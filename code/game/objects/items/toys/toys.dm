@@ -309,8 +309,8 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(cooldown < world.time)
-		cooldown = (world.time + 3 SECONDS)
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 3 SECONDS)
 		user.visible_message(span_notice("The [src] says \"[toysay]\"."))
 		playsound(src, 'sound/machines/click.ogg', 20, 1)
 
@@ -841,9 +841,9 @@
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
-		if(cooldown_timer < world.time)
+		if(COOLDOWN_FINISHED(src, cooldown_timer))
 			playsound(src, squeeze_sound, 25, 0)
-			cooldown_timer = world.time + cooldown_length
+			COOLDOWN_START(src, cooldown_timer, cooldown_length)
 	if(pokephrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		say_phrase()
 	last_message = world.time
@@ -1824,13 +1824,13 @@
 
 /obj/item/toy/plushie/marketable_pip/attackby(obj/item/I, mob/user)
 	var/obj/item/card/id/id = I.GetID()
-	if(istype(id) && cooldown_timer < world.time)
+	if(istype(id) && COOLDOWN_FINISHED(src, cooldown_timer))
 		var/responses = list("I'm not giving you all-access.", "Do you want an ID modification?", "Where are you swiping that!?", "Congratulations! You've been promoted to unemployed!")
 		pokephrase = pick(responses)
 		user.visible_message(span_notice("[user] swipes \the [I] against \the [src]."))
 		playsound(user, 'sound/effects/whistle.ogg', 10, 0)
 		say_phrase()
-		cooldown_timer = world.time + cooldown_length
+		COOLDOWN_START(src, cooldown_timer, cooldown_length)
 		return ..()
 
 /obj/item/toy/plushie/marketable_pip/attack_self(mob/user as mob)
@@ -2044,8 +2044,8 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(cooldown < world.time)
-		cooldown = (world.time + 300) // Sets cooldown at 30 seconds
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
 		user.visible_message(span_warning("[user] presses the big red button."), span_notice("You press the button, it plays a loud noise!"), span_notice("The button clicks loudly."))
 		playsound(src, 'sound/effects/explosionfar.ogg', 50, 0, 0)
 		for(var/mob/M in range(10, src)) // Checks range
@@ -2079,7 +2079,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(cooldown > world.time) //No, I'm not allowing you to spamclick this to do a search over REGISTRY_MEMBERS(REGISTRY_PLAYERS)
+	if(!COOLDOWN_FINISHED(src, cooldown)) //No, I'm not allowing you to spamclick this to do a search over REGISTRY_MEMBERS(REGISTRY_PLAYERS)
 		return
 	var/list/players = list()
 
@@ -2089,8 +2089,8 @@
 		players += player.real_name
 
 	var/random_player = "The " + JOB_SITE_MANAGER
-	if(cooldown < world.time)
-		cooldown = (world.time + 300) // Sets cooldown at 30 seconds
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
 		if(players.len)
 			random_player = pick(players)
 
@@ -2143,8 +2143,8 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(cooldown < world.time)
-		cooldown = world.time + 1800 //3 minutes
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 1800) //3 minutes
 		user.visible_message(span_warning("[user] presses a button on [src]"), span_notice("You activate [src], it plays a loud noise!"), span_notice("You hear the click of a button."))
 		om_after(src, 5, PROC_REF(alarm_sequence)) //gia said so
 	else
@@ -2237,8 +2237,8 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(cooldown <= world.time)
-		cooldown = (world.time + 50) //5 second cooldown
+	if(COOLDOWN_FINISHED(src, cooldown))
+		COOLDOWN_START(src, cooldown, 50) //5 second cooldown
 		user.visible_message(span_notice("[user] pulls back the string on [src]."))
 		icon_state = "[initial(icon_state)]cool"
 		om_after(src, 5, PROC_REF(hiss))
