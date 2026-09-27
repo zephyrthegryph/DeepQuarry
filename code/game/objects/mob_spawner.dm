@@ -5,7 +5,7 @@
 	icon_state = "rift"
 	anchored = TRUE
 
-	var/last_spawn = 0
+	COOLDOWN_DECLARE(spawn_cooldown)
 	var/spawn_delay = 10 MINUTES
 
 	var/list/spawn_types = list(
@@ -25,7 +25,7 @@
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
-	last_spawn = world.time + rand(0,spawn_delay)
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
 // LIFECYCLE: its spawned mobs lose their nest.
 /obj/structure/mob_spawner/Destroy()
@@ -54,7 +54,7 @@
 		return 0
 	if(length(spawned_mobs) >= simultaneous_spawns)
 		return 0
-	if(world.time < last_spawn + spawn_delay)
+	if(!COOLDOWN_FINISHED(src, spawn_cooldown))
 		return 0
 	return 1
 
@@ -66,7 +66,7 @@
 		return 0
 	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
 		return 0
-	last_spawn = world.time
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(total_spawns > 0)
 		total_spawns--
 	if(ispath(mob_path, /mob/living))
@@ -140,7 +140,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 		return 0
 	if(!ispath(mob_path, /mob/living) && !ispath(mob_path, /obj/structure/closet/crate/mimic))
 		return 0
-	last_spawn = world.time
+	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(total_spawns > 0)
 		total_spawns--
 	//how about we find a suitable location first
@@ -179,7 +179,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 /obj/structure/mob_spawner/scanner/periodic_step()
 	if(!can_spawn())
 		return
-	if(world.time > last_spawn + spawn_delay)
+	if(COOLDOWN_FINISHED(src, spawn_cooldown))
 		for(var/mob/living/A in mobs_in_range) //No more calling fucking range(10) every goddamn processing tick, christ.
 			if ((A.faction != mob_faction) && A.ckey)
 				var/chosen_mob = choose_spawn()

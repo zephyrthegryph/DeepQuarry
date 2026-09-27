@@ -130,7 +130,7 @@
 	toggled = 0					// Mainly used for overlays.
 	cooldown = 0 				// If set, will add a cooldown overlay and adjust click delay.  Must be a multiple of 5 for overlays.
 	cast_sound = null			// Sound file played when this is used.
-	var/last_castcheck = null	// The last time this spell was cast.
+	COOLDOWN_DECLARE(castcheck_cooldown) // The last time this spell was cast.
 
 /obj/item/spell/unrestricted/Initialize(mapload, coreless)
 	. = ..()
@@ -142,8 +142,8 @@
 
 /obj/item/spell/unrestricted/run_checks()
 	if(owner)
-		if(world.time >= (last_castcheck + cooldown)) //Are they a cultist or a construct, and has the cooldown time passed?
-			last_castcheck = world.time
+		if(COOLDOWN_FINISHED(src, castcheck_cooldown)) //Are they a cultist or a construct, and has the cooldown time passed?
+			COOLDOWN_START(src, castcheck_cooldown, cooldown)
 			return 1
 	return 0
 

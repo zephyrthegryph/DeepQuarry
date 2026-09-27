@@ -16,7 +16,7 @@
 	var/list/vending_machines // List of venders that can potentially be infected.
 	var/list/infected_vending_machines // List of venders that have been infected.
 	var/obj/machinery/vending/vender_zero = null // The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
-	var/last_malware_spread_time = null
+	COOLDOWN_DECLARE(malware_spread_cooldown_until)
 
 /datum/event2/event/brand_intelligence/set_up()
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -40,9 +40,9 @@
 	infect_vender(vender_zero)
 
 /datum/event2/event/brand_intelligence/event_tick()
-	if(last_malware_spread_time + malware_spread_cooldown > world.time)
+	if(!COOLDOWN_FINISHED(src, malware_spread_cooldown_until))
 		return // Still on cooldown.
-	last_malware_spread_time = world.time
+	COOLDOWN_START(src, malware_spread_cooldown_until, malware_spread_cooldown)
 
 	if(length(vending_machines))
 		var/next_victim = DEFAULTPICK(vending_machines, null)

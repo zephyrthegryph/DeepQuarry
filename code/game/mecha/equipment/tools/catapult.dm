@@ -8,7 +8,7 @@
 	var/atom/movable/locked
 	var/mode = 1 //1 - gravsling 2 - gravpush
 
-	var/last_fired = 0  //Concept stolen from guns.
+	COOLDOWN_DECLARE(catapult_fire_cooldown)  //Concept stolen from guns.
 	var/fire_delay = 10 //Used to prevent spam-brute against humans.
 
 	equip_type = EQUIP_UTILITY
@@ -21,8 +21,8 @@
 
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/action(atom/movable/target)
 
-	if(world.time >= last_fired + fire_delay)
-		last_fired = world.time
+	if(COOLDOWN_FINISHED(src, catapult_fire_cooldown))
+		COOLDOWN_START(src, catapult_fire_cooldown, fire_delay)
 	else
 		if (world.time % 3)
 			occupant_message(span_warning("[src] is not ready to fire again!"))

@@ -21,17 +21,17 @@
 	var/spitting = 0 					//Spitting and spitting related things. Any human based ranged attacks, be it innate or added abilities.
 	var/spit_projectile = null			//Projectile type.
 	var/spit_name = null 				//String
-	var/last_spit = 0 					//Timestamp.
+	COOLDOWN_DECLARE(spit_cooldown) 					//Timestamp.
 
 	var/can_defib = 1					//Horrible damage (like beheadings) will prevent defibbing organics.
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
-	var/last_breath_sound				//Allows us to store the value across proc calls per-mob.
+	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
-	var/last_chew = 0
+	COOLDOWN_DECLARE(chew_cooldown)
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)

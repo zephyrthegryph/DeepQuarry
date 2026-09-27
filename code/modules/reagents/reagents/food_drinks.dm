@@ -179,7 +179,7 @@
 	taste_description = "oil"
 	color = "#c79705"
 	touch_met = 1.5
-	var/lastburnmessage = 0
+	COOLDOWN_DECLARE(burn_message_cooldown)
 
 /datum/reagent/nutriment/triglyceride/oil/touch_turf(turf/simulated/T)
 	if(!istype(T))
@@ -255,9 +255,9 @@
 	if (dfactor)
 		M.injure(INJURY_BURN, removed * 1.5 * dfactor, source = src)
 		data["temperature"] -= (6 * removed) / (1 + volume*0.1)//Cools off as it burns you
-		if (lastburnmessage+100 < world.time	)
+		if (COOLDOWN_FINISHED(src, burn_message_cooldown)	)
 			to_chat(M, span_danger("Searing hot oil burns you, wash it off quick!"))
-			lastburnmessage = world.time
+			COOLDOWN_START(src, burn_message_cooldown, 100)
 
 /datum/reagent/nutriment/triglyceride/oil/cooking
 	name = REAGENT_COOKINGOIL

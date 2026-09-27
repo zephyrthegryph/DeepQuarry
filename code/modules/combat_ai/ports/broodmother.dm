@@ -88,7 +88,7 @@
 	var/mob/living/simple_mob/animal/giant_spider/broodmother/BM = brain.holder
 	if(!istype(BM) || QDELETED(target))
 		return DQ_BEHAVIOR_FAILED
-	BM.last_special_attack = world.time
+	COOLDOWN_START(BM, special_attack_cooldown_until, BM.special_attack_cooldown)
 	BM.spawn_brood(target)
 	return DQ_BEHAVIOR_DONE
 
@@ -126,7 +126,7 @@
 	var/mob/living/simple_mob/animal/giant_spider/broodmother/BM = brain.holder
 	if(!istype(BM) || QDELETED(target))
 		return DQ_BEHAVIOR_FAILED
-	BM.last_special_attack = world.time
+	COOLDOWN_START(BM, special_attack_cooldown_until, BM.special_attack_cooldown)
 	BM.launch_brood(target)
 	return DQ_BEHAVIOR_DONE
 

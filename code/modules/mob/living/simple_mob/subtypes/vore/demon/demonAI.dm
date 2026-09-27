@@ -12,7 +12,7 @@
 	var/cloaked_bonus_damage = 30	// This is added on top of the normal melee damage.
 	var/cloaked_weaken_amount = 3	// How long to stun for.
 	var/cloak_cooldown = 10 SECONDS	// Amount of time needed to re-cloak after losing it.
-	var/last_uncloak = 0			// world.time
+	COOLDOWN_DECLARE(uncloak_cooldown)			// world.time
 
 	faction = "demon"
 	endurance = 200
@@ -119,7 +119,7 @@
 
 
 /mob/living/simple_mob/vore/demonAI/uncloak()
-	last_uncloak = world.time // This is assigned even if it isn't dq_get_cloaked(src) already, to 'reset' the timer if the spider is continously getting attacked.
+	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)// This is assigned even if it isn't dq_get_cloaked(src) already, to 'reset' the timer if the spider is continously getting attacked.
 	if(!dq_get_cloaked(src))
 		return
 	animate(src, alpha = initial(alpha), time = 1 SECOND)
@@ -129,7 +129,7 @@
 /mob/living/simple_mob/vore/demonAI/proc/can_cloak()
 	if(stat)
 		return FALSE
-	if(last_uncloak + cloak_cooldown > world.time)
+	if(!COOLDOWN_FINISHED(src, uncloak_cooldown))
 		return FALSE
 
 	return TRUE

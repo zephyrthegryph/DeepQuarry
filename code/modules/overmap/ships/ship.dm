@@ -31,7 +31,7 @@
 	var/position_x						// Pixel coordinates in the world
 	var/position_y						// Pixel coordinates in the world.
 	var/list/speed = list(0,0)          //speed in x,y direction
-	var/last_burn = 0                   //worldtime when ship last acceleated
+	COOLDOWN_DECLARE(burn_cooldown)                   //worldtime when ship last acceleated
 	var/burn_delay = 1 SECOND           //how often ship can do burns
 	var/fore_dir = NORTH                //what dir ship flies towards for purpose of moving stars effect procs
 
@@ -40,7 +40,7 @@
 	var/thrust_limit = 1  //global thrust limit for all engines, 0..1
 	var/halted = 0        //admin halt or other stop.
 	// add
-	var/last_sound = 0 // The last time a ship sound was played // add
+	COOLDOWN_DECLARE(sound_cooldown_until) // The last time a ship sound was played // add
 	var/sound_cooldown = 10 SECONDS // add
 
 	/// Vis contents overlay holding the ship's vector when in motion
@@ -146,9 +146,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 		PERIODIC_STOP(src)
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz)
-		if(last_sound + sound_cooldown >= world.time)
+		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
-		last_sound = world.time
+		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
 		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/shutdown.ogg')
@@ -159,9 +159,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
 			SSstarmover.toggle_move_stars(zz, fore_dir)
-		if(last_sound + sound_cooldown >= world.time)
+		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
-		last_sound = world.time
+		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
 		for(var/mob/potential_mob as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(potential_mob.z in map_z)
 				SEND_SOUND(potential_mob, 'sound/ambience/startup.ogg')
@@ -227,7 +227,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 /obj/effect/overmap/visitable/ship/proc/can_burn()
 	if(halted)
 		return 0
-	if (world.time < last_burn + burn_delay)
+	if (!COOLDOWN_FINISHED(src, burn_cooldown))
 		return 0
 	for(var/datum/ship_engine/E in engines)
 		. |= E.can_burn()

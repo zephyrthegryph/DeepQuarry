@@ -179,7 +179,7 @@
 	var/mob/living/simple_mob/vore/gryphon/G = brain.get_owner()
 	if(!istype(G) || !isliving(target))
 		return DQ_BEHAVIOR_FAILED
-	// special_attack_target() sets last_special_attack and runs do_special_attack
+	// special_attack_target() starts special_attack_cooldown_until and runs do_special_attack
 	// (the leap, which is async via `set waitfor = FALSE` and toggles ai_brain.busy
 	// itself). We just kick it off.
 	G.special_attack_target(target)

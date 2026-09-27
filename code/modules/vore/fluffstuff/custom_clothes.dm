@@ -2616,7 +2616,7 @@ End */
 	has_hood_sprite = FALSE //No need.
 	body_parts_covered = CHEST|ARMS|LEGS
 	var/toggled = FALSE
-	var/last_toggled = 0
+	COOLDOWN_DECLARE(toggle_cooldown)
 
 /obj/item/clothing/suit/storage/hooded/purple_robes/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
@@ -2634,7 +2634,7 @@ End */
 		return FALSE
 
 	//Antispam.
-	if((last_toggled + 6 SECONDS) > world.time) //Can only toggle it once every 6 seconds!
+	if(!COOLDOWN_FINISHED(src, toggle_cooldown)) //Can only toggle it once every 6 seconds!
 		to_chat(user, span_info("You can only toggle the eyes every six seconds!"))
 		return
 
@@ -2655,7 +2655,7 @@ End */
 		icon_state = initial(icon_state)
 		item_state = initial(item_state)
 		to_chat(user, span_info("The coat's eyes close."))
-	last_toggled = world.time
+	COOLDOWN_START(src, toggle_cooldown, 6 SECONDS)
 	user.update_inv_wear_suit()
 
 /obj/item/clothing/head/hood/purple_robes

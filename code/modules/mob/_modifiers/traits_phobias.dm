@@ -571,15 +571,15 @@
 	on_created_text = span_warning("You remain vigilant against the Alien.")
 	on_expired_text = span_notice("Aliens aren't so bad after all.")
 
-	var/last_message = null	// world.time we last did a message.
+	COOLDOWN_DECLARE(message_cooldown_until) // world.time we last did a message.
 	var/message_cooldown = 1 MINUTE
 
 /datum/modifier/trait/phobia/xenophobia/tick()
 	if(holder.stat)
 		return // You got bigger problems.
-	if(last_message + message_cooldown <= world.time)
+	if(COOLDOWN_FINISHED(src, message_cooldown_until))
 		if(intermittent_message())
-			last_message = world.time
+			COOLDOWN_START(src, message_cooldown_until, message_cooldown)
 
 /datum/modifier/trait/phobia/xenophobia/proc/intermittent_message()
 	var/list/xenos = get_xenos()

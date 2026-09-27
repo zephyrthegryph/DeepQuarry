@@ -76,10 +76,10 @@
 	var/flying = 0				// Allows flight
 	var/inventory_panel_type = /datum/inventory_panel
 	var/datum/inventory_panel/inventory_panel
-	var/last_resist_time = 0 // world.time of the most recent resist that wasn't on cooldown.
+	COOLDOWN_DECLARE(resist_cooldown) // world.time the next resist is allowed.
 	var/tiredness = 0					//For vore draining
 	var/fear = 0 						//For fear effects and phobias
-	var/last_fear_sound = 0				//For making sure the heartbeats don't play over each other
+	COOLDOWN_DECLARE(fear_sound_cooldown)				//For making sure the heartbeats don't play over each other
 
 	var/static/list/fear_message_self = list(
 									"Your heart is racing, it feels like it's going burst from your chest.",

@@ -366,8 +366,8 @@
 	set name = "Resist"
 	set category = "IC.Game"
 
-	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (last_resist_time + RESIST_COOLDOWN < world.time))
-		last_resist_time = world.time
+	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(src, resist_cooldown)))
+		COOLDOWN_START(src, resist_cooldown, RESIST_COOLDOWN)
 		resist_grab()
 		if(!has_status(EFFECT_WEAKENED))
 			process_resist()

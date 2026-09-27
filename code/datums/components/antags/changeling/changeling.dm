@@ -47,7 +47,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/datum/changeling_panel/power_panel //Our changeling eveolution panel. Generated the first time we try to open the panel.
 	dupe_mode = COMPONENT_DUPE_UNIQUE //Only the first changeling application survives!
 	var/cooldown_time = 1 SECOND // Sting anti-spam.
-	var/last_used_sting_time = 0 // world.time when we used last used a power.
+	COOLDOWN_DECLARE(sting_cooldown) // world.time when we used last used a power.
 	var/list/changeling_cooldowns = list(
 		CRYO_STING = 0,
 		ESCAPE_RESTRAINTS = 0,
@@ -77,12 +77,12 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 ///This is just a general anti-spam thing and not really a true cooldown
 
 /datum/component/antag/changeling/proc/check_cooldown()
-	if(world.time > last_used_sting_time+cooldown_time)
+	if(COOLDOWN_FINISHED(src, sting_cooldown))
 		return TRUE
 	return FALSE
 
 /datum/component/antag/changeling/proc/set_sting_cooldown()
-	last_used_sting_time = world.time
+	COOLDOWN_START(src, sting_cooldown, cooldown_time)
 
 /datum/component/antag/changeling/proc/get_cooldown(id)
 	return changeling_cooldowns[id]

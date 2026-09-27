@@ -20,16 +20,16 @@
 	var/carp_largest_group = 5
 	var/carp_wave_cooldown = 10 SECONDS
 
-	var/last_carp_wave_time = null // Last world.time we spawned a carp wave.
+	COOLDOWN_DECLARE(carp_wave_cooldown_until) // Last world.time we spawned a carp wave.
 
 /datum/event2/event/mob_spawning/carp_migration/announce()
 	var/announcement = "Unknown biological entities been detected near \the [location_name()], please stand-by."
 	GLOB.command_announcement.Announce(announcement, "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
 
 /datum/event2/event/mob_spawning/carp_migration/event_tick()
-	if(last_carp_wave_time + carp_wave_cooldown > world.time)
+	if(!COOLDOWN_FINISHED(src, carp_wave_cooldown_until))
 		return
-	last_carp_wave_time = world.time
+	COOLDOWN_START(src, carp_wave_cooldown_until, carp_wave_cooldown)
 
 	if(count_spawned_mobs() < carp_cap)
 		spawn_mobs_in_space(

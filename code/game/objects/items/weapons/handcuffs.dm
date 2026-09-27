@@ -117,7 +117,7 @@
 
 /mob/living/carbon/human/RestrainedClickOn(atom/A)
 	if (A != src) return ..()
-	if (last_chew + 26 > world.time) return
+	if (!COOLDOWN_FINISHED(src, chew_cooldown)) return
 
 	var/mob/living/carbon/human/H = A
 	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return
@@ -139,7 +139,7 @@
 
 	H.injure(INJURY_CUT, 3, O, src)
 
-	last_chew = world.time
+	COOLDOWN_START(src, chew_cooldown, 26)
 
 /obj/item/handcuffs/fuzzy
 	name = "fuzzy cuffs"

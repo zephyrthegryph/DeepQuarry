@@ -19,7 +19,7 @@
 
 	//spitting
 	var/spit_delay = 20 // maximum spit fire rate
-	var/spit_last = 0
+	COOLDOWN_DECLARE(spit_cooldown)
 	var/icon_overlay_spit = null // spit iconstate
 	var/icon_overlay_spit_pounce = null // spit while pouncing
 
@@ -227,11 +227,11 @@
 	if(isnull(spit_projectile))
 		return
 
-	if((spit_last + spit_delay) > world.time) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		spit_last = world.time
+		COOLDOWN_START(src, spit_cooldown, spit_delay)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")

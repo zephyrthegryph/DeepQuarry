@@ -1,7 +1,7 @@
 /mob/living/silicon
 	var/datum/ai_laws/laws = null
 	var/list/additional_law_channels = list("State" = "")
-	var/last_law_notification = null // Avoids receiving 5+ of them at once.
+	COOLDOWN_DECLARE(law_notification_cooldown) // Avoids receiving 5+ of them at once.
 
 /mob/living/silicon/proc/laws_sanity_check()
 	if (!src.laws)
@@ -90,9 +90,9 @@
 
 /mob/living/silicon/proc/notify_of_law_change(message)
 	throw_alert("newlaw", /atom/movable/screen/alert/newlaw)
-	if((last_law_notification + 1 SECOND) > world.time)
+	if(!COOLDOWN_FINISHED(src, law_notification_cooldown))
 		return
-	last_law_notification = world.time
+	COOLDOWN_START(src, law_notification_cooldown, 1 SECOND)
 	SEND_SOUND(src, 'sound/machines/defib_success.ogg')
 	window_flash(client)
 	to_chat(src, span_warning(message))

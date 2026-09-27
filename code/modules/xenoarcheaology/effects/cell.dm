@@ -6,7 +6,7 @@
 	name = "Cell Power Effect"
 	effect_type = EFFECT_CELL
 	effect_color = "#ffee06"
-	var/last_message
+	COOLDOWN_DECLARE(message_cooldown)
 	var/charge_type = CELL_CHARGE
 
 /datum/artifact_effect/cell/New()
@@ -29,7 +29,7 @@
 			var/obj/item/cell/C = L.get_cell()
 
 			if(C)
-				if(issilicon(L) && ((last_message + (1 MINUTE)) < world.time))
+				if(issilicon(L) && (COOLDOWN_FINISHED(src, message_cooldown)))
 					messaged_robots = TRUE
 					switch(effect)
 						if(CELL_CHARGE)
@@ -48,7 +48,7 @@
 				C.charge = max(0, C.charge - amount)
 
 	if(messaged_robots)
-		last_message = world.time
+		COOLDOWN_START(src, message_cooldown, (1 MINUTE))
 
 /datum/artifact_effect/cell/DoEffectTouch(mob/living/user)
 	if(!user)

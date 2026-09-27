@@ -88,7 +88,7 @@
 
 	var/strain = 0	// The amount of stress this organ is under. Capped at min_broken_damage, usually half its max damage.
 
-	var/last_strain_increase = 0	// World time of the last increase in strain.
+	COOLDOWN_DECLARE(strain_regen_cooldown_until)	// World time of the last increase in strain.
 	var/strain_regen_cooldown = 5 MINUTES
 
 /obj/item/organ/internal/regennetwork/Initialize(mapload)
@@ -106,11 +106,11 @@
 	return round((strain / min_broken_damage) * 10) / 10
 
 /obj/item/organ/internal/regennetwork/proc/adjust_strain(amount)
-	if(amount < 0 && world.time < (last_strain_increase + strain_regen_cooldown))
+	if(amount < 0 && !COOLDOWN_FINISHED(src, strain_regen_cooldown_until))
 		return
 
 	else if(amount > 0)
-		last_strain_increase = world.time
+		COOLDOWN_START(src, strain_regen_cooldown_until, strain_regen_cooldown)
 
 	strain = CLAMP(strain + amount, 0, min_broken_damage)
 

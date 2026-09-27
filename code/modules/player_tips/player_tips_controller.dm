@@ -9,16 +9,16 @@ Controlled by the player_tips subsystem under code/controllers/subsystems/player
 	var/min_tip_delay = 45 MINUTES
 	var/max_tip_delay = 75 MINUTES
 	var/tip_delay = 5 MINUTES //10 minute initial delay for first tip of the day. Timer starts 5 minutes after game starts, plus 5 minutes here. Gets overwritten afterwards
-	var/last_tip_time = 0
+	COOLDOWN_DECLARE(tip_cooldown)
 	var/last_tip = null
 	var/list/HasReceived //Tracking who received tips. We let them know how to turn them off if they're not on this list. Stores CKeys until round-end.
 
 //Called every 5 minutes as defined in the subsystem.
 /datum/player_tips/proc/check_next_tip()
-	if(world.time <= last_tip_time + tip_delay)
+	if(!COOLDOWN_FINISHED(src, tip_cooldown))
 		return FALSE
 
-	last_tip_time = world.time
+	COOLDOWN_START(src, tip_cooldown, tip_delay)
 	tip_delay = rand(min_tip_delay, max_tip_delay)
 	return TRUE
 

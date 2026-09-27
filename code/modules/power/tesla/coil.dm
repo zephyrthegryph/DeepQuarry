@@ -19,7 +19,7 @@
 	var/power_loss = 2
 	var/input_power_multiplier = 1
 	var/zap_cooldown = 10
-	var/last_zap = 0
+	COOLDOWN_DECLARE(zap_cooldown_until)
 	var/zap_range = 5
 	var/lossy_transfer = TRUE  //If true, we lose power upon shooting the next beam by our power_loss var. Only comes to play if power_loss is > 1
 
@@ -175,9 +175,9 @@ REF_OWNED(/obj/machinery/power/tesla_coil, "wires")
 
 //Unused.
 /obj/machinery/power/tesla_coil/proc/zap(power, explosive, current_jumps)
-	if((last_zap + zap_cooldown) > world.time || !powernet)
+	if(!COOLDOWN_FINISHED(src, zap_cooldown_until) || !powernet)
 		return FALSE
-	last_zap = world.time
+	COOLDOWN_START(src, zap_cooldown_until, zap_cooldown)
 	var/coeff = (20 - ((input_power_multiplier - 1) * 3))
 	coeff = max(coeff, 10)
 	power = (powernet.avail/2)

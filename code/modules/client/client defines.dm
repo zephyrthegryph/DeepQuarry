@@ -67,7 +67,7 @@
 		///////////////
 		//SOUND STUFF//
 		///////////////
-	var/time_last_ambience_played = 0 // world.time when ambience was played to this client, to space out ambience sounds.
+	COOLDOWN_DECLARE(ambience_cooldown) // world.time when ambience may next play to this client, to space out ambience sounds.
 
 		////////////
 		//SECURITY//

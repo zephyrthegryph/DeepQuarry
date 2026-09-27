@@ -205,19 +205,19 @@
 	var/cloaked_bonus_damage = 20
 	var/cloaked_weaken_amount = 3
 	var/cloak_cooldown = 10 SECONDS
-	var/last_uncloak = 0
+	COOLDOWN_DECLARE(uncloak_cooldown)
 
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/proc/can_cloak()
 	if(stat)
 		return FALSE
-	if(last_uncloak + cloak_cooldown > world.time)
+	if(!COOLDOWN_FINISHED(src, uncloak_cooldown))
 		return FALSE
 
 	return TRUE
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/uncloak()
-	last_uncloak = world.time
+	COOLDOWN_START(src, uncloak_cooldown, cloak_cooldown)
 	if(!dq_get_cloaked(src))
 		return
 	animate(src, alpha = initial(alpha), time = 1 SECOND)

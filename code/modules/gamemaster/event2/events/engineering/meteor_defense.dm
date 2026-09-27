@@ -31,7 +31,7 @@
 	var/dir_text = null // Direction shown in the announcement.
 	var/list/meteor_types = null
 	var/waves = null // How many times to send meteors.
-	var/last_wave_time = null // world.time of latest wave.
+	COOLDOWN_DECLARE(wave_cooldown) // world.time of latest wave.
 	var/wave_delay = 10 SECONDS
 	var/wave_upper_bound = 8 // Max amount of meteors per wave.
 	var/wave_lower_bound = 4 // Min amount.
@@ -69,8 +69,8 @@
 	GLOB.command_announcement.Announce("Incoming meteors approach from \the [dir_text] side!", "Meteor Alert - Update")
 
 /datum/event2/event/meteor_defense/event_tick()
-	if(world.time > last_wave_time + wave_delay)
-		last_wave_time = world.time
+	if(COOLDOWN_FINISHED(src, wave_cooldown))
+		COOLDOWN_START(src, wave_cooldown, wave_delay)
 		waves--
 		message_admins("[waves] more wave\s of meteors remain.")
 		// Dir is reversed because the direction describes where meteors are going, not what side it's gonna hit.

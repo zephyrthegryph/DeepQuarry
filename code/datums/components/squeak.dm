@@ -13,7 +13,7 @@
 	var/step_delay = 0	// Changed from 0 to 1 to make the sounds more consistent with movespeed.
 
 	// This is to stop squeak spam from inhand usage
-	var/last_use = 0
+	COOLDOWN_DECLARE(use_cooldown)
 	var/use_delay = 20
 
 	///extra-range for this component's sound
@@ -115,8 +115,8 @@
 /datum/component/squeak/proc/use_squeak()
 	SIGNAL_HANDLER
 
-	if(last_use + use_delay < world.time)
-		last_use = world.time
+	if(COOLDOWN_FINISHED(src, use_cooldown))
+		COOLDOWN_START(src, use_cooldown, use_delay)
 		play_squeak()
 
 /datum/component/squeak/proc/on_equip(datum/source, mob/equipper, slot)

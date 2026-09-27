@@ -26,7 +26,7 @@
 	/// browser payload so React does not repeat an asynchronous storage lookup.
 	var/list/preapplied_geometry
 	/// Rate limit for automatic local-development browser telemetry.
-	var/last_perf_log_at = 0
+	COOLDOWN_DECLARE(perf_log_cooldown)
 	var/datum/tgui/locked_by
 	var/datum/subscriber_object
 	var/subscriber_delegate
@@ -505,9 +505,9 @@
 			if(client?.address != "127.0.0.1" && client?.address != "::1")
 				return
 			#endif
-			if(world.time < last_perf_log_at + 1 SECOND)
+			if(!COOLDOWN_FINISHED(src, perf_log_cooldown))
 				return
-			last_perf_log_at = world.time
+			COOLDOWN_START(src, perf_log_cooldown, 1 SECOND)
 			var/encoded_payload = json_encode(payload)
 			if(length(encoded_payload) > 8000)
 				encoded_payload = copytext(encoded_payload, 1, 8001)

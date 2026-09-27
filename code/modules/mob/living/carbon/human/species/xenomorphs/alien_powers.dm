@@ -125,11 +125,11 @@
 	return
 
 /mob/living/carbon/human/proc/Spit(atom/A)
-	if((last_spit + 1 SECONDS) > world.time) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		last_spit = world.time
+		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
@@ -198,7 +198,7 @@
 		return
 
 	else
-		last_spit = world.time
+		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
 		spitting = 1
 		spit_projectile = /obj/item/projectile/energy/neurotoxin
 		spit_name = "neurotoxin"
@@ -219,7 +219,7 @@
 		return
 
 	else
-		last_spit = world.time
+		COOLDOWN_START(src, spit_cooldown, 1 SECONDS)
 		spitting = 1
 		spit_projectile = /obj/item/projectile/energy/acid
 		spit_name = "acid"

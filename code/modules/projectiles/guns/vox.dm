@@ -7,7 +7,7 @@
 	name = "spike thrower"
 	desc = "A vicious alien projectile weapon. Parts of it quiver gelatinously, as though the thing is insectile and alive."
 
-	var/last_regen = 0
+	COOLDOWN_DECLARE(regen_cooldown)
 	var/spike_gen_time = 150
 	var/max_spikes = 5
 	var/spikes = 5
@@ -20,15 +20,15 @@
 
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
-	last_regen = world.time
+	COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 
 /// Regrows spikes every 2 s while short (firing starts it); full, it sleeps.
 /obj/item/gun/launcher/spikethrower/periodic_step()
 	if(spikes >= max_spikes)
 		return PROCESS_KILL
-	if(spikes < max_spikes && world.time > last_regen + spike_gen_time)
+	if(spikes < max_spikes && COOLDOWN_FINISHED(src, regen_cooldown))
 		spikes++
-		last_regen = world.time
+		COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 		update_icon()
 
 /obj/item/gun/launcher/spikethrower/examine(mob/user)

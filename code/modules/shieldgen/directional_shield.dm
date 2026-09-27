@@ -90,7 +90,7 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	max_integrity = 400
 	var/shield_regen_amount = 20		// How much to recharge every process(), after the delay.
 	var/shield_regen_delay = 5 SECONDS	// If the shield takes damage, it won't recharge for this long.
-	var/last_damaged_time = null		// world.time when the shields took damage, used for the delay.
+	COOLDOWN_DECLARE(regen_cooldown) // world.time when the shields took damage, used for the delay.
 	var/list/active_shields	// Shields that are active and deployed.
 	var/always_on = FALSE				// If true, will always try to reactivate if disabled for whatever reason, ideal if AI mobs are holding this.
 	var/high_color = "#0099FF"			// Color the shield will be when at max health.  A light blue.
@@ -152,7 +152,7 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 /obj/item/shield_projector/on_update_integrity(old_value, new_value)
 	. = ..()
 	if(new_value < old_value)
-		last_damaged_time = world.time
+		COOLDOWN_START(src, regen_cooldown, shield_regen_delay)
 		PERIODIC_START(src, PERIODIC_SLOW) // regenerates after its delay
 		if(new_value > 0)
 			if(new_value < max_integrity / 4) // Play a more urgent sounding beep if it's at 25% health.
@@ -223,7 +223,7 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 /obj/item/shield_projector/periodic_step()
 	if(get_integrity() >= max_integrity && (active || !always_on))
 		return PROCESS_KILL
-	if(get_integrity() < max_integrity && ( (last_damaged_time + shield_regen_delay) < world.time) )
+	if(get_integrity() < max_integrity && ( COOLDOWN_FINISHED(src, regen_cooldown)) )
 		adjust_health(shield_regen_amount)
 		if(always_on && !active) // Make shields as soon as possible if this is set.
 			create_shields()
