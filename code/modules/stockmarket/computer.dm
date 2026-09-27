@@ -286,7 +286,10 @@
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
 		return
 	var/price = S.current_value
-	var/amt = round(tgui_input_number(user, "How many shares? \n(Have: [avail], unit price: [price])", "Sell shares in [S.name]", 0))
+	var/_answer_k289 = rerun_prompt(user, "k289", list("kind" = "number", "message" = "How many shares? \n(Have: [avail], unit price: [price])", "title" = "Sell shares in [S.name]", "default" = 0), PROC_REF(sell_some_shares), args)
+	if(isnull(_answer_k289))
+		return
+	var/amt = round(_answer_k289)
 	amt = min(amt, LAZYACCESS(S.shareholders, logged_in))
 
 	if (!user || (!(user in range(1, src)) && iscarbon(user)))
@@ -321,7 +324,10 @@
 	var/avail = S.available_shares
 	var/price = S.current_value
 	var/canbuy = round(b / price)
-	var/amt = round(tgui_input_number(user, "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", "Buy shares in [S.name]", 0))
+	var/_answer_k324 = rerun_prompt(user, "k324", list("kind" = "number", "message" = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", "title" = "Buy shares in [S.name]", "default" = 0), PROC_REF(buy_some_shares), args)
+	if(isnull(_answer_k324))
+		return
+	var/amt = round(_answer_k324)
 	if (!user || (!(user in range(1, src)) && iscarbon(user)))
 		return
 	if (li != logged_in)
