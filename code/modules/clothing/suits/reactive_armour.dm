@@ -398,6 +398,10 @@
 	var/mob/living/attacker = hitby
 	owner.visible_message(span_danger("[src] activates, cloaking the wrong person!"))
 	attacker.alpha = 0
-	om_after(attacker, 4 SECONDS, TYPE_PROC_REF(/atom, om_restore_alpha), initial(attacker.alpha))
+	om_after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), attacker, initial(attacker.alpha))
 	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
 	return FALSE
+
+/// om_after() target: the misfired cloak wears off.
+/proc/reactive_cloak_wear_off(mob/living/attacker, old_alpha)
+	attacker.alpha = old_alpha

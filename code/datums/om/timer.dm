@@ -182,7 +182,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return FALSE
 
 /// How many om_after() timers E has pending.
-/proc/om_timer_count(datum/E)
+/datum/om/scheduler/proc/timer_count(datum/E)
 	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
 
 /proc/om_timer_pending(datum/E, id)
@@ -343,10 +343,12 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // ---------------------------------------------------------------- keyed timers
 //
 // SStimer's TIMER_UNIQUE and TIMER_OVERRIDE, as the key they really were: the owner, the
-// proc and its arguments. No extra state: the owner's timer list is the index.
+// proc and its arguments. No extra state: the owner's timer list is the index. These live on
+// the scheduler (base_proc_lint: no new global API taking a datum); call them through the
+// om_after_unique() / om_after_replace() / om_cancel_calls() / om_timer_count() macros.
 
 /// The position in rec.timers of a pending timer calling `proc_ref` with `call_args`, or 0.
-/proc/om_timer_find(datum/om/rec/rec, proc_ref, list/call_args)
+/datum/om/scheduler/proc/timer_find(datum/om/rec/rec, proc_ref, list/call_args)
 	var/list/T = rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		if(T[i + 2] != proc_ref)
@@ -366,30 +368,30 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 
 /// om_after(), unless the same call (owner, proc, arguments) is already pending: then
 /// nothing, and the pending timer's id is returned. (Was TIMER_UNIQUE.)
-/proc/om_after_unique(datum/E, delay, proc_ref, ...)
+/datum/om/scheduler/proc/after_unique(datum/E, delay, proc_ref, ...)
 	if(isnull(E))
 		E = om_global_owner()
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : list()
 	var/datum/om/rec/rec = om_rec_of(E)
-	var/i = om_timer_find(rec, proc_ref, call_args)
+	var/i = timer_find(rec, proc_ref, call_args)
 	if(i)
 		return rec.timers[i]
 	return om_after(arglist(list(E, delay, proc_ref) + call_args))
 
 /// om_after(), replacing the same call if it is pending: the delay restarts. (Was
 /// TIMER_UNIQUE | TIMER_OVERRIDE.)
-/proc/om_after_replace(datum/E, delay, proc_ref, ...)
+/datum/om/scheduler/proc/after_replace(datum/E, delay, proc_ref, ...)
 	if(isnull(E))
 		E = om_global_owner()
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : list()
 	var/datum/om/rec/rec = om_rec_of(E)
-	var/i = om_timer_find(rec, proc_ref, call_args)
+	var/i = timer_find(rec, proc_ref, call_args)
 	if(i)
 		om_cancel_timer(E, rec.timers[i])
 	return om_after(arglist(list(E, delay, proc_ref) + call_args))
 
 /// Cancels every pending timer on E that calls `proc_ref`, whatever its arguments.
-/proc/om_cancel_calls(datum/E, proc_ref)
+/datum/om/scheduler/proc/cancel_calls(datum/E, proc_ref)
 	var/datum/om/rec/rec = E?.om_rec
 	var/list/T = rec?.timers
 	. = 0

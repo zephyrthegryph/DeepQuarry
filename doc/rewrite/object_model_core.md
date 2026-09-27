@@ -495,7 +495,7 @@ A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` o
 - `TIMER_STOPPABLE`: keep the id `om_after()` returns and `om_cancel_timer(E, id)`; `om_timer_left(E, id)` replaces `timeleft()`; `om_cancel_calls(E, proc)` drops every pending call of one proc.
 - `TIMER_CLIENT_TIME`: `om_after_realtime(d, proc, args...)` on the global owner, due at a `REALTIMEOFDAY` and re-armed if the game-time wheel fires it early.
 - `TIMER_LOOP`: a proc that does its work and calls `om_after_replace()` for the next round.
-- `QDEL_IN`: `expire(d)` on an atom, `om_qdel_after(D, d)` on anything else; `QDEL_IN_STOPPABLE` is `expire()` with `cancel_expire()`.
+- `QDEL_IN`: `expire(d)` on an atom, `om_qdel_after(D, d)` on anything else; `QDEL_IN_STOPPABLE` is `expire()`, disarmed with `expire(null)`.
 - `VARSET_IN` and `TIMER_COOLDOWN_*`: a `COOLDOWN_*` when the var is a rate limit, else `om_after()` of a named proc that sets it.
 
 **Weak capture.** Object arguments to `om_after` and to tasks are held as OM handles, never as references. When the timer fires, or a task step runs, each handle is resolved first: if any argument has been deleted, the call is dropped (a timer) or fails with the reason `"gone"` (a task). A deferred call can't keep a deleted object alive or run against one.

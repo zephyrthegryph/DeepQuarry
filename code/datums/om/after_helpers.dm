@@ -78,7 +78,3 @@
 /// Nearsighted for good (the disability) or for a while (EFFECT_NEARSIGHTED: a flash, a sting).
 /mob/proc/is_nearsighted()
 	return (disabilities & NEARSIGHTED) || has_status(EFFECT_NEARSIGHTED)
-
-/// om_after() target: an alpha change that undoes itself (a cloak wearing off).
-/atom/proc/om_restore_alpha(new_alpha)
-	alpha = new_alpha
