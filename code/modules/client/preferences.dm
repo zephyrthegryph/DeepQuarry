@@ -157,17 +157,11 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		save_preferences()
 	save_character() // Save random character
 
+REF_OWNED_LIST(/datum/preferences, "middleware")
+
+// LIFECYCLE: in-flight character preview renders discard their result.
 /datum/preferences/Destroy()
-	// character_preview_b64 is just a list of base64 strings, no
-	// atoms to qdel. Bumping the generation makes any in-flight async
-	// render discard its result (it also checks QDELETED).
 	dq_preview_generation++
-	character_preview_b64 = null
-	// `middleware` is a list of /datum/preference_middleware; QDEL_NULL would
-	// pass the list itself to qdel and trip the "lists should not be qdel'd" runtime.
-	// QDEL_LIST iterates and qdels each entry then clears the list.
-	QDEL_LIST(middleware)
-	value_cache = null
 	return ..()
 
 // transactional batching for constraint cascades and editor actions.
@@ -569,11 +563,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	PREF_TRANSACTION_END(src)
 
-
 // metadata_maybes/metadata_favs/matadata_ooc_style were dead declarations
 // (never referenced anywhere); equivalent functionality is on /datum/preference/text/living/ooc_notes_{maybes,favs} and /datum/preference/toggle/living/ooc_notes_style. Deleted.
 // job_other_low/med/high migrated to /datum/preference/numeric/human/job_other_* subtypes; declarations deleted.
-
 
 // show_in_directory, directory_*, sensorpref, capture_crystal,
 // auto_backup_implant, borg_petting migrated to /datum/preference subtypes

@@ -227,7 +227,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	fileaccess_timer = world.time + FTPDELAY	*/
 	return 1
 
-
 	///////////
 	//CONNECT//
 	///////////
@@ -412,6 +411,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		Destroy() //Clean up signals and timers.
 	return ..()
 
+// LIFECYCLE: a client logs out of the directory, admins and tickets.
 /client/Destroy()
 	GLOB.directory -= ckey
 	GLOB.clients -= src
@@ -767,7 +767,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			stat_tab = payload["tab"]
 			SSstatpanels.immediate_send_stat_data(src)
 
-
 // Mouse stuff
 /client/Click(atom/object, atom/location, control, params)
 	var/mcl = CONFIG_GET(number/minute_click_limit)
@@ -847,7 +846,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 #undef LIMITER_SIZE
 #undef MINUTE_COUNT
 #undef SECOND_COUNT
-
 
 //Uses a couple different services
 /client/proc/update_ip_reputation()
