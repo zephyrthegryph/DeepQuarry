@@ -501,7 +501,9 @@
 		if("begin_shutdown")
 			if(running < SHIELD_RUNNING) // Discharging or off
 				return
-			var/alert = tgui_alert(ui.user, "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", "Are you sure?", list("Yes", "No"))
+			var/alert = act_prompt(ui.user, action, params, ui, "k504", list("message" = "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", "title" = "Are you sure?", "choices" = list("Yes", "No")))
+			if(isnull(alert))
+				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
 			if(running < SHIELD_RUNNING)
@@ -528,7 +530,9 @@
 			if(!running)
 				return TRUE
 
-			var/choice = tgui_alert(ui.user, "Are you sure that you want to initiate an emergency shield shutdown? This will instantly drop the shield, and may result in unstable release of stored electromagnetic energy. Proceed at your own risk.", "Confirmation", list("No", "Yes"))
+			var/choice = act_prompt(ui.user, action, params, ui, "k531", list("message" = "Are you sure that you want to initiate an emergency shield shutdown? This will instantly drop the shield, and may result in unstable release of stored electromagnetic energy. Proceed at your own risk.", "title" = "Confirmation", "choices" = list("No", "Yes")))
+			if(isnull(choice))
+				return
 			if((choice != "Yes") || !running)
 				return TRUE
 
@@ -547,14 +551,19 @@
 
 	switch(action)
 		if("set_range")
-			var/new_range = tgui_input_number(ui.user, "Enter new field range (1-[world.maxx]). Leave blank to cancel.", "Field Radius Control", field_radius, world.maxx, 1)
+			var/new_range = act_prompt(ui.user, action, params, ui, "k550", list("kind" = "number", "message" = "Enter new field range (1-[world.maxx]). Leave blank to cancel.", "title" = "Field Radius Control", "default" = field_radius, "max" = world.maxx, "min" = 1))
+			if(isnull(new_range))
+				return
 			if(!new_range)
 				return TRUE
 			target_radius = between(1, new_range, world.maxx)
 			return TRUE
 
 		if("set_input_cap")
-			var/new_cap = round(tgui_input_number(ui.user, "Enter new input cap (in kW). Enter 0 or nothing to disable input cap.", "Generator Power Control", round(input_cap / 1000)))
+			var/_answer_k557 = act_prompt(ui.user, action, params, ui, "k557", list("kind" = "number", "message" = "Enter new input cap (in kW). Enter 0 or nothing to disable input cap.", "title" = "Generator Power Control", "default" = round(input_cap / 1000)))
+			if(isnull(_answer_k557))
+				return
+			var/new_cap = round(_answer_k557)
 			if(!new_cap)
 				input_cap = 0
 				return
