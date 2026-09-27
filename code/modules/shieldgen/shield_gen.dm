@@ -46,10 +46,8 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/shield_gen/Destroy()
-	QDEL_LIST_NULL(field)
-	QDEL_NULL(shield_hum)
-	return ..()
+REF_OWNED(/obj/machinery/shield_gen, "shield_hum")
+REF_OWNED_LIST(/obj/machinery/shield_gen, "field")
 
 /obj/machinery/shield_gen/emag_act(remaining_charges, mob/user)
 	if(prob(75))
@@ -242,7 +240,6 @@
 			z_range = clamp(text2num(params["val"]), 0, 10)
 			. = TRUE
 
-
 /obj/machinery/shield_gen/ex_act(severity)
 	if(active)
 		toggle()
@@ -355,11 +352,9 @@
 
 	return out
 
-
 // === merged from shield_gen_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/shield_gen
 	icon = 'icons/obj/machines/shielding.dmi'
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shield_gen/step_start_condition()

@@ -210,13 +210,7 @@
 	update_icon()
 	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/portable_atmospherics/hydroponics/Destroy()
-	if(growth_timer)
-		deltimer(growth_timer)
-		growth_timer = null
-	QDEL_NULL(temp_chem_holder)
-	seed = null
-	return ..()
+REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()
 	MACHINE_WAKE(src)

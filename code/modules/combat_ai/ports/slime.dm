@@ -15,9 +15,7 @@
 	if(!slime_state)
 		slime_state = new /datum/slime_state(src)
 
-/mob/living/simple_mob/slime/xenobio/Destroy()
-	QDEL_NULL(slime_state)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/slime/xenobio, "slime_state")
 
 /mob/living/simple_mob/slime/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
 	. = ..()

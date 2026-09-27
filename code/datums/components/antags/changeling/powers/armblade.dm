@@ -88,10 +88,6 @@
 	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
 	..()
 
-/obj/item/melee/changeling/Destroy()
-	creator = null
-	. = ..()
-
 /obj/item/melee/changeling/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(defend_chance))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))

@@ -28,7 +28,6 @@
 	should_be_mapped = TRUE
 	circuit = /obj/item/circuitboard/batteryrack
 
-
 /obj/machinery/power/smes/batteryrack/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -42,11 +41,7 @@
 	input_level = max_transfer_rate
 	output_level = max_transfer_rate
 
-/obj/machinery/power/smes/batteryrack/Destroy()
-	for(var/obj/item/cell/C in internal_cells)
-		qdel(C)
-	internal_cells = null
-	return ..()
+REF_OWNED_LIST(/obj/machinery/power/smes/batteryrack, "internal_cells")
 
 /obj/machinery/power/smes/batteryrack/check_terminals()
 	return TRUE // we don't necessarily need terminals
@@ -57,7 +52,6 @@
 
 	var/cellcount = 0
 	var/charge_level = between(0, round(Percentage() / 12), 7)
-
 
 	add_overlay("charge[charge_level]")
 
@@ -79,7 +73,6 @@
 	newmaxcharge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
 	capacity = newmaxcharge
 	charge = between(0, charge, newmaxcharge)
-
 
 // Sets input/output depending on our "mode" var.
 /obj/machinery/power/smes/batteryrack/proc/update_io(newmode)
@@ -115,7 +108,6 @@
 		// No more power to input so return.
 		if(!amount)
 			return
-
 
 /obj/machinery/power/smes/batteryrack/remove_charge(amount)
 	amount *= CELLRATE // Convert to CELLRATE first.
@@ -167,7 +159,6 @@
 	update_maxcharge()
 	update_icon()
 	return 1
-
 
 /obj/machinery/power/smes/batteryrack/power_settled()
 	return FALSE
@@ -333,7 +324,6 @@
 #undef PSU_AUTO
 
 #undef PSU_MAXCELLS
-
 
 /obj/machinery/power/smes/batteryrack/mapped
 	var/cell_type = /obj/item/cell/apc

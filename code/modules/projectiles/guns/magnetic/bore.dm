@@ -23,9 +23,7 @@
 		mat_cost = initial(mat_cost) / (2*manipulator.rating)
 	update_rating_mod()
 
-/obj/item/gun/magnetic/matfed/Destroy()
-	QDEL_NULL(manipulator)
-	. = ..()
+REF_OWNED(/obj/item/gun/magnetic/matfed, "manipulator")
 
 /obj/item/gun/magnetic/matfed/examine(mob/user)
 	. = ..()
@@ -82,7 +80,6 @@
 		return span_notice("It has [mat_storage] out of [max_mat_storage] units of [ammo_material] loaded.")
 	else
 		return span_warning("It\'s out of [ammo_material]!")
-
 
 /obj/item/gun/magnetic/matfed/crowbar_act(mob/user, obj/item/tool)
 	update_rating_mod()
@@ -227,9 +224,7 @@
 	. = ..()
 	soundloop = new(list(src), 0)
 
-/obj/item/gun/magnetic/matfed/phoronbore/Destroy()
-	QDEL_NULL(soundloop)
-	. = ..()
+REF_OWNED(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop")
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)

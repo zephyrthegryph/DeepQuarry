@@ -26,9 +26,7 @@
 	body = new body_type(src)
 	return ..()
 
-/mob/living/Destroy()
-	QDEL_NULL(body)
-	return ..()
+REF_OWNED(/mob/living, "body")
 
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
 /// the chem-caused afflictions are stale.
@@ -79,20 +77,15 @@
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
+REF_OWNED(/datum/body, "physiology")
+REF_OWNED_LIST(/datum/body, "supports")
+
+// LIFECYCLE: each affliction is removed (symptoms end) before it is deleted.
 /datum/body/Destroy()
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		remove_affliction(A)
 		qdel(A)
 	afflictions = null
-	afflictions_by_type = null
-	afflictions_by_location = null
-	treatment_snapshot = null
-	reagent_volumes = null
-	reagent_interference = null
-	factors = null
-	QDEL_NULL(physiology)
-	QDEL_LIST(supports)
-	owner = null
 	return ..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.
@@ -103,7 +96,6 @@
 		dirty |= BODY_DIRTY_PHYSIOLOGY
 	if(owner)
 		om_changed(owner, CHANGE_MOB_HEALTH)
-
 
 // --- Affliction bookkeeping -------------------------------------------------
 
@@ -200,7 +192,6 @@
 /datum/body/proc/biology_of(location)
 	return owner.biology
 
-
 // --- Injury / treatment entry points (overridden per plan) ----------------------
 
 /// Multiplier applied to an injury of `kind` at `location` before armour:
@@ -251,7 +242,6 @@
 		. += treated
 	if(.)
 		on_status_changed()
-
 
 // --- Treatment snapshot ------------------------------------------------------------
 
@@ -343,7 +333,6 @@
 /datum/body/proc/regeneration_level()
 	return 0
 
-
 // --- Life ---------------------------------------------------------------------------
 
 /// Called once per Life tick. Healthy bodies return immediately.
@@ -427,7 +416,6 @@
 		owner.set_stat(UNCONSCIOUS)
 	else if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
 		REMOVE_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
-
 
 // --- Queries ----------------------------------------------------------------------------
 

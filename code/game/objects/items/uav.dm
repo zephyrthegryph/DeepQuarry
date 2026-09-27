@@ -56,10 +56,7 @@
 	ion_trail.set_up(src)
 	ion_trail.stop()
 
-/obj/item/uav/Destroy()
-	QDEL_NULL(cell)
-	QDEL_NULL(ion_trail)
-	return ..()
+REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 
 /obj/item/uav/examine(mob/user)
 	. = ..()

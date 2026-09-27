@@ -124,6 +124,7 @@
 	ASSERT(istype(C))
 	src.owner = C
 
+// LIFECYCLE: closes its media window.
 /datum/media_manager/Destroy()
 	if(media_window)
 		media_window.close()
@@ -207,7 +208,6 @@
 		targetVolume = M.volume
 		//MP_DEBUG("Found audio source: [M.media_url] @ [(world.time - start_time) / 10]s.")
 	push_music(targetURL, targetStartTime, targetVolume)
-
 
 #ifdef DEBUG_MEDIAPLAYER
 #undef DEBUG_MEDIAPLAYER

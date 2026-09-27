@@ -372,6 +372,7 @@
 	AddComponent(/datum/component/recursive_move)
 	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_moved))
 
+// LIFECYCLE: its hologram goes with it.
 /obj/item/integrated_circuit/output/holographic_projector/Destroy()
 	destroy_hologram()
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)

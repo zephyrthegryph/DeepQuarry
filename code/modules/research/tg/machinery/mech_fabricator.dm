@@ -79,11 +79,7 @@
 	if(stored_research)
 		on_connected_techweb()
 
-/obj/machinery/mecha_part_fabricator_tg/Destroy()
-	QDEL_NULL(print_sound)
-	rmat = null
-	queue_producer_accounts = null
-	return ..()
+REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research)
@@ -575,7 +571,6 @@
 
 /obj/machinery/mecha_part_fabricator_tg/proc/interaction_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
 	return default_part_replacement(user, held) ? TRUE : FALSE
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()

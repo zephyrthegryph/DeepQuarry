@@ -473,6 +473,7 @@
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)
 
+// LIFECYCLE: things stuffed inside drop out.
 /obj/item/reagent_containers/food/snacks/Destroy()
 	if(contents)
 		for(var/atom/movable/something in contents)
@@ -544,9 +545,6 @@
 ///obj/item/reagent_containers/food/snacks/xenoburger/Initialize(mapload)	//Don't mess with this. (We use Initialize now instead of New())
 //	. = ..()																//Same here.
 //	reagents.add_reagent("xenomicrobes", 10)								//This is what is in the food item. you may copy/paste this line of code for all the contents.
-
-
-
 
 /obj/item/reagent_containers/food/snacks/aesirsalad
 	name = "Aesir salad"
@@ -893,7 +891,6 @@
 	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
 	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
 
-
 /obj/item/reagent_containers/food/snacks/donut/chaos
 	name = "Chaos Donut"
 	desc = "Like life, it never quite tastes the same."
@@ -950,7 +947,6 @@
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly/cherryjelly/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_CHERRYJELLY, 5)
-
 
 /obj/item/reagent_containers/food/snacks/egg
 	name = "egg"
@@ -1516,7 +1512,6 @@
 	. = ..()
 // end
 
-
 /obj/item/reagent_containers/food/snacks/mimeburger
 	name = JOB_MIME + " Burger"
 	desc = "Its taste defies language."
@@ -1806,7 +1801,6 @@
 	nutriment_amt = 2
 	nutriment_desc = list("popcorn" = 3)
 	bitesize = 0.1 //This snack is supposed to be eaten for a long time.
-
 
 /obj/item/reagent_containers/food/snacks/popcorn/Initialize(mapload)
 	. = ..()
@@ -2971,7 +2965,6 @@
 	reagents.add_reagent(REAGENT_ID_IMIDAZOLINE, 5)
 	reagents.add_reagent(REAGENT_ID_WATER, 5)
 
-
 /obj/item/reagent_containers/food/snacks/hotchili
 	name = "Hot Chili"
 	desc = "A five alarm Texan Chili!"
@@ -3009,7 +3002,6 @@
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 3)
 	reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
 	reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
-
 
 /obj/item/reagent_containers/food/snacks/bearchili
 	name = "bear chili"
@@ -3130,7 +3122,6 @@
 	center_of_mass_y = 13
 	whole_path = /obj/item/reagent_containers/food/snacks/sliceable/xenomeatbread
 
-
 /obj/item/reagent_containers/food/snacks/slice/xenomeatbread/filled
 	filled = TRUE
 
@@ -3189,7 +3180,6 @@
 /obj/item/reagent_containers/food/snacks/slice/tofubread/filled
 	filled = TRUE
 
-
 /obj/item/reagent_containers/food/snacks/slice/bread
 	name = "Bread slice"
 	desc = "A slice of home."
@@ -3202,7 +3192,6 @@
 
 /obj/item/reagent_containers/food/snacks/slice/bread/filled
 	filled = TRUE
-
 
 /obj/item/reagent_containers/food/snacks/sliceable/creamcheesebread
 	name = "Cream Cheese Bread"
@@ -3448,7 +3437,6 @@
 	center_of_mass_y = 10
 	nutriment_desc = list("cake" = 10, "sweetness" = 10, PLANT_LEMON = 15)
 	nutriment_amt = 20
-
 
 /obj/item/reagent_containers/food/snacks/slice/lemoncake
 	name = "Lemon Cake slice"
@@ -5132,7 +5120,6 @@
 	nutriment_desc = list("Cheese" = 5, "pasta" = 4, "happiness" = 1)
 	bitesize = 3
 
-
 //Code for dipping food in batter
 /obj/item/reagent_containers/food/snacks/afterattack(obj/O as obj, mob/user as mob, proximity)
 	if(O.is_open_container() && O.reagents && !(istype(O, /obj/item/reagent_containers/food)) && proximity)
@@ -5205,7 +5192,6 @@
 
 	return 1
 
-
 //Called by cooking machines. This is mainly intended to set properties on the food that differ between raw/cooked
 /obj/item/reagent_containers/food/snacks/proc/cook()
 	if (coating)
@@ -5230,7 +5216,6 @@
 		J.alpha = 200
 		J.tag = "coating"
 		add_overlay(J)
-
 
 		if (do_coating_prefix == 1)
 			name = "[coating.coated_adj] [name]"
@@ -5290,7 +5275,6 @@
 	do_coating_prefix = 0
 	bitesize = 2
 
-
 /obj/item/reagent_containers/food/snacks/sausage/battered/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
@@ -5342,7 +5326,6 @@
 		reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
 		reagents.add_reagent(REAGENT_ID_BEERBATTER, 2)
 		reagents.add_reagent(REAGENT_ID_OIL, 1)
-
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
@@ -5570,7 +5553,6 @@
 /obj/item/reagent_containers/food/snacks/pineapple_ring/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PINEAPPLEJUICE,3)
-
 
 /obj/item/reagent_containers/food/snacks/burger/bacon
 	name = "bacon burger"
@@ -7796,7 +7778,6 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_COOKINGOIL, 1)
 
-
 	//Imported food from old code
 /obj/item/reagent_containers/food/snacks/sauerkraut
 	name = "Sauerkraut"
@@ -7904,8 +7885,6 @@
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
 	bitesize = 5
 
-
-
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
 	nutriment_amt = 15
 	nutriment_desc = list("tortilla" = 2, "meat" = 3, "bean" = 5, REAGENT_ID_CHEESE = 3, "Mexico" = 7)
@@ -7925,7 +7904,6 @@
 	slices_num = 5
 	nutriment_desc = list("tortilla" = 2, "meat" = 4, "bean" = 7, REAGENT_ID_CHEESE = 4, PLANT_CHILI = 1, "Mexico" = 7)
 	nutriment_amt = 50
-
 
 /obj/item/reagent_containers/food/snacks/sliceable/supremoburrito/Initialize(mapload)
 	. = ..()
@@ -8120,7 +8098,6 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 1)
 
-
 //I guess we're not always eating PEOPLE.
 /obj/item/reagent_containers/food/snacks/sliceable/sushi
 	name = "sushi roll"
@@ -8163,7 +8140,6 @@
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 3) //For meaty things.
 	reagents.add_reagent(REAGENT_ID_WATER, 5)
 
-
 /obj/item/reagent_containers/food/snacks/donerkebab
 	name = "doner kebab"
 	desc = "A delicious sandwich-like food from ancient Earth. The meat is typically cooked on a vertical rotisserie."
@@ -8175,7 +8151,6 @@
 /obj/item/reagent_containers/food/snacks/donerkebab/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 2) //For meaty things.
-
 
 /obj/item/reagent_containers/food/snacks/roastbeef
 	name = "roast beef"
@@ -8190,7 +8165,6 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 4) //For meaty things.
 	bitesize = 2
-
 
 /obj/item/reagent_containers/food/snacks/reishicup
 	name = "reishi's cup"
@@ -8245,7 +8219,6 @@
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_PROTEIN, 1)
 	bitesize = 3
-
 
 /obj/item/reagent_containers/food/snacks/hotandsoursoup
 	name = "hot & sour soup"
@@ -9080,7 +9053,6 @@
 	nutriment_amt = 2
 	nutriment_desc = list("synthetic meat" = 6)
 
-
 //desatti snacks
 
 /obj/item/reagent_containers/food/snacks/jaffacake
@@ -9118,7 +9090,6 @@
 	nutriment_amt = 1
 	bitesize = 2
 	nutriment_desc = list(REAGENT_ID_SUGAR = 5, "berry" = 2)
-
 
 /obj/item/reagent_containers/food/snacks/winegum/orange
 	icon_state = "winegum_orange"

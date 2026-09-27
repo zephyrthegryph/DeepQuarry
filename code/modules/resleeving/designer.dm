@@ -27,11 +27,7 @@
 	. = ..()
 	our_db = SStranscore.db_by_key(db_key)
 
-/obj/machinery/computer/transhuman/designer/Destroy()
-	if(disk)
-		disk.forceMove(get_turf(src))
-		disk = null
-	. = ..()
+REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)

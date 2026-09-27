@@ -8,7 +8,6 @@
 		COMSIG_ATOM_ENTERED = PROC_REF(join_swarm)
 	)
 
-
 /datum/component/swarming/Initialize(max_x = 24, max_y = 24)
 	if(!ismovable(parent))
 		return COMPONENT_INCOMPATIBLE
@@ -17,6 +16,7 @@
 
 	AddComponent(/datum/component/connect_loc_behalf, parent, swarming_loc_connections)
 
+// LIFECYCLE: swarm-mates left alone stop swarming.
 /datum/component/swarming/Destroy()
 	for(var/other in swarm_members)
 		var/datum/component/swarming/other_swarm = other

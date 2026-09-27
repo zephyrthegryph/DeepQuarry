@@ -44,9 +44,6 @@
 		return PROCESS_KILL
 	shaken -= seconds_per_tick
 
-/obj/item/reagent_containers/food/drinks/Destroy()
-	. = ..()
-
 //DRINKS
 
 /obj/item/reagent_containers/food/drinks/cans/cola
@@ -751,7 +748,6 @@
 /obj/item/reagent_containers/food/drinks/cans/nukie_one/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_NUKIEONE, 60)
-
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur
 	name = "bottled wataur"

@@ -180,9 +180,7 @@
 	QDEL_NULL(thermostat_watch)
 	MACHINE_WAKE(src)
 
-/obj/machinery/appliance/cooker/Destroy()
-	QDEL_NULL(thermostat_watch)
-	return ..()
+REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")
 
 /// Heat capacity from `resistance` (the old per-process heating step is
 /// heating_power / resistance), and the casing's loss to the room.
@@ -245,5 +243,4 @@
 		to_chat(user, span_filter_notice("\The [I] will be used to make a [selected_option]. Output selection is returned to default for future items."))
 		selected_option = null
 
-/obj/machinery/appliance/cooker/declared_owned_vars()
-	return list("thermostat_watch")
+REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")

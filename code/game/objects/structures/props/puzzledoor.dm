@@ -45,6 +45,7 @@
 			LAZYOR(L.linked_objects, src)
 			LAZYOR(locks, L)
 
+// LIFECYCLE: many-to-many with locks: leaves each lock's door list.
 /obj/machinery/door/blast/puzzle/Destroy()
 	if(length(locks))
 		for(var/obj/structure/prop/lock/L in locks)

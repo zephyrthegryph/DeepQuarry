@@ -11,9 +11,7 @@
 	..()
 	arscreen = new(nif)
 
-/datum/nifsoft/crewmonitor/Destroy()
-	QDEL_NULL(arscreen)
-	return ..()
+REF_OWNED(/datum/nifsoft/crewmonitor, "arscreen")
 
 /datum/nifsoft/crewmonitor/activate()
 	if((. = ..()))
@@ -40,9 +38,7 @@
 	..()
 	tgarscreen = new(nif)
 
-/datum/nifsoft/alarmmonitor/Destroy()
-	QDEL_NULL(tgarscreen)
-	return ..()
+REF_OWNED(/datum/nifsoft/alarmmonitor, "tgarscreen")
 
 /datum/nifsoft/alarmmonitor/activate()
 	if((. = ..()))

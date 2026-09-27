@@ -46,10 +46,7 @@
 	unit = _unit
 	event_types += CONTRACT_EVENT_FAX_ACCEPTED
 
-/datum/contract_requirement/recorded_stages/Destroy()
-	QDEL_NULL(filter)
-	stages = null
-	return ..()
+REF_OWNED(/datum/contract_requirement/recorded_stages, "filter")
 
 /datum/contract_requirement/recorded_stages/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING || !filter.matches(event, contract))

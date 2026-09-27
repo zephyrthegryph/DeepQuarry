@@ -38,11 +38,6 @@
 /obj/effect/temporary_effect/pulse/LateInitialize()
 	pulse_loop()
 
-/obj/effect/temporary_effect/pulse/Destroy()
-	deltimer(pulsetimer)
-	pulsetimer = null
-	. = ..()
-
 /obj/effect/temporary_effect/pulse/proc/pulse_loop()
 
 	if(pulses_remaining > 0)
@@ -54,8 +49,6 @@
 
 // Override for specific effects.
 /obj/effect/temporary_effect/pulse/proc/on_pulse()
-
-
 
 /obj/effect/temporary_effect/pulse/pulsar
 	name = "pulsar"

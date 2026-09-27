@@ -43,10 +43,6 @@
 	if(comp && istype(comp))
 		computer = comp
 
-/datum/computer_file/program/Destroy()
-	computer = null
-	. = ..()
-
 /datum/computer_file/program/tgui_host()
 	return computer.tgui_host()
 

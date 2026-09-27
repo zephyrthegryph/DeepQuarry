@@ -19,14 +19,10 @@
 	var/list/prize_list //Generated during Initialize
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
+REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
+
+// LIFECYCLE: prize entries are nested per category.
 /obj/machinery/mineral/equipment_vendor/Destroy()
-	if(inserted_id)
-		var/turf/T = get_turf(src)
-		if(T)
-			inserted_id.forceMove(T)
-			inserted_id = null
-		else
-			QDEL_NULL(inserted_id)
 	for(var/key, value in prize_list)
 		var/list/item_list = value
 		QDEL_LIST_ASSOC_VAL(item_list)
@@ -252,7 +248,6 @@
 		ui.open()
 		ui.set_autoupdate(FALSE)
 
-
 /obj/machinery/mineral/equipment_vendor/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return
@@ -291,7 +286,6 @@
 			flick(icon_deny, src)
 			return FALSE
 	add_fingerprint()
-
 
 /// Old attackby: a mining voucher redeems its selection.
 /datum/interaction/machine_item/equipment_vendor_voucher
@@ -373,7 +367,6 @@
 					new /obj/item/borg/upgrade/modkit/range(drop_location)
 				if("Holster")
 					new /obj/item/clothing/accessory/holster/waist/kinetic_accelerator(drop_location)
-
 
 		if("Resonator + Advanced Ore Scanner") //1400 points worth
 			new /obj/item/resonator(drop_location)

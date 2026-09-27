@@ -32,10 +32,6 @@
 	title = report_title
 	forward_host = host
 
-/datum/admin_report/Destroy(force, ...)
-	forward_host = null
-	return ..()
-
 /datum/admin_report/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
 

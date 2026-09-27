@@ -81,10 +81,6 @@
 
 	var/buffered_anomaly = null
 
-/obj/item/anomaly_scanner/Destroy()
-	. = ..()
-	buffered_anomaly = null
-
 /obj/item/anomaly_scanner/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)
@@ -214,6 +210,3 @@
 		anomaly_type = choices[choice]
 		picked = TRUE
 
-/obj/item/assembly/signaler/anomaly/choice/Destroy()
-	// Sample anomaly objects are qdel'd at creation; `choices` only holds type paths, so nothing to clean here.
-	. = ..()

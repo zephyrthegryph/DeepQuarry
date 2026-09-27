@@ -8,10 +8,6 @@
 	. = ..()
 	images = list()
 
-/datum/component/update_on_z/Destroy(force)
-	images = null
-	return ..()
-
 /proc/dq_add_z_update_image(atom/a, image/img)
 	if(!img)
 		return

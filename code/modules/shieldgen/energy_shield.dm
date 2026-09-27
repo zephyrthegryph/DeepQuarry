@@ -62,6 +62,7 @@
 		return ..()
 	return 0
 
+// LIFECYCLE: leaves its generator's segment lists.
 /obj/effect/shield/Destroy()
 	if(can_atmos_pass != ATMOS_PASS_YES)
 		update_nearby_tiles() //Force ZAS update
@@ -124,7 +125,6 @@
 	if(gen.check_flag(MODEFLAG_OVERCHARGE) && istype(source, /mob/living/))
 		overcharge_shock(source)
 	..(source, damage, emote)
-
 
 // Fails shield segments in specific range. Range of 1 affects the shielded turf only.
 /obj/effect/shield/proc/fail_adjacent_segments(range, hitby = null)
@@ -194,7 +194,6 @@
 			fail_adjacent_segments(rand(8, 16), hitby)
 			return
 
-
 /// Packet sink. A segment has no integrity of its own: hits drain its
 /// generator's shared energy (deal_shield_damage) by shield damage type.
 /// take_damage() keeps its (damage, SHIELD_DAMTYPE_*, hitby) form for this sink
@@ -234,7 +233,6 @@
 	can_atmos_pass = new_value
 	update_nearby_tiles() //Force ZAS update
 
-
 // EMP. It may seem weak but keep in mind that multiple shield segments are likely to be affected.
 /obj/effect/shield/emp_act(severity, recursive)
 	. = ..()
@@ -247,13 +245,11 @@
 	if(!disabled_for)
 		deal_damage(DAMAGE_BLAST, rand(10,15) / severity, flags = DAMAGE_PACKET_SILENT)
 
-
 // Fire
 /// Overheating: fire drains the shield.
 /obj/effect/shield/apply_heat_damage(amount)
 	if(!disabled_for)
 		take_damage(amount, SHIELD_DAMTYPE_HEAT)
-
 
 // Projectiles
 /obj/effect/shield/bullet_act(obj/item/projectile/proj)
@@ -263,7 +259,6 @@
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_PHYSICAL)
 	else //TODO - This will never happen because of get_structure_damage() only returning values for BRUTE and BURN damage types
 		take_damage(proj.get_structure_damage(), SHIELD_DAMTYPE_EM)
-
 
 // Attacks with hand tools. Blocked by Hyperkinetic flag.
 /obj/effect/shield/attackby(obj/item/I as obj, mob/user as mob)
@@ -280,7 +275,6 @@
 			take_damage(I.force, SHIELD_DAMTYPE_EM)
 	else
 		user.visible_message(span_danger("\The [user] tries to attack \the [src] with \the [I], but it passes through!"))
-
 
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
 /obj/effect/shield/Bumped(atom/movable/mover)
@@ -338,7 +332,6 @@
 /atom/movable/proc/can_pass_shield(obj/machinery/power/shield_generator/gen)
 	return 1
 
-
 // Other mobs
 /mob/living/can_pass_shield(obj/machinery/power/shield_generator/gen)
 	return !gen.check_flag(MODEFLAG_NONHUMANS)
@@ -353,7 +346,6 @@
 /mob/living/silicon/can_pass_shield(obj/machinery/power/shield_generator/gen)
 	return !gen.check_flag(MODEFLAG_ANORGANIC)
 
-
 // Generic objects. Also applies to bullets and meteors.
 /obj/can_pass_shield(obj/machinery/power/shield_generator/gen)
 	return !gen.check_flag(MODEFLAG_HYPERKINETIC)
@@ -361,7 +353,6 @@
 // Beams
 /obj/item/projectile/beam/can_pass_shield(obj/machinery/power/shield_generator/gen)
 	return !gen.check_flag(MODEFLAG_PHOTONIC)
-
 
 // Shield on-impact logic here. This is called only if the object is actually blocked by the field (can_pass_shield applies first)
 /atom/movable/proc/shield_impact(obj/effect/shield/S)

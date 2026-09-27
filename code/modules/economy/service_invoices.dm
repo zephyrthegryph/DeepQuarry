@@ -92,13 +92,6 @@
 	/// Closed accounting periods are final evidence and cannot be refunded.
 	var/settled = FALSE
 
-/datum/service_invoice/Destroy()
-	items = null
-	prices = null
-	verified_item_types = null
-	verified_items = null
-	return ..()
-
 /datum/service_invoice/proc/as_row()
 	return list(
 		"invoice_id" = id,
@@ -332,10 +325,6 @@
 	value = _value
 	RegisterSignal(parent, COMSIG_ITEM_ATTACK_SELF, PROC_REF(on_attack_self))
 	RegisterSignal(parent, COMSIG_ITEM_ATTACK, PROC_REF(on_attack))
-
-/datum/component/economic_adoption/Destroy()
-	UnregisterSignal(parent, list(COMSIG_ITEM_ATTACK_SELF, COMSIG_ITEM_ATTACK))
-	return ..()
 
 /datum/component/economic_adoption/proc/on_attack_self(obj/item/source, mob/user)
 	SIGNAL_HANDLER

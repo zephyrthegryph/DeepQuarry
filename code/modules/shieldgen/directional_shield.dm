@@ -47,11 +47,7 @@
 		animate(src, color = new_color, 5)
 //	color = new_color
 
-/obj/effect/directional_shield/Destroy()
-	if(projector)
-		LAZYREMOVE(projector.active_shields, src)
-		projector = null
-	return ..()
+REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"))
 
 /obj/effect/directional_shield/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover, /obj/item/projectile))
@@ -74,7 +70,6 @@
 	if(projector)
 		projector.adjust_health(amount) // Projector will kill the shield if needed.
 	// If the shield lacks a projector, then it was probably spawned in by an admin for bus, so it's indestructable.
-
 
 // This actually creates the shields.  It's an item so that it can be carried, but it could also be placed inside a stationary object if desired.
 // It should work inside the contents of any mob.
@@ -112,6 +107,7 @@
 		om_after(src, 0, PROC_REF(create_shields))
 	return ..()
 
+// LIFECYCLE: its shields come down.
 /obj/item/shield_projector/Destroy()
 	destroy_shields()
 	UnregisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE)

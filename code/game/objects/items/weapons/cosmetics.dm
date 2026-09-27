@@ -127,6 +127,4 @@
 		if(istype(E))
 			E.change_eye_color()
 
-/obj/item/makeover/Destroy()
-	qdel(M)
-	. = ..()
+REF_OWNED(/obj/item/makeover, "M")

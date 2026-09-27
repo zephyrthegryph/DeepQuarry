@@ -125,10 +125,12 @@
 		return
 	return parent?.network
 
-/obj/machinery/atmospherics/pipe/Destroy()
+/// Phase 1 (unbind), on top of the atmos topology: the pipe's pipeline and
+/// leak watches let go, and its gas goes back to the room.
+/obj/machinery/atmospherics/pipe/lifecycle_unbind()
 	var/datum/pipeline/old_parent = parent
 	var/rust_owned_parent = old_parent?.network?.rust_authoritative
-	rust_unregister_pipe_topology()
+	. = ..()
 	clear_leak_gas_dependencies()
 	wake_automatic_shutoff_valves(old_parent?.network)
 	release_sorbed_material_gas()
@@ -152,12 +154,6 @@
 	if(air_temporary)
 		loc.assume_air(air_temporary)
 		QDEL_NULL(air_temporary)
-	for(var/obj/machinery/meter/meter in loc)
-		if(meter.target == src)
-			var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
-			meter.transfer_fingerprints_to(PM)
-			qdel(meter)
-	. = ..()
 
 /obj/machinery/atmospherics/pipe/proc/register_edge_pipeline(datum/pipeline/edge_owner)
 	LAZYOR(edge_pipelines, edge_owner)

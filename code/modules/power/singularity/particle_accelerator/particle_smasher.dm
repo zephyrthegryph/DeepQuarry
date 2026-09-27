@@ -33,11 +33,7 @@
 	update_icon()
 	prepare_recipes()
 
-/obj/machinery/particle_smasher/Destroy()
-	for(var/datum/particle_smasher_recipe/D in recipes)
-		qdel(D)
-	recipes.Cut()
-	. = ..()
+REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()

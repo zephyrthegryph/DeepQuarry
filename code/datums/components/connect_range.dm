@@ -29,10 +29,6 @@
 	src.works_in_containers = works_in_containers
 	set_tracked(tracked)
 
-/datum/component/connect_range/Destroy()
-	set_tracked(null)
-	return ..()
-
 /datum/component/connect_range/InheritComponent(datum/component/component, original, atom/tracked, list/connections, range, works_in_containers)
 	// Not equivalent. Checks if they are not the same list via shallow comparison.
 	if(!compare_list(src.connections, connections))

@@ -9,6 +9,7 @@
 	/// Linked experiment handler
 	var/datum/component/experiment_handler/linked_experiment_handler
 
+// LIFECYCLE: stops tracking its scanned atom's events.
 /datum/experiment/physical/Destroy()
 	if(currently_scanned_atom)
 		unregister_events()

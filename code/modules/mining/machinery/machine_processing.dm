@@ -31,10 +31,7 @@
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
 
-/obj/machinery/mineral/processing_unit_console/Destroy()
-	if(inserted_id)
-		inserted_id.forceMove(loc) //Prevents deconstructing from deleting whatever ID was inside it.
-	. = ..()
+REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
 	into += list(
@@ -92,7 +89,6 @@
 		)
 	else
 		data["has_id"] = FALSE
-
 
 	var/list/ores = list()
 	for(var/ore in machine.ores_processing)
@@ -173,7 +169,6 @@
 
 /**********************Mineral processing unit**************************/
 
-
 /obj/machinery/mineral/processing_unit
 	name = "material processor" //This isn't actually a goddamn furnace, we're in space and it's processing platinum and flammable phoron...
 	icon = 'icons/obj/machines/mining_machines.dmi'
@@ -230,11 +225,10 @@
 		if(src.output) break
 	watch_input(input)
 
-/obj/machinery/mineral/processing_unit/Destroy()
+/// Phase 2: drops the turf watch on its input marker.
+/obj/machinery/mineral/processing_unit/lifecycle_dematerialize()
+	. = ..()
 	unwatch_input(input)
-	input = null
-	output = null
-	return ..()
 
 /obj/machinery/mineral/processing_unit/proc/toggle_speed(forced)
 	var/area/refinery_area = get_area(src)
@@ -254,7 +248,6 @@
 		cswitch.toggle_speed()
 	for(var/obj/machinery/mineral/stacking_machine/stacker in refinery_area.contents)
 		stacker.toggle_speed()
-
 
 /// Takes in what is on its input plate and smelts while active; with nothing to take in and nothing
 /// to make it sleeps until something arrives (on_input_entered()) or it is switched on.
@@ -278,7 +271,6 @@
 				ores_stored[ore] += ore_amount 										// Add the ore to the machine.
 				points += (ore_values[ore]*points_mult*ore_amount) // Give Points! or give lots of points! or less points! or no points!
 				OB.stored_ore[ore] = 0 												// Set the value of the ore in the box to 0.
-
 
 	for(var/obj/item/ore_chunk/ore_chunk in input.loc) //Special ore chunk item. For conveyor belt. Completely unneeded but keeps asthetics.
 		for(var/ore in ore_chunk.stored_ore)

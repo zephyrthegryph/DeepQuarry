@@ -54,8 +54,6 @@
 	var/obj/machinery/alarm/AM = om_resolve(main_air_alarm)
 	return AM && !(AM.stat & (NOPOWER | BROKEN))
 
-
-
 /obj/machinery/alarm
 
 	name = "alarm"
@@ -157,16 +155,16 @@
 	set_initial_TLV()
 	soundloop = new(list(src), FALSE)
 
-/obj/machinery/alarm/Destroy()
-	unregister_radio(src, frequency)
-	qdel(wires)
-	wires = null
+REF_OWNED(/obj/machinery/alarm, list("wires", "soundloop"))
+
+/// Phase 2: leaves its area's alarm list; the area elects a new main alarm.
+/obj/machinery/alarm/lifecycle_dematerialize()
+	. = ..()
+	if(!alarm_area)
+		return
 	LAZYREMOVE(alarm_area.air_alarms, src)
 	if(om_resolve(alarm_area.main_air_alarm) == src)
 		alarm_area.elect_main_air_alarm(TRUE)
-	alarm_area = null
-	QDEL_NULL(soundloop) // Looping Alarms
-	. = ..()
 
 /obj/machinery/alarm/proc/offset_airalarm()
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? -26 : 26)
@@ -796,7 +794,6 @@
 				"intdefault"= (info["internal"] == 0),
 			)))
 
-
 		var/list/list/scrubbers = list()
 		data["scrubbers"] = scrubbers
 		for(var/id_tag in alarm_area.air_scrub_names)
@@ -1000,9 +997,6 @@
 				selected[2] = selected[4]
 			if(selected[3] > selected[4])
 				selected[3] = selected[4]
-
-
-
 
 /obj/machinery/alarm/proc/atmos_reset()
 	if(alarm_area.atmosalert(0, src))

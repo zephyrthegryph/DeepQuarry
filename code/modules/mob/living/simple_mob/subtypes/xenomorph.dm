@@ -13,7 +13,6 @@
 	endurance = 200
 	see_in_dark = 10
 
-
 	min_oxy = 0
 	max_oxy = 0
 	min_tox = 0
@@ -62,14 +61,7 @@
 	src.adjust_nutrition(src.max_nutrition)
 	sight |= SEE_MOBS
 
-/mob/living/simple_mob/xeno_ch/Destroy()
-	QDEL_NULL(build_action)
-	QDEL_NULL(neurotox_action)
-	QDEL_NULL(acidspit_action)
-	QDEL_NULL(corrode_action)
-	QDEL_NULL(pounce_action)
-	QDEL_NULL(spin_action)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/xeno_ch, list("build_action", "neurotox_action", "acidspit_action", "corrode_action", "pounce_action", "spin_action"))
 
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
@@ -77,7 +69,6 @@
 	add_verb(src,/mob/living/simple_mob/xeno_ch/proc/xeno_build) // TGPanel
 	add_verb(src,/mob/living/simple_mob/verb/toggle_speech_sounds) // TGPanel
 	build_action.Grant(src)
-
 
 // Xenomorph hunter subtype
 /mob/living/simple_mob/xeno_ch/hunter
@@ -126,7 +117,6 @@
 	icon_pounce_x = -32
 	icon_pounce_y = -32
 
-
 /mob/living/simple_mob/xeno_ch/sentinel/Login()
 	. = ..()
 	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
@@ -138,7 +128,6 @@
 	neurotox_action.Grant(src)
 	acidspit_action.Grant(src)
 	corrode_action.Grant(src)
-
 
 //Xenomorph queen subtype
 /mob/living/simple_mob/xeno_ch/queen

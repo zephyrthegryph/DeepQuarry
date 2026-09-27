@@ -53,27 +53,6 @@
 /obj/machinery/atmospherics/tvalve/get_neighbor_nodes_for_init()
 	return list(node1, node2, node3)
 
-/obj/machinery/atmospherics/tvalve/Destroy()
-	rust_unregister_pipe_topology()
-	// Disconnect/qdel BEFORE ..() so node derefs are valid.
-	if(node1)
-		node1.disconnect(src)
-		rust_release_network_wrapper(network_node1)
-	if(node2)
-		node2.disconnect(src)
-		rust_release_network_wrapper(network_node2)
-	if(node3)
-		node3.disconnect(src)
-		rust_release_network_wrapper(network_node3)
-
-	node1 = null
-	node2 = null
-	node3 = null
-	network_node1 = null
-	network_node2 = null
-	network_node3 = null
-	return ..()
-
 /obj/machinery/atmospherics/tvalve/proc/go_to_side()
 
 	if(state) return 0
@@ -199,10 +178,6 @@
 	var/id = null
 	var/datum/radio_frequency/radio_connection
 
-/obj/machinery/atmospherics/tvalve/digital/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
-
 /obj/machinery/atmospherics/tvalve/digital/bypass
 	icon_state = "map_tvalve1"
 	state = 1
@@ -250,8 +225,6 @@
 	frequency = new_frequency
 	if(frequency)
 		radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
-
-
 
 /obj/machinery/atmospherics/tvalve/digital/Initialize(mapload)
 	. = ..()

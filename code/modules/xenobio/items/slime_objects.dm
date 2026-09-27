@@ -68,7 +68,6 @@
 		S.mind.name = S.name
 	qdel(src)
 
-
 // More or less functionally identical to the telecrystal tele.
 /obj/item/slime_crystal
 	name = "lesser slime cystal"
@@ -104,7 +103,6 @@
 	safe_blink(AM, 14)
 	qdel(src)
 
-
 /obj/item/disposable_teleporter/slime
 	name = "greater slime crystal"
 	desc = "A larger, gooier crystal."
@@ -128,7 +126,6 @@
 /obj/item/reagent_containers/food/snacks/slime/Initialize(mapload)
 	. = ..()
 	bitesize = 5
-
 
 //Flashlight
 
@@ -198,17 +195,11 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/slime_irradiator/Destroy()
-	return ..()
-
-
 //BS Pouch
 /obj/item/storage/backpack/holding/slime
 	name = "bluespace slime pouch"
 	desc = "A slimy pouch that opens into a localized pocket of bluespace."
 	icon_state = "slimepouch"
-
-
 
 //Slime Chems
 

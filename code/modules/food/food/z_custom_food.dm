@@ -115,9 +115,7 @@
 		name = new_name
 	return new_name
 
-/obj/item/reagent_containers/food/snacks/customizable/Destroy()
-	QDEL_LIST_NULL(ingredients)
-	return ..()
+REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredients")
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/drawTopping()
 	var/image/I = topping

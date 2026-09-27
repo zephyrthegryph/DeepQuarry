@@ -57,13 +57,12 @@
 	// if(istype(target, /datum/mind))
 	// 	RegisterSignal(target, COMSIG_MIND_TRANSFERRED, PROC_REF(on_target_mind_swapped))
 
+// LIFECYCLE: an action leaves its owner (signals, owner's action list, every viewer's hud).
 /datum/action/Destroy()
 	if(owner)
 		Remove(owner)
-	target = null
 	QDEL_LIST_ASSOC_VAL(viewers)
 	return ..()
-
 
 /// Signal proc that clears any references based on the owner or target deleting
 /// If the owner's deleted, we will simply remove from them, but if the target's deleted, we will self-delete

@@ -12,11 +12,11 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 /datum/private_notes_panel/New(mob/living/host_mob)
 	host = host_mob
 
-/datum/private_notes_panel/Destroy(force, ...)
+/// Phase 2: leaves the per-host panel index.
+/datum/private_notes_panel/lifecycle_dematerialize()
+	. = ..()
 	if(host)
 		GLOB.dq_private_notes_panels -= "[REF(host)]"
-	host = null
-	return ..()
 
 /datum/private_notes_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state
@@ -71,11 +71,11 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 /datum/ooc_notes_panel/New(mob/living/host_mob)
 	host = host_mob
 
-/datum/ooc_notes_panel/Destroy(force, ...)
+/// Phase 2: leaves the per-host panel index.
+/datum/ooc_notes_panel/lifecycle_dematerialize()
+	. = ..()
 	if(host)
 		GLOB.dq_ooc_notes_panels -= "[REF(host)]"
-	host = null
-	return ..()
 
 /datum/ooc_notes_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state

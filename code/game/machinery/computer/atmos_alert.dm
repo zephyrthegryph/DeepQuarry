@@ -10,9 +10,10 @@
 	. = ..()
 	GLOB.atmosphere_alarm.register_alarm(src, /atom/proc/update_icon)
 
-/obj/machinery/computer/atmos_alert/Destroy()
-	GLOB.atmosphere_alarm.unregister_alarm(src)
+/// Phase 2: leaves the atmosphere alarm's listeners.
+/obj/machinery/computer/atmos_alert/lifecycle_dematerialize()
 	. = ..()
+	GLOB.atmosphere_alarm.unregister_alarm(src)
 
 /obj/machinery/computer/atmos_alert/declare_interactions(list/into)
 	into += list(

@@ -42,9 +42,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 			target = singubeacon
 			break
 
-/obj/singularity/Destroy()
-	return ..()
-
 /obj/singularity/attack_hand(mob/user as mob)
 	consume(user)
 	return 1
@@ -393,7 +390,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 		smwave()
 	return 1
 
-
 /obj/singularity/proc/toxmob()
 	radiation_pulse(
 		src,
@@ -404,7 +400,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 		strength = 250
 	)
 	return
-
 
 /obj/singularity/proc/mezzer()
 	for(var/mob/living/carbon/M in oviewers(8, src))

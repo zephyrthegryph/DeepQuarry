@@ -42,11 +42,7 @@
 	robotic = ORGAN_ASSISTED
 	butcherable = FALSE
 
-/obj/item/organ/internal/mmi_holder/Destroy()
-	if(stored_mmi && (stored_mmi.loc == src))
-		qdel(stored_mmi)
-		stored_mmi = null
-	return ..()
+REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 
 /obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
 	. = ..(mapload, internal)
@@ -116,7 +112,6 @@
 	..()
 	stored_mmi.icon_state = "posibrain-occupied"
 	icon_state = stored_mmi.icon_state
-
 
 /obj/item/organ/internal/mmi_holder/robot
 	name = "digital brain interface"

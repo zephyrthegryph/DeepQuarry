@@ -75,6 +75,7 @@
  * Arguments:
  * * force - makes it not check for and remove the component from the parent
  */
+// LIFECYCLE: the base: a component leaves its parent.
 /datum/component/Destroy(force = FALSE)
 	if(!parent)
 		return ..()
@@ -199,7 +200,6 @@
 /datum/component/proc/InheritComponent(datum/component/C, i_am_original)
 	return
 
-
 /**
  * Called on a component when a component of the same type was added to the same parent with [COMPONENT_DUPE_SELECTIVE]
  *
@@ -211,7 +211,6 @@
  */
 /datum/component/proc/CheckDupeComponent(datum/component/C, ...)
 	return
-
 
 /**
  * Callback Just before this component is transferred

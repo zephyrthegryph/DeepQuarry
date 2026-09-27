@@ -39,7 +39,6 @@ check_build()
  *   |PB|
  * PE|PE|PE
 
-
 Icon Addemdum
 Icon system is much more robust, and the icons are all variable based.
 Each part has a reference string, powered, strength, and contruction values.
@@ -77,6 +76,7 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/rotatable)
 
+// LIFECYCLE: its control box rescans its parts.
 /obj/structure/particle_accelerator/Destroy()
 	construction_state = 0
 	if(master)
@@ -117,7 +117,6 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 /obj/structure/particle_accelerator/screwdriver_act(mob/user, obj/item/W)
 	return process_tool_hit(W, user, TOOL_SCREWDRIVER) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
-
 /obj/structure/particle_accelerator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 	if(master?.active)
@@ -143,19 +142,16 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 		master.update_state()
 		return 0
 
-
 /obj/structure/particle_accelerator/proc/report_ready(obj/O)
 	if(O && (O == master))
 		if(construction_state >= 3)
 			return 1
 	return 0
 
-
 /obj/structure/particle_accelerator/proc/report_master()
 	if(master)
 		return master
 	return 0
-
 
 /obj/structure/particle_accelerator/proc/connect_master(obj/O)
 	if(O && istype(O,/obj/machinery/particle_accelerator/control_box))
@@ -163,7 +159,6 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 			master = O
 			return 1
 	return 0
-
 
 /obj/structure/particle_accelerator/proc/process_tool_hit(obj/item/O, mob/user, tool_quality)
 	if(!(O) || !(user))
@@ -215,8 +210,6 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 		update_icon()
 		return 1
 
-
-
 /obj/machinery/particle_accelerator
 	name = "Particle Accelerator"
 	desc = "Part of a Particle Accelerator."
@@ -254,7 +247,6 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 			. += "The panel is open."
 		if(3)
 			. += "It is assembled."
-
 
 /obj/machinery/particle_accelerator/declare_interactions(list/into)
 	into += list(

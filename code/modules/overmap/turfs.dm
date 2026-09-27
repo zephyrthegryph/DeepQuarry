@@ -41,10 +41,6 @@ GLOBAL_LIST_EMPTY(map_sectors)
 				wrap_buddy = T
 				break
 
-/turf/unsimulated/map/edge/Destroy()
-	wrap_buddy = null
-	return ..()
-
 /turf/unsimulated/map/edge/Bumped(atom/movable/AM)
 	if(wrap_buddy?.map_is_to_my)
 		AM.forceMove(get_step(wrap_buddy, wrap_buddy.map_is_to_my))

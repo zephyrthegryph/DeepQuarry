@@ -390,7 +390,6 @@ About the new airlock wires panel:
 	else
 		return FALSE
 
-
 /obj/machinery/door/airlock/update_icon()
 	cut_overlays()
 	if(density)
@@ -1288,10 +1287,7 @@ About the new airlock wires panel:
 	update_icon()
 	check_for_freeze()
 
-/obj/machinery/door/airlock/Destroy()
-	qdel(wires)
-	wires = null
-	. = ..()
+REF_OWNED(/obj/machinery/door/airlock, "wires")
 
 // Most doors will never be deconstructed over the course of a round,
 // so as an optimization defer the creation of electronics until
@@ -1382,7 +1378,6 @@ About the new airlock wires panel:
 	frozen = TRUE
 	update_icon()
 
-
 // === merged from airlock_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/door/airlock/scp
 	name = "SCP Access"
@@ -1393,7 +1388,6 @@ About the new airlock wires panel:
 
 /obj/machinery/door/airlock/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	return ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !locked && !inoperable())
-
 
 // === merged from robot_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

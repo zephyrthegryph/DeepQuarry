@@ -46,7 +46,6 @@
 /obj/machinery/mineral/stacking_unit_console/tgui_data(mob/user)
 	var/list/data = ..()
 
-
 	var/list/stacktypes = list()
 	for(var/stacktype in machine.stack_storage)
 		if(LAZYACCESS(machine.stack_storage, stacktype) > 0)
@@ -80,7 +79,6 @@
 
 /**********************Mineral stacking unit**************************/
 
-
 /obj/machinery/mineral/stacking_machine
 	name = "stacking machine"
 	icon = 'icons/obj/machines/mining_machines.dmi'
@@ -109,13 +107,10 @@
 		if(src.output) break
 	watch_input(input)
 
-/obj/machinery/mineral/stacking_machine/Destroy()
+/// Phase 2: drops the turf watch on its input marker.
+/obj/machinery/mineral/stacking_machine/lifecycle_dematerialize()
+	. = ..()
 	unwatch_input(input)
-	input = null
-	output = null
-	console = null
-	return ..()
-
 
 /obj/machinery/mineral/stacking_machine/proc/toggle_speed(forced)
 	if(forced)

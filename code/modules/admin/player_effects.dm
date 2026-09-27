@@ -16,17 +16,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 		ui = new(user, src, "PlayerEffects", "Player Effects")
 		ui.open()
 
-/datum/eventkit/player_effects/Destroy()
-	target = null
-	. = ..()
-
 /datum/eventkit/player_effects/tgui_static_data(mob/user)
 	var/list/data = list()
 
 	data["real_name"] = target.name;
 	data["player_ckey"] = target.ckey;
 	data["target_mob"] = target;
-
 
 	return data
 
@@ -136,7 +131,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(!kin_type || !target)
 				return
 
-
 			kin_type = kin_types[kin_type]
 
 			var/myself = tgui_alert(ui.user, "Control the shadekin yourself or delete pred and prey after?","Control Shadekin?",list("Control","Cancel","Delete"))
@@ -160,7 +154,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			shadekin.comp.dark_energy = initial(shadekin.comp.dark_energy)
 			//For fun: a timed sequence (shadekin_smite_step), nothing sleeps.
 			shadekin_smite_step(shadekin, target, myself == "Control" ? target.ckey : null, 1)
-
 
 		if("redspace_abduct")
 			redspace_abduction(target, ui.user)
@@ -311,7 +304,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				our_chem.add_reagent(chem, 30)
 				our_chem.trans_to_turf(surroundings,30)
 				our_chem.Destroy()
-
 
 		////////MEDICAL//////////////
 
@@ -809,7 +801,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				target.quest_from_above(specific_quest)
 			else
 				target.quest_from_above()
-
 
 		////////FIXES//////////////
 

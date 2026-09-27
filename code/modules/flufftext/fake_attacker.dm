@@ -43,6 +43,7 @@
 			animate(G, pixel_x = 0, time = MT, flags = ANIMATION_PARALLEL)
 			animate(G, pixel_y = 0, time = MT, flags = ANIMATION_PARALLEL)
 
+// LIFECYCLE: its images come off every client.
 /obj/effect/fake_attacker/Destroy(force)
 	. = ..()
 	clear_every_clients_images()
@@ -99,8 +100,6 @@
 	for(var/img in dir_images)
 		QDEL_NULL(dir_images[img])
 	dir_images.Cut()
-
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Hallucination attackers with AI behaviors
@@ -159,9 +158,6 @@
 	// Usually we want to face our target for maximum spooky effect
 	set_dir(get_dir(src,targeting_mob))
 
-/obj/effect/fake_attacker/human/Destroy()
-	. = ..()
-
 /obj/effect/fake_attacker/human/periodic_step()
 	// check if valid
 	var/mob/living/M = om_resolve(target)
@@ -182,7 +178,6 @@
 /obj/effect/fake_attacker/human/proc/set_target(mob/M)
 	target = om_handle(M)
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Attacker: Performs hostile shoves and attacks
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,7 +194,6 @@
 
 	if(prob(15))
 		step_away(src,M)
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Fleeing: Runs away when you get close

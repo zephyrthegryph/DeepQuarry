@@ -36,11 +36,7 @@
 	if(src.anchored)
 		update_icon(0)
 
-/obj/structure/railing/Destroy()
-	var/turf/location = loc
-	. = ..()
-	for(var/obj/structure/railing/R in orange(location, 1))
-		R.update_icon()
+DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor_type = /obj/structure/railing, neighbor_reconnect = FALSE))
 
 /obj/structure/railing/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))

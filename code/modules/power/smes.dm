@@ -8,7 +8,6 @@
 // when a setting changes (CHANGE_MACHINE_SETTINGS) and then idles; power_event()
 // applies the charge and the shown state.
 
-
 //# define SMESMAXCHARGELEVEL 250000 Unused
 //# define SMESMAXOUTPUT 250000 Unused
 
@@ -142,11 +141,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/apply_mapped_settings()
 	return
 
+REF_OWNED(/obj/machinery/power/smes, "soundloop")
+
+// LIFECYCLE: its terminals lose their master.
 /obj/machinery/power/smes/Destroy()
 	for(var/obj/machinery/power/terminal/T in terminals)
 		T.master = null
 	terminals = null
-	QDEL_NULL(soundloop)
 	return ..()
 
 /obj/machinery/power/smes/proc/add_nearby_terminals()
@@ -243,7 +244,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	if(clevel>0)
 		add_overlay("smes-og[clevel]")
 	return
-
 
 /obj/machinery/power/smes/proc/chargedisplay()
 	return round(5.5*charge/(capacity ? capacity : 5e6))
@@ -364,7 +364,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 			return 0
 		drained += term.powernet.draw_power(amount - drained, term)
 	return drained
-
 
 /obj/machinery/power/smes
 	silicon_use = SILICON_USE_UI
@@ -569,7 +568,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 			if(SMES_TGUI_OUTPUT)
 				set_output(target)
 
-
 /obj/machinery/power/smes/proc/inputting(do_input)
 	input_attempt = do_input
 	if(!input_attempt)
@@ -623,7 +621,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 			. += span_filter_notice(span_notice("It's casing is quite seriously damaged."))
 		if(0 to 24)
 			. += span_filter_notice("It's casing has some minor damage.")
-
 
 // Proc: toggle_input()
 // Parameters: None

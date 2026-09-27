@@ -26,11 +26,7 @@
 	. = ..()
 	active_beams = list()
 
-/obj/structure/cult/pylon/swarm/Destroy()
-	for(var/datum/beam/B in active_beams)
-		QDEL_NULL(B)
-	active_beams = null
-	. = ..()
+REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 
 /obj/structure/cult/pylon/swarm/pylonhit(damage)
 	if(!isbroken)

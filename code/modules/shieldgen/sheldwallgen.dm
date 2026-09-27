@@ -180,7 +180,6 @@
 		var/obj/machinery/shieldwall/CF = new/obj/machinery/shieldwall(T, src, G) //(ref to this gen, ref to connected gen)
 		CF.set_dir(field_dir)
 
-
 /// Old attackby: never called ..(), so both branches stay in their effects.
 /datum/interaction/machine_item/shieldwallgen_id_swipe
 	id = "shieldwallgen_id_swipe"
@@ -235,6 +234,7 @@
 			if(!G.active)
 				break
 
+// LIFECYCLE: its walls come down in every direction.
 /obj/machinery/shieldwallgen/Destroy()
 	src.cleanup(1)
 	src.cleanup(2)
@@ -246,7 +246,6 @@
 	storedpower -= 400 * Proj.get_structure_damage()
 	..()
 	return
-
 
 //////////////Containment Field START
 /obj/machinery/shieldwall
@@ -283,10 +282,6 @@
 	else
 		return INITIALIZE_HINT_QDEL
 
-/obj/machinery/shieldwall/Destroy()
-	update_nearby_tiles()
-	. = ..()
-
 /obj/machinery/shieldwall/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/shieldwall_touch_block,
@@ -301,7 +296,6 @@
 
 /obj/machinery/shieldwall/proc/interaction_touch_block(mob/user, obj/item/held, datum/interaction/interaction)
 	return TRUE
-
 
 /obj/machinery/shieldwall/machine_step()
 	if(needs_power)
@@ -318,7 +312,6 @@
 		else
 			gen_secondary.storedpower -= power_usage
 
-
 /obj/machinery/shieldwall/bullet_act(obj/item/projectile/Proj)
 	if(needs_power)
 		var/obj/machinery/shieldwallgen/G
@@ -329,7 +322,6 @@
 		G.storedpower -= 400 * Proj.get_structure_damage()
 	..()
 	return
-
 
 /obj/machinery/shieldwall/ex_act(severity)
 	// The wall itself is energy; the blast drains a generator instead.
@@ -345,11 +337,9 @@
 		return prob(10)
 	return !density
 
-
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldwallgen/step_start_condition()
 	return active
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shieldwall/step_start_condition()

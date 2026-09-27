@@ -52,9 +52,6 @@
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_3p = list("squeaks", "squiks")
 
-/mob/living/simple_mob/animal/passive/mouse/Destroy()
-	return ..()
-
 /mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
 	. = ..()
 	ghostjoin = TRUE
@@ -195,7 +192,6 @@
 	max_n2 = 0
 	maxbodytemp = 700
 
-
 //The names Cheese... Agent Cheese
 /mob/living/simple_mob/animal/passive/mouse/operative/agent_cheese
 	name = "Agent Cheese"
@@ -242,7 +238,6 @@
 	if(isliving(AM) && !isnull(rat_diseases) && prob(20))
 		var/mob/living/L = AM
 		L.ContractDisease(pick(rat_diseases), BP_R_FOOT)
-
 
 // === merged from mouse_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob/animal/passive/mouse
@@ -330,7 +325,6 @@
 	icon_dead = "mouse_miner_dead"
 	icon_rest = "mouse_miner_sleep"
 	desc = "A lonely miner's best friend."
-
 
 /mob/living/simple_mob/animal/passive/mouse/mining/splat()
 	src.set_stat(DEAD)

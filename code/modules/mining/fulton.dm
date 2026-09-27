@@ -177,9 +177,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 	. = ..()
 	name += " ([rand(100,999)]) ([get_area_name(src, TRUE)])"
 
-/obj/structure/extraction_point/Destroy()
-	. = ..()
-
 /obj/effect/extraction_holder
 	name = "extraction holder"
 	desc = "you shouldn't see this"

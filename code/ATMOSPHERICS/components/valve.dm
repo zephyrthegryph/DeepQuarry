@@ -14,7 +14,6 @@
 	var/open = 0
 	var/openDuringInit = 0
 
-
 	var/datum/pipe_network/network_node1
 	var/datum/pipe_network/network_node2
 
@@ -49,22 +48,6 @@
 
 /obj/machinery/atmospherics/valve/get_neighbor_nodes_for_init()
 	return list(node1, node2)
-
-/obj/machinery/atmospherics/valve/Destroy()
-	rust_unregister_pipe_topology()
-	// Disconnect/qdel BEFORE ..() so node derefs are valid.
-	if(node1)
-		node1.disconnect(src)
-		rust_release_network_wrapper(network_node1)
-	if(node2)
-		node2.disconnect(src)
-		rust_release_network_wrapper(network_node2)
-
-	node1 = null
-	node2 = null
-	network_node1 = null
-	network_node2 = null
-	return ..()
 
 /obj/machinery/atmospherics/valve/proc/open()
 	if(open) return 0
@@ -197,10 +180,6 @@
 	var/frequency = ZERO_FREQ
 	var/id = null
 	var/datum/radio_frequency/radio_connection
-
-/obj/machinery/atmospherics/valve/digital/Destroy()
-	unregister_radio(src, frequency)
-	. = ..()
 
 /obj/machinery/atmospherics/valve/digital/attack_ai(mob/user as mob)
 	return src.attack_hand(user)

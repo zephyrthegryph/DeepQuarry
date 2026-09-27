@@ -30,9 +30,10 @@
 		mapped_quantum_pads[map_pad_id] = src
 	update_icon()
 
-/obj/machinery/power/quantumpad/Destroy()
+/// Phase 2: leaves the quantum pad map.
+/obj/machinery/power/quantumpad/lifecycle_dematerialize()
+	. = ..()
 	mapped_quantum_pads -= map_pad_id
-	return ..()
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()

@@ -25,9 +25,6 @@
 	range_alert = world.view
 	range_warning = world.view * 2
 
-/obj/item/multitool/ai_detector/Destroy()
-	return ..()
-
 /obj/item/multitool/ai_detector/periodic_step()
 	if(!ismob(loc))
 		return PROCESS_KILL
@@ -107,7 +104,6 @@
 			if(PROXIMITY_TRACKING_FAIL)
 				to_chat(carrier, span_danger(span_large("[icon2html(src, carrier.client)] Danger: AI is attempting to actively track you, but you are outside of the camera network!")))
 				carrier <<'sound/machines/defib_ready.ogg'
-
 
 #undef PROXIMITY_OFF_CAMERANET
 #undef PROXIMITY_NONE

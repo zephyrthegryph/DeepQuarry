@@ -31,6 +31,7 @@
 	if(!isnull(author))
 		author = _author
 
+// LIFECYCLE: persistent graffiti forgets it.
 /obj/effect/decal/writing/Destroy()
 	SSpersistence.forget_value(src, /datum/persistent/graffiti)
 	. = ..()

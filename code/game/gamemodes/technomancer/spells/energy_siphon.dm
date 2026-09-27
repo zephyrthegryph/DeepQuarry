@@ -23,6 +23,7 @@
 /obj/item/spell/energy_siphon/Initialize(mapload)
 	. = ..()
 
+// LIFECYCLE: the siphon stops draining its target.
 /obj/item/spell/energy_siphon/Destroy()
 	stop_siphoning()
 	return ..()
@@ -44,8 +45,6 @@
 		stop_siphoning()
 		return
 	siphon(siphoning, owner)
-
-
 
 /obj/item/spell/energy_siphon/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable) && within_range(hit_atom, 4))
@@ -199,7 +198,6 @@
 	else
 		target_mob.electrocute_act(power, src, 0.75, BP_TORSO)
 	return 0 // Since this is a continous beam, it needs to keep flying until it hits the Technomancer.
-
 
 #undef SIPHON_CELL_TO_ENERGY
 #undef SIPHON_FBP_TO_ENERGY

@@ -43,11 +43,7 @@ log transactions
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-/obj/machinery/atm/Destroy()
-	QDEL_NULL(spark_system)
-	held_card = null
-	authenticated_account = null
-	return ..()
+REF_OWNED(/obj/machinery/atm, "spark_system")
 
 /obj/machinery/atm/machine_step()
 	if(stat & NOPOWER)
@@ -486,7 +482,6 @@ log transactions
 	if(ishuman(human_user) && !human_user.get_active_hand())
 		human_user.put_in_hands(held_card)
 	held_card = null
-
 
 /obj/machinery/atm/proc/spawn_ewallet(sum, loc, mob/living/carbon/human/human_user as mob)
 	var/obj/item/spacecash/ewallet/E = new /obj/item/spacecash/ewallet(loc)

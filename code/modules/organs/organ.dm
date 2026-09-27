@@ -47,6 +47,7 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+// LIFECYCLE: afflictions on the organ are cured; organ mods removed.
 /obj/item/organ/Destroy()
 
 	handle_organ_mod_special(TRUE)
@@ -497,7 +498,6 @@
 	owner = null
 	// Detached: integrity now derives from the afflictions it carries.
 	recalc_integrity()
-
 
 /obj/item/organ/proc/replaced(mob/living/carbon/human/target,obj/item/organ/external/affected)
 

@@ -12,16 +12,7 @@
 
 	var/mob/spell_holder
 
-/atom/movable/screen/movable/spell_master/Destroy()
-	. = ..()
-	for(var/atom/movable/screen/spell/spells in spell_objects)
-		spells.spellmaster = null
-	LAZYCLEARLIST(spell_objects)
-	if(spell_holder)
-		spell_holder.spell_masters -= src
-		if(spell_holder.client && spell_holder.client.screen)
-			spell_holder.client.screen -= src
-		spell_holder = null
+REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "spell_masters"))
 
 /atom/movable/screen/movable/spell_master/MouseDrop()
 	if(showing)
@@ -161,17 +152,7 @@
 
 	var/icon/last_charged_icon
 
-/atom/movable/screen/spell/Destroy()
-	. = ..()
-	spell = null
-	last_charged_icon = null
-	if(spellmaster)
-		LAZYREMOVE(spellmaster.spell_objects, src)
-		if(spellmaster.spell_holder && spellmaster.spell_holder.client)
-			spellmaster.spell_holder.client.screen -= src
-	if(spellmaster && !length(spellmaster.spell_objects))
-		qdel(spellmaster)
-	spellmaster = null
+REF_BACKLIST(/atom/movable/screen/spell, list("spellmaster" = "spell_objects"))
 
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	if(!spell)

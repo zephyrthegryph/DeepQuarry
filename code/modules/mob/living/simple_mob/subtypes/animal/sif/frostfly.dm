@@ -70,9 +70,7 @@
 	add_verb(src, /mob/living/proc/hide)
 	ADD_TRAIT(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
-/mob/living/simple_mob/animal/sif/frostfly/Destroy()
-	QDEL_NULL(smoke_special)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special")
 
 /datum/say_list/frostfly
 	speak = list("Zzzz.", "Kss.", "Zzt?")
@@ -123,7 +121,6 @@
 				return TRUE
 
 			return FALSE
-
 
 /datum/decl/mob_organ_names/frostfly
 	hit_zones = list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs")

@@ -16,11 +16,7 @@
 		alpha = 0
 */
 
-/obj/structure/holosign/Destroy()
-	if(projector)
-		LAZYREMOVE(projector.signs, src)
-		projector = null
-	return ..()
+REF_BACKLIST(/obj/structure/holosign, list("projector" = "signs"))
 
 /obj/structure/holosign/attack_hand(mob/user, list/params)
 	. = ..()
@@ -52,10 +48,6 @@
 	can_atmos_pass = ATMOS_PASS_NO
 	rad_insulation = RAD_LIGHT_INSULATION
 	alpha = 150
-
-/obj/structure/holosign/barrier/combifan/Destroy()
-	update_nearby_tiles()
-	return ..()
 
 /obj/structure/holosign/barrier/combifan/Initialize(mapload)
 	.=..()

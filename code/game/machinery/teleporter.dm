@@ -40,9 +40,7 @@
 		hub.com = src
 		teleport_control.station = station
 
-/obj/machinery/computer/teleporter/Destroy()
-	QDEL_NULL(teleport_control)
-	return ..()
+REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 /obj/machinery/computer/teleporter/declare_interactions(list/into)
 	into += list(
@@ -156,6 +154,7 @@
 	underlays += image('icons/obj/stationobjs.dmi', icon_state = "tele-wires")
 	default_apply_parts()
 
+// LIFECYCLE: the teleporter console forgets its hub.
 /obj/machinery/teleport/hub/Destroy()
 	com?.teleport_control.hub = null
 	com = null
@@ -222,6 +221,7 @@
 	add_overlay("controller-wires")
 	default_apply_parts()
 
+// LIFECYCLE: the teleporter console forgets its station.
 /obj/machinery/teleport/station/Destroy()
 	com?.com?.teleport_control.station = null
 	com = null
@@ -280,7 +280,6 @@
 			com.icon_state = "tele0"
 	else
 		icon_state = "controller"
-
 
 /obj/effect/laser/Bump()
 	range--

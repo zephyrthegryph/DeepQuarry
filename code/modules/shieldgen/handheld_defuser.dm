@@ -7,16 +7,11 @@
 	var/obj/item/cell/device/cell
 	var/enabled = 0
 
-
 /obj/item/shield_diffuser/Initialize(mapload)
 	. = ..()
 	cell = new(src)
 
-/obj/item/shield_diffuser/Destroy()
-	QDEL_NULL(cell)
-	if(enabled)
-		PERIODIC_STOP(src)
-	. = ..()
+REF_OWNED(/obj/item/shield_diffuser, "cell")
 
 /obj/item/shield_diffuser/get_cell()
 	return cell

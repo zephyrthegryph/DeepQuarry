@@ -123,6 +123,7 @@
 	if(!has_buckled_mobs())
 		qdel(src)
 
+// LIFECYCLE: netted mobs are told they're free.
 /obj/effect/energy_net/Destroy()
 	if(has_buckled_mobs())
 		for(var/A in src?.buckled_mob_list())

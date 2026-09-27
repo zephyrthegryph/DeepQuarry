@@ -72,7 +72,6 @@
 	///If we use a toony glow instead of a more emmissive one.
 	var/toony = FALSE
 
-
 	dupe_mode = COMPONENT_DUPE_UNIQUE
 	dupe_type = /datum/component/radiation_effects
 
@@ -121,6 +120,7 @@
 	if(toony)
 		src.toony = toony
 
+// LIFECYCLE: removes the control-panel verb and the radiation glow filter.
 /datum/component/radiation_effects/Destroy(force)
 	var/atom/movable/parent_movable = parent
 	if(show_panel)
@@ -282,7 +282,6 @@
 		ui = new(user, src, "RadiationConfig", "Radiation Config")
 		ui.open()
 
-
 /mob/living/proc/radiation_control_panel()
 	set name = "Radiation Control Panel"
 	set desc = "Allows you to adjust the settings of various radioactive settings!"
@@ -344,7 +343,6 @@
 
 	animate(filter, alpha = 110, time = 1.5 SECONDS, loop = -1)
 	animate(alpha = 40, time = 2.5 SECONDS)
-
 
 /datum/component/radiation_effects/proc/on_geiger_counter_scan(mob/living/living_source, mob/user, obj/item/geiger/geiger_counter)
 	SIGNAL_HANDLER

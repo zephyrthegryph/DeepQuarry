@@ -221,7 +221,6 @@
 			return
 	..()
 
-
 GLOBAL_LIST_EMPTY(unique_deployable)
 /*****************************Survival Pod********************************/
 /area/survivalpod
@@ -244,7 +243,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /area/survivalpod/redspace
 	name = "\improper Redspace Capsule Shelter"
 	icon_state = "darkred"
-
 
 //Custom survival pod areas
 
@@ -391,10 +389,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	template.load(deploy_location, centered = TRUE)
 	template.update_lighting(deploy_location)
 	qdel(src)
-
-/obj/item/survivalcapsule/Destroy()
-	template = null // without this, capsules would be one use. per round.
-	. = ..()
 
 /obj/item/survivalcapsule/examine(mob/user)
 	. = ..()
@@ -696,7 +690,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	name = "shelter light switch"
 	var/obj/machinery/light/target_light
 
-
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
 /obj/machinery/light_switch/survival_pod/declare_interactions(list/into)
 	into += list(
@@ -868,9 +861,6 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	var/buildstackamount = 5
 
 // start - fans weren't updating atmos when destroyed or placed
-/obj/structure/fans/Destroy()
-	update_nearby_tiles()
-	return ..()
 
 /obj/structure/fans/Initialize(mapload)
 	.=..()

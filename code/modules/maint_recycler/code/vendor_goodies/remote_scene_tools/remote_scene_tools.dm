@@ -9,7 +9,6 @@ why aren't these accessories?
 
 */
 
-
 /obj/item/remote_scene_tool
 	var/obj/item/remote_scene_tool/linked
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
@@ -57,7 +56,6 @@ why aren't these accessories?
 	worn_mob = null
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
-
 //called when the mob wearing this item logs out
 /obj/item/remote_scene_tool/proc/worn_mob_logged_out()
 	SIGNAL_HANDLER
@@ -65,7 +63,6 @@ why aren't these accessories?
 		return
 	transmit_emote(src, span_warning("\The [src]'s wearer has gone SSD!"))
 	linked?.linked_updated()
-
 
 /obj/item/remote_scene_tool/proc/worn_mob_logged_in()
 	SIGNAL_HANDLER
@@ -89,7 +86,6 @@ why aren't these accessories?
 		to_chat(linked.loc, icon2html(src,m.client) + text)
 
 	//transmit the emote to the other side
-
 
 /obj/item/remote_scene_tool/proc/sanity_check()
 	//check if the other side is still valid
@@ -124,7 +120,6 @@ why aren't these accessories?
 
 	var/mob/m = getWearer()
 
-
 	if(ismob(m))
 		register_to_mob(m) //handles any caching
 	else
@@ -140,7 +135,7 @@ why aren't these accessories?
 	else
 		icon_state = icon_root + "_inactive"
 
-
+// LIFECYCLE: its linked tool forgets it; its wearer is unregistered.
 /obj/item/remote_scene_tool/Destroy()
 	. = ..()
 	if(linked)
@@ -165,7 +160,6 @@ why aren't these accessories?
 
 	if(!ismob(linked.loc))
 		. += span_warning("\The [src]'s counterpart isn't being worn or carried by anyone!")
-
 
 /obj/item/storage/box/remote_scene_tools
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'

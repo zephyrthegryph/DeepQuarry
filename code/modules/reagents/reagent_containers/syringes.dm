@@ -7,7 +7,6 @@
 
 #define SYRINGE_CAPPED 10
 
-
 /obj/item/reagent_containers/syringe
 	name = "syringe"
 	desc = "A syringe."
@@ -44,10 +43,7 @@
 	. = ..()
 	update_icon()
 
-/obj/item/reagent_containers/syringe/Destroy()
-	QDEL_LIST_NULL(viruses)
-	LAZYCLEARLIST(targets)
-	return ..()
+REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 
 /obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)
@@ -230,7 +226,6 @@
 				to_chat(user, span_notice("You fill the syringe with [trans] units of the solution."))
 				update_icon()
 
-
 			if(!reagents.get_free_space())
 				mode = SYRINGE_INJECT
 				update_icon()
@@ -352,8 +347,6 @@
 	else
 		balloon_alert_visible("stabs [user] in \the [target] with [src.name]!")
 		target.injure(INJURY_PIERCE, 3, source = src)// 7 is the same as crowbar punch
-
-
 
 	var/syringestab_amount_transferred = rand(max(reagents.total_volume - 10, 0), (reagents.total_volume - 5)) //nerfed by popular demand
 	var/contained = reagents.get_reagents()

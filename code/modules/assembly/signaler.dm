@@ -135,7 +135,6 @@
 		return
 	set_radio(new_frequency)
 
-
 /obj/item/assembly/signaler/proc/set_radio(new_frequency)
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -165,8 +164,3 @@
 	usr.visible_message("<font color='red'>[usr] moves their finger over [src]'s signal button...</font>")
 // end
 
-/obj/item/assembly/signaler/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
-	frequency = ZERO_FREQ
-	. = ..()

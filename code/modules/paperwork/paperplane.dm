@@ -28,11 +28,7 @@
 		internalPaper = new /obj/item/paper(src)
 	update_icon()
 
-/obj/item/paperplane/Destroy()
-	if(internalPaper)
-		qdel(internalPaper)
-		internalPaper = null
-	return ..()
+REF_OWNED(/obj/item/paperplane, "internalPaper")
 
 /obj/item/paperplane/update_icon()
 	cut_overlays()

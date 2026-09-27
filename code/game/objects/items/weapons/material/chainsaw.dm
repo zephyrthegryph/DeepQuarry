@@ -19,9 +19,6 @@
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	. = ..()
 
-/obj/item/chainsaw/Destroy()
-	. = ..()
-
 /obj/item/chainsaw/proc/turnOn(mob/user as mob)
 	if(on) return
 

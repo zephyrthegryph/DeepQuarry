@@ -50,13 +50,13 @@
 
 	rebuild_radial_images()
 
+REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
+
+// LIFECYCLE: its beacons forget it.
 /obj/item/perfect_tele/Destroy()
-	// Must clear the beacon's backpointer or we won't GC. Someday maybe do something nicer even.
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
 		B.tele_hand = null
 	LAZYCLEARLIST(beacons)
-	QDEL_NULL(power_source)
-	QDEL_NULL(spk)
 	return ..()
 
 /obj/item/perfect_tele/update_icon()
@@ -403,11 +403,6 @@ This device records all warnings given and teleport events for admin review in c
 	var/warned_users = list()
 	var/tele_network = null
 	flags = NOBLUDGEON
-
-/obj/item/perfect_tele_beacon/Destroy()
-	tele_name = null
-	tele_hand = null
-	return ..()
 
 /obj/item/perfect_tele_beacon/attack_hand(mob/user)
 	if((user.ckey != creator) && !(user.ckey in warned_users))

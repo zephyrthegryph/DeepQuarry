@@ -151,10 +151,7 @@
 /obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
 	return TRUE
 
-/obj/structure/closet/Destroy()
-	QDEL_NULL(door_obj)
-	closet_appearance = null
-	return ..()
+REF_OWNED(/obj/structure/closet, "door_obj")
 
 /obj/structure/closet/examine(mob/user)
 	. = ..()
@@ -271,7 +268,6 @@
 			continue
 		if(C.move_into(src))
 			.++
-
 
 /obj/structure/closet/proc/toggle(mob/user as mob)
 	if(is_animating_door)

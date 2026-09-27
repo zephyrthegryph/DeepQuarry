@@ -18,9 +18,6 @@
 	. = ..()
 	logged_in = "Cargo Department"
 
-/obj/machinery/computer/stockexchange/Destroy()
-	return ..()
-
 /obj/machinery/computer/stockexchange/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/stockexchange_attackby,

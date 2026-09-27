@@ -17,9 +17,7 @@
 	monitor.gyro_tag = id_tag
 	monitor.scan_range = scan_range
 
-/obj/machinery/computer/gyrotron_control/Destroy()
-	QDEL_NULL(monitor)
-	. = ..()
+REF_OWNED(/obj/machinery/computer/gyrotron_control, "monitor")
 
 /obj/machinery/computer/gyrotron_control/declare_interactions(list/into)
 	into += list(

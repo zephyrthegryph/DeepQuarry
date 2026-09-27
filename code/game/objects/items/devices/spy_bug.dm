@@ -139,6 +139,7 @@
 	linkedmonitor = null
 	qdel(src)
 
+// LIFECYCLE: its monitor unpairs it.
 /obj/item/camerabug/Destroy()
 	if(linkedmonitor)
 		linkedmonitor.unpair(src)

@@ -66,7 +66,6 @@
 		qdel(src)
 		return
 
-
 /obj/effect/dark/floor
 	name = "dark"
 	desc = "It's a strange, impenetrable darkness."
@@ -113,16 +112,13 @@
 	set_light(light_range, -20, "#FFFFFF")
 	PERIODIC_START(src, PERIODIC_SLOW)
 
+// LIFECYCLE: its dark tiles unlink and wither.
 /obj/structure/prop/dark_node/Destroy()
 	for(var/obj/effect/dark/dark_tile in children_effects)
 		dark_tile.unlinked()
 	return ..()
 
-/obj/effect/dark/Destroy()
-	if(linked_node)
-		LAZYREMOVE(linked_node.children_effects, src)
-		linked_node = null
-	. = ..()
+REF_BACKLIST(/obj/effect/dark, list("linked_node" = "children_effects"))
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1

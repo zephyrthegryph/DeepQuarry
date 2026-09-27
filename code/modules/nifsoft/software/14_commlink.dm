@@ -45,12 +45,8 @@
 	nif = loc
 	nifsoft = soft
 
-/obj/item/communicator/commlink/Destroy()
-	if(nif)
-		nif.comm = null
-		nif = null
-	nifsoft = null
-	return ..()
+REF_PAIR(/obj/item/communicator/commlink, list("nif" = "comm"))
+REF_PAIR(/obj/item/nif, list("comm" = "nif"))
 
 /obj/item/communicator/commlink/register_device(new_name)
 	owner = new_name

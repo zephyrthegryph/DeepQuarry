@@ -29,11 +29,6 @@
 
 	teleports_left = rand(minimum_teleports, maximum_teleports)
 
-/obj/effect/anomaly/dimensional/Destroy()
-	theme = null
-	target_turfs = null
-	return ..()
-
 /obj/effect/anomaly/dimensional/anomalyEffect(seconds_per_tick)
 	. = ..()
 	transmute_area()

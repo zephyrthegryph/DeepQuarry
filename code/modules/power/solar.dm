@@ -48,6 +48,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	. = ..()
 	connect_to_network()
 
+// LIFECYCLE: leaves its solar control computer.
 /obj/machinery/power/solar/Destroy()
 	unset_control() //remove from control computer
 	. = ..()
@@ -114,7 +115,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	new /obj/item/material/shard(src.loc)
 	return ..()
 
-
 /obj/machinery/power/solar/update_icon()
 	..()
 	cut_overlays()
@@ -160,7 +160,6 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	update_icon()
 	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)
 	return
-
 
 //trace towards sun to see if we're in shadow
 /obj/machinery/power/solar/proc/occlusion()
@@ -318,6 +317,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	connect_to_network()
 	set_panels(cdir)
 
+// LIFECYCLE: its panels and tracker lose their controller.
 /obj/machinery/power/solar_control/Destroy()
 	for(var/obj/machinery/power/solar/M in connected_panels)
 		M.unset_control()
@@ -552,8 +552,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	if((. = ..()))
 		update_icon()
 
-
-
 //
 // MISC
 //
@@ -565,7 +563,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 #undef SOLAR_AUTO_START_NO
 #undef SOLAR_AUTO_START_YES
 #undef SOLAR_AUTO_START_CONFIG
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/solar_control/step_start_condition()

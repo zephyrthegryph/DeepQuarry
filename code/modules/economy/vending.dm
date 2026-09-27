@@ -53,7 +53,6 @@
 	// List of vending_product items available.
 	var/list/product_records = list()
 
-
 	// Variables used to initialize advertising
 	var/product_slogans = "" //String of slogans spoken out loud, separated by semicolons
 	var/product_ads = "" //String of small ad messages in the vending screen
@@ -81,7 +80,6 @@
 	var/req_log_access = ACCESS_CARGO //default access for checking logs is cargo
 	var/has_logs = 0 //defaults to 0, set to anything else for vendor to have logs
 	var/can_rotate = 1 //Defaults to yes, can be set to 0 for vendors without or with unwanted directionals.
-
 
 /obj/machinery/vending/Initialize(mapload)
 	. = ..()
@@ -138,7 +136,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 	if(LAZYLEN(premium))
 		has_premium = TRUE
 
-
 	if(!LAZYLEN(refill) && refillable)			// Manually setting refill list prevents the automatic population. By default filled with all entries from normal product.
 		refill = products
 	share_refill_table()
@@ -192,13 +189,8 @@ GLOBAL_LIST_EMPTY(vending_products)
 		for(var/datum/stored_item/R as anything in product_records)
 			R.forget(thing)
 
-/obj/machinery/vending/Destroy()
-	qdel(wires)
-	wires = null
-	qdel(coin)
-	coin = null
-	QDEL_NULL_LIST(product_records)
-	return ..()
+REF_OWNED(/obj/machinery/vending, list("wires", "coin"))
+REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 
 /obj/machinery/vending/ex_act(severity)
 	if(severity == 3 && prob(25))
@@ -682,7 +674,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 	currently_vending = null
 	SStgui.update_uis(src)
 
-
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)
 	if(user.GetIdCard())
 		var/obj/item/card/id/tempid = user.GetIdCard()
@@ -816,7 +807,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 	return 1
 
 //Actual machines are in vending_machines.dm
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/vending/step_start_condition()

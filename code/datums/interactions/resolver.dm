@@ -22,12 +22,6 @@
 	src.target = target
 	src.held = held
 
-/datum/interaction_resolution/Destroy()
-	actor = null
-	target = null
-	held = null
-	return ..()
-
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)
 	return best_of(available, action, null)

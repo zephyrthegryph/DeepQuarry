@@ -30,6 +30,7 @@
 	link_parts()
 	reset_calibration()
 
+// LIFECYCLE: releases its linked parts.
 /obj/machinery/computer/ship/disperser/Destroy()
 	release_links()
 	. = ..()

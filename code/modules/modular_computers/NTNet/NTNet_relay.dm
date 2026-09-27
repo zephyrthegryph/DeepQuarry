@@ -22,7 +22,6 @@
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
 
-
 // TODO: Implement more logic here. For now it's only a placeholder.
 /obj/machinery/ntnet_relay/operable()
 	if(!..(EMPED))
@@ -127,6 +126,7 @@
 			soundloop.mid_length = 30
 	soundloop.start() // Have to do this here bc it starts on
 
+// LIFECYCLE: NTNet logs the lost relay and DoS programs lose their target.
 /obj/machinery/ntnet_relay/Destroy()
 	if(GLOB.ntnet_global)
 		LAZYREMOVE(GLOB.ntnet_global.relays, src)
@@ -140,7 +140,6 @@
 
 /obj/machinery/ntnet_relay
 	maintenance_flags = MACHINE_MAINT_STANDARD
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/ntnet_relay/step_start_condition()

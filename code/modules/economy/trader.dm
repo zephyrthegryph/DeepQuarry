@@ -43,17 +43,6 @@
 	if(move_trader)
 		move_trader()
 
-/obj/trader/Destroy()
-	. = ..()
-	LAZYCLEARLIST(products)
-	LAZYCLEARLIST(bank)
-	LAZYCLEARLIST(start_products)
-	LAZYCLEARLIST(prices)
-	LAZYCLEARLIST(multiple)
-	// Snapshot: qdel pulls members out of contents mid-iteration.
-	for(var/item in contents.Copy())
-		qdel(item)
-
 /obj/trader/attack_hand(mob/living/user)
 	. = ..()
 	if(trading)

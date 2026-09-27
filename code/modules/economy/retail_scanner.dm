@@ -41,10 +41,6 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	if(GLOB.economy_init && account_to_connect)
 		linked_account = GLOB.department_accounts[account_to_connect]
 
-/obj/item/retail_scanner/Destroy()
-	freight_form_paper = null
-	. = ..()
-
 // Always face the user when put on a table
 /obj/item/retail_scanner/afterattack(atom/movable/AM, mob/user, proximity)
 	if(!proximity)	return
@@ -273,7 +269,6 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 		src.visible_message("[icon2html(src, viewers(src))]<b>Total price:</b> [transaction_amount] Thaler\s. Swipe again to confirm.")
 		playsound(src, 'sound/machines/twobeep.ogg', 25)
 		return 0
-
 
 /obj/item/retail_scanner/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
 	if(!transaction_amount || !ticket_is_valid())

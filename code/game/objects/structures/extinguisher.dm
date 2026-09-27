@@ -93,12 +93,6 @@
 	opened = TRUE
 	update_icon()
 
-/obj/structure/extinguisher_cabinet/Destroy()
-	if(has_extinguisher)
-		UnregisterSignal(has_extinguisher, COMSIG_QDELETING)
-		has_extinguisher = null
-	return ..()
-
 /obj/structure/extinguisher_cabinet/update_icon()
 	var/suffix = "empty"
 	if(has_extinguisher)

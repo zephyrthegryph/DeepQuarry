@@ -351,14 +351,12 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
-/obj/machinery/light/Destroy()
+REF_OWNED(/obj/machinery/light, "cell")
+
+/// Phase 2: stops watching player chunks for flicker.
+/obj/machinery/light/lifecycle_dematerialize()
+	. = ..()
 	stop_flicker_watch()
-	var/area/A = get_area(src)
-	if(A)
-		on = 0
-//		A.update_lights()
-	QDEL_NULL(cell)
-	return ..()
 
 /obj/machinery/light/update_icon()
 
@@ -955,7 +953,6 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 		on = has_power()
 		update()
 	return TRUE
-
 
 /obj/machinery/light/attack_tk(mob/user)
 	if(status == LIGHT_EMPTY)

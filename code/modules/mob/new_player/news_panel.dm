@@ -13,12 +13,11 @@
 	host = host_mob
 	channel = CHANNEL
 
-/datum/news_panel/Destroy(force, ...)
-	if(host)
+/// Phase 2: its host's panel cache lets go.
+/datum/news_panel/lifecycle_dematerialize()
+	. = ..()
+	if(host?.dq_news_panel_cache == src)
 		host.dq_news_panel_cache = null
-	host = null
-	channel = null
-	return ..()
 
 /datum/news_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state

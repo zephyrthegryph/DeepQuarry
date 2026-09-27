@@ -34,7 +34,7 @@
 	if(my_predecessor)
 		inherit_information(my_predecessor)
 
-
+// LIFECYCLE: it lets go of its victim.
 /mob/living/simple_mob/slime/xenobio/Destroy()
 	if(victim)
 		stop_consumption() // Unbuckle us from our victim.
@@ -50,7 +50,6 @@
 	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
 	icon_rest = icon_dead
 	..() // This will apply the correct icon_state and do the other overlay-related things.
-
 
 /datum/om/stage/life/special/slime/xenobio
 	of = /mob/living/simple_mob/slime/xenobio
@@ -137,7 +136,6 @@
 /mob/living/simple_mob/slime/xenobio/proc/pacify()
 	return
 
-
 // These are verbs so that player slimes can evolve/split.
 /mob/living/simple_mob/slime/xenobio/verb/evolve()
 	set category = "Slime"
@@ -158,7 +156,6 @@
 			to_chat(src, span_warning("I am not ready to evolve yet..."))
 	else
 		to_chat(src, span_warning("I have already evolved..."))
-
 
 /mob/living/simple_mob/slime/xenobio/verb/reproduce()
 	set category = "Slime"

@@ -13,9 +13,7 @@
 	configure_effects()
 	return ..()
 
-/obj/effect/map_effect/interval/effect_emitter/Destroy()
-	QDEL_NULL(effect_system)
-	return ..()
+REF_OWNED(/obj/effect/map_effect/interval/effect_emitter, "effect_system")
 
 /obj/effect/map_effect/interval/effect_emitter/proc/configure_effects()
 	effect_system.set_up(effect_amount, effect_cardinals_only, src.loc, effect_forced_dir)
@@ -24,7 +22,6 @@
 	configure_effects() // We do this every interval in case it changes.
 	effect_system.start()
 	..()
-
 
 // Creates smoke clouds every so often.
 /obj/effect/map_effect/interval/effect_emitter/smoke
@@ -55,7 +52,6 @@
 /obj/effect/map_effect/interval/effect_emitter/smoke/mist
 	name = "mist smoke emitter"
 	effect_system_type = /datum/effect/effect/system/smoke_spread/mist
-
 
 // Makes sparks.
 /obj/effect/map_effect/interval/effect_emitter/sparks

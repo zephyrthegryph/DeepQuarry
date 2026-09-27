@@ -72,6 +72,7 @@
 	host_mob.refresh_hud()
 	settings.attached_to_mob(src, host_mob)
 
+// LIFECYCLE: the viewer's eye, view size, hud and vision are restored.
 /datum/component/remote_view/Destroy(force)
 	. = ..()
 	// Basic handling
@@ -282,7 +283,6 @@
 /datum/component/remote_view/proc/looking_at_target_already(atom/target)
 	return (remote_view_target == target)
 
-
 /**
  * Remote view subtype where if the item used with it is moved or dropped the view ends too
  */
@@ -323,6 +323,7 @@
 		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [host_item.zoomdevicename ? "[host_item.zoomdevicename] of the [host_item.name]" : "[host_item.name]"]."))
 	host_mob.refresh_vision()
 
+// LIFECYCLE: the zooming item un-zooms and the viewer's client offset resets.
 /datum/component/remote_view/item_zoom/Destroy(force)
 	// Feedback
 	if(show_message)
@@ -342,7 +343,6 @@
 	host_item = null
 	. = ..()
 
-
 /**
  * Remote view subtype that stops if the remote view target is dead, or you lose access to the mremote mutation
  */
@@ -357,12 +357,6 @@
 	if(host_mob != remote_view_target)
 		RegisterSignal(remote_view_target, COMSIG_MOB_DEATH, PROC_REF(handle_endview))
 
-/datum/component/remote_view/mremote_mutation/Destroy(force)
-	UnregisterSignal(host_mob, COMSIG_MOB_DNA_MUTATION)
-	if(host_mob != remote_view_target)
-		UnregisterSignal(remote_view_target, COMSIG_MOB_DEATH)
-	. = ..()
-
 /datum/component/remote_view/mremote_mutation/proc/on_mutation(datum/source)
 	SIGNAL_HANDLER
 	PRIVATE_PROC(TRUE)
@@ -373,7 +367,6 @@
 		return
 	end_view()
 	qdel(src)
-
 
 /**
  * Remote view subtype that handles look() and unlook() procs while managing a list of viewers. Expects a viewer list stored by the object itself, passed in with AddComponent(). Ensure the list exists before passing it to the component or pass by reference will fail.
@@ -392,12 +385,10 @@
 	LAZYDISTINCTADD(viewers, om_handle(host_mob))
 	RegisterSignal(view_coordinator, COMSIG_REMOTE_VIEW_CLEAR, PROC_REF(handle_forced_endview))
 
+// LIFECYCLE: the view coordinator stops showing to this viewer.
 /datum/component/remote_view/viewer_managed/Destroy(force)
-	UnregisterSignal(view_coordinator, COMSIG_REMOTE_VIEW_CLEAR)
 	view_coordinator.unlook(host_mob, FALSE)
 	LAZYREMOVE(viewers, om_handle(host_mob))
-	view_coordinator = null
-	viewers = null
 	. = ..()
 
 /datum/component/remote_view/viewer_managed/get_coordinator()
@@ -424,10 +415,6 @@
 	// Check our inmob state
 	if(ismob(find_topmost_atom()))
 		needs_to_decouple = TRUE
-
-/datum/component/remote_view/mob_holding_item/Destroy(force)
-	UnregisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
-	. = ..()
 
 /datum/component/remote_view/mob_holding_item/handle_status_effects(datum/source, amount)
 	if(host_mob.loc == remote_view_target) // If we are still inside our holder or belly than don't bother spamming this

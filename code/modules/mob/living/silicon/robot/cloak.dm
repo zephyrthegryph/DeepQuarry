@@ -11,9 +11,6 @@
 /obj/item/borg/cloak/Initialize(mapload)
 	. = ..()
 
-/obj/item/borg/cloak/Destroy()
-	. = ..()
-
 /obj/item/borg/cloak/attack_self(mob/user)
 	. = ..(user)
 	if(.)

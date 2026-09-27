@@ -122,7 +122,6 @@
 		return FALSE
 	return effective > 0 && prob(effective)
 
-
 /datum/armor
 	/// Canonical text of the values; the intern key.
 	var/canonical
@@ -137,6 +136,7 @@
 	src.percent = percent
 	src.flat = flat
 
+// LIFECYCLE: armor datums are interned and shared; refuse deletion unless forced.
 /datum/armor/Destroy(force)
 	if(!force)
 		// Interned and shared; nothing may delete one.
@@ -239,7 +239,6 @@
 	result[ARMOR_SOAK_PROTECTION] = protection
 	return result
 
-
 // ---- Atoms ----
 
 /atom
@@ -271,7 +270,6 @@
 
 /obj/item/armor_changed()
 	worn_protection_changed()
-
 
 // ---- Shields (damage.md §4 step 1) ----
 

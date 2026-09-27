@@ -8,8 +8,15 @@
 /datum/proc/om_qdel_self()
 	qdel(src)
 
-/// Deletes `D` after `delay` deciseconds of its own clock (0: once the current proc returns).
-/// Null-safe. An atom that should always die after a while declares `lifecycle_lifetime`.
+/// om_after() target: deletes the owner as one batched destroy
+/// (code/datums/lifecycle/batch.dm), with `extra` in the same set.
+/datum/proc/om_qdel_batch_self(list/extra)
+	var/list/doomed = list(src)
+	if(extra)
+		doomed += extra
+	qdel_batch(doomed)
+
+/// Deletes `D` after `delay` deciseconds of its own clock. Null-safe.
 /proc/om_qdel_after(datum/D, delay)
 	if(D && !QDELETED(D))
 		return om_after(D, delay, /datum/proc/om_qdel_self)

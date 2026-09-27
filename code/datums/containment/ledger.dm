@@ -169,15 +169,10 @@
 		default_id = first.slot_id
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
+// LIFECYCLE: the ledger is the containment engine itself; it lets go of its holder.
 /datum/ledger/Destroy()
 	if(holder?.ledger == src)
 		holder.ledger = null
-	holder = null
-	pending_thing = null
-	slots = null
-	entries = null
-	accumulators = null
-	keys = null
 	return ..()
 
 /datum/ledger/proc/def_by_id(id)

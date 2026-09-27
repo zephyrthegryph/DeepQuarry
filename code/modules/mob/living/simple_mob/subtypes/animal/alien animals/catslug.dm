@@ -113,10 +113,7 @@
 	add_verb(src, /mob/living/proc/hide)
 	add_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/Destroy()
-	if(hat)
-		drop_hat()
-	return ..()
+REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 
 /mob/living/simple_mob/vore/alienanimals/catslug/attackby(obj/item/reagent_containers/food/snacks/O as obj, mob/user as mob)
 	if(istype(O, /obj/item/clothing/head)) // Handle hat simulator.
@@ -264,7 +261,6 @@
 		picked_color = TRUE
 	update_icon()
 
-
 /mob/living/simple_mob/vore/alienanimals/catslug/horrible
 
 /obj/item/holder/catslug
@@ -290,7 +286,6 @@
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)
 	remove_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)	//Most of these have custom sprites with colour already, so we'll not let them have this.
-
 
 /datum/category_item/catalogue/fauna/catslug/custom/spaceslug
 	name = "Alien Wildlife - Catslug - Miros"
@@ -596,7 +591,6 @@
 	holder_type = /obj/item/holder/catslug/custom/scienceslug
 	say_list_type = /datum/say_list/catslug/custom/scienceslug
 	myid_access = list(ACCESS_ROBOTICS, ACCESS_TOX, ACCESS_TOX_STORAGE, ACCESS_RESEARCH, ACCESS_XENOBIOLOGY, ACCESS_XENOARCH)
-
 
 /datum/say_list/catslug/custom/scienceslug
 	speak = list("Slimes, squish!", "What is that?", "Smoking in Toxins is not advised.", "What are you doing?", "How did you get here?", "Do not deconstruct the cube!", "WAOW!", "Where are our materials?", "The acid dispenser is not full of juice. Must remember that.")
@@ -982,7 +976,6 @@
 
 /datum/say_list/catslug/custom/santaslug
 	speak = list("Ho ho ho!", "Meow-ery Solstice, everybody!", "Thanks fur all the furstive cheer!", "I must get all these purresents", "What would be the pawfect gift for you?", "All I want for solstice is... Porls.", "The winter trees are more bark than bite!", "I'm just glad not to be stuck in a blizzard again!")
-
 
 //=============================
 //Admin-spawn only catslugs end

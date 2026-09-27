@@ -458,7 +458,6 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		to_chat(src, span_warning("Sorry, that target is in an area that ghosts aren't allowed to go."))
 		return
 
-
 	var/icon/I = icon(target.icon,target.icon_state,target.dir)
 
 	var/orbitsize = (I.Width()+I.Height())*0.5
@@ -512,6 +511,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
+// LIFECYCLE: a ghost leaves the ghost visualnet and its chunks; one with a client is re-ghosted.
 /mob/observer/dead/Destroy()
 	if(exonet)
 		exonet.remove_address()
@@ -1007,7 +1007,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	set category = "Ghost.Join"
 	src.abandon_mob()
 
-
 /mob/observer/dead/verb/backup_ping()
 	set category = "Ghost.Join"
 	set name = "Notify Transcore"
@@ -1108,7 +1107,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	forceMove(L)
-
 
 /mob/observer
 	low_priority = TRUE

@@ -107,20 +107,11 @@
 /obj/machinery/atmospherics/portables_connector/get_neighbor_nodes_for_init()
 	return list(node)
 
-/obj/machinery/atmospherics/portables_connector/Destroy()
+/// Phase 1 (unbind): the connected canister's external Rust device detaches
+/// with the port, and the canister is let go.
+/obj/machinery/atmospherics/portables_connector/lifecycle_unbind()
 	rust_detach_external_device()
-	rust_unregister_pipe_topology()
-	clear_gas_dependency()
-	// Disconnect/qdel BEFORE ..() so connected_device/node derefs are valid.
-	if(connected_device)
-		connected_device.disconnect()
-
-	if(node)
-		node.disconnect(src)
-		rust_release_network_wrapper(network)
-
-	node = null
-	network = null
+	connected_device?.disconnect()
 	return ..()
 
 /obj/machinery/atmospherics/portables_connector/atmos_init()
@@ -207,7 +198,6 @@
 	update_underlays()
 
 	return null
-
 
 /obj/machinery/atmospherics/portables_connector/wrench_act(mob/user, obj/item/W)
 	if (connected_device)

@@ -60,9 +60,6 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/poi/pascalb/Destroy()
-	return ..()
-
 /obj/item/poi/pascalb/deadly //For testing purposes, mainly.
 
 /obj/item/poi/pascalb/deadly/radiate()
@@ -153,10 +150,6 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/poi/brokenoldreactor/Destroy()
-	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
-	return ..()
-
 /datum/category_item/catalogue/information/objects/growthcanister
 	name = "Object - Growth Inhibitor 78-1"
 	desc = "The production of Vatborn humans is a process which involves the synthesis of over two hundred \
@@ -184,7 +177,6 @@
 	anchored = FALSE
 	density = TRUE
 
-
 /obj/item/poi/broken_drone_circuit
 	name = "Central Processing Strata"	//Ideally we spawn this as loot for robotic enemies
 	desc = "The pinnacle of artifical intelligence which can be achieved using classical computer science. \n \
@@ -202,7 +194,6 @@
 	var/unlocked = FALSE
 	var/fried = FALSE
 	var/has_paper = FALSE
-
 
 /obj/item/poi/broken_drone_circuit/Initialize(mapload)
 	. = ..()
@@ -273,7 +264,6 @@
 				P.info = "[examine_canalyzer_printed ? examine_canalyzer_printed : examine_canalyzer]"
 				has_paper = FALSE
 
-
 	return ..()
 
 /obj/item/poi/broken_drone_circuit/attack_self(mob/user)
@@ -290,7 +280,6 @@
 	else
 		message += "You see [drone_name] stenciled onto the board on close inspection! This looks like a secure drone intelligence strata. \n"
 
-
 	if(unlocked)
 		message += "The power logic to the blackbox is scorched. Whatever secrets lie in the blackbox are yours for taking! \n"
 	else if(wirecutted)
@@ -304,7 +293,6 @@
 		It looks like a single pulse will fry this system for good\n"
 	if(unscrewed && !has_paper)
 		message += "Looks like there's a printer without any paper in it."
-
 
 	om_do_after(user, delay = 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, message))
 

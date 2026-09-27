@@ -306,6 +306,7 @@
 		T.update_connections()
 		T.update_icon()
 
+// LIFECYCLE: neighbouring windows and tables re-smooth without it.
 /obj/structure/window/Destroy()
 	density = FALSE
 	update_nearby_tiles()
@@ -395,7 +396,6 @@
 	add_overlay(I)
 
 	return
-
 
 /obj/structure/window/basic
 	desc = "It looks thin and flimsy. A few knocks with... almost anything, really should shatter it."
@@ -626,7 +626,6 @@
 			return TRUE
 	return FALSE
 */
-
 
 // === merged from window_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/window/titanium

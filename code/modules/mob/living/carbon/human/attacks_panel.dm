@@ -8,11 +8,11 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 /datum/attacks_panel/New(mob/living/carbon/human/host_mob)
 	host = host_mob
 
-/datum/attacks_panel/Destroy(force, ...)
+/// Phase 2: leaves the per-host panel index.
+/datum/attacks_panel/lifecycle_dematerialize()
+	. = ..()
 	if(host)
 		GLOB.dq_attacks_panels -= "[REF(host)]"
-	host = null
-	return ..()
 
 /datum/attacks_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state

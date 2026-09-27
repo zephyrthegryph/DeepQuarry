@@ -23,11 +23,11 @@
 	updatename()
 	updatedesc()
 	update()
-/obj/structure/disposalpipe/tagger/Destroy()
+/// Phase 2: leaves the tagger index.
+/obj/structure/disposalpipe/tagger/lifecycle_dematerialize()
 	. = ..()
 	if(sort_tag)
 		LAZYREMOVE(GLOB.tagger_locations["[sort_tag]"], get_z(src))
-
 
 /obj/structure/disposalpipe/tagger/attackby(obj/item/I, mob/user)
 	if(..())

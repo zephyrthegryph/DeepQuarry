@@ -21,13 +21,7 @@
 	///If the core is removable once socketed.
 	var/core_removable = TRUE
 
-/obj/item/organ/internal/heart/machine/anomalock/Destroy()
-	if(lightning_timer)
-		deltimer(lightning_timer)
-	if(lightning_overlay)
-		lightning_overlay = null
-	QDEL_NULL(core)
-	return ..()
+REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
 	if(!core)

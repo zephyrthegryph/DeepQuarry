@@ -42,14 +42,6 @@
 	timer_id = "generated-station-materialization-[next_timer_id]"
 	rustg_time_reset(timer_id)
 
-/datum/generated_station_materialization_job/Destroy()
-	materializer = null
-	flight_plan = null
-	materialization = null
-	on_done_box = null
-	timer_id = null
-	return ..()
-
 /datum/generated_station_materialization_job/proc/checkpoint(new_phase, new_progress, force_yield = FALSE)
 	// Measure only uninterrupted generator work. world.tick_usage can reset or
 	// include unrelated subsystems around a sleeping proc, so it cannot produce

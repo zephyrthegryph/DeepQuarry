@@ -5,6 +5,7 @@
 	var/obj/soulgem/gem
 
 // Cleaning up the refs during deletion
+// LIFECYCLE: its gem is told the mind unloaded.
 /mob/living/carbon/brain/caught_soul/vore/Destroy()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(eyeobj)

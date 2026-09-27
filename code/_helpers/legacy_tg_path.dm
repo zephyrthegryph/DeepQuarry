@@ -15,11 +15,7 @@
 	L = new()
 	cmp = compare
 
-/datum/tg_heap/Destroy(force, ...)
-	for(var/i in L) // because this is before the list helpers are loaded
-		qdel(i)
-	L = null
-	return ..()
+REF_OWNED_LIST(/datum/tg_heap, "L")
 
 /datum/tg_heap/proc/is_empty()
 	return !length(L)
@@ -124,10 +120,6 @@ GLOBAL_LIST_INIT(legacy_tg_space_type_cache, typecacheof(/turf/space))
 		heuristic = get_dist(tile, node_goal)
 		f_value = number_tiles + heuristic
 	// otherwise, no parent node means this is from a subscan lateral scan, so we just need the tile for now until we call [datum/jps/proc/update_parent] on it
-
-/datum/tg_jps_node/Destroy(force, ...)
-	previous_node = null
-	return ..()
 
 /datum/tg_jps_node/proc/update_parent(datum/tg_jps_node/new_parent)
 	previous_node = new_parent

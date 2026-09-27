@@ -148,11 +148,6 @@
 	. = ..()
 	update_nearby_tiles(1)
 
-/obj/structure/foamedmetal/Destroy()
-	density = FALSE
-	update_nearby_tiles(1)
-	return ..()
-
 /obj/structure/foamedmetal/update_icon()
 	if(metal == 1)
 		icon_state = "metalfoam"
@@ -189,7 +184,6 @@
 	else
 		to_chat(user, span_notice("You hit the metal foam to no effect."))
 
-
 /obj/effect/effect/foam/firefighting
 	name = "firefighting foam"
 	icon_state = "mfoam" //Whiter
@@ -205,7 +199,4 @@
 /obj/effect/effect/foam/firefighting/proc/dissolve()
 	flick("[icon_state]-disolve", src)
 	QDEL_IN(src, 5)
-
-/obj/effect/effect/foam/firefighting/Destroy()
-	return ..()
 

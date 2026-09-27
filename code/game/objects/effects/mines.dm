@@ -24,12 +24,12 @@
 	if(camo_net)
 		alpha = 50
 
-/obj/effect/mine/Destroy()
+REF_OWNED(/obj/effect/mine, list("trap", "wires"))
+
+/// Phase 2: leaves the dangerous-to-step index.
+/obj/effect/mine/lifecycle_dematerialize()
+	. = ..()
 	unregister_dangerous_to_step()
-	if(trap)
-		QDEL_NULL(trap)
-	QDEL_NULL(wires)
-	return ..()
 
 /obj/effect/mine/Moved(atom/oldloc)
 	. = ..()

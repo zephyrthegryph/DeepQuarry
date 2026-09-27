@@ -17,3 +17,31 @@
 
 /// A human label for a LIFECYCLE_PHASE_* id, for logs and test output.
 #define LIFECYCLE_PHASE_NAME(id) (list("guard", "mind", "unbind", "dematerialize", "contents", "links", "teardown", "effects", "destroy", "scrub")[id])
+
+// ---- Declared references (L2, doc/rewrite/lifecycle.md §4) ----
+// One line next to the type replaces a hand-written Destroy() body. Each adds
+// to what the parent type declared (read once per type, links.dm).
+// NAMES is one var name or a list() of them; PAIRS/LISTS are assoc lists.
+
+/// Owned children, not contained: deleted in phase 4 (was QDEL_NULL in Destroy()).
+#define REF_OWNED(PATH, NAMES) ##PATH/declared_owned_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Owned lists of children: each member deleted in phase 4 (was QDEL_LIST in Destroy()).
+#define REF_OWNED_LIST(PATH, NAMES) ##PATH/declared_owned_list_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// One inserted thing (a beaker, a card) spilled to the drop location in phase 3.
+#define REF_SPILL(PATH, NAMES) ##PATH/declared_spill_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// A thing held in contents with no policy of its own (an installed board): the
+/// var is nulled if the thing is destroyed while inside.
+#define REF_HELD(PATH, NAMES) ##PATH/declared_held_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// A list var's members spilled to the drop location in phase 3.
+#define REF_SPILL_LIST(PATH, NAMES) ##PATH/declared_spill_list_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Owned assoc lists whose values are children: deleted in phase 4 (was QDEL_LIST_ASSOC_VAL).
+#define REF_OWNED_VALUES(PATH, NAMES) ##PATH/declared_owned_value_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Pairs, our var -> the partner's var pointing back: nulled on both sides in phase 4.
+#define REF_PAIR(PATH, PAIRS) ##PATH/declared_pair_vars() { return lifecycle_merge_assoc(..(), PAIRS); }
+/// Back-lists, our var (the owner) -> the owner's list var we sit in: removed in phase 4.
+#define REF_BACKLIST(PATH, LISTS) ##PATH/declared_backlist_vars() { return lifecycle_merge_assoc(..(), LISTS); }
+
+/// Declared destruction effects (phase 6): DATA is a `new /datum/destroy_effects_data(...)`
+/// with named arguments, built once per type. Replaces message/sound/debris/
+/// neighbour-smoothing bodies in Destroy().
+#define DESTROY_EFFECTS(PATH, DATA) ##PATH/destroy_effects() { var/static/datum/destroy_effects_data/data = DATA; return data; }

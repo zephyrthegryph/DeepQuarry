@@ -51,6 +51,7 @@
 
 	default_apply_parts()
 
+// LIFECYCLE: cooking food and its containers go with the machine.
 /obj/machinery/appliance/Destroy()
 	for(var/datum/cooking_item/CI as anything in cooking_objs)
 		qdel(CI.container)//Food is fragile, it probably doesnt survive the destruction of the machine
@@ -202,11 +203,9 @@
 
 		return 2
 
-
 	if (!has_space(I))
 		to_chat(user, span_warning("There's no room in [src] for that!"))
 		return 0
-
 
 	if (container_type && istype(I, container_type))
 		return 1
@@ -226,7 +225,6 @@
 		return 0
 
 	return 1
-
 
 //This function is overridden by cookers that do stuff with containers
 /obj/machinery/appliance/proc/has_space(obj/item/I)
@@ -347,7 +345,6 @@
 				else
 					work += R.volume
 					CI.max_oil += R.volume * 0.15
-
 
 	else if(istype(I, /obj/item/holder))
 		var/obj/item/holder/H = I
@@ -477,7 +474,6 @@
 				AM.forceMove(temp)
 			results += TR
 
-
 		for(var/obj/item/reagent_containers/food/snacks/R as anything in results)
 			R.forceMove(C) //Move everything from the buffer back to the container
 
@@ -487,7 +483,6 @@
 	else if(CI.combine_target)
 		CI.result_type = 3//Combination type. We're making something out of our ingredients
 		. = combination_cook(CI)
-
 
 	else
 		//Otherwise, we're just doing standard modification cooking. change a color + name
@@ -499,7 +494,6 @@
 		if(!S.heat_cooked)
 			S.heat_cooked = TRUE
 			S.cook()
-
 
 //Combination cooking involves combining the names and reagents of ingredients into a predefined output object
 //The ingredients represent flavours or fillings. EG: donut pizza, cheese bread
@@ -535,7 +529,6 @@
 					t = buffer.total_volume / t
 					totalcolour = BlendRGB(totalcolour, S.filling_color, t)
 					//Blend colours in order to find a good filling color
-
 
 			S.reagents.trans_to_holder(buffer, S.reagents.total_volume)
 		//Cleanup these empty husk ingredients now
@@ -774,7 +767,6 @@
 	product.name = "[cook_type] [product.name]"
 	product.desc = "[product.desc]\nIt has been [cook_type]."
 
-
 /obj/machinery/appliance/proc/change_product_appearance(obj/item/reagent_containers/food/snacks/product, datum/cooking_item/CI)
 	if (!product.coating) //Coatings change colour through a new sprite
 		product.color = food_color
@@ -889,11 +881,9 @@
 	cooking_power = cooking_coeff * (1 + (scan_rating + cap_rating) / 20) // 100% eff. becomes 120%, 140%, 160% w/ better parts, thus rewarding upgrading the appliances during your shift.
 	// to_world("RefreshParts returned cooking power of [cooking_power] during this step.") // Debug lines, uncomment if you need to test.
 
-
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
 	food_safety = !food_safety
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/appliance/step_start_condition()

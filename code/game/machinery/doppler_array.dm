@@ -26,10 +26,6 @@
 	RegisterSignal(SSdcs, COMSIG_GLOB_EXPLOSION, PROC_REF(sense_explosion))
 	ADD_TRAIT(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
-/obj/machinery/doppler_array/Destroy()
-	UnregisterSignal(SSdcs, COMSIG_GLOB_EXPLOSION)
-	. = ..()
-
 /obj/machinery/doppler_array/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)

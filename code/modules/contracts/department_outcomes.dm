@@ -9,10 +9,6 @@
 	var/outcome_variant = "standard"
 	var/list/personal_side_definitions
 
-/datum/contract/outcome/Destroy()
-	personal_side_definitions = null
-	return ..()
-
 /datum/contract/outcome/on_accepted(mob/living/user, atom/source)
 	offer_linked_personal_contracts(user)
 
@@ -220,10 +216,6 @@
 	var/datum/contract_requirement/staged_sustained_event/performance_requirement
 	/// Synthetic tests may shorten the timers without weakening live terms.
 	var/stage_duration_override = 0
-
-/datum/contract/outcome/engine_performance/Destroy()
-	performance_requirement = null
-	return ..()
 
 /datum/contract/outcome/engine_performance/on_negotiated_terms_changed()
 	..()

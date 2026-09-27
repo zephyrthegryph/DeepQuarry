@@ -68,12 +68,7 @@
 
 	update_icon()
 
-/obj/item/gun/projectile/Destroy()
-	QDEL_NULL(ammo_provider)
-	loaded = null
-	ammo_magazine = null
-	chambered = null
-	return ..()
+REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
@@ -135,7 +130,6 @@
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
 		M?.hud_used.update_ammo_hud(M, src)
-
 
 //attempts to unload src. If allow_dump is set to 0, the speedloader unloading method will be disabled
 /obj/item/gun/projectile/proc/unload_ammo(mob/user, allow_dump=1)
@@ -308,7 +302,6 @@
 		return chambered.BB ? 1 : 0
 	else // Failsafe, or completely unloaded
 		return 0
-
 
 #define BOLT_NOEVENT 0
 #define BOLT_CLOSED 1

@@ -24,13 +24,8 @@
 	/// null on circuit add/remove via Entered()/Exited() and recomputed lazily.
 	var/tmp/power_relevant = null
 
-
 /obj/item/electronic_assembly/Initialize(mapload)
 	battery = new(src)
-	return ..()
-
-/obj/item/electronic_assembly/Destroy()
-	battery = null // It will be qdel'd by ..() if still in our contents
 	return ..()
 
 /obj/item/electronic_assembly/periodic_step(seconds_per_tick)
@@ -92,7 +87,6 @@
 		if(IC.power_draw_idle)
 			if(!draw_power(IC.power_draw_idle * draw_scale))
 				IC.power_fail()
-
 
 /obj/item/electronic_assembly/proc/check_interactivity(mob/user)
 	return tgui_status(user, GLOB.tgui_physical_state) == STATUS_INTERACTIVE

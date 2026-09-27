@@ -92,6 +92,7 @@
 	bleed_timer += initial_damage
 	sync()
 
+// LIFECYCLE: its limb recomputes integrity.
 /datum/affliction/wound/Destroy()
 	var/obj/item/organ/external/E = location
 	if(istype(E))

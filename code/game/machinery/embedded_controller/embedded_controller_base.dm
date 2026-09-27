@@ -13,10 +13,7 @@
 		program = new program(src)
 	return ..()
 
-/obj/machinery/embedded_controller/Destroy()
-	if(istype(program))
-		QDEL_NULL(program)
-	return ..()
+REF_OWNED(/obj/machinery/embedded_controller, "program")
 
 /obj/machinery/embedded_controller/examine(mob/user, infix, suffix)
 	. = ..()
@@ -108,11 +105,6 @@
 
 /obj/machinery/embedded_controller/radio/Initialize(mapload)
 	set_frequency(frequency) // Set it before parent instantiates program
-	. = ..()
-
-/obj/machinery/embedded_controller/radio/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
 	. = ..()
 
 /obj/machinery/embedded_controller/radio/update_icon()

@@ -15,7 +15,6 @@
 	var/list/viewers = list()
 	var/atom/owner = null
 
-
 /datum/alternate_appearance/proc/display_to(list/displayTo)
 	if(!displayTo || !displayTo.len)
 		return
@@ -25,7 +24,6 @@
 		viewing |= src
 		if(M.client)
 			M.client.images |= img
-
 
 /datum/alternate_appearance/proc/hide(list/hideFrom)
 	var/list/hiding = viewers
@@ -42,7 +40,6 @@
 				dq_clear_viewing_alt_appearances_component(M)
 		viewers -= M
 
-
 /datum/alternate_appearance/proc/remove()
 	hide()
 	if(owner)
@@ -52,12 +49,11 @@
 			if(!owned.len)
 				dq_clear_alt_appearances_component(owner)
 
-
+// LIFECYCLE: it is removed from everyone who saw it.
 /datum/alternate_appearance/Destroy()
 	remove()
 	owner = null
 	return ..()
-
 
 /atom/Destroy()
 	. = ..()
@@ -78,7 +74,6 @@
 	owned[key] = AA
 	if(displayTo && displayTo.len)
 		display_alt_appearance(key, displayTo)
-
 
 /atom/proc/remove_alt_appearance(key)
 	var/list/owned = dq_get_alt_appearances(src)
@@ -103,7 +98,6 @@
 	if(!AA || !AA.img)
 		return
 	AA.display_to(displayTo)
-
 
 /atom/proc/hide_alt_appearance(key, list/hideFrom)
 	var/list/owned = dq_get_alt_appearances(src)

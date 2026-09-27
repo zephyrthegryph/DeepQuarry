@@ -26,6 +26,7 @@
 	if(trunk)
 		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
 
+// LIFECYCLE: it unlinks from its trunk.
 /obj/structure/disposaloutlet/Destroy()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
 	target = null

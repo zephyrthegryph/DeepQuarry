@@ -66,12 +66,11 @@ FIRE ALARM
 	critalarm = new(list(src), FALSE) // Create soundloop
 	causality = new(list(src), FALSE) // Create soundloop
 
+REF_OWNED(/obj/machinery/firealarm, list("soundloop", "engalarm", "critalarm", "causality"))
+
+// LIFECYCLE: a sounding alarm is reset for its area.
 /obj/machinery/firealarm/Destroy()
-	reset() // alarm needs to go when destroyed
-	QDEL_NULL(soundloop) // Just clearing the loop here
-	QDEL_NULL(engalarm) // Clearing the loop here too
-	QDEL_NULL(critalarm) // Clearing the loop here too
-	QDEL_NULL(causality) // Clearing the loop here too
+	reset()
 	return ..()
 
 /obj/machinery/firealarm/proc/offset_alarm()

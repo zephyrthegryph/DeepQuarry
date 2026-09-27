@@ -159,7 +159,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/crawl_destroy = FALSE //chompADD: Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
-
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/ammo_casing))
@@ -483,6 +482,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	original = target
 	setAngle(Get_Angle(source, target))
 
+// LIFECYCLE: a hitscan finalizes its tracers; its casing forgets it.
 /obj/item/projectile/Destroy()
 	if(hitscan)
 		finalize_hitscan_and_generate_tracers()
@@ -802,13 +802,11 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(dephasing)
 		target_mob.phase_in() //If the mob is phased, dephase them. If they're not phased, this does nothing.
 
-
 	//sometimes bullet_act() will want the projectile to continue flying
 	if (result == PROJECTILE_CONTINUE)
 		return FALSE
 
 	return TRUE
-
 
 /obj/item/projectile/proc/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 
@@ -937,7 +935,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 #undef MOVES_HITSCAN
 #undef MUZZLE_EFFECT_PIXEL_INCREMENT
 
-
 // === merged from projectile_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/projectile/bullet/pellet/shotgun/silver
 	name = "shrapnel"
@@ -948,7 +945,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	pellets = 6
 	range_step = 1
 	spread_step = 20
-
 
 // === merged from projectile_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/item/projectile

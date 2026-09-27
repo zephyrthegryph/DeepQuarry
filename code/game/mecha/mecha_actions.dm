@@ -5,8 +5,6 @@
 //
 // I better get some free food for this..
 
-
-
 //
 /// Adding the buttons things to the player. The interactive, top left things, at least at time of writing.
 /// If you want it to be only for a special mech, you have to go and make an override like in the durand mech.
@@ -56,7 +54,6 @@
 	overload_action.Remove(user, src)
 	cloak_action.Remove(user, src)
 
-
 //
 ////BUTTONS STUFF
 //
@@ -68,15 +65,10 @@
 	overlay_icon = 'icons/effects/actions_mecha.dmi'
 	var/obj/mecha/chassis
 
-/datum/action/innate/mecha/Destroy()
-	chassis = null
-	return ..()
-
 /datum/action/innate/mecha/Grant(mob/living/L, obj/mecha/M)
 	if(M)
 		chassis = M
 	..()
-
 
 /datum/action/innate/mecha/mech_toggle_lights
 	name = "Toggle Lights"
@@ -87,8 +79,6 @@
 	build_all_button_icons()
 	chassis.lights()
 
-
-
 /datum/action/innate/mecha/mech_toggle_internals
 	name = "Toggle Internal Airtank Usage"
 	button_icon_state = "mech_internals_off"
@@ -98,8 +88,6 @@
 	build_all_button_icons()
 	chassis.internal_tank()
 
-
-
 /datum/action/innate/mecha/mech_view_stats
 	name = "View stats"
 	button_icon_state = "mech_view_stats"
@@ -107,16 +95,12 @@
 /datum/action/innate/mecha/mech_view_stats/Activate()
 	chassis.view_stats()
 
-
-
 /datum/action/innate/mecha/mech_eject
 	name = "Eject From Mech"
 	button_icon_state = "mech_eject"
 
 /datum/action/innate/mecha/mech_eject/Activate()
 	chassis.go_out()
-
-
 
 /datum/action/innate/mecha/strafe
 	name = "Toggle Mech Strafing"
@@ -127,8 +111,6 @@
 	build_all_button_icons()
 	chassis.strafing()
 
-
-
 /datum/action/innate/mecha/mech_defence_mode
 	name = "Toggle Mech defence mode"
 	button_icon_state = "mech_defense_mode_off"
@@ -137,8 +119,6 @@
 	button_icon_state = "mech_defense_mode_[chassis.defence_mode ? "off" : "on"]"
 	build_all_button_icons()
 	chassis.defence_mode(owner)
-
-
 
 /datum/action/innate/mecha/mech_overload_mode
 	name = "Toggle Mech Leg Overload"
@@ -149,8 +129,6 @@
 	build_all_button_icons()
 	chassis.overload(owner)
 
-
-
 /datum/action/innate/mecha/mech_smoke
 	name = "Toggle Mech Smoke"
 	button_icon_state = "mech_smoke_off"
@@ -159,8 +137,6 @@
 	//button_icon_state = "mech_smoke_[chassis.smoke ? "off" : "on"]"
 	//build_all_button_icons()	//Dual colors notneeded ATM
 	chassis.smoke(owner)
-
-
 
 /datum/action/innate/mecha/mech_zoom
 	name = "Toggle Mech Zoom"
@@ -171,8 +147,6 @@
 	build_all_button_icons()
 	chassis.zoom(owner)
 
-
-
 /datum/action/innate/mecha/mech_toggle_thrusters
 	name = "Toggle Mech thrusters"
 	button_icon_state = "mech_thrusters_off"
@@ -181,8 +155,6 @@
 	button_icon_state = "mech_thrusters_[chassis.thrusters ? "off" : "on"]"
 	build_all_button_icons()
 	chassis.thrusters(owner)
-
-
 
 /datum/action/innate/mecha/mech_cycle_equip	//I'll be honest, i don't understand this part, buuuuuut it works!
 	name = "Cycle Equipment"
@@ -222,20 +194,15 @@
 			build_all_button_icons()
 			return
 
-
-
 /datum/action/innate/mecha/mech_switch_damtype
 	name = "Reconfigure arm microtool arrays"
 	button_icon_state = "mech_damtype_brute"
-
 
 /datum/action/innate/mecha/mech_switch_damtype/Activate()
 	button_icon_state = "mech_damtype_[chassis.melee_damtype_icon()]"
 	playsound(src, 'sound/mecha/mechmove01.ogg', 50, 1)
 	build_all_button_icons()
 	chassis.query_damtype(owner)
-
-
 
 /datum/action/innate/mecha/mech_toggle_phasing
 	name = "Toggle Mech phasing"
@@ -246,8 +213,6 @@
 	build_all_button_icons()
 	chassis.phasing(owner)
 
-
-
 /datum/action/innate/mecha/mech_toggle_cloaking
 	name = "Toggle Mech phasing"
 	button_icon_state = "mech_phasing_off"
@@ -257,15 +222,12 @@
 	build_all_button_icons()
 	chassis.toggle_cloaking(owner)
 
-
-
 /////
 /////
 /////		ACTUAL MECANICS FOR THE ACTIONS
 /////		OVERLOAD, DEFENCE, SMOKE
 /////
 /////
-
 
 /obj/mecha/verb/toggle_defence_mode()
 	set category = "Exosuit Interface"
@@ -287,8 +249,6 @@
 		src.occupant_message(span_red("You disable [src] defence mode."))
 	src.log_message("Toggled defence mode.", LOG_GAME)
 	return
-
-
 
 /obj/mecha/verb/toggle_overload()
 	set category = "Exosuit Interface"
@@ -318,7 +278,6 @@
 	playsound(src, 'sound/mecha/mechanical_toggle.ogg', 50, 1)
 	return
 
-
 /obj/mecha/verb/toggle_smoke()
 	set category = "Exosuit Interface"
 	set name = "Activate Smoke"
@@ -347,8 +306,6 @@
 		COOLDOWN_START(src, smoke_cooldown_end, smoke_cooldown)
 	return
 
-
-
 /obj/mecha/verb/toggle_zoom()
 	set category = "Exosuit Interface"
 	set name = "Zoom"
@@ -376,8 +333,6 @@
 			_tmp_occ_13.set_viewsize() // Reset to default
 	return
 
-
-
 /obj/mecha/verb/toggle_thrusters()
 	set category = "Exosuit Interface"
 	set name = "Toggle thrusters"
@@ -397,8 +352,6 @@
 			else
 				src.occupant_message(span_red("Thrusters disabled."))
 	return
-
-
 
 /obj/mecha/verb/switch_damtype()
 	set category = "Exosuit Interface"
@@ -426,8 +379,6 @@
 	occupant_message("Melee damage type switched to [new_damtype]")
 	return
 
-
-
 /obj/mecha/verb/toggle_phasing()
 	set category = "Exosuit Interface"
 	set name = "Toggle phasing"
@@ -445,7 +396,6 @@
 	else
 		src.occupant_message(span_red("Disabled phasing."))
 	return
-
 
 /obj/mecha/verb/toggle_cloak()
 	set category = "Exosuit Interface"

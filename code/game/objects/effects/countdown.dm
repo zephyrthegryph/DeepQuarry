@@ -69,10 +69,6 @@
 	else
 		maptext = null
 
-/obj/effect/countdown/Destroy()
-	attached_to = null
-	. = ..()
-
 /obj/effect/countdown/singularity_pull(atom/singularity, current_size)
 	return
 

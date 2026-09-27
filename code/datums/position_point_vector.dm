@@ -118,7 +118,6 @@
 /datum/point/proc/return_py()
 	return MODULUS(y, world.icon_size) - 16 - 1
 
-
 /datum/point/vector
 	var/speed = 32				//pixels per iteration
 	var/iteration = 0
@@ -195,9 +194,6 @@
 	var/last_process = 0
 	var/last_move = 0
 	var/paused = FALSE
-
-/datum/point/vector/processed/Destroy()
-	return ..()
 
 /datum/point/vector/processed/proc/start()
 	last_process = world.time

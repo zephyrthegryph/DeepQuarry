@@ -13,12 +13,12 @@
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER+0.01
 
-
 /obj/machinery/power/terminal/Initialize(mapload)
 	. = ..()
 	var/turf/T = src.loc
 	if(level==1) hide(!T.is_plating())
 
+// LIFECYCLE: its master disconnects the terminal.
 /obj/machinery/power/terminal/Destroy()
 	if(master)
 		master.disconnect_terminal(src)

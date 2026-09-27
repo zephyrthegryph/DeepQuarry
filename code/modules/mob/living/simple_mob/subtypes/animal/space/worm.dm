@@ -30,7 +30,6 @@
 
 	organ_names = /datum/decl/mob_organ_names
 
-
 	mob_class = MOB_CLASS_ABERRATION	// It's a monster.
 
 	meat_amount = 10
@@ -193,6 +192,7 @@
 		return TRUE
 	return ..()
 
+// LIFECYCLE: a destroyed chunk empties its stomach and kills the back half.
 /mob/living/simple_mob/animal/space/space_worm/Destroy() // If a chunk is destroyed, kill the back half.
 	DumpStomach()
 	if(previous)

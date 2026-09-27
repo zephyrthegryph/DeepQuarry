@@ -123,7 +123,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	attack_sound = 'sound/voice/teppi/roar.ogg' // make a better one idiot
 	friendly = list("snoofs", "nuzzles", "nibbles", "smooshes on")
 
-
 	mob_size = MOB_LARGE
 
 	has_langs = list(LANGUAGE_TEPPI)
@@ -643,13 +642,11 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	if(vitality() <= 0.75)
 		. += span_notice("They look beat up.")
 
-
 /mob/living/simple_mob/vore/alienanimals/teppi/update_icon()
 	..()
 	teppi_icon()
 	if(ghostjoin)
 		ghostjoin_icon()
-
 
 /datum/om/stage/life/type_post/simple_mob/vore/alienanimals/teppi
 	of = /mob/living/simple_mob/vore/alienanimals/teppi
@@ -773,6 +770,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring)
 	teppi_setup()
 
+// LIFECYCLE: the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/teppi/Destroy()
 	GLOB.teppi_count --
 	friend_zone = null
@@ -815,7 +813,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		vore_selected.digest_mode = DM_DRAIN
 	..()
 	ai_busy_end()
-
 
 /mob/living/simple_mob/vore/alienanimals/teppi/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay_time)
 	if(!client)
@@ -890,7 +887,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	say_maybe_target = list("Gyuuh?", "Rrrr!")
 	say_got_target = list("GYOOOHHHH!!!")
 
-
 ////////////////// Da babby //////////////
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby
@@ -920,7 +916,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	meat_amount = 2
 	loot_list = list()
 	say_list_type = /datum/say_list/teppibaby
-
 
 /mob/living/simple_mob/vore/alienanimals/teppi/baby/init_vore(force) //shouldn't need all the vore bidness if they aren't using it as babbies. They get their tummies when they grow up.
 	return
@@ -980,7 +975,6 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	skin_color =  pick(list(mom.skin_color, dad.skin_color, BlendRGB(mom.skin_color, dad.skin_color, 0.5)))
 	marking_type =  pick(list(mom.marking_type, dad.marking_type, null))
 	horn_type =  pick(list(mom.horn_type, dad.horn_type, null))
-
 
 	if(mom.teppi_mutate || dad.teppi_mutate)
 		teppi_mutate = TRUE

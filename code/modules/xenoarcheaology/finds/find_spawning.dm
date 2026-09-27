@@ -369,7 +369,6 @@
 				new_gun.power_supply.charge = 0
 			item_type = "Relic Laser Gun"
 
-
 		/// Artifact type gun that requires a random caliber and selects a random bullet type it shoots out!.
 		if(ARCHAEO_GUN)
 			var/obj/item/gun/projectile/artifact/new_gun = new /obj/item/gun/projectile/artifact(src.loc)
@@ -465,7 +464,6 @@
 			//Code to prevent rejection.
 			new_organ = new_item
 			new_organ.can_reject = FALSE
-
 
 		if(ARCHAEO_REMAINS_ROBOT)
 			//robot remains
@@ -879,7 +877,7 @@
 	if(become_anomalous)
 		become_anomalous()
 
-
+// LIFECYCLE: its artifact master component is removed.
 /obj/item/archaeological_find/Destroy()
 	if(src.is_anomalous())
 		var/datum/component/artifact_master/arti_mstr = GetComponent(/datum/component/artifact_master)

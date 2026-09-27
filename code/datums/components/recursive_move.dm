@@ -64,7 +64,6 @@
 		noparents = FALSE
 		UnregisterSignal(holder, COMSIG_ATOM_ENTERING)
 
-
 /datum/component/recursive_move/proc/unregister_signals()
 	if(noparents) // safety check
 		noparents = FALSE
@@ -105,12 +104,6 @@
 	reset_parents()
 	holder = null
 	qdel(src)
-
-/datum/component/recursive_move/Destroy()
-	. = ..()
-	reset_parents()
-	if(holder) UnregisterSignal(holder, COMSIG_QDELETING)
-	holder = null
 
 /datum/component/recursive_move/proc/reset_parents()
 	unregister_signals()

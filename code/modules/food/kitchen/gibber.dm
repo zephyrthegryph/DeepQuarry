@@ -38,22 +38,12 @@
 	if(!input_plate)
 		log_world("## MISC a [src] didn't find an input plate.")
 
-/obj/machinery/gibber/Destroy()
-	// The occupant slot's own teardown (destroy transaction phase 5, before
-	// Destroy(), C8 step 2) already cleared occupant if one was present.
-	return ..()
-
 /// Sealed occupant slot (C8a, containment.md §10).
 /datum/om/relation/slot/occupant/gibber
 	holder = /obj/machinery/gibber
 	slot_id = OCCUPANT_SLOT_GIBBER
 	name = "gibber"
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
-
-
-/obj/machinery/gibber/autogibber/Destroy()
-	input_plate = null
-	return ..()
 
 /obj/machinery/gibber/autogibber/Bumped(atom/A)
 	if(!input_plate) return
@@ -65,7 +55,6 @@
 		)
 			M.forceMove(src)
 			M.gib()
-
 
 /obj/machinery/gibber/Initialize(mapload)
 	. = ..()
@@ -146,7 +135,6 @@
 		to_chat(user, span_danger("The gibber safety guard is engaged!"))
 		return
 
-
 	if(victim.abiotic(1))
 		to_chat(user, span_danger("Subject may not have abiotic items on."))
 		return
@@ -183,7 +171,6 @@
 	slot_remove(occupant, get_turf(src))
 	update_icon()
 	return
-
 
 /obj/machinery/gibber/proc/startgibbing(mob/user as mob)
 	var/mob/living/occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER)

@@ -46,7 +46,6 @@
 	var/cell_type =  /obj/item/cell/high
 	var/air_type =   /obj/item/tank/oxygen
 
-
 	//Component/device holders.
 	var/obj/item/tank/air_supply                       // Air tank, if any.
 	var/obj/item/clothing/shoes/boots = null                  // Deployable boots, if any.
@@ -139,18 +138,12 @@
 
 	update_icon(1)
 
-/obj/item/rig/Destroy()
-	// Delegate piece teardown to the component registry.
-	if(component_registry)
-		component_registry.destroy_pieces()
-	QDEL_NULL(component_registry)
-	QDEL_NULL(power_system)
+REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system"))
 
-	installed_modules = null
-	qdel(wires)
-	wires = null
-	qdel(spark_system)
-	spark_system = null
+// LIFECYCLE: the suit pieces are torn down by the component registry first.
+/obj/item/rig/Destroy()
+	component_registry?.destroy_pieces()
+	QDEL_NULL(component_registry)
 	return ..()
 
 /obj/item/rig/MouseDrop(obj/over_object)
@@ -243,7 +236,6 @@
 		piece.max_pressure_protection = null
 		piece.item_flags &= ~AIRTIGHT
 	return
-
 
 /obj/item/rig/proc/reset()
 	offline = 2
@@ -461,7 +453,6 @@
 	cooling_on = 1
 	power_system.cooling_on = 1
 	to_chat(user, span_notice("You switch \the [src]'s cooling system on."))
-
 
 /obj/item/rig/proc/turn_cooling_off(mob/user, failed)
 	if(failed)

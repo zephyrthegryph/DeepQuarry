@@ -83,14 +83,11 @@
 	var/alerttooltipstyle = ""
 	var/no_underlay // Don't underlay the UI style's blank template icon under this
 
-
 /atom/movable/screen/alert/MouseEntered(location,control,params)
 	openToolTip(usr, src, params, title = name, content = desc, theme = alerttooltipstyle)
 
-
 /atom/movable/screen/alert/MouseExited()
 	closeToolTip(usr, src)
-
 
 //Gas alerts
 /atom/movable/screen/alert/not_enough_oxy
@@ -167,7 +164,6 @@ The box in your backpack has an oxygen tank and gas mask in it."
 	desc = "You're not getting enough methane. Find some good air before you pass out!"
 	icon_state = "not_enough_tox"
 //End gas alerts
-
 
 /atom/movable/screen/alert/fat
 	icon_state = "fat"
@@ -384,7 +380,6 @@ so as to remain in compliance with the most up-to-date laws."
 	desc = "Mech integrity is low."
 	icon_state = "low_mech_integrity"
 
-
 //GHOSTS
 //TODO: expand this system to replace the pollCandidates/CheckAntagonist/"choose quickly"/etc Yes/No messages
 /atom/movable/screen/alert/notify_cloning
@@ -504,13 +499,13 @@ so as to remain in compliance with the most up-to-date laws."
 		return usr.client.Click(master, location, control, params)
 	..() // Pass through to click_vr
 
+// LIFECYCLE: alerts are pooled per mob; reset and queued rather than collected.
 /atom/movable/screen/alert/Destroy()
 	..()
 	severity = 0
 	master_ref = null
 	screen_loc = ""
 	return QDEL_HINT_QUEUE
-
 
 /atom/movable/screen/alert/fat
 	name = "Full"
@@ -566,7 +561,6 @@ so as to remain in compliance with the most up-to-date laws."
 		if(H.revive_ready == REVIVING_DONE) // Sanity check.
 			H.hatch() // Hatch.
 */
-
 
 /atom/movable/screen/alert/open_ticket
 	icon = 'icons/logo.dmi'

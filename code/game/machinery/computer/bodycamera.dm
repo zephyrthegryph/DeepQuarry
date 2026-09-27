@@ -38,12 +38,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 	bradio.canhear_range = world.view // Same as default sight range.
 	power_change()
 
+REF_OWNED(/obj/machinery/computer/security/telescreen/bodycamera, list("bpinboard", "bradio"))
+
+// LIFECYCLE: stops showing its feed.
 /obj/machinery/computer/security/telescreen/bodycamera/Destroy()
 	if(showing)
 		stop_showing()
 	vis_contents.Cut()
-	QDEL_NULL(bpinboard)
-	QDEL_NULL(bradio)
 	return ..()
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/bodycam_toggle()

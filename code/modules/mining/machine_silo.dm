@@ -32,6 +32,7 @@
 		GLOB.ore_silo_default = src
 	// register_context()
 
+// LIFECYCLE: connected machines disconnect; the default silo clears.
 /obj/machinery/ore_silo/Destroy()
 	if(GLOB.ore_silo_default == src)
 		GLOB.ore_silo_default = null
@@ -55,7 +56,6 @@
 	SIGNAL_HANDLER
 
 	silo_log(context, "deposited", amount_inserted, item_inserted.name, mats_consumed)
-
 
 /obj/machinery/ore_silo/proc/log_sheets_ejected(datum/component/material_container/container, obj/item/stack/material/sheets, atom/context)
 	SIGNAL_HANDLER

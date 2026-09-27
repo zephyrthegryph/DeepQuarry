@@ -56,6 +56,7 @@ GLOBAL_REAL(Failsafe, /datum/controller/failsafe)
 	if(!QDELETED(src))
 		qdel(src) //when Loop() returns, we delete ourselves and let the mc recreate us
 
+// LIFECYCLE: MC singleton; stops its loop and asks for a hard delete.
 /datum/controller/failsafe/Destroy()
 	running = FALSE
 	..()

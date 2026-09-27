@@ -15,14 +15,7 @@
 	var/mob/living/soul_sharer
 	var/id // Optional ID, for tagging and finding specific instances.
 
-/datum/soul_link/Destroy()
-	if(soul_owner)
-		LAZYREMOVE(soul_owner.owned_soul_links, src)
-		soul_owner = null
-	if(soul_sharer)
-		LAZYREMOVE(soul_sharer.shared_soul_links, src)
-		soul_sharer = null
-	return ..()
+REF_BACKLIST(/datum/soul_link, list("soul_owner" = "owned_soul_links", "soul_sharer" = "shared_soul_links"))
 
 /datum/soul_link/proc/remove_soul_sharer(mob/living/sharer)
 	if(soul_sharer == sharer)
@@ -55,7 +48,6 @@
 	if(S.parse_args(arglist(args.Copy(2, 0))))
 		return S
 
-
 /////////////////
 // MULTISHARER //
 /////////////////
@@ -75,7 +67,6 @@
 
 /datum/soul_link/multi_sharer/remove_soul_sharer(mob/living/sharer)
 	LAZYREMOVE(soul_sharers, sharer)
-
 
 /////////////////
 // SHARED FATE //
@@ -117,8 +108,6 @@
 /datum/soul_link/shared_body/sharer_died(gibbed, mob/living/sharer)
 	if(soul_owner && soul_sharer && soul_sharer.mind)
 		soul_sharer.mind.transfer_to(soul_owner)
-
-
 
 //////////////////////
 // REPLACEMENT POOL //

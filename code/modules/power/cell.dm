@@ -38,7 +38,6 @@
 	var/material_quenched = FALSE
 	var/material_feedback_cooldown = 0
 
-
 	drop_sound = 'sound/items/drop/component.ogg'
 	pickup_sound = 'sound/items/pickup/component.ogg'
 
@@ -58,17 +57,6 @@
 	update_icon()
 	if(self_recharge)
 		PERIODIC_START(src, PERIODIC_SLOW)
-
-/obj/item/cell/Destroy()
-	if(self_recharge)
-		PERIODIC_STOP(src)
-	// Cells are normally owned through loc, but APCs also keep an explicit typed
-	// reference.  A blast may delete the cell without deleting its APC first.
-	if(istype(loc, /obj/machinery/power/apc))
-		var/obj/machinery/power/apc/holder = loc
-		if(holder.cell == src)
-			holder.cell = null
-	return ..()
 
 /obj/item/cell/get_cell()
 	return src
@@ -340,7 +328,6 @@
 	update_icon()
 	iterations--
 	addtimer(CALLBACK(src, PROC_REF(gradual_charge), iterations, multiplier, sparks, user), 1 SECOND, TIMER_DELETE_ME)
-
 
 /obj/item/cell/examine(mob/user)
 	. = ..()

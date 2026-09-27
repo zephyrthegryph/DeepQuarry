@@ -57,21 +57,6 @@
 	var/corrosion_resistance = 0
 	var/brittleness = 0
 
-/datum/material_batch/Destroy()
-	composition = null
-	impurities = null
-	process_history = null
-	contributors = null
-	feedstock_lots = null
-	test_results = null
-	process_counts = null
-	surface_layers = null
-	dissolved_gases = null
-	field_treatments = null
-	cost_ledger = null
-	structure = null
-	return ..()
-
 /datum/material_batch/proc/add_material(material_name, sheets = 1, datum/money_account/producer, source_purity = 100, lot_id)
 	var/datum/material/material = get_material_by_name(material_name)
 	if(!material || sheets <= 0)

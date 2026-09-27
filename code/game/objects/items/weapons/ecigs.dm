@@ -22,10 +22,7 @@
 	. = ..()
 	ec_cartridge = new cartridge_type(src)
 
-/obj/item/clothing/mask/smokable/ecig/Destroy()
-	// Un-nulled `ec_cartridge` pins the cartridge against GC.
-	QDEL_NULL(ec_cartridge)
-	return ..()
+REF_OWNED(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge")
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)
 	. = ..()

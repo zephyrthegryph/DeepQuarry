@@ -21,10 +21,6 @@
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
 	holder = new_holder
 
-/datum/rig_component_registry/Destroy()
-	holder = null
-	return ..()
-
 /*
  * proc/initialize_pieces()
  *

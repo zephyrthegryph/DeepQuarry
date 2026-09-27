@@ -133,17 +133,14 @@ SUBSYSTEM_DEF(throwing)
 
 	start_time = world.time
 
-/datum/thrownthing/Destroy()
-	UnregisterSignal(thrownthing, COMSIG_QDELETING)
-	UnregisterSignal(thrownthing, COMSIG_LIVING_TURF_COLLISION)
-	SSthrowing.processing -= thrownthing
-	SSthrowing.currentrun -= thrownthing
-	thrownthing.throwing = null
-	thrownthing = null
-	thrower = null
-	initial_target = null
-	callback = null
-	return ..()
+/// Phase 2: the throw leaves SSthrowing's run (keyed by the thrown movable).
+/datum/thrownthing/lifecycle_dematerialize()
+	. = ..()
+	if(thrownthing)
+		SSthrowing.processing -= thrownthing
+		SSthrowing.currentrun -= thrownthing
+		if(thrownthing.throwing == src)
+			thrownthing.throwing = null
 
 ///Defines the datum behavior on the thrownthing's qdeletion event.
 /datum/thrownthing/proc/on_thrownthing_qdel(atom/movable/source, force)

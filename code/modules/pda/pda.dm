@@ -348,7 +348,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	else
 		to_chat(usr, span_notice("You cannot do this while restrained."))
 
-
 /obj/item/pda/verb/verb_remove_pen()
 	set category = "Object"
 	set name = "Remove pen"
@@ -392,7 +391,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	update_programs()
 	update_shortcuts()
 	start_program(find_program(/datum/data/pda/app/main_menu))
-
 
 /obj/item/pda/proc/id_check(mob/user, choice)//To check for IDs; 1 for in-pda use, 2 for out of pda use.
 	if(choice == 1)
@@ -479,17 +477,15 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		explosion(T, 0, 0, 1, rand(1,2))
 	return
 
+REF_OWNED(/obj/item/pda, list("pai", "cartridge"))
+REF_OWNED_LIST(/obj/item/pda, "programs")
+
+// LIFECYCLE: its ID drops out unless flagged to go with it.
 /obj/item/pda/Destroy()
 	if (id && !delete_id && id.loc == src)
 		id.forceMove(get_turf(loc))
 	else
 		QDEL_NULL(id)
-
-	current_app = null
-	scanmode = null
-	QDEL_NULL(pai)
-	QDEL_LIST(programs)
-	QDEL_NULL(cartridge)
 	return ..()
 
 //Some spare PDAs in a box
@@ -513,7 +509,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 						/obj/item/cartridge/signal/science,
 						/obj/item/cartridge/quartermaster)
 	new newcart(src)
-
 
 // === merged from pda_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /obj/item/pda

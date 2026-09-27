@@ -31,9 +31,5 @@
 	else
 		new item_to_spawn(loc)
 
-
-/obj/effect/bspawner/Destroy()
-	. = ..()
-
 /obj/effect/bspawner/min30
 	time_to_end = 30 MINUTES

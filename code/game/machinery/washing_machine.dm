@@ -7,7 +7,6 @@
 #define BLOODY_CLOSED 7
 #define BLOODY_RUNNING 8
 
-
 /obj/machinery/washing_machine
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	maintenance_wrench_time = 4 SECONDS
@@ -36,13 +35,7 @@
 	default_apply_parts()
 	AddElement(/datum/element/climbable)
 
-/obj/machinery/washing_machine/Destroy()
-	for(var/atom/movable/washed_items in contents)
-		washed_items.forceMove(get_turf(src))
-	LAZYCLEARLIST(washing)
-	crayon = null
-	. = ..()
-
+REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(

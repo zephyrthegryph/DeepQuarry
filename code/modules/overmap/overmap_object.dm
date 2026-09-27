@@ -60,16 +60,13 @@
 		cam_background.del_on_map_removal = FALSE
 		update_screen()
 
+REF_OWNED(/obj/effect/overmap, list("cam_screen", "cam_background"))
+REF_OWNED_LIST(/obj/effect/overmap, "cam_plane_masters")
+
+// LIFECYCLE: its real appearance holder is detached.
 /obj/effect/overmap/Destroy()
 	real_appearance?.loc = null
 	real_appearance = null
-
-	if(cam_screen)
-		QDEL_NULL(cam_screen)
-	QDEL_LIST_NULL(cam_plane_masters)
-	if(cam_background)
-		QDEL_NULL(cam_background)
-
 	return ..()
 
 //Overlay of how this object should look on other skyboxes

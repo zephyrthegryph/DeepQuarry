@@ -15,9 +15,6 @@
 
 	var/list/areas_to_use
 
-/obj/turbolift_map_holder/Destroy()
-	return ..()
-
 REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 
 /obj/turbolift_map_holder/Initialize(mapload)

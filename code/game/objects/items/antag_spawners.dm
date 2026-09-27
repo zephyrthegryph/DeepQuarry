@@ -12,9 +12,7 @@
 	sparks.set_up(5, 0, src)
 	sparks.attach(loc)
 
-/obj/item/antag_spawner/Destroy()
-	QDEL_NULL(sparks)
-	return ..()
+REF_OWNED(/obj/item/antag_spawner, "sparks")
 
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
@@ -94,9 +92,6 @@
 /obj/item/antag_spawner/technomancer_apprentice/equip_antag(mob/technomancer_mob)
 	var/datum/antagonist/technomancer/antag_datum = SSantag_job.all_antag_types[MODE_TECHNOMANCER]
 	antag_datum.equip_apprentice(technomancer_mob)
-
-
-
 
 /obj/item/antag_spawner/syndicate_drone
 	name = "drone teleporter"

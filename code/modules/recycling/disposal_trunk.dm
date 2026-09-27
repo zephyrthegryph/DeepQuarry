@@ -11,6 +11,7 @@
 /obj/structure/disposalpipe/trunk/LateInitialize()
 	update()
 
+// LIFECYCLE: its linked machine unlinks.
 /obj/structure/disposalpipe/trunk/Destroy()
 	if(linked) //Linked to something, better unlink.
 		SEND_SIGNAL(linked, COMSIG_DISPOSAL_UNLINK)

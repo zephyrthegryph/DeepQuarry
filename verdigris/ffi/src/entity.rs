@@ -112,6 +112,18 @@ fn num(v: &ByondValue) -> Result<f32> {
     Ok(v.get_number()?)
 }
 
+/// Batched destroy's one unbind call (`doc/rewrite/init_and_turfs.md` §4.4):
+/// [`entity_unbind`] for every handle in `entities`, a list of `vg_entity`
+/// values. Zero/null entries are skipped; the first bad handle is an error
+/// after every earlier one has been freed.
+#[auxmacros::bind("/proc/entity_unbind_list")]
+fn entity_unbind_list(entities: ByondValue) -> Result<ByondValue> {
+    for entity in entities.get_list_values()? {
+        entity_unbind(entity)?;
+    }
+    Ok(ByondValue::null())
+}
+
 /// Generic unbind (J1's `pre_destroy()`, or today's earliest guaranteed
 /// point — see `on_dematerialize()` in `atom_materialize.dm`): detaches
 /// every domain's component from the entity through its registered handler,

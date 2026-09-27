@@ -53,9 +53,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	global_leak_token = TRUE
 	subscribe_network_keys()
 
-/obj/machinery/atmospherics/valve/shutoff/Destroy()
-	. = ..()
-
 /obj/machinery/atmospherics/valve/shutoff/attack_ai(mob/user as mob)
 	return src.attack_hand(user)
 
@@ -187,7 +184,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 			if(L.leaking)
 				close() // Found the leak!
 				return
-
 
 		if(istype(A, /obj/machinery/atmospherics/valve/shutoff))
 			var/obj/machinery/atmospherics/valve/shutoff/S = A

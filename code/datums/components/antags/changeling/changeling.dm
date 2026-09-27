@@ -108,6 +108,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		owner.add_language("Changeling")
 
 ///This is a component that is referenced to by the mind, so it should never be deleted
+// LIFECYCLE: antag state refuses deletion unless forced.
 /datum/component/antag/changeling/Destroy(force = FALSE)
 	if(!force)
 		return QDEL_HINT_LETMELIVE
@@ -433,10 +434,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 ///Changeling Panel
 /datum/changeling_panel
 	var/datum/component/antag/changeling/comp
-
-/datum/changeling_panel/Destroy(force)
-	comp = null
-	. = ..()
 
 /datum/changeling_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state

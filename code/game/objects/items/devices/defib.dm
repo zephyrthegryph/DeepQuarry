@@ -30,9 +30,7 @@
 		bcell = new bcell(src)
 	update_icon()
 
-/obj/item/defib_kit/Destroy()
-	. = ..()
-	QDEL_NULL(bcell)
+REF_OWNED(/obj/item/defib_kit, "bcell")
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc
@@ -76,7 +74,6 @@
 			return
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
-
 
 /obj/item/defib_kit/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/cell))
@@ -143,7 +140,6 @@
 /obj/item/defib_kit/compact/loaded
 	bcell = /obj/item/cell/high
 
-
 /obj/item/defib_kit/compact/combat
 	name = "combat defibrillator"
 	desc = "A belt-equipped blood-red defibrillator that can be rapidly deployed. Does not have the restrictions or safeties of conventional defibrillators and can revive through space suits."
@@ -156,7 +152,6 @@
 	combat = 1
 	safety = 0
 	chargetime = (1 SECONDS)
-
 
 //paddles
 
@@ -627,11 +622,6 @@
 	var/last_event = 0
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
-
-/obj/item/shockpaddles/standalone/Destroy()
-	. = ..()
-	if(fail_counter)
-		PERIODIC_STOP(src)
 
 /obj/item/shockpaddles/standalone/check_charge(charge_amt)
 	return 1

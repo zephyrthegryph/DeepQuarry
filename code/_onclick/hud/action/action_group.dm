@@ -26,11 +26,8 @@
 	actions = list()
 	src.owner = owner
 
-/datum/action_group/Destroy()
-	owner = null
-	QDEL_NULL(landing)
-	QDEL_LIST(actions)
-	return ..()
+REF_OWNED(/datum/action_group, "landing")
+REF_OWNED_LIST(/datum/action_group, "actions")
 
 /datum/action_group/proc/insert_action(atom/movable/screen/action, index)
 	if(action in actions)
@@ -200,7 +197,6 @@
 	// We only render the landing in this case, so we force it to be the second item displayed (Second rather then first since it looks nicer)
 	// Remember the number var indexes at 0
 	return ..(1 + (row_offset * column_max), landing)
-
 
 /datum/action_group/listed
 	pixel_north_offset = 6

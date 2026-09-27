@@ -85,13 +85,7 @@
 	..()
 	update_aiming()
 
-/obj/aiming_overlay/Destroy()
-	if(aiming_at)
-		aiming_at.aimed -= src
-		aiming_at = null
-	owner = null
-	aiming_with = null
-	return ..()
+REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
 	om_after(src, 0, PROC_REF(update_aiming))

@@ -23,9 +23,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 	if(portal_id)
 		link_portal()
 
-/obj/effect/simple_portal/Destroy()
-	. = ..()
-
 /obj/effect/simple_portal/Bumped(atom/movable/AM)
 	. = ..()
 	handle_teleport(AM)

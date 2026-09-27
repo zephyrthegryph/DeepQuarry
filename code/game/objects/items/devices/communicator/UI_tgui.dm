@@ -9,14 +9,8 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 
-/obj/item/communicator/Destroy()
-	if(cam_screen)
-		QDEL_NULL(cam_screen)
-	QDEL_LIST_NULL(cam_plane_masters)
-	if(cam_background)
-		QDEL_NULL(cam_background)
-	local_skybox = null
-	. = ..()
+REF_OWNED(/obj/item/communicator, list("cam_screen", "cam_background"))
+REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 
 // Proc: setup_tgui_camera()
 // Parameters: None
@@ -245,7 +239,6 @@
 				"ref" = "\ref[CIRC]"
 			)))
 
-
 	//Actual messages.
 	for(var/I in im_list)
 		im_list_ui.Add(list(list(
@@ -269,7 +262,6 @@
 				"Forecast" = english_list(planet.weather_holder.forecast, and_text = "&#8594;", comma_text = "&#8594;", final_comma_text = "&#8594;") // Unicode RIGHTWARDS ARROW.
 				)
 			weather.Add(list(W))
-
 
 	//Modules for homescreen.
 	for(var/list/R in modules)

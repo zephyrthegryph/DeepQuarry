@@ -56,11 +56,6 @@
 	for(var/datum/omni_port/P in ports)
 		P.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 
-/obj/machinery/atmospherics/omni/mixer/Destroy()
-	inputs.Cut()
-	output = null
-	. = ..()
-
 /obj/machinery/atmospherics/omni/mixer/sort_ports()
 	for(var/datum/omni_port/P in ports)
 		if(P.update)

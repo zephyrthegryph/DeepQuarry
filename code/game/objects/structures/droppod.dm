@@ -20,9 +20,7 @@
 		podfall(auto_open)
 	air = new
 
-/obj/structure/drop_pod/Destroy()
-	. = ..()
-	QDEL_NULL(air)
+REF_OWNED(/obj/structure/drop_pod, "air")
 
 /obj/structure/drop_pod/proc/podfall(auto_open)
 	var/turf/T = get_turf(src)

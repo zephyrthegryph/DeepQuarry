@@ -71,11 +71,6 @@
 	if(user)
 		src.preset_colors = user.read_preference(/datum/preference/text/preset_colors)
 
-/datum/tgui_color_picker/Destroy(force)
-	SStgui.close_uis(src)
-	state = null
-	. = ..()
-
 /**
  * Waits for a user's response to the tgui_color_picker's prompt before returning. Returns early if
  * the window was closed by the user.

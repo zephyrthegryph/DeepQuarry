@@ -300,6 +300,7 @@
 		engineering_evidence_id = null
 	engineering_reading = reading.Copy()
 
+// LIFECYCLE: releases its engineering evidence id.
 /obj/item/multitool/Destroy()
 	if(engineering_evidence_id)
 		SScontracts?.release_evidence(engineering_evidence_id)

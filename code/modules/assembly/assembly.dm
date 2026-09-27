@@ -29,10 +29,6 @@
 	COOLDOWN_DECLARE(next_activate)
 	var/activation_cooldown = 3 SECONDS
 
-/obj/item/assembly/Destroy()
-	holder = null
-	return ..()
-
 /obj/item/assembly/proc/holder_movement()
 	return
 

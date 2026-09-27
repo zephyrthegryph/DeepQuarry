@@ -128,6 +128,7 @@
 	entries = null
 	configuration_errors?.Cut()
 
+// LIFECYCLE: engine: wipes every config entry and the global config ref.
 /datum/controller/configuration/Destroy()
 	full_wipe()
 	config = null

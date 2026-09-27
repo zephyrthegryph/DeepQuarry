@@ -37,6 +37,4 @@
 	current_temp = LERP( D.temp_range[1], D.temp_range[2], temp_prog)
 	reagents.handle_reactions()
 
-/obj/distilling_tester/Destroy(force, ...)
-	QDEL_NULL(GM)
-	. = ..()
+REF_OWNED(/obj/distilling_tester, "GM")

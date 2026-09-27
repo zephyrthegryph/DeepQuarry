@@ -18,7 +18,6 @@
 	var/obj/machinery/power/solar_control/control = null
 	var/SOLAR_MAX_DIST = 60 // ition // ours are >40 away
 
-
 /obj/machinery/power/tracker/Initialize(mapload, glass_type)
 	. = ..()
 	update_icon()
@@ -30,6 +29,7 @@
 	. = ..()
 	connect_to_network()
 
+// LIFECYCLE: leaves its solar control computer.
 /obj/machinery/power/tracker/Destroy()
 	unset_control() //remove from control computer
 	. = ..()

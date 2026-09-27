@@ -132,6 +132,11 @@ SUBSYSTEM_DEF(vg)
 	if(entities_by_index[slot] == mover)
 		entities_by_index[slot] = null
 
+/// unregister() for a whole doomed set (batched destroy): one pass over `bound`.
+/datum/controller/subsystem/vg/proc/unregister_many(list/movers)
+	bound -= movers
+	sweep_index = min(sweep_index, length(bound) + 1)
+
 /// Gives `D` (any datum) its own entity handle, bound in `entities_by_index`
 /// like an atom's: `entity_lookup()` finds it. Returns the handle.
 /datum/controller/subsystem/vg/proc/bind_datum(datum/D)

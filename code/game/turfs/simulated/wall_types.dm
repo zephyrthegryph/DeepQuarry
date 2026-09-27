@@ -18,14 +18,12 @@
 /turf/simulated/wall/rpshull/Initialize(mapload)
 	. = ..(mapload,  MAT_PLASTEELHULL, MAT_PLASTEELHULL, MAT_PLASTEELHULL)
 
-
 /turf/simulated/wall/thull
 	icon_state = "hull-titanium"
 	rad_insulation = RAD_HEAVY_INSULATION
 
 /turf/simulated/wall/thull/Initialize(mapload)
 	. = ..(mapload,  MAT_TITANIUMHULL, null, MAT_TITANIUMHULL)
-
 
 /turf/simulated/wall/cult
 	icon_state = "cult"
@@ -44,7 +42,6 @@
 /turf/simulated/wall/gold/Initialize(mapload)
 	. = ..(mapload, MAT_GOLD)
 
-
 /turf/simulated/wall/r_lead
 	rad_insulation = RAD_EXTREME_INSULATION
 
@@ -59,14 +56,12 @@
 /turf/simulated/wall/snowbrick/Initialize(mapload)
 	. = ..(mapload, MAT_SNOWBRICK)
 
-
 /turf/simulated/wall/concrete
 	icon_state = "brick"
 	rad_insulation = RAD_HEAVY_INSULATION
 
 /turf/simulated/wall/concrete/Initialize(mapload)
 	. = ..(mapload, MAT_CONCRETE) //3strong
-
 
 // Kind of wondering if this is going to bite me in the butt.
 /turf/simulated/wall/skipjack/Initialize(mapload)
@@ -82,16 +77,13 @@
 /turf/simulated/wall/durasteel/Initialize(mapload)
 	. = ..(mapload, MAT_DURASTEEL, MAT_DURASTEEL)
 
-
 // ENd
 
 /turf/simulated/wall/wood/Initialize(mapload)
 	. = ..(mapload,  MAT_WOOD)
 
-
 /turf/simulated/wall/log_sif/Initialize(mapload)
 	. = ..(mapload,  MAT_SIFLOG)
-
 
 // Shuttle Walls
 /turf/simulated/shuttle/wall
@@ -154,7 +146,6 @@
 /turf/simulated/shuttle/wall/alien/Initialize(mapload)
 	. = ..()
 	update_light()
-
 
 /turf/simulated/shuttle/wall/Initialize(mapload)
 	. = ..()
@@ -231,7 +222,6 @@
 	icon_state = "void-hc"
 	hard_corner = 1
 	stripe_color = "#0000FF"
-
 
 /turf/simulated/shuttle/wall/voidcraft/no_join
 	name = "nojoin wall"
@@ -324,7 +314,6 @@
 /obj/structure/hull_corner/long_horiz/get_dirs_to_test()
 	return list(dir, turn(dir,90), turn(dir,-90))
 
-
 // Eris walls
 /turf/simulated/wall/eris
 	icon = 'icons/turf/wall_masks_eris.dmi'
@@ -356,7 +345,6 @@
 					if(decided_to_blend)
 						dirs += direction
 						break blend_obj_loop // breaks outer loop
-
 
 // Bay walls
 /turf/simulated/wall/bay
@@ -401,7 +389,6 @@
 					if(decided_to_blend)
 						dirs += direction
 						break blend_obj_loop // breaks outer loop
-
 
 /turf/simulated/wall/tgmc
 	icon = 'icons/turf/wall_masks_tgmc.dmi'
@@ -489,14 +476,11 @@
 /turf/simulated/wall/tgmc/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall)
 
-
 #define WINDOW_GLASS 0x1
 #define WINDOW_RGLASS 0x2
 
-
 #undef WINDOW_GLASS
 #undef WINDOW_RGLASS
-
 
 /turf/simulated/shuttle/wall/alien/blue
 	name = "hybrid wall"
@@ -522,7 +506,6 @@
 	opacity = 1
 	density = TRUE
 	blocks_air = 1
-
 
 /turf/simulated/flesh/attackby()
 	return
@@ -571,18 +554,15 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	density = TRUE
 	blocks_air = 1
 
-
 /turf/simulated/wall/rplastihull
 	icon_state = "rhull-plastitanium"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 /turf/simulated/wall/rplastihull/Initialize(mapload)
 	. = ..(mapload, MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL,MAT_PLASTITANIUMHULL)
 
-
 /turf/simulated/wall/diamond
 	icon_state = "diamond"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-
 
 /turf/simulated/wall/durasteel
 	icon_state = "durasteel"
@@ -604,7 +584,6 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	icon_state = "iron"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-
 /turf/simulated/wall/log_sif
 	icon_state = "log_sif"
 	icon = 'icons/turf/wall_masks_vr.dmi'
@@ -617,11 +596,9 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	icon_state = "lead"
 	icon = 'icons/turf/wall_masks_vr.dmi'
 
-
 /turf/simulated/wall/sandstone
 	icon_state = "sandstone"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-
 
 /turf/simulated/wall/skipjack
 	icon_state = "skipjack"
@@ -649,10 +626,6 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	. = ..(mapload, MAT_URANIUM)
 	RegisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(radiate))
 
-/turf/simulated/wall/uranium/Destroy()
-	UnregisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE)
-	. = ..()
-
 /turf/simulated/wall/uranium/radiate()
 	// SIGNAL_HANDLER is declared on /turf/simulated/wall/radiate(); this override
 	// inherits the contract and must not re-set the should_not_sleep pragma.
@@ -673,11 +646,9 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	last_event = world.time
 	active = FALSE
 
-
 /turf/simulated/wall/wood
 	icon_state = "wood"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-
 
 /turf/simulated/wall/stonelogs
 	icon_state = "stonelogs"

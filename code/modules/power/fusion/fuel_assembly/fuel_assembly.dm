@@ -35,10 +35,6 @@
 	last_event = world.time
 	active = FALSE
 
-/obj/item/fuel_assembly/Destroy()
-	return ..()
-
-
 /obj/item/fuel_assembly/Initialize(mapload, _material, _colour)
 	. = ..()
 	fuel_type = _material
@@ -80,7 +76,6 @@
 
 /obj/item/fuel_assembly/supermatter/Initialize(mapload)
 	. = ..(mapload, MAT_SUPERMATTER)
-
 
 // === merged from fuel_assembly_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/fuel_assembly/blitz

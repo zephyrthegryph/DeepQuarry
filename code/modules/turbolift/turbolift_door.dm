@@ -11,6 +11,7 @@
 	var/datum/turbolift/lift
 	var/datum/turbolift_floor/floor
 
+// LIFECYCLE: leaves its lift's and floor's door lists.
 /obj/machinery/door/airlock/lift/Destroy()
 	if(lift)
 		lift.doors -= src
@@ -45,7 +46,6 @@
 				cur_command = null // the door will just keep trying otherwise
 				return 0
 	return ..()
-
 
 // Vore specific code for /obj/machinery/door/airlock/lift
 

@@ -52,6 +52,7 @@
 	if(trunk)
 		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
 
+// LIFECYCLE: non-basic bins, the teleplumb crystal and flushed objects drop out.
 /obj/structure/toilet/Destroy()
 	if(bin)
 		if(bin.type == /obj/item/stock_parts/matter_bin) //Specifically, if this is a basic bin, you dont get it back. Other bins are returned.
@@ -68,7 +69,6 @@
 	swirlie_mob = null
 	teleplumb_dest_ref = null
 	. = ..()
-
 
 /obj/structure/toilet/update_icon()
 	icon_state = "[initial(icon_state)][open][cistern]"
@@ -423,8 +423,6 @@
 			else
 				to_chat(user, span_notice("You need a tighter grip."))
 
-
-
 /obj/machinery/shower
 	name = "shower"
 	desc = "The HS-451. Installed in the 2550s by the Hygiene Division."
@@ -445,10 +443,7 @@
 	reagents.add_reagent(reagent_id, reaction_volume)
 	soundloop = new(list(src), FALSE)
 
-/obj/machinery/shower/Destroy()
-	QDEL_NULL(soundloop)
-	QDEL_NULL(reagents)
-	return ..()
+REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
@@ -586,7 +581,6 @@
 	var/obj/effect/mist/mist = locate() in loc
 	if(mist && (!on || current_temperature == SHOWER_FREEZING))
 		qdel(mist)
-
 
 /obj/machinery/shower/Crossed(atom/movable/AM)
 	..()
@@ -1142,7 +1136,6 @@
 #undef SHOWER_TEMP_NORMAL
 #undef SHOWER_BOILING
 #undef SHOWER_TEMP_BOILING
-
 
 // === merged from watercloset_ch.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/structure/toilet/item/Initialize(mapload)

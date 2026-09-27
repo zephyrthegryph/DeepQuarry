@@ -23,10 +23,11 @@
 	. = ..()
 	get_targets()
 
-/mob/living/bot/cleanbot/Destroy()
+/// Phase 2: releases the turf it reserved.
+/mob/living/bot/cleanbot/lifecycle_dematerialize()
+	. = ..()
 	if(target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
-	return ..()
 
 /mob/living/bot/cleanbot/handleIdle()
 	if(!wet_floors && !spray_blood && vocal && prob(2))
@@ -98,7 +99,6 @@
 		if(istype(D, T))
 			return TRUE
 	return FALSE
-
 
 /mob/living/bot/cleanbot/handleAdjacentTarget()
 	if(get_turf(target) == src.loc)

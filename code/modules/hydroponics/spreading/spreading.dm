@@ -47,6 +47,7 @@
 	var/last_tick = 0
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
+// LIFECYCLE: neighbouring plants resume spreading.
 /obj/effect/plant/Destroy()
 	LAZYCLEARLIST(neighbors)
 	if(seed && seed.get_trait(TRAIT_SPREAD)==2)

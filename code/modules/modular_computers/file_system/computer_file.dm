@@ -31,6 +31,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	if(islist(md))
 		metadata = md.Copy()
 
+// LIFECYCLE: leaves its drive; a running program is killed.
 /datum/computer_file/Destroy()
 	if(!holder)
 		return ..()

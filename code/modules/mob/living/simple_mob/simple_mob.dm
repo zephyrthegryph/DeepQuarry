@@ -1,7 +1,6 @@
 // Reorganized and somewhat cleaned up.
 // AI code has been made into a datum, inside the AI module folder.
 
-
 /mob/living/simple_mob
 	name = "animal"
 	desc = ""
@@ -218,24 +217,13 @@
 
 	return ..()
 
+REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
+
+// LIFECYCLE: eye glow comes off and belly contents are released.
 /mob/living/simple_mob/Destroy()
-	default_language = null
-	if(myid)
-		qdel(myid)
-		myid = null
-
-	LAZYCLEARLIST(friends)
-	languages.Cut()
-	movement_target = null
-
 	if(has_eye_glow)
 		remove_eyes()
-
-	// Release belly contents before being gc'd!
-	if(mob_radio)
-		QDEL_NULL(mob_radio)
 	release_vore_contents()
-	LAZYCLEARLIST(prey_excludes)
 	return ..()
 
 //Client attached
@@ -248,7 +236,6 @@
 		init_vore(TRUE)
 	if(hasthermals)
 		add_verb(src, /mob/living/simple_mob/proc/hunting_vision) //So that maint preds can see prey through walls, to make it easier to find them.
-
 
 /mob/living/simple_mob/proc/pick_size()
 	set name = "Pick Size"
@@ -369,7 +356,6 @@
 		visible_emote("stares at the [movement_target] that [movement_target.loc] has with an unknowable gaze.")
 	movement_target = null
 
-
 /mob/living/simple_mob/say_quote(message, datum/language/speaking = null)
 	if(speak_emote.len)
 		. = pick(speak_emote)
@@ -475,7 +461,6 @@
 /// Simple mob slip logic, should be overriden if you want the simple mob to slip under certain conditions
 /mob/living/simple_mob/proc/animal_slip(wet_level, dirtslip)
 	return FALSE
-
 
 // === merged from simple_mob_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /mob/living/simple_mob
@@ -620,7 +605,6 @@
 	else
 		return ..()
 
-
 /mob/living/simple_mob/proc/CanPounceTarget(mob/living/M) //returns either FALSE or a %chance of success
 	if(!M.canmove || issilicon(M) || world.time < vore_pounce_cooldown) //eliminate situations where pouncing CANNOT happen
 		return FALSE
@@ -635,7 +619,6 @@
 		return FALSE
 	else
 		return max(0,(vore_pounce_successrate - (vore_pounce_falloff * TargetHealthPercent)))
-
 
 /mob/living/simple_mob/proc/PounceTarget(mob/living/M, successrate = 100)
 	vore_pounce_cooldown = world.time + 20 SECONDS // don't attempt another pounce for a while
@@ -942,7 +925,6 @@
 	T.injure(INJURY_PAIN, 20, null, src, flags = INJURE_ARMORED)
 	if(prob(75))
 		T.apply_effect(3, WEAKEN, armor_block)
-
 
 // === merged from simple_mob_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it

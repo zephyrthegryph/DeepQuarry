@@ -4,7 +4,6 @@
 	w_class = ITEMSIZE_NORMAL
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
-
 	var/tmp/image/blood_overlay = null //this saves our blood splatter overlay, which will be processed not to go over the edges of the sprite
 	var/randpixel = 6
 	var/abstract = 0
@@ -160,6 +159,7 @@
 		else
 			embed_chance = max(5, round(force/(w_class*3)))
 
+// LIFECYCLE: the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 /obj/item/Destroy()
 	// Machine components are normally located inside their owner. Detach the
 	// owner's strong bookkeeping reference before qdel continues so a component
@@ -184,7 +184,6 @@
 		remove_item_action(action)
 
 	return ..()
-
 
 /obj/item/click_ctrl(mob/user)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -271,7 +270,6 @@
 		return TRUE
 
 	return FALSE
-
 
 //Checks if the item is being held by a mob, and if so, updates the held icons
 /obj/item/proc/update_held_icon()
@@ -572,7 +570,6 @@
 	usr.UnarmedAttack(src)
 	return
 
-
 //This proc is executed when someone clicks the on-screen UI button.
 //The default action is attack_self().
 //Checks before we get to here are: mob is alive, mob is not restrained, paralyzed, asleep, resting, laying, item is on the mob.
@@ -857,7 +854,6 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 			if(icon_exists(species_sheet, icon_state)) //Checks to make sure our custom sheet actually HAS the icon_state
 				return species_sheet
 
-
 	//3: slot-specific sprite sheets
 	if(LAZYLEN(item_icons))
 		var/sheet = item_icons[slot_name]
@@ -987,7 +983,6 @@ closest to where the cursor has clicked on.
 Note: This proc can be overwritten to allow for different types of auto-alignment.
 */
 
-
 /obj/item/var/center_of_mass_x = 16
 /obj/item/var/center_of_mass_y = 16
 
@@ -1100,7 +1095,6 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_ITEM_TF_SPAWNPOINTS)
 	if(cleandesc)
 		desc = cleandesc
 
-
 // === merged from items_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
@@ -1143,5 +1137,4 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 		if(B.mode_flags & DM_FLAG_MUFFLEITEMS)
 			return TRUE
 	return FALSE
-
 

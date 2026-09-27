@@ -42,10 +42,10 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	pixel_y = rand(0, 10)
 	GLOB.chicken_count += 1
 
+// LIFECYCLE: the population cap counts it out.
 /mob/living/simple_mob/animal/passive/chicken/Destroy()
 	. = ..()
 	GLOB.chicken_count -= 1
-
 
 /mob/living/simple_mob/animal/passive/chicken/attackby(obj/item/O as obj, mob/user as mob)
 	if(istype(O, /obj/item/reagent_containers/food/snacks/grown)) //feedin' dem chickens
@@ -79,12 +79,6 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 		if(GLOB.chicken_count < GLOB.MAX_CHICKENS && prob(10))
 			PERIODIC_START(E, PERIODIC_SLOW)
 
-
-
-
-
-
-
 /obj/item/reagent_containers/food/snacks/egg/var/amount_grown = 0
 
 // This only starts normally if there are less than MAX_CHICKENS chickens
@@ -98,12 +92,6 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 			qdel(src)
 	else
 		PERIODIC_STOP(src)
-
-
-
-
-
-
 
 /mob/living/simple_mob/animal/passive/chick
 	name = "chick"

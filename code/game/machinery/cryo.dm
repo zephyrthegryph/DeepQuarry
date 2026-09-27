@@ -48,17 +48,7 @@
 	add_overlay(tank)
 	update_icon()
 
-/obj/machinery/atmospherics/unary/cryo_cell/Destroy()
-	// The occupant slot's own drop policy (SPILL, below) has already moved
-	// the occupant out by this point (the destroy transaction's contents
-	// phase runs before any Destroy()), so `contents` here no longer
-	// includes them.
-	var/turf/T = src.loc
-	T.contents += contents
-	if(beaker)
-		beaker.forceMove(get_step(loc, SOUTH)) //Beaker is carefully ejected from the wreckage of the cryotube
-		beaker = null
-	. = ..()
+REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/cryo
@@ -69,7 +59,6 @@
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// are its only writer now -- there is no generic field-link mechanism
 	// left to do it for them.
-
 
 /obj/machinery/atmospherics/unary/cryo_cell/machine_step()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
@@ -383,7 +372,6 @@
 
 /datum/data/function/proc/display()
 	return
-
 
 /obj/machinery/atmospherics/unary/cryo_cell/step_has_work()
 	return on && node

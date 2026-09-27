@@ -16,20 +16,14 @@
 	"Something twinkles faintly as you look at it.",
 	"It's mesmerizing to behold.")
 
+// LIFECYCLE: the crystal shatters into shards.
 /obj/structure/crystal/Destroy()
 	src.visible_message(span_bolddanger("[src] shatters!"))
-	if(prob(75))
-		new /obj/item/material/shard/phoron(src.loc)
-	if(prob(50))
-		new /obj/item/material/shard/phoron(src.loc)
-	if(prob(25))
-		new /obj/item/material/shard/phoron(src.loc)
-	if(prob(75))
-		new /obj/item/material/shard(src.loc)
-	if(prob(50))
-		new /obj/item/material/shard(src.loc)
-	if(prob(25))
-		new /obj/item/material/shard(src.loc)
+	for(var/chance in list(75, 50, 25))
+		if(prob(chance))
+			new /obj/item/material/shard/phoron(src.loc)
+		if(prob(chance))
+			new /obj/item/material/shard(src.loc)
 	. = ..()
 
 //todo: laser_act

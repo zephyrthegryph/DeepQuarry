@@ -15,9 +15,7 @@
 	monitor = new(src)
 	monitor.fuel_tag = id_tag
 
-/obj/machinery/computer/fusion_fuel_control/Destroy()
-	QDEL_NULL(monitor)
-	. = ..()
+REF_OWNED(/obj/machinery/computer/fusion_fuel_control, "monitor")
 
 /obj/machinery/computer/fusion_fuel_control/declare_interactions(list/into)
 	into += list(

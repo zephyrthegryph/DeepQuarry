@@ -42,13 +42,10 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		amounts[i] = 0
 
+// LIFECYCLE: packets are pooled; refuse deletion unless forced.
 /datum/damage_packet/Destroy(force)
 	if(!force)
-		// Pooled; nothing should qdel a packet.
 		return QDEL_HINT_LETMELIVE
-	source = null
-	attacker = null
-	weapon = null
 	return ..()
 
 /// Take a clean packet from the pool.
@@ -230,7 +227,6 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 		return 0
 	return ladder[band]
 
-
 // --- The sinks ------------------------------------------------------------------
 
 /// Apply a damage packet. Returns the amount actually applied after mitigation.
@@ -277,7 +273,6 @@ GLOBAL_LIST_EMPTY(damage_packet_pool)
 /// stay internal to the body, so only a living target takes them, directly.
 /atom/proc/receive_internal_injury(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
 	return 0
-
 
 // --- Adapter helpers --------------------------------------------------------------
 // Each builds the packet for one kind of entry point, delivers it and

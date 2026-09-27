@@ -11,9 +11,7 @@
 	. = ..()
 	monitor = new(src)
 
-/obj/machinery/computer/shutoff_monitor/Destroy()
-	QDEL_NULL(monitor)
-	. = ..()
+REF_OWNED(/obj/machinery/computer/shutoff_monitor, "monitor")
 
 /obj/machinery/computer/shutoff_monitor/declare_interactions(list/into)
 	into += list(

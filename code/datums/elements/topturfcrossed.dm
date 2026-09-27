@@ -7,11 +7,6 @@
 		return COMPONENT_INCOMPATIBLE
 	our_owner = parent
 
-/datum/component/topturfcrossed/Destroy(force)
-	. = ..()
-	our_owner = null
-	our_old_turf = null
-
 /datum/component/topturfcrossed/RegisterWithParent()
 	our_owner.AddComponent(/datum/component/recursive_move) // Required if we want to be useful at all
 	RegisterSignal(our_owner, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(handle_location_change))
@@ -56,8 +51,6 @@
 	if(crosser == our_owner)
 		return
 	our_owner.Crossed(crosser)
-
-
 
 //the bikehorn of testing
 /obj/item/bikehorn/topturf_testing

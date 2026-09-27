@@ -11,6 +11,7 @@
 	else
 		return name
 
+// LIFECYCLE: the base living mob: Life, modifiers, soul links, nest, transformed holder and organs.
 /mob/living/Destroy()
 	life_leave_z()
 	remove_all_modifiers(TRUE)
@@ -163,7 +164,6 @@
 /mob/living/proc/calculate_affecting_pressure(pressure)
 	return
 
-
 //sort of a legacy burn method for /electrocute, /shock, and the e_chair
 /mob/living/proc/burn_skin(burn_amount)
 	if(ishuman(src))
@@ -199,11 +199,9 @@
 //		to_world("[src] ~ [src.bodytemperature] ~ [temperature]")
 	return temperature
 
-
 // ++++ROCKDTBEN++++ MOB PROCS //END
 
 /mob/proc/get_contents()
-
 
 //Recursive function to find everything a mob is holding.
 /mob/living/get_contents(obj/item/storage/Storage = null)
@@ -342,7 +340,6 @@
 
 /mob/living/proc/UpdateDamageIcon()
 	return
-
 
 /mob/living/verb/Examine_OOC()
 	set name = "Examine Meta-Info (OOC)"
@@ -911,7 +908,6 @@
 		step(src, inertia_dir)
 */
 
-
 	item.throw_at(target, throw_range, item.throw_speed, src)
 	return TRUE
 
@@ -948,10 +944,8 @@
 /mob/living/proc/make_hud_overlays()
 	return
 
-
 /mob/living/proc/has_vision()
 	return !(has_status(EFFECT_BLINDED) || (disabilities & BLIND) || stat || blinded)
-
 
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
 	return makes_dirt
@@ -1095,7 +1089,6 @@
 	if(reopen)
 		ooc_notes_window(user)
 
-
 /mob/living/Initialize(mapload)
 	. = ..()
 	life_update_relevance()
@@ -1152,7 +1145,6 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
-
 
 // === merged from living_vr.dm during hard-fork de-suffix (chain-verified, vr->ch order preserved) ===
 /mob/living/Check_Shoegrip()

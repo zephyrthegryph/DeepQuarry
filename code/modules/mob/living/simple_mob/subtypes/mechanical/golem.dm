@@ -29,7 +29,6 @@
 	special_attack_min_range = 0
 	special_attack_max_range = 7
 
-
 	var/obj/item/technomancer_core/golem/core = null
 	var/obj/item/spell/active_spell = null // Shield and ranged spells
 	var/mob/living/master = null
@@ -59,9 +58,7 @@
 	core = new(src)
 	return ..()
 
-/mob/living/simple_mob/mechanical/technomancer_golem/Destroy()
-	qdel(core)
-	return ..()
+REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 
 /mob/living/simple_mob/mechanical/technomancer_golem/unref_spell()
 	active_spell = null
@@ -101,7 +98,6 @@
 
 /mob/living/simple_mob/mechanical/technomancer_golem/should_special_attack(atom/A)
 	return instability < 50 // Don't kill ourselves by casting everything.
-
 
 /mob/living/simple_mob/mechanical/technomancer_golem/do_special_attack(atom/A)
 	var/proximity = Adjacent(A)
@@ -154,7 +150,6 @@
 
 /datum/decl/mob_organ_names/golem
 	hit_zones = list("helmet", "cuirass", "left tasset", "right tasset", "left gauntlet", "right gauntlet", "weapon")
-
 
 // === merged from golem_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 // Cataloguer data below - strange we can catalogue space golem wizards

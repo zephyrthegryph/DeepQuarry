@@ -20,9 +20,7 @@
 	. = ..()
 	fuel = new fuel_type(src)
 
-/obj/item/mecha_parts/mecha_equipment/generator/Destroy()
-	qdel(fuel)
-	return ..()
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/generator, "fuel")
 
 /obj/item/mecha_parts/mecha_equipment/generator/periodic_step()
 	if(!chassis)
@@ -49,7 +47,6 @@
 	PERIODIC_STOP(src)
 	..()
 	return
-
 
 /obj/item/mecha_parts/mecha_equipment/generator/Topic(href, href_list)
 	..()
@@ -126,7 +123,6 @@
 		T.visible_message("The [src] suddenly disgorges a cloud of phoron.")
 	T.assume_air(GM)
 	return
-
 
 /obj/item/mecha_parts/mecha_equipment/generator/nuclear
 	name = "\improper ExoNuclear reactor"

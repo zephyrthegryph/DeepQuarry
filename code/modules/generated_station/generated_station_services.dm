@@ -26,10 +26,6 @@
 	..()
 	footprint = list()
 
-/datum/generated_station_module/Destroy()
-	footprint = null
-	return ..()
-
 /datum/generated_station_module/proc/tile_key(x, y)
 	return "[x],[y]"
 
@@ -73,9 +69,7 @@
 	var/y
 	var/obj/effect/landmark/generated_station_service/landmark
 
-/datum/generated_station_service_endpoint/Destroy()
-	QDEL_NULL(landmark)
-	return ..()
+REF_OWNED(/datum/generated_station_service_endpoint, "landmark")
 
 /// A route between two service endpoints, stored in planner-local coordinates.
 /datum/generated_station_service_route
@@ -91,19 +85,13 @@
 	path = list()
 	physical_markers = list()
 
-/datum/generated_station_service_route/Destroy()
-	QDEL_LIST(physical_markers)
-	path = null
-	return ..()
+REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 
 /obj/effect/landmark/generated_station_department_core
 	name = "generated department control point"
 	var/station_id
 	var/department_node_id
 	var/module_role
-
-/obj/effect/landmark/generated_station_department_core/Destroy()
-	return ..(TRUE)
 
 /obj/effect/landmark/generated_station_service
 	name = "generated station service endpoint"
@@ -112,17 +100,11 @@
 	var/department_node_id
 	var/service_id
 
-/obj/effect/landmark/generated_station_service/Destroy()
-	return ..(TRUE)
-
 /obj/effect/landmark/generated_station_service_route
 	name = "generated station service route"
 	invisibility = INVISIBILITY_ABSTRACT
 	var/station_id
 	var/service_id
-
-/obj/effect/landmark/generated_station_service_route/Destroy()
-	return ..(TRUE)
 
 /proc/generated_station_module_roles(department_id)
 	switch(department_id)

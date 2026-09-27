@@ -40,10 +40,7 @@
 		RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
 	on_move(parent, null, NORTH)
 
-/obj/effect/abstract/particle_holder/Destroy(force)
-	QDEL_NULL(particles)
-	parent = null
-	return ..()
+REF_OWNED(/obj/effect/abstract/particle_holder, "particles")
 
 /// Non movables don't delete contents on destroy, so we gotta do this
 /obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source)

@@ -48,11 +48,6 @@
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
 
-/datum/contract/medical_case_report/Destroy()
-	consent_record = null
-	evidence_requirement = null
-	return ..()
-
 /datum/contract/medical_case_report/proc/initialize_case(list/context)
 	target_ref = context?["target_ref"]
 	target_name = context?["target_name"]

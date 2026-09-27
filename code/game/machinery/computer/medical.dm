@@ -27,7 +27,6 @@
 	var/static/list/field_edit_questions
 	var/static/list/field_edit_choices
 
-
 /obj/machinery/computer/med_data/Initialize(mapload)
 	. = ..()
 	field_edit_questions = list(
@@ -62,11 +61,6 @@
 		"id_gender" = all_genders_text_list,
 		"blood_type" = list("A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"),
 	)
-
-/obj/machinery/computer/med_data/Destroy()
-	active1 = null
-	active2 = null
-	return ..()
 
 /obj/machinery/computer/med_data/verb/eject_id()
 	set category = "Object"
@@ -103,14 +97,12 @@
 	add_fingerprint(user)
 	tgui_interact(user)
 
-
 /obj/machinery/computer/med_data/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
 		ui = new(user, src, "MedicalRecords", "Medical Records") // 800, 380
 		ui.open()
 		ui.set_autoupdate(FALSE)
-
 
 /obj/machinery/computer/med_data/tgui_data(mob/user)
 	var/data[0]
@@ -421,7 +413,6 @@
 					return FALSE
 		else
 			return FALSE
-
 
 /**
  * Called when the print timer finishes

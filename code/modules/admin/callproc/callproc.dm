@@ -46,6 +46,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	return FALSE
 
 // Shit will break if this is allowed to be deleted
+// LIFECYCLE: the global proc-call handler refuses deletion unless forced.
 /mob/proccall_handler/Destroy(force)
 	if(GLOB.AdminProcCallHandler != src)
 		return ..()

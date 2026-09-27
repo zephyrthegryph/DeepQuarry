@@ -77,6 +77,7 @@
 			mode = DISPOSALMODE_CHARGED
 	update_icon()
 
+// LIFECYCLE: it unlinks and ejects its contents.
 /obj/machinery/disposal/Destroy()
 	if(power_retry_timer)
 		deltimer(power_retry_timer)
@@ -749,7 +750,6 @@
 	//..() //*cough
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //unlinks in destroy, too.
 	qdel(src) //Parent above should do this, but that's not a thing as of writing this.
-
 
 /obj/machinery/disposal/proc/clean_items()
 	// Clean items before sending them

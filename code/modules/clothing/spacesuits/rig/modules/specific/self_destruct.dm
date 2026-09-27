@@ -19,10 +19,7 @@
 	smoke = new /datum/effect/effect/system/smoke_spread/bad()
 	smoke.attach(src)
 
-/obj/item/rig_module/self_destruct/Destroy()
-	qdel(smoke)
-	smoke = null
-	return ..()
+REF_OWNED(/obj/item/rig_module/self_destruct, "smoke")
 
 /obj/item/rig_module/self_destruct/activate()
 	return

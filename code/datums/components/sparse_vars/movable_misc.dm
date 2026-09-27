@@ -76,12 +76,6 @@ GLOBAL_LIST_INIT(dq_parachuting_by_type, list(
 	var/hovering_set = FALSE
 	var/hovering_value = FALSE
 
-/datum/component/movable_state/Destroy(force)
-	recursive_listeners = null
-	affected_dynamic_lights = null
-	cloaked_selfimage = null
-	return ..()
-
 // ---- Helpers (global procs to avoid /atom/movable proc-table bloat). ----
 
 /proc/dq_get_belly_cycles(atom/movable/am)

@@ -47,6 +47,7 @@
 	if(start_damaged)
 		update_integrity(round(max_integrity * integrity_danger_mod))
 
+// LIFECYCLE: a component detaches from its mech.
 /obj/item/mecha_parts/component/Destroy()
 	detach()
 	return ..()
@@ -142,7 +143,6 @@
 		forceMove(get_turf(chassis))
 	chassis = null
 	return TRUE
-
 
 /// One nanopaste repair a second (a timed action on `site`) until whole or out of paste.
 /obj/item/mecha_parts/component/proc/paste_repair_step(mob/user, obj/item/stack/nanopaste/NP, atom/site)

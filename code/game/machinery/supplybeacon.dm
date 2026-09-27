@@ -113,6 +113,7 @@
 	target_drop_time = null
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))
 
+// LIFECYCLE: an active beacon deactivates.
 /obj/machinery/power/supply_beacon/Destroy()
 	if(use_power)
 		deactivate()

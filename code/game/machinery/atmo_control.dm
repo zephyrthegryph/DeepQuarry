@@ -128,11 +128,6 @@
 	if(frequency)
 		set_frequency(frequency)
 
-/obj/machinery/air_sensor/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
-	. = ..()
-
 /obj/machinery/air_sensor/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
 	user.visible_message("[user] unfastens \the [src].", span_notice("You have unfastened \the [src]."), "You hear ratcheting.")
@@ -209,11 +204,6 @@
 	var/list/sensor_information
 	var/datum/radio_frequency/radio_connection
 	circuit = /obj/item/circuitboard/air_management
-
-/obj/machinery/computer/general_air_control/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src, frequency)
-	. = ..()
 
 /obj/machinery/computer/general_air_control/declare_interactions(list/into)
 	into += list(

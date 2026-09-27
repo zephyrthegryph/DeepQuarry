@@ -29,7 +29,3 @@
 		owner.status_at_least(EFFECT_SLEEPING, 10)
 		owner.status_adjust(EFFECT_JITTERY, 1000)
 
-/datum/component/epilepsy_disability/Destroy(force = FALSE)
-	UnregisterSignal(owner, COMSIG_HANDLE_DISABILITIES)
-	owner = null
-	. = ..()

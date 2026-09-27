@@ -39,12 +39,6 @@
 	RefreshParts()
 	faketank = new
 
-/obj/machinery/bomb_tester/Destroy()
-	tank1 = null //Base machine Destroy()
-	tank2 = null //handles deleting contents
-	test_canister = null
-	. = ..()
-
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))
@@ -387,7 +381,6 @@
 #undef MODE_SINGLE
 #undef MODE_DOUBLE
 #undef MODE_CANISTER
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/bomb_tester/step_start_condition()

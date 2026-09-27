@@ -16,7 +16,6 @@
 	var/rate = 3
 	var/mega_energy = 1
 
-
 /obj/machinery/power/emitter/gyrotron/anchored
 	anchored = TRUE
 	state = 2
@@ -25,9 +24,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 
 /obj/machinery/power/emitter/gyrotron/Initialize(mapload)
 	default_apply_parts()
-	return ..()
-
-/obj/machinery/power/emitter/gyrotron/Destroy()
 	return ..()
 
 /obj/machinery/power/emitter/gyrotron/proc/set_beam_power(new_power)

@@ -40,7 +40,6 @@ GLOBAL_LIST_INIT(meteors_catastrophic, list(
 	))
 */
 
-
 ///////////////////////////////
 //Meteor spawning global procs
 ///////////////////////////////
@@ -157,8 +156,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	if(prob(10) && !istype(T, /turf/space)) //randomly takes a 'hit' from ramming
 		get_hit()
 
+// LIFECYCLE: the meteor count changes for whoever watches the storm.
 /obj/effect/meteor/Destroy()
-	walk(src,FALSE) //this cancels the walk_towards() proc
 	om_changed(GLOB.meteor_watch, CHANGE_METEORS)
 	return ..()
 
@@ -246,7 +245,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 /obj/effect/meteor/proc/meteor_effect(explode)
 	if(heavy)
 		shake_players()
-
 
 ///////////////////////
 //Meteor types
@@ -353,7 +351,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/meteor, REGISTRY_METEORS)
 	..()
 	if(prob(20))
 		explosion(src.loc,2,4,6,8)
-
 
 /obj/effect/meteor/dust/meatyore
 	name = "space blood"

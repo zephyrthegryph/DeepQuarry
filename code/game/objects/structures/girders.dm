@@ -28,11 +28,6 @@
 	set_material(our_material)
 	update_icon()
 
-/obj/structure/girder/Destroy()
-	if(girder_material && girder_material.products_need_process())
-		PERIODIC_STOP(src)
-	. = ..()
-
 /obj/structure/girder/periodic_step()
 	if(!radiate())
 		PERIODIC_STOP(src)

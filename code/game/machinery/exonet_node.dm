@@ -45,9 +45,7 @@
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \
 		electronically."
 
-/obj/machinery/exonet_node/Destroy()
-	QDEL_NULL(soundloop)
-	return ..()
+REF_OWNED(/obj/machinery/exonet_node, "soundloop")
 
 // Proc: update_icon()
 // Parameters: None
@@ -206,7 +204,6 @@
 	var/timestamp = "[stationdate2text()] [stationtime2text()]"
 	var/msg = "[timestamp] | FROM [origin_address] TO [target_address] | TYPE: [data_type] | CONTENT: [content]"
 	LAZYADD(logs, msg)
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/exonet_node/step_start_condition()

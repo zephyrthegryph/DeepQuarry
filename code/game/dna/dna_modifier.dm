@@ -52,7 +52,6 @@
 		newrecord.vars[A] = vars[A]
 	return newrecord
 
-
 /////////////////////////// DNA MACHINES
 /obj/machinery/dna_scannernew
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -102,6 +101,7 @@
 /obj/machinery/dna_scannernew/explosion_contents_severity(severity)
 	return dq_slot_blast_severity(src, severity)
 
+// LIFECYCLE: the occupant slot is holder-resolved: go_out() ejects and cleans up the occupant.
 /obj/machinery/dna_scannernew/Destroy()
 	eject_occupant()
 	. = ..()
@@ -171,7 +171,6 @@
 	set src in oview(1)
 	set category = "Object"
 	set name = "Enter DNA Scanner"
-
 
 	if(usr.stat != 0)
 		return
@@ -748,7 +747,6 @@
 		else
 			return FALSE
 
-
 /**
  * Triggers sleeve growing in a clonepod within the area
  *
@@ -856,7 +854,6 @@
 
 	WC.apply_effect(((radiation_intensity*3)+radiation_duration*3), IRRADIATE, check_protection = 0)
 
-
 /obj/machinery/computer/scan_consolenew/proc/do_transfer(lock_state, bufferId)
 	irradiating = 0
 	connected.locked = lock_state
@@ -881,8 +878,6 @@
 			H.sync_organ_dna()
 
 	WC.apply_effect(rand(20,50), IRRADIATE, check_protection = 0)
-
-
 
 #undef DNA_BLOCK_SIZE
 

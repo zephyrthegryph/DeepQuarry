@@ -174,11 +174,6 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 			if(faction_id in GLOB.reputation_factions)
 				reputations[faction_id] = CLAMP(round(initial_values[faction_id]), REPUTATION_MINIMUM, REPUTATION_MAXIMUM)
 
-/datum/faction_reputation_ledger/Destroy()
-	reputations = null
-	positive_reputation_earned = null
-	return ..()
-
 /datum/faction_reputation_ledger/proc/get_reputation(faction_id)
 	if(!(faction_id in GLOB.reputation_factions))
 		return null
@@ -232,16 +227,8 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	for(var/department in get_reputation_departments())
 		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
 
-/datum/station_faction_relations/Destroy()
-	for(var/department in department_ledgers)
-		qdel(department_ledgers[department])
-	department_ledgers = null
-	for(var/account_number in personal_ledgers)
-		qdel(personal_ledgers[account_number])
-	personal_ledgers = null
-	QDEL_LIST(agent_records)
-	agent_records = null
-	return ..()
+REF_OWNED_VALUES(/datum/station_faction_relations, list("department_ledgers", "personal_ledgers"))
+REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 
 /datum/station_faction_relations/proc/get_reputation_departments()
 	return list(
@@ -316,11 +303,6 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 /datum/faction_agent_record/New()
 	. = ..()
 	investigation_facts = list()
-
-/datum/faction_agent_record/Destroy()
-	agent_mind = null
-	investigation_facts = null
-	return ..()
 
 /proc/faction_agent_tier_name(tier)
 	switch(tier)
