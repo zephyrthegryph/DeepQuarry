@@ -246,4 +246,5 @@
 		selected_option = null
 
 /obj/machinery/appliance/cooker/declared_owned_vars()
-	return list("thermostat_watch")
+	. = ..()
+	. = (. || list()) + "thermostat_watch"

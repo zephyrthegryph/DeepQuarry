@@ -341,7 +341,6 @@
 		if(deployed)
 			undeploy()
 		revert_shell() // To get it out of the GLOB list.
-	QDEL_NULL(wires)
 	sprite_datum = null
 	QDEL_NULL(robotact)
 	set_cell(null)

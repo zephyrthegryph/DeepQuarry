@@ -205,4 +205,5 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	return TRUE
 
 /datum/component/burning/declared_owned_vars()
-	return list("cool_watch")
+	. = ..()
+	. = (. || list()) + "cool_watch"

@@ -121,11 +121,6 @@
 		if(!found)
 			log_mapping("A radio [src] at [x],[y],[z] specified bluespace prelink IDs, but the machines with corresponding IDs ([bs_tx_preload_id], [bs_rx_preload_id]) couldn't be found.")
 
-/obj/item/radio/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
-
 /obj/item/radio/proc/recalculateChannels()
 	return
 

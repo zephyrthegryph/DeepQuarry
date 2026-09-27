@@ -74,11 +74,6 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	set_wires(new /datum/wires/suit_storage_unit(src))
 
-/obj/machinery/suit_cycler/Destroy()
-	qdel(wires)
-	wires = null
-	return ..()
-
 /obj/machinery/suit_cycler/proc/load_departments()
 	var/list/typecache = GLOB.suit_cycler_typecache[type]
 	// First of our type

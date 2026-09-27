@@ -63,10 +63,8 @@
 	// L1: the destroy transaction's contents phase already spilled the stock
 	// and contents before this ever runs, while it was still valid, so the
 	// item records forget() correctly before they go here.
-	qdel(wires)
 	for(var/A in item_records)	//Get rid of item records.
 		qdel(A)
-	wires = null
 	if(persistent)
 		SSpersistence.forget_value(src, persistent)
 	QDEL_NULL(soundloop)

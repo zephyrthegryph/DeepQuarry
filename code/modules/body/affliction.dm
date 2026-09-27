@@ -63,6 +63,7 @@
 
 	// --- Treatment ---
 	/// TREAT_* -> severity decrease per tick at full treatment level.
+	// dm-health: type assoc<text,num>?
 	var/list/treated_by
 	/// TREAT_* -> severity increase per tick at full level.
 	var/list/worsened_by_tags
@@ -103,6 +104,7 @@
 	/// INJURY_* kind, or "internal" for organ integrity damage.
 	var/organ_damage_type
 	var/organ_damage_per_tick = 0
+	// dm-health: type list<text>?
 	var/list/organ_damage_targets
 	/// Lesion kind (/datum/affliction/lesion typepath) inflicted by "internal"
 	/// organ damage. Null = the organ's default (chem-caused -> toxic injury).
@@ -113,6 +115,7 @@
 	var/category = "General"
 	var/subcategory
 	/// symptom typepath -> weight 0..100
+	// dm-health: type assoc<typepath</datum/affliction_symptom>,num>?
 	var/list/symptom_pool
 	var/min_symptoms = 1
 	var/max_symptoms = 3

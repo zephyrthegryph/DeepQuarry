@@ -52,6 +52,12 @@
 /// One stage of a staged pharmacological condition: its symptom pool, how
 /// many of those symptoms show, and any other stage keys (organ damage,
 /// "factors", "always_spawns", emotes...).
+// dm-health: alias ChemStageExtra = record<always_spawns?:list<typepath</datum/affliction>>,factors?:alist<num,num>,organ_damage_per_tick?:num,organ_damage_targets?:list<text>,organ_damage_type?:oneof<num,text>,spontaneous_emote_prob?:num,spontaneous_emotes?:list<text>>
+// dm-health: alias ChemStage = merge<record<symptom_pool:assoc<typepath</datum/affliction_symptom>,num>?,min_symptoms:num?,max_symptoms:num?>,@ChemStageExtra>
+// dm-health: param symptom_pool assoc<typepath</datum/affliction_symptom>,num>
+// dm-health: param min_symptoms num
+// dm-health: param max_symptoms num
+// dm-health: param extra @ChemStageExtra?
 /proc/chem_stage(list/symptom_pool, min_symptoms, max_symptoms, list/extra)
 	. = list("symptom_pool" = symptom_pool, "min_symptoms" = min_symptoms, "max_symptoms" = max_symptoms)
 	if(extra)
@@ -59,5 +65,9 @@
 			.[key] = extra[key]
 
 /// The Mild -> Severe -> Critical stage table every overdose uses.
+// dm-health: param mild @ChemStage
+// dm-health: param severe @ChemStage
+// dm-health: param critical @ChemStage
+// dm-health: returns assoc<text,@ChemStage?>
 /proc/overdose_stages(list/mild, list/severe, list/critical)
 	return list("Mild" = mild, "Severe" = severe, "Critical" = critical)

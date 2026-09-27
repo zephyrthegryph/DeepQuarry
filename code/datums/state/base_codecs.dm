@@ -43,6 +43,13 @@
 	variant = vars["variant"]
 	apply_variant()
 
+// Generated in Initialize(), so a sampled pristine instance can't stand in for another's.
+/obj/item/clothing/head/fishing/state_nondeterministic_list_vars()
+	return ..() + list("item_state_slots")
+
+/obj/item/trash/material/state_nondeterministic_list_vars()
+	return ..() + list("material_mix")
+
 /obj/machinery/state_codecs()
 	return ..() + list(
 		"circuit" = /datum/state_codec/child,

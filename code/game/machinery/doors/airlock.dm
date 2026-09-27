@@ -1286,11 +1286,6 @@ About the new airlock wires panel:
 	update_icon()
 	check_for_freeze()
 
-/obj/machinery/door/airlock/Destroy()
-	qdel(wires)
-	wires = null
-	. = ..()
-
 // Most doors will never be deconstructed over the course of a round,
 // so as an optimization defer the creation of electronics until
 // the airlock is deconstructed

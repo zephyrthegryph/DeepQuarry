@@ -89,8 +89,6 @@
 	if(assembly)
 		qdel(assembly)
 		assembly = null
-	qdel(wires)
-	wires = null
 	client_huds = null
 	network = null
 	return ..()

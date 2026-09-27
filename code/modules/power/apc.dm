@@ -218,8 +218,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		area.power_environ = 0
 		area.power_change()
 
-	qdel(wires)
-	wires = null
 	qdel(terminal)
 	terminal = null
 	if(cell)

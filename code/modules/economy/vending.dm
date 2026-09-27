@@ -193,8 +193,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 			R.forget(thing)
 
 /obj/machinery/vending/Destroy()
-	qdel(wires)
-	wires = null
 	qdel(coin)
 	coin = null
 	QDEL_NULL_LIST(product_records)

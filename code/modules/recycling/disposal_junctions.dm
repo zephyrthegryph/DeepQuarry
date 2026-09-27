@@ -69,7 +69,6 @@
 	name = initial(name)
 
 /obj/structure/disposalpipe/sortjunction/Destroy()
-	QDEL_NULL(wires)
 	if(sortType)
 		LAZYREMOVE(GLOB.tagger_locations["[sortType]"], get_z(src))
 	. = ..()

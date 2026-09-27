@@ -159,8 +159,6 @@
 
 /obj/machinery/alarm/Destroy()
 	unregister_radio(src, frequency)
-	qdel(wires)
-	wires = null
 	LAZYREMOVE(alarm_area.air_alarms, src)
 	if(om_resolve(alarm_area.main_air_alarm) == src)
 		alarm_area.elect_main_air_alarm(TRUE)

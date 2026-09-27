@@ -147,8 +147,6 @@
 	QDEL_NULL(power_system)
 
 	installed_modules = null
-	qdel(wires)
-	wires = null
 	qdel(spark_system)
 	spark_system = null
 	return ..()
