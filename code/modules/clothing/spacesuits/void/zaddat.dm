@@ -45,7 +45,10 @@
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	suit_style = tgui_input_list(M, "Which suit style would you like?", "Suit Style", list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
+	var/_answer_a1 = rerun_prompt(M, "a1", list("kind" = "list", "message" = "Which suit style would you like?", "title" = "Suit Style", "choices" = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")), VERB_REF(custom_suit), args)
+	if(isnull(_answer_a1))
+		return
+	suit_style = _answer_a1
 	switch(suit_style)
 		if("Engineer")
 			name = "\improper Engineer's Guild Shroud"
@@ -179,7 +182,10 @@
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	suit_style = tgui_input_list(M, "Which suit style would you like?", "Select Style", list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
+	var/_answer_a2 = rerun_prompt(M, "a2", list("kind" = "list", "message" = "Which suit style would you like?", "title" = "Select Style", "choices" = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")), TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args)
+	if(isnull(_answer_a2))
+		return
+	suit_style = _answer_a2
 	switch(suit_style)
 		if("Spacer")
 			name = "\improper Security Spacer's Guild Shroud"
@@ -255,7 +261,10 @@
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	suit_style = tgui_input_list(M, "Which suit style would you like?", "Select Style", list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
+	var/_answer_a3 = rerun_prompt(M, "a3", list("kind" = "list", "message" = "Which suit style would you like?", "title" = "Select Style", "choices" = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")), TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args)
+	if(isnull(_answer_a3))
+		return
+	suit_style = _answer_a3
 	switch(suit_style)
 		if("Engineer")
 			name = "\improper Rad-Plated Engineer's Guild Shroud"

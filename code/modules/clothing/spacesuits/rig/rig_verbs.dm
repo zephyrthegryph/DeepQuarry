@@ -219,7 +219,9 @@
 		if(module.selectable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = tgui_input_list(usr, "Which module do you wish to select?", "Select Module", selectable)
+	var/obj/item/rig_module/module = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Which module do you wish to select?", "title" = "Select Module", "choices" = selectable), VERB_REF(select_module), args)
+	if(isnull(module))
+		return
 
 	if(!istype(module))
 		selected_module = null
@@ -255,7 +257,9 @@
 		if(module.toggleable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = tgui_input_list(usr, "Which module do you wish to toggle?", "Toggle Module", selectable)
+	var/obj/item/rig_module/module = rerun_prompt(usr, "a2", list("kind" = "list", "message" = "Which module do you wish to toggle?", "title" = "Toggle Module", "choices" = selectable), VERB_REF(toggle_module), args)
+	if(isnull(module))
+		return
 
 	if(!istype(module))
 		return
@@ -293,7 +297,9 @@
 		if(module.usable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = tgui_input_list(usr, "Which module do you wish to engage?", "Engage Module", selectable)
+	var/obj/item/rig_module/module = rerun_prompt(usr, "a3", list("kind" = "list", "message" = "Which module do you wish to engage?", "title" = "Engage Module", "choices" = selectable), VERB_REF(engage_module), args)
+	if(isnull(module))
+		return
 
 	if(!istype(module))
 		return

@@ -387,7 +387,9 @@
 	set desc = "Change the color of the helmet"
 	set category = "Object"
 
-	var/choice = tgui_input_list(usr, "Select a new color:", "[src] Color", list("White", "Blue", "Purple", "Yellow", "Red", "Green"))
+	var/choice = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Select a new color:", "title" = "[src] Color", "choices" = list("White", "Blue", "Purple", "Yellow", "Red", "Green")), VERB_REF(select_color), args)
+	if(isnull(choice))
+		return
 	if(!choice)
 		return
 	icon_state = "moebiushelm_[choice]"
