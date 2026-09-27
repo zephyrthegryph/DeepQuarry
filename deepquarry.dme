@@ -491,6 +491,8 @@
 #include "code\controllers\globals.dm"
 #include "code\controllers\hooks-defs.dm"
 #include "code\controllers\hooks.dm"
+#include "code\controllersoot_dependencies.dm"
+#include "code\controllers\boot_dependencies.dm"
 #include "code\controllers\master.dm"
 #include "code\controllers\subsystem.dm"
 #include "code\controllers\configuration\config_entry.dm"
