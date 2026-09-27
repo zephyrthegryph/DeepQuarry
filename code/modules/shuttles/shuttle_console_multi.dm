@@ -25,7 +25,9 @@
 
 	switch(action)
 		if("pick")
-			var/dest_key = tgui_input_list(ui.user, "Choose shuttle destination", "Shuttle Destination", shuttle.get_destinations())
+			var/dest_key = act_prompt(ui.user, action, params, ui, "k28", list("kind" = "list", "message" = "Choose shuttle destination", "title" = "Shuttle Destination", "choices" = shuttle.get_destinations()))
+			if(isnull(dest_key))
+				return
 			if(dest_key && CanInteract(ui.user, GLOB.tgui_default_state))
 				shuttle.set_destination(dest_key, ui.user)
 			return TRUE

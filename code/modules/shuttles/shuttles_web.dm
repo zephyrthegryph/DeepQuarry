@@ -158,7 +158,9 @@
 	if(!can_rename)
 		to_chat(user, span_warning("You can't rename this vessel."))
 		return
-	var/new_name = tgui_input_text(user, "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", "Rename Shuttle", visible_name)
+	var/new_name = rerun_prompt(user, "k161", list("kind" = "text", "message" = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", "title" = "Rename Shuttle", "default" = visible_name), PROC_REF(rename_shuttle), args)
+	if(isnull(new_name))
+		return
 	var/sanitized_name = sanitizeName(new_name, MAX_NAME_LEN, TRUE)
 	if(sanitized_name)
 		// can_rename = FALSE // Removal
@@ -395,11 +397,16 @@
 	if(MS.skip_docking_checks() || MS.check_undocked())
 		return 1
 
-	var/choice = tgui_alert(user, "The shuttle is currently docked! Please undock before continuing.","Error",list("Cancel","Force Launch"))
+	var/choice = rerun_prompt(user, "k398", list("message" = "The shuttle is currently docked! Please undock before continuing.", "title" = "Error", "choices" = list("Cancel","Force Launch")), PROC_REF(check_docking), args)
+	if(isnull(choice))
+		return
 	if(!choice || choice == "Cancel")
 		return 0
 
-	choice = tgui_alert(user, "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", "Force Launch", list("Force Launch", "Cancel"))
+	var/_answer_k402 = rerun_prompt(user, "k402", list("message" = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", "title" = "Force Launch", "choices" = list("Force Launch", "Cancel")), PROC_REF(check_docking), args)
+	if(isnull(_answer_k402))
+		return
+	choice = _answer_k402
 	if(!choice || choice == "Cancel")
 		return 0
 
