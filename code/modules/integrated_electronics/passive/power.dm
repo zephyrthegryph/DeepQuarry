@@ -157,7 +157,6 @@
 				if(reagents.remove_reagent(I, 1))
 					assembly.give_power(fuel[I])
 
-
 // For really fat machines.
 /obj/item/integrated_circuit/passive/power/relay/large
 	name = "large tesla power relay"
@@ -208,9 +207,7 @@
 	IO = new(src)
 	return ..()
 
-/obj/item/integrated_circuit/passive/power/powernet/Destroy()
-	qdel(IO)
-	return ..()
+REF_OWNED(/obj/item/integrated_circuit/passive/power/powernet, "IO")
 
 /obj/item/integrated_circuit/passive/power/powernet/on_anchored()
 	IO.connect_to_network()

@@ -13,9 +13,7 @@
 	EA = new(src)
 	EA.holder = src
 
-/obj/item/assembly/electronic_assembly/Destroy()
-	QDEL_NULL(EA)
-	return ..()
+REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 
 /obj/item/assembly/electronic_assembly/attackby(obj/item/I as obj, mob/user as mob)
 	if(opened)
@@ -70,7 +68,6 @@
 
 	toggle_open(usr)
 
-
 /obj/item/electronic_assembly/device
 	name = "electronic device"
 	icon_state = "setup_device"
@@ -79,7 +76,6 @@
 	w_class = ITEMSIZE_TINY
 	max_components = IC_COMPONENTS_BASE * 3/4
 	max_complexity = IC_COMPLEXITY_BASE * 3/4
-
 
 /obj/item/electronic_assembly/device/Initialize(mapload)
 	. = ..()

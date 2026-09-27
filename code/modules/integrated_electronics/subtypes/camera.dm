@@ -33,10 +33,7 @@
 	camera = new(src, camera_network_id, see_dark)
 	update_camera_name()
 
-/obj/item/integrated_circuit/output/video_camera/Destroy()
-	if(camera)
-		QDEL_NULL(camera)
-	return ..()
+REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 
 /obj/item/integrated_circuit/output/video_camera/on_data_written()
 	update_camera_name()

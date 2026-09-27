@@ -161,8 +161,6 @@
 	push_data()
 	activate_pin(2)
 
-
-
 /obj/item/integrated_circuit/input/adv_med_scanner
 
 	name = "integrated advanced medical analyzer"
@@ -411,10 +409,6 @@
 		O.push_data()
 		activate_pin(3)
 
-
-
-
-
 /obj/item/integrated_circuit/input/signaler
 	name = "integrated signaler"
 	desc = "Signals from a signaler can be received with this, allowing for remote control.  Additionally, it can send signals as well."
@@ -456,7 +450,6 @@
 		set_frequency(new_freq)
 	if(isnum(new_code))
 		code = new_code
-
 
 /obj/item/integrated_circuit/input/signaler/do_work() // Sends a signal.
 	if(!radio_connection)
@@ -605,7 +598,6 @@
 	push_data()
 	activate_pin(2)
 
-
 /obj/item/integrated_circuit/input/microphone
 	name = "microphone"
 	desc = "Useful for spying on people or for voice activated machines."
@@ -627,9 +619,6 @@
 /obj/item/integrated_circuit/input/microphone/Initialize(mapload)
 	. = ..()
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-
-/obj/item/integrated_circuit/input/microphone/Destroy()
-	return ..()
 
 /obj/item/integrated_circuit/input/microphone/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE)
@@ -797,7 +786,6 @@
 	set_pin_data(IC_OUTPUT, 2, null)
 	set_pin_data(IC_OUTPUT, 3, null)
 	if(AM)
-
 
 		var/obj/item/cell/cell = null
 		if(istype(AM, /obj/item/cell)) // Is this already a cell?

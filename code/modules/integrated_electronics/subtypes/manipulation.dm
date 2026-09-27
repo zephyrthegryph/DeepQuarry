@@ -25,10 +25,6 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 	power_draw_per_use = 50 // The targeting mechanism uses this.  The actual gun uses its own cell for firing if it's an energy weapon.
 
-/obj/item/integrated_circuit/manipulation/weapon_firing/Destroy()
-	installed_gun = null // It will be qdel'd by ..() if still in our contents
-	return ..()
-
 /obj/item/integrated_circuit/manipulation/weapon_firing/attackby(obj/O, mob/user)
 	if(istype(O, /obj/item/gun))
 		var/obj/item/gun/gun = O
@@ -151,7 +147,6 @@
 			var/datum/integrated_io/wanted_dir = inputs[1]
 			if(isnum(wanted_dir.data))
 				step(assembly, wanted_dir.data)
-
 
 /obj/item/integrated_circuit/manipulation/grenade
 	name = "grenade primer"
