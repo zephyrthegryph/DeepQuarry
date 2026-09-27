@@ -73,10 +73,7 @@
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"
 	w_class = n_ceil(CLAMP((length(ingredients)/2),2,4))
 
-/obj/item/reagent_containers/food/snacks/csandwich/Destroy()
-	for(var/obj/item/O in ingredients)
-		qdel(O)
-	. = ..()
+REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/csandwich, "ingredients")
 
 /obj/item/reagent_containers/food/snacks/csandwich/examine(mob/user)
 	. = ..()

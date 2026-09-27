@@ -85,11 +85,13 @@
 	soundloop = new(list(src), FALSE)
 	update_icon()
 
+REF_OWNED(/obj/machinery/microwave, "soundloop")
+
+// LIFECYCLE: its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/Destroy()
 	dispose(FALSE)
 	if(paicard)
-		ejectpai() // Lets not delete the pAI.
-	QDEL_NULL(soundloop)
+		ejectpai()
 	return ..()
 
 /*******************

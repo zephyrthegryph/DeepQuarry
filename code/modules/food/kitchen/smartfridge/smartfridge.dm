@@ -59,17 +59,13 @@
 		for(var/datum/stored_item/I as anything in item_records)
 			I.forget(thing)
 
+REF_OWNED(/obj/machinery/smartfridge, list("wires", "soundloop"))
+REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
+
+// LIFECYCLE: a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/Destroy()
-	// L1: the destroy transaction's contents phase already spilled the stock
-	// and contents before this ever runs, while it was still valid, so the
-	// item records forget() correctly before they go here.
-	qdel(wires)
-	for(var/A in item_records)	//Get rid of item records.
-		qdel(A)
-	wires = null
 	if(persistent)
 		SSpersistence.forget_value(src, persistent)
-	QDEL_NULL(soundloop)
 	return ..()
 
 /obj/machinery/smartfridge/proc/accept_check(obj/item/O)
@@ -332,7 +328,6 @@
 			return TRUE
 	return ..()
 
-
 /*
  * Expert Jobs
  */
@@ -387,6 +382,7 @@
 		return 1
 	return 0
 
+// LIFECYCLE: records shared with the upper unit must not be deleted with it.
 /obj/machinery/smartfridge/chemistry/chemvator/down/Destroy()
 	if(attached)
 		attached.attached = null // clear the upper unit's back-reference to us
@@ -407,7 +403,6 @@
 		item_records = attached.item_records
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
-
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/smartfridge/step_start_condition()
