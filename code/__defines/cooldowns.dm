@@ -26,8 +26,6 @@
 */
 
 // random cooldowns
-#define COOLDOWN_VENOM_MILKING "venom_milking"
-#define COOLDOWN_SHIP_REFRESH "ship_refresh"
 
 // admin verb cooldowns
 #define COOLDOWN_INTERNET_SOUND "internet_sound"

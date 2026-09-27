@@ -85,6 +85,10 @@
 /obj/item/reagent_containers/glass/self_feed_message(mob/user)
 	balloon_alert(user, "swallowed from \the [src]")
 
+/// When this mob's venom can next be expressed into a beaker.
+/mob/living
+	COOLDOWN_DECLARE(venom_milking_cooldown)
+
 /obj/item/reagent_containers/glass/proc/attempt_snake_milking(mob/living/user, mob/living/target)
 	var/reagent
 	var/amount
@@ -101,11 +105,11 @@
 		to_chat(user, span_warning("[target] does not have venom you can express. Open the beaker to drink from it."))
 		return ITEM_INTERACT_FAILURE
 
-	if(TIMER_COOLDOWN_RUNNING(target, COOLDOWN_VENOM_MILKING))
+	if(!COOLDOWN_FINISHED(target, venom_milking_cooldown))
 		user.visible_message(span_warning("[user] attempts to express venom from [target], but nothing happens."), span_warning("[target] had their venom expressed too recently, try again later."))
 		return ITEM_INTERACT_FAILURE
 
-	TIMER_COOLDOWN_START(target, COOLDOWN_VENOM_MILKING, 30 SECONDS)
+	COOLDOWN_START(target, venom_milking_cooldown, 30 SECONDS)
 	user.visible_message(span_notice("[user] expresses venom from [target]."))
 	reagents.add_reagent(reagent, amount)
 	return ITEM_INTERACT_SUCCESS
