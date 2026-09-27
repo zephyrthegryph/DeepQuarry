@@ -87,10 +87,11 @@
 		to_chat(user, span_danger("You have no pai name set."))
 		return
 
-	var/choice = tgui_alert(user, "Do you want to inhabit this pAI using \"[pai_name]\"?", "Load pAI", list("Load pAI Data", "Cancel"))
-	if(choice == "Load pAI Data")
+	om_prompt(src, user, list("message" = "Do you want to inhabit this pAI using \"[pai_name]\"?", "title" = "Load pAI", "choices" = list("Load pAI Data", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(inhabit_confirmed))
+
+/obj/item/paicard/proc/inhabit_confirmed(mob/user, choice, datum/om/prompt/ask)
+	if(choice == "Load pAI Data" && !pai)
 		ghost_inhabit(user)
-		return
 
 /obj/item/paicard/proc/ghost_inhabit(mob/user)
 	RETURN_TYPE(/mob/living/silicon/pai)
@@ -482,64 +483,7 @@
 			if(speech_synthesizer != PP_MISSING)
 				parts |= "speech synthesizer"
 
-			var/choice = tgui_input_list(user, "Which part would you like to check?", "Check part", parts)
-			switch(choice)
-				if("cell")
-					if(cell == PP_FUNCTIONAL)
-						to_chat(user,"Power cell: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Power cell: " + span_warning("damaged"))
-					else
-						to_chat(user,"Power cell: " + span_warning("missing"))
-
-				if("processor")
-					if(processor == PP_FUNCTIONAL)
-						to_chat(user,"Processor: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Processor: " + span_warning("damaged"))
-					else
-						to_chat(user,"Processor: " + span_warning("missing"))
-
-				if("board")
-					if(board == PP_FUNCTIONAL)
-						to_chat(user,"Board: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Board: " + span_warning("damaged"))
-					else
-						to_chat(user,"Board: " + span_warning("missing"))
-
-				if("capacitor")
-					if(capacitor == PP_FUNCTIONAL)
-						to_chat(user,"Capacitors: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Capacitors: " + span_warning("damaged"))
-					else
-						to_chat(user,"Capacitors: " + span_warning("missing"))
-
-				if("projector")
-					if(projector == PP_FUNCTIONAL)
-						to_chat(user,"Projectors: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Projectors: " + span_warning("damaged"))
-					else
-						to_chat(user,"Projectors: " + span_warning("missing"))
-
-				if("emitter")
-					if(emitter == PP_FUNCTIONAL)
-						to_chat(user,"Emitters: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Emitters: " + span_warning("damaged"))
-					else
-						to_chat(user,"Emitters: " + span_warning("missing"))
-
-				if("speech synthesizer")
-					if(speech_synthesizer == PP_FUNCTIONAL)
-						to_chat(user,"Speech Synthesizer: " + span_notice("functional"))
-					else if(speech_synthesizer == PP_BROKEN)
-						to_chat(user,"Speech Synthesizer: " + span_warning("damaged"))
-					else
-						to_chat(user,"Speech Synthesizer: " + span_warning("missing"))
-
+			om_prompt(src, user, list("kind" = "list", "message" = "Which part would you like to check?", "title" = "Check part", "choices" = parts, "requires" = PROMPT_ADJACENT), PROC_REF(check_part))
 	if(istype(I,/obj/item/paiparts/cell))
 		if(cell == PP_MISSING)
 			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
@@ -579,20 +523,70 @@
 	var/obj/item/card/id/ID = I.GetID()
 	if(ID && pai)
 		if (pai.idaccessible == 1)
-			switch(alert(user, "Do you wish to add access to [src] or remove access from [src]?",,"Add Access","Remove Access", "Cancel"))
-				if("Add Access")
-					pai.idcard.access |= ID.access
-					to_chat(user, span_notice("You add the access from the [I] to [src]."))
-					return
-				if("Remove Access")
-					pai.idcard.access = list()
-					to_chat(user, span_notice("You remove the access from [src]."))
-					return
-				if("Cancel")
-					return
+			om_prompt(src, user, list("message" = "Do you wish to add access to [src] or remove access from [src]?", "choices" = list("Add Access","Remove Access", "Cancel"), "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(id_access_chosen))
+			return
 		else if (pai.idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifications at this time."))
 			return
+
+/obj/item/paicard/proc/check_part(mob/user, choice, datum/om/prompt/ask)
+	switch(choice)
+		if("cell")
+			if(cell == PP_FUNCTIONAL)
+				to_chat(user,"Power cell: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Power cell: " + span_warning("damaged"))
+			else
+				to_chat(user,"Power cell: " + span_warning("missing"))
+
+		if("processor")
+			if(processor == PP_FUNCTIONAL)
+				to_chat(user,"Processor: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Processor: " + span_warning("damaged"))
+			else
+				to_chat(user,"Processor: " + span_warning("missing"))
+
+		if("board")
+			if(board == PP_FUNCTIONAL)
+				to_chat(user,"Board: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Board: " + span_warning("damaged"))
+			else
+				to_chat(user,"Board: " + span_warning("missing"))
+
+		if("capacitor")
+			if(capacitor == PP_FUNCTIONAL)
+				to_chat(user,"Capacitors: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Capacitors: " + span_warning("damaged"))
+			else
+				to_chat(user,"Capacitors: " + span_warning("missing"))
+
+		if("projector")
+			if(projector == PP_FUNCTIONAL)
+				to_chat(user,"Projectors: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Projectors: " + span_warning("damaged"))
+			else
+				to_chat(user,"Projectors: " + span_warning("missing"))
+
+		if("emitter")
+			if(emitter == PP_FUNCTIONAL)
+				to_chat(user,"Emitters: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Emitters: " + span_warning("damaged"))
+			else
+				to_chat(user,"Emitters: " + span_warning("missing"))
+
+		if("speech synthesizer")
+			if(speech_synthesizer == PP_FUNCTIONAL)
+				to_chat(user,"Speech Synthesizer: " + span_notice("functional"))
+			else if(speech_synthesizer == PP_BROKEN)
+				to_chat(user,"Speech Synthesizer: " + span_warning("damaged"))
+			else
+				to_chat(user,"Speech Synthesizer: " + span_warning("missing"))
+
 
 /obj/item/paicard/proc/attackby_timed_done(mob/user)
 	panel_open = TRUE
@@ -659,13 +653,27 @@
 	if(speech_synthesizer != PP_MISSING)
 		parts |= "speech synthesizer"
 
-	var/choice = tgui_input_list(user, "Which part would you like to remove?", "Remove part", parts)
-	if(choice)
-		playsound(src, 'sound/items/pickup/component.ogg', vary = TRUE)
-	else
-		return
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, choice))
+	om_prompt(src, user, list("kind" = "list", "message" = "Which part would you like to remove?", "title" = "Remove part", "choices" = parts, "requires" = PROMPT_HELD), PROC_REF(part_to_remove_chosen))
 	return TRUE
+
+/obj/item/paicard/proc/part_to_remove_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(!panel_open)
+		return
+	playsound(src, 'sound/items/pickup/component.ogg', vary = TRUE)
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, choice))
+
+/obj/item/paicard/proc/id_access_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/I = user.get_active_hand()
+	var/obj/item/card/id/ID = I?.GetID()
+	if(!ID || !pai || pai.idaccessible != 1)
+		return
+	switch(choice)
+		if("Add Access")
+			pai.idcard.access |= ID.access
+			to_chat(user, span_notice("You add the access from the [I] to [src]."))
+		if("Remove Access")
+			pai.idcard.access = list()
+			to_chat(user, span_notice("You remove the access from [src]."))
 
 /obj/item/paicard/proc/attack_self_timed_done(mob/user, choice)
 	switch(choice)

@@ -209,13 +209,23 @@
 		to_chat(user, span_warning("You can't do that right now!"))
 		return
 
-	if(tgui_alert(user, "Are you sure you want to recolor your blade?", "Confirm Recolor", list("Yes", "No")) == "Yes")
-		var/energy_color_input = tgui_color_picker(user,"","Choose Energy Color",lcolor)
-		if(energy_color_input)
-			lcolor = sanitize_hexcolor(energy_color_input)
-		update_icon()
-		if(active)
-			set_light(lrange, lpower, lcolor)
+	om_prompt_sequence(src, user, list(
+		list("key" = "sure", "message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
+		PROC_REF(ask_blade_color),
+	), PROC_REF(blade_recolored), list("requires" = PROMPT_ADJACENT))
+
+/obj/item/melee/energy/proc/ask_blade_color(mob/user, datum/om/prompt/ask)
+	if(ask.get("sure") == "Yes")
+		return list("key" = "color", "kind" = "color", "message" = "", "title" = "Choose Energy Color", "default" = lcolor)
+
+/obj/item/melee/energy/proc/blade_recolored(mob/user, datum/om/prompt/ask)
+	if(ask.get("sure") != "Yes")
+		return
+	if(ask.get("color"))
+		lcolor = sanitize_hexcolor(ask.get("color"))
+	update_icon()
+	if(active)
+		set_light(lrange, lpower, lcolor)
 
 /*
  * Energy Axe

@@ -451,3 +451,23 @@
 #define CACHE_ON_EVENT(path) list("event", path)
 /// Cleared when an edge of relation `path` is added to or removed from the entity.
 #define CACHE_ON_RELATION(path) list("relation", path)
+
+// ---------------------------------------------------------------- om_prompt requires (prompt.dm)
+// Common re-checks for an answer: actor = the user, target = the spec's target, else E.
+
+/// The user can still work E the way its UI allows (adjacent, silicon access, conscious).
+#define PROMPT_USABLE list(/datum/om/check/ui_usable)
+/// The user can still work E, judged by the named tgui state (GLOB.tgui_<name>_state).
+#define PROMPT_USABLE_BY(state_name) list(CHECK(/datum/om/check/ui_usable, state_name))
+/// E is still carried by the user, who is not incapacitated.
+#define PROMPT_HELD list(/datum/om/check/carried, /datum/om/check/not_incapacitated)
+/// E is still in the user's hands, and the user is not incapacitated.
+#define PROMPT_IN_HAND list(/datum/om/check/in_hands, /datum/om/check/not_incapacitated)
+/// E is still next to the user, who is not incapacitated.
+#define PROMPT_ADJACENT list(/datum/om/check/adjacent, /datum/om/check/not_incapacitated)
+/// The user is still conscious (self prompts: abilities, verbs on your own mob).
+#define PROMPT_CONSCIOUS list(/datum/om/check/conscious)
+/// The user is still alive.
+#define PROMPT_ALIVE list(/datum/om/check/stat_at_most = UNCONSCIOUS)
+/// The user still holds these admin rights (R_* flags; 0 = any admin rank).
+#define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))

@@ -87,14 +87,19 @@
 			to_chat(user, span_warning("Circuit controls are locked."))
 			return
 		var/existing_networks = jointext(network,",")
-		var/input = tgui_input_text(user, "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "Multitool-Circuitboard interface", existing_networks, MAX_MESSAGE_LEN)
-		if(!input)
-			to_chat(user, "No input found please hang up and try your call again.")
-			return
-		var/list/tempnetwork = splittext(input, ",")
-		tempnetwork = difflist(tempnetwork, GLOB.restricted_camera_networks, 1)
-		if(tempnetwork.len < 1)
-			to_chat(user, "No network found please hang up and try your call again.")
-			return
-		network = tempnetwork
+		om_prompt(src, user, list("kind" = "text", "message" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = existing_networks, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(networks_entered))
+	return
+
+/obj/item/circuitboard/security/proc/networks_entered(mob/user, input, datum/om/prompt/ask)
+	if(locked)
+		return
+	if(!input)
+		to_chat(user, "No input found please hang up and try your call again.")
+		return
+	var/list/tempnetwork = splittext(input, ",")
+	tempnetwork = difflist(tempnetwork, GLOB.restricted_camera_networks, 1)
+	if(tempnetwork.len < 1)
+		to_chat(user, "No network found please hang up and try your call again.")
+		return
+	network = tempnetwork
 	return

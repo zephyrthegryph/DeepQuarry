@@ -109,16 +109,11 @@
 
 /obj/item/canvas/attackby(obj/item/I, mob/living/user, params)
 	if(istype(I, /obj/item/paint_palette))
-		var/choice = tgui_alert(user, "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "Confirm Color Fill", list("Yes", "No"))
-		if(choice != "Yes")
-			return
-		var/basecolor = tgui_color_picker(user, "Select a base color for the canvas:", "Base Color", canvas_color)
-		if(basecolor && Adjacent(user) && user.get_active_hand() == I)
-			canvas_color = basecolor
-			reset_grid()
-			user.visible_message("[user] smears paint on [src], covering the entire thing in paint.", "You smear paint on [src], changing the color of the entire thing.", runemessage = "smears paint")
-			update_appearance()
-			return
+		om_prompt_sequence(src, user, list(
+			list("key" = "confirm", "message" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "title" = "Confirm Color Fill", "choices" = list("Yes", "No")),
+			PROC_REF(ask_base_color),
+		), PROC_REF(base_color_chosen), list("target" = I, "requires" = PROMPT_IN_HAND, "data" = list("palette" = I)))
+		return
 
 	if(IS_HELPING(user))
 		tgui_interact(user)
@@ -221,9 +216,23 @@
 	else if(istype(I, /obj/item/soap) || istype(I, /obj/item/reagent_containers/glass/rag))
 		return canvas_color
 
+/obj/item/canvas/proc/ask_base_color(mob/living/user, datum/om/prompt/ask)
+	if(ask.get("confirm") == "Yes")
+		return list("key" = "color", "kind" = "color", "message" = "Select a base color for the canvas:", "title" = "Base Color", "default" = canvas_color)
+
+/obj/item/canvas/proc/base_color_chosen(mob/living/user, datum/om/prompt/ask)
+	var/basecolor = ask.get("color")
+	if(basecolor && Adjacent(user))
+		canvas_color = basecolor
+		reset_grid()
+		user.visible_message("[user] smears paint on [src], covering the entire thing in paint.", "You smear paint on [src], changing the color of the entire thing.", runemessage = "smears paint")
+		update_appearance()
+
 /obj/item/canvas/proc/try_rename(mob/user)
-	var/new_name = tgui_input_text(user,"What do you want to name the painting?", max_length = 250, encode=TRUE)
-	if(new_name != painting_name && new_name && CanUseTopic(user, GLOB.tgui_physical_state))
+	om_prompt(src, user, list("kind" = "text", "message" = "What do you want to name the painting?", "max_length" = 250, "requires" = PROMPT_USABLE_BY("physical")), PROC_REF(renamed))
+
+/obj/item/canvas/proc/renamed(mob/user, new_name, datum/om/prompt/ask)
+	if(new_name != painting_name && new_name)
 		painting_name = new_name
 		SStgui.update_uis(src)
 
@@ -572,61 +581,70 @@
 		Title: [title] \n \
 		Author's Name: [author_name]. \n \
 		Author's CKey: [author_ckey]"))
-		if(tgui_alert(usr, "Check your chat log (if filtering for notices, check where you don't) for painting details.",
-		"Is this the painting you want?", list("Yes", "No")) != "Yes")
-			return 0
-		if(!fexists("data/persistent/paintings/[persistence_id]/[painting["md5"]].png"))
-			to_chat(usr, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
-			log_runtime("[usr] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
-			Painting was titled [title] by [author_ckey] of [persistence_id]")
-			return 0
-
-		var/icon/I = new(png)
-		var/obj/item/canvas/new_canvas
-		var/w = I.Width()
-		var/h = I.Height()
-		for(var/T in typesof(/obj/item/canvas))
-			new_canvas = T
-			if(initial(new_canvas.width) == w && initial(new_canvas.height) == h)
-				new_canvas = new T(src)
-				break
-
-		if(!new_canvas)
-			WARNING("Couldn't find a canvas to match [w]x[h] of painting")
-			return 0
-
-		new_canvas.fill_grid_from_icon(I)
-		new_canvas.generated_icon = I
-		new_canvas.icon_generated = TRUE
-		new_canvas.finalized = TRUE
-		new_canvas.painting_name = title
-		new_canvas.author_name = author_name
-		new_canvas.author_ckey = author_ckey
-		new_canvas.name = "painting - [title]"
-		current_canvas = new_canvas
-		loaded = TRUE
-		update_appearance()
-		log_and_message_admins("spawned painting from [author_ckey] with title [title]", usr)
-
+		om_prompt(src, usr, list("message" = "Check your chat log (if filtering for notices, check where you don't) for painting details.", "title" = "Is this the painting you want?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_HOLDER), "data" = list("which" = which_painting)), PROC_REF(lateload_confirmed))
 	else
-
-		if(tgui_alert(usr, "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
+		om_prompt(src, usr, list("message" = "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
 		If you do not wish to do that, you may request a list to be generated of painting titles. This might be resource intensive. \
-		Proceed? It will likely have over 500 entries", "Generate list?", list("Proceed!", "Cancel")) != "Proceed!")
-			return
+		Proceed? It will likely have over 500 entries", "title" = "Generate list?", "choices" = list("Proceed!", "Cancel"), "requires" = PROMPT_ADMIN(R_HOLDER)), PROC_REF(lateload_list_confirmed))
 
-		// to_chat(world, "[usr] generated list of paintings from SSPersistence")
-		var/list/paintings = list()
-		var/current = 1
-		for(var/entry in SSpersistence.all_paintings)
-			var/key = "[entry["title"]] by [entry["author"]]"
-			paintings[key] = current
-			current += 1
+/obj/structure/sign/painting/proc/lateload_list_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Proceed!")
+		return
+	var/list/paintings = list()
+	var/current = 1
+	for(var/entry in SSpersistence.all_paintings)
+		var/key = "[entry["title"]] by [entry["author"]]"
+		paintings[key] = current
+		current += 1
+	ask.put("paintings", paintings)
+	om_prompt_chain(ask, list("kind" = "list", "message" = "Choose which painting to spawn!", "title" = "Spawn painting", "choices" = paintings), PROC_REF(lateload_picked))
 
-		var/choice = tgui_input_list(usr, "Choose which painting to spawn!", "Spawn painting", paintings, null)
-		if(!choice)
-			return 0
-		admin_lateload_painting(1, paintings[choice])
+/obj/structure/sign/painting/proc/lateload_picked(mob/user, choice, datum/om/prompt/ask)
+	var/list/paintings = ask.get("paintings")
+	admin_lateload_painting(1, paintings[choice])
+
+/obj/structure/sign/painting/proc/lateload_confirmed(mob/user, answer, datum/om/prompt/ask)
+	if(answer != "Yes")
+		return
+	var/which_painting = ask.get("which")
+	var/list/painting = SSpersistence.all_paintings[which_painting]
+	var/title = painting["title"]
+	var/author_name = painting["author"]
+	var/author_ckey = painting["ckey"]
+	var/persistence_id = painting["persistence_id"]
+	var/png = "data/persistent/paintings/[persistence_id]/[painting["md5"]].png"
+	if(!fexists("data/persistent/paintings/[persistence_id]/[painting["md5"]].png"))
+		to_chat(usr, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
+		log_runtime("[usr] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
+		Painting was titled [title] by [author_ckey] of [persistence_id]")
+		return 0
+
+	var/icon/I = new(png)
+	var/obj/item/canvas/new_canvas
+	var/w = I.Width()
+	var/h = I.Height()
+	for(var/T in typesof(/obj/item/canvas))
+		new_canvas = T
+		if(initial(new_canvas.width) == w && initial(new_canvas.height) == h)
+			new_canvas = new T(src)
+			break
+
+	if(!new_canvas)
+		WARNING("Couldn't find a canvas to match [w]x[h] of painting")
+		return 0
+
+	new_canvas.fill_grid_from_icon(I)
+	new_canvas.generated_icon = I
+	new_canvas.icon_generated = TRUE
+	new_canvas.finalized = TRUE
+	new_canvas.painting_name = title
+	new_canvas.author_name = author_name
+	new_canvas.author_ckey = author_ckey
+	new_canvas.name = "painting - [title]"
+	current_canvas = new_canvas
+	loaded = TRUE
+	update_appearance()
+	log_and_message_admins("spawned painting from [author_ckey] with title [title]", user)
 
 
 

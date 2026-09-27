@@ -95,22 +95,27 @@
 		user.visible_message(span_rose("Without even breaking stride, \the [user] flips open \the [src] in one smooth movement."))
 
 	else if(lit && detonator_mode)
-		switch(tgui_alert(user, "What would you like to do?", "Lighter", list("Press the button.", "Close the lighter.")))
-			if("Press the button.")
-				to_chat(user, span_warning("You press the button."))
-				icon_state = "[base_state]click"
-				if(bomb)
-					var/obj/item/syndie/c4explosive/bomb_to_explode = bomb
-					bomb = null //clear up our ref
-					bomb_to_explode.detonate()
-					log_admin("[key_name(user)] has triggered [bomb_to_explode] with [src].")
-					message_admins(span_danger("[key_name_admin(user)] has triggered [bomb_to_explode] with [src]."))
+		om_prompt(src, user, list("message" = "What would you like to do?", "title" = "Lighter", "choices" = list("Press the button.", "Close the lighter."), "requires" = PROMPT_HELD), PROC_REF(detonator_action))
 
-			if("Close the lighter.")
-				lit = FALSE
-				icon_state = "[base_state]"
-				//item_state = "[base_state]"
-				user.visible_message(span_rose("You hear a quiet click, as \the [user] shuts off \the [src] without even looking at what they're doing."))
+/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(mob/user, choice, datum/om/prompt/ask)
+	if(!lit || !detonator_mode)
+		return
+	switch(choice)
+		if("Press the button.")
+			to_chat(user, span_warning("You press the button."))
+			icon_state = "[base_state]click"
+			if(bomb)
+				var/obj/item/syndie/c4explosive/bomb_to_explode = bomb
+				bomb = null //clear up our ref
+				bomb_to_explode.detonate()
+				log_admin("[key_name(user)] has triggered [bomb_to_explode] with [src].")
+				message_admins(span_danger("[key_name_admin(user)] has triggered [bomb_to_explode] with [src]."))
+
+		if("Close the lighter.")
+			lit = FALSE
+			icon_state = "[base_state]"
+			//item_state = "[base_state]"
+			user.visible_message(span_rose("You hear a quiet click, as \the [user] shuts off \the [src] without even looking at what they're doing."))
 
 
 /obj/item/flame/lighter/zippo/c4detonator/screwdriver_act(mob/user, obj/item/tool)

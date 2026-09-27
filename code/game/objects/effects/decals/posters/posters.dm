@@ -154,8 +154,11 @@
 	if(ruined)
 		return
 
-	if(tgui_alert(user, "Do I want to rip the poster from the wall?","You think...",list("Yes","No")) == "Yes")
-		if(ruined || !user.Adjacent(src))
+	om_prompt(src, user, list("message" = "Do I want to rip the poster from the wall?", "title" = "You think...", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(rip_answered))
+
+/obj/structure/sign/poster/proc/rip_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes")
+		if(ruined)
 			return
 
 		visible_message(span_warning("[user] rips [src] in a single, decisive motion!") )

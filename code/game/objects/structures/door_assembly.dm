@@ -152,9 +152,10 @@
 		bound_height = width * world.icon_size
 
 /obj/structure/door_assembly/proc/rename_door(mob/living/user)
-	var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for the [base_name].", src.name, src.created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-	if(!in_range(src, user) && src.loc != user)	return
-	created_name = t
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter the name for the [base_name].", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(door_named))
+
+/obj/structure/door_assembly/proc/door_named(mob/living/user, t, datum/om/prompt/ask)
+	created_name = sanitizeSafe(t, MAX_NAME_LEN)
 	update_state()
 
 /obj/structure/door_assembly/attack_robot(mob/living/silicon/robot/user)

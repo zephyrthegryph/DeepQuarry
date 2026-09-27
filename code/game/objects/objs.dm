@@ -226,40 +226,12 @@
 	if(href_list[VV_HK_MASS_DEL_TYPE])
 		if(!check_rights(R_DEBUG|R_SERVER))
 			return
-		var/action_type = tgui_alert(usr, "Strict type ([type]) or type and all subtypes?",,list("Strict type","Type and subtypes","Cancel"))
-		if(action_type == "Cancel" || !action_type)
-			return
-		if(tgui_alert(usr, "Are you really sure you want to delete all objects of type [type]?",,list("Yes","No")) != "Yes")
-			return
-		if(tgui_alert(usr, "Second confirmation required. Delete?",,list("Yes","No")) != "Yes")
-			return
-		var/O_type = type
-		switch(action_type)
-			if("Strict type")
-				var/i = 0
-				for(var/obj/Obj in world)
-					if(Obj.type == O_type)
-						i++
-						qdel(Obj)
-					CHECK_TICK
-				if(!i)
-					to_chat(usr, "No objects of this type exist")
-					return
-				log_admin("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) ")
-				message_admins(span_notice("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) "))
-			if("Type and subtypes")
-				var/i = 0
-				for(var/obj/Obj in world)
-					if(istype(Obj,O_type))
-						i++
-						qdel(Obj)
-					CHECK_TICK
-				if(!i)
-					to_chat(usr, "No objects of this type exist")
-					return
-				log_admin("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
-				message_admins(span_notice("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) "))
-
+		om_prompt_sequence(src, usr, list(
+			list("key" = "scope", "message" = "Strict type ([type]) or type and all subtypes?", "choices" = list("Strict type","Type and subtypes","Cancel")),
+			list("key" = "sure", "message" = "Are you really sure you want to delete all objects of type [type]?", "choices" = list("Yes","No")),
+			list("key" = "sure2", "message" = "Second confirmation required. Delete?", "choices" = list("Yes","No")),
+		), PROC_REF(mass_delete_confirmed), list("requires" = PROMPT_ADMIN(R_DEBUG|R_SERVER)))
+		return
 	if(href_list[VV_HK_FAKE_CONVO])
 		if(!check_rights(R_FUN))
 			return
@@ -270,3 +242,35 @@
 			return
 
 		P.createPropFakeConversation_admin(usr)
+
+/obj/proc/mass_delete_confirmed(mob/user, datum/om/prompt/ask)
+	var/action_type = ask.get("scope")
+	if(action_type == "Cancel" || ask.get("sure") != "Yes" || ask.get("sure2") != "Yes")
+		return
+	var/O_type = type
+	switch(action_type)
+		if("Strict type")
+			var/i = 0
+			for(var/obj/Obj in world)
+				if(Obj.type == O_type)
+					i++
+					qdel(Obj)
+				CHECK_TICK
+			if(!i)
+				to_chat(usr, "No objects of this type exist")
+				return
+			log_admin("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) ")
+			message_admins(span_notice("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) "))
+		if("Type and subtypes")
+			var/i = 0
+			for(var/obj/Obj in world)
+				if(istype(Obj,O_type))
+					i++
+					qdel(Obj)
+				CHECK_TICK
+			if(!i)
+				to_chat(usr, "No objects of this type exist")
+				return
+			log_admin("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
+			message_admins(span_notice("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) "))
+

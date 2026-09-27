@@ -30,12 +30,9 @@
 			opposite_catastasis = "BROAD"
 			catastasis = "STANDARD"
 
-		switch(tgui_alert(user, "Current receiver spectrum is set to: [catastasis]","Multitool-Circuitboard interface",list("Switch to [opposite_catastasis]","Cancel")))
-			if("Switch to STANDARD","Switch to BROAD")
-				src.contraband_enabled = !src.contraband_enabled
-
-			if("Cancel", null)
-				return
-			else
-				to_chat(user, "DERP! BUG! Report this (And what you were doing to cause it) to Agouri")
+		om_prompt(src, user, list("message" = "Current receiver spectrum is set to: [catastasis]", "title" = "Multitool-Circuitboard interface", "choices" = list("Switch to [opposite_catastasis]","Cancel"), "requires" = PROMPT_ADJACENT), PROC_REF(spectrum_chosen))
 	return
+
+/obj/item/circuitboard/supplycomp/proc/spectrum_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(choice == "Switch to STANDARD" || choice == "Switch to BROAD")
+		src.contraband_enabled = !src.contraband_enabled

@@ -75,9 +75,9 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
-	var/input_color = tgui_input_list(user, "Choose a color.", "Beacon Color", options)
-	if(user.incapacitated() || !istype(user) || !in_range(src, user))
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+
+/obj/item/stack/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
 	if(input_color)
 		picked_color = input_color
 		update_icon()
@@ -160,9 +160,9 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
-	var/input_color = tgui_input_list(user, "Choose a color.", "Beacon Color", options)
-	if(user.incapacitated() || !istype(user) || !in_range(src, user))
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+
+/obj/structure/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
 	if(input_color)
 		picked_color = input_color
 		update_icon()

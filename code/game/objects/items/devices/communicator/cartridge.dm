@@ -57,17 +57,7 @@
 				if(!istype(user)) // Ref no longer valid
 					return
 
-				var/newVal = tgui_input_number(user, "Input a new [href_list["signaler_value"]].", href_list["signaler_value"], (href_list["signaler_value"] == "Code" ? S.code : S.frequency), round_value=FALSE)
-				if(newVal)
-					switch(href_list["signaler_value"])
-						if("Code")
-							S.code = newVal
-
-						if("Frequency")
-							// set_frequency() re-registers with SSradio; a bare var
-							// write leaves the signaler listening (and later stranded,
-							// unable to GC) on its old frequency.
-							S.set_frequency(sanitize_frequency(newVal, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+				om_prompt(src, user, list("kind" = "number", "message" = "Input a new [href_list["signaler_value"]].", "title" = href_list["signaler_value"], "default" = (href_list["signaler_value"] == "Code" ? S.code : S.frequency), "round" = FALSE, "requires" = PROMPT_USABLE, "data" = list("signaler" = S, "field" = href_list["signaler_value"])), PROC_REF(signaler_value_entered))
 
 	// Refresh list of powernet sensors
 	if(href_list["powernet_refresh"])
@@ -102,10 +92,7 @@
 				if(!istype(user)) // Ref no longer valid
 					return
 
-				var/newTag = tgui_input_text(user, "Please enter desired tag.", "Name Tag", G.tag)
-
-				if(newTag)
-					G.tag = newTag
+				om_prompt(src, user, list("kind" = "text", "message" = "Please enter desired tag.", "title" = "Name Tag", "default" = G.tag, "requires" = PROMPT_USABLE, "data" = list("gps" = G)), PROC_REF(gps_tag_entered))
 
 		if(href_list["active_category"])
 			internal_data["supply_category"] = href_list["active_category"]
@@ -135,16 +122,7 @@
 				visible_message(span_warning("[src] flashes, \"[internal_data["supply_reqtime"] - world.time] seconds remaining until another requisition form may be printed.\""))
 				return
 
-			var/timeout = world.time + 600
-			var/reason = tgui_input_text(user, "Reason:","Why do you require this item?","", MAX_MESSAGE_LEN)
-			if(world.time > timeout)
-				to_chat(user, span_warning("Error. Request timed out."))
-				return
-			if(!reason)
-				return
-
-			SSsupply.create_order(S, user, reason)
-			internal_data["supply_reqtime"] = (world.time + 5) % 1e5
+			om_prompt(src, user, list("kind" = "text", "message" = "Reason:", "title" = "Why do you require this item?", "default" = "", "max_length" = MAX_MESSAGE_LEN, "timeout" = 1 MINUTE, "requires" = PROMPT_USABLE, "data" = list("pack" = S)), PROC_REF(supply_reason_entered))
 
 	if(href_list["order_ref"])
 		var/datum/supply_order/O = locate(href_list["order_ref"])
@@ -158,38 +136,7 @@
 			return
 
 		if(href_list["edit"])
-			var/new_val = tgui_input_text(user, href_list["edit"], "Enter the new value for this field:", href_list["default"], MAX_MESSAGE_LEN)
-			if(!new_val)
-				return
-
-			switch(href_list["edit"])
-				if("Supply Pack")
-					O.name = new_val
-
-				if("Cost")
-					var/num = text2num(new_val)
-					if(num)
-						O.cost = num
-
-				if("Index")
-					var/num = text2num(new_val)
-					if(num)
-						O.index = num
-
-				if("Reason")
-					O.comment = new_val
-
-				if("Ordered by")
-					O.ordered_by = new_val
-
-				if("Ordered at")
-					O.ordered_at = new_val
-
-				if("Approved by")
-					O.approved_by = new_val
-
-				if("Approved at")
-					O.approved_at = new_val
+			om_prompt(src, user, list("kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("order" = O, "field" = href_list["edit"])), PROC_REF(order_field_entered))
 
 		if(href_list["approve"])
 			SSsupply.approve_order(O, user)
@@ -219,46 +166,18 @@
 			return
 
 		if(href_list["index"])
-			var/list/L = E.contents[href_list["index"]]
-
 			if(href_list["edit"])
-				var/field = tgui_alert(user, "Select which field to edit", "Field?", list("Name", "Quantity", "Value"))
-
-				var/new_val = tgui_input_text(user, href_list["edit"], "Enter the new value for this field:", href_list["default"])
-				if(!new_val)
-					return
-
-				switch(field)
-					if("Name")
-						L["object"] = new_val
-
-					if("Quantity")
-						var/num = text2num(new_val)
-						if(num)
-							L["quantity"] = num
-
-					if("Value")
-						var/num = text2num(new_val)
-						if(num)
-							L["value"] = num
+				om_prompt_sequence(src, user, list(
+					list("key" = "field", "message" = "Select which field to edit", "title" = "Field?", "choices" = list("Name", "Quantity", "Value")),
+					list("key" = "value", "kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"]),
+				), PROC_REF(export_item_edited), list("requires" = PROMPT_USABLE, "data" = list("crate" = E, "index" = href_list["index"])))
 
 			if(href_list["delete"])
 				E.contents.Cut(href_list["index"], href_list["index"] + 1)
 
 		// Else clause means they're editing/deleting the whole export report, rather than a specific item in it
 		else if(href_list["edit"])
-			var/new_val = tgui_input_text(user, href_list["edit"], "Enter the new value for this field:", href_list["default"])
-			if(!new_val)
-				return
-
-			switch(href_list["edit"])
-				if("Name")
-					E.name = new_val
-
-				if("Value")
-					var/num = text2num(new_val)
-					if(num)
-						E.value = num
+			om_prompt(src, user, list("kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"], "requires" = PROMPT_USABLE, "data" = list("crate" = E, "field" = href_list["edit"])), PROC_REF(export_field_entered))
 
 		else if(href_list["delete"])
 			SSsupply.delete_export(E, user)
@@ -294,7 +213,7 @@
 			post_status("alert", href_list["alert"])
 			internal_data["stat_display_special"] = href_list["alert"]
 		if("setmsg")
-			internal_data["stat_display_line[href_list["line"]]"] = reject_bad_text(tgui_input_text(usr, "Line 1", "Enter Message Text", internal_data["stat_display_line[href_list["line"]]"], 40), 40)
+			om_prompt(src, usr, list("kind" = "text", "message" = "Line 1", "title" = "Enter Message Text", "default" = internal_data["stat_display_line[href_list["line"]]"], "max_length" = 40, "requires" = PROMPT_USABLE, "data" = list("line" = href_list["line"])), PROC_REF(status_line_entered))
 		else
 			post_status(href_list["stat_display"])
 			internal_data["stat_display_special"] = href_list["stat_display"]
@@ -317,6 +236,95 @@
 			return
 		addtimer(CALLBACK(src, PROC_REF(toggle_blast_door_deferred), B), 0)
 
+/obj/item/commcard/proc/signaler_value_entered(mob/user, newVal, datum/om/prompt/ask)
+	var/obj/item/assembly/signaler/S = ask.get("signaler")
+	if(!newVal || S.loc != src)
+		return
+	switch(ask.get("field"))
+		if("Code")
+			S.code = newVal
+		if("Frequency")
+			// set_frequency() re-registers with SSradio; a bare var
+			// write leaves the signaler listening (and later stranded,
+			// unable to GC) on its old frequency.
+			S.set_frequency(sanitize_frequency(newVal, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+
+/obj/item/commcard/proc/gps_tag_entered(mob/user, newTag, datum/om/prompt/ask)
+	var/obj/item/gps/G = ask.get("gps")
+	if(newTag && G.loc == src)
+		G.tag = newTag
+
+/obj/item/commcard/proc/supply_reason_entered(mob/user, reason, datum/om/prompt/ask)
+	if(!reason)
+		return
+	SSsupply.create_order(ask.get("pack"), user, reason)
+	internal_data["supply_reqtime"] = (world.time + 5) % 1e5
+
+/obj/item/commcard/proc/export_item_edited(mob/user, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("crate")
+	var/new_val = ask.get("value")
+	var/list/L = E.contents[ask.get("index")]
+	if(!new_val || !islist(L))
+		return
+	switch(ask.get("field"))
+		if("Name")
+			L["object"] = new_val
+		if("Quantity")
+			var/num = text2num(new_val)
+			if(num)
+				L["quantity"] = num
+		if("Value")
+			var/num = text2num(new_val)
+			if(num)
+				L["value"] = num
+
+/obj/item/commcard/proc/export_field_entered(mob/user, new_val, datum/om/prompt/ask)
+	var/datum/exported_crate/E = ask.get("crate")
+	if(!new_val)
+		return
+	switch(ask.get("field"))
+		if("Name")
+			E.name = new_val
+		if("Value")
+			var/num = text2num(new_val)
+			if(num)
+				E.value = num
+
+/obj/item/commcard/proc/status_line_entered(mob/user, text, datum/om/prompt/ask)
+	internal_data["stat_display_line[ask.get("line")]"] = reject_bad_text(text, 40)
+
+/obj/item/commcard/proc/order_field_entered(mob/user, new_val, datum/om/prompt/ask)
+	var/datum/supply_order/O = ask.get("order")
+	if(!new_val)
+		return
+	switch(ask.get("field"))
+		if("Supply Pack")
+			O.name = new_val
+
+		if("Cost")
+			var/num = text2num(new_val)
+			if(num)
+				O.cost = num
+
+		if("Index")
+			var/num = text2num(new_val)
+			if(num)
+				O.index = num
+
+		if("Reason")
+			O.comment = new_val
+
+		if("Ordered by")
+			O.ordered_by = new_val
+
+		if("Ordered at")
+			O.ordered_at = new_val
+
+		if("Approved by")
+			O.approved_by = new_val
+
+		if("Approved at")
+			O.approved_at = new_val
 
 /obj/item/commcard/proc/toggle_blast_door_deferred(obj/machinery/door/blast/B)
 	if(B.density)

@@ -167,11 +167,10 @@
 		turfs += T
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
-	var/t1 = tgui_input_list(user, "Please select a teleporter to lock in on.", "Hand Teleporter", L)
-	if(!t1)
-		return
-	if ((user.get_active_hand() != src || user.stat || user.restrained()))
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Please select a teleporter to lock in on.", "title" = "Hand Teleporter", "choices" = L, "requires" = PROMPT_IN_HAND, "data" = list("targets" = L)), PROC_REF(teleporter_chosen))
+
+/obj/item/hand_tele/proc/teleporter_chosen(mob/user, t1, datum/om/prompt/ask)
+	var/list/L = ask.get("targets")
 	var/count = 0	//num of portals from this teleport in world
 	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++
@@ -181,9 +180,9 @@
 	var/T = L[t1]
 	for(var/mob/O in hearers(user, null))
 		O.show_message(span_notice("Locked In."), 2)
-	var/obj/effect/portal/P = new /obj/effect/portal( get_turf(src) )
-	P.target = T
-	P.creator = src
-	P.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
+	var/obj/effect/portal/NEWP = new /obj/effect/portal( get_turf(src) )
+	NEWP.target = T
+	NEWP.creator = src
+	NEWP.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
 	src.add_fingerprint(user)
 	return

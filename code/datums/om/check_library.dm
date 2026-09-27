@@ -325,3 +325,68 @@
 /datum/om/check/is_living/why_not(datum/actor, datum/target)
 	if(!isliving(subject(actor, target)))
 		return "not alive"
+
+// ---------------------------------------------------------------- prompt re-checks (om_prompt)
+
+/// The target is somewhere on the actor (held, worn, or inside something carried).
+/datum/om/check/carried
+	depends_on = CHANGE_MOB_HANDS | CHANGE_ITEM_LOC
+
+/datum/om/check/carried/why_not(datum/actor, datum/target)
+	var/atom/movable/T = target
+	if(!istype(T))
+		return "not carrying it"
+	for(var/atom/loc = T.loc; loc; loc = loc.loc)
+		if(loc == actor)
+			return null
+	return "not carrying it"
+
+/// The target is in one of the actor's hands.
+/datum/om/check/in_hands
+	depends_on = CHANGE_MOB_HANDS
+
+/datum/om/check/in_hands/why_not(datum/actor, datum/target)
+	var/mob/M = actor
+	if(!istype(M) || !target || (M.get_active_hand() != target && M.get_inactive_hand() != target))
+		return "not holding it"
+
+/// The actor is not incapacitated (arg: INCAPACITATION_* flags).
+/datum/om/check/not_incapacitated
+	depends_on = CHANGE_MOB_STAT | CHANGE_MOB_STATUS
+	arg = INCAPACITATION_DEFAULT
+
+/datum/om/check/not_incapacitated/why_not(datum/actor, datum/target)
+	var/mob/M = actor
+	if(!istype(M) || M.incapacitated(param(actor)))
+		return "not able to"
+
+/// The actor can still work the target through a tgui state (arg: the state's name in
+/// GLOB.tgui_<name>_state, default "default": adjacency, silicon access, consciousness).
+/datum/om/check/ui_usable
+	depends_on = CHANGE_MOB_LOC | CHANGE_ITEM_LOC | CHANGE_MOB_STAT
+	arg = "default"
+
+/datum/om/check/ui_usable/why_not(datum/actor, datum/target)
+	var/mob/M = actor
+	var/datum/tgui_state/S = GLOB.vars["tgui_[param(actor)]_state"]
+	if(!istype(M) || !target || !istype(S) || S.can_use_topic(target, M) < STATUS_INTERACTIVE)
+		return "can't use it"
+
+/// The actor's player holds admin rights (arg: R_* flags; 0 = any admin rank).
+/datum/om/check/admin_rights
+	arg = 0
+
+/datum/om/check/admin_rights/why_not(datum/actor, datum/target)
+	var/mob/M = actor
+	var/client/C = istype(M) ? M.client : null
+	if(!C?.holder || !check_rights_for(C, param(actor)))
+		return "no admin rights"
+
+/// The actor is directly inside the target (a tunnel, a closet, a vehicle).
+/datum/om/check/inside_target
+	depends_on = CHANGE_MOB_LOC
+
+/datum/om/check/inside_target/why_not(datum/actor, datum/target)
+	var/atom/movable/A = actor
+	if(!istype(A) || !target || A.loc != target)
+		return "not inside it"

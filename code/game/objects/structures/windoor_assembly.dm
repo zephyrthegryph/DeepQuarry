@@ -71,9 +71,10 @@
 		return TRUE
 
 /obj/structure/windoor_assembly/proc/rename_door(mob/living/user)
-	var/t = sanitizeSafe(tgui_input_text(user, "Enter the name for the windoor.", src.name, src.created_name, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-	if(!in_range(src, user) && src.loc != user)	return
-	created_name = t
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter the name for the windoor.", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(windoor_named))
+
+/obj/structure/windoor_assembly/proc/windoor_named(mob/living/user, t, datum/om/prompt/ask)
+	created_name = sanitizeSafe(t, MAX_NAME_LEN)
 	update_state()
 
 /obj/structure/windoor_assembly/attack_robot(mob/living/silicon/robot/user)

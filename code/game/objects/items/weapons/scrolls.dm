@@ -24,14 +24,11 @@
 	// single-action panel; tgui_alert with the existing
 	// uses count is the right primitive.
 	user.set_machine(src)
-	var/choice = tgui_alert(
-		user,
-		"You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.",
-		"Teleportation Scroll",
-		list("Teleport", "Cancel"),
-	)
-	if(choice == "Teleport")
-		Topic("spell_teleport=1", list("spell_teleport" = "1"))
+	om_prompt(src, user, list("message" = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.", "title" = "Teleportation Scroll", "choices" = list("Teleport", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(scroll_answered))
+
+/obj/item/teleportation_scroll/proc/scroll_answered(mob/living/carbon/human/user, choice, datum/om/prompt/ask)
+	if(choice == "Teleport" && ishuman(user) && !user.stat && !user.restrained() && uses >= 1)
+		teleportscroll(user)
 
 /obj/item/teleportation_scroll/Topic(href, href_list)
 	..()
@@ -45,14 +42,17 @@
 		if (href_list["spell_teleport"])
 			if (src.uses >= 1)
 				teleportscroll(H)
+				return
 	attack_self(H)
 	return
 
 /obj/item/teleportation_scroll/proc/teleportscroll(mob/user)
-	var/A = tgui_input_list(user, "Area to jump to:", "Teleportation Scroll", GLOB.teleportlocs)
-	if(!A)
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Area to jump to:", "title" = "Teleportation Scroll", "choices" = GLOB.teleportlocs, "requires" = PROMPT_HELD), PROC_REF(area_chosen))
+
+/obj/item/teleportation_scroll/proc/area_chosen(mob/user, A, datum/om/prompt/ask)
 	var/area/thearea = GLOB.teleportlocs[A]
+	if(!thearea || uses < 1)
+		return
 
 	if (user.stat || user.restrained())
 		return

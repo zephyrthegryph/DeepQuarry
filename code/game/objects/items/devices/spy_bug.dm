@@ -196,9 +196,20 @@
 	if(cameras.len == 1)
 		selected_camera = cameras[1]
 	else
-		in_use = TRUE // Don't allow spamming tgui menus
-		selected_camera = tgui_input_list(user, "Select camera to view.", "Camera Choice", cameras)
-		in_use = FALSE
+		if(in_use) // Don't allow spamming tgui menus
+			return
+		in_use = TRUE
+		if(!om_prompt(src, user, list("kind" = "list", "message" = "Select camera to view.", "title" = "Camera Choice", "choices" = cameras, "requires" = PROMPT_HELD, "on_cancel" = PROC_REF(camera_choice_closed), "on_refused" = PROC_REF(camera_choice_closed)), PROC_REF(camera_chosen)))
+			in_use = FALSE
+		return
+	view_camera(user)
+
+/obj/item/bug_monitor/proc/camera_choice_closed(mob/user, datum/om/prompt/ask)
+	in_use = FALSE
+
+/obj/item/bug_monitor/proc/camera_chosen(mob/user, camera, datum/om/prompt/ask)
+	in_use = FALSE
+	selected_camera = camera
 	view_camera(user)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)

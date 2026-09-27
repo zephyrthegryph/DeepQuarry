@@ -122,15 +122,17 @@
 		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
-		var/tmp_label = tgui_input_text(user, "Enter a nickname for [src]", "Nickname", nickname, MAX_NAME_LEN)
-		if(length(tmp_label) > 50 || length(tmp_label) < 3)
-			to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
-		else
-			to_chat(user, span_notice("You scribble your new nickname on the side of [src]."))
-			nickname = tmp_label
-			desc = initial(desc) + " This one has "  + span_notice("'[nickname]'") + " scribbled on the side."
+		om_prompt(src, user, list("kind" = "text", "message" = "Enter a nickname for [src]", "title" = "Nickname", "default" = nickname, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(nickname_entered))
 	else
 		return ..()
+
+/obj/item/uav/proc/nickname_entered(mob/user, tmp_label, datum/om/prompt/ask)
+	if(length(tmp_label) > 50 || length(tmp_label) < 3)
+		to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
+	else
+		to_chat(user, span_notice("You scribble your new nickname on the side of [src]."))
+		nickname = tmp_label
+		desc = initial(desc) + " This one has "  + span_notice("'[nickname]'") + " scribbled on the side."
 
 /obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
 	to_chat(user, span_notice("You insert [I] into [nickname]."))

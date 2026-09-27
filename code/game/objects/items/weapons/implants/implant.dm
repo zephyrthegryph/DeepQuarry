@@ -294,12 +294,19 @@ Implant Specifics:<BR>"}
 		t.hotspot_expose(3500,125)
 
 /obj/item/implant/explosive/post_implant(mob/source as mob)
-	elevel = tgui_alert(usr, "What sort of explosion would you prefer?", "Implant Intent", list("Localized Limb", "Destroy Body", "Full Explosion"))
-	phrase = tgui_input_text(usr, "Choose activation phrase:")
+	om_prompt_sequence(src, usr, list(
+		list("key" = "level", "message" = "What sort of explosion would you prefer?", "title" = "Implant Intent", "choices" = list("Localized Limb", "Destroy Body", "Full Explosion")),
+		list("key" = "phrase", "kind" = "text", "message" = "Choose activation phrase:"),
+	), PROC_REF(explosive_configured), list("data" = list("source" = source)))
+
+/obj/item/implant/explosive/proc/explosive_configured(mob/user, datum/om/prompt/ask)
+	var/mob/source = ask.get("source")
+	elevel = ask.get("level")
+	phrase = ask.get("phrase")
 	var/list/replacechars = list("'" = "","\"" = "",">" = "","<" = "","(" = "",")" = "")
 	phrase = replace_characters(phrase, replacechars)
-	usr.mind.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
-	to_chat(usr, "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.")
+	user.mind?.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
+	to_chat(user, "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.")
 
 /obj/item/implant/explosive/emp_act(severity, recursive)
 	. = ..()
@@ -620,9 +627,15 @@ the implant may become unstable and either pre-maturely inject the subject or si
 
 /obj/item/implant/compressed/post_implant(mob/source)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
-	activation_emote = tgui_input_list(usr, "Choose activation emote. If you cancel this, one will be picked at random.", "Implant Activation", choices)
-	if(!activation_emote)
-		activation_emote = pick(choices)
+	activation_emote = pick(choices)
+	announce_activation(source)
+	om_prompt(src, usr, list("kind" = "list", "message" = "Choose activation emote. If you cancel this, one will be picked at random.", "title" = "Implant Activation", "choices" = choices, "data" = list("source" = source)), PROC_REF(emote_chosen))
+
+/obj/item/implant/compressed/proc/emote_chosen(mob/user, emote, datum/om/prompt/ask)
+	activation_emote = emote
+	announce_activation(ask.get("source"))
+
+/obj/item/implant/compressed/proc/announce_activation(mob/source)
 	if (source.mind)
 		source.mind.store_memory("Compressed matter implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.", 0, 0)
 	to_chat(source, "The implanted compressed matter implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
@@ -797,17 +810,22 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 	imp = new /obj/item/implant/compliance(src)
 	update()
 
+/obj/item/implanter/compliance/proc/laws_entered(mob/user, newlaws, datum/om/prompt/ask)
+	var/obj/item/implant/compliance/implant = ask.get("implant")
+	if(implant != imp)
+		return
+	newlaws = sanitize(newlaws,2048)
+	if(newlaws)
+		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
+		implant.laws = newlaws //Organic
+
 /obj/item/implanter/compliance/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
 	if(istype(imp,/obj/item/implant/compliance))
 		var/obj/item/implant/compliance/implant = imp
-		var/newlaws = tgui_input_text(user, "Please Input Laws", "Compliance Laws", "", multiline = TRUE, prevent_enter = TRUE)
-		newlaws = sanitize(newlaws,2048)
-		if(newlaws)
-			to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
-			implant.laws = newlaws //Organic
+		om_prompt(src, user, list("kind" = "text", "message" = "Please Input Laws", "title" = "Compliance Laws", "default" = "", "multiline" = TRUE, "requires" = PROMPT_HELD, "data" = list("implant" = implant)), PROC_REF(laws_entered))
 	else //No using other implants.
 		to_chat(user,span_notice("A red warning pops up on the implanter's micro-screen: 'INVALID IMPLANT DETECTED.'"))
 

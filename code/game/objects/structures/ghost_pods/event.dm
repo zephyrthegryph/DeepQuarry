@@ -15,9 +15,8 @@
 	spawn_active = TRUE
 
 /obj/structure/ghost_pod/ghost_activated/maintpred/create_occupant(mob/M)
-	..()
-	var/choice
-	var/finalized = "No"
+	used = TRUE
+	registry_leave(REGISTRY_GHOST_PODS, src)
 
 	if(jobban_isbanned(M, JOB_GHOSTROLES))
 		to_chat(M, span_warning("You cannot inhabit this creature because you are banned from playing ghost roles."))
@@ -26,24 +25,15 @@
 
 	//No OOC notes
 	if(not_has_ooc_text(M))
+		open_pod()
 		return
 
-	while(finalized != "Yes" && M.client)
-		choice = tgui_input_list(M, "What type of predator do you want to play as?", "Maintpred Choice", GLOB.maint_mob_pred_options)
-		if(!choice)	//We probably pushed the cancel button on the mob selection. Let's just put the ghost pod back in the list.
-			to_chat(M, span_notice("No mob selected, cancelling."))
-			reset_ghostpod()
-			return
+	ask_maint_critter(M, "What type of predator do you want to play as?", "Maintpred Choice")
 
-		if(choice)
-			finalized = tgui_alert(M, "Are you sure you want to play as [choice]?","Confirmation",list("No","Yes"))
-
-	if(!choice)	//If somehow we ended up here and we don't have a choice, let's just reset things!
-		reset_ghostpod()
-		return
-
+/obj/structure/ghost_pod/ghost_activated/maintpred/spawn_maint_critter(mob/M, choice)
 	var/mobtype = GLOB.maint_mob_pred_options[choice]
 	var/mob/living/simple_mob/newPred = new mobtype(get_turf(src))
+	open_pod()
 	qdel(newPred.ai_brain)
 	newPred.ai_brain = null
 	//newPred.movement_cooldown = 0			// The "needless artificial speed cap" exists for a reason
@@ -58,10 +48,7 @@
 	newPred.ckey = M.ckey
 	newPred.visible_message(span_warning("[newPred] emerges from somewhere!"))
 	log_and_message_admins("successfully entered \a [src] and became a [newPred].")
-	if(tgui_alert(newPred, "Do you want to load the vore bellies from your current slot?", "Load Bellies", list("Yes", "No")) == "Yes")
-		newPred.copy_from_prefs_vr()
-		if(LAZYLEN(newPred.vore_organs))
-			newPred.vore_selected = newPred.vore_organs[1]
+	newPred.offer_load_bellies()
 	qdel(src)
 
 /obj/structure/ghost_pod/ghost_activated/morphspawn
@@ -98,10 +85,7 @@
 	newMorph.ckey = M.ckey
 	newMorph.visible_message(span_warning("A morph appears to crawl out of somewhere."))
 	log_and_message_admins("successfully entered \a [src] and became a Morph.")
-	if(tgui_alert(newMorph, "Do you want to load the vore bellies from your current slot?", "Load Bellies", list("Yes", "No")) == "Yes")
-		newMorph.copy_from_prefs_vr()
-		if(LAZYLEN(newMorph.vore_organs))
-			newMorph.vore_selected = newMorph.vore_organs[1]
+	newMorph.offer_load_bellies()
 	qdel(src)
 
 /obj/structure/ghost_pod/ghost_activated/maintpred/redgate //For ghostpods placed in the redgate that aren't spawned via an event
@@ -142,11 +126,11 @@
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
 		return
 
-	var/choice = tgui_alert(user, "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?", "Stowaway Spawner", list("Yes", "No"))
+	om_prompt(src, user, list("message" = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?", "title" = "Stowaway Spawner", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/has_client)), PROC_REF(lurker_confirmed))
 
-	if(choice != "Yes")
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/proc/lurker_confirmed(mob/observer/dead/user, choice, datum/om/prompt/ask)
+	if(choice != "Yes" || used)
 		return
-
 	create_occupant(user)
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/create_occupant(mob/M)
@@ -220,9 +204,4 @@
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
 		return
 
-	var/choice = tgui_alert(user, "Using this spawner will spawn you as your currently loaded character slot in a special role. It should be a character who has a suitable reason for existing within this redspace location. You will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "Redspace Inhabitant Spawner", list("Yes", "No"))
-
-	if(choice != "Yes")
-		return
-
-	create_occupant(user)
+	om_prompt(src, user, list("message" = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should be a character who has a suitable reason for existing within this redspace location. You will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "title" = "Redspace Inhabitant Spawner", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/has_client)), PROC_REF(lurker_confirmed))

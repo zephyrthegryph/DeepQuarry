@@ -18,19 +18,19 @@
 		icon_state = "implantcase-0"
 	return
 
+/obj/item/implantcase/proc/label_entered(mob/user, t, datum/om/prompt/ask)
+	if((!in_range(src, user) && loc != user))
+		return
+	t = sanitizeSafe(t, MAX_NAME_LEN)
+	if(t)
+		name = text("Glass Case - '[]'", t)
+	else
+		name = "Glass Case"
+
 /obj/item/implantcase/attackby(obj/item/I as obj, mob/user as mob)
 	..()
 	if (istype(I, /obj/item/pen))
-		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", name), null, MAX_NAME_LEN)
-		if (user.get_active_hand() != I)
-			return
-		if((!in_range(src, user) && loc != user))
-			return
-		t = sanitizeSafe(t, MAX_NAME_LEN)
-		if(t)
-			name = text("Glass Case - '[]'", t)
-		else
-			name = "Glass Case"
+		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[name]", "max_length" = MAX_NAME_LEN, "target" = I, "requires" = PROMPT_IN_HAND, "data" = list("case" = src)), PROC_REF(label_entered))
 	else if(istype(I, /obj/item/reagent_containers/syringe))
 		if(!imp)	return
 		if(!imp.allow_reagents)	return

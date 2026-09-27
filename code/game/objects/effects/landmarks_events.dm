@@ -20,22 +20,45 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	. = ..()
 	coordinates = "(X:[loc.x];Y:[loc.y];Z:[loc.z])"
 
+/// Asks the creator how the trigger behaves (om_prompt_sequence); the answers land in apply_vars().
 /obj/effect/landmark/event_trigger/proc/set_vars(mob/M)
-	var/new_name = tgui_input_text(M, "Input Name for the trigger", "Naming", "Event Trigger", MAX_MESSAGE_LEN)
+	om_prompt_sequence(src, M, setup_steps(), PROC_REF(apply_vars), list("requires" = PROMPT_ADMIN(R_FUN), "on_cancel" = PROC_REF(setup_cancelled)))
+
+/obj/effect/landmark/event_trigger/proc/setup_steps()
+	return list(
+		list("key" = "name", "kind" = "text", "message" = "Input Name for the trigger", "title" = "Naming", "default" = "Event Trigger", "max_length" = MAX_MESSAGE_LEN),
+		list("key" = "team", "message" = "Notify rest of team?", "title" = "Teamwork", "choices" = list("No", "Yes")),
+		PROC_REF(ask_loud),
+		list("key" = "repeat", "message" = "Make it fire repeatedly?", "title" = "Repetition", "choices" = list("No", "Yes")),
+		PROC_REF(ask_cooldown),
+	)
+
+/obj/effect/landmark/event_trigger/proc/ask_loud(mob/user, datum/om/prompt/ask)
+	if(ask.get("team") != "Yes")
+		return list("key" = "loud", "message" = "Should it make a bwoink when triggered for YOU?", "title" = "bwoink", "choices" = list("No", "Yes"))
+
+/obj/effect/landmark/event_trigger/proc/ask_cooldown(mob/user, datum/om/prompt/ask)
+	if(ask.get("repeat") == "Yes")
+		return list("key" = "cooldown", "kind" = "number", "message" = "Set cooldown in seconds. Minimum 5 seconds!", "title" = "Cooldown", "default" = 60, "min" = 5)
+
+/obj/effect/landmark/event_trigger/proc/setup_cancelled(mob/user, datum/om/prompt/ask)
+	qdel(src)
+
+/obj/effect/landmark/event_trigger/proc/apply_vars(mob/M, datum/om/prompt/ask)
+	var/new_name = ask.get("name")
 	if(!new_name)
+		qdel(src)
 		return
 	name = new_name
 	creator_ckey = M.ckey
 	if(!GLOB.event_triggers[creator_ckey])
 		GLOB.event_triggers[creator_ckey] = list()
 	GLOB.event_triggers[creator_ckey] |= list(src)
-	isTeamwork = (tgui_alert(M, "Notify rest of team?", "Teamwork", list("No", "Yes")) == "Yes" ? TRUE : FALSE)
-	if(!isTeamwork)
-		isLoud = (tgui_alert(M, "Should it make a bwoink when triggered for YOU?", "bwoink", list("No", "Yes")) == "Yes" ? TRUE : FALSE)
-	isRepeating = (tgui_alert(M, "Make it fire repeatedly?", "Repetition", list("No", "Yes")) == "Yes" ? TRUE : FALSE)
+	isTeamwork = ask.get("team") == "Yes"
+	isLoud = !isTeamwork && ask.get("loud") == "Yes"
+	isRepeating = ask.get("repeat") == "Yes"
 	if(isRepeating)
-		cooldown = tgui_input_number(M, "Set cooldown in seconds. Minimum 5 seconds!", "Cooldown", 60, min_value = 5)
-		cooldown = cooldown SECONDS
+		cooldown = ask.get("cooldown") SECONDS
 	else
 		delete_me = TRUE
 	log_admin("[M.ckey] has created a [isNarrate ? "Narrtion" : "Notification"] landmark trigger at [coordinates]")
@@ -93,21 +116,36 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	. = ..()
 	message_range = world.view
 
-/obj/effect/landmark/event_trigger/auto_narrate/set_vars(mob/M)
+/obj/effect/landmark/event_trigger/auto_narrate/setup_steps()
+	return ..() + list(
+		list("key" = "message", "kind" = "text", "message" = "What should the automatic narration say?", "title" = "Message", "default" = "", "max_length" = MAX_MESSAGE_LEN),
+		list("key" = "target", "message" = "Should it send directly to the player, or send to the turf?", "title" = "Target", "choices" = list("Player", "Turf")),
+		PROC_REF(ask_style),
+		PROC_REF(ask_range),
+	)
+
+/obj/effect/landmark/event_trigger/auto_narrate/proc/ask_style(mob/user, datum/om/prompt/ask)
+	if(ask.get("target") == "Player")
+		return list("key" = "scary", "message" = "Should it be a normal message or a big scary red text?", "title" = "Scary Red", "choices" = list("Big Red", "Normal"))
+	return list("key" = "mode", "message" = "Should it be visible or audible?", "title" = "Mode", "choices" = list("Visible", "Audible"))
+
+/obj/effect/landmark/event_trigger/auto_narrate/proc/ask_range(mob/user, datum/om/prompt/ask)
+	if(ask.get("target") != "Player")
+		return list("key" = "range", "kind" = "number", "message" = "Give narration range! Input value over 10 to use world.view", "title" = "Range", "default" = 11, "min" = 0)
+
+/obj/effect/landmark/event_trigger/auto_narrate/apply_vars(mob/M, datum/om/prompt/ask)
 	..()
-	message = encode_html_emphasis(tgui_input_text(M, "What should the automatic narration say?", "Message", "", MAX_MESSAGE_LEN))
-	isPersonal_orVis_orAud = (tgui_alert(M, "Should it send directly to the player, or send to the turf?", "Target", list("Player", "Turf")) == "Player" ? 0 : 1)
-	if(isPersonal_orVis_orAud == 0)
-		isWarning = (tgui_alert(M, "Should it be a normal message or a big scary red text?", "Scary Red", list("Big Red", "Normal")) == "Big Red" ? TRUE : FALSE)
+	if(QDELETED(src))
+		return
+	message = encode_html_emphasis(ask.get("message"))
+	if(ask.get("target") == "Player")
+		isPersonal_orVis_orAud = 0
+		isWarning = ask.get("scary") == "Big Red"
 	else
-		isPersonal_orVis_orAud = (tgui_alert(M, "Should it be visible or audible?", "Mode", list("Visible", "Audible")) == "Audible" ? 2 : 1)
-		var/range = tgui_input_number(M, "Give narration range! Input value over 10 to use world.view", "Range",default = 11, min_value = 0)
+		isPersonal_orVis_orAud = ask.get("mode") == "Audible" ? 2 : 1
+		var/range = ask.get("range")
 		if(range <= 10)
 			message_range = range
-
-
-
-
 
 /obj/effect/landmark/event_trigger/auto_narrate/Crossed(atom/movable/AM)
 	. = ..()	//Checks if AM is mob/living and notifies admin(s)

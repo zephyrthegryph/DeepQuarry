@@ -305,9 +305,12 @@
 		return //something is terribly wrong
 
 	var/prefs_name = src.client.prefs.read_preference(/datum/preference/name/real_name)
-	var/confirm = tgui_alert(src, "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", "Join as Voice?", list("Yes","No"))
+	om_prompt(src, src, list("message" = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", "title" = "Join as Voice?", "choices" = list("Yes","No"), "data" = list("name" = prefs_name)), PROC_REF(join_as_voice_confirmed))
+
+/mob/observer/dead/proc/join_as_voice_confirmed(mob/user, confirm, datum/om/prompt/ask)
 	if(confirm != "Yes")
 		return
+	var/prefs_name = ask.get("name")
 
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD == 1)
 		to_chat(src, span_danger("You have used the antagHUD and cannot respawn or use communicators!"))
@@ -334,14 +337,14 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	var/choice = tgui_input_list(src, "Send a voice request to whom?", "Recipient Choice", choices)
-	if(choice)
-		var/obj/item/communicator/chosen_communicator = choice
-		var/mob/observer/dead/O = src
-		if(O.exonet)
-			O.exonet.send_message(chosen_communicator.exonet.address, "voice")
+	om_prompt_chain(ask, list("kind" = "list", "message" = "Send a voice request to whom?", "title" = "Recipient Choice", "choices" = choices), PROC_REF(voice_request_target_chosen))
 
-			to_chat(src, "A communications request has been sent to [chosen_communicator].  Now you need to wait until someone answers.")
+/mob/observer/dead/proc/voice_request_target_chosen(mob/user, obj/item/communicator/chosen_communicator, datum/om/prompt/ask)
+	var/mob/observer/dead/O = src
+	if(O.exonet && chosen_communicator.exonet)
+		O.exonet.send_message(chosen_communicator.exonet.address, "voice")
+
+		to_chat(src, "A communications request has been sent to [chosen_communicator].  Now you need to wait until someone answers.")
 
 // Proc: connect_video()
 // Parameters: user - the mob doing the viewing of video, comm - the communicator at the far end

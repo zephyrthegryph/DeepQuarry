@@ -113,9 +113,7 @@
 		var/obj/item/C = new newpath(H)
 		H.equip_to_appropriate_slot(C)
 
-	var/newname = tgui_input_text(H, "Your mind feels foggy, and you recall your name might be [H.real_name]. Would you like to change your name?", "Name change", null, MAX_NAME_LEN)
-	if (newname)
-		H.real_name = newname
+	H.offer_spawn_rename()
 
 	icon_state = icon_state_opened
 

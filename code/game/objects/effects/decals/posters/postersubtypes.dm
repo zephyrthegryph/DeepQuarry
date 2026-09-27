@@ -36,8 +36,11 @@
 	for(var/option in posters)
 		options[posters[option].name] = posters[option]
 
-	var/choice = tgui_input_list(M, "Choose a poster!", "Customize Poster", options)
-	if(src && choice && !M.stat && in_range(M,src))
+	om_prompt(src, M, list("kind" = "list", "message" = "Choose a poster!", "title" = "Customize Poster", "choices" = options, "requires" = PROMPT_ADJACENT, "data" = list("options" = options)), PROC_REF(poster_chosen))
+
+/obj/item/poster/custom/proc/poster_chosen(mob/M, choice, datum/om/prompt/ask)
+	var/list/options = ask.get("options")
+	if(options[choice])
 		poster_decl = options[choice]
 		name = "rolled-up poly-poster - [poster_decl.name]"
 		to_chat(M, "The poster is now: [choice].")

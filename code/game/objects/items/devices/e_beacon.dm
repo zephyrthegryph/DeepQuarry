@@ -23,6 +23,10 @@
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
+/obj/item/emergency_beacon/proc/activation_answered(mob/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && !beacon_active)	//short delay, so they can still abort if they want to
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
+
 /obj/item/emergency_beacon/attack_self(mob/user)
 	. = ..(user)
 	if(.)
@@ -36,11 +40,7 @@
 			to_chat(user,span_warning("You cannot activate the beacon when you are not on sufficiently solid ground!"))
 			return
 		else
-			var/answer = tgui_alert(user, "Would you like to activate this personal emergency beacon?","\The [src]", list("Yes", "No"))
-			if(answer != "Yes")
-				return
-			else	//short delay, so they can still abort if they want to
-				om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
+			om_prompt(src, user, list("message" = "Would you like to activate this personal emergency beacon?", "title" = "\The [src]", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(activation_answered))
 	else
 		to_chat(user,"\The [src] is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
 

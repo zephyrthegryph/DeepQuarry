@@ -148,32 +148,37 @@ This device records all warnings given and teleport events for admin review in c
 			to_chat(user, span_warning("The translocator can't support any more beacons!"))
 			return
 
-		var/new_name = tgui_input_text(user,"New beacon's name (2-20 char):","[src]",null,20)
-		if(!check_menu(user))
-			return
-
-		if(length(new_name) > 20 || length(new_name) < 2)
-			to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
-			return
-
-		if(new_name in beacons)
-			to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
-			return
-
-		var/obj/item/perfect_tele_beacon/nb = new(get_turf(src))
-		nb.tele_name = new_name
-		nb.tele_hand = src
-		nb.creator = user.ckey
-		LAZYSET(beacons, new_name, nb)
-		beacons_left--
-		if(isliving(user))
-			var/mob/living/L = user
-			L.put_in_any_hand_if_possible(nb)
-		rebuild_radial_images()
+		om_prompt(src, user, list("kind" = "text", "message" = "New beacon's name (2-20 char):", "title" = "[src]", "max_length" = 20, "requires" = PROMPT_HELD), PROC_REF(beacon_named))
+		return
 
 	else
 		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
+
+/obj/item/perfect_tele/proc/beacon_named(mob/user, new_name, datum/om/prompt/ask)
+	if(!check_menu(user))
+		return
+	if(beacons_left <= 0)
+		to_chat(user, span_warning("The translocator can't support any more beacons!"))
+		return
+	if(length(new_name) > 20 || length(new_name) < 2)
+		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
+		return
+
+	if(new_name in beacons)
+		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
+		return
+
+	var/obj/item/perfect_tele_beacon/nb = new(get_turf(src))
+	nb.tele_name = new_name
+	nb.tele_hand = src
+	nb.creator = user.ckey
+	LAZYSET(beacons, new_name, nb)
+	beacons_left--
+	if(isliving(user))
+		var/mob/living/L = user
+		L.put_in_any_hand_if_possible(nb)
+	rebuild_radial_images()
 
 /obj/item/perfect_tele/attackby(obj/W, mob/user)
 	if(istype(W,cell_type) && !power_source)
@@ -405,14 +410,17 @@ This device records all warnings given and teleport events for admin review in c
 /obj/item/perfect_tele_beacon/attack_hand(mob/user)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		warned_users |= user.ckey
-		var/choice = tgui_alert(user, {"
+		om_prompt(src, user, list("message" = {"
 This device is a translocator beacon. Having it on your person may mean that anyone
 who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
 or don't wish to potentially have a random person teleported into you, it's suggested that you
-not carry this around."}, "OOC Warning", list("Take It","Leave It"))
-		if(choice == "Leave It")
-			return
+not carry this around."}, "title" = "OOC Warning", "choices" = list("Take It","Leave It"), "requires" = PROMPT_ADJACENT), PROC_REF(warning_answered))
+		return
 	return ..()
+
+/obj/item/perfect_tele_beacon/proc/warning_answered(mob/user, choice, datum/om/prompt/ask)
+	if(choice == "Take It")
+		attack_hand(user)
 
 /obj/item/perfect_tele_beacon/stationary
 	name = "stationary translocator beacon"
@@ -430,12 +438,20 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	if(!isliving(user))
 		return
 	var/mob/living/L = user
-	var/confirm = tgui_alert(user, "You COULD eat the beacon...", "Eat beacon?", list("Eat it!", "No, thanks."))
-	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = tgui_input_list(user, "Which belly?","Select A Belly", L.vore_organs)
-		if(bellychoice)
-			user.visible_message(span_warning("[user] is trying to stuff \the [src] into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!"),span_notice("You begin putting \the [src] into your [bellychoice.name]!"))
-			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
+	om_prompt_sequence(src, user, list(
+		list("key" = "confirm", "message" = "You COULD eat the beacon...", "title" = "Eat beacon?", "choices" = list("Eat it!", "No, thanks.")),
+		PROC_REF(ask_belly),
+	), PROC_REF(belly_chosen), list("requires" = PROMPT_HELD, "data" = list("pred" = L)))
+
+/obj/item/perfect_tele_beacon/proc/ask_belly(mob/living/user, datum/om/prompt/ask)
+	if(ask.get("confirm") == "Eat it!")
+		return list("key" = "belly", "kind" = "list", "message" = "Which belly?", "title" = "Select A Belly", "choices" = user.vore_organs)
+
+/obj/item/perfect_tele_beacon/proc/belly_chosen(mob/living/user, datum/om/prompt/ask)
+	var/obj/belly/bellychoice = ask.get("belly")
+	if(istype(bellychoice) && bellychoice.owner == user)
+		user.visible_message(span_warning("[user] is trying to stuff \the [src] into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!"),span_notice("You begin putting \the [src] into your [bellychoice.name]!"))
+		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))
 
 /obj/item/perfect_tele_beacon/proc/attack_self_timed_done(mob/user, obj/belly/bellychoice)
 	user.unEquip(src)

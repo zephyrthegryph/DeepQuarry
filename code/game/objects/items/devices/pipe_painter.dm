@@ -29,9 +29,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/new_mode = tgui_input_list(user, "Which colour do you want to use?", "Pipe painter", modes)
-	if(!new_mode)
-		return
+	om_prompt(src, user, list("kind" = "list", "message" = "Which colour do you want to use?", "title" = "Pipe painter", "choices" = modes, "requires" = PROMPT_HELD), PROC_REF(mode_chosen))
+
+/obj/item/pipe_painter/proc/mode_chosen(mob/user, new_mode, datum/om/prompt/ask)
 	mode = new_mode
 
 /obj/item/pipe_painter/examine(mob/user)

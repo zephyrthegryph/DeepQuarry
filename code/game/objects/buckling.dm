@@ -9,6 +9,10 @@
 	var/max_buckled_mobs = 1
 
 
+/atom/movable/proc/unbuckle_chosen(mob/living/user, mob/living/unbuckled, datum/om/prompt/ask)
+	if(unbuckled in BUCKLED_MOBS(src))
+		user_unbuckle_mob(unbuckled, user)
+
 /atom/movable/hand_gate(mob/living/user)
 	. = ..()
 //	if(can_buckle && buckled_mob)
@@ -17,9 +21,8 @@
 	if(can_buckle && has_buckled_mobs())
 		var/list/mobs = BUCKLED_MOBS(src)
 		if(mobs.len > 1)
-			var/unbuckled = tgui_input_list(user, "Who do you wish to unbuckle?","Unbuckle Who?", mobs)
-			if(unbuckled && user_unbuckle_mob(unbuckled, user))
-				return TRUE
+			om_prompt(src, user, list("kind" = "list", "message" = "Who do you wish to unbuckle?", "title" = "Unbuckle Who?", "choices" = mobs, "requires" = PROMPT_ADJACENT), PROC_REF(unbuckle_chosen))
+			return TRUE
 		else
 			if(user_unbuckle_mob(mobs[1], user))
 				return TRUE

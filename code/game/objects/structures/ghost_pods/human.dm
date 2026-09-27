@@ -102,10 +102,6 @@
 		E.description_antag = "This is a 'disguised' emag, to make your escape from wherever you happen to be trapped."
 		H.equip_to_appropriate_slot(E)
 
-	var/newname = tgui_input_text(H, "Your mind feels foggy, and you recall your name might be [H.real_name]. Would you like to change your name?", "Name change", null, MAX_NAME_LEN)
-	if (newname)
-		H.real_name = newname
-
 	icon_state = icon_state_opened
 
 	H.forceMove(T)
@@ -123,6 +119,7 @@
 
 	if(allow_appearance_change)
 		H.change_appearance(APPEARANCE_ALL, H, check_species_whitelist = 1)
+	H.offer_spawn_rename()
 
 //	visible_message(span_alien("\The [src] [pick("gurgles", "seizes", "clangs")] before releasing \the [H]!"))
 
@@ -224,9 +221,7 @@
 		var/obj/item/C = new newpath(H)
 		H.equip_to_appropriate_slot(C)
 
-	var/newname = tgui_input_text(H, "Your mind feels foggy, and you recall your name might be [H.real_name]. Would you like to change your name?", "Name change", null, MAX_NAME_LEN)
-	if (newname)
-		H.real_name = newname
+	H.offer_spawn_rename()
 
 	icon_state = icon_state_opened
 

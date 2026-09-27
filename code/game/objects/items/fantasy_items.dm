@@ -333,32 +333,37 @@ This device records all warnings given and teleport events for admin review in c
 			to_chat(user, span_warning("The tome can't support any more pages!"))
 			return
 
-		var/new_name = tgui_input_text(user,"New pages's name (2-20 char):","[src]",null,20)
-		if(!check_menu(user))
-			return
-
-		if(length(new_name) > 20 || length(new_name) < 2)
-			to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
-			return
-
-		if(new_name in beacons)
-			to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
-			return
-
-		var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
-		nb.tele_name = new_name
-		nb.tele_hand = src
-		nb.creator = user.ckey
-		LAZYSET(beacons, new_name, nb)
-		beacons_left--
-		if(isliving(user))
-			var/mob/living/L = user
-			L.put_in_any_hand_if_possible(nb)
-		rebuild_radial_images()
+		om_prompt(src, user, list("kind" = "text", "message" = "New pages's name (2-20 char):", "title" = "[src]", "max_length" = 20, "requires" = PROMPT_HELD), PROC_REF(page_named))
+		return
 
 	else
 		destination = LAZYACCESS(beacons, choice)
 		rebuild_radial_images()
+
+/obj/item/perfect_tele/magic/proc/page_named(mob/user, new_name, datum/om/prompt/ask)
+	if(!check_menu(user))
+		return
+	if(beacons_left <= 0)
+		to_chat(user, span_warning("The tome can't support any more pages!"))
+		return
+	if(length(new_name) > 20 || length(new_name) < 2)
+		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
+		return
+
+	if(new_name in beacons)
+		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
+		return
+
+	var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
+	nb.tele_name = new_name
+	nb.tele_hand = src
+	nb.creator = user.ckey
+	LAZYSET(beacons, new_name, nb)
+	beacons_left--
+	if(isliving(user))
+		var/mob/living/L = user
+		L.put_in_any_hand_if_possible(nb)
+	rebuild_radial_images()
 
 //sizegun
 

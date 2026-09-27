@@ -104,18 +104,18 @@
 
 /obj/structure/morgue/attackby(P as obj, mob/user as mob)
 	if (istype(P, /obj/item/pen))
-		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null)
-		if (user.get_active_hand() != P)
-			return
-		if ((!in_range(src, user) && src.loc != user))
-			return
-		t = sanitizeSafe(t, MAX_NAME_LEN)
-		if (t)
-			src.name = text("Morgue- '[]'", t)
-		else
-			src.name = "Morgue"
+		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "target" = P, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
 	src.add_fingerprint(user)
 	return
+
+/obj/structure/morgue/proc/label_entered(mob/user, t, datum/om/prompt/ask)
+	if ((!in_range(src, user) && src.loc != user))
+		return
+	t = sanitizeSafe(t, MAX_NAME_LEN)
+	if (t)
+		src.name = text("Morgue- '[]'", t)
+	else
+		src.name = "Morgue"
 
 /obj/structure/morgue/relaymove(mob/user as mob)
 	if (user.stat)
@@ -229,18 +229,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 /obj/structure/morgue/crematorium/attackby(P as obj, mob/user as mob)
 	if (istype(P, /obj/item/pen))
-		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null)
-		if (user.get_active_hand() != P)
-			return
-		if ((!in_range(src, user) > 1 && src.loc != user))
-			return
-		t = sanitizeSafe(t, MAX_NAME_LEN)
-		if (t)
-			src.name = text("Crematorium- '[]'", t)
-		else
-			src.name = "Crematorium"
+		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "target" = P, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
 	src.add_fingerprint(user)
 	return
+
+/obj/structure/morgue/crematorium/label_entered(mob/user, t, datum/om/prompt/ask)
+	if ((!in_range(src, user) && src.loc != user))
+		return
+	t = sanitizeSafe(t, MAX_NAME_LEN)
+	if (t)
+		src.name = text("Crematorium- '[]'", t)
+	else
+		src.name = "Crematorium"
 
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)

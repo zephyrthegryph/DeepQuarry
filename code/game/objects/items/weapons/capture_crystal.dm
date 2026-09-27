@@ -68,17 +68,7 @@
 			to_chat(M, span_notice("\The [bound_mob] is now [AI.get_hostile() ? "hostile" : "passive"]."))
 			log_admin("[key_name_admin(M)] set [bound_mob] to [AI.get_hostile()].")
 	else if(bound_mob.client)
-		var/transmit_msg = tgui_input_text(user, "What is your command?", "Command")
-		if(length(transmit_msg) >= MAX_MESSAGE_LEN)
-			to_chat(M, span_danger("Your message was TOO LONG!:[transmit_msg]"))
-			return
-		transmit_msg = sanitize(transmit_msg, max_length = MAX_MESSAGE_LEN)
-		if(isnull(transmit_msg))
-			to_chat(M, span_notice("You decided against it."))
-			return
-		to_chat(bound_mob, span_notice("\The [owner] commands, '[transmit_msg]'"))
-		to_chat(M, span_notice("Your command has been transmitted, '[transmit_msg]'"))
-		log_admin("[key_name_admin(M)] sent the command, '[transmit_msg]' to [bound_mob].")
+		om_prompt(src, user, list("kind" = "text", "message" = "What is your command?", "title" = "Command", "requires" = PROMPT_HELD, "on_cancel" = PROC_REF(command_cancelled)), PROC_REF(command_entered))
 	else
 		to_chat(M, span_notice("\The [src] emits an unpleasant tone... \The [bound_mob] is unresponsive."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
@@ -161,6 +151,23 @@
 		owner = null
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!
+/obj/item/capture_crystal/proc/command_cancelled(mob/living/M, datum/om/prompt/ask)
+	to_chat(M, span_notice("You decided against it."))
+
+/obj/item/capture_crystal/proc/command_entered(mob/living/M, transmit_msg, datum/om/prompt/ask)
+	if(M != owner || !bound_mob)
+		return
+	if(length(transmit_msg) >= MAX_MESSAGE_LEN)
+		to_chat(M, span_danger("Your message was TOO LONG!:[transmit_msg]"))
+		return
+	transmit_msg = sanitize(transmit_msg, max_length = MAX_MESSAGE_LEN)
+	if(isnull(transmit_msg))
+		to_chat(M, span_notice("You decided against it."))
+		return
+	to_chat(bound_mob, span_notice("\The [owner] commands, '[transmit_msg]'"))
+	to_chat(M, span_notice("Your command has been transmitted, '[transmit_msg]'"))
+	log_admin("[key_name_admin(M)] sent the command, '[transmit_msg]' to [bound_mob].")
+
 /obj/item/capture_crystal/verb/invite_ghost()
 	set name = "Enhance (Toggle Ghost Join)"
 	set category = "Object"
@@ -184,11 +191,16 @@
 	if(M.ghostjoin)
 		M.ghostjoin = FALSE
 		to_chat(U, span_notice("\The [bound_mob] is no longer eligable to be joined by ghosts."))
-	else if(tgui_alert(U, "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", "Invite ghosts?",list("No","Yes")) == "Yes")
-		M.ghostjoin = TRUE
-		to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 	else
+		om_prompt(src, U, list("message" = "Do you want to offer your [bound_mob] up to ghosts to play as? There is no way undo this once a ghost takes over.", "title" = "Invite ghosts?", "choices" = list("No", "Yes"), "requires" = PROMPT_HELD, "data" = list("bound" = M)), PROC_REF(ghost_invite_answered))
+
+/obj/item/capture_crystal/proc/ghost_invite_answered(mob/living/U, answer, datum/om/prompt/ask)
+	var/mob/living/simple_mob/M = ask.get("bound")
+	if(answer != "Yes" || M != bound_mob || U != owner || M.client)
 		to_chat(U, span_notice("You decided against it."))
+		return
+	M.ghostjoin = TRUE
+	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 
 /obj/item/capture_crystal/update_icon()
 	. = ..()
@@ -244,8 +256,16 @@
 			to_chat(user, span_notice("\The [src] emits an unpleasant tone... It does not activate for you."))
 			playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
 			return
-		if(tgui_alert(user, "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", "Claim ownership", list("No","Yes")) == "Yes")
-			owner = user
+		om_prompt(src, user, list("message" = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", "title" = "Claim ownership", "choices" = list("No", "Yes"), "requires" = PROMPT_HELD), PROC_REF(claim_answered))
+		return
+	use_crystal(user)
+
+/obj/item/capture_crystal/proc/claim_answered(mob/living/user, answer, datum/om/prompt/ask)
+	if(answer == "Yes" && !owner && bound_mob && bound_mob != user)
+		owner = user
+	use_crystal(user)
+
+/obj/item/capture_crystal/proc/use_crystal(mob/living/user)
 	if(!cooldown_check())
 		to_chat(user, span_notice("\The [src] emits an unpleasant tone... It is not ready yet."))
 		if(bound_mob)
@@ -336,14 +356,32 @@
 	else if(!M.capture_crystal || M.capture_caught)
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
-	else if(tgui_alert(M, "Would you like to be caught by in [src] by [U]? You will be bound to their will.", "Become Caught",list("No","Yes")) == "Yes")
-		if(tgui_alert(M, "Are you really sure? The only way to undo this is to OOC escape while you're in the crystal.", "Become Caught", list("No","Yes")) == "Yes")
-			log_admin("[key_name(M)] has agreed to become caught by [key_name(U)].")
-			capture(M, U)
-			recall(U)
-			return
+	else
+		om_prompt_sequence(src, M, list(
+			list("key" = "agree", "message" = "Would you like to be caught by in [src] by [U]? You will be bound to their will.", "title" = "Become Caught", "choices" = list("No", "Yes")),
+			PROC_REF(ask_capture_sure),
+		), PROC_REF(capture_answered), list("requires" = list(/datum/om/check/conscious), "on_cancel" = PROC_REF(capture_refused), "data" = list("capturer" = U)))
+		return
 	to_chat(U, span_warning("This creature is too strong willed to be captured."))
 	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+
+/obj/item/capture_crystal/proc/ask_capture_sure(mob/living/M, datum/om/prompt/ask)
+	if(ask.get("agree") == "Yes")
+		return list("key" = "sure", "message" = "Are you really sure? The only way to undo this is to OOC escape while you're in the crystal.", "title" = "Become Caught", "choices" = list("No", "Yes"))
+
+/obj/item/capture_crystal/proc/capture_refused(mob/living/M, datum/om/prompt/ask)
+	var/mob/living/U = ask.get("capturer")
+	to_chat(U, span_warning("This creature is too strong willed to be captured."))
+	playsound(src, 'sound/effects/capture-crystal-negative.ogg', 75, 1, -1)
+
+/obj/item/capture_crystal/proc/capture_answered(mob/living/M, datum/om/prompt/ask)
+	var/mob/living/U = ask.get("capturer")
+	if(ask.get("sure") != "Yes" || bound_mob || !M.capture_crystal || M.capture_caught || get_dist(U, M) > 7)
+		capture_refused(M, ask)
+		return
+	log_admin("[key_name(M)] has agreed to become caught by [key_name(U)].")
+	capture(M, U)
+	recall(U)
 
 //The clean up procs!
 /obj/item/capture_crystal/proc/mob_was_deleted()

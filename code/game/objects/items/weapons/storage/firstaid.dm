@@ -139,19 +139,22 @@
 
 /obj/item/storage/pill_bottle/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/tmp_label = sanitizeSafe(tgui_input_text(user, "Enter a label for [name]", "Label", label_text, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
-		if(length(tmp_label) > 50)
-			to_chat(user, span_notice("The label can be at most 50 characters long."))
-		else if(length(tmp_label) > 10)
-			to_chat(user, span_notice("You set the label."))
-			label_text = tmp_label
-			update_name_label()
-		else
-			to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
-			label_text = tmp_label
-			update_name_label()
+		om_prompt(src, user, list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(label_entered))
 	else
 		..()
+
+/obj/item/storage/pill_bottle/proc/label_entered(mob/user, tmp_label, datum/om/prompt/ask)
+	tmp_label = sanitizeSafe(tmp_label, MAX_NAME_LEN)
+	if(length(tmp_label) > 50)
+		to_chat(user, span_notice("The label can be at most 50 characters long."))
+	else if(length(tmp_label) > 10)
+		to_chat(user, span_notice("You set the label."))
+		label_text = tmp_label
+		update_name_label()
+	else
+		to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
+		label_text = tmp_label
+		update_name_label()
 
 /obj/item/storage/pill_bottle/proc/update_name_label()
 	if(!label_text)

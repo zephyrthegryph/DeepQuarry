@@ -53,26 +53,8 @@
 
 /obj/structure/bonfire/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
-		var/obj/item/stack/rods/R = W
-		var/choice = tgui_input_list(user, "What would you like to construct?", "Bonfire", list("Stake","Grill"))
-		switch(choice)
-			if("Stake")
-				R.use(1)
-				can_buckle = TRUE
-				buckle_require_restraints = TRUE
-				to_chat(user, span_notice("You add a rod to \the [src]."))
-				var/mutable_appearance/rod_underlay = mutable_appearance('icons/obj/structures.dmi', "bonfire_rod")
-				rod_underlay.pixel_y = 16
-				rod_underlay.appearance_flags = RESET_COLOR|PIXEL_SCALE|TILE_BOUND
-				underlays += rod_underlay
-			if("Grill")
-				R.use(1)
-				grill = TRUE
-				to_chat(user, span_notice("You add a grill to \the [src]."))
-				update_icon()
-			else
-				return ..()
-
+		om_prompt(src, user, list("kind" = "list", "message" = "What would you like to construct?", "title" = "Bonfire", "choices" = list("Stake","Grill"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("rods" = W)), PROC_REF(construction_chosen))
+		return
 	else if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
@@ -80,6 +62,27 @@
 		ignite()
 	else
 		return ..()
+
+/obj/structure/bonfire/proc/construction_chosen(mob/user, choice, datum/om/prompt/ask)
+	var/obj/item/stack/rods/R = ask.get("rods")
+	if(can_buckle || grill)
+		return
+	switch(choice)
+		if("Stake")
+			R.use(1)
+			can_buckle = TRUE
+			buckle_require_restraints = TRUE
+			to_chat(user, span_notice("You add a rod to \the [src]."))
+			var/mutable_appearance/rod_underlay = mutable_appearance('icons/obj/structures.dmi', "bonfire_rod")
+			rod_underlay.pixel_y = 16
+			rod_underlay.appearance_flags = RESET_COLOR|PIXEL_SCALE|TILE_BOUND
+			underlays += rod_underlay
+		if("Grill")
+			R.use(1)
+			grill = TRUE
+			to_chat(user, span_notice("You add a grill to \the [src]."))
+			update_icon()
+
 
 /obj/structure/bonfire/attack_hand(mob/user)
 	if(has_buckled_mobs())

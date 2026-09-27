@@ -83,21 +83,21 @@
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
 
+/obj/structure/closet/body_bag/proc/label_entered(mob/user, t, datum/om/prompt/ask)
+	if (!in_range(src, user) && src.loc != user)
+		return
+	t = sanitizeSafe(t, MAX_NAME_LEN)
+	if (t)
+		src.name = "body bag - "
+		src.name += t
+		has_label = TRUE
+		add_overlay("bodybag_label")
+	else
+		src.name = "body bag"
+
 /obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(W, /obj/item/pen))
-		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null, MAX_NAME_LEN	)
-		if (user.get_active_hand() != W)
-			return
-		if (!in_range(src, user) && src.loc != user)
-			return
-		t = sanitizeSafe(t, MAX_NAME_LEN)
-		if (t)
-			src.name = "body bag - "
-			src.name += t
-			has_label = TRUE
-			add_overlay("bodybag_label")
-		else
-			src.name = "body bag"
+		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "max_length" = MAX_NAME_LEN, "target" = W, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
 	//..() //Doesn't need to run the parent. Since when can fucking bodybags be welded shut? -Agouri
 		return
 
@@ -185,11 +185,14 @@
 
 /obj/structure/closet/body_bag/cryobag/attack_hand(mob/living/user)
 	if(used)
-		var/confirm = tgui_alert(user, "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", "Confirm Opening", list("No", "Yes"))
-		if(confirm == "Yes")
-			..() // Will call `toggle()` and open the bag.
+		om_prompt(src, user, list("message" = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", "title" = "Confirm Opening", "choices" = list("No", "Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(open_confirmed))
 	else
 		..()
+
+/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
+	if(confirm == "Yes")
+		add_fingerprint(user)
+		toggle(user) // What the parent attack_hand does: opens the bag.
 
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()

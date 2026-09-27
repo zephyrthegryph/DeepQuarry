@@ -185,12 +185,13 @@
 	if (!can_rotate || admin)
 		to_chat(user, span_warning("The rotation is locked!"))
 		return FALSE
-	var/new_angle = tgui_input_number(user, "Input a new angle for primary reflection face.", "Reflector Angle", rotation_angle, 360, -360)
-	if(!CanUseTopic(user))
-		return
-	if(!isnull(new_angle))
-		setAngle(SIMPLIFY_DEGREES(new_angle))
+	om_prompt(src, user, list("kind" = "number", "message" = "Input a new angle for primary reflection face.", "title" = "Reflector Angle", "default" = rotation_angle, "max" = 360, "min" = -360, "requires" = PROMPT_USABLE), PROC_REF(angle_entered))
 	return TRUE
+
+/obj/structure/reflector/proc/angle_entered(mob/user, new_angle, datum/om/prompt/ask)
+	if(!can_rotate || admin)
+		return
+	setAngle(SIMPLIFY_DEGREES(new_angle))
 
 /obj/structure/reflector/click_alt(mob/user)
 	if(!CanUseTopic(user))

@@ -40,9 +40,13 @@
 
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("The door is locked."))
-	var/input = tgui_input_text(user, "Enter [codelen] digits. All digits must be unique.", "Deca-Code Lock", "")
-	if(!Adjacent(user))
-		return ITEM_INTERACT_BLOCKING
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock", "default" = "", "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(code_cancelled)), PROC_REF(code_entered))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_cancelled(mob/user, datum/om/prompt/ask)
+	to_chat(user, span_notice("You leave the lock alone."))
+
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(mob/user, input, datum/om/prompt/ask)
 	var/list/sanitised = list()
 	var/sanitycheck = TRUE
 	for(var/i in 1 to length(input))

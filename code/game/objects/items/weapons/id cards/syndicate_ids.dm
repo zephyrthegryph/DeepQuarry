@@ -37,7 +37,18 @@
 		if(SSantag_job.player_is_antag(user.mind) || registered_user == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
-/obj/item/card/id/syndicate/attack_self(mob/user)
+/obj/item/card/id/syndicate/proc/edit_or_show_chosen(mob/user, choice, datum/om/prompt/ask)
+	if(registered_user != user)
+		return
+	switch(choice)
+		if("Edit")
+			agentcard_module.tgui_interact(user)
+		if("Show")
+			attack_self(user, TRUE)
+
+/obj/item/card/id/syndicate/attack_self(mob/user, show_id = FALSE)
+	if(show_id)
+		return ..(user, TRUE)
 	. = ..(user)
 	if(.)
 		return TRUE
@@ -45,13 +56,8 @@
 	if(!registered_user && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
 	if(registered_user == user)
-		switch(tgui_alert(user, "Would you like to edit the ID, or show it?","Show or Edit?", list("Edit","Show")))
-			if(null)
-				return
-			if("Edit")
-				agentcard_module.tgui_interact(user)
-			if("Show")
-				..(user, TRUE)
+		om_prompt(src, user, list("message" = "Would you like to edit the ID, or show it?", "title" = "Show or Edit?", "choices" = list("Edit","Show"), "requires" = PROMPT_HELD), PROC_REF(edit_or_show_chosen))
+		return
 
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)

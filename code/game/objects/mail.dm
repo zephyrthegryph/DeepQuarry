@@ -95,8 +95,7 @@
 /obj/item/mail/blank/attackby(obj/item/W, mob/user)
 	..()
 	if(istype(W, /obj/item/pen) && sealed && !set_recipient)
-		if(setRecipient(user))
-			set_recipient = TRUE
+		setRecipient(user)
 		add_fingerprint(user)
 		return
 
@@ -123,10 +122,14 @@
 		if(!SSantag_job.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
-	recipient_mob = tgui_input_list(user, "Choose recipient", "Recipients", recipients, recipients)
+	om_prompt(src, user, list("kind" = "list", "message" = "Choose recipient", "title" = "Recipients", "choices" = recipients, "requires" = PROMPT_HELD), PROC_REF(recipient_chosen))
 
-	if(recipient_mob)
+/obj/item/mail/proc/recipient_chosen(mob/user, mob/living/recipient_mob, datum/om/prompt/ask)
+	if(recipient_mob?.mind)
 		initialize_for_recipient(recipient_mob.mind, preset_goodies = TRUE)
+		if(istype(src, /obj/item/mail/blank))
+			var/obj/item/mail/blank/B = src
+			B.set_recipient = TRUE
 		return TRUE
 
 /obj/item/mail/blank/click_alt(mob/user)
@@ -144,9 +147,11 @@
 /obj/item/mail/blank/ShiftClick(mob/user)
 	..()
 	if(!sealed)
-		var/sender = tgui_input_text(user, "Write name", "Name", user.name)
-		if(sender)
-			desc = "A signed envelope, from [sender]."
+		om_prompt(src, user, list("kind" = "text", "message" = "Write name", "title" = "Name", "default" = user.name, "requires" = PROMPT_HELD), PROC_REF(sender_named))
+
+/obj/item/mail/blank/proc/sender_named(mob/user, sender, datum/om/prompt/ask)
+	if(sender && !sealed)
+		desc = "A signed envelope, from [sender]."
 
 /obj/item/mail/blank/attack_self(mob/user)
 	. = ..(user)
@@ -283,39 +288,33 @@
 ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player, with a specific item.", ADMIN_CATEGORY_FUN_EVENT_KIT, object as text)
 	var/list/types = typesof(/atom)
 	var/list/matches = new()
-	var/list/recipients = list()
-	var/datum/mind/recipient_mind
-
 	for(var/path in types)
 		if(findtext("[path]", object))
 			matches += path
 
 	if(matches.len==0)
 		return
-	var/chosen
 	if(matches.len==1)
-		chosen = matches[1]
-	else
-		chosen = tgui_input_list(user, "Select an atom type", "Spawn Atom in Mail", matches)
-		if(!chosen)
-			return
+		spawn_mail_type_chosen(user, user.mob, matches[1])
+		return
+	om_prompt(user, user, list("kind" = "list", "message" = "Select an atom type", "title" = "Spawn Atom in Mail", "choices" = matches, "requires" = PROMPT_ADMIN(R_SPAWN)), GLOBAL_PROC_REF(spawn_mail_type_chosen))
 
+/proc/spawn_mail_type_chosen(client/C, mob/user, chosen, datum/om/prompt/ask)
+	var/list/recipients = list()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		recipients += player
+	om_prompt_sequence(C, user, list(
+		list("key" = "recipient", "kind" = "list", "message" = "Choose recipient", "title" = "Recipients", "choices" = recipients),
+		list("key" = "where", "message" = "Spawn mail at location or in the shuttle?", "title" = "Spawn mail", "choices" = list("Location", "Shuttle")),
+	), GLOBAL_PROC_REF(spawn_mail_finish), list("requires" = PROMPT_ADMIN(R_SPAWN), "data" = list("chosen" = chosen)))
 
-	var/mob/living/chosen_player = tgui_input_list(user, "Choose recipient", "Recipients", recipients, recipients)
-
-	recipient_mind = chosen_player.mind
-
+/proc/spawn_mail_finish(client/C, mob/user_mob, datum/om/prompt/ask)
+	var/mob/living/chosen_player = ask.get("recipient")
+	var/datum/mind/recipient_mind = chosen_player?.mind
+	var/chosen = ask.get("chosen")
 	if(!recipient_mind)
 		return
-
-	var/shuttle_spawn = tgui_alert(user, "Spawn mail at location or in the shuttle?", "Spawn mail", list("Location", "Shuttle"))
-	if(!shuttle_spawn)
-		return
-
-	var/mob/user_mob = user.mob
-	if(shuttle_spawn == "Shuttle")
+	if(ask.get("where") == "Shuttle")
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)

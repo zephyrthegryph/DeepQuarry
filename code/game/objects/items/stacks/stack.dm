@@ -408,21 +408,23 @@
 
 /obj/item/stack/attack_hand(mob/user as mob)
 	if (user.get_inactive_hand() == src)
-		var/N = tgui_input_number(user, "How many stacks of [src] would you like to split off?  There are currently [amount].", "Split stacks", 1, amount, 1)
-		if(N != round(N))
-			to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
-			return
-		if(N)
-			var/obj/item/stack/F = src.split(N)
-			if (F)
-				user.put_in_hands(F)
-				src.add_fingerprint(user)
-				F.add_fingerprint(user)
-				if (src && user.check_current_machine(src))
-					src.interact(user)
+		om_prompt(src, user, list("kind" = "number", "message" = "How many stacks of [src] would you like to split off?  There are currently [amount].", "title" = "Split stacks", "default" = 1, "max" = amount, "min" = 1, "requires" = PROMPT_HELD), PROC_REF(split_amount_chosen))
 	else
 		..()
 	return
+
+/obj/item/stack/proc/split_amount_chosen(mob/user, N, datum/om/prompt/ask)
+	if(N != round(N))
+		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
+		return
+	if(N)
+		var/obj/item/stack/F = src.split(N)
+		if (F)
+			user.put_in_hands(F)
+			src.add_fingerprint(user)
+			F.add_fingerprint(user)
+			if (!QDELETED(src) && user.check_current_machine(src))
+				src.interact(user)
 
 /obj/item/stack/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/gripper))

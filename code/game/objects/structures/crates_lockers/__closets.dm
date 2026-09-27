@@ -600,22 +600,20 @@
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	var/mob/living/target = tgui_input_list(usr, "Please select a target.", "Victim", targets)
+	om_prompt(src, usr, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "requires" = list(/datum/om/check/inside_target)), PROC_REF(hidden_vore_target_chosen))
 
-	if(!target)
-		return
-
+/obj/structure/closet/proc/hidden_vore_target_chosen(mob/living/user, mob/living/target, datum/om/prompt/ask)
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
 
-	if (get_dist(src,target) >= 1 || get_dist(src,usr) >= 1) //in case they leave the locker
+	if (get_dist(src,target) >= 1 || get_dist(src,user) >= 1) //in case they leave the locker
 		to_chat(src, span_warning("You are no longer both in \the [src]."))
 		return
 
 	playsound(src, vore_sound, 25)
 
-	var/mob/living/M = usr
+	var/mob/living/M = user
 	if(isliving(M))
 		M.begin_instant_nom(M,target,M,M.vore_selected)
 
