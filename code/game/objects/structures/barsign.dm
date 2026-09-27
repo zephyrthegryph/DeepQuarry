@@ -31,20 +31,31 @@
 	. = ..()
 	icon_state = pick(get_valid_states())
 
-/obj/structure/sign/double/barsign/attackby(obj/item/I, mob/user)
-	if(cult)
-		return ..()
+/obj/structure/sign/double/barsign/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/barsign_item,
+	)
+	..()
 
+/// Old attackby: change the sign with an ID card that has bar access.
+/datum/interaction/entry_item/barsign_item
+	id = "barsign_item"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/sign/double/barsign/proc/barsign_not_cult, null))
+	effect = /obj/structure/sign/double/barsign/proc/interaction_item
+
+/obj/structure/sign/double/barsign/proc/barsign_not_cult(mob/actor, atom/target, obj/item/held)
+	return !cult
+
+/obj/structure/sign/double/barsign/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/card/id/card = I.GetID()
 	if(istype(card))
 		if(ACCESS_BAR in card.GetAccess())
 			var/sign_type = tgui_input_list(user, "What would you like to change the barsign to?", "Bar Sign Choice", get_valid_states(0))
 			if(!sign_type)
-				return
+				return TRUE
 			icon_state = sign_type
 			to_chat(user, span_notice("You change the barsign."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		return
-
-	return ..()
+	return TRUE

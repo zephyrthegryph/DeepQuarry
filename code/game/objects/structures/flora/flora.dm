@@ -52,7 +52,19 @@
 /obj/structure/flora/proc/get_harvestable_desc()
 	return span_notice("\The [src] seems to have something hanging from it.")
 
-/obj/structure/flora/attackby(obj/item/W, mob/living/user)
+/obj/structure/flora/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/flora_item,
+	)
+	..()
+
+/// Old attackby: harvest, or uproot with the removal tool.
+/datum/interaction/entry_item/flora_item
+	id = "flora_item"
+	name = "Use"
+	effect = /obj/structure/flora/proc/interaction_item
+
+/obj/structure/flora/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 
 	if(can_harvest(W))
 		var/harvest_spawn = pickweight(harvest_loot)
@@ -61,14 +73,14 @@
 			to_chat(user, span_notice("You harvest \the [AM] from \the [src]."))
 		else
 			to_chat(user, span_notice("You fail to harvest anything from \the [src]."))
-		return
+		return TRUE
 
 	if(removal_tool && istype(W, removal_tool))
 		to_chat(user, span_warning("You start uprooting \the [src]..."))
 		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return
+		return TRUE
 
-	..(W, user)
+	return TRUE
 
 /obj/structure/flora/proc/attackby_timed_done(mob/living/user)
 	visible_message(span_notice("\The [user] uproots and discards \the [src]!"))
@@ -276,37 +288,56 @@
 	if(in_range(user, src) && stored_item)
 		. += span_filter_notice(span_italics("You can see something in there..."))
 
-/obj/structure/flora/pottedplant/attackby(obj/item/I, mob/user)
+// Pottedplant's Use and Insert fully replace flora's harvest/uproot ones (the original
+// overrides never called ..()), so it declares its own interactions instead of flora's.
+/obj/structure/flora/pottedplant/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/pottedplant_item,
+		/datum/interaction/entry_hand/pottedplant_hand,
+	)
+
+/// Old attackby: hide a tiny item in the pot.
+/datum/interaction/entry_item/pottedplant_item
+	id = "pottedplant_item"
+	name = "Hide item"
+	effect = /obj/structure/flora/pottedplant/proc/interaction_hide_item
+
+/obj/structure/flora/pottedplant/proc/interaction_hide_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(issilicon(user))
-		return // Don't try to put modules in here, you're a borg. TODO: Inventory refactor to not be ass.
+		return TRUE // Don't try to put modules in here, you're a borg. TODO: Inventory refactor to not be ass.
 
 	if(stored_item)
 		to_chat(user, span_notice("[I] won't fit in. There already appears to be something in here..."))
-		return
+		return TRUE
 
 	if(I.w_class > ITEMSIZE_TINY)
 		to_chat(user, span_notice("[I] is too big to fit inside [src]."))
-		return
+		return TRUE
 
 	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user), on_fail = PROC_REF(attackby_timed_failed2), fail_args = list(I, user))
+	return TRUE
 
 /obj/structure/flora/pottedplant/proc/attackby_timed_done2(obj/item/I, mob/user)
 	user.drop_from_inventory(I, src)
 	I.forceMove(src)
 	stored_item = I
 	src.visible_message("[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] [user] places [I] into [src].")
-	return
 
 /obj/structure/flora/pottedplant/proc/attackby_timed_failed2(obj/item/I, mob/user)
 	to_chat(user, span_notice("You refrain from putting things into the plant pot."))
-	return
 
-/obj/structure/flora/pottedplant/attack_hand(mob/user)
+/// Old attack_hand: find whatever is hidden in the pot.
+/datum/interaction/entry_hand/pottedplant_hand
+	id = "pottedplant_hand"
+	name = "Search"
+	effect = /obj/structure/flora/pottedplant/proc/interaction_hand
+
+/obj/structure/flora/pottedplant/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!stored_item)
 		to_chat(user, span_filter_notice(span_bold("You see nothing of interest in [src]...")))
 	else
 		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
-	..()
+	return TRUE
 
 /obj/structure/flora/pottedplant/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_filter_notice("You find [icon2html(stored_item, user.client)] [stored_item] in [src]!"))

@@ -81,8 +81,22 @@
 		if(get_dist(user,src) <= 1) //not remotely though
 			return TryToSwitchState(user)
 
-/obj/structure/simple_door/attack_hand(mob/user as mob)
-	return TryToSwitchState(user)
+/obj/structure/simple_door/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/simple_door_hand,
+		/datum/interaction/entry_item/simple_door_item,
+	)
+	..()
+
+/// Old attack_hand: open/close the door.
+/datum/interaction/entry_hand/simple_door_hand
+	id = "simple_door_hand"
+	name = "Use"
+	effect = /obj/structure/simple_door/proc/interaction_hand
+
+/obj/structure/simple_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	TryToSwitchState(user)
+	return TRUE
 
 /* // disabling becaue alt-clicking to view a turf is pretty important.
 /obj/structure/simple_door/click_alt(mob/user as mob)
@@ -167,7 +181,13 @@
 	else
 		icon_state = material.door_icon_base
 
-/obj/structure/simple_door/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: lock/unlock with the matching key, dig/hit the door, or fall back to toggling.
+/datum/interaction/entry_item/simple_door_item
+	id = "simple_door_item"
+	name = "Use"
+	effect = /obj/structure/simple_door/proc/interaction_item
+
+/obj/structure/simple_door/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(istype(W,/obj/item/simple_key))
 		var/obj/item/simple_key/key = W
@@ -179,7 +199,7 @@
 			visible_message(span_notice("[user] [key.keyverb] \the [key] and [locked ? "unlocks" : "locks"] \the [src]."))
 			locked = !locked
 			playsound(src, keysound,100, 1)
-		return
+		return TRUE
 	if(istype(W,/obj/item/pickaxe) && breakable)
 		var/obj/item/pickaxe/digTool = W
 		visible_message(span_danger("[user] starts digging [src]!"))
@@ -194,8 +214,8 @@
 			playsound(src, 'sound/weapons/smash.ogg', 50, 1)
 		receive_weapon_hit(W, user)
 	else
-		attack_hand(user)
-	return
+		interaction_hand(user, W, interaction)
+	return TRUE
 
 /obj/structure/simple_door/proc/attackby_timed_done(mob/user)
 	if(!(src))
@@ -362,28 +382,41 @@
 	..()
 
 // start: Allows removing resin doors.
-/obj/structure/simple_door/resin/attack_hand(mob/user as mob)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (usr.has_mutation(HULK))
-		visible_message(span_warning("[usr] destroys the [name]!"))
+// Resin's Use fully replaces the base simple_door's (the original override never called
+// ..() into it either), so it declares its own interaction.
+/obj/structure/simple_door/resin/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/simple_door_resin_hand,
+	)
+
+/// Old attack_hand: a Hulk destroys it, a xenomorph melts through it, or it opens as usual.
+/datum/interaction/entry_hand/simple_door_resin_hand
+	id = "simple_door_resin_hand"
+	name = "Use"
+	effect = /obj/structure/simple_door/resin/proc/interaction_resin_hand
+
+/obj/structure/simple_door/resin/proc/interaction_resin_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if (HULK in user.mutations)
+		visible_message(span_warning("[user] destroys the [name]!"))
 		Dismantle(1)
-		return
+		return TRUE
 	else
 
 		// Carbons can get straight through these.
-		if(istype(usr,/mob/living/carbon))
+		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
-				var/mob/living/carbon/M = usr
+				var/mob/living/carbon/M = user
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
-					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
+					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					Dismantle(1)
-					return
+					return TRUE
 				else
-					visible_message(span_warning("[usr] tears at the [name]!"))
+					visible_message(span_warning("[user] tears at the [name]!"))
 					take_damage(20, BRUTE, MELEE, FALSE)
-					return
+					return TRUE
 	TryToSwitchState(user)
-	return
+	return TRUE
 // end.
 
 

@@ -151,7 +151,20 @@
 	user.visible_message(span_notice("Something knocks on [src]."))
 	playsound(src, 'sound/effects/Glasshit.ogg', 50, 1)
 
-/obj/structure/window/attack_hand(mob/user as mob)
+/obj/structure/window/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/window_hand,
+		/datum/interaction/entry_item/window_item,
+	)
+	..()
+
+/// Old attack_hand: a Hulk smashes through, harm intent bangs on it, or a knock.
+/datum/interaction/entry_hand/window_hand
+	id = "window_hand"
+	name = "Use"
+	effect = /obj/structure/window/proc/interaction_hand
+
+/obj/structure/window/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
 	if(user.has_mutation(HULK))
 		user.say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!"))
@@ -166,7 +179,7 @@
 			var/shreddamage = H.species.can_shred(H, FALSE, 15)
 			if(shreddamage)
 				attack_generic(H, shreddamage + 5, "attacks")
-				return
+				return TRUE
 
 		playsound(src, 'sound/effects/glassknock.ogg', 80, 1)
 		user.do_attack_animation(src)
@@ -178,7 +191,7 @@
 		user.visible_message("[user.name] knocks on the [src.name].",
 							"You knock on the [src.name].",
 							"You hear a knocking sound.")
-	return
+	return TRUE
 
 /obj/structure/window/attack_generic(mob/user, damage)
 	user.setClickCooldown(user.get_attack_speed())
@@ -194,9 +207,13 @@
 	user.do_attack_animation(src)
 	return 1
 
-/obj/structure/window/attackby(obj/item/W as obj, mob/user as mob)
-	if(!istype(W)) return//I really wish I did not need this
+/// Old attackby: slam a grabbed mob, wire for tinting, build a frame, or take a hit.
+/datum/interaction/entry_item/window_item
+	id = "window_item"
+	name = "Use"
+	effect = /obj/structure/window/proc/interaction_item
 
+/obj/structure/window/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// Slamming.
 	if (istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
@@ -220,9 +237,9 @@
 					M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 20, null, src)
 					hit(50)
-			return
+			return TRUE
 
-	if(W.flags & NOBLUDGEON) return
+	if(W.flags & NOBLUDGEON) return TRUE
 
 	if(istype(W, /obj/item/stack/cable_coil) && reinf && state == 0 && !istype(src, /obj/structure/window/reinforced/polarized))
 		var/obj/item/stack/cable_coil/C = W
@@ -247,8 +264,7 @@
 				step(src, get_dir(user, src))
 		else
 			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-		..()
-	return
+	return TRUE
 
 /obj/structure/window/proc/attackby_tool_done(state)
 	if(!(state == 0))
@@ -515,7 +531,8 @@
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
-/obj/structure/window/reinforced/polarized/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides window's interaction_item(): a multitool programs the tint ID while unanchored.
+/obj/structure/window/reinforced/polarized/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/obj/item/multitool/MT = W.get_multitool()
 	if(MT && !anchored) // Only allow programming if unanchored!
 		// First check if they have a windowtint button buffered
@@ -532,7 +549,7 @@
 			src.id = t
 			to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
 			return TRUE
-	. = ..()
+	return ..()
 
 /obj/structure/window/reinforced/polarized/proc/toggle()
 	if(opacity)

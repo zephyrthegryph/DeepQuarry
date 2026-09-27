@@ -306,8 +306,8 @@
 	icon = 'icons/obj/props/fantasy.dmi'
 	icon_state = "page"
 
-/obj/item/perfect_tele/magic/attack_self(mob/user, radial_menu_anchor = src)
-	. = ..(user, radial_menu_anchor)
+/obj/item/perfect_tele/magic/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, radial_menu_anchor = src)
+	. = ..(user, held, interaction, radial_menu_anchor)
 	if(.)
 		return TRUE
 	if(loc_network)

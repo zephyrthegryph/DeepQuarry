@@ -117,7 +117,7 @@
 	if(!placed)
 		return FALSE
 	var/zone = part.organ_tag
-	if(tgui_alert(user, "Implant 	he [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "Confirm Cavity Implant", list("Implant", "Cancel")) != "Implant")
+	if(tgui_alert(user, "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "Confirm Cavity Implant", list("Implant", "Cancel")) != "Implant")
 		return FALSE
 	// The alert may have waited a long time: check everything again.
 	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))

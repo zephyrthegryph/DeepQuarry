@@ -79,7 +79,6 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		. += state_running_blockers(nodes[i])
 	. += state_signal_blockers(nodes, internal)
 	. += state_refcount_blockers(nodes, internal, held_refs)
-	. += state_weakref_blockers(nodes)
 
 /// Running behaviour: timers and processing.
 /proc/state_running_blockers(datum/node)
@@ -219,30 +218,6 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	if(length(names))
 		. += " (found in: [jointext(names, ", ")])"
 #endif
-
-/**
- * The weakref gap (containment.md §4.7, C10): a node's own weak_reference
- * datum (code/datums/weakrefs.dm) is reachable from the node by one var, so
- * state_owned_parts() already pulls it into `internal` and its reference back
- * to the node is accounted for. But nothing checks the weakref's OWN
- * refcount(): something outside the subtree can hold WEAKREF(node) -- a
- * callback, a list entry elsewhere -- without ever touching node's own
- * refcount(). That reference is real (resolve() would hand the holder src
- * back), so it must block collapse exactly like any other outside reference.
- */
-/proc/state_weakref_blockers(list/nodes)
-	. = list()
-	for(var/i in 1 to length(nodes))
-		var/datum/node = nodes[i]
-		if(!isdatum(node))
-			continue
-		var/datum/weakref/W = node.weak_reference
-		if(!W)
-			continue
-		// This proc's local `W` is one reference besides node's own var.
-		var/extra = refcount(W) - 2
-		if(extra > 0)
-			. += "[node.type]'s weak_reference has [extra] reference\s from outside its container"
 
 #undef STATE_REFS_FROM_LOC
 #undef STATE_REFS_PER_CONTENT

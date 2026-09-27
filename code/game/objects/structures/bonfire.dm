@@ -51,7 +51,20 @@
 		. += "[src] has a makeshift stake built in it, perfect for witches and space templars."
 // ition end
 
-/obj/structure/bonfire/attackby(obj/item/W, mob/user)
+/obj/structure/bonfire/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/bonfire_item,
+		/datum/interaction/entry_hand/bonfire_hand,
+	)
+	..()
+
+/// Old attackby: build a stake or grill from rods, add wood/logs as fuel, or ignite with a hot item.
+/datum/interaction/entry_item/bonfire_item
+	id = "bonfire_item"
+	name = "Use"
+	effect = /obj/structure/bonfire/proc/interaction_item
+
+/obj/structure/bonfire/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/rods) && !can_buckle && !grill)
 		var/obj/item/stack/rods/R = W
 		var/choice = tgui_input_list(user, "What would you like to construct?", "Bonfire", list("Stake","Grill"))
@@ -70,25 +83,27 @@
 				grill = TRUE
 				to_chat(user, span_notice("You add a grill to \the [src]."))
 				update_icon()
-			else
-				return ..()
 
 	else if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
 	else if(W.is_hot())
 		ignite()
-	else
-		return ..()
+	return TRUE
 
-/obj/structure/bonfire/attack_hand(mob/user)
-	if(has_buckled_mobs())
-		return ..()
+/// Old attack_hand: take out fuel, or dismantle if it's empty. The buckle unbuckle check now
+/// runs earlier, in hand_gate() (code/game/objects/buckling.dm), before this interaction is tried.
+/datum/interaction/entry_hand/bonfire_hand
+	id = "bonfire_hand"
+	name = "Use"
+	effect = /obj/structure/bonfire/proc/interaction_hand
 
+/obj/structure/bonfire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(get_fuel_amount())
 		remove_fuel(user)
 	else
 		dismantle(user)
+	return TRUE
 
 
 /obj/structure/bonfire/proc/dismantle(mob/user)
@@ -301,18 +316,37 @@
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
 
-/obj/structure/fireplace/attackby(obj/item/W, mob/user)
+/obj/structure/fireplace/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/fireplace_item,
+		/datum/interaction/entry_hand/fireplace_hand,
+	)
+	..()
+
+/// Old attackby: add wood/logs as fuel, or ignite with a hot item.
+/datum/interaction/entry_item/fireplace_item
+	id = "fireplace_item"
+	name = "Use"
+	effect = /obj/structure/fireplace/proc/interaction_item
+
+/obj/structure/fireplace/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/material/wood) || istype(W, /obj/item/stack/material/log) )
 		add_fuel(W, user)
 
 	else if(W.is_hot())
 		ignite()
-	else
-		return ..()
+	return TRUE
 
-/obj/structure/fireplace/attack_hand(mob/user)
+/// Old attack_hand: take out fuel.
+/datum/interaction/entry_hand/fireplace_hand
+	id = "fireplace_hand"
+	name = "Use"
+	effect = /obj/structure/fireplace/proc/interaction_hand
+
+/obj/structure/fireplace/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(get_fuel_amount())
 		remove_fuel(user)
+	return TRUE
 
 /obj/structure/fireplace/proc/get_fuel_amount()
 	var/F = 0

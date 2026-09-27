@@ -228,7 +228,20 @@ LINEN BINS
 		icon_state = "linenbin-full"
 
 
-/obj/structure/bedsheetbin/attackby(obj/item/I as obj, mob/user as mob)
+/obj/structure/bedsheetbin/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/bedsheetbin_item,
+		/datum/interaction/entry_hand/bedsheetbin_hand,
+	)
+	..()
+
+/// Old attackby: put a bedsheet in, or hide a small item among the sheets.
+/datum/interaction/entry_item/bedsheetbin_item
+	id = "bedsheetbin_item"
+	name = "Use"
+	effect = /obj/structure/bedsheetbin/proc/interaction_item
+
+/obj/structure/bedsheetbin/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/bedsheet))
 		user.drop_item()
 		I.loc = src
@@ -240,8 +253,15 @@ LINEN BINS
 		I.loc = src
 		hidden = I
 		to_chat(user, span_notice("You hide [I] among the sheets."))
+	return TRUE
 
-/obj/structure/bedsheetbin/attack_hand(mob/user as mob)
+/// Old attack_hand: take a bedsheet out (and anything hidden among them).
+/datum/interaction/entry_hand/bedsheetbin_hand
+	id = "bedsheetbin_hand"
+	name = "Use"
+	effect = /obj/structure/bedsheetbin/proc/interaction_hand
+
+/obj/structure/bedsheetbin/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(amount >= 1)
 		amount--
 
@@ -264,6 +284,7 @@ LINEN BINS
 
 
 	add_fingerprint(user)
+	return TRUE
 
 /obj/structure/bedsheetbin/attack_tk(mob/user as mob)
 	if(amount >= 1)

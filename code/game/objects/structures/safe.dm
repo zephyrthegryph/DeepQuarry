@@ -77,9 +77,22 @@ FLOOR SAFES
 
 // TGUI migration. attack_hand opens Safe.tsx; the Topic
 // dial/open/retrieve actions move to tgui_act below.
-/obj/structure/safe/attack_hand(mob/user)
+/obj/structure/safe/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/safe_open_ui,
+		/datum/interaction/entry_item/safe_item,
+	)
+	..()
+
+/datum/interaction/entry_hand/safe_open_ui
+	id = "safe_open_ui"
+	name = "Use"
+	effect = /obj/structure/safe/proc/interaction_open_ui
+
+/obj/structure/safe/proc/interaction_open_ui(mob/user, obj/item/held, datum/interaction/interaction)
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/structure/safe/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -149,7 +162,13 @@ FLOOR SAFES
 			return TRUE
 
 
-/obj/structure/safe/attackby(obj/item/I, mob/user)
+/// Old attackby: put an item in the open safe, or a stethoscope hint while closed.
+/datum/interaction/entry_item/safe_item
+	id = "safe_item"
+	name = "Use"
+	effect = /obj/structure/safe/proc/interaction_item
+
+/obj/structure/safe/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(open)
 		if(I.w_class + space <= maxspace)
 			space += I.w_class
@@ -157,14 +176,12 @@ FLOOR SAFES
 			I.loc = src
 			to_chat(user, span_notice("You put [I] in \the [src]."))
 			updateUsrDialog(user)
-			return
 		else
 			to_chat(user, span_notice("[I] won't fit in \the [src]."))
-			return
 	else
 		if(istype(I, /obj/item/clothing/accessory/stethoscope))
 			to_chat(user, "Hold [I] in one of your hands while you manipulate the dial.")
-			return
+	return TRUE
 
 
 //FLOOR SAFES

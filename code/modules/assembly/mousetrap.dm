@@ -47,8 +47,9 @@
 	update_icon()
 	pulse(0)
 
-/obj/item/assembly/mousetrap/attack_self(mob/living/user)
-	. = ..(user)
+/// Overrides assembly's interaction_self(): arm/disarm instead of opening the UI.
+/obj/item/assembly/mousetrap/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = ..()
 	if(.)
 		return TRUE
 	if(!armed)
@@ -61,14 +62,28 @@
 			triggered(user, which_hand)
 			user.visible_message(span_warning("[user] accidentally sets off [src], breaking [p_their()] fingers."), \
 									span_warning("You accidentally trigger [src]!"))
-			return
+			return TRUE
 
 		to_chat(user, span_notice("You disarm [src]."))
 	armed = !armed
 	update_icon()
 	playsound(user, 'sound/weapons/handcuffs.ogg', 30, 1, -3)
+	return TRUE
 
-/obj/item/assembly/mousetrap/attack_hand(mob/living/user)
+/obj/item/assembly/mousetrap/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/mousetrap_hand,
+	)
+	..()
+
+/// Old attack_hand: trigger it early if armed and the user fumbles; otherwise not handled
+/// (falls through the same as it always did — this override never called ..() when armed).
+/datum/interaction/entry_hand/mousetrap_hand
+	id = "mousetrap_hand"
+	name = "Use"
+	effect = /obj/item/assembly/mousetrap/proc/interaction_hand
+
+/obj/item/assembly/mousetrap/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(armed)
 		if(CLUMSY_FAIL_CHANCE(user))
 			var/which_hand = BP_L_HAND
@@ -77,8 +92,8 @@
 			triggered(user, which_hand)
 			user.visible_message(span_warning("[user] accidentally sets off [src], breaking [p_their()] fingers."), \
 									span_warning("You accidentally trigger [src]!"))
-			return
-	..()
+			return TRUE
+	return FALSE
 
 /obj/item/assembly/mousetrap/Crossed(atom/movable/AM)
 	if(AM.is_incorporeal())

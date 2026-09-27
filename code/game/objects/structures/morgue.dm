@@ -65,14 +65,27 @@
 /obj/structure/morgue
 	silicon_use = ROBOT_USE_HAND_ADJACENT
 
-/obj/structure/morgue/attack_hand(mob/user as mob)
+/obj/structure/morgue/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/morgue_hand,
+		/datum/interaction/entry_item/morgue_item,
+	)
+	..()
+
+/// Old attack_hand: open/close the tray.
+/datum/interaction/entry_hand/morgue_hand
+	id = "morgue_hand"
+	name = "Use"
+	effect = /obj/structure/morgue/proc/interaction_hand
+
+/obj/structure/morgue/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (src.connected)
 		close()
 	else
 		open()
 	src.add_fingerprint(user)
 	update()
-	return
+	return TRUE
 
 
 /obj/structure/morgue/proc/close()
@@ -102,20 +115,26 @@
 		src.connected = null
 
 
-/obj/structure/morgue/attackby(P as obj, mob/user as mob)
+/// Old attackby: relabel with a pen.
+/datum/interaction/entry_item/morgue_item
+	id = "morgue_item"
+	name = "Use"
+	effect = /obj/structure/morgue/proc/interaction_item
+
+/obj/structure/morgue/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if (istype(P, /obj/item/pen))
 		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null)
 		if (user.get_active_hand() != P)
-			return
+			return TRUE
 		if ((!in_range(src, user) && src.loc != user))
-			return
+			return TRUE
 		t = sanitizeSafe(t, MAX_NAME_LEN)
 		if (t)
 			src.name = text("Morgue- '[]'", t)
 		else
 			src.name = "Morgue"
 	src.add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/structure/morgue/relaymove(mob/user as mob)
 	if (user.stat)
@@ -146,7 +165,19 @@
 /obj/structure/m_tray
 	silicon_use = ROBOT_USE_HAND_ADJACENT
 
-/obj/structure/m_tray/attack_hand(mob/user as mob)
+/obj/structure/m_tray/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/m_tray_hand,
+	)
+	..()
+
+/// Old attack_hand: push the tray back in.
+/datum/interaction/entry_hand/m_tray_hand
+	id = "m_tray_hand"
+	name = "Push in"
+	effect = /obj/structure/m_tray/proc/interaction_hand
+
+/obj/structure/m_tray/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (src.connected)
 		for(var/atom/movable/A as mob|obj in src.loc)
 			if (!( A.anchored ))
@@ -157,8 +188,7 @@
 		add_fingerprint(user)
 		//SN src = null
 		qdel(src)
-		return
-	return
+	return TRUE
 
 /obj/structure/m_tray/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
 	if ((!( istype(O, /atom/movable) ) || O.anchored || get_dist(user, src) > 1 || get_dist(user, O) > 1 || user.contents.Find(src) || user.contents.Find(O)))
@@ -200,10 +230,24 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			src.icon_state = "crema1"
 	return
 
-/obj/structure/morgue/crematorium/attack_hand(mob/user as mob)
+// Crematorium's Use and label overrides fully replace morgue's (the original overrides
+// never called ..() into it either), so it declares its own interactions.
+/obj/structure/morgue/crematorium/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/crematorium_hand,
+		/datum/interaction/entry_item/crematorium_item,
+	)
+
+/// Old attack_hand: open/close the crematorium tray.
+/datum/interaction/entry_hand/crematorium_hand
+	id = "crematorium_hand"
+	name = "Use"
+	effect = /obj/structure/morgue/crematorium/proc/interaction_crema_hand
+
+/obj/structure/morgue/crematorium/proc/interaction_crema_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (cremating)
 		to_chat(user, span_warning("It's locked."))
-		return
+		return TRUE
 	if ((src.connected) && (src.locked == 0))
 		for(var/atom/movable/A as mob|obj in src.connected.loc)
 			if (!( A.anchored ))
@@ -226,21 +270,28 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			QDEL_NULL(connected)
 	src.add_fingerprint(user)
 	update()
+	return TRUE
 
-/obj/structure/morgue/crematorium/attackby(P as obj, mob/user as mob)
+/// Old attackby: relabel with a pen.
+/datum/interaction/entry_item/crematorium_item
+	id = "crematorium_item"
+	name = "Use"
+	effect = /obj/structure/morgue/crematorium/proc/interaction_crema_item
+
+/obj/structure/morgue/crematorium/proc/interaction_crema_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if (istype(P, /obj/item/pen))
 		var/t = tgui_input_text(user, "What would you like the label to be?", text("[]", src.name), null)
 		if (user.get_active_hand() != P)
-			return
+			return TRUE
 		if ((!in_range(src, user) > 1 && src.loc != user))
-			return
+			return TRUE
 		t = sanitizeSafe(t, MAX_NAME_LEN)
 		if (t)
 			src.name = text("Crematorium- '[]'", t)
 		else
 			src.name = "Crematorium"
 	src.add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)

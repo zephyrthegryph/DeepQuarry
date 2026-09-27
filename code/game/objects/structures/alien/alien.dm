@@ -23,36 +23,53 @@
 	receive_generic_attack(user, damage)
 	return
 
-/obj/structure/alien/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/alien/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/alien_item,
+		/datum/interaction/entry_hand/alien_hand,
+	)
+	..()
 
+/// Old attackby: hit the alien structure.
+/datum/interaction/entry_item/alien_item
+	id = "alien_item"
+	name = "Use"
+	effect = /obj/structure/alien/proc/interaction_item
+
+/obj/structure/alien/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
 	visible_message(span_danger("[user] attacks the [src]!"))
 	receive_weapon_hit(W, user)
-	..()
-	return
+	return TRUE
 
-/obj/structure/alien/attack_hand(mob/user as mob)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	if (usr.has_mutation(HULK))
-		visible_message(span_warning("[usr] destroys the [name]!"))
+/// Old attack_hand: a Hulk destroys it, or a xenomorph melts through it.
+/datum/interaction/entry_hand/alien_hand
+	id = "alien_hand"
+	name = "Use"
+	effect = /obj/structure/alien/proc/interaction_hand
+
+/obj/structure/alien/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	if (HULK in user.mutations)
+		visible_message(span_warning("[user] destroys the [name]!"))
 		take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	else
 
 		// Aliens can get straight through these.
-		if(istype(usr,/mob/living/carbon))
+		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
-				var/mob/living/carbon/M = usr
+				var/mob/living/carbon/M = user
 				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
-					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
+					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
-					return
+					return TRUE
 				if(locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)
 					om_do_after(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
-					return
+					return TRUE
 			visible_message(span_warning("[usr] claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)
-	return
+	return TRUE
 
 /obj/structure/alien/proc/attack_hand_timed_done(mob/usr_mob)
 	visible_message (span_warning("[usr_mob] strokes the [name] and it melts away!"), 1)

@@ -1642,14 +1642,28 @@
 		qdel(linked_flag) //otherwise you're going to get weird duping nonsense
 	qdel(src)
 
-/obj/structure/sign/flag/attack_hand(mob/user)
+/obj/structure/sign/flag/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/sign_flag_rip,
+		/datum/interaction/entry_item/sign_flag_item,
+	)
+	..()
+
+/// Old attack_hand: rip the flag from its place.
+/datum/interaction/entry_hand/sign_flag_rip
+	id = "sign_flag_rip"
+	name = "Rip down"
+	effect = /obj/structure/sign/flag/proc/interaction_rip
+
+/obj/structure/sign/flag/proc/interaction_rip(mob/user, obj/item/held, datum/interaction/interaction)
 	if(tgui_alert(user, "Do you want to rip \the [src] from its place?","You think...",list("Yes","No")) == "Yes")
 		if(!Adjacent(user)) //Cannot bring up dialogue and walk away
-			return FALSE
+			return TRUE
 		visible_message(span_warning("\The [user] rips \the [src] in a single, decisive motion!" ))
 		playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, 1)
 		add_fingerprint(user)
 		rip()
+	return TRUE
 
 /obj/structure/sign/flag/proc/rip(rip_linked = TRUE)
 	var/icon/I = new('icons/obj/flags.dmi', icon_state)
@@ -1662,8 +1676,13 @@
 	if(linked_flag && rip_linked)
 		linked_flag.rip(FALSE) //Prevents an infinite ripping loop
 
-/obj/structure/sign/flag/attackby(obj/item/W, mob/user)
-	..()
+/// Old attackby: burn the flag down.
+/datum/interaction/entry_item/sign_flag_item
+	id = "sign_flag_item"
+	name = "Burn"
+	effect = /obj/structure/sign/flag/proc/interaction_item
+
+/obj/structure/sign/flag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter) || W.has_tool_quality(TOOL_WELDER))
 		visible_message(span_warning("\The [user] starts to burn \the [src] down!"))
 		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))

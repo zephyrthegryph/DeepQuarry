@@ -57,10 +57,14 @@
 /obj/item/powersink/attack_ai()
 	return
 
-/obj/item/powersink/attack_hand(mob/user)
+/obj/item/powersink/get_interactions()
+	var/static/list/L = list(INTERACT_HAND(null, PROC_REF(interaction_hand)))
+	return L
+
+/obj/item/powersink/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	switch(mode)
 		if(0)
-			..()
+			return FALSE
 		if(1)
 			src.visible_message(span_notice("[user] activates [src]!"))
 			mode = 2
@@ -73,6 +77,7 @@
 			icon_state = "powersink0"
 			PERIODIC_STOP(src)
 		
+	return TRUE
 /obj/item/powersink/pwr_drain()
 	if(!attached)
 		return 0

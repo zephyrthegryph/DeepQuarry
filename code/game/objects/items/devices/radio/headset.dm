@@ -91,27 +91,29 @@
 /obj/item/radio/headset/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/radio/headset/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/encryptionkey/))
-		if(keyslot1 && keyslot2)
-			to_chat(user, span_notice("The headset can't hold another key!"))
-			return
+/obj/item/radio/headset/get_interactions()
+	var/static/list/L = list(INTERACT_INSERT(/obj/item/encryptionkey, PROC_REF(interaction_item), "Insert key"))
+	return L
 
-		if(!keyslot1)
-			user.drop_item()
-			W.loc = src
-			keyslot1 = W
+/obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(keyslot1 && keyslot2)
+		to_chat(user, span_notice("The headset can't hold another key!"))
+		return TRUE
 
-		else
-			user.drop_item()
-			W.loc = src
-			keyslot2 = W
+	if(!keyslot1)
+		user.drop_item()
+		W.loc = src
+		keyslot1 = W
+
+	else
+		user.drop_item()
+		W.loc = src
+		keyslot2 = W
 
 
-		recalculateChannels()
+	recalculateChannels()
 
-		return
-	return ..()
+	return TRUE
 
 /obj/item/radio/headset/screwdriver_act(mob/user, obj/item/tool)
 	if(!keyslot1 && !keyslot2)

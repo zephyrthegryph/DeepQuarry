@@ -21,7 +21,11 @@
 
 	supply = new(max = 60, A = src)
 
-/obj/item/nifrepairer/attackby(obj/W, mob/user)
+/obj/item/nifrepairer/get_interactions()
+	var/static/list/L = list(INTERACT_ITEM("Load", PROC_REF(interaction_item)))
+	return L
+
+/obj/item/nifrepairer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/np = W
 		if((supply.get_free_space() >= efficiency) && np.use(1))
@@ -30,7 +34,7 @@
 			update_icon()
 		else if(supply.get_free_space() < efficiency)
 			to_chat(user, span_warning("\The [src] is too full. Empty it into a container first."))
-			return
+	return TRUE
 
 /obj/item/nifrepairer/update_icon()
 	if(supply.total_volume)

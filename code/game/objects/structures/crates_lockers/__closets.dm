@@ -284,14 +284,27 @@
 /obj/structure/closet/explosion_contents_severity(severity)
 	return severity < 3 ? severity + 1 : 0
 
-/obj/structure/closet/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/closet/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/closet_item,
+		/datum/interaction/entry_hand/closet_hand,
+	)
+	..()
+
+/// Old attackby: stuff items/grabs in while open, or seal/weld while closed.
+/datum/interaction/entry_item/closet_item
+	id = "closet_item"
+	name = "Use"
+	effect = /obj/structure/closet/proc/interaction_item
+
+/obj/structure/closet/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(opened)
 		if(istype(W, /obj/item/grab))
 			var/obj/item/grab/G = W
 			MouseDrop_T(GRAB_TARGET(G), user)      //act like they were dragged onto the closet
-			return 0
+			return TRUE
 		if(istype(W,/obj/item/tk_grab))
-			return 0
+			return TRUE
 		if(istype(W, /obj/item/storage/laundry_basket) && W.contents.len)
 			var/obj/item/storage/laundry_basket/LB = W
 			var/turf/T = get_turf(src)
@@ -300,23 +313,23 @@
 			user.visible_message(span_notice("[user] empties \the [LB] into \the [src]."), \
 									span_notice("You empty \the [LB] into \the [src]."), \
 									span_notice("You hear rustling of clothes."))
-			return
+			return TRUE
 		if(isrobot(user))
-			return
+			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
-			return
+			return TRUE
 		user.drop_item()
 		if(W)
 			W.do_drop_animation(user)
 			W.forceMove(loc)
 	else if(istype(W, /obj/item/packageWrap))
-		return
+		return TRUE
 	else if(seal_tool)
 		if(istype(W, seal_tool))
 			use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(W, user))
 	else
-		attack_hand(user)
-	return
+		interaction_hand(user, W, interaction)
+	return TRUE
 
 /obj/structure/closet/proc/attackby_tool_done(obj/item/W, mob/user)
 	if(opened) // cancel weld if opened mid-progress to prevent welder-traps
@@ -400,9 +413,16 @@
 	if(!open())
 		to_chat(user, span_notice("It won't budge!"))
 
-/obj/structure/closet/attack_hand(mob/user as mob)
+/// Old attack_hand: open/close the closet.
+/datum/interaction/entry_hand/closet_hand
+	id = "closet_hand"
+	name = "Use"
+	effect = /obj/structure/closet/proc/interaction_hand
+
+/obj/structure/closet/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	toggle(user)
+	return TRUE
 
 // tk grab then use on self
 /obj/structure/closet/attack_self_tk(mob/user as mob)

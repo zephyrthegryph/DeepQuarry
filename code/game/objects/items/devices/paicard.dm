@@ -401,7 +401,7 @@
 		return
 	setEmotion(16)
 
-/obj/item/paicard/attackby(obj/item/I as obj, mob/user as mob)
+/obj/item/paicard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		if(panel_open)
 			panel_open = FALSE
@@ -583,16 +583,17 @@
 				if("Add Access")
 					pai.idcard.access |= ID.access
 					to_chat(user, span_notice("You add the access from the [I] to [src]."))
-					return
+					return TRUE
 				if("Remove Access")
 					pai.idcard.access = list()
 					to_chat(user, span_notice("You remove the access from [src]."))
-					return
+					return TRUE
 				if("Cancel")
-					return
+					return TRUE
 		else if (pai.idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifications at this time."))
-			return
+			return TRUE
+	return TRUE
 
 /obj/item/paicard/proc/attackby_timed_done(mob/user)
 	panel_open = TRUE
@@ -634,11 +635,17 @@
 	user.drop_from_inventory(I)
 	qdel(I)
 
-/obj/item/paicard/attack_self(mob/user, callback)
-	. = ..(user)
-	if(.)
-		return TRUE
-	if(special_handling && !callback)
+/obj/item/paicard/get_interactions()
+	var/static/list/L = list(
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+	)
+	return L
+
+/// `held` is unused by paicard's own dispatch (always null through the resolver) - repurposed
+/// as the old `callback` bypass arg, so sleevecard.dm's direct ..(user, TRUE) call still works.
+/obj/item/paicard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(special_handling && !held)
 		return FALSE
 	if(!panel_open)
 		tgui_interact(user)
@@ -878,8 +885,12 @@
 	icon_state = "radio"
 	loudspeaker = FALSE
 
-/obj/item/radio/borg/pai/attackby(obj/item/W, mob/user)
-	return
+/// Old attackby was an empty stub, replacing radio/borg's own (no ..() chain): always swallowed, no action.
+/obj/item/radio/borg/pai/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/obj/item/radio/borg/pai/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return TRUE
 
 /obj/item/radio/borg/pai/recalculateChannels()
 	if(!istype(loc,/obj/item/paicard))

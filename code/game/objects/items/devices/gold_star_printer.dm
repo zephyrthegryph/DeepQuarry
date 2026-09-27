@@ -11,10 +11,11 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/gold_star_printer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/gold_star_printer/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/gold_star_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(last_print + print_cooldown <= world.time)
 		make_star(user)
 	else

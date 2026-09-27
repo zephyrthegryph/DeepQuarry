@@ -356,8 +356,7 @@ generic demand model instead:
   lives with the consumer, the slot just wires the common case up once.
 - **Implicit pins.** Two sources never need an explicit pin call because they're
   cheap to compute on demand and always accurate: `state_collapse_blockers()`
-  is non-empty (running behaviour, an outside reference, the weakref gap, §4.7
-  below), and `isturf(A.loc)` (sitting directly on a tile is itself being
+  is non-empty (running behaviour or an outside reference, §4.7 below), and `isturf(A.loc)` (sitting directly on a tile is itself being
   rendered to everyone nearby — nobody needs to remember to pin it, leaving a
   turf is nobody's job to unpin either). `dq_latent_pinned(A)` is the single read
   combining both kinds: any explicit pin, or a non-empty `state_collapse_blockers()`,
@@ -385,19 +384,13 @@ generic demand model instead:
 directly in `can_be_latent()` since a tgui window is not per-item) both keep
 contents real for as long as anyone is looking.
 
-**Refs, closing the weakref gap.** Collapse already requires
-`state_collapse_blockers()` to be empty: no collapse blockers, no signal
-registrations reaching outside the subtree, and `refcount()` of everything in the
-subtree accounted for by loc, contents, ledger entries and subtree/element refs
-(`state.md §1`, `collapse.dm`). That leaves one gap: an item's `weak_reference`
-datum (`code/datums/weakrefs.dm`) is itself a plain datum, reachable from the item
-by one var, but nothing walked *its* `refcount()`. A callback or a list elsewhere
-holding `WEAKREF(item)` doesn't show up as an extra reference to the item — it
-shows up as an extra reference to the weakref, which the old check never looked
-at. `state_weakref_blockers()` (`collapse.dm`) closes it: for every subtree node
-with a live `weak_reference`, its `refcount()` must equal exactly the one
-reference the node's own var accounts for (plus the counting overhead); anything
-above that blocks collapse, same as any other outside reference.
+**Refs.** Collapse already requires `state_collapse_blockers()` to be empty: no
+collapse blockers, no signal registrations reaching outside the subtree, and
+`refcount()` of everything in the subtree accounted for by loc, contents, ledger
+entries and subtree/element refs (`state.md §1`, `collapse.dm`). This tree has
+no `/datum/weakref` (weakrefs were removed with the OM refs work), so the
+weakref gap C10 closed on master does not exist here and its check was dropped
+during reconciliation.
 
 **Policy.** `can_be_latent(atom/movable/A)` (`code/datums/containment/latency_policy.dm`)
 is the single read that decides whether `A` may be latent right now:

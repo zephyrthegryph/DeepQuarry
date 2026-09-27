@@ -21,7 +21,19 @@ REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 	if(Adjacent(user))
 		. += "It contains [reagents.total_volume] unit\s of water!"
 
-/obj/structure/mopbucket/attackby(obj/item/I, mob/user)
+/obj/structure/mopbucket/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/mopbucket_item,
+	)
+	..()
+
+/// Old attackby: wet a mop/soap/rag in the bucket.
+/datum/interaction/entry_item/mopbucket_item
+	id = "mopbucket_item"
+	name = "Use"
+	effect = /obj/structure/mopbucket/proc/interaction_item
+
+/obj/structure/mopbucket/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/mop) || istype(I, /obj/item/soap) || istype(I, /obj/item/reagent_containers/glass/rag)) // "Allows soap and rags to be used on mopbuckets"
 		if(reagents.total_volume < 1)
 			user.balloon_alert(user, "\the [src] is out of water!")
@@ -29,3 +41,4 @@ REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 			reagents.trans_to_obj(I, 5)
 			user.balloon_alert(user, "you wet \the [I] in \the [src].")
 			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+	return TRUE

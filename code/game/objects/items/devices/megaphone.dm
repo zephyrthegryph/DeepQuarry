@@ -42,10 +42,11 @@
 	else
 		user.audible_message(span_infoplain(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, " + span_large("\"[message]\"")), runemessage = message)
 
-/obj/item/megaphone/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/megaphone/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/message = tgui_input_text(user, "Shout a message?", "Megaphone", null, MAX_MESSAGE_LEN)
 	if(!message)
 		return

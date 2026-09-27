@@ -80,10 +80,22 @@
 	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
 
-/obj/structure/windoor_assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/windoor_assembly/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/windoor_assembly_item,
+	)
+	..()
+
+/// Old attackby: rename with a pen, wire, or install electronics.
+/datum/interaction/entry_item/windoor_assembly_item
+	id = "windoor_assembly_item"
+	name = "Use"
+	effect = /obj/structure/windoor_assembly/proc/interaction_item
+
+/obj/structure/windoor_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
 		rename_door(user)
-		return
+		return TRUE
 
 	if(state == "01")
 		//Adding cable to the assembly. Step 5 complete.
@@ -92,8 +104,6 @@
 
 			var/obj/item/stack/cable_coil/CC = W
 			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, CC))
-		else
-			..()
 
 	else if(state == "02")
 		//Adding airlock electronics for access. Step 6 complete.
@@ -102,11 +112,10 @@
 			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
 			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(W, user), on_fail = PROC_REF(attackby_timed_failed2), fail_args = list(W, user))
-		else
-			..()
 
 	//Update to reflect changes(if applicable)
 	update_state()
+	return TRUE
 
 /obj/structure/windoor_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/CC)
 	if (CC.use(1))

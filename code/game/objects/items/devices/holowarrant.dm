@@ -23,10 +23,14 @@
 		. += span_notice("You have to go closer if you want to read it.")
 
 //hit yourself with it
-/obj/item/holowarrant/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/holowarrant/get_interactions()
+	var/static/list/L = list(
+		INTERACT_USE(null, PROC_REF(interaction_self)),
+		INTERACT_ITEM(null, PROC_REF(interaction_item)),
+	)
+	return L
+
+/obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = null
 	var/list/warrants = list()
 	if(!isnull(GLOB.data_core.general))
@@ -42,7 +46,7 @@
 			active = W
 	update_icon()
 
-/obj/item/holowarrant/attackby(obj/item/W, mob/user)
+/obj/item/holowarrant/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(active)
 		var/obj/item/card/id/I = W.GetIdCard()
 		if(I && (ACCESS_HOS in I.GetAccess()))
@@ -51,10 +55,10 @@
 				active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 			user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
 					span_notice("[user] swipes \the [I] through the [src]."))
-			return 1
+			return TRUE
 		to_chat(user, span_warning("You don't have the access to do this!"))
-		return 1
-	..()
+		return TRUE
+	return FALSE
 
 //hit other people with it
 /obj/item/holowarrant/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

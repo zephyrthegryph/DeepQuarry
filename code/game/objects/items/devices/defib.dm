@@ -61,11 +61,19 @@
 	else
 		add_overlay("[initial(icon_state)]-nocell")
 
-/obj/item/defib_kit/attack_hand(mob/living/user)
+/obj/item/defib_kit/get_interactions()
+	var/static/list/L = list(
+		INTERACT_HAND(null, PROC_REF(interaction_hand)),
+		INTERACT_ITEM("Load", PROC_REF(interaction_item)),
+	)
+	return L
+
+/// Old attack_hand: let tethered_item swap the paddles into hand before falling through to pickup.
+/obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// See important note in tethered_item.dm
 	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	. = ..()
+	return FALSE
 
 /obj/item/defib_kit/MouseDrop()
 	if(ismob(src.loc))
@@ -78,20 +86,19 @@
 		M.put_in_any_hand_if_possible(src)
 
 
-/obj/item/defib_kit/attackby(obj/item/W, mob/user, params)
+/obj/item/defib_kit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(bcell)
 			to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			if(!user.unEquip(W))
-				return
+				return TRUE
 			W.forceMove(src)
 			bcell = W
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
-
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 /obj/item/defib_kit/screwdriver_act(mob/user, obj/item/tool)
 	if(!bcell)

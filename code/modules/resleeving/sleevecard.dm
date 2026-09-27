@@ -64,10 +64,7 @@
 
 	return 0
 
-/obj/item/paicard/sleevecard/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/paicard/sleevecard/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(!pai)

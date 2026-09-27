@@ -27,21 +27,23 @@
 	src.attack_hand(user)
 	return
 
-/obj/structure/closet/walllocker/emerglocker/attackby(obj/item/W as obj, mob/user as mob)
-	return
+/// Overrides closet's interaction_item(): no items stored in the emergency locker.
+/obj/structure/closet/walllocker/emerglocker/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return TRUE
 
-/obj/structure/closet/walllocker/emerglocker/attack_hand(mob/user as mob)
+/// Overrides closet's interaction_hand(): dispense emergency supplies instead of toggling.
+/obj/structure/closet/walllocker/emerglocker/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (isAI(user))	//Added by Strumpetplaya - AI shouldn't be able to
-		return									//activate emergency lockers.  This fixes that.  (Does this make sense, the AI can't call attack_hand, can it? --Mloc)
+		return TRUE								//activate emergency lockers.  This fixes that.  (Does this make sense, the AI can't call attack_hand, can it? --Mloc)
 	if(!amount)
 		to_chat(user, "<spawn class='notice'>It's empty..")
-		return
+		return TRUE
 	if(amount)
 		to_chat(user, "<spawn class='notice'>You take out some items from \the [src].")
 		for(var/path in spawnitems)
 			new path(src.loc)
 		amount--
-	return
+	return TRUE
 
 /obj/structure/closet/walllocker/emerglocker/north
 	pixel_y = 32

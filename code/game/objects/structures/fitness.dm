@@ -10,10 +10,21 @@
 	density = TRUE
 	var/static/list/hit_message = list("hit", "punch", "kick", "robust")
 
-/obj/structure/fitness/punchingbag/attack_hand(mob/living/carbon/human/user)
+/obj/structure/fitness/punchingbag/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/punchingbag_hand,
+	)
+	..()
+
+/// Old attack_hand: hit the punching bag.
+/datum/interaction/entry_hand/punchingbag_hand
+	id = "punchingbag_hand"
+	name = "Punch"
+	effect = /obj/structure/fitness/punchingbag/proc/interaction_hand
+
+/obj/structure/fitness/punchingbag/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		..()
-		return
+		return TRUE
 	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to use the punching bag. Go eat something."))
 	else if(user.weight < 70) // Add weight loss to old fitness equipment
@@ -27,6 +38,7 @@
 			user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
 			user.weight -= 0.25 * weightloss_power * (0.01 * user.weight_loss)
 			to_chat(user, span_warning("You [pick(hit_message)] \the [src]."))
+	return TRUE
 
 /obj/structure/fitness/weightlifter
 	name = "weightlifting machine"
@@ -42,26 +54,39 @@
 	to_chat(user, "You set the machine's weight level to [weight].")
 	return TRUE
 
-/obj/structure/fitness/weightlifter/attack_hand(mob/living/carbon/human/user)
+/obj/structure/fitness/weightlifter/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/weightlifter_hand,
+	)
+	..()
+
+/// Old attack_hand: use the weightlifting machine.
+/datum/interaction/entry_hand/weightlifter_hand
+	id = "weightlifter_hand"
+	name = "Lift"
+	effect = /obj/structure/fitness/weightlifter/proc/interaction_hand
+
+/obj/structure/fitness/weightlifter/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		return
+		return TRUE
 	if(user.loc != src.loc)
 		to_chat(user, span_warning("You must be on the weight machine to use it."))
-		return
+		return TRUE
 	if(user.nutrition < 70) // Set minimum nutrition to be the same as in fitness_machines_vr.dm
 		to_chat(user, span_warning("You need more energy to lift weights. Go eat something."))
-		return
+		return TRUE
 	if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
-		return
+		return TRUE
 	if(om_busy(src))
 		to_chat(user, span_warning("The weight machine is already in use by somebody else."))
-		return
+		return TRUE
 	else
 		playsound(src, 'sound/effects/weightlifter.ogg', 50, 1)
 		user.set_dir(SOUTH)
 		flick("[icon_state]_[weight]", src)
 		om_do_after(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
+	return TRUE
 
 /obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
 	playsound(src, 'sound/effects/weightdrop.ogg', 25, 1)

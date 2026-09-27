@@ -81,16 +81,28 @@
 		return TRUE
 	return ..()
 
-/obj/structure/bed/attackby(obj/item/W as obj, mob/user as mob)
+/obj/structure/bed/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/bed_item,
+	)
+	..()
+
+/// Old attackby: pad with a stack, tuck a disk/plushie in, or buckle a grabbed mob in.
+/datum/interaction/entry_item/bed_item
+	id = "bed_item"
+	name = "Use"
+	effect = /obj/structure/bed/proc/interaction_item
+
+/obj/structure/bed/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack))
 		if(padding_material)
 			to_chat(user, "\The [src] is already padded.")
-			return
+			return TRUE
 		var/obj/item/stack/C = W
 		if(C.get_amount() < 1) // How??
 			user.drop_from_inventory(C)
 			qdel(C)
-			return
+			return TRUE
 		var/padding_type
 		// making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
 		if(istype(W,/obj/item/stack/tile/carpet))
@@ -103,14 +115,14 @@
 				padding_type = "[M.material.name]"
 		if(!padding_type)
 			to_chat(user, "You cannot pad \the [src] with that.")
-			return
+			return TRUE
 		C.use(1)
 		if(!istype(src.loc, /turf))
 			user.drop_from_inventory(src)
 			src.loc = get_turf(src)
 		to_chat(user, "You add padding to \the [src].")
 		add_padding(padding_type)
-		return
+		return TRUE
 
 	else if(istype(W, /obj/item/disk) || (istype(W, /obj/item/toy/plushie)))
 		user.drop_from_inventory(W, get_turf(src))
@@ -123,12 +135,11 @@
 		var/obj/item/grab/G = W
 		var/mob/living/affecting = GRAB_TARGET(G)
 		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
-			to_chat(user, span_notice("\The [src] already has someone BUCKLED(src) to it."))
-			return
+			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
+			return TRUE
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
 		om_do_after(user, 2 SECONDS, target = GRAB_TARGET(G), target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(W, user, affecting))
-	else
-		..()
+	return TRUE
 
 /obj/structure/bed/proc/attackby_timed_done(obj/item/W, mob/user, mob/living/affecting)
 	affecting.forceMove(loc)
@@ -230,9 +241,11 @@
 /obj/structure/bed/roller/update_icon()
 	return
 
-/obj/structure/bed/roller/attackby(obj/item/W as obj, mob/user as mob)
+/// Overrides bed's interaction_item(): a stack does nothing, a roller holder collapses the
+/// bed, and anything else falls through to bed's own handling.
+/obj/structure/bed/roller/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack))
-		return
+		return TRUE
 	else if(istype(W,/obj/item/roller_holder))
 		if(has_buckled_mobs())
 			for(var/A in BUCKLED_MOBS(src))
@@ -241,8 +254,8 @@
 			visible_message("[user] collapses \the [src.name].")
 			new rollertype(get_turf(src))
 			QDEL_IN(src, 0)
-		return
-	..()
+		return TRUE
+	return ..()
 
 /obj/structure/bed/roller/wrench_act(mob/user, obj/item/W)
 	return TRUE
@@ -374,8 +387,9 @@
 /obj/structure/bed/alien/update_icon()
 	return // Doesn't care about material or anything else.
 
-/obj/structure/bed/alien/attackby(obj/item/W, mob/user)
-	return // No deconning.
+/// Overrides bed's interaction_item(): no deconning.
+/obj/structure/bed/alien/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return TRUE
 
 /obj/structure/bed/alien/wrench_act(mob/user, obj/item/W)
 	return TRUE
@@ -397,10 +411,25 @@
 	buckle_dir = SOUTH
 	buckle_lying = 1
 
-/obj/structure/dirtybed/attackby(obj/item/W as obj, mob/user as mob)
-	if(!anchored)
-		to_chat(user,span_notice(" The bed isn't secured."))
-		return
+/obj/structure/dirtybed/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/dirtybed_item,
+	)
+	..()
+
+/// Old attackby: a notice if the bed isn't anchored.
+/datum/interaction/entry_item/dirtybed_item
+	id = "dirtybed_item"
+	name = "Use"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/dirtybed/proc/dirtybed_not_anchored, null))
+	effect = /obj/structure/dirtybed/proc/interaction_item
+
+/obj/structure/dirtybed/proc/dirtybed_not_anchored(mob/actor, atom/target, obj/item/held)
+	return !anchored
+
+/obj/structure/dirtybed/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user,span_notice(" The bed isn't secured."))
+	return TRUE
 
 /obj/structure/dirtybed/wrench_act(mob/user, obj/item/W)
 	user.visible_message("[user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")

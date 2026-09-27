@@ -6,16 +6,38 @@
 	var/obj/item/clothing/suit/coat
 	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench)
 
-/obj/structure/coatrack/attack_hand(mob/user as mob)
-	if(!coat)
-		return ..()
+/obj/structure/coatrack/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/coatrack_hand,
+		/datum/interaction/entry_item/coatrack_item,
+	)
+	..()
+
+/// Old attack_hand: take the hung coat off the rack.
+/datum/interaction/entry_hand/coatrack_hand
+	id = "coatrack_hand"
+	name = "Take coat"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/coatrack/proc/coatrack_has_coat, null))
+	effect = /obj/structure/coatrack/proc/interaction_hand
+
+/obj/structure/coatrack/proc/coatrack_has_coat(mob/actor, atom/target, obj/item/held)
+	return !!coat
+
+/obj/structure/coatrack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message("[user] takes [coat] off \the [src].", "You take [coat] off the \the [src]")
 	if(!user.put_in_active_hand(coat))
 		coat.loc = get_turf(user)
 	coat = null
 	update_icon()
+	return TRUE
 
-/obj/structure/coatrack/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: hang a coat/labcoat on the rack.
+/datum/interaction/entry_item/coatrack_item
+	id = "coatrack_item"
+	name = "Hang coat"
+	effect = /obj/structure/coatrack/proc/interaction_item
+
+/obj/structure/coatrack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/can_hang = 0
 	for (var/T in allowed)
 		if(istype(W,T))
@@ -27,7 +49,7 @@
 		update_icon()
 	else
 		to_chat(user, span_notice("You cannot hang [W] on [src]"))
-		return ..()
+	return TRUE
 
 /obj/structure/coatrack/CanPass(atom/movable/mover, turf/target)
 	var/can_hang = 0

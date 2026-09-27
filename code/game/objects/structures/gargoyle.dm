@@ -241,32 +241,43 @@
 	visible_message(span_danger("[user] [attack_message] the [src]!"))
 	damage(damage)
 
-/obj/structure/gargoyle/attackby(obj/item/W as obj, mob/living/user as mob)
+/obj/structure/gargoyle/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/gargoyle_item,
+	)
+	..()
+
+/// Old attackby: anchor with a wrench, feed the gargoyle's vore mode, or take a hit.
+/datum/interaction/entry_item/gargoyle_item
+	id = "gargoyle_item"
+	name = "Use"
+	effect = /obj/structure/gargoyle/proc/interaction_item
+
+/obj/structure/gargoyle/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(W.has_tool_quality(TOOL_WRENCH))
 		if(isspace(loc) || isopenspace(loc))
 			to_chat(user, span_warning("You can't anchor that here!"))
 			anchored = FALSE
-			return ..()
+			return TRUE
 		var/was_anchored = anchored
 		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
 	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
 			gargoyle.vore_attackby(W, user)
-			return
+			return TRUE
 		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(gargoyle.vore_selected.name)] ."))
 			user.drop_item()
 			gargoyle.vore_selected.nom_atom(W)
-			return
+			return TRUE
 	else if(!(W.flags & NOBLUDGEON))
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())
 			user.do_attack_animation(src)
 			playsound(src, W.hitsound, 50, 1)
 			damage(W.force)
-	else
-		return ..()
+	return TRUE
 
 /obj/structure/gargoyle/proc/attackby_tool_done(mob/living/user, was_anchored)
 	to_chat(user, span_notice("You [was_anchored ? "un" : ""]anchor the [src]."))

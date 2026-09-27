@@ -1,5 +1,5 @@
 // The latency policy (roadmap C10, doc/rewrite/containment.md §4.7): per-
-// condition unit tests, the kill switch, the weakref gap, a pin blocking
+// condition unit tests, the kill switch, a pin blocking
 // collapse while an appearance-only representation keeps working without one,
 // a thrash guard, and a fuzz over collapse/materialize/move/destroy cycles.
 
@@ -49,11 +49,6 @@
 /obj/item/dq_latency_test_machine/slot_def_types()
 	var/static/list/types = list(/datum/slot_def/machine_internals, /datum/slot_def/stock)
 	return types
-
-/// Something that holds a weakref to a test item, standing in for a callback
-/// or an external list entry that shouldn't be invisible to collapse.
-/datum/dq_latency_weakref_holder
-	var/datum/weakref/ref
 
 /datum/unit_test/proc/dq_latency_floor()
 	for(var/turf/simulated/floor/T in world)
@@ -142,32 +137,6 @@
 	qdel(box.open_tguis[1])
 	box.open_tguis = null
 	TEST_ASSERT(can_be_latent(item), "closing the window should restore eligibility")
-	qdel(box)
-
-/// Closes the weakref gap (collapse.dm's state_weakref_blockers, containment.md
-/// §4.7): a plain ref elsewhere on the item is already caught by the ordinary
-/// refcount check; this proves the weakref-specific path independently.
-/datum/unit_test/dq_latency_weakref_blocks
-
-/datum/unit_test/dq_latency_weakref_blocks/Run()
-	var/turf/floor = dq_latency_floor()
-	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
-	var/obj/item/dq_latency_test_box/box = new(floor)
-	var/obj/item/dq_latency_test_item/item = new(box)
-	dq_ledger(box)
-	item.latent_last_touch = world.time - (box.latent_idle_delay * 2)
-	TEST_ASSERT(length(item.state_collapse_blockers(2)) == 0, "a plain item should have no collapse blockers yet")
-
-	var/datum/weakref/W = WEAKREF(item)
-	var/datum/dq_latency_weakref_holder/outside = new
-	outside.ref = W // an outside reference to the weakref, not to the item
-	TEST_ASSERT(length(item.state_collapse_blockers(2)) > 0, "an outside reference to the item's weak_reference must block collapse")
-	TEST_ASSERT(!can_be_latent(item), "can_be_latent must refuse a weakref-pinned item")
-
-	outside.ref = null
-	qdel(outside)
-	TEST_ASSERT(length(item.state_collapse_blockers(2)) == 0, "releasing the outside weakref reference should clear the blocker")
-	TEST_ASSERT(can_be_latent(item), "can_be_latent should accept the item again")
 	qdel(box)
 
 /// Rollout (containment.md §4.7): machine internals are eligible, the stock

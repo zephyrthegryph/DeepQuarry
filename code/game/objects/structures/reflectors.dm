@@ -101,20 +101,34 @@
 	P.ignore_source_check = TRUE
 	return 2
 
-/obj/structure/reflector/attackby(obj/item/W, mob/user, params)
-	if(admin)
-		return
+/obj/structure/reflector/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/reflector_item,
+		/datum/interaction/entry_alt/reflector_alt,
+	)
+	..()
 
+/// Old attackby: lock rotation, dismantle/weld, or finish the frame with material.
+/datum/interaction/entry_item/reflector_item
+	id = "reflector_item"
+	name = "Use"
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/structure/reflector/proc/reflector_not_admin, null))
+	effect = /obj/structure/reflector/proc/interaction_item
+
+/obj/structure/reflector/proc/reflector_not_admin(mob/actor, atom/target, obj/item/held)
+	return !admin
+
+/obj/structure/reflector/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))
 		can_rotate = !can_rotate
 		to_chat(user, span_notice("You [can_rotate ? "unlock" : "lock"] [src]'s rotation."))
 		playsound(W, W.usesound, 50, 1)
-		return
+		return TRUE
 
 	if(W.has_tool_quality(TOOL_WRENCH) && can_decon)
 		if(anchored)
 			to_chat(user, span_warning("Unweld [src] from the floor first!"))
-			return
+			return TRUE
 		user.visible_message(span_notice("[user] starts to dismantle [src]."), span_notice("You start to dismantle [src]..."))
 
 		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
@@ -123,20 +137,21 @@
 		if(!anchored)
 			if(!I.get_fuel())
 				to_chat(user, span_warning("You require fuel to weld the [src]!"))
-				return
+				return TRUE
 
 			user.visible_message(span_notice("[user] starts to weld [src] to the floor."),
 								span_notice("You start to weld [src] to the floor..."),
 								span_hear("You hear welding."))
 
 			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
+			return TRUE
 			anchored = TRUE
 			user.visible_message(span_notice("[user] welds [src] to the floor."),
 								span_notice("You weld [src] to the floor..."),
 								span_hear("You hear welding."))
 		else
 			if(!I.remove_fuel(1,user))
-				return
+				return TRUE
 
 			user.visible_message(span_notice("[user] starts to cut [src] free from the floor."),
 								span_notice("You start to cut [src] free from the floor..."),
@@ -147,7 +162,7 @@
 	//Finishing the frame
 	else if(istype(W, /obj/item/stack/material))
 		if(finished)
-			return
+			return TRUE
 		var/obj/item/stack/material/S = W
 		if(istype(S, /obj/item/stack/material/glass))
 			if(S.use(5))
@@ -155,20 +170,19 @@
 				qdel(src)
 			else
 				to_chat(user, span_warning("You need five sheets of glass to create a reflector!"))
-				return
+				return TRUE
 		if(istype(S, /obj/item/stack/material/glass/reinforced))
 			if(S.use(10))
 				new /obj/structure/reflector/double(drop_location())
 				qdel(src)
 			else
 				to_chat(user, span_warning("You need ten sheets of reinforced glass to create a double reflector!"))
-				return
+				return TRUE
 		if(istype(S, /obj/item/stack/material/diamond))
 			if(S.use(1))
 				new /obj/structure/reflector/box(drop_location())
 				qdel(src)
-	else
-		return ..()
+	return TRUE
 
 /obj/structure/reflector/proc/attackby_timed_done(mob/user)
 	user.visible_message(span_notice("[user] dismantles [src]."), span_notice("You dismantle [src]..."))
@@ -192,11 +206,21 @@
 		setAngle(SIMPLIFY_DEGREES(new_angle))
 	return TRUE
 
-/obj/structure/reflector/click_alt(mob/user)
+/// Old click_alt: rotate the finished reflector.
+/datum/interaction/entry_alt/reflector_alt
+	id = "reflector_alt"
+	name = "Rotate"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/reflector/proc/reflector_finished, null))
+	effect = /obj/structure/reflector/proc/interaction_alt
+
+/obj/structure/reflector/proc/reflector_finished(mob/actor, atom/target, obj/item/held)
+	return !!finished
+
+/obj/structure/reflector/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!CanUseTopic(user))
-		return
-	else if(finished)
-		rotate(user)
+		return TRUE
+	rotate(user)
+	return TRUE
 
 
 //TYPES OF REFLECTORS, SINGLE, DOUBLE, BOX

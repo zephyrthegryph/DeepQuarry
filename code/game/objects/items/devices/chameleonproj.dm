@@ -29,11 +29,9 @@
 	disrupt()
 	..()
 
-/obj/item/chameleon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	toggle(user)
+/obj/item/chameleon/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(toggle)))
+	return L
 
 /obj/item/chameleon/afterattack(atom/target, mob/user, proximity)
 	if(!proximity) return
@@ -113,15 +111,18 @@
 	master = C
 	master.active_dummy = src
 
-/obj/effect/dummy/chameleon/attackby()
-	for(var/mob/M in src)
-		to_chat(M, span_warning("Your chameleon-projector deactivates."))
-	master.disrupt()
+/obj/effect/dummy/chameleon/get_interactions()
+	var/static/list/L = list(
+		INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)),
+		INTERACT_HAND("Disrupt", PROC_REF(interaction_disrupt)),
+	)
+	return L
 
-/obj/effect/dummy/chameleon/attack_hand()
+/obj/effect/dummy/chameleon/proc/interaction_disrupt(mob/user, obj/item/held, datum/interaction/interaction)
 	for(var/mob/M in src)
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
+	return TRUE
 
 /obj/effect/dummy/chameleon/ex_act()
 	for(var/mob/M in src)
@@ -157,5 +158,5 @@
 	return
 
 /obj/effect/dummy/chameleon/Destroy()
-	master.disrupt(0)
+	master?.disrupt(0)
 	. = ..()

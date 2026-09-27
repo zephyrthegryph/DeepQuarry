@@ -67,13 +67,21 @@
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
 
-/obj/item/assembly/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/assembly/get_interactions()
+	var/static/list/L = list(
+		INTERACT_ITEM("Use", PROC_REF(interaction_item)),
+		INTERACT_USE("Use", PROC_REF(interaction_self)),
+	)
+	return L
+
+/// Old attackby: attach another unsecured assembly.
+/obj/item/assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(isassembly(W))
 		var/obj/item/assembly/A = W
 		if((!A.secured) && (!secured))
 			attach_assembly(A,user)
-			return
-	return ..()
+			return TRUE
+	return FALSE
 
 /obj/item/assembly/screwdriver_act(mob/user, obj/item/tool)
 	if(toggle_secure())
@@ -93,15 +101,18 @@
 		else
 			. += "\The [src] can be attached!"
 
-/obj/item/assembly/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: subtypes override interaction_self() and call ..() first, matching the
+/// old override chain (a subtype's own handling takes priority; this base opens the UI).
+/// Compact INTERACT_USE dispatches virtually by proc name, so every subtype's override
+/// (voice, igniter, shock_kit, mousetrap, ...) is reached with no interaction of its own -
+/// one shared /datum/interaction/generic singleton covers the whole hierarchy.
+/obj/item/assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!user)
 		return FALSE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/assembly/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state

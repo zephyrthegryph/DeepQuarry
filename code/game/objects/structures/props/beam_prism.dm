@@ -41,22 +41,38 @@
 	var/degrees_to_rotate = -1 * degrees_from_north
 	animate(src, transform = turn(src.transform, degrees_to_rotate), time = 2)
 
-/obj/structure/prop/prism/attack_hand(mob/living/user)
+// The original attack_hand called ..() (prop's message display) unconditionally, then always
+// continued into its own rotate prompt below, so prism_rotate() shows the message itself
+// instead of also offering prop_hand (which would tie with it and open the Menu).
+/obj/structure/prop/prism/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/prism_rotate,
+	)
 	..()
+	into -= /datum/interaction/entry_hand/prop_hand
 
+/// Old attack_hand: manually rotate the prism to a chosen bearing.
+/datum/interaction/entry_hand/prism_rotate
+	id = "prism_rotate"
+	name = "Rotate"
+	effect = /obj/structure/prop/prism/proc/interaction_rotate
+
+/obj/structure/prop/prism/proc/interaction_rotate(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_message)
+		to_chat(user, interaction_message)
 	if(rotation_lock)
 		to_chat(user, span_warning("\The [src] is locked at its current bearing."))
-		return
+		return TRUE
 	if(external_control_lock)
 		to_chat(user, span_warning("\The [src]'s motors resist your efforts to rotate it. You may need to find some form of controller."))
-		return
+		return TRUE
 
 	var/confirm = tgui_alert(user, "Do you want to try to rotate \the [src]?", "[name]", list("Yes", "No"))
 	if(confirm != "Yes")
 		visible_message(\
 			span_notice("[user.name] decides not to try turning \the [src]."),\
 			span_notice("You decide not to try turning \the [src]."))
-		return
+		return TRUE
 
 	var/new_bearing
 	if(free_rotate)
@@ -64,7 +80,7 @@
 		new_bearing = round(new_bearing)
 		if(new_bearing <= -1 || new_bearing > 360)
 			to_chat(user, span_warning("Rotating \the [src] [new_bearing] degrees would be a waste of time."))
-			return
+			return TRUE
 	else
 		var/choice = tgui_input_list(user, "What point do you want to set \the [src] to?", "[name]", compass_directions)
 		new_bearing = round(compass_directions[choice])
@@ -87,6 +103,7 @@
 		om_after(src, 3, PROC_REF(rotate_second_stage), rotate_degrees)
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6) //Can't update transform because it will reset the angle.
+	return TRUE
 
 /obj/structure/prop/prism/proc/rotate_auto(new_bearing)
 	if(rotation_lock)
@@ -152,19 +169,32 @@
 	var/list/my_turrets
 	var/dialID = null
 
-/obj/structure/prop/prismcontrol/attack_hand(mob/living/user)
+/obj/structure/prop/prismcontrol/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/prismcontrol_rotate,
+	)
 	..()
+	into -= /datum/interaction/entry_hand/prop_hand
 
+/// Old attack_hand: rotate every linked prism to a chosen bearing.
+/datum/interaction/entry_hand/prismcontrol_rotate
+	id = "prismcontrol_rotate"
+	name = "Rotate"
+	effect = /obj/structure/prop/prismcontrol/proc/interaction_rotate
+
+/obj/structure/prop/prismcontrol/proc/interaction_rotate(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_message)
+		to_chat(user, interaction_message)
 	var/confirm = tgui_alert(user, "Do you want to try to rotate \the [src]?", "[name]", list("Yes", "No"))
 	if(confirm != "Yes")
 		visible_message(\
 			span_notice("[user.name] decides not to try turning \the [src]."),\
 			span_notice("You decide not to try turning \the [src]."))
-		return
+		return TRUE
 
 	if(!my_turrets || !length(my_turrets))
 		to_chat(user, span_notice("\The [src] doesn't seem to do anything."))
-		return
+		return TRUE
 
 	var/free_rotate = 1
 	var/list/compass_directions = list()
@@ -179,7 +209,7 @@
 		new_bearing = round(new_bearing)
 		if(new_bearing <= -1 || new_bearing > 360)
 			to_chat(user, span_warning("Rotating \the [src] [new_bearing] degrees would be a waste of time."))
-			return
+			return TRUE
 	else
 		var/choice = tgui_input_list(user, "What point do you want to set \the [src] to?", "[name]", compass_directions)
 		new_bearing = round(compass_directions[choice])
@@ -189,11 +219,12 @@
 		visible_message(\
 			span_notice("[user.name] decides not to try turning \the [src]."),\
 			span_notice("You decide not to try turning \the [src]."))
-		return
+		return TRUE
 
 	to_chat(user, span_notice("\The [src] clicks into place."))
 	for(var/obj/structure/prop/prism/P in my_turrets)
 		P.rotate_auto(new_bearing)
+	return TRUE
 
 /obj/structure/prop/prismcontrol/Initialize(mapload)
 	. = ..()

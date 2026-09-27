@@ -58,17 +58,30 @@
 /obj/structure/ghost_pod/manual
 	var/confirm_before_open = FALSE // Recommended to be TRUE if the pod contains a surprise.
 
-/obj/structure/ghost_pod/manual/attack_hand(mob/living/user)
+/obj/structure/ghost_pod/manual/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/ghost_pod_open,
+	)
+	..()
+
+/// Old attack_hand: open the pod.
+/datum/interaction/entry_hand/ghost_pod_open
+	id = "ghost_pod_open"
+	name = "Open"
+	effect = /obj/structure/ghost_pod/manual/proc/interaction_open
+
+/obj/structure/ghost_pod/manual/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!used)
 		if(confirm_before_open)
 			if(tgui_alert(user, "Are you sure you want to touch \the [src]?", "Confirm", list("No", "Yes")) != "Yes")
-				return
+				return TRUE
 		trigger(user)
 		// ition Start
 		if(!used)
 			activated = TRUE
 			ghostpod_startup(FALSE)
 		// ition End
+	return TRUE
 
 /obj/structure/ghost_pod/manual/attack_ai(mob/living/silicon/user)
 	if(Adjacent(user))

@@ -69,17 +69,34 @@
 		return TRUE
 	return ..()
 
-/obj/structure/fence/attack_hand(mob/user)
-	if(electric && isliving(user) && !user.is_incorporeal())
-		if(electrocute(user))
-			return
-	. = ..()
+/obj/structure/fence/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/fence_hand,
+		/datum/interaction/entry_item/fence_item,
+	)
+	..()
 
-/obj/structure/fence/attackby(obj/item/W, mob/user)
+/// Old attack_hand: shocks a living, corporeal user if the fence is electrified.
+/datum/interaction/entry_hand/fence_hand
+	id = "fence_hand"
+	name = "Use"
+	effect = /obj/structure/fence/proc/interaction_hand
+
+/obj/structure/fence/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(electric && isliving(user) && !user.is_incorporeal())
+		electrocute(user)
+	return TRUE
+
+/// Old attackby: same, but a NOCONDUCT item protects the user.
+/datum/interaction/entry_item/fence_item
+	id = "fence_item"
+	name = "Use"
+	effect = /obj/structure/fence/proc/interaction_item
+
+/obj/structure/fence/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(electric && isliving(user) && !user.is_incorporeal() && !(W.flags & NOCONDUCT))
-		if(electrocute(user))
-			return
+		electrocute(user)
 	return TRUE
 
 /obj/structure/fence/wirecutter_act(mob/user, obj/item/W)
@@ -163,15 +180,35 @@
 	desc = "It looks like it has a strong padlock attached."
 	locked = TRUE
 
-/obj/structure/fence/door/attack_hand(mob/user)
+// The fence door's Use overrides its own, replacing (not chaining to) the base fence's
+// electrify interactions: a fence door is never electrified, so it declares its own set
+// instead of calling ..() into /obj/structure/fence/declare_interactions().
+/obj/structure/fence/door/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/fence_door_hand,
+		/datum/interaction/entry_item/fence_door_item,
+	)
+
+/// Old attack_hand: open/close the door.
+/datum/interaction/entry_hand/fence_door_hand
+	id = "fence_door_hand"
+	name = "Use"
+	effect = /obj/structure/fence/door/proc/interaction_door_hand
+
+/obj/structure/fence/door/proc/interaction_door_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(can_open(user))
 		toggle(user)
 	else
 		to_chat(user, span_warning("\The [src] is [!open ? "locked" : "stuck open"]."))
-
 	return TRUE
 
-/obj/structure/fence/door/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: lock/unlock with the matching key, pick the lock, or fall back to toggling.
+/datum/interaction/entry_item/fence_door_item
+	id = "fence_door_item"
+	name = "Use"
+	effect = /obj/structure/fence/door/proc/interaction_door_item
+
+/obj/structure/fence/door/proc/interaction_door_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(istype(W,/obj/item/simple_key))
 		var/obj/item/simple_key/key = W
@@ -183,28 +220,28 @@
 			visible_message(span_notice("[user] [key.keyverb] \the [key] and [locked ? "unlocks" : "locks"] \the [src]."))
 			locked = !locked
 			playsound(src, keysound,100, 1)
-		return
+		return TRUE
 
 	else if(istype(W,/obj/item/lockpick))
 		var/obj/item/lockpick/L = W
 		if(!locked)
 			to_chat(user, span_notice("\The [src] isn't locked."))
-			return
+			return TRUE
 		else if(lock_type != L.pick_type) //make sure our types match
 			to_chat(user, span_warning("\The [L] can't pick \the [src]. Another tool might work?"))
-			return
+			return TRUE
 		else if(!can_pick)
 			to_chat(user, span_warning("\The [src] can't be [L.pick_verb]ed."))
-			return
+			return TRUE
 		else
 			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
 			playsound(src, keysound,100, 1)
 			om_do_after(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
-		return
+		return TRUE
 
 	else
-		attack_hand(user)
-	return
+		interaction_door_hand(user, W, interaction)
+	return TRUE
 
 /obj/structure/fence/door/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("Success!"))

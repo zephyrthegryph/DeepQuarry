@@ -23,13 +23,26 @@
 	var/state
 
 /// Used to tell the player that this isn't useful for anything.
-/obj/structure/prop/attack_hand(mob/living/user)
+/obj/structure/prop/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_hand/prop_hand,
+	)
+	..()
+
+/datum/interaction/entry_hand/prop_hand
+	id = "prop_hand"
+	name = "Use"
+	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/prop/proc/prop_has_message, null))
+	effect = /obj/structure/prop/proc/interaction_hand
+
+/obj/structure/prop/proc/prop_has_message(mob/actor, atom/target, obj/item/held)
+	return !!interaction_message
+
+/obj/structure/prop/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
-		return FALSE
-	if(!interaction_message)
-		return ..()
-	else
-		to_chat(user, interaction_message)
+		return TRUE
+	to_chat(user, interaction_message)
+	return TRUE
 
 /obj/structure/prop/proc/change_state(state)
 	SHOULD_CALL_PARENT(TRUE)

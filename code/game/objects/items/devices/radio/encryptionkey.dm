@@ -11,7 +11,13 @@
 	var/syndie = 0
 	var/list/channels = list()
 
-/obj/item/encryptionkey/attackby(obj/item/W as obj, mob/user as mob)
+/obj/item/encryptionkey/get_interactions()
+	var/static/list/L = list(INTERACT_ITEM(null, PROC_REF(interaction_item)))
+	return L
+
+/// Old attackby was an empty stub: it always swallowed the click with no action, no fallthrough.
+/obj/item/encryptionkey/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return TRUE
 
 /obj/item/encryptionkey/syndicate
 	icon_state = "syn_cypherkey"

@@ -58,31 +58,46 @@
 		W.update_connections()
 		W.update_icon()
 
-/obj/structure/low_wall/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
+/obj/structure/low_wall/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/entry_item/low_wall_item,
+	)
+	..()
+
+/// Old attackby: build a grille from rods, a window from glass, or drop an item on the wall.
+/// Precision placement (auto_align against the exact click position) isn't available here:
+/// run_interaction_entry() doesn't thread click_parameters through to the effect proc, so a
+/// dropped item is aligned by its center of mass instead of the exact click cell.
+/datum/interaction/entry_item/low_wall_item
+	id = "low_wall_item"
+	name = "Use"
+	effect = /obj/structure/low_wall/proc/interaction_item
+
+/obj/structure/low_wall/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 
 	// Making grilles (only works on Bay ones currently)
 	if(istype(W, /obj/item/stack/rods))
 		handle_rod_use(user, W)
-		return
+		return TRUE
 
 	// Making windows, different per subtype
 	else if(istype(W, /obj/item/stack/material/glass) || istype(W, /obj/item/stack/material/cyborg/glass))
 		handle_glass_use(user, W)
-		return
+		return TRUE
 
 	// Handle placing things
 	if(isrobot(user))
-		return
+		return TRUE
 
 	if(W.loc != user) // This should stop mounted modules ending up outside the module.
-		return
+		return TRUE
 
 	if(can_place_items() && user.unEquip(W, 0, src.loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
-		auto_align(W, click_parameters)
-		return 1
+		auto_align(W, null)
+		return TRUE
 
-	return ..()
+	return TRUE
 
 /obj/structure/low_wall/wrench_act(mob/user, obj/item/W)
 	for(var/obj/structure/S in loc)

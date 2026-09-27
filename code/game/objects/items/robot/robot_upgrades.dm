@@ -145,7 +145,7 @@
 /obj/item/borg/upgrade/basic/vtec/remove_upgrade(mob/living/silicon/robot/R)
 	if(!is_installed(R))
 		return
-	remove_verb(R, /mob/living/silicon/robot/proc/toggle_vtec)
+	R.revoke_ability(ABILITY_ID_ROBOT_TOGGLE_VTEC, R)
 	R.vtec_active = FALSE
 	if(R.hud_used)
 		R.hud_used.toggle_vtec_control()

@@ -80,10 +80,11 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		to_chat(user,span_warning("Not a compatible subject to work with!"))
 		return ITEM_INTERACT_FAILURE
 
-/obj/item/sleevemate/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/obj/item/sleevemate/get_interactions()
+	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
+	return L
+
+/obj/item/sleevemate/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!stored_mind)
 		to_chat(user,span_warning("No stored mind in \the [src]."))
 		return
