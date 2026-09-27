@@ -56,6 +56,19 @@
 #define LIFE_MAX_CATCHUP 2
 /// Frames in a row that must end with every stage idle before a mob parks.
 #define LIFE_PARK_AFTER 2
+// --- Steady-state resampling (idle rules with a rewake behind them; w5 human sleep rules) ------
+/// A carbon breathing stage idle in steady air re-samples it this often (air can change in place).
+#define BREATH_STEADY_RESAMPLE (30 SECONDS)
+/// A human environment stage idle in comfortable air re-samples it this often.
+#define ENVIRONMENT_STEADY_RESAMPLE (15 SECONDS)
+/// A human chemicals stage with nothing to metabolise wakes this often to charge hunger.
+#define NUTRITION_RESAMPLE (30 SECONDS)
+/// At most this many Life cycles of hunger are charged at once after a nap.
+#define NUTRITION_CATCHUP_CYCLES 50
+/// A carbon's germs stage rolls its creep toward the ambient level this often.
+#define GERM_RESAMPLE (1 MINUTES)
+/// At most this many Life cycles of germ creep are charged at once.
+#define GERM_CATCHUP_CYCLES 100
 /// The presentation pipeline (HUD, vision) runs at most this often; changes in between coalesce.
 #define LIFE_PRESENT_MIN_INTERVAL (0.5 SECONDS)
 /// Observer upkeep (ghosts, AI eyes, blob overmind) runs this often.

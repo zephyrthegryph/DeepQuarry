@@ -100,6 +100,10 @@
 	if(self.factor(BF_STASIS) > STASIS_SLEEP_THRESHOLD)
 		self.status_at_least(EFFECT_SLEEPING, 20)
 
+/// Factor changes (body invalidate, CHANGE_MOB_HEALTH) wake it.
+/datum/om/stage/life/stasis_sleep/idle(mob/living/carbon/human/self)
+	return self.factor(BF_STASIS) <= STASIS_SLEEP_THRESHOLD
+
 /// Falling (prevents people from floating).
 /datum/om/stage/life/fall
 	order = LIFE_PHASE_TAIL + 130
@@ -109,6 +113,14 @@
 
 /datum/om/stage/life/fall/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.fall()
+
+/// Event-driven: moving wakes it. A floor removed from under a standing player is caught by
+/// the rewake.
+/datum/om/stage/life/fall/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/datum/om/stage/life/fall/rewake_delay(mob/living/carbon/human/self)
+	return self.client ? 10 SECONDS : 0
 
 /// Allergens, medication side effects, ischemia and the dirty medical domains.
 /datum/om/stage/life/medical
@@ -924,7 +936,36 @@
 /datum/om/stage/life/environment/carbon/human
 	of = /mob/living/carbon/human
 
+/mob/living/carbon/human
+	/// TRUE when the last environment exchange found comfortable air (its idle rule).
+	var/environment_steady = FALSE
+
+/// Idle after an exchange that found comfortable air on a turf (the pressure inside the warning
+/// band, the air within 20 K of the body, the body inside its comfort band). Only the mob's own
+/// state is read, so the air is re-sampled by the rewake; moving and equipment wake it sooner.
+/// Species and traits with their own environment effects stay awake.
+/datum/om/stage/life/environment/carbon/human/idle(mob/living/carbon/human/self)
+	var/static/list/active_environment_species = typecacheof(list(
+		/datum/species/alraune,
+		/datum/species/grey,
+		/datum/species/diona,
+		/datum/species/spider,
+		/datum/species/xenochimera,
+		/datum/species/xenomorph_hybrid,
+		/datum/species/xenos,
+		/datum/species/shapeshifter/promethean/avatar,
+	))
+	if(!self.environment_steady || !isturf(self.loc) || self.alerts?["pressure"])
+		return FALSE
+	if(LAZYLEN(self.species.env_traits) || is_type_in_typecache(self.species, active_environment_species))
+		return FALSE
+	return self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1
+
+/datum/om/stage/life/environment/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return ENVIRONMENT_STEADY_RESAMPLE
+
 /datum/om/stage/life/environment/carbon/human/exchange(mob/living/carbon/human/self, datum/gas_mixture/environment)
+	self.environment_steady = FALSE
 	if(!environment)
 		return
 
@@ -969,6 +1010,7 @@
 
 		if(adjusted_pressure < self.species.warning_high_pressure && adjusted_pressure > self.species.warning_low_pressure && abs(loc_temp - self.bodytemperature) < 20 && self.bodytemperature < self.species.heat_level_1 && self.bodytemperature > self.species.cold_level_1 && (!isbelly(self.loc) || !self.allowtemp))
 			self.clear_alert("pressure")
+			self.environment_steady = TRUE
 			return // Temperatures are within normal ranges, fuck all this processing. ~Ccomp
 
 		//Body temperature adjusts depending on surrounding atmosphere based on your thermal protection (convection)
@@ -1244,11 +1286,13 @@
 	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 
-	// nutrition decrease
-	// Species controls hunger rate for humans, otherwise use defaults
+	// nutrition decrease, for the biological time since the last one (the stage idles between
+	// reagents and comes back on its rewake to catch up). Species controls hunger rate for humans.
+	var/bio_now = om_clock_now(self, CLOCK_BIO)
+	var/hunger_cycles = self.nutrition_drained_at ? clamp((bio_now - self.nutrition_drained_at) / LIFE_CYCLE, 0, NUTRITION_CATCHUP_CYCLES) : 1
+	self.nutrition_drained_at = bio_now
 	if(self.nutrition > 0 && self.stat != DEAD)
-		var/nutrition_reduction = DEFAULT_HUNGER_FACTOR
-		nutrition_reduction = self.species.hunger_factor
+		var/nutrition_reduction = self.species.hunger_factor * hunger_cycles
 		// Metabolism above or below the species' own (hunger_factor already
 		// covers the species) raises or lowers nutrition cost.
 		var/species_metabolism = self.species.baseline_factor(BF_METABOLISM)
@@ -1281,6 +1325,24 @@
 		self.handle_trace_chems()
 
 	return
+
+/mob/living/carbon/human
+	/// Biological time (om_clock_now(CLOCK_BIO), ds) of the last nutrition drain.
+	var/nutrition_drained_at = 0
+
+/// Idle with nothing to metabolise and no digestion noises due; reagent changes invalidate the
+/// body (CHANGE_MOB_HEALTH). Hunger is integrated over the idle time on the rewake.
+/datum/om/stage/life/chemicals/carbon/human/idle(mob/living/carbon/human/self)
+	if(self.touching?.total_volume || self.ingested?.total_volume || self.bloodstr?.total_volume)
+		return FALSE
+	if(!self.factor(BF_DARKSIGHT) != !self.chemical_darksight)
+		return FALSE
+	if((self.noisy && self.nutrition < 250) || (self.noisy_full && self.nutrition > 500))
+		return FALSE
+	return TRUE
+
+/datum/om/stage/life/chemicals/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return self.stat == DEAD ? 0 : NUTRITION_RESAMPLE
 
 //DO NOT run the statuses system from this proc: it runs after this one as long as this returns a true value.
 /datum/om/stage/life/status/carbon/human
@@ -1990,9 +2052,13 @@
 /datum/om/stage/life/pulse/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	self.pulse = compute(self)
 
-/// The pulse this body should show now (updates every 5 life ticks).
+/// Event-driven: the heart, blood, factors, reagents and stat all reach it through the body
+/// (CHANGE_MOB_HEALTH) or set_stat().
+/datum/om/stage/life/pulse/idle(mob/living/carbon/human/self)
+	return TRUE
+
+/// The pulse this body should show now.
 /datum/om/stage/life/pulse/proc/compute(mob/living/carbon/human/self)
-	if(self.life_tick % 5) return self.pulse	//update pulse every 5 life ticks (~1 tick/sec, depending on server load)
 
 	var/temp = PULSE_NORM
 
@@ -2287,6 +2353,13 @@
 	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_DEAD_BIOLOGY
 	of = /mob/living/carbon/human
+
+/// Busy while dead with a defibrillation window still open.
+/datum/om/stage/life/defib_timer/idle(mob/living/carbon/human/self)
+	if(self.stat != DEAD || !self.should_have_organ(O_BRAIN))
+		return TRUE
+	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
+	return !istype(brain) || brain.defib_timer <= 0
 
 /// Brain decay while dead, which closes the defibrillation window.
 /datum/om/stage/life/defib_timer/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)

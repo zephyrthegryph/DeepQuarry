@@ -572,3 +572,30 @@
 	if(ctx.fact("in_stasis"))
 		return
 	self.body?.physiology_tick(ctx.dt)
+
+/// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses by a
+/// validity check. Woken by CHANGE_MOB_HEALTH through the body's invalidate() (factors, organs,
+/// breath quality, blood volume, supports); a timed support's expiry is the rewake.
+/datum/om/stage/life/physiology/idle(mob/living/self)
+	var/datum/body/B = self.body
+	if(!B?.physiology)
+		return TRUE
+	if(B.dirty & BODY_DIRTY_PHYSIOLOGY)
+		return FALSE
+	var/datum/physiology/P = B.physiology
+	if(P.shortfall || P.oxygen_debt)
+		return FALSE
+	for(var/datum/body_support/S as anything in B.supports)
+		if(S.still_valid)
+			return FALSE
+	return TRUE
+
+/// The soonest timed support's expiry, so the physiology prunes it on time.
+/datum/om/stage/life/physiology/rewake_delay(mob/living/self)
+	. = 0
+	for(var/datum/body_support/S as anything in self.body?.supports)
+		if(!S.expires_at)
+			continue
+		var/left = max(S.expires_at - world.time, 1)
+		if(!. || left < .)
+			. = left

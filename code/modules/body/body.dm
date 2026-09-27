@@ -360,8 +360,9 @@
 	// A cycle the stasis clock paused: afflictions hold still (advance_stasis()).
 	if(stasis_paused)
 		return
-	// Regeneration depends on sleep and nutrition: one snapshot per tick.
-	invalidate(BODY_DIRTY_TREATMENT)
+	// Regeneration depends on sleep and nutrition: one snapshot per tick. Marked directly: this
+	// is the tick's own bookkeeping, not a change that should wake the mob's HEALTH stages again.
+	dirty |= BODY_DIRTY_TREATMENT
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		if(A.body == src)
 			A.tick()

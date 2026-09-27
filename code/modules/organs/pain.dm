@@ -58,6 +58,10 @@
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
 
+/// Pain messages need a hurt limb, which is an affliction; add_affliction() invalidates the body.
+/datum/om/stage/life/pain/idle(mob/living/carbon/human/self)
+	return self.stat || !LAZYLEN(self.body?.afflictions)
+
 /// Pain messages from limbs and organs.
 /datum/om/stage/life/pain/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.stat)
