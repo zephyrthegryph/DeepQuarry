@@ -57,14 +57,16 @@
 			span_warning("You gnaw on \the [SJ]. (This will take around [round(breakouttime / 600)] minutes and you need to stand still.)")
 			)
 
-	if(do_after(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED))
-		if(!get_equipped_item(SLOT_ID_SUIT))
-			return
-		visible_message(
-			span_danger("\The [src] manages to remove \the [get_equipped_item(SLOT_ID_SUIT)]!"),
-			span_notice("You successfully remove \the [get_equipped_item(SLOT_ID_SUIT)].")
-			)
-		drop_from_inventory(get_equipped_item(SLOT_ID_SUIT))
+	om_do_after(src, breakouttime, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(escape_straight_jacket_human_done), done_args = list())
+
+/mob/living/carbon/human/proc/escape_straight_jacket_human_done()
+	if(!get_equipped_item(SLOT_ID_SUIT))
+		return
+	visible_message(
+		span_danger("\The [src] manages to remove \the [get_equipped_item(SLOT_ID_SUIT)]!"),
+		span_notice("You successfully remove \the [get_equipped_item(SLOT_ID_SUIT)].")
+		)
+	drop_from_inventory(get_equipped_item(SLOT_ID_SUIT))
 
 #undef RESIST_ATTACK_DEFAULT
 #undef RESIST_ATTACK_CLAWS
@@ -80,24 +82,26 @@
 		span_warning("You attempt to rip your [get_equipped_item(SLOT_ID_SUIT).name] apart. (This will take around 5 seconds and you need to stand still)")
 		)
 
-	if(do_after(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED))	// Same scaling as breaking cuffs, 5 seconds to 120 seconds, 20 seconds to 480 seconds.
-		if(!get_equipped_item(SLOT_ID_SUIT) || BUCKLED(src))
-			return
+	om_do_after(src, 20 SECONDS, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(break_straight_jacket_human_done), done_args = list())
 
-		visible_message(
-			span_danger("[src] manages to rip \the [get_equipped_item(SLOT_ID_SUIT)]!"),
-			span_warning("You successfully rip your [get_equipped_item(SLOT_ID_SUIT).name].")
-			)
+/mob/living/carbon/human/proc/break_straight_jacket_human_done()
+	if(!get_equipped_item(SLOT_ID_SUIT) || BUCKLED(src))
+		return
 
-		if(has_mutation(HULK))
-			say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!", "RAAAAAAAARGH!", "HNNNNNNNNNGGGGGGH!", "GWAAAAAAAARRRHHH!", "AAAAAAARRRGH!" ))
+	visible_message(
+		span_danger("[src] manages to rip \the [get_equipped_item(SLOT_ID_SUIT)]!"),
+		span_warning("You successfully rip your [get_equipped_item(SLOT_ID_SUIT).name].")
+		)
 
-		var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)
-		drop_from_inventory(ripped)
-		qdel(ripped)
-		var/obj/buckled = BUCKLED(src)
-		if(buckled && buckled.buckle_require_restraints)
-			buckled.unbuckle_mob()
+	if(has_mutation(HULK))
+		say(pick(";RAAAAAAAARGH!", ";HNNNNNNNNNGGGGGGH!", ";GWAAAAAAAARRRHHH!", "NNNNNNNNGGGGGGGGHH!", ";AAAAAAARRRGH!", "RAAAAAAAARGH!", "HNNNNNNNNNGGGGGGH!", "GWAAAAAAAARRRHHH!", "AAAAAAARRRGH!" ))
+
+	var/obj/item/ripped = get_equipped_item(SLOT_ID_SUIT)
+	drop_from_inventory(ripped)
+	qdel(ripped)
+	var/obj/buckled = BUCKLED(src)
+	if(buckled && buckled.buckle_require_restraints)
+		buckled.unbuckle_mob()
 
 /mob/living/carbon/human/can_break_cuffs()
 	if(species.can_shred(src,1))

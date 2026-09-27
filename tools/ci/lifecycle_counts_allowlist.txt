@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 1221 in 979 files. qdel total: 2917 in 1159 files.
+# Destroy total: 1221 in 979 files. qdel total: 2910 in 1159 files.
 [destroy]
 code/ATMOSPHERICS/atmospherics.dm 1
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
@@ -1130,7 +1130,7 @@ code/game/antagonist/station/rogue_ai.dm 1
 code/game/atom/atoms_initializing_EXPENSIVE.dm 1
 code/game/atoms_movable.dm 2
 code/game/dna/dna_modifier.dm 1
-code/game/gamemodes/cult/construct_spells.dm 5
+code/game/gamemodes/cult/construct_spells.dm 6
 code/game/gamemodes/cult/cult_structures.dm 2
 code/game/gamemodes/cult/cultify/mob.dm 4
 code/game/gamemodes/cult/cultify/obj.dm 9
@@ -1248,7 +1248,6 @@ code/game/machinery/supplybeacon.dm 1
 code/game/machinery/telecomms/logbrowser.dm 1
 code/game/machinery/telecrystal_storage.dm 3
 code/game/machinery/teleporter.dm 1
-code/game/machinery/transportpod.dm 1
 code/game/machinery/virtual_reality/vr_procs.dm 3
 code/game/machinery/vitals_monitor.dm 1
 code/game/machinery/wall_frames.dm 3
@@ -1258,7 +1257,6 @@ code/game/mecha/equipment/tools/drill.dm 1
 code/game/mecha/equipment/tools/generator.dm 1
 code/game/mecha/equipment/tools/shield.dm 1
 code/game/mecha/equipment/tools/sleeper.dm 2
-code/game/mecha/equipment/tools/weldinglaser.dm 1
 code/game/mecha/equipment/weapons/energy/pulse.dm 1
 code/game/mecha/mecha.dm 7
 code/game/mecha/mecha_construction_paths.dm 1
@@ -1292,7 +1290,7 @@ code/game/objects/effects/mines.dm 17
 code/game/objects/effects/overlays.dm 1
 code/game/objects/effects/particle_holder.dm 1
 code/game/objects/effects/portals.dm 1
-code/game/objects/effects/prop/snake.dm 1
+code/game/objects/effects/prop/snake.dm 2
 code/game/objects/effects/spawners/bombspawner.dm 2
 code/game/objects/effects/spiders.dm 4
 code/game/objects/effects/step_triggers.dm 2
@@ -1381,6 +1379,7 @@ code/game/objects/items/weapons/implants/implantaugment.dm 2
 code/game/objects/items/weapons/implants/implantchair.dm 1
 code/game/objects/items/weapons/implants/implantcircuits.dm 1
 code/game/objects/items/weapons/improvised_components.dm 3
+code/game/objects/items/weapons/inducer.dm 1
 code/game/objects/items/weapons/lego.dm 2
 code/game/objects/items/weapons/material/ashtray.dm 2
 code/game/objects/items/weapons/material/chainsaw.dm 2
@@ -1551,6 +1550,7 @@ code/modules/casino/casino_prize_vendor.dm 1
 code/modules/casino/slots.dm 2
 code/modules/casino/spawnergrenade.dm 2
 code/modules/catalogue/catalogue_data.dm 1
+code/modules/catalogue/cataloguer.dm 1
 code/modules/catalogue/cataloguer_visuals.dm 1
 code/modules/client/client procs.dm 17
 code/modules/client/preferences/editors/species_picker.dm 1
@@ -1674,7 +1674,7 @@ code/modules/hydroponics/seed_storage.dm 5
 code/modules/hydroponics/spreading/spreading.dm 2
 code/modules/hydroponics/spreading/spreading_growth.dm 4
 code/modules/hydroponics/trays/tray.dm 3
-code/modules/hydroponics/trays/tray_soil.dm 6
+code/modules/hydroponics/trays/tray_soil.dm 5
 code/modules/integrated_electronics/core/integrated_circuit.dm 3
 code/modules/integrated_electronics/core/printer.dm 2
 code/modules/integrated_electronics/passive/power.dm 1
@@ -1783,7 +1783,7 @@ code/modules/mob/living/silicon/robot/death.dm 2
 code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm 6
 code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm 4
 code/modules/mob/living/silicon/robot/drone/drone_items.dm 3
-code/modules/mob/living/silicon/robot/drone/swarm_items.dm 5
+code/modules/mob/living/silicon/robot/drone/swarm_items.dm 4
 code/modules/mob/living/silicon/robot/robot.dm 2
 code/modules/mob/living/silicon/robot/robot_items.dm 5
 code/modules/mob/living/silicon/robot/robot_modules/station.dm 2
@@ -1894,7 +1894,7 @@ code/modules/multiz/pipes.dm 3
 code/modules/multiz/portals.dm 2
 code/modules/multiz/turf.dm 1
 code/modules/nifsoft/nif_softshop.dm 3
-code/modules/nifsoft/nifsoft.dm 7
+code/modules/nifsoft/nifsoft.dm 4
 code/modules/nifsoft/software/05_health.dm 2
 code/modules/nifsoft/software/13_soulcatcher.dm 4
 code/modules/organs/blood.dm 2
@@ -1982,7 +1982,7 @@ code/modules/projectiles/broken.dm 3
 code/modules/projectiles/gun.dm 1
 code/modules/projectiles/guns/energy.dm 1
 code/modules/projectiles/guns/energy/particle.dm 2
-code/modules/projectiles/guns/energy/special.dm 2
+code/modules/projectiles/guns/energy/special.dm 1
 code/modules/projectiles/guns/launcher/bows.dm 2
 code/modules/projectiles/guns/launcher/confetti.dm 1
 code/modules/projectiles/guns/launcher/crossbow.dm 2
@@ -2043,7 +2043,7 @@ code/modules/resleeving/computers.dm 3
 code/modules/resleeving/implant.dm 1
 code/modules/resleeving/infocore_records.dm 1
 code/modules/resleeving/machines.dm 2
-code/modules/rogueminer/zonemaster.dm 2
+code/modules/rogueminer/zonemaster.dm 1
 code/modules/samples/samples.dm 1
 code/modules/scripting/Parser/Keywords.dm 1
 code/modules/security levels/keycard authentication.dm 1
@@ -2110,10 +2110,10 @@ code/modules/vore/eating/belly_obj.dm 5
 code/modules/vore/eating/bellymodes.dm 4
 code/modules/vore/eating/digest_act.dm 9
 code/modules/vore/eating/leave_remains.dm 1
-code/modules/vore/eating/living.dm 10
+code/modules/vore/eating/living.dm 7
 code/modules/vore/eating/panel_databackend/vorepanel_set_attribute.dm 1
 code/modules/vore/eating/soulcatcher.dm 6
-code/modules/vore/eating/vore_procs.dm 1
+code/modules/vore/eating/vore_procs.dm 2
 code/modules/vore/fluffstuff/custom_clothes.dm 1
 code/modules/vore/fluffstuff/custom_items.dm 6
 code/modules/vore/mob_tf.dm 2

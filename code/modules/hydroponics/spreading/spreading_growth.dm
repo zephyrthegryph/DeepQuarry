@@ -42,6 +42,12 @@
 		if(neighbor.seed == src.seed)
 			LAZYREMOVE(neighbor.neighbors, T)
 
+/// One delayed spread to a random neighbour (process() spaces them a few deciseconds apart).
+/obj/effect/plant/proc/spread_once()
+	if(!length(neighbors))
+		return
+	spread_to(DEFAULTPICK(neighbors, null))
+
 /obj/effect/plant/periodic_step()
 
 	// Something is very wrong, kill ourselves.
@@ -105,14 +111,11 @@
 			//spread to 1-3 adjacent turfs depending on yield trait.
 			var/max_spread = between(1, round(seed.get_trait(TRAIT_YIELD)*3/14), 3)
 
+			var/spread_delay = 0
 			for(var/i in 1 to max_spread)
 				if(prob(spread_chance))
-					sleep(rand(3,5))
-					if(!length(neighbors))
-						break
-					if(QDELETED(src)) // we sleep, might get deleted!
-						return
-					spread_to(DEFAULTPICK(neighbors, null))
+					spread_delay += rand(3,5)
+					om_after(src, spread_delay, PROC_REF(spread_once))
 
 	// We shouldn't have spawned if the controller doesn't exist.
 	check_health()

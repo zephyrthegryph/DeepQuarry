@@ -49,8 +49,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/filingcabinet/screwdriver_act(mob/user, obj/item/tool)
-	if(!use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin taking the [name] apart."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 1 SECOND, volume = 50, message_self = "You begin taking the [name] apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/filingcabinet/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You take the [name] apart."))
 	new /obj/item/stack/material/steel(loc, 4)

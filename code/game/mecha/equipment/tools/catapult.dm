@@ -13,6 +13,12 @@
 
 	equip_type = EQUIP_UTILITY
 
+/// Pushes `A` away from `target` once every 0.2 s, `left` more times.
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/catapult_push(atom/movable/A, atom/target, left)
+	step_away(A,target)
+	if(left > 0)
+		om_after(src, 0.2 SECONDS, PROC_REF(catapult_push), A, target, left - 1)
+
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/action(atom/movable/target)
 
 	if(world.time >= last_fired + fire_delay)
@@ -54,9 +60,7 @@
 				atoms = orange(target,3)
 			for(var/atom/movable/A in atoms)
 				if(A.anchored) continue
-				var/iter = 5-get_dist(A,target)
-				for(var/i=0 to iter)
-					om_after(A, i * 2, TYPE_PROC_REF(/atom/movable, om_step_away), target)
+				catapult_push(A, target, 5-get_dist(A,target))
 			set_ready_state(FALSE)
 			chassis.use_power(energy_drain)
 			do_after_cooldown()

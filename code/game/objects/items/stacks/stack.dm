@@ -193,10 +193,15 @@
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
 		is_building = TRUE
-		if (!do_after(user, recipe.time, target = src))
-			is_building = FALSE
-			return
+		om_do_after(user, recipe.time, target = src, receiver = src, on_done = PROC_REF(produce_recipe_done), done_args = list(recipe, user, required, produced), on_fail = PROC_REF(produce_recipe_interrupted))
+		return
+	produce_recipe_done(recipe, user, required, produced)
 
+/obj/item/stack/proc/produce_recipe_interrupted()
+	is_building = FALSE
+
+/// The build time is over: spend the stack and make the thing.
+/obj/item/stack/proc/produce_recipe_done(datum/stack_recipe/recipe, mob/user, required, produced)
 	is_building = FALSE
 	if (use(required))
 		var/atom/O

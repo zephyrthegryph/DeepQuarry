@@ -1,3 +1,12 @@
+/obj/item/rig/proc/install_module_done(mob/living/user, obj/item/rig_module/mod)
+	if(!user.unEquip(mod))
+		return
+	to_chat(user, "You install \the [mod] into \the [src].")
+	LAZYOR(installed_modules, mod)
+	mod.forceMove(src)
+	mod.installed(src)
+	update_icon()
+
 /obj/item/rig/attackby(obj/item/W, mob/living/user)
 	if(!istype(user))
 		return 0
@@ -64,17 +73,7 @@
 
 			var/obj/item/rig_module/mod = W
 			to_chat(user, "You begin installing \the [mod] into \the [src].")
-			if(!do_after(user, 4 SECONDS, target = src))
-				return
-			if(!user || !W)
-				return
-			if(!user.unEquip(mod))
-				return
-			to_chat(user, "You install \the [mod] into \the [src].")
-			LAZYOR(installed_modules, mod)
-			mod.forceMove(src)
-			mod.installed(src)
-			update_icon()
+			om_do_after(user, 4 SECONDS, src, src, PROC_REF(install_module_done), list(user, mod))
 			return 1
 
 		else if(!cell && istype(W,/obj/item/cell))

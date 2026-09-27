@@ -326,17 +326,7 @@
 
 		var/obj/item/rig_module/mod = W
 		to_chat(user, "You begin installing \the [mod] into \the [src].")
-		if(!do_after(user, 4 SECONDS, target = src))
-			return
-		if(!user || !W)
-			return
-		if(!user.unEquip(mod))
-			return
-		to_chat(user, "You install \the [mod] into \the [src].")
-		LAZYOR(installed_modules, mod)
-		mod.forceMove(src)
-		mod.installed(src)
-		update_icon()
+		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_protean_done), done_args = list(W, user, mod))
 		return 1
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
@@ -348,6 +338,18 @@
 	else
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
+
+/obj/item/rig/protean/proc/attackby_protean_done(obj/item/W, mob/living/user, obj/item/rig_module/mod)
+	if(!user || !W)
+		return
+	if(!user.unEquip(mod))
+		return
+	to_chat(user, "You install \the [mod] into \the [src].")
+	LAZYOR(installed_modules, mod)
+	mod.forceMove(src)
+	mod.installed(src)
+	update_icon()
+	return 1
 
 /obj/item/rig/protean/wrench_act(mob/living/user, obj/item/tool)
 	if(get_dormancy())

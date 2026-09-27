@@ -179,9 +179,7 @@
 	if((mode & DESTROY_MODE) && can_destroy_pipe)
 		to_chat(user, span_notice("You start destroying a pipe..."))
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
-		if(do_after(user, 2, target = A))
-			activate()
-			animate_deletion(A)
+		om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A))
 		return
 
 	if((mode & PAINT_MODE)) //Paint pipes
@@ -200,39 +198,14 @@
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
 				if(istype(recipe, /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
-					if(do_after(user, 2, target = A))
-						activate()
-						var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(A))
-						PM.setAttachLayer(queued_piping_layer)
-						if(mode & WRENCH_MODE)
-							do_wrench(PM, user)
+					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(A, user, queued_piping_layer))
 				else if(istype(recipe, /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
-					if(do_after(user, 2, target = A))
-						activate()
-						var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(A))
-						if(mode & WRENCH_MODE)
-							do_wrench(GS, user)
+					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
 				else if(istype(recipe, /datum/pipe_recipe/pipe))
 					var/datum/pipe_recipe/pipe/R = recipe
 					to_chat(user, span_notice("You start building a pipe..."))
-					if(do_after(user, 2, target = A))
-						activate()
-						var/obj/machinery/atmospherics/path = R.pipe_type
-						var/pipe_item_type = initial(path.construction_type) || /obj/item/pipe
-						var/obj/item/pipe/P = new pipe_item_type(get_turf(A), path, queued_p_dir)
-
-						P.update()
-						P.add_fingerprint(user)
-						if(R.paintable)
-							P.color = GLOB.pipe_colors[paint_color]
-						P.setPipingLayer(queued_piping_layer)
-						if(queued_p_flipped)
-							P.do_a_flip()
-						if(mode & WRENCH_MODE)
-							do_wrench(P, user)
-						else
-							build_effect(P)
+					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(A, user, queued_piping_layer, queued_p_dir, queued_p_flipped, R))
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
 				var/datum/pipe_recipe/disposal/R = recipe
@@ -244,44 +217,78 @@
 					return
 				to_chat(user, span_notice("You start building a disposals pipe..."))
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
-				if(do_after(user, 4, target = A))
-					var/obj/structure/disposalconstruct/C = new(A, R.pipe_type, queued_p_dir, queued_p_flipped, R.subtype)
-
-					if(!C.can_place())
-						to_chat(user, span_warning("There's not enough room to build that here!"))
-						qdel(C)
-						return
-
-					activate()
-
-					C.add_fingerprint(user)
-					C.update_icon()
-					if(mode & WRENCH_MODE)
-						do_wrench(C, user)
-					else
-						build_effect(C)
+				om_do_after(user, 4, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done5), done_args = list(A, user, queued_p_dir, queued_p_flipped, R))
 
 			else
 				return ..()
 
+/obj/item/pipe_dispenser/proc/afterattack_timed_done(atom/A)
+	activate()
+	animate_deletion(A)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done2(atom/A, mob/user, queued_piping_layer)
+	activate()
+	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(get_turf(A))
+	PM.setAttachLayer(queued_piping_layer)
+	if(mode & WRENCH_MODE)
+		do_wrench(PM, user)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done3(atom/A, mob/user)
+	activate()
+	var/obj/item/pipe_gsensor/GS = new /obj/item/pipe_gsensor(get_turf(A))
+	if(mode & WRENCH_MODE)
+		do_wrench(GS, user)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done4(atom/A, mob/user, queued_piping_layer, queued_p_dir, queued_p_flipped, datum/pipe_recipe/pipe/R)
+	activate()
+	var/obj/machinery/atmospherics/path = R.pipe_type
+	var/pipe_item_type = initial(path.construction_type) || /obj/item/pipe
+	var/obj/item/pipe/P = new pipe_item_type(get_turf(A), path, queued_p_dir)
+
+	P.update()
+	P.add_fingerprint(user)
+	if(R.paintable)
+		P.color = GLOB.pipe_colors[paint_color]
+	P.setPipingLayer(queued_piping_layer)
+	if(queued_p_flipped)
+		P.do_a_flip()
+	if(mode & WRENCH_MODE)
+		do_wrench(P, user)
+	else
+		build_effect(P)
+/obj/item/pipe_dispenser/proc/afterattack_timed_done5(atom/A, mob/user, queued_p_dir, queued_p_flipped, datum/pipe_recipe/disposal/R)
+	var/obj/structure/disposalconstruct/C = new(A, R.pipe_type, queued_p_dir, queued_p_flipped, R.subtype)
+
+	if(!C.can_place())
+		to_chat(user, span_warning("There's not enough room to build that here!"))
+		qdel(C)
+		return
+
+	activate()
+
+	C.add_fingerprint(user)
+	C.update_icon()
+	if(mode & WRENCH_MODE)
+		do_wrench(C, user)
+	else
+		build_effect(C)
+
 /obj/item/pipe_dispenser/proc/build_effect(obj/P, time = 1.5)
-	set waitfor = FALSE
 	P.filters += filter(type = "angular_blur", size = 30)
 	animate(P.filters[P.filters.len], size = 0, time = time)
 	var/outline = filter(type = "outline", size = 1, color = "#22AAFF")
 	P.filters += outline
-	sleep(time)
+	om_after(P, time, /proc/rpd_build_effect_end, P, outline)
+
+/proc/rpd_build_effect_end(obj/P, outline)
 	P.filters -= outline
 	P.filters -= filter(type = "angular_blur", size = 0)
 
 /obj/item/pipe_dispenser/proc/animate_deletion(obj/P, time = 1.5)
-	set waitfor = FALSE
 	P.filters += filter(type = "angular_blur", size = 0)
 	animate(P.filters[P.filters.len], size = 30, time = time)
-	sleep(time)
-	if(!QDELETED(P))
-		P.filters -= filter(type = "angular_blur", size = 30)
-		qdel(P)
+	om_after(P, time, /proc/rpd_deletion_end, P)
+
+/proc/rpd_deletion_end(obj/P)
+	P.filters -= filter(type = "angular_blur", size = 30)
+	qdel(P)
 
 /obj/item/pipe_dispenser/proc/activate()
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)

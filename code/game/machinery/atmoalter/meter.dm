@@ -141,11 +141,13 @@
 	return ..()
 
 /obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
-	if(use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]..."))
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
-		new /obj/item/pipe_meter(get_turf(src))
-		qdel(src)
+	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/meter/proc/wrench_act_tool_done(mob/user)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " unfastens \the [src]."), span_notice("You have unfastened \the [src]."), "You hear ratchet.")
+	new /obj/item/pipe_meter(get_turf(src))
+	qdel(src)
 
 /obj/machinery/meter/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)

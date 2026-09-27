@@ -121,27 +121,35 @@
 	current_user = user
 	user.visible_message("[user] begins to draw back the string of [src].",span_notice("You begin to draw back the string of [src]."))
 	tension = 1
+	draw_step(user)
 
-	while(bolt && tension && loc == current_user)
-		if(!do_after(user, 25, target = src)) //crossbow strings don't just magically pull back on their own.
-			user.visible_message("[user] stops drawing and relaxes the string of [src].",span_warning("You stop drawing back and relax the string of [src]."))
-			tension = 0
-			update_icon()
-			return
+/// One notch of tension every 2.5 seconds (a timed action each) up to max_tension.
+//crossbow strings don't just magically pull back on their own.
+/obj/item/gun/launcher/crossbow/proc/draw_step(mob/user)
+	if(!(bolt && tension && loc == current_user))
+		return
+	om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(draw_notch), list(user), on_fail = PROC_REF(draw_relaxed), fail_args = list(user))
 
-		//double check that the user hasn't removed the bolt in the meantime
-		if(!(bolt && tension && loc == current_user))
-			return
+/obj/item/gun/launcher/crossbow/proc/draw_relaxed(mob/user)
+	user?.visible_message("[user] stops drawing and relaxes the string of [src].",span_warning("You stop drawing back and relax the string of [src]."))
+	tension = 0
+	update_icon()
 
-		tension++
-		update_icon()
+/obj/item/gun/launcher/crossbow/proc/draw_notch(mob/user)
+	//double check that the user hasn't removed the bolt in the meantime
+	if(!(bolt && tension && loc == current_user))
+		return
 
-		if(tension >= max_tension)
-			tension = max_tension
-			to_chat(user, "[src] clunks as you draw the string to its maximum tension!")
-			return
+	tension++
+	update_icon()
 
-		user.visible_message("[user] draws back the string of [src]!",span_notice("You continue drawing back the string of [src]!"))
+	if(tension >= max_tension)
+		tension = max_tension
+		to_chat(user, "[src] clunks as you draw the string to its maximum tension!")
+		return
+
+	user.visible_message("[user] draws back the string of [src]!",span_notice("You continue drawing back the string of [src]!"))
+	draw_step(user)
 
 /obj/item/gun/launcher/crossbow/proc/increase_tension(mob/user as mob)
 

@@ -582,10 +582,12 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 			oocnotes = 1
 		to_chat(character, span_notify("You begin to reform. You will need to remain still."))
 		character.visible_message(span_notify("[character] rapidly contorts and shifts!"), span_danger("You begin to reform."))
-		if(do_after(character, 4 SECONDS, target = src))
-			if(character.client.prefs)	//Make sure we didn't d/c
-				character.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE, FALSE)
-				character.visible_message(span_notify("[character] adopts a new form!"), span_danger("You have reformed."))
+		om_do_after(character, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_regenerate_human_done), done_args = list(character, flavour, oocnotes))
+
+/mob/living/carbon/human/proc/shapeshifter_regenerate_human_done(mob/living/character, flavour, oocnotes)
+	if(character.client.prefs)	//Make sure we didn't d/c
+		character.client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE, FALSE)
+		character.visible_message(span_notify("[character] adopts a new form!"), span_danger("You have reformed."))
 
 /mob/living/carbon/human/proc/shapeshifter_copy_body()
 	set name = "Copy Form"
@@ -638,17 +640,19 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	to_chat(character, span_notify("You begin to reassemble into [victim]. You will need to remain still."))
 	character.visible_message(span_notify("[character] rapidly contorts and shifts!"), span_danger("You begin to reassemble into [victim]."))
-	if(do_after(character, 4 SECONDS, target = victim))
-		checking = FALSE
-		for(var/obj/item/grab/G in character)
-			if(GRAB_TARGET(G) == victim && G.state >= GRAB_AGGRESSIVE)
-				checking = TRUE
-		if (!checking)
-			to_chat(character, span_warning("You lost your grip on [victim]!"))
-			return
-		if(character.client)	//Make sure we didn't d/c
-			transform_into_other_human(victim, FALSE, flavour, FALSE, FALSE)
-			character.visible_message(span_notify("[character] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
+	om_do_after(character, 4 SECONDS, target = victim, receiver = src, on_done = PROC_REF(copy_body_done), done_args = list(victim, flavour))
+
+/mob/living/carbon/human/proc/copy_body_done(mob/living/carbon/human/victim, flavour)
+	var/checking = FALSE
+	for(var/obj/item/grab/G in src)
+		if(GRAB_TARGET(G) == victim && G.state >= GRAB_AGGRESSIVE)
+			checking = TRUE
+	if (!checking)
+		to_chat(src, span_warning("You lost your grip on [victim]!"))
+		return
+	if(client)	//Make sure we didn't d/c
+		transform_into_other_human(victim, FALSE, flavour, FALSE, FALSE)
+		visible_message(span_notify("[src] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
 
 
 /mob/living/carbon/human/proc/shapeshifter_reassemble()
@@ -678,7 +682,9 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		oocnotes = 1
 	to_chat(src, span_notify("You begin to reform. You will need to remain still."))
 	visible_message(span_notify("[src] rapidly contorts and shifts!"), span_danger("You begin to reform."))
-	if (do_after(src, 4 SECONDS, src))
-		if (client?.prefs)
-			client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
-			visible_message(span_notify("[src] adopts a new form!"), span_danger("You have reformed."))
+	om_do_after(src, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(shapeshifter_reassemble_human_done), done_args = list(flavour, oocnotes))
+
+/mob/living/carbon/human/proc/shapeshifter_reassemble_human_done(flavour, oocnotes)
+	if (client?.prefs)
+		client.prefs.vanity_copy_to(src, FALSE, flavour, oocnotes, FALSE)
+		visible_message(span_notify("[src] adopts a new form!"), span_danger("You have reformed."))

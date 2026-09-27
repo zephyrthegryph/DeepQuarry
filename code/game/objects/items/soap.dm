@@ -40,16 +40,7 @@
 	if(ishuman(target) && user.zone_sel.selecting == O_MOUTH)
 		if(target == user)
 			to_chat(user, span_warning("You raise the soap to your mouth and prepare to take a bite..."))
-			if(do_after(user, 0.5 SECONDS, target = target)) //Mercy against accidental chomps
-				user.visible_message(span_notice("[user] takes a bite out of [src]!"), span_notice("You gnaw on [src]! This can't be good for you..."))
-				var/mob/living/carbon/C = user
-				playsound(get_turf(C), 'sound/items/eatfood.ogg', 25, 0)
-				C.ingested.add_reagent(REAGENT_ID_TOXIN, 0.5) //normally formaldehyde, and 2 units of it. Toxin is being subsituted and is 4 times as toxic, hence a quarter of the normal amount.
-				C.ingested.add_reagent(REAGENT_ID_CHLORALHYDRATE, 3)
-				reagents.trans_to_holder(C.ingested, 1)
-				bites++
-				if(bites >= 5)
-					qdel(src)
+			om_do_after(user, 0.5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(user))
 		else
 			user.visible_message(span_danger("\The [user] washes \the [target]'s mouth out with \the [src]!"))
 			//Add pieface cleaning here if that ever gets ported.
@@ -63,9 +54,7 @@
 		to_chat(user, span_warning("You need to take that [target] off before cleaning it."))
 	else if(istype(target,/obj/effect/decal/cleanable))
 		user.visible_message("[user] begins to scrub \the [target] out with [src].", span_warning("You begin to scrub \the [target] out with [src]..."))
-		if(do_after(user, src.cleanspeed, target = target))
-			user.balloon_alert(user, "you scrub \the [target] out.")
-			qdel(target)
+		om_do_after(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done2), done_args = list(target, user))
 	else
 		if(istype(target,/turf))
 			if(reagents.has_reagent(REAGENT_ID_WATER, 1) || reagents.has_reagent(REAGENT_ID_CLEANER, 1)) //Instant floorcleaning with wetness
@@ -75,16 +64,32 @@
 				reagents.trans_to_turf(T, 1, 10)
 				return
 			user.visible_message("[user] begins to scrub \the [target] out with [src].", span_warning("You begin to scrub \the [target] out with [src]..."))
-			if(do_after(user, src.cleanspeed, target = target))
-				user.balloon_alert(user, "you scrub \the [target] clean.")
-				var/turf/T = target
-				T.wash(CLEAN_SCRUB)
-				reagents.trans_to_turf(T, 1, 10)
+			om_do_after(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(target, user))
 			return
 		user.visible_message("[user] begins to clean \the [target.name] with [src]...", span_notice("You begin to clean \the [target.name] with [src]..."))
-		if(do_after(user, src.cleanspeed, target = target))
-			target.wash(CLEAN_SCRUB)
+		om_do_after(user, src.cleanspeed, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done4), done_args = list(target))
 	return
+
+/obj/item/soap/proc/afterattack_timed_done(mob/user)
+	user.visible_message(span_notice("[user] takes a bite out of [src]!"), span_notice("You gnaw on [src]! This can't be good for you..."))
+	var/mob/living/carbon/C = user
+	playsound(get_turf(C), 'sound/items/eatfood.ogg', 25, 0)
+	C.ingested.add_reagent(REAGENT_ID_TOXIN, 0.5) //normally formaldehyde, and 2 units of it. Toxin is being subsituted and is 4 times as toxic, hence a quarter of the normal amount.
+	C.ingested.add_reagent(REAGENT_ID_CHLORALHYDRATE, 3)
+	reagents.trans_to_holder(C.ingested, 1)
+	bites++
+	if(bites >= 5)
+		qdel(src)
+/obj/item/soap/proc/afterattack_timed_done2(atom/target, mob/user)
+	user.balloon_alert(user, "you scrub \the [target] out.")
+	qdel(target)
+/obj/item/soap/proc/afterattack_timed_done3(atom/target, mob/user)
+	user.balloon_alert(user, "you scrub \the [target] clean.")
+	var/turf/T = target
+	T.wash(CLEAN_SCRUB)
+	reagents.trans_to_turf(T, 1, 10)
+/obj/item/soap/proc/afterattack_timed_done4(atom/target)
+	target.wash(CLEAN_SCRUB)
 
 /obj/item/soap/nanotrasen
 	name = "Soap (Nanotrasen)"

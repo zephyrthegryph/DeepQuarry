@@ -11,8 +11,14 @@
 		if(announced)
 			return
 		announced = 1
-		om_after(src, spawn_announcement_delay, /proc/delayed_command_announcement, "[spawn_announcement]", "[spawn_announcement_title ? spawn_announcement_title : "Priority Alert"]", spawn_announcement_sound)
+		om_after(src, spawn_announcement_delay || 0, PROC_REF(make_spawn_announcement))
 	return
+
+/datum/antagonist/proc/make_spawn_announcement()
+	if(spawn_announcement_sound)
+		GLOB.command_announcement.Announce("[spawn_announcement]", "[spawn_announcement_title ? spawn_announcement_title : "Priority Alert"]", new_sound = spawn_announcement_sound)
+	else
+		GLOB.command_announcement.Announce("[spawn_announcement]", "[spawn_announcement_title ? spawn_announcement_title : "Priority Alert"]")
 
 /datum/antagonist/proc/place_mob(mob/living/mob)
 	if(!starting_locations || !length(starting_locations))

@@ -99,8 +99,10 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/noticeboard/wrench_act(mob/user, obj/item/tool)
-	if(!use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_others = "[user] begins dismantling [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 5 SECONDS, volume = 50, message_others = "[user] begins dismantling [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/noticeboard/proc/wrench_act_tool_done(mob/user)
 	visible_message(span_danger("[user] has dismantled [src]!"))
 	dismantle()
 	return ITEM_INTERACT_SUCCESS

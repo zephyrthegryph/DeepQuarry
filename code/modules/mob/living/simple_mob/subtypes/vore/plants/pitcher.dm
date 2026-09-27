@@ -196,6 +196,17 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 	if(fruit)
 		. += "A plump fruit glistens beneath \the [src]'s cap."
 
+/mob/living/simple_mob/vore/pitcher_plant/proc/fish_out_done(mob/user, mob/living/carbon/human/H)
+	if(H.loc != vore_selected)
+		return
+	if(prob(15))
+		user.visible_message(span_notice("[user] pulls a sticky [H] free from \the [src]."), span_infoplain("You heft [H] free from \the [src]."))
+		LAZYSET(prey_excludes, H, world.time)
+		vore_selected.release_specific_contents(H)
+		addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), om_handle(H)), 1 MINUTES)
+	else
+		to_chat(user, span_notice("The victim slips from your grasp!"))
+
 /mob/living/simple_mob/vore/pitcher_plant/attackby(obj/item/O, mob/user)
 	if(istype(O, /obj/item/reagent_containers/food/snacks/meat))
 		if(meat > NUTRITION_FRUIT - NUTRITION_MEAT) //Can't exceed 250
@@ -206,24 +217,13 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 			qdel(O)
 			return
 	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
-		var/mob/living/carbon/human/H
-		var/N = 0
-		for(H in vore_selected.contents) //Only works for carbons, RIP mice. Should pick the first human the code finds.
-			user.visible_message(span_infoplain("[user] uses a loop of wire to try fishing someone out of \the [src]."), span_infoplain("You use a loop of wire to try snagging someone trapped in \the [src]..."))
-			if(do_after(user, rand(3 SECONDS, 7 SECONDS), target = src)) //You can just spam click to stack attempts if you feel like abusing it.
-				if(prob(15))
-					user.visible_message(span_notice("[user] pulls a sticky [H] free from \the [src]."), span_infoplain("You heft [H] free from \the [src]."))
-					LAZYSET(prey_excludes, H, world.time)
-					vore_selected.release_specific_contents(H)
-					N = 1
-					addtimer(CALLBACK(src, PROC_REF(removeMobFromPreyExcludes), om_handle(H)), 1 MINUTES)
-					break
-				else
-					to_chat(user, span_notice("The victim slips from your grasp!"))
-					N = 1
-					break //We need to terminate the loop after each outcome or this could loop through multiple bellies. Of course, there should only be one belly, but leave this here anyway just in case.
-		if(!N)
+		var/mob/living/carbon/human/H = locate() in vore_selected.contents //Only works for carbons, RIP mice. Should pick the first human the code finds.
+		if(!H)
 			to_chat(user, span_infoplain("The pitcher is empty."))
+		else
+			user.visible_message(span_infoplain("[user] uses a loop of wire to try fishing someone out of \the [src]."), span_infoplain("You use a loop of wire to try snagging someone trapped in \the [src]..."))
+			//You can just spam click to stack attempts if you feel like abusing it.
+			om_do_after(user, rand(3 SECONDS, 7 SECONDS), target = src, receiver = src, on_done = PROC_REF(fish_out_done), done_args = list(user, H))
 	if(istype(O, /obj/item/newspaper))
 		user.visible_message(span_notice("[user] baps \the [src], but it doesn't seem to do anything."), span_notice("You whap \the [src] with a rolled up newspaper."))
 		to_chat(user, span_notice("Weird. That usually works. Maybe you can fish out its victim with some string or wire or something? Or maybe kill the thing with some plant-b-gone. Both would probably be safer than hacking it up with a person still inside."))

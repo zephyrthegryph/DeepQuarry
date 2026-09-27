@@ -49,8 +49,7 @@
 ////////////////////////////
 
 /mob/living/simple_mob/construct/wraith/do_special_attack(atom/A)
-	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
@@ -58,7 +57,10 @@
 	// Telegraph to give a small window to dodge if really close.
 	flick("phase_shift",A)
 	icon_state = "phase_shift"
-	sleep(jaunt_warning) // For the telegraphing.
+	om_after(src, jaunt_warning, PROC_REF(do_special_attack_1), A, destination, starting_turf) // For the telegraphing.
+
+
+/mob/living/simple_mob/construct/wraith/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
 
 	// Do the dig!
 	visible_message(span_danger("\The [src] vanishes into thin air \the [A]!"))

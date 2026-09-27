@@ -21,14 +21,12 @@
 
 
 /turf/simulated/floor/looking_glass/proc/activate()
-	set waitfor = FALSE
-
 	icon_state = "origin_switching"
 
 	animate(src, color = "#000000", time = 3 SECONDS)
+	om_after(src, 3 SECONDS, PROC_REF(activate_finish))
 
-	sleep(3 SECONDS)
-
+/turf/simulated/floor/looking_glass/proc/activate_finish()
 	var/new_x = 0
 	var/new_y = 0
 
@@ -62,11 +60,10 @@
 	animate(src, color = "#FFFFFF", transform = M, time = 3 SECONDS)
 
 /turf/simulated/floor/looking_glass/proc/deactivate()
-	set waitfor = FALSE
-
 	animate(src, color = "#000000", transform = matrix(), time = 3 SECONDS)
+	om_after(src, 3 SECONDS, PROC_REF(deactivate_finish))
 
-	sleep(3 SECONDS)
+/turf/simulated/floor/looking_glass/proc/deactivate_finish()
 	var/mutable_appearance/MA = new (src)
 	MA.opacity = 0
 	MA.density = FALSE

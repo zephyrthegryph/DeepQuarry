@@ -28,53 +28,62 @@
 		to_chat(target, span_warning("[user] rifles in your pockets!"))
 
 	if(IS_HELPING(user))
-		if(istype(target.get_equipped_item(SLOT_ID_BACK),/obj/item/storage) && do_after(user, 3 SECONDS, target, progress = FALSE))
-			var/obj/item/storage/Backpack = target.get_equipped_item(SLOT_ID_BACK)
-			Backpack.open(user)
-		else if(istype(target.get_equipped_item(SLOT_ID_BELT), /obj/item/storage) && do_after(user, 5 SECONDS, target))
-			var/obj/item/storage/Belt = target.get_equipped_item(SLOT_ID_BELT)
-			Belt.open(user)
+		if(istype(target.get_equipped_item(SLOT_ID_BACK),/obj/item/storage))
+			om_do_after(user, 3 SECONDS, target, src, PROC_REF(pickpocket_open), list(user, target, SLOT_ID_BACK), progress = FALSE)
+		else if(istype(target.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
+			om_do_after(user, 5 SECONDS, target, src, PROC_REF(pickpocket_open), list(user, target, SLOT_ID_BELT))
 		return 1
 
 	if(IS_DISARMING(user))
-		var/obj/item/LTarg = target.get_equipped_item(SLOT_ID_POCKET_L)
-		var/obj/item/LUser = user.get_equipped_item(SLOT_ID_POCKET_L)
-
-		if(do_after(user, 1 SECOND, target))
-			var/took = istype(LTarg) && do_after(user, 1 SECOND, target)
-			target.drop_from_inventory(LTarg)
-			var/gave = istype(LUser) && do_after(user, 1 SECOND, target)
-			// Taking something leaves the user's own pocket item in bluespace: it drops.
-			if(gave || (took && istype(LUser)))
-				user.drop_from_inventory(LUser)
-			if(took)
-				user.equip_to_slot(LTarg, slot_l_store)
-			if(gave)
-				target.equip_to_slot(LUser, slot_l_store)
-
+		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_take), list(user, target, SLOT_ID_POCKET_L, slot_l_store))
 		return 1
 
 	if(IS_GRABBING(user))
-		var/obj/item/RTarg = target.get_equipped_item(SLOT_ID_POCKET_R)
-		var/obj/item/RUser = user.get_equipped_item(SLOT_ID_POCKET_R)
-
-		if(do_after(user, 1 SECOND, target))
-			var/took = istype(RTarg) && do_after(user, 1 SECOND, target)
-			target.drop_from_inventory(RTarg)
-			var/gave = istype(RUser) && do_after(user, 1 SECOND, target)
-			// Taking something leaves the user's own pocket item in bluespace: it drops.
-			if(gave || (took && istype(RUser)))
-				user.drop_from_inventory(RUser)
-			if(took)
-				user.equip_to_slot(RTarg, slot_r_store)
-			if(gave)
-				target.equip_to_slot(RUser, slot_r_store)
-
+		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_take), list(user, target, SLOT_ID_POCKET_R, slot_r_store))
 		return 1
 
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_open(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id)
+	var/obj/item/storage/S = target.get_equipped_item(slot_id)
+	if(istype(S))
+		S.open(user)
+
+// Swapping pocket contents is three timed actions: a rummage, taking theirs, giving yours.
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_take(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot)
+	var/obj/item/theirs = target.get_equipped_item(slot_id)
+	if(istype(theirs))
+		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_took), list(user, target, slot_id, slot, theirs))
+	else
+		pickpocket_give(user, target, slot_id, slot, null)
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_took(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot, obj/item/theirs)
+	if(target.get_equipped_item(slot_id) != theirs)
+		return
+	target.drop_from_inventory(theirs)
+	pickpocket_give(user, target, slot_id, slot, theirs)
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_give(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot, obj/item/took)
+	var/obj/item/mine = user.get_equipped_item(slot_id)
+	if(istype(mine))
+		var/list/swap_args = list(user, target, slot, took, mine)
+		om_do_after(user, 1 SECOND, target, src, PROC_REF(pickpocket_swapped), swap_args + TRUE, on_fail = PROC_REF(pickpocket_swapped), fail_args = swap_args + FALSE)
+	else
+		pickpocket_swapped(user, target, slot, took, null, FALSE)
+
+/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_swapped(mob/living/carbon/human/user, mob/living/carbon/human/target, slot, obj/item/took, obj/item/mine, gave)
+	if(!user)
+		return
+	// Taking something leaves the user's own pocket item in bluespace: it drops.
+	if(mine && (gave || took))
+		user.drop_from_inventory(mine)
+	if(took)
+		user.equip_to_slot(took, slot)
+	if(gave && target)
+		target.equip_to_slot(mine, slot)
+
 /obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity)
-	if(proximity && ishuman(usr) && ishuman(A) && do_after(usr, 1 SECOND, target = A))
-		return pickpocket(usr, A, proximity)
+	if(proximity && ishuman(usr) && ishuman(A))
+		om_do_after(usr, 1 SECOND, A, src, PROC_REF(pickpocket), list(usr, A, proximity))
+		return 1
 	return 0
 
 

@@ -276,8 +276,10 @@
 	if(!anchored)
 		to_chat(user, "You need to attach it to the plating first!")
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "Welding the [nicetype] in place."))
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "Welding the [nicetype] in place.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, nicetype, ispipe))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/disposalconstruct/proc/welder_act_tool_done(mob/user, nicetype, ispipe)
 	if(!src)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "The [nicetype] has been welded in place!")

@@ -42,6 +42,7 @@
 /datum/tgui_panel/proc/initialize(force = FALSE)
 	set waitfor = FALSE
 	// Minimal sleep to defer initialization to after client constructor
+	// S8 allowlist: client proc: defer until after the client constructor.
 	sleep(1 TICKS)
 	initialized_at = world.time
 	// Perform a clean initialization

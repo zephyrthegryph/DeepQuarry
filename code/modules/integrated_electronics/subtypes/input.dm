@@ -473,8 +473,6 @@
 	if(!frequency)
 		return
 	if(!SSradio)
-		sleep(20)
-	if(!SSradio)
 		return
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency

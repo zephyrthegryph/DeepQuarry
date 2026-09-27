@@ -343,13 +343,15 @@ update_flag
 	if(air_contents.return_pressure() > 1 && !destroyed)
 		to_chat(user, span_warning("\The [src]'s internal pressure is too high! Empty the canister before attempting to weld it apart."))
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50))
-		to_chat(user, span_notice("You deconstruct [src]."))
-		new /obj/item/stack/material/steel(loc, 10)
-		if(connected_port)
-			disconnect()
-		qdel(src)
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/portable_atmospherics/canister/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You deconstruct [src]."))
+	new /obj/item/stack/material/steel(loc, 10)
+	if(connected_port)
+		disconnect()
+	qdel(src)
 
 /obj/machinery/portable_atmospherics/canister/tgui_state(mob/user)
 	return GLOB.tgui_physical_state

@@ -146,19 +146,21 @@
 		tfbeam(A)
 
 /mob/living/simple_mob/vore/ddraig/proc/lunge(atom/A)	//Mostly copied from hunter.dm
-	set waitfor = FALSE
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	sleep(leap_warmup) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(lunge_1), L) // For the telegraphing.
+
+
+/mob/living/simple_mob/vore/ddraig/proc/lunge_1(mob/living/L)
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		if(ai_brain) ai_brain.busy = FALSE
@@ -170,7 +172,9 @@
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	sleep(5) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	om_after(src, 5, PROC_REF(lunge_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+
+/mob/living/simple_mob/vore/ddraig/proc/lunge_2(mob/living/L)
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.
@@ -183,7 +187,7 @@
 	glow_toggle = 1
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	flames = 1
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
 	do_windup_animation(A, charge_warmup)
 	firebreathtimer = addtimer(CALLBACK(src, PROC_REF(firebreathend), A), charge_warmup, TIMER_STOPPABLE)
@@ -205,10 +209,13 @@
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam(atom/A)
 	if(!isturf(get_turf(A)))
 		return
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src] begins to shimmer with a rainbow hue!"))
 	do_windup_animation(A, tf_warmup)
-	sleep(tf_warmup)
+	om_after(src, tf_warmup, PROC_REF(tfbeam_1), A)
+
+
+/mob/living/simple_mob/vore/ddraig/proc/tfbeam_1(atom/A)
 	if(ai_brain) ai_brain.busy = FALSE
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/mouselaser/ddraig(get_turf(src))
 	src.visible_message(span_danger("\The [src] breathes a beam at \the [A]!"))
@@ -328,14 +335,19 @@
 		return
 
 	visible_message("<b>\The [src]</b> begins significantly shifting their form.")
-	if(!do_after(src, 10 SECONDS, target = src))
-		visible_message("<b>\The [src]</b> ceases shifting their form.")
-		return 0
+	om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(polymorph_living_done), done_args = list(beast_options, chosen_beast, M), on_fail = PROC_REF(polymorph_living_failed), fail_args = list(beast_options, chosen_beast, M))
+	return TRUE
+
+/mob/living/proc/polymorph_living_done(list/beast_options, chosen_beast, mob/living/M)
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
 	om_after(src, 1 SECOND, PROC_REF(finish_polymorph), coolanimation, chosen_beast, beast_options[chosen_beast])
+
+/mob/living/proc/polymorph_living_failed(list/beast_options, chosen_beast, mob/living/M)
+	visible_message("<b>\The [src]</b> ceases shifting their form.")
+	return 0
 
 /mob/living/proc/spawn_polymorph_mob(chosen_beast)
 	var/tf_type = chosen_beast

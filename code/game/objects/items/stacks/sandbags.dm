@@ -69,9 +69,11 @@
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-		if (!do_after(user, recipe.time, target = src))
-			return
+		om_do_after(user, recipe.time, target = src, receiver = src, on_done = PROC_REF(produce_sandbag_done), done_args = list(recipe, user, required, produced))
+		return
+	produce_sandbag_done(recipe, user, required, produced)
 
+/obj/item/stack/sandbags/proc/produce_sandbag_done(datum/stack_recipe/recipe, mob/user, required, produced)
 	if (use(required))
 		var/atom/O = new recipe.result_type(user.loc, bag_material)
 
@@ -137,9 +139,19 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	while(do_after(user, 1 SECOND, target = src) && can_use(1) && istype(get_turf(src), /turf/simulated/floor/outdoors))
-		use(1)
-		var/obj/item/stack/sandbags/SB = new (get_turf(src), 1, bag_material)
-		SB.color = color
-		if(user)
-			to_chat(user, span_notice("You fill a sandbag."))
+	fill_next_bag(user)
+
+/// Fills one sandbag a second while the user stays put on outdoor ground.
+/obj/item/stack/emptysandbag/proc/fill_next_bag(mob/user)
+	om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(fill_bag_done), done_args = list(user))
+
+/obj/item/stack/emptysandbag/proc/fill_bag_done(mob/user)
+	if(!can_use(1) || !istype(get_turf(src), /turf/simulated/floor/outdoors))
+		return
+	use(1)
+	var/obj/item/stack/sandbags/SB = new (get_turf(src), 1, bag_material)
+	SB.color = color
+	if(user)
+		to_chat(user, span_notice("You fill a sandbag."))
+	if(!QDELETED(src))
+		fill_next_bag(user)

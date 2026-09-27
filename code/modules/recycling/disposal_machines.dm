@@ -145,6 +145,14 @@
 	name = "Insert"
 	effect = /obj/machinery/disposal/proc/interaction_disposal_insert
 
+/obj/machinery/disposal/proc/dunk_done(mob/user, mob/GM, obj/item/grab/G)
+	GM.forceMove(src)
+	for (var/mob/C in viewers(src))
+		C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
+	qdel(G)
+
+	add_attack_logs(user,GM,"Disposals dunked")
+
 /obj/machinery/disposal/proc/interaction_disposal_insert(mob/user, obj/item/I, datum/interaction/interaction, drag_dropped = FALSE)
 	wake_for_state_change()
 	if(stat & BROKEN || !I || !user || !istype(I))
@@ -177,13 +185,7 @@
 			var/mob/GM = GRAB_TARGET(G)
 			for (var/mob/V in viewers(user))
 				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
-			if(do_after(user, 2 SECONDS, target = src))
-				GM.forceMove(src)
-				for (var/mob/C in viewers(src))
-					C.show_message(span_red("[GM.name] has been placed in the [src] by [user]."), 3)
-				qdel(G)
-
-				add_attack_logs(user,GM,"Disposals dunked")
+			om_do_after(user, 2 SECONDS, src, src, PROC_REF(dunk_done), list(user, GM, G))
 		return TRUE
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.
@@ -240,12 +242,14 @@
 		if(length(contents))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit."))
-		if(!src)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, "You sliced the floorweld off the disposal unit.")
-		atom_deconstruct(TRUE)
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/disposal/proc/welder_act_tool_done(mob/user)
+	if(!src)
+		return ITEM_INTERACT_BLOCKING
+	to_chat(user, "You sliced the floorweld off the disposal unit.")
+	atom_deconstruct(TRUE)
 
 /obj/machinery/disposal/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -366,17 +370,19 @@
 	else
 		target.visible_message(span_danger("[user] starts stuffing [target] into [src]."), span_userdanger("[user] starts stuffing you into [src]!"))
 
-	if(do_after(user, 2 SECONDS, target))
-		if(!loc)
-			return
-		target.forceMove(src)
-		if(user == target)
-			user.visible_message("[user] climbs into [src].", span_notice("You climb into [src]"))
-			log_and_message_admins("climbed into disposals!", user)
-		else
-			target.visible_message(span_danger("[user] stuffs [target] into \the [src]."), span_userdanger("[user] stuffs [target] into \the [src]."))
-			add_attack_logs(user,target,"Disposals dunked")
-		update_icon()
+	om_do_after(user, 2 SECONDS, target, src, PROC_REF(stuff_mob_done), list(target, user))
+
+/obj/machinery/disposal/proc/stuff_mob_done(mob/living/target, mob/living/user)
+	if(!loc)
+		return
+	target.forceMove(src)
+	if(user == target)
+		user.visible_message("[user] climbs into [src].", span_notice("You climb into [src]"))
+		log_and_message_admins("climbed into disposals!", user)
+	else
+		target.visible_message(span_danger("[user] stuffs [target] into \the [src]."), span_userdanger("[user] stuffs [target] into \the [src]."))
+		add_attack_logs(user,target,"Disposals dunked")
+	update_icon()
 
 // attempt to move while inside
 /obj/machinery/disposal/relaymove(mob/user)

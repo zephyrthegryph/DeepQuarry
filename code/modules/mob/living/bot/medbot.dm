@@ -148,24 +148,9 @@
 	if(declare_treatment)
 		var/area/location = get_area(src)
 		GLOB.global_announcer.autosay("[src] is treating <b>[H]</b> in <b>[location]</b>", "[src]", "Medical")
-	busy = 1
+	om_flag_hold(src, "busy")
 	update_icons()
-	if(do_after(src, 3 SECONDS, H))
-		if(t == 1)
-			reagent_glass.reagents.trans_to_mob(H, injection_amount, CHEM_BLOOD)
-		else
-			H.reagents.add_reagent(t, injection_amount)
-		visible_message(span_warning("[src] injects [H] with the syringe!"))
-		if(SScontracts)
-			emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
-				"department" = DEPARTMENT_SYNTHETIC,
-				"bot_id" = REF(src),
-				"task_kind" = "medical_assistance",
-				"target_id" = SScontracts.subject_identity(H)?.id,
-				"successful" = TRUE,
-				"work_units" = injection_amount,
-				"detail" = "[src] completed an autonomous treatment for [H].",
-			), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
+	om_do_after(src, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(UnarmedAttack_medbot_done), done_args = list(H, t))
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
 		target = null
@@ -197,6 +182,23 @@
 	busy = 0
 	update_icons()
 
+/mob/living/bot/medbot/proc/UnarmedAttack_medbot_done(mob/living/carbon/human/H, t)
+	if(t == 1)
+		reagent_glass.reagents.trans_to_mob(H, injection_amount, CHEM_BLOOD)
+	else
+		H.reagents.add_reagent(t, injection_amount)
+	visible_message(span_warning("[src] injects [H] with the syringe!"))
+	if(SScontracts)
+		emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
+			"department" = DEPARTMENT_SYNTHETIC,
+			"bot_id" = REF(src),
+			"task_kind" = "medical_assistance",
+			"target_id" = SScontracts.subject_identity(H)?.id,
+			"successful" = TRUE,
+			"work_units" = injection_amount,
+			"detail" = "[src] completed an autonomous treatment for [H].",
+		), "automation:[REF(src)]:medical:[REF(H)]:[world.time]", src, null, H)
+
 /mob/living/bot/medbot/update_icons()
 	cut_overlays()
 	if(skin)
@@ -217,15 +219,18 @@
 			say(message)
 			playsound(src, messagevoice[message], 70, FALSE)
 
-		if(do_after(H, 3 SECONDS, target = src))
-			tip_over(H)
+		om_do_after(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
 
 	else if(istype(H) && IS_HELPING(H) && is_tipped)
 		H.visible_message(span_notice("[H] begins righting [src]."), span_notice("You begin righting [src]..."))
-		if(do_after(H, 3 SECONDS, target = src))
-			set_right(H)
+		om_do_after(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
 	else
 		tgui_interact(H)
+
+/mob/living/bot/medbot/proc/attack_hand_medbot_done(mob/living/carbon/human/H)
+	tip_over(H)
+/mob/living/bot/medbot/proc/attack_hand_medbot_done2(mob/living/carbon/human/H)
+	set_right(H)
 
 /mob/living/bot/medbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()

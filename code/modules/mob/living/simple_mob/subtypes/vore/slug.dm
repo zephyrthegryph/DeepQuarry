@@ -229,12 +229,14 @@
 			escape_time = 0.5 * base_escape_time
 		else
 			escape_time = base_escape_time //Admeme size scale
-	if(do_after(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED))
-		if(!has_buckled_mobs())
-			return
-		to_chat(user, "You tug free of the tacky, rubbery strands!")
-		unbuckle_mob(buckled_mob)
-		unalert_slug(buckled_mob)
+	om_do_after(user, escape_time, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(user_unbuckle_mob_slug_glue_done), done_args = list(buckled_mob, user))
+
+/obj/effect/slug_glue/proc/user_unbuckle_mob_slug_glue_done(mob/living/buckled_mob, mob/user)
+	if(!has_buckled_mobs())
+		return
+	to_chat(user, "You tug free of the tacky, rubbery strands!")
+	unbuckle_mob(buckled_mob)
+	unalert_slug(buckled_mob)
 
 /obj/effect/slug_glue/wash(clean_types) // Needs proper scrubbing
 	. = ..()

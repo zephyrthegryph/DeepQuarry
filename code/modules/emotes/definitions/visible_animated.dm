@@ -16,9 +16,7 @@
 /datum/decl/emote/visible/sidestep/do_extra(mob/user)
 	if(istype(user))
 		animate(user, pixel_x = 5, time = 5)
-		sleep(3)
-		animate(user, pixel_x = -5, time = 5)
-		animate(pixel_x = user.default_pixel_x, pixel_y = user.default_pixel_x, time = 2)
+		om_after(user, 0.3 SECONDS, GLOBAL_PROC_REF(emote_sidestep_back), user)
 
 /datum/decl/emote/visible/flip
 	key = "flip"
@@ -66,18 +64,14 @@
 	)
 
 /datum/decl/emote/visible/floorspin/proc/spin_dir(mob/user)
-	set waitfor = FALSE
-	for(var/i in spin_dirs)
-		user.set_dir(i)
-		sleep(1)
-		if(QDELETED(user))
-			return
+	om_stagger(user, spin_dirs, 0.1 SECONDS, TYPE_PROC_REF(/atom, set_dir))
 
 /datum/decl/emote/visible/floorspin/proc/spin_anim(mob/user)
-	set waitfor = FALSE
-	sleep(1)
-	if(!QDELETED(user))
-		user.SpinAnimation(10,1)
+	om_after(user, 0.1 SECONDS, TYPE_PROC_REF(/atom, SpinAnimation), 10, 1)
+
+/proc/emote_sidestep_back(mob/user)
+	animate(user, pixel_x = -5, time = 5)
+	animate(pixel_x = user.default_pixel_x, pixel_y = user.default_pixel_x, time = 2)
 
 /datum/decl/emote/visible/floorspin/do_extra(mob/user)
 	. = ..()

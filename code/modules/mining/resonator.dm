@@ -48,8 +48,7 @@
 		while(fields < fieldlimit)
 			for(var/i=0, i<=2, i++)
 				if(fields >= fieldlimit)
-					sleep(burst_time)
-					cascading = FALSE
+					om_after(src, burst_time, PROC_REF(end_cascade))
 					return
 				switch(i) //Using a switch statement rather than (-90 + i * 90) to favour going straight ahead
 					if(0)
@@ -159,6 +158,9 @@
 	. = ..()
 	transform = matrix()*1.5
 	animate(src, transform = matrix()*0.1, alpha = 50, time = 4)
+
+/obj/item/resonator/proc/end_cascade()
+	cascading = FALSE
 
 /obj/item/resonator/proc/field_burst()
 	fieldsactive--

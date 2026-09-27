@@ -78,11 +78,7 @@
 		var/obj/structure/closet/crate/secure/A = target
 		if(A.locked)
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			if(do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src))
-				to_chat(user, span_notice("Override successful!"))
-				A.locked = FALSE
-				A.update_icon()
-				playsound(A, 'sound/machines/click.ogg', 15, 1, -3)
+			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done), done_args = list(user, A))
 		else
 			return
 
@@ -90,11 +86,7 @@
 		var/obj/structure/closet/secure_closet/A = target
 		if(A.locked)
 			to_chat(user, span_notice("Overriding access. Stand by."))
-			if(do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src))
-				to_chat(user, span_notice("Override successful!"))
-				A.locked = FALSE
-				A.update_icon()
-				playsound(A, 'sound/machines/click.ogg', 15, 1, -3)
+			om_do_after(user, (((5 SECONDS + rand(0, 5 SECONDS) + rand(0, 5 SECONDS))*hackspeed)), target = src, receiver = src, on_done = PROC_REF(attempt_hack_timed_done2), done_args = list(user, A))
 		else
 			return
 
@@ -112,19 +104,35 @@
 		is_hacking = 1
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
 		// Reduced hack duration to compensate for the reduced functionality, multiplied by door sec level
-		var/hack_result = do_after(user, (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), target = src)
-		is_hacking = 0
+		om_do_after(user, (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), target = src, receiver = src, on_done = PROC_REF(hack_airlock_done), done_args = list(user, D), on_fail = PROC_REF(hack_airlock_failed), fail_args = list(user, D))
+		return 0 // the hack is under way; the door is handled when it lands
 
-		if(hack_result && in_hack_mode)
-			to_chat(user, span_notice("Your hacking attempt was succesful!"))
-			user.playsound_local(get_turf(src), 'sound/runtime/instruments/piano/An6.ogg', 50)
-		else
-			to_chat(user, span_warning("Your hacking attempt failed!"))
-			return 0
+/obj/item/multitool/hacktool/proc/hack_airlock_failed(mob/user, obj/machinery/door/airlock/D)
+	is_hacking = 0
+	to_chat(user, span_warning("Your hacking attempt failed!"))
 
-		known_targets.Insert(1, D)	// Insert the newly hacked target first,
-		D.register(OBSERVER_EVENT_DESTROY, src, /obj/item/multitool/hacktool/proc/on_target_destroy)
-		return 1
+/// The airlock hack landed: remember the door and act on it as a hacked target.
+/obj/item/multitool/hacktool/proc/hack_airlock_done(mob/user, obj/machinery/door/airlock/D)
+	is_hacking = 0
+	if(!in_hack_mode)
+		hack_airlock_failed(user, D)
+		return
+	to_chat(user, span_notice("Your hacking attempt was succesful!"))
+	user.playsound_local(get_turf(src), 'sound/runtime/instruments/piano/An6.ogg', 50)
+	known_targets.Insert(1, D)	// Insert the newly hacked target first,
+	D.register(OBSERVER_EVENT_DESTROY, src, /obj/item/multitool/hacktool/proc/on_target_destroy)
+	afterattack(D, user)
+
+/obj/item/multitool/hacktool/proc/attempt_hack_timed_done(mob/user, obj/structure/closet/crate/secure/A)
+	to_chat(user, span_notice("Override successful!"))
+	A.locked = FALSE
+	A.update_icon()
+	playsound(A, 'sound/machines/click.ogg', 15, 1, -3)
+/obj/item/multitool/hacktool/proc/attempt_hack_timed_done2(mob/user, obj/structure/closet/crate/secure/A)
+	to_chat(user, span_notice("Override successful!"))
+	A.locked = FALSE
+	A.update_icon()
+	playsound(A, 'sound/machines/click.ogg', 15, 1, -3)
 
 /obj/item/multitool/hacktool/proc/sanity_check()
 	if(max_known_targets < 1) max_known_targets = 1

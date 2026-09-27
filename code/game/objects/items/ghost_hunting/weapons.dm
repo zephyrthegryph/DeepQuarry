@@ -104,7 +104,7 @@
 		return
 
 	// Start the special effects.
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon_state = "curse1", time = 60 SECONDS)
 	var/filter = filter(type = "outline", size = 1, color = "#330099")
@@ -124,10 +124,7 @@
 		to_chat(target, span_danger("You feel yourself weakened from the [src]'s beam!"))
 
 	// The delay, and test for if the scan succeeds or not.
-	if(do_after(user, 60 SECONDS, target, timed_action_flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, max_distance = grab_range))
-		to_chat(user, span_warning("With a buzz, \the [src] flashes red, the beam on \the [target] has broken!"))
-		playsound(src, 'sound/machines/buzz-two.ogg', 50)
-		color_box(box_segments, "#330099", 3)
+	om_do_after(user, 60 SECONDS, target = target, timed_action_flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, max_distance = grab_range, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user, box_segments))
 	busy = FALSE
 
 	// Now clean up the effects.
@@ -139,6 +136,11 @@
 		delete_box(box_segments, user.client)
 	grabbed_entity = null
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
+
+/obj/item/ghost_catcher/proc/afterattack_timed_done(atom/target, mob/user, list/box_segments)
+	to_chat(user, span_warning("With a buzz, \the [src] flashes red, the beam on \the [target] has broken!"))
+	playsound(src, 'sound/machines/buzz-two.ogg', 50)
+	color_box(box_segments, "#330099", 3)
 
 /atom/proc/incorporeal_grab(mob/user)
 	if(is_incorporeal())

@@ -26,10 +26,7 @@
 			to_chat(user, span_warning("You need one length of coil to wire \the [src]."))
 			return
 		user.visible_message("[user] wires \the [src].", "You start to wire \the [src].")
-		if(do_after(user, 4 SECONDS, target = src) && !wired && anchored)
-			if (cable.use(1))
-				wired = 1
-				to_chat(user, span_notice("You wire \the [src]."))
+		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, cable))
 
 	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
 		if(anchored)
@@ -50,24 +47,38 @@
 			playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 			user.visible_message(span_info("[user] adds [S.name] to \the [src]."),
 								span_notice("You start to install [S.name] into \the [src]."))
-			if(do_after(user, 4 SECONDS, target = src) && !glass && S.use(1))
-				to_chat(user, span_notice("You installed reinforced glass windows into \the [src]."))
-				glass = TRUE
-				update_icon()
+			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
 
 	else
 		..(C, user)
+
+/obj/structure/firedoor_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/cable)
+	if(!(!wired && anchored))
+		return
+	if (cable.use(1))
+		wired = 1
+		to_chat(user, span_notice("You wire \the [src]."))
+/obj/structure/firedoor_assembly/proc/attackby_timed_done2(mob/user, obj/item/stack/S)
+	if(!(!glass && S.use(1)))
+		return
+	to_chat(user, span_notice("You installed reinforced glass windows into \the [src]."))
+	glass = TRUE
+	update_icon()
 
 /obj/structure/firedoor_assembly/wirecutter_act(mob/user, obj/item/tool)
 	if(!wired)
 		return FALSE
 	playsound(src, tool.usesound, 100, TRUE)
 	user.visible_message("[user] cuts the wires from \the [src].", "You start to cut the wires from \the [src].")
-	if(do_after(user, 4 SECONDS, target = src) && !QDELETED(src) && wired)
-		to_chat(user, span_notice("You cut the wires!"))
-		new /obj/item/stack/cable_coil(loc, 1)
-		wired = FALSE
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/firedoor_assembly/proc/wirecutter_act_timed_done(mob/user)
+	if(!(!QDELETED(src) && wired))
+		return
+	to_chat(user, span_notice("You cut the wires!"))
+	new /obj/item/stack/cable_coil(loc, 1)
+	wired = FALSE
 
 /obj/structure/firedoor_assembly/wrench_act(mob/user, obj/item/tool)
 	anchored = !anchored
@@ -80,18 +91,17 @@
 	if(!glass && anchored)
 		return FALSE
 	if(glass)
-		if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0,
-				message_self = "You start to weld the glass panel out of \the [src].",
-				message_others = "[user] welds the glass panel out of \the [src]."))
-			to_chat(user, span_notice("You welded the glass panel out!"))
-			new /obj/item/stack/material/glass/reinforced(drop_location())
-			glass = FALSE
-			update_icon()
+		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to weld the glass panel out of \the [src].", message_others = "[user] welds the glass panel out of \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return TRUE
-	if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0,
-			message_self = "You start to disassemble \the [src].",
-			message_others = "[user] disassembles \the [src]."))
-		user.visible_message(span_warning("[user] has disassembled \the [src]."), "You have disassembled \the [src].")
-		new /obj/item/stack/material/steel(drop_location(), 2)
-		qdel(src)
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to disassemble \the [src].", message_others = "[user] disassembles \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 	return TRUE
+
+/obj/structure/firedoor_assembly/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You welded the glass panel out!"))
+	new /obj/item/stack/material/glass/reinforced(drop_location())
+	glass = FALSE
+	update_icon()
+/obj/structure/firedoor_assembly/proc/welder_act_tool_done2(mob/user)
+	user.visible_message(span_warning("[user] has disassembled \the [src]."), "You have disassembled \the [src].")
+	new /obj/item/stack/material/steel(drop_location(), 2)
+	qdel(src)

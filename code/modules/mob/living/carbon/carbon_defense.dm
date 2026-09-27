@@ -54,8 +54,10 @@
 	user.visible_message(span_danger("\The [user] begins to slit [src]'s throat with \the [W]!"))
 
 	user.next_move = world.time + 20 //also should prevent user from triggering this repeatedly
-	if(!do_after(user, 2 SECONDS, target = src))
-		return 0
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_throat_carbon_done), done_args = list(W, G, user))
+	return TRUE
+
+/mob/living/carbon/proc/attack_throat_carbon_done(obj/item/W, obj/item/grab/G, mob/user)
 	if(!(G && GRAB_ASSAILANT(G) == user && GRAB_TARGET(G) == src)) //check that we still have a grab
 		return 0
 

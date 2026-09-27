@@ -436,6 +436,8 @@
 // This whole things needs to be completely replaced by tg's dropped stuff but we're a long way off from that.
 /obj/item/proc/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(TRUE)
+	if(user)
+		om_changed(user, CHANGE_MOB_HANDS)
 	appearance_flags &= ~NO_CLIENT_COLOR
 	// Remove any item actions we temporary gave out.
 	for(var/datum/action/action_item_has as anything in actions)
@@ -475,6 +477,7 @@
 // for items that can be placed in multiple slots
 // note this isn't called during the initial dressing of a player
 /obj/item/proc/equipped(mob/user, slot)
+	om_changed(user, CHANGE_MOB_HANDS)
 	// Give out actions our item has to people who equip it.
 	for(var/datum/action/action as anything in actions)
 		give_item_action(action, user, slot)

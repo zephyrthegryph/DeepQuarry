@@ -18,7 +18,10 @@
 	animation.icon = 'icons/mob/mob.dmi'
 	animation.master = src
 	flick("h2monkey", animation)
-	sleep(48)
+	om_after(src, 48, PROC_REF(monkeyize_1), animation)
+
+
+/mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)
 	//animation = null
 
 	transforming = 0

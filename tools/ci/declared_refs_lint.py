@@ -101,14 +101,18 @@ def declared_names(body_lines):
 def scan_file(path):
     rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
     with open(path, encoding="utf-8", errors="replace") as handle:
-        raw_lines = code_only(handle.read()).split("\n")
+        text = handle.read()
+    raw_lines = code_only(text).split("\n")
+    # Declared names are string literals, which code_only() blanks: pass 1
+    # reads the declared_*_vars() bodies from the raw text instead.
+    source_lines = text.split("\n")
 
     # Pass 1: every declared_*_vars() proc body, by owner type, as the union
     # of every quoted name across every such override for that type (a type
     # may split REF_OWNED/REF_PAIR/etc. across several small overrides).
     declared = {}  # owner type -> set of var names
     cur_owner, cur_proc_indent, capturing = None, None, []
-    for raw in raw_lines:
+    for raw in source_lines:
         if not raw.strip():
             continue
         stripped = raw.lstrip("\t ")

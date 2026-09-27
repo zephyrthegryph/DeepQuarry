@@ -222,31 +222,32 @@ two tiles on initialization, and which way a cliff is facing may change during m
 		if(displaced) // Make the fall look more natural when falling sideways.
 			L.pixel_z = 32 * 2
 			animate(L, pixel_z = 0, time = fall_time)
-		sleep(fall_time) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
+		om_after(src, fall_time, PROC_REF(fall_land), L, T, safe_fall, harm) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
 
-		if(safe_fall)
-			visible_message(span_notice("\The [L] lands on \the [T]."))
-			playsound(L, "rustle", 25, 1)
-			return
+/obj/structure/cliff/proc/fall_land(mob/living/L, turf/T, safe_fall, harm)
 
-		playsound(L, "punch", 70, 1)
-		shake_camera(L, 1, 1)
+	if(safe_fall)
+		visible_message(span_notice("\The [L] lands on \the [T]."))
+		playsound(L, "rustle", 25, 1)
+		return
 
-		visible_message(span_danger("\The [L] hits \the [T]!"))
+	playsound(L, "punch", 70, 1)
+	shake_camera(L, 1, 1)
 
-		// The bigger they are, the harder they fall.
-		// They will take at least 20 damage at the minimum, and tries to scale up to 40% of their endurance.
-		// This scaling is capped at 100 total damage, which occurs if the thing that fell has more than 250 endurance.
-		var/damage = between(20, L.get_endurance() * 0.4, 100)
-		var/target_zone = ran_zone()
-		L.injure(INJURY_BLUNT, damage * harm, target_zone, src, flags = INJURE_ARMORED)
+	visible_message(span_danger("\The [L] hits \the [T]!"))
 
-		// Now fall off more cliffs below this one if they exist.
-		var/obj/structure/cliff/bottom_cliff = locate() in T
-		if(bottom_cliff)
-			visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
-			sleep(5)
-			bottom_cliff.fall_off_cliff(L)
+	// The bigger they are, the harder they fall.
+	// They will take at least 20 damage at the minimum, and tries to scale up to 40% of their endurance.
+	// This scaling is capped at 100 total damage, which occurs if the thing that fell has more than 250 endurance.
+	var/damage = between(20, L.get_endurance() * 0.4, 100)
+	var/target_zone = ran_zone()
+	L.injure(INJURY_BLUNT, damage * harm, target_zone, src, flags = INJURE_ARMORED)
+
+	// Now fall off more cliffs below this one if they exist.
+	var/obj/structure/cliff/bottom_cliff = locate() in T
+	if(bottom_cliff)
+		visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
+		om_after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), L)
 
 // This tells AI mobs to not be dumb and step off cliffs willingly.
 /obj/structure/cliff/is_safe_to_step(mob/living/L)

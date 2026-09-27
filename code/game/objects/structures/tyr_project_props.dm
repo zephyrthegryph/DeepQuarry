@@ -10,8 +10,10 @@
 	var/descendy
 
 /obj/structure/prop/tyr_elevator/attackby(obj/item/W as obj, mob/user as mob)
-	if (do_after(user, 30, target = src))
-		do_teleport(user, locate(descendx,descendy,src.z), channel = TELEPORT_CHANNEL_QUANTUM)
+	om_do_after(user, 30, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
+
+/obj/structure/prop/tyr_elevator/proc/attackby_timed_done(mob/user)
+	do_teleport(user, locate(descendx,descendy,src.z), channel = TELEPORT_CHANNEL_QUANTUM)
 
 /obj/machinery/door/blast/puzzle/tyrdoor
 	name = "strange door"
@@ -194,6 +196,11 @@
 	update_icon()
 	return 1
 
+/obj/machinery/restoration_cell/proc/release_sequence_done(mob/who)
+	if(SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) != who) //Check if someone's released/replaced/bombed him already
+		return
+	go_out()//and release him from the eternal prison.
+
 /obj/machinery/restoration_cell/verb/move_eject()
 	set name = "Eject occupant"
 	set category = "Object"
@@ -202,10 +209,7 @@
 		if(usr.stat == 2)//and he's not dead....
 			return
 		to_chat(usr, span_notice("Release sequence activated. This will take one minute."))
-		sleep(600)
-		if(!src || !usr || !SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) || (SLOT_ITEM(src, OCCUPANT_SLOT_TYR_PROP) != usr)) //Check if someone's released/replaced/bombed him already
-			return
-		go_out()//and release him from the eternal prison.
+		om_after(src, 1 MINUTE, PROC_REF(release_sequence_done), usr)
 	else
 		if(usr.stat != 0)
 			return

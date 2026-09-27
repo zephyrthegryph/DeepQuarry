@@ -54,15 +54,17 @@
 /obj/machinery/power/tracker/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar tracker."))
-	if(do_after(user, 5 SECONDS, target = src))
-		var/obj/item/solar_assembly/S = new(loc)
-		S.tracker = TRUE
-		S.anchored = TRUE
-		new glass_type(loc, 2)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		user.visible_message(span_notice("[user] takes the glass off the tracker."))
-		qdel(src)
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(remove_glass_done), list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/tracker/proc/remove_glass_done(mob/user)
+	var/obj/item/solar_assembly/S = new(loc)
+	S.tracker = TRUE
+	S.anchored = TRUE
+	new glass_type(loc, 2)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	user.visible_message(span_notice("[user] takes the glass off the tracker."))
+	qdel(src)
 
 // Tracker Electronic
 

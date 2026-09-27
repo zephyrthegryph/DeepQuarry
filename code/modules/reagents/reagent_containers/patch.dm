@@ -61,22 +61,21 @@
 		user.visible_message(span_warning("[user] attempts to place \the [src] onto [H]`s [affecting]."))
 
 		user.setClickCooldown(user.get_attack_speed(src))
-		if(!do_after(user, 3 SECONDS, M))
-			return ITEM_INTERACT_FAILURE
-
-		user.drop_from_inventory(src) //icon update
-		user.visible_message(span_warning("[user] applies \the [src] to [H]."))
-
-		var/contained = reagentlist()
-		add_attack_logs(user,M,"Applied a patch containing [contained]")
-
-		to_chat(H, span_notice("\The [src] is placed on your [affecting]."))
-		M.drop_from_inventory(src) //icon update
-
-		if(reagents.total_volume)
-			reagents.trans_to_mob(M, reagents.total_volume, CHEM_TOUCH)	//CHEM_TOUCH
-		qdel(src)
-
+		om_do_after(user, 3 SECONDS, M, src, PROC_REF(apply_patch_done), list(user, H, affecting))
 		return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE
+
+/obj/item/reagent_containers/pill/patch/proc/apply_patch_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/affecting)
+	user.drop_from_inventory(src) //icon update
+	user.visible_message(span_warning("[user] applies \the [src] to [H]."))
+
+	var/contained = reagentlist()
+	add_attack_logs(user,H,"Applied a patch containing [contained]")
+
+	to_chat(H, span_notice("\The [src] is placed on your [affecting]."))
+	H.drop_from_inventory(src) //icon update
+
+	if(reagents.total_volume)
+		reagents.trans_to_mob(H, reagents.total_volume, CHEM_TOUCH)	//CHEM_TOUCH
+	qdel(src)

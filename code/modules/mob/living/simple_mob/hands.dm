@@ -1,5 +1,6 @@
 // Hand procs for player-controlled SA's
 /mob/living/simple_mob/swap_hand()
+	om_changed(src, CHANGE_MOB_HANDS)
 	src.hand = !( src.hand )
 	if(hud_used.l_hand_hud_object && hud_used.r_hand_hud_object)
 		if(hand)	//This being 1 means the left hand is in use

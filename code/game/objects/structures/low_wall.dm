@@ -94,10 +94,12 @@
 			return TRUE
 	playsound(loc, 'sound/items/Ratchet.ogg', 100, 1)
 	to_chat(user, span_notice("Now disassembling the low wall..."))
-	if(do_after(user, 4 SECONDS, target = src))
-		to_chat(user, span_notice("You disassembled the low wall!"))
-		dismantle()
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/low_wall/proc/wrench_act_timed_done(mob/user)
+	to_chat(user, span_notice("You disassembled the low wall!"))
+	dismantle()
 
 /obj/structure/low_wall/proc/can_place_items()
 	for(var/obj/structure/S in loc)
@@ -157,8 +159,10 @@
 		to_chat(user, span_warning("You need at least two rods to do this."))
 		return
 	to_chat(user, span_notice("Assembling grille..."))
-	if(!do_after(user, 1 SECONDS, target = R))
-		return
+	om_do_after(user, 1 SECONDS, target = R, receiver = src, on_done = PROC_REF(handle_rod_use_timed_done), done_args = list(R))
+	return TRUE
+
+/obj/structure/low_wall/proc/handle_rod_use_timed_done(obj/item/stack/rods/R)
 	if(!R.use(2))
 		return
 	new grille_type(loc)
@@ -177,8 +181,10 @@
 		to_chat(user, span_warning("You need at least four sheets of glass to do this."))
 		return
 	to_chat(user, span_notice("Assembling window..."))
-	if(!do_after(user, 4 SECONDS, target = G))
-		return
+	om_do_after(user, 4 SECONDS, target = G, receiver = src, on_done = PROC_REF(handle_glass_use_timed_done), done_args = list(G, window_type))
+	return TRUE
+
+/obj/structure/low_wall/proc/handle_glass_use_timed_done(obj/item/stack/material/glass/G, window_type)
 	if(!G.use(4))
 		return
 	new window_type(loc, null, TRUE)

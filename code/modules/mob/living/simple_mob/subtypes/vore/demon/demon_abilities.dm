@@ -52,23 +52,7 @@
 		//Cosmetics mostly
 		flick("phasein",src)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-		sleep(30) //The duration of the TP animation
-		is_shifting = FALSE
-		canmove = original_canmove
-
-		//Potential phase-in vore
-		if(can_be_drop_pred) //Toggleable in vore panel
-			var/list/potentials = living_mobs(0)
-			if(potentials.len)
-				var/mob/living/target = pick(potentials)
-				if(can_phase_vore(src, target))
-					vore_selected.nom_atom(target)
-					to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
-
-		// Do this after the potential vore, so we get the belly
-		update_icon()
-
-		shift_state = AB_SHIFT_NONE
+		om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, FALSE) //The duration of the TP animation
 
 		/*
 		//Affect nearby lights
@@ -99,17 +83,7 @@
 
 		cut_overlays()
 		flick("phaseout",src)
-		sleep(30)
-		invisibility = INVISIBILITY_LEVEL_TWO
-		see_invisible = INVISIBILITY_LEVEL_TWO
-		update_icon()
-		alpha = 127
-
-		is_shifting = FALSE
-		canmove = original_canmove
-		incorporeal_move = TRUE
-		density = FALSE
-		force_max_speed = TRUE
+		om_after(src, 3 SECONDS, PROC_REF(demon_phased_out), original_canmove)
 
 /mob/living/simple_mob/vore/demon/verb/demonic_phase_shift()
 	set name = "Phase Shift"
@@ -156,7 +130,33 @@
 
 	cut_overlays()
 	flick("phaseout",src)
-	sleep(30)
+	om_after(src, 3 SECONDS, PROC_REF(demon_phased_out), original_canmove)
+	om_after(src, 33 SECONDS, PROC_REF(demon_shift_return))
+
+/// The temporary phase shift runs out: back into reality.
+/mob/living/simple_mob/vore/demon/proc/demon_shift_return()
+	shifted_out = FALSE
+	name = real_name
+	for(var/obj/belly/B as anything in vore_organs)
+		B.escapable = initial(B.escapable)
+
+	cut_overlays()
+	alpha = initial(alpha)
+	invisibility = initial(invisibility)
+	see_invisible = initial(see_invisible)
+	incorporeal_move = initial(incorporeal_move)
+	density = initial(density)
+	force_max_speed = initial(force_max_speed)
+	var/original_canmove = canmove
+	canmove = FALSE
+	is_shifting = TRUE
+
+	//Cosmetics mostly
+	flick("phasein",src)
+	automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
+	om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, TRUE) //The duration of the TP animation
+
+/mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
 	invisibility = INVISIBILITY_LEVEL_TWO
 	see_invisible = INVISIBILITY_LEVEL_TWO
 	update_icon()
@@ -169,6 +169,36 @@
 	force_max_speed = TRUE
 
 	om_after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
+/// Phase-in animation done: maybe grab someone on arrival.
+/mob/living/simple_mob/vore/demon/proc/demon_phased_in(original_canmove, from_temporary)
+	is_shifting = FALSE
+	canmove = original_canmove
+
+	if(from_temporary)
+		var/turf/NT = get_turf(src)
+		if(!NT.CanPass(src,NT))
+			for(var/direction in list(1,2,4,8,5,6,9,10))
+				var/turf/L = get_step(NT, direction)
+				if(L)
+					if(L.CanPass(src,L))
+						forceMove(L)
+						break
+
+	//Potential phase-in vore
+	if(can_be_drop_pred) //Toggleable in vore panel
+		var/list/potentials = living_mobs(0)
+		if(potentials.len)
+			var/mob/living/target = pick(potentials)
+			if(can_phase_vore(src, target))
+				vore_selected.nom_atom(target)
+				to_chat(target,span_vwarning("\The [src] phases in around you, [vore_selected.vore_verb]ing you into their [vore_selected.get_belly_name()]!"))
+
+	// Do this after the potential vore, so we get the belly
+	update_icon()
+
+	shift_state = AB_SHIFT_NONE
+	if(from_temporary)
+		last_shift = world.time
 
 
 /mob/living/simple_mob/vore/demon/verb/blood_burst()

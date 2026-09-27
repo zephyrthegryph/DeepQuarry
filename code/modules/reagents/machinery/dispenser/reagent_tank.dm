@@ -182,11 +182,15 @@
 /obj/structure/reagent_dispensers/fueltank/attack_hand(mob/user)
 	if (rig)
 		user.visible_message("[user] begins to detach [rig] from \the [src].", "You begin to detach [rig] from \the [src]")
-		if(do_after(user, 2 SECONDS, target = src))
-			user.visible_message(span_notice("[user] detaches [rig] from \the [src]."), span_notice("You detach [rig] from \the [src]"))
-			rig.loc = get_turf(user)
-			rig = null
-			overlays = new/list()
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(detach_rig_done), list(user))
+
+/obj/structure/reagent_dispensers/fueltank/proc/detach_rig_done(mob/user)
+	if(!rig)
+		return
+	user.visible_message(span_notice("[user] detaches [rig] from \the [src]."), span_notice("You detach [rig] from \the [src]"))
+	rig.loc = get_turf(user)
+	rig = null
+	overlays = new/list()
 
 /obj/structure/reagent_dispensers/fueltank/attackby(obj/item/W as obj, mob/user as mob)
 	src.add_fingerprint(user)
@@ -195,24 +199,27 @@
 			to_chat(user, span_warning("There is another device in the way."))
 			return ..()
 		user.visible_message("[user] begins rigging [W] to \the [src].", "You begin rigging [W] to \the [src]")
-		if(do_after(user, 2 SECONDS, target = src))
-			user.visible_message(span_notice("[user] rigs [W] to \the [src]."), span_notice("You rig [W] to \the [src]"))
-
-			var/obj/item/assembly_holder/H = W
-			if (istype(H.a_left,/obj/item/assembly/igniter) || istype(H.a_right,/obj/item/assembly/igniter))
-				message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
-				log_game("[key_name(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion.")
-
-			rig = W
-			user.drop_item()
-			W.loc = src
-
-			var/icon/test = getFlatIcon(W)
-			test.Shift(NORTH,1)
-			test.Shift(EAST,6)
-			add_overlay(test)
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(rig_assembly_done), list(user, W))
 
 	return ..()
+
+/obj/structure/reagent_dispensers/fueltank/proc/rig_assembly_done(mob/user, obj/item/assembly_holder/H)
+	if(rig)
+		return
+	user.visible_message(span_notice("[user] rigs [H] to \the [src]."), span_notice("You rig [H] to \the [src]"))
+
+	if (istype(H.a_left,/obj/item/assembly/igniter) || istype(H.a_right,/obj/item/assembly/igniter))
+		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
+		log_game("[key_name(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion.")
+
+	rig = H
+	user.drop_item()
+	H.loc = src
+
+	var/icon/test = getFlatIcon(H)
+	test.Shift(NORTH,1)
+	test.Shift(EAST,6)
+	add_overlay(test)
 
 /obj/structure/reagent_dispensers/fueltank/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
@@ -348,14 +355,7 @@
 			if(anchored)
 				var/obj/item/reagent_containers/glass/cooler_bottle/G = I
 				to_chat(user, span_notice("You start to screw the bottle onto the water-cooler."))
-				if(do_after(user, 2 SECONDS, target = src) && !bottle && anchored)
-					bottle = 1
-					update_icon()
-					to_chat(user, span_notice("You screw the bottle onto the water-cooler!"))
-					for(var/datum/reagent/R in G.reagents.reagent_list)
-						var/total_reagent = G.reagents.get_reagent_amount(R.id)
-						reagents.add_reagent(R.id, total_reagent)
-					qdel(G)
+				om_do_after(user, 2 SECONDS, src, src, PROC_REF(bottle_done), list(user, G))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
@@ -369,33 +369,53 @@
 				src.add_fingerprint(user)
 				to_chat(user, span_notice("You start to attach a cup dispenser onto the water-cooler."))
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				if(do_after(user, 2 SECONDS, target = src) && !cupholder && anchored)
-					if (P.use(1))
-						to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
-						cupholder = 1
-						update_icon()
+				om_do_after(user, 2 SECONDS, src, src, PROC_REF(cupholder_done), list(user, P))
 			else
 				to_chat(user, span_warning("You need to wrench down the cooler first."))
 		else
 			to_chat(user, span_warning("There is already a cup dispenser there!"))
 		return
 
+/obj/structure/reagent_dispensers/water_cooler/proc/bottle_done(mob/user, obj/item/reagent_containers/glass/cooler_bottle/G)
+	if(bottle || !anchored)
+		return
+	bottle = 1
+	update_icon()
+	to_chat(user, span_notice("You screw the bottle onto the water-cooler!"))
+	for(var/datum/reagent/R in G.reagents.reagent_list)
+		var/total_reagent = G.reagents.get_reagent_amount(R.id)
+		reagents.add_reagent(R.id, total_reagent)
+	qdel(G)
+
+/obj/structure/reagent_dispensers/water_cooler/proc/cupholder_done(mob/user, obj/item/stack/material/plastic/P)
+	if(cupholder || !anchored)
+		return
+	if (P.use(1))
+		to_chat(user, span_notice("You attach a cup dispenser onto the water-cooler."))
+		cupholder = 1
+		update_icon()
+
+/obj/structure/reagent_dispensers/water_cooler/proc/unfasten_jug_done(mob/user)
+	if(!bottle)
+		return
+	to_chat(user, span_notice("You unfasten the jug."))
+	var/obj/item/reagent_containers/glass/cooler_bottle/jug = new(loc)
+	for(var/datum/reagent/reagent in reagents.reagent_list)
+		jug.reagents.add_reagent(reagent.id, reagents.get_reagent_amount(reagent.id))
+	reagents.clear_reagents()
+	bottle = FALSE
+	update_icon()
+
 /obj/structure/reagent_dispensers/water_cooler/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
 	if(bottle)
 		playsound(src, tool.usesound, 50, TRUE)
-		if(!do_after(user, 2 SECONDS, target = src) || !bottle)
-			return ITEM_INTERACT_BLOCKING
-		to_chat(user, span_notice("You unfasten the jug."))
-		var/obj/item/reagent_containers/glass/cooler_bottle/jug = new(loc)
-		for(var/datum/reagent/reagent in reagents.reagent_list)
-			jug.reagents.add_reagent(reagent.id, reagents.get_reagent_amount(reagent.id))
-		reagents.clear_reagents()
-		bottle = FALSE
-		update_icon()
+		om_do_after(user, 2 SECONDS, src, src, PROC_REF(unfasten_jug_done), list(user))
 		return ITEM_INTERACT_SUCCESS
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 0))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, tool))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/reagent_dispensers/water_cooler/proc/wrench_act_tool_done(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secure \the [src]."))
 	anchored = !anchored
 	playsound(src, tool.usesound, 50, TRUE)
@@ -414,8 +434,12 @@
 		return ITEM_INTERACT_SUCCESS
 	if(bottle)
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start taking the water-cooler apart.") || bottle || cupholder)
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 50, message_self = "You start taking the water-cooler apart.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/reagent_dispensers/water_cooler/proc/screwdriver_act_tool_done(mob/user)
+	if(bottle || cupholder)
+		return
 	to_chat(user, span_notice("You take the water-cooler apart."))
 	new /obj/item/stack/material/plastic(loc, 4)
 	qdel(src)

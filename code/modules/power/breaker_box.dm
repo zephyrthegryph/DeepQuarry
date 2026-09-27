@@ -64,12 +64,25 @@
 
 	busy = 1
 	to_chat(user, span_green("Updating power settings..."))
-	if(do_after(user, 5 SECONDS, target = src))
-		set_state(!on)
-		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
-		update_locked = 1
-		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, FALSE), on_fail = PROC_REF(toggle_ended))
+
+/obj/machinery/power/breakerbox/proc/toggle_ended()
 	busy = 0
+
+/obj/machinery/power/breakerbox/proc/unlock_updates()
+	update_locked = 0
+
+/obj/machinery/power/breakerbox/proc/toggle_done(mob/user, by_hand)
+	busy = 0
+	set_state(!on)
+	if(by_hand)
+		user.visible_message(\
+		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
+		span_notice("You [on ? "enabled" : "disabled"] the breaker box!"))
+	else
+		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
+	update_locked = 1
+	om_after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
 
 /obj/machinery/power/breakerbox/declare_interactions(list/into)
@@ -100,14 +113,7 @@
 	for(var/mob/O in viewers(user))
 		O.show_message(span_red(text("[user] started reprogramming [src]!")), 1)
 
-	if(do_after(user, 5 SECONDS, target = src))
-		set_state(!on)
-		user.visible_message(\
-		span_notice("[user.name] [on ? "enabled" : "disabled"] the breaker box!"),\
-		span_notice("You [on ? "enabled" : "disabled"] the breaker box!"))
-		update_locked = 1
-		om_after(src, 1 MINUTE, TYPE_PROC_REF(/datum, om_set_var), "update_locked", 0)
-	busy = 0
+	om_do_after(user, 5 SECONDS, src, src, PROC_REF(toggle_done), list(user, TRUE), on_fail = PROC_REF(toggle_ended))
 	return TRUE
 
 /**

@@ -177,16 +177,17 @@
 
 	// So I heard you like sequences...
 	// Play a sequence of sounds while inside the current iteration of the outer sequence.
+	// The dots and dashes are timers on this sound; the next letter waits for all of them.
 	var/list/instructions = morse_alphabet[letter]
+	var/offset = 0
 	for(var/sound in instructions)
-		if(sound == MORSE_DOT)
-			play(dot_soundfile)
-			sleep(dot_delay)
-		else // It's a dash otherwise.
-			play(dash_soundfile)
-			sleep(dash_delay)
-		sleep(spaces_between_sounds)
-	return spaces_between_letters
+		var/file = (sound == MORSE_DOT) ? dot_soundfile : dash_soundfile
+		if(offset)
+			om_after(src, offset, PROC_REF(play), file)
+		else
+			play(file)
+		offset += ((sound == MORSE_DOT) ? dot_delay : dash_delay) + spaces_between_sounds
+	return offset + spaces_between_letters
 
 #undef MORSE_DOT
 #undef MORSE_DASH

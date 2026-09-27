@@ -117,12 +117,7 @@
 			return
 		user.visible_message(span_notice("[user] starts to dismantle [src]."), span_notice("You start to dismantle [src]..."))
 
-		if(do_after(user, 2 SECONDS, target = src))
-			user.visible_message(span_notice("[user] dismantles [src]."), span_notice("You dismantle [src]..."))
-			new framebuildstacktype(drop_location(), framebuildstackamount)
-			if(buildstackamount)
-				new buildstacktype(drop_location(), buildstackamount)
-			qdel(src)
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	else if(W.get_welder())
 		var/obj/item/weldingtool/I = W.get_welder()
 		if(!anchored)
@@ -134,10 +129,7 @@
 								span_notice("You start to weld [src] to the floor..."),
 								span_hear("You hear welding."))
 
-			if(do_after(user, 2 SECONDS, target = src))
-				if(!I.remove_fuel(1,user))
-					to_chat(user, span_warning("You require fuel to weld the [src]!"))
-					return
+			om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, I))
 			anchored = TRUE
 			user.visible_message(span_notice("[user] welds [src] to the floor."),
 								span_notice("You weld [src] to the floor..."),
@@ -177,6 +169,17 @@
 				qdel(src)
 	else
 		return ..()
+
+/obj/structure/reflector/proc/attackby_timed_done(mob/user)
+	user.visible_message(span_notice("[user] dismantles [src]."), span_notice("You dismantle [src]..."))
+	new framebuildstacktype(drop_location(), framebuildstackamount)
+	if(buildstackamount)
+		new buildstacktype(drop_location(), buildstackamount)
+	qdel(src)
+/obj/structure/reflector/proc/attackby_timed_done2(mob/user, obj/item/weldingtool/I)
+	if(!I.remove_fuel(1,user))
+		to_chat(user, span_warning("You require fuel to weld the [src]!"))
+		return
 
 /obj/structure/reflector/proc/rotate(mob/user)
 	if (!can_rotate || admin)

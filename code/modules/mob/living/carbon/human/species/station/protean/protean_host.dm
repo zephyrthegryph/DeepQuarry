@@ -17,11 +17,16 @@
 		to_chat(H, span_warning("You can only do this while standing."))
 		return
 	to_chat(H, span_notice("You rapidly condense into your module."))
-	if(!do_after(H, 2 SECONDS, target = H))
-		to_chat(H, span_warning("You must remain still to condense!"))
-		return
+	om_do_after(H, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(activate_hardsuit_done), done_args = list(H, F), on_fail = PROC_REF(activate_hardsuit_failed), fail_args = list(H, F))
+	return TRUE
+
+/datum/protean_power/hardsuit/proc/activate_hardsuit_done(mob/living/carbon/human/H, datum/component/forms/protean/F)
 	if(can_use(H, F) && F.form_control_check())
 		F.enter_rig()
+
+/datum/protean_power/hardsuit/proc/activate_hardsuit_failed(mob/living/carbon/human/H, datum/component/forms/protean/F)
+	to_chat(H, span_warning("You must remain still to condense!"))
+	return
 
 /mob/living/carbon/human/proc/nano_rig_transform()
 	set name = "Modify Form - Hardsuit"
@@ -60,8 +65,10 @@
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
 	H.visible_message(span_warning("[H] is attempting to latch onto [target]!"), span_danger("You attempt to latch onto [target]!"))
-	if(!do_after(H, 5 SECONDS, target))
-		return
+	om_do_after(H, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(activate_latch_host_done2), done_args = list(H, F, G, target))
+	return TRUE
+
+/datum/protean_power/latch_host/proc/activate_latch_host_done2(mob/living/carbon/human/H, datum/component/forms/protean/F, obj/item/grab/G, mob/living/carbon/human/target)
 	if(QDELETED(G) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
 		return
 	if(target.get_equipped_item(SLOT_ID_BACK))

@@ -101,10 +101,11 @@ SUBSYSTEM_DEF(planets)
 		CHECK_TICK
 
 /datum/controller/subsystem/planets/proc/weatherDisco()
-	var/count = 100000
-	while(count > 0)
-		count--
-		for(var/datum/planet/P as anything in planets)
-			if(P.weather_holder)
-				P.weather_holder.change_weather(DEFAULTPICK(P.weather_holder.allowed_weather_types, null))
-		sleep(3)
+	weather_disco_step(100000)
+
+/datum/controller/subsystem/planets/proc/weather_disco_step(count)
+	for(var/datum/planet/P as anything in planets)
+		if(P.weather_holder)
+			P.weather_holder.change_weather(DEFAULTPICK(P.weather_holder.allowed_weather_types, null))
+	if(count > 1)
+		om_after(src, 3, PROC_REF(weather_disco_step), count - 1)

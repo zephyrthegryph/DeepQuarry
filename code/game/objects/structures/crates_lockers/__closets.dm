@@ -313,27 +313,31 @@
 		return
 	else if(seal_tool)
 		if(istype(W, seal_tool))
-			if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
-				if(opened) // cancel weld if opened mid-progress to prevent welder-traps
-					return
-				playsound(src, W.usesound, 50)
-				sealed = !sealed
-				update_icon()
-				for(var/mob/M in viewers(src))
-					M.show_message(span_warning("[src] has been [sealed?"sealed":"unsealed"] by [user.name]."), 3)
+			use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(W, user))
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/closet/proc/attackby_tool_done(obj/item/W, mob/user)
+	if(opened) // cancel weld if opened mid-progress to prevent welder-traps
+		return
+	playsound(src, W.usesound, 50)
+	sealed = !sealed
+	update_icon()
+	for(var/mob/M in viewers(src))
+		M.show_message(span_warning("[src] has been [sealed?"sealed":"unsealed"] by [user.name]."), 3)
 
 /obj/structure/closet/wrench_act(mob/user, obj/item/W)
 	if(!opened)
 		to_chat(user, span_notice("You can't reach the anchoring bolts when the door is closed!"))
 		return TRUE
 	user.visible_message("\The [user] begins [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.", "You start [anchored ? "unsecuring \the [src] from" : "securing \the [src] to"] the floor.")
-	if(use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0))
-		anchored = !anchored
-		to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
+	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 0, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/closet/proc/wrench_act_tool_done(mob/user)
+	anchored = !anchored
+	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 /obj/structure/closet/welder_act(mob/user, obj/item/W)
 	var/obj/item/weldingtool/WT = W.get_welder()
@@ -350,13 +354,17 @@
 		return TRUE
 	if(!seal_tool || !istype(W, seal_tool))
 		return TRUE
-	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0) && !opened)
-		playsound(src, W.usesound, 50)
-		sealed = !sealed
-		update_icon()
-		for(var/mob/M in viewers(src))
-			M.show_message(span_warning("[src] has been [sealed ? "sealed" : "unsealed"] by [user.name]."), 3)
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))
 	return TRUE
+
+/obj/structure/closet/proc/welder_act_tool_done(mob/user, obj/item/W)
+	if(!(!opened))
+		return
+	playsound(src, W.usesound, 50)
+	sealed = !sealed
+	update_icon()
+	for(var/mob/M in viewers(src))
+		M.show_message(span_warning("[src] has been [sealed ? "sealed" : "unsealed"] by [user.name]."), 3)
 
 /obj/structure/closet/MouseDrop_T(atom/movable/O as mob|obj, mob/user as mob)
 	if(istype(O, /atom/movable/screen))	//fix for HUD elements making their way into the world	-Pete
@@ -457,21 +465,30 @@
 	visible_message(span_danger("\The [src] begins to shake violently!"))
 
 	breakout = 1 //can't think of a better way to do this right now.
-	for(var/i in 1 to (6*breakout_time * 2)) //minutes * 6 * 5seconds * 2
-		if(!do_after(escapee, 5 SECONDS, target = src)) //5 seconds
-			breakout = 0
-			return
-		if(!escapee || escapee.incapacitated() || escapee.loc != src)
-			breakout = 0
-			return //closet/user destroyed OR user dead/unconcious OR user no longer in closet OR closet opened
-		//Perform the same set of checks as above for weld and lock status to determine if there is even still a point in 'resisting'...
-		if(!req_breakout())
-			breakout = 0
-			return
+	breakout_push(escapee, 1)
 
-		playsound(src, breakout_sound, 100, 1)
-		animate_shake()
-		add_fingerprint(escapee)
+/// One 5-second shove; (6 * breakout_time * 2) of them break the closet open.
+/obj/structure/closet/proc/breakout_push(mob/living/escapee, i)
+	om_do_after(escapee, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(breakout_pushed), done_args = list(escapee, i), on_fail = PROC_REF(breakout_stop))
+
+/obj/structure/closet/proc/breakout_stop()
+	breakout = 0
+
+/obj/structure/closet/proc/breakout_pushed(mob/living/escapee, i)
+	if(!escapee || escapee.incapacitated() || escapee.loc != src)
+		breakout = 0
+		return //closet/user destroyed OR user dead/unconcious OR user no longer in closet OR closet opened
+	//Perform the same set of checks as above for weld and lock status to determine if there is even still a point in 'resisting'...
+	if(!req_breakout())
+		breakout = 0
+		return
+
+	playsound(src, breakout_sound, 100, 1)
+	animate_shake()
+	add_fingerprint(escapee)
+	if(i < (6*breakout_time * 2)) //minutes * 6 * 5seconds * 2
+		breakout_push(escapee, i + 1)
+		return
 
 	//Well then break it!
 	breakout = 0

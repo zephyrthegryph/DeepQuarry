@@ -44,12 +44,14 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		L.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
 
 		//Do the searching
-		busy = TRUE
-		if(do_after(user, rand(4 SECONDS,6 SECONDS), target = src))
-			SEND_SIGNAL(src,COMSIG_LOOT_REWARD,L,searchedby, 0)
+		om_flag_hold(src, "busy")
+		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(L))
 		busy = FALSE
 	else
 		return ..()
+
+/obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)
+	SEND_SIGNAL(src,COMSIG_LOOT_REWARD,L,searchedby, 0)
 
 /obj/structure/loot_pile/Initialize(mapload)
 	if(icon_states_to_use && length(icon_states_to_use))

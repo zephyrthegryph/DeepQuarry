@@ -17,27 +17,29 @@
 /obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
 	var/carving_1 = sanitizeSafe(tgui_input_text(user, "Who is \the [src.name] for?", "Gravestone Naming", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 	if(carving_1)
-		if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER,
-				message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name]."))
-			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-			grave_name += carving_1
-			update_icon()
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	var/carving_2 = sanitizeSafe(tgui_input_text(user, "What message should \the [src.name] have?", "Epitaph Carving", null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN)
 	if(carving_2)
-		if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER,
-				message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name]."))
-			user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
-			epitaph += carving_2
-			update_icon()
+		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done2), done_args = list(user, carving_2))
 	return NONE
 
+/obj/item/material/gravemarker/proc/screwdriver_act_tool_done(mob/user, carving_1)
+	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	grave_name += carving_1
+	update_icon()
+/obj/item/material/gravemarker/proc/screwdriver_act_tool_done2(mob/user, carving_2)
+	user.visible_message("[user] carves something into \the [src.name].", "You carve your message into \the [src.name].")
+	epitaph += carving_2
+	update_icon()
+
 /obj/item/material/gravemarker/wrench_act(mob/user, obj/item/W)
-	if(use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH,
-			message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name]."))
-		material.place_dismantled_product(get_turf(src))
-		user.visible_message("[user] dismantles down \the [src.name].", "You dismantle \the [src.name].")
-		qdel(src)
+	use_tool(user, W, src, delay = material.hardness, quality = TOOL_WRENCH, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return NONE
+
+/obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
+	material.place_dismantled_product(get_turf(src))
+	user.visible_message("[user] dismantles down \the [src.name].", "You dismantle \the [src.name].")
+	qdel(src)
 
 /obj/item/material/gravemarker/examine(mob/user)
 	. = ..()
@@ -73,13 +75,17 @@
 		return 0
 	else
 		to_chat(user, span_notice("You begin to place \the [src.name]."))
-		if(!do_after(user, 1 SECOND, target = src))
-			return 0
-		var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
-		to_chat(user, span_notice("You place \the [src.name]."))
-		G.grave_name = grave_name
-		G.epitaph = epitaph
-		G.add_fingerprint(user)
-		G.dir = user.dir
-		QDEL_NULL(src)
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
+	return
+
+/obj/item/material/gravemarker/proc/place_done(mob/user)
+	if(!isturf(user.loc) || locate(/obj/structure/gravemarker, user.loc))
+		return
+	var/obj/structure/gravemarker/G = new /obj/structure/gravemarker/(user.loc, src.get_material())
+	to_chat(user, span_notice("You place \the [src.name]."))
+	G.grave_name = grave_name
+	G.epitaph = epitaph
+	G.add_fingerprint(user)
+	G.dir = user.dir
+	QDEL_NULL(src)
 	return

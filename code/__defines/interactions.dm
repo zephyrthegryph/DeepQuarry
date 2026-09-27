@@ -63,3 +63,8 @@
 /// Requirement: in reach. Adjacent, or a silicon the target lets use it remotely (silicon_use),
 /// or already dispatched by the legacy entry (which decided reach itself: telekinesis, the AI).
 #define REQ_INTERACTION_REACH REQ_PROC(/proc/dq_interaction_reach, "too far away")
+
+/// use_tool() and pay_cost(): the job is a timed action that has started; its on_done runs later.
+#define USE_TOOL_PENDING 2
+/// Internal to /datum/interaction/proc/attempt(): no result yet.
+#define INTERACTION_TRY_PENDING "pending"

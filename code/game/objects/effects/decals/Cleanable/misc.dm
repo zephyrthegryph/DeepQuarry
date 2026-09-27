@@ -236,5 +236,7 @@
 
 /obj/effect/decal/cleanable/confetti/attack_hand(mob/user)
 	to_chat(user, span_notice("You start to meticulously pick up the confetti."))
-	if(do_after(user, 6 SECONDS, target = src))
-		qdel(src)
+	om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list())
+
+/obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
+	qdel(src)

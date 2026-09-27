@@ -166,8 +166,10 @@
 	if(!open || !paicard)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You are attempting to remove the pAI."))
-	if(!do_after(user, 1 SECOND * tool.toolspeed, target = src))
-		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 1 SECOND * tool.toolspeed, target = src, receiver = src, on_done = PROC_REF(crowbar_act_bot_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/bot/proc/crowbar_act_bot_done(mob/user)
 	ejectpai(user)
 	return ITEM_INTERACT_SUCCESS
 
@@ -190,6 +192,16 @@
 
 /mob/living/bot/emag_act(remaining_charges, mob/user)
 	return 0
+
+/// Calls `step_proc` `count` times, `delay` apart (the bot's movement within one AI tick).
+/mob/living/bot/proc/bot_steps(count, delay, step_proc)
+	if(count <= 0)
+		return
+	om_after(src, delay, PROC_REF(bot_step), count, delay, step_proc)
+
+/mob/living/bot/proc/bot_step(count, delay, step_proc)
+	call(src, step_proc)()
+	bot_steps(count - 1, delay, step_proc)
 
 /mob/living/bot/proc/handleAI()
 	if(ignore_list.len)
@@ -215,9 +227,7 @@
 		else
 			handleRangedTarget()
 		if(!wait_if_pulled || !PULLED_BY(src))
-			for(var/i = 1 to (target_speed + panic_speed_mod))
-				sleep(20 / (target_speed + panic_speed_mod + 1))
-				stepToTarget()
+			bot_steps(target_speed + panic_speed_mod, 20 / (target_speed + panic_speed_mod + 1), PROC_REF(stepToTarget))
 		if(max_frustration && frustration > max_frustration * target_speed)
 			handleFrustrated(1)
 	else
@@ -225,9 +235,7 @@
 		lookForTargets()
 		if(will_patrol && !PULLED_BY(src) && !target)
 			if(patrol_path && patrol_path.len)
-				for(var/i = 1 to (patrol_speed + panic_speed_mod))
-					sleep(20 / (patrol_speed + 1))
-					handlePatrol()
+				bot_steps(patrol_speed + panic_speed_mod, 20 / (patrol_speed + 1), PROC_REF(handlePatrol))
 				if(max_frustration && frustration > max_frustration * patrol_speed)
 					handleFrustrated(0)
 			else

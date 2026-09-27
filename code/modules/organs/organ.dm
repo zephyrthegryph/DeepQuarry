@@ -604,16 +604,24 @@
 
 	return FALSE
 
+/// Butchers the organ into meat. With a user it's a timed action (TRUE if it started) that
+/// butchers on completion; without one it happens at once.
 /obj/item/organ/proc/butcher(obj/item/O, mob/living/user, atom/newtarget)
 
 	if(user)
 		to_chat(user, span_danger("You are preparing to butcher \the [src]!"))
 		user.visible_message(span_danger("[user] prepares to butcher \the [src]!"))
-		if(!do_after(user, 10 SECONDS * O.toolspeed, target = src)) //They can queue this up on multiple organs.
-			to_chat(user, span_notice("You reconsider butchering \the [src]..."))
-			user.visible_message(span_notice("[user] reconsiders butchering \the [src]!"))
-			return FALSE
+		//They can queue this up on multiple organs.
+		var/started = om_do_after(user, 10 SECONDS * O.toolspeed, src, src, PROC_REF(butcher_done), list(user, newtarget), on_fail = PROC_REF(butcher_failed), fail_args = list(user))
+		return !istext(started)
+	return butcher_done(null, newtarget)
 
+/obj/item/organ/proc/butcher_failed(mob/living/user)
+	to_chat(user, span_notice("You reconsider butchering \the [src]..."))
+	user.visible_message(span_notice("[user] reconsiders butchering \the [src]!"))
+
+/obj/item/organ/proc/butcher_done(mob/living/user, atom/newtarget)
+	if(user)
 		if(robotic >= ORGAN_ROBOT)
 			user?.visible_message(span_warning("[user] disassembles \the [src]."))
 

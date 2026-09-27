@@ -34,7 +34,7 @@
 /datum/expedition_teardown_job/proc/checkpoint()
 	if(TICK_USAGE >= tick_budget)
 		yield_count++
-		sleep(0)
+		sleep(0) // S8 allowlist: budgeted background teardown job yielding the tick.
 
 /datum/expedition_teardown_job/proc/execute()
 	if(!controller || !site || QDELETED(site))

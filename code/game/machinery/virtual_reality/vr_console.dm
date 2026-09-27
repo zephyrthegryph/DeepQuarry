@@ -222,24 +222,26 @@
 	else
 		visible_message("\The [user] starts putting [M] into \the [src].")
 
-	if(do_after(user, 2 SECONDS, target = src))
-		if(occupant)
-			to_chat(user, span_warning("\The [src] is already occupied."))
-			return
-		M.stop_pulling()
-		if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
-			return
-		MACHINE_WAKE(src)
-
-		update_icon()
-
-		if(M.has_brain_worms())
-			to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
-			return
-
-		update_use_power(USE_POWER_ACTIVE)
-		enter_vr()
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(go_in_timed_done), done_args = list(M, user))
 	return
+
+/obj/machinery/vr_sleeper/proc/go_in_timed_done(mob/M, mob/user)
+	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	if(occupant)
+		to_chat(user, span_warning("\The [src] is already occupied."))
+		return
+	M.stop_pulling()
+	if(!M.move_into(src, OCCUPANT_SLOT_VR_POD))
+		return
+
+	update_icon()
+
+	if(M.has_brain_worms())
+		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
+		return
+
+	update_use_power(USE_POWER_ACTIVE)
+	enter_vr()
 
 /obj/machinery/vr_sleeper/proc/go_out()
 	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)

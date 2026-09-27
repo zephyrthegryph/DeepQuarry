@@ -23,18 +23,19 @@
 
 	var/step_delay = 0	// Does the component slow/speed up the suit?
 
+/// Starts the equipment cooldown (ready again after equip_cooldown). TRUE while it can act on
+/// `target`: the act no longer waits for the cooldown.
 /obj/item/mecha_parts/mecha_equipment/proc/do_after_cooldown(target=1)
-	sleep(equip_cooldown)
-	cooldown_done()
+	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
 	if(target && chassis)
 		return 1
 	return 0
 
 /// The cooldown without waiting for it: ready again after equip_cooldown.
 /obj/item/mecha_parts/mecha_equipment/proc/start_cooldown()
-	om_after(src, equip_cooldown, PROC_REF(cooldown_done))
+	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
 
-/obj/item/mecha_parts/mecha_equipment/proc/cooldown_done()
+/obj/item/mecha_parts/mecha_equipment/proc/cooldown_over()
 	set_ready_state(TRUE)
 	if(ready_sound) //Kind of like the kinetic accelerator.
 		playsound(src, ready_sound, 50, 1, -1)

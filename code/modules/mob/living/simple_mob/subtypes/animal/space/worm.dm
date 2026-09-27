@@ -218,10 +218,8 @@
 			if(currentlyEating != obstacle)
 				currentlyEating = obstacle
 
-			if(ai_brain) ai_brain.busy = TRUE
-			if(AttemptToEat(obstacle))
-				currentlyEating = null
-			if(ai_brain) ai_brain.busy = FALSE
+			if(ai_brain) om_flag_hold(ai_brain, "busy")
+			AttemptToEat(obstacle)
 	else
 		currentlyEating = null
 		. = ..(obstacle)
@@ -243,56 +241,77 @@
 
 	return
 
+/// Starts eating `target`; eat_finished() reports the outcome.
 /mob/living/simple_mob/animal/space/space_worm/proc/AttemptToEat(atom/target)
 	if(istype(target,/turf/simulated/wall))
 		var/turf/simulated/wall/W = target
-		if((!W.reinf_material && do_after(src, 5 SECONDS, target)) || do_after(src, 10 SECONDS, target)) // 10 seconds for an R-wall, 5 seconds for a normal one.
-			if(target)
-				W.dismantle_wall()
-				return 1
-	else if(istype(target,/atom/movable))
-		if(istype(target,/mob) || do_after(src, 5, target)) // 5 ticks to eat stuff like tables.
-			var/atom/movable/objectOrMob = target
-			if(istype(objectOrMob, /obj/machinery/door))	// Doors and airlocks take time based on their durability and our damageo.
-				var/obj/machinery/door/D = objectOrMob
-				var/total_hits = max(2, round(D.max_integrity / (2 * melee_damage_upper)))
+		// 10 seconds for an R-wall, 5 seconds for a normal one.
+		om_do_after(src, W.reinf_material ? 10 SECONDS : 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(eat_wall_done), done_args = list(W), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+		return
+	if(istype(target,/atom/movable))
+		if(istype(target,/mob))
+			eat_movable(target)
+		else // 5 ticks to eat stuff like tables.
+			om_do_after(src, 5, target = target, receiver = src, on_done = PROC_REF(eat_movable), done_args = list(target), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
+		return
+	eat_finished(FALSE)
 
-				for(var/I = 1 to total_hits)
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_finished(success)
+	if(success)
+		currentlyEating = null
+	if(ai_brain) ai_brain.busy = FALSE
 
-					if(!D)
-						objectOrMob = null
-						break
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(turf/simulated/wall/W)
+	W.dismantle_wall()
+	eat_finished(TRUE)
 
-					if(do_after(src, 5, target))
-						D.visible_message(span_danger("Something crashes against \the [D]!"))
-						D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
-					else
-						objectOrMob = null
-						break
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_movable(atom/movable/objectOrMob)
+	if(istype(objectOrMob, /obj/machinery/door))	// Doors and airlocks take time based on their durability and our damageo.
+		var/obj/machinery/door/D = objectOrMob
+		eat_door_hit(D, 1, max(2, round(D.max_integrity / (2 * melee_damage_upper))))
+		return
+	if(istype(objectOrMob, /obj/effect/energy_field))
+		var/obj/effect/energy_field/EF = objectOrMob
+		if(EF.opacity)
+			EF.visible_message(span_danger("Something begins forcing itself through \the [EF]!"))
+		else
+			EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
+		// No eating shields.
+		om_do_after(src, EF.get_strength() * 5, target = EF, receiver = src, on_done = PROC_REF(eat_field_done), done_args = list(EF), on_fail = PROC_REF(eat_field_failed), fail_args = list(EF))
+		return
+	eat_consume(objectOrMob)
 
-					if(D && (D.stat & (BROKEN|NOPOWER)))
-						D.open(TRUE)
-						break
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_hit(obj/machinery/door/D, hit, total_hits)
+	om_do_after(src, 5, target = D, receiver = src, on_done = PROC_REF(eat_door_struck), done_args = list(D, hit, total_hits), on_fail = PROC_REF(eat_finished), fail_args = list(FALSE))
 
-			if(istype(objectOrMob, /obj/effect/energy_field))
-				var/obj/effect/energy_field/EF = objectOrMob
-				objectOrMob = null	// No eating shields.
-				if(EF.opacity)
-					EF.visible_message(span_danger("Something begins forcing itself through \the [EF]!"))
-				else
-					EF.visible_message(span_danger("\The [src] begins forcing itself through \the [EF]!"))
-				if(do_after(src, EF.get_strength() * 5, target))
-					EF.adjust_strength(rand(-8, -10))
-					EF.visible_message(span_danger("\The [src] crashes through \the [EF]!"))
-				else
-					EF.visible_message(span_danger("\The [EF] reverberates as it returns to normal."))
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_door_struck(obj/machinery/door/D, hit, total_hits)
+	D.visible_message(span_danger("Something crashes against \the [D]!"))
+	D.take_damage(2 * melee_damage_upper, BRUTE, MELEE)
+	if(QDELETED(D))
+		eat_finished(FALSE)
+		return
+	if(D.stat & (BROKEN|NOPOWER))
+		D.open(TRUE)
+		eat_consume(D)
+		return
+	if(hit < total_hits)
+		eat_door_hit(D, hit + 1, total_hits)
+		return
+	eat_consume(D)
 
-			if(objectOrMob)
-				objectOrMob.update_nearby_tiles(need_rebuild=1)
-				objectOrMob.forceMove(src)
-				return 1
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_done(obj/effect/energy_field/EF)
+	EF.adjust_strength(rand(-8, -10))
+	EF.visible_message(span_danger("\The [src] crashes through \the [EF]!"))
+	eat_finished(FALSE)
 
-	return 0
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_field_failed(obj/effect/energy_field/EF)
+	EF.visible_message(span_danger("\The [EF] reverberates as it returns to normal."))
+	eat_finished(FALSE)
+
+/mob/living/simple_mob/animal/space/space_worm/proc/eat_consume(atom/movable/objectOrMob)
+	objectOrMob.update_nearby_tiles(need_rebuild=1)
+	objectOrMob.forceMove(src)
+	eat_finished(TRUE)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/Attach(mob/living/simple_mob/animal/space/space_worm/attachement)
 	if(!attachement)

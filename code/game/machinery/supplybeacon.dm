@@ -16,8 +16,10 @@
 	if(.)
 		return TRUE
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " begins setting up \the [src]."))
-	if(!do_after(user, deploy_time, target = src))
-		return
+	om_do_after(user, deploy_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	return TRUE
+
+/obj/item/supply_beacon/proc/attack_self_timed_done(mob/user)
 	var/obj/S = new deploy_path(get_turf(user))
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " deploys \the [S]."))
 	user.unEquip(src)

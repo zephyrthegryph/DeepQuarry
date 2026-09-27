@@ -56,30 +56,32 @@
 /obj/item/storage/secure/screwdriver_act(mob/user, obj/item/tool)
 	if(!locked)
 		return ..()
-	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_SCREWDRIVER, volume = 0))
-		open = !open
-		playsound(src, tool.usesound, 50, TRUE)
-		user.show_message(span_notice("You [open ? "open" : "close"] the service panel."))
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/storage/secure/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
+	open = !open
+	playsound(src, tool.usesound, 50, TRUE)
+	user.show_message(span_notice("You [open ? "open" : "close"] the service panel."))
 
 /obj/item/storage/secure/multitool_act(mob/user, obj/item/tool)
 	if(!locked || !open || l_hacking)
 		return ..()
 	user.show_message(span_notice("Now attempting to reset internal memory, please hold."), 1)
 	l_hacking = TRUE
-	if(do_after(user, 10 SECONDS, target = src))
-		if(prob(40))
-			l_setshort = TRUE
-			l_set = FALSE
-			code = ""
-			user.show_message(span_notice("Internal memory reset. Please give it a few seconds to reinitialize."), 1)
-			sleep(8 SECONDS)
-			l_setshort = FALSE
-		else
-			user.show_message(span_warning("Unable to reset internal memory."), 1)
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(multitool_act_timed_done), done_args = list(user))
 	l_hacking = FALSE
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/storage/secure/proc/multitool_act_timed_done(mob/user)
+	if(prob(40))
+		l_setshort = TRUE
+		l_set = FALSE
+		code = ""
+		user.show_message(span_notice("Internal memory reset. Please give it a few seconds to reinitialize."), 1)
+		om_after(src, 8 SECONDS, PROC_REF(memory_reinitialized))
+	else
+		user.show_message(span_warning("Unable to reset internal memory."), 1)
 
 /obj/item/storage/secure/MouseDrop(over_object, src_location, over_location)
 	if (locked)
@@ -151,15 +153,20 @@
 	. = TRUE
 	return
 
+/obj/item/storage/secure/proc/memory_reinitialized()
+	l_setshort = FALSE
+
+/obj/item/storage/secure/proc/emag_spark_done(mob/user, feedback)
+	cut_overlays()
+	add_overlay(icon_locking)
+	locked = 0
+	to_chat(user, (feedback ? feedback : "You short out the lock of \the [src]."))
+
 /obj/item/storage/secure/emag_act(remaining_charges, mob/user, feedback)
 	if(!emagged)
 		emagged = 1
 		src.add_overlay(icon_sparking)
-		sleep(6)
-		cut_overlays()
-		add_overlay(icon_locking)
-		locked = 0
-		to_chat(user, (feedback ? feedback : "You short out the lock of \the [src]."))
+		om_after(src, 6, PROC_REF(emag_spark_done), user, feedback)
 		return 1
 
 // -----------------------------

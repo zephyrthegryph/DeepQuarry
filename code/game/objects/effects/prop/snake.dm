@@ -31,15 +31,20 @@
 		creator = Creator
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
-	set waitfor = FALSE
+	snake_pulse_wait()
 
-	while(pulses_remaining)
-		sleep(pulse_delay)
-		if(on_pulse())
-			pulses_remaining--
-		else
-			break
-	qdel(src)
+/obj/effect/temporary_effect/pulse/snake/proc/snake_pulse_wait()
+	if(pulses_remaining <= 0)
+		qdel(src)
+		return
+	om_after(src, pulse_delay, PROC_REF(snake_pulse))
+
+/obj/effect/temporary_effect/pulse/snake/proc/snake_pulse()
+	if(!on_pulse())
+		qdel(src)
+		return
+	pulses_remaining--
+	snake_pulse_wait()
 
 /obj/effect/temporary_effect/pulse/snake/on_pulse()
 	var/list/possible_turfs = list()

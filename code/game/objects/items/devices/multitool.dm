@@ -119,8 +119,10 @@
 		return ..()
 	user.visible_message(span_notice("[user] plugs \the [src] into a diagnostic port on [H]'s [E.name] and starts recalibrating."), \
 		span_notice("You start recalibrating [H]'s [E.name]."))
-	if(!do_after(user, 4 SECONDS, H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 4 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H, E))
+	return TRUE
+
+/obj/item/multitool/proc/attack_timed_done(mob/living/user, mob/living/carbon/human/H, obj/item/organ/external/E)
 	var/treated = H.mend(TREAT_CALIBRATION, 30, E.organ_tag)
 	if(E.organ_tag == BP_HEAD)
 		treated += H.mend(TREAT_SYSTEM_RESTORE, 20, BP_HEAD)

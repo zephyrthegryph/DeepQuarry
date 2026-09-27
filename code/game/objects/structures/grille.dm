@@ -123,18 +123,9 @@
 				to_chat(user, span_notice("There is already a window facing this way there."))
 				return
 		to_chat(user, span_notice("You start placing the window."))
-		if(do_after(user, 2 SECONDS, target = src))
-			for(var/obj/structure/window/WINDOW in loc)
-				if(WINDOW.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
-					to_chat(user, span_notice("There is already a window facing this way there."))
-					return
-
-			var/wtype = ST.material.created_window
-			if (ST.use(1))
-				var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
-				to_chat(user, span_notice("You place the [WD] on [src]."))
-				WD.update_icon()
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, ST, dir_to_set))
 		return
+
 //window placing end
 
 	else if((W.flags & NOCONDUCT) || !shock(user, 70))
@@ -148,6 +139,18 @@
 				receive_weapon_hit(W, user, W.force * 0.1)
 	..()
 	return
+
+/obj/structure/grille/proc/attackby_timed_done(mob/user, obj/item/stack/material/ST, dir_to_set)
+	for(var/obj/structure/window/WINDOW in loc)
+		if(WINDOW.dir == dir_to_set)//checking this for a 2nd time to check if a window was made while we were waiting.
+			to_chat(user, span_notice("There is already a window facing this way there."))
+			return
+
+	var/wtype = ST.material.created_window
+	if (ST.use(1))
+		var/obj/structure/window/WD = new wtype(loc, dir_to_set, 1)
+		to_chat(user, span_notice("You place the [WD] on [src]."))
+		WD.update_icon()
 
 // Crossing the integrity_failure threshold turns the grille into a passable broken stub.
 /obj/structure/grille/atom_break(damage_flag)

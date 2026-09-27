@@ -159,17 +159,38 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You start dismantling \the [src]..."))
 	playsound(src, tool.usesound, 50, TRUE)
-	if(do_after(user, 3 SECONDS, target = src))
-		user.visible_message(span_notice("[user] dismantles \the [src]."), span_notice("You dismantle \the [src]."))
-		new /obj/item/beehive_assembly(loc)
-		qdel(src)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(dismantle_done), list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/beehive/proc/dismantle_done(mob/user)
+	if(bee_count || length(frames))
+		return
+	user.visible_message(span_notice("[user] dismantles \the [src]."), span_notice("You dismantle \the [src]."))
+	new /obj/item/beehive_assembly(loc)
+	qdel(src)
 
 /datum/interaction/machine_hand/ungated/beehive_harvest
 	id = "beehive_harvest"
 	name = "Harvest honeycombs"
 	effect = /obj/machinery/beehive/proc/interaction_beehive_harvest
+
+/// One frame every 3 seconds (a timed action each) while there are filled honeycombs.
+/obj/machinery/beehive/proc/harvest_next(mob/user)
+	if(honeycombs >= 100 && length(frames))
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(harvest_frame), list(user))
+	else if(honeycombs < 100)
+		to_chat(user, span_notice("You take all filled honeycombs out."))
+
+/obj/machinery/beehive/proc/harvest_frame(mob/user)
+	if(honeycombs < 100 || !length(frames))
+		return
+	var/obj/item/honey_frame/H = pop(frames)
+	H.honey = 20
+	honeycombs -= 100
+	H.update_icon()
+	H.forceMove(get_turf(src))
+	update_icon()
+	harvest_next(user)
 
 /obj/machinery/beehive/proc/interaction_beehive_harvest(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!closed)
@@ -180,15 +201,7 @@
 			to_chat(user, span_notice("The bees won't let you take the honeycombs out like this, smoke them first."))
 			return TRUE
 		user.visible_message(span_notice("[user] starts taking the honeycombs out of \the [src]."), span_notice("You start taking the honeycombs out of \the [src]..."))
-		while(honeycombs >= 100 && length(frames) && do_after(user, 3 SECONDS, target = src))
-			var/obj/item/honey_frame/H = pop(frames)
-			H.honey = 20
-			honeycombs -= 100
-			H.update_icon()
-			H.forceMove(get_turf(src))
-			update_icon()
-		if(honeycombs < 100)
-			to_chat(user, span_notice("You take all filled honeycombs out."))
+		harvest_next(user)
 		return TRUE
 
 /obj/machinery/beehive/machine_step()
@@ -359,12 +372,13 @@
 	if(.)
 		return TRUE
 	to_chat(user, span_notice("You start assembling \the [src]..."))
-	if(do_after(user, 3 SECONDS, target = src))
-		user.visible_message(span_notice("[user] constructs a beehive."), span_notice("You construct a beehive."))
-		new /obj/machinery/beehive(get_turf(user))
-		user.drop_from_inventory(src)
-		qdel(src)
-	return
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
+
+/obj/item/beehive_assembly/proc/assemble_done(mob/user)
+	user.visible_message(span_notice("[user] constructs a beehive."), span_notice("You construct a beehive."))
+	new /obj/machinery/beehive(get_turf(user))
+	user.drop_from_inventory(src)
+	qdel(src)
 
 /obj/item/stack/material/wax
 	name = "wax"

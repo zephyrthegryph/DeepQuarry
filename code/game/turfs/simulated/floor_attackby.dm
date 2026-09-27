@@ -1,6 +1,15 @@
 // Tool work on floors (removing coverings, welding and cutting plating) is the
 // floor construction graph: floor_construction.dm.
 
+/turf/simulated/floor/proc/lay_flooring(obj/item/stack/S, datum/decl/flooring/use_flooring)
+	if(!is_plating())
+		return
+	if(S.use(use_flooring.build_cost))
+		set_flooring(use_flooring)
+		if(S.color)
+			color = S.color
+		playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
+
 /turf/simulated/floor/attackby(obj/item/C, mob/user, attack_modifier, click_parameters)
 
 	if(!C || !user)
@@ -122,16 +131,8 @@
 				to_chat(user, span_warning("You require at least [use_flooring.build_cost] [S.name] to complete the [use_flooring.descriptor]."))
 				return
 			// Stay still and focus...
-			if(use_flooring.build_time && !do_after(user, use_flooring.build_time, target = src))
-				return
-			if(!is_plating() || !S || !user || !use_flooring)
-				return
-			if(S.use(use_flooring.build_cost))
-				set_flooring(use_flooring)
-				if(S.color)
-					color = S.color
-				playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
-				return
+			om_do_after(user, use_flooring.build_time || 0, src, src, PROC_REF(lay_flooring), list(S, use_flooring))
+			return
 
 /turf/simulated/floor/proc/try_deconstruct_tile(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/stack/tile) && isliving(user)) //If we're hitting it with a tile, try to check our offhand

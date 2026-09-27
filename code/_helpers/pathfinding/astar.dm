@@ -24,7 +24,9 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 	astar_wipe_colors_after_sleeping(turfs, time)
 
 /proc/astar_wipe_colors_after_sleeping(list/turf/turfs, time)
-	sleep(time)
+	om_after(null, time, /proc/astar_wipe_colors_now, turfs)
+
+/proc/astar_wipe_colors_now(list/turf/turfs)
 	for(var/turf/T in turfs)
 		T.color = null
 		T.maptext = null
@@ -183,6 +185,7 @@ GLOBAL_VAR_INIT(astar_visualization_persist, 3 SECONDS)
 		#ifdef ASTAR_DEBUGGING
 		top.pos.color = ASTAR_VISUAL_COLOR_CURRENT
 		turfs_got_colored[top.pos] = TRUE
+		// S8 allowlist: debug-only search visualisation (ASTAR_DEBUGGING builds).
 		sleep(GLOB.astar_visualization_delay)
 		#else
 		CHECK_TICK

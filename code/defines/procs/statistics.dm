@@ -34,7 +34,7 @@
 		return
 	while(1)
 		sql_poll_population()
-		sleep(6000)
+		sleep(6000) // S8 allowlist: world-level SQL statistics poll (blocking external API leaf).
 
 //This proc is used for feedback. It is executed at round end.
 /proc/sql_commit_feedback()

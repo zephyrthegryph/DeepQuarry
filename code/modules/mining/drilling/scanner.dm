@@ -17,9 +17,9 @@
 	to_chat(user, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
 	playsound(src, 'sound/items/goggles_charge.ogg', 50, 1, -6)
 
-	if(!do_after(user, scan_time, target = src))
-		return
+	om_do_after(user, scan_time, src, src, PROC_REF(sweep_done), list(user))
 
+/obj/item/mining_scanner/proc/sweep_done(mob/user)
 	ScanTurf(get_turf(user), user)
 
 /obj/item/mining_scanner/verb/toggle_sediment_scan()

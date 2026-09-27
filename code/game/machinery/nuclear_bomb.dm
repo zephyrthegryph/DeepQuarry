@@ -125,24 +125,23 @@ GLOBAL_VAR(bomb_set)
 		return NONE
 	switch(removal_stage)
 		if(0)
-			if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, \
-					message_self = "You start cutting loose the anchoring bolt covers with [tool]...", \
-					message_others = "[user] starts cutting loose the anchoring bolt covers on [src]."))
-				if(!src || !user)
-					return ITEM_INTERACT_SUCCESS
-				user.visible_message("[user] cuts through the bolt covers on [src].", "You cut through the bolt cover.")
-				removal_stage = 1
+			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, message_self = "You start cutting loose the anchoring bolt covers with [tool]...", message_others = "[user] starts cutting loose the anchoring bolt covers on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 		if(2)
-			if(use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, \
-					message_self = "You start cutting apart the anchoring system's sealant with [tool]...", \
-					message_others = "[user] starts cutting apart the anchoring system sealant on [src]."))
-				if(!src || !user)
-					return ITEM_INTERACT_SUCCESS
-				user.visible_message("[user] cuts apart the anchoring system sealant on [src].", "You cut apart the anchoring system's sealant.")
-				removal_stage = 3
+			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, message_self = "You start cutting apart the anchoring system's sealant with [tool]...", message_others = "[user] starts cutting apart the anchoring system sealant on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/nuclearbomb/proc/welder_act_tool_done(mob/user)
+	if(!src || !user)
+		return ITEM_INTERACT_SUCCESS
+	user.visible_message("[user] cuts through the bolt covers on [src].", "You cut through the bolt cover.")
+	removal_stage = 1
+/obj/machinery/nuclearbomb/proc/welder_act_tool_done2(mob/user)
+	if(!src || !user)
+		return ITEM_INTERACT_SUCCESS
+	user.visible_message("[user] cuts apart the anchoring system sealant on [src].", "You cut apart the anchoring system's sealant.")
+	removal_stage = 3
 
 /obj/machinery/nuclearbomb/crowbar_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
@@ -150,25 +149,24 @@ GLOBAL_VAR(bomb_set)
 		return NONE
 	switch(removal_stage)
 		if(1)
-			if(use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, \
-					message_self = "You start forcing open the anchoring bolt covers with [tool]...", \
-					message_others = "[user] starts forcing open the bolt covers on [src]."))
-				if(!src || !user)
-					return ITEM_INTERACT_SUCCESS
-				user.visible_message("[user] forces open the bolt covers on [src].", "You force open the bolt covers.")
-				removal_stage = 2
+			use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, message_self = "You start forcing open the anchoring bolt covers with [tool]...", message_others = "[user] starts forcing open the bolt covers on [src].", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 		if(4)
-			if(use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, \
-					message_self = "You begin lifting the device off the anchors...", \
-					message_others = "[user] begins lifting [src] off of the anchors."))
-				if(!src || !user)
-					return ITEM_INTERACT_SUCCESS
-				user.visible_message("[user] crowbars [src] off of the anchors. It can now be moved.", "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!")
-				anchored = FALSE
-				removal_stage = 5
+			use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, message_self = "You begin lifting the device off the anchors...", message_others = "[user] begins lifting [src] off of the anchors.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done2), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
+
+/obj/machinery/nuclearbomb/proc/crowbar_act_tool_done(mob/user)
+	if(!src || !user)
+		return ITEM_INTERACT_SUCCESS
+	user.visible_message("[user] forces open the bolt covers on [src].", "You force open the bolt covers.")
+	removal_stage = 2
+/obj/machinery/nuclearbomb/proc/crowbar_act_tool_done2(mob/user)
+	if(!src || !user)
+		return ITEM_INTERACT_SUCCESS
+	user.visible_message("[user] crowbars [src] off of the anchors. It can now be moved.", "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!")
+	anchored = FALSE
+	removal_stage = 5
 
 /obj/machinery/nuclearbomb/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
@@ -176,14 +174,14 @@ GLOBAL_VAR(bomb_set)
 		return NONE
 	if(removal_stage != 3)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, \
-			message_self = "You begin unwrenching the anchoring bolts...", \
-			message_others = "[user] begins unwrenching the anchoring bolts on [src]."))
-		if(!src || !user)
-			return ITEM_INTERACT_SUCCESS
-		user.visible_message("[user] unwrenches the anchoring bolts on [src].", "You unwrench the anchoring bolts.")
-		removal_stage = 4
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, message_self = "You begin unwrenching the anchoring bolts...", message_others = "[user] begins unwrenching the anchoring bolts on [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/nuclearbomb/proc/wrench_act_tool_done(mob/user)
+	if(!src || !user)
+		return ITEM_INTERACT_SUCCESS
+	user.visible_message("[user] unwrenches the anchoring bolts on [src].", "You unwrench the anchoring bolts.")
+	removal_stage = 4
 
 // TGUI migration. attack_hand opens the main control view
 // of NuclearBomb.tsx; nukehack_win switches to the wire-defusion view of
@@ -436,7 +434,10 @@ GLOBAL_VAR(bomb_set)
 	world << sound('sound/machines/Alarm.ogg')//chompedit, nuke is big event, make it global
 	if(SSticker && SSticker.mode)
 		SSticker.mode.explosion_in_progress = 1
-	sleep(100)
+	om_after(src, 10 SECONDS, PROC_REF(detonate))
+
+/// Ten seconds after the alarm: the blast, the cinematic and the round outcome.
+/obj/machinery/nuclearbomb/proc/detonate()
 
 	var/off_station = 0
 	var/turf/bomb_location = get_turf(src)
@@ -491,11 +492,12 @@ GLOBAL_VAR(bomb_set)
 
 				if(GLOB.blackbox)
 					GLOB.blackbox.save_all_data_to_sql()
-				sleep(300)
-				log_game("Rebooting due to nuclear detonation")
-				world.Reboot()
+				om_after(null, 30 SECONDS, /proc/nuke_reboot)
 				return
-	return
+
+/proc/nuke_reboot()
+	log_game("Rebooting due to nuclear detonation")
+	world.Reboot()
 
 #undef NUKERANGE
 

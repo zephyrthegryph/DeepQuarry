@@ -33,14 +33,17 @@
 			limit_x = xc[locNum]+1
 			limit_y = yc[locNum]+1
 			build()
-			sleep(20) //Give explosion time so the pod itself doesn't go boom
-			src.forceMove(L)
-			playsound(src, pick('sound/effects/Explosion1.ogg', 'sound/effects/Explosion2.ogg', 'sound/effects/Explosion3.ogg', 'sound/effects/Explosion4.ogg'))
 			in_transit = 0
-			sleep(2)
-			go_out()
-			sleep(2)
-			qdel(src)
+			om_after(src, 2 SECONDS, PROC_REF(arrive), L) //Give explosion time so the pod itself doesn't go boom
+
+/obj/machinery/transportpod/proc/arrive(turf/L)
+	src.forceMove(L)
+	playsound(src, pick('sound/effects/Explosion1.ogg', 'sound/effects/Explosion2.ogg', 'sound/effects/Explosion3.ogg', 'sound/effects/Explosion4.ogg'))
+	om_after(src, 2, PROC_REF(arrive_unload))
+
+/obj/machinery/transportpod/proc/arrive_unload()
+	go_out()
+	om_after(src, 2, TYPE_PROC_REF(/datum, om_qdel_self))
 
 /obj/machinery/transportpod/relaymove(mob/user as mob)
 	if(user.stat)

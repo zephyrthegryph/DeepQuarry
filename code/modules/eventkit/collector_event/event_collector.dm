@@ -212,31 +212,37 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 		//put it in
 		user.visible_message("[user] begins to [pick(step_initiation_verbs)] \The [O] into \The [src]")
-		if(do_after(user, step_insertion_time, target = src)) //wait a second or two
-			user.visible_message("[user] [pick(step_insertion_verbs)] \The [O] into \The [src]!")
-			if(ishuman(user)) //should always be?
-				var/mob/living/carbon/human/h = user
-				h.drop_item() //drop held item. this is also what plays the item sound via association
-				if(noisy_step_completion)
-					var/next_item = "Nothing! The sequence is done!"
-					if(active_recipe.len > 1)
-						next_item = active_recipe[2]
-					message_admins("\[EVENT\] Event Collection object [src] has completed a step in its recipe with [O]! if it's in sequence, the next one is [next_item] ")
-				active_recipe -= active_recipe[stored_index]
-				if(item_theft_mode)
-					O.forceMove(src) //note that this does NOT delete anything! ever! or release it manually! entirely so admins can manually collect or do stuff later via moving/ejecting.
-				else
-					qdel(O)
+		//wait a second or two
+		om_do_after(user, step_insertion_time, src, src, PROC_REF(insert_done), list(O, user, stored_index), on_fail = PROC_REF(insert_gave_up), fail_args = list(user))
 
-				jiggle_animation(0.1)
-				if(active_recipe.len == 0)
-					start_recipe_process()
-				current_step += 1
-				update_icon()
-				post_recipe_complete(user)
-				next_item_added = (world.time + wait_between_items)
+/obj/structure/event_collector/proc/insert_gave_up(mob/user)
+	user?.visible_message("[user] gives up!") //shitty, change later
+
+/obj/structure/event_collector/proc/insert_done(obj/item/O, mob/user, stored_index)
+	if(stored_index > length(active_recipe))
+		return
+	user.visible_message("[user] [pick(step_insertion_verbs)] \The [O] into \The [src]!")
+	if(ishuman(user)) //should always be?
+		var/mob/living/carbon/human/h = user
+		h.drop_item() //drop held item. this is also what plays the item sound via association
+		if(noisy_step_completion)
+			var/next_item = "Nothing! The sequence is done!"
+			if(active_recipe.len > 1)
+				next_item = active_recipe[2]
+			message_admins("\[EVENT\] Event Collection object [src] has completed a step in its recipe with [O]! if it's in sequence, the next one is [next_item] ")
+		active_recipe -= active_recipe[stored_index]
+		if(item_theft_mode)
+			O.forceMove(src) //note that this does NOT delete anything! ever! or release it manually! entirely so admins can manually collect or do stuff later via moving/ejecting.
 		else
-			user.visible_message("[user] gives up!") //shitty, change later
+			qdel(O)
+
+		jiggle_animation(0.1)
+		if(active_recipe.len == 0)
+			start_recipe_process()
+		current_step += 1
+		update_icon()
+		post_recipe_complete(user)
+		next_item_added = (world.time + wait_between_items)
 
 /obj/structure/event_collector/proc/start_recipe_process()
 	awaiting_next_recipe = TRUE

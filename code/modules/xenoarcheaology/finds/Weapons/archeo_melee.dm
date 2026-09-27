@@ -289,16 +289,16 @@
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
 	conjure_animation(A, toolspeed)
-	if(do_after(user, toolspeed, target = A))
-		if(stored_blood < consecration_cost)
-			to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
-			return FALSE
-		if(A.occult_act(user))
-			stored_blood -= consecration_cost
-			return TRUE
-
 	//Moving = stop
-	return FALSE
+	om_do_after(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
+	return TRUE
+
+/obj/item/melee/artifact_blade/proc/convert_turf_done(atom/A, mob/living/user)
+	if(stored_blood < consecration_cost)
+		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
+		return
+	if(A.occult_act(user))
+		stored_blood -= consecration_cost
 #undef SOULSTONE
 #undef SHELL
 #undef ARTIFACT

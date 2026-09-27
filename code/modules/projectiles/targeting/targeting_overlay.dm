@@ -94,9 +94,7 @@
 	return ..()
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
-	set waitfor = 0
-	sleep(0)
-	update_aiming()
+	om_after(src, 0, PROC_REF(update_aiming))
 
 /obj/aiming_overlay/proc/update_aiming()
 

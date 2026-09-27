@@ -42,17 +42,28 @@
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
 		to_chat(user, span_notice("[icon2html(src,user.client)] Attempting to call [comm]."))
-		sleep(10)
-		to_chat(user, span_notice("[icon2html(src,user.client)] Dialing internally from [station_name()], [system_name()]."))
-		sleep(20) //If they don't have an exonet something is very wrong and we want a runtime.
-		to_chat(user, span_notice("[icon2html(src,user.client)] Connection re-routed to [comm] at [comm.exonet.address]."))
-		sleep(40)
-		to_chat(user, span_notice("[icon2html(src,user.client)] Connection to [comm] at [comm.exonet.address] established."))
-		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connection to [src] at [exonet.address] established."))
-		sleep(20)
+		om_after(src, 1 SECOND, PROC_REF(dial_communicator), user, comm, 1)
+		return
 
 	src.add_communicating(comm)
 	comm.add_communicating(src)
+
+/// The dial-up fluff before two communicators connect, one line per stage.
+/obj/item/communicator/proc/dial_communicator(mob/user, obj/item/communicator/comm, stage)
+	switch(stage)
+		if(1)
+			to_chat(user, span_notice("[icon2html(src,user.client)] Dialing internally from [station_name()], [system_name()]."))
+			om_after(src, 2 SECONDS, PROC_REF(dial_communicator), user, comm, 2)
+		if(2)
+			to_chat(user, span_notice("[icon2html(src,user.client)] Connection re-routed to [comm] at [comm.exonet.address]."))
+			om_after(src, 4 SECONDS, PROC_REF(dial_communicator), user, comm, 3)
+		if(3)
+			to_chat(user, span_notice("[icon2html(src,user.client)] Connection to [comm] at [comm.exonet.address] established."))
+			comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connection to [src] at [exonet.address] established."))
+			om_after(src, 2 SECONDS, PROC_REF(dial_communicator), user, comm, 4)
+		if(4)
+			src.add_communicating(comm)
+			comm.add_communicating(src)
 
 // Proc: open_connection_to_ghost()
 // Parameters: 2 (user - the person who initiated this, candidate - the ghost that will be turned into a voice mob)
@@ -90,26 +101,33 @@
 	if(user)
 		to_chat(user, span_notice("[icon2html(src,user.client)] Connecting to [candidate]."))
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Attempting to call [src]."))
-	sleep(10)
-	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Dialing to [station_name()], Kara Subsystem, [system_name()]."))
-	sleep(20)
-	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connecting to [station_name()] telecommunications array."))
-	sleep(40)
-	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [station_name()] telecommunications array established.  Redirecting signal to [src]."))
-	sleep(20)
+	om_after(src, 1 SECOND, PROC_REF(dial_ghost), user, new_voice, blackness, candidate ? "[candidate]" : "someone", 1)
 
-	//We're connected, no need to hide everything.
-	new_voice.client.screen.Remove(blackness)
-	qdel(blackness)
+/// The ghost's dial-up: a black screen while the fluff plays, then the call opens.
+/obj/item/communicator/proc/dial_ghost(mob/user, mob/living/voice/new_voice, atom/movable/screen/blackness, candidate_name, stage)
+	switch(stage)
+		if(1)
+			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Dialing to [station_name()], Kara Subsystem, [system_name()]."))
+			om_after(src, 2 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 2)
+		if(2)
+			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connecting to [station_name()] telecommunications array."))
+			om_after(src, 4 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 3)
+		if(3)
+			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [station_name()] telecommunications array established.  Redirecting signal to [src]."))
+			om_after(src, 2 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 4)
+		if(4)
+			//We're connected, no need to hide everything.
+			new_voice.client?.screen.Remove(blackness)
+			qdel(blackness)
 
-	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [src] established."))
-	to_chat(new_voice, span_infoplain(span_bold("To talk to the person on the other end of the call, just talk normally.")))
-	to_chat(new_voice, span_infoplain(span_bold("If you want to end the call, use the 'Hang Up' verb.  The other person can also hang up at any time.")))
-	to_chat(new_voice, span_infoplain(span_bold("Remember, your character does not know anything you've learned from observing!")))
-	if(new_voice.mind)
-		new_voice.mind.assigned_role = JOB_DISEMBODIED_VOICE
-	if(user)
-		to_chat(user, span_notice("[icon2html(src,new_voice.client)] Your communicator is now connected to [candidate]'s communicator."))
+			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [src] established."))
+			to_chat(new_voice, span_infoplain(span_bold("To talk to the person on the other end of the call, just talk normally.")))
+			to_chat(new_voice, span_infoplain(span_bold("If you want to end the call, use the 'Hang Up' verb.  The other person can also hang up at any time.")))
+			to_chat(new_voice, span_infoplain(span_bold("Remember, your character does not know anything you've learned from observing!")))
+			if(new_voice.mind)
+				new_voice.mind.assigned_role = JOB_DISEMBODIED_VOICE
+			if(user)
+				to_chat(user, span_notice("[icon2html(src,new_voice.client)] Your communicator is now connected to [candidate_name]'s communicator."))
 
 // Proc: close_connection()
 // Parameters: 3 (user - the user who initiated the disconnect, target - the mob or device being disconnected, reason - string shown when disconnected)
@@ -344,7 +362,11 @@
 		return
 
 	to_chat(user, span_notice("[icon2html(src, user.client)] Attempting to start video over existing call."))
-	sleep(30)
+	om_after(src, 3 SECONDS, PROC_REF(connect_video_done), user, comm)
+
+/obj/item/communicator/proc/connect_video_done(mob/user, obj/item/communicator/comm)
+	if(video_source || !(src in comm.communicating) || !comm.camera)
+		return
 	to_chat(user, span_notice("[icon2html(src, user.client)] Please wait..."))
 
 	video_source = comm.camera

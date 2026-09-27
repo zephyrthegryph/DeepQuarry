@@ -809,11 +809,12 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/item/gps/computer/wrench_act(mob/user, obj/item/tool)
 	user.visible_message(span_warning("[user] disassembles [src]."),
 		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
-	if(do_after(user, 4 SECONDS, target = src))
-		new /obj/item/gps(loc)
-		qdel(src)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 4 SECONDS, src, src, PROC_REF(disassemble_done))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/gps/computer/proc/disassemble_done()
+	new /obj/item/gps(loc)
+	qdel(src)
 
 /obj/item/gps/computer/attack_hand(mob/user)
 	attack_self(user)
@@ -883,10 +884,8 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/structure/fans/wrench_act(mob/user, obj/item/tool)
 	user.visible_message(span_warning("[user] disassembles [src]."),
 		span_notice("You start to disassemble [src]..."), "You hear clanking and banging noises.")
-	if(do_after(user, 4 SECONDS, target = src))
-		atom_deconstruct(TRUE)
-		return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 4 SECONDS, src, src, TYPE_PROC_REF(/obj, atom_deconstruct), list(TRUE))
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/fans/tiny
 	name = "tiny fan"

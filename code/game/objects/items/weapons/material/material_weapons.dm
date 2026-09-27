@@ -142,17 +142,19 @@
 	if(!fragile)
 		if(get_integrity() < max_integrity)
 			user.visible_message("[user] begins repairing \the [src].", "You begin repairing \the [src].")
-			if(do_after(user, repair_time, target = src))
-				user.visible_message("[user] has finished repairing \the [src]", "You finish repairing \the [src].")
-				repair_damage(repair_amount * MATERIAL_WEAR_UNIT)
-				dulled = 0
-				sharp = initial(sharp)
-				edge = initial(edge)
+			om_do_after(user, repair_time, target = src, receiver = src, on_done = PROC_REF(repair_timed_done), done_args = list(repair_amount, user))
 		else
 			to_chat(user, span_notice("[src] doesn't need repairs."))
 	else
 		to_chat(user, span_warning("You can't repair \the [src]."))
 		return
+
+/obj/item/material/proc/repair_timed_done(repair_amount, mob/living/user)
+	user.visible_message("[user] has finished repairing \the [src]", "You finish repairing \the [src].")
+	repair_damage(repair_amount * MATERIAL_WEAR_UNIT)
+	dulled = 0
+	sharp = initial(sharp)
+	edge = initial(edge)
 
 /obj/item/material/proc/sharpen(material, sharpen_time, kit, mob/living/M)
 	if(!fragile && src.material.can_sharpen)
@@ -160,11 +162,13 @@
 			to_chat(M, "You should repair [src] first. Try using [kit] on it.")
 			return FALSE
 		M.visible_message("[M] begins to replace parts of [src] with [kit].", "You begin to replace parts of [src] with [kit].")
-		if(do_after(M, sharpen_time, target = src))
-			M.visible_message("[M] has finished replacing parts of [src].", "You finish replacing parts of [src].")
-			src.set_material(material)
-			return TRUE
+		om_do_after(M, sharpen_time, target = src, receiver = src, on_done = PROC_REF(sharpen_timed_done), done_args = list(material, M))
+		return TRUE
 	else
 		to_chat(M, span_warning("You can't sharpen and re-edge [src]."))
 		return FALSE
 
+/obj/item/material/proc/sharpen_timed_done(material, mob/living/M)
+	M.visible_message("[M] has finished replacing parts of [src].", "You finish replacing parts of [src].")
+	src.set_material(material)
+	return TRUE

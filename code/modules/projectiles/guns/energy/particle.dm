@@ -127,6 +127,14 @@
 	..(severity*2, user, T)
 
 
+/obj/item/gun/energy/particle/proc/safety_removed(mob/user)
+	if(!attached_safety)
+		return
+	to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
+	user.put_in_hands(attached_safety)
+	safetycatch = 0
+	attached_safety = null
+
 /obj/item/gun/energy/particle/attackby(obj/item/A as obj, mob/user as mob)
 	if(istype(A, /obj/item/pressurelock))
 		if(safetycatch)
@@ -142,11 +150,7 @@
 	if(A.has_tool_quality(TOOL_SCREWDRIVER))
 		if(safetycatch && attached_safety)
 			to_chat(user, span_notice("You begin removing \the [attached_safety] from \the [src]."))
-			if(do_after(user, 25, target = src))
-				to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
-				user.put_in_hands(attached_safety)
-				safetycatch = 0
-				attached_safety = null
+			om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(safety_removed), list(user))
 			return
 	..()
 

@@ -347,13 +347,16 @@
 	add_fingerprint(user)
 	msg_admin_attack("[key_name_admin(user)] primed \a [src]")
 	user.visible_message("[user] starts priming \the [src.name].", "You start priming \the [src.name]. Hold still!")
-	if(do_after(user, 10 SECONDS, target = src))
-		playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
-		prime(user)
-	else
-		visible_message("[user] triggers \the [src.name]!", "You accidentally trigger \the [src.name]!")
-		prime(user, TRUE)
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list(user))
 	return
+
+/obj/item/mine/proc/attack_self_timed_done(mob/user)
+	playsound(src, 'sound/weapons/armbomb.ogg', 75, 1, -3)
+	prime(user)
+
+/obj/item/mine/proc/attack_self_timed_failed(mob/user)
+	visible_message("[user] triggers \the [src.name]!", "You accidentally trigger \the [src.name]!")
+	prime(user, TRUE)
 
 /obj/item/mine/attackby(obj/item/W as obj, mob/living/user as mob)
 	if(LAZYLEN(allowed_gadgets) && !trap)
@@ -450,11 +453,15 @@
 	if(!trap)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You begin removing \the [trap]."))
-	if(do_after(user, 10 SECONDS, target = src) && trap)
-		to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
-		trap.forceMove(get_turf(src))
-		trap = null
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/mine/proc/screwdriver_act_timed_done(mob/living/user)
+	if(!(trap))
+		return
+	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
+	trap.forceMove(get_turf(src))
+	trap = null
 
 //Lasertag mines
 

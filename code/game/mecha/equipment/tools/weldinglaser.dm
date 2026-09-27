@@ -14,13 +14,11 @@
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/welding/action(atom/target)
 	..()
 
-	var/datum/beam/weld_beam = null
 	if(is_ranged())
 		var/atom/movable/beam_origin = chassis
-		weld_beam = beam_origin.Beam(target, icon_state = "solar_beam", time = 0.3 SECONDS)
+		beam_origin.Beam(target, icon_state = "solar_beam", time = 0.3 SECONDS)
 
-	if(!do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 0.3 SECONDS, target))
-		qdel(weld_beam)
+	// The beam ends itself after 0.3 seconds.
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/welding/attach(obj/mecha/M as obj)
 	..()

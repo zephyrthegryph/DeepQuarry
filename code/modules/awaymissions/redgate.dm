@@ -227,6 +227,14 @@
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
+/obj/item/laserdome_flag/proc/flag_return_failed(mob/user)
+	user?.drop_from_inventory(src)
+
+/obj/item/laserdome_flag/proc/flag_returned(mob/user)
+	user.drop_from_inventory(src)
+	src.loc = src.start_pos
+	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
+
 /obj/item/laserdome_flag/attack_hand(mob/user as mob)
 	. = ..()
 	var/mob/living/carbon/human/M = loc
@@ -247,13 +255,9 @@
 	//set the verb based on matching (or mismatching) outfits, and teleport the flag back to base if it was touched by the owning team
 	if(grabbing_team == laser_team)
 		user.visible_message(span_warning("[user] is returning \the [src]!"))
-		if(do_after(user, flag_return_delay, target = src))	//channel return, rather than instant
-			user.drop_from_inventory(src)
-			src.loc = src.start_pos
-			GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
-		else	//if they fail the channel (e.g. because they got tagged!) then drop it
-			user.drop_from_inventory(src)
-			return
+		//channel return, rather than instant; if they fail the channel (e.g. because they got tagged!) then drop it
+		om_do_after(user, flag_return_delay, src, src, PROC_REF(flag_returned), list(user), IGNORE_TARGET_LOC_CHANGE, PROC_REF(flag_return_failed), list(user))
+		return
 	else
 		user.visible_message(span_warning("[user] has taken \the [src]!"))
 		GLOB.global_announcer.autosay("[src] taken by [capitalize(grabbing_team)] team!","Laserdome Announcer","Entertainment")

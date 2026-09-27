@@ -273,11 +273,15 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 /datum/game_mode/proc/cleanup()	//This is called when the round has ended but not the game, if any cleanup would be necessary in that case.
 	return
 
+/// One antagonist summary a second, then the completion declaration.
 /datum/game_mode/proc/declare_antag_goals()
-	for(var/datum/antagonist/antag in antag_templates)
-		sleep(10)
-		antag.check_victory()
-		antag.print_player_summary()
+	om_stagger(src, antag_templates, 1 SECOND, PROC_REF(declare_antag_goal), 1, null, PROC_REF(finish_antag_goals))
+
+/datum/game_mode/proc/declare_antag_goal(datum/antagonist/antag)
+	antag.check_victory()
+	antag.print_player_summary()
+
+/datum/game_mode/proc/finish_antag_goals()
 	addtimer(CALLBACK(src, PROC_REF(finish_completion_declatration)), 1 SECOND)
 
 /datum/game_mode/proc/declare_completion()

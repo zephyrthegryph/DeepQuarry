@@ -658,7 +658,7 @@
 	// ai_log("vr/EatTarget() [M]",2) // AI TEMPORARY REMOVAL
 	// stop_automated_movement = 1 // AI TEMPORARY REMOVAL
 	var/old_target = M
-	if(ai_brain) ai_brain.busy = 1 // AI TEMPORARY EDIT
+	if(ai_brain) om_flag_hold(ai_brain, "busy") // AI TEMPORARY EDIT
 	. = animal_nom(M)
 	playsound(src, swallowsound, 50, 1)
 	update_icon()
@@ -924,9 +924,9 @@
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	playsound(src, 'sound/effects/bodyfall1.ogg', 50, 1)
 	pixel_y = default_pixel_y
+	om_after(src, 5, PROC_REF(leap_land), T)
 
-	sleep(5)
-
+/mob/living/simple_mob/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) status_flags &= ~LEAPING
 
 	if(!Adjacent(T))

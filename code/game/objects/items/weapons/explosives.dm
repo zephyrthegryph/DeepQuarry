@@ -64,21 +64,25 @@
 	to_chat(user, "Planting explosives...")
 	user.do_attack_animation(target)
 
-	if(do_after(user, 5 SECONDS, target = target) && in_range(user, target))
-		user.drop_item()
-		src.target = target
-		loc = null
+	om_do_after(user, 5 SECONDS, target = target, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(target, user))
 
-		if (ismob(target))
-			add_attack_logs(user, target, "planted [name] on with [timer] second fuse")
-			user.visible_message(span_danger("[user.name] finished planting an explosive on [target.name]!"))
-		else
-			message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
-			log_game("[key_name(user)] planted [src.name] on [target.name] at ([target.x],[target.y],[target.z]) with [timer] second fuse")
+/obj/item/plastique/proc/afterattack_timed_done(atom/movable/target, mob/user)
+	if(!(in_range(user, target)))
+		return
+	user.drop_item()
+	src.target = target
+	loc = null
 
-		target.add_overlay(image_overlay)
-		to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
-		om_after(src, timer SECONDS, PROC_REF(explode), get_turf(target))
+	if (ismob(target))
+		add_attack_logs(user, target, "planted [name] on with [timer] second fuse")
+		user.visible_message(span_danger("[user.name] finished planting an explosive on [target.name]!"))
+	else
+		message_admins("[key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) planted [src.name] on [target.name] at ([target.x],[target.y],[target.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[target.x];Y=[target.y];Z=[target.z]'>JMP</a>) with [timer] second fuse")
+		log_game("[key_name(user)] planted [src.name] on [target.name] at ([target.x],[target.y],[target.z]) with [timer] second fuse")
+
+	target.add_overlay(image_overlay)
+	to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
+	om_after(src, timer SECONDS, PROC_REF(explode), get_turf(target))
 
 /obj/item/plastique/proc/explode(location)
 	if(!target)

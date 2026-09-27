@@ -27,23 +27,16 @@
 
 /datum/material/resin/wall_touch_special(turf/simulated/wall/W, mob/living/L)
 	var/mob/living/carbon/M = L
-	if(istype(M) && locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+	if(istype(M) && ((locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs) || (locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)))
 		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
 		playsound(W, 'sound/effects/attackblob.ogg', 50, 1)
-		if(!do_after(L, 5 SECONDS, target = W))
-			return FALSE
-		playsound(W, 'sound/effects/attackblob.ogg', 100, 1)
-		W.dismantle_wall()
-		return TRUE
-	if(istype(M) && locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)
-		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
-		playsound(W, 'sound/effects/attackblob.ogg', 50, 1)
-		if(!do_after(L, 5 SECONDS, target = W))
-			return FALSE
-		playsound(W, 'sound/effects/attackblob.ogg', 100, 1)
-		W.dismantle_wall()
+		om_do_after(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))
 		return TRUE
 	return FALSE
+
+/proc/resin_wall_dissolve(turf/simulated/wall/W)
+	playsound(W, 'sound/effects/attackblob.ogg', 100, 1)
+	W.dismantle_wall()
 
 /datum/material/resin/generate_recipes()
 	recipes = list(

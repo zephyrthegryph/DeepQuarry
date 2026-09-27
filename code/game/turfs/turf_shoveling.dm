@@ -7,26 +7,28 @@
 		return
 
 	// Loot and garden digging
-	if(use_tool(user, our_shovel, src, delay = 3 SECONDS, volume = 0, message_self = "\The [user] begins digging into \the [src] with \the [our_shovel]."))
-		if(shovel_can_cultivate() && !(locate(/obj/machinery/portable_atmospherics/hydroponics/soil) in contents) && !(locate(/obj/structure/closet/grave/dirthole) in contents))
-			var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = new(src)
-			user.visible_message(span_notice("\The [src] digs \a [soil] into \the [src]."))
-			return
+	use_tool(user, our_shovel, src, delay = 3 SECONDS, volume = 0, message_self = "\The [user] begins digging into \the [src] with \the [our_shovel].", receiver = src, on_done = PROC_REF(handle_turf_dig_tool_done), done_args = list(user, our_shovel))
 
-		// Spawn loot
-		if(dig_exhaustion_chance >= TURF_DIG_LOOT_EXHAUSTED)
-			to_chat(user, span_warning("There is nothing more to be found in \the [src]."))
-			return
-		var/loot_type = get_dig_loot_type(user, our_shovel)
-		if(!loot_type)
-			to_chat(user, span_notice("You didn't find anything of note in \the [src]."))
-			return
-		var/obj/item/loot = new loot_type(src)
-		to_chat(user, span_notice("You dug up \a [loot]!"))
+/turf/proc/handle_turf_dig_tool_done(mob/user, obj/item/shovel/our_shovel)
+	if(shovel_can_cultivate() && !(locate(/obj/machinery/portable_atmospherics/hydroponics/soil) in contents) && !(locate(/obj/structure/closet/grave/dirthole) in contents))
+		var/obj/machinery/portable_atmospherics/hydroponics/soil/soil = new(src)
+		user.visible_message(span_notice("\The [src] digs \a [soil] into \the [src]."))
+		return
 
-		// Check if we should be exhausted of loot
-		if(dig_exhaustion_chance && prob(dig_exhaustion_chance))
-			dig_exhaustion_chance = TURF_DIG_LOOT_EXHAUSTED
+	// Spawn loot
+	if(dig_exhaustion_chance >= TURF_DIG_LOOT_EXHAUSTED)
+		to_chat(user, span_warning("There is nothing more to be found in \the [src]."))
+		return
+	var/loot_type = get_dig_loot_type(user, our_shovel)
+	if(!loot_type)
+		to_chat(user, span_notice("You didn't find anything of note in \the [src]."))
+		return
+	var/obj/item/loot = new loot_type(src)
+	to_chat(user, span_notice("You dug up \a [loot]!"))
+
+	// Check if we should be exhausted of loot
+	if(dig_exhaustion_chance && prob(dig_exhaustion_chance))
+		dig_exhaustion_chance = TURF_DIG_LOOT_EXHAUSTED
 
 /turf/proc/shovel_dig_grave(mob/user, obj/item/shovel/our_shovel)
 	if(length(contents))
@@ -36,10 +38,12 @@
 	to_chat(user, span_notice("\The [user] begins digging into \the [src] with \the [our_shovel]."))
 	var/delay = (5 SECONDS * our_shovel.toolspeed)
 	user.setClickCooldown(delay)
-	if(do_after(user, delay, target = src))
-		if(!(locate(/obj/structure/closet/grave/dirthole) in contents))
-			new /obj/structure/closet/grave/dirthole(src)
-		to_chat(user, span_notice("You dug up a hole!"))
+	om_do_after(user, delay, src, src, PROC_REF(grave_dug), list(user))
+
+/turf/proc/grave_dug(mob/user)
+	if(!(locate(/obj/structure/closet/grave/dirthole) in contents))
+		new /obj/structure/closet/grave/dirthole(src)
+	to_chat(user, span_notice("You dug up a hole!"))
 
 /// If a turf has any loot when dug with a shovel
 /turf/proc/get_dig_loot_type(mob/user, obj/item/W)

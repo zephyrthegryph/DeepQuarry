@@ -364,7 +364,7 @@
 			)
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A)
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	do_windup_animation(A, 20)
 	addtimer(CALLBACK(src, PROC_REF(chargeend), A), 20)
 
@@ -477,18 +477,25 @@
 	visible_message(span_warning("\The [src] calls for help!"))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	sleep(2.0 SECONDS)
+	om_after(src, 2.0 SECONDS, PROC_REF(summon_combo_1))
+
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_1()
 	visible_message(span_warning("\The [src] calls for help!"))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	sleep(1.5 SECONDS)
+	om_after(src, 1.5 SECONDS, PROC_REF(summon_combo_2))
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_2()
 	visible_message(span_warning("\The [src] calls for help!"))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	sleep(1.0 SECONDS)
+	om_after(src, 1.0 SECONDS, PROC_REF(summon_combo_3))
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_3()
 	visible_message(span_warning("\The [src] calls for help!"))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
@@ -496,7 +503,9 @@
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	visible_message(span_warning("\The [src] begins to heal!"))
-	sleep(3.5 SECONDS)
+	om_after(src, 3.5 SECONDS, PROC_REF(summon_combo_4))
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_4()
 	mend(TREAT_TISSUE_REPAIR, 35)
 	mend(TREAT_BURN_CARE, 35)
 	mend(TREAT_ANTITOXIN, 35)
@@ -504,36 +513,26 @@
 	mend(TREAT_GENETIC_REPAIR, 35)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_combo(atom/target)
-	if(prob(50))
-		sleep(0.5 SECONDS)
-		var/obj/item/projectile/P = new /obj/item/projectile/arc/fragmentation/cherrybomb(get_turf(src))
-		P.launch_projectile(target, BP_TORSO, src)
-		if(prob(50))
-			sleep(0.5 SECONDS)
-			new /obj/random/mob/candycritter (src.loc)
-			new /obj/random/mob/candycritter (src.loc)
-			new /obj/random/mob/candycritter (src.loc)
-		else
-			sleep(0.5 SECONDS)
-			var/obj/item/projectile/V = new /obj/item/projectile/bullet/cmblast(get_turf(src))
-			V.launch_projectile(target, BP_TORSO, src)
+	var/first = prob(50) ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast
+	var/second = prob(50) ? "critters" : (first == /obj/item/projectile/bullet/cmblast ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast)
+	om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, first, second)
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_shot(atom/target, shot, next_shot)
+	if(shot == "critters")
+		new /obj/random/mob/candycritter (src.loc)
+		new /obj/random/mob/candycritter (src.loc)
+		new /obj/random/mob/candycritter (src.loc)
 	else
-		sleep(0.5 SECONDS)
-		var/obj/item/projectile/A = new /obj/item/projectile/bullet/cmblast(get_turf(src))
-		A.launch_projectile(target, BP_TORSO, src)
-		if(prob(50))
-			sleep(0.5 SECONDS)
-			var/obj/item/projectile/B = new /obj/item/projectile/arc/fragmentation/cherrybomb(get_turf(src))
-			B.launch_projectile(target, BP_TORSO, src)
-		else
-			sleep(0.5 SECONDS)
-			new /obj/random/mob/candycritter (src.loc)
-			new /obj/random/mob/candycritter (src.loc)
-			new /obj/random/mob/candycritter (src.loc)
+		var/obj/item/projectile/P = new shot(get_turf(src))
+		P.launch_projectile(target, BP_TORSO, src)
+	if(next_shot)
+		om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, next_shot, null)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_combo(atom/target)
 	visible_message(span_warning("\The [src] prepares to let out a thunderous roar!"))
-	sleep(2.5 SECONDS)
+	om_after(src, 2.5 SECONDS, PROC_REF(debuff_roar), target)
+
+/mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_roar(atom/target)
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
 		G.throw_at(G.throw_range, G.throw_speed, src)
@@ -545,8 +544,7 @@
 	else
 		var/obj/item/projectile/P = new /obj/item/projectile/bullet/cmblast(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
-		sleep(0.5)
-		P.launch_projectile(target, BP_TORSO, src)
+		om_after(P, 0.5, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), target, BP_TORSO, src)
 
 
 /obj/random/mob/candycritter

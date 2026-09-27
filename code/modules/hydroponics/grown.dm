@@ -264,8 +264,7 @@
 			return
 		reagents.remove_any(rand(1,3))
 		seed.thrown_at(src, target)
-		sleep(-1)
-		if(!src)
+		if(QDELETED(src))
 			return
 		if(prob(35))
 			if(user)
@@ -286,8 +285,8 @@
 	if(IS_HARMING(user))
 		user.visible_message(span_danger("\The [user] squashes \the [src]!"))
 		seed.thrown_at(src,user)
-		sleep(-1)
-		if(src) qdel(src)
+		if(!QDELETED(src))
+			qdel(src)
 		return
 
 	if(seed.kitchen_tag == PLANT_GRASS)

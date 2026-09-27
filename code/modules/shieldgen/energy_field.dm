@@ -88,7 +88,6 @@
 /obj/effect/energy_field/handle_meteor_impact(obj/effect/meteor/meteor)
 	var/penetrated = TRUE
 	adjust_strength(-max((meteor.wall_power * meteor.hits) / 800, 0)) // One renwick (strength var) equals one r-wall for the purposes of meteor-stopping.
-	sleep(1)
 	if(density) // Check if we're still up.
 		penetrated = FALSE
 		explosion(meteor.loc, 0, 0, 0, 0, 0, 0, 0) // For the sound effect.

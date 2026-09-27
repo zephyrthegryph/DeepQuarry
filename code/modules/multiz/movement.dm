@@ -59,11 +59,8 @@
 			var/pull_up_time = max((3 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 			to_chat(src, span_notice("You start diving underwater..."))
 			src.audible_message(span_notice("[src] begins to dive under the water."), runemessage = "splish splosh")
-			if(do_after(src, pull_up_time, target = src))
-				to_chat(src, span_notice("You reach the sea floor."))
-			else
-				to_chat(src, span_warning("You stopped swimming downwards."))
-				return 0
+			om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You reach the sea floor."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You stopped swimming downwards.")))
+			return 0
 
 		else if(!destination.CanZPass(src, direction)) // one for the down and non-special case
 			to_chat(src, span_warning("\The [destination] blocks your way."))
@@ -84,21 +81,15 @@
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
 				to_chat(src, span_notice("You grab \the [lattice] and start pulling yourself upward..."))
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				if(do_after(src, pull_up_time, target = src))
-					to_chat(src, span_notice("You pull yourself up."))
-				else
-					to_chat(src, span_warning("You gave up on pulling yourself up."))
-					return 0
+				om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You pull yourself up."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You gave up on pulling yourself up.")))
+				return 0
 
 			else if(isdiveablewater(destination))
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 				to_chat(src, span_notice("You start swimming upwards..."))
 				src.audible_message(span_notice("[src] begins to swim towards the surface."), runemessage = "splish splosh")
-				if(do_after(src, pull_up_time, target = src))
-					to_chat(src, span_notice("You reach the surface."))
-				else
-					to_chat(src, span_warning("You stopped swimming upwards."))
-					return 0
+				om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You reach the surface."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You stopped swimming upwards.")))
+				return 0
 
 			else if(catwalk?.hatch_open)
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
@@ -109,11 +100,8 @@
 					to_chat(src, span_notice("There's something in the way up above in that direction, try another."))
 					return 0
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				if(do_after(src, pull_up_time, target = src))
-					to_chat(src, span_notice("You pull yourself up."))
-				else
-					to_chat(src, span_warning("You gave up on pulling yourself up."))
-					return 0
+				om_do_after(src, pull_up_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You pull yourself up."), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You gave up on pulling yourself up.")))
+				return 0
 
 			// Explicit check if the destination turf allows full passing
 			else if(!destination.CanZPass(src, direction))
@@ -130,11 +118,8 @@
 					var/fly_time = max(7 SECONDS + (H.movement_delay() * 10), 1) //So it's not too useful for combat. Could make this variable somehow, but that's down the road.
 					to_chat(src, span_notice("You begin to fly upwards..."))
 					H.audible_message(span_notice("[H] begins to flap \his wings, preparing to move upwards!"), runemessage = "flap flap")
-					if(do_after(H, fly_time, target = src) && H.flying)
-						to_chat(src, span_notice("You fly upwards."))
-					else
-						to_chat(src, span_warning("You stopped flying upwards."))
-						return 0
+					om_do_after(H, fly_time, src, src, PROC_REF(zmove_timed_done), list(direction, start, destination, "You fly upwards.", TRUE), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(src, span_warning("You stopped flying upwards.")))
+					return 0
 				else
 					to_chat(src, span_warning("Gravity stops you from moving upward."))
 					return 0 // .
@@ -143,6 +128,21 @@
 				to_chat(src, span_warning("Gravity stops you from moving upward."))
 				return 0
 
+	return zmove_finish(direction, start, destination)
+
+/// A timed z-move (diving, climbing, swimming, flying) completed: move.
+/mob/proc/zmove_timed_done(direction, turf/start, turf/destination, message, needs_flight)
+	if(needs_flight)
+		var/mob/living/H = src
+		if(!istype(H) || !H.flying)
+			to_chat(src, span_warning("You stopped flying upwards."))
+			return
+	to_chat(src, span_notice(message))
+	if(zmove_finish(direction, start, destination))
+		to_chat(src, span_notice(direction == UP ? "You move upwards." : "You move down."))
+
+/// The end of a z-move: blockers at the destination, then the move and whatever is pulled along.
+/mob/proc/zmove_finish(direction, turf/start, turf/destination)
 	for(var/atom/A in destination)
 		if(!A.CanPass(src, start, 1.5, 0))
 			to_chat(src, span_warning("\The [A] blocks you."))
@@ -870,26 +870,31 @@
 			fall_chance = 30
 	L.visible_message(message = span_infoplain(span_bold("[L]") + " begins to climb up on " + span_bold("\The [src]")), self_message = span_infoplain("You begin to clumb up on " + span_bold("\The [src]")), \
 		blind_message = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
-	var/oops_time = world.time
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	if(do_after(L, climb_time, target = src))
-		if(prob(fall_chance))
-			L.forceMove(above_mob)
-			L.visible_message(message = span_infoplain(span_bold("[L]") + " falls off " + span_bold("\The [src]")), self_message = span_danger("You slipped off " + span_bold("\The [src]")), \
-				blind_message = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
-		else
-			if(drop_our_held)
-				L.drop_item(get_turf(L))
-			L.forceMove(above_wall)
-			L.visible_message(message = span_infoplain(span_bold("[L]") + " climbed up on " + span_bold("\The [src]")),	\
-				self_message = span_notice("You successfully scaled " + span_bold("\The [src]")),	\
-				blind_message = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
-		L.adjust_nutrition(-nutrition_cost)
-	else if(world.time > (oops_time + grace_time))
+	om_do_after(L, climb_time, src, src, PROC_REF(climb_wall_done), list(L, above_mob, above_wall, fall_chance, drop_our_held, nutrition_cost), on_fail = PROC_REF(climb_wall_interrupted), fail_args = list(L, above_mob, world.time + grace_time))
+
+/turf/simulated/proc/climb_wall_done(mob/living/L, turf/above_mob, turf/above_wall, fall_chance, drop_our_held, nutrition_cost)
+	if(prob(fall_chance))
 		L.forceMove(above_mob)
 		L.visible_message(message = span_infoplain(span_bold("[L]") + " falls off " + span_bold("\The [src]")), self_message = span_danger("You slipped off " + span_bold("\The [src]")), \
 			blind_message = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
+	else
+		if(drop_our_held)
+			L.drop_item(get_turf(L))
+		L.forceMove(above_wall)
+		L.visible_message(message = span_infoplain(span_bold("[L]") + " climbed up on " + span_bold("\The [src]")),	\
+			self_message = span_notice("You successfully scaled " + span_bold("\The [src]")),	\
+			blind_message = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
+	L.adjust_nutrition(-nutrition_cost)
+
+/// Interrupted past the grace time: the climber falls.
+/turf/simulated/proc/climb_wall_interrupted(mob/living/L, turf/above_mob, fall_after)
+	if(!L || world.time <= fall_after)
+		return
+	L.forceMove(above_mob)
+	L.visible_message(message = span_infoplain(span_bold("[L]") + " falls off " + span_bold("\The [src]")), self_message = span_danger("You slipped off " + span_bold("\The [src]")), \
+		blind_message = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
 
 /mob/living/verb/climb_down()
 	set name = "Climb down wall"
@@ -993,23 +998,28 @@
 		self_message = span_infoplain("You begin to descend " + span_bold("\The [below_wall]")), 	\
 		blind_message = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
-	var/oops_time = world.time
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	if(do_after(src, climb_time, target = src))
-		if(prob(fall_chance))
-			src.forceMove(front_of_us)
-			src.visible_message(message = span_infoplain(span_bold("[src]") + " falls off " + span_bold("\The [below_wall]")), \
-				self_message = span_danger("You slipped off " + span_bold("\The [below_wall]")), \
-				blind_message = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
-		else
-			src.forceMove(destination)
-			src.visible_message(message = span_infoplain(span_bold("[src]") + " climbed down on " + span_bold("\The [below_wall]")),	\
-				self_message = span_notice("You successfully descended " + span_bold("\The [below_wall]")),	\
-				blind_message = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
-		adjust_nutrition(-nutrition_cost)
-	else if(world.time > (oops_time + grace_time))
+	om_do_after(src, climb_time, src, src, PROC_REF(climb_down_done), list(front_of_us, destination, below_wall, fall_chance, nutrition_cost), on_fail = PROC_REF(climb_down_interrupted), fail_args = list(front_of_us, below_wall, world.time + grace_time))
+
+/mob/living/proc/climb_down_done(turf/front_of_us, turf/destination, turf/below_wall, fall_chance, nutrition_cost)
+	if(prob(fall_chance))
 		src.forceMove(front_of_us)
 		src.visible_message(message = span_infoplain(span_bold("[src]") + " falls off " + span_bold("\The [below_wall]")), \
 			self_message = span_danger("You slipped off " + span_bold("\The [below_wall]")), \
 			blind_message = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")
+	else
+		src.forceMove(destination)
+		src.visible_message(message = span_infoplain(span_bold("[src]") + " climbed down on " + span_bold("\The [below_wall]")),	\
+			self_message = span_notice("You successfully descended " + span_bold("\The [below_wall]")),	\
+			blind_message = span_infoplain("The sounds of climbing cease."), runemessage = "Tap Tap")
+	adjust_nutrition(-nutrition_cost)
+
+/// Interrupted past the grace time: the climber falls.
+/mob/living/proc/climb_down_interrupted(turf/front_of_us, turf/below_wall, fall_after)
+	if(world.time <= fall_after)
+		return
+	src.forceMove(front_of_us)
+	src.visible_message(message = span_infoplain(span_bold("[src]") + " falls off " + span_bold("\The [below_wall]")), \
+		self_message = span_danger("You slipped off " + span_bold("\The [below_wall]")), \
+		blind_message = span_infoplain("you hear a loud thud!"), runemessage = "CRASH!")

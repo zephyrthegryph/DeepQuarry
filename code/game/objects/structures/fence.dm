@@ -97,18 +97,22 @@
 		to_chat(user, span_notice("This fence has too much cut out of it already."))
 		return TRUE
 	user.visible_message(span_danger("\The [user] starts cutting through \the [src] with \the [W]."), span_danger("You start cutting through \the [src] with \the [W]."))
-	if(use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50) && current_stage == hole_size)
-		switch(++hole_size)
-			if(MEDIUM_HOLE)
-				visible_message(span_notice("\The [user] cuts into \the [src] some more."))
-				to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
-				AddElement(/datum/element/climbable)
-			if(LARGE_HOLE)
-				visible_message(span_notice("\The [user] completely cuts through \the [src]."))
-				to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
-				RemoveElement(/datum/element/climbable)
-		update_cut_status()
+	use_tool(user, W, src, delay = CUT_TIME, quality = TOOL_WIRECUTTER, volume = 50, receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, current_stage))
 	return TRUE
+
+/obj/structure/fence/proc/wirecutter_act_tool_done(mob/user, current_stage)
+	if(!(current_stage == hole_size))
+		return
+	switch(++hole_size)
+		if(MEDIUM_HOLE)
+			visible_message(span_notice("\The [user] cuts into \the [src] some more."))
+			to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
+			AddElement(/datum/element/climbable)
+		if(LARGE_HOLE)
+			visible_message(span_notice("\The [user] completely cuts through \the [src]."))
+			to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
+			RemoveElement(/datum/element/climbable)
+	update_cut_status()
 
 /obj/structure/fence/Bumped(AM)
 	. = ..()
@@ -195,14 +199,16 @@
 		else
 			to_chat(user, span_notice("You start to [L.pick_verb] the lock on \the [src]..."))
 			playsound(src, keysound,100, 1)
-			if(do_after(user, L.pick_time * lock_difficulty, target = src))
-				to_chat(user, span_notice("Success!"))
-				locked = FALSE
+			om_do_after(user, L.pick_time * lock_difficulty, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return
 
 	else
 		attack_hand(user)
 	return
+
+/obj/structure/fence/door/proc/attackby_timed_done(mob/user)
+	to_chat(user, span_notice("Success!"))
+	locked = FALSE
 
 /obj/structure/fence/door/attack_ai(mob/user as mob)
 	if(isAI(user)) //so the AI can't open it

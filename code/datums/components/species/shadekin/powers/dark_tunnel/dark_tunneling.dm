@@ -30,7 +30,8 @@
 	smoke.set_up(10, 0, T)
 	smoke.start()
 	actor.visible_message(span_notice("[actor] begins pulling dark energies around themselves."))
-	return do_after(actor, DARK_TUNNEL_CHANNEL_TIME, target = actor)
+	var/started = om_do_after(actor, DARK_TUNNEL_CHANNEL_TIME, actor, src, PROC_REF(cost_paid), list(actor, target, held))
+	return istext(started) ? FALSE : USE_TOOL_PENDING
 
 /mob/living/proc/dq_pred_no_dark_tunnel_yet(mob/living/actor, atom/target, obj/item/held)
 	var/datum/component/shadekin/SK = actor.get_shadekin_component()

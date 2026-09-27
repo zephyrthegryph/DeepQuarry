@@ -141,7 +141,6 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 
 		if(ticksleft > 1e5)
 			GLOB.prison_shuttle_time = world.timeofday + 10	// midnight rollover
-
 		GLOB.prison_shuttle_timeleft = (ticksleft / 10)
 		om_after(src, 5, PROC_REF(prison_process))
 		return

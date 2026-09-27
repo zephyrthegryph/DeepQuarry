@@ -615,6 +615,13 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	return
 
 //I am the icon meister. Bow fefore me.	//>fefore
+/mob/living/silicon/ai/proc/hologram_from_dummy(mob/living/carbon/human/dummy/dummy)
+	dummy.regenerate_icons()
+	var/new_holo = getHologramIcon(getCompoundIcon(dummy))
+	qdel(holo_icon)
+	qdel(dummy)
+	holo_icon = new_holo
+
 /mob/living/silicon/ai/proc/ai_hologram_change()
 	set name = "Change Hologram"
 	set desc = "Change the default hologram available to AI to something else."
@@ -662,13 +669,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 					var/mob/living/carbon/human/dummy/dummy = new ()
 					//This doesn't include custom_items because that's ... hard.
 					client.prefs.dress_preview_mob(dummy)
-					sleep(1 SECOND) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
-					dummy.regenerate_icons()
-
-					var/new_holo = getHologramIcon(getCompoundIcon(dummy))
-					qdel(holo_icon)
-					qdel(dummy)
-					holo_icon = new_holo
+					om_after(src, 1 SECOND, PROC_REF(hologram_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 
 				else //A premade from the dmi
 					var/icon_list[] = list(
@@ -811,12 +812,17 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 	if(user == deployed_shell)
 		to_chat(user, span_notice("The shell's subsystems resist your efforts to tamper with your bolts."))
 		return ITEM_INTERACT_BLOCKING
-	if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, message_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating..."))
-		user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, message_others = "\The [user] starts to [anchored ? "unbolt" : "bolt"] \the [src] [anchored ? "from" : "to"] the plating...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed), fail_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
 	anchored = !anchored
 	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
 	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/ai/proc/wrench_act_tool_failed(mob/user)
+	user.visible_message(span_notice("\The [user] decides not to [anchored ? "unbolt" : "bolt"] \the [src]."))
+	return ITEM_INTERACT_BLOCKING
 
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"

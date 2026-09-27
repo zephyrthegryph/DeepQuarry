@@ -89,7 +89,7 @@
 			user.status_at_least(EFFECT_WEAKENED, 5) //They get tackled anyway whether they're edible or not.
 			user.visible_message(span_danger("[user] swats [src] with [O] and promptly gets tackled!"))
 			if(will_eat(user))
-				if(ai_brain) ai_brain.busy = TRUE
+				if(ai_brain) om_flag_hold(ai_brain, "busy")
 				animal_nom(user)
 				update_icon()
 				if(ai_brain) ai_brain.busy = FALSE
@@ -127,11 +127,13 @@
 	var/missing = round((1 - vitality()) * get_endurance()) // re-read after the input prompt
 	heal_amount = CLAMP(heal_amount, 1, max(1, missing))
 	heal_amount = CLAMP(heal_amount, 1, nutrition / 10)
-	if(do_after (src, 10 * heal_amount))
-		nutrition -= 10 * heal_amount
-		// Spend the budget mechanism by mechanism, in the old brute > burn > oxy > tox > clone order.
-		// Plating/wiring cover synthetic bodies; the body ignores tags that don't match its biology.
-		for(var/treat_tag in list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_OXYGENATION, TREAT_ANTITOXIN, TREAT_GENETIC_REPAIR))
-			if(heal_amount <= 0)
-				break
-			heal_amount -= mend(treat_tag, heal_amount)
+	om_do_after(src, 10 * heal_amount, null, src, PROC_REF(nutrition_heal_done), list(heal_amount))
+
+/mob/living/simple_mob/proc/nutrition_heal_done(heal_amount)
+	nutrition -= 10 * heal_amount
+	// Spend the budget mechanism by mechanism, in the old brute > burn > oxy > tox > clone order.
+	// Plating/wiring cover synthetic bodies; the body ignores tags that don't match its biology.
+	for(var/treat_tag in list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR, TREAT_BURN_CARE, TREAT_WIRING_REPAIR, TREAT_OXYGENATION, TREAT_ANTITOXIN, TREAT_GENETIC_REPAIR))
+		if(heal_amount <= 0)
+			break
+		heal_amount -= mend(treat_tag, heal_amount)

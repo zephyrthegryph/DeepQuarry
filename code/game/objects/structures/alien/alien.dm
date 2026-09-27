@@ -48,13 +48,15 @@
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return
 				if(locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)
-					if(!do_after(M, 3 SECONDS, src))
-						return
-					visible_message (span_warning("[usr] strokes the [name] and it melts away!"), 1)
-					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
+					om_do_after(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
 					return
 			visible_message(span_warning("[usr] claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)
+	return
+
+/obj/structure/alien/proc/attack_hand_timed_done(mob/usr_mob)
+	visible_message (span_warning("[usr_mob] strokes the [name] and it melts away!"), 1)
+	take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 	return
 
 /obj/structure/alien/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)

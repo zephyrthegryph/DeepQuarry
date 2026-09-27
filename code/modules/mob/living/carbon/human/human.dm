@@ -1237,11 +1237,14 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return
 
 	to_chat(usr, span_filter_notice("You must[self ? "" : " both"] remain still until counting is finished."))
-	if(do_after(usr, 6 SECONDS, src))
-		var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
-		to_chat(usr,message)
-	else
-		to_chat(usr, span_warning("You failed to check the pulse. Try again."))
+	om_do_after(usr, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(check_pulse_human_done), done_args = list(self, usr), on_fail = PROC_REF(check_pulse_human_failed), fail_args = list(self, usr))
+
+/mob/living/carbon/human/proc/check_pulse_human_done(self, mob/usr_mob)
+	var/message = span_notice("[self ? "Your" : "[src]'s"] pulse is [src.get_pulse(GETPULSE_HAND)].")
+	to_chat(usr_mob,message)
+
+/mob/living/carbon/human/proc/check_pulse_human_failed(self, mob/usr_mob)
+	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
 /mob/living/carbon/human/proc/set_species(new_species)
 
@@ -1580,8 +1583,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	else
 		to_chat(U, span_warning("You begin to relocate [S]'s [current_limb.joint]..."))
 
-	if(!do_after(U, 3 SECONDS, target = src))
-		return
+	om_do_after(U, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(relocate_human_done), done_args = list(S, U, self, current_limb))
+	return TRUE
+
+/mob/living/carbon/human/proc/relocate_human_done(mob/S, mob/U, self, obj/item/organ/external/current_limb)
 	if(!current_limb || !S || !U)
 		return
 

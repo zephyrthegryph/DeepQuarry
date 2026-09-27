@@ -35,11 +35,10 @@
 
 /datum/beam/proc/Start()
 	Draw()
-	Tick()
+	om_after(src, sleep_time, PROC_REF(beam_tick))
 
-/// Every sleep_time: redraws the beam if either end moved, and ends it once it is finished,
-/// timed out, out of range or across z-levels.
-/datum/beam/proc/Tick()
+/// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
+/datum/beam/proc/beam_tick()
 	if(finished || !origin || !target || world.time >= endtime || get_dist(origin,target) >= max_distance || origin.z != target.z)
 		qdel(src)
 		return
@@ -50,7 +49,7 @@
 		target_oldloc = target_turf
 		Reset()
 		Draw()
-	om_after(src, sleep_time, PROC_REF(Tick))
+	om_after(src, sleep_time, PROC_REF(beam_tick))
 
 /datum/beam/proc/End()
 	finished = TRUE

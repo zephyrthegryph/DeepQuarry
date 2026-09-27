@@ -599,11 +599,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 /obj/machinery/cash_register/proc/toggle_anchors(obj/item/W, mob/user)
 	if(manipulating) return
 	manipulating = 1
-	if(!use_tool(user, W, src, delay = 2 SECONDS, volume = 50, \
-			message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", \
-			message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor."))
-		manipulating = 0
-		return
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, message_self = anchored ? "You begin unsecuring \the [src] from the floor." : "You begin securing \the [src] to the floor.", message_others = anchored ? "\The [user] begins unsecuring \the [src] from the floor." : "\The [user] begins securing \the [src] to the floor.", receiver = src, on_done = PROC_REF(toggle_anchors_tool_done), done_args = list(user), on_fail = PROC_REF(toggle_anchors_tool_failed), fail_args = list(user))
+	return TRUE
+
+/obj/machinery/cash_register/proc/toggle_anchors_tool_done(mob/user)
 	if(!anchored)
 		user.visible_message(span_notice("\The [user] has secured \the [src] to the floor."),
 							span_notice("You have secured \the [src] to the floor."))
@@ -611,6 +610,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		user.visible_message(span_warning("\The [user] has unsecured \the [src] from the floor."),
 							span_notice("You have unsecured \the [src] from the floor."))
 	anchored = !anchored
+	manipulating = 0
+	return
+
+/obj/machinery/cash_register/proc/toggle_anchors_tool_failed(mob/user)
 	manipulating = 0
 	return
 

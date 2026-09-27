@@ -89,39 +89,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 				to_chat(user, span_warning("Teleportation doesn't seem to work here."))
 				return
 			visible_message(span_warning("\The [user] starts glowing!"))
-			var/light_intensity = 2
-			var/time_left = 3
-			if(check_for_scepter())
-				time_left = 2
-			while(time_left)
-				if(user.incapacitated())
-					visible_message(span_notice("\The [user]'s glow fades."))
-					to_chat(user, span_danger("You cannot Recall while incapacitated!"))
-					return 0
-				light_intensity++
-				set_light(light_intensity, light_intensity, l_color = "#006AFF")
-				time_left--
-				sleep(1 SECOND)
-
-			var/turf/target_turf = marker.T // Multiple technomancer support
-			var/turf/old_turf = get_turf(user)
-
-			for(var/obj/item/grab/G in user.contents) // People the Technomancer is grabbing come along for the ride.
-				var/mob/living/grabbed = GRAB_TARGET(G)
-				if(grabbed)
-					grabbed.forceMove(locate( target_turf.x+rand(-1,1), target_turf.y+rand(-1,1), target_turf.z))
-					to_chat(grabbed, span_warning("You are teleported along with [user]!"))
-
-			user.forceMove(target_turf)
-			to_chat(user, span_notice("You are teleported to your Mark."))
-
-			playsound(target_turf, 'sound/effects/phasein.ogg', 25, 1)
-			playsound(target_turf, 'sound/effects/sparks2.ogg', 50, 1)
-
-			playsound(old_turf, 'sound/effects/sparks2.ogg', 50, 1)
-
-			adjust_instability(25)
-			qdel(src)
+			recall_glow(user, marker, check_for_scepter() ? 2 : 3, 3)
 			return 1
 	else
 		to_chat(user, span_warning("You can't afford the energy cost!"))
@@ -129,3 +97,33 @@ GLOBAL_LIST_INIT(mark_spells, list())
 
 /datum/technomancer_marker/proc/loop_animation()
 	I.icon_state = "spawn-wall-loop"
+
+/// The glow builds once a second for `time_left` seconds, then the Recall.
+/obj/item/spell/recall/proc/recall_glow(mob/living/user, datum/technomancer_marker/marker, time_left, light_intensity)
+	if(user.incapacitated())
+		visible_message(span_notice("\The [user]'s glow fades."))
+		to_chat(user, span_danger("You cannot Recall while incapacitated!"))
+		return
+	if(time_left > 0)
+		set_light(light_intensity, light_intensity, l_color = "#006AFF")
+		om_after(src, 1 SECOND, PROC_REF(recall_glow), user, marker, time_left - 1, light_intensity + 1)
+		return
+	var/turf/target_turf = marker.T // Multiple technomancer support
+	var/turf/old_turf = get_turf(user)
+
+	for(var/obj/item/grab/G in user.contents) // People the Technomancer is grabbing come along for the ride.
+		var/mob/living/grabbed = GRAB_TARGET(G)
+		if(grabbed)
+			grabbed.forceMove(locate( target_turf.x+rand(-1,1), target_turf.y+rand(-1,1), target_turf.z))
+			to_chat(grabbed, span_warning("You are teleported along with [user]!"))
+
+	user.forceMove(target_turf)
+	to_chat(user, span_notice("You are teleported to your Mark."))
+
+	playsound(target_turf, 'sound/effects/phasein.ogg', 25, 1)
+	playsound(target_turf, 'sound/effects/sparks2.ogg', 50, 1)
+
+	playsound(old_turf, 'sound/effects/sparks2.ogg', 50, 1)
+
+	adjust_instability(25)
+	qdel(src)

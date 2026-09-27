@@ -96,15 +96,16 @@
 	panel_open = !panel_open
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
 	update_icon()
-	if(do_after(user, 1.5 SECONDS, target = src))
-		to_chat(user, "You deconstruct the feeder.")
-		new /obj/item/stack/material/plastic(loc, 4)
-		if(beaker)
-			beaker.forceMove(get_turf(src))
-			beaker = null
-		qdel(src)
+	om_do_after(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/machinery/feeder/proc/screwdriver_act_timed_done(mob/user)
+	to_chat(user, "You deconstruct the feeder.")
+	new /obj/item/stack/material/plastic(loc, 4)
+	if(beaker)
+		beaker.forceMove(get_turf(src))
+		beaker = null
+	qdel(src)
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
 /obj/machinery/feeder/machine_step()

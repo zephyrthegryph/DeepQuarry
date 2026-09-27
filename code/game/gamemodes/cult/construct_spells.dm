@@ -516,24 +516,33 @@
 	var/obj/item/projectile/P = new projectile_type(get_turf(user))
 	return P
 
+/// TRUE to fire now. With a pre-shot delay the shot is a timed action that fires on completion.
 /obj/item/spell/construct/projectile/proc/set_up(atom/hit_atom, mob/living/user)
+	if(shot_ready)
+		return TRUE
 	if(!spell_projectile || !pay_energy(energy_cost_per_shot) || !owner)
 		return FALSE
 	if(!pre_shot_delay)
 		return TRUE
-	var/succeeded = FALSE
 
 	var/turf/T = get_turf(hit_atom)
 	var/image/target_image = image(icon = 'icons/obj/spells.dmi', icon_state = "target")
 
 	T.add_overlay(target_image)
+	var/list/shot = list(hit_atom, user, T, target_image)
+	om_do_after(user, pre_shot_delay, src, src, PROC_REF(delayed_shot), shot + TRUE, on_fail = PROC_REF(delayed_shot), fail_args = shot + FALSE)
+	return FALSE
 
-	if(do_after(user, pre_shot_delay, target = src))
-		succeeded = TRUE
+/obj/item/spell/construct/projectile/var/shot_ready = FALSE
 
-	T.cut_overlay(target_image)
+/obj/item/spell/construct/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, turf/T, image/target_image, fire)
+	T?.cut_overlay(target_image)
 	qdel(target_image)
-	return succeeded
+	if(!fire || !hit_atom || !user)
+		return
+	shot_ready = TRUE
+	on_ranged_cast(hit_atom, user)
+	shot_ready = FALSE
 
 /obj/item/spell/construct/spawner
 	name = "spawner template"
@@ -672,12 +681,16 @@
 		var/windup = cooldown
 		if(W.reinf_material)
 			windup = cooldown * 2
-		if(do_after(user, windup, target = src))
-			W.visible_message(span_danger("\The [user] [attack_message] \the [W], obliterating it!"))
-			W.dismantle_wall(1)
-		else
-			user.visible_message(span_bold("\The [user]") + " lowers its fist.")
-			return
+		om_do_after(user, windup, src, src, PROC_REF(slam_wall), list(user, W, attack_message), on_fail = PROC_REF(slam_lowered), fail_args = list(user))
+		return
+	qdel(src)
+
+/obj/item/spell/construct/slam/proc/slam_lowered(mob/living/user)
+	user?.visible_message(span_bold("\The [user]") + " lowers its fist.")
+
+/obj/item/spell/construct/slam/proc/slam_wall(mob/living/user, turf/simulated/wall/W, attack_message)
+	W.visible_message(span_danger("\The [user] [attack_message] \the [W], obliterating it!"))
+	W.dismantle_wall(1)
 	qdel(src)
 
 

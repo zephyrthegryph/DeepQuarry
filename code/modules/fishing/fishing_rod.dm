@@ -51,18 +51,21 @@
 	. = ..()
 	update_icon()
 
+/obj/item/material/fishing_rod/proc/string_done(mob/user, obj/item/stack/cable_coil/C)
+	if(strung || !C.use(5))
+		return
+	strung = TRUE
+	to_chat(user, span_notice("You string \the [src]!"))
+	update_icon()
+
 /obj/item/material/fishing_rod/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/stack/cable_coil) && !strung)
 		var/obj/item/stack/cable_coil/C = I
 		if(C.get_amount() < 5)
 			to_chat(user, span_warning("You do not have enough length in \the [C] to string this!"))
 			return
-		if(do_after(user, rand(10 SECONDS, 20 SECONDS), target = src))
-			C.use(5)
-			strung = TRUE
-			to_chat(user, span_notice("You string \the [src]!"))
-			update_icon()
-			return
+		om_do_after(user, rand(10 SECONDS, 20 SECONDS), src, src, PROC_REF(string_done), list(user, C))
+		return
 	else if(istype(I, bait_type))
 		if(Bait)
 			Bait.forceMove(get_turf(user))

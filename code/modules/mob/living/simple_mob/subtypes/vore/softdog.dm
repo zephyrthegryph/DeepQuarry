@@ -216,17 +216,20 @@
 		return ..()
 	if(IS_HELPING(M))
 		M.visible_message("[M] pets [src].", runemessage = "pets [src]")
-		if(do_after(M, 30 SECONDS, target = src))
-			faction = M.faction
-			revive()
-			sight = initial(sight)
-			see_in_dark = initial(see_in_dark)
-			see_invisible = initial(see_invisible)
-			update_icon()
-			visible_message("[src] stops playing dead.", runemessage = "[src] stops playing dead")
-		else
-			M.visible_message("The petting was interrupted!!!", runemessage = "The petting was interrupted")
+		om_do_after(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
 	return
+
+/mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_done(mob/living/carbon/human/M)
+	faction = M.faction
+	revive()
+	sight = initial(sight)
+	see_in_dark = initial(see_in_dark)
+	see_invisible = initial(see_invisible)
+	update_icon()
+	visible_message("[src] stops playing dead.", runemessage = "[src] stops playing dead")
+
+/mob/living/simple_mob/vore/woof/cass/proc/attack_hand_cass_failed(mob/living/carbon/human/M)
+	M.visible_message("The petting was interrupted!!!", runemessage = "The petting was interrupted")
 
 GLOBAL_VAR_INIT(woof_maximum, 0)
 GLOBAL_VAR_INIT(woof_current, 0)

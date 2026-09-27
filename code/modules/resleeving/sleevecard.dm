@@ -10,6 +10,15 @@
 /obj/item/paicard/sleevecard/attack_ghost(mob/user as mob)
 	return // No ghosts can invite, these are intended for sleevemates only
 
+/obj/item/paicard/sleevecard/proc/upload_mind_done(mob/user, obj/item/sleevemate/S, mind_name)
+	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind_name)
+	if(!db || pai)
+		return
+	var/datum/transhuman/mind_record/record = db.backed_up[mind_name]
+	to_chat(user, span_notice("You have successfully uploaded [mind_name] into \the [src]"))
+	sleeveInto(record)
+	S.clear_mind()
+
 /obj/item/paicard/sleevecard/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I,/obj/item/sleevemate))
 		var/obj/item/sleevemate/S = I
@@ -18,11 +27,7 @@
 			var/datum/transcore_db/db = SStranscore.db_by_mind_name(M.name)
 			if(db)
 				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
-				if(do_after(user, 8 SECONDS, target = src))
-					var/datum/transhuman/mind_record/record = db.backed_up[M.name]
-					to_chat(user, span_notice("You have successfully uploaded [M.name] into \the [src]"))
-					sleeveInto(record)
-					S.clear_mind()
+				om_do_after(user, 8 SECONDS, src, src, PROC_REF(upload_mind_done), list(user, S, M.name))
 			else
 				to_chat(user, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
 	else if(istype(I, /obj/item/card/emag))

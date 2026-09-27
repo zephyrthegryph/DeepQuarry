@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Convert sites to forceMove()
 # or the slot API (code/datums/containment/api.dm) and lower the count;
 # `python tools/ci/containment_lint.py --update` rewrites it.
-# Total: 605 sites in 284 files.
+# Total: 605 sites in 283 files.
 code/_helpers/refinery.dm 1
 code/_helpers/turfs.dm 2
 code/_helpers/unsorted.dm 7
@@ -233,8 +233,7 @@ code/modules/projectiles/guns/launcher/crossbow.dm 5
 code/modules/projectiles/guns/launcher/grenade_launcher.dm 2
 code/modules/projectiles/guns/launcher/rocket.dm 1
 code/modules/projectiles/guns/launcher/syringe_gun.dm 2
-code/modules/projectiles/guns/modular_guns.dm 1
-code/modules/projectiles/guns/projectile.dm 8
+code/modules/projectiles/guns/projectile.dm 9
 code/modules/projectiles/guns/projectile/contender.dm 1
 code/modules/projectiles/guns/projectile/dartgun.dm 2
 code/modules/projectiles/guns/projectile/pistol.dm 2

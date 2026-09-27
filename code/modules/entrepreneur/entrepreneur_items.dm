@@ -300,8 +300,11 @@
 	if(M.nutrition <= 100)
 		to_chat(user, span_notice("You are too hungry to exercise right now."))
 		return 0
-	if(!do_after(user, 3 SECONDS, target = src))
-		return 0
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
+	return 0
+
+/obj/item/entrepreneur/dumbbell/proc/exercise_done(mob/living/M)
+	var/mob/user = M
 	M.adjust_nutrition(-10)
 	to_chat(user, span_notice("You successfully perform a [src] exercise!"))
 	if(M.weight > 50)
@@ -430,9 +433,11 @@
 	if(!istype(W))
 		to_chat(user, span_notice("You need some sort of glass, bottle or cup to contact the spirit world."))
 		return 0
+	om_do_after(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
+	return 0
+
+/obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)
 	var/result = 0
-	if(!do_after(user, 3 SECONDS, target = src))
-		return 0
 	if(next_result)
 		result = next_result
 	else

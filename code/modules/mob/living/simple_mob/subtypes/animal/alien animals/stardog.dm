@@ -59,6 +59,17 @@
 	remove_verb(src, /mob/living/simple_mob/proc/set_name)
 	remove_verb(src, /mob/living/simple_mob/proc/set_desc)
 
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
+	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
+		to_chat(user, span_warning("\The [that_one] got away..."))
+		to_chat(that_one, span_notice("You got away!"))
+		return
+	var/prev_size = that_one.size_multiplier
+	that_one.resize(RESIZE_TINY, ignore_prefs = TRUE)
+	if(!that_one.attempt_to_scoop(user, ignore_size = TRUE))
+		that_one.resize(prev_size, ignore_prefs = TRUE)
+		return
+
 /mob/living/simple_mob/vore/overmap/stardog/attack_hand(mob/living/user)
 	if(!(user.pickup_pref && user.pickup_active))
 		return ..()
@@ -79,17 +90,9 @@
 	if(!that_one)
 		return ..()
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
-	if(!do_after(user, 3 SECONDS, target = src))
-		return ..()
-	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
-		to_chat(user, span_warning("\The [that_one] got away..."))
-		to_chat(that_one, span_notice("You got away!"))
-		return
-	var/prev_size = that_one.size_multiplier
-	that_one.resize(RESIZE_TINY, ignore_prefs = TRUE)
-	if(!that_one.attempt_to_scoop(user, ignore_size = TRUE))
-		that_one.resize(prev_size, ignore_prefs = TRUE)
-		return ..()
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
+	return TRUE
+
 
 /datum/om/stage/life/type_post/simple_mob/vore/overmap/stardog
 	of = /mob/living/simple_mob/vore/overmap/stardog
@@ -254,8 +257,10 @@
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	if(!do_after(src, 20 SECONDS, target = E))
-		return
+	om_do_after(src, 20 SECONDS, target = E, receiver = src, on_done = PROC_REF(eat_space_weather_stardog_done), done_args = list(E, nut, aff, mob, ore, tre, msg, heal, delet))
+	return TRUE
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/eat_space_weather_stardog_done(obj/effect/overmap/event/E, nut, aff, mob, ore, tre, msg, heal, delet)
 	to_chat(src, span_notice("[msg]"))
 	if(nut || aff)
 		adjust_nutrition(nut)
@@ -284,6 +289,13 @@
 	for(var/area/redgate/stardog/flesh_abyss/a in weather_areas)
 		if(istype(a, /area/redgate/stardog/flesh_abyss) && prob(chance))
 			a.spawn_treasure()
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_down_done(atom/our_dest)
+	visible_message(span_warning("\The [src] disappears!!!"))
+	stop_pulling()
+	forceMove(get_turf(our_dest))
+	adjust_nutrition(-1000)
+	visible_message(span_warning("\The [src] steps into the area as if from nowhere!"))
 
 /mob/living/simple_mob/vore/overmap/stardog/verb/transition()	//Don't ask how it works. I don't know. I didn't think about it. I just thought it would be cool.
 	set name = "Transition"
@@ -319,26 +331,23 @@
 			to_chat(src, span_warning("You decide not to transition."))
 			return
 		to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
-		if(!do_after(src, 15 SECONDS, target = src))
-			to_chat(src, span_warning("You were interrupted."))
-			return
-		visible_message(span_warning("\The [src] disappears!!!"))
-		stop_pulling()
-		forceMove(get_turf(our_dest))
-		adjust_nutrition(-1000)
-		visible_message(span_warning("\The [src] steps into the area as if from nowhere!"))
+		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
-		if(!do_after(src, 15 SECONDS, target = src))
-			to_chat(src, span_warning("You were interrupted."))
-			return
+		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
+		return
 
-		visible_message(span_warning("\The [src] disappears!!!"))
-		stop_pulling()
-		forceMove(get_turf(get_overmap_sector(z)))
-		adjust_nutrition(-500)
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_done()
 
+	visible_message(span_warning("\The [src] disappears!!!"))
+	stop_pulling()
+	forceMove(get_turf(get_overmap_sector(z)))
+	adjust_nutrition(-500)
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_stardog_failed()
+	to_chat(src, span_warning("You were interrupted."))
+	return
 
 /obj/effect/overmap/visitable/ship/simplemob/stardog
 	icon = 'icons/obj/overmap.dmi'
@@ -816,9 +825,10 @@
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
 	user.visible_message(span_notice("\The [user] reaches out to touch \the [src]..."),span_notice("You reach out to touch \the [src]..."))
-	if(!do_after(user, 10 SECONDS, target = src))
-		user.visible_message(span_warning("\The [user] pulls back from \the [src]."),span_warning("You pull back from \the [src]."))
-		return
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(control_control_pod_done), done_args = list(user), on_fail = PROC_REF(control_control_pod_failed), fail_args = list(user))
+	return TRUE
+
+/obj/structure/control_pod/proc/control_control_pod_done(mob/living/user)
 	if(controller)	//got busy while you were waiting, get rekt
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
@@ -831,6 +841,10 @@
 	icon_state = "control_node1"
 	plane = ABOVE_MOB_PLANE
 	set_light(5, 0.75, "#f94bff")
+
+/obj/structure/control_pod/proc/control_control_pod_failed(mob/living/user)
+	user.visible_message(span_warning("\The [user] pulls back from \the [src]."),span_warning("You pull back from \the [src]."))
+	return
 
 /obj/structure/control_pod/proc/eject()
 	to_chat(host, span_warning("You feel your control over \the [host] slip away from you!"))
@@ -1415,7 +1429,9 @@
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-opening",src)
-	sleep(8)
+	om_after(src, 8, PROC_REF(open_finish))
+
+/obj/structure/auto_flesh_door/proc/open_finish()
 	density = FALSE
 	set_opacity(0)
 	state = 1
@@ -1431,7 +1447,9 @@
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-closing",src)
-	sleep(8)
+	om_after(src, 8, PROC_REF(close_finish))
+
+/obj/structure/auto_flesh_door/proc/close_finish()
 	density = TRUE
 	set_opacity(1)
 	state = 0

@@ -100,8 +100,11 @@
 	// Service begins, delay
 	visible_message(span_bold("\The [src]") + " scans [user] thoroughly!")
 	flick("kiosk_active", src)
-	if(!do_after(user, 5 SECONDS, target = src) || inoperable())
-		suspend()
+	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(start_using_timed_done), done_args = list(user, choice), on_fail = PROC_REF(start_using_timed_failed), fail_args = list(user, choice))
+	return TRUE
+
+/obj/machinery/medical_kiosk/proc/start_using_timed_done(mob/living/user, choice)
+	if(inoperable())
 		return
 
 	// Service completes
@@ -118,6 +121,10 @@
 
 	// Standby
 	suspend()
+
+/obj/machinery/medical_kiosk/proc/start_using_timed_failed(mob/living/user, choice)
+	suspend()
+	return
 
 /obj/machinery/medical_kiosk/proc/medical_scan(mob/living/user)
 	if(!istype(user))

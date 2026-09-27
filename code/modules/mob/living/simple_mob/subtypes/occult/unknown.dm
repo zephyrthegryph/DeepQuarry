@@ -210,17 +210,19 @@
 /mob/living/simple_mob/glitch_boss/proc/bullethell(atom/A)
 	set waitfor = FALSE
 
-	var/sd = dir2angle(dir)
-	var/list/offsets = list(45, 45, 20, 10)
+	bullethell_wave(dir2angle(dir), 1)
 
-	for(var/i = 0, i<4, i++)
-		for(var/j = 0, j <4, j++)
-			var/obj/item/projectile/energy/slow_orb/shot = new(get_turf(src))
-			shot.firer = src
-			shot.fire(sd)
-			sd += 90
-		sd += pick(offsets)
-		sleep(20)
+/// Four waves of four orbs, two seconds apart, each wave rotated a little.
+/mob/living/simple_mob/glitch_boss/proc/bullethell_wave(sd, wave)
+	var/static/list/offsets = list(45, 45, 20, 10)
+	for(var/j = 0, j <4, j++)
+		var/obj/item/projectile/energy/slow_orb/shot = new(get_turf(src))
+		shot.firer = src
+		shot.fire(sd)
+		sd += 90
+	sd += pick(offsets)
+	if(wave < 4)
+		om_after(src, 2 SECONDS, PROC_REF(bullethell_wave), sd, wave + 1)
 
 /mob/living/simple_mob/glitch_boss/proc/speed_up_boost(atom/A)
 	if(base_attack_cooldown == initial(base_attack_cooldown))

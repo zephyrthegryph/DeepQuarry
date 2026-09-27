@@ -60,15 +60,18 @@
 		else
 			user.visible_message(span_warning("[user] begins to do [H]'s lips with \the [src]."), \
 									span_notice("You begin to apply \the [src]."))
-			if(do_after(user, 2 SECONDS, target = H))	//user needs to keep their active hand, H does not.
-				user.visible_message(span_notice("[user] does [H]'s lips with \the [src]."), \
-										span_notice("You apply \the [src]."))
-				H.lip_style = colour
-				H.update_icons_body()
-				return ITEM_INTERACT_SUCCESS
+			om_do_after(user, 2 SECONDS, target = H, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(user, H))
+			return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_notice("Where are the lips on that?"))
 		return ITEM_INTERACT_FAILURE
+
+/obj/item/lipstick/proc/attack_timed_done(mob/living/user, mob/living/carbon/human/H)
+	user.visible_message(span_notice("[user] does [H]'s lips with \the [src]."), \
+							span_notice("You apply \the [src]."))
+	H.lip_style = colour
+	H.update_icons_body()
+	return ITEM_INTERACT_SUCCESS
 
 //you can wipe off lipstick with paper! see code/modules/paperwork/paper.dm, paper/attack()
 

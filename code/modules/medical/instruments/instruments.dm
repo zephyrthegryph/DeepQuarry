@@ -29,11 +29,12 @@
 		span_notice("[user] takes [H]'s temperature."),
 		span_notice("You take [H]'s temperature."),
 	)
-	if(!do_after(user, 3 SECONDS, H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 3 SECONDS, H, src, PROC_REF(read_temperature), list(user, H))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/thermometer_medical/proc/read_temperature(mob/living/user, mob/living/carbon/human/H)
 	var/c = H.get_temperature_reading_c()
 	to_chat(user, span_notice("Reading: <b>[c]°C</b>."))
-	return ITEM_INTERACT_SUCCESS
 
 
 // --- Blood pressure cuff ---
@@ -55,14 +56,15 @@
 		span_notice("[user] starts wrapping [src] around [H]'s arm."),
 		span_notice("You wrap [src] around [H]'s arm and begin pumping."),
 	)
-	if(!do_after(user, 12 SECONDS, H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 12 SECONDS, H, src, PROC_REF(read_pressure), list(user, H))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/bp_cuff/proc/read_pressure(mob/living/user, mob/living/carbon/human/H)
 	var/list/bp = H.get_bp_reading()
 	if(!bp)
 		to_chat(user, span_warning("You can't find a pulse to measure pressure against."))
-		return ITEM_INTERACT_SUCCESS
+		return
 	to_chat(user, span_notice("Reading: <b>[bp[1]]/[bp[2]] mmHg</b>."))
-	return ITEM_INTERACT_SUCCESS
 
 
 // --- Pulse oximeter ---
@@ -83,12 +85,13 @@
 		span_notice("[user] clips [src] to [H]'s fingertip."),
 		span_notice("You clip [src] to [H]'s fingertip and wait for the reading."),
 	)
-	if(!do_after(user, 4 SECONDS, H))
-		return ITEM_INTERACT_SUCCESS
+	om_do_after(user, 4 SECONDS, H, src, PROC_REF(read_oximetry), list(user, H))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/pulse_oximeter/proc/read_oximetry(mob/living/user, mob/living/carbon/human/H)
 	var/sat = H.get_o2_sat_reading()
 	var/bpm = H.get_pulse_reading_bpm()
 	if(!bpm)
 		to_chat(user, span_warning("No signal — the device can't find a pulse."))
-		return ITEM_INTERACT_SUCCESS
+		return
 	to_chat(user, span_notice("Reading: <b>SpO₂ [sat]%</b>, pulse <b>~[bpm] bpm</b>."))
-	return ITEM_INTERACT_SUCCESS

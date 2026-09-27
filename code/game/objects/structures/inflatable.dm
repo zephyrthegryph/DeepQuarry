@@ -180,7 +180,9 @@
 /obj/structure/inflatable/door/proc/Open()
 	isSwitchingStates = 1
 	flick("door_opening",src)
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(open_finish))
+
+/obj/structure/inflatable/door/proc/open_finish()
 	density = FALSE
 	opacity = 0
 	state = 1
@@ -190,7 +192,9 @@
 /obj/structure/inflatable/door/proc/Close()
 	isSwitchingStates = 1
 	flick("door_closing",src)
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(close_finish))
+
+/obj/structure/inflatable/door/proc/close_finish()
 	density = TRUE
 	opacity = 0
 	state = 0

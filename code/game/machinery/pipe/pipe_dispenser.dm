@@ -128,9 +128,10 @@
 
 /obj/machinery/pipedispenser/wrench_act(mob/user, obj/item/tool)
 	var/delay = unwrenched ? 2 SECONDS : 4 SECONDS
-	if(!use_tool(user, tool, src, delay = delay, volume = 50, \
-			message_self = "You begin to [unwrenched ? "fasten" : "unfasten"] \the [src] [unwrenched ? "to" : "from"] the floor..."))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = delay, volume = 50, message_self = "You begin to [unwrenched ? "fasten" : "unfasten"] \the [src] [unwrenched ? "to" : "from"] the floor...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/pipedispenser/proc/wrench_act_tool_done(mob/user)
 	unwrenched = !unwrenched
 	anchored = !unwrenched
 	if(unwrenched)

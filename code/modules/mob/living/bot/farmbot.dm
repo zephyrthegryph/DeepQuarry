@@ -186,44 +186,30 @@
 				update_icons()
 				visible_message(span_notice("[src] starts [T.dead? "removing the plant from" : "harvesting"] \the [A]."))
 
-				busy = 1
-				if(do_after(src, 3 SECONDS, target = A))
-					visible_message(span_notice("[src] [T.dead? "removes the plant from" : "harvests"] \the [A]."))
-					T.attack_hand(src)
+				om_flag_hold(src, "busy")
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
 				visible_message(span_notice("[src] starts watering \the [A]."))
 
-				busy = 1
-				if(do_after(src, 3 SECONDS, target = A))
-					playsound(src, 'sound/effects/slosh.ogg', 25, 1)
-					visible_message(span_notice("[src] waters \the [A]."))
-					tank.reagents.trans_to(T, 100 - T.waterlevel)
+				om_flag_hold(src, "busy")
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done2), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
 				visible_message(span_notice("[src] starts uprooting the weeds in \the [A]."))
 
-				busy = 1
-				if(do_after(src, 3 SECONDS, target = A))
-					visible_message(span_notice("[src] uproots the weeds in \the [A]."))
-					T.weedlevel = 0
+				om_flag_hold(src, "busy")
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done3), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
 				visible_message(span_notice("[src] starts fertilizing \the [A]."))
 
-				busy = 1
-				if(do_after(src, 3 SECONDS, target = A))
+				om_flag_hold(src, "busy")
+				om_do_after(src, 3 SECONDS, target = A, receiver = src, on_done = PROC_REF(UnarmedAttack_farmbot_done4), done_args = list(A, T), on_fail = PROC_REF(farm_job_end), fail_args = list(T))
 
-					visible_message(span_notice("[src] fertilizes \the [A]."))
-					T.reagents.add_reagent(REAGENT_ID_AMMONIA, 10)
-
-		busy = 0
-		action = ""
-		update_icons()
-		T.update_icon()
 	else if(istype(A, /obj/structure/sink))
 		if(!tank || tank.reagents.total_volume >= tank.reagents.maximum_volume)
 			return
@@ -231,16 +217,8 @@
 		update_icons()
 		visible_message(span_notice("[src] starts refilling its tank from \the [A]."))
 
-		busy = 1
-		while(do_after(src, 1 SECOND, target = A) && tank.reagents.total_volume < tank.reagents.maximum_volume)
-			tank.reagents.add_reagent("water", 100)
-			if(prob(5))
-				playsound(src, 'sound/effects/slosh.ogg', 25, 1)
-
-		busy = 0
-		action = ""
-		update_icons()
-		visible_message(span_notice("[src] finishes refilling its tank."))
+		om_flag_hold(src, "busy")
+		refill_step(A)
 	else if(emagged && ishuman(A))
 		var/action = pick("weed", "water")
 
@@ -261,6 +239,49 @@
 				visible_message(span_danger("[src] splashes [A] with water!"))
 				tank.reagents.splash(A, 100)
 
+/mob/living/bot/farmbot/proc/farm_job_end(obj/machinery/portable_atmospherics/hydroponics/T)
+	busy = 0
+	action = ""
+	update_icons()
+	T?.update_icon()
+
+/// One second of refilling from a sink, repeated until the tank is full or interrupted.
+/mob/living/bot/farmbot/proc/refill_step(atom/A)
+	if(tank.reagents.total_volume < tank.reagents.maximum_volume)
+		om_do_after(src, 1 SECOND, target = A, receiver = src, on_done = PROC_REF(refill_pulse), done_args = list(A), on_fail = PROC_REF(refill_end))
+		return
+	refill_end()
+
+/mob/living/bot/farmbot/proc/refill_pulse(atom/A)
+	tank.reagents.add_reagent("water", 100)
+	if(prob(5))
+		playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+	refill_step(A)
+
+/mob/living/bot/farmbot/proc/refill_end()
+	busy = 0
+	action = ""
+	update_icons()
+	visible_message(span_notice("[src] finishes refilling its tank."))
+
+/mob/living/bot/farmbot/proc/UnarmedAttack_farmbot_done(atom/A, obj/machinery/portable_atmospherics/hydroponics/T)
+	visible_message(span_notice("[src] [T.dead? "removes the plant from" : "harvests"] \the [A]."))
+	T.attack_hand(src)
+	farm_job_end(T)
+/mob/living/bot/farmbot/proc/UnarmedAttack_farmbot_done2(atom/A, obj/machinery/portable_atmospherics/hydroponics/T)
+	playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+	visible_message(span_notice("[src] waters \the [A]."))
+	tank.reagents.trans_to(T, 100 - T.waterlevel)
+	farm_job_end(T)
+/mob/living/bot/farmbot/proc/UnarmedAttack_farmbot_done3(atom/A, obj/machinery/portable_atmospherics/hydroponics/T)
+	visible_message(span_notice("[src] uproots the weeds in \the [A]."))
+	T.weedlevel = 0
+	farm_job_end(T)
+/mob/living/bot/farmbot/proc/UnarmedAttack_farmbot_done4(atom/A, obj/machinery/portable_atmospherics/hydroponics/T)
+
+	visible_message(span_notice("[src] fertilizes \the [A]."))
+	T.reagents.add_reagent(REAGENT_ID_AMMONIA, 10)
+	farm_job_end(T)
 /mob/living/bot/farmbot/explode()
 	visible_message(span_danger("[src] blows apart!"))
 	var/turf/Tsec = get_turf(src)

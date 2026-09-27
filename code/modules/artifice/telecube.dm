@@ -133,8 +133,7 @@
 
 	if(A == src || A == mate)
 		A.visible_message(span_alien("\The [A] distorts and fades, before popping back into existence."))
-		animate_out(A)
-		animate_in(A)
+		fade_and_move(A, null)
 		return .
 
 	var/mob/living/L = src.loc
@@ -149,8 +148,7 @@
 
 	if((A.anchored && !omniteleport) || !mate)
 		A.visible_message(span_alien("\The [A] distorts for a moment, before reforming in the same position."))
-		animate_out(A)
-		animate_in(A)
+		fade_and_move(A, null)
 		return .
 
 	var/turf/TLocate = get_turf(mate)
@@ -159,11 +157,8 @@
 
 	if(T1)
 		A.visible_message(span_alien("\The [A] fades out of existence."))
-		animate_out(A)
-		A.forceMove(T1)
-		animate_in(A)
+		fade_and_move(A, T1, TRUE)
 		. = TRUE
-		A.visible_message(span_alien("\The [A] fades into existence."))
 	else
 		return .
 
@@ -203,6 +198,22 @@
 	ready = TRUE
 	update_icon()
 
+/// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
+/obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)
+	animate_out(AM)
+	om_after(src, 0.5 SECONDS, PROC_REF(fade_back_in), AM, T, announce)
+
+/obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
+	AM.filters -= filter(type="blur", size = 2)
+	if(T)
+		AM.forceMove(T)
+	animate_in(AM)
+	if(announce)
+		AM.visible_message(span_alien("\The [AM] fades into existence."))
+
+/obj/item/telecube/proc/clear_blur(atom/movable/AM)
+	AM.filters -= filter(type="blur", size = 0)
+
 /obj/item/telecube/proc/animate_out(atom/movable/AM)
 	//See atom cloak/uncloak animations for comments
 	var/atom/movable/target = AM
@@ -211,8 +222,6 @@
 
 	animate(target, alpha = 0, time = 5) //Out
 	animate(target.filters[our_filter_index], size = 2, time = 5, flags = ANIMATION_PARALLEL)
-	sleep(5)
-	target.filters -= filter(type="blur", size = 2)
 
 /obj/item/telecube/proc/animate_in(atom/movable/AM)
 	//See atom cloak/uncloak animations for comments
@@ -222,8 +231,7 @@
 
 	animate(target, alpha = 255, time = 5) //In
 	animate(target.filters[our_filter_index], size = 0, time = 5, flags = ANIMATION_PARALLEL)
-	sleep(5)
-	target.filters -= filter(type="blur", size = 0)
+	om_after(src, 0.5 SECONDS, PROC_REF(clear_blur), target)
 
 /obj/item/telecube/item_ctrl_click(mob/user)
 	if(Adjacent(user) && teleport_to_mate(user))

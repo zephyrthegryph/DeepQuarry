@@ -98,9 +98,10 @@
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
-	if(!do_after(src, windup, target = src, progress = FALSE, hidden = TRUE, interaction_key = "melee_swing"))
-		is_swinging = FALSE
-		return FALSE
+	om_do_after(src, windup, target = src, progress = FALSE, hidden = TRUE, interaction_key = "melee_swing", receiver = src, on_done = PROC_REF(begin_melee_swing_living_done), done_args = list(target, weapon, windup, swing_tiles), on_fail = PROC_REF(begin_melee_swing_living_failed), fail_args = list(target, weapon, windup, swing_tiles))
+	return TRUE
+
+/mob/living/proc/begin_melee_swing_living_done(mob/living/target, obj/item/weapon, windup, list/turf/swing_tiles)
 
 	// Re-validate the weapon is still in hand after the windup.
 	if(QDELETED(weapon) || get_active_hand() != weapon)
@@ -128,3 +129,7 @@
 				weapon.apply_hit_effect(victim, src, hit_zone, 1) // attack_modifier 1; null would zero the damage
 
 	return TRUE
+
+/mob/living/proc/begin_melee_swing_living_failed(mob/living/target, obj/item/weapon, windup, list/turf/swing_tiles)
+	is_swinging = FALSE
+	return FALSE

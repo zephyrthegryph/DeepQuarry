@@ -79,22 +79,24 @@
 		new plated_tile(src.loc)
 	qdel(src)
 
+/obj/structure/catwalk/proc/plate_done(mob/user, obj/item/stack/tile/floor/ST)
+	if(plated_tile || !ST.use(1))
+		return
+	to_chat(user, span_notice("You plate \the [src]"))
+	name = "plated catwalk"
+	plated_tile = ST.type
+	add_fingerprint(user)
+	for(var/tiletype in plating_colors)
+		if(istype(ST, tiletype))
+			plating_color = plating_colors[tiletype]
+	update_icon()
+
 /obj/structure/catwalk/attackby(obj/item/C as obj, mob/user as mob)
 	if(istype(C, /obj/item/stack/tile/floor) && !plated_tile)
 		var/obj/item/stack/tile/floor/ST = C
 		to_chat(user, span_notice("Placing tile..."))
-		if (!do_after(user, 1 SECOND, target = src))
-			return
-		if(!ST.use(1))
-			return
-		to_chat(user, span_notice("You plate \the [src]"))
-		name = "plated catwalk"
-		plated_tile = C.type
-		add_fingerprint(user)
-		for(var/tiletype in plating_colors)
-			if(istype(ST, tiletype))
-				plating_color = plating_colors[tiletype]
-		update_icon()
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(plate_done), done_args = list(user, ST))
+		return
 
 /obj/structure/catwalk/welder_act(mob/user, obj/item/C)
 	var/obj/item/weldingtool/WT = C.get_welder()

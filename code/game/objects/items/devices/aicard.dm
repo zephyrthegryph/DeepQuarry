@@ -118,33 +118,35 @@
 	user.visible_message("\The [user] starts transferring \the [ai] into \the [src]...", "You start transferring \the [ai] into \the [src]...")
 	show_message(span_critical("\The [user] is transferring you into \the [src]!"))
 
-	if(do_after(user, 10 SECONDS, target = src))
-		if(carded_ai)
-			to_chat(user, span_danger("Transfer failed:") + " Existing AI found on remote device. Remove existing AI to install a new one.")
-			return 0
-		if(istype(ai.loc, /turf/))
-			new /obj/structure/AIcore/deactivated(get_turf(ai))
-
-		ai.carded = 1
-		add_attack_logs(user,ai,"Extracted into AI Card")
-		src.name = "[initial(name)] - [ai.name]"
-
-		ai.forceMove(src)
-		ai.destroy_eyeobj(src)
-		ai.cancel_camera()
-		ai.control_disabled = 1
-		ai.aiRestorePowerRoutine = 0
-		carded_ai = ai
-		ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
-
-		if(ai.client)
-			to_chat(ai, span_infoplain("You have been transferred into a mobile core. Remote access lost."))
-		if(user.client)
-			to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
-
-		ai.canmove = 1
-		update_icon()
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(grab_ai_timed_done), done_args = list(ai, user))
 	return 1
+
+/obj/item/aicard/proc/grab_ai_timed_done(mob/living/silicon/ai/ai, mob/living/user)
+	if(carded_ai)
+		to_chat(user, span_danger("Transfer failed:") + " Existing AI found on remote device. Remove existing AI to install a new one.")
+		return 0
+	if(istype(ai.loc, /turf/))
+		new /obj/structure/AIcore/deactivated(get_turf(ai))
+
+	ai.carded = 1
+	add_attack_logs(user,ai,"Extracted into AI Card")
+	src.name = "[initial(name)] - [ai.name]"
+
+	ai.forceMove(src)
+	ai.destroy_eyeobj(src)
+	ai.cancel_camera()
+	ai.control_disabled = 1
+	ai.aiRestorePowerRoutine = 0
+	carded_ai = ai
+	ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
+
+	if(ai.client)
+		to_chat(ai, span_infoplain("You have been transferred into a mobile core. Remote access lost."))
+	if(user.client)
+		to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
+
+	ai.canmove = 1
+	update_icon()
 
 /obj/item/aicard/proc/clear()
 	if(carded_ai && istype(carded_ai.loc, /turf))
@@ -178,11 +180,15 @@
 	flush = TRUE
 	our_ai.suiciding = TRUE
 	to_chat(our_ai, "Your power has been disabled!")
-	var/power_lost = 0
-	while(our_ai && our_ai.stat != DEAD)
-		// This is absolutely evil and I love it.
-		if(our_ai.deployed_shell && prob(power_lost)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
-			our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
-		power_lost += 2
-		sleep(1 SECOND)
-	flush = FALSE
+	wipe_ai_tick(our_ai, 0)
+
+/// Once a second while the carded AI dies: the shell link fails more and more.
+/obj/item/aicard/proc/wipe_ai_tick(mob/living/silicon/ai/our_ai, power_lost)
+	if(QDELETED(our_ai) || our_ai.stat == DEAD)
+		flush = FALSE
+		return
+	// This is absolutely evil and I love it.
+	if(our_ai.deployed_shell && prob(power_lost)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
+		our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
+	if(!om_after(src, 1 SECOND, PROC_REF(wipe_ai_tick), our_ai, power_lost + 2))
+		flush = FALSE

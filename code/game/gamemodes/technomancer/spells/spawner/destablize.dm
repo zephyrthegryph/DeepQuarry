@@ -40,15 +40,18 @@
 	. = ..()
 	radiate_loop()
 
+/// A pulse every half second until pulses_remaining runs out.
 /obj/effect/temporary_effect/destablize/proc/radiate_loop()
-	set waitfor = FALSE
+	if(!pulses_remaining)
+		qdel(src)
+		return
+	om_after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))
 
-	while(pulses_remaining)
-		sleep(5)
-		for(var/mob/living/L in range(src, instability_range) )
-			var/radius = max(get_dist(L, src), 1)
-			// Being farther away lessens the amount of instabity received.
-			var/outgoing_instability = instability_power * ( 1 / (radius**2) )
-			L.receive_radiated_instability(outgoing_instability)
-		pulses_remaining--
-	qdel(src)
+/obj/effect/temporary_effect/destablize/proc/radiate_pulse()
+	for(var/mob/living/L in range(src, instability_range) )
+		var/radius = max(get_dist(L, src), 1)
+		// Being farther away lessens the amount of instabity received.
+		var/outgoing_instability = instability_power * ( 1 / (radius**2) )
+		L.receive_radiated_instability(outgoing_instability)
+	pulses_remaining--
+	radiate_loop()

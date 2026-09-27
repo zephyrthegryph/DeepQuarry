@@ -145,7 +145,7 @@
 	if(!nexttube)
 		pod.set_dir(turn(pod.dir, 180))
 
-	if(icon_state == "closed")
+	if(icon_state == "closed" && pod)
 		pod.follow_tube()
 
 	pod_moving = 0

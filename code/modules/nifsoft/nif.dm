@@ -220,40 +220,55 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			open = 3
 			update_icon()
 			return
-		if(do_after(user, 6 SECONDS, target = src) && open == 1 && C.use(3))
-			user.visible_message("[user] replaces some wiring in \the [src].",span_notice("You replace any burned out wiring in \the [src]."))
-			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-			open = 2
-			update_icon()
+		om_do_after(user, 6 SECONDS, src, src, PROC_REF(rewire_done), list(user, C))
 	else
 		return ..()
 
+/obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
+	if(open == 1 && C.use(3))
+		user.visible_message("[user] replaces some wiring in \the [src].",span_notice("You replace any burned out wiring in \the [src]."))
+		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		open = 2
+		update_icon()
+
+/obj/item/nif/proc/pry_open_done(mob/user, obj/item/tool)
+	if(open != 0)
+		return
+	user.visible_message("[user] unscrews and pries open \the [src].",span_notice("You unscrew and pry open \the [src]."))
+	playsound(src, tool.usesound, 50, 1)
+	open = 1
+	update_icon()
+
+/obj/item/nif/proc/reseal_done(mob/user, obj/item/tool)
+	if(open != 3)
+		return
+	user.visible_message("[user] closes up \the [src].",span_notice("You re-seal \the [src] for use once more."))
+	playsound(src, tool.usesound, 50, 1)
+	open = FALSE
+	repair(initial(durability))
+	stat = NIF_PREINSTALL
+	update_icon()
+
+/obj/item/nif/proc/reset_circuits_done(mob/user)
+	if(open != 2)
+		return
+	user.visible_message("[user] resets several circuits in \the [src].",span_notice("You find and repair any faulty circuits in \the [src]."))
+	open = 3
+	update_icon()
+
 /obj/item/nif/screwdriver_act(mob/user, obj/item/tool)
 	if(open == 0)
-		if(do_after(user, 4 SECONDS, target = src) && open == 0)
-			user.visible_message("[user] unscrews and pries open \the [src].",span_notice("You unscrew and pry open \the [src]."))
-			playsound(src, tool.usesound, 50, 1)
-			open = 1
-			update_icon()
+		om_do_after(user, 4 SECONDS, src, src, PROC_REF(pry_open_done), list(user, tool))
 		return ITEM_INTERACT_SUCCESS
 	if(open == 3)
-		if(do_after(user, 3 SECONDS, target = src) && open == 3)
-			user.visible_message("[user] closes up \the [src].",span_notice("You re-seal \the [src] for use once more."))
-			playsound(src, tool.usesound, 50, 1)
-			open = FALSE
-			repair(initial(durability))
-			stat = NIF_PREINSTALL
-			update_icon()
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(reseal_done), list(user, tool))
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
 /obj/item/nif/multitool_act(mob/user, obj/item/tool)
 	if(open != 2)
 		return ITEM_INTERACT_BLOCKING
-	if(do_after(user, 8 SECONDS, target = src) && open == 2)
-		user.visible_message("[user] resets several circuits in \the [src].",span_notice("You find and repair any faulty circuits in \the [src]."))
-		open = 3
-		update_icon()
+	om_do_after(user, 8 SECONDS, src, src, PROC_REF(reset_circuits_done), list(user))
 	return ITEM_INTERACT_SUCCESS
 
 //Icon updating
@@ -288,8 +303,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			install_done = world.time + 15 MINUTES // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
-			sleep(5 SECONDS)
-			notify("Adjoining optic [human.isSynthetic() ? "interface" : "nerve"], please be patient.",TRUE)
+			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [human.isSynthetic() ? "interface" : "nerve"], please be patient.", TRUE)
 		else
 			notify("You are not an authorized user for this device. Please contact [owner].",TRUE)
 			unimplant(human)
@@ -687,15 +701,17 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),
 		span_notice("You begin installing [src] into [T]'s chest by just stuffing it in."),
 		"There's a wet SQUISH noise.")
-		if(do_after(user, 20 SECONDS, T, target_zone = BP_TORSO))
-			user.unEquip(src)
-			forceMove(eo)
-			eo.implants |= src
-			implant(T)
-			playsound(T,'sound/effects/slime_squish.ogg',50,1)
-			return ITEM_INTERACT_SUCCESS
+		om_do_after(user, 20 SECONDS, T, src, PROC_REF(stuff_in_done), list(user, T, eo), target_zone = BP_TORSO)
+		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()
+
+/obj/item/nif/proc/stuff_in_done(mob/living/user, mob/living/carbon/human/T, obj/item/organ/external/eo)
+	user.unEquip(src)
+	forceMove(eo)
+	eo.implants |= src
+	implant(T)
+	playsound(T,'sound/effects/slime_squish.ogg',50,1)
 
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"

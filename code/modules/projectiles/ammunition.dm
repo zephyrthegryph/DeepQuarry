@@ -34,37 +34,41 @@
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 	update_icon()
 
+/// Mass reloading: one matching shell from `floor` per half second (a timed action each).
+/obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor, boolets)
+	if(box.stored_ammo.len < box.max_ammo)
+		for(var/obj/item/ammo_casing/bullet in floor)
+			if(box.caliber == bullet.caliber && bullet.BB)
+				if (boolets < 1)
+					to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
+				om_do_after(user, 0.5 SECONDS, box, src, PROC_REF(shell_collected), list(user, box, floor, boolets, bullet), on_fail = PROC_REF(collect_done), fail_args = list(user, box, boolets))
+				return
+	collect_done(user, box, boolets)
+
+/obj/item/ammo_casing/proc/shell_collected(mob/user, obj/item/ammo_magazine/box, turf/floor, boolets, obj/item/ammo_casing/bullet)
+	if(box.stored_ammo.len < box.max_ammo && bullet.loc == floor) // Double check because these can change during the wait.
+		bullet.forceMove(box)
+		box.stored_ammo.Add(bullet)
+		box.update_icon()
+		boolets++
+	collect_shell(user, box, floor, boolets)
+
+/obj/item/ammo_casing/proc/collect_done(mob/user, obj/item/ammo_magazine/box, boolets)
+	if(!box)
+		return
+	if(boolets > 0)
+		to_chat(user, span_notice("You collect [boolets] shell\s. [box] now contains [box.stored_ammo.len] shell\s."))
+	else
+		to_chat(user, span_warning("You fail to collect anything!"))
+	box.reloading = FALSE
+
 /obj/item/ammo_casing/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/ammo_magazine) && isturf(loc)) // Mass magazine reloading.
 		var/obj/item/ammo_magazine/box = I
 		if (!box.can_remove_ammo || box.reloading)
 			return ..()
 		box.reloading = TRUE
-		var/boolets = 0
-		var/turf/floor = loc
-		for(var/obj/item/ammo_casing/bullet in floor)
-			if(box.stored_ammo.len >= box.max_ammo)
-				break
-			if(box.caliber == bullet.caliber && bullet.BB)
-				if (boolets < 1)
-					to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
-				if(do_after(user, 5, target = box))
-					if(box.stored_ammo.len >= box.max_ammo) // Double check because these can change during the wait.
-						break
-					if(bullet.loc != floor)
-						continue
-					bullet.forceMove(box)
-					box.stored_ammo.Add(bullet)
-					box.update_icon()
-					boolets++
-				else
-					break
-
-		if(boolets > 0)
-			to_chat(user, span_notice("You collect [boolets] shell\s. [box] now contains [box.stored_ammo.len] shell\s."))
-		else
-			to_chat(user, span_warning("You fail to collect anything!"))
-		box.reloading = FALSE
+		collect_shell(user, box, loc, 0)
 	else if(istype(I, /obj/item/ammo_casing)) // Gather two loose rounds into a handful.
 		var/obj/item/ammo_casing/other = I
 		if(other == src)

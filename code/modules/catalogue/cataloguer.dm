@@ -101,7 +101,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			to_chat(user, span_warning("Scanning new target. Previous scan buffer cleared."))
 
 	// Start the special effects.
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon_state = "rped_upgrade", time = scan_delay)
 	var/filter = filter(type = "outline", size = 1, color = "#FFFFFF")
@@ -113,36 +113,49 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 	playsound(src, 'sound/machines/beep.ogg', 50)
 
-	// The delay, and test for if the scan succeeds or not.
-	var/scan_start_time = world.time
-	if(do_after(user, scan_delay, target, timed_action_flags = IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, max_distance = scan_range))
-		if(target.can_catalogue(user))
-			to_chat(user, span_notice("You successfully scan \the [target] with \the [src]."))
-			playsound(src, 'sound/machines/ping.ogg', 50)
-			catalogue_object(target, user)
-		else
-			// In case someone else scans it first, or it died, etc.
-			to_chat(user, span_warning("\The [target] is no longer valid to scan with \the [src]."))
-			playsound(src, 'sound/machines/buzz-two.ogg', 50)
+	// The delay, and test for if the scan succeeds or not. The effects travel in a list so the
+	// beam (which ends itself) is never a captured argument.
+	var/list/effects = list(scan_beam, filter, box_segments)
+	om_do_after(user, scan_delay, target, src, PROC_REF(scan_succeeded), list(target, user, effects), IGNORE_USER_LOC_CHANGE|IGNORE_TARGET_LOC_CHANGE, PROC_REF(scan_failed), list(target, user, effects, world.time), max_distance = scan_range)
 
-		partial_scanned = null
-		partial_scan_time = 0
+/obj/item/cataloguer/proc/scan_succeeded(atom/target, mob/user, list/effects)
+	if(target.can_catalogue(user))
+		to_chat(user, span_notice("You successfully scan \the [target] with \the [src]."))
+		playsound(src, 'sound/machines/ping.ogg', 50)
+		catalogue_object(target, user)
 	else
-		to_chat(user, span_warning("You failed to finish scanning \the [target] with \the [src]."))
+		// In case someone else scans it first, or it died, etc.
+		to_chat(user, span_warning("\The [target] is no longer valid to scan with \the [src]."))
 		playsound(src, 'sound/machines/buzz-two.ogg', 50)
-		color_box(box_segments, "#FF0000", 3)
+
+	partial_scanned = null
+	partial_scan_time = 0
+	scan_cleanup(target, user, effects)
+
+/obj/item/cataloguer/proc/scan_failed(atom/target, mob/user, list/effects, scan_start_time)
+	to_chat(user, span_warning("You failed to finish scanning \the [target] with \the [src]."))
+	playsound(src, 'sound/machines/buzz-two.ogg', 50)
+	color_box(effects[3], "#FF0000", 3)
+	if(target)
 		partial_scanned = om_handle(target)
-		partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
-		sleep(3)
+	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
+	om_after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), effects, target ? REF(target) : null, user ? REF(user) : null)
+
+/obj/item/cataloguer/proc/scan_cleanup_late(list/effects, target_ref, user_ref)
+	scan_cleanup(locate(target_ref), locate(user_ref), effects)
+
+/obj/item/cataloguer/proc/scan_cleanup(atom/target, mob/user, list/effects)
 	busy = FALSE
 
 	// Now clean up the effects.
 	update_icon()
-	QDEL_NULL(scan_beam)
+	var/datum/beam/scan_beam = effects[1]
+	if(!QDELETED(scan_beam))
+		qdel(scan_beam)
 	if(target)
-		target.filters -= filter
-	if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
-		delete_box(box_segments, user.client)
+		target.filters -= effects[2]
+	if(user?.client) // If for some reason they logged out mid-scan the box will be gone anyways.
+		delete_box(effects[3], user.client)
 
 // Todo: Display scanned information, increment points, etc.
 /obj/item/cataloguer/proc/catalogue_object(atom/target, mob/living/user)
@@ -200,7 +213,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		to_chat(user, span_warning("\The [src] is busy doing something else."))
 		return
 
-	busy = TRUE
+	om_flag_hold(src, "busy")
 	update_icon()
 	playsound(src, 'sound/machines/beep.ogg', 50)
 
@@ -215,9 +228,11 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	for(var/atom/A as anything in scannable_atoms)
 		A.filters += filter
 	to_chat(user, span_notice("\The [src] is highlighting scannable objects in green, if any exist."))
+	om_after(src, 2 SECONDS, PROC_REF(pulse_scan_end), user, list(scannable_atoms, filter))
 
-	sleep(2 SECONDS)
-
+/obj/item/cataloguer/proc/pulse_scan_end(mob/user, list/state)
+	var/list/scannable_atoms = state[1]
+	var/filter = state[2]
 	// Remove the highlights.
 	for(var/atom/A as anything in scannable_atoms)
 		if(QDELETED(A))
@@ -275,7 +290,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 /obj/item/cataloguer/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/card/id) && !busy)
-		busy = TRUE
+		om_flag_hold(src, "busy")
 		var/obj/item/card/id/ID = W
 		if(points_stored)
 			var/datum/money_account/account = get_account(ID.associated_account_number)

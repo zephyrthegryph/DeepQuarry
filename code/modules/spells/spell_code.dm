@@ -62,12 +62,20 @@
 	//still_recharging_msg = span_notice("[name] is still recharging.")
 	charge_counter = charge_max
 
-/// Recharges one charge per tick until full.
+/// Starts recharging: a second's worth (10 charge) every second until full.
 /datum/spell/proc/start_recharge()
-	spawn while(charge_counter < charge_max)
-		charge_counter++
-		sleep(1)
-	return
+	if(charge_counter < charge_max && !recharging)
+		recharging = TRUE
+		om_after(src, 1 SECOND, PROC_REF(recharge_tick))
+
+/datum/spell/var/recharging = FALSE
+
+/datum/spell/proc/recharge_tick()
+	charge_counter = min(charge_counter + 10, charge_max)
+	if(charge_counter < charge_max)
+		om_after(src, 1 SECOND, PROC_REF(recharge_tick))
+	else
+		recharging = FALSE
 
 /////////////////
 /////CASTING/////
@@ -81,8 +89,14 @@
 		holder = user //just in case
 	if(!cast_check(skipcharge, user))
 		return
-	if(cast_delay && !spell_do_after(user, cast_delay))
+	if(cast_delay)
+		var/flags = IGNORE_HELD_ITEM | ((spell_flags & (STATALLOWED|GHOSTCAST)) ? IGNORE_INCAPACITATED : NONE)
+		om_do_after(user, cast_delay, null, src, PROC_REF(perform_cast), list(user, skipcharge), flags, progress = FALSE)
 		return
+	perform_cast(user, skipcharge)
+
+/// The cast itself, after any cast delay.
+/datum/spell/proc/perform_cast(mob/user, skipcharge)
 	var/list/targets = choose_targets(user)
 	if(targets && targets.len)
 		invocation(user, targets)
@@ -337,20 +351,4 @@
 
 	return temp
 
-/datum/spell/proc/spell_do_after(mob/user as mob, delay as num, numticks = 5)
-	if(!user || isnull(user))
-		return 0
-	if(numticks == 0)
-		return 1
 
-	var/delayfraction = round(delay/numticks)
-	var/Location = user.loc
-	var/originalstat = user.stat
-
-	for(var/i = 0, i<numticks, i++)
-		sleep(delayfraction)
-
-
-		if(!user || (!(spell_flags & (STATALLOWED|GHOSTCAST)) && user.stat != originalstat)  || !(user.loc == Location))
-			return 0
-	return 1

@@ -80,6 +80,7 @@
 			if(status == "PENDING")
 				// The worker owns only immutable Rust data. BYOND remains free to
 				// service ordinary ticks until the serialized result is ready.
+				// S8 allowlist: leaf poll of a blocking external (Rust) job.
 				sleep(0)
 				continue
 			if(findtext(status, "ERROR:") == 1)
@@ -121,6 +122,7 @@
 				break
 			rows += page
 			offset += length(page)
+			// S8 allowlist: leaf fetch of a blocking external (Rust) job's result.
 			sleep(0)
 		root[section] = rows
 	return root

@@ -107,6 +107,18 @@
 		else
 			to_chat(user, span_warning("\The [src] is already full!"))
 
+/obj/item/backup_implanter/proc/backup_implant_done(mob/living/M, mob/living/user, turf/T1)
+	if((get_turf(M) == T1) && src.imps.len)
+		M.visible_message(span_notice("[M] has been backup implanted by [user]."))
+
+		var/obj/item/implant/backup/imp = imps[imps.len]
+		if(imp.handle_implant(M,user.zone_sel.selecting))
+			imp.post_implant(M)
+			imps -= imp
+			add_attack_logs(user,M,"Implanted backup implant")
+
+		update()
+
 /obj/item/backup_implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!istype(M, /mob/living/carbon))
 		return ITEM_INTERACT_FAILURE
@@ -117,17 +129,8 @@
 		user.do_attack_animation(M)
 
 		var/turf/T1 = get_turf(M)
-		if (T1 && ((M == user) || do_after(user, 5 SECONDS, target = M)))
-			if(user && M && (get_turf(M) == T1) && src && src.imps.len)
-				M.visible_message(span_notice("[M] has been backup implanted by [user]."))
-
-				var/obj/item/implant/backup/imp = imps[imps.len]
-				if(imp.handle_implant(M,user.zone_sel.selecting))
-					imp.post_implant(M)
-					imps -= imp
-					add_attack_logs(user,M,"Implanted backup implant")
-
-				update()
+		if(T1)
+			om_do_after(user, M == user ? 0 : 5 SECONDS, M, src, PROC_REF(backup_implant_done), list(M, user, T1))
 		return ITEM_INTERACT_SUCCESS
 
 //The glass case for the implant
@@ -182,23 +185,22 @@
 
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 
-		if(do_after(user, 2.5 SECONDS, src))
+		om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(self_implant_done), list(user))
 
-			if(user && src)
+/obj/structure/backup_implanter_ch/proc/self_implant_done(mob/user)
+	//Create the actual implant.
+	var/obj/item/implant/backup/imp = new(src.contents)
+	imp.germ_level = 0
 
-				//Create the actual implant.
-				var/obj/item/implant/backup/imp = new(src.contents)
-				imp.germ_level = 0
+	//Implant the implant.
+	if(imp.handle_implant(user, user.zone_sel.selecting))
+		imp.post_implant(user)
+		add_attack_logs(user, user, "Implanted backup implant")
+		user.visible_message(span_notice("[user] has been backup implanted by [user]."))
 
-				//Implant the implant.
-				if(imp.handle_implant(user, user.zone_sel.selecting))
-					imp.post_implant(user)
-					add_attack_logs(user, user, "Implanted backup implant")
-					user.visible_message(span_notice("[user] has been backup implanted by [user]."))
-
-				//If implanting somehow fails, delete the implant.
-				else
-					qdel(imp)
+	//If implanting somehow fails, delete the implant.
+	else
+		qdel(imp)
 
 /obj/structure/backup_implanter_ch/attackby(obj/item/O, mob/user)
 	if(O.has_tool_quality(TOOL_WRENCH))
@@ -207,22 +209,17 @@
 			to_chat(user, span_notice("You start to unwrench the implanter."))
 			playsound(src, O.usesound, 50, 1)
 
-			if(do_after(user, 15 * O.toolspeed, src))
-				to_chat(user, span_notice("You unwrench the implanter."))
-				anchored = FALSE
-				return
-			else
-				return
+			om_do_after(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, FALSE))
+			return
 
 		else
 			to_chat(user, span_notice("You start to wrench the implanter into place."))
 			playsound(src, O.usesound, 50, 1)
 
-			if(do_after(user, 15 * O.toolspeed, src))
-
-				to_chat(user, span_notice("You wrench the implanter into place."))
-				anchored = TRUE
-				return
-			else
-				return
+			om_do_after(user, 15 * O.toolspeed, src, src, PROC_REF(wrench_done), list(user, TRUE))
+			return
 	..()
+
+/obj/structure/backup_implanter_ch/proc/wrench_done(mob/user, anchoring)
+	to_chat(user, span_notice(anchoring ? "You wrench the implanter into place." : "You unwrench the implanter."))
+	anchored = anchoring

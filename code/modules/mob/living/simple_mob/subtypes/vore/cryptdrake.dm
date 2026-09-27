@@ -98,19 +98,21 @@
 		"The drake happily wanders around while digesting its meal, almost like it is trying to show off the hanging gut you've given it. Not like it made much of a difference on his already borderline obese form anyway~")
 
 /mob/living/simple_mob/vore/cryptdrake/do_special_attack(atom/A)	//Mostly copied from hunter.dm
-	set waitfor = FALSE
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
 	if(!L.devourable || !L.allowmobvore || !L.can_be_drop_prey || !L.throw_vore || L.unacidable)
 		return FALSE
 
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	visible_message(span_warning("\The [src]'s eyes flash ominously!"))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	sleep(leap_warmup) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), L) // For the telegraphing.
+
+
+/mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_1(mob/living/L)
 
 	if(L.z != z)	//Make sure you haven't disappeared to somewhere we can't go
 		if(ai_brain) ai_brain.busy = FALSE
@@ -122,7 +124,9 @@
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	sleep(5) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	om_after(src, 5, PROC_REF(do_special_attack_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+
+/mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_2(mob/living/L)
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING // Revert special passage ability.

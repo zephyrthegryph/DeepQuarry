@@ -39,15 +39,13 @@
 			return
 		else
 			user.visible_message(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!", span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
-			if(do_after(user, 15, target = src))
-				to_chat(user, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))
+			om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 			return
 
 	if(istype(I, /obj/item/measuring_tape))
 		var/obj/item/measuring_tape/P = I
 		user.visible_message(span_bold("\The [user]") + " extends \the [P] towards \the [src].", span_notice("You extend \the [P] towards \the [src]."))
-		if(do_after(user, 15, target = src))
-			to_chat(user, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))
+		om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
 		return
 
 	if(istype(I, /obj/item/pickaxe))
@@ -58,27 +56,30 @@
 		last_act = world.time
 
 		to_chat(user, span_warning("You start [P.drill_verb] [src]."))
+		om_do_after(user, P.digspeed, src, src, PROC_REF(dig_done), list(user, P))
+		return
 
-		if(!do_after(user, P.digspeed, target = src))
-			return
+/obj/structure/boulder/proc/measure_done(mob/user)
+	to_chat(user, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))
 
-		to_chat(user, span_notice("You finish [P.drill_verb] [src]."))
-		excavation_level += P.excavation_amount
+/obj/structure/boulder/proc/dig_done(mob/user, obj/item/pickaxe/P)
+	to_chat(user, span_notice("You finish [P.drill_verb] [src]."))
+	excavation_level += P.excavation_amount
 
-		if(prob(excavation_level))
-			//success
-			if(artifact_find)
-				var/spawn_type = artifact_find.artifact_find_type
-				var/obj/O = new spawn_type(get_turf(src))
-				if(istype(O, /obj/machinery/artifact))
-					var/obj/machinery/artifact/X = O
-					if(X.artifact_master)
-						X.artifact_master.artifact_id = artifact_find.artifact_id
-				O.anchored = FALSE	// Anchored finds are lame.
-				src.visible_message(span_warning("\The [src] suddenly crumbles away."))
-			else
-				user.visible_message(span_warning("\The [src] suddenly crumbles away."), span_notice("\The [src] has been whittled away under your careful excavation, but there was nothing of interest inside."))
-			qdel(src)
+	if(prob(excavation_level))
+		//success
+		if(artifact_find)
+			var/spawn_type = artifact_find.artifact_find_type
+			var/obj/O = new spawn_type(get_turf(src))
+			if(istype(O, /obj/machinery/artifact))
+				var/obj/machinery/artifact/X = O
+				if(X.artifact_master)
+					X.artifact_master.artifact_id = artifact_find.artifact_id
+			O.anchored = FALSE	// Anchored finds are lame.
+			src.visible_message(span_warning("\The [src] suddenly crumbles away."))
+		else
+			user.visible_message(span_warning("\The [src] suddenly crumbles away."), span_notice("\The [src] has been whittled away under your careful excavation, but there was nothing of interest inside."))
+		qdel(src)
 
 /obj/structure/boulder/Bumped(AM)
 	. = ..()

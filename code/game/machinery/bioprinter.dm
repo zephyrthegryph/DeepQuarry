@@ -185,18 +185,18 @@
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins churning."))
 
-	sleep(print_delay)
+	om_after(src, print_delay, PROC_REF(printing_done), possible_list[choice][1])
 
+/// The print delay is over: the organ comes out unless the printer lost power.
+/obj/machinery/organ_printer/proc/printing_done(organ_path)
 	update_use_power(USE_POWER_IDLE)
 	printing = 0
 	update_icon()
 
-	if(!choice || !src || (stat & (BROKEN|NOPOWER)))
+	if(stat & (BROKEN|NOPOWER))
 		return
 
-	print_organ(possible_list[choice][1])
-
-	return
+	print_organ(organ_path)
 
 /obj/machinery/organ_printer/verb/eject_beaker()
 	set name = "Eject Beaker"
@@ -308,6 +308,15 @@
 	visible_message(span_info("\The [src] dings, then spits out \a [O]."))
 	return O
 
+/obj/machinery/organ_printer/proc/load_container_done(mob/user, obj/item/reagent_containers/glass/G)
+	if(container)
+		to_chat(user, span_warning("\The [src] already has a container loaded!"))
+		return
+	user.visible_message("[user] has loaded \the [G] into \the [src].", "You load \the [G] into \the [src].")
+	container = G
+	user.drop_item()
+	G.forceMove(src)
+
 /obj/machinery/organ_printer/flesh/attackby(obj/item/W, mob/user)
 	// DNA sample from syringe.
 	if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actually empty the syringe
@@ -323,11 +332,7 @@
 		if(container)
 			to_chat(user, span_warning("\The [src] already has a container loaded!"))
 			return
-		else if(do_after(user, 1 SECOND, target = src))
-			user.visible_message("[user] has loaded \the [G] into \the [src].", "You load \the [G] into \the [src].")
-			container = G
-			user.drop_item()
-			G.forceMove(src)
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
 		return
 
 	return ..()

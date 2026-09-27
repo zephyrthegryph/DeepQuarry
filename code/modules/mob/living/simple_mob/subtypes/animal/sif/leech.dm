@@ -112,11 +112,11 @@
 	if(istype(A, /mob/living/carbon))
 		switch(use_stance())
 			if(I_DISARM) // Poison
-				if(ai_brain) ai_brain.busy = TRUE
+				if(ai_brain) om_flag_hold(ai_brain, "busy")
 				poison_inject(src, A)
 				if(ai_brain) ai_brain.busy = FALSE
 			if(I_GRAB) // Infesting!
-				if(ai_brain) ai_brain.busy = TRUE
+				if(ai_brain) om_flag_hold(ai_brain, "busy")
 				do_infest(src, A)
 				if(ai_brain) ai_brain.busy = FALSE
 /datum/om/stage/life/special/animal/sif/leech
@@ -260,9 +260,10 @@
 				to_chat(user, span_notice("We cannot get through that host's protective gear."))
 				return
 
-	if(!do_after(src, 2, target))
-		to_chat(user, span_notice("As [M] moves away, we are dislodged and fall to the ground."))
-		return
+	om_do_after(src, 2, target = target, receiver = src, on_done = PROC_REF(do_infest_leech_done), done_args = list(user, target, M), on_fail = PROC_REF(do_infest_leech_failed), fail_args = list(user, target, M))
+	return TRUE
+
+/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_done(mob/living/user, mob/living/target, mob/living/carbon/M)
 
 	if(!M || !src)
 		return
@@ -291,6 +292,10 @@
 	else
 		to_chat(user, span_notice("They are no longer in range."))
 		return
+
+/mob/living/simple_mob/animal/sif/leech/proc/do_infest_leech_failed(mob/living/user, mob/living/target, mob/living/carbon/M)
+	to_chat(user, span_notice("As [M] moves away, we are dislodged and fall to the ground."))
+	return
 
 /mob/living/simple_mob/animal/sif/leech/verb/uninfest()
 	set category = "Abilities.Leech"

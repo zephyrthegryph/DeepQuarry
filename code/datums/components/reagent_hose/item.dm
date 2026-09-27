@@ -61,8 +61,7 @@
 					remembered = null // Unintuitive if it does not reset state
 
 				else if(distancetonode <= amount)
-					if(REMB.setup_hoses(AC,distancetonode,user))
-						use(distancetonode)
+					REMB.setup_hoses(AC,distancetonode,user,src)
 					remembered = null
 
 				else
@@ -92,8 +91,7 @@
 							remembered = null // Unintuitive if it does not reset state
 
 						else if(distancetonode <= amount)
-							if(REMB.setup_hoses(CC,distancetonode,user))
-								use(distancetonode)
+							REMB.setup_hoses(CC,distancetonode,user,src)
 							remembered = null
 
 						else

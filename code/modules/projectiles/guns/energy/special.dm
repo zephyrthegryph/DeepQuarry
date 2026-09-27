@@ -280,6 +280,8 @@
 	return FALSE
 
 /obj/item/gun/energy/maghowitzer/attack(mob/living/A, mob/living/user, target_zone, attack_modifier)
+	if(charged_shot)
+		return ..()
 	if(power_cycle)
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 		return ITEM_INTERACT_FAILURE
@@ -289,24 +291,14 @@
 		user.visible_message(span_cult("[user] aims \the [src] at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
-		if(do_after(user, 3 SECONDS, target = src))
-			if(A.loc == target_turf)
-				..(A, user, target_zone, attack_modifier)
-			else
-				var/rand_target = pick_random_target(target_turf)
-				if(rand_target)
-					..(rand_target, user, target_zone, attack_modifier)
-				else
-					..(target_turf, user, target_zone, attack_modifier)
-			return ITEM_INTERACT_SUCCESS
-		else
-			if(beameffect)
-				qdel(beameffect)
-		power_cycle = FALSE
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(howitzer_charged), list(A, user, target_turf, TRUE, target_zone, attack_modifier), on_fail = PROC_REF(howitzer_aborted), fail_args = list(list(beameffect), user, FALSE))
+		return ITEM_INTERACT_SUCCESS
 	else
 		..(A, user, target_zone, attack_modifier) //If it can't fire, just bash with no delay.
 
 /obj/item/gun/energy/maghowitzer/afterattack(atom/A, mob/living/user, adjacent, params)
+	if(charged_shot)
+		return ..()
 	if(power_cycle)
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 		return 0
@@ -320,22 +312,32 @@
 
 	if(!power_cycle)
 		power_cycle = TRUE
-		if(do_after(user, 3 SECONDS, target = src))
-			if(A.loc == target_turf)
-				..(A, user, adjacent, params)
-			else
-				var/rand_target = pick_random_target(target_turf)
-				if(rand_target)
-					..(rand_target, user, adjacent, params)
-				else
-					..(target_turf, user, adjacent, params)
-		else
-			if(beameffect)
-				qdel(beameffect)
-			handle_click_empty(user)
-		power_cycle = FALSE
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(howitzer_charged), list(A, user, target_turf, FALSE, adjacent, params), on_fail = PROC_REF(howitzer_aborted), fail_args = list(list(beameffect), user, TRUE))
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
+
+/obj/item/gun/energy/maghowitzer/var/charged_shot = FALSE
+
+/obj/item/gun/energy/maghowitzer/proc/howitzer_aborted(list/beam_holder, mob/living/user, click_empty)
+	var/datum/beam = beam_holder[1]
+	if(beam && !QDELETED(beam))
+		qdel(beam)
+	if(click_empty && user)
+		handle_click_empty(user)
+	power_cycle = FALSE
+
+/// Charged: attack() or afterattack() again, past the charge-up.
+/obj/item/gun/energy/maghowitzer/proc/howitzer_charged(atom/A, mob/living/user, turf/target_turf, melee, arg3, arg4)
+	var/atom/aim = A
+	if(A.loc != target_turf)
+		aim = pick_random_target(target_turf) || target_turf
+	charged_shot = TRUE
+	if(melee)
+		attack(aim, user, arg3, arg4)
+	else
+		afterattack(aim, user, arg3, arg4)
+	charged_shot = FALSE
+	power_cycle = FALSE
 
 
 /obj/item/gun/energy/ionrifle/pistol
@@ -384,6 +386,8 @@
 	var/spinning_up = FALSE
 
 /obj/item/gun/energy/bfgtaser/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
+	if(spun)
+		return ..()
 	if(spinning_up)
 		return
 	if(!power_supply || !power_supply.check_charge(charge_cost))
@@ -395,11 +399,19 @@
 	update_icon()
 	user.visible_message(span_notice("[user] starts charging the [src]!"), \
 						span_notice("You start charging the [src]!"))
-	if(do_after(user, 8, target = src))
-		spinning_up = FALSE
-		..()
-	else
-		spinning_up = FALSE
+	om_do_after(user, 0.8 SECONDS, src, src, PROC_REF(spun_up), list(target, user, clickparams, pointblank, reflex), on_fail = PROC_REF(spin_ended))
+
+/obj/item/gun/energy/bfgtaser/var/spun = FALSE
+
+/obj/item/gun/energy/bfgtaser/proc/spin_ended()
+	spinning_up = FALSE
+
+/// Charged: Fire() again, past the spin-up.
+/obj/item/gun/energy/bfgtaser/proc/spun_up(atom/target, mob/living/user, clickparams, pointblank, reflex)
+	spinning_up = FALSE
+	spun = TRUE
+	Fire(target, user, clickparams, pointblank, reflex)
+	spun = FALSE
 
 /obj/item/projectile/beam/stun/weak/BFG
 	fire_sound = 'sound/effects/sparks6.ogg'

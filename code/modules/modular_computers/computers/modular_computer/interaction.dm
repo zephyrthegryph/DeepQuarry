@@ -176,11 +176,14 @@
 		to_chat(user, "\The [src] does not require repairs.")
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You begin repairing damage to \the [src]...")
-	if(!welder.remove_fuel(round(missing / 75)) || !do_after(user, missing / 10, target = src))
+	if(!welder.remove_fuel(round(missing / 75)))
 		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, missing / 10, src, src, PROC_REF(weld_repair_done), list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/modular_computer/proc/weld_repair_done(mob/user)
 	repair_damage(max_integrity)
 	to_chat(user, "You repair \the [src].")
-	return ITEM_INTERACT_SUCCESS
 
 /obj/item/modular_computer/screwdriver_act(mob/user, obj/item/tool)
 	var/list/all_components = get_all_components()

@@ -2022,13 +2022,15 @@ Departamental Swimsuits, for general use
 	translocator_unequip(translocator, usr)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
-	if (do_after(user, 2 SECONDS, target = T))
-		user.unEquip(T)
-		translocator_unequip(translocator, user)
-		T.forceMove(src)
-		translocator = T
-		user.show_message("[icon2html(src, user.client)]*click!*")
-		playsound(src, 'sound/machines/click.ogg', 30, 1)
+	om_do_after(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
+
+/obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
+	user.unEquip(T)
+	translocator_unequip(translocator, user)
+	T.forceMove(src)
+	translocator = T
+	user.show_message("[icon2html(src, user.client)]*click!*")
+	playsound(src, 'sound/machines/click.ogg', 30, 1)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_unequip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	if (translocator)
@@ -2143,6 +2145,9 @@ Departamental Swimsuits, for general use
 			add_attack_logs(user, user, "Tried to put on \the [src] and was involuntarily teleported by it (via \the [translocator] within)!")
 			return
 
+/obj/item/clothing/head/fluff/nikki/proc/hat_warp_done(mob/living/target, mob/user, proximity_flag)
+	translocator?.afterattack(target, user, proximity_flag)
+
 /obj/item/clothing/head/fluff/nikki/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters)
 	// If the hat is willing to cooperate with the holder...
 	if (hat_warp_checks(target, user, proximity_flag))
@@ -2150,15 +2155,13 @@ Departamental Swimsuits, for general use
 		switch(user.use_stance())
 			if (I_HELP)
 				user.visible_message(span_notice("[user] guides \the [target] to the bottomless hole within \the [src]. They begin to climb inside..."))
-				if (do_after(user, 5 SECONDS, target))
-					translocator.afterattack(target, user, proximity_flag)
+				om_do_after(user, 5 SECONDS, target, src, PROC_REF(hat_warp_done), list(target, user, proximity_flag))
 			if (I_DISARM)
 				user.visible_message(span_danger("[user] plops \the [src] onto \the [target]'s head!"))
 				translocator.afterattack(target, user, proximity_flag)
 			if (I_GRAB)
 				user.visible_message(span_danger("[user] begins stuffing [target] into \the [src]!"))
-				if (do_after(user, 5 SECONDS, target))
-					translocator.afterattack(target, user, proximity_flag)
+				om_do_after(user, 5 SECONDS, target, src, PROC_REF(hat_warp_done), list(target, user, proximity_flag))
 			if (I_HURT)
 				user.visible_message(span_danger("[user] swipes \the [src] over \the [target]!"))
 				translocator.afterattack(target, user, proximity_flag)

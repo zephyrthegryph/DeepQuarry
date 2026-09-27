@@ -29,6 +29,9 @@
 
 
 /datum/shuttle/autodock/ferry/specops/launch(user)
+	if(countdown_done)
+		launch_now(user)
+		return ..(user)
 	if (!can_launch())
 		return
 
@@ -50,15 +53,24 @@
 	else
 		radio_announce("THE SPECIAL OPERATIONS SHUTTLE IS PREPARING FOR LAUNCH")
 
-	sleep_until_launch()
+	start_launch_countdown(user)
+	return
 
+/// The launch, once the countdown (start_launch_countdown()) has run out: launch() again, past it.
+/datum/shuttle/autodock/ferry/specops/proc/launch_after_countdown(user)
+	countdown_done = TRUE
+	launch(user)
+	countdown_done = FALSE
+
+/datum/shuttle/autodock/ferry/specops/var/countdown_done = FALSE
+
+/datum/shuttle/autodock/ferry/specops/proc/launch_now(user)
 	if (location)
 		var/obj/machinery/light/small/readylight/light = locate() in shuttle_area
 		if(light) light.set_state(0)
 
 	//launch
 	radio_announce("ALERT: INITIATING LAUNCH SEQUENCE")
-	..(user)
 
 /datum/shuttle/autodock/ferry/specops/perform_shuttle_move()
 	..()
@@ -92,37 +104,71 @@
 		return 1
 	return ..()
 
-/datum/shuttle/autodock/ferry/specops/proc/sleep_until_launch()
-	var/message_tracker[] = list(0,1,2,3,5,10,30,45)//Create a a list with potential time values.
-
-	var/launch_time = world.time + specops_countdown_time
-	var/time_until_launch
-
+/// The countdown: announcements at the marked seconds, then the launch. A cancel stops it.
+/datum/shuttle/autodock/ferry/specops/proc/start_launch_countdown(user)
+	var/list/message_tracker = list(0,1,2,3,5,10,30,45)//The seconds left that are announced.
 	cancel_countdown = 0
 	launch_prep = 1
-	while(!cancel_countdown && (launch_time - world.time) > 0)
-		var/ticksleft = launch_time - world.time
+	for(var/seconds in message_tracker)
+		var/delay = specops_countdown_time - seconds * 10
+		if(delay >= 0 && seconds * 10 < specops_countdown_time)
+			om_after(src, delay, PROC_REF(announce_countdown), seconds)
+	om_after(src, specops_countdown_time, PROC_REF(countdown_ended), user)
 
-		//if(ticksleft > 1e5)
-		//	launch_time = world.timeofday + 10	// midnight rollover
-		time_until_launch = (ticksleft / 10)
+/datum/shuttle/autodock/ferry/specops/proc/announce_countdown(seconds)
+	if(cancel_countdown || !launch_prep)
+		return
+	radio_announce("ALERT: [seconds] SECOND[(seconds!=1)?"S":""] REMAIN")
 
-		//All this does is announce the time before launch.
-		var/rounded_time_left = round(time_until_launch)//Round time so that it will report only once, not in fractions.
-		if(rounded_time_left in message_tracker)//If that time is in the list for message announce.
-			radio_announce("ALERT: [rounded_time_left] SECOND[(rounded_time_left!=1)?"S":""] REMAIN")
-			message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
-			//Should call all the numbers but lag could mean some issues. Oh well. Not much I can do about that.
-
-		sleep(5)
-
+/datum/shuttle/autodock/ferry/specops/proc/countdown_ended(user)
+	if(!launch_prep)
+		return
 	launch_prep = 0
+	if(cancel_countdown)
+		return
+	launch_after_countdown(user)
 
 
+/// The launchpad's assault bays, "ASSAULT0" to "ASSAULT3": 1 to 4 seconds apart.
+/proc/marauder_bay_delay(id)
+	var/static/list/delays = list("ASSAULT0" = 1 SECOND, "ASSAULT1" = 2 SECONDS, "ASSAULT2" = 3 SECONDS, "ASSAULT3" = 4 SECONDS)
+	return delays[id]
+
+/// The Marauder launchpad: bay doors open, portals, mass drivers, then the doors close.
 /proc/launch_mauraders()
 	var/area/centcom/specops/special_ops = locate()//Where is the specops area located?
-	specops_marauder_launchpad(special_ops)
-	//End Marauder launchpad.
+	for(var/obj/machinery/door/blast/M in special_ops)
+		var/delay = marauder_bay_delay(M.id)
+		if(delay)
+			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/door, open))
+	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_portals), special_ops)
+
+/proc/mauraders_portals(area/centcom/specops/special_ops)
+	var/spawn_marauder[] = new()
+	for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+		if(L.name == "Marauder Entry")
+			spawn_marauder.Add(L)
+	for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
+		if(L.name == "Marauder Exit")
+			var/obj/effect/portal/P = new(L.loc)
+			P.invisibility = INVISIBILITY_ABSTRACT //So it is not seen by anyone.
+			P.failchance = 0//So it has no fail chance when teleporting.
+			P.target = pick(spawn_marauder)//Where the marauder will arrive.
+			spawn_marauder.Remove(P.target)
+	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_drive), special_ops)
+
+/proc/mauraders_drive(area/centcom/specops/special_ops)
+	for(var/obj/machinery/mass_driver/M in special_ops)
+		var/delay = marauder_bay_delay(M.id)
+		if(delay)
+			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/mass_driver, drive))
+	om_after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), special_ops) //Doors remain open for 5 seconds.
+
+/proc/mauraders_close(area/centcom/specops/special_ops)
+	for(var/obj/machinery/door/blast/M in special_ops)
+		if(marauder_bay_delay(M.id)) //Doors close at the same time.
+			M.close()
+	special_ops.readyreset()//Reset firealarm after the team launched.
 
 /obj/machinery/light/small/readylight
 	brightness_range = 5

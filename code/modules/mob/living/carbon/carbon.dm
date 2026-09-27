@@ -253,20 +253,7 @@
 			else
 				M.visible_message(span_warning("[M] tries to pat out [src]'s flames!"),
 				span_warning("You try to pat out [src]'s flames! Hot!"))
-				if(do_after(M, 1.5 SECONDS, src))
-					src.adjust_fire_stacks(-0.5)
-					if (prob(10) && (M.fire_stacks <= 0))
-						M.adjust_fire_stacks(1)
-					M.ignite_mob()
-					if (M.on_fire)
-						M.visible_message(span_danger("The fire spreads from [src] to [M]!"),
-						span_danger("The fire spreads to you as well!"))
-					else
-						src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
-						if (src.fire_stacks <= 0)
-							M.visible_message(span_warning("[M] successfully pats out [src]'s flames."),
-							span_warning("You successfully pat out [src]'s flames."))
-							src.extinguish_mob()
+				om_do_after(M, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(help_shake_act_carbon_done), done_args = list(M))
 		else
 			if (ishuman(src))
 				var/mob/living/carbon/human/H = src
@@ -312,6 +299,21 @@
 			status_adjust(EFFECT_WEAKENED, -3)
 
 			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+
+/mob/living/carbon/proc/help_shake_act_carbon_done(mob/living/carbon/M)
+	src.adjust_fire_stacks(-0.5)
+	if (prob(10) && (M.fire_stacks <= 0))
+		M.adjust_fire_stacks(1)
+	M.ignite_mob()
+	if (M.on_fire)
+		M.visible_message(span_danger("The fire spreads from [src] to [M]!"),
+		span_danger("The fire spreads to you as well!"))
+	else
+		src.adjust_fire_stacks(-0.5) //Less effective than stop, drop, and roll - also accounting for the fact that it takes half as long.
+		if (src.fire_stacks <= 0)
+			M.visible_message(span_warning("[M] successfully pats out [src]'s flames."),
+			span_warning("You successfully pat out [src]'s flames."))
+			src.extinguish_mob()
 
 /mob/living/carbon/proc/eyecheck()
 	return 0

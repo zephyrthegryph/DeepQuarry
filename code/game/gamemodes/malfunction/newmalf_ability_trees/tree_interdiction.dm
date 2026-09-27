@@ -110,22 +110,24 @@
 			return
 		user.hacking = 1
 		to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
-		sleep(300)
-		if(target && target.lockcharge)
-			to_chat(user, "Successfully sent unlock signal to cyborg..")
-			to_chat(target, "Unlock signal received..")
-			target.SetLockdown(0)
-			if(target.lockcharge)
-				to_chat(user, span_notice("Unlock Failed, lockdown wire cut."))
-				to_chat(target, span_notice("Unlock Failed, lockdown wire cut."))
-			else
-				to_chat(user, "Cyborg unlocked.")
-				to_chat(target, "You have been unlocked.")
-		else if(target)
-			to_chat(user, "Unlock cancelled - cyborg is already unlocked.")
+		om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
+
+/proc/malf_unlock_cyborg_done(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
+	if(target && target.lockcharge)
+		to_chat(user, "Successfully sent unlock signal to cyborg..")
+		to_chat(target, "Unlock signal received..")
+		target.SetLockdown(0)
+		if(target.lockcharge)
+			to_chat(user, span_notice("Unlock Failed, lockdown wire cut."))
+			to_chat(target, span_notice("Unlock Failed, lockdown wire cut."))
 		else
-			to_chat(user, "Unlock cancelled - lost connection to cyborg.")
-		user.hacking = 0
+			to_chat(user, "Cyborg unlocked.")
+			to_chat(target, "You have been unlocked.")
+	else if(target)
+		to_chat(user, "Unlock cancelled - cyborg is already unlocked.")
+	else
+		to_chat(user, "Unlock cancelled - lost connection to cyborg.")
+	user.hacking = 0
 
 
 /datum/game_mode/malfunction/verb/hack_cyborg(mob/living/silicon/robot/target as mob in get_unlinked_cyborgs(usr))

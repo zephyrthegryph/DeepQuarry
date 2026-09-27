@@ -21,6 +21,9 @@
 		return 0
 	return ..()
 
+/obj/item/mecha_parts/mecha_equipment/weapon/proc/burst_fire(obj/item/projectile/P, atom/target, params)
+	Fire(P, target, params)
+
 /obj/item/mecha_parts/mecha_equipment/weapon/action(atom/target, params)
 	if(!action_checks(target))
 		return
@@ -50,11 +53,13 @@
 		if(!projectile_turf)
 			projectile_turf = get_turf(curloc)
 		var/P = new projectile(projectile_turf)
-		Fire(P, target, params)
+		if(i > 1 && fire_cooldown)
+			// Later shots of the burst follow fire_cooldown apart.
+			om_after(src, fire_cooldown * (i - 1), PROC_REF(burst_fire), P, target, params)
+		else
+			Fire(P, target, params)
 		if(i == 1)
 			set_ready_state(FALSE)
-		if(fire_cooldown)
-			sleep(fire_cooldown)
 	if(auto_rearm)
 		projectiles = projectiles_per_shot
 //	set_ready_state(FALSE)

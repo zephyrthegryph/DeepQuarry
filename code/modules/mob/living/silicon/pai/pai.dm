@@ -602,7 +602,10 @@
 	var/mob/living/carbon/human/dummy/dummy = new ()
 	//This doesn't include custom_items because that's ... hard.
 	client.prefs.dress_preview_mob(dummy)
-	sleep(1 SECOND) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+	om_after(src, 1 SECOND, PROC_REF(character_icon_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+	return TRUE
+
+/mob/living/silicon/pai/proc/character_icon_from_dummy(mob/living/carbon/human/dummy/dummy)
 	dummy.regenerate_icons()
 
 	var/icon/new_holo = getCompoundIcon(dummy)
@@ -623,7 +626,7 @@
 	holo_icon_north = new_holo_north
 	holo_icon_east = new_holo_east
 	holo_icon_west = new_holo_west
-	return TRUE
+	update_icon()
 
 /mob/living/silicon/pai/set_dir(new_dir)
 	. = ..()

@@ -66,28 +66,32 @@
 /obj/belly/proc/resist_default_escape(mob/living/living_prey, obj/item/prey_item)
 	var/escape_attempt_owner_message = span_vwarning(belly_format_string(escape_attempt_messages_owner, living_prey))
 	var/escape_attempt_prey_message = span_vwarning(belly_format_string(escape_attempt_messages_prey, living_prey))
-	var/escape_fail_owner_message = span_vwarning(belly_format_string(escape_fail_messages_owner, living_prey))
-	var/escape_fail_prey_message = span_vnotice(belly_format_string(escape_fail_messages_prey, living_prey))
 	escape_attempt_prey_message = span_vwarning("[escape_attempt_prey_message] (will take around [escapetime/10] seconds.)")
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
 
-	if(do_after(living_prey, escapetime, owner, target = src, timed_action_flags = IGNORE_INCAPACITATED))
-		if((owner.stat || escapable)) //Can still escape?
-			if(prey_item)
-				release_specific_contents(prey_item)
-				return
+	om_do_after(living_prey, escapetime, src, src, PROC_REF(default_escape_done), list(living_prey, prey_item), IGNORE_INCAPACITATED, PROC_REF(escape_failed), list(living_prey))
 
-			if(living_prey.loc == src)
-				release_specific_contents(living_prey)
-				return
-
-		if(living_prey.loc != src) //Aren't even in the belly. Quietly fail.
+/obj/belly/proc/default_escape_done(mob/living/living_prey, obj/item/prey_item)
+	if((owner.stat || escapable)) //Can still escape?
+		if(prey_item)
+			release_specific_contents(prey_item)
 			return
 
+		if(living_prey.loc == src)
+			release_specific_contents(living_prey)
+			return
+
+	if(living_prey.loc != src) //Aren't even in the belly. Quietly fail.
+		return
 	//Belly became inescapable or mob revived
-	to_chat(living_prey, escape_fail_prey_message)
-	to_chat(owner, escape_fail_owner_message)
+	escape_failed(living_prey)
+
+/obj/belly/proc/escape_failed(mob/living/living_prey)
+	if(!living_prey)
+		return
+	to_chat(living_prey, span_vnotice(belly_format_string(escape_fail_messages_prey, living_prey)))
+	to_chat(owner, span_vwarning(belly_format_string(escape_fail_messages_owner, living_prey)))
 
 /obj/belly/proc/resist_struggle_outside(mob/living/living_prey)
 	var/struggle_outer_message = span_valert(belly_format_string(struggle_messages_outside, living_prey))
@@ -116,44 +120,44 @@
 
 	var/escape_attempt_owner_message = span_vwarning(belly_format_string(escape_attempt_messages_owner, living_prey))
 	var/escape_attempt_prey_message = span_vwarning(belly_format_string(escape_attempt_messages_prey, living_prey))
-	var/escape_fail_owner_message = span_vwarning(belly_format_string(escape_fail_messages_owner, living_prey))
-	var/escape_fail_prey_message = span_vnotice(belly_format_string(escape_fail_messages_prey, living_prey))
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
-	if(do_after(living_prey, escapetime, target = src))
-		if(escapable && prey_item)
-			var/escape_item_owner_message = span_vwarning(belly_format_string(escape_item_messages_owner, living_prey, item = prey_item))
-			var/escape_item_prey_message = span_vwarning(belly_format_string(escape_item_messages_prey, living_prey, item = prey_item))
-			var/escape_item_outside_message = span_vwarning(belly_format_string(escape_item_messages_outside, living_prey, item = prey_item))
+	om_do_after(living_prey, escapetime, src, src, PROC_REF(chance_escape_done), list(living_prey, prey_item))
+	return TRUE
 
-			release_specific_contents(prey_item)
-			to_chat(living_prey, escape_item_prey_message)
-			to_chat(owner, escape_item_owner_message)
-			if(!private_struggle)
-				for(var/mob/M in hearers(4, owner))
-					M.show_message(escape_item_outside_message, 2)
-			return TRUE
+/obj/belly/proc/chance_escape_done(mob/living/living_prey, obj/item/prey_item)
+	if(escapable && prey_item)
+		var/escape_item_owner_message = span_vwarning(belly_format_string(escape_item_messages_owner, living_prey, item = prey_item))
+		var/escape_item_prey_message = span_vwarning(belly_format_string(escape_item_messages_prey, living_prey, item = prey_item))
+		var/escape_item_outside_message = span_vwarning(belly_format_string(escape_item_messages_outside, living_prey, item = prey_item))
 
-		if(escapable && (living_prey.loc == src) && !living_prey.absorbed) //Does the owner still have escapable enabled?
-			var/escape_owner_message = span_vwarning(belly_format_string(escape_messages_owner, living_prey))
-			var/escape_prey_message = span_vwarning(belly_format_string(escape_messages_prey, living_prey))
-			var/escape_outside_message = span_vwarning(belly_format_string(escape_messages_outside, living_prey))
-
-			release_specific_contents(living_prey)
-			to_chat(living_prey, escape_prey_message)
-			to_chat(owner, escape_owner_message)
-			if(!private_struggle)
-				for(var/mob/M in hearers(4, owner))
-					M.show_message(escape_outside_message, 2)
-			return TRUE
-
-		if(!(living_prey.loc == src)) //Aren't even in the belly. Quietly fail.
-			return TRUE
-
-		//Belly became inescapable.
-		to_chat(living_prey, escape_fail_prey_message)
-		to_chat(owner, escape_fail_owner_message)
+		release_specific_contents(prey_item)
+		to_chat(living_prey, escape_item_prey_message)
+		to_chat(owner, escape_item_owner_message)
+		if(!private_struggle)
+			for(var/mob/M in hearers(4, owner))
+				M.show_message(escape_item_outside_message, 2)
 		return TRUE
+
+	if(escapable && (living_prey.loc == src) && !living_prey.absorbed) //Does the owner still have escapable enabled?
+		var/escape_owner_message = span_vwarning(belly_format_string(escape_messages_owner, living_prey))
+		var/escape_prey_message = span_vwarning(belly_format_string(escape_messages_prey, living_prey))
+		var/escape_outside_message = span_vwarning(belly_format_string(escape_messages_outside, living_prey))
+
+		release_specific_contents(living_prey)
+		to_chat(living_prey, escape_prey_message)
+		to_chat(owner, escape_owner_message)
+		if(!private_struggle)
+			for(var/mob/M in hearers(4, owner))
+				M.show_message(escape_outside_message, 2)
+		return TRUE
+
+	if(!(living_prey.loc == src)) //Aren't even in the belly. Quietly fail.
+		return TRUE
+
+	//Belly became inescapable.
+	escape_failed(living_prey)
+	return TRUE
 
 /obj/belly/proc/resist_check_transferchance(mob/living/living_prey, obj/item/prey_item)
 	if(!prob(transferchance) || !transferlocation) //Next, let's have it see if they end up getting into an even bigger mess then when they started.
@@ -282,27 +286,30 @@
 
 	to_chat(living_prey, escape_attempt_absorbed_prey_message)
 	to_chat(owner, escape_attempt_absorbed_owner_message)
-	if(do_after(living_prey, escapetime, target = src))
-		if((escapable || owner.stat) && (living_prey.loc == src) && prob(escapechance_absorbed)) //Does the escape attempt succeed?
-			var/escape_absorbed_owner_message = span_vwarning(belly_format_string(escape_absorbed_messages_owner, living_prey))
-			var/escape_absorbed_prey_message = span_vwarning(belly_format_string(escape_absorbed_messages_prey, living_prey))
-			var/escape_absorbed_outside_message = span_vwarning(belly_format_string(escape_absorbed_messages_outside, living_prey))
+	om_do_after(living_prey, escapetime, src, src, PROC_REF(absorbed_escape_done), list(living_prey))
+	return TRUE
 
-			release_specific_contents(living_prey)
-			to_chat(living_prey, escape_absorbed_prey_message)
-			to_chat(owner, escape_absorbed_owner_message)
-			if(!private_struggle)
-				for(var/mob/M in hearers(4, owner))
-					M.show_message(escape_absorbed_outside_message, 2)
-			return TRUE
+/obj/belly/proc/absorbed_escape_done(mob/living/living_prey)
+	if((escapable || owner.stat) && (living_prey.loc == src) && prob(escapechance_absorbed)) //Does the escape attempt succeed?
+		var/escape_absorbed_owner_message = span_vwarning(belly_format_string(escape_absorbed_messages_owner, living_prey))
+		var/escape_absorbed_prey_message = span_vwarning(belly_format_string(escape_absorbed_messages_prey, living_prey))
+		var/escape_absorbed_outside_message = span_vwarning(belly_format_string(escape_absorbed_messages_outside, living_prey))
 
-		if(!(living_prey.loc == src)) //Aren't even in the belly. Quietly fail.
-			return TRUE
-
-		//Belly became inescapable or you failed your roll.
-		var/escape_fail_absorbed_owner_message = span_vwarning(belly_format_string(escape_fail_absorbed_messages_owner, living_prey))
-		var/escape_fail_absorbed_prey_message = span_vnotice(belly_format_string(escape_fail_absorbed_messages_prey, living_prey))
-
-		to_chat(living_prey, escape_fail_absorbed_prey_message)
-		to_chat(owner, escape_fail_absorbed_owner_message)
+		release_specific_contents(living_prey)
+		to_chat(living_prey, escape_absorbed_prey_message)
+		to_chat(owner, escape_absorbed_owner_message)
+		if(!private_struggle)
+			for(var/mob/M in hearers(4, owner))
+				M.show_message(escape_absorbed_outside_message, 2)
 		return TRUE
+
+	if(!(living_prey.loc == src)) //Aren't even in the belly. Quietly fail.
+		return TRUE
+
+	//Belly became inescapable or you failed your roll.
+	var/escape_fail_absorbed_owner_message = span_vwarning(belly_format_string(escape_fail_absorbed_messages_owner, living_prey))
+	var/escape_fail_absorbed_prey_message = span_vnotice(belly_format_string(escape_fail_absorbed_messages_prey, living_prey))
+
+	to_chat(living_prey, escape_fail_absorbed_prey_message)
+	to_chat(owner, escape_fail_absorbed_owner_message)
+	return TRUE

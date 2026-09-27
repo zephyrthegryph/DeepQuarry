@@ -113,11 +113,13 @@
 
 /obj/machinery/recycling/crusher/take_item(obj/item/O)
 	. = ..()
-	var/trash = 1 // Trash multiplier
 	working = TRUE
 	icon_state = "crusher-process"
 	update_use_power(USE_POWER_ACTIVE)
-	sleep(5 SECONDS)
+	om_after(src, 5 SECONDS, PROC_REF(crush_done), O)
+
+/obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
+	var/trash = 1 // Trash multiplier
 	var/list/modified_mats = list()
 	if(istype(O,/obj/item/trash)) // Trash multiplier
 		trash = 5 // Trash good
@@ -165,12 +167,11 @@
 	working = TRUE
 	icon_state = "sorter-process"
 	update_use_power(USE_POWER_ACTIVE)
-	sleep(2 SECONDS)
+	om_after(src, 2 SECONDS, PROC_REF(sort_done), O)
+
+/obj/machinery/recycling/sorter/proc/sort_done(obj/item/O)
 	sort_item(O)
 	dispense_if_possible()
-	update_use_power(USE_POWER_IDLE)
-	icon_state = "sorter"
-	working = FALSE
 
 /obj/machinery/recycling/sorter/proc/sort_item(obj/item/O)
 	var/list/item_matter = O.material_totals()
@@ -181,12 +182,17 @@
 			materials[mat] = item_matter[mat]
 	qdel(O)
 
+/// Dispenses one dust pile every 2 seconds while any material has a sheet's worth, then idles.
 /obj/machinery/recycling/sorter/proc/dispense_if_possible()
 	for(var/mat in materials)
-		while(materials[mat] >= (SHEET_MATERIAL_AMOUNT))
+		if(materials[mat] >= (SHEET_MATERIAL_AMOUNT))
 			materials[mat] -= (SHEET_MATERIAL_AMOUNT)
 			new /obj/item/material_dust(get_step(src, dir), mat)
-			sleep(2 SECONDS)
+			om_after(src, 2 SECONDS, PROC_REF(dispense_if_possible))
+			return
+	update_use_power(USE_POWER_IDLE)
+	icon_state = "sorter"
+	working = FALSE
 
 /**
  * This machine makes sheets after being provided with material dust from a sorter.
@@ -208,7 +214,9 @@
 	working = TRUE
 	icon_state = "stamper-process"
 	update_use_power(USE_POWER_ACTIVE)
-	sleep(64)
+	om_after(src, 6.4 SECONDS, PROC_REF(stamp_done), O)
+
+/obj/machinery/recycling/stamper/proc/stamp_done(obj/item/O)
 	dust_to_sheet(O)
 	icon_state = "stamper"
 	update_use_power(USE_POWER_IDLE)

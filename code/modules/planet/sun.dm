@@ -50,22 +50,24 @@
 /datum/sun_holder/proc/rainbow()
 	var/end = world.time + 30 SECONDS
 
-	var/col_index = 1
 
 	var/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
 	var/original_brightness = sun.alpha/255
 	var/original_color = sun.color
 
 	update_brightness(0.8)
+	rainbow_step(end, colors, 1, original_brightness, original_color)
 
-	while(world.time < end)
-		update_color(colors[col_index])
-		if(++col_index > colors.len)
-			col_index = 1
-		sleep(3)
-
-	update_brightness(original_brightness)
-	update_color(original_color)
+/// One colour of the rainbow every 0.3 s until `end`, then the original light.
+/datum/sun_holder/proc/rainbow_step(end, list/colors, col_index, original_brightness, original_color)
+	if(world.time >= end)
+		update_brightness(original_brightness)
+		update_color(original_color)
+		return
+	update_color(colors[col_index])
+	if(++col_index > colors.len)
+		col_index = 1
+	om_after(src, 0.3 SECONDS, PROC_REF(rainbow_step), end, colors, col_index, original_brightness, original_color)
 
 // Holds a full white icon that can be mutated to make sun on the O_LIGHTING plane
 /atom/movable/sun_visuals

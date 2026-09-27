@@ -45,13 +45,13 @@
 		opened = !opened
 		update_icon()
 		return TRUE
-	if(use_tool(user, O, src, delay = 1.5 SECONDS, quality = TOOL_WRENCH, volume = 50,
-			message_self = "You start to unwrench the extinguisher cabinet."))
-		to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
-		new /obj/item/frame/extinguisher_cabinet(loc)
-		qdel(src)
+	use_tool(user, O, src, delay = 1.5 SECONDS, quality = TOOL_WRENCH, volume = 50, message_self = "You start to unwrench the extinguisher cabinet.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
 
+/obj/structure/extinguisher_cabinet/proc/wrench_act_tool_done(mob/user)
+	to_chat(user, span_notice("You unwrench the extinguisher cabinet."))
+	new /obj/item/frame/extinguisher_cabinet(loc)
+	qdel(src)
 
 /obj/structure/extinguisher_cabinet/attack_hand(mob/living/user)
 	if(isrobot(user))

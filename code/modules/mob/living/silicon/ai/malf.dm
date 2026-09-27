@@ -20,10 +20,12 @@
 
 // Safely remove malfunction status, fixing hacked APCs and resetting variables.
 /mob/living/silicon/ai/proc/stop_malf()
-	var/mob/living/silicon/ai/user = src
 	// Generic variables
 	malfunctioning = 0
-	sleep(10)
+	om_after(src, 1 SECOND, PROC_REF(stop_malf_finish))
+
+/mob/living/silicon/ai/proc/stop_malf_finish()
+	var/mob/living/silicon/ai/user = src
 	research = null
 	// Fix hacked APCs
 	if(hacked_apcs)

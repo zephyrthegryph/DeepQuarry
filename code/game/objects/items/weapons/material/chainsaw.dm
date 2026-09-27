@@ -28,23 +28,27 @@
 	visible_message("You start pulling the string on \the [src].", "[user] starts pulling the string on the [src].")
 
 	if(max_fuel <= 0)
-		if(do_after(user, 15, target = src))
-			to_chat(user, "\The [src] won't start!")
-		else
-			to_chat(user, "You fumble with the string.")
+		om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
 	else
-		if(do_after(user, 15, target = src))
-			visible_message("You start \the [src] up with a loud grinding!", "[user] starts \the [src] up with a loud grinding!")
-			attack_verb = list("shredded", "ripped", "torn")
-			playsound(src, 'sound/weapons/chainsaw_startup.ogg',40,1)
-			force = active_force
-			edge = TRUE
-			sharp = TRUE
-			on = 1
-			PERIODIC_START(src, PERIODIC_SLOW) // burns fuel while running
-			update_icon()
-		else
-			to_chat(user, "You fumble with the string.")
+		om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done2), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed2), fail_args = list(user))
+
+/obj/item/chainsaw/proc/turnOn_timed_done(mob/user)
+	to_chat(user, "\The [src] won't start!")
+
+/obj/item/chainsaw/proc/turnOn_timed_failed(mob/user)
+	to_chat(user, "You fumble with the string.")
+/obj/item/chainsaw/proc/turnOn_timed_done2(mob/user)
+	visible_message("You start \the [src] up with a loud grinding!", "[user] starts \the [src] up with a loud grinding!")
+	attack_verb = list("shredded", "ripped", "torn")
+	playsound(src, 'sound/weapons/chainsaw_startup.ogg',40,1)
+	force = active_force
+	edge = TRUE
+	sharp = TRUE
+	on = 1
+	update_icon()
+
+/obj/item/chainsaw/proc/turnOn_timed_failed2(mob/user)
+	to_chat(user, "You fumble with the string.")
 
 /obj/item/chainsaw/proc/turnOff(mob/user as mob)
 	if(!on) return
@@ -91,12 +95,15 @@
 				Hyd.die()
 	if (istype(A, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,A) <= 1)
 		to_chat(user, span_notice("You begin filling the tank on the chainsaw."))
-		if(do_after(user, 15, target = src))
-			A.reagents.trans_to_obj(src, max_fuel)
-			playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
-			to_chat(user, span_notice("Chainsaw succesfully refueled."))
-		else
-			to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
+		om_do_after(user, 15, target = src, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(A, user), on_fail = PROC_REF(afterattack_timed_failed), fail_args = list(A, user))
+
+/obj/item/chainsaw/proc/afterattack_timed_done(atom/A, mob/user)
+	A.reagents.trans_to_obj(src, max_fuel)
+	playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+	to_chat(user, span_notice("Chainsaw succesfully refueled."))
+
+/obj/item/chainsaw/proc/afterattack_timed_failed(atom/A, mob/user)
+	to_chat(user, span_notice("Don't move while you're refilling the chainsaw."))
 
 /// Burns fuel every 2 s while running (turnOn() starts it); off, it sleeps.
 /obj/item/chainsaw/periodic_step()

@@ -92,13 +92,16 @@
 			to_chat(user, span_warning("You'll need to turn [src] on to patch the damage on [H]'s [S.name]!"))
 			return ITEM_INTERACT_FAILURE
 
-		if(S.robo_repair(15, BRUTE, "some dents", src, user))
-			remove_fuel(1, user)
+		if(S.robo_repair(15, BRUTE, "some dents", src, user, PROC_REF(robo_repair_used)))
 			return ITEM_INTERACT_SUCCESS
 		else
 			return ITEM_INTERACT_FAILURE //Stops you from accidentally harming someone while on help intent.
 
 	return ..()
+
+/// A robotic limb repair with this welder finished.
+/obj/item/weldingtool/proc/robo_repair_used(mob/living/user)
+	remove_fuel(1, user)
 
 /obj/item/weldingtool/attackby(obj/item/W as obj, mob/living/user as mob)
 	if(W.has_tool_quality(TOOL_SCREWDRIVER))

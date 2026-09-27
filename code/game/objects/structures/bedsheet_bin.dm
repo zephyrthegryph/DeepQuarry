@@ -46,13 +46,15 @@ LINEN BINS
 /obj/item/bedsheet/attackby(obj/item/I, mob/user)
 	if(is_sharp(I))
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " begins cutting up [src] with [I]."), span_notice("You begin cutting up [src] with [I]."))
-		if(do_after(user, 5 SECONDS, target = src))
-			to_chat(user, span_notice("You cut [src] into pieces!"))
-			for(var/i in 1 to rand(2,5))
-				new /obj/item/reagent_containers/glass/rag(drop_location())
-			qdel(src)
+		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 		return
 	..()
+
+/obj/item/bedsheet/proc/attackby_timed_done(mob/user)
+	to_chat(user, span_notice("You cut [src] into pieces!"))
+	for(var/i in 1 to rand(2,5))
+		new /obj/item/reagent_containers/glass/rag(drop_location())
+	qdel(src)
 
 /obj/item/bedsheet/ghosts_can_use_rotate_verbs()
 	return CONFIG_GET(flag/ghost_interaction)

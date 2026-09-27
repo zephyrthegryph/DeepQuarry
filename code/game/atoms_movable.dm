@@ -302,6 +302,9 @@
 ///Called after a successful Move(). By this point, we've already moved
 /atom/movable/proc/Moved(atom/old_loc, direction, forced = FALSE, movetime)
 	SEND_SIGNAL(src, COMSIG_MOVABLE_MOVED, old_loc, direction, forced, movetime)
+	// Mobs raise CHANGE_MOB_LOC themselves (living_movement.dm).
+	if(om_listen && !ismob(src))
+		om_changed(src, isitem(src) ? CHANGE_ITEM_LOC : CHANGE_EXPLICIT)
 	// Covers Destroy() too, which moves to nullspace.
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(old_loc)
@@ -648,8 +651,7 @@
 /atom/movable/proc/cloak()
 	if(!cloak_begin())
 		return FALSE
-	cloak_animation(1 SECOND)
-	cloak_finish()
+	cloak_animation(1 SECOND) // cloak_finish() when it has played
 	return TRUE
 
 /// Cloaking without waiting: marks the atom cloaked and starts the fade. TRUE when it did work.
@@ -698,14 +700,16 @@
 	filters += filter(type="wave", x = 0, y = 16, size = 0, offset = 0, flags = WAVE_SIDEWAYS)
 	animate(filters[our_filter], offset = 1, size = 8, time = length, flags = ANIMATION_PARALLEL)
 
-	//Wait for animations to finish
-	sleep(length+5)
+	//When the animations finish
+	om_after(src, length + 5, PROC_REF(cloak_animation_done), initial_alpha)
 
+/atom/movable/proc/cloak_animation_done(initial_alpha)
 	//Remove those
 	filters -= filter(type="wave", x = 0, y = 16, size = 8, offset = 1, flags = WAVE_SIDEWAYS)
 
 	//Back to original alpha
 	alpha = initial_alpha
+	cloak_finish()
 
 /atom/movable/proc/uncloak_animation(length = 1 SECOND)
 	//Save these
@@ -722,9 +726,10 @@
 	filters += filter(type="wave", x=0, y = 16, size = 8, offset = 1, flags = WAVE_SIDEWAYS)
 	animate(filters[our_filter], offset = 0, size = 0, time = length, flags = ANIMATION_PARALLEL)
 
-	//Wait for animations to finish
-	sleep(length+5)
+	//When the animations finish
+	om_after(src, length + 5, PROC_REF(uncloak_animation_done))
 
+/atom/movable/proc/uncloak_animation_done()
 	//Remove those
 	filters -= filter(type="wave", x=0, y = 16, size = 0, offset = 0, flags = WAVE_SIDEWAYS)
 

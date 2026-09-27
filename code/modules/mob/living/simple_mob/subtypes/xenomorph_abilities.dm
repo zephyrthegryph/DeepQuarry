@@ -1,3 +1,26 @@
+/mob/living/simple_mob/xeno_ch/proc/xeno_build_done(choice, targetLoc)
+	var/obj/O
+	switch(choice)
+		if("Resin Door")
+			O = new /obj/structure/simple_door/resin(targetLoc)
+
+		if("Resin Membrane")
+			O = new /obj/structure/alien/membrane(targetLoc)
+
+		if("Nest")
+			O = new /obj/structure/bed/nest(targetLoc)
+
+		if("Resin Wall")
+			O = new /obj/structure/alien/wall(targetLoc)
+
+		if("Weed Node")
+			O = new /obj/effect/alien/weeds/node(targetLoc)
+
+	if(O)
+		visible_message(span_boldwarning("[src] vomits up a thick purple substance and begins to shape it!"), span_alium("You shape a [choice]."))
+		O.color = "#321D37"
+		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+
 /mob/living/simple_mob/xeno_ch/proc/xeno_build()
 	set name = "Build Resin Structure"
 	set desc = "Build a xenomorph resin structure."
@@ -16,29 +39,8 @@
 	if(iswall(targetLoc))
 		targetLoc = get_turf(src)
 
-	var/obj/O
+	om_do_after(src, xeno_build_time, target = src, receiver = src, on_done = PROC_REF(xeno_build_done), done_args = list(choice, targetLoc))
 
-	if(do_after(src, xeno_build_time, src))
-		switch(choice)
-			if("Resin Door")
-				O = new /obj/structure/simple_door/resin(targetLoc)
-
-			if("Resin Membrane")
-				O = new /obj/structure/alien/membrane(targetLoc)
-
-			if("Nest")
-				O = new /obj/structure/bed/nest(targetLoc)
-
-			if("Resin Wall")
-				O = new /obj/structure/alien/wall(targetLoc)
-
-			if("Weed Node")
-				O = new /obj/effect/alien/weeds/node(targetLoc)
-
-		if(O)
-			visible_message(span_boldwarning("[src] vomits up a thick purple substance and begins to shape it!"), span_alium("You shape a [choice]."))
-			O.color = "#321D37"
-			playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
 
 
 

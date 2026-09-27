@@ -337,7 +337,7 @@
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
 	if(can_use(user, H))
-		busy = TRUE
+		om_flag_hold(src, "busy")
 		update_icon()
 
 		do_revive(H, user)
@@ -350,7 +350,7 @@
 //Since harm-intent now skips the delay for deliberate placement, you have to be able to hit them in combat in order to shock people.
 /obj/item/shockpaddles/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(ishuman(target) && can_use(user, target))
-		busy = 1
+		om_flag_hold(src, "busy")
 		update_icon()
 
 		do_electrocute(target, user, hit_zone)
@@ -370,8 +370,10 @@
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
 	user.visible_message(span_warning("\The [user] begins to place [src] on [H]'s chest."), span_warning("You begin to place [src] on [H]'s chest..."))
-	if(!do_after(user, 3 SECONDS, target = H))
-		return
+	om_do_after(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user))
+	return TRUE
+
+/obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " places [src] on [H]'s chest."), span_warning("You place [src] on [H]'s chest."))
 	playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
 
@@ -386,9 +388,9 @@
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	if(!do_after(user, chargetime / output_envelope, target = H))
-		return
+	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_revive_charged), done_args = list(H, user, output_envelope))
 
+/obj/item/shockpaddles/proc/do_revive_charged(mob/living/carbon/human/H, mob/user, output_envelope)
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))
 		make_announcement("buzzes, \"Insufficient charge.\"", "warning")
@@ -412,7 +414,7 @@
 		add_attack_logs(user, H, "Cardioverted using [name]")
 		return
 
-	error = can_revive(H)
+	var/error = can_revive(H)
 	if(error)
 		make_announcement(error, "warning")
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
@@ -441,7 +443,6 @@
 
 	log_and_message_admins("used \a [src] to revive [key_name(H)].")
 
-
 /obj/item/shockpaddles/proc/do_electrocute(mob/living/carbon/human/H, mob/user, target_zone)
 	var/obj/item/organ/external/affecting = H.get_organ(target_zone)
 	if(!affecting)
@@ -460,8 +461,10 @@
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	if(!do_after(user, chargetime / output_envelope, target = H))
-		return
+	om_do_after(user, chargetime / output_envelope, target = H, receiver = src, on_done = PROC_REF(do_electrocute_timed_done), done_args = list(H, user, target_zone, output_envelope))
+	return TRUE
+
+/obj/item/shockpaddles/proc/do_electrocute_timed_done(mob/living/carbon/human/H, mob/user, target_zone, output_envelope)
 
 	//deduct charge here, in case the base unit was EMPed or something during the delay time
 	if(!consume_enhanced_charge(chargecost, output_envelope))

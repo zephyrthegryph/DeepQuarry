@@ -408,10 +408,7 @@
 			user.visible_message(span_notice("\The [user] secured \the [src]'s maintenance panel."))
 			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
 		else if(pai)
-			if(do_after(user, 3 SECONDS, target = src))
-				panel_open = TRUE
-				user.visible_message(span_warning("\The [user] opened \the [src]'s maintenance panel."))
-				playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	if(istype(I,/obj/item/robotanalyzer))
 		if(!panel_open)
 			to_chat(user, span_warning("The panel isn't open. You will need to unscrew it to open it."))
@@ -545,65 +542,37 @@
 
 	if(istype(I,/obj/item/paiparts/cell))
 		if(cell == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				cell = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/processor))
 		if(processor == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				processor = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/board))
 		if(board == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				board = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/capacitor))
 		if(capacitor == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				capacitor = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done5), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/projector))
 		if(projector == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				projector = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done6), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/emitter))
 		if(emitter == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				emitter = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done7), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 	if(istype(I,/obj/item/paiparts/speech_synthesizer))
 		if(speech_synthesizer == PP_MISSING)
-			if(do_after(user, 3 SECONDS, target = src))
-				user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
-				speech_synthesizer = PP_FUNCTIONAL
-				user.drop_from_inventory(I)
-				qdel(I)
+			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done8), done_args = list(I, user))
 		else
 			to_chat(user, span_warning("You would need to remove the installed [I] first!"))
 
@@ -624,6 +593,46 @@
 		else if (pai.idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifications at this time."))
 			return
+
+/obj/item/paicard/proc/attackby_timed_done(mob/user)
+	panel_open = TRUE
+	user.visible_message(span_warning("\The [user] opened \the [src]'s maintenance panel."))
+	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+/obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	cell = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
+/obj/item/paicard/proc/attackby_timed_done3(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	processor = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
+/obj/item/paicard/proc/attackby_timed_done4(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	board = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
+/obj/item/paicard/proc/attackby_timed_done5(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	capacitor = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
+/obj/item/paicard/proc/attackby_timed_done6(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	projector = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
+/obj/item/paicard/proc/attackby_timed_done7(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	emitter = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
+/obj/item/paicard/proc/attackby_timed_done8(obj/item/I, mob/user)
+	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	speech_synthesizer = PP_FUNCTIONAL
+	user.drop_from_inventory(I)
+	qdel(I)
 
 /obj/item/paicard/attack_self(mob/user, callback)
 	. = ..(user)
@@ -655,8 +664,10 @@
 		playsound(src, 'sound/items/pickup/component.ogg', vary = TRUE)
 	else
 		return
-	if(!do_after(user, 3 SECONDS, target = src))
-		return
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, choice))
+	return TRUE
+
+/obj/item/paicard/proc/attack_self_timed_done(mob/user, choice)
 	switch(choice)
 		if("cell")
 			if(cell == PP_FUNCTIONAL)

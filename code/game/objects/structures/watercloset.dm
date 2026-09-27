@@ -138,21 +138,7 @@
 			if(open && !swirlie)
 				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
 				swirlie_mob = om_handle(GM)
-				if(do_after(user, 3 SECONDS, target = GM))
-					if(!open) //Someone closed it while we were trying to swirlie. Rude.
-						open = TRUE //Open it.
-						update_icon()
-					if(!refilling)
-						user.visible_message(span_danger("[user] gives [GM] a swirlie!"), span_notice("You give [GM] a swirlie!"), "You hear a toilet flushing.")
-						if(!GM.internal)
-							GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
-						if(GM.size_multiplier <= 0.75)
-							GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
-							GM.forceMove(get_turf(src))
-							GM.status_at_least(EFFECT_WEAKENED, 5)
-						flush()
-					else
-						user.visible_message(span_warning("[user] tries to give [GM.name] a swirlie, but the toilet was still refilling!"), span_warning("You cant give [GM] swirlie while \the [src] is still refilling!"))
+				om_do_after(user, 3 SECONDS, target = GM, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, GM, swirlie))
 				swirlie_mob = null
 			else
 				user.visible_message(span_danger("[user] slams [GM] into the [src]!"), span_notice("You slam [GM] into the [src]!"))
@@ -160,26 +146,12 @@
 
 	if(cistern && !teleplumb_crystal && istype(I, /obj/item/bluespace_crystal))
 		to_chat(user, span_notice("You begin to insert \the [I] into \the [src]..."))
-		if(!do_after(user, 2 SECONDS, src))
-			return
-		to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
-		user.drop_item()
-		I.forceMove(src)
-		teleplumb_crystal = I
-		//TODO: add a way to link this to custom destinations.
-		teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
-		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
 		return
 
 	if(cistern && istype(I, /obj/item/stock_parts/matter_bin))
 		to_chat(user, span_notice("You begin to replace \the [bin] in \the [src] with \the [I]."))
-		if(!do_after(user, 2 SECONDS, src))
-			return
-		to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
-		bin.forceMove(src.loc) //Remove the old bin.
-		user.drop_item()
-		I.forceMove(src)
-		bin = I //Set the internally stored bin to the new bin.
+		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(I, user))
 		return
 
 	if(cistern && !istype(user,/mob/living/silicon/robot)) //STOP PUTTING YOUR MODULES IN THE TOILET.
@@ -194,6 +166,38 @@
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
 		return
+
+/obj/structure/toilet/proc/attackby_timed_done(mob/living/user, mob/living/GM, mob/living/swirlie)
+	if(!open) //Someone closed it while we were trying to swirlie. Rude.
+		open = TRUE //Open it.
+		update_icon()
+	if(!refilling)
+		user.visible_message(span_danger("[user] gives [GM] a swirlie!"), span_notice("You give [GM] a swirlie!"), "You hear a toilet flushing.")
+		if(!GM.internal)
+			GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
+		if(GM.size_multiplier <= 0.75)
+			GM.visible_message(span_danger("[GM] gets sucked into \the [src] due to their small size!"), span_userdanger("You get sucked into \the [src]!"))
+			GM.forceMove(get_turf(src))
+			GM.status_at_least(EFFECT_WEAKENED, 5)
+		flush()
+	else
+		user.visible_message(span_warning("[user] tries to give [GM.name] a swirlie, but the toilet was still refilling!"), span_warning("You cant give [GM] swirlie while \the [src] is still refilling!"))
+/obj/structure/toilet/proc/attackby_timed_done2(obj/item/I, mob/living/user)
+	to_chat(user, span_notice("You insert \the [I] into \the [src]. A deep rumble eminates from within it, and a faint blue glow eminates from the bottom of the bowl for a moment."))
+	user.drop_item()
+	I.forceMove(src)
+	teleplumb_crystal = I
+	//TODO: add a way to link this to custom destinations.
+	teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
+	desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
+	return
+/obj/structure/toilet/proc/attackby_timed_done3(obj/item/I, mob/living/user)
+	to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
+	bin.forceMove(src.loc) //Remove the old bin.
+	user.drop_item()
+	I.forceMove(src)
+	bin = I //Set the internally stored bin to the new bin.
+	return
 
 /obj/structure/toilet/click_alt(mob/user)
 	if(!isliving(user) || get_dist(user, src) > 1 || user.loc == src )
@@ -443,11 +447,13 @@
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
 	playsound(src, 'sound/effects/stonedoor_openclose.ogg', 50, 1)
-	if(do_after(user, 3 SECONDS, target = src))
-		user.visible_message(span_notice("[user] [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!"), span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!"), "You hear grinding porcelain.")
-		cistern = !cistern
-		update_icon()
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/toilet/proc/crowbar_act_timed_done(mob/user)
+	user.visible_message(span_notice("[user] [cistern ? "replaces the lid on the cistern" : "lifts the lid off the cistern"]!"), span_notice("You [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]!"), "You hear grinding porcelain.")
+	cistern = !cistern
+	update_icon()
 
 /obj/structure/toilet/wrench_act(mob/user, obj/item/I)
 	if(!cistern)
@@ -456,10 +462,12 @@
 		to_chat(user, span_notice("Wait for \the [src] to finish refilling..."))
 		return TRUE
 	to_chat(user, span_notice("You begin to dismantle \the [src]..."))
-	if(do_after(user, 5 SECONDS, src))
-		to_chat(user, span_notice("You dismantle \the [src]."))
-		deconstruct()
+	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/toilet/proc/wrench_act_timed_done(mob/user)
+	to_chat(user, span_notice("You dismantle \the [src]."))
+	deconstruct()
 
 //add heat controls? when emagged, you can freeze to death in it?
 
@@ -526,12 +534,14 @@
 	var/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
 	var/newtemp = tgui_input_list(user, "What setting would you like to set the temperature valve to?", "Water Temperature Valve", temperature_settings)
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
-	if(do_after(user, 5 SECONDS, src))
-		current_temperature = newtemp
-		user.visible_message(span_notice("[user] adjusts the shower."), span_notice("You adjust the shower to [current_temperature] temperature."))
-		add_fingerprint(user)
+	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
 	return TRUE
+
+/obj/machinery/shower/proc/interaction_set_temperature_timed_done(mob/user, newtemp)
+	current_temperature = newtemp
+	user.visible_message(span_notice("[user] adjusts the shower."), span_notice("You adjust the shower to [current_temperature] temperature."))
+	add_fingerprint(user)
 
 /obj/machinery/shower/examine(mob/user)
 	. = ..()
@@ -987,11 +997,11 @@
 	to_chat(user, span_notice("You start washing your hands."))
 	playsound(src, 'sound/effects/sink_long.ogg', 75, 1)
 
-	busy = 1
-	if(!do_after(user, 4 SECONDS, target = src))
-		busy = 0
-		to_chat(user, span_notice("You stop washing your hands."))
-		return
+	om_flag_hold(src, "busy")
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user))
+	return TRUE
+
+/obj/structure/sink/proc/attack_hand_timed_done(mob/user)
 	busy = 0
 
 	if(ishuman(user))
@@ -1014,6 +1024,11 @@
 		user.wash(CLEAN_SCRUB)
 	for(var/mob/V in viewers(src, null))
 		V.show_message(span_notice("[user] washes their hands using \the [src]."))
+
+/obj/structure/sink/proc/attack_hand_timed_failed(mob/user)
+	busy = 0
+	to_chat(user, span_notice("You stop washing your hands."))
+	return
 
 /obj/structure/sink/attackby(obj/item/O, mob/user)
 	if(busy)
@@ -1068,11 +1083,11 @@
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
-	busy = 1
-	if(!do_after(user, 4 SECONDS, target = src))
-		busy = 0
-		to_chat(user, span_notice("You stop washing \the [I]."))
-		return
+	om_flag_hold(src, "busy")
+	om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done4), done_args = list(O, user, I), on_fail = PROC_REF(attackby_timed_failed4), fail_args = list(O, user, I))
+	return TRUE
+
+/obj/structure/sink/proc/attackby_timed_done4(obj/item/O, mob/user, obj/item/I)
 	busy = 0
 
 	O.wash(CLEAN_SCRUB)
@@ -1080,6 +1095,11 @@
 	user.visible_message( \
 		span_notice("[user] washes \a [I] using \the [src]."), \
 		span_notice("You wash \a [I] using \the [src]."))
+
+/obj/structure/sink/proc/attackby_timed_failed4(obj/item/O, mob/user, obj/item/I)
+	busy = 0
+	to_chat(user, span_notice("You stop washing \the [I]."))
+	return
 
 /obj/structure/sink/kitchen
 	name = "kitchen sink"

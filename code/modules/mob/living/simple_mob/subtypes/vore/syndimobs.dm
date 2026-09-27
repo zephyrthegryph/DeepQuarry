@@ -80,24 +80,27 @@
 	return ..()
 
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A)
-	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	do_windup_animation(A, leap_warmup)
-	sleep(leap_warmup) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.
+
+
+/mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
 
 	status_flags |= LEAPING
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	sleep(5)
+	om_after(src, 5, PROC_REF(do_special_attack_2))
+
+/mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
 
 	var/turf/T = get_turf(src)
 
-	. = FALSE
 
 	// Now for the stun.
 	var/mob/living/victim = null

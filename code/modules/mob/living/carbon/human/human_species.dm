@@ -52,17 +52,11 @@
 		rig.toggle_seals(src)
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/proc/turntable()
-	set waitfor = FALSE
+	turntable_step(SOUTH)
 
-	while(TRUE)
-		set_dir(SOUTH)
-		sleep(2 SECONDS)
-		set_dir(EAST)
-		sleep(2 SECONDS)
-		set_dir(NORTH)
-		sleep(2 SECONDS)
-		set_dir(WEST)
-		sleep(2 SECONDS)
+/mob/living/carbon/human/dummy/mannequin/autoequip/proc/turntable_step(facing)
+	set_dir(facing)
+	om_after(src, 2 SECONDS, PROC_REF(turntable_step), turn(facing, 90))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'

@@ -459,7 +459,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		"message" = message_pieces, // the actual sent message
 		"connection" = connection, // the radio connection to use
 		"radio" = src, // stores the radio used for transmission
-		"slow" = 0, // how much to sleep() before broadcasting - simulates net lag
+		"slow" = 0, // broadcast delay - simulates net lag
 		"traffic" = 0, // dictates the total traffic sum that the signal went through
 		"type" = SIGNAL_NORMAL, // determines what type of radio input it is: normal broadcast
 		"server" = null, // the last server to log this signal

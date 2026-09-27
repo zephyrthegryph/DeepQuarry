@@ -45,9 +45,7 @@
 
 	if(is_stump)
 		if(istype(W,/obj/item/shovel))
-			if(do_after(user, 5 SECONDS, target = src))
-				visible_message(span_infoplain(span_bold("\The [user]") + " digs up \the [src] stump with \the [W]."))
-				qdel(src)
+			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(chop_done), done_args = list(W, user))
 		return
 
 	visible_message(span_danger("\The [user] hits \the [src] with \the [W]!"))
@@ -68,6 +66,10 @@
 	hit_animation()
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
+
+/obj/structure/flora/tree/proc/chop_done(obj/item/W, mob/living/user)
+	visible_message(span_infoplain(span_bold("\The [user]") + " digs up \the [src] stump with \the [W]."))
+	qdel(src)
 
 // Shakes the tree slightly, more or less stolen from lockers.
 /obj/structure/flora/tree/proc/hit_animation()

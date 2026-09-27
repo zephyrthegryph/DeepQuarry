@@ -42,36 +42,7 @@
 
 			var/time = 20 //2/3rds the time of a syringe
 			user.visible_message(span_warning("[user] is trying to squirt something into [target]'s eyes!"))
-
-			if(!do_after(user, time, target))
-				return
-
-			if(ishuman(target))
-				var/mob/living/carbon/human/victim = target
-
-				var/obj/item/safe_thing = null
-				if(victim.get_equipped_item(SLOT_ID_MASK))
-					if (victim.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
-						safe_thing = victim.get_equipped_item(SLOT_ID_MASK)
-				if(victim.get_equipped_item(SLOT_ID_HEAD))
-					if (victim.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
-						safe_thing = victim.get_equipped_item(SLOT_ID_HEAD)
-				if(victim.get_equipped_item(SLOT_ID_EYES))
-					if (!safe_thing)
-						safe_thing = victim.get_equipped_item(SLOT_ID_EYES)
-
-				if(safe_thing)
-					trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30)
-					user.visible_message(span_warning("[user] tries to squirt something into [target]'s eyes, but fails!"), span_notice("You transfer [trans] units of the solution."))
-					return
-
-			var/contained = reagentlist()
-			add_attack_logs(user,target,"Used [src.name] containing [contained]")
-
-			trans += reagents.trans_to_mob(target, min(amount_per_transfer_from_this, reagents.total_volume)/2, CHEM_INGEST, can_dialysis = FALSE) //Half injected, half ingested
-			trans += reagents.trans_to_mob(target, min(amount_per_transfer_from_this, reagents.total_volume), CHEM_BLOOD) //I guess it gets into the bloodstream through the eyes or something
-			user.visible_message(span_warning("[user] squirts something into [target]'s eyes!"), span_notice("You transfer [trans] units of the solution."))
-
+			om_do_after(user, time, target, src, PROC_REF(squirt_done), list(user, target))
 			return
 
 		else
@@ -93,6 +64,36 @@
 		to_chat(user, span_notice("You fill the dropper with [trans] units of the solution."))
 
 	return
+
+/obj/item/reagent_containers/dropper/proc/squirt_done(mob/user, mob/target)
+	if(!reagents.total_volume)
+		return
+	var/trans = 0
+	if(ishuman(target))
+		var/mob/living/carbon/human/victim = target
+
+		var/obj/item/safe_thing = null
+		if(victim.get_equipped_item(SLOT_ID_MASK))
+			if (victim.get_equipped_item(SLOT_ID_MASK).body_parts_covered & EYES)
+				safe_thing = victim.get_equipped_item(SLOT_ID_MASK)
+		if(victim.get_equipped_item(SLOT_ID_HEAD))
+			if (victim.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & EYES)
+				safe_thing = victim.get_equipped_item(SLOT_ID_HEAD)
+		if(victim.get_equipped_item(SLOT_ID_EYES))
+			if (!safe_thing)
+				safe_thing = victim.get_equipped_item(SLOT_ID_EYES)
+
+		if(safe_thing)
+			trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30)
+			user.visible_message(span_warning("[user] tries to squirt something into [target]'s eyes, but fails!"), span_notice("You transfer [trans] units of the solution."))
+			return
+
+	var/contained = reagentlist()
+	add_attack_logs(user,target,"Used [src.name] containing [contained]")
+
+	trans += reagents.trans_to_mob(target, min(amount_per_transfer_from_this, reagents.total_volume)/2, CHEM_INGEST, can_dialysis = FALSE) //Half injected, half ingested
+	trans += reagents.trans_to_mob(target, min(amount_per_transfer_from_this, reagents.total_volume), CHEM_BLOOD) //I guess it gets into the bloodstream through the eyes or something
+	user.visible_message(span_warning("[user] squirts something into [target]'s eyes!"), span_notice("You transfer [trans] units of the solution."))
 
 /obj/item/reagent_containers/dropper/on_reagent_change()
 	update_icon()

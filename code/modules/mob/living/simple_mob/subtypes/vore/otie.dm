@@ -292,7 +292,6 @@
 						if(tamed != 1)
 							tamed = 1
 							faction = M.faction
-					sleep(1 SECOND)
 
 		if(I_GRAB)
 			if(stat != DEAD)

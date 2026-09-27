@@ -44,19 +44,21 @@
 			"You hear the slow creaking of a spring."
 			)
 
-		if (do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has deployed \the [src]."),
-				span_danger("You have deployed \the [src]!"),
-				"You hear a latch click loudly."
-				)
-			playsound(src, 'sound/machines/click.ogg',70, 1)
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 
-			deployed = 1
-			user.drop_from_inventory(src)
-			update_icon()
-			anchored = TRUE
-			log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
+/obj/item/beartrap/proc/attack_self_timed_done(mob/user)
+	user.visible_message(
+		span_danger("[user] has deployed \the [src]."),
+		span_danger("You have deployed \the [src]!"),
+		"You hear a latch click loudly."
+		)
+	playsound(src, 'sound/machines/click.ogg',70, 1)
+
+	deployed = 1
+	user.drop_from_inventory(src)
+	update_icon()
+	anchored = TRUE
+	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
 /obj/item/beartrap/attack_hand(mob/user as mob)
 	if(has_buckled_mobs() && can_use(user))
@@ -65,11 +67,7 @@
 			span_notice("[user] begins freeing [victim] from \the [src]."),
 			span_notice("You carefully begin to free [victim] from \the [src]."),
 			)
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
-			for(var/A in BUCKLED_MOBS(src))
-				unbuckle_mob(A)
-			anchored = FALSE
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
 	else if(deployed && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to disarm \the [src]."),
@@ -78,16 +76,23 @@
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		if(do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has disarmed \the [src]."),
-				span_notice("You have disarmed \the [src]!")
-				)
-			deployed = 0
-			anchored = FALSE
-			update_icon()
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
 		..()
+
+/obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
+	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
+	for(var/A in BUCKLED_MOBS(src))
+		unbuckle_mob(A)
+	anchored = FALSE
+/obj/item/beartrap/proc/attack_hand_timed_done2(mob/user)
+	user.visible_message(
+		span_danger("[user] has disarmed \the [src]."),
+		span_notice("You have disarmed \the [src]!")
+		)
+	deployed = 0
+	anchored = FALSE
+	update_icon()
 
 /obj/item/beartrap/proc/attack_mob(mob/living/L)
 
@@ -209,15 +214,17 @@
 			)
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
-		if(do_after(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src))
-			user.visible_message(
-				span_danger("[user] has collected \the [src]."),
-				span_notice("You have collected \the [src]!")
-				)
-			anchored = FALSE
-			update_icon()
+		om_do_after(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
 		..()
+
+/obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
+	user.visible_message(
+		span_danger("[user] has collected \the [src]."),
+		span_notice("You have collected \the [src]!")
+		)
+	anchored = FALSE
+	update_icon()
 
 /obj/item/material/barbedwire/attack_self(mob/user)
 	. = ..(user)
@@ -230,18 +237,20 @@
 			"You hear the rustling of [material.name]."
 			)
 
-		if (do_after(user, 6 SECONDS, target = src))
-			user.visible_message(
-				span_danger("[user] has deployed \the [src]."),
-				span_danger("You have deployed \the [src]!"),
-				"You hear the rustling of [material.name]."
-				)
-			playsound(src, 'sound/items/Wirecutter.ogg',70, 1)
-			om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
-			user.drop_from_inventory(src)
-			forceMove(get_turf(src))
-			anchored = TRUE
-			update_icon()
+		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
+
+/obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)
+	user.visible_message(
+		span_danger("[user] has deployed \the [src]."),
+		span_danger("You have deployed \the [src]!"),
+		"You hear the rustling of [material.name]."
+		)
+	playsound(src, 'sound/items/Wirecutter.ogg',70, 1)
+	om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
+	user.drop_from_inventory(src)
+	forceMove(get_turf(src))
+	anchored = TRUE
+	update_icon()
 
 /obj/item/material/barbedwire/attackby(obj/item/W as obj, mob/user as mob)
 	if(!istype(W))

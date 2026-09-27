@@ -40,13 +40,15 @@
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_warning("You begin to [!anchored ? "weld" : "cut"] the [src] [!anchored ? "to" : "off"] the wall."))
 	playsound(src, tool.usesound, 75, 1)
-	if(do_after(user, 2 SECONDS, target = src))
-		anchored = !anchored
-		update_nearby_tiles(need_rebuild = 1)
-		update_nearby_icons()
-		update_verbs()
-		to_chat(user, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(weld_toggle_done), list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/window/maintenance_panel/proc/weld_toggle_done(mob/user)
+	anchored = !anchored
+	update_nearby_tiles(need_rebuild = 1)
+	update_nearby_icons()
+	update_verbs()
+	to_chat(user, span_info("You [anchored ? "weld" : "cut"] the [src] [anchored ? "to" : "off"] the wall."))
 
 
 // Heavier panel takes a metal-scrape sound on big hits, glass tink on small ones.

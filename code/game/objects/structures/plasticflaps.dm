@@ -17,12 +17,14 @@
 		)
 
 /obj/structure/plasticflaps/wirecutter_act(mob/user, obj/item/P)
-	if(use_tool(user, P, src, delay = 1 SECOND, quality = TOOL_WIRECUTTER, volume = 50,
-			message_self = "You start to cut the plastic flaps."))
-		to_chat(user, span_notice("You cut the plastic flaps."))
-		new /obj/item/stack/material/plastic(loc, 4)
-		qdel(src)
+	use_tool(user, P, src, delay = 1 SECOND, quality = TOOL_WIRECUTTER, volume = 50, message_self = "You start to cut the plastic flaps.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	return TRUE
+
+/obj/structure/plasticflaps/proc/wirecutter_act_tool_done(mob/user)
+	to_chat(user, span_notice("You cut the plastic flaps."))
+	new /obj/item/stack/material/plastic(loc, 4)
+	qdel(src)
+
 /obj/structure/plasticflaps/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
 	if(isliving(actor))
 		var/mob/living/L = actor

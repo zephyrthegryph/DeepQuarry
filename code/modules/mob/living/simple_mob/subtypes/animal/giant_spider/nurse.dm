@@ -101,11 +101,11 @@
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance around \the [AM]."))
 
 	// Get our AI to stay still.
-	if(ai_brain) ai_brain.busy = TRUE
-	if(!do_after(src,5 SECONDS, AM))
-		if(ai_brain) ai_brain.busy = FALSE
-		to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
-		return FALSE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	om_do_after(src, 5 SECONDS, target = AM, receiver = src, on_done = PROC_REF(spin_cocoon_nurse_done), done_args = list(AM), on_fail = PROC_REF(spin_cocoon_nurse_failed), fail_args = list(AM))
+	return TRUE
+
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_done(atom/movable/AM)
 
 	if(ai_brain) ai_brain.busy = FALSE
 	if(!AM) // Make sure it didn't get deleted for whatever reason.
@@ -146,6 +146,11 @@
 
 	return TRUE
 
+/mob/living/simple_mob/animal/giant_spider/nurse/proc/spin_cocoon_nurse_failed(atom/movable/AM)
+	if(ai_brain) ai_brain.busy = FALSE
+	to_chat(src, span_warning("You need to stay still to spin a web around \the [AM]."))
+	return FALSE
+
 /datum/om/stage/life/special/animal/giant_spider/nurse
 	of = /mob/living/simple_mob/animal/giant_spider/nurse
 
@@ -164,7 +169,7 @@
 	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_web, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to secrete a sticky substance.") )
-	ai_brain?.busy = TRUE // Get our AI to stay still.
+	om_flag_hold(ai_brain, "busy") // Get our AI to stay still.
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/proc/web_done(datum/om/task/task)
@@ -187,7 +192,7 @@
 	if(istext(om_task_start(src, /datum/om/task_def/mob_work/spider_eggs, T)))
 		return FALSE
 	visible_message(span_notice("\The [src] begins to lay a cluster of eggs.") )
-	ai_brain?.busy = TRUE
+	om_flag_hold(ai_brain, "busy")
 	laying_eggs = TRUE // Stop players from spamming eggs.
 	return TRUE
 

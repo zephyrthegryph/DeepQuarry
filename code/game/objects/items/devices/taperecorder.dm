@@ -171,21 +171,26 @@
 		mytape.record_speech("Recording started.")
 
 		//count seconds until full, or recording is stopped
-		while(mytape && recording && mytape.used_capacity < mytape.max_capacity)
-			sleep(10)
-			mytape.used_capacity++
-			if(mytape.used_capacity >= mytape.max_capacity)
-				if(ismob(loc))
-					var/mob/M = loc
-					to_chat(M, span_notice("The tape is full."))
-				stop_recording()
-
-
-		update_icon()
+		om_after(src, 1 SECOND, PROC_REF(record_tick))
 		return
 	else
 		to_chat(usr, span_notice("The tape is full."))
 
+
+/// One second of recording: the tape fills up.
+/obj/item/taperecorder/proc/record_tick()
+	if(!mytape || !recording || mytape.used_capacity >= mytape.max_capacity)
+		update_icon()
+		return
+	mytape.used_capacity++
+	if(mytape.used_capacity >= mytape.max_capacity)
+		if(ismob(loc))
+			var/mob/M = loc
+			to_chat(M, span_notice("The tape is full."))
+		stop_recording()
+		update_icon()
+		return
+	om_after(src, 1 SECOND, PROC_REF(record_tick))
 
 /obj/item/taperecorder/proc/stop_recording()
 	//Sanity checks skipped, should not be called unless actually recording
@@ -261,55 +266,59 @@
 	playing = 1
 	update_icon()
 	to_chat(usr, span_notice("Playing started."))
-	for(var/i=1 , i < mytape.max_capacity , i++)
-		if(!mytape || !playing)
-			break
-		if(length(mytape.storedinfo) < i)
-			break
+	play_step(1)
 
-		var/turf/T = get_turf(src)
-		var/playedmessage = LAZYACCESS(mytape.storedinfo, i)
-		if (findtextEx(playedmessage,"*",1,2)) //remove marker for action sounds
-			playedmessage = copytext(playedmessage,2)
-		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": [playedmessage]"), runemessage = playedmessage)
+/// Plays line `i`, then waits out the recorded gap before the next one.
+/obj/item/taperecorder/proc/play_step(i)
+	if(!mytape || !playing || i >= mytape.max_capacity || length(mytape.storedinfo) < i)
+		play_end()
+		return
 
-		if(length(mytape.storedinfo) < i+1)
-			playsleepseconds = 1
-			sleep(10)
-			T = get_turf(src)
-			T.audible_message(span_maroon(span_bold("Tape Recorder") + ": End of recording."), runemessage = "click")
-			break
-		else
-			playsleepseconds = mytape.timestamp[i+1] - mytape.timestamp[i]
+	var/turf/T = get_turf(src)
+	var/playedmessage = LAZYACCESS(mytape.storedinfo, i)
+	if (findtextEx(playedmessage,"*",1,2)) //remove marker for action sounds
+		playedmessage = copytext(playedmessage,2)
+	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": [playedmessage]"), runemessage = playedmessage)
 
-		if(playsleepseconds > 14)
-			sleep(10)
-			T = get_turf(src)
-			T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Skipping [playsleepseconds] seconds of silence"), runemessage = "tape winding")
-			playsleepseconds = 1
-		sleep(10 * playsleepseconds)
+	if(length(mytape.storedinfo) < i+1)
+		playsleepseconds = 1
+		om_after(src, 1 SECOND, PROC_REF(play_end_of_tape))
+		return
+	playsleepseconds = mytape.timestamp[i+1] - mytape.timestamp[i]
 
+	if(playsleepseconds > 14)
+		om_after(src, 1 SECOND, PROC_REF(play_skip_silence), i, playsleepseconds)
+		return
+	om_after(src, 10 * playsleepseconds, PROC_REF(play_step), i + 1)
 
+/obj/item/taperecorder/proc/play_skip_silence(i, skipped)
+	var/turf/T = get_turf(src)
+	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Skipping [skipped] seconds of silence"), runemessage = "tape winding")
+	playsleepseconds = 1
+	om_after(src, 1 SECOND, PROC_REF(play_step), i + 1)
+
+/obj/item/taperecorder/proc/play_end_of_tape()
+	var/turf/T = get_turf(src)
+	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": End of recording."), runemessage = "click")
+	play_end()
+
+/obj/item/taperecorder/proc/play_end()
 	playing = 0
 	update_icon()
 
 	if(emagged)
 		var/turf/T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": This tape recorder will self-destruct in... Five."), runemessage = "beep beep")
-		sleep(10)
-		T = get_turf(src)
-		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Four."))
-		sleep(10)
-		T = get_turf(src)
-		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Three."))
-		sleep(10)
-		T = get_turf(src)
-		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Two."))
-		sleep(10)
-		T = get_turf(src)
-		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": One."))
-		sleep(10)
+		om_after(src, 1 SECOND, PROC_REF(self_destruct_count), 4)
+
+/obj/item/taperecorder/proc/self_destruct_count(n)
+	if(n <= 0)
 		explode()
+		return
+	var/turf/T = get_turf(src)
+	var/static/list/words = list("One", "Two", "Three", "Four")
+	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": [words[n]]."))
+	om_after(src, 1 SECOND, PROC_REF(self_destruct_count), n - 1)
 
 
 /obj/item/taperecorder/verb/print_transcript()
@@ -440,11 +449,14 @@
 /obj/item/rectape/screwdriver_act(mob/user, obj/item/tool)
 	if(!ruined)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You start winding the tape back in...") && ruined)
-		to_chat(user, span_notice("You wound the tape back in."))
-		fix()
+	use_tool(user, tool, src, delay = 12 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You start winding the tape back in...", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/rectape/proc/screwdriver_act_tool_done(mob/user)
+	if(!(ruined))
+		return
+	to_chat(user, span_notice("You wound the tape back in."))
+	fix()
 
 //Random colour tapes
 /obj/item/rectape/random/Initialize(mapload)

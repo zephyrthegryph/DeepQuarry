@@ -144,12 +144,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 				if(!choice)
 					return
 				to_chat(user,span_notice("You begin moving..."))
-				if(!do_after(user, 10 SECONDS, target = src))
-					return
-				user.forceMove(choice)
-				user.cancel_camera()
-				var/obj/structure/micro_tunnel/da_oddawun = choice
-				da_oddawun.tunnel_notify(user)
+				om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
 				return
 			if("Eat")
 				var/list/our_targets = list()
@@ -178,50 +173,63 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 	if(!can_enter(user))
 		user.visible_message(span_warning("\The [user] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-		if(!do_after(user, 3 SECONDS, target = src))
-			user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
-			return
-		if(!src.contents.len)
-			to_chat(user, span_warning("There was nothing inside."))
-			user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
-			return
-		var/grabbed = pick(src.contents)
-		if(!grabbed)
-			to_chat(user, span_warning("There was nothing inside."))
-			user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
-			return
-
-		if(ishuman(user))
-			var/mob/living/carbon/human/h = user
-			var/mob/living/l = grabbed
-			if(isliving(grabbed))
-				if(!l.attempt_to_scoop(h))
-					l.forceMove(get_turf(src.loc))
-			else
-				var/atom/movable/whatever = grabbed
-				whatever.forceMove(get_turf(src.loc))
-
-			user.visible_message(span_warning("\The [user] pulls \the [grabbed] out of \the [src]! ! !"))
-			return
-
-		else if(isanimal(user))
-			var/mob/living/simple_mob/a = user
-			var/mob/living/l = grabbed
-			if(!a.has_hands || isliving(grabbed))
-				if(!l.attempt_to_scoop(a))
-					l.forceMove(get_turf(src.loc))
-			else
-				var/atom/movable/whatever = grabbed
-				whatever.forceMove(get_turf(src.loc))
-			user.visible_message(span_warning("\The [user] pulls \the [grabbed] out of \the [src]! ! !"))
-			return
-
-	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
-	if(!do_after(user, 10 SECONDS, target = src))
-		to_chat(user, span_warning("You didn't go into \the [src]!"))
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_reach_done), done_args = list(user), on_fail = PROC_REF(micro_reach_failed), fail_args = list(user))
 		return
 
+	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
+	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
+	return TRUE
+
+/obj/structure/micro_tunnel/proc/tunnel_interact_timed_done(mob/living/user, choice)
+	user.forceMove(choice)
+	user.cancel_camera()
+	var/obj/structure/micro_tunnel/da_oddawun = choice
+	da_oddawun.tunnel_notify(user)
+	return
+/obj/structure/micro_tunnel/proc/tunnel_interact_timed_done2(mob/living/user)
+
 	enter_tunnel(user)
+
+/obj/structure/micro_tunnel/proc/tunnel_interact_timed_failed2(mob/living/user)
+	to_chat(user, span_warning("You didn't go into \the [src]!"))
+	return
+
+/// Reached into the tunnel: pull whatever is inside out.
+/obj/structure/micro_tunnel/proc/tunnel_reach_done(mob/living/user)
+	if(!src.contents.len)
+		to_chat(user, span_warning("There was nothing inside."))
+		user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		return
+	var/grabbed = pick(src.contents)
+	if(!grabbed)
+		to_chat(user, span_warning("There was nothing inside."))
+		user.visible_message(span_notice("\The [user] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		return
+
+	if(ishuman(user))
+		var/mob/living/carbon/human/h = user
+		var/mob/living/l = grabbed
+		if(isliving(grabbed))
+			if(!l.attempt_to_scoop(h))
+				l.forceMove(get_turf(src.loc))
+		else
+			var/atom/movable/whatever = grabbed
+			whatever.forceMove(get_turf(src.loc))
+
+		user.visible_message(span_warning("\The [user] pulls \the [grabbed] out of \the [src]! ! !"))
+		return
+
+	else if(isanimal(user))
+		var/mob/living/simple_mob/a = user
+		var/mob/living/l = grabbed
+		if(!a.has_hands || isliving(grabbed))
+			if(!l.attempt_to_scoop(a))
+				l.forceMove(get_turf(src.loc))
+		else
+			var/atom/movable/whatever = grabbed
+			whatever.forceMove(get_turf(src.loc))
+		user.visible_message(span_warning("\The [user] pulls \the [grabbed] out of \the [src]! ! !"))
+		return
 
 /obj/structure/micro_tunnel/proc/can_enter(mob/living/user)
 	if(user.mob_size <= MOB_TINY || user.get_effective_size(TRUE) <= micro_accepted_scale)
@@ -244,11 +252,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	var/mob/living/k = M
 
 	k.visible_message(span_notice("\The [k] begins climbing into \the [src]!"))
-	if(!do_after(k, 3 SECONDS, target = src))
-		to_chat(k, span_warning("You didn't go into \the [src]!"))
-		return
+	om_do_after(k, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_T_timed_done), done_args = list(k), on_fail = PROC_REF(MouseDrop_T_timed_failed), fail_args = list(k))
+	return TRUE
+
+/obj/structure/micro_tunnel/proc/MouseDrop_T_timed_done(mob/living/k)
 
 	enter_tunnel(k)
+
+/obj/structure/micro_tunnel/proc/MouseDrop_T_timed_failed(mob/living/k)
+	to_chat(k, span_warning("You didn't go into \the [src]!"))
+	return
 
 /obj/structure/micro_tunnel/proc/enter_tunnel(mob/living/k)
 	k.visible_message(span_notice("\The [k] climbs into \the [src]!"))
@@ -340,108 +353,119 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 				if(!choice)
 					return
 				to_chat(usr,span_notice("You begin moving..."))
-				if(!do_after(usr, 10 SECONDS, target = src))
-					return
-				if(QDELETED(src))
-					return
-				if(usr.loc != src)
-					return
-				var/obj/our_choice = choice
-
-				var/list/new_contained_mobs = list()
-				for(var/mob/living/issamob in src.contents)
-					if(isliving(issamob))
-						contained_mobs |= issamob
-
-				usr.forceMove(our_choice)
-				usr.cancel_camera()
-
-				to_chat(usr,span_notice("You are inside of \the [our_choice]. You can click upon the thing you are in to exit, or travel to a nearby thing if there are other tunnels linked to it."))
-
-				var/our_message = "You can see "
-				var/found_stuff = FALSE
-				for(var/thing in new_contained_mobs)
-					if(thing == usr)
-						continue
-					found_stuff = TRUE
-					our_message = "[our_message] [thing], "
-					if(isliving(thing))
-						var/mob/living/t = thing
-						to_chat(t, span_notice("\The [usr] enters \the [src]!"))
-				if(found_stuff)
-					to_chat(usr, span_notice("[our_message]inside of \the [src]!"))
-				if(prob(25))
-					our_choice.visible_message(span_warning("Something moves inside of \the [our_choice]. . ."))
+				om_do_after(usr, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(micro_interact_timed_done), done_args = list(contained_mobs, choice, usr))
 				return
 			if("Cancel")
 				return
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
 		usr.visible_message(span_warning("\The [usr] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-		if(!do_after(usr, 3 SECONDS, target = src))
-			usr.visible_message(span_notice("\The [usr] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
-			return
-
-		if(!contained_mobs.len)
-			to_chat(usr, span_warning("There was nothing inside."))
-			usr.visible_message(span_notice("\The [usr] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
-			return
-		var/grabbed = pick(contained_mobs)
-		if(!grabbed)
-			to_chat(usr, span_warning("There was nothing inside."))
-			usr.visible_message(span_notice("\The [usr] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
-			return
-
-		if(ishuman(usr))
-			var/mob/living/carbon/human/h = usr
-			var/mob/living/l = grabbed
-			if(isliving(grabbed))
-				l.attempt_to_scoop(h)
-				if(!l.attempt_to_scoop(h))
-					l.forceMove(get_turf(src.loc))
-			else
-				var/atom/movable/whatever = grabbed
-				whatever.forceMove(get_turf(src.loc))
-
-			usr.visible_message(span_warning("\The [usr] pulls \the [grabbed] out of \the [src]! ! !"))
-			return
-
-		else if(isanimal(usr))
-			var/mob/living/simple_mob/a = usr
-			var/mob/living/l = grabbed
-			if(!a.has_hands || isliving(grabbed))
-				if(!l.attempt_to_scoop(a))
-					l.forceMove(get_turf(src.loc))
-			else
-				var/atom/movable/whatever = grabbed
-				whatever.forceMove(get_turf(src.loc))
-			usr.visible_message(span_warning("\The [usr] pulls \the [grabbed] out of \the [src]! ! !"))
-			return
-
-	usr.visible_message(span_notice("\The [usr] begins climbing into \the [src]!"))
-	if(!do_after(usr, 10 SECONDS, target = src))
-		to_chat(usr, span_warning("You didn't go into \the [src]!"))
+		om_do_after(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(micro_reach_done), done_args = list(contained_mobs, usr), on_fail = PROC_REF(micro_reach_failed), fail_args = list(usr))
 		return
 
-	usr.visible_message(span_notice("\The [usr] climbs into \the [src]!"))
-	usr.forceMove(src)
-	usr.cancel_camera()
-	to_chat(usr,span_notice("You are inside of \the [src]. You can click upon the tunnel to exit, or travel to another tunnel if there are other tunnels linked to it."))
+	usr.visible_message(span_notice("\The [usr] begins climbing into \the [src]!"))
+	om_do_after(usr, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(micro_interact_timed_done2), done_args = list(contained_mobs, usr), on_fail = PROC_REF(micro_interact_timed_failed2), fail_args = list(contained_mobs, usr))
+	return TRUE
+
+/obj/proc/micro_reach_failed(mob/usr_mob)
+	usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+
+/// Reached into the tunnel: pull a random occupant out.
+/obj/proc/micro_reach_done(list/contained_mobs, mob/usr_mob)
+
+	if(!contained_mobs.len)
+		to_chat(usr_mob, span_warning("There was nothing inside."))
+		usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		return
+	var/grabbed = pick(contained_mobs)
+	if(!grabbed)
+		to_chat(usr_mob, span_warning("There was nothing inside."))
+		usr_mob.visible_message(span_notice("\The [usr_mob] pulls their hand out of \the [src]."),span_warning("You pull your hand out of \the [src]"))
+		return
+
+	if(ishuman(usr_mob))
+		var/mob/living/carbon/human/h = usr_mob
+		var/mob/living/l = grabbed
+		if(isliving(grabbed))
+			l.attempt_to_scoop(h)
+			if(!l.attempt_to_scoop(h))
+				l.forceMove(get_turf(src.loc))
+		else
+			var/atom/movable/whatever = grabbed
+			whatever.forceMove(get_turf(src.loc))
+
+		usr_mob.visible_message(span_warning("\The [usr_mob] pulls \the [grabbed] out of \the [src]! ! !"))
+		return
+
+	else if(isanimal(usr_mob))
+		var/mob/living/simple_mob/a = usr_mob
+		var/mob/living/l = grabbed
+		if(!a.has_hands || isliving(grabbed))
+			if(!l.attempt_to_scoop(a))
+				l.forceMove(get_turf(src.loc))
+		else
+			var/atom/movable/whatever = grabbed
+			whatever.forceMove(get_turf(src.loc))
+		usr_mob.visible_message(span_warning("\The [usr_mob] pulls \the [grabbed] out of \the [src]! ! !"))
+		return
+
+/obj/proc/micro_interact_timed_done(list/contained_mobs, choice, mob/usr_mob)
+	if(QDELETED(src))
+		return
+	if(usr_mob.loc != src)
+		return
+	var/obj/our_choice = choice
+
+	var/list/new_contained_mobs = list()
+	for(var/mob/living/issamob in src.contents)
+		if(isliving(issamob))
+			contained_mobs |= issamob
+
+	usr_mob.forceMove(our_choice)
+	usr_mob.cancel_camera()
+
+	to_chat(usr_mob,span_notice("You are inside of \the [our_choice]. You can click upon the thing you are in to exit, or travel to a nearby thing if there are other tunnels linked to it."))
 
 	var/our_message = "You can see "
 	var/found_stuff = FALSE
-	for(var/thing in contained_mobs)
-		if(thing == usr)
+	for(var/thing in new_contained_mobs)
+		if(thing == usr_mob)
 			continue
 		found_stuff = TRUE
 		our_message = "[our_message] [thing], "
 		if(isliving(thing))
 			var/mob/living/t = thing
-			to_chat(t, span_notice("\The [usr] enters \the [src]!"))
+			to_chat(t, span_notice("\The [usr_mob] enters \the [src]!"))
 	if(found_stuff)
-		to_chat(usr, span_notice("[our_message]inside of \the [src]!"))
+		to_chat(usr_mob, span_notice("[our_message]inside of \the [src]!"))
+	if(prob(25))
+		our_choice.visible_message(span_warning("Something moves inside of \the [our_choice]. . ."))
+	return
+/obj/proc/micro_interact_timed_done2(list/contained_mobs, mob/usr_mob)
+
+	usr_mob.visible_message(span_notice("\The [usr_mob] climbs into \the [src]!"))
+	usr_mob.forceMove(src)
+	usr_mob.cancel_camera()
+	to_chat(usr_mob,span_notice("You are inside of \the [src]. You can click upon the tunnel to exit, or travel to another tunnel if there are other tunnels linked to it."))
+
+	var/our_message = "You can see "
+	var/found_stuff = FALSE
+	for(var/thing in contained_mobs)
+		if(thing == usr_mob)
+			continue
+		found_stuff = TRUE
+		our_message = "[our_message] [thing], "
+		if(isliving(thing))
+			var/mob/living/t = thing
+			to_chat(t, span_notice("\The [usr_mob] enters \the [src]!"))
+	if(found_stuff)
+		to_chat(usr_mob, span_notice("[our_message]inside of \the [src]!"))
 	if(prob(25))
 		visible_message(span_warning("Something moves inside of \the [src]. . ."))
+
+/obj/proc/micro_interact_timed_failed2(list/contained_mobs, mob/usr_mob)
+	to_chat(usr_mob, span_warning("You didn't go into \the [src]!"))
+	return
 
 /obj/effect/mouse_hole_spawner
 	name = "mouse hole spawner"

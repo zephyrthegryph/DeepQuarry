@@ -159,23 +159,25 @@
 		to_chat(owner, span_warning("You can't create another one in the same tile here!"))
 		return
 
-	if(do_after(owner, ((cost/25) SECONDS), target = owner))
-		if(cost > silk_reserve)
-			to_chat(owner, span_warning("You don't have enough silk to weave that!"))
-			return
+	om_do_after(owner, ((cost/25) SECONDS), owner, src, PROC_REF(weave_done), list(cost, weaved_object))
 
-		if(!isturf(owner.loc))
-			to_chat(owner, span_warning("You can't weave here!"))
-			return
-
-		if(locate(weaved_object) in owner.loc)
-			to_chat(owner, span_warning("You can't create another one in the same tile!"))
-			return
-
-		silk_reserve = max(silk_reserve - cost, 0)
-		var/atom/object = new weaved_object(owner.loc)
-		object.color = silk_color
+/datum/component/weaver/proc/weave_done(cost, weaved_object)
+	if(cost > silk_reserve)
+		to_chat(owner, span_warning("You don't have enough silk to weave that!"))
 		return
+
+	if(!isturf(owner.loc))
+		to_chat(owner, span_warning("You can't weave here!"))
+		return
+
+	if(locate(weaved_object) in owner.loc)
+		to_chat(owner, span_warning("You can't create another one in the same tile!"))
+		return
+
+	silk_reserve = max(silk_reserve - cost, 0)
+	var/atom/object = new weaved_object(owner.loc)
+	object.color = silk_color
+	return
 
 /// Trait system: silk production. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/weaver

@@ -110,7 +110,10 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	if(!do_after(user, 2 SECONDS, target = owner) || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !stock.use(quantity))
+	om_do_after(user, 2 SECONDS, owner, src, PROC_REF(fit_stock_done), list(stock, user, role, quantity, material_id))
+
+/datum/material_service/proc/fit_stock_done(obj/item/stack/material/stock, mob/user, role, quantity, material_id)
+	if(!can_service(user) || !maintenance_open || stock.loc != user || !stock.use(quantity))
 		return
 	advance()
 	if(QDELETED(owner))

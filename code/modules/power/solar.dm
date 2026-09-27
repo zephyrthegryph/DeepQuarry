@@ -85,15 +85,16 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/crowbar_act(mob/user, obj/item/W)
 	playsound(src, 'sound/machines/click.ogg', 50, 1)
 	user.visible_message(span_notice("[user] begins to take the glass off the solar panel."))
-	if(use_tool(user, W, src, delay = 2 SECONDS, volume = 0))
-		var/obj/item/solar_assembly/S = new(loc)
-		S.anchored = TRUE
-		new glass_type(loc, 2)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-		user.visible_message(span_notice("[user] takes the glass off the solar panel."))
-		qdel(src)
+	use_tool(user, W, src, delay = 2 SECONDS, volume = 0, receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
+/obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
+	var/obj/item/solar_assembly/S = new(loc)
+	S.anchored = TRUE
+	new glass_type(loc, 2)
+	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
+	qdel(src)
 
 // First time integrity bottoms out, the panel flips to its broken (cracked) state.
 /obj/machinery/power/solar/atom_break(damage_flag)
@@ -440,31 +441,33 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 /obj/machinery/power/solar_control/screwdriver_act(mob/user, obj/item/I)
 	playsound(src, I.usesound, 50, 1)
-	if(do_after(user, 2 SECONDS, target = src))
-		if (src.stat & BROKEN)
-			to_chat(user, span_blue("The broken glass falls out."))
-			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-			new /obj/item/material/shard(src.loc)
-			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
-			for(var/obj/C in src)
-				C.loc = src.loc
-			A.circuit = M
-			A.state = 3
-			A.icon_state = "computer_3"
-			A.anchored = TRUE
-			qdel(src)
-		else
-			to_chat(user, span_blue("You disconnect the monitor."))
-			var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
-			var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
-			for(var/obj/C in src)
-				C.loc = src.loc
-			A.circuit = M
-			A.state = 4
-			A.icon_state = "computer_4"
-			A.anchored = TRUE
-			qdel(src)
+	om_do_after(user, 2 SECONDS, src, src, PROC_REF(disassemble_done), list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/machinery/power/solar_control/proc/disassemble_done(mob/user)
+	if (src.stat & BROKEN)
+		to_chat(user, span_blue("The broken glass falls out."))
+		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		new /obj/item/material/shard(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		for(var/obj/C in src)
+			C.loc = src.loc
+		A.circuit = M
+		A.state = 3
+		A.icon_state = "computer_3"
+		A.anchored = TRUE
+		qdel(src)
+	else
+		to_chat(user, span_blue("You disconnect the monitor."))
+		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
+		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
+		for(var/obj/C in src)
+			C.loc = src.loc
+		A.circuit = M
+		A.state = 4
+		A.icon_state = "computer_4"
+		A.anchored = TRUE
+		qdel(src)
 
 /obj/machinery/power/solar_control/machine_step()
 	if(stat & (NOPOWER | BROKEN))

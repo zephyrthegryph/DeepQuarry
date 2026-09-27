@@ -34,13 +34,16 @@
 
 	to_chat(user, "***** CORE SELF-DESTRUCT SEQUENCE ACTIVATED *****")
 	to_chat(user, "Use command again to cancel self-destruct. Destroying in 15 seconds.")
-	var/timer = 15
-	while(timer)
-		sleep(10)
-		timer--
-		if(!user || !user.bombing_core)
-			return
-		to_chat(user, "** [timer] **")
+	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, 14)
+
+/// The core bomb's countdown, once a second; it goes off at zero unless cancelled.
+/proc/malf_core_bomb_tick(mob/living/silicon/ai/user, timer)
+	if(!user.bombing_core)
+		return
+	to_chat(user, "** [timer] **")
+	if(timer > 0)
+		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, timer - 1)
+		return
 	explosion(user.loc, 3,6,12,24)
 	qdel(user)
 
@@ -93,17 +96,20 @@
 	set_security_level("delta")
 	radio.autosay("Self destruct sequence has been activated. Self-destructing in 120 seconds.", "Self-Destruct Control")
 
-	var/timer = 120
-	while(timer)
-		sleep(10)
-		if(!user || !user.bombing_station || user.stat == DEAD)
-			radio.autosay("Self destruct sequence has been cancelled.", "Self-Destruct Control")
-			return
-		if(timer in list(2, 3, 4, 5, 10, 30, 60, 90)) // Announcement times. "1" is not intentionally included!
-			radio.autosay("Self destruct in [timer] seconds.", "Self-Destruct Control")
-		if(timer == 1)
-			radio.autosay("Self destructing now. Have a nice day.", "Self-Destruct Control")
-		timer--
+	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, 120)
+
+/// The station self-destruct countdown, once a second.
+/proc/malf_station_bomb_tick(mob/living/silicon/ai/user, obj/item/radio/radio, timer)
+	if(!user.bombing_station || user.stat == DEAD)
+		radio.autosay("Self destruct sequence has been cancelled.", "Self-Destruct Control")
+		return
+	if(timer in list(2, 3, 4, 5, 10, 30, 60, 90)) // Announcement times. "1" is not intentionally included!
+		radio.autosay("Self destruct in [timer] seconds.", "Self-Destruct Control")
+	if(timer == 1)
+		radio.autosay("Self destructing now. Have a nice day.", "Self-Destruct Control")
+	if(timer > 1)
+		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, timer - 1)
+		return
 
 	if(SSticker)
 		play_cinematic(/datum/cinematic/malf)

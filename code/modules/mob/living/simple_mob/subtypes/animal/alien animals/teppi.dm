@@ -548,13 +548,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 			return ..()
 		if(resting)
 			user.visible_message(span_attack("\The [user] approaches \the [src]'s neck with \the [O]."),span_attack("You approach \the [src]'s neck with \the [O]."))
-			if(do_after(user, 5 SECONDS, target = src))
-				if(resting)
-					death()
-					return
-				else
-					to_chat(user, span_notice("\The [src] woke up! You think better of slaughtering it while it is awake."))
-					return
+			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
 		else
 			return ..()
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
@@ -576,6 +570,14 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		return
 	/////EVERYTHING ELSE/////
 	return ..()
+
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/attackby_teppi_done(mob/user)
+	if(resting)
+		death()
+		return
+	else
+		to_chat(user, span_notice("\The [src] woke up! You think better of slaughtering it while it is awake."))
+		return
 
 //Wake up the teppi if it is resting, which they like to do sometimes.
 /mob/living/simple_mob/vore/alienanimals/teppi/attack_hand(mob/living/carbon/human/M as mob)
@@ -737,16 +739,19 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		sheartime *= 2
 	else
 		return FALSE
-	if(do_after(user, sheartime, target = src))
-		user.visible_message(span_notice("\The [user] shears \the [src] with \the [tool]."),span_notice("You shear \the [src] with \the [tool]."))
-		amount_grown = rand(0,250)
-		var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
-		F.color = marking_color
-		teppi_wool = FALSE
-		update_icon()
-		handle_affinity(user, 5)
-		teppi_sound()
-		return TRUE
+	om_do_after(user, sheartime, target = src, receiver = src, on_done = PROC_REF(teppi_shear_teppi_done), done_args = list(user, tool))
+	return TRUE
+
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_teppi_done(mob/user, obj/item/tool)
+	user.visible_message(span_notice("\The [user] shears \the [src] with \the [tool]."),span_notice("You shear \the [src] with \the [tool]."))
+	amount_grown = rand(0,250)
+	var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
+	F.color = marking_color
+	teppi_wool = FALSE
+	update_icon()
+	handle_affinity(user, 5)
+	teppi_sound()
+	return TRUE
 
 //Handles both growing up from a baby and also passing parent details to new babies.
 /mob/living/simple_mob/vore/alienanimals/teppi/Initialize(mapload, teppi1, teppi2)
@@ -795,7 +800,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	if(client)
 		return ..()
 	var/current_affinity = affinity[T.real_name]
-	ai_brain.busy = TRUE
+	om_flag_hold(ai_brain, "busy")
 	T.stop_pulling()
 	if(current_affinity >= 50)
 		var/tumby = vore_selected
@@ -817,7 +822,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		var/teppi_checks = teppi_checks(user, prey, pred, belly)
 		if(teppi_checks)
 			belly = teppi_checks
-		ai_brain.busy = TRUE
+		om_flag_hold(ai_brain, "busy")
 		prey.stop_pulling()
 	..()
 	if(!client)
@@ -828,7 +833,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		var/teppi_checks = teppi_checks(user, prey, pred, belly)
 		if(teppi_checks)
 			belly = teppi_checks
-		ai_brain.busy = TRUE
+		om_flag_hold(ai_brain, "busy")
 		prey.stop_pulling()
 	..()
 	if(!client)

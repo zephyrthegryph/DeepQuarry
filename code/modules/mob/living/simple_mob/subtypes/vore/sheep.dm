@@ -92,15 +92,17 @@
 			return ..()
 		if(!harvestable_wool)
 			return ..()
-		if(do_after(user, 3 SECONDS, exclusive = TASK_USER_EXCLUSIVE, target = src))
-			user.visible_message(span_notice("\The [user] shears \the [src] with \the [O]."),span_notice("You shear \the [src] with \the [O]."))
-			var/obj/item/stack/material/fur/wool/W = new(get_turf(user))
-			harvestable_wool = FALSE
-			update_icon()
-			return
-		else
-			return ..()
+		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(shear_done), done_args = list(user, O), interaction_key = "shearing")
+		return
 	return ..()
+
+/mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)
+	if(!harvestable_wool)
+		return
+	user.visible_message(span_notice("\The [user] shears \the [src] with \the [O]."),span_notice("You shear \the [src] with \the [O]."))
+	new /obj/item/stack/material/fur/wool(get_turf(user))
+	harvestable_wool = FALSE
+	update_icon()
 
 
 /datum/om/stage/life/type_post/simple_mob/vore/sheep

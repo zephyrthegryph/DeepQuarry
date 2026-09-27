@@ -75,7 +75,6 @@
 			om_after(null, delay, /proc/create_wormhole, enter, exit, wormhole_min_duration, wormhole_max_duration)
 			delay += sleep_duration
 
-
 //maybe this proc can even be used as an admin tool for teleporting players without ruining immulsions?
 /proc/create_wormhole(turf/enter as turf, atom/exit, min_duration = 30 SECONDS, max_duration = 60 SECONDS)
 	var/obj/effect/portal/P = new /obj/effect/portal( enter )

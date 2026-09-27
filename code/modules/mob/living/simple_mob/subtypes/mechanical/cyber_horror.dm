@@ -135,33 +135,36 @@
 
 // The actual leaping attack.
 /mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/do_special_attack(atom/A)
-	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
-// Telegraph, since getting stunned suddenly feels bad.
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
+	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-// For the telegraphing.
-	sleep(leap_warmup)
+	// For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A)
 
-// Do the actual leap.
-// Lets us pass over everything.
+
+/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/proc/do_special_attack_1(atom/A)
+
+	// Do the actual leap.
+	// Lets us pass over everything.
 	status_flags |= LEAPING
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
-// For the throw to complete. It won't hold up the AI SSticker due to waitfor being false.
-	sleep(5)
+	// For the throw to complete. It won't hold up the AI SSticker due to waitfor being false.
+	om_after(src, 5, PROC_REF(do_special_attack_2), A)
 
-// Revert special passage ability.
+/mob/living/simple_mob/mechanical/cyber_horror/ling_cyber_horror/proc/do_special_attack_2(atom/A)
+
+	// Revert special passage ability.
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
-// Where we landed. This might be different than A's turf.
+	// Where we landed. This might be different than A's turf.
 	var/turf/T = get_turf(src)
 
-	. = FALSE
 
-// Now for the stun.
+	// Now for the stun.
 	var/mob/living/victim = null
-// So player-controlled cyber horrors only need to click the tile to stun them.
+	// So player-controlled cyber horrors only need to click the tile to stun them.
 	for(var/mob/living/L in T)
 		if(L == src)
 			continue
@@ -169,7 +172,7 @@
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
 			if(H.check_shields(damage = 0, damage_source = src, attacker = src, def_zone = null, attack_text = "the leap"))
-// We were blocked.
+	// We were blocked.
 				continue
 
 		victim = L

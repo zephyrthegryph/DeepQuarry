@@ -224,8 +224,12 @@
 		span_notice("[user] begins opening [src]."),
 		span_notice("You begin opening [src].")
 	)
-	if(!do_after(user, 1 SECOND, target = src) || firing)
-		return TRUE
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(eject_contents_done), list(user))
+	return TRUE
+
+/obj/machinery/material_furnace/proc/eject_contents_done(mob/user)
+	if(firing)
+		return
 	if(output_stock)
 		var/obj/item/stack/material/processed_alloy/finished = output_stock
 		output_stock = null
@@ -237,7 +241,6 @@
 		)
 	if(LAZYLEN(feedstock) || LAZYLEN(carbon_feed))
 		unload_charge(user)
-	return TRUE
 
 /obj/machinery/material_furnace/proc/finish_firing()
 	firing_timer = null

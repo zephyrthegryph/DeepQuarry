@@ -34,11 +34,7 @@
 					return
 				to_chat(user, span_notice("You start to add cables to the frame."))
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				if (do_after(user, 2 SECONDS, target = src) && state == 2)
-					if (C.use(5))
-						state = 3
-						icon_state = "3"
-						to_chat(user, span_notice("You add cables to the frame."))
+				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 				return
 		if(3)
 			if(istype(P, /obj/item/stack/material) && P.get_material_name() == MAT_RGLASS)
@@ -48,11 +44,7 @@
 					return
 				to_chat(user, span_notice("You start to put in the glass panel."))
 				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
-				if (do_after(user, 2 SECONDS, target = src) && state == 3)
-					if(RG.use(2))
-						to_chat(user, span_notice("You put in the glass panel."))
-						state = 4
-						icon_state = "4"
+				om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
 
 			if(istype(P, /obj/item/aiModule/asimov))
 				laws.add_inherent_law("You may not injure a human being or, through inaction, allow a human being to come to harm.")
@@ -99,31 +91,50 @@
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
 
+/obj/structure/AIcore/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
+	if(!(state == 2))
+		return
+	if (C.use(5))
+		state = 3
+		icon_state = "3"
+		to_chat(user, span_notice("You add cables to the frame."))
+/obj/structure/AIcore/proc/attackby_timed_done2(mob/user, obj/item/stack/RG)
+	if(!(state == 3))
+		return
+	if(RG.use(2))
+		to_chat(user, span_notice("You put in the glass panel."))
+		state = 4
+		icon_state = "4"
+
 /obj/structure/AIcore/wrench_act(mob/user, obj/item/tool)
 	if(state != 0 && state != 1)
 		return ITEM_INTERACT_BLOCKING
 	if(state == 0)
-		if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
-			to_chat(user, span_notice("You wrench the frame into place."))
-			anchored = TRUE
-			state = 1
+		use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	else
-		if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50))
-			to_chat(user, span_notice("You unfasten the frame."))
-			anchored = FALSE
-			state = 0
+		use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done2), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/AIcore/proc/wrench_act_tool_done(mob/user)
+	to_chat(user, span_notice("You wrench the frame into place."))
+	anchored = TRUE
+	state = 1
+/obj/structure/AIcore/proc/wrench_act_tool_done2(mob/user)
+	to_chat(user, span_notice("You unfasten the frame."))
+	anchored = FALSE
+	state = 0
 
 /obj/structure/AIcore/welder_act(mob/user, obj/item/tool)
 	if(state != 0)
 		return ITEM_INTERACT_BLOCKING
-	if(use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0))
-		to_chat(user, span_notice("You deconstruct the frame."))
-		new /obj/item/stack/material/plasteel(loc, 4)
-		qdel(src)
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
+/obj/structure/AIcore/proc/welder_act_tool_done(mob/user)
+	to_chat(user, span_notice("You deconstruct the frame."))
+	new /obj/item/stack/material/plasteel(loc, 4)
+	qdel(src)
 
 /obj/structure/AIcore/screwdriver_act(mob/user, obj/item/tool)
 	switch(state)
@@ -260,18 +271,19 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore/deactivated, REGISTRY_AI_CORES_DEACTIV
 /obj/structure/AIcore/deactivated/wrench_act(mob/user, obj/item/tool)
 	if(anchored)
 		user.visible_message(span_bold("\The [user]") + " starts to unbolt \the [src] from the plating...")
-		if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50))
-			user.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")
-			return ITEM_INTERACT_SUCCESS
-		user.visible_message(span_bold("\The [user]") + " finishes unfastening \the [src]!")
-		anchored = FALSE
+		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(unbolted), done_args = list(user), on_fail = PROC_REF(unbolt_abandoned), fail_args = list(user))
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message(span_bold("\The [user]") + " starts to bolt \the [src] to the plating...")
-	if(!use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50))
-		user.visible_message(span_bold("\The [user]") + " decides not to bolt \the [src].")
-		return ITEM_INTERACT_SUCCESS
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(wrench_act_tool_done3), done_args = list(user), on_fail = PROC_REF(wrench_act_tool_failed3), fail_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/AIcore/deactivated/proc/wrench_act_tool_done3(mob/user)
 	user.visible_message(span_bold("\The [user]") + " finishes fastening down \the [src]!")
 	anchored = TRUE
+	return ITEM_INTERACT_SUCCESS
+
+/obj/structure/AIcore/deactivated/proc/wrench_act_tool_failed3(mob/user)
+	user.visible_message(span_bold("\The [user]") + " decides not to bolt \the [src].")
 	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI Core Latejoin", "Toggles the option to latejoin as AI core.", ADMIN_CATEGORY_SILICON)
@@ -293,3 +305,10 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	else
 		registry_join(REGISTRY_EMPTY_AI_CORES, ai_struct)
 		to_chat(user, span_infoplain("\The [id] is now [span_green("available")] for latejoining AIs."))
+
+/obj/structure/AIcore/deactivated/proc/unbolted(mob/user)
+	user.visible_message(span_bold("\The [user]") + " finishes unfastening \the [src]!")
+	anchored = FALSE
+
+/obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
+	user?.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")

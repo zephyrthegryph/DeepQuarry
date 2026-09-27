@@ -78,30 +78,31 @@
 
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/do_special_attack(atom/A)
-	set waitfor = FALSE
-	if(ai_brain) ai_brain.busy = TRUE
+	if(ai_brain) om_flag_hold(ai_brain, "busy")
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)
 	var/turf/starting_turf = get_turf(src)
 
 	// Telegraph to give a small window to dodge if really close.
 	do_windup_animation(A, tunnel_warning)
-	sleep(tunnel_warning) // For the telegraphing.
+	om_after(src, tunnel_warning, PROC_REF(tunnel_dig), A, destination, starting_turf) // For the telegraphing.
 
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_dig(atom/A, turf/destination, turf/starting_turf)
 	// Do the dig!
 	visible_message(span_danger("\The [src] tunnels towards \the [A]!"))
 	submerge()
+	handle_tunnel(destination, PROC_REF(tunnel_arrived), list(destination, starting_turf))
 
-	if(handle_tunnel(destination) == FALSE)
-		if(ai_brain) ai_brain.busy = FALSE
-		emerge()
-		return FALSE
+/// First tunnel finished (result FALSE/null means it stopped short).
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_arrived(result, turf/destination, turf/starting_turf)
+	if(result == FALSE)
+		tunnel_surface()
+		return
 
 	// Did we make it?
 	if(!(src in destination))
-		if(ai_brain) ai_brain.busy = FALSE
-		emerge()
-		return FALSE
+		tunnel_surface()
+		return
 
 	var/overshoot = TRUE
 
@@ -116,9 +117,8 @@
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
-		if(ai_brain) ai_brain.busy = FALSE
-		emerge()
-		return TRUE
+		tunnel_surface()
+		return
 
 	// Otherwise we need to keep going.
 	to_chat(src, span_warning("You overshoot your target!"))
@@ -127,55 +127,69 @@
 	for(var/i = 1 to rand(2, 4))
 		destination = get_step(destination, dir_to_go)
 
-	if(handle_tunnel(destination) == FALSE)
-		if(ai_brain) ai_brain.busy = FALSE
-		emerge()
-		return FALSE
+	handle_tunnel(destination, PROC_REF(tunnel_surface_after))
 
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_surface_after(result)
+	tunnel_surface()
+
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_surface()
 	if(ai_brain) ai_brain.busy = FALSE
 	emerge()
-	return FALSE
 
+/// Tunnels toward destination a tile per tunnel_tile_speed, then calls
+/// then_proc(result, extra...): FALSE if stopped, null if the run ended.
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/handle_tunnel(turf/destination, then_proc, list/extra)
+	tunnel_step(destination, get_dist(src, destination), then_proc, extra)
 
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_finish(result, then_proc, list/extra)
+	var/list/call_args = list(result)
+	if(extra)
+		call_args += extra
+	call(src, then_proc)(arglist(call_args))
 
-// Does the tunnel movement, stuns enemies, etc.
-/mob/living/simple_mob/animal/giant_spider/tunneler/proc/handle_tunnel(turf/destination)
-	var/turf/T = get_turf(src) // Hold our current tile.
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_step(turf/destination, steps_left, then_proc, list/extra)
+	if(steps_left <= 0)
+		tunnel_finish(null, then_proc, extra)
+		return
+	if(stat)
+		tunnel_finish(FALSE, then_proc, extra) // We died or got knocked out on the way.
+		return
 
-	// Regular tunnel loop.
-	for(var/i = 1 to get_dist(src, destination))
-		if(stat)
-			return FALSE // We died or got knocked out on the way.
+	var/last_loc = loc
+	if(last_loc == destination)
+		tunnel_finish(null, then_proc, extra) // We somehow got there early.
+		return
 
-		var/last_loc = loc
-		if(last_loc == destination)
-			break // We somehow got there early.
+	var/turf/T = get_step(src, get_dir(src, destination))
+	if(!T) //There is no turf in that direction.
+		tunnel_finish(FALSE, then_proc, extra) //Hit a non-existant turf.
+		return
+	if(T.check_density(ignore_mobs = TRUE))
+		to_chat(src, span_critical("You hit something really solid!"))
+		playsound(src, "punch", 75, 1)
+		status_at_least(EFFECT_WEAKENED, 5)
+		add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
+		tunnel_finish(FALSE, then_proc, extra) // Hit a wall.
+		return
 
-		// Update T.
-		T = get_step(src, get_dir(src, destination))
-		if(!T) //There is no turf in that direction.
-			return FALSE //Hit a non-existant turf.
-		if(T.check_density(ignore_mobs = TRUE))
-			to_chat(src, span_critical("You hit something really solid!"))
-			playsound(src, "punch", 75, 1)
-			status_at_least(EFFECT_WEAKENED, 5)
-			add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
-			return FALSE // Hit a wall.
+	// Stun anyone in our way.
+	for(var/mob/living/L in T)
+		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
+		L.status_at_least(EFFECT_WEAKENED, 2)
 
-		// Stun anyone in our way.
-		for(var/mob/living/L in T)
-			playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
-			L.status_at_least(EFFECT_WEAKENED, 2)
+	// Get into the tile.
+	forceMove(T)
 
-		// Get into the tile.
-		forceMove(T)
+	// Visuals and sound.
+	dig_under_floor(get_turf(src))
+	playsound(src, 'sound/effects/break_stone.ogg', 75, 1)
+	om_after(src, tunnel_tile_speed, PROC_REF(tunnel_step_check), destination, steps_left - 1, last_loc, then_proc, extra)
 
-		// Visuals and sound.
-		dig_under_floor(get_turf(src))
-		playsound(src, 'sound/effects/break_stone.ogg', 75, 1)
-		sleep(tunnel_tile_speed)
-		if(last_loc == loc)
-			return FALSE
+/mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_step_check(turf/destination, steps_left, last_loc, then_proc, list/extra)
+	if(last_loc == loc)
+		tunnel_finish(FALSE, then_proc, extra)
+		return
+	tunnel_step(destination, steps_left, then_proc, extra)
 
 // For visuals.
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/submerge()

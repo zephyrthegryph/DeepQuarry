@@ -79,13 +79,8 @@
 			return
 		else
 			to_chat(user, "You begin inserting \the [I] into \the [src].")
-			if(do_after(user, 25, target = src))
-				user.drop_item()
-				I.forceMove(src)
-				attached_cell = I
-				user.visible_message("[user] installs a cell in \the [src].", "You install \the [I] into \the [src].")
-				update_icon()
-				return
+			om_do_after(user, 2.5 SECONDS, src, src, PROC_REF(cell_installed), list(user, I))
+			return
 
 	else if(istype(I, /obj/item/ammo_magazine) || istype(I, /obj/item/ammo_casing))
 		scan_ammo(I, user)
@@ -97,8 +92,10 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/cell/device/removed_cell = attached_cell
 	to_chat(user, "You begin removing \the [removed_cell] from \the [src].")
-	if(!use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0))
-		return ITEM_INTERACT_BLOCKING
+	use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, removed_cell))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/ammo_magazine/smart/proc/screwdriver_act_tool_done(mob/user, obj/item/cell/device/removed_cell)
 	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))
 	attached_cell = null
@@ -117,14 +114,27 @@
 	if(user.get_inactive_hand() == src)
 		if(attached_cell)
 			to_chat(user, "You struggle to remove \the [attached_cell] from \the [src].")
-			if(do_after(user, 4 SECONDS, target = src))
-				attached_cell.update_icon()
-				user.put_in_hands(attached_cell)
-				attached_cell = null
-				user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell] from \the [src].")
-				update_icon()
-				return
+			om_do_after(user, 4 SECONDS, src, src, PROC_REF(cell_removed), list(user))
+			return
 	..()
+
+/obj/item/ammo_magazine/smart/proc/cell_installed(mob/user, obj/item/cell/device/I)
+	if(attached_cell)
+		return
+	user.drop_item()
+	I.forceMove(src)
+	attached_cell = I
+	user.visible_message("[user] installs a cell in \the [src].", "You install \the [I] into \the [src].")
+	update_icon()
+
+/obj/item/ammo_magazine/smart/proc/cell_removed(mob/user)
+	if(!attached_cell)
+		return
+	attached_cell.update_icon()
+	user.put_in_hands(attached_cell)
+	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell] from \the [src].")
+	attached_cell = null
+	update_icon()
 
 // Finds the cell for the magazine, used by rechargers
 /obj/item/ammo_magazine/smart/get_cell()

@@ -238,6 +238,14 @@
 
 	return data
 
+/obj/machinery/computer/transhuman/resleeving/proc/eject_dump_disk()
+	if(!disk)
+		return
+	visible_message(span_warning("\The [src] spits out \the [disk]."))
+	current_br = null
+	disk.forceMove(get_turf(src))
+	disk = null
+
 /obj/machinery/computer/transhuman/resleeving/tgui_act(action, params, datum/tgui/ui)
 	. = ..()
 	if(.)
@@ -259,11 +267,7 @@
 		if("coredump")
 			if(disk)
 				our_db.core_dump(disk)
-				sleep(5)
-				visible_message(span_warning("\The [src] spits out \the [disk]."))
-				current_br = null
-				disk.forceMove(get_turf(src))
-				disk = null
+				om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
 				. = TRUE
 		if("ejectdisk")
 			current_br = null

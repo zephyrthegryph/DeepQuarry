@@ -57,15 +57,20 @@
 	if(!broken)
 		return ITEM_INTERACT_SKIP_TO_ATTACK
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " starts trying to repair \the [src]'s bulb."))
-	if(use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0) && can_repair)
-		if(prob(30))
-			user.visible_message(span_notice("\The [user] successfully repairs \the [src]!"))
-			broken = FALSE
-			update_icon()
-		playsound(src, tool.usesound, 50, 1)
-	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " fails to repair \the [src]."))
+	use_tool(user, tool, src, delay = 40 SECONDS + rand(0, 20 SECONDS), quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, tool), on_fail = PROC_REF(screwdriver_act_tool_failed), fail_args = list(user, tool))
 	return ITEM_INTERACT_SUCCESS
+
+/obj/item/flash/proc/screwdriver_act_tool_done(mob/user, obj/item/tool)
+	if(!(can_repair))
+		return
+	if(prob(30))
+		user.visible_message(span_notice("\The [user] successfully repairs \the [src]!"))
+		broken = FALSE
+		update_icon()
+	playsound(src, tool.usesound, 50, 1)
+
+/obj/item/flash/proc/screwdriver_act_tool_failed(mob/user, obj/item/tool)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " fails to repair \the [src]."))
 
 /obj/item/flash/update_icon()
 	var/obj/item/cell/battery = power_supply

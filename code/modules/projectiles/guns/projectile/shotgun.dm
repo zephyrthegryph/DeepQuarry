@@ -157,20 +157,22 @@
 			user.hud_used.update_ammo_hud(user, src) // TGMC Ammo HUD Port
 			burst = burstsetting
 			return
-		if(do_after(user, 3 SECONDS, target = src)) // SHIT IS STEALTHY EYYYYY
-			if(sawn_off)
-				return
-			item_state = "sawnshotgun"
-			w_class = ITEMSIZE_NORMAL
-			force = 5
-			slot_flags &= ~SLOT_BACK // you can't sling it on your back
-			slot_flags |= (SLOT_BELT|SLOT_HOLSTER) // but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
-			name = "sawn-off shotgun"
-			desc = "Omar's coming!"
-			to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
-			sawn_off = TRUE
+		om_do_after(user, 3 SECONDS, src, src, PROC_REF(saw_off_done), list(user)) // SHIT IS STEALTHY EYYYYY
 	else
 		..()
+
+/obj/item/gun/projectile/shotgun/doublebarrel/proc/saw_off_done(mob/user)
+	if(sawn_off)
+		return
+	item_state = "sawnshotgun"
+	w_class = ITEMSIZE_NORMAL
+	force = 5
+	slot_flags &= ~SLOT_BACK // you can't sling it on your back
+	slot_flags |= (SLOT_BELT|SLOT_HOLSTER) // but you can wear it on your belt (poorly concealed under a trenchcoat, ideally) - or in a holster, why not.
+	name = "sawn-off shotgun"
+	desc = "Omar's coming!"
+	to_chat(user, span_warning("You shorten the barrel of \the [src]!"))
+	sawn_off = TRUE
 
 /*
  * Sawn-Off Shotgun

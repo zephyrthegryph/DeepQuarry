@@ -302,20 +302,23 @@
 		cable.machine = null
 		hackdoor = null
 		return
-	while(hackprogress < 1000)
-		if(cable && cable.machine == D && cable.machine == hackdoor && get_dist(src, hackdoor) <= 1)
-			hackprogress = min(hackprogress+rand(1, 20), 1000)
-		else
-			hack_aborted = 1
-			hackprogress = 0
-			hackdoor = null
-			return
-		if(hackprogress >= 1000)
-			hackprogress = 0
-			D.open()
-			cable.machine = null
-			return
-		sleep(10)			// Update every second
+	hack_tick(D)
+
+/// One second of brute-forcing the door.
+/mob/living/silicon/pai/proc/hack_tick(obj/machinery/door/D)
+	if(cable && cable.machine == D && cable.machine == hackdoor && get_dist(src, hackdoor) <= 1)
+		hackprogress = min(hackprogress+rand(1, 20), 1000)
+	else
+		hack_aborted = 1
+		hackprogress = 0
+		hackdoor = null
+		return
+	if(hackprogress >= 1000)
+		hackprogress = 0
+		D.open()
+		cable.machine = null
+		return
+	om_after(src, 1 SECOND, PROC_REF(hack_tick), D)			// Update every second
 
 /datum/pai_software/atmosphere_sensor
 	name = "Atmosphere Sensor"

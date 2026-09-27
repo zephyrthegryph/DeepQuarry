@@ -56,41 +56,47 @@
 		to_chat(src, span_notice("[pick(rimplant.empty_message)]"))
 		return
 	visible_message(span_danger("[usr] starts squeezing [src]'s lower body firmly..."))
-	if (rimplant && do_after(usr,120,src))
-		if(src.Adjacent(usr))
-			var/egg = rimplant.eggtype
-			new egg(get_turf(src))
-			src.status_set(EFFECT_STUNNED, 3)
-			playsound(src,'sound/vore/insert.ogg',50,1)
-			var/index = rand(1,3)
+	om_do_after(usr, 120, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_done), done_args = list(usr, rimplant))
 
-			if (usr != src)
-				var/emote = rimplant.emote_descriptor[index]
-				var/verb_desc = rimplant.verb_descriptor[index]
-				var/self_verb_desc = rimplant.self_verb_descriptor[index]
-				visible_message(span_notice("[usr] [verb_desc] [emote]"),
-								span_notice("You [self_verb_desc] [emote]"))
-			else
-				visible_message(span_notice("[src] [pick(rimplant.short_emote_descriptor)] an egg."),
-									span_notice("You [pick(rimplant.self_emote_descriptor)] an egg."))
+/mob/living/carbon/human/proc/use_reagent_implant_egg_done(mob/usr_mob, obj/item/implant/reagent_generator/egg/rimplant)
+	if(src.Adjacent(usr_mob))
+		var/egg = rimplant.eggtype
+		new egg(get_turf(src))
+		src.status_set(EFFECT_STUNNED, 3)
+		playsound(src,'sound/vore/insert.ogg',50,1)
+		var/index = rand(1,3)
 
-			if(prob(15))
-				visible_message(span_notice("[src] [pick(rimplant.random_emote)]."))
-			rimplant.reagents.remove_any(rimplant.transfer_amount)
+		if (usr_mob != src)
+			var/emote = rimplant.emote_descriptor[index]
+			var/verb_desc = rimplant.verb_descriptor[index]
+			var/self_verb_desc = rimplant.self_verb_descriptor[index]
+			visible_message(span_notice("[usr_mob] [verb_desc] [emote]"),
+							span_notice("You [self_verb_desc] [emote]"))
+		else
+			visible_message(span_notice("[src] [pick(rimplant.short_emote_descriptor)] an egg."),
+								span_notice("You [pick(rimplant.self_emote_descriptor)] an egg."))
 
-			if(rimplant.cascade)
-				to_chat(src, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
-				while(rimplant.reagents.total_volume >= rimplant.transfer_amount)
-					if(do_after(src,30,src))
-						src.status_set(EFFECT_STUNNED, 3)
-						playsound(src,'sound/vore/insert.ogg',50,1)
-						src.apply_effect(10,STUTTER,0)
-						new egg(get_turf(src))
-						rimplant.reagents.remove_any(rimplant.transfer_amount)
-						if(prob(25))
-							visible_message(span_notice("[src] [pick(rimplant.random_emote)]."))
-					else
-						return
+		if(prob(15))
+			visible_message(span_notice("[src] [pick(rimplant.random_emote)]."))
+		rimplant.reagents.remove_any(rimplant.transfer_amount)
+
+		if(rimplant.cascade)
+			to_chat(src, span_notice("You feel your legs quake as your muscles fail to stand strong!"))
+			egg_cascade_next(rimplant, egg)
+
+/mob/living/carbon/human/proc/egg_cascade_next(obj/item/implant/reagent_generator/egg/rimplant, egg)
+	if(rimplant.reagents.total_volume >= rimplant.transfer_amount)
+		om_do_after(src, 30, target = src, receiver = src, on_done = PROC_REF(use_reagent_implant_egg_timed_done), done_args = list(rimplant, egg))
+
+/mob/living/carbon/human/proc/use_reagent_implant_egg_timed_done(obj/item/implant/reagent_generator/egg/rimplant, egg)
+	src.status_set(EFFECT_STUNNED, 3)
+	playsound(src,'sound/vore/insert.ogg',50,1)
+	src.apply_effect(10,STUTTER,0)
+	new egg(get_turf(src))
+	rimplant.reagents.remove_any(rimplant.transfer_amount)
+	if(prob(25))
+		visible_message(span_notice("[src] [pick(rimplant.random_emote)]."))
+	egg_cascade_next(rimplant, egg)
 
 /mob/living/carbon/human/proc/toggle_cascade()
 

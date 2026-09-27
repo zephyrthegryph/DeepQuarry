@@ -9,11 +9,7 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 		return ..()
 	if(icon_state in GLOB.has_rocks)
 		user.visible_message("[user] loosens rocks from \the [src]...", "You loosen rocks from \the [src]...")
-		if(do_after(user, 5 SECONDS, target = src))
-			var/obj/item/stack/material/flint/R = new(get_turf(src), rand(1,4))
-			R.pixel_x = rand(-6,6)
-			R.pixel_y = rand(-6,6)
-			icon_state = "dirt0"
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
 		return
 	if(locate(/obj) in src)
 		to_chat(user, span_notice("The [name] isn't clear."))
@@ -23,8 +19,19 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 		if(!choice||choice=="No")
 			return
 		user.visible_message("[user] starts piling up \the [src]...", "You start piling up \the [src]...")
-		if(do_after(user, 5 SECONDS, target = src))
-			new /obj/machinery/portable_atmospherics/hydroponics/soil(src)
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(pile_done))
+
+/turf/simulated/floor/outdoors/newdirt/proc/loosen_rocks_done()
+	if(!(icon_state in GLOB.has_rocks))
+		return
+	var/obj/item/stack/material/flint/R = new(get_turf(src), rand(1,4))
+	R.pixel_x = rand(-6,6)
+	R.pixel_y = rand(-6,6)
+	icon_state = "dirt0"
+
+/turf/simulated/floor/outdoors/newdirt/proc/pile_done()
+	if(!(locate(/obj) in src))
+		new /obj/machinery/portable_atmospherics/hydroponics/soil(src)
 
 /turf/simulated/floor/outdoors/newdirt/get_dig_loot_type(mob/user, obj/item/W)
 	if(prob(5))
@@ -54,13 +61,17 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 /obj/structure/flora/tree
 	var/sticks = TRUE
 
+/obj/structure/flora/tree/proc/sticks_found(mob/user)
+	if(!sticks)
+		return
+	var/obj/item/stack/material/stick/S = new(get_turf(user), rand(1,3))
+	S.pixel_x = rand(-6,6)
+	S.pixel_y = rand(-6,6)
+	sticks = FALSE
+
 /obj/structure/flora/tree/attack_hand(mob/user)
 	if(sticks)
 		user.visible_message("[user] searches \the [src] for loose sticks...", "You search \the [src] for loose sticks...")
-		if(do_after(user, 5 SECONDS, target = src))
-			var/obj/item/stack/material/stick/S = new(get_turf(user), rand(1,3))
-			S.pixel_x = rand(-6,6)
-			S.pixel_y = rand(-6,6)
-			sticks = FALSE
+		om_do_after(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
 	else
 		to_chat(user, span_notice("You don't see any loose sticks..."))

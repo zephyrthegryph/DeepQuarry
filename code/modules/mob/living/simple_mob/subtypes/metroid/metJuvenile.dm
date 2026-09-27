@@ -58,8 +58,7 @@
 			return
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
 		status_set(EFFECT_PARALYZED, 7998)
-		sleep(50)
-		expand_troid()
+		om_after(src, 5 SECONDS, PROC_REF(expand_troid))
 
 	if(nutrition >= evo_limit && (BUCKLED(src) || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()

@@ -1006,8 +1006,10 @@
 		to_chat(user, span_filter_notice("\The [src] has no brain to remove."))
 		return FALSE
 	to_chat(user, span_filter_notice("You jam the crowbar into the robot and begin levering [mmi]."))
-	if(!do_after(user, 3 SECONDS, target = src))
-		return FALSE
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(extract_mmi_robot_done), done_args = list(user))
+	return TRUE
+
+/mob/living/silicon/robot/proc/extract_mmi_robot_done(mob/user)
 	if(QDELETED(src) || !mmi || !opened || cell || !wiresexposed || !wires.is_all_cut())
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
@@ -1088,8 +1090,10 @@
 		to_chat(user, span_filter_notice("There is no restraining bolt installed."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_filter_notice("You begin removing \the [bolt]."))
-	if(!do_after(user, 2 SECONDS, target = src))
-		return ITEM_INTERACT_BLOCKING
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(wrench_act_robot_done), done_args = list(user))
+	return ITEM_INTERACT_SUCCESS
+
+/mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
 	bolt.forceMove(get_turf(src))
 	bolt = null
 	to_chat(user, span_filter_notice("You remove the restraining bolt."))
@@ -1113,11 +1117,13 @@
 	if(bolt)
 		if(!bolt.malfunction)
 			visible_message(span_danger("[src] is trying to break their [bolt]!"), span_warning("You attempt to break your [bolt]. (This will take around 90 seconds and you need to stand still)"))
-			if(do_after(src, 1.5 MINUTES, src, timed_action_flags = IGNORE_INCAPACITATED))
-				visible_message(span_danger("[src] manages to break \the [bolt]!"), span_warning("You successfully break your [bolt]."))
-				bolt.malfunction = MALFUNCTION_PERMANENT
+			om_do_after(src, 1.5 MINUTES, target = src, timed_action_flags = IGNORE_INCAPACITATED, receiver = src, on_done = PROC_REF(resist_restraints_robot_done), done_args = list())
 
 	return
+
+/mob/living/silicon/robot/proc/resist_restraints_robot_done()
+	visible_message(span_danger("[src] manages to break \the [bolt]!"), span_warning("You successfully break your [bolt]."))
+	bolt.malfunction = MALFUNCTION_PERMANENT
 
 /mob/living/silicon/robot/proc/module_reset(notify = TRUE)
 	transform_with_anim() //sprite animation
@@ -1428,13 +1434,14 @@
 		return
 
 	balloon_alert(user, "dropping hat...")
-	if(!do_after(user, 3 SECONDS, src))
-		return
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
+	return TRUE
+
+/mob/living/silicon/robot/proc/attack_robot_robot_done(mob/user)
 	if(QDELETED(src) || !Adjacent(user) || user.incapacitated() || isnull(hat))
 		return
 	remove_hat(get_turf(src))
 	balloon_alert(user, "dropped hat")
-
 
 /mob/living/silicon/robot/proc/installed_modules()
 	robotact.tgui_interact(src)

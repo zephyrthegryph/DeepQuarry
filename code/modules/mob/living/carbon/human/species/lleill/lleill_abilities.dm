@@ -145,23 +145,42 @@
 		return
 	else
 		visible_message(span_infoplain(span_bold("\The [src]") + " begins to change the form of \the [I]."))
-		if(!do_after(src, 10 SECONDS, target = I))
-			visible_message(span_infoplain(span_bold("\The [src]") + " leaves \the [I] in its original form."))
-			return 0
-		visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [transmute_product.name]."))
-		drop_item(I)
-		qdel(I)
-		var/spawnloc = get_turf(src)
-		var/obj/item/N = new transmute_product(spawnloc)
-		put_in_active_hand(N)
-		species.lleill_energy -= energy_cost
-		species.update_lleill_hud(src)
+		om_do_after(src, 10 SECONDS, target = I, receiver = src, on_done = PROC_REF(lleill_transmute_human_done), done_args = list(energy_cost, I, transmute_product), on_fail = PROC_REF(lleill_transmute_human_failed), fail_args = list(energy_cost, I, transmute_product))
+		return
+
+/mob/living/carbon/human/proc/lleill_transmute_human_done(energy_cost, obj/item/I, obj/item/transmute_product)
+	visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [transmute_product.name]."))
+	drop_item(I)
+	qdel(I)
+	var/spawnloc = get_turf(src)
+	var/obj/item/N = new transmute_product(spawnloc)
+	put_in_active_hand(N)
+	species.lleill_energy -= energy_cost
+	species.update_lleill_hud(src)
+
+/mob/living/carbon/human/proc/lleill_transmute_human_failed(energy_cost, obj/item/I, obj/item/transmute_product)
+	visible_message(span_infoplain(span_bold("\The [src]") + " leaves \the [I] in its original form."))
+	return 0
 
 /datum/power/lleill/rings
 	name = "Glamour Rings"
 	desc = "Place or teleport to a glamour ring."
 	verbpath = /mob/living/carbon/human/proc/lleill_rings
 	ability_icon_state = "lleill_ring"
+
+/mob/living/carbon/human/proc/lleill_ring_interrupted()
+	src.visible_message(span_infoplain(span_bold("\The [src]") + " begins to form white rings on the ground."))
+
+/mob/living/carbon/human/proc/lleill_ring_placed(energy_cost_spawn)
+	if(species.lleill_energy < energy_cost_spawn)
+		return
+	to_chat(src, span_warning("You place a new glamour ring at your feet."))
+	var/spawnloc = get_turf(src)
+	var/obj/structure/glamour_ring/R = new(spawnloc)
+	R.connected_mob = src
+	src.teleporters |= R
+	species.lleill_energy -= energy_cost_spawn
+	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_rings()
 	set name = "Place/Use Rings"
@@ -185,15 +204,8 @@
 		if(species.lleill_energy < energy_cost_spawn)
 			to_chat(src, span_warning("You do not have enough energy to do that!"))
 			return
-		if(!do_after(src, 10 SECONDS, target = src))
-			src.visible_message(span_infoplain(span_bold("\The [src]") + " begins to form white rings on the ground."))
-			return 0
-		to_chat(src, span_warning("You place a new glamour ring at your feet."))
-		var/spawnloc = get_turf(src)
-		var/obj/structure/glamour_ring/R = new(spawnloc)
-		R.connected_mob = src
-		src.teleporters |= R
-		species.lleill_energy -= energy_cost_spawn
+		om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_ring_placed), done_args = list(energy_cost_spawn), on_fail = PROC_REF(lleill_ring_interrupted))
+		return
 	if(findtext(r_action,"Teleport to Ring"))
 		if(species.lleill_energy < energy_cost_tele)
 			to_chat(src, span_warning("You do not have enough energy to do that!"))
@@ -315,18 +327,22 @@
 			src.visible_message(span_infoplain(span_bold("\The [src]") + " boops [chosen_target] on the nose."))
 		if(contact_type == "Custom")
 			src.visible_message(span_infoplain("[custom_text]"))
-		if(!do_after(src, 10 SECONDS, target = chosen_target))
-			src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] break contact before energy has been transferred."))
-			return
-		src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] complete their contact."))
-		species.lleill_energy = species.lleill_energy_max
-		nutrition += (chosen_target.nutrition / 2)
-		to_chat(src, span_warning("You feel revitalised."))
-		chosen_target.tiredness += 70
-		chosen_target.nutrition = max((chosen_target.nutrition / 2),75)
-		chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
-		chosen_target.status_adjust(EFFECT_BLURRY, 20)
-		to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
+		om_do_after(src, 10 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(lleill_contact_done), done_args = list(chosen_target), on_fail = PROC_REF(lleill_contact_broken), fail_args = list(chosen_target))
+	species.update_lleill_hud(src)
+
+/mob/living/carbon/human/proc/lleill_contact_broken(mob/living/carbon/human/chosen_target)
+	src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] break contact before energy has been transferred."))
+
+/mob/living/carbon/human/proc/lleill_contact_done(mob/living/carbon/human/chosen_target)
+	src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] complete their contact."))
+	species.lleill_energy = species.lleill_energy_max
+	nutrition += (chosen_target.nutrition / 2)
+	to_chat(src, span_warning("You feel revitalised."))
+	chosen_target.tiredness += 70
+	chosen_target.nutrition = max((chosen_target.nutrition / 2),75)
+	chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
+	chosen_target.status_adjust(EFFECT_BLURRY, 20)
+	to_chat(chosen_target, span_warning("You feel considerably weakened for the moment."))
 	species.update_lleill_hud(src)
 
 /datum/power/lleill/alchemy
@@ -366,16 +382,21 @@
 		return
 	else
 		visible_message(span_infoplain(span_bold("\The [src]") + " begins to change the form of \the [I]."))
-		if(!do_after(src, 10 SECONDS, target = I))
-			visible_message(span_infoplain(span_bold("\The [src]") + " leaves \the [I] in its original form."))
-			return 0
-		visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [transmute_product.name]."))
-		drop_item(I)
-		qdel(I)
-		var/spawnloc = get_turf(src)
-		var/obj/item/N = new transmute_product(spawnloc)
-		put_in_active_hand(N)
-		species.lleill_energy -= energy_cost
+		om_do_after(src, 10 SECONDS, target = I, receiver = src, on_done = PROC_REF(lleill_alchemy_done), done_args = list(I, transmute_product, energy_cost), on_fail = PROC_REF(lleill_alchemy_stopped), fail_args = list(I))
+	species.update_lleill_hud(src)
+
+/mob/living/carbon/human/proc/lleill_alchemy_stopped(obj/item/potion_material/I)
+	visible_message(span_infoplain(span_bold("\The [src]") + " leaves \the [I] in its original form."))
+
+/mob/living/carbon/human/proc/lleill_alchemy_done(obj/item/potion_material/I, transmute_product, energy_cost)
+	var/obj/item/reagent_containers/glass/bottle/potion/product = transmute_product
+	visible_message(span_infoplain(span_bold("\The [src]") + " transmutes \the [I] into \the [initial(product.name)]."))
+	drop_item(I)
+	qdel(I)
+	var/spawnloc = get_turf(src)
+	var/obj/item/N = new transmute_product(spawnloc)
+	put_in_active_hand(N)
+	species.lleill_energy -= energy_cost
 	species.update_lleill_hud(src)
 
 /datum/power/lleill/beastform
@@ -463,9 +484,10 @@
 		return
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
-	if(!do_after(src, 10 SECONDS, target = src))
-		visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
-		return 0
+	om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(lleill_beast_form_human_done), done_args = list(energy_cost, beast_options, chosen_beast, M), on_fail = PROC_REF(lleill_beast_form_human_failed), fail_args = list(energy_cost, beast_options, chosen_beast, M))
+	return TRUE
+
+/mob/living/carbon/human/proc/lleill_beast_form_human_done(energy_cost, list/beast_options, chosen_beast, mob/living/M)
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
@@ -473,6 +495,9 @@
 	om_after(src, 1 SECOND, PROC_REF(finish_beast_shift), coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost)
 	species.update_lleill_hud(src)
 
+/mob/living/carbon/human/proc/lleill_beast_form_human_failed(energy_cost, list/beast_options, chosen_beast, mob/living/M)
+	visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
+	return 0
 
 /mob/living/carbon/human/proc/spawn_beast_mob(chosen_beast)
 	var/tf_type = chosen_beast
@@ -491,11 +516,16 @@
 		return
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
-	if(!do_after(src, 10 SECONDS, target = src))
-		visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
-		return 0
+	om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(revert_beast_form_living_done), done_args = list(), on_fail = PROC_REF(revert_beast_form_living_failed), fail_args = list())
+	return TRUE
+
+/mob/living/proc/revert_beast_form_living_done()
 	visible_message(span_infoplain(span_bold("\The [src]") + " has reverted to their original form."))
 	revert_beast_tf()
+
+/mob/living/proc/revert_beast_form_living_failed()
+	visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
+	return 0
 
 /mob/living/proc/revert_beast_tf()
 	if(!tf_mob_holder)
@@ -609,9 +639,10 @@
 		return
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins significantly shifting their form."))
-	if(!do_after(src, 10 SECONDS, target = src))
-		visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
-		return 0
+	om_do_after(src, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(hanner_beast_form_human_done), done_args = list(energy_cost, beast_options, chosen_beast, M), on_fail = PROC_REF(hanner_beast_form_human_failed), fail_args = list(energy_cost, beast_options, chosen_beast, M))
+	return TRUE
+
+/mob/living/carbon/human/proc/hanner_beast_form_human_done(energy_cost, list/beast_options, chosen_beast, mob/living/M)
 
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
@@ -630,3 +661,7 @@
 		add_verb(new_mob, /mob/living/simple_mob/proc/ColorMate)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
+
+/mob/living/carbon/human/proc/hanner_beast_form_human_failed(energy_cost, list/beast_options, chosen_beast, mob/living/M)
+	visible_message(span_infoplain(span_bold("\The [src]") + " ceases shifting their form."))
+	return 0

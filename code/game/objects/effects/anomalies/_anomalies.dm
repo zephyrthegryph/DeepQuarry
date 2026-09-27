@@ -133,12 +133,14 @@
 			return TRUE
 	if(istype(I, /obj/item/anomaly_scanner) && stats)
 		var/obj/item/anomaly_scanner/scanner = I
-		if(!do_after(user, 1 SECOND, src))
-			return
-		scanner.buffered_anomaly = om_handle(src)
-		scanner.tgui_interact(user)
+		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, scanner))
 		return TRUE
 	return ..()
+
+/obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
+	scanner.buffered_anomaly = om_handle(src)
+	scanner.tgui_interact(user)
+	return TRUE
 
 /obj/effect/anomaly/bullet_act(obj/item/projectile/proj)
 	if(stats && istype(stats.modifier, /datum/anomaly_modifiers/reflective) && prob(stats.severity/1.5))

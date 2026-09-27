@@ -9,6 +9,11 @@
 	energy_drain = 600
 	equip_type = EQUIP_HULL
 
+/obj/item/mecha_parts/mecha_equipment/hardpoint_actuator/proc/integrate_done(obj/item/mecha_parts/mecha_equipment/ME)
+	if(ME.can_attach(chassis))
+		ME.attach(chassis)
+		occupant_message("[ME] successfully integrated.")
+
 /obj/item/mecha_parts/mecha_equipment/hardpoint_actuator/action(atom/target)
 	if(!action_checks(target))
 		return
@@ -17,10 +22,7 @@
 		var/obj/item/mecha_parts/mecha_equipment/ME = target
 		if(ME.can_attach(chassis))
 			occupant_message("[ME] can be integrated. Stand by.")
-			if(do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 3 SECONDS, target))
-				if(ME.can_attach(chassis) && action_checks(target))
-					ME.attach(chassis)
-					occupant_message("[ME] successfully integrated.")
+			om_do_after(SLOT_ITEM(chassis, MECHA_SLOT_PILOT), 3 SECONDS, target, src, PROC_REF(integrate_done), list(ME), IGNORE_HELD_ITEM)
 		else
 			occupant_message("[ME] cannot be integrated due to lack of free hardpoints.")
 
