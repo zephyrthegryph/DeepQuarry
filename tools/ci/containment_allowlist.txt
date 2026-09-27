@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Convert sites to forceMove()
 # or the slot API (code/datums/containment/api.dm) and lower the count;
 # `python tools/ci/containment_lint.py --update` rewrites it.
-# Total: 659 sites in 304 files.
+# Total: 639 sites in 297 files.
 code/_helpers/refinery.dm 1
 code/_helpers/turfs.dm 2
 code/_helpers/unsorted.dm 7
@@ -61,7 +61,7 @@ code/game/machinery/feeder.dm 2
 code/game/machinery/floodlight.dm 3
 code/game/machinery/floorlayer.dm 1
 code/game/machinery/food_replicator.dm 1
-code/game/machinery/frame.dm 7
+code/game/machinery/frame_construction.dm 6
 code/game/machinery/iv_drip.dm 2
 code/game/machinery/machinery.dm 2
 code/game/machinery/newscaster.dm 3
@@ -76,11 +76,9 @@ code/game/machinery/virtual_reality/vr_console.dm 1
 code/game/machinery/washing_machine.dm 1
 code/game/mecha/combat/gorilla.dm 1
 code/game/mecha/combat/marauder.dm 1
-code/game/mecha/equipment/mecha_equipment.dm 1
-code/game/mecha/equipment/tools/clamp.dm 2
 code/game/mecha/equipment/tools/jetpack.dm 1
 code/game/mecha/mecha.dm 2
-code/game/mecha/mecha_wreckage.dm 1
+code/game/mecha/mecha_wreckage_salvage.dm 1
 code/game/mecha/micro/micro_equipment.dm 4
 code/game/mecha/working/ripley.dm 1
 code/game/objects/effects/alien/aliens.dm 1
@@ -230,7 +228,6 @@ code/modules/paperwork/photography.dm 1
 code/modules/paperwork/silicon_photography.dm 1
 code/modules/pda/pda.dm 5
 code/modules/persistence/noticeboard.dm 16
-code/modules/power/cable.dm 1
 code/modules/power/lighting.dm 1
 code/modules/power/singularity/collector.dm 2
 code/modules/power/singularity/particle_accelerator/particle.dm 3

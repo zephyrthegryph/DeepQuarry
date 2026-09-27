@@ -199,7 +199,7 @@
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	TEST_ASSERT(istype(brain), "a human has a brain")
 	brain.defib_timer = 0
-	brain.damage = brain.max_damage
+	brain.die()
 	H.ChangeToHusk()
 	TEST_ASSERT(H.return_from_death("unit test", src, REVIVE_HEAL) != TRUE, "without REVIVE_RESTORE the dead brain refuses")
 	TEST_ASSERT_EQUAL(H.return_from_death("unit test", src, REVIVE_RESTORE | REVIVE_IGNORE_WINDOW | REVIVE_HEAL | REVIVE_UNCONSCIOUS), TRUE, "reform flags always revive")
@@ -229,7 +229,7 @@
 	H.death()
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	brain.defib_timer = 0
-	brain.damage = brain.max_damage
+	brain.die()
 	H.ChangeToHusk()
 	H.reform_restore("unit test", src)
 	TEST_ASSERT(H.stat != DEAD, "reform always revives")

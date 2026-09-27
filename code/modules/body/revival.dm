@@ -55,9 +55,11 @@
 		var/obj/item/organ/prototype = organ_type
 		if(!initial(prototype.vital) || internal_organs_by_name[organ_tag])
 			continue
+		// Born inside us, the organ places itself (ledger attach hook); set_organ_tag() rekeys
+		// its slot and our caches when the species files it under a non-default tag.
 		var/obj/item/organ/O = new organ_type(src, 1)
-		O.organ_tag = organ_tag
-		internal_organs_by_name[organ_tag] = O
+		if(O.organ_tag != organ_tag)
+			O.set_organ_tag(organ_tag)
 		log_game("REVIVE RESTORE: [key_name(src)] regrew missing vital organ [organ_tag].")
 	restore_all_organs()
 	for(var/obj/item/organ/internal/I in internal_organs)
