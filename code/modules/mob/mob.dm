@@ -15,6 +15,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	. = ..()
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
+REF_OWNED(/mob, "ability_master")
+REF_PAIR(/mob, list("ability_master" = "my_mob"))
+
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
 	if(client)
@@ -43,9 +46,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	QDEL_NULL_LIST(viruses)
 	if(PULLING(src))
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
-
-	if(ability_master)
-		QDEL_NULL(ability_master)
 
 	if(LAZYLEN(vore_organs))
 		QDEL_NULL_LIST(vore_organs)

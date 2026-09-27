@@ -15,11 +15,7 @@
 	L = new()
 	cmp = compare
 
-/datum/tg_heap/Destroy(force, ...)
-	for(var/i in L) // because this is before the list helpers are loaded
-		qdel(i)
-	L = null
-	return ..()
+REF_OWNED_LIST(/datum/tg_heap, "L")
 
 /datum/tg_heap/proc/is_empty()
 	return !length(L)

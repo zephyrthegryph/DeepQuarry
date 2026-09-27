@@ -862,10 +862,6 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 	. = ..()
 	parent = loc
 
-/atom/movable/screen/mapper/Destroy()
-	parent = null
-	return ..()
-
 // Holds the actual map image
 /atom/movable/screen/mapper/map
 	var/offset_x = 32

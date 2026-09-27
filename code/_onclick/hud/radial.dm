@@ -343,10 +343,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 				next_check = world.time + check_delay
 		stoplag(1)
 
+// LIFECYCLE: a menu closes on its viewer and wakes the chooser waiting on it.
 /datum/radial_menu/Destroy()
 	Reset()
 	hide()
-	custom_check_callback = null
 	. = ..()
 
 /*

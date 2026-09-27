@@ -313,6 +313,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 /datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
+REF_OWNED(/obj/mecha, "minihud")
+REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
+
 /obj/mecha/Destroy()
 	src.go_out()
 	for(var/mob/M in src) //Be Extra Sure
@@ -387,7 +390,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	GLOB.mech_destroyed_roundstat++
 
 	QDEL_NULL(spark_system)
-	QDEL_NULL(minihud)
 
 
 	. = ..()

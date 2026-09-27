@@ -73,11 +73,7 @@
 		S.master_ref = om_handle(owner_mech)
 	..()
 
-/datum/mini_hud/mech/Destroy()
-	if(owner_mech)
-		owner_mech.minihud = null
-		owner_mech = null
-	return ..()
+REF_PAIR(/datum/mini_hud/mech, list("owner_mech" = "minihud"))
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech)

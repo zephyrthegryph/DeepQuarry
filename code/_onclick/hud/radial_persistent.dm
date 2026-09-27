@@ -18,8 +18,6 @@
 	. = ..()
 	icon_state = "radial_center"
 
-
-
 /datum/radial_menu/persistent
 	var/uniqueid
 	var/datum/callback/select_proc_callback
@@ -28,10 +26,8 @@
 	close_button = new /atom/movable/screen/radial/persistent/center
 	close_button.parent = src
 
-
 /datum/radial_menu/persistent/element_chosen(choice_id,mob/user)
 	select_proc_callback.Invoke(LAZYACCESS(choices_values, choice_id))
-
 
 /datum/radial_menu/persistent/proc/change_choices(list/newchoices, tooltips)
 	if(!newchoices.len)
@@ -39,12 +35,10 @@
 	Reset()
 	set_choices(newchoices,tooltips)
 
-/datum/radial_menu/persistent/Destroy()
-	QDEL_NULL(select_proc_callback)
+REF_OWNED(/datum/radial_menu/persistent, "select_proc_callback")
+
+/datum/radial_menu/persistent/lifecycle_dematerialize()
 	GLOB.radial_menus -= uniqueid
-	Reset()
-	hide()
-	. = ..()
 
 /*
 	Creates a persistent radial menu and shows it to the user, anchored to anchor (or user if the anchor is currently in users screen).

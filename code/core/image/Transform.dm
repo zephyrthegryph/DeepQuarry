@@ -1,10 +1,6 @@
 //Images are the ONLY other kind of child of datum that has a loc other than atom
 //Datums DO NOT have a loc themselves. Usually, loc based cleanup is handled by atom/, but it doesn't count here
 //Image is not a child of loc!
-/image/Destroy()
-	loc = null
-	. = ..()
-
 
 /// The image's base transform scale for width.
 /image/var/tf_scale_x
@@ -21,7 +17,6 @@
 /// The image's base transform scale for vertical offset.
 /image/var/tf_offset_y
 
-
 /// Clear the image's tf_* variables and the current transform state.
 /image/proc/ClearTransform()
 	tf_scale_x = null
@@ -30,7 +25,6 @@
 	tf_offset_x = null
 	tf_offset_y = null
 	transform = null
-
 
 /// Sets the image's tf_* variables and the current transform state, also applying others if supplied.
 /image/proc/SetTransform(

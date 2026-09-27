@@ -7,7 +7,6 @@
 	screenobjs = list(new /atom/movable/screen/movable/mapper_holder(null, owner))
 	..()
 
-/datum/mini_hud/mapper/Destroy()
-	owner?.hud_item = null
-	owner?.hud_datum = null
-	return ..()
+REF_PAIR(/datum/mini_hud/mapper, list("owner" = "hud_datum"))
+REF_PAIR(/atom/movable/screen/movable/mapper_holder, list("owner" = "hud_item"))
+REF_PAIR(/obj/item/mapping_unit, list("hud_datum" = "owner", "hud_item" = "owner"))
