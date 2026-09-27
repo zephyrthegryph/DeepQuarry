@@ -95,7 +95,9 @@
 	if(enabled)
 		tgui_interact(user)
 	else if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
-		var/response = tgui_alert(user, "This computer is turned off. Would you like to turn it on?", "Admin Override", list("Yes", "No"))
+		var/response = rerun_prompt(user, "k98", list("message" = "This computer is turned off. Would you like to turn it on?", "title" = "Admin Override", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		if(isnull(response))
+			return
 		if(response == "Yes")
 			turn_on(user)
 
@@ -193,7 +195,9 @@
 	var/list/component_names = list()
 	for(var/obj/item/computer_hardware/hardware in all_components)
 		component_names += hardware.name
-	var/choice = tgui_input_list(user, "Which component do you want to uninstall?", "Computer maintenance", component_names)
+	var/choice = rerun_prompt(user, "k196", list("kind" = "list", "message" = "Which component do you want to uninstall?", "title" = "Computer maintenance", "choices" = component_names), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	if(isnull(choice))
+		return ITEM_INTERACT_BLOCKING
 	if(!choice || !Adjacent(user))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/computer_hardware/hardware = find_hardware_by_name(choice)

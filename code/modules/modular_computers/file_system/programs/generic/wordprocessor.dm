@@ -123,7 +123,10 @@
 
 		if("PRG_openfile")
 			if(is_edited)
-				if(tgui_alert(ui.user, "Would you like to save your changes first?","Save Changes",list("Yes","No")) == "Yes")
+				var/_answer_k126 = act_prompt(ui.user, action, params, ui, "k126", list("message" = "Would you like to save your changes first?", "title" = "Save Changes", "choices" = list("Yes","No")))
+				if(isnull(_answer_k126))
+					return
+				if(_answer_k126 == "Yes")
 					save_file(open_file)
 			browsing = 0
 			if(!open_file(params["PRG_openfile"]))
@@ -132,10 +135,15 @@
 
 		if("PRG_newfile")
 			if(is_edited)
-				if(tgui_alert(ui.user, "Would you like to save your changes first?","Save Changes",list("Yes","No")) == "Yes")
+				var/_answer_k135 = act_prompt(ui.user, action, params, ui, "k135", list("message" = "Would you like to save your changes first?", "title" = "Save Changes", "choices" = list("Yes","No")))
+				if(isnull(_answer_k135))
+					return
+				if(_answer_k135 == "Yes")
 					save_file(open_file)
 
-			var/newname = tgui_input_text(ui.user, "Enter file name:", "New File", "", MAX_MESSAGE_LEN)
+			var/newname = act_prompt(ui.user, action, params, ui, "k138", list("kind" = "text", "message" = "Enter file name:", "title" = "New File", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(newname))
+				return
 			if(!newname)
 				return TRUE
 			var/datum/computer_file/data/F = create_file(newname)
@@ -148,7 +156,9 @@
 			return TRUE
 
 		if("PRG_saveasfile")
-			var/newname = tgui_input_text(ui.user, "Enter file name:", "Save As", "", MAX_MESSAGE_LEN)
+			var/newname = act_prompt(ui.user, action, params, ui, "k151", list("kind" = "text", "message" = "Enter file name:", "title" = "Save As", "max_length" = MAX_MESSAGE_LEN))
+			if(isnull(newname))
+				return
 			if(!newname)
 				return TRUE
 			var/datum/computer_file/data/F = create_file(newname, loaded_data)
@@ -160,7 +170,10 @@
 
 		if("PRG_savefile")
 			if(!open_file)
-				open_file = tgui_input_text(ui.user, "Enter file name:", "Save As", "", MAX_MESSAGE_LEN)
+				var/_answer_k163 = act_prompt(ui.user, action, params, ui, "k163", list("kind" = "text", "message" = "Enter file name:", "title" = "Save As", "max_length" = MAX_MESSAGE_LEN))
+				if(isnull(_answer_k163))
+					return
+				open_file = _answer_k163
 				if(!open_file)
 					return 0
 			if(!save_file(open_file))
@@ -171,7 +184,10 @@
 			var/oldtext = html_decode(loaded_data)
 			oldtext = replacetext(oldtext, "\[br\]", "\n")
 
-			var/newtext = replacetext(tgui_input_text(ui.user, "Editing file '[open_file]'. You may use most tags used in paper formatting:", "Text Editor", oldtext, MAX_TEXTFILE_LENGTH, TRUE, prevent_enter = TRUE), "\n", "\[br\]")
+			var/_answer_k174 = act_prompt(ui.user, action, params, ui, "k174", list("kind" = "text", "message" = "Editing file '[open_file]'. You may use most tags used in paper formatting:", "title" = "Text Editor", "default" = oldtext, "max_length" = MAX_TEXTFILE_LENGTH, "multiline" = TRUE))
+			if(isnull(_answer_k174))
+				return
+			var/newtext = replacetext(_answer_k174, "\n", "\[br\]")
 			if(!newtext)
 				return
 			loaded_data = newtext
