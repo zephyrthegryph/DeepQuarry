@@ -30,16 +30,21 @@
 	if (chassis)
 		chassis.visible_message(span_notice("[user] starts to climb into [chassis]."))
 
-	if(do_after(user, 4 SECONDS, target = src))
-		if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
-			if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
-				return
-			src.mecha_log_message("[user] boarded.")
-			occupant_message("[user] boarded.")
-		else if(SLOT_ITEM(src, MECHA_SLOT_PILOT) != user)
-			to_chat(user, span_warning("[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
-	else
-		to_chat(user, span_info("You stop entering the exosuit."))
+	om_do_after(user, 4 SECONDS, src, src, PROC_REF(boarded), list(user), on_fail = GLOBAL_PROC_REF(to_chat), fail_args = list(user, span_info("You stop entering the exosuit.")))
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/forced_out(mob/user, mob/passenger_occupant)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " opens the hatch on \the [src] and removes [passenger_occupant]!"), span_notice("You open the hatch on \the [src] and remove [passenger_occupant]!"))
+	go_out()
+	mecha_log_message("[passenger_occupant] was removed.")
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(mob/user)
+	if(!SLOT_ITEM(src, MECHA_SLOT_PILOT))
+		if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
+			return
+		src.mecha_log_message("[user] boarded.")
+		occupant_message("[user] boarded.")
+	else if(SLOT_ITEM(src, MECHA_SLOT_PILOT) != user)
+		to_chat(user, span_warning("[SLOT_ITEM(src, MECHA_SLOT_PILOT)] was faster. Try harder next time, loser."))
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/container_resist(mob/living)
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)
@@ -57,19 +62,26 @@
 		return
 	if(door_locked)
 		to_chat(occupant, span_notice("\The [src] is locked! You begin operating the emergency unlock mechanism. This will take one minute."))
-		sleep(600)
-		if(!src || !usr || !occupant || (occupant != usr)) //Check if someone's released/replaced/bombed him already
-			return
-		if(door_locked)
-			door_locked = FALSE
-			occupant_message("Passenger compartment hatch unlocked.")
-			if (chassis)
-				chassis.visible_message(span_infoplain("The hatch on \the [chassis] unlocks."), span_hear("You hear something latching."))
+		om_after(src, 1 MINUTE, PROC_REF(emergency_unlocked), occupant)
+		return
+	passenger_disembark(occupant)
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/emergency_unlocked(mob/living/carbon/occupant)
+	if(occupant != SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)) //Check if someone's released/replaced/bombed him already
+		return
+	if(door_locked)
+		door_locked = FALSE
+		occupant_message("Passenger compartment hatch unlocked.")
+		if (chassis)
+			chassis.visible_message(span_infoplain("The hatch on \the [chassis] unlocks."), span_hear("You hear something latching."))
+	passenger_disembark(occupant)
+
+/obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/passenger_disembark(mob/living/carbon/occupant)
 	to_chat(occupant, span_info("You climb out from \the [src]."))
 	go_out()
 	occupant_message("[occupant] disembarked.")
 	src.mecha_log_message("[occupant] disembarked.")
-	add_fingerprint(usr)
+	add_fingerprint(occupant)
 
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/go_out()
 	var/mob/living/carbon/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_MECHA_PASSENGER)

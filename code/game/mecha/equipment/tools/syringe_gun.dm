@@ -40,6 +40,34 @@
 		return "[output] \[<a href=\"?src=\ref[src];toggle_mode=1\">[mode? "Analyze" : "Launch"]</a>\]<br />\[Syringes: [syringes.len]/[max_syringes] | Reagents: [reagents.total_volume]/[reagents.maximum_volume]\]<br /><a href='byond://?src=\ref[src];show_reagents=1'>Reagents list</a>"
 	return
 
+/// One step of a launched syringe, every decisecond for `left` steps.
+/proc/mech_syringe_fly(obj/item/reagent_containers/syringe/S, turf/trg, left)
+	if(left <= 0)
+		return
+	if(step_towards(S,trg))
+		var/list/mobs = list()
+		for(var/mob/living/carbon/M in S.loc)
+			mobs += M
+		var/mob/living/carbon/M = safepick(mobs)
+		if(M)
+			S.icon_state = initial(S.icon_state)
+			S.icon = initial(S.icon)
+			S.reagents.trans_to_mob(M, S.reagents.total_volume, CHEM_BLOOD)
+			M.injure(INJURY_PIERCE, 2, null, S)
+			S.visible_message(span_attack("[M] was hit by the syringe!"))
+			return
+		else if(S.loc == trg)
+			S.icon_state = initial(S.icon_state)
+			S.icon = initial(S.icon)
+			S.update_icon()
+			return
+	else
+		S.icon_state = initial(S.icon_state)
+		S.icon = initial(S.icon)
+		S.update_icon()
+		return
+	om_after(S, 0.1 SECONDS, GLOBAL_PROC_REF(mech_syringe_fly), S, trg, left - 1)
+
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/action(atom/movable/target)
 	if(!action_checks(target))
 		return
@@ -68,34 +96,8 @@
 	S.icon_state = "syringeproj"
 	playsound(src, 'sound/items/syringeproj.ogg', 50, 1)
 	src.mecha_log_message("Launched [S] from [src], targeting [target].")
-	spawn(-1)
-		src = null //if src is deleted, still process the syringe
-		for(var/i=0, i<6, i++)
-			if(!S)
-				break
-			if(step_towards(S,trg))
-				var/list/mobs = list()
-				for(var/mob/living/carbon/M in S.loc)
-					mobs += M
-				var/mob/living/carbon/M = safepick(mobs)
-				if(M)
-					S.icon_state = initial(S.icon_state)
-					S.icon = initial(S.icon)
-					S.reagents.trans_to_mob(M, S.reagents.total_volume, CHEM_BLOOD)
-					M.injure(INJURY_PIERCE, 2, null, S)
-					S.visible_message(span_attack("[M] was hit by the syringe!"))
-					break
-				else if(S.loc == trg)
-					S.icon_state = initial(S.icon_state)
-					S.icon = initial(S.icon)
-					S.update_icon()
-					break
-			else
-				S.icon_state = initial(S.icon_state)
-				S.icon = initial(S.icon)
-				S.update_icon()
-				break
-			sleep(1)
+	// The syringe owns its flight: it goes on if the gun is deleted.
+	om_after(S, 0, GLOBAL_PROC_REF(mech_syringe_fly), S, trg, 6)
 	do_after_cooldown()
 	return 1
 

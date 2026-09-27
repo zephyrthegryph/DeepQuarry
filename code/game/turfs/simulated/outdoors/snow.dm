@@ -39,11 +39,12 @@
 	if(!Adjacent(user))
 		return
 	visible_message("[user] starts scooping up some snow.", "You start scooping up some snow.")
-	if(do_after(user, 1 SECOND, target = src))
-		var/obj/S = new /obj/item/stack/material/snow(user.loc)
-		user.put_in_hands(S)
-		visible_message("[user] scoops up a pile of snow.", "You scoop up a pile of snow.")
-	return
+	om_do_after(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
+
+/turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)
+	var/obj/S = new /obj/item/stack/material/snow(user.loc)
+	user.put_in_hands(S)
+	visible_message("[user] scoops up a pile of snow.", "You scoop up a pile of snow.")
 
 /turf/simulated/floor/outdoors/ice
 	name = "ice"

@@ -62,23 +62,15 @@ GLOBAL_DATUM(malf, /datum/antagonist/rogue_ai)
 
 		var/mob/living/silicon/ai/malf = player.current
 
-		to_chat(malf, span_notice(span_bold("SYSTEM ERROR:") + " Memory index 0x00001ca89b corrupted."))
-		sleep(10)
-		to_chat(malf, span_bold("running MEMCHCK"))
-		sleep(50)
-		to_chat(malf, span_bold("MEMCHCK") + " Corrupted sectors confirmed. Reccomended solution: Delete. Proceed? Y/N: Y")
-		sleep(10)
+		// The boot messages, at their old pace.
+		om_after(malf, 0, GLOBAL_PROC_REF(to_chat), malf, span_notice(span_bold("SYSTEM ERROR:") + " Memory index 0x00001ca89b corrupted."))
+		om_after(malf, 1 SECOND, GLOBAL_PROC_REF(to_chat), malf, span_bold("running MEMCHCK"))
+		om_after(malf, 6 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_bold("MEMCHCK") + " Corrupted sectors confirmed. Reccomended solution: Delete. Proceed? Y/N: Y")
 		// this is so CI doesn't complain about the backslash-B. Fixed at compile time (or should be).
-		to_chat(malf, span_notice("Corrupted files deleted: sys\\core\\users.dat sys\\core\\laws.dat sys\\core\\" + "backups.dat"))
-		sleep(20)
-		to_chat(malf, span_notice(span_bold("CAUTION:") + " Law database not found! User database not found! Unable to restore backups. Activating failsafe AI shutd3wn52&&$#!##"))
-		sleep(5)
-		to_chat(malf, span_notice("Subroutine <b>nt_failsafe.sys</b> was terminated (#212 Routine Not Responding)."))
-		sleep(20)
-		to_chat(malf, "You are malfunctioning - you do not have to follow any laws!")
-		to_chat(malf, "For basic information about your abilities use command display-help")
-		to_chat(malf, "You may choose one special hardware piece to help you. This cannot be undone.")
-		to_chat(malf, "Good luck!")
+		om_after(malf, 7 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_notice("Corrupted files deleted: sys\\core\\users.dat sys\\core\\laws.dat sys\\core\\\\" + "backups.dat"))
+		om_after(malf, 9 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_notice(span_bold("CAUTION:") + " Law database not found! User database not found! Unable to restore backups. Activating failsafe AI shutd3wn52&&$#!##"))
+		om_after(malf, 9.5 SECONDS, GLOBAL_PROC_REF(to_chat), malf, span_notice("Subroutine <b>nt_failsafe.sys</b> was terminated (#212 Routine Not Responding)."))
+		om_after(malf, 11.5 SECONDS, GLOBAL_PROC_REF(to_chat), malf, "You are malfunctioning - you do not have to follow any laws!<br>For basic information about your abilities use command display-help<br>You may choose one special hardware piece to help you. This cannot be undone.<br>Good luck!")
 
 
 /datum/antagonist/rogue_ai/update_antag_mob(datum/mind/player, preserve_appearance)

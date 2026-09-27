@@ -36,10 +36,12 @@
 	to_chat(user, span_notice("\The [user] begins digging into \the [src] with \the [our_shovel]."))
 	var/delay = (5 SECONDS * our_shovel.toolspeed)
 	user.setClickCooldown(delay)
-	if(do_after(user, delay, target = src))
-		if(!(locate(/obj/structure/closet/grave/dirthole) in contents))
-			new /obj/structure/closet/grave/dirthole(src)
-		to_chat(user, span_notice("You dug up a hole!"))
+	om_do_after(user, delay, src, src, PROC_REF(grave_dug), list(user))
+
+/turf/proc/grave_dug(mob/user)
+	if(!(locate(/obj/structure/closet/grave/dirthole) in contents))
+		new /obj/structure/closet/grave/dirthole(src)
+	to_chat(user, span_notice("You dug up a hole!"))
 
 /// If a turf has any loot when dug with a shovel
 /turf/proc/get_dig_loot_type(mob/user, obj/item/W)
