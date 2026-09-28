@@ -346,7 +346,7 @@
 		to_chat(user, span_warning("You can't do that right now!"))
 		return
 
-	var/_answer_k349 = rerun_prompt(user, "k349", list("message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, click_alt), args)
+	var/_answer_k349 = rerun_ask(user, "k349", TYPE_PROC_REF(/atom, click_alt), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"))
 	if(isnull(_answer_k349))
 		return
 	if(_answer_k349 == "Yes")

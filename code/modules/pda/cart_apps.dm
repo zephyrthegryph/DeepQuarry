@@ -23,12 +23,12 @@
 				if("alert")
 					post_status("alert", params["alert"])
 				if("setmsg1")
-					var/_answer_k26 = act_prompt(ui.user, action, params, ui, "k26", list("kind" = "text", "message" = "Line 1", "title" = "Enter Message Text", "default" = message1, "encode" = TRUE))
+					var/_answer_k26 = act_ask(ui.user, action, params, ui, "k26", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = message1)
 					if(isnull(_answer_k26))
 						return
 					message1 = _answer_k26
 				if("setmsg2")
-					var/_answer_k28 = act_prompt(ui.user, action, params, ui, "k28", list("kind" = "text", "message" = "Line 2", "title" = "Enter Message Text", "default" = message2, "encode" = TRUE))
+					var/_answer_k28 = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = message2)
 					if(isnull(_answer_k28))
 						return
 					message2 = _answer_k28

@@ -106,7 +106,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 		to_chat(L, span_warning("The global automated relays are still recalibrating. Try again later or relay your request in written form for processing."))
 		return
 
-	var/confirmation = rerun_prompt(L, "k109", list("message" = "Are you sure you want to send automated crew request?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel")), PROC_REF(request_roles), args)
+	var/confirmation = rerun_ask(L, "k109", PROC_REF(request_roles), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to send automated crew request?", title = "Confirmation", choices = list("Yes", "No", "Cancel"))
 	if(isnull(confirmation))
 		return
 	if(confirmation != "Yes")
@@ -127,7 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 				if(J.offmap_spawn)
 					jobs |= job
 
-	var/role = rerun_prompt(L, "k128", list("kind" = "list", "message" = "Pick the job to request.", "title" = "Job Request", "choices" = jobs), PROC_REF(request_roles), args)
+	var/role = rerun_ask(L, "k128", PROC_REF(request_roles), args, /datum/om/prompt/choice, message = "Pick the job to request.", title = "Job Request", choices = jobs)
 	if(isnull(role))
 		return
 	if(!role)
@@ -137,12 +137,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	var/reason = "Unspecified"
 	var/list/possible_reasons = list("Unspecified", "General duties", "Emergency situation")
 	possible_reasons += job_to_request.get_request_reasons()
-	var/_answer_k136 = rerun_prompt(L, "k136", list("kind" = "list", "message" = "Pick request reason.", "title" = "Request reason", "choices" = possible_reasons), PROC_REF(request_roles), args)
+	var/_answer_k136 = rerun_ask(L, "k136", PROC_REF(request_roles), args, /datum/om/prompt/choice, message = "Pick request reason.", title = "Request reason", choices = possible_reasons)
 	if(isnull(_answer_k136))
 		return
 	reason = _answer_k136
 
-	var/final_conf = rerun_prompt(L, "k138", list("message" = "You are about to request [role]. Are you sure?", "title" = "Confirmation", "choices" = list("Yes", "No", "Cancel")), PROC_REF(request_roles), args)
+	var/final_conf = rerun_ask(L, "k138", PROC_REF(request_roles), args, /datum/om/prompt/choice/alert, message = "You are about to request [role]. Are you sure?", title = "Confirmation", choices = list("Yes", "No", "Cancel"))
 	if(isnull(final_conf))
 		return
 	if(final_conf != "Yes")
@@ -264,7 +264,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	switch(action)
 		if("rename")
 			if(copyitem)
-				var/new_name = act_prompt(ui.user, action, params, ui, "k258", list("kind" = "text", "message" = "Enter new paper title", "title" = "This will show up in the preview for staff chat on discord when sending to central.", "default" = copyitem.name, "max_length" = MAX_NAME_LEN))
+				var/new_name = act_ask(ui.user, action, params, ui, "k258", /datum/om/prompt/text, message = "Enter new paper title", title = "This will show up in the preview for staff chat on discord when sending to central.", default = copyitem.name, max_length = MAX_NAME_LEN)
 				if(isnull(new_name))
 					return
 				if(!new_name)
@@ -284,7 +284,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 
 		if("dept")
 			var/lastdestination = destination
-			var/_answer_k276 = act_prompt(ui.user, action, params, ui, "k276", list("kind" = "list", "message" = "Which department?", "title" = "Choose a department", "choices" = (GLOB.alldepartments + GLOB.admin_departments)))
+			var/_answer_k276 = act_ask(ui.user, action, params, ui, "k276", /datum/om/prompt/choice, message = "Which department?", title = "Choose a department", choices = (GLOB.alldepartments + GLOB.admin_departments))
 			if(isnull(_answer_k276))
 				return
 			destination = _answer_k276
@@ -315,11 +315,11 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	else if(copyitem.name != initial(copyitem.name))
 		return FALSE
 
-	var/choice = act_prompt(user, action, params, ui, "default_title", list("message" = "[question_text] improve response time from staff when sending to discord. Renaming it changes its preview in staff chat.", "title" = "Default name detected", "choices" = list("Change Title","Continue", "Cancel")))
+	var/choice = act_ask(user, action, params, ui, "default_title", /datum/om/prompt/choice/alert, message = "[question_text] improve response time from staff when sending to discord. Renaming it changes its preview in staff chat.", title = "Default name detected", choices = list("Change Title","Continue", "Cancel"))
 	if(!choice || choice == "Cancel")
 		return TRUE
 	else if(choice == "Change Title")
-		var/new_name = act_prompt(user, action, params, ui, "new_title", list("kind" = "text", "message" = "Enter new fax title", "title" = "This will show up in the preview for staff chat on discord when sending to central.", "default" = copyitem.name, "max_length" = MAX_NAME_LEN))
+		var/new_name = act_ask(user, action, params, ui, "new_title", /datum/om/prompt/text, message = "Enter new fax title", title = "This will show up in the preview for staff chat on discord when sending to central.", default = copyitem.name, max_length = MAX_NAME_LEN)
 		if(!new_name)
 			return TRUE
 		copyitem.name = new_name
@@ -363,7 +363,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 /obj/machinery/photocopier/faxmachine/multitool_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_prompt(user, "k352", list("kind" = "text", "message" = "What Department ID would you like to give this fax machine?", "title" = "Multitool-Fax Machine Interface", "default" = department, "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/input = rerun_ask(user, "k352", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What Department ID would you like to give this fax machine?", title = "Multitool-Fax Machine Interface", default = department)
 	if(isnull(input))
 		return ITEM_INTERACT_BLOCKING
 	if(!input)

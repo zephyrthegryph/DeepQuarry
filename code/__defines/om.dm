@@ -450,6 +450,29 @@
 #define om_ask(answerer, prompt, on_answer, params...) om_ask_begin(src, answerer, prompt, on_answer, list(params))
 /// Starts a flow (flow.dm): om_flow_start(/datum/om/flow/x, actor, target, var = value, ...).
 #define om_flow_start(flow, actor, target, params...) om_flow_begin(flow, actor, target, list(params))
+/// Asks a list of typed prompts in turn (flow.dm): om_ask_sequence(/datum/om/flow/ask_sequence/x, answerer, subject, steps = list(...), on_done = PROC_REF(cb), var = value, ...).
+/// Step procs, on_done and on_stop run on the caller's src (`owner = X` runs them on X).
+#define om_ask_sequence(sequence, answerer, subject, params...) om_ask_sequence_begin(src, sequence, answerer, subject, list(params))
+
+// Re-run prompts (prompt_helpers.dm): the first call asks and returns null; the answer re-runs
+// the caller, where the same call returns the answer. `prompt` is a /datum/om/prompt/<kind>;
+// the named arguments set its vars, as in om_ask().
+/// In a Topic() handler.
+#define topic_ask(user, href_list, key, prompt, fields...) om_topic_ask(user, href_list, key, prompt, list(fields))
+/// In a tgui_act() action.
+#define act_ask(user, action, act_params, ui, key, prompt, fields...) om_act_ask(user, action, act_params, ui, key, prompt, list(fields))
+/// In an ADMIN_VERB body (`verb_args`: the verb's args).
+#define verb_ask(user, key, verb_args, prompt, fields...) om_verb_ask(user, key, verb_args, prompt, list(fields))
+/// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.
+#define client_ask(key, proc_name, proc_args, rights, prompt, fields...) om_client_ask(key, proc_name, proc_args, rights, prompt, list(fields))
+/// In any datum proc: re-runs proc_name on src with proc_args.
+#define rerun_ask(user, key, proc_name, proc_args, prompt, fields...) om_rerun_ask(user, key, proc_name, proc_args, prompt, list(fields))
+/// The same, re-running proc_name on `target` instead of src.
+#define rerun_ask_on(target, user, key, proc_name, proc_args, prompt, fields...) target.om_rerun_ask(user, key, proc_name, proc_args, prompt, list(fields))
+/// Deep inside a prompt_flow().
+#define flow_ask(user, key, prompt, fields...) om_flow_ask(user, key, prompt, list(fields))
+/// Returned by a prompt kind's refine_answer() when it asked again instead of answering.
+#define OM_PROMPT_REOPENED "om_prompt_reopened"
 
 // ---------------------------------------------------------------- typed prompt re-checks (ask.dm)
 // The prompt's ask_flags: re-checked when the answer arrives, before the answer proc runs.

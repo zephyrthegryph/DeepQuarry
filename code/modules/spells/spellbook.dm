@@ -59,7 +59,7 @@
 							break
 						else
 							if(aspell.can_improve("speed") && aspell.can_improve("power"))
-								var/upgrade = topic_prompt(H, href_list, "upgrade", list("message" = "Do you want to upgrade this spell's speed or power?", "title" = "Select Upgrade", "choices" = list("Speed", "Power", "Cancel")))
+								var/upgrade = topic_ask(H, href_list, "upgrade", /datum/om/prompt/choice/alert, message = "Do you want to upgrade this spell's speed or power?", title = "Select Upgrade", choices = list("Speed", "Power", "Cancel"))
 								if(isnull(upgrade)) // the answer re-runs this link
 									uses++
 									return

@@ -282,11 +282,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 		if(!sdog.shipvore)
 			return
 	var/mob/living/L = over
-	var/confirm = rerun_prompt(L, "k285", list("message" = "You COULD eat this spaceship...", "title" = "Eat spaceship?", "choices" = list("Eat it!", "No, thanks.")), "MouseDrop" /* a built-in proc, which nameof cannot name */, args)
+	var/confirm = rerun_ask(L, "k285", "MouseDrop" /* a built-in proc, which nameof cannot name */, /datum/om/prompt/choice/alert, message = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."))
 	if(isnull(confirm))
 		return
 	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = rerun_prompt(L, "k287", list("kind" = "list", "message" = "Which belly?", "title" = "Select A Belly", "choices" = L.vore_organs), "MouseDrop" /* a built-in proc, which nameof cannot name */, args)
+		var/obj/belly/bellychoice = rerun_ask(L, "k287", "MouseDrop" /* a built-in proc, which nameof cannot name */, /datum/om/prompt/choice, message = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
 		if(isnull(bellychoice))
 			return
 		if(bellychoice)

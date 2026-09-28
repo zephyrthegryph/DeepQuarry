@@ -49,7 +49,7 @@
 			var/list/possible_d = shuttle.get_possible_destinations()
 			var/D
 			if(possible_d.len)
-				var/_answer_k52 = act_prompt(ui.user, action, params, ui, "k52", list("kind" = "list", "message" = "Choose shuttle destination", "title" = "Shuttle Destination", "choices" = possible_d))
+				var/_answer_k52 = act_ask(ui.user, action, params, ui, "k52", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d)
 				if(isnull(_answer_k52))
 					return
 				D = _answer_k52

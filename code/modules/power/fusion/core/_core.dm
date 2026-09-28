@@ -182,7 +182,7 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 	effect = /obj/machinery/power/fusion_core/proc/interaction_set_ident
 
 /obj/machinery/power/fusion_core/proc/interaction_set_ident(mob/user, obj/item/held, datum/interaction/interaction)
-	var/new_ident = rerun_prompt(user, "k186", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Fusion Core", "default" = id_tag, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+	var/new_ident = rerun_ask(user, "k186", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Fusion Core", default = id_tag, max_length = MAX_NAME_LEN)
 	if(isnull(new_ident))
 		return
 	if(new_ident && user.Adjacent(src))

@@ -49,7 +49,7 @@
 	if(!ai_brain || !IIsAlly(usr))
 		to_chat(usr, span_warning("\The [src] does not respond to your input."))
 		return
-	var/setting = rerun_prompt(usr, "k52", list("kind" = "list", "message" = "Toggle Swoopie Swooping Options", "title" = "Swoopie Options", "choices" = list("Swoop Pests", "Swoop Trash")), VERB_REF(change_settings), args)
+	var/setting = rerun_ask(usr, "k52", VERB_REF(change_settings), args, /datum/om/prompt/choice, message = "Toggle Swoopie Swooping Options", title = "Swoopie Options", choices = list("Swoop Pests", "Swoop Trash"))
 	if(isnull(setting))
 		return
 	switch(setting)

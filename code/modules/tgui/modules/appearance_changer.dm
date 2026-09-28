@@ -129,7 +129,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				// A custom species is named before the change (the answer re-runs this action).
 				var/custom_name
 				if(params["race"] == "Custom Species")
-					custom_name = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Input custom species name:", "title" = "Custom Species Name", "max_length" = MAX_NAME_LEN))
+					custom_name = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Input custom species name:", title = "Custom Species Name", max_length = MAX_NAME_LEN)
 					if(isnull(custom_name))
 						return
 				if(owner.change_species(params["race"]))
@@ -153,7 +153,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return 1
 		if("skin_tone")
 			if(can_change_skin_tone(owner))
-				var/new_s_tone = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "number", "message" = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", "title" = "Skin Tone", "default" = -owner.s_tone + 35, "max" = 220, "min" = 1))
+				var/new_s_tone = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/number, message = "Choose your character's skin-tone:\n(Light 1 - 220 Dark)", title = "Skin Tone", default = -owner.s_tone + 35, max = 220, min = 1)
 				if(isnull(new_s_tone))
 					return
 				if(isnum(new_s_tone) && can_still_topic(ui.user, state))
@@ -347,7 +347,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			return TRUE
 		if("rename")
 			if(owner)
-				var/raw_name = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "Choose the a name:", "title" = "Sleeve Name", "encode" = FALSE))
+				var/raw_name = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/text, message = "Choose the a name:", title = "Sleeve Name", encode = FALSE)
 				if(isnull(raw_name))
 					return
 				if(!isnull(raw_name) && can_change(owner, APPEARANCE_RACE))
@@ -362,7 +362,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 						return TRUE
 		if("char_name")
 			if(DC) // Only body designer does this. no hrefing
-				var/new_name = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "text", "message" = "Input character's name:", "title" = "Name", "default" = owner.name, "max_length" = MAX_NAME_LEN))
+				var/new_name = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/text, message = "Input character's name:", title = "Name", default = owner.name, max_length = MAX_NAME_LEN)
 				if(isnull(new_name))
 					return
 				if(can_change(owner, APPEARANCE_RACE)) // new name can be empty, it uses base species if so
@@ -371,7 +371,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 					owner.dna.real_name = owner.name
 					return TRUE
 		if("race_name")
-			var/new_name = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "text", "message" = "Input custom species name:", "title" = "Custom Species Name", "default" = owner.custom_species, "max_length" = MAX_NAME_LEN))
+			var/new_name = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/text, message = "Input custom species name:", title = "Custom Species Name", default = owner.custom_species, max_length = MAX_NAME_LEN)
 			if(isnull(new_name))
 				return
 			if(can_change(owner, APPEARANCE_RACE)) // new name can be empty, it uses base species if so
@@ -379,7 +379,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return TRUE
 		if("base_icon")
 			if(can_change(owner, APPEARANCE_MISC))
-				var/new_species = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "list", "message" = "Please select basic shape.", "title" = "Body Shape", "choices" = GLOB.custom_species_bases))
+				var/new_species = act_ask(ui.user, action, params, ui, "a6", /datum/om/prompt/choice, message = "Please select basic shape.", title = "Body Shape", choices = GLOB.custom_species_bases)
 				if(isnull(new_species))
 					return
 				if(new_species)
@@ -395,7 +395,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 					return TRUE
 		if("blood_reagent") //you know, this feels REALLY odd to be able to change at will but WHATEVER, WE BALL.
 			if(can_change(owner, APPEARANCE_MISC))
-				var/new_blood_reagents = act_prompt(ui.user, action, params, ui, "a7", list("kind" = "list", "message" = "Please select blood restoration reagent:", "title" = "Character Preference", "choices" = GLOB.valid_bloodreagents))
+				var/new_blood_reagents = act_ask(ui.user, action, params, ui, "a7", /datum/om/prompt/choice, message = "Please select blood restoration reagent:", title = "Character Preference", choices = GLOB.valid_bloodreagents)
 				if(isnull(new_blood_reagents))
 					return
 				if(new_blood_reagents)
@@ -406,11 +406,11 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			var/current = owner.species.blood_color ? owner.species.blood_color : "#A10808"
 			om_ask(ui.user, /datum/om/prompt/color/appearance, PROC_REF(appearance_color_picked), subject = src, ui_state = state, field = "blood_color", title = "Blood color", message = "Please select blood color", default = current)
 		if("weight")
-			var/new_weight = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "number", "message" = "Choose tbe character's relative body weight.\nThis measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n([WEIGHT_MIN]-[WEIGHT_MAX])", "title" = "Character Preference", "max" = WEIGHT_MAX, "min" = WEIGHT_MIN, "round" = FALSE))
+			var/new_weight = act_ask(ui.user, action, params, ui, "a8", /datum/om/prompt/number, message = "Choose tbe character's relative body weight.\nThis measurement should be set relative to a normal 5'10'' person's body and not the actual size of the character.\n([WEIGHT_MIN]-[WEIGHT_MAX])", title = "Character Preference", max = WEIGHT_MAX, min = WEIGHT_MIN, round_entry = FALSE)
 			if(isnull(new_weight))
 				return
 			if(new_weight && can_change(owner, APPEARANCE_MISC))
-				var/unit_of_measurement = act_prompt(ui.user, action, params, ui, "a9", list("message" = "Is that number in pounds (lb) or kilograms (kg)?", "title" = "Confirmation", "choices" = list("Pounds", "Kilograms")))
+				var/unit_of_measurement = act_ask(ui.user, action, params, ui, "a9", /datum/om/prompt/choice/alert, message = "Is that number in pounds (lb) or kilograms (kg)?", title = "Confirmation", choices = list("Pounds", "Kilograms"))
 				if(isnull(unit_of_measurement))
 					return
 				if(unit_of_measurement)
@@ -422,7 +422,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 					changed_hook(APPEARANCECHANGER_CHANGED_RACE)
 					return TRUE
 		if("size_scale")
-			var/new_size = act_prompt(ui.user, action, params, ui, "a10", list("kind" = "number", "message" = "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", "title" = "Set Size", "max" = RESIZE_MAXIMUM * 100, "min" = RESIZE_MINIMUM * 100))
+			var/new_size = act_ask(ui.user, action, params, ui, "a10", /datum/om/prompt/number, message = "Choose size, ranging from [RESIZE_MINIMUM * 100]% to [RESIZE_MAXIMUM * 100]%", title = "Set Size", max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
 			if(isnull(new_size))
 				return
 			if(new_size && ISINRANGE(new_size,RESIZE_MINIMUM * 100,RESIZE_MAXIMUM * 100) && can_change(owner, APPEARANCE_MISC))
@@ -455,7 +455,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				return TRUE
 		if("species_sound")
 			var/list/possible_species_sound_types = GLOB.species_sound_map
-			var/choice = act_prompt(ui.user, action, params, ui, "a11", list("kind" = "list", "message" = "Which set of sounds would you like to use? (Cough, Sneeze, Scream, Pain, Gasp, Death)", "title" = "Species Sounds", "choices" = possible_species_sound_types))
+			var/choice = act_ask(ui.user, action, params, ui, "a11", /datum/om/prompt/choice, message = "Which set of sounds would you like to use? (Cough, Sneeze, Scream, Pain, Gasp, Death)", title = "Species Sounds", choices = possible_species_sound_types)
 			if(isnull(choice))
 				return
 			if(choice && can_change(owner, APPEARANCE_MISC))
@@ -467,7 +467,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 				if(select_key in owner.flavor_texts)
 					switch(select_key)
 						if("general")
-							var/_answer_a12 = act_prompt(ui.user, action, params, ui, "a12", list("kind" = "text", "message" = "Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank.", "title" = "Flavor Text", "default" = html_decode(owner.flavor_texts[select_key]), "multiline" = TRUE))
+							var/_answer_a12 = act_ask(ui.user, action, params, ui, "a12", /datum/om/prompt/text, message = "Give a general description of the character. This will be shown regardless of clothings. Put in \"!clear\" to make blank.", title = "Flavor Text", default = html_decode(owner.flavor_texts[select_key]), multiline = TRUE, max_length = MAX_TGUI_INPUT)
 							if(isnull(_answer_a12))
 								return
 							var/msg = strip_html_simple(_answer_a12)
@@ -477,7 +477,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 								LAZYSET(owner.flavor_texts, select_key, msg)
 								return TRUE
 						else
-							var/_answer_a13 = act_prompt(ui.user, action, params, ui, "a13", list("kind" = "text", "message" = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.", "title" = "Flavor Text", "default" = html_decode(owner.flavor_texts[select_key]), "multiline" = TRUE))
+							var/_answer_a13 = act_ask(ui.user, action, params, ui, "a13", /datum/om/prompt/text, message = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.", title = "Flavor Text", default = html_decode(owner.flavor_texts[select_key]), multiline = TRUE, max_length = MAX_TGUI_INPUT)
 							if(isnull(_answer_a13))
 								return
 							var/msg = strip_html_simple(_answer_a13)
@@ -488,7 +488,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 								return TRUE
 		if("load_saveslot") //saveslot_load
 			if(can_change(owner, APPEARANCE_ALL_COSMETIC))
-				var/_answer_a14 = act_prompt(owner, action, params, ui, "a14", list("message" = "Are you certain you wish to load the currently selected savefile?", "title" = "Load Savefile", "choices" = list("No","Yes")))
+				var/_answer_a14 = act_ask(owner, action, params, ui, "a14", /datum/om/prompt/choice/alert, message = "Are you certain you wish to load the currently selected savefile?", title = "Load Savefile", choices = list("No","Yes"))
 				if(isnull(_answer_a14))
 					return
 				if(_answer_a14 == "Yes")
@@ -539,7 +539,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 			if(owner.changeling_locked)
 				to_chat(ui.user, span_warning("ERROR: Record too complex. Disk does not have enough space to store this record."))
 			else if(owner.resleeve_lock)
-				var/answer = act_prompt(ui.user, action, params, ui, "a15", list("message" = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", "title" = "Mind Compatability", "choices" = list("No","Yes")))
+				var/answer = act_ask(ui.user, action, params, ui, "a15", /datum/om/prompt/choice/alert, message = "This body record will be written to a disk and allow any mind to inhabit it. This is against the current body owner's configured OOC preferences for body impersonation. Please confirm that you have permission to do this, and are sure! Admins will be notified.", title = "Mind Compatability", choices = list("No","Yes"))
 				if(isnull(answer))
 					return
 				if(!answer)

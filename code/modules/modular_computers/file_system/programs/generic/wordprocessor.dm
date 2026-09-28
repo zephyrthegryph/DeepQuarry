@@ -123,7 +123,7 @@
 
 		if("PRG_openfile")
 			if(is_edited)
-				var/_answer_k126 = act_prompt(ui.user, action, params, ui, "k126", list("message" = "Would you like to save your changes first?", "title" = "Save Changes", "choices" = list("Yes","No")))
+				var/_answer_k126 = act_ask(ui.user, action, params, ui, "k126", /datum/om/prompt/choice/alert, message = "Would you like to save your changes first?", title = "Save Changes", choices = list("Yes","No"))
 				if(isnull(_answer_k126))
 					return
 				if(_answer_k126 == "Yes")
@@ -135,13 +135,13 @@
 
 		if("PRG_newfile")
 			if(is_edited)
-				var/_answer_k135 = act_prompt(ui.user, action, params, ui, "k135", list("message" = "Would you like to save your changes first?", "title" = "Save Changes", "choices" = list("Yes","No")))
+				var/_answer_k135 = act_ask(ui.user, action, params, ui, "k135", /datum/om/prompt/choice/alert, message = "Would you like to save your changes first?", title = "Save Changes", choices = list("Yes","No"))
 				if(isnull(_answer_k135))
 					return
 				if(_answer_k135 == "Yes")
 					save_file(open_file)
 
-			var/newname = act_prompt(ui.user, action, params, ui, "k138", list("kind" = "text", "message" = "Enter file name:", "title" = "New File", "max_length" = MAX_MESSAGE_LEN))
+			var/newname = act_ask(ui.user, action, params, ui, "k138", /datum/om/prompt/text, message = "Enter file name:", title = "New File")
 			if(isnull(newname))
 				return
 			if(!newname)
@@ -156,7 +156,7 @@
 			return TRUE
 
 		if("PRG_saveasfile")
-			var/newname = act_prompt(ui.user, action, params, ui, "k151", list("kind" = "text", "message" = "Enter file name:", "title" = "Save As", "max_length" = MAX_MESSAGE_LEN))
+			var/newname = act_ask(ui.user, action, params, ui, "k151", /datum/om/prompt/text, message = "Enter file name:", title = "Save As")
 			if(isnull(newname))
 				return
 			if(!newname)
@@ -170,7 +170,7 @@
 
 		if("PRG_savefile")
 			if(!open_file)
-				var/_answer_k163 = act_prompt(ui.user, action, params, ui, "k163", list("kind" = "text", "message" = "Enter file name:", "title" = "Save As", "max_length" = MAX_MESSAGE_LEN))
+				var/_answer_k163 = act_ask(ui.user, action, params, ui, "k163", /datum/om/prompt/text, message = "Enter file name:", title = "Save As")
 				if(isnull(_answer_k163))
 					return
 				open_file = _answer_k163
@@ -184,7 +184,7 @@
 			var/oldtext = html_decode(loaded_data)
 			oldtext = replacetext(oldtext, "\[br\]", "\n")
 
-			var/_answer_k174 = act_prompt(ui.user, action, params, ui, "k174", list("kind" = "text", "message" = "Editing file '[open_file]'. You may use most tags used in paper formatting:", "title" = "Text Editor", "default" = oldtext, "max_length" = MAX_TEXTFILE_LENGTH, "multiline" = TRUE))
+			var/_answer_k174 = act_ask(ui.user, action, params, ui, "k174", /datum/om/prompt/text, message = "Editing file '[open_file]'. You may use most tags used in paper formatting:", title = "Text Editor", default = oldtext, max_length = MAX_TEXTFILE_LENGTH, multiline = TRUE)
 			if(isnull(_answer_k174))
 				return
 			var/newtext = replacetext(_answer_k174, "\n", "\[br\]")

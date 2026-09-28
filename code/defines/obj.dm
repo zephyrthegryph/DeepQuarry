@@ -8,7 +8,7 @@
 	return attack_hand(user)
 
 /obj/structure/signpost/attack_hand(mob/user as mob)
-	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), TYPE_PROC_REF(/atom, attack_hand), args)
+	var/_answer_k11 = rerun_ask(user, "k11", TYPE_PROC_REF(/atom, attack_hand), args, /datum/om/prompt/choice/alert, message = "Travel back to ss13?", title = "Return?", choices = list("Yes","No"))
 	if(isnull(_answer_k11))
 		return TRUE
 	if(_answer_k11 == "Yes")

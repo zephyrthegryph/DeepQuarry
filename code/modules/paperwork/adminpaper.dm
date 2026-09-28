@@ -123,7 +123,7 @@
 			admin_write("end", usr)
 			return TRUE
 		if("confirm")
-			switch(act_prompt(usr, action, params, ui, "send", list("message" = "Are you sure you want to send the fax as is?", "title" = "Send Fax", "choices" = list("Yes", "No"))))
+			switch(act_ask(usr, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
 				if("Yes")
 					if(headerOn)
 						info = header + info
@@ -157,11 +157,11 @@
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
 	// The answers re-run this write.
-	var/t = rerun_prompt(user, "text", list("kind" = "text", "message" = "Enter what you want to write:", "title" = "Write", "max_length" = free_space, "multiline" = TRUE), PROC_REF(admin_write), args)
+	var/t = rerun_ask(user, "text", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter what you want to write:", title = "Write", max_length = free_space, multiline = TRUE)
 	if(!t)
 		return
 	if(findtext(t, "\[sign\]"))
-		var/signature = rerun_prompt(user, "signature", list("kind" = "text", "message" = "Enter the name you wish to sign the paper with", "title" = "Signature"), PROC_REF(admin_write), args)
+		var/signature = rerun_ask(user, "signature", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter the name you wish to sign the paper with", title = "Signature")
 		if(isnull(signature))
 			return
 		admin_signature = signature

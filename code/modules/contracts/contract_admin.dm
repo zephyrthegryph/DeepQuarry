@@ -3,7 +3,7 @@ ADMIN_VERB(dq_inspect_contract, R_ADMIN, "Inspect Contract", "Inspect contract s
 	for(var/id in SScontracts.contracts_by_id)
 		var/datum/contract/contract = SScontracts.contracts_by_id[id]
 		options["[contract.id] — [contract.title] ([contract.state])"] = contract
-	var/selection = verb_prompt(user.mob, "k6", list("kind" = "list", "message" = "Select a contract to inspect.", "title" = "Contract Inspector", "choices" = options), args)
+	var/selection = verb_ask(user.mob, "k6", args, /datum/om/prompt/choice, message = "Select a contract to inspect.", title = "Contract Inspector", choices = options)
 	if(isnull(selection))
 		return
 	var/datum/contract/contract = options[selection]

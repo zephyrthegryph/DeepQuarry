@@ -117,7 +117,7 @@
 	if(!placed)
 		return FALSE
 	var/zone = part.organ_tag
-	if(tool.surgery_prompt(user, "implant", list("message" = "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", "title" = "Confirm Cavity Implant", "choices" = list("Implant", "Cancel"))) != "Implant")
+	if(surgery_ask(tool, user, "implant", /datum/om/prompt/choice/alert, message = "Implant \the [placed] into [target]'s [surgical_cavity_name(part)] cavity?", title = "Confirm Cavity Implant", choices = list("Implant", "Cancel")) != "Implant")
 		return FALSE
 	// The alert may have waited a long time: check everything again.
 	if(QDELETED(user) || QDELETED(target) || QDELETED(part) || QDELETED(tool) || QDELETED(placed))

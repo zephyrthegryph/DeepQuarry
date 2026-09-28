@@ -289,7 +289,7 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 			if(params["amount"])
 				amount = params["amount"]
 			else
-				var/_answer_k289 = act_prompt(ui.user, action, params, ui, "k289", list("kind" = "number", "message" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1))
+				var/_answer_k289 = act_ask(ui.user, action, params, ui, "k289", /datum/om/prompt/number, message = "How many items?", title = "How many items would you like to take out?", default = 1)
 				if(isnull(_answer_k289))
 					return
 				amount = _answer_k289

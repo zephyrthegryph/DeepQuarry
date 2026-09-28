@@ -12,7 +12,7 @@
 								SMITE_SHADEKIN_ATTACK,SMITE_SHADEKIN_NOMF,SMITE_AD_SPAM,SMITE_REDSPACE_ABDUCT,SMITE_AUTOSAVE,SMITE_AUTOSAVE_WIDE,SMITE_SPICEREQUEST,SMITE_PEPPERNADE,SMITE_TERROR,
 								SMITE_PIE, SMITE_SPICE, SMITE_HOTDOG) //pie, spicy air and hot dog
 
-	var/smite_choice = client_prompt("a1", list("kind" = "list", "message" = "Select the type of SMITE for [target]", "title" = "SMITE Type Choice", "choices" = smite_types), PROC_REF(smite), args, R_FUN)
+	var/smite_choice = client_ask("a1", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice, message = "Select the type of SMITE for [target]", title = "SMITE Type Choice", choices = smite_types)
 	if(isnull(smite_choice))
 		return
 	if(!smite_choice)
@@ -101,7 +101,7 @@
 				"Orange Eyes (Light)" = /mob/living/simple_mob/shadekin/orange/white,
 				"Orange Eyes (Brown)" = /mob/living/simple_mob/shadekin/orange/brown,
 				"Rivyr (Unique)" = /mob/living/simple_mob/shadekin/blue/rivyr)
-			var/kin_type = client_prompt("a2", list("kind" = "list", "message" = "Select the type of shadekin for [target] nomf", "title" = "Shadekin Type Choice", "choices" = kin_types), PROC_REF(smite), args, R_FUN)
+			var/kin_type = client_ask("a2", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice, message = "Select the type of shadekin for [target] nomf", title = "Shadekin Type Choice", choices = kin_types)
 			if(isnull(kin_type))
 				return
 			if(!kin_type || !target)
@@ -110,7 +110,7 @@
 
 			kin_type = kin_types[kin_type]
 
-			var/myself = client_prompt("a3", list("message" = "Control the shadekin yourself or delete pred and prey after?", "title" = "Control Shadekin?", "choices" = list("Control","Cancel","Delete")), PROC_REF(smite), args, R_FUN)
+			var/myself = client_ask("a3", PROC_REF(smite), args, R_FUN, /datum/om/prompt/choice/alert, message = "Control the shadekin yourself or delete pred and prey after?", title = "Control Shadekin?", choices = list("Control","Cancel","Delete"))
 			if(isnull(myself))
 				return
 			if(!myself || myself == "Cancel" || !target)

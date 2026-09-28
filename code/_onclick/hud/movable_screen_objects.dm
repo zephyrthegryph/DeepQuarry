@@ -120,7 +120,7 @@
 	set category = "Debug"
 	set name = "Spawn Movable UI Object"
 
-	var/screen_l = client_prompt("where", list("kind" = "text", "message" = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", "title" = "Spawn Movable UI Object"), PROC_REF(test_movable_UI), args)
+	var/screen_l = client_ask("where", PROC_REF(test_movable_UI), args, 0, /datum/om/prompt/text, message = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Movable UI Object")
 	if(!screen_l)
 		return
 
@@ -139,7 +139,7 @@
 	set category = "Debug"
 	set name = "Spawn Snap UI Object"
 
-	var/screen_l = client_prompt("where", list("kind" = "text", "message" = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", "title" = "Spawn Snap UI Object"), PROC_REF(test_snap_UI), args)
+	var/screen_l = client_ask("where", PROC_REF(test_snap_UI), args, 0, /datum/om/prompt/text, message = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Snap UI Object")
 	if(!screen_l)
 		return
 

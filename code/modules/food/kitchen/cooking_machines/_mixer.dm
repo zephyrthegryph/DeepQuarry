@@ -78,7 +78,7 @@ REF_OWNED(/obj/machinery/appliance/mixer, "mixer_loop")
 				for (var/obj/item/I in CI.container)
 					menuoptions[I.name] = I
 
-		var/selection = rerun_prompt(user, "k86", list("kind" = "list", "message" = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", "title" = "Remove ingredients", "choices" = menuoptions), PROC_REF(removal_menu), args)
+		var/selection = rerun_ask(user, "k86", PROC_REF(removal_menu), args, /datum/om/prompt/choice, message = "Which item would you like to remove? If you want to remove chemicals, use an empty beaker.", title = "Remove ingredients", choices = menuoptions)
 		if(isnull(selection))
 			return
 		if (selection)

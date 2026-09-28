@@ -419,7 +419,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	var/list/valid_objects = find_transfer_objects()
 	if(!valid_objects || !valid_objects.len)
 		return
-	var/obj/target = rerun_prompt(owner, "a1", list("kind" = "list", "message" = "Select where you want to store the mind into.", "title" = "Mind Transfer Target", "choices" = valid_objects), PROC_REF(transfer_selected), args)
+	var/obj/target = rerun_ask(owner, "a1", PROC_REF(transfer_selected), args, /datum/om/prompt/choice, message = "Select where you want to store the mind into.", title = "Mind Transfer Target", choices = valid_objects)
 	if(isnull(target))
 		return
 	transfer_mob_selector(selected_soul, target)
@@ -464,7 +464,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	if(is_taken_over()) return
 	if(!istype(M) || !gem) return
 	if(!gem.owner) return
-	var/_answer_a2 = rerun_prompt(gem.owner, "a2", list("message" = "Do you want to allow [owner] to transfer [selected_soul] to your soulcatcher?", "title" = "Allow Transfer", "choices" = list("No", "Yes")), PROC_REF(transfer_mob_soulcatcher), args)
+	var/_answer_a2 = rerun_ask(gem.owner, "a2", PROC_REF(transfer_mob_soulcatcher), args, /datum/om/prompt/choice/alert, message = "Do you want to allow [owner] to transfer [selected_soul] to your soulcatcher?", title = "Allow Transfer", choices = list("No", "Yes"))
 	if(isnull(_answer_a2))
 		return
 	if((_answer_a2 != "Yes"))
@@ -526,7 +526,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION))
 		return release_mob(M)
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_DELETION_INSTANT))
-		var/_answer_a3 = rerun_prompt(M, "a3", list("message" = "Do you really want to allow [owner] to delete you? On decline, you'll be ghosted.", "title" = "Allow Deletion", "choices" = list("No", "Yes"), "timeout" = 1 MINUTES), PROC_REF(delete_mob), args)
+		var/_answer_a3 = rerun_ask(M, "a3", PROC_REF(delete_mob), args, /datum/om/prompt/choice/alert, message = "Do you really want to allow [owner] to delete you? On decline, you'll be ghosted.", title = "Allow Deletion", choices = list("No", "Yes"), timeout = 1 MINUTES)
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")

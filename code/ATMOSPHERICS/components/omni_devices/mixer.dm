@@ -233,7 +233,7 @@
 			. = TRUE
 			if(!configuring || use_power)
 				return
-			var/new_flow_rate = act_prompt(ui.user, action, params, ui, "k237", list("kind" = "number", "message" = "Enter new flow rate limit (0-[max_flow_rate]L/s)", "title" = "Flow Rate Control", "default" = set_flow_rate, "max" = max_flow_rate, "min" = 0))
+			var/new_flow_rate = act_ask(ui.user, action, params, ui, "k237", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
 			if(isnull(new_flow_rate))
 				return
 			set_flow_rate = between(0, new_flow_rate, max_flow_rate)
@@ -319,7 +319,7 @@
 	if(non_locked < 1)
 		return
 
-	var/_answer_k321 = rerun_prompt(user, "k321", list("kind" = "number", "message" = "Enter a new concentration (0-[round(remain_con * 100, 0.5)])%", "title" = "Concentration control", "default" = min(remain_con, old_con)*100, "max" = round(remain_con * 100, 0.5), "min" = 0), PROC_REF(change_concentration), args)
+	var/_answer_k321 = rerun_ask(user, "k321", PROC_REF(change_concentration), args, /datum/om/prompt/number, message = "Enter a new concentration (0-[round(remain_con * 100, 0.5)])%", title = "Concentration control", default = min(remain_con, old_con)*100, max = round(remain_con * 100, 0.5))
 	if(isnull(_answer_k321))
 		return
 	var/new_con = (_answer_k321) / 100

@@ -136,7 +136,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			if(!remote || !remote.provided_file)
 				return
 			if(remote.server_password)
-				var/pass = act_prompt(ui.user, action, params, ui, "k139", list("kind" = "text", "message" = "Code 401 Unauthorized. Please enter password:", "title" = "Password required", "max_length" = MAX_MESSAGE_LEN))
+				var/pass = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/text, message = "Code 401 Unauthorized. Please enter password:", title = "Password required")
 				if(isnull(pass))
 					return
 				if(pass != remote.server_password)
@@ -156,7 +156,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			provided_file = null
 			return TRUE
 		if("PRG_setpassword")
-			var/pass = act_prompt(ui.user, action, params, ui, "k157", list("kind" = "text", "message" = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", "title" = "Server security", "default" = "none", "max_length" = MAX_MESSAGE_LEN))
+			var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
 			if(isnull(pass))
 				return
 			if(!pass)

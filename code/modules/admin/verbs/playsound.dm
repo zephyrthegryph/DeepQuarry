@@ -10,7 +10,7 @@ GLOBAL_LIST_EMPTY(sounds_cache)
 
 ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all players.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
 	var/freq = 1
-	var/vol = verb_prompt(user, "a1", list("kind" = "number", "message" = "What volume would you like the sound to play at?", "default" = 100, "max" = 100, "min" = 1), args)
+	var/vol = verb_ask(user, "a1", args, /datum/om/prompt/number, message = "What volume would you like the sound to play at?", default = 100, max = 100, min = 1)
 	if(isnull(vol))
 		return
 	if(!vol)
@@ -29,7 +29,7 @@ ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all play
 
 	GLOB.sounds_cache += S
 
-	var/res = verb_prompt(user, "a2", list("message" = "Show the title of this song ([S]) to the players?\nOptions 'Yes' and 'No' will play the sound.", "choices" = list("Yes", "No", "Cancel")), args)
+	var/res = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "Show the title of this song ([S]) to the players?\nOptions 'Yes' and 'No' will play the sound.", choices = list("Yes", "No", "Cancel"))
 	if(isnull(res))
 		return
 	if(!res)
@@ -58,7 +58,7 @@ ADMIN_VERB(play_local_sound, R_SOUNDS, "Play Local Sound", "Plays a sound around
 	feedback_add_details("admin_verb", "Play Local Sound")
 
 ADMIN_VERB(play_direct_mob_sound, R_SOUNDS, "Play Direct Mob Sound", "Plays a sound to a single mob.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
-	var/mob/target_mob = verb_prompt(user, "a3", list("kind" = "list", "message" = "Choose a mob to play the sound to. Only they will hear it.", "title" = "Play Mob Sound", "choices" = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS))), args)
+	var/mob/target_mob = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Choose a mob to play the sound to. Only they will hear it.", title = "Play Mob Sound", choices = sortNames(REGISTRY_MEMBERS(REGISTRY_PLAYERS)))
 	if(isnull(target_mob))
 		return
 	if(QDELETED(target_mob))
@@ -75,7 +75,7 @@ ADMIN_VERB(play_z_sound, R_SOUNDS, "Play Z Sound", "Plays a sound to a single z-
 
 	GLOB.sounds_cache += S
 
-	var/_answer_a4 = verb_prompt(user, "a4", list("message" = "Do you ready?\nSong: [S]\nNow you can also play this sound using \"Play Server Sound\".", "title" = "Confirmation request", "choices" = list("Play","Cancel")), args)
+	var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Do you ready?\nSong: [S]\nNow you can also play this sound using \"Play Server Sound\".", title = "Confirmation request", choices = list("Play","Cancel"))
 	if(isnull(_answer_a4))
 		return
 	if(_answer_a4 != "Play")
@@ -94,7 +94,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	sounds += "--CANCEL--"
 	sounds += GLOB.sounds_cache
 
-	var/melody = verb_prompt(user, "a5", list("kind" = "list", "message" = "Select a sound from the server to play", "title" = "Server sound list", "choices" = sounds, "default" = "--CANCEL--"), args)
+	var/melody = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Select a sound from the server to play", title = "Server sound list", choices = sounds, default = "--CANCEL--")
 	if(isnull(melody))
 		return
 
@@ -242,11 +242,11 @@ ADMIN_VERB(play_web_sound, R_SOUNDS, "Play Internet Sound", "Plays a sound from 
 		return
 
 	if(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown))
-		var/override = verb_prompt(user, "override", list("message" = "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. Would you like to override?", "title" = "Musicalis Interruptus", "choices" = list("No","Yes")), args)
+		var/override = verb_ask(user, "override", args, /datum/om/prompt/choice/alert, message = "Someone else is already playing an Internet sound! It has [DisplayTimeText(COOLDOWN_TIMELEFT(GLOB, internet_sound_cooldown), 1)] remaining. Would you like to override?", title = "Musicalis Interruptus", choices = list("No","Yes"))
 		if(override != "Yes")
 			return
 
-	var/web_sound_input = verb_prompt(user, "a6", list("kind" = "text", "message" = "Enter content URL (supported sites only, leave blank to stop playing)", "title" = "Play Internet Sound"), args)
+	var/web_sound_input = verb_ask(user, "a6", args, /datum/om/prompt/text, message = "Enter content URL (supported sites only, leave blank to stop playing)", title = "Play Internet Sound")
 	if(isnull(web_sound_input))
 		return
 

@@ -116,14 +116,14 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/choice = rerun_prompt(user, "k119", list("message" = "What setting do you want to adjust?", "title" = "Firework Star", "choices" = list("Color", "Shape", "Nothing")), PROC_REF(attack_self), args)
+	var/choice = rerun_ask(user, "k119", PROC_REF(attack_self), args, /datum/om/prompt/choice/alert, message = "What setting do you want to adjust?", title = "Firework Star", choices = list("Color", "Shape", "Nothing"))
 	if(isnull(choice))
 		return TRUE
 	if(src.loc != user)
 		return
 
 	if(choice == "Color")
-		var/color_choice = rerun_prompt(user, "k124", list("kind" = "list", "message" = "What color would you like firework to be?", "title" = "Firework Star", "choices" = firework_colors), PROC_REF(attack_self), args)
+		var/color_choice = rerun_ask(user, "k124", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "What color would you like firework to be?", title = "Firework Star", choices = firework_colors)
 		if(isnull(color_choice))
 			return TRUE
 		if(src.loc != user)
@@ -132,7 +132,7 @@
 			current_color = color_choice
 
 	if(choice == "Shape")
-		var/shape_choice = rerun_prompt(user, "k131", list("kind" = "list", "message" = "What shape would you like firework to be?", "title" = "Firework Star", "choices" = firework_shapes), PROC_REF(attack_self), args)
+		var/shape_choice = rerun_ask(user, "k131", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "What shape would you like firework to be?", title = "Firework Star", choices = firework_shapes)
 		if(isnull(shape_choice))
 			return TRUE
 		if(src.loc != user)

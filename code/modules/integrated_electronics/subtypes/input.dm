@@ -89,7 +89,7 @@
 	power_draw_per_use = 4
 
 /obj/item/integrated_circuit/input/numberpad/ask_for_input(mob/user)
-	var/new_input = rerun_prompt(user, "k92", list("kind" = "number", "message" = "Enter a number, please.", "title" = "Number pad", "default" = get_pin_data(IC_OUTPUT, 1)), PROC_REF(ask_for_input), args)
+	var/new_input = rerun_ask(user, "k92", PROC_REF(ask_for_input), args, /datum/om/prompt/number, message = "Enter a number, please.", title = "Number pad", default = get_pin_data(IC_OUTPUT, 1))
 	if(isnull(new_input))
 		return
 	if(isnum(new_input) && CanInteract(user, GLOB.tgui_physical_state))
@@ -110,7 +110,7 @@
 	power_draw_per_use = 4
 
 /obj/item/integrated_circuit/input/textpad/ask_for_input(mob/user)
-	var/_answer_k111 = rerun_prompt(user, "k111", list("kind" = "text", "message" = "Enter some words, please.", "title" = "Text pad", "default" = get_pin_data(IC_OUTPUT, 1), "max_length" = MAX_KEYPAD_INPUT_LEN, "encode" = FALSE), PROC_REF(ask_for_input), args)
+	var/_answer_k111 = rerun_ask(user, "k111", PROC_REF(ask_for_input), args, /datum/om/prompt/text, message = "Enter some words, please.", title = "Text pad", default = get_pin_data(IC_OUTPUT, 1), max_length = MAX_KEYPAD_INPUT_LEN, encode = FALSE)
 	if(isnull(_answer_k111))
 		return
 	var/new_input = sanitizeSafe(_answer_k111, MAX_KEYPAD_INPUT_LEN, 0, 0)

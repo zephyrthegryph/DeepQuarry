@@ -154,18 +154,18 @@
 
 ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on your location.", ADMIN_CATEGORY_FUN_DROP_POD)
 	// Everything is asked before anything is made: each answer re-runs this verb.
-	var/spawn_path = verb_prompt(user, "path", list("kind" = "list", "message" = "Select a mob type.", "title" = "Drop Pod Selection", "choices" = subtypesof(/mob/living)), args)
+	var/spawn_path = verb_ask(user, "path", args, /datum/om/prompt/choice, message = "Select a mob type.", title = "Drop Pod Selection", choices = subtypesof(/mob/living))
 	if(!ispath(spawn_path, /mob/living))
 		return
 
-	var/input = verb_prompt(user, "player", list("message" = "Do you wish the mob to have a player?", "title" = "Assign Player?", "choices" = list("No","Yes")), args)
+	var/input = verb_ask(user, "player", args, /datum/om/prompt/choice/alert, message = "Do you wish the mob to have a player?", title = "Assign Player?", choices = list("No","Yes"))
 	if(!input)
 		return
 	var/spawn_count = 0
 	var/client/selected_player
 	var/antag_type
 	if(input == "No")
-		spawn_count = verb_prompt(user, "count", list("kind" = "number", "message" = "How many mobs do you wish the pod to contain?", "title" = "Drop Pod Selection", "min" = 1), args)
+		spawn_count = verb_ask(user, "count", args, /datum/om/prompt/number, message = "How many mobs do you wish the pod to contain?", title = "Drop Pod Selection", min = 1)
 		if(isnull(spawn_count) || spawn_count <= 0)
 			return
 	else
@@ -179,7 +179,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 			return
 
 		// Get a player and a mob type.
-		var/player_ckey = verb_prompt(user, "ckey", list("kind" = "list", "message" = "Select a player.", "title" = "Drop Pod Selection", "choices" = candidates), args)
+		var/player_ckey = verb_ask(user, "ckey", args, /datum/om/prompt/choice, message = "Select a player.", title = "Drop Pod Selection", choices = candidates)
 		if(!player_ckey)
 			return
 		selected_player = candidates[player_ckey]
@@ -189,11 +189,11 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 
 		// Equip them, if they are human and it is desirable.
 		if(ispath(spawn_path, /mob/living/carbon/human))
-			antag_type = verb_prompt(user, "antag", list("kind" = "list", "message" = "Select an equipment template to use or cancel for nude.", "title" = "Drop Pod Selection", "choices" = SSantag_job.all_antag_types, "cancel_answer" = ""), args)
+			antag_type = verb_ask(user, "antag", args, /datum/om/prompt/choice, message = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = SSantag_job.all_antag_types, cancel_answer = "")
 			if(isnull(antag_type))
 				return
 
-	if(verb_prompt(user, "sure", list("message" = "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.", "title" = "Danger!", "choices" = list("No","Yes")), args) != "Yes")
+	if(verb_ask(user, "sure", args, /datum/om/prompt/choice/alert, message = "Are you SURE you wish to deploy this drop pod? It will cause a sizable explosion and gib anyone underneath it.", title = "Danger!", choices = list("No","Yes")) != "Yes")
 		return
 
 	var/mob/living/spawned_mob

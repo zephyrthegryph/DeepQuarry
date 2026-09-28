@@ -18,7 +18,7 @@
 
 ADMIN_VERB(admin_convert_savefile, R_ADMIN, "Convert Player Savefile", "Convert a player's preferences.sav to preferences.json or vice versa. Player must be logged off.", ADMIN_CATEGORY_SERVER_ADMIN)
 	// Pick your target.
-	var/target_ckey = verb_prompt(user, "a1", list("kind" = "text", "message" = "Enter the ckey of the player whose save file you want to convert.", "title" = "Convert Player Savefile"), args)
+	var/target_ckey = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Enter the ckey of the player whose save file you want to convert.", title = "Convert Player Savefile")
 	if(isnull(target_ckey))
 		return
 	if(!target_ckey)
@@ -56,14 +56,14 @@ ADMIN_VERB(admin_convert_savefile, R_ADMIN, "Convert Player Savefile", "Convert 
 	if(has_json)
 		options += "preferences.json -> preferences.sav"
 
-	var/direction = verb_prompt(user, "a2", list("kind" = "list", "message" = "Select the conversion to perform for '[target_ckey]'.", "title" = "Convert Player Savefile", "choices" = options), args)
+	var/direction = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select the conversion to perform for '[target_ckey]'.", title = "Convert Player Savefile", choices = options)
 	if(isnull(direction))
 		return
 	if(!direction)
 		return
 
 	// Warn the admin in case the player has logged in since we checked.
-	var/confirm = verb_prompt(user, "confirm", list("message" = "WARNING: '[target_ckey]' should be logged off before this runs. Proceeding while they are online can corrupt their save.\n\nAre you sure [target_ckey] is logged off?", "title" = "Convert Player Savefile", "choices" = list("Cancel", "Yes, they are logged off")), args)
+	var/confirm = verb_ask(user, "confirm", args, /datum/om/prompt/choice/alert, message = "WARNING: '[target_ckey]' should be logged off before this runs. Proceeding while they are online can corrupt their save.\n\nAre you sure [target_ckey] is logged off?", title = "Convert Player Savefile", choices = list("Cancel", "Yes, they are logged off"))
 	if(confirm != "Yes, they are logged off")
 		return
 

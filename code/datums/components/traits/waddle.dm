@@ -50,19 +50,19 @@
 	set category = "Preferences.Character"
 	var/datum/component/waddle_trait/comp = GetComponent(/datum/component/waddle_trait)
 	if(comp)
-		var/Z = rerun_prompt(src, "a1", list("kind" = "number", "message" = "Desired Z.", "title" = "Set Z", "default" = 0.5, "min" = -INFINITY, "round" = FALSE), PROC_REF(waddle_debug), args)
+		var/Z = rerun_ask(src, "a1", PROC_REF(waddle_debug), args, /datum/om/prompt/number, message = "Desired Z.", title = "Set Z", default = 0.5, min = -INFINITY, round_entry = FALSE)
 		if(isnull(Z))
 			return
 		comp.waddle_z = Z
-		var/min = rerun_prompt(src, "a2", list("kind" = "number", "message" = "Desired min.", "title" = "Set min", "default" = -4, "min" = -INFINITY, "round" = FALSE), PROC_REF(waddle_debug), args)
+		var/min = rerun_ask(src, "a2", PROC_REF(waddle_debug), args, /datum/om/prompt/number, message = "Desired min.", title = "Set min", default = -4, min = -INFINITY, round_entry = FALSE)
 		if(isnull(min))
 			return
 		comp.waddle_min = min
-		var/max = rerun_prompt(src, "a3", list("kind" = "number", "message" = "Desired max.", "title" = "Set max", "default" = 4, "round" = FALSE), PROC_REF(waddle_debug), args)
+		var/max = rerun_ask(src, "a3", PROC_REF(waddle_debug), args, /datum/om/prompt/number, message = "Desired max.", title = "Set max", default = 4, round_entry = FALSE)
 		if(isnull(max))
 			return
 		comp.waddle_max = max
-		var/time = rerun_prompt(src, "a4", list("kind" = "number", "message" = "Desired time.", "title" = "Set time", "default" = 2, "round" = FALSE), PROC_REF(waddle_debug), args)
+		var/time = rerun_ask(src, "a4", PROC_REF(waddle_debug), args, /datum/om/prompt/number, message = "Desired time.", title = "Set time", default = 2, round_entry = FALSE)
 		if(isnull(time))
 			return
 		comp.waddle_time = time
@@ -74,7 +74,7 @@
 	set category = "Preferences.Character"
 	var/datum/component/waddle_trait/comp = GetComponent(/datum/component/waddle_trait)
 	if(comp)
-		var/Z_height = rerun_prompt(src, "a5", list("kind" = "number", "message" = "Put the desired waddle height. (5 is default. 0 min 40 max)", "title" = "Set Height", "default" = 5, "max" = 40, "min" = 0), PROC_REF(waddle_adjust), args)
+		var/Z_height = rerun_ask(src, "a5", PROC_REF(waddle_adjust), args, /datum/om/prompt/number, message = "Put the desired waddle height. (5 is default. 0 min 40 max)", title = "Set Height", default = 5, max = 40)
 		if(isnull(Z_height))
 			return
 		Z_height = Z_height/10 //Clear numbers
@@ -83,7 +83,7 @@
 			return
 		comp.waddle_z = Z_height
 
-		var/min = rerun_prompt(src, "a6", list("kind" = "number", "message" = "Put the desired waddle backwards lean. (4 is default. 0 min, 12 max)", "title" = "Set Back Lean", "default" = 4, "max" = 12, "min" = 0), PROC_REF(waddle_adjust), args)
+		var/min = rerun_ask(src, "a6", PROC_REF(waddle_adjust), args, /datum/om/prompt/number, message = "Put the desired waddle backwards lean. (4 is default. 0 min, 12 max)", title = "Set Back Lean", default = 4, max = 12)
 		if(isnull(min))
 			return
 		if(min > 12 || min < 0 )
@@ -91,7 +91,7 @@
 			return
 		comp.waddle_min = -min
 
-		var/max = rerun_prompt(src, "a7", list("kind" = "number", "message" = "Put the desired waddle forwards lean. (4 is default. 0 min, 12 max)", "title" = "Set Forwards Lean", "default" = 4, "max" = 12, "min" = 0), PROC_REF(waddle_adjust), args)
+		var/max = rerun_ask(src, "a7", PROC_REF(waddle_adjust), args, /datum/om/prompt/number, message = "Put the desired waddle forwards lean. (4 is default. 0 min, 12 max)", title = "Set Forwards Lean", default = 4, max = 12)
 		if(isnull(max))
 			return
 		if(max > 12 || max < 0 )
@@ -99,7 +99,7 @@
 			return
 		comp.waddle_max = max
 
-		var/time = rerun_prompt(src, "a8", list("kind" = "number", "message" = "Put the desired waddle animation time. (20 is default. 10 min, 20 max)", "title" = "Set Time", "default" = 20, "max" = 20, "min" = 10), PROC_REF(waddle_adjust), args)
+		var/time = rerun_ask(src, "a8", PROC_REF(waddle_adjust), args, /datum/om/prompt/number, message = "Put the desired waddle animation time. (20 is default. 10 min, 20 max)", title = "Set Time", default = 20, max = 20, min = 10)
 		if(isnull(time))
 			return
 		time = time/10 //Clear numbers

@@ -159,7 +159,7 @@
 		if("drainbattery")
 			if(inserted_battery)
 				if(inserted_battery.battery_effect && inserted_battery.stored_charge > 0)
-					var/_answer_k162 = act_prompt(ui.user, action, params, ui, "k162", list("message" = "This action will dump all charge, safety gear is recommended before proceeding", "title" = "Warning", "choices" = list("Continue","Cancel")))
+					var/_answer_k162 = act_ask(ui.user, action, params, ui, "k162", /datum/om/prompt/choice/alert, message = "This action will dump all charge, safety gear is recommended before proceeding", title = "Warning", choices = list("Continue","Cancel"))
 					if(isnull(_answer_k162))
 						return
 					if(_answer_k162 == "Continue")
@@ -225,7 +225,7 @@
 			atom_say("Cannot harvest. No harvestable energy emitting from source.")
 			return
 
-		var/artifact_selection = rerun_prompt(user, "k225", list("kind" = "list", "message" = "Which effect do you wish to harvest?", "title" = "Effect Selection", "choices" = effects_to_show), PROC_REF(harvest), args)
+		var/artifact_selection = rerun_ask(user, "k225", PROC_REF(harvest), args, /datum/om/prompt/choice, message = "Which effect do you wish to harvest?", title = "Effect Selection", choices = effects_to_show)
 		if(isnull(artifact_selection))
 			return
 		var/datum/artifact_effect/selected_effect

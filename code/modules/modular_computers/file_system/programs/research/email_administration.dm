@@ -93,7 +93,7 @@
 			if(!current_account)
 				return TRUE
 
-			var/newpass = act_prompt(ui.user, action, params, ui, "k96", list("kind" = "text", "message" = "Enter new password for account [current_account.login]", "title" = "Password", "max_length" = 100))
+			var/newpass = act_ask(ui.user, action, params, ui, "k96", /datum/om/prompt/text, message = "Enter new password for account [current_account.login]", title = "Password", max_length = 100)
 			if(isnull(newpass))
 				return
 			if(!newpass)
@@ -120,12 +120,12 @@
 			return TRUE
 
 		if("newaccount")
-			var/newdomain = act_prompt(ui.user, action, params, ui, "k121", list("kind" = "list", "message" = "Pick domain:", "title" = "Domain name", "choices" = using_map.usable_email_tlds))
+			var/newdomain = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice, message = "Pick domain:", title = "Domain name", choices = using_map.usable_email_tlds)
 			if(isnull(newdomain))
 				return
 			if(!newdomain)
 				return TRUE
-			var/newlogin = act_prompt(ui.user, action, params, ui, "k124", list("kind" = "text", "message" = "Pick account name (@[newdomain]):", "title" = "Account name", "max_length" = 100))
+			var/newlogin = act_ask(ui.user, action, params, ui, "k124", /datum/om/prompt/text, message = "Pick account name (@[newdomain]):", title = "Account name", max_length = 100)
 			if(isnull(newlogin))
 				return
 			if(!newlogin)

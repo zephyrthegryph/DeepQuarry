@@ -38,7 +38,7 @@ REF_OWNED(/obj/item/rig_module/self_destruct, "smoke")
 		engage(1)
 
 /obj/item/rig_module/self_destruct/engage(skip_check)
-	var/_answer_a1 = rerun_prompt(usr, "a1", list("message" = "Are you sure you want to push that button?", "title" = "Self-destruct", "choices" = list("No", "Yes")), PROC_REF(engage), args)
+	var/_answer_a1 = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to push that button?", title = "Self-destruct", choices = list("No", "Yes"))
 	if(isnull(_answer_a1))
 		return
 	if(!skip_check && usr && _answer_a1 != "Yes")

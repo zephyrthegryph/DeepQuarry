@@ -191,7 +191,7 @@
 /mob/living/carbon/human/proc/custom_medical_issue(mob/user)
 	var/static/list/possible_symptoms = list("vomit", "temporary weakness", "permanent weakness", "temporary sleeping", "permanent sleeping", "jittery", "paralysed", "cough", "confusion", "None")
 
-	var/issue_name = rerun_prompt(user, "a1", list("kind" = "text", "message" = "What would you like to call this medical issue?", "title" = "Name"), PROC_REF(custom_medical_issue), args)
+	var/issue_name = rerun_ask(user, "a1", PROC_REF(custom_medical_issue), args, /datum/om/prompt/text, message = "What would you like to call this medical issue?", title = "Name")
 	if(isnull(issue_name))
 		return
 	if(!issue_name)
@@ -202,13 +202,13 @@
 		organ_options |= E
 	for(var/obj/item/organ/I in internal_organs)
 		organ_options |= I
-	var/obj/item/organ/issue_organ = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Which organ should this issue be attached to?", "title" = "Affect organ", "choices" = organ_options), PROC_REF(custom_medical_issue), args)
+	var/obj/item/organ/issue_organ = rerun_ask(user, "a2", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which organ should this issue be attached to?", title = "Affect organ", choices = organ_options)
 	if(isnull(issue_organ))
 		return
 	if(!issue_organ)
 		return
 
-	var/damage = rerun_prompt(user, "a3", list("message" = "Should this apply damage?", "title" = "Damage", "choices" = list("Yes", "No", "Cancel")), PROC_REF(custom_medical_issue), args)
+	var/damage = rerun_ask(user, "a3", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this apply damage?", title = "Damage", choices = list("Yes", "No", "Cancel"))
 	if(isnull(damage))
 		return
 	if(!damage || damage == "Cancel")
@@ -218,17 +218,17 @@
 	var/damage_max
 	var/damage_kind
 	if(damage == "Yes")
-		var/_answer_a4 = rerun_prompt(user, "a4", list("message" = "Should this damage the organ or body?", "title" = "Damage", "choices" = list("Organ", "Body")), PROC_REF(custom_medical_issue), args)
+		var/_answer_a4 = rerun_ask(user, "a4", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this damage the organ or body?", title = "Damage", choices = list("Organ", "Body"))
 		if(isnull(_answer_a4))
 			return
 		damage_organ = _answer_a4
 		if(!damage_organ)
 			return
-		var/damage_value_pre = rerun_prompt(user, "a5", list("kind" = "number", "message" = "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", "title" = "Damage", "default" = 1), PROC_REF(custom_medical_issue), args)
+		var/damage_value_pre = rerun_ask(user, "a5", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "How much damage should this apply per processing. Low values are recommended, automatically divided by 10.", title = "Damage", default = 1)
 		if(isnull(damage_value_pre))
 			return
 		damage_value = max(0, damage_value_pre) / 10
-		var/_answer_a6 = rerun_prompt(user, "a6", list("kind" = "number", "message" = "What is the maximum amount of damage this issue can apply? It will not damage above this value.", "title" = "Damage", "default" = 300), PROC_REF(custom_medical_issue), args)
+		var/_answer_a6 = rerun_ask(user, "a6", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "What is the maximum amount of damage this issue can apply? It will not damage above this value.", title = "Damage", default = 300)
 		if(isnull(_answer_a6))
 			return
 		damage_max = _answer_a6
@@ -236,14 +236,14 @@
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/kind_name = rerun_prompt(user, "a7", list("kind" = "list", "message" = "What kind of harm should this do to the body?", "title" = "Damage", "choices" = kinds, "default" = injury_kind_name(INJURY_BLUNT)), PROC_REF(custom_medical_issue), args)
+			var/kind_name = rerun_ask(user, "a7", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "What kind of harm should this do to the body?", title = "Damage", choices = kinds, default = injury_kind_name(INJURY_BLUNT))
 			if(isnull(kind_name))
 				return
 			if(!kind_name)
 				return
 			damage_kind = kinds[kind_name]
 
-	var/cure_q = rerun_prompt(user, "a8", list("message" = "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", "title" = "Cure", "choices" = list("Reagent", "Surgery", "Removal", "Cancel")), PROC_REF(custom_medical_issue), args)
+	var/cure_q = rerun_ask(user, "a8", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this be cured by a reagent, surgery or organ removal only? Note that organ removal will always be an option if it's not a vital body part.", title = "Cure", choices = list("Reagent", "Surgery", "Removal", "Cancel"))
 	if(isnull(cure_q))
 		return
 	if(!cure_q || cure_q == "Cancel")
@@ -251,39 +251,39 @@
 	var/datum/reagent/cure_reagent_type
 	var/cure_surgery_name
 	if(cure_q == "Reagent")
-		var/_answer_a9 = rerun_prompt(user, "a9", list("kind" = "list", "message" = "Which reagent should be the cure?", "title" = "Cure", "choices" = subtypesof(/datum/reagent)), PROC_REF(custom_medical_issue), args)
+		var/_answer_a9 = rerun_ask(user, "a9", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which reagent should be the cure?", title = "Cure", choices = subtypesof(/datum/reagent))
 		if(isnull(_answer_a9))
 			return
 		cure_reagent_type = _answer_a9
 		if(!cure_reagent_type)
 			return
 	if(cure_q == "Surgery")
-		var/_answer_a10 = rerun_prompt(user, "a10", list("kind" = "list", "message" = "Which surgery step should cure it?", "title" = "Cure", "choices" = istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries()), PROC_REF(custom_medical_issue), args)
+		var/_answer_a10 = rerun_ask(user, "a10", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "Which surgery step should cure it?", title = "Cure", choices = istype(issue_organ, /obj/item/organ/internal) ? dq_custom_internal_surgeries() : dq_custom_external_surgeries())
 		if(isnull(_answer_a10))
 			return
 		cure_surgery_name = _answer_a10
 		if(!cure_surgery_name)
 			return
 
-	var/symptom_text = rerun_prompt(user, "a11", list("kind" = "text", "message" = "What text should be displayed to the affected patient about their symptoms?", "title" = "Symptoms"), PROC_REF(custom_medical_issue), args)
+	var/symptom_text = rerun_ask(user, "a11", PROC_REF(custom_medical_issue), args, /datum/om/prompt/text, message = "What text should be displayed to the affected patient about their symptoms?", title = "Symptoms")
 	if(isnull(symptom_text))
 		return
-	var/symptom_affect = rerun_prompt(user, "a12", list("kind" = "list", "message" = "What observable symptom should they display?", "title" = "Symptoms", "choices" = possible_symptoms), PROC_REF(custom_medical_issue), args)
+	var/symptom_affect = rerun_ask(user, "a12", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice, message = "What observable symptom should they display?", title = "Symptoms", choices = possible_symptoms)
 	if(isnull(symptom_affect))
 		return
 	if(!symptom_affect)
 		return
 
-	var/scanner_show = rerun_prompt(user, "a13", list("message" = "Should this show on body scanners?", "title" = "Diagnosis", "choices" = list("Yes", "No", "Cancel")), PROC_REF(custom_medical_issue), args)
+	var/scanner_show = rerun_ask(user, "a13", PROC_REF(custom_medical_issue), args, /datum/om/prompt/choice/alert, message = "Should this show on body scanners?", title = "Diagnosis", choices = list("Yes", "No", "Cancel"))
 	if(isnull(scanner_show))
 		return
 	if(!scanner_show || scanner_show == "Cancel")
 		return
 
-	var/scanner_strength = rerun_prompt(user, "a14", list("kind" = "number", "message" = "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "title" = "Diagnosis", "default" = 0), PROC_REF(custom_medical_issue), args)
+	var/scanner_strength = rerun_ask(user, "a14", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "What level of health analyser is needed to see this? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", title = "Diagnosis", default = 0)
 	if(isnull(scanner_strength))
 		return
-	var/advscan_cure = rerun_prompt(user, "a15", list("kind" = "number", "message" = "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", "title" = "Diagnosis", "default" = 0), PROC_REF(custom_medical_issue), args)
+	var/advscan_cure = rerun_ask(user, "a15", PROC_REF(custom_medical_issue), args, /datum/om/prompt/number, message = "What level of health analyser is required to display the cure? 0 for standard, 1 for improved, 2 for advanced, 3 for phasic and 4 for impossible.", title = "Diagnosis", default = 0)
 	if(isnull(advscan_cure))
 		return
 
@@ -335,7 +335,7 @@
 	if(!length(all_issues))
 		to_chat(user, "No custom medical issues found in [src]!")
 		return
-	var/broad = rerun_prompt(user, "a16", list("message" = "Would you like to clear all custom medical issues or a specific one?", "title" = "Damage", "choices" = list("All", "One", "Cancel")), PROC_REF(clear_medical_issue), args)
+	var/broad = rerun_ask(user, "a16", PROC_REF(clear_medical_issue), args, /datum/om/prompt/choice/alert, message = "Would you like to clear all custom medical issues or a specific one?", title = "Damage", choices = list("All", "One", "Cancel"))
 	if(isnull(broad))
 		return
 	if(!broad || broad == "Cancel")
@@ -347,7 +347,7 @@
 			A.cure()
 		return
 
-	var/datum/affliction/custom/one_issue = rerun_prompt(user, "a17", list("kind" = "list", "message" = "Which issue would you like to remove?", "title" = "Symptoms", "choices" = all_issues), PROC_REF(clear_medical_issue), args)
+	var/datum/affliction/custom/one_issue = rerun_ask(user, "a17", PROC_REF(clear_medical_issue), args, /datum/om/prompt/choice, message = "Which issue would you like to remove?", title = "Symptoms", choices = all_issues)
 	if(isnull(one_issue))
 		return
 	if(!one_issue || QDELETED(one_issue) || one_issue.owner != src)

@@ -154,7 +154,7 @@
 			to_chat(user, span_warning(" BUG:Assembly part missing, please report this!"))
 			return TRUE
 		if(istype(a_left,a_right.type))//If they are the same type it causes issues due to window code
-			var/_answer_k143 = rerun_prompt(usr, "k143", list("message" = "Which side would you like to use?", "title" = "Side", "choices" = list("Left","Right")), PROC_REF(attack_self), args)
+			var/_answer_k143 = rerun_ask(usr, "k143", PROC_REF(attack_self), args, /datum/om/prompt/choice/alert, message = "Which side would you like to use?", title = "Side", choices = list("Left","Right"))
 			if(isnull(_answer_k143))
 				return TRUE
 			switch(_answer_k143)
@@ -246,7 +246,7 @@
 		if(tmr.timing)
 			to_chat(usr, span_notice("Clock is ticking already."))
 		else
-			var/ntime = rerun_prompt(usr, "k231", list("kind" = "number", "message" = "Enter desired time in seconds", "title" = "Time", "default" = 5, "max" = 1000, "min" = 0), VERB_REF(configure), args)
+			var/ntime = rerun_ask(usr, "k231", VERB_REF(configure), args, /datum/om/prompt/number, message = "Enter desired time in seconds", title = "Time", default = 5, max = 1000)
 			if(isnull(ntime))
 				return
 			if (ntime > 0 && ntime < 1000)

@@ -151,7 +151,7 @@
 		if(accessory_amount == 1)
 			A = accessories[1] // If there's only one accessory, just remove it without any additional prompts.
 		else
-			var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select an accessory to remove from \the [src]", "title" = "Accessory Choice", "choices" = accessories), PROC_REF(removetie_proc), args)
+			var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(removetie_proc), args, /datum/om/prompt/choice, message = "Select an accessory to remove from \the [src]", title = "Accessory Choice", choices = accessories)
 			if(isnull(_answer_a1))
 				return
 			A = _answer_a1

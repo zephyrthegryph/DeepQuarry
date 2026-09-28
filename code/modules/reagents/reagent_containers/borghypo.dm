@@ -278,12 +278,12 @@
 			. = TRUE
 
 		if("save_recording")
-			var/name = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "What do you want to name this recipe?", "title" = "Recipe Name?", "default" = "Recipe Name", "max_length" = MAX_NAME_LEN))
+			var/name = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "What do you want to name this recipe?", title = "Recipe Name?", default = "Recipe Name", max_length = MAX_NAME_LEN)
 			if(isnull(name))
 				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
-			if(LAZYACCESS(saved_recipes, name) && act_prompt(ui.user, action, params, ui, "a2", list("message" = "\"[name]\" already exists, do you want to overwrite it?", "choices" = list("No", "Yes"))) != "Yes")
+			if(LAZYACCESS(saved_recipes, name) && act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "\"[name]\" already exists, do you want to overwrite it?", choices = list("No", "Yes")) != "Yes")
 				return
 			if(name && recording_recipe)
 				for(var/list/L in recording_recipe)

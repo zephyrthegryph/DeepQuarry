@@ -123,7 +123,7 @@ ADMIN_VERB(intercom_view, R_DEBUG, "Intercom Range Display", "Displays the inter
 
 ADMIN_VERB_VISIBILITY(count_objects_on_z_level, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts all objects on a Z level (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
-	var/level = verb_prompt(user, "a1", list("kind" = "text", "message" = "Which z-level?", "title" = "Level?"), args)
+	var/level = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Which z-level?", title = "Level?")
 	if(isnull(level))
 		return
 	if(!level)
@@ -134,7 +134,7 @@ ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts 
 	if(!isnum(num_level))
 		return
 
-	var/type_text = verb_prompt(user, "a2", list("kind" = "text", "message" = "Which type path?", "title" = "Path?"), args)
+	var/type_text = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Which type path?", title = "Path?")
 	if(isnull(type_text))
 		return
 	if(!type_text)
@@ -165,7 +165,7 @@ ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts 
 
 ADMIN_VERB_VISIBILITY(count_objects_all, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(count_objects_all, R_DEBUG, "Count Objects All", "Count all objects by type (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
-	var/type_text = verb_prompt(user, "a3", list("kind" = "text", "message" = "Which type path?"), args)
+	var/type_text = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Which type path?")
 	if(isnull(type_text))
 		return
 	if(!type_text)

@@ -77,7 +77,7 @@
 		else
 			..()
 	else if(istype(W,/obj/item/pen))
-		var/_answer_k80 = rerun_prompt(user, "k80", list("kind" = "text", "message" = "What would you like to write on the plaque:", "title" = "Skeleton plaque", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k80 = rerun_ask(user, "k80", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "What would you like to write on the plaque:", title = "Skeleton plaque")
 		if(isnull(_answer_k80))
 			return TRUE
 		plaque_contents = _answer_k80

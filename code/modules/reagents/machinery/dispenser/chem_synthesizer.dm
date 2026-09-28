@@ -244,7 +244,7 @@
 /obj/machinery/chemical_synthesizer/screwdriver_act(mob/user, obj/item/tool)
 	if(!panel_open)
 		return ..()
-	var/label = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which cartridge would you like to remove?", "title" = "Chemical Synthesizer", "choices" = cartridges), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Synthesizer", choices = cartridges)
 	if(!label)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
@@ -373,7 +373,7 @@
 			queue -= queue[index]
 		if("clear_queue")
 			// Remove all entries from the queue except the currently processing recipe.
-			var/confirm = act_prompt(usr, action, params, ui, "a1", list("message" = "Are you sure you want to clear the running queue?", "title" = "Confirm", "choices" = list("No", "Yes")))
+			var/confirm = act_ask(usr, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Are you sure you want to clear the running queue?", title = "Confirm", choices = list("No", "Yes"))
 			if(isnull(confirm))
 				return
 			if(confirm == "Yes")
@@ -396,7 +396,7 @@
 		if("emergency_stop")
 			// Stops everything if that's desirable for some reason.
 			if(busy)
-				var/confirm = act_prompt(usr, action, params, ui, "a2", list("message" = "Are you sure you want to stall the machine?", "title" = "Confirm", "choices" = list("Yes", "No")))
+				var/confirm = act_ask(usr, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Are you sure you want to stall the machine?", title = "Confirm", choices = list("Yes", "No"))
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")
@@ -424,7 +424,7 @@
 		if("rem_recipe")
 			// Allows the user to remove recipes while the machine is idle.
 			if(!busy)
-				var/confirm = act_prompt(usr, action, params, ui, "a3", list("message" = "Are you sure you want to remove this recipe?", "title" = "Confirm", "choices" = list("No", "Yes")))
+				var/confirm = act_ask(usr, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove this recipe?", title = "Confirm", choices = list("No", "Yes"))
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")
@@ -522,7 +522,7 @@
 // This proc is lets users create recipes step-by-step and exports a comma delineated list to chat. It's intended to teach how to use the machine.
 /obj/machinery/chemical_synthesizer/proc/babystep_recipe(mob/user)
 	// Each answer re-runs this proc; steps are keyed by their number.
-	var/answer = rerun_prompt(user, "name", list("kind" = "text", "message" = "Name your recipe. Consider including the output volume.", "title" = "Recipe naming"), PROC_REF(babystep_recipe), args)
+	var/answer = rerun_ask(user, "name", PROC_REF(babystep_recipe), args, /datum/om/prompt/text, message = "Name your recipe. Consider including the output volume.", title = "Recipe naming")
 	if(isnull(answer))
 		return
 	var/rec_name = sanitizeSafe(answer)
@@ -530,7 +530,7 @@
 		to_chat(user, "Please provide a unique recipe name!")
 		return
 
-	var/step_count = rerun_prompt(user, "steps", list("kind" = "number", "message" = "How many steps does your recipe contain ([RECIPE_MAX_STEPS] max)?", "title" = "Steps", "default" = 1, "max" = RECIPE_MAX_STEPS, "min" = 1), PROC_REF(babystep_recipe), args)
+	var/step_count = rerun_ask(user, "steps", PROC_REF(babystep_recipe), args, /datum/om/prompt/number, message = "How many steps does your recipe contain ([RECIPE_MAX_STEPS] max)?", title = "Steps", default = 1, max = RECIPE_MAX_STEPS, min = 1)
 	if(isnull(step_count))
 		return
 	var/steps = 2 * step_count
@@ -540,14 +540,14 @@
 
 	var/list/new_rec = list() // This holds the actual recipe.
 	for(var/i = 1, i < steps, i += 2) // For the user, 1 step is both text and volume. For list arithmetic, that's 2 steps.
-		var/label = rerun_prompt(user, "label[i]", list("kind" = "list", "message" = "Which chemical would you like to use?", "title" = "Chemical Synthesizer", "choices" = cartridges), PROC_REF(babystep_recipe), args)
+		var/label = rerun_ask(user, "label[i]", PROC_REF(babystep_recipe), args, /datum/om/prompt/choice, message = "Which chemical would you like to use?", title = "Chemical Synthesizer", choices = cartridges)
 		if(isnull(label))
 			return
 		if(!label)
 			to_chat(user, "Please select a chemical!")
 			return
 		new_rec[++new_rec.len] = label // Add the reagent ID.
-		var/amount = rerun_prompt(user, "amount[i]", list("kind" = "number", "message" = "How much of the chemical would you like to add?", "title" = "Volume", "default" = 1, "max" = src.reagents.maximum_volume, "min" = 1), PROC_REF(babystep_recipe), args)
+		var/amount = rerun_ask(user, "amount[i]", PROC_REF(babystep_recipe), args, /datum/om/prompt/number, message = "How much of the chemical would you like to add?", title = "Volume", default = 1, max = src.reagents.maximum_volume, min = 1)
 		if(isnull(amount))
 			return
 		if(!amount)
@@ -564,7 +564,7 @@
 
 // This proc allows users to copy-paste a comma delineated list to create a recipe. The recipe will cause a stall() if formatted incorrectly.
 /obj/machinery/chemical_synthesizer/proc/import_recipe(mob/user)
-	var/_answer_a2 = rerun_prompt(user, "a2", list("kind" = "text", "message" = "Name your recipe. Consider including the output volume.", "title" = "Recipe naming", "max_length" = MAX_NAME_LEN), PROC_REF(import_recipe), args)
+	var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(import_recipe), args, /datum/om/prompt/text, message = "Name your recipe. Consider including the output volume.", title = "Recipe naming", max_length = MAX_NAME_LEN)
 	if(isnull(_answer_a2))
 		return
 	var/rec_name = sanitizeSafe(_answer_a2, MAX_NAME_LEN)
@@ -572,7 +572,7 @@
 		to_chat(user, "Please provide a unique recipe name!")
 		return
 
-	var/rec_input = rerun_prompt(user, "a3", list("kind" = "text", "message" = "Input your recipe as 'Chem1,vol1,Chem2,vol2,...'", "title" = "Import recipe"), PROC_REF(import_recipe), args)
+	var/rec_input = rerun_ask(user, "a3", PROC_REF(import_recipe), args, /datum/om/prompt/text, message = "Input your recipe as 'Chem1,vol1,Chem2,vol2,...'", title = "Import recipe")
 	if(isnull(rec_input))
 		return
 	if(!rec_input || (length(rec_input) > RECIPE_MAX_STRING) || !findtext(rec_input, ",")) // The smallest possible recipe will contain 1 comma.

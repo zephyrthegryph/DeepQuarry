@@ -341,7 +341,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		var/attempt_pin = ""
 		// Answers re-run this scan; they're keyed by the ticket revision, so a changed ticket asks again.
 		if(D && D.security_level)
-			attempt_pin = rerun_prompt(user, "pin[ticket_revision]:[transaction_amount]", list("kind" = "number", "message" = "Enter PIN", "title" = "Transaction"), PROC_REF(scan_card), args)
+			attempt_pin = rerun_ask(user, "pin[ticket_revision]:[transaction_amount]", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter PIN", title = "Transaction")
 			if(isnull(attempt_pin))
 				return
 			D = null

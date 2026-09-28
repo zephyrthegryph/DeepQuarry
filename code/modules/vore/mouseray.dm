@@ -29,7 +29,7 @@
 		pick_type(user)
 
 /obj/item/gun/energy/mouseray/proc/pick_type(mob/user)
-	var/choice = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a type to turn things into.", "title" = "[src.name]", "choices" = tf_possible_types), PROC_REF(pick_type), args)
+	var/choice = rerun_ask(user, "a1", PROC_REF(pick_type), args, /datum/om/prompt/choice, message = "Select a type to turn things into.", title = "[src.name]", choices = tf_possible_types)
 	if(isnull(choice))
 		return
 	if(!choice)

@@ -1357,21 +1357,21 @@ REF_OWNED(/obj/machinery/light, "cell")
 		"Nightshift Color",
 		)
 
-	var/modification_decision = rerun_prompt(user, "k1365", list("kind" = "list", "message" = "What do you wish to change about this light?", "title" = "Light Adjustment", "choices" = menu_list), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/modification_decision = rerun_ask(user, "k1365", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "What do you wish to change about this light?", title = "Light Adjustment", choices = menu_list)
 	if(isnull(modification_decision))
 		return ITEM_INTERACT_BLOCKING
 	if(!modification_decision)
 		return ITEM_INTERACT_BLOCKING
 	switch(modification_decision)
 		if("Normal Range")
-			var/new_range = rerun_prompt(user, "k1370", list("kind" = "number", "message" = "Choose the new range of the light! (1-[init_brightness_range])", "default" = init_brightness_range, "max" = init_brightness_range, "min" = 1, "timeout" = 0), TYPE_PROC_REF(/atom, multitool_act), args)
+			var/new_range = rerun_ask(user, "k1370", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new range of the light! (1-[init_brightness_range])", default = init_brightness_range, max = init_brightness_range, min = 1, timeout = 0)
 			if(isnull(new_range))
 				return ITEM_INTERACT_BLOCKING
 			if(new_range)
 				brightness_range = new_range
 
 		if("Normal Brightness")
-			var/new_power = rerun_prompt(user, "k1375", list("kind" = "number", "message" = "Choose the new brightness of the light! (0.01 - [init_brightness_power])", "default" = init_brightness_power, "max" = init_brightness_power, "min" = 0.01, "round" = FALSE), TYPE_PROC_REF(/atom, multitool_act), args)
+			var/new_power = rerun_ask(user, "k1375", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new brightness of the light! (0.01 - [init_brightness_power])", default = init_brightness_power, max = init_brightness_power, min = 0.01, round_entry = FALSE)
 			if(isnull(new_power))
 				return ITEM_INTERACT_BLOCKING
 			if(new_power)
@@ -1382,14 +1382,14 @@ REF_OWNED(/obj/machinery/light, "cell")
 			return ITEM_INTERACT_SUCCESS
 
 		if("Nightshift Range")
-			var/new_range = rerun_prompt(user, "k1385", list("kind" = "number", "message" = "Choose the new range of the light! (1-[init_nightshift_range])", "default" = init_nightshift_range, "max" = init_nightshift_range, "min" = 1), TYPE_PROC_REF(/atom, multitool_act), args)
+			var/new_range = rerun_ask(user, "k1385", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new range of the light! (1-[init_nightshift_range])", default = init_nightshift_range, max = init_nightshift_range, min = 1)
 			if(isnull(new_range))
 				return ITEM_INTERACT_BLOCKING
 			if(new_range)
 				nightshift_range = new_range
 
 		if("Nightshift Brightness")
-			var/new_power = rerun_prompt(user, "k1390", list("kind" = "number", "message" = "Choose the new brightness of the light! (0.01 - [init_nightshift_power])", "default" = init_nightshift_power, "max" = init_nightshift_power, "min" = 0.01, "round" = FALSE), TYPE_PROC_REF(/atom, multitool_act), args)
+			var/new_power = rerun_ask(user, "k1390", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new brightness of the light! (0.01 - [init_nightshift_power])", default = init_nightshift_power, max = init_nightshift_power, min = 0.01, round_entry = FALSE)
 			if(isnull(new_power))
 				return ITEM_INTERACT_BLOCKING
 			if(new_power)

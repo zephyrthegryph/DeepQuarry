@@ -34,7 +34,7 @@
 		if(writing_space <= 0)
 			to_chat(user, span_warning("There is no room left on \the [src]."))
 			return
-		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to write?", "max_length" = writing_space, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k37 = rerun_ask(user, "k37", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "What would you like to write?", max_length = writing_space, encode = FALSE)
 		if(isnull(_answer_k37))
 			return TRUE
 		var/text = sanitizeSafe(_answer_k37, writing_space)

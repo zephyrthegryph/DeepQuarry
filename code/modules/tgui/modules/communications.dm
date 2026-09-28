@@ -264,7 +264,7 @@
 				if(!COOLDOWN_FINISHED(src, message_cooldown))
 					to_chat(ui.user, span_warning("Please allow at least one minute to pass between announcements."))
 					return
-				var/input = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Please write a message to announce to the station crew.", "title" = "Priority Announcement", "multiline" = TRUE))
+				var/input = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Please write a message to announce to the station crew.", title = "Priority Announcement", multiline = TRUE, max_length = MAX_TGUI_INPUT)
 				if(isnull(input))
 					return
 				if(!input || !COOLDOWN_FINISHED(src, message_cooldown) || ..() || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
@@ -280,7 +280,7 @@
 				return
 
 			// Add confirmation message
-			var/response = act_prompt(ui.user, action, params, ui, "a2", list("message" = "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?", "title" = "Confirm", "choices" = list("Yes", "No")))
+			var/response = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "OOC: You are required to Ahelp first before calling the shuttle. Please obtain confirmation from staff before calling the shuttle. \n\n Are you sure you want to call the shuttle?", title = "Confirm", choices = list("Yes", "No"))
 			if(isnull(response))
 				return
 
@@ -294,7 +294,7 @@
 			if(isAI(ui.user) || isrobot(ui.user))
 				to_chat(ui.user, span_warning("Firewalls prevent you from recalling the shuttle."))
 				return
-			var/response = act_prompt(ui.user, action, params, ui, "a3", list("message" = "Are you sure you wish to recall the shuttle?", "title" = "Confirm", "choices" = list("Yes", "No")))
+			var/response = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you wish to recall the shuttle?", title = "Confirm", choices = list("Yes", "No"))
 			if(isnull(response))
 				return
 			if(response == "Yes")
@@ -312,7 +312,7 @@
 			var/datum/comm_message_listener/l = obtain_message_listener()
 			if(params["msgid"])
 				setCurrentMessage(ui.user, text2num(params["msgid"]))
-			var/response = act_prompt(ui.user, action, params, ui, "a4", list("message" = "Are you sure you wish to delete this message?", "title" = "Confirm", "choices" = list("Yes", "No")))
+			var/response = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you wish to delete this message?", title = "Confirm", choices = list("Yes", "No"))
 			if(isnull(response))
 				return
 			if(response == "Yes")
@@ -337,14 +337,14 @@
 					post_status(src, params["statdisp"], user = ui.user)
 
 		if("setmsg1")
-			var/_answer_a5 = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "text", "message" = "Line 1", "title" = "Enter Message Text", "default" = stat_msg1, "max_length" = 40))
+			var/_answer_a5 = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = stat_msg1, max_length = 40)
 			if(isnull(_answer_a5))
 				return
 			stat_msg1 = reject_bad_text(_answer_a5, 40)
 			setMenuState(ui.user, COMM_SCREEN_STAT)
 
 		if("setmsg2")
-			var/_answer_a6 = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "text", "message" = "Line 2", "title" = "Enter Message Text", "default" = stat_msg2, "max_length" = 40))
+			var/_answer_a6 = act_ask(ui.user, action, params, ui, "a6", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = stat_msg2, max_length = 40)
 			if(isnull(_answer_a6))
 				return
 			stat_msg2 = reject_bad_text(_answer_a6, 40)
@@ -356,7 +356,7 @@
 				if(!COOLDOWN_FINISHED(src, centcomm_message_cooldown))
 					to_chat(ui.user, span_warning("Arrays recycling. Please stand by."))
 					return
-				var/input = act_prompt(ui.user, action, params, ui, "a7", list("kind" = "text", "message" = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement. Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "Central Command Quantum Messaging", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+				var/input = act_ask(ui.user, action, params, ui, "a7", /datum/om/prompt/text, message = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement. Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", title = "Central Command Quantum Messaging", multiline = TRUE)
 				if(isnull(input))
 					return
 				if(!input || ..() || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
@@ -376,7 +376,7 @@
 				if(!COOLDOWN_FINISHED(src, centcomm_message_cooldown))
 					to_chat(ui.user, "Arrays recycling.  Please stand by.")
 					return
-				var/input = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "text", "message" = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "To abort, send an empty message.", "max_length" = MAX_MESSAGE_LEN))
+				var/input = act_ask(ui.user, action, params, ui, "a8", /datum/om/prompt/text, message = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", title = "To abort, send an empty message.")
 				if(isnull(input))
 					return
 				if(!input || ..() || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))

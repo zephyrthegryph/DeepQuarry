@@ -18,7 +18,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 				targets["[T.mob.real_name](as [T.mob.name]) - [T]"] = T
 		else
 			targets["(No Mob) - [T]"] = T
-	var/target = verb_prompt(user, "a1", list("kind" = "list", "message" = "To whom shall we send a message?", "title" = "Admin PM", "choices" = sortList(targets)), args)
+	var/target = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "To whom shall we send a message?", title = "Admin PM", choices = sortList(targets))
 	if(isnull(target))
 		return
 	if(!target) //Admin canceled

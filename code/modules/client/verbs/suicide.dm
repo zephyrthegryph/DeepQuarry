@@ -29,7 +29,7 @@
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
-	var/confirm = rerun_prompt(src, "k32", list("message" = "Are you sure you want to commit suicide?", "title" = "Confirm Suicide", "choices" = list("Yes", "No")), VERB_REF(suicide), args)
+	var/confirm = rerun_ask(src, "k32", VERB_REF(suicide), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to commit suicide?", title = "Confirm Suicide", choices = list("Yes", "No"))
 	if(isnull(confirm))
 		return
 
@@ -49,7 +49,7 @@
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
-	var/confirm = rerun_prompt(src, "k50", list("message" = "Are you sure you want to commit suicide?", "title" = "Confirm Suicide", "choices" = list("Yes", "No")), VERB_REF(suicide), args)
+	var/confirm = rerun_ask(src, "k50", VERB_REF(suicide), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to commit suicide?", title = "Confirm Suicide", choices = list("Yes", "No"))
 	if(isnull(confirm))
 		return
 
@@ -69,7 +69,7 @@
 		to_chat(src, "You're already committing suicide! Be patient!")
 		return
 
-	var/confirm = rerun_prompt(src, "k68", list("message" = "Are you sure you want to commit suicide?", "title" = "Confirm Suicide", "choices" = list("Yes", "No")), VERB_REF(suicide), args)
+	var/confirm = rerun_ask(src, "k68", VERB_REF(suicide), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to commit suicide?", title = "Confirm Suicide", choices = list("Yes", "No"))
 	if(isnull(confirm))
 		return
 

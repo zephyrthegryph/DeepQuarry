@@ -56,7 +56,7 @@
 
 /obj/item/reagent_containers/blood/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_a1 = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Enter a label for [name]", title = "Label", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE)
 		if(isnull(_answer_a1))
 			return TRUE
 		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)

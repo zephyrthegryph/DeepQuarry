@@ -22,7 +22,7 @@
 	if(!A)
 		return
 
-	var/_answer_k25 = rerun_prompt(user, "k25", list("message" = "Do you want to toggle ghost vision for this area [A.flag_check(AREA_BLOCK_GHOST_SIGHT) ? "on" : "off"]?", "title" = "Toggle ghost vision?", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, attack_hand), args)
+	var/_answer_k25 = rerun_ask(user, "k25", TYPE_PROC_REF(/atom, attack_hand), args, /datum/om/prompt/choice/alert, message = "Do you want to toggle ghost vision for this area [A.flag_check(AREA_BLOCK_GHOST_SIGHT) ? "on" : "off"]?", title = "Toggle ghost vision?", choices = list("Yes", "No"))
 	if(isnull(_answer_k25))
 		return TRUE
 	if(_answer_k25 != "Yes")

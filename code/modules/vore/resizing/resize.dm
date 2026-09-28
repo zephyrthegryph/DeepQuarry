@@ -224,7 +224,7 @@
 
 	var/nagmessage = "Adjust your mass to be a size between 25 to 200% (or 1% to 600% in dormitories). (DO NOT ABUSE)"
 	var/default = size_multiplier * 100
-	var/new_size = rerun_prompt(src, "a1", list("kind" = "number", "message" = nagmessage, "title" = "Pick a Size", "default" = default, "max" = 600, "min" = 1), PROC_REF(set_size), args)
+	var/new_size = rerun_ask(src, "a1", PROC_REF(set_size), args, /datum/om/prompt/number, message = nagmessage, title = "Pick a Size", default = default, max = 600, min = 1)
 	if(isnull(new_size))
 		return
 	if(size_range_check(new_size))

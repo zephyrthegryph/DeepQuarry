@@ -244,7 +244,7 @@
 	if(free_space <= 0)
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
-	var/t = rerun_prompt(user, "k247", list("kind" = "text", "message" = "Enter what you want to write:", "title" = "Write", "max_length" = MAX_PAPER_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(do_write_action), args)
+	var/t = rerun_ask(user, "k247", PROC_REF(do_write_action), args, /datum/om/prompt/text, message = "Enter what you want to write:", title = "Write", max_length = MAX_PAPER_MESSAGE_LEN, multiline = TRUE)
 	if(isnull(t))
 		return
 	if(!t)
@@ -308,7 +308,7 @@
 	if(CLUMSY_FAIL_CHANCE(usr))
 		to_chat(usr, span_warning("You cut yourself on the paper."))
 		return
-	var/_answer_k309 = rerun_prompt(usr, "k309", list("kind" = "text", "message" = "What would you like to label the paper?", "title" = "Paper Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	var/_answer_k309 = rerun_ask(usr, "k309", VERB_REF(rename), args, /datum/om/prompt/text, message = "What would you like to label the paper?", title = "Paper Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k309))
 		return
 	var/n_name = sanitizeSafe(_answer_k309, MAX_NAME_LEN)

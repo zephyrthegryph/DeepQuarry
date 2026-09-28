@@ -3,7 +3,7 @@
 
 /datum/proc/find_references(references_to_clear = INFINITY)
 	if(usr?.client)
-		if(rerun_prompt(usr, "sure", list("message" = "Running this will lock everything up for about 5 minutes.  Would you like to begin the search?", "title" = "Find References", "choices" = list("Yes", "No")), PROC_REF(find_references), args) != "Yes")
+		if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/om/prompt/choice/alert, message = "Running this will lock everything up for about 5 minutes.  Would you like to begin the search?", title = "Find References", choices = list("Yes", "No")) != "Yes")
 			return
 
 	src.references_to_clear = references_to_clear

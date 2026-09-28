@@ -93,7 +93,7 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 		if(A.density && usr.Adjacent(A) && !istype(A, /mob))
 			things_to_smash_on += A
 
-	var/atom/choice = rerun_prompt(usr, "k104", list("kind" = "list", "message" = "Select what you want to smash the bottle on.", "title" = "SMASH!", "choices" = things_to_smash_on), VERB_REF(smash_bottle), args)
+	var/atom/choice = rerun_ask(usr, "k104", VERB_REF(smash_bottle), args, /datum/om/prompt/choice, message = "Select what you want to smash the bottle on.", title = "SMASH!", choices = things_to_smash_on)
 	if(isnull(choice))
 		return
 	if(!choice)

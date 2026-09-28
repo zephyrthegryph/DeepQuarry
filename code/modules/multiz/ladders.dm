@@ -100,7 +100,7 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 		to_chat(M, span_notice("\The [src] is incomplete and can't be climbed."))
 		return
 	if(target_down && target_up)
-		var/direction = rerun_prompt(M, "direction", list("message" = "Do you want to go up or down?", "title" = "Ladder", "choices" = list("Up", "Down", "Cancel")), caller_proc, caller_args)
+		var/direction = rerun_ask(M, "direction", caller_proc, caller_args, /datum/om/prompt/choice/alert, message = "Do you want to go up or down?", title = "Ladder", choices = list("Up", "Down", "Cancel"))
 
 		if(!direction || direction == "Cancel")
 			return

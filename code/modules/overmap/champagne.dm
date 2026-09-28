@@ -27,7 +27,7 @@
 		return
 
 	user.visible_message(span_notice("[user] lifts [src] bottle over [comp]!"))
-	var/shuttle_name = rerun_prompt(user, "k30", list("kind" = "text", "message" = "Choose a name for the shuttle", "title" = "New Shuttle Name"), PROC_REF(afterattack), args)
+	var/shuttle_name = rerun_ask(user, "k30", PROC_REF(afterattack), args, /datum/om/prompt/text, message = "Choose a name for the shuttle", title = "New Shuttle Name")
 	if(isnull(shuttle_name))
 		return TRUE
 	if(!shuttle_name || QDELETED(src) || QDELETED(comp) || comp.shuttle_tag || user.incapacitated())

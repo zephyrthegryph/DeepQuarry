@@ -37,7 +37,7 @@
 	var/datum/om_test_entity/holder = entity(made)
 	var/datum/om/prompt/confirm/test_offer/P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_offer, /datum/om_test_entity/proc/offer_taken, list("holder" = holder, "subject" = E))
 	TEST_ASSERT(istype(P), "om_ask returns the pending typed prompt")
-	TEST_ASSERT_EQUAL(P.spec["message"], "Take it from [holder]?", "prepare() built the message from the typed state")
+	TEST_ASSERT_EQUAL(P.message, "Take it from [holder]?", "prepare() built the message from the typed state")
 	TEST_ASSERT_NULL(P.holder, "a datum in the state is held as a handle while the window is open")
 	TEST_ASSERT_NULL(om_prompt_answer(P, "Yes"), "a yes passes and is delivered")
 	TEST_ASSERT_EQUAL(E.log.Join(","), "taken", "the answer proc ran on the receiver")

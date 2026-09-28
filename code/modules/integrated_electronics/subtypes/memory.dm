@@ -93,7 +93,7 @@
 	if(.)
 		return TRUE
 	var/datum/integrated_io/O = outputs[1]
-	var/type_to_use = rerun_prompt(user, "k96", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(attack_self), args)
+	var/type_to_use = rerun_ask(user, "k96", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Please choose a type to use.", title = "[src] type setting", choices = list("string","number","ref", "null"))
 	if(isnull(type_to_use))
 		return TRUE
 	if(!CanInteract(user, GLOB.tgui_physical_state))
@@ -103,7 +103,7 @@
 	switch(type_to_use)
 		if("string")
 			accepting_refs = 0
-			var/_answer_k104 = rerun_prompt(user, "k104", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+			var/_answer_k104 = rerun_ask(user, "k104", PROC_REF(attack_self), args, /datum/om/prompt/text, message = "Now type in a string.", title = "[src] string writing", max_length = MAX_NAME_LEN, encode = FALSE)
 			if(isnull(_answer_k104))
 				return TRUE
 			new_data = sanitizeSafe(_answer_k104, MAX_NAME_LEN, 0, 0)
@@ -112,7 +112,7 @@
 				to_chat(user, span_notice("You set \the [src]'s memory to [O.display_data(O.data)]."))
 		if("number")
 			accepting_refs = 0
-			var/_answer_k110 = rerun_prompt(user, "k110", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "default" = 0), PROC_REF(attack_self), args)
+			var/_answer_k110 = rerun_ask(user, "k110", PROC_REF(attack_self), args, /datum/om/prompt/number, message = "Now type in a number.", title = "[src] number writing", default = 0)
 			if(isnull(_answer_k110))
 				return TRUE
 			new_data = _answer_k110

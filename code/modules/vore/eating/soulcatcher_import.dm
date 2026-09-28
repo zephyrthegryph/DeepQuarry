@@ -9,7 +9,7 @@
 	if(LAZYLEN(soulcatcher_data) == 0)
 		return FALSE
 
-	var/confirm = rerun_prompt(host, "a1", list("message" = "WARNING: This will override your current soulcatcher settings!", "title" = "Import soulcatcher?", "choices" = list("Yes","Cancel")), PROC_REF(import_soulcatcher), args)
+	var/confirm = rerun_ask(host, "a1", PROC_REF(import_soulcatcher), args, /datum/om/prompt/choice/alert, message = "WARNING: This will override your current soulcatcher settings!", title = "Import soulcatcher?", choices = list("Yes","Cancel"))
 	if(isnull(confirm))
 		return
 

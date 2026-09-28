@@ -508,7 +508,7 @@
 		options += "Confirm + [ten_percent] Th tip"
 	if(twenty_percent > 0 && twenty_percent <= available && twenty_percent != ten_percent)
 		options += "Confirm + [twenty_percent] Th tip"
-	var/choice = asker.rerun_prompt(user, key, list("message" = service_quote_text(quote, description, ten_percent, twenty_percent), "title" = "Confirm Service Purchase", "choices" = options), proc_name, proc_args)
+	var/choice = rerun_ask_on(asker, user, key, proc_name, proc_args, /datum/om/prompt/choice/alert, message = service_quote_text(quote, description, ten_percent, twenty_percent), title = "Confirm Service Purchase", choices = options)
 	if(choice == "Confirm - no tip")
 		return 0
 	if(choice == "Confirm + [ten_percent] Th tip")

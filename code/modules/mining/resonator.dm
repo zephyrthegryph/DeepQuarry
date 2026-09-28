@@ -84,7 +84,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/_answer_k87 = rerun_prompt(user, "k87", list("message" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time")), PROC_REF(attack_self), args)
+	var/_answer_k87 = rerun_ask(user, "k87", PROC_REF(attack_self), args, /datum/om/prompt/choice/alert, message = "Change Detonation Time or toggle Cascading?", title = "Setting", choices = list("Toggle Cascade", "Resonance Time"))
 	if(isnull(_answer_k87))
 		return TRUE
 	switch(_answer_k87)

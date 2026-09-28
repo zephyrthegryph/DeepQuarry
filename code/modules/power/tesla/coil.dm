@@ -103,7 +103,7 @@
 		"Collector",
 		)
 
-		var/modification_decision = rerun_prompt(user, "k110", list("kind" = "list", "message" = "Which tesla do you wish to change it into?", "title" = "Tesla Selection", "choices" = menu_list), TYPE_PROC_REF(/atom, multitool_act), args)
+		var/modification_decision = rerun_ask(user, "k110", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Which tesla do you wish to change it into?", title = "Tesla Selection", choices = menu_list)
 		if(isnull(modification_decision))
 			return ITEM_INTERACT_BLOCKING
 		if(!modification_decision)

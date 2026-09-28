@@ -62,7 +62,7 @@
 
 	switch(action)
 		if("set_id_tag")
-			var/new_id = act_prompt(usr, action, params, ui, "k65", list("kind" = "text", "message" = "Enter a new ID tag for [A]", "title" = "[A] ID Tag", "default" = A.id_tag, "max_length" = 60, "multiline" = FALSE, "encode" = TRUE))
+			var/new_id = act_ask(usr, action, params, ui, "k65", /datum/om/prompt/text, message = "Enter a new ID tag for [A]", title = "[A] ID Tag", default = A.id_tag, max_length = 60)
 			if(isnull(new_id))
 				return
 			if(new_id)

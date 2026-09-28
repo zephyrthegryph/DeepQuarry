@@ -106,7 +106,7 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 	if(!BB)
 		to_chat(user, span_blue("There is no bullet in the casing to inscribe anything into."))
 		return ITEM_INTERACT_BLOCKING
-	var/_answer_k91 = rerun_prompt(user, "k91", list("kind" = "text", "message" = "Inscribe some text into \the [initial(BB.name)]", "title" = "Inscription", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	var/_answer_k91 = rerun_ask(user, "k91", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/text, message = "Inscribe some text into \the [initial(BB.name)]", title = "Inscription", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k91))
 		return ITEM_INTERACT_BLOCKING
 	var/label_text = sanitizeSafe(_answer_k91, MAX_NAME_LEN)

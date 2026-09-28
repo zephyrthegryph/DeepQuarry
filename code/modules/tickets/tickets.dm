@@ -550,7 +550,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		handler_ref = om_handle(our_handler_mob.client)
 
 /datum/ticket/proc/Retitle()
-	var/new_title = rerun_prompt(usr, "k558", list("kind" = "text", "message" = "Enter a title for the ticket", "title" = "Rename Ticket", "default" = name), PROC_REF(Retitle), args)
+	var/new_title = rerun_ask(usr, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
 	if(isnull(new_title))
 		return
 	if(new_title)
@@ -563,7 +563,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 //Kick ticket to next level
 /datum/ticket/proc/Escalate()
-	var/_answer_k569 = rerun_prompt(usr, "k569", list("message" = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", "title" = "Escalate", "choices" = list("Yes","No")), PROC_REF(Escalate), args)
+	var/_answer_k569 = rerun_ask(usr, "k569", PROC_REF(Escalate), args, /datum/om/prompt/choice/alert, message = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", title = "Escalate", choices = list("Yes","No"))
 	if(isnull(_answer_k569))
 		return
 	if(_answer_k569 != "Yes")

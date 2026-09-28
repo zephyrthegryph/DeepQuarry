@@ -88,11 +88,11 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	return types
 
 /obj/item/rig_module/protean/armor/engage()
-	var/armor_chosen = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Which armor to adjust?", "title" = "Protean Armor", "choices" = armor_types()), PROC_REF(engage), args)
+	var/armor_chosen = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = armor_types())
 	if(isnull(armor_chosen))
 		return
 	if(armor_chosen)
-		var/armorvalue = rerun_prompt(usr, "a2", list("kind" = "number", "message" = "Set armour reduction value (Max of 60%)", "title" = "Protean Armor", "default" = 0, "max" = 60), PROC_REF(engage), args)
+		var/armorvalue = rerun_ask(usr, "a2", PROC_REF(engage), args, /datum/om/prompt/number, message = "Set armour reduction value (Max of 60%)", title = "Protean Armor", default = 0, max = 60)
 		if(isnull(armorvalue))
 			return
 		if(isnum(armorvalue))

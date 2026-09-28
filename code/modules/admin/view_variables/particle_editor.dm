@@ -126,7 +126,7 @@
 			. = FALSE
 		if("new_type")
 			var/list/types = make_types_fancy(typesof(/particles))
-			var/picked = act_prompt(ui.user, action, params, ui, "type", list("kind" = "list", "message" = "Select a type", "title" = "Pick Type", "choices" = types))
+			var/picked = act_ask(ui.user, action, params, ui, "type", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = types)
 			var/new_type = types[picked]
 			if(!new_type)
 				return FALSE

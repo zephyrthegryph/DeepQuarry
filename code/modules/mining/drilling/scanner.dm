@@ -117,7 +117,7 @@
 /obj/item/mining_scanner/advanced/verb/change_size()
 	set name = "Set Scanner Range"
 	set category = "Object"
-	var/custom_range = rerun_prompt(usr, "k120", list("kind" = "list", "message" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7)), VERB_REF(change_size), args)
+	var/custom_range = rerun_ask(usr, "k120", VERB_REF(change_size), args, /datum/om/prompt/choice, message = "Scanner Range", title = "Pick a range to scan. ", choices = list(0,1,2,3,4,5,6,7))
 	if(isnull(custom_range))
 		return
 	if(custom_range)

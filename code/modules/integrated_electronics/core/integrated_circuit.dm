@@ -64,7 +64,7 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k80 = rerun_prompt(M, "k80", list("kind" = "text", "message" = "What do you want to name the circuit?", "title" = "Rename", "default" = src.name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_component), args)
+	var/_answer_k80 = rerun_ask(M, "k80", VERB_REF(rename_component), args, /datum/om/prompt/text, message = "What do you want to name the circuit?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k80))
 		return
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)

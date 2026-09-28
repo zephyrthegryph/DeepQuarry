@@ -17,12 +17,12 @@
 	var/current_style = prefs.read_preference(/datum/preference/choiced/ui_style)
 	var/current_alpha = prefs.read_preference(/datum/preference/numeric/ui_style_alpha)
 	var/current_color = prefs.read_preference(/datum/preference/color/ui_style_color)
-	var/UI_style_new = client_prompt("a1", list("kind" = "list", "message" = "Select a style. White is recommended for customization", "title" = "UI Style Choice", "choices" = GLOB.all_ui_styles, "default" = current_style), VERB_REF(change_ui), args, 0)
+	var/UI_style_new = client_ask("a1", VERB_REF(change_ui), args, 0, /datum/om/prompt/choice, message = "Select a style. White is recommended for customization", title = "UI Style Choice", choices = GLOB.all_ui_styles, default = current_style)
 	if(isnull(UI_style_new))
 		return
 	if(!UI_style_new) return
 
-	var/UI_style_alpha_new = client_prompt("a2", list("kind" = "number", "message" = "Select a new alpha (transparency) parameter for your UI, between 50 and 255", "default" = current_alpha, "max" = 255, "min" = 50), VERB_REF(change_ui), args, 0)
+	var/UI_style_alpha_new = client_ask("a2", VERB_REF(change_ui), args, 0, /datum/om/prompt/number, message = "Select a new alpha (transparency) parameter for your UI, between 50 and 255", default = current_alpha, max = 255, min = 50)
 	if(isnull(UI_style_alpha_new))
 		return
 	if(!UI_style_alpha_new || !(UI_style_alpha_new <= 255 && UI_style_alpha_new >= 50)) return

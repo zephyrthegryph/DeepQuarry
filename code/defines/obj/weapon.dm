@@ -229,7 +229,7 @@
 		friendly_cameras.Add(C.c_tag)
 
 	in_use = TRUE
-	var/target = rerun_prompt(user, "k232", list("kind" = "list", "message" = "Select the camera to observe", "title" = "Select Camera", "choices" = friendly_cameras), PROC_REF(attack_self), args)
+	var/target = rerun_ask(user, "k232", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Select the camera to observe", title = "Select Camera", choices = friendly_cameras)
 	if(isnull(target))
 		return TRUE
 	in_use = FALSE

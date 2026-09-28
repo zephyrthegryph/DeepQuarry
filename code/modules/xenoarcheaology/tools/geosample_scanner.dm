@@ -71,7 +71,7 @@
 		var/obj/item/reagent_containers/glass/G = I
 		if(!G.is_open_container())
 			return TRUE
-		var/choice = rerun_prompt(user, "k74", list("message" = "What do you want to do with the container?", "title" = "Radiometric Scanner", "choices" = list("Add water","Empty water","Scan container")), PROC_REF(interaction_use_item), args)
+		var/choice = rerun_ask(user, "k74", PROC_REF(interaction_use_item), args, /datum/om/prompt/choice/alert, message = "What do you want to do with the container?", title = "Radiometric Scanner", choices = list("Add water","Empty water","Scan container"))
 		if(isnull(choice))
 			return
 		if(!choice)

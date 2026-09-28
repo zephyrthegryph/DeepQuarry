@@ -22,7 +22,7 @@
 	for(var/datum/absorbed_dna/DNA in changeling.absorbed_dna)
 		names += "[DNA.name]"
 
-	var/S = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select the target DNA:", "title" = "Target DNA", "choices" = names), PROC_REF(changeling_transform), args)
+	var/S = rerun_ask(src, "a1", PROC_REF(changeling_transform), args, /datum/om/prompt/choice, message = "Select the target DNA:", title = "Target DNA", choices = names)
 	if(isnull(S))
 		return
 	if(!S)

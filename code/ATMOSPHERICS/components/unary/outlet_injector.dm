@@ -190,7 +190,7 @@
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Frequency", "ID Tag", "-SAVE TO BUFFER-", "Cancel")
-	var/answer = rerun_prompt(user, "k197", list("message" = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", "title" = "Options!", "choices" = options), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/answer = rerun_ask(user, "k197", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice/alert, message = "[src] has an ID of \"[id]\" and a frequency of [frequency]. What would you like to change?", title = "Options!", choices = options)
 	if(isnull(answer))
 		return ITEM_INTERACT_BLOCKING
 	if(!answer || answer == "Cancel" || !Adjacent(user))
@@ -198,7 +198,7 @@
 
 	switch(answer)
 		if("Frequency")
-			var/new_frequency = rerun_prompt(user, "k203", list("kind" = "number", "message" = "[src] has a frequency of [frequency]. What would you like it to be?", "title" = "[src] frequency", "default" = frequency, "max" = RADIO_HIGH_FREQ, "min" = RADIO_LOW_FREQ), TYPE_PROC_REF(/atom, multitool_act), args)
+			var/new_frequency = rerun_ask(user, "k203", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "[src] has a frequency of [frequency]. What would you like it to be?", title = "[src] frequency", default = frequency, max = RADIO_HIGH_FREQ, min = RADIO_LOW_FREQ)
 			if(isnull(new_frequency))
 				return ITEM_INTERACT_BLOCKING
 			if(new_frequency)
@@ -207,7 +207,7 @@
 				to_chat(user, span_notice("You set the [src]'s frequency to [frequency]."))
 
 		if("ID Tag")
-			var/_answer_k210 = rerun_prompt(user, "k210", list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'exhaust_port'.", "title" = "Set ID Tag", "default" = id, "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+			var/_answer_k210 = rerun_ask(user, "k210", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "Please insert an ID tag for [src], example 'exhaust_port'.", title = "Set ID Tag", default = id, max_length = MAX_NAME_LEN)
 			if(isnull(_answer_k210))
 				return ITEM_INTERACT_BLOCKING
 			id = _answer_k210

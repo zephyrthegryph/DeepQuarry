@@ -120,7 +120,7 @@
 	return effects
 
 /datum/component/artifact_master/proc/add_effect()
-	var/effect_type = rerun_prompt(usr, "k123", list("kind" = "list", "message" = "What type do you want?", "title" = "Effect Type", "choices" = subtypesof(/datum/artifact_effect)), PROC_REF(add_effect), args)
+	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))
 	if(isnull(effect_type))
 		return
 	if(effect_type)
@@ -133,7 +133,7 @@
 			qdel(my_effect)
 
 /datum/component/artifact_master/proc/remove_effect()
-	var/to_remove_effect = rerun_prompt(usr, "k134", list("kind" = "list", "message" = "What effect do you want to remove?", "title" = "Remove Effect", "choices" = my_effects), PROC_REF(remove_effect), args)
+	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/om/prompt/choice, message = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
 	if(isnull(to_remove_effect))
 		return
 

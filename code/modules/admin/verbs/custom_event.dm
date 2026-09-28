@@ -1,6 +1,6 @@
 // verb for admins to set custom event
 ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Change Custom Event", "Change custom event message.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/input = verb_prompt(user, "a1", list("kind" = "text", "message" = "Enter the description of the custom event. Be descriptive. To cancel the event, make this blank or hit cancel.", "title" = "Custom Event", "default" = GLOB.custom_event_msg, "max_length" = MAX_PAPER_MESSAGE_LEN, "multiline" = TRUE), args)
+	var/input = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Enter the description of the custom event. Be descriptive. To cancel the event, make this blank or hit cancel.", title = "Custom Event", default = GLOB.custom_event_msg, max_length = MAX_PAPER_MESSAGE_LEN, multiline = TRUE)
 	if(isnull(input))
 		return
 	if(isnull(input))

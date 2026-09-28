@@ -286,7 +286,7 @@
 		if(2)
 			if(istype(W,/obj/item/surgical/hemostat))
 				if(LAZYLEN(contents))
-					var/obj/item/removing = rerun_prompt(user, "k308", list("kind" = "list", "message" = "What would you like to remove?", "title" = "Extraction", "choices" = contents, "timeout" = 20 SECONDS), TYPE_PROC_REF(/atom, attackby), args)
+					var/obj/item/removing = rerun_ask(user, "k308", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/choice, message = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
 					if(isnull(removing))
 						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.

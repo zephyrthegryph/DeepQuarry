@@ -40,12 +40,12 @@
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k43 = rerun_prompt(user, "k43", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k43 = rerun_ask(user, "k43", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/choice/alert, message = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"))
 		if(isnull(_answer_k43))
 			return TRUE
 		switch(_answer_k43)
 			if("Title")
-				var/_answer_k45 = rerun_prompt(user, "k45", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				var/_answer_k45 = rerun_ask(user, "k45", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Label text?", title = "Set label", max_length = MAX_NAME_LEN, encode = FALSE)
 				if(isnull(_answer_k45))
 					return TRUE
 				var/str = sanitizeSafe(_answer_k45, MAX_NAME_LEN)
@@ -63,7 +63,7 @@
 				else
 					nameset = 1
 			if("Description")
-				var/str = rerun_prompt(user, "k60", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				var/str = rerun_ask(user, "k60", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Label text?", title = "Set label")
 				if(isnull(str))
 					return TRUE
 				if(!str || !length(str))
@@ -180,12 +180,12 @@
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k174 = rerun_prompt(user, "k174", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k174 = rerun_ask(user, "k174", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/choice/alert, message = "What would you like to alter?", title = "Select Alteration", choices = list("Title","Description","Cancel"))
 		if(isnull(_answer_k174))
 			return TRUE
 		switch(_answer_k174)
 			if("Title")
-				var/_answer_k176 = rerun_prompt(user, "k176", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				var/_answer_k176 = rerun_ask(user, "k176", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Label text?", title = "Set label", max_length = MAX_NAME_LEN, encode = FALSE)
 				if(isnull(_answer_k176))
 					return TRUE
 				var/str = sanitizeSafe(_answer_k176, MAX_NAME_LEN)
@@ -204,7 +204,7 @@
 					nameset = 1
 
 			if("Description")
-				var/str = rerun_prompt(user, "k192", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				var/str = rerun_ask(user, "k192", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Label text?", title = "Set label")
 				if(isnull(str))
 					return TRUE
 				if(!str || !length(str))

@@ -45,7 +45,7 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to remove."))
 		return
 	if(!target_entry)
-		var/_answer_k48 = rerun_prompt(user, "k48", list("kind" = "list", "message" = "Which piece of data do you want to remove?", "title" = "Remove", "choices" = my_list), PROC_REF(remove_from_list), args)
+		var/_answer_k48 = rerun_ask(user, "k48", PROC_REF(remove_from_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to remove?", title = "Remove", choices = my_list)
 		if(isnull(_answer_k48))
 			return
 		target_entry = _answer_k48
@@ -58,7 +58,7 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to modify."))
 		return
 	if(!target_entry)
-		var/_answer_k58 = rerun_prompt(user, "k58", list("kind" = "list", "message" = "Which piece of data do you want to edit?", "title" = "Edit", "choices" = my_list), PROC_REF(edit_in_list), args)
+		var/_answer_k58 = rerun_ask(user, "k58", PROC_REF(edit_in_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to edit?", title = "Edit", choices = my_list)
 		if(isnull(_answer_k58))
 			return
 		target_entry = _answer_k58
@@ -96,14 +96,14 @@
 		to_chat(user, span_warning("The list is empty, or too small to do any meaningful swapping."))
 		return
 	if(!first_target)
-		var/_answer_k93 = rerun_prompt(user, "k93", list("kind" = "list", "message" = "Which piece of data do you want to swap? (1)", "title" = "Swap", "choices" = my_list), PROC_REF(swap_inside_list), args)
+		var/_answer_k93 = rerun_ask(user, "k93", PROC_REF(swap_inside_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to swap? (1)", title = "Swap", choices = my_list)
 		if(isnull(_answer_k93))
 			return
 		first_target = _answer_k93
 
 	if(first_target)
 		if(!second_target)
-			var/_answer_k97 = rerun_prompt(user, "k97", list("kind" = "list", "message" = "Which piece of data do you want to swap? (2)", "title" = "Swap", "choices" = my_list - first_target), PROC_REF(swap_inside_list), args)
+			var/_answer_k97 = rerun_ask(user, "k97", PROC_REF(swap_inside_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to swap? (2)", title = "Swap", choices = my_list - first_target)
 			if(isnull(_answer_k97))
 				return
 			second_target = _answer_k97

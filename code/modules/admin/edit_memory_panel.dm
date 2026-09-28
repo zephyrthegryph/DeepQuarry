@@ -88,7 +88,7 @@ REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
 
 	switch(action)
 		if("edit_role")
-			var/new_role = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Select new role", "title" = "Assigned role", "choices" = SSjob.occupations_by_name, "default" = target_mind.assigned_role))
+			var/new_role = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Select new role", title = "Assigned role", choices = SSjob.occupations_by_name, default = target_mind.assigned_role)
 			if(isnull(new_role))
 				return
 			if(new_role)
@@ -96,7 +96,7 @@ REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit_memory")
-			var/new_memo = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Write new memory", "title" = "Memory", "default" = target_mind.memory, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+			var/new_memo = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Write new memory", title = "Memory", default = target_mind.memory, multiline = TRUE)
 			if(isnull(new_memo))
 				return
 			if(!isnull(new_memo))
@@ -104,7 +104,7 @@ REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit_ambitions")
-			var/new_amb = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "Enter a new ambition", "title" = "Ambition", "default" = target_mind.ambitions, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+			var/new_amb = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/text, message = "Enter a new ambition", title = "Ambition", default = target_mind.ambitions, multiline = TRUE)
 			if(isnull(new_amb))
 				return
 			if(isnull(new_amb))

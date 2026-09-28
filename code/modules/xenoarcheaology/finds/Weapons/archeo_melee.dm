@@ -173,20 +173,20 @@
 		to_chat(user, span_cult("The blade does not respond to your attempts, seeming to have not enough blood to perform any actions!"))
 		return
 	if(stored_blood >= 10)
-		var/choice = rerun_prompt(user, "k176", list("kind" = "list", "message" = "What action do you wish to have the blade perform?", "title" = "Download", "choices" = abilities), PROC_REF(attack_self), args)
+		var/choice = rerun_ask(user, "k176", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "What action do you wish to have the blade perform?", title = "Download", choices = abilities)
 		if(isnull(choice))
 			return TRUE
 		if(choice && loc == user)
 			switch(choice)
 				if("Consecrate")
-					var/decision2 = rerun_prompt(user, "k180", list("message" = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", "title" = "Consecrate!", "choices" = list("Toggle on", "Toggle off")), PROC_REF(attack_self), args)
+					var/decision2 = rerun_ask(user, "k180", PROC_REF(attack_self), args, /datum/om/prompt/choice/alert, message = "Do you wish to toggle the sword's 'consecrate' mode? If enabled, this will allow the sword to turn floors and walls into a more cult-like appearance! It requires [consecration_cost] per use!", title = "Consecrate!", choices = list("Toggle on", "Toggle off"))
 					if(isnull(decision2))
 						return TRUE
 					consecrate_toggle(user, decision2)
 					return
 				/// Spawning logic. Checks the 'summonables' list.
 				if("Summon")
-					var/summoned_item = rerun_prompt(user, "k185", list("kind" = "list", "message" = "What do you wish to summon?", "title" = "Summon", "choices" = summonables), PROC_REF(attack_self), args)
+					var/summoned_item = rerun_ask(user, "k185", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "What do you wish to summon?", title = "Summon", choices = summonables)
 					if(isnull(summoned_item))
 						return TRUE
 					summon_item(user, summoned_item)
@@ -212,7 +212,7 @@
 /obj/item/melee/artifact_blade/proc/summon_item(mob/user as mob, selected_item)
 	if(selected_item)
 		if(selected_item == "Soulstone")
-			var/decision2 = rerun_prompt(user, "k209", list("message" = "Do you wish to create a redspace gem? This will take 200 lifeforce from the sword.", "title" = "Generate Gem", "choices" = list("YES", "NO")), PROC_REF(summon_item), args)
+			var/decision2 = rerun_ask(user, "k209", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create a redspace gem? This will take 200 lifeforce from the sword.", title = "Generate Gem", choices = list("YES", "NO"))
 			if(isnull(decision2))
 				return
 			if(stored_blood < 200)
@@ -228,7 +228,7 @@
 			else
 				return
 		if(selected_item == "Shell")
-			var/decision2 = rerun_prompt(user, "k223", list("message" = "Do you wish to create a shell? This will take 500 lifeforce from the sword.", "title" = "Generate Shell", "choices" = list("YES", "NO")), PROC_REF(summon_item), args)
+			var/decision2 = rerun_ask(user, "k223", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create a shell? This will take 500 lifeforce from the sword.", title = "Generate Shell", choices = list("YES", "NO"))
 			if(isnull(decision2))
 				return
 			if(stored_blood < 500)
@@ -245,7 +245,7 @@
 		/// In some cases, if a xenoarch was REALLY unlucky, they could only find 3-4 large artifacts in the (readily) available Z levels without scouring the entire universe.
 		/// So this acts as a "You sacrifice a LOT to get a random artifact"
 		if(selected_item == "Cultic Artifact")
-			var/decision2 = rerun_prompt(user, "k238", list("message" = "Do you wish to create an artifact? This will take 1000 lifeforce from the sword.", "title" = "Generate Artifact", "choices" = list("YES", "NO")), PROC_REF(summon_item), args)
+			var/decision2 = rerun_ask(user, "k238", PROC_REF(summon_item), args, /datum/om/prompt/choice/alert, message = "Do you wish to create an artifact? This will take 1000 lifeforce from the sword.", title = "Generate Artifact", choices = list("YES", "NO"))
 			if(isnull(decision2))
 				return
 			if(stored_blood < 1000)

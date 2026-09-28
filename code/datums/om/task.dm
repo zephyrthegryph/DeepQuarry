@@ -187,8 +187,8 @@
 	return om_task_launch(task, actor, target, params, starter)
 
 /// Starts a task from a built params list (var name -> value): om_task_begin() and the helpers
-/// that build their own (om_do_after(), flows). `legacy`: the receiver defaults to the actor.
-/proc/om_task_launch(task, datum/actor, datum/target, list/params, datum/starter, legacy = FALSE)
+/// that build their own (om_do_after(), flows, use_tool()).
+/proc/om_task_launch(task, datum/actor, datum/target, list/params, datum/starter)
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/task/spec = ispath(task) ? reg.task_by_type[task] : reg.task_by_name[task]
 	if(!spec)
@@ -218,7 +218,7 @@
 			return "gone"
 		T.vars[key] = value
 	if(!T.receiver)
-		T.receiver = legacy ? actor : T.pick_receiver(starter)
+		T.receiver = T.pick_receiver(starter)
 	if(isnull(T.duration))
 		T.duration = 0
 	else if(!isnum(T.duration))

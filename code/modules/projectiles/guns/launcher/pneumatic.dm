@@ -39,7 +39,7 @@
 	set name = "Set Valve Pressure"
 	set category = "Object"
 	set src in range(0)
-	var/N = rerun_prompt(usr, "k42", list("kind" = "list", "message" = "Percentage of tank used per shot:", "title" = "[src]", "choices" = possible_pressure_amounts), VERB_REF(set_pressure), args)
+	var/N = rerun_ask(usr, "k42", VERB_REF(set_pressure), args, /datum/om/prompt/choice, message = "Percentage of tank used per shot:", title = "[src]", choices = possible_pressure_amounts)
 	if(isnull(N))
 		return
 	if (N)

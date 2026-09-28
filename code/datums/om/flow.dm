@@ -199,43 +199,60 @@
 	flow = null
 	F?.stop(reason || "interrupted")
 
-// ---------------------------------------------------------------- data-driven question lists
+// ---------------------------------------------------------------- question sequences
 //
-// om_ask_sequence(owner, answerer, steps, on_done, subject, requires, on_stop, data) asks a list
-// of typed prompts one after another as a flow. Each step is a typed prompt (a type, or an
-// instance with its vars set), null (skipped), or a proc on the owner called as (sequence) that
-// returns a prompt, null to skip, or ASK_STOP to end there; it reads the answers so far with
-// sequence.get(key), so later questions can depend on earlier ones. Each answer is stored under
-// its prompt's `key` (else the step's index) as answer_value(). A prompt whose `answerer` is
-// set asks that mob instead (consent from the other party). An optional prompt's cancel stores
-// null and goes on; any other cancel, a "no" or a failed re-check ends the sequence and calls
-// on_stop on the owner as (sequence, reason). When the last step is answered, on_done runs on
-// the owner as (sequence). A /proc/ path is called globally with the same arguments.
-// `data` is caller state carried along (read with get(); held as-is, so keep it to values).
+// om_ask_sequence(sequence, answerer, subject, steps = list(...), on_done = PROC_REF(cb), ...)
+// asks a list of typed prompts one after another as a flow. `sequence` is
+// /datum/om/flow/ask_sequence or a subtype declaring the sequence's typed state:
+//
+//	/datum/om/flow/ask_sequence/pin_value
+//		var/type_name          // the answer of the prompt with key = "type_name"
+//		var/value
+//		var/datum/integrated_io/pin   // caller state, set by name; held as a handle between steps
+//
+//	om_ask_sequence(/datum/om/flow/ask_sequence/pin_value, user, null, steps = list(type_ask, PROC_REF(value_ask)), on_done = PROC_REF(value_entered), pin = src)
+//
+// Each step is a typed prompt (a type, or an instance with its vars set), null (skipped), or a
+// proc on the owner called as (sequence) that returns a prompt, null to skip, or ASK_STOP to
+// end there. Each answer (answer_value()) lands in the sequence var named by its prompt's
+// `key` when the type declares one, else in `answers` under the key (default: the step's
+// index), read with get(key); later steps can depend on earlier answers. A prompt whose
+// `answerer` is set asks that mob instead (consent from the other party). An optional prompt's
+// cancel stores null and goes on; any other cancel, a "no" or a failed re-check ends the
+// sequence and calls on_stop on the owner as (sequence, reason). When the last step is
+// answered, on_done runs on the owner as (sequence). The owner is the caller's src (`owner = X`
+// instead); a /proc/ path is called globally with the same arguments.
 
 /datum/om/flow/ask_sequence
 	name = "ask_sequence"
 	var/list/steps
 	var/step_index = 0
-	/// key -> answer.
+	/// key -> answer, for keys the type declares no var for.
 	var/list/answers
-	/// Caller state, read with get().
-	var/list/data
 	/// What step procs, on_done and on_stop run on.
 	var/datum/owner
 	var/on_done
 	var/on_stop
 
-/// An answer so far (by key), else a value from the caller's data.
+/// An answer so far, by key: the declared var, else from `answers`.
 /datum/om/flow/ask_sequence/proc/get(key)
 	if(answers && (key in answers))
 		return answers[key]
-	return data?[key]
+	if(sequence_var(key))
+		return vars[key]
+	return null
 
-/// Stores a value readable with get() by later steps.
+/// Stores an answer: in the declared var named `key`, else in `answers`.
 /datum/om/flow/ask_sequence/proc/put(key, value)
+	if(sequence_var(key))
+		vars[key] = value
+		return
 	LAZYINITLIST(answers)
 	answers[key] = value
+
+/// TRUE when `key` names a var the sequence type declares (its typed state).
+/datum/om/flow/ask_sequence/proc/sequence_var(key)
+	return istext(key) && (key in state_var_names(/datum/om/flow/ask_sequence, null))
 
 /datum/om/flow/ask_sequence/start()
 	next_step()
@@ -282,16 +299,14 @@
 	if(on_stop)
 		call_owner(on_stop, reason)
 
-/// Starts an om_ask_sequence(). Returns the flow, or the text reason it didn't start.
-/proc/om_ask_sequence(datum/owner, mob/answerer, list/steps, on_done, datum/subject, list/requires, on_stop, list/data)
+/// om_ask_sequence()'s body. `owner` is the caller's src. Returns the flow, or the text reason
+/// it didn't start.
+/proc/om_ask_sequence_begin(datum/owner, sequence, mob/answerer, datum/subject, list/params)
 	if(istype(answerer, /client))
 		var/client/C = answerer
 		answerer = C.mob
-	var/datum/om/flow/ask_sequence/F = new
+	var/datum/om/flow/ask_sequence/F = ispath(sequence) ? new sequence : sequence
+	if(!istype(F))
+		CRASH("om_ask_sequence: [sequence] is not a /datum/om/flow/ask_sequence")
 	F.owner = owner
-	F.steps = steps
-	F.on_done = on_done
-	F.on_stop = on_stop
-	F.requires = requires
-	F.data = data
-	return om_flow_begin(F, answerer, subject, null)
+	return om_flow_begin(F, answerer, subject, params)

@@ -4,7 +4,7 @@
 	var/list/fakeJobs //Assoc list of name in names = job
 
 ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identities for use in setting up PDA props", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/choice = verb_prompt(user, "choice", list("kind" = "list", "message" = "What do you wish to do?", "title" = "Options", "choices" = list("Add new identity", "Edit existing identity", "Delete existing identity", "Delete holder", "Cancel")), args)
+	var/choice = verb_ask(user, "choice", args, /datum/om/prompt/choice, message = "What do you wish to do?", title = "Options", choices = list("Add new identity", "Edit existing identity", "Delete existing identity", "Delete holder", "Cancel"))
 	if(isnull(choice))
 		return
 
@@ -21,11 +21,11 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 
 	// Everything is asked before anything changes: each answer re-runs this verb.
 	if(choice == "Add new identity")
-		var/newRef = verb_prompt(user, "ref", list("kind" = "text", "message" = "Input unique reference. Duplicates are FORBIDDEN!. Players can't see this.Used to uniquely identify conversations in PDAs", "max_length" = MAX_MESSAGE_LEN), args)
+		var/newRef = verb_ask(user, "ref", args, /datum/om/prompt/text, message = "Input unique reference. Duplicates are FORBIDDEN!. Players can't see this.Used to uniquely identify conversations in PDAs")
 		if(!newRef) return
-		var/new_name = verb_prompt(user, "name", list("kind" = "text", "message" = "Input fake name", "title" = newRef, "max_length" = MAX_MESSAGE_LEN), args)
+		var/new_name = verb_ask(user, "name", args, /datum/om/prompt/text, message = "Input fake name", title = newRef)
 		if(isnull(new_name)) return
-		var/new_job = verb_prompt(user, "job", list("kind" = "text", "message" = "Input fake assignment.", "title" = newRef, "max_length" = MAX_MESSAGE_LEN), args)
+		var/new_job = verb_ask(user, "job", args, /datum/om/prompt/text, message = "Input fake assignment.", title = newRef)
 		if(isnull(new_job)) return
 		LAZYADD(FPC.fakeRefs, newRef)
 		FPC.names[newRef] = new_name
@@ -34,25 +34,25 @@ ADMIN_VERB(fake_pdaconvos, R_FUN, "Manage PDA identities", "Creates fake identit
 		return
 
 	if(choice == "Edit existing identity")
-		var/ref = verb_prompt(user, "ref", list("kind" = "list", "message" = "Pick which identity to edit (details are printed to chat)", "title" = "identities", "choices" = FPC.fakeRefs), args)
+		var/ref = verb_ask(user, "ref", args, /datum/om/prompt/choice, message = "Pick which identity to edit (details are printed to chat)", title = "identities", choices = FPC.fakeRefs)
 		if(isnull(ref)) return
-		var/editChoice = verb_prompt(user, "edit", list("message" = "You are editing [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]\nWhat do you wish to edit?", "title" = "Details", "choices" = list("Name", "Job", "Cancel")), args)
+		var/editChoice = verb_ask(user, "edit", args, /datum/om/prompt/choice/alert, message = "You are editing [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]\nWhat do you wish to edit?", title = "Details", choices = list("Name", "Job", "Cancel"))
 		if(isnull(editChoice)) return
 		if(editChoice == "Name")
-			var/new_name = verb_prompt(user, "name", list("kind" = "text", "message" = "Input fake name", "title" = FPC.names[ref], "max_length" = MAX_MESSAGE_LEN), args)
+			var/new_name = verb_ask(user, "name", args, /datum/om/prompt/text, message = "Input fake name", title = FPC.names[ref])
 			if(isnull(new_name)) return
 			FPC.names[ref] = new_name
 			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		if(editChoice == "Job")
-			var/new_job = verb_prompt(user, "job", list("kind" = "text", "message" = "Input fake name", "title" = LAZYACCESS(FPC.fakeJobs, ref), "max_length" = MAX_MESSAGE_LEN), args)
+			var/new_job = verb_ask(user, "job", args, /datum/om/prompt/text, message = "Input fake name", title = LAZYACCESS(FPC.fakeJobs, ref))
 			if(isnull(new_job)) return
 			LAZYSET(FPC.fakeJobs, ref, new_job)
 			to_chat(user, span_notice("Current data for [ref] are : Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]"))
 		return
 	if(choice == "Delete existing identity")
-		var/ref = verb_prompt(user, "ref", list("kind" = "list", "message" = "Pick which identity to delete (details are printed to chat)", "title" = "identities", "choices" = FPC.fakeRefs), args)
+		var/ref = verb_ask(user, "ref", args, /datum/om/prompt/choice, message = "Pick which identity to delete (details are printed to chat)", title = "identities", choices = FPC.fakeRefs)
 		if(isnull(ref)) return
-		if(verb_prompt(user, "sure", list("message" = "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]", "title" = "are you sure?", "choices" = list("Yes", "No")), args) == "Yes")
+		if(verb_ask(user, "sure", args, /datum/om/prompt/choice/alert, message = "You are deleting [ref]. Current name: [FPC.names[ref]]. Current assignment: [LAZYACCESS(FPC.fakeJobs, ref)]", title = "are you sure?", choices = list("Yes", "No")) == "Yes")
 			LAZYREMOVE(FPC.fakeRefs, ref)
 			LAZYREMOVE(FPC.fakeJobs, ref)
 			FPC.names -= ref

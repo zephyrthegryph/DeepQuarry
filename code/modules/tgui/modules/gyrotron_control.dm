@@ -18,7 +18,7 @@
 
 	switch(action)
 		if("set_tag")
-			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Gyrotron Control", "default" = gyro_tag))
+			var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Gyrotron Control", default = gyro_tag)
 			if(isnull(_answer_a1))
 				return
 			var/new_ident = sanitize_text(_answer_a1)

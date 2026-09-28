@@ -137,10 +137,10 @@
 		/datum/expedition_mission/station_assault,
 	)
 	// Answers re-run this verb.
-	var/mission_type = client_prompt("mission", list("kind" = "list", "message" = "Mission type?", "title" = "Expedition Mission", "choices" = mission_types), VERB_REF(generate_expedition_mission), args, R_DEBUG)
+	var/mission_type = client_ask("mission", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Mission type?", title = "Expedition Mission", choices = mission_types)
 	if(!mission_type)
 		return
-	var/diff = client_prompt("difficulty", list("kind" = "list", "message" = "Difficulty?", "title" = "Expedition Mission", "choices" = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH)), VERB_REF(generate_expedition_mission), args, R_DEBUG)
+	var/diff = client_ask("difficulty", VERB_REF(generate_expedition_mission), args, R_DEBUG, /datum/om/prompt/choice, message = "Difficulty?", title = "Expedition Mission", choices = list(EXP_DIFF_LOW, EXP_DIFF_MED, EXP_DIFF_HIGH))
 	if(isnull(diff))
 		return
 

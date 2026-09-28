@@ -867,7 +867,7 @@
 			var/list/cur_meta = item_meta["[tweak_idx]"]
 			var/list/cur_matrix = (islist(cur_meta) && cur_meta["mode"] == "matrix") ? cur_meta["value"] : null
 			// The answer re-runs this action, so the item is checked again.
-			var/list/new_matrix = rerun_prompt(user, "matrix", list("kind" = "colormatrix", "message" = "Pick a color matrix for this item", "title" = "Matrix Recolor", "preview" = G.path, "default" = cur_matrix, "matrix_only" = TRUE), PROC_REF(handle_action), args)
+			var/list/new_matrix = rerun_ask(user, "matrix", PROC_REF(handle_action), args, /datum/om/prompt/colormatrix, message = "Pick a color matrix for this item", title = "Matrix Recolor", preview = G.path, default = cur_matrix, matrix_only = TRUE)
 			if(!islist(new_matrix) || length(new_matrix) < 12)
 				return PREF_UPDATE_UNCHANGED
 			if(!user?.client?.prefs || user.client.prefs != preferences)

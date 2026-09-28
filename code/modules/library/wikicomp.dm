@@ -257,7 +257,7 @@
 					var/obj/item/card/id/card = H.GetIdCard()
 					var/pin
 					if(id_card_needs_pin(card))
-						pin = act_prompt(ui.user, action, params, ui, "pin", list("kind" = "number", "message" = "Enter pin code", "title" = "Donation"))
+						pin = act_ask(ui.user, action, params, ui, "pin", /datum/om/prompt/number, message = "Enter pin code", title = "Donation")
 						if(isnull(pin))
 							return TRUE
 					pay_donation(card, ui.user, amount, ui, pin)

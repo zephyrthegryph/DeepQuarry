@@ -20,7 +20,7 @@
 		to_chat(usr, "This map is not appropriate for this verb.")
 		return
 
-	var/response = rerun_prompt(usr, "k23", list("message" = "Are you sure?", "title" = "Engine setup", "choices" = list("No", "Yes")), PROC_REF(setup_fusion), args)
+	var/response = rerun_ask(usr, "k23", PROC_REF(setup_fusion), args, /datum/om/prompt/choice/alert, message = "Are you sure?", title = "Engine setup", choices = list("No", "Yes"))
 	if(isnull(response))
 		return
 	if(response != "Yes")

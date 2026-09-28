@@ -158,7 +158,7 @@
 		if("add_funds")
 			if(access_level < 2)
 				return FALSE
-			var/amount = act_prompt(ui.user, action, params, ui, "k161", list("kind" = "number", "message" = "Enter the amount you wish to add", "title" = "Silently add funds"))
+			var/amount = act_ask(ui.user, action, params, ui, "k161", /datum/om/prompt/number, message = "Enter the amount you wish to add", title = "Silently add funds")
 			if(isnull(amount))
 				return
 			if(detailed_account_view && isnum(amount) && amount > 0)
@@ -168,7 +168,7 @@
 		if("remove_funds")
 			if(access_level < 2)
 				return FALSE
-			var/amount = act_prompt(ui.user, action, params, ui, "k169", list("kind" = "number", "message" = "Enter the amount you wish to remove", "title" = "Silently remove funds"))
+			var/amount = act_ask(ui.user, action, params, ui, "k169", /datum/om/prompt/number, message = "Enter the amount you wish to remove", title = "Silently remove funds")
 			if(isnull(amount))
 				return
 			if(detailed_account_view && isnum(amount) && amount > 0)

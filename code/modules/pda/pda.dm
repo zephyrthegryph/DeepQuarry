@@ -96,7 +96,7 @@
 		O.show_message(text("[icon2html(src, O.client)] *[ttone]*"))
 
 /obj/item/pda/proc/set_ringtone(mob/user)
-	var/t = rerun_prompt(user, "k99", list("kind" = "text", "message" = "Please enter new ringtone", "title" = name, "default" = ttone), PROC_REF(set_ringtone), args)
+	var/t = rerun_ask(user, "k99", PROC_REF(set_ringtone), args, /datum/om/prompt/text, message = "Please enter new ringtone", title = name, default = ttone)
 	if(isnull(t))
 		return
 	if(in_range(src, user) && loc == user)

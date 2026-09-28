@@ -56,14 +56,14 @@
 
 		if(act == "custom")
 			if(!message)
-				var/_answer_k59 = rerun_prompt(src, "k59", list("kind" = "text", "message" = "Choose an emote to display.", "encode" = FALSE), PROC_REF(emote), args)
+				var/_answer_k59 = rerun_ask(src, "k59", PROC_REF(emote), args, /datum/om/prompt/text, message = "Choose an emote to display.", encode = FALSE)
 				if(isnull(_answer_k59))
 					return
 				message = sanitize_or_reflect(_answer_k59, src) // Reflect too long messages, within reason
 			if(!message)
 				return
 			if (!m_type)
-				var/_answer_k63 = rerun_prompt(src, "k63", list("message" = "Is this an audible emote?", "title" = "Emote", "choices" = list("Yes", "No")), PROC_REF(emote), args)
+				var/_answer_k63 = rerun_ask(src, "k63", PROC_REF(emote), args, /datum/om/prompt/choice/alert, message = "Is this an audible emote?", title = "Emote", choices = list("Yes", "No"))
 				if(isnull(_answer_k63))
 					return
 				if(_answer_k63 != "Yes")

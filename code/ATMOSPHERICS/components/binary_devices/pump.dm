@@ -224,7 +224,7 @@ Thus, the two variables affect pump operation are set in New():
 				if("max")
 					set_target_pressure(max_pressure_setting)
 				if("set")
-					var/new_pressure = act_prompt(ui.user, action, params, ui, "k231", list("kind" = "number", "message" = "Enter new output pressure (0-[max_pressure_setting]kPa)", "title" = "Pressure control", "default" = get_target_pressure(), "max" = max_pressure_setting, "min" = 0))
+					var/new_pressure = act_ask(ui.user, action, params, ui, "k231", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure control", default = get_target_pressure(), max = max_pressure_setting)
 					if(isnull(new_pressure))
 						return
 					set_target_pressure(between(0, new_pressure, max_pressure_setting))

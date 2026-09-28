@@ -14,7 +14,7 @@ ADMIN_VERB(Jump, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Area", "Area to jump to
 	if(areaname)
 		target_area = return_sorted_areas()[areaname]
 	else
-		var/_answer_a1 = verb_prompt(user, "a1", list("kind" = "list", "message" = "Pick an area:", "title" = "Jump to Area", "choices" = return_sorted_areas()), args)
+		var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Pick an area:", title = "Jump to Area", choices = return_sorted_areas())
 		if(isnull(_answer_a1))
 			return
 		target_area = return_sorted_areas()[_answer_a1]
@@ -82,15 +82,15 @@ ADMIN_VERB(jumptocoord, R_ADMIN|R_MOD|R_DEBUG|R_EVENT,"Jump to Coordinate", "Jum
 		tgui_alert_async(user, "Admin jumping disabled")
 		return
 	if(!tx || !ty || !tz)
-		var/_answer_a2 = verb_prompt(user, "a2", list("kind" = "number", "message" = "Select the target x coordinate", "title" = "X Loc", "default" = 1, "max" = world.maxx, "min" = 1), args)
+		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/number, message = "Select the target x coordinate", title = "X Loc", default = 1, max = world.maxx, min = 1)
 		if(isnull(_answer_a2))
 			return
 		tx = _answer_a2
-		var/_answer_a3 = verb_prompt(user, "a3", list("kind" = "number", "message" = "Select the target y coordinate", "title" = "Y Loc", "default" = 1, "max" = world.maxy, "min" = 1), args)
+		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/number, message = "Select the target y coordinate", title = "Y Loc", default = 1, max = world.maxy, min = 1)
 		if(isnull(_answer_a3))
 			return
 		ty = _answer_a3
-		var/_answer_a4 = verb_prompt(user, "a4", list("kind" = "number", "message" = "Select the target z coordinate", "title" = "Z Loc", "default" = 1, "max" = world.maxz, "min" = 1), args)
+		var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Select the target z coordinate", title = "Z Loc", default = 1, max = world.maxz, min = 1)
 		if(isnull(_answer_a4))
 			return
 		tz = _answer_a4
@@ -114,7 +114,7 @@ ADMIN_VERB(jumptokey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Key", "Jump to a p
 	var/list/keys = list()
 	for(var/mob/player_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += player_mob.client
-	var/client/selection = verb_prompt(user, "a5", list("kind" = "list", "message" = "Select a key:", "title" = "Jump to Key", "choices" = sortKey(keys)), args)
+	var/client/selection = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Select a key:", title = "Jump to Key", choices = sortKey(keys))
 	if(isnull(selection))
 		return
 	if(!selection)
@@ -135,7 +135,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(Getmob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Mob",  "
 		return
 
 	if(!living_mob)
-		var/_answer_a6 = verb_prompt(user, "a6", list("kind" = "list", "message" = "Pick a mob:", "title" = "Get Mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)), args)
+		var/_answer_a6 = verb_ask(user, "a6", args, /datum/om/prompt/choice, message = "Pick a mob:", title = "Get Mob", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(isnull(_answer_a6))
 			return
 		living_mob = _answer_a6
@@ -157,7 +157,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	var/list/keys = list()
 	for(var/mob/curernt_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += curernt_mob.client
-	var/client/selection = verb_prompt(user, "a7", list("kind" = "list", "message" = "Pick a key:", "title" = "Get Key", "choices" = sortKey(keys)), args)
+	var/client/selection = verb_ask(user, "a7", args, /datum/om/prompt/choice, message = "Pick a key:", title = "Get Key", choices = sortKey(keys))
 	if(isnull(selection))
 		return
 	if(!selection)

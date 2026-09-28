@@ -60,7 +60,7 @@
 				GLOB.ntnet_global.setting_disabled = FALSE
 				return TRUE
 
-			var/response = act_prompt(ui.user, action, params, ui, "k63", list("message" = "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", "title" = "NTNet shutdown", "choices" = list("Yes", "No")))
+			var/response = act_ask(ui.user, action, params, ui, "k63", /datum/om/prompt/choice/alert, message = "Really disable NTNet wireless? If your computer is connected wirelessly you won't be able to turn it back on! This will affect all connected wireless devices.", title = "NTNet shutdown", choices = list("Yes", "No"))
 			if(isnull(response))
 				return
 			if(response == "Yes" && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
@@ -83,7 +83,7 @@
 		if("ban_nid")
 			if(!GLOB.ntnet_global)
 				return
-			var/nid = act_prompt(ui.user, action, params, ui, "k84", list("kind" = "number", "message" = "Enter NID of device which you want to block from the network:", "title" = "Enter NID"))
+			var/nid = act_ask(ui.user, action, params, ui, "k84", /datum/om/prompt/number, message = "Enter NID of device which you want to block from the network:", title = "Enter NID")
 			if(isnull(nid))
 				return
 			if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
@@ -92,7 +92,7 @@
 		if("unban_nid")
 			if(!GLOB.ntnet_global)
 				return
-			var/nid = act_prompt(ui.user, action, params, ui, "k91", list("kind" = "number", "message" = "Enter NID of device which you want to unblock from the network:", "title" = "Enter NID"))
+			var/nid = act_ask(ui.user, action, params, ui, "k91", /datum/om/prompt/number, message = "Enter NID of device which you want to unblock from the network:", title = "Enter NID")
 			if(isnull(nid))
 				return
 			if(nid && tgui_status(ui.user, state) == STATUS_INTERACTIVE)

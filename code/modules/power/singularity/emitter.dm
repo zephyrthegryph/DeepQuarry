@@ -289,7 +289,7 @@
 /obj/machinery/power/emitter/multitool_act(mob/user, obj/item/W)
 	if(!anomalous)
 		return ITEM_INTERACT_BLOCKING
-	var/chosen_particle = rerun_prompt(user, "k282", list("kind" = "list", "message" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/chosen_particle = rerun_ask(user, "k282", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
 	if(isnull(chosen_particle))
 		return ITEM_INTERACT_BLOCKING
 	if(!chosen_particle)

@@ -337,7 +337,7 @@ REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
  */
 /obj/machinery/mineral/equipment_vendor/proc/redeem_voucher(obj/item/mining_voucher/voucher, mob/redeemer)
 	to_chat(redeemer, span_notice("You insert your voucher into the machine!"))
-	var/selection = rerun_prompt(redeemer, "k346", list("kind" = "list", "message" = "Pick your equipment.", "title" = "Mining Voucher Redemption", "choices" = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points")), PROC_REF(redeem_voucher), args)
+	var/selection = rerun_ask(redeemer, "k346", PROC_REF(redeem_voucher), args, /datum/om/prompt/choice, message = "Pick your equipment.", title = "Mining Voucher Redemption", choices = list("Kinetic Accelerator + KA Addon", "Resonator + Advanced Ore Scanner", "Survival Pistol & Machete + Survival Addon","1000 Points"))
 	if(isnull(selection))
 		return
 	var/drop_location = drop_location()
@@ -355,7 +355,7 @@ REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 	switch(selection)
 
 		if("Kinetic Accelerator + KA Addon") //1250-2100 points worth
-			var/_answer_k362 = rerun_prompt(redeemer, "k362", list("kind" = "list", "message" = "Pick your addon", "title" = "Mining Voucher Redemption", "choices" = list("Cooldown", "Range","Holster")), PROC_REF(redeem_voucher), args)
+			var/_answer_k362 = rerun_ask(redeemer, "k362", PROC_REF(redeem_voucher), args, /datum/om/prompt/choice, message = "Pick your addon", title = "Mining Voucher Redemption", choices = list("Cooldown", "Range","Holster"))
 			if(isnull(_answer_k362))
 				return
 			var/addon_selection = _answer_k362 //Just the basics. Nothing too crazy.
@@ -378,7 +378,7 @@ REF_SPILL(/obj/machinery/mineral/equipment_vendor, "inserted_id")
 			new /obj/item/mining_scanner/advanced(drop_location)
 
 		if("Survival Pistol & Machete + Survival Addon") // ~3000-3500 points worth.
-			var/_answer_k383 = rerun_prompt(redeemer, "k383", list("kind" = "list", "message" = "Pick your survival addon", "title" = "Mining Voucher Redemption", "choices" = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens")), PROC_REF(redeem_voucher), args)
+			var/_answer_k383 = rerun_ask(redeemer, "k383", PROC_REF(redeem_voucher), args, /datum/om/prompt/choice, message = "Pick your survival addon", title = "Mining Voucher Redemption", choices = list("Shelter Capsule", "Glucose", "Panacea", "Trauma", "Medipens"))
 			if(isnull(_answer_k383))
 				return
 			var/addon_selection = _answer_k383 //Just the basics. Nothing too crazy.

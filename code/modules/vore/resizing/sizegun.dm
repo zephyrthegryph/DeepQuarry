@@ -52,7 +52,7 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/size_select = rerun_prompt(user, "a1", list("kind" = "number", "message" = "Put the desired size (25-200%), (1-600%) in dormitory areas.", "title" = "Set Size", "default" = size_set_to * 100, "max" = RESIZE_MAXIMUM_DORMS * 100, "min" = RESIZE_MINIMUM_DORMS * 100), PROC_REF(select_size), args)
+	var/size_select = rerun_ask(user, "a1", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), (1-600%) in dormitory areas.", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
 	if(isnull(size_select))
 		return
 	if(!size_select)
@@ -130,7 +130,7 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/size_select = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Put the desired size (1-600%)", "title" = "Set Size", "default" = size_set_to * 100, "max" = RESIZE_MAXIMUM_DORMS * 100, "min" = RESIZE_MINIMUM_DORMS * 100), PROC_REF(select_size), args)
+	var/size_select = rerun_ask(user, "a2", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (1-600%)", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
 	if(isnull(size_select))
 		return
 	if(!size_select)

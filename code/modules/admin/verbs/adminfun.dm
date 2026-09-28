@@ -1,20 +1,20 @@
 ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, atom/orignator as obj|mob|turf)
-	var/devastation = verb_prompt(user, "a1", list("kind" = "number", "message" = "Range of total devastation. -1 to none", "title" = text("Input"), "min" = -1), args)
+	var/devastation = verb_ask(user, "a1", args, /datum/om/prompt/number, message = "Range of total devastation. -1 to none", title = "Input", min = -1)
 	if(isnull(devastation))
 		return
 	if(devastation == null)
 		return
-	var/heavy = verb_prompt(user, "a2", list("kind" = "number", "message" = "Range of heavy impact. -1 to none", "title" = text("Input"), "min" = -1), args)
+	var/heavy = verb_ask(user, "a2", args, /datum/om/prompt/number, message = "Range of heavy impact. -1 to none", title = "Input", min = -1)
 	if(isnull(heavy))
 		return
 	if(heavy == null)
 		return
-	var/light = verb_prompt(user, "a3", list("kind" = "number", "message" = "Range of light impact. -1 to none", "title" = text("Input"), "min" = -1), args)
+	var/light = verb_ask(user, "a3", args, /datum/om/prompt/number, message = "Range of light impact. -1 to none", title = "Input", min = -1)
 	if(isnull(light))
 		return
 	if(light == null)
 		return
-	var/flash = verb_prompt(user, "a4", list("kind" = "number", "message" = "Range of flash. -1 to none", "title" = text("Input"), "min" = -1), args)
+	var/flash = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Range of flash. -1 to none", title = "Input", min = -1)
 	if(isnull(flash))
 		return
 	if(flash == null)
@@ -22,7 +22,7 @@ ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTIO
 
 	if ((devastation != -1) || (heavy != -1) || (light != -1) || (flash != -1))
 		if ((devastation > 20) || (heavy > 20) || (light > 20))
-			var/_answer_a5 = verb_prompt(user, "a5", list("message" = "Are you sure you want to do this? It will laaag.", "title" = "Confirmation", "choices" = list("Yes", "No")), args)
+			var/_answer_a5 = verb_ask(user, "a5", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to do this? It will laaag.", title = "Confirmation", choices = list("Yes", "No"))
 			if(isnull(_answer_a5))
 				return
 			if (_answer_a5 != "Yes")
@@ -34,22 +34,22 @@ ADMIN_VERB(admin_explosion, R_ADMIN|R_FUN, "Explosion", ADMIN_VERB_NO_DESCRIPTIO
 		feedback_add_details("admin_verb","EXPL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(admin_emp, R_ADMIN|R_FUN, "EM Pulse", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, atom/orignator as obj|mob|turf)
-	var/heavy = verb_prompt(user, "a6", list("kind" = "number", "message" = "Range of heavy pulse.", "title" = text("Input")), args)
+	var/heavy = verb_ask(user, "a6", args, /datum/om/prompt/number, message = "Range of heavy pulse.", title = "Input")
 	if(isnull(heavy))
 		return
 	if(heavy == null)
 		return
-	var/med = verb_prompt(user, "a7", list("kind" = "number", "message" = "Range of medium pulse.", "title" = text("Input")), args)
+	var/med = verb_ask(user, "a7", args, /datum/om/prompt/number, message = "Range of medium pulse.", title = "Input")
 	if(isnull(med))
 		return
 	if(med == null)
 		return
-	var/light = verb_prompt(user, "a8", list("kind" = "number", "message" = "Range of light pulse.", "title" = text("Input")), args)
+	var/light = verb_ask(user, "a8", args, /datum/om/prompt/number, message = "Range of light pulse.", title = "Input")
 	if(isnull(light))
 		return
 	if(light == null)
 		return
-	var/long = verb_prompt(user, "a9", list("kind" = "number", "message" = "Range of long pulse.", "title" = text("Input")), args)
+	var/long = verb_ask(user, "a9", args, /datum/om/prompt/number, message = "Range of long pulse.", title = "Input")
 	if(isnull(long))
 		return
 	if(long == null)
@@ -62,7 +62,7 @@ ADMIN_VERB(admin_emp, R_ADMIN|R_FUN, "EM Pulse", ADMIN_VERB_NO_DESCRIPTION, ADMI
 		feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/victim in REGISTRY_MEMBERS(REGISTRY_MOBS))
-	var/confirm = verb_prompt(user, "a10", list("message" = "You sure?", "title" = "Confirm", "choices" = list("Yes", "No")), args)
+	var/confirm = verb_ask(user, "a10", args, /datum/om/prompt/choice/alert, message = "You sure?", title = "Confirm", choices = list("Yes", "No"))
 	if(isnull(confirm))
 		return
 	if(confirm != "Yes")
@@ -82,7 +82,7 @@ ADMIN_VERB(gib_them, (R_ADMIN|R_FUN), "Gib", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CA
 	feedback_add_details("admin_verb","GIB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(gib_self, R_HOLDER, "Gibself", "Give yourself the same treatment you give others.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/confirm = verb_prompt(user, "a11", list("message" = "You sure?", "title" = "Confirm", "choices" = list("Yes", "No")), args)
+	var/confirm = verb_ask(user, "a11", args, /datum/om/prompt/choice/alert, message = "You sure?", title = "Confirm", choices = list("Yes", "No"))
 	if(isnull(confirm))
 		return
 	if(!confirm)

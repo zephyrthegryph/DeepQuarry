@@ -26,7 +26,7 @@
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	var/mob/living/target = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets), PROC_REF(vertical_nom), args)
+	var/mob/living/target = rerun_ask(src, "a1", PROC_REF(vertical_nom), args, /datum/om/prompt/choice, message = "Please select a target.", title = "Victim", choices = targets)
 	if(isnull(target))
 		return
 

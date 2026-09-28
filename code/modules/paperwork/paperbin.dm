@@ -49,7 +49,7 @@
 			return
 	var/response = ""
 	if(!length(papers) > 0)
-		var/_answer_k52 = rerun_prompt(user, "k52", list("message" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+		var/_answer_k52 = rerun_ask(user, "k52", TYPE_PROC_REF(/atom, attack_hand), args, /datum/om/prompt/choice/alert, message = "Do you take regular paper, or Carbon copy paper?", title = "Paper type request", choices = list("Regular", "Carbon-Copy", "Cancel"))
 		if(isnull(_answer_k52))
 			return TRUE
 		response = _answer_k52

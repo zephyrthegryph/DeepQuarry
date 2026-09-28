@@ -41,7 +41,7 @@
 	if(!M.mind)
 		return 0
 
-	var/_answer_a1 = rerun_prompt(M, "a1", list("kind" = "text", "message" = "Who do you want to dedicate the bracelet to?", "title" = "Friendship Bracelet", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(dedicate_bracelet), args)
+	var/_answer_a1 = rerun_ask(M, "a1", VERB_REF(dedicate_bracelet), args, /datum/om/prompt/text, message = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)

@@ -278,7 +278,7 @@
 			var/oldtext = html_decode(msg_body)
 			oldtext = replacetext(oldtext, "\[editorbr\]", "\n")
 
-			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Enter your message. You may use most tags from paper formatting", "title" = "Message Editor", "default" = oldtext, "max_length" = 20000, "multiline" = TRUE))
+			var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter your message. You may use most tags from paper formatting", title = "Message Editor", default = oldtext, max_length = 20000, multiline = TRUE)
 			if(isnull(_answer_a1))
 				return
 			var/newtext = replacetext(_answer_a1, "\n", "\[editorbr\]")
@@ -364,17 +364,17 @@
 			return 1
 
 		if("changepassword")
-			var/oldpassword = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Please enter your old password:", "title" = "Password Change", "max_length" = 100))
+			var/oldpassword = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Please enter your old password:", title = "Password Change", max_length = 100)
 			if(isnull(oldpassword))
 				return
 			if(!oldpassword)
 				return 1
-			var/newpassword1 = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "text", "message" = "Please enter your new password:", "title" = "Password Change", "max_length" = 100))
+			var/newpassword1 = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/text, message = "Please enter your new password:", title = "Password Change", max_length = 100)
 			if(isnull(newpassword1))
 				return
 			if(!newpassword1)
 				return 1
-			var/newpassword2 = act_prompt(ui.user, action, params, ui, "a4", list("kind" = "text", "message" = "Please re-enter your new password:", "title" = "Password Change", "max_length" = 100))
+			var/newpassword2 = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/text, message = "Please re-enter your new password:", title = "Password Change", max_length = 100)
 			if(isnull(newpassword2))
 				return
 			if(!newpassword2)
@@ -407,7 +407,7 @@
 				error = "Error exporting file. Are you using a functional and NTOS-compliant device?"
 				return 1
 
-			var/filename = act_prompt(ui.user, action, params, ui, "a5", list("kind" = "text", "message" = "Please specify file name:", "title" = "Message export", "max_length" = 100))
+			var/filename = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/text, message = "Please specify file name:", title = "Message export", max_length = 100)
 			if(isnull(filename))
 				return
 			if(!filename)
@@ -437,7 +437,7 @@
 				if(CF.unsendable)
 					continue
 				filenames.Add(CF.filename)
-			var/picked_file = act_prompt(ui.user, action, params, ui, "a6", list("kind" = "list", "message" = "Please pick a file to send as attachment (max 32GQ)", "title" = "Select Attachment", "choices" = filenames))
+			var/picked_file = act_ask(ui.user, action, params, ui, "a6", /datum/om/prompt/choice, message = "Please pick a file to send as attachment (max 32GQ)", title = "Select Attachment", choices = filenames)
 			if(isnull(picked_file))
 				return
 

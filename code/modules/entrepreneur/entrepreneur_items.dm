@@ -189,7 +189,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/zodiac = rerun_prompt(user, "k192", list("kind" = "list", "message" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = zodiacs), PROC_REF(attack_self), args)
+	var/zodiac = rerun_ask(user, "k192", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Which of todays zodiacs do you want to read?", title = "Zodiac", choices = zodiacs)
 	if(isnull(zodiac))
 		return TRUE
 	if(zodiac)
@@ -450,7 +450,7 @@
 /obj/item/entrepreneur/spirit_board/click_alt(mob/living/carbon/user)
 	if(!istype(user)) //admins can be cheeky
 		return 0
-	var/_answer_k451 = rerun_prompt(user, "k451", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, click_alt), args)
+	var/_answer_k451 = rerun_ask(user, "k451", TYPE_PROC_REF(/atom, click_alt), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
 	if(isnull(_answer_k451))
 		return
 	next_result = _answer_k451
@@ -461,7 +461,7 @@
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot interact with this board because you are banned from playing ghost roles."))
 		return
-	var/_answer_k459 = rerun_prompt(user, "k459", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, attack_ghost), args)
+	var/_answer_k459 = rerun_ask(user, "k459", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
 	if(isnull(_answer_k459))
 		return
 	next_result = _answer_k459

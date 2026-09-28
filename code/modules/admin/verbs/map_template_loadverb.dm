@@ -1,6 +1,6 @@
 
 ADMIN_VERB(map_template_load, R_SPAWN, "Map template - Place At Loc", "Spawns a new map template at the current position.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/map = verb_prompt(user, "map", list("kind" = "list", "message" = "Choose a Map Template to place at your CURRENT LOCATION", "title" = "Place Map Template", "choices" = SSmapping.map_templates), args)
+	var/map = verb_ask(user, "map", args, /datum/om/prompt/choice, message = "Choose a Map Template to place at your CURRENT LOCATION", title = "Place Map Template", choices = SSmapping.map_templates)
 	if(!map)
 		return
 	var/datum/map_template/template = SSmapping.map_templates[map]
@@ -54,7 +54,7 @@ ADMIN_VERB(map_template_load, R_SPAWN, "Map template - Place At Loc", "Spawns a 
 	end_preview()
 
 ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns a new map template at the selected z level.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/map = verb_prompt(user, "a1", list("kind" = "list", "message" = "Choose a Map Template to place on a new Z-level.", "title" = "Place Map Template", "choices" = SSmapping.map_templates), args)
+	var/map = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose a Map Template to place on a new Z-level.", title = "Place Map Template", choices = SSmapping.map_templates)
 	if(isnull(map))
 		return
 	if(!map)
@@ -62,14 +62,14 @@ ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns 
 	var/datum/map_template/template = SSmapping.map_templates[map]
 
 	if(template.width > world.maxx || template.height > world.maxx)
-		var/_answer_a2 = verb_prompt(user, "a2", list("message" = "This template is larger than the existing z-levels. It will EXPAND ALL Z-LEVELS to match the size of the template. This may cause chaos. Are you sure you want to do this?", "title" = "DANGER!!!", "choices" = list("Cancel","Yes")), args)
+		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "This template is larger than the existing z-levels. It will EXPAND ALL Z-LEVELS to match the size of the template. This may cause chaos. Are you sure you want to do this?", title = "DANGER!!!", choices = list("Cancel","Yes"))
 		if(isnull(_answer_a2))
 			return
 		if(_answer_a2 == "Cancel")
 			to_chat(user,"Template placement aborted.")
 			return
 
-	var/_answer_a3 = verb_prompt(user, "a3", list("message" = "Confirm map load.", "title" = "Template Confirm", "choices" = list("No","Yes")), args)
+	var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice/alert, message = "Confirm map load.", title = "Template Confirm", choices = list("No","Yes"))
 	if(isnull(_answer_a3))
 		return
 	if(_answer_a3 == "Yes")

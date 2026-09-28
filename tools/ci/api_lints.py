@@ -28,7 +28,7 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
     raw_world_bind   a vg_world_* subscription or step bind outside code/datums/om/world_watch.dm:
                      subscribe with om_world_at/on_key/on_change/when/on_rate (sec 4.8)
     string_keys      a string passed to om_world_publish()/om_world_on_key(): keys are numbers
-    prompt_spec      om_prompt() outside code/datums/om: the string-keyed spec list form
+    prompt_spec      the removed spec-list prompt forms (om_prompt(), topic_prompt(), rerun_prompt() and kin)
                      (om_prompt_sequence()/om_prompt_chain() are deleted). Ask with a typed prompt,
                      om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value),
                      and a multi-step action is a flow (/datum/om/flow/x)
@@ -124,7 +124,8 @@ def _not_define(text, line):
 def prompt_spec(rel, text):
     if rel.startswith("code/datums/om/"):
         return
-    for name in ("om_prompt", "om_prompt_sequence", "om_prompt_chain"):
+    for name in ("om_prompt", "om_prompt_sequence", "om_prompt_chain", "topic_prompt", "act_prompt",
+                 "verb_prompt", "client_prompt", "rerun_prompt", "surgery_prompt", "cast_prompt"):
         for line, _ in calls(text, name):
             if _not_define(text, line):
                 yield line

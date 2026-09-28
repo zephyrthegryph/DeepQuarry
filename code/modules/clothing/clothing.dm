@@ -1220,7 +1220,7 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 		if(value == sensor_mode)
 			default_choice = key
 			break
-	var/switchMode = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a sensor mode:", "title" = "Suit Sensor Mode", "choices" = modes, "default" = default_choice), PROC_REF(set_sensors), args)
+	var/switchMode = rerun_ask(user, "a1", PROC_REF(set_sensors), args, /datum/om/prompt/choice, message = "Select a sensor mode:", title = "Suit Sensor Mode", choices = modes, default = default_choice)
 	if(isnull(switchMode))
 		return
 	if(get_dist(user, src) > 1)

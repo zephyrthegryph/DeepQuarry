@@ -34,7 +34,7 @@
 		to_chat(user, span_warning("There's nothing on the glass to remove!"))
 		return
 
-	var/choice = rerun_prompt(user, "k37", list("kind" = "list", "message" = "What would you like to remove from the glass?", "title" = "Removal Choice", "choices" = extras), TYPE_PROC_REF(/atom, attack_hand), args)
+	var/choice = rerun_ask(user, "k37", TYPE_PROC_REF(/atom, attack_hand), args, /datum/om/prompt/choice, message = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
 	if(isnull(choice))
 		return TRUE
 	if(!choice || !(choice in extras))

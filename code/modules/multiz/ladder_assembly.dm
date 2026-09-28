@@ -12,7 +12,7 @@
 
 /obj/structure/ladder_assembly/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/pen))
-		var/_answer_k15 = rerun_prompt(user, "k15", list("kind" = "text", "message" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k15 = rerun_ask(user, "k15", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Enter the name for the ladder.", title = "Ladder Name", default = src.created_name, max_length = MAX_NAME_LEN, encode = FALSE)
 		if(isnull(_answer_k15))
 			return TRUE
 		var/t = sanitizeSafe(_answer_k15, MAX_NAME_LEN)

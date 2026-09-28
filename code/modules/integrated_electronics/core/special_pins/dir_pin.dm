@@ -3,7 +3,7 @@
 	name = "dir pin"
 
 /datum/integrated_io/dir/ask_for_pin_data(mob/user)
-	var/new_data = rerun_prompt(user, "k6", list("kind" = "number", "message" = "Please type in a valid dir number.  Valid dirs are;\nNorth/Fore = [NORTH],\nSouth/Aft = [SOUTH],\nEast/Starboard = [EAST],\nWest/Port = [WEST],\nNortheast = [NORTHEAST],\nNorthwest = [NORTHWEST],\nSoutheast = [SOUTHEAST],\nSouthwest = [SOUTHWEST],\nUp = [UP],\nDown = [DOWN]", "title" = "[src] dir writing"), PROC_REF(ask_for_pin_data), args)
+	var/new_data = rerun_ask(user, "k6", PROC_REF(ask_for_pin_data), args, /datum/om/prompt/number, message = "Please type in a valid dir number.  Valid dirs are;\nNorth/Fore = [NORTH],\nSouth/Aft = [SOUTH],\nEast/Starboard = [EAST],\nWest/Port = [WEST],\nNortheast = [NORTHEAST],\nNorthwest = [NORTHWEST],\nSoutheast = [SOUTHEAST],\nSouthwest = [SOUTHWEST],\nUp = [UP],\nDown = [DOWN]", title = "[src] dir writing")
 	if(isnull(new_data))
 		return
 	if(isnum(new_data) && holder.check_interactivity(user) )

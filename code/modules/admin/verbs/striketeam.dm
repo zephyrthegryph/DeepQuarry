@@ -72,18 +72,18 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 	if(GLOB.send_emergency_team)
 		to_chat(user, span_danger("[using_map.boss_name] has already dispatched an emergency response team!"))
 		return
-	var/_answer_a1 = verb_prompt(user, "a1", list("message" = "Do you want to dispatch an Emergency Response Team?", "title" = "ERT", "choices" = list("Yes","No")), args)
+	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to dispatch an Emergency Response Team?", title = "ERT", choices = list("Yes","No"))
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")
 		return
-	var/_answer_a2 = verb_prompt(user, "a2", list("message" = "Do you want this Response Team to be announced?", "title" = "ERT", "choices" = list("Yes","No")), args)
+	var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "Do you want this Response Team to be announced?", title = "ERT", choices = list("Yes","No"))
 	if(isnull(_answer_a2))
 		return
 	if(_answer_a2 != "Yes")
 		GLOB.silent_ert = TRUE
 	if(get_security_level() != "red") // Allow admins to reconsider if the alert level isn't Red
-		var/_answer_a3 = verb_prompt(user, "a3", list("message" = "The station is not in red alert. Do you still want to dispatch a response team?", "title" = "ERT", "choices" = list("Yes","No")), args)
+		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice/alert, message = "The station is not in red alert. Do you still want to dispatch a response team?", title = "ERT", choices = list("Yes","No"))
 		if(isnull(_answer_a3))
 			return
 		if(_answer_a3 != "Yes")

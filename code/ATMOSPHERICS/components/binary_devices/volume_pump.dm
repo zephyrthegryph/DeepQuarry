@@ -262,7 +262,7 @@ Thus, the two variables affect pump operation are set in New():
 				if("max")
 					transfer_rate = max_transfer_rate
 				if("set")
-					var/new_rate = act_prompt(ui.user, action, params, ui, "k269", list("kind" = "number", "message" = "Enter new transfer rate (0-[max_transfer_rate] L/s)", "title" = "Flow Control", "default" = src.transfer_rate, "max" = max_transfer_rate, "min" = 0))
+					var/new_rate = act_ask(ui.user, action, params, ui, "k269", /datum/om/prompt/number, message = "Enter new transfer rate (0-[max_transfer_rate] L/s)", title = "Flow Control", default = src.transfer_rate, max = max_transfer_rate)
 					if(isnull(new_rate))
 						return
 					src.transfer_rate = between(0, new_rate, max_transfer_rate)

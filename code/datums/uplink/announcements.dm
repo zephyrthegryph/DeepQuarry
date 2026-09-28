@@ -16,10 +16,10 @@
 	item_cost = 20
 
 /datum/uplink_item/abstract/announcements/fake_centcom/extra_args(mob/user, list/buy_args)
-	var/title = rerun_prompt(user, "title", list("kind" = "text", "message" = "Enter your announcement title.", "title" = "Announcement Title", "max_length" = MAX_MESSAGE_LEN), PROC_REF(buy), buy_args)
+	var/title = rerun_ask(user, "title", PROC_REF(buy), buy_args, /datum/om/prompt/text, message = "Enter your announcement title.", title = "Announcement Title")
 	if(!title)
 		return
-	var/message = rerun_prompt(user, "message", list("kind" = "text", "message" = "Enter your announcement message.", "title" = "Announcement Title", "max_length" = MAX_MESSAGE_LEN), PROC_REF(buy), buy_args)
+	var/message = rerun_ask(user, "message", PROC_REF(buy), buy_args, /datum/om/prompt/text, message = "Enter your announcement message.", title = "Announcement Title")
 	if(!message)
 		return
 	return list("title" = title, "message" = message)

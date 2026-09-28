@@ -1,7 +1,7 @@
 
 ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part target_x_cord target_y_cord target_z_cord range (captures part of a map originating from bottom left corner).", ADMIN_CATEGORY_SERVER_GAME)
 
-	var/pos_type = verb_prompt(user, "a1", list("message" = "Do you want to use your current loc or a manual number input?", "title" = "Where?", "choices" = list("Manual", "Location", "Cancel")), args)
+	var/pos_type = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to use your current loc or a manual number input?", title = "Where?", choices = list("Manual", "Location", "Cancel"))
 	if(isnull(pos_type))
 		return
 	if(!pos_type || pos_type == "Cancel")
@@ -15,20 +15,20 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 		ty = user.mob.y
 		tz = user.mob.z
 	else
-		var/_answer_a2 = verb_prompt(user, "a2", list("kind" = "number", "message" = "Select X location", "title" = "X Loc", "default" = 1, "max" = world.maxx, "min" = 1), args)
+		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/number, message = "Select X location", title = "X Loc", default = 1, max = world.maxx, min = 1)
 		if(isnull(_answer_a2))
 			return
 		tx = _answer_a2
-		var/_answer_a3 = verb_prompt(user, "a3", list("kind" = "number", "message" = "Select Y location", "title" = "Y Loc", "default" = 1, "max" = world.maxy, "min" = 1), args)
+		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/number, message = "Select Y location", title = "Y Loc", default = 1, max = world.maxy, min = 1)
 		if(isnull(_answer_a3))
 			return
 		ty = _answer_a3
-		var/_answer_a4 = verb_prompt(user, "a4", list("kind" = "number", "message" = "Select Z location", "title" = "Z Loc", "default" = 1, "max" = world.maxz, "min" = 1), args)
+		var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Select Z location", title = "Z Loc", default = 1, max = world.maxz, min = 1)
 		if(isnull(_answer_a4))
 			return
 		tz = _answer_a4
 
-	var/range = verb_prompt(user, "a5", list("kind" = "number", "message" = "Select Range", "title" = "Range", "default" = 1, "max" = 32, "min" = 1), args)
+	var/range = verb_ask(user, "a5", args, /datum/om/prompt/number, message = "Select Range", title = "Range", default = 1, max = 32, min = 1)
 	if(isnull(range))
 		return
 
@@ -52,7 +52,7 @@ ADMIN_VERB(capture_map, R_ADMIN, "Capture Map Part", "Usage: Capture-Map-Part ta
 					turfstocapture.Add(T)
 				else
 					if(!hasasked)
-						var/answer = verb_prompt(user, "a6", list("message" = "Capture includes non existant turf, Continue capture?", "title" = "Continue capture?", "choices" = list("No", "Yes")), args)
+						var/answer = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Capture includes non existant turf, Continue capture?", title = "Continue capture?", choices = list("No", "Yes"))
 						if(isnull(answer))
 							return
 						hasasked = TRUE

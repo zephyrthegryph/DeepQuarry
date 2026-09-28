@@ -62,7 +62,7 @@
 		names += "---Elements---"
 		names += sortList(subtypesof(/datum/element), GLOBAL_PROC_REF(cmp_typepaths_asc))
 
-		var/result = flow_ask(mob, "component:add", list("kind" = "list", "message" = "Choose a component/element to add", "title" = "Add Component", "choices" = names))
+		var/result = flow_ask(mob, "component:add", /datum/om/prompt/choice, message = "Choose a component/element to add", title = "Add Component", choices = names)
 		if(isnull(result))
 			return
 		if(!usr || result == "---Components---" || result == "---Elements---")
@@ -76,7 +76,7 @@
 		if(ispath(result, /datum/component))
 			var/datum/component/comp_path = result
 			if(initial(comp_path.dupe_mode) == COMPONENT_DUPE_SOURCES)
-				add_source = flow_ask(mob, "component:source", list("kind" = "text", "message" = "Enter a source for the component", "title" = "Add Component", "default" = "ADMIN-ABUSE"))
+				add_source = flow_ask(mob, "component:source", /datum/om/prompt/text, message = "Enter a source for the component", title = "Add Component", default = "ADMIN-ABUSE")
 				if(isnull(add_source))
 					return
 
@@ -106,7 +106,7 @@
 		names += "---Elements---"
 		// We have to list every element here because there is no way to know what element is on this object without doing some sort of hack.
 		names += sortList(subtypesof(/datum/element), GLOBAL_PROC_REF(cmp_typepaths_asc))
-		var/path = flow_ask(mob, "component:remove", list("kind" = "list", "message" = "Choose a component/element to remove. All elements listed here may not be on the datum.", "title" = "Remove element", "choices" = names))
+		var/path = flow_ask(mob, "component:remove", /datum/om/prompt/choice, message = "Choose a component/element to remove. All elements listed here may not be on the datum.", title = "Remove element", choices = names)
 		if(isnull(path))
 			return
 		if(!usr || path == "---Components---" || path == "---Elements---")
@@ -119,7 +119,7 @@
 			var/method = vv_subtype_prompt(target.type, "component")
 			if(isnull(method))
 				return
-			if(flow_ask(mob, "component:mass", list("message" = "Are you sure you want to mass-delete [path] on [target.type]?", "title" = "Mass Remove Confirmation", "choices" = list("Yes", "No"))) != "Yes")
+			if(flow_ask(mob, "component:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-delete [path] on [target.type]?", title = "Mass Remove Confirmation", choices = list("Yes", "No")) != "Yes")
 				return
 			targets_to_remove_from = get_all_of_type(target.type, method)
 

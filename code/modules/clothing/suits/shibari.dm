@@ -28,7 +28,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which limbs would you like to restrain with the bindings?", "title" = "Shibari", "choices" = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH)), PROC_REF(attack_self), args)
+	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Which limbs would you like to restrain with the bindings?", title = "Shibari", choices = list(SHIBARI_NONE, SHIBARI_ARMS, SHIBARI_LEGS, SHIBARI_BOTH))
 	if(isnull(_answer_a1))
 		return TRUE
 	rope_mode = _answer_a1

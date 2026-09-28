@@ -109,7 +109,7 @@
 		if(!check_rights(R_SERVER))	return
 
 		if (SSemergency_shuttle.wait_for_launch)
-			var/new_time_left = topic_prompt(usr, href_list, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = SSemergency_shuttle.estimate_launch_time()))
+			var/new_time_left = topic_ask(usr, href_list, "a1", /datum/om/prompt/number, message = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = SSemergency_shuttle.estimate_launch_time())
 			if(isnull(new_time_left))
 				return
 
@@ -119,7 +119,7 @@
 			message_admins(span_blue("[key_name_admin(usr)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
 		else if (SSemergency_shuttle.shuttle.has_arrive_time())
 
-			var/new_time_left = topic_prompt(usr, href_list, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = SSemergency_shuttle.estimate_arrival_time()))
+			var/new_time_left = topic_ask(usr, href_list, "a2", /datum/om/prompt/number, message = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = SSemergency_shuttle.estimate_arrival_time())
 			if(isnull(new_time_left))
 				return
 			SSemergency_shuttle.shuttle.arrive_time = world.time + (new_time_left * 10)
@@ -149,7 +149,7 @@
 			return
 
 		var/delmob = 0
-		var/_answer_a3 = topic_prompt(usr, href_list, "a3", list("message" = "Delete old mob?", "title" = "Message", "choices" = list("Yes","No","Cancel")))
+		var/_answer_a3 = topic_ask(usr, href_list, "a3", /datum/om/prompt/choice/alert, message = "Delete old mob?", title = "Message", choices = list("Yes","No","Cancel"))
 		if(isnull(_answer_a3))
 			return
 		switch(_answer_a3)
@@ -189,7 +189,7 @@
 		var/banfolder = href_list["unbanf"]
 		GLOB.banlist.cd = "/base/[banfolder]"
 		var/key = GLOB.banlist["key"]
-		var/_answer_a4 = topic_prompt(usr, href_list, "a4", list("message" = "Are you sure you want to unban [key]?", "title" = "Confirmation", "choices" = list("Yes", "No")))
+		var/_answer_a4 = topic_ask(usr, href_list, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
 		if(isnull(_answer_a4))
 			return
 		if(_answer_a4 == "Yes")
@@ -223,7 +223,7 @@
 
 		var/duration
 
-		var/_answer_a5 = topic_prompt(usr, href_list, "a5", list("message" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes","No")))
+		var/_answer_a5 = topic_ask(usr, href_list, "a5", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No"))
 		if(isnull(_answer_a5))
 			return
 		switch(_answer_a5)
@@ -234,7 +234,7 @@
 				var/mins = 0
 				if(minutes > GLOB.c_minutes)
 					mins = minutes - GLOB.c_minutes
-				var/_answer_a6 = topic_prompt(usr, href_list, "a6", list("kind" = "number", "message" = "How long (in minutes)? (Default: 1440)", "title" = "Ban time", "default" = mins ? mins : 1440))
+				var/_answer_a6 = topic_ask(usr, href_list, "a6", /datum/om/prompt/number, message = "How long (in minutes)? (Default: 1440)", title = "Ban time", default = mins ? mins : 1440)
 				if(isnull(_answer_a6))
 					return
 				mins = _answer_a6
@@ -242,7 +242,7 @@
 				mins = min(525599,mins)
 				minutes = GLOB.c_minutes + mins
 				duration = GetExp(minutes)
-				var/_answer_a7 = topic_prompt(usr, href_list, "a7", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = reason2, "max_length" = MAX_MESSAGE_LEN))
+				var/_answer_a7 = topic_ask(usr, href_list, "a7", /datum/om/prompt/text, message = "Reason?", title = "reason", default = reason2)
 				if(isnull(_answer_a7))
 					return
 				reason = _answer_a7
@@ -250,7 +250,7 @@
 			if("No")
 				temp = 0
 				duration = "Perma"
-				var/_answer_a8 = topic_prompt(usr, href_list, "a8", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = reason2, "max_length" = MAX_MESSAGE_LEN))
+				var/_answer_a8 = topic_ask(usr, href_list, "a8", /datum/om/prompt/text, message = "Reason?", title = "reason", default = reason2)
 				if(isnull(_answer_a8))
 					return
 				reason = _answer_a8
@@ -388,7 +388,7 @@
 
 		//Banning comes first
 		if(notbannedlist.len) //at least 1 unbanned job exists in joblist so we have stuff to ban.
-			var/_answer_a9 = topic_prompt(usr, href_list, "a9", list("message" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes","No","Cancel")))
+			var/_answer_a9 = topic_ask(usr, href_list, "a9", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
 			if(isnull(_answer_a9))
 				return
 			switch(_answer_a9)
@@ -401,7 +401,7 @@
 					if(CONFIG_GET(flag/ban_legacy_system))
 						to_chat(usr, span_filter_adminlog(span_warning("Your server is using the legacy banning system, which does not support temporary job bans. Consider upgrading. Aborting ban.")))
 						return
-					var/mins = topic_prompt(usr, href_list, "a10", list("kind" = "number", "message" = "How long (in minutes)?", "title" = "Ban time", "default" = 1440))
+					var/mins = topic_ask(usr, href_list, "a10", /datum/om/prompt/number, message = "How long (in minutes)?", title = "Ban time", default = 1440)
 					if(isnull(mins))
 						return
 					if(!mins)
@@ -409,7 +409,7 @@
 					if(check_rights(R_MOD, 0) && !check_rights(R_BAN, 0) && mins > CONFIG_GET(number/mod_job_tempban_max))
 						to_chat(usr, span_filter_adminlog(span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_job_tempban_max)] minutes!")))
 						return
-					var/reason = topic_prompt(usr, href_list, "a11", list("kind" = "text", "message" = "Reason?", "title" = "Please State Reason", "max_length" = MAX_MESSAGE_LEN))
+					var/reason = topic_ask(usr, href_list, "a11", /datum/om/prompt/text, message = "Reason?", title = "Please State Reason")
 					if(isnull(reason))
 						return
 					if(!reason)
@@ -436,7 +436,7 @@
 					return 1
 				if("No")
 					if(!check_rights(R_BAN))  return
-					var/reason = topic_prompt(usr, href_list, "a12", list("kind" = "text", "message" = "Reason?", "title" = "Please State Reason", "max_length" = MAX_MESSAGE_LEN))
+					var/reason = topic_ask(usr, href_list, "a12", /datum/om/prompt/text, message = "Reason?", title = "Please State Reason")
 					if(isnull(reason))
 						return
 					if(reason)
@@ -471,7 +471,7 @@
 			for(var/job in joblist)
 				var/reason = jobban_isbanned(M, job)
 				if(!reason) continue //skip if it isn't jobbanned anyway
-				var/_answer_a13 = topic_prompt(usr, href_list, "unjob_[job]", list("message" = "Job: '[job]' Reason: '[reason]' Un-jobban?", "title" = "Please Confirm", "choices" = list("Yes","No")))
+				var/_answer_a13 = topic_ask(usr, href_list, "unjob_[job]", /datum/om/prompt/choice/alert, message = "Job: '[job]' Reason: '[reason]' Un-jobban?", title = "Please Confirm", choices = list("Yes","No"))
 				if(isnull(_answer_a13))
 					return
 				switch(_answer_a13)
@@ -498,7 +498,7 @@
 		if (ismob(M))
 			if(!check_if_greater_rights_than(M.client))
 				return
-			var/reason = topic_prompt(usr, href_list, "a14", list("kind" = "text", "message" = "Please enter reason.", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+			var/reason = topic_ask(usr, href_list, "a14", /datum/om/prompt/text, message = "Please enter reason.", multiline = TRUE)
 			if(isnull(reason))
 				return
 			if(!reason)
@@ -516,7 +516,7 @@
 
 		var/t = href_list["removejobban"]
 		if(t)
-			var/_answer_a15 = topic_prompt(usr, href_list, "a15", list("message" = "Do you want to unjobban [t]?", "title" = "Unjobban confirmation", "choices" = list("Yes", "No")))
+			var/_answer_a15 = topic_ask(usr, href_list, "a15", /datum/om/prompt/choice/alert, message = "Do you want to unjobban [t]?", title = "Unjobban confirmation", choices = list("Yes", "No"))
 			if(isnull(_answer_a15))
 				return
 			if((_answer_a15 == "Yes") && t) //No more misclicks! Unless you do it twice.
@@ -543,14 +543,14 @@
 
 		if(M.client && check_rights_for(M.client, R_HOLDER))	return	//admins cannot be banned. Even if they could, the ban doesn't affect them anyway
 
-		var/_answer_a16 = topic_prompt(usr, href_list, "a16", list("message" = "Temporary Ban?", "title" = "Temporary Ban", "choices" = list("Yes","No","Cancel")))
+		var/_answer_a16 = topic_ask(usr, href_list, "a16", /datum/om/prompt/choice/alert, message = "Temporary Ban?", title = "Temporary Ban", choices = list("Yes","No","Cancel"))
 		if(isnull(_answer_a16))
 			return
 		switch(_answer_a16)
 			if(null)
 				return
 			if("Yes")
-				var/mins = topic_prompt(usr, href_list, "a17", list("kind" = "number", "message" = "How long (in minutes)?", "title" = "Ban time", "default" = 1440))
+				var/mins = topic_ask(usr, href_list, "a17", /datum/om/prompt/number, message = "How long (in minutes)?", title = "Ban time", default = 1440)
 				if(isnull(mins))
 					return
 				if(!mins)
@@ -559,7 +559,7 @@
 					to_chat(usr, span_warning("Moderators can only job tempban up to [CONFIG_GET(number/mod_tempban_max)] minutes!"))
 					return
 				if(mins >= 525600) mins = 525599
-				var/reason = topic_prompt(usr, href_list, "a18", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = "Griefer", "max_length" = MAX_MESSAGE_LEN))
+				var/reason = topic_ask(usr, href_list, "a18", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
 				if(isnull(reason))
 					return
 				if(!reason)
@@ -585,12 +585,12 @@
 				//qdel(M)	// See no reason why to delete mob. Important stuff can be lost. And ban can be lifted before round ends.
 			if("No")
 				if(!check_rights(R_BAN))   return
-				var/reason = topic_prompt(usr, href_list, "a19", list("kind" = "text", "message" = "Reason?", "title" = "reason", "default" = "Griefer", "max_length" = MAX_MESSAGE_LEN))
+				var/reason = topic_ask(usr, href_list, "a19", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
 				if(isnull(reason))
 					return
 				if(!reason)
 					return
-				var/_answer_a20 = topic_prompt(usr, href_list, "a20", list("message" = "IP ban?", "title" = "IP Ban", "choices" = list("Yes","No","Cancel")))
+				var/_answer_a20 = topic_ask(usr, href_list, "a20", /datum/om/prompt/choice/alert, message = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
 				if(isnull(_answer_a20))
 					return
 				switch(_answer_a20)
@@ -648,7 +648,7 @@
 		label_to_mode["Secret"] = "secret"
 		labels += "Random"
 		label_to_mode["Random"] = "random"
-		var/pick = topic_prompt(usr, href_list, "a21", list("kind" = "list", "message" = "What mode do you wish to play? (current: [GLOB.master_mode])", "title" = "Game Mode", "choices" = labels))
+		var/pick = topic_ask(usr, href_list, "a21", /datum/om/prompt/choice, message = "What mode do you wish to play? (current: [GLOB.master_mode])", title = "Game Mode", choices = labels)
 		if(isnull(pick))
 			return
 		if(!pick)
@@ -673,7 +673,7 @@
 			label_to_mode[label] = mode
 		labels += "Random (default)"
 		label_to_mode["Random (default)"] = "secret"
-		var/pick = topic_prompt(usr, href_list, "a22", list("kind" = "list", "message" = "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])", "title" = "Force Secret", "choices" = labels))
+		var/pick = topic_ask(usr, href_list, "a22", /datum/om/prompt/choice, message = "What game mode do you want to force secret to be? (current: [GLOB.secret_force_mode])", title = "Force Secret", choices = labels)
 		if(isnull(pick))
 			return
 		if(!pick)
@@ -740,7 +740,7 @@
 			to_chat(usr, span_filter_adminlog("this can only be used on instances of type /mob"))
 			return
 
-		var/_answer_a23 = topic_prompt(usr, href_list, "a23", list("kind" = "text", "message" = "What will [key_name(M)] say?.", "title" = "Force speech"))
+		var/_answer_a23 = topic_ask(usr, href_list, "a23", /datum/om/prompt/text, message = "What will [key_name(M)] say?.", title = "Force speech")
 		if(isnull(_answer_a23))
 			return
 		var/speech = _answer_a23 // Don't need to sanitize, since it does that in say(), we also trust our admins.
@@ -753,7 +753,7 @@
 	else if(href_list["sendtoprison"])
 		if(!check_rights(R_ADMIN))	return
 
-		var/_answer_a24 = topic_prompt(usr, href_list, "a24", list("message" = "Send to admin prison for the round?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a24 = topic_ask(usr, href_list, "a24", /datum/om/prompt/choice/alert, message = "Send to admin prison for the round?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a24))
 			return
 		if(_answer_a24 != "Yes")
@@ -805,7 +805,7 @@
 			to_chat(usr, span_filter_adminlog(span_warning("[M] doesn't seem to have an active client.")))
 			return
 
-		var/_answer_a25 = topic_prompt(usr, href_list, "a25", list("message" = "Send [key_name(M)] back to Lobby?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a25 = topic_ask(usr, href_list, "a25", /datum/om/prompt/choice/alert, message = "Send [key_name(M)] back to Lobby?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a25))
 			return
 		if(_answer_a25 != "Yes")
@@ -821,7 +821,7 @@
 	else if(href_list["tdome1"])
 		if(!check_rights(R_FUN))	return
 
-		var/_answer_a26 = topic_prompt(usr, href_list, "a26", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a26 = topic_ask(usr, href_list, "a26", /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a26))
 			return
 		if(_answer_a26 != "Yes")
@@ -848,7 +848,7 @@
 	else if(href_list["tdome2"])
 		if(!check_rights(R_FUN))	return
 
-		var/_answer_a27 = topic_prompt(usr, href_list, "a27", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a27 = topic_ask(usr, href_list, "a27", /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a27))
 			return
 		if(_answer_a27 != "Yes")
@@ -875,7 +875,7 @@
 	else if(href_list["tdomeadmin"])
 		if(!check_rights(R_FUN))	return
 
-		var/_answer_a28 = topic_prompt(usr, href_list, "a28", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a28 = topic_ask(usr, href_list, "a28", /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a28))
 			return
 		if(_answer_a28 != "Yes")
@@ -899,7 +899,7 @@
 	else if(href_list["tdomeobserve"])
 		if(!check_rights(R_FUN))	return
 
-		var/_answer_a29 = topic_prompt(usr, href_list, "a29", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a29 = topic_ask(usr, href_list, "a29", /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a29))
 			return
 		if(_answer_a29 != "Yes")
@@ -1170,7 +1170,7 @@
 			to_chat(usr, span_filter_adminlog("This can only be used on instances of type /mob/living"))
 			return
 
-		var/_answer_a30 = topic_prompt(src.owner, href_list, "a30", list("message" = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", "title" = "Confirm Firing?", "choices" = list("Yes", "No")))
+		var/_answer_a30 = topic_ask(src.owner, href_list, "a30", /datum/om/prompt/choice/alert, message = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", title = "Confirm Firing?", choices = list("Yes", "No"))
 		if(isnull(_answer_a30))
 			return
 		if(_answer_a30 != "Yes")
@@ -1185,7 +1185,7 @@
 			return
 
 		if(L.can_centcom_reply())
-			var/input = topic_prompt(src.owner, href_list, "a31", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(L)] via their headset.", "title" = "Outgoing message from CentCom", "max_length" = MAX_MESSAGE_LEN))
+			var/input = topic_ask(src.owner, href_list, "a31", /datum/om/prompt/text, message = "Please enter a message to reply to [key_name(L)] via their headset.", title = "Outgoing message from CentCom")
 			if(isnull(input))
 				return
 			if(!input)		return
@@ -1212,7 +1212,7 @@
 			to_chat(usr, span_filter_adminlog("The person you are trying to contact is not wearing a headset"))
 			return
 
-		var/input = topic_prompt(src.owner, href_list, "a32", list("kind" = "text", "message" = "Please enter a message to reply to [key_name(H)] via their headset.", "title" = "Outgoing message from a shadowy figure...", "max_length" = MAX_MESSAGE_LEN))
+		var/input = topic_ask(src.owner, href_list, "a32", /datum/om/prompt/text, message = "Please enter a message to reply to [key_name(H)] via their headset.", title = "Outgoing message from a shadowy figure...")
 		if(isnull(input))
 			return
 		if(!input)	return
@@ -1294,7 +1294,7 @@
 		if(!CONFIG_GET(flag/allow_admin_jump))
 			tgui_alert_async(usr, "Admin jumping disabled")
 			return
-		var/_answer_a33 = topic_prompt(usr, href_list, "a33", list("message" = "Confirm?", "title" = "Message", "choices" = list("Yes", "No")))
+		var/_answer_a33 = topic_ask(usr, href_list, "a33", /datum/om/prompt/choice/alert, message = "Confirm?", title = "Message", choices = list("Yes", "No"))
 		if(isnull(_answer_a33))
 			return
 		if(_answer_a33 != "Yes")
@@ -1322,7 +1322,7 @@
 			return
 
 		var/list/areachoices = return_sorted_areas()
-		var/choice = topic_prompt(usr, href_list, "a34", list("kind" = "list", "message" = "Pick an area:", "title" = "Send Mob", "choices" = areachoices))
+		var/choice = topic_ask(usr, href_list, "a34", /datum/om/prompt/choice, message = "Pick an area:", title = "Send Mob", choices = areachoices)
 		if(isnull(choice))
 			return
 		if(!choice)
@@ -1380,7 +1380,7 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_channel_name"])
-		var/_answer_a35 = topic_prompt(usr, href_list, "a35", list("kind" = "text", "message" = "Provide a Feed Channel Name", "title" = "Network Channel Handler", "encode" = FALSE))
+		var/_answer_a35 = topic_ask(usr, href_list, "a35", /datum/om/prompt/text, message = "Provide a Feed Channel Name", title = "Network Channel Handler", encode = FALSE)
 		if(isnull(_answer_a35))
 			return
 		src.admincaster_feed_channel.channel_name = sanitizeSafe(_answer_a35)
@@ -1399,7 +1399,7 @@
 		if(src.admincaster_feed_channel.channel_name == "" || src.admincaster_feed_channel.channel_name == "\[REDACTED\]" || check )
 			src.admincaster_screen=7
 		else
-			var/choice = topic_prompt(usr, href_list, "a36", list("message" = "Please confirm Feed channel creation", "title" = "Network Channel Handler", "choices" = list("Confirm","Cancel")))
+			var/choice = topic_ask(usr, href_list, "a36", /datum/om/prompt/choice/alert, message = "Please confirm Feed channel creation", title = "Network Channel Handler", choices = list("Confirm","Cancel"))
 			if(isnull(choice))
 				return
 			if(choice=="Confirm")
@@ -1413,21 +1413,21 @@
 		var/list/available_channels = list()
 		for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 			available_channels += F.channel_name
-		var/_answer_a37 = topic_prompt(usr, href_list, "a37", list("kind" = "list", "message" = "Choose receiving Feed Channel", "title" = "Network Channel Handler", "choices" = available_channels))
+		var/_answer_a37 = topic_ask(usr, href_list, "a37", /datum/om/prompt/choice, message = "Choose receiving Feed Channel", title = "Network Channel Handler", choices = available_channels)
 		if(isnull(_answer_a37))
 			return
 		src.admincaster_feed_channel.channel_name = _answer_a37
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_new_title"])
-		var/_answer_a38 = topic_prompt(usr, href_list, "a38", list("kind" = "text", "message" = "Enter the Feed title", "title" = "Network Channel Handler", "max_length" = MAX_MESSAGE_LEN))
+		var/_answer_a38 = topic_ask(usr, href_list, "a38", /datum/om/prompt/text, message = "Enter the Feed title", title = "Network Channel Handler")
 		if(isnull(_answer_a38))
 			return
 		src.admincaster_feed_message.title = _answer_a38
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_new_message"])
-		var/_answer_a39 = topic_prompt(usr, href_list, "a39", list("kind" = "text", "message" = "Write your Feed story", "title" = "Network Channel Handler", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+		var/_answer_a39 = topic_ask(usr, href_list, "a39", /datum/om/prompt/text, message = "Write your Feed story", title = "Network Channel Handler", multiline = TRUE)
 		if(isnull(_answer_a39))
 			return
 		src.admincaster_feed_message.body = _answer_a39
@@ -1472,14 +1472,14 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_wanted_name"])
-		var/_answer_a40 = topic_prompt(usr, href_list, "a40", list("kind" = "text", "message" = "Provide the name of the Wanted person", "title" = "Network Security Handler", "max_length" = MAX_MESSAGE_LEN))
+		var/_answer_a40 = topic_ask(usr, href_list, "a40", /datum/om/prompt/text, message = "Provide the name of the Wanted person", title = "Network Security Handler")
 		if(isnull(_answer_a40))
 			return
 		src.admincaster_feed_message.author = _answer_a40
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_wanted_desc"])
-		var/_answer_a41 = topic_prompt(usr, href_list, "a41", list("kind" = "text", "message" = "Provide the a description of the Wanted person and any other details you deem important", "title" = "Network Security Handler", "max_length" = MAX_MESSAGE_LEN))
+		var/_answer_a41 = topic_ask(usr, href_list, "a41", /datum/om/prompt/text, message = "Provide the a description of the Wanted person and any other details you deem important", title = "Network Security Handler")
 		if(isnull(_answer_a41))
 			return
 		src.admincaster_feed_message.body = _answer_a41
@@ -1490,7 +1490,7 @@
 		if(src.admincaster_feed_message.author == "" || src.admincaster_feed_message.body == "")
 			src.admincaster_screen = 16
 		else
-			var/choice = topic_prompt(usr, href_list, "a42", list("message" = "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]", "title" = "Network Security Handler", "choices" = list("Confirm","Cancel")))
+			var/choice = topic_ask(usr, href_list, "a42", /datum/om/prompt/choice/alert, message = "Please confirm Wanted Issue [(input_param==1) ? ("creation.") : ("edit.")]", title = "Network Security Handler", choices = list("Confirm","Cancel"))
 			if(isnull(choice))
 				return
 			if(choice=="Confirm")
@@ -1514,7 +1514,7 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_cancel_wanted"])
-		var/choice = topic_prompt(usr, href_list, "a43", list("message" = "Please confirm Wanted Issue removal", "title" = "Network Security Handler", "choices" = list("Confirm","Cancel")))
+		var/choice = topic_ask(usr, href_list, "a43", /datum/om/prompt/choice/alert, message = "Please confirm Wanted Issue removal", title = "Network Security Handler", choices = list("Confirm","Cancel"))
 		if(isnull(choice))
 			return
 		if(choice=="Confirm")
@@ -1591,7 +1591,7 @@
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
 	else if(href_list["ac_set_signature"])
-		var/_answer_a44 = topic_prompt(usr, href_list, "a44", list("kind" = "text", "message" = "Provide your desired signature", "title" = "Network Identity Handler", "max_length" = MAX_MESSAGE_LEN))
+		var/_answer_a44 = topic_ask(usr, href_list, "a44", /datum/om/prompt/text, message = "Provide your desired signature", title = "Network Identity Handler")
 		if(isnull(_answer_a44))
 			return
 		src.admincaster_signature = _answer_a44

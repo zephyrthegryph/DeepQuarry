@@ -44,7 +44,7 @@
 	var/list/choices = removable_organs(target, part)
 	if(!length(choices))
 		return null
-	var/choice = tool.surgery_prompt(user, "target", list("kind" = "list", "message" = "Which organ do you want to remove?", "title" = name, "choices" = choices))
+	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to remove?", title = name, choices = choices)
 	return choice ? choices[choice] : null
 
 /datum/surgical_step/organ/extract/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
@@ -134,7 +134,7 @@
 		return null
 	if(length(choices) == 1)
 		return choices[choices[1]]
-	var/choice = tool.surgery_prompt(user, "target", list("kind" = "list", "message" = "Which organ do you want to reattach?", "title" = name, "choices" = choices))
+	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to reattach?", title = name, choices = choices)
 	return choice ? choices[choice] : null
 
 /datum/surgical_step/organ/reconnect/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)

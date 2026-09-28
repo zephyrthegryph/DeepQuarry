@@ -143,7 +143,7 @@
 	effect = /obj/machinery/compressor/proc/interaction_set_ident
 
 /obj/machinery/compressor/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = rerun_prompt(user, "k146", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = name, "default" = comp_id, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+	var/new_ident = rerun_ask(user, "k146", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = name, default = comp_id, max_length = MAX_NAME_LEN)
 	if(isnull(new_ident))
 		return
 	if(new_ident && user.Adjacent(src))
@@ -381,7 +381,7 @@
 	effect = /obj/machinery/computer/turbine_computer/proc/interaction_set_ident
 
 /obj/machinery/computer/turbine_computer/proc/interaction_set_ident(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = rerun_prompt(user, "k382", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = name, "default" = id, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_ident), args)
+	var/new_ident = rerun_ask(user, "k382", PROC_REF(interaction_set_ident), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = name, default = id, max_length = MAX_NAME_LEN)
 	if(isnull(new_ident))
 		return
 	if(new_ident && user.Adjacent(src))

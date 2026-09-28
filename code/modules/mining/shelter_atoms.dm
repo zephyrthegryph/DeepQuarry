@@ -179,7 +179,7 @@
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_prompt(user, "k182", list("kind" = "list", "message" = "Which template would you like to load?", "title" = "Available Templates", "choices" = template_ids), PROC_REF(attack_self), args)
+		var/answer = rerun_ask(user, "k182", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Which template would you like to load?", title = "Available Templates", choices = template_ids)
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -214,7 +214,7 @@
 			LAZYADD(template_ids, initial(shelter_type.shelter_id))
 		pod_initialized = TRUE
 	if(!template_id)
-		var/answer = rerun_prompt(user, "k215", list("kind" = "list", "message" = "Which template would you like to load?", "title" = "Available Templates", "choices" = template_ids), PROC_REF(attack_self), args)
+		var/answer = rerun_ask(user, "k215", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Which template would you like to load?", title = "Available Templates", choices = template_ids)
 		if(isnull(answer))
 			return TRUE
 		if(!answer)
@@ -428,7 +428,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 		// We only show where the doors will be on a successful deploy check to avoid player confusion.
 		remove_preview(user, preview_render, 0)
 		preview_render = preview_template(user, deploy_location, show_doors = TRUE)
-		var/_answer_k433 = rerun_prompt(usr, "k433", list("message" = "Confirm location. (The shelter's exterior doors are highlighted in green!)", "title" = "Shelter Deploy Confirm", "choices" = list("No","Yes")), PROC_REF(attack_self), args)
+		var/_answer_k433 = rerun_ask(usr, "k433", PROC_REF(attack_self), args, /datum/om/prompt/choice/alert, message = "Confirm location. (The shelter's exterior doors are highlighted in green!)", title = "Shelter Deploy Confirm", choices = list("No","Yes"))
 		if(isnull(_answer_k433))
 			return TRUE
 		if(_answer_k433 == "Yes")

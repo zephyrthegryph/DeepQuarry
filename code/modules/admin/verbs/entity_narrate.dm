@@ -44,7 +44,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 			gets logged in case of abuse."))
 			log_and_message_admins("has added [L.ckey]'s mob to their entity narrate list", user)
 			return
-		var/unique_name = verb_prompt(user, "a1", list("kind" = "text", "message" = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", "title" = "tracker", "default" = L.name, "max_length" = MAX_MESSAGE_LEN), args)
+		var/unique_name = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", title = "tracker", default = L.name)
 		if(isnull(unique_name))
 			return
 		if(unique_name in holder.entity_names)
@@ -57,7 +57,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(add_mob_for_narration, R_FUN, "Narrate Entity (Add r
 	//Covering functionality for turfs and objs. We need static type to access the name var
 	else if(istype(E, /atom))
 		var/atom/A = E
-		var/unique_name = verb_prompt(user, "a2", list("kind" = "text", "message" = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", "title" = "tracker", "default" = A.name, "max_length" = MAX_MESSAGE_LEN), args)
+		var/unique_name = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Please give the entity a unique name to track internally. This doesn't override how it appears in game", title = "tracker", default = A.name)
 		if(isnull(unique_name))
 			return
 		if(unique_name in holder.entity_names)
@@ -78,11 +78,11 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 	var/datum/entity_narrate/holder = user.entity_narrate_holder
 
 	var/options = (holder.entity_names || list()) + "Clear All"
-	var/removekey = verb_prompt(user, "a3", list("kind" = "list", "message" = "Choose which entity to remove", "title" = "remove reference", "choices" = options), args)
+	var/removekey = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Choose which entity to remove", title = "remove reference", choices = options)
 	if(isnull(removekey))
 		return
 	if(removekey == "Clear All")
-		var/_answer_a4 = verb_prompt(user, "a4", list("message" = "Do you really want to clear your entity list?", "title" = "confirm", "choices" = list("Yes", "No")), args)
+		var/_answer_a4 = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Do you really want to clear your entity list?", title = "confirm", choices = list("Yes", "No"))
 		if(isnull(_answer_a4))
 			return
 		if(_answer_a4 != "Yes")
@@ -108,18 +108,18 @@ ADMIN_VERB(narrate_mob, R_FUN, "Narrate Entity (Interface)", "Send either a visi
 
 	//Obtaining and sanitizing arguments for the actual proc
 	var/choices = (holder.entity_names || list()) + "Open TGUI"
-	var/which_entity = verb_prompt(user, "a5", list("kind" = "list", "message" = "Choose which mob to narrate", "title" = "Narrate mob", "choices" = choices), args)
+	var/which_entity = verb_ask(user, "a5", args, /datum/om/prompt/choice, message = "Choose which mob to narrate", title = "Narrate mob", choices = choices)
 	if(isnull(which_entity))
 		return
 	if(!which_entity) return
 	if(which_entity == "Open TGUI")
 		holder.tgui_interact(user.mob)
 	else
-		var/mode = verb_prompt(user, "a6", list("message" = "Speak or emote?", "title" = "mode", "choices" = list("Speak", "Emote", "Cancel")), args)
+		var/mode = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Speak or emote?", title = "mode", choices = list("Speak", "Emote", "Cancel"))
 		if(isnull(mode))
 			return
 		if(!mode || mode == "Cancel") return
-		var/message = verb_prompt(user, "a7", list("kind" = "text", "message" = "Input what you want [which_entity] to [mode]", "title" = "narrate", "multiline" = TRUE), args)
+		var/message = verb_ask(user, "a7", args, /datum/om/prompt/text, message = "Input what you want [which_entity] to [mode]", title = "narrate", multiline = TRUE, max_length = MAX_TGUI_INPUT)
 		if(isnull(message))
 			return
 		if(message)
@@ -161,7 +161,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			if(!om_answers) // Once: the message prompt re-runs this.
 				log_and_message_admins("used entity-narrate to speak through [our_entity.ckey]'s mob", user)
 		if(!message)
-			var/_answer_a8 = verb_prompt(user, "a8", list("kind" = "text", "message" = "Input what you want [our_entity] to [mode]", "title" = "narrate", "encode" = FALSE), args)
+			var/_answer_a8 = verb_ask(user, "a8", args, /datum/om/prompt/text, message = "Input what you want [our_entity] to [mode]", title = "narrate", encode = FALSE)
 			if(isnull(_answer_a8))
 				return
 			message = _answer_a8 //say/emote sanitize already
@@ -177,7 +177,7 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 	else if(istype(selection, /atom))
 		var/atom/our_entity = selection
 		if(!message)
-			var/_answer_a9 = verb_prompt(user, "a9", list("kind" = "text", "message" = "Input what you want [our_entity] to [mode]", "title" = "narrate"), args)
+			var/_answer_a9 = verb_ask(user, "a9", args, /datum/om/prompt/text, message = "Input what you want [our_entity] to [mode]", title = "narrate")
 			if(isnull(_answer_a9))
 				return
 			message = _answer_a9

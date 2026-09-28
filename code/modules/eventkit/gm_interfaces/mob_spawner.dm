@@ -88,7 +88,7 @@
 	switch(action)
 		if("select_path")
 			var/list/choices = typesof(/mob)
-			var/newPath = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Please select the new path of the mob you want to spawn.", "choices" = choices))
+			var/newPath = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Please select the new path of the mob you want to spawn.", choices = choices)
 			if(isnull(newPath))
 				return
 
@@ -99,13 +99,13 @@
 			use_custom_ai = !use_custom_ai
 			return TRUE
 		if("set_faction")
-			var/_answer_a2 = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "Please input your mobs' faction", "title" = "Faction", "default" = (faction ? faction : "neutral"), "max_length" = MAX_MESSAGE_LEN))
+			var/_answer_a2 = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Please input your mobs' faction", title = "Faction", default = (faction ? faction : "neutral"))
 			if(isnull(_answer_a2))
 				return
 			faction = _answer_a2
 			return TRUE
 		if("set_intent")
-			var/_answer_a3 = act_prompt(ui.user, action, params, ui, "a3", list("kind" = "list", "message" = "Please select preferred intent", "title" = "Select Intent", "choices" = list(I_HELP, I_HURT), "default" = (intent ? intent : I_HELP)))
+			var/_answer_a3 = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice, message = "Please select preferred intent", title = "Select Intent", choices = list(I_HELP, I_HURT), default = (intent ? intent : I_HELP))
 			if(isnull(_answer_a3))
 				return
 			intent = _answer_a3
@@ -119,7 +119,7 @@
 			loc_lock = !loc_lock
 			return TRUE
 		if("start_spawn")
-			var/confirm = act_prompt(ui.user, action, params, ui, "a4", list("message" = "Are you sure that you want to start spawning your custom mobs?", "title" = "Confirmation", "choices" = list("Yes", "Cancel")))
+			var/confirm = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure that you want to start spawning your custom mobs?", title = "Confirmation", choices = list("Yes", "Cancel"))
 			if(isnull(confirm))
 				return
 

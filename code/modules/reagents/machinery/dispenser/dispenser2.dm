@@ -125,7 +125,7 @@
 	return ..()
 
 /obj/machinery/chemical_dispenser/screwdriver_act(mob/user, obj/item/tool)
-	var/label = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Which cartridge would you like to remove?", "title" = "Chemical Dispenser", "choices" = cartridges), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	var/label = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which cartridge would you like to remove?", title = "Chemical Dispenser", choices = cartridges)
 	if(!label)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/reagent_containers/chem_disp_cartridge/cartridge = remove_cartridge(label)
@@ -239,7 +239,7 @@
 			. = TRUE
 
 		if("clear_recipes")
-			var/_answer_a1 = act_prompt(ui.user, action, params, ui, "a1", list("message" = "Clear all recipes?", "title" = "Clear?", "choices" = list("No", "Yes")))
+			var/_answer_a1 = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Clear all recipes?", title = "Clear?", choices = list("No", "Yes"))
 			if(isnull(_answer_a1))
 				return
 			if(_answer_a1 == "Yes")
@@ -247,12 +247,12 @@
 			. = TRUE
 
 		if("save_recording")
-			var/name = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "text", "message" = "What do you want to name this recipe?", "title" = "Recipe Name?", "default" = "Recipe Name", "max_length" = MAX_NAME_LEN))
+			var/name = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "What do you want to name this recipe?", title = "Recipe Name?", default = "Recipe Name", max_length = MAX_NAME_LEN)
 			if(isnull(name))
 				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return
-			if(LAZYACCESS(saved_recipes, name) && act_prompt(ui.user, action, params, ui, "a3", list("message" = "\"[name]\" already exists, do you want to overwrite it?", "choices" = list("No", "Yes"))) != "Yes")
+			if(LAZYACCESS(saved_recipes, name) && act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "\"[name]\" already exists, do you want to overwrite it?", choices = list("No", "Yes")) != "Yes")
 				return
 			if(name && recording_recipe)
 				for(var/list/L in recording_recipe)

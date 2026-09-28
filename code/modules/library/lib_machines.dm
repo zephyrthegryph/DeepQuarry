@@ -76,14 +76,14 @@
 		return
 	switch(action)
 		if("settitle")
-			var/newtitle = act_prompt(usr, action, params, ui, "k79", list("kind" = "text", "message" = "Enter a title to search for:", "max_length" = MAX_MESSAGE_LEN))
+			var/newtitle = act_ask(usr, action, params, ui, "k79", /datum/om/prompt/text, message = "Enter a title to search for:")
 			if(isnull(newtitle))
 				return
 			if(newtitle)
 				title = newtitle
 			return TRUE
 		if("setcategory")
-			var/newcategory = act_prompt(usr, action, params, ui, "k84", list("kind" = "list", "message" = "Choose a category to search for:", "title" = "Category", "choices" = list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion")))
+			var/newcategory = act_ask(usr, action, params, ui, "k84", /datum/om/prompt/choice, message = "Choose a category to search for:", title = "Category", choices = list("Any", "Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
 			if(isnull(newcategory))
 				return
 			if(!newcategory)
@@ -91,7 +91,7 @@
 			category = newcategory
 			return TRUE
 		if("setauthor")
-			var/newauthor = act_prompt(usr, action, params, ui, "k90", list("kind" = "text", "message" = "Enter an author to search for:", "max_length" = MAX_MESSAGE_LEN))
+			var/newauthor = act_ask(usr, action, params, ui, "k90", /datum/om/prompt/text, message = "Enter an author to search for:")
 			if(isnull(newauthor))
 				return
 			if(newauthor)
@@ -360,13 +360,13 @@
 				checkoutperiod = 1
 			return TRUE
 		if("editbook")
-			var/_answer_k357 = act_prompt(usr, action, params, ui, "k357", list("kind" = "text", "message" = "Enter the book's title:", "encode" = FALSE))
+			var/_answer_k357 = act_ask(usr, action, params, ui, "k357", /datum/om/prompt/text, message = "Enter the book's title:", encode = FALSE)
 			if(isnull(_answer_k357))
 				return
 			buffer_book = sanitizeSafe(_answer_k357)
 			return TRUE
 		if("editmob")
-			var/_answer_k360 = act_prompt(usr, action, params, ui, "k360", list("kind" = "text", "message" = "Enter the recipient's name:", "max_length" = MAX_NAME_LEN))
+			var/_answer_k360 = act_ask(usr, action, params, ui, "k360", /datum/om/prompt/text, message = "Enter the recipient's name:", max_length = MAX_NAME_LEN)
 			if(isnull(_answer_k360))
 				return
 			buffer_mob = _answer_k360
@@ -390,14 +390,14 @@
 				LAZYREMOVE(inventory, b)
 			return TRUE
 		if("setauthor")
-			var/newauthor = act_prompt(usr, action, params, ui, "k381", list("kind" = "text", "message" = "Enter the author's name:", "max_length" = MAX_MESSAGE_LEN))
+			var/newauthor = act_ask(usr, action, params, ui, "k381", /datum/om/prompt/text, message = "Enter the author's name:")
 			if(isnull(newauthor))
 				return
 			if(newauthor && scanner?.cache)
 				scanner.cache.author = newauthor
 			return TRUE
 		if("setcategory")
-			var/newcategory = act_prompt(usr, action, params, ui, "k386", list("kind" = "list", "message" = "Choose a category:", "title" = "Category", "choices" = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion")))
+			var/newcategory = act_ask(usr, action, params, ui, "k386", /datum/om/prompt/choice, message = "Choose a category:", title = "Category", choices = list("Fiction", "Non-Fiction", "Adult", "Reference", "Religion"))
 			if(isnull(newcategory))
 				return
 			if(newcategory)
@@ -406,7 +406,7 @@
 		if("upload")
 			if(!scanner?.cache)
 				return TRUE
-			var/choice = act_prompt(usr, action, params, ui, "k393", list("message" = "Are you certain you wish to upload this title to the Archive?", "title" = "Confirmation", "choices" = list("Confirm", "Abort")))
+			var/choice = act_ask(usr, action, params, ui, "k393", /datum/om/prompt/choice/alert, message = "Are you certain you wish to upload this title to the Archive?", title = "Confirmation", choices = list("Confirm", "Abort"))
 			if(isnull(choice))
 				return
 			if(choice != "Confirm")
@@ -482,7 +482,7 @@
 			qdel(query)
 			return TRUE
 		if("orderbyid")
-			var/orderid = act_prompt(usr, action, params, ui, "k468", list("kind" = "number", "message" = "Enter your order:"))
+			var/orderid = act_ask(usr, action, params, ui, "k468", /datum/om/prompt/number, message = "Enter your order:")
 			if(isnull(orderid))
 				return
 			if(orderid && isnum(orderid))

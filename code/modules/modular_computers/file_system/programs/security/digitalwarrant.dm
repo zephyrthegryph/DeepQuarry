@@ -82,7 +82,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 		if("addwarrant")
 			. = TRUE
 			var/datum/data/record/warrant/W = new()
-			var/temp = act_prompt(ui.user, action, params, ui, "k85", list("message" = "Do you want to create a search-, or an arrest warrant?", "title" = "Warrant Type", "choices" = list("Search","Arrest","Cancel")))
+			var/temp = act_ask(ui.user, action, params, ui, "k85", /datum/om/prompt/choice/alert, message = "Do you want to create a search-, or an arrest warrant?", title = "Warrant Type", choices = list("Search","Arrest","Cancel"))
 			if(isnull(temp))
 				return
 			if(!temp)
@@ -115,7 +115,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 			var/namelist = list()
 			for(var/datum/data/record/t in GLOB.data_core.general)
 				namelist += t.fields["name"]
-			var/new_name = act_prompt(ui.user, action, params, ui, "k116", list("kind" = "list", "message" = "Please input name:", "title" = "Name Choice", "choices" = namelist))
+			var/new_name = act_ask(ui.user, action, params, ui, "k116", /datum/om/prompt/choice, message = "Please input name:", title = "Name Choice", choices = namelist)
 			if(isnull(new_name))
 				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
@@ -125,7 +125,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 
 		if("editwarrantnamecustom")
 			. = TRUE
-			var/new_name = act_prompt(ui.user, action, params, ui, "k124", list("kind" = "text", "message" = "Please input name", "max_length" = MAX_MESSAGE_LEN))
+			var/new_name = act_ask(ui.user, action, params, ui, "k124", /datum/om/prompt/text, message = "Please input name")
 			if(isnull(new_name))
 				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
@@ -137,7 +137,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 			. = TRUE
 			if(!activewarrant)
 				return
-			var/new_charges = act_prompt(ui.user, action, params, ui, "k134", list("kind" = "text", "message" = "Please input charges", "title" = "Charges", "default" = activewarrant.fields["charges"], "max_length" = MAX_MESSAGE_LEN))
+			var/new_charges = act_ask(ui.user, action, params, ui, "k134", /datum/om/prompt/text, message = "Please input charges", title = "Charges", default = activewarrant.fields["charges"])
 			if(isnull(new_charges))
 				return
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)

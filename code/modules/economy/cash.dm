@@ -89,7 +89,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/amount = rerun_prompt(user, "k92", list("kind" = "number", "message" = "How many [initial_name]s do you want to take? (0 to [src.worth])", "title" = "Take Money", "default" = 20, "max" = src.worth), PROC_REF(attack_self), args)
+	var/amount = rerun_ask(user, "k92", PROC_REF(attack_self), args, /datum/om/prompt/number, message = "How many [initial_name]s do you want to take? (0 to [src.worth])", title = "Take Money", default = 20, max = src.worth)
 	if(isnull(amount))
 		return TRUE
 	if(!src || QDELETED(src))
