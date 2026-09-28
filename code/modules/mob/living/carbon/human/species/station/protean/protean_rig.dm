@@ -133,19 +133,19 @@
 	else
 		to_chat(P,span_warning("Your rigsuit can only assimilate a backpack into itself. If you are seeing this message, and you do not have a rigsuit, tell a coder."))
 
-/obj/item/rig/protean/verb/RemoveBag()
-	set name = "Remove Stored Bag"
-	set category = "Object"
-
+/// Old verb "Remove Stored Bag".
+/obj/item/rig/protean/proc/protean_removebag_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rig_storage)
-		usr.put_in_hands(rig_storage)
+		user.put_in_hands(rig_storage)
 		rig_storage = null
 	else
-		to_chat(usr, "This Rig does not have a bag installed. Use a bag on it to install one.")
+		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
 EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(protean_rig_hand)), \
 	INTERACT_ITEM(null, PROC_REF(protean_rig_item)), \
+	INTERACT_VERB("Remove Stored Bag", PROC_REF(protean_removebag_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Remove Assimilated Rig", PROC_REF(protean_removerig_verb), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
@@ -682,10 +682,8 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	slowdown = (initial(R.slowdown) *0.5)
 	offline_slowdown = slowdown
 
-/obj/item/rig/protean/verb/RemoveRig()
-	set name = "Remove Assimilated Rig"
-	set category = "Object"
-
+/// Old verb "Remove Assimilated Rig".
+/obj/item/rig/protean/proc/protean_removerig_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(assimilated_rig)
 		rigsuit_max_pressure = initial(rigsuit_max_pressure)
 		for(var/obj/item/piece in list(gloves,helmet,boots,chest))
@@ -715,11 +713,11 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
 		wearer?.worn_protection_changed()
-		usr.put_in_hands(assimilated_rig)
+		user.put_in_hands(assimilated_rig)
 		assimilated_rig = null
 		qdel(tempRig)
 	else
-		to_chat(usr, "[src] has not assimilated a RIG. Use one on it to assimilate.")
+		to_chat(user, "[src] has not assimilated a RIG. Use one on it to assimilate.")
 
 /obj/item/rig/protean/MouseDrop(obj/over_object as obj)
 	if(get_dormancy()) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.

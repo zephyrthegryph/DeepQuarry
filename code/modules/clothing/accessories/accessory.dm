@@ -696,15 +696,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	overlay_state = "collar_bell"
 	var/jingled = 0
 
-/obj/item/clothing/accessory/collar/bell/verb/jinglebell()
-	set name = "Jingle Bell"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
+	INTERACT_VERB("Jingle Bell", PROC_REF(bell_jinglebell_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Jingle Bell".
+/obj/item/clothing/accessory/collar/bell/proc/bell_jinglebell_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	if(!jingled)
-		usr.audible_message("[usr] jingles the [src]'s bell.", runemessage = "jingle")
+		user.audible_message("[user] jingles the [src]'s bell.", runemessage = "jingle")
 		playsound(src, 'sound/items/pickup/ring.ogg', 50, 1)
 		jingled = 1
 		om_after(src, 50, PROC_REF(jingledreset))

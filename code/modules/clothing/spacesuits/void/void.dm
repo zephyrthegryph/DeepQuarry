@@ -160,21 +160,18 @@
 /obj/item/clothing/suit/space/void/ui_action_click(mob/living/user, action_name)
 	if(..())
 		return TRUE
-	toggle_helmet()
+	void_toggle_helmet_verb(user)
 
-/obj/item/clothing/suit/space/void/verb/toggle_helmet()
-	set name = "Toggle Helmet"
-	set category = "Object"
-	set src in usr
-
+/// Old verb "Toggle Helmet".
+/obj/item/clothing/suit/space/void/proc/void_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(loc))
 		return
 
 	if(!hood)
-		to_chat(usr, "There is no helmet installed.")
+		to_chat(user, "There is no helmet installed.")
 		return
 
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 
 	if(!istype(H)) return
 	if(H.stat) return
@@ -202,21 +199,20 @@
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt)), \
 	INTERACT_ITEM(null, PROC_REF(voidsuit_install_item)), \
+	INTERACT_VERB("Toggle Helmet", PROC_REF(void_toggle_helmet_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Eject Voidsuit Tank/Cooler", PROC_REF(void_eject_tank_verb), REQ_IN_INVENTORY), \
 )
 
 /// Old click_alt. It never reached the clothing alt-click.
 /obj/item/clothing/suit/space/void/proc/voidsuit_eject_tank_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	eject_tank()
+	void_eject_tank_verb(user)
 	return TRUE
 
-/obj/item/clothing/suit/space/void/verb/eject_tank()
-	set name = "Eject Voidsuit Tank/Cooler"
-	set category = "Object"
-	set src in usr
-
+/// Old verb "Eject Voidsuit Tank/Cooler".
+/obj/item/clothing/suit/space/void/proc/void_eject_tank_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(src.loc)) return
 
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 
 	if(!tank && !cooler)
 		to_chat(H, span_notice("There is no tank or cooling unit inserted."))

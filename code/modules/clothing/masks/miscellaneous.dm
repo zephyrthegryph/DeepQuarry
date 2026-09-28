@@ -60,12 +60,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/muzzle, INTERACT_HAND_UNGATED(null, 
 		update_clothing_icon()
 		worn_protection_changed()
 
-/obj/item/clothing/mask/surgical/verb/toggle()
-	set category = "Object"
-	set name = "Adjust mask"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
+	INTERACT_VERB("Adjust mask", PROC_REF(surgical_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	adjust_mask(usr)
+/// Old verb "Adjust mask".
+/obj/item/clothing/mask/surgical/proc/surgical_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	adjust_mask(user)
 
 /obj/item/clothing/mask/surgical/white
 	icon_state = "sterilew"

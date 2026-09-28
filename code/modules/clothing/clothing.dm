@@ -644,12 +644,16 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 
 REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 
-/obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
-	set name = "Draw Boot Knife"
-	set desc = "Pull out your boot knife."
-	set category = "IC.Game"
-	set src in usr
+/// Old verb "Draw Boot Knife" (offered while a knife is held).
+/obj/item/clothing/shoes/proc/shoes_draw_knife_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isliving(user))
+		draw_knife(user)
 
+/// Requirement: a knife is tucked in these shoes.
+/obj/item/clothing/shoes/proc/pred_holding_knife(mob/actor, atom/target, obj/item/held)
+	return !!holding
+
+/obj/item/clothing/shoes/proc/draw_knife(mob/living/user)
 	if(user.stat || user.restrained() || user.incapacitated())
 		return
 
@@ -672,9 +676,6 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
 		holding.forceMove(src)
 
-	if(!holding)
-		verbs -= /obj/item/clothing/shoes/proc/draw_knife
-
 	update_icon()
 	return
 
@@ -685,12 +686,10 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 		return TRUE
 	return FALSE
 
-/obj/item/clothing/shoes/verb/toggle_layer()
-	set name = "Switch Shoe Layer"
-	set category = "Object"
-
+/// Old verb "Switch Shoe Layer".
+/obj/item/clothing/shoes/proc/shoes_toggle_layer_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(shoes_under_pants == -1)
-		to_chat(usr, span_notice("\The [src] cannot be worn above your suit!"))
+		to_chat(user, span_notice("\The [src] cannot be worn above your suit!"))
 		return
 	shoes_under_pants = !shoes_under_pants
 	update_icon()
@@ -967,7 +966,7 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 		hood.forceMove(src)
 
 /obj/item/clothing/suit/proc/ToggleHood()
-	if(!hood || special_hood_handling) //Some suits have special handling (See: void.dm with it's ui_action_click doing toggle_helmet())
+	if(!hood || special_hood_handling) //Some suits have special handling (See: void.dm with it's ui_action_click doing void_toggle_helmet_verb())
 		return //In that case, we return and allow it to do it's special handling!
 	if(hood_up)
 		RemoveHood()
@@ -1097,7 +1096,31 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_REF(under_worn_hand)))
+EXTEND_INTERACTIONS(/obj/item/clothing/under, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(under_worn_hand)), \
+	INTERACT_VERB("Toggle Suit Sensors", PROC_REF(under_toggle_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Roll Down Jumpsuit", PROC_REF(under_rollsuit_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_can_roll_down, "it can't be rolled down")), \
+	INTERACT_VERB("Roll Up Sleeves", PROC_REF(under_rollsleeves_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_can_roll_sleeves, "its sleeves can't be rolled")), \
+	INTERACT_VERB("Holster", PROC_REF(under_holster_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/under/proc/pred_has_holster, "it has no holster")), \
+)
+
+/// Requirement: the uniform can be rolled down (replaces removing the verb at Initialize).
+/obj/item/clothing/under/proc/pred_can_roll_down(mob/actor, atom/target, obj/item/held)
+	return rolled_down != -1
+
+/// Requirement: the sleeves can be rolled (replaces removing the verb at Initialize).
+/obj/item/clothing/under/proc/pred_can_roll_sleeves(mob/actor, atom/target, obj/item/held)
+	return rolled_sleeves != -1
+
+/// Requirement: a holster is attached (replaces the holster adding its verb to the uniform).
+/obj/item/clothing/under/proc/pred_has_holster(mob/actor, atom/target, obj/item/held)
+	return !!(locate(/obj/item/clothing/accessory/holster) in accessories)
+
+/// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
+/obj/item/clothing/under/proc/under_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/obj/item/clothing/accessory/holster/H = locate() in accessories
+	if(H)
+		H.holster_quick_holster_verb(user)
 
 /// Old attack_hand: a worn uniform isn't pulled off by a click; its accessories get the touch.
 /obj/item/clothing/under/proc/under_worn_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1118,11 +1141,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_R
 	if(rolled_down < 0)
 		if((icon_exists(icon, "[worn_state]_d") || icon_exists(rolled_down_icon, worn_state) || icon_exists(icon_override, "[worn_state]_d")))
 			rolled_down = 0
-
-	if(rolled_down == -1)
-		verbs -= /obj/item/clothing/under/verb/rollsuit
-	if(rolled_sleeves == -1)
-		verbs -= /obj/item/clothing/under/verb/rollsleeves
 
 	if(!ishuman(loc))
 		return
@@ -1249,22 +1267,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_R
 	else if (istype(src.loc, /mob))
 		user.visible_message("[user] adjusts [src.loc]'s sensors.", "You adjust [src.loc]'s sensors.")
 
-/obj/item/clothing/under/verb/toggle()
-	set name = "Toggle Suit Sensors"
-	set category = "Object"
-	set src in usr
-	set_sensors(usr)
+/// Old verb "Toggle Suit Sensors".
+/obj/item/clothing/under/proc/under_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	set_sensors(user)
 
-/obj/item/clothing/under/verb/rollsuit()
-	set name = "Roll Down Jumpsuit"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+/// Old verb "Roll Down Jumpsuit".
+/obj/item/clothing/under/proc/under_rollsuit_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	update_rolldown_status()
 	if(rolled_down == -1)
-		to_chat(usr, span_notice("You cannot roll down [src]!"))
+		to_chat(user, span_notice("You cannot roll down [src]!"))
 		return
 	if((rolled_sleeves == 1) && !(rolled_down))
 		rolled_sleeves = 0
@@ -1281,7 +1295,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_R
 		else
 			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_d")
 
-		to_chat(usr, span_notice("You roll down your [src]."))
+		to_chat(user, span_notice("You roll down your [src]."))
 	else
 		body_parts_covered = initial(body_parts_covered)
 		heat_protection = initial(heat_protection)
@@ -1289,23 +1303,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_R
 		if(icon_override == rolled_down_icon)
 			icon_override = initial(icon_override)
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
-		to_chat(usr, span_notice("You roll up your [src]."))
+		to_chat(user, span_notice("You roll up your [src]."))
 	update_clothing_icon()
 	worn_protection_changed()
 
-/obj/item/clothing/under/verb/rollsleeves()
-	set name = "Roll Up Sleeves"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+/// Old verb "Roll Up Sleeves".
+/obj/item/clothing/under/proc/under_rollsleeves_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	update_rollsleeves_status()
 	if(rolled_sleeves == -1)
-		to_chat(usr, span_notice("You cannot roll up your [src]'s sleeves!"))
+		to_chat(user, span_notice("You cannot roll up your [src]'s sleeves!"))
 		return
 	if(rolled_down == 1)
-		to_chat(usr, span_notice("You must roll up your [src] first!"))
+		to_chat(user, span_notice("You must roll up your [src] first!"))
 		return
 
 	rolled_sleeves = !rolled_sleeves
@@ -1318,7 +1330,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_R
 			LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
 		else
 			LAZYSET(item_state_slots, slot_w_uniform_str, "[worn_state]_r")
-		to_chat(usr, span_notice("You roll up your [src]'s sleeves."))
+		to_chat(user, span_notice("You roll up your [src]'s sleeves."))
 	else
 		body_parts_covered = initial(body_parts_covered)
 		heat_protection = initial(heat_protection)
@@ -1326,7 +1338,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_R
 		if(icon_override == rolled_down_sleeves_icon)
 			icon_override = initial(icon_override)
 		LAZYSET(item_state_slots, slot_w_uniform_str, worn_state)
-		to_chat(usr, span_notice("You roll down your [src]'s sleeves."))
+		to_chat(user, span_notice("You roll down your [src]'s sleeves."))
 	update_clothing_icon()
 	worn_protection_changed()
 
@@ -1448,6 +1460,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(shoes_draw_knife_hand)), \
 	INTERACT_USE(null, PROC_REF(shoes_shake_out_self)), \
 	INTERACT_ITEM(null, PROC_REF(shoes_stuff_item)), \
+	INTERACT_VERB("Switch Shoe Layer", PROC_REF(shoes_toggle_layer_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Draw Boot Knife", PROC_REF(shoes_draw_knife_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/clothing/shoes/proc/pred_holding_knife, "there is no knife in it")), \
 )
 
 /// Old MouseDrop_T.
@@ -1504,7 +1518,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		I.forceMove(src)
 		holding = I
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " shoves \the [I] into \the [src]."))
-		verbs |= /obj/item/clothing/shoes/proc/draw_knife
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 	return FALSE

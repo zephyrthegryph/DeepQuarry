@@ -44,17 +44,13 @@
 		holder.air_supply = new holder.air_type(holder)
 	if(holder.glove_type)
 		holder.gloves = new holder.glove_type(holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_gauntlets
 	if(holder.helm_type)
 		holder.helmet = new holder.helm_type(holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_helmet
 	if(holder.boot_type)
 		holder.boots = new holder.boot_type(holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_boots
 	if(holder.chest_type)
 		holder.chest = new holder.chest_type(holder)
 		holder.chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder)
-		holder.verbs |= /obj/item/rig/proc/toggle_chest
 
 	// Apply shared stats to equippable pieces
 	propagate_stats()

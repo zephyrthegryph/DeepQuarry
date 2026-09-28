@@ -134,7 +134,11 @@ REF_OWNED(/obj/item/clothing/glasses/omnihud, "tgarscreen")
 		name = "[initial(name)]"
 		icon_state = "[initial(icon_state)]"
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, INTERACT_SELF(null, PROC_REF(omnihud_display_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, \
+	INTERACT_SELF(null, PROC_REF(omnihud_display_self)), \
+	INTERACT_VERB("Toggle AR Glasses Shading", PROC_REF(omnihud_chromatize_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle AR Heads-Up Display", PROC_REF(omnihud_toggle_ar_planes_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self: show the AR display. FALSE where the old body fell through or returned nothing.
 /obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -152,15 +156,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, INTERACT_SELF(null, PROC
 	return FALSE
 
 //cosmetic shading, doesn't enhance eye protection
-/obj/item/clothing/glasses/omnihud/verb/chromatize()
-	set name = "Toggle AR Glasses Shading"
-	set desc = "Toggle the cosmetic electrochromatic shading of your AR glasses."
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
+/// Old verb "Toggle AR Glasses Shading".
+/obj/item/clothing/glasses/omnihud/proc/omnihud_chromatize_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(icon_state == "3d")
-		to_chat(usr, "You reset the electrochromic lenses of \the [src] back to normal.")
+		to_chat(user, "You reset the electrochromic lenses of \the [src] back to normal.")
 		if(prescription)
 			name = "[initial(name)] (pr)"
 		else
@@ -168,53 +169,49 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, INTERACT_SELF(null, PROC
 		icon_state = "[initial(icon_state)]"
 	else if(prescription)
 		if(icon_state == "glasses")
-			to_chat(usr, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
+			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded, pr)"
 			flags_inv |= HIDEEYES
 			icon_state = "sun"
 		else if(icon_state == "sun")
-			to_chat(usr, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
+			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)] (pr)"
 			flags_inv &= ~HIDEEYES
 			icon_state = "glasses"
 		else
-			to_chat(usr, "It doesn't seem possible to do that with \the [src].")
+			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!prescription)
 		if(icon_state == "glasses")
-			to_chat(usr, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
+			to_chat(user, "You darken the electrochromic lenses of \the [src] to one-way transparency.")
 			name = "[initial(name)] (shaded)"
 			flags_inv |= HIDEEYES
 			icon_state = "sun"
 		else if(icon_state == "sun")
-			to_chat(usr, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
+			to_chat(user, "You restore the electrochromic lenses of \the [src] to standard two-way transparency.")
 			name = "[initial(name)]"
 			flags_inv &= ~HIDEEYES
 			icon_state = "glasses"
 		else
-			to_chat(usr, "It doesn't seem possible to do that with \the [src].")
+			to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	else if(!can_shade)
-		to_chat(usr, "It doesn't seem possible to do that with \the [src].")
+		to_chat(user, "It doesn't seem possible to do that with \the [src].")
 	update_clothing_icon()
 
-/obj/item/clothing/glasses/omnihud/verb/toggle_ar_planes()
-	set name = "Toggle AR Heads-Up Display"
-	set desc = "Toggles the job icon and other non-manually requested displays. Does not disable Crew monitor and similar."
-	set category = "Object"
-	set src in usr
-
+/// Old verb "Toggle AR Heads-Up Display".
+/obj/item/clothing/glasses/omnihud/proc/omnihud_toggle_ar_planes_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	//We do not check if user can move or not, since this system is inspired to help see chat bubbles during scenes primarily.
 	//Preventing turning off the HUD could get in the way of scene flow.
 	if(ar_toggled)
 		away_planes = enables_planes
 		enables_planes = null
-		to_chat(usr, span_notice("You disable the Augmented Reality HUD of your [src.name]."))
+		to_chat(user, span_notice("You disable the Augmented Reality HUD of your [src.name]."))
 	else
 		enables_planes = away_planes
 		away_planes = null
-		to_chat(usr, span_notice("You enable the Augmented Reality HUD of your [src.name]."))
+		to_chat(user, span_notice("You enable the Augmented Reality HUD of your [src.name]."))
 	ar_toggled = !ar_toggled
-	usr.update_mob_action_buttons()
-	usr.recalculate_vis()
+	user.update_mob_action_buttons()
+	user.recalculate_vis()
 
 /obj/item/clothing/glasses/omnihud/proc/ar_interact(mob/living/carbon/human/user)
 	return 0 //The base models do nothing.
@@ -295,33 +292,34 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, INTERACT_SELF(null, PROC
 	specialty_goggles = TRUE
 	hud_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, INTERACT_USE("Toggle projector", PROC_REF(omnihud_meson_projector_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, \
+	INTERACT_USE("Toggle projector", PROC_REF(omnihud_meson_projector_self)), \
+	INTERACT_VERB("Toggle projector", PROC_REF(meson_toggleprojector_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/clothing/glasses/omnihud/eng/meson/proc/omnihud_meson_projector_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!active)
-		toggleprojector()
+		meson_toggleprojector_verb(user)
 
-/obj/item/clothing/glasses/omnihud/eng/meson/verb/toggleprojector()
-	set name = "Toggle projector"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+/// Old verb "Toggle projector".
+/obj/item/clothing/glasses/omnihud/eng/meson/proc/meson_toggleprojector_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 	if(toggleable)
 		if(active)
 			active = 0
 			icon_state = off_state
 			item_state = "[initial(item_state)]-off"
-			usr.update_inv_glasses()
-			to_chat(usr, "You deactivate the retinal projector on the [src].")
+			user.update_inv_glasses()
+			to_chat(user, "You deactivate the retinal projector on the [src].")
 		else
 			active = 1
 			icon_state = initial(icon_state)
 			item_state = initial(item_state)
-			usr.update_inv_glasses()
-			to_chat(usr, "You activate the retinal projector on the [src].")
-		usr.update_mob_action_buttons()
+			user.update_inv_glasses()
+			to_chat(user, "You activate the retinal projector on the [src].")
+		user.update_mob_action_buttons()
 
 /obj/item/clothing/glasses/omnihud/all
 	name = "\improper AR-B glasses"
@@ -348,12 +346,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, INTERACT_USE("
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-/obj/item/clothing/glasses/hud/security/eyepatch/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(security_eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/hud/security/eyepatch/proc/security_eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -371,12 +371,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, INTERACT_USE("
 	enables_planes = list(VIS_CH_ID,VIS_CH_WANTED,VIS_CH_IMPTRACK,VIS_CH_IMPLOYAL,VIS_CH_IMPCHEM)
 	var/eye = null
 
-/obj/item/clothing/glasses/hud/security/eyepatch2/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/security/eyepatch2, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch2_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/hud/security/eyepatch2/proc/eyepatch2_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -394,12 +396,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, INTERACT_USE("
 	enables_planes =  list(VIS_CH_STATUS,VIS_CH_HEALTH)
 	var/eye = null
 
-/obj/item/clothing/glasses/hud/health/eyepatch/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/hud/health/eyepatch, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(health_eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/hud/health/eyepatch/proc/health_eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -465,18 +469,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, INTERACT_USE("
 		tgarscreen.tgui_interact(user)
 	return 1
 
-/obj/item/clothing/glasses/omnihud/mantle/verb/switcheye()
-	set name = "Toggle Autocorrective Vision"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/mantle, \
+	INTERACT_VERB("Toggle Autocorrective Vision", PROC_REF(mantle_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Toggle Autocorrective Vision".
+/obj/item/clothing/glasses/omnihud/mantle/proc/mantle_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	prescription = !prescription
 	if(prescription)
-		to_chat(usr, "You switch the [src] into autocorrective mode.")
+		to_chat(user, "You switch the [src] into autocorrective mode.")
 	else
-		to_chat(usr, "You switch the [src] out of autocorrective mode.")
+		to_chat(user, "You switch the [src] out of autocorrective mode.")
 
 /obj/item/clothing/glasses/omnihud/mantle/sec
 	name = "security AR mantle"

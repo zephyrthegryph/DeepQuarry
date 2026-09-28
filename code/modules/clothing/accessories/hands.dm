@@ -33,15 +33,17 @@
 	desc = "A beautiful friendship bracelet in all the colors of the rainbow."
 	icon_state = "friendbracelet"
 
-/obj/item/clothing/accessory/bracelet/friendship/verb/dedicate_bracelet()
-	set name = "Dedicate Bracelet"
-	set category = "Object"
-	set desc = "Dedicate your friendship bracelet to a special someone."
-	var/mob/M = usr
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
+	INTERACT_VERB("Dedicate Bracelet", PROC_REF(friendship_dedicate_bracelet_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Dedicate Bracelet".
+/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedicate_bracelet_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/mob/M = user
 	if(!M.mind)
 		return 0
 
-	var/_answer_a1 = rerun_prompt(M, "a1", list("kind" = "text", "message" = "Who do you want to dedicate the bracelet to?", "title" = "Friendship Bracelet", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(dedicate_bracelet), args)
+	var/_answer_a1 = rerun_prompt(M, "a1", list("kind" = "text", "message" = "Who do you want to dedicate the bracelet to?", "title" = "Friendship Bracelet", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(friendship_dedicate_bracelet_verb), list(user))
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)

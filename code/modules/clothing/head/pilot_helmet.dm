@@ -152,13 +152,13 @@
 		I.icon_state = ""
 		animate(pilot_hud,alpha=0,time=3 SECONDS)
 
-/obj/item/clothing/head/pilot/verb/hud_colors()
-	set name = "Alter HUD color"
-	set desc = "Change the color of the piloting HUD."
-	set category = "Object"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot, \
+	INTERACT_VERB("Alter HUD color", PROC_REF(pilot_hud_colors_verb), REQ_IN_INVENTORY), \
+)
 
-	var/newcolor = tgui_color_picker(usr,"Pick a color!","HUD Color")
+/// Old verb "Alter HUD color".
+/obj/item/clothing/head/pilot/proc/pilot_hud_colors_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	var/newcolor = tgui_color_picker(user,"Pick a color!","HUD Color")
 	if(newcolor)
 		for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
 			var/image/I = images[img]

@@ -10,6 +10,19 @@
 EXTEND_INTERACTIONS(/obj/item/rig, \
 	INTERACT_ITEM(null, PROC_REF(rig_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(rig_shock_hand)), \
+	INTERACT_VERB("Open Hardsuit Interface", PROC_REF(rig_hardsuit_interface_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Visor", PROC_REF(rig_toggle_vision_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Helmet", PROC_REF(rig_toggle_helmet_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_helmet, "it has no helmet")), \
+	INTERACT_VERB("Toggle Chestpiece", PROC_REF(rig_toggle_chest_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_chest, "it has no chestpiece")), \
+	INTERACT_VERB("Toggle Gauntlets", PROC_REF(rig_toggle_gauntlets_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_gauntlets, "it has no gauntlets")), \
+	INTERACT_VERB("Toggle Boots", PROC_REF(rig_toggle_boots_verb), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/rig/proc/pred_has_boots, "it has no boots")), \
+	INTERACT_VERB("Deploy Hardsuit", PROC_REF(rig_deploy_suit_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Hardsuit", PROC_REF(rig_toggle_seals_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Switch Vision Mode", PROC_REF(rig_switch_vision_mode_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Configure Voice Synthesiser", PROC_REF(rig_alter_voice_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Select Module", PROC_REF(rig_select_module_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Toggle Module", PROC_REF(rig_toggle_module_verb), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Engage Module", PROC_REF(rig_engage_module_verb), REQ_IN_INVENTORY), \
 )
 
 /// Old attackby: lock, install a tank, module or cell, or hand the item to a module.

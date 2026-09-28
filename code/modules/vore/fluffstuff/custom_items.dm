@@ -503,24 +503,25 @@ EXTEND_INTERACTIONS(/obj/item/card/id/centcom/station/fluff/aronai, INTERACT_SEL
 	flags_inv = HIDEJUMPSUIT|HIDETIE|HIDEHOLSTER
 	var/unbuttoned = 0
 
-/obj/item/clothing/suit/fluff/purp_robes/verb/toggle()
-	set name = "Toggle coat buttons"
-	set category = "Object"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/fluff/purp_robes, \
+	INTERACT_VERB("Toggle coat buttons", PROC_REF(purp_robes_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	if(!usr.canmove || usr.stat || usr.restrained())
+/// Old verb "Toggle coat buttons".
+/obj/item/clothing/suit/fluff/purp_robes/proc/purp_robes_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	switch(unbuttoned)
 		if(0)
 			icon_state = "[initial(icon_state)]_open"
 			unbuttoned = TRUE
-			to_chat(usr, "You unbutton the coat.")
+			to_chat(user, "You unbutton the coat.")
 		if(1)
 			icon_state = "[initial(icon_state)]"
 			unbuttoned = FALSE
-			to_chat(usr, "You button up the coat.")
-	usr.update_inv_wear_suit()
+			to_chat(user, "You button up the coat.")
+	user.update_inv_wear_suit()
 
 /obj/item/clothing/head/fluff/pink_tiara
 	name = "pink tourmaline tiara"

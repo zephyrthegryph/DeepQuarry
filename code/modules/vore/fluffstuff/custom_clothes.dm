@@ -343,25 +343,26 @@
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_SECURITY, POCKET_DETECTIVE)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/clothing/suit/storage/fluff/fedcoat/verb/toggle()
-	set name = "Toggle coat buttons"
-	set category = "Object"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/fedcoat, \
+	INTERACT_VERB("Toggle coat buttons", PROC_REF(fedcoat_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	if(!usr.canmove || usr.stat || usr.restrained())
+/// Old verb "Toggle coat buttons".
+/obj/item/clothing/suit/storage/fluff/fedcoat/proc/fedcoat_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return FALSE
 
 	if(unbuttoned)
 		icon_state = "[initial(icon_state)]"
 		item_state = "[initial(item_state)]"
 		unbuttoned = FALSE
-		to_chat(usr, "You button up the coat.")
+		to_chat(user, "You button up the coat.")
 	else
 		icon_state = "[initial(icon_state)]_open"
 		item_state = "[initial(item_state)]_open"
 		unbuttoned = TRUE
-		to_chat(usr, "You unbutton the coat.")
-	usr.update_inv_wear_suit()
+		to_chat(user, "You unbutton the coat.")
+	user.update_inv_wear_suit()
 
 	//Variants
 /obj/item/clothing/suit/storage/fluff/fedcoat/fedblue
@@ -1131,29 +1132,28 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/pompom, INTERACT_SELF("Toggle 
 	flags_inv = (HIDEEYES)
 	body_parts_covered = HEAD|EYES
 
-/obj/item/clothing/head/welding/fluff/vinjj/toggle() //overriding this 'cause it only conceals the eyes - it's a hat, not a mask
-	set category = "Object"
-	set src in usr
+/// Overrides the "Adjust welding mask" interaction: it only conceals the eyes - it's a hat, not a mask.
+/obj/item/clothing/head/welding/fluff/vinjj/head_welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+	if(user.canmove && !user.stat && !user.restrained())
 		if(up)
 			up = !up
 			body_parts_covered |= (EYES)
 			flags_inv |= (HIDEEYES)
 			icon_state = "vinjjdana"
-			to_chat(usr, "You flip the goggles down to protect your eyes.")
+			to_chat(user, "You flip the goggles down to protect your eyes.")
 		else
 			up = !up
 			body_parts_covered &= ~(EYES)
 			flags_inv &= ~(HIDEEYES)
 			icon_state = "vinjjdanaup"
 
-			to_chat(usr, "You push the goggles up out of your face.")
+			to_chat(user, "You push the goggles up out of your face.")
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = loc
 			M.update_inv_wear_mask()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 //Vorrarkul: Theodora Lindt
 /obj/item/clothing/suit/chococoat
@@ -1419,23 +1419,24 @@ Departamental Swimsuits, for general use
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
 	var/unbuttoned = FALSE
 
-/obj/item/clothing/suit/storage/fluff/jacket/verb/toggle()
-	set name = "Toggle coat buttons"
-	set category = "Object"
-	set src in usr
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
+	INTERACT_VERB("Toggle coat buttons", PROC_REF(jacket_toggle_verb), REQ_IN_INVENTORY), \
+)
 
-	if(!usr.canmove || usr.stat || usr.restrained())
+/// Old verb "Toggle coat buttons".
+/obj/item/clothing/suit/storage/fluff/jacket/proc/jacket_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return FALSE
 
 	if(unbuttoned)
 		icon_state = "[initial(icon_state)]"
 		unbuttoned = FALSE
-		to_chat(usr, "You button up the coat.")
+		to_chat(user, "You button up the coat.")
 	else
 		icon_state = "[initial(icon_state)]_open"
 		unbuttoned = TRUE
-		to_chat(usr, "You unbutton the coat.")
-	usr.update_inv_wear_suit()
+		to_chat(user, "You unbutton the coat.")
+	user.update_inv_wear_suit()
 
 /obj/item/clothing/suit/storage/fluff/jacket/field //Just here so it can be seen and easily recognized under /spawn.
 	name = "Field Jacket"
@@ -2017,11 +2018,9 @@ Departamental Swimsuits, for general use
 	var/owner = "ryumi"
 	var/obj/item/perfect_tele/translocator = null // The translocator installed inside, if there is one. Gotta go out and get it first!
 
-/obj/item/clothing/head/fluff/nikki/verb/verb_translocator_unequip()
-	set category = "Object"
-	set name = "Nikki's Hat - Unequip Translocator"
-	set src in usr
-	translocator_unequip(translocator, usr)
+/// Old verb "Nikki's Hat - Unequip Translocator".
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_translocator_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	translocator_unequip(translocator, user)
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	om_do_after(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
@@ -2079,7 +2078,13 @@ Departamental Swimsuits, for general use
 
 	else return 1
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, 	INTERACT_ITEM(null, PROC_REF(nikki_hat_item)), 	INTERACT_HAND_UNGATED(null, PROC_REF(nikki_hat_unload_hand)), 	INTERACT_ALT("Remove translocator", PROC_REF(nikki_hat_unequip_alt)), 	INTERACT_SELF(null, PROC_REF(nikki_hat_self)), )
+EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
+	INTERACT_ITEM(null, PROC_REF(nikki_hat_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(nikki_hat_unload_hand)), \
+	INTERACT_ALT("Remove translocator", PROC_REF(nikki_hat_unequip_alt)), \
+	INTERACT_SELF(null, PROC_REF(nikki_hat_self)), \
+	INTERACT_VERB("Nikki's Hat - Unequip Translocator", PROC_REF(nikki_hat_unequip_translocator_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attackby: slot in (or swap) a translocator, or hand the item to the one inside.
 /obj/item/clothing/head/fluff/nikki/proc/nikki_hat_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -2258,11 +2263,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, 	INTERACT_ITEM(null, PR
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY)
 	return list(HOLD_ONLY(stores))
 
-/obj/item/clothing/suit/storage/hooded/purple_robes/verb/toggle()
-	set name = "Toggle Eyes"
-	set category = "Object"
-	set src in usr
-	toggle_eyes(usr)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/purple_robes, \
+	INTERACT_VERB("Toggle Eyes", PROC_REF(purple_robes_toggle_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Toggle Eyes".
+/obj/item/clothing/suit/storage/hooded/purple_robes/proc/purple_robes_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	toggle_eyes(user)
 
 /obj/item/clothing/suit/storage/hooded/purple_robes/proc/toggle_eyes(mob/user)
 

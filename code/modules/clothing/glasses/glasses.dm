@@ -205,12 +205,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	drop_sound = 'sound/items/drop/gloves.ogg'
 	pickup_sound = 'sound/items/pickup/gloves.ogg'
 
-/obj/item/clothing/glasses/eyepatch/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/eyepatch/proc/eyepatch_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -229,12 +231,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	drop_sound = 'sound/items/drop/gloves.ogg'
 	pickup_sound = 'sound/items/pickup/gloves.ogg'
 
-/obj/item/clothing/glasses/eyepatchwhite/verb/switcheye()
-	set name = "Switch Eyepatch"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
+	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatchwhite_switcheye_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Switch Eyepatch".
+/obj/item/clothing/glasses/eyepatchwhite/proc/eyepatchwhite_switcheye_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!isliving(user)) return
+	if(user.stat) return
 
 	eye = !eye
 	if(eye)
@@ -401,18 +405,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/bigshot, INTERACT_ALT(
 	tint = TINT_HEAVY
 	specialty_goggles = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, INTERACT_USE("Flip", PROC_REF(welding_goggles_flip_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
+	INTERACT_USE("Flip", PROC_REF(welding_goggles_flip_self)), \
+	INTERACT_VERB("Adjust welding goggles", PROC_REF(welding_toggle_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/clothing/glasses/welding/proc/welding_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle()
+	welding_toggle_verb(user)
 
-/obj/item/clothing/glasses/welding/verb/toggle()
-	set category = "Object"
-	set name = "Adjust welding goggles"
-	set src in usr
-
-	if(usr.canmove && !usr.stat && !usr.restrained())
+/// Old verb "Adjust welding goggles".
+/obj/item/clothing/glasses/welding/proc/welding_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			flags_inv |= HIDEEYES
@@ -420,7 +424,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, INTERACT_USE("Flip", PRO
 			icon_state = initial(icon_state)
 			flash_protection = initial(flash_protection)
 			tint = initial(tint)
-			to_chat(usr, "You flip \the [src] down to protect your eyes.")
+			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			flags_inv &= ~HIDEEYES
@@ -428,9 +432,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, INTERACT_USE("Flip", PRO
 			icon_state = "[initial(icon_state)]up"
 			flash_protection = FLASH_PROTECTION_NONE
 			tint = TINT_NONE
-			to_chat(usr, "You push \the [src] up out of your face.")
+			to_chat(user, "You push \the [src] up out of your face.")
 		update_clothing_icon()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 /obj/item/clothing/glasses/welding/superior
 	name = "superior welding goggles"
@@ -630,32 +634,32 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 	var/list/bodytypes = list(SPECIES_TESHARI)
 	return list(REQ_FITS_BODYTYPES(bodytypes))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
+	INTERACT_USE("Flip", PROC_REF(aerogel_goggles_flip_self)), \
+	INTERACT_VERB("Adjust Orange Goggles", PROC_REF(aerogelgoggles_toggle_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/clothing/glasses/aerogelgoggles/proc/aerogel_goggles_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle()
+	aerogelgoggles_toggle_verb(user)
 
-/obj/item/clothing/glasses/aerogelgoggles/verb/toggle()
-	set category = "Object"
-	set name = "Adjust Orange Goggles"
-	set src in usr
-
-	if(usr.canmove && !usr.stat && !usr.restrained())
+/// Old verb "Adjust Orange Goggles".
+/obj/item/clothing/glasses/aerogelgoggles/proc/aerogelgoggles_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			flags_inv |= HIDEEYES
 			body_parts_covered |= EYES
 			icon_state = initial(icon_state)
-			to_chat(usr, "You flip \the [src] down to protect your eyes.")
+			to_chat(user, "You flip \the [src] down to protect your eyes.")
 		else
 			src.up = !src.up
 			flags_inv &= ~HIDEEYES
 			body_parts_covered &= ~EYES
 			icon_state = "[initial(icon_state)]up"
-			to_chat(usr, "You push \the [src] up from in front of your eyes.")
+			to_chat(user, "You push \the [src] up from in front of your eyes.")
 		update_clothing_icon()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 
 /obj/item/clothing/glasses/proc/prescribe(mob/user)

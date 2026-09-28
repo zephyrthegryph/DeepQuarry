@@ -274,28 +274,28 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/riot, INTERACT_USE("Toggle vi
 	var/up = FALSE
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, INTERACT_USE("Toggle visor", PROC_REF(bedevere_visor_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, \
+	INTERACT_USE("Toggle visor", PROC_REF(bedevere_visor_self)), \
+	INTERACT_VERB("Adjust helmet visor", PROC_REF(bedevere_toggle_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/clothing/head/helmet/combat/bedevere/proc/bedevere_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle()
+	bedevere_toggle_verb(user)
 
-/obj/item/clothing/head/helmet/combat/bedevere/verb/toggle()
-	set category = "Object"
-	set name = "Adjust helmet visor"
-	set src in usr
-
+/// Old verb "Adjust helmet visor".
+/obj/item/clothing/head/helmet/combat/bedevere/proc/bedevere_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!base_state)
 		base_state = icon_state
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			body_parts_covered |= (EYES|FACE)
 			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = base_state
 			tint = initial(tint)
-			to_chat(usr, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
+			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
 			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
 		else
 			src.up = !src.up
@@ -303,13 +303,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, INTERACT_USE
 			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
-			to_chat(usr, "You push the [src] up out of your face, ineffectively clearing your vision.")
+			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
 			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
 			M.update_inv_wear_mask()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()
 
 // Costume Versions Here
 /obj/item/clothing/head/helmet/combat/crusader_costume
@@ -331,28 +331,28 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, INTERACT_USE
 	var/up = FALSE
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere_costume, INTERACT_USE("Toggle visor", PROC_REF(bedevere_costume_visor_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere_costume, \
+	INTERACT_USE("Toggle visor", PROC_REF(bedevere_costume_visor_self)), \
+	INTERACT_VERB("Adjust helmet visor", PROC_REF(bedevere_costume_toggle_verb), REQ_IN_INVENTORY), \
+)
 
 /// Old attack_self.
 /obj/item/clothing/head/helmet/combat/bedevere_costume/proc/bedevere_costume_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle()
+	bedevere_costume_toggle_verb(user)
 
-/obj/item/clothing/head/helmet/combat/bedevere_costume/verb/toggle()
-	set category = "Object"
-	set name = "Adjust helmet visor"
-	set src in usr
-
+/// Old verb "Adjust helmet visor".
+/obj/item/clothing/head/helmet/combat/bedevere_costume/proc/bedevere_costume_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!base_state)
 		base_state = icon_state
 
-	if(usr.canmove && !usr.stat && !usr.restrained())
+	if(user.canmove && !user.stat && !user.restrained())
 		if(src.up)
 			src.up = !src.up
 			body_parts_covered |= (EYES|FACE)
 			flags_inv |= (HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = base_state
 			tint = initial(tint)
-			to_chat(usr, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
+			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
 			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
 		else
 			src.up = !src.up
@@ -360,10 +360,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere_costume, INTE
 			flags_inv &= ~(HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE)
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
-			to_chat(usr, "You push the [src] up out of your face, ineffectively clearing your vision.")
+			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
 			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
 			M.update_inv_wear_mask()
-		usr.update_mob_action_buttons()
+		user.update_mob_action_buttons()

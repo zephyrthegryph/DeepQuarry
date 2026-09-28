@@ -36,25 +36,27 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
-/obj/item/clothing/suit/storage/toggle/verb/toggle()
-	set name = "Toggle Coat Buttons"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/toggle, \
+	INTERACT_VERB("Toggle Coat Buttons", PROC_REF(toggle_toggle_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Toggle Coat Buttons".
+/obj/item/clothing/suit/storage/toggle/proc/toggle_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
 		open = 0
 		icon_state = initial(icon_state)
 		flags_inv = HIDETIE|HIDEHOLSTER
-		to_chat(usr, "You button up the coat.")
+		to_chat(user, "You button up the coat.")
 	else if(open == 0)
 		open = 1
 		icon_state = "[icon_state]_open"
 		flags_inv = HIDEHOLSTER
-		to_chat(usr, "You unbutton the coat.")
+		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
-		to_chat(usr, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
+		to_chat(user, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
 		return
 	update_clothing_icon()	//so our overlays update
 
@@ -63,30 +65,32 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	flags_inv = HIDEHOLSTER
 	var/open = 0	//0 is closed, 1 is open, -1 means it won't be able to toggle
 
-/obj/item/clothing/suit/storage/hooded/toggle/verb/toggle()
-	set name = "Toggle Coat Buttons"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/toggle, \
+	INTERACT_VERB("Toggle Coat Buttons", PROC_REF(hooded_toggle_toggle_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Toggle Coat Buttons".
+/obj/item/clothing/suit/storage/hooded/toggle/proc/hooded_toggle_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	if(open == 1) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
 		open = 0
 		update_icon()
 		flags_inv = HIDETIE|HIDEHOLSTER
-		to_chat(usr, "You button up the coat.")
+		to_chat(user, "You button up the coat.")
 	else if(open == 0)
 		open = 1
 		update_icon()
 		flags_inv = HIDEHOLSTER
-		to_chat(usr, "You unbutton the coat.")
+		to_chat(user, "You unbutton the coat.")
 	else //in case some goofy admin switches icon states around without switching the icon_open or icon_closed
-		to_chat(usr, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
+		to_chat(user, "You attempt to button-up the velcro on your [src], before promptly realising how silly you are.")
 		return
 	if(istype(hood,/obj/item/clothing/head/hood/toggleable)) //checks if a hood (which you should use) is attached
 		var/obj/item/clothing/head/hood/toggleable/T = hood
 		T.open = open //copy the jacket's open state to the hood
-		T.update_icon(usr) //usr as an arg to fix a weird runtime
+		T.update_icon(user) //user as an arg to fix a weird runtime
 		T.update_clothing_icon()
 	update_clothing_icon() //so our overlays update
 
@@ -105,21 +109,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	var/icon_badge
 	var/icon_nobadge
 
-/obj/item/clothing/suit/storage/vest/verb/toggle()
-	set name ="Adjust Badge"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/vest, \
+	INTERACT_VERB("Adjust Badge", PROC_REF(vest_toggle_verb), REQ_IN_INVENTORY), \
+)
+
+/// Old verb "Adjust Badge".
+/obj/item/clothing/suit/storage/vest/proc/vest_toggle_verb(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user.canmove || user.stat || user.restrained())
 		return 0
 
 	if(icon_state == icon_badge)
 		icon_state = icon_nobadge
-		to_chat(usr, "You conceal \the [src]'s badge.")
+		to_chat(user, "You conceal \the [src]'s badge.")
 	else if(icon_state == icon_nobadge)
 		icon_state = icon_badge
-		to_chat(usr, "You reveal \the [src]'s badge.")
+		to_chat(user, "You reveal \the [src]'s badge.")
 	else
-		to_chat(usr, "\The [src] does not have a badge.")
+		to_chat(user, "\The [src] does not have a badge.")
 		return
 	update_clothing_icon()
 
