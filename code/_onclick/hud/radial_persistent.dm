@@ -7,8 +7,8 @@
 	icon_state = "radial_center"
 
 /atom/movable/screen/radial/persistent/center/Click(location, control, params)
-	if(usr.client == parent.current_user)
-		parent.element_chosen(null,usr)
+	if(usr.client == parent().current_user())
+		parent().element_chosen(null,usr)
 
 /atom/movable/screen/radial/persistent/center/MouseEntered(location, control, params)
 	. = ..()
@@ -24,7 +24,7 @@
 
 /datum/radial_menu/persistent/New()
 	close_button = new /atom/movable/screen/radial/persistent/center
-	close_button.parent = src
+	close_button.set_parent(src)
 
 /datum/radial_menu/persistent/element_chosen(choice_id,mob/user)
 	select_proc_callback.Invoke(LAZYACCESS(choices_values, choice_id))
@@ -63,7 +63,7 @@ REF_OWNED(/datum/radial_menu/persistent, "select_proc_callback")
 	if(radius)
 		menu.radius = radius
 	menu.select_proc_callback = select_proc
-	menu.anchor = anchor
+	menu.anchor_handle = om_handle(anchor)
 	menu.check_screen_border(user) //Do what's needed to make it look good near borders or on hud
 	menu.set_choices(choices, tooltips)
 	menu.show_to(user)

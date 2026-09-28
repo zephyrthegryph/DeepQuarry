@@ -1043,12 +1043,11 @@
 					to_chat(X, take_msg)
 			to_chat(M, span_filter_pm(span_boldnotice("Your adminhelp is being attended to by [usr.client]. Thanks for your patience!")))
 			if (CONFIG_GET(string/chat_webhook_url))
-				spawn(0) // S7 keeps: admin topic; world.Export() is a blocking external call
-					var/query_string = "type=admintake"
-					query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-					query_string += "&admin=[url_encode(key_name(usr.client))]"
-					query_string += "&user=[url_encode(key_name(M))]"
-					world.Export("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+				var/query_string = "type=admintake"
+				query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
+				query_string += "&admin=[url_encode(key_name(usr.client))]"
+				query_string += "&user=[url_encode(key_name(M))]"
+				om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 		else
 			to_chat(usr, span_warning("Unable to locate mob."))
 
@@ -1462,12 +1461,12 @@
 
 	else if(href_list["ac_menu_wanted"])
 		var/already_wanted = 0
-		if(GLOB.news_network.wanted_issue)
+		if(GLOB.news_network.wanted_issue())
 			already_wanted = 1
 
 		if(already_wanted)
-			src.admincaster_feed_message.author = GLOB.news_network.wanted_issue.author
-			src.admincaster_feed_message.body = GLOB.news_network.wanted_issue.body
+			src.admincaster_feed_message.author = GLOB.news_network.wanted_issue().author
+			src.admincaster_feed_message.body = GLOB.news_network.wanted_issue().body
 		src.admincaster_screen = 14
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
 
@@ -1500,15 +1499,15 @@
 					WANTED.body = src.admincaster_feed_message.body                   //Wanted desc
 					WANTED.backup_author = src.admincaster_signature                  //Submitted by
 					WANTED.is_admin_message = 1
-					GLOB.news_network.wanted_issue = WANTED
+					GLOB.news_network.wanted_issue_handle = om_handle(WANTED)
 					for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 						NEWSCASTER.newsAlert()
 						NEWSCASTER.update_icon()
 					src.admincaster_screen = 15
 				else
-					GLOB.news_network.wanted_issue.author = src.admincaster_feed_message.author
-					GLOB.news_network.wanted_issue.body = src.admincaster_feed_message.body
-					GLOB.news_network.wanted_issue.backup_author = src.admincaster_feed_message.backup_author
+					GLOB.news_network.wanted_issue().author = src.admincaster_feed_message.author
+					GLOB.news_network.wanted_issue().body = src.admincaster_feed_message.body
+					GLOB.news_network.wanted_issue().backup_author = src.admincaster_feed_message.backup_author
 					src.admincaster_screen = 19
 				log_admin("[key_name_admin(usr)] issued a Station-wide Wanted Notification for [src.admincaster_feed_message.author]!")
 		SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/access_news_network)
@@ -1518,7 +1517,7 @@
 		if(isnull(choice))
 			return
 		if(choice=="Confirm")
-			GLOB.news_network.wanted_issue = null
+			GLOB.news_network.wanted_issue_handle = null
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.update_icon()
 			src.admincaster_screen=17

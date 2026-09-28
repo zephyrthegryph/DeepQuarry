@@ -16,7 +16,7 @@ GLOBAL_LIST(construction_frame_floor)
 // Frame Type Datum - Describes the frame structures that can be created from a frame item.
 //////////////////////////////
 /datum/frame/frame_types
-	var/icon/icon_override		// Icon to set on frame object when building. If null icon is unchanged.
+	var/icon_override		// Icon to set on frame object when building. If null icon is unchanged.
 	var/name					// Name assigned to the frame object.
 	var/frame_size = 5			// Sheets of metal required to build.
 	var/frame_class				// Determines construction method.  "machine", "computer", "alarm", or "display"
@@ -448,3 +448,5 @@ GLOBAL_LIST(construction_frame_floor)
 	update_desc()
 	to_chat(user, desc)
 	return TRUE
+
+REF_HELD(/obj/structure/frame, list("circuit"))

@@ -371,3 +371,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	split_file = 'icons/turf/fancy_shuttles/pod.dmi'
 /obj/effect/fancy_shuttle_floor_preview/escapepod
 	icon = 'icons/turf/fancy_shuttles/pod_preview.dmi'
+
+REF_OWNED(/obj/effect/fancy_shuttle, list("split_icon"))
+REF_OWNED(/turf/simulated/wall/fancy_shuttle, list("under_MA", "under_EM"))

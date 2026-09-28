@@ -126,7 +126,7 @@ GLOBAL_LIST_INIT(disposal_pipe_recipes, list(
 // Subtype for actual pipes
 //
 /datum/pipe_recipe/pipe
-	var/obj/item/pipe/construction_type 		// The type PATH to the type of pipe fitting object the recipe makes.
+	var/construction_type 		// The type PATH to the type of pipe fitting object the recipe makes.
 	var/paintable = FALSE // If TRUE, allow the RPD to paint this pipe. //
 
 /datum/pipe_recipe/pipe/New(label, obj/machinery/atmospherics/path)
@@ -134,7 +134,8 @@ GLOBAL_LIST_INIT(disposal_pipe_recipes, list(
 	pipe_type = path
 	construction_type = initial(path.construction_type)
 	icon_state = initial(path.pipe_state)
-	dirtype = initial(construction_type.dispenser_class)
+	var/obj/item/pipe/construction_path = construction_type
+	dirtype = initial(construction_path.dispenser_class)
 	if (dirtype == PIPE_TRIN_M)
 		icon_state_m = "[icon_state]m"
 	paintable = !ispath(path, /obj/machinery/atmospherics/pipe/simple/heat_exchanging) && ispath(path, /obj/machinery/atmospherics/pipe) && !(ispath(path, /obj/machinery/atmospherics/pipe/vent))

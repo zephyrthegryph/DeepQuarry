@@ -16,7 +16,7 @@
 	var/master_ref = null
 	/// A reference to the owner HUD, if any.
 	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
-	var/datum/hud/hud = null // A reference to the owner HUD, if any.
+	var/hud_handle	// A reference to the owner HUD, if any.
 
 // L1 (doc/rewrite/lifecycle.md §2 phase 5, "release screens"): whichever
 // client(s) it's shown on -- almost always exactly one, but this doesn't
@@ -63,10 +63,10 @@
 	return 1
 
 /atom/movable/screen/item_action
-	var/obj/item/owner
+	var/owner_handle
 
 /atom/movable/screen/item_action/Click()
-	if(!usr || !owner)
+	if(!usr || !owner())
 		return 1
 	if(!usr.checkClickCooldown())
 		return
@@ -74,10 +74,10 @@
 	if(usr.stat || usr.restrained() || usr.has_status(EFFECT_STUNNED) || usr.lying)
 		return 1
 
-	if(!(owner in usr))
+	if(!(owner() in usr))
 		return 1
 
-	owner.ui_action_click()
+	owner().ui_action_click()
 	return 1
 
 /atom/movable/screen/grab
@@ -703,33 +703,33 @@
 
 /atom/movable/screen/inventory/hand/update_icon()
 	..()
-	if(!hud)
+	if(!owner_hud())
 		return
 	if(!handcuff_overlay)
-		var/state = (hud.l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"
+		var/state = (owner_hud().l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"
 		handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
 	cut_overlays()
-	if(hud.mymob && iscarbon(hud.mymob))
-		var/mob/living/carbon/C = hud.mymob
+	if(owner_hud().mymob() && iscarbon(owner_hud().mymob()))
+		var/mob/living/carbon/C = owner_hud().mymob()
 		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 			add_overlay(handcuff_overlay)
 
 // PIP stuff
 /atom/movable/screen/component_button
-	var/atom/movable/screen/parent
+	var/parent_handle
 
 /atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
 	. = ..()
-	parent = new_parent
+	parent_handle = om_handle(new_parent)
 
 /atom/movable/screen/component_button/Click(params)
-	if(parent)
-		parent.component_click(src, params)
+	if(parent())
+		parent().component_click(src, params)
 
 // Character setup stuff
 /atom/movable/screen/setup_preview
 
-	var/datum/preferences/pref
+	var/pref_handle
 
 // Background 'floor'
 /atom/movable/screen/setup_preview/pm_helper
@@ -744,14 +744,14 @@
 
 /atom/movable/screen/setup_preview/bg/Click(params)
 	// migrated bgstate
-	if(pref)
+	if(pref())
 		// bgstate_options moved onto the pref subtype as bgstate_choices.
 		// Cast through the typed local rather than reaching the subtype member with `:`;
 		// the `:` operator skips compile-time validation (CLAUDE.md §6b).
 		var/datum/preference/text/human/bgstate/bg_pref = GLOB.preference_entries[/datum/preference/text/human/bgstate]
 		var/list/options = bg_pref?.bgstate_choices
-		pref.update_preference_by_type(/datum/preference/text/human/bgstate, next_in_list(pref.read_preference(/datum/preference/text/human/bgstate), options))
-		pref.update_preview_icon()
+		pref().update_preference_by_type(/datum/preference/text/human/bgstate, next_in_list(pref().read_preference(/datum/preference/text/human/bgstate), options))
+		pref().update_preview_icon()
 /**
  * This object holds all the on-screen elements of the mapping unit.
  * It has a decorative frame and onscreen buttons. The map itself is drawn
@@ -782,12 +782,12 @@
 	var/atom/movable/screen/mapper/powbutton/powbutton
 	var/atom/movable/screen/mapper/mapbutton/mapbutton
 
-	var/obj/item/mapping_unit/owner
-	var/atom/movable/screen/mapper/extras_holder/extras_holder
+	var/owner_handle
+	var/extras_holder_handle
 
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
-	owner = newowner
+	owner_handle = om_handle(newowner)
 
 	mask_full = new(src) // Full white square mask
 	mask_ping = new(src) // Animated 'pinging' mask
@@ -797,10 +797,10 @@
 	powbutton = new(src) // Clickable button
 	mapbutton = new(src) // Clickable button
 
-	frame.icon_state = initial(frame.icon_state)+owner.hud_frame_hint
+	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
 	/**
-	 * The vis_contents layout is: this(frame,extras_holder,mask(bg(map)))
+	 * The vis_contents layout is: this(frame,extras_holder(),mask(bg(map)))
 	 * bg is set to BLEND_MULTIPLY against the mask to crop it.
 	 */
 
@@ -822,12 +822,12 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 	bg.vis_contents.Cut()
 	bg.vis_contents.Add(map)
 
-	if(extras && !extras_holder)
-		extras_holder = extras
-		vis_contents += extras_holder
-	if(!extras && extras_holder)
-		vis_contents -= extras_holder
-		extras_holder = null
+	if(extras && !extras_holder())
+		extras_holder_handle = om_handle(extras)
+		vis_contents += extras_holder()
+	if(!extras && extras_holder())
+		vis_contents -= extras_holder()
+		extras_holder_handle = null
 
 /atom/movable/screen/movable/mapper_holder/proc/powerClick()
 	if(running)
@@ -836,35 +836,35 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 		on()
 
 /atom/movable/screen/movable/mapper_holder/proc/mapClick()
-	if(owner)
+	if(owner())
 		if(running)
 			off()
-		owner.pinging = !owner.pinging
+		owner().pinging = !owner().pinging
 		on()
 
 /atom/movable/screen/movable/mapper_holder/proc/off(inform = TRUE)
 	frame.cut_overlay("powlight")
 	bg.vis_contents.Cut()
-	vis_contents.Remove(mask_ping, mask_full, extras_holder)
-	extras_holder = null
+	vis_contents.Remove(mask_ping, mask_full, extras_holder())
+	extras_holder_handle = null
 	running = FALSE
 	if(inform)
-		owner.stop_updates()
+		owner().stop_updates()
 
 /atom/movable/screen/movable/mapper_holder/proc/on(inform = TRUE)
 	frame.add_overlay("powlight")
 	if(inform)
-		owner.start_updates()
+		owner().start_updates()
 
 // Prototype
 /atom/movable/screen/mapper
 	plane = PLANE_HOLOMAP
 	mouse_opacity = 0
-	var/atom/movable/screen/movable/mapper_holder/parent
+	var/parent_handle
 
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
-	parent = loc
+	parent_handle = om_handle(loc)
 
 // Holds the actual map image
 /atom/movable/screen/mapper/map
@@ -913,7 +913,7 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 		return TRUE
 	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
-	parent.powerClick()
+	parent().powerClick()
 	flick("powClick",src)
 	usr << get_sfx("button")
 	return TRUE
@@ -931,7 +931,7 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 		return TRUE
 	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
-	parent.mapClick()
+	parent().mapClick()
 	flick("mapClick",src)
 	usr << get_sfx("button")
 	return TRUE
@@ -1050,14 +1050,14 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 //Is this pretty? Fuck no, but its how i know to fix it -shark
 //Oh also the swap button on simple mob hands has hud set to null so we also need to catch that.
 /atom/movable/screen/inventory/proc/add_overlays()
-	if(!hud) //Simplemob swap hands button has this set to null :)
+	if(!owner_hud()) //Simplemob swap hands button has this set to null :)
 		return
 	var/mob/user
-	if(ismob(hud)) //Simplemob hands directly reference the mob in hud, dont ask me.
-		user = hud
+	if(ismob(owner_hud())) //Simplemob hands directly reference the mob in hud, dont ask me.
+		user = owner_hud()
 	else
-		user = hud.mymob //original intended behaviour
-	if(hud && user && slot_id)
+		user = owner_hud().mymob() //original intended behaviour
+	if(owner_hud() && user && slot_id)
 
 		var/obj/item/holding = user.get_active_hand()
 
@@ -1079,3 +1079,35 @@ REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_pi
 	user.client?.screen -= F
 	qdel(F)
 	overlays += empty
+
+/// LC-refs: the hud this screen object belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/proc/owner_hud() as /datum/hud
+	return om_resolve(hud_handle)
+
+/// LC-refs: the item this button acts for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/item_action/proc/owner() as /obj/item
+	return om_resolve(owner_handle)
+
+/// LC-refs: the screen object this button belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/component_button/proc/parent() as /atom/movable/screen
+	return om_resolve(parent_handle)
+
+/// LC-refs: the preferences this preview shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/setup_preview/proc/pref() as /datum/preferences
+	return om_resolve(pref_handle)
+
+/// LC-refs: the mapping unit this holder shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/mapper_holder/proc/owner() as /obj/item/mapping_unit
+	return om_resolve(owner_handle)
+
+/// LC-refs: the extras overlay the mapping unit handed us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/mapper_holder/proc/extras_holder() as /atom/movable/screen/mapper/extras_holder
+	return om_resolve(extras_holder_handle)
+
+/// LC-refs: the mapper holder this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
+	return om_resolve(parent_handle)
+
+REF_OWNED(/atom/movable/screen/zone_sel, list("selecting_appearance"))
+
+REF_OWNED(/atom/movable/screen/inventory/hand, list("handcuff_overlay"))

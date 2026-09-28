@@ -1,11 +1,13 @@
-/// Seed and gene data. Spreading plants grow on their own lane (PERIODIC_PLANTS, 7.5 s, was this
-/// subsystem's loop), started by add_plant().
-SUBSYSTEM_DEF(plants)
+/// The plant world service (fold wave F1; was SSplants): seed and gene data. It has no periodic work
+/// of its own: spreading plants grow on their own lane (PERIODIC_PLANTS, 7.5 s), started by
+/// add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS registry. SSplanets.Initialize()
+/// calls initialize(), where SSplants used to initialize.
+GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
+
+/datum/world_service/plants
 	name = "Plants"
-	dependencies = list(
-		/datum/controller/subsystem/mapping
-	)
-	flags = SS_NO_FIRE
+	/// TRUE once setup() has built the seed and gene tables.
+	var/initialized = FALSE
 
 	var/list/product_descs = list()					// Stores generated fruit descs.
 	var/list/seeds = list()							// All seed data stored here.
@@ -18,22 +20,21 @@ SUBSYSTEM_DEF(plants)
 	var/list/gene_masked_list = list()				// Stored gene masked list, rather than recreating it when needed.
 	var/list/plant_gene_datums = list()				// Stored datum versions of the gene masked list.
 
-	/// Spreading plants that are growing (on PERIODIC_PLANTS).
-	var/list/processing = list()
+/datum/world_service/plants/stat_line()
+	return "P:[REGISTRY_COUNT(REGISTRY_GROWING_PLANTS)]|S:[length(seeds)]"
 
-/datum/controller/subsystem/plants/stat_entry(msg)
-	msg = "P:[length(processing)]|S:[length(seeds)]"
-	return ..()
-
-/datum/controller/subsystem/plants/Initialize()
+/datum/world_service/plants/initialize()
+	if(initialized)
+		return
 	setup()
-	return SS_INIT_SUCCESS
+	initialized = TRUE
+	log_world("Plant service initialized: [length(seeds)] seeds, [length(gene_tag_masks)] gene masks.")
 
 // Predefined/roundstart varieties use a string key to make it
 // easier to grab the new variety when mutating. Post-roundstart
 // and mutant varieties use their uid converted to a string instead.
 // Looks like shit but it's sort of necessary.
-/datum/controller/subsystem/plants/proc/setup()
+/datum/world_service/plants/proc/setup()
 	// Build the icon lists.
 	for(var/icostate in icon_states_fast('icons/obj/hydroponics_growing.dmi'))
 		var/split = findtext(icostate,"-")
@@ -98,10 +99,10 @@ SUBSYSTEM_DEF(plants)
 		gene_masked_list.Add(list(list("tag" = gene_tag, "mask" = gene_mask)))
 
 // Proc for creating a random seed type.
-/datum/controller/subsystem/plants/proc/create_random_seed(survive_on_station)
+/datum/world_service/plants/proc/create_random_seed(survive_on_station)
 	var/datum/seed/seed = new()
 	seed.randomize()
-	seed.uid = SSplants.seeds.len + 1
+	seed.uid = length(seeds) + 1
 	seed.name = "[seed.uid]"
 	seeds[seed.name] = seed
 
@@ -121,22 +122,22 @@ SUBSYSTEM_DEF(plants)
 		seed.set_trait(TRAIT_HIGHKPA_TOLERANCE,200)
 	return seed
 
-/datum/controller/subsystem/plants/proc/add_plant(obj/effect/plant/plant)
+/datum/world_service/plants/proc/add_plant(obj/effect/plant/plant)
 	if(!QDELETED(plant))
-		processing |= plant
+		registry_join(REGISTRY_GROWING_PLANTS, plant)
 		PERIODIC_START(plant, PERIODIC_PLANTS)
 
-/datum/controller/subsystem/plants/proc/remove_plant(obj/effect/plant/plant)
-	processing -= plant
+/datum/world_service/plants/proc/remove_plant(obj/effect/plant/plant)
+	registry_leave(REGISTRY_GROWING_PLANTS, plant)
 	PERIODIC_STOP(plant)
 
 
 // Debug for testing seed genes.
 ADMIN_VERB(show_plant_genes, R_DEBUG, "Show Plant Genes", "Prints the round's plant gene masks.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	if(!SSplants.initialized)
+	if(!GLOB.plant_service.initialized)
 		to_chat(user, "Gene masks not set.")
 		return
 
-	for(var/mask in SSplants.gene_tag_masks)
-		to_chat(user, "[mask]: [SSplants.gene_tag_masks[mask]]")
+	for(var/mask in GLOB.plant_service.gene_tag_masks)
+		to_chat(user, "[mask]: [GLOB.plant_service.gene_tag_masks[mask]]")
 

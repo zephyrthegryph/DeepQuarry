@@ -98,7 +98,7 @@ SUBSYSTEM_DEF(persist)
 			return
 
 	if(length(query_stack))
-		SSdbcore.MassInsert(format_table_name("vr_player_hours"), query_stack, duplicate_key = "ON DUPLICATE KEY UPDATE hours = VALUES(hours), total_hours = VALUES(total_hours)")
+		SSdbcore.mass_insert_io(null, format_table_name("vr_player_hours"), query_stack.Copy(), "ON DUPLICATE KEY UPDATE hours = VALUES(hours), total_hours = VALUES(total_hours)") // om_io: returns at once
 		query_stack.Cut()
 
 

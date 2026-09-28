@@ -256,3 +256,5 @@
 	stat = BROKEN
 	update_icon()
 	explosion(src, 0, 0, 2)
+
+REF_HELD(/obj/machinery/food_replicator, list("container"))

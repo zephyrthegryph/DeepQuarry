@@ -1,6 +1,6 @@
-/// The SQL leaf: its query waits on the database, so callers don't wait for it.
+/// Records the population in the stats database: a write on the I/O lane (om_io), so
+/// nothing waits on the database.
 /proc/sql_poll_population()
-	set waitfor = FALSE // S10b keeps: SQL leaf (population insert)
 	if(!CONFIG_GET(flag/enable_stat_tracking))
 		return
 	var/admincount = GLOB.admins.len
@@ -10,16 +10,16 @@
 			playercount += 1
 	if(!SSdbcore.IsConnected())
 		log_game("SQL ERROR during population polling. Failed to connect.")
-	else
-		var/sqltime = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss")
-		var/datum/db_query/query = SSdbcore.NewQuery(
-			"INSERT INTO population (`playercount`, `admincount`, `time`) VALUES (:playercount, :admincount, :sqltime)",
-			list("playercount" = playercount, "admincount" = admincount, "sqltime" = sqltime)
-		)
-		if(!query.Execute())
-			var/err = query.ErrorMsg()
-			log_game("SQL ERROR during population polling. Error : \[[err]\]\n")
-		qdel(query)
+		return
+	var/sqltime = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss")
+	om_io(null, /datum/om/io/sql,
+		"INSERT INTO population (`playercount`, `admincount`, `time`) VALUES (:playercount, :admincount, :sqltime)",
+		list("playercount" = playercount, "admincount" = admincount, "sqltime" = sqltime),
+		/proc/sql_poll_population_done)
+
+/proc/sql_poll_population_done(list/result, error)
+	if(error)
+		log_game("SQL ERROR during population polling. Error : \[[error]\]")
 
 /proc/sql_report_round_start()
 	// TODO
@@ -52,33 +52,34 @@
 
 	if(!SSdbcore.IsConnected())
 		log_game("SQL ERROR during feedback reporting. Failed to connect.")
+		return
+	// The feedback is captured now (text and numbers); the rows are written once the next
+	// round id is known. Both steps run on the I/O lane.
+	var/list/rows = list()
+	for(var/datum/feedback_variable/item in content)
+		rows += list(list(item.get_variable(), item.get_value()))
+	om_io(null, /datum/om/io/sql, "SELECT MAX(roundid) AS max_round_id FROM erro_feedback", null, /proc/sql_commit_feedback_rows, rows)
+
+/// om_io() callback: the next feedback round id is known; writes the captured rows.
+/proc/sql_commit_feedback_rows(list/result, error, list/rows)
+	if(error)
+		log_game("SQL ERROR during feedback reporting. Error : \[[error]\]")
+		return
+	var/newroundid
+	for(var/list/row in result["rows"])
+		newroundid = row[1]
+	if(!(isnum(newroundid)))
+		newroundid = text2num(newroundid)
+	if(isnum(newroundid))
+		newroundid++
 	else
+		newroundid = 1
+	for(var/list/row in rows)
+		om_io(null, /datum/om/io/sql,
+			"INSERT INTO erro_feedback (id, roundid, time, variable, value) VALUES (null, :newroundid, Now(), :variable, :value)",
+			list("newroundid" = newroundid, "variable" = row[1], "value" = row[2]),
+			/proc/sql_commit_feedback_done)
 
-		var/datum/db_query/max_query = SSdbcore.NewQuery("SELECT MAX(roundid) AS max_round_id FROM erro_feedback")
-		max_query.Execute()
-
-		var/newroundid
-
-		while(max_query.NextRow())
-			newroundid = max_query.item[1]
-		qdel(max_query)
-		if(!(isnum(newroundid)))
-			newroundid = text2num(newroundid)
-
-		if(isnum(newroundid))
-			newroundid++
-		else
-			newroundid = 1
-
-		for(var/datum/feedback_variable/item in content)
-			var/variable = item.get_variable()
-			var/value = item.get_value()
-
-			var/datum/db_query/query = SSdbcore.NewQuery(
-				"INSERT INTO erro_feedback (id, roundid, time, variable, value) VALUES (null, :newroundid, Now(), :variable, :value)",
-				list("newroundid" = newroundid, "variable" = variable, "value" = value)
-			)
-			if(!query.Execute())
-				var/err = query.ErrorMsg()
-				log_game("SQL ERROR during feedback reporting. Error : \[[err]\]\n")
-			qdel(query)
+/proc/sql_commit_feedback_done(list/result, error)
+	if(error)
+		log_game("SQL ERROR during feedback reporting. Error : \[[error]\]")

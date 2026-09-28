@@ -32,7 +32,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	antaghud_indicator = "hudcultist"
 
 	var/allow_narsie = 1
-	var/datum/mind/sacrifice_target
+	var/sacrifice_target_handle
 	var/list/startwords = list("blood","join","self","hell")
 	var/static/list/allwords = list("travel","self","see","hell","blood","join","tech","destroy", "other", "hide")
 	var/list/sacrificed
@@ -55,7 +55,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 
 	var/datum/objective/cult/sacrifice/sacrifice = new()
 	sacrifice.find_target()
-	sacrifice_target = sacrifice.target
+	sacrifice_target_handle = om_handle(sacrifice.target)
 	LAZYOR(global_objectives, sacrifice)
 
 /datum/antagonist/cultist/equip(mob/living/carbon/human/player)
@@ -123,6 +123,10 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 	if(!..())
 		return 0
 	for(var/obj/item/implant/loyalty/L in player.current)
-		if(L && (L.imp_in == player.current))
+		if(L && (L.imp_in() == player.current))
 			return 0
 	return 1
+
+/// LC-refs: sacrifice target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/antagonist/cultist/proc/sacrifice_target() as /datum/mind
+	return om_resolve(sacrifice_target_handle)

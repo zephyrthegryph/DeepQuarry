@@ -1,4 +1,4 @@
-// Change-channel wake tests: machines sleeping on watched channels and SSai's
+// Change-channel wake tests: machines sleeping on watched channels and the AI brain's
 // chunk hibernation. Held steady, each must stay asleep; after its input changes, it must
 // wake. Each also checks om_sleep_violation() while asleep.
 
@@ -98,7 +98,7 @@
 	TEST_ASSERT_NULL(B.om_sleep_violation(), "a calm hibernating brain reported a violation")
 	var/failure = om_wake_test(B, CALLBACK(visitor, TYPE_PROC_REF(/atom/movable, forceMove), T))
 	TEST_ASSERT(!failure, failure)
-	TEST_ASSERT(B in SSai.processing, "woken brain did not rejoin strategic processing")
+	TEST_ASSERT(B.loop_running(DQAI_PROCESSING), "woken brain did not rejoin strategic processing")
 	// The audit catches a brain asleep with a threat.
 	B.hibernate_calm()
 	B.primary_threat = visitor

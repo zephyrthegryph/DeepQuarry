@@ -31,8 +31,8 @@
 /obj/item/paicard/sleevecard/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I,/obj/item/sleevemate))
 		var/obj/item/sleevemate/S = I
-		if(S.stored_mind && !pai)
-			var/datum/mind/M = S.stored_mind
+		if(S.stored_mind() && !pai)
+			var/datum/mind/M = S.stored_mind()
 			var/datum/transcore_db/db = SStranscore.db_by_mind_name(M.name)
 			if(db)
 				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))

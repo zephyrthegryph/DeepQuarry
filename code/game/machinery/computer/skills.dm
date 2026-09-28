@@ -22,7 +22,7 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/datum/data/record/active1 = null
+	var/active1_handle
 	var/a_id = null
 	var/list/temp = null
 	var/printing = null
@@ -381,32 +381,32 @@
 			if(GENERAL_RECORD_DATA)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1, /datum/data/record) && GLOB.data_core.general.Find(active1))
+				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
 					var/list/fields = list()
 					general["fields"] = fields
-					fields[++fields.len] = FIELD("Name", active1.fields["name"], "name")
-					fields[++fields.len] = FIELD("ID", active1.fields["id"], "id")
-					fields[++fields.len] = FIELD("Sex", active1.fields["sex"], "sex")
-					fields[++fields.len] = FIELD("Species", active1.fields["species"], "species")
-					fields[++fields.len] = FIELD("Age", active1.fields["age"], "age")
-					fields[++fields.len] = FIELD("Fingerprint", active1.fields["fingerprint"], "fingerprint")
-					fields[++fields.len] = FIELD("Home", active1.fields["home_system"], "home_system")
-					fields[++fields.len] = FIELD("Birthplace", active1.fields["birthplace"], "birthplace")
-					fields[++fields.len] = FIELD("Citizenship", active1.fields["citizenship"], "citizenship")
-					fields[++fields.len] = FIELD("Employer", active1.fields["faction"], "faction")
-					fields[++fields.len] = FIELD("Religion", active1.fields["religion"], "religion")
-					fields[++fields.len] = FIELD("Known Languages", active1.fields["languages"], "languages")
-					fields[++fields.len] = FIELD("Physical Status", active1.fields["p_stat"], null)
-					fields[++fields.len] = FIELD("Mental Status", active1.fields["m_stat"], null)
+					fields[++fields.len] = FIELD("Name", active1().fields["name"], "name")
+					fields[++fields.len] = FIELD("ID", active1().fields["id"], "id")
+					fields[++fields.len] = FIELD("Sex", active1().fields["sex"], "sex")
+					fields[++fields.len] = FIELD("Species", active1().fields["species"], "species")
+					fields[++fields.len] = FIELD("Age", active1().fields["age"], "age")
+					fields[++fields.len] = FIELD("Fingerprint", active1().fields["fingerprint"], "fingerprint")
+					fields[++fields.len] = FIELD("Home", active1().fields["home_system"], "home_system")
+					fields[++fields.len] = FIELD("Birthplace", active1().fields["birthplace"], "birthplace")
+					fields[++fields.len] = FIELD("Citizenship", active1().fields["citizenship"], "citizenship")
+					fields[++fields.len] = FIELD("Employer", active1().fields["faction"], "faction")
+					fields[++fields.len] = FIELD("Religion", active1().fields["religion"], "religion")
+					fields[++fields.len] = FIELD("Known Languages", active1().fields["languages"], "languages")
+					fields[++fields.len] = FIELD("Physical Status", active1().fields["p_stat"], null)
+					fields[++fields.len] = FIELD("Mental Status", active1().fields["m_stat"], null)
 					var/list/photos = list()
 					general["photos"] = photos
-					photos[++photos.len] = active1.fields["photo-south"]
-					photos[++photos.len] = active1.fields["photo-west"]
-					general["has_photos"] = (active1.fields["photo-south"] || active1.fields["photo-west"] ? 1 : 0)
-					if(!active1.fields["comments"] || !islist(active1.fields["comments"]))
-						active1.fields["comments"] = list()
-					general["skills"] = active1.fields["notes"]
-					general["comments"] = active1.fields["comments"]
+					photos[++photos.len] = active1().fields["photo-south"]
+					photos[++photos.len] = active1().fields["photo-west"]
+					general["has_photos"] = (active1().fields["photo-south"] || active1().fields["photo-west"] ? 1 : 0)
+					if(!active1().fields["comments"] || !islist(active1().fields["comments"]))
+						active1().fields["comments"] = list()
+					general["skills"] = active1().fields["notes"]
+					general["comments"] = active1().fields["comments"]
 					general["empty"] = 0
 				else
 					general["empty"] = 1
@@ -459,8 +459,8 @@
 
 	add_fingerprint(ui.user)
 
-	if(!GLOB.data_core.general.Find(active1))
-		active1 = null
+	if(!GLOB.data_core.general.Find(active1()))
+		active1_handle = null
 
 	. = TRUE
 	if(tgui_act_modal(action, params))
@@ -495,7 +495,7 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1 = null
+				active1_handle = null
 				screen = GENERAL_RECORD_LIST
 		else
 			. = FALSE
@@ -514,14 +514,14 @@
 					scan = null
 				authenticated = null
 				screen = null
-				active1 = null
+				active1_handle = null
 			if("screen")
 				var/requested_screen = text2num(params["screen"])
 				if(requested_screen in list(GENERAL_RECORD_FINANCES, GENERAL_RECORD_CONTRACTS))
 					screen = requested_screen
 				else
 					screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
-				active1 = null
+				active1_handle = null
 			if("contract_accept")
 				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 				return accept_management_contract(contract, ui.user)
@@ -607,40 +607,42 @@
 					qdel(R)
 				set_temp("All employment records deleted.")
 			if("sync_r")
-				if(active1)
+				if(active1())
 					set_temp(client_update_record(src,ui.user))
 			if("edit_notes")
 				// The modal input in tgui is busted for this sadly...
-				om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter new information here.", "title" = "Character Preference", "default" = html_decode(active1.fields["notes"]), "max_length" = MAX_RECORD_LENGTH, "multiline" = TRUE, "requires" = PROMPT_ADJACENT, "data" = list("record" = active1)), PROC_REF(record_notes_entered))
+				om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter new information here.", "title" = "Character Preference", "default" = html_decode(active1().fields["notes"]), "max_length" = MAX_RECORD_LENGTH, "multiline" = TRUE, "requires" = PROMPT_ADJACENT, "data" = list("record" = active1())), PROC_REF(record_notes_entered))
 			if("del_r")
 				if(GLOB.PDA_Manifest)
 					GLOB.PDA_Manifest.Cut()
-				if(active1)
+				if(active1())
 					for(var/datum/data/record/R in GLOB.data_core.medical)
-						if ((R.fields["name"] == active1.fields["name"] || R.fields["id"] == active1.fields["id"]))
+						if ((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
 							qdel(R)
 					set_temp("Employment record deleted.")
-					QDEL_NULL(active1)
+					var/datum/data/record/deleted_record = active1()
+					active1_handle = null
+					QDEL_NULL(deleted_record)
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
 				if(!GLOB.data_core.general.Find(general_record))
 					set_temp("Record not found.", "danger")
 					return
 
-				active1 = general_record
+				active1_handle = om_handle(general_record)
 				screen = GENERAL_RECORD_DATA
 			if("new")
 				if(GLOB.PDA_Manifest)
 					GLOB.PDA_Manifest.Cut()
-				active1 = GLOB.data_core.CreateGeneralRecord()
+				active1_handle = om_handle(GLOB.data_core.CreateGeneralRecord())
 				screen = GENERAL_RECORD_DATA
 				set_temp("Employment record created.", "success")
 			if("del_c")
 				var/index = text2num(params["del_c"] || "")
-				if(!index || !istype(active1, /datum/data/record))
+				if(!index || !istype(active1(), /datum/data/record))
 					return
 
-				var/list/comments = active1.fields["comments"]
+				var/list/comments = active1().fields["comments"]
 				index = clamp(index, 1, length(comments))
 				if(comments[index])
 					comments.Cut(index, index + 1)
@@ -663,8 +665,8 @@
 
 /obj/machinery/computer/skills/proc/record_notes_confirmed(mob/user, answer, datum/om/prompt/ask)
 	var/datum/data/record/R = ask.get("record")
-	if(answer == "Delete" && R == active1)
-		active1.fields["notes"] = ask.get("notes")
+	if(answer == "Delete" && R == active1())
+		active1().fields["notes"] = ask.get("notes")
 		SStgui.update_uis(src)
 
 /**
@@ -709,13 +711,13 @@
 					if(field == "age")
 						answer = text2num(answer)
 
-					if(istype(active1) && (field in active1.fields))
-						active1.fields[field] = answer
+					if(istype(active1(), /datum/data/record) && (field in active1().fields))
+						active1().fields[field] = answer
 					. = TRUE
 				if("add_c")
-					if(!length(answer) || !istype(active1) || !length(authenticated))
+					if(!length(answer) || !istype(active1(), /datum/data/record) || !length(authenticated))
 						return
-					active1.fields["comments"] += list(list(
+					active1().fields["comments"] += list(list(
 						header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
 						text = answer
 					))
@@ -730,29 +732,29 @@
 /obj/machinery/computer/skills/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
-	if(istype(active1, /datum/data/record) && GLOB.data_core.general.Find(active1))
-		P.info += {"Name: [active1.fields["name"]] ID: [active1.fields["id"]]
-		<br>\nSex: [active1.fields["sex"]]
-		<br>\nSpecies: [active1.fields["species"]]
-		<br>\nAge: [active1.fields["age"]]
-		<br>\nFingerprint: [active1.fields["fingerprint"]]
-		<br>\nHome: [active1.fields["home_system"]]
-		<br>\nBirthplace: [active1.fields["birthplace"]]
-		<br>\nCitizenship: [active1.fields["citizenship"]]
-		<br>\nEmployer: [active1.fields["faction"]]
-		<br>\nReligion: [active1.fields["religion"]]
-		<br>\nKnown Languages: [active1.fields["languages"]]
-		<br>\nPhysical Status: [active1.fields["p_stat"]]
-		<br>\nMental Status: [active1.fields["m_stat"]]<br>
-		<br>\nEmployment/Skills Summary: [active1.fields["notes"]]
+	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
+		<br>\nSex: [active1().fields["sex"]]
+		<br>\nSpecies: [active1().fields["species"]]
+		<br>\nAge: [active1().fields["age"]]
+		<br>\nFingerprint: [active1().fields["fingerprint"]]
+		<br>\nHome: [active1().fields["home_system"]]
+		<br>\nBirthplace: [active1().fields["birthplace"]]
+		<br>\nCitizenship: [active1().fields["citizenship"]]
+		<br>\nEmployer: [active1().fields["faction"]]
+		<br>\nReligion: [active1().fields["religion"]]
+		<br>\nKnown Languages: [active1().fields["languages"]]
+		<br>\nPhysical Status: [active1().fields["p_stat"]]
+		<br>\nMental Status: [active1().fields["m_stat"]]<br>
+		<br>\nEmployment/Skills Summary: [active1().fields["notes"]]
 		<br>\n
 		<center><b>Comments/Log</b></center><br>"}
-		for(var/c in active1.fields["comments"])
+		for(var/c in active1().fields["comments"])
 			P.info += "[c["header"]]<br>[c["text"]]<br>"
 	else
 		P.info += span_bold("General Record Lost!") + "<br>"
 	P.info += "</tt>"
-	P.name = "paper - 'Employment Record: [active1.fields["name"]]'"
+	P.name = "paper - 'Employment Record: [active1().fields["name"]]'"
 	printing = FALSE
 	SStgui.update_uis(src)
 
@@ -801,3 +803,9 @@
 #undef GENERAL_RECORD_DATA
 
 #undef FIELD
+
+REF_HELD(/obj/machinery/computer/skills, list("scan"))
+
+/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/skills/proc/active1() as /datum/data/record
+	return om_resolve(active1_handle)

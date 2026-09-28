@@ -250,7 +250,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	var/list/section_data = searchcache_catalogs[section] || list()
 	for(var/PG in section_data)
 		var/datum/internal_wiki/page/catalog/P = catalogs["[PG]"]
-		var/datum/category_item/catalogue/C = P.catalog_record
+		var/datum/category_item/catalogue/C = P.catalog_record()
 		if(C.visible || C.value <= CATALOGUER_REWARD_TRIVIAL)
 			known_entries.Add(PG)
 	return known_entries
@@ -404,8 +404,8 @@ SUBSYSTEM_DEF(internal_wiki)
 		grind_list["material"] = display_reactions
 
 	display_reactions = list()
-	for(var/SN in SSplants.seeds)
-		var/datum/seed/S = SSplants.seeds[SN]
+	for(var/SN in GLOB.plant_service.seeds)
+		var/datum/seed/S = GLOB.plant_service.seeds[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				continue
@@ -553,8 +553,8 @@ SUBSYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// seeds and plants
-	for(var/SN in SSplants.seeds)
-		var/datum/seed/S = SSplants.seeds[SN]
+	for(var/SN in GLOB.plant_service.seeds)
+		var/datum/seed/S = GLOB.plant_service.seeds[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				spoiler_entries.Add(S.type)
@@ -764,7 +764,7 @@ SUBSYSTEM_DEF(internal_wiki)
 				continue // too many silly entries
 			var/datum/internal_wiki/page/catalog/P = new()
 			P.title = item.name
-			P.catalog_record = item
+			P.catalog_record_handle = om_handle(item)
 			P.assemble()
 			catalogs["[item.name]"] = P
 			if(!searchcache_catalogs[G.name])
@@ -1058,7 +1058,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	if(S.mutants && length(S.mutants) > 0)
 		var/list/mutations = list()
 		for(var/MS in S.mutants)
-			var/datum/seed/mut = SSplants.seeds[MS]
+			var/datum/seed/mut = GLOB.plant_service.seeds[MS]
 			if(mut)
 				mutations.Add(mut.display_name)
 		data["mutations"] = mutations
@@ -1394,11 +1394,11 @@ SUBSYSTEM_DEF(internal_wiki)
 // CATALOG
 ////////////////////////////////////////////
 /datum/internal_wiki/page/catalog
-	var/datum/category_item/catalogue/catalog_record = null
+	var/catalog_record_handle
 
 /datum/internal_wiki/page/catalog/assemble()
-	data["name"] = catalog_record.name
-	data["desc"] = catalog_record.desc
+	data["name"] = catalog_record().name
+	data["desc"] = catalog_record().desc
 
 // VIRUSES
 /////////////////////////////////////////////
@@ -1664,3 +1664,7 @@ SUBSYSTEM_DEF(internal_wiki)
 #undef WIKI_CATEGORY_KITCHEN
 #undef WIKI_CATEGORY_LORE
 #undef WIKI_CATEGORY_GENE
+
+/// LC-refs: the catalogue entry this page shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/internal_wiki/page/catalog/proc/catalog_record() as /datum/category_item/catalogue
+	return om_resolve(catalog_record_handle)

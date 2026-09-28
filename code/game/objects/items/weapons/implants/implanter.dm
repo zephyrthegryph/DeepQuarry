@@ -130,7 +130,7 @@
 /obj/item/implanter/compressed/update()
 	if (imp)
 		var/obj/item/implant/compressed/c = imp
-		if(!c.scanned)
+		if(!c.scanned())
 			icon_state = "cimplanter1"
 		else
 			icon_state = "cimplanter2"
@@ -142,7 +142,7 @@
 	var/obj/item/implant/compressed/c = imp
 	if(!c)
 		return ITEM_INTERACT_FAILURE
-	if(c.scanned == null)
+	if(c.scanned() == null)
 		to_chat(user, "Please scan an object with the implanter first.")
 		return ITEM_INTERACT_FAILURE
 	..()
@@ -155,13 +155,13 @@
 		return
 	if(istype(A,/obj/item) && imp)
 		var/obj/item/implant/compressed/c = imp
-		if (c.scanned)
+		if (c.scanned())
 			to_chat(user, span_warning("Something is already scanned inside the implant!"))
 			return
-		c.scanned = A
+		c.scanned_handle = om_handle(A)
 		if(istype(A, /obj/item/storage))
 			to_chat(user, span_warning("You can't store \the [A.name] in this!"))
-			c.scanned = null
+			c.scanned_handle = null
 			return
 		if(ishuman(A.loc))
 			var/mob/living/carbon/human/H = A.loc
@@ -190,3 +190,5 @@
 	. = ..()
 	imp = new /obj/item/implant/vrlanguage( src )
 	update()
+
+REF_HELD(/obj/item/implanter, list("imp"))

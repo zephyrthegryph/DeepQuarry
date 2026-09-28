@@ -5,7 +5,7 @@
 
 // Specific types
 /datum/mini_hud/rig
-	var/obj/item/rig/owner_rig
+	var/owner_rig_handle
 	var/atom/movable/screen/rig/power/power
 	var/atom/movable/screen/rig/health/health
 	var/atom/movable/screen/rig/air/air
@@ -14,7 +14,7 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
-	owner_rig = owner
+	owner_rig_handle = om_handle(owner)
 	power = new ()
 	health = new ()
 	air = new ()
@@ -27,28 +27,28 @@
 	screenobjs += new /atom/movable/screen/rig/deco2_f
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = om_handle(owner_rig)
+		S.master_ref = om_handle(owner_rig())
 	..()
 
 /datum/mini_hud/rig/periodic_step()
-	if(!owner_rig)
+	if(!owner_rig())
 		qdel(src)
 		return
 
-	var/obj/item/cell/rigcell = owner_rig.cell
-	var/obj/item/tank/rigtank = owner_rig.air_supply
+	var/obj/item/cell/rigcell = owner_rig().cell
+	var/obj/item/tank/rigtank = owner_rig().air_supply
 
 	var/charge_percentage = rigcell ? rigcell.charge / rigcell.maxcharge : 0
 	var/air_percentage = rigtank?.air_contents ? CLAMP(rigtank.air_contents.total_moles() / 17.4693, 0, 1) : 0
-	var/air_on = owner_rig.wearer?.internal ? 1 : 0
+	var/air_on = owner_rig().wearer?.internal ? 1 : 0
 
 	power.icon_state = "pwr[round(charge_percentage / 0.2, 1)]"
 	air.icon_state = "air[round(air_percentage / 0.2, 1)]"
-	health.icon_state = owner_rig.malfunctioning ? "health1" : "health5"
+	health.icon_state = owner_rig().malfunctioning ? "health1" : "health5"
 	airtoggle.icon_state = "airon[air_on]"
 
 /datum/mini_hud/mech
-	var/obj/mecha/owner_mech
+	var/owner_mech_handle
 	var/atom/movable/screen/mech/power/power
 	var/atom/movable/screen/mech/health/health
 	var/atom/movable/screen/mech/air/air
@@ -57,7 +57,7 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
-	owner_mech = owner
+	owner_mech_handle = om_handle(owner)
 	power = new ()
 	health = new ()
 	air = new ()
@@ -70,23 +70,28 @@
 	screenobjs += new /atom/movable/screen/mech/deco2_f
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = om_handle(owner_mech)
+		S.master_ref = om_handle(owner_mech())
 	..()
 
-REF_PAIR(/datum/mini_hud/mech, list("owner_mech" = "minihud"))
+// LIFECYCLE: the mech points at its minihud; the minihud going clears that var.
+/datum/mini_hud/mech/Destroy()
+	if(owner_mech())
+		owner_mech().minihud = null
+		owner_mech_handle = null
+	return ..()
 
 /datum/mini_hud/mech/periodic_step()
-	if(!owner_mech)
+	if(!owner_mech())
 		qdel(src)
 		return
 
-	var/obj/item/cell/mechcell = owner_mech.cell
-	var/obj/machinery/portable_atmospherics/canister/mechtank = owner_mech.internal_tank
+	var/obj/item/cell/mechcell = owner_mech().cell
+	var/obj/machinery/portable_atmospherics/canister/mechtank = owner_mech().internal_tank
 
 	var/charge_percentage = mechcell ? mechcell.charge / mechcell.maxcharge : 0
 	var/air_percentage = mechtank ? CLAMP(mechtank.air_contents.total_moles() / 1863.47, 0, 1) : 0
-	var/health_percentage = owner_mech.get_integrity() / owner_mech.max_integrity
-	var/air_on = owner_mech.use_internal_tank
+	var/health_percentage = owner_mech().get_integrity() / owner_mech().max_integrity
+	var/air_on = owner_mech().use_internal_tank
 
 	power.icon_state = "pwr[round(charge_percentage / 0.2, 1)]"
 	air.icon_state = "air[round(air_percentage / 0.2, 1)]"
@@ -198,3 +203,15 @@ REF_PAIR(/datum/mini_hud/mech, list("owner_mech" = "minihud"))
 		return
 	owner_mech.toggle_internal_tank()
 
+
+/// LC-refs: the rig this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/mini_hud/rig/proc/owner_rig() as /obj/item/rig
+	return om_resolve(owner_rig_handle)
+
+/// LC-refs: the mech this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
+	return om_resolve(owner_mech_handle)
+
+REF_OWNED(/datum/mini_hud/rig, list("power", "health", "air", "airtoggle"))
+
+REF_OWNED(/datum/mini_hud/mech, list("power", "health", "air", "airtoggle"))

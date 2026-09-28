@@ -865,6 +865,11 @@ GLOBAL_VAR(dq_test_select_names)
 		current_test_index++
 		RunUnitTest(unit_path, test_results, current_test_index, total_tests)
 	SSticker.delay_end = FALSE
+	if(length(GLOB.dq_refsearch_type_counts))
+		var/list/searched = list()
+		for(var/type in GLOB.dq_refsearch_type_counts)
+			searched += "[type] x[GLOB.dq_refsearch_type_counts[type]][GLOB.dq_refsearch_skipped[type] ? " (+[GLOB.dq_refsearch_skipped[type]] skipped)" : ""]"
+		log_test("Reference searches this run ([GLOB.dq_refsearch_spent_ds / 10]s): [jointext(searched, ", ")]")
 	log_test("Unit-test suite finished: [total_tests] test types, failures: [GLOB.failed_any_test ? "yes" : "no"].")
 
 	// A sharded run gives each world its own results file (shard-tests-file's

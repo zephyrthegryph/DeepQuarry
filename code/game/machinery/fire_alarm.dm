@@ -13,7 +13,6 @@ FIRE ALARM
 	var/detecting = 1.0
 	var/working = 1.0
 	var/time = 10.0
-	var/timing = 0.0
 	var/lockdownbyai = 0
 	anchored = TRUE
 	unacidable = TRUE

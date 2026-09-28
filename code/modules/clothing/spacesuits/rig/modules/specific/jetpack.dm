@@ -54,10 +54,10 @@ REF_OWNED(/obj/item/rig_module/maneuvering_jets, "jets")
 
 /obj/item/rig_module/maneuvering_jets/installed()
 	..()
-	jets.holder = holder
+	jets.holder_handle = om_handle(holder)
 	jets.ion_trail.set_up(holder)
 
 /obj/item/rig_module/maneuvering_jets/removed()
 	..()
-	jets.holder = null
+	jets.holder_handle = null
 	jets.ion_trail.set_up(jets)

@@ -15,7 +15,7 @@
 	var/busy = MEDIGUN_IDLE // Set to true when scanning, to stop multiple scans.
 	var/action_cancelled = FALSE
 	var/wielded = FALSE
-	var/mob/current_target
+	var/current_target_handle
 	var/mgcmo
 	canremove = FALSE
 
@@ -113,3 +113,7 @@
 	if(user.get_inactive_hand() == src)// && loc != get_turf)
 		return
 	return ..()
+
+/// LC-refs: current target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/bork_medigun/proc/current_target() as /mob
+	return om_resolve(current_target_handle)

@@ -1552,7 +1552,7 @@
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "flag"
 	var/obj/structure/sign/flag/linked_flag //For double flags
-	var/obj/item/flag/flagtype //For returning your flag
+	var/flagtype //For returning your flag
 	var/ripped = FALSE //If we've been torn down
 
 /obj/structure/sign/flag/blank

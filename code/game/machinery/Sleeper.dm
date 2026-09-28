@@ -573,3 +573,5 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 /obj/machinery/sleeper/survival_pod/Initialize(mapload)
 	. = ..()
 	RefreshParts(1)
+
+REF_HELD(/obj/machinery/sleeper, list("beaker"))

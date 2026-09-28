@@ -20,28 +20,40 @@
 			ToRban_update()
 	return
 
-/proc/ToRban_update()
-	spawn(0) // S7 keeps: world.Export() is a blocking external call
-		log_world("Downloading updated ToR data...")
-		var/http[] = world.Export("https://check.torproject.org/exit-addresses")
+/// om_after() target from world/New: the ToR list refresh, if enabled.
+/proc/ToRban_autoupdate_if_enabled()
+	if(CONFIG_GET(flag/ToRban))
+		ToRban_autoupdate()
 
-		var/list/rawlist = world.file2list(http["CONTENT"])
-		if(rawlist.len)
-			fdel(TORFILE)
-			var/savefile/F = new(TORFILE)
-			for( var/line in rawlist )
-				if(!line)	continue
-				if( copytext(line,1,12) == "ExitAddress" )
-					var/cleaned = copytext(line,13,length(line)-19)
-					if(!cleaned)	continue
-					F[cleaned] << 1
-			F["last_update"] << world.realtime
-			log_world("ToR data updated!")
-			if(usr)
-				to_chat(usr, span_filter_adminlog("ToRban updated."))
-			return
-		log_world("ToR data update aborted: no data.")
+/// Downloads the ToR exit list on the I/O lane (om_io); returns at once. `requester` (optional)
+/// is told when the update lands.
+/proc/ToRban_update(client/requester)
+	log_world("Downloading updated ToR data...")
+	om_io(null, /datum/om/io/http, RUSTG_HTTP_METHOD_GET, "https://check.torproject.org/exit-addresses", "", null, /proc/ToRban_update_done, requester?.ckey)
+
+/// om_io() callback: stores the downloaded exit addresses.
+/proc/ToRban_update_done(response_arg, error, requester_ckey)
+	var/datum/http_response/response = response_arg
+	if(error || !response?.body)
+		log_world("ToR data update aborted: [error || "no data"].")
 		return
+	var/list/rawlist = splittext(response.body, "\n")
+	if(rawlist.len)
+		fdel(TORFILE)
+		var/savefile/F = new(TORFILE)
+		for( var/line in rawlist )
+			if(!line)	continue
+			if( copytext(line,1,12) == "ExitAddress" )
+				var/cleaned = copytext(line,13,length(line)-19)
+				if(!cleaned)	continue
+				F[cleaned] << 1
+		F["last_update"] << world.realtime
+		log_world("ToR data updated!")
+		var/client/requester = requester_ckey && GLOB.directory[requester_ckey]
+		if(requester)
+			to_chat(requester, span_filter_adminlog("ToRban updated."))
+		return
+	log_world("ToR data update aborted: no data.")
 
 ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", ADMIN_CATEGORY_SERVER_CONFIG)
 	var/task = verb_prompt(user, "a1", list("kind" = "list", "message" = "What do you want to do?", "title" = "Select Option", "choices" = list("update","toggle","show","remove","remove all","find")), args)
@@ -49,7 +61,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 		return
 	switch(task)
 		if("update")
-			ToRban_update()
+			ToRban_update(user)
 		if("toggle")
 			if(config)
 				if(CONFIG_GET(flag/ToRban))

@@ -8,7 +8,7 @@
 	light_range = 3
 
 	var/obj/item/assembly/signaler/anomaly/anomaly_core = /obj/item/assembly/signaler/anomaly
-	var/area/impact_area
+	var/impact_area_handle
 
 	var/lifespan = ANOMALY_COUNTDOWN_TIMER
 	var/death_time
@@ -27,9 +27,9 @@
 	. = ..()
 
 	PERIODIC_START(src, PERIODIC_SLOW)
-	impact_area = get_area(src)
+	impact_area_handle = om_handle(get_area(src))
 
-	if(!impact_area)
+	if(!impact_area())
 		return INITIALIZE_HINT_QDEL
 
 	if(!drops_core)
@@ -180,3 +180,7 @@ REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))
 			new /obj/effect/anomaly/weather(local_turf, null, drops_core)
 		if(DUST_ANOMALY)
 			new /obj/effect/anomaly/dust(local_turf, null, drops_core)
+
+/// LC-refs: impact area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/anomaly/proc/impact_area() as /area
+	return om_resolve(impact_area_handle)

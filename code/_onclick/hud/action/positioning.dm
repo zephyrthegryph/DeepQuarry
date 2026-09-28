@@ -4,7 +4,7 @@
 	switch(position)
 		if(SCRN_OBJ_DEFAULT) // Reset to the default
 			button.dump_save() // Nuke any existing saves
-			position_action(button, button.linked_action.default_button_position)
+			position_action(button, button.linked_action().default_button_position)
 			return
 		if(SCRN_OBJ_IN_LIST)
 			listed_actions.insert_action(button)
@@ -27,9 +27,9 @@
 			palette_actions.insert_action(button, palette_actions.index_of(relative_to))
 		if(SCRN_OBJ_FLOATING) // If we don't have it as a define, this is a screen_loc, and we should be floating
 			floating_actions += button
-			var/client/our_client = mymob.client
+			var/client/our_client = mymob().client
 			if(!our_client)
-				position_action(button, button.linked_action.default_button_position)
+				position_action(button, button.linked_action().default_button_position)
 				return
 			button.screen_loc = get_valid_screen_location(relative_to.screen_loc, world.icon_size, our_client.view) // Asks for a location adjacent to our button that won't overflow the map
 

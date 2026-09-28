@@ -7,7 +7,7 @@
 	anchored = TRUE
 
 	var/obj/item/tank/tank
-	var/mob/living/carbon/breather
+	var/breather_handle
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = /obj/item/tank/emergency/oxygen/engi
@@ -28,14 +28,14 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 
 // LIFECYCLE: the mask retracts from its breather.
 /obj/machinery/oxygen_pump/Destroy()
-	if(breather)
-		breather.internal = null
-		if(breather.internals)
-			breather.internals.icon_state = "internal0"
-		breather.remove_from_mob(contained)
-		breather.cozyloop.stop()
+	if(breather())
+		breather().internal = null
+		if(breather().internals)
+			breather().internals.icon_state = "internal0"
+		breather().remove_from_mob(contained)
+		breather().cozyloop.stop()
 		visible_message(span_notice("\The [contained] rapidly retracts just before /the [src] is destroyed!"))
-		breather = null
+		breather_handle = null
 	return ..()
 
 /obj/machinery/oxygen_pump/MouseDrop(mob/living/carbon/human/target, src_location, over_location)
@@ -70,16 +70,16 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 	if (!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]!"))
 		return
-	if(breather)
+	if(breather())
 		if(tank)
 			tank.forceMove(src)
-		breather.remove_from_mob(contained)
+		breather().remove_from_mob(contained)
 		contained.forceMove(src)
 		src.visible_message(span_infoplain(span_bold("\The [user]") + " makes \the [contained] rapidly retract back into \the [src]!"))
-		breather.cozyloop.stop() // Cozy Music
-		if(breather.internals)
-			breather.internals.icon_state = "internal0"
-		breather = null
+		breather().cozyloop.stop() // Cozy Music
+		if(breather().internals)
+			breather().internals.icon_state = "internal0"
+		breather_handle = null
 		update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/oxygen_pump
@@ -91,15 +91,15 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		C.equip_to_slot(contained, slot_wear_mask)
 		if(tank)
 			tank.forceMove(C)
-		breather = C
+		breather_handle = om_handle(C)
 		MACHINE_WAKE(src)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
-	if(!breather.internal && tank)
-		breather.internal = tank
-		if(breather.internals)
-			breather.internals.icon_state = "internal1"
+	if(!breather().internal && tank)
+		breather().internal = tank
+		if(breather().internals)
+			breather().internals.icon_state = "internal1"
 	update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user as mob)
@@ -112,7 +112,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 	if(!target.check_has_mouth())
 		to_chat(user, span_warning("\The [target] doesn't have a mouth."))
 		return
-	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather)
+	if(target.get_equipped_item(SLOT_ID_MASK) && target != breather())
 		to_chat(user, span_warning("\The [target] is already wearing a mask."))
 		return
 	if(target.get_equipped_item(SLOT_ID_HEAD) && (target.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
@@ -128,11 +128,11 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		to_chat(user, span_warning("Please stay close to \the [src]."))
 		return
 	//when there is a breather:
-	if(breather && target != breather)
+	if(breather() && target != breather())
 		to_chat(user, span_warning("\The [src] is already in use."))
 		return
 	//Checking if breather is still valid
-	if(target == breather && target.get_equipped_item(SLOT_ID_MASK) != contained)
+	if(target == breather() && target.get_equipped_item(SLOT_ID_MASK) != contained)
 		to_chat(user, span_warning("\The [target] is not using the supplied [contained]."))
 		return
 	return 1
@@ -169,22 +169,22 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 
 /// Runs while a mask is on someone; with nobody attached it sleeps until attach_mask().
 /obj/machinery/oxygen_pump/machine_step()
-	if(!breather)
+	if(!breather())
 		return PROCESS_KILL
-	if(breather)
-		if(!can_apply_to_target(breather))
+	if(breather())
+		if(!can_apply_to_target(breather()))
 			if(tank)
 				tank.forceMove(src)
-			breather.remove_from_mob(contained)
+			breather().remove_from_mob(contained)
 			contained.forceMove(src)
-			breather.cozyloop.stop() // Cozy Music
+			breather().cozyloop.stop() // Cozy Music
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			breather = null
+			breather_handle = null
 			update_use_power(USE_POWER_IDLE)
-		else if(!breather.internal && tank)
-			breather.internal = tank
-			if(breather.internals)
-				breather.internals.icon_state = "internal0"
+		else if(!breather().internal && tank)
+			breather().internal = tank
+			if(breather().internals)
+				breather().internals.icon_state = "internal0"
 
 //Create rightclick to view tank settings
 /obj/machinery/oxygen_pump/verb/settings()
@@ -209,7 +209,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 	var/list/data = ..()
 
 	data["showToggle"] = FALSE
-	data["maskConnected"] = !!breather
+	data["maskConnected"] = !!breather()
 
 	data["tankPressure"] = 0
 	data["releasePressure"] = 0
@@ -262,17 +262,17 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		C.equip_to_slot(contained, slot_wear_mask)
 		if(tank)
 			tank.forceMove(C)
-		breather = C
+		breather_handle = om_handle(C)
 		MACHINE_WAKE(src)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
-	if(!breather.internal && tank)
-		breather.internal = tank
-		if(breather.internals)
-			breather.internals.icon_state = "internal1"
+	if(!breather().internal && tank)
+		breather().internal = tank
+		if(breather().internals)
+			breather().internals.icon_state = "internal1"
 	update_use_power(USE_POWER_ACTIVE)
-	breather.cozyloop.start()
+	breather().cozyloop.start()
 
 /obj/machinery/oxygen_pump/mobile
 	name = "portable oxygen pump"
@@ -313,42 +313,42 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		C.equip_to_slot(contained, slot_wear_mask)
 		if(tank)
 			tank.forceMove(C)
-		breather = C
+		breather_handle = om_handle(C)
 		MACHINE_WAKE(src)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
-	if(!breather.internal && tank)
-		breather.internal = tank
-		if(breather.internals)
-			breather.internals.icon_state = "internal1"
+	if(!breather().internal && tank)
+		breather().internal = tank
+		if(breather().internals)
+			breather().internals.icon_state = "internal1"
 	update_use_power(USE_POWER_ACTIVE)
-	breather.cozyloop.start()
+	breather().cozyloop.start()
 
 /obj/machinery/oxygen_pump/mobile/stabilizer
 	name = "portable patient stabilizer"
 	desc = "A portable oxygen pump with a retractable mask used for stabilizing patients in the field."
 
 /obj/machinery/oxygen_pump/mobile/stabilizer/machine_step()
-	if(!breather)
+	if(!breather())
 		return PROCESS_KILL
-	if(breather)
-		if(!can_apply_to_target(breather))
+	if(breather())
+		if(!can_apply_to_target(breather()))
 			if(tank)
 				tank.forceMove(src)
-			breather.remove_from_mob(contained)
+			breather().remove_from_mob(contained)
 			contained.forceMove(src)
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			breather = null
+			breather_handle = null
 			update_use_power(USE_POWER_IDLE)
-		else if(!breather.internal && tank)
-			breather.internal = tank
-			if(breather.internals)
-				breather.internals.icon_state = "internal0"
+		else if(!breather().internal && tank)
+			breather().internal = tank
+			if(breather().internals)
+				breather().internals.icon_state = "internal0"
 
-		if(breather)	// Safety.
-			if(ishuman(breather) && !(breather.isSynthetic()))
-				var/mob/living/carbon/human/H = breather
+		if(breather())	// Safety.
+			if(ishuman(breather()) && !(breather().isSynthetic()))
+				var/mob/living/carbon/human/H = breather()
 
 				if(H.internal_organs_by_name[O_LUNGS])
 					var/obj/item/organ/internal/L = H.internal_organs_by_name[O_LUNGS]
@@ -372,3 +372,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 					// breathing drive and cardiac output while attached.
 					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
 					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
+
+/// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/oxygen_pump/proc/breather() as /mob/living/carbon
+	return om_resolve(breather_handle)

@@ -92,7 +92,7 @@
 	reads = list("sdisabilities", "ear_damage")
 	order = LIFE_PHASE_INPUT + 30
 	name = "robot senses"
-	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_STATUS
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
 	life_sets = LIFE_SET_ROBOT
 	of = /mob/living/silicon/robot
 

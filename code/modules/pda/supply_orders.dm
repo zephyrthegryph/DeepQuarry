@@ -16,7 +16,7 @@
 				"number" = order.ordernum,
 				"name" = order.name,
 				"status" = order.status,
-				"cost" = SSsupply.pack_price(order.object),
+				"cost" = SSsupply.pack_price(order.supply_pack_of()),
 				"reason" = order.comment,
 				"ordered_at" = order.ordered_at,
 				"approved_by" = order.approved_by,

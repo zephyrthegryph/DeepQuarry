@@ -5,7 +5,7 @@
 	/// Human readable name of the theme
 	var/name = "Unnamed Theme"
 	/// An icon to display to represent the theme
-	var/icon/icon = 'icons/obj/stacks.dmi'
+	var/icon = 'icons/obj/stacks.dmi'
 	/// Icon state to use to represent the theme
 	var/icon_state
 	/// Typepath of custom material to use for objects.
@@ -15,7 +15,7 @@
 	/// Weighted list of turfs to replace the floor with.
 	var/list/replace_floors = list(/turf/simulated/floor/tiled = 1)
 	/// Typepath of turf to replace walls with.
-	var/turf/replace_walls = /turf/simulated/wall
+	var/replace_walls = /turf/simulated/wall
 	/// List of weighted lists for object replacement. Key is an original typepath, value is a weighted list of typepaths to replace it with.
 	var/list/replace_objs = list(
 		/obj/structure/bed/chair = list(/obj/structure/bed/chair = 1),
@@ -29,7 +29,7 @@
 	var/random_spawn_chance = 0
 	/// Typepath of full-size windows which will replace existing ones
 	/// These need to be separate from replace_objs because we don't want to replace dir windows with full ones and they share typepath
-	var/obj/structure/window/replace_window
+	var/replace_window
 	/// Colour to recolour windows with, replaced by material colour if material was specified.
 	var/window_colour = "#ffffff"
 

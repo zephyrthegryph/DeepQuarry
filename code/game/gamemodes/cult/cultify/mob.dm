@@ -61,3 +61,5 @@
 		if(narsimage)
 			qdel(narsimage)
 			qdel(narglow)
+
+REF_OWNED(/mob, list("narsimage", "narglow"))

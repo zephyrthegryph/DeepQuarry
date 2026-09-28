@@ -426,3 +426,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	department = "Head of Personnel's Desk"
 	departmentType = RC_ASSIST|RC_INFO
 	announcementConsole = 1
+
+REF_OWNED(/obj/machinery/requests_console, list("announcement"))

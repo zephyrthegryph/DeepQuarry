@@ -2140,7 +2140,7 @@ Departamental Swimsuits, for general use
 			span_danger("The hat falls over your head as you put it on, enveloping you in a bright green light! <b>Uh oh.</b>"))
 			var/uh_oh = DEFAULTPICK(translocator.beacons, null)
 			user.remove_from_mob(src, get_turf(user))
-			translocator.destination = LAZYACCESS(translocator.beacons, uh_oh)
+			translocator.destination_handle = om_handle(LAZYACCESS(translocator.beacons, uh_oh))
 			translocator.afterattack(user, user, proximity_flag = 1, ignore_fail_chance = 1)
 			add_attack_logs(user, user, "Tried to put on \the [src] and was involuntarily teleported by it (via \the [translocator] within)!")
 			return

@@ -88,12 +88,12 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
 	if(panel_open)
-		multitool.connectable = src
+		multitool.connectable_handle = om_handle(src)
 		to_chat(user, span_notice("You save the data in [tool]'s buffer."))
 		return ITEM_INTERACT_SUCCESS
-	if(!istype(multitool.connectable, /obj/machinery/power/quantumpad))
+	if(!istype(multitool.connectable(), /obj/machinery/power/quantumpad))
 		return ITEM_INTERACT_BLOCKING
-	linked_pad = multitool.connectable
+	linked_pad = multitool.connectable()
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

@@ -8,15 +8,15 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
-	var/datum/data/record/warrant/active
+	var/active_handle
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 //look at it
 /obj/item/holowarrant/examine(mob/user)
 	. = ..()
-	if(active)
-		. += "It's a holographic warrant for '[active.fields["namewarrant"]]'."
+	if(active())
+		. += "It's a holographic warrant for '[active().fields["namewarrant"]]'."
 	if(in_range(user, src) || isobserver(user))
 		show_content(user) //Opens a browse window, not chatbox related
 	else
@@ -31,7 +31,7 @@
 	return L
 
 /obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = null
+	active_handle = null
 	var/list/warrants = list()
 	if(!isnull(GLOB.data_core.general))
 		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
@@ -44,21 +44,21 @@
 /obj/item/holowarrant/proc/warrant_chosen(mob/user, temp, datum/om/prompt/ask)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == temp)
-			active = W
+			active_handle = om_handle(W)
 	update_icon()
 
 /obj/item/holowarrant/proc/authorize_answered(mob/user, choice, datum/om/prompt/ask)
 	var/obj/item/card/id/I = ask.get("card")
-	if(choice == "Yes" && active == ask.get("warrant"))
-		active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
+	if(choice == "Yes" && active() == ask.get("warrant"))
+		active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 	user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
 			span_notice("[user] swipes \the [I] through the [src]."))
 
 /obj/item/holowarrant/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(active)
+	if(active())
 		var/obj/item/card/id/I = W.GetIdCard()
 		if(I && (ACCESS_HOS in I.GetAccess()))
-			om_prompt(src, user, list("message" = "Would you like to authorize this warrant?", "title" = "Warrant authorization", "choices" = list("Yes","No"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("card" = I, "warrant" = active)), PROC_REF(authorize_answered))
+			om_prompt(src, user, list("message" = "Would you like to authorize this warrant?", "title" = "Warrant authorization", "choices" = list("Yes","No"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("card" = I, "warrant" = active())), PROC_REF(authorize_answered))
 			return TRUE
 		to_chat(user, span_warning("You don't have the access to do this!"))
 		return TRUE
@@ -72,7 +72,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/holowarrant/update_icon()
-	if(active)
+	if(active())
 		icon_state = "holowarrant_filled"
 	else
 		icon_state = "holowarrant"
@@ -87,3 +87,7 @@
 	. = ..()
 	for(var/i = 0 to 3)
 		new /obj/item/holowarrant(src) // addition ends
+
+/// LC-refs: active -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/holowarrant/proc/active() as /datum/data/record/warrant
+	return om_resolve(active_handle)

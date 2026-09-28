@@ -450,10 +450,10 @@ so as to remain in compliance with the most up-to-date laws."
 
 // Re-render all alerts - also called in /datum/hud/show_hud() because it's needed there
 /datum/hud/proc/reorganize_alerts()
-	var/list/alerts = mymob.alerts
+	var/list/alerts = mymob().alerts
 	if(!hud_shown)
 		for(var/i in 1 to length(alerts))
-			mymob?.client?.screen -= alerts[alerts[i]]
+			mymob()?.client?.screen -= alerts[alerts[i]]
 		return TRUE
 	for(var/i in 1 to length(alerts))
 		var/atom/movable/screen/alert/alert = alerts[alerts[i]]
@@ -481,7 +481,7 @@ so as to remain in compliance with the most up-to-date laws."
 			else
 				. = ""
 		alert.screen_loc = .
-		mymob?.client?.screen |= alert
+		mymob()?.client?.screen |= alert
 	return 1
 
 /mob

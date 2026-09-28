@@ -105,8 +105,8 @@
 			include_tgui_shell = TRUE
 			continue
 		resolved_assets += asset
-	if(include_tgui_shell && asset_generation?.shell_assets)
-		resolved_assets += asset_generation.shell_assets
+	if(include_tgui_shell && asset_generation?.shell_assets())
+		resolved_assets += asset_generation.shell_assets()
 	src.initial_strict_mode = strict_mode
 	src.initial_fancy = fancy
 	src.initial_assets = resolved_assets

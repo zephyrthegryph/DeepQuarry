@@ -319,7 +319,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	desc = "An industrial U-Tak-It Dispenser unit designed to fetch all kinds of space suits. A newer model."
 	icon_state = "suit_storage_map"
 	var/obj/effect/overlay/vis/door
-	var/datum/gear_disp/held_gear_disp
+	var/held_gear_disp_handle
 	var/special_frame
 
 /obj/machinery/gear_dispenser/suit_fancy/Initialize(mapload)
@@ -346,7 +346,7 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 	else
 		add_overlay("light1")
 
-	if(held_gear_disp)
+	if(held_gear_disp())
 		add_overlay("fullsuit")
 		if(operable())
 			add_overlay("light2")
@@ -365,13 +365,13 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 	effect = /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/interaction_take(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(held_gear_disp)
+	if(held_gear_disp())
 		var/turf/T = get_turf(user)
-		var/list/spawned = held_gear_disp.spawn_gear(T, user)
+		var/list/spawned = held_gear_disp().spawn_gear(T, user)
 		for(var/obj/item/I in spawned)
 			user.put_in_hands(I)
 		to_chat(user, span_notice("You remove the equipment from [src]."))
-		held_gear_disp = null
+		held_gear_disp_handle = null
 		animate_close()
 		return TRUE
 	return FALSE
@@ -388,7 +388,7 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 	if((dispenser_flags & GD_UNIQUE) && !emagged)
 		unique_dispense_list |= user.ckey
 
-	held_gear_disp = S
+	held_gear_disp_handle = om_handle(S)
 
 	animate_dispensing()
 	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
@@ -965,3 +965,9 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 #undef GD_NOGREED
 #undef GD_UNLIMITED
 #undef GD_UNIQUE
+
+REF_OWNED(/obj/machinery/gear_dispenser, list("one_setting"))
+
+/// LC-refs: held gear disp -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/gear_dispenser/suit_fancy/proc/held_gear_disp() as /datum/gear_disp
+	return om_resolve(held_gear_disp_handle)

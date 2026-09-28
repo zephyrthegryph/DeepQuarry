@@ -288,7 +288,7 @@ REF_OWNED_LIST(/obj/item/robot_module, list("modules", "emag", "synths"))
 	water.name = "Water reserves"
 	water.recharge_rate = 10
 	water.max_energy = 1000
-	robot.water_res = water
+	robot.water_res_handle = om_handle(water)
 	synths += water
 	var/obj/item/robot_tongue/T = new /obj/item/robot_tongue(src)
 	T.water = water

@@ -198,7 +198,7 @@ Buildable meters
 			return TRUE
 		if((M.piping_layer != piping_layer) && !((M.pipe_flags | flags) & PIPING_ALL_LAYER)) // Pipes on different layers can't block each other unless they are ALL_LAYER
 			continue
-		if(M.get_init_dirs() & SSmachines.get_init_dirs(pipe_type, dir))	// matches at least one direction on either type of pipe
+		if(M.get_init_dirs() & GLOB.machine_service.get_init_dirs(pipe_type, dir))	// matches at least one direction on either type of pipe
 			to_chat(user, span_warning("There is already a pipe at that location!"))
 			return TRUE
 	// no conflicts found
@@ -242,7 +242,7 @@ Buildable meters
 // Lookup the initialize_directions for a given atmos machinery instance facing dir.
 // TODO - Right now this determines the answer by instantiating an instance and checking!
 // There has to be a better way... ~Leshana
-/datum/controller/subsystem/machines/proc/get_init_dirs(type, dir)
+/datum/world_service/machines/proc/get_init_dirs(type, dir)
 	var/static/list/pipe_init_dirs_cache = list()
 	if(!pipe_init_dirs_cache[type])
 		pipe_init_dirs_cache[type] = list()

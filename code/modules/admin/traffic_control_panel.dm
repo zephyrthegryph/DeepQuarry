@@ -42,9 +42,9 @@
 				"ref" = "[T.id]",
 			))
 		data["servers"] = server_rows
-	else if(screen == 1 && SelectedServer)
-		data["selected_id"] = SelectedServer.id
-		data["autoruncode"] = !!SelectedServer.autoruncode
+	else if(screen == 1 && SelectedServer())
+		data["selected_id"] = SelectedServer().id
+		data["autoruncode"] = !!SelectedServer().autoruncode
 	return data
 
 /obj/machinery/computer/telecomms/traffic/tgui_act(action, list/params, datum/tgui/ui)

@@ -140,18 +140,18 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	var/list/cables = dq_power_test_line(run)
 	var/obj/structure/cable/left_end = cables[1]
 	var/obj/structure/cable/right_end = cables[4]
-	SSmachines.process_power()
-	var/datum/powernet/before = SSmachines.power_region_of(left_end.power_entity)
+	GLOB.machine_service.process_power()
+	var/datum/powernet/before = GLOB.machine_service.power_region_of(left_end.power_entity)
 	TEST_ASSERT_NOTNULL(before, "the line should already have a region before the blast")
-	TEST_ASSERT(SSmachines.power_region_of(right_end.power_entity) == before, "the run should start as one network")
+	TEST_ASSERT(GLOB.machine_service.power_region_of(right_end.power_entity) == before, "the run should start as one network")
 
 	var/obj/structure/cable/cut_a = cables[2]
 	var/obj/structure/cable/cut_b = cables[3]
 	blast(list(cut_a, cut_b), 1)
 	TEST_ASSERT(QDELETED(cut_a) && QDELETED(cut_b), "a devastating blast should cut the cables")
-	SSmachines.process_power()
-	var/datum/powernet/left_after = SSmachines.power_region_of(left_end.power_entity)
-	var/datum/powernet/right_after = SSmachines.power_region_of(right_end.power_entity)
+	GLOB.machine_service.process_power()
+	var/datum/powernet/left_after = GLOB.machine_service.power_region_of(left_end.power_entity)
+	var/datum/powernet/right_after = GLOB.machine_service.power_region_of(right_end.power_entity)
 	TEST_ASSERT_NOTNULL(left_after, "the left side lost its network after the batched cut")
 	TEST_ASSERT_NOTNULL(right_after, "the right side lost its network after the batched cut")
 	TEST_ASSERT(left_after != right_after, "cutting both cables in the same explosion epoch should still split the network")

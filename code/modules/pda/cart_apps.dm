@@ -42,7 +42,7 @@
 		return
 
 	var/datum/signal/status_signal = new
-	status_signal.source = src
+	status_signal.source_handle = om_handle(src)
 	status_signal.transmission_method = 1
 	status_signal.data["command"] = command
 
@@ -230,7 +230,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	for(var/datum/supply_order/SO as anything in SSsupply.shoppinglist)
 
 		supplyOrderCount++
-		supplyOrderData[++supplyOrderData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.object.name), "ApprovedBy" = SO.approved_by, "Comment" = html_encode(SO.comment))
+		supplyOrderData[++supplyOrderData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.supply_pack_of().name), "ApprovedBy" = SO.approved_by, "Comment" = html_encode(SO.comment))
 
 	supplyData["approved"] = supplyOrderData
 	supplyData["approved_count"] = supplyOrderCount
@@ -242,7 +242,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 			continue
 
 		requestCount++
-		requestData[++requestData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.object.name), "OrderedBy" = SO.ordered_by, "Comment" = html_encode(SO.comment))
+		requestData[++requestData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.supply_pack_of().name), "OrderedBy" = SO.ordered_by, "Comment" = html_encode(SO.comment))
 
 	supplyData["requests"] = requestData
 	supplyData["requests_count"] = requestCount

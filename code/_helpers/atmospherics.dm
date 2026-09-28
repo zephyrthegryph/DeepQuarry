@@ -73,8 +73,8 @@
 
 /obj/machinery/meter/atmosanalyze(mob/user)
 	var/datum/gas_mixture/mixture = null
-	if(target && target.parent)
-		mixture = src.target.parent.air
+	if(target_ref() && target_ref().parent)
+		mixture = src.target_ref().parent.air
 	return atmosanalyzer_scan(src, mixture, user)
 
 /obj/machinery/power/rad_collector/atmosanalyze(mob/user)

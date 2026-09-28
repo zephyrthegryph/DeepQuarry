@@ -3,20 +3,16 @@
 # this file: a file may not exceed its count. Make the list an owned-children
 # list, a backlist, a declared cache with an invalidation rule, a relation or
 # a registry, or key it by OM handle, and lower the count with --update.
-# Total: 596 writes in 139 files.
+# Total: 265 writes in 121 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
 code/ATMOSPHERICS/datum_pipe_network.dm 5
 code/ATMOSPHERICS/environmental/LINDA_fire.dm 1
 code/ATMOSPHERICS/xgm_compat.dm 2
-code/_helpers/legacy_tg_path.dm 4
-code/_onclick/hud/action/action.dm 1
-code/controllers/subsystems/transcore.dm 2
-code/datums/category.dm 4
+code/datums/category.dm 2
 code/datums/components/materials/material_container.dm 1
 code/datums/containment/ledger.dm 2
-code/modules/medical/contagion/engineered/engineered.dm 3
 code/datums/elements/footstep_override.dm 1
 code/datums/interactions/construction.dm 3
 code/datums/looping_sounds/_looping_sound.dm 1
@@ -37,20 +33,17 @@ code/game/gamemodes/malfunction/malf_research.dm 3
 code/game/gamemodes/technomancer/spells/energy_siphon.dm 1
 code/game/machinery/atm_ret_field.dm 2
 code/game/machinery/atmoalter/area_atmos_computer.dm 3
-code/game/machinery/computer/cloning.dm 3
+code/game/machinery/computer/cloning.dm 2
 code/game/machinery/doors/firedoor.dm 2
 code/game/machinery/frame.dm 3
 code/game/machinery/machinery.dm 3
 code/game/machinery/partslathe.dm 1
 code/game/mecha/equipment/tools/syringe_gun.dm 1
 code/game/objects/effects/chem/chemsmoke.dm 2
-code/game/objects/items/devices/uplink_random_lists.dm 46
 code/game/objects/items/weapons/chewables.dm 1
 code/game/objects/items/weapons/material/kitchen.dm 1
 code/game/objects/items/weapons/storage/ore_bag.dm 1
-code/game/objects/items/weapons/storage/storage.dm 1
 code/game/objects/structures/props/nest.dm 1
-code/modules/alarm/alarm_handler.dm 1
 code/modules/assembly/infrared.dm 1
 code/modules/asset_cache/asset_list.dm 1
 code/modules/benchmarks/_benchmark.dm 1
@@ -58,11 +51,8 @@ code/modules/clothing/head/pilot_helmet.dm 16
 code/modules/clothing/spacesuits/spacesuits.dm 2
 code/modules/combat_ai/brain/brain.dm 2
 code/modules/combat_ai/world_model/world_model.dm 3
-code/modules/contracts/contract.dm 5
+code/modules/contracts/contract.dm 1
 code/modules/contracts/damage_batch.dm 1
-code/modules/contracts/medical_trial.dm 1
-code/modules/contracts/opportunity_broker.dm 1
-code/modules/contracts/social_framework.dm 2
 code/modules/detectivework/tools/scanner.dm 1
 code/modules/economy/cargo_market.dm 6
 code/modules/economy/trader.dm 1
@@ -70,17 +60,16 @@ code/modules/entopics/alternate_appearance.dm 1
 code/modules/error_handler/error_viewer.dm 1
 code/modules/expedition/expedition_objective.dm 8
 code/modules/expedition/expedition_site.dm 1
-code/modules/factions/reputation.dm 4
 code/modules/gamemaster/event2/events/everyone/electrical_fault.dm 1
 code/modules/games/cards.dm 4
 code/modules/generated_station/generated_station_defenders.dm 1
-code/modules/generated_station/generated_station_director.dm 4
+code/modules/generated_station/generated_station_director.dm 1
 code/modules/generated_station/generated_station_jobs.dm 1
 code/modules/generated_station/generated_station_materializer.dm 5
 code/modules/generated_station/generated_station_runtime.dm 2
-code/modules/generated_station/generated_station_simulation.dm 2
-code/modules/generated_station/generated_station_tile_plan.dm 4
-code/modules/generated_station/generated_station_types.dm 1
+code/modules/generated_station/generated_station_simulation.dm 1
+code/modules/generated_station/generated_station_tile_plan.dm 3
+code/modules/hydroponics/plant_service.dm 3
 code/modules/hydroponics/seed_storage.dm 2
 code/modules/instruments/instrument_data/_instrument_data.dm 4
 code/modules/instruments/songs/_song.dm 1
@@ -88,9 +77,9 @@ code/modules/lighting/lighting_source.dm 2
 code/modules/logging/log_holder.dm 2
 code/modules/looking_glass/lg_imageholder.dm 1
 code/modules/lore_codex/codex_tree.dm 1
-code/modules/maint_recycler/code/maint_vendor.dm 1
 code/modules/maps/reader.dm 1
 code/modules/materials/materials/_materials.dm 2
+code/modules/medical/contagion/engineered/engineered.dm 3
 code/modules/mining/ore_redemption_machine/equipment_vendor.dm 1
 code/modules/mob/freelook/ai/chunk.dm 1
 code/modules/mob/freelook/chunk.dm 1
@@ -100,7 +89,6 @@ code/modules/mob/living/carbon/human/species/station/protean/forms.dm 1
 code/modules/mob/living/carbon/human/species/station/protean/protean_form.dm 1
 code/modules/mob/living/silicon/ai/multicam.dm 1
 code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm 5
-code/modules/mob/living/silicon/robot/robot_modules/station.dm 237
 code/modules/mob/living/silicon/silicon.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/alien animals/synx.dm 1
 code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm 2
@@ -108,19 +96,16 @@ code/modules/mob/living/simple_mob/subtypes/vore/macrophage.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/pakkun.dm 1
 code/modules/mob/living/simple_mob/subtypes/vore/plants/plants.dm 1
 code/modules/mob/living/simple_mob/taming.dm 1
-code/modules/nifsoft/software/13_soulcatcher.dm 1
 code/modules/organs/internal/augment/armmounted.dm 3
 code/modules/overmap/events/event_handler.dm 1
 code/modules/overmap/overmap_shuttle.dm 1
-code/modules/pda/cart.dm 11
 code/modules/power/powernet.dm 4
 code/modules/power/singularity/field_generator.dm 1
-code/modules/power/singularity/particle_accelerator/particle_smasher.dm 3
-code/modules/power/turbine.dm 1
+code/modules/power/singularity/particle_accelerator/particle_smasher.dm 1
 code/modules/projectiles/ammunition.dm 1
 code/modules/projectiles/guns/projectile.dm 2
 code/modules/projectiles/projectile.dm 2
-code/modules/reagents/holder/holder.dm 5
+code/modules/reagents/holder/holder.dm 3
 code/modules/reagents/machinery/dispenser/chem_synthesizer.dm 1
 code/modules/reagents/machinery/dispenser/dispenser2.dm 1
 code/modules/recycling/conveyor2.dm 2
@@ -133,12 +118,10 @@ code/modules/scripting/Parser/Parser.dm 11
 code/modules/scripting/Scanner/Scanner.dm 3
 code/modules/shuttles/crashes.dm 1
 code/modules/shuttles/shuttles_web.dm 2
-code/modules/shuttles/web_datums.dm 1
 code/modules/stockmarket/stockmarket.dm 1
 code/modules/stockmarket/stocks.dm 1
 code/modules/tgs/v4/api.dm 1
 code/modules/tgs/v5/api.dm 2
 code/modules/tgui/modules/atmos_control.dm 1
 code/modules/tgui/modules/power_monitor.dm 1
-code/modules/vore/eating/soulcatcher.dm 1
 code/modules/xenoarcheaology/effect_master.dm 4

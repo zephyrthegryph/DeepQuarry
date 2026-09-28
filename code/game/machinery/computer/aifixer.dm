@@ -10,7 +10,7 @@
 	active_power_usage = 1000
 
 	/// Variable containing transferred AI
-	var/mob/living/silicon/ai/occupier
+	var/occupier_handle
 	/// Variable dictating if we are in the process of restoring the occupier AI
 	var/restoring = FALSE
 
@@ -33,21 +33,21 @@
 	if(stat & (NOPOWER|BROKEN))
 		return "this terminal isn't functioning right now"
 	if(restoring)
-		return "terminal is busy restoring [occupier] right now"
+		return "terminal is busy restoring [occupier()] right now"
 	return TRUE
 
 /obj/machinery/computer/aifixer/proc/interaction_use_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
-	if(occupier)
-		if(card.grab_ai(occupier, user))
-			occupier = null
-	else if(card.carded_ai)
-		var/mob/living/silicon/ai/new_occupant = card.carded_ai
+	if(occupier())
+		if(card.grab_ai(occupier(), user))
+			occupier_handle = null
+	else if(card.carded_ai())
+		var/mob/living/silicon/ai/new_occupant = card.carded_ai()
 		to_chat(new_occupant, span_notice("You have been transferred into a stationary terminal. Sadly there is no remote access from here."))
 		to_chat(user, span_notice("Transfer Successful:") + " [new_occupant] placed within stationary terminal.")
 		new_occupant.forceMove(src)
 		new_occupant.cancel_camera()
 		new_occupant.control_disabled = TRUE
-		occupier = new_occupant
+		occupier_handle = om_handle(new_occupant)
 		card.clear()
 		update_icon()
 	else
@@ -56,7 +56,7 @@
 	return FALSE
 
 /obj/machinery/computer/aifixer/screwdriver_act(mob/user, obj/item/tool)
-	if(!occupier)
+	if(!occupier())
 		return ..()
 	if(stat & (NOPOWER|BROKEN))
 		to_chat(user, span_warning("The screws on [name]'s screen won't budge."))
@@ -88,16 +88,16 @@
 	data["ejectable"] = FALSE
 	data["AI_present"] = FALSE
 	data["error"] = null
-	if(!occupier)
+	if(!occupier())
 		data["error"] = "Please transfer an AI unit."
 	else
 		data["AI_present"] = TRUE
-		data["name"] = occupier.name
+		data["name"] = occupier().name
 		data["restoring"] = restoring
-		data["health"] = occupier.hardware_integrity()
-		data["isDead"] = occupier.stat == DEAD
+		data["health"] = occupier().hardware_integrity()
+		data["isDead"] = occupier().stat == DEAD
 		var/list/laws = list()
-		for(var/datum/ai_law/law in occupier.laws.all_laws())
+		for(var/datum/ai_law/law in occupier().laws.all_laws())
 			laws += "[law.get_index()]: [law.law]"
 		data["laws"] = laws
 
@@ -106,7 +106,7 @@
 /obj/machinery/computer/aifixer/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
-	if(!occupier)
+	if(!occupier())
 		restoring = FALSE
 
 	if(action)
@@ -114,36 +114,36 @@
 
 	switch(action)
 		if("PRG_beginReconstruction")
-			if(occupier && (occupier.vitality() < 1 || occupier.backup_capacitor() < 100))
+			if(occupier() && (occupier().vitality() < 1 || occupier().backup_capacitor() < 100))
 				to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
 				playsound(src, 'sound/machines/terminal_prompt_confirm.ogg', 25, FALSE)
 				restoring = TRUE
 				MACHINE_WAKE(src)
-				var/mob/observer/dead/ghost = occupier.get_ghost()
+				var/mob/observer/dead/ghost = occupier().get_ghost()
 				if(ghost)
 					ghost.notify_revive("Your core files are being restored!", source = src)
 				. = TRUE
 
 /obj/machinery/computer/aifixer/proc/Fix()
 	use_power(active_power_usage)
-	occupier.adjust_backup_charge(5)
-	occupier.mend(TREAT_SYSTEM_RESTORE, 5)
-	occupier.mend(TREAT_WIRING_REPAIR, 5)
-	occupier.mend(TREAT_PLATING_REPAIR, 5)
+	occupier().adjust_backup_charge(5)
+	occupier().mend(TREAT_SYSTEM_RESTORE, 5)
+	occupier().mend(TREAT_WIRING_REPAIR, 5)
+	occupier().mend(TREAT_PLATING_REPAIR, 5)
 	// Old threshold: hardware integrity back above 50%.
-	if(occupier.vitality() >= 0.5 && occupier.stat == DEAD)
-		occupier.revive()
+	if(occupier().vitality() >= 0.5 && occupier().stat == DEAD)
+		occupier().revive()
 
-	return occupier.vitality() < 1 || occupier.backup_capacitor() < 100
+	return occupier().vitality() < 1 || occupier().backup_capacitor() < 100
 
 /obj/machinery/computer/aifixer/machine_step()
-	if(!restoring || !occupier)
+	if(!restoring || !occupier())
 		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
 		return
-	var/oldstat = occupier.stat
+	var/oldstat = occupier().stat
 	restoring = Fix()
-	if(oldstat != occupier.stat)
+	if(oldstat != occupier().stat)
 		update_icon()
 	if(!restoring)
 		return PROCESS_KILL
@@ -155,11 +155,15 @@
 
 	if(restoring)
 		. += "ai-fixer-on"
-	if (occupier)
-		switch (occupier.stat)
+	if (occupier())
+		switch (occupier().stat)
 			if (CONSCIOUS)
 				. += "ai-fixer-full"
 			if (UNCONSCIOUS)
 				. += "ai-fixer-404"
 	else
 		. += "ai-fixer-empty"
+
+/// LC-refs: occupier -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/aifixer/proc/occupier() as /mob/living/silicon/ai
+	return om_resolve(occupier_handle)

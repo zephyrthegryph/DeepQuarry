@@ -109,7 +109,6 @@
 	var/uses = 4.0
 	var/selfdestruct = 0.0
 	var/traitor_frequency = 0.0
-	var/obj/item/radio/origradio = null
 	slot_flags = SLOT_BELT
 	item_state = "radio"
 	throwforce = 5
@@ -250,7 +249,7 @@
 	icon = 'icons/obj/power.dmi'
 	icon_state = "wire1"
 
-	var/obj/machinery/machine
+	var/machine_handle
 
 ///////////////////////////////////////Stock Parts /////////////////////////////////
 
@@ -478,3 +477,9 @@
 		/obj/item/stock_parts/scanning_module,
 		/obj/item/stock_parts/micro_laser
 	)
+
+/// LC-refs: the machine this cable is jacked into -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pai_cable/proc/machine() as /obj/machinery
+	return om_resolve(machine_handle)
+
+REF_OWNED(/obj/item/gift, list("gift"))

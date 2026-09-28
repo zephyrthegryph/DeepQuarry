@@ -162,7 +162,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 */
 
 /datum/hud
-	var/mob/mymob
+	var/mymob_handle
 
 	var/hud_shown = 1			//Used for the HUD toggle (F12)
 	var/inventory_shown = 1		//the inventory
@@ -204,32 +204,35 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/ui_alpha
 
 	// TGMC Ammo HUD Port
+	/// Gun OM handle -> its ammo hud (owned).
 	var/list/atom/movable/screen/ammo_hud_list
 
 	var/list/minihuds
 
 /datum/hud/New(mob/owner)
-	mymob = owner
+	mymob_handle = om_handle(owner)
 	instantiate()
 	..()
 
-REF_OWNED(/datum/hud, list("toggle_palette", "palette_down", "palette_up", "palette_actions", "listed_actions"))
-REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions"))
-REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hud", "palette_up" = "our_hud"))
+// The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
+// are keyed by the gun's OM handle.
+REF_OWNED(/datum/hud, list("lingchemdisplay", "wiz_instability_display", "wiz_energy_display", "blobpwrdisplay", "blobhealthdisplay", "r_hand_hud_object", "l_hand_hud_object", "combat_mode_button", "move_intent", "control_vtec", "toggle_palette", "palette_down", "palette_up", "palette_actions", "listed_actions", "ui_style"))
+REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions", "hotkeybuttons"))
+REF_OWNED_VALUES(/datum/hud, "ammo_hud_list")
 
-// LIFECYCLE: takes its ammo counters off its mob's screen and lets the mob go.
+// LIFECYCLE: the mob's hud_used points at us (our side is a handle); a hud going clears it.
 /datum/hud/Destroy()
-	if(mymob?.hud_used == src)
-		mymob.hud_used = null
+	if(mymob()?.hud_used == src)
+		mymob().hud_used = null
 	for (var/x in ammo_hud_list)
-		remove_ammo_hud(mymob, x)
+		remove_ammo_hud(mymob(), x)
 	ammo_hud_list = null
 	return ..()
 
 /datum/hud/proc/hidden_inventory_update()
-	if(!mymob) return
-	if(ishuman(mymob))
-		var/mob/living/carbon/human/H = mymob
+	if(!mymob()) return
+	if(ishuman(mymob()))
+		var/mob/living/carbon/human/H = mymob()
 		for(var/gear_slot in H.species.hud.gear)
 			var/list/hud_data = H.species.hud.gear[gear_slot]
 			if(inventory_shown && hud_shown)
@@ -274,11 +277,11 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = null
 
 /datum/hud/proc/persistant_inventory_update()
-	if(!mymob)
+	if(!mymob())
 		return
 
-	if(ishuman(mymob))
-		var/mob/living/carbon/human/H = mymob
+	if(ishuman(mymob()))
+		var/mob/living/carbon/human/H = mymob()
 		for(var/gear_slot in H.species.hud.gear)
 			var/list/hud_data = H.species.hud.gear[gear_slot]
 			if(hud_shown)
@@ -311,13 +314,13 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = null
 
 /datum/hud/proc/instantiate()
-	if(!ismob(mymob))
+	if(!ismob(mymob()))
 		return 0
 
 	toggle_palette = new()
 	palette_down = new()
 	palette_up = new()
-	mymob.create_mob_hud(src)
+	mymob().create_mob_hud(src)
 
 	// Past this point, mymob.hud_used is set
 
@@ -326,8 +329,8 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 	palette_up.set_hud(src)
 
 	persistant_inventory_update()
-	mymob.reload_fullscreen() // Reload any fullscreen overlays this mob has.
-	mymob.update_action_buttons(TRUE)
+	mymob().reload_fullscreen() // Reload any fullscreen overlays this mob has.
+	mymob().update_action_buttons(TRUE)
 	reorganize_alerts()
 
 /mob/proc/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
@@ -382,21 +385,21 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 	if(MH in minihuds)
 		return
 	LAZYADD(minihuds, MH)
-	if(mymob.client)
-		mymob.client.screen -= miniobjs
+	if(mymob().client)
+		mymob().client.screen -= miniobjs
 	miniobjs += MH.get_screen_objs()
-	if(mymob.client)
-		mymob.client.screen += miniobjs
+	if(mymob().client)
+		mymob().client.screen += miniobjs
 
 /datum/hud/proc/remove_minihud(datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
 	LAZYREMOVE(minihuds, MH)
-	if(mymob.client)
-		mymob.client.screen -= miniobjs
+	if(mymob().client)
+		mymob().client.screen -= miniobjs
 	miniobjs -= MH.get_screen_objs()
-	if(mymob.client)
-		mymob.client.screen += miniobjs
+	if(mymob().client)
+		mymob().client.screen += miniobjs
 
 //Triggered when F12 is pressed (Unless someone changed something in the DMF)
 /mob/verb/button_pressed_F12(full = 0 as null)
@@ -556,7 +559,7 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	LAZYSET(ammo_hud_list, G, ammo_hud)
+	LAZYSET(ammo_hud_list, om_handle(G), ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
 	ammo_hud.our_gun = om_handle(G)
 	ammo_hud.add_hud(user, G)
@@ -564,13 +567,14 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 
 ///Remove the ammo hud related to the gun G from the user
 /datum/hud/proc/remove_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, G)
+	var/gun_handle = om_handle_of(G) // the gun may be on its way out
+	var/atom/movable/screen/ammo/ammo_hud = gun_handle && LAZYACCESS(ammo_hud_list, gun_handle)
 	if(isnull(ammo_hud))
 		return
 	ammo_hud.our_gun = null
 	ammo_hud.remove_hud(user, G)
 	qdel(ammo_hud)
-	LAZYREMOVE(ammo_hud_list, G)
+	LAZYREMOVE(ammo_hud_list, gun_handle)
 	var/i = 1
 	for(var/key in ammo_hud_list)
 		ammo_hud = LAZYACCESS(ammo_hud_list, key)
@@ -579,7 +583,13 @@ REF_PAIR(/datum/hud, list("toggle_palette" = "our_hud", "palette_down" = "our_hu
 
 ///Update the ammo hud related to the gun G
 /datum/hud/proc/update_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, G)
+	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, om_handle(G))
 	ammo_hud?.update_hud(user, G)
 
 #undef MAX_AMMO_HUD_POSSIBLE
+
+/// LC-refs: the mob this hud belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/hud/proc/mymob() as /mob
+	return om_resolve(mymob_handle)
+
+REF_OWNED(/datum/global_hud, list("druggy", "blurry", "whitense", "heavy_whitense", "centermarker", "darksight", "nvg", "thermal", "meson", "science", "material", "holomap"))

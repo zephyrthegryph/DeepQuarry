@@ -22,7 +22,7 @@
 
 	. += ""
 
-	if(hardware && (hardware.owner == src))
+	if(hardware && (hardware.owner_ref() == src))
 		. += hardware.get_examine_desc()
 
 	user.showLaws(src)

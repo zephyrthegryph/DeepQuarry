@@ -23,7 +23,7 @@
 		return
 	regen_tick++
 	if(regen_tick % 5 == 0)
-		var/list/nearby_mobs = range(calculate_spell_power(4),owner)
+		var/list/nearby_mobs = range(calculate_spell_power(4),owner_ref())
 		var/list/mobs_to_heal = list()
 		for(var/mob/living/L in nearby_mobs)
 			if(heal_allies_only)

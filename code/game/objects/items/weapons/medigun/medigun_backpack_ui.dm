@@ -8,7 +8,7 @@
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(!medigun)
 		return list()
-	var/mob/living/carbon/human/H = medigun.current_target
+	var/mob/living/carbon/human/H = medigun.current_target()
 	var/patientname
 	var/patienthealth = 0
 	var/list/patientdiagnosis

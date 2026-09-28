@@ -20,8 +20,8 @@
 	var/mode = 0					// 0 = off, 1=clamped (off), 2=operating
 	var/drained_this_tick = 0		// One drain per step, however many callers ask.
 
-	var/datum/powernet/PN			// Our powernet
-	var/obj/structure/cable/attached		// the attached cable
+	var/PN_handle			// Our powernet
+	var/attached_handle		// the attached cable
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
@@ -32,8 +32,8 @@
 		if(!isturf(T) || !T.is_plating())
 			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
 			return ITEM_INTERACT_BLOCKING
-		attached = locate() in T
-		if(!attached)
+		attached_handle = om_handle(locate(/obj/structure/cable) in T)
+		if(!attached())
 			to_chat(user, "No exposed cable here to attach to.")
 			return ITEM_INTERACT_BLOCKING
 		anchored = TRUE
@@ -76,7 +76,7 @@
 		
 	return TRUE
 /obj/item/powersink/pwr_drain()
-	if(!attached)
+	if(!attached())
 		return 0
 
 	if(drained_this_tick)
@@ -85,17 +85,17 @@
 
 	var/drained = 0
 
-	if(!PN)
+	if(!PN())
 		return 1
 
 	set_light(12)
-	PN.trigger_warning()
+	PN().trigger_warning()
 	// found a powernet, so drain up to max power from it
-	drained = PN.draw_power(drain_rate)
+	drained = PN().draw_power(drain_rate)
 	// if tried to drain more than available on powernet
 	// now look for APCs and drain their cells
 	if(drained < drain_rate)
-		for(var/obj/machinery/power/terminal/T in PN.nodes)
+		for(var/obj/machinery/power/terminal/T in PN().nodes)
 			// Enough power drained this tick, no need to torture more APCs
 			if(drained >= drain_rate)
 				break
@@ -112,7 +112,7 @@
 /// Every 2 s while operating: drain the attached powernet (and its APCs), then dissipate.
 /obj/item/powersink/periodic_step()
 	drained_this_tick = 0
-	PN = attached?.get_powernet()
+	PN_handle = om_handle(attached()?.get_powernet())
 	pwr_drain()
 	power_drained -= min(dissipation_rate, power_drained)
 	if(power_drained > max_power * 0.95)
@@ -121,4 +121,12 @@
 		explosion(src.loc, 3,6,9,12)
 		qdel(src)
 		return
-	PN = attached?.get_powernet()
+	PN_handle = om_handle(attached()?.get_powernet())
+
+/// LC-refs: PN -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/powersink/proc/PN() as /datum/powernet
+	return om_resolve(PN_handle)
+
+/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/powersink/proc/attached() as /obj/structure/cable
+	return om_resolve(attached_handle)

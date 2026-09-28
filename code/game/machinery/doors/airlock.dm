@@ -30,7 +30,7 @@
 	var/lights = 1 // bolt lights show by default
 	var/aiDisabledIdScanner = 0
 	var/aiHacking = FALSE
-	var/obj/machinery/door/airlock/closeOther = null
+	var/closeOther_handle
 	var/closeOtherId = null
 	var/lockdownbyai = 0
 	autoclose = 1
@@ -58,7 +58,7 @@
 	var/knock_sound = 'sound/machines/2beeplow.ogg'
 	var/knock_hammer_sound = 'sound/weapons/sonic_jackhammer.ogg'
 	var/knock_unpowered_sound = 'sound/machines/door/knock_glass.ogg'
-	var/mob/hold_open
+	var/hold_open_handle
 	rad_insulation = RAD_MEDIUM_INSULATION
 
 	// Frozen airlocks and how to deice them
@@ -599,14 +599,14 @@ About the new airlock wires panel:
 			if(shock(user, 100))
 				return TRUE
 
-	if(!Adjacent(hold_open))
-		hold_open = null
+	if(!Adjacent(hold_open()))
+		hold_open_handle = null
 
-	if(hold_open && !density)
-		if(hold_open == user)
-			hold_open = null
+	if(hold_open() && !density)
+		if(hold_open() == user)
+			hold_open_handle = null
 		else
-			to_chat(user, span_warning("[hold_open] is holding \the [src] open!"))
+			to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/X = user
@@ -637,7 +637,7 @@ About the new airlock wires panel:
 		return CLICK_ACTION_SUCCESS
 
 	if(IS_GRABBING(user)) //Hold door open
-		hold_open = user
+		hold_open_handle = om_handle(user)
 		visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
 		attack_hand(user)
 		return CLICK_ACTION_SUCCESS
@@ -763,12 +763,12 @@ About the new airlock wires panel:
 	else if(locked)
 		to_chat(user, span_warning("The door bolts are down!"))
 	else if(!density)
-		if(hold_open)
-			if(hold_open == user)
-				hold_open = null
+		if(hold_open())
+			if(hold_open() == user)
+				hold_open_handle = null
 				close()
 			else
-				to_chat(user, span_warning("[hold_open] is holding \the [src] open!"))
+				to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
 				return
 		close()
 	else
@@ -1000,8 +1000,8 @@ About the new airlock wires panel:
 
 	use_power(360)	//360 W seems much more appropriate for an actuator moving an industrial door capable of crushing people
 
-	if(hold_open)
-		visible_message("[hold_open] holds \the [src] open.")
+	if(hold_open())
+		visible_message("[hold_open()] holds \the [src] open.")
 
 	//if the door is unpowered then it doesn't make sense to hear the woosh of a pneumatic actuator
 	for(var/mob/M as anything in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -1045,8 +1045,8 @@ About the new airlock wires panel:
 
 	SSmotiontracker.ping(src,100)
 
-	if(closeOther != null && istype(closeOther, /obj/machinery/door/airlock/) && !closeOther.density)
-		closeOther.close()
+	if(closeOther() != null && istype(closeOther(), /obj/machinery/door/airlock/) && !closeOther().density)
+		closeOther().close()
 	. = ..()
 
 /obj/machinery/door/airlock/can_open(forced=0)
@@ -1063,11 +1063,11 @@ About the new airlock wires panel:
 		return FALSE
 	if(!forced)
 		//despite the name, this wire is for general door control.
-		if(hold_open)
-			if(Adjacent(hold_open) && !hold_open.incapacitated())
+		if(hold_open())
+			if(Adjacent(hold_open()) && !hold_open().incapacitated())
 				return FALSE
 			else
-				hold_open = null
+				hold_open_handle = null
 		if(!arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR))
 			return	0
 	. = ..()
@@ -1132,7 +1132,7 @@ About the new airlock wires panel:
 	if(frozen && forced) // Unfreeze on forced open
 		unFreeze()
 
-	hold_open = null //if it passes the can close check, always make sure to clear hold open
+	hold_open_handle = null //if it passes the can close check, always make sure to clear hold open
 
 	if(safe && !ignore_safties)
 		for(var/turf/turf in locs)
@@ -1278,7 +1278,7 @@ About the new airlock wires panel:
 	if(closeOtherId != null)
 		for (var/obj/machinery/door/airlock/A in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(A.closeOtherId == closeOtherId && A != src)
-				closeOther = A
+				closeOther_handle = om_handle(A)
 				break
 	name = "\improper [name]"
 	if(frequency)
@@ -1391,13 +1391,13 @@ About the new airlock wires panel:
 // sets, so every override stays after its base definition (resolution preserved). ===
 /mob/living/silicon/robot
 	var/sleeper_resting = FALSE //Enable resting belly sprites for dogborgs that have the sprites
-	var/datum/matter_synth/water_res = null //Enable water for lick clean
+	var/water_res_handle //Enable water for lick clean
 	//Multibelly support. We do not want to apply it to any module not supporting it in it's sprites
 
 /mob/living/silicon/robot/proc/ex_reserve_refill()
 	set name = "Refill Extinguisher"
 	set category = "Object"
-	var/datum/matter_synth/water = water_res
+	var/datum/matter_synth/water = water_res()
 	for(var/obj/item/extinguisher/E in module.modules)
 		if(E.reagents.total_volume < E.max_water)
 			if(water && water.energy > 0)
@@ -1480,3 +1480,17 @@ About the new airlock wires panel:
 	if(!check_access(R.idcard))
 		return TRUE
 	return FALSE
+
+REF_HELD(/obj/machinery/door/airlock, list("electronics"))
+
+/// LC-refs: closeOther -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock
+	return om_resolve(closeOther_handle)
+
+/// LC-refs: hold open -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/airlock/proc/hold_open() as /mob
+	return om_resolve(hold_open_handle)
+
+/// LC-refs: water res -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
+	return om_resolve(water_res_handle)

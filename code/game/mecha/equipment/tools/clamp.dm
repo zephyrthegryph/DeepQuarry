@@ -4,13 +4,13 @@
 	equip_cooldown = 15
 	energy_drain = 10
 	var/dam_force = 20
-	var/obj/mecha/working/ripley/cargo_holder
+	var/cargo_holder_handle
 	required_type = list(/obj/mecha/working)
 	ready_sound = 'sound/mecha/gasdisconnected.ogg'
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/attach(obj/mecha/M as obj)
 	..()
-	cargo_holder = M
+	cargo_holder_handle = om_handle(M)
 
 	return
 
@@ -44,7 +44,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/action(atom/target)
 	if(!action_checks(target)) return
-	if(!cargo_holder) return
+	if(!cargo_holder()) return
 
 	//loading
 	if(istype(target,/obj))
@@ -81,7 +81,7 @@
 			else
 				occupant_message(span_warning("[target] is firmly secured."))
 			return
-		if(length(cargo_holder.cargo) >= cargo_holder.cargo_capacity)
+		if(length(cargo_holder().cargo) >= cargo_holder().cargo_capacity)
 			occupant_message(span_warning("Not enough room in cargo compartment."))
 			return
 
@@ -93,12 +93,12 @@
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
-				LAZYADD(cargo_holder.cargo, O)
-				if(!O.move_into(cargo_holder, MECHA_SLOT_CARGO))
-					O.forceMove(cargo_holder)
+				LAZYADD(cargo_holder().cargo, O)
+				if(!O.move_into(cargo_holder(), MECHA_SLOT_CARGO))
+					O.forceMove(cargo_holder())
 				O.anchored = FALSE
 				occupant_message(span_notice("[target] succesfully loaded."))
-				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - length(cargo_holder.cargo)]")
+				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
 			else
 				occupant_message(span_warning("You must hold still while handling objects."))
 				O.anchored = initial(O.anchored)
@@ -140,11 +140,11 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/safety/action(atom/target)
 	if(!action_checks(target)) return
-	if(!cargo_holder) return
+	if(!cargo_holder()) return
 	if(istype(target,/obj))
 		var/obj/O = target
 		if(!O.anchored)
-			if(length(cargo_holder.cargo) < cargo_holder.cargo_capacity)
+			if(length(cargo_holder().cargo) < cargo_holder().cargo_capacity)
 				chassis.occupant_message("You lift [target] and start to load it into cargo compartment.")
 				chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 				set_ready_state(FALSE)
@@ -153,12 +153,12 @@
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
-						LAZYADD(cargo_holder.cargo, O)
-						if(!O.move_into(cargo_holder, MECHA_SLOT_CARGO))
-							O.forceMove(cargo_holder)
+						LAZYADD(cargo_holder().cargo, O)
+						if(!O.move_into(cargo_holder(), MECHA_SLOT_CARGO))
+							O.forceMove(cargo_holder())
 						O.anchored = FALSE
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))
-						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder.cargo_capacity - length(cargo_holder.cargo)]")
+						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
 					else
 						chassis.occupant_message(span_warning("You must hold still while handling objects."))
 						O.anchored = initial(O.anchored)
@@ -184,3 +184,7 @@
 		chassis.use_power(energy_drain)
 		do_after_cooldown()
 	return 1
+
+/// LC-refs: cargo holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working/ripley
+	return om_resolve(cargo_holder_handle)

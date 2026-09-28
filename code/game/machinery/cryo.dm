@@ -418,3 +418,5 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 
 #undef CRYO_BASE_RATE
 #undef CRYO_DEEP_COLD
+
+REF_OWNED(/obj/machinery/atmospherics/unary/cryo_cell, list("fluid"))

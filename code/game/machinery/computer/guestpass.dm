@@ -303,3 +303,5 @@
 		SStgui.update_uis(src)
 	else
 		to_chat(user, span_warning("Invalid duration."))
+
+REF_HELD(/obj/machinery/computer/guestpass, list("giver"))

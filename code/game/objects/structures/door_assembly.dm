@@ -362,3 +362,5 @@
 	if(prob(40)) // Chance for the frame to let the bullet keep going.
 		return PROJECTILE_CONTINUE
 	return ..()
+
+REF_HELD(/obj/structure/door_assembly, list("electronics"))

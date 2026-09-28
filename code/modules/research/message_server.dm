@@ -384,24 +384,26 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 
 	round_end_data_gathering() //round_end time logging and some other data processing
 	if(!SSdbcore.IsConnected()) return
-	var/round_id
+	// The feedback is captured now (text and numbers); the rows are written on the I/O lane
+	// once the next round id is known.
+	var/list/rows = list()
+	for(var/datum/feedback_variable/FV in feedback)
+		rows += list(list(FV.get_variable(), FV.get_value(), FV.get_details()))
+	om_io(null, /datum/om/io/sql, "SELECT MAX(round_id) AS round_id FROM erro_feedback", null, /proc/blackbox_write_feedback_rows, rows)
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT MAX(round_id) AS round_id FROM erro_feedback")
-	query.Execute()
-	while(query.NextRow())
-		round_id = query.item[1]
-	qdel(query)
+/// om_io() callback: writes the blackbox's captured feedback rows under the next round id.
+/proc/blackbox_write_feedback_rows(list/result, error, list/rows)
+	if(error)
+		log_sql("Blackbox feedback: round id lookup failed: [error]")
+		return
+	var/round_id
+	for(var/list/row in result["rows"])
+		round_id = row[1]
 	if(!isnum(round_id))
 		round_id = text2num(round_id)
 	round_id++
-
-	for(var/datum/feedback_variable/FV in feedback)
-		var/fv_variable = FV.get_variable()
-		var/fv_value = FV.get_value()
-		var/fv_details = FV.get_details()
-		var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = fv_variable, "fv_value" = fv_value, "fv_details" = fv_details))
-		query_insert.Execute()
-		qdel(query_insert)
+	for(var/list/row in rows)
+		om_sql_write("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = row[1], "fv_value" = row[2], "fv_details" = row[3]))
 
 // Sanitize inputs to avoid SQL injection attacks. This is not secure. Basic filters like this are pretty easy to bypass. Use the format for arguments used in the above.
 /proc/sql_sanitize_text(text)

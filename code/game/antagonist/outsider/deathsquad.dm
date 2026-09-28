@@ -32,7 +32,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 	if(!..())
 		return
 
-	if (player.mind == leader)
+	if (player.mind == leader())
 		player.equip_to_slot_or_del(new /obj/item/clothing/under/rank/centcom_officer(player), slot_w_uniform)
 	else
 		player.equip_to_slot_or_del(new /obj/item/clothing/under/color/green(player), slot_w_uniform)
@@ -41,7 +41,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/swat(player), slot_gloves)
 	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/thermal(player), slot_glasses)
 	player.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/swat(player), slot_wear_mask)
-	if (player.mind == leader)
+	if (player.mind == leader())
 		player.equip_to_slot_or_del(new /obj/item/pinpointer(player), slot_l_store)
 		player.equip_to_slot_or_del(new /obj/item/disk/nuclear(player), slot_r_store)
 	else
@@ -63,7 +63,7 @@ GLOBAL_DATUM(deathsquad, /datum/antagonist/deathsquad)
 	..()
 
 	var/syndicate_commando_rank
-	if(leader && player == leader)
+	if(leader() && player == leader())
 		syndicate_commando_rank = pick("Corporal", "Sergeant", "Staff Sergeant", "Sergeant 1st Class", "Master Sergeant", "Sergeant Major")
 	else
 		syndicate_commando_rank = pick("Lieutenant", "Captain", "Major")

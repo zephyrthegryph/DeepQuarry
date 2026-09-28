@@ -9,6 +9,13 @@
 /// offers atoms that have genuinely sat untouched.
 /atom/movable/var/tmp/latent_last_touch = 0
 
+/// world.time before which the sweep will not offer this atom again, set when
+/// latent_collapse() refused it although can_be_latent() passed. A refusal is a
+/// stable fact about the atom (an outside reference, a signal, a slot problem),
+/// so retrying every frame only repeats the refusal -- and in test builds each
+/// refcount refusal walks the world looking for the holder.
+/atom/movable/var/tmp/latent_refused_until = 0
+
 /// A holder's configured idle delay, in deciseconds, before its contents are
 /// offered to the sweep. Holders may override for a shorter or longer delay
 /// (a busy vending machine vs. a crate in a mothballed cargo bay).
@@ -146,6 +153,8 @@ GLOBAL_LIST_EMPTY(latency_policy_log)
 
 /// Checks per PERIODIC_SLOW frame (2 s): 32 per 4 s, as the reactor sweep spent.
 #define LATENCY_SWEEP_BUDGET 16
+/// Shortest wait before the sweep re-offers an atom latent_collapse() refused.
+#define LATENCY_REFUSAL_BACKOFF_MIN (1 MINUTES)
 
 /// Holders with latent contents that the sweep should look at. Populated by
 /// dq_latency_sweep_register() the first time a holder's ledger is built
@@ -202,14 +211,24 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 			LAZYADD(dead, holder)
 			continue
 		for(var/atom/movable/A as anything in holder.contents)
+			if(world.time < A.latent_refused_until)
+				continue
+			if(!can_be_latent(A))
+				continue
+			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
 			if(dq_latent_attempt_collapse(A))
 				collapsed++
 				break // holder.contents changed; the rest wait for next turn
+			// Refused by latent_collapse() itself: back off for the holder's idle
+			// delay instead of re-offering it (and re-running its refusal) every frame.
+			A.latent_refused_until = world.time + max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN)
+			log_runtime("LATENCY_SWEEP: [A.type] in [holder.type] refused collapse, retry after [DisplayTimeText(A.latent_refused_until - world.time)]: [GLOB.latent_last_refusal]")
 	if(dead)
 		holders -= dead
 	cursor = index % max(length(holders), 1)
 
 #undef LATENCY_SWEEP_BUDGET
+#undef LATENCY_REFUSAL_BACKOFF_MIN
 
 // ---- Admin toggle (containment.md §4.7 "Safety") ----
 

@@ -288,3 +288,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/space_heater/step_start_condition()
 	return state
+
+REF_HELD(/obj/machinery/space_heater, list("cell"))

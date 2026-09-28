@@ -10,7 +10,7 @@
 	throwforce = 6
 	preserve_item = 1
 	w_class = ITEMSIZE_LARGE
-	var/obj/item/radio/bluespacehandset/linked/handset_path = /obj/item/radio/bluespacehandset/linked
+	var/handset_path = /obj/item/radio/bluespacehandset/linked
 
 /obj/item/bluespaceradio/Initialize(mapload)
 	AddComponent(/datum/component/tethered_item, handset_path)

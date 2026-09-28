@@ -837,3 +837,5 @@
 
 	update_icon()
 	return TRUE
+
+REF_OWNED(/obj/structure/prop/machine/nt_pod, list("outside", "door", "fluid"))

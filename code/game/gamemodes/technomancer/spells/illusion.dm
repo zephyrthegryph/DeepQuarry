@@ -13,14 +13,14 @@
 	desc = "Now you can toy with the minds of the whole colony."
 	aspect = ASPECT_LIGHT
 	cast_methods = CAST_RANGED | CAST_USE
-	var/atom/movable/copied = null
+	var/copied_handle
 	var/mob/living/simple_mob/illusion/illusion = null
 
 /obj/item/spell/illusion/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable))
 		var/atom/movable/AM = hit_atom
 		if(pay_energy(100))
-			copied = AM
+			copied_handle = om_handle(AM)
 			update_icon()
 			to_chat(user, span_notice("You've copied \the [AM]'s appearance."))
 			user << 'sound/weapons/flash.ogg'
@@ -28,13 +28,13 @@
 	else if(istype(hit_atom, /turf))
 		var/turf/T = hit_atom
 		if(!illusion)
-			if(!copied)
-				copied = user
+			if(!copied())
+				copied_handle = om_handle(user)
 			if(pay_energy(500))
 				illusion = new(T)
-				illusion.copy_appearance(copied)
-				illusion.copy_overlays(copied, TRUE)
-				to_chat(user, span_notice("An illusion of \the [copied] is made on \the [T]."))
+				illusion.copy_appearance(copied())
+				illusion.copy_overlays(copied(), TRUE)
+				to_chat(user, span_notice("An illusion of \the [copied()] is made on \the [T]."))
 				user << 'sound/effects/pop.ogg'
 				return 1
 		else
@@ -65,10 +65,14 @@ REF_OWNED(/obj/item/spell/illusion, "illusion")
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
 /obj/item/spell/illusion/update_icon()
 	cut_overlays()
-	if(copied)
-		var/image/temp_image = image(copied)
+	if(copied())
+		var/image/temp_image = image(copied())
 		var/matrix/M = matrix()
 		M.Scale(0.5, 0.5)
 		temp_image.transform = M
 //		temp_image.pixel_y = 8
 		add_overlay(temp_image)
+
+/// LC-refs: copied -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/spell/illusion/proc/copied() as /atom/movable
+	return om_resolve(copied_handle)

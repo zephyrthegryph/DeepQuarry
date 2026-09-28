@@ -818,8 +818,9 @@
 	TEST_ASSERT(life_test_settle(M), "the mouse should park first; still busy: [life_test_busy(M)]")
 	TEST_ASSERT(!length(om_pipeline_audit(sched, 400, 0, TRUE)), "the audit must not flag a mob that is correctly parked")
 	// A deliberately missed wake: write state an idle stage reads (healing ears) without raising
-	// a channel.
-	M.ear_damage = 50
+	// a channel. Bypasses set_ear_damage() on purpose, by name, since every direct write to a
+	// declared field is linted (field_write); this is the one write that must not raise.
+	M.vars["ear_damage"] = 50
 	TEST_ASSERT(life_test_parked(M), "a direct write must not wake the mob (that is the bug the audit catches)")
 	var/list/S = life_stats()
 	var/missed_before = S[OM_STAT_MISSED]
@@ -827,7 +828,7 @@
 	TEST_ASSERT(length(found), "the audit should find the stage with pending work")
 	TEST_ASSERT_EQUAL(S[OM_STAT_MISSED], missed_before + 1, "the audit should count the missed wake")
 	TEST_ASSERT(!life_test_parked(M), "the audit should wake the mob")
-	M.ear_damage = 0
+	M.set_ear_damage(0)
 
 // --- Statuses, immunity and the frame's own changes (doc/rewrite/life_on_om.md §7) --------------
 

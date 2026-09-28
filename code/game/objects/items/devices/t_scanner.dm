@@ -14,7 +14,7 @@
 
 	var/on = 0
 	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
-	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
+	var/user_client_handle //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
@@ -52,7 +52,7 @@
 	set_user_client(loc_client)
 
 	//no sense processing if no-one is going to see it.
-	if(!user_client) return
+	if(!user_client()) return
 
 	//get all objects in scan range
 	var/list/scanned = get_scanned_objects(scan_range)
@@ -63,11 +63,11 @@
 	for(var/obj/O in update_add)
 		var/image/overlay = get_overlay(O)
 		LAZYSET(active_scanned, O, overlay)
-		user_client.images += overlay
+		user_client().images += overlay
 
 	//Remove stale overlays
 	for(var/obj/O in update_remove)
-		user_client.images -= LAZYACCESS(active_scanned, O)
+		user_client().images -= LAZYACCESS(active_scanned, O)
 		LAZYREMOVE(active_scanned, O)
 
 	//Flicker effect
@@ -121,18 +121,18 @@
 			. += O
 
 /obj/item/t_scanner/proc/set_user_client(client/new_client)
-	if(new_client == user_client)
+	if(new_client == user_client())
 		return
-	if(user_client)
+	if(user_client())
 		for(var/scanned in active_scanned)
-			user_client.images -= LAZYACCESS(active_scanned, scanned)
+			user_client().images -= LAZYACCESS(active_scanned, scanned)
 	if(new_client)
 		for(var/scanned in active_scanned)
 			new_client.images += LAZYACCESS(active_scanned, scanned)
 	else
 		LAZYCLEARLIST(active_scanned)
 
-	user_client = new_client
+	user_client_handle = om_handle(new_client)
 
 /obj/item/t_scanner/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -154,3 +154,7 @@
 
 
 #undef overlay_cache_LEN
+
+/// LC-refs: user client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/t_scanner/proc/user_client() as /client
+	return om_resolve(user_client_handle)

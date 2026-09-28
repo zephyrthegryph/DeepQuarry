@@ -93,6 +93,7 @@
 #define REGISTRY_GEIGER_COUNTERS "geiger_counters"
 #define REGISTRY_GHOST_PODS "active_ghost_pods"
 #define REGISTRY_GPS "GPS_list"
+#define REGISTRY_GROWING_PLANTS "growing_plants"
 #define REGISTRY_GYROTRONS "gyrotrons"
 #define REGISTRY_HOLOPOSTERS "holoposters"
 #define REGISTRY_HUMANS "human_mob_list"

@@ -93,10 +93,10 @@ REF_SPILL(/obj/machinery/computer/telescience, "inserted_gps")
 
 /obj/machinery/computer/telescience/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
-	if(!istype(multitool.connectable, /obj/machinery/telepad))
+	if(!istype(multitool.connectable(), /obj/machinery/telepad))
 		return ITEM_INTERACT_BLOCKING
-	telepad = multitool.connectable
-	multitool.connectable = null
+	telepad = multitool.connectable()
+	multitool.connectable_handle = null
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 

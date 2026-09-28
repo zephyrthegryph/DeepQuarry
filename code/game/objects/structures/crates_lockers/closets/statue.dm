@@ -25,7 +25,7 @@
 			_tmp_buck_9.unbuckle_mob(L, TRUE)
 			L.anchored = FALSE
 		L.forceMove(src)
-		L.sdisabilities |= MUTE
+		L.set_sdisabilities(L.sdisabilities | MUTE)
 		max_integrity = L.get_endurance() + 100
 		original_int = L.vitality() * L.get_endurance() + 100
 		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues

@@ -34,7 +34,7 @@
 		LAZYOR(neighbors, floor)
 
 	if(length(neighbors))
-		SSplants.add_plant(src)	//if we have neighbours again, start processing
+		GLOB.plant_service.add_plant(src)	//if we have neighbours again, start processing
 
 	// Update all of our friends.
 	var/turf/T = get_turf(src)
@@ -120,7 +120,7 @@
 	// We shouldn't have spawned if the controller doesn't exist.
 	check_health()
 	if(has_buckled_mobs() || length(neighbors))
-		SSplants.add_plant(src)
+		GLOB.plant_service.add_plant(src)
 
 //spreading vines aren't created on their final turf.
 //Instead, they are created at their parent and then move to their destination.
@@ -141,7 +141,7 @@
 			continue
 		for(var/obj/effect/plant/neighbor in check_turf.contents)
 			LAZYOR(neighbor.neighbors, check_turf)
-			SSplants.add_plant(neighbor)
+			GLOB.plant_service.add_plant(neighbor)
 	om_qdel_after(src, 1)
 
 #undef NEIGHBOR_REFRESH_TIME

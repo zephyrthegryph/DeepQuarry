@@ -2,13 +2,8 @@
 // declared channel once per change, and every stage's wake_on covers what it reads.
 
 /datum/om_field_test_entity
-	var/level = 0
 
-/datum/om/decl/om_field_test_entity
-	of = /datum/om_field_test_entity
-	fields = list("level" = CHANGE_DATUM_A)
-
-OM_SETTER(/datum/om_field_test_entity, level)
+OM_FIELD(/datum/om_field_test_entity, level, 0, CHANGE_DATUM_A)
 
 /// Every stage and behaviour that reads a declared field is woken by that field's channel.
 /datum/unit_test/dq_om_declared_fields_cover_reads

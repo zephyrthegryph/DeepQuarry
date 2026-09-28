@@ -47,7 +47,7 @@
 
 	var/obj/machinery/door/airlock/A = holder
 	data["id_tag"] = A.id_tag
-	data["frequency"] = A.radio_connection ? A.frequency : null
+	data["frequency"] = A.radio_connection() ? A.frequency : null
 	data["min_freq"] = RADIO_LOW_FREQ
 	data["max_freq"] = RADIO_HIGH_FREQ
 

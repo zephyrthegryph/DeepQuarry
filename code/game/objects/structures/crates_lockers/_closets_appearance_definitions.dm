@@ -1988,3 +1988,5 @@
 		"stripe_vertical_mid_partial" = COLOR_WARM_YELLOW,
 		"hop" = COLOR_WARM_YELLOW
 	)
+
+REF_OWNED(/datum/decl/closet_appearance, list("icon"))

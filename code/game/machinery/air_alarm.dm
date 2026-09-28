@@ -91,12 +91,11 @@
 	var/mode = AALARM_MODE_SCRUBBING
 	var/screen = AALARM_SCREEN_MAIN
 	var/area_uid
-	var/area/alarm_area
+	var/alarm_area_handle
 
 	var/target_temperature = T0C+20
-	var/regulating_temperature = 0
 
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 	/// Keys are things like temperature and certain gasses. Values are lists, which contain, in order:
 	/// red warning minimum value, yellow warning minimum value, yellow warning maximum value, red warning maximum value
@@ -149,9 +148,9 @@
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	set_wires(new /datum/wires/alarm(src))
-	LAZYADD(alarm_area.air_alarms, src)
-	if(!alarm_area.main_air_alarm_is_operating()) // select main alarm
-		alarm_area.elect_main_air_alarm()
+	LAZYADD(alarm_area_ref().air_alarms, src)
+	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
+		alarm_area_ref().elect_main_air_alarm()
 	set_initial_TLV()
 	soundloop = new(list(src), FALSE)
 
@@ -160,11 +159,11 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 /// Phase 2: leaves its area's alarm list; the area elects a new main alarm.
 /obj/machinery/alarm/lifecycle_dematerialize()
 	. = ..()
-	if(!alarm_area)
+	if(!alarm_area_ref())
 		return
-	LAZYREMOVE(alarm_area.air_alarms, src)
-	if(om_resolve(alarm_area.main_air_alarm) == src)
-		alarm_area.elect_main_air_alarm(TRUE)
+	LAZYREMOVE(alarm_area_ref().air_alarms, src)
+	if(om_resolve(alarm_area_ref().main_air_alarm) == src)
+		alarm_area_ref().elect_main_air_alarm(TRUE)
 
 /obj/machinery/alarm/proc/offset_airalarm()
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? -26 : 26)
@@ -209,10 +208,10 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 
 /obj/machinery/alarm/proc/update_area()
 	invalidate_gas_dependencies()
-	alarm_area = get_area(src)
-	area_uid = "\ref[alarm_area]"
+	alarm_area_handle = om_handle(get_area(src))
+	area_uid = "\ref[alarm_area_ref()]"
 	if(name == "alarm")
-		name = "[alarm_area.name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
+		name = "[alarm_area_ref().name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
 
 /obj/machinery/alarm/proc/scan_atmo()
 	var/turf/simulated/location = src.loc
@@ -249,16 +248,16 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 				"pressure" = current_pressure,
 				"temperature" = current_temperature,
 			),
-			"detail" = "[alarm_area] atmospheric service reports danger level [danger_level], [round(current_pressure, 0.1)] kPa, and [round(current_temperature, 0.1)] K.",
+			"detail" = "[alarm_area_ref()] atmospheric service reports danger level [danger_level], [round(current_pressure, 0.1)] kPa, and [round(current_temperature, 0.1)] K.",
 		), "atmos-service:[REF(src)]:[contract_atmos_revision]", src)
 	if(mode == AALARM_MODE_CYCLE && environment.return_pressure() < ONE_ATMOSPHERE * 0.05)
 		mode = AALARM_MODE_FILL
 		apply_mode()
 
-	if(alarm_area?.atmosalm || danger_level > 0)  // Looping Alarms (Trigger Decompression alarm here, on detection of any breach in the area)
+	if(alarm_area_ref()?.atmosalm || danger_level > 0)  // Looping Alarms (Trigger Decompression alarm here, on detection of any breach in the area)
 		soundloop.start()
 		atmoswarn = TRUE
-	else if(danger_level == 0 && alarm_area?.atmosalm == 0)  // Looping Alarms (Cancel Decompression alarm here)
+	else if(danger_level == 0 && alarm_area_ref()?.atmosalm == 0)  // Looping Alarms (Cancel Decompression alarm here)
 		soundloop.stop()
 		atmoswarn = FALSE
 
@@ -474,14 +473,14 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		set_light(0)
 		set_light_on(FALSE)
 		return
-	if(!alarm_area || (stat & (NOPOWER|BROKEN)) || shorted)
+	if(!alarm_area_ref() || (stat & (NOPOWER|BROKEN)) || shorted)
 		icon_state = "alarmp"
 		set_light(0)
 		set_light_on(FALSE)
 		return
 
 	// sub light!
-	var/obj/machinery/alarm/MA = om_resolve(alarm_area.main_air_alarm)
+	var/obj/machinery/alarm/MA = om_resolve(alarm_area_ref().main_air_alarm)
 	if(MA == src)
 		// I am the main alarm
 		add_overlay(mutable_appearance(icon, "alarm_Mmode"))
@@ -499,14 +498,14 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 	add_overlay(emissive_appearance(icon, "alarm_Pmode"))
 
 	var/icon_level = danger_level
-	if(alarm_area.atmosalm)
+	if(alarm_area_ref().atmosalm)
 		icon_level = max(icon_level, 1)	//if there's an atmos alarm but everything is okay locally, no need to go past yellow
 
 	var/new_color = null
 	switch(icon_level)
 		if(0)
 			icon_state = "alarm_0"
-			if(om_resolve(alarm_area.main_air_alarm) == src)
+			if(om_resolve(alarm_area_ref().main_air_alarm) == src)
 				// active controller
 				add_overlay(mutable_appearance(icon, "alarm_ov0"))
 				add_overlay(emissive_appearance(icon, "alarm_ov0"))
@@ -544,33 +543,33 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		return
 
 	var/dev_type = signal.data["device"]
-	if(!(id_tag in alarm_area.air_scrub_names) && !(id_tag in alarm_area.air_vent_names))
+	if(!(id_tag in alarm_area_ref().air_scrub_names) && !(id_tag in alarm_area_ref().air_vent_names))
 		register_env_machine(id_tag, dev_type)
 	if(dev_type == "AScr")
-		LAZYSET(alarm_area.air_scrub_info, id_tag, signal.data)
+		LAZYSET(alarm_area_ref().air_scrub_info, id_tag, signal.data)
 	else if(dev_type == "AVP")
-		LAZYSET(alarm_area.air_vent_info, id_tag, signal.data)
+		LAZYSET(alarm_area_ref().air_vent_info, id_tag, signal.data)
 
 /obj/machinery/alarm/proc/register_env_machine(m_id, device_type)
 	var/new_name
 	if(device_type == "AVP")
-		new_name = "[alarm_area.name] Vent Pump #[length(alarm_area.air_vent_names)+1]"
-		LAZYSET(alarm_area.air_vent_names, m_id, new_name)
+		new_name = "[alarm_area_ref().name] Vent Pump #[length(alarm_area_ref().air_vent_names)+1]"
+		LAZYSET(alarm_area_ref().air_vent_names, m_id, new_name)
 	else if(device_type == "AScr")
-		new_name = "[alarm_area.name] Air Scrubber #[length(alarm_area.air_scrub_names)+1]"
-		LAZYSET(alarm_area.air_scrub_names, m_id, new_name)
+		new_name = "[alarm_area_ref().name] Air Scrubber #[length(alarm_area_ref().air_scrub_names)+1]"
+		LAZYSET(alarm_area_ref().air_scrub_names, m_id, new_name)
 	else
 		return
 	om_after(src, 10, PROC_REF(send_signal), m_id, list("init" = new_name))
 
 /obj/machinery/alarm/proc/refresh_all()
-	for(var/id_tag in alarm_area.air_vent_names)
-		var/list/I = LAZYACCESS(alarm_area.air_vent_info, id_tag)
+	for(var/id_tag in alarm_area_ref().air_vent_names)
+		var/list/I = LAZYACCESS(alarm_area_ref().air_vent_info, id_tag)
 		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
 			continue
 		send_signal(id_tag, list("status"))
-	for(var/id_tag in alarm_area.air_scrub_names)
-		var/list/I = LAZYACCESS(alarm_area.air_scrub_info, id_tag)
+	for(var/id_tag in alarm_area_ref().air_scrub_names)
+		var/list/I = LAZYACCESS(alarm_area_ref().air_scrub_info, id_tag)
 		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
 			continue
 		send_signal(id_tag, list("status"))
@@ -578,64 +577,64 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid))
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
 
 /obj/machinery/alarm/proc/send_signal(target, list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
-	if(!radio_connection)
+	if(!radio_connection())
 		return 0
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source = src
+	signal.source_handle = om_handle(src)
 
 	signal.data = command
 	signal.data["tag"] = target
 	signal.data["sigtype"] = "command"
 
-	radio_connection.post_signal(src, signal, AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid))
+	radio_connection().post_signal(src, signal, AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid))
 //			to_world("Signal [command] Broadcasted to [target]")
 
 	return 1
 
 /obj/machinery/alarm/proc/apply_mode()
-	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.mode = mode //propagate mode to other air alarms in the area
 
 	switch(mode)
 		if(AALARM_MODE_SCRUBBING)
-			for(var/device_id in alarm_area.air_scrub_names)
+			for(var/device_id in alarm_area_ref().air_scrub_names)
 				send_signal(device_id, list("power"= 1, "co2_scrub"= 1, "scrubbing"= 1, "panic_siphon"= 0))
-			for(var/device_id in alarm_area.air_vent_names)
+			for(var/device_id in alarm_area_ref().air_vent_names)
 				send_signal(device_id, list("power"= 1, "checks"= "default", "set_external_pressure"= "default"))
 
 		if(AALARM_MODE_PANIC, AALARM_MODE_CYCLE)
-			for(var/device_id in alarm_area.air_scrub_names)
+			for(var/device_id in alarm_area_ref().air_scrub_names)
 				send_signal(device_id, list("power"= 1, "panic_siphon"= 1))
-			for(var/device_id in alarm_area.air_vent_names)
+			for(var/device_id in alarm_area_ref().air_vent_names)
 				send_signal(device_id, list("power"= 0))
 
 		if(AALARM_MODE_REPLACEMENT)
-			for(var/device_id in alarm_area.air_scrub_names)
+			for(var/device_id in alarm_area_ref().air_scrub_names)
 				send_signal(device_id, list("power"= 1, "panic_siphon"= 1))
-			for(var/device_id in alarm_area.air_vent_names)
+			for(var/device_id in alarm_area_ref().air_vent_names)
 				send_signal(device_id, list("power"= 1, "checks"= "default", "set_external_pressure"= "default"))
 
 		if(AALARM_MODE_FILL)
-			for(var/device_id in alarm_area.air_scrub_names)
+			for(var/device_id in alarm_area_ref().air_scrub_names)
 				send_signal(device_id, list("power"= 0))
-			for(var/device_id in alarm_area.air_vent_names)
+			for(var/device_id in alarm_area_ref().air_vent_names)
 				send_signal(device_id, list("power"= 1, "checks"= "default", "set_external_pressure"= "default"))
 
 		if(AALARM_MODE_OFF)
-			for(var/device_id in alarm_area.air_scrub_names)
+			for(var/device_id in alarm_area_ref().air_scrub_names)
 				send_signal(device_id, list("power"= 0))
-			for(var/device_id in alarm_area.air_vent_names)
+			for(var/device_id in alarm_area_ref().air_vent_names)
 				send_signal(device_id, list("power"= 0))
 
 /obj/machinery/alarm/proc/apply_danger_level(new_danger_level)
-	if(report_danger_level && alarm_area.atmosalert(new_danger_level, src))
+	if(report_danger_level && alarm_area_ref().atmosalert(new_danger_level, src))
 		post_alert(new_danger_level)
-	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.update_icon()
 
 /obj/machinery/alarm/proc/post_alert(alert_level)
@@ -644,9 +643,9 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		return
 
 	var/datum/signal/alert_signal = new
-	alert_signal.source = src
+	alert_signal.source_handle = om_handle(src)
 	alert_signal.transmission_method = TRANSMISSION_RADIO
-	alert_signal.data["zone"] = alarm_area.name
+	alert_signal.data["zone"] = alarm_area_ref().name
 	alert_signal.data["type"] = "Atmospheric"
 
 	if(alert_level==2)
@@ -796,9 +795,9 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 
 		var/list/list/scrubbers = list()
 		data["scrubbers"] = scrubbers
-		for(var/id_tag in alarm_area.air_scrub_names)
-			var/long_name = alarm_area.air_scrub_names[id_tag]
-			var/list/info = LAZYACCESS(alarm_area.air_scrub_info, id_tag)
+		for(var/id_tag in alarm_area_ref().air_scrub_names)
+			var/long_name = alarm_area_ref().air_scrub_names[id_tag]
+			var/list/info = LAZYACCESS(alarm_area_ref().air_scrub_info, id_tag)
 			if(!info)
 				continue
 			scrubbers += list(list(
@@ -869,7 +868,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			if(RCON_YES)
 				rcon_setting = RCON_YES
 
-		for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+		for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 			AA.rcon_setting = rcon_setting
 		return TRUE
 
@@ -935,13 +934,13 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			apply_mode(ui.user)
 			. = TRUE
 		if("alarm")
-			if(alarm_area.atmosalert(2, src))
+			if(alarm_area_ref().atmosalert(2, src))
 				apply_danger_level(2)
 			. = TRUE
 		if("reset")
 			atmos_reset()
 			. = TRUE
-	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.update_icon()
 
 /obj/machinery/alarm/proc/thermostat_entered(mob/user, input_temperature, datum/om/prompt/ask)
@@ -951,7 +950,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		if(input_temperature > max_temperature || input_temperature < min_temperature)
 			to_chat(user, "Temperature must be between [min_temperature]C and [max_temperature]C")
 		else
-			for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+			for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 				AA.target_temperature = input_temperature + T0C
 				AA.invalidate_gas_dependencies()
 	return TRUE
@@ -967,7 +966,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			TLV[env][name] = round(value, 0.01)
 		clamp_tlv_values(env, name)
 		// investigate_log(" treshold value for [env]:[name] was set to [value] by [key_name(user)]",INVESTIGATE_ATMOS)
-		for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+		for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 			AA.own_TLV()
 			AA.TLV[env][name] = TLV[env][name]
 			AA.invalidate_gas_dependencies()
@@ -1009,9 +1008,9 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 				selected[3] = selected[4]
 
 /obj/machinery/alarm/proc/atmos_reset()
-	if(alarm_area.atmosalert(0, src))
+	if(alarm_area_ref().atmosalert(0, src))
 		apply_danger_level(0)
-	for(var/obj/machinery/alarm/AA in alarm_area.air_alarms)
+	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.update_icon()
 
 /obj/machinery/alarm/screwdriver_act(mob/user, obj/item/tool)
@@ -1130,3 +1129,11 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 /obj/machinery/alarm/arm_wakes()
 	..()
 	register_gas_dependencies()
+
+/// LC-refs: alarm area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/alarm/proc/alarm_area_ref() as /area
+	return om_resolve(alarm_area_handle)
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/alarm/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

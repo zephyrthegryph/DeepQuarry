@@ -144,7 +144,6 @@
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
 		LAZYADD(sick.viruses, base_disease.Copy())
-	qdel(src)
 
 /obj/belly/macrophage
 	name = "capsid"

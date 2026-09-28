@@ -38,3 +38,5 @@
 /obj/machinery/computer/communications/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	communications.tgui_interact(user)
 	return TRUE
+
+REF_OWNED(/obj/machinery/computer/communications, list("communications"))

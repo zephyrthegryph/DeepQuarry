@@ -92,7 +92,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 /obj/structure/cable/proc/power_material_changed()
 	if(!engineered_material_id && !material_custom_assembly)
 		return
-	SSmachines.power_material_cables[src] = TRUE
+	GLOB.machine_service.power_material_cables[src] = TRUE
 	if(power_entity)
 		get_powernet()?.invalidate_material_cache()
 
@@ -113,7 +113,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /// The network this cable is on (asks Rust).
 /obj/structure/cable/proc/get_powernet()
-	return power_entity ? SSmachines.power_region_of(power_entity) : null
+	return power_entity ? GLOB.machine_service.power_region_of(power_entity) : null
 
 /// Sends this piece (its turf and directions) to the Rust network. Placing,
 /// rotating and moving a cable all call this; Rust works out what it joins.
@@ -187,7 +187,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /// Phase 1 (unbind): the cable leaves its powernet and the material power graph.
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
-	SSmachines.power_material_cables -= src
+	GLOB.machine_service.power_material_cables -= src
 	powernet?.remove_cable(src)
 	powernet = null
 	power_unregister()

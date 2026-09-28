@@ -6,7 +6,7 @@
 	desc = "Chitter chitter."
 	cast_methods = CAST_RANGED | CAST_USE
 	aspect = ASPECT_TELE
-	var/mob/living/summoned_mob_type = null // The type to use when making new mobs when summoned.
+	var/summoned_mob_type = null // The type to use when making new mobs when summoned.
 	var/list/summon_options
 	var/energy_cost = 0
 	var/instability_cost = 0
@@ -21,7 +21,7 @@
 
 /obj/item/spell/summon/proc/summon_arrives(obj/effect/E, turf/T, mob/living/user)
 	qdel(E)
-	if(owner) // We might've been dropped.
+	if(owner_ref()) // We might've been dropped.
 		var/mob/living/L = new summoned_mob_type(T)
 		LAZYOR(core.summoned_mobs, L)
 		L.summoned = 1

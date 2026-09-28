@@ -53,9 +53,6 @@
 
 	src.soulgem?.transfer_self(new_mob)
 
-/mob/living
-	var/mob/living/tf_mob_holder = null
-
 /// The player in this transformed form goes back to its original body
 /// (tf_mob_holder) through its mind, binding its identity there again.
 /mob/living/proc/return_player_to_tf_holder(reason)

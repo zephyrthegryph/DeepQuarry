@@ -43,8 +43,8 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	var/list/species
 	var/list/emagged_departments
 
-	var/datum/suit_cycler_choice/department/target_department
-	var/datum/suit_cycler_choice/species/target_species
+	var/target_department_handle
+	var/target_species_handle
 
 	var/obj/item/clothing/suit/space/void/suit = null
 	var/obj/item/clothing/head/helmet/space/helmet = null
@@ -65,10 +65,10 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	emagged_departments = load_emagged()
 	limit_departments = null // just for mem
 
-	target_department = departments["No Change"]
-	target_species = species["No Change"]
+	target_department_handle = om_handle(departments["No Change"])
+	target_species_handle = om_handle(species["No Change"])
 
-	if(!target_department || !target_species)
+	if(!target_department() || !target_species())
 		stat |= BROKEN
 
 	set_wires(new /datum/wires/suit_storage_unit(src))
@@ -416,15 +416,15 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		if("department")
 			var/choice = params["department"]
 			if(choice in departments)
-				target_department = departments[choice]
+				target_department_handle = om_handle(departments[choice])
 			else if(emagged && (choice in emagged_departments))
-				target_department = emagged_departments[choice]
+				target_department_handle = om_handle(emagged_departments[choice])
 				. = TRUE
 
 		if("species")
 			var/choice = params["species"]
 			if(choice in species)
-				target_species = species[choice]
+				target_species_handle = om_handle(species[choice])
 				. = TRUE
 
 		if("radlevel")
@@ -566,22 +566,22 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 // "Streamlined" before? Ok. -Aro
 /obj/machinery/suit_cycler/proc/apply_paintjob()
-	if(!target_species || !target_department)
+	if(!target_species() || !target_department())
 		return
 
 	// Helmet to new paint
-	if(target_department.can_refit_helmet(helmet))
-		target_department.do_refit_helmet(helmet)
+	if(target_department().can_refit_helmet(helmet))
+		target_department().do_refit_helmet(helmet)
 	// Suit to new paint
-	if(target_department.can_refit_suit(suit))
-		target_department.do_refit_suit(suit)
+	if(target_department().can_refit_suit(suit))
+		target_department().do_refit_suit(suit)
 	// Attached voidsuit helmet to new paint
-	if(target_department.can_refit_helmet(suit?.hood))
-		target_department.do_refit_helmet(suit?.hood)
+	if(target_department().can_refit_helmet(suit?.hood))
+		target_department().do_refit_helmet(suit?.hood)
 
 	// Species fitting for all 3 potential changes
-	if(target_species.can_refit_to(helmet, suit, suit?.hood))
-		target_species.do_refit_to(helmet, suit, suit?.hood)
+	if(target_species().can_refit_to(helmet, suit, suit?.hood))
+		target_species().do_refit_to(helmet, suit, suit?.hood)
 	else
 		visible_message("[icon2html(src,viewers(src))]" + span_warning("Unable to apply specified cosmetics with specified species. Please try again with a different species or cosmetic option selected."))
 		return
@@ -593,3 +593,13 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 /obj/machinery/suit_cycler/proc/finish_paintjob(mob/user)
 	apply_paintjob()
 	finished_job(user)
+
+REF_HELD(/obj/machinery/suit_cycler, list("suit", "helmet"))
+
+/// LC-refs: target department -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department
+	return om_resolve(target_department_handle)
+
+/// LC-refs: target species -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/suit_cycler/proc/target_species() as /datum/suit_cycler_choice/species
+	return om_resolve(target_species_handle)

@@ -58,7 +58,7 @@
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	var/obj/item/uplink/hidden/hidden_uplink = null // All items can have an uplink hidden inside, just remember to add the triggers.
+	var/hidden_uplink_handle // All items can have an uplink hidden inside, just remember to add the triggers.
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -95,7 +95,7 @@
 	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
-	var/icon/default_worn_icon	//Default on-mob icon
+	var/default_worn_icon	//Default on-mob icon
 	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
@@ -126,7 +126,7 @@
 	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
-	var/obj/item/organ/my_augment = null	// Used to reference the object's host organ.
+	var/my_augment_handle	// Used to reference the object's host organ.
 	var/datum/identification/identity = null
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
@@ -456,8 +456,8 @@
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
 			qdel(src)
 
-	if(my_augment && !QDELETED(src))
-		forceMove(my_augment)
+	if(item_my_augment(src) && !QDELETED(src))
+		forceMove(item_my_augment(src))
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
@@ -1151,3 +1151,12 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 			return TRUE
 	return FALSE
 
+REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay"))
+
+/// LC-refs: hidden uplink -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
+	return om_resolve(I?.hidden_uplink_handle)
+
+/// LC-refs: my augment -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/proc/item_my_augment(obj/item/I) as /obj/item/organ
+	return om_resolve(I?.my_augment_handle)
