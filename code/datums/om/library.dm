@@ -125,7 +125,6 @@
 		target.riding_datum.handle_vehicle_offsets()
 	source.update_water()
 	target.post_buckle_mob(source)
-	SEND_SIGNAL(target, COMSIG_MOVABLE_BUCKLE, source, forced)
 	source.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = target)
 
 /datum/om/relation/buckled_to/on_unlink(mob/living/source, atom/movable/target, datum/om/edge/edge)

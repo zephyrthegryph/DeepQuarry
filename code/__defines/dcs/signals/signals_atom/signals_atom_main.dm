@@ -29,8 +29,6 @@
 //Non /TG/ signals:
 
 
-///from base atom/Exited(): (mob/user, obj/item/extrapolator/extrapolator, dry_run, list/result)
-#define COMSIG_ATOM_EXTRAPOLATOR_ACT "atom_extrapolator_act"
 
 
 ///from base of /datum/destroy

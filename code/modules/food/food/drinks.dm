@@ -94,7 +94,6 @@
 	return ..()
 
 /obj/item/reagent_containers/food/drinks/proc/On_Consume(mob/living/eater, mob/feeder, changed = FALSE)
-	SEND_SIGNAL(src, COMSIG_GLASS_DRANK, eater, feeder)
 	if(SScontracts && eater && changed)
 		contract_consumption_sequence++
 		var/mob/living/living_feeder = feeder
