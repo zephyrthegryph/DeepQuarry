@@ -63,7 +63,7 @@ REF_OWNED(/obj/machinery/smartfridge, "soundloop")
 REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 
 // a persistent fridge is forgotten by persistence.
-/obj/machinery/smartfridge/on_destroy(force)
+/obj/machinery/smartfridge/lifecycle_dematerialize()
 	if(persistent)
 		SSpersistence.forget_value(src, persistent)
 	..()

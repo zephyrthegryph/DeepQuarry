@@ -43,9 +43,9 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	GLOB.chicken_count += 1
 
 // the population cap counts it out.
-/mob/living/simple_mob/animal/passive/chicken/on_destroy(force)
-	..()
+/mob/living/simple_mob/animal/passive/chicken/lifecycle_dematerialize()
 	GLOB.chicken_count -= 1
+	..()
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/chicken, INTERACT_ITEM(null, PROC_REF(chicken_interaction_item)))
 

@@ -87,7 +87,7 @@ REF_BACK(/datum/material_response, list("parent" = "material_response"))
 
 // its owner leaves the radiovoltaic registry (hooks and the `parent` back link
 // clear with the links).
-/datum/material_response/on_destroy(force)
+/datum/material_response/lifecycle_dematerialize()
 	if(parent)
 		registry_leave(REGISTRY_RADIOVOLTAIC_ITEMS, parent)
 	..()

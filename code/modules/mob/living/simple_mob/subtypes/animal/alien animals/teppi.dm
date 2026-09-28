@@ -780,7 +780,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	teppi_setup()
 
 // the population cap counts it out.
-/mob/living/simple_mob/vore/alienanimals/teppi/on_destroy(force)
+/mob/living/simple_mob/vore/alienanimals/teppi/lifecycle_dematerialize()
 	GLOB.teppi_count --
 	..()
 

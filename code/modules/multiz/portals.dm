@@ -157,11 +157,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	var/target
 
 // its portal forgets it.
-/obj/structure/portal_target/on_destroy(force)
-	if(target)
-		var/obj/structure/portal_event/T = target
-		T.target = null
-	..()
+REF_BACK(/obj/structure/portal_target, list("target" = "target"))
 
 /obj/structure/portal_gateway
 	name = "portal"

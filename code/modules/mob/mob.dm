@@ -1175,11 +1175,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		I.exploit_for = om_handle(src)
 
 // exploit add-ons forget the item (the exploited mob is a handle).
-/obj/item/on_destroy(force)
-	if(exploit_for)
-		var/mob/exploited = om_resolve(exploit_for)
-		exploited?.exploit_addons -= src
-	..()
+REF_BACKLIST_HANDLE(/obj/item, list("exploit_for" = "exploit_addons"))
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)

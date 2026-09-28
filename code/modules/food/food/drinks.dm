@@ -41,14 +41,7 @@
 	return
 
 // micros inside drop out.
-/obj/item/reagent_containers/food/drinks/on_destroy(force)
-	if(food_inserted_micros)
-		for(var/mob/mob in food_inserted_micros)
-			mob.dropInto(loc)
-			food_inserted_micros -= mob
-	..()
-
-	return
+REF_SPILL_LIST(/obj/item/reagent_containers/food/drinks, "food_inserted_micros")
 
 /// Old attackby. FALSE falls to the food handling, as the old ..() did.
 /obj/item/reagent_containers/food/drinks/proc/drinks_item(mob/user, obj/item/W, datum/interaction/interaction)

@@ -244,7 +244,7 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	GLOB.woof_current++
 
 // the population cap counts it out.
-/mob/living/simple_mob/vore/woof/hostile/aweful/on_destroy(force)
+/mob/living/simple_mob/vore/woof/hostile/aweful/lifecycle_dematerialize()
 	GLOB.woof_current--
 	..()
 
