@@ -608,7 +608,7 @@
 				to_chat(usr,span_notice(span_bold("Darkness:") + " [darkness]"))
 			var/mob/living/H = usr
 			if(ismob(H))
-				var/datum/shadekin/SK = H.get_shadekin_component()
+				var/datum/shadekin/SK = H.get_shadekin_state()
 				if(SK)
 					to_chat(usr,span_notice(span_bold("Energy:") + " [SK.shadekin_get_energy()]"))
 
@@ -619,7 +619,7 @@
 
 		if("danger level")
 			var/mob/living/carbon/human/H = usr
-			var/datum/xenochimera/xc = H.get_xenochimera_component()
+			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc)
 				if(xc.feral > 50)
 					to_chat(usr, span_warning("You are currently <b>completely feral.</b>"))
@@ -654,7 +654,7 @@
 
 		if("Reconstructing Form") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
 			var/mob/living/carbon/human/H = usr
-			var/datum/xenochimera/xc = H.get_xenochimera_component()
+			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
 				if(xc.revive_ready == REVIVING_NOW)
 					to_chat(usr, span_notice("We are currently reviving, and will be done in [round((xc.revive_finished - world.time) / 10)] seconds, or [round(((xc.revive_finished - world.time) * 0.1) / 60)] minutes."))
@@ -663,7 +663,7 @@
 
 		if("Ready to Hatch") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
 			var/mob/living/carbon/human/H = usr
-			var/datum/xenochimera/xc = H.get_xenochimera_component()
+			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
 				if(xc.revive_ready == REVIVING_DONE) // Sanity check.
 					H.hatch() // Hatch.

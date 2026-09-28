@@ -106,7 +106,7 @@
 /datum/species/shadekin/handle_death(mob/living/carbon/human/H)
 	var/special_handling = TRUE // varswitch for downstream // Enable.
 	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	if(!special_handling || (SK && SK.no_retreat))
 		om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
 	else
@@ -192,7 +192,7 @@
 
 
 /mob/living/proc/enter_the_dark()
-	var/datum/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		return
 	SK.respite_activating = FALSE
@@ -203,7 +203,7 @@
 	SK.respite_activating = FALSE
 
 /mob/living/proc/can_leave_dark()
-	var/datum/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		return
 	SK.in_dark_respite = FALSE
@@ -218,7 +218,7 @@
 /datum/species/shadekin/post_spawn_special(mob/living/carbon/human/H)
 	.=..()
 
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	if(!SK)
 		CRASH("A shadekin [H] somehow is missing their shadekin component post-spawn!")
 

@@ -357,6 +357,7 @@
 			to_chat(user, span_bolddanger("[icon2html(geiger_counter, user)] Subject is irradiated and offputting radiation."))
 		else
 			to_chat(user, span_bolddanger("[icon2html(geiger_counter, user)] Subject is irradiated."))
+		return GEIGER_COUNTER_SCAN_SUCCESSFUL
 
 /mob/living/proc/get_radiation_state()
 	RETURN_TYPE(/datum/trait_state/radiation_effects)

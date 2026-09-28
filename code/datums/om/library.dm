@@ -20,16 +20,16 @@
 	return list(
 		// Mob statuses (status.dm; doc/rewrite/life_on_om.md §7): timed, in units of LIFE_CYCLE.
 		// Every field is declared here: immunity, veto signal, presentation and hooks.
-		EFFECT_STUNNED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_STUN, "scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_STUN, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
+		EFFECT_STUNNED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_STUN, "scaled" = TRUE, "signal" = /datum/om/event/living_status_stun, "alert" = "stunned", "alert_type" = /atom/movable/screen/alert/stunned, "indicator" = "stunned",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_WEAKENED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_WEAKEN, "scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_WEAKEN, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
+		EFFECT_WEAKENED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_WEAKEN, "scaled" = TRUE, "signal" = /datum/om/event/living_status_weaken, "alert" = "weakened", "alert_type" = /atom/movable/screen/alert/weakened, "indicator" = "weakened",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_knocked_down, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_PARALYZED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_PARALYZE, "scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_PARALYZE, "alert" = "paralyzed", "alert_type" = /atom/movable/screen/alert/paralyzed, "indicator" = "paralysis",
+		EFFECT_PARALYZED = om_mob_status_row(list("immunity" = EFFECT_IMMUNE_PARALYZE, "scaled" = TRUE, "signal" = /datum/om/event/living_status_paralyze, "alert" = "paralyzed", "alert_type" = /atom/movable/screen/alert/paralyzed, "indicator" = "paralysis",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_passed_out, "on_end" = /mob/proc/status_incapacitation_changed)),
-		EFFECT_SLEEPING = om_mob_status_row(list("scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_SLEEP, "alert" = "asleep", "alert_type" = /atom/movable/screen/alert/asleep, "indicator" = "sleeping",
+		EFFECT_SLEEPING = om_mob_status_row(list("scaled" = TRUE, "signal" = /datum/om/event/before/living_status_sleep, "alert" = "asleep", "alert_type" = /atom/movable/screen/alert/asleep, "indicator" = "sleeping",
 			"on_increase" = /mob/proc/status_clear_facing, "on_start" = /mob/proc/status_incapacitation_changed, "on_end" = /mob/proc/status_incapacitation_changed)),
 		EFFECT_CONFUSED = om_mob_status_row(list("scaled" = TRUE, "alert" = "confused", "alert_type" = /atom/movable/screen/alert/confused, "indicator" = "confused")),
-		EFFECT_BLINDED = om_mob_status_row(list("scaled" = TRUE, "signal" = COMSIG_LIVING_STATUS_BLIND, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned)),
+		EFFECT_BLINDED = om_mob_status_row(list("scaled" = TRUE, "signal" = /datum/om/event/living_status_blind, "indicator" = "blinded", "on_end" = /mob/proc/status_sight_returned)),
 		EFFECT_BLURRY = om_mob_status_row(list("rate" = 1)),
 		EFFECT_NEARSIGHTED = om_mob_status_row(list("rate" = 1)),
 		EFFECT_DEAFENED = om_mob_status_row(list("on_start" = /mob/proc/status_deafness_started, "on_end" = /mob/proc/status_deafness_ended)),

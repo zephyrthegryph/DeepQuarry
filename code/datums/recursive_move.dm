@@ -113,8 +113,7 @@ REF_BACK(/datum/recursive_move, list("holder" = "recursive_move"))
 //One of the parents other than the top parent moved.
 /datum/recursive_move/proc/on_parent_exited(atom/old_loc, datum/om/event/atom_exited/event)
 	EVENT_HANDLER
-	// atom_exited's `direction` carries the new loc (the sender passes Exited()'s second argument).
-	heirarchy_changed(old_loc, event.direction)
+	heirarchy_changed(old_loc, event.new_loc)
 
 /datum/recursive_move/proc/on_parent_equipped(atom/old_loc, datum/om/event/item_equipped/event)
 	EVENT_HANDLER

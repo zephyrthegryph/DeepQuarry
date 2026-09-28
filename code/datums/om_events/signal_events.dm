@@ -93,15 +93,15 @@
 	src.destination = destination
 	src.old_loc = old_loc
 
-/// Was COMSIG_ATOM_EXITED. from base of atom/Exited(): (atom/movable/gone, direction)
+/// Was COMSIG_ATOM_EXITED. From base of atom/Exited(): `gone` left the atom for `new_loc`.
 /datum/om/event/atom_exited
 	sync = TRUE
 	var/gone
-	var/direction
+	var/new_loc
 
-/datum/om/event/atom_exited/New(gone, direction)
+/datum/om/event/atom_exited/New(gone, new_loc)
 	src.gone = gone
-	src.direction = direction
+	src.new_loc = new_loc
 
 /// Was COMSIG_ATOM_EXTINGUISH. from base of atom/attack_basic_mob(): (/mob/user) from base of [/atom/proc/extinguish]
 /datum/om/event/before/atom_extinguish
@@ -1095,10 +1095,6 @@
 
 /// Was COMSIG_OBSERVER_APC. 
 /datum/om/event/observer_apc
-	sync = TRUE
-
-/// Was COMSIG_OBSERVER_DESTROYED. from base of /datum/destroy
-/datum/om/event/observer_destroyed
 	sync = TRUE
 
 /// Was COMSIG_OBSERVER_GLOBALMOVED. 

@@ -381,7 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 
 	if(isliving(T))
 		var/mob/living/M = T
-		var/datum/shadekin/SK = M.get_shadekin_component()
+		var/datum/shadekin/SK = M.get_shadekin_state()
 		if(SK && SK.in_phase)
 			power_cost *= 2
 

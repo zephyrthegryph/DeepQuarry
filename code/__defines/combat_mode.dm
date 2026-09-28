@@ -38,7 +38,6 @@
 #define COMBAT_GRAB_BINDING "combat_grab"
 
 /// From /mob/proc/set_combat_mode(): (new_mode)
-#define COMSIG_MOB_COMBAT_MODE_CHANGED "mob_combat_mode_changed"
 
 /// Selector clause: the actor's Use is the harm outcome (IS_HARMING).
 #define REQ_HARMING REQ_PROC(/proc/dq_pred_harming, "combat mode is off")

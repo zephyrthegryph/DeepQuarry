@@ -21,7 +21,7 @@
 
 /datum/unit_test/dq_ability_phase_shift_blocked_spends_nothing/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/datum/interaction/ability/A = dq_phase_ability()
 	TEST_ASSERT_NOTNULL(A, "shadekin_phase_shift is registered")
 
@@ -38,7 +38,7 @@
 
 /datum/unit_test/dq_ability_phase_shift_area_blocks/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/datum/interaction/ability/A = dq_phase_ability()
 	var/turf/T = get_turf(H)
 	var/area/original = get_area(T)
@@ -59,7 +59,7 @@
 
 /datum/unit_test/dq_ability_phase_shift_commits/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/datum/interaction/ability/A = dq_phase_ability()
 
 	TEST_ASSERT_NULL(A.why_not(H, H, null), "an unblocked shadekin can phase shift")
@@ -76,7 +76,7 @@
 
 /datum/unit_test/dq_ability_phase_shift_returning_is_free/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	SK.in_phase = TRUE
 	var/before = SK.shadekin_get_energy()
 	var/datum/interaction/ability/A = dq_phase_ability()
@@ -184,7 +184,7 @@
 
 /datum/unit_test/dq_ability_dark_respite_warp_triggered_cannot_be_manually_ended/Run()
 	var/mob/living/carbon/human/H = dq_respite_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	H.add_modifier(/datum/modifier/dark_respite) // as an emergency warp would, not through the ability
 	SK.manual_respite = FALSE
 	var/datum/interaction/ability/A = dq_respite_ability()
@@ -213,7 +213,7 @@
 
 /datum/unit_test/dq_ability_regenerate_other_heals_a_neighbour/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/turf/T = get_turf(H)
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, get_step(T, NORTH))
 	var/datum/interaction/ability/A = ABILITY_BY_ID(ABILITY_ID_SHADEKIN_REGENERATE_OTHER)
@@ -230,7 +230,7 @@
 
 /datum/unit_test/dq_ability_regenerate_other_needs_energy/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	SK.dark_energy = 10
 	var/turf/T = get_turf(H)
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human, get_step(T, NORTH))
@@ -243,7 +243,7 @@
 
 /datum/unit_test/dq_ability_create_shade_applies_the_modifier/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/datum/interaction/ability/A = ABILITY_BY_ID(ABILITY_ID_SHADEKIN_CREATE_SHADE)
 	TEST_ASSERT_NOTNULL(A, "shadekin_create_shade is registered")
 	TEST_ASSERT_NULL(A.why_not(H, H, null), "an unblocked shadekin can create a shade")
@@ -269,7 +269,7 @@
 	// under test is the ability's own logic: it spends its cost and defers to
 	// the (unchanged) trap object, and clearing an empty trap list is safe.
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	var/before = SK.shadekin_get_energy()
 	TEST_ASSERT(H.dq_do_dark_maw(H, null, null), "it deploys")
 	TEST_ASSERT_EQUAL(SK.shadekin_get_energy(), before - 20, "the flat 20-energy cost was spent")
@@ -286,7 +286,7 @@
 	// (unrelated) site-readiness clause would fail first there and this test
 	// would never reach the energy clause it's meant to exercise.
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	SK.dark_energy = 10
 	var/datum/interaction/ability/A = ABILITY_BY_ID(ABILITY_ID_SHADEKIN_DARK_TUNNELING)
 	TEST_ASSERT_NOTNULL(A, "shadekin_dark_tunneling is registered")
@@ -296,7 +296,7 @@
 
 /datum/unit_test/dq_ability_dark_tunneling_once_only/Run()
 	var/mob/living/carbon/human/H = dq_phase_test_human()
-	var/datum/shadekin/SK = H.get_shadekin_component()
+	var/datum/shadekin/SK = H.get_shadekin_state()
 	SK.created_dark_tunnel = TRUE
 	var/datum/interaction/ability/A = ABILITY_BY_ID(ABILITY_ID_SHADEKIN_DARK_TUNNELING)
 	TEST_ASSERT_EQUAL(A.why_not(H, H, null), "you have already made a tunnel to the Dark", "blocked after one use")

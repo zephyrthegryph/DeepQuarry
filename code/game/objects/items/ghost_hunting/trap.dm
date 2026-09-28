@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity
-		var/datum/shadekin/SK = living_entity.get_shadekin_component()
+		var/datum/shadekin/SK = living_entity.get_shadekin_state()
 		living_entity.phase_in(get_turf(src), SK)
 
 	passing_entity.forceMove(src)

@@ -55,87 +55,43 @@
 	if(href_list[VV_HK_ADDCOMPONENT])
 		if(!check_rights(R_DEBUG))
 			return
-		var/list/names = list()
-		var/list/componentsubtypes = sortList(subtypesof(/datum/component), GLOBAL_PROC_REF(cmp_typepaths_asc))
-		names += "---Components---"
-		names += componentsubtypes
-		names += "---Elements---"
-		names += sortList(subtypesof(/datum/element), GLOBAL_PROC_REF(cmp_typepaths_asc))
-
-		var/result = flow_ask(mob, "component:add", list("kind" = "list", "message" = "Choose a component/element to add", "title" = "Add Component", "choices" = names))
-		if(isnull(result))
+		var/list/names = sortList(subtypesof(/datum/om/behaviour), GLOBAL_PROC_REF(cmp_typepaths_asc))
+		var/result = flow_ask(mob, "behaviour:add", list("kind" = "list", "message" = "Choose an OM behaviour to attach", "title" = "Attach Behaviour", "choices" = names))
+		if(isnull(result) || !usr)
 			return
-		if(!usr || result == "---Components---" || result == "---Elements---")
-			return
-
-		if(QDELETED(src))
+		if(QDELETED(target))
 			to_chat(usr, "That thing doesn't exist anymore!", confidential = TRUE)
 			return
-
-		var/add_source
-		if(ispath(result, /datum/component))
-			var/datum/component/comp_path = result
-			if(initial(comp_path.dupe_mode) == COMPONENT_DUPE_SOURCES)
-				add_source = flow_ask(mob, "component:source", list("kind" = "text", "message" = "Enter a source for the component", "title" = "Add Component", "default" = "ADMIN-ABUSE"))
-				if(isnull(add_source))
-					return
-
-		var/list/lst = get_callproc_args("component:args")
-		if(!lst)
-			return
-
-		var/datumname = "error"
-		lst.Insert(1, result)
-		if(result in componentsubtypes)
-			datumname = "component"
-			target._AddComponent(lst, add_source, TRUE)
-		else
-			datumname = "element"
-			target._AddElement(lst)
-		log_admin("[key_name(usr)] has added [result] [datumname] to [key_name(target)].")
-		message_admins(span_notice("[key_name_admin(usr)] has added [result] [datumname] to [key_name_admin(target)]."))
+		om_attach(target, result)
+		log_admin("[key_name(usr)] has attached behaviour [result] to [key_name(target)].")
+		message_admins(span_notice("[key_name_admin(usr)] has attached behaviour [result] to [key_name_admin(target)]."))
 	if(href_list[VV_HK_REMOVECOMPONENT] || href_list[VV_HK_MASS_REMOVECOMPONENT])
 		if(!check_rights(R_DEBUG))
 			return
 		var/mass_remove = href_list[VV_HK_MASS_REMOVECOMPONENT]
-		var/list/components = target._datum_components.Copy()
 		var/list/names = list()
-		names += "---Components---"
-		if(length(components))
-			names += sortList(components, GLOBAL_PROC_REF(cmp_typepaths_asc))
-		names += "---Elements---"
-		// We have to list every element here because there is no way to know what element is on this object without doing some sort of hack.
-		names += sortList(subtypesof(/datum/element), GLOBAL_PROC_REF(cmp_typepaths_asc))
-		var/path = flow_ask(mob, "component:remove", list("kind" = "list", "message" = "Choose a component/element to remove. All elements listed here may not be on the datum.", "title" = "Remove element", "choices" = names))
-		if(isnull(path))
+		for(var/datum/om/behaviour/B as anything in target.om_rec?.att)
+			names += B.type
+		if(!length(names))
+			to_chat(usr, "[target] has no OM behaviours attached.")
 			return
-		if(!usr || path == "---Components---" || path == "---Elements---")
+		var/path = flow_ask(mob, "behaviour:remove", list("kind" = "list", "message" = "Choose an OM behaviour to detach", "title" = "Detach Behaviour", "choices" = names))
+		if(isnull(path) || !usr)
 			return
-		if(QDELETED(src))
+		if(QDELETED(target))
 			to_chat(usr, "That thing doesn't exist anymore!")
 			return
 		var/list/targets_to_remove_from = list(target)
 		if(mass_remove)
-			var/method = vv_subtype_prompt(target.type, "component")
+			var/method = vv_subtype_prompt(target.type, "behaviour")
 			if(isnull(method))
 				return
-			if(flow_ask(mob, "component:mass", list("message" = "Are you sure you want to mass-delete [path] on [target.type]?", "title" = "Mass Remove Confirmation", "choices" = list("Yes", "No"))) != "Yes")
+			if(flow_ask(mob, "behaviour:mass", list("message" = "Are you sure you want to mass-detach [path] on [target.type]?", "title" = "Mass Detach Confirmation", "choices" = list("Yes", "No"))) != "Yes")
 				return
 			targets_to_remove_from = get_all_of_type(target.type, method)
-
 		for(var/datum/target_to_remove_from as anything in targets_to_remove_from)
-			if(ispath(path, /datum/element))
-				var/list/lst = get_callproc_args("component:args")
-				if(!lst)
-					return
-				lst.Insert(1, path)
-				target_to_remove_from._RemoveElement(lst)
-			else
-				var/list/components_actual = target_to_remove_from.GetComponents(path)
-				for(var/to_delete in components_actual)
-					qdel(to_delete)
-
-		message_admins(span_notice("[key_name_admin(usr)] has [mass_remove? "mass" : ""] removed [path] component from [mass_remove? target.type : key_name_admin(target)]."))
+			om_detach(target_to_remove_from, path)
+		message_admins(span_notice("[key_name_admin(usr)] has [mass_remove? "mass " : ""]detached behaviour [path] from [mass_remove? target.type : key_name_admin(target)]."))
 
 	if(href_list[VV_HK_CALLPROC])
 		return SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/call_proc_datum, target)

@@ -506,7 +506,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	apply_brain_damage(M)
 	M.injure(INJURY_PAIN, 40, BP_TORSO, src) // Moderate amount of halloss for EVERYONE being defibbed. Defibs feel like being kicked in the chest by a mule. Shit hurts if you're awake.
 	// s Start: Defib pain
-	var/datum/xenochimera/xc = M.get_xenochimera_component()
+	var/datum/xenochimera/xc = M.get_xenochimera_state()
 	if(xc) // Only do the following to Xenochimera. Handwave this however you want, this is to balance defibs on an alien race.
 		M.injure(INJURY_PAIN, 220, BP_TORSO, src) // This hurts a LOT, stacks on top of the previous halloss.
 		xc.feral += 100 // If they somehow weren't already feral, force them feral by increasing ferality var directly, to avoid any messy checks. handle_feralness() will immediately set our feral properly according to halloss anyhow.

@@ -213,12 +213,15 @@
 		call(src, def.on_increase)()
 	return amount
 
-/// Admission of an increase: the immunity, then the status's veto signal.
+/// Admission of an increase: the immunity, then the status's veto event.
 /datum/proc/status_admit(datum/om/effect/status/def, amount)
 	var/datum/om/rec/rec = om_rec
 	if(def.immunity_idx && rec?.contribs && om_effect_value(rec, om_registry().effects[def.immunity_idx]))
 		return FALSE
-	return !(def.signal && (SEND_SIGNAL(src, def.signal, amount) & COMPONENT_NO_STUN))
+	var/event_path = def.signal
+	if(!event_path || !om_wants(src, event_path))
+		return TRUE
+	return !(om_emit(src, new event_path(amount)) & COMPONENT_NO_STUN)
 
 /// Units of `def` that wear off per unit of time on this entity.
 /datum/proc/status_rate(datum/om/effect/status/def)

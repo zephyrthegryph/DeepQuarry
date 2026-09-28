@@ -74,11 +74,3 @@
 /// Step delay of the restore routine.
 #define AI_POWER_STEP        (5 SECONDS)
 
-// --- Signals -------------------------------------------------------------------------------
-/// From /mob/living/silicon/robot/proc/after_equip(): (obj/item/equipped_or_null)
-#define COMSIG_ROBOT_EQUIPMENT_CHANGED "robot_equipment_changed"
-/// From the robot belly overlay provider: (belly_class, list/fullness_ref)
-/// Handlers may adjust fullness_ref[1].
-#define COMSIG_ROBOT_BELLY_FULLNESS "robot_belly_fullness"
-/// From /mob/living/silicon/proc/laws_changed(): ()
-#define COMSIG_SILICON_LAWS_CHANGED "silicon_laws_changed"

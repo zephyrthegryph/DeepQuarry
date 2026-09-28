@@ -28,21 +28,6 @@
 	/// Status traits attached to this datum. associative list of the form: list(trait name (string) = list(source1, source2, source3,...))
 	var/tmp/list/_status_traits
 
-	/**
-	  * Components attached to this datum
-	  *
-	  * Lazy associated list in the structure of `type -> component/list of components`
-	  */
-	var/tmp/list/_datum_components
-	/**
-	  * Any datum registered to receive signals from this datum is in this list
-	  *
-	  * Lazy associated list in the structure of `signal -> registree/list of registrees`
-	  */
-	var/tmp/list/_listen_lookup
-	/// Lazy associated list in the structure of `target -> list(signal -> proctype)` that are run when the datum receives that signal
-	var/tmp/list/list/_signal_procs
-
 	/// Datum level flags
 	var/tmp/datum_flags = NONE
 
@@ -83,11 +68,11 @@
  * The base case is responsible for doing the following
  * * Erasing timers pointing to this datum
  * * Erasing compenents on this datum
- * * Notifying datums listening to signals from this datum that we are going away
+ * * Dropping event hooks (lifecycle phase 4 does this: om_teardown_hooks())
  *
  * Returns [QDEL_HINT_QUEUE]
  */
-// ALLOW(lifecycle): the base: timers, reactor, components, signals and tgui.
+// ALLOW(lifecycle): the base: timers, reactor and tgui.
 /datum/proc/Destroy(force = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -99,25 +84,8 @@
 	#endif
 	#endif
 
-	//BEGIN: ECS SHIT
-	var/list/dc = _datum_components
-	if(dc)
-		for(var/component_key in dc)
-			var/component_or_list = dc[component_key]
-			if(islist(component_or_list))
-				for(var/datum/component/component as anything in component_or_list)
-					qdel(component, FALSE)
-			else
-				var/datum/component/C = component_or_list
-				qdel(C, FALSE)
-		dc.Cut()
-
-	_clear_signal_refs()
-	//END: ECS SHIT
 
 	SStgui.close_uis(src)
-
-	SEND_SIGNAL(src,COMSIG_OBSERVER_DESTROYED)
 
 	#ifdef REFERENCE_TRACKING
 	if(find_references_on_destroy)
@@ -127,24 +95,6 @@
 	#endif
 
 	return QDEL_HINT_QUEUE
-
-///Only override this if you know what you're doing. You do not know what you're doing
-///This is a threat
-/datum/proc/_clear_signal_refs()
-	var/list/lookup = _listen_lookup
-	if(lookup)
-		for(var/sig in lookup)
-			var/list/comps = lookup[sig]
-			if(length(comps))
-				for(var/datum/component/comp as anything in comps)
-					comp.UnregisterSignal(src, sig)
-			else
-				var/datum/component/comp = comps
-				comp.UnregisterSignal(src, sig)
-		_listen_lookup = lookup = null
-
-	for(var/target in _signal_procs)
-		UnregisterSignal(target, _signal_procs[target])
 
 /** Add a filter to the datum.
  * This is on datum level, despite being most commonly / primarily used on atoms, so that filters can be applied to images / mutable appearances.
@@ -311,12 +261,12 @@
 /// Begin coordinated remote viewing, this will call look() when the view begins, and unlook() when it ends.
 /proc/start_coordinated_remoteview(datum/coordinator, mob/user, atom/target, list/viewer_managed_list, remote_view_config_path = null)
 	ASSERT(islist(viewer_managed_list))
-	user.AddComponent(/datum/component/remote_view/viewer_managed, focused_on = target, viewsize = null, vconfig_path = remote_view_config_path, coordinator = coordinator, viewer_list = viewer_managed_list)
+	user.begin_remote_view(/datum/remote_view/viewer_managed, target, null, remote_view_config_path, coordinator, viewer_managed_list)
 
-/// Called from /datum/component/remote_view/viewer_managed during Initilize().
+/// Called from /datum/remote_view/viewer_managed when the view begins.
 /datum/proc/look(mob/user)
 	return
 
-/// Called from /datum/component/remote_view/viewer_managed during Destroy()
+/// Called from /datum/remote_view/viewer_managed when the view ends.
 /datum/proc/unlook(mob/user)
 	return

@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 /obj/structure/dark_portal/hub/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return TRUE
-	var/datum/shadekin/SK = user.get_shadekin_component()
+	var/datum/shadekin/SK = user.get_shadekin_state()
 	if(SK)
 		if(SK.in_dark_respite)
 			to_chat(user, span_warning("You can't use this so soon after an emergency warp!"))
@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 /obj/structure/dark_portal/minion/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return TRUE
-	var/datum/shadekin/SK = user.get_shadekin_component()
+	var/datum/shadekin/SK = user.get_shadekin_state()
 	if(SK)
 		if(SK.in_dark_respite)
 			to_chat(user, span_warning("You can't use this so soon after an emergency warp!"))

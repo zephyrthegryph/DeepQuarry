@@ -278,7 +278,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		owner.emote("twitch")
 
 /datum/xenochimera/proc/handle_feral()
-	if(QDELETED(owner) || owner.get_hallucination_component() || !owner.client || feral < XENOCHIFERAL_THRESHOLD)
+	if(QDELETED(owner) || owner.get_hallucination_state() || !owner.client || feral < XENOCHIFERAL_THRESHOLD)
 		return
 	owner.start_hallucinations(/datum/hallucinations/xenochimera)
 
@@ -294,7 +294,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 /mob/living/carbon/human/proc/reconstitute_form() //Scree's race ability.in exchange for: No cloning.
 	set name = "Reconstitute Form"
 	set category = "Abilities.Xenochimera"
-	var/datum/xenochimera/xc = get_xenochimera_component()
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
 	if(is_incorporeal())
@@ -400,7 +400,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 /mob/living/carbon/human/proc/hatch()
 	set name = "Hatch"
 	set category = "Abilities.Xenochimera"
-	var/datum/xenochimera/xc = get_xenochimera_component()
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
 	if(xc.revive_ready != REVIVING_DONE)
@@ -513,15 +513,15 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 
 ///This is bad and should not be done this way, but xenochimera was hardcoded in SO many places that it's going to be a hassle to completely undo.
 /mob/proc/get_feralness()
-	var/datum/xenochimera/xc = get_xenochimera_component()
+	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(xc)
 		return xc.feral
 
-/mob/proc/get_xenochimera_component()
+/mob/proc/get_xenochimera_state()
 	RETURN_TYPE(/datum/xenochimera)
 	return null
 
-/mob/living/carbon/human/get_xenochimera_component()
+/mob/living/carbon/human/get_xenochimera_state()
 	return xenochimera
 
 /// Gives this human the xenochimera state datum (or returns the existing one). Replaces the old xenochimera component load.

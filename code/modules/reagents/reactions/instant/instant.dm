@@ -1640,7 +1640,7 @@
 /datum/decl/chemical_reaction/instant/xenolazarus/on_reaction(datum/reagents/holder, created_volume) //literally all this does is mash the regenerate button
 	if(ishuman(holder.my_atom))
 		var/mob/living/carbon/human/H = holder.my_atom
-		var/datum/xenochimera/comp = H.get_xenochimera_component()
+		var/datum/xenochimera/comp = H.get_xenochimera_state()
 		if(!comp)
 			return
 		else

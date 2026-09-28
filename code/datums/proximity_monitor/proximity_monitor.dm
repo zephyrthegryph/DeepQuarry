@@ -87,8 +87,7 @@ REF_OWNED(/datum/proximity_monitor, list("containers_connector", "range_connecto
 
 /datum/proximity_monitor/proc/on_uncrossed(atom/source, datum/om/event/atom_exited/event)
 	EVENT_HANDLER
-	// atom_exited's `direction` carries the new loc (the sender passes Exited()'s second argument).
-	uncrossed(source, event.gone, event.direction)
+	uncrossed(source, event.gone, event.new_loc)
 
 /// Something left a turf in range. Used by the advanced subtype for effect fields.
 /datum/proximity_monitor/proc/uncrossed(atom/source, atom/movable/gone, atom/new_loc)

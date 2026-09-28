@@ -47,7 +47,7 @@
 	if(!..())
 		return FALSE
 	var/mob/living/L = target
-	return L.get_shadekin_component() ? TRUE : FALSE
+	return L.get_shadekin_state() ? TRUE : FALSE
 
 // pay_cost() is deliberately trivial: phase shift is instant (no duration, no
 // tool), and the framework re-checks why_not() again right after pay_cost()
@@ -63,11 +63,11 @@
 
 /// TRUE if `actor` has shadekin state, else a reason.
 /mob/living/proc/dq_pred_shadekin(mob/living/actor, atom/target, obj/item/held)
-	return actor.get_shadekin_component() ? TRUE : "you aren't shadekin"
+	return actor.get_shadekin_state() ? TRUE : "you aren't shadekin"
 
 /// TRUE if `actor` isn't already mid-phase, else a reason.
 /mob/living/proc/dq_pred_not_phasing(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	return !SK.doing_phase || "you are already trying to phase"
@@ -95,7 +95,7 @@
  * pay_cost() spends precisely the amount that was checked.
  */
 /mob/living/proc/dq_phase_shift_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return "you aren't shadekin"
 	if(SK.in_phase)
@@ -112,7 +112,7 @@
 	for(var/mob/living/watcher in oviewers(7, actor))
 		if(!ishuman(watcher) && !isrobot(watcher))
 			continue
-		if(watcher.get_shadekin_component() || watcher.stat || isbelly(watcher.loc))
+		if(watcher.get_shadekin_state() || watcher.stat || isbelly(watcher.loc))
 			continue
 		if(ishuman(watcher) && istype(watcher.loc, /obj/item/holder)) // Held humans can't watch.
 			continue
@@ -131,7 +131,7 @@
 // ---- Effect: phase in or out. Runs only once every requirement passed and the cost was paid. ----
 
 /mob/living/proc/dq_do_phase_shift(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return FALSE
 	var/turf/T = get_turf(actor)
@@ -155,7 +155,7 @@
 		if(!T)
 			return
 	if(!SK)
-		SK = get_shadekin_component()
+		SK = get_shadekin_state()
 		if(!SK)
 			return
 	if(SK.in_phase)
@@ -262,7 +262,7 @@
 			held_lights.flicker(SK.flicker_time, SK.flicker_color, TRUE)
 
 /mob/living/proc/phase_out(turf/T)
-	var/datum/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!(SK.in_phase))
 		// pre-change
 		forceMove(T)

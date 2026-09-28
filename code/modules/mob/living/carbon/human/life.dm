@@ -841,9 +841,9 @@
 				self.emote(pick("giggle", "laugh"))
 		breath.adjust_gas(GAS_N2O, -LINDA_GAS_AMT(breath, GAS_N2O)/6, update = 0) //update after
 
-	if(self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_OXY)
+	if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_OXY)
 		self.throw_alert("oxy", /atom/movable/screen/alert/not_enough_atmos)
-	else if(self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_TOXIN)
+	else if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_TOXIN)
 		self.throw_alert("tox_in_air", /atom/movable/screen/alert/tox_in_air)
 
 	// Were we able to breathe?
@@ -1487,7 +1487,7 @@
 				// Nobody home (SSD, or no mind at all): the body stays asleep until a player returns.
 				if(!self.mind || !self.client)
 					self.status_at_least(EFFECT_SLEEPING, 1)
-				if(prob(2) && !self.is_critical() && !self.get_hallucination_component()?.get_fakecrit() && self.client)
+				if(prob(2) && !self.is_critical() && !self.get_hallucination_state()?.get_fakecrit() && self.client)
 					self.emote("snore")
 		//CONSCIOUS
 		else if(!in_crit)
@@ -1802,11 +1802,11 @@
 		health_images += E.get_damage_hud_image(limb_trauma_val)
 
 	// Apply a fire overlay if we're burning.
-	if(self.on_fire || self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_ONFIRE)
+	if(self.on_fire || self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_ONFIRE)
 		health_images += image('icons/mob/OnFire.dmi',"[self.get_fire_icon_state()]")
 
 	// Show a general pain/crit indicator if needed.
-	if(self.get_hallucination_component()?.get_hud_state() == HUD_HALLUCINATION_CRIT)
+	if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_CRIT)
 		trauma_val = 2
 	if(trauma_val)
 		if(!(self.species.flags & NO_PAIN))

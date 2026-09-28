@@ -106,10 +106,15 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	om_unhook(human, /datum/om/event/mob_death, src)
 	human.nif = null
 
-/// Saves the NIF's data when the implanted human dies.
+/// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
+/// runs right after the event instead of inside it (handlers must not sleep).
 /obj/item/nif/proc/on_human_death(mob/living/carbon/human/source, datum/om/event/mob_death/event)
 	EVENT_HANDLER
-	persist_nif_data(source)
+	om_after(src, 0, PROC_REF(persist_on_death), source)
+
+/obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)
+	if(!QDELETED(source))
+		persist_nif_data(source)
 
 //Destructor cleans up references
 REF_OWNED(/obj/item/nif, "comm")

@@ -122,9 +122,9 @@
 #define GEIGER_COUNTER_SCAN_SUCCESSFUL (1<<0)
 
 // ---- from dcs/declarations.dm (conflict_checking behaviour ids)
-#ifndef CONFLICT_ELEMENT_CRUSHER
+
 #define CONFLICT_ELEMENT_CRUSHER "crusher"
-#endif
-#ifndef CONFLICT_ELEMENT_KA
+
+
 #define CONFLICT_ELEMENT_KA "kinetic_accelerator"
-#endif
+

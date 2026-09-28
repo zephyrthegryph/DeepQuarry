@@ -92,8 +92,6 @@
 #include "clothing_tests.dm"
 #include "construction_tests.dm"
 #include "cosmetic_tests.dm"
-#include "dcs_check_list_arguments.dm"
-#include "dcs_get_id_from_elements.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"
 #include "focus_only_tests.dm"

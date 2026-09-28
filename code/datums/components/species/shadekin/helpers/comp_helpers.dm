@@ -1,5 +1,5 @@
 ///Returns the shadekin state datum of the given mob (null if not shadekin)
-/mob/living/proc/get_shadekin_component()
+/mob/living/proc/get_shadekin_state()
 	RETURN_TYPE(/datum/shadekin)
 	return shadekin
 
@@ -185,7 +185,7 @@
 	owner.status_at_least(EFFECT_WEAKENED, 3)
 
 /mob/living/carbon/human/is_incorporeal()
-	var/datum/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(SK && SK.in_phase) //Shadekin
 		return TRUE
 	return ..()

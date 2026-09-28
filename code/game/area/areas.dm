@@ -590,7 +590,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 		return
 	if(check_rights_for(ourmob.client, R_HOLDER)) //If we're an admin, we don't get affected by phase blockers.
 		return
-	var/datum/shadekin/SK = ourmob.get_shadekin_component()
+	var/datum/shadekin/SK = ourmob.get_shadekin_state()
 	if(SK && SK.in_phase)
 		SK.attack_dephase(ourmob.loc, src)
 

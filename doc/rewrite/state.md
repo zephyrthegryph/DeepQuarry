@@ -33,7 +33,7 @@ The API is `code/datums/state/schema.dm`. Built-in vars are skipped except a fix
 - **Hygiene pass.** Caches, references and runtime handles become `tmp`.
 - **Reference lint (CI).** A typed var declaration that holds an object (`var/datum/…`, `var/obj/…`, `var/mob/…`, `var/list` of datums) must be `tmp` or have a codec. `tools/ci/state_schema_lint.py` parses the declarations and checks every saved var of each latent-safe type and its ancestors. Relationships that should keep an object real carry `// ALLOW(state_ref): <reason>` on the var declaration. It is what stops a new var from quietly breaking serialization.
 - **Latent-safe types** set `latent_safe = TRUE` (`code/datums/state/latent_safe_types.dm`), and subtypes inherit it.
-- **Components** that hold per-instance state serialize through the same codecs, as the component type plus its state. A component declares `state_mode`: saved, derived (dropped and rebuilt), or refused (the default). The sparse-var components (`code/datums/components/sparse_vars/`: forensics, alt appearance, …) come first.
+- **Former components.** The DCS is deleted; state that used to live on components (forensics, movable state, observer events) is plain vars on the entity and serializes as vars. Old saves that still carry component blobs are read back into those vars by `apply_legacy_components()` (`GLOB.state_legacy_component_vars`) when `STATE_COMPONENTS` is set.
 
 ## 3. Codecs
 

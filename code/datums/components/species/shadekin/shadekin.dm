@@ -349,7 +349,7 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 	set desc = "Allows you to adjust the settings of various shadekin settings!"
 	set category = "Abilities.Shadekin"
 
-	var/datum/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)
 		to_chat(src, span_warning("Only a shadekin can use that!"))
 		return FALSE

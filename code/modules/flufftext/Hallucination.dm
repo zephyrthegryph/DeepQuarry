@@ -56,7 +56,7 @@ REF_BACK(/datum/hallucinations, list("our_human" = "hallucinations"))
 // Traditional hallucinations
 /////////////////////////////////////////////////////////////////////////////////////////////////////
 /mob/living/carbon/proc/handle_hallucinations()
-	if(get_hallucination_component() || !client || HAS_TRAIT(src, TRAIT_MADNESS_IMMUNE))
+	if(get_hallucination_state() || !client || HAS_TRAIT(src, TRAIT_MADNESS_IMMUNE))
 		return
 	start_hallucinations(/datum/hallucinations)
 
@@ -67,7 +67,7 @@ REF_BACK(/datum/hallucinations, list("our_human" = "hallucinations"))
 	hallucinations = new hallucination_type(src)
 	return hallucinations
 
-/mob/living/carbon/proc/get_hallucination_component()
+/mob/living/carbon/proc/get_hallucination_state()
 	RETURN_TYPE(/datum/hallucinations)
 	return hallucinations
 

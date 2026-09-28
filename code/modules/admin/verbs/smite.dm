@@ -360,7 +360,7 @@ GLOBAL_VAR(redspace_abduction_z)
 		if(5)
 			shadekin.audible_message(span_vwarning(span_bold("[shadekin]") + " belches loudly!"), runemessage = "URRRRRP")
 		if(6)
-			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_component())
+			shadekin.phase_in(get_turf(shadekin), shadekin.get_shadekin_state())
 			if(target)
 				target.transforming = FALSE //Undo cheap hack
 			if(controller_ckey) //Put admin in mob
