@@ -389,4 +389,7 @@
 	else
 		return FALSE
 
-REF_OWNED(/turf/simulated, "shandler")
+// LC-refs: a simulated turf and its sunlight handler point at each other (the handler moves
+// with the turf through ChangeTurf, turf_changing.dm).
+REF_PAIR(/turf/simulated, list("shandler" = "holder"))
+REF_PAIR(/datum/sunlight_handler, list("holder" = "shandler"))

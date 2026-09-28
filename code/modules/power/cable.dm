@@ -899,3 +899,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	return
 
 #undef MAXCOIL
+
+/// LC-refs: a cable is a member of its powernet's cables; deleting it leaves the list.
+REF_BACKLIST(/obj/structure/cable, list("powernet" = "cables"))
