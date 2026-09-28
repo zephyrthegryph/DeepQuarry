@@ -16,9 +16,7 @@
 	loot_list = list(/obj/item/prop/alien/junk = 20
 			)
 
-/mob/living/simple_mob/mechanical/hivebot/precusor/Initialize(mapload)
-	shields = new /obj/item/shield_projector/rectangle/automatic/hivebot_drone(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/hivebot/precusor, "shields", /obj/item/shield_projector/rectangle/automatic/hivebot_drone)
 
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/machinegun

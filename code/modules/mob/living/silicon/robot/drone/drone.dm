@@ -121,7 +121,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
-		icon_state = shell_types[random]
+		icon_state = shell_types[random] // ALLOW(decl): random pick
 		shell_accessories = list("[icon_state]-eyes-blue")
 
 	update_icon()

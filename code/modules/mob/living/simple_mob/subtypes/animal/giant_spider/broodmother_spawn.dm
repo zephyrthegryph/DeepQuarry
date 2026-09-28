@@ -9,7 +9,6 @@
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/replace_death(gibbed)
@@ -30,7 +29,6 @@
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/replace_death(gibbed)
@@ -48,7 +46,6 @@
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/replace_death(gibbed)
@@ -66,7 +63,6 @@
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/replace_death(gibbed)
@@ -84,7 +80,6 @@
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/replace_death(gibbed)
@@ -102,7 +97,6 @@
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/replace_death(gibbed)
@@ -123,7 +117,6 @@
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/replace_death(gibbed)
@@ -141,7 +134,6 @@
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/replace_death(gibbed)
@@ -161,7 +153,6 @@
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after(src, 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/replace_death(gibbed)
@@ -184,7 +175,7 @@
 /mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death))
+	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death)) // ALLOW(decl): keeps the timer handle
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)
@@ -193,3 +184,13 @@
 	if(!QDELETED(src))
 		qdel(src)
 	return TRUE
+
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/frost/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/electric/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/hunter/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/lurker/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/nurse/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/pepper/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/thermic/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/tunneler/broodling, 2 MINUTES, PROC_REF(death))
+DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/webslinger/broodling, 2 MINUTES, PROC_REF(death))

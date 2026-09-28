@@ -189,7 +189,7 @@
 		myid_access = shared_type_list(type, "myid_access", myid_access)
 
 	if(ID_provided)
-		myid = new /obj/item/card/id(src)
+		myid = new /obj/item/card/id(src) // ALLOW(decl): conditional on ID_provided
 		myid.access = myid_access ? myid_access.Copy() : list()
 
 	for(var/L in has_langs)

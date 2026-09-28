@@ -170,10 +170,9 @@
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
 	if(islist(req_access))
 		req_access = shared_type_list(type, "req_access", req_access)
-	spark_system = new /datum/effect/effect/system/spark_spread()
+	spark_system = new /datum/effect/effect/system/spark_spread() // ALLOW(decl): configured before parent init
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
-	robotact = new(src)
 	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
@@ -182,7 +181,7 @@
 
 	set_wires(new /datum/wires/robot(src))
 
-	robot_modules_background = new()
+	robot_modules_background = new() // ALLOW(decl): screen object made in nullspace, configured before parent init
 	robot_modules_background.icon_state = "block"
 	ident = rand(1, 999)
 	updatename(modtype)
@@ -331,14 +330,14 @@
 			else
 				if(!T)
 					log_game("MIND: cyborg [key_name(src)] was destroyed with no location; its MMI is lost and the mind is ghosted without re-entry.")
-					QDEL_NULL(mmi)
+					QDEL_NULL(mmi) // ALLOW(decl): the MMI is lost with the mind when there is no turf
 				else if(!shell) // Shells don't have brainmobs in their MMIs.
 					log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
 					to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
 				mmi = null
 				ghostize(FALSE)
 		else
-			QDEL_NULL(mmi)
+			QDEL_NULL(mmi) // ALLOW(decl): mindless MMI deleted here on purpose, beside the mind-transfer branch
 	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
 	if(shell)
@@ -1918,6 +1917,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return (given_type in module.supported_upgrades)
 
 DECLARE_REF(/mob/living/silicon/robot, "robotact", OWNED, null)
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/robot_ui)
 DECLARE_REF(/mob/living/silicon/robot, "bolt", OWNED, null)
 DECLARE_REF(/mob/living/silicon/robot, "communicator", OWNED, null)
 DECLARE_REF(/mob/living/silicon/robot, "rbPDA", OWNED, null)

@@ -218,17 +218,6 @@ init_reagents	code/modules/integrated_electronics/passive/power.dm	create_reagen
 init_reagents	code/modules/integrated_electronics/subtypes/reagents.dm	create_reagents(volume)
 init_reagents	code/modules/material_science/material_machines.dm	create_reagents(120)
 init_reagents	code/modules/material_science/material_machines.dm	create_reagents(200)
-init_reagents	code/modules/mob/living/carbon/human/species/station/alraune.dm	create_reagents(usable_volume)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	create_reagents(60)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	reagents.add_reagent(REAGENT_ID_TOXIN, 45)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	reagents.add_reagent(REAGENT_ID_IMPEDREZENE, 15)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	reagents.add_reagent(REAGENT_ID_SUGAR, 2)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	create_reagents(splatter_volume)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5)
-init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5)
 init_reagents	code/modules/organs/internal/brain.dm	create_reagents(50)
 init_reagents	code/modules/organs/internal/stomach.dm	create_reagents(30)
 init_reagents	code/modules/organs/organ.dm	create_reagents(5)
@@ -350,9 +339,6 @@ init_registry	code/game/objects/structures/ghost_pods/unified_ghost_hole.dm	regi
 init_registry	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = src
 init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
 init_registry	code/modules/integrated_electronics/subtypes/input.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-init_registry	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	registry_join(REGISTRY_GHOST_PODS, src)
-init_registry	code/modules/mob/living/simple_mob/subtypes/animal/passive/raccoon.dm	registry_join(REGISTRY_GHOST_PODS, src)
-init_registry	code/modules/mob/mob.dm	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 init_registry	code/modules/overmap/ships/ship.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 init_service	code/game/machinery/computer/bodycamera.dm	bpinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
 init_service	code/game/machinery/computer/camera.dm	pinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
@@ -456,22 +442,6 @@ init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	om_after(s
 init_scheduling	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	om_task_periodic(src, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
 init_scheduling	code/modules/materials/sheets/supermatter.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/mining/resonator.dm	om_after(src, timetoburst, PROC_REF(burst), creator)
-init_scheduling	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK))
-init_scheduling	code/modules/mob/living/living.dm	om_attach(src, /datum/om/behaviour/spontaneous_vore)
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm	om_after(src, 35 SECONDS, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	om_task_periodic(src, PERIODIC_SLOW)
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/bullet_heck/puddle_mechanic.dm	om_after(src, fuse_time, PROC_REF(detonate))
-init_scheduling	code/modules/mob/living/simple_mob/subtypes/metroid/metObjects.dm	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 init_scheduling	code/modules/modular_computers/computers/modular_computer/core.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/power/cell.dm	om_task_periodic(src, PERIODIC_SLOW)
 init_scheduling	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	om_task_periodic(src, PERIODIC_SLOW)
@@ -663,32 +633,6 @@ init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_s
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
 init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")
 init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
-init_visuals	code/modules/mob/dead/observer/observer.dm	add_overlay(H.overlays_standing)
-init_visuals	code/modules/mob/living/bot/medbot.dm	add_overlay("kit_skin_[src.skin]")
-init_visuals	code/modules/mob/living/carbon/human/human_species.dm	icon_state = ""
-init_visuals	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	icon_state = power.icon_state
-init_visuals	code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm	icon_state = pick(possible_icon_states)
-init_visuals	code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm	icon_state = pick(possible_icon_states)
-init_visuals	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-init_visuals	code/modules/mob/living/silicon/robot/component.dm	icon_state = pick(possible_icons)
-init_visuals	code/modules/mob/living/silicon/robot/drone/drone.dm	icon_state = shell_types[random]
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm	icon_state = icon_living
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	icon_state = "chicken_[body_color]"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	icon_state = "lizard_[body_color]"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	icon_state = "mouse_[body_color]"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	icon_state = "mouse_miner"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/pets/parrot.dm	icon_state = "eclectusf"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	icon_state = "mouse_[rank]"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	icon_state = "snack_[snack_colour]"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/bullet_heck/other_attacks.dm	icon_state = "arti"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	icon_state = icon_living
-init_visuals	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	icon_state = null
-init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	icon_state = "dragon_maneNone"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/fennec.dm	add_overlay(bigshadow)
-init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	icon_state = initial(new_attrs.icon_state)
-init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	icon_state = "rabbit_[body_color]"
-init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	icon_state = pick("white","dark","brown")
-init_visuals	code/modules/mob/mob_grab.dm	icon_state = "grabbed"
 init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
 init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
 init_visuals	code/modules/organs/subtypes/nano.dm	icon_state = "posi"
@@ -1064,71 +1008,6 @@ init_new_child	code/modules/material_science/material_machines.dm	chamber_air = 
 init_new_child	code/modules/mining/drilling/drill.dm	cell = new cell(src)
 init_new_child	code/modules/mining/drilling/drill.dm	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
 init_new_child	code/modules/mining/machine_silo.dm	materials = new /datum/material_container( \
-init_new_child	code/modules/mob/living/bot/bot.dm	botcard = new /obj/item/card/id(src)
-init_new_child	code/modules/mob/living/bot/bot.dm	access_scanner = new /obj(src)
-init_new_child	code/modules/mob/living/bot/farmbot.dm	tank = new /obj/structure/reagent_dispensers/watertank(src)
-init_new_child	code/modules/mob/living/carbon/brain/MMI.dm	radio = new(src)//Spawns a radio inside the MMI.
-init_new_child	code/modules/mob/living/carbon/carbon.dm	bloodstr = new/datum/reagents/metabolism/bloodstream(500, src)
-init_new_child	code/modules/mob/living/carbon/carbon.dm	ingested = new/datum/reagents/metabolism/ingested(500, src)
-init_new_child	code/modules/mob/living/carbon/carbon.dm	touching = new/datum/reagents/metabolism/touch(500, src)
-init_new_child	code/modules/mob/living/carbon/carbon.dm	cozyloop = new(list(src), FALSE)
-init_new_child	code/modules/mob/living/carbon/human/human.dm	dna = new /datum/dna(null)
-init_new_child	code/modules/mob/living/carbon/human/human.dm	crafting = new /datum/personal_crafting(src)
-init_new_child	code/modules/mob/living/living.dm	deaf_loop = new(list(src), FALSE)
-init_new_child	code/modules/mob/living/living.dm	firesoundloop = new(list(src), FALSE)
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	announcement = new()
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiPDA = new/obj/item/pda/ai(src)
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiCommunicator = new /obj/item/communicator/integrated(src)
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	laws = new using_map.default_law_type
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiMulti = new(src)
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiRadio = new(src)
-init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiCamera = new/obj/item/camera/siliconcam/ai_camera(src)
-init_new_child	code/modules/mob/living/silicon/ai/multicam.dm	aiEye = new /mob/observer/eye/aiEye/pic_in_pic()
-init_new_child	code/modules/mob/living/silicon/pai/pai.dm	card = new default_pai_card_path(src)
-init_new_child	code/modules/mob/living/silicon/pai/pai.dm	sradio = new(src)
-init_new_child	code/modules/mob/living/silicon/pai/pai.dm	communicator = new(src)
-init_new_child	code/modules/mob/living/silicon/pai/pai.dm	pai_ui_chassis = new(src)
-init_new_child	code/modules/mob/living/silicon/pai/pai.dm	pda = new(src)
-init_new_child	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	ore_bag = new(null) //We don't need it inside, just need a reference to it.
-init_new_child	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	med_analyzer = new /obj/item/healthanalyzer
-init_new_child	code/modules/mob/living/silicon/robot/robot.dm	spark_system = new /datum/effect/effect/system/spark_spread()
-init_new_child	code/modules/mob/living/silicon/robot/robot.dm	robotact = new(src)
-init_new_child	code/modules/mob/living/silicon/robot/robot.dm	robot_modules_background = new()
-init_new_child	code/modules/mob/living/silicon/robot/robot_items.dm	dummy_card = new dummy_card_type(src)
-init_new_child	code/modules/mob/living/silicon/robot/robot_remote_control.dm	mmi = new /obj/item/mmi/inert/ai_remote(src)
-init_new_child	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	mmi = new /obj/item/mmi/digital/robot(src)
-init_new_child	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_subtypes.dm	laws = new /datum/ai_laws/explorer
-init_new_child	code/modules/mob/living/simple_mob/simple_mob.dm	myid = new /obj/item/card/id(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/cow.dm	udder = new(50)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/goat.dm	udder = new(50)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm	hat = new /obj/item/clothing/head/sombrero
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/pets/parrot.dm	my_headset = new my_headset(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm	smoke_special = new
-init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm	smoke_spore = new
-init_new_child	code/modules/mob/living/simple_mob/subtypes/gateway/imperion.dm	shields = new /obj/item/shield_projector/rectangle/automatic/imperion(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/gateway/vistors.dm	shields = new /obj/item/shield_projector/rectangle/automatic/orange(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	shields = new /obj/item/shield_projector/rectangle/automatic/magus(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	ion_trail = new
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	ion_trail = new
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	my_storage = new /obj/item/ore_bag(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/golem.dm	core = new(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/precusor_hivebots.dm	shields = new /obj/item/shield_projector/rectangle/automatic/hivebot_drone(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
-init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	sparks = new (src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src) //We always give radios to spawned mobs anyway
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	loopy = new(list(src),FALSE)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	pit = new /obj/item/seeds/pitcherseed(src.contents)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	powermachine = new(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	sparks = new(src)
-init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	Vac = new /obj/item/vac_attachment/swoopie(src)
-init_new_child	code/modules/mob/mob_grab.dm	hud = new /atom/movable/screen/grab(src)
 init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	soundloop = new(list(src), FALSE)
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	battery = new cell_type(src)
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	battery = new/obj/item/cell(src)
@@ -1223,10 +1102,6 @@ init_new_child	code/modules/xenobio/items/weapons.dm	bcell = new/obj/item/cell/d
 destroy_qdel_owned	code/game/mecha/mecha.dm	qdel(cell)
 destroy_qdel_owned	code/game/mecha/mecha.dm	qdel(internal_tank)
 destroy_qdel_owned	code/modules/medical/contagion/engineered/engineered.dm	QDEL_LIST(symptoms)
-destroy_qdel_owned	code/modules/mob/living/carbon/brain/MMI.dm	QDEL_NULL(brainobj)
-destroy_qdel_owned	code/modules/mob/living/silicon/robot/robot.dm	QDEL_NULL(mmi)
-destroy_qdel_owned	code/modules/mob/living/silicon/robot/robot.dm	QDEL_NULL(mmi)
-destroy_qdel_owned	code/modules/mob/mob.dm	QDEL_NULL(soulgem) //Soulcatcher
 destroy_qdel_owned	code/modules/organs/organ_external.dm	qdel(splinted)
 destroy_qdel_owned	code/modules/organs/organ_external.dm	qdel(tourniquet)
 destroy_qdel_owned	code/modules/pda/pda.dm	QDEL_NULL(id)
@@ -1244,10 +1119,6 @@ destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warni
 destroy_effects	code/game/objects/objs.dm	m.visible_message(span_notice("\The [m] tumbles out of \the [src]!"))
 destroy_effects	code/game/objects/structures/gargoyle.dm	visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
 destroy_effects	code/modules/artifice/telecube.dm	mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
-destroy_effects	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster."))
-destroy_effects	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts."))
-destroy_effects	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
-destroy_effects	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.",
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	src.visible_message(span_bolddanger("[src] shatters!"))
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard/phoron(src.loc)
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard(src.loc)

@@ -8,7 +8,7 @@
 
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
 	. = ..()
-	aiEye = new /mob/observer/eye/aiEye/pic_in_pic()
+	aiEye = new /mob/observer/eye/aiEye/pic_in_pic() // ALLOW(decl): eye mob is created in nullspace, not inside src
 	aiEye.screen = src
 
 // ALLOW(ownership_cycle): type-level only; a pic_in_pic window is never one of its own eye's hud elements.

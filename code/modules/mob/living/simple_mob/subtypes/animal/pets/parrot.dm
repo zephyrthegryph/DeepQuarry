@@ -99,10 +99,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 	if(my_headset)
 		. += "It is wearing \a [my_headset]."
 
-/mob/living/simple_mob/animal/passive/bird/parrot/Initialize(mapload)
-	if(my_headset)
-		my_headset = new my_headset(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_headset", null)
 
 // Subtypes.
 
@@ -143,7 +140,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus/Initialize(mapload)
 	gender = pick(MALE, FEMALE)
 	if(gender == FEMALE)
-		icon_state = "eclectusf"
+		icon_state = "eclectusf" // ALLOW(decl): random gender
 		icon_rest = "eclectusf-held"
 		icon_dead = "eclectusf-dead"
 	return ..()

@@ -101,7 +101,7 @@
 	F.rig = src
 	myprotean = P
 	if(P.get_equipped_item(SLOT_ID_BACK))
-		om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK))
+		om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)) // ALLOW(decl): conditional, extra args
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -117,7 +117,7 @@
 		// A dormant core with no cluster left is repaired on the protean itself.
 		if(F?.is_dormant())
 			log_game("NANOFORM: [key_name(myprotean)]'s control cluster was destroyed during dormancy; repairs continue on the body at [AREACOORD(myprotean)].")
-			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster."))
+			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster.")) // ALLOW(decl): message from the protean, only while dormant
 		myprotean = null
 	..()
 

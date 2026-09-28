@@ -25,7 +25,7 @@
 	. = ..()
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
+	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch)) // ALLOW(decl): computed delay
 
 /// Hatches (its growth timer).
 /obj/effect/metroid/egg/proc/hatch()

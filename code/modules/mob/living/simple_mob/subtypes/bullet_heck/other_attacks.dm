@@ -72,9 +72,6 @@
 	density = FALSE
 	mouse_opacity = 0
 	icon ='icons/obj/guns/precursor/tyr.dmi'
-
-/obj/effect/callstrike/Initialize(mapload)
-	.=..()
 	icon_state = "arti"
 
 /obj/effect/callstrike/end_fall(crushing = FALSE)

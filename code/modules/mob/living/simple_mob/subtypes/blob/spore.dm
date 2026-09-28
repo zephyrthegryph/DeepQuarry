@@ -59,7 +59,7 @@ DECLARE_REF(/mob/living/simple_mob/blob/spore, "infested", HELD, null)
 /mob/living/simple_mob/blob/spore/on_destroy(force)
 	if(infested)
 		infested.forceMove(get_turf(src))
-		visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts."))
+		visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts.")) // ALLOW(decl): message names the infested mob
 	..()
 
 /mob/living/simple_mob/blob/spore

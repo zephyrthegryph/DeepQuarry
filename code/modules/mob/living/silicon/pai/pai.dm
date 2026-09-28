@@ -113,12 +113,9 @@
 
 	card = loc
 	if(!istype(card))
-		card = new default_pai_card_path(src)
+		card = new default_pai_card_path(src) // ALLOW(decl): only when not spawned in a card
 		card.pai = src
 
-	sradio = new(src)
-	communicator = new(src)
-	pai_ui_chassis = new(src)
 	if(card)
 		if(!card.radio)
 			card.radio = new /obj/item/radio/borg/pai(src.card)
@@ -143,7 +140,6 @@
 	remove_verb(src, /mob/verb/toggle_gun_mode) // Pai doesn't have support for this and shouldn't be able to use guns anyway
 
 	//PDA
-	pda = new(src)
 	pda.ownjob = "Personal Assistant"
 	pda.owner = text("[]", src)
 	pda.name = pda.owner + " (" + pda.ownjob + ")"
@@ -696,3 +692,8 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 /mob/living/silicon/pai/proc/close_up_unless_dead()
 	if(stat != DEAD)
 		close_up()
+
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "sradio", /obj/item/radio/integrated/signal)
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "communicator", /obj/item/communicator/integrated)
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "pai_ui_chassis", /datum/tgui_module/pai_chassis)
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "pda", /obj/item/pda/ai/pai)

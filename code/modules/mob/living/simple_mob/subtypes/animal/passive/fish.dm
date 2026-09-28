@@ -322,11 +322,7 @@
 	endurance = 50
 	meat_amount = 0
 
-/mob/living/simple_mob/animal/passive/fish/koi/poisonous/Initialize(mapload)
-	. = ..()
-	create_reagents(60)
-	reagents.add_reagent(REAGENT_ID_TOXIN, 45)
-	reagents.add_reagent(REAGENT_ID_IMPEDREZENE, 15)
+DECLARE_REAGENTS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, 60, list(REAGENT_ID_TOXIN = 45, REAGENT_ID_IMPEDREZENE = 15))
 
 /datum/om/stage/life/type_post/simple_mob/animal/passive/fish/koi/poisonous
 	of = /mob/living/simple_mob/animal/passive/fish/koi/poisonous

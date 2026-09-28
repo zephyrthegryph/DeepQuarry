@@ -109,7 +109,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 	name = power.name
 	desc = power.desc
 	icon = power.icon
-	icon_state = power.icon_state
+	icon_state = power.icon_state // ALLOW(decl): copied from the power passed in
 
 /obj/effect/protean_power_button/Click(location, control, params)
 	var/mob/living/carbon/human/H = usr

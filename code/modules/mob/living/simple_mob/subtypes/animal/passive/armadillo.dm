@@ -125,11 +125,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 
 /mob/living/simple_mob/animal/passive/armadillo/torta/Initialize(mapload)
 	. = ..()
-	if(!hat)
-		hat = new /obj/item/clothing/head/sombrero
-		hat.forceMove(src)
+	if(hat)
 		update_icon()
 
 /datum/say_list/armadillo
 	emote_hear = list("churrs","rumbles","chirrs")
 	emote_see = list("rolls in place", "shuffles", "scritches at something")
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/armadillo/torta, "hat", /obj/item/clothing/head/sombrero)

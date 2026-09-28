@@ -202,7 +202,6 @@
 	if(!voremob_loaded)
 		voremob_loaded = TRUE
 		init_vore()
-	mob_radio = new /obj/item/radio/headset/mob_headset(src)	//We always give radios to spawned mobs anyway
 	if(is_pet)
 		return
 	add_verb(src,/mob/living/proc/ventcrawl)
@@ -982,3 +981,5 @@ This includes the sprites of the below Mob which are based upon SCP 939.
 /// Stops mimicking a voice.
 /mob/living/simple_mob/animal/synx/proc/end_mimic()
 	name = realname
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/synx, "mob_radio", /obj/item/radio/headset/mob_headset)

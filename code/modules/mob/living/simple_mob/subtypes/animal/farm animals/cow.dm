@@ -26,7 +26,7 @@
 /mob/living/simple_mob/animal/passive/cow/Initialize(mapload)
 	. = ..()
 
-	udder = new(50)
+	udder = new(50) // ALLOW(decl): holder takes constructor args
 	udder.my_atom = src
 
 	add_hose_connector(/datum/hose_connector/output/cow) // Moo?

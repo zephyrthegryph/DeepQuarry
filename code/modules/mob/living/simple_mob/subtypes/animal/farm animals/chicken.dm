@@ -35,7 +35,7 @@ GLOBAL_VAR_INIT(chicken_count, 0)	// How mant chickens DO we have?
 	. = ..()
 	if(!body_color)
 		body_color = pick( list("brown","black","white") )
-	icon_state = "chicken_[body_color]"
+	icon_state = "chicken_[body_color]" // ALLOW(decl): random colour pick
 	icon_living = "chicken_[body_color]"
 	icon_dead = "chicken_[body_color]_dead"
 	pixel_x = rand(-6, 6)

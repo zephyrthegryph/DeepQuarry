@@ -173,4 +173,4 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 /obj/item/reagent_containers/food/snacks/jellyfishcore/Initialize(mapload, inherit)
 	. = ..()
 	nutriment_amt += inherit
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc)
+	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc) // ALLOW(decl): amount from the parent core, data arg
