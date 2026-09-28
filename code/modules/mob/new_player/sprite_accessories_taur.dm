@@ -142,7 +142,7 @@
 	if(buckle_mob(M))
 		visible_message(span_notice("[M] starts riding [name]!"))
 
-/mob/living/carbon/human/attack_hand(mob/user as mob)
+/mob/living/carbon/human/hand_default(mob/user as mob)
 	if(LAZYLEN(src?.buckled_mob_list()) && riding_datum)
 		//We're getting off!
 		if(user in src?.buckled_mob_list())

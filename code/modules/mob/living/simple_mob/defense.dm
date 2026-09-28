@@ -8,7 +8,7 @@
 
 
 // When someone clicks us with an empty hand
-/mob/living/simple_mob/attack_hand(mob/living/L)
+/mob/living/simple_mob/hand_default(mob/living/L)
 	..()
 
 	switch(L.use_stance())
@@ -80,7 +80,7 @@
 
 
 // When somoene clicks us with an item in hand
-/mob/living/simple_mob/attackby(obj/item/O, mob/user)
+/mob/living/simple_mob/attackby_default(obj/item/O, mob/user, attack_modifier)
 	if(istype(O, /obj/item/stack/medical))
 		if(stat != DEAD)
 			// This could be done better.

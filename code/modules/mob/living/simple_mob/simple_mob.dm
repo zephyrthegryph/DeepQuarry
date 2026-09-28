@@ -827,7 +827,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		riding_datum.rider_size = H.size_multiplier
 		src?.buckled_mob_list()[H] = "riding"
 
-/mob/living/simple_mob/attack_hand(mob/user as mob)
+/mob/living/simple_mob/hand_default(mob/user as mob)
 	if(riding_datum && LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
 		if(user in src?.buckled_mob_list())

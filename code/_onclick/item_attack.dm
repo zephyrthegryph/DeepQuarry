@@ -172,18 +172,16 @@ avoid code duplication. This includes items that may sometimes act as a standard
 			return answered.consumes_input
 	else if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	return attackby_default(W, user)
+	return attackby_default(W, user, attack_modifier)
 
 /// Used with an item that no interaction used up (none answered, or one handled it and passed).
 /// Returns TRUE when it used the input. Items let a pickup-mode bag collect them (items.dm).
-/atom/proc/attackby_default(obj/item/W, mob/user)
+/atom/proc/attackby_default(obj/item/W, mob/user, attack_modifier)
 	return FALSE
 
-/mob/living/attackby(obj/item/I, mob/user, attack_modifier, click_parameters)
+/// Used with an item no interaction took: surgery, vore, then the attack (a phased swing in combat mode).
+/mob/living/attackby_default(obj/item/I, mob/user, attack_modifier)
 	if(!ismob(user))
-		return FALSE
-
-	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, I, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return FALSE
 
 	if(can_operate(src, user) && I.do_surgery(src,user))

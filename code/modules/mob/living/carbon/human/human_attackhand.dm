@@ -33,7 +33,7 @@
 			return u_attack
 	return null
 
-/mob/living/carbon/human/attack_hand(mob/living/M as mob)
+/mob/living/carbon/human/hand_default(mob/living/M as mob)
 	var/mob/living/carbon/human/H = M
 
 	if(is_incorporeal())

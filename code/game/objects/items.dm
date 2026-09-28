@@ -325,7 +325,10 @@
  * own work, as the old `attack_hand() { . = ..(); ... }` overrides did: they are not
  * interactions of their own.
  */
-/obj/item/hand_pickup(mob/living/user)
+/obj/item/hand_default(mob/living/user)
+	return hand_pickup(user)
+
+/obj/item/proc/hand_pickup(mob/living/user)
 	if(anchored) // Start
 		if(hascall(src, "attack_self"))
 			return src.attack_self(user)
@@ -387,7 +390,7 @@
 		R.hud_used.update_robot_modules_display()
 
 /// Used with an item nothing else took: a pickup-mode bag collects this item.
-/obj/item/attackby_default(obj/item/W, mob/user)
+/obj/item/attackby_default(obj/item/W, mob/user, attack_modifier)
 	storage_gather_by(W, user)
 	return FALSE
 

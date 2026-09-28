@@ -38,10 +38,14 @@
 		return FALSE
 	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
 		return TRUE
-	return hand_pickup(user)
+	return hand_default(user)
 
-/// An empty-hand touch that no gate stopped and no interaction answered. Items are picked up (items.dm).
-/atom/proc/hand_pickup(mob/living/user)
+/**
+ * An empty-hand touch that no gate stopped and no interaction answered: the type's default.
+ * Items are picked up (items.dm); mobs are helped, disarmed, grabbed or punched (their
+ * unarmed combat, e.g. human_attackhand.dm).
+ */
+/atom/proc/hand_default(mob/living/user)
 	return FALSE
 
 /**
