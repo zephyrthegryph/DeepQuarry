@@ -212,6 +212,7 @@
 #include "dq_medical_med7_expo_tests.dm"
 #include "dq_medical_med8_tests.dm"
 #include "dq_medical_k_c_tests.dm"
+#include "dq_medical_k_b_tests.dm"
 #include "dq_mutation_tests.dm"
 #include "dq_dna_storage_tests.dm"
 #include "dq_lesion_tests.dm"
