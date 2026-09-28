@@ -623,6 +623,30 @@ impl<D: Domain> MainPort<D> {
             && state.applied_through == self.commands.last_issued()
     }
 
+    /// Folds DM's queued writes into `state`'s live store now, as the next
+    /// frame's apply step would, so a direct write can follow them (bulk
+    /// registration after a few per-cell writes: one early `put` must not
+    /// send a whole map load through commands and the overlay). Only while
+    /// no frame runs (the caller holds the idle world) and never on the
+    /// fallback path. Returns whether the port is quiescent afterwards.
+    pub(crate) fn absorb(&mut self, state: &mut DomainState<D>) -> bool {
+        if self.fallback.is_some() {
+            return false;
+        }
+        if let Some(view) = self.inbox.take() {
+            if let Some(batch) = self.outbox_inbox.collect() {
+                self.collected.append(batch);
+            }
+            self.overlay.prune(view.applied_through);
+            self.pinned = view;
+        }
+        let batch = self.commands.take();
+        state.enqueue(batch);
+        state.apply_pending();
+        self.overlay.prune(state.applied_through);
+        self.quiescent(state)
+    }
+
     /// Pins a view of `state`'s live store (after a direct write), dropping
     /// any older view still in the mailbox so it can never be pinned over it.
     pub(crate) fn repin(&mut self, state: &DomainState<D>) {

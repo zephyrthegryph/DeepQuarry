@@ -45,6 +45,18 @@
 	#endif
 
 /turf/open/Initialize(mapload)
+	setup_open_air()
+	. = ..()
+	register_open_air()
+
+/turf/open/table_initialize()
+	setup_open_air()
+	..()
+	register_open_air()
+
+/// Gives the turf its gas mixture (Initialize() and the init_from_table path).
+/turf/open/proc/setup_open_air()
+	PRIVATE_PROC(TRUE)
 	if(!blocks_air)
 		if(immutable_atmos)
 			// Space and transit hold nothing but vacuum, so they all share one
@@ -63,7 +75,10 @@
 				var/datum/gas_mixture/immutable/planetary/mix = new
 				mix.parse_string_immutable(initial_gas_mix)
 				SSair.planetary[initial_gas_mix] = mix
-	. = ..()
+
+/// After the turf is initialized: join the Rust air arena when SSair is already running.
+/turf/open/proc/register_open_air()
+	PRIVATE_PROC(TRUE)
 	// Register this turf's air ref in the Rust arena. During roundstart mapload
 	// SSair isn't initialised yet — SSair.setup_allturfs registers every
 	// turf then. For turfs created AFTER SSair init (ChangeTurf, runtime spawns)
@@ -91,6 +106,21 @@
 ///Copies all gas info from the turf into a new gas_mixture, along with our temperature
 ///Returns the created gas_mixture
 /turf/proc/create_gas_mixture()
+	// Air template as type-table data (doc/rewrite/init_and_turfs.md sec 3.1): a turf whose gas
+	// string and temperature are its type's copies one mixture built once per type, instead of
+	// building a "[string]-[type]" cache key and re-checking the temperature per turf.
+	if(initial_gas_mix == initial(initial_gas_mix) && temperature == initial(temperature))
+		var/static/list/air_templates = list()
+		var/datum/gas_mixture/template = air_templates[type]
+		if(!template)
+			template = build_gas_mixture()
+			air_templates[type] = template
+		return template.copy()
+	return build_gas_mixture()
+
+/// A fresh mixture from the turf's gas string and temperature.
+/turf/proc/build_gas_mixture()
+	PRIVATE_PROC(TRUE)
 	var/datum/gas_mixture/mix = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/turf)
 
 	//acounts for changes in temperature

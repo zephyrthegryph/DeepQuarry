@@ -12,9 +12,6 @@
 	var/tmp/corpse_handle
 	var/tmp/watchowner_handle
 
-/obj/item/deadringer/Initialize(mapload)
-	. = ..()
-
 // an invisible wearer is revealed.
 /obj/item/deadringer/on_destroy(force) //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()

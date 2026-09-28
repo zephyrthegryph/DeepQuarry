@@ -22,9 +22,6 @@
 	var/last_twitch = 0
 	var/max_stored_messages = 100
 
-/obj/item/clothing/mask/gas/poltergeist/Initialize(mapload)
-	. = ..()
-
 /// Echoes what it heard through its wearer every 2 s while worn by someone with something to say
 /// (hearing or being put on starts it); otherwise it sleeps.
 /obj/item/clothing/mask/gas/poltergeist/periodic_step()

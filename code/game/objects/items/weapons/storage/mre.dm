@@ -235,9 +235,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interac
 /obj/item/storage/mrebag/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-/obj/item/storage/mrebag/Initialize(mapload)
-	. = ..()
-
 /obj/item/storage/mrebag/update_icon()
 	if(opened)
 		icon_state = "[initial(icon_state)][opened]"

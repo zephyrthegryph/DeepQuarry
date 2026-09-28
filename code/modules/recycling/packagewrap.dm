@@ -112,9 +112,6 @@
 	desc = "Wraps various items so they can be tagged and shipped through disposals. Refills over time."
 	var/recharge_ticker = 0
 
-/obj/item/packageWrap/borg/Initialize(mapload)
-	. = ..()
-
 /// Refills one sheet per 12 s while short (wrap_used() starts it); full, it sleeps.
 /obj/item/packageWrap/borg/periodic_step()
 	if(amount >= initial(amount))

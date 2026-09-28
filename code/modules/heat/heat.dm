@@ -118,11 +118,12 @@
 	if(istype(self) && !isnull(om_resolve(self.heat_fire_turf_handle)) && om_resolve(self.heat_fire_turf_handle) != loc)
 		self.decouple_from_fire()
 
-/// Releases this atom's heat body: its excess heat goes to its surroundings.
+/// Releases this atom's heat body: its excess heat goes to its surroundings
+/// (in a batched destroy, in the batch's one release call).
 /atom/proc/release_heat_body()
 	if(isnull(heat_body))
 		return
-	vg_heat_body_release(heat_body)
+	dq_heat_body_release(src, heat_body)
 	heat_body = null
 
 // ------------------------------------------------------------------ turfs

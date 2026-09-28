@@ -113,9 +113,6 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 	plane = SPACE_PLANE
 	layer = AREA_LAYER + 0.1
 
-/turf/unsimulated/ai_visible/Initialize(mapload)
-	. = ..()
-
 /area/ai_multicam_room
 	name = "AI Multicam Room"
 	icon_state = "ai_camera_room"

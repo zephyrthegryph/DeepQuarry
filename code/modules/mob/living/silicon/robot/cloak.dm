@@ -8,8 +8,6 @@
 	icon_state = "shock"
 	var/cloak_strength = 0.5		//Percent of visibility, 0 is visible, 1 is fully invisible
 	var/active = FALSE				//If the shield is on
-/obj/item/borg/cloak/Initialize(mapload)
-	. = ..()
 
 DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \

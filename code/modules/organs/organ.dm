@@ -123,19 +123,19 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /// Fully prosthetic: robot, lifelike or nanoform. No pulse, no blood, repaired
 /// with tools rather than medicine.
 /obj/item/organ/proc/is_robotic()
-	return robotic >= ORGAN_ROBOT
+	return ORGAN_ROBOT <= robotic // the predicate itself
 
 /// Has any mechanical component: assisted (pacemaker-style) or fully robotic.
 /obj/item/organ/proc/is_assisted()
-	return robotic >= ORGAN_ASSISTED
+	return ORGAN_ASSISTED <= robotic // the predicate itself
 
 /// Made of nanites (protean).
 /obj/item/organ/proc/is_nanoform()
-	return robotic >= ORGAN_NANOFORM
+	return ORGAN_NANOFORM <= robotic // the predicate itself
 
 /// Plain flesh: no mechanical parts at all.
 /obj/item/organ/proc/is_organic()
-	return robotic < ORGAN_ASSISTED
+	return ORGAN_ASSISTED > robotic // the predicate itself
 
 /// The part's biology (BIOLOGY_* flag) for afflictions and treatment tags.
 /// Assisted parts are still organic tissue.

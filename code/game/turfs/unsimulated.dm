@@ -4,15 +4,14 @@
 	nitrogen = MOLES_N2STANDARD
 	var/skip_init = TRUE // Don't call down the chain, apparently for performance when loading maps at runtime.
 	flags = TURF_ACID_IMMUNE
-
-/turf/unsimulated/Initialize(mapload)
-	. = ..()
+	init_from_table = TRUE
 
 /turf/unsimulated/fake_space
 	name = "\proper space"
 	icon = 'icons/turf/space.dmi'
 	icon_state = "0"
 	dynamic_lighting = FALSE
+	init_from_table = FALSE
 
 /turf/unsimulated/fake_space/Initialize(mapload)
 	. = ..()

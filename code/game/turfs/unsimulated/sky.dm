@@ -8,6 +8,7 @@
 	icon = 'icons/turf/floors.dmi'
 	icon_state = "sky_slow"
 	dir = SOUTH
+	init_from_table = FALSE
 	var/does_skyfall = TRUE
 	var/list/skyfall_levels
 

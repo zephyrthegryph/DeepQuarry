@@ -55,9 +55,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
-/obj/item/cataloguer/Initialize(mapload)
-	return ..()
-
 /obj/item/cataloguer/update_icon()
 	if(om_busy(src))
 		icon_state = "[initial(icon_state)]_active"

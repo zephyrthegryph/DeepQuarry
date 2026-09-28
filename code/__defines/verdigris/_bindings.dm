@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "82e6bb9787adbdee"
+#define VERDIGRIS_ABI "8859f31d0908b2b6"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -789,6 +789,15 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h)
 
+/// Batched destroy's one heat release (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): [`heat_body_release`] for every handle in `bodies`.
+/// Zero/null and already-released entries are skipped.
+// /proc/heat_body_release_list (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_release_list(bodies)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_release_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(bodies)
+
 // /proc/heat_body_set_temperature (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_set_temperature(h, temperature)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_set_temperature_ffi")
@@ -1081,6 +1090,14 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port_a, port_b)
 
+/// Map-load edges in one call: [`pipe_connect`] for every pair in the flat
+/// `port_a, port_b, ...` list `pairs`, in one topology edit.
+// /proc/vg_pipe_connect_list (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_connect_list(pairs)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_connect_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(pairs)
+
 // /proc/vg_pipe_device_remove (verdigris/ffi/src/pipes.rs)
 /proc/vg_pipe_device_remove(id)
 	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_device_remove_ffi")
@@ -1123,6 +1140,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port, mixture_handle)
 
+/// Batched destroy's one pipe release (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): [`pipe_remove`] for every pair in `pairs`, a flat
+/// `port, mixture_handle, ...` list (`mixture_handle` 0: discard), in one
+/// topology edit. Zero/null or bad ports are skipped.
+// /proc/vg_pipe_remove_list (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_remove_list(pairs)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_remove_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(pairs)
+
 /// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
 /// <-> region edges directly, region<->turf edges (a vent pump/scrubber)
 /// through `crate::gas`'s turf accessors (this module's own docs) --
@@ -1143,6 +1170,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(port, mixture_handle, volume)
 
+/// Map-load topology in one call (`doc/rewrite/init_and_turfs.md` §3.3
+/// step 4): [`pipe_upsert`] for every `port, mixture_handle, volume` triple
+/// in the flat list `triples`. Returns how many succeeded (a bad row is
+/// skipped, not an error).
+// /proc/vg_pipe_upsert_list (verdigris/ffi/src/pipes.rs)
+/proc/vg_pipe_upsert_list(triples)
+	var/static/__f = load_ext(VERDIGRIS, "byond:pipe_upsert_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(triples)
+
 // /proc/poll_material_power_graph (verdigris/verdigris/src/material_power.rs)
 /proc/vg_poll_material_power_graph(handle)
 	var/static/__f = load_ext(VERDIGRIS, "byond:poll_material_power_graph_ffi")
@@ -1157,6 +1194,17 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_bind_cable_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, shape)
+
+/// A map-load chunk's cables in one call (`doc/rewrite/init_and_turfs.md`
+/// §3.3 step 4): [`power_bind_cable`] for each piece, in one topology edit.
+/// `entities` holds each piece's current handle (`0`: mint one) and `shapes`
+/// its `x, y, z, d1, d2, up, down, link`, flattened. Returns the handles in
+/// order.
+// /proc/vg_power_bind_cable_list (verdigris/ffi/src/power.rs)
+/proc/vg_power_bind_cable_list(entities, shapes)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_bind_cable_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entities, shapes)
 
 /// Binds (or rebinds) `entity`'s node as a plain machine terminal at
 /// `(x, y, z)`: a producer, an APC's own area terminal, or one of a SMES's
@@ -1244,6 +1292,15 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_unbind_node_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity)
+
+/// Batched destroy's one power release (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): drops the node of every entity handle in `entities` in one
+/// topology edit. Zero/null or bad entries are skipped.
+// /proc/vg_power_unbind_node_list (verdigris/ffi/src/power.rs)
+/proc/vg_power_unbind_node_list(entities)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_unbind_node_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entities)
 
 /// One radiation pulse from (`x`, `y`, `z`): returns the path transmission
 /// to each target in `targets` (a flat list of `x, y, z`), or -1 for targets

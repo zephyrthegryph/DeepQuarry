@@ -9,9 +9,6 @@
 		/obj/item/radio/headset)
 	*/
 
-/obj/structure/closet/secure_closet/personal/Initialize(mapload)
-	return ..()
-
 /obj/structure/closet/secure_closet/personal/patient
 	name = "patient's closet"
 	closet_appearance = /datum/decl/closet_appearance/secure_closet/patient

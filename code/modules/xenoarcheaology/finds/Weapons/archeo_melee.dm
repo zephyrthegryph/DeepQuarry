@@ -36,10 +36,6 @@
 	var/consecration_cost = 10 //Ten stored_blood per use!
 	var/empowered = FALSE //If our next atack is empowered (2x damage)
 
-/obj/item/melee/artifact_blade/Initialize(mapload) //We will never spawn without xenoarch or SOMEONE unearthing us.
-	. = ..()
-	//PERIODIC_START(src, PERIODIC_SLOW) //We could start processing here, but let's wait until someone touches us. Uncomment this if more stuff is added and you want it to do spooky passive things.
-
 /obj/item/melee/artifact_blade/examine(mob/user)
 	. = ..()
 	if(stored_blood && user == last_touched())

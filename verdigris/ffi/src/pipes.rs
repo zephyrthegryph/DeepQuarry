@@ -43,7 +43,7 @@ use std::collections::HashMap;
 
 use crate::gas::mix::{self, MixRef};
 use byondapi::prelude::*;
-use eyre::{Result, eyre};
+use eyre::{Result, bail, eyre};
 use vg_core::entity::EntityId;
 use vg_core::network::{Endpoint, RegionId, Side};
 use vg_core::slot::RawHandle;
@@ -116,6 +116,27 @@ fn pipe_upsert(
     Ok(ok.into())
 }
 
+/// Map-load topology in one call (`doc/rewrite/init_and_turfs.md` §3.3
+/// step 4): [`pipe_upsert`] for every `port, mixture_handle, volume` triple
+/// in the flat list `triples`. Returns how many succeeded (a bad row is
+/// skipped, not an error).
+#[auxmacros::bind("/proc/vg_pipe_upsert_list")]
+fn pipe_upsert_list(triples: ByondValue) -> Result<ByondValue> {
+    let values = triples.get_list_values()?;
+    if values.len() % 3 != 0 {
+        bail!("triples must be a flat port, mixture_handle, volume list");
+    }
+    let mut ok = 0u32;
+    for t in values.chunks_exact(3) {
+        // One bad row (an unbound handle) doesn't lose the map's other ports.
+        if pipe_upsert(t[0], t[1], t[2]).is_ok_and(|v| v.is_true()) {
+            ok += 1;
+        }
+    }
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(ok as f32))
+}
+
 fn gas_from_handle(handle: &ByondValue) -> PipeGas {
     let Some(mix_ref) = num(handle).ok().and_then(MixRef::from_f32) else {
         return PipeGas::default();
@@ -141,6 +162,41 @@ fn pipe_remove(port: ByondValue, mixture_handle: ByondValue) -> Result<ByondValu
     .map(ByondValue::from)
 }
 
+/// Batched destroy's one pipe release (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): [`pipe_remove`] for every pair in `pairs`, a flat
+/// `port, mixture_handle, ...` list (`mixture_handle` 0: discard), in one
+/// topology edit. Zero/null or bad ports are skipped.
+#[auxmacros::bind("/proc/vg_pipe_remove_list")]
+fn pipe_remove_list(pairs: ByondValue) -> Result<ByondValue> {
+    let values = pairs.get_list_values()?;
+    if values.len() % 2 != 0 {
+        bail!("pairs must be a flat port, mixture_handle list");
+    }
+    let mut doomed = Vec::with_capacity(values.len() / 2);
+    for pair in values.chunks_exact(2) {
+        // A stale or unbound handle is skipped (the rest still go).
+        let Ok(e) = handle_entity(&pair[0]) else {
+            continue;
+        };
+        if let Some(target) = num(&pair[1]).ok().and_then(MixRef::from_f32) {
+            RELEASE_TARGETS.with(|r| r.borrow_mut().insert(e, target));
+        }
+        doomed.push(e);
+    }
+    if doomed.is_empty() {
+        return Ok(ByondValue::null());
+    }
+    with_world(|w| {
+        w.edit_network::<Pipes>(move |host| {
+            for e in doomed {
+                host.unbind_node(e);
+            }
+        })
+        .map_err(|e| eyre!("{e}"))
+    })?;
+    Ok(ByondValue::null())
+}
+
 /// Connects two ports' nodes directly (`NetworkHost::connect_entities`,
 /// bypassing any geometric connection rule -- pipes manage topology
 /// explicitly).
@@ -155,6 +211,31 @@ fn pipe_connect(port_a: ByondValue, port_b: ByondValue) -> Result<ByondValue> {
         Ok(true)
     })
     .map(ByondValue::from)
+}
+
+/// Map-load edges in one call: [`pipe_connect`] for every pair in the flat
+/// `port_a, port_b, ...` list `pairs`, in one topology edit.
+#[auxmacros::bind("/proc/vg_pipe_connect_list")]
+fn pipe_connect_list(pairs: ByondValue) -> Result<ByondValue> {
+    let values = pairs.get_list_values()?;
+    if values.len() % 2 != 0 {
+        bail!("pairs must be a flat port_a, port_b list");
+    }
+    // A pair with an unbound handle is skipped; the rest still connect.
+    let edges = values
+        .chunks_exact(2)
+        .filter_map(|p| Some((handle_entity(&p[0]).ok()?, handle_entity(&p[1]).ok()?)))
+        .collect::<Vec<_>>();
+    with_world(|w| {
+        w.edit_network::<Pipes>(move |host| {
+            for (ea, eb) in edges {
+                let _ = host.connect_entities(ea, eb);
+            }
+        })
+        .map_err(|e| eyre!("{e}"))?;
+        Ok(())
+    })?;
+    Ok(ByondValue::null())
 }
 
 #[auxmacros::bind("/proc/vg_pipe_disconnect")]

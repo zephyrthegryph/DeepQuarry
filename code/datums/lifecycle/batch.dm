@@ -18,8 +18,12 @@
 //   3. Edges between doomed atoms are dropped with no bookkeeping: links.dm
 //      nulls only our own var when the far end of a pair, a back-list owner,
 //      or a holder is doomed.
-//   4. One Rust unbind call: entity handles owned by doomed datums are
-//      queued (dq_entity_unbind()) and freed with one vg_entity_unbind_list().
+//   4. One Rust unbind call per kind: entity handles owned by doomed datums
+//      are queued (dq_entity_unbind()) and freed with one
+//      vg_entity_unbind_list(); heat bodies (dq_heat_body_release()), power
+//      nodes (dq_power_unbind_node()) and pipe ports
+//      (dq_pipe_port_remove()) likewise go in one call each, and the pipe
+//      topology commits once for the batch.
 //   5. One pass over the registries: a doomed member's registry leaves are
 //      queued per registry and applied as one `members -= doomed` each.
 //   6. Effects merged per turf: one object's declared destroy effects play
@@ -54,6 +58,16 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	var/list/forced = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Entity handles freed by the one unbind call at the end.
 	var/list/unbind_entities = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+	/// Heat body handles released by one vg_heat_body_release_list().
+	var/list/release_heat_bodies = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+	/// Entity handles whose power node goes in one vg_power_unbind_node_list().
+	var/list/unbind_power_nodes = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+	/// Flat `port, mixture handle` pairs removed by one vg_pipe_remove_list().
+	var/list/remove_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+	/// Pipe port handles whose /datum/pipe_port is freed after that removal.
+	var/list/free_pipe_ports = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
+	/// A pipe topology commit was asked for while the batch ran: it runs once at the end.
+	var/pipe_commit_pending = FALSE
 	/// Movables leaving SSvg's bound list in one pass.
 	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// /datum/registry -> members leaving it in one pass.
@@ -138,8 +152,26 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 	for(var/atom/movable/thing as anything in contents_of(holder))
 		dq_batch_mark(batch, thing, order, force, TRUE)
 
-/// End of batch: the one unbind call, one pass per registry, merged effects.
+/// End of batch: the one unbind call per kind, one pass per registry, merged effects.
+/// Pipe ports and power nodes go before the entities behind them are freed.
 /proc/dq_batch_flush(datum/destroy_batch/batch)
+	if(length(batch.remove_pipe_ports))
+		vg_pipe_remove_list(batch.remove_pipe_ports)
+		for(var/port in batch.free_pipe_ports)
+			rust_free_pipe_port(port)
+	if(batch.pipe_commit_pending || length(batch.remove_pipe_ports))
+		batch.pipe_commit_pending = FALSE
+		if(SSair)
+			SSair.rust_pipe_topology_dirty = TRUE
+			// An explosion's bulk resolve commits once itself when it ends.
+			if(!GLOB.explosion_service.is_bulk_resolving())
+				// Directly: rust_commit_pending_pipenets() would defer to this batch again.
+				SSair.rust_pipe_topology_dirty = FALSE
+				SSair.rust_apply_pipe_commit()
+	if(length(batch.unbind_power_nodes))
+		vg_power_unbind_node_list(batch.unbind_power_nodes)
+	if(length(batch.release_heat_bodies))
+		vg_heat_body_release_list(batch.release_heat_bodies)
 	if(length(batch.unbind_movers))
 		SSvg.unregister_many(batch.unbind_movers)
 	if(length(batch.unbind_entities))
@@ -160,6 +192,50 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		batch.unbind_entities += entity
 		return
 	vg_entity_unbind(entity)
+
+/// Releases heat body `handle`, owned by `owner`: queued for the batch's one
+/// release call when `owner` is doomed, released now otherwise.
+/proc/dq_heat_body_release(datum/owner, handle)
+	if(!handle)
+		return
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+	if(batch?.doomed[owner])
+		batch.release_heat_bodies += handle
+		return
+	vg_heat_body_release(handle)
+
+/// Drops the power node of entity `entity`, owned by `owner`: queued for the
+/// batch's one call when `owner` is doomed, dropped now otherwise.
+/proc/dq_power_unbind_node(datum/owner, entity)
+	if(!entity)
+		return
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+	if(batch?.doomed[owner])
+		batch.unbind_power_nodes += entity
+		return
+	vg_power_unbind_node(entity)
+
+/// Removes pipe port `port` of `owner` (its gas to `mixture_handle`, 0:
+/// discarded) and frees the port datum. Returns TRUE when the batch queued
+/// both for its one removal call (`owner` doomed); FALSE: the caller removes
+/// and frees the port now.
+/proc/dq_pipe_port_remove(datum/owner, port, mixture_handle = 0)
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+	if(!port || !batch?.doomed[owner])
+		return FALSE
+	batch.remove_pipe_ports += port
+	batch.remove_pipe_ports += mixture_handle
+	batch.free_pipe_ports += port
+	return TRUE
+
+/// TRUE (and deferred to the end of the batch) while a batch runs: pipe
+/// topology commits once per batch, after its one removal call.
+/proc/dq_batch_defer_pipe_commit()
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+	if(!batch)
+		return FALSE
+	batch.pipe_commit_pending = TRUE
+	return TRUE
 
 /// TRUE (and queued) when `member` is doomed: its leave from `registry`
 /// happens in the batch's one pass over that registry.

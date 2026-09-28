@@ -1,3 +1,11 @@
+#define WALL_FACT_INTEGRITY 1
+#define WALL_FACT_EXPLOSION 2
+#define WALL_FACT_CONDUCTIVITY 3
+#define WALL_FACT_HEAT_CAPACITY 4
+#define WALL_FACT_RAD 5
+#define WALL_FACT_NAME 6
+#define WALL_FACT_DESC 7
+
 /turf/simulated/wall/proc/update_material()
 
 	if(!material)
@@ -7,29 +15,19 @@
 		construction_stage = 6
 	else
 		construction_stage = null
-	if(!material)
-		material = get_material_by_name(DEFAULT_WALL_MATERIAL)
-	if(material)
-		// The material cap is the wall's integrity; the wall keeps the damage it already has.
-		var/missing = max_integrity - get_integrity()
-		max_integrity = material_integrity_cap()
-		update_integrity(max(1, max_integrity - missing))
-		explosion_resistance = material.explosion_resistance
-		// A wall is geometry around a material, not a hard-coded thermal type.
-		var/material_temperature = SSair?.initialized ? get_temperature() : temperature
-		var/conductance = material.material_thermal_conductance(2.5, 0.25, material_temperature)
-		thermal_conductivity = clamp(conductance / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT, 0.001, WALL_MAX_HEAT_TRANSFER_COEFFICIENT)
-		heat_capacity = max(10000, material.density * material.specific_heat * 25)
-		set_rad_insulation(material.material_radiation_transmission(RAD_WALL_THICKNESS_MM))
-	if(reinf_material && reinf_material.explosion_resistance > explosion_resistance)
-		explosion_resistance = reinf_material.explosion_resistance
-
-	if(reinf_material)
-		name = "reinforced [material.display_name] wall"
-		desc = "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]."
-	else
-		name = "[material.display_name] wall"
-		desc = "It seems to be a section of wall plated with [material.display_name]."
+	// The material cap is the wall's integrity; the wall keeps the damage it already has.
+	// A wall is geometry around a material, not a hard-coded thermal type.
+	var/material_temperature = SSair?.initialized ? get_temperature() : temperature
+	var/list/facts = wall_material_facts(material_temperature)
+	var/missing = max_integrity - get_integrity()
+	max_integrity = facts[WALL_FACT_INTEGRITY]
+	update_integrity(max(1, max_integrity - missing))
+	explosion_resistance = facts[WALL_FACT_EXPLOSION]
+	thermal_conductivity = facts[WALL_FACT_CONDUCTIVITY]
+	heat_capacity = facts[WALL_FACT_HEAT_CAPACITY]
+	set_rad_insulation(facts[WALL_FACT_RAD])
+	name = facts[WALL_FACT_NAME]
+	desc = facts[WALL_FACT_DESC]
 
 	if(material.opacity > 0.5 && !opacity)
 		set_light(1)
@@ -46,6 +44,41 @@
 	if(SSair?.initialized)
 		update_air_ref(0)
 
+
+/// Material facts (doc/rewrite/init_and_turfs.md sec 3.1) for this wall's (material,
+/// reinforcement) pair at `material_temperature`: worked out once per pair and temperature
+/// and shared by every wall that has them (Southern Cross maps ~7 k walls of four materials).
+/// Read-only: a caller must not change the returned list.
+/turf/simulated/wall/proc/wall_material_facts(material_temperature)
+	var/static/list/facts_by_material = list()
+	var/list/by_reinf = facts_by_material[material]
+	if(!by_reinf)
+		by_reinf = list()
+		facts_by_material[material] = by_reinf
+	var/reinf_key = reinf_material || "none"
+	var/list/by_temperature = by_reinf[reinf_key]
+	if(!by_temperature)
+		by_temperature = list()
+		by_reinf[reinf_key] = by_temperature
+	var/temperature_key = num2text(material_temperature, 12)
+	var/list/facts = by_temperature[temperature_key]
+	if(facts)
+		return facts
+	var/explosion = material.explosion_resistance
+	if(reinf_material && reinf_material.explosion_resistance > explosion)
+		explosion = reinf_material.explosion_resistance
+	var/conductance = material.material_thermal_conductance(2.5, 0.25, material_temperature)
+	facts = list(
+		material_integrity_cap(),
+		explosion,
+		clamp(conductance / WALL_CONDUCTANCE_PER_TRANSFER_COEFFICIENT, 0.001, WALL_MAX_HEAT_TRANSFER_COEFFICIENT),
+		max(10000, material.density * material.specific_heat * 25),
+		material.material_radiation_transmission(RAD_WALL_THICKNESS_MM),
+		reinf_material ? "reinforced [material.display_name] wall" : "[material.display_name] wall",
+		reinf_material ? "It seems to be a section of wall reinforced with [reinf_material.display_name] and plated with [material.display_name]." : "It seems to be a section of wall plated with [material.display_name].",
+	)
+	by_temperature[temperature_key] = facts
+	return facts
 
 /turf/simulated/wall/proc/set_material(datum/material/newmaterial, datum/material/newrmaterial, datum/material/newgmaterial)
 	material = newmaterial
@@ -73,40 +106,59 @@
 		add_overlay(I)
 		return
 
-	var/list/connections = get_wall_connections()
+	add_overlay(wall_overlay_images())
+
+/// The overlay images for this wall's state (doc/rewrite/init_and_turfs.md sec 3.5), built
+/// once per (masks, material, reinforcement, connections, construction stage, damage step) and
+/// shared by every wall in that state. Read-only: callers pass it to add_overlay(), which copies.
+/turf/simulated/wall/proc/wall_overlay_images()
+	var/list/connections = get_wall_connections() // interned (string_list), so usable as a key
+	var/damage_step = 0
+	var/damage_fraction = wall_damage_fraction()
+	if(damage_fraction > 0)
+		damage_step = min(round(damage_fraction * damage_overlays.len) + 1, damage_overlays.len)
+	var/static/list/cache = list()
+	var/list/level = cache
+	for(var/key in list(wall_masks, material, reinf_material || "none", connections))
+		var/list/next = level[key]
+		if(!next)
+			next = list()
+			level[key] = next
+		level = next
+	var/state_key = "[construction_stage]-[damage_step]"
+	var/list/images = level[state_key]
+	if(images)
+		return images
+	images = list()
+	var/image/I
 	for(var/i = 1 to 4)
 		I = image(wall_masks, "[material.icon_base][connections[i]]", dir = 1<<(i-1))
 		I.color = material.icon_colour
-		add_overlay(I)
+		images += I
 
 	if(reinf_material)
 		if(construction_stage != null && construction_stage < 6)
 			I = image(wall_masks, "reinf_construct-[construction_stage]")
 			I.color = reinf_material.icon_colour
-			add_overlay(I)
+			images += I
 		else
 			if(icon_exists(wall_masks, "[reinf_material.icon_reinf]0"))
 				// Directional icon
 				for(var/i = 1 to 4)
 					I = image(wall_masks, "[reinf_material.icon_reinf][connections[i]]", dir = 1<<(i-1))
 					I.color = reinf_material.icon_colour
-					add_overlay(I)
+					images += I
 			else if(icon_exists(wall_masks, "[reinf_material.icon_reinf]"))
 				I = image(wall_masks, reinf_material.icon_reinf)
 				I.color = reinf_material.icon_colour
-				add_overlay(I)
+				images += I
 	var/image/texture = material.get_wall_texture()
 	if(texture)
-		add_overlay(texture)
-
-	var/damage_fraction = wall_damage_fraction()
-	if(damage_fraction > 0)
-		var/overlay = round(damage_fraction * damage_overlays.len) + 1
-		if(overlay > damage_overlays.len)
-			overlay = damage_overlays.len
-
-		add_overlay(damage_overlays[overlay])
-	return
+		images += texture
+	if(damage_step)
+		images += damage_overlays[damage_step]
+	level[state_key] = images
+	return images
 
 /turf/simulated/wall/proc/generate_overlays()
 	var/alpha_inc = 256 / damage_overlays.len
@@ -170,3 +222,11 @@
 
 /turf/simulated/wall/proc/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return FALSE
+
+#undef WALL_FACT_INTEGRITY
+#undef WALL_FACT_EXPLOSION
+#undef WALL_FACT_CONDUCTIVITY
+#undef WALL_FACT_HEAT_CAPACITY
+#undef WALL_FACT_RAD
+#undef WALL_FACT_NAME
+#undef WALL_FACT_DESC

@@ -163,8 +163,27 @@ its turf visuals step and its first eight fires, so a boot keeps its memory
 marks even when the scenario never starts. After-boot marks: 70 MB after Atoms,
 137 MB after `air: turfs registered` (+67 MB: the uniform-chunk sharing
 that took the vg-ffi test's registration from 64 to 15 MB does not show up
-here yet), 153 MB peak after pipenets, 168 MB at round start, then 118-126 MB
+here yet; cause below), 153 MB peak after pipenets, 168 MB at round start, then 118-126 MB
 over the first fires.
+
+**Why registration missed the bulk path (fixed in rewrite/l-boot2).** The
+run's metrics show `bulk.direct_flushes` 94 and `bulk.port_fallback_flushes`
+94 (749,887 rows): half of the bulk flushes went through commands and the
+overlay, which is the old per-cell cost and never reaches
+`share_uniform_chunks()`. A bulk flush writes the live store only when its
+domain is quiescent, and during SSatoms a few turfs already registered one
+by one: `SSair.add_to_active()` on an initialized turf calls
+`update_air_ref()` at once (atoms spawning gas, pipelines, fires), which puts
+port writes into the gas and heat domains. No frame runs during init, so
+those writes stayed queued and every later bulk flush of those domains fell
+back. `Sim::write_direct()` now folds a domain's queued writes into its
+live store first (as the next frame's apply step would; not while recording
+or with a frame in flight), and `early_single_registrations_keep_the_bulk_path`
+in `boot_memory_tests.rs` covers it (160 fallbacks before, 0 after, 12 MB at
+"turfs registered"). Expect the live mark to drop from +67 MB toward the
+test's +6-15 MB, and the ~40 MB fall at "air: fire 1" (the overlay
+draining) to go away. Station chunks that mix walls, air and space still
+cannot share; only uniform chunks (mostly space) do.
 
 **Measuring caveat.** On this tree the bench scenario never starts on the full
 map: after round start the latency sweep keeps hitting a runtime in
@@ -172,6 +191,31 @@ map: after round start the latency sweep keeps hitting a runtime in
 reference finder spends its whole 323 s budget on it, while atmos uses ~125 ms
 a tick. The numbers above come from the boot log (`Initialized ... within`,
 `RUST_ALLOC_PROFILE`, `BENCH_RUST_MARK`) and `data/bench/process.json`.
+
+### 0.2c rewrite/l-boot2 on the live map (2026-09-28)
+
+One Southern Cross boot (`bench -DCITESTING_FULL_MAP --scenario=boot_profile`,
+`DQ_PREBUILT_VERDIGRIS=1` with the l-boot2 DLL). The machine was building
+Rust for another session at the same time (about 20 rustc processes), so the
+times are not comparable. The memory marks are.
+
+| | k-boot (0.2b) | l-boot2 |
+|---|---|---|
+| Atoms | 37.5-41.1 s | 61.4 s (loaded machine) |
+| Atmospherics | 8.5-9.0 s | 14.5 s (loaded machine) |
+| Lighting | 3.9-4.1 s | 7.0 s (loaded machine) |
+| Rust after Atoms | 70 MB | 68 MB |
+| `air: turfs registered` | 137 MB (**+67**) | 87 MB (**+18**) |
+| after pipenets | 153 MB (peak) | 98 MB (peak 103) |
+| Rust peak, first fires | 176 MB | **130 MB** |
+| Rust steady, fires 1-8 | 118-126 MB | 109-112 MB |
+| private after Atoms | ~985 MB | 1,152 MB |
+
+Turf registration now stays on the bulk path (see "Why registration missed"
+below). Take a quiet-machine boot before quoting any of these times. The run
+logged one runtime, repeated: `get_moles_hook` "no gas mixture behind
+handle 1" from the algae farm's `internal` mixture (a compile-time `new()`) in
+the OM pipeline audit. It is not yet known whether this is new.
 
 ### 0.3 DM memory census (boot_memory, sampled)
 
@@ -735,6 +779,13 @@ site). Instead of `materialize()` per atom:
 4. **One Rust bind call per chunk** for everything that needs a core entity:
    turf cells (already bulk), heat bodies, pipe ports and edges (today's
    string transaction becomes the chunk's list), power nodes.
+   *Status (rewrite/l-boot2):* cables queue during an SSatoms batch
+   (`SSatoms.deferred_cable_binds`) and bind in one `vg_power_bind_cable_list`
+   call when it ends; `setup_rust_pipenets()` sends every port in one
+   `vg_pipe_upsert_list` and every edge in one `vg_pipe_connect_list`. Heat
+   bodies stay per atom (created lazily; callers use the handle at once);
+   machine power nodes stay per machine (bound in `on_materialize()`, some
+   with an immediate region read).
 5. **One lighting pass per chunk** (§5): sources registered in bulk, one
    propagation over the chunk, one batch of overlay writes.
 6. Smoothing once per chunk (§4.2).
@@ -776,8 +827,31 @@ turf whose row needs none of the three as materialized without the call chain
 (hence the zero ceiling on turf `on_materialize()` overrides). Space turfs pick
 their dust appearance from a flat index and share one immutable-air lookup;
 `/turf/Initialize` checks multi-z neighbours without `GetAbove`/`GetBelow`.
-Not done: skipping `Initialize()` altogether for no-state types, the per-type
-appearance cache (�3.5), and the air template / material facts as table data.
+**l-boot2:**
+- **Skipping Initialize.** A type that sets `init_from_table = TRUE` has no
+  per-instance `Initialize()` state. `InitAtom()` calls its
+  `table_initialize()` instead of the Initialize chain and its arglist.
+  - `/turf/space` and plain `/turf/unsimulated` use it. The subtypes that
+    override Initialize turn the flag off.
+  - The lint's `table_init_overrides` count (ceiling 0) catches a subtype
+    that forgets to.
+- **Forwarding overrides removed.** 41 overrides whose body was only
+  `. = ..()` were deleted. The ceilings are now `initialize` 3284 and
+  `unreasoned` 3379.
+- **Air template per type.** `create_gas_mixture()` copies one mixture per
+  type when the turf's gas string and temperature are its type's.
+- **Walls.**
+  - Material facts come from one table per (material, reinforcement,
+    temperature): `wall_material_facts()`.
+  - Overlay images come from one shared list per (masks, materials,
+    connections, construction stage, damage step): `wall_overlay_images()`.
+- **Rule bindings.** One shared `/datum/rule_type_table` per rule list.
+  Per-object state is three bitmasks plus one flat token list.
+
+Not done:
+- Initialize-free obj types (decals, step triggers, emissive blockers).
+- Appearance caches for floors and windows.
+- Material facts for anything but walls.
 
 `tools/ci/check_grep.sh` gets a count of `/Initialize(` overrides (and
 separately of `/LateInitialize(`), with the baseline in the ratchet file.
@@ -877,8 +951,13 @@ so gibs and shuttle crushes are covered. `dq_destroy_effects_once(atom)` is
 the per-turf gate for cosmetic effects outside `destroy_effects()`: machinery
 destruction sparks and sound, catwalk and railing break messages use it.
 
-Remaining: heat bodies, pipe ports and power nodes still unbind one call each
-(Verdigris has no bulk release for them); material service cleanup is still
+Heat bodies, pipe ports and power nodes now release in one call each per
+batch too (`dq_heat_body_release()`, `dq_pipe_port_remove()`,
+`dq_power_unbind_node()` queue into the batch; `vg_heat_body_release_list`,
+`vg_pipe_remove_list`, `vg_power_unbind_node_list`), and the pipe topology
+commits once per batch after the removal (rewrite/l-boot2).
+
+Remaining: material service cleanup is still
 per service (its `om_unhook` calls on a doomed owner could be skipped once OM
 teardown is confirmed to drop inbound hooks); other `atom_destruction()`
 messages (material weapons and armour, mob spawners, grave markers,

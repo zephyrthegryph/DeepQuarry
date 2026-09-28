@@ -448,9 +448,6 @@ DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interac
 	var/overload_time = 0			//Stores the time of overload
 	var/last_flash = 0				//Stores the time of last flash
 
-/obj/item/borg/combat/shield/Initialize(mapload)
-	. = ..()
-
 DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_VERB("Set shield level", PROC_REF(borg_shield_verb_set_level), REQ_IN_INVENTORY), \

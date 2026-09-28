@@ -18,7 +18,14 @@
 	var/bench_depth = benchmark_init_frame_begin()
 	#endif
 
-	var/result = A.Initialize(arglist(arguments))
+	// Type-table fast path (atom_type_table.dm): an Initialize-free type skips the proc chain.
+	// A mapper-set colour needs /atom/Initialize()'s colour handling, and extra New() args an override.
+	var/result
+	if(A.init_from_table && length(arguments) == 1 && !A.color)
+		A.table_initialize()
+		result = INITIALIZE_HINT_NORMAL
+	else
+		result = A.Initialize(arglist(arguments))
 
 	#ifdef BENCHMARK_DEEP_PROFILE
 	var/list/bench_init_mark = benchmark_init_frame_mark(bench_depth)

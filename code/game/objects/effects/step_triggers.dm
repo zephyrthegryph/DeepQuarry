@@ -182,9 +182,6 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 
 REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 
-/obj/effect/landmark/teleport_mark/Initialize(mapload)
-	. = ..()
-
 /* Teleporter which simulates falling out of the sky. */
 
 /obj/effect/step_trigger/teleporter/planetary_fall

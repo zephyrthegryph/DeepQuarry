@@ -36,9 +36,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 
-/obj/machinery/drone_fabricator/Initialize(mapload)
-	. = ..()
-
 /obj/machinery/drone_fabricator/power_change()
 	..()
 	if (stat & NOPOWER)

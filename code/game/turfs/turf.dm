@@ -101,8 +101,18 @@
 
 /turf/Initialize(mapload)
 	. = ..()
-	for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
-		Entered(AM)
+	turf_instance_setup()
+
+/turf/table_initialize()
+	..()
+	turf_instance_setup()
+
+/// The per-turf part of Initialize(), shared with the init_from_table path (atom_type_table.dm).
+/turf/proc/turf_instance_setup()
+	PRIVATE_PROC(TRUE)
+	if(length(contents)) // ALLOW(spatial): hot map-load path (one read per turf); skips the loop setup for empty turfs
+		for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
+			Entered(AM)
 
 	//Lighting related
 	set_luminosity(!(dynamic_lighting))

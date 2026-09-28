@@ -66,9 +66,6 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 /datum/say_list/solargrub
 	emote_see = list("squelches", "squishes")
 
-/mob/living/simple_mob/vore/solargrub/Initialize(mapload)
-	. = ..()
-
 /datum/om/stage/life/type_post/simple_mob/vore/solargrub
 	of = /mob/living/simple_mob/vore/solargrub
 

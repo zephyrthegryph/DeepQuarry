@@ -61,9 +61,6 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly/flux, \
 /obj/effect/anomaly/flux/minor
 	anomaly_core = null
 
-/obj/effect/anomaly/flux/minor/Initialize(mapload, new_lifespan, emp_zap = FLUX_NO_EMP)
-	return ..()
-
 /obj/effect/anomaly/flux/anomalyPulse()
 	if(!..())
 		return

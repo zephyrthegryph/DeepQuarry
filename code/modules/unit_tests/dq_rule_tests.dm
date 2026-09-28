@@ -230,7 +230,7 @@
 		dq_rx_test_advance(rule.hold_for + 1 SECONDS)
 	if(dq_rule_fire_count(thing, rule) != 1)
 		var/datum/rule_binding/diag = dq_rule_binding_of(thing)
-		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag ? jointext(diag.holding, ",") : "-"] key=[diag?.key_id] kinds=[diag ? jointext(diag.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
+		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] key=[diag?.key_id] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
 		return FALSE
 	if(!QDELETED(thing))
 		// dq_rule_test_write() flushes deterministically itself now.
@@ -441,11 +441,12 @@
 	var/obj/structure/grille/third = allocate(/obj/structure/grille, T)
 	third.take_damage(10, BRUTE, MELEE, FALSE)
 	var/datum/rule_binding/binding = dq_rule_binding_of(third)
-	var/break_index = binding.rules.Find(dq_rules()[/datum/rule/integrity_breaks])
+	var/list/bound_rules = binding.rule_list()
+	var/break_index = bound_rules.Find(dq_rules()[/datum/rule/integrity_breaks])
 	TEST_ASSERT(break_index, "grilles have the breaking-point rule")
-	TEST_ASSERT(binding.holding[break_index], "broken: the rule holds")
+	TEST_ASSERT(binding.is_holding(break_index), "broken: the rule holds")
 	third.repair_damage(10)
-	TEST_ASSERT(!binding.holding[break_index], "repaired above the breaking point: the rule is re-armed")
+	TEST_ASSERT(!binding.is_holding(break_index), "repaired above the breaking point: the rule is re-armed")
 	for(var/obj/item/stack/rods/R in turf_contents_of_type(T, /obj/item/stack/rods))
 		qdel(R)
 
