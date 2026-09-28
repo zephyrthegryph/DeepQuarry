@@ -33,7 +33,7 @@
 
 	// Flomph synthetics
 	for(var/mob/living/carbon/S in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
-		if (!S.isSynthetic())
+		if (!HAS_SYNTHETIC_BIOLOGY(S))
 			continue
 		if(!(S.z in affecting_z))
 			continue

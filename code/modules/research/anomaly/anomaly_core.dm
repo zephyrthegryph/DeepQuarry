@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PRO
 	new /obj/effect/temp_visual/circle_wave/dirt(get_turf(src))
 	for(var/mob/living/carbon/human/person in view(get_turf(src), 2))
 		person.germ_level += rand(5, 10)
-		if(person.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(person))
 			continue
 		if(person.is_mouth_covered())
 			continue

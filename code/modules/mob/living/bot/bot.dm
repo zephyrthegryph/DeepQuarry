@@ -524,9 +524,6 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		else return !D.check_access(ID)	// it's a real, air blocking door
 	return 0
 
-/mob/living/bot/isSynthetic() //Robots are synthetic, no?
-	return 1
-
 /mob/living/bot/update_canmove()
 	..()
 	canmove = on

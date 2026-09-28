@@ -24,7 +24,7 @@
 /proc/randmutb(mob/living/M)
 	if(!M || !(M.dna)) return
 	// Traitgenes NO_DNA and Synthetics cannot be mutated
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -39,7 +39,7 @@
 /proc/randmutg(mob/living/M)
 	if(!M || !(M.dna)) return
 	// Traitgenes NO_DNA and Synthetics cannot be mutated
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -54,7 +54,7 @@
 /proc/scramble(UI, mob/M, prob)
 	if(!M || !(M.dna))	return
 	// Traitgenes edit begin - NO_DNA and Synthetics cannot be mutated
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M

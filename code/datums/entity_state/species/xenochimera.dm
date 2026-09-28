@@ -70,7 +70,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 
 /datum/xenochimera/proc/trigger_revival(from_save_slot)
 	ASSERT(revival_record)
-	if(owner.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(owner))
 		revival_record.revive_xenochimera(owner,TRUE,from_save_slot)
 	else
 		revival_record.revive_xenochimera(owner,FALSE,from_save_slot)
@@ -415,7 +415,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 			return
 		var/list/organ_data = client.prefs.read_preference(/datum/preference/organ_data)
 		var/slot_is_synth = (organ_data && (O_BRAIN in organ_data) && organ_data[O_BRAIN])
-		if(slot_is_synth && !isSynthetic()) // Prevents some pretty weird situations
+		if(slot_is_synth && !HAS_SYNTHETIC_BIOLOGY(src)) // Prevents some pretty weird situations
 			to_chat(src,span_warning("Cannot apply character appearance. [slot_is_synth ? "The slot's character is synthetic." : "The slot's character is organic."] Slot must match the current body's synthetic state. Please try another character."))
 			return
 		from_slot = "You'll hatch using [client.prefs.read_preference(/datum/preference/name/real_name)]'s appearance"
@@ -426,7 +426,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 	if(confirm == "Yes")
 
 		///This makes xenochimera shoot out their robotic limbs if they're not a FBP.
-		if(!isSynthetic()) //If we aren't repairing robotic limbs (FBP) we reject any robot limbs we have and kick them out!
+		if(!HAS_SYNTHETIC_BIOLOGY(src)) //If we aren't repairing robotic limbs (FBP) we reject any robot limbs we have and kick them out!
 			for(var/O in organs_by_name)
 				var/obj/item/organ/external/organ = organs_by_name[O]
 				if(!istype(organ, /obj/item/organ/external))

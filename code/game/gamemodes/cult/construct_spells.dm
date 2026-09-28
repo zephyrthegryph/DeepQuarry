@@ -638,7 +638,7 @@
 	for(var/mob/living/L in view(4,src))
 		if(!iscultist(L) && !istype(L, /mob/living/simple_mob/construct))
 			L.apply_body_effect(/datum/body_effect/agonize, 2 SECONDS)
-			if(L.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(L))
 				to_chat(L, span_cult("Your chassis warps as the [src] pulses!"))
 				L.injure(INJURY_BURN, 4, source = src)
 

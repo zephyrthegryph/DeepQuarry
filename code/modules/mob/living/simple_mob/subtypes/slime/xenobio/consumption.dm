@@ -122,7 +122,7 @@
 	if(L.mob_class & MOB_CLASS_SLIME)
 		to_chat(src, "I cannot feed on other slimes...")
 		return FALSE
-	if(L.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(L))
 		to_chat(src, "This subject is not biological...")
 		return FALSE
 	if(L.injury_armor(INJURY_TOXIN, null) >= 75)

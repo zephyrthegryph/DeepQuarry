@@ -105,9 +105,10 @@
 	else
 		return get_gender()
 
-// This is the 'mechanical' check for synthetic-ness, not appearance
-// Returns the company that made the synthetic
-/mob/living/carbon/human/isSynthetic()
+// Cosmetic chassis model (the torso manufacturer) of a full-body prosthesis,
+// or null. Data for icons, blood colour and speech bubbles; NOT a biology
+// question (use HAS_SYNTHETIC_BIOLOGY() / biology() for that).
+/mob/living/carbon/human/proc/robolimb_model()
 	return synthetic
 
 // Would an onlooker know this person is synthetic?
@@ -131,7 +132,7 @@
 
 // Returns a string based on what kind of brain the FBP has.
 /mob/living/carbon/human/proc/get_FBP_type()
-	if(!isSynthetic())
+	if(!HAS_SYNTHETIC_BIOLOGY(src))
 		return FBP_NONE
 	var/obj/item/organ/internal/brain/B
 	B = internal_organs_by_name[O_BRAIN]
@@ -149,7 +150,7 @@
 
 /mob/living/carbon/human/make_hud_overlays()
 	hud_list[HEALTH_HUD]      = gen_hud_image(GLOB.ingame_hud_med, src, "100", plane = PLANE_CH_HEALTH)
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		hud_list[STATUS_HUD]  = gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_STATUS)
 		hud_list[LIFE_HUD]	  = gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_LIFE)
 	else

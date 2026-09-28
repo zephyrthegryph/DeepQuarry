@@ -287,7 +287,7 @@
 	var/armor_factor = abs( (armor - 100) / 100)
 	amount = amount * armor_factor
 	if(amount && prob(10))
-		if(isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(src))
 			to_chat(src, span_cult(span_huge("Warning: Anomalous field detected.")))
 		else
 			to_chat(src, span_cult(span_huge("The purple glow makes you feel strange...")))

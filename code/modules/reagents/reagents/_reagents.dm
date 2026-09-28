@@ -83,7 +83,7 @@
 		return
 	if(!affects_dead && M.stat == DEAD && !M.has_body_effect(/datum/body_effect/bloodpump_corpse))
 		return
-	if(M.isSynthetic() && (!M.synth_reag_processing || !affects_robots))
+	if(HAS_SYNTHETIC_BIOLOGY(M) && (!M.synth_reag_processing || !affects_robots))
 		return
 	if(!istype(location))
 		return
@@ -105,7 +105,7 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			if(!H.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(H))
 				if(H.species.has_organ[O_HEART] && (active_metab.metabolism_class == CHEM_BLOOD))
 					var/obj/item/organ/internal/heart/Pump = H.internal_organs_by_name[O_HEART]
 					if(!Pump)

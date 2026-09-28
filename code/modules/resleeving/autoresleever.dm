@@ -100,21 +100,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		to_chat(ghost, span_warning("You are not whitelisted to spawn as this species!"))
 		return
 
-	// start
-
-	var/datum/species/chosen_species
-	var/pref_species = ghost.client.prefs.read_preference(/datum/preference/choiced/species)
-	if(pref_species) // In case we somehow don't have a species set here.
-		chosen_species = GLOB.all_species[pref_species]
-
-	if(!chosen_species)
-		to_chat(ghost, span_warning("No valid species is selected for resleeving!"))
+	if(!autoresleeve_species_allowed(ghost))
 		return
-
-	if((chosen_species.spawn_flags & SPECIES_IS_WHITELISTED) || (chosen_species.spawn_flags & SPECIES_IS_RESTRICTED))
-		to_chat(ghost, span_warning("This species cannot be resleeved!"))
-		return
-	// Add checks for Whitelist + Resleeving
 
 	//Name matching is ugly but mind doesn't persist to look at.
 	var/charjob
@@ -142,23 +129,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 
 	if(spawntype)
-		var/spawnthing = new spawntype(spawnloc)
-		if(isliving(spawnthing))
-			var/mob/living/L = spawnthing
-			L.key = player_key
-			L.ckey = picked_ckey
-			log_admin("[L.ckey]'s has been spawned as [L] via \the [src].")
-			message_admins("[L.ckey]'s has been spawned as [L] via \the [src].")
-		else
-			to_chat(ghost, span_warning("You can't play as a [spawnthing]..."))
-			return
-		if(spawn_slots == -1)
-			return
-		else if(spawn_slots == 0)
-			return
-		else
-			spawn_slots --
-			return
+		autoresleeve_spawn_type(ghost, spawnloc, player_key, picked_ckey)
+		return
 
 	var/slot = ghost.client.prefs.default_slot
 	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"))
@@ -175,13 +147,56 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		to_chat(ghost, span_warning("It appears as though your loaded character has not been spawned this round, or has quit the round. If you died as a different character, please load them, and try again."))
 		message_admins("[key_name_admin(ghost)] swapped savefiles while using the autosleever and tried to spawn as another character! [ADMIN_JMP(T)]")
 		return
-	var/mob/living/carbon/human/new_character
-	new_character = new(spawnloc)
+	var/mob/living/carbon/human/new_character = build_autoresleeved_character(ghost, ghost_client, spawnloc, player_key, picked_ckey, picked_slot)
+	if(!new_character)
+		return
+	finish_autoresleeve(new_character, charjob)
+	consume_spawn_slot()
+
+/// Can `ghost`'s loaded species be resleeved here? Tells them why not.
+/obj/machinery/transhuman/autoresleever/proc/autoresleeve_species_allowed(mob/observer/dead/ghost)
+	var/datum/species/chosen_species
+	var/pref_species = ghost.client.prefs.read_preference(/datum/preference/choiced/species)
+	if(pref_species) // In case we somehow don't have a species set here.
+		chosen_species = GLOB.all_species[pref_species]
+
+	if(!chosen_species)
+		to_chat(ghost, span_warning("No valid species is selected for resleeving!"))
+		return FALSE
+
+	if((chosen_species.spawn_flags & SPECIES_IS_WHITELISTED) || (chosen_species.spawn_flags & SPECIES_IS_RESTRICTED))
+		to_chat(ghost, span_warning("This species cannot be resleeved!"))
+		return FALSE
+
+	return TRUE
+
+/// A spawner resleever (spawntype set) hands the ghost a fresh `spawntype` instead of their character.
+/obj/machinery/transhuman/autoresleever/proc/autoresleeve_spawn_type(mob/observer/dead/ghost, turf/spawnloc, player_key, picked_ckey)
+	var/spawnthing = new spawntype(spawnloc)
+	if(isliving(spawnthing))
+		var/mob/living/L = spawnthing
+		L.key = player_key
+		L.ckey = picked_ckey
+		log_admin("[L.ckey]'s has been spawned as [L] via \the [src].")
+		message_admins("[L.ckey]'s has been spawned as [L] via \the [src].")
+	else
+		to_chat(ghost, span_warning("You can't play as a [spawnthing]..."))
+		return
+	consume_spawn_slot()
+
+/// Uses one spawn slot; -1 is unlimited and 0 is exhausted.
+/obj/machinery/transhuman/autoresleever/proc/consume_spawn_slot()
+	if(spawn_slots > 0)
+		spawn_slots--
+
+/// Build the ghost's loaded character at `spawnloc`, move their mind in and restore antag roles.
+/obj/machinery/transhuman/autoresleever/proc/build_autoresleeved_character(mob/observer/dead/ghost, client/ghost_client, turf/spawnloc, player_key, picked_ckey, picked_slot)
+	var/mob/living/carbon/human/new_character = new(spawnloc)
 
 	//We were able to spawn them, right?
 	if(!new_character)
 		to_chat(ghost, "Something went wrong and spawning failed.")
-		return
+		return null
 
 	//Write the appearance and whatnot out to the character
 	ghost_client.prefs.copy_to(new_character)
@@ -208,7 +223,13 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		if(new_character.mind.antag_holder)
 			new_character.mind.antag_holder.apply_antags(new_character)
 
-	// migrated language prefs to /datum/preference
+	apply_resleeve_languages(new_character, ghost, ghost_client)
+
+	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
+	return new_character
+
+/// The character's whitelisted languages, custom language keys and preferred language.
+/obj/machinery/transhuman/autoresleever/proc/apply_resleeve_languages(mob/living/carbon/human/new_character, mob/observer/dead/ghost, client/ghost_client)
 	var/list/_ghost_alt_languages = ghost_client.prefs.read_preference(/datum/preference/alternate_languages)
 	var/list/_ghost_lang_custom = ghost_client.prefs.read_preference(/datum/preference/language_custom_keys)
 	for(var/lang in _ghost_alt_languages)
@@ -226,8 +247,8 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		if(def_lang)
 			new_character.default_language = def_lang
 
-	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
-
+/// Equip, log, implant a backup and announce a freshly resleeved character.
+/obj/machinery/transhuman/autoresleever/proc/finish_autoresleeve(mob/living/carbon/human/new_character, charjob)
 	//If desired, apply equipment.
 	if(equip_body)
 		if(charjob)
@@ -252,20 +273,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
 		if((world.time - record.last_notification) < 30 MINUTES)
-			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", new_character.isSynthetic() ? "Science" : "Medical")
+			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", HAS_SYNTHETIC_BIOLOGY(new_character) ? "Science" : "Medical")
 		if(record.nif_path)
 			om_after(new_character, 0, /proc/resleeve_restore_nif, new_character, record) //Wait a moment for nif to do its thing if there is one
 
 	if(!new_character.dna)
 		CRASH("[new_character] just came out of an autosleever and has no DNA! Species: [new_character.species] as mob: [new_character.type]. NIF Status: [new_character.nif]")
-
-	if(spawn_slots == -1)
-		return
-	else if(spawn_slots == 0)
-		return
-	else
-		spawn_slots --
-		return
 
 /// Restores a resleeved body's backed-up NIF, then (a moment later, once a new NIF is in) its software.
 /proc/resleeve_restore_nif(mob/living/carbon/human/new_character, datum/transhuman/mind_record/record)

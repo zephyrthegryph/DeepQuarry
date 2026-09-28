@@ -443,7 +443,7 @@ REF_OWNED(/mob/living/carbon, "cozyloop")
 /mob/living/carbon/can_feel_pain(check_organ)
 	if(!species)
 		return 0
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return 0
 	return !(species.flags & NO_PAIN)
 

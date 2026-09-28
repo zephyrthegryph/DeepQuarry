@@ -5,7 +5,7 @@
 	emote_message_3p = "is sweating heavily."
 
 /datum/decl/emote/exertion/biological/mob_can_use(mob/living/user)
-	if(istype(user) && !user.isSynthetic())
+	if(istype(user) && !HAS_SYNTHETIC_BIOLOGY(user))
 		return ..()
 	return FALSE
 
@@ -30,7 +30,7 @@
 	emote_message_3p = "USER's actuators whine with strain."
 
 /datum/decl/emote/exertion/synthetic/mob_can_use(mob/living/user)
-	if(istype(user) && user.isSynthetic())
+	if(istype(user) && HAS_SYNTHETIC_BIOLOGY(user))
 		return ..()
 	return FALSE
 

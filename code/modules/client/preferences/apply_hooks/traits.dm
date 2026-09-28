@@ -16,7 +16,7 @@
 	// Detect synthetic vs organic so the trait filter can use it.
 	// write_preference_by_type, not update_, to avoid re-triggering the preview
 	// cascade that called this hook in the first place (would infinite-recurse).
-	if(target.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(target))
 		preferences.write_preference_by_type(/datum/preference/toggle/human/dirty_synth, 1)
 		preferences.write_preference_by_type(/datum/preference/toggle/human/gross_meatbag, 0)
 	else

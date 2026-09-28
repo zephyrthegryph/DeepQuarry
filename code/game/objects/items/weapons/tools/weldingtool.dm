@@ -318,7 +318,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 		if(!E)
 			return
-		if(user.isSynthetic()) //Fixes robots going blind when doing the equivalent of a bruise pack.
+		if(HAS_SYNTHETIC_BIOLOGY(user)) //Fixes robots going blind when doing the equivalent of a bruise pack.
 			return
 		if(H.nif && H.nif.flag_check(NIF_V_UVFILTER,NIF_FLAGS_VISION)) return // NIF
 		switch(safety)

@@ -30,6 +30,8 @@
 	organ_tag = O_PLASMA
 	var/stored_plasma = 0
 	var/max_plasma = 500
+	/// Plasma generated every organ tick regardless of phoron intake.
+	var/passive_plasma = 1
 
 	organ_verbs = list(
 		/mob/living/carbon/human/proc/transfer_plasma
@@ -47,7 +49,7 @@
 	if(owner.ingested.has_reagent(REAGENT_ID_PHORON))
 		adjust_plasma(round(2 * modifier))
 
-	adjust_plasma(1)
+	adjust_plasma(passive_plasma)
 
 /obj/item/organ/internal/xenos/plasmavessel/proc/adjust_plasma(amount = 0)
 	stored_plasma = CLAMP(stored_plasma + amount, 0, max_plasma)

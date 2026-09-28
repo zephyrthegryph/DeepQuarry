@@ -46,7 +46,7 @@
 
 	// Determine what kind of support might be needed.
 	for(var/mob/living/L in engineers|security)
-		if(L.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(L))
 			need_robotics = TRUE
 		else
 			need_medical = TRUE

@@ -382,7 +382,7 @@
 		return FALSE
 	if(!affects_dead && L.stat == DEAD && !L.has_body_effect(/datum/body_effect/bloodpump_corpse))
 		return FALSE
-	if(L.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(L))
 		if(!affects_robots)
 			return FALSE
 		if(iscarbon(L))

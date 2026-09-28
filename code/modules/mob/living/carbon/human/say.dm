@@ -51,7 +51,7 @@
 
 /mob/living/carbon/human/speech_bubble_appearance()
 	var/sounds_synth = FALSE
-	var/datum/robolimb/robo = isSynthetic() //Will get torso manufacturer
+	var/datum/robolimb/robo = robolimb_model() //Will get torso manufacturer
 	if(robo)
 		sounds_synth = looksSynthetic() //Based on lifelike robolimb vars
 

@@ -156,7 +156,7 @@
 /mob/living/carbon/proc/addict_to_reagent(reagentid, round_start)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(isSynthetic()) // Should this be allowed? I guess you can roleplay Bender as an FBP? Trait in the future?
+	if(HAS_SYNTHETIC_BIOLOGY(src)) // Should this be allowed? I guess you can roleplay Bender as an FBP? Trait in the future?
 		return
 	// Check if serverconfig allows addiction during the round. Otherwise only allow spawning with addictions
 	var/allow_addiction = round_start || CONFIG_GET(flag/can_addict_during_round)

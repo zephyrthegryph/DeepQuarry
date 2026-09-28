@@ -419,7 +419,7 @@
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["safe"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_1"]) //Equivalent of 1.0-2.0 Gy. Minimum stage you start seeing effects.
 			damage = 1
 			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT)
-			if(!self.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(self))
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.has_status(EFFECT_WEAKENED))
 					to_chat(self, span_warning("You feel exhausted."))
 					self.status_adjust(EFFECT_WEAKENED, 3)
@@ -435,7 +435,7 @@
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_1"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_2"]) //Equivalent of 2.0 to 6.0 Gy. Nobody should ever be above this without extreme negligence.
 			damage = 3
 			self.decay_radiation(30 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 30 * RADIATION_SPEED_COEFFICIENT)
-			if(!self.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(self))
 				if(prob(5))
 					self.radiation_burn(5 * RADIATION_SPEED_COEFFICIENT)
 				if(prob(1))
@@ -450,7 +450,7 @@
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_2"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_3"]) //Equivalent of 6.0 to 8.0 Gy.
 			damage = 5
 			self.decay_radiation(50 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 50 * RADIATION_SPEED_COEFFICIENT)
-			if(!self.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(self))
 				if(prob(15))
 					self.radiation_burn(10 * RADIATION_SPEED_COEFFICIENT)
 				if(prob(2))
@@ -477,7 +477,7 @@
 			self.throw_alert("irradiated", /atom/movable/screen/alert/irradiated)
 			damage = 10
 			self.decay_radiation(100 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 100 * RADIATION_SPEED_COEFFICIENT)
-			if(!self.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(self))
 				if(prob(25))
 					self.radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
 					if(prob(5))
@@ -511,7 +511,7 @@
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Above 30Gy. You had to get absolutely blasted with rads for this.
 			damage = 30
 			self.decay_radiation(300 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 300 * RADIATION_SPEED_COEFFICIENT)
-			if(!self.isSynthetic())
+			if(!HAS_SYNTHETIC_BIOLOGY(self))
 				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
 				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
 
@@ -550,7 +550,7 @@
 		if(damage)
 			damage *= rad_mod
 			self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
-			if(!self.isSynthetic() && self.organs.len)
+			if(!HAS_SYNTHETIC_BIOLOGY(self) && self.organs.len)
 				var/obj/item/organ/external/O = pick(self.organs)
 				if(istype(O)) O.add_autopsy_data("Radiation Poisoning", damage)
 
@@ -558,7 +558,7 @@
 	// Loss of taste occurs at 100 (2Gy) and is handled in taste.dm
 	// These are all done one after another, so duplication is not required. Someone at 400rads will have the 100&400 effects.
 	if(!self.radiation && self.accumulated_rads >= 100  && !self.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE)) //Let's not hit them with long term effects when they're actively being hit with rads.
-		if(!self.isSynthetic())
+		if(!HAS_SYNTHETIC_BIOLOGY(self))
 			I = self.internal_organs_by_name[O_EYES]
 			if(I) //Eye stuff
 				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
@@ -1160,7 +1160,7 @@
 		self.throw_alert("pressure", /atom/movable/screen/alert/lowpressure, 1)
 	else
 		if(!(self.has_mutation(COLD_RESISTANCE)) && !istype(self.loc, /obj/structure/closet/body_bag/cryobag))
-			if(!self.isSynthetic() || !self.nif || !self.nif.flag_check(NIF_O_PRESSURESEAL,NIF_FLAGS_OTHER))
+			if(!HAS_SYNTHETIC_BIOLOGY(self) || !self.nif || !self.nif.flag_check(NIF_O_PRESSURESEAL,NIF_FLAGS_OTHER))
 				var/pressure_damage = LOW_PRESSURE_DAMAGE
 				if(self.stat==DEAD)
 					pressure_damage = pressure_damage/2
@@ -1337,7 +1337,7 @@
 		self.chemical_darksight = 0
 
 	// TODO: stomach and bloodstream organ.
-	if(!self.isSynthetic())
+	if(!HAS_SYNTHETIC_BIOLOGY(self))
 		self.handle_trace_chems()
 
 	return
@@ -1421,7 +1421,7 @@
 				if(COOLDOWN_FINISHED(self, fear_sound_cooldown))
 					self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
 					COOLDOWN_START(self, fear_sound_cooldown, 51 SECONDS)
-			if(self.fear >= 80 && !self.isSynthetic())
+			if(self.fear >= 80 && !HAS_SYNTHETIC_BIOLOGY(self))
 				if(prob(1) && self.get_active_hand())
 					var/stuff_to_drop = self.get_active_hand()
 					self.drop_item()
@@ -1430,7 +1430,7 @@
 					var/fear_self = pick(self.fear_message_self)
 					var/fear_other = pick(self.fear_message_other)
 					self.visible_message(span_notice("\The [self][fear_other]"),span_warning("[fear_self]"))
-			else if(self.fear >= 30 && !self.isSynthetic())
+			else if(self.fear >= 30 && !HAS_SYNTHETIC_BIOLOGY(self))
 				if(prob(2))
 					var/fear_self = pick(self.fear_message_self)
 					var/fear_other = pick(self.fear_message_other)
@@ -1644,7 +1644,7 @@
 		var/hungry_alert = /atom/movable/screen/alert/hungry
 		var/starving_alert = /atom/movable/screen/alert/starving
 
-		if(self.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(self))
 			fat_alert = /atom/movable/screen/alert/fat/synth
 			hungry_alert = /atom/movable/screen/alert/hungry/synth
 			starving_alert = /atom/movable/screen/alert/starving/synth
@@ -1755,7 +1755,7 @@
 	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
 	// cached damage image and colour band, fire, and the pain indicators make up the key.
 	var/trauma_val = 0 // Used in calculating softcrit/hardcrit indicators.
-	if(!(self.species.flags & NO_PAIN))
+	if(self.can_feel_pain())
 		trauma_val = self.pain_knockout_fraction()
 	var/limb_trauma_val = trauma_val*0.3
 	var/hallucination_hud = self.get_hallucination_state()?.get_hud_state()
@@ -1770,7 +1770,7 @@
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
 		key += "|\ref[limb_image][limb_image.color]"
-	var/show_pain = trauma_val && !(self.species.flags & NO_PAIN)
+	var/show_pain = trauma_val && self.can_feel_pain()
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == self.health_doll_key)
 		return
@@ -1921,12 +1921,12 @@
 	// Puke if toxloss is too high
 	if(!self.stat && !isbelly(self.loc))
 		var/toxic_load = self.injury_load(INJURY_CATEGORY_TOXIC)
-		if (toxic_load >= 30 && self.isSynthetic())
+		if (toxic_load >= 30 && HAS_SYNTHETIC_BIOLOGY(self))
 			if(!self.has_status(EFFECT_CONFUSED))
 				if(prob(5))
 					to_chat(self, span_danger("You lose directional control!"))
 					self.status_at_least(EFFECT_CONFUSED, 10)
-		if (toxic_load >= 45 && !self.isSynthetic())
+		if (toxic_load >= 45 && !HAS_SYNTHETIC_BIOLOGY(self))
 			spawn self.vomit()
 
 
@@ -2238,7 +2238,7 @@
 
 	if (BITTEST(self.hud_updateflag, LIFE_HUD))
 		var/image/holder = self.grab_hud(LIFE_HUD)
-		if(self.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(self))
 			holder.icon_state = "hudrobo"
 		else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
 			holder.icon_state = "huddead"
@@ -2253,7 +2253,7 @@
 		var/image/holder = self.grab_hud(STATUS_HUD)
 		var/image/holder2 = self.grab_hud(STATUS_HUD_OOC)
 		var/image/status_r = self.grab_hud(STATUS_R_HUD)
-		if (self.isSynthetic())
+		if (HAS_SYNTHETIC_BIOLOGY(self))
 			holder.icon_state = "hudrobo"
 		else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
 			holder.icon_state = "huddead"

@@ -61,19 +61,9 @@
 	icon_state = "plasma_grey"
 	supply_conversion_value = 50 // Selling engineered organs
 
-/obj/item/organ/internal/xenos/plasmavessel/replicant/crew/handle_organ_proc_special()
-	if(!istype(owner))
-		return
-
-	var/modifier = 1 - 0.5 * is_bruised()
-
-	if(owner.bloodstr.has_reagent(REAGENT_ID_PHORON))
-		adjust_plasma(round(4 * modifier))
-
-	if(owner.ingested.has_reagent(REAGENT_ID_PHORON))
-		adjust_plasma(round(2 * modifier))
-
-	adjust_plasma(2) //Make it a decent amount so people can actually build stuff without stealing all of medbays phoron
+// D25: the crew variant differs only in data, not a copied proc.
+/obj/item/organ/internal/xenos/plasmavessel/replicant/crew
+	passive_plasma = 2 //Make it a decent amount so people can actually build stuff without stealing all of medbays phoron
 
 /obj/item/organ/internal/xenos/acidgland/replicant
 	name = "replicant aerosol tubule"
@@ -160,6 +150,10 @@
 	description_info = "This organ, when connected properly to the body, will attempt to induce an adrenaline surge in the implantee."
 	var/prev_damage_tally = 0
 	var/last_activation_time = 0
+	/// Minimum time between surges.
+	var/activation_cooldown = 60 SECONDS
+	/// How long a surge lasts.
+	var/berserk_duration = 20 SECONDS
 	supply_conversion_value = 10 // Selling engineered organs
 
 /obj/item/organ/internal/heart/replicant/rage/handle_organ_proc_special()
@@ -173,31 +167,23 @@
 	pain_tally += owner.current_pain()
 
 	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
-		if(world.time > last_activation_time + 60 SECONDS)
+		if(world.time > last_activation_time + activation_cooldown)
 			last_activation_time = world.time
-			owner.apply_body_effect(/datum/body_effect/berserk, 20 SECONDS)
+			owner.apply_body_effect(/datum/body_effect/berserk, berserk_duration)
 			apply_lesion_damage(5)
+	prev_damage_tally = damage_tally
 
-/obj/item/organ/internal/heart/replicant/rage/crew/handle_organ_proc_special()
-	if(!owner)
-		return
-
-	var/damage_tally = 0
-	var/pain_tally = 0
-	damage_tally += owner.injury_load(INJURY_CATEGORY_PHYSICAL)
-	damage_tally += owner.injury_load(INJURY_CATEGORY_THERMAL)
-	pain_tally += owner.current_pain()
-
-	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
-		if(world.time > last_activation_time + 60 MINUTES) //Can only be activated once every 60 minutes to prevent it being able to be spammed
-			last_activation_time = world.time
-			owner.apply_body_effect(/datum/body_effect/berserk, 40 SECONDS) //Lasts a little longer so that it can actually get some use seeing as it activates so infrequently
-			apply_lesion_damage(5)
+// D25: the crew variant differs only in data, not a copied proc.
+/obj/item/organ/internal/heart/replicant/rage/crew
+	activation_cooldown = 60 MINUTES //Can only be activated once every 60 minutes to prevent it being able to be spammed
+	berserk_duration = 40 SECONDS //Lasts a little longer so that it can actually get some use seeing as it activates so infrequently
 
 /obj/item/organ/internal/lungs/replicant/mending
 	name = "replicant hive lungs"
 	desc = "A pair of rubbery sacs with large portions dedicated to honeycombed nanite filters."
 	description_info = "This organ, when connected properly to the body, will attempt to keep some other organs repaired."
+	/// Restoration delivered to each listed organ per organ tick.
+	var/repair_rate = 1
 
 /// Organs these lungs keep repaired (constant).
 /obj/item/organ/internal/lungs/replicant/mending/proc/repair_list()
@@ -214,19 +200,11 @@
 		for(var/o_tag in repair_list())
 			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
 			if(O)
-				owner.mend(TREAT_RESTORATION, 1 * modifier, O)
+				owner.mend(TREAT_RESTORATION, repair_rate * modifier, O)
 
-/obj/item/organ/internal/lungs/replicant/mending/crew/handle_organ_proc_special()
-	if(!owner)
-		return
-
-	var/modifier = 1 - (0.5 * is_bruised())
-
-	if(istype(owner))
-		for(var/o_tag in repair_list())
-			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
-			if(O)
-				owner.mend(TREAT_RESTORATION, 0.01 * modifier, O) //Very very slow regen, but still cool flavour
+// D25: the crew variant differs only in data, not a copied proc.
+/obj/item/organ/internal/lungs/replicant/mending/crew
+	repair_rate = 0.01 //Very very slow regen, but still cool flavour
 
 // MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
 /obj/item/organ/internal/xenos/plasmavessel/replicant/crew/life_step_idle()

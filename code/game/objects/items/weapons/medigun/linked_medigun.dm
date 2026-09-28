@@ -55,7 +55,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	if(user.stat)
 		return TRUE
 
-	if(target.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(target))
 		to_chat(user, span_warning("Target is not organic."))
 		return TRUE
 

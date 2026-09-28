@@ -129,7 +129,7 @@ the artifact triggers the rage.
 			to_chat(L, span_warning("You recently berserked, and cannot do so again while exhausted."))
 		return FALSE // On cooldown.
 
-	if(L.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(L))
 		L.apply_body_effect(/datum/body_effect/berserk_synthetic, 30 SECONDS)
 		return FALSE // Borgs can get angry but their metal shell can't be pushed harder by just being mad. Same for Posibrains.
 

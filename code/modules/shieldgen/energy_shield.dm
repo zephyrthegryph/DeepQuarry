@@ -342,7 +342,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 
 // Human mobs
 /mob/living/carbon/human/can_pass_shield(obj/machinery/power/shield_generator/gen)
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return !gen.check_flag(MODEFLAG_ANORGANIC)
 	return !gen.check_flag(MODEFLAG_HUMANOIDS)
 

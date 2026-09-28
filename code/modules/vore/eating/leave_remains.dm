@@ -80,7 +80,7 @@
 	if((H.species.name in GLOB.remainless_species))	//Don't leave anything if there is nothing to leave
 		return
 
-	if(prob(20) && !H.isSynthetic())	//ribcage surviving whole is some luck //Edit: no robor
+	if(prob(20) && !HAS_SYNTHETIC_BIOLOGY(H))	//ribcage surviving whole is some luck //Edit: no robor
 		new /obj/item/digestion_remains/ribcage(src,owner)
 		bones_amount--
 
@@ -97,10 +97,10 @@
 		/obj/item/digestion_remains/synth/variant3
 	)
 	for(var/i = 1, i <= bones_amount, i++)	//throw in the rest
-		var/new_bone = H.isSynthetic() ? pick(synthetic_bones) : pick(organic_bones)
+		var/new_bone = HAS_SYNTHETIC_BIOLOGY(H) ? pick(synthetic_bones) : pick(organic_bones)
 		new new_bone(src,owner)
 
-	if(H.isSynthetic()) // Synths dont have skulls, atleast not any that survive digestion.
+	if(HAS_SYNTHETIC_BIOLOGY(H)) // Synths dont have skulls, atleast not any that survive digestion.
 		return			// TODO: add synth skulls and remove this.
 	var/skull_amount = 1
 	if(H.species.skull_type)

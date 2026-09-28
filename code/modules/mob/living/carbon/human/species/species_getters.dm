@@ -45,11 +45,11 @@
 	return name
 
 /datum/species/proc/get_knockout_message(mob/living/carbon/human/H)
-	return ((H && H.isSynthetic()) ? "encounters a hardware fault and suddenly reboots!" : knockout_message)
+	return ((H && HAS_SYNTHETIC_BIOLOGY(H)) ? "encounters a hardware fault and suddenly reboots!" : knockout_message)
 
 /datum/species/proc/get_death_message(mob/living/carbon/human/H)
 	if(CONFIG_GET(flag/show_human_death_message))
-		return ((H && H.isSynthetic()) ? "gives one shrill beep before falling lifeless." : death_message)
+		return ((H && HAS_SYNTHETIC_BIOLOGY(H)) ? "gives one shrill beep before falling lifeless." : death_message)
 	else
 		return DEATHGASP_NO_MESSAGE
 
@@ -64,7 +64,7 @@
 
 /datum/species/proc/get_blood_colour(mob/living/carbon/human/H)
 	if(H)
-		var/datum/robolimb/company = H.isSynthetic()
+		var/datum/robolimb/company = H.robolimb_model()
 		if(company)
 			return dq_get_blood_color(company)
 		else
@@ -72,17 +72,17 @@
 
 /datum/species/proc/get_blood_name(mob/living/carbon/human/H)
 	if(H)
-		var/datum/robolimb/company = H.isSynthetic()
+		var/datum/robolimb/company = H.robolimb_model()
 		if(company)
 			return company.blood_name
 		else
 			return blood_name
 
 /datum/species/proc/get_virus_immune(mob/living/carbon/human/H)
-	return ((H && H.isSynthetic()) ? 1 : virus_immune)
+	return ((H && HAS_SYNTHETIC_BIOLOGY(H)) ? 1 : virus_immune)
 
 /datum/species/proc/get_flesh_colour(mob/living/carbon/human/H)
-	return ((H && H.isSynthetic()) ? SYNTH_FLESH_COLOUR : flesh_color)
+	return ((H && HAS_SYNTHETIC_BIOLOGY(H)) ? SYNTH_FLESH_COLOUR : flesh_color)
 
 /datum/species/proc/get_environment_discomfort(mob/living/carbon/human/H, msg_type)
 

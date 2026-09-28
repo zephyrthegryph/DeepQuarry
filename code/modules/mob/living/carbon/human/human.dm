@@ -1867,7 +1867,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	return FALSE
 
 /mob/living/carbon/human/can_feel_pain(obj/item/organ/check_organ)
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return 0
 	if(loc?.numbs_pain_of(src))
 		return FALSE
@@ -1877,7 +1877,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		if(!istype(check_organ))
 			return 0
 		return check_organ.organ_can_feel_pain()
-	return !(species.flags & NO_PAIN)
+	// NO_PAIN reaches here as BF_PAIN_IMMUNITY (species grant, humanoid factors).
+	return !(species?.flags & NO_PAIN)
 
 /mob/living/carbon/human/is_sentient()
 	if(get_FBP_type() == FBP_DRONE)

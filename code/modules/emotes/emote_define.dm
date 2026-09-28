@@ -213,7 +213,7 @@
 	return key
 
 /datum/decl/emote/proc/check_synthetic(mob/living/user)
-	. = istype(user) && user.isSynthetic()
+	. = istype(user) && HAS_SYNTHETIC_BIOLOGY(user)
 	if(!. && ishuman(user) && message_type == AUDIBLE_MESSAGE)
 		var/mob/living/carbon/human/H = user
 		if(H.should_have_organ(O_LUNGS))

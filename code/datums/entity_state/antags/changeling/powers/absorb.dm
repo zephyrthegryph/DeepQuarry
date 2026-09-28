@@ -21,7 +21,7 @@
 		return
 
 	var/mob/living/carbon/human/T = G?.grab_target()
-	if(!istype(T) || T.isSynthetic())
+	if(!istype(T) || HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_warning("\The [T] is not compatible with our biology."))
 		return
 

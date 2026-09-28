@@ -97,7 +97,8 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/set_initial_meat()
 	if(owner)
 		if(!meat_type)
-			if(owner.isSynthetic())
+			// D25: the part's own biology decides what it's made of, not the owner's.
+			if(is_robotic())
 				meat_type = /obj/item/stack/material/steel
 			else if(ishuman(owner))
 				var/mob/living/carbon/human/H = owner
@@ -115,8 +116,38 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		forensic_data?.clear_blooddna()
 		add_blooddna_organ(data)
 
+// --- Construction predicates (P2-S2) ------------------------------------------
+// One vocabulary for "what is this part built from?" instead of raw
+// `robotic >= ORGAN_*` comparisons with mixed thresholds.
+
+/// Fully prosthetic: robot, lifelike or nanoform. No pulse, no blood, repaired
+/// with tools rather than medicine.
+/obj/item/organ/proc/is_robotic()
+	return robotic >= ORGAN_ROBOT
+
+/// Has any mechanical component: assisted (pacemaker-style) or fully robotic.
+/obj/item/organ/proc/is_assisted()
+	return robotic >= ORGAN_ASSISTED
+
+/// Made of nanites (protean).
+/obj/item/organ/proc/is_nanoform()
+	return robotic == ORGAN_NANOFORM
+
+/// Plain flesh: no mechanical parts at all.
+/obj/item/organ/proc/is_organic()
+	return robotic < ORGAN_ASSISTED
+
+/// The part's biology (BIOLOGY_* flag) for afflictions and treatment tags.
+/// Assisted parts are still organic tissue.
+/obj/item/organ/proc/biology()
+	if(is_nanoform())
+		return BIOLOGY_NANOFORM
+	if(is_robotic())
+		return BIOLOGY_SYNTHETIC
+	return BIOLOGY_ORGANIC
+
 /obj/item/organ/proc/die()
-	if(robotic < ORGAN_ROBOT)
+	if(!is_robotic())
 		status |= ORGAN_DEAD
 	saturate_damage()
 	PERIODIC_STOP(src)
@@ -399,9 +430,9 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/shed_mismatched_afflictions()
 	if(!owner?.body)
 		return
-	var/biology = owner.body.biology_of(src)
+	var/part_biology = owner.body.biology_of(src)
 	for(var/datum/affliction/A as anything in afflictions_here())
-		if(!(A.biology & biology))
+		if(!(A.biology & part_biology))
 			log_game("BODY: [key_name(owner)] [A.type] cured on [name]: biology changed.")
 			A.cure()
 
@@ -689,10 +720,16 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 /obj/item/organ/proc/handle_organ_proc_special()	// Called when processed.
 	return
 
-// Shared heat output from robotic body parts, used by machine organs that run hot.
+/// Kelvin of waste heat per robotic core part (torso, groin, head) per organ tick.
+#define ROBOBODY_WASTE_HEAT_PER_PART 0.5
+
+/// Waste heat from a robotic chassis. ONE writer (D25): only the machine power
+/// cell calls this; heatsinks dissipate it.
 /obj/item/organ/proc/apply_robobody_heat()
 	if(owner && owner.is_alive())
-		owner.adjust_bodytemperature(round(owner.robobody_count * 0.25, 0.1))
+		owner.adjust_bodytemperature(round(owner.robobody_count * ROBOBODY_WASTE_HEAT_PER_PART, 0.1))
+
+#undef ROBOBODY_WASTE_HEAT_PER_PART
 
 /obj/item/organ/proc/check_verb_compatability()		// Used for determining if an organ should give or remove its verbs. I.E., FBP part in a human, no verbs. If true, keep or add.
 	if(owner)

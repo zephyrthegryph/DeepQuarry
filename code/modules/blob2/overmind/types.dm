@@ -12,8 +12,8 @@
 	var/faction = FACTION_BLOB				// The blob's faction.
 
 	var/attack_message = "The blob attacks you" // Base message the mob gets when blob_act() gets called on them by the blob.  An exclaimation point is added to the end.
-	var/attack_message_living = null	// Appended to attack_message, if the target fails isSynthetic() check.
-	var/attack_message_synth = null		// Ditto, but if they pass isSynthetic().
+	var/attack_message_living = null	// Appended to attack_message, if the target is organic (HAS_SYNTHETIC_BIOLOGY).
+	var/attack_message_synth = null		// Ditto, but if they have synthetic biology.
 	var/attack_verb = "attacks"			// Used for the visible_message(), as the above is shown to the mob getting hit directly.
 										// Format is '\The [blob name] [attack_verb] [victim]!' E.g. 'The explosive lattice blasts John Doe!'
 

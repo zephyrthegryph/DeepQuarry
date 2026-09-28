@@ -56,7 +56,7 @@
 		return FALSE
 	if(is_dead())
 		return FALSE
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return FALSE
 	if(!species)
 		return FALSE

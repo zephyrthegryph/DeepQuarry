@@ -83,7 +83,7 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/proc/test_validity(mob/living/carbon/human/host)
-	if(!host || host.isSynthetic() || host.stat == DEAD || host.nutrition <= 10)
+	if(!host || HAS_SYNTHETIC_BIOLOGY(host) || host.stat == DEAD || host.nutrition <= 10)
 		return FALSE // Robots and dead people don't have a metabolism.
 	return TRUE
 
@@ -105,7 +105,7 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 
 /obj/item/integrated_circuit/passive/power/metabolic_siphon/synthetic/test_validity(mob/living/carbon/human/host)
-	if(!host || !host.isSynthetic() || host.stat == DEAD || host.nutrition <= 10)
+	if(!host || !HAS_SYNTHETIC_BIOLOGY(host) || host.stat == DEAD || host.nutrition <= 10)
 		return FALSE // This time we don't want a metabolism.
 	return TRUE
 

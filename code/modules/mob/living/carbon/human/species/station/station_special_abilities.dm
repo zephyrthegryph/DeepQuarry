@@ -109,7 +109,7 @@
 	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
 		to_chat(src, "You cannot bite in your current state.")
 		return FALSE
-	if(B.vessel.total_volume <= 0 || B.isSynthetic()) //Do they have any blood in the first place, and are they synthetic?
+	if(B.vessel.total_volume <= 0 || HAS_SYNTHETIC_BIOLOGY(B)) //Do they have any blood in the first place, and are they synthetic?
 		to_chat(src, span_red("There appears to be no blood in this prey..."))
 		return FALSE
 	return TRUE
@@ -209,7 +209,7 @@
 		return
 
 	var/mob/living/carbon/human/T = G?.grab_target() // I must say, this is a quite ingenious way of doing it. Props to the original coders.
-	if(!istype(T) || T.isSynthetic())
+	if(!istype(T) || HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_warning("\The [T] is not able to be drained."))
 		return
 
@@ -272,7 +272,7 @@
 		return
 
 	var/mob/living/carbon/human/T = G?.grab_target() // I must say, this is a quite ingenious way of doing it. Props to the original coders.
-	if(!istype(T) || T.isSynthetic())
+	if(!istype(T) || HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_warning("\The [T] is not able to be drained."))
 		return
 
@@ -1244,7 +1244,7 @@
 		return
 
 	var/synth = 0
-	if(target.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(target))
 		synth = 1
 
 	if(!trait_injection_selected)
@@ -1306,7 +1306,7 @@
 
 	var/mob/living/carbon/human/T = G?.grab_target()
 
-	if(!istype(T) || T.isSynthetic())
+	if(!istype(T) || HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_warning("\The [T] is not able to be bitten."))
 		return
 
@@ -1476,7 +1476,7 @@
 
 /mob/living/proc/insect_sting_chosen(datum/om/prompt/choice/insect_sting/ask)
 	var/mob/living/carbon/T = ask.choice
-	if(T.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
 

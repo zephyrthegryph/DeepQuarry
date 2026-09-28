@@ -231,7 +231,7 @@
 	if(!dna || !species)
 		return
 	// Traitgenes NO_DNA and Synthetics cannot be mutated
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		return
 	if(species.flags & NO_DNA)
 		return

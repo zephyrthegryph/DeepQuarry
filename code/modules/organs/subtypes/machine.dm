@@ -24,10 +24,8 @@
 
 /obj/item/organ/internal/cell/machine/handle_organ_proc_special()
 	..()
-	if(owner && owner.is_alive())
-		owner.adjust_bodytemperature(round(owner.robobody_count * 0.5, 0.1))
-
-	return
+	// D25: the power cell is the one source of chassis waste heat.
+	apply_robobody_heat()
 
 // Used for an MMI or posibrain being installed into a human.
 /obj/item/organ/internal/mmi_holder

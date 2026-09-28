@@ -14,7 +14,7 @@
 			my_brain_handle = om_handle(possible_brain) //Organs will take damage all the same.
 			if(istype(possible_brain) && my_brain().can_assist())		//If the brain is infact a brain, and not something special like an MMI.
 				my_brain().implant_assist(target_state)
-		if(H.isSynthetic() && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
+		if(HAS_SYNTHETIC_BIOLOGY(H) && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
 			robotic_brain = TRUE
 	if(istype(my_brain(), /obj/item/organ/internal/brain) && my_brain().can_assist())
 		PERIODIC_START(src, PERIODIC_SLOW)

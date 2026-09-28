@@ -253,7 +253,7 @@
 
 	if(!(src.Adjacent(M))) return
 
-	if(!istype(M) || M.isSynthetic())
+	if(!istype(M) || HAS_SYNTHETIC_BIOLOGY(M))
 		to_chat(user, "\The [M] cannot be infested.")
 		return
 
@@ -377,7 +377,7 @@
 
 	var/mob/living/carbon/human/H = L
 
-	if(!istype(H) || H.isSynthetic())
+	if(!istype(H) || HAS_SYNTHETIC_BIOLOGY(H))
 		to_chat(user, span_warning("You cannot inject this target..."))
 		return
 

@@ -125,7 +125,7 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 
 	// Random biometric information
 	data["nutrition"] = human.nutrition
-	data["isSynthetic"] = human.isSynthetic()
+	data["isSynthetic"] = HAS_SYNTHETIC_BIOLOGY(human)
 
 	data["nif_percent"] = round((durability/initial(durability))*100)
 	data["nif_stat"] = stat

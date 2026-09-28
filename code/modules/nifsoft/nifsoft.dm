@@ -227,7 +227,7 @@
 	if(!Ht.nif || Ht.nif.stat != NIF_WORKING)
 		upload_failed()
 		return
-	if(Ht.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(Ht))
 		new stored_synthetic(Ht.nif,extra)
 	else
 		new stored_organic(Ht.nif,extra)

@@ -700,7 +700,7 @@
 	coolant_modifier = 2 // In the name
 
 /datum/reagent/coolant/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.isSynthetic() && ishuman(M))
+	if(HAS_SYNTHETIC_BIOLOGY(M) && ishuman(M))
 		var/mob/living/carbon/human/H = M
 
 		var/datum/reagent/blood/coolant = H.get_blood(H.vessel)

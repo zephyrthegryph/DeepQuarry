@@ -133,7 +133,7 @@
 		kind = blob.injury_kind
 		kinds = blob.injury_kinds
 
-		attack_message = "[blob.attack_message][isSynthetic() ? "[blob.attack_message_synth]":"[blob.attack_message_living]"]"
+		attack_message = "[blob.attack_message][HAS_SYNTHETIC_BIOLOGY(src) ? "[blob.attack_message_synth]":"[blob.attack_message_living]"]"
 		attack_verb = blob.attack_verb
 		B.overmind.blob_type.on_attack(B, src, def_zone)
 

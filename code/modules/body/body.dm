@@ -31,6 +31,16 @@
 
 REF_OWNED(/mob/living, "body")
 
+/// Systemic biology (BIOLOGY_* flags). Non-living mobs have no body: organic.
+/mob/proc/biology()
+	return BIOLOGY_ORGANIC
+
+/// Systemic biology, read from the body: the ONLY answer to "is this mob a
+/// machine?" (P2-S1). Simple plans answer from the `biology` var; the humanoid
+/// plan answers from the torso.
+/mob/living/biology()
+	return body ? body.biology_of(null) : biology
+
 /// Any reagent holder owned by this mob changed: the treatment snapshot and
 /// the chem-caused afflictions are stale.
 /mob/living/on_reagent_change(changetype)

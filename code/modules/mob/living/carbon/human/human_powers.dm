@@ -206,7 +206,7 @@
 
 	output += "Internal Temperature: [convert_k2c(bodytemperature)] Degrees Celsius\n"
 
-	if(isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		output += "Current Battery Charge: [nutrition]\n"
 
 		var/toxDam = injury_load(INJURY_CATEGORY_TOXIC)

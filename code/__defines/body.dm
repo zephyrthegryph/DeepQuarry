@@ -66,6 +66,12 @@
 #define BIOLOGY_SYNTHETIC (1<<1)
 #define BIOLOGY_NANOFORM  (1<<2)
 #define BIOLOGY_ALL       (BIOLOGY_ORGANIC | BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM)
+/// Non-organic bodies: machines and nanite swarms (what the old isSynthetic() meant).
+#define BIOLOGY_INORGANIC (BIOLOGY_SYNTHETIC | BIOLOGY_NANOFORM)
+/// Is this mob's SYSTEMIC biology synthetic (or nanoform)? One source of truth:
+/// `mob.biology()`, which reads the body (P2-S1). For a single part use
+/// `body.biology_of(part)`; for a human's cosmetic chassis use `robolimb_model()`.
+#define HAS_SYNTHETIC_BIOLOGY(M) (((M).biology() & BIOLOGY_INORGANIC) != 0)
 
 // --- Treatment tags --------------------------------------------------------------
 // Healing MECHANISMS. Strings: they are association-list keys (DM forbids

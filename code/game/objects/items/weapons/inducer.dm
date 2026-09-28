@@ -120,7 +120,7 @@
 	//Synthetic humanoids
 	if(ishuman(A))
 		var/mob/living/carbon/human/H = A
-		if(H.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(H))
 			C = new /obj/item/cell/standin(null, H) // o o f
 
 	//Borg frienbs

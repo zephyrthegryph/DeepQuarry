@@ -451,7 +451,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 			X.adjust_nutrition(rand(15, 25), 0)
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			if(H.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
 			H.nutrition = between(0, H.nutrition + rand(15, 25), 800)
 

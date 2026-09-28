@@ -441,7 +441,7 @@
 /datum/species/proc/equip_survival_gear(mob/living/carbon/human/H,extendedtank = 0,comprehensive = 0)
 	var/boxtype = /obj/item/storage/box/survival //Default survival box
 
-	var/synth = H.isSynthetic()
+	var/synth = HAS_SYNTHETIC_BIOLOGY(H)
 
 	//Empty box for synths
 	if(synth)

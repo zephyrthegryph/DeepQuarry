@@ -270,7 +270,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		for(var/mob/living/carbon/human/H in oview(2, src))
 			if(!istype(H) || !isliving(H) || H.stat == DEAD) //Living mobs only
 				continue
-			if(isSynthetic(H) || !H.species.breath_type || H.internal) //Exclude species which don't breathe or have internals.
+			if(HAS_SYNTHETIC_BIOLOGY(H) || !H.species.breath_type || H.internal) //Exclude species which don't breathe or have internals.
 				continue
 			if(src.Adjacent(H)) //If they can breathe and are next to the pitcher, confuse them.
 				to_chat(H,span_red("The sweet, overwhelming scent from \the [src] makes your senses reel!"))

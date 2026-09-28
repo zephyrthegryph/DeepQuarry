@@ -77,7 +77,7 @@
 	if(player.current)
 		if(ishuman(player.current))
 			var/mob/living/carbon/human/H = player.current
-			if(H.isSynthetic())
+			if(HAS_SYNTHETIC_BIOLOGY(H))
 				return 0
 			if(H.species.flags & (NO_SLEEVE|NO_DNA))
 				return 0

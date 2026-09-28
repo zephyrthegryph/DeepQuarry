@@ -1153,9 +1153,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set instant = TRUE
 	throw_mode_off()
 
-/mob/proc/isSynthetic()
-	return 0
-
 /mob/proc/is_muzzled()
 	return 0
 

@@ -675,7 +675,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 		for(var/mob/living/carbon/human/H in oview(6, src))
 			if(!istype(H) || !isliving(H) || H.stat == DEAD)
 				continue
-			if(isSynthetic(H))
+			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
 			if(src.Adjacent(H))
 				to_chat(H,span_danger("The overwhelming psychic influence from \the [src] makes your senses reel!"))

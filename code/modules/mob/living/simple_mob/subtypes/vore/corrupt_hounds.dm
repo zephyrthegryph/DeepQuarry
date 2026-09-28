@@ -91,9 +91,6 @@
 
 	say_list_type = /datum/say_list/corrupthound_prettyboi
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/isSynthetic()
-	return TRUE
-
 /mob/living/simple_mob/vore/aggressive/corrupthound
 	biology = BIOLOGY_SYNTHETIC
 
@@ -334,9 +331,6 @@
 	icon_dead = "cmhound-dead"
 	icon_rest = "cmhound-dead"
 
-
-/mob/living/simple_mob/vore/retaliate/corrupthound/janihound/isSynthetic()
-	return TRUE
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound
 	biology = BIOLOGY_SYNTHETIC

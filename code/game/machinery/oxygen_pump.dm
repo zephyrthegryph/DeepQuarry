@@ -353,7 +353,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 				breather().internals.icon_state = "internal0"
 
 		if(breather())	// Safety.
-			if(ishuman(breather()) && !(breather().isSynthetic()))
+			if(ishuman(breather()) && !(HAS_SYNTHETIC_BIOLOGY(breather())))
 				var/mob/living/carbon/human/H = breather()
 
 				if(H.internal_organs_by_name[O_LUNGS])

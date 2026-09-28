@@ -567,7 +567,7 @@
 	// Check for sanity
 	if(!istype(reviver,/mob/living/carbon/human))
 		return
-	if(isSynthetic(src))
+	if(HAS_SYNTHETIC_BIOLOGY(src))
 		to_chat(reviver, span_danger("You push on [src]'s chest and realize you're shoving down on metal! This isn't going to work!"))
 		return //Lets you know IMMEDIATELY that this is a robot. Do not pass go. Don't do damage or pump blood.
 

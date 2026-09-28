@@ -191,7 +191,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 		return
 
 	use_power(1000)
-	visible_message(span_danger("You hear a loud [occupant.isSynthetic() ? "metallic" : "squelchy"] grinding sound."))
+	visible_message(span_danger("You hear a loud [HAS_SYNTHETIC_BIOLOGY(occupant) ? "metallic" : "squelchy"] grinding sound."))
 	src.operating = 1
 	update_icon()
 
@@ -205,7 +205,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	if(ishuman(occupant))
 		var/mob/living/carbon/human/H = occupant
 		slab_name = occupant.real_name
-		slab_type = H.isSynthetic() ? /obj/item/stack/material/steel : H.species.meat_type
+		slab_type = HAS_SYNTHETIC_BIOLOGY(H) ? /obj/item/stack/material/steel : H.species.meat_type
 
 	// Small mobs don't give as much nutrition.
 	if(issmall(occupant))

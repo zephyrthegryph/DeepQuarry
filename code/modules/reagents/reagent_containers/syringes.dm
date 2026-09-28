@@ -206,7 +206,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 						to_chat(user, span_warning("You are unable to locate any blood."))
 						return
 
-					if(T.isSynthetic())
+					if(HAS_SYNTHETIC_BIOLOGY(T))
 						to_chat(user, span_warning("You can't draw blood from a synthetic!"))
 						return
 

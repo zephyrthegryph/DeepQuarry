@@ -103,7 +103,7 @@
 	var/mob/living/carbon/human/H = om_resolve(wearer)
 	if(!H || H.get_equipped_item(SLOT_ID_GLOVES) != src)
 		return PROCESS_KILL
-	if(!H || H.isSynthetic() || H.stat == DEAD)
+	if(!H || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
 	H.nutrition = max(H.nutrition + 8, 0)
 

@@ -701,7 +701,7 @@
 
 /datum/reagent/mutagen/affect_blood(mob/living/carbon/M, alien, removed)
 
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	if(ishuman(M))
@@ -1010,7 +1010,7 @@
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/slimetoxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	var/mob/living/carbon/human/H = M
@@ -1040,7 +1040,7 @@
 	industrial_use = REFINERYEXPORT_REASON_MATSCI
 
 /datum/reagent/aslimetoxin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(M.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(M))
 		return
 
 	var/mob/living/carbon/human/H = M

@@ -93,7 +93,7 @@
 /datum/body_effect/franken_sickness/can_apply(mob/living/L)
 	if(!ishuman(L))
 		return FALSE
-	if(L.isSynthetic()) //Nonhumans and Machines cannot be Frankensteined, at this time.
+	if(HAS_SYNTHETIC_BIOLOGY(L)) //Nonhumans and Machines cannot be Frankensteined, at this time.
 		return FALSE
 
 	return ..()
@@ -116,7 +116,7 @@
 /datum/body_effect/franken_recovery/can_apply(mob/living/L)
 	if(!ishuman(L))
 		return FALSE
-	if(L.isSynthetic()) //Nonhumans and Machines cannot be Frankensteined, at this time.
+	if(HAS_SYNTHETIC_BIOLOGY(L)) //Nonhumans and Machines cannot be Frankensteined, at this time.
 		return FALSE
 
 	return ..()

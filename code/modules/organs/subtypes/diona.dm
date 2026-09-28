@@ -216,7 +216,7 @@
 
 /obj/item/organ/internal/brain/cephalon/Initialize(mapload)
 	. = ..()
-	if(!owner?.isSynthetic())
+	if(!owner || !HAS_SYNTHETIC_BIOLOGY(owner))
 		vital = FALSE
 
 /obj/item/organ/internal/brain/cephalon/robotize()

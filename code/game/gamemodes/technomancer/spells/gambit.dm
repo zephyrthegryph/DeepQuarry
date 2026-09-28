@@ -53,7 +53,7 @@
 
 	// First the spell will concern itself with the health of the technomancer.
 	if(prob(owner_ref().injury_load(INJURY_CATEGORY_PHYSICAL) * 2)) // Having 20 brute means a 40% chance of being added to the pool.
-		if(!owner_ref().isSynthetic())
+		if(!HAS_SYNTHETIC_BIOLOGY(owner_ref()))
 			potential_spells |= /obj/item/spell/modifier/mend_life
 		else
 			potential_spells |= /obj/item/spell/modifier/mend_synthetic

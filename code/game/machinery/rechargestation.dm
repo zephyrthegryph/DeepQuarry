@@ -115,13 +115,13 @@
 	else if(ishuman(occupant))
 		var/mob/living/carbon/human/H = occupant
 
-		if(H.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(H))
 			// Run diagnostics: clears processor / system faults on synthetic parts.
 			if(H.is_injured())
 				H.mend(TREAT_SYSTEM_RESTORE, rand(1,3))
 
 			// Also recharge their internal battery.
-			if(H.isSynthetic() && H.nutrition < 500)
+			if(HAS_SYNTHETIC_BIOLOGY(H) && H.nutrition < 500)
 				H.nutrition = min(H.nutrition+(10*(1-min(H.species.synthetic_food_coeff, 0.9))), 500)
 				cell.use(7000/450*10)
 
@@ -350,7 +350,7 @@
 
 	else if(istype(L,  /mob/living/carbon/human))
 		var/mob/living/carbon/human/H = L
-		if(H.isSynthetic() || H.wearing_rig)
+		if(HAS_SYNTHETIC_BIOLOGY(H) || H.wearing_rig)
 			add_fingerprint(H)
 			if(!H.move_into(src, OCCUPANT_SLOT_RECHARGE_STATION))
 				return

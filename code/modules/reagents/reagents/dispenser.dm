@@ -131,7 +131,7 @@
 	if(!ishuman(L) || volume <= 0)
 		return acc
 	var/mob/living/carbon/human/H = L
-	if(H.isSynthetic() && !H.species.robo_ethanol_drunk)
+	if(HAS_SYNTHETIC_BIOLOGY(H) && !H.species.robo_ethanol_drunk)
 		return acc
 	var/static/alist/intoxication = alist(BF_INTOXICATION = 1)
 	var/static/alist/hepatotoxicity = alist(BF_HEPATOTOXICITY = 1)
@@ -153,7 +153,7 @@
 	if(!strength_mod)
 		return
 
-	if(!(M.isSynthetic()))
+	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		var/effective_dose = dose * strength_mod * (1 + volume/60) //drinking a LOT will make you go down faster
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
@@ -184,17 +184,17 @@
 	if(issmall(M))
 		removed *= 2
 
-	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type) && !(M.isSynthetic())) // assuming it doesn't cause a horrible reaction, we get the nutrition effects - (added synth check)
+	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type) && !(HAS_SYNTHETIC_BIOLOGY(M))) // assuming it doesn't cause a horrible reaction, we get the nutrition effects - (added synth check)
 		M.adjust_nutrition(nutriment_factor * removed)
 
-	if(M.isSynthetic() && M.nutrition < 500 && M.species.robo_ethanol_proc)
+	if(HAS_SYNTHETIC_BIOLOGY(M) && M.nutrition < 500 && M.species.robo_ethanol_proc)
 		M.adjust_nutrition(round(max(0,ep_base_power - strength) * removed)/ep_final_mod)	//the stronger it is, the more juice you gain
 
 	var/effective_dose = dose
 	if(!effective_dose)
 		return
 
-	if(M.species.robo_ethanol_drunk || !(M.isSynthetic()))
+	if(M.species.robo_ethanol_drunk || !(HAS_SYNTHETIC_BIOLOGY(M)))
 
 		if(effective_dose >= (strength * M.species.chem_strength_alcohol)) // Early warning
 			M.status_adjust(EFFECT_DIZZY, 6) // It is decreased at the speed of 3 per tick

@@ -654,7 +654,7 @@
 	if(H.mind)
 		H.mind.transfer_to(S)
 
-	if(H.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(H))
 		H.visible_message(span_danger("\The [H] collapses into parts, revealing a solitary diona nymph at the core."))
 
 		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.

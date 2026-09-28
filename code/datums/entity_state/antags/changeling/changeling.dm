@@ -286,7 +286,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	if(!comp.check_cooldown())//Check again in case we have multiple windows open at once.
 		to_chat(src, span_warning("We are still recovering from our last sting."))
 		return
-	if(T.isSynthetic())
+	if(HAS_SYNTHETIC_BIOLOGY(T))
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
 	if(!(T in view(comp.sting_range))) return

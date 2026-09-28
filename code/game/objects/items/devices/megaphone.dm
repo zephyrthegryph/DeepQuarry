@@ -17,7 +17,7 @@
 		if(user.client.prefs.muted & MUTE_IC)
 			to_chat(user, span_warning("You cannot speak in IC (muted)."))
 			return FALSE
-	if(!(ishuman(user) || user.isSynthetic()))
+	if(!(ishuman(user) || HAS_SYNTHETIC_BIOLOGY(user)))
 		to_chat(user, span_warning("You don't know how to use this!"))
 		return FALSE
 	if(user.has_status(EFFECT_MUTED))

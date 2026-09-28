@@ -35,7 +35,7 @@
 
 		// Corrosion: flesh melts from the inside, a chassis decays; the body resolves which.
 		L.injure(INJURY_CORROSIVE, damage_to_inflict, source = owner_ref())
-		if(L.isSynthetic())
+		if(HAS_SYNTHETIC_BIOLOGY(L))
 			if(damage_to_inflict && prob(10))
 				to_chat(L, span_danger("Your chassis seems to slowly be decaying and breaking down."))
 		else

@@ -48,7 +48,7 @@
 	var/list/options = list("Mouth")
 	if(human_owner().vore_selected)
 		options.Add("Belly ([sanitize(human_owner().vore_selected.name)])")
-	if(!human_owner().isSynthetic()) // Results in a lot of bad behaviors...
+	if(!HAS_SYNTHETIC_BIOLOGY(human_owner())) // Results in a lot of bad behaviors...
 		options.Add("Bloodstream")
 
 	// Choose destination

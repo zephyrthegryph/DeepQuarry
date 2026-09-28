@@ -4,7 +4,7 @@
 	emote_sound = 'sound/machines/ping.ogg'
 
 /datum/decl/emote/audible/synth/mob_can_use(mob/living/user)
-	if(istype(user) && user.isSynthetic())
+	if(istype(user) && HAS_SYNTHETIC_BIOLOGY(user))
 		return ..()
 	return FALSE
 
