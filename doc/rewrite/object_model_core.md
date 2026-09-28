@@ -483,7 +483,7 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 | `addtimer(cb, d)`, `spawn(d)` | `om_after(E, d, proc, args...)`: a one-shot deadline on E's clock | E. Cancelled on delete; paused by suspension or stasis on its clock |
 | repeating `addtimer`, countdown vars | `om_clock`, stage `rewake`, or a timed contribution | E |
 | `do_after`, `sleep()` sequences, multi-step machines | `om_task` with declared `steps` (each a delay and a proc), claims, `requires` and `interrupted_by` | actor and target |
-| `input()` / `alert()` / `tgui_input_*` | `om_prompt(E, user, spec, on_answer)`: a callback prompt (tgui async), re-checked through the task's `requires` before `on_answer` runs | E and the user |
+| `input()` / `alert()` / `tgui_input_*` | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb))`: a callback prompt (tgui async), re-checked through its declared `ask_flags`, `requires` and `valid()` before `cb` runs (§11) | the receiver and the answerer |
 | `INVOKE_ASYNC` | nothing: the callee no longer sleeps | — |
 | `stoplag()` in long loops | the work runs as a lane with a budget and resumes by cursor | the lane |
 
@@ -750,11 +750,12 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   	complete_proc = /obj/item/lockpick/proc/pick_done
   	var/obj/structure/simple_door/door
 
-  om_task_start(/datum/om/task/timed/lockpick, user, src, list("receiver" = src, "door" = D))
+  om_task_start(/datum/om/task/timed/lockpick, user, src, door = D)
   ```
 
-  `om_task_start(type, actor, target, params)` returns the task or a reason. `params` sets vars
-  by name (state, or any declaration to override per run: `duration`, `receiver`, `flags`).
+  `om_task_start(type, actor, target, var = value...)` returns the task or a reason. The named
+  arguments set vars (state, or any declaration to override per run: `duration`, `receiver`,
+  `flags`).
   It checks `requires`, claims the target (a `target_single`, refusing claim relation: the
   loser gets "is in use"), and sets one deadline. It completes by that deadline or its last
   step, and is cancelled when its requires fail (re-checked on their channels on actor or
@@ -773,6 +774,159 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   zero-state case: at most two arguments across `done_args`, `fail_args` and `check_args`
   (`tools/ci/api_lints.py`, `do_after_state`, is 0). A done proc taking a third argument, or a
   `*_timed_done2` proc threading the same arguments through, is a task type instead.
+- **Named task arguments.** `om_task_start()` is a macro: its named arguments set the task's
+  typed vars, and the caller's `src` rides along as the receiver default (the first of src,
+  target and actor that has the `complete_proc`/`cancel_proc`/`check_proc`/a step proc, else
+  src). A `complete_proc` of the task's own type runs on the task with no arguments, so it reads
+  the state as its own vars. A var the type doesn't declare is a CRASH on first run. The old
+  `list("key" = value)` form still works (receiver defaults to the actor) and is ratcheted by
+  `api_lints.py` (`task_params_list`).
+
+  Before (`code/game/objects/items/stacks/medical.dm`, `code/modules/clothing/glasses/glasses.dm`):
+
+  ```dm
+  om_task_start(/datum/om/task/timed/splint_attack, user, affecting, list("receiver" = src, "M" = M, "limb" = limb))
+
+  om_do_after(user, 5 SECONDS, target, src, PROC_REF(prescribe_done), list(user, G))
+
+  /obj/item/glasses_kit/proc/prescribe_done(mob/living/carbon/human/user, obj/item/clothing/glasses/G)
+  ```
+
+  After:
+
+  ```dm
+  om_task_start(/datum/om/task/timed/splint_attack, user, affecting, M = M, limb = limb)
+
+  om_task_start(/datum/om/task/timed/glasses_kit/prescribe, user, G, kit = src)
+
+  /datum/om/task/timed/glasses_kit/prescribe
+  	complete_proc = /datum/om/task/timed/glasses_kit/prescribe/proc/done
+
+  /datum/om/task/timed/glasses_kit/prescribe/proc/done()   // runs on the task: kit, actor, target are its vars
+  	var/obj/item/clothing/glasses/G = target
+  	if(!kit.scrip_loaded)
+  		return
+  	G.prescribe(actor)
+  	kit.scrip_loaded = 0
+  ```
+- **Typed prompts** (`code/datums/om/ask.dm`). A question is a `/datum/om/prompt/<kind>` type:
+  `confirm` (answer `yes`; the answer proc runs on yes unless `answer_on_no`, `declined()` on
+  no), `choice` (`choice`; `buttons = TRUE` for alert buttons), `text` (`text`), `number`
+  (`number`), `color` (`picked_color`) and `checklist` (`picked`). `title`, `message`,
+  `ask_flags`, `requires`, `timeout` and `cancel_answer` are declared on the type (or passed by
+  name); `prepare()` builds the message from the state; `valid()` is the type's own re-check,
+  run with the answer already stored. Roles: `answerer` (sees the window), `asker` (started it;
+  default the answerer, or the flow's actor) and `subject` (what it's about; default the
+  receiver when it's an atom). `ask_flags` cover the common re-checks: `ASK_ALIVE`,
+  `ASK_CONSCIOUS`, `ASK_CAPABLE` (answerer and asker), `ASK_ADJACENT` (answerer next to the
+  asker, or to the subject when they're the same mob), `ASK_NEAR_SUBJECT`, `ASK_HELD` /
+  `ASK_CARRIED` (the subject is still in the asker's hands / on them), `ASK_FACE_TO_FACE`. Any
+  failure drops the answer and calls `refused(reason)`. Datums in the type's scalar vars (and
+  the three roles) are held as handles while the window is open, so a deleted one drops the
+  answer. `om_ask(answerer, type, PROC_REF(cb), var = value...)` is a macro: `cb` runs on the
+  caller's `src` with the prompt as its one argument. The string-keyed
+  `om_prompt(E, user, list(...), cb)` form still works and is ratcheted (`api_lints.py`,
+  `prompt_spec`).
+
+  Before (`code/modules/mob/living/carbon/human/species/species_shapeshift.dm`):
+
+  ```dm
+  om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
+
+  /mob/living/carbon/human/proc/shapeshifter_shape_chosen(mob/user, new_species, datum/om/prompt/ask)
+  	if(!GLOB.all_species[new_species] || GLOB.wrapped_species_by_ref["\ref[src]"] == new_species || !(new_species in species.get_valid_shapeshifter_forms(src)))
+  		return
+  	shapeshifter_change_shape(new_species)
+  ```
+
+  After:
+
+  ```dm
+  om_ask(src, /datum/om/prompt/choice/shapeshifter_form, PROC_REF(shapeshifter_shape_chosen), choices = species.get_valid_shapeshifter_forms(src))
+
+  /datum/om/prompt/choice/shapeshifter_form
+  	title = "Shapeshifter Body"
+  	message = "Please select a species to emulate."
+  	ask_flags = ASK_CONSCIOUS
+
+  /datum/om/prompt/choice/shapeshifter_form/valid()
+  	var/mob/living/carbon/human/shifter = asker
+  	if(!GLOB.all_species[choice] || GLOB.wrapped_species_by_ref["\ref[shifter]"] == choice || !(choice in shifter.species.get_valid_shapeshifter_forms(shifter)))
+  		return "not a form to take"
+  	return null
+
+  /mob/living/carbon/human/proc/shapeshifter_shape_chosen(datum/om/prompt/choice/shapeshifter_form/ask)
+  	shapeshifter_change_shape(ask.choice)
+  ```
+- **Flows** (`code/datums/om/flow.dm`): a multi-step action (take time, ask someone, act) is one
+  `/datum/om/flow/<x>` type. Its typed vars are the state every step shares (held as handles
+  between steps); each step is a proc on the flow; `requires` (actor, target) and `valid()` are
+  re-checked before every step after the first. A step goes on with `wait(duration, next, ...)`
+  (a timed action by the actor on the target, then `next(task)`) or `om_ask(answerer, prompt,
+  next, ...)` (then `next(prompt)`; the asker defaults to the actor and the subject to the
+  target); a step that does neither finishes the flow. A cancelled wait, a declined, cancelled
+  or refused prompt, a failed re-check or a deleted datum calls `ended(reason)` once.
+  `om_flow_start(type, actor, target, var = value...)` starts one and returns it or a reason.
+
+  Before (`code/game/objects/items/leash.dm`): three procs, state through positional args and a
+  data list, re-checks by hand:
+
+  ```dm
+  	om_do_after(user, leashtime, target = C, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(C, user))
+
+  /obj/item/leash/proc/attack_timed_done(mob/living/C, mob/living/user)
+  	om_prompt(src, C, list("message" = "Would you like to be leased by [user]? ...", "title" = "Become Leashed", "choices" = list("No","Yes"), "target" = user, "requires" = PROMPT_ADJACENT, "data" = list("holder" = user)), PROC_REF(leash_accepted))
+
+  /obj/item/leash/proc/leash_accepted(mob/living/C, answer, datum/om/prompt/ask)
+  	var/mob/living/user = ask.get("holder")
+  	if(answer != "Yes")
+  		return ITEM_INTERACT_FAILURE
+  	if(QDELETED(C) || QDELETED(user) || loc != user || C?.leash_item())
+  		return ITEM_INTERACT_FAILURE
+  	...
+  ```
+
+  After:
+
+  ```dm
+  	om_flow_start(/datum/om/flow/leash, user, C, leash = src)
+
+  /datum/om/flow/leash
+  	var/obj/item/leash/leash
+
+  /datum/om/flow/leash/valid()            // before every step: still holding it, pet still free
+  	var/mob/living/pet = target
+  	if(leash.loc != actor)
+  		return "not holding the leash"
+  	if(pet.leash_item())
+  		return "already leashed"
+  	return null
+
+  /datum/om/flow/leash/start()
+  	...
+  	wait(leashtime, PROC_REF(offer))
+
+  /datum/om/flow/leash/proc/offer()
+  	om_ask(target, /datum/om/prompt/confirm/leash_offer, PROC_REF(accepted))
+
+  /datum/om/flow/leash/proc/accepted(datum/om/prompt/confirm/leash_offer/ask)
+  	leash.attach(target, actor)
+
+  /datum/om/prompt/confirm/leash_offer
+  	title = "Become Leashed"
+  	no_first = TRUE
+  	ask_flags = ASK_FACE_TO_FACE
+
+  /datum/om/prompt/confirm/leash_offer/prepare()
+  	message = "Would you like to be leashed by [asker]? You can OOC escape to escape"
+  	return TRUE
+  ```
+
+  Other flows: tome scribing (`gamemodes/cult/ritual.dm`: rune pick, destination pick, cut,
+  timed drawing; `requires` keeps the tome in hand at every step), pickpocketing
+  (`clothing/gloves/antagonist.dm`: five chained tasks) and inbelly spawning
+  (`vore/eating/inbelly_spawn.dm`: six consent prompts across two players, with `ended()`
+  telling both sides by the step it stopped at).
 - **Busy is a claim, not a flag.** A task can also claim what does the work: its actor
   (`claims_actor`), or a tool, bot or machine (`om_task_claim()`, `om_do_after(..., busy = X)`,
   `use_tool(..., busy = X)`), on the `busy` relation so a busy worker can still be someone's
@@ -883,8 +1037,9 @@ counted total ratchets to 0.
 | To... | The one way | Not | Lint (count) |
 |---|---|---|---|
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
-| Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, params)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()` | `api_lints.py` (`do_after_state`, `use_tool_state`), `scheduler_lints.py` (`do_after`) |
-| Ask a player | `om_prompt(E, user, spec, on_answer)` | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()` | `scheduler_lints.py` (`prompts`) |
+| Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, var = value...)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()`; a `list("key" = value)` params list | `api_lints.py` (`do_after_state`, `use_tool_state`, `task_params_list`), `scheduler_lints.py` (`do_after`) |
+| Ask a player | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value...)` (§11) | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()`; the string-keyed spec of `om_prompt()`/`om_prompt_sequence()`/`om_prompt_chain()` | `scheduler_lints.py` (`prompts`), `api_lints.py` (`prompt_spec`) |
+| Do an action in steps (take time, ask, act) | one flow type, `om_flow_start(/datum/om/flow/x, actor, target, var = value...)`, its steps chained with `wait()` / `om_ask()` (§11) | several procs passing state through `done_args`, prompt `data` or chained task params, each re-checking by hand | `api_lints.py` (`prompt_spec`, `task_params_list`) |
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()`; a raw `world.time` compare against a hand-kept timestamp or deadline | `api_lints.py` (`timer_cooldown`), `cooldown_lint.py` |
 | Change a var that a stage, behaviour or watch reads | its declared field's setter, `E.set_x(v)` or `om_set(E, "x", v)` (§5.1) | `x = v`, `E.x = v`, `x |= v` on a declared field; `vars[name] = v` outside the reflection sites in `api_lints_allowlist.txt`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |

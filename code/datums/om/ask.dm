@@ -236,7 +236,7 @@
 	if(istype(answerer, /client))
 		var/client/C = answerer
 		answerer = C.mob
-	if(!ismob(answerer) || QDELETED(answerer))
+	if(!isdatum(answerer) || QDELETED(answerer))
 		return null
 	var/datum/om/flow/F = receiver
 	if(istype(F))
@@ -278,10 +278,12 @@
 	parked = null
 	return om_unpark_state(src, held)
 
-/// The ask_flags, requires, valid() and (for a flow) the flow's own re-checks.
+/// The ask_flags, requires and valid(): null, or the reason to drop the answer.
 /datum/om/prompt/proc/typed_recheck(datum/E, mob/answerer)
 	var/mob/A = asker || answerer
 	var/atom/S = subject
+	if((ask_flags & (ASK_ALIVE | ASK_CONSCIOUS | ASK_CAPABLE | ASK_ADJACENT | ASK_NEAR_SUBJECT)) && (!ismob(answerer) || !ismob(A)))
+		return "not a mob"
 	if((ask_flags & ASK_ALIVE) && (answerer.stat == DEAD || A.stat == DEAD))
 		return "dead"
 	if((ask_flags & ASK_CONSCIOUS) && (answerer.stat != CONSCIOUS || A.stat != CONSCIOUS))
@@ -306,9 +308,8 @@
 		var/reason = om_why_not(check_spec, answerer, S || E)
 		if(!isnull(reason))
 			return reason
-	. = valid()
-	if(isnull(.) && flow)
-		. = flow.why_not_continuing()
+	// A flow's own re-checks run when it resumes (its state is held until then).
+	return valid()
 
 // ---------------------------------------------------------------- continuations (om_prompt plumbing)
 

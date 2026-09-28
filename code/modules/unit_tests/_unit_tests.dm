@@ -252,6 +252,7 @@
 #include "dq_om_pipeline_tests.dm"
 #include "dq_om_relations_tests.dm"
 #include "dq_om_scheduler_tests.dm"
+#include "dq_om_ask_tests.dm"
 #include "dq_refs_tests.dm"
 #include "dq_om_timed_action_tests.dm"
 #include "dq_base_proc_moves_tests.dm"
