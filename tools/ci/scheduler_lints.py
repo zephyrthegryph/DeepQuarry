@@ -70,6 +70,8 @@ PATTERNS = [
     ("blocking_builtins", re.compile(r"(?<![\w./])(?:winget|winexists|shell)\s*\(|\.MeasureText\s*\(")),
 ]
 NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
+# Counts whose ratchet reached 0 and became an outright ban: no baseline line, ceiling 0.
+BANNED = {"lc_refs"}
 LINT = "scheduler"
 
 UNSAVED_MODS = {"static", "global", "const"}
@@ -221,6 +223,8 @@ def write_baseline(counts):
         "# Lower a line when a sweep removes sites: `python tools/ci/scheduler_lints.py --update`.",
     ]
     for name in NAMES:
+        if name in BANNED:
+            continue
         lines.append("%s %d" % (name, counts[name]))
     with open(BASELINE, "w", encoding="utf-8", newline="\n") as handle:
         handle.write("\n".join(lines) + "\n")
@@ -242,7 +246,7 @@ def main(argv):
     base = read_baseline()
     failed = False
     for name in NAMES:
-        limit = base.get(name, 0)
+        limit = 0 if name in BANNED else base.get(name, 0)
         status = "ok"
         if counts[name] > limit:
             status = "FAIL (ceiling %d)" % limit

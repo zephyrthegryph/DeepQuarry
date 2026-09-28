@@ -1,7 +1,0 @@
-# Declared-reference ceilings (roadmap L2, doc/rewrite/lifecycle.md sec 4).
-# undeclared: object-typed vars not named by a declared_*_vars(); object_keyed: objects
-# written into undeclared instance lists. tools/ci/declared_refs_lint.py fails when a
-# count rises above its line. Declare the var/list (REF_OWNED/REF_OWNED_LIST/REF_PAIR/
-# REF_BACKLIST, a declared cache, tmp, an OM handle) and lower it with --update.
-undeclared 536
-object_keyed 208

@@ -28,6 +28,7 @@ REF_MACRO_PROC = {
     "DEF": "declared_def_vars",
     "STATIC": "declared_static_vars",
     "TRANSIENT": "declared_transient_vars",
+    "WEAK_LIST": "declared_weak_list_vars",
 }
 _KINDS = "|".join(sorted(REF_MACRO_PROC, key=len, reverse=True))
 REF_MACRO = re.compile(r"^REF_(" + _KINDS + r")\(\s*(/[\w/]+)\s*,(.*)\)\s*$")

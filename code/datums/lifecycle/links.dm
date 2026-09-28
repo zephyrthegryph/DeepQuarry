@@ -68,6 +68,34 @@
 /datum/proc/declared_held_vars()
 	return null
 
+/// Names of `src`'s weak list vars (REF_WEAK_LIST): lists of OM handles naming
+/// other live entities src doesn't own. Phase 4 cuts them; members are untouched.
+/datum/proc/declared_weak_list_vars()
+	return null
+
+/// Runs in the destroy transaction just before phase 4 (links) nulls, deletes and
+/// unlinks the declared vars: the place for teardown that must still read them
+/// (a holder ending its busy state, a hologram handing bellies back to its master,
+/// a projectile drawing its tracers from owned beam segments). Must not sleep.
+/datum/proc/lifecycle_prerelease()
+	return
+
+/// The live entities weak list `L` (REF_WEAK_LIST) names, in order. Prunes the
+/// handles of deleted members from `L` in place.
+/proc/weak_list_live(list/L)
+	. = list()
+	if(!length(L))
+		return
+	var/list/dead
+	for(var/h in L)
+		var/datum/D = om_resolve(h)
+		if(D)
+			. += D
+		else
+			LAZYADD(dead, h)
+	if(dead)
+		L -= dead
+
 /// Names of `src`'s list vars whose members spill the same way.
 /datum/proc/declared_spill_list_vars()
 	return null
@@ -136,6 +164,7 @@
 			"back" = D.declared_back_vars(),
 			"keep" = D.declared_keep_vars(),
 			"static" = D.declared_static_vars(),
+			"weak_list" = D.declared_weak_list_vars(),
 		)
 		// A declaration naming a var the type no longer has (the var was
 		// removed, the REF_* line wasn't) would runtime on D.vars[name] in the
@@ -263,6 +292,10 @@
 		for(var/datum/child in copy)
 			if(!QDELETED(child))
 				qdel(child)
+	for(var/var_name in table["weak_list"])
+		var/list/weak = D.vars[var_name]
+		if(islist(weak))
+			weak.Cut()
 	var/list/owned_values = table["owned_values"]
 	for(var/var_name in owned_values)
 		var/list/by_key = D.vars[var_name]
