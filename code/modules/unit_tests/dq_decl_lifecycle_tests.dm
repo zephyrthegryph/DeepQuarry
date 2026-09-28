@@ -107,6 +107,10 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 		if(overlay.icon_state == state)
 			.++
 
+/obj/machinery/shower/dq_decl_probe
+	reagent_id = REAGENT_ID_ETHANOL
+	reaction_volume = 50
+
 // ---- Tests ----
 
 /datum/unit_test/dq_decl_reagents
@@ -127,6 +131,11 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 
 	var/obj/item/dq_decl_probe/dry/dry = allocate(/obj/item/dq_decl_probe/dry, T)
 	TEST_ASSERT(isnull(dry.reagents), "DECLARE_NO_REAGENTS drops the inherited holder")
+
+	var/obj/machinery/shower/dq_decl_probe/shower = allocate(/obj/machinery/shower/dq_decl_probe, T)
+	TEST_ASSERT_EQUAL(shower.reagents.maximum_volume, 50, "the shower's holder follows reaction_volume")
+	TEST_ASSERT_EQUAL(shower.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 50, "the shower fills with its reagent_id")
+	TEST_ASSERT_EQUAL(shower.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "and not hardcoded water")
 
 	var/datum/lifecycle_decls/a = lifecycle_decls_of(probe)
 	var/obj/item/dq_decl_probe/other = allocate(/obj/item/dq_decl_probe, T)

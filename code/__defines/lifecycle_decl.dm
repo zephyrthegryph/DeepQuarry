@@ -48,6 +48,9 @@
 /// declaration table is shared by the type, the per-instance reagent datums exist only in the
 /// holder (empty holders already share one empty list).
 #define DECLARE_REAGENTS(PATH, VOLUME, CONTENTS) _LIFECYCLE_DECL(PATH, set_reagents(VOLUME, CONTENTS, null, FALSE))
+/// A holder of VOLUME holding the reagent named by the instance var ID_VAR, AMOUNT units
+/// (a number, or the name of an instance var); both read per atom at init.
+#define DECLARE_REAGENT_FROM_VAR(PATH, VOLUME, ID_VAR, AMOUNT) _LIFECYCLE_DECL(PATH, set_reagent_var(VOLUME, ID_VAR, AMOUNT))
 /// DECLARE_REAGENTS, then `color = reagents.get_color()` (pills, patches).
 #define DECLARE_REAGENTS_TINTED(PATH, VOLUME, CONTENTS) _LIFECYCLE_DECL(PATH, set_reagents(VOLUME, CONTENTS, null, TRUE))
 /// DECLARE_REAGENTS with a /datum/reagents subtype for the holder.

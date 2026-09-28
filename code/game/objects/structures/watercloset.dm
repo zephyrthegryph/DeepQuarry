@@ -503,7 +503,7 @@
 	. = ..()
 	soundloop = new(list(src), FALSE)
 
-DECLARE_REAGENTS(/obj/machinery/shower, "reaction_volume", list(REAGENT_ID_WATER = 200))
+DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
 DECLARE_REF(/obj/machinery/shower, "soundloop", OWNED, null)
 DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
