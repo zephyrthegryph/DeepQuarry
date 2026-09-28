@@ -399,7 +399,7 @@
 	if(istype(host.loc, /turf/simulated))
 		host.loc.assume_air(leaked_gas)
 	else
-		qdel(leaked_gas)
+		qdel(leaked_gas) // ALLOW(lifecycle): a gas_mixture handle is a plain datum with no lifecycle verb; the leak has nowhere to go off-turf
 
 /datum/mech_affliction/control_damage
 	name = "control damage"

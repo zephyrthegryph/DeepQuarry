@@ -1487,7 +1487,6 @@ initialize	code/modules/env_message/env_message.dm	/obj/effect/env_message/Initi
 initialize	code/modules/eventkit/collector_event/blockers.dm	/obj/structure/event_collector_blocker/Initialize(mapload)
 initialize	code/modules/events/meteor_strike.dm	/obj/effect/meteor_falling/Initialize(mapload)
 initialize	code/modules/events/meteor_strike.dm	/obj/structure/meteorite/Initialize(mapload)
-initialize	code/modules/examine/descriptions/atmospherics.dm	/obj/machinery/atmospherics/pipe/Initialize(mapload) //This is needed or else 20+ lines of copypasta to dance around inheritence.
 initialize	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
 initialize	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/devillock/Initialize(mapload)
 initialize	code/modules/exploration/tyr_tribal_gear.dm	/obj/item/reagent_containers/food/snacks/weatherlily/Initialize(mapload)
@@ -2298,7 +2297,6 @@ initialize	code/modules/mining/shelter_atoms.dm	/obj/structure/table/survival_po
 initialize	code/modules/mining/shelter_atoms.dm	/obj/structure/bed/pod/Initialize(mapload)
 initialize	code/modules/mining/shelter_atoms.dm	/obj/machinery/smartfridge/survival_pod/Initialize(mapload)
 initialize	code/modules/mining/shelter_atoms.dm	/obj/structure/fans/Initialize(mapload)
-initialize	code/modules/mob/combat_mode.dm	/mob/Initialize(mapload)
 initialize	code/modules/mob/dead/corpse.dm	/obj/effect/landmark/mobcorpse/Initialize(mapload)
 initialize	code/modules/mob/dead/observer/observer.dm	/mob/observer/dead/Initialize(mapload, aghost = FALSE)
 initialize	code/modules/mob/freelook/ai/eye.dm	/mob/observer/eye/aiEye/Initialize(mapload)
@@ -4918,7 +4916,6 @@ unreasoned	code/modules/env_message/env_message.dm	/obj/effect/env_message/Initi
 unreasoned	code/modules/eventkit/collector_event/blockers.dm	/obj/structure/event_collector_blocker/Initialize(mapload)
 unreasoned	code/modules/events/meteor_strike.dm	/obj/effect/meteor_falling/Initialize(mapload)
 unreasoned	code/modules/events/meteor_strike.dm	/obj/structure/meteorite/Initialize(mapload)
-unreasoned	code/modules/examine/descriptions/atmospherics.dm	/obj/machinery/atmospherics/pipe/Initialize(mapload) //This is needed or else 20+ lines of copypasta to dance around inheritence.
 unreasoned	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)
 unreasoned	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/devillock/Initialize(mapload)
 unreasoned	code/modules/exploration/tyr_tribal_gear.dm	/obj/item/reagent_containers/food/snacks/weatherlily/Initialize(mapload)
@@ -5735,7 +5732,6 @@ unreasoned	code/modules/mining/shelter_atoms.dm	/obj/structure/table/survival_po
 unreasoned	code/modules/mining/shelter_atoms.dm	/obj/structure/bed/pod/Initialize(mapload)
 unreasoned	code/modules/mining/shelter_atoms.dm	/obj/machinery/smartfridge/survival_pod/Initialize(mapload)
 unreasoned	code/modules/mining/shelter_atoms.dm	/obj/structure/fans/Initialize(mapload)
-unreasoned	code/modules/mob/combat_mode.dm	/mob/Initialize(mapload)
 unreasoned	code/modules/mob/dead/corpse.dm	/obj/effect/landmark/mobcorpse/Initialize(mapload)
 unreasoned	code/modules/mob/dead/observer/observer.dm	/mob/observer/dead/Initialize(mapload, aghost = FALSE)
 unreasoned	code/modules/mob/freelook/ai/eye.dm	/mob/observer/eye/aiEye/Initialize(mapload)

@@ -50,10 +50,14 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 		return TRUE
 
 	// A single available option is answered at once (autopick_single_option); otherwise the player picks.
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(option_chosen), choices = options, anchor = src, require_near = !issilicon(user))
+	om_ask(user, /datum/om/prompt/choice/radial/deskbell, PROC_REF(option_chosen), stance = interaction?.stance || I_HELP, choices = options, anchor = src, require_near = !issilicon(user))
 	return TRUE
 
-/obj/item/deskbell/proc/option_chosen(datum/om/prompt/choice/radial/ask)
+/// The bell's radial remembers the stance it was opened in, so "use" rings (or hammers) accordingly.
+/datum/om/prompt/choice/radial/deskbell
+	var/stance = I_HELP
+
+/obj/item/deskbell/proc/option_chosen(datum/om/prompt/choice/radial/deskbell/ask)
 	var/mob/user = ask.answerer
 	if(!user || user.incapacitated())
 		return
@@ -64,7 +68,7 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 
 		if("use")
 			if(check_ability(user))
-				ring(user, interaction.stance)
+				ring(user, ask.stance)
 				add_fingerprint(user)
 
 		if("pick up")
