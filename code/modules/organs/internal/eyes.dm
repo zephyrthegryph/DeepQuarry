@@ -40,8 +40,22 @@
 	set category = "IC.Settings"
 	set src in usr
 
-	var/current_color = eye_rgb()
-	var/new_color = tgui_color_picker(owner, "Pick a new color for your eyes.","Eye Color", current_color)
+	if(!owner)
+		return
+	om_ask(owner, /datum/om/prompt/color/eye_color, PROC_REF(eye_color_picked), default = eye_rgb())
+
+/datum/om/prompt/color/eye_color
+	title = "Eye Color"
+	message = "Pick a new color for your eyes."
+
+/datum/om/prompt/color/eye_color/valid()
+	var/obj/item/organ/internal/eyes/E = receiver
+	if(!istype(E) || E.owner != answerer)
+		return "no longer your eyes"
+	return null
+
+/obj/item/organ/internal/eyes/proc/eye_color_picked(datum/om/prompt/color/eye_color/ask)
+	var/new_color = ask.picked_color
 	if(new_color && owner)
 		// input() supplies us with a hex color, which we can't use, so we convert it to rbg values.
 		var/list/new_color_rgb_list = hex2rgb(new_color)

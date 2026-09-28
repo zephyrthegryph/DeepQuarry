@@ -702,7 +702,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),
 		span_notice("You begin installing [src] into [T]'s chest by just stuffing it in."),
 		"There's a wet SQUISH noise.")
-		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, list("receiver" = src, "eo" = eo, "target_zone" = BP_TORSO))
+		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
 		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()

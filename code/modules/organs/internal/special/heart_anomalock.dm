@@ -93,7 +93,7 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 			balloon_alert(user, "can't remove core!")
 			return FALSE
 		balloon_alert(user, "removing core...")
-		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, list("receiver" = src))
+		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, receiver = src)
 		return TRUE
 
 	return ..()

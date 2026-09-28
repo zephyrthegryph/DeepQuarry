@@ -1378,9 +1378,8 @@ REF_OWNED(/obj/machinery/light, "cell")
 				brightness_power = new_power
 
 		if("Normal Color")
-			var/new_color = tgui_color_picker(user, "Choose a color to set the light to!", "", brightness_color)
-			if(new_color)
-				brightness_color = new_color
+			om_ask(user, /datum/om/prompt/color/light_bulb, PROC_REF(bulb_color_picked), default = brightness_color, nightshift = FALSE)
+			return ITEM_INTERACT_SUCCESS
 
 		if("Nightshift Range")
 			var/new_range = rerun_prompt(user, "k1385", list("kind" = "number", "message" = "Choose the new range of the light! (1-[init_nightshift_range])", "default" = init_nightshift_range, "max" = init_nightshift_range, "min" = 1), TYPE_PROC_REF(/atom, multitool_act), args)
@@ -1397,9 +1396,8 @@ REF_OWNED(/obj/machinery/light, "cell")
 				nightshift_power = new_power
 
 		if("Nightshift Color")
-			var/new_color = tgui_color_picker(user, "Choose a color to set the light to!", "", nightshift_color)
-			if(new_color)
-				nightshift_color = new_color
+			om_ask(user, /datum/om/prompt/color/light_bulb, PROC_REF(bulb_color_picked), default = nightshift_color, nightshift = TRUE)
+			return ITEM_INTERACT_SUCCESS
 
 		else //Should never happen.
 			return ITEM_INTERACT_BLOCKING
@@ -1743,3 +1741,23 @@ REF_OWNED(/obj/machinery/light, "cell")
 /obj/machinery/light/proc/surge_break()
 	on = 1
 	broken()
+
+/// A multitool recolouring a bulb (normal or nightshift colour).
+/datum/om/prompt/color/light_bulb
+	message = "Choose a color to set the light to!"
+	ask_flags = ASK_CAPABLE
+	var/nightshift = FALSE
+
+/obj/item/light/proc/bulb_color_picked(datum/om/prompt/color/light_bulb/ask)
+	var/new_color = ask.picked_color
+	if(!new_color)
+		return
+	if(ask.nightshift)
+		nightshift_color = new_color
+	else
+		brightness_color = new_color
+	if(istype(loc, /obj/machinery/light))
+		var/obj/machinery/light/fixture = loc
+		fixture.update_from_bulb(src)
+		fixture.update()
+		fixture.update()

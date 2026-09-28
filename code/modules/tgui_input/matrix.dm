@@ -184,7 +184,7 @@
 			active_mode = text2num(params["mode"])
 			return TRUE
 		if("choose_color")
-			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), title = "[title] colour picking", message = "Choose a color: ", default = activecolor)
+			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), title = "[title] colour picking", message = "Choose a color: ", default = activecolor, ui_refresh = src)
 			return TRUE
 		if("paint")
 			if(!do_paint(ui.user, !was_path))
@@ -231,7 +231,6 @@
 
 /datum/tgui_input_colormatrix/proc/color_chosen(datum/om/prompt/color/ask)
 	activecolor = ask.picked_color
-	SStgui.update_uis(src)
 
 /datum/tgui_input_colormatrix/proc/set_entry(entry)
 	src.entry = entry

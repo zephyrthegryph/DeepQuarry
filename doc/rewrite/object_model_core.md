@@ -778,9 +778,9 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   typed vars, and the caller's `src` rides along as the receiver default (the first of src,
   target and actor that has the `complete_proc`/`cancel_proc`/`check_proc`/a step proc, else
   src). A `complete_proc` of the task's own type runs on the task with no arguments, so it reads
-  the state as its own vars. A var the type doesn't declare is a CRASH on first run. The old
-  `list("key" = value)` form still works (receiver defaults to the actor) and is ratcheted by
-  `api_lints.py` (`task_params_list`).
+  the state as its own vars. A var the type doesn't declare is a CRASH on first run. A positional
+  `list("key" = value)` is refused; `api_lints.py` (`task_params_list`, ceiling 0) keeps it out.
+  Code that builds its own params list calls `om_task_launch()`.
 
   Before (`code/game/objects/items/stacks/medical.dm`, `code/modules/clothing/glasses/glasses.dm`):
 
@@ -820,13 +820,25 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   receiver when it's an atom). `ask_flags` cover the common re-checks: `ASK_ALIVE`,
   `ASK_CONSCIOUS`, `ASK_CAPABLE` (answerer and asker), `ASK_ADJACENT` (answerer next to the
   asker, or to the subject when they're the same mob), `ASK_NEAR_SUBJECT`, `ASK_HELD` /
-  `ASK_CARRIED` (the subject is still in the asker's hands / on them), `ASK_FACE_TO_FACE`. Any
+  `ASK_CARRIED` (the subject is still in the asker's hands / on them), `ASK_RESTRAINED`,
+  `ASK_FACE_TO_FACE`. Any
   failure drops the answer and calls `refused(reason)`. Datums in the type's scalar vars (and
   the three roles) are held as handles while the window is open, so a deleted one drops the
   answer. `om_ask(answerer, type, PROC_REF(cb), var = value...)` is a macro: `cb` runs on the
-  caller's `src` with the prompt as its one argument. The string-keyed
-  `om_prompt(E, user, list(...), cb)` form still works and is ratcheted (`api_lints.py`,
-  `prompt_spec`).
+  caller's `src` with the prompt as its one argument (`receiver = X` runs it on X; the prompt's
+  typed `receiver` var is that datum in every hook; in a global proc pass a `/proc/` path).
+  More options, on every kind: `optional = TRUE` (a cancel answers null instead of calling
+  `cancelled()`), confirm `cancel_text` / choice `cancel_choice` (a cancel button: Yes/No/Cancel,
+  which stops a flow), `hold_strong = list("var")` (state the prompt created and nothing else
+  owns, held as a plain reference), `ui_refresh = X` (X's tgui windows refresh after the answer
+  proc), and `answer_value()` for procs serving several kinds. A cancel, and a `cancel_answer`,
+  is never refused by the re-checks. Kind `colormatrix` is the ColorMate window (`preview`,
+  `matrix_only`, `ui_state`; answer `matrix`).
+  A data-driven list of questions is `om_ask_sequence(owner, answerer, steps, on_done, subject,
+  requires, on_stop, data)` (flow.dm): steps are typed prompts (with `key`) or procs returning
+  one, and `seq.get(key)` reads the answers. `om_prompt()` is the plumbing underneath and is
+  not called outside `code/datums/om` (`api_lints.py`, `prompt_spec`, ceiling 0); the old
+  `om_prompt_sequence()`/`om_prompt_chain()` are deleted.
 
   Before (`code/modules/mob/living/carbon/human/species/species_shapeshift.dm`):
 
@@ -1038,7 +1050,7 @@ counted total ratchets to 0.
 |---|---|---|---|
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
 | Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, var = value...)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()`; a `list("key" = value)` params list | `api_lints.py` (`do_after_state`, `use_tool_state`, `task_params_list`), `scheduler_lints.py` (`do_after`) |
-| Ask a player | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value...)` (§11) | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()`; the string-keyed spec of `om_prompt()`/`om_prompt_sequence()`/`om_prompt_chain()` | `scheduler_lints.py` (`prompts`), `api_lints.py` (`prompt_spec`) |
+| Ask a player | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value...)` (§11) | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()`; a string-keyed `om_prompt()` spec | `scheduler_lints.py` (`prompts`), `api_lints.py` (`prompt_spec`) |
 | Do an action in steps (take time, ask, act) | one flow type, `om_flow_start(/datum/om/flow/x, actor, target, var = value...)`, its steps chained with `wait()` / `om_ask()` (§11) | several procs passing state through `done_args`, prompt `data` or chained task params, each re-checking by hand | `api_lints.py` (`prompt_spec`, `task_params_list`) |
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()`; a raw `world.time` compare against a hand-kept timestamp or deadline | `api_lints.py` (`timer_cooldown`), `cooldown_lint.py` |

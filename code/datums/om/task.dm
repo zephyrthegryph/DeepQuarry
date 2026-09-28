@@ -167,14 +167,12 @@
  * (duration, receiver, ...). Every datum among them is held: deleting it cancels the task.
  * `starter` is the caller's src (the macro passes it): without an explicit receiver, the
  * receiver is the first of starter, target and actor that has the complete_proc (or
- * cancel_proc/check_proc/a step proc). The old form, a positional list("key" = value) after
- * the target, still works (the receiver then defaults to the actor) and is counted by
- * api_lints.py (task_params_list). Returns the task, or a text reason it can't start.
+ * cancel_proc/check_proc/a step proc). A positional params list is refused (name each
+ * argument). Returns the task, or a text reason it can't start.
  */
 /proc/om_task_begin(task, datum/actor, list/rest, datum/starter)
 	var/datum/target
 	var/list/params = list()
-	var/legacy = FALSE
 	var/positional = 0
 	for(var/i in 1 to length(rest))
 		var/entry = rest[i]
@@ -184,15 +182,9 @@
 		positional++
 		if(positional == 1)
 			target = entry
-		else if(positional == 2 && (isnull(entry) || islist(entry)))
-			// om_task_start(type, actor, target, list("key" = value)): the deprecated list form.
-			var/list/old = entry
-			for(var/key in old)
-				params[key] = old[key]
-			legacy = TRUE
 		else
 			CRASH("om: task [task] was given a positional argument ([entry]); name it (var = value)")
-	return om_task_launch(task, actor, target, params, starter, legacy)
+	return om_task_launch(task, actor, target, params, starter)
 
 /// Starts a task from a built params list (var name -> value): om_task_begin() and the helpers
 /// that build their own (om_do_after(), flows). `legacy`: the receiver defaults to the actor.

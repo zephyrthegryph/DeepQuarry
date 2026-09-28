@@ -28,8 +28,8 @@ never rise. Most are at 0; the rest are ratchets a sweep lowers.
     raw_world_bind   a vg_world_* subscription or step bind outside code/datums/om/world_watch.dm:
                      subscribe with om_world_at/on_key/on_change/when/on_rate (sec 4.8)
     string_keys      a string passed to om_world_publish()/om_world_on_key(): keys are numbers
-    prompt_spec      om_prompt()/om_prompt_sequence()/om_prompt_chain() outside code/datums/om:
-                     the string-keyed spec list form. Ask with a typed prompt,
+    prompt_spec      om_prompt() outside code/datums/om: the string-keyed spec list form
+                     (om_prompt_sequence()/om_prompt_chain() are deleted). Ask with a typed prompt,
                      om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value),
                      and a multi-step action is a flow (/datum/om/flow/x)
     task_params_list om_task_start() given a positional params list (list("key" = value)):

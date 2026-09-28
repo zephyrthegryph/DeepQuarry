@@ -441,11 +441,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 			return TRUE
 
 		if("set_new_message")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(story_written), message = "Write your Feed story", title = "Network Channel Handler", default = "", max_length = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, requires = PROMPT_USABLE)
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(story_written), message = "Write your Feed story", title = "Network Channel Handler", default = "", max_length = MAX_MESSAGE_LEN, multiline = TRUE, encode = FALSE, requires = PROMPT_USABLE, ui_refresh = src)
 			return TRUE
 
 		if("set_new_title")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(title_written), message = "Enter your Feed title", title = "Network Channel Handler", default = "", max_length = MAX_KEYPAD_INPUT_LEN, requires = PROMPT_USABLE)
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(title_written), message = "Enter your Feed title", title = "Network Channel Handler", default = "", max_length = MAX_KEYPAD_INPUT_LEN, requires = PROMPT_USABLE, ui_refresh = src)
 			return TRUE
 
 		if("set_attachment")
@@ -604,12 +604,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 /obj/machinery/newscaster/proc/story_written(datum/om/prompt/text/ask)
 	var/text = ask.text
 	msg = sanitize(text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
-	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/title_written(datum/om/prompt/text/ask)
 	var/text = ask.text
 	title = text
-	SStgui.update_uis(src)
 
 /obj/machinery/newscaster/proc/wanted_change_confirmed(datum/om/prompt/confirm/ask)
 	var/mob/user = ask.answerer

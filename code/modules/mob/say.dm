@@ -329,8 +329,8 @@
 	else
 		emote_vr(message)
 
-/// `ask` carries the answers of earlier questions (the mode, the belly or person picked) when a prompt re-enters this.
-/mob/proc/custom_emote_vr(m_type=1,message = null,mode_selection = FALSE, datum/om/prompt/ask) //This would normally go in emote.dm
+/// `picked_mode` and `picked` carry the answers of earlier questions (the mode, the belly or person picked) when a prompt re-enters this.
+/mob/proc/custom_emote_vr(m_type=1,message = null,mode_selection = FALSE, picked_mode, datum/picked) //This would normally go in emote.dm
 	if(stat || !use_me && usr == src)
 		to_chat(src, "You are unable to emote.")
 		return
@@ -348,10 +348,10 @@
 	if(autowhisper && autowhisper_mode && !mode_selection)
 		if(autowhisper_mode != "Psay/Pme")	//This isn't actually a custom subtle mode, so we shouldn't use it!
 			subtle_mode = autowhisper_mode
-	if(ask)
-		subtle_mode = ask.get("mode")
+	if(picked_mode)
+		subtle_mode = picked_mode
 	if(mode_selection && !subtle_mode)
-		om_prompt(src, src, list("kind" = "list", "message" = "Select Custom Subtle Mode", "title" = "Custom Subtle Mode", "choices" = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person"), "on_cancel" = PROC_REF(custom_subtle_cancelled), "data" = list("m_type" = m_type, "text" = message, "key" = "mode")), PROC_REF(custom_subtle_picked))
+		om_ask(src, /datum/om/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), title = "Custom Subtle Mode", message = "Select Custom Subtle Mode", choices = list("Adjacent Turfs (Default)", "My Turf", "My Table", "Current Belly (Prey)", "Specific Belly (Pred)", "Specific Person"), m_type = m_type, text = message)
 		return
 	if(!subtle_mode)
 		if(mode_selection)
@@ -363,7 +363,7 @@
 
 	var/input
 	if(!message)
-		om_prompt(src, src, list("kind" = "text", "message" = "Choose an emote to display.", "encode" = FALSE, "data" = list("m_type" = m_type, "mode" = subtle_mode)), PROC_REF(custom_subtle_text_entered))
+		om_ask(src, /datum/om/prompt/text/custom_subtle, PROC_REF(custom_subtle_text_entered), m_type = m_type, subtle_mode = subtle_mode)
 		return
 	input = message
 
@@ -454,9 +454,9 @@
 				if(!(L.vore_organs) || !(length(L.vore_organs)))
 					to_chat(src, span_warning("You do not have any bellies. Your input has not been sent, but preserved:") + " [input]")
 					return
-				var/obj/belly/B = ask?.get("belly")
+				var/obj/belly/B = picked
 				if(!B)
-					custom_subtle_pick(m_type, input, subtle_mode, "belly", list("kind" = "list", "message" = "Which belly do you want to sent the subtle to?", "title" = "Select Belly", "choices" = L.vore_organs))
+					om_ask(src, /datum/om/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), title = "Select Belly", message = "Which belly do you want to sent the subtle to?", choices = L.vore_organs, m_type = m_type, text = input, subtle_mode = subtle_mode)
 					return
 				if(!istype(B) || B.owner != L)
 					to_chat(src, span_warning("You have not selected a valid belly. Your input has not been sent, but preserved:") + " [input]")
@@ -489,9 +489,9 @@
 				if(!(vis_mobs.len))
 					to_chat(src, span_warning("No valid targets found. Your input has not been sent, but preserved:") + " [input]")
 					return
-				var/target = ask?.get("target")
+				var/target = picked
 				if(!target)
-					custom_subtle_pick(m_type, input, subtle_mode, "target", list("kind" = "list", "message" = "Who do we send our message to?", "title" = "Select Target", "choices" = vis_mobs))
+					om_ask(src, /datum/om/prompt/choice/custom_subtle, PROC_REF(custom_subtle_picked), title = "Select Target", message = "Who do we send our message to?", choices = vis_mobs, m_type = m_type, text = input, subtle_mode = subtle_mode)
 					return
 				if(!(target in vis_mobs))
 					to_chat(src, span_warning("No target selected. Your input has not been sent, but preserved:") + " [input]")
@@ -556,24 +556,36 @@
 
 ///// PSAY /////
 
-/// Asks one more question of a custom subtle emote; the answer re-enters custom_emote_vr().
-/mob/proc/custom_subtle_pick(m_type, text, subtle_mode, key, list/spec)
-	spec["on_cancel"] = PROC_REF(custom_subtle_cancelled)
-	spec["data"] = list("m_type" = m_type, "text" = text, "mode" = subtle_mode, "key" = key)
-	om_prompt(src, src, spec, PROC_REF(custom_subtle_picked))
+/// One more question of a custom subtle emote: the mode (subtle_mode unset), else the belly or
+/// person for that mode. The answer re-enters custom_emote_vr().
+/datum/om/prompt/choice/custom_subtle
+	var/m_type
+	/// The emote typed so far (null: asked after the pick).
+	var/text
+	var/subtle_mode
 
-/mob/proc/custom_subtle_picked(mob/user, answer, datum/om/prompt/ask)
-	ask.put(ask.get("key"), answer)
-	custom_emote_vr(ask.get("m_type"), ask.get("text"), FALSE, ask)
+/datum/om/prompt/choice/custom_subtle/cancelled()
+	unpark()
+	if(text && answerer)
+		to_chat(answerer, span_warning("Nothing was picked. Your input has not been sent, but preserved:") + " [text]")
 
-/mob/proc/custom_subtle_cancelled(mob/user, datum/om/prompt/ask)
-	if(ask.get("text"))
-		to_chat(src, span_warning("Nothing was picked. Your input has not been sent, but preserved:") + " [ask.get("text")]")
+/// The emote text of a custom subtle emote whose mode is already known.
+/datum/om/prompt/text/custom_subtle
+	message = "Choose an emote to display."
+	encode = FALSE
+	var/m_type
+	var/subtle_mode
 
-/mob/proc/custom_subtle_text_entered(mob/user, text, datum/om/prompt/ask)
-	text = sanitize_or_reflect(text, src)
+/mob/proc/custom_subtle_picked(datum/om/prompt/choice/custom_subtle/ask)
+	if(ask.subtle_mode)
+		custom_emote_vr(ask.m_type, ask.text, FALSE, ask.subtle_mode, ask.choice)
+	else
+		custom_emote_vr(ask.m_type, ask.text, FALSE, ask.choice)
+
+/mob/proc/custom_subtle_text_entered(datum/om/prompt/text/custom_subtle/ask)
+	var/text = sanitize_or_reflect(ask.text, src)
 	if(text)
-		custom_emote_vr(ask.get("m_type"), text, FALSE, ask)
+		custom_emote_vr(ask.m_type, text, FALSE, ask.subtle_mode)
 
 /mob/verb/psay(message as text)
 	set name = "Psay"
@@ -852,9 +864,10 @@
 	set name = "Select Speech Bubble"
 	set category = "OOC.Chat Settings"
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Pick new voice (default for automatic selection)", "title" = "Character Preference", "choices" = GLOB.selectable_speech_bubbles), PROC_REF(speech_bubble_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_bubble_chosen), title = "Character Preference", message = "Pick new voice (default for automatic selection)", choices = GLOB.selectable_speech_bubbles)
 
-/mob/proc/speech_bubble_chosen(mob/user, new_speech_bubble, datum/om/prompt/ask)
+/mob/proc/speech_bubble_chosen(datum/om/prompt/choice/ask)
+	var/new_speech_bubble = ask.choice
 	if(new_speech_bubble)
 		custom_speech_bubble = new_speech_bubble
 		if(dna)

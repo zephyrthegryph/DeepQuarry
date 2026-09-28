@@ -671,7 +671,7 @@
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	var/started = om_task_start(/datum/om/task/timed/external_robo_repair, user, src, list("receiver" = src, "repair_amount" = repair_amount, "damage_type" = damage_type, "damage_desc" = damage_desc, "tool" = tool, "damage_amount" = damage_amount, "tool_proc" = tool_proc, "tool_args" = tool_args))
+	var/started = om_task_start(/datum/om/task/timed/external_robo_repair, user, src, receiver = src, repair_amount = repair_amount, damage_type = damage_type, damage_desc = damage_desc, tool = tool, damage_amount = damage_amount, tool_proc = tool_proc, tool_args = tool_args)
 	return !istext(started)
 
 /obj/item/organ/external/proc/robo_repair_failed(datum/om/task/timed/external_robo_repair/task)

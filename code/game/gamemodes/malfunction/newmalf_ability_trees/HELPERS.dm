@@ -33,8 +33,8 @@
 	var/precheck_override = 0
 	/// The silicon or machine the ability is used on.
 	var/atom/malf_target
-	/// A datum the question is about, kept in a list (datum vars are held only as handles).
-	var/list/options
+	/// The hardware piece being confirmed (made for the question: held strongly).
+	var/datum/malf_hardware/hardware
 
 /datum/om/prompt/confirm/malf/valid()
 	if(!isnull(price) && !ability_prechecks(answerer, price, precheck_override))
@@ -71,7 +71,7 @@
 	if(!C.desc)
 		log_world("## ERROR Hardware without description: [C]")
 		return
-	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_hardware_confirmed), title = "Hardware selection", message = "[C.desc] - Is this what you want?", answer_on_no = TRUE, options = list(C))
+	om_ask(user, /datum/om/prompt/confirm/malf, GLOBAL_PROC_REF(malf_hardware_confirmed), title = "Hardware selection", message = "[C.desc] - Is this what you want?", answer_on_no = TRUE, hardware = C, hold_strong = list("hardware"))
 
 /proc/malf_hardware_confirmed(datum/om/prompt/confirm/malf/ask)
 	var/mob/living/silicon/ai/user = ask.answerer
@@ -81,7 +81,7 @@
 	if(user.hardware)
 		to_chat(user, "You have already selected your hardware.")
 		return
-	var/datum/malf_hardware/C = ask.options[1]
+	var/datum/malf_hardware/C = ask.hardware
 	C.owner = user
 	C.install()
 

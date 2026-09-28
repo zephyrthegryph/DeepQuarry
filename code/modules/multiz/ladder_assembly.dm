@@ -55,14 +55,14 @@
 				return ITEM_INTERACT_BLOCKING
 			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
 			user.visible_message("\The [user] starts to weld \the [src] to the floor.", "You start to weld \the [src] to the floor.", "You hear welding")
-			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, list("receiver" = src, "WT" = WT, "from_state" = LADDER_CONSTRUCTION_WRENCHED))
+			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WRENCHED)
 		if(LADDER_CONSTRUCTION_WELDED)
 			if(!WT.remove_fuel(0, user))
 				to_chat(user, span_warning("You need more welding fuel to complete this task."))
 				return ITEM_INTERACT_BLOCKING
 			playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
 			user.visible_message("\The [user] starts to cut \the [src] free from the floor.", "You start to cut \the [src] free from the floor.", "You hear welding")
-			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, list("receiver" = src, "WT" = WT, "from_state" = LADDER_CONSTRUCTION_WELDED))
+			om_task_start(/datum/om/task/timed/ladder_assembly_weld, user, src, receiver = src, WT = WT, from_state = LADDER_CONSTRUCTION_WELDED)
 	return ITEM_INTERACT_SUCCESS
 
 /datum/om/task/timed/ladder_assembly_weld

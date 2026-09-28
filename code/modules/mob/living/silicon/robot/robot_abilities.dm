@@ -187,7 +187,7 @@
 
 /mob/living/silicon/robot/proc/dq_do_recolour(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	om_prompt(src, src, list("kind" = "colormatrix", "message" = "Allows you to recolor yourself", "title" = "Robot Recolor", "preview" = src, "ui_state" = GLOB.tgui_conscious_state), null)
+	om_ask(src, /datum/om/prompt/colormatrix, null, title = "Robot Recolor", message = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 	return TRUE
 
 // ---------------------------------------------------------------------------

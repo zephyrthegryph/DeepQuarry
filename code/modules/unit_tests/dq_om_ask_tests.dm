@@ -103,11 +103,6 @@
 	TEST_ASSERT_EQUAL(T.receiver, target, "the receiver defaults to the first of src, target, actor that has the complete_proc")
 	om_task_cancel(T)
 
-	var/datum/om/task/test_named/L = om_task_start(/datum/om/task/test_named, actor, target, list("amount" = 4))
-	TEST_ASSERT_EQUAL(L.amount, 4, "the old params-list form still works")
-	TEST_ASSERT_EQUAL(L.receiver, actor, "the old form keeps the actor as the receiver default")
-	om_task_cancel(L)
-
 	var/datum/om/task/test_named/own/O = om_task_start(/datum/om/task/test_named/own, actor, null, amount = 5)
 	om_task_complete(O)
 	TEST_ASSERT_EQUAL(actor.log.Join(","), "own:5", "a complete_proc of the task's own type runs on the task, reading its vars")

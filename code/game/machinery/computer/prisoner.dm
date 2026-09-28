@@ -82,7 +82,7 @@
 				to_chat(ui.user, "Unauthorized Access.")
 			. = TRUE
 		if("warn")
-			om_ask(ui.user, /datum/om/prompt/text/implant_warning, PROC_REF(warning_entered), imp_ref = params["imp"])
+			om_ask(ui.user, /datum/om/prompt/text/implant_warning, PROC_REF(warning_entered), imp_ref = params["imp"], ui_refresh = src)
 			. = TRUE
 	add_fingerprint(ui.user)
 
@@ -98,4 +98,3 @@
 	var/obj/item/implant/I = locate(ask.imp_ref)
 	if(I && I.imp_in)
 		to_chat(I.imp_in, span_notice("You hear a voice in your head saying: '[ask.text]'"))
-	SStgui.update_uis(src)

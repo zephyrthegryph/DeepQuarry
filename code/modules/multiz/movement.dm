@@ -62,7 +62,7 @@
 			var/pull_up_time = max((3 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 			to_chat(src, span_notice("You start diving underwater..."))
 			src.audible_message(span_notice("[src] begins to dive under the water."), runemessage = "splish splosh")
-			om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You reach the sea floor.", "fail_message" = span_warning("You stopped swimming downwards.")))
+			om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You reach the sea floor.", fail_message = span_warning("You stopped swimming downwards."))
 			return 0
 
 		else if(!destination.CanZPass(src, direction)) // one for the down and non-special case
@@ -84,14 +84,14 @@
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * climb_modifier), 1)
 				to_chat(src, span_notice("You grab \the [lattice] and start pulling yourself upward..."))
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You pull yourself up.", "fail_message" = span_warning("You gave up on pulling yourself up.")))
+				om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You pull yourself up.", fail_message = span_warning("You gave up on pulling yourself up."))
 				return 0
 
 			else if(isdiveablewater(destination))
 				var/pull_up_time = max((5 SECONDS + (src.movement_delay() * 10) * swim_modifier), 1)
 				to_chat(src, span_notice("You start swimming upwards..."))
 				src.audible_message(span_notice("[src] begins to swim towards the surface."), runemessage = "splish splosh")
-				om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You reach the surface.", "fail_message" = span_warning("You stopped swimming upwards.")))
+				om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You reach the surface.", fail_message = span_warning("You stopped swimming upwards."))
 				return 0
 
 			else if(catwalk?.hatch_open)
@@ -103,7 +103,7 @@
 					to_chat(src, span_notice("There's something in the way up above in that direction, try another."))
 					return 0
 				src.audible_message(span_notice("[src] begins climbing up \the [lattice]."), runemessage = "clank clang")
-				om_task_start(/datum/om/task/timed/zmove, src, null, list("duration" = pull_up_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You pull yourself up.", "fail_message" = span_warning("You gave up on pulling yourself up.")))
+				om_task_start(/datum/om/task/timed/zmove, src, null, duration = pull_up_time, direction = direction, start = start, destination = destination, done_message = "You pull yourself up.", fail_message = span_warning("You gave up on pulling yourself up."))
 				return 0
 
 			// Explicit check if the destination turf allows full passing
@@ -121,7 +121,7 @@
 					var/fly_time = max(7 SECONDS + (H.movement_delay() * 10), 1) //So it's not too useful for combat. Could make this variable somehow, but that's down the road.
 					to_chat(src, span_notice("You begin to fly upwards..."))
 					H.audible_message(span_notice("[H] begins to flap \his wings, preparing to move upwards!"), runemessage = "flap flap")
-					om_task_start(/datum/om/task/timed/zmove, H, null, list("duration" = fly_time, "direction" = direction, "start" = start, "destination" = destination, "done_message" = "You fly upwards.", "needs_flight" = TRUE, "fail_message" = span_warning("You stopped flying upwards.")))
+					om_task_start(/datum/om/task/timed/zmove, H, null, duration = fly_time, direction = direction, start = start, destination = destination, done_message = "You fly upwards.", needs_flight = TRUE, fail_message = span_warning("You stopped flying upwards."))
 					return 0
 				else
 					to_chat(src, span_warning("Gravity stops you from moving upward."))
@@ -890,7 +890,7 @@
 		blind_message = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, list("receiver" = src, "duration" = climb_time, "above_mob" = above_mob, "above_wall" = above_wall, "fall_chance" = fall_chance, "drop_our_held" = drop_our_held, "nutrition_cost" = nutrition_cost, "fall_after" = world.time + grace_time))
+	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_after = world.time + grace_time)
 
 /datum/om/task/timed/simulated_climb_wall
 	complete_proc = /turf/simulated/proc/climb_wall_done
@@ -1039,7 +1039,7 @@
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/living_climb_down, src, src, list("duration" = climb_time, "front_of_us" = front_of_us, "destination" = destination, "below_wall" = below_wall, "fall_chance" = fall_chance, "nutrition_cost" = nutrition_cost, "fall_after" = world.time + grace_time))
+	om_task_start(/datum/om/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_after = world.time + grace_time)
 
 /datum/om/task/timed/living_climb_down
 	complete_proc = /mob/living/proc/climb_down_done

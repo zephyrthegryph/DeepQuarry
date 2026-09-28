@@ -83,7 +83,6 @@
 	else
 		base_color = ask.picked_color
 	update_icon()
-	SStgui.update_uis(src)
 
 /obj/item/toy/plushie/customizable/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -124,7 +123,7 @@
 			var/target = added_overlays[selected_icon_state]
 			if(!target)
 				return FALSE
-			om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = possible_overlays[selected_icon_state], default = base_color, overlay_state = selected_icon_state)
+			om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = possible_overlays[selected_icon_state], default = base_color, overlay_state = selected_icon_state, ui_refresh = src)
 
 		if("move_overlay_up")
 			var/target = params["icon"]
@@ -148,7 +147,7 @@
 
 		if("change_base_color")
 			. = TRUE
-			om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = "Plushie base color", default = base_color)
+			om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = "Plushie base color", default = base_color, ui_refresh = src)
 
 		if("set_overlay_alpha")
 			var/target = added_overlays[params["icon_state"]]

@@ -312,7 +312,6 @@
 	if(!ask.picked_color)
 		return
 	radiation_color = ask.picked_color
-	SStgui.update_uis(src)
 
 /datum/component/radiation_effects/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -320,7 +319,7 @@
 
 	switch(action)
 		if("toggle_color")
-			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color)
+			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src)
 			return FALSE
 		if("toggle_glow")
 			glows = !glows

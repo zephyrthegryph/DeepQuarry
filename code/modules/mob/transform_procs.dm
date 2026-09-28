@@ -244,9 +244,16 @@
 /mob/living/carbon/human/Animalize(mob/user)
 
 	var/list/mobtypes = typesof(/mob/living/simple_mob)
-	om_prompt(src, user, list("kind" = "list", "message" = "Which type of mob should [src] turn into?", "title" = "Choose a type", "choices" = mobtypes, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(animalize_type_chosen))
+	om_ask(user, /datum/om/prompt/choice/animalize_type, PROC_REF(animalize_type_chosen), message = "Which type of mob should [src] turn into?", choices = mobtypes)
 
-/mob/living/carbon/human/proc/animalize_type_chosen(mob/user, mobpath, datum/om/prompt/ask)
+/// The simple mob type an admin turns a mob into.
+/datum/om/prompt/choice/animalize_type
+	title = "Choose a type"
+	requires = PROMPT_ADMIN(R_SPAWN)
+
+/mob/living/carbon/human/proc/animalize_type_chosen(datum/om/prompt/choice/animalize_type/ask)
+	var/mob/user = ask.answerer
+	var/mobpath = ask.choice
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return
@@ -278,9 +285,11 @@
 /mob/proc/Animalize(mob/user)
 
 	var/list/mobtypes = typesof(/mob/living/simple_mob)
-	om_prompt(src, user, list("kind" = "list", "message" = "Which type of mob should [src] turn into?", "title" = "Choose a type", "choices" = mobtypes, "requires" = PROMPT_ADMIN(R_SPAWN)), PROC_REF(mob_animalize_type_chosen))
+	om_ask(user, /datum/om/prompt/choice/animalize_type, PROC_REF(mob_animalize_type_chosen), message = "Which type of mob should [src] turn into?", choices = mobtypes)
 
-/mob/proc/mob_animalize_type_chosen(mob/user, mobpath, datum/om/prompt/ask)
+/mob/proc/mob_animalize_type_chosen(datum/om/prompt/choice/animalize_type/ask)
+	var/mob/user = ask.answerer
+	var/mobpath = ask.choice
 	if(!safe_animal(mobpath))
 		to_chat(user, span_red("Sorry but this mob type is currently unavailable."))
 		return

@@ -89,7 +89,6 @@
 	if(!ask.picked_color)
 		return
 	silk_color = ask.picked_color
-	SStgui.update_uis(src)
 
 //TGUI Weaver Panel
 /datum/component/weaver/tgui_interact(mob/user, datum/tgui/ui)
@@ -141,7 +140,7 @@
 
 	switch(action)
 		if("new_silk_color")
-			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color)
+			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color, ui_refresh = src)
 			return FALSE
 		if("toggle_silk_production")
 			silk_production = !(silk_production)

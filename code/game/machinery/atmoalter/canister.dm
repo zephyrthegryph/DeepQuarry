@@ -413,7 +413,7 @@ update_flag
 				pressure = 10*ONE_ATMOSPHERE
 				. = TRUE
 			else if(pressure == "input")
-				om_ask(ui.user, /datum/om/prompt/number/canister_pressure, PROC_REF(release_pressure_entered), title = name, default = release_pressure)
+				om_ask(ui.user, /datum/om/prompt/number/canister_pressure, PROC_REF(release_pressure_entered), title = name, default = release_pressure, ui_refresh = src)
 				return TRUE
 			else if(text2num(pressure) != null)
 				pressure = text2num(pressure)
@@ -476,7 +476,6 @@ update_flag
 
 /obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(datum/om/prompt/number/canister_pressure/ask)
 	release_pressure = clamp(round(ask.number), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
-	SStgui.update_uis(src)
 
 /obj/machinery/portable_atmospherics/canister/phoron/Initialize(mapload)
 	. = ..()

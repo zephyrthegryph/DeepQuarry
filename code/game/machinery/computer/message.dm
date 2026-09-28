@@ -209,7 +209,7 @@
 		//Find a server
 		if("find")
 			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-				om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE)
+				om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
 			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 				linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
@@ -329,7 +329,6 @@
 /obj/machinery/computer/message_monitor/proc/server_selected(datum/om/prompt/choice/ask)
 	linkedServer = ask.choice
 	set_temp("NOTICE: Server selected.", "alert")
-	SStgui.update_uis(src)
 
 /obj/machinery/computer/message_monitor/proc/current_key_entered(datum/om/prompt/text/ask)
 	var/dkey = trim(ask.text)
