@@ -760,7 +760,7 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		to_chat(src, span_warning("You lost your grip on [victim]!"))
 		return
 	if(client)	//Make sure we didn't d/c
-		transform_into_other_human(victim, FALSE, flavour, FALSE, FALSE)
+		transform_into_other_human(victim, new /datum/human_transform_options(copy_flavour = flavour, apply_bloodtype = FALSE))
 		visible_message(span_notify("[src] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
 
 

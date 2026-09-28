@@ -45,3 +45,16 @@
 	TEST_ASSERT_EQUAL(entry["band"], DIAG_BAND_CRITICAL, "a feigned death shows a critical brain")
 	qdel(D)
 	H.status_flags &= ~FAKEDEATH
+
+/// P2-F6: transform_into_other_human takes an options datum; the defaults keep our name.
+/datum/unit_test/dq_k_c_f6_transform_options
+
+/datum/unit_test/dq_k_c_f6_transform_options/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human)
+	H.name = "shifter"
+	victim.name = "target"
+	H.transform_into_other_human(victim)
+	TEST_ASSERT_EQUAL(H.name, "shifter", "the default options don't copy the name")
+	H.transform_into_other_human(victim, new /datum/human_transform_options(copy_name = TRUE))
+	TEST_ASSERT_EQUAL(H.name, "target", "copy_name copies the name")

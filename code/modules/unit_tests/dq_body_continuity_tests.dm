@@ -281,7 +281,7 @@
 	dq_test_injure_everywhere(victim)
 	var/victim_count = length(victim.body.afflictions)
 
-	H.transform_into_other_human(victim, FALSE)
+	H.transform_into_other_human(victim)
 	TEST_ASSERT_EQUAL(H.body, B, "transforming keeps the transformer's body")
 	TEST_ASSERT_EQUAL(length(H.body.afflictions), 1, "transforming should not copy the target's afflictions")
 	TEST_ASSERT(!QDELETED(mine) && mine.owner == H, "the transformer keeps its own afflictions")

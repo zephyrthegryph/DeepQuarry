@@ -506,7 +506,7 @@ REF_OWNED(/datum/protean_power, "button")
 		to_chat(H, span_warning("You lost your grip on [victim]!"))
 		return
 	if(H.client)
-		H.transform_into_other_human(victim, FALSE, input == "Yes", TRUE, FALSE)
+		H.transform_into_other_human(victim, new /datum/human_transform_options(copy_flavour = (input == "Yes"), convert_to_prosthetics = TRUE, apply_bloodtype = FALSE))
 		H.visible_message(span_notify("[H] adopts the form of [victim]!"), span_danger("You have reassembled into [victim]."))
 
 /mob/living/carbon/human/proc/nano_copy_body()
