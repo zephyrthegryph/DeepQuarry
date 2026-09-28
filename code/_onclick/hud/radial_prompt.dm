@@ -94,9 +94,7 @@
 	var/datum/om/prompt/om_prompt
 	var/menu_id
 
-/datum/radial_menu/om/declared_pair_vars()
-	var/static/list/pairs = list("om_prompt" = "ui")
-	return pairs
+DECLARE_REF(/datum/radial_menu/om, "om_prompt", PAIR, "ui")
 
 /datum/radial_menu/om/element_chosen(choice_id, mob/user)
 	var/answer = LAZYACCESS(choices_values, choice_id)
