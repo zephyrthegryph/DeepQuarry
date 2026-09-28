@@ -36,6 +36,7 @@
 
 /// The identity's DNA, or null if the datum was replaced and deleted.
 /datum/character_identity/proc/get_dna()
+	RETURN_TYPE(/datum/dna)
 	if(QDELETED(dna()))
 		dna_handle = null
 	return dna()
@@ -128,6 +129,7 @@ REF_OWNED(/mob/living, "own_identity")
 
 /// The mind's identity, adopting its current body's if it has none yet.
 /datum/mind/proc/get_identity()
+	RETURN_TYPE(/datum/character_identity)
 	if(!identity && isliving(current))
 		var/mob/living/L = current
 		identity = L.identity()

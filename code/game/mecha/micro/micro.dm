@@ -28,7 +28,7 @@
 	if(!melee_can_hit || !istype(target, /atom)) return
 	if(isliving(target))
 		var/mob/living/M = target
-		if(IS_HARMING(src?.slot_item(MECHA_SLOT_PILOT)))
+		if(pilot_is_harming())
 			playsound(src, 'sound/weapons/punch4.ogg', 50, 1)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)

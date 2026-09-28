@@ -89,6 +89,7 @@
 /// var/list/obj/item/cell/cells = contents_of(holder, /obj/item/cell)
 /// ```
 /proc/contents_of(atom/A, type)
+	RETURN_TYPE(/list)
 	if(!A)
 		return list()
 	if(!type)

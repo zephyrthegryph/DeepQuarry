@@ -439,7 +439,7 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 			continue // No expanding powerless rooms etc
 		areas[place.name] = place
 
-	om_ask(creator, /datum/om/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), receiver = AO, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs)
+	om_ask_begin(null, creator, /datum/om/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), list(receiver = AO, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs))
 
 /// Blueprint area prompts: the subject is the creator's turf, and they stay on it (BLUEPRINT_PROMPT_REQUIRES).
 /datum/om/prompt/choice/blueprint_expand
@@ -859,7 +859,7 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	om_ask(creator, /datum/om/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), receiver = creator, subject = get_turf(creator), turfs = turfs)
+	om_ask_begin(null, creator, /datum/om/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), list(receiver = creator, subject = get_turf(creator), turfs = turfs))
 
 /datum/om/prompt/text/blueprint_new_area
 	title = "Area Name"

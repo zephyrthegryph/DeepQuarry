@@ -85,11 +85,9 @@ REF_SPILL_LIST(/obj/machinery/clonepod, "containers")
 	name = "cloning pod"
 
 /datum/om/relation/slot/occupant/clonepod/on_link(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	target.set_occupant(source)
 
 /datum/om/relation/slot/occupant/clonepod/on_unlink(mob/living/source, obj/machinery/clonepod/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 

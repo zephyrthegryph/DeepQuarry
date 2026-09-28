@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		job_vars[key] = job_params[key]
 	if(!job_type)
 		job_type = claims ? /datum/om/task/timed/tool_job/claiming : /datum/om/task/timed/tool_job
-	var/datum/om/task/timed/tool_job/job = om_task_launch(job_type, actor, target, job_vars, src)
+	var/datum/om/task/timed/tool_job/job = om_task_launch(job_type, actor, target, job_vars, null)
 	if(istext(job))
 		return FALSE
 	if(job.state == OM_TASK_DONE)

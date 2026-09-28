@@ -13,6 +13,7 @@
 /// A shared, never-used instance per upgrade type, for detection by type
 /// (analyzers, admin tools).
 /proc/robot_upgrade_prototype(upgrade_type)
+	RETURN_TYPE(/obj/item/borg/upgrade)
 	var/static/list/prototypes = list()
 	if(!ispath(upgrade_type, /obj/item/borg/upgrade))
 		return null

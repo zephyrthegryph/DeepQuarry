@@ -54,6 +54,7 @@
 
 /// Wound afflictions located on this limb, attached or detached.
 /obj/item/organ/external/proc/get_wounds()
+	RETURN_TYPE(/list)
 	. = list()
 	var/list/source = owner?.body ? owner.body.afflictions_by_location?[src] : detached_afflictions
 	for(var/datum/affliction/wound/W in source)

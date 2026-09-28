@@ -55,6 +55,7 @@
 /// The default message lists every /obj/belly shares until a player customizes one (C7).
 /// Keyed by var name. Never mutate these: a write replaces the belly's var with a new list.
 /proc/belly_default_message_lists()
+	RETURN_TYPE(/list)
 	var/static/list/defaults = list(
 		"struggle_messages_outside" = list(
 			"%pred's %belly wobbles with a squirming meal.",

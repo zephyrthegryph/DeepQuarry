@@ -37,7 +37,7 @@
 
 /obj/machinery/meter/proc/select_target()
 	var/obj/machinery/atmospherics/pipe/P
-	for(is_in_holder(P, loc))
+	FOR_CONTENTS(P, loc)
 		if(!P.hides_under_flooring())
 			break
 	if(!P)

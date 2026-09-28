@@ -684,7 +684,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 					LAZYOR(items_preserved, brainbox)
 					hasMMI = brainbox // Adjust how MMI's are handled
 			for(var/slot in slots)
-				var/obj/item/I = M.get_equipped_item(slot = slot)
+				var/obj/item/I = M.get_equipped_item(slot)
 				if(I)
 					M.unEquip(I,force = TRUE)
 					if(contaminates)

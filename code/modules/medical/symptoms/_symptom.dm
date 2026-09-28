@@ -127,6 +127,7 @@
 
 /// The shared singleton for a symptom type.
 /proc/affliction_symptom(symptom_type)
+	RETURN_TYPE(/datum/affliction_symptom)
 	var/static/list/singletons = list()
 	. = singletons[symptom_type]
 	if(!.)

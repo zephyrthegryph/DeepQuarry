@@ -138,6 +138,7 @@
 
 /// Flat list of baselines, indexed by BF_*. Shared: never mutate.
 /proc/body_factor_baselines()
+	RETURN_TYPE(/list)
 	var/static/list/baselines
 	if(baselines)
 		return baselines
