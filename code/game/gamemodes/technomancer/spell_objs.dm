@@ -130,8 +130,6 @@
 // the caster forgets the spell.
 /obj/item/spell/on_destroy(force)
 	owner_ref()?.unref_spell(src)
-	owner_handle = null
-	core = null
 	..()
 
 // Proc: unref_spells()
@@ -297,7 +295,7 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 		on_throw_cast(hit_atom)
 
 	// If we miss or hit an obstacle, we still want to delete the spell.
-	om_qdel_after(src, 2 SECONDS)
+	expire(2 SECONDS)
 
 /// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spell/proc/owner_ref() as /mob/living

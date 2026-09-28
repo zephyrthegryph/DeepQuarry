@@ -58,12 +58,12 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	GLOB.areas_by_type[type] = src
 	return ..()
 
-/area/on_destroy(force)
+/area/lifecycle_dematerialize()
+	..()
 	// Dynamically created areas must not remain pinned by the type lookup after
 	// their turfs have been reassigned during map teardown.
 	if(GLOB.areas_by_type[type] == src)
 		GLOB.areas_by_type -= type
-	..()
 
 /area/Initialize(mapload)
 	apply_ceiling()

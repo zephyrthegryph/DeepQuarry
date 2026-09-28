@@ -264,7 +264,7 @@
 		var/obj/item/wheelchair/R = new folded_type(get_turf(src))
 		R.name = src.name
 		R.color = src.color
-		om_qdel_after(src, 0)
+		expire(0)
 		return
 
 /obj/structure/bed/chair/wheelchair/proc/check_pulled_along()

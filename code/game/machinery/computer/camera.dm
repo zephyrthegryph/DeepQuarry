@@ -137,7 +137,6 @@ REF_OWNED(/obj/machinery/computer/security/telescreen/entertainment, list("pinbo
 /obj/machinery/computer/security/telescreen/entertainment/on_destroy(force)
 	if(showing)
 		stop_showing()
-	vis_contents.Cut()
 	..()
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/toggle()

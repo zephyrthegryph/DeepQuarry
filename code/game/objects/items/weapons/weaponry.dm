@@ -96,7 +96,7 @@
 		qdel(src)
 
 	// If we miss or hit an obstacle, we still want to delete the net.
-	om_qdel_after(src, 1 SECOND)
+	expire(1 SECOND)
 
 /obj/effect/energy_net
 	name = "energy net"
@@ -124,13 +124,12 @@
 		qdel(src)
 
 // netted mobs are told they're free.
-/obj/effect/energy_net/on_destroy(force)
+/obj/effect/energy_net/lifecycle_prerelease()
+	..()
 	if(has_buckled_mobs())
 		for(var/A in src?.buckled_mob_list())
 			to_chat(A, span_notice("You are free of the net!"))
 			unbuckle_mob(A)
-
-	..()
 
 /obj/effect/energy_net/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	user.setClickCooldown(user.get_attack_speed())

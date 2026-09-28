@@ -42,7 +42,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 // its beams go with it.
 /obj/effect/map_effect/beam_point/on_destroy(force)
 	destroy_all_beams()
-	use_timer = FALSE
 	..()
 
 // This is the top level proc to make the magic happen.

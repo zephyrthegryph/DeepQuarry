@@ -149,6 +149,3 @@ REF_OWNED(/obj/effect/abstract/directional_lighting, "light_spot")
 	stack_trace("Directional light atom deleted, but not by our component")
 	return TRUE
 
-/obj/effect/abstract/directional_lighting/on_destroy(force)
-	vis_contents.Cut()
-	..()

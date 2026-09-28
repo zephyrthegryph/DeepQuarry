@@ -143,7 +143,6 @@
 		unpetrify(deleting = FALSE) //don't delete if we're already deleting!
 	else
 		visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
-	WR_gargoyle = null
 	..()
 
 /obj/structure/gargoyle/periodic_step()

@@ -77,7 +77,6 @@
 /datum/mini_hud/mech/on_destroy(force)
 	if(owner_mech())
 		owner_mech().minihud = null
-		owner_mech_handle = null
 	..()
 
 /datum/mini_hud/mech/periodic_step()

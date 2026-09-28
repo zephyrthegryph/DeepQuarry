@@ -163,7 +163,6 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 // the teleporter console forgets its hub.
 /obj/machinery/teleport/hub/on_destroy(force)
 	com()?.teleport_control.hub_handle = null
-	com_handle = null
 	..()
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
@@ -230,7 +229,6 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 // the teleporter console forgets its station.
 /obj/machinery/teleport/station/on_destroy(force)
 	com()?.com()?.teleport_control.station_handle = null
-	com_handle = null
 	..()
 
 /obj/machinery/teleport/station/proc/engage(mob/user)

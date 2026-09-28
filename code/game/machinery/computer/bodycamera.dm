@@ -44,7 +44,6 @@ REF_OWNED(/obj/machinery/computer/security/telescreen/bodycamera, list("bpinboar
 /obj/machinery/computer/security/telescreen/bodycamera/on_destroy(force)
 	if(showing)
 		stop_showing()
-	vis_contents.Cut()
 	..()
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/bodycam_toggle()

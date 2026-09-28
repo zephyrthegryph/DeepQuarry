@@ -368,10 +368,10 @@ GLOBAL_LIST_EMPTY(all_maps)
 	stack_trace("Attempt to delete a map_z_level instance [log_info_line(src)]")
 	return !force
 
-/datum/map_z_level/on_destroy(force)
+/datum/map_z_level/lifecycle_dematerialize()
+	..()
 	if (using_map.zlevels["[z]"] == src)
 		using_map.zlevels -= "[z]"
-	..()
 
 /datum/map/proc/get_map_info()
 	return "No map information available"

@@ -30,12 +30,6 @@
 	. = ..()
 	update_icon()
 
-// the cell goes only if it is still inside the baton.
-/obj/item/melee/baton/on_destroy(force)
-	if(bcell?.loc == src && !QDELETED(bcell))
-		qdel(bcell)
-	..()
-
 /obj/item/melee/baton/get_cell()
 	return bcell
 

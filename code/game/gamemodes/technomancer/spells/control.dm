@@ -84,7 +84,6 @@
 /obj/item/spell/control/on_destroy(force)
 	for(var/mob/living/L in controlled_mobs)
 		deselect(L)
-	controlled_mobs = list()
 	..()
 
 /obj/item/spell/control/on_use_cast(mob/living/user)

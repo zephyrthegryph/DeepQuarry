@@ -85,4 +85,4 @@
 	P.icon_state = "bhole3" // Better icon as well
 	P.name = "wormhole"
 	P.event = TRUE
-	om_qdel_after(P, rand(min_duration,max_duration))
+	P.expire(rand(min_duration,max_duration))

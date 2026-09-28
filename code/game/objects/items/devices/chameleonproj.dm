@@ -154,9 +154,9 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	return
 
 // the projector's disguise is disrupted.
-/obj/effect/dummy/chameleon/on_destroy(force)
-	master?.disrupt(0)
+/obj/effect/dummy/chameleon/lifecycle_prerelease()
 	..()
+	master?.disrupt(0)
 
 REF_OWNED(/obj/item/chameleon, list("active_dummy"))
 REF_PAIR(/obj/effect/dummy/chameleon, list("master" = "active_dummy"))

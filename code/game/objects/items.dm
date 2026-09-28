@@ -169,9 +169,6 @@
 		var/obj/machinery/owner = loc
 		if(owner.component_parts)
 			owner.component_parts -= src
-	d_stage_overlay = null
-	d_stage_overlay_key = null
-	exploit_for = null
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)

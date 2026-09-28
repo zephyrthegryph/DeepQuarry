@@ -305,7 +305,6 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 /obj/structure/prop/prismcontrol/on_destroy(force)
 	for(var/obj/structure/prop/prism/P in my_turrets)
 		P.remote_dial = null
-	my_turrets = list()
 	..()
 
 /// The second half of a two-stage turn.

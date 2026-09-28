@@ -76,7 +76,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 /obj/machinery/requests_console/on_destroy(force)
 	var/lastDeptRC = 1
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
-		if(Console != src && Console.department == department) // still registered until ..() dematerializes it
+		if(Console != src && Console.department == department)
 			lastDeptRC = 0
 			break
 	if(lastDeptRC)

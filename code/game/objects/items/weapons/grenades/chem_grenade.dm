@@ -194,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		C.throw_mode_off()
 
 	invisibility = INVISIBILITY_MAXIMUM //Why am i doing this?
-	om_qdel_after(src, 5 SECONDS) //To make sure all reagents can work correctly before deleting the grenade.
+	expire(5 SECONDS) //To make sure all reagents can work correctly before deleting the grenade.
 
 /obj/item/grenade/chem_grenade/large
 	name = "large chem grenade"

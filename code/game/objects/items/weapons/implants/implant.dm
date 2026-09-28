@@ -119,7 +119,6 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 /obj/item/implant/tracking/on_destroy(force)
 	if(part)
 		LAZYREMOVE(part.implants, src)
-	part = imp_in_handle = null
 	..()
 
 /obj/item/implant/tracking/periodic_step()
@@ -406,7 +405,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if(!src.reagents.total_volume)
 		to_chat(R, "You hear a faint click from your chest.")
 		playsound(R, 'sound/weapons/empty.ogg', 10, 1)
-		om_qdel_after(src, 0)
+		expire(0)
 	return
 
 /obj/item/implant/chem/emp_act(severity, recursive)

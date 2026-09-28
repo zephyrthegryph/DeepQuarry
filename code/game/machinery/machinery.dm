@@ -184,16 +184,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/on_destroy(force)
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
-	// Constructed machinery owns its installed board. Clear the typed reference
-	// immediately when destruction starts; otherwise the board spends an extra GC
-	// generation retained by an already-deleting machine (and reference tracking
-	// turns thousands of those harmless delays into multi-second world freezes).
-	if(circuit)
-		// circuit may still be a type path (roadmap C6, never materialized):
-		// nothing real to delete in that case.
-		if(!ispath(circuit) && circuit.loc == src && !QDELETED(circuit))
-			qdel(circuit)
-		circuit = null
+	// The installed board is REF_OWNED (phase 4 already deleted it).
 	if(contents) // The same for contents.
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/atom/A in contents) // ALLOW(latent): materialized above

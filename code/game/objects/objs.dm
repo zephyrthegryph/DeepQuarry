@@ -62,8 +62,6 @@
 		update_nearby_tiles()
 
 /obj/on_destroy(force)
-	QDEL_NULL(material_service)
-
 	// I really am an idiot why did I make it this way
 	if(micro_target)
 		for(var/thing in src.contents)

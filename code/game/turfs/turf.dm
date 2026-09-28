@@ -133,9 +133,12 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 	if (!changing_turf)
 		stack_trace("Improper turf qdel. Do not qdel turfs directly.")
 	changing_turf = FALSE
-	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, src)
 	// Rust owns turf adjacency; /turf/open/on_destroy's unregister drops it.
 	..()
+
+/turf/lifecycle_dematerialize()
+	..()
+	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, src)
 
 /turf/ex_act(severity)
 	return 0

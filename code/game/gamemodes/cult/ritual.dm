@@ -74,11 +74,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 REF_OWNED(/obj/effect/rune, "blood_image")
 
 // the rune's blood image comes off every AI client that was shown it.
-/obj/effect/rune/on_destroy(force)
+/obj/effect/rune/lifecycle_prerelease()
+	..()
 	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
 			our_ai.client.images -= blood_image
-	..()
 
 /obj/effect/rune/examine(mob/user)
 	. = ..()

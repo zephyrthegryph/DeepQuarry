@@ -142,7 +142,6 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 /obj/item/camerabug/on_destroy(force)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
-	linkedmonitor_handle = null
 	..()
 
 /obj/item/bug_monitor
