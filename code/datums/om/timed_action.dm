@@ -20,10 +20,10 @@
 //		complete_proc = /obj/item/lockpick/proc/pick_done
 //		var/obj/structure/simple_door/door
 //
-//	om_task_start(/datum/om/task/timed/lockpick, user, src, list("duration" = 5 SECONDS, "receiver" = src, "door" = D))
+//	om_task_start(/datum/om/task/timed/lockpick, user, src, duration = 5 SECONDS, door = D)
 //
 // Every declaration var below (flags, progress, interaction_key, max_distance, busy, ...) can
-// be set per run through params. om_do_after() remains for the zero-state case: a proc and at
+// be set per run as a named argument. om_do_after() remains for the zero-state case: a proc and at
 // most two plain arguments.
 
 /// Re-check channels for a timed action: everything that can break one, on the user or the target.
@@ -298,7 +298,8 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 		"check_pos" = check?[2])
 	if(receiver)
 		params["receiver"] = receiver
-	var/datum/om/task/timed/T = om_task_start(claims ? /datum/om/task/timed/simple/claiming : /datum/om/task/timed/simple, user, (target && target != user) ? target : null, params)
+	// om_task_begin() directly: the params are built here, and the receiver defaults to the user.
+	var/datum/om/task/timed/T = om_task_begin(claims ? /datum/om/task/timed/simple/claiming : /datum/om/task/timed/simple, user, (target && target != user) ? target : null, list(params), null)
 	if(istype(T) && T.state == OM_TASK_DONE)
 		return null
 	return T

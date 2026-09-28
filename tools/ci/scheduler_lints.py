@@ -154,6 +154,10 @@ def lc_ref_sites(rel, raw_text, code_text):
         # relation, which clears the var and cancels the task when the datum is deleted.
         if owner_type == "/datum/om/task" or owner_type.startswith("/datum/om/task/"):
             continue
+        # Typed prompts and flows (ask.dm, flow.dm) hold their state vars as handles while they
+        # wait (om_park_state()), and a prompt's `flow` is the one strong ref keeping its flow alive.
+        if owner_type in ("/datum/om/prompt", "/datum/om/flow") or owner_type.startswith(("/datum/om/prompt/", "/datum/om/flow/")):
+            continue
         sites.append((rel, no, "%s var/%s %s" % (owner_type, vtype.strip("/"), name)))
     return sites
 

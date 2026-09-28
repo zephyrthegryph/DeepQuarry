@@ -9,7 +9,14 @@
 //		var/obj/item/grab/grab                          // state, set from om_task_start()'s params
 //		var/stage
 //
-//	om_task_start(/datum/om/task/timed/absorb, user, victim, list("grab" = G, "stage" = 2))
+//	om_task_start(/datum/om/task/timed/absorb, user, victim, grab = G, stage = 2)
+//
+// om_task_start() is a macro (code/__defines/om.dm): its named arguments set the task's typed
+// vars (a name the type doesn't declare is a CRASH on the first run, and
+// tools/ci/api_lints.py's task_params_list counts the old list("grab" = G) form). The receiver
+// defaults to whichever of the caller's src, the target or the actor has the complete_proc, so
+// "receiver" = src is not repeated. A complete_proc/cancel_proc of the task's own type runs on
+// the task with no arguments and reads the state as its own vars (no copying into locals).
 //
 // It is finished by a deadline (no polling), or by `steps`; cancelled when its requires fail
 // (re-checked only when their channels change on the actor or target), when an interrupted_by
@@ -137,11 +144,13 @@
 	if(cancel_proc)
 		om_task_call(src, cancel_proc)
 
-/// Calls `proc_ref` with the task: a /proc/ path globally, else on the receiver (skipped once
-/// the receiver is gone).
+/// Calls `proc_ref` with the task: a /proc/ path globally, a proc of the task's own type on the
+/// task with no arguments, else on the receiver (skipped once the receiver is gone).
 /proc/om_task_call(datum/om/task/T, proc_ref)
 	if(copytext("[proc_ref]", 1, 7) == "/proc/")
 		return call(proc_ref)(T)
+	if(om_task_own_proc(T, proc_ref))
+		return call(T, proc_ref)()
 	var/datum/R = T.receiver
 	if(!R || QDELETED(R))
 		return null
@@ -149,11 +158,24 @@
 
 /**
  * Starts task `task` (a /datum/om/task type, or a name from a bundle's `tasks`) with `actor`
- * working on `target`. `params` sets the run's vars by name: its state, and any declaration
- * var to override (duration, receiver, ...). Every datum in params is held: deleting it
- * cancels the task. Returns the task, or a text reason it can't start.
+ * working on `target`. Called through the om_task_start() macro:
+ *
+ *	om_task_start(/datum/om/task/timed/tome_scribe, user, src, chosen_rune = rune, word1 = w1)
+ *
+ * The named arguments set the run's vars: its state, and any declaration var to override
+ * (duration, receiver, ...). Every datum among them is held: deleting it cancels the task.
+ * `starter` is the caller's src (the macro passes it): without an explicit receiver, the
+ * receiver is the first of starter, target and actor that has the complete_proc (or
+ * cancel_proc/check_proc). The old form, one positional list("key" = value), still works
+ * (the receiver then defaults to the actor) and is counted by api_lints.py (task_params_list).
+ * Returns the task, or a text reason it can't start.
  */
-/proc/om_task_start(task, datum/actor, datum/target, list/params)
+/proc/om_task_begin(task, datum/actor, datum/target, list/params, datum/starter)
+	var/legacy = FALSE
+	if(length(params) == 1 && (isnull(params[1]) || islist(params[1])))
+		// om_task_start(type, actor, target, list("key" = value)): the deprecated list form.
+		params = params[1]
+		legacy = TRUE
 	var/datum/om/registry/reg = om_registry()
 	var/datum/om/task/spec = ispath(task) ? reg.task_by_type[task] : reg.task_by_name[task]
 	if(!spec)
@@ -173,6 +195,8 @@
 	T.actor = actor
 	T.target = target
 	for(var/key in params)
+		if(!istext(key))
+			CRASH("om: task [spec.name] was given a positional argument ([key]); name it (var = value)")
 		if(!(key in T.vars))
 			CRASH("om: task [spec.name] has no var [key]")
 		var/value = params[key]
@@ -181,7 +205,7 @@
 			return "gone"
 		T.vars[key] = value
 	if(!T.receiver)
-		T.receiver = actor
+		T.receiver = legacy ? actor : om_task_pick_receiver(T, starter)
 	if(isnull(T.duration))
 		T.duration = 0
 	else if(!isnum(T.duration))
@@ -235,6 +259,33 @@
 	om_tasks_reschedule(rec)
 	T.on_started()
 	return T
+
+/// The receiver of a task started without one: the first of `starter` (the caller's src), the
+/// target and the actor that has the task's complete_proc, cancel_proc or check_proc. A task
+/// whose procs are all its own (or global) gets the actor.
+/proc/om_task_pick_receiver(datum/om/task/T, datum/starter)
+	var/list/procs = list(T.complete_proc, T.cancel_proc)
+	if(istype(T, /datum/om/task/timed))
+		var/datum/om/task/timed/timed = T
+		procs += timed.check_proc
+	for(var/proc_ref in procs)
+		if(!proc_ref || copytext("[proc_ref]", 1, 7) == "/proc/" || om_task_own_proc(T, proc_ref))
+			continue
+		for(var/datum/candidate as anything in list(starter, T.target, T.actor))
+			if(candidate && !QDELETED(candidate) && om_task_proc_fits(candidate, proc_ref))
+				return candidate
+	return T.actor
+
+/// TRUE when `proc_ref` (a proc path, or a PROC_REF() name) can be called on `D`.
+/proc/om_task_proc_fits(datum/D, proc_ref)
+	var/text = "[proc_ref]"
+	var/at = findtext(text, "/proc/")
+	if(!at)
+		at = findtext(text, "/verb/")
+	if(at > 1)
+		var/owner = text2path(copytext(text, 1, at))
+		return owner && istype(D, owner)
+	return hascall(D, text)
 
 /// A zero-duration task that completes at once (timed actions with no delay): its checks run,
 /// then on_complete, or on_cancel with the reason (which is returned).
@@ -503,7 +554,7 @@
 /// a task on `E` claiming it, done at the deadline. `on_end`, a proc on `E`, runs when the hold
 /// ends (done or cancelled). Returns the task, or a reason (already busy).
 /proc/om_hold_busy(datum/E, duration, on_end)
-	return om_task_start(/datum/om/task/hold, E, null, list("duration" = max(duration, 0), "complete_proc" = on_end, "cancel_proc" = on_end))
+	return om_task_start(/datum/om/task/hold, E, null, duration = max(duration, 0), complete_proc = on_end, cancel_proc = on_end)
 
 /// See om_hold_busy().
 /datum/om/task/hold
