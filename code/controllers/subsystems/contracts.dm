@@ -281,10 +281,16 @@ SUBSYSTEM_DEF(contracts)
 	if(pending_subject_reconciliations[key])
 		return
 	pending_subject_reconciliations[key] = TRUE
-	om_after(src, 0, PROC_REF(reconcile_subject_availability), subject, key)
+	// Pass only the key: om_after() drops a call whose captured datum is gone, and a subject
+	// deleted before the timer fires would then leave its key pending forever (blocking every
+	// later reconciliation for that key). The handler resolves the key and copes with a gone subject.
+	om_after(src, 0, PROC_REF(reconcile_subject_availability), key)
 
-/datum/controller/subsystem/contracts/proc/reconcile_subject_availability(mob/living/carbon/human/subject, key)
+/datum/controller/subsystem/contracts/proc/reconcile_subject_availability(key)
 	pending_subject_reconciliations -= key
+	var/mob/living/carbon/human/subject = key == "global" ? null : locate(key)
+	if(!istype(subject))
+		subject = null
 	if(QDELETED(subject))
 		reconcile_medical_trial_offers()
 		return

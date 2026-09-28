@@ -585,6 +585,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 				if(GLOB.om_traced[E])
 					GLOB.om_traced[E]++
+					GLOB.om_traced_bits[E] |= arg
 #endif
 				B.on_wake(E, arg)
 			if(OM_HOOK_DEADLINE)

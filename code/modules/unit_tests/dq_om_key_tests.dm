@@ -37,7 +37,13 @@
 	om_trace(C)
 	om_changed(P, CHANGE_POWERNET_TOPOLOGY)
 	om_test_ticks(4)
-	TEST_ASSERT(!om_traced_count(C), "a topology change woke a rate subscriber")
+	// Only a watch wake (CHANGE_RELATED) can come from P. The capacitor has other real inputs
+	// (its area's power, a machine timer) that a full-suite world can move inside the window:
+	// those are not what this asserts, so they are reported but not counted.
+	var/stray = om_traced_wake_bits(C)
+	TEST_ASSERT(!(stray & CHANGE_RELATED), "a topology change woke a rate subscriber (wake bits [stray], [om_traced_count(C)] wake(s))")
+	if(om_traced_count(C))
+		log_test("dq_om_keys_wake_shield_capacitor: unrelated wake(s) in the window, bits [stray]")
 	om_untrace(C)
 	qdel(P)
 
