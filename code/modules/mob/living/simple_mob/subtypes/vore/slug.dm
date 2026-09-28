@@ -104,7 +104,7 @@
 	else //This is the parent do_attack() code for determining whether or not attacks can hit.
 		face_atom(A)
 		var/missed = FALSE
-		if(!isturf(A) && !(is_inside(A, T)) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
+		if(!isturf(A) && !(is_in_holder(A, T)) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
 			missed = TRUE
 		else if(!T.AdjacentQuick(src))
 			missed = TRUE

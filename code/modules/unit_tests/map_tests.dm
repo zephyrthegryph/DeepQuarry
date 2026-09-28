@@ -135,7 +135,7 @@
 		for(T in cable_turfs)
 			var/bad_msg = "--------------- [T.name] \[[T.x] / [T.y] / [T.z]\] [color]"
 			LAZYCLEARLIST(dirs_checked)
-			for(is_inside(C, T))
+			for(is_in_holder(C, T))
 				wire_test_count++
 				var/combined_dir = "[C.d1]-[C.d2]"
 				if(combined_dir in dirs_checked)

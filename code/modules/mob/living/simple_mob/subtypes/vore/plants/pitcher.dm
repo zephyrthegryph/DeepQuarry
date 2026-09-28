@@ -244,7 +244,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		var/N = 0
 		var/hasdigestable = 0
 		var/hasindigestable = 0
-		for(is_inside(L, vore_selected))
+		for(is_in_holder(L, vore_selected))
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.nutrition = 0 //No stuffing monkeys with protein shakes for massive nutrition.
 			if(!L.digestable)

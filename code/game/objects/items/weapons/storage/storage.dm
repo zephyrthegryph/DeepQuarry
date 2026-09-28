@@ -915,7 +915,7 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 	var/depth = 0
 	var/atom/cur_atom = src
 
-	while (cur_atom && !(is_inside(cur_atom, container)))
+	while (cur_atom && !(is_in_holder(cur_atom, container)))
 		if (isarea(cur_atom))
 			return INFINITY
 		if (istype(cur_atom.loc, /obj/item/storage))

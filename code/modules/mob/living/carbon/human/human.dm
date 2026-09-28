@@ -1988,7 +1988,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if((limb.is_fractured() && (!limb.splinted || ((is_inside(limb.splinted, limb)) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
+			if((limb.is_fractured() && (!limb.splinted || ((is_in_holder(limb.splinted, limb)) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()

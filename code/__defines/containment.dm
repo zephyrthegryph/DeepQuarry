@@ -230,11 +230,11 @@
 
 /// Non-copying walk over `holder`'s direct contents, for loops that do not move
 /// anything in or out while iterating (hot tile passes: explosions, smoothing,
-/// throw impacts). Use `for(is_inside(..., holder))` when the body moves things.
+/// throw impacts). Use `for(... in contents_of(holder))` when the body moves things.
 /// `FOR_CONTENTS(var/atom/movable/AM as anything, T)`
 #define FOR_CONTENTS(decl, holder) for(decl in (holder).contents)
 
 /// Whether `thing` is directly inside `holder`, without copying the holder's
 /// contents. Equivalent to `thing in holder.contents` for movables (and for a
 /// turf in its area).
-#define is_inside(thing, holder) ((thing)?.loc == (holder) && !isnull(holder))
+#define is_in_holder(thing, holder) ((thing)?.loc == (holder) && !isnull(holder))

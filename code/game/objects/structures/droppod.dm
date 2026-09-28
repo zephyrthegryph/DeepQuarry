@@ -119,7 +119,7 @@ REF_OWNED(/obj/structure/drop_pod, "air")
 	effect = /obj/structure/drop_pod/proc/interaction_open
 
 /obj/structure/drop_pod/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(istype(user) && (Adjacent(user) || (is_inside(user, src))) && !user.incapacitated())
+	if(istype(user) && (Adjacent(user) || (is_in_holder(user, src))) && !user.incapacitated())
 		if(finished)
 			to_chat(user, span_warning("Nothing left to do with it now. Maybe you can break it down into materials."))
 		else

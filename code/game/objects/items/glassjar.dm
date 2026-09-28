@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			to_chat(user, span_warning("You can't fit anyone else into \the [src]!"))
 		else
 			var/obj/item/holder/micro/holder = W
-			if(holder.held_mob && (is_inside(holder.held_mob, holder)))
+			if(holder.held_mob && (is_in_holder(holder.held_mob, holder)))
 				var/mob/living/M = holder.held_mob
 				holder.dump_mob()
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
