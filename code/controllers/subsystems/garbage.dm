@@ -279,6 +279,10 @@ SUBSYSTEM_DEF(garbage)
 				var/message = "## TESTING: GC: -- [ref(D)] | [type] was unable to be GC'd --"
 				message = "[message] (ref count of [refcount(D)])"
 				log_world(message)
+				// Cycles among deleted objects are invisible to a reference
+				// search from live roots; the destroy postcondition names them.
+				for(var/leak_line in dq_lifecycle_leak_lines(D))
+					log_world("  [leak_line]")
 
 				/*var/detail = D.dump_harddel_info()
 				if(detail)

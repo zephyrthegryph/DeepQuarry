@@ -102,7 +102,7 @@
 		SSadmin_verbs.dynamic_invoke_verb(arglist(verb_args))
 	catch(var/exception/e)
 		V.om_answers = null
-		stack_trace("admin verb [V.type] re-run: [e]")
+		dq_report_caught(e, "admin verb [V.type] re-run")
 		return
 	V.om_answers = null
 
@@ -147,7 +147,7 @@
 	try
 		call(C, proc_name)(arglist(proc_args))
 	catch(var/exception/e)
-		stack_trace("client prompt re-run [proc_name]: [e]")
+		dq_report_caught(e, "client prompt re-run [proc_name]")
 	C.om_answers = null
 	C.om_answers_proc = null
 
@@ -190,7 +190,7 @@ GLOBAL_LIST_EMPTY(om_rerun_answers)
 	try
 		call(E, proc_name)(arglist(proc_args))
 	catch(var/exception/e)
-		stack_trace("prompt re-run [proc_name] on [E]: [e]")
+		dq_report_caught(e, "prompt re-run [proc_name] on [E]")
 	GLOB.om_rerun_answers -= id
 	SStgui.update_uis(E)
 

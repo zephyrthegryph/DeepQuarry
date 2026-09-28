@@ -209,7 +209,7 @@
 	var/list/decoded
 	try
 		decoded = json_decode(text)
-	catch
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 		return null
 	return decoded
 

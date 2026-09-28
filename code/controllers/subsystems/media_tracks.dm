@@ -105,7 +105,7 @@ SUBSYSTEM_DEF(media_tracks)
 	var/json
 	try
 		json = json_decode(url)
-	catch
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 	return islist(json)
 
 /datum/controller/subsystem/media_tracks/proc/manual_track_ask_title(mob/user, datum/om/prompt/ask)
@@ -155,7 +155,7 @@ SUBSYSTEM_DEF(media_tracks)
 	var/list/json
 	try
 		json = json_decode(url)
-	catch
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 
 	if(islist(json))
 		for(var/song in json)

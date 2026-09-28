@@ -67,7 +67,7 @@
 		R.status_code = L["status_code"]
 		R.headers = L["headers"]
 		R.body = L["body"]
-	catch
+	catch // ALLOW(silent_catch): a malformed response is returned as R.errored/R.error
 		R.errored = TRUE
 		R.error = _raw_response
 

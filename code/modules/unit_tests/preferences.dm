@@ -108,7 +108,7 @@
 
 			try
 				choiced_preference.icon_for(values[1])
-			catch
+			catch // ALLOW(silent_catch): the test records the error and asserts on it
 				errored = TRUE
 
 			TEST_ASSERT(errored, "[preference_type] implemented icon_for, but does not have should_generate_icons = TRUE")

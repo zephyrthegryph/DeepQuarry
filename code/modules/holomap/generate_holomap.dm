@@ -41,7 +41,7 @@
 	var/list/index
 	try
 		index = json_decode(rustg_file_read(index_file))
-	catch
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 		return FALSE
 	if(!islist(index) || index["key"] != key || index["maxz"] != world.maxz)
 		return FALSE

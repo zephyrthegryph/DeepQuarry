@@ -309,7 +309,7 @@
 	else
 		try
 			root = json_decode(payload)
-		catch(var/exception/error)
+		catch(var/exception/error) // ALLOW(silent_catch): the failure is returned in errors
 			errors += "Rust station response is not valid JSON: [error]"
 			return null
 	if(!islist(root) || root["schema"] != GENERATED_STATION_RUST_SCHEMA || root["major"] != GENERATED_STATION_RUST_MAJOR)

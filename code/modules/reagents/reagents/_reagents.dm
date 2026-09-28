@@ -272,6 +272,14 @@
 	species_factors = shared[4]
 	return ..()
 
+// Its holder's reagent_by_id points back at us, and `data` can hold live refs (blood's donor).
+// LIFECYCLE: breaks the reagent <-> holder reference cycle and drops `data`.
+/datum/reagent/Destroy()
+	holder = null
+	if(islist(data))
+		data.Cut()
+	return ..()
+
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)
 	return

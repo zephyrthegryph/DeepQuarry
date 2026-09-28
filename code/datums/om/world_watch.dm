@@ -252,7 +252,7 @@
 		try
 			W.fire(arguments)
 		catch(var/exception/e)
-			error("world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
+			report_caught(e, "world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
 		if(W.one_shot)
 			W.cancel()
 		// Urgent wakes drain in full, like Rust's urgent lane. The rest yield to the budget, but

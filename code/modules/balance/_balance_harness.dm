@@ -172,7 +172,7 @@
 		try
 			scenario.Run()
 			entry["status"] = "passed"
-		catch(var/exception/error)
+		catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the scenario result entry
 			entry["status"] = "failed"
 			entry["error"] = "[error.name] ([error.file]:[error.line])"
 		scenario.cleanup()

@@ -136,7 +136,7 @@
 	if(istype(T,/turf/simulated/shuttle))
 		shuttlework = 1
 		var/turf/simulated/shuttle/SS = T
-		if(!SS.landed_holder()) SS.landed_holder_handle = om_handle(new /obj/landed_holder(SS))
+		if(!SS.landed_holder()) SS.landed_holder_ref = new /obj/landed_holder(SS)
 		X = SS.landed_holder().land_on(B)
 
 	//Generic non-shuttle turf move.

@@ -136,7 +136,7 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 	var/list/data
 	try
 		data = json_decode(stdout)
-	catch(var/exception/e)
+	catch(var/exception/e) // ALLOW(silent_catch): the parse failure is shown to the admin
 		to_chat(user, span_boldwarning("Youtube-dl JSON parsing FAILED:"), confidential = TRUE)
 		to_chat(user, span_warning("[e]: [stdout]"), confidential = TRUE)
 		return

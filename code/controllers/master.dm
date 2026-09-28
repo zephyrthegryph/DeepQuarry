@@ -297,7 +297,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		Master.processing = FALSE //stop ticking this one
 	try
 		new/datum/controller/master()
-	catch
+	catch(var/exception/e)
+		dq_report_caught(e, "Master controller recreation")
 		return -1
 	return 1
 

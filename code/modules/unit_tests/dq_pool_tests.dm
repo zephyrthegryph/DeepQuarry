@@ -53,7 +53,7 @@ REF_TRANSIENT(/datum/pool_test_item, list("held", "count"))
 	var/crashed = FALSE
 	try
 		pool_release(item)
-	catch
+	catch // ALLOW(silent_catch): the test expects this crash
 		crashed = TRUE
 	TEST_ASSERT(crashed, "a second release should crash")
 	TEST_ASSERT_EQUAL(pool.double_releases, before + 1, "a double release is counted")
@@ -72,7 +72,7 @@ REF_TRANSIENT(/datum/pool_test_item, list("held", "count"))
 	var/crashed = FALSE
 	try
 		item.touch()
-	catch
+	catch // ALLOW(silent_catch): the test expects this crash
 		crashed = TRUE
 	TEST_ASSERT(crashed, "using a poisoned object should crash")
 	var/datum/pool_test_item/fresh = pool_take(/datum/pool_test_item)

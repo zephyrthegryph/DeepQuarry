@@ -213,7 +213,16 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 		for(var/atom/movable/A as anything in holder.contents)
 			if(world.time < A.latent_refused_until)
 				continue
-			if(!can_be_latent(A))
+			var/eligible = FALSE
+			try
+				eligible = can_be_latent(A)
+			catch(var/exception/e)
+				// One bad atom must not end the whole frame (and with it every
+				// other holder's turn): log it with context and back it off.
+				A.latent_refused_until = world.time + max(holder.latent_idle_delay, LATENCY_REFUSAL_BACKOFF_MIN)
+				stack_trace("LATENCY_SWEEP: can_be_latent([A.type] in [holder.type]) runtimed: [e.name] at [e.file]:[e.line] -- [e.desc]")
+				continue
+			if(!eligible)
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
 			if(dq_latent_attempt_collapse(A))

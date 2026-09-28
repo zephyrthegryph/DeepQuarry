@@ -51,6 +51,10 @@ registries are global. "An object" is recognised syntactically: `src`, `usr`, a
 `mob/M`, a `var/obj/item/I` local, a `for(var/atom/A in ...)` loop var). These are
 ratcheted by the `object_keyed` ceiling in the same baseline; a justified write
 carries `// ALLOW(object_keyed_lists): <reason>`.
+A list var declared with an object element type
+(`var/list/datum/reagent/reagent_by_id`, tmp or not) counts once at its
+declaration even when no write is recognised: an id -> datum index left set
+after Destroy is a cycle among deleted objects.
 
 Declared caches. Every declared_cache_vars() entry maps the var name to its
 invalidation rule, CACHE_ON_CHANGE(bits), CACHE_ON_EVENT(path) or
@@ -291,8 +295,9 @@ def objlist_candidates(rel, raw_lines, objlist_ok):
     """(rel, line, text) for every write of an object into an undeclared instance list var."""
     # Instance list vars declared in this file (any type block, indent 1).
     list_vars = set()
+    typed_lists = {}  # name -> (line, text): `var/list/datum/reagent/x`, a list typed as holding objects
     cur_type = None
-    for raw in raw_lines:
+    for decl_no, raw in enumerate(raw_lines, 1):
         if not raw.strip():
             continue
         stripped = raw.lstrip("\t ")
@@ -315,12 +320,21 @@ def objlist_candidates(rel, raw_lines, objlist_ok):
         if structural(cur_type):
             continue
         list_vars.add(segs[-1])
+        # A list whose declared element type is an object type holds objects by
+        # declaration, even where no write is recognisable (an index write of a
+        # proc result, `x = other_list`): the reagent_by_id class, an assoc of id ->
+        # datum that, left set after Destroy, closed a cycle between deleted objects.
+        if len(segs) > 2 and is_object_type("/".join(segs[1:-1])):
+            typed_lists[segs[-1]] = (decl_no, stripped.rstrip())
     list_vars -= objlist_ok
     list_vars -= BACKLIST_TARGETS
     if not list_vars:
         return []
 
     out = []
+    for name in sorted(set(typed_lists) & list_vars):
+        decl_no, text = typed_lists[name]
+        out.append((rel, decl_no, "%s: typed object list, undeclared: %s" % (name, text)))
     objs, locals_ = set(), set()
     for no, raw in enumerate(raw_lines, 1):
         if not raw.strip():

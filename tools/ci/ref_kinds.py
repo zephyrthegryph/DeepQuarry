@@ -22,6 +22,8 @@ REF_MACRO_PROC = {
     "HELD": "declared_held_vars",
     "PAIR": "declared_pair_vars",
     "BACKLIST": "declared_backlist_vars",
+    "BACK": "declared_back_vars",
+    "KEEP": "declared_keep_vars",
     "DEF": "declared_def_vars",
     "TRANSIENT": "declared_transient_vars",
 }

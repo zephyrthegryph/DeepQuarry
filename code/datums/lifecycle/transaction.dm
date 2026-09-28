@@ -13,7 +13,64 @@
 /// because the phase order encodes every ordering hazard the codebase used to
 /// rely on ad-hoc Destroy() comments for. Returns what phase 7's Destroy()
 /// (or, for a plain /datum with no override, the base no-op) returned.
+/// Test/debug tracing: while GLOB.dq_lifecycle_trace_depth > 0, every phase of
+/// every destroy transaction is logged, so a transaction that never returns
+/// (a sleep or a runaway loop in a phase) shows the last phase it finished.
+GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
+#define DQ_LIFECYCLE_TRACE(D, what) if(GLOB.dq_lifecycle_trace_depth) { log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] [what]") }
+
 /proc/destroy_transaction(datum/D, force, datum/qdel_item/trash)
+	var/hint = QDEL_HINT_QUEUE
+	var/aborted = FALSE
+	try
+		hint = destroy_transaction_phases(D, force, trash)
+	catch(var/exception/e)
+		// A runtime in any phase (often a Destroy() override touching state an
+		// Initialize() that returned INITIALIZE_HINT_QDEL early never set up)
+		// used to abandon the transaction: the atom kept its loc and contents,
+		// stayed "being destroyed" forever, and a second qdel() was refused.
+		// Report it, then finish what must happen for the object to be freed.
+		aborted = TRUE
+		dq_report_caught(e, "destroy transaction of [D?.type]")
+		if(D)
+			dq_lifecycle_finish_aborted(D)
+	if(D && ismovable(D) && hint != QDEL_HINT_LETMELIVE)
+		dq_lifecycle_release_loc(D, aborted)
+	return hint
+
+/// What an aborted destroy transaction still owes: declared refs scrubbed,
+/// and a movable's contents deleted (as /atom/movable/Destroy() would have).
+/proc/dq_lifecycle_finish_aborted(datum/D)
+	try
+		dq_lifecycle_scrub(D)
+		if(D.om_hid)
+			om_handle_release(D)
+		if(ismovable(D))
+			var/atom/movable/AM = D
+			for(var/atom/movable/thing in AM.contents.Copy())
+				qdel(thing)
+	catch(var/exception/e)
+		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
+
+/// A destroyed movable leaves its loc (/atom/movable/Destroy() ends with
+/// moveToNullspace()). One still somewhere had a Destroy() that skipped ..()
+/// or runtimed: it is moved out here, so it never lingers on a turf where
+/// nothing can delete it again.
+/proc/dq_lifecycle_release_loc(atom/movable/AM, aborted)
+	if(isnull(AM.loc))
+		return
+	if(!aborted)
+		dq_lifecycle_report("LIFECYCLE: [AM.type] still in [AM.loc.type] after Destroy() (an override skipped ..()?); moved to nullspace")
+	try
+		AM.moveToNullspace()
+	catch(var/exception/e)
+		dq_report_caught(e, "moving the destroyed [AM.type] to nullspace")
+	if(AM.loc)
+		AM.loc = null
+
+/// The phases of destroy_transaction(), in order.
+/proc/destroy_transaction_phases(datum/D, force, datum/qdel_item/trash)
+	DQ_LIFECYCLE_TRACE(D, "begin")
 	// Indexed by LIFECYCLE_PHASE_* id, so it must have a slot per phase
 	// (an empty lazy list made every phase write an out-of-bounds runtime).
 	if(length(trash.phase_ms) < LIFECYCLE_PHASE_COUNT)
@@ -27,6 +84,7 @@
 	D.datum_flags |= DF_DESTROYING
 	SEND_SIGNAL(D, COMSIG_QDELETING, force)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_GUARD, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_GUARD done")
 
 	// Phase 2 for datums that aren't atoms: leave registries (atoms leave in
 	// their own phase 2, through dematerialize).
@@ -40,6 +98,7 @@
 			tick = world.tick_usage
 			dq_lifecycle_resolve_minds(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_MIND, tick)
+			DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_MIND done")
 
 	// Phase 1: unbind, for every datum: Rust entity bindings, pipe/cable
 	// topology, heat bodies (lifecycle_unbind() overrides). Must precede
@@ -47,14 +106,17 @@
 	tick = world.tick_usage
 	D.lifecycle_unbind()
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_UNBIND done")
 
 	// Phase 2: dematerialize. Index leaves that aren't registries yet
 	// (lifecycle_dematerialize() overrides), for every datum.
 	tick = world.tick_usage
 	D.lifecycle_dematerialize()
+	DQ_LIFECYCLE_TRACE(D, "lifecycle_dematerialize() returned")
 	if(ismovable(D))
 		dq_lifecycle_release_from_holder(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_DEMATERIALIZE done")
 
 	if(isatom(D))
 		var/atom/movable/AM = D
@@ -67,12 +129,14 @@
 			AM.dq_lifecycle_resolve_contents()
 			dq_lifecycle_spill_declared(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
+			DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_CONTENTS done")
 
 	// Phase 4: links. Owned children deleted, pair partners nulled,
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
 	tick = world.tick_usage
 	dq_lifecycle_clear_links(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
 
 	// Phase 5: teardown. Processing (auto-stopped via
 	// periodic_pipe, set by PERIODIC_START), screens,
@@ -82,6 +146,7 @@
 	tick = world.tick_usage
 	dq_lifecycle_teardown(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_TEARDOWN, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_TEARDOWN done")
 
 	// Phase 6: effects. Declared destroy_effects data (L3).
 	tick = world.tick_usage
@@ -91,6 +156,7 @@
 	if(effects && !dq_batch_effects(D, effects))
 		effects_turf = effects.apply(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_EFFECTS done")
 
 	// Phase 7: leftover Destroy(). Only real domain consequences should
 	// remain here once L4's mechanical sweeps land; today this is still
@@ -98,6 +164,7 @@
 	tick = world.tick_usage
 	var/hint = D.Destroy(force)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DESTROY, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_DESTROY done")
 
 	if(isnull(D)) // Destroy() hard-deleted itself (rare; some override del()s src)
 		return hint
@@ -107,14 +174,24 @@
 		tick = world.tick_usage
 		effects.apply_after(D, effects_turf)
 		dq_lifecycle_time(trash, LIFECYCLE_PHASE_EFFECTS, tick)
+		DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_EFFECTS done")
 
 	// Phase 8: scrub. Null outbound declared owned/pair vars to break
 	// reference cycles, then hand D to GC. Nothing is parked in nullspace.
 	tick = world.tick_usage
 	dq_lifecycle_scrub(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_SCRUB, tick)
+	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_SCRUB done")
 
+	// Postcondition (leak_check.dm): on in test builds, toggleable on servers.
+	// Nothing D still holds may be a deleted object that holds D back.
+	if(GLOB.dq_lifecycle_leak_check && hint != QDEL_HINT_LETMELIVE)
+		dq_lifecycle_postcondition(D)
+
+	DQ_LIFECYCLE_TRACE(D, "end")
 	return hint
+
+#undef DQ_LIFECYCLE_TRACE
 
 /// Accumulates the milliseconds since `start_tick` onto phase `id`. Cheap:
 /// one TICK_USAGE_TO_MS and one list write, mirroring how destroy_time

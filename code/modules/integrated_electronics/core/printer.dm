@@ -290,7 +290,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	var/input_data
 	try
 		input_data = file2text(input_file)
-	catch(var/exception/e)
+	catch(var/exception/e) // ALLOW(silent_catch): bad user-supplied file; the error is shown to the user
 		to_chat(user, span_warning("Failed to read file: [e]. Please ensure you selected a valid text/JSON file."))
 		return
 
@@ -345,7 +345,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	var/list/assembly_data = null
 	try
 		assembly_data = deserialize_electronic_assembly(circuit_data)
-	catch(var/exception/e)
+	catch(var/exception/e) // ALLOW(silent_catch): bad user-supplied file; the error is shown to the user
 		to_chat(user, span_warning("Failed to process circuit data: [e]. The file may be corrupted or not a valid circuit export."))
 		return
 

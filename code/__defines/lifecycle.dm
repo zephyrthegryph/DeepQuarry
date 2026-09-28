@@ -41,6 +41,16 @@
 /// Back-lists, our var (the owner) -> the owner's list var we sit in: removed in phase 4.
 #define REF_BACKLIST(PATH, LISTS) ##PATH/declared_backlist_vars() { return lifecycle_merge_assoc(..(), LISTS); }
 
+/// Back-references, our var -> the var on the referenced object that points at
+/// us (or null): the non-owning side of an owner/child pair. Phase 4 nulls
+/// ours, and theirs if it still points at us. Ownership stays a tree: a child
+/// names its owner with REF_BACK, never REF_OWNED (ownership_cycle_lint.py).
+#define REF_BACK(PATH, BACKS) ##PATH/declared_back_vars() { return lifecycle_merge_assoc(..(), BACKS); }
+/// Vars deliberately left set after destruction (a shared, immortal singleton;
+/// an id the GC report reads). Exempt from the destroy postcondition
+/// (dq_lifecycle_leak_lines(), code/datums/lifecycle/leak_check.dm).
+#define REF_KEEP(PATH, NAMES) ##PATH/declared_keep_vars() { . = ..(); . = (. || list()) + NAMES; }
+
 /// Declared destruction effects (phase 6): DATA is a `new /datum/destroy_effects_data(...)`
 /// with named arguments, built once per type. Replaces message/sound/debris/
 /// neighbour-smoothing bodies in Destroy().

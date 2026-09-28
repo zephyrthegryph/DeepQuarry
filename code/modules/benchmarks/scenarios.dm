@@ -272,7 +272,7 @@
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
 		generated_site_handle = om_handle(SSexpedition.generate_debug_station(seed, diagnostics))
-	catch(var/exception/error)
+	catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the benchmark diagnostics
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
 

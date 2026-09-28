@@ -943,31 +943,31 @@ I think I covered everything.
 			try
 				if(rgb2num(input_style_list[1]))
 					overlay_colors["Underbelly"] = input_style_list[1]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			under = input_style_list[2]
 			try
 				if(rgb2num(input_style_list[3]))
 					overlay_colors["Body"] = input_style_list[3]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			body_style = input_style_list[4]
 			try
 				if(rgb2num(input_style_list[5]))
 					overlay_colors["Ears"] = input_style_list[5]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			ears = input_style_list[6]
 			try
 				if(rgb2num(input_style_list[7]))
 					overlay_colors["Mane"] = input_style_list[7]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			mane = input_style_list[8]
 			try
 				if(rgb2num(input_style_list[9]))
 					overlay_colors["Horns"] = input_style_list[9]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			horns = input_style_list[10]
 			try
 				if(rgb2num(input_style_list[11]))
 					overlay_colors["Eyes"] = input_style_list[11]
-			catch
+			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			eyes = input_style_list[12]
 			build_icons()

@@ -72,6 +72,17 @@
 /datum/proc/declared_spill_list_vars()
 	return null
 
+/// Assoc: our var name -> the var on the object it names that points back
+/// at us (or null). The non-owning side of an owner/child pair (REF_BACK):
+/// phase 4 nulls ours and, if it still points at us, theirs.
+/datum/proc/declared_back_vars()
+	return null
+
+/// Names of `src`'s vars deliberately left set after destruction (REF_KEEP):
+/// exempt from the destroy postcondition (leak_check.dm).
+/datum/proc/declared_keep_vars()
+	return null
+
 /// Assoc: our cache var name -> its invalidation rule, CACHE_ON_CHANGE(bits),
 /// CACHE_ON_EVENT(path) or CACHE_ON_RELATION(path) (code/__DEFINES/om.dm). A
 /// cache may hold object references; the object-model core nulls it when the
@@ -112,7 +123,23 @@
 			"spill" = D.declared_spill_vars(),
 			"spill_list" = D.declared_spill_list_vars(),
 			"held" = D.declared_held_vars(),
+			"back" = D.declared_back_vars(),
+			"keep" = D.declared_keep_vars(),
 		)
+		// A declaration naming a var the type no longer has (the var was
+		// removed, the REF_* line wasn't) would runtime on D.vars[name] in the
+		// middle of a destroy transaction, abandoning it half done. Drop it
+		// here, once per type, loudly.
+		for(var/kind in table)
+			var/list/names = table[kind]
+			if(!length(names))
+				continue
+			for(var/name in names.Copy())
+				if(!(name in D.vars))
+					stack_trace("LIFECYCLE: [D.type] declares [kind] var '[name]', which it doesn't have; ignoring it")
+					names = names.Copy()
+					names -= name
+					table[kind] = names
 		cache[key] = table
 	return table
 
@@ -177,6 +204,8 @@
 	// Object-model relations, watches and forwards (code/datums/om/entity.dm).
 	if(D.om_rec)
 		om_teardown_links(D)
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: om teardown done")
 	var/list/table = dq_lifecycle_link_table(D)
 	if(!table)
 		return
@@ -186,7 +215,18 @@
 		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		// A typed var may still hold a type path (never materialized) or a list.
 		if(isdatum(child))
+			dq_lifecycle_check_owner_cycle(D, var_name, child)
+		// A typed var may still hold a type path (never materialized) or a list.
+		// An owned child already being destroyed (two objects that own each
+		// other, like an overmap mob and its marker) is only let go: its own
+		// transaction is further up this stack, and qdel() on it again is the
+		// "destroy proc was called multiple times" CRASH.
+		if(isdatum(child) && !QDELETED(child))
+			if(GLOB.dq_lifecycle_trace_depth)
+				log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: deleting owned [var_name] ([child.type])")
 			qdel(child)
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned vars done")
 	var/list/owned_list = table["owned_list"]
 	for(var/var_name in owned_list)
 		var/list/children = D.vars[var_name]
@@ -195,7 +235,8 @@
 		var/list/copy = children.Copy()
 		children.Cut()
 		for(var/datum/child in copy)
-			qdel(child)
+			if(!QDELETED(child))
+				qdel(child)
 	var/list/owned_values = table["owned_values"]
 	for(var/var_name in owned_values)
 		var/list/by_key = D.vars[var_name]
@@ -205,8 +246,12 @@
 		by_key.Cut()
 		for(var/key in copy)
 			var/datum/child = copy[key]
-			if(isdatum(child))
+			if(isdatum(child) && !QDELETED(child))
 				qdel(child)
+	if(GLOB.dq_lifecycle_trace_depth)
+		log_world("LIFECYCLE_TRACE: [D.type] [ref(D)] links: owned lists done")
+	for(var/our_var in table["back"])
+		dq_lifecycle_clear_back(D, our_var, table["back"][our_var])
 	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 	var/list/pairs = table["pair"]
 	for(var/our_var in pairs)
@@ -238,6 +283,8 @@
 		return
 	for(var/var_name in table["owned"])
 		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	for(var/our_var in table["back"])
+		dq_lifecycle_clear_back(D, our_var, table["back"][our_var])
 	for(var/var_name in table["pair"])
 		if(D.vars[var_name])
 			link_clear(D, var_name)
@@ -302,3 +349,49 @@
 	. = parent ? parent.Copy() : list()
 	for(var/key in extra)
 		.[key] = extra[key]
+
+/// REF_BACK: nulls `D.vars[our_var]` and, when `their_var` is named and the
+/// object it pointed at still points back at D through it, that too.
+/proc/dq_lifecycle_clear_back(datum/D, our_var, their_var)
+	var/datum/other = D.vars[our_var]
+	D.vars[our_var] = null
+	if(!their_var || !isdatum(other) || !(their_var in other.vars))
+		return
+	if(other.vars[their_var] == D)
+		other.vars[their_var] = null
+
+/// While a list, lifecycle framework reports (ownership cycles, leaks) are
+/// appended here instead of raised as runtimes (unit tests of the checks).
+GLOBAL_VAR(dq_lifecycle_report_capture)
+
+/// Reports a lifecycle framework violation: a stack_trace (a runtime, so a
+/// test run fails), or into GLOB.dq_lifecycle_report_capture while a test
+/// captures. Each distinct message is reported once per round.
+/proc/dq_lifecycle_report(message)
+	var/list/capture = GLOB.dq_lifecycle_report_capture
+	if(islist(capture))
+		capture += message
+		return
+	var/static/list/reported = list()
+	if(reported[message])
+		return
+	reported[message] = TRUE
+	stack_trace(message)
+
+/// Ownership must be a tree. Called for each owned child as phase 4 lets it
+/// go: if the child owns `D` back through any declared owned var, two types
+/// REF_OWN each other (tools/ci/ownership_cycle_lint.py is the static half;
+/// this catches untyped vars and declarations written as procs). The release
+/// of an already-deleting child (above) keeps it from crashing; this makes it
+/// loud. One side should own, the other name it with REF_BACK.
+/proc/dq_lifecycle_check_owner_cycle(datum/D, var_name, datum/child)
+	var/list/child_table = dq_lifecycle_link_table(child)
+	for(var/child_var in child_table["owned"])
+		if(child.vars[child_var] == D)
+			dq_lifecycle_report("LIFECYCLE OWNERSHIP CYCLE: [D.type].[var_name] owns [child.type], and [child.type].[child_var] owns [D.type] back. Ownership must be a tree: make one side REF_BACK.")
+			return
+	for(var/child_var in child_table["owned_list"])
+		var/list/L = child.vars[child_var]
+		if(islist(L) && (D in L))
+			dq_lifecycle_report("LIFECYCLE OWNERSHIP CYCLE: [D.type].[var_name] owns [child.type], and [child.type].[child_var] (owned list) owns [D.type] back. Ownership must be a tree: make one side REF_BACK.")
+			return

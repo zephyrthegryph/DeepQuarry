@@ -61,6 +61,8 @@
 
 GLOBAL_LIST_EMPTY(om_handle_slots)
 GLOBAL_LIST_EMPTY(om_handle_gens)
+/// Per handle slot: the type of the datum it names (for the collected-without-qdel report).
+GLOBAL_LIST_EMPTY(om_handle_types)
 GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// The datum's handle slot, 0 until om_handle() is first called on it.
@@ -92,6 +94,10 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 			id = length(slots)
 			gens[id] = 0
 		slots[id] = REF(D)
+		var/list/types = GLOB.om_handle_types
+		if(length(types) < id)
+			types.len = id
+		types[id] = D.type
 		D.om_hid = id
 	return "[id]:[gens[id]]"
 
@@ -130,6 +136,11 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/datum/D = locate(ref)
 	if(!isdatum(D) || D.om_hid != id)
 		// Collected without qdel(); a new datum may even have the ref now. Free the slot.
+		// A handle is not a reference: when it was the only thing naming its
+		// target, BYOND freed the target at once (a nullspace holder turned into
+		// a handle by the LC-refs sweep). That var owns what it names.
+		var/list/types = GLOB.om_handle_types
+		om_handle_collected_report(id <= length(types) ? types[id] : null)
 		slots[id] = null
 		GLOB.om_handle_gens[id]++
 		GLOB.om_handle_free += id
@@ -139,6 +150,13 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return D
 
 /// Lifecycle phase 5: frees `D`'s handle slot. Every handle to it stops resolving.
+/// A handle's target was freed by BYOND without going through qdel() (a
+/// qdel'd datum releases its slot in phase 5, so it never gets here): the var
+/// holding the handle was its only owner. Reported once per type, with a stack
+/// trace naming the reader; a runtime, so a test run fails.
+/proc/om_handle_collected_report(target_type)
+	dq_lifecycle_report("HANDLE TARGET COLLECTED WITHOUT QDEL: a handle to [target_type || "an unknown type"] outlived its target, which was freed without qdel() -- the var holding it must be REF_OWNED/REF_HELD, not a handle (see the stack for the reader)")
+
 /proc/om_handle_release(datum/D)
 	var/id = D.om_hid
 	if(!id)
@@ -175,17 +193,14 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec || rec.torn_down)
 		return 0
-	var/list/captured = call_args ? call_args.Copy() : null
+	var/list/captured = null
 	var/list/positions = null
-	for(var/i in 1 to length(captured))
-		var/datum/D = captured[i]
-		if(!isdatum(D))
-			continue
-		var/h = om_handle(D)
-		if(isnull(h))
+	if(call_args)
+		var/list/capture = om_capture_args(call_args)
+		if(!capture)
 			return 0
-		captured[i] = h
-		LAZYADD(positions, i)
+		captured = capture[1]
+		positions = capture[2]
 	var/local = om_timer_local(rec)
 	var/id = ++rec.timer_seq
 	LAZYADD(rec.timers, list(id, local + max(delay, 0), proc_ref, captured, positions))
@@ -294,12 +309,15 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 /// rest of the callee finishes on its own later, and the sleep is reported. Returns the
 /// callee's return value, or OM_CALLEE_SLEPT. Runtimes re-throw as before.
 /proc/om_guarded_call(datum/E, proc_ref, list/call_args)
-	var/list/state = list(TRUE, null, null) // running, result, exception
+	var/list/state = list(TRUE, null, null, FALSE) // running, result, exception, abandoned
 	om_trampoline(state, E, proc_ref, call_args)
 	if(state[3])
 		throw state[3]
 	if(!state[1])
 		return state[2]
+	// The callee slept: nobody reads state[3] any more, so a runtime it raises
+	// later must be reported by the trampoline itself (see om_trampoline()).
+	state[4] = TRUE
 	var/datum/om/scheduler/sched = om_scheduler()
 	sched.callees_slept++
 	log_runtime("OM: SLEPT [proc_ref] on [E]")
@@ -318,10 +336,15 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		else
 			state[2] = call(proc_ref)(arglist(call_args || list()))
 	catch(var/exception/e)
-		state[3] = e
+		// Still synchronous: om_guarded_call() rethrows it. After a sleep the
+		// caller is gone and would never look, so report it here -- a silent
+		// swallow here once hid a double-qdel CRASH and hung a test batch.
+		if(state[4])
+			dq_report_caught(e, "OM trampoline (after sleep) [proc_ref] on [E]")
+		else
+			state[3] = e
 	state[1] = FALSE
 
-/// Resolves captured handles in place. FALSE if any is gone.
 /// The live datums a list of OM handles names, in order, skipping any that have been deleted.
 /// For an instance list keyed by om_handle() (LC-refs: lists, lifecycle.md sec 4) that is iterated.
 /proc/om_resolve_all(list/handles)
@@ -331,12 +354,84 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		if(D)
 			. += D
 
-/proc/om_resolve_captured(list/captured, list/positions)
-	for(var/i in positions)
-		var/datum/D = om_resolve(captured[i])
-		if(!D)
-			return FALSE
-		captured[i] = D
+
+// ---------------------------------------------------------------- weak arguments
+//
+// Every deferred record in the OM (timers and their keyed/real-time forms, I/O
+// callbacks, timed actions) holds its datum arguments as OM handles, never as
+// references: a record can outlive what it names without keeping it alive (a
+// strong ref in a pending timer was a hard delete). om_capture_args() converts
+// at record time, om_resolve_captured() at fire time; a deleted argument drops
+// the call with a log_qdel() line. Synchronous paths never capture.
+//
+// Captured: each datum argument, and each datum inside a list argument one
+// level deep (a member, or the value under a text key). The list is copied
+// only when it holds a datum. A datum used as an assoc *key* stays a plain
+// reference (rare; re-keying would lose its value).
+
+/// Captures `call_args`' datums as handles. Returns list(captured, positions),
+/// or null when an argument is already deleted. A position is an argument
+/// index, or list(index, list(member indexes / text keys)) for a list argument.
+/proc/om_capture_args(list/call_args)
+	var/list/captured = call_args ? call_args.Copy() : null
+	var/list/positions = null
+	for(var/i in 1 to length(captured))
+		var/value = captured[i]
+		if(isdatum(value))
+			var/h = om_handle(value)
+			if(isnull(h))
+				return null
+			captured[i] = h
+			LAZYADD(positions, i)
+		else if(islist(value))
+			var/list/inner = value
+			var/list/copy = null
+			var/list/inner_positions = null
+			for(var/j in 1 to length(inner))
+				var/member = inner[j]
+				var/datum/target = null
+				var/where = null
+				if(istext(member))
+					var/keyed = inner[member]
+					if(isdatum(keyed))
+						target = keyed
+						where = member
+				else if(isdatum(member) && isnull(inner[member]))
+					target = member
+					where = j
+				if(!target)
+					continue
+				var/h = om_handle(target)
+				if(isnull(h))
+					return null
+				copy ||= inner.Copy()
+				copy[where] = h
+				LAZYADD(inner_positions, where)
+			if(copy)
+				captured[i] = copy
+				LAZYADD(positions, list(list(i, inner_positions)))
+	return list(captured, positions)
+
+/// Resolves captured handles in place. FALSE if any is gone (or, with
+/// `nulls_for_gone`, passes null for it instead: cleanup that must still run).
+/proc/om_resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)
+	for(var/p in positions)
+		if(isnum(p))
+			var/datum/D = om_resolve(captured[p])
+			if(!D && !nulls_for_gone)
+				return FALSE
+			captured[p] = D
+			continue
+		var/list/entry = p
+		var/i = entry[1]
+		var/list/inner = captured[i]
+		inner = inner.Copy() // the record keeps its handles
+		for(var/where in entry[2])
+			var/datum/D = om_resolve(inner[where])
+			if(!D && !nulls_for_gone)
+				return FALSE
+			inner[where] = D
+		captured[i] = inner
 	return TRUE
 
 /datum/om/behaviour/internal/timers
@@ -366,11 +461,12 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			rec.timers = null
 		if(!om_resolve_captured(captured, positions))
 			rec.sched.timers_dropped++
+			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired")
 			continue
 		try
 			om_guarded_call(E, proc_ref, captured)
 		catch(var/exception/e)
-			stack_trace("om timer [proc_ref] on [E]: [e]")
+			dq_report_caught(e, "om timer [proc_ref] on [E]")
 	om_timers_reschedule(rec)
 
 // ---------------------------------------------------------------- keyed timers
@@ -392,12 +488,30 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/same = TRUE
 		for(var/j in 1 to length(call_args))
 			var/arg = call_args[j]
-			if(captured[j] != arg && (!isdatum(arg) || captured[j] != om_handle(arg)))
+			if(captured[j] != arg && (!isdatum(arg) || captured[j] != om_handle(arg)) && !om_captured_list_matches(captured[j], arg))
 				same = FALSE
 				break
 		if(same)
 			return i
 	return 0
+
+/// A captured list argument (datums as handles) against the caller's list.
+/proc/om_captured_list_matches(captured_value, arg)
+	if(!islist(captured_value) || !islist(arg))
+		return FALSE
+	var/list/C = captured_value
+	var/list/A = arg
+	if(length(C) != length(A))
+		return FALSE
+	for(var/j in 1 to length(A))
+		var/member = A[j]
+		if(C[j] != member && (!isdatum(member) || C[j] != om_handle(member)))
+			return FALSE
+		if(istext(member))
+			var/value = A[member]
+			if(C[member] != value && (!isdatum(value) || C[member] != om_handle(value)))
+				return FALSE
+	return TRUE
 
 /// om_after(), unless the same call (owner, proc, arguments) is already pending: then
 /// nothing, and the pending timer's id is returned. (Was TIMER_UNIQUE.)

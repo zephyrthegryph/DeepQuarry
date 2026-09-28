@@ -221,21 +221,6 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 /datum/om/task/timed/simple/timed_check()
 	return !call_check_proc || om_call_captured(receiver, call_check_proc, check_args, check_pos)
 
-/// Captures datum arguments as handles. Returns list(captured, positions), or null if one is gone.
-/proc/om_capture_args(list/call_args)
-	var/list/captured = call_args ? call_args.Copy() : null
-	var/list/positions = null
-	for(var/i in 1 to length(captured))
-		var/datum/D = captured[i]
-		if(!isdatum(D))
-			continue
-		var/h = om_handle(D)
-		if(isnull(h))
-			return null
-		captured[i] = h
-		LAZYADD(positions, i)
-	return list(captured, positions)
-
 /// Calls a captured proc: FALSE if the callee or an argument is gone, else the proc's result
 /// (TRUE for a null result). `nulls_for_gone`: a gone argument is passed as null instead
 /// (cleanup that must run).
@@ -243,10 +228,8 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	if(!proc_ref)
 		return TRUE
 	var/list/call_args = captured ? captured.Copy() : list()
-	if(nulls_for_gone)
-		for(var/i in positions)
-			call_args[i] = om_resolve(call_args[i])
-	else if(!om_resolve_captured(call_args, positions))
+	if(!om_resolve_captured(call_args, positions, nulls_for_gone))
+		log_qdel("OM: dropped timed-action call [proc_ref] on [callee]: a captured argument was deleted")
 		return FALSE
 	if(copytext("[proc_ref]", 1, 7) == "/proc/")
 		. = call(proc_ref)(arglist(call_args))
@@ -367,7 +350,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 			else
 				call(E, proc_ref)(arglist(list(D) + (extra || list())))
 		catch(var/exception/e)
-			stack_trace("om_stagger [proc_ref] on [E]: [e]")
+			dq_report_caught(e, "om_stagger [proc_ref] on [E]")
 	if(last < length(items))
 		om_after(E, delay, /proc/om_stagger_step, E, items, last + 1, delay, proc_ref, per_step, extra, on_end)
 	else if(on_end)

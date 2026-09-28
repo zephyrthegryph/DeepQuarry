@@ -194,7 +194,9 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		C.update_icon()
 	cameras_telegraphed.Cut()
 
-REF_OWNED(/mob/observer/eye/aiEye/pic_in_pic, "screen")
+// The screen owns its eye (REF_OWNED aiEye); `screen` is only the way back,
+// so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
+REF_BACK(/mob/observer/eye/aiEye/pic_in_pic, list("screen" = "aiEye"))
 
 // ALLOW(lifecycle): stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/Destroy()

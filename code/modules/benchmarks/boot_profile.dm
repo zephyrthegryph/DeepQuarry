@@ -198,7 +198,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		return null
 	try
 		return json_decode(text)
-	catch
+	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
 		return null
 
 /// Summarises a proc profile: the top procs by self and by total time.

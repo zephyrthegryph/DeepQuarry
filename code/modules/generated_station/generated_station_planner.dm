@@ -110,7 +110,7 @@
 		return FALSE
 	try
 		state["root"] = json_decode(vg_verdigris_station_layout_section(state["job"], "header", "0", "0"))
-	catch(var/exception/error)
+	catch(var/exception/error) // ALLOW(silent_catch): the failure is returned through plan_failed()
 		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "[error]"))
 		return FALSE
 	state["section"] = 1
@@ -127,7 +127,7 @@
 	var/list/page
 	try
 		page = json_decode(vg_verdigris_station_layout_section(state["job"], section, num2text(state["offset"], 20), num2text(page_size, 20)))
-	catch(var/exception/error)
+	catch(var/exception/error) // ALLOW(silent_catch): the failure is returned through plan_failed()
 		plan_async_end(state, plan_failed(state["job"], state["request"], state["seed"], "[error]"))
 		return null
 	if(length(page))

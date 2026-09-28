@@ -56,8 +56,6 @@
 
 	update_icon()
 
-REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
-
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
 		//get the next casing

@@ -124,7 +124,7 @@ SUBSYSTEM_DEF(time_track)
 	var/list/send_maps_data = null
 	try
 		send_maps_data = json_decode(sendmaps_json)
-	catch
+	catch // ALLOW(silent_catch): malformed profiler JSON is dumped to bad_sendmaps.json and tracking stops
 		text2file(sendmaps_json,"bad_sendmaps.json")
 		can_fire = FALSE
 		return

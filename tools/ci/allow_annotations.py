@@ -37,9 +37,11 @@ LINTS = {
     "latent": "tools/ci/latent_lint.py",
     "lifecycle": "tools/ci/lifecycle_counts_lint.py (Destroy() overrides and qdel( sites)",
     "object_keyed_lists": "tools/ci/declared_refs_lint.py (object-keyed instance lists)",
+    "ownership_cycle": "tools/ci/ownership_cycle_lint.py (type-level REF_OWNED cycles)",
     "pollers": "tools/ci/pollers_lint.py",
     "registry": "tools/ci/registry_lint.py",
     "scheduler": "tools/ci/scheduler_lints.py",
+    "silent_catch": "tools/ci/silent_catch_lint.py (catches that swallow an exception)",
     "spatial": "tools/ci/spatial_lint.py",
     "state_ref": "tools/ci/state_schema_lint.py",
 }

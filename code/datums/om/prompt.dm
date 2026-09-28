@@ -237,7 +237,7 @@
 				else
 					spec = call(E, step)(user, src)
 			catch(var/exception/e)
-				stack_trace("om prompt sequence step [step] on [E]: [e]")
+				dq_report_caught(e, "om prompt sequence step [step] on [E]")
 				return null
 		if(spec == PROMPT_STOP)
 			return null
@@ -274,7 +274,7 @@
 			else
 				call(E, seq_done)(user, src)
 		catch(var/exception/e)
-			stack_trace("om prompt sequence [seq_done] on [E]: [e]")
+			dq_report_caught(e, "om prompt sequence [seq_done] on [E]")
 	return src
 
 /proc/om_prompt_sequence_answered(datum/E, mob/user, answer, datum/om/prompt/P)
@@ -396,7 +396,7 @@
 		else
 			call(E, proc_ref)(user, value, P)
 	catch(var/exception/e)
-		stack_trace("om prompt [proc_ref] on [E]: [e]")
+		dq_report_caught(e, "om prompt [proc_ref] on [E]")
 
 /// Types under `root` whose path contains `text`, for kind "typepath".
 /proc/om_prompt_typepaths(text, root)
