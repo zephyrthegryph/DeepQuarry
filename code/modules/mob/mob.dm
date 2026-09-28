@@ -746,11 +746,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 /mob/proc/is_alive()
 	return stat != DEAD
 
-/mob/proc/is_mechanical()
-	if(mind && (mind.assigned_role == JOB_CYBORG || mind.assigned_role == JOB_AI))
-		return 1
-	return istype(src, /mob/living/silicon) || get_species() == "Machine"
-
 /mob/proc/is_ready()
 	return client && !!mind
 

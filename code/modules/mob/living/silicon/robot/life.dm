@@ -247,26 +247,7 @@
 	if(!. || !self.healths)
 		return
 
-	if(self.stat == DEAD || (self.status_effects & FAKEDEATH))
-		self.healths.icon_state = "health7"
-		return
-
-	// Same bands as the old 200..-200 health scale, read from vitality.
-	var/v = self.vitality()
-	if(v >= 1)
-		self.healths.icon_state = "health0"
-	else if(v >= 0.875)
-		self.healths.icon_state = "health1"
-	else if(v >= 0.75)
-		self.healths.icon_state = "health2"
-	else if(v >= 0.625)
-		self.healths.icon_state = "health3"
-	else if(v >= 0.5)
-		self.healths.icon_state = "health4"
-	else if(v > 0)
-		self.healths.icon_state = "health5"
-	else
-		self.healths.icon_state = "health6"
+	self.healths.icon_state = vitality_health_band(self)
 
 /mob/living/silicon/robot/proc/update_cell()
 	if(cell)

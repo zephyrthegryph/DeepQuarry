@@ -1631,6 +1631,7 @@
 			self.clear_fullscreen("fear")
 
 
+		var/static/list/custom_species = list(SPECIES_CUSTOM, SPECIES_HANNER)
 		var/fat_alert = /atom/movable/screen/alert/fat
 		var/hungry_alert = /atom/movable/screen/alert/hungry
 		var/starving_alert = /atom/movable/screen/alert/starving
@@ -1639,7 +1640,7 @@
 			fat_alert = /atom/movable/screen/alert/fat/synth
 			hungry_alert = /atom/movable/screen/alert/hungry/synth
 			starving_alert = /atom/movable/screen/alert/starving/synth
-		else if(self.get_species() in list(SPECIES_CUSTOM, SPECIES_HANNER))
+		else if(self.get_species() in custom_species)
 			var/datum/species/custom/C = self.species
 			if(/datum/trait/neutral/bloodsucker in C.traits)
 				fat_alert = /atom/movable/screen/alert/fat/vampire
@@ -1728,8 +1729,9 @@
 	if(!. || !self.healths)
 		return
 
-	if(self.stat == DEAD || (self.status_effects & FAKEDEATH)) //Dead
+	if(self.stat == DEAD || (self.status_flags & FAKEDEATH)) //Dead
 		self.healths.icon_state = "health7"	//DEAD healthmeter
+		self.health_doll_key = null
 		return
 
 	if(self.is_critical()) //Crit
@@ -1737,44 +1739,55 @@
 
 	if(self.factor(BF_ANALGESIA) > 100)
 		self.healths.icon_state = "health_numb"
+		self.health_doll_key = null
 		return
 
-	// Generate a by-limb health display.
-	var/mutable_appearance/healths_ma = new(self.healths)
-	healths_ma.icon_state = "blank"
-	healths_ma.overlays = null
-	healths_ma.plane = PLANE_PLAYER_HUD
-
-	var/no_damage = 1
+	// A by-limb health display. The doll is only rebuilt when what it shows changes: each limb's
+	// cached damage image and colour band, fire, and the pain indicators make up the key.
 	var/trauma_val = 0 // Used in calculating softcrit/hardcrit indicators.
 	if(!(self.species.flags & NO_PAIN))
 		trauma_val = self.pain_knockout_fraction()
 	var/limb_trauma_val = trauma_val*0.3
-	// Collect and apply the images all at once to avoid appearance churn.
-	var/list/health_images = list()
+	var/hallucination_hud = self.get_hallucination_state()?.get_hud_state()
+	var/burning = self.on_fire || hallucination_hud == HUD_HALLUCINATION_ONFIRE
+	if(hallucination_hud == HUD_HALLUCINATION_CRIT)
+		trauma_val = 2
+
+	var/no_damage = 1
+	var/key = "[burning ? self.get_fire_icon_state() : ""]"
 	for(var/obj/item/organ/external/E in self.organs)
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
+		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
+		key += "|ef[limb_image][limb_image.color]"
+	var/show_pain = trauma_val && !(self.species.flags & NO_PAIN)
+	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
+	if(key == self.health_doll_key)
+		return
+	self.health_doll_key = key
+
+	var/mutable_appearance/healths_ma = new(self.healths)
+	healths_ma.icon_state = "blank"
+	healths_ma.overlays = null
+	healths_ma.plane = PLANE_PLAYER_HUD
+	var/list/health_images = list()
+	for(var/obj/item/organ/external/E in self.organs)
 		health_images += E.get_damage_hud_image(limb_trauma_val)
-
-	// Apply a fire overlay if we're burning.
-	if(self.on_fire || self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_ONFIRE)
+	if(burning)
 		health_images += image('icons/mob/OnFire.dmi',"[self.get_fire_icon_state()]")
-
-	// Show a general pain/crit indicator if needed.
-	if(self.get_hallucination_state()?.get_hud_state() == HUD_HALLUCINATION_CRIT)
-		trauma_val = 2
-	if(trauma_val)
-		if(!(self.species.flags & NO_PAIN))
-			if(trauma_val > 0.7)
-				health_images += image('icons/mob/screen1_health.dmi',"softcrit")
-			if(trauma_val >= 1)
-				health_images += image('icons/mob/screen1_health.dmi',"hardcrit")
-	else if(no_damage)
+	if(show_pain)
+		if(trauma_val > 0.7)
+			health_images += image('icons/mob/screen1_health.dmi',"softcrit")
+		if(trauma_val >= 1)
+			health_images += image('icons/mob/screen1_health.dmi',"hardcrit")
+	else if(!trauma_val && no_damage)
 		health_images += image('icons/mob/screen1_health.dmi',"fullhealth")
 
 	healths_ma.add_overlay(health_images)
 	self.healths.appearance = healths_ma
+
+/// The last by-limb health doll this human's HUD built (see health_icons); null forces a rebuild.
+/mob/living/carbon/human/var/tmp/health_doll_key
 
 /datum/om/stage/life/vision/carbon/human
 	of = /mob/living/carbon/human
@@ -2401,8 +2414,8 @@
 		return // No brain.
 
 	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	if(!brain)
-		return // Still no brain.
+	if(!istype(brain))
+		return // No brain, or an MMI holder / posibrain in the slot (they do not decay).
 
 	brain.tick_defib_timer()
 

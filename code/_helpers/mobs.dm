@@ -138,6 +138,29 @@
 			return icon_state
 	return icon_states[icon_states.len] // If we had no match, return the last element
 
+/// The one vitality -> "health0".."health7" band table for a mob's own health meter
+/// (robots, brains, aliens, pAIs, simple mobs). Dead or faking death reads "health7",
+/// critical or no vitality reads "health6".
+/proc/vitality_health_band(mob/living/L)
+	if(L.stat == DEAD || (L.status_flags & FAKEDEATH))
+		return "health7"
+	if(L.is_critical())
+		return "health6"
+	var/percent = L.vitality() * 100
+	if(percent >= 100)
+		return "health0"
+	if(percent >= 80)
+		return "health1"
+	if(percent >= 60)
+		return "health2"
+	if(percent >= 40)
+		return "health3"
+	if(percent >= 20)
+		return "health4"
+	if(percent > 0)
+		return "health5"
+	return "health6"
+
 /*
 Proc for attack log creation, because really why not
 1 argument is the actor

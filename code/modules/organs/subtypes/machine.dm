@@ -56,10 +56,6 @@ REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 /obj/item/organ/internal/mmi_holder/LateInitialize()
 	update_from_mmi()
 
-// This sits in the brain organ slot, but is not a brain. Posibrains and dronecores aren't brains either.
-/obj/item/organ/internal/mmi_holder/proc/tick_defib_timer()
-	return
-
 /obj/item/organ/internal/mmi_holder/proc/get_control_efficiency()
 	. = max(0, 1 - round(damage / max_damage, 0.1))
 
