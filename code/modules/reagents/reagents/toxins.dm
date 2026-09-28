@@ -18,13 +18,16 @@
 	dermal_absorption = 0
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
+	// Prometheans take a quarter dose, which halves the standard tox since they are 'Small' for flaps.
+	species_strength = alist(IS_SLIME = 0.25)
 
 /datum/reagent/toxin/affect_blood(mob/living/carbon/M, alien, removed)
 	var/poison_strength = strength * M.species.chem_strength_tox
-	if(strength && alien != IS_DIONA)
+	if(strength && !inert_for(M))
 		if(issmall(M)) removed *= 2 // Small bodymass, more effect from lower volume.
+		removed *= species_mult(M)
+		// Kept: a Promethean dose-gated behaviour (nourishment or repair), not a strength.
 		if(alien == IS_SLIME)
-			removed *= 0.25 // Results in half the standard tox as normal. Prometheans are 'Small' for flaps.
 			if(dose >= 10)
 				M.adjust_nutrition(poison_strength * removed) // Body has to deal with the massive influx of toxins, rather than try using them to repair.
 			else
@@ -100,7 +103,7 @@
 
 /datum/reagent/toxin/neurotoxic_protein/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien != IS_DIONA)
+	if(!inert_for(M))
 		if(M.canmove && !M.restrained() && istype(M.loc, /turf/space))
 			step(M, pick(GLOB.cardinal))
 		if(prob(5))
@@ -181,9 +184,12 @@
 	strength = 1
 	poison_affliction = /datum/affliction/venom/arachnid
 
+/datum/reagent/toxin/warningtoxin
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/toxin/warningtoxin/affect_blood(mob/living/carbon/M, alien, removed)
 	var/poison_strength = strength * M.species.chem_strength_tox
-	if(strength && alien != IS_DIONA)
+	if(strength)
 		M.injure(INJURY_TOXIN, poison_strength * removed, source = src, affliction = poison_affliction)
 		M.status_at_least(EFFECT_DRUGGED, 10)
 		M.status_adjust(EFFECT_JITTERY, 5)
@@ -340,11 +346,7 @@
 	filtered_organs = list(O_SPLEEN, O_KIDNEYS)
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
-
-/datum/reagent/toxin/potassium_chloride/affect_blood(mob/living/carbon/M, alien, removed)
-	..()
-	if(alien == IS_SLIME)
-		M.injure(INJURY_BURN, removed * 2, source = src)
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BURN = 2))
 
 /datum/reagent/toxin/potassium_chloride/overdose(mob/living/carbon/M, alien)
 	..()
@@ -369,6 +371,7 @@
 	filtered_organs = list(O_SPLEEN, O_KIDNEYS)
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_BURN = 3))
 
 /datum/reagent/toxin/potassium_chlorophoride/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
@@ -379,8 +382,6 @@
 			if(H.losebreath >= 10)
 				H.losebreath = max(10, M.losebreath-10)
 			H.status_at_least(EFFECT_WEAKENED, 10)
-	if(alien == IS_SLIME)
-		M.injure(INJURY_BURN, removed * 3, source = src)
 
 /datum/reagent/toxin/zombiepowder
 	name = REAGENT_ZOMBIEPOWDER
@@ -401,7 +402,7 @@
 
 /datum/reagent/toxin/zombiepowder/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	if(!(M.status_flags & FAKEDEATH))
 		M.emote("deathgasp")
@@ -525,13 +526,16 @@
 		var/obj/effect/alien/weeds/alien_weeds = O
 		alien_weeds.take_damage(rand(15, 35), BRUTE)
 
+/datum/reagent/toxin/plantbgone
+	// Herbicide: harmless to everyone but plant people.
+	species_injuries_blood = alist(IS_DIONA = alist(INJURY_TOXIN = 50))
+	species_injuries_touch = alist(IS_DIONA = alist(INJURY_TOXIN = 50))
+
 /datum/reagent/toxin/plantbgone/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		M.injure(INJURY_TOXIN, 50 * removed, source = src)
+	return
 
 /datum/reagent/toxin/plantbgone/affect_touch(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		M.injure(INJURY_TOXIN, 50 * removed, source = src)
+	return
 
 /datum/reagent/toxin/sifslurry
 	name = REAGENT_SIFSAP
@@ -555,7 +559,7 @@
 	..()
 
 /datum/reagent/toxin/sifslurry/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.apply_effect(2 * removed,IRRADIATE, 0, 0)
 	M.apply_effect(5 * removed,DROWSY, 0, 0)
@@ -620,7 +624,7 @@
 	M.injure(INJURY_BURN, 3 * removed, source = src)
 	if(M.fire_stacks <= 1.5)
 		M.adjust_fire_stacks(0.15)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	if(prob(10))
 		to_chat(M, span_warning("Your veins feel like they're on fire!"))
@@ -779,14 +783,14 @@
 
 /datum/reagent/soporific
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	species_strength = alist(IS_SLIME = 0.15) // threshold ~1/6; evens to 3 as they are 'small' for flaps
 
 /datum/reagent/soporific/affect_blood(mob/living/carbon/M, alien, removed)
 	var/threshold = 1
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		threshold /= M.species.chem_strength_tox
 
-	if(alien == IS_SLIME)
-		threshold *= 0.15 //~1/6	//Evens to 3 due to the fact they are considered 'small' for flaps.
+	threshold *= species_mult(M)
 
 	var/effective_dose = dose
 	if(issmall(M))
@@ -802,6 +806,7 @@
 			M.status_at_least(EFFECT_WEAKENED, 2)
 		M.status_at_least(EFFECT_DROWSY, 20)
 	else
+		// Kept: a different symptom set, not a strength.
 		if(alien == IS_SLIME) //They don't have eyes, and they don't really 'sleep'. Fumble their general senses.
 			M.status_at_least(EFFECT_BLURRY, 30)
 			if(prob(20))
@@ -831,14 +836,14 @@
 
 /datum/reagent/chloralhydrate
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	species_strength = alist(IS_SLIME = 0.15) // threshold ~1/6
 
 /datum/reagent/chloralhydrate/affect_blood(mob/living/carbon/M, alien, removed)
 	var/threshold = 1
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		threshold /= M.species.chem_strength_tox
 
-	if(alien == IS_SLIME)
-		threshold *= 0.15 //~1/6
+	threshold *= species_mult(M)
 
 	var/effective_dose = dose
 	if(issmall(M))
@@ -851,6 +856,7 @@
 		M.status_at_least(EFFECT_WEAKENED, 30)
 		M.status_at_least(EFFECT_BLURRY, 10)
 	else
+		// Kept: a different symptom set, not a strength.
 		if(alien == IS_SLIME)
 			if(prob(30))
 				M.status_at_least(EFFECT_DEAFENED, 4)
@@ -897,9 +903,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/serotrotium
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
+
 /datum/reagent/serotrotium/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(prob(7))
 		M.emote(pick("twitch", "drool", "moan", "gasp"))
 	return
@@ -938,14 +945,13 @@
 
 /datum/reagent/cryptobiolin
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	species_strength = alist(IS_SLIME = 0.15) // ~1/6
 
 /datum/reagent/cryptobiolin/affect_blood(mob/living/carbon/M, alien, removed)
 	var/drug_strength = 4
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		drug_strength *= M.species.chem_strength_tox
-
-	if(alien == IS_SLIME)
-		drug_strength *= 0.15 //~ 1/6
+	drug_strength *= species_mult(M)
 
 	M.status_adjust(EFFECT_DIZZY, drug_strength)
 	M.status_at_least(EFFECT_CONFUSED, drug_strength * 5)
@@ -990,14 +996,13 @@
 
 /datum/reagent/mindbreaker
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	species_strength = alist(IS_SLIME = 0.15) // ~1/6
 
 /datum/reagent/mindbreaker/affect_blood(mob/living/carbon/M, alien, removed)
 	var/drug_strength = 100
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		drug_strength *= M.species.chem_strength_tox //Ex: If you have a CST of 0.01 (100x resistant) drug_strength would = 10000
-
-	if(alien == IS_SLIME)
-		drug_strength *= 0.15 //~ 1/6
+	drug_strength *= species_mult(M)
 
 	drug_strength = CLAMP(drug_strength, 0, 150) //Let's not have users be hallucinating more than 5 minutes.
 
