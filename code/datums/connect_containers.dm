@@ -24,6 +24,7 @@ REF_BACK(/datum/connect_containers, list("listener" = null))
 	src.connections = connections
 	set_tracked(tracked)
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/connect_containers/Destroy()
 	if(tracked())
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)

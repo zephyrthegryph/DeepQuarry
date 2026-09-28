@@ -1078,6 +1078,7 @@ REF_BACK(/datum/character_setup_button, list("owner" = "character_setup_button")
 	if(owner.client)
 		create_mob_button(owner)
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/character_setup_button/Destroy(force)
 	if(owner)
 		om_unhook(owner, /datum/om/event/mob_client_login, src)

@@ -36,6 +36,7 @@ REF_BACK(/datum/recursive_move, list("holder" = "recursive_move"))
 	holder = new_holder
 	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/recursive_move/Destroy()
 	reset_parents()
 	om_unhook_all(src)

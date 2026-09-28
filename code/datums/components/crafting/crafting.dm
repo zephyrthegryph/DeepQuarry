@@ -5,6 +5,7 @@
 	if(ismob(owner))
 		om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_owner_login))
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/personal_crafting/Destroy()
 	om_unhook_all(src)
 	owner = null

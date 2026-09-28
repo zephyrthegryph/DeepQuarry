@@ -16,6 +16,7 @@
 	om_hook(owner, /datum/om/event/movable_attempted_move, src, PROC_REF(handle_location_change))
 	update_turf_hooks(get_turf(owner))
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/topturfcrossed/Destroy()
 	if(owner)
 		om_unhook(owner, /datum/om/event/movable_attempted_move, src)

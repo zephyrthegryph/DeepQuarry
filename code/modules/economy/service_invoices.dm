@@ -340,6 +340,7 @@ REF_BACK(/datum/economic_adoption, list("parent" = "economic_adoption"))
 	om_hook(parent, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
 	om_hook(parent, /datum/om/event/item_attack, src, PROC_REF(on_attack))
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/economic_adoption/Destroy()
 	if(parent)
 		om_unhook(parent, null, src)

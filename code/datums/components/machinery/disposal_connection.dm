@@ -8,7 +8,7 @@
 	/// The connected machine.
 	var/obj/owner
 
-/obj/var/datum/disposal_system_connection/disposal_connection
+/obj/var/tmp/datum/disposal_system_connection/disposal_connection
 REF_OWNED(/obj, "disposal_connection")
 
 /// Gives src a disposal network connection (owned; deleted with src). Returns it.
@@ -30,6 +30,7 @@ REF_OWNED(/obj, "disposal_connection")
 
 REF_BACK(/datum/disposal_system_connection, list("owner" = "disposal_connection"))
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/disposal_system_connection/Destroy()
 	om_unhook_all(src)
 	if(owner?.disposal_connection == src)

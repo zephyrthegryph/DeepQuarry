@@ -35,6 +35,7 @@ REF_BACK(/datum/connect_range, list("listener" = null))
 	src.works_in_containers = works_in_containers
 	set_tracked(tracked)
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/connect_range/Destroy()
 	if(tracked())
 		unregister_hooks(isturf(tracked()) ? tracked() : tracked().loc, turfs)

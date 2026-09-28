@@ -34,6 +34,7 @@ REF_BACK(/datum/robot_belly, list("owner" = "robot_belly"))
 	om_hook(R, /datum/om/event/robot_equipment_changed, src, PROC_REF(on_equipment_changed))
 	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/robot_belly/Destroy(force)
 	var/mob/living/silicon/robot/R = owner
 	if(R)

@@ -168,6 +168,7 @@
 		owner.overlay_light = null
 	owner = null
 
+// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
 /datum/overlay_lighting/Destroy()
 	qdel(visible_mask, TRUE)
 	visible_mask = null
