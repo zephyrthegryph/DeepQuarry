@@ -250,8 +250,8 @@ REF_OWNED(/obj/item/radio, "wires")
 			if((new_frequency < PUBLIC_LOW_FREQ || new_frequency > PUBLIC_HIGH_FREQ))
 				new_frequency = sanitize_frequency(new_frequency)
 			set_frequency(new_frequency)
-			if(hidden_uplink())
-				if(hidden_uplink().check_trigger(ui.user, frequency, traitor_frequency))
+			if(item_hidden_uplink(src))
+				if(item_hidden_uplink(src).check_trigger(ui.user, frequency, traitor_frequency))
 					// close the TGUI Radio when the uplink trips (was browse(null)).
 					SStgui.close_uis(src)
 			. = TRUE

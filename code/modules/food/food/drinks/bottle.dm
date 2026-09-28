@@ -37,7 +37,7 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 	..()
 
 	if(isGlass && violent_throw)
-		var/throw_dist = get_dist(throw_source(), loc)
+		var/throw_dist = get_dist(movable_throw_source(src), loc)
 		if(smash_check(throw_dist)) //not as reliable as smashing directly
 			if(reagents)
 				hit_atom.visible_message(span_notice("The contents of \the [src] splash all over [hit_atom]!"))

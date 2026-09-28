@@ -609,8 +609,9 @@
 						if ((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
 							qdel(R)
 					set_temp("Employment record deleted.")
-					qdel(active1())
+					var/datum/data/record/deleted_record = active1()
 					active1_handle = null
+					QDEL_NULL(deleted_record)
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
 				if(!GLOB.data_core.general.Find(general_record))

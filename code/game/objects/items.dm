@@ -446,8 +446,8 @@
 		if((item_flags & DROPDEL) && loc != user && !QDELETED(src))
 			qdel(src)
 
-	if(my_augment() && !QDELETED(src))
-		forceMove(my_augment())
+	if(item_my_augment(src) && !QDELETED(src))
+		forceMove(item_my_augment(src))
 
 // called just as an item is picked up (loc is not yet changed)
 /obj/item/proc/pickup(mob/user)
@@ -1140,10 +1140,10 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 
 REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay"))
 
-/// LC-refs: hidden uplink -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/proc/hidden_uplink() as /obj/item/uplink/hidden
-	return om_resolve(hidden_uplink_handle)
+/// LC-refs: hidden uplink -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
+	return om_resolve(I?.hidden_uplink_handle)
 
-/// LC-refs: my augment -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/proc/my_augment() as /obj/item/organ
-	return om_resolve(my_augment_handle)
+/// LC-refs: my augment -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/proc/item_my_augment(obj/item/I) as /obj/item/organ
+	return om_resolve(I?.my_augment_handle)

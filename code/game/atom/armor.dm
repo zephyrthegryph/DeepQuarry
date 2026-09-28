@@ -251,7 +251,7 @@
 /// This atom's armour. The one accessor: never read armour any other way.
 /atom/proc/get_armor()
 	RETURN_TYPE(/datum/armor)
-	return armor_override() || dq_armor_from_spec(armor_spec)
+	return atom_armor_override(src) || dq_armor_from_spec(armor_spec)
 
 /// Give this instance armour `new_armor` (an interned datum); null restores
 /// its type's.
@@ -295,6 +295,6 @@
 			return
 	return 0
 
-/// LC-refs: armor override -- an OM handle (om_handle()), so it reads null once that is deleted.
-/atom/proc/armor_override() as /datum/armor
-	return om_resolve(armor_override_handle)
+/// LC-refs: armor override -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/proc/atom_armor_override(atom/A) as /datum/armor
+	return om_resolve(A?.armor_override_handle)

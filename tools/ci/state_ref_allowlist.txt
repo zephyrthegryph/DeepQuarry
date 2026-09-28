@@ -7,7 +7,6 @@
 # Relationships with other live objects.
 /atom/movable/riding_datum # relationship: riding setup while buckled
 /obj/item/master # relationship: the item this one is attached to
-/obj/item/my_augment # relationship: the organ this item is an augment of
 
 # Running behaviour.
 /atom/movable/throwing # running: set only mid-throw
@@ -15,16 +14,12 @@
 
 # Owned state with no codec yet; set on few items, which stay real until one is written.
 /obj/talking_atom # owned: xenoarch speech state with mob refs
-/obj/item/hidden_uplink # owned: uplink object held outside contents
 /obj/item/identity # owned: identification datum, refers back to its holder
 
 # Values that are not objects in practice.
-/obj/item/default_worn_icon # holds an icon file, which encodes as a resource; a runtime /icon is refused
 
 # baseline when CI was wired (2026-09-26); convert or give a real reason.
 /obj/item/card/id/syndicate/agentcard_module # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/card/id/syndicate/registered_user # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/card/id/synthetic/borg/robot_owner # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/IC # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/accessory/gaiter/breathmask # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/accessory/has_suit # baseline when CI was wired (2026-09-26); convert or give a real reason
@@ -56,18 +51,14 @@
 /obj/item/clothing/under/rolled_down_icon # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/clothing/under/rolled_down_sleeves_icon # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/borg/keyslot # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/radio/borg/myborg # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/event/effect_overlay # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/radio/headset/event/wearer # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/keyslot1 # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/headset/keyslot2 # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/integrated/active # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/integrated/hostpda # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/radio/radio_connection # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/radio/secure_radio_connections # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/stack/material/processed_alloy/batch_state # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/stack/synths # baseline when CI was wired (2026-09-26); convert or give a real reason
-/obj/item/storage/wallet/front_id # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/tool/transforming/welder # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/toy/minigibber/stored_minature # baseline when CI was wired (2026-09-26); convert or give a real reason
 /obj/item/toy/plushie/stored_item # baseline when CI was wired (2026-09-26); convert or give a real reason

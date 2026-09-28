@@ -867,7 +867,3 @@
 		C?.open_particle_editor(src)
 
 REF_OWNED(/atom/movable, list("riding_datum"))
-
-/// LC-refs: throw source -- an OM handle (om_handle()), so it reads null once that is deleted.
-/atom/movable/proc/throw_source() as /turf
-	return om_resolve(throw_source_handle)

@@ -19,5 +19,5 @@
 	to_chat(source, "The implanted uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.")
 
 /obj/item/implant/uplink/trigger(emote, mob/source as mob)
-	if(hidden_uplink() && usr == source) // Let's not have another people activate our uplink
-		hidden_uplink().check_trigger(source, emote, activation_emote)
+	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
+		item_hidden_uplink(src).check_trigger(source, emote, activation_emote)

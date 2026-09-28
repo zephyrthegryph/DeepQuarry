@@ -8,7 +8,7 @@
 	if(!trash_eatable) //OOC pref. This /IS/ respected, even if adminbus_trash is enabled
 		to_chat(user, span_warning("You can't eat that so casually!"))
 		return FALSE
-	if(hidden_uplink())
+	if(item_hidden_uplink(src))
 		to_chat(user, span_warning("You really should not be eating this."))
 		message_admins("[key_name(user)] has attempted to ingest an uplink item. ([user ? ADMIN_JMP(user) : "null"])")
 		return FALSE

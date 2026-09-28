@@ -4,9 +4,9 @@
 // If it returns true, I recommend closing the item's normal menu
 /obj/item/proc/active_uplink_check(mob/user as mob)
 	// Activates the uplink if it's active
-	if(hidden_uplink())
-		if(hidden_uplink().active)
-			hidden_uplink().trigger(user)
+	if(item_hidden_uplink(src))
+		if(item_hidden_uplink(src).active)
+			item_hidden_uplink(src).trigger(user)
 			return TRUE
 	return FALSE
 
@@ -230,8 +230,8 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(hidden_uplink())
-		hidden_uplink().trigger(user)
+	if(item_hidden_uplink(src))
+		item_hidden_uplink(src).trigger(user)
 
 /obj/item/multitool/uplink
 	uplink = TRUE
@@ -244,8 +244,8 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(hidden_uplink())
-		hidden_uplink().trigger(user)
+	if(item_hidden_uplink(src))
+		item_hidden_uplink(src).trigger(user)
 
 /obj/item/radio/headset/uplink
 	traitor_frequency = BEACON_FREQ

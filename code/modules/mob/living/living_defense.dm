@@ -207,8 +207,8 @@
 		var/mass = O.w_class/THROWNOBJ_KNOCKBACK_DIVISOR
 		var/momentum = speed*mass
 
-		if(O.throw_source() && momentum >= THROWNOBJ_KNOCKBACK_SPEED)
-			var/dir = get_dir(O.throw_source(), src)
+		if(movable_throw_source(O) && momentum >= THROWNOBJ_KNOCKBACK_SPEED)
+			var/dir = get_dir(movable_throw_source(O), src)
 
 			visible_message(span_filter_warning("[span_red("[src] staggers under the impact!")]"),span_filter_warning("[span_red("You stagger under the impact!")]"))
 			src.throw_at(get_edge_target_turf(src,dir),1,momentum)

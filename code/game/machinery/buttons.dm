@@ -93,8 +93,9 @@
 	var/faction = tgui_alert(user, "Do you want the mob's faction to remain the same or be passive?","Faction",list("Normal","Neutral"))
 	if(!faction)
 		return TRUE
-	qdel(mobspawned())
+	var/mob/living/simple_mob/old_mob = mobspawned()
 	mobspawned_handle = null
+	QDEL_NULL(old_mob)
 	if(faction == "Neutral")
 		neutral = TRUE
 	mobspawned_handle = om_handle(new mobtype(get_turf(GLOB.button_mob_spawner_landmark[link])))
