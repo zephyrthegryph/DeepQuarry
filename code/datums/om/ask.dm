@@ -395,7 +395,7 @@
 	var/datum/om/flow/F = receiver
 	if(istype(F))
 		P.flow = F
-		if(isnull(P.asker) && ismob(F.actor))
+		if(isnull(P.asker) && (ismob(F.actor) || (isdatum(F.actor) && !isatom(F.actor)))) // the flow's actor asks: a mob, or a non-atom datum actor
 			P.asker = F.actor
 		if(isnull(P.subject))
 			P.subject = F.target

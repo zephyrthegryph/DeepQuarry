@@ -191,6 +191,11 @@
 		qdel(H)
 	for(var/obj/item/I as anything in items)
 		qdel(I)
+	// Deleting the probes drops their removable parts where they lay, as in
+	// play (a stun glove's cell, a circuit's attached grenade): clear them.
+	for(var/atom/movable/salvage in T)
+		if(!istype(salvage, /obj/effect/landmark))
+			qdel(salvage)
 	finish("equip", cells)
 
 // ---- The constraint API ----

@@ -456,9 +456,9 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 			return O.attack_hand(user)
 	return actor_use_default(/datum/input_adapter/ai, user, target)
 
-/// Cyborgs get everything but observer-only interactions, silicon-only ones included.
+/// Cyborgs get everything but observer-only and telekinesis-only interactions, silicon-only ones included.
 /datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return !(INTERACTION_TAG_OBSERVER in interaction.tags)
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_TELEKINESIS in interaction.tags)
 
 /datum/input_adapter/robot/accept_click(mob/living/silicon/robot/user, atom/target, params)
 	if(!user.checkClickCooldown())

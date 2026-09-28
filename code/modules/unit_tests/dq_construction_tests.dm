@@ -247,9 +247,11 @@
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "repairing doesn't change the stage")
 
 	wall.thermite = TRUE
+	H.set_combat_mode(TRUE) // lighting thermite is a hostile act (INTERACTION_TAG_HOSTILE): Use picks it in combat mode
 	resolution = interactions_for(H, wall, welder)
 	best = resolution.best_for_action(INPUT_ACTION_USE)
 	TEST_ASSERT_EQUAL(best[1], INTERACTION(/datum/interaction/wall_light_thermite), "thermite is lit ahead of the graph")
+	H.set_combat_mode(FALSE)
 	wall.thermite = FALSE
 	wall_turf.ChangeTurf(old_type)
 

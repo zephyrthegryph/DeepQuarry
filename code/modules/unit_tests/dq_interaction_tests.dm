@@ -79,13 +79,22 @@
 	return TRUE
 
 /// The ids in a resolution, as "available|blocked:reason,...".
+/// An interaction id as snapshots record it: a generic id's collision suffix (the md5 that
+/// dq_interaction_from_spec() adds) is dropped, since which of two same-named specs gets the plain
+/// id depends on which type was declared first, i.e. on which tests ran before.
+/proc/dq_snapshot_id(id)
+	var/static/regex/suffix = regex(@"^(gen_.+)_[0-9a-f]{32}$")
+	if(suffix.Find(id))
+		return suffix.group[1]
+	return id
+
 /proc/dq_resolution_text(datum/interaction_resolution/resolution)
 	var/list/available = list()
 	for(var/datum/interaction/interaction as anything in resolution.available)
-		available += interaction.id
+		available += dq_snapshot_id(interaction.id)
 	var/list/blocked = list()
 	for(var/datum/interaction/interaction as anything in resolution.blocked)
-		blocked += "[interaction.id]:[resolution.blocked[interaction]]"
+		blocked += "[dq_snapshot_id(interaction.id)]:[resolution.blocked[interaction]]"
 	return "[jointext(available, ",")]|[jointext(blocked, ",")]"
 
 /datum/unit_test/proc/dq_lit_welder(turf/T)
@@ -141,7 +150,7 @@
 		var/datum/predicate/pred = interaction.predicate()
 		if(pred)
 			TEST_ASSERT(!pred.errors, "[interaction.id] requirements compile: [jointext(pred.errors || list(), "; ")]")
-		TEST_ASSERT((interaction.id in tested_ids) || (interaction.entry && dq_snapshot_covered_ids()[interaction.id]) || findtext(interaction.id, "dq_entry_") == 1, "[interaction.id] has a test (add it to tested_ids with one, or record a converted domain's snapshot)")
+		TEST_ASSERT((interaction.id in tested_ids) || (interaction.entry && dq_snapshot_covered_ids()[dq_snapshot_id(interaction.id)]) || findtext(interaction.id, "dq_entry_") == 1, "[interaction.id] has a test (add it to tested_ids with one, or record a converted domain's snapshot)")
 		TEST_ASSERT_EQUAL(INTERACTION_BY_ID(interaction.id), interaction, "[interaction.id] is found by id")
 
 /// Open and close the maintenance panel.
@@ -254,11 +263,11 @@
 
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(ghost, probe, null)), "|", "ghosts are offered nothing")
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	AI.forceMove(T) // in sight of the probe (I3: the AI needs camera sight)
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(AI, probe, null)), "dq_test_ghostly|", "the AI is offered only remote interactions")
 
-	var/obj/dq_input_probe/plain = allocate(/obj/dq_input_probe, T)
+	var/obj/plain = allocate(/obj, T)
 	TEST_ASSERT_NULL(try_interaction(H, plain, null, INPUT_ACTION_USE), "no interactions means the legacy fallback")
 
 /// Use through the router, end to end, on a real converted machine.
@@ -316,15 +325,15 @@
 		"/obj/machinery/autolathe|human|crowbar => autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed",
 		"/obj/machinery/autolathe|human|wrench => autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar",
 		"/obj/machinery/autolathe|human|welder => autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar",
-		"/obj/machinery/autolathe|robot|screwdriver => machine_panel,autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_deconstruct:needs a crowbar",
+		"/obj/machinery/autolathe|robot|screwdriver => machine_panel,gen_robot_interaction_swallow,autolathe_interact,autolathe_reset_drop,autolathe_attackby|machine_deconstruct:needs a crowbar",
 		"/obj/machinery/autolathe|ghost|screwdriver => |",
 		"/obj/machinery/autolathe|ai|none => |",
-		"/obj/machinery/washing_machine|human|none => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|screwdriver => machine_panel,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|crowbar => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|wrench => machine_anchor,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|human|welder => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
-		"/obj/machinery/washing_machine|robot|screwdriver => machine_panel,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|none => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|screwdriver => machine_panel,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use,gen_drag_interaction_drag_buckle|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|crowbar => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|wrench => machine_anchor,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|human|welder => washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
+		"/obj/machinery/washing_machine|robot|screwdriver => machine_panel,gen_robot_interaction_swallow,washing_machine_use_item,washing_machine_start,washing_machine_start_washing,washing_machine_use,gen_drag_interaction_drag_buckle|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,washing_machine_climb_out:you aren't inside it",
 		"/obj/machinery/washing_machine|ghost|screwdriver => |",
 		"/obj/machinery/washing_machine|ai|none => |",
 		"/obj/machinery/pipelayer|human|none => pipelayer_toggle|machine_panel:needs a screwdriver,machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item",
@@ -332,7 +341,7 @@
 		"/obj/machinery/pipelayer|human|crowbar => pipelayer_toggle|machine_panel:needs a screwdriver,machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item",
 		"/obj/machinery/pipelayer|human|wrench => pipelayer_toggle|machine_panel:needs a screwdriver,machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item",
 		"/obj/machinery/pipelayer|human|welder => pipelayer_toggle|machine_panel:needs a screwdriver,machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item",
-		"/obj/machinery/pipelayer|robot|screwdriver => machine_panel,pipelayer_toggle|machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item",
+		"/obj/machinery/pipelayer|robot|screwdriver => machine_panel,gen_robot_interaction_swallow,pipelayer_toggle|machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item",
 		"/obj/machinery/pipelayer|ghost|screwdriver => |",
 		"/obj/machinery/pipelayer|ai|none => |",
 		"/obj/machinery/vending|human|none => vending_use,vending_check_logs|machine_anchor:needs a wrench,vending_id_dispatch:needs an item,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin,vending_stock:needs an item",
@@ -340,15 +349,15 @@
 		"/obj/machinery/vending|human|crowbar => vending_stock,vending_use,vending_check_logs|machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
 		"/obj/machinery/vending|human|wrench => machine_anchor,vending_stock,vending_use,vending_check_logs|vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
 		"/obj/machinery/vending|human|welder => vending_stock,vending_use,vending_check_logs|machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|robot|screwdriver => vending_stock,vending_use,vending_check_logs|machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|ghost|screwdriver => |",
+		"/obj/machinery/vending|robot|screwdriver => gen_robot_interaction_swallow,vending_stock,vending_use,vending_check_logs|machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
+		"/obj/machinery/vending|ghost|screwdriver => gen_observer_interaction_as_touch|",
 		"/obj/machinery/vending|ai|none => |",
 		"/obj/machinery/dq_maint_probe|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|human|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|human|crowbar => |machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|human|wrench => machine_anchor|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|human|welder => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:it isn't damaged",
-		"/obj/machinery/dq_maint_probe|robot|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
+		"/obj/machinery/dq_maint_probe|robot|screwdriver => machine_panel,gen_robot_interaction_swallow|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|ghost|screwdriver => |",
 		"/obj/machinery/dq_maint_probe|ai|none => |",
 	)
@@ -359,7 +368,7 @@
 		"human" = allocate(/mob/living/carbon/human, T),
 		"robot" = allocate(/mob/living/silicon/robot, T),
 		"ghost" = allocate(/mob/observer/dead, T),
-		"ai" = allocate(/mob/living/silicon/ai, T),
+		"ai" = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE),
 	)
 	var/list/held_items = list(
 		"none" = null,
@@ -385,6 +394,11 @@
 		for(var/list/combination as anything in combinations)
 			var/datum/interaction_resolution/resolution = interactions_for(actors[combination[1]], target, held_items[combination[2]])
 			actual += "[type]|[combination[1]]|[combination[2]] => [dq_resolution_text(resolution)]"
+	// On a mismatch, write the actual lines out for review and regeneration (as the domain snapshots do).
+	if(length(actual ^ expected))
+		var/file_name = "data/test-snapshots/[replacetext("[type]", "/", "_")].txt"
+		fdel(file_name)
+		text2file(jointext(actual, "\n"), file_name)
 	for(var/line in actual)
 		TEST_ASSERT(line in expected, "new or changed snapshot: [line]")
 	for(var/line in expected)
@@ -457,8 +471,9 @@
 	TEST_ASSERT_EQUAL(length(lines), 5, "examine: a heading, one available and three blocked")
 	TEST_ASSERT(findtext(lines[2], "Open maintenance panel (Click)"), "examine shows what you can do with its key: [lines[2]]")
 	TEST_ASSERT(findtext(lines[3], "Deconstruct: needs a crowbar"), "examine shows what you can't and why: [lines[3]]")
-	var/obj/dq_input_probe/plain = allocate(/obj/dq_input_probe, T)
-	TEST_ASSERT_NULL(interaction_examine_lines(H, plain), "no section for things without interactions")
+	var/obj/plain = allocate(/obj, T) // dq_input_probe declares one interaction per actor kind now
+	var/list/plain_lines = interaction_examine_lines(H, plain)
+	TEST_ASSERT_NULL(plain_lines, "no section for things without interactions: [jointext(plain_lines, "; ")]")
 
 /// Screentip text for Use and Alternate.
 /datum/unit_test/dq_interaction_screentips

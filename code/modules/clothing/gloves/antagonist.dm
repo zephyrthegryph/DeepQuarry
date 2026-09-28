@@ -125,6 +125,8 @@
 	icon_state = "material"
 	var/battery_type = /obj/item/cell/device/weapon/recharge
 	var/obj/item/cell/battery = null
+// The battery is built in (nothing removes it): it goes with the ring, not onto the floor.
+REF_OWNED(/obj/item/clothing/gloves/ring/buzzer, "battery")
 
 /obj/item/clothing/gloves/ring/buzzer/get_cell()
 	return battery

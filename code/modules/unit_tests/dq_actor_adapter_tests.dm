@@ -102,7 +102,7 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
 	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, T)
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	AI.forceMove(T) // a new AI starts in nullspace, where it sees nothing
 
 	TEST_ASSERT_EQUAL(dq_resolution_text(interactions_for(H, probe, null)), "dq_actor_handless|dq_actor_tool:needs a screwdriver", "hands: everything but observer-only")
@@ -163,7 +163,7 @@ GLOBAL_LIST_EMPTY(dq_actor_calls)
 
 /datum/unit_test/dq_actor_parity_ai/Run()
 	var/turf/T = test_floor()
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
 	AI.forceMove(T) // a new AI starts in nullspace, where it sees nothing
 	// Were `return attack_hand(user)`.
 	TEST_ASSERT_EQUAL(dq_actor_click(AI, allocate(/obj/machinery/button/dq_actor_probe, T)), "attack_hand", "button: the AI's Use is the hand's")

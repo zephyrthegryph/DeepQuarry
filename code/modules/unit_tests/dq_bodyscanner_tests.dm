@@ -79,7 +79,7 @@
 /datum/unit_test/dq_bodyscanner_finding_trend
 
 /datum/unit_test/proc/_lacerated_artery_trend(mob/living/carbon/human/H)
-	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner, null, TRUE) // each read is an explicit scan (D9: passive reads keep the baseline)
 	for(var/datum/diagnosis_finding/F as anything in D.findings)
 		if(F.source_type == /datum/affliction/lacerated_artery)
 			. = F.trend

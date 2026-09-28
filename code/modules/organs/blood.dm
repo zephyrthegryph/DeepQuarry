@@ -181,6 +181,13 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 				if(prob(1))
 					custom_pain("You feel a stabbing pain in your [temp.name]!", 50)
 
+		// D18b: an open surgical site bleeds only while the incision does (clamped, closed or
+		// bloodless sites don't). Checked before the ORGAN_BLEEDING gate: that flag tracks
+		// wounds, and an incision is not a wound.
+		var/datum/affliction/surgical_incision/incision = temp.get_incision()
+		if(incision?.is_bleeding())
+			blood_max += 2 //Yer stomach is cut open
+
 		///Thirdly, we check to see if the limb is bleeding EXTERNALLY
 		if(!(temp.status & ORGAN_BLEEDING))
 			continue
@@ -211,14 +218,12 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 				else
 					blood_max += W.damage / temp_bld
 
-		// D18b: an open surgical site bleeds only while the incision does (clamped, closed or
-		// bloodless sites don't).
-		var/datum/affliction/surgical_incision/incision = temp.get_incision()
-		if(incision?.is_bleeding())
-			blood_max += 2 //Yer stomach is cut open
+	blood_max = round(blood_max, 0.1)
 	if(bleed)
-		blood_max = round(blood_max, 0.1)
 		drip(blood_max)
+	// A dry run (bleed = FALSE) still reports the external loss it would drip, so callers
+	// (the blood stage's idle(), tests) can ask "is anything bleeding?" without bleeding.
+	if(bleed || count_external)
 		total_blood_loss += blood_max
 	return round(total_blood_loss, 0.1)
 
