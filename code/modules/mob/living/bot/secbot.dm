@@ -387,7 +387,6 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 	s.start()
 
 	new /obj/effect/decal/cleanable/blood/oil(Tsec)
-	//qdel(src)
 	return ..()
 
 /mob/living/bot/secbot/proc/target_name(mob/living/T)

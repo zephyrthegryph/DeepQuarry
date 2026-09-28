@@ -22,7 +22,6 @@
 
 
 /mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)
-	//animation = null
 
 	transforming = 0
 	status_set(EFFECT_STUNNED, 0)

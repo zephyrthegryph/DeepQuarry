@@ -75,7 +75,6 @@
 			"Grab" is subtle because we keep our prey tight and close.
 			*/
 			switch(use_stance())
-				//if(I_HELP) uses default values. Added as a comment for clarity
 				if(I_DISARM)
 					noise = FALSE
 					bleed = TRUE

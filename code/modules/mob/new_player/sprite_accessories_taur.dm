@@ -191,7 +191,6 @@
 	icon_state = "wolf_s"
 	extra_overlay = "wolf_markings"
 	extra_overlay2 = "wolf_markings_2"
-	//icon_sprite_tag = "wolf2c"
 
 /datum/sprite_accessory/tail/taur/wolf/fatwolf_2c
 	name = "Fat Wolf 3-color (Taur)"
@@ -214,7 +213,6 @@
 	icon_state = "synthwolf_s"
 	extra_overlay = "synthwolf_markings"
 	extra_overlay2 = "synthwolf_glow"
-	//icon_sprite_tag = "synthwolf"
 	loaf_offset = 3
 
 /datum/sprite_accessory/tail/taur/wolf/fatsynthwolf
@@ -250,7 +248,6 @@
 	name = "Naga (Taur)"
 	icon_state = "naga_s"
 	suit_sprites = 'icons/mob/taursuits_naga.dmi'
-	//icon_sprite_tag = "naga"
 	vore_tail_sprite_variant = "Naga"
 	fullness_icons = 1
 
@@ -291,14 +288,12 @@
 	name = "Naga dual-color (Taur)"
 	icon_state = "naga_s"
 	extra_overlay = "naga_markings"
-	//icon_sprite_tag = "naga2c"
 
 /datum/sprite_accessory/tail/taur/naga/alt_2c
 	name = "Naga alt style dual-color (Taur)"
 	suit_sprites = 'icons/mob/taursuits_naga.dmi' //TODO: PORT CHOMPS NAGA_ALT AND MAKE THESE NAGA_ALT.
 	icon_state = "altnaga_s"
 	extra_overlay = "altnaga_markings"
-	//icon_sprite_tag = "altnaga2c"
 
 /datum/sprite_accessory/tail/taur/naga/alt_3c
 	name = "Naga alt style tri-color (Taur)"
@@ -353,14 +348,12 @@
 /datum/sprite_accessory/tail/taur/horse/horse_2c
 	name = "Horse & colorable tail (Taur)"
 	extra_overlay = "horse_markings"
-	//icon_sprite_tag = "wolf2c"
 
 /datum/sprite_accessory/tail/taur/horse/synthhorse
 	name = "SynthHorse dual-color (Taur)"
 	icon_state = "synthhorse_s"
 	extra_overlay = "synthhorse_markings"
 	extra_overlay2 = "synthhorse_glow"
-	//icon_sprite_tag = "synthhorse"
 	can_loaf = TRUE
 	icon_loaf = 'icons/mob/vore/taurs_loaf.dmi'
 	loaf_offset = 3
@@ -466,7 +459,6 @@
 	name = "Lizard dual-color (Taur)"
 	icon_state = "lizard_s"
 	extra_overlay = "lizard_markings"
-	//icon_sprite_tag = "lizard2c"
 	can_loaf = TRUE
 	icon_loaf = 'icons/mob/vore/taurs_loaf.dmi'
 	loaf_offset = 5
@@ -491,7 +483,6 @@
 	icon_state = "synthlizard_s"
 	extra_overlay = "synthlizard_markings"
 	extra_overlay2 = "synthlizard_glow"
-	//icon_sprite_tag = "synthlizard"
 	can_loaf = TRUE
 	icon_loaf = 'icons/mob/vore/taurs_loaf.dmi'
 	loaf_offset = 3
@@ -585,7 +576,6 @@
 /datum/sprite_accessory/tail/taur/fatfeline
 	name = "Fat Feline (Taur)"
 	icon_state = "fatfeline_s"
-	//icon_sprite_tag = "fatfeline"
 	can_loaf = TRUE
 	icon_loaf = 'icons/mob/vore/taurs_loaf.dmi'
 	loaf_offset = 3
@@ -603,7 +593,6 @@
 	icon_state = "feline_s"
 	extra_overlay = "feline_markings"
 	extra_overlay2 = "feline_markings_2"
-	//icon_sprite_tag = "feline2c"
 	can_loaf = TRUE
 
 /datum/sprite_accessory/tail/taur/feline/fatfeline_2c
@@ -629,7 +618,6 @@
 	icon_state = "synthfeline_s"
 	extra_overlay = "synthfeline_markings"
 	extra_overlay2 = "synthfeline_glow"
-	//icon_sprite_tag = "synthfeline"
 	can_loaf = TRUE
 	icon_loaf = 'icons/mob/vore/taurs_loaf.dmi'
 	loaf_offset = 3

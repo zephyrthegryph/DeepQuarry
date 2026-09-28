@@ -386,8 +386,6 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 /mob/living/bot/proc/resetTarget()
 	target = null
 	target_path = list()
-	// frustration = 0
-	// obstacle = null
 
 /mob/living/bot/proc/turn_on()
 	if(stat)
@@ -439,7 +437,6 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 /turf/proc/CardinalTurfsWithAccess(obj/item/card/id/ID)
 	var/L[] = new()
 
-	//	for(var/turf/simulated/t in oview(src,1))
 
 	for(var/d in GLOB.cardinal)
 		var/turf/T = get_step(src, d)
@@ -519,8 +516,6 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		if(istype(D, /obj/machinery/door/window))
 			if( dir & D.dir )	return !D.check_access(ID)
 
-			//if((dir & SOUTH) && (D.dir & (EAST|WEST)))		return !D.check_access(ID)
-			//if((dir & EAST ) && (D.dir & (NORTH|SOUTH)))	return !D.check_access(ID)
 		else return !D.check_access(ID)	// it's a real, air blocking door
 	return 0
 
@@ -530,7 +525,6 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	return canmove
 
 /mob/living/bot/proc/insertpai(mob/user, obj/item/paicard/card)
-	//var/obj/item/paicard/card = I
 	var/mob/living/silicon/pai/AI = card.pai
 	if(paicard)
 		to_chat(user, span_notice("This bot is already under PAI Control!"))

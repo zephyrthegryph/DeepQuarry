@@ -581,7 +581,6 @@ REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 		return
 	// ok, we're alive, camera is good and in our network...
 	eyeobj.setLoc(get_turf(C))
-	//machine = src
 
 	return 1
 

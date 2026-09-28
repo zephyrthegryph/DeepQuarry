@@ -972,8 +972,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 //This sets all the things on baby teppi when they are bred from adult teppi
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/inherit_from_parents(mob/living/simple_mob/vore/alienanimals/teppi/mom, mob/living/simple_mob/vore/alienanimals/teppi/dad)
 	inherit_colors = TRUE
-//	mom_id = mom.teppi_id
-//	dad_id = dad.teppi_id
 	faction = mom.faction
 	color = pick(list(mom.color, dad.color, BlendRGB(mom.color, dad.color, 0.5)))
 	marking_color = pick(list(mom.marking_color, dad.marking_color, BlendRGB(mom.marking_color, dad.marking_color, 0.5)))

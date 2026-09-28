@@ -357,7 +357,6 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	var/break_strength = 1
 	var/list/break_chance_table = list(100)
 	switch(state)
-		//if(GRAB_PASSIVE)
 
 		if(GRAB_AGGRESSIVE)
 			grab_name = "grip"

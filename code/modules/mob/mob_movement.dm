@@ -174,7 +174,6 @@
 
 	// We're in the middle of another move we've already decided to do
 	if(moving)
-		// to_chat(world, "Client [src] attempted to move while moving=[moving]")
 		return 0
 
 	// We're still cooling down from the last move

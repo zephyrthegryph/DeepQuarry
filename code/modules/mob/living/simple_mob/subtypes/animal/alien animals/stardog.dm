@@ -356,7 +356,6 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 		if(!destinations.len)
 			to_chat(src, span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition."))
 			return
-		//for(var/obj/effect/landmark/stardog/l in destinations)
 		om_ask(src, /datum/om/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), choices = destinations)
 
 	else

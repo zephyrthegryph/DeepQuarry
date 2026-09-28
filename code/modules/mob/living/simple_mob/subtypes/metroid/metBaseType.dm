@@ -117,5 +117,4 @@
 	)
 
 /mob/living/simple_mob/metroid/on_death(gibbed)
-	// playsound(src, 'sound/metroid/metroiddeath.ogg', 75, 1)
 	..()

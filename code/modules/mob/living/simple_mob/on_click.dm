@@ -5,7 +5,6 @@
 	if(!(. = ..()))
 		return
 
-//	setClickCooldown(get_attack_speed())
 
 	if(has_hands && istype(A,/obj) && !IS_HARMING(src))
 		var/obj/O = A
@@ -50,7 +49,6 @@
 				attack_target(A)
 
 /mob/living/simple_mob/RangedAttack(atom/A)
-//	setClickCooldown(get_attack_speed())
 
 	if(can_special_attack(A) && special_attack_target(A))
 		return

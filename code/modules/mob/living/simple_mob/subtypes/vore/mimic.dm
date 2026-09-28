@@ -41,7 +41,6 @@
 			new_mimic.real_crate = src
 			new_mimic.name = name
 			new_mimic.desc = desc
-			//new_mimic.icon = icon
 			new_mimic.icon_state = "open"
 			new_mimic.icon_living = "open"
 		else

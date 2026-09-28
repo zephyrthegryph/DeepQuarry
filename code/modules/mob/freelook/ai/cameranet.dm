@@ -27,8 +27,6 @@
 /datum/visualnet/camera/proc/updatePortableCamera(obj/machinery/camera/c)
 	if(c.can_use())
 		majorChunkChange(c, 1)
-	//else
-	//	majorChunkChange(c, 0)
 
 /datum/visualnet/camera/onMajorChunkChange(atom/c, choice, datum/chunk/camera/chunk)
 // Only add actual cameras to the list of cameras

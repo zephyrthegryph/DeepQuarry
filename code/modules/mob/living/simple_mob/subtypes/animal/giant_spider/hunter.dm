@@ -99,15 +99,8 @@
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 
 	ai_busy_end()
-//		var/obj/item/grab/G = new(src, victim)
-//		put_in_active_hand(G)
 
-//		G.synch()
-//		G.affecting = victim
-//		victim.LAssailant = src
 
-//		visible_message(span_warning("\The [src] seizes \the [victim] aggressively!"))
-//		do_attack_animation(victim)
 
 
 // This AI would've isolated people it stuns with its 'leap' attack, by dragging them away.

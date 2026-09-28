@@ -288,7 +288,6 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	//qdel(src)
 	return ..()
 
 /mob/living/bot/floorbot/proc/addTiles(am)

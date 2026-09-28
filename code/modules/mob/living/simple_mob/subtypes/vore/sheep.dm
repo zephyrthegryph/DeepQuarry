@@ -34,8 +34,6 @@
 
 	say_list_type = /datum/say_list/sheep
 
-//	var/harvestable_wool = TRUE			//Relating to wool growth and shearing down below.
-//	var/wool_growth = 0
 
 
 // Activate Noms!

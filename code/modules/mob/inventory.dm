@@ -397,7 +397,6 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /mob/proc/has_unequipped(obj/item/item, equipping, slot) //silent = FALSE) //TODO: Add silent some other time.
 	SHOULD_CALL_PARENT(TRUE)
 	item.dropped(src, equipping, slot) //silent)
-	//update_equipment_speed_mods()
 	return TRUE
 
 //Drops the item in our left hand
@@ -473,7 +472,6 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		if(id)
 			slot_vacated(id, item_dropping)
 		has_unequipped(item_dropping, FALSE)
-	//SEND_SIGNAL(item_dropping, COMSIG_ITEM_POST_UNEQUIP, item_dropping, target)
 	OM_EMIT(src, /datum/om/event/mob_unequipped_item, item_dropping, target)
 	on_equipment_changed()
 	return TRUE

@@ -372,7 +372,6 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
 	s.start()
-	//qdel(src)
 	return ..()
 
 /mob/living/bot/medbot/handleRegular()
@@ -431,8 +430,6 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 			GLOB.global_announcer.autosay("PSYCH ALERT: Crewmember [tipper_name] recorded displaying antisocial tendencies torturing bots in [get_area(src)]. Please schedule psych evaluation.", "[src]", "Medical")
 			set_right() // strong independent medbot
 
-	// if(prob(tipped_status)) // Commented out pending introduction of jitter stuff from /tg/
-		// do_jitter_animation(tipped_status * 0.1)
 
 	if(messagevoice)
 		var/message = pick(messagevoice)

@@ -55,7 +55,6 @@
 
 	var/construct_type = "shade"
 	var/list/construct_spells = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-//	var/do_glow = TRUE
 
 	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE
@@ -64,7 +63,6 @@
 	if(!path || !ispath(path))
 		return 0
 
-	//var/obj/item/spell/S = new path(src)
 	var/obj/item/spell/construct/S = new path(src)
 
 	//No hands needed for innate casts.

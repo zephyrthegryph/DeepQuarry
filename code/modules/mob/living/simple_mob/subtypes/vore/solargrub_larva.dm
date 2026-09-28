@@ -31,7 +31,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	can_pull_mobs = MOB_PULL_NONE
 	density = FALSE
 
-	//stop_when_pulled = 0
 
 	var/static/list/ignored_machine_types = list(
 		/obj/machinery/atmospherics/unary/vent_scrubber,

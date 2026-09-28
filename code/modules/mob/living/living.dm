@@ -141,7 +141,6 @@
 //sort of a legacy burn method for /electrocute, /shock, and the e_chair
 /mob/living/proc/burn_skin(burn_amount)
 	if(ishuman(src))
-		//to_world("DEBUG: burn_skin(), mutations=[mutations]")
 		if(src.has_mutation(mShock)) //shockproof
 			return 0
 		if (src.has_mutation(COLD_RESISTANCE)) //fireproof
@@ -169,8 +168,6 @@
 		temperature -= change
 		if(actual < desired)
 			temperature = desired
-//	if(ishuman(src))
-//		to_world("[src] ~ [src.bodytemperature] ~ [temperature]")
 	return temperature
 
 // ++++ROCKDTBEN++++ MOB PROCS //END
@@ -905,14 +902,12 @@
 /mob/living/proc/apply_hud(cache_index, image/I)
 	hud_list[cache_index] = I
 	if((. = hud_list[cache_index]))
-		//underlays += .
 		add_overlay(.)
 
 //Remove an entry from overlays, and from the list
 /mob/living/proc/grab_hud(cache_index)
 	var/I = hud_list[cache_index]
 	if(I)
-		//underlays -= I
 		cut_overlay(I)
 		hud_list[cache_index] = null
 		return I

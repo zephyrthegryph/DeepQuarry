@@ -196,7 +196,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "breadcat"
 	icon_rest = "breadcat_rest"
 	icon_dead = "breadcat_dead"
-	//icon_sit = "breadcat_sit"
 	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/breadcat
 
@@ -208,7 +207,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "original"
 	icon_rest = "original_rest"
 	icon_dead = "original_dead"
-	//icon_sit = "original_sit"
 	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/original
 
@@ -220,7 +218,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "cak"
 	icon_rest = "cak_rest"
 	icon_dead = "cak_dead"
-	//icon_sit = "cak_sit"
 	makes_dirt = 0
 	holder_type = /obj/item/holder/cat/cak
 
@@ -232,7 +229,6 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_living = "spacecat"
 	icon_rest = "spacecat_rest"
 	icon_dead = "spacecat_dead"
-	//icon_sit = "spacecat_sit"
 	holder_type = /obj/item/holder/cat/spacecat
 	makes_dirt = 0
 

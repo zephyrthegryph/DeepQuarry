@@ -239,7 +239,6 @@
 		update_icon()
 		return
 	else if(spitting)
-		//visible_message(span_warning("[src] spits [spit_name] at \the [A]!"), span_alium("You spit [spit_name] at \the [A]."))
 		var/obj/item/projectile/P = new spit_projectile(get_turf(src))
 		P.firer = src
 		P.old_style_target(A)

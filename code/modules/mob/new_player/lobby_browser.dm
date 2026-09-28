@@ -7,7 +7,6 @@
 		ui.close()
 
 	winset(src, "lobby_browser", "is-disabled=false;is-visible=true")
-	// winset(src, "mapwindow.status_bar", "is-visible=false")
 	lobby_window = new(client, "lobby_browser")
 	lobby_window.initialize(
 		assets = list(

@@ -70,7 +70,6 @@
 //TODO: Add more customization options, these are pretty scarce
 	faction = "Synx"
 
-	//intelligence_level = SA_ANIMAL
 
 	endurance = 75 //Lowered from 150. 150 is wayyy too high for a noodly stealth predator. - Lo
 	movement_cooldown = 6
@@ -854,7 +853,6 @@
 	icon_state = "synx_C_living"
 	icon_living = "synx_C_living"
 	icon_dead = "synx_C_dead"
-	//hostile = 1
 	name = "SYN-KinC"
 	desc = "A robotic recreation of a an Alien parasite. The metal plates seem quite thick."
 	humanoid_hands = 1
@@ -875,12 +873,9 @@
 	name = "SYN-KinC-([rand(100,999)])"
 
 /mob/living/simple_mob/animal/synx/ai/pet/greed/synth/goodboy
-	//hostile = 0
 	faction = "neutral"
 
 /mob/living/simple_mob/animal/synx/ai/pet/diablo
-	//var/diablo_LIVING = "synx_diablo_living"
-	//var/diablo_DEAD = "synx_diablo_dead"
 	name = "diablo"
 	desc = "A cold blooded, genderless, parasitic eel from the more distant and stranger areas of the cosmos. grey, perpetually grinning and possessing a hunger as enthusiastic and endless as humanity's sense of exploration.. This one has a small shock collar on it that reads 'diablo'."
 	icon_state = "synx_diablo_living"
@@ -891,14 +886,12 @@
 	vore_capacity = 2
 */
 /mob/living/simple_mob/animal/synx/ai/pet/clown
-	//hostile = 1
 	poison_chance = 100
 	poison_type = "clownsynxchem" //unlike synxchem this one HONKS
 	name = "Inflatable Clown Synx"
 	desc = "Honk!, made this here with all the fun on in the booth. At the gate outside, when they pull up, they get me loose. Yeah, Jump Out Clowns, that's Clown gang, hoppin' out tiny cars. This shit way too funny, when we pull up give them the honk hard!"
 	icon_state = "synx_pet_rainbow"
 	icon_living = "synx_pet_rainbow"
-	//icon_dead = "synx_hardlight_dead"
 	icon_gib = null
 	faction = "clown"
 	melee_damage_lower = 1

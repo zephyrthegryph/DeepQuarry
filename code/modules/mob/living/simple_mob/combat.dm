@@ -158,8 +158,6 @@
 	if(needs_reload)
 		reload_count++
 
-//	if(distance >= special_attack_min_range && distance <= special_attack_max_range)
-//		return TRUE
 
 /mob/living/simple_mob/proc/try_reload()
 	om_do_after(src, reload_time, target = src, receiver = src, on_done = PROC_REF(reload_done), busy = src)

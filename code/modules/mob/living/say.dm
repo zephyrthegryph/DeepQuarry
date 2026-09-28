@@ -353,7 +353,6 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	//The 'post-say' static speech bubble
 	var/speech_bubble_test = say_test(message)
-	// var/image/speech_bubble = image('icons/mob/talk_vr.dmi',src,"h[speech_bubble_test]") // . Commented this out in case we need to reenable.
 	var/speech_type = custom_speech_bubble
 	if(!speech_type || speech_type == "default")
 		speech_type = speech_bubble_appearance()

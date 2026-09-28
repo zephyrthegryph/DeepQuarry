@@ -180,7 +180,6 @@
 	count_items_for_sprite = TRUE
 	item_multiplier = 10
 	health_impacts_size = FALSE
-	//speedy_mob_processing = TRUE
 	mode_flags = DM_FLAG_TURBOMODE
 
 	size_factor_for_sprite = 5
