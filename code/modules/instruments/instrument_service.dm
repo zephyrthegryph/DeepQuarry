@@ -60,3 +60,5 @@ GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
 	. = sound_service().reserve_sound_channel(I)
 	if(!isnull(.))
 		current_instrument_channels++
+
+REF_OWNED_VALUES(/datum/world_service/instruments, list("instrument_data"))

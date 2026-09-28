@@ -6,6 +6,9 @@
 	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
 	var/ID
 
+// The seed objects sit in the storage machine's contents; the pile only indexes them.
+REF_SPILL_LIST(/datum/seed_pile, "seeds")
+
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
 	amount = 1

@@ -11,7 +11,8 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	var/list/preferences_datums = list() // ALLOW(instance_list): d: world service singleton
 	var/list/newplayers_requiring_init = list() // ALLOW(instance_list): d: world service singleton
 
-	var/list/save_queue = list() // ALLOW(instance_list): d: world service singleton
+	/// Preferences waiting to be saved, as a weak list (REF_WEAK_LIST): the client owns them.
+	var/list/save_queue
 /*
 /datum/world_service/character_setup/Initialize()
 	while(length(prefs_awaiting_setup))
@@ -26,7 +27,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 */	//Might be useful if we ever switch to Bay prefs.
 /datum/world_service/character_setup/service_step(resumed)
 	while(length(save_queue))
-		var/datum/preferences/prefs = save_queue[length(save_queue)]
+		var/datum/preferences/prefs = om_resolve(save_queue[length(save_queue)])
 		save_queue.len--
 
 		// Can't save prefs without client, because the sanitize functions will be
@@ -42,7 +43,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 /datum/world_service/character_setup/proc/queue_preferences_save(datum/preferences/prefs)
 	if(!prefs)
 		return
-	save_queue |= prefs
+	WEAK_LIST_ADD(save_queue, prefs)
 	demand()
 
 /datum/world_service/character_setup/has_work()
@@ -60,3 +61,6 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 
 /datum/om/behaviour/world/character_setup/service()
 	return GLOB.character_setup_service
+
+/// Pending saves: drained by service_step(); deleted prefs are skipped there.
+REF_WEAK_LIST(/datum/world_service/character_setup, "save_queue")

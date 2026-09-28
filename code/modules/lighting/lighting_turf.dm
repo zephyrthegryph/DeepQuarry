@@ -18,6 +18,7 @@
 	///Which directions does this turf block the vision of, taking into account both the turf's opacity and the movable opacity_sources.
 	var/directional_opacity = NONE
 	///Lazylist of movable atoms providing opacity sources.
+	// ALLOW(scheduler, declared_refs, object_keyed_lists): lighting hot path; strong many-to-many list kept in step by both sides (each opaque movable adds and removes itself on move and destroy). A handle per entry would cost a resolve per lighting update.
 	var/list/atom/movable/opacity_sources
 
 // Causes any affecting light sources to be queued for a visibility update, for example a door got opened.
@@ -152,4 +153,6 @@
 		L.area_power_changed()
 
 // Held: corners are shared by four turfs and freed by the lighting subsystem; turfs are never destroyed.
-REF_HELD(/turf, list("lighting_corner_NE", "lighting_corner_SE", "lighting_corner_SW", "lighting_corner_NW"))
+REF_HELD(/turf, list("lighting_object", "lighting_corner_NE", "lighting_corner_SE", "lighting_corner_SW", "lighting_corner_NW"))
+
+

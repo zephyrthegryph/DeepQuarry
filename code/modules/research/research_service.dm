@@ -428,3 +428,6 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 
 /datum/om/behaviour/world/research/service()
 	return GLOB.research_service
+
+// Shared techwebs, scipaper partners and the two error placeholders live for the round.
+REF_STATIC(/datum/world_service/research, list("techwebs", "scientific_partners", "error_node", "error_design"))

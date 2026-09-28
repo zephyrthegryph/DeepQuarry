@@ -266,3 +266,4 @@
 	return "[power] · [atmosphere] · [coordination] · [profile]"
 
 REF_OWNED(/datum/expedition_site, list("station_simulation", "station_director"))
+REF_OWNED_LIST(/datum/expedition_site, "station_controls")

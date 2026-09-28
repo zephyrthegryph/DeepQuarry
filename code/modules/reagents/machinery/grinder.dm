@@ -242,3 +242,5 @@
 		beaker = new_beaker
 	update_icon()
 	return TRUE
+
+REF_HELD(/obj/machinery/reagentgrinder, "beaker")

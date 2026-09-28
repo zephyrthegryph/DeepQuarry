@@ -81,3 +81,5 @@
 /// LC-refs: the target_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area
 	return om_resolve(target_area_handle)
+
+REF_STATIC(/datum/event/disease_outbreak/floor, list("target_turfs"))

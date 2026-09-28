@@ -256,3 +256,7 @@ REF_PAIR(/obj/item/rig, list("visor" = "holder"))
 	vision_modes = processed_vision
 
 REF_OWNED(/datum/rig_vision, "glasses")
+
+// vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.
+REF_OWNED_LIST(/obj/item/rig_module/vision, list("vision_modes"))
+REF_BACK(/obj/item/rig_module/vision, list("vision" = null))

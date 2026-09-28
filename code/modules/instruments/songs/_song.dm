@@ -158,7 +158,7 @@
 	// for(var/mob/M in get_hearers_in_view(instrument_range, source))
 	var/list/in_range = get_mobs_and_objs_in_view_fast(source, instrument_range, remote_ghosts = FALSE)
 	for(var/mob/M in in_range["mobs"])
-		hearing_mobs[M] = get_dist(M, source)
+		hearing_mobs[M] = get_dist(M, source) // ALLOW(object_keyed_lists): rebuilt every hearcheck; stop_playing() needs every hearer to terminate its sound
 	var/list/exited = old - hearing_mobs
 	for(var/i in exited)
 		terminate_sound_mob(i)

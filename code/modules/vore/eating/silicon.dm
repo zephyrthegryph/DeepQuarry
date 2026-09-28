@@ -5,10 +5,16 @@
 	color = HOLO_ORIGINAL_COLOR //This is the blue from icons.dm that it was before.
 	desc = "A hologram representing an AI persona."
 
-// ALLOW(lifecycle): its bellies go back to the AI.
-/obj/effect/overlay/aiholo/Destroy()
+/// Its bellies go back to the AI before phase 4 clears master (REF_BACK).
+/obj/effect/overlay/aiholo/lifecycle_prerelease()
 	for(var/obj/belly/B in src)
 		B.forceMove(master)
+	return ..()
+
+REF_BACK(/obj/effect/overlay/aiholo, list("master" = null))
+
+// ALLOW(lifecycle): stops its walk loop.
+/obj/effect/overlay/aiholo/Destroy()
 
 	walk(src, 0) // Because we might have called walk_to, we must stop the walk loop or BYOND keeps an internal reference to us forever.
 	return ..()

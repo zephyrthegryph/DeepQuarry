@@ -476,3 +476,6 @@
 		if(len && !isnum(L[1]) && !isnull(L[L[1]]))
 			row[6] += len
 		by_var[name] += len + 1
+
+// Keyed by subsystems (singletons).
+REF_STATIC(/datum/benchmark, "window_subsystem_fires")

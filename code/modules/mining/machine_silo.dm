@@ -10,6 +10,7 @@
 	/// List of all connected components that are on hold from accessing materials.
 	var/list/holds
 	/// List of all components that are sharing ores with this silo.
+	// ALLOW(scheduler, declared_refs, object_keyed_lists): membership list maintained by /datum/remote_materials (connect/disconnect, it names the silo by handle); Destroy() disconnects each. No objlist kind fits a non-owning list on a movable (a CHANGE_EXPLICIT cache would be cleared whenever the silo moves).
 	var/list/datum/remote_materials/ore_connected_machines
 	/// Material Container
 	var/datum/material_container/materials
@@ -41,7 +42,6 @@
 		mats.disconnect()
 
 	ore_connected_machines = null
-	materials = null
 
 	return ..()
 

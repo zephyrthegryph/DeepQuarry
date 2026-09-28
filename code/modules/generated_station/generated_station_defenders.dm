@@ -101,11 +101,6 @@
 /datum/generated_station_defense_runtime/Destroy()
 	if(director()?.defense_runtime() == src)
 		director().defense_runtime_handle = null
-	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.defender() && !QDELETED(agent.defender()))
-			qdel(agent.defender())
-		qdel(agent)
-	agents = null
 	squads_by_department = null
 	department_turfs = null
 	active_patrols = null
@@ -410,3 +405,13 @@ REF_OWNED(/datum/expedition_site, "station_defense")
 	return om_resolve(director_handle)
 
 
+
+REF_OWNED_LIST(/datum/generated_station_defense_runtime, "agents")
+
+/// Its defenders go with it, before phase 4 deletes the agents that name them.
+/datum/generated_station_defense_runtime/lifecycle_prerelease()
+	for(var/datum/generated_station_defender_agent/agent in agents)
+		var/mob/living/defender = agent.defender()
+		if(defender && !QDELETED(defender))
+			qdel(defender)
+	return ..()

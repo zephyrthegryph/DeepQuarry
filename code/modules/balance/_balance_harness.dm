@@ -44,7 +44,6 @@
 
 /datum/balance_scenario/Destroy() // ALLOW(lifecycle): the scenario owns what it spawned; cleanup() removes it.
 	cleanup()
-	site = null
 	return ..()
 
 /// The scenario body.
@@ -202,3 +201,5 @@
 	text2file(json_encode(document), BALANCE_RESULTS_FILE)
 	log_test("BALANCE: wrote [BALANCE_RESULTS_FILE]")
 	return document
+
+REF_BACK(/datum/balance_scenario, list("site" = null))

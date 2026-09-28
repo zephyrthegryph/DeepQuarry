@@ -51,8 +51,11 @@
 	if(!owner || !brain)
 		return
 
+	visible_hostiles ||= list()
 	visible_hostiles.Cut()
+	visible_friendlies ||= list()
 	visible_friendlies.Cut()
+	visible_neutrals ||= list()
 	visible_neutrals.Cut()
 
 	var/range = brain.vision_range
@@ -135,3 +138,13 @@
 /// LC-refs: the last_known_threat_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/world_model/proc/last_known_threat_turf() as /atom
 	return om_resolve(last_known_threat_turf_handle)
+
+/// The perception lists are rebuilt from view() on every update_perception() call:
+/// caches of other mobs, not relationships.
+/datum/world_model/declared_cache_vars()
+	var/list/L = ..()
+	L = L ? L.Copy() : list()
+	L["visible_hostiles"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	L["visible_friendlies"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	L["visible_neutrals"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	return L

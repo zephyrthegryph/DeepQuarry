@@ -29,7 +29,8 @@
 	var/phase_index = 1
 	var/phase_cursor
 	/// materialize_async(): list(callback) invoked with the materialization (or null) at the end.
-	var/list/on_done_box
+	/// Invoked with the materialization when the run ends; the caller made it.
+	var/datum/callback/on_done
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
@@ -80,7 +81,7 @@
 /// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
 /datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, datum/callback/new_on_done)
 	now = FALSE
-	on_done_box = list(new_on_done)
+	on_done = new_on_done
 	if(!start(spec, z_level, origin_x, origin_y))
 		finish_async()
 		return
@@ -136,7 +137,7 @@
 /datum/generated_station_materialization_job/proc/finish_async()
 	var/datum/generated_station_materialization/result = end_run()
 	materializer().record_job_telemetry(src)
-	var/datum/callback/callback = on_done_box?[1]
+	var/datum/callback/callback = on_done
 	qdel(src)
 	callback?.Invoke(result)
 
@@ -156,3 +157,5 @@
 	return om_resolve(materialization_handle)
 
 
+
+REF_HELD(/datum/generated_station_materialization_job, "on_done")

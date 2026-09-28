@@ -16,7 +16,7 @@
 /obj/effect/landmark/looking_glass/proc/gain_viewer(client/C)
 	if(C in viewers)
 		log_mapping("Looking Glass [x],[y],[z] tried to add a duplicate viewer.")
-	viewers |= C
+	viewers |= C // ALLOW(object_keyed_lists): viewing clients, removed by lose_viewer(); unshow_to() needs every one to pull the image
 	if(holding)
 		show_to(C)
 

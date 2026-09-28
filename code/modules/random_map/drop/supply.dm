@@ -38,7 +38,8 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 /// An admin putting together a supply drop: the custom loot list is picked one type at a time
 /// per category (cancel ends a category), then the drop is confirmed and lands on the admin.
 /datum/supply_drop_order
-	var/mob/admin
+	/// The ordering admin's mob, as an om_handle() (read with admin()).
+	var/tmp/admin_handle
 	/// The categories offered in order: question = root type. Shared by every order.
 	var/static/list/categories = list(
 		"Do you wish to add mobs?" = /mob/living,
@@ -56,20 +57,23 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	var/static/list/open_orders = list()
 
 /datum/supply_drop_order/New(mob/admin)
-	src.admin = admin
+	admin_handle = om_handle(admin)
 	open_orders += src
+
+/// LC-refs: the ordering admin -- an OM handle, so it reads null once that mob is deleted.
+/datum/supply_drop_order/proc/admin() as /mob
+	return om_resolve(admin_handle)
 
 /datum/supply_drop_order/Destroy()
 	open_orders -= src
-	admin = null
 	return ..()
 
 /// Asks the admin a supply drop question. `on_cancel` runs on the order when the window is closed.
 /datum/supply_drop_order/proc/ask(prompt_type, message, on_answer, on_cancel, list/choices)
 	if(choices)
-		om_ask(admin, prompt_type, on_answer, order = src, cancel_proc = on_cancel, message = message, choices = choices)
+		om_ask(admin(), prompt_type, on_answer, order = src, cancel_proc = on_cancel, message = message, choices = choices)
 	else
-		om_ask(admin, prompt_type, on_answer, order = src, cancel_proc = on_cancel, message = message)
+		om_ask(admin(), prompt_type, on_answer, order = src, cancel_proc = on_cancel, message = message)
 
 /// A yes/no step of a supply drop order. Re-checked on the answer: the admin still has R_FUN.
 /datum/om/prompt/confirm/supply_drop

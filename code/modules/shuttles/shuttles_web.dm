@@ -173,8 +173,8 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	icon_state = "flightcomp_center"
 	icon_keyboard = "flight_center_key"
 	icon_screen = "flight_center"
-	var/list/my_doors //Should be list("id_tag" = "Pretty Door Name", ...)
-	var/list/my_sensors //Should be list("id_tag" = "Pretty Sensor Name", ...)
+	var/list/my_doors //Should be list("id_tag" = "Pretty Door Name", ...); after Initialize, "Pretty Door Name" = om_handle(door)
+	var/list/my_sensors //Should be list("id_tag" = "Pretty Sensor Name", ...); after Initialize, name = om_handle(sensor)
 	tgui_subtemplate = "ShuttleControlConsoleWeb"
 	skip_act = TRUE
 
@@ -188,7 +188,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 		my_doors = list()
 		for(var/obj/machinery/door/airlock/A in area_contents_of_type(my_area, /obj/machinery/door/airlock))
 			if(A.id_tag in find_doors)
-				my_doors[find_doors[A.id_tag]] = A
+				my_doors[find_doors[A.id_tag]] = om_handle(A)
 				find_doors -= A.id_tag
 		for(var/lost in find_doors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] door!")
@@ -198,7 +198,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 		my_sensors = list()
 		for(var/obj/machinery/shuttle_sensor/S in area_contents_of_type(my_area, /obj/machinery/shuttle_sensor))
 			if(S.id_tag in find_sensors)
-				my_sensors[find_sensors[S.id_tag]] = S
+				my_sensors[find_sensors[S.id_tag]] = om_handle(S)
 				find_sensors -= S.id_tag
 		for(var/lost in find_sensors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
@@ -274,14 +274,14 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	var/list/doors = list()
 	if(my_doors)
 		for(var/doorname in my_doors)
-			var/obj/machinery/door/airlock/A = my_doors[doorname]
+			var/obj/machinery/door/airlock/A = om_resolve(my_doors[doorname])
 			if(A)
 				doors[doorname] = list("bolted" = A.locked, "open" = !A.density)
 
 	var/list/sensors = list()
 	if(my_sensors)
 		for(var/sensorname in my_sensors)
-			var/obj/machinery/shuttle_sensor/S = my_sensors[sensorname]
+			var/obj/machinery/shuttle_sensor/S = om_resolve(my_sensors[sensorname])
 			if(S)
 				sensors[sensorname] = S.air_list()
 

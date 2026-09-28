@@ -31,7 +31,7 @@
 /datum/codex_tree/proc/go_to_page(datum/lore/codex/new_page, dont_record_history = FALSE, mob/user)
 	var/datum/lore/codex/D = current_page["[user]"]
 	if(new_page && istype(D)) // Make sure we're not going to a null page for whatever reason.
-		current_page["[user]"] = new_page
+		current_page["[user]"] = new_page // ALLOW(object_keyed_lists): per-reader cursor into pages the tree's home owns; they share the tree's lifetime
 		if(!dont_record_history)
 			var/list/H = history["[user]"]
 			if(!H)

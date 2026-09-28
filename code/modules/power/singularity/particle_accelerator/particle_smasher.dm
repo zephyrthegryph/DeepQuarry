@@ -709,3 +709,6 @@ REF_HELD(/obj/machinery/particle_smasher, "target")
 /// LC-refs: Holds the beaker. The process will consume ALL reagents inside it. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
 	return om_resolve(reagent_container_handle)
+
+// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
+REF_SPILL_LIST(/obj/machinery/particle_smasher, list("storage"))

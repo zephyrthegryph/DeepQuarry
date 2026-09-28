@@ -645,3 +645,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 /obj/machinery/cash_register/civilian
 	account_to_connect = "Civilian"
+
+REF_BACK(/obj/machinery/cash_register, list("confirm_item" = null, "linked_account" = null))

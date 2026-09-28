@@ -26,7 +26,7 @@
 		alerting = alert
 		update_icon()
 	var/list/dependencies = list()
-	for(var/obj/machinery/power/sensor/S as anything in power_monitor.grid_sensors)
+	for(var/obj/machinery/power/sensor/S as anything in weak_list_live(power_monitor.grid_sensors))
 		if(S.powernet)
 			dependencies[S.powernet] = TRUE
 	if(length(dependencies))
@@ -71,7 +71,7 @@ REF_OWNED(/obj/machinery/computer/power_monitor, "power_monitor")
 
 // Verifies if any warnings were registered by connected sensors.
 /obj/machinery/computer/power_monitor/proc/check_warnings()
-	for(var/obj/machinery/power/sensor/S in power_monitor.grid_sensors)
+	for(var/obj/machinery/power/sensor/S in weak_list_live(power_monitor.grid_sensors))
 		if(S.check_grid_warning())
 			return 1
 	return 0

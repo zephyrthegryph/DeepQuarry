@@ -23,7 +23,7 @@
 	var/bonus_cash = 0
 	/// Back-reference to the site.
 	var/tmp/site_handle
-	/// Atoms this objective spawned / tracks.
+	/// Atoms this objective spawned / tracks, as om_handle()s (they live on the site; read with om_resolve_all()).
 	var/list/tracked
 	/// Progress / target for the console readout.
 	var/progress = 0
@@ -62,7 +62,7 @@
 
 /datum/expedition_objective/proc/count_alive()
 	var/n = 0
-	for(var/mob/living/L in tracked)
+	for(var/mob/living/L in om_resolve_all(tracked))
 		if(!QDELETED(L) && L.stat != DEAD)
 			n++
 	return n
@@ -86,7 +86,7 @@
 			continue
 		var/mob/guard = expedition_spawn_guard(T, S.faction, S.difficulty)
 		if(guard)
-			tracked += guard
+			tracked += om_handle(guard)
 
 /datum/expedition_objective/eliminate_all/check()
 	var/alive = count_alive()
@@ -107,7 +107,7 @@
 	target = 1
 	var/turf/T = S.random_floor()
 	if(T)
-		tracked += expedition_spawn_boss(T, S.faction, S.difficulty)
+		tracked += om_handle(expedition_spawn_boss(T, S.faction, S.difficulty))
 
 /datum/expedition_objective/eliminate_boss/check()
 	if(count_alive() <= 0)
@@ -144,7 +144,7 @@
 		if(prob(60))
 			var/mob/guard = expedition_spawn_guard(rt, S.faction, S.difficulty)
 			if(guard)
-				tracked += guard
+				tracked += om_handle(guard)
 		if(prob(50))
 			expedition_spawn_loot(rt, expedition_roll_tier(S.difficulty, S.size))
 	if(!length(tracked) && length(B.room_centers))
@@ -153,7 +153,7 @@
 		if(rt)
 			var/mob/guard = expedition_spawn_guard(rt, S.faction, S.difficulty)
 			if(guard)
-				tracked += guard
+				tracked += om_handle(guard)
 	target = max(1, length(tracked))
 	qdel(B)
 
@@ -186,7 +186,7 @@
 	var/datum/expedition_poi/vault/V = new()
 	var/obj/item/expedition_artifact/relic = V.stamp(T, S)
 	if(relic)
-		tracked += relic
+		tracked += om_handle(relic)
 
 /datum/expedition_objective/retrieve/check()
 	if(count_returned(/obj/item/expedition_artifact) >= 1)
@@ -243,7 +243,7 @@
 	var/datum/expedition_poi/camp/C = new()
 	var/obj/structure/expedition_survivor_pod/pod = C.stamp(T, S)
 	if(pod)
-		tracked += pod
+		tracked += om_handle(pod)
 
 /datum/expedition_objective/rescue/check()
 	if(count_returned(/obj/structure/expedition_survivor_pod) >= 1)
@@ -269,11 +269,12 @@
 		var/turf/T = S.random_floor()
 		if(!T)
 			continue
-		tracked += new /obj/structure/expedition_survey_beacon(T)
+		var/obj/structure/expedition_survey_beacon/beacon = new(T)
+		tracked += om_handle(beacon)
 
 /datum/expedition_objective/survey/check()
 	var/done = 0
-	for(var/obj/structure/expedition_survey_beacon/B in tracked)
+	for(var/obj/structure/expedition_survey_beacon/B in om_resolve_all(tracked))
 		if(!QDELETED(B) && B.scanned)
 			done++
 	progress = done
@@ -305,7 +306,7 @@
 			best = T
 	if(best)
 		marker = new(best)
-		tracked += marker
+		tracked += om_handle(marker)
 
 /datum/expedition_objective/reach/check()
 	if(QDELETED(marker) || !site())
@@ -336,7 +337,7 @@
 	/// Power output (watts) the generator must reach to count as commissioned.
 	var/power_threshold = 50000
 	/// Generators found in the stamped engine bay.
-	var/list/generators
+	var/list/generators // om_handle()s
 
 /datum/expedition_objective/commission_engine/populate(datum/expedition_site/S)
 	..()
@@ -356,13 +357,13 @@
 	for(var/turf/T in template.get_affected_turfs(corner))
 		var/obj/machinery/power/generator/G = locate(/obj/machinery/power/generator) in T
 		if(G)
-			generators += G
+			generators += om_handle(G)
 			// `tracked` is what has_viable_objectives() inspects; leaving it empty
 			// made every restore mission log as published without objectives.
-			tracked += G
+			tracked += om_handle(G)
 
 /datum/expedition_objective/commission_engine/check()
-	for(var/obj/machinery/power/generator/G in generators)
+	for(var/obj/machinery/power/generator/G in om_resolve_all(generators))
 		if(!QDELETED(G) && G.effective_gen >= power_threshold)
 			progress = 1
 			state = EXP_OBJ_COMPLETE
@@ -388,7 +389,7 @@
 	if(!T)
 		return
 	target_obj = new(T)
-	tracked += target_obj
+	tracked += om_handle(target_obj)
 	for(var/turf/G in range(2, T))
 		if(G == T || !expedition_is_walkable(G))
 			continue

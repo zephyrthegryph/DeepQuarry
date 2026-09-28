@@ -483,18 +483,19 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	original_handle = om_handle(target)
 	setAngle(Get_Angle(source, target))
 
-// ALLOW(lifecycle): a hitscan finalizes its tracers; its casing forgets it.
-/obj/item/projectile/Destroy()
+/// A hitscan draws its tracers from its trajectory and beam points before phase 4 deletes them.
+/obj/item/projectile/lifecycle_prerelease()
 	if(hitscan)
 		finalize_hitscan_and_generate_tracers()
+	cleanup_beam_segments()
+	return ..()
 
+// ALLOW(lifecycle): its casing forgets it.
+/obj/item/projectile/Destroy()
 	if(impacted_mobs)
 		if(LAZYLEN(impacted_mobs))
 			LAZYCLEARLIST(impacted_mobs)
 		impacted_mobs = null
-
-	QDEL_NULL(trajectory)
-	cleanup_beam_segments()
 
 	if(my_case())
 		if(my_case().BB == src)
@@ -957,6 +958,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	speed = 1.5 // Movespeed is in Deciseconds per movement. Lower is faster. default was 0.8, but we had it at 3.0 for a while.
 
 REF_OWNED(/obj/item/projectile, list("trajectory", "beam_components"))
+// Tracer points (point -> next point); cleanup_beam_segments() deletes keys and values in lifecycle_prerelease().
+REF_OWNED_LIST(/obj/item/projectile, "beam_segments")
 
 /// LC-refs: the beam_index this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/beam_index() as /datum/point
@@ -977,3 +980,5 @@ REF_OWNED(/obj/item/projectile, list("trajectory", "beam_components"))
 /// LC-refs: the original target clicked -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/original() as /atom
 	return om_resolve(original_handle)
+
+REF_BACK(/obj/item/projectile, list("starting" = null, "firer" = null))

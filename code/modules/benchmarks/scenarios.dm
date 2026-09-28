@@ -762,3 +762,7 @@
 /// LC-refs: the generated_site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/benchmark/generation/proc/generated_site() as /datum/expedition_site
 	return om_resolve(generated_site_handle)
+
+/// The fixture floor, rebuilt per event by Run().
+// turfs, never freed
+REF_STATIC(/datum/benchmark/major_events, "event_turfs")

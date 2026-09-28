@@ -291,6 +291,8 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 /proc/HrefTokenFormField(forceGlobal = FALSE)
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
 
+// Shared admin_rank registry entries.
+REF_STATIC(/datum/admins, "ranks")
 REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "particle_test", "whitelist_editor", "spawn_menu", "spawn_panel", "access_view_menu", "admincaster_scratch_channel"))
 
 /// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

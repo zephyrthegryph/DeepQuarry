@@ -292,7 +292,7 @@
 	H.put_in_hands(G)
 	H.ai_brain.rebuild_behaviors()
 	TEST_ASSERT(/datum/ai_behavior/throw_grenade in H.ai_brain.effective_behaviors, "rebuild_behaviors didn't merge held grenade's granted behavior into effective_behaviors")
-	TEST_ASSERT_EQUAL(H.ai_brain.effective_behaviors[/datum/ai_behavior/throw_grenade], G, "throw_grenade's source isn't the grenade itself")
+	TEST_ASSERT_EQUAL(om_resolve(H.ai_brain.effective_behaviors[/datum/ai_behavior/throw_grenade]), G, "throw_grenade's source isn't the grenade itself")
 
 
 // --- runtime: give_destination + tick walks the mob ------------------

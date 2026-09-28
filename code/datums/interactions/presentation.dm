@@ -109,3 +109,5 @@
 	if(screentip)
 		screen -= screentip
 		screentip.maptext = null
+
+REF_OWNED(/client, "screentip")

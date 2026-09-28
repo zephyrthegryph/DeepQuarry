@@ -27,3 +27,5 @@ GLOBAL_DATUM_INIT(runechat_service, /datum/world_service/runechat, new)
 
 /datum/om/behaviour/world/runechat/service()
 	return GLOB.runechat_service
+
+REF_OWNED_LIST(/datum/world_service/runechat, "message_queue")

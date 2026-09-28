@@ -99,3 +99,6 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 		/obj/item/integrated_electronics/debugger,
 		/obj/item/integrated_electronics/detailer
 		)
+
+// Prototype instances the service spawned once, keyed by path.
+REF_OWNED_VALUES(/datum/world_service/circuit, list("cached_components", "cached_assemblies"))

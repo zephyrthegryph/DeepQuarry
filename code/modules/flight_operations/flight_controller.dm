@@ -512,3 +512,5 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 
 /datum/om/behaviour/world/flight/service()
 	return GLOB.flight_service
+
+REF_OWNED_VALUES(/datum/world_service/flight, list("destinations", "vessels", "plans"))

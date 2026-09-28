@@ -532,3 +532,5 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 
 /obj/item/retail_scanner/civilian
 	account_to_connect = "Civilian"
+
+REF_BACK(/obj/item/retail_scanner, list("confirm_item" = null, "linked_account" = null))

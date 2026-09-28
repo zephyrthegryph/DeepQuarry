@@ -224,6 +224,8 @@
 	/// The reboot timer, once the core is jump-started.
 	var/reboot_timer
 
+REF_BACK(/datum/affliction/core_dormancy, list("held_mob" = null))
+
 /datum/affliction/core_dormancy/on_added()
 	..()
 	set_severity(AFFLICTION_SEVERITY_TERMINAL)

@@ -778,3 +778,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 	payout_distributed = paid_reward >= reward
 	audit(CONTRACT_AUDIT_PAYMENT, "[reason]: distributed [planned_total] Thalers ([paid_reward]/[reward] settled).")
 	return TRUE
+
+// A sub-contract sits in its parent's children list; Destroy() orphans our own children.
+REF_BACKLIST(/datum/contract, list("parent" = "children"))
+REF_BACK(/datum/contract, list("funding_account" = null))

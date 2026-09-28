@@ -806,3 +806,5 @@ REF_STATIC(/datum/expedition_teardown_job, "controller_static")
 
 /datum/om/behaviour/world/expedition/service()
 	return GLOB.expedition_service
+
+REF_OWNED_VALUES(/datum/world_service/expedition, "sites")

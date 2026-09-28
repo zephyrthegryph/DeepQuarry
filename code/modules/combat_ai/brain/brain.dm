@@ -39,7 +39,7 @@
 	var/selection_dirty = TRUE
 
 	// --- Behavior aggregation ---
-	var/list/effective_behaviors = null  // typepath => source_atom_or_null
+	var/list/effective_behaviors = null  // typepath => om_handle(source atom) or null
 
 	// --- Per-behavior state ---
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
@@ -87,16 +87,17 @@
 	return ..()
 
 REF_OWNED(/datum/ai_brain, "model")
+REF_BACK(/datum/ai_brain, list("primary_threat" = null, "holder" = "ai_brain"))
 
-// ALLOW(lifecycle): a running behaviour is stopped and chunk sleep cancelled.
-/datum/ai_brain/Destroy()
+// effective_behaviors maps behaviour type -> om_handle() of its source atom (or null): the brain owns no source.
+
+/// A running behaviour is stopped (it ends ai_busy on holder) and the loops and chunk sleep are
+/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain (REF_BACK).
+/datum/ai_brain/lifecycle_prerelease()
 	cancel_chunk_sleep()
 	if(active_behavior_type)
 		var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 		B.stop(src, active_target(), active_source(), DQ_BEHAVIOR_STOP_QDEL)
-	// Clear the mob's back-reference so nothing keeps calling into a deleted brain.
-	if(holder?.ai_brain == src)
-		holder.ai_brain = null
 	manage_processing(0)
 	return ..()
 
@@ -230,14 +231,14 @@ REF_OWNED(/datum/ai_brain, "model")
 		var/list/granted = I.get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = I
+				effective_behaviors[btype] = om_handle(I)
 
 	// Modifier-granted (statuses, buffs).
 	for(var/effect_type in holder.body_effects())
 		var/list/granted = body_effect_def(effect_type).get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = holder
+				effective_behaviors[btype] = om_handle(holder)
 
 	// Inject behaviors implied by legacy-compat flags so callers can flip
 	// brain.returns_home = TRUE on a mob even after spawn and have it work.
@@ -293,7 +294,7 @@ REF_OWNED(/datum/ai_brain, "model")
 	var/any_pending = FALSE
 
 	for(var/btype as anything in effective_behaviors)
-		var/source = effective_behaviors[btype]
+		var/source = om_resolve(effective_behaviors[btype])
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		if(B.requires_held_source && !source)
 			continue

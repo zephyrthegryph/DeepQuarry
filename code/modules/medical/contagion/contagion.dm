@@ -100,6 +100,7 @@
 	var/tmp/mob/living/carbon/human/host
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
+REF_BACK(/datum/affliction/contagion, list("host" = null))
 
 /// Contagions are systemic: whatever arguments a subtype's constructor takes,
 /// the affliction location is null.
@@ -111,7 +112,6 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 // ALLOW(lifecycle): parks the spread lane and drops the host view and strain data.
 /datum/affliction/contagion/Destroy()
 	PERIODIC_STOP(src)
-	host = null
 	cures = null
 	required_organs = null
 	strain_data = null

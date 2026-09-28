@@ -16,11 +16,11 @@
 		"syndicate"
 	)
 	var/tmp/last_notification
-	var/tmp/menu_handle
+	var/datum/nif_menu/menu_ref
 
 /**
  * Small helper datum to manage the HUD icon (was /datum/component/nif_menu).
- * Held by the NIF through `menu_handle`; hooks the implanted mob and goes away with it.
+ * Owned by the NIF through `menu_ref`; hooks the implanted mob and goes away with it.
  */
 /datum/nif_menu
 	var/mob/owner
@@ -192,6 +192,8 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 			last_notification = null
 			return TRUE
 
-/// LC-refs: the menu this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The NIF's HUD menu helper, owned by the NIF (created on implant, deleted on unimplant or with the NIF).
 /obj/item/nif/proc/menu() as /datum/nif_menu
-	return om_resolve(menu_handle)
+	return QDELETED(menu_ref) ? null : menu_ref
+
+REF_OWNED(/obj/item/nif, "menu_ref")

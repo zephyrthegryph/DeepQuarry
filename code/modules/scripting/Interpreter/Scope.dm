@@ -22,3 +22,5 @@
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scope/proc/block_node() as /datum/node/BlockDefinition
 	return block_ref
+
+REF_BACK(/datum/scope, list("parent_ref" = null, "block_ref" = null))

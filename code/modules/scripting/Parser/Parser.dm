@@ -196,3 +196,7 @@ REF_OWNED(/datum/n_Parser, list("blocks", "global_block"))
 	return options_ref
 
 REF_OWNED_LIST(/datum/n_Parser, "errors")
+
+// Cursors into the token stream and the tree being built; options are the caller's.
+REF_BACK(/datum/n_Parser, list("curToken_ref" = null, "curBlock_ref" = null))
+REF_BACK(/datum/n_Parser/nS_Parser, list("options_ref" = null))

@@ -1088,3 +1088,5 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 REF_OWNED_LIST(/datum/world_service/supply, "market_transactions")
 
 REF_OWNED_VALUES(/datum/world_service/supply, list("market_counterparties", "market_listings", "market_bids"))
+
+REF_STATIC(/datum/cargo_market_listing, list("pack"))

@@ -4,7 +4,8 @@
 	var/obj/access = new()
 	var/emagged = 0
 	var/ui_ref
-	var/list/monitored_alarms = list() // ALLOW(instance_list): d: UI module state, filled on open
+	/// Alarms this console is limited to (weak: the machines own themselves); empty means every alarm.
+	var/list/monitored_alarms
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
@@ -12,11 +13,13 @@
 	access.req_one_access = req_one_access
 
 	if(monitored_alarm_ids)
+		var/list/found = list()
 		for(var/obj/machinery/alarm/alarm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(alarm.alarm_id && (alarm.alarm_id in monitored_alarm_ids))
-				monitored_alarms += alarm
+				found += alarm
 		// machines may not yet be ordered at this point
-		monitored_alarms = dd_sortedObjectList(monitored_alarms)
+		for(var/obj/machinery/alarm/alarm as anything in dd_sortedObjectList(found))
+			WEAK_LIST_ADD(monitored_alarms, alarm)
 
 /datum/tgui_module/atmos_control/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -25,7 +28,7 @@
 	switch(action)
 		if("alarm")
 			if(ui_ref)
-				var/obj/machinery/alarm/alarm = locate(params["alarm"]) in (monitored_alarms.len ? monitored_alarms : REGISTRY_MEMBERS(REGISTRY_MACHINES))
+				var/obj/machinery/alarm/alarm = locate(params["alarm"]) in (LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				if(alarm)
 					var/datum/tgui_state/TS = generate_state(alarm)
 					alarm.tgui_interact(ui.user, parent_ui = ui_ref, state = TS)
@@ -54,8 +57,8 @@
 
 	// TODO: Move these to a cache, similar to cameras
 	var/alarms[0]
-	for(var/obj/machinery/alarm/alarm in (monitored_alarms.len ? monitored_alarms : REGISTRY_MEMBERS(REGISTRY_MACHINES)))
-		if(!monitored_alarms.len && alarm.alarms_hidden)
+	for(var/obj/machinery/alarm/alarm in (LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)))
+		if(!LAZYLEN(monitored_alarms) && alarm.alarms_hidden)
 			continue
 		if(!(alarm.z in map_levels))
 			continue
@@ -118,3 +121,6 @@ REF_OWNED(/datum/tgui_module/atmos_control, "access")
 /// LC-refs: the air_alarm this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_state/air_alarm_remote/proc/air_alarm() as /obj/machinery/alarm
 	return om_resolve(air_alarm_handle)
+
+/// Alarms shown by this UI, rebuilt when it opens.
+REF_WEAK_LIST(/datum/tgui_module/atmos_control, "monitored_alarms")

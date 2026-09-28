@@ -84,6 +84,10 @@
 
 	special_handling = TRUE
 
+REF_OWNED(/obj/item/organ/external, list("mob_icon", "hud_damage_image"))
+REF_HELD(/obj/item/organ/external, "splinted")
+REF_BACK(/obj/item/organ/external, list("parent" = null, "applied_pressure" = null))
+
 // ALLOW(lifecycle): child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/Destroy()
 	// Child limbs and organs sit in this limb's part slots: the ledger deletes

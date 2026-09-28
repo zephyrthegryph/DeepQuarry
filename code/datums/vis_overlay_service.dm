@@ -94,3 +94,5 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 
 /datum/om/behaviour/world/vis_overlays/service()
 	return GLOB.vis_overlays_service
+
+REF_OWNED_VALUES(/datum/world_service/vis_overlays, "vis_overlay_cache")

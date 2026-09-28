@@ -3,6 +3,7 @@
 // For the record: these should never ever ever be deleted, even if the turf doesn't have dynamic lighting.
 
 /datum/lighting_corner
+	// ALLOW(scheduler, declared_refs, object_keyed_lists): lighting hot path; strong many-to-many list kept in step by both sides (light_source remove_lum/update_corners and corner/turf teardown). A handle per entry would cost a resolve per lighting update.
 	var/list/datum/light_source/affecting // Light sources affecting us.
 
 	var/sunlight = SUNLIGHT_NONE
@@ -304,3 +305,8 @@
 		master_SW_sim.shandler.sunlight_update()
 	if(istype(master_NW_sim) && master_NW_sim.shandler && master_NW_sim.shandler.sleeping)
 		master_NW_sim.shandler.sunlight_update()
+
+// Corners are immortal (Destroy refuses unless forced): turfs are never deleted, so the masters are never cleared.
+REF_STATIC(/datum/lighting_corner, list("master_NE", "master_SE", "master_SW", "master_NW"))
+
+

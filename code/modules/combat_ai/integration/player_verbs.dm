@@ -71,7 +71,7 @@
 			continue
 		if(!B.applicable_to(src))
 			continue
-		var/atom/source = ai_brain.effective_behaviors[btype]
+		var/atom/source = om_resolve(ai_brain.effective_behaviors[btype])
 		if(B.requires_held_source && !source)
 			continue
 		if(!B.is_off_cooldown(ai_brain, source))

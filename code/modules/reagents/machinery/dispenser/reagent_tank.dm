@@ -565,3 +565,5 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 /obj/structure/reagent_dispensers/space_cleaner/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_CLEANER, 1000)
+
+REF_HELD(/obj/structure/reagent_dispensers/fueltank, "rig")

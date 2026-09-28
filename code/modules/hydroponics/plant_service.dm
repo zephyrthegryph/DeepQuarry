@@ -4,6 +4,8 @@
 /// calls initialize(), where SSplants used to initialize.
 GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 
+REF_STATIC(/datum/world_service/plants, list("seeds", "plant_gene_datums"))
+
 /datum/world_service/plants
 	name = "Plants"
 	var/list/product_descs = list()					// Stores generated fruit descs. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)

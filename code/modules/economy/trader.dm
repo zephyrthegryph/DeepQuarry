@@ -419,3 +419,6 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 		/obj/item/clothing/under/hyperfiber/bluespace = 2,
 		/obj/item/reagent_containers/food/snacks/jellyfishcore = 10
 		)
+
+// The stock the trader spawned into itself at Initialize().
+REF_OWNED_LIST(/obj/trader, list("products"))

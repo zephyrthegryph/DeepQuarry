@@ -483,3 +483,5 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 REF_OWNED_LIST(/datum/construction_graph, list("edges", "wildcard_edges"))
 
 REF_OWNED_VALUES(/datum/construction_graph, "edges_by_id")
+
+REF_STATIC(/datum/interaction/construction, list("graph", "compiled_alt"))
