@@ -87,7 +87,7 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 		return
 	light_up()
 	pressed(user)
-	if(floor == lift(current_floor()or && !(lift().target_floor()))	//Make sure we're not going anywhere before opening doors
+	if(floor == lift().current_floor() && !(lift().target_floor()))	//Make sure we're not going anywhere before opening doors
 		lift().open_doors()
 		om_after(src, 3, PROC_REF(reset))
 		return

@@ -36,7 +36,7 @@
 	if(moving_status == SHUTTLE_INTRANSIT)
 		return FALSE //already going somewhere, current_location may be an intransit location instead of in a sector
 	var/our_sector = waypoint_sector(current_location())
-	if(myship()?.landmark &next_location()on == myship().landmark)
+	if(myship()?.landmark && next_location() == myship().landmark)
 		return TRUE //We're not on the overmap yet (admin spawned probably), and we're trying to hook up with our openspace sector
 	if(!our_sector || !waypoint_sector(next_location()))
 		return FALSE

@@ -147,7 +147,7 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	LAZYADD(destination().active_plans, src)
 	created_at = world.time
 	id = "flight-[REF(src)]"
-	if(destination()?.expedition() &destination()on.expedition().z_level <= 0)
+	if(destination()?.expedition() && destination().expedition().z_level <= 0)
 		generation_state = FLIGHT_GENERATION_QUEUED
 		generation_stage = "Awaiting departure"
 

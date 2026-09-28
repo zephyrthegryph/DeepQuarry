@@ -68,7 +68,7 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 			circ1_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,NORTH))
 			circ2_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,SOUTH))
 
-			if(circ1() && circ2() &&circ1()c1.dir != EAST || circ2().dir != WEST))
+			if(circ1() && circ2() && (circ1().dir != EAST || circ2().dir != WEST))
 				circ1_handle = null
 				circ2_handle = null
 

@@ -62,7 +62,7 @@
 /obj/machinery/computer/ship/disperser/proc/is_valid_setup()
 	if(front() && middle() && back())
 		var/everything_in_range = (get_dist(src, front()) < link_range) && (get_dist(src, middle()) < link_range) && (get_dist(src, back()) < link_range)
-		var/everything_in_order = (middle().Adjacent(front()) && middle().Adjacent(back())) && (front().dir =middle()le.dir &middle()le.dir == back().dir)
+		var/everything_in_order = (middle().Adjacent(front()) && middle().Adjacent(back())) && (front().dir == middle().dir && middle().dir == back().dir)
 		return everything_in_order && everything_in_range
 	return FALSE
 
