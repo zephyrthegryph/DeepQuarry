@@ -91,6 +91,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	/// Breakdown for the highest-usage tick since the last explicit reset.
 	var/list/perf_worst_tick
 	var/perf_history_limit = 12000
+	/// Names of one subsystem dependency cycle found at boot, or null (boot_dependencies.dm).
+	var/boot_dependency_cycle
 	/// Every sample ever recorded, so callers can hold a position that survives trimming.
 	var/perf_samples_total = 0
 	var/perf_tick_top_name = "None"
@@ -379,73 +381,39 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			LAZYOR(dependent.dependencies, subsystem.type)
 		subsystem.dependents = list()
 
-	// Constructs a reverse-dependency graph.
+	// Resolves each subsystem's declared dependencies (boot_dependencies.dm).
+	var/list/deps_by_subsystem = list()
 	for(var/datum/controller/subsystem/subsystem as anything in subsystems)
+		var/list/resolved = list()
 		for(var/dependency_type in subsystem.dependencies)
 			if(!ispath(dependency_type, /datum/controller/subsystem))
 				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependency: `[dependency_type]`. Skipping")
 				continue
 			var/datum/controller/subsystem/dependency = type_to_subsystem[dependency_type]
+			if(!dependency)
+				continue
 			// Not a foolproof failsafe, likely to only prevent any immediate issues if this is only triggered once.
 			if(subsystem.init_stage < dependency.init_stage)
 				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency.init_stage])! Setting init_stage to [dependency.init_stage]")
 				subsystem.init_stage = dependency.init_stage
 			dependency.dependents += subsystem
+			resolved += dependency
+		deps_by_subsystem[subsystem] = resolved
 
-	// Topological sorting algorithm
-	var/list/counts = new(subsystems.len)
-	var/list/unsorted_subsystems = list()
-	var/index = 1
-	for(var/datum/controller/subsystem/subsystem as anything in subsystems)
-		counts[index] = length(subsystem.dependencies)
-		subsystem.ordering_id = index
-		if(counts[index] == 0)
-			unsorted_subsystems += subsystem
-		index += 1
-
-	var/list/sorted_subsystems = list()
-	while(length(unsorted_subsystems) > 0)
-		var/datum/controller/subsystem/sub = unsorted_subsystems[unsorted_subsystems.len]
-		unsorted_subsystems.len--
-		sorted_subsystems += sub
-		for(var/datum/controller/subsystem/dependent as anything in sub.dependents)
-			counts[dependent.ordering_id] -= 1
-			if(counts[dependent.ordering_id] == 0)
-				unsorted_subsystems += dependent
-	// Topological sorting algorithm end
+	var/list/cycle = list()
+	var/list/sorted_subsystems = boot_dependency_order(subsystems, deps_by_subsystem, cycle)
+	for(var/i in 1 to length(subsystems))
+		var/datum/controller/subsystem/subsystem = subsystems[i]
+		subsystem.ordering_id = i
 
 	if(length(subsystems) != length(sorted_subsystems))
-		var/list/circular_dependency = subsystems - sorted_subsystems
-		var/list/debug_msg = list()
 		var/list/usr_msg = list()
-		for(var/datum/controller/subsystem/subsystem as anything in circular_dependency)
+		for(var/datum/controller/subsystem/subsystem as anything in subsystems - sorted_subsystems)
 			usr_msg += subsystem.name
-
-		var/list/datum/controller/subsystem/nodes = list(circular_dependency[1])
-		var/list/loop = list()
-		while(length(nodes) > 0)
-			var/datum/controller/subsystem/node = nodes[nodes.len]
-			nodes.len--
-			if(node in loop)
-				loop += node
-				break
-			loop += node
-			for(var/datum/controller/subsystem/connected as anything in node.dependencies)
-				nodes += type_to_subsystem[connected]
-
-		var/loop_position = 0
-		for(var/datum/controller/subsystem/node in loop)
-			if(node == loop[loop.len])
-				break
-			loop_position++
-		if(loop_position != 0)
-			loop.Cut(1, loop_position + 1)
-
-		for(var/datum/controller/subsystem/subsystem as anything in loop)
-			debug_msg += "[subsystem.name]"
-
+		boot_dependency_cycle = jointext(cycle, " -> ")
 		// Can't initialize them if they have circular dependencies, there's no real failsafe here.
-		stack_trace("ERROR: CRITICAL: MC: The following subsystems have circular dependencies: [jointext(debug_msg, " -> ")]")
+		stack_trace("ERROR: CRITICAL: MC: The following subsystems have circular dependencies: [boot_dependency_cycle]")
+		log_world("ERROR: CRITICAL: MC: subsystem dependency cycle: [boot_dependency_cycle]")
 		to_chat(world, span_bolddanger("CRITICAL: Failed to initialize [jointext(usr_msg, ", ")]"), MESSAGE_TYPE_DEBUG)
 
 	for (var/datum/controller/subsystem/subsystem as anything in sorted_subsystems)

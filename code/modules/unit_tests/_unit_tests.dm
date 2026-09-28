@@ -120,6 +120,7 @@
 #include "spritesheets.dm"
 #include "sqlite_tests.dm"
 #include "subsystem_init.dm"
+#include "mc_boot_dependencies.dm"
 #include "techwebs.dm"
 #include "tgui_create_message.dm"
 #include "trait_tests.dm"

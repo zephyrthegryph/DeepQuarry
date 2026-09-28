@@ -871,7 +871,7 @@ Each has a regression test in `dq_om_core_tests.dm`.
 
 Each job has one mechanism. Every alternative in the third column is counted by the lint in the
 fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never rise (the
-ceilings are in `tools/ci/api_lints_baseline.txt`, `scheduler_lints_baseline.txt` and the
+ceilings are in `tools/ci/api_lints_baseline.txt`, `scheduler_lints_baseline.txt`, `dcs_lints_baseline.txt` and the
 allowlists next to each lint).
 
 | To... | The one way | Not | Lint (count) |
@@ -891,3 +891,4 @@ allowlists next to each lint).
 | Hold an object reference | a relation or slot, an owned child, an OM handle or a declared cache (§4.11) | an undeclared object-typed var | `scheduler_lints.py` (`lc_refs`), `declared_refs_lint.py` |
 | Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |
 | Keep a set of live instances | an OM registry (`REGISTRY_MEMBERS()`) | a `GLOB` list of instances; a list allocated per instance | `registry_lint.py`, `instance_list_lint.py` |
+| React to something happening now | an OM event, `om_emit(E, new /datum/om/event/x)`; a `/datum/om/event/before/x` returning `EVENT_VETO` to refuse it (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()` outside the DCS core allowlist (`tools/ci/dcs_allowlist.txt`); per-folder replacements in `signal_migration_map.md` | `dcs_lints.py` (`register_signal`, `add_component`, `add_element`) |
