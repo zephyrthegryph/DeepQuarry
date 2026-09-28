@@ -131,7 +131,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 /obj/structure/micro_tunnel/proc/tunnel_reach(mob/living/user)
 	user.visible_message(span_warning("\The [user] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-	om_task_start(/datum/om/task/timed/micro_reach/tunnel, user, src, list("receiver" = src))
+	om_task_start(/datum/om/task/timed/micro_reach/tunnel, user, src)
 
 /obj/structure/micro_tunnel/proc/tunnel_climb(mob/living/user)
 	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
@@ -339,7 +339,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	for(var/mob/living/issamob in src.contents)
 		contained_mobs |= issamob
 	to_chat(user,span_notice("You begin moving..."))
-	om_task_start(/datum/om/task/timed/obj_micro_interact, user, src, list("receiver" = src, "contained_mobs" = contained_mobs, "choice" = choice))
+	om_task_start(/datum/om/task/timed/obj_micro_interact, user, src, contained_mobs = contained_mobs, choice = choice)
 
 /obj/proc/micro_interact()
 	set name = "Micro Interact"
@@ -361,11 +361,11 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))
 		usr.visible_message(span_warning("\The [usr] reaches into \the [src]. . ."),span_warning("You reach into \the [src]. . ."))
-		om_task_start(/datum/om/task/timed/micro_reach, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs))
+		om_task_start(/datum/om/task/timed/micro_reach, usr, src, contained_mobs = contained_mobs)
 		return
 
 	usr.visible_message(span_notice("\The [usr] begins climbing into \the [src]!"))
-	om_task_start(/datum/om/task/timed/obj_micro_interact2, usr, src, list("receiver" = src, "contained_mobs" = contained_mobs))
+	om_task_start(/datum/om/task/timed/obj_micro_interact2, usr, src, contained_mobs = contained_mobs)
 	return TRUE
 
 /// Reaching into something small for whoever is inside.

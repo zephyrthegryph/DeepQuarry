@@ -205,12 +205,12 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 							H.reagents.trans_to_obj(src, amount)
 							draw_blood_done(user, T, amount, FALSE)
 						else if(H != user)
-							om_task_start(/datum/om/task/timed/syringe_draw, user, T, list("duration" = time, "receiver" = src, "amount" = amount))
+							om_task_start(/datum/om/task/timed/syringe_draw, user, T, duration = time, amount = amount)
 							return
 						else
 							draw_blood_done(user, T, amount, TRUE)
 					else
-						om_task_start(/datum/om/task/timed/syringe_draw, user, T, list("duration" = time, "receiver" = src, "amount" = amount))
+						om_task_start(/datum/om/task/timed/syringe_draw, user, T, duration = time, amount = amount)
 						return
 
 			else //if not mob
@@ -304,7 +304,7 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 			var/contained = reagentlist()
 			if(ismob(target))
 				// Then 5u per cycle, each cycle a timed action.
-				om_task_start(/datum/om/task/timed/syringe_inject, user, target, list("receiver" = src, "warmup" = warmup_time, "cycle_time" = cycle_time, "contained" = contained))
+				om_task_start(/datum/om/task/timed/syringe_inject, user, target, warmup = warmup_time, cycle_time = cycle_time, contained = contained)
 				return
 			var/trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
 			inject_finish(user, target, trans, contained)

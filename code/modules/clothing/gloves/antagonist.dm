@@ -17,110 +17,88 @@
 	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
-/datum/om/task/timed/thieves_pickpocket
-	duration = 1 SECOND
-	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket
-	var/proximity
-
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket(datum/om/task/timed/thieves_pickpocket/task)
-	var/mob/living/carbon/human/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/proximity = task.proximity
-	if(!proximity || !user || !target)
-		return 0
-
-	if(!istype(target))
-		return 0
-
-	if(!IS_HARMING(user) && (turn(target.dir, 180) == get_dir(user, target)))
-		to_chat(target, span_warning("[user] rifles in your pockets!"))
-
-	if(IS_HELPING(user))
-		if(istype(target.get_equipped_item(SLOT_ID_BACK),/obj/item/storage))
-			om_task_start(/datum/om/task/timed/thieves_pickpocket_open, user, target, list("receiver" = src, "duration" = 3 SECONDS, "slot_id" = SLOT_ID_BACK, "progress" = FALSE))
-		else if(istype(target.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
-			om_task_start(/datum/om/task/timed/thieves_pickpocket_open, user, target, list("receiver" = src, "duration" = 5 SECONDS, "slot_id" = SLOT_ID_BELT))
-		return 1
-
-	if(IS_DISARMING(user))
-		om_task_start(/datum/om/task/timed/thieves_pickpocket_take, user, target, list("receiver" = src, "slot_id" = SLOT_ID_POCKET_L, "slot" = slot_l_store))
-		return 1
-
-	if(IS_GRABBING(user))
-		om_task_start(/datum/om/task/timed/thieves_pickpocket_take, user, target, list("receiver" = src, "slot_id" = SLOT_ID_POCKET_R, "slot" = slot_r_store))
-		return 1
-
-/datum/om/task/timed/thieves_pickpocket_open
-	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_open
-	var/slot_id
-
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_open(datum/om/task/timed/thieves_pickpocket_open/task)
-	var/mob/living/carbon/human/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/slot_id = task.slot_id
-	var/obj/item/storage/S = target.get_equipped_item(slot_id)
-	if(istype(S))
-		S.open(user)
-
-// Swapping pocket contents is three timed actions: a rummage, taking theirs, giving yours.
-/datum/om/task/timed/thieves_pickpocket_take
-	duration = 1 SECOND
-	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_take
+/// Pickpocketing is one flow: a second's rummage, then by intent either opening their bag
+/// (help) or swapping a pocket (disarm: left, grab: right) as take-theirs, give-yours.
+/datum/om/flow/pickpocket
+	name = "pickpocket"
+	/// The pocket being swapped (slot id and equip slot).
 	var/slot_id
 	var/slot
-
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_take(datum/om/task/timed/thieves_pickpocket_take/task)
-	var/mob/living/carbon/human/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/slot_id = task.slot_id
-	var/slot = task.slot
-	var/obj/item/theirs = target.get_equipped_item(slot_id)
-	if(istype(theirs))
-		om_task_start(/datum/om/task/timed/thieves_pickpocket_took, user, target, list("receiver" = src, "slot_id" = slot_id, "slot" = slot, "theirs" = theirs))
-	else
-		pickpocket_give(user, target, slot_id, slot, null)
-
-/datum/om/task/timed/thieves_pickpocket_took
-	duration = 1 SECOND
-	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_took
-	var/slot_id
-	var/slot
-	var/obj/item/theirs
-
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_took(datum/om/task/timed/thieves_pickpocket_took/task)
-	var/mob/living/carbon/human/user = task.actor
-	var/mob/living/carbon/human/target = task.target
-	var/slot_id = task.slot_id
-	var/slot = task.slot
-	var/obj/item/theirs = task.theirs
-	if(target.get_equipped_item(slot_id) != theirs)
-		return
-	target.drop_from_inventory(theirs)
-	pickpocket_give(user, target, slot_id, slot, theirs)
-
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_give(mob/living/carbon/human/user, mob/living/carbon/human/target, slot_id, slot, obj/item/took)
-	var/obj/item/mine = user.get_equipped_item(slot_id)
-	if(istype(mine))
-		om_task_start(/datum/om/task/timed/pickpocket_swap, user, target, list("receiver" = src, "slot" = slot, "took" = took, "mine" = mine))
-	else
-		pickpocket_swapped(user, target, slot, took, null, FALSE)
-
-/// Slipping your own pocket item into theirs after taking: a second of holding still.
-/datum/om/task/timed/pickpocket_swap
-	duration = 1 SECOND
-	complete_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_gave
-	cancel_proc = /obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_kept
-	var/slot
+	/// What was taken from them, and the user's own pocket item being slipped in.
 	var/obj/item/took
+	var/obj/item/theirs
 	var/obj/item/mine
+	/// TRUE while giving: an interrupted give still keeps what was taken.
+	var/giving = FALSE
 
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_gave(datum/om/task/timed/pickpocket_swap/task)
-	pickpocket_swapped(task.actor, task.target, task.slot, task.took, task.mine, TRUE)
+/datum/om/flow/pickpocket/start()
+	wait(1 SECOND, PROC_REF(rummaged))
 
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_kept(datum/om/task/timed/pickpocket_swap/task)
-	pickpocket_swapped(task.actor, task.target, task.slot, task.took, task.mine, FALSE)
+/datum/om/flow/pickpocket/proc/rummaged()
+	var/mob/living/carbon/human/user = actor
+	var/mob/living/carbon/human/victim = target
+	if(!IS_HARMING(user) && (turn(victim.dir, 180) == get_dir(user, victim)))
+		to_chat(victim, span_warning("[user] rifles in your pockets!"))
+	if(IS_HELPING(user))
+		if(istype(victim.get_equipped_item(SLOT_ID_BACK), /obj/item/storage))
+			slot_id = SLOT_ID_BACK
+			wait(3 SECONDS, PROC_REF(open_storage), progress = FALSE)
+		else if(istype(victim.get_equipped_item(SLOT_ID_BELT), /obj/item/storage))
+			slot_id = SLOT_ID_BELT
+			wait(5 SECONDS, PROC_REF(open_storage))
+		return
+	if(IS_DISARMING(user))
+		slot_id = SLOT_ID_POCKET_L
+		slot = slot_l_store
+	else if(IS_GRABBING(user))
+		slot_id = SLOT_ID_POCKET_R
+		slot = slot_r_store
+	else
+		return
+	theirs = victim.get_equipped_item(slot_id)
+	if(istype(theirs))
+		wait(1 SECOND, PROC_REF(take))
+	else
+		theirs = null
+		give()
 
-/obj/item/clothing/gloves/sterile/thieves/proc/pickpocket_swapped(mob/living/carbon/human/user, mob/living/carbon/human/target, slot, obj/item/took, obj/item/mine, gave)
+/datum/om/flow/pickpocket/proc/open_storage()
+	var/mob/living/carbon/human/victim = target
+	var/obj/item/storage/S = victim.get_equipped_item(slot_id)
+	if(istype(S))
+		S.open(actor)
+
+/datum/om/flow/pickpocket/proc/take()
+	var/mob/living/carbon/human/victim = target
+	if(victim.get_equipped_item(slot_id) != theirs)
+		return
+	victim.drop_from_inventory(theirs)
+	took = theirs
+	theirs = null
+	give()
+
+/// Slipping your own pocket item into theirs: a second of holding still.
+/datum/om/flow/pickpocket/proc/give()
+	var/mob/living/carbon/human/user = actor
+	mine = user.get_equipped_item(slot_id)
+	if(!istype(mine))
+		mine = null
+		swapped(FALSE)
+		return
+	giving = TRUE
+	wait(1 SECOND, PROC_REF(gave))
+
+/datum/om/flow/pickpocket/proc/gave()
+	swapped(TRUE)
+
+/datum/om/flow/pickpocket/ended(reason)
+	if(giving)
+		swapped(FALSE)
+
+/datum/om/flow/pickpocket/proc/swapped(gave)
+	var/mob/living/carbon/human/user = actor
+	var/mob/living/carbon/human/victim = target
+	giving = FALSE
 	if(!user)
 		return
 	// Taking something leaves the user's own pocket item in bluespace: it drops.
@@ -128,15 +106,14 @@
 		user.drop_from_inventory(mine)
 	if(took)
 		user.equip_to_slot(took, slot)
-	if(gave && target)
-		target.equip_to_slot(mine, slot)
+	if(gave && victim)
+		victim.equip_to_slot(mine, slot)
 
 /obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity)
 	if(proximity && ishuman(usr) && ishuman(A))
-		om_task_start(/datum/om/task/timed/thieves_pickpocket, usr, A, list("receiver" = src, "proximity" = proximity))
+		om_flow_start(/datum/om/flow/pickpocket, usr, A)
 		return 1
 	return 0
-
 
 // Buzzer Ring - Traitor, Merc.
 /obj/item/clothing/gloves/ring/buzzer

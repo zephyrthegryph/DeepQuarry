@@ -261,19 +261,23 @@
 	return T
 
 /// The receiver of a task started without one: the first of `starter` (the caller's src), the
-/// target and the actor that has the task's complete_proc, cancel_proc or check_proc. A task
-/// whose procs are all its own (or global) gets the actor.
+/// target and the actor that has the task's complete_proc, cancel_proc, check_proc or a step
+/// proc. Otherwise the starter (the caller asked for the work), else the actor.
 /proc/om_task_pick_receiver(datum/om/task/T, datum/starter)
 	var/list/procs = list(T.complete_proc, T.cancel_proc)
 	if(istype(T, /datum/om/task/timed))
 		var/datum/om/task/timed/timed = T
 		procs += timed.check_proc
+	for(var/step_proc in T.steps)
+		procs += step_proc
 	for(var/proc_ref in procs)
 		if(!proc_ref || copytext("[proc_ref]", 1, 7) == "/proc/" || om_task_own_proc(T, proc_ref))
 			continue
 		for(var/datum/candidate as anything in list(starter, T.target, T.actor))
 			if(candidate && !QDELETED(candidate) && om_task_proc_fits(candidate, proc_ref))
 				return candidate
+	if(starter && !QDELETED(starter))
+		return starter
 	return T.actor
 
 /// TRUE when `proc_ref` (a proc path, or a PROC_REF() name) can be called on `D`.
