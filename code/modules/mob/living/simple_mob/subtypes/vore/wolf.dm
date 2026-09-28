@@ -80,6 +80,7 @@
 	return TRUE
 
 /mob/living/simple_mob/vore/wolf/direwolf
+	drag_buckle = FALSE
 	name = "dire wolf"
 	desc = "The biggest and baddest wolf around."
 	tt_desc = "Canis maxdirus"
@@ -117,8 +118,6 @@
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	add_verb(src,/mob/living/simple_mob/proc/pick_color)
 	movement_cooldown = -1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/wolf/direwolf, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/wolf/direwolf/dog
 	name = "large dog"

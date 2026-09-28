@@ -127,7 +127,3 @@
 /mob/living/simple_mob/vore/aggressive
 	mob_bump_flag = HEAVY
 
-/// Drag-onto effect for rideable vore mobs: swallows the drop so /atom/movable/MouseDrop_T's drag-to-buckle
-/// never runs (mounting goes through the animal_mount verb and riding datum instead). Was a bare `return` MouseDrop_T.
-/mob/living/simple_mob/vore/proc/vore_mob_block_drag(mob/user, atom/movable/held, datum/interaction/interaction)
-	return TRUE

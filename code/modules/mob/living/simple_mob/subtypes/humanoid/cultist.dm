@@ -212,6 +212,7 @@
 	value = CATALOGUER_REWARD_EASY
 
 /mob/living/simple_mob/humanoid/cultist/tesh
+	drag_buckle = FALSE
 	name = "cultist"
 	desc = "A sinister looking hooded Teshari armed with a curved knife."
 	icon_state = "culttesh"
@@ -405,6 +406,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/humanoid/cultist/castertesh
+	drag_buckle = FALSE
 	name = "Teshari Mage"
 	desc = "This Teshari seems to have forsoken weapons for unfanthomable power."
 	icon_state = "castertesh"
@@ -702,6 +704,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	projectiletype = /obj/item/projectile/energy/fireball
 
 /mob/living/simple_mob/humanoid/cultist/noodle
+	drag_buckle = FALSE
 	name = "Converted"
 	desc = "An indiuval wrapped up in a makeshift rig, made from fallen cultist."
 	icon_state = "cobra-cultist"
@@ -743,6 +746,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 
 //Nibbler//
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball
+	drag_buckle = FALSE
 	vore_active = 1
 	vore_capacity = 6
 	vore_max_size = RESIZE_HUGE
@@ -759,13 +763,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
-
-/// Drag-onto effect: swallows the drop so /atom/movable/MouseDrop_T's drag-to-buckle never runs.
-/// Was a bare `return` MouseDrop_T.
-/mob/living/simple_mob/humanoid/cultist/proc/cultist_block_drag(mob/user, atom/movable/held, datum/interaction/interaction)
-	return TRUE
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
 	. = ..()
@@ -803,8 +800,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fir
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/noodle, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
 	. = ..()
@@ -844,8 +839,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/noodle, INTERACT_DRA
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/tesh, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
-
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -882,8 +875,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/tesh, INTERACT_DRAG(
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/castertesh, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()
 	. = ..()

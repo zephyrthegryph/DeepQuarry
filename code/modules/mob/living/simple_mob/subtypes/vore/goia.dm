@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/zorgoia
+	drag_buckle = FALSE
 	name = "zorgoia"
 	desc = "It's a a reptilian mammal hybrid, known for its voracious nature and love for fruits. By more popular terms its referred to as the furry slinky!"
 	tt_desc = "Zorgoyuh slinkus"
@@ -413,7 +414,6 @@
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(zorgoia_interaction_hand)), \
-	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
 )
 
 /// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive and AI-run. FALSE = default touch.

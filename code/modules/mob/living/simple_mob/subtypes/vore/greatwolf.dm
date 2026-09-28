@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/greatwolf
+	drag_buckle = FALSE
 	name = "great white wolf"
 	desc = "A massive white wolf, with piercing green eyes. Much like a dire wolf, but bigger. Passive, until you give it a reason to not be."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/greatwolf)
@@ -100,7 +101,6 @@
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \
 	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(greatwolf_interaction_feed), "Feed"), \
-	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
 )
 
 /// Old attackby: trade food for people!

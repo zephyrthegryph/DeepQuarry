@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/gryphon
+	drag_buckle = FALSE
 	name = "gryphon"
 	desc = "A large, lazy feline-avian hybrid. Best not to walk too close to a gryphon alone."
 
@@ -145,8 +146,6 @@
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
 	add_verb(src,/mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/gryphon, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /datum/say_list/gryphon
 	emote_hear = list("squawks!", "looks around as its stomach growls.")

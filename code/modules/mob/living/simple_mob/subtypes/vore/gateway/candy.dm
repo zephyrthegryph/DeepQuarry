@@ -52,8 +52,6 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/bluecabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
-
 /mob/living/simple_mob/vore/candy/bluecabold/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -76,8 +74,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/bluecabold, INTERACT_DRAG(
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/redcabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/redcabold/load_default_bellies()
 	. = ..()
@@ -102,8 +98,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/redcabold, INTERACT_DRAG(n
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/yellowcabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
-
 /mob/living/simple_mob/vore/candy/yellowcabold/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -126,8 +120,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/yellowcabold, INTERACT_DRA
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/orangecabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/orangecabold/load_default_bellies()
 	. = ..()
@@ -152,8 +144,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/orangecabold, INTERACT_DRA
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/purplecabold, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
-
 /mob/living/simple_mob/vore/candy/purplecabold/load_default_bellies()
 	. = ..()
 	var/obj/belly/B = vore_selected
@@ -176,8 +166,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/purplecabold, INTERACT_DRA
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/marshmellowserpent, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/load_default_bellies()
 	. = ..()
@@ -613,6 +601,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/marshmellowserpent, INTERA
 //antimelee
 
 /mob/living/simple_mob/vore/candy/peppermint
+	drag_buckle = FALSE
 	name = "peppermint turtle"
 	desc = "A creature made of candy, it's peppermint looking shell seeming diffcult to get a good hit on, but fragile if well struck."
 	icon = 'icons/mob/candy.dmi'
@@ -626,7 +615,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/marshmellowserpent, INTERA
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 	INTERACT_ITEM(null, PROC_REF(peppermint_interaction_item)), \
-	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
 )
 
 /// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (hit_with_item).
@@ -644,6 +632,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 
 /*
 /mob/living/simple_mob/vore/candy/worm
+	drag_buckle = FALSE
 	name = "hardcandy worm"
 	desc = "A creature made of candy."
 	icon = 'icons/mob/candy.dmi'
@@ -670,8 +659,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/worm, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/candy/worm/redcabold/load_default_bellies()
 	. = ..()
@@ -711,3 +698,22 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/worm, INTERACT_DRAG(null, 
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 v
+
+
+/mob/living/simple_mob/vore/candy/bluecabold
+	drag_buckle = FALSE
+
+/mob/living/simple_mob/vore/candy/redcabold
+	drag_buckle = FALSE
+
+/mob/living/simple_mob/vore/candy/yellowcabold
+	drag_buckle = FALSE
+
+/mob/living/simple_mob/vore/candy/orangecabold
+	drag_buckle = FALSE
+
+/mob/living/simple_mob/vore/candy/purplecabold
+	drag_buckle = FALSE
+
+/mob/living/simple_mob/vore/candy/marshmellowserpent
+	drag_buckle = FALSE

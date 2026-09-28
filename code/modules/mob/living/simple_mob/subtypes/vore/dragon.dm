@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/aggressive/dragon
+	drag_buckle = FALSE
 	name = "red dragon"
 	desc = "Here to pillage stations and kidnap princesses, and there probably aren't any princesses."
 
@@ -119,8 +120,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/dragon, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /datum/say_list/dragonboss
 	say_got_target = list("roars and snaps it jaws!")

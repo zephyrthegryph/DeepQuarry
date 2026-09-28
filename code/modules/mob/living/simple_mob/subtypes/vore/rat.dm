@@ -19,6 +19,7 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 /mob/living/simple_mob/vore/aggressive/rat
+	drag_buckle = FALSE
 	name = "giant rat"
 	desc = "In what passes for a hierarchy among verminous rodents, this one is king."
 	tt_desc = "Mus muscular"
@@ -227,8 +228,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_IN
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/aggressive/rat/phoron
 	name = "phoron rat"

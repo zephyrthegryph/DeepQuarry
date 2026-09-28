@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/horse
+	drag_buckle = FALSE
 	name = "small horse"
 	desc = "Don't look it in the mouth."
 	tt_desc = "Equus ferus caballus"
@@ -73,8 +74,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = -2
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/horse, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/horse/load_default_bellies()
 	. = ..()

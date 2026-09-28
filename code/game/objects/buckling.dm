@@ -35,10 +35,20 @@
 		return attack_hand(user) //Process as if we're a normal person touching the object.
 	return ..() //Otherwise, treat this as an AI click like usual.
 
-/atom/movable/MouseDrop_T(atom/dropping, mob/user, src_location, over_location, src_control, over_control, params)
-	. = ..()
-	if(.)
-		return
+/atom/movable
+	/// Dragging a mob onto this buckles it (when can_buckle) or climbs it. FALSE for mobs that are
+	/// mounted another way (riding animals use their mount verb) and so ignore the drag.
+	var/drag_buckle = TRUE
+
+/// Every movable's default drag: buckle the dragged mob, or climb it.
+/atom/movable/declare_interactions(list/into)
+	..()
+	var/static/list/drag_spec = INTERACT_DRAG_DEFAULT("Buckle", PROC_REF(interaction_drag_buckle))
+	into += dq_interaction_from_spec(/atom/movable, drag_spec)
+
+/atom/movable/proc/interaction_drag_buckle(mob/user, atom/movable/dropping, datum/interaction/interaction)
+	if(!drag_buckle)
+		return TRUE
 	var/mob/living/M = dropping
 	if(can_buckle && istype(M))
 		if(user_buckle_mob(M, user))
@@ -46,6 +56,7 @@
 	if(M == user && HAS_TRAIT(src,TRAIT_CLIMBABLE)) // Buckling takes priority
 		SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
 		return TRUE
+	return FALSE
 
 /atom/movable/proc/has_buckled_mobs()
 	return LAZYLEN(src?.buckled_mob_list())

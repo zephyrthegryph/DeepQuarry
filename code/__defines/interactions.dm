@@ -186,6 +186,8 @@
 #define INTERACT_HAND_DEFAULT(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
 /// Used with any item, when nothing else takes it: the type's default (a mob is hit with it).
 #define INTERACT_ITEM_DEFAULT(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// Something dragged onto the target, when nothing else takes it (a movable's drag-buckle).
+#define INTERACT_DRAG_DEFAULT(name, effect, requires...) list(INTERACT_KIND_DRAG, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
 /// Used with an item of `held_type`, when nothing else takes it.
 #define INTERACT_INSERT_DEFAULT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, null, INTERACT_ORDER_DEFAULT)
 

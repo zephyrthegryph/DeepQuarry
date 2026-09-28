@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/hippo
+	drag_buckle = FALSE
 	name = "hippo"
 	desc = "Mostly know for the spectacular hit of the live action movie Hungry Hungry Hippos."
 	tt_desc = "Hippopotamus amphibius"
@@ -66,8 +67,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/hippo, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /datum/say_list/hippo
 	speak = list("UUUUUUH")

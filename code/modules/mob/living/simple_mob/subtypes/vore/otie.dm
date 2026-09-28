@@ -55,6 +55,7 @@
 // Activate Noms!
 
 /mob/living/simple_mob/vore/otie
+	drag_buckle = FALSE
 	vore_active = 1
 	vore_capacity = 1
 	vore_pounce_chance = 20
@@ -239,7 +240,6 @@
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 	INTERACT_INSERT(/obj/item/reagent_containers/food, PROC_REF(otie_interaction_feed), "Feed"), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(otie_interaction_hand)), \
-	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
 )
 
 /// Old attackby: trade donuts for bellybrig victims.

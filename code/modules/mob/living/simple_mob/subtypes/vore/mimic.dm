@@ -371,11 +371,14 @@
 	visible_message(span_boldwarning("The [new_mimic] suddenly growls beneath you as it turns out to be a mimic!"))
 	replace_with(src, new_mimic)
 
-/obj/effect/floormimic/attackby(obj/item/I, mob/living/L)
+EXTEND_INTERACTIONS(/obj/effect/floormimic, INTERACT_ITEM(null, PROC_REF(floormimic_awaken_item)))
+
+/// Old attackby: prodding an active mimic wakes it.
+/obj/effect/floormimic/proc/floormimic_awaken_item(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(mimic_active)
-		awaken(L)
-	else
-		return ..()
+		awaken(user)
+		return TRUE
+	return FALSE
 
 /obj/effect/floormimic/ex_act(severity)
 	qdel(src)

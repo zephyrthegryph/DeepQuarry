@@ -85,6 +85,7 @@
 
 //Human overrides for taur riding
 /mob/living/carbon/human
+	drag_buckle = FALSE
 	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE
 	buckle_movable = TRUE
@@ -121,12 +122,6 @@
 	if(.)
 		riding_datum.rider_size = M.size_multiplier
 		src?.buckled_mob_list()[M] = "riding"
-
-EXTEND_INTERACTIONS(/mob/living/carbon/human, INTERACT_DRAG("Block drag", PROC_REF(human_interaction_drag_block)))
-
-/// Old MouseDrop_T: prevents forced relocation by the base drag-buckle (can_buckle). Takes every drop.
-/mob/living/carbon/human/proc/human_interaction_drag_block(mob/user, atom/dropping, datum/interaction/interaction)
-	return TRUE
 
 /mob/living/carbon/human/proc/taur_mount(mob/living/M in living_mobs(1))
 	set name = "Taur Mount/Dismount"

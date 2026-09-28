@@ -1,4 +1,5 @@
 /mob/living/simple_mob/vore/sheep
+	drag_buckle = FALSE
 	name = "sheep"
 	desc = "looks warm and wooly!."
 	tt_desc = "Ovis aries"
@@ -49,8 +50,6 @@
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = -1
-
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/sheep, INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)))
 
 /mob/living/simple_mob/vore/sheep/load_default_bellies()
 	. = ..()
