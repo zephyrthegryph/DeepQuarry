@@ -1769,8 +1769,7 @@
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
-		key += "|
-ef[limb_image][limb_image.color]"
+		key += "|\ref[limb_image][limb_image.color]"
 	var/show_pain = trauma_val && !(self.species.flags & NO_PAIN)
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == self.health_doll_key)

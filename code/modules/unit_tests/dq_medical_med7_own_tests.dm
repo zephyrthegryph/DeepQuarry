@@ -79,7 +79,7 @@
 /datum/unit_test/dq_med7_p2d11_robot_rejuvenate/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, run_loc_floor_bottom_left)
 	R.nutrition = 0
-	R.bodytemperature = 350
+	R.set_bodytemperature(350)
 	R.rejuvenate()
 	TEST_ASSERT_EQUAL(R.nutrition, 0, "a borg has no nutrition to refill")
 	TEST_ASSERT_EQUAL(R.bodytemperature, 350, "a borg's temperature is not reset to T20C")
