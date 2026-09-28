@@ -205,18 +205,32 @@
 		if(in_use) // Don't allow spamming tgui menus
 			return
 		in_use = TRUE
-		if(!om_prompt(src, user, list("kind" = "list", "message" = "Select camera to view.", "title" = "Camera Choice", "choices" = cameras, "requires" = PROMPT_HELD, "on_cancel" = PROC_REF(camera_choice_closed), "on_refused" = PROC_REF(camera_choice_closed)), PROC_REF(camera_chosen)))
+		if(!om_ask(user, /datum/om/prompt/choice/bug_camera, PROC_REF(camera_chosen), choices = cameras, monitor = src))
 			in_use = FALSE
 		return
 	view_camera(user)
 
-/obj/item/bug_monitor/proc/camera_choice_closed(mob/user, datum/om/prompt/ask)
-	in_use = FALSE
+/// Picking a paired camera. Re-checked on the answer: the monitor is still carried. Any ending frees the monitor.
+/datum/om/prompt/choice/bug_camera
+	title = "Camera Choice"
+	message = "Select camera to view."
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	var/obj/item/bug_monitor/monitor
 
-/obj/item/bug_monitor/proc/camera_chosen(mob/user, camera, datum/om/prompt/ask)
+/datum/om/prompt/choice/bug_camera/cancelled()
+	if(monitor)
+		monitor.in_use = FALSE
+	return ..()
+
+/datum/om/prompt/choice/bug_camera/refused(reason)
+	if(monitor)
+		monitor.in_use = FALSE
+	return ..()
+
+/obj/item/bug_monitor/proc/camera_chosen(datum/om/prompt/choice/bug_camera/ask)
 	in_use = FALSE
-	selected_camera = camera
-	view_camera(user)
+	selected_camera = ask.choice
+	view_camera(ask.answerer)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)
 	if(loc != user) // Nice try smartass, must be in your hand and not in a box in your inventory

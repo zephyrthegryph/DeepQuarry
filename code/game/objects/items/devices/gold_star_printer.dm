@@ -23,16 +23,34 @@
 
 /obj/item/gold_star_printer/proc/make_star(mob/user)
 
-	om_prompt(src, user, list("kind" = "text", "message" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "title" = "Title", "max_length" = 32, "requires" = PROMPT_HELD), PROC_REF(star_titled))
+	om_ask(user, /datum/om/prompt/text/gold_star_title, PROC_REF(star_titled))
 
-/obj/item/gold_star_printer/proc/star_titled(mob/user, star_title, datum/om/prompt/ask)
-	if(!star_title)
+/// Re-checked on the answer: the printer is still carried.
+/datum/om/prompt/text/gold_star_title
+	title = "Title"
+	message = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'."
+	max_length = 32
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/datum/om/prompt/text/gold_star_desc
+	title = "Ticket Details"
+	max_length = 200
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	var/star_title
+
+/datum/om/prompt/text/gold_star_desc/prepare()
+	message = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)"
+	return TRUE
+
+/obj/item/gold_star_printer/proc/star_titled(datum/om/prompt/text/gold_star_title/ask)
+	if(!ask.text)
 		return
-	ask.put("title", star_title)
-	om_prompt_chain(ask, list("kind" = "text", "message" = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)", "title" = "Ticket Details", "max_length" = 200), PROC_REF(star_described))
+	om_ask(ask.answerer, /datum/om/prompt/text/gold_star_desc, PROC_REF(star_described), star_title = ask.text)
 
-/obj/item/gold_star_printer/proc/star_described(mob/user, star_desc, datum/om/prompt/ask)
-	var/star_title = ask.get("title")
+/obj/item/gold_star_printer/proc/star_described(datum/om/prompt/text/gold_star_desc/ask)
+	var/mob/user = ask.answerer
+	var/star_title = ask.star_title
+	var/star_desc = ask.text
 	if(!star_desc)
 		return
 
@@ -53,16 +71,35 @@
 	icon_state = "gold_sticker"
 	slot = ACCESSORY_SLOT_TIE
 
-/obj/item/clothing/accessory/gold_sticker/proc/sticker_refused(mob/living/M, datum/om/prompt/ask)
-	to_chat(ask.get("sticker"), span_warning("\The [M] does not allow you to stick the [src] on them."))
+/// Asking a mob to be stuck with a sticker. Re-checked on the answer: face to face, and the
+/// sticker is still the asker's. No, or a cancel, tells the asker.
+/datum/om/prompt/confirm/gold_sticker
+	title = "Sticker!"
+	no_first = TRUE
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 
-/obj/item/clothing/accessory/gold_sticker/proc/sticker_answered(mob/living/M, accepting, datum/om/prompt/ask)
-	var/mob/user = ask.get("sticker")
-	if(accepting != "Yes")
-		sticker_refused(M, ask)
-		return
-	if(loc != user)
-		return
+/datum/om/prompt/confirm/gold_sticker/prepare()
+	message = "[asker] is attempting to stick a [subject] on you. Will you allow this?"
+	return TRUE
+
+/datum/om/prompt/confirm/gold_sticker/valid()
+	var/obj/item/clothing/accessory/gold_sticker/S = subject
+	return S.loc == asker ? null : "not holding it"
+
+/datum/om/prompt/confirm/gold_sticker/declined()
+	var/obj/item/clothing/accessory/gold_sticker/S = subject
+	S?.sticker_refused(answerer, asker)
+
+/datum/om/prompt/confirm/gold_sticker/cancelled()
+	var/obj/item/clothing/accessory/gold_sticker/S = subject
+	S?.sticker_refused(answerer, asker)
+
+/obj/item/clothing/accessory/gold_sticker/proc/sticker_refused(mob/living/M, mob/user)
+	to_chat(user, span_warning("\The [M] does not allow you to stick the [src] on them."))
+
+/obj/item/clothing/accessory/gold_sticker/proc/sticker_answered(datum/om/prompt/confirm/gold_sticker/ask)
+	var/mob/living/M = ask.answerer
+	var/mob/user = ask.asker
 	apply_sticker(M,user)
 	to_chat(M, span_notice("\The [user] stuck \the [src] to you!"))
 
@@ -78,7 +115,7 @@
 	if(isanimal(target) || issilicon(target))
 		var/mob/living/M = target
 		if(M.client)
-			om_prompt(src, M, list("message" = "[user] is attempting to stick a [src] on you. Will you allow this?", "title" = "Sticker!", "choices" = list("No","Yes"), "target" = user, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(sticker_refused), "data" = list("sticker" = user)), PROC_REF(sticker_answered))
+			om_ask(M, /datum/om/prompt/confirm/gold_sticker, PROC_REF(sticker_answered), asker = user)
 			return
 		else
 			apply_sticker(M,user)

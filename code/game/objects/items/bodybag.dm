@@ -82,10 +82,18 @@
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
 
-/obj/structure/closet/body_bag/proc/label_entered(mob/user, t, datum/om/prompt/ask)
-	if (!in_range(src, user) && src.loc != user)
-		return
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+/// Labelling a body bag with a pen (the subject, still in hand). Re-checked on the answer: the bag is still in reach.
+/datum/om/prompt/text/body_bag_label
+	message = "What would you like the label to be?"
+	max_length = MAX_NAME_LEN
+	requires = PROMPT_IN_HAND
+	var/obj/structure/closet/body_bag/bag
+
+/datum/om/prompt/text/body_bag_label/valid()
+	return (in_range(bag, answerer) || bag.loc == answerer) ? null : "too far away"
+
+/obj/structure/closet/body_bag/proc/label_entered(datum/om/prompt/text/body_bag_label/ask)
+	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if (t)
 		src.name = "body bag - "
 		src.name += t
@@ -96,7 +104,7 @@
 
 /obj/structure/closet/body_bag/attackby(obj/item/W as obj, mob/user as mob)
 	if (istype(W, /obj/item/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "max_length" = MAX_NAME_LEN, "target" = W, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
+		om_ask(user, /datum/om/prompt/text/body_bag_label, PROC_REF(label_entered), subject = W, bag = src, title = "[src.name]")
 	//..() //Doesn't need to run the parent. Since when can fucking bodybags be welded shut? -Agouri
 		return
 
@@ -180,14 +188,18 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 
 /obj/structure/closet/body_bag/cryobag/attack_hand(mob/living/user)
 	if(used)
-		om_prompt(src, user, list("message" = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", "title" = "Confirm Opening", "choices" = list("No", "Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(open_confirmed))
+		om_ask(user, /datum/om/prompt/confirm/cryobag_open, PROC_REF(open_confirmed), message = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.")
 	else
 		..()
 
-/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
-	if(confirm == "Yes")
-		add_fingerprint(user)
-		toggle(user) // What the parent attack_hand does: opens the bag.
+/datum/om/prompt/confirm/cryobag_open
+	title = "Confirm Opening"
+	no_first = TRUE
+	requires = PROMPT_ADJACENT
+
+/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(datum/om/prompt/confirm/cryobag_open/ask)
+	add_fingerprint(ask.answerer)
+	toggle(ask.answerer) // What the parent attack_hand does: opens the bag.
 
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()

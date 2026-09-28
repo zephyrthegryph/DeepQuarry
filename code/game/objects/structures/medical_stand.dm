@@ -104,13 +104,33 @@
 			available_options += "Drip needle"
 
 		if(available_options.len > 1)
-			om_prompt(src, user, list("kind" = "list", "message" = "What do you want to attach/detach?", "title" = "Attach/Detach Choice", "choices" = available_options, "requires" = PROMPT_ADJACENT, "data" = list("patient" = target)), PROC_REF(attach_choice_made))
+			om_ask(user, /datum/om/prompt/choice/medical_stand_attach, PROC_REF(attach_choice_made), choices = available_options, patient = target)
 		else if(available_options.len)
-			attach_choice_made(user, available_options[1], null, target)
+			attach_action(user, available_options[1], target)
 
-/obj/structure/medical_stand/proc/attach_choice_made(mob/user, action_type, datum/om/prompt/ask, mob/living/carbon/human/target)
-	if(ask)
-		target = ask.get("patient")
+/datum/om/prompt/choice/medical_stand_attach
+	title = "Attach/Detach Choice"
+	message = "What do you want to attach/detach?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/mob/living/carbon/human/patient
+
+/datum/om/prompt/choice/medical_stand_action
+	title = "Stand Choice"
+	message = "What do you want to do?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/choice/medical_stand_transfer
+	message = "Amount per transfer from this:"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/choice/medical_stand_transfer/prepare()
+	title = "[subject]"
+	return TRUE
+
+/obj/structure/medical_stand/proc/attach_choice_made(datum/om/prompt/choice/medical_stand_attach/ask)
+	attach_action(ask.answerer, ask.choice, ask.patient)
+
+/obj/structure/medical_stand/proc/attach_action(mob/user, action_type, mob/living/carbon/human/target)
 	if(user.stat == DEAD || !CanMouseDrop(target))
 		return
 	switch (action_type)
@@ -131,7 +151,7 @@
 			else if(ishuman(target))
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " begins inserting needle into [target]'s vein."),
 								span_notice("You begin inserting needle into [target]'s vein."))
-				om_task_start(/datum/om/task/timed/medical_stand_needle_inserted, user, target, list("receiver" = src))
+				om_task_start(/datum/om/task/timed/medical_stand_needle_inserted, user, target, receiver = src)
 			update_icon()
 
 /obj/structure/medical_stand/proc/needle_removed()
@@ -202,12 +222,15 @@
 		available_options += "Remove vessel"
 
 	if(available_options.len > 1)
-		om_prompt(src, user, list("kind" = "list", "message" = "What do you want to do?", "title" = "Stand Choice", "choices" = available_options, "requires" = PROMPT_ADJACENT), PROC_REF(stand_action_chosen))
+		om_ask(user, /datum/om/prompt/choice/medical_stand_action, PROC_REF(stand_action_chosen), choices = available_options)
 		return
 	if(available_options.len)
-		stand_action_chosen(user, available_options[1])
+		stand_action(user, available_options[1])
 
-/obj/structure/medical_stand/proc/stand_action_chosen(mob/user, action_type, datum/om/prompt/ask)
+/obj/structure/medical_stand/proc/stand_action_chosen(datum/om/prompt/choice/medical_stand_action/ask)
+	stand_action(ask.answerer, ask.choice)
+
+/obj/structure/medical_stand/proc/stand_action(mob/user, action_type)
 	switch (action_type)
 		if ("Remove tank")
 			if (!tank)
@@ -272,9 +295,10 @@
 	set name = "Set IV transfer amount"
 	set category = "Object"
 	set src in range(1)
-	om_prompt(src, usr, list("kind" = "list", "message" = "Amount per transfer from this:", "title" = "[src]", "choices" = transfer_amounts, "requires" = PROMPT_ADJACENT), PROC_REF(transfer_amount_chosen))
+	om_ask(usr, /datum/om/prompt/choice/medical_stand_transfer, PROC_REF(transfer_amount_chosen), choices = transfer_amounts)
 
-/obj/structure/medical_stand/proc/transfer_amount_chosen(mob/user, N, datum/om/prompt/ask)
+/obj/structure/medical_stand/proc/transfer_amount_chosen(datum/om/prompt/choice/medical_stand_transfer/ask)
+	var/N = ask.choice
 	if(N)
 		transfer_amount = N
 

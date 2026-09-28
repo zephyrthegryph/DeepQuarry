@@ -91,10 +91,18 @@
 	return ..()
 
 // Topic switch lifted into tgui_act with stable action names.
-/obj/structure/undies_wardrobe/proc/underwear_chosen(mob/living/carbon/human/H, datum/category_item/underwear/selected_underwear, datum/om/prompt/ask)
+/datum/om/prompt/choice/underwear
+	title = "Choose underwear"
+	message = "Choose underwear:"
+	requires = PROMPT_USABLE
+	var/category
+
+/obj/structure/undies_wardrobe/proc/underwear_chosen(datum/om/prompt/choice/underwear/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/datum/category_item/underwear/selected_underwear = ask.choice
 	if(!istype(H))
 		return
-	var/category = ask.get("category")
+	var/category = ask.category
 	LAZYSET(H.all_underwear, category, selected_underwear)
 	H.hide_underwear[category] = FALSE
 	H.update_underwear()
@@ -116,7 +124,7 @@
 			var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
 			if(!UWC)
 				return TRUE
-			om_prompt(src, H, list("kind" = "list", "message" = "Choose underwear:", "title" = "Choose underwear", "choices" = UWC.items, "default" = LAZYACCESS(H.all_underwear, UWC.name), "requires" = PROMPT_USABLE, "data" = list("category" = UWC.name)), PROC_REF(underwear_chosen))
+			om_ask(H, /datum/om/prompt/choice/underwear, PROC_REF(underwear_chosen), choices = UWC.items, default = LAZYACCESS(H.all_underwear, UWC.name), category = UWC.name)
 		if("tweak")
 			var/underwear = params["category"]
 			if(!(underwear in H.all_underwear))

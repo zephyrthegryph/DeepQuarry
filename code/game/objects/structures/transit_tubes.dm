@@ -253,7 +253,7 @@
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	om_task_start(/datum/om/task/transit_pod, src, null, list("tube_h" = om_handle(current_tube)))
+	om_task_start(/datum/om/task/transit_pod, src, null, tube_h = om_handle(current_tube))
 
 /// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
 /// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.

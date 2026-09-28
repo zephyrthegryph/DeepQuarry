@@ -104,7 +104,7 @@ AI MODULES
 		R.visible_message(span_danger("\The [user] slides a law module into \the [R]."))
 		to_chat(R, span_danger("Local law upload in progress."))
 		to_chat(user, span_notice("Uploading laws from board.  This will take a moment..."))
-		om_task_start(/datum/om/task/timed/aimodule_install, user, src, list("receiver" = src, "R" = R))
+		om_task_start(/datum/om/task/timed/aimodule_install, user, src, receiver = src, R = R)
 
 /datum/om/task/timed/aimodule_install
 	duration = 10 SECONDS
@@ -158,10 +158,16 @@ AI MODULES
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "text", "message" = "Please enter the name of the person to safeguard.", "title" = "Safeguard who?", "default" = user.name, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(target_named))
+	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(target_named), title = "Safeguard who?", message = "Please enter the name of the person to safeguard.", default = user.name)
 
-/obj/item/aiModule/safeguard/proc/target_named(mob/user, targName, datum/om/prompt/ask)
-	targetName = targName
+/// Text written onto an AI law module (a law, or a name in one). Re-checked on the answer: the module is still carried.
+/datum/om/prompt/text/ai_law
+	title = "Freeform Law Entry"
+	default = ""
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/obj/item/aiModule/safeguard/proc/target_named(datum/om/prompt/text/ai_law/ask)
+	targetName = ask.text
 	desc = text("A 'safeguard' AI module: 'Safeguard []. Anyone threatening or attempting to harm [] is no longer to be considered a crew member, and is a threat which must be neutralized.'", targetName, targetName)
 
 /obj/item/aiModule/safeguard/install(obj/machinery/computer/C, mob/living/user)
@@ -187,10 +193,10 @@ AI MODULES
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "text", "message" = "Please enter the name of the person who is the only crew member.", "title" = "Who?", "default" = user.real_name, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(target_named))
+	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(target_named), title = "Who?", message = "Please enter the name of the person who is the only crew member.", default = user.real_name)
 
-/obj/item/aiModule/oneHuman/proc/target_named(mob/user, targName, datum/om/prompt/ask)
-	targetName = targName
+/obj/item/aiModule/oneHuman/proc/target_named(datum/om/prompt/text/ai_law/ask)
+	targetName = ask.text
 	desc = text("A 'one crew member' AI module: 'Only [] is a crew member.'", targetName)
 
 /obj/item/aiModule/oneHuman/install(obj/machinery/computer/C, mob/living/user)
@@ -266,16 +272,16 @@ AI MODULES
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "number", "message" = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", "title" = "Law Priority (15+)", "default" = lawpos, "requires" = PROMPT_HELD), PROC_REF(law_position_entered))
+	om_ask(user, /datum/om/prompt/number, PROC_REF(law_position_entered), title = "Law Priority (15+)", message = "Please enter the priority for your new law. Can only write to law sectors 15 and above.", default = lawpos, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/aiModule/freeform/proc/law_position_entered(mob/user, new_lawpos, datum/om/prompt/ask)
-	if(new_lawpos < MIN_SUPPLIED_LAW_NUMBER)
+/obj/item/aiModule/freeform/proc/law_position_entered(datum/om/prompt/number/ask)
+	if(ask.number < MIN_SUPPLIED_LAW_NUMBER)
 		return
-	lawpos = min(new_lawpos, MAX_SUPPLIED_LAW_NUMBER)
-	om_prompt_chain(ask, list("kind" = "text", "message" = "Please enter a new law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN), PROC_REF(law_entered))
+	lawpos = min(ask.number, MAX_SUPPLIED_LAW_NUMBER)
+	om_ask(ask.answerer, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
 
-/obj/item/aiModule/freeform/proc/law_entered(mob/user, targName, datum/om/prompt/ask)
-	newFreeFormLaw = targName
+/obj/item/aiModule/freeform/proc/law_entered(datum/om/prompt/text/ai_law/ask)
+	newFreeFormLaw = ask.text
 	desc = "A 'freeform' AI module: ([lawpos]) '[newFreeFormLaw]'"
 
 /obj/item/aiModule/freeform/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
@@ -384,10 +390,10 @@ AI MODULES
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "text", "message" = "Please enter a new core law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(law_entered))
+	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new core law for the AI.")
 
-/obj/item/aiModule/freeformcore/proc/law_entered(mob/user, targName, datum/om/prompt/ask)
-	newFreeFormLaw = targName
+/obj/item/aiModule/freeformcore/proc/law_entered(datum/om/prompt/text/ai_law/ask)
+	newFreeFormLaw = ask.text
 	desc = "A 'freeform' Core AI module:  '[newFreeFormLaw]'"
 
 /obj/item/aiModule/freeformcore/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
@@ -410,10 +416,10 @@ AI MODULES
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "text", "message" = "Please enter a new law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(law_entered))
+	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
 
-/obj/item/aiModule/syndicate/proc/law_entered(mob/user, targName, datum/om/prompt/ask)
-	newFreeFormLaw = targName
+/obj/item/aiModule/syndicate/proc/law_entered(datum/om/prompt/text/ai_law/ask)
+	newFreeFormLaw = ask.text
 	desc = "A hacked AI law module:  '[newFreeFormLaw]'"
 
 /obj/item/aiModule/syndicate/transmitInstructions(mob/living/silicon/ai/target, mob/sender)

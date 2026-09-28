@@ -21,20 +21,32 @@
 		to_chat(user, span_warning("\The [src] is not ready to print another ticket yet."))
 
 /obj/item/ticket_printer/proc/print_a_ticket(mob/user)
-	om_prompt_sequence(src, user, list(
-		list("key" = "name", "kind" = "text", "message" = "The Name of the person you are issuing the ticket to.", "title" = "Name", "max_length" = 100),
-		list("key" = "details", "kind" = "text", "message" = ticket_details_prompt(), "title" = "Ticket Details", "max_length" = 200),
-	), PROC_REF(ticket_written), list("requires" = PROMPT_HELD))
+	om_ask(user, /datum/om/prompt/text/ticket_name, PROC_REF(ticket_named))
 
-/obj/item/ticket_printer/proc/ticket_details_prompt()
-	return "What is the ticket for? Avoid entering personally identifiable information in this section. This information should not be used to harrass or otherwise make the person feel uncomfortable. (Max length: 200)"
+/// Who the ticket is for. Re-checked on the answer: the printer is still carried.
+/datum/om/prompt/text/ticket_name
+	title = "Name"
+	message = "The Name of the person you are issuing the ticket to."
+	max_length = 100
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
-/obj/item/ticket_printer/proc/ticket_written(mob/user, datum/om/prompt/ask)
-	var/ticket_name = ask.get("name")
-	var/details = ask.get("details")
-	if(!ticket_name || !details)
+/// What the ticket is for, carrying the name already given.
+/datum/om/prompt/text/ticket_details
+	title = "Ticket Details"
+	message = "What is the ticket for? Avoid entering personally identifiable information in this section. This information should not be used to harrass or otherwise make the person feel uncomfortable. (Max length: 200)"
+	max_length = 200
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	var/ticket_name
+
+/obj/item/ticket_printer/proc/ticket_named(datum/om/prompt/text/ticket_name/ask)
+	if(!ask.text)
 		return
-	print_ticket_paper(user, ticket_name, details)
+	om_ask(ask.answerer, /datum/om/prompt/text/ticket_details, PROC_REF(ticket_written), ticket_name = ask.text)
+
+/obj/item/ticket_printer/proc/ticket_written(datum/om/prompt/text/ticket_details/ask)
+	if(!ask.ticket_name || !ask.text)
+		return
+	print_ticket_paper(ask.answerer, ask.ticket_name, ask.text)
 
 /obj/item/ticket_printer/proc/print_ticket_paper(mob/user, ticket_name, details)
 

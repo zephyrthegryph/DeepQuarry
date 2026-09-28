@@ -37,10 +37,16 @@
 	)
 	..()
 
-/obj/structure/sign/double/barsign/proc/sign_chosen(mob/user, sign_type, datum/om/prompt/ask)
+/datum/om/prompt/choice/barsign
+	title = "Bar Sign Choice"
+	message = "What would you like to change the barsign to?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/obj/structure/sign/double/barsign/proc/sign_chosen(datum/om/prompt/choice/barsign/ask)
+	var/mob/user = ask.answerer
 	if(cult)
 		return
-	icon_state = sign_type
+	icon_state = ask.choice
 	to_chat(user, span_notice("You change the barsign."))
 
 /// Old attackby: change the sign with an ID card that has bar access.
@@ -57,7 +63,7 @@
 	var/obj/item/card/id/card = I.GetID()
 	if(istype(card))
 		if(ACCESS_BAR in card.GetAccess())
-			om_prompt(src, user, list("kind" = "list", "message" = "What would you like to change the barsign to?", "title" = "Bar Sign Choice", "choices" = get_valid_states(0), "requires" = PROMPT_ADJACENT), PROC_REF(sign_chosen))
+			om_ask(user, /datum/om/prompt/choice/barsign, PROC_REF(sign_chosen), choices = get_valid_states(0))
 		else
 			to_chat(user, span_warning("Access denied."))
 	return TRUE

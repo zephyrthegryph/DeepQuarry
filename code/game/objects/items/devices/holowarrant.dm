@@ -39,17 +39,33 @@
 	if(warrants.len == 0)
 		to_chat(user,span_notice("There are no warrants available"))
 		return
-	om_prompt(src, user, list("kind" = "list", "message" = "Which warrant would you like to load?", "title" = "Warrant Selection", "choices" = warrants, "requires" = PROMPT_HELD), PROC_REF(warrant_chosen))
+	om_ask(user, /datum/om/prompt/choice/holowarrant, PROC_REF(warrant_chosen), choices = warrants)
 
-/obj/item/holowarrant/proc/warrant_chosen(mob/user, temp, datum/om/prompt/ask)
+/// Re-checked on the answer: the projector is still carried.
+/datum/om/prompt/choice/holowarrant
+	title = "Warrant Selection"
+	message = "Which warrant would you like to load?"
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/// Swiping an ID (the subject, still in hand) to authorize the loaded warrant.
+/datum/om/prompt/confirm/holowarrant_authorize
+	title = "Warrant authorization"
+	message = "Would you like to authorize this warrant?"
+	answer_on_no = TRUE
+	requires = PROMPT_IN_HAND
+	var/obj/item/card/id/card
+	var/datum/data/record/warrant/warrant
+
+/obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/holowarrant/ask)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
-		if(W.fields["namewarrant"] == temp)
+		if(W.fields["namewarrant"] == ask.choice)
 			active = W
 	update_icon()
 
-/obj/item/holowarrant/proc/authorize_answered(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/card/id/I = ask.get("card")
-	if(choice == "Yes" && active == ask.get("warrant"))
+/obj/item/holowarrant/proc/authorize_answered(datum/om/prompt/confirm/holowarrant_authorize/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/card/id/I = ask.card
+	if(ask.yes && active == ask.warrant)
 		active.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
 	user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
 			span_notice("[user] swipes \the [I] through the [src]."))
@@ -58,7 +74,7 @@
 	if(active)
 		var/obj/item/card/id/I = W.GetIdCard()
 		if(I && (ACCESS_HOS in I.GetAccess()))
-			om_prompt(src, user, list("message" = "Would you like to authorize this warrant?", "title" = "Warrant authorization", "choices" = list("Yes","No"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("card" = I, "warrant" = active)), PROC_REF(authorize_answered))
+			om_ask(user, /datum/om/prompt/confirm/holowarrant_authorize, PROC_REF(authorize_answered), subject = W, card = I, warrant = active)
 			return TRUE
 		to_chat(user, span_warning("You don't have the access to do this!"))
 		return TRUE

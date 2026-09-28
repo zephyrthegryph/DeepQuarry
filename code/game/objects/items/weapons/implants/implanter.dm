@@ -88,7 +88,7 @@
 
 			var/turf/T1 = get_turf(M)
 			if(T1)
-				om_task_start(/datum/om/task/timed/implant, user, M, list("duration" = M == user ? 0 : 5 SECONDS, "receiver" = src, "start_turf" = T1))
+				om_task_start(/datum/om/task/timed/implant, user, M, duration = (M == user ? 0 : 5 SECONDS), receiver = src, start_turf = T1)
 				return ITEM_INTERACT_SUCCESS
 	else
 		to_chat(user, span_warning("You need to activate \the [src.name] first."))

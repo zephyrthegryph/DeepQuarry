@@ -133,7 +133,7 @@ REF_OWNED(/obj/item/rcd, "spark_system")
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 
 	perform_effect(A, true_delay)
-	var/started = om_task_start(/datum/om/task/timed/rcd_build, user, A, list("duration" = true_delay, "receiver" = src, "rcd_results" = rcd_results, "output_envelope" = output_envelope, "beam" = rcd_beam, "busy" = allow_concurrent_building ? null : src))
+	var/started = om_task_start(/datum/om/task/timed/rcd_build, user, A, duration = true_delay, receiver = src, rcd_results = rcd_results, output_envelope = output_envelope, beam = rcd_beam, busy = (allow_concurrent_building ? null : src))
 	if(istext(started))
 		use_rcd_interrupted(A, rcd_beam)
 	return FALSE

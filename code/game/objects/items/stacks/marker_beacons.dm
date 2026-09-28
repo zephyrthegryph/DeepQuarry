@@ -75,11 +75,17 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+	om_ask(user, /datum/om/prompt/choice/marker_beacon_color, PROC_REF(color_chosen), choices = options)
 
-/obj/item/stack/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
-	if(input_color)
-		picked_color = input_color
+/// A marker beacon's colour (held stack or placed beacon). Re-checked on the answer: still next to it.
+/datum/om/prompt/choice/marker_beacon_color
+	title = "Beacon Color"
+	message = "Choose a color."
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/obj/item/stack/marker_beacon/proc/color_chosen(datum/om/prompt/choice/marker_beacon_color/ask)
+	if(ask.choice)
+		picked_color = ask.choice
 		update_icon()
 
 /obj/structure/marker_beacon
@@ -160,9 +166,9 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+	om_ask(user, /datum/om/prompt/choice/marker_beacon_color, PROC_REF(color_chosen), choices = options)
 
-/obj/structure/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
-	if(input_color)
-		picked_color = input_color
+/obj/structure/marker_beacon/proc/color_chosen(datum/om/prompt/choice/marker_beacon_color/ask)
+	if(ask.choice)
+		picked_color = ask.choice
 		update_icon()

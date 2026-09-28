@@ -111,10 +111,40 @@
 	return L
 
 /obj/item/floor_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_prompt(src, user, list("message" = "Do you wish to change the decal type, paint direction, or paint colour?", "title" = "Modify What?", "choices" = list("Decal","Direction","Colour","Cancel"), "requires" = PROMPT_HELD), PROC_REF(modify_chosen))
+	om_ask(user, /datum/om/prompt/choice/floor_painter/modify, PROC_REF(modify_chosen))
 
-/obj/item/floor_painter/proc/modify_chosen(mob/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/// Floor painter settings: re-checked on the answer, the painter is still carried.
+/datum/om/prompt/choice/floor_painter
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/datum/om/prompt/choice/floor_painter/modify
+	title = "Modify What?"
+	message = "Do you wish to change the decal type, paint direction, or paint colour?"
+	choices = list("Decal","Direction","Colour","Cancel")
+	buttons = TRUE
+
+/datum/om/prompt/choice/floor_painter/decal
+	title = "Decal Choice"
+	message = "Select a decal:"
+
+/datum/om/prompt/choice/floor_painter/direction
+	title = "Direction Choice"
+	message = "Select a direction:"
+
+/// The pick must still be one of the painter's (decals and paint_dirs map names to data).
+/datum/om/prompt/choice/floor_painter/decal/valid()
+	return isnull(choices[choice]) ? "not a decal" : null
+
+/datum/om/prompt/choice/floor_painter/direction/valid()
+	return isnull(choices[choice]) ? "not a direction" : null
+
+/datum/om/prompt/color/floor_painter
+	message = "Choose a colour."
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/obj/item/floor_painter/proc/modify_chosen(datum/om/prompt/choice/floor_painter/modify/ask)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Decal")
 			ask_decal(user)
 		if("Direction")
@@ -123,28 +153,26 @@
 			ask_colour(user)
 
 /obj/item/floor_painter/proc/ask_decal(mob/user)
-	om_prompt(src, user, list("kind" = "list", "message" = "Select a decal:", "title" = "Decal Choice", "choices" = decals, "requires" = PROMPT_HELD), PROC_REF(decal_chosen))
+	om_ask(user, /datum/om/prompt/choice/floor_painter/decal, PROC_REF(decal_chosen), choices = decals)
 
-/obj/item/floor_painter/proc/decal_chosen(mob/user, new_decal, datum/om/prompt/ask)
-	if(!isnull(decals[new_decal]))
-		decal = new_decal
-		to_chat(user, span_notice("You set \the [src] decal to '[decal]'."))
+/obj/item/floor_painter/proc/decal_chosen(datum/om/prompt/choice/floor_painter/decal/ask)
+	decal = ask.choice
+	to_chat(ask.answerer, span_notice("You set \the [src] decal to '[decal]'."))
 
 /obj/item/floor_painter/proc/ask_direction(mob/user)
-	om_prompt(src, user, list("kind" = "list", "message" = "Select a direction:", "title" = "Direction Choice", "choices" = paint_dirs, "requires" = PROMPT_HELD), PROC_REF(direction_chosen))
+	om_ask(user, /datum/om/prompt/choice/floor_painter/direction, PROC_REF(direction_chosen), choices = paint_dirs)
 
-/obj/item/floor_painter/proc/direction_chosen(mob/user, new_dir, datum/om/prompt/ask)
-	if(!isnull(paint_dirs[new_dir]))
-		paint_dir = new_dir
-		to_chat(user, span_notice("You set \the [src] direction to '[paint_dir]'."))
+/obj/item/floor_painter/proc/direction_chosen(datum/om/prompt/choice/floor_painter/direction/ask)
+	paint_dir = ask.choice
+	to_chat(ask.answerer, span_notice("You set \the [src] direction to '[paint_dir]'."))
 
 /obj/item/floor_painter/proc/ask_colour(mob/user)
-	om_prompt(src, user, list("kind" = "color", "message" = "Choose a colour.", "title" = name, "default" = paint_colour, "requires" = PROMPT_HELD), PROC_REF(colour_chosen))
+	om_ask(user, /datum/om/prompt/color/floor_painter, PROC_REF(colour_chosen), title = name, default = paint_colour)
 
-/obj/item/floor_painter/proc/colour_chosen(mob/user, new_colour, datum/om/prompt/ask)
-	if(new_colour && new_colour != paint_colour)
-		paint_colour = new_colour
-		to_chat(user, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
+/obj/item/floor_painter/proc/colour_chosen(datum/om/prompt/color/floor_painter/ask)
+	if(ask.picked_color && ask.picked_color != paint_colour)
+		paint_colour = ask.picked_color
+		to_chat(ask.answerer, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
 
 /obj/item/floor_painter/examine(mob/user)
 	. = ..()

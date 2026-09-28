@@ -42,7 +42,7 @@
 		return TRUE // Skip delay
 
 	if(remove_delay && !stall_passed)
-		om_task_start(/datum/om/task/timed/pouch_stalled_remove, user, src, list("receiver" = src, "duration" = remove_delay, "W" = W, "new_location" = new_location))
+		om_task_start(/datum/om/task/timed/pouch_stalled_remove, user, src, receiver = src, duration = remove_delay, W = W, new_location = new_location)
 		return FALSE // the delay runs first; stalled_remove() retries the move
 
 	if(W in slot_contents(CONTAINER_SLOT_STORAGE))

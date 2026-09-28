@@ -23,9 +23,11 @@
 		to_chat(usr, "The hailer is fried. The tiny input screen just shows a waving ASCII penis.")
 		return
 
-	om_prompt(src, usr, list("kind" = "text", "message" = "Please enter new message (leave blank to reset).", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD), PROC_REF(message_entered))
+	om_ask(usr, /datum/om/prompt/text, PROC_REF(message_entered), message = "Please enter new message (leave blank to reset).", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/hailer/proc/message_entered(mob/user, new_message, datum/om/prompt/ask)
+/obj/item/hailer/proc/message_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/new_message = ask.text
 	if(!new_message || new_message == "")
 		use_message = "Halt! Security!"
 	else

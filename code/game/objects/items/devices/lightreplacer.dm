@@ -144,10 +144,16 @@
 	if(special_handling)
 		return FALSE
 	to_chat(user, "It has [uses] lights remaining.")
-	var/new_color = tgui_color_picker(user, "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "", selected_color)
-	if(new_color)
-		selected_color = new_color
-		to_chat(user, "The light color has been changed.")
+	om_ask(user, /datum/om/prompt/color/light_tool, PROC_REF(replacer_color_picked), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color)
+
+/// A light replacer's or painter's colour. Re-checked on the answer: the tool is still carried.
+/datum/om/prompt/color/light_tool
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/obj/item/lightreplacer/proc/replacer_color_picked(datum/om/prompt/color/light_tool/ask)
+	if(ask.picked_color)
+		selected_color = ask.picked_color
+		to_chat(ask.answerer, "The light color has been changed.")
 
 /obj/item/lightreplacer/update_icon()
 	icon_state = "lightreplacer[emagged]"
@@ -263,16 +269,19 @@
 		resetmode = 1
 		to_chat(user, span_infoplain("Painter reset."))
 	else
-		var/color_input = tgui_color_picker(user,"","Choose Light Color",setcolor)
-		if(color_input)
-			setcolor = sanitize_hexcolor(color_input)
-			var/list/setcolorRGB = hex2rgb(setcolor)
-			var/setcolorR = num2hex(setcolorRGB[1] * dimming, 2)
-			var/setcolorG = num2hex(setcolorRGB[2] * dimming, 2)
-			var/setcolorB = num2hex(setcolorRGB[3] * dimming, 2)
-			setnightcolor = addtext("#", setcolorR, setcolorG, setcolorB)
-			resetmode = 0
-			to_chat(user, span_infoplain("Painter color set."))
+		om_ask(user, /datum/om/prompt/color/light_tool, PROC_REF(painter_color_picked), title = "Choose Light Color", message = "", default = setcolor)
+
+/obj/item/lightpainter/proc/painter_color_picked(datum/om/prompt/color/light_tool/ask)
+	if(!ask.picked_color)
+		return
+	setcolor = sanitize_hexcolor(ask.picked_color)
+	var/list/setcolorRGB = hex2rgb(setcolor)
+	var/setcolorR = num2hex(setcolorRGB[1] * dimming, 2)
+	var/setcolorG = num2hex(setcolorRGB[2] * dimming, 2)
+	var/setcolorB = num2hex(setcolorRGB[3] * dimming, 2)
+	setnightcolor = addtext("#", setcolorR, setcolorG, setcolorB)
+	resetmode = 0
+	to_chat(ask.answerer, span_infoplain("Painter color set."))
 
 /obj/item/lightpainter/proc/ColorLight(obj/machinery/light/target, mob/living/U)
 

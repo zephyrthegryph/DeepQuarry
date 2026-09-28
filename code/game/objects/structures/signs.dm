@@ -35,13 +35,25 @@
 
 /obj/item/sign/screwdriver_act(mob/user, obj/item/tool)
 	if(isturf(user.loc))
-		om_prompt(src, user, list("kind" = "list", "message" = "In which direction?", "title" = "Select direction.", "choices" = list("North", "East", "South", "West", "Cancel"), "target" = tool, "requires" = PROMPT_IN_HAND, "data" = list("tool" = tool)), PROC_REF(direction_chosen))
+		om_ask(user, /datum/om/prompt/choice/sign_direction, PROC_REF(direction_chosen), subject = tool)
 		return TRUE
 	return ..()
 
-/obj/item/sign/proc/direction_chosen(mob/user, direction, datum/om/prompt/ask)
-	var/obj/item/tool = ask.get("tool")
-	if(direction == "Cancel" || !isturf(user.loc)) return
+/// Fastening a sign: the screwdriver (the subject) stays in hand, the fastener on a turf.
+/datum/om/prompt/choice/sign_direction
+	title = "Select direction."
+	message = "In which direction?"
+	choices = list("North", "East", "South", "West", "Cancel")
+	ask_flags = ASK_HELD | ASK_CAPABLE
+
+/datum/om/prompt/choice/sign_direction/valid()
+	return isturf(answerer.loc) ? null : "not on a turf"
+
+/obj/item/sign/proc/direction_chosen(datum/om/prompt/choice/sign_direction/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/tool = ask.subject
+	var/direction = ask.choice
+	if(direction == "Cancel") return
 	var/target_type = original_type || /obj/structure/sign
 	var/obj/structure/sign/S = new target_type(user.loc)
 	switch(direction)
@@ -1653,15 +1665,23 @@ REF_PAIR(/obj/structure/sign/flag, list("linked_flag" = "linked_flag"))
 	effect = /obj/structure/sign/flag/proc/interaction_rip
 
 /obj/structure/sign/flag/proc/interaction_rip(mob/user, obj/item/held, datum/interaction/interaction)
-	om_prompt(src, user, list("message" = "Do you want to rip \the [src] from its place?", "title" = "You think...", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(rip_answered))
+	om_ask(user, /datum/om/prompt/confirm/flag_rip, PROC_REF(rip_answered))
 	return TRUE
 
-/obj/structure/sign/flag/proc/rip_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		visible_message(span_warning("\The [user] rips \the [src] in a single, decisive motion!" ))
-		playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, 1)
-		add_fingerprint(user)
-		rip()
+/datum/om/prompt/confirm/flag_rip
+	title = "You think..."
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/confirm/flag_rip/prepare()
+	message = "Do you want to rip \the [subject] from its place?"
+	return TRUE
+
+/obj/structure/sign/flag/proc/rip_answered(datum/om/prompt/confirm/flag_rip/ask)
+	var/mob/user = ask.answerer
+	visible_message(span_warning("\The [user] rips \the [src] in a single, decisive motion!" ))
+	playsound(src.loc, 'sound/items/poster_ripped.ogg', 100, 1)
+	add_fingerprint(user)
+	rip()
 	return TRUE
 
 /obj/structure/sign/flag/proc/rip(rip_linked = TRUE)

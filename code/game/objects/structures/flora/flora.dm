@@ -314,7 +314,7 @@
 		to_chat(user, span_notice("[I] is too big to fit inside [src]."))
 		return TRUE
 
-	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, list("receiver" = src, "I" = I))
+	om_task_start(/datum/om/task/timed/pottedplant_attackby, user, src, I = I)
 	return TRUE
 
 /datum/om/task/timed/pottedplant_attackby

@@ -150,20 +150,27 @@
 	if(ruined)
 		return
 
-	om_prompt(src, user, list("message" = "Do I want to rip the poster from the wall?", "title" = "You think...", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(rip_answered))
+	om_ask(user, /datum/om/prompt/confirm/rip_poster, PROC_REF(rip_answered))
 
-/obj/structure/sign/poster/proc/rip_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		if(ruined)
-			return
+/// Re-checked on the answer: still next to it, and it isn't ripped already.
+/datum/om/prompt/confirm/rip_poster
+	title = "You think..."
+	message = "Do I want to rip the poster from the wall?"
+	requires = PROMPT_ADJACENT
 
-		visible_message(span_warning("[user] rips [src] in a single, decisive motion!") )
-		playsound(src, 'sound/items/poster_ripped.ogg', 100, 1)
-		ruined = TRUE
-		icon_state = "poster_ripped"
-		name = "ripped poster"
-		desc = "You can't make out anything from the poster's original print. It's ruined."
-		add_fingerprint(user)
+/datum/om/prompt/confirm/rip_poster/valid()
+	var/obj/structure/sign/poster/P = subject
+	return P.ruined ? "already ripped" : null
+
+/obj/structure/sign/poster/proc/rip_answered(datum/om/prompt/confirm/rip_poster/ask)
+	var/mob/user = ask.answerer
+	visible_message(span_warning("[user] rips [src] in a single, decisive motion!") )
+	playsound(src, 'sound/items/poster_ripped.ogg', 100, 1)
+	ruined = TRUE
+	icon_state = "poster_ripped"
+	name = "ripped poster"
+	desc = "You can't make out anything from the poster's original print. It's ruined."
+	add_fingerprint(user)
 
 /// Creates a poster item using roll_type as the path, and qdels the wall poster
 /obj/structure/sign/poster/proc/roll_and_drop(turf/newloc)

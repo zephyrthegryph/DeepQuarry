@@ -256,7 +256,7 @@
 
 	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [H]!"))
 
-	om_task_start(/datum/om/task/timed/legcuffs_place_legcuffs, user, src, list("receiver" = src, "duration" = use_time, "target_arg" = target, "H" = H))
+	om_task_start(/datum/om/task/timed/legcuffs_place_legcuffs, user, src, receiver = src, duration = use_time, target_arg = target, H = H)
 	return TRUE
 
 /datum/om/task/timed/legcuffs_place_legcuffs

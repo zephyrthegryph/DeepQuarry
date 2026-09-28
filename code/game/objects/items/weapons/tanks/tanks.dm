@@ -154,7 +154,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	if(istype(W, /obj/item/assembly_holder))
 		if(wired)
 			to_chat(user, span_notice("You begin attaching the assembly to \the [src]."))
-			om_task_start(/datum/om/task/timed/tank_attackby, user, src, list("receiver" = src, "W" = W))
+			om_task_start(/datum/om/task/timed/tank_attackby, user, src, receiver = src, W = W)
 		else
 			to_chat(user, span_notice("You need to wire the device up first."))
 
@@ -224,7 +224,7 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 	if(WT?.remove_fuel(1,user))
 		if(!valve_welded)
 			to_chat(user, span_notice("You begin welding the \the [src] emergency pressure relief valve."))
-			om_task_start(/datum/om/task/timed/tank_welder_act, user, src, list("receiver" = src, "tool" = tool, "WT" = WT))
+			om_task_start(/datum/om/task/timed/tank_welder_act, user, src, receiver = src, tool = tool, WT = WT)
 			WT.eyecheck(user)
 		else
 			to_chat(user, span_notice("The emergency pressure relief valve has already been welded."))

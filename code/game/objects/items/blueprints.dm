@@ -67,7 +67,7 @@
 			to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
 			return
 		else if(blueprint.uses_charges && blueprint.charges) //Getting from another with limited charges.
-			om_prompt(src, user, list("kind" = "number", "message" = "How many charges do you want to add to the [src]?", "title" = "[blueprint]", "default" = missing_charges, "max" = blueprint.charges, "target" = blueprint, "requires" = PROMPT_IN_HAND, "on_cancel" = PROC_REF(charges_not_added), "data" = list("from" = blueprint)), PROC_REF(add_charges))
+			om_ask(user, /datum/om/prompt/number/blueprint_charges, PROC_REF(add_charges), subject = blueprint, title = "[blueprint]", message = "How many charges do you want to add to the [src]?", default = missing_charges, max = blueprint.charges)
 			return
 		else if(!blueprint.uses_charges || !blueprint.charges) // The item it's being hit by doesn't use charges OR doesn't have any charges.
 			to_chat(user, span_warning("You can't add find any suitable material to add from the [blueprint]!"))
@@ -285,25 +285,43 @@
 			return message
 	return ""
 
-/obj/item/areaeditor/proc/add_charges(mob/user, to_add, datum/om/prompt/ask)
-	var/obj/item/areaeditor/blueprint = ask.get("from")
-	to_add = min(to_add, initial_charges - charges)
+/// Moving charges from another blueprint (the subject, still in hand). A cancel says so.
+/datum/om/prompt/number/blueprint_charges
+	requires = PROMPT_IN_HAND
+
+/datum/om/prompt/number/blueprint_charges/cancelled()
+	to_chat(answerer, span_notice("You decide not to add any more material."))
+
+/obj/item/areaeditor/proc/add_charges(datum/om/prompt/number/blueprint_charges/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/areaeditor/blueprint = ask.subject
+	var/to_add = min(ask.number, initial_charges - charges)
 	if(blueprint.charges >= to_add)
 		to_chat(user, span_notice("You add some more writing material to the [src] with the [blueprint]!"))
 		blueprint.charges -= to_add
 		charges += to_add
 	else
-		charges_not_added(user, ask)
+		charges_not_added(user)
 
-/obj/item/areaeditor/proc/charges_not_added(mob/user, datum/om/prompt/ask)
+/obj/item/areaeditor/proc/charges_not_added(mob/user)
 	to_chat(user, span_notice("You decide not to add any more material to the [src]"))
 
 /obj/item/areaeditor/proc/edit_area()
 	var/area/A = get_area(usr)
-	om_prompt(src, usr, list("kind" = "text", "message" = "New area name", "title" = "Area Creation", "max_length" = MAX_NAME_LEN, "requires" = PROMPT_IN_HAND, "data" = list("area" = A)), PROC_REF(area_renamed))
+	om_ask(usr, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
 
-/obj/item/areaeditor/proc/area_renamed(mob/user, str, datum/om/prompt/ask)
-	var/area/A = ask.get("area")
+/// Re-checked on the answer: the blueprint is still in hand.
+/datum/om/prompt/text/blueprint_rename_area
+	title = "Area Creation"
+	message = "New area name"
+	max_length = MAX_NAME_LEN
+	requires = PROMPT_IN_HAND
+	var/area/area_to_rename
+
+/obj/item/areaeditor/proc/area_renamed(datum/om/prompt/text/blueprint_rename_area/ask)
+	var/mob/user = ask.answerer
+	var/str = ask.text
+	var/area/A = ask.area_to_rename
 	var/prevname = "[A.name]"
 	if(!str || !length(str) || str==prevname) //cancel
 		return
@@ -415,20 +433,38 @@
 			continue // No expanding powerless rooms etc
 		areas[place.name] = place
 
-	om_prompt(AO, creator, list("kind" = "list", "message" = "Choose an area to expand or make a new area", "title" = "Area Expansion", "choices" = areas, "target" = get_turf(creator), "requires" = BLUEPRINT_PROMPT_REQUIRES, "on_cancel" = GLOBAL_PROC_REF(create_area_cancelled), "data" = list("editor" = AO, "turfs" = turfs, "areas" = areas)), GLOBAL_PROC_REF(create_area_chosen))
+	om_ask(creator, /datum/om/prompt/choice/blueprint_expand, GLOBAL_PROC_REF(create_area_chosen), subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs)
 
-/proc/create_area_cancelled(datum/E, mob/creator, datum/om/prompt/ask)
-	to_chat(creator, span_warning("No choice selected. No adjustments made."))
+/// Blueprint area prompts: the subject is the creator's turf, and they stay on it (BLUEPRINT_PROMPT_REQUIRES).
+/datum/om/prompt/choice/blueprint_expand
+	title = "Area Expansion"
+	message = "Choose an area to expand or make a new area"
+	requires = BLUEPRINT_PROMPT_REQUIRES
+	var/obj/item/areaeditor/editor
+	var/list/turfs
 
-/proc/create_area_chosen(datum/E, mob/creator, area_choice, datum/om/prompt/ask)
-	var/list/areas = ask.get("areas")
-	area_choice = areas[area_choice]
+/datum/om/prompt/choice/blueprint_expand/cancelled()
+	to_chat(answerer, span_warning("No choice selected. No adjustments made."))
+
+/// Naming the new area a blueprint makes (the expansion and the whole-room editor).
+/datum/om/prompt/text/blueprint_area_name
+	title = "Blueprint Editing"
+	message = "New area name"
+	max_length = MAX_NAME_LEN
+	requires = BLUEPRINT_PROMPT_REQUIRES
+	var/obj/item/areaeditor/editor
+	var/list/turfs
+
+/proc/create_area_chosen(datum/om/prompt/choice/blueprint_expand/ask)
+	var/area_choice = ask.choices[ask.choice]
 	if(isarea(area_choice))
-		create_area_commit(creator, ask, area_choice)
+		create_area_commit(ask.answerer, ask.editor, ask.turfs, area_choice)
 		return
-	om_prompt_chain(ask, list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), GLOBAL_PROC_REF(create_area_named))
+	om_ask(ask.answerer, /datum/om/prompt/text/blueprint_area_name, GLOBAL_PROC_REF(create_area_named), subject = ask.subject, editor = ask.editor, turfs = ask.turfs)
 
-/proc/create_area_named(datum/E, mob/creator, str, datum/om/prompt/ask)
+/proc/create_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+	var/mob/creator = ask.answerer
+	var/str = ask.text
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -442,12 +478,10 @@
 	var/area/newA = new /area
 	newA.setup(str)
 	newA.has_gravity = oldA.has_gravity
-	create_area_commit(creator, ask, newA, TRUE)
+	create_area_commit(creator, ask.editor, ask.turfs, newA, TRUE)
 
 /// The blueprint's area expansion, once the creator has picked (and maybe named) the area.
-/proc/create_area_commit(mob/creator, datum/om/prompt/ask, area/newA, annoy_admins = FALSE)
-	var/obj/item/areaeditor/AO = ask.get("editor")
-	var/list/turfs = ask.get("turfs")
+/proc/create_area_commit(mob/creator, obj/item/areaeditor/AO, list/turfs, area/newA, annoy_admins = FALSE)
 	var/area/oldA = get_area(get_turf(creator))
 
 	for(var/i in 1 to length(turfs)) //Fix lighting. Praise the lord.
@@ -527,25 +561,48 @@
 		areas[place.name] = place
 
 	//They can select an area they want to turn their current area into.
-	om_prompt(src, creator, list("kind" = "list", "message" = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?", "title" = "Area Expansion", "choices" = areas, "target" = get_turf(creator), "requires" = BLUEPRINT_PROMPT_REQUIRES, "on_cancel" = PROC_REF(no_changes_made), "data" = list("turfs" = turfs, "areas" = areas, "can_make_new_area" = can_make_new_area)), PROC_REF(whole_area_chosen))
+	om_ask(creator, /datum/om/prompt/choice/blueprint_whole_area, PROC_REF(whole_area_chosen), subject = get_turf(creator), choices = areas, turfs = turfs, can_make_new_area = can_make_new_area)
 
-/obj/item/areaeditor/proc/no_changes_made(mob/creator, datum/om/prompt/ask)
-	to_chat(creator, span_warning("No changes made."))
+/datum/om/prompt/choice/blueprint_whole_area
+	title = "Area Expansion"
+	message = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?"
+	requires = BLUEPRINT_PROMPT_REQUIRES
+	var/list/turfs
+	var/can_make_new_area
 
-/obj/item/areaeditor/proc/whole_area_chosen(mob/creator, area_choice, datum/om/prompt/ask)
-	var/list/areas = ask.get("areas")
-	area_choice = areas[area_choice]
+/datum/om/prompt/choice/blueprint_whole_area/cancelled()
+	to_chat(answerer, span_warning("No changes made."))
+
+/// The last "are you sure?" before the whole room changes area. No, or a cancel, says so.
+/datum/om/prompt/confirm/blueprint_whole_area
+	title = "READ CAREFULLY"
+	no_first = TRUE
+	requires = BLUEPRINT_PROMPT_REQUIRES
+	var/list/turfs
+	var/area/chosen_area
+	var/new_name
+
+/datum/om/prompt/confirm/blueprint_whole_area/cancelled()
+	to_chat(answerer, span_warning("No changes made."))
+
+/datum/om/prompt/confirm/blueprint_whole_area/declined()
+	to_chat(answerer, span_warning("No changes made."))
+
+/obj/item/areaeditor/proc/whole_area_chosen(datum/om/prompt/choice/blueprint_whole_area/ask)
+	var/mob/creator = ask.answerer
+	var/area_choice = ask.choices[ask.choice]
 	var/area/oldA = get_area(get_turf(creator))
 	if(isarea(area_choice))
-		ask.put("area", area_choice)
-		om_prompt_chain(ask, list("message" = "Are you sure you want to change [oldA.name] into [area_choice]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
+		om_ask(creator, /datum/om/prompt/confirm/blueprint_whole_area, PROC_REF(whole_area_confirmed), subject = ask.subject, message = "Are you sure you want to change [oldA.name] into [area_choice]?", turfs = ask.turfs, chosen_area = area_choice)
 		return
-	if(!ask.get("can_make_new_area") && !can_override)
+	if(!ask.can_make_new_area && !can_override)
 		to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
 		return
-	om_prompt_chain(ask, list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), PROC_REF(whole_area_named))
+	om_ask(creator, /datum/om/prompt/text/blueprint_area_name, PROC_REF(whole_area_named), subject = ask.subject, turfs = ask.turfs)
 
-/obj/item/areaeditor/proc/whole_area_named(mob/creator, str, datum/om/prompt/ask)
+/obj/item/areaeditor/proc/whole_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+	var/mob/creator = ask.answerer
+	var/str = ask.text
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -556,17 +613,14 @@
 			to_chat(creator, span_warning("An area in the world alreay has this name."))
 			return
 	var/area/oldA = get_area(get_turf(creator))
-	ask.put("name", str)
-	om_prompt_chain(ask, list("message" = "Are you sure you want to change [oldA.name] into a new area named [str]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
+	om_ask(creator, /datum/om/prompt/confirm/blueprint_whole_area, PROC_REF(whole_area_confirmed), subject = ask.subject, message = "Are you sure you want to change [oldA.name] into a new area named [str]?", turfs = ask.turfs, new_name = str)
 
-/obj/item/areaeditor/proc/whole_area_confirmed(mob/creator, confirm, datum/om/prompt/ask)
-	if(confirm != "Yes")
-		to_chat(creator, span_warning("No changes made."))
-		return
-	var/list/turf/turfs = ask.get("turfs")
+/obj/item/areaeditor/proc/whole_area_confirmed(datum/om/prompt/confirm/blueprint_whole_area/ask)
+	var/mob/creator = ask.answerer
+	var/list/turf/turfs = ask.turfs
 	var/area/oldA = get_area(get_turf(creator))
-	var/str = ask.get("name")
-	var/area/newA = ask.get("area")
+	var/str = ask.new_name
+	var/area/newA = ask.chosen_area
 	if(str)
 		newA = new /area
 		newA.setup(str)
@@ -811,13 +865,22 @@
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	om_prompt(null, creator, list("kind" = "text", "message" = "What would you like to name the area?", "title" = "Area Name", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "target" = get_turf(creator), "requires" = BLUEPRINT_PROMPT_REQUIRES, "on_cancel" = GLOBAL_PROC_REF(create_new_area_cancelled), "data" = list("turfs" = turfs)), GLOBAL_PROC_REF(create_new_area_named))
+	om_ask(creator, /datum/om/prompt/text/blueprint_new_area, GLOBAL_PROC_REF(create_new_area_named), subject = get_turf(creator), turfs = turfs)
 
-/proc/create_new_area_cancelled(datum/E, mob/creator, datum/om/prompt/ask)
-	to_chat(creator, span_warning("No new area made. Cancelling."))
+/datum/om/prompt/text/blueprint_new_area
+	title = "Area Name"
+	message = "What would you like to name the area?"
+	max_length = MAX_NAME_LEN
+	encode = FALSE
+	requires = BLUEPRINT_PROMPT_REQUIRES
+	var/list/turfs
 
-/proc/create_new_area_named(datum/E, mob/creator, str, datum/om/prompt/ask)
-	str = sanitizeSafe(str, MAX_NAME_LEN)
+/datum/om/prompt/text/blueprint_new_area/cancelled()
+	to_chat(answerer, span_warning("No new area made. Cancelling."))
+
+/proc/create_new_area_named(datum/om/prompt/text/blueprint_new_area/ask)
+	var/mob/creator = ask.answerer
+	var/str = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))
 		return
@@ -828,7 +891,7 @@
 		if(A.name == str)
 			to_chat(creator, span_warning("An area in the world alreay has this name."))
 			return
-	var/list/turf/turfs = ask.get("turfs")
+	var/list/turf/turfs = ask.turfs
 	var/area/oldA = get_area(get_turf(creator))
 	var/area/newA = new /area
 	newA.setup(str)

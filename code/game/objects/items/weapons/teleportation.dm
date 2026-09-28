@@ -167,10 +167,12 @@
 		turfs += T
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
-	om_prompt(src, user, list("kind" = "list", "message" = "Please select a teleporter to lock in on.", "title" = "Hand Teleporter", "choices" = L, "requires" = PROMPT_IN_HAND, "data" = list("targets" = L)), PROC_REF(teleporter_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(teleporter_chosen), title = "Hand Teleporter", message = "Please select a teleporter to lock in on.", choices = L, ask_flags = ASK_HELD | ASK_CAPABLE)
 
-/obj/item/hand_tele/proc/teleporter_chosen(mob/user, t1, datum/om/prompt/ask)
-	var/list/L = ask.get("targets")
+/obj/item/hand_tele/proc/teleporter_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/list/L = ask.choices
+	var/t1 = ask.choice
 	var/count = 0	//num of portals from this teleport in world
 	for(var/obj/effect/portal/PO in REGISTRY_MEMBERS(REGISTRY_PORTALS))
 		if(PO.creator == src)	count++

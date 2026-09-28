@@ -45,10 +45,11 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "number", "message" = "Please set the timer.", "title" = "Timer", "default" = 10, "max" = 60000, "min" = 10, "requires" = PROMPT_IN_HAND), PROC_REF(timer_set))
+	om_ask(user, /datum/om/prompt/number, PROC_REF(timer_set), title = "Timer", message = "Please set the timer.", default = 10, max = 60000, min = 10, ask_flags = ASK_HELD | ASK_CAPABLE)
 
-/obj/item/plastique/proc/timer_set(mob/user, newtime, datum/om/prompt/ask)
-	newtime = CLAMP(newtime, 10, 60000)
+/obj/item/plastique/proc/timer_set(datum/om/prompt/number/ask)
+	var/mob/user = ask.answerer
+	var/newtime = CLAMP(ask.number, 10, 60000)
 	timer = newtime
 	to_chat(user, "Timer set for [timer] seconds.")
 

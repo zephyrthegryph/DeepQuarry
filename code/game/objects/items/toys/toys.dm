@@ -197,18 +197,14 @@
 		to_chat(user, span_warning("You can't do that right now!"))
 		return
 
-	om_prompt_sequence(src, user, list(
-		list("key" = "sure", "message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
-		PROC_REF(ask_blade_color),
-	), PROC_REF(blade_recolored), list("requires" = PROMPT_ADJACENT))
+	om_ask(user, /datum/om/prompt/confirm/energy_recolor, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?")
 
-/obj/item/toy/sword/proc/ask_blade_color(mob/user, datum/om/prompt/ask)
-	if(ask.get("sure") == "Yes")
-		return list("key" = "color", "kind" = "color", "message" = "", "title" = "Choose Energy Color", "default" = lcolor)
+/obj/item/toy/sword/proc/ask_blade_color(datum/om/prompt/confirm/energy_recolor/ask)
+	om_ask(ask.answerer, /datum/om/prompt/color/energy, PROC_REF(blade_recolored), default = lcolor)
 
-/obj/item/toy/sword/proc/blade_recolored(mob/user, datum/om/prompt/ask)
-	if(ask.get("color"))
-		lcolor = sanitize_hexcolor(ask.get("color"))
+/obj/item/toy/sword/proc/blade_recolored(datum/om/prompt/color/energy/ask)
+	if(ask.picked_color)
+		lcolor = sanitize_hexcolor(ask.picked_color)
 	update_icon()
 
 /obj/item/toy/sword/examine(mob/user)
@@ -882,9 +878,11 @@
 	if(!M.mind)
 		return 0
 
-	om_prompt(src, M, list("kind" = "text", "message" = "What do you want to name the plushie?", "default" = "", "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(plushie_named))
+	om_ask(M, /datum/om/prompt/text, PROC_REF(plushie_named), message = "What do you want to name the plushie?", default = "", max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/toy/plushie/proc/plushie_named(mob/M, input, datum/om/prompt/ask)
+/obj/item/toy/plushie/proc/plushie_named(datum/om/prompt/text/ask)
+	var/mob/M = ask.answerer
+	var/input = ask.text
 	if(input)
 		name = input
 		// Rename possessed voices too
@@ -1942,11 +1940,12 @@
 /obj/item/toy/rock/attackby(obj/item/I as obj, mob/living/user as mob, proximity)
 	if(!proximity) return
 	if(istype(I, /obj/item/pen))
-		om_prompt(src, user, list("message" = "Choose what you'd like to draw.", "title" = "Faces", "choices" = list("fred","roxie","rock","Cancel"), "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(face_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(face_chosen), title = "Faces", message = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE)
 	return
 
-/obj/item/toy/rock/proc/face_chosen(mob/living/user, drawtype, datum/om/prompt/ask)
-	switch(drawtype)
+/obj/item/toy/rock/proc/face_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/user = ask.answerer
+	switch(ask.choice)
 		if("fred")
 			src.icon_state = "fred"
 			to_chat(user, "You draw a face on the rock.")
@@ -2194,7 +2193,7 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 /obj/item/toy/minigibber/attackby(obj/O, mob/user, params)
 	if(istype(O,/obj/item/toy/figure) || istype(O,/obj/item/toy/character) && O.loc == user)
 		to_chat(user, span_notice("You start feeding \the [O] [icon2html(O, user.client)] into \the [src]'s mini-input."))
-		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, list("receiver" = src, "O" = O))
+		om_task_start(/datum/om/task/timed/minigibber_attackby, user, src, receiver = src, O = O)
 
 	else ..()
 

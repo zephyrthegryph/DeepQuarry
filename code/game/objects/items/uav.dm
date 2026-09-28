@@ -119,11 +119,13 @@ REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(I, user))
 
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "Enter a nickname for [src]", "title" = "Nickname", "default" = nickname, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(nickname_entered))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(nickname_entered), title = "Nickname", message = "Enter a nickname for [src]", default = nickname, max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	else
 		return ..()
 
-/obj/item/uav/proc/nickname_entered(mob/user, tmp_label, datum/om/prompt/ask)
+/obj/item/uav/proc/nickname_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/tmp_label = ask.text
 	if(length(tmp_label) > 50 || length(tmp_label) < 3)
 		to_chat(user, span_notice("The nickname must be between 3 and 50 characters."))
 	else

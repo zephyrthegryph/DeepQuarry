@@ -14,11 +14,11 @@
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	om_prompt(src, usr, list("kind" = "list", "message" = "Choose activation emote. If you cancel this, one will be picked at random.", "title" = "Implant Activation", "choices" = choices, "data" = list("source" = source)), PROC_REF(emote_chosen))
+	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
 
-/obj/item/implant/uplink/proc/emote_chosen(mob/user, emote, datum/om/prompt/ask)
-	activation_emote = emote
-	announce_activation(ask.get("source"))
+/obj/item/implant/uplink/proc/emote_chosen(datum/om/prompt/choice/implant_emote/ask)
+	activation_emote = ask.choice
+	announce_activation(ask.source)
 
 /obj/item/implant/uplink/proc/announce_activation(mob/source)
 	source.mind?.store_memory("Uplink implant can be activated by using the [src.activation_emote] emote, <B>say *[src.activation_emote]</B> to attempt to activate.", 0, 0)

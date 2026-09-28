@@ -39,10 +39,21 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 		if(SSantag_job.player_is_antag(user.mind) || registered_user == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
-/obj/item/card/id/syndicate/proc/edit_or_show_chosen(mob/user, choice, datum/om/prompt/ask)
-	if(registered_user != user)
-		return
-	switch(choice)
+/// Edit or show an agent ID. Re-checked on the answer: still carried by its registered owner.
+/datum/om/prompt/choice/agent_id_mode
+	title = "Show or Edit?"
+	message = "Would you like to edit the ID, or show it?"
+	choices = list("Edit", "Show")
+	buttons = TRUE
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/datum/om/prompt/choice/agent_id_mode/valid()
+	var/obj/item/card/id/syndicate/card = subject
+	return card.registered_user == answerer ? null : "not the owner"
+
+/obj/item/card/id/syndicate/proc/edit_or_show_chosen(datum/om/prompt/choice/agent_id_mode/ask)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Edit")
 			agentcard_module.tgui_interact(user)
 		if("Show")
@@ -58,7 +69,7 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 	if(!registered_user && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))
 	if(registered_user == user)
-		om_prompt(src, user, list("message" = "Would you like to edit the ID, or show it?", "title" = "Show or Edit?", "choices" = list("Edit","Show"), "requires" = PROMPT_HELD), PROC_REF(edit_or_show_chosen))
+		om_ask(user, /datum/om/prompt/choice/agent_id_mode, PROC_REF(edit_or_show_chosen))
 		return
 
 /obj/item/card/id/syndicate/proc/register_user(mob/user)

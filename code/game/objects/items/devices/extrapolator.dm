@@ -119,14 +119,41 @@
 			var/list/atom/targets = find_valid_targets(user, target)
 			var/target_amt = length(targets)
 			if(target_amt > 1)
-				om_prompt(src, user, list("kind" = "list", "message" = "Select object to analyze", "title" = "Viral Extrapolation", "choices" = targets, "default" = targets[1], "requires" = PROMPT_HELD), PROC_REF(analyze_target_chosen))
+				om_ask(user, /datum/om/prompt/choice/extrapolator/analyze_target, PROC_REF(analyze_target_answered), choices = targets, default = targets[1])
 				return
 			target = target_amt ? targets[1] : null
 		analyze_target_chosen(user, target)
 	else
 		to_chat(user, span_warning("The extrapolator has no scanner installed!"))
 
-/obj/item/extrapolator/proc/analyze_target_chosen(mob/user, atom/target, datum/om/prompt/ask)
+/// Extrapolator prompts: re-checked on the answer, the extrapolator is still carried.
+/datum/om/prompt/choice/extrapolator
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	var/atom/target
+
+/datum/om/prompt/choice/extrapolator/analyze_target
+	title = "Viral Extrapolation"
+	message = "Select object to analyze"
+
+/datum/om/prompt/choice/extrapolator/disease
+	title = "Viral Extraction"
+	message = "Select disease to extract"
+
+/datum/om/prompt/choice/extrapolator/isolate_what
+	title = "Isolate"
+	message = "What would you like to isolate?"
+	choices = list("Symptom", "Disease")
+	buttons = TRUE
+	var/datum/disease/advance/disease
+
+/datum/om/prompt/choice/extrapolator/symptom
+	title = "Symptom Extraction"
+	message = "Select symptom to isolate"
+
+/obj/item/extrapolator/proc/analyze_target_answered(datum/om/prompt/choice/extrapolator/analyze_target/ask)
+	analyze_target_chosen(ask.answerer, ask.choice)
+
+/obj/item/extrapolator/proc/analyze_target_chosen(mob/user, atom/target)
 	var/list/result = target?.extrapolator_act(user, src, dry_run = TRUE)
 	var/list/diseases = result && result[EXTRAPOLATOR_RESULT_DISEASES]
 	if(!target)
@@ -202,16 +229,20 @@
 	if(!length(diseases))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no valid diseases to make a culture from."))
 		return
-	om_prompt_sequence(src, user, list(
-		length(diseases) > 1 ? list("key" = "disease", "kind" = "list", "message" = "Select disease to extract", "title" = "Viral Extraction", "choices" = diseases, "default" = diseases[1]) : null,
-		list("key" = "what", "message" = "What would you like to isolate?", "title" = "Isolate", "choices" = list("Symptom", "Disease")),
-	), PROC_REF(isolation_chosen), list("requires" = PROMPT_HELD, "data" = list("target" = target, "disease" = diseases[1])))
+	if(length(diseases) > 1)
+		om_ask(user, /datum/om/prompt/choice/extrapolator/disease, PROC_REF(disease_chosen), choices = diseases, default = diseases[1], target = target)
+	else
+		om_ask(user, /datum/om/prompt/choice/extrapolator/isolate_what, PROC_REF(isolation_chosen), target = target, disease = diseases[1])
 	return TRUE
 
-/obj/item/extrapolator/proc/isolation_chosen(mob/living/user, datum/om/prompt/ask)
-	var/atom/target = ask.get("target")
-	var/datum/disease/advance/target_disease = ask.get("disease")
-	if(ask.get("what") == "Symptom")
+/obj/item/extrapolator/proc/disease_chosen(datum/om/prompt/choice/extrapolator/disease/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice/extrapolator/isolate_what, PROC_REF(isolation_chosen), target = ask.target, disease = ask.choice)
+
+/obj/item/extrapolator/proc/isolation_chosen(datum/om/prompt/choice/extrapolator/isolate_what/ask)
+	var/mob/living/user = ask.answerer
+	var/atom/target = ask.target
+	var/datum/disease/advance/target_disease = ask.disease
+	if(ask.choice == "Symptom")
 		isolate_symptom(user, target, target_disease)
 	else
 		isolate_disease(user, target, target_disease)
@@ -227,20 +258,21 @@
 		to_chat(user, span_warning("[icon2html(src, user)] There are no symptoms that could be isolated.."))
 		return
 	if(length(symptoms) > 1)
-		om_prompt(src, user, list("kind" = "list", "message" = "Select symptom to isolate", "title" = "Symptom Extraction", "choices" = symptoms, "default" = symptoms[1], "requires" = PROMPT_HELD, "data" = list("target" = target)), PROC_REF(symptom_chosen))
+		om_ask(user, /datum/om/prompt/choice/extrapolator/symptom, PROC_REF(symptom_answered), choices = symptoms, default = symptoms[1], target = target)
 		return TRUE
-	return symptom_chosen(user, symptoms[1], null, target)
+	return symptom_chosen(user, symptoms[1], target)
 
-/obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/symptom/chosen, datum/om/prompt/ask, atom/target)
-	if(ask)
-		target = ask.get("target")
+/obj/item/extrapolator/proc/symptom_answered(datum/om/prompt/choice/extrapolator/symptom/ask)
+	symptom_chosen(ask.answerer, ask.choice, ask.target)
+
+/obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/symptom/chosen, atom/target)
 	user.visible_message(span_notice("[user] slots [target] into [src], which begins to whir and beep!"), span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]..."),)
 	var/datum/disease/advance/symptom_holder = new
 	symptom_holder.name = chosen.name
 	symptom_holder.symptoms += chosen
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
-	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, list("receiver" = src, "duration" = extract_time, "symptom_holder" = symptom_holder))
+	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)
 	return TRUE
 
 /datum/om/task/timed/extrapolator_isolate_symptom
@@ -258,7 +290,7 @@
 	. = FALSE
 	user.visible_message(span_notice("[user] begins to thoroughly scan [target] with [src]..."), \
 		span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]..."))
-	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, list("receiver" = src, "duration" = isolate_time, "target_disease" = target_disease))
+	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
 	return TRUE
 
 /datum/om/task/timed/extrapolator_isolate_disease

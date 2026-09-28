@@ -216,7 +216,7 @@
 
 	to_chat(user, span_notice("You begin adding the plating..."))
 
-	om_task_start(/datum/om/task/timed/girder_construct_wall, user, src, list("receiver" = src, "duration" = time_to_reinforce, "S" = S, "amount_to_use" = amount_to_use, "M" = M, "wall_fake" = wall_fake))
+	om_task_start(/datum/om/task/timed/girder_construct_wall, user, src, duration = time_to_reinforce, S = S, amount_to_use = amount_to_use, M = M, wall_fake = wall_fake)
 	return TRUE
 
 /datum/om/task/timed/girder_construct_wall
@@ -266,7 +266,7 @@
 		return 0
 
 	to_chat(user, span_notice("Now reinforcing..."))
-	om_task_start(/datum/om/task/timed/girder_reinforce_with_material, user, src, list("receiver" = src, "S" = S, "M" = M))
+	om_task_start(/datum/om/task/timed/girder_reinforce_with_material, user, src, S = S, M = M)
 	return TRUE
 
 /datum/om/task/timed/girder_reinforce_with_material

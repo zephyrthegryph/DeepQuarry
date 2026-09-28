@@ -152,7 +152,7 @@
 		spark_system.set_up(5, 0, get_turf(A))
 		spark_system.attach(A)
 
-		om_task_start(/datum/om/task/timed/induce, user, null, list("duration" = 2 SECONDS, "receiver" = src, "charged" = A, "charging" = C, "device" = O, "coefficient" = coefficient, "beam" = charge_beam, "filter" = filter))
+		om_task_start(/datum/om/task/timed/induce, user, null, duration = 2 SECONDS, receiver = src, charged = A, charging = C, device = O, coefficient = coefficient, beam = charge_beam, filter = filter)
 		return TRUE
 	else //Couldn't find a cell
 		to_chat(user, span_warning("Error unable to interface with device."))

@@ -26,12 +26,21 @@
 
 	user.client?.start_thinking()
 	user.client?.start_typing()
-	om_prompt(src, user, list("kind" = "text", "message" = "Choose a message to relay to those around you.", "title" = "", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_HELD, "on_cancel" = PROC_REF(message_cancelled)), PROC_REF(message_entered))
+	om_ask(user, /datum/om/prompt/text/tts_message, PROC_REF(message_entered))
 
-/obj/item/text_to_speech/proc/message_cancelled(mob/user, datum/om/prompt/ask)
-	user.client?.stop_thinking()
+/// The message to speak. Re-checked on the answer: the device is still carried. A cancel stops the typing indicator.
+/datum/om/prompt/text/tts_message
+	message = "Choose a message to relay to those around you."
+	default = ""
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
-/obj/item/text_to_speech/proc/message_entered(mob/user, message, datum/om/prompt/ask)
+/datum/om/prompt/text/tts_message/cancelled()
+	answerer?.client?.stop_thinking()
+	return ..()
+
+/obj/item/text_to_speech/proc/message_entered(datum/om/prompt/text/tts_message/ask)
+	var/mob/user = ask.answerer
+	var/message = ask.text
 	user.client?.stop_thinking()
 
 	if(message)

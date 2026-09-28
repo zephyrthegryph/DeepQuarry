@@ -285,15 +285,29 @@ Implant Specifics:<BR>"}
 		t.hotspot_expose(3500,125)
 
 /obj/item/implant/explosive/post_implant(mob/source as mob)
-	om_prompt_sequence(src, usr, list(
-		list("key" = "level", "message" = "What sort of explosion would you prefer?", "title" = "Implant Intent", "choices" = list("Localized Limb", "Destroy Body", "Full Explosion")),
-		list("key" = "phrase", "kind" = "text", "message" = "Choose activation phrase:"),
-	), PROC_REF(explosive_configured), list("data" = list("source" = source)))
+	om_ask(usr, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
 
-/obj/item/implant/explosive/proc/explosive_configured(mob/user, datum/om/prompt/ask)
-	var/mob/source = ask.get("source")
-	elevel = ask.get("level")
-	phrase = ask.get("phrase")
+/// The explosive implant's yield, then its phrase; `source` is the implantee.
+/datum/om/prompt/choice/explosive_implant_level
+	title = "Implant Intent"
+	message = "What sort of explosion would you prefer?"
+	choices = list("Localized Limb", "Destroy Body", "Full Explosion")
+	buttons = TRUE
+	var/mob/source
+
+/datum/om/prompt/text/explosive_implant_phrase
+	message = "Choose activation phrase:"
+	var/mob/source
+	var/level
+
+/obj/item/implant/explosive/proc/explosive_level_chosen(datum/om/prompt/choice/explosive_implant_level/ask)
+	om_ask(ask.answerer, /datum/om/prompt/text/explosive_implant_phrase, PROC_REF(explosive_configured), source = ask.source, level = ask.choice)
+
+/obj/item/implant/explosive/proc/explosive_configured(datum/om/prompt/text/explosive_implant_phrase/ask)
+	var/mob/user = ask.answerer
+	var/mob/source = ask.source
+	elevel = ask.level
+	phrase = ask.text
 	var/list/replacechars = list("'" = "","\"" = "",">" = "","<" = "","(" = "",")" = "")
 	phrase = replace_characters(phrase, replacechars)
 	user.mind?.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
@@ -616,11 +630,17 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	om_prompt(src, usr, list("kind" = "list", "message" = "Choose activation emote. If you cancel this, one will be picked at random.", "title" = "Implant Activation", "choices" = choices, "data" = list("source" = source)), PROC_REF(emote_chosen))
+	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
 
-/obj/item/implant/compressed/proc/emote_chosen(mob/user, emote, datum/om/prompt/ask)
-	activation_emote = emote
-	announce_activation(ask.get("source"))
+/// An emote-triggered implant's activation emote (compressed matter, uplink); `source` is the implantee.
+/datum/om/prompt/choice/implant_emote
+	title = "Implant Activation"
+	message = "Choose activation emote. If you cancel this, one will be picked at random."
+	var/mob/source
+
+/obj/item/implant/compressed/proc/emote_chosen(datum/om/prompt/choice/implant_emote/ask)
+	activation_emote = ask.choice
+	announce_activation(ask.source)
 
 /obj/item/implant/compressed/proc/announce_activation(mob/source)
 	if (source.mind)
@@ -790,11 +810,23 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 	imp = new /obj/item/implant/compliance(src)
 	update()
 
-/obj/item/implanter/compliance/proc/laws_entered(mob/user, newlaws, datum/om/prompt/ask)
-	var/obj/item/implant/compliance/implant = ask.get("implant")
-	if(implant != imp)
-		return
-	newlaws = sanitize(newlaws,2048)
+/// The compliance implant's laws. Re-checked on the answer: the implanter is still carried and still loaded with that implant.
+/datum/om/prompt/text/compliance_laws
+	title = "Compliance Laws"
+	message = "Please Input Laws"
+	default = ""
+	multiline = TRUE
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	var/obj/item/implant/compliance/implant
+
+/datum/om/prompt/text/compliance_laws/valid()
+	var/obj/item/implanter/compliance/implanter = subject
+	return implanter.imp == implant ? null : "implant changed"
+
+/obj/item/implanter/compliance/proc/laws_entered(datum/om/prompt/text/compliance_laws/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/implant/compliance/implant = ask.implant
+	var/newlaws = sanitize(ask.text, 2048)
 	if(newlaws)
 		to_chat(user,"You set the laws to: <br>" + span_notice("[newlaws]"))
 		implant.laws = newlaws //Organic
@@ -805,7 +837,7 @@ Due to the small chemical capacity of the implant, the life of the implant is re
 		return TRUE
 	if(istype(imp,/obj/item/implant/compliance))
 		var/obj/item/implant/compliance/implant = imp
-		om_prompt(src, user, list("kind" = "text", "message" = "Please Input Laws", "title" = "Compliance Laws", "default" = "", "multiline" = TRUE, "requires" = PROMPT_HELD, "data" = list("implant" = implant)), PROC_REF(laws_entered))
+		om_ask(user, /datum/om/prompt/text/compliance_laws, PROC_REF(laws_entered), implant = implant)
 	else //No using other implants.
 		to_chat(user,span_notice("A red warning pops up on the implanter's micro-screen: 'INVALID IMPLANT DETECTED.'"))
 

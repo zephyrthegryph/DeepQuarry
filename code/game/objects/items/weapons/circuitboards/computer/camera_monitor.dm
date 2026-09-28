@@ -87,12 +87,14 @@
 			to_chat(user, span_warning("Circuit controls are locked."))
 			return
 		var/existing_networks = jointext(network,",")
-		om_prompt(src, user, list("kind" = "text", "message" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = existing_networks, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(networks_entered))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(networks_entered), message = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", title = "Multitool-Circuitboard interface", default = existing_networks, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return
 
-/obj/item/circuitboard/security/proc/networks_entered(mob/user, input, datum/om/prompt/ask)
+/obj/item/circuitboard/security/proc/networks_entered(datum/om/prompt/text/ask)
 	if(locked)
 		return
+	var/mob/user = ask.answerer
+	var/input = ask.text
 	if(!input)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return

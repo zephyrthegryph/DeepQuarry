@@ -98,8 +98,15 @@
 		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
 
 // This is the only Topic the communicators really uses
-/obj/item/communicator/proc/reply_entered(mob/user, message, datum/om/prompt/ask)
-	var/obj/item/communicator/comm = ask.get("comm")
+/datum/om/prompt/text/communicator/reply
+	title = "Reply"
+	message = "Enter your message below."
+	var/obj/item/communicator/comm
+
+/obj/item/communicator/proc/reply_entered(datum/om/prompt/text/communicator/reply/ask)
+	var/mob/user = ask.answerer
+	var/message = ask.text
+	var/obj/item/communicator/comm = ask.comm
 	if(!message || !comm.exonet)
 		return
 	exonet.send_message(comm.exonet.address, "text", message)
@@ -113,7 +120,7 @@
 			var/obj/item/communicator/comm = locate(href_list["target"])
 			if(!istype(comm) || !comm.exonet)
 				return
-			om_prompt(src, usr, list("kind" = "text", "message" = "Enter your message below.", "title" = "Reply", "requires" = PROMPT_USABLE, "data" = list("comm" = comm)), PROC_REF(reply_entered))
+			om_ask(usr, /datum/om/prompt/text/communicator/reply, PROC_REF(reply_entered), comm = comm)
 
 // Verb: text_communicator()
 // Parameters: None
@@ -154,15 +161,25 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_prompt_sequence(src, src, list(
-		list("key" = "comm", "kind" = "list", "message" = "Send a text message to whom?", "title" = "Recipient Choice", "choices" = choices),
-		list("key" = "text", "kind" = "text", "message" = "What do you want the message to say?", "encode" = FALSE, "multiline" = TRUE),
-	), PROC_REF(ghost_text_written))
+	om_ask(src, /datum/om/prompt/choice/ghost_text_recipient, PROC_REF(ghost_text_recipient_chosen), choices = choices)
 
-/mob/observer/dead/proc/ghost_text_written(mob/user, datum/om/prompt/ask)
-	var/obj/item/communicator/chosen_communicator = ask.get("comm")
+/datum/om/prompt/choice/ghost_text_recipient
+	title = "Recipient Choice"
+	message = "Send a text message to whom?"
+
+/datum/om/prompt/text/ghost_text
+	message = "What do you want the message to say?"
+	encode = FALSE
+	multiline = TRUE
+	var/obj/item/communicator/recipient
+
+/mob/observer/dead/proc/ghost_text_recipient_chosen(datum/om/prompt/choice/ghost_text_recipient/ask)
+	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = ask.choice)
+
+/mob/observer/dead/proc/ghost_text_written(datum/om/prompt/text/ghost_text/ask)
+	var/obj/item/communicator/chosen_communicator = ask.recipient
 	var/mob/observer/dead/O = src
-	var/text_message = sanitize(ask.get("text"), MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	var/text_message = sanitize(ask.text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	if(text_message && O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
 

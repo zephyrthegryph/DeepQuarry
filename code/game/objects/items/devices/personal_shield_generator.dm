@@ -175,7 +175,7 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 		to_chat(user, span_notice("You cannot remove the cell from this device."))
 		return ITEM_INTERACT_BLOCKING
 	if(istype(bcell, /obj/item/cell/device/shield_generator))
-		om_prompt(src, user, list("message" = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?", "title" = "Selection List", "choices" = list("Cancel", "Remove"), "requires" = PROMPT_ADJACENT), PROC_REF(destroy_cell_answered))
+		om_ask(user, /datum/om/prompt/confirm/shield_cell_destroy, PROC_REF(destroy_cell_answered))
 		return ITEM_INTERACT_BLOCKING
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
@@ -187,9 +187,23 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/personal_shield_generator/proc/destroy_cell_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice != "Remove" || !istype(bcell, /obj/item/cell/device/shield_generator) || istype(bcell, /obj/item/cell/device/shield_generator/parry))
-		return
+/// Removing a built-in cell destroys it. Re-checked on the answer: still next to it, and the cell is still a removable built-in one.
+/datum/om/prompt/confirm/shield_cell_destroy
+	title = "Selection List"
+	message = "A popup appears on the device 'REMOVING THE INTERNAL CELL WILL DESTROY THE BATTERY. DO YOU WISH TO CONTINUE?'...Well, do you?"
+	yes_text = "Remove"
+	no_text = "Cancel"
+	no_first = TRUE
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/confirm/shield_cell_destroy/valid()
+	var/obj/item/personal_shield_generator/gen = subject
+	if(!istype(gen.bcell, /obj/item/cell/device/shield_generator) || istype(gen.bcell, /obj/item/cell/device/shield_generator/parry))
+		return "no removable cell"
+	return null
+
+/obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/om/prompt/confirm/shield_cell_destroy/ask)
+	var/mob/user = ask.answerer
 	var/datum/effect/effect/system/spark_spread/sparks = new
 	sparks.set_up(5, 1, src)
 	sparks.start()
@@ -203,12 +217,12 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/personal_shield_generator/multitool_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("kind" = "color", "message" = "Choose a color to set the shield to!", "title" = "", "default" = effect_color, "requires" = PROMPT_ADJACENT), PROC_REF(shield_color_chosen))
+	om_ask(user, /datum/om/prompt/color, PROC_REF(shield_color_chosen), message = "Choose a color to set the shield to!", default = effect_color, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/personal_shield_generator/proc/shield_color_chosen(mob/user, new_color, datum/om/prompt/ask)
-	if(new_color)
-		effect_color = new_color
+/obj/item/personal_shield_generator/proc/shield_color_chosen(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		effect_color = ask.picked_color
 
 // TODO: EMAG ACT
 // Perhaps make it so emagging the generator gives two options: One to rig the cell (stealthily) and one to disable the safeties (supercharge it)

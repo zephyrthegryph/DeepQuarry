@@ -1,14 +1,28 @@
 ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfer valve bomb.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/obj/effect/spawner/newbomb/proto = /obj/effect/spawner/newbomb/radio/custom
 
-	om_prompt_sequence(user, user, list(
-		list("key" = "p", "kind" = "number", "message" = "Enter phoron amount (mol):", "title" = "Phoron", "default" = initial(proto.phoron_amt)),
-		list("key" = "o", "kind" = "number", "message" = "Enter oxygen amount (mol):", "title" = "Oxygen", "default" = initial(proto.oxygen_amt)),
-		list("key" = "c", "kind" = "number", "message" = "Enter carbon dioxide amount (mol):", "title" = "Carbon Dioxide", "default" = initial(proto.carbon_amt)),
-	), GLOBAL_PROC_REF(spawn_tanktransferbomb_answered), list("requires" = PROMPT_ADMIN(R_SPAWN)))
+	om_flow_start(/datum/om/flow/ttv_bomb, user.mob, null, phoron = initial(proto.phoron_amt), oxygen = initial(proto.oxygen_amt), carbon = initial(proto.carbon_amt))
 
-/proc/spawn_tanktransferbomb_answered(client/C, mob/user, datum/om/prompt/ask)
-	new /obj/effect/spawner/newbomb/radio/custom(get_turf(user), ask.get("p"), ask.get("o"), ask.get("c"))
+/// The three gas amounts, then the bomb at the admin's feet. The admin keeps R_SPAWN throughout.
+/datum/om/flow/ttv_bomb
+	requires = PROMPT_ADMIN(R_SPAWN)
+	var/phoron
+	var/oxygen
+	var/carbon
+
+/datum/om/flow/ttv_bomb/start()
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(phoron_entered), title = "Phoron", message = "Enter phoron amount (mol):", default = phoron)
+
+/datum/om/flow/ttv_bomb/proc/phoron_entered(datum/om/prompt/number/ask)
+	phoron = ask.number
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(oxygen_entered), title = "Oxygen", message = "Enter oxygen amount (mol):", default = oxygen)
+
+/datum/om/flow/ttv_bomb/proc/oxygen_entered(datum/om/prompt/number/ask)
+	oxygen = ask.number
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(carbon_entered), title = "Carbon Dioxide", message = "Enter carbon dioxide amount (mol):", default = carbon)
+
+/datum/om/flow/ttv_bomb/proc/carbon_entered(datum/om/prompt/number/ask)
+	new /obj/effect/spawner/newbomb/radio/custom(get_turf(actor), phoron, oxygen, ask.number)
 
 /obj/effect/spawner/newbomb
 	name = "TTV bomb"

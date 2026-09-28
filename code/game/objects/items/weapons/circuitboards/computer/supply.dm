@@ -30,9 +30,9 @@
 			opposite_catastasis = "BROAD"
 			catastasis = "STANDARD"
 
-		om_prompt(src, user, list("message" = "Current receiver spectrum is set to: [catastasis]", "title" = "Multitool-Circuitboard interface", "choices" = list("Switch to [opposite_catastasis]","Cancel"), "requires" = PROMPT_ADJACENT), PROC_REF(spectrum_chosen))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(spectrum_chosen), title = "Multitool-Circuitboard interface", message = "Current receiver spectrum is set to: [catastasis]", yes_text = "Switch to [opposite_catastasis]", no_text = "Cancel", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return
 
-/obj/item/circuitboard/supplycomp/proc/spectrum_chosen(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Switch to STANDARD" || choice == "Switch to BROAD")
+/obj/item/circuitboard/supplycomp/proc/spectrum_chosen(datum/om/prompt/confirm/ask)
+	if(ask.yes)
 		src.contraband_enabled = !src.contraband_enabled

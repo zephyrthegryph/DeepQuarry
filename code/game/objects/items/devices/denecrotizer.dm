@@ -207,7 +207,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_GHOST_PODS)
 
 /obj/item/denecrotizer/proc/basic_rez(mob/living/simple_mob/target, mob/living/user) //so medical can have a way to bring back people's pets or whatever, does not change any settings about the mob or offer it to ghosts.
 	user.visible_message("[user] presses [src] to [target]...", runemessage = "presses [src] to [target]")
-	om_task_start(/datum/om/task/timed/denecrotizer_basic_rez, user, target, list("receiver" = src, "duration" = revive_time))
+	om_task_start(/datum/om/task/timed/denecrotizer_basic_rez, user, target, receiver = src, duration = revive_time)
 
 /datum/om/task/timed/denecrotizer_basic_rez
 	complete_proc = /obj/item/denecrotizer/proc/basic_rez_timed_done

@@ -200,18 +200,19 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("kind" = "list", "message" = "What element would you like to customize?", "title" = "Customize Card", "choices" = list("Band","Stamp","Reset"), "requires" = PROMPT_HELD), PROC_REF(customize_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(customize_chosen), title = "Customize Card", message = "What element would you like to customize?", choices = list("Band","Stamp","Reset"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/card_fluff/proc/customize_chosen(mob/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/obj/item/card_fluff/proc/customize_chosen(datum/om/prompt/choice/ask)
+	switch(ask.choice)
 		if("Band")
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Select colour", "title" = "Band colour", "choices" = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black")), PROC_REF(band_chosen))
+			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(band_chosen), title = "Band colour", message = "Select colour", choices = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		if("Stamp")
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Select image", "title" = "Stamp image", "choices" = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation")), PROC_REF(stamp_chosen))
+			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(stamp_chosen), title = "Stamp image", message = "Select image", choices = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		if("Reset")
 			reset_icon()
 
-/obj/item/card_fluff/proc/band_chosen(mob/user, bandchoice, datum/om/prompt/ask)
+/obj/item/card_fluff/proc/band_chosen(datum/om/prompt/choice/ask)
+	var/bandchoice = ask.choice
 	if(bandchoice == "red")
 		sprite_stack.Add("bar-red")
 	else if(bandchoice == "orange")
@@ -239,7 +240,8 @@
 
 	update_icon()
 
-/obj/item/card_fluff/proc/stamp_chosen(mob/user, stampchoice, datum/om/prompt/ask)
+/obj/item/card_fluff/proc/stamp_chosen(datum/om/prompt/choice/ask)
+	var/stampchoice = ask.choice
 	if(stampchoice == "ship")
 		sprite_stack.Add("stamp-starship")
 	else if(stampchoice == "cross")

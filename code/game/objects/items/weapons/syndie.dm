@@ -95,12 +95,13 @@
 		user.visible_message(span_rose("Without even breaking stride, \the [user] flips open \the [src] in one smooth movement."))
 
 	else if(lit && detonator_mode)
-		om_prompt(src, user, list("message" = "What would you like to do?", "title" = "Lighter", "choices" = list("Press the button.", "Close the lighter."), "requires" = PROMPT_HELD), PROC_REF(detonator_action))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(detonator_action), title = "Lighter", message = "What would you like to do?", choices = list("Press the button.", "Close the lighter."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(mob/user, choice, datum/om/prompt/ask)
+/obj/item/flame/lighter/zippo/c4detonator/proc/detonator_action(datum/om/prompt/choice/ask)
 	if(!lit || !detonator_mode)
 		return
-	switch(choice)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Press the button.")
 			to_chat(user, span_warning("You press the button."))
 			icon_state = "[base_state]click"
