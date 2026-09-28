@@ -15,8 +15,8 @@
 // next generate_site() to reuse.
 
 /datum/expedition_teardown_job
-	var/controller_handle
-	var/site_handle
+	var/tmp/controller_handle
+	var/tmp/site_handle
 	var/z_level
 	var/reason
 	var/yield_count = 0
@@ -96,7 +96,7 @@ SUBSYSTEM_DEF(expedition)
 	if(!vessel?.shuttle() || !vessel.has_capabilities(FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND))
 		to_chat(user, span_warning("This vessel cannot perform surface expeditions."))
 		return null
-	if(vessel.active_expedition && !QDELETED(vessel.active_expedition) && vessel.active_expedition.status != EXP_STATUS_EXPIRED)
+	if(vessel.active_expedition() && !QDELETED(vessel.active_expedition()) && vessel.active_expedition().status != EXP_STATUS_EXPIRED)
 		to_chat(user, span_warning("This vessel already has an active expedition assignment."))
 		return null
 	var/list/choices = list()
@@ -125,12 +125,12 @@ SUBSYSTEM_DEF(expedition)
 		return null
 	site.assigned_flight_vessel_handle = om_handle(vessel)
 	site.payout_turf_handle = om_handle(get_turf(payout_source))
-	vessel.active_expedition = site
+	vessel.active_expedition_handle = om_handle(site)
 	to_chat(user, span_notice("[site.name] has been surveyed. Select it in Flight Operations to begin the jump and generate its landing zone."))
 	return site
 
 /datum/controller/subsystem/expedition/proc/abandon_assignment(mob/user, datum/flight_vessel/vessel)
-	var/datum/expedition_site/site = vessel?.active_expedition
+	var/datum/expedition_site/site = vessel?.active_expedition()
 	if(!site || QDELETED(site))
 		return FALSE
 	var/datum/flight_destination/destination = SSflight_operations?.destinations[site.flight_destination_id]
@@ -140,7 +140,7 @@ SUBSYSTEM_DEF(expedition)
 	if(site.z_level > 0 && players_on_z(site.z_level))
 		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
 		return FALSE
-	vessel.active_expedition = null
+	vessel.active_expedition_handle = null
 	if(site.z_level > 0 && sites["[site.z_level]"] == site)
 		release_site(site, "assignment abandoned")
 	else
@@ -165,7 +165,7 @@ SUBSYSTEM_DEF(expedition)
 	var/datum/flight_vessel/assigned_vessel = SSflight_operations?.vessel_for_ship(assigned_shuttle?.myship())
 	site.assigned_flight_vessel_handle = om_handle(assigned_vessel)
 	if(assigned_vessel)
-		assigned_vessel.active_expedition = site
+		assigned_vessel.active_expedition_handle = om_handle(site)
 	site.status = EXP_STATUS_GENERATING
 	SSflight_operations?.register_expedition(site)
 	return site
@@ -220,7 +220,7 @@ SUBSYSTEM_DEF(expedition)
 			SSflight_operations.unregister_destination(generated_destination_id)
 		destination.name = descriptor_name
 		destination.expedition_handle = om_handle(site)
-		destination.target = site.overmap_sector()
+		destination.target_handle = om_handle(site.overmap_sector())
 		if(site.overmap_sector())
 			SSflight_operations.destination_by_target[REF(site.overmap_sector())] = destination.id
 		site.flight_destination_id = destination.id
@@ -312,8 +312,8 @@ SUBSYSTEM_DEF(expedition)
 				materialization.floor_count++
 			ChangeArea(T, emergency_area)
 	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
-	materialization.entry = new(arrival)
-	materialization.entry.station_id = spec.id
+	materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(arrival))
+	materialization.entry().station_id = spec.id
 	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
 	return materialization
 
@@ -518,12 +518,12 @@ SUBSYSTEM_DEF(expedition)
 		generated_station_seed_air(fallback_floor)
 		site.floors += fallback_floor
 		station_materialization.degradation_events += "no planned floor survived; installed an emergency landing floor"
-	site.landing_handle = om_handle(get_turf(station_materialization.entry))
+	site.landing_handle = om_handle(get_turf(station_materialization.entry()))
 	if(!site.landing() || site.landing().density)
 		site.landing_handle = om_handle(site.floors[1])
-		QDEL_NULL(station_materialization.entry)
-		station_materialization.entry = new(site.landing())
-		station_materialization.entry.station_id = station_spec.id
+		qdel(station_materialization.entry()); station_materialization.entry_handle = null
+		station_materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(site.landing()))
+		station_materialization.entry().station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
 	site.name += " — [expedition_faction_name(site.faction)]"
@@ -640,7 +640,7 @@ SUBSYSTEM_DEF(expedition)
 	if(site.assigned_flight_vessel()?.active_expedition == site)
 		site.assigned_flight_vessel().active_expedition = null
 	QDEL_NULL(site.landing_waypoint)
-	QDEL_NULL(site.overmap_sector())
+	qdel(site.overmap_sector()); site.overmap_sector_handle = null
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(src, site, reason)
 	job.execute()

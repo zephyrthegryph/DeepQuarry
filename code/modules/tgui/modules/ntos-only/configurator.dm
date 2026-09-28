@@ -2,7 +2,7 @@
 	name = "NTOS Computer Configuration Tool"
 	ntos = TRUE
 	tgui_id = "Configuration"
-	var/movable_handle
+	var/tmp/movable_handle
 
 /datum/tgui_module/computer_configurator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	movable_handle = om_handle(tgui_host())

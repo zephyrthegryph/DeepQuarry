@@ -14,14 +14,14 @@
 #define BREAKING   2
 #define CONTINUING 4
 /datum/n_Interpreter
-	var/curScope_handle
+	var/tmp/curScope_handle
 	var/datum/scope/globalScope
 	var/datum/node/BlockDefinition/program
-	var/curFunction_handle
+	var/tmp/curFunction_handle
 	var/datum/stack/scopes	= new()
 	var/datum/stack/functions	= new()
 
-	var/container_handle	// associated container for interpeter
+	var/tmp/container_handle	// associated container for interpeter
 /*
 	Var: status
 	A variable indicating that the rest of the current block should be skipped. This may be set to any combination of <Status Macros>.

@@ -184,7 +184,7 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	var/gene_handle
+	var/tmp/gene_handle
 	hud_state = "electrothermal"
 
 /obj/item/projectile/energy/florayield

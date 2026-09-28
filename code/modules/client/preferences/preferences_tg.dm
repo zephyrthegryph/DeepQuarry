@@ -25,4 +25,4 @@
 			continue
 
 		value_cache -= preference.type
-		preference.apply_to_client(client, read_preference(preference.type))
+		preference.apply_to_client(client(), read_preference(preference.type))

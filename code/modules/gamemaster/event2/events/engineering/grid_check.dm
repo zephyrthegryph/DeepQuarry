@@ -26,7 +26,7 @@
 
 
 /datum/event2/event/grid_check
-	var/engine_handle	// The turbine that will send a power spike.
+	var/tmp/engine_handle	// The turbine that will send a power spike.
 
 /datum/event2/event/grid_check/set_up()
 	// no turbines under LINDA (see get_overpower); engine stays null

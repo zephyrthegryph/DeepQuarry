@@ -12,15 +12,15 @@
 	interface_name = "niling d-sink"
 	interface_desc = "Colloquially known as a power siphon, this module drains power through the suit hands into the suit battery."
 
-	var/interfaced_with_handle	// Currently draining power from this device.
+	var/tmp/interfaced_with_handle	// Currently draining power from this device.
 	var/total_power_drained = 0
 	var/drain_loc
 
 /obj/item/rig_module/power_sink/deactivate()
 
 	if(interfaced_with())
-		if(holder && holder.wearer)
-			to_chat(holder.wearer, span_warning("Your power sink retracts as the module deactivates."))
+		if(holder && holder.wearer())
+			to_chat(holder.wearer(), span_warning("Your power sink retracts as the module deactivates."))
 		drain_complete()
 	interfaced_with_handle = null
 	total_power_drained = 0
@@ -44,7 +44,7 @@
 		return 1
 
 	// Are we close enough?
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(!target.Adjacent(H))
 		return 0
 
@@ -74,8 +74,8 @@
 		return ..()
 
 	var/mob/living/carbon/human/H
-	if(holder && holder.wearer)
-		H = holder.wearer
+	if(holder && holder.wearer())
+		H = holder.wearer()
 
 	if(!H || !istype(H))
 		return 0

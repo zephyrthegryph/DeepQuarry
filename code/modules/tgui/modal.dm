@@ -236,7 +236,7 @@ GLOBAL_LIST(tgui_modals)
  * Modal datum (contains base information for a modal)
  */
 /datum/tgui_modal
-	var/owning_source_handle
+	var/tmp/owning_source_handle
 	var/id
 	var/text
 	var/delegate

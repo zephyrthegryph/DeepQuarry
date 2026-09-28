@@ -11,7 +11,7 @@
 
 
 /datum/event2/event/wallrot
-	var/origin_handle
+	var/tmp/origin_handle
 
 /datum/event2/event/wallrot/set_up()
 	for(var/i = 1 to 100)

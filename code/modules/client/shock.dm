@@ -17,7 +17,7 @@
 // normal configuration UI!
 /datum/tgui_shock
 	/// The user who opened the window
-	var/client_handle
+	var/tmp/client_handle
 	/// The modal window
 	var/datum/tgui_window/window
 

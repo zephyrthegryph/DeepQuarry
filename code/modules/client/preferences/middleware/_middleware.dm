@@ -1,7 +1,7 @@
 /// Preference middleware is code that helps to decentralize complicated preference features.
 /datum/preference_middleware
 	/// The preferences datum
-	var/preferences_handle
+	var/tmp/preferences_handle
 
 	/// The key that will be used for get_constant_data().
 	/// If null, will use the typepath minus /datum/preference_middleware.

@@ -534,8 +534,8 @@
 		piece.set_armor(dq_armor_none())
 	slowdown = PROTEAN_RIG_INERT_SLOWDOWN
 	offline_slowdown = PROTEAN_RIG_INERT_SLOWDOWN
-	wearer?.update_inv_back()
-	wearer?.worn_protection_changed()
+	wearer()?.update_inv_back()
+	wearer()?.worn_protection_changed()
 	log_game("PROTEAN RIG: [src] of [key_name(myprotean)] went inert at [AREACOORD(src)].")
 
 /// The protean has reconstituted: the cluster is its own again.
@@ -548,7 +548,7 @@
 	set_armor(restored)
 	for(var/obj/item/piece in list(gloves, helmet, boots, chest))
 		piece.set_armor(restored)
-	wearer?.worn_protection_changed()
+	wearer()?.worn_protection_changed()
 	if(istype(R))
 		slowdown = initial(R.slowdown) * 0.5
 	else
@@ -572,8 +572,8 @@
 	return	//nope
 
 /obj/item/rig/protean/force_rest(mob/user)
-	wearer.lay_down()
-	to_chat(user, span_notice("\The [wearer] is now [wearer.resting ? "resting" : "getting up"]."))
+	wearer().lay_down()
+	to_chat(user, span_notice("\The [wearer()] is now [wearer().resting ? "resting" : "getting up"]."))
 
 /// The cluster's cell. It starts full and is recharged only through the
 /// cluster's power ledger (recharge_from()).
@@ -604,22 +604,22 @@
 		if(user)
 			to_chat(user, span_warning("Your host rig is unpowered and unresponsive."))
 		return 0
-	if(!wearer || (wearer.get_equipped_item(SLOT_ID_BACK) != src && wearer.get_equipped_item(SLOT_ID_BELT) != src))
+	if(!wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		if(user)
 			to_chat(user, span_warning("Your host rig is not being worn."))
 		return 0
 	return 1
 
 /obj/item/rig/protean/toggle_seals(mob/living/carbon/human/M, instant = TRUE)
-	M = src.wearer
+	M = src.wearer()
 	..()
 
 /obj/item/rig/protean/toggle_cooling(mob/user)
-	user = src.wearer
+	user = src.wearer()
 	..()
 
 /obj/item/rig/protean/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced)
-	H = src.wearer
+	H = src.wearer()
 	..()
 
 /obj/item/rig/protean/get_description_interaction()
@@ -646,7 +646,7 @@
 		piece.set_armor(R.get_armor())
 		piece.max_pressure_protection = R.rigsuit_max_pressure
 		piece.max_heat_protection_temperature = R.max_heat_protection_temperature
-	wearer?.worn_protection_changed()
+	wearer()?.worn_protection_changed()
 	//I dislike this piece of code, but not every rig has the full set of parts
 	if(R.gloves)
 		gloves.sprite_sheets = R.gloves.sprite_sheets.Copy()
@@ -715,7 +715,7 @@
 		icon_state = tempRig.icon_state
 		suit_state = icon_state
 		offline_slowdown = initial(offline_slowdown)
-		wearer?.worn_protection_changed()
+		wearer()?.worn_protection_changed()
 		usr.put_in_hands(assimilated_rig)
 		assimilated_rig = null
 		qdel(tempRig)

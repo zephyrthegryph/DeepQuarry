@@ -42,4 +42,4 @@
 	if(!node)
 		return null
 	var/datum/generated_station_department_instance/department = department_for_node(node)
-	return department?.definition?.id
+	return department?.definition()?.id

@@ -160,13 +160,13 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(!department)
 			continue
-		var/list/roles = generated_station_module_roles(department.definition.id)
+		var/list/roles = generated_station_module_roles(department.definition().id)
 		if(spec().grid_width >= 96 && spec().grid_height >= 96)
-			if(!build_large_department_modules(node, department.definition.id, roles))
+			if(!build_large_department_modules(node, department.definition().id, roles))
 				log_world("Generated station department [node.id] ([node.width]x[node.height]) cannot satisfy its expanded room program.")
 				return FALSE
 			continue
-		var/list/division = generated_module_division(node, department.definition.id, roles)
+		var/list/division = generated_module_division(node, department.definition().id, roles)
 		if(!division)
 			log_world("Generated station department [node.id] ([node.width]x[node.height]) cannot satisfy its room program.")
 			return FALSE
@@ -380,9 +380,9 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 
 /datum/generated_station_materializer/proc/services_for_department(datum/generated_station_department_instance/department)
 	var/list/services = list(GENERATED_STATION_SERVICE_MAINTENANCE)
-	for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
+	for(var/datum/generated_station_capability_requirement/requirement in department.definition().requirements)
 		services |= requirement.capability_id
-	for(var/datum/generated_station_capability_provision/provision in department.definition.provisions)
+	for(var/datum/generated_station_capability_provision/provision in department.definition().provisions)
 		services |= provision.capability_id
 	return services
 
@@ -429,8 +429,8 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	var/datum/generated_station_layout_node/to_node = nodes_by_id[edge.to_node_id]
 	var/datum/generated_station_department_instance/provider = department_for_node(from_node)
 	var/datum/generated_station_department_instance/consumer = department_for_node(to_node)
-	for(var/datum/generated_station_capability_provision/provision in provider?.definition?.provisions)
-		for(var/datum/generated_station_capability_requirement/requirement in consumer?.definition?.requirements)
+	for(var/datum/generated_station_capability_provision/provision in provider?.definition()?.provisions)
+		for(var/datum/generated_station_capability_requirement/requirement in consumer?.definition()?.requirements)
 			if(provision.capability_id == requirement.capability_id)
 				return provision.capability_id
 	return null
@@ -526,7 +526,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 			for(var/direction in GLOB.cardinal)
 				var/area/generated_station/neighbor_area = get_area(get_step(door_turf, direction))
 				var/datum/generated_station_department_instance/node_department = materializer?.department_for_node(node)
-				if(istype(neighbor_area) && neighbor_area.department_id == node_department?.definition?.id)
+				if(istype(neighbor_area) && neighbor_area.department_id == node_department?.definition()?.id)
 					has_maintenance_access = TRUE
 					break
 			if(has_maintenance_access)
@@ -536,12 +536,12 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 		materializer?.generation_checkpoint("Validating department maintenance", 56)
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/node_id = department.layout_node_id
-		for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
+		for(var/datum/generated_station_capability_requirement/requirement in department.definition().requirements)
 			var/has_endpoint = FALSE
 			var/has_route = FALSE
 			// A department can satisfy an internal service locally; there is no
 			// meaningful inter-department route to draw back to itself.
-			for(var/datum/generated_station_capability_provision/local_provision in department.definition.provisions)
+			for(var/datum/generated_station_capability_provision/local_provision in department.definition().provisions)
 				if(local_provision.capability_id == requirement.capability_id)
 					has_route = TRUE
 					break

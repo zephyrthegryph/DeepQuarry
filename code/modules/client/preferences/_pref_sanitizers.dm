@@ -39,7 +39,7 @@
 		if(!istype(L) || (L.flags & RESTRICTED))
 			value -= language
 			continue
-		if(!(language in S.secondary_langs) && preferences.client && !is_lang_whitelisted(preferences.client, L))
+		if(!(language in S.secondary_langs) && preferences.client() && !is_lang_whitelisted(preferences.client(), L))
 			value -= language
 	return value
 

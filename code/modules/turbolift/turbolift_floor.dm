@@ -8,7 +8,7 @@
 	var/delay_time
 
 	var/list/doors = list()
-	var/ext_panel_handle
+	var/tmp/ext_panel_handle
 
 /datum/turbolift_floor/proc/set_area_ref(ref)
 	var/area/turbolift/A = locate(ref)

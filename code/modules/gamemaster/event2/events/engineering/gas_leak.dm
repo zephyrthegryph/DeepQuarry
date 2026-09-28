@@ -22,7 +22,7 @@
 /datum/event2/event/gas_leak
 	var/potential_gas_choices = list(GAS_CO2, GAS_N2O, GAS_PHORON, GAS_VOLATILE_FUEL, GAS_CH4)
 	var/chosen_gas = null
-	var/chosen_turf_handle
+	var/tmp/chosen_turf_handle
 
 /datum/event2/event/gas_leak/set_up()
 	chosen_gas = pick(potential_gas_choices)

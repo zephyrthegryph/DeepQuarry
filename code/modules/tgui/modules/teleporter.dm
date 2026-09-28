@@ -2,9 +2,9 @@
 	name = "Teleporter Control"
 	tgui_id = "Teleporter"
 	var/locked_name = "Not Locked"
-	var/locked_handle
-	var/station_handle
-	var/hub_handle
+	var/tmp/locked_handle
+	var/tmp/station_handle
+	var/tmp/hub_handle
 
 /datum/tgui_module/teleport_control/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()

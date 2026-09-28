@@ -17,7 +17,7 @@
 	var/fire_pressure									// Used in fire checks/pressure checks.
 	var/hopper_size = ITEMSIZE_NORMAL					// Hopper intake size.
 	var/max_storage_space = ITEMSIZE_COST_NORMAL * 5	// Total internal storage size.
-	var/tank_handle	// Tank of gas for use in firing the cannon.
+	var/tmp/tank_handle	// Tank of gas for use in firing the cannon.
 
 	var/obj/item/storage/item_storage
 	var/pressure_setting = 10							// Percentage of the gas in the tank used to fire the projectile.

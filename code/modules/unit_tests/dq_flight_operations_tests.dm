@@ -5,7 +5,7 @@
 	var/datum/flight_destination/destination = new
 	destination.id = "unit-test-destination"
 	destination.name = "Unit Test Destination"
-	destination.target = target
+	destination.target_handle = om_handle(target)
 	destination.required_capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_vessel/vessel = new
 	vessel.name = "Unit Test Vessel"
@@ -42,7 +42,7 @@
 	var/obj/effect/target = new(null)
 	var/datum/flight_destination/destination = new
 	destination.name = "Surface Site"
-	destination.target = target
+	destination.target_handle = om_handle(target)
 	destination.required_capabilities = FLIGHT_CAP_LAND
 	var/datum/flight_vessel/vessel = new
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
@@ -237,7 +237,7 @@
 	var/datum/flight_destination/station = new
 	station.id = "unit-station-orbit"
 	station.kind = FLIGHT_DEST_STATION
-	station.target = target
+	station.target_handle = om_handle(target)
 	var/datum/flight_vessel/vessel = new
 	vessel.ship_handle = om_handle(ship)
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
@@ -247,7 +247,7 @@
 	TEST_ASSERT_EQUAL(plan.state, FLIGHT_PLAN_FAILED, "A berthless station flight did not fail during preflight")
 	qdel(plan)
 	vessel.ship_handle = null
-	station.target = null
+	station.target_handle = null
 	qdel(vessel)
 	qdel(station)
 	qdel(target)

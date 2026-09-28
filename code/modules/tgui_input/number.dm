@@ -67,7 +67,7 @@
 	/// The title of the TGUI window
 	var/title
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/state_handle
+	var/tmp/state_handle
 
 /datum/tgui_input_number/New(mob/user, message, title, default, max_value, min_value, timeout, round_value, ui_state)
 	src.default = default

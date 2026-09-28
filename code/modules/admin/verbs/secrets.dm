@@ -5,7 +5,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	feedback_add_details("admin_verb","S") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/secrets_menu
-	var/holder_handle	//client of whoever is using this datum
+	var/tmp/holder_handle	//client of whoever is using this datum
 	var/is_debugger = FALSE
 	var/is_funmin = FALSE
 

@@ -14,8 +14,8 @@
 	var/train_length = 0
 	var/latch_on_start = 1
 
-	var/lead_handle
-	var/tow_handle
+	var/tmp/lead_handle
+	var/tmp/tow_handle
 
 	var/open_top = TRUE
 

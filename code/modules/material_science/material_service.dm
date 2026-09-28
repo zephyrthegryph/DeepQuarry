@@ -171,14 +171,14 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return MATERIAL_TANK_REFERENCE_THICKNESS
 
 /datum/material_service
-	var/owner_handle
+	var/tmp/owner_handle
 	var/list/mixture_ids
 	/// Last pressure published for each watched mixture. Stable, harmless
 	/// pressure jitter updates this cache without waking the physical model.
 	var/list/mixture_pressures
 	var/list/mixture_corrosion
 	var/list/movement_sources
-	var/watched_turf_handle
+	var/tmp/watched_turf_handle
 	var/timer
 	var/next_update = 0
 	var/last_update
@@ -199,8 +199,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/updating = FALSE
 	var/electrical_reference_temperature = T20C
 	var/thermal_material_id
-	var/thermal_stock_handle
-	var/electrical_stock_handle
+	var/tmp/thermal_stock_handle
+	var/tmp/electrical_stock_handle
 	var/thermal_capacity = 1000
 	var/watches_dirty = TRUE
 	var/last_environment_temperature = T20C

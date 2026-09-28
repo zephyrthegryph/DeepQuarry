@@ -23,7 +23,7 @@
 		shandler.only_sun_object = lighting_object
 
 /datum/sunlight_handler
-	var/sun_handle
+	var/tmp/sun_handle
 	var/turf/simulated/holder
 	var/datum/lighting_object/only_sun_object
 	var/effect_str_r = 0

@@ -2,13 +2,13 @@
 /obj/item/paper/admin
 	name = "administrative paper"
 	desc = "If you see this, something has gone horribly wrong."
-	var/admindatum_handle
+	var/tmp/admindatum_handle
 
 	var/interactions = null
 	var/isCrayon = 0
 	var/origin = null
-	var/sender_handle
-	var/destination_handle
+	var/tmp/sender_handle
+	var/tmp/destination_handle
 
 	var/header = null
 	var/headerOn = TRUE

@@ -252,7 +252,7 @@
 	spellname = "mindswap"
 	icon_state ="bookmindswap"
 	desc = "This book's cover is pristine, though its pages look ragged and torn."
-	var/stored_swap_handle	//Used in used book recoils to store an identity for mindswaps
+	var/tmp/stored_swap_handle	//Used in used book recoils to store an identity for mindswaps
 
 /obj/item/spellbook/oneuse/mindswap/onlearned()
 	spellname = pick("fireball","smoke","blind","forcewall","knock","horses","charge")

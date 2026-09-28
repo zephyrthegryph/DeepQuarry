@@ -32,7 +32,7 @@
 /datum/tgui_module/robot_ui_module/tgui_static_data()
 	var/list/data = ..()
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	var/list/modules = list()
 	var/list/whitelisted = list()
@@ -68,7 +68,7 @@
 /datum/tgui_module/robot_ui_module/tgui_data()
 	var/list/data = ..()
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	data["currentName"] = new_name ? new_name : R.name
 	data["isDefaultName"] = !new_name
@@ -110,7 +110,7 @@
 	if(.)
 		return
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	switch(action)
 		if("pick_module")

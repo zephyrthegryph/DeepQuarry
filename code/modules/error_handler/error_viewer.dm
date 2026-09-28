@@ -129,11 +129,11 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	browse_to(user, html)
 
 /datum/error_viewer/error_entry
-	var/error_source_handle
+	var/tmp/error_source_handle
 	var/exception/exc
 	var/desc = ""
 	var/usr_ref
-	var/usr_loc_handle
+	var/tmp/usr_loc_handle
 	var/is_skip_count
 
 /datum/error_viewer/error_entry/New(exception/e, list/desclines, skip_count)

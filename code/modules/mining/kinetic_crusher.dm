@@ -282,7 +282,7 @@
 	w_class = ITEMSIZE_NO_CONTAINER
 
 /obj/item/offhand/crushergauntlets
-	var/linked_handle
+	var/tmp/linked_handle
 
 /obj/item/offhand/crushergauntlets/dropped(mob/user, equipping, slot)
 	SHOULD_CALL_PARENT(FALSE)
@@ -291,7 +291,7 @@
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig
 	name = "\improper mounted proto-kinetic gear"
-	var/storing_module_handle
+	var/tmp/storing_module_handle
 
 /obj/item/kinetic_crusher/machete/gauntlets/rig/dropped(mob/user, equipping, slot)
 	. = ..(user)
@@ -337,7 +337,7 @@
 	damage = 0 //We're just here to mark people. This is still a melee weapon.
 	range = 6
 	accuracy = INFINITY	// NO.
-	var/hammer_synced_handle
+	var/tmp/hammer_synced_handle
 
 /obj/item/projectile/destabilizer/on_impact(atom/A)
 	if(ismineralturf(A))

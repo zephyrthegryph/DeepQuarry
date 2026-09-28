@@ -65,7 +65,7 @@ REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_f
 	var/list/network = list()
 	var/list/additional_networks
 
-	var/active_camera_handle
+	var/tmp/active_camera_handle
 	var/list/concurrent_users
 
 	// Stuff needed to render the map
@@ -74,7 +74,7 @@ REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_f
 	var/atom/movable/screen/map_view_tg/camera/cam_screen_tg
 
 	// Stuff for moving cameras
-	var/last_camera_turf_handle
+	var/tmp/last_camera_turf_handle
 
 /datum/tgui_module/camera/New(host, list/network_computer)
 	. = ..()

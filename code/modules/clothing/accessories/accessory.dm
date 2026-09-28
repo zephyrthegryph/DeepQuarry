@@ -10,7 +10,7 @@
 	var/glove_level = 1							// What 'level' the accessory is on if equipped on the gloveslot. Lower = things can be put on top of it.
 	var/slot = ACCESSORY_SLOT_DECOR
 	var/can_remove = TRUE						// Can it be taken off once attached?
-	var/has_suit_handle	// The suit the tie may be attached to
+	var/tmp/has_suit_handle	// The suit the tie may be attached to
 	var/tmp/image/inv_overlay = null				// Overlay used when attached to clothing.
 	var/image/mob_overlay = null
 	var/overlay_state = null
@@ -469,7 +469,7 @@
 	slot = ACCESSORY_SLOT_INSIGNIA // snowflakey, i know, shut up
 	item_flags = FLEXIBLEMATERIAL
 	var/breath_masked = FALSE
-	var/breathmask_handle
+	var/tmp/breathmask_handle
 	actions_types = list(/datum/action/item_action/pull_on_gaiter)
 	special_handling = TRUE
 
@@ -717,7 +717,7 @@
 	var/on = FALSE // 0 for off, 1 for on, starts off to encourage people to set non-default frequencies and codes.
 	var/frequency = AMAG_ELE_FREQ
 	var/code = 2
-	var/radio_connection_handle
+	var/tmp/radio_connection_handle
 	special_collar = TRUE
 
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)

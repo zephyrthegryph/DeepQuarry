@@ -1,7 +1,7 @@
 /datum/seed_pile
 	var/name
 	var/amount
-	var/seed_type_handle	// Keeps track of what our seed is
+	var/tmp/seed_type_handle	// Keeps track of what our seed is
 	var/list/obj/item/seeds/seeds = list() // Tracks actual objects contained in the pile
 	var/ID
 

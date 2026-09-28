@@ -17,9 +17,9 @@
 	var/delete_message = "Delete Message"
 
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
-// linked_belly is saved as the belly's name.
+// the linked belly (an OM handle) is saved as the belly's name.
 /obj/soulgem/state_codecs()
-	return ..() + list("linked_belly" = /datum/state_codec/soulgem_belly)
+	return ..() + list("linked_belly_handle" = /datum/state_codec/soulgem_belly)
 
 /obj/soulgem/Initialize(mapload)
 	. = ..()
@@ -30,7 +30,7 @@
 /datum/state_codec/soulgem_belly
 
 /datum/state_codec/soulgem_belly/encode(datum/owner, var_name, value, datum/state_context/ctx)
-	var/obj/belly/belly = value
+	var/obj/belly/belly = om_resolve(value)
 	return istype(belly) ? belly.name : null
 
 /datum/state_codec/soulgem_belly/decode(datum/owner, var_name, encoded, datum/state_context/ctx)

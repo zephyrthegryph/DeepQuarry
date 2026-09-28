@@ -55,10 +55,10 @@
 	var/time_end = 0
 	var/last_activation = 0
 	var/last_process = 0
-	var/inserted_battery_handle
-	var/archived_loc_handle
+	var/tmp/inserted_battery_handle
+	var/tmp/archived_loc_handle
 	var/energy_consumed_on_touch = 100
-	var/last_user_touched_handle
+	var/tmp/last_user_touched_handle
 
 /obj/item/anodevice/Initialize(mapload)
 	. = ..()

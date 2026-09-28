@@ -20,8 +20,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	/// Transient hand-off: shards produced by the most recent break_to_parts(), read
 	/// by callers (e.g. tableslam) that previously consumed take_damage()'s return.
 	var/list/last_break_shards
-	var/material_handle
-	var/reinforced_handle
+	var/tmp/material_handle
+	var/tmp/reinforced_handle
 
 	// Gambling tables. I'd prefer reinforced with carpet/felt/cloth/whatever, but AFAIK it's either harder or impossible to get /obj/item/stack/material of those.
 	// Convert if/when you can easily get stacks of these.

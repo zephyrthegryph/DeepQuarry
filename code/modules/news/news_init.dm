@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 	// CreateFeedChannel("Vir News Network", "Oculum Broadcast", 1, 1, "Updates from the Vir News Network!") // Removal
 
 /datum/lore/news
-	var/station_newspaper_handle
+	var/tmp/station_newspaper_handle
 	var/datum/lore/codex/category/main_news/news_codex = new()
 	var/newsindex
 

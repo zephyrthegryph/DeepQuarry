@@ -143,9 +143,9 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/door_count = 0
 	var/styled_floor_count = 0
 	var/accent_decal_count = 0
-	var/obj/effect/landmark/generated_station_entry/entry
+	var/tmp/entry_handle
 	var/area/generated_station/transit/transit_area
-	var/maintenance_area_handle
+	var/tmp/maintenance_area_handle
 	var/list/department_areas
 	var/list/module_areas
 	var/list/modules
@@ -195,7 +195,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 
 // LIFECYCLE: its areas revert to space and its built atoms go with it.
 /datum/generated_station_materialization/Destroy()
-	QDEL_NULL(entry)
+	qdel(entry()); entry_handle = null
 	var/area/space/space_area = generated_station_space_area()
 	if(department_areas)
 		for(var/node_id in department_areas)
@@ -222,7 +222,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
-	QDEL_NULL(maintenance_area())
+	qdel(maintenance_area()); maintenance_area_handle = null
 	QDEL_LIST(modules)
 	QDEL_LIST(room_solutions)
 	QDEL_LIST(control_landmarks)
@@ -240,7 +240,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 /// Converts planner-local coordinates into station turfs. This pass deliberately
 /// creates no machinery: utility and room-content passes can safely follow it.
 /datum/generated_station_materializer
-	var/spec_handle
+	var/tmp/spec_handle
 	var/z_level
 	var/min_x
 	var/min_y
@@ -250,7 +250,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/list/department_areas
 	var/list/module_areas
 	var/area/generated_station/transit/transit_area
-	var/maintenance_area_handle
+	var/tmp/maintenance_area_handle
 	var/datum/generated_station_materialization/result
 	var/datum/generated_station_validation_result/last_architecture_validation
 	var/datum/generated_station_tile_plan/tile_plan
@@ -331,10 +331,10 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		nodes_by_id[node.id] = node
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(department)
-			var/area/generated_station/department_area = make_department_area(department.definition.id)
+			var/area/generated_station/department_area = make_department_area(department.definition().id)
 			department_area.station_id = spec().id
 			department_area.department_id = department.id
-			department_area.name = "[spec().name] [department.definition.name]"
+			department_area.name = "[spec().name] [department.definition().name]"
 			department_areas[node.id] = department_area
 			result.department_areas[node.id] = department_area
 		generation_checkpoint("Allocating station areas", 25)
@@ -409,7 +409,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	for(var/i in (cursor || 1) to length(spec().layout_nodes))
 		var/datum/generated_station_layout_node/node = spec().layout_nodes[i]
 		var/datum/generated_station_department_instance/node_department = department_for_node(node)
-		var/department_id = node_department?.definition?.id
+		var/department_id = node_department?.definition()?.id
 		for(var/key in node.territory)
 			var/list/parts = splittext(key, ",")
 			tile_plan.claim(text2num(parts[1]), text2num(parts[2]), node.id, node.id, GENERATED_STATION_TILE_FLOOR, floor_type, department_id)
@@ -473,7 +473,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			var/datum/generated_station_layout_node/door_node = nodes_by_id[maintenance_door.owner_node_id]
 			var/access_id
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
-				access_id = department_for_node(door_node)?.definition?.id
+				access_id = department_for_node(door_node)?.definition()?.id
 			tile_plan.claim_door(x, y, "maintenance", /obj/machinery/door/airlock/maintenance/generated_station, maintenance_door.direction, access_id)
 		if(i < length(spec().maintenance_tiles) && generation_checkpoint("Compiling maintenance circulation", 29))
 			return i + 1
@@ -1367,7 +1367,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /// Applies the generated station's department access policy to an entrance.
 /datum/generated_station_materializer/proc/configure_department_airlock(obj/machinery/door/airlock/airlock, datum/generated_station_department_instance/department)
-	configure_airlock_access(airlock, department?.definition?.id)
+	configure_airlock_access(airlock, department?.definition()?.id)
 
 /// Applies one department definition's access policy to an airlock.
 /datum/generated_station_materializer/proc/configure_airlock_access(obj/machinery/door/airlock/airlock, department_id)
@@ -1616,7 +1616,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	var/datum/generated_station_layout_node/docking
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
-		if(department?.definition?.id == "docking")
+		if(department?.definition()?.id == "docking")
 			docking = node
 			break
 	if(!docking)
@@ -1636,8 +1636,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				T = candidate
 				break
 	if(T)
-		result.entry = new(T)
-		result.entry.station_id = spec().id
+		result.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(T))
+		result.entry().station_id = spec().id
 		result.register_furnishing(new /obj/item/card/id/generated_station_master(T))
 
 /datum/generated_station_materializer/proc/finalize()
@@ -1663,3 +1663,7 @@ REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_v
 /// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materialization/proc/maintenance_area() as /area/generated_station/maintenance
 	return om_resolve(maintenance_area_handle)
+
+/// LC-refs: the entry this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization/proc/entry() as /obj/effect/landmark/generated_station_entry
+	return om_resolve(entry_handle)

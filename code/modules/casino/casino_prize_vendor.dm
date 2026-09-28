@@ -44,7 +44,7 @@
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
-	var/currently_vending_handle	// What we're requesting payment for right now
+	var/tmp/currently_vending_handle	// What we're requesting payment for right now
 	var/list/log = list() //Log only SS13 staff is allowed to look at, CKEYS are listed here for record keeping of prizes and players for events!
 
 	var/category_weapons	 = 1	//For listing categories, if false then prizes of this categories cant be obtained nor bought for post-shift enjoyment

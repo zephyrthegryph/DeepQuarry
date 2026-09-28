@@ -23,7 +23,7 @@
 		AddComponent(/datum/component/artifact_master)
 
 /datum/component/artifact_master
-	var/holder_handle
+	var/tmp/holder_handle
 	var/list/my_effects
 
 	dupe_type = /datum/component/artifact_master

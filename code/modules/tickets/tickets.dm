@@ -1,5 +1,5 @@
-/client/var/current_ticket_handle	//the current ticket the (usually) not-admin client is dealing with
-/client/var/selected_ticket_handle	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
+/client/var/tmp/current_ticket_handle	//the current ticket the (usually) not-admin client is dealing with
+/client/var/tmp/selected_ticket_handle	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
 
 /proc/get_ahelp_channel()
 	var/datum/tgs_api/v5/api = TGS_READ_GLOBAL(tgs)
@@ -223,7 +223,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/opened_at
 	var/closed_at
 
-	var/initiator_handle	//semi-misnomer, it's the person who ahelped/was bwoinked
+	var/tmp/initiator_handle	//semi-misnomer, it's the person who ahelped/was bwoinked
 	var/handler_ref
 	var/handler = "/Unassigned\\" // The admin handling the ticket
 	var/initiator_ckey
@@ -622,7 +622,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 //
 
 /obj/effect/statclick/ticket
-	var/ticket_datum_handle
+	var/tmp/ticket_datum_handle
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)

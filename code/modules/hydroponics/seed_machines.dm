@@ -190,7 +190,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	name = "lysis-isolation centrifuge"
 	icon_state = "traitcopier"
 
-	var/genetics_handle	// Currently scanned seed genetic structure.
+	var/tmp/genetics_handle	// Currently scanned seed genetic structure.
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 

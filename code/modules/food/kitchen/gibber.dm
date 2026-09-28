@@ -22,7 +22,7 @@
 
 //auto-gibs anything that bumps into it
 /obj/machinery/gibber/autogibber
-	var/input_plate_handle
+	var/tmp/input_plate_handle
 
 /obj/machinery/gibber/autogibber/Initialize(mapload)
 	. = ..()

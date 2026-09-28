@@ -7,7 +7,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	modify_robot.tgui_interact(user.mob)
 
 /datum/eventkit/modify_robot
-	var/target_handle
+	var/tmp/target_handle
 	var/mob/living/silicon/robot/source
 	var/selected_ai
 	var/ion_law	= "IonLaw"
@@ -16,7 +16,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
-	var/multibelt_holder_handle	//Currently selected multibelt.
+	var/tmp/multibelt_holder_handle	//Currently selected multibelt.
 
 /datum/eventkit/modify_robot/New()
 	. = ..()

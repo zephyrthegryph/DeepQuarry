@@ -11,9 +11,9 @@
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
 	var/confirm_delay = 20 //(2 seconds)
-	var/event_source_handle
-	var/event_triggered_by_handle
-	var/event_confirmed_by_handle
+	var/tmp/event_source_handle
+	var/tmp/event_triggered_by_handle
+	var/tmp/event_confirmed_by_handle
 	//1 = select event
 	//2 = authenticate
 	anchored = TRUE

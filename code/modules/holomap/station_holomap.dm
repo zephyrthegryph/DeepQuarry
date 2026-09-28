@@ -24,7 +24,7 @@
 	var/light_range_on = 2
 	light_color = "#64C864"
 
-	var/watching_mob_handle
+	var/tmp/watching_mob_handle
 	var/image/small_station_map = null
 	var/image/floor_markings = null
 	var/image/panel = null

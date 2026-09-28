@@ -27,7 +27,7 @@
 	icon_state = "sector"
 	known = TRUE
 	in_space = FALSE
-	var/site_handle
+	var/tmp/site_handle
 
 // LIFECYCLE: its site forgets its sector.
 /obj/effect/overmap/visitable/sector/expedition/Destroy()
@@ -39,7 +39,7 @@
 /obj/effect/shuttle_landmark/automatic/clearing/expedition
 	name = "Expedition Landing Zone"
 	radius = 18
-	var/site_handle
+	var/tmp/site_handle
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/shuttle_arrived(datum/shuttle/shuttle)
 	. = ..()
@@ -61,36 +61,36 @@
 
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
-	var/datum/expedition_site/active_expedition
+	var/tmp/active_expedition_handle
 	var/next_expedition_plot = 0
 
 REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")
 
 // LIFECYCLE: its expedition forgets its origin console.
 /obj/machinery/computer/shuttle_control/explore/Destroy()
-	if(active_expedition?.origin_console() == src)
-		active_expedition.origin_console_handle = null
+	if(active_expedition()?.origin_console() == src)
+		active_expedition().origin_console_handle = null
 	return ..()
 
 /obj/machinery/computer/shuttle_control/explore/proc/expedition_data()
-	if(!active_expedition || QDELETED(active_expedition))
+	if(!active_expedition() || QDELETED(active_expedition()))
 		return null
-	var/datum/expedition_mission/M = active_expedition.mission
+	var/datum/expedition_mission/M = active_expedition().mission
 	return list(
-		"name" = active_expedition.name,
+		"name" = active_expedition().name,
 		"objective" = M ? M.objective_text() : "Survey the destination.",
 		"progress" = M ? M.progress_text() : "-",
-		"complete" = active_expedition.status == EXP_STATUS_COMPLETE,
+		"complete" = active_expedition().status == EXP_STATUS_COMPLETE,
 	)
 
 /obj/machinery/computer/shuttle_control/explore/proc/can_plot_expedition()
-	return !active_expedition || QDELETED(active_expedition) || active_expedition.status == EXP_STATUS_EXPIRED
+	return !active_expedition() || QDELETED(active_expedition()) || active_expedition().status == EXP_STATUS_EXPIRED
 
 /obj/machinery/computer/shuttle_control/explore/proc/plot_expedition(mob/user, datum/shuttle/autodock/overmap/shuttle)
 	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(shuttle.myship())
 	var/datum/expedition_site/site = SSexpedition.plot_for_vessel(user, vessel, src)
 	if(site)
-		active_expedition = site
+		active_expedition_handle = om_handle(site)
 		next_expedition_plot = world.time + EXP_LAUNCH_COOLDOWN
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
@@ -100,3 +100,7 @@ REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/overmap/visitable/sector/expedition/proc/site() as /datum/expedition_site
 	return om_resolve(site_handle)
+
+/// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/shuttle_control/explore/proc/active_expedition() as /datum/expedition_site
+	return om_resolve(active_expedition_handle)

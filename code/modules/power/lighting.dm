@@ -25,8 +25,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/stage = 1
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
-	var/newlight_handle
-	var/cell_handle
+	var/tmp/newlight_handle
+	var/tmp/cell_handle
 
 	var/cell_connectors = TRUE
 

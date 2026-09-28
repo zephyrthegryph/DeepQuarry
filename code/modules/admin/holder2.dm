@@ -11,10 +11,10 @@ GLOBAL_PROTECT(href_token)
 
 	var/target
 	var/name = "nobody's admin datum (no rank)" //Makes for better runtimes
-	var/owner_handle
+	var/tmp/owner_handle
 	var/fakekey = null
 
-	var/marked_datum_handle
+	var/tmp/marked_datum_handle
 
 	var/admincaster_screen = 0	//See newscaster.dm under machinery for a full description
 	var/datum/feed_message/admincaster_feed_message = new /datum/feed_message   //These two will act as holders.

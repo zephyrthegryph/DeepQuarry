@@ -65,7 +65,7 @@
 	/// The prompt's body, if any, of the TGUI window.
 	var/message
 	/// The target for our display
-	var/target_handle
+	var/tmp/target_handle
 	/// The base color matrix
 	var/list/default
 	/// static mode users can't change
@@ -79,7 +79,7 @@
 	/// The title of the TGUI window
 	var/title
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/state_handle
+	var/tmp/state_handle
 	/// Internal var to remember if we only passed a path before
 	var/was_path
 

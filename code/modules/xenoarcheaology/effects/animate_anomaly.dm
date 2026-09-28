@@ -2,7 +2,7 @@
 /datum/artifact_effect/animate_anomaly
 	name = "Animation"
 	effect_type = EFFECT_ANIMATE
-	var/target_handle
+	var/tmp/target_handle
 
 	effect_state = "pulsing"
 	effect_color = "#00c3ff"

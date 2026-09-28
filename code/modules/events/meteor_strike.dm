@@ -1,6 +1,6 @@
 /datum/event/meteor_strike
 	announceWhen = 1
-	var/strike_target_handle
+	var/tmp/strike_target_handle
 
 /datum/event/meteor_strike/setup()
 	startWhen = rand(8,15)

@@ -86,7 +86,7 @@
 	var/reappearing = 0
 	density = FALSE
 	anchored = TRUE
-	var/last_valid_turf_handle
+	var/tmp/last_valid_turf_handle
 
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()

@@ -22,7 +22,7 @@
  */
 /datum/tgui_say
 	/// The user who opened the window
-	var/client_handle
+	var/tmp/client_handle
 	/// Injury phrases to blurt out
 	var/static/list/hurt_phrases = list("GACK!", "GLORF!", "OOF!", "AUGH!", "OW!", "URGH!", "HRNK!")
 	/// Max message length

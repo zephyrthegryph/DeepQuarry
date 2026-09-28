@@ -88,8 +88,8 @@
 	return state
 
 /datum/tgui_state/air_alarm_remote
-	var/atmos_control_handle
-	var/air_alarm_handle
+	var/tmp/atmos_control_handle
+	var/tmp/air_alarm_handle
 
 /datum/tgui_state/air_alarm_remote/can_use_topic(src_object, mob/user)
 	if(!atmos_control().ui_ref)

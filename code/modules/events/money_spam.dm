@@ -1,8 +1,8 @@
 /datum/event/pda_spam
 	endWhen = 36000
 	var/last_spam_time = 0
-	var/useMS_handle
-	var/node_handle
+	var/tmp/useMS_handle
+	var/tmp/node_handle
 
 /datum/event/pda_spam/setup()
 	last_spam_time = world.time

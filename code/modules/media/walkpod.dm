@@ -11,8 +11,8 @@
 	icon_state = "podzu" // podzu_o, headpod, zuman
 
 	var/loop_mode = JUKEMODE_PLAY_ONCE	// Behavior when finished playing a song
-	var/current_track_handle	// Current track playing
-	var/listener_handle	// Person whomst is listening to us
+	var/tmp/current_track_handle	// Current track playing
+	var/tmp/listener_handle	// Person whomst is listening to us
 
 	var/playing = 0
 	var/volume = 1

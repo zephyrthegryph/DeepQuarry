@@ -6,7 +6,7 @@
 	icon_state = "cardreader"
 	hardware_size = 1
 
-	var/stored_card_handle
+	var/tmp/stored_card_handle
 
 /obj/item/computer_hardware/card_slot/get_slot_var()
 	return "card_slot"

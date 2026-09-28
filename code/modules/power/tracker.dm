@@ -15,7 +15,7 @@
 
 	var/id = 0
 	var/sun_angle = 0		// sun angle as set by sun datum
-	var/control_handle
+	var/tmp/control_handle
 	var/SOLAR_MAX_DIST = 60 // ition // ours are >40 away
 
 /obj/machinery/power/tracker/Initialize(mapload, glass_type)

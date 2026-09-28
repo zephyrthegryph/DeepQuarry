@@ -22,7 +22,7 @@
 	var/bonus_points = 0
 	var/bonus_cash = 0
 	/// Back-reference to the site.
-	var/site_handle
+	var/tmp/site_handle
 	/// Atoms this objective spawned / tracks.
 	var/list/tracked
 	/// Progress / target for the console readout.

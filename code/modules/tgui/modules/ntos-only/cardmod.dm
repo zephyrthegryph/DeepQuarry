@@ -15,7 +15,7 @@
 	return data
 
 /datum/tgui_module/cardmod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/datum/computer_file/program/card_mod/program = host
+	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return 0
 	var/list/data = ..()
@@ -93,7 +93,7 @@
 	return data
 
 /datum/tgui_module/cardmod/proc/format_jobs(list/jobs)
-	var/datum/computer_file/program/card_mod/program = host
+	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return null
 
@@ -112,7 +112,7 @@
 		return TRUE
 
 
-	var/datum/computer_file/program/card_mod/program = host
+	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return TRUE
 	var/obj/item/modular_computer/computer = tgui_host()

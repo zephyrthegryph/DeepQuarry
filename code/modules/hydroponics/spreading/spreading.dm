@@ -36,8 +36,8 @@
 	var/growth_type = 0
 	var/max_growth = 0
 	var/list/neighbors
-	var/parent_handle
-	var/seed_handle
+	var/tmp/parent_handle
+	var/tmp/seed_handle
 	var/sampled = 0
 	var/floor = 0
 	var/spread_chance = 40

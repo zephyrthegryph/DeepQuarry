@@ -5,9 +5,9 @@
 
 /datum/rogue/zonemaster
 	//our area
-	var/myarea_handle
+	var/tmp/myarea_handle
 	// var/area/shuttle/belter/myshuttle
-	var/myshuttle_landmark_handle
+	var/tmp/myshuttle_landmark_handle
 
 	//world.time
 	var/prepared_at = 0

@@ -5,7 +5,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
-	var/target_handle	//The target of the effects
+	var/tmp/target_handle	//The target of the effects
 
 /datum/eventkit/player_effects/New()
 	. = ..()

@@ -8,8 +8,8 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 10
-	var/haspen_handle	//The stored pen.
-	var/toppaper_handle	//The topmost piece of paper.
+	var/tmp/haspen_handle	//The stored pen.
+	var/tmp/toppaper_handle	//The topmost piece of paper.
 	slot_flags = SLOT_BELT
 
 /obj/item/clipboard/Initialize(mapload)

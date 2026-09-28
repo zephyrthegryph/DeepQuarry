@@ -17,7 +17,7 @@
 	return GLOB.tgui_always_state
 
 /datum/preferences/tgui_status(mob/user, datum/tgui_state/state)
-	return user.client == client ? STATUS_INTERACTIVE : STATUS_CLOSE
+	return user.client == client() ? STATUS_INTERACTIVE : STATUS_CLOSE
 
 /datum/preferences/ui_assets(mob/user)
 	var/list/assets = list()
@@ -109,7 +109,7 @@
 		if("reload")
 			load_preferences(TRUE)
 			load_character()
-			client.prefs_vr.load_vore()
+			client().prefs_vr.load_vore()
 			sanitize_preferences()
 			return TRUE
 		if("resetslot")

@@ -255,10 +255,10 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 /datum/preferences/proc/get_save_data_for_savefile_identifier(savefile_identifier)
 	RETURN_TYPE(/list)
 
-	if(!client)
+	if(!client())
 		return null
 	if(!savefile)
-		CRASH("Attempted to get the savedata for [savefile_identifier] of [client] without a savefile. This should have been handled by load_preferences()")
+		CRASH("Attempted to get the savedata for [savefile_identifier] of [client()] without a savefile. This should have been handled by load_preferences()")
 
 	// Both of these will cache savefiles, but only for a tick.
 	// This is because storing a savefile will lock it, causing later issues down the line.
@@ -445,7 +445,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 			stack_trace("preference constraint cascade exceeded depth [PREF_CONSTRAINT_MAX_DEPTH] starting from [preference.savefile_key]; likely a constraint cycle")
 
 		if(preference.savefile_identifier == PREFERENCE_PLAYER)
-			preference.apply_to_client_updated(client, read_preference(preference.type))
+			preference.apply_to_client_updated(client(), read_preference(preference.type))
 		else if(constraint_cascade_depth == 0 && dq_preference_affects_preview(preference))
 			// outermost call only. Constraint-triggered inner calls
 			// (species_resets_hair, etc.) skip the preview; one rebuild at the

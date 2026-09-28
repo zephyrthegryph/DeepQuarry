@@ -20,9 +20,9 @@
 	var/production_modifier = 2			// Multiplier on the ammo_casing's matter cost
 	var/production_delay = 75			// If we're in a gun, how long since it last shot do we need to wait before making bullets?
 
-	var/holding_gun_handle	// What gun are we in, if any?
+	var/tmp/holding_gun_handle	// What gun are we in, if any?
 
-	var/attached_cell_handle	// What cell are we using, if any?
+	var/tmp/attached_cell_handle	// What cell are we using, if any?
 
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 

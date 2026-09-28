@@ -8,11 +8,11 @@
 	bubble_icon = "science"
 	var/scan_in_progress = 0
 	var/scan_num = 0
-	var/scanned_obj_handle
-	var/owned_scanner_handle
+	var/tmp/scanned_obj_handle
+	var/tmp/owned_scanner_handle
 	var/scan_completion_time = 0
 	var/scan_duration = 50
-	var/scanned_object_handle
+	var/tmp/scanned_object_handle
 	var/report_num = 0
 	var/static/list/priority_objects = list(/obj/machinery/artifact,
 										/obj/machinery/auto_cloner,

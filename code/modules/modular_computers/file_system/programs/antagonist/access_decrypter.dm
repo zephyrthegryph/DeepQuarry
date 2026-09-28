@@ -15,7 +15,7 @@
 	var/running = FALSE
 	var/progress = 0
 	var/target_progress = 300
-	var/target_access_handle
+	var/tmp/target_access_handle
 	var/static/list/restricted_access_codes = list(ACCESS_CHANGE_IDS, ACCESS_NETWORK) // access codes that are not hackable due to balance reasons
 
 /datum/computer_file/program/access_decrypter/kill_program(forced)

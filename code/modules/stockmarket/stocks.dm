@@ -1,7 +1,7 @@
 /datum/borrow
 	var/broker = ""
 	var/borrower = ""
-	var/stock_handle
+	var/tmp/stock_handle
 	var/lease_expires = 0
 	var/lease_time = 0
 	var/grace_time = 0

@@ -18,7 +18,7 @@ GLOBAL_LIST_EMPTY(map_sectors)
 	density = TRUE
 	alpha = 255
 	var/map_is_to_my
-	var/wrap_buddy_handle
+	var/tmp/wrap_buddy_handle
 
 /turf/unsimulated/map/edge/Initialize(mapload)
 	..()

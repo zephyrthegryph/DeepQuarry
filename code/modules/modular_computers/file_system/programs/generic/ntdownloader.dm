@@ -27,7 +27,7 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-	var/my_computer_handle
+	var/tmp/my_computer_handle
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()

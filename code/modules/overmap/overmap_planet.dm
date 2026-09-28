@@ -6,7 +6,7 @@
 	unknown_name = "unknown planet"
 	unknown_state = "planet"
 
-	var/atmosphere_handle
+	var/tmp/atmosphere_handle
 
 	var/atmosphere_color = "FFFFFF"
 	var/mountain_color = "#735555"

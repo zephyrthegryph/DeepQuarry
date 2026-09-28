@@ -1,5 +1,5 @@
 /datum/event/electrified_door
-	var/chosen_door_handle
+	var/tmp/chosen_door_handle
 	var/static/list/area/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters

@@ -1,10 +1,10 @@
 /// Event-driven binding between one physical defender and its strategic squad.
 /datum/generated_station_defender_agent
-	var/defender_handle
-	var/runtime_handle
+	var/tmp/defender_handle
+	var/tmp/runtime_handle
 	var/department_id
 	var/squad_id
-	var/home_handle
+	var/tmp/home_handle
 	var/last_contact
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
@@ -60,8 +60,8 @@
 
 /// Owns the finite generated-station roster. It performs no periodic scans.
 /datum/generated_station_defense_runtime
-	var/site_handle
-	var/director_handle
+	var/tmp/site_handle
+	var/tmp/director_handle
 	var/list/agents
 	var/list/squads_by_department
 	var/list/department_turfs

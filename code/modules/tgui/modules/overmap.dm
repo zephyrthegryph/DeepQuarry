@@ -1,5 +1,5 @@
 /datum/tgui_module/ship
-	var/linked_handle
+	var/tmp/linked_handle
 	var/list/viewers
 	var/extra_view = 0
 	var/map_view_used = FALSE
@@ -156,7 +156,7 @@
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
 	var/accellimit = 0.001 //manual limiter for acceleration
 	// SENSORS
-	var/sensors_handle
+	var/tmp/sensors_handle
 
 /datum/tgui_module/ship/fullmonty/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)

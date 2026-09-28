@@ -148,7 +148,7 @@
 
 			return TRUE
 		if("give_feedback")
-			if(!SSsqlite.can_submit_feedback(persistent_client.client))
+			if(!SSsqlite.can_submit_feedback(persistent_client.client()))
 				return
 
 			if(client.feedback_form)

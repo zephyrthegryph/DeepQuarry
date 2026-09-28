@@ -13,7 +13,7 @@
 
 	var/secured = 1
 	var/list/attached_overlays = null
-	var/obj/item/assembly_holder/holder = null
+	var/tmp/holder_handle
 	var/cooldown = FALSE //To prevent spam
 	var/wires_type = WIRE_RECEIVE | WIRE_PULSE
 
@@ -33,17 +33,17 @@
 	return
 
 /obj/item/assembly/proc/pulsed(radio = 0)
-	if(holder && (wires_type & WIRE_RECEIVE))
+	if(holder() && (wires_type & WIRE_RECEIVE))
 		activate()
 	if(radio && (wires_type & WIRE_RADIO_RECEIVE))
 		activate()
 	return 1
 
 /obj/item/assembly/proc/pulse(radio = 0)
-	if(holder && (wires_type & WIRE_PULSE))
-		holder.process_activation(src, 1, 0)
-	if(holder && (wires_type & WIRE_PULSE_SPECIAL))
-		holder.process_activation(src, 0, 1)
+	if(holder() && (wires_type & WIRE_PULSE))
+		holder().process_activation(src, 1, 0)
+	if(holder() && (wires_type & WIRE_PULSE_SPECIAL))
+		holder().process_activation(src, 0, 1)
 	return 1
 
 /obj/item/assembly/proc/activate()
@@ -58,8 +58,8 @@
 	return secured
 
 /obj/item/assembly/proc/attach_assembly(obj/item/assembly/A, mob/user)
-	holder = new/obj/item/assembly_holder(get_turf(src))
-	if(holder.attach(A,src,user))
+	holder_handle = om_handle(new/obj/item/assembly_holder(get_turf(src)))
+	if(holder().attach(A,src,user))
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE
 
@@ -109,3 +109,7 @@
 	if(istype(loc, /obj/item/assembly_holder))
 		return loc.tgui_host()
 	return ..()
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/assembly/proc/holder() as /obj/item/assembly_holder
+	return om_resolve(holder_handle)

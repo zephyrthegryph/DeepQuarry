@@ -50,8 +50,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	//Hitscan
 	var/hitscan = FALSE		//Whether this is hitscan. If it is, speed is basically ignored.
 	var/list/beam_segments	//assoc list of datum/point or datum/point/vector, start = end. Used for hitscan effect generation.
-	var/beam_index_handle
-	var/hitscan_last_handle	//last turf touched during hitscanning.
+	var/tmp/beam_index_handle
+	var/tmp/hitscan_last_handle	//last turf touched during hitscanning.
 	var/tracer_type
 	var/muzzle_type
 	var/impact_type
@@ -71,7 +71,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	//Homing
 	var/homing = FALSE
-	var/homing_target_handle
+	var/tmp/homing_target_handle
 	var/homing_turn_speed = 10		//Angle per tick.
 	var/homing_inaccuracy_min = 0		//in pixels for these. offsets are set once when setting target.
 	var/homing_inaccuracy_max = 0
@@ -81,7 +81,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	//Targetting
 	var/yo = null
 	var/xo = null
-	var/original_handle	// the original target clicked
+	var/tmp/original_handle	// the original target clicked
 	var/turf/starting = null // the projectile's starting turf
 	var/list/permutated = list() // we've passed through these atoms, don't try to hit them again
 	var/p_x = 16
@@ -155,7 +155,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	///If the rounds hit phased entities or not.
 	var/hits_phased = FALSE
 
-	var/my_case_handle
+	var/tmp/my_case_handle
 
 	var/crawl_destroy = FALSE //chompADD: Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 

@@ -33,10 +33,10 @@
 	Var: curToken
 	The token at <index> in <tokens>.
 */
-	var/curToken_handle
+	var/tmp/curToken_handle
 	var/datum/stack/blocks=new
 	var/datum/node/BlockDefinition/GlobalBlock/global_block=new
-	var/curBlock_handle
+	var/tmp/curBlock_handle
 
 /*
 	Proc: Parse
@@ -60,7 +60,7 @@
 	An implmentation of a parser for n_Script.
 */
 /datum/n_Parser/nS_Parser
-	var/options_handle
+	var/tmp/options_handle
 /*
 	Constructor: New
 

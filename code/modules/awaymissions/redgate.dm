@@ -8,7 +8,7 @@
 	anchored = TRUE
 	pixel_x = -16
 
-	var/target_handle
+	var/tmp/target_handle
 	var/secret = FALSE	//If either end of the redgate has this enabled, ghosts will not be able to click to teleport
 	var/static/list/exceptions = list(
 		/obj/structure/ore_box,

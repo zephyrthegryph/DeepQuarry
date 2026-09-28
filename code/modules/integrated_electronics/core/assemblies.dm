@@ -16,8 +16,8 @@
 	var/net_power = 0 // Set every tick, to display how much power is being drawn in total.
 	var/detail_color = COLOR_ASSEMBLY_BLACK
 	var/locked = FALSE // If true, the assembly cannot be opened with a crowbar
-	var/locked_by_handle	// The ID that locked this assembly
-	var/access_card_handle	// ID card for door access
+	var/tmp/locked_by_handle	// The ID that locked this assembly
+	var/tmp/access_card_handle	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
 	/// makes power (so handle_idle_power() actually has work to do). Invalidated to

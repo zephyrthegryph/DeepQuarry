@@ -13,7 +13,7 @@
 	var/pages = 0
 	var/curr_page = 0
 	var/list/datum/feed_channel/news_content
-	var/important_message_handle
+	var/tmp/important_message_handle
 	var/scribble=""
 	var/scribble_page = null
 	drop_sound = 'sound/items/drop/wrapper.ogg'

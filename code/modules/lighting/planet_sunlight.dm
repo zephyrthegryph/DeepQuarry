@@ -117,7 +117,7 @@
 	return //Do nothing. This is meant to be overridden.
 
 /datum/simple_sun/planetary
-	var/sun_handle
+	var/tmp/sun_handle
 
 /datum/simple_sun/planetary/New(datum/planet/planet)
 	sun_handle = om_handle(planet.sun_holder)

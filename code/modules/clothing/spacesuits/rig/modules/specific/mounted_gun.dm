@@ -26,10 +26,10 @@
 		return 0
 
 	if(!target)
-		gun.attack_self(holder.wearer)
+		gun.attack_self(holder.wearer())
 		return
 
-	gun.Fire(target,holder.wearer)
+	gun.Fire(target,holder.wearer())
 	return 1
 
 /obj/item/rig_module/mounted/egun
@@ -82,8 +82,8 @@
 
 /obj/item/rig_module/mounted/energy_blade/periodic_step()
 
-	if(holder && holder.wearer)
-		if(!(locate(/obj/item/melee/energy/blade) in holder.wearer))
+	if(holder && holder.wearer())
+		if(!(locate(/obj/item/melee/energy/blade) in holder.wearer()))
 			deactivate()
 			return 0
 
@@ -93,7 +93,7 @@
 
 	..()
 
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
@@ -108,7 +108,7 @@
 
 	..()
 
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 
 	if(!M)
 		return
@@ -139,8 +139,8 @@
 
 /obj/item/rig_module/mounted/mop/periodic_step()
 
-	if(holder && holder.wearer)
-		if(!(locate(/obj/item/mop_deploy) in holder.wearer))
+	if(holder && holder.wearer())
+		if(!(locate(/obj/item/mop_deploy) in holder.wearer()))
 			deactivate()
 			return 0
 
@@ -150,7 +150,7 @@
 
 	..()
 
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
@@ -165,7 +165,7 @@
 
 	..()
 
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 
 	if(!M)
 		return

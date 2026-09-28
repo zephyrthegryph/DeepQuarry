@@ -10,7 +10,7 @@
 	var/datum/slime_state/slime_state = null
 
 /datum/slime_state
-	var/holder_handle
+	var/tmp/holder_handle
 	var/rabid = FALSE
 	var/discipline = 0
 	var/resentment = 0

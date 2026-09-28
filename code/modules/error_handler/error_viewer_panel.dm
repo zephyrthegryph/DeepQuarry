@@ -4,7 +4,7 @@
 	/// "organized" | "linear" — only meaningful when viewing the error_cache.
 	var/dq_linear = FALSE
 	/// Backwards-navigation target for the panel.
-	var/dq_back_to_handle
+	var/tmp/dq_back_to_handle
 
 /datum/error_viewer/browse_to(client/user, html)
 	// body is now a TGUI panel; the legacy html arg is ignored.

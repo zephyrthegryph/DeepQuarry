@@ -25,7 +25,7 @@
 
 	/// One-slot caches (refs).
 	var/last_attacker = null
-	var/last_known_threat_turf_handle
+	var/tmp/last_known_threat_turf_handle
 
 	/// world.time of last perception refresh.
 	var/last_update = 0

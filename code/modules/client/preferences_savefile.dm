@@ -52,10 +52,10 @@
 
 /datum/preferences/proc/load_preferences(skip_client)
 	if(!savefile)
-		stack_trace("Attempted to load the preferences of [client] without a savefile; did you forget to call load_savefile?")
+		stack_trace("Attempted to load the preferences of [client()] without a savefile; did you forget to call load_savefile?")
 		load_savefile()
 		if(!savefile)
-			stack_trace("Failed to load the savefile for [client] after manually calling load_savefile; something is very wrong.")
+			stack_trace("Failed to load the savefile for [client()] after manually calling load_savefile; something is very wrong.")
 			return FALSE
 
 	var/needs_update = save_data_needs_update(savefile.get_entry())
@@ -67,8 +67,8 @@
 		// surface the wipe so the player knows their old savefile was incompatible
 		// with the fork's clean-room pref schema. Backup is preserved at <path>.updatebac
 		// for manual recovery / admin help.
-		if(client)
-			to_chat(client, span_warning("Your savefile is from an incompatible upstream version and could not be loaded. A backup was saved to your data directory; please re-create your characters. If you believe this is an error, contact server staff."))
+		if(client())
+			to_chat(client(), span_warning("Your savefile is from an incompatible upstream version and could not be loaded. A backup was saved to your data directory; please re-create your characters. If you believe this is an error, contact server staff."))
 		return FALSE
 
 	if(!skip_client)
@@ -111,7 +111,7 @@
 
 /datum/preferences/proc/save_preferences()
 	if(!savefile)
-		CRASH("Attempted to save the preferences of [client] without a savefile. This should have been handled by load_preferences()")
+		CRASH("Attempted to save the preferences of [client()] without a savefile. This should have been handled by load_preferences()")
 	savefile.set_entry("version", SAVEFILE_VERSION_MAX) //updates (or failing that the sanity checks) will ensure data is not invalid at load. Assume up-to-date
 
 	// Bay player_setup.save_preferences chain deleted; per-pref write() handles persistence.

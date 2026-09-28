@@ -9,7 +9,7 @@
 	icon_state = "synth_facemask"
 	var/lstat
 	var/visor_state = "Neutral" //Separating this from lstat so that it could potentially be used for an override system or something
-	var/maskmaster_handle
+	var/tmp/maskmaster_handle
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
 
 /obj/item/clothing/mask/synthfacemask/equipped()

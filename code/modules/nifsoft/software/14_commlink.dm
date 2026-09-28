@@ -38,7 +38,7 @@
 	desc = "An internal communicator, basically."
 	occupation = "\[Commlink\]"
 	var/obj/item/nif/nif
-	var/nifsoft_handle
+	var/tmp/nifsoft_handle
 
 /obj/item/communicator/commlink/Initialize(mapload, soft)
 	. = ..()

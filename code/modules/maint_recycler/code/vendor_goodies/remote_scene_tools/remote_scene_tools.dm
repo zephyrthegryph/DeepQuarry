@@ -10,7 +10,7 @@ why aren't these accessories?
 */
 
 /obj/item/remote_scene_tool
-	var/linked_handle
+	var/tmp/linked_handle
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_override = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	item_state = "InvalidState" //so it defaults to the empty icon
@@ -21,7 +21,7 @@ why aren't these accessories?
 	description_info = "These stickers act as remote scene tools - any sort of emotes or subtles that the wearer does will go DIRECTLY to the other sticker! It's vague, so use it how you want in RP! Just remember bystander consent!"
 	slot_flags = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)
 	w_class = ITEMSIZE_SMALL
-	var/worn_mob_handle
+	var/tmp/worn_mob_handle
 	var/last_loc
 	var/can_summon = TRUE
 	var/can_replace = TRUE

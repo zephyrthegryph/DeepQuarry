@@ -9,7 +9,7 @@
 	density = TRUE
 	circuit = /obj/item/circuitboard/dna_analyzer
 
-	var/bloodsamp_handle
+	var/tmp/bloodsamp_handle
 	var/scanning = 0
 	var/scanner_progress = 0
 	var/scanner_rate = 5

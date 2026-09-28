@@ -11,7 +11,7 @@
 /datum/event2/event/sudden_weather_shift
 	start_delay_lower_bound = 30 SECONDS
 	start_delay_upper_bound = 1 MINUTE
-	var/chosen_planet_handle
+	var/tmp/chosen_planet_handle
 
 /datum/event2/event/sudden_weather_shift/set_up()
 	if(!LAZYLEN(SSplanets.planets))

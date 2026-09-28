@@ -1,6 +1,6 @@
 /// The tgui page where a player edits their keybindings. One per client, made on demand.
 /datum/keybind_editor
-	var/owner_handle
+	var/tmp/owner_handle
 	/// The profile being edited in the UI.
 	var/profile = KEYBIND_PROFILE_DEFAULT
 

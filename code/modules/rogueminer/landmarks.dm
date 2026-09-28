@@ -9,7 +9,7 @@
 	icon_state = "x2"
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
-	var/myasteroid_handle
+	var/tmp/myasteroid_handle
 
 /obj/asteroid_spawner/Initialize(mapload)
 	. = ..()
@@ -23,7 +23,7 @@
 	icon_state = "x"
 	invisibility = INVISIBILITY_ABSTRACT
 	anchored = TRUE
-	var/mymob_handle
+	var/tmp/mymob_handle
 
 /obj/rogue_mobspawner/Initialize(mapload)
 	. = ..()

@@ -244,7 +244,7 @@
 	var/pressure_decrease_active = FALSE
 	var/pressure_decrease = 1/3
 	var/environment = KA_ENVIRO_TYPE_COLD
-	var/kinetic_gun_handle
+	var/tmp/kinetic_gun_handle
 
 /obj/item/projectile/kinetic/premium
 	damage = 40

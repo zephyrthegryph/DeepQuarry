@@ -8,8 +8,8 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bspeaker"
 
-	var/paired_juke_handle
-	var/our_area_handle
+	var/tmp/paired_juke_handle
+	var/tmp/our_area_handle
 
 // Pairing
 /obj/item/juke_remote/proc/pair_juke(obj/machinery/media/jukebox/juke, mob/user)

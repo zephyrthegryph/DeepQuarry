@@ -10,9 +10,9 @@
 	use_power = USE_POWER_IDLE
 	var/harvesting = 0
 	var/harvesting_speed = 0
-	var/inserted_battery_handle
-	var/cur_artifact_handle
-	var/owned_scanner_handle
+	var/tmp/inserted_battery_handle
+	var/tmp/cur_artifact_handle
+	var/tmp/owned_scanner_handle
 	var/last_process = 0
 	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester

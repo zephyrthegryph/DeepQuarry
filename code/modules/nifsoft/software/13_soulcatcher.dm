@@ -286,8 +286,8 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	var/client_missing = 0		//How long the client has been missing
 	universal_understand = TRUE
 
-	var/nif_handle
-	var/soulcatcher_handle
+	var/tmp/nif_handle
+	var/tmp/soulcatcher_handle
 	var/identifying_gender
 
 /mob/living/carbon/brain/caught_soul/Login()
@@ -431,7 +431,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	plane = PLANE_AUGMENTED
 	icon = 'icons/obj/machines/ar_elements.dmi'
 	icon_state = "beacon"
-	var/parent_human_handle
+	var/tmp/parent_human_handle
 
 /mob/observer/eye/ar_soul/Initialize(mapload, human)
 	. = ..()

@@ -46,7 +46,7 @@ REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 
 /datum/board_game
 	var/name
-	var/parent_handle
+	var/tmp/parent_handle
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 

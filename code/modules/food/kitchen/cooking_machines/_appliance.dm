@@ -841,7 +841,7 @@
 	var/cookwork
 	var/overcook_mult = 6 // How long it takes to overcook. This is max_cookwork x overcook mult. If you're changing this, mind that at 3x, a max_cookwork of 30 becomes 90 ticks for the purpose of burning, and a max_cookwork of 4 only has 12 before burning! // doubled to 6
 	var/result_type = 0
-	var/container_handle
+	var/tmp/container_handle
 	var/combine_target = null
 
 	//Result type is one of the following:

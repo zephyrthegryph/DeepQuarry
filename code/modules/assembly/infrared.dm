@@ -52,15 +52,15 @@
 		add_overlay("infrared_on")
 		LAZYADD(attached_overlays, "infrared_on")
 
-	if(holder)
-		holder.update_icon(2)
+	if(holder())
+		holder().update_icon(2)
 
 /obj/item/assembly/infra/periodic_step()
 	if(!on && i_beams)
 		QDEL_LIST_NULL(i_beams)
 		return
 
-	if(!i_beams && secured && (istype(loc, /turf) || (holder && istype(holder.loc, /turf))))
+	if(!i_beams && secured && (istype(loc, /turf) || (holder() && istype(holder().loc, /turf))))
 		create_beams()
 
 /obj/item/assembly/infra/proc/create_beams(limit = 8)
@@ -90,7 +90,7 @@
 	QDEL_LIST_NULL(i_beams)
 
 /obj/item/assembly/infra/holder_movement()
-	if(!holder)
+	if(!holder())
 		return FALSE
 	QDEL_LIST_NULL(i_beams)
 	return TRUE
@@ -100,7 +100,7 @@
 		return FALSE
 	pulse(0)
 	QDEL_LIST_NULL(i_beams) //They will get recreated next process() if the situation is still appropriate
-	if(!holder)
+	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*")
 
 /obj/item/assembly/infra/tgui_interact(mob/user, datum/tgui/ui)
@@ -141,7 +141,7 @@
 	name = "i beam"
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "ibeam"
-	var/master_handle
+	var/tmp/master_handle
 	var/visible = 0
 	anchored = TRUE
 

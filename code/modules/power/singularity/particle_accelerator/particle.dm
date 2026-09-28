@@ -15,8 +15,8 @@
 	var/ionizing = 0
 	var/particle_type
 	var/additional_particles = 0
-	var/target_handle
-	var/source_handle
+	var/tmp/target_handle
+	var/tmp/source_handle
 	var/movetotarget = 1
 
 /obj/effect/accelerated_particle/weak

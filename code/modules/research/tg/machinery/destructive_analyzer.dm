@@ -16,7 +16,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	idle_power_usage = 30
 	active_power_usage = 2500
 	var/rped_recycler_ready = TRUE
-	var/rmat_handle
+	var/tmp/rmat_handle
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
 	rmat_handle = om_handle(AddComponent()

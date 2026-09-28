@@ -175,8 +175,8 @@
 		menu_state = value
 
 /datum/tgui_module/communications/proc/obtain_message_listener()
-	if(istype(host, /datum/computer_file/program/comm))
-		var/datum/computer_file/program/comm/P = host
+	if(istype(host(), /datum/computer_file/program/comm))
+		var/datum/computer_file/program/comm/P = host()
 		return P.message_core
 	return GLOB.global_message_listener
 

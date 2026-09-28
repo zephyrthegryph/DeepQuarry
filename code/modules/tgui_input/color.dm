@@ -56,7 +56,7 @@
 	/// The user's presets
 	var/preset_colors
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/state_handle
+	var/tmp/state_handle
 
 /datum/tgui_color_picker/New(mob/user, message, title, default, timeout, autofocus, ui_state)
 	src.autofocus = autofocus

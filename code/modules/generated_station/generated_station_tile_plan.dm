@@ -60,7 +60,7 @@
 	var/list/errors
 	/// Exclusive fixture ownership keyed by structural wall coordinate and room-facing side.
 	var/list/wall_fixture_edges
-	var/generation_owner_handle
+	var/tmp/generation_owner_handle
 	var/list/utility_floors_by_owner
 	var/list/utility_floors_by_zone
 	/// Working state of derive_hull_step() and validate_seal_step() between slices.

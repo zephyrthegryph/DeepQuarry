@@ -44,7 +44,7 @@
 	var/sound_cooldown = 10 SECONDS // add
 
 	/// Vis contents overlay holding the ship's vector when in motion
-	var/vector_handle
+	var/tmp/vector_handle
 	/// Stable registry key used by the unified flight-operations system.
 	var/flight_vessel_id
 	render_map = TRUE

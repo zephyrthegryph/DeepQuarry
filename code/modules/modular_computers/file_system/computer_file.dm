@@ -8,7 +8,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	/// File size in GQ. Integers only!
 	var/size = 1
 	/// Holder that contains this file.
-	var/holder_handle
+	var/tmp/holder_handle
 	//// Whether the file may be sent to someone via NTNet transfer, email or other means.
 	var/unsendable = FALSE
 	/// Whether the file may be deleted. Setting to TRUE prevents deletion/renaming/etc.

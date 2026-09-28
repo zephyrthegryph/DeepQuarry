@@ -126,7 +126,7 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 
 /datum/contract/social/alternative_fuel_trial
 	var/datum/contract_requirement/staged_sustained_event/output_requirement
-	var/thermal_requirement_handle
+	var/tmp/thermal_requirement_handle
 
 /datum/contract/social/alternative_fuel_trial/on_negotiated_terms_changed()
 	..()
@@ -354,7 +354,7 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 // --------------------------------------------------------------------------
 
 /datum/contract/social/balanced_operations
-	var/cycle_requirement_handle
+	var/tmp/cycle_requirement_handle
 
 /datum/contract/social/balanced_operations/on_negotiated_terms_changed()
 	..()

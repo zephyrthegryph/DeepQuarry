@@ -15,7 +15,7 @@
 
 	var/list/vending_machines // List of venders that can potentially be infected.
 	var/list/infected_vending_machines // List of venders that have been infected.
-	var/vender_zero_handle	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
+	var/tmp/vender_zero_handle	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 	var/last_malware_spread_time = null
 
 /datum/event2/event/brand_intelligence/set_up()

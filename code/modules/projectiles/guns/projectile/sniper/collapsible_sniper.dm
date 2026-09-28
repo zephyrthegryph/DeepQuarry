@@ -41,9 +41,9 @@
 
 	icon = 'icons/obj/gun.dmi'
 
-	var/barrel_handle
-	var/stock_handle
-	var/trigger_group_handle
+	var/tmp/barrel_handle
+	var/tmp/stock_handle
+	var/tmp/trigger_group_handle
 	var/part_count = 1
 
 

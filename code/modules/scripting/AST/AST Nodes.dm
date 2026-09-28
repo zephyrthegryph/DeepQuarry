@@ -107,7 +107,7 @@
 	Class: reference
 */
 /datum/node/expression/value/reference
-	var/value_handle
+	var/tmp/value_handle
 
 /datum/node/expression/value/reference/New(value)
 	.=..()

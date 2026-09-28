@@ -5,7 +5,7 @@
 	light_color = "#77fff8"
 	circuit = /obj/item/circuitboard/sensors
 	extra_view = 4
-	var/sensors_handle
+	var/tmp/sensors_handle
 
 // fancy sprite
 /obj/machinery/computer/ship/sensors/adv

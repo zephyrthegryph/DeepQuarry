@@ -13,7 +13,7 @@
 	var/key = ""
 	var/image/img
 	var/list/viewers = list()
-	var/owner_handle
+	var/tmp/owner_handle
 
 /datum/alternate_appearance/proc/display_to(list/displayTo)
 	if(!displayTo || !displayTo.len)

@@ -5,7 +5,7 @@
  */
 /datum/lootpanel
 	/// The owner of the panel
-	var/owner_handle
+	var/tmp/owner_handle
 	/// The list of all search objects indexed.
 	var/list/datum/search_object/contents = list()
 	/// The list of search_objects needing processed
@@ -13,7 +13,7 @@
 	/// We've been notified about client version
 	var/notified = FALSE
 	/// The turf being searched
-	var/source_turf_handle
+	var/tmp/source_turf_handle
 
 /datum/lootpanel/New(client/owner)
 	. = ..()

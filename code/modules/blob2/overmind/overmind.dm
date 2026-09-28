@@ -10,7 +10,7 @@
 	invisibility = INVISIBILITY_OBSERVER
 
 	faction = FACTION_BLOB
-	var/blob_core_handle	// The blob overmind's core
+	var/tmp/blob_core_handle	// The blob overmind's core
 	var/blob_points = 0
 	var/max_blob_points = 200
 	var/last_attack = 0
@@ -25,7 +25,7 @@
 	universal_understand = TRUE
 
 	var/list/has_langs = list(LANGUAGE_ANIMAL)
-	var/default_language_handle
+	var/tmp/default_language_handle
 
 /mob/observer/blob/get_default_language()
 	return default_language()

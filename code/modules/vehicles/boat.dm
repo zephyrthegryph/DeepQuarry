@@ -9,7 +9,7 @@
 	move_delay = 3 // Rather slow, but still faster than swimming, and won't get you wet.
 	max_buckled_mobs = 2
 	anchored = FALSE
-	var/material_handle
+	var/tmp/material_handle
 	var/riding_datum_type = /datum/riding/boat/small
 
 /obj/vehicle/boat/sifwood/Initialize(mapload, material_name)
@@ -41,7 +41,7 @@
 	icon_state = "oar"
 	item_state = "oar"
 	force = 12
-	var/material_handle
+	var/tmp/material_handle
 
 /obj/item/oar/sifwood/Initialize(mapload, material_name)
 	. = ..(mapload, MAT_SIFWOOD)

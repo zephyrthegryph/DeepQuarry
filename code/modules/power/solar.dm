@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/adir = SOUTH // actual dir
 	var/ndir = SOUTH // target dir
 	var/turn_angle = 0
-	var/control_handle
+	var/tmp/control_handle
 	var/glass_type = /obj/item/stack/material/glass
 	var/SOLAR_MAX_DIST = 60 // ours are >40 away
 
@@ -294,7 +294,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
 	var/nexttime = 0		// time for a panel to rotate of 1° in manual tracking
-	var/connected_tracker_handle
+	var/tmp/connected_tracker_handle
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
 	VAR_PRIVATE/list/connected_panels = list()

@@ -4,7 +4,7 @@
 
 	var/list/obj/machinery/vending/vendingMachines
 	var/list/obj/machinery/vending/infectedVendingMachines
-	var/originMachine_handle
+	var/tmp/originMachine_handle
 
 	var/static/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
 										"you should buy products to feed your lifestyle obession!", \

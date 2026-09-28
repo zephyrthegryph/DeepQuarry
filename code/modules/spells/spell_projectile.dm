@@ -5,7 +5,7 @@
 
 	nodamage = 1 //Most of the time, anyways
 
-	var/carried_handle
+	var/tmp/carried_handle
 
 	penetrating = 0
 	range = 10 //set by the duration of the spell

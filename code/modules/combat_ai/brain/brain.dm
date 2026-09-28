@@ -35,8 +35,8 @@
 
 	// --- Active action ---
 	var/active_behavior_type = null   // typepath of currently-running behavior
-	var/active_target_handle
-	var/active_source_handle	// null for innate, else the item/modifier granting it
+	var/tmp/active_target_handle
+	var/tmp/active_source_handle	// null for innate, else the item/modifier granting it
 	var/selection_dirty = TRUE
 
 	// --- Behavior aggregation ---
@@ -54,7 +54,7 @@
 	// --- Tactical state (read by behaviors) ---
 	var/last_attack_at = 0           // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
-	var/home_turf_handle	// for guard / return_home behaviors
+	var/tmp/home_turf_handle	// for guard / return_home behaviors
 	var/leader_ref = null  // for follow_leader / cooperative AI
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for

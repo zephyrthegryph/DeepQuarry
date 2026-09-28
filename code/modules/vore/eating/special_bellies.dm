@@ -7,7 +7,7 @@
 	prevent_saving = TRUE
 
 /obj/belly/special/teleporter
-	var/target_handle
+	var/tmp/target_handle
 	var/target_turf = TRUE
 	var/teleport_delay = 3 SECONDS
 

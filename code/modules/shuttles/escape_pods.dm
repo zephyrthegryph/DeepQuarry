@@ -1,5 +1,5 @@
 /datum/shuttle/autodock/ferry/escape_pod
-	var/arming_controller_handle
+	var/tmp/arming_controller_handle
 	category = /datum/shuttle/autodock/ferry/escape_pod
 
 /datum/shuttle/autodock/ferry/escape_pod/New()
@@ -59,7 +59,7 @@
 	name = "escape pod controller"
 	unacidable = TRUE
 	program = /datum/embedded_program/docking/simple
-	var/pod_handle
+	var/tmp/pod_handle
 	valid_actions = list("toggle_override", "force_door")
 
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/tgui_data(mob/user)

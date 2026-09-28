@@ -7,9 +7,9 @@
  */
 /datum/component/experiment_handler
 	/// Holds the currently linked techweb to get experiments from
-	var/linked_web_handle
+	var/tmp/linked_web_handle
 	/// Holds the currently selected experiment
-	var/selected_experiment_handle
+	var/tmp/selected_experiment_handle
 	/// Holds the list of types of experiments that this experiment_handler can interact with
 	var/list/allowed_experiments
 	/// Holds the list of types of experiments that this experimennt_handler should NOT interact with

@@ -3,7 +3,7 @@
 /datum/stockEvent
 	var/name = "event"
 	var/next_phase = 0
-	var/company_handle
+	var/tmp/company_handle
 	var/current_title = "A company holding a pangalactic conference in the Seattle Conference Center, Seattle, Earth"
 	var/current_desc = "We will continue to monitor their stocks as the situation unfolds."
 	var/phase_id = 0
@@ -29,7 +29,7 @@
 /datum/stockEvent/product
 	name = "product"
 	var/product_name = ""
-	var/product_article_handle
+	var/tmp/product_article_handle
 	var/effect = 0
 
 /datum/stockEvent/product/New(datum/stock/S)

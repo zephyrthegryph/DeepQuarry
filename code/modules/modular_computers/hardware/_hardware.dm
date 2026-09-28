@@ -2,7 +2,7 @@
 	name = "Hardware"
 	desc = "Unknown Hardware."
 	icon = 'icons/obj/modular_components.dmi'
-	var/holder2_handle
+	var/tmp/holder2_handle
 
 	/// If the hardware uses extra power, change this.
 	var/power_usage = 0

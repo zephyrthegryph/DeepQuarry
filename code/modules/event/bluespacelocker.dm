@@ -1,6 +1,6 @@
 /datum/event/bluespace_locker
-	var/entry_point_handle
-	var/exit_point_handle
+	var/tmp/entry_point_handle
+	var/tmp/exit_point_handle
 	var/static/list/area/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters,

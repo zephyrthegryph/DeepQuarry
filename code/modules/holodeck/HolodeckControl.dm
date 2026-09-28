@@ -8,14 +8,14 @@
 	active_power_usage = 8000 //8kW for the scenery + 500W per holoitem
 	var/item_power_usage = 500
 
-	var/linkedholodeck_handle
-	var/target_handle
+	var/tmp/linkedholodeck_handle
+	var/tmp/target_handle
 	var/active = 0
 	var/list/holographic_objs
 	var/list/holographic_mobs
 	var/damaged = 0
 	var/safety_disabled = 0
-	var/last_to_emag_handle
+	var/tmp/last_to_emag_handle
 	var/last_change = 0
 	var/last_gravity_change = 0
 

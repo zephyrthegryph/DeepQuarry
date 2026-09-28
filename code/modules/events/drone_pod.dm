@@ -1,5 +1,5 @@
 /datum/event/drone_pod_drop
-	var/land_target_handle
+	var/tmp/land_target_handle
 	var/attempt_amount = 10
 
 /datum/event/drone_pod_drop/setup()

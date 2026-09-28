@@ -269,7 +269,7 @@
 				for(var/flag_name in selected.vore_sprite_flag_list)
 					UNTYPED_LIST_ADD(vs_flags, list("label" = flag_name, "selection" = selected.vore_sprite_flags & selected.vore_sprite_flag_list[flag_name]))
 
-				var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[host.vore_selected.undergarment_chosen]
+				var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[host().vore_selected.undergarment_chosen]
 				var/list/undergarments
 				if(UWC)
 					undergarments = UWC.items
@@ -296,7 +296,7 @@
 				"resist_animation" = selected.resist_triggers_animation,
 				"voresprite_size_factor" = selected.size_factor_for_sprite,
 				"belly_sprite_to_affect" = selected.belly_sprite_to_affect,
-				"belly_sprite_options" = host.vore_icon_bellies,
+				"belly_sprite_options" = host().vore_icon_bellies,
 				"undergarment_chosen" = selected.undergarment_chosen,
 				"undergarment_if_none" = selected.undergarment_if_none || "None",
 				"undergarment_options" = GLOB.global_underwear.categories,

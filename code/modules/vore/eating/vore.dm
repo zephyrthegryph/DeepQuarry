@@ -133,7 +133,7 @@
 	//Mechanically required
 	var/path
 	var/slot
-	var/client_handle
+	var/tmp/client_handle
 	var/client_ckey
 
 /datum/vore_preferences/New(client/C)

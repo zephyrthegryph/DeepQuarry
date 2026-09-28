@@ -3,7 +3,7 @@
 //
 
 /datum/ticket_chat
-	var/T_handle
+	var/tmp/T_handle
 
 /datum/ticket_chat/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

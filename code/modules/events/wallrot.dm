@@ -1,5 +1,5 @@
 /datum/event/wallrot
-	var/center_handle
+	var/tmp/center_handle
 
 /datum/event/wallrot/setup()
 	announceWhen = rand(0, 300)

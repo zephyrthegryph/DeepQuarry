@@ -11,7 +11,7 @@
 	available_on_syndinet = TRUE
 	tgui_id = "NtosNetDos"
 
-	var/target_handle
+	var/tmp/target_handle
 	var/dos_speed = 0
 	var/error = ""
 	var/executed = 0

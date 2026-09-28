@@ -6,7 +6,7 @@
 	var/inherent_law = "InherentLaw"
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
-	var/owner_handle
+	var/tmp/owner_handle
 
 /datum/tgui_module/law_manager/New(mob/living/silicon/S)
 	. = ..()

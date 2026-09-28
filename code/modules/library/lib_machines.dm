@@ -146,7 +146,7 @@
 	var/list/checkouts
 	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
-	var/scanner_handle	// Book scanner that will be used when uploading books to the Archive
+	var/tmp/scanner_handle	// Book scanner that will be used when uploading books to the Archive
 
 	/// Printing a bible or a book: at most one per few seconds.
 	COOLDOWN_DECLARE(print_cooldown)
@@ -506,7 +506,7 @@
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
-	var/cache_handle	// Last scanned book
+	var/tmp/cache_handle	// Last scanned book
 
 /obj/machinery/libraryscanner/declare_interactions(list/into)
 	into += list(

@@ -4,7 +4,7 @@
  */
 /datum/search_object
 	/// Item we're indexing
-	var/item_handle
+	var/tmp/item_handle
 	/// Url to the image of the object
 	var/icon
 	/// Icon state, for inexpensive icons

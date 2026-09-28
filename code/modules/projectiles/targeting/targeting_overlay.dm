@@ -11,8 +11,8 @@
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
-	var/aiming_with_handle	// What are we targeting with?
-	var/owner_handle	// Who do we belong to?
+	var/tmp/aiming_with_handle	// What are we targeting with?
+	var/tmp/owner_handle	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
 	var/lock_time = 0          // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?

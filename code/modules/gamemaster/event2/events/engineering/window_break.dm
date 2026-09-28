@@ -20,8 +20,8 @@
 	announce_delay_upper_bound = 20 SECONDS
 	length_lower_bound = 8 MINUTES
 	length_upper_bound = 12 MINUTES
-	var/chosen_turf_with_windows_handle
-	var/chosen_window_handle
+	var/tmp/chosen_turf_with_windows_handle
+	var/tmp/chosen_window_handle
 	var/list/collateral_windows
 
 /datum/event2/event/window_break/set_up()

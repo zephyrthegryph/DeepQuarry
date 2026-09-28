@@ -90,7 +90,7 @@
 /obj/item/clothing/shoes/orange
 	name = "orange shoes"
 	icon_state = "orange"
-	var/chained_handle
+	var/tmp/chained_handle
 
 /obj/item/clothing/shoes/orange/proc/attach_cuffs(obj/item/handcuffs/cuffs, mob/user as mob)
 	if (chained()) return

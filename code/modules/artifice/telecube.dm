@@ -31,7 +31,7 @@
 
 	throw_range = 2
 
-	var/mate_handle
+	var/tmp/mate_handle
 
 	var/start_paired = FALSE
 	var/mirror_colors = FALSE

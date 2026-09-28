@@ -19,7 +19,7 @@
 	w_class = ITEMSIZE_HUGE
 
 	var/build_stage = 0
-	var/cell_handle
+	var/tmp/cell_handle
 
 /obj/item/vehicle_assembly/Initialize(mapload)
 	. = ..()

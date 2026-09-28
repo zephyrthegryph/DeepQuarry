@@ -9,8 +9,8 @@
 	var/timer = 0
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
-	var/corpse_handle
-	var/watchowner_handle
+	var/tmp/corpse_handle
+	var/tmp/watchowner_handle
 
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()

@@ -12,7 +12,7 @@
 	var/id = ""
 
 	/// The atom we're attached to/playing from
-	var/parent_handle
+	var/tmp/parent_handle
 
 	/// Our song lines
 	var/list/lines
@@ -43,7 +43,7 @@
 
 	//////////// Cached instrument variables /////////////
 	/// Instrument we are currently using
-	var/using_instrument_handle
+	var/tmp/using_instrument_handle
 	/// Cached legacy ext for legacy instruments
 	var/cached_legacy_ext
 	/// Cached legacy dir for legacy instruments
@@ -73,7 +73,7 @@
 	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from SSsounds/SSinstruments.
 	var/list/channels_idle
 	/// Who or what's playing us
-	var/music_player_handle
+	var/tmp/music_player_handle
 	//////////////////////////////////////////////////////
 
 	/// Last world.time we checked for who can hear us

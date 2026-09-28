@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(all_integrated_circuits, initialize_integrated_circuits_list())
 	icon = 'icons/obj/integrated_electronics/electronic_components.dmi'
 	icon_state = "template"
 	w_class = ITEMSIZE_TINY
-	var/assembly_handle	// Reference to the assembly holding this circuit, if any.
+	var/tmp/assembly_handle	// Reference to the assembly holding this circuit, if any.
 	var/extended_desc = null
 	var/list/inputs = list()
 	var/list/inputs_default			// Assoc list which will fill a pin with data upon creation.  e.g. "2" = 0 will set input pin 2 to equal 0 instead of null.

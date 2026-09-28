@@ -5,7 +5,7 @@
 	icon_state = "gigadrill"
 	var/active = 0
 	var/drill_time = 10
-	var/drilling_turf_handle
+	var/tmp/drilling_turf_handle
 	density = TRUE
 	layer = ABOVE_JUNK_LAYER
 

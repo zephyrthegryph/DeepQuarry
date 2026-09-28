@@ -5,14 +5,14 @@
 	// NanoTrasen TCS Language - Made by Doohl
 
 /datum/n_Interpreter/TCS_Interpreter
-	var/Compiler_handle
+	var/tmp/Compiler_handle
 
 /datum/n_Interpreter/TCS_Interpreter/HandleError(datum/runtimeError/e)
 	Compiler().Holder().add_entry(e.ToString(), "Execution Error")
 
 /datum/TCS_Compiler
 	var/datum/n_Interpreter/TCS_Interpreter/interpreter
-	var/Holder_handle	// the server that is running the code
+	var/tmp/Holder_handle	// the server that is running the code
 	var/ready = 1 // 1 if ready to run code
 
 	/** Proc: Compile

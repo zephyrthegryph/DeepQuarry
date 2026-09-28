@@ -18,7 +18,7 @@
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
 	var/print_end_time = 0		// World time when printing will finish
-	var/queued_assembly_handle	// The assembly being cloned.
+	var/tmp/queued_assembly_handle	// The assembly being cloned.
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
 	if(!queued_assembly())

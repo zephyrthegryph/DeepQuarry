@@ -6,8 +6,8 @@
 	icon_state = "unloader"
 	density = TRUE
 	anchored = TRUE
-	var/input_handle
-	var/output_handle
+	var/tmp/input_handle
+	var/tmp/output_handle
 
 /obj/machinery/mineral/unloading_machine/Initialize(mapload)
 	. = ..()

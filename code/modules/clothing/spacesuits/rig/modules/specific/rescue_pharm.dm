@@ -48,7 +48,7 @@
 	if(!target)
 		return 1 //You're just toggling the module on, not clicking someone.
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 
 	if(!charge_selected)
 		to_chat(H,span_danger("You have not selected a chemical type."))

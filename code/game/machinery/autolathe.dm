@@ -525,7 +525,7 @@ REF_OWNED(/obj/machinery/autolathe, list("wires", "print_sound"))
 	// More complex as it holds multiple nodes of research
 	else if(istype(O, /obj/item/disk/tech_disk))
 		var/obj/item/disk/tech_disk/disky = O
-		var/datum/techweb/disk_web = disky.stored_research
+		var/datum/techweb/disk_web = disky.stored_research()
 		for(var/design_id in disk_web.researched_designs)
 			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
 			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research.researched_designs, blueprint.id))

@@ -17,10 +17,10 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 	var/error = ""										// Error screen
 	var/server_password = ""							// Optional password to download the file.
-	var/provided_file_handle	// File which is provided to clients.
+	var/tmp/provided_file_handle	// File which is provided to clients.
 	var/datum/computer_file/downloaded_file = null		// File which is being downloaded
 	var/list/connected_clients					// List of connected clients.
-	var/remote_handle	// Client var, specifies who are we downloading from.
+	var/tmp/remote_handle	// Client var, specifies who are we downloading from.
 	var/download_completion = 0							// Download progress in GQ
 	var/actual_netspeed = 0								// Displayed in the UI, this is the actual transfer speed.
 	var/unique_token 									// UID of this program

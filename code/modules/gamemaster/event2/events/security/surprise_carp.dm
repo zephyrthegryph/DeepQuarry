@@ -12,7 +12,7 @@
 
 
 /datum/event2/event/surprise_carp
-	var/victim_handle
+	var/tmp/victim_handle
 
 /datum/event2/event/surprise_carp/set_up()
 	var/list/potential_victims = list()

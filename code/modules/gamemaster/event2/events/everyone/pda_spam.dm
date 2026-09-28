@@ -14,8 +14,8 @@
 	var/last_spam_time = null // world.time of most recent spam.
 	var/next_spam_attempt_time = 0 // world.time of next attempt to try to spam.
 	var/give_up_after = 5 MINUTES
-	var/MS_handle
-	var/node_handle
+	var/tmp/MS_handle
+	var/tmp/node_handle
 
 /datum/event2/event/pda_spam/set_up()
 	last_spam_time = world.time // So it won't immediately give up.

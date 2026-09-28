@@ -56,7 +56,7 @@
 	plane = PLANE_PLAYER_HUD
 	dir = NORTH
 	icon = 'icons/misc/buildmode.dmi'
-	var/master_handle
+	var/tmp/master_handle
 
 // LIFECYCLE: comes off its builder's screen (clients aren't datums).
 /obj/effect/bmode/Destroy()
@@ -198,12 +198,12 @@
 /obj/effect/bmode/buildholder
 	density = FALSE
 	anchored = TRUE
-	var/cl_handle
+	var/tmp/cl_handle
 	var/obj/effect/bmode/builddir/builddir = null
 	var/obj/effect/bmode/buildhelp/buildhelp = null
 	var/obj/effect/bmode/buildmode/buildmode = null
 	var/obj/effect/bmode/buildquit/buildquit = null
-	var/throw_atom_handle
+	var/tmp/throw_atom_handle
 	var/list/selected_mobs
 	var/copied_faction = null
 	var/warned = 0
@@ -240,8 +240,8 @@ REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmod
 
 	var/wall_holder = /turf/simulated/wall
 	var/floor_holder = /turf/simulated/floor/plating
-	var/coordA_handle
-	var/coordB_handle
+	var/tmp/coordA_handle
+	var/tmp/coordB_handle
 	var/area_enabled = 0
 	var/area_name = "New Area"
 

@@ -4,7 +4,7 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 /datum/exonet_log_panel
-	var/host_handle
+	var/tmp/host_handle
 
 /datum/exonet_log_panel/New(mob/observer/dead/host_mob)
 	host_handle = om_handle(host_mob)

@@ -8,7 +8,7 @@
  * to implement interesting matrix transformations without the hassle if needing to know... algebra? Damn, i'm stupid.
  */
 /datum/nobody_wants_to_learn_matrix_math
-	var/target_handle
+	var/tmp/target_handle
 	var/matrix/testing_matrix
 
 /datum/nobody_wants_to_learn_matrix_math/New(atom/target)

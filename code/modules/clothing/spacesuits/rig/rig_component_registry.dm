@@ -16,7 +16,7 @@
 
 /datum/rig_component_registry
 	/// The rig this datum belongs to.  Nulled on Destroy().
-	var/holder_handle
+	var/tmp/holder_handle
 
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
 	holder_handle = om_handle(new_holder)

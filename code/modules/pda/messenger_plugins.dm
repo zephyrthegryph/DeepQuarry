@@ -1,5 +1,5 @@
 /datum/data/pda/messenger_plugin
-	var/messenger_handle
+	var/tmp/messenger_handle
 
 /datum/data/pda/messenger_plugin/proc/user_act(mob/user, obj/item/pda/P)
 

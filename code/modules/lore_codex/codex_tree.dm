@@ -1,7 +1,7 @@
 // Holds the various pages and implementations for codex books, so they can be used in more than just books.
 
 /datum/codex_tree
-	var/holder_handle
+	var/tmp/holder_handle
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
 	var/list/current_page = list() // Current page or category to display to the user. // converted to list to track multiple players.

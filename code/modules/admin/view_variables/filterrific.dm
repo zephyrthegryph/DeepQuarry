@@ -1,5 +1,5 @@
 /datum/filter_editor
-	var/target_handle
+	var/tmp/target_handle
 
 /datum/filter_editor/New(atom/target)
 	src.target_handle = om_handle(target)

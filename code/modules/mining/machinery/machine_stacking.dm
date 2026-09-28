@@ -7,7 +7,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	density = TRUE
 	anchored = TRUE
-	var/machine_handle
+	var/tmp/machine_handle
 	//var/machinedir = SOUTHEAST //This is really dumb, so lets burn it with fire.
 
 /obj/machinery/mineral/stacking_unit_console/Initialize(mapload)
@@ -85,9 +85,9 @@
 	icon_state = "stacker"
 	density = TRUE
 	anchored = TRUE
-	var/console_handle
-	var/input_handle
-	var/output_handle
+	var/tmp/console_handle
+	var/tmp/input_handle
+	var/tmp/output_handle
 	var/list/stack_storage
 	var/list/stack_paths
 	var/stack_amt = 50; // Amount to stack before releassing

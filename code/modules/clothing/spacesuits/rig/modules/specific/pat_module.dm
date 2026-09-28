@@ -26,7 +26,7 @@
 	if(!..(TRUE)) //Skip the engage() call, that's for the override and is 'spensive.
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	to_chat(H,span_notice("You activate the P.A.T. module."))
 	H.AddComponent(/datum/component/recursive_move)
 	RegisterSignal(H, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/rig_module/pat_module/proc/boop)
@@ -35,7 +35,7 @@
 	if(!..())
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	to_chat(H,span_notice("Your disable the P.A.T. module."))
 	UnregisterSignal(H, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 
@@ -62,7 +62,7 @@
 		A.open()
 
 /obj/item/rig_module/pat_module/engage()
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 	if(!istype(H))
 		return 0
 

@@ -7,7 +7,7 @@
 	icon_state = "evidenceobj"
 	item_state = null
 	w_class = ITEMSIZE_SMALL
-	var/stored_item_handle
+	var/tmp/stored_item_handle
 
 
 /obj/item/evidencebag/MouseDrop(obj/item/I)

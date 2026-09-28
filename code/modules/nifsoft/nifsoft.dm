@@ -6,7 +6,7 @@
 	var/name = "Prototype"
 	var/desc = "Contact a dev!"
 
-	var/nif_handle	//The NIF that the software is stored in
+	var/tmp/nif_handle	//The NIF that the software is stored in
 
 	var/list_pos				// List position in the nifsoft list
 

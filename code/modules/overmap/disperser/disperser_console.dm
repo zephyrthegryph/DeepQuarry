@@ -9,9 +9,9 @@
 	icon_keyboard = "rd_key"
 	icon_screen = "teleport"
 
-	var/obj/machinery/disperser/front/front
-	var/middle_handle
-	var/back_handle
+	var/tmp/front_handle
+	var/tmp/middle_handle
+	var/tmp/back_handle
 	var/const/link_range = 16 //How far can the above stuff be maximum before we start complaining
 
 	var/overmapdir = 0
@@ -49,7 +49,7 @@
 		var/obj/machinery/disperser/back/B = locate() in get_step(M, backwards)
 		if(!B || get_dist(src, B) >= link_range)
 			continue
-		front = F
+		front_handle = om_handle(F)
 		middle_handle = om_handle(M)
 		back_handle = om_handle(B)
 		if(is_valid_setup())
@@ -60,18 +60,18 @@
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/is_valid_setup()
-	if(front && middle() && back())
-		var/everything_in_range = (get_dist(src, front) < link_range) && (get_dist(src, middle()) < link_range) && (get_dist(src, back()) < link_range)
-		var/everything_in_order = (middle().Adjacent(front) && middle().Adjacent(back())) && (front.dir =middle()le.dir &middle()le.dir == back().dir)
+	if(front() && middle() && back())
+		var/everything_in_range = (get_dist(src, front()) < link_range) && (get_dist(src, middle()) < link_range) && (get_dist(src, back()) < link_range)
+		var/everything_in_order = (middle().Adjacent(front()) && middle().Adjacent(back())) && (front().dir =middle()le.dir &middle()le.dir == back().dir)
 		return everything_in_order && everything_in_range
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/release_links()
 	SIGNAL_HANDLER
-	UnregisterSignal(front, COMSIG_OBSERVER_DESTROYED)
+	UnregisterSignal(front(), COMSIG_OBSERVER_DESTROYED)
 	UnregisterSignal(middle(), COMSIG_OBSERVER_DESTROYED)
 	UnregisterSignal(back(), COMSIG_OBSERVER_DESTROYED)
-	front = null
+	front_handle = null
 	middle_handle = null
 	back_handle = null
 
@@ -149,7 +149,7 @@
 		data["strength"] = strength
 		data["range"] = range
 		data["next_shot"] = round(get_next_shot_seconds())
-		data["nopower"] = !data["faillink"] && (!front.powered() || !middle().powered() || !back().powered())
+		data["nopower"] = !data["faillink"] && (!front().powered() || !middle().powered() || !back().powered())
 
 		var/charge = "UNKNOWN ERROR"
 		if(get_charge_type() == OVERMAP_WEAKNESS_NONE)
@@ -214,3 +214,7 @@
 /// LC-refs: the back this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/ship/disperser/proc/back() as /obj/machinery/disperser/back
 	return om_resolve(back_handle)
+
+/// LC-refs: the front this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/ship/disperser/proc/front() as /obj/machinery/disperser/front
+	return om_resolve(front_handle)

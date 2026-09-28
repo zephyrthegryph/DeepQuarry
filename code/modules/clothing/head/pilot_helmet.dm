@@ -15,7 +15,7 @@
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	w_class = ITEMSIZE_NORMAL
 
-	var/shuttle_comp_handle
+	var/tmp/shuttle_comp_handle
 	var/atom/movable/screen/pilot_hud
 	var/list/images
 	var/list/raw_images

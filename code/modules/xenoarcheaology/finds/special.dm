@@ -147,7 +147,7 @@
 
 //animated blood 2 SPOOKY
 /obj/effect/decal/cleanable/blood/splatter/animated
-	var/target_turf_handle
+	var/tmp/target_turf_handle
 	var/loc_last_process
 
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)

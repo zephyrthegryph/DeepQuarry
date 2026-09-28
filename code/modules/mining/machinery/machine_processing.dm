@@ -14,7 +14,7 @@
 
 	var/obj/item/card/id/inserted_id	// Inserted ID card, for points
 
-	var/machine_handle
+	var/tmp/machine_handle
 	var/show_all_ores = FALSE
 
 /// Settings changed from the console (ore modes, power): the processing unit re-evaluates.
@@ -176,9 +176,9 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 	density = TRUE
 	anchored = TRUE
 	light_range = 3
-	var/input_handle
-	var/output_handle
-	var/console_handle
+	var/tmp/input_handle
+	var/tmp/output_handle
+	var/tmp/console_handle
 	var/sheets_per_tick = 10
 	var/list/ores_processing
 	var/list/ores_stored = list()

@@ -448,7 +448,7 @@
 	icon_state = "auth_off"
 	layer = ABOVE_WINDOW_LAYER
 	var/ready = 0
-	var/currentarea_handle
+	var/tmp/currentarea_handle
 	var/eventstarted = 0
 
 	unacidable = TRUE

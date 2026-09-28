@@ -17,11 +17,11 @@
 // React owns is-visible (it shows the element after sizing it).
 
 /datum/tooltip
-	var/owner_handle
+	var/tmp/owner_handle
 	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
-	var/last_target_handle
+	var/tmp/last_target_handle
 	var/datum/tgui_window/tooltip_window
 	// State that gets pushed to the React side. When `_visible` is
 	// FALSE the React component renders nothing; otherwise it

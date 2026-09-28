@@ -17,7 +17,7 @@
 	var/locked = 0
 	use_power = USE_POWER_OFF //doesn't use APC power
 	var/charge_rate = 100000	//100 kW
-	var/owned_gen_handle
+	var/tmp/owned_gen_handle
 	interact_offline = TRUE
 
 /obj/machinery/shield_capacitor/Initialize(mapload)

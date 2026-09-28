@@ -41,7 +41,7 @@
 	///Contains admin info. Null if client is not an admin.
 	var/datum/admins/holder = null
 	///Needs to implement InterceptClickOn(user,params,atom) proc
-	var/click_intercept_handle
+	var/tmp/click_intercept_handle
 	var/buildmode		= 0
 
 	///Contains the last message sent by this client - used to protect against copy-paste spamming.
@@ -134,11 +134,11 @@
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
 	var/list/recent_examines
 	///Our object window datum. It stores info about and handles behavior for the object tab
-	var/obj_window_handle
+	var/tmp/obj_window_handle
 
 	var/list/misc_cache = list()
 
-	var/examine_icon_handle	//Holder for examine icon, useful for statpanel
+	var/tmp/examine_icon_handle	//Holder for examine icon, useful for statpanel
 
 	//Hide top bars
 	var/fullscreen = FALSE

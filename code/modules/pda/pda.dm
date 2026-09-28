@@ -19,7 +19,7 @@
 
 	//Secondary variables
 	var/model_name = "Thinktronic 5230 Personal Data Assistant"
-	var/scanmode_handle
+	var/tmp/scanmode_handle
 
 	var/lock_code = "" // Lockcode to unlock uplink
 
@@ -38,8 +38,8 @@
 
 	var/spam_proof = FALSE // If true, it can't be spammed by random events.
 
-	var/current_app_handle
-	var/lastapp_handle
+	var/tmp/current_app_handle
+	var/tmp/lastapp_handle
 	var/list/programs = list(
 		new/datum/data/pda/app/main_menu,
 		new/datum/data/pda/app/notekeeper,

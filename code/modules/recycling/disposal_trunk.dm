@@ -1,7 +1,7 @@
 //a trunk joining to a disposal bin or outlet on the same turf
 /obj/structure/disposalpipe/trunk
 	icon_state = "pipe-t"
-	var/linked_handle	// The linked atom. It should have a /datum/component/disposal_connection to handle receiving disposal packets.
+	var/tmp/linked_handle	// The linked atom. It should have a /datum/component/disposal_connection to handle receiving disposal packets.
 
 /obj/structure/disposalpipe/trunk/Initialize(mapload)
 	..()

@@ -1,7 +1,7 @@
 //Gas nozzle engine
 /datum/ship_engine/gas_thruster
 	name = "gas thruster"
-	var/nozzle_handle
+	var/tmp/nozzle_handle
 
 /datum/ship_engine/gas_thruster/New(obj/machinery/_holder)
 	..()

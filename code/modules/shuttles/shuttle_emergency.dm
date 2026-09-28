@@ -2,7 +2,7 @@
 /datum/shuttle/autodock/ferry/emergency
 	category = /datum/shuttle/autodock/ferry/emergency
 	var/frequency = AUTODOCK_FREQ // Why this frequency? BECAUSE! Thats what someone decided once.
-	var/radio_connection_handle
+	var/tmp/radio_connection_handle
 
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()

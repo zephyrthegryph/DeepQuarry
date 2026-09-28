@@ -9,7 +9,7 @@
 	var/id_tag = ""
 	var/scan_range = 25
 	var/list/connected_devices
-	var/cur_viewed_device_handle
+	var/tmp/cur_viewed_device_handle
 	var/datum/tgui_module/rustcore_monitor/monitor
 
 /obj/machinery/computer/fusion_core_control/Initialize(mapload)

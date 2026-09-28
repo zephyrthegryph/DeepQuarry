@@ -12,7 +12,7 @@
 	active_power_usage = 8000
 
 	var/current_program = "Off"
-	var/my_area_handle
+	var/tmp/my_area_handle
 	var/last_gravity_change = 0
 	var/ready = TRUE
 	var/immersion = FALSE

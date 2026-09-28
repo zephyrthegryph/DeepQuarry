@@ -10,7 +10,7 @@
 	var/receipt_num
 	var/machine_id = ""
 	var/obj/item/card/id/held_card
-	var/detailed_account_view_handle
+	var/tmp/detailed_account_view_handle
 	var/creating_new_account = 0
 	var/const/fund_cap = 1000000
 	circuit = /obj/item/circuitboard/account_console

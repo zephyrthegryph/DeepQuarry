@@ -5,7 +5,7 @@
 	icon_keyboard = "teleport_key"
 	circuit = /obj/item/circuitboard/telesci_console
 	var/sending = 1
-	var/telepad_handle
+	var/tmp/telepad_handle
 	var/temp_msg = "Telescience control console initialized. Welcome."
 
 	// VARIABLES //
@@ -14,7 +14,7 @@
 	var/z_co = 1
 	var/distance_off
 	var/rotation_off
-	var/last_target_handle
+	var/tmp/last_target_handle
 
 	var/rotation = 0
 	var/distance = 5

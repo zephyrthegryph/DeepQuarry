@@ -7,7 +7,7 @@
 	var/row_options1 = " width='85px'"
 	var/row_options2 = " width='260px'"
 	var/row_options3 = " width='150px'"
-	var/selected_event_container_handle
+	var/tmp/selected_event_container_handle
 
 /datum/controller/subsystem/events/proc/Interact(mob/living/user)
 	// structured TGUI Event Manager panel (see

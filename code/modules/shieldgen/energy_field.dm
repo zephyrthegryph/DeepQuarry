@@ -26,7 +26,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = FALSE
 	can_atmos_pass = ATMOS_PASS_DENSITY
-	var/my_gen_handle
+	var/tmp/my_gen_handle
 	var/ticks_recovering = 10
 	uses_integrity = TRUE
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK

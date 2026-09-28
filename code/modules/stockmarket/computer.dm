@@ -10,7 +10,7 @@
 	var/vmode = 1
 
 	var/screen = "stocks"
-	var/current_stock_handle
+	var/tmp/current_stock_handle
 
 	light_color = LIGHT_COLOR_GREEN
 

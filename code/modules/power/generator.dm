@@ -18,8 +18,8 @@
 	var/max_power = 500000
 	var/thermal_efficiency = 0.65
 
-	var/circ1_handle
-	var/circ2_handle
+	var/tmp/circ1_handle
+	var/tmp/circ2_handle
 
 	var/last_circ1_gen = 0
 	var/last_circ2_gen = 0

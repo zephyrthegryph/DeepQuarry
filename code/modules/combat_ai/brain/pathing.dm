@@ -12,7 +12,7 @@
 	/// Cached A* path. List of turfs from current position to path_goal.
 	var/list/cached_path = null
 	/// Turf the cached path was computed to. Recomputed when target moves far.
-	var/path_goal_handle
+	var/tmp/path_goal_handle
 	/// Consecutive failed step attempts. After 3 we recompute.
 	var/failed_steps = 0
 	/// How far the goal can drift before recompute. Keeps us from recomputing

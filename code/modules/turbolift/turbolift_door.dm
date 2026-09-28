@@ -8,8 +8,8 @@
 	glass = 1
 	icon = 'icons/obj/doors/doorlift.dmi'
 
-	var/lift_handle
-	var/floor_handle
+	var/tmp/lift_handle
+	var/tmp/floor_handle
 
 // LIFECYCLE: leaves its lift's and floor's door lists.
 /obj/machinery/door/airlock/lift/Destroy()

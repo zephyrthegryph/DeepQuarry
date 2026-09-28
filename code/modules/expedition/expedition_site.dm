@@ -14,7 +14,7 @@
 	/// EXP_STATUS_* lifecycle status.
 	var/status = EXP_STATUS_GENERATING
 	/// A safe, walkable turf crews arrive on.
-	var/landing_handle
+	var/tmp/landing_handle
 	/// Cached walkable floors, for content placement and respawns.
 	var/list/floors
 	/// The mission bound to this site (may be null for a raw debug site).
@@ -30,14 +30,14 @@
 	/// Mobs that have deployed here (for reward payout).
 	var/list/participants
 	/// The short-jump craft assigned to this expedition.
-	var/assigned_shuttle_handle
+	var/tmp/assigned_shuttle_handle
 	/// Authoritative vessel assignment; survives console replacement or deletion.
-	var/assigned_flight_vessel_handle
+	var/tmp/assigned_flight_vessel_handle
 	/// The craft's control console, used as the physical payout point.
-	var/origin_console_handle
-	var/payout_turf_handle
+	var/tmp/origin_console_handle
+	var/tmp/payout_turf_handle
 	/// Overmap destination and landing waypoint owned by this site.
-	var/overmap_sector_handle
+	var/tmp/overmap_sector_handle
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/landing_waypoint
 	/// Stable destination registry key used before and after physical generation.
 	var/flight_destination_id

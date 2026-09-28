@@ -20,7 +20,7 @@
 	/// EXP_MISSION_* state.
 	var/state = EXP_MISSION_ACTIVE
 	/// Back-reference to the site, set in populate().
-	var/site_handle
+	var/tmp/site_handle
 	/// Base survey points / Thalers paid on success.
 	var/reward_points = 100
 	var/reward_cash = 250

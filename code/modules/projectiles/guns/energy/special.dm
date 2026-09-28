@@ -48,7 +48,7 @@
 	cell_type = /obj/item/cell/device/weapon/recharge
 	battery_lock = 1
 
-	var/gene_handle
+	var/tmp/gene_handle
 	recoil_mode = 0
 	var/obj/item/stock_parts/micro_laser/emitter
 

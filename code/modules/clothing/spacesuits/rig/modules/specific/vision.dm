@@ -217,7 +217,7 @@ REF_PAIR(/obj/item/rig, list("visor" = "holder"))
 
 	// Don't cycle if this engage() is being called by activate().
 	if(!active)
-		to_chat(holder.wearer, span_blue("You activate your visual sensors."))
+		to_chat(holder.wearer(), span_blue("You activate your visual sensors."))
 		return TRUE
 
 	if(vision_modes.len > 1)
@@ -226,18 +226,18 @@ REF_PAIR(/obj/item/rig, list("visor" = "holder"))
 			vision_index = 1
 		vision = vision_modes[vision_index]
 
-		to_chat(holder.wearer, span_blue("You cycle your sensors to <b>[vision.mode]</b> mode."))
+		to_chat(holder.wearer(), span_blue("You cycle your sensors to <b>[vision.mode]</b> mode."))
 	else
-		to_chat(holder.wearer, span_blue("Your sensors only have one mode."))
+		to_chat(holder.wearer(), span_blue("Your sensors only have one mode."))
 	return TRUE
 
 /obj/item/rig_module/vision/activate()
-	if((. = ..()) && holder.wearer)
-		holder.wearer.recalculate_vis()
+	if((. = ..()) && holder.wearer())
+		holder.wearer().recalculate_vis()
 
 /obj/item/rig_module/vision/deactivate()
-	if((. = ..()) && holder.wearer)
-		holder.wearer.recalculate_vis()
+	if((. = ..()) && holder.wearer())
+		holder.wearer().recalculate_vis()
 
 /obj/item/rig_module/vision/Initialize(mapload)
 	. = ..()

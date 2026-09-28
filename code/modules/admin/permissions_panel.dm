@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		SStgui.update_uis(dq_permissions_panel)
 
 /datum/permissions_panel
-	var/holder_handle
+	var/tmp/holder_handle
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
 	..()

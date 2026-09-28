@@ -1,6 +1,6 @@
 /datum/sun_holder
 	var/atom/movable/sun_visuals/sun
-	var/our_planet_handle
+	var/tmp/our_planet_handle
 
 	var/our_color = "#FFFFFF"
 	var/our_brightness = 1.0

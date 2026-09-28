@@ -1,6 +1,6 @@
 /datum/particle_editor
 	/// movable whose particles we want to be editing
-	var/target_handle
+	var/tmp/target_handle
 
 /datum/particle_editor/New(atom/target)
 	src.target_handle = om_handle(target)

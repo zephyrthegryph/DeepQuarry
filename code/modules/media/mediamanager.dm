@@ -97,7 +97,7 @@
 /area
 	// For now, only one media source per area allowed
 	// Possible Future: turn into a list, then only play the first one that's playing.
-	var/media_source_handle
+	var/tmp/media_source_handle
 
 //
 // ### Media Manager Datum
@@ -109,7 +109,7 @@
 	var/source_volume = 1		// Volume as set by source. Actual volume = "volume * source_volume"
 	var/rate = 1				// Playback speed.  For Fun(tm)
 	var/volume = 0.5			// Client's volume modifier. Actual volume = "volume * source_volume"
-	var/owner_handle	// Client this is actually running in
+	var/tmp/owner_handle	// Client this is actually running in
 	var/forced=0				// If true, current url overrides area media sources
 	// media playback via TGUI MediaPlayer hosted in the
 	// hidden rpane.mediapanel skin element. The skin element stays

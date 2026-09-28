@@ -80,7 +80,7 @@ SUBSYSTEM_DEF(flight_operations)
 	destination.id = make_id("destination", target.name)
 	destination.name = target.name
 	destination.description = target.desc
-	destination.target = target
+	destination.target_handle = om_handle(target)
 	if(istype(target, /obj/effect/overmap/visitable/planet))
 		destination.kind = FLIGHT_DEST_SURFACE
 		destination.orbit_parent_id = "system-vir"
@@ -173,7 +173,7 @@ SUBSYSTEM_DEF(flight_operations)
 	destination.description = site.mission?.desc || "A procedurally surveyed expedition site."
 	destination.kind = FLIGHT_DEST_EXPEDITION
 	destination.expedition_handle = om_handle(site)
-	destination.target = site.overmap_sector()
+	destination.target_handle = om_handle(site.overmap_sector())
 	destination.required_capabilities = FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND
 	destination.orbit_parent_id = site.parent_destination_id || first_planet_id()
 	destination.body_radius = 0.45
@@ -181,8 +181,8 @@ SUBSYSTEM_DEF(flight_operations)
 	destination.surface_latitude = rand(-75, 75)
 	destination.surface_longitude = rand(-180, 180)
 	destinations[destination.id] = destination
-	if(destination.target)
-		destination_by_target[REF(destination.target)] = destination.id
+	if(destination.target())
+		destination_by_target[REF(destination.target())] = destination.id
 	site.flight_destination_id = destination.id
 	return destination
 
@@ -190,8 +190,8 @@ SUBSYSTEM_DEF(flight_operations)
 	var/datum/flight_destination/destination = destinations[id]
 	if(!destination)
 		return
-	if(destination.target)
-		destination_by_target -= REF(destination.target)
+	if(destination.target())
+		destination_by_target -= REF(destination.target())
 	destinations -= id
 	qdel(destination)
 
@@ -360,7 +360,7 @@ SUBSYSTEM_DEF(flight_operations)
 			return null
 		site.assigned_flight_vessel_handle = om_handle(vessel)
 		site.assigned_shuttle_handle = om_handle(vessel.shuttle())
-		vessel.active_expedition = site
+		vessel.active_expedition_handle = om_handle(site)
 	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
 	vessel.active_plan = plan

@@ -50,8 +50,8 @@
 	var/surface_latitude
 	var/surface_longitude
 	var/required_capabilities = 0
-	var/atom/target
-	var/expedition_handle
+	var/tmp/target_handle
+	var/tmp/expedition_handle
 	var/discovered = TRUE
 	var/list/active_plans
 
@@ -60,16 +60,16 @@
 		return FALSE
 	if(expedition())
 		return !QDELETED(expedition()) && expedition().status != EXP_STATUS_EXPIRED
-	return target && !QDELETED(target)
+	return target() && !QDELETED(target())
 
 /datum/flight_vessel
 	var/id
 	var/name = "Unregistered Vessel"
 	var/capabilities = 0
-	var/ship_handle
-	var/shuttle_handle
+	var/tmp/ship_handle
+	var/tmp/shuttle_handle
 	var/datum/flight_plan/active_plan
-	var/datum/expedition_site/active_expedition
+	var/tmp/active_expedition_handle
 	/// Authoritative celestial context; replaces hidden overmap tile coordinates.
 	var/orbit_parent_id
 	/// Reserved port occupied by the vessel, if physically docked.
@@ -95,9 +95,9 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	/// Logical destinations whose routes may terminate at this port. The physical
 	/// host remains authoritative for rendering and occupancy.
 	var/list/serves_destination_ids
-	var/landmark_handle
-	var/occupied_by_handle
-	var/reserved_by_handle
+	var/tmp/landmark_handle
+	var/tmp/occupied_by_handle
+	var/tmp/reserved_by_handle
 	/// Ports in the same physical bay exclude one another even when their alignment landmarks differ.
 	var/berth_group
 
@@ -123,9 +123,9 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 /datum/flight_plan
 	var/id
 	var/datum/flight_vessel/vessel
-	var/origin_handle
-	var/destination_handle
-	var/arrival_port_handle
+	var/tmp/origin_handle
+	var/tmp/destination_handle
+	var/tmp/arrival_port_handle
 	var/state = FLIGHT_PLAN_DRAFT
 	var/failure_reason
 	var/created_at
@@ -170,8 +170,8 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	if(release_assignment && destination()?.expedition()?.assigned_flight_vessel() == vessel)
 		destination().expedition().assigned_flight_vessel_handle = null
 		destination().expedition().assigned_shuttle_handle = null
-		if(vessel?.active_expedition == destination().expedition())
-			vessel.active_expedition = null
+		if(vessel?.active_expedition() == destination().expedition())
+			vessel.active_expedition_handle = null
 
 /datum/flight_plan/proc/state_name()
 	switch(state)
@@ -261,3 +261,11 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 /// LC-refs: the shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_vessel/proc/shuttle() as /datum/shuttle/autodock/overmap
 	return om_resolve(shuttle_handle)
+
+/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_destination/proc/target() as /atom
+	return om_resolve(target_handle)
+
+/// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
+	return om_resolve(active_expedition_handle)

@@ -6,7 +6,7 @@
 	var/range = 1	// Short-jump craft can reach sectors one overmap tile away.
 	var/fuel_consumption = 0 //Amount of moles of gas consumed per trip; If zero, then shuttle is magic and does not need fuel
 	var/list/obj/structure/fuel_port/fuel_ports //the fuel ports of the shuttle (but usually just one)
-	var/myship_handle	//my overmap ship object
+	var/tmp/myship_handle	//my overmap ship object
 
 	category = /datum/shuttle/autodock/overmap
 

@@ -56,7 +56,7 @@
 	/// The title of the TGUI window
 	var/title
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/state_handle
+	var/tmp/state_handle
 
 /datum/tgui_input_keycombo/New(mob/user, message, title, default, timeout, ui_state)
 	src.default = default

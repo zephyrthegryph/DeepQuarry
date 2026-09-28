@@ -21,7 +21,7 @@
 	var/debug_scans = 0
 	var/scanning = 0
 	var/legacy_zone = 0 //Disable scanning and whatnot.
-	var/shuttle_control_handle
+	var/tmp/shuttle_control_handle
 
 /obj/machinery/computer/roguezones/Initialize(mapload)
 	. = ..()

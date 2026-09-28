@@ -13,7 +13,7 @@
 //
 /datum/node/statement/FunctionCall
 	var/func_name
-	var/object_handle
+	var/tmp/object_handle
 	var/list/parameters=list()
 
 /*
@@ -39,7 +39,7 @@
 */
 //
 /datum/node/statement/VariableAssignment
-	var/object_handle
+	var/tmp/object_handle
 	var/datum/node/identifier/var_name
 	var/datum/node/expression/value
 
@@ -52,8 +52,8 @@
 */
 //
 /datum/node/statement/VariableDeclaration
-	var/object_handle
-	var/var_name_handle
+	var/tmp/object_handle
+	var/tmp/var_name_handle
 
 /*
 	Class: IfStatement
@@ -78,10 +78,10 @@
 	Loops while test is true, initializing a variable, increasing the variable
 */
 /datum/node/statement/ForLoop
-	var/block_handle
-	var/test_handle
-	var/init_handle
-	var/increment_handle
+	var/tmp/block_handle
+	var/tmp/test_handle
+	var/tmp/init_handle
+	var/tmp/increment_handle
 
 /*
 	Class: BreakStatement

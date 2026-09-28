@@ -32,7 +32,7 @@
 
 	var/scanning = 0
 	var/report_num = 0
-	var/scanned_item_handle
+	var/tmp/scanned_item_handle
 	var/last_scan_data = "No scans on record."
 	var/scan_progress = 0
 

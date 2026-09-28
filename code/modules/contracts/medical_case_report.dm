@@ -44,7 +44,7 @@
 	var/target_condition_type
 	var/target_condition_name
 	var/consent_time = 0
-	var/consent_record_handle
+	var/tmp/consent_record_handle
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
 

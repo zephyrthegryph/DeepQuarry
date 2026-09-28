@@ -21,7 +21,7 @@
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/our_db_handle	// These persist all round and are never destroyed, just keep a hard ref
+	var/tmp/our_db_handle	// These persist all round and are never destroyed, just keep a hard ref
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
@@ -56,7 +56,7 @@ REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 		designer_gui = new(src, null)
 		designer_gui.linked_body_design_console = om_handle(src)
 		CallAsync(designer_gui, TYPE_PROC_REF(/datum/tgui_module/appearance_changer,jiggle_map))
-	if(!designer_gui.owner)
+	if(!designer_gui.owner())
 		designer_gui.make_fake_owner()
 		selected_record = FALSE
 	designer_gui.tgui_interact(user)

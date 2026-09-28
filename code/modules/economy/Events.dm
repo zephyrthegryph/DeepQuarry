@@ -5,7 +5,7 @@
 	var/event_type = 0
 	var/list/cheaper_goods
 	var/list/dearer_goods
-	var/affected_dest_handle
+	var/tmp/affected_dest_handle
 
 /datum/event/economic_event/start()
 	affected_dest_handle = om_handle(pickweight(GLOB.weighted_randomevent_locations))

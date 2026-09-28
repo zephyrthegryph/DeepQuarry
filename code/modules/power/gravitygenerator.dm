@@ -61,7 +61,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 //
 
 /obj/machinery/gravity_generator/part
-	var/main_part_handle
+	var/tmp/main_part_handle
 
 /obj/machinery/gravity_generator/part/declare_interactions(list/into)
 	into += list(
@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	var/on = TRUE
 	var/breaker = TRUE
 	var/list/parts
-	var/middle_handle
+	var/tmp/middle_handle
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
 	var/current_overlay = null

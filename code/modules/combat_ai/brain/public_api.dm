@@ -136,7 +136,7 @@
 	var/max_home_distance = 7
 	/// Destination turf for a one-shot walk. Set via give_destination, read by
 	/// /datum/ai_behavior/walk_to_destination.
-	var/destination_handle
+	var/tmp/destination_handle
 
 /// Legacy stubs for procs that mob subtypes still try to call. Each returns
 /// a safe default — the real behavior moved to /datum/ai_behavior selection.

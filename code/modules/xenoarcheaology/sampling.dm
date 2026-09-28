@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	var/geological_data_handle
+	var/tmp/geological_data_handle
 
 /obj/item/rocksliver/Initialize(mapload)
 	. = ..()

@@ -2,9 +2,9 @@
 /datum/lore/codex
 	var/name = null // Title displayed
 	var/data = null // The actual words.
-	var/parent_handle	// Category above us
+	var/tmp/parent_handle	// Category above us
 	var/list/keywords = list() // Used for searching.
-	var/holder_handle
+	var/tmp/holder_handle
 
 /datum/lore/codex/New(new_holder, new_parent)
 	..()

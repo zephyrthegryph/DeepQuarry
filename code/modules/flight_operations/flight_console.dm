@@ -1,6 +1,6 @@
 /datum/flight_operations_ui
-	var/host_handle
-	var/forced_vessel_handle
+	var/tmp/host_handle
+	var/tmp/forced_vessel_handle
 
 /datum/flight_operations_ui/New(new_host, datum/flight_vessel/new_forced_vessel = null)
 	..()
@@ -68,10 +68,10 @@
 			"longitude" = destination.surface_longitude,
 			"compatible" = viewing_vessel.has_capabilities(destination.required_capabilities),
 			"materialized" = !destination.expedition() || destination.expedition().z_level > 0,
-			"is_current" = destination.target == viewing_ship,
+			"is_current" = destination.target() == viewing_ship,
 		)
 		if(destination.kind == FLIGHT_DEST_VESSEL)
-			var/datum/flight_vessel/render_vessel = SSflight_operations.vessel_for_ship(destination.target)
+			var/datum/flight_vessel/render_vessel = SSflight_operations.vessel_for_ship(destination.target())
 			var/is_carrier = istype(render_vessel?.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier)
 			var/datum/flight_port/render_port = is_carrier ? null : SSflight_operations.ports[render_vessel?.docked_port_id]
 			render_data["scene_role"] = render_port ? "docked" : "orbital"
@@ -128,7 +128,7 @@
 			"generation_progress" = plan.generation_progress,
 			"generation_stage" = plan.generation_stage,
 		)
-	var/datum/expedition_site/active_expedition = vessel.active_expedition
+	var/datum/expedition_site/active_expedition = vessel.active_expedition()
 	if(active_expedition && !QDELETED(active_expedition))
 		data["expedition"] = list(
 			"name" = active_expedition.name,

@@ -34,7 +34,7 @@
 	interface_name = "integrated intelligence system"
 	interface_desc = "A socket that supports a range of artificial intelligence systems."
 
-	var/integrated_ai_handle	// Direct reference to the actual mob held in the suit.
+	var/tmp/integrated_ai_handle	// Direct reference to the actual mob held in the suit.
 	var/obj/item/aicard/ai_card  // Reference to the MMI, posibrain, intellicard or pAI card previously holding the AI.
 	var/obj/item/ai_verbs/verb_holder
 
@@ -122,7 +122,7 @@
 	if(!..())
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 
 	if(!target)
 		if(ai_card)

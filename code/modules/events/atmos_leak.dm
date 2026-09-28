@@ -11,8 +11,8 @@
 
 /datum/event/atmos_leak
 	startWhen = 5			// Nobody will actually be in the room, but still give a bit of warning.
-	var/target_area_handle	// Chosen target area
-	var/target_turf_handle	// Chosen target turf in target_area
+	var/tmp/target_area_handle	// Chosen target area
+	var/tmp/target_turf_handle	// Chosen target turf in target_area
 	var/gas_type			// Chosen gas to release
 	// Exclude these types and sub-types from targeting eligibilty
 	var/static/list/area/excluded = list(

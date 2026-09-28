@@ -25,7 +25,7 @@
 	/// Optional fully-formatted HTML body (rendered after lines/table).
 	var/body_html = ""
 	/// Optional datum receiving forwarded byond:// link clicks. May be null.
-	var/forward_host_handle
+	var/tmp/forward_host_handle
 
 /datum/admin_report/New(report_title, mob/viewer, datum/host)
 	..()

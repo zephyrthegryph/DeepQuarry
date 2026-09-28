@@ -175,7 +175,7 @@
 
 /obj/item/multitool
 	var/accepting_refs
-	var/selected_io_handle
+	var/tmp/selected_io_handle
 	var/mode = 0
 
 /obj/item/multitool/update_icon()

@@ -3,7 +3,7 @@
 	name = "large parcel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "deliverycloset"
-	var/wrapped_handle
+	var/tmp/wrapped_handle
 	density = TRUE
 	var/sortTag = null
 	flags = NOBLUDGEON

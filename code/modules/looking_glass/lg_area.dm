@@ -1,7 +1,7 @@
 /area/looking_glass
 	name = "make a subtype"
 
-	var/our_landmark_handle
+	var/tmp/our_landmark_handle
 	var/list/our_turfs
 	var/list/our_optional_turfs
 

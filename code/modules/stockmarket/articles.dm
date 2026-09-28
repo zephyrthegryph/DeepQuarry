@@ -28,7 +28,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	var/spacetime = ""
 	var/opinion = 0
 	var/ticks = 0
-	var/about_handle
+	var/tmp/about_handle
 	var/outlet = ""
 	var/static/list/outlets = list()
 	var/static/list/default_tokens = list( \

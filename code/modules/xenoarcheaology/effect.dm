@@ -3,7 +3,7 @@
 	var/effect = EFFECT_TOUCH //This is simply if the effect occurs on touch, in an aura, or a pulse AOE. Horribly named variable.
 	var/effectrange = 4 //How far the effect will hit something.
 	var/trigger = TRIGGER_TOUCH //This decides how the artifact is actually activated. Ex: Splashing water on it.
-	var/master_handle	//This code is handled in effect_master.dm
+	var/tmp/master_handle	//This code is handled in effect_master.dm
 	var/activated = 0
 	var/chargelevel = 1
 	var/chargelevelmax = 10

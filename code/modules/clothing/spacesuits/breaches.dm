@@ -6,7 +6,7 @@
 	var/class = 0                           // Size. Lower is smaller. Uses floating point values!
 	var/descriptor                          // 'gaping hole' etc.
 	var/breach_type = BURN                      // Punctured or melted
-	var/holder_handle	// Suit containing the list of breaches holding this instance.
+	var/tmp/holder_handle	// Suit containing the list of breaches holding this instance.
 
 /obj/item/clothing/suit/space
 	armor_spec = "cold=60"

@@ -10,7 +10,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/active = FALSE // Code appendix.
-	var/target_handle	// this will be where the output objects are 'thrown' to.
+	var/tmp/target_handle	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
 	var/start_eject = 0
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?

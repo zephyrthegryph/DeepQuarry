@@ -152,7 +152,7 @@
 /obj/item/shovel/wood
 	icon_state = "whiteshovel"
 	item_state = "whiteshovel"
-	var/material_handle
+	var/tmp/material_handle
 	resistance_flags = FLAMMABLE
 
 /obj/item/shovel/wood/Initialize(mapload, _mat)

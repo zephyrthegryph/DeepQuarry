@@ -25,7 +25,7 @@
 /obj/item/rig_module/gauntlets/activate()
 	if(!..())
 		return
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 	if(!M)
 		return
 
@@ -50,7 +50,7 @@
 
 /obj/item/rig_module/gauntlets/deactivate()
 	..()
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 	if(!M)
 		return
 	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in M.contents)

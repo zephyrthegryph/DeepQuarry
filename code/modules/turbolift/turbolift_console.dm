@@ -7,7 +7,7 @@
 	density = FALSE
 	plane = MOB_PLANE
 
-	var/lift_handle
+	var/tmp/lift_handle
 
 /obj/structure/lift/set_dir(newdir)
 	. = ..()

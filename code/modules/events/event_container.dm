@@ -5,7 +5,7 @@
 	var/next_event_time = 0
 	var/list/available_events
 	var/list/last_event_time
-	var/next_event_handle
+	var/tmp/next_event_handle
 
 	var/last_world_time = 0
 

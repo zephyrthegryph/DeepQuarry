@@ -8,7 +8,7 @@
  * Hosts tgchat and other nice features.
  */
 /datum/tgui_panel
-	var/client_handle
+	var/tmp/client_handle
 	var/datum/tgui_window/window
 	var/broken = FALSE
 	var/initialized_at

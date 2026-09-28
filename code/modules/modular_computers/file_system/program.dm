@@ -11,7 +11,7 @@
 	var/datum/tgui_module/TM = null			// If the program uses TGUIModule, put it here and it will be automagically opened. Otherwise implement tgui_interact.
 	var/tguimodule_path = null				// Path to tguimodule, make sure to set this if implementing new program.
 	var/program_state = PROGRAM_STATE_KILLED// PROGRAM_STATE_KILLED or PROGRAM_STATE_BACKGROUND or PROGRAM_STATE_ACTIVE - specifies whether this program is running.
-	var/computer_handle	// Device that runs this program.
+	var/tmp/computer_handle	// Device that runs this program.
 
 	var/filedesc = "Unknown Program"		// User-friendly name of this program.
 	var/extended_desc = "N/A"				// Short description of this program's function.

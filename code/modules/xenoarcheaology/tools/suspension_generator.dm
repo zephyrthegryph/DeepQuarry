@@ -7,7 +7,7 @@
 	density = 1
 	req_access = list(ACCESS_RESEARCH)
 	var/obj/item/cell/cell
-	var/auth_card_handle
+	var/tmp/auth_card_handle
 	var/locked = 1
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field

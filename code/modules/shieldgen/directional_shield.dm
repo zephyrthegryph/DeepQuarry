@@ -380,8 +380,8 @@ REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"
 	offset_from_center = 1 //Snug against the exosuit.
 	max_integrity = 200
 
-	var/my_mecha_handle
-	var/my_tool_handle
+	var/tmp/my_mecha_handle
+	var/tmp/my_tool_handle
 	special_handling = TRUE
 
 /obj/item/shield_projector/line/exosuit/periodic_step()

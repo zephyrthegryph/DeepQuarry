@@ -117,7 +117,7 @@
 /datum/data/pda/utility/scanmode/notes
 	base_name = "Note Scanner"
 	icon = "clipboard"
-	var/notes_handle
+	var/tmp/notes_handle
 
 /datum/data/pda/utility/scanmode/notes/start()
 	. = ..()

@@ -9,7 +9,7 @@
 	maintenance_wrench_time = 2 SECONDS
 
 	circuit = /obj/item/circuitboard/firework_launcher
-	var/loaded_star_handle
+	var/tmp/loaded_star_handle
 	var/last_launch
 	var/launch_cooldown = 5 MINUTES
 

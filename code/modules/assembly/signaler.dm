@@ -12,8 +12,8 @@
 	var/frequency = RSD_FREQ
 	var/delay = 0
 	var/airlock_wire = null
-	var/connected_handle
-	var/radio_connection_handle
+	var/tmp/connected_handle
+	var/tmp/radio_connection_handle
 	var/deadman = FALSE
 
 /obj/item/assembly/signaler/Initialize(mapload)
@@ -27,8 +27,8 @@
 	return TRUE
 
 /obj/item/assembly/signaler/update_icon()
-	if(holder)
-		holder.update_icon()
+	if(holder())
+		holder().update_icon()
 
 /obj/item/assembly/signaler/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -100,8 +100,8 @@
 		return FALSE
 	if(connected() && wires)
 		connected().pulse_assembly(src)
-	else if(holder)
-		holder.process_activation(src, 1, 0)
+	else if(holder())
+		holder().process_activation(src, 1, 0)
 	else
 		..(radio)
 	return TRUE
@@ -117,7 +117,7 @@
 		return FALSE
 	pulse(1)
 
-	if(!holder)
+	if(!holder())
 		for(var/mob/O in hearers(1, src.loc))
 			O.show_message("[icon2html(src, O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 

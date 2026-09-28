@@ -18,7 +18,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	var/datum/view_variables_panel/dq_vv_panel
 
 /datum/view_variables_panel
-	var/owner_handle
+	var/tmp/owner_handle
 	/// The datum or list currently being viewed.
 	var/thing
 	/// Saved ref string so refresh actions land on the same target.

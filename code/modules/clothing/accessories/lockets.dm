@@ -9,7 +9,7 @@
 	slot = ACCESSORY_SLOT_DECOR
 	var/base_icon
 	var/open
-	var/held_handle	//Item inside locket.
+	var/tmp/held_handle	//Item inside locket.
 	special_handling = TRUE
 
 /obj/item/clothing/accessory/locket/attack_self(mob/user)

@@ -4,7 +4,7 @@
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pack"
 	w_class = ITEMSIZE_NORMAL
-	var/beacon_handle
+	var/tmp/beacon_handle
 	var/static/list/beacon_networks = list("station")
 	var/uses_left = 3
 	var/can_use_indoors = TRUE // Can be used anywhere.
@@ -179,7 +179,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 /obj/effect/extraction_holder
 	name = "extraction holder"
 	desc = "you shouldn't see this"
-	var/stored_obj_handle
+	var/tmp/stored_obj_handle
 
 /obj/item/extraction_pack/proc/check_for_living_mobs(atom/A)
 	if(isliving(A))

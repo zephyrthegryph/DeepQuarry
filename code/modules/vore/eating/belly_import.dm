@@ -13,7 +13,7 @@
 
 	switch(action)
 		if("import_soulcatcher")
-			import_soulcatcher(host, params["data"])
+			import_soulcatcher(host(), params["data"])
 		if("import_bellies")
 			import_belly(ui.user, params["data"])
 

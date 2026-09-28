@@ -79,7 +79,7 @@
 		SPECIES_ALTEVIAN 		= 'icons/inventory/suit/mob_altevian.dmi'
 		)
 	supporting_limbs = list()
-	var/tacknife_handle
+	var/tmp/tacknife_handle
 	max_pressure_protection = null
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF

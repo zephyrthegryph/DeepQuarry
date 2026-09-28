@@ -5,7 +5,7 @@
 	icon_state = "anomaly_container"
 	density = TRUE
 
-	var/contained_handle
+	var/tmp/contained_handle
 
 /obj/structure/anomaly_container/Initialize(mapload)
 	. = ..()

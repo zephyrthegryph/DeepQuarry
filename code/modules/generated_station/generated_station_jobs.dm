@@ -7,8 +7,8 @@
 /// is spent, so nothing sleeps and a partially built z-level is never exposed to
 /// players. The normal budget deliberately leaves most of a 25 ms tick to the live game.
 /datum/generated_station_materialization_job
-	var/materializer_handle
-	var/flight_plan_handle
+	var/tmp/materializer_handle
+	var/tmp/flight_plan_handle
 	var/phase = "queued"
 	var/progress = 0
 	var/tick_budget = GENERATED_STATION_TICK_BUDGET_NORMAL
@@ -21,7 +21,7 @@
 	var/finished_at
 	var/failed = FALSE
 	var/failure_reason
-	var/materialization_handle
+	var/tmp/materialization_handle
 	/// Runs every phase at once (materialize()), or as lane work (materialize_async()).
 	var/now = TRUE
 	/// The materializer's phases, the one running and where it resumes.

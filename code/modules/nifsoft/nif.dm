@@ -179,7 +179,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 	if(H)
 		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
 		H.nif = null
-	QDEL_NULL(menu())
+	qdel(menu()); menu_handle = null
 	unregister_human()
 	human = null
 	install_done = null

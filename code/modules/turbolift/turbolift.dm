@@ -1,7 +1,7 @@
 // Lift master datum. One per turbolift.
 /datum/turbolift
-	var/target_floor_handle	// Where are we going?
-	var/current_floor_handle	// Where is the lift currently?
+	var/tmp/target_floor_handle	// Where are we going?
+	var/tmp/current_floor_handle	// Where is the lift currently?
 	var/list/doors = list()                             // Doors inside the lift structure.
 	var/list/queued_floors                     // Where are we moving to next?
 	var/list/floors = list()                            // All floors in this system.

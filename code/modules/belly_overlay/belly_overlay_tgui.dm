@@ -8,7 +8,7 @@
 // natively, so we don't ship per-frame URLs or any animation timing.
 
 /datum/belly_overlay_tgui
-	var/owner_handle
+	var/tmp/owner_handle
 	var/datum/tgui/active_ui
 	var/list/state = list()
 	/// Signature of the last computed overlay state. show() recomputes it cheaply

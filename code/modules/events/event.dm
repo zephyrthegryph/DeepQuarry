@@ -10,7 +10,7 @@
 	var/add_to_queue= 1	// If true, add back to the queue of events upon finishing.
 	var/list/role_weights // null when the event has no job weighting
 	var/list/min_job_count
-	var/event_type_handle
+	var/tmp/event_type_handle
 
 /datum/event_meta/New(event_severity, event_name, datum/event/type, event_weight, list/job_weights, is_one_shot = 0, min_event_weight = 0, max_event_weight = 0, add_to_queue = 1, list/min_jobs)
 	name = event_name
@@ -68,10 +68,10 @@
 	var/startedAt			= 0 //When this event started.
 	var/endedAt				= 0 //When this event ended.
 	var/processing_active 	= TRUE
-	var/event_meta_handle
+	var/tmp/event_meta_handle
 	var/list/affecting_z	= null // List of z-levels to affect, null lets the event choose (usally station_levels)
 	var/has_skybox_image	= FALSE // True if SSskybox should query this event for an image to put in the skybox.
-	var/victim_handle	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
+	var/tmp/victim_handle	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
 
 /datum/event/nothing
 

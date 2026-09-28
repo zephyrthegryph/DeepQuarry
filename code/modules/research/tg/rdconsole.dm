@@ -201,7 +201,7 @@ REF_SPILL(/obj/machinery/computer/rdconsole_tg, list("t_disk", "d_disk"))
 
 	if(t_disk)
 		data["t_disk"] = list (
-			"stored_research" = (t_disk.stored_research.researched_nodes || list()),
+			"stored_research" = (t_disk.stored_research().researched_nodes || list()),
 		)
 	if(d_disk)
 		data["d_disk"] = list("blueprints" = list())
@@ -378,7 +378,7 @@ REF_SPILL(/obj/machinery/computer/rdconsole_tg, list("t_disk", "d_disk"))
 					return TRUE
 				COOLDOWN_START(src, cooldowncopy, 5 SECONDS)
 				atom_say("Uploading technology disk.")
-				t_disk.stored_research.copy_research_to(stored_research)
+				t_disk.stored_research().copy_research_to(stored_research)
 			return TRUE
 
 		//Tech disk-only action.
@@ -391,7 +391,7 @@ REF_SPILL(/obj/machinery/computer/rdconsole_tg, list("t_disk", "d_disk"))
 				return
 			COOLDOWN_START(src, cooldowncopy, 5 SECONDS)
 			atom_say("Downloading to technology disk.")
-			stored_research.copy_research_to(t_disk.stored_research)
+			stored_research.copy_research_to(t_disk.stored_research())
 			return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/eject_disk(type)

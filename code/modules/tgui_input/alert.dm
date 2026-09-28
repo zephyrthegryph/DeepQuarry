@@ -67,7 +67,7 @@
 	/// Boolean field describing if the tgui_modal was closed by the user.
 	var/closed
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/state_handle
+	var/tmp/state_handle
 
 /datum/tgui_alert/New(mob/user, message, title, list/buttons, timeout, autofocus, ui_state)
 	src.autofocus = autofocus

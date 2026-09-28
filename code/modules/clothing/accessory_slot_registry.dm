@@ -35,7 +35,7 @@
 	/// Force delta (melee damage).
 	var/force_delta = 0
 	/// The clothing item this modifier was applied to.
-	var/target_handle
+	var/tmp/target_handle
 
 /datum/accessory_stat_modifier/New(obj/item/clothing/new_target, label_str)
 	target_handle = om_handle(new_target)

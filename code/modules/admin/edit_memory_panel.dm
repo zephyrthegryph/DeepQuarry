@@ -11,7 +11,7 @@
 
 /datum/edit_memory_panel
 	var/datum/mind/target_mind
-	var/admin_user_handle
+	var/tmp/admin_user_handle
 	var/list/cached_antag_blocks
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)

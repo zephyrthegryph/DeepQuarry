@@ -1,7 +1,7 @@
 GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /datum/event/money_hacker
-	var/affected_account_handle
+	var/tmp/affected_account_handle
 	endWhen = 100
 	var/end_time
 

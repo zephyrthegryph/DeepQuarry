@@ -9,7 +9,7 @@
 	throwforce = 3
 	force = 3
 	w_class = ITEMSIZE_TINY
-	var/syringe_handle
+	var/tmp/syringe_handle
 
 /obj/item/syringe_cartridge/update_icon()
 	underlays.Cut()
@@ -87,7 +87,7 @@
 
 	var/list/darts
 	var/max_darts = 1
-	var/next_handle
+	var/tmp/next_handle
 
 	special_handling = TRUE
 

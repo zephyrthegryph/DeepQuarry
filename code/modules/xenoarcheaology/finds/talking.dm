@@ -3,7 +3,7 @@
 /datum/talking_atom
 	var/list/heard_words = list()
 	var/last_talk_time = 0
-	var/holder_atom_handle
+	var/tmp/holder_atom_handle
 	var/talk_interval = 50
 	var/talk_chance = 10
 

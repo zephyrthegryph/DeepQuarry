@@ -17,7 +17,7 @@
 /datum/event2/event/money_hacker
 	length_lower_bound = 8 MINUTES
 	length_upper_bound = 12 MINUTES
-	var/targeted_account_handle
+	var/tmp/targeted_account_handle
 
 /datum/event2/event/money_hacker/set_up()
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))

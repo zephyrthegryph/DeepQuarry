@@ -23,7 +23,7 @@
 	desc = "A clamp used to lift people or things."
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_hook"
-	var/source_hoist_handle
+	var/tmp/source_hoist_handle
 	can_buckle = TRUE
 	anchored = TRUE
 	description_info = "Click and drag someone (or any object) to this to attach them to the clamp. If you are within reach, when you click and drag this to a turf adjacent to you, it will move the attached object there and release it."
@@ -99,7 +99,7 @@
 	anchored = TRUE
 	name = "hoist"
 	desc = "A manual hoist, uses a clamp and pulley to hoist things."
-	var/hoistee_handle
+	var/tmp/hoistee_handle
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
 	description_info = "Click this to raise or lower the hoist, or to switch directions if it can't move any further. It can also be collapsed into a hoist kit."

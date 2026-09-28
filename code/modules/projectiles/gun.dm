@@ -73,7 +73,7 @@
 
 	var/wielded_item_state
 	var/one_handed_penalty = 0 // Penalty applied if someone fires a two-handed gun with one hand.
-	var/auto_target_handle
+	var/tmp/auto_target_handle
 	var/shooting = 0
 	var/next_fire_time = 0
 

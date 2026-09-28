@@ -22,7 +22,8 @@
 	/// Where and how the atom should be spawned.
 	var/where_target_type = WHERE_FLOOR_BELOW_MOB
 	/// The atom selected from the panel.
-	var/atom/selected_atom = null
+	/// The type path to spawn (the copy mode picks an object's type).
+	var/selected_atom = null
 	/// The icon selected for the atom from the panel.
 	var/selected_atom_icon = null
 	/// The icon state selected for the atom from the panel.
@@ -88,8 +89,9 @@
 			selected_atom_icon = null
 			selected_atom_icon_state = null
 			if(selected_atom)
-				selected_atom_icon = initial(selected_atom.icon)
-				selected_atom_icon_state = initial(selected_atom.icon_state)
+				var/atom/selected_type = selected_atom
+				selected_atom_icon = initial(selected_type.icon)
+				selected_atom_icon_state = initial(selected_type.icon_state)
 				available_icon_states = icon_states(selected_atom_icon)
 			else
 				available_icon_states = list()
@@ -102,7 +104,8 @@
 		if("reset-icon-state")
 			selected_atom_icon_state = null
 			if(selected_atom)
-				selected_atom_icon_state = initial(selected_atom.icon_state)
+				var/atom/selected_type = selected_atom
+				selected_atom_icon_state = initial(selected_type.icon_state)
 			return TRUE
 
 		if("set-icon-size")
@@ -251,7 +254,7 @@
 
 			if(PRECISE_MODE_COPY)
 				to_chat(user, span_notice("Picked object: [icon2html(target, user)] [span_bold("[target]")]"))
-				selected_atom = target
+				selected_atom = target.type
 				toggle_precise_mode(PRECISE_MODE_OFF, user)
 				SStgui.update_uis(src)
 
@@ -269,7 +272,7 @@
 			states += state
 	data["iconStates"] = states
 	data["precise_mode"] = precise_mode
-	data["selected_object"] = selected_atom ? "[selected_atom.type]" : ""
+	data["selected_object"] = selected_atom ? "[selected_atom]" : ""
 	return data
 
 /datum/spawnpanel/ui_assets(mob/user)

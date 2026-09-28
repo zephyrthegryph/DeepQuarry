@@ -2,7 +2,7 @@
 	announceWhen	= 12
 	endWhen			= 120
 
-	var/Blob_handle
+	var/tmp/Blob_handle
 
 
 /datum/event/blob/start()

@@ -3,7 +3,7 @@
 	name = "Supermatter monitor"
 	tgui_id = "SupermatterMonitor"
 	var/list/supermatters
-	var/active_handle	// Currently selected supermatter crystal.
+	var/tmp/active_handle	// Currently selected supermatter crystal.
 
 /datum/tgui_module/supermatter_monitor/New()
 	..()

@@ -64,7 +64,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER
 	color = COLOR_RED
-	var/breaker_box_handle
+	var/tmp/breaker_box_handle
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0

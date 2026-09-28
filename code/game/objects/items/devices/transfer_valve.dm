@@ -45,7 +45,7 @@
 		attached_device = A
 		A.forceMove(src)
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
-		A.holder = src
+		A.holder_handle = om_handle(src)
 		A.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
 
 		GLOB.bombers += "[key_name(user)] attached a [item] to a transfer valve."
@@ -110,7 +110,7 @@
 		if("remove_device")
 			if(attached_device)
 				attached_device.forceMove(get_turf(src))
-				attached_device.holder = null
+				attached_device.holder_handle = null
 				attached_device = null
 				update_icon()
 		else

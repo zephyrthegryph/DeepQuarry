@@ -24,14 +24,14 @@ log transactions
 	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/atm
 	flags = WALL_ITEM
-	var/authenticated_account_handle
+	var/tmp/authenticated_account_handle
 	var/number_incorrect_tries = 0
 	var/previous_account_number = 0
 	var/max_pin_attempts = 3
 	var/ticks_left_locked_down = 0
 	var/ticks_left_timeout = 0
 	var/machine_id = ""
-	var/held_card_handle
+	var/tmp/held_card_handle
 	var/editing_security_level = 0
 	var/view_screen = NO_SCREEN
 	var/datum/effect/effect/system/spark_spread/spark_system

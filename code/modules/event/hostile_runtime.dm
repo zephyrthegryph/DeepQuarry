@@ -1,7 +1,7 @@
 /datum/event/hostile_runtime
-	var/picked_area_handle
+	var/tmp/picked_area_handle
 	var/list/obj/machinery/door/airlock/target_airlocks
-	var/apc_handle
+	var/tmp/apc_handle
 
 	var/static/list/excluded = list(
 		/area/shuttle,

@@ -160,7 +160,7 @@ REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
 		to_chat(usr, span_warning("You cannot use the suit in this state."))
 		return 0
 
-	if(holder.wearer && holder.wearer.lying)
+	if(holder.wearer() && holder.wearer().lying)
 		to_chat(usr, span_warning("The suit cannot function while the wearer is prone."))
 		return 0
 

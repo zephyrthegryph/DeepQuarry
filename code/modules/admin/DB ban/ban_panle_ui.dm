@@ -1,6 +1,6 @@
 /datum/tgui_ban_panel
-	var/holder_handle	//client of whoever is using this datum
-	var/admin_datum_handle
+	var/tmp/holder_handle	//client of whoever is using this datum
+	var/tmp/admin_datum_handle
 	var/playerckey
 	var/adminckey
 	var/playerip

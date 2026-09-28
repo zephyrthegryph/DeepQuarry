@@ -7,7 +7,7 @@
 	req_access = list(ACCESS_RD)
 
 	///Connected techweb node the server is connected to.
-	var/stored_research_handle
+	var/tmp/stored_research_handle
 	var/badmin = FALSE // old compatibility
 
 /obj/machinery/computer/rdservercontrol/Initialize(mapload)

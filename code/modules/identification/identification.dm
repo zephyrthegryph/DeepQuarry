@@ -4,7 +4,7 @@
 // Despite this, unlike a roguelike, objects that do the same thing DO NOT have the same name/appearance/etc.
 
 /datum/identification
-	var/holder_handle	// The thing the datum is 'attached' to.
+	var/tmp/holder_handle	// The thing the datum is 'attached' to.
 	// Holds the true information.
 	var/true_name = null				// The real name of the object. It is copied automatically from holder, on the datum being instantiated.
 	var/true_desc = null				// Ditto, for desc.

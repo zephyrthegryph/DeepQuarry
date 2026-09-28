@@ -8,7 +8,7 @@
 	w_class = ITEMSIZE_TINY
 	max_components = IC_COMPONENTS_BASE / 2
 	max_complexity = IC_COMPLEXITY_BASE / 2
-	var/implant_handle
+	var/tmp/implant_handle
 
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()

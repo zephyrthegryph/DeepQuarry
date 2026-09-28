@@ -3,8 +3,8 @@
 	A runtime instance of a block. Used internally by the interpreter.
 */
 /datum/scope
-	var/parent_handle
-	var/block_handle
+	var/tmp/parent_handle
+	var/tmp/block_handle
 	var/list/functions
 	var/list/variables
 

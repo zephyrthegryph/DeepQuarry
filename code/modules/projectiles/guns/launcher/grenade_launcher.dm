@@ -12,7 +12,7 @@
 	throw_distance = 7
 	release_force = 5
 
-	var/chambered_handle
+	var/tmp/chambered_handle
 	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
 	MATERIAL_BULK(MAT_STEEL, 2000)

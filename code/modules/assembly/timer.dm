@@ -42,7 +42,7 @@
 	if(!secured)
 		return 0
 	pulse(0)
-	if(!holder)
+	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*", "*beep* *beep*")
 
 /obj/item/assembly/timer/periodic_step()
@@ -57,8 +57,8 @@
 	if(timing)
 		add_overlay("timer_timing")
 		attached_overlays += "timer_timing"
-	if(holder)
-		holder.update_icon()
+	if(holder())
+		holder().update_icon()
 	return
 
 /obj/item/assembly/timer/tgui_interact(mob/user, datum/tgui/ui)

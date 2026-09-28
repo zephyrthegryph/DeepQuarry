@@ -65,7 +65,7 @@
 	integrity_failure = 0.5
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
-	var/area_handle
+	var/tmp/area_handle
 	var/areastring = null
 	var/obj/item/cell/cell
 	/// Cap for how fast APC cells charge, as a percentage-per-tick.

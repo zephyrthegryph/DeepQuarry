@@ -15,7 +15,7 @@
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/power_efficiency = 1
 	var/boosted = 0 // do we teleport mecha?
-	var/linked_pad_handle
+	var/tmp/linked_pad_handle
 
 	//mapping
 	var/static/list/mapped_quantum_pads = list()

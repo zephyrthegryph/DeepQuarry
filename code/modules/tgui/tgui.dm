@@ -10,11 +10,11 @@
 	/// The mob who opened/is using the UI.
 	var/mob/user
 	/// The object which owns the UI.
-	var/src_object_handle
+	var/tmp/src_object_handle
 	/// The title of the UI.
 	var/title
 	/// The window_id for browse() and onclose().
-	var/window_handle
+	var/tmp/window_handle
 	/// Key that is used for remembering the window geometry.
 	var/window_key
 	/// Deprecated: Window size.
@@ -36,7 +36,7 @@
 	/// Timed refreshing state
 	var/refreshing = FALSE
 	/// Topic state used to determine status/interactability.
-	var/state_handle
+	var/tmp/state_handle
 	/// Rate limit client refreshes to prevent DoS.
 	COOLDOWN_DECLARE(refresh_cooldown)
 	/// The id of any ByondUi elements that we have opened
@@ -44,7 +44,7 @@
 	/// The map z-level to display.
 	var/map_z_level = 1
 	/// The Parent UI
-	var/parent_ui_handle
+	var/tmp/parent_ui_handle
 	/// Children of this UI
 	var/list/children = list()
 	/// Any partial packets that we have received from TGUI, waiting to be sent

@@ -7,8 +7,8 @@
 	opacity = 1
 	anchored = TRUE
 	var/excavation_level = 0
-	var/geological_data_handle
-	var/artifact_find_handle
+	var/tmp/geological_data_handle
+	var/tmp/artifact_find_handle
 	var/last_act = 0
 
 /obj/structure/boulder/Initialize(mapload)

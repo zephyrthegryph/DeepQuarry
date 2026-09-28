@@ -206,7 +206,7 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 	tgui_id = "ICCameraConsole"
 	access_based = FALSE
 
-	var/owner_circuit_handle
+	var/tmp/owner_circuit_handle
 
 /datum/tgui_module/camera/intcircuit/New(host)
 	owner_circuit_handle = om_handle(host)

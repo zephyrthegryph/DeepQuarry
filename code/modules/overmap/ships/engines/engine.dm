@@ -2,7 +2,7 @@
 
 /datum/ship_engine
 	var/name = "ship engine"
-	var/holder_handle	//actual engine object
+	var/tmp/holder_handle	//actual engine object
 
 REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 

@@ -9,7 +9,7 @@
 /datum/tgui_module/robot_ui_decals/tgui_static_data()
 	var/list/data = ..()
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 
 	if(!R.sprite_datum)
 		return data
@@ -22,7 +22,7 @@
 /datum/tgui_module/robot_ui_decals/tgui_data()
 	var/list/data = ..()
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 	data["active_decals"] = (R.robotdecal_on || list())
 
 	data["theme"] = R.get_ui_theme()
@@ -34,7 +34,7 @@
 	if(.)
 		return
 
-	var/mob/living/silicon/robot/R = host
+	var/mob/living/silicon/robot/R = host()
 	if(!R.sprite_datum)
 		return FALSE
 

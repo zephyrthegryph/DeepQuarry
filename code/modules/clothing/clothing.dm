@@ -65,7 +65,7 @@
 // itself if the control module is removed, destroyed, or its owner dies, so a
 // deployed component is never left locked onto the wearer. See rig_self_detach().
 /obj/item/clothing
-	var/master_rig_handle
+	var/tmp/master_rig_handle
 
 // The self-detach primitive. Gets a deployed rig piece off its wearer and somewhere
 // safe: retracted back into the control module if it still exists, otherwise dropped

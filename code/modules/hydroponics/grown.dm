@@ -11,7 +11,7 @@
 	pickup_sound = 'sound/items/pickup/herb.ogg'
 
 	var/plantname
-	var/seed_handle
+	var/tmp/seed_handle
 	var/potency = -1
 	special_handling = TRUE
 

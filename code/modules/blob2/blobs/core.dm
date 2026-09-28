@@ -18,7 +18,7 @@
 	var/point_rate = 2
 	var/ai_controlled = TRUE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
-	var/controller_handle	//Whoever is set to be controlling the blob. Used when the blob is created.
+	var/tmp/controller_handle	//Whoever is set to be controlling the blob. Used when the blob is created.
 
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player

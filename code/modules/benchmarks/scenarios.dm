@@ -202,7 +202,7 @@
 /datum/benchmark/major_events
 	id = "major_events"
 	description = "Tick cost of explosions, supermatter, mass fire and decompression"
-	var/event_center_handle
+	var/tmp/event_center_handle
 	var/list/turf/open/event_turfs
 
 /datum/benchmark/major_events/Run()
@@ -266,7 +266,7 @@
 /datum/benchmark/generation
 	id = "generation"
 	description = "Expedition station generation and release (bench_cycles, default 1)"
-	var/generated_site_handle
+	var/tmp/generated_site_handle
 	var/generation_done = FALSE
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)

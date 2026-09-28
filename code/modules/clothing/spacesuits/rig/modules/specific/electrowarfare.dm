@@ -18,7 +18,7 @@
 		return
 
 	// This is not the best way to handle this, but I don't want it to mess with ling camo
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 	M.digitalcamo++
 
 /obj/item/rig_module/electrowarfare_suite/deactivate()
@@ -26,5 +26,5 @@
 	if(!..())
 		return
 
-	var/mob/living/M = holder.wearer
+	var/mob/living/M = holder.wearer()
 	M.digitalcamo = max(0,(M.digitalcamo-1))

@@ -11,7 +11,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = TRUE
 	invisibility = INVISIBILITY_NONE
-	var/gen_handle	// Owning generator
+	var/tmp/gen_handle	// Owning generator
 	var/disabled_for = 0
 	var/diffused_for = 0
 	can_atmos_pass = ATMOS_PASS_YES

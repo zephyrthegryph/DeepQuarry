@@ -1,7 +1,7 @@
 /// Runtime state for one department instance. Stockpiles are finite quantities
 /// consumed transactionally by concrete work such as healing and repairs.
 /datum/generated_station_department_runtime
-	var/department_handle
+	var/tmp/department_handle
 	var/state = GENERATED_DEPARTMENT_OFFLINE
 	var/integrity = 100
 	var/list/stockpiles
@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /// Authoritative dependency simulation for one generated station.
 /datum/generated_station_simulation
-	var/spec_handle
+	var/tmp/spec_handle
 	var/list/departments
 	var/list/capabilities
 	var/list/power_areas
@@ -56,7 +56,7 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 /datum/generated_station_simulation/proc/configure_default_resources()
 	for(var/id in departments)
 		var/datum/generated_station_department_runtime/runtime = departments[id]
-		switch(runtime.department().definition.id)
+		switch(runtime.department().definition().id)
 			if("engineering")
 				runtime.stockpiles["fuel"] = 100
 				runtime.minimum_stockpiles["fuel"] = 1
@@ -125,7 +125,7 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 		var/list/available = aggregate_capabilities(candidates)
 		for(var/id in candidates.Copy())
 			var/datum/generated_station_department_runtime/runtime = departments[id]
-			for(var/datum/generated_station_capability_requirement/requirement in runtime.department().definition.requirements)
+			for(var/datum/generated_station_capability_requirement/requirement in runtime.department().definition().requirements)
 				if(requirement.optional)
 					continue
 				if((available[requirement.capability_id] || 0) < requirement.amount)
@@ -148,7 +148,7 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 	for(var/id in candidates)
 		var/datum/generated_station_department_runtime/runtime = departments[id]
 		var/output_scale = runtime.integrity < 50 ? 0.5 : 1
-		for(var/datum/generated_station_capability_provision/provision in runtime.department().definition.provisions)
+		for(var/datum/generated_station_capability_provision/provision in runtime.department().definition().provisions)
 			available[provision.capability_id] = (available[provision.capability_id] || 0) + provision.amount * output_scale
 	return available
 

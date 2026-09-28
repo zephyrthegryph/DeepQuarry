@@ -6,7 +6,7 @@
 	wear = 2
 	applies_to = NIF_SYNTHETIC
 	tick_flags = NIF_ACTIVETICK
-	var/apc_handle
+	var/tmp/apc_handle
 	other_flags = (NIF_O_APCCHARGE)
 
 /datum/nifsoft/apc_recharge/activate()

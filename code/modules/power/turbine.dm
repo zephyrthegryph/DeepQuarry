@@ -32,9 +32,9 @@
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	circuit = /obj/item/circuitboard/machine/power_compressor
-	var/turbine_handle
+	var/tmp/turbine_handle
 	var/datum/gas_mixture/gas_contained
-	var/inturf_handle
+	var/tmp/inturf_handle
 	var/starter = 0
 	var/rpm = 0
 	var/rpmtarget = 0
@@ -52,8 +52,8 @@
 	anchored = TRUE
 	density = TRUE
 	circuit = /obj/item/circuitboard/machine/power_turbine
-	var/compressor_handle
-	var/outturf_handle
+	var/tmp/compressor_handle
+	var/tmp/outturf_handle
 	var/lastgen
 	var/productivity = 1
 
@@ -63,7 +63,7 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "turbinecomp"
 	circuit = /obj/item/circuitboard/turbine_control
-	var/compressor_handle
+	var/tmp/compressor_handle
 	var/list/obj/machinery/door/blast/doors
 	var/id = 0
 	var/door_status = 0

@@ -13,7 +13,7 @@
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/list/item_records = list()
-	var/currently_vending_handle	//What we're putting out of the machine.
+	var/tmp/currently_vending_handle	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
@@ -374,7 +374,7 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 	name = "\improper Smart Chemavator - Upper"
 	desc = "A refrigerated storage unit for medicine and chemical storage. Now sporting a fancy system of pulleys to lift bottles up and down."
 	expert_job = JOB_CHEMIST
-	var/attached_handle
+	var/tmp/attached_handle
 	circuit = /obj/item/circuitboard/smartfridge/chemvator
 
 /obj/machinery/smartfridge/chemistry/chemvator/accept_check(obj/item/O as obj)

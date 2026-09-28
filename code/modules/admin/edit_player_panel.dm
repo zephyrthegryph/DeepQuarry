@@ -18,8 +18,8 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	panel.tgui_interact(owner().mob)
 
 /datum/edit_player_panel
-	var/holder_handle
-	var/target_handle
+	var/tmp/holder_handle
+	var/tmp/target_handle
 
 /datum/edit_player_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()

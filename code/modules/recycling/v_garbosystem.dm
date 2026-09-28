@@ -11,8 +11,8 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	idle_power_usage = 5
 	active_power_usage = 100
 	var/operating = FALSE
-	var/crusher_handle	//Connects to regular crusher
-	var/button_handle
+	var/tmp/crusher_handle	//Connects to regular crusher
+	var/tmp/button_handle
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
 
@@ -134,7 +134,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	desc = "A power button for the big grinder."
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
 	icon_state = "doorbell-standby"
-	var/grinder_handle
+	var/tmp/grinder_handle
 
 /obj/machinery/button/garbosystem/declare_interactions(list/into)
 	into += list(

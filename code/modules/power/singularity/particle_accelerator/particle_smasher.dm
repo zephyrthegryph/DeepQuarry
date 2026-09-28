@@ -21,7 +21,7 @@
 	var/energy = 0				// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
-	var/reagent_container_handle	// Holds the beaker. The process will consume ALL reagents inside it.
+	var/tmp/reagent_container_handle	// Holds the beaker. The process will consume ALL reagents inside it.
 	var/beaker_type = /obj/item/reagent_containers/glass/beaker
 	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
 	var/max_storage = 3	// How many items can be jammed into it?

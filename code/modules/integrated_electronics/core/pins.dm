@@ -17,7 +17,7 @@ D [1]/  ||
 */
 /datum/integrated_io
 	var/name = "input/output"
-	var/holder_handle
+	var/tmp/holder_handle
 	var/data = null // A reference is an IC ref (ic_ref(), an OM handle in a text wrapper), to reduce typecasts.  Note that oftentimes numbers and text may also occupy this.
 	var/list/linked // Lazy: most pins are never wired.
 	var/io_type = DATA_CHANNEL

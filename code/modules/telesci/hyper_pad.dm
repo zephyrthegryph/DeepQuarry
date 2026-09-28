@@ -7,14 +7,14 @@
 	icon_state = "hpad"
 	density = 0
 	anchored = 1
-	var/primary_handle
+	var/tmp/primary_handle
 
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
 	var/last_teleport //to handle the cooldown
 	var/teleporting = 0 //if it's in the process of teleporting
-	var/linked_pad_handle
+	var/tmp/linked_pad_handle
 	icon_state = "hpad_centre"
 	var/newcolor = "#00FFFF" //used for colouring the overlays
 

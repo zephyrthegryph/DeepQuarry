@@ -36,12 +36,12 @@
 	docking_definition.minimum_area = 16
 	var/datum/generated_station_department_instance/command = new
 	command.id = "command-1"
-	command.definition = command_definition
+	command.definition_handle = om_handle(command_definition)
 	command.desired_area = 165
 	command.layout_node_id = "node-command"
 	var/datum/generated_station_department_instance/docking = new
 	docking.id = "docking-1"
-	docking.definition = docking_definition
+	docking.definition_handle = om_handle(docking_definition)
 	docking.desired_area = 165
 	docking.layout_node_id = "node-docking"
 	var/datum/generated_station_layout_node/command_node = new
@@ -89,9 +89,9 @@
 	for(var/obj/machinery/door/airlock/generated_station_exterior/exterior in materialized.doors)
 		exterior_airlocks++
 	TEST_ASSERT_EQUAL(exterior_airlocks, 2, "Each department did not receive one exterior EVA airlock")
-	TEST_ASSERT_NOTNULL(materialized.entry, "Docking department received no entry marker")
-	TEST_ASSERT_EQUAL(materialized.entry.station_id, spec.id, "Entry marker is bound to the wrong station")
-	TEST_ASSERT(get_area(materialized.entry) != materialized.department_areas[command_node.id], "Department areas were not distinct")
+	TEST_ASSERT_NOTNULL(materialized.entry(), "Docking department received no entry marker")
+	TEST_ASSERT_EQUAL(materialized.entry().station_id, spec.id, "Entry marker is bound to the wrong station")
+	TEST_ASSERT(get_area(materialized.entry()) != materialized.department_areas[command_node.id], "Department areas were not distinct")
 	var/turf/corridor = locate(origin_x + 21, origin_y + 7, world.maxz)
 	TEST_ASSERT(istype(corridor, /turf/simulated/floor/tiled), "Routed corridor did not receive finished station flooring")
 	TEST_ASSERT(istype(get_area(corridor), /area/generated_station/transit), "Routed corridor did not receive the transit area")
@@ -253,9 +253,9 @@
 		if(furnishing_area?.department_id)
 			furnished_departments[furnishing_area.department_id] = TRUE
 	for(var/datum/generated_station_department_instance/department in spec.departments)
-		TEST_ASSERT(furnished_departments[department.definition.id], "[department.id] received no functional furnishings")
+		TEST_ASSERT(furnished_departments[department.definition().id], "[department.id] received no functional furnishings")
 	for(var/datum/generated_station_department_instance/department in spec.departments)
-		for(var/datum/generated_station_capability_requirement/requirement in department.definition.requirements)
+		for(var/datum/generated_station_capability_requirement/requirement in department.definition().requirements)
 			var/found_endpoint = FALSE
 			for(var/datum/generated_station_service_endpoint/endpoint in materialized.service_endpoints)
 				if(endpoint.department_node_id == department.layout_node_id && endpoint.service_id == requirement.capability_id && endpoint.landmark)

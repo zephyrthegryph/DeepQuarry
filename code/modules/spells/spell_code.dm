@@ -23,7 +23,7 @@
 	var/range = 7					//the range of the spell; outer radius for aoe spells
 	var/message = ""				//whatever it says to the guy affected by it
 	var/selection_type = "view"		//can be "range" or "view"
-	var/holder_handle	//where the spell is. Normally the user, can be an item
+	var/tmp/holder_handle	//where the spell is. Normally the user, can be an item
 	var/duration = 0 //how long the spell lasts
 
 	var/list/spell_levels = list(Sp_SPEED = 0, Sp_POWER = 0) //the current spell levels - total spell levels can be obtained by just adding the two values

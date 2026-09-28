@@ -1,7 +1,7 @@
 /datum/event/anomaly
 	startWhen = 15
 	announceWhen = 1
-	var/impact_area_handle
+	var/tmp/impact_area_handle
 	var/datum/anomaly_placer/placer = new()
 	var/anomaly_path = /obj/effect/anomaly/flux
 

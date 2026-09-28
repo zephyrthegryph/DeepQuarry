@@ -64,7 +64,7 @@
 	/// Boolean field describing if the tgui_list_input was closed by the user.
 	var/closed
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/state_handle
+	var/tmp/state_handle
 	/// Whether the tgui list input is invalid or not (i.e. due to all list entries being null)
 	var/invalid = FALSE
 

@@ -25,7 +25,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	tgui_id = "NtosDigitalWarrant"
 	category = PROG_SEC
 
-	var/activewarrant_handle
+	var/tmp/activewarrant_handle
 
 /datum/computer_file/program/digitalwarrant/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()

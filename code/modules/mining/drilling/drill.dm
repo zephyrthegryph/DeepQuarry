@@ -474,7 +474,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	icon_state = "mining_brace"
 	circuit = /obj/item/circuitboard/miningdrillbrace
 	var/brace_tier = 1
-	var/connected_handle
+	var/tmp/connected_handle
 
 /obj/machinery/mining/brace/examine(mob/user)
 	. = ..()

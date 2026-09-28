@@ -260,7 +260,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	icon = 'icons/obj/device_alt.dmi'
 	w_class = ITEMSIZE_TINY
 	var/template_id = "shelter_alpha"
-	var/template_handle
+	var/tmp/template_handle
 	var/used = FALSE
 	var/is_ship = FALSE
 	var/unique_id = null
@@ -633,7 +633,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	desc = "You can secure yourself inside the shelter here."
 	specialfunctions = 4 // 4 is bolts
 	id = "placeholder_id_do_not_use" //This has to be this way, otherwise it will control ALL doors if left blank.
-	var/door_handle
+	var/tmp/door_handle
 
 /obj/machinery/button/remote/airlock/survival_pod/declare_interactions(list/into)
 	into += list(
@@ -688,7 +688,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 // Turns off only one light in a given direction from its source turf.
 /obj/machinery/light_switch/survival_pod
 	name = "shelter light switch"
-	var/target_light_handle
+	var/tmp/target_light_handle
 
 // Deliberately override base light switch behavior because we don't want to toggle ALL lights in the area - just one!
 /obj/machinery/light_switch/survival_pod/declare_interactions(list/into)

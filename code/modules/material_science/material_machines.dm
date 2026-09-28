@@ -55,7 +55,7 @@
 	circuit = /obj/item/circuitboard/machine/material_furnace
 	var/list/feedstock
 	var/list/carbon_feed
-	var/output_stock_handle
+	var/tmp/output_stock_handle
 	var/firing = FALSE
 	var/firing_timer
 	var/datum/gas_mixture/chamber_air
@@ -353,7 +353,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	icon_state = "anvil"
 	anchored = TRUE
 	density = TRUE
-	var/stock_handle
+	var/tmp/stock_handle
 
 /obj/structure/material_anvil/attackby(obj/item/item, mob/user)
 	if(istype(item, /obj/item/stack/material/processed_alloy))

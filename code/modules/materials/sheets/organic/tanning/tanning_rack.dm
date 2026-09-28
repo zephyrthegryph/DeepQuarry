@@ -4,7 +4,7 @@
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "spike"
 
-	var/drying_handle
+	var/tmp/drying_handle
 
 /obj/structure/tanning_rack/Initialize(mapload)
 	. = ..()

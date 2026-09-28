@@ -2,7 +2,7 @@
 // as every other manufactured form. There is no separate payload/infusion layer.
 
 /obj/item/ammo_casing
-	var/forged_material_handle
+	var/tmp/forged_material_handle
 
 /obj/item/ammo_casing/proc/set_forged_material(datum/material/material)
 	if(!istype(material))
@@ -27,7 +27,7 @@
 		BB.accuracy += clamp(round((primer.reactivity + primer.purity_equivalent()) / 30) - 3, -4, 5)
 
 /obj/item/ammo_magazine
-	var/forged_material_handle
+	var/tmp/forged_material_handle
 
 /obj/item/ammo_magazine/proc/set_forged_material(datum/material/material)
 	if(!istype(material))

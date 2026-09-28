@@ -72,7 +72,7 @@ REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 	name = "electronic device"
 	icon_state = "setup_device"
 	desc = "It's a tiny electronic device with specific use for attaching to other devices."
-	var/holder_handle
+	var/tmp/holder_handle
 	w_class = ITEMSIZE_TINY
 	max_components = IC_COMPONENTS_BASE * 3/4
 	max_complexity = IC_COMPLEXITY_BASE * 3/4

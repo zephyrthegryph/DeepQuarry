@@ -12,8 +12,8 @@
 	required_access = ACCESS_NETWORK
 	category = PROG_ADMIN
 
-	var/current_account_handle
-	var/current_message_handle
+	var/tmp/current_account_handle
+	var/tmp/current_message_handle
 	var/error = ""
 
 /datum/computer_file/program/email_administration/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)

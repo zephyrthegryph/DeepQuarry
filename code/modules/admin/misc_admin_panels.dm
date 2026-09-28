@@ -13,8 +13,8 @@
 	panel.tgui_interact(recipient)
 
 /datum/mind_memory_panel
-	var/source_handle
-	var/recipient_handle
+	var/tmp/source_handle
+	var/tmp/recipient_handle
 
 /datum/mind_memory_panel/New(datum/mind/src_mind, mob/recipient_mob)
 	..()
@@ -57,7 +57,7 @@
 	panel.tgui_interact(user)
 
 /datum/tag_menu_panel
-	var/holder_handle
+	var/tmp/holder_handle
 
 /datum/tag_menu_panel/New(datum/admins/owner_holder)
 	..()
@@ -186,7 +186,7 @@
 	panel.tgui_interact(user)
 
 /datum/unban_panel
-	var/holder_handle
+	var/tmp/holder_handle
 	var/list/cached_rows
 
 /datum/unban_panel/New(datum/admins/owner_holder)
@@ -288,8 +288,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	panel.tgui_interact(owner().mob)
 
 /datum/jobban_panel
-	var/holder_handle
-	var/target_handle
+	var/tmp/holder_handle
+	var/tmp/target_handle
 
 /datum/jobban_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
@@ -511,7 +511,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 // ---- admin_verbs Delete Book (library admin) -----------------------------
 
 /datum/dq_delete_book_panel
-	var/our_comp_handle
+	var/tmp/our_comp_handle
 	var/list/books
 	var/error_msg = ""
 

@@ -1,5 +1,5 @@
 /datum/event/disease_outbreak/floor
-	var/target_area_handle
+	var/tmp/target_area_handle
 	var/area/target_turfs = list()
 	var/infected_tiles
 

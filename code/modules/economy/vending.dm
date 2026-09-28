@@ -28,7 +28,7 @@
 	var/vend_ready = 1 //Are we ready to vend?? Is it time??
 	var/vend_delay = 10 //How long does it take to vend?
 	var/categories = CAT_NORMAL // Bitmask of cats we're currently showing
-	var/currently_vending_handle	// What we're requesting payment for right now
+	var/tmp/currently_vending_handle	// What we're requesting payment for right now
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	/*

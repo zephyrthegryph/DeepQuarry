@@ -97,7 +97,7 @@
 	power_draw_per_use = 40
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder
-	var/last_known_position_handle
+	var/tmp/last_known_position_handle
 	var/last_target = null
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder/do_work()
@@ -173,7 +173,7 @@
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion
 	// Add these two variables
-	var/last_known_position_handle
+	var/tmp/last_known_position_handle
 	var/last_target = null
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/do_work()

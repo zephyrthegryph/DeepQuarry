@@ -3,10 +3,10 @@
 	desc = "An electronic radio system."
 	icon = 'icons/obj/module.dmi'
 	icon_state = "power_mod"
-	var/hostpda_handle
+	var/tmp/hostpda_handle
 
 	var/list/botlist = null		// list of bots
-	var/active_handle	// the active bot; if null, show bot list
+	var/tmp/active_handle	// the active bot; if null, show bot list
 	var/list/botstatus			// the status signal sent by the bot
 
 	var/bot_type				//The type of bot it is.

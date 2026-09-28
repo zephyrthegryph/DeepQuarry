@@ -10,7 +10,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	w_class = ITEMSIZE_SMALL
 
 	var/seed_type
-	var/seed_handle
+	var/tmp/seed_handle
 	var/modified = 0
 
 /obj/item/seeds/Initialize(mapload, _seed_type)

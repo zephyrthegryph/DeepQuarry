@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	var/rock_icon_path = 'icons/turf/walls.dmi' // Override this on a subtype turf if you want a custom icon
 	var/random_icon = 0
 
-	var/mineral_handle
+	var/tmp/mineral_handle
 	var/sand_dug
 	var/mined_ore = 0
 	var/last_act = 0

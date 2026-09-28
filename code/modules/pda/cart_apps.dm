@@ -121,7 +121,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 			return TRUE
 
 /datum/data/pda/app/crew_records
-	var/general_records_handle
+	var/tmp/general_records_handle
 
 /datum/data/pda/app/crew_records/update_ui(mob/user, list/data)
 	var/list/records[0]
@@ -162,7 +162,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	template = "pda_medical"
 	category = "Medical"
 
-	var/medical_records_handle
+	var/tmp/medical_records_handle
 
 /datum/data/pda/app/crew_records/medical/update_ui(mob/user, list/data)
 	var/list/records = ..()
@@ -187,7 +187,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	template = "pda_security"
 	category = "Security"
 
-	var/security_records_handle
+	var/tmp/security_records_handle
 
 /datum/data/pda/app/crew_records/security/update_ui(mob/user, list/data)
 	var/list/records = ..()

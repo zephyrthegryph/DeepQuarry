@@ -15,8 +15,8 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#5BA8FF"
-	var/FG1_handle
-	var/FG2_handle
+	var/tmp/FG1_handle
+	var/tmp/FG2_handle
 	var/list/shockdirs
 	var/hasShocked = 0 //Used to add a delay between shocks. In some cases this used to crash servers by spawning hundreds of sparks every second.
 

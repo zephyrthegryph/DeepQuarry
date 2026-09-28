@@ -21,8 +21,8 @@
 	var/download_progress = 0
 	var/download_speed = 0
 
-	var/current_account_handle
-	var/current_message_handle
+	var/tmp/current_account_handle
+	var/tmp/current_message_handle
 
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)

@@ -5,7 +5,7 @@
 
 /datum/tgui_window
 	var/id
-	var/client_handle
+	var/tmp/client_handle
 	var/pooled
 	var/pool_index
 	var/is_browser = FALSE
@@ -17,7 +17,7 @@
 	/// Monotonic token identifying the current use of this reusable shell.
 	var/generation = 0
 	/// Immutable shell/manifest/chunk publication loaded by this browser window.
-	var/asset_generation_handle
+	var/tmp/asset_generation_handle
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
 	/// TRUE when acquire_lock applied a generated or previously observed size while hidden.
@@ -27,8 +27,8 @@
 	var/list/preapplied_geometry
 	/// Rate limit for automatic local-development browser telemetry.
 	var/last_perf_log_at = 0
-	var/locked_by_handle
-	var/subscriber_object_handle
+	var/tmp/locked_by_handle
+	var/tmp/subscriber_object_handle
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
 	var/message_queue

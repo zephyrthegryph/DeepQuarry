@@ -10,7 +10,7 @@
 	w_class = ITEMSIZE_SMALL
 	max_components = IC_COMPONENTS_BASE
 	max_complexity = IC_COMPLEXITY_BASE
-	var/clothing_handle
+	var/tmp/clothing_handle
 
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()

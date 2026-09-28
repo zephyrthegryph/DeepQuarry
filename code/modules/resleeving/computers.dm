@@ -20,10 +20,10 @@
 	var/can_sleeve_active = FALSE
 	var/organic_capable = 1
 	var/synthetic_capable = 1
-	var/disk_handle
-	var/selected_pod_handle
-	var/selected_printer_handle
-	var/selected_sleever_handle
+	var/tmp/disk_handle
+	var/tmp/selected_pod_handle
+	var/tmp/selected_printer_handle
+	var/tmp/selected_sleever_handle
 
 	var/current_br
 	var/current_mr

@@ -33,7 +33,7 @@
 	/// Loot context, set by the caller so furnished crates roll appropriate tiers.
 	var/loot_difficulty = EXP_DIFF_LOW
 	var/loot_size = EXP_SIZE_SMALL
-	var/loot_biome_handle
+	var/tmp/loot_biome_handle
 
 // Draw a building centred on `center`, roughly w x h tiles. Returns TRUE if a
 // usable structure (at least one room) was produced.

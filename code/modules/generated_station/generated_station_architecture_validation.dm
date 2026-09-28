@@ -410,7 +410,7 @@
 				continue
 			for(var/datum/generated_station_department_instance/department in spec.departments)
 				if(department.id == layout_node.department_instance_id)
-					module_department_id = department.definition?.id
+					module_department_id = department.definition()?.id
 					break
 			break
 		var/datum/generated_room_definition/definition = generated_room_definition_for(module_department_id, module.role)
@@ -536,7 +536,7 @@
 		if(generated_station_architectural_passable(T))
 			walkable_station |= T
 	if(length(walkable_station))
-		var/turf/start = get_turf(entry)
+		var/turf/start = get_turf(entry())
 		if(!(start in walkable_station))
 			start = walkable_station[1]
 		var/list/reached_station = list()

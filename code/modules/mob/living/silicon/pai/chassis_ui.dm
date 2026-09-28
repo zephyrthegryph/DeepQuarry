@@ -16,7 +16,7 @@
 /datum/tgui_module/pai_chassis/tgui_static_data(mob/user)
 	var/list/data = ..()
 	var/list/available_sprites = list()
-	var/mob/living/silicon/pai/pai_host = host
+	var/mob/living/silicon/pai/pai_host = host()
 	for(var/key, value in SSpai.get_chassis_list())
 		var/datum/pai_sprite/current_sprite = value
 		var/model_type = "def"
@@ -32,7 +32,7 @@
 /datum/tgui_module/pai_chassis/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
-	var/mob/living/silicon/pai/pai_host = host
+	var/mob/living/silicon/pai/pai_host = host()
 	data["pai_color"] = selected_color ? selected_color : pai_host.eye_color
 
 	var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(selected_chassis || pai_host.chassis_name)
@@ -59,7 +59,7 @@
 		if("confirm")
 			if(!selected_chassis)
 				return FALSE
-			var/mob/living/silicon/pai/pai_host = host
+			var/mob/living/silicon/pai/pai_host = host()
 			if(selected_color)
 				pai_host.eye_color = selected_color
 			pai_host.change_chassis(selected_chassis)

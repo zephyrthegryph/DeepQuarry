@@ -10,7 +10,7 @@
 /mob/living/carbon/human
 
 	// Horray Furries!
-	var/hair_accessory_style_handle
+	var/tmp/hair_accessory_style_handle
 	var/r_acc = 30
 	var/g_acc = 30
 	var/b_acc = 30

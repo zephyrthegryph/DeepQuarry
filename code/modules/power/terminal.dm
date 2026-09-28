@@ -8,7 +8,7 @@
 	icon_state = "term"
 	desc = "It's an underfloor wiring terminal for power equipment."
 	level = 1
-	var/master_handle
+	var/tmp/master_handle
 	anchored = TRUE
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER+0.01

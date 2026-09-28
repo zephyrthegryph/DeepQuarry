@@ -107,7 +107,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/list/positive_locations
-	var/current_handle
+	var/tmp/current_handle
 
 /datum/depth_scan
 	var/time = ""
@@ -226,7 +226,7 @@
 			else
 				QDEL_LIST_NULL(positive_locations)
 				positive_locations = list()
-				QDEL_NULL(current())
+				qdel(current()); current_handle = null
 			return TRUE
 
 /obj/item/beacon_locator
@@ -238,7 +238,7 @@
 	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
-	var/target_radio_handle
+	var/tmp/target_radio_handle
 
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()

@@ -1,6 +1,6 @@
 /datum/ship_engine/ion
 	name = "ion thruster"
-	var/thruster_handle
+	var/tmp/thruster_handle
 
 /datum/ship_engine/ion/New(obj/machinery/_holder)
 	..()

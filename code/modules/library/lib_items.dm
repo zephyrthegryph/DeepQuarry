@@ -172,7 +172,7 @@ Book Cart End
 	var/unique = 0   // 0 - Normal book, 1 - Should not be treated as normal book, unable to be copied, unable to be modified
 	var/title		 // The real name of the book.
 	var/carved = 0	 // Has the book been hollowed out for use as a secret storage item?
-	var/store_handle	//What's in the book?
+	var/tmp/store_handle	//What's in the book?
 	var/occult_tier = 0 //If the book is an occult book or not and how strong it is. Used for attack_self
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -425,8 +425,8 @@ Book Cart End
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	var/computer_handle	// Associated computer - Modes 1 to 3 use this
-	var/book_handle	//  Currently scanned book
+	var/tmp/computer_handle	// Associated computer - Modes 1 to 3 use this
+	var/tmp/book_handle	//  Currently scanned book
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
 /obj/item/barcodescanner/attack_self(mob/user)

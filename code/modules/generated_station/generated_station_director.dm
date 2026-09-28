@@ -40,7 +40,7 @@
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
 /datum/generated_station_director
-	var/simulation_handle
+	var/tmp/simulation_handle
 	var/alert_level = GENERATED_STATION_ALERT_GREEN
 	var/list/local_alert_levels
 	var/list/department_connected
@@ -55,7 +55,7 @@
 	var/next_report_id = 1
 	var/next_squad_id = 1
 	var/next_order_id = 1
-	var/defense_runtime_handle
+	var/tmp/defense_runtime_handle
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()

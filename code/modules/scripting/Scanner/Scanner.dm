@@ -54,7 +54,7 @@
 	var/codepos = 1
 	var/line = 1
 	var/linepos = 0 //column=codepos-linepos
-	var/options_handle
+	var/tmp/options_handle
 	var/commenting = 0 /// 1 is a single-line comment, 2 is a multi-line comment
 /*
 	Variable: ignore

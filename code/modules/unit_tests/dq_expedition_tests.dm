@@ -49,7 +49,7 @@
 	TEST_ASSERT(site.generation_seed > 0, "generated station did not retain a reproducible planner seed")
 	TEST_ASSERT_NOTNULL(site.station_spec, "site did not retain its generated station specification")
 	TEST_ASSERT_NOTNULL(site.station_materialization, "site did not retain its station materialization")
-	TEST_ASSERT_EQUAL(site.landing(), get_turf(site.station_materialization.entry), "landing does not use the generated docking entry")
+	TEST_ASSERT_EQUAL(site.landing(), get_turf(site.station_materialization.entry()), "landing does not use the generated docking entry")
 	var/mining_spawners = 0
 	for(var/turf/scan_turf in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
 		if(locate(/obj/structure/mob_spawner/scanner/mining_animals) in scan_turf)
@@ -98,7 +98,7 @@
 			if(candidate_department.layout_node_id == module_node?.id)
 				module_department = candidate_department
 				break
-		var/department_id = module_department?.definition?.id
+		var/department_id = module_department?.definition()?.id
 		var/datum/generated_room_definition/module_definition
 		if(module.definition_id == "[department_id]-micro-[module.role]")
 			module_definition = generated_micro_room_definition_for(department_id, module.role)
@@ -140,8 +140,8 @@
 	var/datum/generated_station_spec/spec = generated_station_emergency_spec(8675309)
 	var/datum/generated_station_materialization/materialization = generated_station_emergency_materialization(spec, z)
 	TEST_ASSERT_NOTNULL(materialization, "Emergency station fallback returned no materialization")
-	TEST_ASSERT_NOTNULL(materialization.entry, "Emergency station fallback has no arrival landmark")
-	var/turf/arrival = get_turf(materialization.entry)
+	TEST_ASSERT_NOTNULL(materialization.entry(), "Emergency station fallback has no arrival landmark")
+	var/turf/arrival = get_turf(materialization.entry())
 	TEST_ASSERT(istype(arrival, /turf/simulated/floor), "Emergency station arrival is not walkable flooring")
 	TEST_ASSERT(arrival.return_air()?.return_pressure() > 80, "Emergency station fallback is not pressurized")
 	TEST_ASSERT(istype(materialization.world_turf(1, 1), /turf/simulated/wall), "Emergency station fallback has no sealed corner hull")
@@ -341,7 +341,7 @@
 	var/datum/expedition_site/site = new(world.maxz + 1, EXP_DIFF_LOW)
 	var/obj/machinery/computer/shuttle_control/explore/console = new(null)
 	site.origin_console_handle = om_handle(console)
-	console.active_expedition = site
+	console.active_expedition_handle = om_handle(site)
 	TEST_ASSERT(site.has_active_assignment(), "A site owned by its origin console was not recognized as actively assigned")
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
@@ -351,7 +351,7 @@
 	TEST_ASSERT(SSexpedition.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
 	SSexpedition.sites -= "assignment-lifecycle-test"
 
-	console.active_expedition = null
+	console.active_expedition_handle = null
 	TEST_ASSERT(!site.has_active_assignment(), "A site remained actively assigned after its console released it")
 	qdel(console)
 	qdel(site)

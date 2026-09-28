@@ -2,7 +2,7 @@
 	name = "stored soul"
 	desc = "A soul stored within the predator."
 
-	var/gem_handle
+	var/tmp/gem_handle
 
 // Cleaning up the refs during deletion
 // LIFECYCLE: its gem is told the mind unloaded.

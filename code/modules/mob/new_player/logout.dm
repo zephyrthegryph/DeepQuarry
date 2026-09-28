@@ -20,6 +20,6 @@
 		lobby_window.unsubscribe(src)
 		lobby_window.close()
 		lobby_window = null
-	var/client/exiting_client = persistent_client.client
+	var/client/exiting_client = persistent_client.client()
 	if(exiting_client)
 		winset(exiting_client, "lobby_browser", "is-disabled=true;is-visible=false")

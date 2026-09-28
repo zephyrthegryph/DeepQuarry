@@ -49,7 +49,7 @@
 	if(!target)
 		return 0
 
-	var/mob/living/carbon/human/H = holder.wearer
+	var/mob/living/carbon/human/H = holder.wearer()
 
 	if(!charge_selected)
 		to_chat(H, span_danger("You have not selected a grenade type."))

@@ -64,7 +64,7 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	icon_state = "none"
 	anchored = FALSE
 	density = TRUE
-	var/master_handle
+	var/tmp/master_handle
 	var/construction_state = 0
 	var/reference = null
 	var/powered = 0

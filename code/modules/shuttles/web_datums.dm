@@ -6,8 +6,8 @@
 
 // This is the first datum, and it connects shuttle_destinations together.
 /datum/shuttle_route
-	var/start_handle	// One of the two sides of this route.  Start just means it was the creator of this route.
-	var/end_handle	// The second side.
+	var/tmp/start_handle	// One of the two sides of this route.  Start just means it was the creator of this route.
+	var/tmp/end_handle	// The second side.
 	var/var/obj/effect/shuttle_landmark/interim	// Where the shuttle sits during the movement.  Make sure no other shuttle shares this or Very Bad Things will happen.
 	var/travel_time = 0							// How long it takes to move from start to end, or end to start.  Set to 0 for instant travel.
 	var/one_way = FALSE							// If true, you can't travel from end to start.
@@ -52,7 +52,7 @@
 /datum/shuttle_destination
 	var/name = "a place"				// Name of the destination, used for the flight computer.
 	var/obj/effect/shuttle_landmark/my_landmark = null // Where the shuttle will move to when it actually arrives.
-	var/master_handle	// The datum that does the coordination with the actual shuttle datum.
+	var/tmp/master_handle	// The datum that does the coordination with the actual shuttle datum.
 	var/list/routes			// Routes that are connected to this destination.
 	var/preferred_interim_tag = null	// When building a new route, use interim landmark with this tag.
 	var/skip_me = FALSE					// We will not autocreate this one. Some map must be doing it.
@@ -164,14 +164,14 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 // This is the third and final datum, which coordinates with the shuttle datum to tell it where it is, where it can go, and how long it will take.
 // It is also responsible for instancing all the destinations it has control over, and linking them together.
 /datum/shuttle_web_master
-	var/my_shuttle_handle	// Ref to the shuttle this datum is coordinating with.
-	var/current_destination_handle	// Where the shuttle currently is.  Bit of a misnomer.
-	var/future_destination_handle	// Where it will be in the near future.
+	var/tmp/my_shuttle_handle	// Ref to the shuttle this datum is coordinating with.
+	var/tmp/current_destination_handle	// Where the shuttle currently is.  Bit of a misnomer.
+	var/tmp/future_destination_handle	// Where it will be in the near future.
 	var/starting_destination = null	// Where the shuttle will start at, generally at the home base.
 	var/list/destinations = list()								// List of currently instanced destinations.
 	var/destination_class = null								// Type to use in typesof(), to build destinations.
 
-	var/autopath_handle	// Datum used to direct an autopilot.
+	var/tmp/autopath_handle	// Datum used to direct an autopilot.
 	var/list/autopaths									// Potential autopaths the autopilot can use. The autopath's start var must equal current_destination to be viable.
 	var/autopath_class = null									// Similar to destination_class, used for typesof().
 
@@ -313,7 +313,7 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 
 // Fourth datum, this one essentially acts as directions for an autopilot to go to the correct places.
 /datum/shuttle_autopath
-	var/master_handle
+	var/tmp/master_handle
 	var/start = null
 	var/list/path_nodes
 	var/index = 1

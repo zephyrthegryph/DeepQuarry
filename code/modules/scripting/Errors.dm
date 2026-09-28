@@ -12,7 +12,7 @@
 
 /datum/scriptError/BadToken
 	message="Unexpected token: "
-	var/token_handle
+	var/tmp/token_handle
 /datum/scriptError/BadToken/New(datum/token/t)
 	token_handle=om_handle(t)
 	if(t&&t.line) message="[t.line]: [message]"
@@ -32,7 +32,7 @@
 	message = "Bad number: "
 
 /datum/scriptError/BadReturn
-	var/token_handle
+	var/tmp/token_handle
 	message = "Unexpected return statement outside of a function."
 /datum/scriptError/BadReturn/New(datum/token/t)
 	src.token_handle=om_handle(t)

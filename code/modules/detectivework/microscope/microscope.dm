@@ -7,7 +7,7 @@
 	anchored = TRUE
 	density = TRUE
 
-	var/sample_handle
+	var/tmp/sample_handle
 	var/report_num = 0
 
 /obj/machinery/microscope/declare_interactions(list/into)

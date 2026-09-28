@@ -222,8 +222,8 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	return null
 
 /datum/generated_station_utility_builder
-	var/spec_handle
-	var/materialization_handle
+	var/tmp/spec_handle
+	var/tmp/materialization_handle
 	var/datum/generated_station_utility_topology/result
 
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.
@@ -237,7 +237,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	var/engineering_owner
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
-		if(department?.definition?.id == "engineering")
+		if(department?.definition()?.id == "engineering")
 			engineering_owner = node.id
 	for(var/datum/generated_station_module/module in result.modules)
 		var/datum/generated_station_tile_intent/apc = planned_utility_floor(plan, module.department_node_id, reserved, TRUE, module.id)

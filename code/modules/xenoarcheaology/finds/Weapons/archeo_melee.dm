@@ -27,7 +27,7 @@
 	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
-	var/last_touched_handle	//The last human that touched us
+	var/tmp/last_touched_handle	//The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
 	var/last_special = 0 //How recently our powers were used! Can be admin-set to a high number to keep from having the mode able to be changed.
 	var/static/list/abilities = list("Consecrate", "Summon")
