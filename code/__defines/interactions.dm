@@ -101,3 +101,22 @@
 /// Used with an item of `held_type` (old attackby with an istype(W, held_type) guard at the top).
 /// name may be null to derive one ("Insert " + the item type's article+name).
 #define INTERACT_INSERT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type)
+
+/**
+ * Declares a type's compact interaction specs: generates its get_interactions()
+ * getter returning a proc-local `var/static/list` (allocated once, ever; AGENTS.md §3a).
+ *
+ *   DECLARE_INTERACTIONS(/obj/item/binoculars, \
+ *   	INTERACT_USE("Zoom", PROC_REF(zoom)), \
+ *   	INTERACT_ALT(null, PROC_REF(eject)), \
+ *   )
+ *
+ * A multi-line call needs a trailing backslash on each line (DM does not continue a
+ * macro call across lines at its top paren depth). PROC_REF() inside the specs resolves against `T`, since the getter is defined on it.
+ * Like any get_interactions() override it replaces an ancestor's specs; to add to
+ * them, override declare_interactions() and use dq_interaction_from_spec() (§5a).
+ */
+#define DECLARE_INTERACTIONS(T, specs...) ##T/get_interactions(){\
+	var/static/list/dq_interaction_specs = list(specs);\
+	return dq_interaction_specs;\
+}

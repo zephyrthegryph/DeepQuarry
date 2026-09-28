@@ -27,13 +27,11 @@
 	if(answer == "Yes" && !beacon_active)	//short delay, so they can still abort if they want to
 		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
 
-/obj/item/emergency_beacon/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE("Activate", PROC_REF(interaction_self)),
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_ITEM("Disassemble", PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
+	INTERACT_USE("Activate", PROC_REF(interaction_self)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Disassemble", PROC_REF(interaction_item)), \
+)
 
 /obj/item/emergency_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/T = user.loc

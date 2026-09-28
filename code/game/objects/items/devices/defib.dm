@@ -59,12 +59,10 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 	else
 		add_overlay("[initial(icon_state)]-nocell")
 
-/obj/item/defib_kit/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_ITEM("Load", PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/defib_kit, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Load", PROC_REF(interaction_item)), \
+)
 
 /// Old attack_hand: let tethered_item swap the paddles into hand before falling through to pickup.
 /obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

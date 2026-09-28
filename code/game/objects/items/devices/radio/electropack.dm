@@ -16,12 +16,10 @@
 	var/code = 2
 	electric_pack = TRUE
 
-/obj/item/radio/electropack/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/radio/electropack, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /obj/item/radio/electropack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(src == user.get_equipped_item(SLOT_ID_BACK))

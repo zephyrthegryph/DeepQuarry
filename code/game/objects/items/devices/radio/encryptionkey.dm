@@ -11,9 +11,7 @@
 	var/syndie = 0
 	var/list/channels = list()
 
-/obj/item/encryptionkey/get_interactions()
-	var/static/list/L = list(INTERACT_ITEM(null, PROC_REF(interaction_item)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/encryptionkey, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby was an empty stub: it always swallowed the click with no action, no fallthrough.
 /obj/item/encryptionkey/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

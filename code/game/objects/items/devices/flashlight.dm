@@ -90,13 +90,11 @@ REF_OWNED(/obj/item/flashlight, "cell")
 		else if(cell.charge > cell.maxcharge*0.75 && cell.charge <= cell.maxcharge)
 			. += "It appears to have a high amount of power remaining."
 
-/obj/item/flashlight/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/flashlight, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /obj/item/flashlight/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(single_use && on)

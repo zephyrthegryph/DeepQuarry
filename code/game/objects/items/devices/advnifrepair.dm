@@ -21,9 +21,7 @@
 
 	supply = new(max = 60, A = src)
 
-/obj/item/nifrepairer/get_interactions()
-	var/static/list/L = list(INTERACT_ITEM("Load", PROC_REF(interaction_item)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/nifrepairer, INTERACT_ITEM("Load", PROC_REF(interaction_item)))
 
 /obj/item/nifrepairer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/nanopaste))

@@ -124,9 +124,7 @@
 /obj/item/radio/proc/recalculateChannels()
 	return
 
-/obj/item/radio/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/radio/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(beacon || electric_pack || uplink)

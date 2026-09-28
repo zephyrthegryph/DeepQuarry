@@ -30,9 +30,7 @@
 	else
 		icon_state = initial(icon_state)
 
-/obj/item/mass_spectrometer/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/mass_spectrometer, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/mass_spectrometer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (user.stat)

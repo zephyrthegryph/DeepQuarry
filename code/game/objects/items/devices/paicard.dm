@@ -621,12 +621,10 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 	speech_synthesizer = PP_FUNCTIONAL
 	consume(I, user)
 
-/obj/item/paicard/get_interactions()
-	var/static/list/L = list(
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/paicard, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
 /// `held` is unused by paicard's own dispatch (always null through the resolver) - repurposed
 /// as the old `callback` bypass arg, so sleevecard.dm's direct ..(user, TRUE) call still works.

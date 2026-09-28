@@ -67,12 +67,10 @@
 	if(get_dist(user, src) <= 2)
 		. += "It has [uses] lights remaining."
 
-/obj/item/lightreplacer/get_interactions()
-	var/static/list/L = list(
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
 /// Old attackby never called ..() regardless of item type, so every click was swallowed.
 /obj/item/lightreplacer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -254,9 +252,7 @@
 		else
 			. += "It is currently coloring lights."
 
-/obj/item/lightpainter/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/lightpainter, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/lightpainter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!resetmode)

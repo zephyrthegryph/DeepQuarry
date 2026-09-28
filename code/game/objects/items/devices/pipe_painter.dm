@@ -25,9 +25,7 @@
 
 	P.change_color(GLOB.pipe_colors[mode])
 
-/obj/item/pipe_painter/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/pipe_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/pipe_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "list", "message" = "Which colour do you want to use?", "title" = "Pipe painter", "choices" = modes, "requires" = PROMPT_HELD), PROC_REF(mode_chosen))

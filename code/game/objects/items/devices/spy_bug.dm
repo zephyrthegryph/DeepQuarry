@@ -95,13 +95,11 @@
 	else
 		alpha = 255
 
-/obj/item/camerabug/get_interactions()
-	var/static/list/L = list(
-		INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/camerabug, \
+	INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
 /obj/item/camerabug/proc/interaction_pair(mob/user, obj/item/bug_monitor/SM, datum/interaction/interaction)
 	if(!linkedmonitor)
@@ -168,12 +166,10 @@
 /obj/item/bug_monitor/Initialize(mapload)
 	radio = new(src)
 */
-/obj/item/bug_monitor/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_INSERT(/obj/item/camerabug, PROC_REF(interaction_item), null),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_INSERT(/obj/item/camerabug, PROC_REF(interaction_item), null), \
+)
 
 /obj/item/bug_monitor/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	view_cameras(user)

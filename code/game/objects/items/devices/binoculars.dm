@@ -13,9 +13,7 @@
 
 	//MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 50))
 
-/obj/item/binoculars/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(zoom)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(zoom)))
 
 /obj/item/binoculars/spyglass
 	name = "spyglass"

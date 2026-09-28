@@ -23,9 +23,7 @@
 /obj/item/t_scanner/update_icon()
 	icon_state = "t-ray[on]"
 
-/obj/item/t_scanner/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/t_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	set_active(!on)

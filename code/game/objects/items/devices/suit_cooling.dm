@@ -120,12 +120,10 @@ REF_OWNED(/obj/item/suit_cooling_unit, "cell")
 	PERIODIC_STOP(src)
 	update_icon()
 
-/obj/item/suit_cooling_unit/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_INSERT(/obj/item/cell, PROC_REF(interaction_item), "Insert cell"),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_INSERT(/obj/item/cell, PROC_REF(interaction_item), "Insert cell"), \
+)
 
 /obj/item/suit_cooling_unit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cover_open && cell)

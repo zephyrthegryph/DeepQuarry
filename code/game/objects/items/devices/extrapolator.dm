@@ -39,12 +39,10 @@
 
 	refresh_parts()
 
-/obj/item/extrapolator/get_interactions()
-	var/static/list/L = list(
-		INTERACT_INSERT(/obj/item/stock_parts/scanning_module, PROC_REF(interaction_item), "Install"),
-		INTERACT_USE("Toggle mode", PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/extrapolator, \
+	INTERACT_INSERT(/obj/item/stock_parts/scanning_module, PROC_REF(interaction_item), "Install"), \
+	INTERACT_USE("Toggle mode", PROC_REF(interaction_self)), \
+)
 
 /obj/item/extrapolator/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	if(!scanner)

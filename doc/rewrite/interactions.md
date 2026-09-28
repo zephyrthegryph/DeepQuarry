@@ -142,14 +142,12 @@ INTERACT_ALT(name, effect, requires...)              // old click_alt
 A type declares its specs from a **getter**, not a plain var:
 
 ```dm
-/obj/item/binoculars/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE("Zoom", PROC_REF(zoom)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/binoculars, \
+	INTERACT_USE("Zoom", PROC_REF(zoom)), \
+)
 ```
 
-Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either.
+Not `interactions = list(...)` as a type-level var default: DM reallocates a list-valued var's default per *instance* (the list-allocation anti-pattern, [AGENTS.md §3a](../../AGENTS.md)), which would cost memory per item in the world - the opposite of the goal. A `var/static/list` local to the getter is allocated once, ever, and is what AGENTS.md already prescribes for a per-subtype constant table. `get_interactions()` is a proc override like any other, so it costs nothing extra either. `DECLARE_INTERACTIONS(type, specs...)` (`code/__defines/interactions.dm`) generates exactly that getter, so a type writes only its specs; a multi-line call ends each line with a backslash, because DM does not continue a macro call across lines at its top paren depth.
 
 **Compiling.** `declare_interactions()` (interaction.dm) calls `get_interactions()` and turns each spec into a `/datum/interaction/generic` singleton via `dq_interaction_from_spec()` (`code/datums/interactions/compact.dm`), interned by the spec list's own reference identity, not its printed content: `PROC_REF(x)` is `nameof(.proc/x)`, a bare proc name with no type prefix, so two unrelated types that happen to name their effect proc the same thing (`interaction_self` is a common choice) would collide on a string key. A spec is stable across calls that share it - a `get_interactions()` override returns a `var/static/list`, computed once per *declaring* proc and handed back unchanged by every subtype that inherits it without overriding the getter (the assembly hierarchy's shared `assembly_self` spec) - and distinct for two types that each build their own list, even when the content looks similar (`aicard` and `bodysnatcher` both naming their own `interaction_self`). Generated interactions carry a real `id` (derived from the kind and the effect proc, deduplicated against a collision with an md5 suffix) and plug into `GLOB.interactions_by_type`'s sibling registry the same way, so the resolver, the Menu, examine, screentips and keybinds need no changes to support them - `interaction_candidates()` accepts either a `/datum/interaction` type path (full form) or a live instance (compact form) in the same list.
 
@@ -166,9 +164,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 		return TRUE
 	zoom()
 // After:
-/obj/item/binoculars/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(zoom)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(zoom)))
 ```
 
 ```dm
@@ -181,9 +177,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 			supply.add_reagent(id = REAGENT_ID_NIFREPAIRNANITES, amount = efficiency)
 			update_icon()
 // After:
-/obj/item/nifrepairer/get_interactions()
-	var/static/list/L = list(INTERACT_INSERT(/obj/item/stack/nanopaste, PROC_REF(interaction_item), "Load"))
-	return L
+DECLARE_INTERACTIONS(/obj/item/nifrepairer, INTERACT_INSERT(/obj/item/stack/nanopaste, PROC_REF(interaction_item), "Load"))
 
 /obj/item/nifrepairer/proc/interaction_item(mob/user, obj/item/stack/nanopaste/np, datum/interaction/interaction)
 	if((supply.get_free_space() >= efficiency) && np.use(1))
@@ -200,9 +194,7 @@ Not `interactions = list(...)` as a type-level var default: DM reallocates a lis
 		return
 	remove_id()
 // After:
-/obj/item/communicator/get_interactions()
-	var/static/list/L = list(INTERACT_ALT("Remove ID", PROC_REF(remove_id_alt)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/communicator, INTERACT_ALT("Remove ID", PROC_REF(remove_id_alt)))
 
 /obj/item/communicator/proc/remove_id_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user))

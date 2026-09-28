@@ -68,12 +68,10 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 			icon_state = "geiger_on_5"
 	return ..()
 
-/obj/item/geiger/get_interactions()
-	var/static/list/L = list(
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-		INTERACT_ALT("Reset", PROC_REF(interaction_alt)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/geiger, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ALT("Reset", PROC_REF(interaction_alt)), \
+)
 
 /obj/item/geiger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	scanning = !scanning

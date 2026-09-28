@@ -131,12 +131,10 @@ REF_OWNED(/obj/item/radio/intercom, "circuit")
 	src.add_fingerprint(user)
 	attack_self(user)
 
-/obj/item/radio/intercom/get_interactions()
-	var/static/list/L = list(
-		INTERACT_HAND(null, PROC_REF(interaction_hand)),
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/radio/intercom, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /obj/item/radio/intercom/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)

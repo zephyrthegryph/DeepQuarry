@@ -10,12 +10,10 @@
 	var/valve_open = 0
 	COOLDOWN_DECLARE(toggle)
 
-/obj/item/transfer_valve/get_interactions()
-	var/static/list/L = list(
-		INTERACT_ITEM(null, PROC_REF(interaction_item)),
-		INTERACT_USE(null, PROC_REF(interaction_self)),
-	)
-	return L
+DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
 /obj/item/transfer_valve/proc/interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
 	var/turf/location = get_turf(src) // For admin logs

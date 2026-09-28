@@ -29,9 +29,7 @@
 	var/max_items = 20
 	flags = NOBLUDGEON
 
-/obj/item/vac_attachment/get_interactions()
-	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
-	return L
+DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!om_resolve(output_dest))
