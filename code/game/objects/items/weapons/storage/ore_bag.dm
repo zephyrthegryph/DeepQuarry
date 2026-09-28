@@ -148,15 +148,15 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 
 /obj/item/ore_bag/equipped(mob/user)
 	..()
-	user.AddComponent(/datum/component/recursive_move)
-	RegisterSignal(user, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/ore_bag/proc/autoload)
+	dq_add_recursive_move(user)
+	om_hook(user, /datum/om/event/movable_attempted_move, src, PROC_REF(autoload))
 
 /obj/item/ore_bag/dropped(mob/user, equipping, slot)
 	..()
-	UnregisterSignal(user, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	om_unhook(user, /datum/om/event/movable_attempted_move, src)
 
-/obj/item/ore_bag/proc/autoload(mob/user)
-	SIGNAL_HANDLER
+/obj/item/ore_bag/proc/autoload(mob/user, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	var/obj/item/ore/O = locate_on(get_turf(user), /obj/item/ore)
 	if(O)
 		gather_all(get_turf(user), user)

@@ -546,7 +546,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 					n_p ++
 		else if (SSticker.current_state == GAME_STATE_PLAYING)
 			for(var/mob/living/carbon/human/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				var/datum/component/antag/changeling/comp = P.GetComponent(/datum/component/antag/changeling)
+				var/datum/changeling/comp = P.get_changeling_state()
 				if(P.client && !(comp) && P.mind!=owner)
 					n_p ++
 		target_amount = min(target_amount, n_p)
@@ -556,7 +556,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 /datum/objective/absorb/check_completion()
 	if(owner)
-		var/datum/component/antag/changeling/comp = owner.GetComponent(/datum/component/antag/changeling)
+		var/datum/changeling/comp = owner.current ? owner.current.get_changeling_state() : null
 		if(comp && comp.absorbed_dna && (comp.absorbedcount >= target_amount))
 			return 1
 	else

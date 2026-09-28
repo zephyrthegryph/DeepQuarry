@@ -33,11 +33,11 @@
 		if(bound_mob in contents)
 			unleash()
 		to_chat(bound_mob, span_notice("You feel like yourself again. You are no longer under the influence of \the [src]'s command."))
-		UnregisterSignal(bound_mob, COMSIG_QDELETING)
+		om_unhook(bound_mob, /datum/om/event/qdeleting, src)
 		bound_mob.capture_caught = FALSE
 		bound_mob = null
 	if(owner)
-		UnregisterSignal(owner, COMSIG_QDELETING)
+		om_unhook(owner, /datum/om/event/qdeleting, src)
 		owner = null
 	return ..()
 
@@ -148,7 +148,7 @@
 	else
 		M.visible_message("\The [src] flickers in \the [M]'s hand and emits a little tone.", "\The [src] flickers in your hand and emits a little tone.")
 		playsound(src, 'sound/effects/capture-crystal-out.ogg', 75, 1, -1)
-		UnregisterSignal(owner, COMSIG_QDELETING)
+		om_unhook(owner, /datum/om/event/qdeleting, src)
 		owner = null
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!
@@ -284,8 +284,8 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 
 //Make it so the crystal knows if its mob references get deleted to make sure things get cleaned up
 /obj/item/capture_crystal/proc/knowyoursignals(mob/living/M, mob/living/U)
-	RegisterSignal(M, COMSIG_QDELETING, PROC_REF(mob_was_deleted), TRUE)
-	RegisterSignal(U, COMSIG_QDELETING, PROC_REF(owner_was_deleted), TRUE)
+	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(mob_was_deleted))
+	om_hook(U, /datum/om/event/qdeleting, src, PROC_REF(owner_was_deleted))
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/proc/capture(mob/living/M, mob/living/U)
@@ -386,10 +386,10 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	recall(U)
 
 //The clean up procs!
-/obj/item/capture_crystal/proc/mob_was_deleted()
-	SIGNAL_HANDLER
-	UnregisterSignal(bound_mob, COMSIG_QDELETING)
-	UnregisterSignal(owner, COMSIG_QDELETING)
+/obj/item/capture_crystal/proc/mob_was_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	om_unhook(bound_mob, /datum/om/event/qdeleting, src)
+	om_unhook(owner, /datum/om/event/qdeleting, src)
 	bound_mob.capture_caught = FALSE
 	bound_mob = null
 	owner = null
@@ -397,9 +397,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	persist_storable = TRUE
 	update_icon()
 
-/obj/item/capture_crystal/proc/owner_was_deleted()
-	SIGNAL_HANDLER
-	UnregisterSignal(owner, COMSIG_QDELETING)
+/obj/item/capture_crystal/proc/owner_was_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
+	om_unhook(owner, /datum/om/event/qdeleting, src)
 	owner = null
 	active = FALSE
 	update_icon()

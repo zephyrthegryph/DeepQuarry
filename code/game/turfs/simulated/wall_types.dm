@@ -624,10 +624,10 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 
 /turf/simulated/wall/uranium/Initialize(mapload)
 	. = ..(mapload, MAT_URANIUM)
-	RegisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(radiate))
+	om_hook(src, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(radiate))
 
 /turf/simulated/wall/uranium/radiate()
-	// SIGNAL_HANDLER is declared on /turf/simulated/wall/radiate(); this override
+	// EVENT_HANDLER is declared on /turf/simulated/wall/radiate(); this override
 	// inherits the contract and must not re-set the should_not_sleep pragma.
 	if(active)
 		return

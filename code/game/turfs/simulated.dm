@@ -139,7 +139,7 @@
 				bloodDNA = null
 
 		if(check_slipping(M,dirtslip))
-			var/datum/component/turfslip/TSC = M.LoadComponent(/datum/component/turfslip)
+			var/datum/turfslip/TSC = M.get_or_start_turfslip()
 			TSC.start_slip(src,dirtslip)
 	..()
 

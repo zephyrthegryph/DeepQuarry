@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 			return
 		if(isliving(AM))
 			var/mob/living/L = AM
-			var/datum/component/shadekin/SK = L.get_shadekin_component()
+			var/datum/shadekin/SK = L.get_shadekin_component()
 			if(SK)
 				SK.attack_dephase(null, src)
 	if(ismob(AM) && !(isliving(AM)))

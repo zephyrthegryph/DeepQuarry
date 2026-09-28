@@ -13,17 +13,17 @@
 
 /obj/machinery/doppler_array/Initialize(mapload)
 	//Explosive analysis
-	var/static/list/explosive_signals = list(
-		COMSIG_MACHINERY_EXPLOSION_DETECTED = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_ordinance_experiment),
+	var/static/list/explosive_events = list(
+		/datum/om/event/machinery_explosion_detected = TYPE_PROC_REF(/datum/experiment_handler, try_run_ordinance_experiment),
 	)
-	AddComponent(/datum/component/experiment_handler, \
+	new /datum/experiment_handler(src, \
 		config_mode = EXPERIMENT_CONFIG_ALTCLICK, \
 		allowed_experiments = list(/datum/experiment/ordnance),\
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
-		experiment_signals = explosive_signals, \
+		experiment_events = explosive_events, \
 	)
 	. = ..()
-	RegisterSignal(SSdcs, COMSIG_GLOB_EXPLOSION, PROC_REF(sense_explosion))
+	om_hook(OM_WORLD, /datum/om/event/world_explosion, src, PROC_REF(sense_explosion))
 	ADD_TRAIT(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 
 /obj/machinery/doppler_array/tgui_interact(mob/user, datum/tgui/ui)
@@ -37,8 +37,13 @@
 	data["explosions"] = length(detected_explosions) ? detected_explosions : null;
 	return data
 
-/obj/machinery/doppler_array/proc/sense_explosion(datum/source, turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
-	SIGNAL_HANDLER
+/obj/machinery/doppler_array/proc/sense_explosion(datum/source, datum/om/event/world_explosion/event)
+	EVENT_HANDLER
+	var/turf/epicenter = event.epicenter
+	var/devastation_range = event.devastation_range
+	var/heavy_impact_range = event.heavy_impact_range
+	var/light_impact_range = event.light_impact_range
+	var/seconds_taken = event.took
 
 	if(stat & NOPOWER)
 		return
@@ -52,7 +57,7 @@
 	if(our_turf.Distance(epicenter) > 100)
 		return
 	atom_say("Explosive disturbance detected - Epicenter at: grid ([x0],[y0],[z0]). Epicenter radius: [devastation_range]. Outer radius: [heavy_impact_range]. Shockwave radius: [light_impact_range]. Temporal displacement of tachyons: [seconds_taken] seconds.")
-	SEND_SIGNAL(src, COMSIG_MACHINERY_EXPLOSION_DETECTED, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
+	OM_EMIT(src, /datum/om/event/machinery_explosion_detected, epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
 	LAZYINITLIST(detected_explosions); detected_explosions += list(
 		list(
 			"index" = length(detected_explosions),

@@ -46,7 +46,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 // Parameters: None
 // Description: This refreshes the camera location
 /obj/item/communicator/proc/update_active_camera_screen()
-	SIGNAL_HANDLER
+	EVENT_HANDLER
 	if(!video_source?.can_use())
 		show_static()
 		return

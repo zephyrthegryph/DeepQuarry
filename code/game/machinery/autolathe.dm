@@ -35,7 +35,7 @@
 	///Designs imported from technology disks that we can print.
 	var/list/imported_designs
 	///The container to hold materials
-	var/datum/component/material_container/materials
+	var/datum/material_container/materials
 	///direction we output onto (if 0, on top of us)
 	var/drop_direction = 0
 	//looping sound for printing items
@@ -43,12 +43,12 @@
 
 /obj/machinery/autolathe/Initialize(mapload)
 	print_sound = new(list(src), FALSE, TRUE)
-	materials = AddComponent( \
-		/datum/component/material_container, \
+	materials = new /datum/material_container( \
+		src, \
 		subtypesof(/datum/material), \
 		0, \
 		MATCONTAINER_EXAMINE, \
-		container_signals = list(COMSIG_MATCONTAINER_ITEM_CONSUMED = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
+		container_events = list((/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/autolathe, AfterMaterialInsert)) \
 	)
 	. = ..()
 
@@ -61,7 +61,7 @@
 	default_apply_parts()
 	RefreshParts()
 
-REF_OWNED(/obj/machinery/autolathe, "print_sound")
+REF_OWNED(/obj/machinery/autolathe, list("print_sound", "materials"))
 
 /obj/machinery/autolathe/examine(mob/user)
 	. = ..()
@@ -133,8 +133,8 @@ REF_OWNED(/obj/machinery/autolathe, "print_sound")
 
 	tgui_interact(user)
 
-/obj/machinery/autolathe/proc/AfterMaterialInsert(datum/source, obj/item/item_inserted, id_inserted, amount_inserted)
-	SIGNAL_HANDLER
+/obj/machinery/autolathe/proc/AfterMaterialInsert(datum/source, datum/om/event/matcontainer_item_consumed/event)
+	EVENT_HANDLER
 	flick("autolathe_loading", src)//plays metal insertion animation
 	// use_power(min(1000, amount_inserted / 100))
 	SStgui.update_uis(src)

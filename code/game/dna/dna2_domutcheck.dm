@@ -69,4 +69,4 @@
 					M.update_icon = 1
 	M.update_mutations()
 	// Inform anything attached of our mutation
-	SEND_SIGNAL(M, COMSIG_MOB_DNA_MUTATION)
+	OM_EMIT(M, /datum/om/event/mob_dna_mutation)

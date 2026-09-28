@@ -141,18 +141,17 @@
 	if(!blocker)
 		return
 	LAZYADD(autoclose_blockers, blocker)
-	RegisterSignal(blocker, COMSIG_MOVABLE_MOVED, PROC_REF(on_autoclose_blocker_changed))
-	RegisterSignal(blocker, COMSIG_QDELETING, PROC_REF(on_autoclose_blocker_changed))
+	om_hook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(on_autoclose_blocker_changed))
 	close_door_at = 0
 	schedule_door_timer()
 
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
-		UnregisterSignal(blocker, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+		om_unhook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
 	LAZYCLEARLIST(autoclose_blockers)
 
-/obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source)
-	SIGNAL_HANDLER
+/obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source, datum/om/event/event)
+	EVENT_HANDLER
 	clear_autoclose_blockers()
 	autoclose_in(0)
 

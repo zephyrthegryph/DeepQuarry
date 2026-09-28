@@ -26,18 +26,18 @@
 	attached_to = A
 	var/turf/loc_turf = get_turf(A)
 	if(!loc_turf)
-		RegisterSignal(attached_to, COMSIG_MOVABLE_MOVED, PROC_REF(retry_attach), TRUE)
+		om_hook(attached_to, /datum/om/event/moved, src, PROC_REF(retry_attach))
 	else
 		forceMove(loc_turf)
 
-/obj/effect/countdown/proc/retry_attach()
-	SIGNAL_HANDLER
+/obj/effect/countdown/proc/retry_attach(datum/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 
 	var/turf/loc_turf = get_turf(attached_to)
 	if(!loc_turf)
 		return
 	forceMove(loc_turf)
-	UnregisterSignal(attached_to, COMSIG_MOVABLE_MOVED)
+	om_unhook(attached_to, /datum/om/event/moved, src)
 
 /obj/effect/countdown/proc/start()
 	if(!started)

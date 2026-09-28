@@ -180,8 +180,8 @@
 	M.visible_message(span_infoplain(span_bold("\The [user]") + " scans the wounds on [M]'s [S.name] with [src]"))
 
 	src.add_data(S)
-	SEND_SIGNAL(src,COMSIG_AUTOPSY_PERFORMED, user, M)
-	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_AUTOPSY_PERFORMED, user, M)
+	OM_EMIT(src, /datum/om/event/autopsy_performed, user, M)
+	OM_EMIT_WORLD(/datum/om/event/world_autopsy_performed, user, M)
 
 	return 1
 

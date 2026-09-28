@@ -277,10 +277,11 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 	if(isrobot(loc))
 		robot_owner_handle = om_handle(loc)
 		registered_name = robot_owner().braintype
-		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(check_loc))
+		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
-/obj/item/card/id/synthetic/borg/proc/check_loc(atom/movable/mover, atom/old_loc, atom/new_loc)
-	SIGNAL_HANDLER
+/obj/item/card/id/synthetic/borg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	var/atom/old_loc = event.old_loc
 	if(old_loc == robot_owner() || old_loc == robot_owner().module)
 		last_robot_loc = old_loc
 	if(!istype(loc, /obj/machinery) && loc != robot_owner() && loc != robot_owner().module)

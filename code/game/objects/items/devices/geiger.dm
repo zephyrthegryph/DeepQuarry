@@ -27,7 +27,7 @@ REGISTRY_MEMBERSHIP(/obj/item/geiger, REGISTRY_GEIGER_COUNTERS)
 
 /obj/item/geiger/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
+	om_hook(src, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
 /obj/item/geiger/examine(mob/user)
 	. = ..()
@@ -77,9 +77,10 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	scanning = !scanning
 
 	if (scanning)
-		AddComponent(/datum/component/geiger_sound)
+		if(!geiger_sound)
+			geiger_sound = new /datum/geiger_sound(src)
 	else
-		qdel(GetComponent(/datum/component/geiger_sound))
+		QDEL_NULL(geiger_sound)
 
 	update_icon()
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
@@ -101,15 +102,17 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 /obj/item/geiger/equipped(mob/user, slot, initial)
 	. = ..()
 
-	RegisterSignal(user, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
+	om_hook(user, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
 /obj/item/geiger/dropped(mob/user, equipping, slot)
 	. = ..()
 
-	UnregisterSignal(user, COMSIG_IN_RANGE_OF_IRRADIATION)
+	om_unhook(user, /datum/om/event/before/in_range_of_irradiation, src)
 
-/obj/item/geiger/proc/on_pre_potential_irradiation(datum/source, datum/radiation_pulse_information/pulse_information, insulation_to_target)
-	SIGNAL_HANDLER
+/obj/item/geiger/proc/on_pre_potential_irradiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+	EVENT_HANDLER
+	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
+	var/insulation_to_target = event.insulation_to_target
 
 	last_perceived_radiation_danger = get_perceived_radiation_danger(pulse_information, insulation_to_target)
 	last_radiation_strength = pulse_information.strength
@@ -130,7 +133,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 		update_icon()
 
 /obj/item/geiger/proc/scan(atom/target, mob/user)
-	if (SEND_SIGNAL(target, COMSIG_GEIGER_COUNTER_SCAN, user, src) & COMSIG_GEIGER_COUNTER_SCAN_SUCCESSFUL)
+	if (OM_EMIT(target, /datum/om/event/before/geiger_counter_scan, user, src) & GEIGER_COUNTER_SCAN_SUCCESSFUL)
 		return
 
 	if(isliving(target))
@@ -171,7 +174,8 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 /obj/item/geiger/wall/Initialize(mapload)
 	. = ..()
 	if(scanning)
-		AddComponent(/datum/component/geiger_sound/wall)
+		if(!geiger_sound)
+			geiger_sound = new /datum/geiger_sound/wall(src)
 
 /obj/item/geiger/wall/update_icon()
 	if(!scanning)

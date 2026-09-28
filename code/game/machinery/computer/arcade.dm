@@ -36,7 +36,7 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/machinery/computer/arcade/proc/prizevend(mob/user)
-	SEND_SIGNAL(src, COMSIG_ARCADE_PRIZEVEND, user)
+	OM_EMIT(src, /datum/om/event/arcade_prizevend, user)
 
 	if(LAZYLEN(special_prizes)) // Downstream wanted the 'win things inside contents sans circuitboard' feature kept.
 		var/atom/movable/AM = pick_n_take(special_prizes)

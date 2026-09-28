@@ -29,7 +29,7 @@
 		max_integrity = L.get_endurance() + 100
 		original_int = L.vitality() * L.get_endurance() + 100
 		update_integrity(original_int) //stoning damaged mobs will result in easier to shatter statues
-		RegisterSignal(L, COMSIG_LIVING_INJURE, PROC_REF(stasis_block_injury))
+		om_hook(L, /datum/om/event/before/living_injure, src, PROC_REF(stasis_block_injury))
 		if(ishuman(L))
 			name = "statue of [L.name]"
 			if(L.gender == "female")
@@ -64,7 +64,7 @@
 	for(var/mob/living/M in slot_contents())
 		M.forceMove(loc) // Might be in a belly
 		M.set_sdisabilities(M.sdisabilities & (~MUTE))
-		UnregisterSignal(M, COMSIG_LIVING_INJURE)
+		om_unhook(M, /datum/om/event/before/living_injure, src)
 		if(get_integrity() < original_int) //any new damage the statue incurred is transfered to the mob
 			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)
 		M.reset_perspective() // Fixes a blackscreen flicker
@@ -77,8 +77,8 @@
 	return ..()
 
 /// Go-go gadget stasis field: the encased mob can't be hurt while it's rock.
-/obj/structure/closet/statue/proc/stasis_block_injury(mob/living/source, kind, list/amount_ref, zone, atom/injury_source, flags)
-	SIGNAL_HANDLER
+/obj/structure/closet/statue/proc/stasis_block_injury(mob/living/source, datum/om/event/before/living_injure/event)
+	EVENT_HANDLER
 	if(source.loc == src)
 		return COMPONENT_CANCEL_INJURY
 

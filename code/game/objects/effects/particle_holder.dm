@@ -34,23 +34,28 @@
 	// /atom doesn't have vis_contents, /turf and /atom/movable do
 	var/atom/movable/lie_about_areas = get_parent()
 	lie_about_areas.vis_contents += src
-	RegisterSignal(get_parent(), COMSIG_QDELETING, PROC_REF(parent_deleted))
+	om_hook(get_parent(), /datum/om/event/qdeleting, src, PROC_REF(parent_deleted))
 
 	if(particle_flags & PARTICLE_ATTACH_MOB)
-		RegisterSignal(get_parent(), COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
+		om_hook(get_parent(), /datum/om/event/moved, src, PROC_REF(on_parent_moved))
 	on_move(get_parent(), null, NORTH)
 
 REF_OWNED(/obj/effect/abstract/particle_holder, "particles")
 
 /// Non movables don't delete contents on destroy, so we gotta do this
-/obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source)
-	SIGNAL_HANDLER
+/obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	qdel(src)
 
-/// signal called when a parent that's been hooked into this moves
+/// Hooked on the parent's moved event.
+/obj/effect/abstract/particle_holder/proc/on_parent_moved(atom/movable/attached, datum/om/event/moved/event)
+	EVENT_HANDLER
+	on_move(attached, event.old_loc, event.direction)
+
+/// called when a parent that's been hooked into this moves
 /// does a variety of checks to ensure overrides work out properly
 /obj/effect/abstract/particle_holder/proc/on_move(atom/movable/attached, atom/oldloc, direction)
-	SIGNAL_HANDLER
+	SHOULD_NOT_SLEEP(TRUE)
 
 	if(!(particle_flags & PARTICLE_ATTACH_MOB))
 		return

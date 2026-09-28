@@ -134,7 +134,7 @@
 			. += span_warning("Experiencing withdrawls from [R.name], [REAGENT_INAPROVALINE] treatment recomended.")
 		else
 			. += span_warning("Chemical dependance detected: [R.name].")
-	var/datum/component/xenochimera/xc = H.get_xenochimera_component()
+	var/datum/xenochimera/xc = H.get_xenochimera_component()
 	if(xc)
 		if(H.stat == DEAD && xc.revive_ready == REVIVING_READY && !H.hasnutriment())
 			. += span_danger("WARNING: Protein levels low. Subject incapable of reconstitution.")

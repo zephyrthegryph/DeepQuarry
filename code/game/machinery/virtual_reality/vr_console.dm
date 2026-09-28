@@ -374,7 +374,7 @@
 		avatar().sync_organ_dna()
 		avatar().initialize_vessel()
 
-	SEND_SIGNAL(avatar(), COMSIG_HUMAN_DNA_FINALIZED)
+	OM_EMIT(avatar(), /datum/om/event/human_dna_finalized)
 
 	if(tf)
 		var/mob/living/new_form = avatar().transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.

@@ -66,7 +66,7 @@
 // ALLOW(lifecycle): its containers drop out and the growing clone is ejected.
 /obj/machinery/clonepod/Destroy()
 	for(var/obj/container in containers)
-		UnregisterSignal(container, COMSIG_QDELETING)
+		om_unhook(container, /datum/om/event/qdeleting, src)
 		container.forceMove(get_turf(src))
 	LAZYCLEARLIST(containers)
 	locked = FALSE
@@ -153,7 +153,7 @@
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
 	var/mob/living/carbon/human/H = BR.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
-	SEND_SIGNAL(H, COMSIG_HUMAN_DNA_FINALIZED)
+	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
 	// the pod grows it out. Seeded directly (not injure()) so the fresh body
@@ -450,7 +450,7 @@
 		var/turf/T = get_turf(src)
 		if(T)
 			for(var/obj/item/reagent_containers/glass/G in containers)
-				UnregisterSignal(G, COMSIG_QDELETING)
+				om_unhook(G, /datum/om/event/qdeleting, src)
 				G.forceMove(T)
 				LAZYREMOVE(containers, G)
 		return	1
@@ -497,10 +497,10 @@
 	if(!container || (container in containers))
 		return
 	LAZYADD(containers, container)
-	RegisterSignal(container, COMSIG_QDELETING, PROC_REF(on_biomass_container_qdel))
+	om_hook(container, /datum/om/event/qdeleting, src, PROC_REF(on_biomass_container_qdel))
 
-/obj/machinery/clonepod/proc/on_biomass_container_qdel(obj/item/reagent_containers/glass/container)
-	SIGNAL_HANDLER
+/obj/machinery/clonepod/proc/on_biomass_container_qdel(obj/item/reagent_containers/glass/container, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	LAZYREMOVE(containers, container)
 
 //Health Tracker Implant

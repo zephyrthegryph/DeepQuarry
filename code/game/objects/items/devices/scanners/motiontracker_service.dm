@@ -1,5 +1,5 @@
 // The motion tracker world service (fold wave F3; was SSmotiontracker). ping() raises
-// COMSIG_MOVABLE_MOTIONTRACKER on the service for every registered listener; listeners queue echo
+// /datum/om/event/movable_motiontracker on the service for every hooked listener; listeners queue echo
 // turfs with queue_echo(), and /datum/om/behaviour/world/motiontracker (code/datums/om/world_lanes.dm)
 // draws the queued echoes every second.
 GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new)
@@ -19,12 +19,9 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 /datum/world_service/motiontracker/stat_line()
 	var/msg
 	var/count = 0
-	if(_listen_lookup)
-		var/list/track_list = _listen_lookup[COMSIG_MOVABLE_MOTIONTRACKER]
-		if(islist(track_list))
-			count = length(track_list)
-		else
-			count = 1 // listen_lookup optimizes single entries into just returning the only thing
+	var/list/track_hooks = om_rec?.hooks_in?[/datum/om/event/movable_motiontracker]
+	if(track_hooks)
+		count = length(track_hooks) / 2 // listener, proc pairs
 	if(hide_all)
 		msg = "HIDE AND SEEK"
 	else
@@ -79,7 +76,7 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 	if(queued_echo_turfs[REF(T)]) // Already echoing
 		return
 	all_pings_round++
-	SEND_SIGNAL(src, COMSIG_MOVABLE_MOTIONTRACKER, om_handle(source), T)
+	OM_EMIT(src, /datum/om/event/movable_motiontracker, om_handle(source), T)
 
 // We get this back from anything that handles the signal, and queues up a turf to draw the echo on
 // The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming

@@ -57,8 +57,8 @@
 			A.materialize()
 		var/atom/location = A.loc
 		if(location)
-			/// Sends a signal that the new atom `src`, has been created at `loc`
-			SEND_SIGNAL(location, COMSIG_ATOM_AFTER_SUCCESSFUL_INITIALIZED_ON, A, arguments[1])
+			/// Emits that the new atom `src`, has been created at `loc`
+			OM_EMIT(location, /datum/om/event/atom_after_successful_initialized_on, A, arguments[1])
 			// Created straight into a holder with a ledger: record it now (containment C1).
 			location.ledger?.note_enter(A)
 		if(created_atoms && from_template && ispath(the_type, /atom/movable))//we only want to populate the list with movables

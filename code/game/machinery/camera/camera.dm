@@ -43,7 +43,7 @@
 	var/client_huds = null
 
 /obj/machinery/camera/Initialize(mapload)
-	RegisterSignals(src, list(COMSIG_MACHINERY_POWER_LOST, COMSIG_MACHINERY_POWER_RESTORED), PROC_REF(on_power_signal))
+	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
 	assembly = new(src)
 	assembly.state = 4
@@ -132,9 +132,9 @@ REF_OWNED(/obj/machinery/camera, "assembly")
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 
-/// The area's channel change reaches cameras as the machinery power signals.
-/obj/machinery/camera/proc/on_power_signal(datum/source)
-	SIGNAL_HANDLER
+/// The area's channel change reaches cameras as the machinery power events.
+/obj/machinery/camera/proc/on_power_signal(datum/source, datum/om/event/event)
+	EVENT_HANDLER
 	schedule_camera_timer()
 
 /obj/machinery/camera/emp_act(severity, recursive, forced)

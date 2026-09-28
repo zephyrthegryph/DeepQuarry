@@ -32,7 +32,7 @@
 		anchored = FALSE
 	if(!istype(H) || !isturf(H.loc))
 		return
-	var/datum/component/gargoyle/comp = H.GetComponent(/datum/component/gargoyle)
+	var/datum/trait_state/gargoyle/comp = H.get_trait_state(/datum/trait_state/gargoyle)
 	var/tint = "#FFFFFF"
 	if(comp)
 		comp.cooldown = world.time + (15 SECONDS)
@@ -185,7 +185,7 @@
 	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)
 		return
-	var/datum/component/gargoyle/comp = gargoyle.GetComponent(/datum/component/gargoyle)
+	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
 		comp.cooldown = world.time + (15 SECONDS)
 		comp.statue_handle = null

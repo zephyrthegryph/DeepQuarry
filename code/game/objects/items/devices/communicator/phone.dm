@@ -375,15 +375,15 @@
 	video_source = comm.camera
 	comm.visible_message(span_danger("[icon2html(src,viewers(src))] New video connection from [comm]."))
 	update_active_camera_screen()
-	RegisterSignal(video_source, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(update_active_camera_screen))
-	video_source.AddComponent(/datum/component/recursive_move)
+	om_hook(video_source, /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
+	dq_add_recursive_move(video_source)
 	update_icon()
 
 // Proc: end_video()
 // Parameters: reason - the text reason to print for why it ended
 // Description: Ends the video call by clearing video_source
 /obj/item/communicator/proc/end_video(reason)
-	UnregisterSignal(video_source, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+	om_unhook(video_source, /datum/om/event/movable_attempted_move, src)
 	show_static()
 	video_source = null
 

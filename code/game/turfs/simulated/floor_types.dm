@@ -310,10 +310,10 @@
 
 /turf/simulated/floor/tiled/material/uranium/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_ATOM_PROPAGATE_RAD_PULSE, PROC_REF(radiate))
+	om_hook(src, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(radiate))
 
 /turf/simulated/floor/tiled/material/uranium/proc/radiate()
-	SIGNAL_HANDLER
+	EVENT_HANDLER
 	if(active)
 		return
 	if(!COOLDOWN_FINISHED(src, event_cooldown))

@@ -27,17 +27,17 @@ REF_OWNED(/obj/item/antag_spawner, list("sparks", "Q"))
 	searching = TRUE
 
 	Q = new ghost_query_type()
-	RegisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE, PROC_REF(get_winner))
+	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
-/obj/item/antag_spawner/proc/get_winner()
-	SIGNAL_HANDLER
+/obj/item/antag_spawner/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+	EVENT_HANDLER
 	if(Q && Q.candidates.len)
 		var/mob/observer/dead/D = Q.candidates[1]
 		spawn_antag(D.client, get_turf(src))
 	else
 		reset_search()
-	UnregisterSignal(Q, COMSIG_GHOST_QUERY_COMPLETE)
+	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
 	QDEL_NULL(Q) //get rid of the query
 	return
 
