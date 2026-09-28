@@ -729,21 +729,30 @@ DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interacti
 			. += span_italics("You can see something in there...")
 
 DECLARE_INTERACTIONS(/obj/structure/plushie, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
+	INTERACT_HAND_UNGATED("Hug", PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
-/// Old attack_hand.
-/obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+/// Old attack_hand's harm branch: punch the plushie (combat mode only).
+/obj/structure/plushie/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
+	touch_started(user)
+	user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+	if(phrase)
+		atom_say("[phrase]")
+	return TRUE
 
+/// A touch of any kind: take out whatever is hidden inside.
+/obj/structure/plushie/proc/touch_started(mob/user)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(stored_item && opened && !om_busy(src))
 		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 
+/// Old attack_hand: hug it (or, holding Grab, strangle it; Disarm pokes it).
+/obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	touch_started(user)
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
-	else if (IS_HARMING(user))
-		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
@@ -1495,16 +1504,23 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 	anchored = FALSE
 	density = FALSE
 
-DECLARE_INTERACTIONS(/obj/structure/balloon, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/balloon, \
+	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
+	INTERACT_HAND_UNGATED("Poke", PROC_REF(interaction_hand)), \
+)
 
-/// Old attack_hand.
+/// Old attack_hand's harm branch: punch the balloon (combat mode only).
+/obj/structure/balloon/proc/interaction_punch(mob/user, obj/item/held, datum/interaction/interaction)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
+	return TRUE
+
+/// Old attack_hand: poke it (or, holding Grab, try to pop it; Disarm bats it).
 /obj/structure/balloon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(IS_HELPING(user))
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]!"),span_notice("You poke [src]!"))
-	else if (IS_HARMING(user))
-		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 	else if (IS_GRABBING(user))
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to pop [src]!"),span_warning("You attempt to pop [src]!"))
 	else
