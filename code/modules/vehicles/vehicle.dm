@@ -94,23 +94,37 @@ REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 	if(load && !(load in src?.buckled_mob_list()) && !istype(load, /datum/vehicle_dummy_load))
 		load.forceMove(loc)
 
-/obj/vehicle/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehicle_item)))
+
+/// Old attackby: mechanical vehicles take cells (and swallow every other item); others take weapon hits.
+/obj/vehicle/proc/interaction_vehicle_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/hand_labeler))
-		return
+		return TRUE
 	if(mechanical)
 		if(istype(W, /obj/item/cell) && !cell && open)
 			insert_cell(W, user)
-
-	else if(W.force && W.obj_damage_type())
+		return TRUE
+	if(W.force && W.obj_damage_type())
 		user.setClickCooldown(user.get_attack_speed(W))
 		switch(W.obj_damage_type())
 			if(BURN)
 				receive_weapon_hit(W, user, W.force * fire_dam_coeff, INJURY_BURN, silent = FALSE)
 			if(BRUTE)
 				receive_weapon_hit(W, user, W.force * brute_dam_coeff, silent = FALSE)
-		..()
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
+
+/// Shared paint step (bike, quad bike, trailer): a multitool on an open panel picks a new paint colour.
+/// Old attackby branch copied across those types; falls through when not applicable or cancelled.
+/obj/vehicle/proc/interaction_vehicle_paint(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!W.has_tool_quality(TOOL_MULTITOOL) || !open)
+		return FALSE
+	var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
+	if(!new_paint)
+		return FALSE
+	paint_color = new_paint
+	update_icon()
+	return TRUE
 
 /obj/vehicle/screwdriver_act(mob/user, obj/item/tool)
 	if(!mechanical)
@@ -169,9 +183,6 @@ REF_OWNED(/obj/vehicle, list("riding_datum", "soundloop"))
 	if(on)
 		turn_off()
 	om_after(src, severity*300, PROC_REF(emp_recover), was_on)
-
-/obj/vehicle/attack_ai(mob/user as mob)
-	return
 
 // For downstream compatibility (in particular Paradise)
 /obj/vehicle/proc/handle_rotation()

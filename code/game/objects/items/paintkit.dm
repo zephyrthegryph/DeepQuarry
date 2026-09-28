@@ -228,13 +228,13 @@
 	M.update_icon()
 	use(1, user)
 
-/obj/mecha/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/kit/paint))
-		var/obj/item/kit/paint/P = W
-		P.customize(src, user)
-		return
-	else
-		return ..()
+/// Old /obj/mecha/attackby override: a paint kit customises the mech. Declared in mecha.dm.
+/obj/mecha/proc/interaction_mecha_paint_kit(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/kit/paint))
+		return FALSE
+	var/obj/item/kit/paint/P = W
+	P.customize(src, user)
+	return TRUE
 
 //Ripley APLU kits.
 /obj/item/kit/paint/ripley

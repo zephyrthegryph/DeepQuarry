@@ -1139,11 +1139,14 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		qdel(src)
 	return
 
-/obj/mecha/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/mecha, 	INTERACT_ITEM(null, PROC_REF(interaction_mecha_paint_kit)), 	INTERACT_ITEM(null, PROC_REF(interaction_mecha_item)), 	INTERACT_HAND(null, PROC_REF(interaction_mecha_hand)), 	INTERACT_DRAG("Enter exosuit", PROC_REF(interaction_mecha_drag)), 	INTERACT_ALT("Toggle strafing", PROC_REF(interaction_mecha_alt)))
+
+/// Old attack_hand.
+/obj/mecha/proc/interaction_mecha_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		show_radial_occupant(user)
-		return
+		return TRUE
 
 	user.setClickCooldown(user.get_attack_speed())
 	src.mecha_log_message("Attack by hand/paw. Attacker - [user].",1)
@@ -1178,7 +1181,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		else
 			user.visible_message(span_danger("\The [user] hits \the [src]. Nothing happens."),span_danger("You hit \the [src] with no visible effect."))
 			src.log_append_to_last("Armor saved.")
-		return
+		return TRUE
 	else if ((user.has_mutation(HULK)) && !prob(temp_deflect_chance))
 		src.take_damage(15)	//The take_damage() proc handles armor values
 		if(prob(25))	//Hulks punch hard but lets not give them consistent internal damage.
@@ -1187,7 +1190,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	else
 		user.visible_message(span_infoplain((span_red(span_bold("[user] hits [src.name]. Nothing happens.")))),span_infoplain(span_red(span_bold("You hit [src.name] with no visible effect."))))
 		src.log_append_to_last("Armor saved.")
-	return
+	return TRUE
 
 /// The mech's packet sink. Each kind lands through the mech's own absorption
 /// and component model (take_damage: absorbDamage, then
@@ -1493,19 +1496,20 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 // Maintenance steps and weld repairs: mecha_maintenance.dm.
 
-/obj/mecha/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: every item is handled here (maintenance, parts, else dynattackby).
+/obj/mecha/proc/interaction_mecha_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W, /obj/item/mmi))
 		if(mmi_move_inside(W,user))
 			to_chat(user, "[src]-MMI interface initialized successfuly")
 		else
 			to_chat(user, "[src]-MMI interface initialization failed.")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/robotanalyzer))
 		var/obj/item/robotanalyzer/RA = W
 		RA.do_scan(src, user)
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/mecha_parts/mecha_equipment))
 		var/obj/item/mecha_parts/mecha_equipment/E = W
@@ -1515,7 +1519,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			user.visible_message("[user] attaches [W] to [src]", "You attach [W] to [src]")
 		else
 			to_chat(user, "You were unable to attach [W] to [src]")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/mecha_parts/component) && state == MECHA_CELL_OUT)
 		var/obj/item/mecha_parts/component/MC = W
@@ -1523,11 +1527,11 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			user.drop_item()
 			MC.forceMove(src)
 			user.visible_message("[user] installs \the [W] in \the [src]", "You install \the [W] in \the [src].")
-		return
+		return TRUE
 
 	if(istype(W, /obj/item/card/robot))
 		var/obj/item/card/robot/RoC = W
-		return attackby(RoC.dummy_card, user)
+		return interaction_mecha_item(user, RoC.dummy_card, interaction)
 
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(add_req_access || maint_access)
@@ -1539,14 +1543,14 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 					var/obj/item/pda/pda = W
 					id_card = pda.id
 				output_maintenance_dialog(id_card, user)
-				return
+				return TRUE
 			else
 				to_chat(user, span_warning("Invalid ID: Access denied."))
 		else
 			to_chat(user, span_warning("Maintenance protocols disabled by operator."))
 	// Tool steps are the maintenance graph (mecha_maintenance.dm); a tool it has no step for does nothing.
 	else if(W.has_tool_quality(TOOL_WRENCH) || W.has_tool_quality(TOOL_CROWBAR) || W.has_tool_quality(TOOL_SCREWDRIVER))
-		return
+		return TRUE
 	else if(istype(W, /obj/item/stack/cable_coil))
 		if(state >= MECHA_CELL_OPEN && hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
 			var/obj/item/stack/cable_coil/CC = W
@@ -1555,7 +1559,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				to_chat(user, "You replace the fused wires.")
 			else
 				to_chat(user, "There's not enough wire to finish the task.")
-		return
+		return TRUE
 	else if(istype(W, /obj/item/multitool))
 		if(state>=MECHA_CELL_OPEN && src?.slot_item(MECHA_SLOT_PILOT))
 			to_chat(user, "You attempt to eject the pilot using the maintenance controls.")
@@ -1567,7 +1571,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				to_chat(user, span_warning("Your attempt is rejected."))
 				src.occupant_message(span_warning("An attempt to eject you was made using the maintenance controls."))
 				src.mecha_log_message("Eject attempt made using maintenance controls - rejected.")
-		return
+		return TRUE
 
 	else if(istype(W, /obj/item/cell))
 		if(state==MECHA_CELL_OUT)
@@ -1579,16 +1583,16 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				src.mecha_log_message("Powercell installed")
 			else
 				to_chat(user, "There's already a powercell installed.")
-		return
+		return TRUE
 
 	else if(W.has_tool_quality(TOOL_WELDER) && !IS_HARMING(user))
-		return
+		return TRUE
 
 	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))
 		user.drop_from_inventory(W)
 		W.forceMove(src)
 		user.visible_message("[user] attaches [W] to [src].", "You attach [W] to [src]")
-		return
+		return TRUE
 
 	else if(istype(W,/obj/item/stack/nanopaste))
 		if(state >= MECHA_PANEL_LOOSE)
@@ -1599,7 +1603,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 				if(!C)
 					to_chat(user, span_notice("There are no components installed!"))
-					return
+					return TRUE
 
 				if(C.get_integrity() >= C.max_integrity)
 					to_chat(user, span_notice("\The [C] does not require repairs."))
@@ -1607,11 +1611,11 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 				else if(C.get_integrity() < C.max_integrity)
 					to_chat(user, span_notice("You start to repair damage to \the [C]."))
 					C.paste_repair_step(user, NP, src)
-			return
+			return TRUE
 
 		else
 			to_chat(user, span_notice("You can't reach \the [src]'s internal components."))
-			return
+			return TRUE
 
 	else
 		call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(W,user)
@@ -1631,21 +1635,8 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			src.take_damage(W.force, W.obj_damage_type())
 			src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
 */
-	return
+	return TRUE
 
-/*
-/obj/mecha/attack_ai(mob/living/silicon/ai/user as mob)
-	if(!isAI(user))
-		return
-	var/output = {"<b>Assume direct control over [src]?</b>
-						<a href='byond://?src=\ref[src];ai_take_control=\ref[user];duration=3000'>Yes</a><br>
-						"}
-	// TGUI sub-view: AI attack interface.
-	tgui_subview = "attack_ai"
-	tgui_subview_html = output
-	tgui_interact(user)
-	return
-*/
 
 ///////////////////////////////
 ////////  Brain Stuff  ////////
@@ -1925,16 +1916,18 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	src.mecha_log_message("Toggled strafing mode [strafing?"on":"off"].")
 	return
 
-/obj/mecha/MouseDrop_T(mob/O, mob/user)
+/// Old MouseDrop_T: drag yourself onto the mech to climb in.
+/obj/mecha/proc/interaction_mecha_drag(mob/user, atom/movable/O, datum/interaction/interaction)
 	//Humans can pilot mechs.
 	if(!ishuman(O))
-		return
+		return TRUE
 
 	//Can't put other people into mechs (can comment this out if you want that to be possible)
 	if(O != user)
-		return
+		return TRUE
 
 	move_inside(user)
+	return TRUE
 
 /obj/mecha/verb/enter()
 	set category = "Object"
@@ -2083,10 +2076,12 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 			else//Everyone else gets the normal noise
 				who << sound('sound/mecha/nominal.ogg',volume=50)
 
-/obj/mecha/click_alt(mob/living/user)
+/// Old click_alt: the pilot toggles strafing.
+/obj/mecha/proc/interaction_mecha_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(user == occupant)
 		strafing()
+	return TRUE
 
 /obj/mecha/verb/view_stats()
 	set name = "View Stats"

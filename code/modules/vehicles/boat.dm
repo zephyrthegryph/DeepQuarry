@@ -68,11 +68,14 @@
 	return INITIALIZE_HINT_NORMAL
 
 // Boarding.
-/obj/vehicle/boat/MouseDrop_T(atom/movable/C, mob/user)
-	if(ismob(C))
-		user_buckle_mob(C, user)
-	else
-		..(C, user)
+EXTEND_INTERACTIONS(/obj/vehicle/boat, INTERACT_DRAG("Board", PROC_REF(interaction_boat_board)))
+
+/// Old MouseDrop_T: drop a mob on the boat to seat it.
+/obj/vehicle/boat/proc/interaction_boat_board(mob/user, atom/movable/C, datum/interaction/interaction)
+	if(!ismob(C))
+		return FALSE
+	user_buckle_mob(C, user)
+	return TRUE
 
 /obj/vehicle/boat/load(mob/living/L, mob/living/user)
 	if(!istype(L)) // Only mobs on boats.

@@ -42,9 +42,12 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 			target = singubeacon
 			break
 
-/obj/singularity/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_singularity_touch)))
+
+/// Old attack_hand: touching it is fatal.
+/obj/singularity/proc/interaction_singularity_touch(mob/user, obj/item/held, datum/interaction/interaction)
 	consume(user)
-	return 1
+	return TRUE
 
 /obj/singularity/ex_act(severity)
 	if(current_size == STAGE_SUPER)//IT'S UNSTOPPABLE
@@ -81,9 +84,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 
 		if (prob(event_chance)) //Chance for it to run a special event TODO: Come up with one or two more that fit.
 			event()
-
-/obj/singularity/attack_ai() //To prevent ais from gibbing themselves when they click on one.
-	return
 
 /obj/singularity/proc/admin_investigate_setup()
 	last_warning = world.time

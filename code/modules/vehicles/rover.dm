@@ -82,22 +82,20 @@
 
 	return ..()
 
-/obj/vehicle/train/rover/trolley/attackby(obj/item/W as obj, mob/user as mob)
-	if(open && W.has_tool_quality(TOOL_WIRECUTTER))
-		passenger_allowed = !passenger_allowed
-		user.visible_message(span_notice("[user] [passenger_allowed ? "cuts" : "mends"] a cable in [src]."),span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable."))
-	else
-		..()
+EXTEND_INTERACTIONS(/obj/vehicle/train/rover/trolley, INTERACT_ITEM("Toggle load limiter", PROC_REF(interaction_train_limiter_cable)))
 
-/obj/vehicle/train/rover/engine/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/key/rover))
-		if(!key)
-			user.drop_item()
-			W.forceMove(src)
-			key = W
-			verbs += /obj/vehicle/train/rover/engine/verb/remove_key
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, INTERACT_ITEM("Insert key", PROC_REF(interaction_rover_engine_key)))
+
+/// Old attackby: the key goes in the ignition (a key is always used up here, even with one already in).
+/obj/vehicle/train/rover/engine/proc/interaction_rover_engine_key(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/key/rover))
+		return FALSE
+	if(!key)
+		user.drop_item()
+		W.forceMove(src)
+		key = W
+		verbs += /obj/vehicle/train/rover/engine/verb/remove_key
+	return TRUE
 
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
 /obj/vehicle/train/rover/bullet_act(obj/item/projectile/Proj)

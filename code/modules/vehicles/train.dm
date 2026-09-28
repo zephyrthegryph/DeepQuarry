@@ -104,17 +104,22 @@
 
 	return 1
 
-/obj/vehicle/train/MouseDrop_T(atom/movable/C, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/vehicle/train, 	INTERACT_DRAG("Load", PROC_REF(interaction_train_drag)), 	INTERACT_HAND(null, PROC_REF(interaction_train_hand)))
+
+/// Old MouseDrop_T: drop a train car to latch it, anything else to load it.
+/obj/vehicle/train/proc/interaction_train_drag(mob/user, atom/movable/C, datum/interaction/interaction)
 	if(user?.buckled_to() || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C) || !istype(C) || (user == C && !user.canmove))
-		return
+		return TRUE
 	if(istype(C,/obj/vehicle/train))
 		latch(C, user)
 	else if(!load(C, user))
 		to_chat(user, span_red("You were unable to load [C] on [src]."))
+	return TRUE
 
-/obj/vehicle/train/attack_hand(mob/user as mob)
+/// Old attack_hand: climb on, or unload what's aboard.
+/obj/vehicle/train/proc/interaction_train_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || user.restrained() || !Adjacent(user))
-		return 0
+		return TRUE
 
 	if(user != load && (user in src))
 		user.forceMove(loc)			//for handling players stuck in src
@@ -122,8 +127,15 @@
 		unload(user)			//unload if loaded
 	else if(!load && !user?.buckled_to())
 		load(user, user)				//else try climbing on board
-	else
-		return 0
+	return TRUE
+
+/// Shared trolley step (security and rover trolleys): wirecutters on an open panel toggle the load limiter.
+/obj/vehicle/train/proc/interaction_train_limiter_cable(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!open || !W.has_tool_quality(TOOL_WIRECUTTER))
+		return FALSE
+	passenger_allowed = !passenger_allowed
+	user.visible_message(span_notice("[user] [passenger_allowed ? "cuts" : "mends"] a cable in [src]."),span_notice("You [passenger_allowed ? "cut" : "mend"] the load limiter cable."))
+	return TRUE
 
 /obj/vehicle/train/verb/unlatch_v()
 	set name = "Unlatch"

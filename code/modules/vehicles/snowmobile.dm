@@ -60,23 +60,30 @@
 	return
 
 //Required for the riding datum to behave:
-/obj/vehicle/train/engine/quadbike/snowmobile/MouseDrop_T(atom/movable/C, mob/user as mob)
-	if(ismob(C))
-		if(C in src?.buckled_mob_list())
-			user_unbuckle_mob(C, user)
-		else
-			user_buckle_mob(C, user)
-	else
-		..(C, user)
+EXTEND_INTERACTIONS(/obj/vehicle/train/engine/quadbike/snowmobile, \
+	INTERACT_DRAG("Buckle", PROC_REF(interaction_snowmobile_drag)), \
+	INTERACT_HAND(null, PROC_REF(interaction_snowmobile_hand)))
 
-/obj/vehicle/train/engine/quadbike/snowmobile/attack_hand(mob/user as mob)
+/// Old MouseDrop_T: mobs buckle/unbuckle through the riding datum; anything else falls to the train's load.
+/obj/vehicle/train/engine/quadbike/snowmobile/proc/interaction_snowmobile_drag(mob/user, atom/movable/C, datum/interaction/interaction)
+	if(!ismob(C))
+		return FALSE
+	if(C in src?.buckled_mob_list())
+		user_unbuckle_mob(C, user)
+	else
+		user_buckle_mob(C, user)
+	return TRUE
+
+/// Old attack_hand: buckle yourself on, or off (replaces the train climb/unload).
+/obj/vehicle/train/engine/quadbike/snowmobile/proc/interaction_snowmobile_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user == load)
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")
-		return
+		return TRUE
 	if(user in src?.buckled_mob_list())
 		unbuckle_mob(user)
-		return
+		return TRUE
 	else if(!load && load(user, user))
 		to_chat(user, "You buckle yourself to \the [src].")
-		return
+		return TRUE
+	return TRUE

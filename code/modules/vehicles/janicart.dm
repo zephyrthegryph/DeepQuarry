@@ -49,7 +49,12 @@
 	if(prob(20))
 		callme = pick(list("pimpin' ride","thang","pussy wagon","janihound deflector","raunchy love mobile","sanitation stallion","magic carpet","crime mobile","get away car"))
 
-/obj/vehicle/train/engine/janicart/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
+	INTERACT_ITEM(null, PROC_REF(interaction_janicart_item)), \
+	INTERACT_HAND(null, PROC_REF(interaction_janicart_hand)))
+
+/// Old attackby: wet a mop, or hook on a trash bag.
+/obj/vehicle/train/engine/janicart/proc/interaction_janicart_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/mop))
 		if(reagents.total_volume > 1)
 			reagents.trans_to_obj(W, 2)
@@ -57,22 +62,23 @@
 			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
 		else
 			to_chat(user, span_notice("This [callme] is out of water!"))
-		return
+		return TRUE
 	if(istype(W, /obj/item/storage/bag/trash))
 		to_chat(user, span_notice("You hook the trashbag onto the [callme]."))
 		user.drop_item()
 		W.forceMove(src)
 		mybag = W
-		return
-	. = ..()
+		return TRUE
+	return FALSE
 
-/obj/vehicle/train/engine/janicart/attack_hand(mob/user)
-	if(mybag)
-		mybag.forceMove(get_turf(user))
-		user.put_in_hands(mybag)
-		mybag = null
-		return
-	. = ..()
+/// Old attack_hand: take the trash bag off first; otherwise the train's climb/unload.
+/obj/vehicle/train/engine/janicart/proc/interaction_janicart_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!mybag)
+		return FALSE
+	mybag.forceMove(get_turf(user))
+	user.put_in_hands(mybag)
+	mybag = null
+	return TRUE
 
 //-------------------------------------------
 // Interaction procs

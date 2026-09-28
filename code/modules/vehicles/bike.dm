@@ -45,14 +45,11 @@
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
 
-/obj/vehicle/bike/attackby(obj/item/W, mob/user)
-	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
-		if(new_paint)
-			paint_color = new_paint
-			update_icon()
-			return
-	..()
+EXTEND_INTERACTIONS(/obj/vehicle/bike, \
+	INTERACT_ITEM("Paint", PROC_REF(interaction_vehicle_paint)), \
+	INTERACT_ALT("Toggle kickstand", PROC_REF(interaction_bike_kickstand)), \
+	INTERACT_DRAG("Load", PROC_REF(interaction_bike_drag)), \
+	INTERACT_HAND(null, PROC_REF(interaction_bike_hand)))
 
 /obj/vehicle/bike/click_ctrl(mob/user)
 	if(Adjacent(user) && anchored)
@@ -82,11 +79,12 @@
 		visible_message("\The [src] putters before turning off.", "You hear something putter slowly.")
 		return CLICK_ACTION_SUCCESS
 
-/obj/vehicle/bike/click_alt(mob/user)
-	if(Adjacent(user))
-		kickstand(user)
-	else
-		return ..()
+/// Old click_alt: toggle the kickstand when adjacent.
+/obj/vehicle/bike/proc/interaction_bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
+		return FALSE
+	kickstand(user)
+	return TRUE
 
 /obj/vehicle/bike/verb/kickstand(mob/user as mob)
 	set name = "Toggle Kickstand"
@@ -119,17 +117,20 @@
 		return 0
 	return ..(M, user)
 
-/obj/vehicle/bike/MouseDrop_T(atom/movable/C, mob/user as mob)
+/// Old MouseDrop_T: load the dropped atom onto the bike.
+/obj/vehicle/bike/proc/interaction_bike_drag(mob/user, atom/movable/C, datum/interaction/interaction)
 	if(!load(C, user))
 		to_chat(user, span_warning(" You were unable to load \the [C] onto \the [src]."))
-		return
+	return TRUE
 
-/obj/vehicle/bike/attack_hand(mob/user as mob)
+/// Old attack_hand: buckle yourself on, or off.
+/obj/vehicle/bike/proc/interaction_bike_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user == load)
 		unload(load, user)
 		to_chat(user, "You unbuckle yourself from \the [src].")
 	else if(!load && load(user, user))
 		to_chat(user, "You buckle yourself to \the [src].")
+	return TRUE
 
 /obj/vehicle/bike/relaymove(mob/user, direction)
 	if(user != load || !on)

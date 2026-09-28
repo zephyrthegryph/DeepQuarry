@@ -65,13 +65,17 @@
 		central_paint_mask.color = central_paint
 		add_overlay(central_paint_mask)
 
-/obj/mecha/working/hoverpod/shuttlecraft/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/multitool) && state == 1)
-		om_prompt_sequence(src, user, list(
-			list("key" = "zone", "kind" = "list", "message" = "Please select a target zone.", "title" = "Paint Zone", "choices" = list("Central", "Engine", "Base", "Front", "CANCEL")),
-			PROC_REF(ask_paint_color),
-		), PROC_REF(hull_painted), list("target" = W, "requires" = PROMPT_IN_HAND))
-	else ..()
+EXTEND_INTERACTIONS(/obj/mecha/working/hoverpod/shuttlecraft, INTERACT_ITEM("Paint hull", PROC_REF(interaction_shuttlecraft_paint)))
+
+/// Old attackby: a multitool repaints the hull while the maintenance state is open.
+/obj/mecha/working/hoverpod/shuttlecraft/proc/interaction_shuttlecraft_paint(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W,/obj/item/multitool) || state != 1)
+		return FALSE
+	om_prompt_sequence(src, user, list(
+		list("key" = "zone", "kind" = "list", "message" = "Please select a target zone.", "title" = "Paint Zone", "choices" = list("Central", "Engine", "Base", "Front", "CANCEL")),
+		PROC_REF(ask_paint_color),
+	), PROC_REF(hull_painted), list("target" = W, "requires" = PROMPT_IN_HAND))
+	return TRUE
 
 /obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(mob/user, datum/om/prompt/ask)
 	if(ask.get("zone") != "CANCEL")

@@ -74,15 +74,20 @@
 	user.visible_message(span_notice("[user] cuts a cable in [src]."), span_notice("You cut the load limiter cable."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/vehicle/train/engine/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, key_type))
-		if(!key)
-			user.drop_item()
-			W.forceMove(src)
-			key = W
-			verbs += /obj/vehicle/train/engine/verb/remove_key
-		return
-	..()
+EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
+	INTERACT_ITEM("Insert key", PROC_REF(interaction_engine_key)), \
+	INTERACT_ALT("Remove key", PROC_REF(interaction_engine_remove_key)))
+
+/// Old attackby: the key goes in the ignition (a key is always used up here, even with one already in).
+/obj/vehicle/train/engine/proc/interaction_engine_key(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, key_type))
+		return FALSE
+	if(!key)
+		user.drop_item()
+		W.forceMove(src)
+		key = W
+		verbs += /obj/vehicle/train/engine/verb/remove_key
+	return TRUE
 
 /*
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
@@ -219,11 +224,12 @@
 
 	return ..()
 
-/obj/vehicle/train/engine/click_alt(mob/user)
-	if(Adjacent(user))
-		remove_key()
-	else
-		return ..()
+/// Old click_alt: pull the key when adjacent.
+/obj/vehicle/train/engine/proc/interaction_engine_remove_key(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
+		return FALSE
+	remove_key()
+	return TRUE
 
 /obj/vehicle/train/engine/verb/start_engine()
 	set name = "Start engine"
@@ -443,19 +449,25 @@
 		return //so people can't knock others over by pushing a trolley around
 	..()
 
-/obj/vehicle/train/trolley_tank/MouseDrop_T(atom/movable/C, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
+	INTERACT_DRAG(null, PROC_REF(interaction_trolley_tank_drag)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_trolley_tank_item)))
+
+/// Old MouseDrop_T: climb, empty a beaker in, or latch another car (the only train drag it allows).
+/obj/vehicle/train/trolley_tank/proc/interaction_trolley_tank_drag(mob/user, atom/movable/C, datum/interaction/interaction)
 	if(C == user)
 		SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
-		return
+		return TRUE
 
 	if(istype(C,/obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = C
 		G.reagents.trans_to(src,G.reagents.total_volume)
-		to_chat(usr,"You empty \the [G] into the \the [src].")
-		return
+		to_chat(user,"You empty \the [G] into the \the [src].")
+		return TRUE
 
 	if(istype(C,/obj/vehicle/train)) // Only allow latching
-		. = ..()
+		return FALSE
+	return TRUE
 
 /obj/vehicle/train/trolley_tank/load(atom/movable/C, mob/living/user)
 	return FALSE // Cannot load anything onto this
@@ -464,47 +476,47 @@
 	..()
 	attack_log += text("\[[time_stamp()]\] [span_red("ran over [M.name] ([M.ckey])")]")
 
-/obj/vehicle/train/trolley_tank/attackby(obj/item/W, mob/user)
-
+/// Old attackby: fill a beaker, repaint (multitool) or relabel (pen).
+/obj/vehicle/train/trolley_tank/proc/interaction_trolley_tank_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = W
 		if(reagents.total_volume <= 0)
-			to_chat(usr,"\The [src] is empty.")
-			return
+			to_chat(user,"\The [src] is empty.")
+			return TRUE
 		if(G.reagents.total_volume >= G.reagents.maximum_volume)
-			to_chat(usr,"\The [G] is full.")
-			return
+			to_chat(user,"\The [G] is full.")
+			return TRUE
 		playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
-		to_chat(usr,"You drain \the [src] into the \the [G].")
+		to_chat(user,"You drain \the [src] into the \the [G].")
 		reagents.trans_to_holder( G.reagents, G.reagents.maximum_volume)
 		update_icon()
-		return
+		return TRUE
 
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_paint = rerun_prompt(user, "paint", list("kind" = "color", "message" = "Please select paint color.", "title" = "Paint Color", "default" = paint_color), TYPE_PROC_REF(/atom, attackby), args)
+		var/new_paint = rerun_prompt(user, "paint", list("kind" = "color", "message" = "Please select paint color.", "title" = "Paint Color", "default" = paint_color), PROC_REF(interaction_trolley_tank_item), args)
 		if(isnull(new_paint))
 			return TRUE
 		if(new_paint)
 			paint_color = new_paint
 			update_icon()
-			return
+			return TRUE
 
 	if(istype(W, /obj/item/pen))
-		var/t = rerun_prompt(user, "k491", list("kind" = "text", "message" = "What would you like the label to be?", "title" = text("[]", src.name), "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		var/t = rerun_prompt(user, "k491", list("kind" = "text", "message" = "What would you like the label to be?", "title" = text("[]", src.name), "max_length" = MAX_NAME_LEN), PROC_REF(interaction_trolley_tank_item), args)
 		if(isnull(t))
 			return TRUE
 		if (user.get_active_hand() != W)
-			return
+			return TRUE
 		if((!in_range(src, user) && src.loc != user))
-			return
+			return TRUE
 		t = sanitizeSafe(t, MAX_NAME_LEN)
 		if(t)
 			src.name = "[initial(name)] - '[t]'"
 		else
 			src.name = initial(name)
-		return
+		return TRUE
 
-	. = ..()
+	return FALSE
 
 /obj/vehicle/train/trolley_tank/update_car(train_length, active_engines)
 	src.train_length = train_length
