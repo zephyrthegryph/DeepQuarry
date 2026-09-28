@@ -333,11 +333,14 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	update_icon()
 
 //Not even going to touch this pile of spaghetti
-/turf/simulated/mineral/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(mineral_item)))
+
+/// Old attackby: digging, excavation, sampling and scanning; anything else touches the rock.
+/turf/simulated/mineral/proc/mineral_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if (!user.IsAdvancedToolUser())
 		to_chat(user, span_warning("You don't have the dexterity to do this!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(!density)
 		var/valid_tool = 0
@@ -347,7 +350,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			var/obj/item/shovel/S = W
 			if(S.grave_mode)
 				shovel_dig_grave(user, S)
-				return
+				return INTERACTION_HANDLED_PASS
 			valid_tool = 1
 			digspeed = S.digspeed
 
@@ -360,11 +363,11 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		if(valid_tool)
 			if (sand_dug)
 				to_chat(user, span_warning("This area has already been dug."))
-				return
+				return INTERACTION_HANDLED_PASS
 
 			var/turf/T = user.loc
 			if (!(istype(T)))
-				return
+				return INTERACTION_HANDLED_PASS
 
 			to_chat(user, span_notice("You start digging."))
 			playsound(user, 'sound/effects/rustle1.ogg', 50, 1)
@@ -376,16 +379,16 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			if(S.collection_mode)
 				for(var/obj/item/fossil/F in contents)
 					F.attackby(W,user)
-					return
+					return INTERACTION_HANDLED_PASS
 
 		else if(istype(W, /obj/item/stack/tile/floor))
 			var/obj/item/stack/tile/floor/S = W
 			if (S.get_amount() < 1)
-				return
+				return INTERACTION_HANDLED_PASS
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			ChangeTurf(/turf/simulated/floor)
 			S.use(1)
-			return
+			return INTERACTION_HANDLED_PASS
 
 
 	else
@@ -394,18 +397,18 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			geologic_data.UpdateNearbyArtifactInfo(src)
 			var/obj/item/core_sampler/C = W
 			C.sample_item(src, user)
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if (istype(W, /obj/item/depth_scanner))
 			var/obj/item/depth_scanner/C = W
 			C.scan_atom(user, src)
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if (istype(W, /obj/item/measuring_tape))
 			var/obj/item/measuring_tape/P = W
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \a [P] towards \the [src]."),span_notice("You extend \the [P] towards \the [src]."))
 			om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/xenoarch_multi_tool))
 			var/obj/item/xenoarch_multi_tool/C = W
@@ -414,16 +417,16 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			else
 				user.visible_message(span_infoplain(span_bold("\The [user]") + " extends \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"), span_notice("You extend \the [C] over \the [src], a flurry of red beams scanning \the [src]'s surface!"))
 				om_do_after(user, 1.5 SECONDS, src, src, PROC_REF(measure_done), list(user))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if (istype(W, /obj/item/melee/shock_maul))
 			if(!istype(user.loc, /turf))
-				return
+				return INTERACTION_HANDLED_PASS
 
 			var/obj/item/melee/shock_maul/S = W
 			if(!S.wielded)
 				to_chat(user, span_warning("\The [W] must be wielded in two hands to be used for mining!"))
-				return
+				return INTERACTION_HANDLED_PASS
 
 			var/newDepth = excavation_level + S.excavation_amount // Used commonly below
 
@@ -448,7 +451,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 					GetDrilled(0)
 				else
 					excavate_turf()
-				return
+				return INTERACTION_HANDLED_PASS
 
 			excavation_level += S.excavation_amount
 			update_archeo_overlays(S.excavation_amount)
@@ -463,11 +466,11 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 
 		if (istype(W, /obj/item/pickaxe))
 			if(!istype(user.loc, /turf))
-				return
+				return INTERACTION_HANDLED_PASS
 
 			var/obj/item/pickaxe/P = W
 			if(last_act + P.digspeed > world.time)//prevents message spam
-				return
+				return INTERACTION_HANDLED_PASS
 			last_act = world.time
 
 			playsound(user, P.drill_sound, 20, 1)
@@ -482,9 +485,9 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 					wreckfinds(P.destroy_artefacts)
 			user.balloon_alert(user, "you start [P.drill_verb][fail_message].")
 			om_do_after(user, P.digspeed, src, src, PROC_REF(pick_done), list(user, P))
-			return
+			return INTERACTION_HANDLED_PASS
 
-	return attack_hand(user)
+	return attack_hand(user) ? TRUE : INTERACTION_HANDLED_PASS
 
 /turf/simulated/mineral/proc/dig_hole_done(mob/user)
 	if(sand_dug)

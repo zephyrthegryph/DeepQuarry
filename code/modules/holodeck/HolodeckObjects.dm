@@ -8,9 +8,8 @@
 	thermal_conductivity = 0
 	flags = TURF_ACID_IMMUNE
 
-/turf/simulated/floor/holofloor/attackby(obj/item/W as obj, mob/user as mob)
-	return
-	// HOLOFLOOR DOES NOT GIVE A FUCK
+// Old attackby: the holofloor ignores items.
+EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
 
 /turf/simulated/floor/holofloor/set_flooring()
 	return

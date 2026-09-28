@@ -24,11 +24,15 @@
 	for(var/d in crossed_dirs)
 		add_overlay(image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d)))
 
-/turf/simulated/floor/outdoors/snow/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/shovel))
-		use_tool(user, W, src, delay = 4 SECONDS, volume = 0, message_self = "You begin to remove \the [src] with your [W].", receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed), fail_args = list(user))
-	else
-		..()
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/snow, \
+	INTERACT_INSERT(/obj/item/shovel, PROC_REF(snow_shovel), "Dig up"), \
+	INTERACT_HAND_UNGATED("Scoop", PROC_REF(snow_scoop)), \
+)
+
+/// Old attackby: shovel the snow away.
+/turf/simulated/floor/outdoors/snow/proc/snow_shovel(mob/user, obj/item/W, datum/interaction/interaction)
+	use_tool(user, W, src, delay = 4 SECONDS, volume = 0, message_self = "You begin to remove \the [src] with your [W].", receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user), on_fail = PROC_REF(attackby_tool_failed), fail_args = list(user))
+	return INTERACTION_HANDLED_PASS
 
 /turf/simulated/floor/outdoors/snow/proc/attackby_tool_done(mob/user)
 	to_chat(user, span_notice("\The [src] has been dug up, and now lies in a pile nearby."))
@@ -38,11 +42,13 @@
 /turf/simulated/floor/outdoors/snow/proc/attackby_tool_failed(mob/user)
 	to_chat(user, span_notice("You decide to not finish removing \the [src]."))
 
-/turf/simulated/floor/outdoors/snow/attack_hand(mob/user as mob)
+/// Old attack_hand: scoop up some snow.
+/turf/simulated/floor/outdoors/snow/proc/snow_scoop(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
-		return
+		return TRUE
 	visible_message("[user] starts scooping up some snow.", "You start scooping up some snow.")
 	om_do_after(user, 1 SECOND, src, src, PROC_REF(scoop_done), list(user))
+	return TRUE
 
 /turf/simulated/floor/outdoors/snow/proc/scoop_done(mob/user)
 	var/obj/S = new /obj/item/stack/material/snow(user.loc)

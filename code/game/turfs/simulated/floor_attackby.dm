@@ -10,23 +10,32 @@
 			color = S.color
 		playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
 
-/turf/simulated/floor/attackby(obj/item/C, mob/user, attack_modifier, click_parameters)
+EXTEND_INTERACTIONS(/turf/simulated/floor, \
+	INTERACT_ITEM(null, PROC_REF(floor_item)), \
+	INTERACT_ALT("Graffiti", PROC_REF(floor_graffiti_alt)), \
+)
+
+/// Old attackby: the turf's own handling and signal listeners first, then graffiti, hitting the tile, roofing, and laying or replacing floor.
+/turf/simulated/floor/proc/floor_item(mob/user, obj/item/C, datum/interaction/interaction)
 
 	if(!C || !user)
-		return 0
+		return FALSE
+	var/click_parameters = dq_interaction_click_params(user)
 
-	// Check parent signals
-	if(..())
-		return
+	// The turf's own handling (dig, bag pickup) and signal listeners, as the old ..() ran them first.
+	if(turf_item(user, C, interaction))
+		return TRUE
+	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, C, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return TRUE
 
 	if(isliving(user) && istype(C, /obj/item))
 		var/mob/living/L = user
 		if(!IS_HELPING(L))
 			if(IS_GRABBING(L))
 				try_graffiti(L, C, click_parameters) // back by unpopular demand - Add - Click parameters
-				return
+				return INTERACTION_HANDLED_PASS
 			attack_tile(C, L) // Be on help intent if you want to decon something.
-			return
+			return INTERACTION_HANDLED_PASS
 
 	// Multi-z roof building
 	if(istype(C, /obj/item/stack/tile/roofing))
@@ -49,7 +58,7 @@
 					A = locate(/turf/simulated/wall) in cardinalTurfs
 				if(!A)
 					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
-					return
+					return INTERACTION_HANDLED_PASS
 
 				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
 					T.ReplaceWithLattice()
@@ -59,7 +68,7 @@
 					expended_tile = TRUE
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return
+				return INTERACTION_HANDLED_PASS
 
 		// Create a ceiling to shield from the weather
 		if(src.is_outdoors())
@@ -71,34 +80,34 @@
 						playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 						user.visible_message(span_notice("[user] roofs a tile, shielding it from the elements."), span_notice("You roof this tile, shielding it from the elements."))
 					break
-		return
+		return INTERACTION_HANDLED_PASS
 
 	// Floor has flooring set
 	if(!is_plating())
 		if(istype(C, /obj/item/stack/cable_coil))
 			to_chat(user, span_warning("You must remove the [flooring.descriptor] first."))
-			return
+			return INTERACTION_HANDLED_PASS
 		else if(istype(C, /obj/item/stack/tile))
 			if(try_replace_tile(C, user))
-				return
+				return INTERACTION_HANDLED_PASS
 			else if(istype(C, /obj/item/stack/tile/floor)) // While we're at it, let's see if this is a raw patch of natural sand, dirt, or whatever that you're trying to put a plating on.
 				if(!flooring.build_type && can_be_plated && !((flooring.flags & TURF_REMOVE_WRENCH) || (flooring.flags & TURF_REMOVE_CROWBAR) || (flooring.flags & TURF_REMOVE_SCREWDRIVER) || (flooring.flags & TURF_REMOVE_SHOVEL)))
 					for(var/obj/structure/P in contents)
 						if(istype(P, /obj/structure/flora))
 							to_chat(user, span_warning("The [P.name] is in the way, you'll have to get rid of it first."))
-							return
+							return INTERACTION_HANDLED_PASS
 					var/obj/item/stack/tile/floor/S = C
 					if (S.get_amount() < 1)
-						return
+						return INTERACTION_HANDLED_PASS
 					S.use(1)
 					playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 					ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
 					if(S.color)
 						color = S.color
-					return
+					return INTERACTION_HANDLED_PASS
 		else if(istype(C, /obj/item))
 			try_deconstruct_tile(C, user)
-			return
+			return INTERACTION_HANDLED_PASS
 
 	// Floor is plating (or no flooring)
 	else
@@ -106,15 +115,15 @@
 		if(istype(C, /obj/item/stack/cable_coil))
 			if(broken || burnt)
 				to_chat(user, span_warning("This section is too damaged to support anything. Use a welder to fix the damage."))
-				return
+				return INTERACTION_HANDLED_PASS
 			var/obj/item/stack/cable_coil/coil = C
 			coil.turf_place(src, user)
-			return
+			return INTERACTION_HANDLED_PASS
 		// Placing flooring on plating
 		else if(istype(C, /obj/item/stack))
 			if(broken || burnt)
 				to_chat(user, span_warning("This section is too damaged to support anything. Use a welder to fix the damage."))
-				return
+				return INTERACTION_HANDLED_PASS
 			var/obj/item/stack/S = C
 			var/datum/decl/flooring/use_flooring
 			for(var/flooring_type in GLOB.flooring_types)
@@ -125,14 +134,15 @@
 					use_flooring = F
 					break
 			if(!use_flooring)
-				return
+				return INTERACTION_HANDLED_PASS
 			// Do we have enough?
 			if(use_flooring.build_cost && S.get_amount() < use_flooring.build_cost)
 				to_chat(user, span_warning("You require at least [use_flooring.build_cost] [S.name] to complete the [use_flooring.descriptor]."))
-				return
+				return INTERACTION_HANDLED_PASS
 			// Stay still and focus...
 			om_do_after(user, use_flooring.build_time || 0, src, src, PROC_REF(lay_flooring), list(S, use_flooring))
-			return
+			return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /turf/simulated/floor/proc/try_deconstruct_tile(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/stack/tile) && isliving(user)) //If we're hitting it with a tile, try to check our offhand

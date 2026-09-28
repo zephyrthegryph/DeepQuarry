@@ -39,21 +39,24 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(get_area(tolink) == get_area(src))
 			linkedsmes = om_handle(tolink)
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, INTERACT_HAND_UNGATED("Interface", PROC_REF(nanites_hand)))
+
+/// Old attack_hand: a protean may interface with the pool; the turf's own touch always follows.
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/nutrienttarget = om_resolve(moblink)
 	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
 	if(check_target() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
-		return ..()
+		return FALSE
 	if(ishuman(user))
 		if(smes || isAI(nutrienttarget))
-			return ..()
+			return FALSE
 		var/mob/living/carbon/human/checker = user
 		if(checker.nif)//Proteans have NIFS
 			om_prompt_sequence(src, user, list(
 				list("key" = "state", "kind" = "list", "message" = "Do you wish interface with \the [src]", "title" = "Desired state", "choices" = list("On", "Off")),
 				PROC_REF(ask_nanite_targets),
 			), PROC_REF(nanite_interface_chosen), list("requires" = PROMPT_ADJACENT))
-	return ..()
+	return FALSE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/ask_nanite_targets(mob/user, datum/om/prompt/ask)
 	if(ask.get("state") == "On")

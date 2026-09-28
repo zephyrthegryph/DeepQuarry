@@ -1,21 +1,25 @@
 GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
-/turf/simulated/floor/outdoors/newdirt/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATED("Dig", PROC_REF(newdirt_hand)))
+
+/// Old attack_hand: loosen rocks, or pile the dirt into a growplot. Pulling, out of reach or in combat mode, the turf's own touch.
+/turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user?.pulling_target())
-		return ..()
+		return FALSE
 	if(!Adjacent(user))
-		return ..()
+		return FALSE
 	if(!IS_HELPING(user))
-		return ..()
+		return FALSE
 	if(icon_state in GLOB.has_rocks)
 		user.visible_message("[user] loosens rocks from \the [src]...", "You loosen rocks from \the [src]...")
 		om_do_after(user, 5 SECONDS, src, src, PROC_REF(loosen_rocks_done))
-		return
+		return TRUE
 	if(locate_on(src, /obj))
 		to_chat(user, span_notice("The [name] isn't clear."))
-		return
+		return TRUE
 	else
 		om_prompt(src, user, list("message" = "Do you want to build a growplot out of the dirt?", "title" = "Build growplot?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(growplot_answered))
+	return TRUE
 
 /turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(mob/user, choice, datum/om/prompt/ask)
 	if(choice != "Yes" || (locate(/obj) in src))

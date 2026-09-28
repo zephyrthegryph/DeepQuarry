@@ -389,12 +389,16 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	var/tree_color = null
 	var/tree_type = /obj/structure/flora/tree/fur
 
-/turf/simulated/floor/outdoors/fur/attackby()
-	return
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/fur, \
+	INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)), \
+	INTERACT_HAND_UNGATED("Pet", PROC_REF(fur_pet)), \
+)
 
-/turf/simulated/floor/outdoors/fur/attack_hand(mob/user)
-	. = ..()
+/// Old attack_hand: the turf's own touch, then petting.
+/turf/simulated/floor/outdoors/fur/proc/fur_pet(mob/user, obj/item/held, datum/interaction/interaction)
+	turf_hand(user, held, interaction)
 	pet()
+	return TRUE
 
 /turf/simulated/floor/outdoors/fur/ex_act(severity)
 	return

@@ -66,8 +66,8 @@
 // Kind of wondering if this is going to bite me in the butt.
 /turf/simulated/wall/skipjack/Initialize(mapload)
 	. = ..(mapload, MAT_ALIENALLOY)
-/turf/simulated/wall/skipjack/attackby()
-	return
+// Old attackby: items do nothing here.
+EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
 /turf/simulated/wall/titanium/Initialize(mapload)
 	. = ..(mapload, MAT_TITANIUM)
 
@@ -507,8 +507,8 @@
 	density = TRUE
 	blocks_air = 1
 
-/turf/simulated/flesh/attackby()
-	return
+// Old attackby: items do nothing here.
+EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
 
 /turf/simulated/flesh/Initialize(mapload)
 	. = ..()

@@ -3,8 +3,8 @@
 	var/pushdirection // push things that get caught in the transit tile this direction
 
 //Overwrite because we dont want people building rods in space.
-/turf/space/transit/attackby(obj/O as obj, mob/user as mob)
-	return
+// Old attackby: no building rods in transit space.
+EXTEND_INTERACTIONS(/turf/space/transit, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
 
 /turf/space/transit/Initialize(mapload)
 	. = ..()

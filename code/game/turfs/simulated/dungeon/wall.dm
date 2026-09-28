@@ -67,8 +67,8 @@
 				var/turf/simulated/wall/solidrock/M = get_step(src, direction)
 				M.update_icon()
 
-/turf/simulated/wall/solidrock/attackby()
-	return
+// Old attackby: items do nothing here.
+EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", PROC_REF(turf_ignore_item)))
 
 /turf/simulated/wall/solidrock/ex_act()
 	return

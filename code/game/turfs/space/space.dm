@@ -86,31 +86,34 @@
 	else
 		set_light(0)
 
-/turf/space/attackby(obj/item/C as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
+
+/// Old attackby: rods build a lattice, tiles plate it, roofing patches the ceiling.
+/turf/space/proc/space_build(mob/user, obj/item/C, datum/interaction/interaction)
 
 	if(istype(C, /obj/item/stack/rods))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			L.upgrade(C, user)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			ReplaceWithLattice()
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(C, /obj/item/stack/tile/floor))
 		var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
 		if(L)
 			var/obj/item/stack/tile/floor/S = C
 			if (S.get_amount() < 1)
-				return
+				return INTERACTION_HANDLED_PASS
 			qdel(L)
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_warning("The plating is going to need some support."))
 
@@ -127,7 +130,7 @@
 					A = locate(/turf/simulated/wall) in T.CardinalTurfs()
 				if(!A)
 					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
-					return
+					return INTERACTION_HANDLED_PASS
 
 				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
 					T.ReplaceWithLattice()
@@ -136,10 +139,10 @@
 					user.visible_message(span_notice("[user] expands the ceiling."), span_notice("You expand the ceiling."))
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))
-				return
+				return INTERACTION_HANDLED_PASS
 		// Space shouldn't have weather of the sort planets with atmospheres do.
 		// If that's changed, then you'll want to swipe the rest of the roofing code from code/game/turfs/simulated/floor_attackby.dm
-	return
+	return INTERACTION_HANDLED_PASS
 
 /turf/space/Entered(atom/movable/A)
 	. = ..()
