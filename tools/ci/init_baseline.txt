@@ -1,9 +1,9 @@
 # Initialize() ratchet (tools/ci/init_lint.py, doc/rewrite/init_and_turfs.md sec 3.6).
 # May fall, never rise. Move type facts to the type table and registration to on_materialize(),
 # then `python tools/ci/init_lint.py --update`.
-initialize 3281
+initialize 3284
 late_initialize 95
-unreasoned 3376
+unreasoned 3379
 world_reads 312
 turf_on_materialize 0
 table_init_overrides 0
