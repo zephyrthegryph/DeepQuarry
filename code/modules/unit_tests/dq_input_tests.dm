@@ -388,7 +388,9 @@ DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(
 	TEST_ASSERT_EQUAL(dq_route(ghost, probe, "left=1"), "attack_ghost", "a ghost's Use reaches attack_ghost")
 	TEST_ASSERT_EQUAL(dq_route(ghost, probe, "left=1;alt=1"), "click_alt", "a ghost's Alternate reaches click_alt")
 
-	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T)
+	// safety = TRUE: without a brain an AI's Initialize() spawns an empty core and qdels itself.
+	var/mob/living/silicon/ai/AI = allocate(/mob/living/silicon/ai, T, null, null, null, TRUE)
+	AI.forceMove(T) // a new AI starts in nullspace, where it sees nothing
 	TEST_ASSERT_EQUAL(AI.input_adapter(), INPUT_ADAPTER(ai), "the AI uses the AI adapter")
 	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1"), "attack_ai", "the AI's Use reaches attack_ai")
 	TEST_ASSERT_EQUAL(dq_route(AI, probe, "left=1;alt=1"), "click_alt", "the AI's Alternate reaches click_alt through AIAltClick")

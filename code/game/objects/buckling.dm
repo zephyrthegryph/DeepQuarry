@@ -49,7 +49,13 @@
 /atom/movable/declare_interactions(list/into)
 	..()
 	var/static/list/drag_spec = INTERACT_DRAG_DEFAULT("Buckle", PROC_REF(interaction_drag_buckle))
-	into += dq_interaction_from_spec(/atom/movable, drag_spec)
+	var/datum/interaction/generic/drag = dq_interaction_from_spec(/atom/movable, drag_spec)
+	drag.applies_proc = PROC_REF(offers_drag_buckle)
+	into += drag
+
+/// Whether the default drag does anything here: something can be buckled to it, or it can be climbed.
+/atom/movable/proc/offers_drag_buckle()
+	return drag_buckle && (can_buckle || HAS_TRAIT(src, TRAIT_CLIMBABLE))
 
 /atom/movable/proc/interaction_drag_buckle(mob/user, atom/movable/dropping, datum/interaction/interaction)
 	if(!drag_buckle)

@@ -46,10 +46,16 @@ REF_BACKLIST_VAR(/datum/trait_state, /mob/living, owner, "trait_states")
 /datum/trait_state/proc/life_tick()
 	return
 
-// ALLOW(lifecycle): a state leaving its mob takes its life stage, hooks and verbs with it.
-/datum/trait_state/Destroy(force)
+/// Phase 1 of qdel: detach while `owner` is still set. The links phase (4) nulls the owner
+/// backlist before Destroy() runs, so detaching there would leave the life stage behind.
+/datum/trait_state/lifecycle_unbind()
 	if(owner)
 		detach()
+	return ..()
+
+// ALLOW(lifecycle): the owner backlist is normally already cleared by the links phase.
+/datum/trait_state/Destroy(force)
+	if(owner)
 		LAZYREMOVE(owner.trait_states, src)
 	owner = null
 	return ..()
