@@ -214,9 +214,13 @@
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
 		return
-	var/newcolor = tgui_color_picker(src, "Choose a color.", "", color)
-	if(newcolor)
-		color = newcolor
+	om_ask(src, /datum/om/prompt/color, PROC_REF(squirrel_color_picked), message = "Choose a color.", default = color)
+
+/mob/living/simple_mob/vore/squirrel/proc/squirrel_color_picked(datum/om/prompt/color/ask)
+	if(picked_color)
+		return
+	if(ask.picked_color)
+		color = ask.picked_color
 	picked_color = TRUE
 	update_icon()
 

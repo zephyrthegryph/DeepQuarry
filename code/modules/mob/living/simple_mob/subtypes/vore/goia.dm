@@ -119,10 +119,24 @@
 	set name = "Change Color"
 	set desc = "Change your main color."
 	set category = "Abilities.General"
-	var/new_color = tgui_color_picker(src, "Pick new colors:","Color", goia_overlays["zorgoia_main"])
-	if(!new_color)
-		return 0
-	goia_overlays["zorgoia_main"] = new_color
+	om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick new colors:", title = "Color", default = goia_overlays["zorgoia_main"], overlay = "zorgoia_main")
+
+/// One of the zorgoia's overlay colours, picked after its style (if it has one). The style lands with the colour.
+/datum/om/prompt/color/goia_overlay
+	ask_flags = ASK_CAPABLE
+	/// The goia_overlays key holding the colour ("zorgoia_ears", ...).
+	var/overlay
+	/// The goia_overlays key holding the style ("ears", ...); null: colour only.
+	var/style_key
+	/// The style picked.
+	var/style
+
+/mob/living/simple_mob/vore/zorgoia/proc/overlay_color_picked(datum/om/prompt/color/goia_overlay/ask)
+	if(!ask.picked_color)
+		return
+	if(ask.style_key)
+		goia_overlays[ask.style_key] = ask.style
+	goia_overlays[ask.overlay] = ask.picked_color
 	update_icon()
 
 /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch() //This is just copypastas of the radial menu code, each block of code is the options for each bit of customisation... all 9 of them
@@ -147,12 +161,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick ears spike color:","Ears Color", goia_overlays["zorgoia_ears"])
-			if(!new_color)
-				return 0
-			goia_overlays["ears"] = choice
-			goia_overlays["zorgoia_ears"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick ears spike color:", title = "Ears Color", default = goia_overlays["zorgoia_ears"], overlay = "zorgoia_ears", style_key = "ears", style = choice)
 
 		if("Spots")
 			options = spots_styles
@@ -162,12 +171,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick spot colors:","Spots Color", goia_overlays["zorgoia_spots"])
-			if(!new_color)
-				return 0
-			goia_overlays["spots"] = choice
-			goia_overlays["zorgoia_spots"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spot colors:", title = "Spots Color", default = goia_overlays["zorgoia_spots"], overlay = "zorgoia_spots", style_key = "spots", style = choice)
 
 		if("Claws")
 			options = claws_styles
@@ -177,12 +181,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick claw colors:","Claws Color", goia_overlays["zorgoia_claws"])
-			if(!new_color)
-				return 0
-			goia_overlays["claws"] = choice
-			goia_overlays["zorgoia_claws"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick claw colors:", title = "Claws Color", default = goia_overlays["zorgoia_claws"], overlay = "zorgoia_claws", style_key = "claws", style = choice)
 
 		if("Spines")
 			options = spines_styles
@@ -192,12 +191,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick spines colors:","Spines Color", goia_overlays["zorgoia_spines"])
-			if(!new_color)
-				return 0
-			goia_overlays["spines"] = choice
-			goia_overlays["zorgoia_spines"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spines colors:", title = "Spines Color", default = goia_overlays["zorgoia_spines"], overlay = "zorgoia_spines", style_key = "spines", style = choice)
 
 		if("Fluff")
 			options = fluff_styles
@@ -207,12 +201,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick fluff colors:","Fluff Color", goia_overlays["zorgoia_fluff"])
-			if(!new_color)
-				return 0
-			goia_overlays["fluff"] = choice
-			goia_overlays["zorgoia_fluff"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick fluff colors:", title = "Fluff Color", default = goia_overlays["zorgoia_fluff"], overlay = "zorgoia_fluff", style_key = "fluff", style = choice)
 
 		if("Underbelly")
 			options = underbelly_styles
@@ -222,12 +211,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick underbelly colors:","Underbelly Color", goia_overlays["zorgoia_underbelly"])
-			if(!new_color)
-				return 0
-			goia_overlays["underbelly"] = choice
-			goia_overlays["zorgoia_underbelly"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick underbelly colors:", title = "Underbelly Color", default = goia_overlays["zorgoia_underbelly"], overlay = "zorgoia_underbelly", style_key = "underbelly", style = choice)
 
 		if("Eyes")
 			options = eyes_styles
@@ -237,12 +221,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick eye color:","Eye Color", goia_overlays["zorgoia_eyes"])
-			if(!new_color)
-				return 0
-			goia_overlays["eyes"] = choice
-			goia_overlays["zorgoia_eyes"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick eye color:", title = "Eye Color", default = goia_overlays["zorgoia_eyes"], overlay = "zorgoia_eyes", style_key = "eyes", style = choice)
 
 		if("Spike")
 			options = spiky_styles
@@ -252,12 +231,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick tail spike color:","Tail Color", goia_overlays["zorgoia_spike"]) //This is overlay 10, not 2, swapped with main body, im not rewriting this array
-			if(!new_color)
-				return 0
-			goia_overlays["spike"] = choice
-			goia_overlays["zorgoia_spike"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick tail spike color:", title = "Tail Color", default = goia_overlays["zorgoia_spike"], overlay = "zorgoia_spike", style_key = "spike", style = choice) //This is overlay 10, not 2, swapped with main body, im not rewriting this array
 
 		if("Belly")
 			options = belly_styles
@@ -267,12 +241,7 @@
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick belly color:","Belly Color", goia_overlays["zorgoia_belly"])
-			if(!new_color)
-				return 0
-			goia_overlays["belly"] = choice
-			goia_overlays["zorgoia_belly"] = new_color
-			update_icon()
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
 /mob/living/simple_mob/vore/zorgoia/Initialize(mapload)
 	. = ..()
@@ -492,9 +461,10 @@
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = "Abilities.Settings"
-	om_prompt(src, src, list("kind" = "text", "message" = "Paste the style string you exported with Export Style.", "title" = "Style loading", "max_length" = 250), PROC_REF(import_style_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(import_style_entered), title = "Style loading", message = "Paste the style string you exported with Export Style.", max_length = 250)
 
-/mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(mob/user, input_style, datum/om/prompt/ask)
+/mob/living/simple_mob/vore/zorgoia/proc/import_style_entered(datum/om/prompt/text/ask)
+	var/input_style = ask.text
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")

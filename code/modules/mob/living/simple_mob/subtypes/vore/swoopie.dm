@@ -287,9 +287,10 @@
 		if(usr != src)
 			usr.put_in_active_hand(Vac)
 		else
-			om_prompt(src, src, list("kind" = "list", "message" = "Borrow Vac-Pack for", "title" = "Swoopie", "choices" = mobs_in_view(1, src)), PROC_REF(vac_borrower_chosen))
+			om_ask(src, /datum/om/prompt/choice, PROC_REF(vac_borrower_chosen), title = "Swoopie", message = "Borrow Vac-Pack for", choices = mobs_in_view(1, src))
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(mob/user, mob/living/L, datum/om/prompt/ask)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/vac_borrower_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/L = ask.choice
 	if(L == src || !istype(Vac) || !Adjacent(L))
 		return
 	L.put_in_active_hand(Vac)

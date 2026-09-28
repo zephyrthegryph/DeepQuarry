@@ -93,9 +93,10 @@
 	if(limit_renames && nameset)
 		to_chat(src, span_userdanger("You've already set your name. Ask an admin to toggle \"nameset\" to 0 if you really must."))
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Set your name. You only get to do this once. Max 52 chars.", "title" = "Name set", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(name_set_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(name_set_entered), title = "Name set", message = "Set your name. You only get to do this once. Max 52 chars.", max_length = MAX_NAME_LEN, encode = FALSE)
 
-/mob/living/simple_mob/proc/name_set_entered(mob/user, newname, datum/om/prompt/ask)
+/mob/living/simple_mob/proc/name_set_entered(datum/om/prompt/text/ask)
+	var/newname = ask.text
 	newname = sanitizeSafe(newname, MAX_NAME_LEN)
 	if(limit_renames && nameset)
 		return
@@ -108,9 +109,10 @@
 	set name = "Set Description"
 	set desc = "Set your description."
 	set category = "Abilities.Settings"
-	om_prompt(src, src, list("kind" = "text", "message" = "Set your description. Max 4096 chars.", "title" = "Description set", "multiline" = TRUE, "encode" = FALSE), PROC_REF(desc_set_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(desc_set_entered), title = "Description set", message = "Set your description. Max 4096 chars.", multiline = TRUE, encode = FALSE)
 
-/mob/living/simple_mob/proc/desc_set_entered(mob/user, newdesc, datum/om/prompt/ask)
+/mob/living/simple_mob/proc/desc_set_entered(datum/om/prompt/text/ask)
+	var/newdesc = ask.text
 	newdesc = sanitizeSafe(newdesc, MAX_MESSAGE_LEN)
 	if(newdesc)
 		desc = newdesc
@@ -119,9 +121,10 @@
 	set name = "Set Gender"
 	set desc = "Set your gender."
 	set category = "Abilities.Settings"
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a gender:", "title" = "Set Gender", "choices" = list(FEMALE, MALE, NEUTER, PLURAL)), PROC_REF(gender_set_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_set_chosen), title = "Set Gender", message = "Please select a gender:", choices = list(FEMALE, MALE, NEUTER, PLURAL))
 
-/mob/living/simple_mob/proc/gender_set_chosen(mob/user, newgender, datum/om/prompt/ask)
+/mob/living/simple_mob/proc/gender_set_chosen(datum/om/prompt/choice/ask)
+	var/newgender = ask.choice
 	gender = newgender
 
 /mob/living/simple_mob/vore/aggressive

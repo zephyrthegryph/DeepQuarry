@@ -244,10 +244,12 @@
 	set name = "Pick Color"
 	set category = "Abilities.Settings"
 	set desc = "You can set your color!"
-	var/newcolor = tgui_color_picker(src, "Choose a color.", "", color)
-	if(newcolor)
-		color = newcolor
-		chosen_color = newcolor
+	om_ask(src, /datum/om/prompt/color, PROC_REF(morph_color_picked), message = "Choose a color.", default = color)
+
+/mob/living/simple_mob/vore/morph/proc/morph_color_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		color = ask.picked_color
+		chosen_color = ask.picked_color
 
 /mob/living/simple_mob/vore/morph/proc/take_over_prey()
 	set name = "Take Over Prey"
@@ -263,33 +265,71 @@
 				possible_mobs += H
 			else
 				continue
-	om_prompt_sequence(src, src, list(
-		list("key" = "target", "kind" = "list", "message" = "Select a mob to take over:", "title" = "Take Over Prey", "choices" = possible_mobs),
+	om_ask_sequence(src, src, list(
+		new /datum/om/prompt/choice/morph_takeover_target(possible_mobs),
 		PROC_REF(take_over_ask_sure),
 		PROC_REF(take_over_ask_consent),
 		PROC_REF(take_over_ask_consent_again),
 	), PROC_REF(take_over_agreed))
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(mob/user, datum/om/prompt/ask)
-	var/mob/living/L = ask.get("target")
+/datum/om/prompt/choice/morph_takeover_target
+	key = "target"
+	title = "Take Over Prey"
+	message = "Select a mob to take over:"
+
+/datum/om/prompt/choice/morph_takeover_target/New(list/possible_mobs)
+	..()
+	choices = possible_mobs
+
+/datum/om/prompt/confirm/morph_takeover_sure
+	key = "sure"
+	title = "Take Over Prey"
+	no_first = TRUE
+
+/// The prey's consent, asked of the prey; a no tells the morph (the asker).
+/datum/om/prompt/confirm/morph_takeover_consent
+	key = "allow"
+	title = "Allow Morph To Take Over"
+	no_first = TRUE
+
+/datum/om/prompt/confirm/morph_takeover_consent/prepare()
+	message = "\The [asker] has elected to attempt to take over your body and control you. Is this something you will allow to happen?"
+	return TRUE
+
+/datum/om/prompt/confirm/morph_takeover_consent/declined()
+	to_chat(asker, span_warning("\The [answerer] declined your request for control."))
+	..()
+
+/datum/om/prompt/confirm/morph_takeover_consent/again
+	key = "allow2"
+
+/datum/om/prompt/confirm/morph_takeover_consent/again/prepare()
+	message = "Are you sure? The only way to undo this on your own is to OOC Escape."
+	return TRUE
+
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_sure(datum/om/flow/ask_sequence/seq)
+	var/mob/living/L = seq.get("target")
 	if(!L.allow_mimicry)
 		to_chat(src, span_warning("\The [L] cannot be impersonated!"))
-		return PROMPT_STOP
-	return list("key" = "sure", "message" = "You selected [L] to attempt to take over. Are you sure?", "title" = "Take Over Prey", "choices" = list("No","Yes"), "confirm" = "Yes")
+		return ASK_STOP
+	var/datum/om/prompt/confirm/morph_takeover_sure/ask = new
+	ask.message = "You selected [L] to attempt to take over. Are you sure?"
+	return ask
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(mob/user, datum/om/prompt/ask)
-	var/mob/living/L = ask.get("target")
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent(datum/om/flow/ask_sequence/seq)
+	var/mob/living/L = seq.get("target")
 	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
-	return list("key" = "allow", "user" = L, "requires" = list(), "message" = "\The [src] has elected to attempt to take over your body and control you. Is this something you will allow to happen?", "title" = "Allow Morph To Take Over", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(take_over_declined))
+	var/datum/om/prompt/confirm/morph_takeover_consent/ask = new
+	ask.answerer = L
+	return ask
 
-/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(mob/user, datum/om/prompt/ask)
-	return list("key" = "allow2", "user" = ask.get("target"), "requires" = list(), "message" = "Are you sure? The only way to undo this on your own is to OOC Escape.", "title" = "Allow Morph To Take Over", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(take_over_declined))
+/mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/seq)
+	var/datum/om/prompt/confirm/morph_takeover_consent/again/ask = new
+	ask.answerer = seq.get("target")
+	return ask
 
-/mob/living/simple_mob/vore/morph/proc/take_over_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_warning("\The [ask.get("target")] declined your request for control."))
-
-/mob/living/simple_mob/vore/morph/proc/take_over_agreed(mob/user, datum/om/prompt/ask)
-	var/mob/living/L = ask.get("target")
+/mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/seq)
+	var/mob/living/L = seq.get("target")
 	if(morphed || !isbelly(L.loc) || L.loc.loc != src)
 		return
 	var/obj/buckled = src?.buckled_to()

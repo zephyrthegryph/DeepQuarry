@@ -413,7 +413,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return
 
 	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	om_prompt(src, src, list("kind" = "colormatrix", "message" = "Allows you to recolor yourself", "title" = "Animal Recolor", "preview" = src, "ui_state" = GLOB.tgui_conscious_state), null)
+	om_ask(src, /datum/om/prompt/colormatrix, null, title = "Animal Recolor", message = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 
 //Thermal vision adding
 

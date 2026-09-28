@@ -316,10 +316,11 @@
 									"Goose" = /mob/living/simple_mob/animal/space/goose
 									)
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Which form would you like to take?", "title" = "Choose Beast Form", "choices" = beast_options, "requires" = PROMPT_CONSCIOUS, "data" = list("options" = beast_options)), PROC_REF(polymorph_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(polymorph_chosen), title = "Choose Beast Form", message = "Which form would you like to take?", choices = beast_options, ask_flags = ASK_CONSCIOUS)
 
-/mob/living/proc/polymorph_chosen(mob/user, chosen_beast, datum/om/prompt/ask)
-	var/list/beast_options = ask.get("options")
+/mob/living/proc/polymorph_chosen(datum/om/prompt/choice/ask)
+	var/chosen_beast = ask.choice
+	var/list/beast_options = ask.choices
 
 	var/mob/living/M = src
 	if(!istype(M))
@@ -334,7 +335,7 @@
 		return
 
 	visible_message("<b>\The [src]</b> begins significantly shifting their form.")
-	om_task_start(/datum/om/task/timed/living_polymorph_living, src, src, list("beast_options" = beast_options, "chosen_beast" = chosen_beast))
+	om_task_start(/datum/om/task/timed/living_polymorph_living, src, src, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
 /datum/om/task/timed/living_polymorph_living

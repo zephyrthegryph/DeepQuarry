@@ -94,9 +94,10 @@
 	set name = "Set Sex"
 	set desc = "Set what sprite set you use (male/female)"
 	set category = "Abilities.Settings"
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a sex:", "title" = "Set Sex", "choices" = list(FEMALE, MALE)), PROC_REF(sex_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(sex_chosen), title = "Set Sex", message = "Please select a sex:", choices = list(FEMALE, MALE))
 
-/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(mob/user, newsex, datum/om/prompt/ask)
+/mob/living/simple_mob/vore/retaliate/lion/proc/sex_chosen(datum/om/prompt/choice/ask)
+	var/newsex = ask.choice
 	if(newsex == FEMALE)
 		icon_living = "lioness"
 		icon_dead = "lioness-dead"
@@ -114,9 +115,11 @@
 	set name = "Set Mane Color"
 	set desc = "Set the color of your mane"
 	set category = "Abilities.Settings"
-	var/new_mane_color = tgui_color_picker(src, "Please pick a mane color:", "Mane Color", mane_color)
-	if(new_mane_color)
-		mane_color = new_mane_color
+	om_ask(src, /datum/om/prompt/color, PROC_REF(mane_color_picked), title = "Mane Color", message = "Please pick a mane color:", default = mane_color)
+
+/mob/living/simple_mob/vore/retaliate/lion/proc/mane_color_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		mane_color = ask.picked_color
 		update_icon()
 
 /mob/living/simple_mob/vore/retaliate/lion/Login()

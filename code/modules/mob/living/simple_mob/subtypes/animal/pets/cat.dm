@@ -263,11 +263,13 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 		if(named)
 			to_chat(user, span_notice("\The [name] already has a name!"))
 		else
-			om_prompt(src, user, list("kind" = "text", "message" = "Give \the [name] a name", "title" = "Name", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(cat_name_entered))
+			om_ask(user, /datum/om/prompt/text, PROC_REF(cat_name_entered), title = "Name", message = "Give \the [name] a name", max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE)
 	else
 		..()
 
-/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(mob/user, tmp_name, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/tmp_name = ask.text
 	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)
 	if(named || !length(tmp_name))
 		return

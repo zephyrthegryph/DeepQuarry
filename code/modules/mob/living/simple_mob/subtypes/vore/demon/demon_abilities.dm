@@ -284,9 +284,11 @@
 	set desc = "Changes the amount you grow/shrink people."
 	set category = "Abilities.Demon"
 
-	om_prompt(src, src, list("kind" = "number", "message" = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", "title" = "Set Size", "default" = size_amount * 100, "max" = RESIZE_MAXIMUM * 100, "min" = RESIZE_MINIMUM * 100), PROC_REF(sizespell_chosen)) //Stolen from sizegun code
+	om_ask(src, /datum/om/prompt/number, PROC_REF(sizespell_chosen), title = "Set Size", message = "Put the desired size ([RESIZE_MINIMUM * 100]-[RESIZE_MAXIMUM * 100]%)", default = size_amount * 100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100) //Stolen from sizegun code
 
-/mob/living/simple_mob/vore/demon/proc/sizespell_chosen(mob/user, size_select, datum/om/prompt/ask)
+/mob/living/simple_mob/vore/demon/proc/sizespell_chosen(datum/om/prompt/number/ask)
+	var/mob/user = ask.answerer
+	var/size_select = ask.number
 	if(!size_select)
 		return
 	size_amount = (size_select/100)

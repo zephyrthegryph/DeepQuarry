@@ -430,11 +430,7 @@ I think I covered everything.
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick underbelly color:","Underbelly Color", overlay_colors["Underbelly"])
-			if(!new_color)
-				return 0
-			under = choice
-			overlay_colors["Underbelly"] = new_color
+			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick underbelly color:", title = "Underbelly Color", default = overlay_colors["Underbelly"], overlay = "Underbelly", style = choice)
 		if("Body")
 			options = body_styles
 			for(var/option in options)
@@ -443,11 +439,7 @@ I think I covered everything.
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick body color:","Body Color", overlay_colors["Body"])
-			if(!new_color)
-				return 0
-			body_style = choice
-			overlay_colors["Body"] = new_color
+			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick body color:", title = "Body Color", default = overlay_colors["Body"], overlay = "Body", style = choice)
 		if("Ears")
 			options = ear_styles
 			for(var/option in options)
@@ -456,11 +448,7 @@ I think I covered everything.
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick ear color:","Ear Color", overlay_colors["Ears"])
-			if(!new_color)
-				return 0
-			ears = choice
-			overlay_colors["Ears"] = new_color
+			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick ear color:", title = "Ear Color", default = overlay_colors["Ears"], overlay = "Ears", style = choice)
 		if("Mane")
 			options = mane_styles
 			for(var/option in options)
@@ -469,11 +457,7 @@ I think I covered everything.
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick mane color:","Mane Color", overlay_colors["Mane"])
-			if(!new_color)
-				return 0
-			mane = choice
-			overlay_colors["Mane"] = new_color
+			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick mane color:", title = "Mane Color", default = overlay_colors["Mane"], overlay = "Mane", style = choice)
 		if("Horns")
 			options = horn_styles
 			for(var/option in options)
@@ -482,11 +466,7 @@ I think I covered everything.
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick horn color:","Horn Color", overlay_colors["Horns"])
-			if(!new_color)
-				return 0
-			horns = choice
-			overlay_colors["Horns"] = new_color
+			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick horn color:", title = "Horn Color", default = overlay_colors["Horns"], overlay = "Horns", style = choice)
 		if("Eyes")
 			options = eye_styles
 			for(var/option in options)
@@ -495,13 +475,36 @@ I think I covered everything.
 			choice = show_radial_menu(src, src, options, radius = 90)
 			if(!choice || QDELETED(src) || src.incapacitated())
 				return 0
-			var/new_color = tgui_color_picker(src, "Pick eye color:","Eye Color", overlay_colors["Eyes"])
-			if(!new_color)
-				return 0
-			eyes = choice
-			overlay_colors["Eyes"] = new_color
-	if(.)
-		build_icons()
+			om_ask(src, /datum/om/prompt/color/bigdragon_overlay, PROC_REF(overlay_color_picked), message = "Pick eye color:", title = "Eye Color", default = overlay_colors["Eyes"], overlay = "Eyes", style = choice)
+
+/// One of the dragon's overlay colours, picked after its style. The style lands with the colour.
+/datum/om/prompt/color/bigdragon_overlay
+	ask_flags = ASK_CAPABLE
+	/// The overlay_colors key: "Underbelly", "Body", "Ears", "Mane", "Horns" or "Eyes".
+	var/overlay
+	/// The style picked for that overlay.
+	var/style
+
+/mob/living/simple_mob/vore/bigdragon/proc/overlay_color_picked(datum/om/prompt/color/bigdragon_overlay/ask)
+	if(!ask.picked_color)
+		return
+	switch(ask.overlay)
+		if("Underbelly")
+			under = ask.style
+		if("Body")
+			body_style = ask.style
+		if("Ears")
+			ears = ask.style
+		if("Mane")
+			mane = ask.style
+		if("Horns")
+			horns = ask.style
+		if("Eyes")
+			eyes = ask.style
+		else
+			return
+	overlay_colors[ask.overlay] = ask.picked_color
+	build_icons()
 
 ///
 ///		Vore stuff
@@ -933,9 +936,10 @@ I think I covered everything.
 	set name = "Import style string"
 	set desc = "Import a string of text that was made using the import style verb to get back that style"
 	set category = "Abilities.Settings"
-	om_prompt(src, src, list("kind" = "text", "message" = "Paste the style string you exported with Export Style.", "title" = "Style loading"), PROC_REF(import_style_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(import_style_entered), title = "Style loading", message = "Paste the style string you exported with Export Style.")
 
-/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(mob/user, input_style, datum/om/prompt/ask)
+/mob/living/simple_mob/vore/bigdragon/proc/import_style_entered(datum/om/prompt/text/ask)
+	var/input_style = ask.text
 	input_style = sanitizeSafe(input_style)
 	if(input_style)
 		var/list/input_style_list = splittext(input_style, ";")
