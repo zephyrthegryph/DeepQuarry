@@ -6,8 +6,8 @@ site's own line or on a comment-only line directly above it:
 
     spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 
-    // ALLOW(lifecycle, declared_refs): the ledger is the containment engine itself
-    /datum/ledger/Destroy()
+    // ALLOW(lifecycle): the round-end sweep deletes every mob
+    qdel(M)
 
 Inside a multi-line macro, where `//` would swallow the `\` continuation, the
 block form `/* ALLOW(scheduler): reason */` works the same. The reason after the
@@ -35,7 +35,7 @@ LINTS = {
     "handle_kinds": "tools/ci/handle_kinds_lint.py (handles to singletons; handles that are a new datum's only owner)",
     "instance_list": "tools/ci/instance_list_lint.py",
     "latent": "tools/ci/latent_lint.py",
-    "lifecycle": "tools/ci/lifecycle_counts_lint.py (Destroy() overrides and qdel( sites)",
+    "lifecycle": "tools/ci/lifecycle_counts_lint.py (qdel( sites; Destroy() overrides are banned outright)",
     "object_keyed_lists": "tools/ci/declared_refs_lint.py (object-keyed instance lists)",
     "ownership_cycle": "tools/ci/ownership_cycle_lint.py (type-level REF_OWNED cycles)",
     "pollers": "tools/ci/pollers_lint.py",

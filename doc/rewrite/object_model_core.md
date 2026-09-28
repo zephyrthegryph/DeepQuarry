@@ -552,6 +552,17 @@ Escape: `// ALLOW(handle_kinds): <reason>`.
 Teardown that must still read declared vars (a holder ending its busy state, a hologram handing
 bellies back to its master, a projectile drawing tracers from its owned segments) goes in
 `lifecycle_prerelease()`, which the destroy transaction runs just before phase 4 clears the links.
+A behaviour's teardown goes in its `on_destroy(E)`, run right after that. What is left, a real
+domain consequence, is the type's `on_destroy(force)` (phase 7, before the core `Destroy()`
+chain). `Destroy()` itself is overridden only by the core chain (`/datum`, `/atom`,
+`/atom/movable`, `/client`, `/datum/controller`); `lifecycle_counts_lint.py` bans every other
+override. The GC hint is the `destroy_hint` type var; refusing deletion is `lifecycle_keep(force)`
+or `LIFECYCLE_KEEP_UNLESS_FORCED(type)`, checked before the transaction starts.
+
+**Comparing a handle to a dying object.** A handle accessor reads null once its target is
+`QDELETED`, which is true from phase 0. `thing.owner() == src` inside src's teardown is therefore
+always FALSE: use `om_handle_is(thing.owner_handle, src)`, which compares the handle text and
+matches until phase 5 frees the slot.
 A declared cache (`CACHE_ON_*`) is only for data that is purely derivable and rebuilt on read: the
 core nulls it whenever its rule fires (a `CHANGE_EXPLICIT` cache on every `MACHINE_WAKE`), so a list
 that must survive is a `REF_WEAK_LIST`, an owned list, or (turfs, never freed) `REF_STATIC`.
@@ -1238,8 +1249,8 @@ it stands, with one annotation every lint reads (`tools/ci/allow_annotations.py`
 ```dm
 spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 
-// ALLOW(lifecycle): the ledger is the containment engine itself; it lets go of its holder.
-/datum/ledger/Destroy()
+// ALLOW(lifecycle): the round-end sweep deletes every mob, not a single consequence.
+qdel(M)
 ```
 
 - It goes on the site's own line or on a comment-only line directly above it. Inside a

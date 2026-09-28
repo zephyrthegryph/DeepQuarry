@@ -63,8 +63,21 @@ place the ordering hazards now scattered through code comments are encoded:
 | 4 | **Links.** Clear every declared relationship (§4): owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
 | 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
-| 7 | **Leftover `Destroy()`.** Only domain consequences remain. Linted: an override must justify itself with a `// ALLOW(lifecycle): <reason>` annotation, and the count is ratcheted. | type | — |
+| 7 | **Destroy hook.** The type's `on_destroy(force)` (domain consequences only; always calls `..()`), then the core `Destroy()` chain (`/atom/movable`, `/atom`, `/datum`). A `Destroy()` override anywhere else is banned outright (`lifecycle_counts_lint.py`); the only other `Destroy()` definitions are `/client` and the MC's `/datum/controller` tree. The GC hint is the type's `destroy_hint` var. | type | every per-type `Destroy()` |
 | 8 | **Scrub.** Null outbound declared owned and pair vars to break reference cycles, then hand the datum to GC. Nothing is parked in nullspace pending deletion. | links | cycle-breaking null-only bodies |
+
+Around the phases:
+- **Refusal** comes first. `lifecycle_keep(force)` returning TRUE (or
+  `LIFECYCLE_KEEP_UNLESS_FORCED(type)` / `LIFECYCLE_KEEP_ALWAYS(type)`) makes `qdel()`
+  leave the object whole, before phase 0 runs; it used to be a `Destroy()` returning
+  `QDEL_HINT_LETMELIVE` after the object had already been half torn down.
+- **Behaviours** get `/datum/om/behaviour/proc/on_destroy(E)` at the start of phase 4,
+  after `lifecycle_prerelease()` and before the links clear, so the entity's declared vars
+  still read; `on_stop(E)` follows in phase 5.
+- **Handles mid-delete.** From phase 0 a handle accessor (`owner()` returning
+  `om_resolve(owner_handle)`) reads null for the dying object, so `thing.owner() == src`
+  is FALSE inside src's own teardown. Compare with `om_handle_is(thing.owner_handle, src)`,
+  which matches until phase 5 releases the handle slot.
 
 **No nullspace parking** (DQ Medical requirement): the transaction never moves
 an atom to nullspace to "finish later". Contents resolve in phase 3 while the
@@ -221,10 +234,10 @@ Real consequences outside the object's declared relationships, such as:
 - a cursed weapon punishing its wielder;
 - a looking-glass program unloading.
 
-These are preferably written as a `COMSIG_QDELETING` handler owned by **the
+These are preferably written as a qdeleting hook owned by **the
 other party**, the pattern grants already uses (the relationship's owner watches
-the lifetime; the dying object doesn't clean up after itself). Otherwise they
-are a justified `Destroy()`.
+the lifetime; the dying object doesn't clean up after itself), or as a
+behaviour's `on_destroy(E)`. Otherwise they go in the type's `on_destroy(force)`.
 
 ## 7. Medical, body, organs, surgery and Life
 
