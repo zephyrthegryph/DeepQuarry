@@ -72,7 +72,7 @@
 
 	// Used to specify the icon file to be used when the item is worn. If not set the default icon for that slot will be used.
 	// If icon_override or sprite_sheets are set they will take precendence over this, assuming they apply to the slot in question.
-	// Only SLOT_ID_HAND_L/slot_r_hand are implemented at the moment. Others to be implemented as needed.
+	// Only SLOT_ID_HAND_L/SLOT_ID_HAND_R are implemented at the moment. Others to be implemented as needed.
 	var/list/item_icons
 
 	//** These specify item/icon overrides for _species_

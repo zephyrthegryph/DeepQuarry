@@ -162,6 +162,8 @@
 				H.equip_to_slot(new /obj/item/storage/backpack(H), SLOT_ID_BACK)
 			var/list/masks = splittext(rows["[species_name]|[state]"], ",")
 			var/list/indices = everything ? null : sensitive
+			// Bit order of the golden masks (the old numeric slot order).
+			var/static/list/golden_order = list(SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_ID, SLOT_ID_SUIT_STORAGE, SLOT_ID_POCKET_L, SLOT_ID_POCKET_R, SLOT_ID_EYES, SLOT_ID_MASK, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_SUIT, SLOT_ID_UNIFORM, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_LEGS, SLOT_ID_TIE, SLOT_ID_HANDCUFFED, SLOT_ID_LEGCUFFED, SLOT_ID_IN_BACKPACK)
 			var/count = everything ? length(items) : length(indices)
 			for(var/n in 1 to count)
 				var/index = everything ? n : indices[n] + 1
@@ -174,16 +176,16 @@
 					continue
 				var/expected = text2num(masks[n], 36)
 				var/actual = 0
-				for(var/slot in 1 to SLOT_TOTAL)
-					if(!I.equip_refusal(H, slot, TRUE))
+				for(var/slot in 1 to length(golden_order))
+					if(!I.equip_refusal(H, golden_order[slot], TRUE))
 						actual |= (1 << (slot - 1))
-				cells += SLOT_TOTAL
+				cells += length(golden_order)
 				if(actual != expected)
 					var/list/diff = list()
-					for(var/slot in 1 to SLOT_TOTAL)
+					for(var/slot in 1 to length(golden_order))
 						var/bit = 1 << (slot - 1)
 						if((actual & bit) != (expected & bit))
-							diff += "slot [slot] [(expected & bit) ? "took" : "refused"]"
+							diff += "slot [golden_order[slot]] [(expected & bit) ? "took" : "refused"]"
 					mismatch("[species_name] [state] [I.type]: [jointext(diff, ", ")] before")
 			CHECK_TICK
 		qdel(H)

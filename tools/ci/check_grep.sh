@@ -508,6 +508,15 @@ if $grep -n '\b(run_armor_check|getarmor|getarmor_organ|mitigate_injury|factor_a
 	FAILED=1
 fi;
 
+part "equip slot ids"
+# Equip slots are SLOT_ID_* text ids on the body slot ledger (code/modules/body/slots.dm).
+# The numeric slot_* defines and their per-slot lookups are gone.
+if $grep -n '(slot_(l_hand|r_hand|back|belt|wear_id|s_store|l_store|r_store|glasses|wear_mask|gloves|head|shoes|wear_suit|w_uniform|l_ear|r_ear|legs|tie|handcuffed|legcuffed|in_backpack)[^"]|(SLOT_TOTAL|get_inventory_slot|get_item_by_slot|dq_slot_num|dq_slot_id))' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: a numeric equip slot. Use SLOT_ID_* ids and get_equipped_item()/inventory_slot_id().${NC}"
+	FAILED=1
+fi;
+
 part "interned armour"
 # Armour is an interned /datum/armor (code/game/atom/armor.dm, damage.md §4):
 # a type declares armor_spec = "melee=40;bullet=30", readers call get_armor(),

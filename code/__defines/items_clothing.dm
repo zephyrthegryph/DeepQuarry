@@ -123,6 +123,8 @@
 #define THERMAL_PROTECTION_ARM_RIGHT   0.075
 #define THERMAL_PROTECTION_HAND_LEFT   0.025
 #define THERMAL_PROTECTION_HAND_RIGHT  0.025
+/// Conductance fraction left when worn layers cover the whole body (heat API).
+#define WORN_INSULATION_MIN_CONDUCTANCE 0.25
 
 // Pressure limits.
 

@@ -168,21 +168,21 @@ const HUD_ICON = 'icons/mob/screen/midnight.dmi';
 
 // Valid icon_states in screen/midnight.dmi (matches the in-game inventory HUD).
 const SLOT_HUD: Record<string, string> = {
-  'head': 'hair',
-  'eyes': 'glasses',
-  'mask': 'mask',
-  'ear_l': 'ears',
-  'ear_r': 'ears',
-  'uniform': 'center',
-  'suit': 'suit',
-  'gloves': 'gloves',
-  'shoes': 'shoes',
-  'back': 'back',
-  'belt': 'belt',
-  'id': 'id',
-  'pocket_l': 'pocket',
-  'pocket_r': 'pocket',
-  'suit_storage': 'suitstore',
+  head: 'hair',
+  eyes: 'glasses',
+  mask: 'mask',
+  ear_l: 'ears',
+  ear_r: 'ears',
+  uniform: 'center',
+  suit: 'suit',
+  gloves: 'gloves',
+  shoes: 'shoes',
+  back: 'back',
+  belt: 'belt',
+  id: 'id',
+  pocket_l: 'pocket',
+  pocket_r: 'pocket',
+  suit_storage: 'suitstore',
 };
 
 // Paper-doll grid (3 columns, head→toe). Compact 5-row layout — all cells visible at
