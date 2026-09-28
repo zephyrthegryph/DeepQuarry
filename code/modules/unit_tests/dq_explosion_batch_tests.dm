@@ -160,7 +160,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 		if(!QDELETED(C))
 			qdel(C)
 	for(var/turf/T as anything in run)
-		for(var/obj/item/stack/cable_coil/coil in T)
+		for(var/obj/item/stack/cable_coil/coil in contents_of(T))
 			qdel(coil)
 
 

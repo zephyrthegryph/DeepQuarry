@@ -116,9 +116,9 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 					var/turf/T = locate(tx, ty, new_z)
 					if(!T)
 						continue
-					if(!candidate.bottom_left && locate(/obj/effect/landmark/unit_test_bottom_left) in T)
+					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
 						candidate.bottom_left = T
-					if(!candidate.top_right && locate(/obj/effect/landmark/unit_test_top_right) in T)
+					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
 						candidate.top_right = T
 			if(candidate.bottom_left && candidate.top_right)
 				block = candidate
@@ -191,7 +191,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	var/leaked = 0
 	var/list/leaked_types = list()
 	for(var/turf/T in block_turfs(block))
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(istype(AM, /obj/effect/landmark))
 				continue
 			leaked++

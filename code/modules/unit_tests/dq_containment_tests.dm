@@ -85,7 +85,7 @@
 		var/turf/east = get_step(T, EAST)
 		if(T.density || !istype(east, /turf/simulated/floor) || east.density)
 			continue
-		if((locate(/obj/item) in T) || (locate(/obj/structure) in T) || (locate(/mob) in T))
+		if((locate_within(T, /obj/item)) || (locate_within(T, /obj/structure)) || (locate_within(T, /mob)))
 			continue
 		if((locate_on(east, /obj/item)) || (locate_on(east, /obj/structure)) || (locate_on(east, /mob)))
 			continue

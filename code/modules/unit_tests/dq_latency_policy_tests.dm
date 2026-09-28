@@ -52,7 +52,7 @@
 
 /datum/unit_test/proc/dq_latency_floor()
 	for(var/turf/simulated/floor/T in world)
-		if(!T.density && !(locate(/obj/item) in T) && !(locate(/obj/structure) in T))
+		if(!T.density && !(locate_within(T, /obj/item)) && !(locate_within(T, /obj/structure)))
 			return T
 	return null
 
@@ -249,10 +249,10 @@
 		var/op = pick("age", "collapse", "materialize", "move", "touch")
 		switch(op)
 			if("age")
-				for(var/atom/movable/A as anything in box.contents)
+				for(var/atom/movable/A as anything in contents_of(box))
 					A.latent_last_touch = world.time - (box.latent_idle_delay * 2)
 			if("collapse")
-				for(var/atom/movable/A as anything in box.contents.Copy())
+				for(var/atom/movable/A as anything in contents_of(box))
 					if(dq_latent_attempt_collapse(A))
 						collapses++
 						break
@@ -263,7 +263,7 @@
 					made += made_now
 			if("move")
 				var/list/real = list()
-				for(var/atom/movable/A as anything in box.contents)
+				for(var/atom/movable/A as anything in contents_of(box))
 					real += A
 				if(length(real))
 					var/atom/movable/A = pick(real)
@@ -272,7 +272,7 @@
 						A.forceMove(dest)
 						dq_latent_touch(A)
 			if("touch")
-				for(var/atom/movable/A as anything in box.contents)
+				for(var/atom/movable/A as anything in contents_of(box))
 					dq_latent_touch(A)
 		if(!check_conservation(boxes, "step [step] ([op])"))
 			break

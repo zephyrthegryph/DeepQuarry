@@ -193,7 +193,7 @@
 		return 0
 
 	for(var/turf/T in area_contents_of_type(destination, /turf))
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(isliving(AM) && !(AM.is_incorporeal()))
 				var/mob/living/M = AM
 				M.gib()

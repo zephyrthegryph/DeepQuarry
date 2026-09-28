@@ -12,7 +12,7 @@
 /// Items of exactly `path` inside `holder`.
 /datum/unit_test/proc/dq_stock_count_in(atom/holder, path)
 	. = 0
-	for(var/atom/movable/A as anything in holder.contents)
+	for(var/atom/movable/A as anything in contents_of(holder))
 		if(A.type == path && !QDELETED(A))
 			.++
 

@@ -80,7 +80,7 @@
 				else
 					var/list/apc_list = list()
 					for(var/turf/T in get_current_area_turfs(A))
-						for(var/atom/S in T.contents)
+						for(var/atom/S in contents_of(T))
 							if(istype(S,/obj/machinery/power/apc))
 								apc_list.Add(S)
 					if(apc_list.len > 1)
@@ -135,7 +135,7 @@
 		for(T in cable_turfs)
 			var/bad_msg = "--------------- [T.name] \[[T.x] / [T.y] / [T.z]\] [color]"
 			LAZYCLEARLIST(dirs_checked)
-			for(C in T)
+			for(C in contents_of(T))
 				wire_test_count++
 				var/combined_dir = "[C.d1]-[C.d2]"
 				if(combined_dir in dirs_checked)

@@ -52,7 +52,7 @@
 	TEST_ASSERT_EQUAL(site.landing(), get_turf(site.station_materialization.entry()), "landing does not use the generated docking entry")
 	var/mining_spawners = 0
 	for(var/turf/scan_turf in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
-		if(locate(/obj/structure/mob_spawner/scanner/mining_animals) in scan_turf)
+		if(locate_within(scan_turf, /obj/structure/mob_spawner/scanner/mining_animals))
 			mining_spawners++
 	TEST_ASSERT_EQUAL(mining_spawners, 0, "generated station inherited legacy cave mining-fauna spawners")
 	TEST_ASSERT_NOTNULL(site.landing_waypoint, "generated site has no physical shuttle landing waypoint")
@@ -312,7 +312,7 @@
 			var/final_pressure = floor.return_air()?.return_pressure()
 			TEST_ASSERT(isnum(final_pressure) && final_pressure > 80, "Seed [seed] floor [generated_station_coordinate(floor)] became unpressurized: [pressure_context(floor)]")
 			TEST_ASSERT(abs(final_pressure - initial_pressure) < 5, "Seed [seed] floor [generated_station_coordinate(floor)] changed pressure by [abs(final_pressure - initial_pressure)] kPa at rest")
-		var/obj/machinery/door/airlock/generated_station_exterior/test_door = locate(/obj/machinery/door/airlock/generated_station_exterior) in site.station_materialization.doors
+		var/obj/machinery/door/airlock/generated_station_exterior/test_door = locate_in_list(site.station_materialization.doors, /obj/machinery/door/airlock/generated_station_exterior)
 		TEST_ASSERT_NOTNULL(test_door, "Seed [seed] lacks an exterior airlock for seal falsifiability")
 		var/original_density = test_door.density
 		test_door.density = FALSE

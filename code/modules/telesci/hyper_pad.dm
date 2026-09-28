@@ -177,7 +177,7 @@
 			break
 		var/xadjust = src.x - T.x
 		var/yadjust = src.y - T.y
-		for(var/atom/movable/ROI in T)
+		for(var/atom/movable/ROI in contents_of(T))
 			if(ROI.anchored)
 				if(isliving(ROI))
 					var/mob/living/L = ROI

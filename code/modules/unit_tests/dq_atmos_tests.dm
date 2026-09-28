@@ -92,6 +92,7 @@
 
 	// An openspace tile IS a hole: it must pass air vertically both ways. Openspace
 	// isn't guaranteed on every map, so only assert if the type exists in the world.
+	// ALLOW(spatial): world search
 	var/turf/simulated/open/hole = locate(/turf/simulated/open) in world
 	if(hole)
 		TEST_ASSERT(hole.zAirOut(DOWN, hole), "openspace should let air fall DOWN through it — zAirOut(DOWN) should be TRUE")
@@ -732,7 +733,7 @@
 					TEST_FAIL("air alarm area [get_area(candidate)] at [start.x],[start.y],[start.z] reaches space through atmos edge [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]")
 				if(neighbor.initial_gas_mix == AIRLESS_ATMOS)
 					var/list/blockers = list()
-					for(var/obj/blocker in current.contents + neighbor.contents)
+					for(var/obj/blocker in contents_of(current) + contents_of(neighbor))
 						blockers += "[blocker.type](dir=[blocker.dir], anchored=[blocker.anchored], pass=[CANATMOSPASS(blocker, blocker.loc == current ? neighbor : current, FALSE)])"
 					TEST_FAIL("air alarm area [get_area(candidate)] at [start.x],[start.y],[start.z] reaches an airless turf through atmos edge [current.x],[current.y],[current.z] -> [neighbor.x],[neighbor.y],[neighbor.z]; objects: [jointext(blockers, "; ")]")
 				checked[neighbor] = TRUE
@@ -1037,7 +1038,7 @@
 	// Try the sealed test-room landmarks first (loaded in RunUnitTests). Force-build
 	// adjacency on the seed in case it wasn't wired yet — the room is a runtime-loaded
 	// z, so setup_allturfs never saw it.
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
+	var/obj/effect/landmark/test_corner = locate_in_list(REGISTRY_MEMBERS(REGISTRY_LANDMARKS), /obj/effect/landmark/unit_test_bottom_left)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -1059,7 +1060,7 @@
 /proc/dq_atmos_test_find_floor_line(count)
 	dq_atmos_test_restore_walls()
 	var/list/seeds = list()
-	var/obj/effect/landmark/test_corner = locate(/obj/effect/landmark/unit_test_bottom_left) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
+	var/obj/effect/landmark/test_corner = locate_in_list(REGISTRY_MEMBERS(REGISTRY_LANDMARKS), /obj/effect/landmark/unit_test_bottom_left)
 	if(test_corner)
 		var/turf/seed_turf = get_turf(test_corner)
 		if(istype(seed_turf, /turf/simulated/floor))
@@ -1121,7 +1122,7 @@
 	for(var/turf/simulated/floor/cand in world)
 		if(!cand.air || cand.blocks_air)
 			continue
-		if(locate(/obj/machinery/atmospherics) in cand)
+		if(locate_within(cand, /obj/machinery/atmospherics))
 			continue
 		for(var/direction in GLOB.cardinal)
 			var/list/run = list(cand)
@@ -1285,7 +1286,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 		if(!neighbor)
 			continue
 		var/contents_block = FALSE
-		for(var/obj/blocker in neighbor.contents + floor.contents)
+		for(var/obj/blocker in contents_of(neighbor) + contents_of(floor))
 			var/turf/other_side = blocker.loc == neighbor ? floor : neighbor
 			if(!QDELETED(blocker) && !CANATMOSPASS(blocker, other_side, FALSE))
 				contents_block = TRUE
@@ -3548,7 +3549,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(S.air, "/turf/space.air is null — /turf/open/Initialize didn't create the vacuum mixture")
 	// ChangeTurf + air_update_turf must have wired floor↔space both ways.
 	var/list/space_blockers = list()
-	for(var/obj/blocker in S.contents + A.contents)
+	for(var/obj/blocker in contents_of(S) + contents_of(A))
 		var/turf/other_side = blocker.loc == S ? A : S
 		if(!QDELETED(blocker) && !CANATMOSPASS(blocker, other_side, FALSE))
 			space_blockers += "[blocker.type](loc=[COORD(blocker)],density=[blocker.density],pass=[blocker.can_atmos_pass])"
@@ -4265,6 +4266,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate
 
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate/Run()
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machinery hibernation test")
 	// Pump and scrubber run the OM machine pipeline too (machine_pipeline.dm), not process():
@@ -4351,7 +4353,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_rust_portable_port_round_trip_conserves_gas/Run()
 	var/turf/simulated/floor/T
 	for(var/turf/simulated/floor/candidate in world)
-		if(!locate(/obj/machinery/atmospherics) in candidate && !locate(/obj/machinery/portable_atmospherics) in candidate)
+		if(!locate_within(candidate, /obj/machinery/atmospherics) && !locate_within(candidate, /obj/machinery/portable_atmospherics))
 			T = candidate
 			break
 	TEST_ASSERT_NOTNULL(T, "no floor for Rust portable-port test")
@@ -4360,7 +4362,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.rust_register_pipe_topology()
 	var/turf/simulated/floor/staging_turf
 	for(var/turf/simulated/floor/candidate in world)
-		if(candidate != T && !locate(/obj/machinery/atmospherics) in candidate && !locate(/obj/machinery/portable_atmospherics) in candidate)
+		if(candidate != T && !locate_within(candidate, /obj/machinery/atmospherics) && !locate_within(candidate, /obj/machinery/portable_atmospherics))
 			staging_turf = candidate
 			break
 	TEST_ASSERT_NOTNULL(staging_turf, "no staging floor for Rust portable-port test")
@@ -4390,7 +4392,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	for(var/turf/simulated/floor/candidate in world)
 		var/nearby_atmos = FALSE
 		for(var/turf/nearby in RANGE_TURFS(1, candidate))
-			if(locate(/obj/machinery/atmospherics) in nearby)
+			if(locate_within(nearby, /obj/machinery/atmospherics))
 				nearby_atmos = TRUE
 				break
 		if(candidate.air && !nearby_atmos)
@@ -4420,6 +4422,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// edge, stepped every gas tick from SSair regardless of state, so it is
 	// never a DM process() subscriber at all — there is nothing left to
 	// hibernate or wake in DM, in any state.
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for binary pump hibernation test")
 	var/obj/machinery/atmospherics/binary/pump/P = new(T)
@@ -4505,6 +4508,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_recharger_hibernates
 
 /datum/unit_test/dq_idle_recharger_hibernates/Run()
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger hibernation test")
 	var/obj/machinery/recharger/R = new(T)
@@ -4529,6 +4533,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_recharger_spill_refreshes_icon
 
 /datum/unit_test/dq_recharger_spill_refreshes_icon/Run()
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
@@ -4544,6 +4549,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning
 
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning/Run()
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for power monitor hibernation test")
 	var/datum/powernet/P = new
@@ -6561,7 +6567,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/item/tank/oxygen/Tank = new(H)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
-	TEST_ASSERT(Tank in H.contents, "tank not in human contents — setup invalid")
+	TEST_ASSERT(Tank.loc == H, "tank not in human contents — setup invalid")
 	H.internal = Tank
 
 	var/initial_tank_moles = Tank.air_contents.total_moles()
@@ -7385,7 +7391,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		var/turf/upper = (direction & UP) ? B : A
 		if(!istype(upper, /turf/simulated/open))
 			return FALSE
-	for(var/obj/checked_object in A.contents + B.contents)
+	for(var/obj/checked_object in contents_of(A) + contents_of(B))
 		if(QDELETED(checked_object))
 			continue
 		var/turf/other = (checked_object.loc == A ? B : A)
@@ -7418,7 +7424,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			mismatch_count++
 			if(length(mismatches) < 10)
 				var/list/objects = list()
-				for(var/obj/O in T.contents + N.contents)
+				for(var/obj/O in contents_of(T) + contents_of(N))
 					if(O.can_atmos_pass != ATMOS_PASS_YES)
 						objects += "[O.type](dir=[O.dir], density=[O.density])"
 				mismatches += "[COORD(T)] -> [COORD(N)] dir=[direction]: expected [expected ? "open" : "blocked"], Rust [actual ? "open" : "blocked"]; masks [T.air_block_mask()]/[N.air_block_mask()]; objects [jointext(objects, ", ")]"

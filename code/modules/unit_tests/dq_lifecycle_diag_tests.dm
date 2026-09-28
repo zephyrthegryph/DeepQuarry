@@ -169,7 +169,7 @@ REF_OWNED(/datum/dq_diag_owner_b, "a")
 	var/obj/item/dq_diag_init_refuser/clean = new(T)
 	TEST_ASSERT(QDELETED(clean), "an INITIALIZE_HINT_QDEL atom is deleted")
 	TEST_ASSERT(isnull(clean.loc), "it left its turf")
-	TEST_ASSERT(!(locate(/obj/item/dq_diag_init_refuser) in T), "nothing of it is left on the turf")
+	TEST_ASSERT(!(locate_within(T, /obj/item/dq_diag_init_refuser)), "nothing of it is left on the turf")
 
 	GLOB.dq_caught_capture = list()
 	var/obj/item/dq_diag_init_refuser/fragile/fragile = new(T)

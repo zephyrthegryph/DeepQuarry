@@ -34,7 +34,7 @@
 				var/moved = 0
 				for(dir in shuffle(GLOB.cardinal.Copy()))
 					var/dest = get_step(LM,dir)
-					if(!(locate(/obj/machinery/door/airlock/lift) in dest))
+					if(!(locate_within(dest, /obj/machinery/door/airlock/lift)))
 						if(LM.Move(dest))
 							moved = 1
 							LM.visible_message("\The [LM] scurries away from the closing doors.")

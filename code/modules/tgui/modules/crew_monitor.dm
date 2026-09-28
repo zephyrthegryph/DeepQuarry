@@ -23,7 +23,7 @@
 		if("track")
 			if(isAI(ui.user))
 				var/mob/living/silicon/ai/AI = ui.user
-				var/mob/living/carbon/human/H = locate(params["track"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+				var/mob/living/carbon/human/H = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), params["track"])
 				if(hassensorlevel(H, SUIT_SENSOR_TRACKING))
 					AI.ai_actual_track(H)
 			return TRUE

@@ -10,7 +10,7 @@
 
 	var/obj/machinery/power/fusion_core/C = null
 	if(params["core"])
-		C = locate(params["core"]) in REGISTRY_MEMBERS(REGISTRY_FUSION_CORES)
+		C = locate_in_list(REGISTRY_MEMBERS(REGISTRY_FUSION_CORES), params["core"])
 		if(!istype(C))
 			return FALSE
 

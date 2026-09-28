@@ -27,6 +27,7 @@
 	L.set_low_priority(FALSE)
 	if(isturf(L.loc))
 		return TRUE
+	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	if(!T)
 		return FALSE

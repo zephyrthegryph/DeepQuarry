@@ -85,7 +85,7 @@
 	D.stat = 0
 	D.flush = 0
 	D.mode = 2 // DISPOSALMODE_CHARGED, which disposal_machines.dm #undefs
-	for(var/atom/movable/AM as anything in D.contents)
+	for(var/atom/movable/AM as anything in contents_of(D))
 		qdel(AM)
 	D.machine_step()
 	TEST_ASSERT(D.asleep_on_keys(), "idle disposal did not sleep on its key")

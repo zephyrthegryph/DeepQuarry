@@ -5,7 +5,7 @@
 	var/origin_y = world.maxy - 12
 	var/turf/origin = locate(origin_x, origin_y, world.maxz)
 	for(var/turf/T in block(origin, locate(origin_x + 4, origin_y + 3, world.maxz)))
-		for(var/atom/movable/existing in T)
+		for(var/atom/movable/existing in contents_of(T))
 			qdel(existing)
 		T.ChangeTurf(/turf/simulated/floor/plating, tell_universe = FALSE)
 	stoplag(1)
