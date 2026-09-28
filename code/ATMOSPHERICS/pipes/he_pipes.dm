@@ -24,6 +24,8 @@
 	buckle_lying = 1
 
 	// BubbleWrap
+/obj/machinery/atmospherics/pipe/simple/heat_exchanging/Initialize(mapload)
+	. = ..()
 // BubbleWrap END
 	color = "#404040" //we don't make use of the fancy overlay system for colours, use this to set the default.
 

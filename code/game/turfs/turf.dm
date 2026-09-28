@@ -110,7 +110,7 @@
 /// The per-turf part of Initialize(), shared with the init_from_table path (atom_type_table.dm).
 /turf/proc/turf_instance_setup()
 	PRIVATE_PROC(TRUE)
-	if(length(contents))
+	if(length(contents)) // ALLOW(spatial): hot map-load path (one read per turf); skips the loop setup for empty turfs
 		for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
 			Entered(AM)
 
