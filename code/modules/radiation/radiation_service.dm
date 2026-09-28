@@ -196,7 +196,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 	if(!ishuman(target))
 		if(ismob(target))
-			target.radiation += strength
+			target.add_radiation(strength)
 			return TRUE
 		return FALSE
 
@@ -204,7 +204,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/rad_vulnerability = 1 - wearing_rad_protected_clothing(target)
 	if(rad_vulnerability <= 0)
 		return FALSE
-	target.radiation += round(strength * rad_vulnerability, 0.1)
+	target.add_radiation(round(strength * rad_vulnerability, 0.1))
 
 	return TRUE
 

@@ -398,13 +398,11 @@
 	var/antirad = self.body?.treatment_levels()?[TREAT_ANTIRADIATION]
 	if(antirad)
 		self.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
-	self.radiation = CLAMP(self.radiation,0,RADIATION_CAP) //Max of 100Gy. If you reach that...You're going to wish you were dead. You probably will be dead.
-	self.accumulated_rads = CLAMP(self.accumulated_rads,0,RADIATION_CAP) //Max of 100Gy as well. You should never get higher than this. You will be dead before you can reach this.
 	var/obj/item/organ/internal/I = null //Used for further down below when an organ is picked.
 	if(!self.radiation)
 		self.clear_alert("irradiated")
 		if(self.accumulated_rads)
-			self.accumulated_rads -= RADIATION_SPEED_COEFFICIENT //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
+			self.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
 	else if(((self.life_tick % 5 == 0) && self.radiation) || (self.radiation > 600)) //Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
 
 		if(HAS_TRAIT(self, TRAIT_HALT_RADIATION_EFFECTS)) //If we have a trait that halts radiation effects, then we just stop here. No need to do any of the checks below.
@@ -414,17 +412,15 @@
 		var/rad_mod = self.species.radiation_mod
 
 		if(!rad_mod) //If we are rad immune, stop here and remove rads if we have any.
-			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
+			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod)
 			return
 
 		if (self.radiation < GLOB.radiation_levels[self.species.rad_levels]["safe"]) //Less than 1.0 Gy. No side effects.
-			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 10 * RADIATION_SPEED_COEFFICIENT //No escape from accumulated rads.
+			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT) //No escape from accumulated rads.
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["safe"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_1"]) //Equivalent of 1.0-2.0 Gy. Minimum stage you start seeing effects.
 			damage = 1
-			self.radiation -= 10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 10 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.has_status(EFFECT_WEAKENED))
 					to_chat(self, span_warning("You feel exhausted."))
@@ -440,8 +436,7 @@
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_1"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_2"]) //Equivalent of 2.0 to 6.0 Gy. Nobody should ever be above this without extreme negligence.
 			damage = 3
-			self.radiation -= 30 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 30 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(30 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 30 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(5))
 					self.radiation_burn(5 * RADIATION_SPEED_COEFFICIENT)
@@ -456,8 +451,7 @@
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_2"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_3"]) //Equivalent of 6.0 to 8.0 Gy.
 			damage = 5
-			self.radiation -= 50 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 50 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(50 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 50 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(15))
 					self.radiation_burn(10 * RADIATION_SPEED_COEFFICIENT)
@@ -484,8 +478,7 @@
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_3"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Equivalent of 8.0 to 30 Gy.
 			self.throw_alert("irradiated", /atom/movable/screen/alert/irradiated)
 			damage = 10
-			self.radiation -= 100 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 100 * RADIATION_SPEED_COEFFICIENT
+			self.decay_radiation(100 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 100 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				if(prob(25))
 					self.radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
@@ -519,9 +512,7 @@
 
 		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Above 30Gy. You had to get absolutely blasted with rads for this.
 			damage = 30
-			self.radiation -= 300 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod
-			self.accumulated_rads += 300 * RADIATION_SPEED_COEFFICIENT
-
+			self.decay_radiation(300 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 300 * RADIATION_SPEED_COEFFICIENT)
 			if(!self.isSynthetic())
 				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
 				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.

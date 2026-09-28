@@ -3344,7 +3344,7 @@
 /datum/reagent/ethanol/vodka/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(!(M.isSynthetic()))
-		M.radiation = max(M.radiation - 1 * removed, 0) // purges radiation; apply_effect(IRRADIATE) here added it back (P2-F8)
+		M.purge_radiation(1 * removed) // purges radiation; apply_effect(IRRADIATE) here added it back (P2-F8)
 
 /datum/reagent/ethanol/whiskey
 	name = REAGENT_WHISKEY
@@ -4856,7 +4856,7 @@
 	..()
 
 	if(!(M.isSynthetic()))
-		M.radiation = max(M.radiation - 5 * removed, 0) // purges radiation (P2-F8)
+		M.purge_radiation(5 * removed) // purges radiation (P2-F8)
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			if(H.species.has_organ[O_LIVER])

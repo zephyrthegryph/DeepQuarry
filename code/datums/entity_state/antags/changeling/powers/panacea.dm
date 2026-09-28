@@ -22,7 +22,7 @@
 
 	var/mob/living/carbon/human/C = src
 
-	C.radiation = 0
+	C.clear_radiation()
 	C.set_sdisabilities(0)
 	C.disabilities = 0
 	C.reagents.clear_reagents()

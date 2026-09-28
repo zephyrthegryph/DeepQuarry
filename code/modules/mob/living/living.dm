@@ -307,7 +307,7 @@
 
 /// Biological state a rejuvenate resets. Body plans without that biology (borgs) override it.
 /mob/living/proc/rejuvenate_physiology()
-	radiation = 0
+	clear_radiation()
 	nutrition = 400
 	set_bodytemperature(T20C)
 

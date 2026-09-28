@@ -45,7 +45,7 @@
 
 /datum/viral_trait/radiation/proc/radiate(mob/living/carbon/human/H)
 	to_chat(H, span_danger("You feel a wave of pain throughout your body!"))
-	H.radiation += 50 * power
+	H.add_radiation(50 * power)
 	return TRUE
 
 /datum/viral_trait/radconversion
@@ -91,7 +91,7 @@
 	var/mob/living/carbon/human/H = A.host
 	if(A.stage >= 4)
 		if(H.radiation)
-			H.radiation -= max(H.radiation * 0.05, min(10, H.radiation))
+			H.purge_radiation(max(H.radiation * 0.05, min(10, H.radiation)))
 			H.injure(INJURY_CUT, 2)
 			if(prob(5))
 				if(H.stat != DEAD)

@@ -37,7 +37,7 @@
 	C.status_set(EFFECT_PARALYZED, 0)
 	C.status_set(EFFECT_STUNNED, 0)
 	C.status_set(EFFECT_WEAKENED, 0)
-	C.radiation = 0
+	C.clear_radiation()
 	C.reagents.clear_reagents()
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = src

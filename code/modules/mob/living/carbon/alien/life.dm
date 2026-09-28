@@ -39,7 +39,7 @@
 		return
 
 	var/rads = self.radiation/25
-	self.radiation -= rads
+	self.decay_radiation(rads)
 	//adjust_nutrition(rads) //Commented out to prevent alien obesity.
 	self.mend(TREAT_TISSUE_REPAIR, rads)
 	self.mend(TREAT_BURN_CARE, rads)

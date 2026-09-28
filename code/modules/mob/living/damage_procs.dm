@@ -22,7 +22,7 @@
 			// injectors dosing from inside the suit) skip the radiation armour.
 			var/rad_protection = check_protection ? radiation_protection_fraction() : 1
 			if(!(OM_EMIT(src, /datum/om/event/before/living_irradiate_effect, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
-				radiation += max((effect * rad_protection), 0)
+				add_radiation(effect * rad_protection)
 		if(STUTTER)
 			if(!status_immune(EFFECT_STUNNED)) // stun is usually associated with stutter
 				status_at_least(EFFECT_STUTTERING, (effect * blocked))

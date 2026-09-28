@@ -143,7 +143,7 @@ REF_OWNED(/obj/effect/mine, "trap")
 	s.set_up(3, 1, src)
 	s.start()
 	if(istype(M))
-		M.radiation += 50
+		M.add_radiation(50)
 		randmutb(M)
 		domutcheck(M,null)
 		M.UpdateAppearance()

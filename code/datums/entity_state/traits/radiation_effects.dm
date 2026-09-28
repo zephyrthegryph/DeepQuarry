@@ -173,10 +173,6 @@
 ///Handles the radiation removal, immunity, and healing effects.
 /datum/trait_state/radiation_effects/proc/process_component()
 	var/mob/living/living_guy = owner
-	if(living_guy.radiation > RADIATION_CAP || living_guy.radiation < 0 || living_guy.accumulated_rads > RADIATION_CAP || living_guy.accumulated_rads < 0)
-		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
-		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)
-
 	if(QDELETED(owner))
 		return
 
@@ -184,9 +180,6 @@
 	var/rad_removal_mod = 1
 	var/rads = living_guy.radiation * 0.04
 	if(!rads)
-		return
-	if(living_guy.radiation < 0)
-		living_guy.radiation = 0
 		return
 
 	if(ishuman(living_guy))
@@ -220,8 +213,7 @@
 
 		//If we heal from radiation, we will dissipate (use up) the amount we heal.
 		if(radiation_healing)
-			living_guy.radiation -= rads_to_utilize
-			living_guy.accumulated_rads -= rads_to_utilize
+			living_guy.purge_radiation(rads_to_utilize)
 			rads_to_utilize = CLAMP(rads_to_utilize, 1, 10) //Only heal up to 10 rads.
 			living_guy.mend(TREAT_TISSUE_REPAIR, rads_to_utilize)
 			living_guy.mend(TREAT_PLATING_REPAIR, rads_to_utilize)
@@ -231,11 +223,8 @@
 			living_guy.mend(TREAT_ANTITOXIN, rads_to_utilize)
 
 		else if(radiation_dissipation)
-			living_guy.radiation -= rads_to_utilize
-			living_guy.accumulated_rads -= rads_to_utilize
+			living_guy.purge_radiation(rads_to_utilize)
 
-		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
-		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
 	if(custom_damage)
@@ -248,8 +237,6 @@
 
 		living_guy.injure(injury_kind, rads_to_utilize * damage_multiplier, flags = INJURE_SILENT)
 
-		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
-		living_guy.accumulated_rads = CLAMP(living_guy.accumulated_rads, 0, RADIATION_CAP)
 		return COMPONENT_BLOCK_LIVING_RADIATION
 
 /datum/trait_state/radiation_effects/proc/on_irradiate_effect(mob/living/living_guy, datum/om/event/before/living_irradiate_effect/event)
@@ -275,8 +262,7 @@
 		//This stops MOST of the radiation we're offputting from hitting us.
 		//If we linger in one place for a prolonged period, the area around us will become irradiated and give us a small bit of radiation back. (only got ~1 rad per tick when we were offputting 60 rads for example)
 		//However, we'll lose our rads faster than we accumulate.
-		living_guy.radiation += max((radiation_to_apply * rad_protection), 0)
-		living_guy.radiation = CLAMP(living_guy.radiation, 0, RADIATION_CAP)
+		living_guy.add_radiation(radiation_to_apply * rad_protection)
 		return COMPONENT_BLOCK_IRRADIATION
 
 ///TGUI below here

@@ -462,7 +462,7 @@
 			if(demand?[tag])
 				L.mend(tag, tags[tag])
 		if(rad_heal)
-			L.radiation = max(0, L.radiation - rad_heal)
+			L.purge_radiation(rad_heal)
 
 		if(ishuman(L) && bone_heal)
 			var/mob/living/carbon/human/H = L

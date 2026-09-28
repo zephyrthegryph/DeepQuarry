@@ -119,7 +119,7 @@
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
 			target.mend(TREAT_ANTITOXIN, 2.5)
-			target.radiation = max(target.radiation - 150, 0) //same as 5 units of arithrazine, sans the brute damage
+			target.purge_radiation(150) //same as 5 units of arithrazine, sans the brute damage
 	else
 		return 1
 

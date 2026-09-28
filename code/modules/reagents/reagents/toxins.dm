@@ -1097,7 +1097,7 @@
 
 /datum/reagent/irradiated_nanites/affect_blood(mob/living/carbon/M, alien, removed)
 	//GLOB.radiation_service.radiate(get_turf(M), 20)	// Irradiate people around you. //TODO
-	M.radiation = max(M.radiation + 5 * removed, 0)	// Irradiate you. Because it's inside you.
+	M.add_radiation(5 * removed)	// Irradiate you. Because it's inside you.
 
 /datum/reagent/neurophage_nanites
 	name = REAGENT_NEUROPHAGENANITES

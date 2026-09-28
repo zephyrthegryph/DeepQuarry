@@ -250,13 +250,33 @@
 /// B14 / P2-S12: the one writer that takes radiation OUT of a mob — acute
 /// dose and accumulated dose together (anti-radiation treatment, restoration).
 /// Returns the acute dose removed.
-/mob/living/proc/purge_radiation(amount)
+/mob/proc/purge_radiation(amount)
 	if(amount <= 0 || (!radiation && !accumulated_rads))
 		return 0
 	var/before = radiation
 	radiation = max(radiation - amount, 0)
 	accumulated_rads = max(accumulated_rads - amount, 0)
 	return before - radiation
+
+/// P2-S12: the one writer that puts acute radiation INTO a mob. Callers apply
+/// their own protection first. Clamped to RADIATION_CAP. Returns the dose added.
+/mob/proc/add_radiation(amount)
+	if(amount <= 0)
+		return 0
+	var/before = radiation
+	radiation = min(radiation + amount, RADIATION_CAP)
+	return radiation - before
+
+/// P2-S12: natural decay owned by the radiation model: acute dose falls by
+/// `amount` and `to_accumulated` of it settles into the long-term dose.
+/mob/proc/decay_radiation(amount, to_accumulated = 0)
+	radiation = max(radiation - amount, 0)
+	accumulated_rads = clamp(accumulated_rads + to_accumulated, 0, RADIATION_CAP)
+
+/// P2-S12: clear all radiation (restoration, rejuvenate, changeling panacea).
+/mob/proc/clear_radiation()
+	radiation = 0
+	accumulated_rads = 0
 
 /// Clear every affliction and restore the body plan's parts. Admin heal,
 /// rejuvenate, resleeve.
