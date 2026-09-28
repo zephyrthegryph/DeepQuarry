@@ -52,7 +52,7 @@
 	var/obj/item/computer_hardware/battery_module/battery_module				// An internal power source for this computer. Can be recharged.
 	var/obj/item/computer_hardware/card_slot/card_slot						// ID Card slot component of this computer. Mostly for HoP modification console that needs ID slot for modification.
 	var/obj/item/computer_hardware/nano_printer/nano_printer					// Nano Printer component of this computer, for your everyday paperwork needs.
-	var/tmp/portable_drive_handle	// Portable data storage
+	var/obj/item/computer_hardware/hard_drive/portable/portable_drive	// Portable data storage
 	var/tmp/ai_slot_handle	// AI slot, an intellicard housing that allows modifications of AIs.
 	var/obj/item/computer_hardware/tesla_link/tesla_link						// Tesla Link, Allows remote charging from nearest APC.
 
@@ -69,10 +69,6 @@ REF_OWNED(/obj/item/modular_computer, list("processor_unit", "network_card", "ha
 /// LC-refs: A currently active program running on the computer. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/active_program() as /datum/computer_file/program
 	return om_resolve(active_program_handle)
-
-/// LC-refs: Portable data storage -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/modular_computer/proc/portable_drive() as /obj/item/computer_hardware/hard_drive/portable
-	return om_resolve(portable_drive_handle)
 
 /// LC-refs: AI slot, an intellicard housing that allows modifications of AIs. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/ai_slot()

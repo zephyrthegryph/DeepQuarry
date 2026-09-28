@@ -5,7 +5,7 @@
 	verbs.Cut()
 
 /obj/item/modular_computer/proc/pred_computer_has_drive(mob/actor, atom/target, obj/item/held)
-	return !!portable_drive()
+	return !!portable_drive
 
 /obj/item/modular_computer/proc/pred_computer_has_card_slot(mob/actor, atom/target, obj/item/held)
 	return !!card_slot
@@ -76,11 +76,11 @@
 	if(!user)
 		user = usr
 
-	if(!portable_drive())
+	if(!portable_drive)
 		to_chat(user, "There is no portable device connected to \the [src].")
 		return
 
-	uninstall_component(user, portable_drive())
+	uninstall_component(user, portable_drive)
 	update_uis()
 
 /// Old attack_ghost: view the screen; staff may turn a powered-off computer on. Never fell through.

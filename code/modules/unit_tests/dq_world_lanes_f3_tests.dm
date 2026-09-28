@@ -125,6 +125,9 @@
 	TEST_ASSERT(TT.periodic_pipe == PERIODIC_THROWING, "a throw is not on the throwing lane")
 	var/steps = 0
 	while(!QDELETED(TT) && steps++ < 100)
+		// world.time is frozen inside a test; a throw's pace is measured from its start_time,
+		// so age the throw by one server tick per step as the lane would.
+		TT.start_time -= world.tick_lag
 		if(TT.periodic_step(1) == PROCESS_KILL)
 			break
 	TEST_ASSERT(QDELETED(TT), "the throw never landed")

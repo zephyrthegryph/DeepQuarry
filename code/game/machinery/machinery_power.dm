@@ -108,7 +108,7 @@
 // 99% of machines are always on a turf anyway, very few need recursive move handling.
 /obj/machinery/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	update_power_on_move(src, old_loc, loc)
+	power_area_moved(old_loc, loc)
 
 	// only add this if we move into a non-turf (not null) and we've never been given recursive move handling
 	if(!recursive_set && loc && !isturf(loc))
@@ -118,8 +118,9 @@
 
 /obj/machinery/proc/update_power_on_move(atom/movable/mover, datum/om/event/movable_attempted_move/event)
 	EVENT_HANDLER
-	var/atom/old_loc = event.old_loc
-	var/atom/new_loc = event.new_loc
+	power_area_moved(event.old_loc, event.new_loc)
+
+/obj/machinery/proc/power_area_moved(atom/old_loc, atom/new_loc)
 	var/area/old_area = get_area(old_loc)
 	var/area/new_area = get_area(new_loc)
 	if(old_area != new_area)

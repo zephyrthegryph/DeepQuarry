@@ -207,7 +207,7 @@
 	var/list/data = get_header_data()
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive()
+	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive
 	data["error"] = null
 	if(error)
 		data["error"] = error
