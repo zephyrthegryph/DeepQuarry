@@ -117,6 +117,17 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/proc/use(mob/user, atom/target, list/modifiers, params)
 	return
 
+/// What this kind of actor's Use does when no interaction answers.
+/datum/input_adapter/proc/use_default(mob/user, atom/target)
+	return FALSE
+
+/// Use `target` as this kind of actor, for code that makes an actor use something directly
+/// (an AI hotkey, a pAI reaching through a cable): its interactions, then its default.
+/datum/input_adapter/proc/interface(mob/user, atom/target)
+	if(use_interaction(user, target))
+		return TRUE
+	return use_default(user, target)
+
 /**
  * One Use run as a Disarm or Grab (use_attack_variant() has set the variant).
  * Only actors with hands have the variants; others do nothing.
@@ -302,7 +313,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 	if(use_interaction(user, target))
 		return TRUE
-	target.attack_tk(user)
+	use_default(user, target)
+
+/datum/input_adapter/telekinesis/use_default(mob/user, atom/target)
+	return target.attack_tk(user)
 
 // ---------------------------------------------------------------------------
 // Ghosts: observer-only.
@@ -320,7 +334,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/ghost/use(mob/user, atom/target, list/modifiers, params)
 	if(use_interaction(user, target))
 		return TRUE
-	target.attack_ghost(user)
+	use_default(user, target)
+
+/datum/input_adapter/ghost/use_default(mob/user, atom/target)
+	return target.attack_ghost(user)
 
 // ---------------------------------------------------------------------------
 // AI: remote, no hands, acts through the camera network.
@@ -380,14 +397,19 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	target.add_hiddenprint(user)
 	if(use_interaction(user, target))
 		return TRUE
-	// attack_ai: the type's override, or the hand's Use per its silicon_use.
-	target.attack_ai(user)
+	use_default(user, target)
+
+/datum/input_adapter/ai/use_default(mob/user, atom/target)
+	return target.attack_ai(user)
 
 // ---------------------------------------------------------------------------
 // Cyborgs: AI-style remote interfacing with an empty gripper, reach-limited items.
 
 /datum/input_adapter/robot
 	name = "robot"
+
+/datum/input_adapter/robot/use_default(mob/user, atom/target)
+	return target.attack_robot(user)
 
 /// Cyborgs get everything but observer-only interactions, silicon-only ones included.
 /datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
@@ -432,8 +454,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		A.add_hiddenprint(user)
 		if(use_interaction(user, A))
 			return TRUE
-		// attack_robot: the type's override, or silicon_use (the hand's Use, or interfacing like the AI).
-		A.attack_robot(user)
+		use_default(user, A)
 		return
 	// buckled cannot prevent machine interlinking but stops arm movement
 	if(user?.buckled_to())
