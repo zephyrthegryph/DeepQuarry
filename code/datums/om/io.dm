@@ -269,7 +269,7 @@
 /// Puts the I/O lane on the wheel (next pass) if it isn't already.
 /proc/om_io_wake(datum/om/scheduler/sched)
 	var/datum/om/global_owner/G = sched.global_owner || om_global_owner()
-	var/datum/om/behaviour/B = om_registry().io_behaviour
+	var/datum/om/behaviour/B = om_registry().behaviour(/datum/om/behaviour/internal/io)
 	if(!B || om_deadline_pending(G, B))
 		return
 	om_deadline(G, 1, B)

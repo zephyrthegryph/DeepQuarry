@@ -151,14 +151,13 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	var/list/afkmins = adm["afk"]
 	var/list/allmins = adm["total"]
 
-	spawn(0) //Unreliable world.Exports() // S7 keeps: world.Export() is a blocking external call
-		var/query_string = "type=adminhelp"
-		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-		query_string += "&from=[url_encode(key_name(initiator))]"
-		query_string += "&msg=[url_encode(html_decode(name))]"
-		query_string += "&admin_number=[allmins.len]"
-		query_string += "&admin_number_afk=[afkmins.len]"
-		world.Export("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	var/query_string = "type=adminhelp"
+	query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
+	query_string += "&from=[url_encode(key_name(initiator))]"
+	query_string += "&msg=[url_encode(html_decode(name))]"
+	query_string += "&admin_number=[allmins.len]"
+	query_string += "&admin_number_afk=[afkmins.len]"
+	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /client/verb/adminspice()
 	set category = "Admin"
