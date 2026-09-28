@@ -19,9 +19,10 @@
 	var/obj/item/stock_parts/scanning_module/scanmod
 	var/dropnoms_active = TRUE
 
+DECLARE_DEFAULT_CHILD(/obj/item/bluespace_harpoon, "scanmod", /obj/item/stock_parts/scanning_module)
+
 /obj/item/bluespace_harpoon/Initialize(mapload)
 	. = ..()
-	scanmod = new(src)
 	update_fail_chance()
 
 /obj/item/bluespace_harpoon/examine(mob/user)

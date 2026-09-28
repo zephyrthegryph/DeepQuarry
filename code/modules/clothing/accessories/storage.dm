@@ -12,9 +12,10 @@
 	var/hide_on_roll = FALSE
 	special_handling = TRUE
 
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/storage, "hold", /obj/item/storage/internal)
+
 /obj/item/clothing/accessory/storage/Initialize(mapload)
 	. = ..()
-	hold = new/obj/item/storage/internal(src)
 	hold.max_storage_space = slots * 2
 	if (!hide_on_roll)
 		on_rolled["down"] = icon_state

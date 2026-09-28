@@ -310,7 +310,7 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(in
 // VOREstation edit: use map default laws
 /obj/item/aiModule/reset/Initialize(mapload)
 	. = ..()
-	laws = new using_map.default_law_type // Pull from loaded map
+	laws = new using_map.default_law_type // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
 
 /obj/item/aiModule/reset/transmitInstructions(mob/living/silicon/ai/target, mob/sender)
 	log_law_changes(target, sender)

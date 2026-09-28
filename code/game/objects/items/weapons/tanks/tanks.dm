@@ -61,12 +61,10 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	apply_blueprint_effects()
 
 	src.init_proxy()
-	src.air_contents = new /datum/gas_mixture()
-	src.air_contents.set_volume(volume) //liters
-	src.air_contents.set_temperature(T20C)
 	update_gauge()
 
 DECLARE_REF(/obj/item/tank, "air_contents", OWNED, null)
+DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 DECLARE_REF(/obj/item/tank, "proxyassembly", OWNED, null)
 
 // a tank in a transfer valve leaves the valve.

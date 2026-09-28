@@ -41,10 +41,11 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine, "cell", /obj/item/cell/high)
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine, "key", "key_type")
+
 /obj/vehicle/train/engine/Initialize(mapload)
 	. = ..()
-	cell = new /obj/item/cell/high(src)
-	key = new key_type(src)
 	var/image/I = new(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", layer = src.layer + 0.2) //over mobs
 	add_overlay(I)
 	update_icon()
@@ -409,9 +410,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	flags = OPENCONTAINER
 	paint_color = "#efdd16"
 
+DECLARE_REAGENTS(/obj/vehicle/train/trolley_tank, CARGOTANKER_VOLUME, null)
+
 /obj/vehicle/train/trolley_tank/Initialize(mapload)
 	. = ..()
-	create_reagents(CARGOTANKER_VOLUME)
 	update_icon()
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/output)

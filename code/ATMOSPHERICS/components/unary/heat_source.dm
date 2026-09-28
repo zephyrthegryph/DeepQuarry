@@ -28,10 +28,11 @@
 	var/reagent_cooling = 0
 	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
+DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
+
 /obj/machinery/atmospherics/unary/heater/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	create_reagents(120)
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/output)
 

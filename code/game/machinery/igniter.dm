@@ -42,9 +42,7 @@
 	if(isturf(location))
 		location.hotspot_expose(1000,500,1)
 
-/obj/machinery/igniter/Initialize(mapload)
-	icon_state = "igniter[on]"
-	. = ..()
+DECLARE_APPEARANCE(/obj/machinery/igniter, "on", list("0" = list(APPEARANCE_ICON_STATE = "igniter0"), "1" = list(APPEARANCE_ICON_STATE = "igniter1")))
 
 /obj/machinery/igniter/power_change()
 	..()

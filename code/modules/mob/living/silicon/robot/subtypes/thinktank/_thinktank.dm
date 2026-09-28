@@ -65,8 +65,6 @@
 
 /mob/living/silicon/robot/platform/Initialize(mapload)
 	. = ..()
-	if(!mmi)
-		mmi = new /obj/item/mmi/digital/robot(src)
 	SetName("inactive [initial(name)]")
 	update_icon()
 	grant_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
@@ -163,3 +161,5 @@
 			if(!recharge_complete && recharging_atom.percent() >= 100)
 				recharge_complete = TRUE
 				visible_message(span_infoplain("[span_bold("\The [src]")] beeps and flashes a green light above \his recharging port."))
+
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot/platform, "mmi", /obj/item/mmi/digital/robot)

@@ -12,9 +12,10 @@
 	var/tmp/cur_viewed_device_handle
 	var/datum/tgui_module/rustcore_monitor/monitor
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /datum/tgui_module/rustcore_monitor)
+
 /obj/machinery/computer/fusion_core_control/Initialize(mapload)
 	. = ..()
-	monitor = new(src)
 	monitor.core_tag = id_tag
 
 DECLARE_REF(/obj/machinery/computer/fusion_core_control, "monitor", OWNED, null)

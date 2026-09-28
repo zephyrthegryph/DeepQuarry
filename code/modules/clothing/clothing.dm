@@ -394,10 +394,7 @@ DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
 	var/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
 	var/special_attack_type = null
 
-/obj/item/clothing/gloves/Initialize(mapload)
-	. = ..()
-	if(special_attack_type && ispath(special_attack_type))
-		special_attack = new special_attack_type
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_attack_type")
 
 /////////////////////////////////////////////////////////////////////
 //Rings

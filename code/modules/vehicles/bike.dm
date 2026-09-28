@@ -26,10 +26,11 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion
 	var/kickstand = 1
 
+DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "cell", /obj/item/cell/high)
+DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "ion", /datum/effect/effect/system/ion_trail_follow)
+
 /obj/vehicle/bike/Initialize(mapload)
 	. = ..()
-	cell = new /obj/item/cell/high(src)
-	ion = new /datum/effect/effect/system/ion_trail_follow()
 	ion.set_up(src)
 	turn_off()
 	icon_state = "[bike_icon]_off"

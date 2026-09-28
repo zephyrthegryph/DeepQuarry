@@ -24,10 +24,11 @@
 
 	var/list/ports = new() // ALLOW(instance_list): atmos area (M1a): omni pipe device ports; listed in memory_lists_audit.md, not edited here
 
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
+
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
 
-	icon_state = "base"
 
 	ports = new()
 	for(var/d in GLOB.cardinal)

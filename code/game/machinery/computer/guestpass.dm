@@ -76,14 +76,8 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 	. = ..()
 	update_icon()
 
-/// Expiry ticking is world registration (L3): start it when the pass is live.
-/obj/item/card/id/guest/on_materialize()
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
-
-/obj/item/card/id/guest/on_dematerialize()
-	om_task_periodic_stop(src)
-	return ..()
+/// Expiry ticking is world registration (L3): it runs while the pass is live.
+DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 
 /obj/item/card/id/guest/periodic_step()
 	if(expired == 0 && world.time >= expiration_time)

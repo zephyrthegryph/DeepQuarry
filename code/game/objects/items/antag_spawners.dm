@@ -8,11 +8,11 @@
 
 /obj/item/antag_spawner/Initialize(mapload)
 	. = ..()
-	sparks = new /datum/effect/effect/system/spark_spread()
 	sparks.set_up(5, 0, src)
 	sparks.attach(loc)
 
 DECLARE_REF(/obj/item/antag_spawner, "sparks", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/antag_spawner, "sparks", /datum/effect/effect/system/spark_spread)
 DECLARE_REF(/obj/item/antag_spawner, "Q", OWNED, null)
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return

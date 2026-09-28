@@ -767,10 +767,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
 
-/obj/item/implanter/sizecontrol/Initialize(mapload)
-	. = ..()
-	src.imp = new /obj/item/implant/sizecontrol( src )
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/sizecontrol, "imp", /obj/item/implant/sizecontrol)
+/obj/item/implanter/sizecontrol
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 //////////////////////////////
 //	Compliance Implant
@@ -787,10 +786,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	with the shape of a star on it, the letters 'KE' in black text on it."
 	special_handling = TRUE
 
-/obj/item/implanter/compliance/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/compliance(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/compliance, "imp", /obj/item/implant/compliance)
+/obj/item/implanter/compliance
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 /// The compliance implant's laws. Re-checked on the answer: the implanter is still carried and still loaded with that implant.
 /datum/om/prompt/text/compliance_laws

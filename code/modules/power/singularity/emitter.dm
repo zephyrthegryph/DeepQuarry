@@ -354,7 +354,6 @@
 
 /obj/machinery/power/emitter/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /obj/machinery/power/emitter
@@ -365,8 +364,6 @@
 /obj/machinery/power/emitter/Initialize(mapload)
 	. = ..()
 	previous_state = state
-	if(state == 2 && anchored)
-		connect_to_network()
 	make_climbable()
 	make_rotatable()
 	emp_protection_flags |= EMP_PROTECT_SELF
@@ -406,7 +403,6 @@
 
 /obj/machinery/power/emitter/antique/pre_mapped/Initialize(mapload)
 	. = ..()
-	connect_to_network()
 	update_icon()
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

@@ -8,9 +8,10 @@
 
 	special_handling = TRUE
 
+DECLARE_DEFAULT_CHILD(/obj/item/assembly/electronic_assembly, "EA", /obj/item/electronic_assembly/device)
+
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
-	EA = new(src)
 	EA.holder_handle = om_handle(src)
 
 DECLARE_REF(/obj/item/assembly/electronic_assembly, "EA", OWNED, null)

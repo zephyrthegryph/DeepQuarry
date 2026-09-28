@@ -9,9 +9,10 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	maintenance_wrench_time = 2 SECONDS
 
+DECLARE_REAGENTS(/obj/machinery/pump_relay, 200, null)
+
 /obj/machinery/pump_relay/Initialize(mapload)
 	. = ..()
-	create_reagents(200)
 	default_apply_parts()
 
 	add_hose_connector(/datum/hose_connector/input)

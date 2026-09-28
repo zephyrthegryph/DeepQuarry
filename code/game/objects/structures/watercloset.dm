@@ -37,9 +37,6 @@
 	update_icon()
 	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
-	if(ispath(bin))
-		bin = new bin(src)
-
 	if(teleplumb_crystal)
 		teleplumb_crystal = new /obj/item/bluespace_crystal(src)
 		teleplumb_dest_ref = om_handle(locate(/obj/effect/landmark/teleplumb_exit))
@@ -504,9 +501,9 @@
 
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
-	create_reagents(reaction_volume)
-	reagents.add_reagent(reagent_id, reaction_volume)
 	soundloop = new(list(src), FALSE)
+
+DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
 DECLARE_REF(/obj/machinery/shower, "soundloop", OWNED, null)
 DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
@@ -1353,6 +1350,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 DECLARE_REF(/obj/structure/toilet, "teleplumb_crystal", HELD, null)
 
 DECLARE_REF(/obj/structure/toilet, "bin", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 
 /// LC-refs: muffinmonster -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound

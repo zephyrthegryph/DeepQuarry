@@ -64,9 +64,9 @@
 			experiment_events = destructive_events, \
 		)
 	if(ore_storage)
-		ore_bag = new(null) //We don't need it inside, just need a reference to it.
+		ore_bag = new(null) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
 	. = ..()
-	med_analyzer = new /obj/item/healthanalyzer
+	med_analyzer = new /obj/item/healthanalyzer // ALLOW(decl): kept in nullspace, not in contents
 
 DECLARE_REF(/obj/item/dogborg/sleeper, "ore_bag", OWNED, null)
 DECLARE_REF(/obj/item/dogborg/sleeper, "med_analyzer", OWNED, null)

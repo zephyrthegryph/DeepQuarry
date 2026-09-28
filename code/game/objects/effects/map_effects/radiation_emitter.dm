@@ -33,9 +33,7 @@
 	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
-/obj/effect/map_effect/radiation_emitter/Initialize(mapload)
-	om_task_periodic(src, PERIODIC_SLOW)
-	return ..()
+DECLARE_PERIODIC(/obj/effect/map_effect/radiation_emitter, PERIODIC_SLOW)
 
 /obj/effect/map_effect/radiation_emitter/strong
 	range = 7

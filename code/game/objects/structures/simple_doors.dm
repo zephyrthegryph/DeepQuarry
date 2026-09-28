@@ -263,7 +263,8 @@
 
 /obj/structure/simple_door/uranium/Initialize(mapload,material_name)
 	. = ..(mapload, material_name || MAT_URANIUM)
-	om_task_periodic(src, PERIODIC_SLOW)
+
+DECLARE_PERIODIC(/obj/structure/simple_door/uranium, PERIODIC_SLOW)
 
 // Use the uranium-specific rate-limited pulse instead of the base generic material radiation.
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.

@@ -109,9 +109,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 			span_notice("You hear metal clanking."))
 	consume(I, user)
 
-/obj/structure/bed/bath/Initialize(mapload)
-	create_reagents(300)
-	. = ..()
+DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 
 //oven
 
@@ -205,10 +203,6 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	if(!GM.internal)
 		GM.body?.add_restriction(src, BF_AIRWAY, 0, 5 SECONDS) // a faceful of water
 
-/obj/structure/toilet/wooden/Initialize(mapload)
-	open = 1 //just to make sure it works
-	icon_state = "toilet3"
-	. = ..()
 
 /obj/structure/toilet/wooden/update_icon()
 	return

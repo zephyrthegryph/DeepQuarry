@@ -26,7 +26,7 @@
 /obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
-		cell = new cell_type
+		cell = new cell_type // ALLOW(decl): made in nullspace, not in src
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))

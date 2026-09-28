@@ -65,7 +65,6 @@
 
 /mob/living/simple_mob/animal/sif/frostfly/Initialize(mapload)
 	. = ..()
-	smoke_special = new
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
@@ -124,3 +123,5 @@ DECLARE_REF(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", OWNED, 
 
 /datum/decl/mob_organ_names/frostfly
 	hit_zones = list("head", "thorax", "abdomen", "left vestigal wing", "right vestigal wing", "left legs", "right legs")
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", /datum/effect/effect/system/smoke_spread/frost)

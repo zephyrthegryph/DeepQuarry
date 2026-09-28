@@ -52,15 +52,12 @@
 		else
 			return "vanilla"
 
+DECLARE_REAGENTS(/obj/machinery/icecream_vat, 100, list(REAGENT_ID_MILK = 5, REAGENT_ID_FLOUR = 5, REAGENT_ID_SUGAR = 5, REAGENT_ID_ICE = 5))
+
 /obj/machinery/icecream_vat/Initialize(mapload)
 	. = ..()
-	create_reagents(100)
 	while(length(product_types) < 6)
 		LAZYADD(product_types, 5)
-	reagents.add_reagent(REAGENT_ID_MILK, 5)
-	reagents.add_reagent(REAGENT_ID_FLOUR, 5)
-	reagents.add_reagent(REAGENT_ID_SUGAR, 5)
-	reagents.add_reagent(REAGENT_ID_ICE, 5)
 
 EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_open_ui)), \
@@ -187,10 +184,7 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 	var/ice_creamed = 0
 	var/cone_type
 
-/obj/item/reagent_containers/food/snacks/icecream/Initialize(mapload)
-	. = ..()
-	create_reagents(20)
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/icecream, 20, list(REAGENT_ID_NUTRIMENT = 5))
 
 /obj/item/reagent_containers/food/snacks/icecream/proc/add_ice_cream(flavour_name)
 	name = "[flavour_name] icecream"

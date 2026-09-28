@@ -75,9 +75,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a tracking implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/tracking/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/tracking(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/tracking, "imp", /obj/item/implant/tracking)
 
 
 /obj/item/implantcase/explosive
@@ -85,9 +83,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing an explosive implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/explosive/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/explosive(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/explosive, "imp", /obj/item/implant/explosive)
 
 
 /obj/item/implantcase/chem
@@ -95,9 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a chemical implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/chem/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/chem(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/chem, "imp", /obj/item/implant/chem)
 
 
 /obj/item/implantcase/loyalty
@@ -105,9 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a loyalty implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/loyalty/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/loyalty(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/loyalty, "imp", /obj/item/implant/loyalty)
 
 
 /obj/item/implantcase/death_alarm
@@ -115,9 +107,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a death alarm implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/death_alarm/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/death_alarm(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/death_alarm, "imp", /obj/item/implant/death_alarm)
 
 
 /obj/item/implantcase/freedom
@@ -125,9 +115,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a freedom implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/freedom/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/freedom(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/freedom, "imp", /obj/item/implant/freedom)
 
 
 /obj/item/implantcase/adrenalin
@@ -135,9 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing an adrenalin implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/adrenalin/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/adrenalin(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/adrenalin, "imp", /obj/item/implant/adrenalin)
 
 
 /obj/item/implantcase/dexplosive
@@ -145,9 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing an explosive."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/dexplosive/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/dexplosive(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/dexplosive, "imp", /obj/item/implant/dexplosive)
 
 
 /obj/item/implantcase/health
@@ -155,153 +139,119 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a health tracking implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/health/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/health(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/health, "imp", /obj/item/implant/health)
 
 /obj/item/implantcase/language
 	name = "glass case - 'GalCom'"
 	desc = "A case containing a GalCom language implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/language/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/language(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/language, "imp", /obj/item/implant/language)
 
 /obj/item/implantcase/language/eal
 	name = "glass case - 'EAL'"
 	desc = "A case containing an Encoded Audio Language implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/language/eal/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/language/eal(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/language/eal, "imp", /obj/item/implant/language/eal)
 
 /obj/item/implantcase/shades
 	name = "glass case - 'Integrated Shades'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/shades/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/shades, "imp", /obj/item/implant/organ)
 
 /obj/item/implantcase/taser
 	name = "glass case - 'Taser'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/taser/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/taser, "imp", /obj/item/implant/organ/limbaugment)
 
 /obj/item/implantcase/laser
 	name = "glass case - 'Laser'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/laser/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/laser(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/laser, "imp", /obj/item/implant/organ/limbaugment/laser)
 
 /obj/item/implantcase/dart
 	name = "glass case - 'Dart'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/dart/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/dart(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/dart, "imp", /obj/item/implant/organ/limbaugment/dart)
 
 /obj/item/implantcase/toolkit
 	name = "glass case - 'Toolkit'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/toolkit/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/upperarm(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/toolkit, "imp", /obj/item/implant/organ/limbaugment/upperarm)
 
 /obj/item/implantcase/medkit
 	name = "glass case - 'Toolkit'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/medkit/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/upperarm/medkit(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/medkit, "imp", /obj/item/implant/organ/limbaugment/upperarm/medkit)
 
 /obj/item/implantcase/surge
 	name = "glass case - 'Muscle Overclocker'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/surge/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/upperarm/surge(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/surge, "imp", /obj/item/implant/organ/limbaugment/upperarm/surge)
 
 /obj/item/implantcase/analyzer
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/analyzer/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/wrist(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/analyzer, "imp", /obj/item/implant/organ/limbaugment/wrist)
 
 /obj/item/implantcase/sword
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/sword/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/wrist/sword(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/sword, "imp", /obj/item/implant/organ/limbaugment/wrist/sword)
 
 /obj/item/implantcase/sprinter
 	name = "glass case - 'Sprinter'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/sprinter/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/pelvic/sprint(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/sprinter, "imp", /obj/item/implant/organ/pelvic/sprint)
 
 /obj/item/implantcase/med_scanner
 	name = "glass case - 'Scanner'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/med_scanner/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/pelvic/scanner(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/med_scanner, "imp", /obj/item/implant/organ/pelvic/scanner)
 
 /obj/item/implantcase/armblade
 	name = "glass case - 'Armblade'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/armblade/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/upperarm/blade(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/armblade, "imp", /obj/item/implant/organ/limbaugment/upperarm/blade)
 
 /obj/item/implantcase/handblade
 	name = "glass case - 'Handblade'"
 	desc = "A case containing a nanite fabricator implant."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/handblade/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/organ/limbaugment/wrist/blade(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/handblade, "imp", /obj/item/implant/organ/limbaugment/wrist/blade)
 
 /obj/item/implantcase/restrainingbolt
 	name = "glass case - 'Restraining Bolt'"
 	desc = "A case containing a restraining bolt."
 	icon_state = "implantcase-b"
 
-/obj/item/implantcase/restrainingbolt/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/restrainingbolt(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/restrainingbolt, "imp", /obj/item/implant/restrainingbolt)
 
 
 /obj/item/implantcase/vrlanguage
@@ -309,9 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 	desc = "A case containing a language implant."
 	icon_state = "implantcase-r"
 
-/obj/item/implantcase/vrlanguage/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/vrlanguage(src)
+DECLARE_DEFAULT_CHILD(/obj/item/implantcase/vrlanguage, "imp", /obj/item/implant/vrlanguage)
 
 /obj/item/implantcase/proc/inject_from(obj/item/reagent_containers/syringe/I, mob/user)
 	I.reagents.trans_to_obj(imp, 5)

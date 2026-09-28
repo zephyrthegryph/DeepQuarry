@@ -16,10 +16,7 @@
 
 /obj/item/reagent_containers/food/snacks/variable/Initialize(mapload)
 	. = ..()
-	if (reagents)
-		reagents.maximum_volume = size*8 + 10
-	else
-		create_reagents(size*8 + 10)
+	reagents.maximum_volume = size*8 + 10 // the holder is declared on reagent_containers
 
 /obj/item/reagent_containers/food/snacks/variable/update_icon()
 	if (reagents && reagents.total_volume)

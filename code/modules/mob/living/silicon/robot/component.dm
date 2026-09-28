@@ -409,7 +409,7 @@ DECLARE_REF(/datum/carried_afflictions, "holder", BACK, "carried_afflictions")
 									"radio_broken")
 
 /obj/item/broken_device/random/Initialize(mapload)
-	icon_state = pick(possible_icons)
+	icon_state = pick(possible_icons) // ALLOW(decl): random pick
 	. = ..()
 
 /obj/item/robot_parts/robot_component

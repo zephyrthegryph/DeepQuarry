@@ -29,15 +29,13 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return INTERACTION_HANDLED_PASS
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers, 5000, null)
+
 /obj/structure/reagent_dispensers/Initialize(mapload)
-	var/datum/reagents/R = new/datum/reagents(5000)
-	reagents = R
-	R.my_atom = src
+	. = ..()
 	if(has_sockets)
 		add_hose_connector(/datum/hose_connector/input)
 		add_hose_connector(/datum/hose_connector/output)
-
-	. = ..()
 
 /obj/structure/reagent_dispensers/examine(mob/user)
 	. = ..()
@@ -86,9 +84,10 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	icon_state = "water"
 	amount_per_transfer_from_this = 10
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/watertank, null, list(REAGENT_ID_WATER = 1000))
+
 /obj/structure/reagent_dispensers/watertank/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 1000)
 	make_climbable()
 
 /obj/structure/reagent_dispensers/watertank/high
@@ -96,9 +95,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	desc = "A highly-pressurized water tank made to hold vast amounts of water.."
 	icon_state = "water_high"
 
-/obj/structure/reagent_dispensers/watertank/high/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 4000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/watertank/high, null, list(REAGENT_ID_WATER = 4000))
 
 /obj/structure/reagent_dispensers/watertank/barrel
 	name = "water barrel"
@@ -114,9 +111,10 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	var/modded = 0
 	var/obj/item/assembly_holder/rig = null
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/fueltank, null, list(REAGENT_ID_FUEL = 1000))
+
 /obj/structure/reagent_dispensers/fueltank/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_FUEL,1000)
 	make_climbable()
 
 /obj/structure/reagent_dispensers/fueltank/high
@@ -124,9 +122,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	desc = "A highly-pressurized fuel tank made to hold vast amounts of fuel."
 	icon_state = "fuel_high"
 
-/obj/structure/reagent_dispensers/fueltank/high/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_FUEL,4000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/fueltank/high, null, list(REAGENT_ID_FUEL = 4000))
 
 //Foam
 /obj/structure/reagent_dispensers/foam
@@ -135,9 +131,10 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	icon_state = "foam"
 	amount_per_transfer_from_this = 10
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/foam, null, list(REAGENT_ID_FIREFOAM = 1000))
+
 /obj/structure/reagent_dispensers/foam/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_FIREFOAM,1000)
 	make_climbable()
 
 //Helium3
@@ -147,9 +144,10 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	icon_state = "he3"
 	amount_per_transfer_from_this = 10
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/he3, null, list(REAGENT_ID_HELIUM3 = 1000))
+
 /obj/structure/reagent_dispensers/he3/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_HELIUM3,1000)
 	make_climbable()
 
 /*
@@ -304,9 +302,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	amount_per_transfer_from_this = 45
 	flags = WALL_ITEM
 
-/obj/structure/reagent_dispensers/peppertank/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN,1000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/peppertank, null, list(REAGENT_ID_CONDENSEDCAPSAICIN = 1000))
 
 /obj/structure/reagent_dispensers/virusfood
 	name = "Virus Food Dispenser"
@@ -317,9 +313,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/virusfood/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_VIRUSFOOD, 1000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/virusfood, null, list(REAGENT_ID_VIRUSFOOD = 1000))
 
 /obj/structure/reagent_dispensers/acid
 	name = "Sulphuric Acid Dispenser"
@@ -330,9 +324,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	density = FALSE
 	amount_per_transfer_from_this = 10
 
-/obj/structure/reagent_dispensers/acid/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SACID, 1000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/acid, null, list(REAGENT_ID_SACID = 1000))
 
 /obj/structure/reagent_dispensers/water_cooler
 	name = "Water-Cooler"
@@ -490,9 +482,10 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 	icon_state = "beertankTEMP"
 	amount_per_transfer_from_this = 10
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/beerkeg, null, list(REAGENT_ID_BEER = 1000))
+
 /obj/structure/reagent_dispensers/beerkeg/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_BEER,1000)
 	make_climbable()
 
 /obj/structure/reagent_dispensers/beerkeg/wood
@@ -505,9 +498,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 	desc = "A wine casket with a tap on it."
 	icon_state = "beertankfantasy"
 
-/obj/structure/reagent_dispensers/beerkeg/wine/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_REDWINE,1000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/beerkeg/wine, null, list(REAGENT_ID_REDWINE = 1000))
 
 /obj/structure/reagent_dispensers/beerkeg/fakenuke
 	name = "nuclear beer keg"
@@ -523,9 +514,10 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 	icon_state = "oiltank"
 	amount_per_transfer_from_this = 120
 
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/cookingoil, null, list(REAGENT_ID_COOKINGOIL = 5000))
+
 /obj/structure/reagent_dispensers/cookingoil/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_COOKINGOIL,5000)
 	make_climbable()
 
 /obj/structure/reagent_dispensers/cookingoil/bullet_act(obj/item/projectile/Proj)
@@ -561,8 +553,6 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 	amount_per_transfer_from_this = 60
 	anchored = 1
 
-/obj/structure/reagent_dispensers/space_cleaner/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CLEANER, 1000)
+DECLARE_REAGENTS(/obj/structure/reagent_dispensers/space_cleaner, null, list(REAGENT_ID_CLEANER = 1000))
 
 DECLARE_REF(/obj/structure/reagent_dispensers/fueltank, "rig", HELD, null)

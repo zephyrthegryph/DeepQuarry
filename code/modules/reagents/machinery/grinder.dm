@@ -18,9 +18,10 @@
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_grind = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_grind")
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent_containers/glass/beaker/large)
+
 /obj/machinery/reagentgrinder/Initialize(mapload)
 	. = ..()
-	beaker = new /obj/item/reagent_containers/glass/beaker/large(src)
 	default_apply_parts()
 
 /obj/machinery/reagentgrinder/examine(mob/user)

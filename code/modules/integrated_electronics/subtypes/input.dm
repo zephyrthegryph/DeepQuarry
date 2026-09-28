@@ -522,9 +522,10 @@
 		return can_telecomm(src,node)
 	return 0
 
+DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/EPv2, "exonet", /datum/exonet_protocol)
+
 /obj/item/integrated_circuit/input/EPv2/Initialize(mapload)
 	. = ..()
-	exonet = new(src)
 	exonet.make_address("EPv2_circuit-\ref[src]")
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
 	node = get_exonet_node()
@@ -611,9 +612,7 @@ DECLARE_REF(/obj/item/integrated_circuit/input/EPv2, "exonet", OWNED, null)
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 15
 
-/obj/item/integrated_circuit/input/microphone/Initialize(mapload)
-	. = ..()
-	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+DECLARE_REGISTRY(/obj/item/integrated_circuit/input/microphone, REGISTRY_LISTENING_OBJECTS)
 
 /obj/item/integrated_circuit/input/microphone/hear_talk(mob/M, list/message_pieces, verb)
 	var/msg = multilingual_to_message(message_pieces, requires_machine_understands = TRUE)

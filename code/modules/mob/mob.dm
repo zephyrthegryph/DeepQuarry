@@ -13,7 +13,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/on_materialize()
 	. = ..()
-	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
+	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src) // ALLOW(decl): registry picked by stat
 
 
 /mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
@@ -32,7 +32,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		spellremove(src)
 	if(!istype(src,/mob/observer))
 		ghostize(FALSE)
-	QDEL_NULL(soulgem) //Soulcatcher
 	for(var/key in alerts) //clear out alerts
 		clear_alert(key)
 	if(src?.pulling_target())

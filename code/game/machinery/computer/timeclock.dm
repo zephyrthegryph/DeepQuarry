@@ -22,9 +22,7 @@
 	var/obj/item/card/id/card // Inserted Id card
 	var/obj/item/radio/intercom/announce	// Integreated announcer
 
-/obj/machinery/computer/timeclock/Initialize(mapload)
-	. = ..()
-	announce = new /obj/item/radio/intercom(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/radio/intercom)
 
 DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 

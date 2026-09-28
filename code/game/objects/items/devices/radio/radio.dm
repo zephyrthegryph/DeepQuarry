@@ -56,7 +56,6 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
-	secure_radio_connections = new
 	if(frequency < RADIO_LOW_FREQ || frequency > RADIO_HIGH_FREQ)
 		frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 
@@ -77,8 +76,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
-	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT) // ALLOW(decl): per-channel service call with extra arguments
 
 /obj/item/radio/on_dematerialize()
 	if(GLOB.radio_service)
@@ -869,6 +867,8 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
 
 DECLARE_REF(/obj/item/radio, "secure_radio_connections", OWNED_LIST, null)
+DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
+DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
 DECLARE_REF(/obj/item/radio/borg, "keyslot", HELD, null)
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.

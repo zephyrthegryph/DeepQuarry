@@ -14,9 +14,7 @@
 	var/slime_type
 	flags = OPENCONTAINER
 
-/obj/item/slime_extract/Initialize(mapload)
-	. = ..()
-	create_reagents(60)
+DECLARE_REAGENTS(/obj/item/slime_extract, 60, null)
 
 DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

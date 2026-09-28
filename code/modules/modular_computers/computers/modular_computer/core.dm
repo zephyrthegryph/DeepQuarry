@@ -67,10 +67,11 @@
 /obj/item/modular_computer/proc/install_default_programs()
 	return 1
 
+DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
+
 /obj/item/modular_computer/Initialize(mapload)
 	if(!overlay_icon)
 		overlay_icon = icon
-	om_task_periodic(src, PERIODIC_SLOW)
 	install_default_hardware()
 	if(hard_drive)
 		install_default_programs()

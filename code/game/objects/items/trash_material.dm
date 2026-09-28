@@ -29,7 +29,7 @@
 
 /obj/item/trash/material/metal/Initialize(mapload)
 	. = ..()
-	icon_state = "metal[rand(4)]"
+	icon_state = "metal[rand(4)]" // ALLOW(decl): random pick
 
 
 /obj/item/trash/material/circuit
@@ -48,7 +48,7 @@
 
 /obj/item/trash/material/circuit/Initialize(mapload)
 	. = ..()
-	icon_state = "circuit[rand(3)]"
+	icon_state = "circuit[rand(3)]" // ALLOW(decl): random pick
 
 
 /obj/item/trash/material/device
@@ -67,4 +67,4 @@
 
 /obj/item/trash/material/device/Initialize(mapload)
 	. = ..()
-	icon_state = "device[rand(3)]"
+	icon_state = "device[rand(3)]" // ALLOW(decl): random pick

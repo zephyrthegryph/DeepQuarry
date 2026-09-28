@@ -31,7 +31,7 @@
 	. = ..()
 	starting_scanner = starting_scanner || default_scanning_module
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
-		scanner = new starting_scanner(src)
+		scanner = new starting_scanner(src) // ALLOW(decl): scanner from an Initialize argument
 	else if(istype(starting_scanner))
 		starting_scanner.forceMove(src)
 		scanner = starting_scanner

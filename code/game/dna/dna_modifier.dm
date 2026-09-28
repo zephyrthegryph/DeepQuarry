@@ -357,6 +357,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		to_chat(user, "\The [src] will not accept a disk without a DNA modifier connected.")
 	return TRUE
 
+DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_REF(injector_cooldown_finish))
+
 /obj/machinery/computer/scan_consolenew/Initialize(mapload)
 	. = ..()
 	for(var/i=0;i<3;i++)
@@ -372,7 +374,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		connected_handle = om_handle(locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
 		if(connected())
 			break
-	om_after(src, 25 SECONDS, PROC_REF(injector_cooldown_finish))
 
 /obj/machinery/computer/scan_consolenew/proc/all_dna_blocks(list/buffer)
 	var/list/arr = list()

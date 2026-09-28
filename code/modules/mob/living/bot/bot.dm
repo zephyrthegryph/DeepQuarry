@@ -47,10 +47,8 @@
 /mob/living/bot/Initialize(mapload)
 	. = ..()
 
-	botcard = new /obj/item/card/id(src)
 	botcard.access = botcard_access.Copy()
 
-	access_scanner = new /obj(src)
 	access_scanner.req_access = req_access.Copy()
 	access_scanner.req_one_access = req_one_access.Copy()
 
@@ -600,6 +598,8 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 DECLARE_REF(/mob/living/bot, "botcard", OWNED, null)
 DECLARE_REF(/mob/living/bot, "access_scanner", OWNED, null)
+DECLARE_DEFAULT_CHILD(/mob/living/bot, "botcard", /obj/item/card/id)
+DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
 DECLARE_REF(/mob/living/bot, "paicard", HELD, null)
 DECLARE_REF(/mob/living/bot, "target", HELD, null)
 DECLARE_REF(/mob/living/bot, "obstacle", STATIC, null)

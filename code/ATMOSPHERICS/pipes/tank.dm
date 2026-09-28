@@ -18,8 +18,9 @@
 	pipe_flags = PIPING_DEFAULT_LAYER_ONLY
 	density = TRUE
 
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "air")))
+
 /obj/machinery/atmospherics/pipe/tank/Initialize(mapload)
-	icon_state = "air"
 	. = ..()
 	make_climbable()
 
@@ -86,11 +87,12 @@
 								GAS_N2,(start_pressure*N2STANDARD)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
 	. = ..()
-	icon_state = "air"
 
 /obj/machinery/atmospherics/pipe/tank/oxygen
 	name = "Pressure Tank (Oxygen)"
 	icon_state = "o2_map"
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/oxygen, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "o2")))
 
 /obj/machinery/atmospherics/pipe/tank/oxygen/Initialize(mapload)
 	air_temporary = new
@@ -100,12 +102,13 @@
 	air_temporary.adjust_gas(GAS_O2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
 	. = ..()
-	icon_state = "o2"
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen
 	name = "Pressure Tank (Nitrogen)"
 	icon_state = "n2_map"
 	volume = 40000
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrogen, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "n2")))
 
 /obj/machinery/atmospherics/pipe/tank/nitrogen/Initialize(mapload)
 	air_temporary = new
@@ -115,11 +118,12 @@
 	air_temporary.adjust_gas(GAS_N2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
 	. = ..()
-	icon_state = "n2"
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide
 	name = "Pressure Tank (Carbon Dioxide)"
 	icon_state = "co2_map"
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/carbon_dioxide, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "co2")))
 
 /obj/machinery/atmospherics/pipe/tank/carbon_dioxide/Initialize(mapload)
 	air_temporary = new
@@ -129,12 +133,13 @@
 	air_temporary.adjust_gas(GAS_CO2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
 	. = ..()
-	icon_state = "co2"
 
 /obj/machinery/atmospherics/pipe/tank/phoron
 	name = "Pressure Tank (Phoron)"
 	icon_state = "phoron_map"
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_FUEL
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/phoron, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "phoron")))
 
 /obj/machinery/atmospherics/pipe/tank/phoron/Initialize(mapload)
 	air_temporary = new
@@ -144,11 +149,12 @@
 	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
 	. = ..()
-	icon_state = "phoron"
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide
 	name = "Pressure Tank (Nitrous Oxide)"
 	icon_state = "n2o_map"
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/nitrous_oxide, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "n2o")))
 
 /obj/machinery/atmospherics/pipe/tank/nitrous_oxide/Initialize(mapload)
 	air_temporary = new
@@ -158,12 +164,13 @@
 	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
 
 	. = ..()
-	icon_state = "n2o"
 
 /obj/machinery/atmospherics/pipe/tank/methane
 	name = "Pressure Tank (Methane)"
 	icon_state = "ch4_map"
 	connect_types = CONNECT_TYPE_REGULAR|CONNECT_TYPE_FUEL
+
+DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank/methane, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "ch4")))
 
 /obj/machinery/atmospherics/pipe/tank/methane/Initialize(mapload)
 	. = ..()
@@ -172,7 +179,6 @@
 	air_temporary.set_temperature(T20C)
 
 	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
-	icon_state = "ch4"
 
 /obj/machinery/atmospherics/pipe/tank/phoron/full
 	start_pressure = 15000

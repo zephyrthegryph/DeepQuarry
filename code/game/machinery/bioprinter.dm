@@ -306,9 +306,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 	icon_state = "bioprinter"
 	circuit = /obj/item/circuitboard/bioprinter
 
-/obj/machinery/organ_printer/flesh/full/Initialize(mapload)
-	. = ..()
-	container = new /obj/item/reagent_containers/glass/bottle/biomass(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj/item/reagent_containers/glass/bottle/biomass)
 
 /obj/machinery/organ_printer/flesh/dismantle()
 	var/turf/T = get_turf(src)

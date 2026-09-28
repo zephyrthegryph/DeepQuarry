@@ -15,10 +15,10 @@
 	else
 		rating_modifier = FALSE
 
+DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic/matfed, "manipulator", "manipulator")
+
 /obj/item/gun/magnetic/matfed/Initialize(mapload)
 	. = ..()
-	if(ispath(manipulator))
-		manipulator = new manipulator(src)
 	if(manipulator)
 		mat_cost = initial(mat_cost) / (2*manipulator.rating)
 	update_rating_mod()

@@ -19,9 +19,7 @@ Deployable items
 	max_integrity = 100
 	var/locked = 0.0
 
-/obj/machinery/deployable/barrier/Initialize(mapload)
-	. = ..()
-	icon_state = "barrier[locked]"
+DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(APPEARANCE_ICON_STATE = "barrier0"), "1" = list(APPEARANCE_ICON_STATE = "barrier1")))
 
 /obj/machinery/deployable/barrier/declare_interactions(list/into)
 	into += list(

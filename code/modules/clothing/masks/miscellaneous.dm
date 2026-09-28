@@ -237,9 +237,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
 	body_parts_covered = 0
 	var/mob/observer/eye/aiEye/eye
 
-/obj/item/clothing/mask/ai/Initialize(mapload)
-	. = ..()
-	eye = new(src)
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/ai, "eye", /mob/observer/eye/aiEye)
 
 /obj/item/clothing/mask/ai/equipped(mob/user, slot)
 	..(user, slot)

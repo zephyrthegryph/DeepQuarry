@@ -15,9 +15,7 @@
 	var/current_tag = null
 	var/datum/tgui_module/rcon/rcon
 
-/obj/machinery/computer/rcon/Initialize(mapload)
-	. = ..()
-	rcon = new(src)
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/rcon, "rcon", /datum/tgui_module/rcon)
 
 DECLARE_REF(/obj/machinery/computer/rcon, "rcon", OWNED, null)
 

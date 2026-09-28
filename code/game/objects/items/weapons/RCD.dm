@@ -29,13 +29,12 @@
 	var/make_rwalls = FALSE // If true, when building walls, they will be reinforced.
 /* Unused
 /obj/item/rcd/Initialize(mapload)
-
-	src.spark_system = new /datum/effect/effect/system/spark_spread
+	. = ..()
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
-	return ..()
 */
 DECLARE_REF(/obj/item/rcd, "spark_system", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/rcd/examine(mob/user)
 	. = ..()
@@ -190,7 +189,7 @@ DECLARE_REF(/obj/item/rcd, "spark_system", OWNED, null)
 
 /obj/item/rcd/electric/Initialize(mapload)
 	if(make_cell)
-		cell = new /obj/item/cell/high(src)
+		cell = new /obj/item/cell/high(src) // ALLOW(decl): only when make_cell
 	return ..()
 
 DECLARE_REF(/obj/item/rcd/electric, "cell", OWNED, null)

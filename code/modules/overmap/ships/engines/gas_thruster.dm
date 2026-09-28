@@ -77,9 +77,10 @@
 /obj/machinery/atmospherics/unary/engine/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	return 0
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /datum/ship_engine/gas_thruster)
+
 /obj/machinery/atmospherics/unary/engine/Initialize(mapload)
 	. = ..()
-	controller = new(src)
 	update_nearby_tiles(need_rebuild=1)
 
 	for(var/obj/effect/overmap/visitable/ship/S as anything in SSshuttles.ships)

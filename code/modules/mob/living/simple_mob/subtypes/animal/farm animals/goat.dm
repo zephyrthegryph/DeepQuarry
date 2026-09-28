@@ -27,7 +27,7 @@
 
 /mob/living/simple_mob/animal/goat/Initialize(mapload)
 	. = ..()
-	udder = new(50)
+	udder = new(50) // ALLOW(decl): holder takes constructor args
 	udder.my_atom = src
 
 /datum/om/stage/life/type_post/simple_mob/animal/goat

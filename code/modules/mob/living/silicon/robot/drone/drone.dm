@@ -123,7 +123,7 @@ DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024,
 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
-		icon_state = shell_types[random]
+		icon_state = shell_types[random] // ALLOW(decl): random pick
 		shell_accessories = list("[icon_state]-eyes-blue")
 
 	update_icon()

@@ -25,9 +25,7 @@
 	var/interval_lower_bound = 5 SECONDS // Lower number for how often the map_effect will trigger.
 	var/interval_upper_bound = 5 SECONDS // Higher number for above.
 
-/obj/effect/map_effect/interval/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/effect/map_effect/interval, PERIODIC_SLOW)
 
 // Override this for the specific thing to do.
 /obj/effect/map_effect/interval/proc/trigger()

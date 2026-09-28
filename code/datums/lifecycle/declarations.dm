@@ -49,6 +49,8 @@
 	var/reagent_volume
 	/// list(id = amount), or null.
 	var/list/reagent_contents
+	/// Reagents named by instance vars: id var name -> amount (number or var name). Read per atom.
+	var/list/reagent_var_contents
 	var/reagent_holder_type
 	/// Set color from the reagents after filling.
 	var/reagent_tint = FALSE
@@ -93,9 +95,17 @@
 	if(tint)
 		reagent_tint = TRUE
 
+/// Adds a reagent whose id (and optionally amount) comes from the atom's own vars at init.
+/datum/lifecycle_decls/proc/set_reagent_var(volume, id_var, amount)
+	set_reagents(volume, null, null, FALSE)
+	var/list/merged = reagent_var_contents ? reagent_var_contents.Copy() : list()
+	merged[id_var] = amount
+	reagent_var_contents = merged
+
 /datum/lifecycle_decls/proc/clear_reagents()
 	reagent_volume = null
 	reagent_contents = null
+	reagent_var_contents = null
 	reagent_holder_type = null
 	reagent_tint = FALSE
 
@@ -240,9 +250,18 @@
 	if(!isnum(volume))
 		volume = 0
 	A.create_reagents(volume, reagent_holder_type || /datum/reagents)
-	if(!length(reagent_contents))
-		return
 	var/total = 0
+	for(var/id_var in reagent_var_contents)
+		var/id = A.vars[id_var]
+		var/amount = lifecycle_decl_value(A, reagent_var_contents[id_var])
+		if(!id || !isnum(amount) || amount <= 0)
+			continue
+		total += amount
+		A.reagents.add_reagent(id, amount)
+	if(!length(reagent_contents))
+		if(total > volume)
+			WARNING("[A]([A.type]) declares more reagents ([total]) than its volume ([volume])")
+		return
 	for(var/id in reagent_contents)
 		var/amount = reagent_contents[id] || 1
 		total += amount

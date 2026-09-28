@@ -54,7 +54,6 @@
 	. = ..()
 	set_wires(new /datum/wires/shield_generator(src))
 	default_apply_parts()
-	connect_to_network()
 
 	mode_list = list()
 	for(var/st in subtypesof(/datum/shield_mode))

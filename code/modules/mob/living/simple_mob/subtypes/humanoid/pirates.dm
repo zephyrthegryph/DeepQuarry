@@ -445,9 +445,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 
 	var/obj/item/shield_projector/shields = null
 
-/mob/living/simple_mob/humanoid/pirate/captain/Initialize(mapload)
-	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/pirate/captain, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
 /mob/living/simple_mob/humanoid/pirate/captain/Process_Spacemove(check_drift = 0)
 	return TRUE

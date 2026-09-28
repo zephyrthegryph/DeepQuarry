@@ -200,9 +200,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	. = ..()
 	if(!snack_colour)
 		snack_colour = pick( list("yellow","green","pink","blue") )
-	icon_state = "snack_[snack_colour]"
+	icon_state = "snack_[snack_colour]" // ALLOW(decl): random colour pick
 	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
-	reagents.add_reagent(REAGENT_ID_SUGAR, 2)
 
 /obj/item/storage/box/snakesnackbox
 	name = "box of Snake Snax"
@@ -220,3 +219,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
 	new /obj/item/reagent_containers/food/snacks/snakesnack(src)
 	. = ..()
+
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/snakesnack, null, list(REAGENT_ID_SUGAR = 2))

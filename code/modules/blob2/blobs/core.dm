@@ -98,9 +98,10 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 
+DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
+
 /obj/structure/blob/core/Initialize(mapload, client/new_overmind = null, new_rate = 2, placed = 0)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon() //so it atleast appears
 	point_rate = new_rate
 	controller_handle = om_handle(new_overmind)

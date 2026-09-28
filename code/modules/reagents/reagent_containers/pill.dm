@@ -278,12 +278,12 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/happy, null, list(REAG
 	desc = "Zoooom!"
 	icon_state = "pill4"
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/pill/zoom, null, list(REAGENT_ID_EXPIREDMEDICINE = 5, REAGENT_ID_STIMM = 5))
+
 /obj/item/reagent_containers/pill/zoom/Initialize(mapload)
 	. = ..()
-	if(prob(50)) // begin: Zoom pill adjustments
-		reagents.add_reagent(REAGENT_ID_MOLD, 2)	//Chance to be more dangerous
-	reagents.add_reagent(REAGENT_ID_EXPIREDMEDICINE, 5)
-	reagents.add_reagent(REAGENT_ID_STIMM, 5) // end: Zoom pill adjustments
+	if(prob(50)) // Zoom pill: chance to be more dangerous
+		reagents.add_reagent(REAGENT_ID_MOLD, 2) // ALLOW(decl): random roll
 	color = reagents.get_color()
 
 /obj/item/reagent_containers/pill/diet

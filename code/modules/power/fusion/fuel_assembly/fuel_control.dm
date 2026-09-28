@@ -10,9 +10,10 @@
 	var/scan_range = 25
 	var/datum/tgui_module/rustfuel_control/monitor
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_fuel_control, "monitor", /datum/tgui_module/rustfuel_control)
+
 /obj/machinery/computer/fusion_fuel_control/Initialize(mapload)
 	. = ..()
-	monitor = new(src)
 	monitor.fuel_tag = id_tag
 
 DECLARE_REF(/obj/machinery/computer/fusion_fuel_control, "monitor", OWNED, null)

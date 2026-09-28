@@ -24,9 +24,6 @@
 
 /obj/structure/medical_stand/Initialize(mapload)
 	. = ..()
-	if (spawn_type)
-		tank = new spawn_type (src)
-	contained = new mask_type (src)
 	update_icon()
 
 /obj/structure/medical_stand/update_icon()
@@ -480,6 +477,8 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 
 DECLARE_REF(/obj/structure/medical_stand, "tank", OWNED, null)
 DECLARE_REF(/obj/structure/medical_stand, "contained", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "tank", "spawn_type")
+DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "contained", "mask_type")
 DECLARE_REF(/obj/structure/medical_stand, "beaker", OWNED, null)
 
 /// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.

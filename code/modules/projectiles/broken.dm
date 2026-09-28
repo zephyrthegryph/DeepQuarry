@@ -9,6 +9,8 @@
 
 	var/do_rotation = TRUE
 
+DECLARE_START_TIMER(/obj/item/broken_gun, 30 SECONDS, PROC_REF(validate_gun_type))
+
 /obj/item/broken_gun/Initialize(mapload, path)
 	. = ..()
 	if(path)
@@ -16,7 +18,6 @@
 			return INITIALIZE_HINT_QDEL
 		setup_repair_needs()
 
-	om_after(src, 30 SECONDS, PROC_REF(validate_gun_type))
 
 /obj/item/broken_gun/proc/validate_gun_type()
 	if(!my_guntype)

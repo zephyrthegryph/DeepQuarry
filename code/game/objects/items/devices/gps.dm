@@ -32,7 +32,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 /obj/item/gps/Initialize(mapload)
 	. = ..()
-	compass = new(src)
 	name = "global positioning system ([gps_tag])"
 	update_holder()
 	update_icon()
@@ -92,6 +91,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 		update_compass(src, TRUE)
 
 DECLARE_REF(/obj/item/gps, "compass", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)

@@ -28,9 +28,7 @@
 
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
-/obj/item/ammo_magazine/smart/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 
 /obj/item/ammo_magazine/smart/periodic_step()
 	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.

@@ -66,9 +66,7 @@ DECLARE_REF(/datum/topturfcrossed, "owner", BACK, "topturfcrossed")
 
 DECLARE_REF(/obj/item/bikehorn/topturf_testing, "topturfcrossed", OWNED, null)
 
-/obj/item/bikehorn/topturf_testing/Initialize(mapload)
-	. = ..()
-	topturfcrossed = new /datum/topturfcrossed(src)
+DECLARE_DEFAULT_CHILD(/obj/item/bikehorn/topturf_testing, "topturfcrossed", /datum/topturfcrossed)
 
 /obj/item/bikehorn/topturf_testing/Crossed(atom/movable/AM)
 	. = ..()

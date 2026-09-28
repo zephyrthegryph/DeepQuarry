@@ -13,10 +13,10 @@
 
 /obj/item/grenade/smokebomb/Initialize(mapload)
 	. = ..()
-	smoke = new /datum/effect/effect/system/smoke_spread/bad()
 	smoke.attach(src)
 
 DECLARE_REF(/obj/item/grenade/smokebomb, "smoke", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/smokebomb, "smoke", /datum/effect/effect/system/smoke_spread/bad)
 
 /obj/item/grenade/smokebomb/detonate()
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)

@@ -8,11 +8,9 @@
 	var/dummy_card = null
 	var/dummy_card_type = /obj/item/card/id/science/roboticist/dummy_cyborg
 
-/obj/item/card/robot/Initialize(mapload)
-	. = ..()
-	dummy_card = new dummy_card_type(src)
 
 DECLARE_REF(/obj/item/card/robot, "dummy_card", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 
 /obj/item/card/robot/GetID()
 	return dummy_card

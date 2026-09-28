@@ -31,7 +31,7 @@
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/Initialize(mapload)
 	icon = null
-	icon_state = ""
+	icon_state = "" // ALLOW(decl): clears the inherited icon before parent init
 	. = ..()
 
 	dress_up()

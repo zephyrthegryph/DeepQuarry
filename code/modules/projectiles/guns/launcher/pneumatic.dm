@@ -27,9 +27,10 @@
 														// analyzer with a force_divisor of 10 hit with a damage multiplier of 3000+.
 	special_handling = TRUE
 
+DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/item/storage)
+
 /obj/item/gun/launcher/pneumatic/Initialize(mapload)
 	. = ..()
-	item_storage = new(src)
 	item_storage.name = "hopper"
 	item_storage.restrict_hold(null, hopper_size)
 	item_storage.max_storage_space = max_storage_space

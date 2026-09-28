@@ -109,6 +109,10 @@
 	permeability_coefficient = 0  //Protect the squishies, after all this shit should be waterproof.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+DECLARE_DEFAULT_CHILD(/obj/item/rig, "spark_system", /datum/effect/effect/system/spark_spread)
+DECLARE_DEFAULT_CHILD(/obj/item/rig, "power_system", /datum/rig_power_system)
+DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_registry)
+
 /obj/item/rig/Initialize(mapload)
 	. = ..()
 
@@ -119,12 +123,10 @@
 	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
 		locked = 0
 
-	spark_system = new()
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
 	// Instantiate the decomposed subsystems.
-	power_system = new /datum/rig_power_system(src)
 	power_system.cooling_on              = cooling_on
 	power_system.max_cooling             = max_cooling
 	power_system.charge_consumption      = charge_consumption
@@ -133,7 +135,6 @@
 	power_system.offline_slowdown        = offline_slowdown
 	power_system.offline_vision_restriction = offline_vision_restriction
 
-	component_registry = new /datum/rig_component_registry(src)
 	component_registry.initialize_pieces()
 
 	update_icon(1)

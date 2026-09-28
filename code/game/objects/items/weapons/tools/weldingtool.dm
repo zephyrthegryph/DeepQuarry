@@ -51,7 +51,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 	if(always_process)
-		om_task_periodic(src, PERIODIC_SLOW)
+		om_task_periodic(src, PERIODIC_SLOW) // ALLOW(decl): only when always_process
 
 /obj/item/weldingtool/get_welder()
 	return src
@@ -535,18 +535,11 @@ DECLARE_REF(/obj/item/weldpack, "nozzle", PAIR, "mounted_pack")
 	acti_sound = 'sound/effects/sparks4.ogg'
 	deac_sound = 'sound/effects/sparks4.ogg'
 
-/obj/item/weldingtool/electric/unloaded/Initialize(mapload)
+/obj/item/weldingtool/electric/unloaded
 	cell_type = null
-	. = ..()
 
 /obj/item/weldingtool/electric/Initialize(mapload)
 	. = ..()
-	if(cell_type == null)
-		update_icon()
-	else if(cell_type)
-		power_supply = new cell_type(src)
-	else
-		power_supply = new /obj/item/cell/device(src)
 	update_icon()
 
 /obj/item/weldingtool/electric/get_cell()
@@ -703,6 +696,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 #undef WELDER_FUEL_BURN_INTERVAL
 
 DECLARE_REF(/obj/item/weldingtool/electric, "power_supply", HELD, null)
+DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
 
 /// LC-refs: equip mount -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment

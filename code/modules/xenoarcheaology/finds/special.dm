@@ -2,9 +2,10 @@
 /obj/item/reagent_containers/glass/replenishing
 	var/spawning_id
 
+DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
+
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
 		var/new_chem = pick(chemistry_service().chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
@@ -56,9 +57,7 @@
 	var/wight_check_index = 1
 	var/list/shadow_wights
 
-/obj/item/vampiric/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/item/vampiric/periodic_step()
@@ -147,9 +146,10 @@
 	var/tmp/target_turf_handle
 	var/loc_last_process
 
+DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_SLOW)
+
 /obj/effect/decal/cleanable/blood/splatter/animated/Initialize(mapload, _age)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
 	loc_last_process = src.loc
 
 /// Crawls toward its target turf every 2 s; arrived, it sleeps.
@@ -181,9 +181,7 @@
 	icon_state = "shade"
 	density = TRUE
 
-/obj/effect/shadow_wight/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/effect/shadow_wight/periodic_step()

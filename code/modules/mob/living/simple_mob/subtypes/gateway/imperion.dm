@@ -361,9 +361,7 @@
 	var/obj/item/projectile/B = new shot_type(get_turf(src))
 	B.launch_projectile(target, BP_TORSO, src)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/phase5/Initialize(mapload)
-	shields = new /obj/item/shield_projector/rectangle/automatic/imperion(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "shields", /obj/item/shield_projector/rectangle/automatic/imperion)
 
 /obj/item/shield_projector/rectangle/automatic/imperion
 	max_integrity = 250

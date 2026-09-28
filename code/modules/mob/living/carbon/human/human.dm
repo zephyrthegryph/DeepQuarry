@@ -38,7 +38,7 @@
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)
-		dna = new /datum/dna(null)
+		dna = new /datum/dna(null) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 		// Species name is handled by set_species()
 
 	if(!species)
@@ -68,7 +68,6 @@
 	initialize_vessel()
 	regenerate_icons()
 
-	crafting = new /datum/personal_crafting(src)
 	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 
 	// Chicken Stuff
@@ -2008,3 +2007,5 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 DECLARE_REF(/mob/living/carbon/human, "wearing_rig", HELD, null)
 // Each side effect is created for this human and kept only here and by its finish() timer.
 DECLARE_REF(/mob/living/carbon/human, "genetic_side_effects", OWNED_LIST, null)
+
+DECLARE_DEFAULT_CHILD(/mob/living/carbon/human, "crafting", /datum/personal_crafting)

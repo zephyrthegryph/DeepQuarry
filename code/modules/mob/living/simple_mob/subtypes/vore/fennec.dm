@@ -132,7 +132,7 @@
 	bigshadow.plane = MOB_PLANE
 	bigshadow.layer = BELOW_MOB_LAYER
 	bigshadow.appearance_flags = RESET_COLOR|RESET_TRANSFORM
-	add_overlay(bigshadow)
+	add_overlay(bigshadow) // ALLOW(decl): per-instance image
 
 /mob/living/simple_mob/vore/fennec/huge/update_icon()
 	. = ..()

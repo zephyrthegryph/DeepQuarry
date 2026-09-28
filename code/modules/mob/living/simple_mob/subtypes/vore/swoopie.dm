@@ -50,7 +50,6 @@
 	if(!voremob_loaded)
 		voremob_loaded = TRUE
 		init_vore()
-	Vac = new /obj/item/vac_attachment/swoopie(src)
 	if(istype(Vac))
 		Vac.output_dest = om_handle(vore_selected)
 		Vac.vac_power = 3
@@ -324,3 +323,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 // Select an obj if no mobs are around.
 
 DECLARE_REF(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac", OWNED, null)
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac", /obj/item/vac_attachment/swoopie)

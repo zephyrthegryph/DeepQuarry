@@ -168,7 +168,7 @@
 /obj/item/projectile/arc/vial/Initialize(mapload)
 	. = ..()
 	if(splatter)
-		create_reagents(splatter_volume)
+		create_reagents(splatter_volume) // ALLOW(decl): conditional on splatter
 		ready_chemicals()
 
 /obj/item/projectile/arc/vial/on_impact(atom/A)

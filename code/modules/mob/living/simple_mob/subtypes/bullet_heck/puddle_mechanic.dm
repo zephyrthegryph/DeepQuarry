@@ -40,9 +40,7 @@
 	spread_range = 3
 	var/fuse_time = 3.5 SECONDS
 
-/obj/item/grenade/shooter/auto_explode/Initialize(mapload)
-	. = ..()
-	om_after(src, fuse_time, PROC_REF(detonate))
+DECLARE_START_TIMER(/obj/item/grenade/shooter/auto_explode, "fuse_time", PROC_REF(detonate))
 
 /obj/item/grenade/shooter/auto_explode/blood_boss
 	spread_range = 2

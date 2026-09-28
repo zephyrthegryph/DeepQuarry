@@ -35,14 +35,15 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/janicart, "cell", /obj/item/cell/high)
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/janicart, "key", "key_type")
+DECLARE_REAGENTS(/obj/vehicle/train/engine/janicart, 600, null)
+
 /obj/vehicle/train/engine/janicart/Initialize(mapload)
 	. = ..()
 	// apply speed
 	move_delay = 0.5
-	cell = new /obj/item/cell/high(src)
-	key = new key_type(src)
 	turn_off()	//so engine verbs are correctly set
-	create_reagents(600)
 	update_icon()
 
 	if(prob(20))

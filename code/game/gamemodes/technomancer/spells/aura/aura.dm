@@ -6,10 +6,11 @@
 	aspect = null
 	var/glow_color = "#FFFFFF"
 
+DECLARE_PERIODIC(/obj/item/spell/aura, PERIODIC_SLOW)
+
 /obj/item/spell/aura/Initialize(mapload)
 	. = ..()
 	set_light(calculate_spell_power(7), calculate_spell_power(4), l_color = glow_color)
-	om_task_periodic(src, PERIODIC_SLOW)
 	log_and_message_admins("has started casting [src].")
 
 // admins are told the maintained spell stopped.

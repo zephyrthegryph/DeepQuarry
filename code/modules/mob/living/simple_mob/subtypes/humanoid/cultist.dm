@@ -563,9 +563,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	..()
 	ghostize()
 
-/mob/living/simple_mob/humanoid/cultist/magus/Initialize(mapload)
-	shields = new /obj/item/shield_projector/rectangle/automatic/magus(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", /obj/item/shield_projector/rectangle/automatic/magus)
 
 ////////////////////////////
 //		Blood Hunter

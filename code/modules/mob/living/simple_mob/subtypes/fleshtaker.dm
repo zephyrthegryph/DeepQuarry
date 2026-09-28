@@ -31,7 +31,7 @@ Only physical attributes are copied.
 	base_values["melee_damage_upper"] = melee_damage_upper
 	base_values["endurance"] = endurance
 	base_values["armor"] = get_armor()
-	icon_state = icon_living
+	icon_state = icon_living // ALLOW(decl): copied from icon_living
 
 
 	//copy stats from our engulfed target

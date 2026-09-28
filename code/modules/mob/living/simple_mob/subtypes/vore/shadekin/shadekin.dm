@@ -95,7 +95,7 @@
 	set_eye_energy()
 
 	if(icon_state == "map_example")
-		icon_state = pick("white","dark","brown")
+		icon_state = pick("white","dark","brown") // ALLOW(decl): random pick
 
 	icon_living = icon_state
 

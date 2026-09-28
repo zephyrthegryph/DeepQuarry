@@ -16,10 +16,11 @@
 	var/damage_to_energy_multiplier = 60.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 1200 energy cost
 	var/datum/effect/effect/system/spark_spread/spark_system = null
 
+DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/effect/system/spark_spread)
+
 /obj/item/spell/reflect/Initialize(mapload, coreless)
 	. = ..()
 	set_light(3, 2, l_color = "#006AFF")
-	spark_system = new /datum/effect/effect/system/spark_spread()
 	spark_system.set_up(5, 0, src)
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)

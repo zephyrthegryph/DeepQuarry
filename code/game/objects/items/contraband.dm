@@ -33,7 +33,7 @@
 
 	var/list/picked_reagents = pickweight(random_reagent_list)
 	for(var/reagent in picked_reagents)
-		reagents.add_reagent(reagent, picked_reagents[reagent])
+		reagents.add_reagent(reagent, picked_reagents[reagent]) // ALLOW(decl): weighted random pick
 
 	var/list/names = list()
 	for(var/datum/reagent/R in reagents.reagent_list)

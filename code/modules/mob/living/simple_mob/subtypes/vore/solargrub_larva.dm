@@ -50,8 +50,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
 	. = ..()
-	powermachine = new(src)
-	sparks = new(src)
 	sparks.set_up()
 	sparks.attach(src)
 	add_verb(src, /mob/living/proc/ventcrawl)
@@ -256,3 +254,6 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 	return ..()
 
 DECLARE_REF(/obj/machinery/abstract_grub_machine, "grub", BACK, "powermachine")
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", /obj/machinery/abstract_grub_machine)
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "sparks", /datum/effect/effect/system/spark_spread)

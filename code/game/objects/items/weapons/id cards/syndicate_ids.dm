@@ -14,7 +14,6 @@
 
 /obj/item/card/id/syndicate/Initialize(mapload)
 	. = ..()
-	agentcard_module = new(src)
 	access = GLOB.syndicate_access.Copy()
 
 /obj/item/card/id/syndicate/station_access/Initialize(mapload)
@@ -22,6 +21,7 @@
 	access |= SSaccess.get_all_station_access()
 
 DECLARE_REF(/obj/item/card/id/syndicate, "agentcard_module", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/card/id/syndicate, "agentcard_module", /datum/tgui_module/agentcard)
 
 // the card's registered user is unset.
 /obj/item/card/id/syndicate/on_destroy(force)

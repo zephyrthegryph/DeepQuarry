@@ -54,7 +54,7 @@
 
 	if(!body_color)
 		body_color = pick( list("brown","black","white") )
-	icon_state = "rabbit_[body_color]"
+	icon_state = "rabbit_[body_color]" // ALLOW(decl): random colour pick
 	item_state = "rabbit_[body_color]"
 	icon_living = "rabbit_[body_color]"
 	icon_dead = "rabbit_[body_color]_dead"

@@ -88,15 +88,14 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 /obj/item/communicator/Initialize(mapload)
 	. = ..()
 	node = get_exonet_node()
-	om_task_periodic(src, PERIODIC_SLOW)
-	camera = new(src)
 	camera.name = "[src] #[rand(100,999)]"
 	camera.c_tag = camera.name
 
 	setup_tgui_camera()
 
-	//This is a pretty terrible way of doing this.
-	om_after(src, 5 SECONDS, PROC_REF(register_to_holder))
+DECLARE_PERIODIC(/obj/item/communicator, PERIODIC_SLOW)
+//This is a pretty terrible way of doing this.
+DECLARE_START_TIMER(/obj/item/communicator, 5 SECONDS, PROC_REF(register_to_holder))
 
 // ITION START: Ayo communicator are better than PDAs /obj/item/communicator
 // Proc: AltClick()
@@ -357,7 +356,6 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Description: Gives ghosts an exonet address based on their key and ghost name.
 /mob/observer/dead/Initialize(mapload)
 	. = ..()
-	exonet = new(src)
 	if(client)
 		exonet.make_address("communicator-[src.client]-[src.client.prefs.read_preference(/datum/preference/name/real_name)]")
 	else
@@ -381,6 +379,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
 DECLARE_REF(/obj/item/communicator, "camera", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/communicator)
 DECLARE_REF(/obj/item/communicator, "exonet", OWNED, null)
 DECLARE_REF(/obj/item/communicator, "cam_screen", OWNED, null)
 DECLARE_REF(/obj/item/communicator, "cam_background", OWNED, null)
@@ -390,7 +389,7 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)
 	// Voice mobs are told the line dropped before they go; a policy can't send that.
-	for(var/mob/living/voice/voice in contents.Copy())
+	for(var/mob/living/voice/voice in contents.Copy()) // ALLOW(decl): per-item message and deletion, not a drop
 		LAZYREMOVE(voice_mobs, voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
@@ -459,3 +458,4 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 #undef SETTTAB
 
 DECLARE_REF(/mob/observer/dead, "exonet", OWNED, null)
+DECLARE_DEFAULT_CHILD(/mob/observer/dead, "exonet", /datum/exonet_protocol)

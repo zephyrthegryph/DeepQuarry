@@ -27,7 +27,7 @@
 /obj/item/reagent_containers/glass/paint/Initialize(mapload)
 	.=..()
 	if(paint_type)
-		reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type)
+		reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type) // ALLOW(decl): data argument
 
 /obj/item/reagent_containers/glass/paint/red
 	icon_state = "paint_red"

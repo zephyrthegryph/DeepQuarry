@@ -31,25 +31,25 @@
 	if(random_color)
 		switch(pick("red","blue","purple","brown","green","cyan","yellow"))
 			if ("red")
-				icon_state = "screwdriver2"
+				icon_state = "screwdriver2" // ALLOW(decl): random pick
 				item_state = "screwdriver"
 			if ("blue")
-				icon_state = "screwdriver"
+				icon_state = "screwdriver" // ALLOW(decl): random pick
 				item_state = "screwdriver_blue"
 			if ("purple")
-				icon_state = "screwdriver3"
+				icon_state = "screwdriver3" // ALLOW(decl): random pick
 				item_state = "screwdriver_purple"
 			if ("brown")
-				icon_state = "screwdriver4"
+				icon_state = "screwdriver4" // ALLOW(decl): random pick
 				item_state = "screwdriver_brown"
 			if ("green")
-				icon_state = "screwdriver5"
+				icon_state = "screwdriver5" // ALLOW(decl): random pick
 				item_state = "screwdriver_green"
 			if ("cyan")
-				icon_state = "screwdriver6"
+				icon_state = "screwdriver6" // ALLOW(decl): random pick
 				item_state = "screwdriver_cyan"
 			if ("yellow")
-				icon_state = "screwdriver7"
+				icon_state = "screwdriver7" // ALLOW(decl): random pick
 				item_state = "screwdriver_yellow"
 
 	if (prob(75))

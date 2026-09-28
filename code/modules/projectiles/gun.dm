@@ -131,6 +131,8 @@
 	playsound(src, 'sound/machines/button.ogg', 25)
 	update_icon()
 
+DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_selector)
+
 /obj/item/gun/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to length(firemodes))
@@ -147,7 +149,6 @@
 		new_mode.apply_to(src)
 
 	// Initialise the firemode selector.
-	firemode_selector  = new /datum/gun_firemode_selector(src)
 
 DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 

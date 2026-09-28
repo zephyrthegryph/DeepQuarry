@@ -71,7 +71,7 @@
 /obj/item/storage/backpack/holding/duffle/Initialize(mapload)
 	. = ..()
 	if(prob(50))
-		icon_state = "[icon_state]_tilted"
+		icon_state = "[icon_state]_tilted" // ALLOW(decl): random pick
 		tilted = 1
 
 /obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
@@ -181,7 +181,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 /obj/item/storage/backpack/dufflebag/Initialize(mapload)
 	. = ..()
 	if(prob(50))
-		icon_state = "[icon_state]_tilted"
+		icon_state = "[icon_state]_tilted" // ALLOW(decl): random pick
 		tilted = 1
 
 /obj/item/storage/backpack/dufflebag/proc/dufflebag_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)

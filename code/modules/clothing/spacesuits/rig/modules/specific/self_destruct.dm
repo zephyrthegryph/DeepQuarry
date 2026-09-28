@@ -14,9 +14,10 @@
 	interface_name = "dead man's switch"
 	interface_desc = "An integrated self-destruct module. When the wearer dies, they vanish in smoke. Do not press this button."
 
+DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect/effect/system/smoke_spread/bad)
+
 /obj/item/rig_module/self_destruct/Initialize(mapload)
 	. = ..()
-	smoke = new /datum/effect/effect/system/smoke_spread/bad()
 	smoke.attach(src)
 
 DECLARE_REF(/obj/item/rig_module/self_destruct, "smoke", OWNED, null)

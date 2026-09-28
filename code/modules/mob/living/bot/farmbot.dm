@@ -356,7 +356,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 /obj/item/farmbot_arm_assembly/Initialize(mapload, theTank)
 	. = ..()
 	if(!theTank) // If an admin spawned it, it won't have a watertank it, so lets make one for em!
-		tank = new /obj/structure/reagent_dispensers/watertank(src)
+		tank = new /obj/structure/reagent_dispensers/watertank(src) // ALLOW(decl): only when no tank was passed in
 	else
 		tank = theTank
 		tank.forceMove(src)

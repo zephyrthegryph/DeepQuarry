@@ -148,9 +148,10 @@
 
 	var/mob/living/voice/my_voice
 
+DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advanced, "my_voice", /mob/living/voice)
+
 /obj/item/integrated_circuit/output/text_to_speech/advanced/Initialize(mapload)
 	. = ..()
-	my_voice = new (src)
 	my_voice.name = "TTS Circuit"
 
 /// A text-to-speech circuit's voice is not a mob of the world: no mob registry.

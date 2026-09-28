@@ -185,25 +185,28 @@
 
 REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
+// Actions and effect systems: declared children (new type(src)); an action's target is the mecha.
+DECLARE_DEFAULT_CHILD(/obj/mecha, "eject_action", /datum/action/innate/mecha/mech_eject)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "internals_action", /datum/action/innate/mecha/mech_toggle_internals)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "lights_action", /datum/action/innate/mecha/mech_toggle_lights)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "stats_action", /datum/action/innate/mecha/mech_view_stats)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "strafing_action", /datum/action/innate/mecha/strafe)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "defence_action", /datum/action/innate/mecha/mech_defence_mode)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "overload_action", /datum/action/innate/mecha/mech_overload_mode)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_action", /datum/action/innate/mecha/mech_smoke)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "zoom_action", /datum/action/innate/mecha/mech_zoom)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "thrusters_action", /datum/action/innate/mecha/mech_toggle_thrusters)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "cycle_action", /datum/action/innate/mecha/mech_cycle_equip)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "switch_damtype_action", /datum/action/innate/mecha/mech_switch_damtype)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "phasing_action", /datum/action/innate/mecha/mech_toggle_phasing)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "cloak_action", /datum/action/innate/mecha/mech_toggle_cloaking)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "spark_system", /datum/effect/effect/system/spark_spread)
+DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/smoke_spread)
+
+DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
+
 /obj/mecha/Initialize(mapload)
 	. = ..()
-
-	//All this used to be set to =new on the object itself which...bad.
-	eject_action = new
-	internals_action = new
-	lights_action = new
-	stats_action = new
-	strafing_action = new
-
-	defence_action = new
-	overload_action = new
-	smoke_action = new
-	zoom_action = new
-	thrusters_action = new
-	cycle_action = new
-	switch_damtype_action = new
-	phasing_action = new
-	cloak_action = new
 
 	for(var/path in starting_components)
 		var/obj/item/mecha_parts/component/C = new path(src)
@@ -214,8 +217,6 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
-	om_task_periodic(src, PERIODIC_SLOW)
-
 	update_transform()
 
 	icon_state += "-open"
@@ -223,11 +224,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 	add_cabin()
 	add_airtank() // without an internal tank the port/airtank Menu entries are not offered (pred_mecha_has_airtank)
 
-	spark_system = new
 	spark_system.set_up(2, 0, src)
 	spark_system.attach(src)
 
-	smoke_system = new
 	if(smoke_possible)//I am pretty sure that's needed here.
 		src.smoke_system.set_up(3, 0, src)
 		src.smoke_system.attach(src)

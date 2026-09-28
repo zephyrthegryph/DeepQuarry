@@ -10,7 +10,7 @@
 // Premade AI shell, for roundstart shells.
 /mob/living/silicon/robot/ai_shell/Initialize(mapload)
 	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
-	mmi = new /obj/item/mmi/inert/ai_remote(src)
+	mmi = new /obj/item/mmi/inert/ai_remote(src) // ALLOW(decl): set up by post_mmi_setup() before parent init
 	post_mmi_setup()
 	return ..()
 

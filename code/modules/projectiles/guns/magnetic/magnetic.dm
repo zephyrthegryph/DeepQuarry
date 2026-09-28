@@ -27,16 +27,15 @@
 
 	var/state = 0
 
+DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "cell", "cell")
+DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
+
 /obj/item/gun/magnetic/Initialize(mapload)
 	. = ..()
 	// So you can have some spawn with components
-	if(ispath(cell))
-		cell = new cell(src)
 	if(ispath(capacitor))
 		capacitor = new capacitor(src)
 		capacitor.charge = capacitor.max_charge
-	if(ispath(loaded))
-		loaded = new loaded(src)
 
 	if(capacitor && capacitor.charge < capacitor.max_charge)
 		om_task_periodic(src, PERIODIC_SLOW)

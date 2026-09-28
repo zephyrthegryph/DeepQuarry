@@ -1413,7 +1413,6 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 /obj/structure/auto_flesh_door/Initialize(mapload)
 	. = ..()
 	countdown = rand(50,250)
-	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /// Opens and closes (and squeezes whoever is inside) only while a mob is near; otherwise it sleeps.
@@ -1527,3 +1526,5 @@ DECLARE_REF(/turf/simulated/floor/water/digestive_enzymes, "linked_mob", HELD, n
 /// Enzyme pools numb swimmers who opted out of digestion pain.
 /turf/simulated/floor/water/digestive_enzymes/numbs_pain_of(mob/living/occupant)
 	return !occupant.digest_pain
+
+DECLARE_PERIODIC(/obj/structure/auto_flesh_door, PERIODIC_SLOW)

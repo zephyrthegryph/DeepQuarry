@@ -16,13 +16,14 @@
 	equip_cooldown = 10
 	required_type = list(/obj/mecha/medical)
 
+DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
+
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
 	syringes = new
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	processed_reagents = new
-	create_reagents(max_volume)
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/detach()
 	om_task_periodic_stop(src)

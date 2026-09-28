@@ -153,9 +153,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 	var/visible = 0
 	anchored = TRUE
 
-/obj/effect/beam/i_beam/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/proc/hit()
 	master()?.trigger_beam()

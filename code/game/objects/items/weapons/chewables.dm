@@ -9,8 +9,9 @@
 	var/chem_volume = 0
 	var/chewtime = 0
 	var/brand
-	var/list/filling
 	var/wrapped = FALSE
+
+DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PROC_REF(chewable_self)))
 
@@ -32,9 +33,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 /obj/item/clothing/mask/chewable/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT // so it doesn't react until you light it
-	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
-	for(var/R in filling)
-		reagents.add_reagent(R, LAZYACCESS(filling, R))
 	if(wrapped)
 		slot_flags = null
 
@@ -103,12 +101,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 /obj/item/clothing/mask/chewable/tobacco/cheap
 	name = "chewing tobacco"
 	desc = "A chewy wad of tobacco. Cut in long strands and treated with syrup so it tastes less like an ash-tray when you stuff it into your face."
-	filling = list(REAGENT_ID_NICOTINE = 2)
+
+DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/cheap, null, list(REAGENT_ID_NICOTINE = 2))
 
 /obj/item/clothing/mask/chewable/tobacco/fine
 	name = "deluxe chewing tobacco"
 	desc = "A chewy wad of fine tobacco. Cut in long strands and treated with syrup so it doesn't taste like an ash-tray when you stuff it into your face."
-	filling = list(REAGENT_ID_NICOTINE = 3)
+
+DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/tobacco/fine, null, list(REAGENT_ID_NICOTINE = 3))
 
 /obj/item/clothing/mask/chewable/tobacco/nico
 	name = "nicotine gum"
@@ -117,10 +117,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	type_butt = /obj/item/trash/spitgum
 	wrapped = TRUE
 
-/obj/item/clothing/mask/chewable/tobacco/nico/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NICOTINE, 2)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, list(REAGENT_ID_NICOTINE = 2))
 
 /obj/item/storage/chewables
 	name = "box of chewing wads master"
@@ -214,7 +211,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	slot_flags = SLOT_EARS | SLOT_MASK
 	chem_volume = 50
 	chewtime = 300
-	filling = list(REAGENT_ID_SUGAR = 2)
+
+DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_SUGAR = 2))
 
 /obj/item/clothing/mask/chewable/candy/gum
 	name = "chewing gum"
@@ -225,7 +223,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 
 /obj/item/clothing/mask/chewable/candy/gum/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10)
+	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10) // ALLOW(decl): random flavour
 	color = reagents.get_color()
 	update_icon()
 
@@ -337,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 
 /obj/item/clothing/mask/chewable/candy/lolli/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20)
+	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20) // ALLOW(decl): random flavour
 	color = reagents.get_color()
 	update_icon()
 
@@ -364,8 +362,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 	desc = "A chocolate-coated biscuit stick."
 	icon_state = "pockystick"
 	item_state = "pocky"
-	filling = list(REAGENT_ID_SUGAR = 2, REAGENT_ID_CHOCOLATE = 5)
 	type_butt = null
+
+DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGENT_ID_CHOCOLATE = 5))
 
 /obj/item/clothing/mask/chewable/candy/pocky/periodic_step()
 	chew()

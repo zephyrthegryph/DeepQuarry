@@ -76,11 +76,12 @@
 		REAGENT_ID_COPPER, REAGENT_ID_MERCURY, REAGENT_ID_RADIUM, REAGENT_ID_WATER, REAGENT_ID_ETHANOL, REAGENT_ID_SUGAR, REAGENT_ID_SACID, REAGENT_ID_TUNGSTEN, REAGENT_ID_CALCIUM
 		)
 
+// The reagents datum acts as the machine's reaction vessel.
+DECLARE_REAGENTS(/obj/machinery/chemical_synthesizer, 600, null)
+DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item/reagent_containers/glass/beaker)
+
 /obj/machinery/chemical_synthesizer/Initialize(mapload)
 	. = ..()
-	// Create the reagents datum which will act as the machine's reaction vessel.
-	create_reagents(600)
-	catalyst = new /obj/item/reagent_containers/glass/beaker(src)
 
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)

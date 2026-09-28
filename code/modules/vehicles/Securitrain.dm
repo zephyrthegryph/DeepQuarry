@@ -58,9 +58,10 @@
 //-------------------------------------------
 // Standard procs
 //-------------------------------------------
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/security/engine, "cell", /obj/item/cell/high)
+DECLARE_DEFAULT_CHILD(/obj/vehicle/train/security/engine, "key", "key_type")
+
 /obj/vehicle/train/security/engine/Initialize(mapload)
-	cell = new /obj/item/cell/high(src)
-	key = new key_type(src)
 	. = ..()
 	var/image/I = new(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", layer = src.layer + 0.2) //over mobs
 	add_overlay(I)

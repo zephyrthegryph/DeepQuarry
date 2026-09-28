@@ -212,9 +212,7 @@
 	loot_list = list(/obj/item/clothing/suit/armor/alien/vistor = 100
 			)
 
-/mob/living/simple_mob/mechanical/mecha/vistor/vistororange/Initialize(mapload)
-	shields = new /obj/item/shield_projector/rectangle/automatic/orange(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange, "shields", /obj/item/shield_projector/rectangle/automatic/orange)
 
 /obj/item/shield_projector/rectangle/automatic/orange
 	max_integrity = 10

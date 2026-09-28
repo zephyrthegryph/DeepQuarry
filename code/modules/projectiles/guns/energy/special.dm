@@ -59,9 +59,7 @@
 		list(mode_name="prune reagents", projectile_type=/obj/item/projectile/energy/floraprune, modifystate="floramut"),
 		)
 
-/obj/item/gun/energy/floragun/Initialize(mapload)
-	. = ..()
-	emitter = new(src)
+DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_parts/micro_laser)
 
 /obj/item/gun/energy/floragun/examine(mob/user)
 	. = ..()

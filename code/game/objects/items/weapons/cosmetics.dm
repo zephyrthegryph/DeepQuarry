@@ -113,9 +113,6 @@ DECLARE_INTERACTIONS(/obj/item/haircomb, INTERACT_USE(null, PROC_REF(interaction
 	icon_state = "trinketbox"
 	var/datum/tgui_module/appearance_changer/mirror/coskit/M
 
-/obj/item/makeover/Initialize(mapload)
-	. = ..()
-	M = new(src, null)
 
 DECLARE_INTERACTIONS(/obj/item/makeover, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -131,3 +128,4 @@ DECLARE_INTERACTIONS(/obj/item/makeover, INTERACT_USE(null, PROC_REF(interaction
 	return TRUE
 
 DECLARE_REF(/obj/item/makeover, "M", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/makeover, "M", /datum/tgui_module/appearance_changer/mirror/coskit)

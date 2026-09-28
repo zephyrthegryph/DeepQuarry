@@ -152,9 +152,7 @@ DECLARE_REF(/datum/beam, "elements", OWNED_LIST, null)
 // 'Reactive' beam parts do something when touched or stood in.
 /obj/effect/ebeam/reactive
 
-/obj/effect/ebeam/reactive/Initialize(mapload)
-	om_task_periodic(src, PERIODIC_SLOW)
-	return ..()
+DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 
 /obj/effect/ebeam/reactive/on_drawn()
 	for(var/A in contents_of(loc))
