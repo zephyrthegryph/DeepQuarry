@@ -732,14 +732,23 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	if (tomob.ckey)
 		question = "This mob already has a user ([tomob.key]) in control of it! "
 	question += "Are you sure you want to place [frommob.name]([frommob.key]) in control of [tomob.name]?"
-	om_prompt(src, usr, list("message" = question, "title" = "Place ghost in control of mob?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_VAREDIT), "data" = list("from" = frommob, "to" = tomob)), PROC_REF(ghost_drag_confirmed))
+	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 	return 1
 
-/datum/admins/proc/ghost_drag_confirmed(mob/admin, ask, datum/om/prompt/prompt)
-	var/mob/observer/dead/frommob = prompt.get("from")
-	var/mob/living/tomob = prompt.get("to")
-	if (ask != "Yes" || !frommob.ckey)
-		return
+/// Re-checked: the ghost still has a player.
+/datum/om/prompt/confirm/ghost_drag
+	title = "Place ghost in control of mob?"
+	requires = PROMPT_ADMIN(R_VAREDIT)
+	var/mob/observer/dead/frommob
+	var/mob/living/tomob
+
+/datum/om/prompt/confirm/ghost_drag/valid()
+	return frommob.ckey ? null : "no player"
+
+/datum/admins/proc/ghost_drag_confirmed(datum/om/prompt/confirm/ghost_drag/ask)
+	var/mob/admin = ask.answerer
+	var/mob/observer/dead/frommob = ask.frommob
+	var/mob/living/tomob = ask.tomob
 	if(tomob.client) //No need to ghostize if there is no client
 		tomob.ghostize(0)
 	if(frommob.mind && frommob.mind.current) //Preserve teleop for original body when adminghosting.
@@ -834,20 +843,39 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
-	om_prompt_sequence(src, owner, list(
-		list("key" = "title", "kind" = "text", "message" = "Pick a title for the report", "title" = "Title", "optional" = TRUE),
-		P.sender ? null : list("key" = "stamp", "message" = "Would you like the fax stamped?", "title" = "Stamped?", "choices" = list("Yes", "No"), "optional" = TRUE),
-	), PROC_REF(fax_answered), list("data" = list("paper" = P, "destination" = destination)))
+	om_ask(owner, /datum/om/prompt/text/fax_title, PROC_REF(fax_titled), paper = P, destination = destination)
 
-/datum/admins/proc/fax_answered(mob/admin, datum/om/prompt/ask)
-	var/obj/item/paper/admin/P = ask.get("paper")
-	var/obj/machinery/photocopier/faxmachine/destination = ask.get("destination")
-	var/customname = ask.get("title")
+/// An admin fax reply: its title, then (admin-initiated) whether to stamp it. A cancel skips either.
+/datum/om/prompt/text/fax_title
+	title = "Title"
+	message = "Pick a title for the report"
+	cancel_answer = ""
+	var/obj/item/paper/admin/paper
+	var/obj/machinery/photocopier/faxmachine/destination
 
+/datum/om/prompt/confirm/fax_stamp
+	title = "Stamped?"
+	message = "Would you like the fax stamped?"
+	answer_on_no = TRUE
+	cancel_answer = "No"
+	var/obj/item/paper/admin/paper
+	var/obj/machinery/photocopier/faxmachine/destination
+	var/custom_title
+
+/datum/admins/proc/fax_titled(datum/om/prompt/text/fax_title/ask)
+	if(ask.paper.sender)
+		fax_answered(ask.paper, ask.destination, ask.text, FALSE)
+		return
+	om_ask(ask.answerer, /datum/om/prompt/confirm/fax_stamp, PROC_REF(fax_stamp_answered), paper = ask.paper, destination = ask.destination, custom_title = ask.text)
+
+/datum/admins/proc/fax_stamp_answered(datum/om/prompt/confirm/fax_stamp/ask)
+	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.yes)
+
+/datum/admins/proc/fax_answered(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination, customname, stamp)
 	P.name = "[P.origin] - [customname]"
 	P.desc = "This is a paper titled '" + P.name + "'."
 
-	var/shouldStamp = P.sender || ask.get("stamp") == "Yes" // admin initiated faxes are stamped when asked
+	var/shouldStamp = P.sender || stamp // admin initiated faxes are stamped when asked
 
 	if(shouldStamp)
 		P.stamps += "<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")

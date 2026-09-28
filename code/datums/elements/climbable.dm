@@ -77,7 +77,7 @@
 
 	user.visible_message(span_warning("[user] starts climbing onto \the [climbed_thing]!"))
 	LAZYADDASSOCLIST(current_climbers, climbed_thing, user)
-	om_task_start(/datum/om/task/timed/climbable_climb, user, user, list("receiver" = src, "duration" = (issmall(user) ? delay_time * 0.6 : delay_time), "climbed_thing" = climbed_thing))
+	om_task_start(/datum/om/task/timed/climbable_climb, user, user, duration = (issmall(user) ? delay_time * 0.6 : delay_time), climbed_thing = climbed_thing)
 
 /datum/element/climbable/proc/climb_ended(datum/om/task/timed/climbable_climb/task)
 	var/obj/climbed_thing = task.climbed_thing

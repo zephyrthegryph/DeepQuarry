@@ -811,38 +811,56 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	var/item_type = GLOB.item_tf_options[target_item_name]
 	if(!ispath(item_type))
 		return
+	om_flow_start(/datum/om/flow/casino_item_tf, sentient_prize, src, item_type = item_type)
+
+/// The prize customises the item they become: name, description and colour, each optional (a
+/// cancel keeps the default). Then they are transformed, if still alive.
+/datum/om/flow/casino_item_tf
+	name = "casino item tf"
+	var/item_type
+	var/item_name
+	var/item_desc
+	var/item_color
+
+/datum/om/flow/casino_item_tf/valid()
+	var/mob/living/sentient_prize = actor
+	return sentient_prize.stat == DEAD ? "dead" : null
+
+/datum/om/flow/casino_item_tf/proc/item_label()
 	var/obj/item/item_path = item_type
-	var/item_label = initial(item_path.name)
-	om_prompt_sequence(src, sentient_prize, list(
-		list("key" = "name", "kind" = "text", "message" = "Choose your item name for \the [item_label] (Leave blank or cancel to use its default name)", "title" = "TF Item Name", "optional" = TRUE),
-		list("key" = "desc", "kind" = "text", "message" = "Choose your item description for \the [item_label] (Leave blank or cancel to use its default description)", "title" = "TF Item Description", "optional" = TRUE),
-		list("key" = "recolor", "message" = "Do you want to customize your item's color?", "title" = "Item TF Color", "choices" = list("Yes", "No"), "optional" = TRUE),
-		PROC_REF(item_tf_ask_color),
-	), PROC_REF(item_tf_customised), list("data" = list("item_type" = item_type), "on_cancel" = PROC_REF(item_tf_uncustomised)))
+	return initial(item_path.name)
 
-/obj/machinery/casinosentientprize_handler/proc/item_tf_ask_color(mob/living/sentient_prize, datum/om/prompt/P)
-	if(P.get("recolor") != "Yes")
-		return null
-	var/obj/item/item_path = P.get("item_type")
-	return list("key" = "color", "kind" = "color", "message" = "Choose the color for your item.", "title" = "Item TF Color", "default" = initial(item_path.color), "optional" = TRUE)
+/datum/om/flow/casino_item_tf/start()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(name_entered), title = "TF Item Name", message = "Choose your item name for \the [item_label()] (Leave blank or cancel to use its default name)", cancel_answer = "")
 
-/// A closed question still transforms them, with the defaults.
-/obj/machinery/casinosentientprize_handler/proc/item_tf_uncustomised(mob/living/sentient_prize, datum/om/prompt/P)
-	item_tf_customised(sentient_prize, P)
+/datum/om/flow/casino_item_tf/proc/name_entered(datum/om/prompt/text/ask)
+	item_name = ask.text
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(desc_entered), title = "TF Item Description", message = "Choose your item description for \the [item_label()] (Leave blank or cancel to use its default description)", cancel_answer = "")
 
-/obj/machinery/casinosentientprize_handler/proc/item_tf_customised(mob/living/sentient_prize, datum/om/prompt/P)
-	if(QDELETED(sentient_prize) || sentient_prize.stat == DEAD)
+/datum/om/flow/casino_item_tf/proc/desc_entered(datum/om/prompt/text/ask)
+	item_desc = ask.text
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(recolor_answered), title = "Item TF Color", message = "Do you want to customize your item's color?", answer_on_no = TRUE, cancel_answer = "No")
+
+/datum/om/flow/casino_item_tf/proc/recolor_answered(datum/om/prompt/confirm/ask)
+	if(!ask.yes)
+		transform()
 		return
-	var/item_type = P.get("item_type")
+	var/obj/item/item_path = item_type
+	om_ask(actor, /datum/om/prompt/color, PROC_REF(color_picked), title = "Item TF Color", message = "Choose the color for your item.", default = initial(item_path.color), cancel_answer = "")
+
+/datum/om/flow/casino_item_tf/proc/color_picked(datum/om/prompt/color/ask)
+	item_color = ask.picked_color
+	transform()
+
+/datum/om/flow/casino_item_tf/proc/transform()
+	var/mob/living/sentient_prize = actor
 	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
-	var/item_name = P.get("name")
-	var/item_desc = P.get("desc")
 	if(LAZYLEN(item_name))
 		newitem.name = item_name
 	if(LAZYLEN(item_desc))
 		newitem.desc = item_desc
-	if(P.get("color"))
-		newitem.color = P.get("color")
+	if(item_color)
+		newitem.color = item_color
 	sentient_prize.tf_into(newitem, TRUE, item_name)
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)

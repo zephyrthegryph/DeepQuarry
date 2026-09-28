@@ -301,14 +301,27 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
 	if(isnull(started_at))
 		started_at = world.time
-	om_prompt(src, src, list("kind" = "text", "message" = "You are \a [role]. Would you like to change your name to something else?", "title" = "Name change", "default" = real_name, "max_length" = MAX_NAME_LEN, "data" = list("role" = role, "allow_numbers" = allow_numbers, "attempt" = attempt, "started_at" = started_at)), TYPE_PROC_REF(/mob, rename_self_entered))
+	om_ask(src, /datum/om/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
+
+/// A mob picking its own name for a role (rename_self()).
+/datum/om/prompt/text/rename_self
+	title = "Name change"
+	max_length = MAX_NAME_LEN
+	var/role
+	var/allow_numbers
+	var/attempt
+	var/started_at
+
+/datum/om/prompt/text/rename_self/prepare()
+	message = "You are \a [role]. Would you like to change your name to something else?"
+	return TRUE
 
 /// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
-/mob/proc/rename_self_entered(mob/user, newname, datum/om/prompt/P)
-	var/role = P.get("role")
-	if((world.time - P.get("started_at")) > 5 MINUTES)
+/mob/proc/rename_self_entered(datum/om/prompt/text/rename_self/P)
+	var/role = P.role
+	if((world.time - P.started_at) > 5 MINUTES)
 		return	//took too long
-	newname = sanitizeName(newname, , P.get("allow_numbers"))	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	var/newname = sanitizeName(P.text, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M == src)
 			continue
@@ -317,8 +330,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			break
 	if(!newname)
 		to_chat(src, "Sorry, that [role]-name wasn't appropriate, please try another. It's possibly too long/short, has bad characters or is already taken.")
-		if(P.get("attempt") < 3)
-			rename_self(role, P.get("allow_numbers"), P.get("attempt") + 1, P.get("started_at"))
+		if(P.attempt < 3)
+			rename_self(role, P.allow_numbers, P.attempt + 1, P.started_at)
 		return
 
 	var/oldname = real_name

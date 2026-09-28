@@ -158,11 +158,12 @@
 	set category = "Object"
 	set src in usr
 
-	var/newcolor = tgui_color_picker(usr,"Pick a color!","HUD Color")
-	if(newcolor)
-		for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
-			var/image/I = images[img]
-			I.color = newcolor
+	om_ask(usr, /datum/om/prompt/color/carried_item, PROC_REF(hud_color_picked), title = "HUD Color", message = "Pick a color!")
+
+/obj/item/clothing/head/pilot/proc/hud_color_picked(datum/om/prompt/color/carried_item/ask)
+	for(var/img in list("top_words","left_bar","right_bar","flyboxes"))
+		var/image/I = images[img]
+		I.color = ask.picked_color
 
 REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 

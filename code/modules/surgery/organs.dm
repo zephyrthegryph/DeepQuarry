@@ -247,28 +247,55 @@
 		if(required && !QDELETED(src))
 			new_form_name_chosen(real_name)
 		return
-	om_prompt_sequence(src, src, list(
-		list("key" = "name", "kind" = "text", "message" = "Pick a name for your new form!", "title" = "New Name", "default" = name),
-		TYPE_PROC_REF(/mob/living/carbon/human, confirm_new_form_name),
-	), TYPE_PROC_REF(/mob/living/carbon/human, new_form_name_answered), list("data" = list("required" = required, "attempt" = attempt), "on_cancel" = TYPE_PROC_REF(/mob/living/carbon/human, new_form_name_declined)))
+	om_ask(src, /datum/om/prompt/text/new_form_name, PROC_REF(new_form_name_entered), default = name, required = required, attempt = attempt)
 
-/mob/living/carbon/human/proc/confirm_new_form_name(mob/user, datum/om/prompt/P)
-	var/clean_name = sanitizeName(P.get("name"), allow_numbers = TRUE)
+/// The name a synthetic body's new occupant picks. A cancel is another go (see new_form_name_declined()).
+/datum/om/prompt/text/new_form_name
+	title = "New Name"
+	message = "Pick a name for your new form!"
+	var/required = FALSE
+	var/attempt = 1
+
+/datum/om/prompt/text/new_form_name/cancelled()
+	var/mob/living/carbon/human/H = answerer
+	if(istype(H))
+		H.new_form_name_declined(required, attempt)
+
+/// Confirms the sanitised name. No or a cancel is another go.
+/datum/om/prompt/confirm/new_form_name
+	title = "Confirmation"
+	yes_text = "Ok"
+	no_text = "Cancel"
+	no_first = TRUE
+	answer_on_no = TRUE
+	var/clean_name
+	var/required = FALSE
+	var/attempt = 1
+
+/datum/om/prompt/confirm/new_form_name/prepare()
+	message = "New name will be '[clean_name]', ok?"
+	return TRUE
+
+/datum/om/prompt/confirm/new_form_name/cancelled()
+	var/mob/living/carbon/human/H = answerer
+	if(istype(H))
+		H.new_form_name_declined(required, attempt)
+
+/mob/living/carbon/human/proc/new_form_name_entered(datum/om/prompt/text/new_form_name/ask)
+	var/clean_name = sanitizeName(ask.text, allow_numbers = TRUE)
 	if(!clean_name)
-		return PROMPT_STOP
-	return list("key" = "ok", "message" = "New name will be '[clean_name]', ok?", "title" = "Confirmation", "choices" = list("Cancel", "Ok"))
-
-/mob/living/carbon/human/proc/new_form_name_answered(mob/user, datum/om/prompt/P)
-	var/clean_name = sanitizeName(P.get("name"), allow_numbers = TRUE)
-	if(clean_name && P.get("ok") == "Ok")
-		new_form_name_chosen(clean_name)
 		return
-	new_form_name_declined(user, P)
+	om_ask(src, /datum/om/prompt/confirm/new_form_name, PROC_REF(new_form_name_answered), clean_name = clean_name, required = ask.required, attempt = ask.attempt)
+
+/mob/living/carbon/human/proc/new_form_name_answered(datum/om/prompt/confirm/new_form_name/ask)
+	if(ask.yes)
+		new_form_name_chosen(ask.clean_name)
+		return
+	new_form_name_declined(ask.required, ask.attempt)
 
 /// Another go, up to the limit; a required name then falls back to the current one.
-/mob/living/carbon/human/proc/new_form_name_declined(mob/user, datum/om/prompt/P)
-	var/required = P.get("required")
-	var/attempt = P.get("attempt") + 1
+/mob/living/carbon/human/proc/new_form_name_declined(required, attempt)
+	attempt++
 	if(attempt <= (required ? 10 : 3))
 		pick_new_form_name(required, attempt)
 	else if(required)

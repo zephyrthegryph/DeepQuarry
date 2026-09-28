@@ -350,10 +350,16 @@
 	if(isnull(_answer_k349))
 		return
 	if(_answer_k349 == "Yes")
-		var/energy_color_input = tgui_color_picker(user,"","Choose Energy Color",lcolor)
-		if(energy_color_input)
-			lcolor = sanitize_hexcolor(energy_color_input)
-		update_icon()
+		om_ask(user, /datum/om/prompt/color/robotic_blade, PROC_REF(blade_color_picked), default = lcolor)
+
+/datum/om/prompt/color/robotic_blade
+	title = "Choose Energy Color"
+	ask_flags = ASK_CAPABLE
+
+/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/om/prompt/color/robotic_blade/ask)
+	if(ask.picked_color)
+		lcolor = sanitize_hexcolor(ask.picked_color)
+	update_icon()
 
 /obj/item/melee/robotic/blade/examine(mob/user)
 	. = ..()

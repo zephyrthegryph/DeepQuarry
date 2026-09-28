@@ -39,7 +39,7 @@
 	update_icon()
 	to_chat(user, span_notice("Analyzing \the [held], please stand by..."))
 
-	om_task_start(/datum/om/task/timed/chemical_analyzer_scan, user, src, list("receiver" = src, "held_arg" = held))
+	om_task_start(/datum/om/task/timed/chemical_analyzer_scan, user, src, receiver = src, held_arg = held)
 	return TRUE
 
 /obj/machinery/chemical_analyzer/proc/scan_failed(datum/om/task/timed/chemical_analyzer_scan/task)

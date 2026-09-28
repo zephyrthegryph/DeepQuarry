@@ -60,7 +60,7 @@
 		balloon_alert(user, "\the [E.name] already has a tourniquet!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts cinching \a [src] around [H == user ? "their" : "[H]'s"] [E.name].", "cinching \the [src] around the [E.name].")
-	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, list("receiver" = src, "duration" = TOURNIQUET_APPLY_TIME, "E" = E))
+	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, duration = TOURNIQUET_APPLY_TIME, E = E)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/tourniquet/proc/cinch_failed(datum/om/task/timed/tourniquet_cinch/task)

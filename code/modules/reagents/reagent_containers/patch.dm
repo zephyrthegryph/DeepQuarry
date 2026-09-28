@@ -61,7 +61,7 @@
 		user.visible_message(span_warning("[user] attempts to place \the [src] onto [H]`s [affecting]."))
 
 		user.setClickCooldown(user.get_attack_speed(src))
-		om_task_start(/datum/om/task/timed/patch_apply_patch, user, M, list("receiver" = src, "H" = H, "affecting" = affecting))
+		om_task_start(/datum/om/task/timed/patch_apply_patch, user, M, receiver = src, H = H, affecting = affecting)
 		return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE

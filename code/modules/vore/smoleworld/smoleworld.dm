@@ -97,9 +97,18 @@
 	set src in oview(1)
 	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	var/new_color = tgui_color_picker(usr, "Please select color.", "Paint Color", color)
-	color = new_color
-	return
+	om_ask(usr, /datum/om/prompt/color/smole_paint, GLOBAL_PROC_REF(smole_paint_picked), default = color)
+
+/// A smole road or building's colour. Re-checked on the answer: the painter is still next to it.
+/datum/om/prompt/color/smole_paint
+	title = "Paint Color"
+	message = "Please select color."
+	ask_flags = ASK_NEAR_SUBJECT
+
+/proc/smole_paint_picked(datum/om/prompt/color/smole_paint/ask)
+	var/atom/A = ask.subject
+	if(istype(A) && ask.picked_color)
+		A.color = ask.picked_color
 
 // probably redundant, allows for direct way to dismantal without knowing intents
 /obj/structure/smoletrack/verb/menudismantal()
@@ -243,9 +252,7 @@
 	set src in oview(1)
 	if(HAS_TRAIT(usr, TRAIT_AMBIENT_PEST_MOB) || (isobserver(usr) && !CONFIG_GET(flag/ghost_interaction)))
 		return
-	var/new_color = tgui_color_picker(usr, "Please select color.", "Paint Color", color)
-	color = new_color
-	return
+	om_ask(usr, /datum/om/prompt/color/smole_paint, GLOBAL_PROC_REF(smole_paint_picked), default = color)
 
 //probably a bit redundant but gives a more direct way to disassemble buildings without using intents
 /obj/structure/smolebuilding/verb/menudismantal()

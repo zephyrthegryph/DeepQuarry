@@ -132,7 +132,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 		to_chat(user,"You cast \the [P.name] into \the [src].")
 		R.cast = TRUE
 		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
-		om_task_start(/datum/om/task/timed/fishing, user, null, list("duration" = fishing_time, "receiver" = src, "rod" = R, "busy" = src))
+		om_task_start(/datum/om/task/timed/fishing, user, null, duration = fishing_time, rod = R, busy = src)
 	else ..()
 
 /// A line in the water until something bites; the water is busy meanwhile.

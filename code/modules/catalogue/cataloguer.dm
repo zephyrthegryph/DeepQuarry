@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	// beam (which ends itself) is never a captured argument.
 	var/list/effects = list(scan_beam, filter, box_segments)
 	// The scan claims the cataloguer: busy (om_busy()) until it ends.
-	var/started = om_task_start(/datum/om/task/timed/cataloguer_scan, user, target, list("receiver" = src, "duration" = scan_delay, "effects" = effects, "scan_start_time" = world.time, "max_distance" = scan_range, "busy" = src))
+	var/started = om_task_start(/datum/om/task/timed/cataloguer_scan, user, target, duration = scan_delay, effects = effects, scan_start_time = world.time, max_distance = scan_range, busy = src)
 	if(istext(started))
 		scan_cleanup(target, user, effects)
 		return

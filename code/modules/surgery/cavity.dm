@@ -172,23 +172,38 @@
 	..()
 	if(!length(part.implants))
 		return
-	om_prompt(part, user, list("kind" = "list", "message" = "Which embedded object do you wish to remove?", "title" = name, "choices" = part.implants, "requires" = PROMPT_ADJACENT, "target" = target, "data" = list("patient" = target, "tool" = tool, "step" = src)), GLOBAL_PROC_REF(extract_foreign_body_chosen))
+	om_ask(user, /datum/om/prompt/choice/extract_foreign_body, PROC_REF(foreign_body_chosen), title = name, choices = part.implants, subject = target, part = part, tool = tool)
 
-/proc/extract_foreign_body_chosen(obj/item/organ/external/part, mob/living/user, atom/movable/removed, datum/om/prompt/P)
-	var/datum/surgical_step/treat/extract_foreign_body/step = P.get("step")
-	step.foreign_body_chosen(user, P.get("patient"), part, P.get("tool"), removed)
+/// Which embedded object to pull out. Re-checked on the answer: the surgeon is still next to the
+/// patient and able, the part is still theirs, the pick is still in it and the tool still in hand.
+/datum/om/prompt/choice/extract_foreign_body
+	message = "Which embedded object do you wish to remove?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/obj/item/organ/external/part
+	var/obj/item/tool
 
-/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/movable/removed)
-	if(!removed || !(removed in part.implants) || part.owner != target || user.get_active_hand() != tool)
-		to_chat(user, span_notice("You draw \the [tool] back out of [target]'s [part.name]."))
-		return
+/datum/om/prompt/choice/extract_foreign_body/valid()
+	if(!choice || !(choice in part.implants) || part.owner != subject || answerer.get_active_hand() != tool)
+		return "lost the grip"
+	return null
+
+/datum/om/prompt/choice/extract_foreign_body/refused(reason)
+	if(answerer && tool && subject && part)
+		to_chat(answerer, span_notice("You draw \the [tool] back out of [subject]'s [part.name]."))
+
+/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(datum/om/prompt/choice/extract_foreign_body/ask)
+	var/mob/living/user = ask.answerer
+	var/mob/living/carbon/human/target = ask.subject
+	var/obj/item/organ/external/part = ask.part
+	var/obj/item/tool = ask.tool
+	var/atom/movable/removed = ask.choice
 	var/wait = 0
 	if(istype(removed, /obj/item/implant))
 		var/obj/item/implant/imp = removed
 		if(!imp.islegal())
 			to_chat(user, span_notice("\The [imp] is anchored deep; you work it loose carefully..."))
 			wait = duration
-	om_task_start(/datum/om/task/timed/extract_foreign_body, user, target, list("duration" = wait, "receiver" = src, "part" = part, "removed" = removed, "tool" = tool, "max_distance" = tool.reach))
+	om_task_start(/datum/om/task/timed/extract_foreign_body, user, target, duration = wait, receiver = src, part = part, removed = removed, tool = tool, max_distance = tool.reach)
 
 /// Working a foreign body (`removed`) out of `part`: at once, or slowly for an anchored implant.
 /datum/om/task/timed/extract_foreign_body

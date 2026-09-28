@@ -153,7 +153,7 @@ REF_OWNED(/obj/item/gun/magnetic/matfed, "manipulator")
 				to_chat(user, span_warning("\The [src] cannot hold more [ammo_material]."))
 				return
 			loading = TRUE
-			if(!can_load_sheet(M) || istext(om_task_start(/datum/om/task/timed/load_sheets, user, src, list("receiver" = src, "sheets" = M))))
+			if(!can_load_sheet(M) || istext(om_task_start(/datum/om/task/timed/load_sheets, user, src, receiver = src, sheets = M)))
 				loading = FALSE
 			return
 

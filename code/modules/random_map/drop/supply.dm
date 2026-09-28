@@ -62,36 +62,66 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	admin = null
 	return ..()
 
-/datum/supply_drop_order/proc/ask(list/spec, on_answer, on_cancel)
-	spec["requires"] = PROMPT_ADMIN(R_FUN)
-	if(on_cancel)
-		spec["on_cancel"] = on_cancel
-	om_prompt(src, admin, spec, on_answer)
+/// Asks the admin a supply drop question. `on_cancel` runs on the order when the window is closed.
+/datum/supply_drop_order/proc/ask(prompt_type, message, on_answer, on_cancel, list/choices)
+	if(choices)
+		om_ask(admin, prompt_type, on_answer, order = src, cancel_proc = on_cancel, message = message, choices = choices)
+	else
+		om_ask(admin, prompt_type, on_answer, order = src, cancel_proc = on_cancel, message = message)
+
+/// A yes/no step of a supply drop order. Re-checked on the answer: the admin still has R_FUN.
+/datum/om/prompt/confirm/supply_drop
+	title = "Supply Drop"
+	no_first = TRUE
+	answer_on_no = TRUE
+	requires = PROMPT_ADMIN(R_FUN)
+	var/datum/supply_drop_order/order
+	/// Runs on the order when the window is closed.
+	var/cancel_proc
+
+/datum/om/prompt/confirm/supply_drop/cancelled()
+	if(order && cancel_proc)
+		call(order, cancel_proc)()
+
+/datum/om/prompt/confirm/supply_drop/refused(reason)
+	qdel(order)
+
+/// A list pick of a supply drop order. Re-checked on the answer: the admin still has R_FUN.
+/datum/om/prompt/choice/supply_drop
+	title = "Loot Selection"
+	requires = PROMPT_ADMIN(R_FUN)
+	var/datum/supply_drop_order/order
+	/// Runs on the order when the window is closed.
+	var/cancel_proc
+
+/datum/om/prompt/choice/supply_drop/cancelled()
+	if(order && cancel_proc)
+		call(order, cancel_proc)()
+
+/datum/om/prompt/choice/supply_drop/refused(reason)
+	qdel(order)
 
 /datum/supply_drop_order/proc/start()
-	ask(list("message" = "Do you wish to supply a custom loot list?", "title" = "Supply Drop", "choices" = list("No","Yes")), PROC_REF(custom_answered), PROC_REF(abandon))
+	ask(/datum/om/prompt/confirm/supply_drop, "Do you wish to supply a custom loot list?", PROC_REF(custom_answered), PROC_REF(abandon))
 
-/datum/supply_drop_order/proc/abandon(mob/user, datum/om/prompt/ask)
+/datum/supply_drop_order/proc/abandon()
 	qdel(src)
 
-/datum/supply_drop_order/proc/custom_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Yes")
+/datum/supply_drop_order/proc/custom_answered(datum/om/prompt/confirm/supply_drop/answer)
+	if(answer.yes)
 		chosen_loot_types = list()
 		next_category()
 		return
-	ask(list("message" = "Do you wish to specify a loot type?", "title" = "Supply Drop", "choices" = list("No","Yes")), PROC_REF(specify_answered), PROC_REF(abandon))
+	ask(/datum/om/prompt/confirm/supply_drop, "Do you wish to specify a loot type?", PROC_REF(specify_answered), PROC_REF(abandon))
 
-/datum/supply_drop_order/proc/specify_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice != "Yes")
+/datum/supply_drop_order/proc/specify_answered(datum/om/prompt/confirm/supply_drop/answer)
+	if(!answer.yes)
 		confirm()
 		return
-	ask(list("kind" = "list", "message" = "Select a loot type.", "title" = "Loot Selection", "choices" = GLOB.supply_drop), PROC_REF(loot_type_answered), PROC_REF(confirm_after_cancel))
+	ask(/datum/om/prompt/choice/supply_drop, "Select a loot type.", PROC_REF(loot_type_answered), PROC_REF(confirm), GLOB.supply_drop)
 
-/datum/supply_drop_order/proc/loot_type_answered(mob/user, loot_type, datum/om/prompt/ask)
-	chosen_loot_type = loot_type
-	confirm()
-
-/datum/supply_drop_order/proc/confirm_after_cancel(mob/user, datum/om/prompt/ask)
+/datum/supply_drop_order/proc/loot_type_answered(datum/om/prompt/choice/supply_drop/answer)
+	chosen_loot_type = answer.choice
 	confirm()
 
 /datum/supply_drop_order/proc/next_category()
@@ -101,22 +131,20 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	var/question = categories[1]
 	current_root = categories[question]
 	categories.Cut(1, 2)
-	ask(list("message" = question, "title" = "Supply Drop", "choices" = list("No","Yes")), PROC_REF(category_answered), PROC_REF(next_category_after_cancel))
+	ask(/datum/om/prompt/confirm/supply_drop, question, PROC_REF(category_answered), PROC_REF(next_category))
 
-/datum/supply_drop_order/proc/next_category_after_cancel(mob/user, datum/om/prompt/ask)
-	next_category()
-
-/datum/supply_drop_order/proc/category_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Yes")
+/datum/supply_drop_order/proc/category_answered(datum/om/prompt/confirm/supply_drop/answer)
+	if(answer.yes)
 		pick_loot()
 	else
 		next_category()
 
 /datum/supply_drop_order/proc/pick_loot()
 	var/list/choices = current_root == /atom/movable || current_root == /mob/living ? typesof(current_root) : subtypesof(current_root)
-	ask(list("kind" = "list", "message" = "Select a new loot path. Cancel to finish.", "title" = "Loot Selection", "choices" = choices), PROC_REF(loot_picked), PROC_REF(next_category_after_cancel))
+	ask(/datum/om/prompt/choice/supply_drop, "Select a new loot path. Cancel to finish.", PROC_REF(loot_picked), PROC_REF(next_category), choices)
 
-/datum/supply_drop_order/proc/loot_picked(mob/user, loot_path, datum/om/prompt/ask)
+/datum/supply_drop_order/proc/loot_picked(datum/om/prompt/choice/supply_drop/answer)
+	var/loot_path = answer.choice
 	if(!ispath(loot_path))
 		next_category()
 		return
@@ -124,10 +152,11 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	pick_loot()
 
 /datum/supply_drop_order/proc/confirm()
-	ask(list("message" = "Are you SURE you wish to deploy this supply drop? It will cause a sizable explosion and gib anyone underneath it.", "title" = "Supply Drop", "choices" = list("No","Yes")), PROC_REF(confirmed), PROC_REF(abandon))
+	ask(/datum/om/prompt/confirm/supply_drop, "Are you SURE you wish to deploy this supply drop? It will cause a sizable explosion and gib anyone underneath it.", PROC_REF(confirmed), PROC_REF(abandon))
 
-/datum/supply_drop_order/proc/confirmed(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Yes" && isturf(user.loc))
+/datum/supply_drop_order/proc/confirmed(datum/om/prompt/confirm/supply_drop/answer)
+	var/mob/user = answer.answerer
+	if(answer.yes && isturf(user.loc))
 		log_admin("[key_name(user)] dropped supplies at ([user.x],[user.y],[user.z])")
 		new /datum/random_map/droppod/supply(null, user.x-2, user.y-2, user.z, supplied_drops = chosen_loot_types, supplied_drop = chosen_loot_type)
 	qdel(src)

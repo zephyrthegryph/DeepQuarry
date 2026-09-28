@@ -588,16 +588,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			if(!pref.is_client_writable(preferences))
 				return FALSE
 			var/current = preferences.read_preference(pref.type)
-			var/new_color = tgui_color_picker(ui.user, "Pick a color", "Color", current || "#000000")
-			if(!new_color)
-				return TRUE  // user cancelled; nothing to write
-			// tgui_color_picker sleeps — the player can move, log off, swap characters, or
-			// have their prefs torn down while it's open. Re-verify before writing.
-			if(!ui.user?.client?.prefs || ui.user.client.prefs != preferences)
-				return TRUE
-			if(!pref.is_accessible(preferences))
-				return TRUE
-			preferences.update_preference(pref, new_color)
+			// The pick is re-checked (same prefs, still accessible) and written in pref_color_picked().
+			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, GLOBAL_PROC_REF(pref_color_picked), title = "Color", message = "Pick a color", default = current || "#000000", preferences = preferences, pref_key = key)
 			return TRUE
 
 		// Atomic multi-pref operation handled by a registered editor.
@@ -613,3 +605,20 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
 				preferences.dq_invalidate_category_cache()
 			return (result == PREF_UPDATE_ACCEPTED)
+
+/// A colour for one /datum/preference/color entry. Re-checked: the entry is still accessible.
+/datum/om/prompt/color/prefs/entry
+	var/pref_key
+
+/datum/om/prompt/color/prefs/entry/valid()
+	. = ..()
+	if(.)
+		return
+	var/datum/preference/pref = GLOB.preference_entries_by_key[pref_key]
+	if(!pref || !pref.is_accessible(preferences))
+		return "not accessible"
+
+/proc/pref_color_picked(datum/om/prompt/color/prefs/entry/ask)
+	var/datum/preference/pref = GLOB.preference_entries_by_key[ask.pref_key]
+	if(ask.preferences.update_preference(pref, ask.picked_color))
+		SStgui.update_uis(ask.preferences)

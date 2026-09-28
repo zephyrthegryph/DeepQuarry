@@ -46,32 +46,60 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	if(T)
 		message_admins(span_pm("[key_name_admin(src)] has started replying to [key_name(C, 0, 0)]'s admin help."))
-	om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Private message to [key_name(C, 0, 0)]", "multiline" = TRUE, "encode" = FALSE, "on_cancel" = PROC_REF(ahelp_reply_cancelled), "data" = list("whom" = C, "ticket" = T)), PROC_REF(ahelp_reply_entered))
+	om_ask(src, /datum/om/prompt/text/admin_pm/ahelp_reply, PROC_REF(ahelp_reply_entered), whom = C, ticket = T)
 
-/client/proc/ahelp_reply_cancelled(mob/user, datum/om/prompt/ask)
-	message_admins(span_pm("[key_name_admin(src)] has cancelled their reply to [key_name(ask.get("whom"), 0, 0)]'s admin help."))
+/// Writing an admin PM to `whom` (a client).
+/datum/om/prompt/text/admin_pm
+	message = "Message:"
+	multiline = TRUE
+	encode = FALSE
+	var/client/whom
+	var/datum/ticket/ticket
 
-/client/proc/ahelp_reply_entered(mob/user, msg, datum/om/prompt/ask)
-	if (!msg)
-		ahelp_reply_cancelled(user, ask)
+/datum/om/prompt/text/admin_pm/prepare()
+	title = "Private message to [key_name(whom, 0, 0)]"
+	return TRUE
+
+/// Replying to an adminhelp: a cancel is announced to the other admins.
+/datum/om/prompt/text/admin_pm/ahelp_reply
+
+/datum/om/prompt/text/admin_pm/ahelp_reply/cancelled()
+	answerer?.client?.ahelp_reply_cancelled(whom)
+
+/// A popup admin PM's reply, on the recipient; the sender is looked up by ckey when it arrives.
+/datum/om/prompt/text/admin_pm_popup
+	multiline = TRUE
+	var/sender_ckey
+
+/client/proc/ahelp_reply_cancelled(client/whom)
+	message_admins(span_pm("[key_name_admin(src)] has cancelled their reply to [key_name(whom, 0, 0)]'s admin help."))
+
+/client/proc/ahelp_reply_entered(datum/om/prompt/text/admin_pm/ahelp_reply/ask)
+	if (!ask.text)
+		ahelp_reply_cancelled(ask.whom)
 		return
-	cmd_admin_pm(ask.get("whom"), msg, ask.get("ticket"))
+	cmd_admin_pm(ask.whom, ask.text, ask.ticket)
 
 //takes input from cmd_admin_pm_context, cmd_admin_pm_panel or /client/Topic and sends them a PM.
 //Fetching a message if needed. src is the sender and C is the target client
 /// A popup PM's reply (on the recipient): to the sender, or an adminhelp if they left.
-/client/proc/admin_pm_popup_replied(mob/user, reply, datum/om/prompt/ask)
+/client/proc/admin_pm_popup_replied(datum/om/prompt/text/admin_pm_popup/ask)
+	var/reply = ask.text
 	if(!reply)
 		return
-	var/client/sender = GLOB.directory[ask.get("sender")]
+	var/client/sender = GLOB.directory[ask.sender_ckey]
 	if(sender)
 		cmd_admin_pm(sender, reply)										//sender is still about, let's reply to them
 	else
 		adminhelp(reply)													//sender has left, adminhelp instead
 
-/client/proc/admin_pm_entered(mob/user, msg, datum/om/prompt/ask)
-	if(msg)
-		cmd_admin_pm(ask.get("whom"), msg, ask.get("ticket"))
+/client/proc/admin_pm_entered(datum/om/prompt/text/admin_pm/ask)
+	if(ask.text)
+		cmd_admin_pm(ask.whom, ask.text, ask.ticket)
+
+/// Shows this client a popup admin PM they can reply to (the answer runs on this client).
+/client/proc/ask_admin_pm_popup(msg, sender_key, sender_ckey)
+	om_ask(src, /datum/om/prompt/text/admin_pm_popup, PROC_REF(admin_pm_popup_replied), message = msg, title = "Admin PM from-[sender_key]", sender_ckey = sender_ckey)
 
 /client/proc/cmd_admin_pm(whom, msg, datum/ticket/T)
 	if(prefs.muted & MUTE_ADMINHELP)
@@ -95,7 +123,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	//get message text, limit it's length.and clean/escape html
 	if(!msg)
-		om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Private message to [key_name(recipient, 0, 0)]", "multiline" = TRUE, "encode" = FALSE, "data" = list("whom" = recipient, "ticket" = T)), PROC_REF(admin_pm_entered))
+		om_ask(src, /datum/om/prompt/text/admin_pm, PROC_REF(admin_pm_entered), whom = recipient, ticket = T)
 		return
 
 	//clean the message if it's not sent by a high-rank admin
@@ -163,7 +191,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 			//AdminPM popup for ApocStation and anybody else who wants to use it. Set it with POPUP_ADMIN_PM in config.txt ~Carn
 			if(CONFIG_GET(flag/popup_admin_pm))
 				// The recipient replies in their own time; the reply goes back to us if we're still here.
-				om_prompt(recipient, recipient, list("kind" = "text", "message" = msg, "title" = "Admin PM from-[key]", "multiline" = TRUE, "data" = list("sender" = ckey)), PROC_REF(admin_pm_popup_replied))
+				recipient.ask_admin_pm_popup(msg, key, ckey)
 
 		else		//neither are admins
 			to_chat(src, span_admin_pm_warning("Error: Admin-PM: Non-admin to non-admin PM communication is forbidden."))

@@ -86,54 +86,87 @@ SUBSYSTEM_DEF(media_tracks)
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
-	om_prompt_sequence(src, usr, list(
-		list("key" = "url", "kind" = "text", "message" = "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", "title" = "Track URL", "multiline" = TRUE),
-		PROC_REF(manual_track_ask_title),
-		PROC_REF(manual_track_ask_duration),
-		PROC_REF(manual_track_ask_artist),
-		PROC_REF(manual_track_ask_genre),
-		PROC_REF(manual_track_ask_secret),
-		PROC_REF(manual_track_ask_lobby),
-		PROC_REF(manual_track_ask_casino),
-	), PROC_REF(manual_track_entered), list("requires" = PROMPT_ADMIN(R_DEBUG|R_FUN)))
+	om_flow_start(/datum/om/flow/media_track_add, usr, null, tracks = src)
 
-/// Pasted JSON skips the remaining questions.
-/datum/controller/subsystem/media_tracks/proc/manual_track_is_json(datum/om/prompt/ask)
-	var/url = ask.get("url")
+/// An admin adds a media track: the URL (or pasted JSON, which ends the questions), then the
+/// title, duration, artist, genre and the secret/lobby/casino marks. A cancel ends it.
+/datum/om/flow/media_track_add
+	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
+	var/datum/controller/subsystem/media_tracks/tracks
+	var/url
+	var/title
+	var/duration
+	var/artist
+	var/genre
+	var/secret
+	var/lobby
+
+/// The admin-only text questions of adding a track.
+/datum/om/prompt/text/media_track
+	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
+	max_length = MAX_TGUI_INPUT
+
+/datum/om/prompt/number/media_track
+	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
+
+/// A Yes/Cancel/No mark; Cancel ends the questions.
+/datum/om/prompt/choice/media_track_mark
+	requires = PROMPT_ADMIN(R_DEBUG|R_FUN)
+	buttons = TRUE
+	choices = list("Yes", "Cancel", "No")
+
+/datum/om/flow/media_track_add/start()
+	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(url_entered), title = "Track URL", message = "REQUIRED: Provide URL for track, or paste JSON if you know what you're doing. See code comments.", multiline = TRUE)
+
+/datum/om/flow/media_track_add/proc/url_entered(datum/om/prompt/text/media_track/ask)
+	url = ask.text
 	if(!url)
-		return TRUE
+		return
 	var/json
 	try
 		json = json_decode(url)
 	catch
-	return islist(json)
+	if(islist(json))
+		tracks.manual_track_entered(actor, src)
+		return
+	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(title_entered), title = "Track Title", message = "REQUIRED: Provide title for track")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_title(mob/user, datum/om/prompt/ask)
-	if(manual_track_is_json(ask))
-		return PROMPT_STOP
-	return list("key" = "title", "kind" = "text", "message" = "REQUIRED: Provide title for track", "title" = "Track Title")
+/datum/om/flow/media_track_add/proc/title_entered(datum/om/prompt/text/media_track/ask)
+	title = ask.text
+	if(!title)
+		return
+	om_ask(actor, /datum/om/prompt/number/media_track, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_duration(mob/user, datum/om/prompt/ask)
-	if(!ask.get("title"))
-		return PROMPT_STOP
-	return list("key" = "duration", "kind" = "number", "message" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "title" = "Track Duration")
+/datum/om/flow/media_track_add/proc/duration_entered(datum/om/prompt/number/media_track/ask)
+	duration = ask.number
+	if(!duration)
+		return
+	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(artist_entered), title = "Track Artist", message = "Optional: Provide artist for track")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_artist(mob/user, datum/om/prompt/ask)
-	if(!ask.get("duration"))
-		return PROMPT_STOP
-	return list("key" = "artist", "kind" = "text", "message" = "Optional: Provide artist for track", "title" = "Track Artist")
+/datum/om/flow/media_track_add/proc/artist_entered(datum/om/prompt/text/media_track/ask)
+	artist = ask.text
+	om_ask(actor, /datum/om/prompt/text/media_track, PROC_REF(genre_entered), title = "Track Genre", message = "Optional: Provide genre for track (try to match an existing one)")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_genre(mob/user, datum/om/prompt/ask)
-	return list("key" = "genre", "kind" = "text", "message" = "Optional: Provide genre for track (try to match an existing one)", "title" = "Track Genre")
+/datum/om/flow/media_track_add/proc/genre_entered(datum/om/prompt/text/media_track/ask)
+	genre = ask.text
+	om_ask(actor, /datum/om/prompt/choice/media_track_mark, PROC_REF(secret_chosen), title = "Track Secret", message = "Optional: Mark track as secret?")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_secret(mob/user, datum/om/prompt/ask)
-	return list("key" = "secret", "message" = "Optional: Mark track as secret?", "title" = "Track Secret", "choices" = list("Yes", "Cancel", "No"), "abort" = "Cancel")
+/datum/om/flow/media_track_add/proc/secret_chosen(datum/om/prompt/choice/media_track_mark/ask)
+	if(ask.choice == "Cancel")
+		return
+	secret = (ask.choice == "Yes")
+	om_ask(actor, /datum/om/prompt/choice/media_track_mark, PROC_REF(lobby_chosen), title = "Track Lobby", message = "Optional: Mark track as lobby music?")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_lobby(mob/user, datum/om/prompt/ask)
-	return list("key" = "lobby", "message" = "Optional: Mark track as lobby music?", "title" = "Track Lobby", "choices" = list("Yes", "Cancel", "No"), "abort" = "Cancel")
+/datum/om/flow/media_track_add/proc/lobby_chosen(datum/om/prompt/choice/media_track_mark/ask)
+	if(ask.choice == "Cancel")
+		return
+	lobby = (ask.choice == "Yes")
+	om_ask(actor, /datum/om/prompt/choice/media_track_mark, PROC_REF(casino_chosen), title = "Track Casino", message = "Optional: Mark track as casino music?")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_ask_casino(mob/user, datum/om/prompt/ask)
-	return list("key" = "casino", "message" = "Optional: Mark track as casino music?", "title" = "Track Casino", "choices" = list("Yes", "Cancel", "No"), "abort" = "Cancel")
+/datum/om/flow/media_track_add/proc/casino_chosen(datum/om/prompt/choice/media_track_mark/ask)
+	if(ask.choice == "Cancel")
+		return
+	tracks.manual_track_entered(actor, src, ask.choice == "Yes")
 
 /**
  * Alternatively to using a series of inputs, you can use json and paste it in.
@@ -148,8 +181,8 @@ SUBSYSTEM_DEF(media_tracks)
  * "lobby": plays in the lobby (true/false)
  * "casino": plays in the casino (true/false)
  */
-/datum/controller/subsystem/media_tracks/proc/manual_track_entered(mob/user, datum/om/prompt/ask)
-	var/url = ask.get("url")
+/datum/controller/subsystem/media_tracks/proc/manual_track_entered(mob/user, datum/om/flow/media_track_add/answers, casino = FALSE)
+	var/url = answers.url
 	if(!url)
 		return
 	var/list/json
@@ -173,14 +206,14 @@ SUBSYSTEM_DEF(media_tracks)
 		sort_tracks()
 		return
 
-	var/title = ask.get("title")
-	var/duration = ask.get("duration")
+	var/title = answers.title
+	var/duration = answers.duration
 	if(!title || !duration)
 		return
-	var/datum/track/T = new(url, title, duration, ask.get("artist"), ask.get("genre"))
-	T.secret = ask.get("secret") == "Yes"
-	T.lobby = ask.get("lobby") == "Yes"
-	T.casino = ask.get("casino") == "Yes"
+	var/datum/track/T = new(url, title, duration, answers.artist, answers.genre)
+	T.secret = answers.secret
+	T.lobby = answers.lobby
+	T.casino = casino
 
 	all_tracks += T
 
@@ -191,9 +224,11 @@ SUBSYSTEM_DEF(media_tracks)
 	if(!check_rights(R_DEBUG|R_FUN))
 		return
 
-	om_prompt(src, usr, list("kind" = "text", "message" = "Input track title or URL to remove (must be exact)", "title" = "Remove Track", "requires" = PROMPT_ADMIN(R_DEBUG|R_FUN)), PROC_REF(manual_track_removal_entered))
+	om_ask(usr, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
 
-/datum/controller/subsystem/media_tracks/proc/manual_track_removal_entered(mob/user, track, datum/om/prompt/ask)
+/datum/controller/subsystem/media_tracks/proc/manual_track_removal_entered(datum/om/prompt/text/media_track/ask)
+	var/mob/user = ask.answerer
+	var/track = ask.text
 	if(!track)
 		return
 

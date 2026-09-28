@@ -295,7 +295,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 	if(!instant)
 		M.visible_message(span_notice("[M]'s suit emits a quiet hum as it begins to adjust its seals."),span_notice("With a quiet hum, the suit begins running checks and adjusting components."))
 		if(seal_delay)
-			om_task_start(/datum/om/task/timed/rig_seal, M, src, list("duration" = seal_delay, "receiver" = src, "seal_target" = seal_target, "booting_L" = booting_L, "booting_R" = booting_R))
+			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R)
 			return 1
 	seal_piece(M, seal_target, instant, booting_L, booting_R, 1)
 	return 1
@@ -353,7 +353,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 			return
 
 		if(seal_delay && !instant)
-			om_task_start(/datum/om/task/timed/rig_seal, M, src, list("duration" = seal_delay, "receiver" = src, "seal_target" = seal_target, "booting_L" = booting_L, "booting_R" = booting_R, "piece" = piece, "msg_type" = msg_type, "index" = i))
+			om_task_start(/datum/om/task/timed/rig_seal, M, src, duration = seal_delay, seal_target = seal_target, booting_L = booting_L, booting_R = booting_R, piece = piece, msg_type = msg_type, index = i)
 			return
 		seal_one_piece(M, piece, msg_type, seal_target)
 

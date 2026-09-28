@@ -581,6 +581,63 @@
 	preferences.update_preview_icon()
 	SStgui.update_uis(preferences)
 
+/// A colour for one of an equipped gear's tweaks. Re-checked on the answer: the same prefs, the
+/// same loadout slot, and the gear still equipped in it.
+/datum/om/prompt/color/prefs/gear_tweak
+	var/gear_name
+	var/tweak_idx
+	var/loadout_key
+	/// Palette swatches: the source colour being remapped.
+	var/original
+
+/datum/om/prompt/color/prefs/gear_tweak/valid()
+	. = ..()
+	if(.)
+		return
+	var/datum/preference_editor/loadout/editor = GLOB.preference_editors_by_key["loadout"]
+	if(editor && editor._current_slot(preferences) != loadout_key)
+		return "slot changed"
+	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[loadout_key] || list()
+	if(!(gear_name in active))
+		return "not equipped"
+
+/// Writes `value` as the tweak's metadata and refreshes the preview and the UI.
+/datum/preference_editor/loadout/proc/write_tweak_meta(datum/om/prompt/color/prefs/gear_tweak/ask, value)
+	var/datum/preferences/preferences = ask.preferences
+	var/list/gear_list = preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[ask.loadout_key] || list()
+	var/list/item_meta = active[ask.gear_name]
+	if(!islist(item_meta))
+		item_meta = list()
+	item_meta["[ask.tweak_idx]"] = value
+	active[ask.gear_name] = item_meta
+	gear_list[ask.loadout_key] = active
+	preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
+	preferences.update_preview_icon()
+	SStgui.update_uis(preferences)
+
+/datum/preference_editor/loadout/proc/tweak_color_picked(datum/om/prompt/color/prefs/gear_tweak/ask)
+	write_tweak_meta(ask, sanitize_hexcolor(ask.picked_color, default = ask.default))
+
+/datum/preference_editor/loadout/proc/tint_color_picked(datum/om/prompt/color/prefs/gear_tweak/ask)
+	write_tweak_meta(ask, list("mode" = "tint", "value" = sanitize_hexcolor(ask.picked_color, default = ask.default)))
+
+/datum/preference_editor/loadout/proc/swatch_color_picked(datum/om/prompt/color/prefs/gear_tweak/ask)
+	var/list/gear_list = ask.preferences.read_preference(/datum/preference/gear_list) || list()
+	var/list/active = gear_list[ask.loadout_key] || list()
+	var/list/item_meta = active[ask.gear_name]
+	var/list/cur_meta = islist(item_meta) ? item_meta["[ask.tweak_idx]"] : null
+	var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
+	var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
+	var/original = ask.original
+	var/sanitized = sanitize_hexcolor(ask.picked_color, default = original)
+	if(sanitized == original)
+		swaps -= original  // identity entry — strip rather than persist
+	else
+		swaps[original] = sanitized
+	write_tweak_meta(ask, list("mode" = "palette", "value" = swaps))
+
 /datum/preference_editor/loadout/handle_action(datum/preferences/preferences, action, list/params, mob/user)
 	// Lazy stale-slot migration: any action implies the user is actively editing, which
 	// is a fine moment to persist a slot fixup if their saved gear_slot points at a job
@@ -734,18 +791,8 @@
 			if(!islist(item_meta))
 				item_meta = list()
 			var/cur = item_meta["[tweak_idx]"] || "#ffffff"
-			var/picked = tgui_color_picker(user, "Pick a color", "[G.display_name]", cur)
-			if(!picked)
-				return PREF_UPDATE_UNCHANGED
-			// tgui_color_picker sleeps — re-verify prefs ownership before writing.
-			if(!user?.client?.prefs || user.client.prefs != preferences)
-				return PREF_UPDATE_UNCHANGED
-			item_meta["[tweak_idx]"] = sanitize_hexcolor(picked, default = cur)
-			active[gear_name] = item_meta
-			gear_list[loadout_key] = active
-			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
-			preferences.update_preview_icon()
-			return PREF_UPDATE_ACCEPTED
+			om_ask(user, /datum/om/prompt/color/prefs/gear_tweak, PROC_REF(tweak_color_picked), title = "[G.display_name]", message = "Pick a color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
+			return PREF_UPDATE_UNCHANGED
 
 		if("recolor_pick_tint")
 			// opens tgui_color_picker for the unified recolor tweak's tint mode.
@@ -767,17 +814,8 @@
 				item_meta = list()
 			var/list/cur_meta = item_meta["[tweak_idx]"]
 			var/cur = (islist(cur_meta) && cur_meta["mode"] == "tint") ? cur_meta["value"] : "#ffffff"
-			var/picked = tgui_color_picker(user, "Tint color", "[G.display_name]", cur)
-			if(!picked)
-				return PREF_UPDATE_UNCHANGED
-			if(!user?.client?.prefs || user.client.prefs != preferences)
-				return PREF_UPDATE_UNCHANGED
-			item_meta["[tweak_idx]"] = list("mode" = "tint", "value" = sanitize_hexcolor(picked, default = cur))
-			active[gear_name] = item_meta
-			gear_list[loadout_key] = active
-			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
-			preferences.update_preview_icon()
-			return PREF_UPDATE_ACCEPTED
+			om_ask(user, /datum/om/prompt/color/prefs/gear_tweak, PROC_REF(tint_color_picked), title = "[G.display_name]", message = "Tint color", default = cur, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key)
+			return PREF_UPDATE_UNCHANGED
 
 		if("recolor_pick_palette_swatch")
 			// palette-mode swatch picker. Takes `original` hex; opens tgui_color_picker
@@ -805,22 +843,8 @@
 			var/list/cur_swaps = (islist(cur_meta) && cur_meta["mode"] == "palette" && islist(cur_meta["value"])) ? cur_meta["value"] : null
 			var/list/swaps = cur_swaps ? cur_swaps.Copy() : list()
 			var/cur_value = swaps[original] || original
-			var/picked = tgui_color_picker(user, "Recolor source [original]", "[G.display_name]", cur_value)
-			if(!picked)
-				return PREF_UPDATE_UNCHANGED
-			if(!user?.client?.prefs || user.client.prefs != preferences)
-				return PREF_UPDATE_UNCHANGED
-			var/sanitized = sanitize_hexcolor(picked, default = original)
-			if(sanitized == original)
-				swaps -= original  // identity entry — strip rather than persist
-			else
-				swaps[original] = sanitized
-			item_meta["[tweak_idx]"] = list("mode" = "palette", "value" = swaps)
-			active[gear_name] = item_meta
-			gear_list[loadout_key] = active
-			preferences.update_preference_by_type(/datum/preference/gear_list, gear_list)
-			preferences.update_preview_icon()
-			return PREF_UPDATE_ACCEPTED
+			om_ask(user, /datum/om/prompt/color/prefs/gear_tweak, PROC_REF(swatch_color_picked), title = "[G.display_name]", message = "Recolor source [original]", default = cur_value, preferences = preferences, gear_name = gear_name, tweak_idx = tweak_idx, loadout_key = loadout_key, original = original)
+			return PREF_UPDATE_UNCHANGED
 
 		if("recolor_pick_matrix")
 			// opens the matrix colormatrix picker for the unified recolor tweak.

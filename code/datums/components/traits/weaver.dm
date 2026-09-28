@@ -50,23 +50,46 @@
 /datum/component/weaver/proc/weave_item()
 	if(!owner?.client)
 		return
-	om_prompt(src, owner, list("kind" = "list", "message" = "What would you like to weave?", "title" = "Weave Choice", "choices" = GLOB.all_weavable, "requires" = PROMPT_CONSCIOUS), PROC_REF(weave_choice_made))
+	om_ask(owner, /datum/om/prompt/choice/weave, PROC_REF(weave_choice_made), choices = GLOB.all_weavable)
 
-/datum/component/weaver/proc/weave_choice_made(mob/user, choice, datum/om/prompt/ask)
-	var/datum/weaver_recipe/item/desired_result = GLOB.all_weavable[choice]
-	if(!istype(desired_result))
-		return
-	om_prompt(src, owner, list("message" = "Are you sure you want to weave [desired_result.title]? It will cost you [desired_result.cost] silk.", "title" = "Confirmation", "choices" = list("Yes","No"), "requires" = PROMPT_CONSCIOUS, "data" = list("choice" = choice)), PROC_REF(weave_confirmed))
+/// Picking a weaver recipe. Re-checked on the answer: conscious, and a real recipe.
+/datum/om/prompt/choice/weave
+	title = "Weave Choice"
+	message = "What would you like to weave?"
+	ask_flags = ASK_CONSCIOUS
 
-/datum/component/weaver/proc/weave_confirmed(mob/user, finalized, datum/om/prompt/ask)
-	if(finalized == "No")
+/datum/om/prompt/choice/weave/valid()
+	return istype(GLOB.all_weavable[choice], /datum/weaver_recipe/item) ? null : "not a recipe"
+
+/// "Weave this?"; a no goes back to the recipe list.
+/datum/om/prompt/confirm/weave
+	title = "Confirmation"
+	ask_flags = ASK_CONSCIOUS
+	answer_on_no = TRUE
+	var/datum/weaver_recipe/item/recipe
+
+/datum/om/prompt/confirm/weave/prepare()
+	message = "Are you sure you want to weave [recipe.title]? It will cost you [recipe.cost] silk."
+	return TRUE
+
+/datum/component/weaver/proc/weave_choice_made(datum/om/prompt/choice/weave/ask)
+	om_ask(owner, /datum/om/prompt/confirm/weave, PROC_REF(weave_confirmed), recipe = GLOB.all_weavable[ask.choice])
+
+/datum/component/weaver/proc/weave_confirmed(datum/om/prompt/confirm/weave/ask)
+	if(!ask.yes)
 		weave_item()
 		return
-	if(finalized != "Yes")
+	weave_check(ask.recipe.cost, ask.recipe.result_type)
+
+/// A colour setting picked from a trait or species settings panel (weaver silk, radiation glow, shadekin flicker).
+/datum/om/prompt/color/panel_setting
+	title = "Color Selector"
+
+/datum/component/weaver/proc/silk_color_picked(datum/om/prompt/color/panel_setting/ask)
+	if(!ask.picked_color)
 		return
-	var/datum/weaver_recipe/item/desired_result = GLOB.all_weavable[ask.get("choice")]
-	if(istype(desired_result))
-		weave_check(desired_result.cost, desired_result.result_type)
+	silk_color = ask.picked_color
+	SStgui.update_uis(src)
 
 //TGUI Weaver Panel
 /datum/component/weaver/tgui_interact(mob/user, datum/tgui/ui)
@@ -118,11 +141,8 @@
 
 	switch(action)
 		if("new_silk_color")
-			var/set_new_color = tgui_color_picker(ui.user, "Select a color you wish your silk to be!", "Color Selector", silk_color)
-			if(!set_new_color)
-				return FALSE
-			silk_color = set_new_color
-			return TRUE
+			om_ask(ui.user, /datum/om/prompt/color/panel_setting, PROC_REF(silk_color_picked), message = "Select a color you wish your silk to be!", default = silk_color)
+			return FALSE
 		if("toggle_silk_production")
 			silk_production = !(silk_production)
 			to_chat(owner, span_info("You are [silk_production ? "now" : "no longer"] producing silk."))

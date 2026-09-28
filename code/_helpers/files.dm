@@ -24,10 +24,28 @@
 	if(path != state["root"])
 		choices.Insert(1,"/")
 	choices = sortList(choices) + "Download Folder"
-	om_prompt(src, src, list("kind" = "list", "message" = "Choose a file to access:", "title" = "Download", "choices" = choices, "data" = state), PROC_REF(browse_files_chosen))
+	om_ask(src, /datum/om/prompt/choice/browse_files, PROC_REF(browse_files_chosen), choices = choices, state = state)
 
-/client/proc/browse_files_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/list/state = ask.values.Copy()
+/// One folder level of browse_files(). `state` carries the walk (root, path, steps left, extensions, on_chosen).
+/datum/om/prompt/choice/browse_files
+	title = "Download"
+	message = "Choose a file to access:"
+	var/list/state
+
+/// "Download every file in this folder?"; a no goes back to the folder.
+/datum/om/prompt/confirm/browse_files_folder
+	title = "Confirmation"
+	answer_on_no = TRUE
+	var/list/state
+
+/datum/om/prompt/confirm/browse_files_folder/prepare()
+	var/count = length(flist(state["path"]))
+	message = "Are you SURE you want to download all the files in this folder? (This will open [count] prompt[count == 1 ? "" : "s"])"
+	return TRUE
+
+/client/proc/browse_files_chosen(datum/om/prompt/choice/browse_files/ask)
+	var/list/state = ask.state.Copy()
+	var/choice = ask.choice
 	var/path = state["path"]
 	state["left"] -= 1
 	switch(choice)
@@ -36,8 +54,7 @@
 			browse_files_ask(state)
 			return
 		if("Download Folder")
-			var/list/comp_flist = flist(path)
-			om_prompt(src, src, list("message" = "Are you SURE you want to download all the files in this folder? (This will open [length(comp_flist)] prompt[length(comp_flist) == 1 ? "" : "s"])", "title" = "Confirmation", "choices" = list("Yes", "No"), "data" = state), PROC_REF(browse_files_folder_confirmed))
+			om_ask(src, /datum/om/prompt/confirm/browse_files_folder, PROC_REF(browse_files_folder_confirmed), state = state)
 			return
 	path += choice
 	if(copytext_char(path, -1) == "/") //chose a directory: go into it
@@ -49,15 +66,15 @@
 		if(extensions)
 			extensions += "|"
 		extensions += "[i]"
-	var/regex/valid_ext = new("\\.([extensions])$", "i")
+	var/regex/valid_ext = new("\.([extensions])$", "i")
 	if( !fexists(path) || !(valid_ext.Find(path)) )
 		to_chat(src, span_red("Error: browse_files(): File not found/Invalid file([path])."))
 		return
 	call(src, state["on_chosen"])(path)
 
-/client/proc/browse_files_folder_confirmed(mob/user, confirmation, datum/om/prompt/ask)
-	var/list/state = ask.values.Copy()
-	if(confirmation != "Yes")
+/client/proc/browse_files_folder_confirmed(datum/om/prompt/confirm/browse_files_folder/ask)
+	var/list/state = ask.state.Copy()
+	if(!ask.yes)
 		browse_files_ask(state)
 		return
 	for(var/file in flist(state["path"]))

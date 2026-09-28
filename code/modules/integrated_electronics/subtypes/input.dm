@@ -132,11 +132,12 @@
 	power_draw_per_use = 4
 
 /obj/item/integrated_circuit/input/colorpad/ask_for_input(mob/user)
-	var/new_color = tgui_color_picker(user, "Enter a color, please.", "Color pad", get_pin_data(IC_OUTPUT, 1))
-	if(new_color && CanInteract(user, GLOB.tgui_physical_state))
-		set_pin_data(IC_OUTPUT, 1, new_color)
-		push_data()
-		activate_pin(1)
+	om_ask(user, /datum/om/prompt/color/circuit, PROC_REF(color_entered), title = "Color pad", message = "Enter a color, please.", default = get_pin_data(IC_OUTPUT, 1))
+
+/obj/item/integrated_circuit/input/colorpad/proc/color_entered(datum/om/prompt/color/circuit/ask)
+	set_pin_data(IC_OUTPUT, 1, ask.picked_color)
+	push_data()
+	activate_pin(1)
 
 /obj/item/integrated_circuit/input/med_scanner
 	name = "integrated medical analyser"

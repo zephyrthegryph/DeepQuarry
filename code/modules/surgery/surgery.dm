@@ -379,7 +379,7 @@ GLOBAL_PROTECT(surgical_steps)
 
 	if(target == user)
 		to_chat(user, span_critical("You focus on attempting to perform surgery upon yourself."))
-	om_task_start(/datum/om/task/timed/surgery_focus, user, target, list("duration" = target == user ? 3 SECONDS : 0, "receiver" = src, "zone" = zone, "cleanliness" = cleanliness))
+	om_task_start(/datum/om/task/timed/surgery_focus, user, target, duration = (target == user ? 3 SECONDS : 0), receiver = src, zone = zone, cleanliness = cleanliness)
 	return TRUE
 
 /// Getting ready to operate: at once, or three seconds of focus to operate on yourself.
@@ -435,7 +435,7 @@ GLOBAL_LIST_EMPTY(surgery_rerun_args)
 
 	var/chance = step.success_chance(user, target, part, src, cleanliness)
 	var/delay = step.duration * (2 - cleanliness / 100) * toolspeed
-	var/started = om_task_start(/datum/om/task/timed/surgical_step, user, target, list("duration" = delay, "receiver" = target, "tool" = src, "surgery_step" = step, "zone" = zone, "cleanliness" = cleanliness, "part" = part, "work_target" = work_target, "chance" = chance, "target_zone" = zone, "max_distance" = reach))
+	var/started = om_task_start(/datum/om/task/timed/surgical_step, user, target, duration = delay, receiver = target, tool = src, surgery_step = step, zone = zone, cleanliness = cleanliness, part = part, work_target = work_target, chance = chance, target_zone = zone, max_distance = reach)
 	if(istext(started))
 		LAZYREMOVE(target.surgery_zones_in_progress, zone)
 		return FALSE

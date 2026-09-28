@@ -197,7 +197,7 @@
 	interpreter.Run()
 	if(interpreter.IsSuspended())
 		// The script called sleep(): the rest runs as task steps.
-		if(istype(om_task_start(/datum/om/task/ntsl_script, src, null, list("signal" = signal, "relay" = relay)), /datum/om/task))
+		if(istype(om_task_start(/datum/om/task/ntsl_script, src, null, receiver = src, signal = signal, relay = relay), /datum/om/task))
 			return FALSE
 		script_dropped()
 	apply_signal(signal)

@@ -313,7 +313,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 	if(check_terminal_exists(tempLoc, user, tempDir))
 		return 1
 	to_chat(user, span_filter_notice(span_notice("You start adding cable to the [src].")))
-	var/started = om_task_start(/datum/om/task/timed/smes_terminal, user, src, list("receiver" = src, "CC" = CC, "tempLoc" = tempLoc, "tempDir" = tempDir))
+	var/started = om_task_start(/datum/om/task/timed/smes_terminal, user, src, receiver = src, CC = CC, tempLoc = tempLoc, tempDir = tempDir)
 	return istext(started) ? 1 : 0
 
 /obj/machinery/power/smes/proc/terminal_ended(datum/om/task/timed/smes_terminal/task)

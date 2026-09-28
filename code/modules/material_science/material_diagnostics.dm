@@ -112,7 +112,7 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner, list("receiver" = src, "stock" = stock, "role" = role, "quantity" = quantity, "material_id" = material_id))
+	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner, stock = stock, role = role, quantity = quantity, material_id = material_id)
 
 /datum/om/task/timed/material_service_fit_stock
 	duration = 2 SECONDS

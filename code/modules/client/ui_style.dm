@@ -27,21 +27,44 @@
 		return
 	if(!UI_style_alpha_new || !(UI_style_alpha_new <= 255 && UI_style_alpha_new >= 50)) return
 
-	var/UI_style_color_new = tgui_color_picker(src, "Choose your UI color. Dark colors are not recommended!", null, current_color)
-	if(!UI_style_color_new) return
+	om_ask(src, /datum/om/prompt/color/ui_style, PROC_REF(ui_color_picked), default = current_color, style = UI_style_new, alpha = UI_style_alpha_new, old_style = current_style, old_alpha = current_alpha, old_color = current_color)
 
+/// The UI colour pick of Change UI; the state is the style and alpha already picked, and the old
+/// look to go back to.
+/datum/om/prompt/color/ui_style
+	message = "Choose your UI color. Dark colors are not recommended!"
+	var/style
+	var/alpha
+	var/old_style
+	var/old_alpha
+	var/old_color
+
+/client/proc/ui_color_picked(datum/om/prompt/color/ui_style/ask)
 	//update UI
-	usr.update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
+	ask.answerer.update_ui_style(ask.style, ask.alpha, ask.picked_color)
+	om_ask(ask.answerer, /datum/om/prompt/confirm/ui_style_save, PROC_REF(ui_style_saved), style = ask.style, alpha = ask.alpha, color = ask.picked_color, old_style = ask.old_style, old_alpha = ask.old_alpha, old_color = ask.old_color)
 
-	var/_answer_a3 = client_prompt("a3", list("message" = "Like it? Save changes?", "title" = "Save?", "choices" = list("Yes", "No")), VERB_REF(change_ui), args, 0)
-	if(isnull(_answer_a3))
-		return
-	if(_answer_a3 == "Yes")
-		usr.write_preference_directly(/datum/preference/choiced/ui_style, UI_style_new, WRITE_PREF_MANUAL)
-		usr.write_preference_directly(/datum/preference/numeric/ui_style_alpha, UI_style_alpha_new, WRITE_PREF_MANUAL)
-		usr.write_preference_directly(/datum/preference/color/ui_style_color, UI_style_color_new, WRITE_PREF_MANUAL)
+/// Keep the new UI look? No (or a closed window) puts the old one back.
+/datum/om/prompt/confirm/ui_style_save
+	title = "Save?"
+	message = "Like it? Save changes?"
+	answer_on_no = TRUE
+	cancel_answer = "No"
+	var/style
+	var/alpha
+	var/color
+	var/old_style
+	var/old_alpha
+	var/old_color
+
+/client/proc/ui_style_saved(datum/om/prompt/confirm/ui_style_save/ask)
+	var/mob/user = ask.answerer
+	if(ask.yes)
+		user.write_preference_directly(/datum/preference/choiced/ui_style, ask.style, WRITE_PREF_MANUAL)
+		user.write_preference_directly(/datum/preference/numeric/ui_style_alpha, ask.alpha, WRITE_PREF_MANUAL)
+		user.write_preference_directly(/datum/preference/color/ui_style_color, ask.color, WRITE_PREF_MANUAL)
 		SScharacter_setup.queue_preferences_save(prefs)
 		to_chat(src, "UI was saved")
 		return
 
-	usr.update_ui_style(current_style, current_alpha, current_color)
+	user.update_ui_style(ask.old_style, ask.old_alpha, ask.old_color)

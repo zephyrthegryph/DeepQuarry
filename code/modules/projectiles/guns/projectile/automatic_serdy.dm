@@ -938,7 +938,7 @@
 	if(user.size_multiplier <= 0.5) //They're 50% or lower. If they fire this gun, they're gonna get obliterated.
 		to_chat(user,span_warning("You struggle to reach the trigger. Maybe shooting such a big gun isn't such a good idea..."))
 		if(!trigger_reached) //Give them a chance to take it back.
-			om_task_start(/datum/om/task/timed/kord_trigger_reached, user, src, list("receiver" = src, "A" = A, "adjacent" = adjacent, "params" = params))
+			om_task_start(/datum/om/task/timed/kord_trigger_reached, user, src, receiver = src, A = A, adjacent = adjacent, params = params)
 			return
 		. = ..() //RIP
 

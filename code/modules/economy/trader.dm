@@ -61,82 +61,102 @@
 			if(welcome_accepts_name == "curious coins")
 				welcome_accepts_name = "a kind of item"
 	// One customer at a time: any way the questions end frees the trader.
-	om_prompt_sequence(src, user, list(
-		list("key" = "ask", "message" = "[welcome_msg][welcome_accepts_name][welcome_msg_finish]", "title" = "[src]", "choices" = list("Yes","No","Return banked funds"), "timeout" = 10 SECONDS),
-		PROC_REF(trade_ask_product),
-		PROC_REF(trade_ask_confirm),
-	), PROC_REF(trade_chosen), list("requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(trade_ended), "on_refused" = PROC_REF(trade_refused)))
-
-/obj/trader/proc/trade_ended(mob/user, datum/om/prompt/ask)
-	trading = FALSE
-
-/obj/trader/proc/trade_refused(mob/user, reason, datum/om/prompt/ask)
-	to_chat(user, span_notice("You aren't close enough."))
-	trading = FALSE
-
-/obj/trader/proc/trade_ask_product(mob/user, datum/om/prompt/ask)
-	var/answer = ask.get("ask")
-	if(answer == "Return banked funds")
-		return_funds()
-	if(answer != "Yes")
-		trading = FALSE
-		return PROMPT_STOP
-	if(length(interact_sound) > 0)
-		if((world.time- sound_lastplayed) > sound_cooldown)
-			var/sound = DEFAULTPICK(interact_sound, null)
-			playsound(src, sound, 25, FALSE, ignore_walls = FALSE)
-			sound_lastplayed = world.time
-	return list("key" = "product", "kind" = "list", "message" = "What would you like? You have [get_value(accepts)] banked with this trader.", "title" = "Trader", "choices" = products, "timeout" = 30 SECONDS)
+	om_flow_start(/datum/om/flow/trader_trade, user, src)
 
 /obj/trader/proc/trade_price(obj/item)
 	return LAZYACCESS(prices, item.type) || 0
 
-/obj/trader/proc/trade_ask_confirm(mob/user, datum/om/prompt/ask)
-	var/obj/input = ask.get("product")
-	if(!istype(input) || !(input in products))
-		to_chat(user, span_notice("You decided not to get anything."))
-		trading = FALSE
-		return PROMPT_STOP
-	var/p = trade_price(input)
+/// A customer (actor) trading with a trader (target): whether to trade, which product, a price
+/// confirmation, then the change. The customer stays next to the trader throughout, and any way
+/// the questions end frees the trader.
+/datum/om/flow/trader_trade
+	name = "trader trade"
+	requires = PROMPT_ADJACENT
+	var/obj/product
+	/// The step waiting for an answer, for ended()'s messages.
+	var/stage
+
+/datum/om/flow/trader_trade/start()
+	var/obj/trader/trader = target
+	stage = "ask"
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(asked), buttons = TRUE, title = "[trader]", message = "[trader.welcome_msg][trader.welcome_accepts_name][trader.welcome_msg_finish]", choices = list("Yes","No","Return banked funds"), timeout = 10 SECONDS)
+
+/datum/om/flow/trader_trade/ended(reason)
+	if(stage == "change") // the trade is done; the trader is already free
+		return
+	var/obj/trader/trader = target
+	if(trader)
+		trader.trading = FALSE
+	if(stage == "confirm" && reason == "declined")
+		to_chat(actor, span_notice("You decided not to."))
+	else if(reason != "cancelled" && reason != "declined" && reason != "gone")
+		to_chat(actor, span_notice("You aren't close enough."))
+
+/datum/om/flow/trader_trade/proc/asked(datum/om/prompt/choice/ask)
+	var/obj/trader/trader = target
+	if(ask.choice == "Return banked funds")
+		trader.return_funds()
+	if(ask.choice != "Yes")
+		trader.trading = FALSE
+		return
+	if(length(trader.interact_sound) > 0)
+		if((world.time - trader.sound_lastplayed) > trader.sound_cooldown)
+			var/sound = DEFAULTPICK(trader.interact_sound, null)
+			playsound(trader, sound, 25, FALSE, ignore_walls = FALSE)
+			trader.sound_lastplayed = world.time
+	stage = "product"
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(product_picked), title = "Trader", message = "What would you like? You have [trader.get_value(trader.accepts)] banked with this trader.", choices = trader.products, timeout = 30 SECONDS)
+
+/datum/om/flow/trader_trade/proc/product_picked(datum/om/prompt/choice/ask)
+	var/obj/trader/trader = target
+	product = ask.choice
+	if(!istype(product) || !(product in trader.products))
+		to_chat(actor, span_notice("You decided not to get anything."))
+		trader.trading = FALSE
+		return
+	var/p = trader.trade_price(product)
 	if(p <= 0)
-		return null
-	return list("key" = "confirm", "message" = "Are you sure? This costs [p].", "title" = "Confirm", "choices" = list("Yes","No"), "confirm" = "Yes", "on_stop" = PROC_REF(trade_declined))
+		trade()
+		return
+	stage = "confirm"
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(trade), title = "Confirm", message = "Are you sure? This costs [p].")
 
-/obj/trader/proc/trade_declined(mob/user, datum/om/prompt/ask)
-	to_chat(user, span_notice("You decided not to."))
-	trading = FALSE
-
-/obj/trader/proc/trade_chosen(mob/user, datum/om/prompt/ask)
-	trading = FALSE
-	var/obj/input = ask.get("product")
-	if(!istype(input) || !(input in products))
+/datum/om/flow/trader_trade/proc/trade()
+	var/obj/trader/trader = target
+	var/mob/user = actor
+	trader.trading = FALSE
+	var/obj/input = product
+	if(!istype(input) || !(input in trader.products))
 		return
 	var/t = input.type
-	var/p = trade_price(input)
+	var/p = trader.trade_price(input)
 	// The bank can have been drained while they chose.
-	if(p > 0 && get_value(accepts) < p)
+	if(p > 0 && trader.get_value(trader.accepts) < p)
 		to_chat(user, span_warning("You haven't provided enough funds!"))
 		return
-	if(t in multiple)
-		multiple[t] -= 1
+	if(t in trader.multiple)
+		trader.multiple[t] -= 1
 		var/temp = input
 		input = new t(get_turf(user))
-		if(LAZYACCESS(multiple, t) <= 0)
-			for(var/obj/d in products)
+		if(LAZYACCESS(trader.multiple, t) <= 0)
+			for(var/obj/d in trader.products)
 				if(istype(d, temp))
-					d.forceMove(get_turf(loc))
+					d.forceMove(get_turf(trader.loc))
 					qdel(d)
 	input.forceMove(get_turf(user))
 	user.put_in_hands(input)
-	products -= input
-	deduct_value(p)
-	om_prompt(src, user, list("message" = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", "title" = "[src]", "choices" = list("Keep it banked","I want my change"), "timeout" = 10 SECONDS, "requires" = PROMPT_ADJACENT), PROC_REF(trade_change_answered))
+	trader.products -= input
+	trader.deduct_value(p)
+	product = null
+	stage = "change"
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(change_answered), buttons = TRUE, title = "[trader]", message = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", choices = list("Keep it banked","I want my change"), timeout = 10 SECONDS)
 
-/obj/trader/proc/trade_change_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "I want my change")
-		return_funds()
+/datum/om/flow/trader_trade/proc/change_answered(datum/om/prompt/choice/ask)
+	var/obj/trader/trader = target
+	if(ask.choice == "I want my change")
+		trader.return_funds()
 	else
-		to_chat(user, span_notice("You decided leave your change banked."))
+		to_chat(actor, span_notice("You decided leave your change banked."))
 
 /obj/trader/attackby(obj/item/O, mob/user)
 	. = ..()

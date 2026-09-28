@@ -266,7 +266,7 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 		span_notice("\The [user] begins [anchored ? "unsecuring" : "securing"] \the [src]."),
 		span_notice("You attempt to [anchored ? "unsecure" : "secure"] \the [src].")
 	)
-	om_task_start(/datum/om/task/timed/microwave_secure, user, src, list("receiver" = src, "duration" = (2 SECONDS) / tool.toolspeed))
+	om_task_start(/datum/om/task/timed/microwave_secure, user, src, duration = (2 SECONDS) / tool.toolspeed)
 	return ITEM_INTERACT_SUCCESS
 
 /datum/om/task/timed/microwave_secure

@@ -256,7 +256,7 @@
 					feed_duration = 5 SECONDS
 
 				user.setClickCooldown(user.get_attack_speed(src))
-				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, list("receiver" = src, "duration" = feed_duration, "swallow_whole" = swallow_whole, "belly_target" = belly_target))
+				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, duration = feed_duration, swallow_whole = swallow_whole, belly_target = belly_target)
 				return ITEM_INTERACT_SUCCESS
 
 			else
@@ -284,7 +284,7 @@
 			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
 			var/feed_duration = 3 SECONDS
 			user.setClickCooldown(user.get_attack_speed(src))
-			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, list("receiver" = src, "duration" = feed_duration, "belly_target" = belly_target))
+			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, duration = feed_duration, belly_target = belly_target)
 			return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE

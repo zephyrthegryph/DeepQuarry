@@ -227,7 +227,7 @@
 		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 		return TRUE
 	to_chat(user, span_notice("You begin repairing \the [src]..."))
-	om_task_start(/datum/om/task/timed/emitter_repair, user, src, list("receiver" = src, "P" = P, "amt" = amt))
+	om_task_start(/datum/om/task/timed/emitter_repair, user, src, receiver = src, P = P, amt = amt)
 	return TRUE
 
 /datum/om/task/timed/emitter_repair

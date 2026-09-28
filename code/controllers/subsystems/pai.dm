@@ -192,17 +192,30 @@ SUBSYSTEM_DEF(pai)
 
 	// Send it!
 	to_chat(inquirer, span_info("A request has been sent!"))
-	om_prompt(card, ghost, list("message" = "[inquirer] is requesting a pAI personality. Would you like to play as a personal AI?", "title" = "pAI Request", "choices" = list("Yes", "No", "Never for this round"), "data" = list("inquirer" = inquirer, "ghost_ref" = ghost_ref)), GLOBAL_PROC_REF(pai_invite_answered))
+	om_ask(ghost, /datum/om/prompt/choice/pai_invite, GLOBAL_PROC_REF(pai_invite_answered), subject = card, inquirer = inquirer, ghost_ref = ghost_ref)
 
-/// The ghost's answer to a pAI invite: the card, the ghost and their respawn are all checked again.
-/proc/pai_invite_answered(obj/item/paicard/card, mob/observer/ghost, response, datum/om/prompt/ask)
-	var/mob/inquirer = ask.get("inquirer")
-	var/client/target = ghost?.client
-	if(!response || !target || !isobserver(ghost) || SSpai.get_ghost_from_ref(ask.get("ghost_ref")) != ghost)
-		return // Nice try smartass
-	if(!inquirer)
-		return
-	SSpai.pai_invite_answer(inquirer, ghost, card, response, target)
+/// A ghost is asked to play a pAI. Re-checked on the answer: still that ghost, with a client.
+/datum/om/prompt/choice/pai_invite
+	title = "pAI Request"
+	buttons = TRUE
+	choices = list("Yes", "No", "Never for this round")
+	var/mob/inquirer
+	var/ghost_ref
+
+/datum/om/prompt/choice/pai_invite/prepare()
+	message = "[inquirer] is requesting a pAI personality. Would you like to play as a personal AI?"
+	return TRUE
+
+/datum/om/prompt/choice/pai_invite/valid()
+	var/mob/observer/ghost = answerer
+	if(!ghost.client || !isobserver(ghost) || SSpai.get_ghost_from_ref(ghost_ref) != ghost)
+		return "not that ghost" // Nice try smartass
+	return null
+
+/// The ghost's answer to a pAI invite.
+/proc/pai_invite_answered(datum/om/prompt/choice/pai_invite/ask)
+	var/mob/observer/ghost = ask.answerer
+	SSpai.pai_invite_answer(ask.inquirer, ghost, ask.subject, ask.choice, ghost.client)
 
 /datum/controller/subsystem/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
 	if(check_is_already_pai(target.ckey))

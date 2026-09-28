@@ -189,21 +189,8 @@
 
 			var/default_value = read_preference(requested_preference.type)
 
-			// Yielding
-			var/new_color = tgui_color_picker(
-				ui.user,
-				"Select new color",
-				null,
-				default_value || COLOR_WHITE,
-			)
-
-			if(!new_color)
-				return FALSE
-
-			if(!update_preference(requested_preference, new_color))
-				return FALSE
-
-			return TRUE
+			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, GLOBAL_PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key)
+			return FALSE
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
 		. = preference_middleware.tgui_act(action, params, ui, state)

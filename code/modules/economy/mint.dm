@@ -39,7 +39,7 @@
 	if(M.amount <= 0)
 		return
 	icon_state = "coinpress1"
-	om_task_start(/datum/om/task/timed/mint_press_sheet, user, src, list("receiver" = src, "M" = M))
+	om_task_start(/datum/om/task/timed/mint_press_sheet, user, src, M = M)
 
 /obj/machinery/mineral/mint/proc/press_interrupted(datum/om/task/timed/mint_press_sheet/task)
 	var/mob/user = task.actor

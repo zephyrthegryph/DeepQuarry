@@ -99,7 +99,7 @@
 		return
 
 	user.visible_message(span_infoplain(span_bold("[user]") + " starts sipping on [victim] with [src]!"), span_info("You start sipping on [victim] with [src]."))
-	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, list("receiver" = src, "reagent_type" = reagent_type))
+	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
 
 /datum/om/task/timed/straw_sipp
 	duration = 3 SECONDS

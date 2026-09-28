@@ -28,9 +28,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 /datum/eventkit/player_effects/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
 
-/datum/eventkit/player_effects/proc/popup_replied(mob/target, reply, datum/om/prompt/ask)
-	if(reply)
-		log_and_message_admins("replied to [ask.get("admin")]'s message: [reply].", target)
+/datum/om/prompt/text/admin_popup
+	title = "Reply"
+	/// key_name() of the sending admin.
+	var/admin_name
+
+/datum/eventkit/player_effects/proc/popup_replied(datum/om/prompt/text/admin_popup/ask)
+	if(ask.text)
+		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.text].", ask.answerer)
 
 /datum/eventkit/player_effects/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
@@ -904,7 +909,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			log_admin("[key_name(ui.user)] sent message to [target]: [message]")
 			// The player answers in their own time; the reply doesn't need this panel open.
-			om_prompt(src, target, list("kind" = "text", "message" = "An admin has sent you a message: [message]", "title" = "Reply", "data" = list("admin" = key_name(ui.user))), PROC_REF(popup_replied))
+			om_ask(target, /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(ui.user))
 
 		if("stop-orbits")
 			target.stop_orbiters()

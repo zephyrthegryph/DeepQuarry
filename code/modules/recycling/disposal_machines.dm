@@ -214,7 +214,7 @@
 			var/mob/GM = G?.grab_target()
 			for (var/mob/V in viewers(user))
 				V.visible_message("[user] starts putting [GM.name] into the disposal.", 3)
-			om_task_start(/datum/om/task/timed/disposal_dunk, user, src, list("receiver" = src, "GM" = GM, "G" = G))
+			om_task_start(/datum/om/task/timed/disposal_dunk, user, src, receiver = src, GM = GM, G = G)
 		return TRUE
 
 	if(isrobot(user) && !drag_dropped) //Borgs are allowed to drag-drop items into the disposal unit.

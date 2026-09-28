@@ -29,13 +29,36 @@
 	if(!..())
 		return 0
 
-	om_prompt(src, usr, list("message" = "Would you like to toggle the synthesiser or set the name?", "choices" = list("Enable","Disable","Set Name","Cancel"), "requires" = PROMPT_CONSCIOUS), PROC_REF(voice_choice_made))
+	om_ask(usr, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
 	return 1
 
-/obj/item/rig_module/voice/proc/voice_choice_made(mob/user, choice, datum/om/prompt/ask)
-	if(!holder || holder.wearer != user)
-		return
-	switch(choice)
+/// Toggling the voice synthesiser or naming it. Re-checked on the answer: conscious, and still
+/// wearing the suit the module is in.
+/datum/om/prompt/choice/rig_voice
+	message = "Would you like to toggle the synthesiser or set the name?"
+	buttons = TRUE
+	choices = list("Enable","Disable","Set Name","Cancel")
+	ask_flags = ASK_CONSCIOUS
+
+/datum/om/prompt/choice/rig_voice/valid()
+	var/obj/item/rig_module/voice/module = subject
+	return (module.holder && module.holder.wearer == answerer) ? null : "not wearing the suit"
+
+/datum/om/prompt/text/rig_voice_name
+	title = "Change name"
+	message = "Please enter a new name."
+	max_length = MAX_NAME_LEN
+	ask_flags = ASK_CONSCIOUS
+
+/datum/om/prompt/text/rig_voice_name/valid()
+	var/obj/item/rig_module/voice/module = subject
+	if(!text)
+		return "no name"
+	return (module.holder && module.holder.wearer == answerer) ? null : "not wearing the suit"
+
+/obj/item/rig_module/voice/proc/voice_choice_made(datum/om/prompt/choice/rig_voice/ask)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Enable")
 			active = 1
 			voice_holder.active = 1
@@ -45,10 +68,9 @@
 			voice_holder.active = 0
 			to_chat(user, span_blue("You disable the speech synthesiser."))
 		if("Set Name")
-			om_prompt(src, user, list("kind" = "text", "message" = "Please enter a new name.", "title" = "Change name", "default" = voice_holder.voice, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_CONSCIOUS), PROC_REF(voice_name_entered))
+			om_ask(user, /datum/om/prompt/text/rig_voice_name, PROC_REF(voice_name_entered), default = voice_holder.voice)
 
-/obj/item/rig_module/voice/proc/voice_name_entered(mob/user, raw_choice, datum/om/prompt/ask)
-	if(!raw_choice || !holder || holder.wearer != user)
-		return
-	voice_holder.voice = raw_choice
+/obj/item/rig_module/voice/proc/voice_name_entered(datum/om/prompt/text/rig_voice_name/ask)
+	var/mob/user = ask.answerer
+	voice_holder.voice = ask.text
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))

@@ -185,10 +185,16 @@
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return
 
-	var/new_color = tgui_color_picker(usr, "Pick a new color", "Color", color)
+	om_ask(usr, /datum/om/prompt/color/carried_item, PROC_REF(recolor_picked), title = "Color", message = "Pick a new color", default = color)
 
-	if(new_color && (new_color != color))
-		color = new_color
+/// A colour for something you carry (a verb on an item in your inventory). Re-checked on the
+/// answer: still carried, and you are able to act.
+/datum/om/prompt/color/carried_item
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/obj/item/clothing/proc/recolor_picked(datum/om/prompt/color/carried_item/ask)
+	if(ask.picked_color && (ask.picked_color != color))
+		color = ask.picked_color
 	update_icon()
 	update_clothing_icon()
 // end
@@ -838,7 +844,7 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, list("receiver" = src, "duration" = escape_time))
+	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, duration = escape_time)
 
 /obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
 	to_chat(micro, span_notice("You climb out of [src]!"))

@@ -46,8 +46,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptoturf, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to 
 ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to Mob", "Jump to the selected mob.", ADMIN_CATEGORY_GAME, mob/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	user.do_jumptomob(M)
 
-/client/proc/jump_mob_picked(mob/admin, mob/M, datum/om/prompt/ask)
-	do_jumptomob(M)
+/// An admin jump/send pick (title, message and choices set at the call).
+/datum/om/prompt/choice/admin_jump
+	requires = PROMPT_ADMIN(R_ADMIN|R_MOD|R_DEBUG|R_EVENT)
+	/// Send Mob: the area picked first.
+	var/area/area
+
+/client/proc/jump_mob_picked(datum/om/prompt/choice/admin_jump/ask)
+	do_jumptomob(ask.choice)
 
 /// Performs the jumps, also called from admin Topic() for JMP links
 /client/proc/do_jumptomob(mob/M)
@@ -56,7 +62,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		return
 
 	if(!M)
-		om_prompt(src, usr, list("kind" = "list", "message" = "Pick a mob:", "title" = "Jump to Mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS), "requires" = PROMPT_ADMIN(R_ADMIN|R_MOD|R_DEBUG|R_EVENT)), PROC_REF(jump_mob_picked))
+		om_ask(usr, /datum/om/prompt/choice/admin_jump, PROC_REF(jump_mob_picked), title = "Jump to Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 		return
 
 	var/mob/A = src.mob // Impossible to be unset, enforced by byond
@@ -177,16 +183,16 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		return
 
 	if(CONFIG_GET(flag/allow_admin_jump))
-		om_prompt_sequence(src, usr, list(
-			list("key" = "area", "kind" = "list", "message" = "Pick an area:", "title" = "Send Mob", "choices" = return_sorted_areas()),
-			list("key" = "mob", "kind" = "list", "message" = "Pick a mob:", "title" = "Send Mob", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)),
-		), PROC_REF(sendmob_answered), list("requires" = PROMPT_ADMIN(R_ADMIN|R_MOD|R_DEBUG|R_EVENT)))
+		om_ask(usr, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_area_picked), title = "Send Mob", message = "Pick an area:", choices = return_sorted_areas())
 	else
 		tgui_alert_async(usr, "Admin jumping disabled")
 
-/client/proc/sendmob_answered(mob/admin, datum/om/prompt/ask)
-	var/area/A = ask.get("area")
-	var/mob/M = ask.get("mob")
+/client/proc/sendmob_area_picked(datum/om/prompt/choice/admin_jump/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_answered), title = "Send Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = ask.choice)
+
+/client/proc/sendmob_answered(datum/om/prompt/choice/admin_jump/ask)
+	var/area/A = ask.area
+	var/mob/M = ask.choice
 	if(CONFIG_GET(flag/allow_admin_jump))
 		M.on_mob_jump()
 		M.reset_perspective(M) // Force reset to self before teleport
@@ -200,8 +206,37 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	else
 		tgui_alert_async(usr, "Admin jumping disabled")
 
-/client/proc/move_atom_coords_chosen(mob/admin, datum/om/prompt/ask)
-	cmd_admin_move_atom(ask.get("atom"), ask.get("x"), ask.get("y"), ask.get("z"))
+/// One missing coordinate for Move Atom; the answer re-enters cmd_admin_move_atom(), which asks for the next.
+/datum/om/prompt/number/move_atom_coord
+	title = "Move Atom"
+	requires = PROMPT_ADMIN(R_ADMIN|R_DEBUG|R_EVENT)
+	var/atom/movable/moved
+	var/tx
+	var/ty
+	var/tz
+
+/datum/om/prompt/number/move_atom_coord/prepare()
+	if(isnull(tx))
+		message = "Select X coordinate"
+		max = world.maxx
+	else if(isnull(ty))
+		message = "Select Y coordinate"
+		max = world.maxy
+	else
+		message = "Select Z coordinate"
+		max = world.maxz
+	return TRUE
+
+/client/proc/move_atom_coords_chosen(datum/om/prompt/number/move_atom_coord/ask)
+	if(isnull(ask.number))
+		return
+	if(isnull(ask.tx))
+		ask.tx = ask.number
+	else if(isnull(ask.ty))
+		ask.ty = ask.number
+	else
+		ask.tz = ask.number
+	cmd_admin_move_atom(ask.moved, ask.tx, ask.ty, ask.tz)
 
 /client/proc/cmd_admin_move_atom(atom/movable/AM, tx as num, ty as num, tz as num)
 	set category = "Admin.Game"
@@ -212,11 +247,7 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 
 	if(CONFIG_GET(flag/allow_admin_jump))
 		if(isnull(tx) || isnull(ty) || isnull(tz))
-			om_prompt_sequence(src, usr, list(
-				isnull(tx) ? list("key" = "x", "kind" = "number", "message" = "Select X coordinate", "title" = "Move Atom", "max" = world.maxx) : null,
-				isnull(ty) ? list("key" = "y", "kind" = "number", "message" = "Select Y coordinate", "title" = "Move Atom", "max" = world.maxy) : null,
-				isnull(tz) ? list("key" = "z", "kind" = "number", "message" = "Select Z coordinate", "title" = "Move Atom", "max" = world.maxz) : null,
-			), PROC_REF(move_atom_coords_chosen), list("requires" = PROMPT_ADMIN(R_ADMIN|R_DEBUG|R_EVENT), "data" = list("atom" = AM, "x" = tx, "y" = ty, "z" = tz)))
+			om_ask(usr, /datum/om/prompt/number/move_atom_coord, PROC_REF(move_atom_coords_chosen), moved = AM, tx = tx, ty = ty, tz = tz)
 			return
 		if(!tx || !ty || !tz)
 			return

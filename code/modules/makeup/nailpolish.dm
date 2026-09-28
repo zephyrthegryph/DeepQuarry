@@ -83,7 +83,7 @@
 	if(user == target)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " paints their nails with \the [src]."), span_infoplain("You paint your nails with \the [src]."))
 	else
-		om_task_start(/datum/om/task/timed/nailpolish_paint, user, target, list("receiver" = src, "body_part" = body_part, "polish" = polish, "fail_message" = span_notice("Both you and [target] must stay still!")))
+		om_task_start(/datum/om/task/timed/nailpolish_paint, user, target, body_part = body_part, polish = polish, fail_message = span_notice("Both you and [target] must stay still!"))
 		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(polish)
 	return ITEM_INTERACT_SUCCESS
@@ -147,7 +147,7 @@
 	if(user == target)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes their nail polish with \the [src]."), span_infoplain("You remove your nail polish with \the [src]."))
 	else
-		om_task_start(/datum/om/task/timed/nailpolish_remover_remove, user, target, list("receiver" = src, "body_part" = body_part, "fail_message" = span_notice("Both you and [target] must stay still!")))
+		om_task_start(/datum/om/task/timed/nailpolish_remover_remove, user, target, body_part = body_part, fail_message = span_notice("Both you and [target] must stay still!"))
 		return ITEM_INTERACT_SUCCESS
 	body_part.set_polish(null)
 	return ITEM_INTERACT_SUCCESS

@@ -142,18 +142,33 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	pai.key = choice.key
 	card.setPersonality(pai)
 	// The new pAI answers these in its own time.
-	om_prompt(pai, pai, list("message" = "Do you want to load your pAI data?", "title" = "Load", "choices" = list("Yes", "No")), TYPE_PROC_REF(/mob/living/silicon/pai, admin_spawn_load_chosen))
+	pai.offer_admin_spawn_load()
 	log_admin("made a pAI with key=[pai.key] at ([target_turf.x],[target_turf.y],[target_turf.z])")
 	feedback_add_details("admin_verb","MPAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/mob/living/silicon/pai/proc/admin_spawn_load_chosen(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
+/// An admin-spawned pAI loads its saved data, or else names itself.
+/mob/living/silicon/pai/proc/offer_admin_spawn_load()
+	om_ask(src, /datum/om/prompt/confirm/pai_admin_load, PROC_REF(admin_spawn_load_chosen))
+
+/datum/om/prompt/confirm/pai_admin_load
+	title = "Load"
+	message = "Do you want to load your pAI data?"
+	answer_on_no = TRUE
+
+/datum/om/prompt/text/pai_admin_name
+	title = "pAI Name"
+	message = "Enter your pAI name:"
+	default = "Personal AI"
+	encode = FALSE
+
+/mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/om/prompt/confirm/pai_admin_load/ask)
+	if(ask.yes)
 		apply_preferences(client)
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Enter your pAI name:", "title" = "pAI Name", "default" = "Personal AI", "encode" = FALSE), PROC_REF(admin_spawn_name_entered))
+	om_ask(src, /datum/om/prompt/text/pai_admin_name, PROC_REF(admin_spawn_name_entered))
 
-/mob/living/silicon/pai/proc/admin_spawn_name_entered(mob/user, new_name, datum/om/prompt/ask)
-	new_name = sanitizeName(new_name, allow_numbers = TRUE)
+/mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/om/prompt/text/pai_admin_name/ask)
+	var/new_name = sanitizeName(ask.text, allow_numbers = TRUE)
 	if(new_name)
 		name = new_name
 
@@ -709,9 +724,16 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
-	om_prompt(src, usr, list("kind" = "list", "message" = "Pick a mob with a player", "title" = "Quick Authentic NIF", "choices" = REGISTRY_MEMBERS(REGISTRY_PLAYERS), "requires" = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG)), PROC_REF(quick_authentic_nif_chosen))
+	om_ask(usr, /datum/om/prompt/choice/quick_authentic_nif, PROC_REF(quick_authentic_nif_chosen), choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 
-/datum/admins/proc/quick_authentic_nif_chosen(mob/admin, mob/living/carbon/human/H, datum/om/prompt/ask)
+/datum/om/prompt/choice/quick_authentic_nif
+	title = "Quick Authentic NIF"
+	message = "Pick a mob with a player"
+	requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG)
+
+/datum/admins/proc/quick_authentic_nif_chosen(datum/om/prompt/choice/quick_authentic_nif/ask)
+	var/mob/admin = ask.answerer
+	var/mob/living/carbon/human/H = ask.choice
 	if(!istype(H))
 		to_chat(admin,span_warning("That mob type ([H.type]) doesn't support NIFs, sorry."))
 		return
@@ -739,8 +761,13 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	set desc = "Force config reload to world default"
 	if(!check_rights(R_DEBUG))
 		return
-	om_prompt(src, usr, list("message" = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", "title" = "Really reset?", "choices" = list("No", "Yes"), "requires" = PROMPT_ADMIN(R_DEBUG)), PROC_REF(reload_configuration_confirmed))
+	om_ask(usr, /datum/om/prompt/confirm/reload_configuration, PROC_REF(reload_configuration_confirmed))
 
-/client/proc/reload_configuration_confirmed(mob/admin, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		config.admin_reload()
+/datum/om/prompt/confirm/reload_configuration
+	title = "Really reset?"
+	message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?"
+	no_first = TRUE
+	requires = PROMPT_ADMIN(R_DEBUG)
+
+/client/proc/reload_configuration_confirmed(datum/om/prompt/confirm/reload_configuration/ask)
+	config.admin_reload()

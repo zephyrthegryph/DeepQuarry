@@ -36,7 +36,7 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 /obj/item/ammo_casing/proc/collect_shell(mob/user, obj/item/ammo_magazine/box, turf/floor)
 	if(next_shell(box, floor))
 		to_chat(user, span_notice("You start collecting shells.")) // Say it here so it doesn't get said if we don't find anything useful.
-		om_task_start(/datum/om/task/timed/collect_shells, user, box, list("duration" = 0.5 SECONDS, "receiver" = src, "floor" = floor))
+		om_task_start(/datum/om/task/timed/collect_shells, user, box, duration = 0.5 SECONDS, receiver = src, floor = floor)
 		return
 	collect_done(user, box, 0)
 
