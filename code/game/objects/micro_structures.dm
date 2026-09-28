@@ -332,6 +332,15 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 /obj/Initialize(mapload)
 	. = ..()
+	obj_instance_setup()
+
+/obj/table_initialize()
+	..()
+	obj_instance_setup()
+
+/// The per-instance part of /obj/Initialize(), shared with table_initialize() (atom_type_table.dm).
+/obj/proc/obj_instance_setup()
+	PRIVATE_PROC(TRUE)
 	intern_access_lists()
 	if(micro_target)
 		verbs += /obj/proc/micro_interact

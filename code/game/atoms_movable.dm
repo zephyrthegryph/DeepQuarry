@@ -35,6 +35,16 @@
 
 /atom/movable/Initialize(mapload)
 	. = ..()
+	movable_instance_setup()
+
+/// The table path (atom_type_table.dm) runs the same per-instance setup as Initialize().
+/atom/movable/table_initialize()
+	..()
+	movable_instance_setup()
+
+/// The per-instance part of /atom/movable/Initialize(), shared with table_initialize().
+/atom/movable/proc/movable_instance_setup()
+	PRIVATE_PROC(TRUE)
 	// L3 (doc/rewrite/lifecycle.md §5): a declared `lifetime` self-arms here
 	// instead of every timed-delete type calling expire()/QDEL_IN by hand.
 	lifecycle_arm_lifetime()

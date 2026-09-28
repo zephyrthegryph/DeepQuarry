@@ -33,6 +33,10 @@
 	. = ..()
 	updateVisibility(src)
 
+/obj/structure/table_initialize()
+	..()
+	updateVisibility(src)
+
 // EFFECTS
 
 /// Phase 2: freelook nets see the effect go.
@@ -46,6 +50,10 @@
 
 /obj/effect/Initialize(mapload)
 	. = ..()
+	updateVisibility(src)
+
+/obj/effect/table_initialize()
+	..()
 	updateVisibility(src)
 
 // DOORS
