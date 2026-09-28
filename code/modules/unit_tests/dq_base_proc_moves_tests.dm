@@ -1,5 +1,5 @@
 // Procs moved off the base types to globals (doc/rewrite/init_and_turfs.md
-// section 0.5, tools/ci/base_proc_lint.py). These cover the converted call paths.
+// section 0.5). These cover the converted call paths.
 
 /datum/unit_test/dq_moved_admin_coordinates
 
