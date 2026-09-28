@@ -31,12 +31,13 @@ REGISTRY_MEMBERSHIP(/obj/singularity, REGISTRY_SINGULARITIES)
 
 	var/chained = 0//Adminbus chain-grab
 
+DECLARE_PERIODIC(/obj/singularity, PERIODIC_SLOW)
+
 /obj/singularity/Initialize(mapload, starting_energy = 50)
 	//CARN: admin-alert for chuckle-fuckery.
 	admin_investigate_setup()
 	. = ..()
 	energy = starting_energy
-	om_task_periodic(src, PERIODIC_SLOW)
 	for(var/obj/machinery/power/singularity_beacon/singubeacon in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(singubeacon.active)
 			target = singubeacon

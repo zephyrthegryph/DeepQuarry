@@ -121,9 +121,10 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	idle_power_usage = 15
 	active_power_usage = 200 //builtin health analyzer, dialysis machine, injectors.
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/sleeper, "beaker", /obj/item/reagent_containers/glass/beaker/large)
+
 /obj/machinery/sleeper/Initialize(mapload)
 	. = ..()
-	beaker = new /obj/item/reagent_containers/glass/beaker/large(src)
 	default_apply_parts()
 	update_icon()
 

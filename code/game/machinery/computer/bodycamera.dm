@@ -19,6 +19,8 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGISTRY_BODYCAMERA_SCREENS)
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", /obj/item/radio)
+
 /obj/machinery/computer/security/telescreen/bodycamera/Initialize(mapload)
 
 	var/static/icon/mask = icon('icons/obj/entertainment_monitor.dmi', "mask")
@@ -31,7 +33,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 
 	. = ..()
 
-	bradio = new(src)
 	bradio.listening = TRUE
 	bradio.broadcasting = FALSE
 	bradio.set_frequency(BDCM_FREQ)

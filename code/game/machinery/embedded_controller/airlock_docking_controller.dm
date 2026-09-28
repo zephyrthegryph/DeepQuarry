@@ -15,9 +15,10 @@
 	tag_secure = 1
 	valid_actions = list("cycle_ext", "cycle_int", "force_ext", "force_int", "abort", "toggle_override")
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/embedded_controller/radio/airlock/docking_port, "airlock_program", /datum/embedded_program/airlock/docking)
+
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
 	. = ..()
-	airlock_program = new/datum/embedded_program/airlock/docking(src)
 	docking_program = new/datum/embedded_program/docking/airlock(src, airlock_program)
 	program = docking_program
 	if(display_name)
