@@ -13,7 +13,7 @@
 	var/obj/item/radio/bluespacehandset/linked/handset_path = /obj/item/radio/bluespacehandset/linked
 
 /obj/item/bluespaceradio/Initialize(mapload)
-	make_tethered(src, handset_path)
+	make_tethered(handset_path)
 	. = ..()
 
 /obj/item/bluespaceradio/get_interactions()
@@ -22,7 +22,7 @@
 
 /// See important note in code/datums/behaviours/tethered_item.dm
 /obj/item/bluespaceradio/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(tether_swap(src, user))
+	if(tether_swap(user))
 		return TRUE
 	return FALSE
 

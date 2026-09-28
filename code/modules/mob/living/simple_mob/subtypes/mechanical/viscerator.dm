@@ -49,7 +49,7 @@
 
 /mob/living/simple_mob/mechanical/viscerator/Initialize(mapload)
 	. = ..()
-	enable_swarming(src)
+	enable_swarming()
 
 /mob/living/simple_mob/mechanical/viscerator
 	delete_on_death = TRUE

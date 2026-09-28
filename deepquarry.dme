@@ -897,8 +897,6 @@
 #include "code\datums\loot_tables\surface.dm"
 #include "code\datums\loot_tables\trash.dm"
 #include "code\datums\behaviours\rotatable.dm"
-#include "code\datums\behaviours\material_emission.dm"
-#include "code\datums\behaviours\overheating.dm"
 #include "code\datums\behaviours\bluespace_connection.dm"
 #include "code\datums\behaviours\burning.dm"
 #include "code\datums\behaviours\holographic_nature.dm"

@@ -14,7 +14,7 @@
 
 /obj/machinery/beehive/Initialize(mapload)
 	. = ..()
-	make_climbable(src)
+	make_climbable()
 
 /obj/machinery/beehive/update_icon()
 	cut_overlays()

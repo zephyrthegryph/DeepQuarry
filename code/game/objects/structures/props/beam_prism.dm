@@ -73,9 +73,9 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 			span_notice("You decide not to try turning \the [src]."))
 		return
 	if(free_rotate)
-		om_prompt_chain(ask, list("kind" = "number", "message" = "What bearing do you want to rotate \the [src] to?", "title" = "[name]", "default" = 0, "max" = 360, "min" = 0), PROC_REF(rotate_to))
+		ask.chain(list("kind" = "number", "message" = "What bearing do you want to rotate \the [src] to?", "title" = "[name]", "default" = 0, "max" = 360, "min" = 0), PROC_REF(rotate_to))
 	else
-		om_prompt_chain(ask, list("kind" = "list", "message" = "What point do you want to set \the [src] to?", "title" = "[name]", "choices" = compass_directions), PROC_REF(rotate_to_point))
+		ask.chain(list("kind" = "list", "message" = "What point do you want to set \the [src] to?", "title" = "[name]", "choices" = compass_directions), PROC_REF(rotate_to_point))
 
 /obj/structure/prop/prism/proc/rotate_to_point(mob/living/user, choice, datum/om/prompt/ask)
 	rotate_to(user, compass_directions[choice], ask)
@@ -210,10 +210,10 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 			compass_directions |= PR.compass_directions
 
 	if(free_rotate)
-		om_prompt_chain(ask, list("kind" = "number", "message" = "What bearing do you want to rotate \the [src] to?", "title" = "[name]", "default" = 0, "max" = 360, "min" = 0), PROC_REF(bearing_chosen))
+		ask.chain(list("kind" = "number", "message" = "What bearing do you want to rotate \the [src] to?", "title" = "[name]", "default" = 0, "max" = 360, "min" = 0), PROC_REF(bearing_chosen))
 	else
 		ask.put("compass", compass_directions)
-		om_prompt_chain(ask, list("kind" = "list", "message" = "What point do you want to set \the [src] to?", "title" = "[name]", "choices" = compass_directions), PROC_REF(point_chosen))
+		ask.chain(list("kind" = "list", "message" = "What point do you want to set \the [src] to?", "title" = "[name]", "choices" = compass_directions), PROC_REF(point_chosen))
 
 /obj/structure/prop/prismcontrol/proc/point_chosen(mob/living/user, choice, datum/om/prompt/ask)
 	var/list/compass_directions = ask.get("compass")
@@ -225,7 +225,7 @@ REF_BACKLIST(/obj/structure/prop/prism, list("remote_dial" = "my_turrets"))
 		to_chat(user, span_warning("Rotating \the [src] [new_bearing] degrees would be a waste of time."))
 		return
 	ask.put("bearing", new_bearing)
-	om_prompt_chain(ask, list("message" = "Are you certain you want to rotate \the [src]?", "title" = "[name]", "choices" = list("Yes", "No")), PROC_REF(rotate_final))
+	ask.chain(list("message" = "Are you certain you want to rotate \the [src]?", "title" = "[name]", "choices" = list("Yes", "No")), PROC_REF(rotate_final))
 
 /obj/structure/prop/prismcontrol/proc/rotate_final(mob/living/user, confirm, datum/om/prompt/ask)
 	if(confirm != "Yes")

@@ -140,7 +140,7 @@
 			attack_self(user)
 		if("Other Signature")
 			mode = 2
-			om_prompt_chain(ask, list("message" = "Search for item signature or DNA fragment?", "title" = "Signature Mode Select", "choices" = list("Item", "DNA")), PROC_REF(pinpointer_signature_chosen))
+			ask.chain(list("message" = "Search for item signature or DNA fragment?", "title" = "Signature Mode Select", "choices" = list("Item", "DNA")), PROC_REF(pinpointer_signature_chosen))
 
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(mob/user, datum/om/prompt/ask)
 	var/locationx = ask.get("x")
@@ -158,9 +158,9 @@
 		if("Item")
 			if(!itemlist)
 				itemlist = new
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Select item to search for.", "title" = "Item Mode Select", "choices" = itemlist.possible_items), PROC_REF(pinpointer_item_chosen))
+			ask.chain(list("kind" = "list", "message" = "Select item to search for.", "title" = "Item Mode Select", "choices" = itemlist.possible_items), PROC_REF(pinpointer_item_chosen))
 		if("DNA")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "Input DNA string to search for.", "title" = "Please Enter String.", "default" = ""), PROC_REF(pinpointer_dna_entered))
+			ask.chain(list("kind" = "text", "message" = "Input DNA string to search for.", "title" = "Please Enter String.", "default" = ""), PROC_REF(pinpointer_dna_entered))
 
 /obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(mob/user, targetitem, datum/om/prompt/ask)
 	var/datum/objective/steal/itemlist = new

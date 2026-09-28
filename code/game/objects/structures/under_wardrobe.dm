@@ -7,7 +7,7 @@
 
 /obj/structure/undies_wardrobe/Initialize(mapload)
 	. = ..()
-	make_climbable(src)
+	make_climbable()
 
 /obj/structure/undies_wardrobe/declare_interactions(list/into)
 	into += list(

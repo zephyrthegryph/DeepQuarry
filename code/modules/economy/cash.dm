@@ -23,7 +23,7 @@
 
 /obj/item/spacecash/Initialize(mapload)
 	. = ..()
-	make_sellable(src, /datum/sellable/spacecash)
+	make_sellable(/datum/sellable/spacecash)
 
 /obj/item/spacecash/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/spacecash))

@@ -2,7 +2,7 @@
 /// spread out by a random pixel offset; alone again, they return. A shared behaviour
 /// singleton on the moved event: whoever moves leaves the swarmers of its old turf and
 /// joins those of its new one, so both sides of every pair stay in step. State lives on
-/// the movable. Attach with enable_swarming(AM).
+/// the movable. Attach with AM.enable_swarming().
 /datum/om/behaviour/swarming
 	handles = list(/datum/om/event/moved)
 
@@ -15,10 +15,10 @@
 	/// om_handle()s of the swarmers sharing our turf (lazy).
 	var/list/swarm_member_handles
 
-/proc/enable_swarming(atom/movable/AM, max_x = 24, max_y = 24)
-	AM.swarm_offset_x = rand(-max_x, max_x)
-	AM.swarm_offset_y = rand(-max_y, max_y)
-	om_attach(AM, /datum/om/behaviour/swarming)
+/atom/movable/proc/enable_swarming(max_x = 24, max_y = 24)
+	swarm_offset_x = rand(-max_x, max_x)
+	swarm_offset_y = rand(-max_y, max_y)
+	om_attach(src, /datum/om/behaviour/swarming)
 
 /// TRUE if `AM` swarms.
 /proc/is_swarmer(atom/movable/AM)

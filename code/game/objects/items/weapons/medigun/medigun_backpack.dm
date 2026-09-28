@@ -279,7 +279,7 @@
 	update_icon()
 
 /obj/item/medigun_backpack/Initialize(mapload)
-	make_tethered(src, medigun_path)
+	make_tethered(medigun_path)
 	. = ..()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
@@ -321,7 +321,7 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 
 /obj/item/medigun_backpack/attack_hand(mob/living/user)
 	// See important note in code/datums/behaviours/tethered_item.dm
-	if(tether_swap(src, user))
+	if(tether_swap(user))
 		return TRUE
 	. = ..()
 

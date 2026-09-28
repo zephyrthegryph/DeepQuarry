@@ -37,9 +37,11 @@ code/datums/components/crafting/crafting.dm 3
 code/datums/components/crafting/recipes.dm 1
 code/datums/components/disabilities/pollen.dm 2
 code/datums/components/dry.dm 1
+code/datums/components/food/germ_sensitive.dm 1
 code/datums/components/materials/material_container.dm 2
 code/datums/components/remote_view.dm 2
 code/datums/components/species/shadekin/powers/phase_shift.dm 2
+code/datums/components/structures/bluespace_connection.dm 1
 code/datums/components/traits/crowd_detection.dm 3
 code/datums/components/traits/weaver.dm 2
 code/datums/diseases/_MobProcs.dm 2

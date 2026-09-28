@@ -36,7 +36,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 /obj/machinery/power/generator/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
-	make_rotatable(src)
+	make_rotatable()
 	..() //Not returned, because...
 	return INITIALIZE_HINT_LATELOAD
 

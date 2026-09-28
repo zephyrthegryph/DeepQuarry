@@ -18,8 +18,8 @@
 
 /obj/structure/closet/crate/Initialize(mapload)
 	. = ..()
-	make_climbable(src)
-	make_rotatable(src)
+	make_climbable()
+	make_rotatable()
 
 /obj/structure/closet/crate/can_close()
 	return 1

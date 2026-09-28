@@ -659,7 +659,7 @@
 	if(new_notes != "")
 		record_notes_confirmed(user, "Delete", ask)
 		return
-	om_prompt_chain(ask, list("message" = "Are you sure you want to delete the current record's notes?", "title" = "Confirm Delete", "choices" = list("Delete", "No")), PROC_REF(record_notes_confirmed))
+	ask.chain(list("message" = "Are you sure you want to delete the current record's notes?", "title" = "Confirm Delete", "choices" = list("Delete", "No")), PROC_REF(record_notes_confirmed))
 
 /obj/machinery/computer/skills/proc/record_notes_confirmed(mob/user, answer, datum/om/prompt/ask)
 	var/datum/data/record/R = ask.get("record")

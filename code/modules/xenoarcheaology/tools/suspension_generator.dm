@@ -15,7 +15,7 @@
 /obj/machinery/suspension_gen/Initialize(mapload)
 	. = ..()
 	cell = new /obj/item/cell/high(src)
-	make_rotatable(src)
+	make_rotatable()
 
 /// Holds its field (draining its cell) while active; off, it sleeps until activate().
 /obj/machinery/suspension_gen/machine_step()

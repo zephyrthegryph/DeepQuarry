@@ -1212,13 +1212,13 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/custom_say_verb_chosen(mob/user, sayselect, datum/om/prompt/ask)
 	switch(sayselect)
 		if("Say")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", "title" = "Custom Say", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_say")), PROC_REF(custom_say_entered))
+			ask.chain(list("kind" = "text", "message" = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", "title" = "Custom Say", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_say")), PROC_REF(custom_say_entered))
 		if("Whisper")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", "title" = "Custom Whisper", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_whisper")), PROC_REF(custom_say_entered))
+			ask.chain(list("kind" = "text", "message" = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", "title" = "Custom Whisper", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_whisper")), PROC_REF(custom_say_entered))
 		if("Ask (?)")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", "title" = "Custom Ask", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_ask")), PROC_REF(custom_say_entered))
+			ask.chain(list("kind" = "text", "message" = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", "title" = "Custom Ask", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_ask")), PROC_REF(custom_say_entered))
 		if("Exclaim/Shout/Yell (!)")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", "title" = "Custom Exclaim", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_exclaim")), PROC_REF(custom_say_entered))
+			ask.chain(list("kind" = "text", "message" = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", "title" = "Custom Exclaim", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_exclaim")), PROC_REF(custom_say_entered))
 
 /mob/living/proc/custom_say_entered(mob/user, text, datum/om/prompt/ask)
 	vars[ask.get("var")] = lowertext(text)
@@ -1380,7 +1380,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	var/list/preset_voice_freqs = ask.get("presets")
 	choice = preset_voice_freqs[choice]
 	if(choice == 1)
-		om_prompt_chain(ask, list("kind" = "number", "message" = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", "title" = "Custom Voice Frequency", "max" = MAX_VOICE_FREQ, "min" = MIN_VOICE_FREQ), PROC_REF(voice_freq_entered))
+		ask.chain(list("kind" = "number", "message" = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", "title" = "Custom Voice Frequency", "max" = MAX_VOICE_FREQ, "min" = MIN_VOICE_FREQ), PROC_REF(voice_freq_entered))
 		return
 	voice_freq_entered(user, choice, ask)
 

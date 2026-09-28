@@ -58,7 +58,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	return TRUE
 
 /obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)
-	loot_pile_reward(src, L, searchedby, 0)
+	loot_reward(L, searchedby, 0)
 
 /obj/structure/loot_pile/Initialize(mapload)
 	if(icon_states_to_use && length(icon_states_to_use))

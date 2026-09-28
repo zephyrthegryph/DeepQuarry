@@ -179,7 +179,7 @@
 			if("frequency")
 				ask_frequency(user, frequency)
 			if("multitool")
-				om_prompt_chain(ask, list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'burn_chamber'.", "title" = "Set ID Tag", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(sensor_tag_entered))
+				ask.chain(list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'burn_chamber'.", "title" = "Set ID Tag", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(sensor_tag_entered))
 
 /obj/machinery/air_sensor/proc/sensor_tag_entered(mob/user, new_tag, datum/om/prompt/ask)
 	if(!new_tag)
@@ -284,14 +284,14 @@
 				to_chat(user, span_warning("Error: No device in multitool buffer, or incompatible device is not a sensor or meter."))
 				return
 			ask.put("device", device)
-			om_prompt_chain(ask, list("kind" = "text", "message" = "Enter a name for the Sensor/Meter.", "title" = "Name"), PROC_REF(sensor_named))
+			ask.chain(list("kind" = "text", "message" = "Enter a name for the Sensor/Meter.", "title" = "Name"), PROC_REF(sensor_named))
 		if("Remove")
 			// Creates an associative mapping of Names to Tags, from Tags to Names.
 			var/list/sensor_names = list()
 			for(var/tag in sensors)
 				sensor_names[LAZYACCESS(sensors, tag)] = tag
 			ask.put("names", sensor_names)
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Select a sensor/meter to remove", "title" = "Sensor/Meter Removal", "choices" = sensor_names), PROC_REF(sensor_removal_chosen))
+			ask.chain(list("kind" = "list", "message" = "Select a sensor/meter to remove", "title" = "Sensor/Meter Removal", "choices" = sensor_names), PROC_REF(sensor_removal_chosen))
 
 /obj/machinery/computer/general_air_control/proc/sensor_named(mob/living/user, device_name, datum/om/prompt/ask)
 	var/obj/machinery/device = ask.get("device")
@@ -308,7 +308,7 @@
 
 /obj/machinery/computer/general_air_control/proc/sensor_removal_chosen(mob/living/user, to_remove, datum/om/prompt/ask)
 	ask.put("remove", to_remove)
-	om_prompt_chain(ask, list("message" = "Are you sure you want to remove the sensor/meter '[to_remove]'?", "title" = "Warning", "choices" = list("Yes", "No")), PROC_REF(sensor_removal_confirmed))
+	ask.chain(list("message" = "Are you sure you want to remove the sensor/meter '[to_remove]'?", "title" = "Warning", "choices" = list("Yes", "No")), PROC_REF(sensor_removal_confirmed))
 
 /obj/machinery/computer/general_air_control/proc/sensor_removal_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
 	if(confirm != "Yes")

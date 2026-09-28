@@ -1,7 +1,7 @@
 /// Sale profiles (was /datum/element/sellable). Object state, not an OM behaviour:
 /// an object's `sellable_type` names a shared profile singleton (get_sellable_profile())
-/// and the cargo shuttle / retail scanner ask through the global procs cargo_export_sale()
-/// and cargo_scan_profit(). Subtypes override the valuation procs.
+/// and the cargo shuttle / retail scanner ask the object directly through
+/// export_sale() and scan_profit(). Subtypes override the valuation procs.
 /datum/sellable
 	var/sale_info = "This can be sold on the cargo shuttle if packed in a crate."
 	var/needs_crate = TRUE
@@ -18,26 +18,28 @@
 	/// The /datum/sellable profile this object sells under, or null.
 	var/sellable_type
 
-/// Makes `O` sellable under profile `path`. The first profile wins.
-/proc/make_sellable(obj/O, path = /datum/sellable)
-	if(O.sellable_type)
+/// Makes this object sellable under profile `path`. The first profile wins.
+/obj/proc/make_sellable(path = /datum/sellable)
+	if(sellable_type)
 		return
-	O.sellable_type = path
+	sellable_type = path
 
-/// `A` offered to the cargo shuttle: TRUE if sold (the crate record is filled in).
-/proc/cargo_export_sale(atom/A, datum/exported_crate/EC, in_crate)
-	var/obj/O = A
-	if(!istype(O) || !O.sellable_type)
+/// Offered to the cargo shuttle: TRUE if sold (the crate record is filled in).
+/atom/proc/export_sale(datum/exported_crate/EC, in_crate)
+	return FALSE
+
+/obj/export_sale(datum/exported_crate/EC, in_crate)
+	if(!sellable_type)
 		return FALSE
-	var/datum/sellable/profile = get_sellable_profile(O.sellable_type)
-	return profile.sell(O, EC, in_crate)
+	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	return profile.sell(src, EC, in_crate)
 
-/// The sale value a retail scanner reads for `O`, or null when not sellable.
-/proc/cargo_scan_profit(obj/O)
-	if(!O.sellable_type)
+/// The sale value a retail scanner reads, or null when not sellable.
+/obj/proc/scan_profit()
+	if(!sellable_type)
 		return null
-	var/datum/sellable/profile = get_sellable_profile(O.sellable_type)
-	return profile.calculate_sell_value(O)
+	var/datum/sellable/profile = get_sellable_profile(sellable_type)
+	return profile.calculate_sell_value(src)
 
 /obj/examine(mob/user, infix = "", suffix = "")
 	. = ..()

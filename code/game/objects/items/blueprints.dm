@@ -426,7 +426,7 @@
 	if(isarea(area_choice))
 		create_area_commit(creator, ask, area_choice)
 		return
-	om_prompt_chain(ask, list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), GLOBAL_PROC_REF(create_area_named))
+	ask.chain(list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), GLOBAL_PROC_REF(create_area_named))
 
 /proc/create_area_named(datum/E, mob/creator, str, datum/om/prompt/ask)
 	if(!length(str)) //cancel
@@ -538,12 +538,12 @@
 	var/area/oldA = get_area(get_turf(creator))
 	if(isarea(area_choice))
 		ask.put("area", area_choice)
-		om_prompt_chain(ask, list("message" = "Are you sure you want to change [oldA.name] into [area_choice]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
+		ask.chain(list("message" = "Are you sure you want to change [oldA.name] into [area_choice]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
 		return
 	if(!ask.get("can_make_new_area") && !can_override)
 		to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
 		return
-	om_prompt_chain(ask, list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), PROC_REF(whole_area_named))
+	ask.chain(list("kind" = "text", "message" = "New area name", "title" = "Blueprint Editing", "max_length" = MAX_NAME_LEN), PROC_REF(whole_area_named))
 
 /obj/item/areaeditor/proc/whole_area_named(mob/creator, str, datum/om/prompt/ask)
 	if(!length(str)) //cancel
@@ -557,7 +557,7 @@
 			return
 	var/area/oldA = get_area(get_turf(creator))
 	ask.put("name", str)
-	om_prompt_chain(ask, list("message" = "Are you sure you want to change [oldA.name] into a new area named [str]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
+	ask.chain(list("message" = "Are you sure you want to change [oldA.name] into a new area named [str]?", "title" = "READ CAREFULLY", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(no_changes_made)), PROC_REF(whole_area_confirmed))
 
 /obj/item/areaeditor/proc/whole_area_confirmed(mob/creator, confirm, datum/om/prompt/ask)
 	if(confirm != "Yes")

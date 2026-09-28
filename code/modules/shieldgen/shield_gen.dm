@@ -44,7 +44,7 @@
 				cap.owned_gen = src
 	shield_hum = new(list(src), FALSE)
 	. = ..()
-	make_climbable(src)
+	make_climbable()
 
 REF_OWNED(/obj/machinery/shield_gen, "shield_hum")
 REF_OWNED_LIST(/obj/machinery/shield_gen, "field")

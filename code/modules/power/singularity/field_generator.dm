@@ -70,7 +70,7 @@
 	. = ..()
 	fields = list()
 	connected_gens = list()
-	make_climbable(src)
+	make_climbable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/field_generator/machine_step()

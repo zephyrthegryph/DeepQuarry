@@ -344,7 +344,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 //
 // SStimer's TIMER_UNIQUE and TIMER_OVERRIDE, as the key they really were: the owner, the
 // proc and its arguments. No extra state: the owner's timer list is the index. These live on
-// the scheduler (base_proc_lint: no new global API taking a datum); call them through the
+// the scheduler; call them through the
 // om_after_unique() / om_after_replace() / om_cancel_calls() / om_timer_count() macros.
 
 /// The position in rec.timers of a pending timer calling `proc_ref` with `call_args`, or 0.

@@ -1,16 +1,16 @@
 /// Rotation verbs (was /datum/element/rotatable). Stateless: the verbs themselves are
-/// the only per-atom state, so this is a plain global proc rather than an OM behaviour (an
-/// OM record per rotatable object would cost more than it carries).
-/proc/make_rotatable(atom/movable/AM, only_flip = FALSE)
+/// the only per-atom state, so this is a plain proc rather than an OM behaviour (an OM
+/// record per rotatable object would cost more than it carries).
+/atom/movable/proc/make_rotatable(only_flip = FALSE)
 	if(!only_flip)
-		AM.verbs |= /atom/movable/proc/rotate_clockwise
-		AM.verbs |= /atom/movable/proc/rotate_counterclockwise
-	AM.verbs |= /atom/movable/proc/turn_around
+		verbs |= /atom/movable/proc/rotate_clockwise
+		verbs |= /atom/movable/proc/rotate_counterclockwise
+	verbs |= /atom/movable/proc/turn_around
 
-/proc/unmake_rotatable(atom/movable/AM)
-	AM.verbs -= /atom/movable/proc/rotate_clockwise
-	AM.verbs -= /atom/movable/proc/rotate_counterclockwise
-	AM.verbs -= /atom/movable/proc/turn_around
+/atom/movable/proc/unmake_rotatable()
+	verbs -= /atom/movable/proc/rotate_clockwise
+	verbs -= /atom/movable/proc/rotate_counterclockwise
+	verbs -= /atom/movable/proc/turn_around
 
 // Core rotation proc, override me to add conditions to object rotations or update_icons/state after!
 /atom/movable/proc/handle_rotation_verbs(angle, mob/user)

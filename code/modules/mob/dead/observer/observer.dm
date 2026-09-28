@@ -950,7 +950,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	cut_overlays()
 	icon_state = GLOB.possible_ghost_sprites[choice]
 	ask.put("choice", choice)
-	om_prompt_chain(ask, list("message" = "Look at your sprite. Is this what you wish to use?", "title" = "Ghost Sprite", "choices" = list("No","Yes"), "on_cancel" = PROC_REF(ghost_sprite_rejected)), PROC_REF(ghost_sprite_confirmed))
+	ask.chain(list("message" = "Look at your sprite. Is this what you wish to use?", "title" = "Ghost Sprite", "choices" = list("No","Yes"), "on_cancel" = PROC_REF(ghost_sprite_rejected)), PROC_REF(ghost_sprite_confirmed))
 
 /mob/observer/dead/proc/ghost_sprite_rejected(mob/user, datum/om/prompt/ask)
 	icon_state = ask.get("previous")

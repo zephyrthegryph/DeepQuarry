@@ -1432,7 +1432,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return
 	ask.put("direction", direction)
 	var/max_length = bloody_hands * 30 //tweeter style
-	om_prompt_chain(ask, list("kind" = "text", "message" = "Write a message. It cannot be longer than [max_length] characters.", "title" = "Blood writing", "max_length" = MAX_MESSAGE_LEN), PROC_REF(bloody_doodle_written))
+	ask.chain(list("kind" = "text", "message" = "Write a message. It cannot be longer than [max_length] characters.", "title" = "Blood writing", "max_length" = MAX_MESSAGE_LEN), PROC_REF(bloody_doodle_written))
 
 /mob/living/carbon/human/proc/bloody_doodle_written(mob/user, message, datum/om/prompt/ask)
 	var/turf/simulated/T = bloody_doodle_turf(ask.get("direction"))

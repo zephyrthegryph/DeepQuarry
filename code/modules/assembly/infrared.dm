@@ -16,7 +16,7 @@
 
 /obj/item/assembly/infra/Initialize(mapload)
 	. = ..()
-	make_rotatable(src)
+	make_rotatable()
 
 /obj/item/assembly/infra/activate()
 	if(!..())

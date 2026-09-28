@@ -52,7 +52,7 @@
 		"detail" = "Fabricated [name] for [department].",
 	), "item-produced:[REF(src)]", src)
 	// Preserve specialized export valuation and never count an object twice.
-	make_sellable(src, /datum/sellable/manufactured)
+	make_sellable(/datum/sellable/manufactured)
 
 /// Phase 1 (unbind): an object that blocked air reopens its tile. It is
 /// already QDELETED (phase 0), so the recomputed air_block_mask() skips it.

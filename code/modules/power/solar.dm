@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 		max_integrity *= 2
 		update_integrity(max_integrity)
 	update_icon()
-	make_climbable(src)
+	make_climbable()
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's

@@ -30,6 +30,61 @@
 	// Geometry-specific consumers can override thickness; ordinary fabricated
 	// items use a five-millimeter representative path through their material.
 	I.set_rad_insulation(material_radiation_transmission(5))
-	configure_item_emissions(I, luminescence, radioactivity, toxicity, icon_colour)
+	I.configure_material_behaviors(luminescence, radioactivity, toxicity, icon_colour)
 	dq_apply_material_responses(I)
 
+// ---- The emission behaviour ------------------------------------------------
+// (was /datum/component/material_behaviors). The magnitudes live on the item;
+// the light is set once, and an item that irradiates or poisons carries the
+// shared material_emission behaviour, which ticks every 2 s while attached.
+
+/obj/item
+	var/mat_luminescence = 0
+	var/mat_radioactivity = 0
+	var/mat_toxicity = 0
+
+/datum/om/behaviour/material_emission
+	every = 2 SECONDS
+
+/obj/item/proc/configure_material_behaviors(_lum = 0, _rad = 0, _tox = 0, colour = null)
+	var/old_luminescence = mat_luminescence
+	mat_luminescence = _lum
+	mat_radioactivity = _rad
+	mat_toxicity = _tox
+	if(mat_luminescence > 0)
+		var/range = clamp(mat_luminescence / 20, 0.5, 4)
+		var/power = clamp(mat_luminescence / 30, 0.3, 2)
+		set_light(range, power, colour)
+	else if(old_luminescence > 0)
+		set_light(0)
+	if(mat_radioactivity > 0 || mat_toxicity > 0)
+		om_attach(src, /datum/om/behaviour/material_emission)
+	else
+		om_detach(src, /datum/om/behaviour/material_emission)
+
+/// TRUE while the item's material irradiates or poisons.
+/obj/item/proc/material_emitting()
+	return om_attached(src, /datum/om/behaviour/material_emission)
+
+/datum/om/behaviour/material_emission/tick(obj/item/I, dt)
+	I.material_emission_step()
+
+/obj/item/proc/material_emission_step()
+	var/obj/item/I = src
+	if(QDELETED(I))
+		return
+	if(mat_radioactivity > 0)
+		radiation_pulse(
+			I,
+			max_range = 3,
+			threshold = RAD_LIGHT_INSULATION,
+			chance = round(mat_radioactivity * 0.5, 1),
+			minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+			strength = mat_radioactivity,
+		)
+	if(mat_toxicity > 0)
+		// Sub-lethal but real, only while held bare in hand (loc is the mob). Dose is
+		// per fixed 2 s tick; deliberately not scaled by dt.
+		var/mob/living/carbon/human/H = I.loc
+		if(istype(H))
+			H.injure(INJURY_TOXIN, mat_toxicity * 0.01, null, I, 0, null, INJURE_SILENT)

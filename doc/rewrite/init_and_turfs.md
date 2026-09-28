@@ -283,11 +283,13 @@ the variant loader and map aliases.
   `laserhit`, `get_ultimate_mob`, `isinspace`), 1 on `/obj`
   (`analyze_gases`, now `analyze_gases_by(tool, target, user)`) and 3 on
   `/mob` (`quest_from_above`, `safe_animal`, `artifact_spawn_debug_tool`).
-  `tools/ci/base_proc_lint.py` (in `check_ratchets.sh`) counts procs declared
-  on `/datum`, `/atom`, `/atom/movable`, `/obj`, `/obj/item` and `/mob`
-  against `tools/ci/base_proc_allowlist.txt`; the ceilings went from
-  166/323/132/103/127/588 to 147/313/132/102/127/585. A new rarely used proc
-  belongs in a global proc or a helper datum.
+  `tools/ci/base_proc_lint.py` (in `check_ratchets.sh`) now watches the
+  memory directly: for `/datum`, `/atom`, `/atom/movable`, `/obj`, `/obj/item`
+  and `/mob` it estimates declared procs x types at or under the type x 23.5
+  bytes, and fails when the total rises above the ceiling in
+  `tools/ci/base_proc_budget.txt` (today's value + 5%; `--report` for the
+  per-type figures, `--update` to reset). It does not care whether a proc is
+  global or on a type: put a proc where its API naturally belongs.
 
   A second pass kept 17 more as global procs (taking the former `src` first),
   all admin, debug, logging or text helpers: `plural_s`, `_search_references`,
@@ -298,13 +300,6 @@ the variant loader and map aliases.
   empty `*_act_secondary` tool stubs: secondary (right-click) tool use runs the
   declared interactions for that quality whose default action is Alternate
   (`interaction_tool_act(..., secondary = TRUE)`). Estimated ~11 MB.
-  Gameplay API stays on the type. `base_proc_lint.py` fails a global proc
-  taking a base-type object first whose name or file is in a protected family:
-  containment, lifecycle, OM, components, filters, interactions and clicks,
-  damage, inventory, movement, heat and light, materials, construction,
-  constraints, surgery, combat and attack variants, identification. Existing
-  global API in those families is listed in
-  `base_proc_protected_allowlist.txt`. Ceilings now 145/306/132/100/123/577.
   Per-proc value differs by type: a proc on `/datum` or `/atom` is ~1 MB, on
   `/obj` ~0.7 MB, on `/obj/item` ~0.44 MB, on `/mob` only ~0.08 MB (~3.5 k mob
   types).

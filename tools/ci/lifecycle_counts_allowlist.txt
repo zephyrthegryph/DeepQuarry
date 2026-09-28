@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 2 in 2 files. qdel total: 2112 in 904 files.
+# Destroy total: 2 in 2 files. qdel total: 2126 in 914 files.
 [destroy]
 code/datums/om/prompt.dm 1
 code/modules/random_map/drop/supply.dm 1
@@ -31,6 +31,7 @@ code/_helpers/logging/log_to_db.dm 2
 code/_helpers/refinery.dm 4
 code/_onclick/hud/ability_screen_objects.dm 1
 code/_onclick/hud/action/action.dm 2
+code/_onclick/hud/action/item_action.dm 1
 code/_onclick/hud/alert.dm 1
 code/_onclick/hud/fullscreen.dm 2
 code/_onclick/hud/hud.dm 1
@@ -65,7 +66,6 @@ code/controllers/subsystems/ticker.dm 3
 code/controllers/subsystems/transcore.dm 1
 code/controllers/subsystems/vis_overlays.dm 1
 code/datums/beam.dm 3
-code/datums/behaviours/tethered_item.dm 1
 code/datums/chat_message.dm 5
 code/datums/cinematics/_cinematic.dm 1
 code/datums/cogbar.dm 4
@@ -73,6 +73,7 @@ code/datums/components/_component.dm 3
 code/datums/components/antags/changeling/powers/absorb.dm 1
 code/datums/components/antags/changeling/powers/fabricate_clothing.dm 10
 code/datums/components/antags/changeling/powers/lesser_form.dm 3
+code/datums/components/burning.dm 2
 code/datums/components/connect_containers.dm 1
 code/datums/components/connect_loc_behalf.dm 1
 code/datums/components/connect_mob_behalf.dm 1
@@ -80,30 +81,38 @@ code/datums/components/connect_range.dm 1
 code/datums/components/crafting/crafting.dm 1
 code/datums/components/crafting/recipes.dm 1
 code/datums/components/effect_remover.dm 1
+code/datums/components/food/germ_sensitive.dm 1
+code/datums/components/infective.dm 2
 code/datums/components/machinery/disposal_connection.dm 1
 code/datums/components/materials/machine_shim.dm 5
 code/datums/components/materials/material_container.dm 5
 code/datums/components/materials/remote_materials.dm 1
 code/datums/components/mind_host.dm 2
 code/datums/components/overlay_lighting.dm 3
+code/datums/components/radiation_countdown.dm 1
+code/datums/components/radioactive_exposure.dm 1
 code/datums/components/reagent_hose/datum.dm 2
 code/datums/components/recursive_move.dm 1
 code/datums/components/remote_view.dm 7
+code/datums/components/resize_guard.dm 1
 code/datums/components/sparse_vars/alt_appearance.dm 2
 code/datums/components/sparse_vars/update_on_z.dm 1
 code/datums/components/species/shadekin/powers/dark_maw.dm 6
+code/datums/components/structures/bluespace_connection.dm 1
+code/datums/behaviours/tethered_item.dm 1
 code/datums/components/traits/crowd_detection.dm 1
 code/datums/components/traits/drippy.dm 1
 code/datums/components/traits/gargoyle.dm 1
+code/datums/components/traits/unlucky.dm 1
 code/datums/components/turfslip.dm 6
 code/datums/containment/latent.dm 3
 code/datums/containment/stock.dm 1
 code/datums/datum.dm 2
 code/datums/diseases/_disease.dm 1
 code/datums/diseases/advance/advance.dm 1
+code/datums/loot_tables/_lootable.dm 1
 code/datums/ghost_spawn.dm 1
 code/datums/helper_datums/teleport.dm 1
-code/datums/loot_tables/_lootable.dm 1
 code/datums/managed_browsers/feedback_form.dm 1
 code/datums/managed_browsers/feedback_viewer.dm 1
 code/datums/mind.dm 3
@@ -123,7 +132,7 @@ code/datums/proximity_monitor/proximity_monitor.dm 1
 code/datums/repositories/ammomaterial.dm 1
 code/datums/repositories/crew.dm 1
 code/datums/rules/binding.dm 6
-code/datums/rules/declarations.dm 1
+code/datums/rules/declarations.dm 2
 code/datums/rules/world_adapter.dm 2
 code/datums/state/collapse.dm 2
 code/datums/state/schema.dm 4
@@ -891,6 +900,7 @@ code/modules/vore/fluffstuff/custom_items.dm 3
 code/modules/vore/mob_tf.dm 2
 code/modules/vore/mouseray.dm 2
 code/modules/vore/resizing/holder.dm 1
+code/modules/vore/resizing/resize.dm 2
 code/modules/vore/resizing/sizegun_slow.dm 2
 code/modules/vore/smoleworld/smoleworld.dm 5
 code/modules/vote/vote_datum.dm 1

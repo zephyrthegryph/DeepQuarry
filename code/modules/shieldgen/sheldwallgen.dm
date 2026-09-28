@@ -27,7 +27,7 @@
 
 /obj/machinery/shieldwallgen/Initialize(mapload)
 	. = ..()
-	make_climbable(src)
+	make_climbable()
 
 /obj/machinery/shieldwallgen/declare_interactions(list/into)
 	into += list(

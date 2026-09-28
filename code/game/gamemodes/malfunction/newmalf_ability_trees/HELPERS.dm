@@ -38,7 +38,7 @@
 		log_world("## ERROR Hardware without description: [C]")
 		return
 	ask.put("chosen", C)
-	om_prompt_chain(ask, list("message" = "[C.desc] - Is this what you want?", "title" = "Hardware selection", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(malf_hardware_confirmed))
+	ask.chain(list("message" = "[C.desc] - Is this what you want?", "title" = "Hardware selection", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(malf_hardware_confirmed))
 
 /proc/malf_hardware_confirmed(mob/living/silicon/ai/user, mob/answerer, confirmation, datum/om/prompt/ask)
 	if(confirmation != "Yes")

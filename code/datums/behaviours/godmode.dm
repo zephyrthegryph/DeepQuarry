@@ -10,15 +10,13 @@
 	var/static/datum/godmode_source/source = new
 	return source
 
-/// Puts `M` in godmode. FALSE if it already was.
-/proc/godmode_enable(mob/M)
-	if(!ismob(M) || om_has(M, EFFECT_GODMODE))
+/// Puts the mob in godmode. FALSE if it already was.
+/mob/proc/enable_godmode()
+	if(om_has(src, EFFECT_GODMODE))
 		return FALSE
-	om_hold(M, EFFECT_GODMODE, godmode_source())
+	om_hold(src, EFFECT_GODMODE, godmode_source())
 	return TRUE
 
-/// Takes `M` out of godmode.
-/proc/godmode_disable(mob/M)
-	if(!ismob(M))
-		return
-	om_release(M, EFFECT_GODMODE, godmode_source())
+/// Takes the mob out of godmode.
+/mob/proc/disable_godmode()
+	om_release(src, EFFECT_GODMODE, godmode_source())

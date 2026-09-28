@@ -64,7 +64,7 @@
 /obj/item/retail_scanner/proc/freight_item_value(obj/item/item)
 	if(item.economic_export_value > 0)
 		return SSsupply.export_revenue(item.economic_export_value)
-	var/value = cargo_scan_profit(item)
+	var/value = item.scan_profit()
 	return isnum(value) ? max(0, SSsupply.export_revenue(value)) : 0
 
 /proc/storefront_department_authorized(mob/living/user, department)

@@ -103,15 +103,15 @@
 	// a freshly created heat body; poll instead of assuming two flushes land.
 	for(var/i in 1 to 10)
 		dq_rx_flush()
-		hot = overheating_active(window)
+		hot = window.is_overheating()
 		if(hot || QDELETED(window))
 			break
 	TEST_ASSERT(hot, "above it the window overheats")
 	var/before = window.get_integrity()
-	overheat_step(window, 1)
+	window.overheat_step(1)
 	TEST_ASSERT(window.get_integrity() < before, "and takes thermal damage through the pipeline")
 	dq_rule_test_write(window, PROP_TEMPERATURE, limit - 50)
-	TEST_ASSERT(!overheating_active(window), "cooled below it, the stream stops")
+	TEST_ASSERT(!window.is_overheating(), "cooled below it, the stream stops")
 
 // ---- Reagents ----
 
@@ -186,15 +186,15 @@
 	// Fuel: the damage stream burns it; it goes out when none is left.
 	var/obj/item/paper/fuelled = allocate(/obj/item/paper, T)
 	fuelled.rule_ignite()
-	TEST_ASSERT(burning_active(fuelled), "ignited")
+	TEST_ASSERT(fuelled.is_burning(), "ignited")
 	TEST_ASSERT(!isnull(fuelled.heat_body), "burning is a heat source on the object's body")
 	var/integrity = fuelled.get_integrity()
 	var/oxygen = air.get_moles(GAS_O2)
-	burning_step(fuelled, 1)
+	fuelled.burning_step(1)
 	TEST_ASSERT(fuelled.get_integrity() < integrity, "a second of burning is an integrity damage stream")
 	TEST_ASSERT(air.get_moles(GAS_O2) < oxygen, "and uses the tile's oxygen")
 	fuelled.burn_fuel = 1
-	burning_step(fuelled, 1)
+	fuelled.burning_step(1)
 	TEST_ASSERT_EQUAL(fuelled.burn_ended_by, BURN_ENDED_FUEL, "it goes out when the fuel runs out")
 	TEST_ASSERT(!(fuelled.resistance_flags & ON_FIRE), "and is no longer on fire")
 
@@ -202,7 +202,7 @@
 	var/obj/item/paper/smothered = allocate(/obj/item/paper, T)
 	smothered.rule_ignite()
 	air.set_moles(GAS_O2, 0)
-	burning_step(smothered, 1)
+	smothered.burning_step(1)
 	air.set_moles(GAS_O2, 20)
 	TEST_ASSERT_EQUAL(smothered.burn_ended_by, BURN_ENDED_OXYGEN, "it goes out without oxygen")
 

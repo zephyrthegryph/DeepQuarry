@@ -47,9 +47,9 @@
 /obj/item/spell/illusion/proc/illusion_action_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Speak")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "What do you want \the [illusion] to say?", "title" = "Illusion Speak", "encode" = FALSE), PROC_REF(illusion_speak))
+			ask.chain(list("kind" = "text", "message" = "What do you want \the [illusion] to say?", "title" = "Illusion Speak", "encode" = FALSE), PROC_REF(illusion_speak))
 		if("Emote")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "What do you want \the [illusion] to do?", "title" = "Illusion Emote", "encode" = FALSE), PROC_REF(illusion_emote))
+			ask.chain(list("kind" = "text", "message" = "What do you want \the [illusion] to do?", "title" = "Illusion Emote", "encode" = FALSE), PROC_REF(illusion_emote))
 
 /obj/item/spell/illusion/proc/illusion_speak(mob/user, what_to_say, datum/om/prompt/ask)
 	//Sanitize occurs inside say() already.

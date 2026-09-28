@@ -33,7 +33,7 @@
 /obj/machinery/washing_machine/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable(src)
+	make_climbable()
 
 REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 

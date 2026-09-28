@@ -817,11 +817,11 @@
 
 /datum/unit_test/dq_material_refit_clears_old_behaviors/Run()
 	var/obj/item/item = new
-	configure_item_emissions(item, 30, 20, 10, "#00ff00")
-	TEST_ASSERT(item_emitting(item) && item.mat_radioactivity > 0, "The initial material must actually emit radiation")
+	item.configure_material_behaviors(30, 20, 10, "#00ff00")
+	TEST_ASSERT(item.material_emitting() && item.mat_radioactivity > 0, "The initial material must actually emit radiation")
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	steel.dq_apply_material_behaviors(item)
-	TEST_ASSERT(!item_emitting(item) && !item.mat_radioactivity && !item.mat_toxicity && !item.mat_luminescence, "Inert replacement stock must remove all old emissions and stop processing")
+	TEST_ASSERT(!item.material_emitting() && !item.mat_radioactivity && !item.mat_toxicity && !item.mat_luminescence, "Inert replacement stock must remove all old emissions and stop processing")
 	qdel(item)
 
 /datum/unit_test/dq_material_physical_cable_loss

@@ -15,7 +15,7 @@
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_rotatable(src)
+	make_rotatable()
 
 // LIFECYCLE: its reagents are flushed.
 /obj/machinery/reagent_refinery/Destroy()

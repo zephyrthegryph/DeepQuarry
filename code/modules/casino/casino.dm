@@ -18,7 +18,7 @@
 
 /obj/structure/casino_table/Initialize(mapload)
 	. = ..()
-	make_climbable(src)
+	make_climbable()
 
 /obj/structure/casino_table/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
 	if(!item_place)

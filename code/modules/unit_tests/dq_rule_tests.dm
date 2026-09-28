@@ -374,7 +374,7 @@
 	TEST_ASSERT(hot.get_temperature() >= ignition, "a 1000 K exposure heats it past its ignition point")
 	dq_rx_flush()
 	TEST_ASSERT(hot.resistance_flags & ON_FIRE, "the rule ignites paper heated above its ignition point")
-	TEST_ASSERT(burning_active(hot), "with the burning state")
+	TEST_ASSERT(hot.is_burning(), "with the burning state")
 
 	var/obj/item/paper/warm = allocate(/obj/item/paper, T)
 	warm.fire_act(ignition - 50, 100)

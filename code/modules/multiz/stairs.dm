@@ -245,7 +245,7 @@ REF_PAIR(/obj/structure/stairs/bottom, list("top" = "bottom", "middle" = "bottom
 	if(!GetAbove(src))
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
-	make_climbable(src)
+	make_climbable()
 
 REF_PAIR(/obj/structure/stairs/middle, list("top" = "middle", "bottom" = "middle"))
 

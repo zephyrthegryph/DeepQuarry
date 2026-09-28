@@ -55,7 +55,7 @@
 			else	//none
 				name_suffix = "[pick("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver")]"
 		name = "[name_prefix] [name_suffix]"
-	make_sellable(src, /datum/sellable/research_sample)
+	make_sellable(/datum/sellable/research_sample)
 
 /obj/item/research_sample/attack_hand(mob/user)
 	. = ..()

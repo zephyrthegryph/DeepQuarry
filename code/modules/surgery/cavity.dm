@@ -172,11 +172,11 @@
 	..()
 	if(!length(part.implants))
 		return
-	om_prompt(part, user, list("kind" = "list", "message" = "Which embedded object do you wish to remove?", "title" = name, "choices" = part.implants, "requires" = PROMPT_ADJACENT, "target" = target, "data" = list("patient" = target, "tool" = tool, "step" = src)), GLOBAL_PROC_REF(extract_foreign_body_chosen))
+	om_prompt(src, user, list("kind" = "list", "message" = "Which embedded object do you wish to remove?", "title" = name, "choices" = part.implants, "requires" = PROMPT_ADJACENT, "target" = target, "data" = list("patient" = target, "tool" = tool, "part" = part)), PROC_REF(foreign_body_picked))
 
-/proc/extract_foreign_body_chosen(obj/item/organ/external/part, mob/living/user, atom/movable/removed, datum/om/prompt/P)
-	var/datum/surgical_step/treat/extract_foreign_body/step = P.get("step")
-	step.foreign_body_chosen(user, P.get("patient"), part, P.get("tool"), removed)
+/// The prompt's answer: the step is the prompt's entity, the patient and part ride in its data.
+/datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_picked(mob/living/user, atom/movable/removed, datum/om/prompt/P)
+	foreign_body_chosen(user, P.get("patient"), P.get("part"), P.get("tool"), removed)
 
 /datum/surgical_step/treat/extract_foreign_body/proc/foreign_body_chosen(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/movable/removed)
 	if(!removed || !(removed in part.implants) || part.owner != target || user.get_active_hand() != tool)

@@ -146,7 +146,7 @@
 		C.dir = text2dir(direct)
 	var/chances = ask.get("chances")
 	if(chances > 0)
-		om_prompt_chain(ask, list("message" = "Is this what you want? Chances Remaining: [chances]", "title" = "Confirmation", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(camera_direction_confirmed))
+		ask.chain(list("message" = "Is this what you want? Chances Remaining: [chances]", "title" = "Confirmation", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(camera_direction_confirmed))
 
 /proc/camera_direction_confirmed(obj/machinery/camera/C, mob/user, answer, datum/om/prompt/ask)
 	if(answer == "Yes")

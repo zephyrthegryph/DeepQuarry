@@ -111,7 +111,7 @@
 
 /obj/structure/fitness/boxing_ropes/Initialize(mapload)
 	. = ..()
-	make_climbable(src, vaulting = TRUE)
+	make_climbable(vaulting = TRUE)
 
 /obj/structure/fitness/boxing_ropes/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))

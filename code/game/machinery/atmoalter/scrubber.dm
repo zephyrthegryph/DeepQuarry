@@ -24,7 +24,7 @@
 	. = ..()
 	if(!skip_cell)
 		cell = new/obj/item/cell/apc(src)
-	make_climbable(src)
+	make_climbable()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/emp_act(severity, recursive)
 	. = ..()
@@ -187,7 +187,7 @@
 	name = "[name] (ID [id])"
 
 	// Not climbable!
-	unmake_climbable(src)
+	unmake_climbable()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/declare_interactions(list/into)
 	into += list(

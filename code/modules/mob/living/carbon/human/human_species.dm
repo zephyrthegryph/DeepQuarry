@@ -7,7 +7,7 @@
 
 /mob/living/carbon/human/dummy/Initialize(mapload)
 	. = ..()
-	godmode_enable(src)
+	enable_godmode()
 
 /// Preview dummies are in no mob registry.
 /mob/living/carbon/human/dummy/skips_registry(registry_id)

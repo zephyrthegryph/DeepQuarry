@@ -74,7 +74,7 @@
 
 /obj/structure/smoletrack/Initialize(mapload)
 	. = ..()
-	make_rotatable(src)
+	make_rotatable()
 
 /obj/structure/smoletrack/attack_hand(mob/user)
 	if(IS_DISARMING(user))

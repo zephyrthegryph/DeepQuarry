@@ -185,12 +185,12 @@
 	var/obj/item/ghost_catcher/who_ya_gunna_call = /obj/item/ghost_catcher
 
 /obj/item/proton_pack/Initialize(mapload)
-	make_tethered(src, who_ya_gunna_call)
+	make_tethered(who_ya_gunna_call)
 	. = ..()
 
 /obj/item/proton_pack/attack_hand(mob/living/user)
 	// See important note in code/datums/behaviours/tethered_item.dm
-	if(tether_swap(src, user))
+	if(tether_swap(user))
 		return TRUE
 	. = ..()
 

@@ -14,7 +14,7 @@
 /obj/item/salvage/Initialize(mapload)
 	. = ..()
 	if(worth)
-		make_sellable(src, /datum/sellable/salvage)
+		make_sellable(/datum/sellable/salvage)
 
 /obj/item/salvage/examine(mob/user)
 	. = ..()

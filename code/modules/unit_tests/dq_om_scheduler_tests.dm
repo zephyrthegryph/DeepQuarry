@@ -223,20 +223,20 @@
 	TEST_ASSERT(istype(P), "om_prompt returns the pending prompt")
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the test scheduler collected it")
 	E.enabled = FALSE
-	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "disabled", "the requires are re-checked when the answer arrives")
+	TEST_ASSERT_EQUAL(P.answer("Yes"), "disabled", "the requires are re-checked when the answer arrives")
 	TEST_ASSERT_EQUAL(E.log.Join(","), "refused:disabled", "on_answer did not run; on_refused did")
-	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "answered", "a prompt is answered once")
+	TEST_ASSERT_EQUAL(P.answer("Yes"), "answered", "a prompt is answered once")
 
 	E.enabled = TRUE
 	E.log.Cut()
 	var/datum/om/prompt/P2 = om_prompt(E, user, spec, /datum/om_test_entity/proc/prompt_answered)
-	TEST_ASSERT_NULL(om_prompt_answer(P2, "Yes"), "a passing re-check delivers the answer")
+	TEST_ASSERT_NULL(P2.answer("Yes"), "a passing re-check delivers the answer")
 	TEST_ASSERT_EQUAL(E.log.Join(","), "answer:Yes", "on_answer ran with the answer")
 
 	E.log.Cut()
 	var/datum/om/prompt/P3 = om_prompt(E, user, spec, /datum/om_test_entity/proc/prompt_answered)
 	qdel(user)
-	TEST_ASSERT_EQUAL(om_prompt_answer(P3, "Yes"), "gone", "an answer after the user is deleted does nothing")
+	TEST_ASSERT_EQUAL(P3.answer("Yes"), "gone", "an answer after the user is deleted does nothing")
 	TEST_ASSERT_EQUAL(length(E.log), 0, "nothing ran")
 
 // ---------------------------------------------------------------- handles

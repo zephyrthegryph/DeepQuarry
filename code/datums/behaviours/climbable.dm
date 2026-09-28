@@ -2,8 +2,7 @@
 /// mousedrag or a verb. A shared behaviour singleton: the per-object state (delay,
 /// vaulting, who is climbing) lives on the object; variants are subtypes.
 ///
-/// Attach with make_climbable(O), detach with unmake_climbable(O) (global procs: base-type
-/// procs cost a proc-table entry per subtype). Senders start a
+/// Attach with O.make_climbable(), detach with O.unmake_climbable(). Senders start a
 /// climb with /datum/om/event/climb_start and shake climbers off with
 /// /datum/om/event/climb_shake; moving the object (unforced) also shakes them.
 /datum/om/behaviour/climbable
@@ -21,22 +20,22 @@
 	/// om_handle()s of the mobs currently climbing this object (lazy).
 	var/list/climber_handles
 
-/// Makes `O` climbable with behaviour `kind` (a /datum/om/behaviour/climbable type).
-/proc/make_climbable(obj/O, kind = /datum/om/behaviour/climbable, delay = 3.5 SECONDS, vaulting = FALSE)
-	if(O.climbable_type)
-		unmake_climbable(O)
-	O.climbable_type = kind
-	O.climbable_delay = delay
-	O.climbable_vaulting = vaulting
-	om_attach(O, kind)
+/// Makes this object climbable with behaviour `kind` (a /datum/om/behaviour/climbable type).
+/obj/proc/make_climbable(kind = /datum/om/behaviour/climbable, delay = 3.5 SECONDS, vaulting = FALSE)
+	if(climbable_type)
+		unmake_climbable()
+	climbable_type = kind
+	climbable_delay = delay
+	climbable_vaulting = vaulting
+	om_attach(src, kind)
 
-/// Removes the climbable behaviour from `O`, if any.
-/proc/unmake_climbable(obj/O)
-	if(!O.climbable_type)
+/// Removes the climbable behaviour, if any.
+/obj/proc/unmake_climbable()
+	if(!climbable_type)
 		return
-	om_detach(O, O.climbable_type)
-	O.climbable_type = null
-	O.climber_handles = null
+	om_detach(src, climbable_type)
+	climbable_type = null
+	climber_handles = null
 
 /datum/om/behaviour/climbable/on_start(obj/O)
 	O.verbs += /obj/proc/climb_on
@@ -50,7 +49,7 @@
 /datum/om/behaviour/climbable/on_climb_start(obj/O, datum/om/event/climb_start/event)
 	var/mob/living/H = event.user
 	if(istype(H) && can_climb(O, H))
-		om_after(O, 0, GLOBAL_PROC_REF(climbable_do_climb), O, H) // Out of the event delivery.
+		om_after(O, 0, TYPE_PROC_REF(/obj, climbable_do_climb), H) // Out of the event delivery.
 
 /datum/om/behaviour/climbable/on_climb_shake(obj/O, datum/om/event/climb_shake/event)
 	shaken(O, event.user)
@@ -81,11 +80,11 @@
 		LAZYREMOVE(O.climber_handles, h)
 
 /// om_after() target: runs the climb on the object's current climbable behaviour.
-/proc/climbable_do_climb(obj/O, mob/living/user)
-	if(QDELETED(O) || !O.climbable_type)
+/obj/proc/climbable_do_climb(mob/living/user)
+	if(!climbable_type)
 		return
-	var/datum/om/behaviour/climbable/B = om_registry().behaviour(O.climbable_type)
-	B.do_climb(O, user, O.climbable_delay)
+	var/datum/om/behaviour/climbable/B = om_registry().behaviour(climbable_type)
+	B.do_climb(src, user, climbable_delay)
 
 /// Check if the mob is in any condition to climb the object, if the destination is blocked, and how to climb it
 /datum/om/behaviour/climbable/proc/can_climb(obj/climbed_thing, mob/living/user, post_climb_check=0)

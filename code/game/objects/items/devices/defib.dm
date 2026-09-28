@@ -24,7 +24,7 @@
 	return bcell
 
 /obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
-	make_tethered(src, paddle_path)
+	make_tethered(paddle_path)
 	. = ..()
 	if(ispath(bcell))
 		bcell = new bcell(src)
@@ -68,7 +68,7 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 /// Old attack_hand: let the tether swap the paddles into hand before falling through to pickup.
 /obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// See important note in code/datums/behaviours/tethered_item.dm
-	if(tether_swap(src, user))
+	if(tether_swap(user))
 		return TRUE
 	return FALSE
 

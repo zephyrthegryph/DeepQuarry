@@ -15,7 +15,7 @@
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_climbable(src)
+	make_climbable()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)

@@ -27,7 +27,7 @@
 	return
 
 /// Emits /datum/om/event/examine on `A` when a behaviour wants it.
-/proc/examine_event_emit(atom/A, mob/user, list/texts)
+/proc/om_emit_examine(atom/A, mob/user, list/texts)
 	if(om_wants(A, /datum/om/event/examine))
 		om_emit(A, new /datum/om/event/examine(user, texts))
 
@@ -53,7 +53,7 @@
 	return
 
 /// Emits /datum/om/event/moved on `AM` when a behaviour wants it.
-/proc/moved_event_emit(atom/movable/AM, atom/old_loc, direction, forced)
+/proc/om_emit_moved(atom/movable/AM, atom/old_loc, direction, forced)
 	if(om_wants(AM, /datum/om/event/moved))
 		om_emit(AM, new /datum/om/event/moved(old_loc, direction, forced))
 
@@ -74,7 +74,7 @@
 	return
 
 /// TRUE when a behaviour on `AM` vetoes `crosser` crossing it.
-/proc/cross_event_vetoed(atom/movable/AM, atom/movable/crosser)
+/proc/om_cross_vetoed(atom/movable/AM, atom/movable/crosser)
 	return om_wants(AM, /datum/om/event/before/cross) && om_emit(AM, new /datum/om/event/before/cross(crosser)) == EVENT_VETO
 
 // ---------------------------------------------------------------- attack_self / attackby

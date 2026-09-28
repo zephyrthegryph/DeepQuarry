@@ -545,12 +545,12 @@ SUBSYSTEM_DEF(supply)
 				// For each thing in the crate, get the value and quantity
 				CR.latent_materialize_all() // selling needs real things (C5)
 				for(var/atom/A in CR) // latent-ok
-					if(cargo_export_sale(A, EC, TRUE))
+					if(A.export_sale(EC, TRUE))
 						things_sold_successfully += A
 			else
 				// Selling things that are not in crates.
 				// Usually it just makes a log that it wasn't shipped properly, and so isn't worth anything
-				if(cargo_export_sale(MA, EC, FALSE))
+				if(MA.export_sale(EC, FALSE))
 					things_sold_successfully += MA
 
 			exported_crates += EC
