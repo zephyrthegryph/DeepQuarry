@@ -65,7 +65,7 @@ PATTERNS = [
     ("locate_in", re.compile(
         r"\blocate\s*\([^()]*\)\s*in\s+"
         r"(?!(?:[\w.]+\.)?(?:slot_contents|latent_entries|latent_materialize_all|get_all_contents|"
-        r"turf_contents_of_type|area_contents_of_type|contents_property)\s*\()"
+        r"turf_contents_of_type|area_contents_of_type|contents_property|contents_of)\s*\()"
     )),
 ]
 
