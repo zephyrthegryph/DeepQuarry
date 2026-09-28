@@ -1,8 +1,8 @@
 /datum/event/pda_spam
 	endWhen = 36000
 	var/last_spam_time = 0
-	var/obj/machinery/message_server/useMS
-	var/obj/machinery/exonet_node/node
+	var/useMS_handle
+	var/node_handle
 
 /datum/event/pda_spam/setup()
 	last_spam_time = world.time
@@ -11,7 +11,7 @@
 /datum/event/pda_spam/proc/pick_message_server()
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(MS.active)
-			useMS = MS
+			useMS_handle = om_handle(MS)
 			break
 
 /datum/event/pda_spam/tick()
@@ -19,17 +19,17 @@
 		//if there's no spam managed to get to receiver for five minutes, give up
 		kill()
 		return
-	if(!node)
-		node = get_exonet_node()
+	if(!node())
+		node_handle = om_handle(get_exonet_node())
 
-	if(!node || !node.on || !node.allow_external_PDAs)
+	if(!node() || !node().on || !node().allow_external_PDAs)
 		return
 
-	if(!useMS || !useMS.active)
-		useMS = null
+	if(!useMS() || !useMS().active)
+		useMS_handle = null
 		pick_message_server()
 
-	if(useMS)
+	if(useMS())
 		if(prob(5))
 			// /obj/machinery/message_server/proc/send_pda_message(var/recipient = "",var/sender = "",var/message = "")
 			var/obj/item/pda/P
@@ -99,7 +99,7 @@
 					"You have won tickets to the newest romantic comedy 16 RULES OF LOVE!",\
 					"You have won tickets to the newest thriller THE CULT OF THE SLEEPING ONE!")
 
-			if (useMS.send_pda_message("[P.owner]", sender, message))	//Message been filtered by spam filter.
+			if (useMS().send_pda_message("[P.owner]", sender, message))	//Message been filtered by spam filter.
 				return
 
 			last_spam_time = world.time
@@ -109,3 +109,11 @@
 
 			var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 			PM.notify(span_bold("Message from [sender] (Unknown / spam?), ") + "\"[message]\" (Unable to Reply)", 0)
+
+/// LC-refs: the useMS this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/pda_spam/proc/useMS() as /obj/machinery/message_server
+	return om_resolve(useMS_handle)
+
+/// LC-refs: the node this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/pda_spam/proc/node() as /obj/machinery/exonet_node
+	return om_resolve(node_handle)

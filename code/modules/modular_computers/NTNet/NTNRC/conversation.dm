@@ -3,7 +3,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 /datum/ntnet_conversation/
 	var/id = null
 	var/title = "Untitled Conversation"
-	var/datum/computer_file/program/chatclient/operator // "Administrator" of this channel. Creator starts as channel's operator,
+	var/operator_handle	// "Administrator" of this channel. Creator starts as channel's operator,
 	var/list/messages = list()
 	var/list/clients
 	var/password
@@ -63,3 +63,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 
 	add_status_message("[client.username] has changed channel title from [title] to [newtitle]")
 	title = newtitle
+
+/// LC-refs: "Administrator" of this channel. Creator starts as channel's operator, -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ntnet_conversation//proc/operator() as /datum/computer_file/program/chatclient
+	return om_resolve(operator_handle)

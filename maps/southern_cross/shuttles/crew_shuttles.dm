@@ -101,10 +101,10 @@
 	)
 
 /datum/shuttle_destination/shuttle1/root/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to Hangar One."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to Hangar One."
 
 /datum/shuttle_destination/shuttle1/root/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed Hangar One."
+	return "Attention, [master().my_shuttle().visible_name] has departed Hangar One."
 
 /datum/shuttle_destination/shuttle2/root
 	name = "Southern Cross Hangar Two"
@@ -119,10 +119,10 @@
 	)
 
 /datum/shuttle_destination/shuttle2/root/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to Hangar Two."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to Hangar Two."
 
 /datum/shuttle_destination/shuttle2/root/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed Hangar Two."
+	return "Attention, [master().my_shuttle().visible_name] has departed Hangar Two."
 
 
 /datum/shuttle_destination/shuttle1/outside_SC
@@ -155,10 +155,10 @@
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/shuttle1/docked_SC/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Arrivals Dock."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Arrivals Dock."
 
 /datum/shuttle_destination/shuttle1/docked_SC/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Arrivals Dock."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Arrivals Dock."
 
 
 /datum/shuttle_destination/shuttle2/docked_SC
@@ -170,10 +170,10 @@
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/shuttle2/docked_SC/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Arrivals Dock."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Arrivals Dock."
 
 /datum/shuttle_destination/shuttle2/docked_SC/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Arrivals Dock."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Arrivals Dock."
 
 
 /datum/shuttle_destination/shuttle1/sif_orbit
@@ -225,10 +225,10 @@
 	announcer = "Outpost Automated ATC"
 
 /datum/shuttle_destination/shuttle1/main_base/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Main Outpost."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Main Outpost."
 
 /datum/shuttle_destination/shuttle1/main_base/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Main Outpost."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Main Outpost."
 
 /datum/shuttle_destination/shuttle2/main_base
 	name = "Main Outpost"
@@ -239,10 +239,10 @@
 	announcer = "Outpost Automated ATC"
 
 /datum/shuttle_destination/shuttle2/main_base/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Main Outpost."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Main Outpost."
 
 /datum/shuttle_destination/shuttle2/main_base/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Main Outpost."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Main Outpost."
 
 
 /datum/shuttle_destination/shuttle1/mining_base
@@ -255,10 +255,10 @@
 	announcer = "Outpost Automated ATC"
 
 /datum/shuttle_destination/shuttle1/mining_base/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Wilderness Area."
 
 /datum/shuttle_destination/shuttle1/mining_base/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Wilderness Area."
 
 /datum/shuttle_destination/shuttle2/mining_base
 	name = "Wilderness Landing Site "
@@ -270,7 +270,7 @@
 	announcer = "Outpost Automated ATC"
 
 /datum/shuttle_destination/shuttle2/mining_base/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Wilderness Area."
 
 /datum/shuttle_destination/shuttle2/mining_base/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Wilderness Area."

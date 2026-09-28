@@ -1178,10 +1178,10 @@
 		var/obj/item/paper/admin/P = new /obj/item/paper/admin( null ) //hopefully the null loc won't cause trouble for us
 		faxreply = P
 
-		P.admindatum = src
+		P.admindatum_handle = om_handle(src)
 		P.origin = replyorigin
-		P.destination = fax
-		P.sender = sender
+		P.destination_handle = om_handle(fax)
+		P.sender_handle = om_handle(sender)
 
 		P.adminbrowse()
 

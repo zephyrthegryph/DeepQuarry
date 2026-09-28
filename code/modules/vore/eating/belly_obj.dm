@@ -52,7 +52,7 @@
 	var/fancy_vore = FALSE					// Using the new sounds?
 	var/is_wet = TRUE						// Is this belly's insides made of slimy parts?
 	var/wet_loop = TRUE						// Does the belly have a fleshy loop playing?
-	var/tmp/obj/item/storage/vore_egg/ownegg	// Is this belly creating an egg?
+	var/tmp/ownegg_handle	// Is this belly creating an egg?
 	var/egg_type = "Egg"					// Default egg type and path.
 	var/tmp/egg_path = /obj/item/storage/vore_egg
 	var/egg_name = null						// Custom egg name
@@ -91,7 +91,7 @@
 	var/resist_triggers_animation = TRUE
 	var/size_factor_for_sprite = 1
 	var/belly_sprite_to_affect = "stomach"
-	var/tmp/datum/sprite_accessory/tail/tail_to_change_to = FALSE
+	var/tmp/tail_to_change_to_handle
 	var/tmp/tail_colouration = FALSE
 	var/tmp/tail_extra_overlay = FALSE
 	var/tmp/tail_extra_overlay2 = FALSE
@@ -1224,7 +1224,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 		belly_surrounding = null
 		return
 	belly_surrounding = get_belly_surrounding(contents)
-	if(owner.soulgem?.linked_belly == src)
+	if(owner.soulgem?.linked_belly() == src)
 		belly_surrounding += owner.soulgem.brainmobs
 
 // Recursive proc that returns all living mobs directly and indirectly inside a belly
@@ -1257,3 +1257,11 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
+
+/// LC-refs: the tail_to_change_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
+	return om_resolve(tail_to_change_to_handle)
+
+/// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
+	return om_resolve(ownegg_handle)

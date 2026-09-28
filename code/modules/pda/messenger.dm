@@ -104,7 +104,7 @@
 
 			var/datum/data/pda/messenger_plugin/plugin = locate(params["plugin"])
 			if(plugin && (plugin in pda.cartridge.messenger_plugins))
-				plugin.messenger = src
+				plugin.messenger_handle = om_handle(src)
 				plugin.user_act(ui.user, P)
 		if("Back")
 			active_conversation = null

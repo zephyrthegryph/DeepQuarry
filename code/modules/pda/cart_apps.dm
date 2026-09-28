@@ -121,14 +121,14 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 			return TRUE
 
 /datum/data/pda/app/crew_records
-	var/datum/data/record/general_records = null
+	var/general_records_handle
 
 /datum/data/pda/app/crew_records/update_ui(mob/user, list/data)
 	var/list/records[0]
 
-	if(general_records && (general_records in GLOB.data_core.general))
+	if(general_records() && (general_records() in GLOB.data_core.general))
 		data["records"] = records
-		records["general"] = general_records.fields
+		records["general"] = general_records().fields
 		return records
 	else
 		for(var/datum/data/record/R as anything in sortRecord(GLOB.data_core.general))
@@ -148,12 +148,12 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 				load_records(R)
 			return TRUE
 		if("Back")
-			general_records = null
+			general_records_handle = null
 			has_back = 0
 			return TRUE
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
-	general_records = R
+	general_records_handle = om_handle(R)
 	has_back = 1
 
 /datum/data/pda/app/crew_records/medical
@@ -162,15 +162,15 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	template = "pda_medical"
 	category = "Medical"
 
-	var/datum/data/record/medical_records = null
+	var/medical_records_handle
 
 /datum/data/pda/app/crew_records/medical/update_ui(mob/user, list/data)
 	var/list/records = ..()
 	if(!records)
 		return
 
-	if(medical_records && (medical_records in GLOB.data_core.medical))
-		records["medical"] = medical_records.fields
+	if(medical_records() && (medical_records() in GLOB.data_core.medical))
+		records["medical"] = medical_records().fields
 
 	return records
 
@@ -178,7 +178,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.medical)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			medical_records = E
+			medical_records_handle = om_handle(E)
 			break
 
 /datum/data/pda/app/crew_records/security
@@ -187,15 +187,15 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	template = "pda_security"
 	category = "Security"
 
-	var/datum/data/record/security_records = null
+	var/security_records_handle
 
 /datum/data/pda/app/crew_records/security/update_ui(mob/user, list/data)
 	var/list/records = ..()
 	if(!records)
 		return
 
-	if(security_records && (security_records in GLOB.data_core.security))
-		records["security"] = security_records.fields
+	if(security_records() && (security_records() in GLOB.data_core.security))
+		records["security"] = security_records().fields
 
 	return records
 
@@ -203,7 +203,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.security)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			security_records = E
+			security_records_handle = om_handle(E)
 			break
 
 /datum/data/pda/app/supply
@@ -299,3 +299,15 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 	JaniData["cleanbots"] = CbotData.len ? CbotData : null
 	JaniData["carts"] = CartData.len ? CartData : null
 	data["janitor"] = JaniData
+
+/// LC-refs: the general_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/app/crew_records/proc/general_records() as /datum/data/record
+	return om_resolve(general_records_handle)
+
+/// LC-refs: the medical_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/app/crew_records/medical/proc/medical_records() as /datum/data/record
+	return om_resolve(medical_records_handle)
+
+/// LC-refs: the security_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/app/crew_records/security/proc/security_records() as /datum/data/record
+	return om_resolve(security_records_handle)

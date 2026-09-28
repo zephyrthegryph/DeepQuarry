@@ -8,8 +8,8 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 10
-	var/obj/item/pen/haspen		//The stored pen.
-	var/obj/item/toppaper	//The topmost piece of paper.
+	var/haspen_handle	//The stored pen.
+	var/toppaper_handle	//The topmost piece of paper.
 	slot_flags = SLOT_BELT
 
 /obj/item/clipboard/Initialize(mapload)
@@ -36,10 +36,10 @@
 
 /obj/item/clipboard/update_icon()
 	cut_overlays()
-	if(toppaper)
-		add_overlay(toppaper.icon_state)
-		add_overlay(toppaper.overlays)
-	if(haspen)
+	if(toppaper())
+		add_overlay(toppaper().icon_state)
+		add_overlay(toppaper().overlays)
+	if(haspen())
 		add_overlay("clipboard_pen")
 	add_overlay("clipboard_over")
 	return
@@ -50,12 +50,12 @@
 		user.drop_item()
 		W.loc = src
 		if(istype(W, /obj/item/paper))
-			toppaper = W
+			toppaper_handle = om_handle(W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
 		update_icon()
 
-	else if(istype(toppaper) && istype(W, /obj/item/pen))
-		toppaper.attackby(W, user)
+	else if(istype(toppaper()) && istype(W, /obj/item/pen))
+		toppaper().attackby(W, user)
 		update_icon()
 
 	return
@@ -63,7 +63,7 @@
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
 	for(var/obj/item/paper/P in T)
 		P.loc = src
-		toppaper = P
+		toppaper_handle = om_handle(P)
 		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
 
@@ -86,18 +86,18 @@
 
 /obj/item/clipboard/tgui_data(mob/user)
 	var/list/data = list()
-	data["has_pen"] = !!haspen
+	data["has_pen"] = !!haspen()
 	var/list/items = list()
 	// Top paper first so React can render it at the head of the list.
-	if(toppaper)
+	if(toppaper())
 		items += list(list(
-			"ref" = "\ref[toppaper]",
-			"name" = toppaper.name,
+			"ref" = "\ref[toppaper()]",
+			"name" = toppaper().name,
 			"kind" = "paper",
 			"is_top" = TRUE,
 		))
 	for(var/obj/item/paper/P in src)
-		if(P == toppaper)
+		if(P == toppaper())
 			continue
 		items += list(list(
 			"ref" = "\ref[P]",
@@ -123,19 +123,19 @@
 		return TRUE
 	switch(action)
 		if("remove_pen")
-			if(haspen && haspen.loc == src)
-				haspen.loc = usr.loc
-				usr.put_in_hands(haspen)
-				haspen = null
+			if(haspen() && haspen().loc == src)
+				haspen().loc = usr.loc
+				usr.put_in_hands(haspen())
+				haspen_handle = null
 				update_icon()
 			return TRUE
 		if("add_pen")
-			if(!haspen)
+			if(!haspen())
 				var/obj/item/pen/W = usr.get_active_hand()
 				if(istype(W, /obj/item/pen))
 					usr.drop_item()
 					W.loc = src
-					haspen = W
+					haspen_handle = om_handle(W)
 					to_chat(usr, span_notice("You slot the pen into \the [src]."))
 					update_icon()
 			return TRUE
@@ -144,7 +144,7 @@
 		return TRUE
 	switch(action)
 		if("write")
-			if(O == toppaper && istype(O, /obj/item/paper))
+			if(O == toppaper() && istype(O, /obj/item/paper))
 				var/obj/item/I = usr.get_active_hand()
 				if(istype(I, /obj/item/pen))
 					O.attackby(I, usr)
@@ -153,8 +153,8 @@
 			if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
 				O.loc = usr.loc
 				usr.put_in_hands(O)
-				if(O == toppaper)
-					toppaper = locate(/obj/item/paper) in src
+				if(O == toppaper())
+					toppaper_handle = om_handle(locate(/obj/item/paper) in src)
 				update_icon()
 			return TRUE
 		if("rename")
@@ -174,3 +174,11 @@
 					var/obj/item/photo/ph = O
 					ph.show(usr)
 			return TRUE
+
+/// LC-refs: The stored pen. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clipboard/proc/haspen() as /obj/item/pen
+	return om_resolve(haspen_handle)
+
+/// LC-refs: The topmost piece of paper. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clipboard/proc/toppaper() as /obj/item
+	return om_resolve(toppaper_handle)

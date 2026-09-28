@@ -9,7 +9,7 @@
 	icon_state = "bspeaker"
 
 	var/obj/machinery/media/jukebox/paired_juke
-	var/area/our_area
+	var/our_area_handle
 
 // Pairing
 /obj/item/juke_remote/proc/pair_juke(obj/machinery/media/jukebox/juke, mob/user)
@@ -84,23 +84,27 @@
 		return FALSE
 	if(A.media_source)
 		return FALSE // Already has a media source, won't overpower it with porta speaker
-	our_area = A
+	our_area_handle = om_handle(A)
 	A.media_source = paired_juke
 	update_music()
 	return TRUE
 
 /obj/item/juke_remote/proc/detach_area()
-	if(!our_area || (paired_juke && our_area.media_source != paired_juke))
+	if(!our_area() || (paired_juke && our_area().media_source != paired_juke))
 		return
-	our_area.media_source = null
+	our_area().media_source = null
 	update_music()
-	our_area = null
+	our_area_handle = null
 
 // Music handling
 /obj/item/juke_remote/proc/update_music()
-	if(!our_area || !paired_juke)
+	if(!our_area() || !paired_juke)
 		return
 	// Send update to clients.
-	for(var/mob/M in mobs_in_area(our_area))
+	for(var/mob/M in mobs_in_area(our_area()))
 		if(M?.client)
 			M.update_music()
+
+/// LC-refs: the our_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/juke_remote/proc/our_area() as /area
+	return om_resolve(our_area_handle)

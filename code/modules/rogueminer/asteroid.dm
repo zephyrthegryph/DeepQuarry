@@ -18,7 +18,7 @@
 	var/difficulty	= 0		//Difficulty this asteroid was created at
 
 	//Locational stats
-	var/obj/effect/landmark/asteroid_spawn/mylandmark	//The landmark I'm spawned at, if any.
+	var/mylandmark_handle	//The landmark I'm spawned at, if any.
 
 	//Asteroid map
 	//The map struct is:
@@ -148,3 +148,7 @@
 
 	if(prob(30))
 		spot_add(3,3,/mob/living/simple_mob/animal/space/alien/sentinel/praetorian) //And maybe a big friend for big loot.
+
+/// LC-refs: The landmark I'm spawned at, if any. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rogue/asteroid/proc/mylandmark() as /obj/effect/landmark/asteroid_spawn
+	return om_resolve(mylandmark_handle)

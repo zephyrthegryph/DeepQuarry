@@ -11,7 +11,7 @@
 	var/secured = 0
 	var/obj/item/assembly/a_left = null
 	var/obj/item/assembly/a_right = null
-	var/obj/special_assembly = null
+	var/special_assembly_handle
 
 // LIFECYCLE: assemblies still inside it go with it (ones already taken out stay).
 /obj/item/assembly_holder/Destroy()
@@ -237,3 +237,7 @@
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
 
 REF_HELD(/obj/item/assembly_holder, list("a_left", "a_right"))
+
+/// LC-refs: the special_assembly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/assembly_holder/proc/special_assembly() as /obj
+	return om_resolve(special_assembly_handle)

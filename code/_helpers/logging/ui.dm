@@ -29,7 +29,7 @@
 		entry += " in [window.id]"
 	// Resolve src_object
 	if(!src_object && window?.locked_by)
-		src_object = window.locked_by.src_object
+		src_object = window.locked_by.src_object()
 	// Insert src_object info
 	if(src_object)
 		entry += "\nUsing: [src_object.type] [REF(src_object)]"

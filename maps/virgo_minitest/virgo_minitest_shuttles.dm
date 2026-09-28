@@ -126,10 +126,10 @@
 	announcer = "Shuttle Authority"
 
 /datum/shuttle_destination/webdemo/inside_bridge/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived at the [name]."
+	return "Attention, [master().my_shuttle().visible_name] has arrived at the [name]."
 
 /datum/shuttle_destination/webdemo/inside_bridge/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed from [name]."
+	return "Attention, [master().my_shuttle().visible_name] has departed from [name]."
 
 /datum/shuttle_destination/webdemo/docked_bridge
 	name = "Bridge docking pylon"
@@ -138,10 +138,10 @@
 	announcer = "Shuttle Authority"
 
 /datum/shuttle_destination/webdemo/docked_bridge/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived at [name]."
+	return "Attention, [master().my_shuttle().visible_name] has arrived at [name]."
 
 /datum/shuttle_destination/webdemo/docked_bridge/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed from [name]."
+	return "Attention, [master().my_shuttle().visible_name] has departed from [name]."
 
 /obj/effect/shuttle_landmark/transit/webdemo_transit
 	name = "Web-Demo Transient Point"

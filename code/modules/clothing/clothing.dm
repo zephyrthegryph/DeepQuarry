@@ -65,14 +65,14 @@
 // itself if the control module is removed, destroyed, or its owner dies, so a
 // deployed component is never left locked onto the wearer. See rig_self_detach().
 /obj/item/clothing
-	var/obj/item/rig/master_rig
+	var/master_rig_handle
 
 // The self-detach primitive. Gets a deployed rig piece off its wearer and somewhere
 // safe: retracted back into the control module if it still exists, otherwise dropped
 // to the floor as a normal item. After this runs the piece is never "stuck".
 /obj/item/clothing/proc/rig_self_detach()
-	var/obj/item/rig/owner_rig = master_rig
-	master_rig = null
+	var/obj/item/rig/owner_rig = master_rig()
+	master_rig_handle = null
 	canremove = TRUE
 	if(ismob(loc))
 		var/mob/M = loc
@@ -93,7 +93,7 @@
 	// control module (dismemberment, stripping, gibbing) frees itself instead of
 	// staying locked. The module's own retract clears master_rig first, so this no-ops
 	// for the normal path.
-	if(master_rig)
+	if(master_rig())
 		rig_self_detach()
 
 /obj/item/clothing/click_alt(mob/user)
@@ -1325,7 +1325,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 // LIFECYCLE: its integrated circuit goes with it.
 /obj/item/clothing/Destroy()
 	if(IC)
-		IC.clothing = null
+		IC.clothing_handle = null
 		action_circuit = null
 		QDEL_NULL(IC)
 	return ..()
@@ -1524,3 +1524,7 @@ REF_OWNED(/obj/item/clothing/head, "helmet_light")
 REF_OWNED(/obj/item/clothing/under, list("rolled_down_icon", "rolled_down_sleeves_icon"))
 
 REF_HELD(/obj/item/clothing/gloves, "cell")
+
+/// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/proc/master_rig() as /obj/item/rig
+	return om_resolve(master_rig_handle)

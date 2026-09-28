@@ -1,5 +1,5 @@
 /datum/event/disease_outbreak/floor
-	var/area/target_area
+	var/target_area_handle
 	var/area/target_turfs = list()
 	var/infected_tiles
 
@@ -23,7 +23,7 @@
 	endWhen = announceWhen + 1
 
 /datum/event/disease_outbreak/floor/announce()
-	GLOB.command_announcement.Announce("Confirmed outbreak of level 7 biohazard aboard \the [location_name()]. All personnel must contain the outbreak.", "Infectious Contaminant in [target_area.name]", new_sound = 'sound/AI/outbreak7.ogg')
+	GLOB.command_announcement.Announce("Confirmed outbreak of level 7 biohazard aboard \the [location_name()]. All personnel must contain the outbreak.", "Infectious Contaminant in [target_area().name]", new_sound = 'sound/AI/outbreak7.ogg')
 
 /datum/event/disease_outbreak/floor/start()
 	GLOB.current_pending_diseases += chosen_disease
@@ -43,15 +43,15 @@
 		if(turfs.len == 0)
 			log_game("infectedroom event: Rejected [A] because it has no clear turfs.")
 			continue
-		target_area = A
+		target_area_handle = om_handle(A)
 		target_turfs = turfs
 
-	if(!target_area)
+	if(!target_area())
 		log_game("infectedroom event: Giving up after too many failures to pick target area")
 		kill()
 		return
 	else
-		log_game("infectedroom event: [target_area] was chosen. Infecting...")
+		log_game("infectedroom event: [target_area()] was chosen. Infecting...")
 		log_admin("Infected room event started; Virus: [chosen_disease.name]")
 		message_admins("Infected room event started; Virus: [chosen_disease.name]")
 
@@ -77,3 +77,7 @@
 			var/mob/living/simple_mob/vore/aggressive/macrophage/M
 			M = new(pick_n_take(target_turfs))
 			M.infections |= chosen_disease
+
+/// LC-refs: the target_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/disease_outbreak/floor/proc/target_area() as /area
+	return om_resolve(target_area_handle)

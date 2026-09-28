@@ -21,11 +21,11 @@
 	var/debug_scans = 0
 	var/scanning = 0
 	var/legacy_zone = 0 //Disable scanning and whatnot.
-	var/obj/machinery/computer/shuttle_control/belter/shuttle_control
+	var/shuttle_control_handle
 
 /obj/machinery/computer/roguezones/Initialize(mapload)
 	. = ..()
-	shuttle_control = locate(/obj/machinery/computer/shuttle_control/belter)
+	shuttle_control_handle = om_handle(locate(/obj/machinery/computer/shuttle_control/belter))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/computer/roguezones/LateInitialize()
@@ -70,22 +70,22 @@
 	data["updated"] = world.time - GLOB.rm_controller.last_scan < 200 //Very recently scanned (20 seconds)
 	data["debug"] = debug
 
-	if(!shuttle_control)
+	if(!shuttle_control())
 		data["shuttle_location"] = "Unknown"
 		data["shuttle_at_station"] = 0
-	else if(shuttle_control.z in using_map.belter_docked_z)
+	else if(shuttle_control().z in using_map.belter_docked_z)
 		data["shuttle_location"] = "Landed"
 		data["shuttle_at_station"] = 1
-	else if(shuttle_control.z == using_map.belter_transit_z)
+	else if(shuttle_control().z == using_map.belter_transit_z)
 		data["shuttle_location"] = "In-transit"
 		data["shuttle_at_station"] = 0
-	else if(shuttle_control.z == using_map.belter_belt_z)
+	else if(shuttle_control().z == using_map.belter_belt_z)
 		data["shuttle_location"] = "Belt"
 		data["shuttle_at_station"] = 0
 
 	var/can_scan = 0
 	if(chargePercent >= 100) //Keep having weird problems with these in one 'if' statement
-		if(shuttle_control && (shuttle_control.z in using_map.belter_docked_z)) //Even though I put them all in parens to avoid OoO problems...
+		if(shuttle_control() && (shuttle_control().z in using_map.belter_docked_z)) //Even though I put them all in parens to avoid OoO problems...
 			if(!curZoneOccupied) //Not sure why.
 				if(!scanning)
 					can_scan = 1
@@ -94,7 +94,7 @@
 	data["scan_ready"] = can_scan
 
 	// Permit emergency recall of the shuttle if its stranded in a zone with just dead people.
-	data["can_recall_shuttle"] = (shuttle_control && (shuttle_control.z in using_map.belter_belt_z) && !curZoneOccupied)
+	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
 	return data
 
 /obj/machinery/computer/roguezones/tgui_act(action, list/params, datum/tgui/ui)
@@ -121,7 +121,7 @@
 
 /obj/machinery/computer/roguezones/proc/finish_scan()
 	//Break the shuttle temporarily.
-	shuttle_control.shuttle_tag = null
+	shuttle_control().shuttle_tag = null
 
 	//Build and get a new zone.
 	var/datum/rogue/zonemaster/ZM_target = GLOB.rm_controller.prepare_new_zone()
@@ -131,10 +131,10 @@
 	//Update shuttle destination.
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
 	S.landmark_offsite = ZM_target.myshuttle_landmark
-	S.next_location = S.get_location_waypoint(!S.location)
+	S.next_location_handle = om_handle(S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.
-	shuttle_control.shuttle_tag = "Belter"
+	shuttle_control().shuttle_tag = "Belter"
 
 	//Update rm_previous
 	GLOB.rm_controller.previous_zone = GLOB.rm_controller.current_zone
@@ -149,9 +149,9 @@
 
 
 /obj/machinery/computer/roguezones/proc/failsafe_shuttle_recall(mob/user)
-	if(!shuttle_control)
+	if(!shuttle_control())
 		return // Shuttle computer has been destroyed
-	if (!(shuttle_control.z in using_map.belter_belt_z))
+	if (!(shuttle_control().z in using_map.belter_belt_z))
 		return // Usable only when shuttle is away
 	if(GLOB.rm_controller.current_zone && GLOB.rm_controller.current_zone.is_occupied())
 		return // Not usable if shuttle is in occupied zone
@@ -182,3 +182,7 @@
 #undef OUTPOST_Z
 #undef TRANSIT_Z
 #undef BELT_Z
+
+/// LC-refs: the shuttle_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/roguezones/proc/shuttle_control() as /obj/machinery/computer/shuttle_control/belter
+	return om_resolve(shuttle_control_handle)

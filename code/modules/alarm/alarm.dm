@@ -19,7 +19,7 @@
 	var/list/sources_assoc	//Associative list of source triggers. Used to efficiently acquire the alarm source.
 	var/list/cameras				//List of cameras that can be switched to, if the player has that capability.
 	var/area/last_area				//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
-	var/area/last_name				//The last acquired name, used should origin be lost
+	var/last_name	//The last acquired name, used should origin be lost
 	var/area/last_camera_area		//The last area in which cameras where fetched, used to see if the camera list should be updated.
 	var/end_time					//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.

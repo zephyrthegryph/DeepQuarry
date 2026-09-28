@@ -125,7 +125,7 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 	. = ..()
 	if (!BB)
 		. += "This one is spent."
-	material_round_examine(forged_material, .)
+	material_round_examine(forged_material(), .)
 
 //An item that holds casings and can be used to put them inside guns
 /obj/item/ammo_magazine
@@ -301,7 +301,7 @@ REF_OWNED(/obj/item/ammo_casing, "BB")
 	. = ..()
 	var/rounds = ammo_count()
 	. += "There [(rounds == 1)? "is" : "are"] [rounds] round\s left!"
-	material_round_examine(forged_material, .)
+	material_round_examine(forged_material(), .)
 
 //magazine icon state caching
 GLOBAL_LIST_EMPTY(magazine_icondata_keys)

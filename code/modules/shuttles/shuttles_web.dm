@@ -74,13 +74,13 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	update_helmets()
 
 	if(moving_status == SHUTTLE_IDLE)
-		if(web_master.autopath) // We're currently flying a path.
+		if(web_master.autopath()) // We're currently flying a path.
 			autopilot_say("Continuing route.")
 			web_master.process_autopath()
 
 		else // Otherwise we are about to start one or just finished one.
 			if(autopilot_delay > 0) // Wait for awhile so people can get on and off.
-				if(active_docking_controller && shuttle_docking_controller) // Dock to the destination if possible.
+				if(active_docking_controller() && shuttle_docking_controller) // Dock to the destination if possible.
 					var/docking_status = shuttle_docking_controller.get_docking_status()
 					if(docking_status == "undocked")
 						dock()
@@ -100,7 +100,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				autopilot_delay--
 
 			else // Time to go.
-				if(active_docking_controller && shuttle_docking_controller) // Undock if possible.
+				if(active_docking_controller() && shuttle_docking_controller) // Undock if possible.
 					var/docking_status = shuttle_docking_controller.get_docking_status()
 					if(docking_status == "docked")
 						undock()
@@ -118,8 +118,8 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 		if(QDELETED(H))
 			helmets -= H
 			continue
-		if(!H.shuttle_comp || !(get_area(H) in shuttle_area))
-			H.shuttle_comp = null
+		if(!H.shuttle_comp() || !(get_area(H) in shuttle_area))
+			H.shuttle_comp_handle = null
 			H.audible_message(span_warning("\The [H] pings as it loses it's connection with the ship."), runemessage = "ping")
 			H.update_hud("discon")
 			helmets -= H
@@ -218,7 +218,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
-	H.shuttle_comp = src
+	H.shuttle_comp_handle = om_handle(src)
 	shuttle.helmets |= H
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
@@ -371,7 +371,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 				return
 
-			WS.next_location = target_destination.my_landmark
+			WS.next_location_handle = om_handle(target_destination.my_landmark)
 			if(!can_move(WS, ui.user))
 				return
 

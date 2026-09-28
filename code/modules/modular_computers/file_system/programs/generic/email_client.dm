@@ -19,7 +19,7 @@
 /datum/computer_file/program/email_client/kill_program()
 	if(TM)
 		var/datum/tgui_module/email_client/TME = TM
-		if(TME.current_account)
+		if(TME.current_account())
 			stored_login = TME.stored_login
 			stored_password = TME.stored_password
 		else

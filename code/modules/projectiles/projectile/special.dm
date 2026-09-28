@@ -184,7 +184,7 @@
 	damage = 0
 	injury_kind = INJURY_TOXIN
 	nodamage = 1
-	var/datum/decl/plantgene/gene = null
+	var/gene_handle
 	hud_state = "electrothermal"
 
 /obj/item/projectile/energy/florayield
@@ -386,3 +386,7 @@
 	var/blastloc = get_step(A, blast_dir)
 	if(blastloc)
 		explosion(blastloc, -1, -1, 2, 3)
+
+/// LC-refs: the gene this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/projectile/energy/floramut/gene/proc/gene() as /datum/decl/plantgene
+	return om_resolve(gene_handle)

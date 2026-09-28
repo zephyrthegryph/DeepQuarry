@@ -8,7 +8,7 @@
 	density = TRUE
 	req_access = list(ACCESS_ENGINE_EQUIP)
 //	use_power = 0
-	var/obj/item/tank/phoron/P = null
+	var/P_handle
 	var/last_power = 0
 	var/last_power_new = 0
 	var/active = 0
@@ -29,16 +29,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	last_power = last_power_new
 	last_power_new = 0
 
-	if(P && active)
+	if(P() && active)
 		if(pulse_information)
 			var/amount_of_rads = pulse_information.strength
 			receive_pulse((amount_of_rads))
 
-			if(LINDA_GAS_AMT(P.air_contents, GAS_PHORON) == 0) // XGM .gas[id] read
+			if(LINDA_GAS_AMT(P().air_contents, GAS_PHORON) == 0) // XGM .gas[id] read
 				investigate_log(span_red("out of fuel") + ".","singulo")
 				eject()
 			else
-				P.air_contents.adjust_gas(GAS_PHORON, -0.0001*drainratio)
+				P().air_contents.adjust_gas(GAS_PHORON, -0.0001*drainratio)
 	return
 
 /obj/machinery/power/rad_collector/declare_interactions(list/into)
@@ -61,7 +61,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 			toggle_power()
 			user.visible_message("[user.name] turns the [src.name] [active? "on":"off"].", \
 			"You turn the [src.name] [active? "on":"off"].")
-			investigate_log("turned [active?span_green("on"): span_red("off")] by [user.key]. [P?"Fuel: [round(LINDA_GAS_AMT(P.air_contents, GAS_PHORON)/0.29)]%":span_red("It is empty")].","singulo")
+			investigate_log("turned [active?span_green("on"): span_red("off")] by [user.key]. [P()?"Fuel: [round(LINDA_GAS_AMT(P().air_contents, GAS_PHORON)/0.29)]%":span_red("It is empty")].","singulo")
 			return TRUE
 		else
 			to_chat(user, span_red("The controls are locked!"))
@@ -78,11 +78,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	if(!src.anchored)
 		to_chat(user, span_red("The [src] needs to be secured to the floor first."))
 		return TRUE
-	if(src.P)
+	if(src.P())
 		to_chat(user, span_red("There's already a phoron tank loaded."))
 		return TRUE
 	user.drop_item()
-	src.P = W
+	src.P_handle = om_handle(W)
 	W.loc = src
 	update_icons()
 	return TRUE
@@ -106,13 +106,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	return TRUE
 
 /obj/machinery/power/rad_collector/crowbar_act(mob/user, obj/item/W)
-	if(P && !locked)
+	if(P() && !locked)
 		eject()
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
 /obj/machinery/power/rad_collector/wrench_act(mob/user, obj/item/W)
-	if(P)
+	if(P())
 		to_chat(user, span_blue("Remove the phoron tank first."))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, W.usesound, 75, 1)
@@ -139,12 +139,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 
 /obj/machinery/power/rad_collector/proc/eject()
 	locked = 0
-	var/obj/item/tank/phoron/Z = src.P
+	var/obj/item/tank/phoron/Z = src.P()
 	if (!Z)
 		return
 	Z.loc = get_turf(src)
 	Z.layer = initial(Z.layer)
-	src.P = null
+	src.P_handle = null
 	if(active)
 		toggle_power()
 	else
@@ -153,9 +153,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 // Continuing here, SM giving us ~170 rads per pulse, a phoron canister full of 30 mols, and * 20 we get:
 // 102000W per collector...So 10 collectors will give us ~1MW.
 /obj/machinery/power/rad_collector/proc/receive_pulse(pulse_strength)
-	if(P && active)
+	if(P() && active)
 		var/power_produced = 0
-		power_produced = LINDA_GAS_AMT(P.air_contents, GAS_PHORON)*pulse_strength*20
+		power_produced = LINDA_GAS_AMT(P().air_contents, GAS_PHORON)*pulse_strength*20
 		if(power_produced)
 			add_avail(power_produced)
 			last_power_new = power_produced
@@ -164,7 +164,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 
 /obj/machinery/power/rad_collector/proc/update_icons()
 	cut_overlays()
-	if(P)
+	if(P())
 		add_overlay("ptank")
 	if(stat & (NOPOWER|BROKEN))
 		return
@@ -181,3 +181,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 		flick("ca_deactive", src)
 	update_icons()
 	return
+
+/// LC-refs: the P this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
+	return om_resolve(P_handle)

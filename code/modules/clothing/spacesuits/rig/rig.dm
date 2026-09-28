@@ -182,7 +182,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 		// onto the (ex-)wearer. Moved() is the universal hook: unlike dropped() it also
 		// fires for forceMove(), which is how the damage/protean paths remove the suit.
 		for(var/obj/item/clothing/piece in list(helmet, gloves, chest, boots))
-			if(piece.master_rig == src && ismob(piece.loc))
+			if(piece.master_rig() == src && ismob(piece.loc))
 				piece.rig_self_detach()
 		// drop_from_inventory() bypasses the canremove seal gate, so a sealed suit can
 		// land here still flagged sealed. Reset to a clean unsealed state, otherwise the
@@ -607,8 +607,8 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 
 /obj/item/rig/proc/notify_ai(message)
 	for(var/obj/item/rig_module/ai_container/module in installed_modules)
-		if(module.integrated_ai && module.integrated_ai.client && !module.integrated_ai.stat)
-			to_chat(module.integrated_ai, "[message]")
+		if(module.integrated_ai() && module.integrated_ai().client && !module.integrated_ai().stat)
+			to_chat(module.integrated_ai(), "[message]")
 			. = 1
 
 /obj/item/rig/equipped(mob/living/carbon/human/M)
@@ -688,7 +688,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
-						use_obj.master_rig = null   // intentional retract: silence the dropped() safety net
+						use_obj.master_rig_handle = null   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
@@ -706,7 +706,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 					to_chat(H, span_danger("You are unable to deploy \the [piece] as \the [check_slot] [check_slot.gender == PLURAL ? "are" : "is"] in the way."))
 					return
 			else
-				use_obj.master_rig = src   // the piece now knows its controller, so it can free itself
+				use_obj.master_rig_handle = om_handle(src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				playsound(src, 'sound/machines/rig/rigservo.ogg', 10, FALSE)
 
@@ -843,7 +843,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 		for(var/obj/item/rig_module/ai_container/module in contents)
 			if(module.damage >= 2)
 				continue
-			if(module.integrated_ai && module.integrated_ai.client && !module.integrated_ai.stat)
+			if(module.integrated_ai() && module.integrated_ai().client && !module.integrated_ai().stat)
 				found_ai = 1
 				break
 		if(!found_ai)

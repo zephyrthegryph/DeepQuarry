@@ -15,8 +15,8 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#5BA8FF"
-	var/obj/machinery/field_generator/FG1 = null
-	var/obj/machinery/field_generator/FG2 = null
+	var/FG1_handle
+	var/FG2_handle
 	var/list/shockdirs
 	var/hasShocked = 0 //Used to add a delay between shocks. In some cases this used to crash servers by spawning hundreds of sparks every second.
 
@@ -33,10 +33,10 @@
 // LIFECYCLE: its generators clean up the rest of the field.
 /obj/machinery/containment_field/Destroy()
 	unsense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
-	if(FG1 && !FG1.clean_up)
-		FG1.cleanup()
-	if(FG2 && !FG2.clean_up)
-		FG2.cleanup()
+	if(FG1() && !FG1().clean_up)
+		FG1().cleanup()
+	if(FG2() && !FG2().clean_up)
+		FG2().cleanup()
 	. = ..()
 
 /obj/machinery/containment_field/declare_interactions(list/into)
@@ -91,7 +91,7 @@
 /obj/machinery/containment_field/shock(mob/living/user as mob)
 	if(hasShocked)
 		return 0
-	if(!FG1 || !FG2)
+	if(!FG1() || !FG2())
 		qdel(src)
 		return 0
 	if(isliving(user))
@@ -107,6 +107,14 @@
 /obj/machinery/containment_field/proc/set_master(master1,master2)
 	if(!master1 || !master2)
 		return 0
-	FG1 = master1
-	FG2 = master2
+	FG1_handle = om_handle(master1)
+	FG2_handle = om_handle(master2)
 	return 1
+
+/// LC-refs: the FG1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/containment_field/proc/FG1() as /obj/machinery/field_generator
+	return om_resolve(FG1_handle)
+
+/// LC-refs: the FG2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/containment_field/proc/FG2() as /obj/machinery/field_generator
+	return om_resolve(FG2_handle)

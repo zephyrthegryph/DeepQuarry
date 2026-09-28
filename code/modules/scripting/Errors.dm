@@ -12,9 +12,9 @@
 
 /datum/scriptError/BadToken
 	message="Unexpected token: "
-	var/datum/token/token
+	var/token_handle
 /datum/scriptError/BadToken/New(datum/token/t)
-	token=t
+	token_handle=om_handle(t)
 	if(t&&t.line) message="[t.line]: [message]"
 	if(istype(t))message+="[t.value]"
 	else message+="[t]"
@@ -32,10 +32,10 @@
 	message = "Bad number: "
 
 /datum/scriptError/BadReturn
-	var/datum/token/token
+	var/token_handle
 	message = "Unexpected return statement outside of a function."
 /datum/scriptError/BadReturn/New(datum/token/t)
-	src.token=t
+	src.token_handle=om_handle(t)
 
 /datum/scriptError/EndOfFile
 	message = "Unexpected end of file."
@@ -122,3 +122,11 @@
 	message="Maximum amount of computational cycles reached (>= 1000)."
 
 REF_OWNED(/datum/runtimeError, "stack")
+
+/// LC-refs: the token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/scriptError/BadToken/proc/token() as /datum/token
+	return om_resolve(token_handle)
+
+/// LC-refs: the token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/scriptError/BadReturn/proc/token() as /datum/token
+	return om_resolve(token_handle)

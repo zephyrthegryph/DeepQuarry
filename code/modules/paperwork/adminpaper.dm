@@ -2,13 +2,13 @@
 /obj/item/paper/admin
 	name = "administrative paper"
 	desc = "If you see this, something has gone horribly wrong."
-	var/datum/admins/admindatum = null
+	var/admindatum_handle
 
 	var/interactions = null
 	var/isCrayon = 0
 	var/origin = null
-	var/mob/sender = null
-	var/obj/machinery/photocopier/faxmachine/destination
+	var/sender_handle
+	var/destination_handle
 
 	var/header = null
 	var/headerOn = TRUE
@@ -119,7 +119,7 @@
 						info += footer
 					updateinfolinks()
 					SStgui.close_uis(src)
-					admindatum.faxCallback(src, destination)
+					admindatum().faxCallback(src, destination())
 			return TRUE
 		if("penmode")
 			isCrayon = !isCrayon
@@ -167,3 +167,15 @@
 
 /obj/item/paper/admin/get_signature()
 	return tgui_input_text(usr, "Enter the name you wish to sign the paper with (will prompt for multiple entries, in order of entry)", "Signature")
+
+/// LC-refs: the admindatum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/paper/admin/proc/admindatum() as /datum/admins
+	return om_resolve(admindatum_handle)
+
+/// LC-refs: the sender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/paper/admin/proc/sender() as /mob
+	return om_resolve(sender_handle)
+
+/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/paper/admin/proc/destination() as /obj/machinery/photocopier/faxmachine
+	return om_resolve(destination_handle)

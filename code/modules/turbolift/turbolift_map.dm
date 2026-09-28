@@ -180,10 +180,10 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 					var/obj/machinery/door/firedoor/glass/firedoor = new firedoor_type(checking) //ition for fire doors
 					if(internal)
 						lift.doors += newdoor
-						newdoor.lift = lift
+						newdoor.lift_handle = om_handle(lift)
 					else
 						cfloor.doors += newdoor
-						newdoor.floor = cfloor
+						newdoor.floor_handle = om_handle(cfloor)
 						cfloor.doors += firedoor //ition for fire doors
 						firedoor.turbolift_floor = cfloor
 						firedoor.glass = cfloor //ition for fire doors
@@ -193,7 +193,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 		var/obj/structure/lift/button/panel_ext = new(placing, lift)
 		panel_ext.floor = cfloor
 		panel_ext.set_dir(udir)
-		cfloor.ext_panel = panel_ext
+		cfloor.ext_panel_handle = om_handle(panel_ext)
 
 		// Place lights
 		var/turf/placing1 = locate(light_x1, light_y1, cz)
@@ -224,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 	var/turf/T = locate(int_panel_x, int_panel_y, uz)
 	lift.control_panel_interior = new(T, lift)
 	lift.control_panel_interior.set_dir(udir)
-	lift.current_floor = lift.floors[1]
+	lift.current_floor_handle = om_handle(lift.floors[1])
 
 	lift.open_doors()
 

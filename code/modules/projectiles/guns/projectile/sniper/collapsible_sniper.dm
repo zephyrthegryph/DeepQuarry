@@ -26,7 +26,7 @@
 		var/obj/item/barrel = new /obj/item/sniper_rifle_part/barrel(user)
 		var/obj/item/sniper_rifle_part/assembly = new /obj/item/sniper_rifle_part/trigger_group(user)
 		var/obj/item/sniper_rifle_part/stock/stock = new(assembly)
-		assembly.stock = stock
+		assembly.stock_handle = om_handle(stock)
 		assembly.part_count = 2
 		assembly.update_build(user)
 		user.put_in_any_hand_if_possible(assembly) || assembly.dropInto(user.loc)
@@ -41,9 +41,9 @@
 
 	icon = 'icons/obj/gun.dmi'
 
-	var/obj/item/sniper_rifle_part/barrel = null
-	var/obj/item/sniper_rifle_part/stock = null
-	var/obj/item/sniper_rifle_part/trigger_group = null
+	var/barrel_handle
+	var/stock_handle
+	var/trigger_group_handle
 	var/part_count = 1
 
 
@@ -53,7 +53,7 @@
 
 /obj/item/sniper_rifle_part/barrel/Initialize(mapload)
 	. = ..()
-	barrel = src
+	barrel_handle = om_handle(src)
 
 /obj/item/sniper_rifle_part/stock
 	name = "AM rifle stock"
@@ -61,7 +61,7 @@
 
 /obj/item/sniper_rifle_part/stock/Initialize(mapload)
 	. = ..()
-	stock = src
+	stock_handle = om_handle(src)
 
 /obj/item/sniper_rifle_part/trigger_group
 	name = "AM rifle trigger assembly"
@@ -69,7 +69,7 @@
 
 /obj/item/sniper_rifle_part/trigger_group/Initialize(mapload)
 	. = ..()
-	trigger_group = src
+	trigger_group_handle = om_handle(src)
 
 /obj/item/sniper_rifle_part/attack_self(mob/user)
 	. = ..(user)
@@ -86,13 +86,13 @@
 	if(part_count == 1)
 		return
 	to_chat(user, span_notice("You disassemble \the [src]."))
-	for(var/obj/item/sniper_rifle_part/P in list(barrel, stock, trigger_group))
-		if(P.barrel != P)
-			P.barrel = null
-		if(P.stock != P)
-			P.stock = null
-		if(P.trigger_group != P)
-			P.trigger_group = null
+	for(var/obj/item/sniper_rifle_part/P in list(barrel(), stock(), trigger_group()))
+		if(P.barrel() != P)
+			P.barrel_handle = null
+		if(P.stock() != P)
+			P.stock_handle = null
+		if(P.trigger_group() != P)
+			P.trigger_group_handle = null
 		if(P != src)
 			user.put_in_any_hand_if_possible(P) || P.dropInto(loc)
 		P.part_count = 1
@@ -110,25 +110,25 @@
 			to_chat(user, span_warning("Disassemble one of these parts first!"))
 			return
 
-		if(!trigger_group)
+		if(!trigger_group())
 			if(user.unEquip(A, force=1))
-				trigger_group = A
+				trigger_group_handle = om_handle(A)
 		else
 			to_chat(user, span_warning("There's already a trigger group!"))
 			return
 
 	else if(istype(A, /obj/item/sniper_rifle_part/barrel))
-		if(!barrel)
+		if(!barrel())
 			if(user.unEquip(A, force=1))
-				barrel = A
+				barrel_handle = om_handle(A)
 		else
 			to_chat(user, span_warning("There's already a barrel!"))
 			return
 
 	else if(istype(A, /obj/item/sniper_rifle_part/stock))
-		if(!stock)
+		if(!stock())
 			if(user.unEquip(A, force=1))
-				stock = A
+				stock_handle = om_handle(A)
 		else
 			to_chat(user, span_warning("There's already a stock!"))
 			return
@@ -136,12 +136,12 @@
 	A.forceMove(src)
 	to_chat(user, span_notice("You install \the [A]."))
 
-	if(A.barrel && !src.barrel)
-		src.barrel = A.barrel
-	if(A.stock && !src.stock)
-		src.stock = A.stock
-	if(A.trigger_group && !src.trigger_group)
-		src.trigger_group = A.trigger_group
+	if(A.barrel() && !src.barrel())
+		src.barrel_handle = om_handle(A.barrel())
+	if(A.stock() && !src.stock())
+		src.stock_handle = om_handle(A.stock())
+	if(A.trigger_group() && !src.trigger_group())
+		src.trigger_group_handle = om_handle(A.trigger_group())
 
 
 	part_count = A.part_count + src.part_count
@@ -155,13 +155,13 @@
 			w_class = ITEMSIZE_NORMAL
 			icon_state = initial(icon_state)
 		if(2)
-			if(barrel && trigger_group)
+			if(barrel() && trigger_group())
 				name = "AM rifle barrel-trigger assembly"
 				icon_state = "heavysniper-trigbar"
-			else if(stock && trigger_group)
+			else if(stock() && trigger_group())
 				name = "AM rifle stock-trigger assembly"
 				icon_state = "heavysniper-trigstock"
-			else if(stock && barrel)
+			else if(stock() && barrel())
 				name = "AM rifle stock-barrel assembly"
 				icon_state = "heavysniper-barstock"
 			w_class = ITEMSIZE_LARGE
@@ -179,3 +179,15 @@
 		icon_state = "heavysniper-open"
 	else
 		icon_state = "heavysniper"
+
+/// LC-refs: the barrel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/sniper_rifle_part/proc/barrel() as /obj/item/sniper_rifle_part
+	return om_resolve(barrel_handle)
+
+/// LC-refs: the trigger_group this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/sniper_rifle_part/proc/trigger_group() as /obj/item/sniper_rifle_part
+	return om_resolve(trigger_group_handle)
+
+/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/sniper_rifle_part/proc/stock() as /obj/item/sniper_rifle_part
+	return om_resolve(stock_handle)

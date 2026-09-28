@@ -136,7 +136,7 @@
 	var/max_home_distance = 7
 	/// Destination turf for a one-shot walk. Set via give_destination, read by
 	/// /datum/ai_behavior/walk_to_destination.
-	var/turf/destination = null
+	var/destination_handle
 
 /// Legacy stubs for procs that mob subtypes still try to call. Each returns
 /// a safe default — the real behavior moved to /datum/ai_behavior selection.
@@ -166,3 +166,7 @@
 			set_hostile(var_value)
 		if("returns_home", "mauling")
 			invalidate_selection()
+
+/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ai_brain/proc/destination() as /turf
+	return om_resolve(destination_handle)

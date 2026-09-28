@@ -1,5 +1,5 @@
 /datum/data/pda/messenger_plugin
-	var/datum/data/pda/app/messenger/messenger
+	var/messenger_handle
 
 /datum/data/pda/messenger_plugin/proc/user_act(mob/user, obj/item/pda/P)
 
@@ -86,3 +86,7 @@
 		// else
 			// P.hidden_uplink.hidden_crystals += P.hidden_uplink.uses //Temporarially hide the PDA's crystals, so you can't steal telecrystals.
 		P.hidden_uplink.active = TRUE
+
+/// LC-refs: the messenger this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/messenger_plugin/proc/messenger() as /datum/data/pda/app/messenger
+	return om_resolve(messenger_handle)

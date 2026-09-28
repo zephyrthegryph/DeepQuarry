@@ -14,7 +14,7 @@ GLOBAL_PROTECT(href_token)
 	var/client/owner = null
 	var/fakekey = null
 
-	var/datum/marked_datum
+	var/marked_datum_handle
 
 	var/admincaster_screen = 0	//See newscaster.dm under machinery for a full description
 	var/datum/feed_message/admincaster_feed_message = new /datum/feed_message   //These two will act as holders.
@@ -288,3 +288,7 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
 
 REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "particle_test", "whitelist_editor", "spawn_menu", "spawn_panel", "access_view_menu"))
+
+/// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/admins/proc/marked_datum() as /datum
+	return om_resolve(marked_datum_handle)

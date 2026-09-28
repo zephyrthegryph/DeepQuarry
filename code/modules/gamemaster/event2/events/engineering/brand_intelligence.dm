@@ -15,7 +15,7 @@
 
 	var/list/vending_machines // List of venders that can potentially be infected.
 	var/list/infected_vending_machines // List of venders that have been infected.
-	var/obj/machinery/vending/vender_zero = null // The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
+	var/vender_zero_handle	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 	var/last_malware_spread_time = null
 
 /datum/event2/event/brand_intelligence/set_up()
@@ -29,15 +29,15 @@
 		abort()
 		return
 
-	vender_zero = DEFAULTPICK(vending_machines, null)
+	vender_zero_handle = om_handle(DEFAULTPICK(vending_machines, null))
 
 /datum/event2/event/brand_intelligence/announce()
 	if(prob(90))
 		GLOB.command_announcement.Announce("An ongoing mass upload of malware for vendors has been detected onboard \the [location_name()], \
-		which appears to transmit to nearby vendors. The original infected machine is believed to be \a [vender_zero].", "Vendor Service Alert", ANNOUNCER_MSG_VENDORVIRUS)
+		which appears to transmit to nearby vendors. The original infected machine is believed to be \a [vender_zero()].", "Vendor Service Alert", ANNOUNCER_MSG_VENDORVIRUS)
 
 /datum/event2/event/brand_intelligence/start()
-	infect_vender(vender_zero)
+	infect_vender(vender_zero())
 
 /datum/event2/event/brand_intelligence/event_tick()
 	if(last_malware_spread_time + malware_spread_cooldown > world.time)
@@ -49,7 +49,7 @@
 		infect_vender(next_victim)
 
 		// Every time Vender Zero infects, it says something.
-		vender_zero.speak(pick("Try our aggressive new marketing strategies!", \
+		vender_zero().speak(pick("Try our aggressive new marketing strategies!", \
 									"You should buy products to feed your lifestyle obsession!", \
 									"Consume!", \
 									"Your money can buy happiness!", \
@@ -61,16 +61,16 @@
 /datum/event2/event/brand_intelligence/should_end()
 	if(!length(vending_machines))
 		return TRUE
-	if(!can_propagate(vender_zero))
+	if(!can_propagate(vender_zero()))
 		return TRUE
 	return FALSE
 
 /datum/event2/event/brand_intelligence/end()
-	if(can_propagate(vender_zero)) // The crew failed and all the machines are infected!
+	if(can_propagate(vender_zero())) // The crew failed and all the machines are infected!
 		return
 	// Otherwise Vender Zero was taken out in some form.
-	if(vender_zero)
-		vender_zero.visible_message(span_notice("\The [vender_zero]'s network activity light flickers wildly \
+	if(vender_zero())
+		vender_zero().visible_message(span_notice("\The [vender_zero()]'s network activity light flickers wildly \
 		for a few seconds as a small screen reads: 'Rolling out firmware reset to networked machines'."))
 	for(var/obj/machinery/vending/vender in infected_vending_machines)
 		cure_vender(vender)
@@ -88,3 +88,7 @@
 
 /datum/event2/event/brand_intelligence/proc/can_propagate(obj/machinery/vending/V)
 	return V && V.shut_up == FALSE
+
+/// LC-refs: The first vending machine infected. If that one gets fixed, all other infected machines will be cured. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/brand_intelligence/proc/vender_zero() as /obj/machinery/vending
+	return om_resolve(vender_zero_handle)

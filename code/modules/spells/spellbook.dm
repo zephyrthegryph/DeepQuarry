@@ -252,7 +252,7 @@
 	spellname = "mindswap"
 	icon_state ="bookmindswap"
 	desc = "This book's cover is pristine, though its pages look ragged and torn."
-	var/mob/stored_swap = null //Used in used book recoils to store an identity for mindswaps
+	var/stored_swap_handle	//Used in used book recoils to store an identity for mindswaps
 
 /obj/item/spellbook/oneuse/mindswap/onlearned()
 	spellname = pick("fireball","smoke","blind","forcewall","knock","horses","charge")
@@ -262,13 +262,13 @@
 
 /obj/item/spellbook/oneuse/mindswap/recoil(mob/user as mob)
 	..()
-	if(stored_swap in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
-		stored_swap = null
-	if(!stored_swap)
-		stored_swap = user
+	if(stored_swap() in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
+		stored_swap_handle = null
+	if(!stored_swap())
+		stored_swap_handle = om_handle(user)
 		to_chat(user, span_warning("For a moment you feel like you don't even know who you are anymore."))
 		return
-	if(stored_swap == user)
+	if(stored_swap() == user)
 		to_chat(user, span_notice("You stare at the book some more, but there doesn't seem to be anything else to learn..."))
 		return
 
@@ -276,17 +276,17 @@
 		for(var/V in user.mind.special_verbs)
 			remove_verb(user, V)
 
-	if(length(stored_swap.mind.special_verbs))
-		for(var/V in stored_swap.mind.special_verbs)
-			remove_verb(stored_swap, V)
+	if(length(stored_swap().mind.special_verbs))
+		for(var/V in stored_swap().mind.special_verbs)
+			remove_verb(stored_swap(), V)
 
-	var/mob/observer/dead/ghost = stored_swap.ghostize(0)
-	ghost.spell_list = stored_swap.spell_list
+	var/mob/observer/dead/ghost = stored_swap().ghostize(0)
+	ghost.spell_list = stored_swap().spell_list
 
-	move_player(user, stored_swap, "spellbook body swap")
-	stored_swap.spell_list = user.spell_list
+	move_player(user, stored_swap(), "spellbook body swap")
+	stored_swap().spell_list = user.spell_list
 
-	if(length(stored_swap.mind.special_verbs))
+	if(length(stored_swap().mind.special_verbs))
 		for(var/V in user.mind.special_verbs)
 			add_verb(user, V)
 
@@ -297,9 +297,9 @@
 		for(var/V in user.mind.special_verbs)
 			add_verb(user, V)
 
-	to_chat(stored_swap, span_warning("You're suddenly somewhere else... and someone else?!"))
+	to_chat(stored_swap(), span_warning("You're suddenly somewhere else... and someone else?!"))
 	to_chat(user, span_warning("Suddenly you're staring at [src] again... where are you, who are you?!"))
-	stored_swap = null
+	stored_swap_handle = null
 
 /obj/item/spellbook/oneuse/forcewall
 	spell = /datum/spell/aoe_turf/conjure/forcewall
@@ -356,3 +356,7 @@
 	..()
 	to_chat(user, span_warning("[src] suddenly feels very warm!"))
 	empulse(src, 1, 1, 1, 1)
+
+/// LC-refs: Used in used book recoils to store an identity for mindswaps -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/spellbook/oneuse/mindswap/proc/stored_swap() as /mob
+	return om_resolve(stored_swap_handle)

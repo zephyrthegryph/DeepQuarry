@@ -16,17 +16,17 @@
 	target = length(department_ids)
 
 /datum/expedition_objective/generated_department/proc/required_siblings_complete()
-	for(var/datum/expedition_objective/objective in site?.mission?.objectives)
+	for(var/datum/expedition_objective/objective in site()?.mission?.objectives)
 		if(objective != src && objective.required && objective.state != EXP_OBJ_COMPLETE)
 			return FALSE
 	return TRUE
 
 /datum/expedition_objective/generated_department/check()
-	if(!site?.station_simulation)
+	if(!site()?.station_simulation)
 		return state
 	var/satisfied = 0
 	for(var/department_id in department_ids)
-		var/department_state = site.station_simulation.department_state(department_id)
+		var/department_state = site().station_simulation.department_state(department_id)
 		switch(action)
 			if("disable")
 				if(department_state == GENERATED_DEPARTMENT_OFFLINE)
@@ -51,12 +51,12 @@
 	return "[clamp(progress, 0, target)] / [target] departments [action == "preserve" ? "preserved" : "secured"]"
 
 /datum/expedition_objective/proc/generated_department_turf(department_id)
-	if(!site?.station_spec || !site.station_materialization)
+	if(!site()?.station_spec || !site().station_materialization)
 		return null
-	for(var/datum/generated_station_department_instance/department in site.station_spec.departments)
+	for(var/datum/generated_station_department_instance/department in site().station_spec.departments)
 		if(department.id != department_id)
 			continue
-		var/area/generated_station/A = site.station_materialization.department_areas[department.layout_node_id]
+		var/area/generated_station/A = site().station_materialization.department_areas[department.layout_node_id]
 		for(var/turf/T in A)
 			if(!T.density && !locate(/obj/machinery/door) in T)
 				return T
@@ -172,7 +172,7 @@
 		tracked += new /mob/living/carbon/human/generated_station_command_officer(T)
 
 /datum/expedition_objective/generated_capture_officer/check()
-	var/datum/shuttle/autodock/overmap/shuttle = site?.assigned_shuttle
+	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle
 	if(!shuttle)
 		return state
 	for(var/area/A in shuttle.shuttle_area)

@@ -303,7 +303,7 @@
 				"undergarment_options_if_none" = undergarments,
 				"undergarment_color" = selected.undergarment_color,
 				"tail_option_shown" = ishuman(owner),
-				"tail_to_change_to" = selected.tail_to_change_to,
+				"tail_to_change_to" = selected.tail_to_change_to(),
 				"tail_sprite_options" = GLOB.tail_styles_list,
 				"mob_belly_controls" = silicon_control
 				)

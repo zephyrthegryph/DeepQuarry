@@ -13,7 +13,7 @@
 				AO.update_aiming_deferred()
 
 /obj/aiming_overlay/proc/trigger(perm)
-	if(!owner || !aiming_with || !aiming_at || !locked)
+	if(!owner || !aiming_with() || !aiming_at || !locked)
 		return
 	if(perm && (target_permissions & perm))
 		return
@@ -21,10 +21,10 @@
 		return
 	owner.setClickCooldown(5) // Spam prevention, essentially.
 	if(IS_HELPING(owner) && owner.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
-		to_chat(owner, span_warning("You refrain from firing \the [aiming_with] as your intent is set to help."))
+		to_chat(owner, span_warning("You refrain from firing \the [aiming_with()] as your intent is set to help."))
 		return
 	owner.visible_message(span_danger("\The [owner] pulls the trigger reflexively!"))
-	var/obj/item/gun/G = aiming_with
+	var/obj/item/gun/G = aiming_with()
 	if(istype(G))
 		G.Fire(aiming_at, owner, reflex = 1)
 		locked = 0

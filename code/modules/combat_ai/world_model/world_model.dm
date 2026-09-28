@@ -25,7 +25,7 @@
 
 	/// One-slot caches (refs).
 	var/last_attacker = null
-	var/atom/last_known_threat_turf = null
+	var/last_known_threat_turf_handle
 
 	/// world.time of last perception refresh.
 	var/last_update = 0
@@ -87,7 +87,7 @@
 	recent_damage_total += amount
 	if(attacker)
 		last_attacker = om_handle(attacker)
-		last_known_threat_turf = get_turf(attacker)
+		last_known_threat_turf_handle = om_handle(get_turf(attacker))
 
 /// Drop damage entries older than 10 seconds.
 /datum/world_model/proc/trim_old_damage()
@@ -131,3 +131,7 @@
 
 /datum/world_model/proc/get_last_attacker()
 	return om_resolve(last_attacker)
+
+/// LC-refs: the last_known_threat_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/world_model/proc/last_known_threat_turf() as /atom
+	return om_resolve(last_known_threat_turf_handle)

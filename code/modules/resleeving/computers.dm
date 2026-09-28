@@ -20,10 +20,10 @@
 	var/can_sleeve_active = FALSE
 	var/organic_capable = 1
 	var/synthetic_capable = 1
-	var/obj/item/disk/transcore/disk
-	var/obj/machinery/clonepod/transhuman/selected_pod
-	var/obj/machinery/transhuman/synthprinter/selected_printer
-	var/obj/machinery/transhuman/resleever/selected_sleever
+	var/disk_handle
+	var/selected_pod_handle
+	var/selected_printer_handle
+	var/selected_sleever_handle
 
 	var/current_br
 	var/current_mr
@@ -88,8 +88,8 @@
 /obj/machinery/computer/transhuman/resleeving/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/disk/transcore) && !our_db().core_dumped)
 		user.unEquip(W)
-		disk = W
-		disk.forceMove(src)
+		disk_handle = om_handle(W)
+		disk().forceMove(src)
 		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	if(istype(W, /obj/item/disk/body_record))
 		var/obj/item/disk/body_record/brDisk = W
@@ -186,11 +186,11 @@
 	data["sleevers"] = resleevers
 
 	data["coredumped"] = our_db().core_dumped
-	data["emergency"] = disk
+	data["emergency"] = disk()
 	data["temp"] = temp
-	data["selected_pod"] = REF(selected_pod)
-	data["selected_printer"] = REF(selected_printer)
-	data["selected_sleever"] = REF(selected_sleever)
+	data["selected_pod"] = REF(selected_pod())
+	data["selected_printer"] = REF(selected_printer())
+	data["selected_sleever"] = REF(selected_sleever())
 
 	var/list/bodyrecords_list_ui = list()
 	for(var/N in our_db().body_scans)
@@ -238,12 +238,12 @@
 	return data
 
 /obj/machinery/computer/transhuman/resleeving/proc/eject_dump_disk()
-	if(!disk)
+	if(!disk())
 		return
-	visible_message(span_warning("\The [src] spits out \the [disk]."))
+	visible_message(span_warning("\The [src] spits out \the [disk()]."))
 	current_br = null
-	disk.forceMove(get_turf(src))
-	disk = null
+	disk().forceMove(get_turf(src))
+	disk_handle = null
 
 /obj/machinery/computer/transhuman/resleeving/tgui_act(action, params, datum/tgui/ui)
 	. = ..()
@@ -264,15 +264,15 @@
 			current_mr = null
 			. = TRUE
 		if("coredump")
-			if(disk)
-				our_db().core_dump(disk)
+			if(disk())
+				our_db().core_dump(disk())
 				om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
 				. = TRUE
 		if("ejectdisk")
 			current_br = null
-			if(disk)
-				disk.forceMove(get_turf(src))
-				disk = null
+			if(disk())
+				disk().forceMove(get_turf(src))
+				disk_handle = null
 			. = TRUE
 		if("create")
 			. = TRUE
@@ -288,7 +288,7 @@
 				else
 					//We're cloning a synth.
 					if(active_br.synthetic)
-						var/obj/machinery/transhuman/synthprinter/spod = selected_printer
+						var/obj/machinery/transhuman/synthprinter/spod = selected_printer()
 						if(!istype(spod))
 							set_temp("Error: No SynthFab selected.", "danger")
 							current_br = null
@@ -328,7 +328,7 @@
 
 					//We're cloning an organic.
 					else
-						var/obj/machinery/clonepod/transhuman/pod = selected_pod
+						var/obj/machinery/clonepod/transhuman/pod = selected_pod()
 						if(!istype(pod))
 							set_temp("Error: No clonepod selected.", "danger")
 							current_br = null
@@ -380,7 +380,7 @@
 				else
 					var/mode = text2num(params["mode"])
 					var/override
-					var/obj/machinery/transhuman/resleever/sleever = selected_sleever
+					var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
 					if(!istype(sleever))
 						set_temp("Error: No resleeving pod selected.", "danger")
 						current_mr = null
@@ -450,7 +450,7 @@
 				return
 			var/obj/machinery/clonepod/selected = locate(ref)
 			if(istype(selected) && (selected in pods))
-				selected_pod = selected
+				selected_pod_handle = om_handle(selected)
 			. = TRUE
 		if("selectprinter")
 			var/ref = params["ref"]
@@ -458,7 +458,7 @@
 				return
 			var/obj/machinery/transhuman/synthprinter/selected = locate(ref)
 			if(istype(selected) && (selected in spods))
-				selected_printer = selected
+				selected_printer_handle = om_handle(selected)
 			. = TRUE
 		if("selectsleever")
 			var/ref = params["ref"]
@@ -466,7 +466,7 @@
 				return
 			var/obj/machinery/transhuman/resleever/selected = locate(ref)
 			if(istype(selected) && (selected in sleevers))
-				selected_sleever = selected
+				selected_sleever_handle = om_handle(selected)
 			. = TRUE
 		if("menu")
 			menu = clamp(text2num(params["num"]), MENU_MAIN, MENU_MIND)
@@ -594,10 +594,10 @@
 			if(!LAZYLEN(sleevers))
 				can_sleeve_active = FALSE
 				set_temp("Error: Cannot sleeve due to no sleevers.", "danger")
-			if(!selected_sleever)
+			if(!selected_sleever())
 				can_sleeve_active = FALSE
 				set_temp("Error: Cannot sleeve due to no selected sleever.", "danger")
-			if(selected_sleever && !selected_sleever.get_occupant())
+			if(selected_sleever() && !selected_sleever().get_occupant())
 				can_sleeve_active = FALSE
 				set_temp("Error: Cannot sleeve due to lack of sleever occupant.", "danger")
 			// load it!
@@ -612,3 +612,19 @@
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/machinery/computer/transhuman/resleeving/proc/our_db() as /datum/transcore_db
 	return SStranscore.db_by_key(db_key)
+
+/// LC-refs: the disk this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/transhuman/resleeving/proc/disk() as /obj/item/disk/transcore
+	return om_resolve(disk_handle)
+
+/// LC-refs: the selected_pod this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/transhuman/resleeving/proc/selected_pod() as /obj/machinery/clonepod/transhuman
+	return om_resolve(selected_pod_handle)
+
+/// LC-refs: the selected_printer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/transhuman/resleeving/proc/selected_printer() as /obj/machinery/transhuman/synthprinter
+	return om_resolve(selected_printer_handle)
+
+/// LC-refs: the selected_sleever this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/transhuman/resleeving/proc/selected_sleever() as /obj/machinery/transhuman/resleever
+	return om_resolve(selected_sleever_handle)

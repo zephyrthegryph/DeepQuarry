@@ -82,7 +82,7 @@
 
 		var/markstring
 		if(!(VV_MARKED_DATUM in restricted_classes))
-			markstring = "[VV_MARKED_DATUM] (CURRENT: [(istype(holder) && istype(holder.marked_datum))? holder.marked_datum.type : "NULL"])"
+			markstring = "[VV_MARKED_DATUM] (CURRENT: [(istype(holder) && istype(holder.marked_datum()))? holder.marked_datum().type : "NULL"])"
 			classes += markstring
 
 		var/list/tagstrings = new
@@ -101,7 +101,7 @@
 			classes += extra_classes
 
 		.["class"] = tgui_input_list(src, "What kind of data?", "Variable Type", classes, default_class)
-		if(holder && holder.marked_datum && .["class"] == markstring)
+		if(holder && holder.marked_datum() && .["class"] == markstring)
 			.["class"] = VV_MARKED_DATUM
 
 		if(holder && tagstrings[.["class"]])
@@ -218,7 +218,7 @@
 				return
 
 		if(VV_MARKED_DATUM)
-			.["value"] = holder.marked_datum
+			.["value"] = holder.marked_datum()
 			if(.["value"] == null)
 				.["class"] = null
 				return

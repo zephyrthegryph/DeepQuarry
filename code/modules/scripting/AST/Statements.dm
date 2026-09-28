@@ -53,7 +53,7 @@
 //
 /datum/node/statement/VariableDeclaration
 	var/datum/node/identifier/object
-	var/datum/node/identifier/var_name
+	var/var_name_handle
 
 /*
 	Class: IfStatement
@@ -79,9 +79,9 @@
 */
 /datum/node/statement/ForLoop
 	var/datum/node/BlockDefinition/block
-	var/datum/node/expression/test
-	var/datum/node/expression/init
-	var/datum/node/expression/increment
+	var/test_handle
+	var/init_handle
+	var/increment_handle
 
 /*
 	Class: BreakStatement
@@ -114,3 +114,19 @@ REF_OWNED(/datum/node/statement/IfStatement, list("block", "else_block", "cond")
 REF_OWNED(/datum/node/statement/WhileLoop, list("block", "cond"))
 
 REF_OWNED(/datum/node/statement/ReturnStatement, "value")
+
+/// LC-refs: the var_name this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/VariableDeclaration/proc/var_name() as /datum/node/identifier
+	return om_resolve(var_name_handle)
+
+/// LC-refs: the test this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/test() as /datum/node/expression
+	return om_resolve(test_handle)
+
+/// LC-refs: the init this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/init() as /datum/node/expression
+	return om_resolve(init_handle)
+
+/// LC-refs: the increment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/node/statement/ForLoop/proc/increment() as /datum/node/expression
+	return om_resolve(increment_handle)

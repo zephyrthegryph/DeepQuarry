@@ -474,7 +474,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	icon_state = "mining_brace"
 	circuit = /obj/item/circuitboard/miningdrillbrace
 	var/brace_tier = 1
-	var/obj/machinery/mining/drill/connected
+	var/connected_handle
 
 /obj/machinery/mining/brace/examine(mob/user)
 	. = ..()
@@ -504,7 +504,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	effect = /obj/machinery/mining/brace/proc/interaction_attackby
 
 /obj/machinery/mining/brace/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
-	if(connected && connected.active)
+	if(connected() && connected().active)
 		balloon_alert(user, "you can't work with the brace of a running drill.")
 		return TRUE
 
@@ -513,17 +513,17 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	return FALSE
 
 /obj/machinery/mining/brace/screwdriver_act(mob/user, obj/item/tool)
-	if(connected?.active)
+	if(connected()?.active)
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
 /obj/machinery/mining/brace/crowbar_act(mob/user, obj/item/tool)
-	if(connected?.active)
+	if(connected()?.active)
 		return ITEM_INTERACT_BLOCKING
 	return ..()
 
 /obj/machinery/mining/brace/wrench_act(mob/user, obj/item/tool)
-	if(connected?.active)
+	if(connected()?.active)
 		balloon_alert(user, "you can't work with the brace of a running drill.")
 		return ITEM_INTERACT_BLOCKING
 	if(istype(get_turf(src), /turf/space))
@@ -544,28 +544,32 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 
 	for(var/thing in T.contents)
 		if(istype(thing, /obj/machinery/mining/drill))
-			connected = thing
+			connected_handle = om_handle(thing)
 			break
 
-	if(!connected)
+	if(!connected())
 		return
 
-	if(!connected.supports)
-		connected.supports = list()
+	if(!connected().supports)
+		connected().supports = list()
 
 	icon_state = "mining_brace_active"
 
-	LAZYADD(connected.supports, src)
-	connected.check_supports()
+	LAZYADD(connected().supports, src)
+	connected().check_supports()
 
 /obj/machinery/mining/brace/proc/disconnect()
 
-	if(!connected) return
+	if(!connected()) return
 
-	if(!connected.supports) connected.supports = list()
+	if(!connected().supports) connected().supports = list()
 
 	icon_state = "mining_brace"
 
-	LAZYREMOVE(connected.supports, src)
-	connected.check_supports()
-	connected = null
+	LAZYREMOVE(connected().supports, src)
+	connected().check_supports()
+	connected_handle = null
+
+/// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
+	return om_resolve(connected_handle)

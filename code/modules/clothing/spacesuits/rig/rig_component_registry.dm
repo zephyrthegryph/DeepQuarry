@@ -105,7 +105,7 @@
 		// safety net stays inert while we deliberately drop and delete it.
 		if(istype(piece, /obj/item/clothing))
 			var/obj/item/clothing/deployed = piece
-			deployed.master_rig = null
+			deployed.master_rig_handle = null
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)

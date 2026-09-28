@@ -9,21 +9,21 @@
 /obj/item/modular_computer/proc/broadcast_event(event_type, context = null)
 	switch(event_type)
 		if(COMPUTER_EVENT_POWERFAILURE)
-			if(active_program)
-				active_program.event_powerfailure(0)
+			if(active_program())
+				active_program().event_powerfailure(0)
 			for(var/datum/computer_file/program/P in idle_threads)
 				P.event_powerfailure(1)
 
 		if(COMPUTER_EVENT_NETWORKFAILURE)
-			if(active_program && active_program.requires_ntnet && !get_ntnet_status(active_program.requires_ntnet_feature))
-				active_program.event_networkfailure(0)
+			if(active_program() && active_program().requires_ntnet && !get_ntnet_status(active_program().requires_ntnet_feature))
+				active_program().event_networkfailure(0)
 			for(var/datum/computer_file/program/P in idle_threads)
 				if(P.requires_ntnet && !get_ntnet_status(P.requires_ntnet_feature))
 					P.event_networkfailure(1)
 
 		if(COMPUTER_EVENT_IDREMOVED)
-			if(active_program)
-				active_program.event_idremoved(0)
+			if(active_program())
+				active_program().event_idremoved(0)
 			for(var/datum/computer_file/program/P in idle_threads)
 				P.event_idremoved(1)
 
@@ -40,13 +40,13 @@
 	// Dispatch network failure event through the unified broadcast proc.
 	broadcast_event(COMPUTER_EVENT_NETWORKFAILURE)
 
-	if(active_program)
-		if(active_program.program_state != PROGRAM_STATE_KILLED)
-			active_program.ntnet_status = get_ntnet_status()
-			active_program.computer_emagged = computer_emagged
-			active_program.process_tick()
+	if(active_program())
+		if(active_program().program_state != PROGRAM_STATE_KILLED)
+			active_program().ntnet_status = get_ntnet_status()
+			active_program().computer_emagged = computer_emagged
+			active_program().process_tick()
 		else
-			active_program = null
+			active_program_handle = null
 
 	for(var/datum/computer_file/program/P in idle_threads)
 		if(P.program_state != PROGRAM_STATE_KILLED)
@@ -117,12 +117,12 @@
 
 	set_light(light_strength)
 
-	if(active_program)
-		var/program_state = active_program.program_icon_state ? active_program.program_icon_state : icon_state_menu
+	if(active_program())
+		var/program_state = active_program().program_icon_state ? active_program().program_icon_state : icon_state_menu
 		. += mutable_appearance(overlay_icon, program_state)
 		. += emissive_appearance(overlay_icon, program_state)
-		if(active_program.program_key_state)
-			. += mutable_appearance(overlay_icon, active_program.program_key_state)
+		if(active_program().program_key_state)
+			. += mutable_appearance(overlay_icon, active_program().program_key_state)
 	else
 		. += mutable_appearance(overlay_icon, icon_state_menu)
 		. += emissive_appearance(overlay_icon, icon_state_menu)
@@ -157,9 +157,9 @@
 
 // Relays kill program request to currently active program. Use this to quit current program.
 /obj/item/modular_computer/proc/kill_program(forced = 0)
-	if(active_program)
-		active_program.kill_program(forced)
-		active_program = null
+	if(active_program())
+		active_program().kill_program(forced)
+		active_program_handle = null
 	var/mob/user = usr
 	addtimer(CALLBACK(src, PROC_REF(delayed_reopen_ui), user), 1, TIMER_DELETE_ME)
 	update_icon()
@@ -209,13 +209,13 @@
 		tgui_interact(user)
 
 /obj/item/modular_computer/proc/minimize_program(mob/user)
-	if(!active_program || !processor_unit)
+	if(!active_program() || !processor_unit)
 		return
 
-	LAZYADD(idle_threads, active_program)
-	active_program.program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
-	SStgui.close_uis(active_program.TM ? active_program.TM : active_program)
-	active_program = null
+	LAZYADD(idle_threads, active_program())
+	active_program().program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
+	SStgui.close_uis(active_program().TM ? active_program().TM : active_program())
+	active_program_handle = null
 	update_icon()
 	if(istype(user))
 		tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
@@ -236,7 +236,7 @@
 		return
 	if(P in idle_threads)
 		P.program_state = PROGRAM_STATE_ACTIVE
-		active_program = P
+		active_program_handle = om_handle(P)
 		LAZYREMOVE(idle_threads, P)
 		update_icon()
 		return
@@ -249,7 +249,7 @@
 		to_chat(user, span_danger("\The [src]'s screen shows \"NETWORK ERROR - Unable to connect to NTNet. Please retry. If problem persists contact your system administrator.\" warning."))
 		return
 
-	if(active_program)
+	if(active_program())
 		minimize_program(user)
 
 	if(P.run_program(user))
@@ -257,20 +257,20 @@
 	return 1
 
 /obj/item/modular_computer/proc/update_uis()
-	if(active_program)
-		SStgui.update_uis(active_program)
-		if(active_program.TM)
-			SStgui.update_uis(active_program.TM)
+	if(active_program())
+		SStgui.update_uis(active_program())
+		if(active_program().TM)
+			SStgui.update_uis(active_program().TM)
 	else
 		SStgui.update_uis(src)
 
 /// TRUE if anyone is actually viewing this computer's tgui — the UI is hosted on
 /// the active program (and its TM), or on the computer itself when idle.
 /obj/item/modular_computer/proc/has_open_ui()
-	if(active_program)
-		if(LAZYLEN(active_program.open_tguis))
+	if(active_program())
+		if(LAZYLEN(active_program().open_tguis))
 			return TRUE
-		if(active_program.TM && LAZYLEN(active_program.TM.open_tguis))
+		if(active_program().TM && LAZYLEN(active_program().TM.open_tguis))
 			return TRUE
 		return FALSE
 	return LAZYLEN(open_tguis)
@@ -332,5 +332,5 @@
 /obj/item/modular_computer/proc/find_file_by_uid(uid)
 	if(hard_drive)
 		. = hard_drive.find_file_by_uid(uid)
-	if(portable_drive && !.)
-		. = portable_drive.find_file_by_uid(uid)
+	if(portable_drive() && !.)
+		. = portable_drive().find_file_by_uid(uid)

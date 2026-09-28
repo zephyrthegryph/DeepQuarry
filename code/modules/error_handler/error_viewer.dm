@@ -133,7 +133,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/exception/exc
 	var/desc = ""
 	var/usr_ref
-	var/turf/usr_loc
+	var/usr_loc_handle
 	var/is_skip_count
 
 /datum/error_viewer/error_entry/New(exception/e, list/desclines, skip_count)
@@ -155,7 +155,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 	if (usr)
 		usr_ref = "[REF(usr)]"
-		usr_loc = get_turf(usr)
+		usr_loc_handle = om_handle(get_turf(usr))
 
 /datum/error_viewer/error_entry/show_to(user, datum/error_viewer/back_to, linear)
 	if (!istype(back_to))
@@ -167,9 +167,9 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		html += "<br><b>usr</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[usr_ref]'>VV</a>"
 		html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayeropts=[usr_ref]'>PP</a>"
 		html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservefollow=[usr_ref]'>Follow</a>"
-		if (istype(usr_loc))
-			html += "<br><b>usr.loc</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(usr_loc)]'>VV</a>"
-			html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[usr_loc.x];Y=[usr_loc.y];Z=[usr_loc.z]'>JMP</a>"
+		if (istype(usr_loc()))
+			html += "<br><b>usr.loc</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(usr_loc())]'>VV</a>"
+			html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[usr_loc().x];Y=[usr_loc().y];Z=[usr_loc().z]'>JMP</a>"
 
 	browse_to(user, html)
 
@@ -177,3 +177,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	return is_skip_count ? name : ..()
 
 REF_OWNED(/datum/error_viewer/error_entry, "exc")
+
+/// LC-refs: the usr_loc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/error_viewer/error_entry/proc/usr_loc() as /turf
+	return om_resolve(usr_loc_handle)

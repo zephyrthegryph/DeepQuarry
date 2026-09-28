@@ -63,9 +63,9 @@
 		title = name
 
 /datum/data/pda/app/start()
-	if(pda.current_app)
-		pda.current_app.stop()
-	pda.current_app = src
+	if(pda.current_app())
+		pda.current_app().stop()
+	pda.current_app_handle = om_handle(src)
 	return 1
 
 /datum/data/pda/app/proc/update_ui(mob/user, list/data)
@@ -86,13 +86,13 @@
 	name = "Enable [base_name]"
 
 /datum/data/pda/utility/scanmode/start()
-	if(pda.scanmode)
-		pda.scanmode.name = "Enable [pda.scanmode.base_name]"
+	if(pda.scanmode())
+		pda.scanmode().name = "Enable [pda.scanmode().base_name]"
 
-	if(pda.scanmode == src)
-		pda.scanmode = null
+	if(pda.scanmode() == src)
+		pda.scanmode_handle = null
 	else
-		pda.scanmode = src
+		pda.scanmode_handle = om_handle(src)
 		name = "Disable [base_name]"
 
 	pda.update_shortcuts()

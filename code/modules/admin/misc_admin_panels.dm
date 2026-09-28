@@ -13,19 +13,19 @@
 	panel.tgui_interact(recipient)
 
 /datum/mind_memory_panel
-	var/datum/mind/source
-	var/mob/recipient
+	var/source_handle
+	var/recipient_handle
 
 /datum/mind_memory_panel/New(datum/mind/src_mind, mob/recipient_mob)
 	..()
-	source = src_mind
-	recipient = recipient_mob
+	source_handle = om_handle(src_mind)
+	recipient_handle = om_handle(recipient_mob)
 
 /datum/mind_memory_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
 /datum/mind_memory_panel/tgui_interact(mob/user, datum/tgui/ui)
-	if(user != recipient)
+	if(user != recipient())
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -34,13 +34,13 @@
 
 /datum/mind_memory_panel/tgui_data(mob/user)
 	var/list/data = list()
-	if(!source)
+	if(!source())
 		return data
-	data["name"] = source.current ? source.current.real_name : (source.name || "(unknown)")
-	data["memory"] = source.memory || ""
-	data["ambitions"] = source.ambitions || ""
+	data["name"] = source().current ? source().current.real_name : (source().name || "(unknown)")
+	data["memory"] = source().memory || ""
+	data["ambitions"] = source().ambitions || ""
 	var/list/objectives = list()
-	for(var/datum/objective/O in source.objectives)
+	for(var/datum/objective/O in source().objectives)
 		objectives += list(list("text" = O.explanation_text))
 	data["objectives"] = objectives
 	return data
@@ -78,7 +78,7 @@
 		return data
 	var/list/rows = list()
 	var/list/tagged_datums = holder.tagged_datums
-	var/datum/marked_datum = holder.marked_datum
+	var/datum/marked_datum = holder.marked_datum()
 	var/index = 0
 	for(var/datum/d as anything in tagged_datums)
 		index++
@@ -511,13 +511,13 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 // ---- admin_verbs Delete Book (library admin) -----------------------------
 
 /datum/dq_delete_book_panel
-	var/obj/machinery/librarycomp/our_comp
+	var/our_comp_handle
 	var/list/books
 	var/error_msg = ""
 
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
 	..()
-	our_comp = comp
+	our_comp_handle = om_handle(comp)
 	books = book_rows || list()
 	error_msg = error || ""
 
@@ -535,26 +535,26 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	return list(
 		"books" = books,
 		"error" = error_msg,
-		"sort_by" = our_comp ? our_comp.sortby : "",
+		"sort_by" = our_comp() ? our_comp().sortby : "",
 	)
 
 /datum/dq_delete_book_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !our_comp)
+	if(. || !our_comp())
 		return
 	switch(action)
 		if("sort")
 			var/by = "[params["by"]]"
-			our_comp.Topic("sort=[by]", list("our_comp" = "\ref[our_comp]", "sort" = by))
+			our_comp().Topic("sort=[by]", list("our_comp" = "\ref[our_comp()]", "sort" = by))
 			SStgui.update_uis(src)
 			return TRUE
 		if("order_by_id")
-			our_comp.Topic("orderbyid=1", list("our_comp" = "\ref[our_comp]", "orderbyid" = "1"))
+			our_comp().Topic("orderbyid=1", list("our_comp" = "\ref[our_comp()]", "orderbyid" = "1"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("delete")
 			var/id = "[params["id"]]"
-			our_comp.Topic("delid=[id]", list("our_comp" = "\ref[our_comp]", "delid" = id))
+			our_comp().Topic("delid=[id]", list("our_comp" = "\ref[our_comp()]", "delid" = id))
 			SStgui.update_uis(src)
 			return TRUE
 
@@ -616,3 +616,15 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	user.set_machine(src)
 	tgui_interact(user)
 	return TRUE
+
+/// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/mind_memory_panel/proc/source() as /datum/mind
+	return om_resolve(source_handle)
+
+/// LC-refs: the recipient this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/mind_memory_panel/proc/recipient() as /mob
+	return om_resolve(recipient_handle)
+
+/// LC-refs: the our_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/dq_delete_book_panel/proc/our_comp() as /obj/machinery/librarycomp
+	return om_resolve(our_comp_handle)

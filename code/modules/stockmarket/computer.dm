@@ -10,7 +10,7 @@
 	var/vmode = 1
 
 	var/screen = "stocks"
-	var/datum/stock/current_stock = null
+	var/current_stock_handle
 
 	light_color = LIGHT_COLOR_GREEN
 
@@ -83,7 +83,7 @@
 		if("stocks_archive")
 			var/datum/stock/S = locate(params["share"])
 			if(S)
-				current_stock = S
+				current_stock_handle = om_handle(S)
 				screen = "archive"
 
 		if("stocks_history")
@@ -94,7 +94,7 @@
 				S.displayValues(ui.user)
 
 		if("stocks_backbutton")
-			current_stock = null
+			current_stock_handle = null
 			screen = "stocks"
 
 		if("stocks_cycle_view")
@@ -232,11 +232,11 @@
 
 		// Archive Screen
 		if("archive")
-			data["name"] = current_stock.name
+			data["name"] = current_stock().name
 			data["events"] = list()
 			data["articles"] = list()
 
-			for (var/datum/stockEvent/E in current_stock.events)
+			for (var/datum/stockEvent/E in current_stock().events)
 				if (E.hidden)
 					continue
 				data["events"] += list(list(
@@ -244,7 +244,7 @@
 						"current_desc" = E.current_desc,
 				))
 
-			for (var/datum/article/A in current_stock.articles)
+			for (var/datum/article/A in current_stock().articles)
 				data["articles"] += list(list(
 						"headline" = A.headline,
 						"subtitle" = A.subtitle,
@@ -256,9 +256,9 @@
 
 		// Stock Graph
 		if("graph")
-			data["name"] = current_stock.name
+			data["name"] = current_stock().name
 			data["maxValue"] = 100
-			data["values"] = current_stock.values
+			data["values"] = current_stock().values
 
 	return data
 
@@ -340,8 +340,12 @@
 	GLOB.stockExchange.add_log(/datum/stock_log/buy, user.name, S.name, amt, S.current_value,  total)
 
 /obj/machinery/computer/stockexchange/proc/do_borrowing_deal(datum/borrow/B, mob/user)
-	if (B.stock.borrow(B, logged_in))
+	if (B.stock().borrow(B, logged_in))
 		to_chat(user, span_notice("You successfully borrowed [B.share_amount] shares. Deposit: [B.deposit]."))
-		GLOB.stockExchange.add_log(/datum/stock_log/borrow, user.name, B.stock.name, B.share_amount, B.deposit)
+		GLOB.stockExchange.add_log(/datum/stock_log/borrow, user.name, B.stock().name, B.share_amount, B.deposit)
 	else
 		to_chat(user, span_danger("Could not complete transaction. Check your account balance."))
+
+/// LC-refs: the current_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/stockexchange/proc/current_stock() as /datum/stock
+	return om_resolve(current_stock_handle)

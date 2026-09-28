@@ -7,7 +7,7 @@
 	density = FALSE
 	plane = MOB_PLANE
 
-	var/datum/turbolift/lift
+	var/lift_handle
 
 /obj/structure/lift/set_dir(newdir)
 	. = ..()
@@ -31,7 +31,7 @@
 
 /obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
 	. = ..()
-	lift = _lift
+	lift_handle = om_handle(_lift)
 
 /obj/structure/lift
 	silicon_use = SILICON_USE_HAND
@@ -43,7 +43,7 @@
 	return interact(user)
 
 /obj/structure/lift/interact(mob/user)
-	if(!lift.is_functional())
+	if(!lift().is_functional())
 		return 0
 	return 1
 // End base.
@@ -71,27 +71,27 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 		if(!check_access(id))
 			playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
 			return
-		lift.priority_mode()
-		if(floor == lift.current_floor)
-			lift.open_doors()
+		lift().priority_mode()
+		if(floor == lift().current_floor())
+			lift().open_doors()
 		else
-			lift.queue_move_to(floor)
+			lift().queue_move_to(floor)
 		return
 	. = ..()
 
 /obj/structure/lift/button/interact(mob/user)
 	if(!..())
 		return
-	if(lift.fire_mode || lift.priority_mode)
+	if(lift().fire_mode || lift().priority_mode)
 		playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
 		return
 	light_up()
 	pressed(user)
-	if(floor == lift.current_floor && !(lift.target_floor))	//Make sure we're not going anywhere before opening doors
-		lift.open_doors()
+	if(floor == lift(current_floor()or && !(lift().target_floor()))	//Make sure we're not going anywhere before opening doors
+		lift().open_doors()
 		om_after(src, 3, PROC_REF(reset))
 		return
-	lift.queue_move_to(floor)
+	lift().queue_move_to(floor)
 
 /obj/structure/lift/button/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
@@ -101,9 +101,9 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 	update_icon()
 
 /obj/structure/lift/button/update_icon()
-	if(lift.fire_mode)
+	if(lift().fire_mode)
 		icon_state = "button_fire"
-	else if(lift.priority_mode)
+	else if(lift().priority_mode)
 		icon_state = "button_pri"
 	else if(light_up)
 		icon_state = "button_lit"
@@ -127,8 +127,8 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 		if(!check_access(id))
 			playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
 			return
-		lift.update_fire_mode(!lift.fire_mode)
-		if(lift.fire_mode)
+		lift().update_fire_mode(!lift().fire_mode)
+		if(lift().fire_mode)
 			audible_message(span_danger("Firefighter Mode Activated.  Door safeties disabled.  Manual control engaged."), runemessage = "SCREECH")
 			playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
 		else
@@ -157,18 +157,18 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 /obj/structure/lift/panel/tgui_data(mob/user)
 	var/list/data = list()
 
-	data["doors_open"] = lift.doors_are_open()
-	data["fire_mode"] = lift.fire_mode
+	data["doors_open"] = lift().doors_are_open()
+	data["fire_mode"] = lift().fire_mode
 
 	var/list/floors = list()
-	for(var/i in lift.floors.len to 1 step -1)
-		var/datum/turbolift_floor/floor = lift.floors[i]
+	for(var/i in lift().floors.len to 1 step -1)
+		var/datum/turbolift_floor/floor = lift().floors[i]
 		floors.Add(list(list(
 			"id" = i,
 			"ref" = "\ref[floor]",
-			"queued" = (floor in lift.queued_floors),
-			"target" = (lift.target_floor == floor),
-			"current" = (lift.current_floor == floor),
+			"queued" = (floor in lift().queued_floors),
+			"target" = (lift().target_floor() == floor),
+			"current" = (lift().current_floor() == floor),
 			"label" = floor.label,
 			"name" = floor.name,
 		)))
@@ -183,24 +183,28 @@ REF_PAIR(/datum/turbolift_floor, list("ext_panel" = "floor"))
 	switch(action)
 		if("move_to_floor")
 			. = TRUE
-			lift.queue_move_to(locate(params["ref"]))
+			lift().queue_move_to(locate(params["ref"]))
 		if("toggle_doors")
 			. = TRUE
-			if(lift.doors_are_open())
-				lift.close_doors()
+			if(lift().doors_are_open())
+				lift().close_doors()
 			else
-				lift.open_doors()
+				lift().open_doors()
 		if("emergency_stop")
 			. = TRUE
-			lift.emergency_stop()
+			lift().emergency_stop()
 
 	if(.)
 		pressed(ui.user)
 
 /obj/structure/lift/panel/update_icon()
-	if(lift.fire_mode)
+	if(lift().fire_mode)
 		icon_state = "panel_fire"
 	else
 		icon_state = initial(icon_state)
 
 // End panel.
+
+/// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/lift/proc/lift() as /datum/turbolift
+	return om_resolve(lift_handle)

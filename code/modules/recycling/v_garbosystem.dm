@@ -11,7 +11,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	idle_power_usage = 5
 	active_power_usage = 100
 	var/operating = FALSE
-	var/obj/machinery/recycling/crusher/crusher //Connects to regular crusher
+	var/crusher_handle	//Connects to regular crusher
 	var/obj/machinery/button/garbosystem/button
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
@@ -21,9 +21,9 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	create_reagents(CARGOTANKER_VOLUME * 2)
 	AddComponent(/datum/component/hose_connector/output)
 	for(var/dir in GLOB.cardinal)
-		src.crusher = locate(/obj/machinery/recycling/crusher, get_step(src, dir))
-		if(src.crusher)
-			crusher.hand_fed = FALSE
+		src.crusher_handle = om_handle(locate(/obj/machinery/recycling/crusher, get_step(src, dir)))
+		if(src.crusher())
+			crusher().hand_fed = FALSE
 			break
 	for(var/dir in GLOB.cardinal)
 		src.button = locate(/obj/machinery/button/garbosystem, get_step(src, dir))
@@ -74,7 +74,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/v_garbosystem/machine_step()
-	if(!operating || !crusher || crusher.stat & (NOPOWER|BROKEN))
+	if(!operating || !crusher() || crusher().stat & (NOPOWER|BROKEN))
 		icon_state = "cronchy_off"
 		return PROCESS_KILL
 	if(stat & (BROKEN | NOPOWER))
@@ -221,7 +221,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 			transfer_ore_to_tank(A,1)
 		A.forceMove(src)
 		if(!is_type_in_list(A, GLOB.item_digestion_blacklist))
-			crusher.take_item(A) //Force feed the poor bastard.
+			crusher().take_item(A) //Force feed the poor bastard.
 
 /obj/machinery/v_garbosystem/proc/crunch_thing(atom/movable/A)
 	if(A)
@@ -235,3 +235,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/v_garbosystem/step_start_condition()
 	return operating
+
+/// LC-refs: Connects to regular crusher -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher
+	return om_resolve(crusher_handle)

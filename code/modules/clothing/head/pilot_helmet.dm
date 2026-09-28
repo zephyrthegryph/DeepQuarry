@@ -15,7 +15,7 @@
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	w_class = ITEMSIZE_NORMAL
 
-	var/obj/machinery/computer/shuttle_control/web/shuttle_comp
+	var/shuttle_comp_handle
 	var/atom/movable/screen/pilot_hud
 	var/list/images
 	var/list/raw_images
@@ -251,3 +251,7 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 	icon_state = "pilot3"
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
 	actions_types = list(/datum/action/item_action/toggle_visor)
+
+/// LC-refs: the shuttle_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/head/pilot/proc/shuttle_comp() as /obj/machinery/computer/shuttle_control/web
+	return om_resolve(shuttle_comp_handle)

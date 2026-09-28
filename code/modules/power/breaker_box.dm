@@ -25,7 +25,7 @@
 // LIFECYCLE: the cables it switched go with it; RCON consoles rescan.
 /obj/machinery/power/breakerbox/Destroy()
 	for(var/obj/structure/cable/C in src.loc)
-		C.breaker_box = null
+		C.breaker_box_handle = null
 		qdel(C)
 	. = ..()
 	for(var/datum/tgui_module/rcon/R in SStgui.all_uis)
@@ -148,13 +148,13 @@
 			C.d1 = 0
 			C.d2 = direction
 			C.icon_state = "[C.d1]-[C.d2]"
-			C.breaker_box = src
+			C.breaker_box_handle = om_handle(src)
 			C.power_register()
 
 	else
 		icon_state = icon_state_off
 		for(var/obj/structure/cable/C in src.loc)
-			C.breaker_box = null
+			C.breaker_box_handle = null
 			qdel(C)
 
 // Used by RCON to toggle the breaker box.

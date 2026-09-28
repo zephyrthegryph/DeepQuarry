@@ -3,27 +3,27 @@
 /datum/talking_atom
 	var/list/heard_words = list()
 	var/last_talk_time = 0
-	var/atom/holder_atom
+	var/holder_atom_handle
 	var/talk_interval = 50
 	var/talk_chance = 10
 
 /datum/talking_atom/New(atom/holder)
-	holder_atom = holder
+	holder_atom_handle = om_handle(holder)
 	init()
 
 /datum/talking_atom/proc/init()
-	if(holder_atom)
+	if(holder_atom())
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 /datum/talking_atom/periodic_step()
-	if(!holder_atom)
+	if(!holder_atom())
 		PERIODIC_STOP(src)
 
 	else if(heard_words.len >= 1 && world.time > last_talk_time + talk_interval && prob(talk_chance))
 		SaySomething()
 
 /datum/talking_atom/proc/catchMessage(msg, mob/source)
-	if(!holder_atom)
+	if(!holder_atom())
 		return
 
 	var/list/seperate = list()
@@ -51,16 +51,16 @@
 		//to_world("Adding [lowertext(seperate[next])] to [lowertext(seperate[Xa])]")
 
 	if(prob(30))
-		var/list/options = list("[holder_atom] seems to be listening intently to [source]...",\
-			"[holder_atom] seems to be focusing on [source]...",\
-			"[holder_atom] seems to turn it's attention to [source]...")
-		holder_atom.loc.visible_message(span_blue("[icon2html(holder_atom,viewers(holder_atom.loc))] [pick(options)]"))
+		var/list/options = list("[holder_atom()] seems to be listening intently to [source]...",\
+			"[holder_atom()] seems to be focusing on [source]...",\
+			"[holder_atom()] seems to turn it's attention to [source]...")
+		holder_atom().loc.visible_message(span_blue("[icon2html(holder_atom(),viewers(holder_atom().loc))] [pick(options)]"))
 
 	if(prob(20))
 		om_after(src, 2, PROC_REF(SaySomething), pick(seperate))
 
 /datum/talking_atom/proc/SaySomething(word = null)
-	if(!holder_atom)
+	if(!holder_atom())
 		return
 
 	var/msg
@@ -99,10 +99,14 @@
 		else
 			msg+="!"
 
-	var/list/listening = viewers(holder_atom)
+	var/list/listening = viewers(holder_atom())
 
 	for(var/mob/M in listening)
-		to_chat(M, "[icon2html(holder_atom,M.client)] " + span_bold("[holder_atom] reverberates") +" , \"[span_blue(msg)]\"")
+		to_chat(M, "[icon2html(holder_atom(),M.client)] " + span_bold("[holder_atom()] reverberates") +" , \"[span_blue(msg)]\"")
 	last_talk_time = world.time
 
 REF_OWNED(/obj, "talking_atom")
+
+/// LC-refs: the holder_atom this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/talking_atom/proc/holder_atom() as /atom
+	return om_resolve(holder_atom_handle)

@@ -24,7 +24,7 @@
 	var/light_range_on = 2
 	light_color = "#64C864"
 
-	var/mob/watching_mob = null
+	var/watching_mob_handle
 	var/image/small_station_map = null
 	var/image/floor_markings = null
 	var/image/panel = null
@@ -80,20 +80,20 @@
 	effect = /obj/machinery/station_map/proc/interaction_watch
 
 /obj/machinery/station_map/proc/interaction_watch(mob/user, obj/item/held, datum/interaction/interaction)
-	if(watching_mob && (watching_mob != user))
+	if(watching_mob() && (watching_mob() != user))
 		to_chat(user, span_warning("Someone else is currently watching the holomap."))
 		return TRUE
 	if(user.loc != loc)
 		to_chat(user, span_warning("You need to stand in front of \the [src]."))
 		return TRUE
-	if(watching_mob)
+	if(watching_mob())
 		return TRUE
 	startWatching(user)
 	return TRUE
 
 // Let people bump up against it to watch
 /obj/machinery/station_map/Bumped(atom/movable/AM)
-	if(!watching_mob && isliving(AM) && AM.loc == loc)
+	if(!watching_mob() && isliving(AM) && AM.loc == loc)
 		startWatching(AM)
 
 /obj/machinery/station_map/Uncross(atom/movable/mover, turf/target)
@@ -125,12 +125,12 @@
 			user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
 			user.client.images |= holomap_datum.station_map
 
-			watching_mob = user
+			watching_mob_handle = om_handle(user)
 			MACHINE_WAKE(src)
-			watching_mob.AddComponent(/datum/component/recursive_move)
-			RegisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
+			watching_mob().AddComponent(/datum/component/recursive_move)
+			RegisterSignal(watching_mob(), COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/machinery/station_map/proc/checkPosition)
 			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
-			RegisterSignal(watching_mob, COMSIG_OBSERVER_DESTROYED, /obj/machinery/station_map/proc/stopWatching)
+			RegisterSignal(watching_mob(), COMSIG_OBSERVER_DESTROYED, /obj/machinery/station_map/proc/stopWatching)
 			update_use_power(USE_POWER_ACTIVE)
 
 			if(bogus)
@@ -145,25 +145,25 @@
 /obj/machinery/station_map/machine_step()
 	if((stat & (NOPOWER|BROKEN)) || !anchored)
 		stopWatching()
-	if(!watching_mob)
+	if(!watching_mob())
 		return PROCESS_KILL
 
 /obj/machinery/station_map/proc/checkPosition()
 	SIGNAL_HANDLER
-	if(!watching_mob || (watching_mob.loc != loc) || (dir != watching_mob.dir))
+	if(!watching_mob() || (watching_mob().loc != loc) || (dir != watching_mob().dir))
 		stopWatching()
 
 /obj/machinery/station_map/proc/stopWatching()
 	SIGNAL_HANDLER
-	if(watching_mob)
-		if(watching_mob.client)
+	if(watching_mob())
+		if(watching_mob().client)
 			animate(holomap_datum.station_map, alpha = 0, time = 5, easing = LINEAR_EASING)
-			var/mob/M = watching_mob
+			var/mob/M = watching_mob()
 			om_after(M, 5, /proc/remove_client_image, M, holomap_datum.station_map) //we give it time to fade out
-		UnregisterSignal(watching_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		UnregisterSignal(watching_mob(), COMSIG_MOVABLE_ATTEMPTED_MOVE)
 		//GLOB.dir_set_event.unregister(watching_mob, src)
-		UnregisterSignal(watching_mob, COMSIG_OBSERVER_DESTROYED)
-	watching_mob = null
+		UnregisterSignal(watching_mob(), COMSIG_OBSERVER_DESTROYED)
+	watching_mob_handle = null
 	update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()
@@ -253,3 +253,7 @@
 	var/color //used by path rune markers
 
 REF_OWNED(/obj/machinery/station_map, list("small_station_map", "floor_markings", "panel", "holomap_datum"))
+
+/// LC-refs: the watching_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/station_map/proc/watching_mob() as /mob
+	return om_resolve(watching_mob_handle)

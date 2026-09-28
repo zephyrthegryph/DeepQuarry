@@ -117,7 +117,7 @@
 	ASSERT(SP && A)
 
 	GLOB.rm_controller.dbg("ZM(pa): Placing at point [SP.x],[SP.y],[SP.z].")
-	SP.myasteroid = A
+	SP.myasteroid_handle = om_handle(A)
 
 	//Bottom-left corner of our bounding box
 	var/BLx = SP.x - (A.width/2)

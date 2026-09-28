@@ -85,10 +85,10 @@
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/syndie/docked_SC/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Arrivals Dock."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Arrivals Dock."
 
 /datum/shuttle_destination/syndie/docked_SC/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Arrivals Dock."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Arrivals Dock."
 
 /datum/shuttle_destination/syndie/sky
 	name = "Skies of Sif"

@@ -7,7 +7,7 @@
 	anchored = TRUE
 	density = TRUE
 
-	var/obj/item/sample = null
+	var/sample_handle
 	var/report_num = 0
 
 /obj/machinery/microscope/declare_interactions(list/into)
@@ -25,7 +25,7 @@
 	effect = /obj/machinery/microscope/proc/interaction_attackby
 
 /obj/machinery/microscope/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
-	if(sample)
+	if(sample())
 		to_chat(user, span_warning("There is already a slide in the microscope."))
 		return TRUE
 
@@ -35,7 +35,7 @@
 	to_chat(user, span_notice("You insert \the [held] into the microscope."))
 	user.unEquip(held)
 	held.forceMove(src)
-	sample = held
+	sample_handle = om_handle(held)
 	update_icon()
 	return TRUE
 
@@ -56,13 +56,13 @@
 
 /obj/machinery/microscope/proc/interaction_examine(mob/user, obj/item/held, datum/interaction/interaction)
 
-	if(!sample)
+	if(!sample())
 		to_chat(user, span_warning("The microscope has no sample to examine."))
 		return TRUE
 
-	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample]."))
+	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample()]."))
 
-	om_task_start(/datum/om/task/timed/microscope_examine, user, sample, list("receiver" = src))
+	om_task_start(/datum/om/task/timed/microscope_examine, user, sample(), list("receiver" = src))
 	return TRUE
 
 /obj/machinery/microscope/proc/examine_stopped(datum/om/task/timed/microscope_examine/task)
@@ -78,7 +78,7 @@
 /obj/machinery/microscope/proc/examine_done(datum/om/task/timed/microscope_examine/task)
 	var/mob/user = task.actor
 	var/obj/item/examined = task.target
-	if(sample != examined)
+	if(sample() != examined)
 		return
 	to_chat(user, span_notice("Printing findings now..."))
 	var/obj/item/paper/report = new(get_turf(src))
@@ -86,8 +86,8 @@
 	report.overlays = list("paper_stamped")
 	report_num++
 
-	if(istype(sample, /obj/item/forensics/swab))
-		var/obj/item/forensics/swab/swab = sample
+	if(istype(sample(), /obj/item/forensics/swab))
+		var/obj/item/forensics/swab/swab = sample()
 
 		report.name = "GSR report #[++report_num]: [swab.name]"
 		report.info = span_bold("Scanned item:") + "<br>[swab.name]<br><br>"
@@ -97,8 +97,8 @@
 		else
 			report.info += "No gunpowder residue found."
 
-	else if(istype(sample, /obj/item/sample/fibers))
-		var/obj/item/sample/fibers/fibers = sample
+	else if(istype(sample(), /obj/item/sample/fibers))
+		var/obj/item/sample/fibers/fibers = sample()
 		report.name = "Fiber report #[++report_num]: [fibers.name]"
 		report.info = span_bold("Scanned item:") + "<br>[fibers.name]<br><br>"
 		if(fibers.evidence)
@@ -107,10 +107,10 @@
 				report.info += span_notice("Most likely match for fibers: [fiber]") + "<br><br>"
 		else
 			report.info += "No fibers found."
-	else if(istype(sample, /obj/item/sample/print))
-		report.name = "Fingerprint report #[report_num]: [sample.name]"
-		report.info = span_bold("Fingerprint analysis report #[report_num]") + ": [sample.name]<br>"
-		var/obj/item/sample/print/card = sample
+	else if(istype(sample(), /obj/item/sample/print))
+		report.name = "Fingerprint report #[report_num]: [sample().name]"
+		report.info = span_bold("Fingerprint analysis report #[report_num]") + ": [sample().name]<br>"
+		var/obj/item/sample/print/card = sample()
 		if(card.evidence && length(card.evidence))
 			report.info += "Surface analysis has determined unique fingerprint strings:<br><br>"
 			for(var/prints in card.evidence)
@@ -131,13 +131,13 @@
 /obj/machinery/microscope/proc/remove_sample(mob/living/remover)
 	if(!istype(remover) || remover.incapacitated() || !Adjacent(remover))
 		return
-	if(!sample)
+	if(!sample())
 		to_chat(remover, span_warning("\The [src] does not have a sample in it."))
 		return
-	to_chat(remover, span_notice("You remove \the [sample] from \the [src]."))
-	sample.forceMove(get_turf(src))
-	remover.put_in_hands(sample)
-	sample = null
+	to_chat(remover, span_notice("You remove \the [sample()] from \the [src]."))
+	sample().forceMove(get_turf(src))
+	remover.put_in_hands(sample())
+	sample_handle = null
 	update_icon()
 
 /obj/machinery/microscope/MouseDrop(atom/other)
@@ -148,5 +148,9 @@
 
 /obj/machinery/microscope/update_icon()
 	icon_state = "microscope"
-	if(sample)
+	if(sample())
 		icon_state += "slide"
+
+/// LC-refs: the sample this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/microscope/proc/sample() as /obj/item
+	return om_resolve(sample_handle)

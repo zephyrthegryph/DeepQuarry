@@ -2,11 +2,11 @@
 /datum/shuttle/autodock/ferry/emergency
 	category = /datum/shuttle/autodock/ferry/emergency
 	var/frequency = AUTODOCK_FREQ // Why this frequency? BECAUSE! Thats what someone decided once.
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()
-	radio_connection = SSradio.add_object(src, frequency, null)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, null))
 	if(SSemergency_shuttle.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
 	SSemergency_shuttle.shuttle = src
@@ -201,3 +201,7 @@
 /obj/machinery/computer/shuttle_control/emergency/proc/interaction_scan_id(mob/user, obj/item/W, datum/interaction/interaction)
 	read_authorization(W)
 	return FALSE
+
+/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

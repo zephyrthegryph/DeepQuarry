@@ -9,7 +9,7 @@
 	maintenance_wrench_time = 2 SECONDS
 
 	circuit = /obj/item/circuitboard/firework_launcher
-	var/obj/item/firework_star/loaded_star
+	var/loaded_star_handle
 	var/last_launch
 	var/launch_cooldown = 5 MINUTES
 
@@ -28,7 +28,7 @@
 	. = ..()
 
 /obj/machinery/firework_launcher/update_icon()
-	icon_state = "launcher[loaded_star ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]"
+	icon_state = "launcher[loaded_star() ? "1" : "0"][anchored ? "1" : "0"][panel_open ? "_open" : ""]"
 
 /obj/machinery/firework_launcher/declare_interactions(list/into)
 	into += list(
@@ -47,11 +47,11 @@
 	effect = /obj/machinery/firework_launcher/proc/interaction_load_star
 
 /obj/machinery/firework_launcher/proc/interaction_load_star(mob/user, obj/item/firework_star/O, datum/interaction/interaction)
-	if(loaded_star)
-		to_chat(user, span_notice("\The [src] already has \a [loaded_star] inside, unload it first!"))
+	if(loaded_star())
+		to_chat(user, span_notice("\The [src] already has \a [loaded_star()] inside, unload it first!"))
 		return TRUE
 	if(user.unEquip(O, 0, src))
-		loaded_star = O
+		loaded_star_handle = om_handle(O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
 		update_icon()
@@ -76,12 +76,12 @@
 	effect = /obj/machinery/firework_launcher/proc/interaction_eject
 
 /obj/machinery/firework_launcher/proc/interaction_eject(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!loaded_star)
+	if(!loaded_star())
 		to_chat(user, span_notice("There is no firework star loaded in \the [src]."))
 		return TRUE
 	else
-		loaded_star.forceMove(get_turf(src))
-		loaded_star = null
+		loaded_star().forceMove(get_turf(src))
+		loaded_star_handle = null
 		add_fingerprint(user)
 		update_icon()
 	return TRUE
@@ -97,7 +97,7 @@
 		to_chat(user, span_warning("Close the panel first!"))
 		return TRUE
 
-	if(!loaded_star)
+	if(!loaded_star())
 		to_chat(user, span_notice("There is no firework star loaded in \the [src]."))
 		return TRUE
 
@@ -115,15 +115,15 @@
 		return TRUE
 
 	var/datum/weather_holder/WH = P.weather_holder
-	if(WH.firework_override && istype(loaded_star, /obj/item/firework_star/weather))			// Enable weather-based events to not be ruined
+	if(WH.firework_override && istype(loaded_star(), /obj/item/firework_star/weather))			// Enable weather-based events to not be ruined
 		to_chat(user, span_warning("\The [src] beeps as it seems some interference is preventing launch of this type of firework."))
 		return TRUE
 
 	to_chat(user, span_notice("You launch the firework!"))
 	playsound(get_turf(src), 'sound/weapons/rpg.ogg', 75, 1)
-	loaded_star.trigger_firework(WH)
-	qdel(loaded_star)
-	loaded_star = null
+	loaded_star().trigger_firework(WH)
+	qdel(loaded_star())
+	loaded_star_handle = null
 	last_launch = world.time
 	add_fingerprint(user)
 	update_icon()
@@ -142,3 +142,7 @@
 	if(!P)
 		return
 	return P
+
+/// LC-refs: the loaded_star this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
+	return om_resolve(loaded_star_handle)

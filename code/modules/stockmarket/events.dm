@@ -29,7 +29,7 @@
 /datum/stockEvent/product
 	name = "product"
 	var/product_name = ""
-	var/datum/article/product_article = null
+	var/product_article_handle
 	var/effect = 0
 
 /datum/stockEvent/product/New(datum/stock/S)
@@ -50,15 +50,15 @@
 			current_title = "Product release: [product_name]"
 			current_desc = "[company.name] unveiled their newest product at a conference, [product_name]Product release is expected to happen at spacetime [spacetime(next_phase)]."
 			var/datum/article/A = company.industry.generateInCharacterProductArticle(product_name, company)
-			product_article = A
+			product_article_handle = om_handle(A)
 			effect = A.opinion + rand(-1, 1)
 			company.affectPublicOpinion(effect)
 			phase_id = 1
 		if (1)
 			finished = 1
 			hidden = 1
-			company.addArticle(product_article)
-			effect += product_article.opinion * 5
+			company.addArticle(product_article())
+			effect += product_article().opinion * 5
 			company.affectPublicOpinion(effect)
 			phase_id = 2
 			company.generateEvent(type)
@@ -233,3 +233,7 @@
 	return A
 
 #undef TIME_MULTIPLIER
+
+/// LC-refs: the product_article this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/stockEvent/product/proc/product_article() as /datum/article
+	return om_resolve(product_article_handle)

@@ -12,7 +12,7 @@
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
 	var/confirm_delay = 20 //(2 seconds)
 	var/obj/machinery/keycard_auth/event_source
-	var/mob/event_triggered_by
+	var/event_triggered_by_handle
 	var/mob/event_confirmed_by
 	//1 = select event
 	//2 = authenticate
@@ -80,7 +80,7 @@
 					event_source.confirmed = 1
 					event_source.event_confirmed_by = user
 			else if(screen == 2)
-				event_triggered_by = user
+				event_triggered_by_handle = om_handle(user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
 	return TRUE
 
@@ -149,7 +149,7 @@
 	confirmed = 0
 	event_source = null
 	icon_state = "auth_off"
-	event_triggered_by = null
+	event_triggered_by_handle = null
 	event_confirmed_by = null
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
@@ -166,8 +166,8 @@
 	if(confirmed)
 		confirmed = 0
 		trigger_event(user)
-		log_game("[key_name(event_triggered_by)] triggered and [key_name(event_confirmed_by)] confirmed event [event]")
-		message_admins("[key_name(event_triggered_by)] triggered and [key_name(event_confirmed_by)] confirmed event [event]", 1)
+		log_game("[key_name(event_triggered_by())] triggered and [key_name(event_confirmed_by)] confirmed event [event]")
+		message_admins("[key_name(event_triggered_by())] triggered and [key_name(event_confirmed_by)] confirmed event [event]", 1)
 	reset()
 
 /obj/machinery/keycard_auth/proc/receive_request(obj/machinery/keycard_auth/source)
@@ -224,3 +224,7 @@ GLOBAL_VAR_INIT(maint_all_access, FALSE)
 	if(GLOB.maint_all_access && src.check_access_list(list(ACCESS_MAINT_TUNNELS)))
 		return 1
 	return ..(M)
+
+/// LC-refs: the event_triggered_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/keycard_auth/proc/event_triggered_by() as /mob
+	return om_resolve(event_triggered_by_handle)

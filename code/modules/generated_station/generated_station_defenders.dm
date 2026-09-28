@@ -1,31 +1,31 @@
 /// Event-driven binding between one physical defender and its strategic squad.
 /datum/generated_station_defender_agent
-	var/mob/living/simple_mob/defender
-	var/datum/generated_station_defense_runtime/runtime
+	var/defender_handle
+	var/runtime_handle
 	var/department_id
 	var/squad_id
-	var/turf/home
+	var/home_handle
 	var/last_contact
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
-	defender = new_defender
-	runtime = new_runtime
+	defender_handle = om_handle(new_defender)
+	runtime_handle = om_handle(new_runtime)
 	department_id = new_department_id
 	squad_id = new_squad_id
-	home = new_home
-	RegisterSignal(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, PROC_REF(on_damage))
-	RegisterSignal(defender, COMSIG_MOB_DEATH, PROC_REF(on_death))
+	home_handle = om_handle(new_home)
+	RegisterSignal(defender(), GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, PROC_REF(on_damage))
+	RegisterSignal(defender(), COMSIG_MOB_DEATH, PROC_REF(on_death))
 
 // LIFECYCLE: its director unregisters the defender.
 /datum/generated_station_defender_agent/Destroy()
-	if(defender)
-		UnregisterSignal(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL)
-		UnregisterSignal(defender, COMSIG_MOB_DEATH)
-		runtime?.director?.unregister_defender(defender)
-	defender = null
-	runtime = null
-	home = null
+	if(defender())
+		UnregisterSignal(defender(), GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL)
+		UnregisterSignal(defender(), COMSIG_MOB_DEATH)
+		runtime()?.director?.unregister_defender(defender())
+	defender_handle = null
+	runtime_handle = null
+	home_handle = null
 	last_contact = null
 	return ..()
 
@@ -33,34 +33,34 @@
 	SIGNAL_HANDLER
 	if(attacker)
 		last_contact = om_handle(attacker)
-		runtime?.report_contact(src, attacker)
-	if(defender && defender.vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
-		runtime?.retreat_agent(src)
+		runtime()?.report_contact(src, attacker)
+	if(defender() && defender().vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
+		runtime()?.retreat_agent(src)
 
 /datum/generated_station_defender_agent/proc/on_death(datum/source, gibbed)
 	SIGNAL_HANDLER
-	runtime?.on_casualty(src)
+	runtime()?.on_casualty(src)
 
 /datum/generated_station_defender_agent/proc/apply_order(datum/generated_station_order/order, datum/generated_station_knowledge_report/report)
-	if(!defender || QDELETED(defender) || defender.stat >= DEAD)
+	if(!defender() || QDELETED(defender()) || defender().stat >= DEAD)
 		return
 	var/atom/target = om_resolve(report?.target_ref)
 	switch(order.kind)
 		if(GENERATED_STATION_ORDER_INTERCEPT)
 			if(isliving(target))
 				var/mob/living/living_target = target
-				defender.ai_brain?.give_target(living_target, TRUE)
+				defender().ai_brain?.give_target(living_target, TRUE)
 		if(GENERATED_STATION_ORDER_DEFEND)
-			defender.ai_brain?.give_destination(home)
+			defender().ai_brain?.give_destination(home())
 		if(GENERATED_STATION_ORDER_SEARCH, GENERATED_STATION_ORDER_PATROL)
-			defender.ai_brain?.give_destination(get_turf(target) || home)
+			defender().ai_brain?.give_destination(get_turf(target) || home())
 		if(GENERATED_STATION_ORDER_RETREAT)
-			runtime.retreat_agent(src)
-	defender.ai_brain?.go_wake()
+			runtime().retreat_agent(src)
+	defender().ai_brain?.go_wake()
 
 /// Owns the finite generated-station roster. It performs no periodic scans.
 /datum/generated_station_defense_runtime
-	var/datum/expedition_site/site
+	var/site_handle
 	var/datum/generated_station_director/director
 	var/list/agents
 	var/list/squads_by_department
@@ -84,7 +84,7 @@
 
 /datum/generated_station_defense_runtime/New(datum/expedition_site/new_site, datum/generated_station_director/new_director)
 	..()
-	site = new_site
+	site_handle = om_handle(new_site)
 	director = new_director
 	agents = list()
 	squads_by_department = list()
@@ -97,22 +97,22 @@
 	if(director?.defense_runtime == src)
 		director.defense_runtime = null
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.defender && !QDELETED(agent.defender))
-			qdel(agent.defender)
+		if(agent.defender() && !QDELETED(agent.defender()))
+			qdel(agent.defender())
 		qdel(agent)
 	agents = null
 	squads_by_department = null
 	department_turfs = null
 	active_patrols = null
 	director = null
-	site = null
+	site_handle = null
 	return ..()
 
 /datum/generated_station_defense_runtime/proc/create_roster()
-	for(var/obj/machinery/generated_station_department_control/control in site.station_controls)
+	for(var/obj/machinery/generated_station_department_control/control in site().station_controls)
 		department_turfs[control.department_id] = get_turf(control)
-	for(var/obj/machinery/generated_station_data_relay/relay in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
-		if(relay.station_id == site.station_spec?.id)
+	for(var/obj/machinery/generated_station_data_relay/relay in block(locate(1, 1, site().z_level), locate(world.maxx, world.maxy, site().z_level)))
+		if(relay.station_id == site().station_spec?.id)
 			relay.defense_runtime_ref = om_handle(src)
 	spawn_department("security-1", 2)
 	spawn_department("medical-1", 1)
@@ -210,8 +210,8 @@
 	var/datum/generated_station_squad/squad = director.squads[order.squad_id]
 	director.complete_order(order.id)
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad?.id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.go_sleep()
+		if(agent.squad_id == squad?.id && agent.defender()?.stat < DEAD)
+			agent.defender().ai_brain?.go_sleep()
 
 /// Patrols are explicitly requested and self-terminate; stable stations schedule none.
 /datum/generated_station_defense_runtime/proc/request_patrol(department_id, turf/destination)
@@ -235,7 +235,7 @@
 
 /datum/generated_station_defense_runtime/proc/on_casualty(datum/generated_station_defender_agent/agent)
 	casualties++
-	director?.unregister_defender(agent.defender)
+	director?.unregister_defender(agent.defender())
 	if(agent.department_id == "security-1" && director?.request_security_reserve())
 		addtimer(CALLBACK(src, PROC_REF(spawn_reinforcement), "security-1"), 10 SECONDS)
 
@@ -261,22 +261,22 @@
 /// Damage producers call this with the affected department. Engineering consumes
 /// finite stockpiles and performs one delayed repair without polling structures.
 /datum/generated_station_defense_runtime/proc/request_engineering_repair(department_id, amount = 20)
-	for(var/obj/machinery/generated_station_department_control/control in site.station_controls)
+	for(var/obj/machinery/generated_station_department_control/control in site().station_controls)
 		if(control.department_id == department_id)
 			return request_physical_repair(control, amount)
 	return FALSE
 
 /datum/generated_station_defense_runtime/proc/retreat_agent(datum/generated_station_defender_agent/agent)
-	if(!agent?.defender || QDELETED(agent.defender))
+	if(!agent?.defender() || QDELETED(agent.defender()))
 		return
-	var/turf/medical = department_turfs["medical-1"] || agent.home
-	agent.defender.ai_brain?.give_destination(medical)
-	agent.defender.ai_brain?.go_wake()
+	var/turf/medical = department_turfs["medical-1"] || agent.home()
+	agent.defender().ai_brain?.give_destination(medical)
+	agent.defender().ai_brain?.go_wake()
 	addtimer(CALLBACK(src, PROC_REF(heal_and_redeploy), om_handle(agent)), 5 SECONDS, TIMER_UNIQUE | TIMER_OVERRIDE)
 
 /datum/generated_station_defense_runtime/proc/heal_and_redeploy(agent_ref)
 	var/datum/generated_station_defender_agent/agent = om_resolve(agent_ref)
-	if(!agent?.defender || QDELETED(agent.defender))
+	if(!agent?.defender() || QDELETED(agent.defender()))
 		return
 	var/obj/item/stack/medical/medicine
 	var/area/medical_area = get_area(department_turfs["medical-1"])
@@ -285,19 +285,19 @@
 			medicine = candidate
 			break
 	if(!medicine || !medicine.use(1))
-		agent.defender.ai_brain?.go_sleep()
+		agent.defender().ai_brain?.go_sleep()
 		return
-	agent.defender.mend(TREAT_TISSUE_REPAIR, 30)
-	agent.defender.mend(TREAT_BURN_CARE, 30)
-	agent.defender.mend(TREAT_PLATING_REPAIR, 30)
-	agent.defender.mend(TREAT_WIRING_REPAIR, 30)
+	agent.defender().mend(TREAT_TISSUE_REPAIR, 30)
+	agent.defender().mend(TREAT_BURN_CARE, 30)
+	agent.defender().mend(TREAT_PLATING_REPAIR, 30)
+	agent.defender().mend(TREAT_WIRING_REPAIR, 30)
 	var/atom/contact = om_resolve(agent.last_contact)
 	if(isliving(contact))
 		var/mob/living/living_contact = contact
-		agent.defender.ai_brain?.give_target(living_contact, TRUE)
+		agent.defender().ai_brain?.give_target(living_contact, TRUE)
 	else
-		agent.defender.ai_brain?.give_destination(agent.home)
-	agent.defender.ai_brain?.go_wake()
+		agent.defender().ai_brain?.give_destination(agent.home())
+	agent.defender().ai_brain?.go_wake()
 
 /// Dispatches Engineering to a damaged physical object and consumes tangible
 /// repair material after revalidating the target at arrival.
@@ -308,9 +308,9 @@
 	if(!squad_id)
 		return FALSE
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.give_destination(get_turf(target))
-			agent.defender.ai_brain?.go_wake()
+		if(agent.squad_id == squad_id && agent.defender()?.stat < DEAD)
+			agent.defender().ai_brain?.give_destination(get_turf(target))
+			agent.defender().ai_brain?.go_wake()
 	addtimer(CALLBACK(src, PROC_REF(complete_physical_repair), om_handle(target), amount, squad_id), 5 SECONDS)
 	return TRUE
 
@@ -328,8 +328,8 @@
 		return
 	target.repair_damage(amount)
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.go_sleep()
+		if(agent.squad_id == squad_id && agent.defender()?.stat < DEAD)
+			agent.defender().ai_brain?.go_sleep()
 
 /// Moves an actual crate through a bounded delivery job.
 /datum/generated_station_defense_runtime/proc/request_logistics_delivery(obj/structure/closet/crate/crate, turf/destination)
@@ -339,9 +339,9 @@
 	if(!squad_id)
 		return FALSE
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.give_destination(get_turf(crate))
-			agent.defender.ai_brain?.go_wake()
+		if(agent.squad_id == squad_id && agent.defender()?.stat < DEAD)
+			agent.defender().ai_brain?.give_destination(get_turf(crate))
+			agent.defender().ai_brain?.go_wake()
 	addtimer(CALLBACK(src, PROC_REF(complete_logistics_delivery), om_handle(crate), om_handle(destination), squad_id), 5 SECONDS)
 	return TRUE
 
@@ -351,8 +351,8 @@
 	if(crate && destination && !QDELETED(crate) && !is_blocked_turf(destination))
 		crate.forceMove(destination)
 	for(var/datum/generated_station_defender_agent/agent in agents)
-		if(agent.squad_id == squad_id && agent.defender?.stat < DEAD)
-			agent.defender.ai_brain?.go_sleep()
+		if(agent.squad_id == squad_id && agent.defender()?.stat < DEAD)
+			agent.defender().ai_brain?.go_sleep()
 
 /datum/expedition_site
 	var/datum/generated_station_defense_runtime/station_defense
@@ -365,3 +365,19 @@
 	return TRUE
 
 REF_OWNED(/datum/expedition_site, "station_defense")
+
+/// LC-refs: the defender this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_defender_agent/proc/defender() as /mob/living/simple_mob
+	return om_resolve(defender_handle)
+
+/// LC-refs: the runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_defender_agent/proc/runtime() as /datum/generated_station_defense_runtime
+	return om_resolve(runtime_handle)
+
+/// LC-refs: the home this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_defender_agent/proc/home() as /turf
+	return om_resolve(home_handle)
+
+/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_defense_runtime/proc/site() as /datum/expedition_site
+	return om_resolve(site_handle)

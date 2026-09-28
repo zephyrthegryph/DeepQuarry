@@ -22,8 +22,8 @@
 // Changes current_page to its parent, assuming one exists.
 /datum/codex_tree/proc/go_to_parent(mob/user)
 	var/datum/lore/codex/D = current_page["[user]"]
-	if(istype(D) && D.parent)
-		current_page["[user]"] = D.parent
+	if(istype(D) && D.parent())
+		current_page["[user]"] = D.parent()
 
 // Changes current_page to a specific page or category.
 /datum/codex_tree/proc/go_to_page(datum/lore/codex/new_page, dont_record_history = FALSE, mob/user)
@@ -72,9 +72,9 @@
 	if(istype(checked))
 		var/output = ""
 		output = span_bold("[checked.name]")
-		while(checked.parent)
-			output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent]'>[checked.parent.name]</a> \> [output]"
-			checked = checked.parent
+		while(checked.parent())
+			output = "<a href='byond://?src=\ref[src];target=\ref[checked.parent()]'>[checked.parent().name]</a> \> [output]"
+			checked = checked.parent()
 		return output
 
 /datum/codex_tree/proc/make_search_bar()
@@ -135,7 +135,7 @@
 	var/list/H = history["[user]"]
 	if(LAZYLEN(H))
 		dat += "<br><a href='byond://?src=\ref[src];go_back=1'>\[Go Back\]</a>"
-	if(D.parent)
+	if(D.parent())
 		dat += "<br><a href='byond://?src=\ref[src];go_to_parent=1'>\[Go Up\]</a>"
 	if(D != home)
 		dat += "<br><a href='byond://?src=\ref[src];go_to_home=1'>\[Go To Home\]</a>"

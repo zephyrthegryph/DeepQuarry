@@ -14,14 +14,14 @@
 #define BREAKING   2
 #define CONTINUING 4
 /datum/n_Interpreter
-	var/datum/scope/curScope
+	var/curScope_handle
 	var/datum/scope/globalScope
 	var/datum/node/BlockDefinition/program
-	var/datum/node/statement/FunctionDefinition/curFunction
+	var/curFunction_handle
 	var/datum/stack/scopes	= new()
 	var/datum/stack/functions	= new()
 
-	var/datum/container // associated container for interpeter
+	var/container_handle	// associated container for interpeter
 /*
 	Var: status
 	A variable indicating that the rest of the current block should be skipped. This may be set to any combination of <Status Macros>.
@@ -70,13 +70,13 @@
 */
 /datum/n_Interpreter/proc/RaiseError(datum/runtimeError/e)
 	e.stack=functions.Copy()
-	e.stack.Push(curFunction)
+	e.stack.Push(curFunction())
 	src.HandleError(e)
 
 /datum/n_Interpreter/proc/CreateScope(datum/node/BlockDefinition/B)
-	var/datum/scope/S = new(B, curScope)
-	scopes.Push(curScope)
-	curScope = S
+	var/datum/scope/S = new(B, curScope())
+	scopes.Push(curScope())
+	curScope_handle = om_handle(S)
 	return S
 
 /datum/n_Interpreter/proc/CreateGlobalScope()
@@ -93,17 +93,17 @@ Runs each statement in a block of code.
 	var/is_global = istype(Block, /datum/node/BlockDefinition/GlobalBlock)
 	if(!is_global)
 		if(scope)
-			curScope = scope
+			curScope_handle = om_handle(scope)
 		else
 			CreateScope(Block)
 	else
 		if(!persist)
 			CreateGlobalScope()
-		curScope = globalScope
+		curScope_handle = om_handle(globalScope)
 
 	RunStatements(Block, 1)
 
-	curScope = scopes.Pop()
+	curScope_handle = om_handle(scopes.Pop())
 
 /// The script's sleep(time): suspends the run after the current statement (see <yield_for>).
 /datum/n_Interpreter/proc/script_sleep(time)
@@ -124,10 +124,10 @@ Runs each statement in a block of code.
 		resume_frames.len--
 		switch(frame[1])
 			if("block")
-				scopes.Push(curScope)
-				curScope = frame[4]
+				scopes.Push(curScope())
+				curScope_handle = om_handle(frame[4])
 				RunStatements(frame[2], frame[3])
-				curScope = scopes.Pop()
+				curScope_handle = om_handle(scopes.Pop())
 			if("while")
 				RunWhile(frame[2], frame[3], frame[3] - 1)
 			if("func")
@@ -147,16 +147,16 @@ Runs each statement in a block of code.
 		for(var/i in index to length(Block.statements))
 			var/datum/node/statement/S = Block.statements[i]
 			if(!isnull(yield_for))
-				PushResume(list("block", Block, i, curScope))
+				PushResume(list("block", Block, i, curScope()))
 				return
 
 			cur_statements++
 			if(cur_statements >= max_statements)
 				RaiseError(new/datum/runtimeError/MaxCPU())
 
-				if(container && !alertadmins)
-					if(istype(container, /datum/TCS_Compiler))
-						var/datum/TCS_Compiler/Compiler = container
+				if(container() && !alertadmins)
+					if(istype(container(), /datum/TCS_Compiler))
+						var/datum/TCS_Compiler/Compiler = container()
 						var/obj/machinery/telecomms/server/Holder = Compiler.Holder
 						var/message = "Potential crash-inducing NTSL script detected at telecommunications server [Compiler.Holder] ([Holder.x], [Holder.y], [Holder.z])."
 
@@ -182,11 +182,11 @@ Runs each statement in a block of code.
 				//VariableDeclaration nodes are used to forcibly declare a local variable so that one in a higher scope isn't used by default.
 				var/datum/node/statement/VariableDeclaration/dec=S
 				if(!dec.object)
-					AssignVariable(dec.var_name.id_name, null, curScope)
+					AssignVariable(dec.var_name().id_name, null, curScope())
 				else
 					var/datum/D = Eval(GetVariable(dec.object.id_name))
 					if(!D) return
-					D.vars[dec.var_name.id_name] = null
+					D.vars[dec.var_name().id_name] = null
 			else if(istype(S, /datum/node/statement/FunctionCall))
 				RunFunction(S)
 			else if(istype(S, /datum/node/statement/FunctionDefinition))
@@ -196,7 +196,7 @@ Runs each statement in a block of code.
 			else if(istype(S, /datum/node/statement/IfStatement))
 				RunIf(S)
 			else if(istype(S, /datum/node/statement/ReturnStatement))
-				if(!curFunction)
+				if(!curFunction())
 					RaiseError(new/datum/runtimeError/UnexpectedReturn())
 					continue
 				status |= RETURNING
@@ -211,7 +211,7 @@ Runs each statement in a block of code.
 			else
 				RaiseError(new/datum/runtimeError/UnknownInstruction())
 			if(!isnull(yield_for))
-				PushResume(list("block", Block, i + 1, curScope))
+				PushResume(list("block", Block, i + 1, curScope()))
 				return
 			if(status)
 				break
@@ -240,7 +240,7 @@ Runs a function block or a proc with the arguments specified in the script.
 
 	cur_recursion++ // add recursion
 	if(istype(def))
-		if(curFunction) functions.Push(curFunction)
+		if(curFunction()) functions.Push(curFunction())
 		var/datum/scope/S = CreateScope(def.block)
 		for(var/i=1 to def.parameters.len)
 			var/val
@@ -249,7 +249,7 @@ Runs a function block or a proc with the arguments specified in the script.
 			//else
 			//	unspecified param
 			AssignVariable(def.parameters[i], new/datum/node/expression/value/literal(Eval(val)), S)
-		curFunction=stmt
+		curFunction_handle=om_handle(stmt)
 		RunBlock(def.block, S)
 		if(!isnull(yield_for))
 			PushResume(list("func")) // the return handling runs when the run resumes
@@ -286,7 +286,7 @@ Checks a condition and runs either the if block or else block.
 /datum/n_Interpreter/proc/FinishFunction()
 	status &= ~RETURNING
 	returnVal=null
-	curFunction=functions.Pop()
+	curFunction_handle=om_handle(functions.Pop())
 	cur_recursion--
 
 /*
@@ -328,11 +328,11 @@ Proc: GetFunction
 Finds a function in an accessible scope with the given name. Returns a <FunctionDefinition>.
 */
 /datum/n_Interpreter/proc/GetFunction(name)
-	var/datum/scope/S = curScope
+	var/datum/scope/S = curScope()
 	while(S)
 		if(S.functions.Find(name))
 			return S.functions[name]
-		S = S.parent
+		S = S.parent()
 	RaiseError(new/datum/runtimeError/UndefinedFunction(name))
 
 /*
@@ -340,27 +340,27 @@ Proc: GetVariable
 Finds a variable in an accessible scope and returns its value.
 */
 /datum/n_Interpreter/proc/GetVariable(name)
-	var/datum/scope/S = curScope
+	var/datum/scope/S = curScope()
 	while(S)
 		if(S.variables.Find(name))
 			return S.variables[name]
-		S = S.parent
+		S = S.parent()
 	RaiseError(new/datum/runtimeError/UndefinedVariable(name))
 
 /datum/n_Interpreter/proc/GetVariableScope(name) //needed for when you reassign a variable in a higher scope
-	var/datum/scope/S = curScope
+	var/datum/scope/S = curScope()
 	while(S)
 		if(S.variables.Find(name))
 			return S
-		S = S.parent
+		S = S.parent()
 
 
 /datum/n_Interpreter/proc/IsVariableAccessible(name)
-	var/datum/scope/S = curScope
+	var/datum/scope/S = curScope()
 	while(S)
 		if(S.variables.Find(name))
 			return TRUE
-		S = S.parent
+		S = S.parent()
 	return FALSE
 
 
@@ -375,7 +375,7 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 */
 /datum/n_Interpreter/proc/AssignVariable(name, datum/node/expression/value, datum/scope/S=null)
 	if(!S) S = GetVariableScope(name)
-	if(!S) S = curScope
+	if(!S) S = curScope()
 	if(!S) S = globalScope
 	ASSERT(istype(S))
 	if(istext(value) || isnum(value) || isnull(value))	value = new/datum/node/expression/value/literal(value)
@@ -388,3 +388,15 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 #undef CONTINUING
 
 REF_OWNED(/datum/n_Interpreter, list("scopes", "functions", "globalScope", "program"))
+
+/// LC-refs: the curFunction this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Interpreter/proc/curFunction() as /datum/node/statement/FunctionDefinition
+	return om_resolve(curFunction_handle)
+
+/// LC-refs: associated container for interpeter -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Interpreter/proc/container() as /datum
+	return om_resolve(container_handle)
+
+/// LC-refs: the curScope this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Interpreter/proc/curScope() as /datum/scope
+	return om_resolve(curScope_handle)

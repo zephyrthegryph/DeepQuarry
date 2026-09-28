@@ -1,5 +1,5 @@
 /client/var/datum/ticket/current_ticket	//the current ticket the (usually) not-admin client is dealing with
-/client/var/datum/ticket/selected_ticket //the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
+/client/var/selected_ticket_handle	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
 
 /proc/get_ahelp_channel()
 	var/datum/tgs_api/v5/api = TGS_READ_GLOBAL(tgs)
@@ -622,18 +622,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 //
 
 /obj/effect/statclick/ticket
-	var/datum/ticket/ticket_datum
+	var/ticket_datum_handle
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
-	ticket_datum = T
+	ticket_datum_handle = om_handle(T)
 	. = ..()
 
 /obj/effect/statclick/ticket/update()
-	return ..(ticket_datum.name)
+	return ..(ticket_datum().name)
 
 /obj/effect/statclick/ticket/Click()
-	ticket_datum.TicketPanel()
+	ticket_datum().TicketPanel()
 
 //
 // LOGGING
@@ -752,3 +752,11 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	return msg
 
 REF_OWNED(/datum/ticket, "statclick")
+
+/// LC-refs: the ticket_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/statclick/ticket/proc/ticket_datum() as /datum/ticket
+	return om_resolve(ticket_datum_handle)
+
+/// LC-refs: the current ticket being viewed in the Tickets Panel (usually) admin/mentor client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/client/proc/selected_ticket() as /datum/ticket
+	return om_resolve(selected_ticket_handle)

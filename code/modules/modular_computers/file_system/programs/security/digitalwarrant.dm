@@ -25,7 +25,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	tgui_id = "NtosDigitalWarrant"
 	category = PROG_SEC
 
-	var/datum/data/record/warrant/activewarrant
+	var/activewarrant_handle
 
 /datum/computer_file/program/digitalwarrant/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
@@ -35,11 +35,11 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	data["warrantauth"] = null
 	data["type"] = null
 
-	if(activewarrant)
-		data["warrantname"] = activewarrant.fields["namewarrant"]
-		data["warrantcharges"] = activewarrant.fields["charges"]
-		data["warrantauth"] = activewarrant.fields["auth"]
-		data["type"] = activewarrant.fields["arrestsearch"]
+	if(activewarrant())
+		data["warrantname"] = activewarrant().fields["namewarrant"]
+		data["warrantcharges"] = activewarrant().fields["charges"]
+		data["warrantauth"] = activewarrant().fields["auth"]
+		data["type"] = activewarrant().fields["arrestsearch"]
 
 	var/list/allwarrants = list()
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
@@ -61,13 +61,13 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	switch(action)
 		if("back")
 			. = TRUE
-			activewarrant = null
+			activewarrant_handle = null
 
 		if("editwarrant")
 			. = TRUE
 			for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 				if(W.warrant_id == text2num(params["id"]))
-					activewarrant = W
+					activewarrant_handle = om_handle(W)
 					break
 
 	// The following actions will only be possible if the user has an ID with security access equipped. This is in line with modular computer framework's authentication methods,
@@ -96,17 +96,17 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 					W.fields["charges"] = "No reason given"
 					W.fields["auth"] = "Unauthorized"
 					W.fields["arrestsearch"] = "search"
-				activewarrant = W
+				activewarrant_handle = om_handle(W)
 
 		if("savewarrant")
 			. = TRUE
-			LAZYOR(GLOB.data_core.warrants, activewarrant)
-			activewarrant = null
+			LAZYOR(GLOB.data_core.warrants, activewarrant())
+			activewarrant_handle = null
 
 		if("deletewarrant")
 			. = TRUE
-			LAZYREMOVE(GLOB.data_core.warrants, activewarrant)
-			activewarrant = null
+			LAZYREMOVE(GLOB.data_core.warrants, activewarrant())
+			activewarrant_handle = null
 
 		if("editwarrantname")
 			. = TRUE
@@ -117,7 +117,7 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				if (!new_name)
 					return
-				activewarrant.fields["namewarrant"] = new_name
+				activewarrant().fields["namewarrant"] = new_name
 
 		if("editwarrantnamecustom")
 			. = TRUE
@@ -125,23 +125,27 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
 				if (!new_name)
 					return
-				activewarrant.fields["namewarrant"] = new_name
+				activewarrant().fields["namewarrant"] = new_name
 
 		if("editwarrantcharges")
 			. = TRUE
-			if(!activewarrant)
+			if(!activewarrant())
 				return
-			var/new_charges = tgui_input_text(ui.user, "Please input charges", "Charges", activewarrant.fields["charges"], max_length = MAX_MESSAGE_LEN)
+			var/new_charges = tgui_input_text(ui.user, "Please input charges", "Charges", activewarrant().fields["charges"], max_length = MAX_MESSAGE_LEN)
 			if(tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-				if (!new_charges || !activewarrant)
+				if (!new_charges || !activewarrant())
 					return
-				activewarrant.fields["charges"] = new_charges
+				activewarrant().fields["charges"] = new_charges
 
 		if("editwarrantauth")
 			. = TRUE
-			if(!activewarrant)
+			if(!activewarrant())
 				return
 			if(!(ACCESS_HOS in I.GetAccess())) // begin
 				to_chat(ui.user, span_warning("You don't have the access to do this!"))
 				return // end
-			activewarrant.fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
+			activewarrant().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
+
+/// LC-refs: the activewarrant this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/program/digitalwarrant/proc/activewarrant() as /datum/data/record/warrant
+	return om_resolve(activewarrant_handle)

@@ -10,7 +10,7 @@
 	var/receipt_num
 	var/machine_id = ""
 	var/obj/item/card/id/held_card
-	var/datum/money_account/detailed_account_view
+	var/detailed_account_view_handle
 	var/creating_new_account = 0
 	var/const/fund_cap = 1000000
 	circuit = /obj/item/circuitboard/account_console
@@ -102,7 +102,7 @@
 	data["access_level"] = get_access_level()
 	data["machine_id"] = machine_id
 	data["creating_new_account"] = creating_new_account
-	data["detailed_account_view"] = !!detailed_account_view
+	data["detailed_account_view"] = !!detailed_account_view()
 	data["station_account_number"] = GLOB.station_account.account_number
 
 	data["account_number"] = null
@@ -111,14 +111,14 @@
 	data["suspended"] = null
 	data["transactions"] = list()
 
-	if(detailed_account_view)
-		data["account_number"] = detailed_account_view.account_number
-		data["owner_name"] = detailed_account_view.owner_name
-		data["money"] = detailed_account_view.money
-		data["suspended"] = detailed_account_view.suspended
+	if(detailed_account_view())
+		data["account_number"] = detailed_account_view().account_number
+		data["owner_name"] = detailed_account_view().owner_name
+		data["money"] = detailed_account_view().money
+		data["suspended"] = detailed_account_view().suspended
 
 		var/list/trx[0]
-		for (var/datum/transaction/T in detailed_account_view.transaction_log)
+		for (var/datum/transaction/T in detailed_account_view().transaction_log)
 			trx.Add(list(list(\
 				"date" = T.date, \
 				"time" = T.time, \
@@ -159,23 +159,23 @@
 			if(access_level < 2)
 				return FALSE
 			var/amount = tgui_input_number(ui.user, "Enter the amount you wish to add", "Silently add funds")
-			if(detailed_account_view && isnum(amount) && amount > 0)
-				var/allowed_amount = min(amount, fund_cap - detailed_account_view.money)
-				detailed_account_view.credit(allowed_amount, ui.user.real_name, "Authorized account adjustment", machine_id)
+			if(detailed_account_view() && isnum(amount) && amount > 0)
+				var/allowed_amount = min(amount, fund_cap - detailed_account_view().money)
+				detailed_account_view().credit(allowed_amount, ui.user.real_name, "Authorized account adjustment", machine_id)
 
 		if("remove_funds")
 			if(access_level < 2)
 				return FALSE
 			var/amount = tgui_input_number(ui.user, "Enter the amount you wish to remove", "Silently remove funds")
-			if(detailed_account_view && isnum(amount) && amount > 0)
-				detailed_account_view.debit(min(amount, detailed_account_view.money), ui.user.real_name, "Authorized account adjustment", machine_id)
+			if(detailed_account_view() && isnum(amount) && amount > 0)
+				detailed_account_view().debit(min(amount, detailed_account_view().money), ui.user.real_name, "Authorized account adjustment", machine_id)
 
 		if("toggle_suspension")
 			if(access_level < 2)
 				return FALSE
-			if(detailed_account_view)
-				detailed_account_view.suspended = !detailed_account_view.suspended
-				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS, detailed_account_view)
+			if(detailed_account_view())
+				detailed_account_view().suspended = !detailed_account_view().suspended
+				SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS, detailed_account_view())
 
 		if("finalise_create_account")
 			var/account_name = params["holder_name"]
@@ -208,18 +208,18 @@
 		if("view_account_detail")
 			var/index = text2num(params["account_index"])
 			if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-				detailed_account_view = REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index]
+				detailed_account_view_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
 
 		if("view_accounts_list")
-			detailed_account_view = null
+			detailed_account_view_handle = null
 			creating_new_account = 0
 
 		if("revoke_payroll")
-			if(access_level < 2 || !detailed_account_view || detailed_account_view.is_budget_account)
+			if(access_level < 2 || !detailed_account_view() || detailed_account_view().is_budget_account)
 				return FALSE
-			var/funds = detailed_account_view.money
+			var/funds = detailed_account_view().money
 			if(funds > 0)
-				transfer_account_funds(detailed_account_view, GLOB.station_account, funds, "Revoke payroll", machine_id)
+				transfer_account_funds(detailed_account_view(), GLOB.station_account, funds, "Revoke payroll", machine_id)
 
 
 		if("print")
@@ -230,15 +230,15 @@
 /obj/machinery/account_database/proc/print()
 	var/text
 	var/obj/item/paper/P = new(loc)
-	if(detailed_account_view)
-		P.name = "account #[detailed_account_view.account_number] details"
-		var/title = "Account #[detailed_account_view.account_number] Details"
+	if(detailed_account_view())
+		P.name = "account #[detailed_account_view().account_number] details"
+		var/title = "Account #[detailed_account_view().account_number] Details"
 		text = {"
 			[accounting_letterhead(title)]
-			<u>Holder:</u> [detailed_account_view.owner_name]<br>
-			<u>Balance:</u> $[detailed_account_view.money]<br>
-			<u>Status:</u> [detailed_account_view.suspended ? "Suspended" : "Active"]<br>
-			<u>Transactions:</u> ([length(detailed_account_view.transaction_log)])<br>
+			<u>Holder:</u> [detailed_account_view().owner_name]<br>
+			<u>Balance:</u> $[detailed_account_view().money]<br>
+			<u>Status:</u> [detailed_account_view().suspended ? "Suspended" : "Active"]<br>
+			<u>Transactions:</u> ([length(detailed_account_view().transaction_log)])<br>
 			<table>
 				<thead>
 					<tr>
@@ -252,7 +252,7 @@
 				<tbody>
 			"}
 
-		for (var/datum/transaction/T in detailed_account_view.transaction_log)
+		for (var/datum/transaction/T in detailed_account_view().transaction_log)
 			text += {"
 						<tr>
 							<td>[T.date] [T.time]</td>
@@ -305,3 +305,7 @@
 	state("The terminal prints out a report.")
 
 REF_HELD(/obj/machinery/account_database, "held_card")
+
+/// LC-refs: the detailed_account_view this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account
+	return om_resolve(detailed_account_view_handle)

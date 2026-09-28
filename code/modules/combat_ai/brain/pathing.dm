@@ -12,7 +12,7 @@
 	/// Cached A* path. List of turfs from current position to path_goal.
 	var/list/cached_path = null
 	/// Turf the cached path was computed to. Recomputed when target moves far.
-	var/turf/path_goal = null
+	var/path_goal_handle
 	/// Consecutive failed step attempts. After 3 we recompute.
 	var/failed_steps = 0
 	/// How far the goal can drift before recompute. Keeps us from recomputing
@@ -22,7 +22,7 @@
 
 /datum/ai_brain/proc/clear_path()
 	cached_path = null
-	path_goal = null
+	path_goal_handle = null
 	failed_steps = 0
 
 /proc/dq_pathfind(mob/living/actor, turf/goal, min_dist = 1, max_path = 128)
@@ -48,7 +48,7 @@
 
 	// Recompute if no cached path, goal moved too far, or we keep failing.
 	var/need_recompute = !length(cached_path)
-	if(!need_recompute && path_goal && get_dist(path_goal, target_turf) > path_recompute_tolerance)
+	if(!need_recompute && path_goal() && get_dist(path_goal(), target_turf) > path_recompute_tolerance)
 		need_recompute = TRUE
 	if(!need_recompute && failed_steps >= 3)
 		need_recompute = TRUE
@@ -56,7 +56,7 @@
 		need_recompute = TRUE
 	if(need_recompute)
 		cached_path = dq_pathfind(holder, target_turf, get_to)
-		path_goal = target_turf
+		path_goal_handle = om_handle(target_turf)
 		path_navigation_revision = SSai.navigation_revision
 		failed_steps = 0
 		if(!length(cached_path))
@@ -83,3 +83,7 @@
 		return TRUE
 	failed_steps++
 	return FALSE
+
+/// LC-refs: the path_goal this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ai_brain/proc/path_goal() as /turf
+	return om_resolve(path_goal_handle)

@@ -37,7 +37,7 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 	// Stuff for moving cameras
-	var/turf/last_camera_turf
+	var/last_camera_turf_handle
 
 	var/list/valid_earstyles
 	var/list/valid_tailstyles
@@ -102,7 +102,7 @@
 		UnregisterSignal(owner, COMSIG_MOVABLE_ATTEMPTED_MOVE)
 		SEND_SIGNAL(owner, COMSIG_HUMAN_DNA_FINALIZED) // Update any components using our saved appearance
 		owner = null
-		last_camera_turf = null
+		last_camera_turf_handle = null
 		cut_data()
 
 REF_OWNED(/datum/tgui_module/appearance_changer, list("cam_screen", "cam_background", "local_skybox"))
@@ -758,8 +758,8 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 		if(!DC.selected_record)
 			// Load all records on station that can be printed
 			var/list/bodyrecords_list_ui = list()
-			for(var/N in DC.our_db.body_scans)
-				var/datum/transhuman/body_record/BR = DC.our_db.body_scans[N]
+			for(var/N in DC.our_db().body_scans)
+				var/datum/transhuman/body_record/BR = DC.our_db().body_scans[N]
 				var/datum/species/S = GLOB.all_species[BR.mydna.dna.species]
 				if((S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) != SPECIES_CAN_JOIN || BR.synthetic) continue
 				bodyrecords_list_ui[++bodyrecords_list_ui.len] = list("name" = N, "recref" = "\ref[BR]")
@@ -1171,3 +1171,7 @@ REF_OWNED_LIST(/datum/tgui_module/appearance_changer, "cam_plane_masters")
 	. = ..()
 	if(!QDELETED(src))
 		qdel(src)
+
+/// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/appearance_changer/proc/last_camera_turf() as /turf
+	return om_resolve(last_camera_turf_handle)

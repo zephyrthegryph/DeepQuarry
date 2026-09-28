@@ -12,8 +12,8 @@
 	var/frequency = RSD_FREQ
 	var/delay = 0
 	var/airlock_wire = null
-	var/datum/wires/connected = null
-	var/datum/radio_frequency/radio_connection
+	var/connected_handle
+	var/radio_connection_handle
 	var/deadman = FALSE
 
 /obj/item/assembly/signaler/Initialize(mapload)
@@ -83,7 +83,7 @@
 /obj/item/assembly/signaler/proc/signal()
 	if(!COOLDOWN_FINISHED(src, next_activate))
 		return FALSE
-	if(!radio_connection)
+	if(!radio_connection())
 		return
 	if(is_jammed(src))
 		return
@@ -92,14 +92,14 @@
 	signal.source_handle = om_handle(src)
 	signal.encryption = code
 	signal.data["message"] = "ACTIVATE"
-	radio_connection.post_signal(src, signal)
+	radio_connection().post_signal(src, signal)
 	COOLDOWN_START(src, next_activate, activation_cooldown)
 
 /obj/item/assembly/signaler/pulse(radio = 0)
 	if(is_jammed(src))
 		return FALSE
-	if(connected && wires)
-		connected.pulse_assembly(src)
+	if(connected() && wires)
+		connected().pulse_assembly(src)
 	else if(holder)
 		holder.process_activation(src, 1, 0)
 	else
@@ -140,7 +140,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
 	if(!deadman)
@@ -164,3 +164,11 @@
 	usr.visible_message("<font color='red'>[usr] moves their finger over [src]'s signal button...</font>")
 // end
 
+
+/// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/assembly/signaler/proc/connected() as /datum/wires
+	return om_resolve(connected_handle)
+
+/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/assembly/signaler/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

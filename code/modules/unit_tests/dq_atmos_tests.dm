@@ -4131,8 +4131,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/binary/circulator/second = new(test_turf)
 	var/obj/machinery/power/generator/G = new(test_turf)
 	G.anchored = TRUE
-	G.circ1 = first
-	G.circ2 = second
+	G.circ1_handle = om_handle(first)
+	G.circ2_handle = om_handle(second)
 	G.stat = 0
 	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "idle thermoelectric generator retained timed polling")
 	TEST_ASSERT(om_watch_armed(G), "idle thermoelectric generator did not subscribe to its circulator gases")

@@ -44,7 +44,7 @@
 	var/sound_cooldown = 10 SECONDS // add
 
 	/// Vis contents overlay holding the ship's vector when in motion
-	var/obj/effect/overlay/vis/vector
+	var/vector_handle
 	/// Stable registry key used by the unified flight-operations system.
 	var/flight_vessel_id
 	render_map = TRUE
@@ -56,8 +56,8 @@
 	SSshuttles.ships += src
 	position_x = 0
 	position_y = 0
-	vector = add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE)
-	vector.vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
+	vector_handle = om_handle(add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
+	vector().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	SSflight_operations?.register_vessel(src)
 
@@ -65,7 +65,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 
 // LIFECYCLE: leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/Destroy()
-	remove_vis_overlay(vector)
+	remove_vis_overlay(vector())
 	SSshuttles.ships -= src
 	if(SSflight_operations && flight_vessel_id)
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[flight_vessel_id]
@@ -206,11 +206,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 	if(!is_still())
 		var/heading = get_heading_degrees()
 		dir = angle2dir(round(heading, 90))
-		vector.dir = NORTH
-		vector.transform = matrix().Turn(heading)
+		vector().dir = NORTH
+		vector().transform = matrix().Turn(heading)
 	else
 		dir = NORTH
-		vector.dir = SOUTH
+		vector().dir = SOUTH
 	..()
 
 /obj/effect/overmap/visitable/ship/set_dir(new_dir)
@@ -320,3 +320,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 	var/list/listeners = get_people_in_ship()
 	for(var/mob/M as anything in listeners)
 		M.show_message(message, m_type)
+
+/// LC-refs: the vector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/overmap/visitable/ship/proc/vector() as /obj/effect/overlay/vis
+	return om_resolve(vector_handle)

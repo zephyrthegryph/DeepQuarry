@@ -21,7 +21,7 @@
 	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
-	var/atom/last_target
+	var/last_target_handle
 	var/datum/tgui_window/tooltip_window
 	// State that gets pushed to the React side. When `_visible` is
 	// FALSE the React component renders nothing; otherwise it
@@ -55,7 +55,7 @@
 	return ..()
 
 /datum/tooltip/Destroy(force)
-	last_target = null
+	last_target_handle = null
 	owner = null
 	return ..()
 
@@ -84,10 +84,10 @@
 	if(!isnum(world.icon_size))
 		return FALSE
 
-	if(!isnull(last_target))
-		UnregisterSignal(last_target, COMSIG_QDELETING)
+	if(!isnull(last_target()))
+		UnregisterSignal(last_target(), COMSIG_QDELETING)
 	RegisterSignal(thing, COMSIG_QDELETING, PROC_REF(on_target_qdel))
-	last_target = thing
+	last_target_handle = om_handle(thing)
 	_revision++
 	queueHide = FALSE
 
@@ -152,7 +152,7 @@
 /datum/tooltip/proc/on_target_qdel()
 	SIGNAL_HANDLER
 	INVOKE_ASYNC(src, PROC_REF(hide))
-	last_target = null
+	last_target_handle = null
 
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
@@ -161,9 +161,9 @@
 	queueHide = FALSE
 	if(!owner)
 		return
-	if(last_target)
-		UnregisterSignal(last_target, COMSIG_QDELETING)
-	last_target = null
+	if(last_target())
+		UnregisterSignal(last_target(), COMSIG_QDELETING)
+	last_target_handle = null
 	_visible = FALSE
 	SStgui.update_uis(src)
 
@@ -202,3 +202,7 @@
 	user.client.tooltips.hide(tip_src)
 
 REF_OWNED(/datum/tooltip, "tooltip_window")
+
+/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tooltip/proc/last_target() as /atom
+	return om_resolve(last_target_handle)

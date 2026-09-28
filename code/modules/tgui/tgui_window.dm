@@ -17,7 +17,7 @@
 	/// Monotonic token identifying the current use of this reusable shell.
 	var/generation = 0
 	/// Immutable shell/manifest/chunk publication loaded by this browser window.
-	var/datum/tgui_asset_generation/asset_generation
+	var/asset_generation_handle
 	/// TRUE when this pooled shell was cloned from the hidden native skin template.
 	var/native_shell = FALSE
 	/// TRUE when acquire_lock applied a generated or previously observed size while hidden.
@@ -28,7 +28,7 @@
 	/// Rate limit for automatic local-development browser telemetry.
 	var/last_perf_log_at = 0
 	var/datum/tgui/locked_by
-	var/datum/subscriber_object
+	var/subscriber_object_handle
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
 	var/message_queue
@@ -85,7 +85,7 @@
 	#endif
 	if(!client)
 		return
-	asset_generation = SStgui.get_current_asset_generation()
+	asset_generation_handle = om_handle(SStgui.get_current_asset_generation())
 	var/list/resolved_assets = list()
 	var/include_tgui_shell = FALSE
 	for(var/datum/asset/asset in assets)
@@ -93,8 +93,8 @@
 			include_tgui_shell = TRUE
 			continue
 		resolved_assets += asset
-	if(include_tgui_shell && asset_generation?.shell_assets())
-		resolved_assets += asset_generation.shell_assets()
+	if(include_tgui_shell && asset_generation()?.shell_assets())
+		resolved_assets += asset_generation().shell_assets()
 	src.initial_fancy = fancy
 	src.initial_assets = resolved_assets
 	src.initial_inline_html = inline_html
@@ -130,7 +130,7 @@
 	// Scoped to pooled windows only — dedicated windows (lobby, media, tooltip)
 	// manage their own visibility and are left alone.
 	// Generate page html
-	var/html = asset_generation?.basehtml || SStgui.basehtml
+	var/html = asset_generation()?.basehtml || SStgui.basehtml
 	html = replacetextEx(html, "\[tgui:windowId]", id)
 	html = replacetextEx(html, "\[tgui:strictMode]", strict_mode)
 	// Inject assets
@@ -283,7 +283,7 @@
  * to support multiple subscribers.
  */
 /datum/tgui_window/proc/subscribe(datum/object, delegate)
-	subscriber_object = object
+	subscriber_object_handle = om_handle(object)
 	subscriber_delegate = delegate
 
 /**
@@ -292,7 +292,7 @@
  * Unsubscribes the datum. Do not forget to call this when cleaning up.
  */
 /datum/tgui_window/proc/unsubscribe(datum/object)
-	subscriber_object = null
+	subscriber_object_handle = null
 	subscriber_delegate = null
 
 /**
@@ -457,12 +457,12 @@
 		status = TGUI_WINDOW_READY
 		flush_message_queue()
 	if(type == "ready" && !client.tgui_chunk_warm_started)
-		var/chunk_base_url = asset_generation?.get_chunk_base_url()
-		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation?.chunk_files))
+		var/chunk_base_url = asset_generation()?.get_chunk_base_url()
+		if((findtext(chunk_base_url, "http://") == 1 || findtext(chunk_base_url, "https://") == 1) && length(asset_generation()?.chunk_files))
 			client.tgui_chunk_warm_started = TRUE
 			send_message("chunk/warm", list(
 				"url" = chunk_base_url,
-				"files" = asset_generation.chunk_files,
+				"files" = asset_generation().chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
 		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))
@@ -472,9 +472,9 @@
 		if(prevent_default)
 			return
 	// Pass message to the subscriber
-	else if(subscriber_object)
+	else if(subscriber_object())
 		var/prevent_default = call(
-			subscriber_object,
+			subscriber_object(),
 			subscriber_delegate)(type, payload, href_list)
 		if(prevent_default)
 			return
@@ -586,3 +586,11 @@
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)
+
+/// LC-refs: the asset_generation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/asset_generation() as /datum/tgui_asset_generation
+	return om_resolve(asset_generation_handle)
+
+/// LC-refs: the subscriber_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/subscriber_object() as /datum
+	return om_resolve(subscriber_object_handle)

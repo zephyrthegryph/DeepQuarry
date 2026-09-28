@@ -28,7 +28,7 @@
 	var/vend_ready = 1 //Are we ready to vend?? Is it time??
 	var/vend_delay = 10 //How long does it take to vend?
 	var/categories = CAT_NORMAL // Bitmask of cats we're currently showing
-	var/datum/stored_item/vending_product/currently_vending = null // What we're requesting payment for right now
+	var/currently_vending_handle	// What we're requesting payment for right now
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	/*
@@ -337,7 +337,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
  *  user is the mob who gets the change.
  */
 /obj/machinery/vending/proc/pay_with_cash(obj/item/spacecash/cashmoney, mob/user)
-	if(currently_vending.price > cashmoney.worth)
+	if(currently_vending().price > cashmoney.worth)
 
 		// This is not a status display message, since it's something the character
 		// themselves is meant to see BEFORE putting the money in
@@ -347,7 +347,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	if(istype(cashmoney, /obj/item/spacecash))
 
 		visible_message(span_info("\The [user] inserts some cash into \the [src]."))
-		cashmoney.worth -= currently_vending.price
+		cashmoney.worth -= currently_vending().price
 
 		if(cashmoney.worth <= 0)
 			consume(cashmoney, user)
@@ -367,11 +367,11 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 /obj/machinery/vending/proc/pay_with_ewallet(obj/item/spacecash/ewallet/wallet, mob/user)
 	visible_message(span_info("\The [user] swipes \the [wallet] through \the [src]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
-	if(currently_vending.price > wallet.worth)
+	if(currently_vending().price > wallet.worth)
 		to_chat(user, span_warning("Insufficient funds on chargecard."))
 		return 0
 	else
-		wallet.worth -= currently_vending.price
+		wallet.worth -= currently_vending().price
 		credit_purchase("[wallet.owner_name] (chargecard)")
 		return 1
 
@@ -384,7 +384,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 /obj/machinery/vending/proc/pay_with_card(obj/item/card/id/I, mob/M)
 	visible_message(span_info("[M] swipes a card through [src]."))
 	playsound(src, 'sound/machines/id_swipe.ogg', 50, 1)
-	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending.item_name]", currently_vending.price, GLOB.vendor_account))
+	if(!purchase_with_id_card(I, M, GLOB.vendor_account.owner_name, name, "Purchase of [currently_vending().item_name]", currently_vending().price, GLOB.vendor_account))
 		return FALSE
 	return 1
 
@@ -394,7 +394,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
  *  Called after the money has already been taken from the customer.
  */
 /obj/machinery/vending/proc/credit_purchase(target as text)
-	GLOB.vendor_account.credit(currently_vending.price, target, "Purchase of [currently_vending.item_name]", name)
+	GLOB.vendor_account.credit(currently_vending().price, target, "Purchase of [currently_vending().item_name]", name)
 
 /obj/machinery/vending/attack_ghost(mob/user)
 	return attack_hand(user)
@@ -457,8 +457,8 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	else
 		data["coin"] = FALSE
 
-	if(currently_vending)
-		data["actively_vending"] = currently_vending.item_name
+	if(currently_vending())
+		data["actively_vending"] = currently_vending().item_name
 	else
 		data["actively_vending"] = null
 
@@ -564,7 +564,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 				vend_ready = TRUE
 				return
 
-			currently_vending = R
+			currently_vending_handle = om_handle(R)
 
 			var/paid = FALSE
 
@@ -585,7 +585,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 				flick("[icon_state]-deny",src)
 				return TRUE // we set this because they shouldn't even be able to get this far, and we want the UI to update.
 			if(paid)
-				vend(currently_vending, ui.user) // vend will handle vend_ready
+				vend(currently_vending(), ui.user) // vend will handle vend_ready
 				. = TRUE
 			else
 				to_chat(ui.user, span_warning("Payment failure: unable to process payment."))
@@ -656,7 +656,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
 		vend_ready = 1
-		currently_vending = null
+		currently_vending_handle = null
 		SStgui.update_uis(src)
 		return
 	R.get_product(get_turf(src))
@@ -669,7 +669,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	GLOB.items_sold_shift_roundstat++
 
 	vend_ready = 1
-	currently_vending = null
+	currently_vending_handle = null
 	SStgui.update_uis(src)
 
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)
@@ -809,3 +809,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/vending/step_start_condition()
 	return active && !shut_up && length(slogan_list)
+
+/// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product
+	return om_resolve(currently_vending_handle)

@@ -243,7 +243,7 @@ SUBSYSTEM_DEF(tgui)
 		var/datum/tgui/ui = current_run[length(current_run)]
 		current_run.len--
 		// TODO: Move user/src_object check to process()
-		if(ui?.user && ui.src_object)
+		if(ui?.user && ui.src_object())
 			ui.process(wait * 0.1)
 		else
 			ui.close(0)
@@ -278,7 +278,7 @@ SUBSYSTEM_DEF(tgui)
 			continue
 		// An idle shell from an older publication must not be reused with the new
 		// manifest. Mark it for a fresh browse() initialization on acquisition.
-		if(window.status == TGUI_WINDOW_READY && window.asset_generation != get_current_asset_generation())
+		if(window.status == TGUI_WINDOW_READY && window.asset_generation() != get_current_asset_generation())
 			window.status = TGUI_WINDOW_CLOSED
 		if(window.status == TGUI_WINDOW_READY)
 			addtimer(CALLBACK(src, PROC_REF(maintain_client_prewarm), user.client), 1 SECOND, TIMER_UNIQUE)
@@ -476,7 +476,7 @@ SUBSYSTEM_DEF(tgui)
 	var/count = 0
 	for(var/datum/tgui/ui in src_object.open_tguis)
 		// Check if UI is valid.
-		if(ui?.src_object && ui.user && ui.src_object.tgui_host(ui.user))
+		if(ui?.src_object() && ui.user && ui.src_object().tgui_host(ui.user))
 			INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE)
 			count++
 	return count
@@ -497,7 +497,7 @@ SUBSYSTEM_DEF(tgui)
 	var/count = 0
 	for(var/datum/tgui/ui in src_object.open_tguis)
 		// Check if UI is valid.
-		if(ui?.src_object && ui.user && ui.src_object.tgui_host(ui.user))
+		if(ui?.src_object() && ui.user && ui.src_object().tgui_host(ui.user))
 			ui.close()
 			count++
 	return count
@@ -513,7 +513,7 @@ SUBSYSTEM_DEF(tgui)
 	var/count = 0
 	for(var/datum/tgui/ui in all_uis)
 		// Check if UI is valid.
-		if(ui?.src_object && ui.user && ui.src_object.tgui_host(ui.user))
+		if(ui?.src_object() && ui.user && ui.src_object().tgui_host(ui.user))
 			ui.close()
 			count++
 	return count
@@ -533,7 +533,7 @@ SUBSYSTEM_DEF(tgui)
 	if(length(user?.tgui_open_uis) == 0)
 		return count
 	for(var/datum/tgui/ui in user.tgui_open_uis)
-		if(isnull(src_object) || ui.src_object == src_object)
+		if(isnull(src_object) || ui.src_object() == src_object)
 			ui.process(wait * 0.1, force = 1)
 			count++
 	return count
@@ -553,7 +553,7 @@ SUBSYSTEM_DEF(tgui)
 	if(length(user?.tgui_open_uis) == 0)
 		return count
 	for(var/datum/tgui/ui in user.tgui_open_uis)
-		if((isnull(src_object) || ui.src_object == src_object) && ui.closeable)
+		if((isnull(src_object) || ui.src_object() == src_object) && ui.closeable)
 			ui.close(logout = logout)
 			count++
 	return count
@@ -567,7 +567,7 @@ SUBSYSTEM_DEF(tgui)
  */
 /datum/controller/subsystem/tgui/proc/on_open(datum/tgui/ui)
 	ui.user?.tgui_open_uis |= ui
-	LAZYOR(ui.src_object.open_tguis, ui)
+	LAZYOR(ui.src_object().open_tguis, ui)
 	all_uis |= ui
 
 /**
@@ -586,8 +586,8 @@ SUBSYSTEM_DEF(tgui)
 	// If the user exists, remove it from them too.
 	if(ui.user)
 		ui.user.tgui_open_uis -= ui
-	if(ui.src_object)
-		LAZYREMOVE(ui.src_object.open_tguis, ui)
+	if(ui.src_object())
+		LAZYREMOVE(ui.src_object().open_tguis, ui)
 	return TRUE
 
 /**

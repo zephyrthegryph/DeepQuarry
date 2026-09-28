@@ -10,8 +10,8 @@
 	var/datum/embedded_program/docking/shuttle_docking_controller // Controller on the shuttle (the one in use)
 	var/docking_codes
 
-	var/tmp/obj/effect/shuttle_landmark/next_location  //This is only used internally.
-	var/datum/embedded_program/docking/active_docking_controller // Controller we are docked with (or trying to)
+	var/tmp/next_location_handle	//This is only used internally.
+	var/active_docking_controller_handle	// Controller we are docked with (or trying to)
 
 	var/obj/effect/shuttle_landmark/landmark_transition  //This variable is type-abused initially: specify the landmark_tag, not the actual landmark.
 	var/move_time = 240		//the time spent in the transition area
@@ -30,8 +30,8 @@
 	//Initial dock
 	set_active_docking_controller(current_location.docking_controller)
 	update_docking_target(current_location)
-	if(active_docking_controller)
-		set_docking_codes(active_docking_controller.docking_codes)
+	if(active_docking_controller())
+		set_docking_codes(active_docking_controller().docking_codes)
 	else if(using_map.use_overmap)
 		var/obj/effect/overmap/visitable/location = get_overmap_sector(get_z(current_location))
 		if(location && location.docking_codes)
@@ -45,7 +45,7 @@
 // LIFECYCLE: its docking controllers are released.
 /datum/shuttle/autodock/Destroy()
 	in_use = null
-	next_location = null
+	next_location_handle = null
 	set_active_docking_controller(null)
 	set_shuttle_docking_controller(null)
 	landmark_transition = null
@@ -75,33 +75,33 @@
 /datum/shuttle/autodock/proc/set_shuttle_docking_controller(datum/embedded_program/docking/controller)
 	if(shuttle_docking_controller == controller)
 		return
-	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller)
+	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller())
 		UnregisterSignal(shuttle_docking_controller, COMSIG_QDELETING)
 	shuttle_docking_controller = controller
-	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller)
+	if(shuttle_docking_controller && shuttle_docking_controller != active_docking_controller())
 		RegisterSignal(shuttle_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
 
 /datum/shuttle/autodock/proc/set_active_docking_controller(datum/embedded_program/docking/controller)
-	if(active_docking_controller == controller)
+	if(active_docking_controller() == controller)
 		return
-	if(active_docking_controller && active_docking_controller != shuttle_docking_controller)
-		UnregisterSignal(active_docking_controller, COMSIG_QDELETING)
-	active_docking_controller = controller
-	if(active_docking_controller && active_docking_controller != shuttle_docking_controller)
-		RegisterSignal(active_docking_controller, COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
+	if(active_docking_controller() && active_docking_controller() != shuttle_docking_controller)
+		UnregisterSignal(active_docking_controller(), COMSIG_QDELETING)
+	active_docking_controller_handle = om_handle(controller)
+	if(active_docking_controller() && active_docking_controller() != shuttle_docking_controller)
+		RegisterSignal(active_docking_controller(), COMSIG_QDELETING, PROC_REF(docking_controller_deleted))
 
 /datum/shuttle/autodock/proc/docking_controller_deleted(datum/source)
 	SIGNAL_HANDLER
 	if(shuttle_docking_controller == source)
 		shuttle_docking_controller = null
-	if(active_docking_controller == source)
-		active_docking_controller = null
+	if(active_docking_controller() == source)
+		active_docking_controller_handle = null
 /*
 	Docking stuff
 */
 /datum/shuttle/autodock/dock()
-	if(active_docking_controller && shuttle_docking_controller)
-		shuttle_docking_controller.initiate_docking(active_docking_controller.id_tag)
+	if(active_docking_controller() && shuttle_docking_controller)
+		shuttle_docking_controller.initiate_docking(active_docking_controller().id_tag)
 		last_dock_attempt_time = world.time
 
 /datum/shuttle/autodock/undock()
@@ -124,8 +124,8 @@
 
 // You also could just directly reference active_docking_controller
 /datum/shuttle/autodock/proc/current_dock_target()
-	if(active_docking_controller)
-		return active_docking_controller.id_tag
+	if(active_docking_controller())
+		return active_docking_controller().id_tag
 	return null
 
 // These checks are built into the check_docked() and check_undocked() procs
@@ -162,35 +162,35 @@
 
 //not to be confused with the arrived() proc
 /datum/shuttle/autodock/proc/process_arrived()
-	set_active_docking_controller(next_location.docking_controller)
-	update_docking_target(next_location)
+	set_active_docking_controller(next_location().docking_controller)
+	update_docking_target(next_location())
 	dock()
 
-	next_location = null
+	next_location_handle = null
 	in_use = null	//release lock
 
 /datum/shuttle/autodock/proc/get_travel_time()
 	return move_time
 
 /datum/shuttle/autodock/proc/process_launch()
-	if(!next_location || !next_location.is_valid(src) || current_location.cannot_depart(src))
+	if(!next_location() || !next_location().is_valid(src) || current_location.cannot_depart(src))
 		set_process_state(IDLE_STATE)
 		in_use = null
 		return
 	if (get_travel_time() && landmark_transition)
-		. = long_jump(next_location, landmark_transition, get_travel_time())
+		. = long_jump(next_location(), landmark_transition, get_travel_time())
 	else
-		. = short_jump(next_location)
+		. = short_jump(next_location())
 	set_process_state(WAIT_ARRIVE)
 
 /*
 	Guards - (These don't take docking status into account, just the state machine and move safety)
 */
 /datum/shuttle/autodock/proc/can_launch()
-	return (next_location && next_location.is_valid(src) && !current_location.cannot_depart(src) && moving_status == SHUTTLE_IDLE && !in_use)
+	return (next_location() && next_location().is_valid(src) && !current_location.cannot_depart(src) && moving_status == SHUTTLE_IDLE && !in_use)
 
 /datum/shuttle/autodock/proc/can_force()
-	return (next_location && next_location.is_valid(src) && !current_location.cannot_depart(src) && moving_status == SHUTTLE_IDLE && process_state == WAIT_LAUNCH)
+	return (next_location() && next_location().is_valid(src) && !current_location.cannot_depart(src) && moving_status == SHUTTLE_IDLE && process_state == WAIT_LAUNCH)
 
 /datum/shuttle/autodock/proc/can_cancel()
 	return (moving_status == SHUTTLE_WARMUP || process_state == WAIT_LAUNCH || process_state == FORCE_LAUNCH)
@@ -234,9 +234,9 @@
 // /datum/shuttle/autodock/get_location_name() defined in shuttle.dm
 
 /datum/shuttle/autodock/proc/get_destination_name()
-	if(!next_location)
+	if(!next_location())
 		return "None"
-	return next_location.name
+	return next_location().name
 
 //This gets called when the shuttle finishes arriving at it's destination
 //This can be used by subtypes to do things when the shuttle arrives.
@@ -246,3 +246,11 @@
 
 /obj/effect/shuttle_landmark/transit
 	flags = SLANDMARK_FLAG_ZERO_G|SLANDMARK_FLAG_AUTOSET
+
+/// LC-refs: This is only used internally. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/proc/next_location() as /obj/effect/shuttle_landmark
+	return om_resolve(next_location_handle)
+
+/// LC-refs: Controller we are docked with (or trying to) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/proc/active_docking_controller() as /datum/embedded_program/docking
+	return om_resolve(active_docking_controller_handle)

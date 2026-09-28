@@ -20,7 +20,7 @@
 	var/survivalfood = FALSE
 	var/nutriment_amt = 0
 	var/list/nutriment_desc = list("food" = 1)
-	var/datum/reagent/nutriment/coating/coating = null
+	var/coating_handle
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
 
@@ -349,8 +349,8 @@
 	if(Adjacent(user))
 		if(food_inserted_micros && food_inserted_micros.len)
 			. += span_notice("It has [english_list(food_inserted_micros)] stuck in it.")
-		if(coating)
-			. += span_notice("It's coated in [coating.name]!")
+		if(coating())
+			. += span_notice("It's coated in [coating().name]!")
 		if(bitecount==0)
 			return .
 		else if (bitecount==1)
@@ -5128,8 +5128,8 @@
 
 //This proc handles drawing coatings out of a container when this food is dipped into it
 /obj/item/reagent_containers/food/snacks/proc/apply_coating(datum/reagent/nutriment/coating/C, mob/user)
-	if (coating)
-		to_chat(user, "The [src] is already coated in [coating.name]!")
+	if (coating())
+		to_chat(user, "The [src] is already coated in [coating().name]!")
 		return 0
 
 	//Calculate the reagents of the coating needed
@@ -5165,7 +5165,7 @@
 	if (!C)
 		return
 
-	coating = C
+	coating_handle = om_handle(C)
 	//Now we have to do the witchcraft with masking images
 	//var/icon/I = new /icon(icon, icon_state)
 
@@ -5174,7 +5174,7 @@
 	var/icon/I = flat_icon
 	color = "#FFFFFF" //Some fruits use the color var. Reset this so it doesnt tint the batter
 	I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
-	I.Blend(new /icon('icons/obj/food_custom.dmi', coating.icon_raw),ICON_MULTIPLY)
+	I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_raw),ICON_MULTIPLY)
 	var/image/J = image(I)
 	J.alpha = 200
 	J.blend_mode = BLEND_OVERLAY
@@ -5182,13 +5182,13 @@
 	add_overlay(J)
 
 	if (user)
-		user.visible_message(span_notice("[user] dips \the [src] into \the [coating.name]"), span_notice("You dip \the [src] into \the [coating.name]"))
+		user.visible_message(span_notice("[user] dips \the [src] into \the [coating().name]"), span_notice("You dip \the [src] into \the [coating().name]"))
 
 	return 1
 
 //Called by cooking machines. This is mainly intended to set properties on the food that differ between raw/cooked
 /obj/item/reagent_containers/food/snacks/proc/cook()
-	if (coating)
+	if (coating())
 		var/list/temp = overlays.Copy()
 		for (var/i in temp)
 			if (istype(i, /image))
@@ -5205,14 +5205,14 @@
 		var/icon/I = flat_icon
 		color = "#FFFFFF" //Some fruits use the color var
 		I.Blend(new /icon('icons/obj/food_custom.dmi', rgb(255,255,255)),ICON_ADD)
-		I.Blend(new /icon('icons/obj/food_custom.dmi', coating.icon_cooked),ICON_MULTIPLY)
+		I.Blend(new /icon('icons/obj/food_custom.dmi', coating().icon_cooked),ICON_MULTIPLY)
 		var/image/J = image(I)
 		J.alpha = 200
 		J.tag = "coating"
 		add_overlay(J)
 
 		if (do_coating_prefix == 1)
-			name = "[coating.coated_adj] [name]"
+			name = "[coating().coated_adj] [name]"
 
 	for(var/datum/reagent/R as anything in reagents.reagent_list)
 		if (istype(R, /datum/reagent/nutriment/coating))
@@ -5324,7 +5324,7 @@
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BATTER, 6.5)
-	coating = reagents.get_reagent(REAGENT_ID_BATTER)
+	coating_handle = om_handle(reagents.get_reagent(REAGENT_ID_BATTER))
 	reagents.add_reagent(REAGENT_ID_OIL, 4)
 
 /obj/item/reagent_containers/food/snacks/funnelcake
@@ -9372,3 +9372,7 @@
 REF_OWNED(/obj/item/reagent_containers/food/snacks, "flat_icon")
 
 REF_HELD(/obj/item/pizzabox, "pizza")
+
+/// LC-refs: the coating this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
+	return om_resolve(coating_handle)

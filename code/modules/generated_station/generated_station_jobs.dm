@@ -7,8 +7,8 @@
 /// is spent, so nothing sleeps and a partially built z-level is never exposed to
 /// players. The normal budget deliberately leaves most of a 25 ms tick to the live game.
 /datum/generated_station_materialization_job
-	var/datum/generated_station_materializer/materializer
-	var/datum/flight_plan/flight_plan
+	var/materializer_handle
+	var/flight_plan_handle
 	var/phase = "queued"
 	var/progress = 0
 	var/tick_budget = GENERATED_STATION_TICK_BUDGET_NORMAL
@@ -21,7 +21,7 @@
 	var/finished_at
 	var/failed = FALSE
 	var/failure_reason
-	var/datum/generated_station_materialization/materialization
+	var/materialization_handle
 	/// Runs every phase at once (materialize()), or as lane work (materialize_async()).
 	var/now = TRUE
 	/// The materializer's phases, the one running and where it resumes.
@@ -33,8 +33,8 @@
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
-	materializer = new_materializer
-	flight_plan = new_flight_plan
+	materializer_handle = om_handle(new_materializer)
+	flight_plan_handle = om_handle(new_flight_plan)
 	if(fast_mode)
 		tick_budget = GENERATED_STATION_TICK_BUDGET_FAST
 	var/static/next_timer_id = 0
@@ -57,9 +57,9 @@
 	if(new_phase)
 		phase = new_phase
 	progress = clamp(new_progress, progress, 100)
-	if(flight_plan && !QDELETED(flight_plan))
-		flight_plan.generation_stage = phase
-		flight_plan.generation_progress = max(flight_plan.generation_progress, progress)
+	if(flight_plan() && !QDELETED(flight_plan()))
+		flight_plan().generation_stage = phase
+		flight_plan().generation_progress = max(flight_plan().generation_progress, progress)
 	if(now)
 		return FALSE
 	if(force_yield || slice_usage >= tick_budget || om_scheduler().out_of_budget())
@@ -93,8 +93,8 @@
 	peak_tick_usage = 0
 	rustg_time_reset(timer_id)
 	last_checkpoint_microseconds = 0
-	phases = materializer.materialize_phases()
-	if(!materializer.prepare_materialization(spec, z_level, origin_x, origin_y, src))
+	phases = materializer().materialize_phases()
+	if(!materializer().prepare_materialization(spec, z_level, origin_x, origin_y, src))
 		failed = TRUE
 		return FALSE
 	return TRUE
@@ -107,7 +107,7 @@
 		rustg_time_reset(timer_id)
 		last_checkpoint_microseconds = 0
 	var/phase = phases[phase_index]
-	var/resume = call(materializer, phase)(phase_cursor)
+	var/resume = call(materializer(), phase)(phase_cursor)
 	if(resume == GENERATED_STATION_PHASE_FAILED)
 		failed = TRUE
 		return null
@@ -120,25 +120,37 @@
 
 /datum/generated_station_materialization_job/proc/end_run()
 	finished_at = REALTIMEOFDAY
-	if(failed || !materializer.result)
+	if(failed || !materializer().result)
 		failed = TRUE
-		failure_reason = materializer.last_failure_details || phase
-		materialization = null
+		failure_reason = materializer().last_failure_details || phase
+		materialization_handle = null
 		return null
-	var/datum/generated_station_materialization/done = materializer.result
+	var/datum/generated_station_materialization/done = materializer().result
 	// Hand-off: the materializer owns its result (REF_OWNED) only while building it, so
 	// deleting the materializer afterwards must not delete the station it built.
-	materializer.result = null
-	materialization = done
+	materializer().result = null
+	materialization_handle = om_handle(done)
 	checkpoint("Station materialization complete", 62)
 	return done
 
 /datum/generated_station_materialization_job/proc/finish_async()
 	var/datum/generated_station_materialization/result = end_run()
-	materializer.record_job_telemetry(src)
+	materializer().record_job_telemetry(src)
 	var/datum/callback/callback = on_done_box?[1]
 	qdel(src)
 	callback?.Invoke(result)
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST
+
+/// LC-refs: the materializer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization_job/proc/materializer() as /datum/generated_station_materializer
+	return om_resolve(materializer_handle)
+
+/// LC-refs: the flight_plan this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization_job/proc/flight_plan() as /datum/flight_plan
+	return om_resolve(flight_plan_handle)
+
+/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization_job/proc/materialization() as /datum/generated_station_materialization
+	return om_resolve(materialization_handle)

@@ -489,7 +489,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 	var/atom/movable/orbiter
 	var/input
 
-	var/datum/marked_datum = user.holder.marked_datum
+	var/datum/marked_datum = user.holder.marked_datum()
 	if(marked_datum)
 		input = tgui_alert(user, "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", "Orbit", list("Center", "Orbiter", "Neither"))
 		switch(input)

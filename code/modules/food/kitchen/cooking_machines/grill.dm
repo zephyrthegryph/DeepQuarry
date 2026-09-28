@@ -55,5 +55,5 @@ REF_OWNED(/obj/machinery/appliance/cooker/grill, "grill_loop")
 
 /obj/machinery/appliance/cooker/grill/finish_cooking(datum/cooking_item/CI)
 	..()
-	for(var/obj/item/I in CI.container)
+	for(var/obj/item/I in CI.container())
 		SEND_SIGNAL(I, COMSIG_ITEM_BARBEQUE_GRILLED)

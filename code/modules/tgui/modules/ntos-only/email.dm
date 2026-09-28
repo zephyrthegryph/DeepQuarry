@@ -21,8 +21,8 @@
 	var/download_progress = 0
 	var/download_speed = 0
 
-	var/datum/computer_file/data/email_account/current_account = null
-	var/datum/computer_file/data/email_message/current_message = null
+	var/current_account_handle
+	var/current_message_handle
 
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
@@ -33,7 +33,7 @@
 				if(account.suspended)
 					error = "This account has been suspended. Please contact the system administrator for assistance."
 					return 0
-				current_account = account
+				current_account_handle = om_handle(account)
 				return 1
 			else
 				error = "Invalid Password"
@@ -44,10 +44,10 @@
 // Returns 0 if no new messages were received, 1 if there is an unread message but notification has already been sent.
 // and 2 if there is a new message that appeared in this tick (and therefore notification should be sent by the program).
 /datum/tgui_module/email_client/proc/check_for_new_messages(messages_read = FALSE)
-	if(!current_account)
+	if(!current_account())
 		return 0
 
-	var/list/allmails = current_account.all_emails()
+	var/list/allmails = current_account().all_emails()
 
 	if(allmails.len > last_message_count)
 		. = 2
@@ -61,7 +61,7 @@
 		read_message_count = allmails.len
 
 /datum/tgui_module/email_client/proc/log_out()
-	current_account = null
+	current_account_handle = null
 	downloading = null
 	download_progress = 0
 	last_message_count = 0
@@ -71,12 +71,12 @@
 	var/list/data = ..()
 
 	// Password has been changed by other client connected to this email account
-	if(current_account)
-		if(current_account.password != stored_password)
+	if(current_account())
+		if(current_account().password != stored_password)
 			log_out()
 			error = "Invalid Password"
 		// Banned.
-		if(current_account.suspended)
+		if(current_account().suspended)
 			log_out()
 			error = "This account has been suspended. Please contact the system administrator for assistance."
 
@@ -124,8 +124,8 @@
 		data["down_size"] = downloading.size
 		data["down_speed"] = download_speed
 
-	else if(istype(current_account))
-		data["current_account"] = current_account.login
+	else if(istype(current_account()))
+		data["current_account"] = current_account().login
 		if(addressbook)
 			var/list/all_accounts = list()
 			for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
@@ -145,27 +145,27 @@
 				data["msg_hasattachment"] = 1
 				data["msg_attachment_filename"] = "[msg_attachment.filename].[msg_attachment.filetype]"
 				data["msg_attachment_size"] = msg_attachment.size
-		else if (current_message)
-			data["cur_title"] = current_message.title
-			data["cur_body"] = pencode2html(current_message.stored_data)
-			data["cur_timestamp"] = current_message.timestamp
-			data["cur_source"] = current_message.source
-			data["cur_uid"] = current_message.uid
-			if(istype(current_message.attachment))
+		else if (current_message())
+			data["cur_title"] = current_message().title
+			data["cur_body"] = pencode2html(current_message().stored_data)
+			data["cur_timestamp"] = current_message().timestamp
+			data["cur_source"] = current_message().source
+			data["cur_uid"] = current_message().uid
+			if(istype(current_message().attachment))
 				data["cur_hasattachment"] = 1
-				data["cur_attachment_filename"] = "[current_message.attachment.filename].[current_message.attachment.filetype]"
-				data["cur_attachment_size"] = current_message.attachment.size
+				data["cur_attachment_filename"] = "[current_message().attachment.filename].[current_message().attachment.filetype]"
+				data["cur_attachment_size"] = current_message().attachment.size
 		else
-			data["label_inbox"] = "Inbox ([current_account.inbox.len])"
-			data["label_spam"] = "Spam ([current_account.spam.len])"
-			data["label_deleted"] = "Deleted ([current_account.deleted.len])"
+			data["label_inbox"] = "Inbox ([current_account().inbox.len])"
+			data["label_spam"] = "Spam ([current_account().spam.len])"
+			data["label_deleted"] = "Deleted ([current_account().deleted.len])"
 			var/list/message_source
 			if(folder == "Inbox")
-				message_source = current_account.inbox
+				message_source = current_account().inbox
 			else if(folder == "Spam")
-				message_source = current_account.spam
+				message_source = current_account().spam
 			else if(folder == "Deleted")
-				message_source = current_account.deleted
+				message_source = current_account().deleted
 
 			if(message_source)
 				data["folder"] = folder
@@ -187,14 +187,14 @@
 	return data
 
 /datum/tgui_module/email_client/proc/find_message_by_fuid(fuid)
-	if(!istype(current_account))
+	if(!istype(current_account()))
 		return
 
 	// params works with strings, so this makes it a bit easier for us
 	if(istext(fuid))
 		fuid = text2num(fuid)
 
-	for(var/datum/computer_file/data/email_message/message in current_account.all_emails())
+	for(var/datum/computer_file/data/email_message/message in current_account().all_emails())
 		if(message.uid == fuid)
 			return message
 
@@ -204,7 +204,7 @@
 	msg_body = ""
 	msg_recipient = ""
 	msg_attachment = null
-	current_message = null
+	current_message_handle = null
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
 	download_speed = netspeed
@@ -302,24 +302,24 @@
 			return 1
 
 		if("delete")
-			if(!istype(current_account))
+			if(!istype(current_account()))
 				return 1
 			var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["delete"])
 			if(!istype(M))
 				return 1
 			if(folder == "Deleted")
-				current_account.deleted.Remove(M)
+				current_account().deleted.Remove(M)
 				qdel(M)
 			else
-				current_account.deleted.Add(M)
-				current_account.inbox.Remove(M)
-				current_account.spam.Remove(M)
-			if(current_message == M)
-				current_message = null
+				current_account().deleted.Add(M)
+				current_account().inbox.Remove(M)
+				current_account().spam.Remove(M)
+			if(current_message() == M)
+				current_message_handle = null
 			return 1
 
 		if("send")
-			if(!current_account)
+			if(!current_account())
 				return 1
 			if((msg_title == "") || (msg_body == "") || (msg_recipient == ""))
 				error = "Error sending mail: Title or message body is empty!"
@@ -328,9 +328,9 @@
 			var/datum/computer_file/data/email_message/message = new()
 			message.title = msg_title
 			message.stored_data = msg_body
-			message.source = current_account.login
+			message.source = current_account().login
 			message.attachment = msg_attachment
-			if(!current_account.send_mail(msg_recipient, message))
+			if(!current_account().send_mail(msg_recipient, message))
 				error = "Error sending email: this address doesn't exist."
 				return 1
 			else
@@ -351,13 +351,13 @@
 			msg_recipient = M.source
 			msg_title = "Re: [M.title]"
 			msg_body = "\[editorbr\]\[editorbr\]\[editorbr\]\[br\]==============================\[br\]\[editorbr\]"
-			msg_body += "Received by [current_account.login] at [M.timestamp]\[br\]\[editorbr\][M.stored_data]"
+			msg_body += "Received by [current_account().login] at [M.timestamp]\[br\]\[editorbr\][M.stored_data]"
 			return 1
 
 		if("view")
 			var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["view"])
 			if(istype(M))
-				current_message = M
+				current_message_handle = om_handle(M)
 			return 1
 
 		if("changepassword")
@@ -371,11 +371,11 @@
 			if(!newpassword2)
 				return 1
 
-			if(!istype(current_account))
+			if(!istype(current_account()))
 				error = "Please log in before proceeding."
 				return 1
 
-			if(current_account.password != oldpassword)
+			if(current_account().password != oldpassword)
 				error = "Incorrect original password"
 				return 1
 
@@ -383,7 +383,7 @@
 				error = "The entered passwords do not match."
 				return 1
 
-			current_account.password = newpassword1
+			current_account().password = newpassword1
 			stored_password = newpassword1
 			error = "Your password has been successfully changed!"
 			return 1
@@ -454,14 +454,14 @@
 			return 1
 
 		if("downloadattachment")
-			if(!current_account || !current_message || !current_message.attachment)
+			if(!current_account() || !current_message() || !current_message().attachment)
 				return 1
 			var/obj/item/modular_computer/MC = tgui_host()
 			if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 				error = "Error downloading file. Are you using a functional and NTOSv2-compliant device?"
 				return 1
 
-			downloading = current_message.attachment.clone()
+			downloading = current_message().attachment.clone()
 			download_progress = 0
 			return 1
 
@@ -475,3 +475,11 @@
 			return 1
 
 REF_OWNED(/datum/tgui_module/email_client, list("msg_attachment", "downloading"))
+
+/// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/email_client/proc/current_account() as /datum/computer_file/data/email_account
+	return om_resolve(current_account_handle)
+
+/// LC-refs: the current_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/email_client/proc/current_message() as /datum/computer_file/data/email_message
+	return om_resolve(current_message_handle)

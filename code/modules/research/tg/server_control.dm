@@ -7,13 +7,13 @@
 	req_access = list(ACCESS_RD)
 
 	///Connected techweb node the server is connected to.
-	var/datum/techweb/stored_research
+	var/stored_research_handle
 	var/badmin = FALSE // old compatibility
 
 /obj/machinery/computer/rdservercontrol/Initialize(mapload)
 	. = ..()
-	if(!stored_research)
-		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
+	if(!stored_research())
+		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research(), src)
 
 /obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
 	into += list(
@@ -33,7 +33,7 @@
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
 		if(!QDELETED(tool.buffer) && istype(tool.buffer, /datum/techweb))
-			stored_research = tool.buffer
+			stored_research_handle = om_handle(tool.buffer)
 			balloon_alert(user, "techweb connected")
 	return TRUE
 
@@ -55,12 +55,12 @@
 /obj/machinery/computer/rdservercontrol/tgui_data(mob/user)
 	var/list/data = list()
 
-	data["server_connected"] = !!stored_research
+	data["server_connected"] = !!stored_research()
 
-	if(stored_research)
-		if(length(stored_research.research_logs)) data["logs"] += stored_research.research_logs
+	if(stored_research())
+		if(length(stored_research().research_logs)) data["logs"] += stored_research().research_logs
 
-		for(var/obj/machinery/rnd/server/server as anything in stored_research.techweb_servers)
+		for(var/obj/machinery/rnd/server/server as anything in stored_research().techweb_servers)
 			data["servers"] += list(list(
 				"server_name" = server,
 				"server_details" = server.get_status_text(),
@@ -68,7 +68,7 @@
 				"server_ref" = REF(server),
 			))
 
-		for(var/obj/machinery/computer/rdconsole_tg/console as anything in stored_research.consoles_accessing)
+		for(var/obj/machinery/computer/rdconsole_tg/console as anything in stored_research().consoles_accessing)
 			data["consoles"] += list(list(
 				"console_name" = console,
 				"console_location" = get_area(console),
@@ -89,14 +89,18 @@
 
 	switch(action)
 		if("lockdown_server")
-			var/obj/machinery/rnd/server/server_selected = locate(params["selected_server"]) in stored_research.techweb_servers
+			var/obj/machinery/rnd/server/server_selected = locate(params["selected_server"]) in stored_research().techweb_servers
 			if(!server_selected)
 				return FALSE
 			server_selected.toggle_disable(usr)
 			return TRUE
 		if("lock_console")
-			var/obj/machinery/computer/rdconsole_tg/console_selected = locate(params["selected_console"]) in stored_research.consoles_accessing
+			var/obj/machinery/computer/rdconsole_tg/console_selected = locate(params["selected_console"]) in stored_research().consoles_accessing
 			if(!console_selected)
 				return FALSE
 			console_selected.locked = !console_selected.locked
 			return TRUE
+
+/// LC-refs: the stored_research this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/rdservercontrol/proc/stored_research() as /datum/techweb
+	return om_resolve(stored_research_handle)

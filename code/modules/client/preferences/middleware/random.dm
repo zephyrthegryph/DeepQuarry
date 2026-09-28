@@ -7,7 +7,7 @@
 
 /datum/preference_middleware/random/get_character_preferences(mob/user)
 	return list(
-		"randomization" = (preferences.randomise || list()),
+		"randomization" = (preferences().randomise || list()),
 	)
 
 /datum/preference_middleware/random/get_constant_data()
@@ -26,8 +26,8 @@
 
 /datum/preference_middleware/random/proc/randomize_character()
 	for (var/datum/preference/preference as anything in get_preferences_in_priority_order())
-		if (preferences.should_randomize(preference))
-			preferences.write_preference(preference, preference.create_random_value(preferences))
+		if (preferences().should_randomize(preference))
+			preferences().write_preference(preference, preference.create_random_value(preferences()))
 
 	// preferences.character_preview_view.update_body()
 
@@ -45,11 +45,11 @@
 		return FALSE
 
 	if (value == RANDOM_ANTAG_ONLY)
-		LAZYSET(preferences.randomise, requested_preference_key, RANDOM_ANTAG_ONLY)
+		LAZYSET(preferences().randomise, requested_preference_key, RANDOM_ANTAG_ONLY)
 	else if (value == RANDOM_ENABLED)
-		LAZYSET(preferences.randomise, requested_preference_key, RANDOM_ENABLED)
+		LAZYSET(preferences().randomise, requested_preference_key, RANDOM_ENABLED)
 	else if (value == RANDOM_DISABLED)
-		LAZYREMOVE(preferences.randomise, requested_preference_key)
+		LAZYREMOVE(preferences().randomise, requested_preference_key)
 	else
 		return FALSE
 

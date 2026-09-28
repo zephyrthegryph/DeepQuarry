@@ -10,8 +10,8 @@
 	set name = "Jump to Core"
 	set desc = "Move your camera to your core."
 
-	if(blob_core)
-		forceMove(blob_core.loc)
+	if(blob_core())
+		forceMove(blob_core().loc)
 
 /mob/observer/blob/proc/createSpecial(price, blobType, nearEquals, needsNode, turf/T)
 	if(!T)

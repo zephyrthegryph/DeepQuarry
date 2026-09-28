@@ -16,7 +16,7 @@
 	var/particle_type
 	var/additional_particles = 0
 	var/turf/target
-	var/turf/source
+	var/source_handle
 	var/movetotarget = 1
 
 /obj/effect/accelerated_particle/weak
@@ -83,8 +83,8 @@
 			if(get_dist(src,target) < 1)
 				movetotarget = 0
 		else
-			if(!step(src, get_step_away(src,source)))
-				src.loc = get_step(src, get_step_away(src,source))
+			if(!step(src, get_step_away(src,source())))
+				src.loc = get_step(src, get_step_away(src,source()))
 	else
 		if(!step(src,dir))
 			src.loc = get_step(src,dir)
@@ -94,3 +94,7 @@
 		return
 
 	addtimer(CALLBACK(src, PROC_REF(move), lag), lag)
+
+/// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/accelerated_particle/proc/source() as /turf
+	return om_resolve(source_handle)

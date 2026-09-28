@@ -17,7 +17,7 @@
 	var/detail_color = COLOR_ASSEMBLY_BLACK
 	var/locked = FALSE // If true, the assembly cannot be opened with a crowbar
 	var/obj/item/card/id/locked_by = null // The ID that locked this assembly
-	var/obj/item/card/id/access_card = null // ID card for door access
+	var/access_card_handle	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
 	/// makes power (so handle_idle_power() actually has work to do). Invalidated to
@@ -531,8 +531,8 @@
 				D.open()
 
 /obj/item/electronic_assembly/check_access(obj/item/I)
-	if(access_card)
-		return access_card.check_access(I)
+	if(access_card())
+		return access_card().check_access(I)
 	return ..()  // Fall back to default behavior if no access_card
 
 // Returns TRUE if I is something that could/should have a valid interaction. Used to tell circuitclothes to hit the circuit with something instead of the clothes
@@ -540,3 +540,7 @@
 	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
 
 REF_HELD(/obj/item/electronic_assembly, "battery")
+
+/// LC-refs: ID card for door access -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id
+	return om_resolve(access_card_handle)

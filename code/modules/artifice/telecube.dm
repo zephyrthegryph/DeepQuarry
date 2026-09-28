@@ -31,7 +31,7 @@
 
 	throw_range = 2
 
-	var/obj/item/telecube/mate = null
+	var/mate_handle
 
 	var/start_paired = FALSE
 	var/mirror_colors = FALSE
@@ -67,14 +67,14 @@
 		color = rgb(rand(30, 255),rand(30, 255),rand(30, 255))
 
 	if(start_paired)
-		mate = new(src.loc)
+		mate_handle = om_handle(new(src.loc))
 		if(mirror_colors)
-			mate.glow_color = color
-			mate.color = glow_color
+			mate().glow_color = color
+			mate().color = glow_color
 		else
-			mate.glow_color = glow_color
-			mate.color = color
-		mate.pair_cube(src)
+			mate().glow_color = glow_color
+			mate().color = color
+		mate().pair_cube(src)
 
 	update_icon()
 
@@ -101,11 +101,11 @@
 
 // LIFECYCLE: its mate collapses into an explosion.
 /obj/item/telecube/Destroy()
-	if(mate)
-		var/turf/T = get_turf(mate)
-		mate.visible_message(span_critical("\The [mate] collapses into itself!"))
-		mate.mate = null
-		mate = null
+	if(mate())
+		var/turf/T = get_turf(mate())
+		mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
+		mate().mate_handle = null
+		mate_handle = null
 		explosion(T,1,3,7)
 
 	return ..()
@@ -119,10 +119,10 @@
 	update_icon()
 
 /obj/item/telecube/proc/pair_cube(obj/item/telecube/M)
-	if(mate)
+	if(mate())
 		return 0
 	else
-		mate = M
+		mate_handle = om_handle(M)
 		update_icon()
 		return 1
 
@@ -132,7 +132,7 @@
 	if(!istype(A))
 		return .
 
-	if(A == src || A == mate)
+	if(A == src || A == mate())
 		A.visible_message(span_alien("\The [A] distorts and fades, before popping back into existence."))
 		fade_and_move(A, null)
 		return .
@@ -147,12 +147,12 @@
 	if(!ready)
 		return .
 
-	if((A.anchored && !omniteleport) || !mate)
+	if((A.anchored && !omniteleport) || !mate())
 		A.visible_message(span_alien("\The [A] distorts for a moment, before reforming in the same position."))
 		fade_and_move(A, null)
 		return .
 
-	var/turf/TLocate = get_turf(mate)
+	var/turf/TLocate = get_turf(mate())
 
 	var/turf/T1 = get_turf(locate(TLocate.x + (A.x - x), TLocate.y + (A.y - y), TLocate.z))
 
@@ -170,17 +170,17 @@
 /obj/item/telecube/proc/swap_with_mate()
 	. = FALSE
 
-	if(!mate || !teleport_range)
+	if(!mate() || !teleport_range)
 		return .
 
 	var/list/objects_near_me = range(teleport_range, get_turf(src))
-	var/list/objects_near_mate = range(teleport_range, get_turf(mate))
+	var/list/objects_near_mate = range(teleport_range, get_turf(mate()))
 
 	for(var/atom/movable/M in objects_near_me)
 		teleport_to_mate(M, TRUE)
 
 	for(var/atom/movable/M1 in objects_near_mate)
-		mate.teleport_to_mate(M1, TRUE)
+		mate().teleport_to_mate(M1, TRUE)
 
 	. = TRUE
 	return .
@@ -192,8 +192,8 @@
 	ready = FALSE
 	update_icon()
 	addtimer(CALLBACK(src, PROC_REF(ready)), cooldown_time)
-	if(mate_too && mate)
-		mate.cooldown(mate_too = FALSE) //No infinite recursion pls
+	if(mate_too && mate())
+		mate().cooldown(mate_too = FALSE) //No infinite recursion pls
 
 /obj/item/telecube/proc/ready()
 	ready = TRUE
@@ -277,3 +277,7 @@
 	mirror_colors = TRUE
 
 REF_OWNED(/obj/item/telecube, list("glow", "charge"))
+
+/// LC-refs: the mate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/telecube/proc/mate() as /obj/item/telecube
+	return om_resolve(mate_handle)

@@ -6,7 +6,7 @@
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 	actions_types = list(/datum/action/item_action/halt)
 	body_parts_covered = FACE
-	var/obj/item/hailer/hailer
+	var/hailer_handle
 	var/cooldown = 0
 	var/phrase = 1
 	var/aggressiveness = 1
@@ -131,7 +131,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/clothing/mask/gas/sechailer/crowbar_act(mob/user, obj/item/tool)
-	if(!hailer)
+	if(!hailer())
 		to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/clothing/mask/gas/half/mask = new(loc)
@@ -140,10 +140,10 @@
 	transfer_fingerprints_to(mask)
 	transfer_fibres_to(mask)
 	if(!isturf(mask.loc))
-		user.put_in_hands(hailer)
+		user.put_in_hands(hailer())
 		user.put_in_hands(mask)
 	else
-		hailer.forceMove(mask.loc)
+		hailer().forceMove(mask.loc)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
@@ -170,3 +170,7 @@
 /obj/item/clothing/mask/gas/sechailer/swat/officer //Just a little nicer to begin with. Can always up the anger with a screwdriver!
 	aggressiveness = 1
 	phrase = 1
+
+/// LC-refs: the hailer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/mask/gas/sechailer/proc/hailer() as /obj/item/hailer
+	return om_resolve(hailer_handle)

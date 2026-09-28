@@ -186,7 +186,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 // Request is for a physical thing
 //
 /datum/supply_demand_order/thing
-	var/atom/type_path // Type path of the item required
+	var/type_path	// Type path of the item required
 
 /datum/supply_demand_order/thing/New(qty, atom/type_path)
 	..()

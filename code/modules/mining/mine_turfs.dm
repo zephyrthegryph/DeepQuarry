@@ -596,7 +596,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	if(artifact_find)
 		//boulder with an artifact inside
 		B = new(src)
-		B.artifact_find = artifact_find
+		B.artifact_find_handle = om_handle(artifact_find)
 
 	if(B)
 		GetDrilled(0)

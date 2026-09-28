@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	var/datum/geosample/geological_data
+	var/geological_data_handle
 
 /obj/item/rocksliver/Initialize(mapload)
 	. = ..()
@@ -142,7 +142,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			R.geological_data = geo_data
+			R.geological_data_handle = om_handle(geo_data)
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
@@ -173,3 +173,7 @@
 		to_chat(user, span_warning("The core sampler is empty."))
 
 REF_OWNED(/obj/item/core_sampler, "filled_bag")
+
+/// LC-refs: the geological_data this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/rocksliver/proc/geological_data() as /datum/geosample
+	return om_resolve(geological_data_handle)

@@ -9,8 +9,8 @@
 	var/timer = 0
 	var/bruteloss_prev = 999999
 	var/fireloss_prev = 999999
-	var/mob/living/carbon/human/corpse = null
-	var/mob/living/carbon/human/watchowner = null
+	var/corpse_handle
+	var/watchowner_handle
 
 /obj/item/deadringer/Initialize(mapload)
 	. = ..()
@@ -26,7 +26,7 @@
 	..()
 	if(timer > 20)
 		reveal()
-		watchowner = null
+		watchowner_handle = null
 
 /obj/item/deadringer/attack_self(mob/user)
 	. = ..(user)
@@ -57,98 +57,98 @@
 		if(!(D.ai_brain != null))
 			continue
 		D.ai_brain.lose_target()
-	watchowner.alpha = 7 //10 is too visible, 5 is too in-visible... 7 is difficult to see but manageable.
-	makeacorpse(watchowner)
+	watchowner().alpha = 7 //10 is too visible, 5 is too in-visible... 7 is difficult to see but manageable.
+	makeacorpse(watchowner())
 	return
 
 /obj/item/deadringer/proc/reveal()
-	if(watchowner)
-		watchowner.alpha = 255
+	if(watchowner())
+		watchowner().alpha = 255
 		playsound(src, 'sound/effects/uncloak.ogg', 35, 1, -1)
 	return
 
 /obj/item/deadringer/proc/makeacorpse(mob/living/carbon/human/H)
 	if(H.isSynthetic())
 		return
-	corpse = new /mob/living/carbon/human(H.loc)
-	QDEL_SWAP(corpse.dna,H.dna.Clone())
+	corpse_handle = om_handle(new /mob/living/carbon/human(H.loc))
+	QDEL_SWAP(corpse().dna,H.dna.Clone())
 	var/obj/item/clothing/temp = null
 	if(H.get_equipped_item(slot_w_uniform))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/under/chameleon/changeling(corpse), slot_w_uniform)
-		temp = corpse.get_equipped_item(slot_w_uniform)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/under/chameleon/changeling(corpse()), slot_w_uniform)
+		temp = corpse().get_equipped_item(slot_w_uniform)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_w_uniform)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_wear_suit))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/suit/chameleon/changeling(corpse), slot_wear_suit)
-		temp = corpse.get_equipped_item(slot_wear_suit)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/suit/chameleon/changeling(corpse()), slot_wear_suit)
+		temp = corpse().get_equipped_item(slot_wear_suit)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_wear_suit)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_shoes))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/shoes/chameleon/changeling(corpse), slot_shoes)
-		temp = corpse.get_equipped_item(slot_shoes)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/shoes/chameleon/changeling(corpse()), slot_shoes)
+		temp = corpse().get_equipped_item(slot_shoes)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_shoes)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_gloves))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/gloves/chameleon/changeling(corpse), slot_gloves)
-		temp = corpse.get_equipped_item(slot_gloves)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/gloves/chameleon/changeling(corpse()), slot_gloves)
+		temp = corpse().get_equipped_item(slot_gloves)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_gloves)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_l_ear))
 		temp = H.get_equipped_item(slot_l_ear)
-		corpse.equip_to_slot_or_del(new temp.type(corpse), slot_l_ear)
-		temp = corpse.get_equipped_item(slot_l_ear)
+		corpse().equip_to_slot_or_del(new temp.type(corpse()), slot_l_ear)
+		temp = corpse().get_equipped_item(slot_l_ear)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_glasses))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/glasses/chameleon/changeling(corpse), slot_glasses)
-		temp = corpse.get_equipped_item(slot_glasses)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/glasses/chameleon/changeling(corpse()), slot_glasses)
+		temp = corpse().get_equipped_item(slot_glasses)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_glasses)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_wear_mask))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/mask/chameleon/changeling(corpse), slot_wear_mask)
-		temp = corpse.get_equipped_item(slot_wear_mask)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/mask/chameleon/changeling(corpse()), slot_wear_mask)
+		temp = corpse().get_equipped_item(slot_wear_mask)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_wear_mask)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_head))
-		corpse.equip_to_slot_or_del(new /obj/item/clothing/head/chameleon/changeling(corpse), slot_head)
-		temp = corpse.get_equipped_item(slot_head)
+		corpse().equip_to_slot_or_del(new /obj/item/clothing/head/chameleon/changeling(corpse()), slot_head)
+		temp = corpse().get_equipped_item(slot_head)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_head)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_belt))
-		corpse.equip_to_slot_or_del(new /obj/item/storage/belt/chameleon/changeling(corpse), slot_belt)
-		temp = corpse.get_equipped_item(slot_belt)
+		corpse().equip_to_slot_or_del(new /obj/item/storage/belt/chameleon/changeling(corpse()), slot_belt)
+		temp = corpse().get_equipped_item(slot_belt)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_belt)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
 	if(H.get_equipped_item(slot_back))
-		corpse.equip_to_slot_or_del(new /obj/item/storage/backpack/chameleon/changeling(corpse), slot_back)
-		temp = corpse.get_equipped_item(slot_back)
+		corpse().equip_to_slot_or_del(new /obj/item/storage/backpack/chameleon/changeling(corpse()), slot_back)
+		temp = corpse().get_equipped_item(slot_back)
 		var/obj/item/clothing/c_type = H.get_equipped_item(slot_back)
 		temp.disguise(c_type.type)
 		temp.canremove = FALSE
-	corpse.identifying_gender = H.identifying_gender
-	corpse.flavor_texts = H.flavor_texts?.Copy()
-	corpse.real_name = H.real_name
-	corpse.name = H.name
-	corpse.emote("deathgasp") //Done after the name is set.
-	corpse.death(1) //Kills the new mob
-	corpse.set_species(corpse.dna.species)
-	corpse.change_hair(H.h_style)
-	corpse.change_facial_hair(H.f_style)
-	corpse.change_hair_color(H.r_hair, H.g_hair, H.b_hair)
-	corpse.change_facial_hair_color(H.r_facial, H.g_facial, H.b_facial)
-	corpse.change_skin_color(H.r_skin, H.g_skin, H.b_skin)
-	corpse.injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
-	corpse.injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
-	corpse.UpdateAppearance()
-	corpse.regenerate_icons()
-	QDEL_NULL_LIST(corpse.internal_organs)
+	corpse().identifying_gender = H.identifying_gender
+	corpse().flavor_texts = H.flavor_texts?.Copy()
+	corpse().real_name = H.real_name
+	corpse().name = H.name
+	corpse().emote("deathgasp") //Done after the name is set.
+	corpse().death(1) //Kills the new mob
+	corpse().set_species(corpse().dna.species)
+	corpse().change_hair(H.h_style)
+	corpse().change_facial_hair(H.f_style)
+	corpse().change_hair_color(H.r_hair, H.g_hair, H.b_hair)
+	corpse().change_facial_hair_color(H.r_facial, H.g_facial, H.b_facial)
+	corpse().change_skin_color(H.r_skin, H.g_skin, H.b_skin)
+	corpse().injure(INJURY_BURN, H.injury_load(INJURY_CATEGORY_THERMAL), null, null, 0, null, INJURE_SILENT)
+	corpse().injure(INJURY_BLUNT, H.injury_load(INJURY_CATEGORY_PHYSICAL), null, null, 0, null, INJURE_SILENT)
+	corpse().UpdateAppearance()
+	corpse().regenerate_icons()
+	QDEL_NULL_LIST(corpse().internal_organs)
 
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /// Watches its holder while armed and counts its cooldown; idle, it sleeps.
@@ -158,16 +158,16 @@
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc
-			watchowner = H
-			if(isbelly(watchowner.loc)) //No spawning people in bellies.
+			watchowner_handle = om_handle(H)
+			if(isbelly(watchowner().loc)) //No spawning people in bellies.
 				return
 			if(H.injury_load(INJURY_CATEGORY_PHYSICAL) > bruteloss_prev || H.injury_load(INJURY_CATEGORY_THERMAL) > fireloss_prev)
 				deathprevent()
 				activated = 0
-				if(watchowner.isSynthetic())
-					to_chat(watchowner, span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
+				if(watchowner().isSynthetic())
+					to_chat(watchowner(), span_blue("You fade into nothingness! [src]'s screen blinks, being unable to copy your synthetic body!"))
 				else
-					to_chat(watchowner, span_blue("You fade into nothingness, leaving behind a fake body!"))
+					to_chat(watchowner(), span_blue("You fade into nothingness, leaving behind a fake body!"))
 				icon_state = "deadringer_cd"
 				timer = 5
 				return
@@ -175,8 +175,16 @@
 		timer--
 	if(timer == 2)
 		reveal()
-		if(corpse)
-			replace_with(corpse, /obj/effect/effect/smoke/chem)
+		if(corpse())
+			replace_with(corpse(), /obj/effect/effect/smoke/chem)
 	if(timer == 0)
 		icon_state = "deadringer"
 	return
+
+/// LC-refs: the watchowner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/deadringer/proc/watchowner() as /mob/living/carbon/human
+	return om_resolve(watchowner_handle)
+
+/// LC-refs: the corpse this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/deadringer/proc/corpse() as /mob/living/carbon/human
+	return om_resolve(corpse_handle)

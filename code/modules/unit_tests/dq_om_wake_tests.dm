@@ -136,7 +136,7 @@
 /datum/unit_test/dq_om_wake_light_area_power/Run()
 	var/obj/machinery/light/L = allocate(/obj/machinery/light, test_floor())
 	var/area/A = get_area(L)
-	TEST_ASSERT(!isnull(L.area_power_token), "a light did not subscribe to its area's power key")
+	TEST_ASSERT(!isnull(L.area_power_token()), "a light did not subscribe to its area's power key")
 	TEST_ASSERT_NULL(L.om_sleep_violation(), "a new light is not asleep")
 	var/failure = om_wake_test(L, CALLBACK(A, TYPE_PROC_REF(/area, power_change)))
 	TEST_ASSERT(!failure, failure)

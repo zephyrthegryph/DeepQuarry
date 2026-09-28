@@ -42,14 +42,14 @@
 	TEST_ASSERT_EQUAL(site.z_level, world.maxz, "site z-level [site.z_level] is not the newly-allocated top z [world.maxz]")
 
 	// A walkable landing turf only exists if the carver actually opened floors.
-	TEST_ASSERT_NOTNULL(site.landing, "site has no landing turf — carve produced no walkable floor (verdigris likely not loaded)")
-	TEST_ASSERT(!site.landing.density, "landing turf is dense — not actually walkable")
-	TEST_ASSERT_EQUAL(site.landing.z, site.z_level, "landing turf z [site.landing.z] != site z [site.z_level]")
+	TEST_ASSERT_NOTNULL(site.landing(), "site has no landing turf — carve produced no walkable floor (verdigris likely not loaded)")
+	TEST_ASSERT(!site.landing().density, "landing turf is dense — not actually walkable")
+	TEST_ASSERT_EQUAL(site.landing().z, site.z_level, "landing turf z [site.landing().z] != site z [site.z_level]")
 	TEST_ASSERT_NULL(site.overmap_sector, "planet-bound site created a legacy space-sector marker")
 	TEST_ASSERT(site.generation_seed > 0, "generated station did not retain a reproducible planner seed")
 	TEST_ASSERT_NOTNULL(site.station_spec, "site did not retain its generated station specification")
 	TEST_ASSERT_NOTNULL(site.station_materialization, "site did not retain its station materialization")
-	TEST_ASSERT_EQUAL(site.landing, get_turf(site.station_materialization.entry), "landing does not use the generated docking entry")
+	TEST_ASSERT_EQUAL(site.landing(), get_turf(site.station_materialization.entry), "landing does not use the generated docking entry")
 	var/mining_spawners = 0
 	for(var/turf/scan_turf in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
 		if(locate(/obj/structure/mob_spawner/scanner/mining_animals) in scan_turf)
@@ -114,8 +114,8 @@
 	TEST_ASSERT_NOTNULL(site.station_director, "Debug station did not initialize its director")
 	TEST_ASSERT_NOTNULL(site.station_defense, "Debug station did not initialize defenders")
 	TEST_ASSERT_EQUAL(length(site.station_controls), length(site.station_spec.departments), "Debug station did not create exactly one control for every department")
-	TEST_ASSERT_NOTNULL(site.landing, "Debug station has no teleport destination")
-	var/datum/gas_mixture/landing_air = site.landing.return_air()
+	TEST_ASSERT_NOTNULL(site.landing(), "Debug station has no teleport destination")
+	var/datum/gas_mixture/landing_air = site.landing().return_air()
 	TEST_ASSERT(landing_air?.return_pressure() > 80, "Debug station landing is not pressurized")
 	var/mineral_exterior_count = 0
 	for(var/turf/simulated/mineral/mineral_turf in block(locate(1, 1, site.z_level), locate(world.maxx, world.maxy, site.z_level)))
@@ -340,7 +340,7 @@
 /datum/unit_test/dq_expedition_assignment_prevents_ready_expiry/Run()
 	var/datum/expedition_site/site = new(world.maxz + 1, EXP_DIFF_LOW)
 	var/obj/machinery/computer/shuttle_control/explore/console = new(null)
-	site.origin_console = console
+	site.origin_console_handle = om_handle(console)
 	console.active_expedition = site
 	TEST_ASSERT(site.has_active_assignment(), "A site owned by its origin console was not recognized as actively assigned")
 	site.status = EXP_STATUS_ACTIVE

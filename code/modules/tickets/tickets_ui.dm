@@ -32,8 +32,8 @@
 
 	var/selected_ticket = null
 
-	if(user.client.selected_ticket)
-		var/datum/ticket/T = user.client.selected_ticket
+	if(user.client.selected_ticket())
+		var/datum/ticket/T = user.client.selected_ticket()
 		if(check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD)) || (check_rights_for(user.client, R_MENTOR) && T.level < 1))
 			selected_ticket = list(
 				"id" = T.id,
@@ -165,27 +165,27 @@
 			. = TRUE
 		if("pick_ticket")
 			var/datum/ticket/T = ID2Ticket(params["ticket_id"])
-			ui.user.client.selected_ticket = T
+			ui.user.client.selected_ticket_handle = om_handle(T)
 			. = TRUE
 		if("retitle_ticket")
-			ui.user.client.selected_ticket.Retitle()
+			ui.user.client.selected_ticket().Retitle()
 			. = TRUE
 		if("reopen_ticket")
-			ui.user.client.selected_ticket.Reopen(ui.user)
+			ui.user.client.selected_ticket().Reopen(ui.user)
 			. = TRUE
 		if("undock_ticket")
-			ui.user.client.selected_ticket.tgui_interact(ui.user)
-			ui.user.client.selected_ticket = null
+			ui.user.client.selected_ticket().tgui_interact(ui.user)
+			ui.user.client.selected_ticket_handle = null
 			. = TRUE
 		if("send_msg")
 			if(!params["msg"])
 				return
 
-			switch(ui.user.client.selected_ticket.level)
+			switch(ui.user.client.selected_ticket().level)
 				if (0)
-					ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket.initiator, params["msg"], ui.user.client.selected_ticket)
+					ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket().initiator, params["msg"], ui.user.client.selected_ticket())
 				if (1)
-					ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket.initiator, params["msg"], ui.user.client.selected_ticket)
+					ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket().initiator, params["msg"], ui.user.client.selected_ticket())
 			. = TRUE
 
 /datum/tickets/tgui_fallback(payload, user)

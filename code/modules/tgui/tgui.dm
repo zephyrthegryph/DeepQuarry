@@ -10,7 +10,7 @@
 	/// The mob who opened/is using the UI.
 	var/mob/user
 	/// The object which owns the UI.
-	var/datum/src_object
+	var/src_object_handle
 	/// The title of the UI.
 	var/title
 	/// The window_id for browse() and onclose().
@@ -70,7 +70,7 @@
  */
 /datum/tgui/New(mob/user, datum/src_object, interface, title, datum/tgui/parent_ui, ui_x, ui_y, datum/tgui_window/window)
 	src.user = user
-	src.src_object = src_object
+	src.src_object_handle = om_handle(src_object)
 	src.interface = interface
 	if(title)
 		src.title = title
@@ -172,7 +172,7 @@
 		/datum/asset/simple/namespaced/tgui_extra_fonts))
 	flush_queue |= window.send_asset(get_asset_datum(
 		/datum/asset/json/icon_ref_map))
-	for(var/datum/asset/asset in src_object.ui_assets(user))
+	for(var/datum/asset/asset in src_object().ui_assets(user))
 		flush_queue |= window.send_asset(asset)
 	#ifdef DEBUG
 	if(startup_profile)
@@ -183,7 +183,7 @@
 	// moment it mounts. Each interface chunk is self-contained (rspack splitChunks is
 	// off), so the single manifest entry is the complete set of files needed — no
 	// dependency closure. No-op when the build emitted no manifest (unsplit bundle).
-	var/datum/tgui_asset_generation/asset_generation = window.asset_generation || SStgui.get_current_asset_generation()
+	var/datum/tgui_asset_generation/asset_generation = window.asset_generation() || SStgui.get_current_asset_generation()
 	var/list/interface_chunks = asset_generation.get_interface_chunks(interface)
 	// Directly copying development chunks into BYOND's cache is not sufficient:
 	// Chromium can request a file before BYOND has registered its browse_rsc name,
@@ -229,7 +229,7 @@
 		// the error message properly.
 		window.release_lock()
 		window.close(can_be_suspended, logout)
-		src_object.tgui_close(user)
+		src_object().tgui_close(user)
 		SStgui.on_close(src)
 
 		if(user.client)
@@ -334,7 +334,7 @@
  */
 /datum/tgui/proc/get_payload(custom_data, with_data, with_static_data, list/startup_profile, startup_timer)
 	var/list/json_data = list()
-	var/datum/tgui_asset_generation/asset_generation = window?.asset_generation || SStgui.get_current_asset_generation()
+	var/datum/tgui_asset_generation/asset_generation = window?.asset_generation() || SStgui.get_current_asset_generation()
 	var/list/default_geometry = asset_generation.get_default_geometry(interface)
 	json_data["config"] = list(
 		"chunk_base_url" = asset_generation.get_chunk_base_url(),
@@ -378,22 +378,22 @@
 			"observer" = isobserver(user),
 		),
 	)
-	var/data = custom_data || with_data && src_object.tgui_data(user, src, state)
+	var/data = custom_data || with_data && src_object().tgui_data(user, src, state)
 	#ifdef DEBUG
 	if(startup_profile)
 		startup_profile["dynamic_data_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
 	if(data)
 		json_data["data"] = data
-	var/static_data = with_static_data && src_object.tgui_static_data(user)
+	var/static_data = with_static_data && src_object().tgui_static_data(user)
 	#ifdef DEBUG
 	if(startup_profile)
 		startup_profile["static_data_ms"] = rustg_time_milliseconds(startup_timer)
 	#endif
 	if(static_data)
 		json_data["static_data"] = static_data
-	if(src_object.tgui_shared_states)
-		json_data["shared"] = src_object.tgui_shared_states
+	if(src_object().tgui_shared_states)
+		json_data["shared"] = src_object().tgui_shared_states
 	return json_data
 
 /**
@@ -405,9 +405,9 @@
 /datum/tgui/process(force = FALSE)
 	if(closing)
 		return
-	var/datum/host = src_object.tgui_host(user)
+	var/datum/host = src_object().tgui_host(user)
 	// If the object or user died (or something else), abort.
-	if(QDELETED(src_object) || QDELETED(host) || QDELETED(user) || QDELETED(window))
+	if(QDELETED(src_object()) || QDELETED(host) || QDELETED(user) || QDELETED(window))
 		close(can_be_suspended = FALSE)
 		return
 	// Validate ping
@@ -421,7 +421,7 @@
 		return
 	// Update through a normal call to ui_interact
 	if(status != STATUS_DISABLED && (autoupdate || force))
-		src_object.tgui_interact(user, src, parent_ui)
+		src_object().tgui_interact(user, src, parent_ui)
 		return
 	// Update status only
 	var/needs_update = process_status()
@@ -438,8 +438,8 @@
  */
 /datum/tgui/proc/process_status()
 	var/prev_status = status
-	if(src_object)
-		status = src_object.tgui_status(user, state)
+	if(src_object())
+		status = src_object().tgui_status(user, state)
 	if(parent_ui)
 		status = min(status, parent_ui.status)
 	return prev_status != status
@@ -457,7 +457,7 @@
 	if(type && copytext(type, 1, 5) == "act/")
 		var/act_type = copytext(type, 5)
 		#ifdef TGUI_DEBUGGING
-		log_tgui(user, "Action: [act_type] [href_list["payload"]], Window: [window.id], Source: [src_object]")
+		log_tgui(user, "Action: [act_type] [href_list["payload"]], Window: [window.id], Source: [src_object()]")
 		#endif
 		process_status()
 		DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(on_act_message), act_type, payload, state))
@@ -482,14 +482,14 @@
 		if("setSharedState")
 			if(status != STATUS_INTERACTIVE)
 				return
-			LAZYINITLIST(src_object.tgui_shared_states)
-			src_object.tgui_shared_states[href_list["key"]] = href_list["value"]
-			SStgui.update_uis(src_object)
+			LAZYINITLIST(src_object().tgui_shared_states)
+			src_object().tgui_shared_states[href_list["key"]] = href_list["value"]
+			SStgui.update_uis(src_object())
 		if("fallback")
 			#ifdef TGUI_DEBUGGING
-			log_tgui(user, "Fallback Triggered: [href_list["payload"]], Window: [window.id], Source: [src_object]")
+			log_tgui(user, "Fallback Triggered: [href_list["payload"]], Window: [window.id], Source: [src_object()]")
 			#endif
-			src_object.tgui_fallback(payload, user)
+			src_object().tgui_fallback(payload, user)
 		if(TGUI_MANAGED_BYONDUI_TYPE_RENDER)
 			var/byond_ui_id = payload[TGUI_MANAGED_BYONDUI_PAYLOAD_ID]
 			if(!byond_ui_id || LAZYLEN(open_byondui_elements) > TGUI_MANAGED_BYONDUI_LIMIT)
@@ -505,10 +505,14 @@
 
 /// Wrapper for behavior to potentially wait until the next tick if the server is overloaded
 /datum/tgui/proc/on_act_message(act_type, payload, state)
-	if(QDELETED(src) || QDELETED(src_object))
+	if(QDELETED(src) || QDELETED(src_object()))
 		return
-	if(src_object.tgui_act(act_type, payload, src, state))
-		SStgui.update_uis(src_object)
-		if(isatom(src_object) && !QDELETED(src_object))
-			var/atom/A = src_object
+	if(src_object().tgui_act(act_type, payload, src, state))
+		SStgui.update_uis(src_object())
+		if(isatom(src_object()) && !QDELETED(src_object()))
+			var/atom/A = src_object()
 			A.interaction_ran(user, null)
+
+/// LC-refs: the src_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui/proc/src_object() as /datum
+	return om_resolve(src_object_handle)

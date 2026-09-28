@@ -1,6 +1,6 @@
 /datum/tgui_ban_panel
 	var/client/holder //client of whoever is using this datum
-	var/datum/admins/admin_datum
+	var/admin_datum_handle
 	var/playerckey
 	var/adminckey
 	var/playerip
@@ -16,14 +16,14 @@
 		var/mob/user_mob = user
 		holder = user_mob.client //if its a mob, assign the mob's client to holder
 	playerckey = pckey
-	admin_datum = admind
+	admin_datum_handle = om_handle(admind)
 
 /datum/tgui_ban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_BAN)
 
 /datum/tgui_ban_panel/tgui_close()
 	holder = null
-	admin_datum = null
+	admin_datum_handle = null
 	qdel(src)
 
 /datum/tgui_ban_panel/tgui_interact(mob/user, datum/tgui/ui)
@@ -112,7 +112,7 @@
 				message_admins("Ban process: A mob matching [playermob.ckey] was found at location [playermob.x], [playermob.y], [playermob.z]. Custom ip and computer id fields replaced with the ip and computer id from the located mob")
 			notes_add(banckey, banreason, ui.user)
 
-			admin_datum.DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
+			admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
 			if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
 				qdel(playermob.client)
 
@@ -134,7 +134,7 @@
 			if(!banedit || !banid)
 				return FALSE
 
-			admin_datum.DB_ban_edit(ui.user.client, banid, banedit)
+			admin_datum().DB_ban_edit(ui.user.client, banid, banedit)
 			return TRUE
 
 /datum/tgui_ban_panel/proc/database_lookup()
@@ -199,3 +199,7 @@
 		UNTYPED_LIST_ADD(all_bans, list("auto" = ((select_query.item[3] in list("TEMPBAN", "JOB_TEMPBAN")) && now > select_query.item[7]), "data_list" = select_query.item))
 
 	return all_bans
+
+/// LC-refs: the admin_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_ban_panel/proc/admin_datum() as /datum/admins
+	return om_resolve(admin_datum_handle)

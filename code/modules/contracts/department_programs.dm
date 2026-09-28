@@ -126,7 +126,7 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 
 /datum/contract/social/alternative_fuel_trial
 	var/datum/contract_requirement/staged_sustained_event/output_requirement
-	var/datum/contract_requirement/sustained_event/thermal_requirement
+	var/thermal_requirement_handle
 
 /datum/contract/social/alternative_fuel_trial/on_negotiated_terms_changed()
 	..()
@@ -166,10 +166,10 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 	output_requirement.filter.set_number_requirement("plasma_fraction", CONTRACT_EVIDENCE_COMPARE_AT_MOST, max_plasma_fraction)
 	output_requirement.filter.set_number_requirement("integrity", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, integrity_floor)
 	output_requirement.description = "Certify three increasingly strong [profile] output stages using at least two chamber gases, no more than [round(max_plasma_fraction * 100, 0.1)]% phoron, and at least [integrity_floor]% integrity."
-	if(thermal_requirement)
-		thermal_requirement.threshold = thermal_ceiling
-		thermal_requirement.filter.set_number_requirement("eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, stages[1]["threshold"])
-		thermal_requirement.description = "Hold the qualifying alternative-fuel engine below [thermal_ceiling] K for two minutes."
+	if(thermal_requirement())
+		thermal_requirement().threshold = thermal_ceiling
+		thermal_requirement().filter.set_number_requirement("eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, stages[1]["threshold"])
+		thermal_requirement().description = "Hold the qualifying alternative-fuel engine below [thermal_ceiling] K for two minutes."
 	description = "Certify progressively stronger output under the negotiated [profile] alternative-fuel protocol while controlling temperature and crystal integrity."
 
 /datum/contract_definition/social/program/alternative_fuel
@@ -206,7 +206,7 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 		contract.output_requirement.filter.require_number(check["key"], check["comparator"], check["expected"])
 	contract.output_requirement.filter.require_value("machine_kind", "supermatter")
 	contract.add_requirement(contract.output_requirement)
-	contract.thermal_requirement = add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 300)))
+	contract.thermal_requirement_handle = om_handle(add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 300))))
 	add_program_sustained(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, "service_id", "powered_channels", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 3, 3 MINUTES, 4, "Commissioned station service", "After the engine trial, hold four APC service zones at full power for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	var/datum/contract_negotiation_clause/commissioning = new("commissioning_priority", "Commissioning priority", "Choose what the station must protect while pursuing the performance award.")
 	commissioning.add_option(make_contract_clause_option("reserve", "Protect reserve", "Keep the safer operating margin; Engineering receives more of the award.", -100, 250, -50, 1, 3, 0, 10 MINUTES, list("requirement_floors" = list("Alternative-fuel output stages" = 0.75))))
@@ -354,20 +354,20 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 // --------------------------------------------------------------------------
 
 /datum/contract/social/balanced_operations
-	var/datum/contract_requirement/event_count/cycle_requirement
+	var/cycle_requirement_handle
 
 /datum/contract/social/balanced_operations/on_negotiated_terms_changed()
 	..()
-	if(!cycle_requirement)
+	if(!cycle_requirement())
 		return
 	var/profile = negotiated_effect("budget_profile", "balanced")
 	var/payroll_floor = profile == "staff" ? 0.98 : 0.9
 	var/department_floor = profile == "departments" ? 7 : 6
 	var/reserve_floor = profile == "reserve" ? 5000 : 0
-	cycle_requirement.filter.set_number_requirement("payroll_coverage", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, payroll_floor)
-	cycle_requirement.filter.set_number_requirement("funded_department_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, department_floor)
-	cycle_requirement.filter.set_number_requirement("station_balance", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, reserve_floor)
-	cycle_requirement.description = "Close two station budget cycles with at least [round(payroll_floor * 100)]% payroll coverage, [department_floor] funded departments[reserve_floor ? ", and [reserve_floor] Thalers retained in station reserve" : ""]."
+	cycle_requirement().filter.set_number_requirement("payroll_coverage", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, payroll_floor)
+	cycle_requirement().filter.set_number_requirement("funded_department_count", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, department_floor)
+	cycle_requirement().filter.set_number_requirement("station_balance", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, reserve_floor)
+	cycle_requirement().description = "Close two station budget cycles with at least [round(payroll_floor * 100)]% payroll coverage, [department_floor] funded departments[reserve_floor ? ", and [reserve_floor] Thalers retained in station reserve" : ""]."
 
 /datum/contract_definition/social/program/balanced_operations
 	id = "balanced_operations_charter"
@@ -386,7 +386,7 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 	add_social_role(contract, "executive", "Executive budget sponsor", "Sets allocations and accepts accountability for the closed cycle.", list(DEPARTMENT_COMMAND), 1, 2)
 	add_social_role(contract, "delegate", "Department budget delegate", "Represents operating and workforce needs.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 5, 9)
 	contract.personal_side_definitions = list("command_executive_reserve")
-	contract.cycle_requirement = add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 2, "Sustained operating agreement", "Close two distinct station budget cycles with payroll paid first, at least six funded departments, and at least 90% payroll coverage.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "accounting_period", list("rollup" = "station"), list(list("key" = "funded_department_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 6), list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.9), list("key" = "station_balance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0)))
+	contract.cycle_requirement_handle = om_handle(add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 2, "Sustained operating agreement", "Close two distinct station budget cycles with payroll paid first, at least six funded departments, and at least 90% payroll coverage.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "accounting_period", list("rollup" = "station"), list(list("key" = "funded_department_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 6), list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.9), list("key" = "station_balance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0))))
 	var/datum/contract_negotiation_clause/operating_policy = new("operating_policy", "Operating policy", "Choose the station's priority for both covered budget cycles.")
 	operating_policy.add_option(make_contract_clause_option("staff", "Staffing first", "Requires 98% payroll coverage across both cycles.", -100, -100, 200, 2, 1, 3, 0, list("budget_profile" = "staff")), TRUE)
 	operating_policy.add_option(make_contract_clause_option("departments", "Operations first", "Requires all seven operating departments to receive funding.", -50, 250, -100, 1, 3, 0, 0, list("budget_profile" = "departments")))
@@ -414,3 +414,11 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 	projects.second_filter.require_number("value", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 100)
 
 REF_OWNED(/datum/contract/social/alternative_fuel_trial, "output_requirement")
+
+/// LC-refs: the thermal_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/contract/social/alternative_fuel_trial/proc/thermal_requirement() as /datum/contract_requirement/sustained_event
+	return om_resolve(thermal_requirement_handle)
+
+/// LC-refs: the cycle_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/contract/social/balanced_operations/proc/cycle_requirement() as /datum/contract_requirement/event_count
+	return om_resolve(cycle_requirement_handle)

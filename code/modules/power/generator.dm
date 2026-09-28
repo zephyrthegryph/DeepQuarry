@@ -18,8 +18,8 @@
 	var/max_power = 500000
 	var/thermal_efficiency = 0.65
 
-	var/obj/machinery/atmospherics/binary/circulator/circ1
-	var/obj/machinery/atmospherics/binary/circulator/circ2
+	var/circ1_handle
+	var/circ2_handle
 
 	var/last_circ1_gen = 0
 	var/last_circ2_gen = 0
@@ -52,43 +52,43 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 //note that the circulator's outlet dir is it's always facing dir, and it's inlet is always the reverse
 /obj/machinery/power/generator/proc/reconnect()
 	clear_gas_dependencies()
-	circ1 = null
-	circ2 = null
+	circ1_handle = null
+	circ2_handle = null
 	if(src.loc && anchored)
 		if(src.dir & (EAST|WEST))
-			circ1 = locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,WEST)
-			circ2 = locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,EAST)
+			circ1_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,WEST))
+			circ2_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,EAST))
 
-			if(circ1 && circ2)
-				if(circ1.dir != NORTH || circ2.dir != SOUTH)
-					circ1 = null
-					circ2 = null
+			if(circ1() && circ2())
+				if(circ1().dir != NORTH || circ2().dir != SOUTH)
+					circ1_handle = null
+					circ2_handle = null
 
 		else if(src.dir & (NORTH|SOUTH))
-			circ1 = locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,NORTH)
-			circ2 = locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,SOUTH)
+			circ1_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,NORTH))
+			circ2_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,SOUTH))
 
-			if(circ1 && circ2 && (circ1.dir != EAST || circ2.dir != WEST))
-				circ1 = null
-				circ2 = null
+			if(circ1() && circ2() &&circ1()c1.dir != EAST || circ2().dir != WEST))
+				circ1_handle = null
+				circ2_handle = null
 
 /// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
 /// dependency filter made.
 /obj/machinery/power/generator/proc/register_gas_dependencies()
 	clear_gas_dependencies()
-	if(!circ1 || !circ2)
+	if(!circ1() || !circ2())
 		return
 	var/list/mixture_ids = list()
-	for(var/datum/gas_mixture/air as anything in list(circ1.air1, circ1.air2, circ2.air1, circ2.air2))
+	for(var/datum/gas_mixture/air as anything in list(circ1().air1, circ1().air2, circ2().air1, circ2().air2))
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
 	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/power/generator/proc/gas_wake_condition()
-	if(!circ1 || !circ2)
+	if(!circ1() || !circ2())
 		return FALSE
-	return (circ1.air1.return_pressure() - circ1.air2.return_pressure() > 10) || (circ2.air1.return_pressure() - circ2.air2.return_pressure() > 10)
+	return (circ1().air1.return_pressure() - circ1().air2.return_pressure() > 10) || (circ2().air1.return_pressure() - circ2().air2.return_pressure() > 10)
 
 /obj/machinery/power/generator/proc/clear_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -100,23 +100,23 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 /obj/machinery/power/generator/update_icon()
 	icon_state = anchored ? "teg-assembled" : "teg-unassembled"
 	cut_overlays()
-	if (circ1)
-		circ1.temperature_overlay = null
-	if (circ2)
-		circ2.temperature_overlay = null
+	if (circ1())
+		circ1().temperature_overlay = null
+	if (circ2())
+		circ2().temperature_overlay = null
 	if (stat & (NOPOWER|BROKEN))
 		return 1
 	else
 		if (lastgenlev != 0)
 			add_overlay("teg-op[lastgenlev]")
-			if (circ1 && circ2)
+			if (circ1() && circ2())
 				var/extreme = (lastgenlev > 9) ? "ex" : ""
-				if (circ1.last_temperature < circ2.last_temperature)
-					circ1.temperature_overlay = "circ-[extreme]cold"
-					circ2.temperature_overlay = "circ-[extreme]hot"
+				if (circ1().last_temperature < circ2().last_temperature)
+					circ1().temperature_overlay = "circ-[extreme]cold"
+					circ2().temperature_overlay = "circ-[extreme]hot"
 				else
-					circ1.temperature_overlay = "circ-[extreme]hot"
-					circ2.temperature_overlay = "circ-[extreme]cold"
+					circ1().temperature_overlay = "circ-[extreme]hot"
+					circ2().temperature_overlay = "circ-[extreme]cold"
 		return 1
 
 /obj/machinery/power/generator/machine_step()
@@ -124,13 +124,13 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 		stored_energy = 0
 		set_power_supply(0)
 		return PROCESS_KILL
-	if(!circ1 || !circ2 || stat & (BROKEN|NOPOWER))
+	if(!circ1() || !circ2() || stat & (BROKEN|NOPOWER))
 		stored_energy = 0
 		set_power_supply(0)
 		return PROCESS_KILL
 
-	var/datum/gas_mixture/air1 = circ1.return_transfer_air()
-	var/datum/gas_mixture/air2 = circ2.return_transfer_air()
+	var/datum/gas_mixture/air1 = circ1().return_transfer_air()
+	var/datum/gas_mixture/air2 = circ2().return_transfer_air()
 
 	lastgen2 = lastgen1
 	lastgen1 = 0
@@ -157,15 +157,15 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 
 	//Transfer the air
 	if (air1)
-		circ1.air2.merge(air1)
+		circ1().air2.merge(air1)
 	if (air2)
-		circ2.air2.merge(air2)
+		circ2().air2.merge(air2)
 
 	//Update the gas networks
-	if(circ1.network2)
-		circ1.network2.mark_dirty()
-	if(circ2.network2)
-		circ2.network2.mark_dirty()
+	if(circ1().network2)
+		circ1().network2.mark_dirty()
+	if(circ2().network2)
+		circ2().network2.mark_dirty()
 
 	//Exceeding maximum power leads to some power loss
 	if(effective_gen > max_power && prob(5))
@@ -175,8 +175,8 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 		stored_energy *= 0.5
 
 	//Power
-	last_circ1_gen = circ1.return_stored_energy()
-	last_circ2_gen = circ2.return_stored_energy()
+	last_circ1_gen = circ1().return_stored_energy()
+	last_circ2_gen = circ2().return_stored_energy()
 	stored_energy += last_thermal_gen + last_circ1_gen + last_circ2_gen
 	lastgen1 = stored_energy*0.4 //smoothened power generation to prevent slingshotting as pressure is equalized, then restored by pumps
 	stored_energy -= lastgen1
@@ -238,7 +238,7 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER) || !anchored)
 		return TRUE
-	if(!circ1 || !circ2) //Just incase the middle part of the TEG was not wrenched last.
+	if(!circ1() || !circ2()) //Just incase the middle part of the TEG was not wrenched last.
 		reconnect()
 	tgui_interact(user)
 	return TRUE
@@ -261,28 +261,28 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 	data["thermalOutput"] = last_thermal_gen
 
 	data["primary"] = null
-	if(circ1)
+	if(circ1())
 		//The one on the left (or top)
 		data["primary"] = list()
 		data["primary"]["dir"] = vertical ? "top" : "left"
 		data["primary"]["output"] = last_circ1_gen
-		data["primary"]["flowCapacity"] = circ1.volume_capacity_used*100
-		data["primary"]["inletPressure"] = circ1.air1.return_pressure()
-		data["primary"]["inletTemperature"] = circ1.air1.return_temperature()
-		data["primary"]["outletPressure"] = circ1.air2.return_pressure()
-		data["primary"]["outletTemperature"] = circ1.air2.return_temperature()
+		data["primary"]["flowCapacity"] = circ1().volume_capacity_used*100
+		data["primary"]["inletPressure"] = circ1().air1.return_pressure()
+		data["primary"]["inletTemperature"] = circ1().air1.return_temperature()
+		data["primary"]["outletPressure"] = circ1().air2.return_pressure()
+		data["primary"]["outletTemperature"] = circ1().air2.return_temperature()
 
 	data["secondary"] = null
-	if(circ2)
+	if(circ2())
 		//Now for the one on the right (or bottom)
 		data["secondary"] = list()
 		data["secondary"]["dir"] = vertical ? "bottom" : "right"
 		data["secondary"]["output"] = last_circ2_gen
-		data["secondary"]["flowCapacity"] = circ2.volume_capacity_used*100
-		data["secondary"]["inletPressure"] = circ2.air1.return_pressure()
-		data["secondary"]["inletTemperature"] = circ2.air1.return_temperature()
-		data["secondary"]["outletPressure"] = circ2.air2.return_pressure()
-		data["secondary"]["outletTemperature"] = circ2.air2.return_temperature()
+		data["secondary"]["flowCapacity"] = circ2().volume_capacity_used*100
+		data["secondary"]["inletPressure"] = circ2().air1.return_pressure()
+		data["secondary"]["inletTemperature"] = circ2().air1.return_temperature()
+		data["secondary"]["outletPressure"] = circ2().air2.return_pressure()
+		data["secondary"]["outletTemperature"] = circ2().air2.return_temperature()
 
 	return data
 
@@ -328,3 +328,11 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 /obj/machinery/power/generator/arm_wakes()
 	..()
 	register_gas_dependencies()
+
+/// LC-refs: the circ1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/generator/proc/circ1() as /obj/machinery/atmospherics/binary/circulator
+	return om_resolve(circ1_handle)
+
+/// LC-refs: the circ2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/generator/proc/circ2() as /obj/machinery/atmospherics/binary/circulator
+	return om_resolve(circ2_handle)

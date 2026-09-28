@@ -184,10 +184,10 @@
 	if (!admin_client)
 		return
 
-	admin_client.click_intercept = null
+	admin_client.click_intercept_handle = null
 
 	if (precise_mode != PRECISE_MODE_OFF)
-		admin_client.click_intercept = src
+		admin_client.click_intercept_handle = om_handle(src)
 		winset(admin_client, "mapwindow.map", "right-click=true")
 	else
 		winset(admin_client, "mapwindow.map", "right-click=false")

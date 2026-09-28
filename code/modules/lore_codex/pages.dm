@@ -2,14 +2,14 @@
 /datum/lore/codex
 	var/name = null // Title displayed
 	var/data = null // The actual words.
-	var/datum/lore/codex/parent = null // Category above us
+	var/parent_handle	// Category above us
 	var/list/keywords = list() // Used for searching.
 	var/datum/codex_tree/holder = null
 
 /datum/lore/codex/New(new_holder, new_parent)
 	..()
 	holder = new_holder
-	parent = new_parent
+	parent_handle = om_handle(new_parent)
 	add_content()
 	if(name)
 		keywords.Add(name)
@@ -64,3 +64,7 @@
 	for(var/datum/lore/codex/child in children)
 		results += child.index_page()
 	return results
+
+/// LC-refs: Category above us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/lore/codex/proc/parent() as /datum/lore/codex
+	return om_resolve(parent_handle)

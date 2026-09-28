@@ -40,7 +40,7 @@
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
 /datum/generated_station_director
-	var/datum/generated_station_simulation/simulation
+	var/simulation_handle
 	var/alert_level = GENERATED_STATION_ALERT_GREEN
 	var/list/local_alert_levels
 	var/list/department_connected
@@ -59,7 +59,7 @@
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()
-	simulation = new_simulation
+	simulation_handle = om_handle(new_simulation)
 	local_alert_levels = list()
 	department_connected = list()
 	reports = list()
@@ -68,7 +68,7 @@
 	squads = list()
 	orders = list()
 	dirty_departments = list()
-	for(var/department_id in simulation?.departments)
+	for(var/department_id in simulation()?.departments)
 		department_connected[department_id] = TRUE
 		local_alert_levels[department_id] = GENERATED_STATION_ALERT_GREEN
 		local_knowledge[department_id] = list()
@@ -104,9 +104,9 @@ REF_OWNED_VALUES(/datum/generated_station_director, list("reports", "squads", "o
 	return TRUE
 
 /datum/generated_station_director/proc/compute_strategic_online()
-	if(!simulation)
+	if(!simulation())
 		return FALSE
-	return simulation.department_state("ai-1") != GENERATED_DEPARTMENT_OFFLINE && simulation.capability_available("data") && simulation.capability_available("coordination")
+	return simulation().department_state("ai-1") != GENERATED_DEPARTMENT_OFFLINE && simulation().capability_available("data") && simulation().capability_available("coordination")
 
 /datum/generated_station_director/proc/process_dirty()
 	if(!strategic_dirty)
@@ -236,3 +236,7 @@ REF_OWNED_VALUES(/datum/generated_station_director, list("reports", "squads", "o
 	orders -= order.id
 	qdel(order)
 	return TRUE
+
+/// LC-refs: the simulation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_director/proc/simulation() as /datum/generated_station_simulation
+	return om_resolve(simulation_handle)

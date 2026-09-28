@@ -65,7 +65,7 @@
 	var/datum/shuttle/shuttle_datum = SSshuttles.shuttles[shuttle]
 	if(istype(shuttle_datum,/datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/oms = shuttle_datum
-		oms.myship = src
+		oms.myship_handle = om_handle(src)
 	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_PRE_MOVE, PROC_REF(pre_shuttle_jump))
 	RegisterSignal(shuttle_datum, COMSIG_OBSERVER_SHUTTLE_MOVED, PROC_REF(on_shuttle_jump))
 	on_landing(landmark, shuttle_datum.current_location) // We "land" at round start to properly place ourselves on the overmap.
@@ -187,11 +187,11 @@ REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark"
 		var/datum/flight_port/port = SSflight_operations.port_for_landmark(into)
 		if(vessel.docked_port_id && vessel.docked_port_id != port?.id)
 			var/datum/flight_port/old_port = SSflight_operations.ports[vessel.docked_port_id]
-			if(old_port?.occupied_by == vessel)
-				old_port.occupied_by = null
+			if(old_port?.occupied_by() == vessel)
+				old_port.occupied_by_handle = null
 		vessel.docked_port_id = port?.id
 		if(port)
-			port.occupied_by = vessel
+			port.occupied_by_handle = om_handle(vessel)
 		// A delegated port inherits the physical host's celestial context, while
 		// the active flight plan retains the logical route destination.
 		var/datum/flight_destination/physical_host = SSflight_operations.destinations[port?.host_destination_id]
@@ -201,8 +201,8 @@ REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark"
 	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
 	if(vessel)
 		var/datum/flight_port/port = SSflight_operations.ports[vessel.docked_port_id]
-		if(port?.occupied_by == vessel)
-			port.occupied_by = null
+		if(port?.occupied_by() == vessel)
+			port.occupied_by_handle = null
 		vessel.docked_port_id = null
 
 /obj/effect/overmap/visitable/ship/landable/get_landed_info()

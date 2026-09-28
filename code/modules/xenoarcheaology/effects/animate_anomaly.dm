@@ -19,7 +19,7 @@
 	var/atom/masterholder = get_master_holder()
 	if(utilizer) //We are in an artifact utilizer! Just run from whoever touched us last!
 		masterholder = utilizer
-		target = utilizer.last_user_touched
+		target = utilizer.last_user_touched()
 		return
 
 	if(!target || target.z != masterholder.z || get_dist(target, masterholder) > effectrange)
@@ -50,7 +50,7 @@
 	/// This does the 'we are in an artifact utilizer' functionality
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anodevice/utilizer = O.loc
-		user = utilizer.last_user_touched
+		user = utilizer.last_user_touched()
 		T = get_step_away(utilizer, user)
 		if(istype(utilizer.loc, /turf))
 			utilizer.Move(T)
@@ -68,7 +68,7 @@
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anodevice/utilizer = O.loc
 		O = O.loc //Yes, this seems weird, but it's needed for below.
-		user = utilizer.last_user_touched
+		user = utilizer.last_user_touched()
 		if(istype(utilizer.loc, /mob)) //It's in your hands and running away!
 			user = utilizer.loc
 			user.drop_from_inventory(utilizer, user.loc)

@@ -43,7 +43,7 @@
 	var/component_coeff = 1
 
 	/// Reference to the techweb.
-	var/datum/techweb/stored_research
+	var/stored_research_handle
 
 	/// Reference to a remote material inventory, such as an ore silo.
 	var/datum/component/remote_materials/rmat
@@ -74,23 +74,23 @@
 	default_apply_parts()
 	RefreshParts()
 	update_icon()
-	if(!stored_research)
-		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
-	if(stored_research)
+	if(!stored_research())
+		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research(), src)
+	if(stored_research())
 		on_connected_techweb()
 
 REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
-	if(stored_research)
-		UnregisterSignal(stored_research, list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
-	stored_research = new_techweb
-	if(!isnull(stored_research))
+	if(stored_research())
+		UnregisterSignal(stored_research(), list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
+	stored_research_handle = om_handle(new_techweb)
+	if(!isnull(stored_research()))
 		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/on_connected_techweb()
 	RegisterSignals(
-		stored_research,
+		stored_research(),
 		list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN),
 		PROC_REF(on_techweb_update)
 	)
@@ -156,7 +156,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 	var/previous_design_count = cached_designs.len
 
 	cached_designs.Cut()
-	for(var/v in stored_research.researched_designs)
+	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
@@ -473,7 +473,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 				if(!istext(design_id))
 					continue
 
-				if(!(LAZYFIND(stored_research.researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
+				if(!(LAZYFIND(stored_research().researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
 					continue
 
 				var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
@@ -575,3 +575,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, "print_sound")
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()
 	return process_queue
+
+/// LC-refs: the stored_research this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
+	return om_resolve(stored_research_handle)

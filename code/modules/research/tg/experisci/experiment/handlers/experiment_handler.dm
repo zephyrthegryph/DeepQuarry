@@ -9,7 +9,7 @@
 	/// Holds the currently linked techweb to get experiments from
 	var/datum/techweb/linked_web
 	/// Holds the currently selected experiment
-	var/datum/experiment/selected_experiment
+	var/selected_experiment_handle
 	/// Holds the list of types of experiments that this experiment_handler can interact with
 	var/list/allowed_experiments
 	/// Holds the list of types of experiments that this experimennt_handler should NOT interact with
@@ -89,7 +89,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
  */
 /datum/component/experiment_handler/proc/should_run_handheld_experiment(datum/source, atom/target, mob/user)
 	// Check that there is actually an experiment selected
-	if (selected_experiment == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
+	if (selected_experiment() == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
 		return
 	if (!linked_web)
 		return
@@ -102,13 +102,13 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 			if (experiment.actionable(arglist(arguments)))
 				return TRUE
 	else
-		return selected_experiment.actionable(arglist(arguments))
+		return selected_experiment().actionable(arglist(arguments))
 
 /**
  * This proc exists because Jared Fogle really likes async
  */
 /datum/component/experiment_handler/proc/try_run_handheld_experiment_async(datum/source, atom/target, mob/user)
-	if (selected_experiment == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
+	if (selected_experiment() == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
 		if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
 			to_chat(user, span_notice("You do not have an experiment selected!"))
 		return
@@ -196,7 +196,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
  */
 /datum/component/experiment_handler/proc/action_experiment(datum/source, ...)
 	// Check if an experiment is selected
-	if (selected_experiment == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
+	if (selected_experiment() == null && !(config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE))
 		return FALSE
 
 	// Get arguments for passing to the experiment[s]
@@ -215,7 +215,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 		return any_success
 	else
 		// Returns true if the experiment was successfuly handled
-		return selected_experiment.actionable(arglist(arguments)) && selected_experiment.perform_experiment(arglist(arguments))
+		return selected_experiment().actionable(arglist(arguments)) && selected_experiment().perform_experiment(arglist(arguments))
 
 /**
  * Hook for handling UI interaction via signals
@@ -258,16 +258,16 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 /datum/component/experiment_handler/proc/link_techweb(datum/techweb/new_web)
 	if (new_web == linked_web)
 		return
-	selected_experiment?.on_unselected(src)
-	selected_experiment = null
+	selected_experiment()?.on_unselected(src)
+	selected_experiment_handle = null
 	linked_web = new_web
 
 /**
  * Unlinks this handler from the selected techweb
  */
 /datum/component/experiment_handler/proc/unlink_techweb()
-	selected_experiment?.on_unselected(src)
-	selected_experiment = null
+	selected_experiment()?.on_unselected(src)
+	selected_experiment_handle = null
 	linked_web = null
 
 /**
@@ -279,15 +279,15 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 /datum/component/experiment_handler/proc/link_experiment(datum/experiment/experiment)
 	if (can_select_experiment(experiment))
 		unlink_experiment()
-		selected_experiment = experiment
-		selected_experiment.on_selected(src)
+		selected_experiment_handle = om_handle(experiment)
+		selected_experiment().on_selected(src)
 
 /**
  * Unlinks this handler from the selected experiment
  */
 /datum/component/experiment_handler/proc/unlink_experiment()
-	selected_experiment?.on_unselected(src)
-	selected_experiment = null
+	selected_experiment()?.on_unselected(src)
+	selected_experiment_handle = null
 
 /**
  * Checks if an experiment is valid to be selected by this handler
@@ -359,7 +359,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 				name = experiment.name,
 				description = experiment.description,
 				tag = experiment.exp_tag,
-				selected = selected_experiment == experiment,
+				selected = selected_experiment() == experiment,
 				progress = experiment.check_progress(),
 				performance_hint = experiment.performance_hint,
 				ref = REF(experiment)
@@ -392,6 +392,10 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 			. = TRUE
 			unlink_experiment()
 		if("start_experiment_callback")
-			start_experiment_callback.Invoke(selected_experiment)
+			start_experiment_callback.Invoke(selected_experiment())
 
 REF_OWNED(/datum/component/experiment_handler, "start_experiment_callback")
+
+/// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/experiment_handler/proc/selected_experiment() as /datum/experiment
+	return om_resolve(selected_experiment_handle)

@@ -4,7 +4,7 @@ with an /obj/effect/overmap/visitable/ship present elsewhere on that z level, or
 somewhere on that shuttle. Subtypes of these can be then used to perform ship overmap movement functions.
 */
 /obj/machinery/computer/ship
-	var/obj/effect/overmap/visitable/ship/linked
+	var/linked_handle
 	var/list/viewers // OM handles of mobs in direct-view mode.
 	var/extra_view = 0 // how much the view is increased by when the mob is in overmap mode.
 	/// Whether AI/silicon mobs are permitted to interact with this console. Subtypes may override to FALSE.
@@ -17,7 +17,7 @@ REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(src))
-		linked = sector
+		linked_handle = om_handle(sector)
 		return 1
 
 /obj/machinery/computer/ship/proc/sync_linked(user = null)
@@ -25,8 +25,8 @@ REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
 	if(!sector)
 		return
 	. = attempt_hook_up_recursive(sector)
-	if(. && linked && user)
-		to_chat(user, span_notice("[src] reconnected to [linked]"))
+	if(. && linked() && user)
+		to_chat(user, span_notice("[src] reconnected to [linked()]"))
 		// reconnect dialog is TGUI now; close via SStgui
 		SStgui.close_uis(src)
 
@@ -110,13 +110,13 @@ REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
 // Management of mob view displacement. look to shift view to the ship on the overmap; unlook to shift back.
 
 /obj/machinery/computer/ship/look(mob/user)
-	if(linked && linked.real_appearance)
-		user.client?.images += linked.real_appearance
+	if(linked() && linked().real_appearance)
+		user.client?.images += linked().real_appearance
 	user.set_viewsize(world.view + extra_view)
 
 /obj/machinery/computer/ship/unlook(mob/user)
-	if(linked && linked.real_appearance && user.client)
-		user.client.images -= linked.real_appearance
+	if(linked() && linked().real_appearance && user.client)
+		user.client.images -= linked().real_appearance
 	user.set_viewsize() // reset to default
 
 /obj/machinery/computer/ship/proc/viewing_overmap(mob/user)
@@ -139,3 +139,7 @@ Ships can now be hijacked!
 		hacked = 1
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return 1
+
+/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
+	return om_resolve(linked_handle)

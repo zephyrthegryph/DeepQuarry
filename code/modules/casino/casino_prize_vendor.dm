@@ -44,7 +44,7 @@
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
-	var/datum/data/casino_prize/currently_vending = null // What we're requesting payment for right now
+	var/currently_vending_handle	// What we're requesting payment for right now
 	var/list/log = list() //Log only SS13 staff is allowed to look at, CKEYS are listed here for record keeping of prizes and players for events!
 
 	var/category_weapons	 = 1	//For listing categories, if false then prizes of this categories cant be obtained nor bought for post-shift enjoyment
@@ -252,7 +252,7 @@
 	effect = /obj/machinery/casino_prize_dispenser/proc/interaction_attackby
 
 /obj/machinery/casino_prize_dispenser/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
-	if(currently_vending)
+	if(currently_vending())
 		if(istype(W, /obj/item/spacecasinocash))
 			to_chat(user, span_warning("Please select prize on display with sufficient amount of chips."))
 		else
@@ -370,7 +370,7 @@
 				to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 				return FALSE
 
-			currently_vending = bi
+			currently_vending_handle = om_handle(bi)
 
 			if(istype(ui.user.get_active_hand(), /obj/item/spacecasinocash))
 				var/obj/item/spacecasinocash/cash = ui.user.get_active_hand()
@@ -383,7 +383,7 @@
 					vend(bi, ui.user)
 
 				speak("Thank you for your purchase, your [bi] has been logged.")
-				do_logging(currently_vending, ui.user, bi)
+				do_logging(currently_vending(), ui.user, bi)
 				. = TRUE
 			else
 				to_chat(ui.user, span_warning("Payment failure: unable to process payment."))
@@ -394,7 +394,7 @@
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, bi.equipment_amt)
 		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
-		currently_vending = null
+		currently_vending_handle = null
 		use_power(vend_power_usage)	//actuators and stuff
 		flick("[icon_state]-vend",src)
 		return TRUE
@@ -403,7 +403,7 @@
 		new bi.equipment_path(loc)
 		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
 
-	currently_vending = null
+	currently_vending_handle = null
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
 
@@ -425,3 +425,7 @@
 	return
 
 #undef CASINO_PRIZE
+
+/// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/casino_prize_dispenser/proc/currently_vending() as /datum/data/casino_prize
+	return om_resolve(currently_vending_handle)

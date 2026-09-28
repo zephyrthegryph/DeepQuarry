@@ -3,7 +3,7 @@
 	desc = "An electronic radio system."
 	icon = 'icons/obj/module.dmi'
 	icon_state = "power_mod"
-	var/obj/item/pda/hostpda = null
+	var/hostpda_handle
 
 	var/list/botlist = null		// list of bots
 	var/mob/living/bot/active 	// the active bot; if null, show bot list
@@ -20,7 +20,7 @@
 /obj/item/radio/integrated/Initialize(mapload)
 	..()
 	if(istype(loc?.loc, /obj/item/pda))
-		hostpda = loc.loc
+		hostpda_handle = om_handle(loc.loc)
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/item/radio/integrated/LateInitialize()
@@ -65,7 +65,7 @@
 			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
 
 		if("summon")
-			post_signal(control_freq, "command", "summon", "active", active, "target", get_turf(hostpda), "useraccess", hostpda.GetAccess(), "user", usr, s_filter = bot_filter)
+			post_signal(control_freq, "command", "summon", "active", active, "target", get_turf(hostpda()), "useraccess", hostpda().GetAccess(), "user", usr, s_filter = bot_filter)
 			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
 
 /obj/item/radio/integrated/receive_signal(datum/signal/signal)
@@ -116,3 +116,7 @@
 	signal.data["message"] = message
 
 	radio_connection.post_signal(src, signal)
+
+/// LC-refs: the hostpda this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/radio/integrated/proc/hostpda() as /obj/item/pda
+	return om_resolve(hostpda_handle)

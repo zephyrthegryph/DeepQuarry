@@ -5,10 +5,10 @@
 	// NanoTrasen TCS Language - Made by Doohl
 
 /datum/n_Interpreter/TCS_Interpreter
-	var/datum/TCS_Compiler/Compiler
+	var/Compiler_handle
 
 /datum/n_Interpreter/TCS_Interpreter/HandleError(datum/runtimeError/e)
-	Compiler.Holder.add_entry(e.ToString(), "Execution Error")
+	Compiler().Holder.add_entry(e.ToString(), "Execution Error")
 
 /datum/TCS_Compiler
 	var/datum/n_Interpreter/TCS_Interpreter/interpreter
@@ -37,7 +37,7 @@
 
 	interpreter 		= new(program)
 	interpreter.persist	= 1
-	interpreter.Compiler= src
+	interpreter.Compiler_handle= om_handle(src)
 
 	return returnerrors
 
@@ -62,7 +62,7 @@
 	if(om_busy(src))
 		return TRUE
 
-	interpreter.container = src
+	interpreter.container_handle = om_handle(src)
 
 	interpreter.SetVar("PI"		, 	3.141592653)	// value of pi
 	interpreter.SetVar("E" 		, 	2.718281828)	// value of e
@@ -329,3 +329,7 @@
 		S.relay_information(newsign, /obj/machinery/telecomms/broadcaster) // send this simple message to broadcasters
 
 REF_OWNED(/datum/TCS_Compiler, "interpreter")
+
+/// LC-refs: the Compiler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Interpreter/TCS_Interpreter/proc/Compiler() as /datum/TCS_Compiler
+	return om_resolve(Compiler_handle)

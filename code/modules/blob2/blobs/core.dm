@@ -18,7 +18,7 @@
 	var/point_rate = 2
 	var/ai_controlled = TRUE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
-	var/client/controller = null //Whoever is set to be controlling the blob. Used when the blob is created.
+	var/controller_handle	//Whoever is set to be controlling the blob. Used when the blob is created.
 
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player
@@ -103,13 +103,13 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	PERIODIC_START(src, PERIODIC_SLOW)
 	update_icon() //so it atleast appears
 	point_rate = new_rate
-	controller = new_overmind
+	controller_handle = om_handle(new_overmind)
 
 	if(!placed && !overmind)
 		return INITIALIZE_HINT_LATELOAD
 
 /obj/structure/blob/core/LateInitialize()
-	create_overmind(controller)
+	create_overmind(controller())
 	if(overmind)
 		update_icon()
 
@@ -119,7 +119,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	new /obj/item/blobcore_chunk(T, overmind?.blob_type)
 
 	if(overmind)
-		overmind.blob_core = null
+		overmind.blob_core_handle = null
 		qdel(overmind)
 	overmind = null
 	return ..()
@@ -164,7 +164,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
 		overmind = B
-		B.blob_core = src
+		B.blob_core_handle = om_handle(src)
 		B.ai_controlled = TRUE
 		update_icon()
 		return TRUE
@@ -183,7 +183,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	else
 		C = new_overmind
 		overmind_creation(C)
-	controller = null //Controller has been set. Let's null it now.
+	controller_handle = null //Controller has been set. Let's null it now.
 
 /obj/structure/blob/core/proc/get_winner()
 	SIGNAL_HANDLER
@@ -201,7 +201,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
 		B.key = new_overmind.key
-		B.blob_core = src
+		B.blob_core_handle = om_handle(src)
 		src.overmind = B
 		update_icon()
 		if(B.mind && !B.mind.special_role)
@@ -222,3 +222,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	return pick(valid_types)
 
 REF_OWNED(/obj/structure/blob/core, "Q")
+
+/// LC-refs: Whoever is set to be controlling the blob. Used when the blob is created. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/blob/core/proc/controller() as /client
+	return om_resolve(controller_handle)

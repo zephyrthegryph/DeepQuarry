@@ -13,7 +13,7 @@
 	var/transaction_amount = 0
 	var/transaction_purpose = "Default charge"
 	var/access_code = 0
-	var/datum/money_account/linked_account
+	var/linked_account_handle
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
@@ -21,7 +21,7 @@
 	. = ..()
 	//by default, connect to the station account
 	//the user of the EFTPOS device can change the target account though, and no-one will be the wiser (except whoever's being charged)
-	linked_account = GLOB.station_account
+	linked_account_handle = om_handle(GLOB.station_account)
 
 	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 	access_code = rand(1111,111111)
@@ -97,7 +97,7 @@
 	data["transaction_paid"] = !!transaction_paid
 	data["transaction_purpose"] = transaction_purpose
 	data["transaction_amount"] = transaction_amount
-	data["linked_account_name"] = linked_account ? linked_account.owner_name : ""
+	data["linked_account_name"] = linked_account() ? linked_account().owner_name : ""
 	return data
 
 /obj/item/eftpos/attackby(obj/item/O, mob/user)
@@ -105,14 +105,14 @@
 	var/obj/item/card/id/I = O.GetID()
 
 	if(I)
-		if(linked_account)
+		if(linked_account())
 			scan_card(I, O)
 		else
 			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Unable to connect to linked account."))
 	else if (istype(O, /obj/item/spacecash/ewallet))
 		var/obj/item/spacecash/ewallet/E = O
-		if (linked_account)
-			if(!linked_account.suspended)
+		if (linked_account())
+			if(!linked_account().suspended)
 				if(transaction_locked && !transaction_paid)
 					if(transaction_amount <= 0 || transaction_amount > EFTPOS_MAX_TRANSACTION)
 						to_chat(user, "[icon2html(src, user.client)]" + span_warning("Invalid transaction amount."))
@@ -122,7 +122,7 @@
 						transaction_paid = 1
 
 						E.worth -= transaction_amount
-						linked_account.credit(transaction_amount, E.owner_name, transaction_purpose || "None supplied.", machine_id)
+						linked_account().credit(transaction_amount, E.owner_name, transaction_purpose || "None supplied.", machine_id)
 					else
 						to_chat(user, "[icon2html(src, user.client)]" + span_warning("\The [O] doesn't have that much money!"))
 			else
@@ -162,10 +162,10 @@
 		if("link_account")
 			var/attempt_account_num = tgui_input_number(usr, "Enter account number to pay EFTPOS charges into", "New account number")
 			var/attempt_pin = tgui_input_number(usr, "Enter pin code", "Account pin")
-			linked_account = attempt_account_access(attempt_account_num, attempt_pin, 1)
-			if(linked_account)
-				if(linked_account.suspended)
-					linked_account = null
+			linked_account_handle = om_handle(attempt_account_access(attempt_account_num, attempt_pin, 1))
+			if(linked_account())
+				if(linked_account().suspended)
+					linked_account_handle = null
 					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account has been suspended."))
 			else
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
@@ -192,13 +192,13 @@
 					if(attempt_code == access_code)
 						transaction_locked = 0
 						transaction_paid = 0
-			else if(linked_account)
+			else if(linked_account())
 				transaction_locked = 1
 			else
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("No account connected to send transactions to."))
 			return TRUE
 		if("scan_card")
-			if(linked_account)
+			if(linked_account())
 				var/obj/item/I = usr.get_active_hand()
 				if(istype(I, /obj/item/card))
 					scan_card(I)
@@ -225,8 +225,8 @@
 		else
 			usr.visible_message(span_info("\The [usr] swipes \the [ID_container] through \the [src]."))
 		if(transaction_locked && !transaction_paid)
-			if(linked_account)
-				if(!linked_account.suspended)
+			if(linked_account())
+				if(!linked_account().suspended)
 					// Snapshot the authoritative amount before any sleeping input; the
 					// transaction can't be silently re-priced while the PIN dialog is open.
 					var/charge_amount = transaction_amount
@@ -252,7 +252,7 @@
 								src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 								transaction_paid = 1
 
-								if(!transfer_account_funds(D, linked_account, charge_amount, transaction_purpose, machine_id))
+								if(!transfer_account_funds(D, linked_account(), charge_amount, transaction_purpose, machine_id))
 									transaction_paid = 0
 									return
 							else
@@ -280,3 +280,7 @@
 	//emag?
 
 #undef EFTPOS_MAX_TRANSACTION
+
+/// LC-refs: the linked_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/eftpos/proc/linked_account() as /datum/money_account
+	return om_resolve(linked_account_handle)

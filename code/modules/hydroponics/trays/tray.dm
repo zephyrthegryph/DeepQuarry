@@ -264,7 +264,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 			if(istype(Proj, /obj/item/projectile/energy/floramut/gene))
 				var/obj/item/projectile/energy/floramut/gene/G = Proj
 				if(seed)
-					seed = seed.diverge_mutate_gene(G.gene, get_turf(loc))	//get_turf just in case it's not in a turf.
+					seed = seed.diverge_mutate_gene(G.gene(), get_turf(loc))	//get_turf just in case it's not in a turf.
 			else
 				mutate(1)
 				return

@@ -9,7 +9,7 @@
 	icon_state = "synth_facemask"
 	var/lstat
 	var/visor_state = "Neutral" //Separating this from lstat so that it could potentially be used for an override system or something
-	var/mob/living/carbon/maskmaster
+	var/maskmaster_handle
 	resistance_flags = FIRE_PROOF | ACID_PROOF | INDESTRUCTIBLE | BOMB_PROOF |FREEZE_PROOF
 
 /obj/item/clothing/mask/synthfacemask/equipped()
@@ -17,12 +17,12 @@
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
-		maskmaster = H
+		maskmaster_handle = om_handle(H)
 		PERIODIC_START(src, PERIODIC_SECOND)
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
-	maskmaster = null
+	maskmaster_handle = null
 	PERIODIC_STOP(src)
 	..()
 
@@ -45,8 +45,8 @@
 	if(istype(H)) H.update_inv_wear_mask()
 
 /obj/item/clothing/mask/synthfacemask/periodic_step()
-	if(maskmaster && lstat != maskmaster.stat)
-		lstat = maskmaster.stat
+	if(maskmaster() && lstat != maskmaster().stat)
+		lstat = maskmaster().stat
 		visor_state = "Neutral" //This does nothing at the moment, but it's there incase anyone wants to add more states.
 		//Maybe a verb that sets an emote override here
 		if(lstat == DEAD)
@@ -64,3 +64,7 @@
 /datum/gear/mask/synthface/New()
 	..()
 	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+
+/// LC-refs: the maskmaster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon
+	return om_resolve(maskmaster_handle)

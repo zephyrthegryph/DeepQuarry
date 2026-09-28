@@ -1,7 +1,7 @@
 // Lift master datum. One per turbolift.
 /datum/turbolift
-	var/datum/turbolift_floor/target_floor              // Where are we going?
-	var/datum/turbolift_floor/current_floor             // Where is the lift currently?
+	var/target_floor_handle	// Where are we going?
+	var/current_floor_handle	// Where is the lift currently?
 	var/list/doors = list()                             // Doors inside the lift structure.
 	var/list/queued_floors                     // Where are we moving to next?
 	var/list/floors = list()                            // All floors in this system.
@@ -19,7 +19,7 @@
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
-	target_floor = null
+	target_floor_handle = null
 	if(!fire_mode)
 		open_doors()
 
@@ -65,15 +65,15 @@
 // Cancel all pending calls
 /datum/turbolift/proc/cancel_pending_floors()
 	for(var/datum/turbolift_floor/floor in queued_floors)
-		if(floor.ext_panel)
-			floor.ext_panel.reset()
+		if(floor.ext_panel())
+			floor.ext_panel().reset()
 	LAZYCLEARLIST(queued_floors)
 
 // Update the icons of all exterior panels (after we change modes etc)
 /datum/turbolift/proc/update_ext_panel_icons()
 	for(var/datum/turbolift_floor/floor in floors)
-		if(floor.ext_panel)
-			floor.ext_panel.update_icon()
+		if(floor.ext_panel())
+			floor.ext_panel().update_icon()
 
 /datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor = current_floor)
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
@@ -103,16 +103,16 @@
 	switch(busy_state)
 		if(LIFT_MOVING)
 			if(!do_move())
-				if(target_floor)
+				if(target_floor())
 					// TODO - This logic copied from old processor.  Would be better to have error states.
-					target_floor.ext_panel.reset()
-					target_floor = null
+					target_floor().ext_panel().reset()
+					target_floor_handle = null
 				return PROCESS_KILL
 			else if(!next_process)
 				log_runtime("Turbolift [src] do_move() returned 1 but next_process = null; busy_state=[busy_state]")
 				return PROCESS_KILL
 		if(LIFT_WAITING_A)
-			var/area/turbolift/origin = locate(current_floor.area_ref)
+			var/area/turbolift/origin = locate(current_floor().area_ref)
 			control_panel_interior.visible_message(span_infoplain(span_bold("The elevator") + " announces, \"[origin.lift_announce_str]\""))
 			next_process = world.time + floor_wait_delay
 			busy_state = LIFT_WAITING_B
@@ -130,14 +130,14 @@
 /datum/turbolift/proc/do_move()
 	next_process = null
 
-	var/current_floor_index = floors.Find(current_floor)
+	var/current_floor_index = floors.Find(current_floor())
 
-	if(!target_floor)
+	if(!target_floor())
 		if(!queued_floors || !length(queued_floors))
 			return 0
-		target_floor = LAZYACCESS(queued_floors, 1)
-		LAZYREMOVE(queued_floors, target_floor)
-		if(current_floor_index < floors.Find(target_floor))
+		target_floor_handle = om_handle(LAZYACCESS(queued_floors, 1))
+		LAZYREMOVE(queued_floors, target_floor())
+		if(current_floor_index < floors.Find(target_floor()))
 			moving_upwards = 1
 		else
 			moving_upwards = 0
@@ -152,7 +152,7 @@
 			doors_closing = 0
 			if(!fire_mode)
 				open_doors()
-			control_panel_interior.audible_message("\The [current_floor.ext_panel] buzzes loudly.", runemessage = "BUZZ")
+			control_panel_interior.audible_message("\The [current_floor().ext_panel()] buzzes loudly.", runemessage = "BUZZ")
 			playsound(control_panel_interior, "sound/machines/buzz-two.ogg", 50, 1)
 			return 0
 
@@ -160,13 +160,13 @@
 
 	GLOB.turbo_lift_floors_moved_roundstat++
 
-	var/area/turbolift/origin = locate(current_floor.area_ref)
+	var/area/turbolift/origin = locate(current_floor().area_ref)
 
-	if(target_floor == current_floor)
+	if(target_floor() == current_floor())
 
 		playsound(control_panel_interior, origin.arrival_sound, 50, 1)
-		target_floor.arrived(src)
-		target_floor = null
+		target_floor().arrived(src)
+		target_floor_handle = null
 
 		next_process = world.time + 15
 		busy_state = LIFT_WAITING_A
@@ -197,7 +197,7 @@
 	if((locate(/obj/machinery/power) in destination) || (locate(/obj/structure/cable) in destination))
 		SSmachines.power_reregister(get_area_turfs(destination))
 
-	current_floor = next_floor
+	current_floor_handle = om_handle(next_floor)
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")
 
 	next_process = world.time + (next_floor.delay_time || move_delay)
@@ -224,3 +224,11 @@
 	update_ext_panel_icons()
 
 REF_OWNED(/datum/turbolift, "control_panel_interior")
+
+/// LC-refs: Where are we going? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/turbolift/proc/target_floor() as /datum/turbolift_floor
+	return om_resolve(target_floor_handle)
+
+/// LC-refs: Where is the lift currently? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/turbolift/proc/current_floor() as /datum/turbolift_floor
+	return om_resolve(current_floor_handle)

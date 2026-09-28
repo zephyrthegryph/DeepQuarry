@@ -32,7 +32,7 @@
 
 	var/scanning = 0
 	var/report_num = 0
-	var/obj/item/scanned_item
+	var/scanned_item_handle
 	var/last_scan_data = "No scans on record."
 	var/scan_progress = 0
 
@@ -88,14 +88,14 @@
 			return TRUE
 		// fall through
 
-	if(scanned_item)
-		to_chat(user, span_warning("[src] already has \a [scanned_item] inside!"))
+	if(scanned_item())
+		to_chat(user, span_warning("[src] already has \a [scanned_item()] inside!"))
 		return TRUE
 
 	if(!user.unEquip(I, target = src))
 		return TRUE
 
-	scanned_item = I
+	scanned_item_handle = om_handle(I)
 	to_chat(user, span_notice("You put [I] into [src]."))
 	return TRUE
 
@@ -119,8 +119,8 @@
 	var/list/data = ..()
 
 	// this is the data which will be sent to the ui
-	data["scanned_item"] = (scanned_item ? scanned_item.name : "")
-	data["scanned_item_desc"] = (scanned_item ? (scanned_item.desc ? scanned_item.desc : "No information on record.") : "")
+	data["scanned_item"] = (scanned_item() ? scanned_item().name : "")
+	data["scanned_item_desc"] = (scanned_item() ? (scanned_item().desc ? scanned_item().desc : "No information on record.") : "")
 	data["last_scan_data"] = last_scan_data
 	data["scanning"] = scanning
 	data["scan_progress"] = scan_progress
@@ -160,7 +160,7 @@
 			if(scanning)
 				stop_scanning()
 				return
-			if(!scanned_item)
+			if(!scanned_item())
 				to_chat(ui.user, span_warning("Insert an item to scan."))
 				return
 			start_scanning()
@@ -168,9 +168,9 @@
 			return TRUE
 
 		if("ejectItem")
-			if(scanned_item)
-				scanned_item.forceMove(loc)
-				scanned_item = null
+			if(scanned_item())
+				scanned_item().forceMove(loc)
+				scanned_item_handle = null
 			return TRUE
 
 		if("set_scanner_rpm_delta")
@@ -189,8 +189,8 @@
 	if(!scanning)
 		return PROCESS_KILL
 
-	if(!scanned_item || scanned_item.loc != src)
-		scanned_item = null
+	if(!scanned_item() || scanned_item().loc != src)
+		scanned_item_handle = null
 		stop_scanning()
 		return
 
@@ -253,33 +253,33 @@
 	stop_scanning()
 	visible_message(span_notice("[icon2html(src, viewers(src))] makes an insistent chime."), range = 2)
 
-	if(!scanned_item)
+	if(!scanned_item())
 		return
 
 		//create report
 	var/obj/item/paper/P = new(src)
-	P.name = "[src] report #[++report_num]: [scanned_item.name]"
+	P.name = "[src] report #[++report_num]: [scanned_item().name]"
 	P.stamped = list(/obj/item/stamp)
 	P.add_overlay("paper_stamped")
 
 	//work out data
-	var/data = " - Mundane object: [scanned_item.desc ? scanned_item.desc : "No information on record."]<br>"
+	var/data = " - Mundane object: [scanned_item().desc ? scanned_item().desc : "No information on record."]<br>"
 	var/datum/geosample/G
-	switch(scanned_item.type)
+	switch(scanned_item().type)
 		if(/obj/item/ore/archeology_debris)
-			var/obj/item/ore/archeology_debris/O = scanned_item
+			var/obj/item/ore/archeology_debris/O = scanned_item()
 			if(O.geologic_data)
 				G = O.geologic_data
 
 		if(/obj/item/rocksliver)
-			var/obj/item/rocksliver/O = scanned_item
-			if(O.geological_data)
-				G = O.geological_data
+			var/obj/item/rocksliver/O = scanned_item()
+			if(O.geological_data())
+				G = O.geological_data()
 
 		if(/obj/item/archaeological_find)
 			data = " - Mundane object (archaic xenos origins)<br>"
 
-			var/obj/item/archaeological_find/A = scanned_item
+			var/obj/item/archaeological_find/A = scanned_item()
 			if(A.talking_atom)
 				data = " - Exhibits properties consistent with sonic reproduction and audio capture technologies.<br>"
 
@@ -308,12 +308,12 @@
 		data += " - No anomalous data<br>"
 
 	P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-	P.info += span_bold("Scanned item:") + " [scanned_item.name]<br><br>" + data
+	P.info += span_bold("Scanned item:") + " [scanned_item().name]<br><br>" + data
 	last_scan_data = P.info
 
 	P.forceMove(loc)
-	scanned_item.forceMove(loc)
-	scanned_item = null
+	scanned_item().forceMove(loc)
+	scanned_item_handle = null
 
 #undef RPM_FRICTION
 #undef IDEAL_RPM
@@ -332,3 +332,7 @@
 #undef HEAT_MAX
 #undef COOLANT_USAGE
 #undef COOLANT_MAX
+
+/// LC-refs: the scanned_item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/radiocarbon_spectrometer/proc/scanned_item() as /obj/item
+	return om_resolve(scanned_item_handle)

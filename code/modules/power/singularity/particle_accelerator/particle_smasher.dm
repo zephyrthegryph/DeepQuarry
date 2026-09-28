@@ -21,7 +21,7 @@
 	var/energy = 0				// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
-	var/obj/item/reagent_containers/reagent_container		// Holds the beaker. The process will consume ALL reagents inside it.
+	var/reagent_container_handle	// Holds the beaker. The process will consume ALL reagents inside it.
 	var/beaker_type = /obj/item/reagent_containers/glass/beaker
 	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
 	var/max_storage = 3	// How many items can be jammed into it?
@@ -94,7 +94,7 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 	effect = /obj/machinery/particle_smasher/proc/interaction_attach_beaker
 
 /obj/machinery/particle_smasher/proc/interaction_attach_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(reagent_container)
+	if(reagent_container())
 		to_chat(user, span_notice("\The [src] already has a container attached."))
 		return TRUE
 	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
@@ -102,9 +102,9 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 		G.drop_item()
 	else
 		user.drop_from_inventory(W)
-	reagent_container = W
-	reagent_container.forceMove(src)
-	to_chat(user, span_notice("You add \the [reagent_container] to \the [src]."))
+	reagent_container_handle = om_handle(W)
+	reagent_container().forceMove(src)
+	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
 	return TRUE
 
@@ -168,7 +168,7 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 			if(successful_craft)
 				material_glow.color = target_color
 				add_overlay(material_glow)
-		if(reagent_container)
+		if(reagent_container())
 			add_overlay(reagent_layer)
 	else
 		icon_state = initial(icon_state)
@@ -287,7 +287,7 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 					var/environment_temperature = environment.return_temperature()
 					if(environment_temperature >= R.required_atmos_temp_min && environment_temperature <= R.required_atmos_temp_max)	// Too hot, or too cold.
 						if(R.reagents && R.reagents.len)
-							if(!reagent_container || R.check_reagents(reagent_container.reagents) == -1)	// It doesn't have a reagent storage when it needs it, or it's lacking what is needed.
+							if(!reagent_container() || R.check_reagents(reagent_container().reagents) == -1)	// It doesn't have a reagent storage when it needs it, or it's lacking what is needed.
 								continue
 						if(R.items && R.items.len)
 							if(!(storage && storage.len) || R.check_items(src) == -1)	// It's empty, or it doesn't contain what is needed.
@@ -313,8 +313,8 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 	qdel(target)
 	target = null
 
-	if(reagent_container)
-		reagent_container.reagents.clear_reagents()
+	if(reagent_container())
+		reagent_container().reagents.clear_reagents()
 
 	if(recipe.items && recipe.items.len)
 		for(var/obj/item/I in storage)
@@ -344,7 +344,7 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	target = null
-	reagent_container = null
+	reagent_container_handle = null
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	for(var/obj/item/I in contents)
@@ -706,3 +706,7 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 REF_OWNED(/obj/machinery/particle_smasher, list("material_layer", "material_glow", "reagent_layer"))
 
 REF_HELD(/obj/machinery/particle_smasher, "target")
+
+/// LC-refs: Holds the beaker. The process will consume ALL reagents inside it. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
+	return om_resolve(reagent_container_handle)

@@ -38,12 +38,12 @@
 	desc = "An internal communicator, basically."
 	occupation = "\[Commlink\]"
 	var/obj/item/nif/nif
-	var/datum/nifsoft/commlink/nifsoft
+	var/nifsoft_handle
 
 /obj/item/communicator/commlink/Initialize(mapload, soft)
 	. = ..()
 	nif = loc
-	nifsoft = soft
+	nifsoft_handle = om_handle(soft)
 
 REF_PAIR(/obj/item/communicator/commlink, list("nif" = "comm"))
 REF_PAIR(/obj/item/nif, list("comm" = "nif"))
@@ -103,7 +103,7 @@ REF_PAIR(/obj/item/nif, list("comm" = "nif"))
 	LAZYOR(voice_requests, candidate)
 
 	if(ringer && nif.human)
-		nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft];open=1'>Open</a>)")
+		nif.notify("New commlink call from [who]. (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>)")
 
 //Similar reason
 /obj/item/communicator/commlink/request_im(atom/candidate, origin_address, text)
@@ -125,4 +125,8 @@ REF_PAIR(/obj/item/nif, list("comm" = "nif"))
 		return
 
 	if(ringer && nif.human)
-		nif.notify("Commlink message from [who]: \"[text]\" (<a href='byond://?src=\ref[nifsoft];open=1'>Open</a>) (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)")
+		nif.notify("Commlink message from [who]: \"[text]\" (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>) (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)")
+
+/// LC-refs: the nifsoft this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/communicator/commlink/proc/nifsoft() as /datum/nifsoft/commlink
+	return om_resolve(nifsoft_handle)

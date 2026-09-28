@@ -676,7 +676,7 @@
 	stock.forceMove(furnace)
 	furnace.feedstock = list(stock)
 	furnace.finish_firing()
-	var/datum/material_batch/output = furnace.output_stock ? furnace.output_stock.physical_batch() : null
+	var/datum/material_batch/output = furnace.output_stock() ? furnace.output_stock().physical_batch() : null
 	TEST_ASSERT(output, "power-starved furnace failed to return recoverable stock")
 	TEST_ASSERT_EQUAL(output.energy_spent, 0, "power-starved furnace invented process energy")
 	TEST_ASSERT(!(MATERIAL_PROCESS_MELT in output.process_history), "power-starved furnace completed a melt without supplied energy")
@@ -713,8 +713,8 @@
 	stock.forceMove(furnace)
 	furnace.feedstock = list(stock)
 	furnace.finish_firing()
-	TEST_ASSERT(furnace.output_stock, "raw stock firing did not produce recoverable processed stock")
-	var/datum/material_batch/output = furnace.output_stock.physical_batch()
+	TEST_ASSERT(furnace.output_stock(), "raw stock firing did not produce recoverable processed stock")
+	var/datum/material_batch/output = furnace.output_stock().physical_batch()
 	TEST_ASSERT(MATERIAL_PROCESS_MELT in output.process_history, "furnace produced alloy stock without melting it")
 	TEST_ASSERT(MATERIAL_PROCESS_HOMOGENIZE in output.process_history, "furnace skipped molten homogenization")
 	TEST_ASSERT(MATERIAL_PROCESS_CAST in output.process_history, "furnace did not cast its molten charge")
@@ -758,8 +758,8 @@
 	stock.forceMove(furnace)
 	furnace.feedstock = list(stock)
 	furnace.finish_firing()
-	TEST_ASSERT(furnace.output_stock, "furnace failed to return heat-treated stock")
-	var/datum/material/processed_alloy/output_material = furnace.output_stock.material
+	TEST_ASSERT(furnace.output_stock(), "furnace failed to return heat-treated stock")
+	var/datum/material/processed_alloy/output_material = furnace.output_stock().material
 	var/datum/material_batch/output_batch = output_material.batch_template
 	TEST_ASSERT(output_batch.solution_treated, "a dedicated furnace heat-treatment firing did not prepare the stock for quenching")
 	TEST_ASSERT(output_batch.can_process(MATERIAL_PROCESS_QUENCH), "furnace output was not physically hot enough to quench")

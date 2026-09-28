@@ -143,7 +143,7 @@
 	do_unregister()
 	holder = null
 	for(var/datum/artifact_effect/AE in my_effects)
-		AE.master = null
+		AE.master_handle = null
 		my_effects -= AE
 		qdel(AE)
 
@@ -196,7 +196,7 @@
 				my_effects += AE
 				effect_generation_chance -= 30
 			else
-				AE.master = src
+				AE.master_handle = om_handle(src)
 				qdel(AE)
 			continue
 

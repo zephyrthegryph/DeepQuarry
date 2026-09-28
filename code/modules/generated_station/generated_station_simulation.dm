@@ -1,7 +1,7 @@
 /// Runtime state for one department instance. Stockpiles are finite quantities
 /// consumed transactionally by concrete work such as healing and repairs.
 /datum/generated_station_department_runtime
-	var/datum/generated_station_department_instance/department
+	var/department_handle
 	var/state = GENERATED_DEPARTMENT_OFFLINE
 	var/integrity = 100
 	var/list/stockpiles
@@ -9,7 +9,7 @@
 
 /datum/generated_station_department_runtime/New(datum/generated_station_department_instance/new_department)
 	..()
-	department = new_department
+	department_handle = om_handle(new_department)
 	stockpiles = list()
 	minimum_stockpiles = list()
 
@@ -26,7 +26,7 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /// Authoritative dependency simulation for one generated station.
 /datum/generated_station_simulation
-	var/datum/generated_station_spec/spec
+	var/spec_handle
 	var/list/departments
 	var/list/capabilities
 	var/list/power_areas
@@ -35,28 +35,28 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()
-	spec = new_spec
+	spec_handle = om_handle(new_spec)
 	departments = list()
 	capabilities = list()
 	power_areas = list()
-	for(var/datum/generated_station_department_instance/department in spec?.departments)
+	for(var/datum/generated_station_department_instance/department in spec()?.departments)
 		departments[department.id] = new /datum/generated_station_department_runtime(department)
 	configure_default_resources()
-	if(spec?.id)
-		GLOB.generated_station_runtimes[spec.id] = src
+	if(spec()?.id)
+		GLOB.generated_station_runtimes[spec().id] = src
 
 REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 
 /// Phase 2: leaves the station runtime index.
 /datum/generated_station_simulation/lifecycle_dematerialize()
 	. = ..()
-	if(spec?.id && GLOB.generated_station_runtimes[spec.id] == src)
-		GLOB.generated_station_runtimes -= spec.id
+	if(spec()?.id && GLOB.generated_station_runtimes[spec().id] == src)
+		GLOB.generated_station_runtimes -= spec().id
 
 /datum/generated_station_simulation/proc/configure_default_resources()
 	for(var/id in departments)
 		var/datum/generated_station_department_runtime/runtime = departments[id]
-		switch(runtime.department.definition.id)
+		switch(runtime.department().definition.id)
 			if("engineering")
 				runtime.stockpiles["fuel"] = 100
 				runtime.minimum_stockpiles["fuel"] = 1
@@ -125,7 +125,7 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 		var/list/available = aggregate_capabilities(candidates)
 		for(var/id in candidates.Copy())
 			var/datum/generated_station_department_runtime/runtime = departments[id]
-			for(var/datum/generated_station_capability_requirement/requirement in runtime.department.definition.requirements)
+			for(var/datum/generated_station_capability_requirement/requirement in runtime.department().definition.requirements)
 				if(requirement.optional)
 					continue
 				if((available[requirement.capability_id] || 0) < requirement.amount)
@@ -148,7 +148,7 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 	for(var/id in candidates)
 		var/datum/generated_station_department_runtime/runtime = departments[id]
 		var/output_scale = runtime.integrity < 50 ? 0.5 : 1
-		for(var/datum/generated_station_capability_provision/provision in runtime.department.definition.provisions)
+		for(var/datum/generated_station_capability_provision/provision in runtime.department().definition.provisions)
 			available[provision.capability_id] = (available[provision.capability_id] || 0) + provision.amount * output_scale
 	return available
 
@@ -158,10 +158,18 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 	return runtime?.state || GENERATED_DEPARTMENT_OFFLINE
 
 /datum/generated_station_simulation/proc/capability_available(capability_id, amount = 1)
-	var/datum/generated_station_utility_topology/utilities = generated_station_utility_topology(spec?.id)
+	var/datum/generated_station_utility_topology/utilities = generated_station_utility_topology(spec()?.id)
 	if(capability_id == "power")
 		return amount <= 1 && utilities?.power_available()
 	if(capability_id == "atmosphere")
 		return amount <= 1 && utilities?.atmosphere_available()
 	recompute()
 	return (capabilities[capability_id] || 0) >= amount
+
+/// LC-refs: the department this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_department_runtime/proc/department() as /datum/generated_station_department_instance
+	return om_resolve(department_handle)
+
+/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_simulation/proc/spec() as /datum/generated_station_spec
+	return om_resolve(spec_handle)

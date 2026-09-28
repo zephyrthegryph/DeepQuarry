@@ -1,5 +1,5 @@
 /datum/event/wallrot
-	var/turf/simulated/wall/center
+	var/center_handle
 
 /datum/event/wallrot/setup()
 	announceWhen = rand(0, 300)
@@ -10,28 +10,32 @@
 		var/z_level = pick(using_map.station_levels)
 		var/turf/candidate = locate(rand(1, world.maxx), rand(1, world.maxy), z_level)
 		if(istype(candidate, /turf/simulated/wall))
-			center = candidate
+			center_handle = om_handle(candidate)
 			var/area/A = get_area(candidate)
 			if(!A.flag_check(AREA_FORBID_EVENTS))
 				return 1
 	return 0
 
 /datum/event/wallrot/announce()
-	if(center)
-		GLOB.command_announcement.Announce("Harmful fungi detected on \the [station_name()]. Hull integrity near [center.loc.name] may be compromised.", "Hazardous Biomass", ANNOUNCER_MSG_WALLROT) // Wording
+	if(center())
+		GLOB.command_announcement.Announce("Harmful fungi detected on \the [station_name()]. Hull integrity near [center().loc.name] may be compromised.", "Hazardous Biomass", ANNOUNCER_MSG_WALLROT) // Wording
 
 /datum/event/wallrot/start()
-	if(center)
+	if(center())
 		// Make sure at least one piece of wall rots!
-		center.rot()
+		center().rot()
 
 		// Have a chance to rot lots of other walls.
 		var/rotcount = 0
 		var/actual_severity = severity * rand(5, 10)
-		for(var/turf/simulated/wall/W in range(5, center)) if(prob(50))
+		for(var/turf/simulated/wall/W in range(5, center())) if(prob(50))
 			W.rot()
 			rotcount++
 
 			// Only rot up to severity walls
 			if(rotcount >= actual_severity)
 				break
+
+/// LC-refs: the center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/wallrot/proc/center() as /turf/simulated/wall
+	return om_resolve(center_handle)

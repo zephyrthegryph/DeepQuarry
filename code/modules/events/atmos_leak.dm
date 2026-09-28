@@ -11,8 +11,8 @@
 
 /datum/event/atmos_leak
 	startWhen = 5			// Nobody will actually be in the room, but still give a bit of warning.
-	var/area/target_area	// Chosen target area
-	var/area/target_turf	// Chosen target turf in target_area
+	var/target_area_handle	// Chosen target area
+	var/target_turf_handle	// Chosen target turf in target_area
 	var/gas_type			// Chosen gas to release
 	// Exclude these types and sub-types from targeting eligibilty
 	var/static/list/area/excluded = list(
@@ -49,17 +49,17 @@
 		if(turfs.len == 0)
 			log_game("atmos_leak event: Rejected [A] because it has no clear turfs.")
 			continue
-		target_area = A
-		target_turf = pick(turfs)
+		target_area_handle = om_handle(A)
+		target_turf_handle = om_handle(pick(turfs))
 
 	// If we can't find a good target, give up
-	if(!target_area)
+	if(!target_area())
 		log_game("atmos_leak event: Giving up after too many failures to pick target area")
 		kill()
 		return
 
 /datum/event/atmos_leak/announce()
-	GLOB.command_announcement.Announce("Warning, hazardous [GLOB.gas_data.name[gas_type]] gas leak detected in \the [target_area], evacuate the area and contain the damage!", "Hazard Alert", ANNOUNCER_MSG_GASLEAK)
+	GLOB.command_announcement.Announce("Warning, hazardous [GLOB.gas_data.name[gas_type]] gas leak detected in \the [target_area()], evacuate the area and contain the damage!", "Hazard Alert", ANNOUNCER_MSG_GASLEAK)
 
 /datum/event/atmos_leak/start()
 	// Okay, time to actually put the gas in the room!
@@ -70,5 +70,13 @@
 	var/datum/gas_mixture/air_contents = new
 	air_contents.set_temperature(T20C + ((severity - 1) * rand(-50, 50)))
 	air_contents.adjust_gas(gas_type, (10 * MOLES_CELLSTANDARD) - LINDA_GAS_AMT(air_contents, gas_type))
-	target_turf.assume_air(air_contents)
-	playsound(target_turf, 'sound/effects/smoke.ogg', 50, 1)
+	target_turf().assume_air(air_contents)
+	playsound(target_turf(), 'sound/effects/smoke.ogg', 50, 1)
+
+/// LC-refs: Chosen target area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/atmos_leak/proc/target_area() as /area
+	return om_resolve(target_area_handle)
+
+/// LC-refs: Chosen target turf in target_area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/atmos_leak/proc/target_turf() as /area
+	return om_resolve(target_turf_handle)

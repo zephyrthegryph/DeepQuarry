@@ -190,7 +190,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	name = "lysis-isolation centrifuge"
 	icon_state = "traitcopier"
 
-	var/datum/seed/genetics // Currently scanned seed genetic structure.
+	var/genetics_handle	// Currently scanned seed genetic structure.
 	var/degradation = 0     // Increments with each scan, stops allowing gene mods after a certain point.
 	circuit = /obj/item/circuitboard/botany_extractor
 
@@ -219,11 +219,11 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	else
 		data["loaded"] = 0
 
-	if(genetics)
+	if(genetics())
 		data["hasGenetics"] = 1
-		data["sourceName"] = genetics.display_name
-		if(!genetics.roundstart)
-			data["sourceName"] += " (variety #[genetics.uid])"
+		data["sourceName"] = genetics().display_name
+		if(!genetics().roundstart)
+			data["sourceName"] += " (variety #[genetics().uid])"
 	else
 		data["hasGenetics"] = 0
 		data["sourceName"] = 0
@@ -274,7 +274,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			active = 1
 
 			if(seed && seed.seed)
-				genetics = seed.seed
+				genetics_handle = om_handle(seed.seed)
 				degradation = 0
 
 			consume(seed)
@@ -282,36 +282,36 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			return TRUE
 
 		if("get_gene")
-			if(!genetics || !loaded_disk)
+			if(!genetics() || !loaded_disk)
 				return
 
 			last_action = world.time
 			active = 1
 
-			var/datum/plantgene/P = genetics.get_gene(params["get_gene"])
+			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 			if(!P)
 				return
 			LAZYADD(loaded_disk.genes, P)
 
-			loaded_disk.genesource = "[genetics.display_name]"
-			if(!genetics.roundstart)
-				loaded_disk.genesource += " (variety #[genetics.uid])"
+			loaded_disk.genesource = "[genetics().display_name]"
+			if(!genetics().roundstart)
+				loaded_disk.genesource += " (variety #[genetics().uid])"
 
-			loaded_disk.name += " ([SSplants.gene_tag_masks[params["get_gene"]]], #[genetics.uid])"
-			loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[params["get_gene"]]], sampled from [genetics.display_name]\'."
+			loaded_disk.name += " ([SSplants.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
+			loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
 			eject_disk = 1
 
 			degradation += rand(20,60)
 			if(degradation >= 100)
 				failed_task = 1
-				genetics = null
+				genetics_handle = null
 				degradation = 0
 			return TRUE
 
 		if("clear_buffer")
-			if(!genetics)
+			if(!genetics())
 				return
-			genetics = null
+			genetics_handle = null
 			degradation = 0
 			return TRUE
 
@@ -389,3 +389,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/botany/step_start_condition()
 	return active
+
+/// LC-refs: Currently scanned seed genetic structure. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/botany/extractor/proc/genetics() as /datum/seed
+	return om_resolve(genetics_handle)

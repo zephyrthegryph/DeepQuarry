@@ -17,7 +17,7 @@
 	var/fire_pressure									// Used in fire checks/pressure checks.
 	var/hopper_size = ITEMSIZE_NORMAL					// Hopper intake size.
 	var/max_storage_space = ITEMSIZE_COST_NORMAL * 5	// Total internal storage size.
-	var/obj/item/tank/tank = null						// Tank of gas for use in firing the cannon.
+	var/tank_handle	// Tank of gas for use in firing the cannon.
 
 	var/obj/item/storage/item_storage
 	var/pressure_setting = 10							// Percentage of the gas in the tank used to fire the projectile.
@@ -45,13 +45,13 @@
 		to_chat(usr, "You dial the pressure valve to [pressure_setting]%.")
 
 /obj/item/gun/launcher/pneumatic/proc/eject_tank(mob/user) //Remove the tank.
-	if(!tank)
+	if(!tank())
 		to_chat(user, "There's no tank in [src].")
 		return
 
 	to_chat(user, "You twist the valve and pop the tank out of [src].")
-	user.put_in_hands(tank)
-	tank = null
+	user.put_in_hands(tank())
+	tank_handle = null
 	update_icon()
 
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
@@ -71,9 +71,9 @@
 		return ..()
 
 /obj/item/gun/launcher/pneumatic/attackby(obj/item/W as obj, mob/user as mob)
-	if(!tank && istype(W,/obj/item/tank))
+	if(!tank() && istype(W,/obj/item/tank))
 		user.drop_from_inventory(W, src)
-		tank = W
+		tank_handle = om_handle(W)
 		user.visible_message("[user] jams [W] into [src]'s valve and twists it closed.","You jam [W] into [src]'s valve and twist it closed.")
 		update_icon()
 	else if(istype(W))
@@ -88,7 +88,7 @@
 /obj/item/gun/launcher/pneumatic/consume_next_projectile(mob/user=null)
 	if(!item_storage.contents.len)
 		return null
-	if (!tank)
+	if (!tank())
 		to_chat(user, "There is no gas tank in [src]!")
 		return null
 
@@ -99,7 +99,7 @@
 		if(environment)
 			environment_pressure = environment.return_pressure()
 
-	fire_pressure = (tank.air_contents.return_pressure() - environment_pressure)*pressure_setting/100
+	fire_pressure = (tank().air_contents.return_pressure() - environment_pressure)*pressure_setting/100
 	if(fire_pressure < 10)
 		to_chat(user, "There isn't enough gas in the tank to fire [src].")
 		return null
@@ -112,22 +112,22 @@
 	. = ..()
 	if(get_dist(user, src) <= 2)
 		. += "The valve is dialed to [pressure_setting]%."
-		if(tank)
-			. += "The tank dial reads [tank.air_contents.return_pressure()] kPa."
+		if(tank())
+			. += "The tank dial reads [tank().air_contents.return_pressure()] kPa."
 		else
 			. += "Nothing is attached to the tank valve!"
 
 /obj/item/gun/launcher/pneumatic/update_release_force(obj/item/projectile)
-	if(tank)
-		release_force = ((fire_pressure*tank.volume)/projectile.w_class)/force_divisor //projectile speed.
+	if(tank())
+		release_force = ((fire_pressure*tank().volume)/projectile.w_class)/force_divisor //projectile speed.
 		if(release_force > 80) release_force = 80 //damage cap.
 	else
 		release_force = 0
 
 /obj/item/gun/launcher/pneumatic/handle_post_fire()
-	if(tank)
-		var/lost_gas_amount = tank.air_contents.total_moles()*(pressure_setting/100)
-		var/datum/gas_mixture/removed = tank.air_contents.remove(lost_gas_amount)
+	if(tank())
+		var/lost_gas_amount = tank().air_contents.total_moles()*(pressure_setting/100)
+		var/datum/gas_mixture/removed = tank().air_contents.remove(lost_gas_amount)
 
 		var/turf/T = get_turf(src.loc)
 		if(T)
@@ -136,7 +136,7 @@
 	..()
 
 /obj/item/gun/launcher/pneumatic/update_icon()
-	if(tank)
+	if(tank())
 		icon_state = "pneumatic-tank"
 		item_state = "pneumatic-tank"
 	else
@@ -228,3 +228,7 @@
 		..()
 
 REF_OWNED(/obj/item/gun/launcher/pneumatic, "item_storage")
+
+/// LC-refs: Tank of gas for use in firing the cannon. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank
+	return om_resolve(tank_handle)

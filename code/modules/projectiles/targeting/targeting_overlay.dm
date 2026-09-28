@@ -11,7 +11,7 @@
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
-	var/obj/item/aiming_with   // What are we targeting with?
+	var/aiming_with_handle	// What are we targeting with?
 	var/mob/owner              // Who do we belong to?
 	var/locked =    0          // Have we locked on?
 	var/lock_time = 0          // When -will- we lock on?
@@ -109,7 +109,7 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 	var/cancel_aim = 1
 
 	var/mob/living/carbon/human/H = owner
-	if(!(aiming_with in owner) || (istype(H) && !H.item_is_in_hands(aiming_with)))
+	if(!(aiming_with() in owner) || (istype(H) && !H.item_is_in_hands(aiming_with())))
 		to_chat(owner, span_warning("You must keep hold of your weapon!"))
 	else if(owner.has_status(EFFECT_BLINDED))
 		to_chat(owner, span_warning("You are blind and cannot see your target!"))
@@ -164,9 +164,9 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 		owner.client.add_gun_icons()
 	to_chat(target, span_danger("You now have a gun pointed at you. No sudden moves!"))
 	to_chat(target, span_critical("If you fail to comply with your assailant, you accept the consequences of your actions."))
-	aiming_with = thing
+	aiming_with_handle = om_handle(thing)
 	aiming_at = target
-	if(istype(aiming_with, /obj/item/gun))
+	if(istype(aiming_with(), /obj/item/gun))
 		playsound(owner, 'sound/weapons/targeton.ogg', 50,1)
 	forceMove(get_turf(target))
 	PERIODIC_START(src, PERIODIC_SLOW)
@@ -204,15 +204,19 @@ REF_BACKLIST(/obj/aiming_overlay, list("aiming_at" = "aimed"))
 		owner.gun_setting_icon?.icon_state = "gun[active]"
 
 /obj/aiming_overlay/proc/cancel_aiming(no_message = 0)
-	if(!aiming_with || !aiming_at)
+	if(!aiming_with() || !aiming_at)
 		return
-	if(istype(aiming_with, /obj/item/gun))
+	if(istype(aiming_with(), /obj/item/gun))
 		playsound(owner, 'sound/weapons/targetoff.ogg', 50,1)
 	if(!no_message)
-		owner.visible_message(span_infoplain(span_bold("\The [owner]") + " lowers \the [aiming_with]."))
+		owner.visible_message(span_infoplain(span_bold("\The [owner]") + " lowers \the [aiming_with()]."))
 
-	aiming_with = null
+	aiming_with_handle = null
 	aiming_at.aimed -= src
 	aiming_at = null
 	loc = null
 	PERIODIC_STOP(src)
+
+/// LC-refs: What are we targeting with? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/aiming_overlay/proc/aiming_with() as /obj/item
+	return om_resolve(aiming_with_handle)

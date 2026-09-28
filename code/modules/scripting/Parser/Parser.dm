@@ -33,10 +33,10 @@
 	Var: curToken
 	The token at <index> in <tokens>.
 */
-	var/datum/token/curToken
+	var/curToken_handle
 	var/datum/stack/blocks=new
 	var/datum/node/BlockDefinition/GlobalBlock/global_block=new
-	var/datum/node/BlockDefinition/curBlock
+	var/curBlock_handle
 
 /*
 	Proc: Parse
@@ -50,17 +50,17 @@
 */
 /datum/n_Parser/proc/NextToken()
 	if(index>=tokens.len)
-		curToken=null
+		curToken_handle=null
 	else
-		curToken=tokens[++index]
-	return curToken
+		curToken_handle=om_handle(tokens[++index])
+	return curToken()
 
 /*
 	Class: nS_Parser
 	An implmentation of a parser for n_Script.
 */
 /datum/n_Parser/nS_Parser
-	var/datum/n_scriptOptions/nS_Options/options
+	var/options_handle
 /*
 	Constructor: New
 
@@ -70,17 +70,17 @@
 */
 /datum/n_Parser/nS_Parser/New(tokens[], datum/n_scriptOptions/options)
 	src.tokens=tokens
-	src.options=options
-	curBlock=global_block
+	src.options_handle=om_handle(options)
+	curBlock_handle=om_handle(global_block)
 	return ..()
 
 /datum/n_Parser/nS_Parser/Parse()
 	ASSERT(tokens)
 	for(,src.index<=src.tokens.len, src.index++)
-		curToken=tokens[index]
-		switch(curToken.type)
+		curToken_handle=om_handle(tokens[index])
+		switch(curToken().type)
 			if(/datum/token/keyword)
-				var/datum/n_Keyword/kw=options.keywords[curToken.value]
+				var/datum/n_Keyword/kw=options().keywords[curToken().value]
 				kw=new kw()
 				if(kw)
 					if(!kw.Parse(src))
@@ -88,7 +88,7 @@
 			if(/datum/token/word)
 				var/datum/token/ntok
 				if(index+1>tokens.len)
-					errors+=new/datum/scriptError/BadToken(curToken)
+					errors+=new/datum/scriptError/BadToken(curToken())
 					continue
 				ntok=tokens[index+1]
 				if(!istype(ntok, /datum/token/symbol))
@@ -96,54 +96,54 @@
 					continue
 				if(ntok.value=="(")
 					ParseFunctionStatement()
-				else if(options.assign_operators.Find(ntok.value))
+				else if(options().assign_operators.Find(ntok.value))
 					ParseAssignment()
 				else
 					errors+=new/datum/scriptError/BadToken(ntok)
 					continue
-				if(!istype(curToken, /datum/token/end))
-					errors+=new/datum/scriptError/ExpectedToken(";", curToken)
+				if(!istype(curToken(), /datum/token/end))
+					errors+=new/datum/scriptError/ExpectedToken(";", curToken())
 					continue
 			if(/datum/token/symbol)
-				if(curToken.value=="}")
+				if(curToken().value=="}")
 					if(!EndBlock())
-						errors+=new/datum/scriptError/BadToken(curToken)
+						errors+=new/datum/scriptError/BadToken(curToken())
 						continue
 				else
-					errors+=new/datum/scriptError/BadToken(curToken)
+					errors+=new/datum/scriptError/BadToken(curToken())
 					continue
 			if(/datum/token/end)
-				LAZYADD(warnings, new/datum/scriptError/BadToken(curToken))
+				LAZYADD(warnings, new/datum/scriptError/BadToken(curToken()))
 				continue
 			else
-				errors+=new/datum/scriptError/BadToken(curToken)
+				errors+=new/datum/scriptError/BadToken(curToken())
 				return
 	return global_block
 
 /datum/n_Parser/nS_Parser/proc/CheckToken(val, type, err=1, skip=1)
-	if(curToken.value!=val || !istype(curToken,type))
+	if(curToken().value!=val || !istype(curToken(),type))
 		if(err)
-			errors+=new/datum/scriptError/ExpectedToken(val, curToken)
+			errors+=new/datum/scriptError/ExpectedToken(val, curToken())
 		return 0
 	if(skip)NextToken()
 	return 1
 
 /datum/n_Parser/nS_Parser/proc/AddBlock(datum/node/BlockDefinition/B)
-	blocks.Push(curBlock)
-	curBlock=B
+	blocks.Push(curBlock())
+	curBlock_handle=om_handle(B)
 
 /datum/n_Parser/nS_Parser/proc/EndBlock()
-	if(curBlock==global_block) return 0
-	curBlock=blocks.Pop()
+	if(curBlock()==global_block) return 0
+	curBlock_handle=om_handle(blocks.Pop())
 	return 1
 
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
-	var/name=curToken.value
-	if(!options.IsValidID(name))
-		errors+=new/datum/scriptError/InvalidID(curToken)
+	var/name=curToken().value
+	if(!options().IsValidID(name))
+		errors+=new/datum/scriptError/InvalidID(curToken())
 		return
 	NextToken()
-	var/t=options.binary_operators[options.assign_operators[curToken.value]]
+	var/t=options().binary_operators[options().assign_operators[curToken().value]]
 	var/datum/node/statement/VariableAssignment/stmt=new()
 	stmt.var_name=new(name)
 	NextToken()
@@ -153,14 +153,14 @@
 		stmt.value:exp2=ParseExpression()
 	else
 		stmt.value=ParseExpression()
-	LAZYADD(curBlock.statements, stmt)
+	LAZYADD(curBlock().statements, stmt)
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()
-	if(!istype(curToken, /datum/token/word))
+	if(!istype(curToken(), /datum/token/word))
 		errors+=new/datum/scriptError("Bad identifier in function call.")
 		return
 	var/datum/node/statement/FunctionCall/stmt=new
-	stmt.func_name=curToken.value
+	stmt.func_name=curToken().value
 	NextToken() //skip function name
 	if(!CheckToken("(", /datum/token/symbol)) //Check for and skip open parenthesis
 		return
@@ -170,15 +170,27 @@
 		if(loops>=6000)
 			CRASH("Something TERRIBLE has gone wrong in ParseFunctionStatement ;__;")
 
-		if(!curToken)
+		if(!curToken())
 			errors+=new/datum/scriptError/EndOfFile()
 			return
-		if(istype(curToken, /datum/token/symbol) && curToken.value==")")
-			LAZYADD(curBlock.statements, stmt)
+		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
+			LAZYADD(curBlock().statements, stmt)
 			NextToken() //Skip close parenthesis
 			return
 		var/datum/node/expression/P=ParseParamExpression()
 		stmt.parameters+=P
-		if(istype(curToken, /datum/token/symbol) && curToken.value==",") NextToken()
+		if(istype(curToken(), /datum/token/symbol) && curToken().value==",") NextToken()
 
 REF_OWNED(/datum/n_Parser, list("blocks", "global_block"))
+
+/// LC-refs: the curToken this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Parser/proc/curToken() as /datum/token
+	return om_resolve(curToken_handle)
+
+/// LC-refs: the curBlock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Parser/proc/curBlock() as /datum/node/BlockDefinition
+	return om_resolve(curBlock_handle)
+
+/// LC-refs: the options this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/n_Parser/nS_Parser/proc/options() as /datum/n_scriptOptions/nS_Options
+	return om_resolve(options_handle)

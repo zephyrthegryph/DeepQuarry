@@ -8,14 +8,14 @@
 	active_power_usage = 8000 //8kW for the scenery + 500W per holoitem
 	var/item_power_usage = 500
 
-	var/area/linkedholodeck = null
+	var/linkedholodeck_handle
 	var/area/target = null
 	var/active = 0
 	var/list/holographic_objs
 	var/list/holographic_mobs
 	var/damaged = 0
 	var/safety_disabled = 0
-	var/mob/last_to_emag = null
+	var/last_to_emag_handle
 	var/last_change = 0
 	var/last_gravity_change = 0
 
@@ -108,7 +108,7 @@
 	data["safetyDisabled"] = safety_disabled
 	data["emagged"] = emagged
 	data["gravity"] = FALSE
-	if(linkedholodeck.get_gravity())
+	if(linkedholodeck().get_gravity())
 		data["gravity"] = TRUE
 
 	return data
@@ -143,14 +143,14 @@
 			return TRUE
 
 		if("gravity")
-			toggleGravity(linkedholodeck)
+			toggleGravity(linkedholodeck())
 			return TRUE
 
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/HolodeckControl/emag_act(remaining_charges, mob/user as mob)
 	playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
-	last_to_emag = user //emag again to change the owner
+	last_to_emag_handle = om_handle(user) //emag again to change the owner
 	if (!emagged)
 		emagged = 1
 		safety_disabled = 1
@@ -164,23 +164,23 @@
 /obj/machinery/computer/HolodeckControl/proc/update_projections()
 	if (safety_disabled)
 		item_power_usage = 2500
-		for(var/obj/item/holo/esword/H in linkedholodeck)
+		for(var/obj/item/holo/esword/H in linkedholodeck())
 			H.injury_kind = H.active ? INJURY_CUT : INJURY_BLUNT
 	else
 		item_power_usage = initial(item_power_usage)
-		for(var/obj/item/holo/esword/H in linkedholodeck)
+		for(var/obj/item/holo/esword/H in linkedholodeck())
 			H.injury_kind = initial(H.injury_kind)
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		C.set_safety(!safety_disabled)
-		if (last_to_emag)
-			C.friends = list(last_to_emag)
+		if (last_to_emag())
+			C.friends = list(last_to_emag())
 
 /obj/machinery/computer/HolodeckControl/Initialize(mapload)
 	. = ..()
 	current_program = powerdown_program
-	linkedholodeck = locate(projection_area)
-	if(!linkedholodeck)
+	linkedholodeck_handle = om_handle(locate(projection_area))
+	if(!linkedholodeck())
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 
 //This could all be done better, but it works for now.
@@ -205,11 +205,11 @@
 	if(!active && !length(holographic_objs) && !length(holographic_mobs))
 		return PROCESS_KILL
 	for(var/item in holographic_objs) // do this first, to make sure people don't take items out when power is down.
-		if(!(get_turf(item) in linkedholodeck))
+		if(!(get_turf(item) in linkedholodeck()))
 			derez(item, 0)
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
-		if (get_area(C.loc) != linkedholodeck)
+		if (get_area(C.loc) != linkedholodeck())
 			LAZYREMOVE(holographic_mobs, C)
 			C.derez()
 
@@ -218,7 +218,7 @@
 	if(active)
 		use_power(item_power_usage * (length(holographic_objs) + length(holographic_mobs)))
 
-		if(!checkInteg(linkedholodeck))
+		if(!checkInteg(linkedholodeck()))
 			damaged = 1
 			loadProgram(powerdown_program, 0)
 			active = 0
@@ -226,7 +226,7 @@
 			for(var/mob/M in range(10,src))
 				M.show_message("The holodeck overloads!")
 
-			for(var/turf/T in linkedholodeck)
+			for(var/turf/T in linkedholodeck())
 				if(prob(30))
 					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 					s.set_up(2, 1, T)
@@ -264,8 +264,8 @@
 	else
 		loadProgram(powerdown_program, 0)
 
-		if(!linkedholodeck.get_gravity())
-			linkedholodeck.gravitychange(1)
+		if(!linkedholodeck().get_gravity())
+			linkedholodeck().gravitychange(1)
 
 		active = 0
 		update_use_power(USE_POWER_IDLE)
@@ -306,34 +306,34 @@
 		LAZYREMOVE(holographic_mobs, C)
 		C.derez()
 
-	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck)
+	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck())
 		qdel(B)
 
-	for(var/obj/effect/landmark/L in linkedholodeck)
+	for(var/obj/effect/landmark/L in linkedholodeck())
 		qdel(L)
 
-	holographic_objs = A.copy_contents_to(linkedholodeck, 1)
+	holographic_objs = A.copy_contents_to(linkedholodeck(), 1)
 	for(var/obj/holo_obj in holographic_objs)
 		holo_obj.alpha *= 0.8 //give holodeck objs a slight transparency
 
 	if(HP.ambience)
-		linkedholodeck.forced_ambience = HP.ambience
+		linkedholodeck().forced_ambience = HP.ambience
 	else
-		linkedholodeck.forced_ambience = list()
+		linkedholodeck().forced_ambience = list()
 
-	for(var/mob/living/M in mobs_in_area(linkedholodeck))
+	for(var/mob/living/M in mobs_in_area(linkedholodeck()))
 		if(M.mind)
-			linkedholodeck.play_ambience(M, initial = TRUE)
+			linkedholodeck().play_ambience(M, initial = TRUE)
 
-	linkedholodeck.sound_env = A.sound_env
+	linkedholodeck().sound_env = A.sound_env
 
 	if(prog == powerdown_program)
-		linkedholodeck.requires_power = TRUE
+		linkedholodeck().requires_power = TRUE
 	else
-		linkedholodeck.requires_power = FALSE
-	linkedholodeck.power_change()
+		linkedholodeck().requires_power = FALSE
+	linkedholodeck().power_change()
 
-	for(var/obj/effect/landmark/L in linkedholodeck)
+	for(var/obj/effect/landmark/L in linkedholodeck())
 		L.delete_me = TRUE
 		if(L.name=="Atmospheric Test Start")
 			om_after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), get_turf(L))
@@ -371,8 +371,8 @@
 	//Turn it back to the regular non-holographic room
 	loadProgram(powerdown_program, 0)
 
-	if(!linkedholodeck.get_gravity())
-		linkedholodeck.gravitychange(1)
+	if(!linkedholodeck().get_gravity())
+		linkedholodeck().gravitychange(1)
 
 	active = 0
 	update_use_power(USE_POWER_IDLE)
@@ -384,3 +384,11 @@
 	if(T)
 		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)
+
+/// LC-refs: the linkedholodeck this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/HolodeckControl/proc/linkedholodeck() as /area
+	return om_resolve(linkedholodeck_handle)
+
+/// LC-refs: the last_to_emag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/HolodeckControl/proc/last_to_emag() as /mob
+	return om_resolve(last_to_emag_handle)

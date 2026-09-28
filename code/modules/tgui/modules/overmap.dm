@@ -1,5 +1,5 @@
 /datum/tgui_module/ship
-	var/obj/effect/overmap/visitable/ship/linked
+	var/linked_handle
 	var/list/viewers
 	var/extra_view = 0
 	var/map_view_used = FALSE
@@ -7,26 +7,26 @@
 /datum/tgui_module/ship/New()
 	. = ..()
 	sync_linked()
-	if(linked)
-		name = "[linked.name] [name]"
+	if(linked())
+		name = "[linked().name] [name]"
 
 /datum/tgui_module/ship/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		if(linked)
-			user.client.register_map_obj(linked.cam_screen)
-			for(var/plane in linked.cam_plane_masters)
+		if(linked())
+			user.client.register_map_obj(linked().cam_screen)
+			for(var/plane in linked().cam_plane_masters)
 				user.client.register_map_obj(plane)
-			user.client.register_map_obj(linked.cam_background)
-			linked.update_screen()
+			user.client.register_map_obj(linked().cam_background)
+			linked().update_screen()
 
 		ui = new(user, src, tgui_id, name, parent_ui)
 		ui.open()
 
 /datum/tgui_module/ship/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
-	if(linked)
-		data["mapRef"] = linked.map_name
+	if(linked())
+		data["mapRef"] = linked().map_name
 	return data
 
 /datum/tgui_module/ship/tgui_status(mob/user)
@@ -37,7 +37,7 @@
 /datum/tgui_module/ship/tgui_close(mob/user)
 	. = ..()
 	// Unregister map objects
-	user.client?.clear_map(linked?.map_name)
+	user.client?.clear_map(linked()?.map_name)
 	user.reset_perspective()
 
 /datum/tgui_module/ship/proc/sync_linked()
@@ -57,7 +57,7 @@
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(tgui_host()))
-		linked = sector
+		linked_handle = om_handle(sector)
 		return 1
 
 /datum/tgui_module/ship/look(mob/user)
@@ -79,9 +79,9 @@
 	tgui_id = "OvermapNavigation"
 
 /datum/tgui_module/ship/nav/tgui_interact(mob/user, datum/tgui/ui)
-	if(!linked)
+	if(!linked())
 		sync_linked()
-	if(!linked)
+	if(!linked())
 		var/obj/machinery/computer/ship/navigation/host = tgui_host()
 		if(istype(host))
 			// Real Computer path
@@ -104,20 +104,20 @@
 /datum/tgui_module/ship/nav/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
-	var/turf/T = get_turf(linked)
+	var/turf/T = get_turf(linked())
 	var/obj/effect/overmap/visitable/sector/current_sector = locate() in T
 
 	data["sector"] = current_sector ? current_sector.name : "Deep Space"
 	data["sector_info"] = current_sector ? current_sector.desc : "Not Available"
-	data["s_x"] = linked.x
-	data["s_y"] = linked.y
-	data["speed"] = round(linked.get_speed()*1000, 0.01)
-	data["accel"] = round(linked.get_acceleration()*1000, 0.01)
-	data["heading"] = linked.get_heading_degrees()
+	data["s_x"] = linked().x
+	data["s_y"] = linked().y
+	data["speed"] = round(linked().get_speed()*1000, 0.01)
+	data["accel"] = round(linked().get_acceleration()*1000, 0.01)
+	data["heading"] = linked().get_heading_degrees()
 	data["viewing"] = viewing_overmap(user)
 
-	if(linked.get_speed())
-		data["ETAnext"] = "[round(linked.ETA()/10)] seconds"
+	if(linked().get_speed())
+		data["ETAnext"] = "[round(linked().ETA()/10)] seconds"
 	else
 		data["ETAnext"] = "N/A"
 
@@ -127,15 +127,15 @@
 	if(..())
 		return TRUE
 
-	if(!linked)
+	if(!linked())
 		return FALSE
 
 	if(action == "viewing")
-		if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked)
+		if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 			return FALSE
 		else if(!viewing_overmap(ui.user))
 			if(!viewers) viewers = list() // List must exist for pass by reference to work
-			start_coordinated_remoteview(src, ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
+			start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 		else
 			ui.user.reset_perspective()
 		return TRUE
@@ -156,7 +156,7 @@
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
 	var/accellimit = 0.001 //manual limiter for acceleration
 	// SENSORS
-	var/obj/machinery/shipsensors/sensors
+	var/sensors_handle
 
 /datum/tgui_module/ship/fullmonty/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
@@ -170,8 +170,8 @@
 	. = ..()
 	if(!istype(new_linked))
 		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-	linked = new_linked
-	name = initial(name) + " ([linked.name])"
+	linked_handle = om_handle(new_linked)
+	name = initial(name) + " ([linked().name])"
 	// HELM
 	var/area/overmap/map = locate() in world
 	for(var/obj/effect/overmap/visitable/sector/S in map)
@@ -183,14 +183,14 @@
 			LAZYSET(known_sectors, S.name, R)
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(linked.check_ownership(S))
-			sensors = S
+		if(linked().check_ownership(S))
+			sensors_handle = om_handle(S)
 			break
 
 /datum/tgui_module/ship/fullmonty/relaymove(mob/user, direction)
-	if(viewing_overmap(user) && linked)
+	if(viewing_overmap(user) && linked())
 		direction = turn(direction,pick(90,-90))
-		linked.relaymove(user, direction, accellimit)
+		linked().relaymove(user, direction, accellimit)
 		return 1
 	return ..()
 
@@ -199,37 +199,37 @@
 	var/list/data = ..()
 
 	// HELM
-	var/turf/T = get_turf(linked)
+	var/turf/T = get_turf(linked())
 	var/obj/effect/overmap/visitable/sector/current_sector = locate() in T
 
 	data["sector"] = current_sector ? current_sector.name : "Deep Space"
 	data["sector_info"] = current_sector ? current_sector.desc : "Not Available"
-	data["landed"] = linked.get_landed_info()
-	data["s_x"] = linked.x
-	data["s_y"] = linked.y
+	data["landed"] = linked().get_landed_info()
+	data["s_x"] = linked().x
+	data["s_y"] = linked().y
 	data["dest"] = dy && dx
 	data["d_x"] = dx
 	data["d_y"] = dy
 	data["speedlimit"] = speedlimit ? speedlimit*1000 : "Halted"
-	data["accel"] = min(round(linked.get_acceleration()*1000, 0.01),accellimit*1000)
-	data["heading"] = linked.get_heading_degrees()
+	data["accel"] = min(round(linked().get_acceleration()*1000, 0.01),accellimit*1000)
+	data["heading"] = linked().get_heading_degrees()
 	data["autopilot_disabled"] = autopilot_disabled
 	data["autopilot"] = autopilot
 	data["manual_control"] = viewing_overmap(user)
-	data["canburn"] = linked.can_burn()
+	data["canburn"] = linked().can_burn()
 	data["accellimit"] = accellimit*1000
 
-	var/speed = round(linked.get_speed()*1000, 0.01)
+	var/speed = round(linked().get_speed()*1000, 0.01)
 	var/speed_color = null
-	if(linked.get_speed() < SHIP_SPEED_SLOW)
+	if(linked().get_speed() < SHIP_SPEED_SLOW)
 		speed_color = "good"
-	if(linked.get_speed() > SHIP_SPEED_FAST)
+	if(linked().get_speed() > SHIP_SPEED_FAST)
 		speed_color = "average"
 	data["speed"] = speed
 	data["speed_color"] = speed_color
 
-	if(linked.get_speed())
-		data["ETAnext"] = "[round(linked.ETA()/10)] seconds"
+	if(linked().get_speed())
+		data["ETAnext"] = "[round(linked().ETA()/10)] seconds"
 	else
 		data["ETAnext"] = "N/A"
 
@@ -246,12 +246,12 @@
 	data["locations"] = locations
 
 	// ENGINES
-	data["global_state"] = linked.engines_state
-	data["global_limit"] = round(linked.thrust_limit*100)
+	data["global_state"] = linked().engines_state
+	data["global_limit"] = round(linked().thrust_limit*100)
 	var/total_thrust = 0
 
 	var/list/enginfo = list()
-	for(var/datum/ship_engine/E in linked.engines)
+	for(var/datum/ship_engine/E in linked().engines)
 		var/list/rdata = list()
 		rdata["eng_type"] = E.name
 		rdata["eng_on"] = E.is_on()
@@ -259,7 +259,7 @@
 		rdata["eng_thrust_limiter"] = round(E.get_thrust_limit()*100)
 		var/list/status = E.get_status()
 		if(!islist(status))
-			log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked.name] returned a non-list status!"))
+			log_runtime(EXCEPTION("Warning, ship [E.name] (\ref[E]) for [linked().name] returned a non-list status!"))
 			status = list("Error")
 		rdata["eng_status"] = status
 		rdata["eng_reference"] = "\ref[E]"
@@ -280,28 +280,28 @@
 	data["status"] = "MISSING"
 	data["contacts"] = list()
 
-	if(sensors)
-		data["on"] = sensors.use_power
-		data["range"] = sensors.range
-		data["health"] = sensors.get_integrity()
-		data["max_health"] = sensors.max_integrity
-		data["heat"] = sensors.heat
-		data["critical_heat"] = sensors.critical_heat
-		if(sensors.get_integrity() <= 0)
+	if(sensors())
+		data["on"] = sensors().use_power
+		data["range"] = sensors().range
+		data["health"] = sensors().get_integrity()
+		data["max_health"] = sensors().max_integrity
+		data["heat"] = sensors().heat
+		data["critical_heat"] = sensors().critical_heat
+		if(sensors().get_integrity() <= 0)
 			data["status"] = "DESTROYED"
-		else if(!sensors.powered())
+		else if(!sensors().powered())
 			data["status"] = "NO POWER"
-		else if(!sensors.in_vacuum())
+		else if(!sensors().in_vacuum())
 			data["status"] = "VACUUM SEAL BROKEN"
 		else
 			data["status"] = "OK"
 		var/list/contacts = list()
-		for(var/obj/effect/overmap/O in view(7,linked))
-			if(linked == O)
+		for(var/obj/effect/overmap/O in view(7,linked()))
+			if(linked() == O)
 				continue
 			if(!O.scannable)
 				continue
-			var/bearing = round(90 - ATAN2(O.x - linked.x, O.y - linked.y),5)
+			var/bearing = round(90 - ATAN2(O.x - linked().x, O.y - linked().y),5)
 			if(bearing < 0)
 				bearing += 360
 			contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
@@ -328,11 +328,11 @@
 				return TRUE
 			switch(params["add"])
 				if("current")
-					R.fields["x"] = linked.x
-					R.fields["y"] = linked.y
+					R.fields["x"] = linked().x
+					R.fields["y"] = linked().y
 				if("new")
-					var/newx = tgui_input_number(ui.user, "Input new entry x coordinate", "Coordinate input", linked.x, world.maxx, 1)
-					var/newy = tgui_input_number(ui.user, "Input new entry y coordinate", "Coordinate input", linked.y, world.maxy, 1)
+					var/newx = tgui_input_number(ui.user, "Input new entry x coordinate", "Coordinate input", linked().x, world.maxx, 1)
+					var/newy = tgui_input_number(ui.user, "Input new entry y coordinate", "Coordinate input", linked().y, world.maxy, 1)
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
 					R.fields["y"] = CLAMP(newy, 1, world.maxy)
 			LAZYSET(known_sectors, sec_name, R)
@@ -382,11 +382,11 @@
 		if("move")
 			var/ndir = text2num(params["dir"])
 			ndir = turn(ndir,pick(90,-90))
-			linked.relaymove(ui.user, ndir, accellimit)
+			linked().relaymove(ui.user, ndir, accellimit)
 			. = TRUE
 
 		if("brake")
-			linked.decelerate()
+			linked().decelerate()
 			. = TRUE
 
 		if("apilot")
@@ -402,34 +402,34 @@
 			. = TRUE
 
 		if("manual")
-			if(ui.user.blinded || !linked)
+			if(ui.user.blinded || !linked())
 				return FALSE
 			else  if(!viewing_overmap(ui.user))
 				if(!viewers) viewers = list()
-				start_coordinated_remoteview(src, ui.user, linked, viewers, /datum/remote_view_config/overmap_ship_control)
+				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()
 			. = TRUE
 		/* END HELM */
 		/* ENGINES */
 		if("global_toggle")
-			linked.engines_state = !linked.engines_state
-			for(var/datum/ship_engine/E in linked.engines)
-				if(linked.engines_state == !E.is_on())
+			linked().engines_state = !linked().engines_state
+			for(var/datum/ship_engine/E in linked().engines)
+				if(linked().engines_state == !E.is_on())
 					E.toggle()
 			. = TRUE
 
 		if("set_global_limit")
-			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100%)", "Thrust limit", linked.thrust_limit*100, 100, 0)
-			linked.thrust_limit = clamp(newlim/100, 0, 1)
-			for(var/datum/ship_engine/E in linked.engines)
-				E.set_thrust_limit(linked.thrust_limit)
+			var/newlim = tgui_input_number(ui.user, "Input new thrust limit (0..100%)", "Thrust limit", linked().thrust_limit*100, 100, 0)
+			linked().thrust_limit = clamp(newlim/100, 0, 1)
+			for(var/datum/ship_engine/E in linked().engines)
+				E.set_thrust_limit(linked().thrust_limit)
 			. = TRUE
 
 		if("global_limit")
-			linked.thrust_limit = clamp(linked.thrust_limit + text2num(params["global_limit"]), 0, 1)
-			for(var/datum/ship_engine/E in linked.engines)
-				E.set_thrust_limit(linked.thrust_limit)
+			linked().thrust_limit = clamp(linked().thrust_limit + text2num(params["global_limit"]), 0, 1)
+			for(var/datum/ship_engine/E in linked().engines)
+				E.set_thrust_limit(linked().thrust_limit)
 			. = TRUE
 
 		if("set_limit")
@@ -457,12 +457,12 @@
 		/* END ENGINES */
 		/* SENSORS */
 		if("range")
-			var/nrange = tgui_input_number(ui.user, "Set new sensors range", "Sensor range", sensors.range, world.view, round_value = FALSE)
+			var/nrange = tgui_input_number(ui.user, "Set new sensors range", "Sensor range", sensors().range, world.view, round_value = FALSE)
 			if(nrange)
-				sensors.set_range(CLAMP(nrange, 1, world.view))
+				sensors().set_range(CLAMP(nrange, 1, world.view))
 			. = TRUE
 		if("toggle_sensor")
-			sensors.toggle()
+			sensors().toggle()
 			. = TRUE
 		if("viewing")
 			if(ui.user && !isAI(ui.user))
@@ -486,7 +486,7 @@
 
 /datum/remote_view_config/overmap_ship_control/handle_relay_movement( datum/component/remote_view/owner_component, mob/host_mob, direction)
 	var/datum/tgui_module/ship/tgui_owner = owner_component.get_coordinator()
-	if(tgui_owner?.linked)
+	if(tgui_owner?.linked())
 		return tgui_owner.relaymove(host_mob, direction)
 	return FALSE
 
@@ -494,6 +494,14 @@
 	var/datum/tgui_module/ship/tgui_owner = owner_component.get_coordinator()
 	if(!tgui_owner)
 		return
-	if(get_dist(host_mob, tgui_owner.tgui_host()) > 1 || !tgui_owner.linked)
+	if(get_dist(host_mob, tgui_owner.tgui_host()) > 1 || !tgui_owner.linked())
 		host_mob.reset_perspective()
 		return
+
+/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/ship/proc/linked() as /obj/effect/overmap/visitable/ship
+	return om_resolve(linked_handle)
+
+/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/ship/fullmonty/proc/sensors() as /obj/machinery/shipsensors
+	return om_resolve(sensors_handle)

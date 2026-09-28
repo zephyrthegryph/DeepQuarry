@@ -1,7 +1,7 @@
 /datum/borrow
 	var/broker = ""
 	var/borrower = ""
-	var/datum/stock/stock = null
+	var/stock_handle
 	var/lease_expires = 0
 	var/lease_time = 0
 	var/grace_time = 0
@@ -230,7 +230,7 @@
 	var/broker = DEFAULTPICK(GLOB.stockExchange.stockBrokers, null)
 	var/datum/borrow/B = new
 	B.broker = broker
-	B.stock = src
+	B.stock_handle = om_handle(src)
 	B.lease_time = rand(4, 7) * 600
 	B.grace_time = rand(1, 3) * 600
 	B.share_amount = rand(1, 10) * 100
@@ -309,3 +309,7 @@
 	return  // body provided by modular override
 
 REF_OWNED(/datum/stock, "industry")
+
+/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/borrow/proc/stock() as /datum/stock
+	return om_resolve(stock_handle)

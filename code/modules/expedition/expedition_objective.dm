@@ -22,7 +22,7 @@
 	var/bonus_points = 0
 	var/bonus_cash = 0
 	/// Back-reference to the site.
-	var/datum/expedition_site/site
+	var/site_handle
 	/// Atoms this objective spawned / tracks.
 	var/list/tracked
 	/// Progress / target for the console readout.
@@ -34,7 +34,7 @@
 	tracked = list()
 
 /datum/expedition_objective/proc/populate(datum/expedition_site/S)
-	site = S
+	site_handle = om_handle(S)
 
 /datum/expedition_objective/proc/check()
 	return state
@@ -50,7 +50,7 @@
 // Shared helpers -------------------------------------------------------------
 
 /datum/expedition_objective/proc/count_returned(typepath)
-	var/datum/shuttle/autodock/overmap/shuttle = site?.assigned_shuttle
+	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle
 	if(!shuttle)
 		return 0
 	var/count = 0
@@ -131,7 +131,7 @@
 	var/datum/expedition_building/B = new()
 	B.loot_difficulty = S.difficulty
 	B.loot_size = S.size
-	B.loot_biome = S.biome
+	B.loot_biome_handle = om_handle(S.biome)
 	var/dim = 14 + S.size * 4
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
 		qdel(B)
@@ -299,7 +299,7 @@
 		var/turf/T = S.random_floor()
 		if(!T)
 			continue
-		var/d = S.landing ? get_dist(T, S.landing) : 0
+		var/d = S.landing() ? get_dist(T, S.landing()) : 0
 		if(d > best_dist)
 			best_dist = d
 			best = T
@@ -308,9 +308,9 @@
 		tracked += marker
 
 /datum/expedition_objective/reach/check()
-	if(QDELETED(marker) || !site)
+	if(QDELETED(marker) || !site())
 		return state
-	for(var/mob/living/L in site.participants)
+	for(var/mob/living/L in site().participants)
 		if(QDELETED(L) || L.stat == DEAD)
 			continue
 		if(get_dist(L, marker) <= 2)
@@ -345,7 +345,7 @@
 	var/datum/map_template/expedition_engine/template = new()
 	if(template.width <= 0 || template.height <= 0)
 		return
-	var/turf/anchor = S.landing || S.random_floor()
+	var/turf/anchor = S.landing() || S.random_floor()
 	if(!anchor)
 		return
 	var/cx = clamp(anchor.x - round(template.width / 2), 2, world.maxx - template.width - 1)
@@ -420,7 +420,7 @@
 	target = round(hold_time / 10)
 
 /datum/expedition_objective/survive/check()
-	if(!site || !players_present())
+	if(!site() || !players_present())
 		return state
 	if(!started_at)
 		started_at = world.time
@@ -435,18 +435,18 @@
 
 /datum/expedition_objective/survive/proc/players_present()
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(M.z == site.z_level)
+		if(M.z == site().z_level)
 			return TRUE
 	return FALSE
 
 /datum/expedition_objective/survive/proc/spawn_wave()
 	var/turf/anchor = null
-	for(var/mob/living/L in site.participants)
-		if(!QDELETED(L) && L.z == site.z_level)
+	for(var/mob/living/L in site().participants)
+		if(!QDELETED(L) && L.z == site().z_level)
 			anchor = get_turf(L)
 			break
 	if(!anchor)
-		anchor = site.landing
+		anchor = site().landing()
 	if(!anchor)
 		return
 	var/list/spots = list()
@@ -455,8 +455,8 @@
 			spots += T
 	if(!length(spots))
 		return
-	for(var/i in 1 to 2 + site.difficulty)
-		expedition_spawn_guard(pick(spots), site.faction, site.difficulty)
+	for(var/i in 1 to 2 + site().difficulty)
+		expedition_spawn_guard(pick(spots), site().faction, site().difficulty)
 
 /datum/expedition_objective/survive/objective_text()
 	return "Hold the site for [round(hold_time / 10)] seconds"
@@ -464,3 +464,7 @@
 REF_OWNED(/datum/expedition_objective/reach, "marker")
 
 REF_OWNED(/datum/expedition_objective/destroy, "target_obj")
+
+/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_objective/proc/site() as /datum/expedition_site
+	return om_resolve(site_handle)

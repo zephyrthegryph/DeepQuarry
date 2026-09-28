@@ -229,7 +229,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif)
 	brainmob.nif = nif
-	brainmob.soulcatcher = src
+	brainmob.soulcatcher_handle = om_handle(src)
 	brainmob.container = src
 	brainmob.stat = 0
 	brainmob.status_set(EFFECT_MUTED, 0)
@@ -287,7 +287,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	universal_understand = TRUE
 
 	var/obj/item/nif/nif
-	var/datum/nifsoft/soulcatcher/soulcatcher
+	var/soulcatcher_handle
 	var/identifying_gender
 
 /mob/living/carbon/brain/caught_soul/Login()
@@ -299,10 +299,10 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 // LIFECYCLE: the soulcatcher is told the mind unloaded.
 /mob/living/carbon/brain/caught_soul/Destroy()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	if(soulcatcher)
-		soulcatcher.notify_into("Mind unloaded: [name]")
-		soulcatcher.brainmobs -= src
-		soulcatcher = null
+	if(soulcatcher())
+		soulcatcher().notify_into("Mind unloaded: [name]")
+		soulcatcher().brainmobs -= src
+		soulcatcher_handle = null
 	if(eyeobj)
 		reenter_soulcatcher()
 	container = null
@@ -324,7 +324,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 /datum/om/stage/life/type_post/carbon/brain/caught_soul/perform(mob/living/carbon/brain/caught_soul/self, datum/om/frame/life/ctx)
 	..()
 
-	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher?.setting_flags & NIF_SC_BACKUPS)
+	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
 		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
 	self.life_tick++
@@ -339,7 +339,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	if(self.parent_mob) return
 
 	//If they're blinded
-	if(self.soulcatcher) // needs it's own handling to allow vore_fx
+	if(self.soulcatcher()) // needs it's own handling to allow vore_fx
 		if(self.ext_blind)
 			self.status_set(EFFECT_BLINDED, 5)
 			self.client.screen.Remove(GLOB.global_hud.whitense)
@@ -384,17 +384,17 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 /mob/living/carbon/brain/caught_soul/me_verb_subtle(message as message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	soulcatcher.emote_into(message,src,eyeobj,TRUE)
+	soulcatcher().emote_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/whisper(message as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	soulcatcher.say_into(message,src,eyeobj,TRUE)
+	soulcatcher().say_into(message,src,eyeobj,TRUE)
 
 /mob/living/carbon/brain/caught_soul/say(message, datum/language/speaking = null, whispering = 0)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	soulcatcher.say_into(message,src,eyeobj)
+	soulcatcher().say_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/emote(act,m_type=1,message = null)
 	if(has_status(EFFECT_MUTED)) return FALSE
@@ -416,7 +416,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 /mob/living/carbon/brain/caught_soul/custom_emote(m_type, message)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(has_status(EFFECT_MUTED)) return FALSE
-	soulcatcher.emote_into(message,src,eyeobj)
+	soulcatcher().emote_into(message,src,eyeobj)
 
 /mob/living/carbon/brain/caught_soul/resist()
 	set name = "Resist"
@@ -431,7 +431,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	plane = PLANE_AUGMENTED
 	icon = 'icons/obj/machines/ar_elements.dmi'
 	icon_state = "beacon"
-	var/mob/living/parent_human
+	var/parent_human_handle
 
 /mob/observer/eye/ar_soul/Initialize(mapload, human)
 	. = ..()
@@ -440,15 +440,15 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		return INITIALIZE_HINT_QDEL
 
 	brainmob.take_eye(src)			//Look through us
-	parent_human = human			//E-z reference to human
+	parent_human_handle = om_handle(human)			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name
 	real_name = brainmob.real_name	//And the OTHER name
 
-	forceMove(get_turf(parent_human))
-	parent_human.AddComponent(/datum/component/recursive_move)
-	RegisterSignal(parent_human, COMSIG_MOVABLE_ATTEMPTED_MOVE, /mob/observer/eye/ar_soul/proc/human_moved)
+	forceMove(get_turf(parent_human()))
+	parent_human().AddComponent(/datum/component/recursive_move)
+	RegisterSignal(parent_human(), COMSIG_MOVABLE_ATTEMPTED_MOVE, /mob/observer/eye/ar_soul/proc/human_moved)
 
 	//Time to play dressup
 	if(brainmob.client.prefs)
@@ -471,7 +471,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		var/turf/stepn = get_turf(get_step(src, direct))
 		if(stepn)
 			set_dir(direct)
-			if(can_see(parent_human, stepn))
+			if(can_see(parent_human(), stepn))
 				forceMove(stepn)
 
 	cooldown = world.timeofday + 5
@@ -483,8 +483,8 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 /mob/observer/eye/ar_soul/proc/human_moved()
 	SIGNAL_HANDLER
-	if(!can_see(parent_human,src))
-		forceMove(get_turf(parent_human))
+	if(!can_see(parent_human(),src))
+		forceMove(get_turf(parent_human()))
 
 ///////////////////
 //The catching hook
@@ -601,7 +601,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		to_chat(src,span_warning("You're already projecting in AR!"))
 		return
 
-	if(!(soulcatcher.setting_flags & NIF_SC_PROJECTING))
+	if(!(soulcatcher().setting_flags & NIF_SC_PROJECTING))
 		to_chat(src,span_warning("Projecting from this NIF has been disabled!"))
 		return
 
@@ -609,7 +609,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		return //Um...
 
 	new /mob/observer/eye/ar_soul(src, nif.human) // takes itself as our eye
-	soulcatcher.notify_into("[src] now AR projecting.")
+	soulcatcher().notify_into("[src] now AR projecting.")
 
 /mob/living/carbon/brain/caught_soul/verb/jump_to_owner()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -634,7 +634,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		return
 
 	QDEL_NULL(eyeobj)
-	soulcatcher.notify_into("[src] ended AR projection.")
+	soulcatcher().notify_into("[src] ended AR projection.")
 
 /mob/living/carbon/brain/caught_soul/verb/nsay_brain(message as text)
 	set name = "NSay"
@@ -645,7 +645,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		message = tgui_input_text(src, "Type a message to say.","Speak into Soulcatcher", encode = FALSE)
 	if(message)
 		var/sane_message = sanitize(message)
-		soulcatcher.say_into(sane_message,src,null)
+		soulcatcher().say_into(sane_message,src,null)
 
 /mob/living/carbon/brain/caught_soul/verb/nme_brain(message as message)
 	set name = "NMe"
@@ -656,4 +656,12 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		message = tgui_input_text(src, "Type an action to perform.","Emote into Soulcatcher", encode = FALSE)
 	if(message)
 		var/sane_message = sanitize(message)
-		soulcatcher.emote_into(sane_message,src,null)
+		soulcatcher().emote_into(sane_message,src,null)
+
+/// LC-refs: the soulcatcher this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/living/carbon/brain/caught_soul/proc/soulcatcher() as /datum/nifsoft/soulcatcher
+	return om_resolve(soulcatcher_handle)
+
+/// LC-refs: the parent_human this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/observer/eye/ar_soul/proc/parent_human() as /mob/living
+	return om_resolve(parent_human_handle)

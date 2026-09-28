@@ -1,21 +1,21 @@
 GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /datum/event/money_hacker
-	var/datum/money_account/affected_account
+	var/affected_account_handle
 	endWhen = 100
 	var/end_time
 
 /datum/event/money_hacker/setup()
 	end_time = world.time + 6000
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		affected_account = pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
+		affected_account_handle = om_handle(pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
 		GLOB.account_hack_attempted = 1
 	else
 		kill()
 
 /datum/event/money_hacker/announce()
-	var/message = "A brute force hack has been detected (in progress since [stationtime2text()]). The target of the attack is: Financial account #[affected_account.account_number], \
+	var/message = "A brute force hack has been detected (in progress since [stationtime2text()]). The target of the attack is: Financial account #[affected_account().account_number], \
 	without intervention this attack will succeed in approximately 10 minutes. Required intervention: temporary suspension of affected accounts until the attack has ceased. \
 	Notifications will be sent as updates occur.<br>"
 	var/my_department = "[station_name()] firewall subroutines"
@@ -33,13 +33,13 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 /datum/event/money_hacker/end()
 	var/message
-	if(affected_account && !affected_account.suspended)
+	if(affected_account() && !affected_account().suspended)
 		//hacker wins
 		message = "The hack attempt has succeeded."
 
 		//subtract the money
-		var/lost = affected_account.money * 0.8 + (rand(2,4) - 2) / 10
-		affected_account.debit(lost, "Unknown attacker", "Account intrusion loss", "Compromised GalaxyNet terminal")
+		var/lost = affected_account().money * 0.8 + (rand(2,4) - 2) / 10
+		affected_account().debit(lost, "Unknown attacker", "Account intrusion loss", "Compromised GalaxyNet terminal")
 
 		//create a taunting log entry
 		var/datum/transaction/T = new()
@@ -54,7 +54,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 		T.time = pick("", stationtime2text(), time2)
 		T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD")
 
-		LAZYADD(affected_account.transaction_log, T)
+		LAZYADD(affected_account().transaction_log, T)
 
 	else
 		//crew wins
@@ -65,3 +65,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!MS.active) continue
 		MS.send_rc_message(JOB_HEAD_OF_PERSONNEL + "'s Desk", my_department, message, "", "", 2)
+
+/// LC-refs: the affected_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/money_hacker/proc/affected_account() as /datum/money_account
+	return om_resolve(affected_account_handle)

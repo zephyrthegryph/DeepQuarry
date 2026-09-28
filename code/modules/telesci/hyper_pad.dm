@@ -7,14 +7,14 @@
 	icon_state = "hpad"
 	density = 0
 	anchored = 1
-	var/obj/machinery/hyperpad/centre/primary
+	var/primary_handle
 
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
 	var/last_teleport //to handle the cooldown
 	var/teleporting = 0 //if it's in the process of teleporting
-	var/obj/machinery/hyperpad/centre/linked_pad
+	var/linked_pad_handle
 	icon_state = "hpad_centre"
 	var/newcolor = "#00FFFF" //used for colouring the overlays
 
@@ -38,10 +38,10 @@
 	if(map_pad_id && mapped_hyper_pads[map_pad_id] == src)
 		mapped_hyper_pads -= map_pad_id
 	for(var/obj/machinery/hyperpad/P in linked)
-		P.primary = null
+		P.primary_handle = null
 		qdel(P)
 	LAZYCLEARLIST(linked)
-	linked_pad = null
+	linked_pad_handle = null
 	return ..()
 
 /obj/machinery/hyperpad/operable()
@@ -54,13 +54,13 @@
 	. = ..()
 	if(.)
 		return
-	if(linked_pad && !QDELETED(linked_pad))
-		ghost.forceMove(get_turf(linked_pad))
+	if(linked_pad() && !QDELETED(linked_pad()))
+		ghost.forceMove(get_turf(linked_pad()))
 
 /obj/machinery/hyperpad/attack_ghost(mob/observer/dead/ghost)
 	. = ..()
-	if(primary)
-		primary.attack_ghost(ghost)
+	if(primary())
+		primary().attack_ghost(ghost)
 
 /obj/machinery/hyperpad/centre/declare_interactions(list/into)
 	into += list(
@@ -75,7 +75,7 @@
 
 /obj/machinery/hyperpad/centre/proc/interaction_teleport(mob/user, obj/item/held, datum/interaction/interaction)
 	detect(user)
-	if(!linked_pad || QDELETED(linked_pad))
+	if(!linked_pad() || QDELETED(linked_pad()))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
 			return TRUE
@@ -85,7 +85,7 @@
 	if(world.time < last_teleport + teleport_cooldown)
 		to_chat(user, span_warning("[src] is recharging power. Please wait [round((last_teleport + teleport_cooldown - world.time)/10)] seconds."))
 		return TRUE
-	if(linked_pad.teleporting)
+	if(linked_pad().teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
 		return TRUE
 	src.add_fingerprint(user)
@@ -104,15 +104,15 @@
 	effect = /obj/machinery/hyperpad/proc/interaction_delegate
 
 /obj/machinery/hyperpad/proc/interaction_delegate(mob/user, obj/item/held, datum/interaction/interaction)
-	if(primary)
-		primary.attack_hand(user)
+	if(primary())
+		primary().attack_hand(user)
 	return TRUE
 
 /obj/machinery/hyperpad/centre/proc/initMappedLink()
 	. = FALSE
 	var/obj/machinery/hyperpad/centre/link = mapped_hyper_pads[map_pad_link_id]
 	if(link)
-		linked_pad = link
+		linked_pad_handle = om_handle(link)
 		. = TRUE
 
 /obj/machinery/hyperpad/centre/proc/detect(mob/user)
@@ -123,7 +123,7 @@
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
 			LAZYADD(linked, new_pad)
-			new_pad.primary = src
+			new_pad.primary_handle = om_handle(src)
 			new_pad.dir = dirs[iterate]
 			iterate += 1
 		if(length(linked) == 8)
@@ -133,7 +133,7 @@
 			to_chat(user, span_warning("Pad detect failed. Are all eight pieces linked?"))
 
 /obj/machinery/hyperpad/centre/proc/startteleport(mob/user)
-	if(!linked_pad)
+	if(!linked_pad())
 		return
 	playsound(get_turf(src), 'sound/weapons/flash.ogg', 25, 1)
 	teleporting = 1
@@ -150,7 +150,7 @@
 	if(!src || QDELETED(src))
 		teleporting = 0
 		return
-	if(!linked_pad || QDELETED(linked_pad))
+	if(!linked_pad() || QDELETED(linked_pad()))
 		to_chat(user, span_warning("Linked pad is not responding to ping. Teleport aborted."))
 		teleporting = 0
 		return
@@ -182,9 +182,9 @@
 			var/datum/effect/effect/system/teleport_greyscale/tele1 = new /datum/effect/effect/system/teleport_greyscale()
 			tele1.set_up(newcolor, get_turf(ROI))
 			var/datum/effect/effect/system/teleport_greyscale/tele2 = new /datum/effect/effect/system/teleport_greyscale()
-			tele2.set_up(linked_pad.newcolor, locate((linked_pad.x - xadjust), (linked_pad.y - yadjust), linked_pad.z))
+			tele2.set_up(linked_pad().newcolor, locate((linked_pad().x - xadjust), (linked_pad().y - yadjust), linked_pad().z))
 			limit += 1
-			do_teleport(ROI, locate((linked_pad.x - xadjust), (linked_pad.y - yadjust), linked_pad.z), effectin = tele1, effectout = tele2, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg', channel = TELEPORT_CHANNEL_QUANTUM)
+			do_teleport(ROI, locate((linked_pad().x - xadjust), (linked_pad().y - yadjust), linked_pad().z), effectin = tele1, effectout = tele2, asoundin = 'sound/weapons/emitter2.ogg', asoundout = 'sound/weapons/emitter2.ogg', channel = TELEPORT_CHANNEL_QUANTUM)
 
 	cut_overlays()
 	for(var/obj/machinery/hyperpad/P in linked)
@@ -205,3 +205,11 @@
 
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)
 	Pad.add_overlay(color)
+
+/// LC-refs: the primary this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre
+	return om_resolve(primary_handle)
+
+/// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/hyperpad/centre/proc/linked_pad() as /obj/machinery/hyperpad/centre
+	return om_resolve(linked_pad_handle)

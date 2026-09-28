@@ -880,8 +880,8 @@
 				tgui_alert_async(user,failure_msg,"Error!")
 				return FALSE
 
-			if(host.soulgem?.linked_belly == host.vore_selected)
-				host.soulgem.linked_belly = null
+			if(host.soulgem?.linked_belly() == host.vore_selected)
+				host.soulgem.linked_belly_handle = null
 
 			qdel(host.vore_selected)
 			host.vore_selected = host.vore_organs[1]
@@ -1008,7 +1008,7 @@
 			var/tail_choice = params["val"]
 			if(!(tail_choice in GLOB.tail_styles_list))
 				return FALSE
-			host.vore_selected.tail_to_change_to = tail_choice
+			host.vore_selected.tail_to_change_to_handle = om_handle(tail_choice)
 			. = TRUE
 		if("b_tail_color")
 			var/newcolor = sanitize_hexcolor(lowertext(params["val"]))

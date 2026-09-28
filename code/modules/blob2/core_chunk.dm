@@ -107,7 +107,7 @@
 
 		var/obj/structure/blob/core/NC = new (get_turf(src))
 		NC.overmind.blob_type = blob_type
-		NC.overmind.blob_core.update_icon()
+		NC.overmind.blob_core().update_icon()
 		return TRUE
 
 	return FALSE

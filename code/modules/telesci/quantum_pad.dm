@@ -15,7 +15,7 @@
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/power_efficiency = 1
 	var/boosted = 0 // do we teleport mecha?
-	var/obj/machinery/power/quantumpad/linked_pad
+	var/linked_pad_handle
 
 	//mapping
 	var/static/list/mapped_quantum_pads = list()
@@ -37,7 +37,7 @@
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
-	. += span_notice("It is [linked_pad ? "currently" : "not"] linked to another pad.")
+	. += span_notice("It is [linked_pad() ? "currently" : "not"] linked to another pad.")
 	if(world.time < last_teleport + teleport_cooldown)
 		. += span_warning("[src] is recharging power. A timer on the side reads <b>[round((last_teleport + teleport_cooldown - world.time)/10)]</b> seconds.")
 	if(boosted)
@@ -93,7 +93,7 @@
 		return ITEM_INTERACT_SUCCESS
 	if(!istype(multitool.connectable, /obj/machinery/power/quantumpad))
 		return ITEM_INTERACT_BLOCKING
-	linked_pad = multitool.connectable
+	linked_pad_handle = om_handle(multitool.connectable)
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -106,7 +106,7 @@
 
 	if(inoperable() || panel_open || !powernet)
 		icon_state = "[initial(icon_state)]-o"
-	else if (!linked_pad)
+	else if (!linked_pad())
 		icon_state = "[initial(icon_state)]-b"
 	else
 		icon_state = initial(icon_state)
@@ -138,8 +138,8 @@
 	if(istype(get_area(src), /area/shuttle))
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start
-		if(linked_pad)
-			linked_pad.linked_pad = null
+		if(linked_pad())
+			linked_pad().linked_pad_handle = null
 		// ition End
 		return TRUE
 
@@ -147,7 +147,7 @@
 		to_chat(user, span_warning("[src] is not attached to a powernet!"))
 		return TRUE
 
-	if(!linked_pad || QDELETED(linked_pad))
+	if(!linked_pad() || QDELETED(linked_pad()))
 		if(!map_pad_link_id || !initMappedLink())
 			to_chat(user, span_warning("There is no linked pad!"))
 			return TRUE
@@ -160,11 +160,11 @@
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
 		return TRUE
 
-	if(linked_pad.teleporting)
+	if(linked_pad().teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
 		return TRUE
 
-	if(linked_pad.inoperable())
+	if(linked_pad().inoperable())
 		to_chat(user, span_warning("Linked pad is not responding to ping."))
 		return TRUE
 	src.add_fingerprint(user)
@@ -175,14 +175,14 @@
 	. = ..()
 	if(.)
 		return
-	if(!linked_pad && map_pad_link_id)
+	if(!linked_pad() && map_pad_link_id)
 		initMappedLink()
-	if(linked_pad && !QDELETED(linked_pad))
-		ghost.forceMove(get_turf(linked_pad))
+	if(linked_pad() && !QDELETED(linked_pad()))
+		ghost.forceMove(get_turf(linked_pad()))
 
 /obj/machinery/power/quantumpad/proc/doteleport(mob/user)
 	update_icon()
-	if(!linked_pad)
+	if(!linked_pad())
 		return
 	// ition Start
 	if(istype(get_area(src), /area/shuttle))
@@ -198,7 +198,7 @@
 	. = FALSE
 	var/obj/machinery/power/quantumpad/link = mapped_quantum_pads[map_pad_link_id]
 	if(link)
-		linked_pad = link
+		linked_pad_handle = om_handle(link)
 		update_icon()
 		. = TRUE
 
@@ -272,7 +272,7 @@
 		gateway_scatter(user)
 		return
 	// Nothing to teleport to
-	if(!linked_pad || QDELETED(linked_pad) || linked_pad.inoperable())
+	if(!linked_pad() || QDELETED(linked_pad()) || linked_pad().inoperable())
 		to_chat(user, span_warning("Linked pad is not responding to ping. Teleport aborted."))
 		teleporting = 0
 		return
@@ -291,7 +291,11 @@
 
 	flick("qpad-beam-out", src)
 	//playsound(src, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
-	flick("qpad-beam-in", linked_pad)
+	flick("qpad-beam-in", linked_pad())
 	//playsound(linked_pad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
 
-	transport_objects(get_turf(linked_pad))
+	transport_objects(get_turf(linked_pad()))
+
+/// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/quantumpad/proc/linked_pad() as /obj/machinery/power/quantumpad
+	return om_resolve(linked_pad_handle)

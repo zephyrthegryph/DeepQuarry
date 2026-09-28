@@ -3,7 +3,7 @@
 	var/effect = EFFECT_TOUCH //This is simply if the effect occurs on touch, in an aura, or a pulse AOE. Horribly named variable.
 	var/effectrange = 4 //How far the effect will hit something.
 	var/trigger = TRIGGER_TOUCH //This decides how the artifact is actually activated. Ex: Splashing water on it.
-	var/datum/component/artifact_master/master //This code is handled in effect_master.dm
+	var/master_handle	//This code is handled in effect_master.dm
 	var/activated = 0
 	var/chargelevel = 1
 	var/chargelevelmax = 10
@@ -26,15 +26,15 @@
 REF_OWNED(/datum/artifact_effect, "active_effect")
 
 /datum/artifact_effect/proc/get_master_holder()	// Return the effectmaster's holder, if it is set to an effectmaster. Otherwise, master is the target object.
-	if(istype(master))
-		return master.holder
+	if(istype(master()))
+		return master().holder
 	else
-		return master
+		return master()
 
 /datum/artifact_effect/New(datum/component/artifact_master/newmaster)
 	..()
 
-	master = newmaster
+	master_handle = om_handle(newmaster)
 	effect = rand(EFFECT_TOUCH, MAX_EFFECT) //This can be overwritten per artifact, in case you want one to only be touch, aura, or pulse!
 	trigger = rand(TRIGGER_TOUCH, MAX_TRIGGER) //Same for this! You can make artifacts that can ONLY be activated through XYZ!
 
@@ -238,3 +238,7 @@ REF_OWNED(/datum/artifact_effect, "active_effect")
 
 	susceptibility = CLAMP01(susceptibility - protected) //Clamp the susceptibility to be between 0 and 1. No negative numbers allowed.
 	return susceptibility
+
+/// LC-refs: This code is handled in effect_master.dm -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/artifact_effect/proc/master() as /datum/component/artifact_master
+	return om_resolve(master_handle)

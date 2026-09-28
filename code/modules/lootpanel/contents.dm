@@ -13,13 +13,13 @@
 		reset_contents()
 
 	// Add source turf first
-	var/datum/search_object/source = new(owner, source_turf)
+	var/datum/search_object/source = new(owner, source_turf())
 	add_to_index(source)
 
-	for(var/atom/thing as anything in source_turf.contents)
+	for(var/atom/thing as anything in source_turf().contents)
 		// validate
 		if(!istype(thing))
-			stack_trace("Non-atom in the contents of [source_turf]!")
+			stack_trace("Non-atom in the contents of [source_turf()]!")
 			continue
 		if(QDELETED(thing))
 			continue

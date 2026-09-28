@@ -12,22 +12,22 @@
 	interface_name = "niling d-sink"
 	interface_desc = "Colloquially known as a power siphon, this module drains power through the suit hands into the suit battery."
 
-	var/atom/interfaced_with // Currently draining power from this device.
+	var/interfaced_with_handle	// Currently draining power from this device.
 	var/total_power_drained = 0
 	var/drain_loc
 
 /obj/item/rig_module/power_sink/deactivate()
 
-	if(interfaced_with)
+	if(interfaced_with())
 		if(holder && holder.wearer)
 			to_chat(holder.wearer, span_warning("Your power sink retracts as the module deactivates."))
 		drain_complete()
-	interfaced_with = null
+	interfaced_with_handle = null
 	total_power_drained = 0
 	return ..()
 
 /obj/item/rig_module/power_sink/activate()
-	interfaced_with = null
+	interfaced_with_handle = null
 	total_power_drained = 0
 	return ..()
 
@@ -37,7 +37,7 @@
 		return 0
 
 	//Target wasn't supplied or we're already draining.
-	if(interfaced_with)
+	if(interfaced_with())
 		return 0
 
 	if(!target)
@@ -53,8 +53,8 @@
 		return 0
 
 	to_chat(H, span_danger("You begin draining power from [target]!"))
-	interfaced_with = target
-	drain_loc = interfaced_with.loc
+	interfaced_with_handle = om_handle(target)
+	drain_loc = interfaced_with().loc
 
 	holder.spark_system.start()
 	playsound(H, 'sound/effects/sparks2.ogg', 50, 1)
@@ -70,7 +70,7 @@
 
 /obj/item/rig_module/power_sink/periodic_step()
 
-	if(!interfaced_with)
+	if(!interfaced_with())
 		return ..()
 
 	var/mob/living/carbon/human/H
@@ -90,7 +90,7 @@
 		drain_complete(H)
 		return
 
-	if(!interfaced_with || !interfaced_with.Adjacent(H) || !(interfaced_with.loc == drain_loc))
+	if(!interfaced_with() || !interfaced_with().Adjacent(H) || !(interfaced_with().loc == drain_loc))
 		to_chat(H, span_warning("Your power sink retracts into its casing."))
 		drain_complete(H)
 		return
@@ -103,9 +103,9 @@
 	// Attempts to drain up to 12.5*cell-capacity kW, determines this value from remaining cell capacity to ensure we don't drain too much.
 	// 1Ws/(12.5*CELLRATE) = 40s to charge
 	var/to_drain = min(12.5*holder.cell.maxcharge, ((holder.cell.maxcharge - holder.cell.charge) / CELLRATE))
-	var/target_drained = interfaced_with.drain_power(0,0,to_drain)
+	var/target_drained = interfaced_with().drain_power(0,0,to_drain)
 	if(target_drained <= 0)
-		to_chat(H, span_danger("Your power sink flashes a red light; there is no power left in [interfaced_with]."))
+		to_chat(H, span_danger("Your power sink flashes a red light; there is no power left in [interfaced_with()]."))
 		drain_complete(H)
 		return
 
@@ -116,14 +116,18 @@
 
 /obj/item/rig_module/power_sink/proc/drain_complete(mob/living/M)
 
-	if(!interfaced_with)
+	if(!interfaced_with())
 		if(M)
 			to_chat(M, span_notice(span_bold("Total power drained:") + " [round(total_power_drained*CELLRATE)] cell units."))
 	else
 		if(M)
-			to_chat(M, span_notice(span_bold("Total power drained from [interfaced_with]:") + " [round(total_power_drained*CELLRATE)] cell units."))
-		interfaced_with.drain_power(0,1,0) // Damage the victim.
+			to_chat(M, span_notice(span_bold("Total power drained from [interfaced_with()]:") + " [round(total_power_drained*CELLRATE)] cell units."))
+		interfaced_with().drain_power(0,1,0) // Damage the victim.
 
 	drain_loc = null
-	interfaced_with = null
+	interfaced_with_handle = null
 	total_power_drained = 0
+
+/// LC-refs: Currently draining power from this device. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/rig_module/power_sink/proc/interfaced_with() as /atom
+	return om_resolve(interfaced_with_handle)

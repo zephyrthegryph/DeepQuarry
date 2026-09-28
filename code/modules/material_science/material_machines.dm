@@ -55,7 +55,7 @@
 	circuit = /obj/item/circuitboard/machine/material_furnace
 	var/list/feedstock
 	var/list/carbon_feed
-	var/obj/item/stack/material/processed_alloy/output_stock
+	var/output_stock_handle
 	var/firing = FALSE
 	var/firing_timer
 	var/datum/gas_mixture/chamber_air
@@ -74,7 +74,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 /obj/machinery/material_furnace/examine(mob/user)
 	. = ..()
 	. += span_notice("Loaded stock: [LAZYLEN(feedstock)] stack(s); chemical medium: [round(reagents?.total_volume || 0, 0.1)]u.")
-	if(output_stock)
+	if(output_stock())
 		. += span_notice("Finished alloy is ready. Click the furnace to collect it.")
 	else if(LAZYLEN(feedstock))
 		. += span_notice("The charge is ready. Click to fire it, or use Eject contents to unload it.")
@@ -101,7 +101,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	effect = /obj/machinery/material_furnace/proc/interaction_load_stock
 
 /obj/machinery/material_furnace/proc/interaction_load_stock(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(firing || output_stock)
+	if(firing || output_stock())
 		to_chat(user, span_warning("The furnace must be idle and its output removed first."))
 		return TRUE
 	user.drop_from_inventory(stock)
@@ -119,7 +119,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	effect = /obj/machinery/material_furnace/proc/interaction_load_carbon
 
 /obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
-	if(firing || output_stock)
+	if(firing || output_stock())
 		return TRUE
 	user.drop_from_inventory(item)
 	item.forceMove(src)
@@ -170,9 +170,9 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	effect = /obj/machinery/material_furnace/proc/interaction_use
 
 /obj/machinery/material_furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(output_stock && !firing)
-		var/obj/item/stack/material/processed_alloy/finished = output_stock
-		output_stock = null
+	if(output_stock() && !firing)
+		var/obj/item/stack/material/processed_alloy/finished = output_stock()
+		output_stock_handle = null
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
 		visible_message(span_notice("[user] removes [finished] from [src]'s output tray."))
@@ -209,7 +209,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	if(firing)
 		to_chat(user, span_warning("The sealed furnace cannot be opened while firing."))
 		return TRUE
-	if(!output_stock && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
+	if(!output_stock() && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
 		to_chat(user, span_notice("The furnace is empty."))
 		return TRUE
 	user.visible_message(
@@ -222,9 +222,9 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 /obj/machinery/material_furnace/proc/eject_contents_done(mob/user)
 	if(firing)
 		return
-	if(output_stock)
-		var/obj/item/stack/material/processed_alloy/finished = output_stock
-		output_stock = null
+	if(output_stock())
+		var/obj/item/stack/material/processed_alloy/finished = output_stock()
+		output_stock_handle = null
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
 		user.visible_message(
@@ -277,18 +277,18 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	if(heat_treatment && batch.phase == MATERIAL_PHASE_SOLID)
 		if(!batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT))
 			visible_message(span_warning("[src] could not complete the heat treatment. The stock remains recoverable."))
-			output_stock = processed_spawn_stack(get_turf(src), batch, batch.amount)
+			output_stock_handle = om_handle(processed_spawn_stack(get_turf(src), batch, batch.amount))
 			qdel(batch)
 			return
 	else
 		if(!batch.apply_process(MATERIAL_PROCESS_MELT) || !batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE) || !batch.apply_process(MATERIAL_PROCESS_CAST))
 			visible_message(span_warning("[src] could not fully melt and combine the charge. The material remains recoverable."))
-			output_stock = processed_spawn_stack(get_turf(src), batch, batch.amount)
+			output_stock_handle = om_handle(processed_spawn_stack(get_turf(src), batch, batch.amount))
 			qdel(batch)
 			return
-	output_stock = processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction)))
-	if(output_stock)
-		output_stock.forceMove(src)
+	output_stock_handle = om_handle(processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction))))
+	if(output_stock())
+		output_stock().forceMove(src)
 	visible_message(span_notice("[src] finishes firing. The completed alloy is ready to collect."))
 	qdel(batch)
 
@@ -335,7 +335,7 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	batch.recalculate()
 
 /obj/machinery/material_furnace/proc/unload_charge(mob/user)
-	if(firing || output_stock)
+	if(firing || output_stock())
 		return FALSE
 	for(var/obj/item/stack/material/stock as anything in feedstock)
 		stock.forceMove(user.drop_location())
@@ -353,35 +353,35 @@ REF_OWNED(/obj/machinery/material_furnace, "chamber_air")
 	icon_state = "anvil"
 	anchored = TRUE
 	density = TRUE
-	var/obj/item/stack/material/processed_alloy/stock
+	var/stock_handle
 
 /obj/structure/material_anvil/attackby(obj/item/item, mob/user)
 	if(istype(item, /obj/item/stack/material/processed_alloy))
-		if(stock)
+		if(stock())
 			return
 		user.drop_from_inventory(item)
 		item.forceMove(src)
-		stock = item
+		stock_handle = om_handle(item)
 		return
-	if(istype(item, /obj/item/melee/hammer) && stock)
-		var/datum/material_batch/batch = stock.physical_batch().copy_batch()
+	if(istype(item, /obj/item/melee/hammer) && stock())
+		var/datum/material_batch/batch = stock().physical_batch().copy_batch()
 		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
 			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
 			qdel(batch)
 			return
-		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, src)
-		stock = replacement
-		stock.forceMove(src)
+		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock(), batch, src)
+		stock_handle = om_handle(replacement)
+		stock().forceMove(src)
 		qdel(batch)
 		visible_message(span_notice("[user] works the alloy under the hammer, refining its shape and internal structure."))
 		return
 	return ..()
 
 /obj/structure/material_anvil/attack_hand(mob/user)
-	if(!stock)
+	if(!stock())
 		return ..()
-	stock.forceMove(get_turf(src))
-	stock = null
+	stock().forceMove(get_turf(src))
+	stock_handle = null
 	return TRUE
 
 /obj/structure/bed/bath/material_treatment
@@ -603,3 +603,11 @@ ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", 
 	if(replacement)
 		operator.put_in_hands(replacement)
 		to_chat(operator, span_notice("Applied [lowertext(selection)] to [replacement]."))
+
+/// LC-refs: the output_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/material_furnace/proc/output_stock() as /obj/item/stack/material/processed_alloy
+	return om_resolve(output_stock_handle)
+
+/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/material_anvil/proc/stock() as /obj/item/stack/material/processed_alloy
+	return om_resolve(stock_handle)

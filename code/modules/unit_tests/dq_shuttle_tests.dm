@@ -53,9 +53,9 @@
 			TEST_ASSERT_NOTNULL(D.my_landmark, "web shuttle '[name]' kept destination '[D.name]' ([D.type]) with no landmark — should have been pruned")
 			// Every surviving route must connect two surviving destinations.
 			for(var/datum/shuttle_route/R in D.routes)
-				TEST_ASSERT_NOTNULL(R.start, "route on '[D.name]' has a null start")
-				TEST_ASSERT_NOTNULL(R.end, "route on '[D.name]' has a null end")
-				TEST_ASSERT(R.start.my_landmark && R.end.my_landmark, "web shuttle '[name]' route [R.start.name] <-> [R.end.name] touches a landmark-less destination")
+				TEST_ASSERT_NOTNULL(R.start(), "route on '[D.name]' has a null start")
+				TEST_ASSERT_NOTNULL(R.end(), "route on '[D.name]' has a null end")
+				TEST_ASSERT(R.start().my_landmark && R.end().my_landmark, "web shuttle '[name]' route [start()rt.name] <-> [R.end().name] touches a landmark-less destination")
 		// Autopaths must only reference destinations that survived the prune.
 		for(var/datum/shuttle_autopath/P in WS.web_master.autopaths)
 			TEST_ASSERT_NOTNULL(WS.web_master.get_destination_by_type(P.start), "web shuttle '[name]' autopath [P.type] starts at a pruned destination")

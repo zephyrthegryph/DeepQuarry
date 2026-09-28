@@ -15,8 +15,8 @@
 // next generate_site() to reuse.
 
 /datum/expedition_teardown_job
-	var/datum/controller/subsystem/expedition/controller
-	var/datum/expedition_site/site
+	var/controller_handle
+	var/site_handle
 	var/z_level
 	var/reason
 	var/yield_count = 0
@@ -26,15 +26,15 @@
 
 /datum/expedition_teardown_job/New(datum/controller/subsystem/expedition/new_controller, datum/expedition_site/new_site, new_reason)
 	..()
-	controller = new_controller
-	site = new_site
+	controller_handle = om_handle(new_controller)
+	site_handle = om_handle(new_site)
 	z_level = new_site?.z_level
 	reason = new_reason
 
 /// Clears the z as lane work (om_lane_work(), object_model_core.md §4.11): a turf at a time,
 /// resuming by cursor, within the scheduler's budget. Nothing sleeps.
 /datum/expedition_teardown_job/proc/execute()
-	if(!controller || !site || QDELETED(site))
+	if(!controller() || !site() || QDELETED(site()))
 		qdel(src)
 		return
 	turfs = block(locate(1, 1, z_level), locate(world.maxx, world.maxy, z_level))
@@ -48,7 +48,7 @@
 	while(i <= length(turfs))
 		// A chunk of turfs at a time, each chunk one batched destroy.
 		var/last = min(length(turfs), i + WIPE_Z_CHUNK - 1)
-		controller.wipe_turfs(turfs.Copy(i, last + 1), space_area)
+		controller().wipe_turfs(turfs.Copy(i, last + 1), space_area)
 		i = last + 1
 		if(i <= length(turfs) && TICK_USAGE - started >= tick_budget)
 			yield_count++
@@ -57,15 +57,15 @@
 
 /datum/expedition_teardown_job/proc/finish()
 	turfs = null
-	if(!controller || !site || QDELETED(site))
+	if(!controller() || !site() || QDELETED(site()))
 		qdel(src)
 		return
-	var/site_name = site.name
+	var/site_name = site().name
 	if(z_level >= 1 && z_level <= world.maxz)
-		controller.free_z |= z_level
-	controller.teardown_z -= "[z_level]"
+		controller().free_z |= z_level
+	controller().teardown_z -= "[z_level]"
 	log_world("SSexpedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
-	qdel(site)
+	qdel(site())
 	qdel(src)
 
 SUBSYSTEM_DEF(expedition)
@@ -123,8 +123,8 @@ SUBSYSTEM_DEF(expedition)
 		qdel(mission)
 		to_chat(user, span_warning("Flight Operations could not survey a viable destination."))
 		return null
-	site.assigned_flight_vessel = vessel
-	site.payout_turf = get_turf(payout_source)
+	site.assigned_flight_vessel_handle = om_handle(vessel)
+	site.payout_turf_handle = om_handle(get_turf(payout_source))
 	vessel.active_expedition = site
 	to_chat(user, span_notice("[site.name] has been surveyed. Select it in Flight Operations to begin the jump and generate its landing zone."))
 	return site
@@ -159,11 +159,11 @@ SUBSYSTEM_DEF(expedition)
 	site.name += " — [expedition_faction_name(site.faction)]"
 	site.mission = mission
 	site.assigned_shuttle = assigned_shuttle
-	site.origin_console = origin_console
+	site.origin_console_handle = om_handle(origin_console)
 	site.parent_destination_id = parent_destination_id
-	site.payout_turf = get_turf(origin_console)
-	var/datum/flight_vessel/assigned_vessel = SSflight_operations?.vessel_for_ship(assigned_shuttle?.myship)
-	site.assigned_flight_vessel = assigned_vessel
+	site.payout_turf_handle = om_handle(get_turf(origin_console))
+	var/datum/flight_vessel/assigned_vessel = SSflight_operations?.vessel_for_ship(assigned_shuttle?.myship())
+	site.assigned_flight_vessel_handle = om_handle(assigned_vessel)
 	if(assigned_vessel)
 		assigned_vessel.active_expedition = site
 	site.status = EXP_STATUS_GENERATING
@@ -190,7 +190,7 @@ SUBSYSTEM_DEF(expedition)
 	descriptor.mission = null
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
-	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle, descriptor.origin_console, plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
+	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle, descriptor.origin_console(), plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
 
 /// The generated site replaces its descriptor (the destination the crew planned against).
 /datum/controller/subsystem/expedition/proc/site_materialized(datum/expedition_site/descriptor, datum/flight_plan/plan, datum/expedition_mission/mission, datum/expedition_site/site)
@@ -207,12 +207,12 @@ SUBSYSTEM_DEF(expedition)
 		site.overmap_sector.name = descriptor_name
 	if(site.landing_waypoint)
 		site.landing_waypoint.name = "[descriptor_name] - Expedition Landing Zone"
-	if(descriptor.origin_console?.active_expedition == descriptor)
-		descriptor.origin_console.active_expedition = site
-	if(descriptor.assigned_flight_vessel?.active_expedition == descriptor)
-		descriptor.assigned_flight_vessel.active_expedition = site
-	site.assigned_flight_vessel = descriptor.assigned_flight_vessel
-	site.payout_turf = descriptor.payout_turf
+	if(descriptor.origin_console()?.active_expedition == descriptor)
+		descriptor.origin_console().active_expedition = site
+	if(descriptor.assigned_flight_vessel()?.active_expedition == descriptor)
+		descriptor.assigned_flight_vessel().active_expedition = site
+	site.assigned_flight_vessel_handle = om_handle(descriptor.assigned_flight_vessel())
+	site.payout_turf_handle = om_handle(descriptor.payout_turf())
 	var/datum/flight_destination/destination = SSflight_operations?.destinations[old_destination_id]
 	if(destination)
 		var/generated_destination_id = site.flight_destination_id
@@ -224,10 +224,10 @@ SUBSYSTEM_DEF(expedition)
 		if(site.overmap_sector)
 			SSflight_operations.destination_by_target[REF(site.overmap_sector)] = destination.id
 		site.flight_destination_id = destination.id
-	descriptor.origin_console = null
+	descriptor.origin_console_handle = null
 	descriptor.assigned_shuttle = null
-	descriptor.assigned_flight_vessel = null
-	descriptor.payout_turf = null
+	descriptor.assigned_flight_vessel_handle = null
+	descriptor.payout_turf_handle = null
 	qdel(descriptor)
 	if(!plan || QDELETED(plan))
 		return
@@ -518,21 +518,21 @@ SUBSYSTEM_DEF(expedition)
 		generated_station_seed_air(fallback_floor)
 		site.floors += fallback_floor
 		station_materialization.degradation_events += "no planned floor survived; installed an emergency landing floor"
-	site.landing = get_turf(station_materialization.entry)
-	if(!site.landing || site.landing.density)
-		site.landing = site.floors[1]
+	site.landing_handle = om_handle(get_turf(station_materialization.entry))
+	if(!site.landing() || site.landing().density)
+		site.landing_handle = om_handle(site.floors[1])
 		QDEL_NULL(station_materialization.entry)
-		station_materialization.entry = new(site.landing)
+		station_materialization.entry = new(site.landing())
 		station_materialization.entry.station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
 	site.name += " — [expedition_faction_name(site.faction)]"
 	site.assigned_shuttle = assigned_shuttle
-	site.origin_console = origin_console
-	site.payout_turf = get_turf(origin_console)
+	site.origin_console_handle = om_handle(origin_console)
+	site.payout_turf_handle = om_handle(get_turf(origin_console))
 
-	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/waypoint = new(site.landing)
-	waypoint.site = site
+	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/waypoint = new(site.landing())
+	waypoint.site_handle = om_handle(site)
 	site.landing_waypoint = waypoint
 
 	// Let the mission lay down its objective content.
@@ -635,10 +635,10 @@ SUBSYSTEM_DEF(expedition)
 	sites -= "[z]"
 	if(site.flight_destination_id)
 		SSflight_operations?.unregister_destination(site.flight_destination_id)
-	if(site.origin_console && site.origin_console.active_expedition == site)
-		site.origin_console.active_expedition = null
-	if(site.assigned_flight_vessel?.active_expedition == site)
-		site.assigned_flight_vessel.active_expedition = null
+	if(site.origin_console() && site.origin_console().active_expedition == site)
+		site.origin_console().active_expedition = null
+	if(site.assigned_flight_vessel()?.active_expedition == site)
+		site.assigned_flight_vessel().active_expedition = null
 	QDEL_NULL(site.landing_waypoint)
 	QDEL_NULL(site.overmap_sector)
 	teardown_z["[z]"] = TRUE
@@ -691,3 +691,11 @@ SUBSYSTEM_DEF(expedition)
 		if(M.z == z)
 			count++
 	return count
+
+/// LC-refs: the controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_teardown_job/proc/controller() as /datum/controller/subsystem/expedition
+	return om_resolve(controller_handle)
+
+/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_teardown_job/proc/site() as /datum/expedition_site
+	return om_resolve(site_handle)

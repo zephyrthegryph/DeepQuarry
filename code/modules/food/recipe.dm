@@ -155,11 +155,11 @@
 		return TRUE //-1 value doesnt care
 
 	var/obj/item/reagent_containers/food/snacks/S = O
-	if (!S.coating)
+	if (!S.coating())
 		if (!coating)
 			return TRUE
 		return FALSE
-	else if (S.coating.type == coating)
+	else if (S.coating().type == coating)
 		return TRUE
 
 	return FALSE

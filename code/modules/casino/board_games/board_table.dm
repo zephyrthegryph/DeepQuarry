@@ -46,7 +46,7 @@ REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 
 /datum/board_game
 	var/name
-	var/atom/parent
+	var/parent_handle
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
@@ -55,10 +55,10 @@ REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 
 /datum/board_game/New(atom/holder)
 	. = ..()
-	parent = holder
+	parent_handle = om_handle(holder)
 
 /datum/board_game/tgui_host(mob/user)
-	return parent
+	return parent()
 
 /datum/board_game/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
@@ -78,3 +78,7 @@ REF_OWNED(/obj/structure/casino_table/board_game, "game_ui")
 			tgui_interact(new_player)
 			return TRUE
 	return FALSE
+
+/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/board_game/proc/parent() as /atom
+	return om_resolve(parent_handle)

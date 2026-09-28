@@ -9,7 +9,7 @@
 	density = TRUE
 	circuit = /obj/item/circuitboard/dna_analyzer
 
-	var/obj/item/forensics/swab/bloodsamp = null
+	var/bloodsamp_handle
 	var/scanning = 0
 	var/scanner_progress = 0
 	var/scanner_rate = 5
@@ -37,7 +37,7 @@
 	effect = /obj/machinery/dnaforensics/proc/interaction_insert_swab
 
 /obj/machinery/dnaforensics/proc/no_sample_loaded(mob/actor, atom/target, obj/item/held)
-	return !bloodsamp
+	return !bloodsamp()
 
 /obj/machinery/dnaforensics/proc/not_currently_scanning(mob/actor, atom/target, obj/item/held)
 	return !scanning
@@ -46,7 +46,7 @@
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
 		user.unEquip(W)
-		bloodsamp = swab
+		bloodsamp_handle = om_handle(swab)
 		swab.forceMove(src)
 		to_chat(user, span_notice("You insert [W] into [src]."))
 		update_icon()
@@ -72,8 +72,8 @@
 	var/list/data = ..()
 	data["scan_progress"] = round(scanner_progress)
 	data["scanning"] = scanning
-	data["bloodsamp"] = (bloodsamp ? bloodsamp.name : "")
-	data["bloodsamp_desc"] = (bloodsamp ? (bloodsamp.desc ? bloodsamp.desc : "No information on record.") : "")
+	data["bloodsamp"] = (bloodsamp() ? bloodsamp().name : "")
+	data["bloodsamp_desc"] = (bloodsamp() ? (bloodsamp().desc ? bloodsamp().desc : "No information on record.") : "")
 	return data
 
 /obj/machinery/dnaforensics/tgui_act(action, list/params, datum/tgui/ui)
@@ -90,7 +90,7 @@
 				scanning = FALSE
 				update_icon()
 			else
-				if(bloodsamp)
+				if(bloodsamp())
 					scanner_progress = 0
 					scanning = TRUE
 					last_process_worldtime = world.time
@@ -102,9 +102,9 @@
 			. = TRUE
 
 		if("ejectItem")
-			if(bloodsamp)
-				bloodsamp.forceMove(loc)
-				bloodsamp = null
+			if(bloodsamp())
+				bloodsamp().forceMove(loc)
+				bloodsamp_handle = null
 				scanning = FALSE
 				update_icon()
 
@@ -113,8 +113,8 @@
 	if(!scanning)
 		return PROCESS_KILL
 	if(scanning)
-		if(!bloodsamp || bloodsamp.loc != src)
-			bloodsamp = null
+		if(!bloodsamp() || bloodsamp().loc != src)
+			bloodsamp_handle = null
 			scanning = 0
 		else if(scanner_progress >= 100)
 			complete_scan()
@@ -128,22 +128,22 @@
 /obj/machinery/dnaforensics/proc/complete_scan()
 	visible_message(span_notice("[icon2html(src,viewers(src))] makes an insistent chime."), 2)
 	update_icon()
-	if(bloodsamp)
+	if(bloodsamp())
 		var/obj/item/paper/P = new(src)
-		P.name = "[src] report #[++report_num]: [bloodsamp.name]"
+		P.name = "[src] report #[++report_num]: [bloodsamp().name]"
 		P.stamped = list(/obj/item/stamp)
 		P.cut_overlays()
 		P.add_overlay("paper_stamped")
 		//dna data itself
 		var/data = "No scan information available."
-		if(bloodsamp.dna != null)
-			data = "Spectometric analysis on provided sample has determined the presence of [bloodsamp.dna.len] strings of DNA.<br><br>"
-			for(var/blood in bloodsamp.dna)
-				data += span_blue("Blood type: [bloodsamp.dna[blood]]<br>\nDNA: [blood]<br><br>")
+		if(bloodsamp().dna != null)
+			data = "Spectometric analysis on provided sample has determined the presence of [bloodsamp().dna.len] strings of DNA.<br><br>"
+			for(var/blood in bloodsamp().dna)
+				data += span_blue("Blood type: [bloodsamp().dna[blood]]<br>\nDNA: [blood]<br><br>")
 		else
 			data += "No DNA found.<br>"
 		P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
-		P.info += span_bold("Scanned item:") + "<br>[bloodsamp.name]<br>[bloodsamp.desc]<br><br>" + data
+		P.info += span_bold("Scanned item:") + "<br>[bloodsamp().name]<br>[bloodsamp().desc]<br><br>" + data
 		P.forceMove(loc)
 		P.update_icon()
 		scanning = FALSE
@@ -157,7 +157,11 @@
 	..()
 	if(!(stat & NOPOWER) && scanning)
 		icon_state = "dnaworking"
-	else if(bloodsamp)
+	else if(bloodsamp())
 		icon_state = "dnaclosed"
 	else
 		icon_state = "dnaopen"
+
+/// LC-refs: the bloodsamp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/dnaforensics/proc/bloodsamp() as /obj/item/forensics/swab
+	return om_resolve(bloodsamp_handle)

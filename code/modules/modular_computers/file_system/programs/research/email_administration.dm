@@ -12,8 +12,8 @@
 	required_access = ACCESS_NETWORK
 	category = PROG_ADMIN
 
-	var/datum/computer_file/data/email_account/current_account = null
-	var/datum/computer_file/data/email_message/current_message = null
+	var/current_account_handle
+	var/current_message_handle
 	var/error = ""
 
 /datum/computer_file/program/email_administration/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -26,21 +26,21 @@
 	data["cur_timestamp"] = null
 	data["cur_source"] = null
 
-	if(istype(current_message))
-		data["cur_title"] = current_message.title
-		data["cur_body"] = pencode2html(current_message.stored_data)
-		data["cur_timestamp"] = current_message.timestamp
-		data["cur_source"] = current_message.source
+	if(istype(current_message()))
+		data["cur_title"] = current_message().title
+		data["cur_body"] = pencode2html(current_message().stored_data)
+		data["cur_timestamp"] = current_message().timestamp
+		data["cur_source"] = current_message().source
 
 	data["current_account"] = null
 	data["cur_suspended"] = null
 	data["messages"] = null
 
-	if(istype(current_account))
-		data["current_account"] = current_account.login
-		data["cur_suspended"] = current_account.suspended
+	if(istype(current_account()))
+		data["current_account"] = current_account().login
+		data["cur_suspended"] = current_account().suspended
 		var/list/all_messages = list()
-		for(var/datum/computer_file/data/email_message/message in (current_account.inbox | current_account.spam | current_account.deleted))
+		for(var/datum/computer_file/data/email_message/message in (current_account().inbox | current_account().spam | current_account().deleted))
 			all_messages.Add(list(list(
 				"title" = message.title,
 				"source" = message.source,
@@ -74,46 +74,46 @@
 		if("back")
 			if(error)
 				error = ""
-			else if(current_message)
-				current_message = null
+			else if(current_message())
+				current_message_handle = null
 			else
-				current_account = null
+				current_account_handle = null
 			return TRUE
 
 		if("ban")
-			if(!current_account)
+			if(!current_account())
 				return TRUE
 
-			current_account.suspended = !current_account.suspended
-			GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Account [current_account.login] has been [current_account.suspended ? "" : "un" ]suspended by SA [I.registered_name] ([I.assignment]).")
-			error = "Account [current_account.login] has been [current_account.suspended ? "" : "un" ]suspended."
+			current_account().suspended = !current_account().suspended
+			GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended by SA [I.registered_name] ([I.assignment]).")
+			error = "Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended."
 			return TRUE
 
 		if("changepass")
-			if(!current_account)
+			if(!current_account())
 				return TRUE
 
-			var/newpass = tgui_input_text(ui.user,"Enter new password for account [current_account.login]", "Password", null, 100)
+			var/newpass = tgui_input_text(ui.user,"Enter new password for account [current_account().login]", "Password", null, 100)
 			if(!newpass)
 				return TRUE
-			current_account.password = newpass
-			GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Password for account [current_account.login] has been changed by SA [I.registered_name] ([I.assignment]).")
+			current_account().password = newpass
+			GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Password for account [current_account().login] has been changed by SA [I.registered_name] ([I.assignment]).")
 			return TRUE
 
 		if("viewmail")
-			if(!current_account)
+			if(!current_account())
 				return TRUE
 
-			for(var/datum/computer_file/data/email_message/received_message in (current_account.inbox | current_account.spam | current_account.deleted))
+			for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
 				if(received_message.uid == text2num(params["viewmail"]))
-					current_message = received_message
+					current_message_handle = om_handle(received_message)
 					break
 			return TRUE
 
 		if("viewaccount")
 			for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 				if(email_account.uid == text2num(params["viewaccount"]))
-					current_account = email_account
+					current_account_handle = om_handle(email_account)
 					break
 			return TRUE
 
@@ -135,3 +135,11 @@
 			new_account.password = GenerateKey()
 			error = "Email [new_account.login] has been created, with generated password [new_account.password]"
 			return TRUE
+
+/// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/program/email_administration/proc/current_account() as /datum/computer_file/data/email_account
+	return om_resolve(current_account_handle)
+
+/// LC-refs: the current_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/program/email_administration/proc/current_message() as /datum/computer_file/data/email_message
+	return om_resolve(current_message_handle)

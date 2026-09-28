@@ -7,7 +7,7 @@
 	var/row_options1 = " width='85px'"
 	var/row_options2 = " width='260px'"
 	var/row_options3 = " width='150px'"
-	var/datum/event_container/selected_event_container = null
+	var/selected_event_container_handle
 
 /datum/controller/subsystem/events/proc/Interact(mob/living/user)
 	// structured TGUI Event Manager panel (see
@@ -24,16 +24,16 @@
 	var/html = "<A align='right' href='byond://?src=\ref[src];refresh=1'>Refresh</A>"
 	html += "<A align='right' href='byond://?src=\ref[src];pause_all=[!CONFIG_GET(flag/allow_random_events)]'>Pause All - [CONFIG_GET(flag/allow_random_events) ? "Pause" : "Resume"]</A>"
 
-	if(selected_event_container)
-		var/event_time = max(0, selected_event_container.next_event_time - world.time)
+	if(selected_event_container())
+		var/event_time = max(0, selected_event_container().next_event_time - world.time)
 		html += "<A align='right' href='byond://?src=\ref[src];back=1'>Back</A><br>"
 		html += "Time till start: [round(event_time / 600, 0.1)]<br>"
 		html += "<div class='block'>"
-		html += "<h2>Available [GLOB.severity_to_string[selected_event_container.severity]] Events (queued & running events will not be displayed)</h2>"
+		html += "<h2>Available [GLOB.severity_to_string[selected_event_container().severity]] Events (queued & running events will not be displayed)</h2>"
 		html += "<table[table_options]>"
 		html += "<tr><td[row_options2]>Name </td><td>Weight </td><td>MinWeight </td><td>MaxWeight </td><td>OneShot </td><td>Enabled </td><td>" + span_alert("CurrWeight") + " </td><td>Remove</td></tr>"
 		var/list/active_with_role = number_active_with_role()
-		for(var/datum/event_meta/EM in selected_event_container.available_events)
+		for(var/datum/event_meta/EM in selected_event_container().available_events)
 			html += "<tr>"
 			html += "<td>[EM.name]</td>"
 			html += "<td><A align='right' href='byond://?src=\ref[src];set_weight=\ref[EM]'>[EM.weight]</A></td>"
@@ -41,8 +41,8 @@
 			html += "<td>[EM.max_weight]</td>"
 			html += "<td><A align='right' href='byond://?src=\ref[src];toggle_oneshot=\ref[EM]'>[EM.one_shot]</A></td>"
 			html += "<td><A align='right' href='byond://?src=\ref[src];toggle_enabled=\ref[EM]'>[EM.enabled]</A></td>"
-			html += "<td>" + span_alert("[selected_event_container.get_weight(EM, active_with_role)]") + "</td>"
-			html += "<td><A align='right' href='byond://?src=\ref[src];remove=\ref[EM];EC=\ref[selected_event_container]'>Remove</A></td>"
+			html += "<td>" + span_alert("[selected_event_container().get_weight(EM, active_with_role)]") + "</td>"
+			html += "<td><A align='right' href='byond://?src=\ref[src];remove=\ref[EM];EC=\ref[selected_event_container()]'>Remove</A></td>"
 			html += "</tr>"
 		html += "</table>"
 		html += "</div>"
@@ -58,7 +58,7 @@
 		html += "<td><A align='right' href='byond://?src=\ref[src];toggle_oneshot=\ref[new_event]'>[new_event.one_shot]</A></td>"
 		html += "</tr>"
 		html += "</table>"
-		html += "<A align='right' href='byond://?src=\ref[src];add=\ref[selected_event_container]'>Add</A><br>"
+		html += "<A align='right' href='byond://?src=\ref[src];add=\ref[selected_event_container()]'>Add</A><br>"
 		html += "</div>"
 	else
 		html += "<A align='right' href='byond://?src=\ref[src];toggle_report=1'>Round End Report: [report_at_round_end ? "On": "Off"]</A><br>"
@@ -96,7 +96,7 @@
 		html += "<tr><td[row_options1]>Severity</td><td[row_options2]>Name</td><td[row_options3]>Event Rotation</td><td>Clear</td></tr>"
 		for(var/severity = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 			var/datum/event_container/EC = event_containers[severity]
-			var/datum/event_meta/EM = EC.next_event
+			var/datum/event_meta/EM = EC.next_event()
 			html += "<tr>"
 			html += "<td>[GLOB.severity_to_string[severity]]</td>"
 			html += "<td><A align='right' href='byond://?src=\ref[src];select_event=\ref[EC]'>[EM ? EM.name : "Random"]</A></td>"
@@ -112,9 +112,9 @@
 		html += "<table[table_options]>"
 		html += "<tr><td[row_options1]>Severity</td><td[row_options2]>Name</td><td[row_options1]>Ends At</td><td[row_options1]>Ends In</td><td[row_options3]>Stop</td></tr>"
 		for(var/datum/event/E in active_events)
-			if(!E.event_meta)
+			if(!E.event_meta())
 				continue
-			var/datum/event_meta/EM = E.event_meta
+			var/datum/event_meta/EM = E.event_meta()
 			var/ends_at = E.startedAt + (E.lastProcessAt() * 20)	// A best estimate, based on how often the alarm manager processes
 			var/ends_in = max(0, round((ends_at - world.time) / 600, 0.1))
 			html += "<tr>"
@@ -168,13 +168,13 @@
 		if(tgui_alert(usr, "Stopping an event may have unintended side-effects. Continue?","Stopping Event!",list("Yes","No")) != "Yes")
 			return
 		var/datum/event/E = locate(href_list["stop"])
-		var/datum/event_meta/EM = E.event_meta
+		var/datum/event_meta/EM = E.event_meta()
 		log_and_message_admins("has stopped the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.")
 		E.kill()
 	else if(href_list["view_events"])
-		selected_event_container = locate(href_list["view_events"])
+		selected_event_container_handle = om_handle(locate(href_list["view_events"]))
 	else if(href_list["back"])
-		selected_event_container = null
+		selected_event_container_handle = null
 	else if(href_list["set_name"])
 		var/name = tgui_input_text(usr, "Enter event name.", "Set Name", "", MAX_LNAME_LEN)
 		if(name)
@@ -213,15 +213,15 @@
 			return
 		if(tgui_alert(usr, "This will add a new event to the rotation. Continue?","Add Event!",list("Yes","No")) != "Yes")
 			return
-		new_event.severity = selected_event_container.severity
-		selected_event_container.available_events += new_event
+		new_event.severity = selected_event_container().severity
+		selected_event_container().available_events += new_event
 		log_and_message_admins("has added \a [GLOB.severity_to_string[new_event.severity]] event '[new_event.name]' of type [new_event.event_type] with weight [new_event.weight].")
 		new_event = new
 	else if(href_list["clear"])
 		var/datum/event_container/EC = locate(href_list["clear"])
-		if(EC.next_event)
-			log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event.name]'.")
-			EC.next_event = null
+		if(EC.next_event())
+			log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event().name]'.")
+			EC.next_event_handle = null
 
 	Interact(usr)
 
@@ -234,3 +234,7 @@ ADMIN_VERB(forceEvent, R_DEBUG, "Trigger Event (Debug Only)", "Immediately trigg
 ADMIN_VERB(event_manager_panel, R_ADMIN|R_EVENT, "Event Manager Panel", "Opens the event manager panel.", ADMIN_CATEGORY_EVENTS)
 	SSevents.Interact(user)
 	feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/// LC-refs: the selected_event_container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/subsystem/events/proc/selected_event_container() as /datum/event_container
+	return om_resolve(selected_event_container_handle)

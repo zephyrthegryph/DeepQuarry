@@ -28,7 +28,7 @@
 	var/datum/expedition_site/site = SSexpedition.create_site_descriptor(mission, EXP_DIFF_LOW)
 	TEST_ASSERT_NOTNULL(site, "Expedition survey did not create a site descriptor")
 	TEST_ASSERT_EQUAL(site.z_level, 0, "Surveying an expedition allocated a physical z-level before departure")
-	TEST_ASSERT_NULL(site.landing, "Surveying an expedition created a landing turf before departure")
+	TEST_ASSERT_NULL(site.landing(), "Surveying an expedition created a landing turf before departure")
 	TEST_ASSERT_NULL(site.overmap_sector, "Surveying an expedition created a legacy overmap sector before departure")
 	TEST_ASSERT_NOTNULL(site.flight_destination_id, "Surveying an expedition did not register a stable flight destination")
 	var/datum/flight_destination/destination = SSflight_operations.destinations[site.flight_destination_id]
@@ -150,7 +150,7 @@
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[id]
 		if(!(vessel.shuttle?.current_location?.landmark_tag in carrier_dock_tags))
 			continue
-		var/datum/flight_destination/destination = SSflight_operations.destination_for_target(vessel.ship)
+		var/datum/flight_destination/destination = SSflight_operations.destination_for_target(vessel.ship())
 		TEST_ASSERT_NOTNULL(destination, "Carrier craft [vessel.name] has no render destination")
 		expected_destination_ids[destination.id] = vessel.name
 		var/datum/flight_port/port = SSflight_operations.ports[vessel.docked_port_id]
@@ -191,7 +191,7 @@
 	var/datum/flight_plan/plan = new(vessel, null, station)
 	TEST_ASSERT(plan.start(), "Southern Cross flight failed preflight")
 	TEST_ASSERT_NOTNULL(plan.arrival_port, "Southern Cross flight planned an orbital fallback instead of a physical landing")
-	TEST_ASSERT(plan.arrival_port.landmark.landmark_tag in list("hangar_3_expedition", "hangar_3_echidna"), "Southern Cross flight did not reserve Hangar Three")
+	TEST_ASSERT(plan.arrival_port.landmark().landmark_tag in list("hangar_3_expedition", "hangar_3_echidna"), "Southern Cross flight did not reserve Hangar Three")
 	TEST_ASSERT(plan.arrival_port.reserved_by == plan, "Reserved arrival port does not own the flight plan lease")
 	TEST_ASSERT_EQUAL(plan.arrival_port.host_destination_id, station.id, "Southern Cross flight substituted a berth on another physical host")
 	qdel(plan)
@@ -239,14 +239,14 @@
 	station.kind = FLIGHT_DEST_STATION
 	station.target = target
 	var/datum/flight_vessel/vessel = new
-	vessel.ship = ship
+	vessel.ship_handle = om_handle(ship)
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC
 	var/datum/flight_plan/plan = new(vessel, null, station)
 	TEST_ASSERT(!plan.start(), "A station flight without a berth launched despite having nowhere to land")
 	TEST_ASSERT_NULL(plan.arrival_port, "A station flight reserved an unrelated physical berth")
 	TEST_ASSERT_EQUAL(plan.state, FLIGHT_PLAN_FAILED, "A berthless station flight did not fail during preflight")
 	qdel(plan)
-	vessel.ship = null
+	vessel.ship_handle = null
 	station.target = null
 	qdel(vessel)
 	qdel(station)

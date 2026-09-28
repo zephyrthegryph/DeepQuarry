@@ -79,7 +79,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 		return
 	vg_heat_body_power(atom_parent.heat_body, 0)
 	var/atom/movable/movable_parent = atom_parent
-	if(!istype(movable_parent) || isnull(movable_parent.heat_fire_turf))
+	if(!istype(movable_parent) || isnull(movable_parent.heat_fire_turf()))
 		vg_heat_body_keep(atom_parent.heat_body, FALSE)
 
 /// The parent cooled below the burn-out temperature (cool_watch).

@@ -7,8 +7,8 @@
 	opacity = 1
 	anchored = TRUE
 	var/excavation_level = 0
-	var/datum/geosample/geological_data
-	var/datum/artifact_find/artifact_find
+	var/geological_data_handle
+	var/artifact_find_handle
 	var/last_act = 0
 
 /obj/structure/boulder/Initialize(mapload)
@@ -18,10 +18,10 @@
 
 /obj/structure/boulder/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/core_sampler))
-		if(!geological_data || !artifact_find)
+		if(!geological_data() || !artifact_find())
 			return
-		src.geological_data.artifact_distance = rand(-100,100) / 100
-		src.geological_data.artifact_id = artifact_find.artifact_id
+		src.geological_data().artifact_distance = rand(-100,100) / 100
+		src.geological_data().artifact_id = artifact_find().artifact_id
 
 		var/obj/item/core_sampler/C = I
 		C.sample_item(src, user)
@@ -68,13 +68,13 @@
 
 	if(prob(excavation_level))
 		//success
-		if(artifact_find)
-			var/spawn_type = artifact_find.artifact_find_type
+		if(artifact_find())
+			var/spawn_type = artifact_find().artifact_find_type
 			var/obj/O = new spawn_type(get_turf(src))
 			if(istype(O, /obj/machinery/artifact))
 				var/obj/machinery/artifact/X = O
 				if(X.artifact_master)
-					X.artifact_master.artifact_id = artifact_find.artifact_id
+					X.artifact_master.artifact_id = artifact_find().artifact_id
 			O.anchored = FALSE	// Anchored finds are lame.
 			src.visible_message(span_warning("\The [src] suddenly crumbles away."))
 		else
@@ -98,3 +98,11 @@
 		var/obj/mecha/M = AM
 		if(istype(M.selected,/obj/item/mecha_parts/mecha_equipment/tool/drill))
 			M.selected.action(src)
+
+/// LC-refs: the geological_data this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/boulder/proc/geological_data() as /datum/geosample
+	return om_resolve(geological_data_handle)
+
+/// LC-refs: the artifact_find this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/boulder/proc/artifact_find() as /datum/artifact_find
+	return om_resolve(artifact_find_handle)

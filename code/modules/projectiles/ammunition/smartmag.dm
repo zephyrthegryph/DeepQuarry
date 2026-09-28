@@ -20,9 +20,9 @@
 	var/production_modifier = 2			// Multiplier on the ammo_casing's matter cost
 	var/production_delay = 75			// If we're in a gun, how long since it last shot do we need to wait before making bullets?
 
-	var/obj/item/gun/holding_gun = null	// What gun are we in, if any?
+	var/holding_gun_handle	// What gun are we in, if any?
 
-	var/obj/item/cell/device/attached_cell = null	// What cell are we using, if any?
+	var/attached_cell_handle	// What cell are we using, if any?
 
 	var/emagged = 0		// If you emag the smart mag, you can get the bullets out by clicking it
 
@@ -31,15 +31,15 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/item/ammo_magazine/smart/periodic_step()
-	if(!holding_gun)	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
+	if(!holding_gun())	// Yes, this is awful, sorry. Don't know a better way to figure out if we've been moved into or out of a gun.
 		if(istype(src.loc, /obj/item/gun))
-			holding_gun = src.loc
+			holding_gun_handle = om_handle(src.loc)
 
-	if(caliber && ammo_type && attached_cell)
+	if(caliber && ammo_type && attached_cell())
 		if(stored_ammo.len == max_ammo)
 			last_production_time = world.time	// Otherwise the max_ammo var is basically always off by 1
 			return
-		if(holding_gun && world.time < holding_gun.last_shot + production_delay)	// Same as recharging energy weapons.
+		if(holding_gun() && world.time < holding_gun().last_shot + production_delay)	// Same as recharging energy weapons.
 			return
 		if(world.time > last_production_time + production_time)
 			last_production_time = world.time
@@ -48,13 +48,13 @@
 /obj/item/ammo_magazine/smart/examine(mob/user)
 	. = ..()
 
-	if(attached_cell)
-		. += span_notice("\The [src] is loaded with a [attached_cell.name]. It is [round(attached_cell.percent())]% charged.")
+	if(attached_cell())
+		. += span_notice("\The [src] is loaded with a [attached_cell().name]. It is [round(attached_cell().percent())]% charged.")
 	else
 		. += span_warning("\The [src] does not appear to have a power source installed.")
 
 /obj/item/ammo_magazine/smart/update_icon()
-	if(attached_cell)
+	if(attached_cell())
 		icon_state = "smartmag-filled"
 	else
 		icon_state = "smartmag-empty"
@@ -71,8 +71,8 @@
 /obj/item/ammo_magazine/smart/attackby(obj/item/I as obj, mob/user)
 	make_rounds_real()
 	if(istype(I, /obj/item/cell/device))
-		if(attached_cell)
-			to_chat(user, span_notice("\The [src] already has a [attached_cell.name] attached."))
+		if(attached_cell())
+			to_chat(user, span_notice("\The [src] already has a [attached_cell().name] attached."))
 			return
 		else
 			to_chat(user, "You begin inserting \the [I] into \the [src].")
@@ -85,9 +85,9 @@
 	..()
 
 /obj/item/ammo_magazine/smart/screwdriver_act(mob/user, obj/item/tool)
-	if(!attached_cell)
+	if(!attached_cell())
 		return ITEM_INTERACT_BLOCKING
-	var/obj/item/cell/device/removed_cell = attached_cell
+	var/obj/item/cell/device/removed_cell = attached_cell()
 	to_chat(user, "You begin removing \the [removed_cell] from \the [src].")
 	use_tool(user, tool, src, delay = 1 SECOND, quality = TOOL_SCREWDRIVER, volume = 0, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, removed_cell))
 	return ITEM_INTERACT_SUCCESS
@@ -95,7 +95,7 @@
 /obj/item/ammo_magazine/smart/proc/screwdriver_act_tool_done(mob/user, obj/item/cell/device/removed_cell)
 	removed_cell.update_icon()
 	removed_cell.forceMove(get_turf(src))
-	attached_cell = null
+	attached_cell_handle = null
 	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [removed_cell] from \the [src].")
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -109,37 +109,37 @@
 /obj/item/ammo_magazine/smart/attack_hand(mob/user)
 	make_rounds_real()
 	if(user.get_inactive_hand() == src)
-		if(attached_cell)
-			to_chat(user, "You struggle to remove \the [attached_cell] from \the [src].")
+		if(attached_cell())
+			to_chat(user, "You struggle to remove \the [attached_cell()] from \the [src].")
 			om_do_after(user, 4 SECONDS, src, src, PROC_REF(cell_removed), list(user))
 			return
 	..()
 
 /obj/item/ammo_magazine/smart/proc/cell_installed(mob/user, obj/item/cell/device/I)
-	if(attached_cell)
+	if(attached_cell())
 		return
 	user.drop_item()
 	I.forceMove(src)
-	attached_cell = I
+	attached_cell_handle = om_handle(I)
 	user.visible_message("[user] installs a cell in \the [src].", "You install \the [I] into \the [src].")
 	update_icon()
 
 /obj/item/ammo_magazine/smart/proc/cell_removed(mob/user)
-	if(!attached_cell)
+	if(!attached_cell())
 		return
-	attached_cell.update_icon()
-	user.put_in_hands(attached_cell)
-	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell] from \the [src].")
-	attached_cell = null
+	attached_cell().update_icon()
+	user.put_in_hands(attached_cell())
+	user.visible_message("[user] removes a cell from \the [src].", "You remove \the [attached_cell()] from \the [src].")
+	attached_cell_handle = null
 	update_icon()
 
 // Finds the cell for the magazine, used by rechargers
 /obj/item/ammo_magazine/smart/get_cell()
-	return attached_cell
+	return attached_cell()
 
 // Removes energy from the attached cell when creating new bullets
 /obj/item/ammo_magazine/smart/proc/chargereduction()
-	return attached_cell && attached_cell.checked_use(production_cost)
+	return attached_cell() && attached_cell().checked_use(production_cost)
 
 // Sets how much energy is drained to make each bullet
 /obj/item/ammo_magazine/smart/proc/set_production_cost(obj/item/ammo_casing/A)
@@ -228,3 +228,11 @@
 	production_cost = null
 
 	return
+
+/// LC-refs: What gun are we in, if any? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/ammo_magazine/smart/proc/holding_gun() as /obj/item/gun
+	return om_resolve(holding_gun_handle)
+
+/// LC-refs: What cell are we using, if any? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/ammo_magazine/smart/proc/attached_cell() as /obj/item/cell/device
+	return om_resolve(attached_cell_handle)

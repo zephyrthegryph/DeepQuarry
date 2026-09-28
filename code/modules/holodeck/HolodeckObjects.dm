@@ -448,7 +448,7 @@
 	icon_state = "auth_off"
 	layer = ABOVE_WINDOW_LAYER
 	var/ready = 0
-	var/area/currentarea = null
+	var/currentarea_handle
 	var/eventstarted = 0
 
 	unacidable = TRUE
@@ -494,8 +494,8 @@
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 
-	currentarea = get_area(src.loc)
-	if(!currentarea)
+	currentarea_handle = om_handle(get_area(src.loc))
+	if(!currentarea())
 		qdel(src)
 		return TRUE
 
@@ -509,7 +509,7 @@
 
 	var/numbuttons = 0
 	var/numready = 0
-	for(var/obj/machinery/readybutton/button in currentarea)
+	for(var/obj/machinery/readybutton/button in currentarea())
 		numbuttons++
 		if (button.ready)
 			numready++
@@ -528,10 +528,10 @@
 
 	eventstarted = 1
 
-	for(var/obj/structure/window/reinforced/holowindow/disappearing/W in currentarea)
+	for(var/obj/structure/window/reinforced/holowindow/disappearing/W in currentarea())
 		qdel(W)
 
-	for(var/mob/M in currentarea)
+	for(var/mob/M in currentarea())
 		to_chat(M, "FIGHT!")
 
 // A window that disappears when the ready button is pressed
@@ -575,3 +575,7 @@
 	visible_message(span_infoplain(span_bold("\The [src]") + " fades away!"))
 	qdel(src)
 
+
+/// LC-refs: the currentarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/readybutton/proc/currentarea() as /area
+	return om_resolve(currentarea_handle)

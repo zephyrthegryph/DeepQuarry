@@ -34,10 +34,10 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	)
 
 /datum/shuttle_destination/shuttle3/root/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to Exploration Hangar One."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to Exploration Hangar One."
 
 /datum/shuttle_destination/shuttle3/root/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed Exploration Hangar One."
+	return "Attention, [master().my_shuttle().visible_name] has departed Exploration Hangar One."
 
 /datum/shuttle_destination/shuttle3/sif_orbit
 	name = "Sif Orbit"
@@ -58,10 +58,10 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/shuttle3/stationhangar3/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to Hangar Three."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to Hangar Three."
 
 /datum/shuttle_destination/shuttle3/stationhangar3/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed Hangar Three."
+	return "Attention, [master().my_shuttle().visible_name] has departed Hangar Three."
 
 /datum/shuttle_destination/shuttle3/sky
 	name = "Skies of Sif"
@@ -81,10 +81,10 @@ GLOBAL_LIST_EMPTY(shuttdisp_list)
 	announcer = "Outpost Automated ATC"
 
 /datum/shuttle_destination/shuttle3/mining_base/get_arrival_message()
-	return "Attention, [master.my_shuttle.visible_name] has arrived to the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has arrived to the Wilderness Area."
 
 /datum/shuttle_destination/shuttle3/mining_base/get_departure_message()
-	return "Attention, [master.my_shuttle.visible_name] has departed the Wilderness Area."
+	return "Attention, [master().my_shuttle().visible_name] has departed the Wilderness Area."
 
 //Shuttle displays for tracking Shuttles 1 and 2 without spammy intercom announcements. This could hypothetically be expanded to other shuttles if for some reason that's desirable.
 /obj/machinery/status_display/shuttle_display

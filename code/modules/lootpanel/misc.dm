@@ -1,6 +1,6 @@
 /// Helper to open the panel
 /datum/lootpanel/proc/open(turf/tile)
-	source_turf = tile
+	source_turf_handle = om_handle(tile)
 
 #if !defined(OPENDREAM) && !defined(UNIT_TESTS)
 	if(!notified)

@@ -82,10 +82,10 @@
 		if(shuttle.debug_logging)
 			log_shuttle("Shuttle [shuttle] cannot depart [shuttle.current_location] because: [cannot_depart].")
 		return FALSE
-	if(!shuttle.next_location.is_valid(shuttle))
+	if(!shuttle.next_location().is_valid(shuttle))
 		to_chat(user, span_warning("Destination zone is invalid or obstructed."))
 		if(shuttle.debug_logging)
-			log_shuttle("Shuttle [shuttle] destination [shuttle.next_location] is invalid.")
+			log_shuttle("Shuttle [shuttle] destination [shuttle.next_location()] is invalid.")
 		return FALSE
 	return TRUE
 

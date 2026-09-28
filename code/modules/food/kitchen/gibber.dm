@@ -22,7 +22,7 @@
 
 //auto-gibs anything that bumps into it
 /obj/machinery/gibber/autogibber
-	var/turf/input_plate
+	var/input_plate_handle
 
 /obj/machinery/gibber/autogibber/Initialize(mapload)
 	. = ..()
@@ -30,12 +30,12 @@
 		var/obj/machinery/mineral/input/input_obj = locate( /obj/machinery/mineral/input, get_step(src.loc, i) )
 		if(input_obj)
 			if(isturf(input_obj.loc))
-				input_plate = input_obj.loc
+				input_plate_handle = om_handle(input_obj.loc)
 				gib_throw_dir = i
 				qdel(input_obj)
 				break
 
-	if(!input_plate)
+	if(!input_plate())
 		log_world("## MISC a [src] didn't find an input plate.")
 
 /// Sealed occupant slot (C8a, containment.md §10).
@@ -46,12 +46,12 @@
 	// The slot IS the occupant: read it with SLOT_ITEM(holder, slot_id).
 
 /obj/machinery/gibber/autogibber/Bumped(atom/A)
-	if(!input_plate) return
+	if(!input_plate()) return
 
 	if(ismob(A))
 		var/mob/M = A
 
-		if(M.loc == input_plate
+		if(M.loc == input_plate()
 		)
 			M.forceMove(src)
 			M.gib()
@@ -247,3 +247,7 @@
 		thing.throw_at(get_edge_target_turf(src,gib_throw_dir),rand(0,3),emagged ? 100 : 50) // Being pelted with bits of meat and bone would hurt.
 
 	update_icon()
+
+/// LC-refs: the input_plate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/gibber/autogibber/proc/input_plate() as /turf
+	return om_resolve(input_plate_handle)

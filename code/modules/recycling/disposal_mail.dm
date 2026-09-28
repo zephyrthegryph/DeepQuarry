@@ -3,7 +3,7 @@
 	name = "large parcel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "deliverycloset"
-	var/obj/wrapped = null
+	var/wrapped_handle
 	density = TRUE
 	var/sortTag = null
 	flags = NOBLUDGEON
@@ -116,12 +116,12 @@
 
 // LIFECYCLE: the wrapped thing is unwrapped onto the floor.
 /obj/structure/bigDelivery/Destroy()
-	if(wrapped) //sometimes items can disappear. For example, bombs. --rastaf0
-		wrapped.forceMove(get_turf(src))
-		if(istype(wrapped, /obj/structure/closet))
-			var/obj/structure/closet/O = wrapped
+	if(wrapped()) //sometimes items can disappear. For example, bombs. --rastaf0
+		wrapped().forceMove(get_turf(src))
+		if(istype(wrapped(), /obj/structure/closet))
+			var/obj/structure/closet/O = wrapped()
 			O.sealed = 0
-		wrapped = null
+		wrapped_handle = null
 	var/turf/T = get_turf(src)
 	for(var/atom/movable/AM in contents)
 		AM.forceMove(T)
@@ -244,3 +244,7 @@
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
 REF_HELD(/obj/item/smallDelivery, "wrapped")
+
+/// LC-refs: the wrapped this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/bigDelivery/proc/wrapped() as /obj
+	return om_resolve(wrapped_handle)

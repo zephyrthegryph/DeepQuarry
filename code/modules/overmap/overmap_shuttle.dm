@@ -6,7 +6,7 @@
 	var/range = 1	// Short-jump craft can reach sectors one overmap tile away.
 	var/fuel_consumption = 0 //Amount of moles of gas consumed per trip; If zero, then shuttle is magic and does not need fuel
 	var/list/obj/structure/fuel_port/fuel_ports //the fuel ports of the shuttle (but usually just one)
-	var/obj/effect/overmap/visitable/ship/landable/myship //my overmap ship object
+	var/myship_handle	//my overmap ship object
 
 	category = /datum/shuttle/autodock/overmap
 
@@ -31,16 +31,16 @@
 	return 1 //sucess, continue with launch
 
 /datum/shuttle/autodock/overmap/proc/can_go()
-	if(!next_location)
+	if(!next_location())
 		return FALSE
 	if(moving_status == SHUTTLE_INTRANSIT)
 		return FALSE //already going somewhere, current_location may be an intransit location instead of in a sector
 	var/our_sector = waypoint_sector(current_location)
-	if(myship?.landmark && next_location == myship.landmark)
+	if(myship()?.landmark &next_location()on == myship().landmark)
 		return TRUE //We're not on the overmap yet (admin spawned probably), and we're trying to hook up with our openspace sector
-	if(!our_sector || !waypoint_sector(next_location))
+	if(!our_sector || !waypoint_sector(next_location()))
 		return FALSE
-	return get_dist(our_sector, waypoint_sector(next_location)) <= range
+	return get_dist(our_sector, waypoint_sector(next_location())) <= range
 
 /datum/shuttle/autodock/overmap/can_launch()
 	return ..() && can_go()
@@ -50,7 +50,7 @@
 
 /datum/shuttle/autodock/overmap/get_travel_time()
 	var/obj/effect/overmap/visitable/current_sector = waypoint_sector(current_location)
-	var/obj/effect/overmap/visitable/destination_sector = waypoint_sector(next_location)
+	var/obj/effect/overmap/visitable/destination_sector = waypoint_sector(next_location())
 	if(!current_sector || !destination_sector)
 		return move_time
 	var/distance_mod = get_dist(current_sector, destination_sector)
@@ -58,13 +58,13 @@
 
 /datum/shuttle/autodock/overmap/proc/set_destination(obj/effect/shuttle_landmark/A)
 	if(A != current_location)
-		next_location = A
+		next_location_handle = om_handle(A)
 
 /datum/shuttle/autodock/overmap/proc/get_possible_destinations()
 	var/list/res = list()
 	var/our_sector = waypoint_sector(current_location)
-	if(!our_sector && myship?.landmark)
-		res["Perform Test Jump"] = myship.landmark
+	if(!our_sector && myship()?.landmark)
+		res["Perform Test Jump"] = myship().landmark
 		return res //We're not on the overmap, maybe an admin spawned us on a non-sector map. We're broken until we connect to our space z-level.
 	if(!our_sector)
 		return res
@@ -81,9 +81,9 @@
 	return "[waypoint_sector(current_location)] - [current_location]"
 
 /datum/shuttle/autodock/overmap/get_destination_name()
-	if(!next_location)
+	if(!next_location())
 		return "None"
-	return "[waypoint_sector(next_location)] - [next_location]"
+	return "[waypoint_sector(next_location())] - [next_location()]"
 
 /datum/shuttle/autodock/overmap/proc/try_consume_fuel() //returns 1 if sucessful, returns 0 if error (like insufficient fuel)
 	if(!fuel_consumption)
@@ -180,3 +180,7 @@
 // Walls hide stuff inside them, but we want to be visible.
 /obj/structure/fuel_port/hide()
 	return
+
+/// LC-refs: my overmap ship object -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/shuttle/autodock/overmap/proc/myship() as /obj/effect/overmap/visitable/ship/landable
+	return om_resolve(myship_handle)

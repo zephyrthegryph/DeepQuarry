@@ -14,13 +14,13 @@
 	var/last_spam_time = null // world.time of most recent spam.
 	var/next_spam_attempt_time = 0 // world.time of next attempt to try to spam.
 	var/give_up_after = 5 MINUTES
-	var/obj/machinery/message_server/MS = null
-	var/obj/machinery/exonet_node/node = null
+	var/MS_handle
+	var/node_handle
 
 /datum/event2/event/pda_spam/set_up()
 	last_spam_time = world.time // So it won't immediately give up.
-	MS = pick_message_server()
-	node = get_exonet_node()
+	MS_handle = om_handle(pick_message_server())
+	node_handle = om_handle(get_exonet_node())
 
 /datum/event2/event/pda_spam/event_tick()
 	if(!can_spam())
@@ -49,7 +49,7 @@
 	P = pick(viables)
 	var/list/spam = generate_spam()
 
-	if(MS.send_pda_message("[P.owner]", spam[1], spam[2])) // Message been filtered by spam filter.
+	if(MS().send_pda_message("[P.owner]", spam[1], spam[2])) // Message been filtered by spam filter.
 		return
 
 	send_spam(P, spam[1], spam[2])
@@ -64,12 +64,12 @@
 			return TRUE
 
 /datum/event2/event/pda_spam/proc/can_spam()
-	if(!node || !node.on || !node.allow_external_PDAs)
-		node = get_exonet_node()
+	if(!node() || !node().on || !node().allow_external_PDAs)
+		node_handle = om_handle(get_exonet_node())
 		return FALSE
 
-	if(!MS || !MS.active)
-		MS = pick_message_server()
+	if(!MS() || !MS().active)
+		MS_handle = om_handle(pick_message_server())
 		return FALSE
 
 	return TRUE
@@ -140,3 +140,11 @@
 /datum/event2/event/pda_spam/proc/pick_message_server()
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)))
 		return pick(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
+
+/// LC-refs: the MS this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/pda_spam/proc/MS() as /obj/machinery/message_server
+	return om_resolve(MS_handle)
+
+/// LC-refs: the node this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/pda_spam/proc/node() as /obj/machinery/exonet_node
+	return om_resolve(node_handle)

@@ -114,7 +114,7 @@
 
 	// Resolve the card to check: caller-supplied card first, then the user's worn/held ID,
 	// then fall back to whatever is inserted in the computer's card slot.
-	var/obj/item/card/id/I = explicit_card || user.GetIdCard() || computer?.card_slot?.stored_card
+	var/obj/item/card/id/I = explicit_card || user.GetIdCard() || computer?.card_slot?.stored_card()
 	if(!I)
 		if(loud)
 			to_chat(user, span_notice("\The [computer] flashes an \"RFID Error - Unable to scan ID\" warning."))
@@ -136,12 +136,12 @@
 // When implementing new program based device, use this to run the program.
 /datum/computer_file/program/proc/run_program(mob/living/user)
 	if(can_run(user, 1) || !requires_access_to_run)
-		computer.active_program = src
+		computer.active_program_handle = om_handle(src)
 		if(tguimodule_path)
 			TM = new tguimodule_path(src)
 			// Prefer the card inserted into the computer's card slot for access checks;
 			// fall back to the user's own access if no card is slotted.
-			var/obj/item/card/id/auth_card = computer?.card_slot?.stored_card
+			var/obj/item/card/id/auth_card = computer?.card_slot?.stored_card()
 			TM.using_access = auth_card ? auth_card.GetAccess() : user.GetAccess()
 		if(requires_ntnet && network_destination)
 			generate_network_log("Connection opened to [network_destination].")
@@ -208,14 +208,14 @@
 				ui.close()
 				return 1
 			if("PC_minimize")
-				if(!computer.active_program)
+				if(!computer.active_program())
 					return
 
 				var/mob/user = ui.user
-				LAZYADD(computer.idle_threads, computer.active_program)
+				LAZYADD(computer.idle_threads, computer.active_program())
 				program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
-				computer.active_program = null
+				computer.active_program_handle = null
 				computer.update_icon()
 				ui.close()
 

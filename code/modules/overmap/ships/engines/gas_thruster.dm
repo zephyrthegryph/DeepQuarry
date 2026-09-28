@@ -1,50 +1,50 @@
 //Gas nozzle engine
 /datum/ship_engine/gas_thruster
 	name = "gas thruster"
-	var/obj/machinery/atmospherics/unary/engine/nozzle
+	var/nozzle_handle
 
 /datum/ship_engine/gas_thruster/New(obj/machinery/_holder)
 	..()
-	nozzle = _holder
+	nozzle_handle = om_handle(_holder)
 
 /datum/ship_engine/gas_thruster/get_status()
-	return nozzle.get_status()
+	return nozzle().get_status()
 
 /datum/ship_engine/gas_thruster/get_thrust()
-	return nozzle.get_thrust()
+	return nozzle().get_thrust()
 
 /datum/ship_engine/gas_thruster/burn()
-	return nozzle.thrust_burn()
+	return nozzle().thrust_burn()
 
 /datum/ship_engine/gas_thruster/set_thrust_limit(new_limit)
-	nozzle.thrust_limit = new_limit
+	nozzle().thrust_limit = new_limit
 
 /datum/ship_engine/gas_thruster/get_thrust_limit()
-	return nozzle.thrust_limit
+	return nozzle().thrust_limit
 
 /datum/ship_engine/gas_thruster/is_on()
-	if(nozzle.use_power && nozzle.operable())
-		if(nozzle.next_on > world.time)
+	if(nozzle().use_power && nozzle().operable())
+		if(nozzle().next_on > world.time)
 			return -1
 		else
 			return 1
 	return 0
 
 /datum/ship_engine/gas_thruster/toggle()
-	if(nozzle.use_power)
-		nozzle.update_use_power(USE_POWER_OFF)
+	if(nozzle().use_power)
+		nozzle().update_use_power(USE_POWER_OFF)
 	else
-		if(nozzle.blockage)
-			if(nozzle.check_blockage())
+		if(nozzle().blockage)
+			if(nozzle().check_blockage())
 				return
-		nozzle.update_use_power(USE_POWER_IDLE)
-		if(nozzle.stat & NOPOWER)//try again
-			nozzle.power_change()
-		if(nozzle.is_on())//if everything is in working order, start booting!
-			nozzle.next_on = world.time + nozzle.boot_time
+		nozzle().update_use_power(USE_POWER_IDLE)
+		if(nozzle().stat & NOPOWER)//try again
+			nozzle().power_change()
+		if(nozzle().is_on())//if everything is in working order, start booting!
+			nozzle().next_on = world.time + nozzle().boot_time
 
 /datum/ship_engine/gas_thruster/can_burn()
-	return nozzle.is_on() && nozzle.check_fuel()
+	return nozzle().is_on() && nozzle().check_fuel()
 
 //Actual thermal nozzle engine object
 
@@ -278,3 +278,7 @@ REF_OWNED(/obj/machinery/atmospherics/unary/engine, "controller")
 
 	update_icon()
 	update_underlays()
+
+/// LC-refs: the nozzle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ship_engine/gas_thruster/proc/nozzle() as /obj/machinery/atmospherics/unary/engine
+	return om_resolve(nozzle_handle)

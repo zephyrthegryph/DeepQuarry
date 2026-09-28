@@ -8,11 +8,11 @@
 	bubble_icon = "science"
 	var/scan_in_progress = 0
 	var/scan_num = 0
-	var/obj/scanned_obj
-	var/obj/machinery/artifact_scanpad/owned_scanner = null
+	var/scanned_obj_handle
+	var/owned_scanner_handle
 	var/scan_completion_time = 0
 	var/scan_duration = 50
-	var/obj/scanned_object
+	var/scanned_object_handle
 	var/report_num = 0
 	var/static/list/priority_objects = list(/obj/machinery/artifact,
 										/obj/machinery/auto_cloner,
@@ -30,9 +30,9 @@
 
 /obj/machinery/artifact_analyser/proc/reconnect_scanner()
 	//connect to a nearby scanner pad
-	owned_scanner = locate(/obj/machinery/artifact_scanpad) in get_step(src, dir)
-	if(!owned_scanner)
-		owned_scanner = locate(/obj/machinery/artifact_scanpad) in orange(1, src)
+	owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in get_step(src, dir))
+	if(!owned_scanner())
+		owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in orange(1, src))
 
 /obj/machinery/artifact_analyser/declare_interactions(list/into)
 	into += list(
@@ -54,7 +54,7 @@
 	return TRUE
 
 /obj/machinery/artifact_analyser/tgui_interact(mob/user, datum/tgui/ui)
-	if(!owned_scanner)
+	if(!owned_scanner())
 		reconnect_scanner()
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -64,7 +64,7 @@
 /obj/machinery/artifact_analyser/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
 
-	data["owned_scanner"] = owned_scanner
+	data["owned_scanner"] = owned_scanner()
 	data["scan_in_progress"] = scan_in_progress
 
 	return data
@@ -81,13 +81,13 @@
 				scan_in_progress = FALSE
 				atom_say("Scanning halted.")
 				return TRUE
-			if(!owned_scanner)
+			if(!owned_scanner())
 				reconnect_scanner()
-			if(owned_scanner)
+			if(owned_scanner())
 				var/artifact_in_use = 0
 				var/obj/secondary_priority
-				for(var/obj/O in owned_scanner.loc)
-					if(O == owned_scanner)
+				for(var/obj/O in owned_scanner().loc)
+					if(O == owned_scanner())
 						continue
 					if(O.invisibility)
 						continue
@@ -104,15 +104,15 @@
 					else
 						for(var/otype in priority_objects)
 							if(istype(O, otype))
-								scanned_object = O
+								scanned_object_handle = om_handle(O)
 								break
-						if(scanned_object)
+						if(scanned_object())
 							break
 						else
 							secondary_priority = O
-				if(secondary_priority && !scanned_object)
-					scanned_object = secondary_priority
-				if(!scanned_object)
+				if(secondary_priority && !scanned_object())
+					scanned_object_handle = om_handle(secondary_priority)
+				if(!scanned_object())
 					atom_say("Unable to isolate scan target.")
 				else
 					scan_in_progress = 1
@@ -135,29 +135,29 @@
 		scan_in_progress = 0
 
 		var/results = ""
-		if(!owned_scanner)
+		if(!owned_scanner())
 			reconnect_scanner()
-		if(!owned_scanner)
+		if(!owned_scanner())
 			results = "Error communicating with scanner."
-		else if(!scanned_object || scanned_object.loc != owned_scanner.loc)
+		else if(!scanned_object() || scanned_object().loc != owned_scanner().loc)
 			results = "Unable to locate scanned object. Ensure it was not moved in the process."
 		else
-			results = get_scan_info(scanned_object)
+			results = get_scan_info(scanned_object())
 
 		atom_say("Scanning complete.")
 		var/obj/item/paper/P = new(src.loc)
 		P.name = "[src] report #[++report_num]"
 		P.info = span_bold("[src] analysis report #[report_num]") + "<br>"
 		P.info += "<br>"
-		P.info += "[bicon(scanned_object)] [results]"
+		P.info += "[bicon(scanned_object())] [results]"
 		P.stamped = list(/obj/item/stamp)
 		P.add_overlay("paper_stamped")
 
-		if(scanned_object && istype(scanned_object, /obj/machinery/artifact))
-			var/obj/machinery/artifact/A = scanned_object
+		if(scanned_object() && istype(scanned_object(), /obj/machinery/artifact))
+			var/obj/machinery/artifact/A = scanned_object()
 			A.anchored = FALSE
 			A.in_use = 0
-		scanned_object = null
+		scanned_object_handle = null
 
 //hardcoded responses, oh well
 /obj/machinery/artifact_analyser/proc/get_scan_info(obj/scanned_obj)
@@ -216,3 +216,15 @@
 				return out
 
 			return "[scanned_obj.name] - mundane application."
+
+/// LC-refs: the scanned_obj this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/artifact_analyser/proc/scanned_obj() as /obj
+	return om_resolve(scanned_obj_handle)
+
+/// LC-refs: the owned_scanner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/artifact_analyser/proc/owned_scanner() as /obj/machinery/artifact_scanpad
+	return om_resolve(owned_scanner_handle)
+
+/// LC-refs: the scanned_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/artifact_analyser/proc/scanned_object() as /obj
+	return om_resolve(scanned_object_handle)

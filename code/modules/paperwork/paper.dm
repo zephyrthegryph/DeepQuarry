@@ -565,7 +565,7 @@
 		if(src.loc == user)
 			user.drop_from_inventory(src)
 		src.loc = CB
-		CB.toppaper = src
+		CB.toppaper_handle = om_handle(src)
 		CB.update_icon()
 		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
 

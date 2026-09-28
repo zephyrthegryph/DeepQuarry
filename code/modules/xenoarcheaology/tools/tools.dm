@@ -142,7 +142,7 @@
 
 	else if(istype(A, /obj/structure/boulder))
 		var/obj/structure/boulder/B = A
-		if(B.artifact_find)
+		if(B.artifact_find())
 			//create a new scanlog entry
 			var/datum/depth_scan/D = new()
 			D.coords = "[B.x]:[B.y]:[B.z]"
@@ -238,18 +238,18 @@
 	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
-	var/obj/item/radio/target_radio
+	var/target_radio_handle
 
 /obj/item/beacon_locator/Initialize(mapload)
 	. = ..()
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/periodic_step()
-	if(!target_radio && !scan_ticks)
+	if(!target_radio() && !scan_ticks)
 		return PROCESS_KILL
-	if(target_radio)
-		set_dir(get_dir(src,target_radio))
-		switch(get_dist(src,target_radio))
+	if(target_radio())
+		set_dir(get_dir(src,target_radio()))
+		switch(get_dist(src,target_radio()))
 			if(0 to 3)
 				icon_state = "pinondirect"
 			if(4 to 10)
@@ -271,10 +271,10 @@
 						var/check_dist = get_dist(T,R)
 						if(check_dist < cur_dist)
 							cur_dist = check_dist
-							target_radio = R
+							target_radio_handle = om_handle(R)
 
 				scan_ticks = 0
-				if(target_radio)
+				if(target_radio())
 					PERIODIC_START(src, PERIODIC_SLOW)
 					T.visible_message("[icon2html(src,viewers(src))] [src] [pick("chirps","chirrups","cheeps")] happily.")
 				else
@@ -302,8 +302,8 @@
 
 	data["scan_ticks"] = scan_ticks
 	data["degrees"] = null
-	if(target_radio)
-		data["degrees"] = round(Get_Angle(get_turf(src), get_turf(target_radio)))
+	if(target_radio())
+		data["degrees"] = round(Get_Angle(get_turf(src), get_turf(target_radio())))
 
 	data["rawfreq"] = frequency
 	data["minFrequency"] = RADIO_LOW_FREQ
@@ -318,7 +318,7 @@
 	switch(action)
 		if("reset_tracking")
 			scan_ticks = 1
-			target_radio = null
+			target_radio_handle = null
 			PERIODIC_START(src, PERIODIC_SLOW)
 			return TRUE
 		if("setFrequency")
@@ -368,3 +368,7 @@
 	anomaly_scanner.interact(user)
 
 REF_OWNED(/obj/item/xenoarch_multi_tool, list("anomaly_scanner", "depth_scanner"))
+
+/// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
+	return om_resolve(target_radio_handle)

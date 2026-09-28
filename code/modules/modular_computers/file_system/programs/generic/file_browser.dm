@@ -21,7 +21,7 @@
 		return TRUE
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/RHDD = computer.portable_drive
+	var/obj/item/computer_hardware/hard_drive/RHDD = computer.portable_drive()
 
 	switch(action)
 		if("PRG_openfile")
@@ -151,7 +151,7 @@
 	var/list/data = get_header_data()
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer.portable_drive
+	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer.portable_drive()
 
 	data["error"] = null
 	if(error)
@@ -168,7 +168,7 @@
 	if(open_file)
 		var/datum/computer_file/data/file
 
-		if(!computer || (!computer.hard_drive && computer.portable_drive))
+		if(!computer || (!computer.hard_drive && computer.portable_drive()))
 			data["error"] = "I/O ERROR: Unable to access hard drive."
 		else
 			file = computer.find_file_by_uid(open_file)

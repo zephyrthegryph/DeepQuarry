@@ -5,7 +5,7 @@
 	light_color = "#77fff8"
 	circuit = /obj/item/circuitboard/sensors
 	extra_view = 4
-	var/obj/machinery/shipsensors/sensors
+	var/sensors_handle
 
 // fancy sprite
 /obj/machinery/computer/ship/sensors/adv
@@ -20,31 +20,31 @@
 	find_sensors()
 
 /obj/machinery/computer/ship/sensors/proc/find_sensors()
-	if(!linked)
+	if(!linked())
 		return
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(linked.check_ownership(S))
-			sensors = S
+		if(linked().check_ownership(S))
+			sensors_handle = om_handle(S)
 			refresh_sensor_light()
 			break
 
 /obj/machinery/computer/ship/sensors/proc/refresh_sensor_light()
-	if(!linked)
+	if(!linked())
 		return
-	if(sensors && sensors.use_power && sensors.powered())
-		var/sensor_range = round(sensors.range * 1.5) + 1
-		linked.set_light(sensor_range + 0.5)
+	if(sensors() && sensors().use_power && sensors().powered())
+		var/sensor_range = round(sensors().range * 1.5) + 1
+		linked().set_light(sensor_range + 0.5)
 	else
-		linked.set_light(0)
+		linked().set_light(0)
 
 /obj/machinery/computer/ship/sensors/tgui_interact(mob/user, datum/tgui/ui)
-	if(!linked)
+	if(!linked())
 		display_reconnect_dialog(user, "sensors")
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "OvermapShipSensors", "[linked.name] Sensors Control") // 420, 530
+		ui = new(user, src, "OvermapShipSensors", "[linked().name] Sensors Control") // 420, 530
 		ui.open()
 
 /obj/machinery/computer/ship/sensors/tgui_data(mob/user)
@@ -60,28 +60,28 @@
 	data["status"] = "MISSING"
 	data["contacts"] = list()
 
-	if(sensors)
-		data["on"] = sensors.use_power
-		data["range"] = sensors.range
-		data["health"] = sensors.get_integrity()
-		data["max_health"] = sensors.max_integrity
-		data["heat"] = sensors.heat
-		data["critical_heat"] = sensors.critical_heat
-		if(sensors.get_integrity() <= 0)
+	if(sensors())
+		data["on"] = sensors().use_power
+		data["range"] = sensors().range
+		data["health"] = sensors().get_integrity()
+		data["max_health"] = sensors().max_integrity
+		data["heat"] = sensors().heat
+		data["critical_heat"] = sensors().critical_heat
+		if(sensors().get_integrity() <= 0)
 			data["status"] = "DESTROYED"
-		else if(!sensors.powered())
+		else if(!sensors().powered())
 			data["status"] = "NO POWER"
-		else if(!sensors.in_vacuum())
+		else if(!sensors().in_vacuum())
 			data["status"] = "VACUUM SEAL BROKEN"
 		else
 			data["status"] = "OK"
 		var/list/contacts = list()
-		for(var/obj/effect/overmap/O in range(7,linked))
-			if(linked == O)
+		for(var/obj/effect/overmap/O in range(7,linked()))
+			if(linked() == O)
 				continue
 			if(!O.scannable)
 				continue
-			var/bearing = round(90 - ATAN2(O.x - linked.x, O.y - linked.y),5)
+			var/bearing = round(90 - ATAN2(O.x - linked().x, O.y - linked().y),5)
 			if(bearing < 0)
 				bearing += 360
 			contacts.Add(list(list("name"=O.name, "ref"="\ref[O]", "bearing"=bearing)))
@@ -93,17 +93,17 @@
 	if(..())
 		return TRUE
 
-	if(!linked)
+	if(!linked())
 		return FALSE
 
 	switch(action)
 		if("viewing")
 			if(ui.user && !isAI(ui.user))
-				if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked)
+				if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 					. = FALSE
-				else if(!viewing_overmap(ui.user) && linked)
+				else if(!viewing_overmap(ui.user) && linked())
 					if(!viewers) viewers = list() // List must exist for pass by reference to work
-					start_coordinated_remoteview(src, ui.user, linked, viewers)
+					start_coordinated_remoteview(src, ui.user, linked(), viewers)
 				else
 					ui.user.reset_perspective()
 			. = TRUE
@@ -114,22 +114,22 @@
 
 		if("scan")
 			var/obj/effect/overmap/O = locate(params["scan"])
-			if(istype(O) && !QDELETED(O) && (O in view(7,linked)))
+			if(istype(O) && !QDELETED(O) && (O in view(7,linked())))
 				new/obj/item/paper/(get_turf(src), O.get_scan_data(ui.user), "paper (Sensor Scan - [O])")
 				playsound(src, "sound/machines/printer.ogg", 30, 1)
 			. = TRUE
 
-	if(sensors)
+	if(sensors())
 		switch(action)
 			if("range")
-				var/nrange = tgui_input_number(ui.user, "Set new sensors range", "Sensor range", sensors.range, world.view, round_value = FALSE )
+				var/nrange = tgui_input_number(ui.user, "Set new sensors range", "Sensor range", sensors().range, world.view, round_value = FALSE )
 				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 					return FALSE
 				if(nrange)
-					sensors.set_range(CLAMP(nrange, 1, world.view))
+					sensors().set_range(CLAMP(nrange, 1, world.view))
 				. = TRUE
 			if("toggle_sensor")
-				sensors.toggle()
+				sensors().toggle()
 				. = TRUE
 
 	if(. && !issilicon(ui.user))
@@ -159,15 +159,15 @@
 /obj/machinery/shipsensors/Destroy()
 	update_use_power(USE_POWER_OFF)
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(console.sensors != src)
+		if(console.sensors() != src)
 			continue
-		console.sensors = null
+		console.sensors_handle = null
 		console.refresh_sensor_light()
 	return ..()
 
 /obj/machinery/shipsensors/proc/refresh_linked_consoles()
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(console.sensors == src)
+		if(console.sensors() == src)
 			console.refresh_sensor_light()
 
 /obj/machinery/shipsensors/welder_act(mob/user, obj/item/tool)
@@ -278,3 +278,7 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/computer/ship/sensors/step_start_condition()
 	return TRUE // its sensor light
+
+/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/ship/sensors/proc/sensors() as /obj/machinery/shipsensors
+	return om_resolve(sensors_handle)

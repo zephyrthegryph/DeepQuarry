@@ -10,14 +10,14 @@
 	w_class = ITEMSIZE_SMALL
 	max_components = IC_COMPONENTS_BASE
 	max_complexity = IC_COMPLEXITY_BASE
-	var/obj/item/clothing/clothing = null
+	var/clothing_handle
 
 /obj/item/electronic_assembly/clothing/tgui_host()
-	return clothing.tgui_host()
+	return clothing().tgui_host()
 
 /obj/item/electronic_assembly/clothing/update_icon()
 	..()
-	clothing.icon_state = icon_state
+	clothing().icon_state = icon_state
 	// We don't need to update the mob sprite since it won't (and shouldn't) actually get changed.
 
 // This is 'small' relative to the size of regular clothing assemblies.
@@ -77,7 +77,7 @@
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)
 	// Set up the internal circuit holder.
 	IC = new new_type(src)
-	IC.clothing = src
+	IC.clothing_handle = om_handle(src)
 	IC.name = name
 
 	// Clothing assemblies can be triggered by clicking on the HUD. This allows that to occur.
@@ -237,3 +237,7 @@
 	..()
 
 REF_OWNED(/obj/item/clothing, list("IC", "action_circuit"))
+
+/// LC-refs: the clothing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/electronic_assembly/clothing/proc/clothing() as /obj/item/clothing
+	return om_resolve(clothing_handle)

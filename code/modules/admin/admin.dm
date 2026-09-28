@@ -781,9 +781,9 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 			var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
 			user.holder.faxreply = P
 
-			P.admindatum = user.holder
+			P.admindatum_handle = om_handle(user.holder)
 			P.origin = replyorigin
-			P.destination = sendto
+			P.destination_handle = om_handle(sendto)
 
 			P.adminbrowse()
 
@@ -797,7 +797,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	P.desc = "This is a paper titled '" + P.name + "'."
 
 	var/shouldStamp = 1
-	if(!P.sender) // admin initiated
+	if(!P.sender()) // admin initiated
 		if(tgui_alert(usr, "Would you like the fax stamped?","Stamped?", list("Yes", "No")) != "Yes")
 			shouldStamp = 0
 
@@ -831,18 +831,18 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 	if(destination.receivefax(P))
 		to_chat(src.owner, span_notice("Message reply to transmitted successfully."))
-		if(P.sender) // sent as a reply
-			log_admin("[key_name(src.owner)] replied to a fax message from [key_name(P.sender)]")
+		if(P.sender()) // sent as a reply
+			log_admin("[key_name(src.owner)] replied to a fax message from [key_name(P.sender())]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
-					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] replied to a fax message from [key_name_admin(P.sender)] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
+					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] replied to a fax message from [key_name_admin(P.sender())] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 		else
 			log_admin("[key_name(src.owner)] has sent a fax message to [destination.department]")
 			for(var/client/C in GLOB.admins)
 				if(check_rights_for(C, (R_ADMIN | R_MOD | R_EVENT)))
 					to_chat(C, span_log_message("[span_prefix("FAX LOG:")][key_name_admin(src.owner)] has sent a fax message to [destination.department] (<a href='byond://?_src_=holder;[HrefToken()];AdminFaxView=[REF(rcvdcopy)]'>VIEW</a>)"))
 
-		var/plaintext_title = P.sender ? "replied to [key_name(P.sender)]'s fax" : "sent a fax message to [destination.department]"
+		var/plaintext_title = P.sender() ? "replied to [key_name(P.sender())]'s fax" : "sent a fax message to [destination.department]"
 		var/fax_text = paper_html_to_plaintext(P.info)
 		log_game(plaintext_title)
 		log_game(fax_text)

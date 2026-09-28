@@ -67,7 +67,7 @@
 	var/current_spot = get_turf(src)
 	for(var/i = 1 to limit)
 		var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam(current_spot)
-		I.master = src
+		I.master_handle = om_handle(src)
 		I.density = TRUE
 		I.set_dir(dir)
 		if(!step(I, I.dir)) //Try to take a step in that direction
@@ -141,7 +141,7 @@
 	name = "i beam"
 	icon = 'icons/obj/projectiles.dmi'
 	icon_state = "ibeam"
-	var/obj/item/assembly/infra/master = null
+	var/master_handle
 	var/visible = 0
 	anchored = TRUE
 
@@ -150,11 +150,11 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/proc/hit()
-	master?.trigger_beam()
+	master()?.trigger_beam()
 	qdel(src)
 
 /obj/effect/beam/i_beam/periodic_step()
-	if(loc?.density || !master)
+	if(loc?.density || !master())
 		qdel(src)
 		return
 
@@ -170,3 +170,7 @@
 	if(istype(AM, /obj/effect/beam))
 		return
 	hit()
+
+/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
+	return om_resolve(master_handle)

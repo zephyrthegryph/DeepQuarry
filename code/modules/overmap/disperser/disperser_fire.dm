@@ -2,7 +2,7 @@
 	log_and_message_admins("attempted to launch a disperser beam.")
 	if(!link_parts())
 		return FALSE //no disperser, no service
-	if(!front.powered() || !middle.powered() || !back.powered())
+	if(!front.powered() || !middle().powered() || !back().powered())
 		return FALSE //no power, no boom boom
 	var/chargetype = get_charge_type()
 	if(chargetype <= 0)
@@ -48,7 +48,7 @@
 
 	//Some moron disregarded the cooldown warning. Let's blow in their face.
 	if(prob(cool_failchance()))
-		explosion(middle,rand(1,2),rand(2,3),rand(3,4))
+		explosion(middle(),rand(1,2),rand(2,3),rand(3,4))
 	next_shot = coolinterval + world.time
 
 	//Success, but we missed.
@@ -59,7 +59,7 @@
 
 	var/list/candidates = list()
 
-	for(var/obj/effect/overmap/event/O in get_step(linked, overmapdir))
+	for(var/obj/effect/overmap/event/O in get_step(linked(), overmapdir))
 		candidates += O
 
 	//Way to waste a charge
@@ -86,7 +86,7 @@
 
 /obj/machinery/computer/ship/disperser/proc/handle_overbeam()
 	set waitfor = FALSE
-	linked.Beam(get_step(linked, overmapdir), "bsa_beam", time = 150, maxdistance = world.maxx)
+	linked().Beam(get_step(linked(), overmapdir), "bsa_beam", time = 150, maxdistance = world.maxx)
 
 /obj/machinery/computer/ship/disperser/proc/get_target_turf(turf/start, direction)
 	switch(direction)

@@ -3,14 +3,18 @@
 	A runtime instance of a block. Used internally by the interpreter.
 */
 /datum/scope
-	var/datum/scope/parent = null
+	var/parent_handle
 	var/datum/node/BlockDefinition/block
 	var/list/functions
 	var/list/variables
 
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
 	src.block = B
-	src.parent = parent
+	src.parent_handle = om_handle(parent)
 	src.variables = LAZYCOPY(B.initial_variables)
 	src.functions = B.functions.Copy()
 	.=..()
+
+/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/scope/proc/parent() as /datum/scope
+	return om_resolve(parent_handle)

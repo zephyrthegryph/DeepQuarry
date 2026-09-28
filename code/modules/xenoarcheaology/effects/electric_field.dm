@@ -19,7 +19,7 @@
 		use_delay = 0 //We're in an artifact, our delay is handled by the utilizer iself.
 		battery.stored_charge = 0 //You only get ONE use of this. This is WAY too strong.
 		holder = utilizer
-		user = utilizer.last_user_touched
+		user = utilizer.last_user_touched()
 	var/list/nearby_mobs = list()
 	for(var/mob/living/L in oview(effectrange, get_turf(holder)))
 		if(user && L == user)	// You're "grounded" when you contact the artifact...
@@ -64,7 +64,7 @@
 		use_delay = 0 //We're in an artifact, our delay is handled by the utilizer iself.
 		battery.stored_charge = max(0, battery.stored_charge-100) //This one isn't TOO terrible. It doesn't stun, so lets just have it do extra drain.
 		holder = utilizer
-		user = utilizer.last_user_touched
+		user = utilizer.last_user_touched()
 	var/list/nearby_mobs = list()
 	for(var/mob/living/L in oview(effectrange, get_turf(holder)))
 		if(L == user)	// You're "grounded" when you contact the artifact...
@@ -103,7 +103,7 @@
 		var/obj/item/anodevice/utilizer = holder.loc
 		var/obj/item/anobattery/battery = holder
 		holder = utilizer
-		user = utilizer.last_user_touched
+		user = utilizer.last_user_touched()
 		battery.stored_charge = 0
 		use_delay = 0 //We're in an artifact, our delay is handled by the utilizer iself.
 	if(world.time < last_used + use_delay)

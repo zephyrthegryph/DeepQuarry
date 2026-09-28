@@ -210,7 +210,7 @@ SUBSYSTEM_DEF(statpanels)
 	var/list/examine_update = list()
 
 	var/atom/atom_icon = description_holders["icon"]
-	var/shown_icon = target.examine_icon
+	var/shown_icon = target.examine_icon()
 	if(!shown_icon && atom_icon)
 		if(ismob(atom_icon))
 			// Flattening a human's dozens of overlays synchronously took 0.8-1.0s
@@ -228,7 +228,7 @@ SUBSYSTEM_DEF(statpanels)
 			shown_icon = costly_icon2html(atom_icon, target, sourceonly=TRUE, force_south = force_south)
 		else
 			shown_icon = icon2html(atom_icon, target, sourceonly=TRUE)
-		target.examine_icon = shown_icon
+		target.examine_icon_handle = om_handle(shown_icon)
 	examine_update += "<img src=\"[shown_icon]\" />&emsp;" + span_giant("[description_holders["name"]]") //The name, written in big letters.
 	examine_update += "[description_holders["desc"]]" //the default examine text.
 	if(description_holders["info"])

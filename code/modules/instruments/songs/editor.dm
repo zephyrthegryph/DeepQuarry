@@ -1,16 +1,16 @@
 /datum/song/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if (!ui)
-		ui = new(user, src, "InstrumentEditor", parent.name)
+		ui = new(user, src, "InstrumentEditor", parent().name)
 		ui.open()
 
 /datum/song/tgui_host(mob/user)
-	return parent
+	return parent()
 
 /datum/song/tgui_data(mob/user)
 	var/list/data = ..()
 	data["id"] = id
-	data["using_instrument"] = using_instrument?.name || "No instrument loaded!"
+	data["using_instrument"] = using_instrument()?.name || "No instrument loaded!"
 	data["note_shift"] = note_shift
 	data["octaves"] = round(note_shift / 12, 0.01)
 	data["sustain_mode"] = sustain_mode
@@ -25,7 +25,7 @@
 			data["sustain_mode_duration"] = sustain_exponential_dropoff
 			data["sustain_mode_min"] = INSTRUMENT_EXP_FALLOFF_MIN
 			data["sustain_mode_max"] = INSTRUMENT_EXP_FALLOFF_MAX
-	data["instrument_ready"] = using_instrument?.ready()
+	data["instrument_ready"] = using_instrument()?.ready()
 	data["volume"] = volume
 	data["volume_dropoff_threshold"] = sustain_dropoff_volume
 	data["sustain_indefinitely"] = full_sustain_held_note
@@ -101,7 +101,7 @@
 			var/song_text = ""
 			do
 				song_text = tgui_input_text(user, "Please paste the entire song, formatted:", name, max_length = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), multiline = TRUE)
-				if(!in_range(parent, user))
+				if(!in_range(parent(), user))
 					return
 
 				if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
@@ -117,8 +117,8 @@
 			tempo = sanitize_tempo(5) // default 120 BPM
 			return TRUE
 		if("add_new_line")
-			var/newline = tgui_input_text(user, "Enter your line", parent.name, max_length = MUSIC_MAXLINECHARS)
-			if(!newline || !in_range(parent, user))
+			var/newline = tgui_input_text(user, "Enter your line", parent().name, max_length = MUSIC_MAXLINECHARS)
+			if(!newline || !in_range(parent(), user))
 				return
 			if(lines.len > MUSIC_MAXLINES)
 				return
@@ -135,8 +135,8 @@
 			var/line_to_edit = params["line_editing"]
 			if(line_to_edit > lines.len || line_to_edit < 1)
 				return FALSE
-			var/new_line_text = tgui_input_text(user, "Enter your line ", parent.name, lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
-			if(isnull(new_line_text) || !in_range(parent, user))
+			var/new_line_text = tgui_input_text(user, "Enter your line ", parent().name, lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
+			if(isnull(new_line_text) || !in_range(parent(), user))
 				return FALSE
 			lines[line_to_edit] = new_line_text
 			return TRUE

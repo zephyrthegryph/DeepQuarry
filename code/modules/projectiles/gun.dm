@@ -73,7 +73,7 @@
 
 	var/wielded_item_state
 	var/one_handed_penalty = 0 // Penalty applied if someone fires a two-handed gun with one hand.
-	var/atom/movable/screen/auto_target/auto_target
+	var/auto_target_handle
 	var/shooting = 0
 	var/next_fire_time = 0
 
@@ -87,7 +87,7 @@
 						//0 for one bullet after tarrget moves and aim is lowered
 	var/multi_aim = 0 //Used to determine if you can target multiple people.
 	var/tmp/list/mob/living/aim_targets //List of who yer targeting.
-	var/tmp/mob/living/last_moved_mob //Used to fire faster at more than one person.
+	var/tmp/last_moved_mob_handle	//Used to fire faster at more than one person.
 	var/tmp/told_cant_shoot = 0 //So that it doesn't spam them with the fact they cannot hit them.
 	var/tmp/lock_time = -100
 
@@ -850,3 +850,11 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	..()
 
 REF_HELD(/obj/item/gun, "attached_lock")
+
+/// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/proc/auto_target() as /atom/movable/screen/auto_target
+	return om_resolve(auto_target_handle)
+
+/// LC-refs: Used to fire faster at more than one person. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/proc/last_moved_mob() as /mob/living
+	return om_resolve(last_moved_mob_handle)

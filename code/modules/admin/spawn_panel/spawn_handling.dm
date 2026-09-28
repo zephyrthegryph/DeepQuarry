@@ -50,14 +50,14 @@
 			where_target_type = WHERE_FLOOR_BELOW_MOB
 
 	else if(where_target_type == WHERE_MARKED_OBJECT || where_target_type == WHERE_IN_MARKED_OBJECT)
-		if(!user.client.holder.marked_datum)
+		if(!user.client.holder.marked_datum())
 			to_chat(user, span_warning("You don't have any object marked."))
 			return
-		else if(!istype(user.client.holder.marked_datum, /atom))
+		else if(!istype(user.client.holder.marked_datum(), /atom))
 			to_chat(user, span_warning("The object you have marked cannot be used as a target. Target must be of type /atom."))
 			return
 		else
-			target = (where_target_type == WHERE_MARKED_OBJECT ? get_turf(user.client.holder.marked_datum) : user.client.holder.marked_datum)
+			target = (where_target_type == WHERE_MARKED_OBJECT ? get_turf(user.client.holder.marked_datum()) : user.client.holder.marked_datum())
 
 	else if(where_target_type == WHERE_TARGETED_LOCATION || where_target_type == WHERE_TARGETED_LOCATION_POD)
 		target = spawn_params["target"]

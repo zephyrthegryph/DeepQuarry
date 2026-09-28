@@ -68,10 +68,10 @@
 	var/startedAt			= 0 //When this event started.
 	var/endedAt				= 0 //When this event ended.
 	var/processing_active 	= TRUE
-	var/datum/event_meta/event_meta = null
+	var/event_meta_handle
 	var/list/affecting_z	= null // List of z-levels to affect, null lets the event choose (usally station_levels)
 	var/has_skybox_image	= FALSE // True if SSskybox should query this event for an image to put in the skybox.
-	var/obj/effect/overmap/visitable/ship/victim = null // Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
+	var/victim_handle	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
 
 /datum/event/nothing
 
@@ -173,8 +173,8 @@
 		SSevents.active_events += src
 		PERIODIC_START(src, PERIODIC_SLOW)
 
-		event_meta = EM
-		severity = event_meta.severity
+		event_meta_handle = om_handle(EM)
+		severity = event_meta().severity
 		if(severity < EVENT_LEVEL_MUNDANE) severity = EVENT_LEVEL_MUNDANE
 		if(severity > EVENT_LEVEL_MAJOR) severity = EVENT_LEVEL_MAJOR
 
@@ -187,6 +187,14 @@
 	..()
 
 /datum/event/proc/location_name()
-	if(victim)
-		return victim.name
+	if(victim())
+		return victim().name
 	return station_name()
+
+/// LC-refs: the event_meta this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/proc/event_meta() as /datum/event_meta
+	return om_resolve(event_meta_handle)
+
+/// LC-refs: Ship this event is acting upon (If this is event is due to overmap travel).nt etc. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/proc/victim() as /obj/effect/overmap/visitable/ship
+	return om_resolve(victim_handle)

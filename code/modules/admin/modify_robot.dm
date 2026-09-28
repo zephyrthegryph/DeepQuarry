@@ -16,7 +16,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
-	var/obj/item/robotic_multibelt/multibelt_holder //Currently selected multibelt.
+	var/multibelt_holder_handle	//Currently selected multibelt.
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
@@ -296,36 +296,36 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			qdel(rem_kit)
 			return TRUE
 		if("select_multibelt")
-			multibelt_holder = locate(params["multibelt"])
+			multibelt_holder_handle = om_handle(locate(params["multibelt"]))
 			return TRUE
 		if("install_tool")
-			if(!istype(multibelt_holder))
+			if(!istype(multibelt_holder()))
 				return FALSE
-			if(istype(multibelt_holder, /obj/item/robotic_multibelt/materials))
+			if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
 				target.add_new_material(text2path(params["tool"]))
 				return TRUE
 			var/new_tool = text2path(params["tool"])
 			if(new_tool in GLOB.all_borg_multitool_options)
-				multibelt_holder.cyborg_integrated_tools += new_tool //Make sure you don't add items directly to it, or you can't ever remove them.
-				multibelt_holder.generate_tools()
+				multibelt_holder().cyborg_integrated_tools += new_tool //Make sure you don't add items directly to it, or you can't ever remove them.
+				multibelt_holder().generate_tools()
 			return TRUE
 
 		if("remove_tool")
-			if(!istype(multibelt_holder))
+			if(!istype(multibelt_holder()))
 				return FALSE
-			if(istype(multibelt_holder, /obj/item/robotic_multibelt/materials))
+			if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
 				var/datum/matter_synth/synth = locate(params["tool"])
 				target.module.synths -= synth
 				qdel(synth)
 				target.update_material_multibelts()
 				return TRUE
 			var/obj/item/rem_tool = locate(params["tool"])
-			if(multibelt_holder.selected_item == rem_tool)
-				multibelt_holder.dropped() //Reset to original icon.
-			multibelt_holder.contents -= rem_tool
-			multibelt_holder.cyborg_integrated_tools -= rem_tool.type
-			multibelt_holder.integrated_tools_by_name -= rem_tool.name
-			multibelt_holder.integrated_tool_images -= rem_tool.name
+			if(multibelt_holder().selected_item == rem_tool)
+				multibelt_holder().dropped() //Reset to original icon.
+			multibelt_holder().contents -= rem_tool
+			multibelt_holder().cyborg_integrated_tools -= rem_tool.type
+			multibelt_holder().integrated_tools_by_name -= rem_tool.name
+			multibelt_holder().integrated_tool_images -= rem_tool.name
 			qdel(rem_tool)
 			return TRUE
 		if("add_channel")
@@ -784,3 +784,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 
 /datum/eventkit/modify_robot/proc/is_special_role(mob/user)
 	return user.mind?.special_role ? TRUE : FALSE
+
+/// LC-refs: Currently selected multibelt. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/eventkit/modify_robot/proc/multibelt_holder() as /obj/item/robotic_multibelt
+	return om_resolve(multibelt_holder_handle)

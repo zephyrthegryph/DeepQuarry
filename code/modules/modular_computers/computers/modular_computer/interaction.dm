@@ -1,6 +1,6 @@
 /obj/item/modular_computer/proc/update_verbs()
 	verbs.Cut()
-	if(portable_drive)
+	if(portable_drive())
 		verbs |= /obj/item/modular_computer/verb/eject_usb
 	if(card_slot)
 		verbs |= /obj/item/modular_computer/verb/eject_id
@@ -68,14 +68,14 @@
 		to_chat(user, "\The [src] does not have an ID card slot")
 		return
 
-	if(!card_slot.stored_card)
+	if(!card_slot.stored_card())
 		to_chat(user, "There is no card in \the [src]")
 		return
 
 	broadcast_event(COMPUTER_EVENT_IDREMOVED)
 
-	card_slot.stored_card.forceMove(get_turf(src))
-	card_slot.stored_card = null
+	card_slot.stored_card().forceMove(get_turf(src))
+	card_slot.stored_card_handle = null
 	update_uis()
 	to_chat(user, "You remove the card from \the [src]")
 
@@ -84,11 +84,11 @@
 	if(!user)
 		user = usr
 
-	if(!portable_drive)
+	if(!portable_drive())
 		to_chat(user, "There is no portable device connected to \the [src].")
 		return
 
-	uninstall_component(user, portable_drive)
+	uninstall_component(user, portable_drive())
 	update_uis()
 
 /obj/item/modular_computer/attack_ghost(mob/observer/dead/user)
@@ -135,11 +135,11 @@
 			to_chat(user, "You try to insert \the [I] into \the [src], but it does not have an ID card slot installed.")
 			return
 
-		if(card_slot.stored_card)
+		if(card_slot.stored_card())
 			to_chat(user, "You try to insert \the [I] into \the [src], but it's ID card slot is occupied.")
 			return
 		user.drop_from_inventory(I)
-		card_slot.stored_card = I
+		card_slot.stored_card_handle = om_handle(I)
 		I.forceMove(src)
 		update_uis()
 		to_chat(user, "You insert \the [I] into \the [src].")
@@ -202,9 +202,9 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/modular_computer/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
-	if(!card_slot?.stored_card?.dna_hash || !user.master_dna)
+	if(!card_slot?.stored_card()?.dna_hash || !user.master_dna)
 		return FALSE
-	if(card_slot.stored_card.dna_hash != user.master_dna)
+	if(card_slot.stored_card().dna_hash != user.master_dna)
 		return FALSE
 	return proximity_flag
 

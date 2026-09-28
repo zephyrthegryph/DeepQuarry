@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/adir = SOUTH // actual dir
 	var/ndir = SOUTH // target dir
 	var/turn_angle = 0
-	var/obj/machinery/power/solar_control/control = null
+	var/control_handle
 	var/glass_type = /obj/item/stack/material/glass
 	var/SOLAR_MAX_DIST = 60 // ours are >40 away
 
@@ -55,17 +55,17 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 
 //set the control of the panel to a given computer if closer than SOLAR_MAX_DIST
 /obj/machinery/power/solar/proc/set_control(obj/machinery/power/solar_control/SC)
-	ASSERT(!control)
+	ASSERT(!control())
 	if(SC && (get_dist(src, SC) > SOLAR_MAX_DIST))
 		return 0
-	control = SC
+	control_handle = om_handle(SC)
 	return 1
 
 //set the control of the panel to null and removes it from the control list of the previous control computer if needed
 /obj/machinery/power/solar/proc/unset_control()
-	if(control)
-		control.remove_panel(src)
-	control = null
+	if(control())
+		control().remove_panel(src)
+	control_handle = null
 
 /obj/machinery/power/solar/declare_interactions(list/into)
 	into += list(
@@ -145,9 +145,9 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/proc/get_power_supplied()
 	if(stat & BROKEN)
 		return 0
-	if(!SSsun.sun || !control)
+	if(!SSsun.sun || !control())
 		return 0  //if there's no sun or the panel is not linked to a solar control computer, no need to proceed
-	if(!powernet || powernet != control.powernet)
+	if(!powernet || powernet != control().powernet)
 		return 0 // We aren't connected to the controller
 	if(obscured)
 		return 0 //get no light from the sun, so don't generate power
@@ -378,7 +378,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		for(var/obj/machinery/power/M in powernet.nodes)
 			if(istype(M, /obj/machinery/power/solar))
 				var/obj/machinery/power/solar/S = M
-				if(!S.control && S.set_control(src)) //i.e unconnected
+				if(!S.control() && S.set_control(src)) //i.e unconnected
 					add_panel(S)
 			else if(istype(M, /obj/machinery/power/tracker))
 				if(!connected_tracker) //if there's already a tracker connected to the computer don't add another
@@ -566,3 +566,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/solar_control/step_start_condition()
 	return TRUE // connects its trackers
+
+/// LC-refs: the control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/solar/proc/control() as /obj/machinery/power/solar_control
+	return om_resolve(control_handle)

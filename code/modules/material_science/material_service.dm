@@ -178,7 +178,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/list/mixture_pressures
 	var/list/mixture_corrosion
 	var/list/movement_sources
-	var/turf/watched_turf
+	var/watched_turf_handle
 	var/timer
 	var/next_update = 0
 	var/last_update
@@ -199,8 +199,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/updating = FALSE
 	var/electrical_reference_temperature = T20C
 	var/thermal_material_id
-	var/datum/material/thermal_stock
-	var/datum/material/electrical_stock
+	var/thermal_stock_handle
+	var/electrical_stock_handle
 	var/thermal_capacity = 1000
 	var/watches_dirty = TRUE
 	var/last_environment_temperature = T20C
@@ -229,8 +229,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		owner.material_service = null
 	owner = null
 	last_delivery_mixture = null
-	thermal_stock = null
-	electrical_stock = null
+	thermal_stock_handle = null
+	electrical_stock_handle = null
 	return ..()
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
@@ -247,9 +247,9 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 			om_deadline(src, delay, /datum/om/behaviour/material_service)
 
 /datum/material_service/proc/clear_watches()
-	if(watched_turf)
-		UnregisterSignal(watched_turf, COMSIG_TURF_CHANGE)
-		watched_turf = null
+	if(watched_turf())
+		UnregisterSignal(watched_turf(), COMSIG_TURF_CHANGE)
+		watched_turf_handle = null
 	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
 	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
 	// to work around here.
@@ -270,7 +270,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service/proc/changing_turf(datum/source, new_type, list/new_baseturfs, flags, list/post_change_callbacks)
 	SIGNAL_HANDLER
 	UnregisterSignal(source, COMSIG_TURF_CHANGE)
-	watched_turf = null
+	watched_turf_handle = null
 	watches_dirty = TRUE
 	post_change_callbacks += CALLBACK(src, PROC_REF(environment_changed))
 
@@ -339,12 +339,12 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	var/list/next_corrosion = list()
 	var/list/air_ports = owner.material_service_gases()
 	var/turf/location = get_turf(owner)
-	if(location != watched_turf)
-		if(watched_turf)
-			UnregisterSignal(watched_turf, COMSIG_TURF_CHANGE)
-		watched_turf = location
-		if(watched_turf)
-			RegisterSignal(watched_turf, COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
+	if(location != watched_turf())
+		if(watched_turf())
+			UnregisterSignal(watched_turf(), COMSIG_TURF_CHANGE)
+		watched_turf_handle = om_handle(location)
+		if(watched_turf())
+			RegisterSignal(watched_turf(), COMSIG_TURF_CHANGE, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()
 	if(ambient)
 		var/ambient_id = ambient.arena_id()
@@ -407,8 +407,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 /datum/material_service/proc/initialize_thermal_stock()
 	var/datum/material/thermal = owner.material_for_role(MATERIAL_ROLE_THERMAL) || owner.primary_construction_material()
-	thermal_stock = thermal
-	electrical_stock = owner.material_for_role(MATERIAL_ROLE_CONDUCTOR)
+	thermal_stock_handle = om_handle(thermal)
+	electrical_stock_handle = om_handle(owner.material_for_role(MATERIAL_ROLE_CONDUCTOR))
 	thermal_capacity = max((thermal?.specific_heat || 125) * MATERIAL_SERVICE_REFERENCE_MASS, 1000)
 	if(thermal_material_id == thermal?.name)
 		return
@@ -422,7 +422,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service/proc/add_heat(joules)
 	if(!joules || QDELETED(owner))
 		return 0
-	var/datum/material/thermal = thermal_stock
+	var/datum/material/thermal = thermal_stock()
 	var/mass = thermal_mass()
 	var/old_temperature = temperature
 	var/phase = thermal?.phase_change_temperature || 0
@@ -456,7 +456,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		contents_changed()
 	if(istype(owner, /obj/structure/cable))
 		var/obj/structure/cable/cable = owner
-		var/datum/material/conductor = electrical_stock
+		var/datum/material/conductor = electrical_stock()
 		var/crossed_critical = conductor?.critical_temperature && ((temperature < conductor.critical_temperature) != (electrical_reference_temperature < conductor.critical_temperature))
 		if(abs(temperature - electrical_reference_temperature) >= 0.1 || crossed_critical)
 			if(cable.powernet?.material_graph)
@@ -618,3 +618,15 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	material_service?.schedule(0)
 
 REF_OWNED(/obj, "material_service")
+
+/// LC-refs: the watched_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/material_service/proc/watched_turf() as /turf
+	return om_resolve(watched_turf_handle)
+
+/// LC-refs: the thermal_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/material_service/proc/thermal_stock() as /datum/material
+	return om_resolve(thermal_stock_handle)
+
+/// LC-refs: the electrical_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/material_service/proc/electrical_stock() as /datum/material
+	return om_resolve(electrical_stock_handle)

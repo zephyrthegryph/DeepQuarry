@@ -141,7 +141,7 @@
 		. += A
 
 /obj/item/gun/energy/kinetic_accelerator/proc/modify_projectile(obj/item/projectile/kinetic/K)
-	K.kinetic_gun = src //do something special on-hit, easy!
+	K.kinetic_gun_handle = om_handle(src) //do something special on-hit, easy!
 	for(var/A in get_modkits())
 		var/obj/item/borg/upgrade/modkit/M = A
 		M.modify_projectile(K)
@@ -244,17 +244,17 @@
 	var/pressure_decrease_active = FALSE
 	var/pressure_decrease = 1/3
 	var/environment = KA_ENVIRO_TYPE_COLD
-	var/obj/item/gun/energy/kinetic_accelerator/kinetic_gun
+	var/kinetic_gun_handle
 
 /obj/item/projectile/kinetic/premium
 	damage = 40
 	range = 5
 
 /obj/item/projectile/kinetic/Bump(atom/target)
-	if(kinetic_gun)
-		var/list/mods = kinetic_gun.get_modkits()
+	if(kinetic_gun())
+		var/list/mods = kinetic_gun().get_modkits()
 		for(var/obj/item/borg/upgrade/modkit/M in mods)
-			M.projectile_prehit(src, target, kinetic_gun)
+			M.projectile_prehit(src, target, kinetic_gun())
 	if(!pressure_decrease_active)
 		if(environment == KA_ENVIRO_TYPE_COLD)
 			if(!lavaland_environment_check(get_turf(src)))
@@ -327,12 +327,12 @@
 	var/turf/target_turf = get_turf(target)
 	if(!target_turf)
 		target_turf = get_turf(src)
-	if(kinetic_gun) //hopefully whoever shot this was not very, very unfortunate.
-		var/list/mods = kinetic_gun.get_modkits()
+	if(kinetic_gun()) //hopefully whoever shot this was not very, very unfortunate.
+		var/list/mods = kinetic_gun().get_modkits()
 		for(var/obj/item/borg/upgrade/modkit/M in mods)
-			M.projectile_strike_predamage(src, target_turf, target, kinetic_gun)
+			M.projectile_strike_predamage(src, target_turf, target, kinetic_gun())
 		for(var/obj/item/borg/upgrade/modkit/M in mods)
-			M.projectile_strike(src, target_turf, target, kinetic_gun)
+			M.projectile_strike(src, target_turf, target, kinetic_gun())
 	if(ismineralturf(target_turf))
 		var/turf/simulated/mineral/M = target_turf
 		M.GetDrilled(TRUE)
@@ -721,3 +721,7 @@
 #undef KA_ENVIRO_TYPE_COLD
 #undef KA_ENVIRO_TYPE_HOT
 #undef KA_ENVIRO_TYPE_OFFSITE
+
+/// LC-refs: the kinetic_gun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/projectile/kinetic/proc/kinetic_gun() as /obj/item/gun/energy/kinetic_accelerator
+	return om_resolve(kinetic_gun_handle)

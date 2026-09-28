@@ -100,7 +100,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	// Marker flags.
 	var/datum/admins/holder = owner ? owner.holder : null
 	var/datum/thing_datum = is_listy ? null : thing
-	data["marked"] = (holder && holder.marked_datum == thing)
+	data["marked"] = (holder && holder.marked_datum() == thing)
 	data["tagged_index"] = (holder && LAZYFIND(holder.tagged_datums, thing)) || 0
 	data["varedited"] = (thing_datum && (thing_datum.datum_flags & DF_VAR_EDITED))
 	data["gc_destroyed"] = (thing_datum && thing_datum.gc_destroyed)

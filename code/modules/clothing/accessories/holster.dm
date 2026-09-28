@@ -79,7 +79,7 @@
 
 //YW change start
 /obj/item/clothing/accessory/holster/attack_hand(mob/user)
-	if (IS_HARMING(user) && has_suit && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
+	if (IS_HARMING(user) && has_suit() && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
 		if (holstered)
 			unholster(user)
 		return
@@ -99,12 +99,12 @@
 
 /obj/item/clothing/accessory/holster/on_attached(obj/item/clothing/under/S, mob/user as mob)
 	..()
-	if(has_suit)
-		has_suit.verbs += /obj/item/clothing/accessory/holster/verb/holster_verb
+	if(has_suit())
+		has_suit().verbs += /obj/item/clothing/accessory/holster/verb/holster_verb
 
 /obj/item/clothing/accessory/holster/on_removed(mob/user as mob)
-	if(has_suit)
-		has_suit.verbs -= /obj/item/clothing/accessory/holster/verb/holster_verb
+	if(has_suit())
+		has_suit().verbs -= /obj/item/clothing/accessory/holster/verb/holster_verb
 	..()
 
 //For the holster hotkey
@@ -251,14 +251,14 @@
 /obj/item/clothing/accessory/holster/machete/rapier/holster(obj/item/I, mob/living/user)
 	..()
 	occupied()
-	if(has_suit)
-		has_suit.update_clothing_icon()
+	if(has_suit())
+		has_suit().update_clothing_icon()
 
 /obj/item/clothing/accessory/holster/machete/rapier/unholster(obj/item/I, mob/living/user)
 	..()
 	occupied()
-	if(has_suit)
-		has_suit.update_clothing_icon()
+	if(has_suit())
+		has_suit().update_clothing_icon()
 
 
 /obj/item/clothing/accessory/holster/leg/left

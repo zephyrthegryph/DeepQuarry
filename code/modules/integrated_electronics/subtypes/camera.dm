@@ -206,24 +206,24 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 	tgui_id = "ICCameraConsole"
 	access_based = FALSE
 
-	var/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
+	var/owner_circuit_handle
 
 /datum/tgui_module/camera/intcircuit/New(host)
-	owner_circuit = host
+	owner_circuit_handle = om_handle(host)
 	// Pass an empty network list - we override get_available_cameras
 	..(host, list("intcircuit_dummy"))
 	access_based = FALSE
 
 /datum/tgui_module/camera/intcircuit/tgui_host(mob/user)
-	if(owner_circuit?.assembly)
-		return owner_circuit.assembly
-	return owner_circuit
+	if(owner_circuit()?.assembly)
+		return owner_circuit().assembly
+	return owner_circuit()
 
 /datum/tgui_module/camera/intcircuit/get_available_cameras(mob/user)
 	var/list/D = list()
-	if(!owner_circuit)
+	if(!owner_circuit())
 		return D
-	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in owner_circuit.paired_cameras)
+	for(var/obj/item/integrated_circuit/output/video_camera/cam_circuit in owner_circuit().paired_cameras)
 		if(!cam_circuit.assembly) // Skip circuits not in assemblies
 			continue
 		var/obj/machinery/camera/intcircuit/C = cam_circuit.camera
@@ -236,5 +236,9 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 
 /datum/tgui_module/camera/intcircuit/tgui_act(action, params, datum/tgui/ui)
 	if(action == "switch_camera")
-		last_camera_turf = null
+		last_camera_turf_handle = null
 	. = ..()
+
+/// LC-refs: the owner_circuit this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/camera/intcircuit/proc/owner_circuit() as /obj/item/integrated_circuit/input/video_camera_input
+	return om_resolve(owner_circuit_handle)

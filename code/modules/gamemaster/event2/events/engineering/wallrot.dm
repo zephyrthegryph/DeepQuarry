@@ -11,33 +11,37 @@
 
 
 /datum/event2/event/wallrot
-	var/turf/simulated/wall/origin = null
+	var/origin_handle
 
 /datum/event2/event/wallrot/set_up()
 	for(var/i = 1 to 100)
 		var/turf/candidate = locate(rand(1, world.maxx), rand(1, world.maxy), pick(get_location_z_levels()) )
 		if(istype(candidate, /turf/simulated/wall))
-			origin = candidate
-			log_game("Wall-rot event has chosen \the [origin] ([origin.loc]) as the origin for the wallrot infestation.")
+			origin_handle = om_handle(candidate)
+			log_game("Wall-rot event has chosen \the [origin()] ([origin().loc]) as the origin for the wallrot infestation.")
 			return
 
 	log_game("Wall-rot event failed to find a valid wall after one hundred tries. Aborting.")
 	abort()
 
 /datum/event2/event/wallrot/announce()
-	if(origin && prob(80))
-		GLOB.command_announcement.Announce("Harmful fungi detected on \the [location_name()], near \the [origin.loc]. \
+	if(origin() && prob(80))
+		GLOB.command_announcement.Announce("Harmful fungi detected on \the [location_name()], near \the [origin().loc]. \
 		Station structural integrity may be compromised.", "Biohazard Alert", ANNOUNCER_MSG_WALLROT)
 
 /datum/event2/event/wallrot/start()
-	if(origin)
-		origin.rot()
+	if(origin())
+		origin().rot()
 
 		var/rot_count = 0
 		var/target_rot = rand(5, 20)
-		for(var/turf/simulated/wall/W in range(7, origin))
+		for(var/turf/simulated/wall/W in range(7, origin()))
 			if(prob(50))
 				if(W.rot())
 					rot_count++
 			if(rot_count >= target_rot)
 				break
+
+/// LC-refs: the origin this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event2/event/wallrot/proc/origin() as /turf/simulated/wall
+	return om_resolve(origin_handle)

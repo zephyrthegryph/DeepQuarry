@@ -13,7 +13,7 @@
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/list/item_records = list()
-	var/datum/stored_item/currently_vending = null	//What we're putting out of the machine.
+	var/currently_vending_handle	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
@@ -374,7 +374,7 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 	name = "\improper Smart Chemavator - Upper"
 	desc = "A refrigerated storage unit for medicine and chemical storage. Now sporting a fancy system of pulleys to lift bottles up and down."
 	expert_job = JOB_CHEMIST
-	var/obj/machinery/smartfridge/chemistry/chemvator/attached
+	var/attached_handle
 	circuit = /obj/item/circuitboard/smartfridge/chemvator
 
 /obj/machinery/smartfridge/chemistry/chemvator/accept_check(obj/item/O as obj)
@@ -384,10 +384,10 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 
 // LIFECYCLE: records shared with the upper unit must not be deleted with it.
 /obj/machinery/smartfridge/chemistry/chemvator/down/Destroy()
-	if(attached)
-		attached.attached = null // clear the upper unit's back-reference to us
+	if(attached())
+		attached().attached_handle = null // clear the upper unit's back-reference to us
 	item_records = null // shared with the upper unit; don't let the base Destroy qdel its stored records
-	attached = null
+	attached_handle = null
 	return ..()
 
 /obj/machinery/smartfridge/chemistry/chemvator/down
@@ -398,12 +398,20 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 	. = ..()
 	var/obj/machinery/smartfridge/chemistry/chemvator/above = locate(/obj/machinery/smartfridge/chemistry/chemvator,get_zstep(src,UP))
 	if(istype(above))
-		above.attached = src
-		attached = above
-		item_records = attached.item_records
+		above.attached_handle = om_handle(src)
+		attached_handle = om_handle(above)
+		item_records = attached().item_records
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/smartfridge/step_start_condition()
 	return !(stat & (BROKEN|NOPOWER)) // its hum
+
+/// LC-refs: What we're putting out of the machine. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/smartfridge/proc/currently_vending() as /datum/stored_item
+	return om_resolve(currently_vending_handle)
+
+/// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
+	return om_resolve(attached_handle)

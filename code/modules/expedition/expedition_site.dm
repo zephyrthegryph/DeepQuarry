@@ -14,7 +14,7 @@
 	/// EXP_STATUS_* lifecycle status.
 	var/status = EXP_STATUS_GENERATING
 	/// A safe, walkable turf crews arrive on.
-	var/turf/landing
+	var/landing_handle
 	/// Cached walkable floors, for content placement and respawns.
 	var/list/floors
 	/// The mission bound to this site (may be null for a raw debug site).
@@ -32,10 +32,10 @@
 	/// The short-jump craft assigned to this expedition.
 	var/datum/shuttle/autodock/overmap/assigned_shuttle
 	/// Authoritative vessel assignment; survives console replacement or deletion.
-	var/datum/flight_vessel/assigned_flight_vessel
+	var/assigned_flight_vessel_handle
 	/// The craft's control console, used as the physical payout point.
-	var/obj/machinery/computer/shuttle_control/explore/origin_console
-	var/turf/payout_turf
+	var/origin_console_handle
+	var/payout_turf_handle
 	/// Overmap destination and landing waypoint owned by this site.
 	var/obj/effect/overmap/visitable/sector/expedition/overmap_sector
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/landing_waypoint
@@ -55,7 +55,7 @@
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level
 	difficulty = _difficulty
-	landing = _landing
+	landing_handle = om_handle(_landing)
 	generated_at = world.time
 	last_occupied = world.time
 	participants = list()
@@ -80,10 +80,26 @@ REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 	return null
 
 /datum/expedition_site/proc/has_active_assignment()
-	if(assigned_flight_vessel && !QDELETED(assigned_flight_vessel) && assigned_flight_vessel.active_expedition == src)
+	if(assigned_flight_vessel() && !QDELETED(assigned_flight_vessel()) && assigned_flight_vessel().active_expedition == src)
 		return TRUE
-	return origin_console && !QDELETED(origin_console) && origin_console.active_expedition == src
+	return origin_console() && !QDELETED(origin_console()) && origin_console().active_expedition == src
 
 /datum/expedition_site/proc/has_travel_lease()
 	var/datum/flight_destination/destination = SSflight_operations?.destinations[flight_destination_id]
 	return LAZYLEN(destination?.active_plans)
+
+/// LC-refs: the landing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_site/proc/landing() as /turf
+	return om_resolve(landing_handle)
+
+/// LC-refs: the assigned_flight_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_site/proc/assigned_flight_vessel() as /datum/flight_vessel
+	return om_resolve(assigned_flight_vessel_handle)
+
+/// LC-refs: the payout_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_site/proc/payout_turf() as /turf
+	return om_resolve(payout_turf_handle)
+
+/// LC-refs: the origin_console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_site/proc/origin_console() as /obj/machinery/computer/shuttle_control/explore
+	return om_resolve(origin_console_handle)

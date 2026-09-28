@@ -6,7 +6,7 @@
 	. = ..()
 	if(istype(shuttle))
 		. += list(
-			"destination_name" = shuttle.next_location ? shuttle.next_location.name : "No destination set.",
+			"destination_name" = shuttle.next_location() ? shuttle.next_location().name : "No destination set.",
 			"can_pick" = shuttle.moving_status == SHUTTLE_IDLE,
 			"can_cloak" = shuttle.can_cloak ? 1 : 0,
 			"cloaked" = shuttle.cloaked ? 1 : 0,

@@ -816,7 +816,7 @@
 			host.soulgem.take_control_owner()
 			return TRUE
 		if("soulcatcher_select")
-			host.soulgem.selected_soul = locate(params["selected_soul"])
+			host.soulgem.selected_soul_handle = om_handle(locate(params["selected_soul"]))
 			return TRUE
 		//Soulcatcher settings
 		if("soulcatcher_toggle")

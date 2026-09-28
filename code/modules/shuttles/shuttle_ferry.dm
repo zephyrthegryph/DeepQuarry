@@ -15,7 +15,7 @@
 
 	..(_name, get_location_waypoint(location))
 
-	next_location = get_location_waypoint(!location)
+	next_location_handle = om_handle(get_location_waypoint(!location))
 
 
 //Gets the shuttle landmark associated with the given location (defaults to current location)
@@ -43,10 +43,10 @@
 // Once we have arrived where we are going, plot a course back!
 /datum/shuttle/autodock/ferry/process_arrived()
 	..()
-	next_location = get_location_waypoint(!location)
+	next_location_handle = om_handle(get_location_waypoint(!location))
 
 // Ferry shuttles should generally always be able to dock.  So read the docking codes off of the target.
 /datum/shuttle/autodock/ferry/update_docking_target(obj/effect/shuttle_landmark/location)
 	..()
-	if(active_docking_controller && active_docking_controller.docking_codes)
-		set_docking_codes(active_docking_controller.docking_codes)
+	if(active_docking_controller() && active_docking_controller().docking_codes)
+		set_docking_codes(active_docking_controller().docking_codes)

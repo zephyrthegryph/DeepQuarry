@@ -62,8 +62,8 @@
 	var/tmp_icon_state = acc.overlay_state ? "[acc.overlay_state]" : "[acc.icon_state]"
 
 	var/mob/living/carbon/human/H
-	if(ishuman(acc.has_suit?.loc))
-		H = acc.has_suit.loc
+	if(ishuman(acc.has_suit()?.loc))
+		H = acc.has_suit().loc
 
 	// Adjust icon state for rolled/unrolled jumpsuit sleeves
 	if(H && istype(acc.loc, /obj/item/clothing/under))

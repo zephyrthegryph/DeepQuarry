@@ -652,7 +652,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			if(!check_rights_for(ui.user.client, R_HOLDER))
 				return
-			var/obj/item/X = ui.user.client.holder.marked_datum
+			var/obj/item/X = ui.user.client.holder.marked_datum()
 			if(!istype(X))
 				return
 			Tar.put_in_hands(X)
@@ -663,7 +663,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			if(!check_rights_for(ui.user.client, R_HOLDER))
 				return
-			var/obj/item/X = ui.user.client.holder.marked_datum
+			var/obj/item/X = ui.user.client.holder.marked_datum()
 			if(!istype(X))
 				return
 			if(Tar.equip_to_appropriate_slot(X))
@@ -756,9 +756,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			ui.user.client.debug_variables(target)
 
 		if("orbit")
-			if(!ui.user.client.holder.marked_datum)
+			if(!ui.user.client.holder.marked_datum())
 				return
-			var/atom/movable/X = ui.user.client.holder.marked_datum
+			var/atom/movable/X = ui.user.client.holder.marked_datum()
 			X.orbit(target)
 
 		if("ai")

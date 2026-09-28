@@ -68,7 +68,7 @@
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
 		P.icon_state = "deliverycrate"
-		P.wrapped = O
+		P.wrapped_handle = om_handle(O)
 		O.loc = P
 		src.amount -= 3
 		wrap_used()
@@ -85,7 +85,7 @@
 		if(O.opened)
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
-		P.wrapped = O
+		P.wrapped_handle = om_handle(O)
 		O.sealed = 1
 		O.loc = P
 		src.amount -= 3

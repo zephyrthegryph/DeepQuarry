@@ -43,7 +43,7 @@ SUBSYSTEM_DEF(events)
 	active_events -= E
 	PERIODIC_STOP(E)
 
-	if(!E.event_meta || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
+	if(!E.event_meta() || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
 		log_game("Event of '[E.type]' with missing meta-data has completed.")
 		return
 
@@ -51,7 +51,7 @@ SUBSYSTEM_DEF(events)
 
 	// Add the event back to the list of available events
 	var/datum/event_container/EC = event_containers[E.severity]
-	var/datum/event_meta/EM = E.event_meta
+	var/datum/event_meta/EM = E.event_meta()
 	if(EM.add_to_queue)
 		EC.available_events += EM
 
@@ -67,7 +67,7 @@ SUBSYSTEM_DEF(events)
 
 	to_chat(world, "<br><br><br>" + span_large(span_bold("Random Events This Round:")))
 	for(var/datum/event/E in active_events|finished_events)
-		var/datum/event_meta/EM = E.event_meta
+		var/datum/event_meta/EM = E.event_meta()
 		if(EM.name == "Nothing")
 			continue
 		var/message = "'[EM.name]' began at [worldtime2stationtime(E.startedAt)] "

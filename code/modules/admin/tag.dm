@@ -55,7 +55,7 @@ ADMIN_VERB(display_tags, R_ADMIN, "View Tags", "Display all of the tagged datums
 	var/list/dat = list()
 
 	var/list/tagged_datums = user.holder.tagged_datums
-	var/list/marked_datum = user.holder.marked_datum
+	var/list/marked_datum = user.holder.marked_datum()
 
 	dat += "<br><a href='byond://?_src_=holder;[HrefToken(forceGlobal = TRUE)];show_tags=1'>Refresh</a><br>"
 	if(LAZYLEN(tagged_datums))

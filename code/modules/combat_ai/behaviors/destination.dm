@@ -10,14 +10,14 @@
 	no_threat_required = TRUE
 
 /datum/ai_behavior/walk_to_destination/evaluate(datum/ai_brain/brain, atom/source)
-	var/turf/dest = brain.destination
+	var/turf/dest = brain.destination()
 	if(!dest)
 		return null
 	var/mob/living/owner = brain.get_owner()
 	if(!owner)
 		return null
 	if(get_dist(owner, dest) == 0)
-		brain.destination = null
+		brain.destination_handle = null
 		return null
 	// Score above idle_wander/return_home but below combat.
 	return DQAI_RESULT(20, dest)
@@ -26,7 +26,7 @@
 	if(!target || !brain.holder)
 		return DQ_BEHAVIOR_FAILED
 	if(get_dist(brain.holder, target) == 0)
-		brain.destination = null
+		brain.destination_handle = null
 		return DQ_BEHAVIOR_DONE
 	if(!brain.smart_step_toward(target, 0))
 		// Fall back to direct step if A* can't find a path.
@@ -40,10 +40,10 @@
 /datum/ai_brain/proc/give_destination(turf/T)
 	if(!T)
 		return
-	destination = T
+	destination_handle = om_handle(T)
 	invalidate_selection()
 
 /datum/ai_brain/proc/clear_destination()
-	destination = null
+	destination_handle = null
 	clear_path()
 	invalidate_selection()

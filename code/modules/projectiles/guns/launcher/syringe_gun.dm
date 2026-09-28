@@ -9,23 +9,23 @@
 	throwforce = 3
 	force = 3
 	w_class = ITEMSIZE_TINY
-	var/obj/item/reagent_containers/syringe/syringe
+	var/syringe_handle
 
 /obj/item/syringe_cartridge/update_icon()
 	underlays.Cut()
-	if(syringe)
-		underlays += image(syringe.icon, src, syringe.icon_state)
-		if(length(syringe.filling)) underlays += syringe.filling
+	if(syringe())
+		underlays += image(syringe().icon, src, syringe().icon_state)
+		if(length(syringe().filling)) underlays += syringe().filling
 
 /obj/item/syringe_cartridge/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/reagent_containers/syringe))
-		if(syringe)
+		if(syringe())
 			to_chat(user, span_warning("[src] already has a syringe loaded!"))
 			return
-		syringe = I
-		to_chat(user, span_notice("You carefully insert [syringe] into [src]."))
-		user.remove_from_mob(syringe)
-		syringe.loc = src
+		syringe_handle = om_handle(I)
+		to_chat(user, span_notice("You carefully insert [syringe()] into [src]."))
+		user.remove_from_mob(syringe())
+		syringe().loc = src
 		sharp = TRUE
 		name = "syringe dart"
 		update_icon()
@@ -34,11 +34,11 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(syringe)
-		to_chat(user, span_notice("You remove [syringe] from [src]."))
+	if(syringe())
+		to_chat(user, span_notice("You remove [syringe()] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
-		user.put_in_hands(syringe)
-		syringe = null
+		user.put_in_hands(syringe())
+		syringe_handle = null
 		sharp = initial(sharp)
 		name = initial(name)
 		update_icon()
@@ -50,21 +50,21 @@
 
 /obj/item/syringe_cartridge/throw_impact(atom/hit_atom, datum/thrownthing/throwingdatum)
 	..() //handles embedding for us. Should have a decent chance if thrown fast enough
-	if(syringe)
+	if(syringe())
 		//check speed to see if we hit hard enough to trigger the rapid injection
 		//incidentally, this means syringe_cartridges can be used with the pneumatic launcher
 		if(throwingdatum?.speed >= 10 && isliving(hit_atom))
 			var/mob/living/L = hit_atom
 			//unfortuately we don't know where the dart will actually hit, since that's done by the parent.
-			if(L.can_inject() && syringe.reagents)
-				var/contained = syringe.reagents.get_reagents()
-				var/trans = syringe.reagents.trans_to_mob(L, 15, CHEM_BLOOD)
+			if(L.can_inject() && syringe().reagents)
+				var/contained = syringe().reagents.get_reagents()
+				var/trans = syringe().reagents.trans_to_mob(L, 15, CHEM_BLOOD)
 				var/mob/thrower = throwingdatum?.get_thrower()
 				if(thrower)
 					add_attack_logs(thrower,L,"Shot with [src.name] containing [contained], trasferred [trans] units")
 
-		syringe.break_syringe(iscarbon(hit_atom)? hit_atom : null)
-		syringe.update_icon()
+		syringe().break_syringe(iscarbon(hit_atom)? hit_atom : null)
+		syringe().update_icon()
 
 	icon_state = initial(icon_state) //reset icon state
 	update_icon()
@@ -150,3 +150,7 @@
 	icon_state = "rapidsyringegun"
 	item_state = "rapidsyringegun"
 	max_darts = 5
+
+/// LC-refs: the syringe this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/syringe_cartridge/proc/syringe() as /obj/item/reagent_containers/syringe
+	return om_resolve(syringe_handle)

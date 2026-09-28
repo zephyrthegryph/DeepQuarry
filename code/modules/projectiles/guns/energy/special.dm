@@ -48,7 +48,7 @@
 	cell_type = /obj/item/cell/device/weapon/recharge
 	battery_lock = 1
 
-	var/datum/decl/plantgene/gene = null
+	var/gene_handle
 	recoil_mode = 0
 	var/obj/item/stock_parts/micro_laser/emitter
 
@@ -110,7 +110,7 @@
 	if(!genemask)
 		return
 
-	gene = SSplants.plant_gene_datums[genemask]
+	gene_handle = om_handle(SSplants.plant_gene_datums[genemask])
 
 	to_chat(usr, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 
@@ -124,7 +124,7 @@
 	var/obj/item/projectile/energy/floraprune/GP = .
 	// Inserting the upgrade level of the gun to the projectile as there isn't a better way to do this.
 	if(istype(G))
-		G.gene = gene
+		G.gene = gene()
 		G.lasermod = emitter.rating
 	else if(istype(GY))
 		GY.lasermod = emitter.rating
@@ -594,3 +594,7 @@
 		)
 
 REF_HELD(/obj/item/gun/energy/floragun, "emitter")
+
+/// LC-refs: the gene this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene
+	return om_resolve(gene_handle)

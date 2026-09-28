@@ -37,11 +37,11 @@
 		for(var/obj/machinery/shield_capacitor/cap in range(1, src))
 			if(!cap.anchored)
 				continue
-			if(cap.owned_gen)
+			if(cap.owned_gen())
 				continue
 			if(get_dir(cap, src) == cap.dir)
 				LAZYOR(capacitors, cap)
-				cap.owned_gen = src
+				cap.owned_gen_handle = om_handle(src)
 	shield_hum = new(list(src), FALSE)
 	. = ..()
 	AddElement(/datum/element/climbable)
@@ -83,14 +83,14 @@ REF_OWNED_LIST(/obj/machinery/shield_gen, "field")
 		toggle()
 	if(anchored)
 		for(var/obj/machinery/shield_capacitor/cap in range(1, src))
-			if(cap.owned_gen)
+			if(cap.owned_gen())
 				continue
 			if(get_dir(cap, src) == cap.dir && src.anchored)
 				LAZYOR(capacitors, cap)
-				cap.owned_gen = src
+				cap.owned_gen_handle = om_handle(src)
 	else
 		for(var/obj/machinery/shield_capacitor/capacitor in capacitors)
-			capacitor.owned_gen = null
+			capacitor.owned_gen_handle = null
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shield_gen/declare_interactions(list/into)

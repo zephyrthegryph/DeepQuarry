@@ -25,7 +25,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/stage = 1
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
-	var/obj/machinery/light/newlight = null
+	var/newlight_handle
 	var/obj/item/cell/cell = null
 
 	var/cell_connectors = TRUE
@@ -264,7 +264,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 	var/emergency_discharge_started
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
-	var/tmp/area/area_power_token
+	var/tmp/area_power_token_handle
 	var/tmp/last_area_power = null
 	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
@@ -1013,15 +1013,15 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 /// Subscribes to the current area's power key (again, if the area changed).
 /obj/machinery/light/proc/subscribe_area_power()
 	var/area/A = get_area(src)
-	if(A == area_power_token)
+	if(A == area_power_token())
 		return
-	if(area_power_token)
-		om_unwatch(src, area_power_token, /datum/om/behaviour/sleeper/light)
-		area_power_token = null
+	if(area_power_token())
+		om_unwatch(src, area_power_token(), /datum/om/behaviour/sleeper/light)
+		area_power_token_handle = null
 	if(A)
 		om_attach(src, /datum/om/behaviour/sleeper/light)
 		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
-		area_power_token = A
+		area_power_token_handle = om_handle(A)
 
 /// Area power changes and players moving near a waiting auto-flicker light.
 /datum/om/behaviour/sleeper/light
@@ -1076,7 +1076,7 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	var/deadline = next_light_deadline()
 	if(deadline && (isnull(light_timer_token) || light_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
-	if(get_area(src) && isnull(area_power_token))
+	if(get_area(src) && isnull(area_power_token()))
 		return "not watching its area's power"
 	return null
 
@@ -1735,3 +1735,11 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 	broken()
 
 REF_HELD(/obj/machinery/light, "installed_light")
+
+/// LC-refs: the newlight this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light_construct/proc/newlight() as /obj/machinery/light
+	return om_resolve(newlight_handle)
+
+/// LC-refs: the area_power_token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light/proc/area_power_token() as /area
+	return om_resolve(area_power_token_handle)

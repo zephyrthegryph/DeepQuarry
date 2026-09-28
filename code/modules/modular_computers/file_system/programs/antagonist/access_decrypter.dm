@@ -15,7 +15,7 @@
 	var/running = FALSE
 	var/progress = 0
 	var/target_progress = 300
-	var/datum/access/target_access = null
+	var/target_access_handle
 	var/static/list/restricted_access_codes = list(ACCESS_CHANGE_IDS, ACCESS_NETWORK) // access codes that are not hackable due to balance reasons
 
 /datum/computer_file/program/access_decrypter/kill_program(forced)
@@ -36,19 +36,19 @@
 	if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
 		message = "A fatal hardware error has been detected."
 		return
-	if(!istype(RFID.stored_card))
+	if(!istype(RFID.stored_card()))
 		message = "RFID card has been removed from the device. Operation aborted."
 		return
 
 	progress += CPU.max_idle_programs
 	if(progress >= target_progress)
 		reset()
-		RFID.stored_card.access |= target_access.id
+		RFID.stored_card().access |= target_access().id
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
-			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer.network_card.get_network_tag()]  - downloaded access codes for: [target_access.desc].")
+			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer.network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
 			GLOB.ntnet_global.intrusion_detection_alarm = 1
-		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access.desc]"
-		target_access = null
+		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
+		target_access_handle = null
 
 /datum/computer_file/program/access_decrypter/tgui_act(action, list/params, datum/tgui/ui)
 	if(..())
@@ -67,12 +67,12 @@
 			if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
 				message = "A fatal hardware error has been detected."
 				return
-			if(!istype(RFID.stored_card))
+			if(!istype(RFID.stored_card()))
 				message = "RFID card is not present in the device. Operation aborted."
 				return
 			running = TRUE
-			target_access = SSaccess.get_access_by_id("[params["access_target"]]")
-			if(!target_access)
+			target_access_handle = om_handle(SSaccess.get_access_by_id("[params["access_target"]]"))
+			if(!target_access())
 				message = "Invalid access target. Operation aborted."
 				running = FALSE
 				return
@@ -95,8 +95,8 @@
 		data["running"] = 1
 		data["rate"] = computer.processor_unit.max_idle_programs
 		data["factor"] = (progress / target_progress)
-	else if(computer?.card_slot?.stored_card)
-		var/obj/item/card/id/id_card = computer.card_slot.stored_card
+	else if(computer?.card_slot?.stored_card())
+		var/obj/item/card/id/id_card = computer.card_slot.stored_card()
 		for(var/i = 1; i <= 7; i++)
 			var/list/accesses = list()
 			for(var/access in SSaccess.get_region_accesses(i))
@@ -114,3 +114,7 @@
 	data["regions"] = regions
 
 	return data
+
+/// LC-refs: the target_access this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file/program/access_decrypter/proc/target_access() as /datum/access
+	return om_resolve(target_access_handle)
