@@ -114,5 +114,5 @@
 		return ..()
 
 /// LC-refs: the holder2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/computer_hardware//proc/holder2() as /obj/item/modular_computer
+/obj/item/computer_hardware/proc/holder2() as /obj/item/modular_computer
 	return om_resolve(holder2_handle)

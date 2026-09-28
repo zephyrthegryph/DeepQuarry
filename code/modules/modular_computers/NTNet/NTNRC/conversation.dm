@@ -65,5 +65,5 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	title = newtitle
 
 /// LC-refs: "Administrator" of this channel. Creator starts as channel's operator, -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/ntnet_conversation//proc/channel_operator() as /datum/computer_file/program/chatclient
+/datum/ntnet_conversation/proc/channel_operator() as /datum/computer_file/program/chatclient
 	return om_resolve(operator_handle)
