@@ -269,7 +269,6 @@ REF_OWNED_LIST(/obj/machinery/shield_gen, "field")
 	else
 		for(var/obj/effect/energy_field/D in field)
 			LAZYREMOVE(field, D)
-			//D.loc = null
 			qdel(D)
 
 		for(var/mob/M in view(5,src))

@@ -191,7 +191,6 @@
 		if("print")
 			if(!crash && doc_title && doc_body)
 				visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
-				// playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 
 				var/obj/item/paper/paper = new /obj/item/paper(loc)
 				paper.name = doc_title

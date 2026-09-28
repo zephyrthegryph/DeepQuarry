@@ -17,7 +17,6 @@
 		var/locked = 1
 		var/destroyed = 0
 		var/directwired = 1
-//		var/maxshieldload = 200
 		var/obj/structure/cable/attached		// the attached cable
 		var/storedpower = 0
 		//There have to be at least two posts, so these are effectively doubled
@@ -115,8 +114,6 @@
 		storedpower = max_stored_power
 	if(storedpower <= 0)
 		storedpower = 0
-//	if(shieldload >= maxshieldload) //there was a loop caused by specifics of process(), so this was needed.
-//		shieldload = maxshieldload
 
 	if(src.active == 1)
 		if(!src.state == 1)
@@ -263,7 +260,6 @@
 		light_range = 3
 		var/needs_power = 0
 		var/active = 1
-//		var/power = 10
 		var/delay = 5
 		var/last_active
 		var/mob/U

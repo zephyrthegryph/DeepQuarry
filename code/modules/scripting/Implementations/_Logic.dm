@@ -217,12 +217,10 @@
 		var/i = 1
 		var/lenh=length(haystack)
 		var/lena=length(a)
-		//var/lenb=length(b)
 		var/count = 0
 		var/list/dat = list()
 		while (i < lenh)
 			var/found = findtext(haystack, a, i, 0)
-			//log_misc("findtext([haystack], [a], [i], 0)=[found]")
 			if (found == 0) // Not found
 				break
 			else
@@ -230,13 +228,10 @@
 					dat+=found
 					count+=1
 				else
-					//log_misc("Script found [a] [count] times, aborted")
 					break
-			//log_misc("Found [a] at [found]! Moving up...")
 			i = found + lena
 		if (count == 0)
 			return haystack
-		//var/nlen = lenh + ((lenb - lena) * count)
 		var/buf = copytext(haystack,1,dat[1]) // Prefill
 		var/lastReadPos = 0
 		for (i = 1, i <= count, i++)

@@ -98,7 +98,6 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	//  from the same source hasn't been shown too recently
 	if (error_source.next_message_at <= world.time) // ALLOW(cooldown): error log throttling (debug infrastructure)
 		var/const/viewtext = "\[view]" // Nesting these in other brackets went poorly
-		//to_chat(world, "Runtime in <b>[error_where(e)]</b>: <b>[html_encode(e.name)]</b> [error_entry.make_link(viewtext)]")
 		var/err_msg_delay
 		if(config?.loaded)
 			err_msg_delay = CONFIG_GET(number/error_msg_delay)

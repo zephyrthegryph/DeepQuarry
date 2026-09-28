@@ -36,7 +36,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTER
 				to_chat(user, span_warning("You slap yourself on the back of the head for thinking that stacking plates is an interesting dish."))
 				return INTERACTION_HANDLED_PASS
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
-			//to_chat(user, span_warning("[pick("As uniquely original as that idea is, you can't figure out how to perform it.","That would be a straining topological exercise.","This world just isn't ready for your cooking genius.","It's possible that you may have a problem.","It won't fit.","You don't think that would taste very good.","Quit goofin' around.")]"))
 			to_chat(user, span_warning("As uniquely original as that idea is, you can't figure out how to perform it."))
 			return INTERACTION_HANDLED_PASS
 		/*if(!user.drop_item())

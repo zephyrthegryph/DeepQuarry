@@ -245,7 +245,6 @@
 		to_chat(user, span_warning("Power is not sufficient to complete a teleport. Teleport aborted."))
 		return
 
-	//sparks()
 	to_chat(user, span_warning("You feel yourself pulled in different directions, before ending up not far from where you started."))
 	flick("qpad-beam-out", src)
 	transport_objects(get_turf(dest))
@@ -296,9 +295,7 @@
 	*/
 
 	flick("qpad-beam-out", src)
-	//playsound(src, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
 	flick("qpad-beam-in", linked_pad())
-	//playsound(linked_pad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
 
 	transport_objects(get_turf(linked_pad()))
 

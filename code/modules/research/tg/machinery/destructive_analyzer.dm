@@ -252,7 +252,6 @@ It is used to destroy hand-held objects and advance technological research. Used
 	if(!current_item)
 		loaded_item = null
 		return FALSE
-	//playsound(loc, 'sound/machines/terminal/terminal_insert_disc.ogg', 30, FALSE)
 	current_item.forceMove(drop_location())
 	loaded_item = null
 	update_icon()
@@ -267,7 +266,6 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/obj/item/current_item = om_resolve(loaded_item)
 	if(!current_item || QDELETED(src))
 		return FALSE
-	//flick("[base_icon_state]_process", src)
 	busy = TRUE
 	om_after(src, 2.4 SECONDS, PROC_REF(reset_busy))
 	use_power(active_power_usage)

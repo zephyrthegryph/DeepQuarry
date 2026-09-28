@@ -8,11 +8,9 @@
 	density = TRUE
 	anchored = TRUE
 	var/tmp/machine_handle
-	//var/machinedir = SOUTHEAST //This is really dumb, so lets burn it with fire.
 
 /obj/machinery/mineral/stacking_unit_console/Initialize(mapload)
 	. = ..()
-	//src.machine = locate(/obj/machinery/mineral/stacking_machine, get_step(src, machinedir)) //No.
 	src.machine_handle = om_handle(locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
 	if (machine())
 		machine().console_handle = om_handle(src)

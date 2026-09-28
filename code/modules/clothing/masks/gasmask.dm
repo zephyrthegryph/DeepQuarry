@@ -126,7 +126,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/swat/vox, INTERACT_USE("Feeding 
 	desc = "A clear survival mask used by the Zaddat to filter out harmful nitrogen. Can be connected to an air supply and reconfigured to allow for safe eating."
 	icon_state = "zaddat_mask"
 	item_state = "vax_mask"
-	//body_parts_covered = 0
 	flags_inv = HIDEEARS //semi-transparent
 	filtered_gases = list(GAS_PHORON, GAS_N2, GAS_N2O)
 

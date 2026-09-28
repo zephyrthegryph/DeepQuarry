@@ -11,7 +11,6 @@
 	icon_state = "coilgun"
 	item_state = "coilgun"
 	icon = 'icons/obj/railgun.dmi'
-//	one_handed_penalty = 15
 	w_class = ITEMSIZE_HUGE //.
 
 	var/obj/item/cell/cell                              // Currently installed powercell.

@@ -22,7 +22,6 @@
 	/// For showing to the pilot of the ship, so they see the 'real' appearance, despite others seeing the unknown ones
 	var/image/real_appearance
 
-	//light_system = MOVABLE_LIGHT
 	light_on = FALSE
 
 	///~~If we need to render a map for cameras and helms for this object~~ basically can you look at and use this as a ship or station.

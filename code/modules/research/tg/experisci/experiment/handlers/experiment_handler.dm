@@ -271,7 +271,6 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/proc/configure_experiment(datum/source, mob/user)
 	SHOULD_NOT_SLEEP(TRUE)
 	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
-	// return CLICK_ACTION_SUCCESS
 
 /**
  * Attempts to show the user the experiment configuration panel

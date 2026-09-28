@@ -1210,8 +1210,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 	icon_state = "holster_machete"
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 0
-	//sound_in = 'sound/effects/holster/sheathin.ogg'
-	//sound_out = 'sound/effects/holster/sheathout.ogg'
 
 //Medals
 

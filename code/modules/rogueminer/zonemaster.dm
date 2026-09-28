@@ -6,7 +6,6 @@
 /datum/rogue/zonemaster
 	//our area
 	var/tmp/myarea_handle
-	// var/area/shuttle/belter/myshuttle
 	var/tmp/myshuttle_landmark_handle
 
 	//world.time

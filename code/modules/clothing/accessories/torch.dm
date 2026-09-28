@@ -281,7 +281,6 @@ department tags
 	icon_state = "dept_exped"
 	on_rolled = list("down" = "none", "rolled" = "dept_exped_sleeves")
 	slot = ACCESSORY_SLOT_DEPT
-	//removable = FALSE
 
 /obj/item/clothing/accessory/solgov/department/command
 	name = "command insignia"
@@ -512,7 +511,6 @@ ranks - ec
 	on_rolled = list("down" = "none")
 	slot = ACCESSORY_SLOT_RANK
 	gender = PLURAL
-	//high_visibility = 1
 
 /obj/item/clothing/accessory/solgov/rank/ec
 	name = "explorer ranks"

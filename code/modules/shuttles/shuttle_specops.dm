@@ -100,7 +100,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 
 //should be fine to allow forcing. process_state only becomes WAIT_LAUNCH after the countdown is over.
 ///datum/shuttle/autodock/ferry/specops/can_force()
-//	return 0
 
 /datum/shuttle/autodock/ferry/specops/can_cancel()
 	if(launch_prep)

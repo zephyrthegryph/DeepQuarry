@@ -384,7 +384,6 @@ DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_it
 		rigged = 0
 		corrupt()
 		return
-	//explosion(T, 0, 1, 2, 2)
 
 	log_admin("LOG: Rigged power cell explosion at [COORD(T)], charge [charge]/[maxcharge], holder [loc?.type], last touched by [forensic_data?.get_lastprint()]")
 	message_admins("LOG: Rigged power cell explosion at [COORD(T)], charge [charge]/[maxcharge], holder [loc?.type], last touched by [forensic_data?.get_lastprint()]")

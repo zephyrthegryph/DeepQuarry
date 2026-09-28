@@ -108,8 +108,6 @@ REF_OWNED(/obj/machinery/message_server, "soundloop")
 	return newKey
 
 /obj/machinery/message_server/machine_step()
-	//if(decryptkey == "password")
-	//	decryptkey = generateKey()
 	if(active && (stat & (BROKEN|NOPOWER)))
 		active = 0
 		soundloop.stop()

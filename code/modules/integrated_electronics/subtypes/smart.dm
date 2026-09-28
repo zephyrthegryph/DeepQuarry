@@ -55,7 +55,6 @@
 	if(!assembly())
 		activate_pin(3)
 		return
-	//idc.access = assembly.access_card.access
 	var/turf/a_loc = get_turf(assembly())
 
 	var/turf/target_turf = locate(get_pin_data(IC_INPUT, 1), get_pin_data(IC_INPUT, 2), a_loc.z)

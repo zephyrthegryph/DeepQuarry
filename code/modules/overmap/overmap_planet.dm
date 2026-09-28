@@ -26,8 +26,6 @@
 
 	skybox_image.add_overlay(get_base_image())
 
-//	for(var/datum/exoplanet_theme/theme in themes)
-//		skybox_image.add_overlay(theme.get_planet_image_extra())
 
 	if(mountain_color)
 		var/image/mountains = image('icons/skybox/planet.dmi', "mountains")
@@ -39,7 +37,6 @@
 		var/image/water = image('icons/skybox/planet.dmi', "water")
 		water.color = water_color
 		water.appearance_flags = PIXEL_SCALE
-//		water.transform = water.transform.Turn(rand(0,360))
 		skybox_image.add_overlay(water)
 
 	if(icecaps)

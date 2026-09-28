@@ -76,7 +76,6 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 			cleanup_ticker = 0
 
 	var/list/currentrun = src.currentrun
-	//var/round_started = SSticker.HasRoundStarted()
 
 	for(var/I in currentrun)
 		var/client/C = I

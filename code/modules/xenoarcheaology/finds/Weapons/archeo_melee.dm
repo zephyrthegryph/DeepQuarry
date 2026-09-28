@@ -299,7 +299,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 		to_chat(user, span_cult("\The [src] lacks enough lifeforce to convert."))
 		return FALSE
 	conjure_animation(A, toolspeed)
-	//Moving = stop
 	om_do_after(user, toolspeed, A, src, PROC_REF(convert_turf_done), list(A, user))
 	return TRUE
 

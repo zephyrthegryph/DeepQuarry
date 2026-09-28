@@ -149,8 +149,6 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 				src.visible_message("[icon2html(src,viewers(src))] " + span_info("[user] scoops delicious [flavour_name] icecream into [I]."))
 				product_types[dispense_flavour] -= 1
 				I.add_ice_cream(flavour_name)
-			//	if(beaker)
-			//		beaker.reagents.trans_to(I, 10)
 				if(I.reagents.total_volume < 10)
 					I.reagents.add_reagent(REAGENT_ID_SUGAR, 10 - I.reagents.total_volume)
 			else

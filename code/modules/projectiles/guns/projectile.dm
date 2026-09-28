@@ -436,7 +436,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 
 			var/output = BOLT_OPENED
 			if(ejected) output |= BOLT_CASING_EJECTED
-			//if(chambering) output |= BOLT_CASING_CHAMBERED
 			return output
 	else
 		if(auto_loading_type)

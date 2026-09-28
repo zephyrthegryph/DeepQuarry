@@ -144,8 +144,6 @@
 			if(pause_state == FALSE)
 				healamt = rand(6,8) // + rand(0, gamerSkill)
 				var/maxPointCost = 3
-				// if(gamerSkillLevel >= SKILL_LEVEL_JOURNEYMAN)
-				// 	maxPointCost = 2
 				healcost = rand(1, maxPointCost)
 			pause_state = TRUE
 			heads_up = "You heal for [healamt] damage."

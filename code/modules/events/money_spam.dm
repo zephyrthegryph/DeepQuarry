@@ -31,7 +31,6 @@
 
 	if(useMS())
 		if(prob(5))
-			// /obj/machinery/message_server/proc/send_pda_message(var/recipient = "",var/sender = "",var/message = "")
 			var/obj/item/pda/P
 			var/list/viables = list()
 			for(var/obj/item/pda/check_pda in REGISTRY_MEMBERS(REGISTRY_PDAS))

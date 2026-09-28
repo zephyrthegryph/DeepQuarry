@@ -77,13 +77,11 @@
 	default_cartridge = /obj/item/cartridge/captain
 	icon_state = "pda-c"
 	detonate = 0
-	//toff = 1
 
 /obj/item/pda/ert
 	default_cartridge = /obj/item/cartridge/captain
 	icon_state = "pda-h"
 	detonate = 0
-//	hidden = 1
 
 /obj/item/pda/cargo
 	default_cartridge = /obj/item/cartridge/quartermaster

@@ -346,7 +346,6 @@
 			if(skip_obstacle)
 				continue
 
-			// to_chat(world, "R-UST DEBUG: [AM] is [AM.type]")
 			AM.visible_message(span_danger("The field buckles visibly around \the [AM]!"))
 			tick_instability += rand(15,30)
 			AM.emp_act(empsev)
@@ -581,7 +580,6 @@ REF_PAIR(/obj/machinery/power/fusion_core, list("owned_field" = "owned_core"))
 		light_max_range = 30
 		visible_message(span_danger("\The [src] flares to eye-searing brightness!"))
 		om_after(src, 6 SECONDS, PROC_REF(temp_color))
-		//plasma_temperature -= lost_plasma
 		return
 //Rupture() is no longer the end all be all. Fear the magnetic resonance cascade and quantum flux cascade
 

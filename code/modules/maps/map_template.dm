@@ -153,7 +153,6 @@
 	if(!bounds)
 		return FALSE
 
-//	repopulate_sorted_areas()
 
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
@@ -197,8 +196,6 @@
 	var/list/bounds = parsed.bounds
 	if(!bounds)
 		return
-//	if(!SSmapping.loading_ruins) //Will be done manually during mapping ss init
-//		repopulate_sorted_areas()
 
 	//initialize things that are normally initialized after map load
 	initTemplateBounds(bounds)
@@ -341,7 +338,6 @@
 				var/area/new_area = get_area(check)
 				if(!(istype(new_area, whitelist)))
 					valid = FALSE // Probably overlapping something important.
-			//		to_world("Invalid due to overlapping with area [new_area.type] at ([check.x], [check.y], [check.z]), when attempting to place at ([T.x], [T.y], [T.z]).")
 					break
 				CHECK_TICK
 

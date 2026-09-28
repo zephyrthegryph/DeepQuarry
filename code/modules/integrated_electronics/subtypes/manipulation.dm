@@ -136,7 +136,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 	being held, or anchored in some way.  It should be noted that the ability to move is dependent on the type of assembly that this circuit inhabits."
 	w_class = ITEMSIZE_NORMAL
 	complexity = 20
-//	size = 5
 	inputs = list("direction" = IC_PINTYPE_DIR)
 	outputs = list()
 	activators = list("step towards dir" = IC_PINTYPE_PULSE_IN)

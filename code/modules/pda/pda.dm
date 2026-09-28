@@ -237,7 +237,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	if(ismob(P.loc))
 		M = P.loc
 
-	//switch(i) //Yes, the overlapping cases are intended.
 	if(i<=10) //The traditional explosion
 		P.explode()
 		j=1
@@ -371,8 +370,6 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	if(ismob(loc))
 		var/mob/M = loc
 		M.put_in_hands(cartridge)
-	// mode = 0
-	// scanmode = 0
 	if (cartridge.radio)
 		cartridge.radio.hostpda_handle = null
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
@@ -523,7 +520,6 @@ REF_OWNED_LIST(/obj/item/pda, "programs")
 	default_cartridge = /obj/item/cartridge/captain
 	icon_state = "pda-h"
 	detonate = 0
-//	hidden = 1
 
 /obj/item/pda/pathfinder
 	default_cartridge = /obj/item/cartridge/explorer

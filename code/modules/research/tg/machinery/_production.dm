@@ -482,7 +482,6 @@ REF_OWNED(/obj/machinery/rnd/production, list("print_sound", "materials"))
 		created.pixel_y = rand(-6, 6)
 		var/obj/created_object = created
 		created_object.set_economic_provenance(DEPARTMENT_RESEARCH, max(10, build_time_per_item / 10), current_producer_account)
-	// SSblackbox.record_feedback("nested tally", "lathe_printed_items", 1, list("[type]", "[created.type]"))
 	created.forceMove(target)
 
 	if(is_stack)

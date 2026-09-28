@@ -1,7 +1,6 @@
 ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before with this handy dandy semi-misc stuff menu.", ADMIN_CATEGORY_SECRETS)
 	var/datum/secrets_menu/tgui = new(user)
 	tgui.tgui_interact(user.mob)
-	//BLACKBOX_LOG_ADMIN_VERB("Secrets Panel")
 	feedback_add_details("admin_verb","S") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/secrets_menu
@@ -298,21 +297,18 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("power")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Power All APCs"))
 			log_admin("[key_name(holder())] made all areas powered")
 			message_admins(span_adminnotice("[key_name_admin(holder())] made all areas powered"))
 			power_restore()
 		if("unpower")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Depower All APCs"))
 			log_admin("[key_name(holder())] made all areas unpowered")
 			message_admins(span_adminnotice("[key_name_admin(holder())] made all areas unpowered"))
 			power_failure()
 		if("quickpower")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Power All SMESs"))
 			log_admin("[key_name(holder())] made all SMESs powered")
 			message_admins(span_adminnotice("[key_name_admin(holder())] made all SMESs powered"))
 			power_restore_quick()
@@ -335,7 +331,6 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			if(!is_funmin)
 				return
 			holder().triple_ai()
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Triple AI"))
 		if("onlyone")
 			if(!is_funmin)
 				return
@@ -349,11 +344,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 					holder().only_one_delayed()
 				else
 					return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("There Can Be Only One"))
 		if("blackout")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Break All Lights"))
 			message_admins("[key_name_admin(holder())] broke all lights")
 			//for(var/obj/machinery/light/L as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/light))
 			//	L.break_light_tube()
@@ -367,16 +360,13 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("whiteout")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Fix All Lights"))
 			message_admins("[key_name_admin(holder())] fixed all lights")
-			//for(var/obj/machinery/light/L as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/light))
 			for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				L.fix()
 				CHECK_TICK
 		if("changebombcap")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Bomb Cap"))
 
 			var/new_cap = act_ask(holder(), action, params, ui, "a14", /datum/om/prompt/choice, message = "Select the max explosion range", title = "Change Bomb Cap", choices = list(14, 16, 20, 28, 56, 128))
 			if(isnull(new_cap))
@@ -392,8 +382,6 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			message_admins(span_danger("[key_name_admin(holder())] changed the bomb cap to [range_dev], [range_high], [range_low]"))
 			log_admin("[key_name_admin(holder())] changed the bomb cap to [GLOB.max_explosion_range]")
 
-			//message_admins(span_boldannounce("[key_name_admin(holder)] changed the bomb cap to [GLOB.MAX_EX_DEVESTATION_RANGE], [GLOB.MAX_EX_HEAVY_RANGE], [GLOB.MAX_EX_LIGHT_RANGE]"))
-			//log_admin("[key_name(holder)] changed the bomb cap to [GLOB.MAX_EX_DEVESTATION_RANGE], [GLOB.MAX_EX_HEAVY_RANGE], [GLOB.MAX_EX_LIGHT_RANGE]")
 
 		if("alter_narsie")
 			var/choice = act_ask(holder(), action, params, ui, "a15", /datum/om/prompt/choice/alert, message = "How do you wish for Nar-Sie to interact with its surroundings?", title = "NarChoice", choices = list("CultStation13", "Nar-Singulo"))
@@ -426,7 +414,6 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("monkey")
 			if(!is_funmin)
 				return
-			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Monkeyize All Humans"))
 			message_admins("[key_name_admin(holder())] made everyone into monkeys.")
 			log_admin("[key_name_admin(holder())] made everyone into monkeys.")
 			for(var/i in REGISTRY_MEMBERS(REGISTRY_MOBS))

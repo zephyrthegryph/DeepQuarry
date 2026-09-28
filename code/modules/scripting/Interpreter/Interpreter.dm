@@ -269,8 +269,6 @@ Runs a function block or a proc with the arguments specified in the script.
 			return call(def, stmt.func_name)(arglist(params))
 		else										//def is a path to a global proc
 			return call(def)(arglist(params))
-	//else
-	//	RaiseError(new/runtimeError/UnknownInstruction())
 
 /*
 Proc: RunIf

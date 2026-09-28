@@ -232,7 +232,6 @@
 					return ITEM_INTERACT_FAILURE
 
 				if(blocked)
-					// to_chat(user, span_warning("\The [blocked] is in the way!"))
 					balloon_alert(user, "\the [blocked] is in the way!")
 					return ITEM_INTERACT_FAILURE
 
@@ -5264,7 +5263,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/human/burger, INTER
 	var/composition_reagent_quantity
 
 ///mob/living/simple_mob/adultslime	//The literal only thing in the game that uses this is commented out, so I comment out this too
-//	composition_reagent = REAGENT_ID_SLIMEJELLY
 
 /mob/living/carbon/alien/diona
 	composition_reagent = REAGENT_ID_NUTRIMENT//Dionae are plants, so eating them doesn't give animal protein
@@ -5742,16 +5740,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/rawcutlet, INTERACT
 //doesn't work
 
 ///obj/item/reagent_containers/food/snacks/chip
-//	name = "chip"
-//	desc = "A portion sized chip good for dipping."
-//	icon_state = "chip"
-//	var/bitten_state = "chip_half"
-//	bitesize = 1
-//	center_of_mass_x = 16
-//	center_of_mass_y = 16
-//	nutriment_desc = list("chips" = 1)
-//	nutriment_amt = 2
-//	flags = OPENCONTAINER
 
 ///obj/item/reagent_containers/food/snacks/chip/on_consume(mob/M as mob)
 //	if(reagents && reagents.total_volume)

@@ -83,7 +83,6 @@ GLOBAL_PROTECT(href_token)
 	GLOB.deadmins -= target
 	GLOB.admin_datums[target] = src
 	deadmined = FALSE
-	//plane_debug = new(src)
 	if (GLOB.directory[target])
 		associate(GLOB.directory[target]) //find the client for a ckey if they are connected and associate them with us
 
@@ -93,7 +92,6 @@ GLOBAL_PROTECT(href_token)
 		return
 	GLOB.deadmins[target] = src
 	GLOB.admin_datums -= target
-	//QDEL_NULL(plane_debug)
 	deadmined = TRUE
 
 	var/client/client = owner() || GLOB.directory[target]
@@ -101,8 +99,6 @@ GLOBAL_PROTECT(href_token)
 	if (!isnull(client))
 		disassociate()
 		add_verb(client, /client/proc/readmin)
-		//client.disable_combo_hud()
-		//client.update_special_keybinds()
 
 /datum/admins/proc/associate(client/client)
 	if(IsAdminAdvancedProcCall())
@@ -126,7 +122,6 @@ GLOBAL_PROTECT(href_token)
 	owner().add_admin_verbs()
 	remove_verb(owner(), /client/proc/readmin)
 	owner().init_verbs() //re-initialize the verb list
-	//owner.update_special_keybinds()
 	GLOB.admins |= client
 
 	try_give_profiling()

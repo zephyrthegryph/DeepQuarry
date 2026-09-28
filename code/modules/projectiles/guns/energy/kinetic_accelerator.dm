@@ -49,16 +49,9 @@
 		slot_r_hand_str = 'icons/mob/items/righthand_guns_vr.dmi',
 		)
 	item_state = "kineticgun"
-	// ammo_type = list(/obj/item/ammo_casing/energy/kinetic)
 	cell_type = /obj/item/cell/device/weapon/empproof
 	item_flags = NONE
 	charge_meter = FALSE
-	// obj_flags = UNIQUE_RENAME
-	// weapon_weight = WEAPON_LIGHT
-	// can_flashlight = 1
-	// flight_x_offset = 15
-	// flight_y_offset = 9
-	// automatic_charge_overlays = FALSE
 	projectile_type = /obj/item/projectile/kinetic
 	charge_cost = 1200
 	battery_lock = TRUE
@@ -69,9 +62,6 @@
 	var/overheat = FALSE
 	var/emptystate = "kineticgun_empty"
 	shot_counter = FALSE
-	// can_bayonet = TRUE
-	// knife_x_offset = 20
-	// knife_y_offset = 12
 
 	var/max_mod_capacity = 100
 	var/list/modkits
@@ -168,7 +158,6 @@
 	..()
 
 /obj/item/gun/energy/kinetic_accelerator/minebot
-	// trigger_guard = TRIGGER_GUARD_ALLOW_ALL
 	overheat_time = 20
 	holds_charge = TRUE
 	unique_frequency = TRUE
@@ -217,11 +206,7 @@
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)
-	// process_chamber()
-	// if(!suppressed)
 	playsound(src, 'sound/weapons/kenetic_reload.ogg', 60, 1)
-	// else
-		// to_chat(loc, span_warning("[src] silently charges up."))
 	overheat = FALSE
 	update_icon()
 
@@ -240,7 +225,6 @@
 	icon_state = null
 	damage = 30
 	range = 4
-	// log_override = TRUE
 
 	var/pressure_decrease_active = FALSE
 	var/pressure_decrease = 1/3
@@ -348,7 +332,6 @@
 	icon_state = "modkit"
 	w_class = ITEMSIZE_SMALL
 	require_module = 1
-	// module_type = list(/obj/item/robot_module/miner)
 	var/denied_type = null
 	var/maximum_of_type = 1
 	var/cost = 30
@@ -394,8 +377,6 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 	if(KA.get_remaining_mod_capacity() >= cost)
 		if(.)
 			user.drop_from_inventory(src, KA)
-			// if(!user.transferItemToLoc(src, KA))
-				// return FALSE
 			to_chat(user, span_notice("You install the modkit."))
 			playsound(loc, 'sound/items/Screwdriver.ogg', 100, 1)
 			LAZYADD(KA.modkits, src)

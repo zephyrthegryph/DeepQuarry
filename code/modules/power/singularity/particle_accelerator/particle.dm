@@ -72,7 +72,6 @@
 /obj/effect/accelerated_particle/proc/toxmob(mob/living/M)
 	var/radiation = (energy*2)
 	M.apply_effect((radiation*3),IRRADIATE,0)
-	//to_chat(M, span_warning("You feel odd."))
 
 
 /obj/effect/accelerated_particle/proc/move(lag)

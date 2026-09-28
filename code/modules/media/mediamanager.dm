@@ -205,7 +205,6 @@
 		targetURL = M.media_url
 		targetStartTime = M.media_start_time
 		targetVolume = M.volume
-		//MP_DEBUG("Found audio source: [M.media_url] @ [(world.time - start_time) / 10]s.")
 	push_music(targetURL, targetStartTime, targetVolume)
 
 #ifdef DEBUG_MEDIAPLAYER

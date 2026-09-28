@@ -90,7 +90,6 @@
 		var/datum/techweb_node/DN = GLOB.research_service.techweb_node_by_id(i)
 		research_node(DN, TRUE, FALSE, FALSE)
 	hidden_nodes = GLOB.research_service.techweb_nodes_hidden.Copy()
-	// initialize_published_papers()
 	return ..()
 
 /// Phase 2: leaves GLOB.research_service's techwebs.
@@ -577,13 +576,11 @@
 // 	// PS: It's also possible to use add_experiment() together with a list/available_experiments check
 // 	// to determine if we need to run all this, but this pretty much does the same while only needing one evaluation.
 
-// 	add_experiment(paper_to_add.experiment_path)
 
 // 	for (var/datum/experiment/experiment as anything in available_experiments)
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
 
-// 	return TRUE
 
 REF_OWNED_LIST(/datum/techweb, "available_experiments")
 REF_OWNED_VALUES(/datum/techweb, "completed_experiments")

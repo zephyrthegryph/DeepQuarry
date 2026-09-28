@@ -78,7 +78,6 @@
 	// This will actually protect it from further damage.
 	if(prob(25))
 		A.energy_fail(rand(60, 120))
-//		log_game("ELECTRICAL EVENT: Disabled \the [A]'s power for a temporary amount of time.")
 		playsound(A, 'sound/machines/defib_success.ogg', 50, 1)
 		apcs_disabled++
 		return
@@ -86,7 +85,6 @@
 	// Decent chance to overload lighting circuit.
 	if(prob(30))
 		A.overload_lighting()
-//		log_game("ELECTRICAL EVENT: Overloaded \the [A]'s lighting.")
 		playsound(A, 'sound/effects/lightningshock.ogg', 50, 1)
 		apcs_overloaded++
 
@@ -94,7 +92,6 @@
 	if(prob(5))
 		A.emagged = TRUE
 		A.update_icon()
-//		log_game("ELECTRICAL EVENT: Emagged \the [A].")
 		playsound(A, 'sound/machines/chime.ogg', 50, 1)
 		apcs_emagged++
 

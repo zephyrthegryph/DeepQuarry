@@ -30,7 +30,6 @@
 
 /obj/item/radio/integrated/proc/post_signal(freq, key, value, key2, value2, key3, value3, s_filter)
 
-	//to_world("Post: [freq]: [key]=[value], [key2]=[value2]")
 	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(freq)
 
 	if(!frequency)

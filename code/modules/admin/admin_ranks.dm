@@ -472,7 +472,6 @@ GLOBAL_PROTECT(protected_ranks)
 
 		file_data["admins"][admin_ckey] = admin.rank_names()
 
-		//admin.backup_connections()
 
 	fdel(json_file)
 	WRITE_FILE(json_file, json_encode(file_data, JSON_PRETTY_PRINT))

@@ -130,7 +130,6 @@
 			MACHINE_WAKE(src)
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
-			//GLOB.dir_set_event.register(watching_mob, src, /obj/machinery/station_map/proc/checkPosition)
 			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
 			update_use_power(USE_POWER_ACTIVE)
 
@@ -170,7 +169,6 @@
 			else
 				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
 		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
-		//GLOB.dir_set_event.unregister(watching_mob, src)
 	watching_mob_handle = null
 	update_use_power(USE_POWER_IDLE)
 

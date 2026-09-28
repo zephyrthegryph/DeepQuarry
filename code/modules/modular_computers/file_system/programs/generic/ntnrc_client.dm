@@ -47,7 +47,6 @@
 					return TRUE
 
 			channel.add_message(message, username)
-			// ui.user.log_talk(message, LOG_CHAT, tag="as [username] to channel [channel.title]")
 			return TRUE
 		if("PRG_joinchannel")
 			var/new_target = text2num(params["id"])

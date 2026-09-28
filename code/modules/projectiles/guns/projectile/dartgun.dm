@@ -21,7 +21,6 @@
 
 /obj/item/ammo_casing/chemdart/expend()
 	..()
-	//qdel(src)		//Wasn't able to find the exact issue with the qdel-ing. Possibly because it was still being processed by the gun when this is called.
 
 /obj/item/ammo_magazine/chemdart
 	name = "dart cartridge"

@@ -23,7 +23,6 @@
 	to_chat(src, span_interface("You are now an admin."), confidential = TRUE)
 	message_admins("[src] re-adminned themselves.")
 	log_admin("[src] re-adminned themselves.")
-	//BLACKBOX_LOG_ADMIN_VERB("Readmin")
 
 	if(isobserver(mob))
 		var/mob/observer/dead/our_mob = mob

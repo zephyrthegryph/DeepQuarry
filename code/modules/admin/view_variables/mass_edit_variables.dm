@@ -16,7 +16,6 @@
 
 	massmodify_variables(target, var_name, strict_type)
 	feedback_add_details("admin_verb","MVV") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-	//BLACKBOX_LOG_ADMIN_VERB("Mass Edit Variables")
 
 /client/proc/massmodify_variables(datum/target, var_name = "", strict_type = FALSE)
 	if(!check_rights(R_VAREDIT))

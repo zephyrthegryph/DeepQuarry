@@ -24,7 +24,6 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 /datum/world_service/statpanels/service_step(resumed)
 	if (!resumed)
 		num_fires++
-		//var/datum/map_config/cached = SSmapping.next_map_config
 		global_data = list(
 			//"Map: [SSmapping.config?.map_name || "Loading..."]",
 			"Map: [using_map.name]",
@@ -68,7 +67,6 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		if(!target.holder)
 			target.stat_panel.send_message("remove_admin_tabs")
 		else
-			//target.stat_panel.send_message("update_split_admin_tabs", !!(target.prefs.toggles & SPLIT_ADMIN_TABS))
 			target.stat_panel.send_message("update_split_admin_tabs", FALSE)
 
 			if(check_rights_for(target, R_MENTOR))
@@ -76,8 +74,6 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			if(check_rights_for(target, R_HOLDER) && (!("MC" in target.panel_tabs) || !("Tickets" in target.panel_tabs)))
 				target.stat_panel.send_message("add_admin_tabs", target.holder.href_token)
 
-			//if(target.stat_tab == "MC" && ((num_fires % mc_wait == 0) || target?.prefs.read_preference(/datum/preference/toggle/fast_mc_refresh)))
-				//set_MC_tab(target)
 			if(target.stat_tab == "MC" && ((num_fires % mc_wait == 0)))
 				set_MC_tab(target)
 
@@ -266,13 +262,8 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 /// Set up the various action tabs.
 /datum/world_service/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
 	return
-	//var/list/actions = target_mob.get_actions_for_statpanel()
-	//target.spell_tabs.Cut()
 
-	//for(var/action_data in actions)
-	//	target.spell_tabs |= action_data[1]
 
-	//target.stat_panel.send_message("update_spells", list(spell_tabs = target.spell_tabs, actions = actions))
 
 /datum/world_service/statpanels/proc/generate_mc_data()
 	mc_data = list(
@@ -331,8 +322,6 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	if(target.stat_tab in target.spell_tabs)
 		update_actions = TRUE
 
-	//if(!length(target.spell_tabs) && locate(/datum/action/cooldown) in target_mob.actions)
-		//update_actions = TRUE
 
 	if(update_actions)
 		set_action_tabs(target, target_mob)

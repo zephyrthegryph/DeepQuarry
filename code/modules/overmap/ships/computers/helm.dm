@@ -1,4 +1,3 @@
-// LEGACY_RECORD_STRUCTURE(all_waypoints, waypoint)
 /datum/computer_file/data/waypoint
 	var/list/fields
 	filetype = "WPT"

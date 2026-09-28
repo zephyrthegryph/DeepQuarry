@@ -295,14 +295,12 @@
 	desc = "A specialized pair of combat boots with a built-in propulsion system for rapid foward movement."
 	icon_state = "jetboots"
 	item_state = "jetboots"
-	// resistance_flags = FIRE_PROOF
 	actions_types = list(/datum/action/item_action/activate_jump_boots)
 	permeability_coefficient = 0.05
 	var/jumpdistance = 5 //-1 from to see the actual distance, e.g 4 goes over 3 tiles
 	var/jumpspeed = 3
 	var/recharging_rate = 60 //default 6 seconds between each dash
 	var/recharging_time = 0 //time until next dash
-	// var/jumping = FALSE //are we mid-jump? We have no throw_at callback, so we have to check user.throwing.
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/shoes/bhop/ui_action_click(mob/unused_user, actiontype)

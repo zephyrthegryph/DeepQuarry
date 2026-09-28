@@ -6,8 +6,6 @@
 	being_shocked = TRUE
 	var/power_bounced = power / 2
 	tesla_zap(src, zap_range = 3, power = power_bounced, explosive = explosive, current_jumps = current_jumps)
-	//addtimer(CALLBACK(src, PROC_REF(reset_shocked)), 10)
-	//schedule_task_with_source_in(10, src, PROC_REF(reset_shocked))
 	om_after(src, 1 SECOND, TYPE_PROC_REF(/obj, reset_shocked))
 
 /obj/proc/reset_shocked()
@@ -89,7 +87,6 @@
 	if(anchored && !panel_open)
 		being_shocked = TRUE
 		coil_act(power, explosive, current_jumps)
-		//addtimer(CALLBACK(src, PROC_REF(reset_shocked)), 10)
 		om_after(src, zap_cooldown, TYPE_PROC_REF(/obj, reset_shocked))
 	else if(anchored && panel_open) //Doing maintenance. Just act like a grounding rod.
 		being_shocked = TRUE

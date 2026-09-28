@@ -89,7 +89,6 @@
 	if(!use_floor)
 		use_floor = current_floor()
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
-		//door.command("open")
 		door.open()
 	return
 
@@ -97,7 +96,6 @@
 	if(!use_floor)
 		use_floor = current_floor()
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
-		//door.command("close")
 		door.close()
 	return
 

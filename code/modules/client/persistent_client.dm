@@ -33,7 +33,6 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 	var/list/joined_as_slots
 
 	/// Tracks achievements they have earned
-	//var/datum/achievement_data/achievements
 
 	/// World.time this player last died
 	var/time_of_death = 0
@@ -41,7 +40,6 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /datum/persistent_client/New(ckey)
-	//achievements = new(ckey)
 	GLOB.persistent_clients_by_ckey[ckey] = src
 	join_registries()
 

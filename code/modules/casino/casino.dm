@@ -978,7 +978,6 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 		to_chat(user,span_notice("You set the price to [casinosentientprize_price]"))
 
 /obj/structure/casino_table/roulette_table/proc/roulette_stops(result, color)
-	// visible_message(span_notice("The roulette stops spinning, the ball landing on [result], [color]."))
 	icon_state = initial(icon_state)
 
 	if(color=="gold") // Happy celebrations!

@@ -213,7 +213,6 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 				to_chat(world, span_boldannounce("An admin played: [page]"), confidential = TRUE)
 	if(credit)
 		to_chat(world, span_boldannounce("[credit]"), confidential = TRUE)
-	//SSblackbox.record_feedback("nested tally", "played_url", 1, list("[user.ckey]", "[input]"))
 	log_admin("[key_name(user)] played web sound: [input]")
 	message_admins("[key_name(user)] played web sound: [input]")
 	if(url)

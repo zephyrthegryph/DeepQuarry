@@ -146,7 +146,6 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	for(var/mob/living/player in viewers(3, user))
 		if(!player.stat)
 			players += player
-	//players -= user
 
 	var/mob/living/M = rerun_ask(user, "k148", PROC_REF(deck_verb_deal), args, /datum/om/prompt/choice, message = "Who do you wish to deal a card?", title = "Deal to whom?", choices = players)
 	if(isnull(M))
@@ -167,7 +166,6 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	for(var/mob/living/player in viewers(3, user))
 		if(!player.stat)
 			players += player
-	//players -= user
 	var/maxcards = max(min(cards.len,10),1)
 	var/dcard = rerun_ask(user, "k172", PROC_REF(deck_verb_deal_multi), args, /datum/om/prompt/number, message = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", max = maxcards)
 	if(isnull(dcard))
@@ -537,7 +535,6 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	var/i = 0
 	for(var/datum/playingcard/P in cards)
 		var/image/I = new(src.icon, (concealed ? "[P.back_icon]" : "[P.card_icon]") )
-		//I.pixel_x = origin+(offset*i)
 		switch(direction)
 			if(SOUTH)
 				I.pixel_x = 8-(offset*i)

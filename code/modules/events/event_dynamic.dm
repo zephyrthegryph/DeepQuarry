@@ -75,7 +75,6 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 	for(var/V in possibleEvents)
 		debug_message += "[V]:[possibleEvents[V]]"
 	debug_message += "|||Picked:[picked_event]"
-	// to_chat(world, debug_message)
 
 	if(!picked_event)
 		return

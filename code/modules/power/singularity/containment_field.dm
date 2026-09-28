@@ -70,7 +70,6 @@
 			return
 		else
 			qdel(A)
-			//Destroy()
 
 /obj/machinery/containment_field/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))

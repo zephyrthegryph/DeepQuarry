@@ -525,7 +525,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
 		//charge_meter = E.charge_meter //does not work very well with icon_state changes, ATM
 	else
 		copy_projectile = null
-		//charge_meter = 0
 
 EXTEND_INTERACTIONS(/obj/item/gun/energy/chameleon, \
 	INTERACT_VERB("Change Gun Appearance", PROC_REF(energy_chameleon_change_verb), REQ_IN_INVENTORY), \

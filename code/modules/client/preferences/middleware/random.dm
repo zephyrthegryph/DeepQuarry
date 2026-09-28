@@ -29,7 +29,6 @@
 		if (preferences().should_randomize(preference))
 			preferences().write_preference(preference, preference.create_random_value(preferences()))
 
-	// preferences.character_preview_view.update_body()
 
 	return TRUE
 
@@ -62,8 +61,6 @@
 
 	var/requested_randomization = LAZYACCESS(randomise, preference.savefile_key)
 
-	//if (istype(preference, /datum/preference/name))
-	//	requested_randomization = read_preference(/datum/preference/choiced/random_name)
 
 	switch (requested_randomization)
 		if (RANDOM_ENABLED)
@@ -77,8 +74,4 @@
 /datum/preference/proc/included_in_randomization_flags(randomize_flags)
 	return TRUE
 
-// /datum/preference/name/included_in_randomization_flags(randomize_flags)
-// 	return !!(randomize_flags & RANDOMIZE_NAME)
 
-// /datum/preference/choiced/species/included_in_randomization_flags(randomize_flags)
-// 	return !!(randomize_flags & RANDOMIZE_SPECIES)

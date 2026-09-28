@@ -645,7 +645,6 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 /datum/weather/sif/toxinrain //wanted phoron but explosions come with phoron
 	name = "toxic rain"
 	icon_state = "toxic_rain"
-	//light_modifier = 0.7
 
 	temp_high = 283.15
 	temp_low = 303.15

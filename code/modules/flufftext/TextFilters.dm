@@ -15,7 +15,6 @@
 			if(lowertext(newletter)=="c")	newletter="k"
 		switch(rand(1,9))
 			if(1,3,5,8)	newletter="[lowertext(newletter)]"
-			//if(2,4,6,15)	newletter="[uppertext(newletter)]"
 			if(2,4,6,9)	newletter="[uppertext(newletter)]"
 			if(7)	newletter+="'"
 		newphrase+="[newletter]";counter-=1

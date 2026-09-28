@@ -195,7 +195,6 @@
 	projectile_type = /obj/item/projectile/beam/burstlaser
 	modifystate = "mg42-e"
 
-//	requires_two_hands = 1
 	one_handed_penalty = 2
 
 	firemodes = list(

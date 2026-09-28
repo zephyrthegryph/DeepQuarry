@@ -336,7 +336,6 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/emp, list(MAT_STEEL = 360, MAT_URANIUM =
 	desc = "An advanced shotgun round that creates a small EMP when it strikes a target."
 	icon_state = "empshell"
 	projectile_type = /obj/item/projectile/ion
-//	projectile_type = /obj/item/projectile/bullet/shotgun/ion
 
 MATERIAL_MIX(/obj/item/ammo_casing/a12g/flechette, list(MAT_STEEL = 360, MAT_PLASTEEL = 100))
 /obj/item/ammo_casing/a12g/flechette

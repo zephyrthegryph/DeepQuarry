@@ -103,7 +103,6 @@ EXTEND_INTERACTIONS(/obj/structure/table, \
 /obj/structure/table/proc/unflip()
 	reset_plane_and_layer()
 	flipped = 0
-	//climbable = initial(climbable)
 	flags &= ~ON_BORDER
 	for(var/D in list(turn(dir, 90), turn(dir, -90)))
 		var/obj/structure/table/T = locate_within(get_step(src.loc,D), /obj/structure/table)

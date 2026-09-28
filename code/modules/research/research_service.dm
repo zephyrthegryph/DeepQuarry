@@ -128,7 +128,6 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	//Around 450000 points max???
 
 	/// The global list of raw anomaly types that have been refined, for hard limits.
-	// var/list/created_anomaly_types = list()
 	/// The hard limits of cores created for each anomaly type. For faster code lookup without switch statements.
 
 	/// Lookup list for ordnance briefers.
@@ -140,7 +139,6 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	initialized = TRUE
 	initialize_all_techweb_designs()
 	initialize_all_techweb_nodes()
-	// populate_ordnance_experiments()
 	new /datum/techweb/science
 	new /datum/techweb/admin
 	// new /datum/techweb/oldstation

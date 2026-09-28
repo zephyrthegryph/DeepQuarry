@@ -452,8 +452,6 @@ REF_OWNED(/obj/item/integrated_circuit/output/holographic_projector, "hologram")
 /obj/item/integrated_circuit/output/holographic_projector/proc/destroy_hologram()
 	QDEL_NULL(hologram)
 
-//	holo_beam.End()
-//	QDEL_NULL(holo_beam)
 
 	power_draw_idle = 0
 

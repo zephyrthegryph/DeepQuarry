@@ -15,7 +15,6 @@
 	w_class = ITEMSIZE_LARGE
 	caliber = "7.62mm"
 	slot_flags = SLOT_BACK
-	//fire_sound = 'sound/weapons/rifleshot.ogg'
 	load_method = MAGAZINE // ToDo: Make it so MAGAZINE, SPEEDLOADER and SINGLE_CASING can all be used on the same gun.
 	magazine_type = /obj/item/ammo_magazine/m762enbloc
 	allowed_magazines = list(/obj/item/ammo_magazine/m762enbloc)

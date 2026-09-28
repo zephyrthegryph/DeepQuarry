@@ -33,7 +33,6 @@
 			var/obj/item/sample/print/P = new /obj/item/sample/print(user.loc)
 			P.attack(target, user)
 			to_chat(user, span_notice("Done printing."))
-	//		to_chat(user, span_notice("[M]'s Fingerprints: [md5(M.dna.uni_identity)]"))
 
 	if(reveal_blood && target.forensic_data?.has_blooddna())
 		to_chat(user, span_notice("Blood found on [target]. Analysing..."))

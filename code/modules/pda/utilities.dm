@@ -32,13 +32,6 @@
 	icon = "external-link"
 	var/remote_door_id = ""
 
-// /datum/data/pda/utility/toggle_door/start()
-// 	for(var/obj/machinery/door/poddoor/M in airlocks)
-// 		if(M.id_tag == remote_door_id)
-// 			if(M.density)
-// 				M.open()
-// 			else
-// 				M.close()
 
 /datum/data/pda/utility/scanmode/medical
 	base_name = "Med Scanner"

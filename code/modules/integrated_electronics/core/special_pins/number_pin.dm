@@ -1,7 +1,6 @@
 // These pins can only contain numbers (int and floating point) or null.
 /datum/integrated_io/number
 	name = "number pin"
-//	data = 0
 
 /datum/integrated_io/number/ask_for_pin_data(mob/user)
 	var/new_data = rerun_ask(user, "k7", PROC_REF(ask_for_pin_data), args, /datum/om/prompt/number, message = "Please type in a number.", title = "[src] number writing")

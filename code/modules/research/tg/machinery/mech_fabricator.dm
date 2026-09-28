@@ -542,7 +542,6 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 	AfterMaterialInsert(event.item, event.primary_mat, event.material_amount)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)
-	// var/datum/material/M = id_inserted // Not used atm.
 	add_overlay("fab-load-metal")
 	om_after(src, 1 SECONDS, TYPE_PROC_REF(/atom, cut_overlay), "fab-load-metal")
 

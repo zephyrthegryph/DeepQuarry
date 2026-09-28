@@ -38,7 +38,6 @@
 	// 		istype(input_device,/obj/machinery/r_n_d/server) ||
 	// 		istype(input_device,/obj/machinery/mecha_part_fabricator))
 
-	// 		incoming_files = input_device:files
 
 	return 0
 

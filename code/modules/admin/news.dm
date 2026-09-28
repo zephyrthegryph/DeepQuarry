@@ -1,7 +1,6 @@
 // #define NEWSFILE "data/news.sav" //where the memos are saved // moved to __defines/admin_ch
 
 /client/
-	//var/last_news_hash = null // Stores a hash of the last news window it saw, which gets compared to the current one to see if it is different.
 
 // Returns true if news was updated since last seen.
 /client/proc/check_for_new_server_news()

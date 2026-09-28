@@ -2,7 +2,6 @@
 /obj/item/instrument
 	name = "generic instrument"
 	force = 10
-	//resistance_flags = FLAMMABLE
 	icon = 'icons/obj/musician.dmi'
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_instruments.dmi',

@@ -156,8 +156,6 @@
 				for (var/mob/V in viewers(src))
 					V.show_message(span_red("[M] writhes in pain as [M.p_their()] vacuoles boil."), 3, span_red("You hear the crunching of leaves."), 2)
 			if(prob(35))
-			//	for (var/mob/V in viewers(src)) //Public messages commented out to prevent possible metaish genetics experimentation and stuff. - Cheridan
-			//		V.show_message(span_red("[M] is mutated by the radiation beam."), 3, span_red(" You hear the snapping of twigs."), 2)
 				if(prob(80))
 					randmutb(M)
 					domutcheck(M,null)
@@ -168,11 +166,7 @@
 			else
 				M.injure(INJURY_BURN, rand(5,15), source = src)
 				M.show_message(span_red("The radiation beam singes you!"))
-			//	for (var/mob/V in viewers(src))
-			//		V.show_message(span_red("[M] is singed by the radiation beam."), 3, span_red(" You hear the crackle of burning leaves."), 2)
 	else if(istype(target, /mob/living/carbon/))
-	//	for (var/mob/V in viewers(src))
-	//		V.show_message("The radiation beam dissipates harmlessly through [M]", 3)
 		M.show_message(span_blue("The radiation beam dissipates harmlessly through your body."))
 	else
 		return 1

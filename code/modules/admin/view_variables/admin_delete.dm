@@ -17,11 +17,9 @@
 	if (flow_ask(mob, "delete", /datum/om/prompt/choice/alert, message = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No")) == "Yes")
 		log_admin("[key_name(usr)] deleted [D] [coords]")
 		message_admins("[key_name_admin(usr)] deleted [D] [jmp_coords]")
-		//BLACKBOX_LOG_ADMIN_VERB("Delete")
 		feedback_add_details("admin_verb","ADEL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 		if(isturf(D))
 			var/turf/T = D
-			//T.ScrapeAway()
 			T.ChangeTurf(world.turf)
 		else
 			vv_update_display(D, "deleted", VV_MSG_DELETED)

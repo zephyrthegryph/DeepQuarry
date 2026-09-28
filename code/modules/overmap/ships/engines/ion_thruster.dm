@@ -38,7 +38,6 @@
 	power_channel = ENVIRON
 	idle_power_usage = 100
 	anchored = TRUE
-	// construct_state = /datum/decl/machine_construction/default/panel_closed
 	var/datum/ship_engine/ion/controller
 	var/thrust_limit = 1
 	var/on = 1

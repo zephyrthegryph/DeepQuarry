@@ -71,8 +71,6 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	return block(locate(poi_to_load.x, poi_to_load.y, poi_to_load.z), locate((poi_to_load.x + poi_to_load.size_x - 1), (poi_to_load.y + poi_to_load.size_y - 1), poi_to_load.z))
 
 /datum/world_service/pois/proc/annihilate_bounds(obj/effect/landmark/poi_loader/poi_to_load)
-	//var/deleted_atoms = 0
-	//admin_notice(span_danger("Annihilating objects in poi loading location."), R_DEBUG)
 	var/list/turfs_to_clean = get_turfs_to_clean(poi_to_load)
 	if(length(turfs_to_clean))
 		for(var/x in 1 to 2) // Requires two passes to get everything.
@@ -80,7 +78,6 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 				for(var/atom/movable/AM in contents_of(T))
 					//++deleted_atoms
 					qdel(AM)
-	//admin_notice(span_danger("Annihilated [deleted_atoms] objects."), R_DEBUG)
 
 /datum/world_service/pois/proc/load_poi(obj/effect/landmark/poi_loader/poi_to_load)
 	if(!poi_to_load)
@@ -114,7 +111,6 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	if(!template_to_use)
 		return
 
-	//admin_notice(span_danger("Chosen Predefined PoI Map: [chosen_type.name]"), R_DEBUG)
 
 	if(poi_to_load.remove_from_pool)
 		GLOB.global_used_pois[poi_to_load.poi_type] -= template_to_use

@@ -415,7 +415,6 @@
 			else
 				iend = findtext(info, "</span>", istart)
 
-			//textindex = istart+26
 			textindex = iend
 			break
 
@@ -452,7 +451,6 @@
 	return (user && user.real_name) ? user.real_name : "Anonymous"
 
 /obj/item/paper/proc/parsepencode(t, obj/item/pen/P, mob/user as mob, iscrayon = 0)
-//	t = copytext(sanitize(t),1,MAX_MESSAGE_LEN)
 
 	t = replacetext(t, "\[center\]", "<center>")
 	t = replacetext(t, "\[/center\]", "</center>")

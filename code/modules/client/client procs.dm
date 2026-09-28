@@ -243,9 +243,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
 	GLOB.directory[ckey] = src
 
-	//var/reconnecting = FALSE we are not using this var yet
 	if(GLOB.persistent_clients_by_ckey[ckey])
-		//reconnecting = TRUE
 		persistent_client = GLOB.persistent_clients_by_ckey[ckey]
 	else
 		persistent_client = new(ckey)

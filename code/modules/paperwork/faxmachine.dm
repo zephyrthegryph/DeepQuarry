@@ -393,7 +393,6 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 			"detail" = "Accepted fax transmission to [destination]",
 		), "fax-accepted:[REF(copyitem)]:[destination]", copyitem, sender)
 		visible_message("[src] beeps, \"Message transmitted successfully.\"")
-		//sendcooldown = 600
 	else
 		visible_message("[src] beeps, \"Error transmitting message.\"")
 	return success

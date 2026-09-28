@@ -17,7 +17,6 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 	var/list/cached_assemblies = list()								// Associative list of [assembly_path]:[assembly] pairs // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	var/list/all_circuits = list()									// Associative list of [circuit_name]:[circuit_path] pairs // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	var/list/circuit_fabricator_recipe_list = list()				// Associative list of [category_name]:[list_of_circuit_paths] pairs // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-//	var/cost_multiplier = MINERAL_MATERIAL_AMOUNT / 10 // Each circuit cost unit is 200cm3
 
 /datum/world_service/circuit/initialize()
 	initialized = TRUE

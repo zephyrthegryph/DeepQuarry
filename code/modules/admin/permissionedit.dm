@@ -197,8 +197,6 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /datum/admins/proc/auto_deadmin()
 	if(owner().is_localhost())
 		return FALSE
-	//if(owner.prefs.read_preference(/datum/preference/toggle/bypass_deadmin_in_centcom) && is_centcom_level(owner.mob.z) && !istype(owner.mob, /mob/observer/dead))
-	//	return FALSE
 
 	to_chat(owner(), span_interface("You are now a normal player."), confidential = TRUE)
 	var/old_owner = owner()

@@ -48,7 +48,6 @@
 	icon_state = "mapping_unit_ds"
 	marker_prefix = "ds"
 	mapper_filter = HOLOMAP_FILTER_DEATHSQUAD
-	//map_color = "#0B74B4"
 	hud_frame_hint = "_ds"
 
 /obj/item/mapping_unit/operative
@@ -56,7 +55,6 @@
 	icon_state = "mapping_unit_op"
 	marker_prefix = "op"
 	mapper_filter = HOLOMAP_FILTER_NUKEOPS
-	//map_color = "#13B40B"
 	hud_frame_hint = "_op"
 
 /obj/item/mapping_unit/ert
@@ -64,7 +62,6 @@
 	icon_state = "mapping_unit_ert"
 	marker_prefix = "ert"
 	mapper_filter = HOLOMAP_FILTER_ERT
-	//map_color = "#5FFF28"
 	hud_frame_hint = "_ert"
 
 	prefix_update_head = list(

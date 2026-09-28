@@ -297,7 +297,6 @@
 /obj/machinery/slot_machine/proc/show_result(mob/user, symbol1, symbol2, symbol3)
 	var/output //Output variable to send out in chat after the large if statement.
 	var/winnings = 0 //How much money will be given if any.
-	// var/platinumwin = 0 // If you win the platinum chip or not - Ringa ding ding babe! No chips until further notice!
 	var/celebrate = 0
 	var/delaytime = 5 SECONDS
 

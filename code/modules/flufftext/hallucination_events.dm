@@ -184,13 +184,10 @@
 	var/image/client_only/CI
 	switch(rand(1,3))
 		if(1)
-			//to_chat(our_human, "Space")
 			CI = new('icons/turf/space.dmi',target,"[rand(1,25)]",TURF_LAYER)
 		if(2)
-			//to_chat(our_human, "Fire")
 			CI = new('icons/effects/fire.dmi',target,"1",TURF_LAYER)
 		if(3)
-			//to_chat(our_human, "C4")
 			CI = new('icons/obj/assemblies.dmi',target,"plastic-explosive2",OBJ_LAYER+0.01)
 	halimage = CI
 	CI.append_client(our_human.client)
@@ -219,8 +216,6 @@
 			CI = new('icons/mob/human.dmi',target,"husk_s",TURF_LAYER)
 		if(4)
 			CI = new('icons/mob/alien.dmi',target,"alienother",TURF_LAYER)
-//		if(5)
-//			CI = new('xcomalien.dmi',target,"chryssalid",TURF_LAYER)
 	halbody = CI
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.

@@ -12,7 +12,6 @@
 	emote_volume_synthetic = 50
 
 	conscious = FALSE
-	// emote_sound_synthetic = list()
 
 /datum/decl/emote/audible/cough/get_emote_sound(atom/user)
 	if(ishuman(user) && !check_synthetic(user))

@@ -139,7 +139,6 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		if(loaded_item)
 			to_chat(user, span_warning("[I] doesn't seem to fit into [src]."))
 			return INTERACTION_HANDLED_PASS
-		//var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		I.forceMove(src)
 		loaded_item = I
@@ -159,7 +158,6 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 /obj/item/xenobio/afterattack(atom/A, mob/user as mob)
 	if(!loaded_item)
 		to_chat(user,span_warning("\The [src] shot fizzles, it appears you need to load something!"))
-		//playsound(src, 'sound/weapons/wave.ogg', 60, 1)
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 		return
 	if(!COOLDOWN_FINISHED(src, firable))
@@ -181,7 +179,6 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	desc = "Based on the technology of the 'Bluespace Harpoon' this device can teleport a loaded cube to a given target and rehydrate it."
 	loadable_item = /obj/item/reagent_containers/food/snacks/monkeycube
 	loadable_name = "Monkey Cube"
-	//projectile_type = /obj/item/projectile/beam/xenobio/monkey
 
 /obj/item/xenobio/monkey_gun/afterattack(atom/A, mob/user as mob)
 	..()
@@ -209,7 +206,6 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 /obj/item/slime_grinder
 	name = "portable slime processor"
 	desc = "An industrial grinder used to automate the process of slime core extraction.  It can also recycle biomatter. This one appears miniturized"
-	//icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "chainsaw0"
 	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed

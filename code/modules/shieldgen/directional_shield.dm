@@ -45,7 +45,6 @@
 		color = "#0099FF"
 	else
 		animate(src, color = new_color, 5)
-//	color = new_color
 
 REF_BACKLIST(/obj/effect/directional_shield, list("projector" = "active_shields"))
 

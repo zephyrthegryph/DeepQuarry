@@ -94,7 +94,6 @@
 
 		//save the updated version
 		var/old_default_slot = default_slot
-		// var/old_max_save_slots = max_save_slots
 
 		for(var/slot in savefile.get_entry()) //but first, update all current character slots.
 			if (copytext(slot, 1, 10) != "character")
@@ -107,7 +106,6 @@
 			if(load_character())
 				save_character()
 		default_slot = old_default_slot
-		// max_save_slots = old_max_save_slots
 		save_preferences()
 	// Bay player_setup.load_preferences chain deleted; see comment above.
 

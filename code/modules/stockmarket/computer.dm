@@ -89,8 +89,6 @@
 		if("stocks_history")
 			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
 			if (S)
-				//current_stock = S
-				//screen = "graph"
 				S.displayValues(ui.user)
 
 		if("stocks_backbutton")

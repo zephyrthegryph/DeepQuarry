@@ -9,7 +9,6 @@
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 10 * ONE_ATMOSPHERE
 
-//	flags_inv = HIDEEARS|BLOCKHAIR
 
 	//Species-specific stuff.
 	sprite_sheets = VR_SPECIES_SPRITE_SHEETS_HEAD_MOB

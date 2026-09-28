@@ -507,7 +507,6 @@
 			to_chat(M, span_filter_system(span_critical("You have been kicked from the server: [reason]")))
 			log_admin("[key_name(usr)] booted [key_name(M)] for reason: '[reason]'.")
 			message_admins(span_blue("[key_name_admin(usr)] booted [key_name_admin(M)] for reason '[reason]'."), 1)
-			//M.client = null
 			admin_action_message(usr.key, M.key, "kicked", reason, 0)
 			qdel(M.client)
 
@@ -582,7 +581,6 @@
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)
-				//qdel(M)	// See no reason why to delete mob. Important stuff can be lost. And ban can be lifted before round ends.
 			if("No")
 				if(!check_rights(R_BAN))   return
 				var/reason = topic_ask(usr, href_list, "a19", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
@@ -615,7 +613,6 @@
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)
-				//qdel(M)
 			if("Cancel")
 				return
 
@@ -1366,13 +1363,7 @@
 	else if(href_list["spawn_panel"])
 		SSadmin_verbs.dynamic_invoke_verb(usr, /datum/admin_verb/spawn_panel)
 
-	//else if(href_list["admin_secrets_panel"])
-		//var/datum/admin_secret_category/AC = locate(href_list["admin_secrets_panel"]) in admin_secrets.categories
-		//src.Secrets(AC)
 
-	//else if(href_list["admin_secrets"])
-		//var/datum/admin_secret_item/item = locate(href_list["admin_secrets"]) in admin_secrets.items
-		//item.execute(usr)
 
 	else if(href_list["ac_view_wanted"])            //Admin newscaster Topic() stuff be here
 		src.admincaster_screen = 18                 //The ac_ prefix before the hrefs stands for AdminCaster.

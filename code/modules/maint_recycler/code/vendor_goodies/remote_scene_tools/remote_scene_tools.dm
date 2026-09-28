@@ -72,7 +72,6 @@ why aren't these accessories?
 	linked()?.linked_updated()
 
 /obj/item/remote_scene_tool/see_emote(mob/M as mob, text, emote_type)
-	//to_world_log("emote: [text] from [M] to [linked]")
 	if(M == getWearer())
 		//we're the one doing the emote
 		transmit_emote(src, text,emote_type)

@@ -273,7 +273,6 @@ EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(i
 /obj/item/pen/reagent/sleepy/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 22)
-	// reagents.add_reagent(REAGENT_ID_STOXIN, 14)
 
 
 /*

@@ -33,11 +33,9 @@
 	if(active)
 		active = FALSE
 		update_icon()
-		// soundloop.stop()
 	else if(HasFuel())
 		active = TRUE
 		update_icon()
-		// soundloop.start()
 	MACHINE_WAKE(src)
 
 /obj/machinery/power/port_gen/machine_step()

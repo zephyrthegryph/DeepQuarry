@@ -581,7 +581,6 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 //Forwarded action from admin/Topic
 /datum/ticket/proc/Action(action)
-	//testing("Ticket action: [action]")
 
 	// Actions everyone can do
 	switch(level)

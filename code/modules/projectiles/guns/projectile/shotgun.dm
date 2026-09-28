@@ -124,7 +124,6 @@
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 
-// var/unique_reskin 
 	var/sawn_off = FALSE
 
 	burst_delay = 0

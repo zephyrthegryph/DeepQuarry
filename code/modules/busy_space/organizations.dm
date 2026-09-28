@@ -876,7 +876,6 @@
 			"Corona",
 			"Binary"
 			)
-	//destination_names = list()
 
 /datum/lore/organization/tsc/bishop
 	name = "Bishop Cybernetics"
@@ -1125,7 +1124,6 @@
 			"Galaxius Mons",
 			"Hellas Planitia"
 			)
-	//destination_names = list()
 
 /datum/lore/organization/tsc/ftu
 	name = "Free Trade Union"

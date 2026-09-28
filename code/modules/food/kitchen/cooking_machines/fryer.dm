@@ -189,7 +189,6 @@ REF_OWNED(/obj/machinery/appliance/cooker/fryer, list("fry_loop", "oil"))
 	if(!istype(victim))
 		return
 
-	// user.visible_message(span_danger("\The [user] starts pushing \the [victim] into \the [src]!"))
 
 	//Removed delay on this action in favour of a cooldown after it
 	//If you can lure someone close to the fryer and grab them then you deserve success.

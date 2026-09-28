@@ -18,7 +18,6 @@
 
 /datum/codex_tree/proc/generate_pages()
 	home = new root_type(src) // This will also generate the others.
-	//current_page = home
 	indexed_pages = home.index_page() // changed from current_page to home.
 
 // Changes current_page to its parent, assuming one exists.
@@ -92,7 +91,6 @@
 	return html
 
 /datum/codex_tree/proc/display(mob/user)
-//	icon_state = "[initial(icon_state)]-open"
 	if(!home)
 		generate_pages()
 	if(!user)
@@ -107,8 +105,6 @@
 		var/list/H_init = list()
 		H_init.Add(home)
 		history["[user]"] = H_init
-	//if(!current_page)
-		//generate_pages()
 
 	user << browse_rsc('html/browser/codex.css', "codex.css")
 

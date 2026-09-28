@@ -45,7 +45,6 @@
 */
 /datum/n_Interpreter/proc/SetVar(name, value)
 	if(!istext(name))
-		//CRASH("Invalid variable name")
 		return
 	AssignVariable(name, value)
 
@@ -61,7 +60,6 @@
 */
 /datum/n_Interpreter/proc/SetProc(name, path, object=null, list/params=null)
 	if(!istext(name))
-		//CRASH("Invalid function name")
 		return
 	if(!object)
 		globalScope.functions[name] = path
@@ -103,7 +101,6 @@
 */
 /datum/n_Interpreter/proc/GetVar(name)
 	if(!VarExists(name))
-		//CRASH("No variable named '[name]'.")
 		return
 	var/x = globalScope.variables[name]
 	return Eval(x)
@@ -118,7 +115,6 @@
 */
 /datum/n_Interpreter/proc/CallProc(name, params[]=null)
 	if(!ProcExists(name))
-		//CRASH("No function named '[name]'.")
 		return
 	var/datum/node/statement/FunctionDefinition/func = globalScope.functions[name]
 	if(istype(func))
@@ -128,7 +124,6 @@
 		return RunFunction(stmt)
 	else
 		return call(func)(arglist(params))
-	//CRASH("Unknown function type '[name]'.")
 
 /*
 	Event: HandleError

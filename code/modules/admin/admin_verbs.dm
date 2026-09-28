@@ -96,19 +96,15 @@ ADMIN_VERB(invisimin, R_ADMIN|R_MOD|R_EVENT, "Invisimin", "Toggles ghost-like in
 
 ADMIN_VERB(list_bombers, R_ADMIN, "List Bombers", "Look at all bombs and their likely culprit.", ADMIN_CATEGORY_GAME)
 	user.holder.list_bombers()
-	//BLACKBOX_LOG_ADMIN_VERB("List Bombers")
 
 ADMIN_VERB(list_signalers, R_ADMIN, "List Signalers", "View all signalers.", ADMIN_CATEGORY_GAME)
 	user.holder.list_signalers()
-	//BLACKBOX_LOG_ADMIN_VERB("List Signalers")
 
 ADMIN_VERB(list_law_changes, R_ADMIN, "List Law Changes", "View all AI law changes.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	user.holder.list_law_changes()
-	//BLACKBOX_LOG_ADMIN_VERB("List Law Changes")
 
 ADMIN_VERB(show_manifest, R_ADMIN, "Show Manifest", "View the shift's Manifest.", ADMIN_CATEGORY_DEBUG_GAME)
 	user.holder.show_manifest()
-	//BLACKBOX_LOG_ADMIN_VERB("Show Manifest")
 
 ADMIN_VERB(player_panel, R_HOLDER, "Player Panel", "Open the player panel.", ADMIN_CATEGORY_GAME)
 	user.holder.player_panel_old(user)
@@ -328,7 +324,6 @@ ADMIN_VERB(deadmin, R_NONE, "DeAdmin", "Shed your admin powers.", ADMIN_CATEGORY
 	to_chat(user, span_interface("You are now a normal player."))
 	log_admin("[key_name(user)] deadminned themselves.")
 	message_admins("[key_name_admin(user)] deadminned themselves.")
-	//BLACKBOX_LOG_ADMIN_VERB("Deadmin")
 	feedback_add_details("admin_verb","DAS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 	if(isobserver(user.mob))
@@ -483,7 +478,6 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	log_admin("[key_name(user)] removed the spell [chosen_spell] from [key_name(removal_target)].")
 	message_admins("[key_name_admin(user)] removed the spell [chosen_spell] from [key_name_admin(removal_target)].")
 	feedback_add_details("admin_verb","RS") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-	//BLACKBOX_LOG_ADMIN_VERB("Remove Spell")
 
 ADMIN_VERB(debug_statpanel, R_DEBUG, "Debug Stat Panel", "Toggles local debug of the stat panel.", ADMIN_CATEGORY_DEBUG_MISC)
 	user.stat_panel.send_message("create_debug")

@@ -98,7 +98,6 @@
 		energy_to_raise = energy_to_raise * 1.25
 
 		playsound(src, 'sound/effects/lightning_chargeup.ogg', 100, 1, extrarange = 30)
-		//addtimer(CALLBACK(src, PROC_REF(new_mini_ball)), 100)
 		om_after(src, 10 SECONDS, PROC_REF(new_mini_ball))
 
 	else if(energy < energy_to_lower && length(orbiting_balls()))

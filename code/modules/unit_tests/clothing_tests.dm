@@ -143,7 +143,6 @@
 		TEST_NOTICE(src, "[C.type]: Clothing - Maximum heat protection was greater than minimum cold protection.")
 		failed = TRUE
 
-	//var/valid_range = HEAD|UPPER_TORSO|LOWER_TORSO|LEGS|FEET|ARMS|HANDS
 	if(C.cold_protection)
 		if(islist(C.cold_protection))
 			TEST_NOTICE(src, "[C.type]: Clothing - cold_protection was defined as a list, when it is a bitflag.")
@@ -187,7 +186,6 @@
 			var/slot_name 	= data[2]
 			var/set_icon 	= data[3]
 			var/set_state 	= data[4]
-			//var/in_hands 	= data[5]
 			var/item_path 	= data[6]
 			var/species 	= data[7]
 			if(!species)

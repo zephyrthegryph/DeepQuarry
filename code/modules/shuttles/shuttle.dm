@@ -165,7 +165,6 @@
 
 // TODO - Far Future - Would be great if this was driven by process too.
 /datum/shuttle/proc/long_jump(obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
-	//to_world("shuttle/long_jump: current_location=[current_location], destination=[destination], interim=[interim], travel_time=[travel_time]")
 	if(!destination || !interim) // Both landmarks get dereferenced below; a null either way is a config error (e.g. a destination whose map landmark was trimmed).
 		log_shuttle("Shuttle [src] refused long_jump(): destination=[destination || "null"], interim=[interim || "null"].")
 		return
@@ -315,10 +314,7 @@
 /datum/shuttle/proc/perform_shuttle_move(obj/effect/shuttle_landmark/destination, list/turf_translation)
 	if(debug_logging)
 		log_shuttle("perform_shuttle_move() current=[current_location()] destination=[destination]")
-	//to_world("move_shuttle() called for [name] leaving [origin] en route to [destination].")
 
-	//to_world("area_coming_from: [origin]")
-	//to_world("destination: [destination]")
 	ASSERT(current_location() != destination)
 	// If shuttle has no internal gravity, update our gravity with destination gravity
 	if((flags & SHUTTLE_FLAGS_ZERO_G))

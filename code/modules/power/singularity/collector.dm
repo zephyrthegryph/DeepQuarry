@@ -7,7 +7,6 @@
 	anchored = FALSE
 	density = TRUE
 	req_access = list(ACCESS_ENGINE_EQUIP)
-//	use_power = 0
 	var/tmp/P_handle
 	var/last_power = 0
 	var/last_power_new = 0

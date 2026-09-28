@@ -190,7 +190,6 @@
 
 /mob/living/proc/add_ventcrawl(obj/machinery/atmospherics/starting_machine)
 	is_ventcrawling = TRUE
-	//candrop = 0
 	var/datum/pipe_network/network = starting_machine.return_network(starting_machine)
 	if(!network)
 		return
@@ -207,7 +206,6 @@
 
 /mob/living/proc/remove_ventcrawl()
 	is_ventcrawling = FALSE
-	//candrop = 1
 	if(client)
 		for(var/image/current_image in pipes_shown)
 			client.images -= current_image

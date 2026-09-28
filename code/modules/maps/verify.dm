@@ -71,7 +71,6 @@ REGISTRY_MEMBERSHIP(/datum/map_report, REGISTRY_MAP_REPORTS)
 			report.loadable = FALSE
 			LAZYINITLIST(report.bad_keys); LAZYADD(report.bad_keys[key], "[areas] areas instead of 1")
 
-	// return the report
 	if(length(report.bad_paths) || length(report.bad_keys) || !report.loadable)
 		// keep the report around so it can be referenced later
 		report.tag = "mapreport_[++report.tag_number]"

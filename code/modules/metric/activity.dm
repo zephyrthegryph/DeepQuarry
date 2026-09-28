@@ -40,13 +40,11 @@
 	var/list/activity = list()
 	for(var/department in departments)
 		activity[department] = assess_department(department)
-//		to_chat(world, "Assessing department [department].  They have activity of [activity[department]].")
 
 	var/list/most_active_departments = list()	// List of winners.
 	var/highest_activity = null 				// Department who is leading in activity, if one exists.
 	var/highest_number = 0						// Activity score needed to beat to be the most active department.
 	for(var/i = 1, i <= cutoff_number, i++)
-//		to_chat(world, "Doing [i]\th round of counting.")
 		for(var/department in activity)
 			if(department in department_blacklist) // Blacklisted?
 				continue
@@ -57,7 +55,6 @@
 		if(highest_activity) // Someone's a winner.
 			most_active_departments.Add(highest_activity)	// Add to the list of most active.
 			activity.Remove(highest_activity) 				// Remove them from the other list so they don't win more than once.
-//			to_chat(world, "[highest_activity] has won the [i]\th round of activity counting.")
 			highest_activity = null // Now reset for the next round.
 			highest_number = 0
 		//todo: finish
