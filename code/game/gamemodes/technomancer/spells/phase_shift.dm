@@ -32,10 +32,7 @@
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 // whatever phased inside comes back out on the turf.
-/obj/effect/phase_shift/on_destroy(force)
-	for(var/atom/movable/AM in contents) //Eject everything out.
-		AM.forceMove(get_turf(src))
-	..()
+REF_SPILL_LIST(/obj/effect/phase_shift, "contents") // everything inside is put out
 
 /// Wears on whoever hides inside every 2 s; empty, it sleeps.
 /obj/effect/phase_shift/periodic_step()

@@ -322,12 +322,12 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 		M.loc.Entered(M)
 		if(M != src?.slot_item(MECHA_SLOT_PILOT))
 			step_rand(M)
+	// The cargo slot (SLOT_DROP_TRANSFER) already put the cargo on the turf in phase 3;
+	// it only scatters here.
 	for(var/atom/movable/A in src.cargo)
-		A.forceMove(get_turf(src))
-		var/turf/T = get_turf(A)
-		if(T)
-			T.Entered(A)
-		step_rand(A)
+		if(isturf(A.loc))
+			step_rand(A)
+	LAZYCLEARLIST(cargo)
 
 	if(loc)
 		loc.Exited(src)

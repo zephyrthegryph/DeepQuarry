@@ -19,7 +19,7 @@
 		SSpersistence.track_value(src, /datum/persistent/filth/trash)
 
 // persistent trash forgets this item.
-/obj/item/trash/on_destroy(force)
+/obj/item/trash/lifecycle_dematerialize()
 	SSpersistence.forget_value(src, /datum/persistent/filth/trash)
 	..()
 

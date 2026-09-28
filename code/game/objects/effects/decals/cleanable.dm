@@ -35,7 +35,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 		return TRUE
 
 // persistent filth forgets this decal.
-/obj/effect/decal/cleanable/on_destroy(force)
+/obj/effect/decal/cleanable/lifecycle_dematerialize()
 	SSpersistence.forget_value(src, /datum/persistent/filth)
 	..()
 

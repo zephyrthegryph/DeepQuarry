@@ -64,10 +64,11 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
+REF_SPILL_LIST(/obj/machinery/clonepod, "containers")
+
+// The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
+// branch (a failed clone leaves gibs).
 /obj/machinery/clonepod/on_destroy(force)
-	for(var/obj/container in containers)
-		container.forceMove(get_turf(src))
-	LAZYCLEARLIST(containers)
 	locked = FALSE
 	go_out()
 	..()

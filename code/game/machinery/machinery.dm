@@ -184,16 +184,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/on_destroy(force)
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
-	// The installed board is REF_OWNED (phase 4 already deleted it).
-	if(contents) // The same for contents.
-		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/A in contents) // ALLOW(latent): materialized above
-			if(ishuman(A))
-				var/mob/living/carbon/human/H = A
-				H.forceMove(loc)
-				H.reset_perspective()
-			else
-				qdel(A)
+	// The installed board is REF_OWNED (phase 4 deletes it); every other leftover in the
+	// internals slot (SLOT_DROP_HOLDER) is deleted by the core /atom/movable Destroy().
+	// Only a human stuck in the internals slot is put out by hand: it needs its view
+	// reset, which no slot policy does.
+	for(var/mob/living/carbon/human/H in contents)
+		H.forceMove(loc)
+		H.reset_perspective()
 	..()
 
 /// One frame of DM-side work for a machine on the machine pipeline (machine_pipeline.dm,

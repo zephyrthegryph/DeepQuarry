@@ -308,9 +308,9 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 // the cocoon splits open and drops its contents.
 /obj/effect/spider/cocoon/on_destroy(force)
 	src.visible_message(span_warning("\The [src] splits open."))
-	for(var/atom/movable/A in contents)
-		A.forceMove(src.loc)
 	..()
+
+REF_SPILL_LIST(/obj/effect/spider/cocoon, "contents") // whatever was wrapped falls out
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"
