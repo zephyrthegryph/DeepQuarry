@@ -265,9 +265,9 @@
 
 			switch(level)
 				if (0)
-					ui.user.client.cmd_mentor_pm(T.initiator, sanitize(params["msg"]), T)
+					ui.user.client.cmd_mentor_pm(T.initiator(), sanitize(params["msg"]), T)
 				if (1)
-					ui.user.client.cmd_admin_pm(T.initiator, sanitize(params["msg"]), T)
+					ui.user.client.cmd_admin_pm(T.initiator(), sanitize(params["msg"]), T)
 
 			. = TRUE
 
@@ -298,7 +298,7 @@
 	if(closed_at)
 		dat += "<br>Closed at: [gameTimestamp(wtime = closed_at)] (Approx [(world.time - closed_at) / 600] minutes ago)"
 	dat += "<br><br>"
-	if(initiator)
+	if(initiator())
 		dat += span_bold("Actions:") + " [FullMonty(ref_src, check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD)))]<br>"
 	else
 		dat += span_bold("DISCONNECTED") + "[GLOB.TAB][ClosureLinks(ref_src)]<br>"

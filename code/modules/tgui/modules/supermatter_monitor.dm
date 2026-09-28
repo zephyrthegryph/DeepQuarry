@@ -3,7 +3,7 @@
 	name = "Supermatter monitor"
 	tgui_id = "SupermatterMonitor"
 	var/list/supermatters
-	var/obj/machinery/power/supermatter/active = null		// Currently selected supermatter crystal.
+	var/active_handle	// Currently selected supermatter crystal.
 
 /datum/tgui_module/supermatter_monitor/New()
 	..()
@@ -22,8 +22,8 @@
 			continue
 		supermatters.Add(S)
 
-	if(!(active in supermatters))
-		active = null
+	if(!(active() in supermatters))
+		active_handle = null
 
 /datum/tgui_module/supermatter_monitor/proc/get_status()
 	. = SUPERMATTER_INACTIVE
@@ -33,23 +33,23 @@
 /datum/tgui_module/supermatter_monitor/tgui_data(mob/user)
 	var/list/data = ..()
 
-	if(istype(active))
-		var/turf/T = get_turf(active)
+	if(istype(active()))
+		var/turf/T = get_turf(active())
 		if(!T)
-			active = null
+			active_handle = null
 			return
 		var/datum/gas_mixture/air = T.return_air()
 		if(!istype(air))
-			active = null
+			active_handle = null
 			return
 
 		data["active"] = 1
-		data["SM_area"] = get_area(active)
-		data["SM_integrity"] = active.get_integrity()
-		data["SM_power"] = active.power
+		data["SM_area"] = get_area(active())
+		data["SM_integrity"] = active().get_integrity()
+		data["SM_power"] = active().power
 		data["SM_ambienttemp"] = air.return_temperature()
 		data["SM_ambientpressure"] = air.return_pressure()
-		data["SM_EPR"] = active.get_epr()
+		data["SM_EPR"] = active().get_epr()
 		//data["SM_EPR"] = active.get_epr()
 		if(air.total_moles())
 			data["SM_gas_O2"] = round(100*LINDA_GAS_AMT(air, GAS_O2)/air.total_moles(),0.01)
@@ -89,7 +89,7 @@
 
 	switch(action)
 		if("clear")
-			active = null
+			active_handle = null
 			. = TRUE
 		if("refresh")
 			refresh()
@@ -98,8 +98,12 @@
 			var/newuid = text2num(params["set"])
 			for(var/obj/machinery/power/supermatter/S in supermatters)
 				if(S.uid == newuid)
-					active = S
+					active_handle = om_handle(S)
 			. = TRUE
 
 /datum/tgui_module/supermatter_monitor/ntos
 	ntos = TRUE
+
+/// LC-refs: Currently selected supermatter crystal. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_module/supermatter_monitor/proc/active() as /obj/machinery/power/supermatter
+	return om_resolve(active_handle)

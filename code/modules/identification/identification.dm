@@ -4,7 +4,7 @@
 // Despite this, unlike a roguelike, objects that do the same thing DO NOT have the same name/appearance/etc.
 
 /datum/identification
-	var/obj/holder = null				// The thing the datum is 'attached' to.
+	var/holder_handle	// The thing the datum is 'attached' to.
 	// Holds the true information.
 	var/true_name = null				// The real name of the object. It is copied automatically from holder, on the datum being instantiated.
 	var/true_desc = null				// Ditto, for desc.
@@ -26,17 +26,17 @@
 
 /datum/identification/New(obj/new_holder)
 	ASSERT(new_holder)
-	holder = new_holder
+	holder_handle = om_handle(new_holder)
 	record_true_identity() // Get all the identifying features from the holder.
 	update_name() // Then hide them for awhile if needed.
 
 // Records the object's inital identifiying features to the datum for future safekeeping.
 /datum/identification/proc/record_true_identity()
-	true_name = holder.name
-	true_desc = holder.desc
-	true_description_info = holder.description_info
-	true_description_fluff = holder.description_fluff
-	true_description_antag = holder.description_antag
+	true_name = holder().name
+	true_desc = holder().desc
+	true_description_info = holder().description_info
+	true_description_fluff = holder().description_fluff
+	true_description_antag = holder().description_antag
 
 // Formally identifies the holder.
 /datum/identification/proc/identify(new_identity = IDENTITY_FULL, mob/user)
@@ -46,46 +46,46 @@
 	if(user)
 		switch(identified)
 			if(IDENTITY_QUALITY)
-				to_chat(user, span_notice("You've identified \the [holder]'s quality."))
+				to_chat(user, span_notice("You've identified \the [holder()]'s quality."))
 			if(IDENTITY_PROPERTIES)
-				to_chat(user, span_notice("You've identified \the [holder]'s functionality as a [true_name]."))
+				to_chat(user, span_notice("You've identified \the [holder()]'s functionality as a [true_name]."))
 			if(IDENTITY_FULL)
-				to_chat(user, span_notice("You've identified \the [holder] as a [true_name], and its quality."))
+				to_chat(user, span_notice("You've identified \the [holder()] as a [true_name], and its quality."))
 		update_name()
-		holder.update_icon()
+		holder().update_icon()
 
 // Reverses identification for whatever reason.
 /datum/identification/proc/unidentify(new_identity = IDENTITY_UNKNOWN, mob/user)
 	identified &= ~new_identity // Unset the bitflag.
 	update_name()
-	holder.update_icon()
+	holder().update_icon()
 	if(user)
 		switch(identified) // Give a message based on what's left.
 			if(IDENTITY_QUALITY)
-				to_chat(user, span_warning("You forgot what \the [holder] actually did..."))
+				to_chat(user, span_warning("You forgot what \the [holder()] actually did..."))
 			if(IDENTITY_PROPERTIES)
-				to_chat(user, span_warning("You forgot \the [holder]'s quality..."))
+				to_chat(user, span_warning("You forgot \the [holder()]'s quality..."))
 			if(IDENTITY_UNKNOWN)
-				to_chat(user, span_warning("You forgot everything about \the [holder]."))
+				to_chat(user, span_warning("You forgot everything about \the [holder()]."))
 
 // Sets the holder's name to the real name if its properties are identified, or obscures it otherwise.
 /datum/identification/proc/update_name()
 	if(identified & IDENTITY_PROPERTIES)
-		holder.name = true_name
-		holder.desc = true_desc
-		holder.description_info = true_description_info
-		holder.description_fluff = true_description_fluff
-		holder.description_antag = true_description_antag
+		holder().name = true_name
+		holder().desc = true_desc
+		holder().description_info = true_description_info
+		holder().description_fluff = true_description_fluff
+		holder().description_antag = true_description_antag
 		return
 
 	if(!unidentified_name)
 		unidentified_name = generate_unidentified_name()
 
-	holder.name = unidentified_name
-	holder.desc = unidentified_desc
-	holder.description_info = unidentified_description_info
-	holder.description_fluff = null
-	holder.description_antag = null
+	holder().name = unidentified_name
+	holder().desc = unidentified_desc
+	holder().description_info = unidentified_description_info
+	holder().description_fluff = null
+	holder().description_antag = null
 
 // Makes a name for an object that is not identified. It picks one string out of each list inside naming_list.
 /datum/identification/proc/generate_unidentified_name()
@@ -120,3 +120,7 @@
 	unidentified_description_info = "A skilled chemist with a specialized machine can identify this autoinjector. \
 	Blindly using the autoinjector is risky and can be dangerous."
 	identification_type = IDENTITY_TYPE_CHEMICAL
+
+/// LC-refs: The thing the datum is 'attached' to. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/identification/proc/holder() as /obj
+	return om_resolve(holder_handle)

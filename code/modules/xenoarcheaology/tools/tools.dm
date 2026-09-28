@@ -107,7 +107,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/list/positive_locations
-	var/datum/depth_scan/current
+	var/current_handle
 
 /datum/depth_scan
 	var/time = ""
@@ -181,15 +181,15 @@
 	var/list/data = ..()
 
 	data["current"] = list()
-	if(current)
+	if(current())
 		data["current"] = list(
-			"time" = current.time,
-			"coords" = current.coords,
-			"depth" = current.depth,
-			"index" = current.record_index,
+			"time" = current().time,
+			"coords" = current().coords,
+			"depth" = current().depth,
+			"index" = current().record_index,
 		)
 		data["current"]["material"] = "Unknown"
-		var/index = GLOB.responsive_carriers.Find(current.material)
+		var/index = GLOB.responsive_carriers.Find(current().material)
 		if(index > 0 && index <= LAZYLEN(GLOB.finds_as_strings))
 			data["current"]["material"] = GLOB.finds_as_strings[index]
 
@@ -213,7 +213,7 @@
 		if("select")
 			var/index = text2num(params["select"])
 			if(index && index <= LAZYLEN(positive_locations))
-				current = LAZYACCESS(positive_locations, index)
+				current_handle = om_handle(LAZYACCESS(positive_locations, index))
 			return TRUE
 		if("clear")
 			var/index = text2num(params["clear"])
@@ -222,11 +222,11 @@
 					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
 					LAZYREMOVE(positive_locations, D)
 					qdel(D)
-					current = null
+					current_handle = null
 			else
 				QDEL_LIST_NULL(positive_locations)
 				positive_locations = list()
-				QDEL_NULL(current)
+				QDEL_NULL(current())
 			return TRUE
 
 /obj/item/beacon_locator
@@ -372,3 +372,7 @@ REF_OWNED(/obj/item/xenoarch_multi_tool, list("anomaly_scanner", "depth_scanner"
 /// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
 	return om_resolve(target_radio_handle)
+
+/// LC-refs: the current this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/depth_scanner/proc/current() as /datum/depth_scan
+	return om_resolve(current_handle)

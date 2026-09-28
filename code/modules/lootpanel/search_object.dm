@@ -4,7 +4,7 @@
  */
 /datum/search_object
 	/// Item we're indexing
-	var/atom/item
+	var/item_handle
 	/// Url to the image of the object
 	var/icon
 	/// Icon state, for inexpensive icons
@@ -17,7 +17,7 @@
 /datum/search_object/New(client/owner, atom/item)
 	. = ..()
 
-	src.item = item
+	src.item_handle = om_handle(item)
 	name = item.name
 	if(isobj(item))
 		path = item.type
@@ -60,7 +60,7 @@
 
 /// Generates the icon for the search object. This is the expensive part.
 /datum/search_object/proc/generate_icon(client/owner)
-	icon = costly_icon2html(item, owner, sourceonly = TRUE)
+	icon = costly_icon2html(item(), owner, sourceonly = TRUE)
 
 /// Parent item has been altered, search object no longer valid
 /datum/search_object/proc/on_item_moved(atom/source)
@@ -76,3 +76,7 @@
 	SIGNAL_HANDLER
 
 	post_change_callbacks += CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src)
+
+/// LC-refs: the item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/search_object/proc/item() as /atom
+	return om_resolve(item_handle)

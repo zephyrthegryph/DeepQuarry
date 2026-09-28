@@ -6,7 +6,7 @@
 	var/new_data = tgui_input_text(user, "Please type in a string.","[src] string writing", encode = FALSE)
 	new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
 
-	if(new_data && holder.check_interactivity(user) )
+	if(new_data && holder().check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data ? "new_data" : "NULL"] into the pin."))
 		write_data_to_pin(new_data)
 
@@ -14,7 +14,7 @@
 	new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
 	if(isnull(new_data) || (istext(new_data) && !ic_is_ref(new_data)))
 		data = new_data
-		holder.on_data_written()
+		holder().on_data_written()
 
 // This makes the text go "from this" to "#G&*!HD$%L"
 /datum/integrated_io/string/scramble()

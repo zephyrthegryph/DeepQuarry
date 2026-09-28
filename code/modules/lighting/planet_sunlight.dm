@@ -117,14 +117,18 @@
 	return //Do nothing. This is meant to be overridden.
 
 /datum/simple_sun/planetary
-	var/datum/sun_holder/sun
+	var/sun_handle
 
 /datum/simple_sun/planetary/New(datum/planet/planet)
-	sun = planet.sun_holder
+	sun_handle = om_handle(planet.sun_holder)
 
 /datum/simple_sun/planetary/update()
 	. = ..()
-	brightness = CLAMP01(sun.our_brightness)
-	color = sun.our_color
+	brightness = CLAMP01(sun().our_brightness)
+	color = sun().our_color
 
 REF_OWNED(/datum/planet_sunlight_handler, list("vis_overhead", "vis_shade"))
+
+/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/simple_sun/planetary/proc/sun() as /datum/sun_holder
+	return om_resolve(sun_handle)

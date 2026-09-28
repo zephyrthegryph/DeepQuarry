@@ -148,7 +148,7 @@
 	var/list/expected_destination_ids = list()
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[id]
-		if(!(vessel.shuttle?.current_location?.landmark_tag in carrier_dock_tags))
+		if(!(vessel.shuttle()?.current_location?.landmark_tag in carrier_dock_tags))
 			continue
 		var/datum/flight_destination/destination = SSflight_operations.destination_for_target(vessel.ship())
 		TEST_ASSERT_NOTNULL(destination, "Carrier craft [vessel.name] has no render destination")
@@ -184,7 +184,7 @@
 	var/datum/flight_vessel/vessel
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/candidate = SSflight_operations.vessels[id]
-		if(candidate.shuttle)
+		if(candidate.shuttle())
 			vessel = candidate
 			break
 	TEST_ASSERT_NOTNULL(vessel, "No landable expedition vessel was registered")
@@ -217,13 +217,13 @@
 	var/tested_vessels = 0
 	for(var/id in SSflight_operations.vessels)
 		var/datum/flight_vessel/vessel = SSflight_operations.vessels[id]
-		if(!vessel.shuttle || !(vessel.capabilities & FLIGHT_CAP_EXPEDITION))
+		if(!vessel.shuttle() || !(vessel.capabilities & FLIGHT_CAP_EXPEDITION))
 			continue
 		tested_vessels++
 		var/found_valid_berth = FALSE
 		for(var/tag in list("hangar_3_expedition", "hangar_3_echidna"))
 			var/obj/effect/shuttle_landmark/southern_cross/expedition_station/berth = SSshuttles.registered_shuttle_landmarks[tag]
-			if(berth?.accepts_shuttle(vessel.shuttle) && berth.is_valid(vessel.shuttle))
+			if(berth?.accepts_shuttle(vessel.shuttle()) && berth.is_valid(vessel.shuttle()))
 				found_valid_berth = TRUE
 				break
 		TEST_ASSERT(found_valid_berth, "Hangar Three cannot physically fit [vessel.name]")

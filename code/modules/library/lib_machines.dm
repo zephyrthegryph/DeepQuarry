@@ -506,7 +506,7 @@
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
-	var/obj/item/book/cache		// Last scanned book
+	var/cache_handle	// Last scanned book
 
 /obj/machinery/libraryscanner/declare_interactions(list/into)
 	into += list(
@@ -547,8 +547,8 @@
 
 /obj/machinery/libraryscanner/tgui_data(mob/user)
 	var/list/data = list()
-	data["has_cache"] = !!cache
-	data["cache_name"] = cache ? cache.name : ""
+	data["has_cache"] = !!cache()
+	data["cache_name"] = cache() ? cache().name : ""
 	var/has_book = FALSE
 	for(var/obj/item/book/B in contents)
 		has_book = TRUE
@@ -563,12 +563,12 @@
 	switch(action)
 		if("scan")
 			for(var/obj/item/book/B in contents)
-				cache = B
+				cache_handle = om_handle(B)
 				break
 			add_fingerprint(usr)
 			return TRUE
 		if("clear")
-			cache = null
+			cache_handle = null
 			return TRUE
 		if("eject")
 			for(var/obj/item/book/B in contents)
@@ -641,3 +641,7 @@
 /// LC-refs: Book scanner that will be used when uploading books to the Archive -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
 	return om_resolve(scanner_handle)
+
+/// LC-refs: Last scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/libraryscanner/proc/cache() as /obj/item/book
+	return om_resolve(cache_handle)

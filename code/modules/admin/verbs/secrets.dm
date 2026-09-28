@@ -5,17 +5,17 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	feedback_add_details("admin_verb","S") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/secrets_menu
-	var/client/holder //client of whoever is using this datum
+	var/holder_handle	//client of whoever is using this datum
 	var/is_debugger = FALSE
 	var/is_funmin = FALSE
 
 /datum/secrets_menu/New(user)//user can either be a client or a mob due to byondcode(tm)
 	if (istype(user, /client))
 		var/client/user_client = user
-		holder = user_client //if its a client, assign it to holder
+		holder_handle = om_handle(user_client) //if its a client, assign it to holder
 	else
 		var/mob/user_mob = user
-		holder = user_mob.client //if its a mob, assign the mob's client to holder
+		holder_handle = om_handle(user_mob.client) //if its a mob, assign the mob's client to holder
 
 	is_debugger = check_rights(R_DEBUG)
 	is_funmin = check_rights(R_FUN)
@@ -50,9 +50,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("admin_log")
 			// structured TGUI AdminReport.
 			if(!GLOB.admin_log.len)
-				dq_admin_report_html(holder, "Admin Logs", "No-one has done anything this round!")
+				dq_admin_report_html(holder(), "Admin Logs", "No-one has done anything this round!")
 			else
-				dq_admin_report_lines(holder, "Admin Logs", GLOB.admin_log)
+				dq_admin_report_lines(holder(), "Admin Logs", GLOB.admin_log)
 		if("dialog_log")
 			SSadmin_verbs.dynamic_invoke_verb(ui.user, /datum/admin_verb/persistent_client_logs)
 		if("show_admins")
@@ -62,37 +62,37 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				for(var/ckey in GLOB.admin_datums)
 					var/datum/admins/D = GLOB.admin_datums[ckey]
 					rows += list(list("[ckey]", D.rank_names()))
-				dq_admin_report_table(holder, "Current admins", list("Ckey", "Rank"), rows)
+				dq_admin_report_table(holder(), "Current admins", list("Ckey", "Rank"), rows)
 		if("show_traitors_and_objectives") // Not implemented in the UI
-			holder.holder.check_antagonists(ui.user.client)
+			holder().holder.check_antagonists(ui.user.client)
 		if("show_game_mode")
-			if (SSticker.mode) tgui_alert_async(holder, "The game mode is [SSticker.mode.name]")
-			else tgui_alert_async(holder, "For some reason there's a ticker, but not a game mode")
+			if (SSticker.mode) tgui_alert_async(holder(), "The game mode is [SSticker.mode.name]")
+			else tgui_alert_async(holder(), "For some reason there's a ticker, but not a game mode")
 
 		//Buttons for debug.
 		//tbd
 
 		//Buttons for helpful stuff. This is where people land in the tgui
 		if("list_bombers")
-			holder.holder.list_bombers()
+			holder().holder.list_bombers()
 
 		if("list_signalers")
-			holder.holder.list_signalers()
+			holder().holder.list_signalers()
 
 		if("list_lawchanges")
-			holder.holder.list_law_changes()
+			holder().holder.list_law_changes()
 
 		if("showailaws")
-			holder.holder.list_law_changes()
+			holder().holder.list_law_changes()
 
 		if("manifest")
-			holder.holder.show_manifest()
+			holder().holder.show_manifest()
 
 		if("dna")
-			holder.holder.list_dna()
+			holder().holder.list_dna()
 
 		if("fingerprints")
-			holder.holder.list_fingerprints()
+			holder().holder.list_fingerprints()
 
 		if("prison_warp")
 			for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -125,7 +125,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				registry_join(REGISTRY_PRISONWARPED, H)
 
 		if("night_shift_set")
-			var/val = tgui_alert(holder, "What do you want to set night shift to? This will override the automatic system until set to automatic again.", "Night Shift", list("On", "Off", "Automatic"))
+			var/val = tgui_alert(holder(), "What do you want to set night shift to? This will override the automatic system until set to automatic again.", "Night Shift", list("On", "Off", "Automatic"))
 			switch(val)
 				if("Automatic")
 					if(CONFIG_GET(flag/enable_night_shifts))
@@ -147,34 +147,34 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			GLOB.borers.attempt_random_spawn()
 
 		if("jump_shuttle")
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle do you want to jump?", "Shuttle Choice", SSshuttles.shuttles)
+			var/shuttle_tag = tgui_input_list(holder(), "Which shuttle do you want to jump?", "Shuttle Choice", SSshuttles.shuttles)
 			if (!shuttle_tag) return
 
 			var/datum/shuttle/S = SSshuttles.shuttles[shuttle_tag]
 
 			var/list/area_choices = return_areas()
-			var/origin_area = tgui_input_list(holder, "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
+			var/origin_area = tgui_input_list(holder(), "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
 			if (!origin_area) return
 
-			var/destination_area = tgui_input_list(holder, "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
+			var/destination_area = tgui_input_list(holder(), "Which area is the shuttle at now? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
 			if (!destination_area) return
 
-			var/long_jump = tgui_alert(holder, "Is there a transition area for this jump?","Transition?", list("Yes","No"))
+			var/long_jump = tgui_alert(holder(), "Is there a transition area for this jump?","Transition?", list("Yes","No"))
 			if(!long_jump)
 				return
 			if (long_jump == "Yes")
-				var/transition_area = tgui_input_list(holder, "Which area is the transition area? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
+				var/transition_area = tgui_input_list(holder(), "Which area is the transition area? (MAKE SURE THIS IS CORRECT OR THINGS WILL BREAK)", "Area Choice", area_choices)
 				if (!transition_area) return
 
-				var/move_duration = tgui_input_number(holder, "How many seconds will this jump take?")
+				var/move_duration = tgui_input_number(holder(), "How many seconds will this jump take?")
 
 				S.long_jump(area_choices[origin_area], area_choices[destination_area], area_choices[transition_area], move_duration)
-				message_admins(span_notice("[key_name_admin(holder)] has initiated a jump from [origin_area] to [destination_area] lasting [move_duration] seconds for the [shuttle_tag] shuttle"), 1)
-				log_admin("[key_name_admin(holder)] has initiated a jump from [origin_area] to [destination_area] lasting [move_duration] seconds for the [shuttle_tag] shuttle")
+				message_admins(span_notice("[key_name_admin(holder())] has initiated a jump from [origin_area] to [destination_area] lasting [move_duration] seconds for the [shuttle_tag] shuttle"), 1)
+				log_admin("[key_name_admin(holder())] has initiated a jump from [origin_area] to [destination_area] lasting [move_duration] seconds for the [shuttle_tag] shuttle")
 			else
 				S.short_jump(area_choices[origin_area], area_choices[destination_area])
-				message_admins(span_notice("[key_name_admin(holder)] has initiated a jump from [origin_area] to [destination_area] for the [shuttle_tag] shuttle"), 1)
-				log_admin("[key_name_admin(holder)] has initiated a jump from [origin_area] to [destination_area] for the [shuttle_tag] shuttle")
+				message_admins(span_notice("[key_name_admin(holder())] has initiated a jump from [origin_area] to [destination_area] for the [shuttle_tag] shuttle"), 1)
+				log_admin("[key_name_admin(holder())] has initiated a jump from [origin_area] to [destination_area] for the [shuttle_tag] shuttle")
 
 		if("launch_shuttle_forced")
 			var/list/valid_shuttles = list()
@@ -182,16 +182,16 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				if (istype(SSshuttles.shuttles[shuttle_tag], /datum/shuttle/autodock))
 					valid_shuttles += shuttle_tag
 
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle's launch do you want to force?", "Shuttle Choice", valid_shuttles)
+			var/shuttle_tag = tgui_input_list(holder(), "Which shuttle's launch do you want to force?", "Shuttle Choice", valid_shuttles)
 			if (!shuttle_tag)
 				return
 
 			var/datum/shuttle/autodock/S = SSshuttles.shuttles[shuttle_tag]
 			if (S.can_force())
-				S.force_launch(holder)
-				log_and_message_admins("forced the [shuttle_tag] shuttle", holder)
+				S.force_launch(holder())
+				log_and_message_admins("forced the [shuttle_tag] shuttle", holder())
 			else
-				tgui_alert_async(holder, "The [shuttle_tag] shuttle launch cannot be forced at this time. It's busy, or hasn't been launched yet.")
+				tgui_alert_async(holder(), "The [shuttle_tag] shuttle launch cannot be forced at this time. It's busy, or hasn't been launched yet.")
 
 		if("launch_shuttle")
 			var/list/valid_shuttles = list()
@@ -199,34 +199,34 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				if (istype(SSshuttles.shuttles[shuttle_tag], /datum/shuttle/autodock))
 					valid_shuttles += shuttle_tag
 
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle do you want to launch?", "Shuttle Choice", valid_shuttles)
+			var/shuttle_tag = tgui_input_list(holder(), "Which shuttle do you want to launch?", "Shuttle Choice", valid_shuttles)
 			if (!shuttle_tag)
 				return
 
 			var/datum/shuttle/autodock/S = SSshuttles.shuttles[shuttle_tag]
 			if (S.can_launch())
-				S.launch(holder)
-				log_and_message_admins("launched the [shuttle_tag] shuttle", holder)
+				S.launch(holder())
+				log_and_message_admins("launched the [shuttle_tag] shuttle", holder())
 			else
-				tgui_alert_async(holder, "The [shuttle_tag] shuttle cannot be launched at this time. It's probably busy.")
+				tgui_alert_async(holder(), "The [shuttle_tag] shuttle cannot be launched at this time. It's probably busy.")
 
 		if("move_shuttle")
-			var/confirm = tgui_alert(holder, "This command directly moves a shuttle from one area to another. DO NOT USE THIS UNLESS YOU ARE DEBUGGING A SHUTTLE AND YOU KNOW WHAT YOU ARE DOING.", "Are you sure?", list("Ok", "Cancel"))
+			var/confirm = tgui_alert(holder(), "This command directly moves a shuttle from one area to another. DO NOT USE THIS UNLESS YOU ARE DEBUGGING A SHUTTLE AND YOU KNOW WHAT YOU ARE DOING.", "Are you sure?", list("Ok", "Cancel"))
 			if (confirm != "Ok")
 				return
 
-			var/shuttle_tag = tgui_input_list(holder, "Which shuttle do you want to jump?", "Shuttle Choice", SSshuttles.shuttles)
+			var/shuttle_tag = tgui_input_list(holder(), "Which shuttle do you want to jump?", "Shuttle Choice", SSshuttles.shuttles)
 			if (!shuttle_tag) return
 
 			var/datum/shuttle/S = SSshuttles.shuttles[shuttle_tag]
 
-			var/destination_tag = tgui_input_list(holder, "Which landmark do you want to jump to? (IF YOU GET THIS WRONG THINGS WILL BREAK)", "Landmark Choice", SSshuttles.registered_shuttle_landmarks)
+			var/destination_tag = tgui_input_list(holder(), "Which landmark do you want to jump to? (IF YOU GET THIS WRONG THINGS WILL BREAK)", "Landmark Choice", SSshuttles.registered_shuttle_landmarks)
 			if (!destination_tag) return
 			var/destination_location = SSshuttles.get_landmark(destination_tag)
 			if (!destination_location) return
 
 			S.attempt_move(destination_location)
-			log_and_message_admins("moved the [shuttle_tag] shuttle", holder)
+			log_and_message_admins("moved the [shuttle_tag] shuttle", holder())
 
 		//!fun! buttons.
 		if("ghost_mode")
@@ -253,7 +253,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 					if(A.requires_power && !A.always_unpowered && A.power_light && (A.z in using_map.player_levels))
 						affected_areas |= get_area(M)
 
-			affected_mobs |= holder
+			affected_mobs |= holder()
 			for(var/area/AffectedArea in affected_areas)
 				AffectedArea.power_light = 0
 				AffectedArea.power_change()
@@ -275,22 +275,22 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			if(!is_funmin)
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Power All APCs"))
-			log_admin("[key_name(holder)] made all areas powered")
-			message_admins(span_adminnotice("[key_name_admin(holder)] made all areas powered"))
+			log_admin("[key_name(holder())] made all areas powered")
+			message_admins(span_adminnotice("[key_name_admin(holder())] made all areas powered"))
 			power_restore()
 		if("unpower")
 			if(!is_funmin)
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Depower All APCs"))
-			log_admin("[key_name(holder)] made all areas unpowered")
-			message_admins(span_adminnotice("[key_name_admin(holder)] made all areas unpowered"))
+			log_admin("[key_name(holder())] made all areas unpowered")
+			message_admins(span_adminnotice("[key_name_admin(holder())] made all areas unpowered"))
 			power_failure()
 		if("quickpower")
 			if(!is_funmin)
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Power All SMESs"))
-			log_admin("[key_name(holder)] made all SMESs powered")
-			message_admins(span_adminnotice("[key_name_admin(holder)] made all SMESs powered"))
+			log_admin("[key_name(holder())] made all SMESs powered")
+			message_admins(span_adminnotice("[key_name_admin(holder())] made all SMESs powered"))
 			power_restore_quick()
 		if("gravity")
 			GLOB.gravity_is_on = !GLOB.gravity_is_on
@@ -300,17 +300,17 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			feedback_inc("admin_secrets_fun_used",1)
 			feedback_add_details("admin_secrets_fun_used","Grav")
 			if(GLOB.gravity_is_on)
-				log_admin("[key_name(holder)] toggled gravity on.", 1)
-				message_admins(span_notice("[key_name_admin(holder)] toggled gravity on."), 1)
+				log_admin("[key_name(holder())] toggled gravity on.", 1)
+				message_admins(span_notice("[key_name_admin(holder())] toggled gravity on."), 1)
 				GLOB.command_announcement.Announce("Gravity generators are again functioning within normal parameters. Sorry for any inconvenience.", ANNOUNCER_MSG_GRAVITY_ON)
 			else
-				log_admin("[key_name(holder)] toggled gravity off.", 1)
-				message_admins(span_notice("[key_name_admin(holder)] toggled gravity off."), 1)
+				log_admin("[key_name(holder())] toggled gravity off.", 1)
+				message_admins(span_notice("[key_name_admin(holder())] toggled gravity off."), 1)
 				GLOB.command_announcement.Announce("Feedback surge detected in mass-distributions systems. Artificial gravity has been disabled whilst the system reinitializes. Further failures may result in a gravitational collapse and formation of blackholes. Have a nice day.", ANNOUNCER_MSG_GRAVITY_OFF)
 		if("tripleAI")
 			if(!is_funmin)
 				return
-			holder.triple_ai()
+			holder().triple_ai()
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Triple AI"))
 		if("onlyone")
 			if(!is_funmin)
@@ -318,9 +318,9 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			var/response = tgui_alert(usr,"Delay by 40 seconds?", "There can, in fact, only be one", list("Instant!", HIGHLANDER_DELAY_TEXT))
 			switch(response)
 				if("Instant!")
-					holder.only_one()
+					holder().only_one()
 				if(HIGHLANDER_DELAY_TEXT)
-					holder.only_one_delayed()
+					holder().only_one_delayed()
 				else
 					return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("There Can Be Only One"))
@@ -328,7 +328,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			if(!is_funmin)
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Break All Lights"))
-			message_admins("[key_name_admin(holder)] broke all lights")
+			message_admins("[key_name_admin(holder())] broke all lights")
 			//for(var/obj/machinery/light/L as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/light))
 			//	L.break_light_tube()
 			//	CHECK_TICK
@@ -336,13 +336,13 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		if("partial_blackout")
 			if(!is_funmin)
 				return
-			message_admins("[key_name_admin(holder)] broke some lights")
+			message_admins("[key_name_admin(holder())] broke some lights")
 			lightsout(1,2)
 		if("whiteout")
 			if(!is_funmin)
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Fix All Lights"))
-			message_admins("[key_name_admin(holder)] fixed all lights")
+			message_admins("[key_name_admin(holder())] fixed all lights")
 			//for(var/obj/machinery/light/L as anything in SSmachines.get_machines_by_type_and_subtypes(/obj/machinery/light))
 			for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 				L.fix()
@@ -352,7 +352,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Bomb Cap"))
 
-			var/new_cap = tgui_input_list(holder, "Select the max explosion range", "Change Bomb Cap", list(14, 16, 20, 28, 56, 128))
+			var/new_cap = tgui_input_list(holder(), "Select the max explosion range", "Change Bomb Cap", list(14, 16, 20, 28, 56, 128))
 
 			if(new_cap)
 				GLOB.max_explosion_range = new_cap
@@ -361,19 +361,19 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			var/range_high = GLOB.max_explosion_range *0.5
 			var/range_low = GLOB.max_explosion_range
 
-			message_admins(span_danger("[key_name_admin(holder)] changed the bomb cap to [range_dev], [range_high], [range_low]"))
-			log_admin("[key_name_admin(holder)] changed the bomb cap to [GLOB.max_explosion_range]")
+			message_admins(span_danger("[key_name_admin(holder())] changed the bomb cap to [range_dev], [range_high], [range_low]"))
+			log_admin("[key_name_admin(holder())] changed the bomb cap to [GLOB.max_explosion_range]")
 
 			//message_admins(span_boldannounce("[key_name_admin(holder)] changed the bomb cap to [GLOB.MAX_EX_DEVESTATION_RANGE], [GLOB.MAX_EX_HEAVY_RANGE], [GLOB.MAX_EX_LIGHT_RANGE]"))
 			//log_admin("[key_name(holder)] changed the bomb cap to [GLOB.MAX_EX_DEVESTATION_RANGE], [GLOB.MAX_EX_HEAVY_RANGE], [GLOB.MAX_EX_LIGHT_RANGE]")
 
 		if("alter_narsie")
-			var/choice = tgui_alert(holder, "How do you wish for Nar-Sie to interact with its surroundings?","NarChoice",list("CultStation13", "Nar-Singulo"))
+			var/choice = tgui_alert(holder(), "How do you wish for Nar-Sie to interact with its surroundings?","NarChoice",list("CultStation13", "Nar-Singulo"))
 			if(choice == "CultStation13")
-				log_and_message_admins("has set narsie's behaviour to \"CultStation13\".", holder)
+				log_and_message_admins("has set narsie's behaviour to \"CultStation13\".", holder())
 				GLOB.narsie_behaviour = choice
 			if(choice == "Nar-Singulo")
-				log_and_message_admins("has set narsie's behaviour to \"Nar-Singulo\".", holder)
+				log_and_message_admins("has set narsie's behaviour to \"Nar-Singulo\".", holder())
 				GLOB.narsie_behaviour = choice
 
 		if("remove_all_clothing")
@@ -385,7 +385,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				qdel(O)
 
 		if("send_strike_team")
-			holder.strike_team()
+			holder().strike_team()
 
 		//buttons that are fun for exactly you and nobody else.
 		if("corgie")
@@ -397,28 +397,28 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			if(!is_funmin)
 				return
 			//SSblackbox.record_feedback("nested tally", "admin_secrets_fun_used", 1, list("Monkeyize All Humans"))
-			message_admins("[key_name_admin(holder)] made everyone into monkeys.")
-			log_admin("[key_name_admin(holder)] made everyone into monkeys.")
+			message_admins("[key_name_admin(holder())] made everyone into monkeys.")
+			log_admin("[key_name_admin(holder())] made everyone into monkeys.")
 			for(var/i in REGISTRY_MEMBERS(REGISTRY_MOBS))
 				var/mob/living/carbon/human/H = i
 				INVOKE_ASYNC(H, TYPE_PROC_REF(/mob/living/carbon/human, monkeyize))
 
 		if("supermatter_cascade")
-			var/choice = tgui_alert(holder, "You sure you want to destroy the universe and create a large explosion at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!", list("NO TIME TO EXPLAIN", "Cancel"))
+			var/choice = tgui_alert(holder(), "You sure you want to destroy the universe and create a large explosion at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!", list("NO TIME TO EXPLAIN", "Cancel"))
 			if(choice == "NO TIME TO EXPLAIN")
-				explosion(get_turf(holder.mob), 8, 16, 24, 32, 1)
-				SSturf_cascade.start_cascade(get_turf(holder.mob), /turf/unsimulated/wall/supermatter)
+				explosion(get_turf(holder().mob), 8, 16, 24, 32, 1)
+				SSturf_cascade.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
 				SetUniversalState(/datum/universal_state/supermatter_cascade)
-				message_admins("[key_name_admin(holder)] has managed to destroy the universe with a supermatter cascade. Good job, [key_name_admin(holder)]")
+				message_admins("[key_name_admin(holder())] has managed to destroy the universe with a supermatter cascade. Good job, [key_name_admin(holder())]")
 
 		if("summon_narsie")
-			var/choice = tgui_alert(holder, "You sure you want to end the round and summon Nar-Sie at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!",list("PRAISE SATAN", "Cancel"))
+			var/choice = tgui_alert(holder(), "You sure you want to end the round and summon Nar-Sie at your location? Misuse of this could result in removal of flags or hilarity.","WARNING!",list("PRAISE SATAN", "Cancel"))
 			if(choice == "PRAISE SATAN")
-				new /obj/singularity/narsie/large(get_turf(holder))
-				log_and_message_admins("has summoned Nar-Sie and brought about a new realm of suffering.", holder)
+				new /obj/singularity/narsie/large(get_turf(holder()))
+				log_and_message_admins("has summoned Nar-Sie and brought about a new realm of suffering.", holder())
 
-	if(holder)
-		log_admin("[key_name(holder)] used secret: [action].")
+	if(holder())
+		log_admin("[key_name(holder())] used secret: [action].")
 #undef HIGHLANDER_DELAY_TEXT
 
 /proc/chilling_wind_relight(area/A)
@@ -428,3 +428,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 /proc/chilling_wind_stops(list/affected_mobs)
 	for(var/mob/M in affected_mobs)
 		M.show_message(span_notice("The chilling wind suddenly stops..."), 1)
+
+/// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/secrets_menu/proc/holder() as /client
+	return om_resolve(holder_handle)

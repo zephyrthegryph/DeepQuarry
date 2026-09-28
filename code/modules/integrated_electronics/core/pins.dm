@@ -17,7 +17,7 @@ D [1]/  ||
 */
 /datum/integrated_io
 	var/name = "input/output"
-	var/obj/item/integrated_circuit/holder = null
+	var/holder_handle
 	var/data = null // A reference is an IC ref (ic_ref(), an OM handle in a text wrapper), to reduce typecasts.  Note that oftentimes numbers and text may also occupy this.
 	var/list/linked // Lazy: most pins are never wired.
 	var/io_type = DATA_CHANNEL
@@ -27,19 +27,19 @@ D [1]/  ||
 	src.name = name
 	if(!isnull(new_data))
 		src.data = new_data
-	holder = newloc
-	if(!istype(holder))
+	holder_handle = om_handle(newloc)
+	if(!istype(holder()))
 		message_admins("ERROR: An integrated_io ([src.name]) spawned without a valid holder!  This is a bug.")
 
 // LIFECYCLE: a pin disconnects from its linked pins.
 /datum/integrated_io/Destroy()
 	disconnect()
 	data = null
-	holder = null
+	holder_handle = null
 	. = ..()
 
 /datum/integrated_io/tgui_host()
-	return holder.tgui_host()
+	return holder().tgui_host()
 
 /datum/integrated_io/proc/data_as_type(as_type)
 	if(!ic_is_ref(data))
@@ -110,7 +110,7 @@ list[](
 		if(istext(new_data) && !ic_is_ref(new_data))
 			new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)
 		data = new_data
-		holder.on_data_written()
+		holder().on_data_written()
 
 /datum/integrated_io/proc/push_data()
 	for(var/datum/integrated_io/io in linked)
@@ -118,7 +118,7 @@ list[](
 
 /datum/integrated_io/activate/push_data(work_left = IC_MAX_PULSE_CIRCUITS)
 	for(var/datum/integrated_io/io in linked)
-		io.holder.check_then_do_work(work_left = work_left)
+		io.holder().check_then_do_work(work_left = work_left)
 
 /datum/integrated_io/proc/pull_data()
 	for(var/datum/integrated_io/io in linked)
@@ -143,23 +143,23 @@ list[](
 
 /datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"))
 	var/type_to_use = tgui_input_list(user, "Please choose a type to use.","[src] type setting", allowed_data_types)
-	if(!holder.check_interactivity(user))
+	if(!holder().check_interactivity(user))
 		return
 
 	var/new_data = null
 	switch(type_to_use)
 		if("string")
 			new_data = sanitizeSafe(tgui_input_text(user, "Now type in a string.","[src] string writing", istext(default) ? default : null, MAX_NAME_LEN, encode = FALSE), MAX_NAME_LEN, 0, 0)
-			if(istext(new_data) && holder.check_interactivity(user) )
+			if(istext(new_data) && holder().check_interactivity(user) )
 				to_chat(user, span_notice("You input [new_data] into the pin."))
 				return new_data
 		if("number")
 			new_data = tgui_input_number(user, "Now type in a number.","[src] number writing", isnum(default) ? default : 0, INFINITY, -INFINITY, 0, FALSE)
-			if(isnum(new_data) && holder.check_interactivity(user) )
+			if(isnum(new_data) && holder().check_interactivity(user) )
 				to_chat(user, span_notice("You input [new_data] into the pin."))
 				return new_data
 		if("null")
-			if(holder.check_interactivity(user))
+			if(holder().check_interactivity(user))
 				to_chat(user, span_notice("You clear the pin's memory."))
 				return new_data
 
@@ -173,8 +173,8 @@ list[](
 	write_data_to_pin(new_data)
 
 /datum/integrated_io/activate/ask_for_pin_data(mob/user) // This just pulses the pin.
-	holder.check_then_do_work(ignore_power = TRUE)
-	to_chat(user, span_notice("You pulse \the [holder]'s [src] pin."))
+	holder().check_then_do_work(ignore_power = TRUE)
+	to_chat(user, span_notice("You pulse \the [holder()]'s [src] pin."))
 
 /datum/integrated_io/activate
 	name = "activation pin"
@@ -182,3 +182,7 @@ list[](
 
 /datum/integrated_io/activate/out // All this does is just make the UI say 'out' instead of 'in'
 	data = 1
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/integrated_io/proc/holder() as /obj/item/integrated_circuit
+	return om_resolve(holder_handle)

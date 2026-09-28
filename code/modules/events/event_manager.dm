@@ -184,7 +184,7 @@
 		var/type = tgui_input_list(usr, "Select event type.", "Select", allEvents)
 		if(type)
 			var/datum/event_meta/EM = locate(href_list["set_type"])
-			EM.event_type = type
+			EM.event_type_handle = om_handle(type)
 	else if(href_list["set_weight"])
 		var/weight = tgui_input_number(usr, "Enter weight. A higher value means higher chance for the event of being selected.", "Set Weight")
 		if(weight && weight > 0)

@@ -6,36 +6,36 @@
 	wear = 2
 	applies_to = NIF_SYNTHETIC
 	tick_flags = NIF_ACTIVETICK
-	var/obj/machinery/power/apc/apc
+	var/apc_handle
 	other_flags = (NIF_O_APCCHARGE)
 
 /datum/nifsoft/apc_recharge/activate()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		apc = locate(/obj/machinery/power/apc) in get_step(H,H.dir)
-		if(!apc)
-			apc = locate(/obj/machinery/power/apc) in get_step(H,0)
-		if(!apc)
+		apc_handle = om_handle(locate(/obj/machinery/power/apc) in get_step(H,H.dir))
+		if(!apc())
+			apc_handle = om_handle(locate(/obj/machinery/power/apc) in get_step(H,0))
+		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
 			om_after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
-		H.visible_message(span_warning("Thin snakelike tendrils grow from [H] and connect to \the [apc]."),span_notice("Thin snakelike tendrils grow from you and connect to \the [apc]."))
+		H.visible_message(span_warning("Thin snakelike tendrils grow from [H] and connect to \the [apc()]."),span_notice("Thin snakelike tendrils grow from you and connect to \the [apc()]."))
 
 /datum/nifsoft/apc_recharge/deactivate(force = FALSE)
 	if((. = ..()))
-		apc = null
+		apc_handle = null
 
 /datum/nifsoft/apc_recharge/life()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		if(apc && (get_dist(H,apc) <= 1) && H.nutrition < 440) // 440 vs 450, life() happens before we get here so it'll never be EXACTLY 450
+		if(apc() && (get_dist(H,apc()) <= 1) && H.nutrition < 440) // 440 vs 450, life() happens before we get here so it'll never be EXACTLY 450
 			H.nutrition = min(H.nutrition+10, 450)
-			apc.drain_power(7000/450*10) //This is from the large rechargers. No idea what the math is.
+			apc().drain_power(7000/450*10) //This is from the large rechargers. No idea what the math is.
 			return TRUE
 		else
 			nif().notify("APC charging has ended.")
-			H.visible_message(span_warning("[H]'s snakelike tendrils whip back into their body from \the [apc]."),span_notice("The APC connector tendrils return to your body."))
+			H.visible_message(span_warning("[H]'s snakelike tendrils whip back into their body from \the [apc()]."),span_notice("The APC connector tendrils return to your body."))
 			deactivate()
 			return FALSE
 
@@ -196,3 +196,7 @@
 		if(nif().human.client && world.time - last_ads > rand(10 MINUTES, 15 MINUTES) && prob(1))
 			last_ads = world.time
 			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
+
+/// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/nifsoft/apc_recharge/proc/apc() as /obj/machinery/power/apc
+	return om_resolve(apc_handle)

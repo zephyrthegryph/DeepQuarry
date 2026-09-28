@@ -2,13 +2,13 @@
 
 /datum/ship_engine
 	var/name = "ship engine"
-	var/obj/machinery/holder	//actual engine object
+	var/holder_handle	//actual engine object
 
 REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 
 /datum/ship_engine/New(obj/machinery/_holder)
 	..()
-	holder = _holder
+	holder_handle = om_handle(_holder)
 	join_registries()
 
 /datum/ship_engine/proc/can_burn()
@@ -42,5 +42,9 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 /datum/ship_engine/Destroy()
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
 		LAZYREMOVE(S.engines, src)
-	holder = null
+	holder_handle = null
 	. = ..()
+
+/// LC-refs: actual engine object -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ship_engine/proc/holder() as /obj/machinery
+	return om_resolve(holder_handle)

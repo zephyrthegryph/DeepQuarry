@@ -447,7 +447,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	data["dq_category_index"] = preferences().dq_category_index
 	data["dq_structure_version"] = preferences().dq_category_structure_version
 
-	var/window_id = ui?.window?.id || "unpooled"
+	var/window_id = ui?.window()?.id || "unpooled"
 	var/force_catalogs = !!preferences().dq_force_catalogs_by_window?[window_id]
 	if(force_catalogs)
 		preferences().dq_force_catalogs_by_window -= window_id
@@ -550,7 +550,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 				return FALSE
 			preferences().dq_active_category = category_key
 			if(params["force_catalogs"])
-				var/window_id = ui?.window?.id || "unpooled"
+				var/window_id = ui?.window()?.id || "unpooled"
 				LAZYINITLIST(preferences().dq_force_catalogs_by_window)
 				preferences().dq_force_catalogs_by_window[window_id] = TRUE
 				if(islist(preferences().dq_window_category_versions?[window_id]))

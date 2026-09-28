@@ -9,7 +9,7 @@
 	move_delay = 3 // Rather slow, but still faster than swimming, and won't get you wet.
 	max_buckled_mobs = 2
 	anchored = FALSE
-	var/datum/material/material = null
+	var/material_handle
 	var/riding_datum_type = /datum/riding/boat/small
 
 /obj/vehicle/boat/sifwood/Initialize(mapload, material_name)
@@ -41,7 +41,7 @@
 	icon_state = "oar"
 	item_state = "oar"
 	force = 12
-	var/datum/material/material = null
+	var/material_handle
 
 /obj/item/oar/sifwood/Initialize(mapload, material_name)
 	. = ..(mapload, MAT_SIFWOOD)
@@ -50,20 +50,20 @@
 	..(mapload)
 	if(!material_name)
 		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
-	if(!material)
+	material_handle = om_handle(get_material_by_name("[material_name]"))
+	if(!material())
 		return INITIALIZE_HINT_QDEL
-	color = material.icon_colour
+	color = material().icon_colour
 	return INITIALIZE_HINT_NORMAL
 
 /obj/vehicle/boat/Initialize(mapload, material_name)
 	..(mapload)
 	if(!material_name)
 		material_name = MAT_WOOD
-	material = get_material_by_name("[material_name]")
-	if(!material)
+	material_handle = om_handle(get_material_by_name("[material_name]"))
+	if(!material())
 		return INITIALIZE_HINT_QDEL
-	color = material.icon_colour
+	color = material().icon_colour
 	riding_datum = new riding_datum_type(src)
 	return INITIALIZE_HINT_NORMAL
 
@@ -78,3 +78,11 @@
 	if(!istype(L)) // Only mobs on boats.
 		return FALSE
 	..(L, user)
+
+/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/vehicle/boat/proc/material() as /datum/material
+	return om_resolve(material_handle)
+
+/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/oar/proc/material() as /datum/material
+	return om_resolve(material_handle)

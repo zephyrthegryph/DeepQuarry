@@ -25,7 +25,7 @@
 /obj/item/integrated_circuit/built_in/device_output/do_work()
 	if(istype(assembly, /obj/item/electronic_assembly/device))
 		var/obj/item/electronic_assembly/device/device = assembly
-		device.holder.pulse()
+		device.holder().pulse()
 
 // Triggered when clothing assembly's hud button is clicked (or used inhand).
 /obj/item/integrated_circuit/built_in/action_button

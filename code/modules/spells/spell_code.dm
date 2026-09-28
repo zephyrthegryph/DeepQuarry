@@ -23,7 +23,7 @@
 	var/range = 7					//the range of the spell; outer radius for aoe spells
 	var/message = ""				//whatever it says to the guy affected by it
 	var/selection_type = "view"		//can be "range" or "view"
-	var/atom/movable/holder			//where the spell is. Normally the user, can be an item
+	var/holder_handle	//where the spell is. Normally the user, can be an item
 	var/duration = 0 //how long the spell lasts
 
 	var/list/spell_levels = list(Sp_SPEED = 0, Sp_POWER = 0) //the current spell levels - total spell levels can be obtained by just adding the two values
@@ -85,8 +85,8 @@
 	return
 
 /datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
-	if(!holder)
-		holder = user //just in case
+	if(!holder())
+		holder_handle = om_handle(user) //just in case
 	if(!cast_check(skipcharge, user))
 		return
 	if(cast_delay)
@@ -120,7 +120,7 @@
 /// Positive `amount` injures with `kind`; negative mends by each of `heal_tags`.
 /datum/spell/proc/spell_injure(mob/living/target, kind, amount, list/heal_tags)
 	if(amount > 0)
-		target.injure(kind, amount, source = holder)
+		target.injure(kind, amount, source = holder())
 	else if(amount < 0)
 		for(var/tag in heal_tags)
 			target.mend(tag, -amount)
@@ -128,7 +128,7 @@
 /// Positive `amount` adds oxygen debt; negative oxygenates.
 /datum/spell/proc/spell_oxygen_debt(mob/living/target, amount)
 	if(amount > 0)
-		target.add_oxygen_debt(amount, holder)
+		target.add_oxygen_debt(amount, holder())
 	else if(amount < 0)
 		target.mend(TREAT_OXYGENATION, -amount)
 
@@ -205,7 +205,7 @@
 
 /datum/spell/proc/cast_check(skipcharge = 0,mob/user = usr) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
 
-	if(!(src in user.spell_list) && holder == user)
+	if(!(src in user.spell_list) && holder() == user)
 		log_world("## ERROR [user] utilized the spell '[src]' without having it.")
 		to_chat(user, span_warning("You shouldn't have this spell! Something's wrong."))
 		return 0
@@ -222,11 +222,11 @@
 		return 0
 
 	if(spell_flags & CONSTRUCT_CHECK)
-		for(var/turf/T in range(holder, 1))
+		for(var/turf/T in range(holder(), 1))
 			if(findNullRod(T))
 				return 0
 
-	if(isanimal(user) && holder == user)
+	if(isanimal(user) && holder() == user)
 		var/mob/living/simple_mob/SM = user
 		if(SM.purge)
 			to_chat(SM, span_warning("The nullrod's power interferes with your own!"))
@@ -235,7 +235,7 @@
 	if(!src.check_charge(skipcharge, user)) //sees if we can cast based on charges alone
 		return 0
 
-	if(!(spell_flags & GHOSTCAST) && holder == user)
+	if(!(spell_flags & GHOSTCAST) && holder() == user)
 		if(user.stat && !(spell_flags & STATALLOWED))
 			to_chat(usr, "Not when you're incapacitated.")
 			return 0
@@ -246,7 +246,7 @@
 				return 0
 
 	var/datum/spell/noclothes/spell = locate() in user.spell_list
-	if((spell_flags & NEEDSCLOTHES) && !(spell && istype(spell)) && holder == user)//clothes check
+	if((spell_flags & NEEDSCLOTHES) && !(spell && istype(spell)) && holder() == user)//clothes check
 		if(!user.wearing_wiz_garb())
 			return 0
 
@@ -354,3 +354,7 @@
 
 
 REF_OWNED(/datum/spell, "connected_button")
+
+/// LC-refs: where the spell is. Normally the user, can be an item -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/spell/proc/holder() as /atom/movable
+	return om_resolve(holder_handle)

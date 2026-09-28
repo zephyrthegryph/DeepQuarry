@@ -134,7 +134,7 @@
 					// APCs. A positional tuple avoids repeating seven JSON field names
 					// per row, cutting Power Monitor bridge traffic substantially.
 					data["areas"] += list(list(
-						A.area.name,
+						A.area().name,
 						cell_charge,
 						DisplayPower(A.channel_load_total()),
 						A.charging,
@@ -207,7 +207,7 @@
 
 		// Split to multiple lines to make it more readable
 		for(var/obj/machinery/power/apc/A in L)
-			out += "<tr><td>\The [A.area]" 															// Add area name
+			out += "<tr><td>\The [A.area()]" 															// Add area name
 			out += "<td>[S[A.equipment+1]]<td>[S[A.lighting+1]]<td>[S[A.environ+1]]" 				// Show status of channels
 			if(A.cell)
 				out += "<td>[round(A.cell.percent())]% - [chg[A.charging+1]]"

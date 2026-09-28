@@ -23,7 +23,7 @@
 		shandler.only_sun_object = lighting_object
 
 /datum/sunlight_handler
-	var/datum/simple_sun/sun
+	var/sun_handle
 	var/turf/simulated/holder
 	var/datum/lighting_object/only_sun_object
 	var/effect_str_r = 0
@@ -317,8 +317,8 @@
 			sunlight_mult = 0.6
 		if(SUNLIGHT_OVERHEAD)
 			sunlight_mult = 1.0
-	var/brightness = sun.brightness * sunlight_mult * SSlighting.sun_mult
-	var/list/color = hex2rgb(sun.color)
+	var/brightness = sun().brightness * sunlight_mult * SSlighting.sun_mult
+	var/list/color = hex2rgb(sun().color)
 	var/red = brightness * (color[1] / 255.0)
 	var/green = brightness * (color[2] / 255.0)
 	var/blue = brightness * (color[3] / 255.0)
@@ -380,11 +380,11 @@
 		corner.wake_sleepers()
 
 /datum/sunlight_handler/proc/try_get_sun()
-	if(sun) return TRUE
+	if(sun()) return TRUE
 	if(!sleeping && SSlighting.get_pshandler_z(holder.z))
 		pshandler = SSlighting.get_pshandler_z(holder.z)
 		LAZYADD(pshandler.shandlers, src)
-		sun = pshandler.sun
+		sun_handle = om_handle(pshandler.sun)
 		return TRUE
 	else
 		return FALSE
@@ -393,3 +393,7 @@
 // with the turf through ChangeTurf, turf_changing.dm).
 REF_PAIR(/turf/simulated, list("shandler" = "holder"))
 REF_PAIR(/datum/sunlight_handler, list("holder" = "shandler"))
+
+/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/sun() as /datum/simple_sun
+	return om_resolve(sun_handle)

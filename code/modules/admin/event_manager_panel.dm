@@ -58,7 +58,7 @@
 		data["new_event"] = list(
 			"ref" = "\ref[NE]",
 			"name" = NE.name,
-			"type" = NE.event_type ? "[NE.event_type]" : null,
+			"type" = NE.event_type() ? "[NE.event_type()]" : null,
 			"weight" = NE.weight || 0,
 			"one_shot" = !!NE.one_shot,
 		)

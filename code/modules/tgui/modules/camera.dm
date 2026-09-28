@@ -114,7 +114,7 @@ REF_OWNED(/datum/tgui_module/camera, "cam_screen_tg")
 		ui = new(user, src, tgui_id, name)
 		ui.open()
 		// Register map objects
-		cam_screen_tg.display_to(user, ui.window)
+		cam_screen_tg.display_to(user, ui.window())
 
 /datum/tgui_module/camera/tgui_data()
 	var/list/data = list()

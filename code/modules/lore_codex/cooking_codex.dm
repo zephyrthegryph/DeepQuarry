@@ -48,7 +48,7 @@
 			qdel(R)
 			continue
 
-		var/datum/lore/codex/page/cooking_recipe/D = new(holder, src)
+		var/datum/lore/codex/page/cooking_recipe/D = new(holder(), src)
 		var/atom/movable/these = R.result // Result is a typepath, requiring use of initial()
 		D.name = capitalize("[initial(these.name)]") // Capitalization on recipe names is inconsistent
 

@@ -57,11 +57,11 @@
 	panel.tgui_interact(user)
 
 /datum/tag_menu_panel
-	var/datum/admins/holder
+	var/holder_handle
 
 /datum/tag_menu_panel/New(datum/admins/owner_holder)
 	..()
-	holder = owner_holder
+	holder_handle = om_handle(owner_holder)
 
 /datum/tag_menu_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -74,11 +74,11 @@
 
 /datum/tag_menu_panel/tgui_data(mob/user)
 	var/list/data = list()
-	if(!holder)
+	if(!holder())
 		return data
 	var/list/rows = list()
-	var/list/tagged_datums = holder.tagged_datums
-	var/datum/marked_datum = holder.marked_datum()
+	var/list/tagged_datums = holder().tagged_datums
+	var/datum/marked_datum = holder().marked_datum()
 	var/index = 0
 	for(var/datum/d as anything in tagged_datums)
 		index++
@@ -104,7 +104,7 @@
 
 /datum/tag_menu_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder)
+	if(. || !holder())
 		return
 	var/ref = "[params["ref"]]"
 	switch(action)
@@ -112,21 +112,21 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("untag")
-			holder.Topic("del_tag=[ref]", list("_src_" = "holder", "del_tag" = ref))
+			holder().Topic("del_tag=[ref]", list("_src_" = "holder", "del_tag" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("mark")
-			holder.Topic("mark_datum=[ref]", list("_src_" = "holder", "mark_datum" = ref))
+			holder().Topic("mark_datum=[ref]", list("_src_" = "holder", "mark_datum" = ref))
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder.Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
+			holder().Topic("Vars=[ref]", list("_src_" = "vars", "Vars" = ref))
 			return TRUE
 		if("pp")
-			holder.Topic("priv_msg=[ref]", list("_src_" = "holder", "playerpanel" = ref))
+			holder().Topic("priv_msg=[ref]", list("_src_" = "holder", "playerpanel" = ref))
 			return TRUE
 		if("follow")
-			holder.Topic("adminmoreinfo=[ref]", list("_src_" = "holder", "adminobs" = ref))
+			holder().Topic("adminmoreinfo=[ref]", list("_src_" = "holder", "adminobs" = ref))
 			return TRUE
 
 // ---- ToRban list ---------------------------------------------------------
@@ -186,12 +186,12 @@
 	panel.tgui_interact(user)
 
 /datum/unban_panel
-	var/datum/admins/holder
+	var/holder_handle
 	var/list/cached_rows
 
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
-	holder = owner_holder
+	holder_handle = om_handle(owner_holder)
 
 /datum/unban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -244,7 +244,7 @@
 
 /datum/unban_panel/tgui_data(mob/user)
 	var/list/data = list()
-	if(!holder)
+	if(!holder())
 		return data
 	data["bans"] = cached_rows || list()
 	data["count"] = length(cached_rows)
@@ -252,7 +252,7 @@
 
 /datum/unban_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder)
+	if(. || !holder())
 		return
 	var/key_id = "[params["key_id"]]"
 	switch(action)
@@ -261,12 +261,12 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("unban")
-			holder.Topic("unbanf=[key_id]", list("unbanf" = key_id))
+			holder().Topic("unbanf=[key_id]", list("unbanf" = key_id))
 			snapshot_bans()
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit")
-			holder.Topic("unbane=[key_id]", list("unbane" = key_id))
+			holder().Topic("unbane=[key_id]", list("unbane" = key_id))
 			snapshot_bans()
 			SStgui.update_uis(src)
 			return TRUE
@@ -288,19 +288,19 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	panel.tgui_interact(owner.mob)
 
 /datum/jobban_panel
-	var/datum/admins/holder
+	var/holder_handle
 	var/mob/target
 
 /datum/jobban_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	holder = owner_holder
+	holder_handle = om_handle(owner_holder)
 	target = target_mob
 
 // LIFECYCLE: leaves the per-admin panel index.
 /datum/jobban_panel/Destroy(force, ...)
-	if(holder && target)
-		GLOB.dq_jobban_panels -= "[REF(holder)]-[REF(target)]"
-	holder = null
+	if(holder() && target)
+		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target)]"
+	holder_handle = null
 	target = null
 	return ..()
 
@@ -308,7 +308,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	return ADMIN_STATE(R_ADMIN|R_MOD)
 
 /datum/jobban_panel/tgui_interact(mob/user, datum/tgui/ui)
-	if(!holder || !target)
+	if(!holder() || !target)
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -455,18 +455,18 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/jobban_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder || !target)
+	if(. || !holder() || !target)
 		return
 	switch(action)
 		if("toggle_job")
 			var/title = "[params["title"]]"
 			// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-			holder.Topic("jobban3=[title];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target)))
+			holder().Topic("jobban3=[title];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target)))
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_dept")
 			var/bantype = "[params["bantype"]]"
-			holder.Topic("jobban3=[bantype];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target)))
+			holder().Topic("jobban3=[bantype];jobban4=[REF(target)]", list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target)))
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh")
@@ -628,3 +628,15 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /// LC-refs: the our_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/dq_delete_book_panel/proc/our_comp() as /obj/machinery/librarycomp
 	return om_resolve(our_comp_handle)
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tag_menu_panel/proc/holder() as /datum/admins
+	return om_resolve(holder_handle)
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/unban_panel/proc/holder() as /datum/admins
+	return om_resolve(holder_handle)
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/jobban_panel/proc/holder() as /datum/admins
+	return om_resolve(holder_handle)

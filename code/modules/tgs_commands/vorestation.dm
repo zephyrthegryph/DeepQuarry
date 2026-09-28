@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 			return "```Ticket with id #[id] was not found in active tickets!```"
 
 	if(text_message)
-		to_chat(found.initiator, span_admin_pm_warning("Admin PM from-" + span_bold("Discord Relay") + ": [text_message]"))
+		to_chat(found.initiator(), span_admin_pm_warning("Admin PM from-" + span_bold("Discord Relay") + ": [text_message]"))
 		found.AddInteraction("Discord Relay: [text_message]")
 	switch(action)
 		if("reject")

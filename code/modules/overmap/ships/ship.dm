@@ -258,7 +258,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 	for(var/obj/machinery/computer/ship/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		S.attempt_hook_up(src)
 	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
-		if(check_ownership(E.holder))
+		if(check_ownership(E.holder()))
 			LAZYOR(engines, E)
 
 /obj/effect/overmap/visitable/ship/proc/get_landed_info()

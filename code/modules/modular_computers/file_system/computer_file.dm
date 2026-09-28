@@ -8,7 +8,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 	/// File size in GQ. Integers only!
 	var/size = 1
 	/// Holder that contains this file.
-	var/obj/item/computer_hardware/hard_drive/holder
+	var/holder_handle
 	//// Whether the file may be sent to someone via NTNet transfer, email or other means.
 	var/unsendable = FALSE
 	/// Whether the file may be deleted. Setting to TRUE prevents deletion/renaming/etc.
@@ -58,3 +58,7 @@ GLOBAL_VAR_INIT(file_uid, 0)
 		temp.filename = filename
 	temp.filetype = filetype
 	return temp
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/computer_file//proc/holder() as /obj/item/computer_hardware/hard_drive
+	return om_resolve(holder_handle)

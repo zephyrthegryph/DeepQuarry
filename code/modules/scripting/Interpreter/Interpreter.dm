@@ -167,7 +167,7 @@ Runs each statement in a block of code.
 			if(istype(S, /datum/node/statement/VariableAssignment))
 				var/datum/node/statement/VariableAssignment/stmt = S
 				var/name = stmt.var_name.id_name
-				if(!stmt.object)
+				if(!stmt.object())
 					// Below we assign the variable first to null if it doesn't already exist.
 					// This is necessary for assignments like +=, and when the variable is used in a function
 					// If the variable already exists in a different block, then AssignVariable will automatically use that one.
@@ -175,16 +175,16 @@ Runs each statement in a block of code.
 						AssignVariable(name, null)
 					AssignVariable(name, Eval(stmt.value))
 				else
-					var/datum/D = Eval(GetVariable(stmt.object.id_name))
+					var/datum/D = Eval(GetVariable(stmt.object().id_name))
 					if(!D) return
 					D.vars[stmt.var_name.id_name] = Eval(stmt.value)
 			else if(istype(S, /datum/node/statement/VariableDeclaration))
 				//VariableDeclaration nodes are used to forcibly declare a local variable so that one in a higher scope isn't used by default.
 				var/datum/node/statement/VariableDeclaration/dec=S
-				if(!dec.object)
+				if(!dec.object())
 					AssignVariable(dec.var_name().id_name, null, curScope())
 				else
-					var/datum/D = Eval(GetVariable(dec.object.id_name))
+					var/datum/D = Eval(GetVariable(dec.object().id_name))
 					if(!D) return
 					D.vars[dec.var_name().id_name] = null
 			else if(istype(S, /datum/node/statement/FunctionCall))
@@ -229,10 +229,10 @@ Runs a function block or a proc with the arguments specified in the script.
 		return 0
 
 	var/datum/node/statement/FunctionDefinition/def
-	if(!stmt.object)							//A scope's function is being called, stmt.object is null
+	if(!stmt.object())							//A scope's function is being called, stmt.object is null
 		def = GetFunction(stmt.func_name)
-	else if(istype(stmt.object))				//A method of an object exposed as a variable is being called, stmt.object is a /node/identifier
-		var/O = GetVariable(stmt.object.id_name)	//Gets a reference to the object which is the target of the function call.
+	else if(istype(stmt.object()))				//A method of an object exposed as a variable is being called, stmt.object is a /node/identifier
+		var/O = GetVariable(stmt.object().id_name)	//Gets a reference to the object which is the target of the function call.
 		if(!O) return							//Error already thrown in GetVariable()
 		def = Eval(O)
 
@@ -264,7 +264,7 @@ Runs a function block or a proc with the arguments specified in the script.
 			params+=list(Eval(P))
 		if(isobject(def))	//def is an object which is the target of a function call
 			if( !hascall(def, stmt.func_name) )
-				RaiseError(new/datum/runtimeError/UndefinedFunction("[stmt.object.id_name].[stmt.func_name]"))
+				RaiseError(new/datum/runtimeError/UndefinedFunction("[stmt.object().id_name].[stmt.func_name]"))
 				return
 			return call(def, stmt.func_name)(arglist(params))
 		else										//def is a path to a global proc

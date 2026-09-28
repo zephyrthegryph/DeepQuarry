@@ -18,19 +18,19 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	panel.tgui_interact(owner.mob)
 
 /datum/edit_player_panel
-	var/datum/admins/holder
+	var/holder_handle
 	var/mob/target
 
 /datum/edit_player_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	holder = owner_holder
+	holder_handle = om_handle(owner_holder)
 	target = target_mob
 
 // LIFECYCLE: leaves the per-admin panel index.
 /datum/edit_player_panel/Destroy(force, ...)
-	if(holder && target)
-		GLOB.dq_edit_player_panels -= "[REF(holder)]-[REF(target)]"
-	holder = null
+	if(holder() && target)
+		GLOB.dq_edit_player_panels -= "[REF(holder())]-[REF(target)]"
+	holder_handle = null
 	target = null
 	return ..()
 
@@ -38,7 +38,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	return ADMIN_STATE(R_HOLDER)
 
 /datum/edit_player_panel/tgui_interact(mob/user, datum/tgui/ui)
-	if(!holder || !target)
+	if(!holder() || !target)
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -157,11 +157,11 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	return keys
 
 /datum/edit_player_panel/proc/forward_topic(qs, list/extra_params = null)
-	forward_holder_topic(holder, qs, extra_params)
+	forward_holder_topic(holder(), qs, extra_params)
 
 /datum/edit_player_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder || !target)
+	if(. || !holder() || !target)
 		return
 	// Most actions take action=<x>=REF(target) form. Build the ref once.
 	var/tref = "[REF(target)]"
@@ -178,7 +178,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			SStgui.update_uis(src)
 			return TRUE
 		if("vv")
-			holder.Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
+			holder().Topic("Vars=[tref]", list("_src_" = "vars", "Vars" = tref))
 			return TRUE
 		if("traitor")
 			forward_topic("traitor=[tref]")
@@ -301,3 +301,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 			forward_topic("toglang=[tref];lang=[lang]")
 			SStgui.update_uis(src)
 			return TRUE
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/edit_player_panel/proc/holder() as /datum/admins
+	return om_resolve(holder_handle)

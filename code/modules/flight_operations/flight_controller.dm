@@ -210,8 +210,8 @@ SUBSYSTEM_DEF(flight_operations)
 		var/datum/flight_vessel/existing = vessels[existing_id]
 		if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
 			var/obj/effect/overmap/visitable/ship/landable/landable = ship
-			existing.shuttle = SSshuttles.shuttles[landable.shuttle]
-			if(existing.shuttle)
+			existing.shuttle_handle = om_handle(SSshuttles.shuttles[landable.shuttle])
+			if(existing.shuttle())
 				existing.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
 		return existing
 	var/datum/flight_vessel/vessel = new
@@ -221,19 +221,19 @@ SUBSYSTEM_DEF(flight_operations)
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC | FLIGHT_CAP_DOCK
 	if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
 		var/obj/effect/overmap/visitable/ship/landable/landable = ship
-		vessel.shuttle = SSshuttles.shuttles[landable.shuttle]
+		vessel.shuttle_handle = om_handle(SSshuttles.shuttles[landable.shuttle])
 		vessel.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
 	vessels[vessel.id] = vessel
 	vessel_by_ship[REF(ship)] = vessel.id
 	ship.flight_vessel_id = vessel.id
 	register_destination(ship)
 	var/obj/effect/overmap/visitable/physical_target
-	if(vessel.shuttle?.current_location)
-		physical_target = waypoint_sector(vessel.shuttle.current_location)
+	if(vessel.shuttle()?.current_location)
+		physical_target = waypoint_sector(vessel.shuttle().current_location)
 	var/datum/flight_destination/physical_context = destination_for_target(physical_target)
 	vessel.orbit_parent_id = physical_context?.orbit_parent_id || planet_id_named("Sif") || first_planet_id()
-	if(vessel.shuttle?.current_location)
-		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle.current_location)
+	if(vessel.shuttle()?.current_location)
+		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle().current_location)
 		if(current_port)
 			vessel.docked_port_id = current_port.id
 			current_port.occupied_by_handle = om_handle(vessel)
@@ -317,7 +317,7 @@ SUBSYSTEM_DEF(flight_operations)
 		if(istype(vessel.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier))
 			vessel.docked_port_id = null
 			continue
-		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle?.current_location)
+		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle()?.current_location)
 		vessel.docked_port_id = current_port?.id
 		if(current_port)
 			current_port.occupied_by_handle = om_handle(vessel)
@@ -326,7 +326,7 @@ SUBSYSTEM_DEF(flight_operations)
 	return ports[port_by_landmark[REF(landmark)]]
 
 /datum/controller/subsystem/flight_operations/proc/reserve_arrival_port(datum/flight_plan/plan)
-	if(!plan?.vessel?.shuttle)
+	if(!plan?.vessel?.shuttle())
 		return null
 	for(var/id in ports)
 		var/datum/flight_port/port = ports[id]
@@ -359,7 +359,7 @@ SUBSYSTEM_DEF(flight_operations)
 		if(site.assigned_flight_vessel() && site.assigned_flight_vessel() != vessel)
 			return null
 		site.assigned_flight_vessel_handle = om_handle(vessel)
-		site.assigned_shuttle_handle = om_handle(vessel.shuttle)
+		site.assigned_shuttle_handle = om_handle(vessel.shuttle())
 		vessel.active_expedition = site
 	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
@@ -396,18 +396,18 @@ SUBSYSTEM_DEF(flight_operations)
 	if(plan.state == FLIGHT_PLAN_PREPARING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
 		if(istype(landable) && landable.status == SHIP_STATUS_LANDED)
-			if(!landable.landmark || !plan.vessel.shuttle)
+			if(!landable.landmark || !plan.vessel.shuttle())
 				plan.fail("The vessel has no open-space departure landmark.")
 				return
 			plan.state = FLIGHT_PLAN_UNDOCKING
 			plan.departure_deadline = world.time + 20 SECONDS
-			plan.vessel.shuttle.short_jump(landable.landmark)
+			plan.vessel.shuttle().short_jump(landable.landmark)
 			return
 		enter_transit(plan)
 		return
 	if(plan.state == FLIGHT_PLAN_UNDOCKING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
-		if(istype(landable) && landable.status == SHIP_STATUS_OVERMAP && plan.vessel.shuttle.moving_status == SHUTTLE_IDLE)
+		if(istype(landable) && landable.status == SHIP_STATUS_OVERMAP && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE)
 			enter_transit(plan)
 			return
 		if(world.time > plan.departure_deadline)
@@ -444,7 +444,7 @@ SUBSYSTEM_DEF(flight_operations)
 	if(plan.state == FLIGHT_PLAN_ARRIVING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
 		var/obj/effect/shuttle_landmark/expected_landmark = plan.arrival_port()?.landmark() || plan.destination().expedition()?.landing_waypoint
-		if(!plan.vessel.shuttle || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle.moving_status == SHUTTLE_IDLE && plan.vessel.shuttle.current_location == expected_landmark))
+		if(!plan.vessel.shuttle() || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE && plan.vessel.shuttle().current_location == expected_landmark))
 			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
 			plan.arrival_at = world.time
@@ -470,15 +470,15 @@ SUBSYSTEM_DEF(flight_operations)
 /datum/controller/subsystem/flight_operations/proc/execute_arrival(datum/flight_plan/plan)
 	var/datum/flight_vessel/vessel = plan.vessel
 	var/datum/flight_destination/destination = plan.destination()
-	if(vessel.shuttle && destination.expedition()?.landing_waypoint)
-		vessel.shuttle.set_destination(destination.expedition().landing_waypoint)
-		vessel.shuttle.short_jump(destination.expedition().landing_waypoint)
+	if(vessel.shuttle() && destination.expedition()?.landing_waypoint)
+		vessel.shuttle().set_destination(destination.expedition().landing_waypoint)
+		vessel.shuttle().short_jump(destination.expedition().landing_waypoint)
 		vessel.orbit_parent_id = destination.orbit_parent_id
 		vessel.docked_port_id = null
 		return TRUE
-	if(vessel.shuttle && plan.arrival_port()?.can_accept(vessel, plan))
-		vessel.shuttle.set_destination(plan.arrival_port().landmark())
-		vessel.shuttle.short_jump(plan.arrival_port().landmark())
+	if(vessel.shuttle() && plan.arrival_port()?.can_accept(vessel, plan))
+		vessel.shuttle().set_destination(plan.arrival_port().landmark())
+		vessel.shuttle().short_jump(plan.arrival_port().landmark())
 		vessel.orbit_parent_id = destination.orbit_parent_id
 		return TRUE
 	if(vessel.ship() && destination.kind != FLIGHT_DEST_STATION && destination.kind != FLIGHT_DEST_VESSEL)

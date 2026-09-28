@@ -56,24 +56,24 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		SStgui.update_uis(dq_permissions_panel)
 
 /datum/permissions_panel
-	var/datum/admins/holder
+	var/holder_handle
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
 	..()
-	holder = owner_holder
+	holder_handle = om_handle(owner_holder)
 
 // LIFECYCLE: clears its holder's cached panel.
 /datum/permissions_panel/Destroy(force, ...)
-	if(holder)
-		holder.dq_permissions_panel = null
-	holder = null
+	if(holder())
+		holder().dq_permissions_panel = null
+	holder_handle = null
 	return ..()
 
 /datum/permissions_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_PERMISSIONS)
 
 /datum/permissions_panel/tgui_interact(mob/user, datum/tgui/ui)
-	if(!holder)
+	if(!holder())
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -154,7 +154,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			can_delete = TRUE
 		if(length(admins_by_rank[rank_name]) != 0)
 			can_delete = FALSE
-		if((holder.can_edit_rights_flags() & rank_datum.rights) != rank_datum.rights)
+		if((holder().can_edit_rights_flags() & rank_datum.rights) != rank_datum.rights)
 			can_modify = FALSE
 			can_delete = FALSE
 		rows += list(list(
@@ -168,15 +168,15 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			"can_delete" = !!can_delete,
 		))
 	data["rows"] = rows
-	data["can_create"] = check_rights(R_PERMISSIONS) && holder.can_edit_rights_flags() != NONE
+	data["can_create"] = check_rights(R_PERMISSIONS) && holder().can_edit_rights_flags() != NONE
 	return data
 
 /datum/permissions_panel/proc/page_data_logging()
 	var/list/data = list()
-	data["log_target"] = holder.dq_perms_log_target
-	data["log_actor"] = holder.dq_perms_log_actor
-	data["log_operation"] = holder.dq_perms_log_operation || PERMISSIONS_ACTION_NONE
-	data["log_page"] = holder.dq_perms_log_page
+	data["log_target"] = holder().dq_perms_log_target
+	data["log_actor"] = holder().dq_perms_log_actor
+	data["log_operation"] = holder().dq_perms_log_operation || PERMISSIONS_ACTION_NONE
+	data["log_page"] = holder().dq_perms_log_page
 	data["action_options"] = GLOB.permission_action_types.Copy()
 
 	var/log_count = 0
@@ -186,7 +186,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			AND adminckey LIKE CONCAT('%',:adminckey,'%')
 			AND (:operation IS NULL OR operation = :operation)
 		"},
-		list("target" = holder.dq_perms_log_target, "adminckey" = holder.dq_perms_log_actor, "operation" = holder.dq_perms_log_operation)
+		list("target" = holder().dq_perms_log_target, "adminckey" = holder().dq_perms_log_actor, "operation" = holder().dq_perms_log_operation)
 	)
 	if(q_count.warn_execute() && q_count.NextRow())
 		log_count = text2num(q_count.item[1])
@@ -211,10 +211,10 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		ORDER BY datetime DESC
 		LIMIT :skip, :take
 	"}, list(
-		"target" = holder.dq_perms_log_target,
-		"adminckey" = holder.dq_perms_log_actor,
-		"operation" = holder.dq_perms_log_operation,
-		"skip" = PERMISSIONS_LOGS_PER_PAGE * holder.dq_perms_log_page,
+		"target" = holder().dq_perms_log_target,
+		"adminckey" = holder().dq_perms_log_actor,
+		"operation" = holder().dq_perms_log_operation,
+		"skip" = PERMISSIONS_LOGS_PER_PAGE * holder().dq_perms_log_page,
 		"take" = PERMISSIONS_LOGS_PER_PAGE,
 	))
 	if(q_search.warn_execute())
@@ -276,7 +276,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		var/can_delete = FALSE
 		if(rank_datum.source == RANK_SOURCE_DB && check_rights(R_DBRANKS))
 			can_delete = TRUE
-		if((holder.can_edit_rights_flags() & rank_datum.rights) == rank_datum.rights)
+		if((holder().can_edit_rights_flags() & rank_datum.rights) == rank_datum.rights)
 			can_delete = FALSE
 		unused_rank_rows += list(list(
 			"name" = unused_rank,
@@ -291,9 +291,9 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/permissions_panel/tgui_data(mob/user)
 	var/list/data = list()
-	if(!holder)
+	if(!holder())
 		return data
-	data["page"] = holder.dq_perms_page || PERMISSIONS_PAGE_PERMISSIONS
+	data["page"] = holder().dq_perms_page || PERMISSIONS_PAGE_PERMISSIONS
 	data["PERMISSIONS_PAGE_PERMISSIONS"] = PERMISSIONS_PAGE_PERMISSIONS
 	data["PERMISSIONS_PAGE_RANKS"] = PERMISSIONS_PAGE_RANKS
 	data["PERMISSIONS_PAGE_LOGGING"] = PERMISSIONS_PAGE_LOGGING
@@ -310,11 +310,11 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	return data
 
 /datum/permissions_panel/proc/forward_topic(qs)
-	forward_holder_topic(holder, qs)
+	forward_holder_topic(holder(), qs)
 
 /datum/permissions_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
-	if(. || !holder)
+	if(. || !holder())
 		return
 	switch(action)
 		// Page navigation.
@@ -372,18 +372,18 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			return TRUE
 		// Logging page actions.
 		if("log_search")
-			holder.dq_perms_log_target = "[params["target"]]"
-			holder.dq_perms_log_actor = "[params["actor"]]"
+			holder().dq_perms_log_target = "[params["target"]]"
+			holder().dq_perms_log_actor = "[params["actor"]]"
 			var/op = "[params["operation"]]"
 			if(op == PERMISSIONS_ACTION_NONE || op == "")
-				holder.dq_perms_log_operation = null
+				holder().dq_perms_log_operation = null
 			else
-				holder.dq_perms_log_operation = op
-			holder.dq_perms_log_page = 0
+				holder().dq_perms_log_operation = op
+			holder().dq_perms_log_page = 0
 			SStgui.update_uis(src)
 			return TRUE
 		if("log_page")
-			holder.dq_perms_log_page = text2num(params["page"]) || 0
+			holder().dq_perms_log_page = text2num(params["page"]) || 0
 			SStgui.update_uis(src)
 			return TRUE
 		// Housekeeping page actions.
@@ -401,3 +401,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			return TRUE
 
 REF_OWNED(/datum/admins, "dq_permissions_panel")
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/permissions_panel/proc/holder() as /datum/admins
+	return om_resolve(holder_handle)

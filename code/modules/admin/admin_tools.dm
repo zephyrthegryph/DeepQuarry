@@ -13,7 +13,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 
 	var/datum/persistent_client/selected = GLOB.persistent_clients_by_ckey[selected_key]
 
-	user.show_cmd_admin_check_player_logs(selected.logging, selected.mob?.name, selected_key, selected.mob?.mind?.special_role, TRUE)
+	user.show_cmd_admin_check_player_logs(selected.logging, selected.mob()?.name, selected_key, selected.mob()?.mind?.special_role, TRUE)
 
 /datum/player_log_viwer
 	var/list/log_data
@@ -85,8 +85,8 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 			target_ckey = new_ckey
 			var/datum/persistent_client/selected = GLOB.persistent_clients_by_ckey[new_ckey]
 			log_data = selected.logging
-			target_name = selected.mob?.name
-			special_role = selected.mob?.mind?.special_role
+			target_name = selected.mob()?.name
+			special_role = selected.mob()?.mind?.special_role
 			client_view = TRUE
 			refresh_data()
 			last_refresh = world.time

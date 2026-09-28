@@ -400,7 +400,7 @@ SUBSYSTEM_DEF(tgui)
 	log_tgui(user, context = "SStgui/force_close_window")
 	// Close all tgui datums based on window_id.
 	for(var/datum/tgui/ui in user.tgui_open_uis)
-		if(ui.window && ui.window.id == window_id)
+		if(ui.window() && ui.window().id == window_id)
 			ui.close(can_be_suspended = FALSE)
 	// Close window directly just to be sure.
 	if(winexists(user.client, window_id))

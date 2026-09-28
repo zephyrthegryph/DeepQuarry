@@ -27,7 +27,7 @@
 	var/list/preapplied_geometry
 	/// Rate limit for automatic local-development browser telemetry.
 	var/last_perf_log_at = 0
-	var/datum/tgui/locked_by
+	var/locked_by_handle
 	var/subscriber_object_handle
 	var/subscriber_delegate
 	var/fatally_errored = FALSE
@@ -258,7 +258,7 @@
 		log_tgui(client, "TGUI transition: stage=server-acquire-hide-sent generation=[generation + 1].", window = src)
 	generation++
 	locked = TRUE
-	locked_by = ui
+	locked_by_handle = om_handle(ui)
 	visible = FALSE
 
 /**
@@ -271,7 +271,7 @@
 	if(locked)
 		sent_assets = list()
 	locked = FALSE
-	locked_by = null
+	locked_by_handle = null
 
 /**
  * public
@@ -467,8 +467,8 @@
 	if(type == "ready" && prewarmed && !locked)
 		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))
 	// Pass message to UI that requested the lock
-	if(locked && locked_by)
-		var/prevent_default = locked_by.on_message(type, payload, href_list)
+	if(locked && locked_by())
+		var/prevent_default = locked_by().on_message(type, payload, href_list)
 		if(prevent_default)
 			return
 	// Pass message to the subscriber
@@ -490,7 +490,7 @@
 			visible = TRUE
 			var/reported_size = payload?["geometry"]?["size"]
 			var/reported_pos = payload?["geometry"]?["pos"]
-			if(locked_by?.interface && istext(reported_size))
+			if(locked_by()?.interface && istext(reported_size))
 				var/static/regex/safe_size = regex(@"^\d+x\d+$")
 				if(safe_size.Find(reported_size))
 					var/list/safe_geometry = list("size" = reported_size)
@@ -498,7 +498,7 @@
 						var/static/regex/safe_pos = regex(@"^-?\d+,-?\d+$")
 						if(safe_pos.Find(reported_pos))
 							safe_geometry["pos"] = reported_pos
-					LAZYSET(client.tgui_resolved_geometries, locked_by.interface, safe_geometry)
+					LAZYSET(client.tgui_resolved_geometries, locked_by().interface, safe_geometry)
 			SEND_SIGNAL(src, COMSIG_TGUI_WINDOW_VISIBLE, client)
 		if("perf/flicker")
 			#ifndef DEBUG
@@ -594,3 +594,7 @@
 /// LC-refs: the subscriber_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_window/proc/subscriber_object() as /datum
 	return om_resolve(subscriber_object_handle)
+
+/// LC-refs: the locked_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_window/proc/locked_by() as /datum/tgui
+	return om_resolve(locked_by_handle)

@@ -152,23 +152,23 @@
 /obj/item/shovel/wood
 	icon_state = "whiteshovel"
 	item_state = "whiteshovel"
-	var/datum/material/material
+	var/material_handle
 	resistance_flags = FLAMMABLE
 
 /obj/item/shovel/wood/Initialize(mapload, _mat)
 	. = ..()
-	material = get_material_by_name(_mat)
-	if(!istype(material))
-		material = null
+	material_handle = om_handle(get_material_by_name(_mat))
+	if(!istype(material()))
+		material_handle = null
 	else
-		name = "[material.display_name] shovel"
-		set_bulk_material(material.name, 50)
+		name = "[material().display_name] shovel"
+		set_bulk_material(material().name, 50)
 		update_icon()
 
 /obj/item/shovel/wood/update_icon()
 	. = ..()
-	color = material ? material.icon_colour : initial(color)
-	alpha = min(max(255 * material.opacity, 80), 255)
+	color = material() ? material().icon_colour : initial(color)
+	alpha = min(max(255 * material().opacity, 80), 255)
 
 /obj/item/shovel/spade
 	name = "spade"
@@ -393,3 +393,7 @@
 /obj/structure/trailblazer/yellow/set_color()
 	icon_state = "yellowtrail_light_on"
 	set_light(2, 2, "#ffea00")
+
+/// LC-refs: the material this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/shovel/wood/proc/material() as /datum/material
+	return om_resolve(material_handle)

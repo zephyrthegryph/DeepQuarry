@@ -129,7 +129,7 @@ REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolve
 		L[++L.len] = list("== Admin Tickets ==", "", null, null)
 		L[++L.len] = list("Active Tickets:", "[astatclick.update("[admin_tickets.len]")]", null, REF(astatclick))
 		for(var/datum/ticket/T as anything in admin_tickets)
-			if(T.initiator)
+			if(T.initiator())
 				L[++L.len] = list("ADM #[T.id]. [T.initiator_key_name]:", T.name, null, REF(T.statclick))
 			else
 				num_adm_tickets_disconnected++
@@ -141,7 +141,7 @@ REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolve
 	L[++L.len] = list("== Mentor Tickets ==", "", null, null)
 	L[++L.len] = list("Active Tickets:", "[astatclick.update("[mentor_tickets.len]")]", null, REF(astatclick))
 	for(var/datum/ticket/T as anything in mentor_tickets)
-		if(T.initiator)
+		if(T.initiator())
 			L[++L.len] = list("MEN #[T.id]. [T.initiator_key_name]:", T.name, null, REF(T.statclick))
 		else
 			num_men_tickets_disconnected++
@@ -166,8 +166,8 @@ REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolve
 	if(C.current_ticket())
 		var/datum/ticket/T = C.current_ticket()
 		T.AddInteraction("Client disconnected.")
-		T.initiator?.mob?.clear_alert("open ticket")
-		T.initiator = null
+		T.initiator()?.mob?.clear_alert("open ticket")
+		T.initiator_handle = null
 		T = null
 
 //Get a ticket given a ckey
@@ -223,7 +223,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/opened_at
 	var/closed_at
 
-	var/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
+	var/initiator_handle	//semi-misnomer, it's the person who ahelped/was bwoinked
 	var/handler_ref
 	var/handler = "/Unassigned\\" // The admin handling the ticket
 	var/initiator_ckey
@@ -260,14 +260,14 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	level = ticket_level
 
-	initiator = C
-	initiator_ckey = initiator.ckey
-	initiator_key_name = key_name(initiator, FALSE, TRUE)
-	if(initiator.current_ticket())	//This is a bug
+	initiator_handle = om_handle(C)
+	initiator_ckey = initiator().ckey
+	initiator_key_name = key_name(initiator(), FALSE, TRUE)
+	if(initiator().current_ticket())	//This is a bug
 		log_admin("Ticket erroneously left open by code, closing...")
-		initiator.current_ticket().AddInteraction("Ticket erroneously left open by code")
-		initiator.current_ticket().Close(usr)
-	initiator.current_ticket_handle = om_handle(src)
+		initiator().current_ticket().AddInteraction("Ticket erroneously left open by code")
+		initiator().current_ticket().Close(usr)
+	initiator().current_ticket_handle = om_handle(src)
 
 	var/parsed_message = keywords_lookup(msg)
 
@@ -288,7 +288,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 				to_chat(C, span_adminnotice("PM to-" + span_bold("Admins") + ": [name]"))
 
 		var/admin_number_present = count_admins()
-		log_admin("Ticket #[id]: [key_name(initiator)]: [name] - heard by [admin_number_present] non-AFK admins who have +BAN.")
+		log_admin("Ticket #[id]: [key_name(initiator())]: [name] - heard by [admin_number_present] non-AFK admins who have +BAN.")
 		if(admin_number_present <= 0)
 			to_chat(C, span_notice("No active admins are online, your adminhelp was sent to the admin discord."))
 
@@ -327,9 +327,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 /datum/ticket/proc/FullMonty(ref_src, admin_commands = FALSE)
 	if(!ref_src)
 		ref_src = "\ref[src]"
-	if(initiator && initiator.mob)
+	if(initiator() && initiator().mob)
 		if(admin_commands)
-			. = ADMIN_FULLMONTY_NONAME(initiator.mob)
+			. = ADMIN_FULLMONTY_NONAME(initiator().mob)
 	else
 		. = "Initiator disconnected."
 	if(state == AHELP_ACTIVE)
@@ -412,18 +412,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 			feedback_dec("ticket_resolve")
 	state = AHELP_ACTIVE
 	closed_at = null
-	if(initiator)
-		initiator.current_ticket_handle = om_handle(src)
+	if(initiator())
+		initiator().current_ticket_handle = om_handle(src)
 
 	var/admin_reopener_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_purple("Reopened by [admin_reopener_name]"))
-	if(initiator)
-		to_chat(initiator, span_filter_adminlog("[span_purple("Ticket [TicketHref("#[id]")] was reopened by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
+	if(initiator())
+		to_chat(initiator(), span_filter_adminlog("[span_purple("Ticket [TicketHref("#[id]")] was reopened by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
 	var/msg = span_adminhelp("Ticket [TicketHref("#[id]")] reopened by [admin_reopener_name].")
 	message_admins(msg)
 	log_admin(msg)
 	feedback_inc("ticket_reopen")
-	initiator.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
+	initiator().mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 	//TicketPanel()	//can only be done from here, so refresh it
 
 //private
@@ -433,8 +433,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	closed_at = world.time
 	QDEL_NULL(statclick)
 	GLOB.tickets.active_tickets -= src
-	if(initiator && initiator.current_ticket() == src)
-		initiator.current_ticket_handle = null
+	if(initiator() && initiator().current_ticket() == src)
+		initiator().current_ticket_handle = null
 
 //Mark open ticket as closed/meme
 /datum/ticket/proc/Close(user, silent = FALSE)
@@ -445,14 +445,14 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	GLOB.tickets.ListInsert(src)
 	var/admin_closer_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_filter_adminlog(span_red("Closed by [admin_closer_name].")))
-	if(initiator)
-		to_chat(initiator, span_filter_adminlog("[span_red("Ticket [TicketHref("#[id]")] was closed by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
+	if(initiator())
+		to_chat(initiator(), span_filter_adminlog("[span_red("Ticket [TicketHref("#[id]")] was closed by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
 	if(!silent)
 		feedback_inc("ahelp_close")
 		var/msg = "Ticket [TicketHref("#[id]")] closed by [admin_closer_name]."
 		message_admins(msg)
 		log_admin(msg)
-	initiator?.mob?.clear_alert("open ticket")
+	initiator()?.mob?.clear_alert("open ticket")
 
 //Mark open ticket as resolved/legitimate, returns ahelp verb
 /datum/ticket/proc/Resolve(user, silent = FALSE)
@@ -464,8 +464,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	var/admin_resolver_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_filter_adminlog(span_green("Resolved by [admin_resolver_name].")))
-	if(initiator)
-		to_chat(initiator, span_filter_adminlog("[span_green("Ticket [TicketHref("#[id]")] was marked resolved by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
+	if(initiator())
+		to_chat(initiator(), span_filter_adminlog("[span_green("Ticket [TicketHref("#[id]")] was marked resolved by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
 	if(!silent)
 		feedback_inc("ticket_resolve")
 		var/msg = "Ticket [TicketHref("#[id]")] resolved by [admin_resolver_name]"
@@ -475,18 +475,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 			message_admins(msg)
 
 		log_admin(msg)
-	initiator?.mob?.clear_alert("open ticket")
+	initiator()?.mob?.clear_alert("open ticket")
 
 //Close and return ahelp verb, use if ticket is incoherent
 /datum/ticket/proc/Reject(mob/user)
 	if(state != AHELP_ACTIVE)
 		return
 
-	if(initiator)
-		if(initiator.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
-			initiator << 'sound/effects/adminhelp.ogg'
+	if(initiator())
+		if(initiator().prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
+			initiator() << 'sound/effects/adminhelp.ogg'
 
-		to_chat(initiator, span_filter_pm("[span_red(span_huge(span_bold("- AdminHelp Rejected! -")))]<br>\
+		to_chat(initiator(), span_filter_pm("[span_red(span_huge(span_bold("- AdminHelp Rejected! -")))]<br>\
 							[span_red(span_bold("Your admin help was rejected."))]<br>\
 							Please try to be calm, clear, and descriptive in admin helps, do not assume the admin has seen any related events, and clearly state the names of anybody you are reporting."))
 
@@ -507,8 +507,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	msg += "[span_red(span_bold("This is something that can be solved ICly, and does not currently require staff intervention."))]<br>"
 	msg += "[span_red("Your AdminHelp may also be unanswerable due to ongoing events.")]"
 
-	if(initiator)
-		to_chat(initiator, span_filter_pm(msg))
+	if(initiator())
+		to_chat(initiator(), span_filter_pm(msg))
 
 	var/admin_resolve_name = ismob(user) ? key_name_admin(user) : user
 	feedback_inc("ahelp_icissue")
@@ -536,8 +536,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		if(1)
 			msg = span_red("Your AdminHelp is being handled by [handler_shown_name] please be patient.")
 
-	if(initiator)
-		to_chat(initiator, msg)
+	if(initiator())
+		to_chat(initiator(), msg)
 
 	feedback_inc("ahelp_handling")
 	msg = "Ticket [TicketHref("#[id]")] being handled by [handler_shown_name]"
@@ -563,7 +563,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 /datum/ticket/proc/Escalate()
 	if(tgui_alert(usr, "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.","Escalate",list("Yes","No")) != "Yes")
 		return
-	if (src.initiator == null) // You can't escalate a mentorhelp of someone who's logged out because it won't create the adminhelp properly
+	if (src.initiator() == null) // You can't escalate a mentorhelp of someone who's logged out because it won't create the adminhelp properly
 		to_chat(usr, span_mentor_warning("Error: client not found, unable to escalate."))
 		return
 
@@ -573,7 +573,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	AddInteraction("[key_name_admin(usr)] escalated Ticket.")
 	message_mentors("[usr.ckey] escalated Ticket [TicketHref("#[id]")]")
 	log_admin("[key_name(usr)] escalated ticket [src.name]")
-	to_chat(src.initiator, span_mentor("[usr.ckey] escalated your ticket to admins."))
+	to_chat(src.initiator(), span_mentor("[usr.ckey] escalated your ticket to admins."))
 
 //Forwarded action from admin/Topic
 /datum/ticket/proc/Action(action)
@@ -601,9 +601,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		if("reply")
 			switch(level)
 				if(0)
-					usr.client.cmd_mhelp_reply(initiator)
+					usr.client.cmd_mhelp_reply(initiator())
 				if(1)
-					usr.client.cmd_ahelp_reply(initiator)
+					usr.client.cmd_ahelp_reply(initiator())
 		if("icissue")
 			ICIssue(usr)
 		if("close")
@@ -764,3 +764,7 @@ REF_OWNED(/datum/ticket, "statclick")
 /// LC-refs: the current ticket the (usually) not-admin client is dealing with -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/current_ticket() as /datum/ticket
 	return om_resolve(current_ticket_handle)
+
+/// LC-refs: semi-misnomer, it's the person who ahelped/was bwoinked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ticket/proc/initiator() as /client
+	return om_resolve(initiator_handle)

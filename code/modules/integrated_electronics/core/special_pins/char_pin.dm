@@ -4,7 +4,7 @@
 
 /datum/integrated_io/char/ask_for_pin_data(mob/user)
 	var/new_data = sanitizeSafe(tgui_input_text(user, "Please type in one character.","[src] char writing", encode = FALSE), 1, 0, 0)
-	if(holder.check_interactivity(user) )
+	if(holder().check_interactivity(user) )
 		to_chat(user, span_notice("You input [new_data ? "new_data" : "NULL"] into the pin."))
 		write_data_to_pin(new_data)
 
@@ -13,7 +13,7 @@
 		if(length(new_data) > 1)
 			return
 		data = new_data
-		holder.on_data_written()
+		holder().on_data_written()
 
 // This makes the text go from "A" to "%".
 /datum/integrated_io/char/scramble()

@@ -6,7 +6,7 @@
 	var/hostpda_handle
 
 	var/list/botlist = null		// list of bots
-	var/mob/living/bot/active 	// the active bot; if null, show bot list
+	var/active_handle	// the active bot; if null, show bot list
 	var/list/botstatus			// the status signal sent by the bot
 
 	var/bot_type				//The type of bot it is.
@@ -50,23 +50,23 @@
 	..()
 	switch(href_list["op"])
 		if("control")
-			active = locate(href_list["bot"])
-			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
+			active_handle = om_handle(locate(href_list["bot"]))
+			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
 
 		if("scanbots")		// find all bots
 			botlist = null
 			post_signal(control_freq, "command", "bot_status", s_filter = bot_filter)
 
 		if("botlist")
-			active = null
+			active_handle = null
 
 		if("stop", "go", "home")
-			post_signal(control_freq, "command", href_list["op"], "active", active, s_filter = bot_filter)
-			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
+			post_signal(control_freq, "command", href_list["op"], "active", active(), s_filter = bot_filter)
+			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
 
 		if("summon")
-			post_signal(control_freq, "command", "summon", "active", active, "target", get_turf(hostpda()), "useraccess", hostpda().GetAccess(), "user", usr, s_filter = bot_filter)
-			post_signal(control_freq, "command", "bot_status", "active", active, s_filter = bot_filter)
+			post_signal(control_freq, "command", "summon", "active", active(), "target", get_turf(hostpda()), "useraccess", hostpda().GetAccess(), "user", usr, s_filter = bot_filter)
+			post_signal(control_freq, "command", "bot_status", "active", active(), s_filter = bot_filter)
 
 /obj/item/radio/integrated/receive_signal(datum/signal/signal)
 	if(bot_type && isbot(signal.source()) && signal.data["type"] == bot_type)
@@ -75,7 +75,7 @@
 
 		botlist |= signal.source()
 
-		if(active == signal.source())
+		if(active() == signal.source())
 			var/list/b = signal.data
 			botstatus = b.Copy()
 
@@ -120,3 +120,7 @@
 /// LC-refs: the hostpda this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/integrated/proc/hostpda() as /obj/item/pda
 	return om_resolve(hostpda_handle)
+
+/// LC-refs: the active bot; if null, show bot list -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/radio/integrated/proc/active() as /mob/living/bot
+	return om_resolve(active_handle)

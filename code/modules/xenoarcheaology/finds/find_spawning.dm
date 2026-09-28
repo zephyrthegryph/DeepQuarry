@@ -753,8 +753,8 @@
 
 		if(istype(new_item, /obj/vehicle/boat))
 			var/obj/vehicle/boat/B = new_item
-			if(B.material && B.material.display_name)
-				source_material = B.material.display_name
+			if(B.material() && B.material().display_name)
+				source_material = B.material().display_name
 
 		//I split these apart. Above here is the primary item. Below here is the secondary item.
 		if(secondary_item)
@@ -770,8 +770,8 @@
 
 			if(istype(secondary_item, /obj/vehicle/boat))
 				var/obj/vehicle/boat/SB = secondary_item
-				if(SB.material && SB.material.display_name)
-					source_material = SB.material.display_name
+				if(SB.material() && SB.material().display_name)
+					source_material = SB.material().display_name
 
 		desc = "A [material_descriptor ? "[material_descriptor] " : ""][item_type] made of [source_material], all craftsmanship is of [pick("the lowest","low","average","high","the highest")] quality."
 		if(secondary_item)

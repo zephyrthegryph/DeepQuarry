@@ -87,32 +87,32 @@
 
 	var/list/darts
 	var/max_darts = 1
-	var/obj/item/syringe_cartridge/next
+	var/next_handle
 
 	special_handling = TRUE
 
 /obj/item/gun/launcher/syringe/consume_next_projectile()
-	if(next)
-		next.prime()
-		return next
+	if(next())
+		next().prime()
+		return next()
 	return null
 
 /obj/item/gun/launcher/syringe/handle_post_fire()
 	..()
-	LAZYREMOVE(darts, next)
-	next = null
+	LAZYREMOVE(darts, next())
+	next_handle = null
 
 /obj/item/gun/launcher/syringe/attack_self(mob/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(next)
+	if(next())
 		user.visible_message("[user] unlatches and carefully relaxes the bolt on [src].", span_warning("You unlatch and carefully relax the bolt on [src], unloading the spring."))
-		next = null
+		next_handle = null
 	else if(length(darts))
 		playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 		user.visible_message("[user] draws back the bolt on [src], clicking it into place.", span_warning("You draw back the bolt on the [src], loading the spring!"))
-		next = LAZYACCESS(darts, 1)
+		next_handle = om_handle(LAZYACCESS(darts, 1))
 	add_fingerprint(user)
 
 /obj/item/gun/launcher/syringe/attack_hand(mob/living/user as mob)
@@ -120,7 +120,7 @@
 		if(!length(darts))
 			to_chat(user, span_warning("[src] is empty."))
 			return
-		if(next)
+		if(next())
 			to_chat(user, span_warning("[src]'s cover is locked shut."))
 			return
 		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
@@ -154,3 +154,7 @@
 /// LC-refs: the syringe this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/syringe_cartridge/proc/syringe() as /obj/item/reagent_containers/syringe
 	return om_resolve(syringe_handle)
+
+/// LC-refs: the next this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/gun/launcher/syringe/proc/next() as /obj/item/syringe_cartridge
+	return om_resolve(next_handle)

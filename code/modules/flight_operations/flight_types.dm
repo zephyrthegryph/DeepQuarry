@@ -67,7 +67,7 @@
 	var/name = "Unregistered Vessel"
 	var/capabilities = 0
 	var/ship_handle
-	var/datum/shuttle/autodock/overmap/shuttle
+	var/shuttle_handle
 	var/datum/flight_plan/active_plan
 	var/datum/expedition_site/active_expedition
 	/// Authoritative celestial context; replaces hidden overmap tile coordinates.
@@ -105,11 +105,11 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 	return host_destination_id == destination_id || (destination_id in serves_destination_ids)
 
 /datum/flight_port/proc/can_accept(datum/flight_vessel/vessel, datum/flight_plan/requesting_plan)
-	if(!vessel?.shuttle || !landmark() || QDELETED(landmark()) || !landmark().is_valid(vessel.shuttle))
+	if(!vessel?.shuttle() || !landmark() || QDELETED(landmark()) || !landmark().is_valid(vessel.shuttle()))
 		return FALSE
 	if(istype(landmark(), /obj/effect/shuttle_landmark/southern_cross/expedition_station))
 		var/obj/effect/shuttle_landmark/southern_cross/expedition_station/station_berth = landmark()
-		if(!station_berth.accepts_shuttle(vessel.shuttle))
+		if(!station_berth.accepts_shuttle(vessel.shuttle()))
 			return FALSE
 	if(berth_group)
 		for(var/id in SSflight_operations.ports)
@@ -257,3 +257,7 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 /// LC-refs: the arrival_port this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_plan/proc/arrival_port() as /datum/flight_port
 	return om_resolve(arrival_port_handle)
+
+/// LC-refs: the shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/flight_vessel/proc/shuttle() as /datum/shuttle/autodock/overmap
+	return om_resolve(shuttle_handle)

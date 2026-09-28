@@ -1,7 +1,7 @@
 // Holds the various pages and implementations for codex books, so they can be used in more than just books.
 
 /datum/codex_tree
-	var/atom/movable/holder = null
+	var/holder_handle
 	var/root_type = null
 	var/datum/lore/codex/home = null // Top-most page.
 	var/list/current_page = list() // Current page or category to display to the user. // converted to list to track multiple players.
@@ -9,7 +9,7 @@
 	var/list/history = list() // List of pages we previously visited. // now a 2D list
 
 /datum/codex_tree/New(new_holder, new_root_type)
-	holder = new_holder
+	holder_handle = om_handle(new_holder)
 	root_type = new_root_type
 	generate_pages()
 	..()
@@ -112,7 +112,7 @@
 
 	var/dat
 	dat =  "<head>"
-	dat += "<title>[holder.name] ([D.name])</title>"
+	dat += "<title>[holder().name] ([D.name])</title>"
 	dat += "<link rel='stylesheet' href='codex.css' />"
 	dat += "</head>"
 
@@ -169,3 +169,7 @@
 	display(usr)
 
 REF_OWNED(/datum/codex_tree, "home")
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/codex_tree/proc/holder() as /atom/movable
+	return om_resolve(holder_handle)

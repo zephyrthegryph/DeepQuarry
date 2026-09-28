@@ -93,7 +93,7 @@ SUBSYSTEM_DEF(expedition)
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/expedition/proc/plot_for_vessel(mob/user, datum/flight_vessel/vessel, atom/payout_source)
-	if(!vessel?.shuttle || !vessel.has_capabilities(FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND))
+	if(!vessel?.shuttle() || !vessel.has_capabilities(FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND))
 		to_chat(user, span_warning("This vessel cannot perform surface expeditions."))
 		return null
 	if(vessel.active_expedition && !QDELETED(vessel.active_expedition) && vessel.active_expedition.status != EXP_STATUS_EXPIRED)
@@ -118,7 +118,7 @@ SUBSYSTEM_DEF(expedition)
 	var/mission_type = choices[choice]
 	var/datum/expedition_mission/mission = new mission_type(difficulty)
 	mission.faction_type = expedition_pick_faction(difficulty)
-	var/datum/expedition_site/site = create_site_descriptor(mission, difficulty, vessel.shuttle)
+	var/datum/expedition_site/site = create_site_descriptor(mission, difficulty, vessel.shuttle())
 	if(!site)
 		qdel(mission)
 		to_chat(user, span_warning("Flight Operations could not survey a viable destination."))

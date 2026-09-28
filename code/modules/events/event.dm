@@ -10,12 +10,12 @@
 	var/add_to_queue= 1	// If true, add back to the queue of events upon finishing.
 	var/list/role_weights // null when the event has no job weighting
 	var/list/min_job_count
-	var/datum/event/event_type
+	var/event_type_handle
 
 /datum/event_meta/New(event_severity, event_name, datum/event/type, event_weight, list/job_weights, is_one_shot = 0, min_event_weight = 0, max_event_weight = 0, add_to_queue = 1, list/min_jobs)
 	name = event_name
 	severity = event_severity
-	event_type = type
+	event_type_handle = om_handle(type)
 	one_shot = is_one_shot
 	weight = event_weight
 	min_weight = min_event_weight
@@ -198,3 +198,7 @@
 /// LC-refs: Ship this event is acting upon (If this is event is due to overmap travel).nt etc. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/proc/victim() as /obj/effect/overmap/visitable/ship
 	return om_resolve(victim_handle)
+
+/// LC-refs: the event_type this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event_meta/proc/event_type() as /datum/event
+	return om_resolve(event_type_handle)

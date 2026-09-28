@@ -1,7 +1,7 @@
 /datum/event/hostile_runtime
 	var/picked_area_handle
 	var/list/obj/machinery/door/airlock/target_airlocks
-	var/obj/machinery/power/apc/apc
+	var/apc_handle
 
 	var/static/list/excluded = list(
 		/area/shuttle,
@@ -62,10 +62,14 @@
 
 /datum/event/hostile_runtime/tick()
 	if(activeFor == releaseWhen)
-		if(apc && apc.operating)
+		if(apc() && apc().operating)
 			for(var/obj/machinery/light/light in picked_area())
 				light.flicker(10)
 
 /// LC-refs: the picked_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/hostile_runtime/proc/picked_area() as /area
 	return om_resolve(picked_area_handle)
+
+/// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
+	return om_resolve(apc_handle)

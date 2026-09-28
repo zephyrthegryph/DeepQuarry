@@ -129,8 +129,8 @@ REF_OWNED_LIST(/obj/item/integrated_circuit, list("inputs", "outputs", "activato
 		UNTYPED_LIST_ADD(linked_list, list(
 			"ref" = REF(linked),
 			"name" = linked.name,
-			"holder_ref" = REF(linked.holder),
-			"holder_name" = linked.holder.displayed_name,
+			"holder_ref" = REF(linked.holder()),
+			"holder_name" = linked.holder().displayed_name,
 		))
 	pindata["linked"] = linked_list
 	return pindata

@@ -21,7 +21,7 @@
 		return FALSE
 
 	var/datum/search_object/index = locate(ref) in contents
-	var/atom/thing = index?.item
+	var/atom/thing = index?.item()
 	if(QDELETED(index) || QDELETED(thing)) // Obj is gone
 		return FALSE
 

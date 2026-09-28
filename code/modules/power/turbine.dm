@@ -32,7 +32,7 @@
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	circuit = /obj/item/circuitboard/machine/power_compressor
-	var/obj/machinery/power/turbine/turbine
+	var/turbine_handle
 	var/datum/gas_mixture/gas_contained
 	var/inturf_handle
 	var/starter = 0
@@ -96,7 +96,7 @@
 	gas_contained = new()
 	inturf_handle = om_handle(get_step(src, dir))
 	locate_machinery()
-	if(!turbine)
+	if(!turbine())
 		stat |= BROKEN
 
 // When anchored, don't let air past us.
@@ -104,11 +104,11 @@
 	return !anchored
 
 /obj/machinery/compressor/proc/locate_machinery()
-	if(turbine)
+	if(turbine())
 		return
-	turbine = locate() in get_step(src, get_dir(inturf(), src))
-	if(turbine)
-		turbine.locate_machinery()
+	turbine_handle = om_handle(locate() in get_step(src, get_dir(inturf(), src)))
+	if(turbine())
+		turbine().locate_machinery()
 
 /obj/machinery/compressor/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/manipulator)
@@ -150,11 +150,11 @@
 
 /obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
-		turbine = null
+		turbine_handle = null
 		if(anchored)
 			inturf_handle = om_handle(get_step(src, dir))
 			locate_machinery()
-			if(turbine)
+			if(turbine())
 				to_chat(user, span_notice("Turbine connected."))
 				stat &= ~BROKEN
 			else
@@ -166,11 +166,11 @@
 	starter = value
 	if(starter)
 		MACHINE_WAKE(src)
-		if(turbine)
-			MACHINE_WAKE(turbine)
+		if(turbine())
+			MACHINE_WAKE(turbine())
 
 /obj/machinery/compressor/machine_step()
-	if(!turbine)
+	if(!turbine())
 		stat = BROKEN
 	if(stat & BROKEN)
 		return PROCESS_KILL
@@ -469,3 +469,7 @@ REF_OWNED(/obj/machinery/compressor, "gas_contained")
 /// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/turbine/proc/compressor() as /obj/machinery/compressor
 	return om_resolve(compressor_handle)
+
+/// LC-refs: the turbine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
+	return om_resolve(turbine_handle)

@@ -23,7 +23,7 @@
 		AddComponent(/datum/component/artifact_master)
 
 /datum/component/artifact_master
-	var/atom/holder
+	var/holder_handle
 	var/list/my_effects
 
 	dupe_type = /datum/component/artifact_master
@@ -41,9 +41,9 @@
 
 /datum/component/artifact_master/New()
 	. = ..()
-	holder = parent
+	holder_handle = om_handle(parent)
 
-	if(!holder)
+	if(!holder())
 		qdel(src)
 		return
 
@@ -71,38 +71,38 @@
 
 /datum/component/artifact_master/proc/DoRegistry()
 //Melee Hit
-	RegisterSignal(holder, COMSIG_ATOM_ATTACKBY, /datum/component/artifact_master/proc/on_attackby, override = FALSE)
+	RegisterSignal(holder(), COMSIG_ATOM_ATTACKBY, /datum/component/artifact_master/proc/on_attackby, override = FALSE)
 //Explosions
-	RegisterSignal(holder, COMSIG_ATOM_EX_ACT, /datum/component/artifact_master/proc/on_exact, override = FALSE)
+	RegisterSignal(holder(), COMSIG_ATOM_EX_ACT, /datum/component/artifact_master/proc/on_exact, override = FALSE)
 //Bullets
-	RegisterSignal(holder, COMSIG_ATOM_BULLET_ACT, /datum/component/artifact_master/proc/on_bullet, override = FALSE)
+	RegisterSignal(holder(), COMSIG_ATOM_BULLET_ACT, /datum/component/artifact_master/proc/on_bullet, override = FALSE)
 
 //Attackhand
-	RegisterSignal(holder, COMSIG_ATOM_ATTACK_HAND, /datum/component/artifact_master/proc/on_attack_hand, override = FALSE)
+	RegisterSignal(holder(), COMSIG_ATOM_ATTACK_HAND, /datum/component/artifact_master/proc/on_attack_hand, override = FALSE)
 
 //Bumped / Bumping
-	RegisterSignal(holder, COMSIG_MOVABLE_BUMP, /datum/component/artifact_master/proc/on_bump, override = FALSE)
-	RegisterSignal(holder, COMSIG_ATOM_BUMPED, /datum/component/artifact_master/proc/on_bumped, override = FALSE)
+	RegisterSignal(holder(), COMSIG_MOVABLE_BUMP, /datum/component/artifact_master/proc/on_bump, override = FALSE)
+	RegisterSignal(holder(), COMSIG_ATOM_BUMPED, /datum/component/artifact_master/proc/on_bumped, override = FALSE)
 
 //Moved
-	RegisterSignal(holder, COMSIG_MOVABLE_MOVED, /datum/component/artifact_master/proc/on_moved, override = FALSE)
+	RegisterSignal(holder(), COMSIG_MOVABLE_MOVED, /datum/component/artifact_master/proc/on_moved, override = FALSE)
 
 //Splashed with a reagent.
-	RegisterSignal(holder, COMSIG_REAGENT_EXPOSE_OBJ, /datum/component/artifact_master/proc/on_reagent, override = FALSE)
+	RegisterSignal(holder(), COMSIG_REAGENT_EXPOSE_OBJ, /datum/component/artifact_master/proc/on_reagent, override = FALSE)
 
 /*
  *
  */
 
 /datum/component/artifact_master/proc/do_unregister()
-	UnregisterSignal(holder, COMSIG_ATOM_ATTACKBY)
-	UnregisterSignal(holder, COMSIG_ATOM_EX_ACT)
-	UnregisterSignal(holder, COMSIG_ATOM_BULLET_ACT)
-	UnregisterSignal(holder, COMSIG_ATOM_ATTACK_HAND)
-	UnregisterSignal(holder, COMSIG_MOVABLE_BUMP)
-	UnregisterSignal(holder, COMSIG_ATOM_BUMPED)
-	UnregisterSignal(holder, COMSIG_MOVABLE_MOVED)
-	UnregisterSignal(holder, COMSIG_REAGENT_EXPOSE_OBJ)
+	UnregisterSignal(holder(), COMSIG_ATOM_ATTACKBY)
+	UnregisterSignal(holder(), COMSIG_ATOM_EX_ACT)
+	UnregisterSignal(holder(), COMSIG_ATOM_BULLET_ACT)
+	UnregisterSignal(holder(), COMSIG_ATOM_ATTACK_HAND)
+	UnregisterSignal(holder(), COMSIG_MOVABLE_BUMP)
+	UnregisterSignal(holder(), COMSIG_ATOM_BUMPED)
+	UnregisterSignal(holder(), COMSIG_MOVABLE_MOVED)
+	UnregisterSignal(holder(), COMSIG_REAGENT_EXPOSE_OBJ)
 
 /datum/component/artifact_master/proc/get_active_effects()
 	var/list/active_effects = list()
@@ -123,7 +123,7 @@
 	var/effect_type = tgui_input_list(usr, "What type do you want?", "Effect Type", subtypesof(/datum/artifact_effect))
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
-		if(istype(holder, my_effect.req_type))
+		if(istype(holder(), my_effect.req_type))
 			my_effects += my_effect
 
 		else
@@ -141,7 +141,7 @@
 // LIFECYCLE: its effects go with it.
 /datum/component/artifact_master/Destroy()
 	do_unregister()
-	holder = null
+	holder_handle = null
 	for(var/datum/artifact_effect/AE in my_effects)
 		AE.master_handle = null
 		my_effects -= AE
@@ -153,7 +153,7 @@
 	if(LAZYLEN(make_effects))
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
-			if(istype(holder, new_effect.req_type))
+			if(istype(holder(), new_effect.req_type))
 				my_effects += new_effect
 
 	else
@@ -192,7 +192,7 @@
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
-			if(istype(holder, AE.req_type))
+			if(istype(holder(), AE.req_type))
 				my_effects += AE
 				effect_generation_chance -= 30
 			else
@@ -209,7 +209,7 @@
 		effect_generation_chance = round(effect_generation_chance)
 
 /datum/component/artifact_master/proc/get_holder()	// Returns the holder.
-	return holder
+	return holder()
 
 /datum/component/artifact_master/proc/get_primary()
 	if(LAZYLEN(my_effects))
@@ -288,7 +288,7 @@
 				my_effect.DoEffectTouch(bumped)
 
 	if(warn && isliving(bumped))
-		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder] as it hits you.")))
+		to_chat(bumped, span_filter_notice(span_bold("You accidentally touch \the [holder()] as it hits you.")))
 
 /datum/component/artifact_master/proc/on_bumped()
 	SIGNAL_HANDLER
@@ -312,7 +312,7 @@
 				my_effect.DoEffectTouch(M)
 
 	if(warn && isliving(M))
-		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder].")))
+		to_chat(M, span_filter_notice(span_bold("You accidentally touch \the [holder()].")))
 
 /datum/component/artifact_master/proc/on_attack_hand()
 	SIGNAL_HANDLER
@@ -320,8 +320,8 @@
 	if(!istype(user))
 		return
 
-	if (get_dist(user, holder) > 1)
-		to_chat(user, span_filter_notice("[span_red("You can't reach [holder] from here.")]"))
+	if (get_dist(user, holder()) > 1)
+		to_chat(user, span_filter_notice("[span_red("You can't reach [holder()] from here.")]"))
 		return
 
 	var/triggered = FALSE
@@ -338,10 +338,10 @@
 				my_effect.DoEffectTouch(user)
 
 	if(triggered)
-		to_chat(user, span_filter_notice(span_bold("You touch [holder].")))
+		to_chat(user, span_filter_notice(span_bold("You touch [holder()].")))
 
 	else
-		to_chat(user, span_filter_notice(span_bold("You touch [holder],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
+		to_chat(user, span_filter_notice(span_bold("You touch [holder()],") + " [pick("but nothing of note happens","but nothing happens","but nothing interesting happens","but you notice nothing different","but nothing seems to have happened")]."))
 
 /datum/component/artifact_master/proc/on_attackby()
 	SIGNAL_HANDLER
@@ -423,20 +423,20 @@
 			my_effect.UpdateMove()
 
 /datum/component/artifact_master/periodic_step()
-	if(!holder)	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
+	if(!holder())	// Some instances can be created and rapidly lose their holder, if they are destroyed rapidly on creation. IE, during excavation.
 		PERIODIC_STOP(src)
 		if(!QDELETED(src))
 			qdel(src)
 			return
 
-	var/turf/L = holder.loc
+	var/turf/L = holder().loc
 	if(!istype(L) && !isliving(L)) 	// We're inside a non-mob container or on null turf, either way stop processing effects
 		return
 
-	if(istype(holder, /atom/movable))
-		var/atom/movable/HA = holder
+	if(istype(holder(), /atom/movable))
+		var/atom/movable/HA = holder()
 		if(HA?.pulled_by_mob())
-			on_bumped(holder, HA?.pulled_by_mob())
+			on_bumped(holder(), HA?.pulled_by_mob())
 
 	for(var/datum/artifact_effect/my_effect in my_effects)
 		if(my_effect)
@@ -446,7 +446,7 @@
 	var/trigger_cold = 0
 	var/trigger_hot = 0
 
-	var/turf/T = get_turf(holder)
+	var/turf/T = get_turf(holder())
 	var/datum/gas_mixture/env = T.return_air()
 	if(env)
 		var/env_temp = env.return_temperature()
@@ -480,3 +480,7 @@
 /// What a mob bumping into an artifact wears on its hands.
 /datum/component/artifact_master/proc/bumper_gloves(mob/M)
 	return M.get_equipped_item(SLOT_ID_GLOVES)
+
+/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/artifact_master/proc/holder() as /atom
+	return om_resolve(holder_handle)

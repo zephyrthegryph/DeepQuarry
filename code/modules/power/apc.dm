@@ -65,7 +65,7 @@
 	integrity_failure = 0.5
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
-	var/area/area
+	var/area_handle
 	var/areastring = null
 	var/obj/item/cell/cell
 	/// Cap for how fast APC cells charge, as a percentage-per-tick.
@@ -188,11 +188,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		offset_apc()
 
 	if(building)
-		area = get_area(src)
-		area.apc = src
+		area_handle = om_handle(get_area(src))
+		area().apc = src
 		opened    = 1
 		operating = 0
-		name = "[area.name] APC"
+		name = "[area().name] APC"
 		stat |= MAINT
 		update_icon()
 		return
@@ -219,12 +219,12 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		GLOB.power_alarm.clearAlarm(loc, src)
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
-	if(area)
-		area.apc = null
-		area.power_light  = 0
-		area.power_equip  = 0
-		area.power_environ = 0
-		area.power_change()
+	if(area())
+		area().apc = null
+		area().power_light  = 0
+		area().power_equip  = 0
+		area().power_environ = 0
+		area().power_change()
 	return ..()
 
 /// Something about the APC changed (settings, cell, damage): send it to Rust.
@@ -247,7 +247,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 /obj/machinery/power/apc/proc/power_sync()
 	if(QDELETED(src) || !vg_entity)
 		return
-	set_active(area?.requires_power && !(stat & (BROKEN | MAINT)) && !failure_timer ? 1 : 0)
+	set_active(area()?.requires_power && !(stat & (BROKEN | MAINT)) && !failure_timer ? 1 : 0)
 	set_has_cell(cell ? 1 : 0)
 	set_failed(failure_timer ? 1 : 0)
 	set_shorted_or_grid_check(shorted || grid_check ? 1 : 0)
@@ -255,7 +255,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	set_chargemode(chargemode)
 	set_chargelevel(chargelevel)
 	set_capacity(cell ? cell.maxcharge : 0)
-	area?.power_loads_changed()
+	area()?.power_loads_changed()
 
 /// Reads back what Rust's `ApcTick` did this step (verdigris/domains/power/src/laws.rs):
 /// channels, charging, the cell charge, and the load it served.
@@ -339,14 +339,14 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	var/area/A = loc.loc
 
 	if(isarea(A) && !areastring)
-		area = A
-		name = "\improper [area.name] APC"
+		area_handle = om_handle(A)
+		name = "\improper [area().name] APC"
 	else
-		area = get_area_name(areastring)
-		name = "\improper [area.name] APC"
-	area.apc = src
+		area_handle = om_handle(get_area_name(areastring))
+		name = "\improper [area().name] APC"
+	area().apc = src
 
-	if(istype(area, /area/submap))
+	if(istype(area(), /area/submap))
 		alarms_hidden = TRUE
 
 	update_icon()
@@ -854,7 +854,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	return data
 
 /obj/machinery/power/apc/proc/report()
-	return "[area.name] : [equipment]/[lighting]/[environ] ([channel_load_total()]) : [cell ? cell.percent() : "N/C"] ([charging])"
+	return "[area().name] : [equipment]/[lighting]/[environ] ([channel_load_total()]) : [cell ? cell.percent() : "N/C"] ([charging])"
 
 // update() — send settings to Rust and push channel state to the area.
 /obj/machinery/power/apc/proc/update()
@@ -864,7 +864,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 /// Pushes the channel state to the area; fires area.power_change() (the
 /// machinery power signals) only when a channel changed.
 /obj/machinery/power/apc/proc/apply_area_power()
-	if(!area)
+	if(!area())
 		return
 	var/new_power_light = FALSE
 	var/new_power_equip = FALSE
@@ -873,12 +873,12 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		new_power_light = (lighting >= POWERCHAN_ON)
 		new_power_equip = (equipment >= POWERCHAN_ON)
 		new_power_environ = (environ >= POWERCHAN_ON)
-	if(area.power_light == new_power_light && area.power_equip == new_power_equip && area.power_environ == new_power_environ)
+	if(area().power_light == new_power_light && area().power_equip == new_power_equip && area().power_environ == new_power_environ)
 		return
-	area.power_light = new_power_light
-	area.power_equip = new_power_equip
-	area.power_environ = new_power_environ
-	area.power_change()
+	area().power_light = new_power_light
+	area().power_equip = new_power_equip
+	area().power_environ = new_power_environ
+	area().power_change()
 	contract_power_revision++
 	var/powered_channels = new_power_light + new_power_equip + new_power_environ
 	if(SScontracts)
@@ -893,7 +893,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 				"cell_percent" = cell ? cell.percent() : 0,
 				"load" = channel_load_total(),
 			),
-			"detail" = "[area] electrical service reports [powered_channels]/3 powered channels.",
+			"detail" = "[area()] electrical service reports [powered_channels]/3 powered channels.",
 		), "power-service:[REF(src)]:[contract_power_revision]", src)
 /obj/machinery/power/apc/proc/can_use(mob/user, loud = 0)
 	if(!user.client)
@@ -1000,7 +1000,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 			update()
 		if("emergency_lighting")
 			emergency_lights = !emergency_lights
-			for(var/obj/machinery/light/L in area)
+			for(var/obj/machinery/light/L in area())
 				if(!initial(L.no_emergency))
 					L.no_emergency = emergency_lights
 					INVOKE_ASYNC(L, TYPE_PROC_REF(/obj/machinery/light, update), FALSE)
@@ -1115,7 +1115,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		cell.use(20)
 		// One light a tick, each on its own clock.
 		var/delay = 0
-		for(var/obj/machinery/light/L in area)
+		for(var/obj/machinery/light/L in area())
 			if(prob(chance))
 				om_after(L, delay, TYPE_PROC_REF(/obj/machinery/light, surge_break))
 			delay++
@@ -1179,7 +1179,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	if(prob(30)) return
 	if(prob(40)) overload_lighting()
 	if(prob(40))
-		for(var/obj/machinery/light/L in area)
+		for(var/obj/machinery/light/L in area())
 			L.flicker(rand(20, 30))
 	if(prob(25))
 		emagged = 1
@@ -1189,7 +1189,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		if(cell)
 			cell.corrupt()
 	if(prob(10))
-		for(var/obj/machinery/computer/comp in area)
+		for(var/obj/machinery/computer/comp in area())
 			comp.ex_act(3)
 	if(prob(5))
 		atom_break()
@@ -1214,7 +1214,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
 	set waitfor = FALSE
-	if(automated && istype(area, /area/shuttle))
+	if(automated && istype(area(), /area/shuttle))
 		return
 	nightshift_lights = on
 	update_nightshift()
@@ -1224,18 +1224,18 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	switch(nightshift_setting)
 		if(NIGHTSHIFT_NEVER)  new_state = FALSE
 		if(NIGHTSHIFT_ALWAYS) new_state = TRUE
-	for(var/obj/machinery/light/L in area)
+	for(var/obj/machinery/light/L in area())
 		L.nightshift_mode(new_state)
 		CHECK_TICK
 
 /obj/machinery/power/apc/proc/update_area()
 	var/area/NA = get_area(src)
-	if(NA != area)
-		if(area.apc == src)
-			area.apc = null
+	if(NA != area())
+		if(area().apc == src)
+			area().apc = null
 		NA.apc = src
-		area = NA
-		name = "[area.name] APC"
+		area_handle = om_handle(NA)
+		name = "[area().name] APC"
 	update()
 
 /obj/machinery/power/apc/get_cell()
@@ -1251,3 +1251,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 /// Watts all three channels draw now.
 /obj/machinery/power/apc/proc/channel_load_total()
 	return channel_load(0) + channel_load(1) + channel_load(2)
+
+/// LC-refs: the area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/apc/proc/area() as /area
+	return om_resolve(area_handle)

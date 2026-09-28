@@ -8,7 +8,7 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 	/// The true client
 	var/client/client
 	/// The mob this persistent client is currently bound to.
-	var/mob/mob
+	var/mob_handle
 
 	/// Major version of BYOND this client was last using.
 	var/byond_version
@@ -66,13 +66,13 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /// Setter for the mob var, handles both references.
 /datum/persistent_client/proc/set_mob(mob/new_mob)
-	if(mob == new_mob)
+	if(mob() == new_mob)
 		return
 
-	mob?.persistent_client = null
+	mob()?.persistent_client = null
 	new_mob?.persistent_client?.set_mob(null)
 
-	mob = new_mob
+	mob_handle = om_handle(new_mob)
 	new_mob?.persistent_client = src
 
 /// Writes all of the `played_names` into an HTML-escaped string.
@@ -107,3 +107,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 			continue
 
 		LAZYADD(writable.played_names, list("[encoded_name]" = mob_tag))
+
+/// LC-refs: the mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/persistent_client/proc/mob() as /mob
+	return om_resolve(mob_handle)

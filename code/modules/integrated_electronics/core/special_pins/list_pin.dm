@@ -101,13 +101,13 @@
 	if(islist(new_data))
 		var/list/new_list = new_data
 		data = new_list.Copy()
-		holder.on_data_written()
+		holder().on_data_written()
 
 /datum/integrated_io/list/display_pin_type()
 	return IC_FORMAT_LIST
 
 /datum/integrated_io/list/Topic(href, href_list, state = GLOB.tgui_always_state)
-	if(!holder.check_interactivity(usr))
+	if(!holder().check_interactivity(usr))
 		return
 	if(..())
 		return 1
@@ -133,5 +133,5 @@
 		else
 			edit_in_list(usr)
 
-	holder.interact(usr) // Refresh the main UI,
+	holder().interact(usr) // Refresh the main UI,
 	interact(usr) // and the list UI.
