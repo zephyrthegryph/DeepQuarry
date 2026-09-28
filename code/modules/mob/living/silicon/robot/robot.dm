@@ -301,6 +301,11 @@
 	update_power_state()
 	update_icon()
 
+/// A borg has no nutrition, body temperature or radiation dose to reset (audit P2-D11);
+/// its parts and cell were rebuilt above.
+/mob/living/silicon/robot/rejuvenate_physiology()
+	return
+
 //If there's an MMI in the robot, have it ejected when the mob goes away. --NEO
 //Improved /N
 // the MMI receives the borg's mind on the turf; shells revert; parts and hat drop.

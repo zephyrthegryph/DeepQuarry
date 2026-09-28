@@ -218,7 +218,7 @@
 	self.update_cell()
 
 	var/turf/T = get_turf(self)
-	var/datum/gas_mixture/environment = T.return_air()
+	var/datum/gas_mixture/environment = T?.return_air()
 	if(environment)
 		switch(environment.return_temperature())
 			if(400 to INFINITY)

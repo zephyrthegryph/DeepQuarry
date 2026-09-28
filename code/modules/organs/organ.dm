@@ -701,6 +701,8 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 		if(ishuman(owner))
 			var/mob/living/carbon/human/H = owner
 			var/obj/item/organ/O = H.get_organ(parent_organ)
+			if(!O)	// Parent limb is missing; nothing to be compatible with.
+				return FALSE
 			if(forgiving_class)
 				if(O.robotic <= ORGAN_ASSISTED && robotic <= ORGAN_LIFELIKE)	// Parent is organic or assisted, we are at most synthetic.
 					return TRUE

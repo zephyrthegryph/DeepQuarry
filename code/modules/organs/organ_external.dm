@@ -1027,9 +1027,13 @@ Note that amputating the affected organ does in fact remove the infection from t
 	if(ishuman(owner))
 		H = owner
 
+	var/can_bleed = !(robotic >= ORGAN_ROBOT) && H && H.should_have_organ(O_HEART) && !(H.species.flags & NO_BLOOD)
+	var/bio_now = can_bleed ? om_clock_now(H, CLOCK_BIO) : 0
 	for(var/datum/affliction/wound/W as anything in get_wounds())
-		if(!(robotic >= ORGAN_ROBOT) && W.bleeding() && (H && H.should_have_organ(O_HEART)) && !(H.species.flags & NO_BLOOD))
-			W.bleed_timer--
+		var/bleeding = can_bleed && W.bleeding()
+		if(can_bleed)
+			W.run_bleed_clock(bio_now, bleeding)
+		if(bleeding)
 			status |= ORGAN_BLEEDING
 
 	// An open, unclamped surgical site bleeds.
@@ -1536,13 +1540,15 @@ Note that amputating the affected organ does in fact remove the infection from t
 			span_danger("\The [victim]'s [src.name] explodes violently!"),\
 			span_danger("Your [src.name] explodes!"),\
 			span_danger("You hear an explosion!"))
-		explosion(get_turf(owner),-1,-1,2,3)
+		// owner is already null here (the base removed() detached us): use victim (audit D4).
+		explosion(get_turf(victim),-1,-1,2,3)
 		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 		spark_system.set_up(5, 0, victim)
-		spark_system.attach(owner)
+		spark_system.attach(victim)
 		spark_system.start()
 		om_qdel_after(spark_system, 1 SECOND)
-		qdel(src)
+		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
+		om_qdel_after(src, 1)
 
 	victim.update_icons_body()
 	return TRUE
