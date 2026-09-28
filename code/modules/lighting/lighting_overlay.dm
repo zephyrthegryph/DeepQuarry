@@ -138,4 +138,5 @@
 		if(FALSE)
 			affected_turf.underlays |= current_underlay
 
-REF_OWNED(/datum/lighting_object, "current_underlay")
+// Held, not owned: Destroy() takes the underlay back off the turf (and may refuse deletion).
+REF_HELD(/datum/lighting_object, "current_underlay")

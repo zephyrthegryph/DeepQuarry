@@ -5,13 +5,16 @@
 	for(var/mob/living/M in src) //ventcrawling is serious business
 		M.remove_ventcrawl()
 		M.forceMove(get_turf(src))
+	. = ..()
+
+/// LC-refs: the pipe image leaves every ventcrawler's screen before phase 4 drops it (REF_OWNED).
+/obj/machinery/atmospherics/lifecycle_dematerialize()
 	if(pipe_image)
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 			if(M.client)
 				M.client.images -= pipe_image
 				M.pipes_shown -= pipe_image
-		pipe_image = null
-	. = ..()
+	return ..()
 
 /obj/machinery/atmospherics/explosion_contents_severity(severity)
 	return severity

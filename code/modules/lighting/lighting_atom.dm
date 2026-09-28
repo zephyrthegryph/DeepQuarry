@@ -207,4 +207,5 @@
 
 REF_OWNED(/atom, "light")
 
-REF_OWNED(/atom/movable, "em_block")
+// Held, not owned: /atom/movable/Destroy() cuts the blocker overlay and unregisters from it itself.
+REF_HELD(/atom/movable, "em_block")

@@ -49,11 +49,12 @@
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-// LIFECYCLE: closes its tooltip window.
+// LIFECYCLE: closes its tooltip window before phase 4 deletes it (REF_OWNED).
+/datum/tooltip/lifecycle_unbind()
+	tooltip_window?.close()
+	return ..()
+
 /datum/tooltip/Destroy(force)
-	if(tooltip_window)
-		tooltip_window.close()
-		tooltip_window = null
 	last_target = null
 	owner = null
 	return ..()

@@ -124,11 +124,12 @@
 	ASSERT(istype(C))
 	src.owner = C
 
-// LIFECYCLE: closes its media window.
+// LIFECYCLE: closes its media window before phase 4 deletes it (REF_OWNED).
+/datum/media_manager/lifecycle_unbind()
+	media_window?.close()
+	return ..()
+
 /datum/media_manager/Destroy()
-	if(media_window)
-		media_window.close()
-		media_window = null
 	owner = null
 	return ..()
 

@@ -63,10 +63,9 @@
 REF_OWNED(/obj/effect/overmap, list("cam_screen", "cam_background", "cached_skybox_image", "real_appearance"))
 REF_OWNED_LIST(/obj/effect/overmap, "cam_plane_masters")
 
-// LIFECYCLE: its real appearance holder is detached.
-/obj/effect/overmap/Destroy()
+// LIFECYCLE: its real appearance holder is detached before phase 4 drops it (REF_OWNED).
+/obj/effect/overmap/lifecycle_dematerialize()
 	real_appearance?.loc = null
-	real_appearance = null
 	return ..()
 
 //Overlay of how this object should look on other skyboxes
