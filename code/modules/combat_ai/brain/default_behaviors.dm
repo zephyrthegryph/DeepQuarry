@@ -9,7 +9,7 @@
 // Each default list is a single proc-local static — instantiated once on
 // first use, shared across every mob in the round whose stats match.
 
-GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
+DECLARE_SHARED_CACHE(dq_default_behavior, GLOBAL_PROC_REF(build_dq_default_behavior), SC_NEVER)
 
 /// Compose a default behavior list for the given mob. Returns a per-shape
 /// static list (cached by signature) so identical-shape mobs share storage.
@@ -22,11 +22,10 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 	var/has_hands  = SM.has_hands
 	var/hostile    = SM.ai_attack_on_sight
 	var/sig = "[has_melee][has_ranged][has_hands][hostile]"
+	return CACHED_KEY(dq_default_behavior, sig, has_melee, has_ranged, has_hands, hostile)
 
-	var/list/cached = GLOB.dq_default_behavior_cache[sig]
-	if(cached)
-		return cached
-
+/// Builds the default behavior list for one combat-shape signature.
+/proc/build_dq_default_behavior(has_melee, has_ranged, has_hands, hostile)
 	var/list/L = list()
 	// Idle always.
 	L += /datum/ai_behavior/idle_wander
@@ -57,5 +56,4 @@ GLOBAL_LIST_EMPTY(dq_default_behavior_cache)
 	if(has_hands)
 		L += /datum/ai_behavior/scavenge_weapon
 
-	GLOB.dq_default_behavior_cache[sig] = L
 	return L

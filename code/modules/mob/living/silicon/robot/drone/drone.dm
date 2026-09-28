@@ -1,4 +1,4 @@
-GLOBAL_LIST_EMPTY(mob_hat_cache)
+DECLARE_SHARED_CACHE_EX(mob_hat, GLOBAL_PROC_REF(build_mob_hat), SC_NEVER, 1024, 0)
 
 /proc/get_hat_icon(obj/item/hat, offset_x = 0, offset_y = 0)
 	var/t_state = hat.icon_state
@@ -7,17 +7,19 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 	else if(hat.item_state)
 		t_state = hat.item_state
 	var/key = "[t_state]_[offset_x]_[offset_y]"
-	if(!GLOB.mob_hat_cache[key])            // Not ideal as there's no guarantee all hat icon_states
-		var/t_icon = INV_HEAD_DEF_ICON // are unique across multiple dmis, but whatever.
-		if(hat.icon_override)
-			t_icon = hat.icon_override
-		else if(LAZYACCESS(hat.item_icons, slot_head_str))
-			t_icon = hat.item_icons[slot_head_str]
-		var/image/I = image(icon = t_icon, icon_state = t_state)
-		I.pixel_x = offset_x
-		I.pixel_y = offset_y
-		GLOB.mob_hat_cache[key] = I
-	return GLOB.mob_hat_cache[key]
+	// Not ideal as there's no guarantee all hat icon_states are unique across multiple dmis, but whatever.
+	var/t_icon = INV_HEAD_DEF_ICON
+	if(hat.icon_override)
+		t_icon = hat.icon_override
+	else if(LAZYACCESS(hat.item_icons, slot_head_str))
+		t_icon = hat.item_icons[slot_head_str]
+	return CACHED_KEY(mob_hat, key, t_icon, t_state, offset_x, offset_y)
+
+/proc/build_mob_hat(t_icon, t_state, offset_x, offset_y)
+	var/image/I = image(icon = t_icon, icon_state = t_state)
+	I.pixel_x = offset_x
+	I.pixel_y = offset_y
+	return I
 
 /mob/living/silicon/robot/drone
 	name = "maintenance drone"

@@ -6,7 +6,7 @@ GLOBAL_VAR_INIT(internet_sound_cooldown, 0)
 #define SHELLEO_STDOUT 2
 #define SHELLEO_STDERR 3
 
-GLOBAL_LIST_EMPTY(sounds_cache)
+GLOBAL_LIST_EMPTY(sounds_cache) // ALLOW(cache): admin-uploaded sound list, not a keyed cache
 
 ADMIN_VERB(play_sound, R_SOUNDS, "Play Global Sound", "Plays a sound to all players.", ADMIN_CATEGORY_FUN_SOUNDS, S as sound)
 	var/freq = 1

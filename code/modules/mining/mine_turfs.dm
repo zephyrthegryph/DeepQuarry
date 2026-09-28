@@ -1,4 +1,4 @@
-GLOBAL_LIST_EMPTY(mining_overlay_cache)
+GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in code/game/turfs/simulated/dungeon/wall.dm (outside scope)
 
 /**********************Mineral deposits**************************/
 /turf/unsimulated/mineral

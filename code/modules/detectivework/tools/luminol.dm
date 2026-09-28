@@ -8,6 +8,4 @@
 	max_transfer_amount = 10
 	volume = 250
 
-/obj/item/reagent_containers/spray/luminol/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_LUMINOL, 250)
+DECLARE_REAGENTS(/obj/item/reagent_containers/spray/luminol, null, list(REAGENT_ID_LUMINOL = 250))

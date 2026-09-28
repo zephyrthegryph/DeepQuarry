@@ -87,7 +87,7 @@
 	var/under_turf //Underlay override turf path.
 	var/join_flags = 0 //Bitstring to represent adjacency of joining walls
 	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
-	var/static/list/antilight_cache
+	var/static/list/antilight_cache // ALLOW(cache): constant table, also read by cut_overlay
 	rad_insulation = RAD_MEDIUM_INSULATION
 	rad_shield_material = MAT_TITANIUM
 	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM

@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Shared keyed caches now go through DECLARE_SHARED_CACHE/CACHED() with invalidation policies, LRU bounds, profiler stats and a test-build mutation guard."
+  - bugfix: "Floors with inner corners on opposite diagonals no longer draw all four inner corners."

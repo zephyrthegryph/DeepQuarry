@@ -63,7 +63,7 @@
 #define MAP_TGM "tgm"
 #define MAP_UNKNOWN "unknown"
 
-GLOBAL_LIST_EMPTY(cached_maps)
+GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special eviction
 
 /datum/grid_set
 	var/xcrd

@@ -25,7 +25,7 @@ GLOBAL_LIST_INIT(meta_gas_info, meta_gas_list()) //see ATMOSPHERICS/gas_types.dm
 // Constant per-gas template table. The mixture 'gases' assoc list is gone (moles
 // live in the Rust arena), but this cache is still a shared constant table read by
 // GAS_TYPE_COUNT / the GAS_2_LIST helpers, so it is kept.
-GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache())
+GLOBAL_LIST_INIT(gaslist_cache, init_gaslist_cache()) // ALLOW(cache): constant table computed at init
 
 /proc/init_gaslist_cache()
 	var/list/gases = list()

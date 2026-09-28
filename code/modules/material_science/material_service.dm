@@ -222,6 +222,23 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 
 // unregisters diagnostics and its service behaviour; its owner forgets it.
 /datum/material_service/on_destroy(force)
+	var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
+	if(batch && (batch.doomed[src] || batch.doomed[owner()]))
+		// Batched destroy (doc/rewrite/init_and_turfs.md sec 4.4 step 6): the whole set's gas
+		// watches disarm in one pass when the batch flushes, and no hook is unhooked one by one --
+		// this service's own OM teardown (lifecycle phase 5, om_teardown_hooks()) drops every hook
+		// it holds, on the doomed owner and on its turf and holders alike.
+		batch.material_service_watch_keys += om_watch_entity_key(src)
+		monitor_tool = null
+		monitor_user = null
+		last_reading = null
+		watched_turf_handle = null
+		mixture_ids = null
+		mixture_pressures = null
+		mixture_corrosion = null
+		movement_sources = null
+		..()
+		return
 	unregister_diagnostics()
 	clear_watches()
 	..()

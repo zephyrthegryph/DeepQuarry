@@ -1009,11 +1009,50 @@ batch too (`dq_heat_body_release()`, `dq_pipe_port_remove()`,
 `vg_pipe_remove_list`, `vg_power_unbind_node_list`), and the pipe topology
 commits once per batch after the removal (rewrite/l-boot2).
 
-Remaining: material service cleanup is still
-per service (its `om_unhook` calls on a doomed owner could be skipped once OM
-teardown is confirmed to drop inbound hooks); other `atom_destruction()`
+Material service cleanup is per set (rewrite/boot-bind): a service whose
+owner is doomed skips its per-hook `om_unhook`s (its own OM teardown drops
+them; `om_teardown_hooks()` also skips per-hook bookkeeping on a doomed
+source, and `om_deliver()` never calls a listener whose OM state is torn
+down) and queues its watch key; the batch flush disarms the whole set's gas
+watches with `om_watch_disarm_keys()`: one registry `-=`, one `-=` per
+mixture index and one republish per touched mixture.
+
+Remaining: other `atom_destruction()`
 messages (material weapons and armour, mob spawners, grave markers,
 expedition structures) can adopt `dq_destroy_effects_once()` the same way.
+
+### 4.5 Shared appearance and material caches (rewrite/boot-bind)
+
+Walls already shared `wall_material_facts()` and `wall_overlay_images()`.
+Floors now share their edge and inner-corner overlay lists per (flooring,
+border bits, corner bits) (`/datum/decl/flooring/proc/get_edge_overlays()`),
+full-tile windows share theirs per (icon, basestate, connections, damage
+step, layer) (`window_overlay_images()`), and
+`/datum/material/proc/material_radiation_transmission()` is cached per
+material and thickness, so window, girder, door, wall and item shielding is
+worked out once per material (`material_facts_changed()` drops the cache).
+
+### 4.6 Bulk binds (rewrite/boot-bind)
+
+Callers use a heat body's handle as soon as `create_heat_body()` returns, so
+a batch cannot simply defer creation. Inside a bind scope
+(`dq_heat_bind_begin()`/`_end()`, opened by `SSatoms.InitializeAtoms()`),
+`create_heat_body()` takes a pre-reserved handle from a pool filled by one
+`heat_body_reserve(n)` call: a live, kept, inert Rust body, so every write
+works at once. The real configuration is queued and sent for the whole scope
+in one `heat_body_configure_list()` call. Invariants (Rust tests in
+`verdigris/ffi/src/heat.rs`, DM tests in `dq_boot_bind_tests.dm`): the
+configure never undoes a write made in between (temperature, slot 0
+coupling, keep, added heat); a pending body is configured before any DM read
+(`HEAT_BODY_RESOLVE`); a body released while pending leaves the queue and a
+stale handle is never configured; unused pool handles are released when the
+outermost scope ends.
+
+Power machine nodes need no reservation (the handle is the machine's own
+`vg_entity`): during a map-load batch `connect_to_network(FALSE)` queues the
+machine, and `SSatoms.flush_machine_binds()` binds them all in one
+`vg_power_bind_machine_list()` edit after the batch's cables, then runs each
+machine's `power_node_sent()` (supply, `power_registered()`).
 
 ## 5. Lighting
 

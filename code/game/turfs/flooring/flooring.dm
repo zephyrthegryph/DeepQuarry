@@ -121,6 +121,31 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 		LAZYSET(flooring_cache, cache_key, I)
 	return LAZYACCESS(flooring_cache, cache_key)
 
+/// The edge and inner-corner overlays for a floor of this flooring with borders on `has_border`
+/// (cardinal bits) and inner corners on `inner_corners` (bit i-1 for GLOB.cornerdirs[i]), in the order
+/// update_icon() always added them: edges, outer corners, inner corners (doc/rewrite/
+/// init_and_turfs.md sec 3.5). Built once per (flooring, border, corners) and shared by every
+/// floor in that state. Read-only: callers pass it to add_overlay(), which copies.
+/datum/decl/flooring/proc/get_edge_overlays(has_border, inner_corners)
+	return CACHED_KEY(flooring_edge_overlays, "[ref(src)]|[has_border | (inner_corners << 4)]", src, has_border, inner_corners)
+
+DECLARE_SHARED_CACHE(flooring_edge_overlays, GLOBAL_PROC_REF(build_flooring_edge_overlays), SC_NEVER)
+
+/// Builder for flooring_edge_overlays: `F` is the (singleton) flooring decl.
+/proc/build_flooring_edge_overlays(datum/decl/flooring/F, has_border, inner_corners)
+	var/list/images = list()
+	for(var/step_dir in GLOB.cardinal)
+		if(has_border & step_dir)
+			images += F.get_flooring_overlay("[F.icon_base]-edge-[step_dir]", "[F.icon_base]_edges", step_dir)
+	for(var/corner_dir in GLOB.cornerdirs)
+		if((has_border & corner_dir) == corner_dir)
+			images += F.get_flooring_overlay("[F.icon_base]-edge-[corner_dir]", "[F.icon_base]_edges", corner_dir)
+	for(var/i in 1 to length(GLOB.cornerdirs))
+		var/corner_dir = GLOB.cornerdirs[i]
+		if(inner_corners & (1 << (i - 1)))
+			images += F.get_flooring_overlay("[F.icon_base]-corner-[corner_dir]", "[F.icon_base]_corners", corner_dir)
+	return images
+
 /datum/decl/flooring/grass
 	name = "grass"
 	desc = "Do they smoke grass out in space, Bowie? Or do they smoke AstroTurf?"

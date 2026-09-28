@@ -371,7 +371,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bottle, INTERACT_HAND_DEF
 	name = "glucose container"
 	desc = "A container of glucose. Used to treat bloodloss through a hardsuit in unconscious patients."
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose, null, list(REAGENT_ID_GLUCOSE = 100))
+
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/glucose/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_GLUCOSE, 100)
 	on_reagent_change()

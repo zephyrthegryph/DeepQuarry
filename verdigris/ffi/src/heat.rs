@@ -755,6 +755,178 @@ fn heat_body_create(
     Ok(ByondValue::from(entity::entity_value(e)))
 }
 
+// ---------------------------------------------------------- bulk binds
+
+/// What happened to a reserved body between [`heat_body_reserve`] and its
+/// [`heat_body_configure_list`] entry. Configure never overwrites an explicit
+/// write made in between: a handle is usable the moment it is reserved.
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+pub(crate) struct Reserved {
+    /// `heat_body_set_temperature` ran: keep the temperature it set.
+    pub temperature_set: bool,
+    /// `heat_body_couple` on slot 0 ran: keep that coupling.
+    pub slot0_set: bool,
+    /// `heat_body_keep` ran: keep that flag.
+    pub keep_set: bool,
+    /// Joules `heat_body_add` put in; re-added on top of the configured
+    /// temperature.
+    pub added: f64,
+}
+
+thread_local! {
+    /// Body entity index -> [`Reserved`], for bodies handed out by
+    /// [`heat_body_reserve`] and not yet configured.
+    static RESERVED: RefCell<HashMap<u32, Reserved>> = RefCell::new(HashMap::new());
+}
+
+/// A reserved body's placeholder: kept (so it never relaxes away), uncoupled,
+/// unpowered, at TCMB with capacity 1. It takes no part in any exchange until
+/// it is configured or coupled.
+fn reserved_placeholder() -> HeatBody {
+    HeatBody {
+        capacity: 1.0,
+        energy: f64::from(vg_heat::consts::TCMB),
+        keep: true,
+        ..Default::default()
+    }
+}
+
+/// Spawns `n` placeholder bodies and records them as reserved.
+pub(crate) fn reserve_bodies(
+    w: &mut vg_core::world::World,
+    n: usize,
+) -> Result<Vec<vg_core::entity::EntityId>> {
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let e = w
+            .bind_value(None, reserved_placeholder())
+            .map_err(|e| eyre!("{e}"))?;
+        RESERVED.with_borrow_mut(|r| r.insert(e.index(), Reserved::default()));
+        out.push(e);
+    }
+    Ok(out)
+}
+
+/// Records a write on `e` if it is still reserved (a no-op otherwise).
+pub(crate) fn note_reserved(e: vg_core::entity::EntityId, f: impl FnOnce(&mut Reserved)) {
+    RESERVED.with_borrow_mut(|r| {
+        if let Some(flags) = r.get_mut(&e.index()) {
+            f(flags);
+        }
+    });
+}
+
+/// Whether `e` is reserved and not yet configured.
+#[cfg(test)]
+pub(crate) fn is_reserved(e: vg_core::entity::EntityId) -> bool {
+    RESERVED.with_borrow(|r| r.contains_key(&e.index()))
+}
+
+/// One reserved body's configuration.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct BodySpec {
+    pub e: vg_core::entity::EntityId,
+    pub capacity: f64,
+    pub temperature: f64,
+    pub keep: bool,
+}
+
+/// Configures reserved bodies in one pass. Per spec: `None` when the handle
+/// is not a live reserved body (never reserved, released, or already
+/// configured -- left untouched), else `Some(couple_slot0)`, false when slot
+/// 0 was coupled explicitly after the reserve and must be kept.
+pub(crate) fn configure_bodies(
+    w: &mut vg_core::world::World,
+    specs: &[BodySpec],
+) -> Vec<Option<bool>> {
+    specs
+        .iter()
+        .map(|spec| {
+            if !(spec.capacity.is_finite() && spec.capacity > 0.0) {
+                return None;
+            }
+            let flags = RESERVED.with_borrow_mut(|r| r.remove(&spec.e.index()))?;
+            let mut b = w.read::<HeatBody>(spec.e)?;
+            let temperature = if flags.temperature_set {
+                b.energy / b.capacity.max(f64::MIN_POSITIVE)
+            } else {
+                spec.temperature.max(f64::from(vg_heat::consts::TCMB))
+                    + flags.added / spec.capacity
+            };
+            b.capacity = spec.capacity;
+            b.energy = spec.capacity * temperature;
+            if !flags.keep_set {
+                b.keep = spec.keep;
+            }
+            w.put(spec.e, b).ok()?;
+            wake_body_couplings(w, spec.e.index());
+            Some(!flags.slot0_set)
+        })
+        .collect()
+}
+
+/// Bulk bind, step 1 (`doc/rewrite/init_and_turfs.md` sec 4.6): `n`
+/// heat-body handles in one call. Each is a live, kept, inert body at once,
+/// so DM may use it immediately (keep, power, couple, set temperature all
+/// work); [`heat_body_configure_list`] gives it its real capacity,
+/// temperature, environment and keep flag later without undoing those
+/// writes. Reads before the configure see the placeholder: DM configures a
+/// pending body before reading it (`/atom/proc/resolve_heat_body()`).
+#[auxmacros::bind("/proc/heat_body_reserve")]
+fn heat_body_reserve(n: ByondValue) -> Result<ByondValue> {
+    #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+    let n = num(&n)?.clamp(0.0, 65_536.0) as usize;
+    let bodies = with_world(|w| reserve_bodies(w, n))?;
+    let handles: Vec<ByondValue> = bodies
+        .into_iter()
+        .map(|e| ByondValue::from(entity::entity_value(e)))
+        .collect();
+    let list = ByondValue::new_list()?;
+    list.write_list(&handles)?;
+    Ok(list)
+}
+
+/// Bulk bind, step 2: configures reserved bodies from `args`, flattened 7 per
+/// body: `handle, capacity, temperature, HEAT_TARGET_*, target, conductance,
+/// keep` (as `heat_body_create` takes them). Entries whose handle is not a
+/// reserved body are skipped. Returns how many were configured.
+#[auxmacros::bind("/proc/heat_body_configure_list")]
+fn heat_body_configure_list(args: ByondValue) -> Result<ByondValue> {
+    let args = args.get_list_values()?;
+    if args.len() % 7 != 0 {
+        bail!("args must hold 7 values per body");
+    }
+    let mut specs = Vec::with_capacity(args.len() / 7);
+    let mut couplings = Vec::with_capacity(args.len() / 7);
+    for chunk in args.chunks_exact(7) {
+        let [h, capacity, temperature, kind, target, conductance, keep] = chunk else {
+            unreachable!("chunks_exact(7)");
+        };
+        let Ok(e) = num(h).and_then(entity::decode) else {
+            continue;
+        };
+        specs.push(BodySpec {
+            e,
+            capacity: f64::from(num(capacity)?),
+            temperature: f64::from(num(temperature)?),
+            keep: keep.is_true(),
+        });
+        #[allow(clippy::cast_possible_truncation)]
+        couplings.push((num(kind)? as i32, target.clone(), num(conductance)?));
+    }
+    let done = with_world(|w| Ok(configure_bodies(w, &specs)))?;
+    let mut configured = 0u32;
+    for ((spec, (kind, target, conductance)), outcome) in specs.iter().zip(couplings).zip(done) {
+        let Some(couple) = outcome else { continue };
+        configured += 1;
+        if couple {
+            set_coupling(spec.e, 0, kind, &target, conductance)?;
+        }
+    }
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(configured as f32))
+}
+
 fn body(h: &ByondValue) -> Result<Option<vg_core::entity::EntityId>> {
     let v = num(h)?;
     if v == 0.0 {
@@ -780,6 +952,7 @@ fn heat_body_add(h: ByondValue, joules: ByondValue) -> Result<ByondValue> {
     let Some(e) = body(&h)? else {
         return Ok(false.into());
     };
+    note_reserved(e, |r| r.added += joules);
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -807,6 +980,9 @@ fn heat_body_couple(
     };
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let slot = num(&slot)?.clamp(0.0, 1.0) as u8;
+    if slot == 0 {
+        note_reserved(e, |r| r.slot0_set = true);
+    }
     #[allow(clippy::cast_possible_truncation)]
     let target_kind = num(&target_kind)? as i32;
     set_coupling(e, slot, target_kind, &target_ref, num(&conductance)?)?;
@@ -895,6 +1071,7 @@ fn heat_body_set_temperature(h: ByondValue, temperature: ByondValue) -> Result<B
     let Some(e) = body(&h)? else {
         return Ok(false.into());
     };
+    note_reserved(e, |r| r.temperature_set = true);
     let ok = with_world(|w| {
         let Some(mut b) = w.read::<HeatBody>(e) else {
             return Ok(false);
@@ -921,6 +1098,7 @@ fn heat_body_keep(h: ByondValue, keep: ByondValue) -> Result<ByondValue> {
     let Some(e) = body(&h)? else {
         return Ok(false.into());
     };
+    note_reserved(e, |r| r.keep_set = true);
     let ok = with_world(|w| {
         let ok = w
             .set(
@@ -943,6 +1121,7 @@ fn heat_body_keep(h: ByondValue, keep: ByondValue) -> Result<ByondValue> {
 #[auxmacros::bind("/proc/heat_body_release")]
 fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
     if let Some(e) = body(&h)? {
+        RESERVED.with_borrow_mut(|r| r.remove(&e.index()));
         let body_i = e.index();
         with_world(|w| {
             release_body(w, e)?;
@@ -1581,6 +1760,108 @@ mod tests {
         })
         .unwrap();
         assert_eq!(crossings.len(), 1, "{crossings:?}");
+    }
+
+    #[test]
+    fn reserved_handles_are_live_distinct_and_usable_at_once() {
+        let (bodies, reads) = with_world(|w| {
+            let bodies = reserve_bodies(w, 4)?;
+            let reads: Vec<_> = bodies.iter().map(|&e| w.read::<HeatBody>(e)).collect();
+            Ok((bodies, reads))
+        })
+        .unwrap();
+        let mut indices: Vec<_> = bodies.iter().map(|e| e.index()).collect();
+        indices.sort_unstable();
+        indices.dedup();
+        assert_eq!(indices.len(), 4, "distinct: {bodies:?}");
+        for (e, read) in bodies.iter().zip(reads) {
+            let b = read.expect("a reserved handle is a live body");
+            assert!(b.keep, "a reserved body is kept until configured");
+            assert!(is_reserved(*e));
+            // The handle round-trips through DM's number form.
+            assert_eq!(entity::decode(entity::entity_value(*e)).unwrap(), *e);
+        }
+    }
+
+    #[test]
+    fn configure_applies_the_spec_but_keeps_writes_made_in_between() {
+        let (plain_b, written_b, outcome, still_reserved) = with_world(|w| {
+            let bodies = reserve_bodies(w, 2)?;
+            let (plain, written) = (bodies[0], bodies[1]);
+            // DM used `written` at once: kept it off, coupled slot 0, set 350 K.
+            note_reserved(written, |r| {
+                r.temperature_set = true;
+                r.keep_set = true;
+                r.slot0_set = true;
+            });
+            let mut b = w.read::<HeatBody>(written).unwrap();
+            b.keep = false;
+            b.energy = 350.0; // capacity 1: 350 K
+            w.put(written, b).unwrap();
+            let outcome = configure_bodies(
+                w,
+                &[
+                    BodySpec { e: plain, capacity: 500.0, temperature: 290.0, keep: false },
+                    BodySpec { e: written, capacity: 2_000.0, temperature: 290.0, keep: true },
+                ],
+            );
+            let still_reserved = is_reserved(plain) || is_reserved(written);
+            Ok((
+                w.read::<HeatBody>(plain).unwrap(),
+                w.read::<HeatBody>(written).unwrap(),
+                outcome,
+                still_reserved,
+            ))
+        })
+        .unwrap();
+        assert_eq!(outcome, vec![Some(true), Some(false)]);
+        assert!((plain_b.capacity - 500.0).abs() < 1e-9);
+        assert!((plain_b.energy / plain_b.capacity - 290.0).abs() < 1e-6);
+        assert!(!plain_b.keep);
+        assert!((written_b.capacity - 2_000.0).abs() < 1e-9);
+        assert!((written_b.energy / written_b.capacity - 350.0).abs() < 1e-6, "{written_b:?}");
+        assert!(!written_b.keep, "an explicit keep write survives configure");
+        assert!(!still_reserved);
+    }
+
+    #[test]
+    fn configure_skips_released_configured_and_foreign_handles() {
+        let outcome = with_world(|w| {
+            let bodies = reserve_bodies(w, 2)?;
+            let foreign = body_at(w, 300.0, 0.0);
+            // Released while pending: its handle stops resolving.
+            RESERVED.with_borrow_mut(|r| r.remove(&bodies[1].index()));
+            let _ = w.despawn(bodies[1]);
+            assert!(w.read::<HeatBody>(bodies[1]).is_none(), "a released handle is dead");
+            let spec = |e| BodySpec { e, capacity: 10.0, temperature: 300.0, keep: false };
+            let first = configure_bodies(w, &[spec(bodies[0]), spec(bodies[1]), spec(foreign)]);
+            // Configuring twice is a no-op the second time.
+            let second = configure_bodies(w, &[spec(bodies[0])]);
+            // A fresh reserve never hands back a handle equal to the dead one.
+            let fresh = reserve_bodies(w, 1)?;
+            assert_ne!(fresh[0], bodies[1], "a stale handle never names a new body");
+            assert!(w.read::<HeatBody>(bodies[1]).is_none(), "the stale handle stays dead");
+            // The foreign body was not touched.
+            let f = w.read::<HeatBody>(foreign).unwrap();
+            assert!((f.capacity - 1_000.0).abs() < 1e-9);
+            Ok((first, second))
+        })
+        .unwrap();
+        assert_eq!(outcome.0, vec![Some(true), None, None]);
+        assert_eq!(outcome.1, vec![None]);
+    }
+
+    #[test]
+    fn added_heat_before_configure_is_kept_on_top() {
+        let t = with_world(|w| {
+            let e = reserve_bodies(w, 1)?[0];
+            note_reserved(e, |r| r.added += 1_000.0);
+            configure_bodies(w, &[BodySpec { e, capacity: 100.0, temperature: 300.0, keep: true }]);
+            let b = w.read::<HeatBody>(e).unwrap();
+            Ok(b.energy / b.capacity)
+        })
+        .unwrap();
+        assert!((t - 310.0).abs() < 1e-6, "{t}");
     }
 
     #[test]

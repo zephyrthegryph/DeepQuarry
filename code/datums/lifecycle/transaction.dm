@@ -116,6 +116,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	// dematerialize.
 	tick = world.tick_usage
 	D.lifecycle_unbind()
+	lifecycle_decls_unbind(D) // DECLARE_BIND releases (declarations.dm)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_UNBIND, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_UNBIND done")
 
@@ -169,6 +170,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	tick = world.tick_usage
 	var/datum/destroy_effects_data/effects = D.destroy_effects()
 	var/turf/effects_turf
+	effects?.apply_per_atom(D)
 	// Under a batch (batch.dm) effects are merged per turf and neighbour updates run once at the end.
 	if(effects && !dq_batch_effects(D, effects))
 		effects_turf = effects.apply(D)

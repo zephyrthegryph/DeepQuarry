@@ -48,10 +48,11 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 /// DECLARE_REF(..., KEEP)), and which of them are tmp (issaved() is FALSE for tmp, const,
 /// static and global vars). Cached once per type.
 /proc/dq_lifecycle_leak_candidates(datum/D)
-	var/static/list/cache = list()
-	var/list/entry = cache[D.type]
-	if(entry)
-		return entry
+	return CACHED_KEY(lifecycle_leak_candidates, D.type, D)
+
+DECLARE_SHARED_CACHE(lifecycle_leak_candidates, GLOBAL_PROC_REF(build_lifecycle_leak_candidates), SC_NEVER)
+
+/proc/build_lifecycle_leak_candidates(datum/D)
 	var/list/ignored = dq_lifecycle_leak_ignored_names()
 	var/list/links = dq_lifecycle_link_table(D)
 	var/list/keep = links[REFKIND_KEEP]
@@ -64,9 +65,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 		names += name
 		if(!issaved(D.vars[name]))
 			tmp_names[name] = TRUE
-	entry = list(names, tmp_names)
-	cache[D.type] = entry
-	return entry
+	return list(names, tmp_names)
 
 /// The name of a var of `X` that still reaches `D` (directly, or as a member
 /// of a list var), or null.

@@ -1,6 +1,10 @@
 #define TANK_IDEAL_PRESSURE 1015 //Arbitrary.
 
-GLOBAL_LIST_EMPTY(tank_gauge_cache)
+DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overlay), SC_NEVER)
+
+/// Builder for tank_gauge_overlays.
+/proc/build_tank_gauge_overlay(icon, indicator)
+	return image(icon, indicator)
 
 /obj/item/tank
 	material_template = /datum/material_template/pressure
@@ -419,9 +423,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 	cut_overlays()
 	add_bomb_overlay()
 	var/indicator = "[gauge_icon][(gauge_pressure == -1) ? "overload" : gauge_pressure]"
-	if(!GLOB.tank_gauge_cache[indicator])
-		GLOB.tank_gauge_cache[indicator] = image(icon, indicator)
-	add_overlay(GLOB.tank_gauge_cache[indicator])
+	add_overlay(CACHED_KEY(tank_gauge_overlays, indicator, icon, indicator))
 
 /obj/item/tank/proc/check_status()
 	//Handle exploding, leaking, and rupturing of the tank

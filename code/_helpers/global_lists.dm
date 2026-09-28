@@ -584,7 +584,7 @@ GLOBAL_LIST_INIT(vr_mob_spawner_options, list(
 	))
 
 //global lists I found in various files and moved here for housekeeping
-GLOBAL_LIST_EMPTY(stool_cache) //haha stool
+GLOBAL_LIST_EMPTY(stool_cache) //haha stool // ALLOW(cache): hot overlay pooling; readers out of scope
 GLOBAL_LIST_EMPTY(emotes_by_key)
 GLOBAL_LIST_EMPTY(random_maps)
 GLOBAL_LIST_EMPTY(map_count)
@@ -628,7 +628,7 @@ GLOBAL_ALIST_EMPTY(dna_activity_bounds)
 GLOBAL_ALIST_EMPTY(assigned_blocks)
 
 GLOBAL_LIST_EMPTY(gear_distributed_to)
-GLOBAL_LIST_EMPTY(overlay_cache) //cache recent overlays
+GLOBAL_LIST_EMPTY(overlay_cache) //cache recent overlays // ALLOW(cache): t_scanner bounded recent-overlay pool; reader out of scope
 
 GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list(
 	/obj/item/spell,
@@ -642,7 +642,7 @@ GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list
 
 
 // color-dir-dry
-GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image)
+GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image) // ALLOW(cache): hot overlay pooling
 
 GLOBAL_LIST_INIT_TYPED(sandbag_recipes, /datum/stack_recipe, list( \
 	new/datum/stack_recipe("barricade", /obj/structure/barricade/sandbag, 3, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE)))
@@ -1328,7 +1328,7 @@ GLOBAL_LIST_INIT(possible_ghost_sprites, list(
 	"Beepsky" = "secbot"
 	))
 
-GLOBAL_LIST_EMPTY(sparring_attack_cache)
+GLOBAL_LIST_EMPTY(sparring_attack_cache) // ALLOW(cache): singleton instance registry; reader out of scope
 
 
 //PAI stuff

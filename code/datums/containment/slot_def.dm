@@ -117,16 +117,17 @@
 /// boot by /datum/om/registry/proc/build_slot_holders(), registry.dm), unless
 /// the holder overrides slot_relation_overrides() to decide dynamically.
 /proc/dq_slot_defs_for(atom/holder)
-	var/static/list/cache = list()
 	var/key = holder.slot_holder_key()
-	. = cache[key]
-	if(isnull(.))
-		var/list/defs = holder.slot_relation_overrides()
-		if(isnull(defs))
-			defs = om_registry().slot_group_for(key)
-		. = length(defs) ? defs : FALSE
-		cache[key] = .
-	return . || null
+	return CACHED_KEY(slot_defs_for, key, holder, key) || null
+
+DECLARE_SHARED_CACHE(slot_defs_for, GLOBAL_PROC_REF(build_slot_defs_for), SC_NEVER)
+
+/// Builder for dq_slot_defs_for(): `holder` is any instance answering `key`.
+/proc/build_slot_defs_for(atom/holder, key)
+	var/list/defs = holder.slot_relation_overrides()
+	if(isnull(defs))
+		defs = om_registry().slot_group_for(key)
+	return length(defs) ? defs : FALSE
 
 /// What a holder's slot set is cached by. A holder whose slots depend on more
 /// than its own type (a mob's body plan) overrides this to return that type

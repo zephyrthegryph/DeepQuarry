@@ -10,15 +10,15 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 
 /datum/world_service/skybox
 	name = "Space skybox"
-	var/static/list/skybox_cache = list()
+	var/static/list/skybox_cache = list() // ALLOW(cache): service-owned appearance tables with paired index lists
 
 	var/static/mutable_appearance/normal_space
-	var/static/list/dust_cache = list()
+	var/static/list/dust_cache = list() // ALLOW(cache): service-owned appearance tables with paired index lists
 	/// dust_cache as a flat list: dust_by_index[n + 1] is dust_cache["[n]"]. Space turfs
 	/// pick one each at map load, so the index skips building a string key per turf.
 	var/static/list/dust_by_index = list()
-	var/static/list/speedspace_cache = list()
-	var/static/list/mapedge_cache = list()
+	var/static/list/speedspace_cache = list() // ALLOW(cache): service-owned appearance tables
+	var/static/list/mapedge_cache = list() // ALLOW(cache): service-owned appearance tables
 	var/static/list/phase_shift_by_x = list()
 	var/static/list/phase_shift_by_y = list()
 

@@ -409,39 +409,30 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 	name = "Syringe (inaprovaline)"
 	desc = "Contains inaprovaline - used to stabilize patients."
 
-/obj/item/reagent_containers/syringe/inaprovaline/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_INAPROVALINE, 15)
+DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/inaprovaline, null, list(REAGENT_ID_INAPROVALINE = 15))
 
 /obj/item/reagent_containers/syringe/antitoxin
 	name = "Syringe (anti-toxin)"
 	desc = "Contains anti-toxins."
 
-/obj/item/reagent_containers/syringe/antitoxin/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ANTITOXIN, 15)
+DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/antitoxin, null, list(REAGENT_ID_ANTITOXIN = 15))
 
 /obj/item/reagent_containers/syringe/antiviral
 	name = "Syringe (spaceacillin)"
 	desc = "Contains antiviral agents."
 
-/obj/item/reagent_containers/syringe/antiviral/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SPACEACILLIN, 15)
+DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/antiviral, null, list(REAGENT_ID_SPACEACILLIN = 15))
 
 /obj/item/reagent_containers/syringe/drugs
 	name = "Syringe (drugs)"
 	desc = "Contains aggressive drugs meant for torture."
 
-/obj/item/reagent_containers/syringe/drugs/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BLISS,  5)
-	reagents.add_reagent(REAGENT_ID_MINDBREAKER,  5)
-	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/drugs, null, list(REAGENT_ID_BLISS = 5, REAGENT_ID_MINDBREAKER = 5, REAGENT_ID_CRYPTOBIOLIN = 5))
+
+DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/ld50_syringe/choral, null, list(REAGENT_ID_CHLORALHYDRATE = 50))
 
 /obj/item/reagent_containers/syringe/ld50_syringe/choral/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 50)
 	mode = SYRINGE_INJECT
 	update_icon()
 

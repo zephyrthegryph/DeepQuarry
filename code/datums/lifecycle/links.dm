@@ -75,35 +75,35 @@
 /// slot_def_types() by the instance's type. Keyed by REFKIND_* ("owned", "pair",
 /// ...); each entry is an assoc of var name -> OPT, or absent.
 /proc/dq_lifecycle_link_table(datum/D)
-	var/static/list/cache = list()
-	var/key = D.type
-	var/list/table = cache[key]
-	if(isnull(table))
-		table = D.declared_refs() || list()
-		// A declaration naming a var the type no longer has (the var was
-		// removed, the DECLARE_REF line wasn't) would runtime on D.vars[name] in the
-		// middle of a destroy transaction, abandoning it half done. Drop it
-		// here, once per type, loudly.
-		// DEF/STATIC/TRANSIENT entries are only read by the lints and pool.dm.
-		var/static/list/unchecked = list(REFKIND_DEF = TRUE, REFKIND_STATIC = TRUE, REFKIND_TRANSIENT = TRUE)
-		for(var/kind in table)
-			var/list/names = table[kind]
-			if(!length(names) || unchecked[kind])
+	return CACHED_KEY(lifecycle_link_table, D.type, D)
+
+DECLARE_SHARED_CACHE(lifecycle_link_table, GLOBAL_PROC_REF(build_lifecycle_link_table), SC_NEVER)
+
+/proc/build_lifecycle_link_table(datum/D)
+	var/list/table = D.declared_refs() || list()
+	// A declaration naming a var the type no longer has (the var was
+	// removed, the DECLARE_REF line wasn't) would runtime on D.vars[name] in the
+	// middle of a destroy transaction, abandoning it half done. Drop it
+	// here, once per type, loudly.
+	// DEF/STATIC/TRANSIENT entries are only read by the lints and pool.dm.
+	var/static/list/unchecked = list(REFKIND_DEF = TRUE, REFKIND_STATIC = TRUE, REFKIND_TRANSIENT = TRUE)
+	for(var/kind in table)
+		var/list/names = table[kind]
+		if(!length(names) || unchecked[kind])
+			continue
+		for(var/name in names.Copy())
+			var/checked = name
+			if(kind == REFKIND_QUEUE && name == LIFECYCLE_QUEUE_ALWAYS)
 				continue
-			for(var/name in names.Copy())
-				var/checked = name
-				if(kind == REFKIND_QUEUE && name == LIFECYCLE_QUEUE_ALWAYS)
-					continue
-				if(kind == REFKIND_BACK_VIA) // a path: its first hop must be ours
-					var/dot = findtext(name, ".")
-					if(dot)
-						checked = copytext(name, 1, dot)
-				if(!(checked in D.vars))
-					stack_trace("LIFECYCLE: [D.type] declares [kind] var '[name]', which it doesn't have; ignoring it")
-					names = names.Copy()
-					names -= name
-					table[kind] = names
-		cache[key] = table
+			if(kind == REFKIND_BACK_VIA) // a path: its first hop must be ours
+				var/dot = findtext(name, ".")
+				if(dot)
+					checked = copytext(name, 1, dot)
+			if(!(checked in D.vars))
+				stack_trace("LIFECYCLE: [D.type] declares [kind] var '[name]', which it doesn't have; ignoring it")
+				names = names.Copy()
+				names -= name
+				table[kind] = names
 	return table
 
 /// Phase 2, for a movable destroyed inside another atom: the holder's declared

@@ -30,9 +30,11 @@ ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 # Every lint that reads the annotation, by the name the annotation uses.
 LINTS = {
     "api": "tools/ci/api_lints.py",
+    "cache": "tools/ci/cache_lint.py (hand-rolled shared caches outside DECLARE_SHARED_CACHE)",
     "check_grep": "tools/ci/check_grep.sh (same line only)",
     "containment": "tools/ci/containment_lint.py",
     "cooldown": "tools/ci/cooldown_lint.py",
+    "decl": "tools/ci/decl_lint.py (Initialize()/on_destroy() work a lifecycle declaration now does)",
     "declared_refs": "tools/ci/declared_refs_lint.py (undeclared object-typed vars)",
     "handle_kinds": "tools/ci/handle_kinds_lint.py (handles to singletons; handles that are a new datum's only owner)",
     "instance_list": "tools/ci/instance_list_lint.py",

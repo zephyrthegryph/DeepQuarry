@@ -23,6 +23,12 @@ SUBSYSTEM_DEF(atoms)
 	///InitializeAtoms() call was given a list to populate. Saved and restored per call.
 	var/list/created_atoms
 
+	/// While a map-load batch initializes, anchored power machines queue their node here
+	/// (machine -> TRUE) instead of one vg_power_bind_machine() each; the outermost
+	/// InitializeAtoms() binds them in one vg_power_bind_machine_list() call after its frame's
+	/// cable binds (doc/rewrite/init_and_turfs.md sec 4.6). Null outside a batch.
+	var/list/deferred_machine_binds
+
 	/// Atoms that will be deleted once the subsystem is initialized
 	var/list/queued_deletions = list()
 
@@ -67,12 +73,27 @@ SUBSYSTEM_DEF(atoms)
 	var/list/outer_created = created_atoms
 	created_atoms = atoms_to_return ? list() : null
 	batch.created_atoms = created_atoms
+	var/machine_owner = isnull(deferred_machine_binds)
+	if(machine_owner)
+		deferred_machine_binds = list()
+	var/decl_bind_owner = isnull(deferred_decl_binds)
+	if(decl_bind_owner)
+		deferred_decl_binds = list()
+	// Heat bodies created by the batch take pre-reserved handles and configure in one call (heat_bind_batch.dm).
+	dq_heat_bind_begin()
 	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
 	CreateAtoms(batch, atoms)
 	clear_tracked_initalize(source)
 	var/list/created = batch.created_atoms
 	created_atoms = outer_created
 	batch_close(batch)
+	// The frame flushed walls and cables; machines bind after the cables so they join the knots.
+	if(machine_owner)
+		flush_machine_binds()
+	// Decl binds run inside the heat bind scope, so bodies they create batch too.
+	if(decl_bind_owner)
+		flush_decl_binds()
+	dq_heat_bind_end()
 
 	var/list/loaders = batch.late_loaders
 	if(length(late_loaders))
@@ -107,6 +128,14 @@ SUBSYSTEM_DEF(atoms)
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
 	#endif
+
+/// Binds every power machine node the batch queued in one Rust call (after the cables, so the
+/// machines join the batch's knots).
+/datum/controller/subsystem/atoms/proc/flush_machine_binds()
+	var/list/queued = deferred_machine_binds
+	deferred_machine_binds = null
+	if(length(queued))
+		power_bind_machines(queued)
 
 /// Initializes the frame's atoms (or every uninitialized atom in the world) chunk by chunk.
 /// Exists solely so a runtime in the creation logic doesn't cause initialized to totally break.

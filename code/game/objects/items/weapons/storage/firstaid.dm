@@ -603,60 +603,42 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/neotane/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NEOTANE, 5)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/neotane, null, list(REAGENT_ID_NEOTANE = 5))
 
 /obj/item/reagent_containers/pill/burncard
 	name = REAGENT_BURNCARD + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/burncard/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BURNCARD, 5)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/burncard, null, list(REAGENT_ID_BURNCARD = 5))
 
 /obj/item/reagent_containers/pill/flamecure
 	name = REAGENT_FLAMECURE + " (5u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/flamecure/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_FLAMECURE, 5)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/flamecure, null, list(REAGENT_ID_FLAMECURE = 5))
 
 /obj/item/reagent_containers/pill/juggernog
 	name = REAGENT_JUGGERNOG + " (5u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/juggernog/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_JUGGERNOG, 5)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/juggernog, null, list(REAGENT_ID_JUGGERNOG = 5))
 
 /obj/item/reagent_containers/pill/curea
 	name = REAGENT_CUREA + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/curea/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CUREA, 10)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/curea, null, list(REAGENT_ID_CUREA = 10))
 
 /obj/item/reagent_containers/pill/souldew
 	name = REAGENT_SOULDEW + " (10u)"
 	desc = "An experimental pill."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/souldew/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SOULDEW, 10)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/souldew, null, list(REAGENT_ID_SOULDEW = 10))
 
 /obj/item/reagent_containers/pill/purifyingagent
 	name = REAGENT_PURIFYINGAGENT + " (10u)"
@@ -664,38 +646,25 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 	desc = "An expirmental pill."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/purifyingagent/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PURIFYINGAGENT, 10)
-
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/purifyingagent, null, list(REAGENT_ID_PURIFYINGAGENT = 10))
 
 /obj/item/reagent_containers/pill/paroxetine
 	name = REAGENT_PAROXETINE + " (10u)"
 	desc = "A pill to help treat severe depression."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/paroxetine/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PAROXETINE, 10)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/paroxetine, null, list(REAGENT_ID_PAROXETINE = 10))
 
 /obj/item/reagent_containers/pill/adranol
 	name = REAGENT_ADRANOL + " (10u)"
 	desc = "A pill to help treat jitters, confusion, and blurred vision."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/adranol/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ADRANOL, 10)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/adranol, null, list(REAGENT_ID_ADRANOL = 10))
 
 /obj/item/reagent_containers/pill/aphrodisiac
 	name = REAGENT_APHRODISIAC + " (20u)"
 	desc = "Just one couldn't hurt, right?"
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/aphrodisiac/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_APHRODISIAC, 20)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/aphrodisiac, null, list(REAGENT_ID_APHRODISIAC = 20))

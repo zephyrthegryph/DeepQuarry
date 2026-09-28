@@ -105,6 +105,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /obj/machinery/power/proc/connect_to_network(bind_now = TRUE)
 	if(power_region && vg_entity)
 		return TRUE
+	if(!bind_now)
+		// A map-load batch binds its machines' nodes in one call when it ends (SSatoms.flush_machine_binds()).
+		var/list/deferred = SSatoms?.deferred_machine_binds
+		if(deferred && vg_entity && istype(power_turf(), /turf))
+			deferred[src] = TRUE
+			return FALSE
+	else
+		SSatoms?.deferred_machine_binds?.Remove(src)
 	if(!power_send_node())
 		return FALSE
 	if(bind_now)
@@ -127,10 +135,38 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(!vg_entity)
 		return FALSE
 	vg_power_bind_machine(vg_entity, T.x, T.y, T.z)
+	power_node_sent()
+	return TRUE
+
+/// Binds `machines` (a list, or machine -> TRUE) in one Rust call: a map-load batch's anchored
+/// power machines (doc/rewrite/init_and_turfs.md sec 4.6). Deleted, unbound, unanchored and
+/// unplaced machines are skipped. Each bound machine then does what power_send_node() does
+/// after its bind (supply, power_registered()), so a queued machine ends in the same state.
+/proc/power_bind_machines(list/machines)
+	var/list/bound = list()
+	var/list/entities = list()
+	var/list/coords = list()
+	for(var/obj/machinery/power/M as anything in machines)
+		if(QDELETED(M) || !M.vg_entity || !M.anchored)
+			continue
+		var/turf/T = M.power_turf()
+		if(!istype(T))
+			continue
+		bound += M
+		entities += M.vg_entity
+		coords += list(T.x, T.y, T.z)
+	if(!length(bound))
+		return 0
+	vg_power_bind_machine_list(entities, coords)
+	for(var/obj/machinery/power/M as anything in bound)
+		M.power_node_sent()
+	return length(bound)
+
+/// After this machine's node went to Rust (alone or in a batch): its supply and resend hook.
+/obj/machinery/power/proc/power_node_sent()
 	if(power_supply_rate)
 		set_supply(power_supply_rate)
 	power_registered()
-	return TRUE
 
 /// Hook: the node was (re)sent to Rust; storage machines resend their state.
 /obj/machinery/power/proc/power_registered()
@@ -156,6 +192,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
 /// Leaves the network and removes the node.
 /obj/machinery/power/proc/disconnect_from_network()
+	SSatoms?.deferred_machine_binds?.Remove(src)
 	if(!vg_entity)
 		return FALSE
 	vg_power_unbind_node(vg_entity)

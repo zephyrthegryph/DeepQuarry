@@ -60,29 +60,29 @@
 
 /// The compiled predicate for a /datum/predicate subtype: one shared instance.
 /proc/dq_predicate(path)
-	var/static/list/cache = list()
-	. = cache[path]
-	if(.)
-		return .
+	return CACHED(compiled_predicate, path)
+
+DECLARE_SHARED_CACHE(compiled_predicate, GLOBAL_PROC_REF(build_compiled_predicate), SC_NEVER)
+
+/proc/build_compiled_predicate(path)
 	var/datum/predicate/P = new path
 	if(!P.compile())
 		stack_trace("predicate [path] failed to compile: [jointext(P.errors, "; ")]")
-	cache[path] = P
 	return P
 
 /// The compiled predicate for an inline spec, compiled once per `key`. The
 /// spec for a given key must not change.
 /proc/dq_predicate_for(key, list/spec, name)
-	var/static/list/cache = list()
-	. = cache[key]
-	if(.)
-		return .
+	return CACHED_KEY(inline_predicate, key, key, spec, name)
+
+DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), SC_NEVER)
+
+/proc/build_inline_predicate(key, list/spec, name)
 	var/datum/predicate/P = new
 	P.spec = spec
 	P.name = name || "[key]"
 	if(!P.compile())
 		stack_trace("predicate [key] failed to compile: [jointext(P.errors, "; ")]")
-	cache[key] = P
 	return P
 
 /// Boot validation: compile every declared /datum/predicate subtype. Returns error strings.

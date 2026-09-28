@@ -1,4 +1,4 @@
-GLOBAL_LIST_EMPTY(limb_icon_cache)
+GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, conditional overwrite on empty key
 
 /obj/item/organ/external/proc/compile_icon()
 	cut_overlays()

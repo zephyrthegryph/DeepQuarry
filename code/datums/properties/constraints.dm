@@ -73,14 +73,14 @@
 		var/override = I.constraint_overrides[kind]
 		if(!isnull(override))
 			return override || null
-	var/static/list/cache = list()
-	var/key = "[kind]|[I.type]"
-	. = cache[key]
-	if(isnull(.))
-		var/list/spec = I.constraint_spec(kind)
-		. = length(spec) ? dq_predicate_for("constraint:[key]", spec, "[I.type] [kind]") : FALSE
-		cache[key] = .
-	return . || null
+	return CACHED_KEY(item_constraint, "[kind]|[I.type]", I, kind) || null
+
+DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC_NEVER)
+
+/// Builder for dq_constraint(): `I` is any instance of the type being compiled.
+/proc/build_item_constraint(obj/item/I, kind)
+	var/list/spec = I.constraint_spec(kind)
+	return length(spec) ? dq_predicate_for("constraint:[kind]|[I.type]", spec, "[I.type] [kind]") : FALSE
 
 /// Why `I`'s constraint of `kind` refuses `thing` (moved or worn by `actor`), or
 /// null if it passes or there is no constraint.

@@ -193,8 +193,6 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 		AM.water_act(amount)
 	inflict_water_damage(20 * amount) // Only things vulnerable to water will actually be harmed (slimes/prommies).
 
-GLOBAL_LIST_EMPTY(shoreline_icon_cache)
-
 /turf/simulated/floor/water/is_safe_to_enter(mob/living/L)
 	// Aquatic flags simulated water as safe now
 	if(istype(L,/mob/living/carbon))

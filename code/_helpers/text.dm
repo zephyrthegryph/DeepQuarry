@@ -356,17 +356,18 @@ GLOBAL_LIST_INIT(alphabet_upper, list("A","B","C","D","E","F","G","H","I","J","K
 //The icon var could be local in the proc, but it's a waste of resources
 //	to always create it and then throw it out.
 GLOBAL_VAR_INIT(text_tag_icons, 'icons/chattags.dmi')
-GLOBAL_LIST_EMPTY(text_tag_cache)
+DECLARE_SHARED_CACHE_EX(text_tags, GLOBAL_PROC_REF(build_text_tag), SC_NEVER, 256, 0)
+
+/proc/build_text_tag(tagname)
+	var/datum/asset/spritesheet_batched/chatassets = get_asset_datum(/datum/asset/spritesheet_batched/chat)
+	return chatassets.icon_tag(tagname)
 
 /proc/create_text_tag(tagname, tagdesc = tagname, client/C = null)
 	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))
 		return tagdesc
-	if(!GLOB.text_tag_cache[tagname])
-		var/datum/asset/spritesheet_batched/chatassets = get_asset_datum(/datum/asset/spritesheet_batched/chat)
-		GLOB.text_tag_cache[tagname] = chatassets.icon_tag(tagname)
 	if(!C.tgui_panel.is_ready() || C.tgui_panel.oldchat)
 		return "<IMG src='\ref[GLOB.text_tag_icons]' class='text_tag' iconstate='[tagname]'" + (tagdesc ? " alt='[tagdesc]'" : "") + ">"
-	return GLOB.text_tag_cache[tagname]
+	return CACHED(text_tags, tagname)
 
 /proc/create_text_tag_old(tagname, tagdesc = tagname, client/C = null)
 	if(!(C && C.prefs?.read_preference(/datum/preference/toggle/chat_tags)))

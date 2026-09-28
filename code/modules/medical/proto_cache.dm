@@ -16,8 +16,10 @@
 // mutate it. The cache is keyed by typepath so subtypes added at
 // runtime (admin spawn?) work as expected.
 
-GLOBAL_LIST_EMPTY(dq_proto_cache)
-GLOBAL_PROTECT(dq_proto_cache)
+DECLARE_SHARED_CACHE(dq_proto, GLOBAL_PROC_REF(build_dq_proto), SC_NEVER)
+
+/proc/build_dq_proto(typepath)
+	return new typepath()
 
 /// Return a long-lived prototype instance of the given /datum typepath.
 /// Useful for reading instance-default vars (`name`, list literals,
@@ -26,9 +28,4 @@ GLOBAL_PROTECT(dq_proto_cache)
 /proc/dq_proto(typepath)
 	if(!typepath)
 		return null
-	var/cached = GLOB.dq_proto_cache[typepath]
-	if(cached)
-		return cached
-	cached = new typepath()
-	GLOB.dq_proto_cache[typepath] = cached
-	return cached
+	return CACHED(dq_proto, typepath)

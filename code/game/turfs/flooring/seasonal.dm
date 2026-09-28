@@ -29,7 +29,6 @@ GLOBAL_VAR(world_time_day)
 	initial_flooring = /datum/decl/flooring/grass/seasonal_grass
 
 	grass = null
-	var/static/list/overlays_cache = list()
 	animal_chance = 0.5 // upstream redeclared these as new vars for some reason
 	animals = null // end
 	var/tree_chance = 1
@@ -106,25 +105,13 @@ GLOBAL_VAR(world_time_day)
 		if("spring")
 			if(prob(50))
 				var/cache_key = "[GLOB.world_time_season]-overlay[rand(1,19)]"
-				if(!overlays_cache[cache_key])
-					var/image/I = image(icon = src.icon, icon_state = cache_key, layer = ABOVE_TURF_LAYER) // Icon should be abstracted out
-					I.plane = TURF_PLANE
-					I.color = null
-					I.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-					overlays_cache[cache_key] = I
-				add_overlay(overlays_cache[cache_key])
+				add_overlay(CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key))
 		if("summer")
 			return
 		if("autumn")
 			if(prob(33))
 				var/cache_key = "[GLOB.world_time_season]-overlay[rand(1,6)]"
-				if(!overlays_cache[cache_key])
-					var/image/I = image(icon = src.icon, icon_state = cache_key, layer = ABOVE_TURF_LAYER) // Icon should be abstracted out
-					I.plane = TURF_PLANE
-					I.color = null
-					I.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
-					overlays_cache[cache_key] = I
-				add_overlay(overlays_cache[cache_key])
+				add_overlay(CACHED_KEY(seasonal_grass_overlays, cache_key, icon, cache_key))
 
 		if("winter")
 			return
@@ -134,3 +121,12 @@ GLOBAL_VAR(world_time_day)
 	animal_chance = 0
 	snow_chance = 0
 
+DECLARE_SHARED_CACHE(seasonal_grass_overlays, GLOBAL_PROC_REF(build_seasonal_grass_overlay), SC_NEVER)
+
+/// Builder for seasonal_grass_overlays.
+/proc/build_seasonal_grass_overlay(icon, state)
+	var/image/I = image(icon = icon, icon_state = state, layer = ABOVE_TURF_LAYER) // Icon should be abstracted out
+	I.plane = TURF_PLANE
+	I.color = null
+	I.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
+	return I

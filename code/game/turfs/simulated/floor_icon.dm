@@ -25,43 +25,24 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 				flooring_override = icon_state
 
 		// Apply edges, corners, and inner corners.
-		var/has_border = 0
 		if(flooring.flags & TURF_HAS_EDGES)
+			var/has_border = 0
 			for(var/step_dir in GLOB.cardinal)
-				var/turf/simulated/floor/T = get_step(src, step_dir)
-				if(!flooring.test_link(src, T))
+				if(!flooring.test_link(src, get_step(src, step_dir)))
 					has_border |= step_dir
-					add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[step_dir]", "[flooring.icon_base]_edges", step_dir))
-
 			//Note: Doesn't actually check northeast, this is bitmath to check if we're edge'd (aka not smoothed) to NORTH and EAST
 			//North = 0001, East = 0100, Northeast = 0101, so (North|East) == Northeast, therefore (North|East)&Northeast == Northeast
-			if((has_border & NORTHEAST) == NORTHEAST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[NORTHEAST]", "[flooring.icon_base]_edges", NORTHEAST))
-			if((has_border & NORTHWEST) == NORTHWEST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[NORTHWEST]", "[flooring.icon_base]_edges", NORTHWEST))
-			if((has_border & SOUTHEAST) == SOUTHEAST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[SOUTHEAST]", "[flooring.icon_base]_edges", SOUTHEAST))
-			if((has_border & SOUTHWEST) == SOUTHWEST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[SOUTHWEST]", "[flooring.icon_base]_edges", SOUTHWEST))
-
+			var/inner_corners = 0
 			if(flooring.flags & TURF_HAS_CORNERS)
 				//Like above but checking for NO similar bits rather than both similar bits.
-				if((has_border & NORTHEAST) == 0) //Are connected NORTH and EAST
-					var/turf/simulated/floor/T = get_step(src, NORTHEAST)
-					if(!flooring.test_link(src, T)) //But not NORTHEAST
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[NORTHEAST]", "[flooring.icon_base]_corners", NORTHEAST))
-				if((has_border & NORTHWEST) == 0)
-					var/turf/simulated/floor/T = get_step(src, NORTHWEST)
-					if(!flooring.test_link(src, T))
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[NORTHWEST]", "[flooring.icon_base]_corners", NORTHWEST))
-				if((has_border & SOUTHEAST) == 0)
-					var/turf/simulated/floor/T = get_step(src, SOUTHEAST)
-					if(!flooring.test_link(src, T))
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[SOUTHEAST]", "[flooring.icon_base]_corners", SOUTHEAST))
-				if((has_border & SOUTHWEST) == 0)
-					var/turf/simulated/floor/T = get_step(src, SOUTHWEST)
-					if(!flooring.test_link(src, T))
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[SOUTHWEST]", "[flooring.icon_base]_corners", SOUTHWEST))
+				// One bit per GLOB.cornerdirs index: the diagonals share direction bits, so OR-ing
+				// the dirs themselves would turn NE|SW into all four corners.
+				for(var/i in 1 to length(GLOB.cornerdirs))
+					var/corner_dir = GLOB.cornerdirs[i]
+					if((has_border & corner_dir) == 0 && !flooring.test_link(src, get_step(src, corner_dir))) //Connected on both cardinals, but not the diagonal
+						inner_corners |= (1 << (i - 1))
+			if(has_border || inner_corners)
+				add_overlay(flooring.get_edge_overlays(has_border, inner_corners))
 
 	// Re-apply floor decals
 	if(LAZYLEN(decals))
@@ -106,12 +87,8 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 		// Their icon_state is not our icon_state
 		// They don't forbid_turf_edge
 		if(istype(T) && T.edge_blending_priority && edge_blending_priority < T.edge_blending_priority && icon_state != T.icon_state && !T.forbid_turf_edge())
-			var/cache_key = "[T.get_edge_icon_state()]-[checkdir]" // Usually [icon_state]-[dirnum]
-			if(!GLOB.turf_edge_cache[cache_key])
-				var/image/I = image(icon = T.icon_edge, icon_state = "[T.get_edge_icon_state()]-edge", dir = checkdir, layer = ABOVE_TURF_LAYER) // icon_edge
-				I.plane = TURF_PLANE
-				GLOB.turf_edge_cache[cache_key] = I
-			add_overlay(GLOB.turf_edge_cache[cache_key])
+			var/edge_state = T.get_edge_icon_state()
+			add_overlay(CACHED_KEY(turf_edge_overlays, "[edge_state]-[checkdir]", T.icon_edge, edge_state, checkdir)) // Usually [icon_state]-[dirnum]
 
 // We will take this state and use it for a cache key, and append '-edge' to it to get the edge overlay (edges *from other turfs*, not our own internal edges)
 /turf/simulated/proc/get_edge_icon_state()

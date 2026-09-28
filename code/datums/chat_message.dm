@@ -25,7 +25,7 @@
  */
 
 // Cached runechat icon
-GLOBAL_LIST_EMPTY(runechat_image_cache)
+GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled registry of two icon images, not a keyed build cache
 
 /hook/startup/proc/runechat_images()
 	var/image/radio_image = image('icons/UI_Icons/chat/chat_icons.dmi', icon_state = "radio")

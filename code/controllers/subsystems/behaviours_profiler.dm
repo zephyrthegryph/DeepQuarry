@@ -127,6 +127,7 @@
 			"status" = WS.stat_line(),
 		))
 	data["services"] = services
+	data["caches"] = shared_cache_stats()
 	if(world_diag)
 		data["world_step"] = list(
 			"step_ms" = round(world_diag["step_ms"], 0.001),

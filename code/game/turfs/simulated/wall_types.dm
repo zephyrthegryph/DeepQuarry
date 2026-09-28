@@ -514,7 +514,11 @@ EXTEND_INTERACTIONS(/turf/simulated/flesh, INTERACT_ITEM("Nothing", TYPE_PROC_RE
 	. = ..()
 	update_icon(1)
 
-GLOBAL_LIST_EMPTY(flesh_overlay_cache)
+DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overlay), SC_NEVER)
+
+/// Builder for flesh_side_overlays.
+/proc/build_flesh_side_overlay(place_dir)
+	return image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
 
 /turf/simulated/flesh/update_icon(update_neighbors)
 	cut_overlays()
@@ -526,9 +530,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 			var/turf/T = get_step(src,direction)
 			if(istype(T) && !T.density)
 				var/place_dir = turn(direction, 180)
-				if(!GLOB.flesh_overlay_cache["flesh_side_[place_dir]"])
-					GLOB.flesh_overlay_cache["flesh_side_[place_dir]"] = image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
-				add_overlay(GLOB.flesh_overlay_cache["flesh_side_[place_dir]"])
+				add_overlay(CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir))
 
 	if(update_neighbors)
 		for(var/direction in GLOB.alldirs)

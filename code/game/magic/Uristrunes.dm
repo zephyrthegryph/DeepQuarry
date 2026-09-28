@@ -55,14 +55,13 @@ GLOBAL_LIST(word_to_uristrune_table)
 
 	return get_uristrune(bits, animated)
 
-GLOBAL_LIST_EMPTY(uristrune_cache)
+DECLARE_SHARED_CACHE(uristrunes, GLOBAL_PROC_REF(build_uristrune), SC_NEVER)
 
 /proc/get_uristrune(symbol_bits, animated = 0)
-	var/lookup = "[symbol_bits]-[animated]"
+	return CACHED2(uristrunes, symbol_bits, animated)
 
-	if(lookup in GLOB.uristrune_cache)
-		return GLOB.uristrune_cache[lookup]
-
+/// Builder for uristrunes.
+/proc/build_uristrune(symbol_bits, animated)
 	var/icon/I = icon('icons/effects/uristrunes.dmi', "blank")
 
 	for(var/i = 0, i < 10, i++)
@@ -123,7 +122,5 @@ GLOBAL_LIST_EMPTY(uristrune_cache)
 		result.Insert(I4, "", frame = 6, delay = 2)
 		result.Insert(I3, "", frame = 7, delay = 2)
 		result.Insert(I2, "", frame = 8, delay = 2)
-
-	GLOB.uristrune_cache[lookup] = result
 
 	return result

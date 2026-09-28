@@ -46,7 +46,7 @@
 	mob_size = MOB_SMALL
 	// dq_get_softfall(src) type-default moved to GLOB.dq_softfall_by_type
 
-	var/static/list/overlays_cache = list()
+	var/static/list/overlays_cache = list() // ALLOW(cache): multi-key overlay table filled inline from mob state
 	var/do_seasons = TRUE
 	picked_color = FALSE
 

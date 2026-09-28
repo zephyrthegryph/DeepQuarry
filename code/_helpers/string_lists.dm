@@ -37,7 +37,7 @@ GLOBAL_LIST_EMPTY(string_lists)
  * DM can't express as a static var. The result is shared: never write to it.
  */
 /proc/shared_type_list(type, name, list/values)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): interning store (values are caller-supplied, no builder)
 	var/key = "[type]:[name]"
 	. = cache[key]
 	if(.)
@@ -53,7 +53,7 @@ GLOBAL_LIST_EMPTY(string_lists)
 /proc/intern_list(list/values)
 	if(!islist(values))
 		return values
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): interning store (values are caller-supplied, no builder)
 	var/key = json_encode(values)
 	. = cache[key]
 	if(.)

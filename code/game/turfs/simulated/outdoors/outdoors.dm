@@ -1,4 +1,10 @@
-GLOBAL_LIST_EMPTY(turf_edge_cache)
+DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay), SC_NEVER)
+
+/// Builder for turf_edge_overlays (edges drawn onto a lower-priority neighbour).
+/proc/build_turf_edge_overlay(icon_edge, edge_state, checkdir)
+	var/image/I = image(icon = icon_edge, icon_state = "[edge_state]-edge", dir = checkdir, layer = ABOVE_TURF_LAYER) // icon_edge
+	I.plane = TURF_PLANE
+	return I
 
 /turf
 	// If greater than 0, this turf will apply edge overlays on top of other turfs cardinally adjacent to it, if those adjacent turfs are of a different icon_state,

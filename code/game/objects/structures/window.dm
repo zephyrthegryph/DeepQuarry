@@ -397,23 +397,28 @@
 			if(W.anchored && W.density && W.glasstype == src.glasstype && W.is_fulltile()) //Only counts anchored, not-destroyed fill-tile windows.
 				dirs += get_dir(src, W)
 
-	var/list/connections = dirs_to_corner_states(dirs)
-
 	icon_state = ""
+	add_overlay(window_overlay_images(dirs_to_corner_states(dirs)))
+
+/// The overlay images for a full-tile window in this state (doc/rewrite/init_and_turfs.md sec 3.5):
+/// built once per (icon, basestate, corner connections, damage step, layer) and shared by every
+/// window in that state. Read-only: callers pass it to add_overlay(), which copies.
+/obj/structure/window/proc/window_overlay_images(list/connections)
+	var/ratio = CEILING((get_integrity() / max_integrity) * 4, 1) * 25
+	var/step = ratio > 75 ? 100 : ratio
+	return CACHED_KEY(window_overlay_sets, "[icon]|[basestate]|[connections.Join(",")]|[step]|[layer]", icon, basestate, connections, step, layer)
+
+DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_sets), SC_NEVER)
+
+/// Builder for window_overlay_sets.
+/proc/build_window_overlay_sets(icon, basestate, list/connections, ratio, layer)
+	var/list/images = list()
 	for(var/i = 1 to 4)
-		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		add_overlay(I)
-
+		images += image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
 	// Damage overlays.
-	var/ratio = get_integrity() / max_integrity
-	ratio = CEILING(ratio * 4, 1) * 25
-
-	if(ratio > 75)
-		return
-	var/image/I = image(icon, "damage[ratio]", layer = layer + 0.1)
-	add_overlay(I)
-
-	return
+	if(ratio <= 75)
+		images += image(icon, "damage[ratio]", layer = layer + 0.1)
+	return images
 
 /obj/structure/window/basic
 	desc = "It looks thin and flimsy. A few knocks with... almost anything, really should shatter it."

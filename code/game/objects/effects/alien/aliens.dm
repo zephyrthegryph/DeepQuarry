@@ -38,7 +38,7 @@
 
 	max_integrity = 15
 	var/linked_node_handle
-	var/static/list/weedImageCache
+	var/static/list/weedImageCache // ALLOW(cache): constant table of four edge images
 
 /obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
 	. = ..()

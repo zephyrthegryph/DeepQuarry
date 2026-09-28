@@ -1,4 +1,11 @@
-GLOBAL_LIST_EMPTY(ashtray_cache)
+DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), SC_NEVER)
+
+/// Builder for ashtray_overlays: `colour` is null for the fill-level overlays.
+/proc/build_ashtray_overlay(state, colour)
+	var/image/I = image('icons/obj/objects.dmi', state)
+	if(colour)
+		I.color = colour
+	return I
 
 /obj/item/material/ashtray
 	name = "ashtray"
@@ -23,22 +30,13 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 /obj/item/material/ashtray/update_icon()
 	color = null
 	cut_overlays()
-	var/cache_key = "base-[material.name]"
-	if(!GLOB.ashtray_cache[cache_key])
-		var/image/I = image('icons/obj/objects.dmi',"ashtray")
-		I.color = material.icon_colour
-		GLOB.ashtray_cache[cache_key] = I
-	add_overlay(GLOB.ashtray_cache[cache_key])
+	add_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
 
 	if (contents_count(src) == max_butts)
-		if(!GLOB.ashtray_cache["full"])
-			GLOB.ashtray_cache["full"] = image('icons/obj/objects.dmi',"ashtray_full")
-		add_overlay(GLOB.ashtray_cache["full"])
+		add_overlay(CACHED_KEY(ashtray_overlays, "full", "ashtray_full", null))
 		desc = "It's stuffed full."
 	else if (contents_count(src) > max_butts/2)
-		if(!GLOB.ashtray_cache["half"])
-			GLOB.ashtray_cache["half"] = image('icons/obj/objects.dmi',"ashtray_half")
-		add_overlay(GLOB.ashtray_cache["half"])
+		add_overlay(CACHED_KEY(ashtray_overlays, "half", "ashtray_half", null))
 		desc = "It's half-filled."
 	else
 		desc = "An ashtray made of [material.display_name]."

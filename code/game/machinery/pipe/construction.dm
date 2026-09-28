@@ -246,16 +246,15 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 // TODO - Right now this determines the answer by instantiating an instance and checking!
 // There has to be a better way... ~Leshana
 /datum/world_service/machines/proc/get_init_dirs(type, dir)
-	var/static/list/pipe_init_dirs_cache = list()
-	if(!pipe_init_dirs_cache[type])
-		pipe_init_dirs_cache[type] = list()
+	return CACHED2(pipe_init_dirs, type, dir)
 
-	if(!pipe_init_dirs_cache[type]["[dir]"])
-		var/obj/machinery/atmospherics/temp = new type(null, dir)
-		pipe_init_dirs_cache[type]["[dir]"] = temp.get_init_dirs()
-		qdel(temp)
+DECLARE_SHARED_CACHE(pipe_init_dirs, GLOBAL_PROC_REF(build_pipe_init_dirs), SC_NEVER)
 
-	return pipe_init_dirs_cache[type]["[dir]"]
+/// Builder for pipe_init_dirs: instantiates a probe of `type` facing `dir`.
+/proc/build_pipe_init_dirs(type, dir)
+	var/obj/machinery/atmospherics/temp = new type(null, dir)
+	. = temp.get_init_dirs()
+	qdel(temp)
 
 //
 // Meters are special - not like any other pipes or components

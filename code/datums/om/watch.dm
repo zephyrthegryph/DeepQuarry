@@ -215,13 +215,17 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 			continue
 		L -= W
 		if(!length(L))
-			GLOB.om_gas_watches_by_mixture -= key
-			var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
-			GLOB.om_gas_native_watches -= key
-			qdel(native)
+			om_watch_drop_mixture(key)
 		else
 			om_watch_republish_mixture(mixture_id)
 	W.mixture_ids = null
+
+/// The last watch on mixture `key` left: its index entry and native watch go.
+/proc/om_watch_drop_mixture(key)
+	GLOB.om_gas_watches_by_mixture -= key
+	var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
+	GLOB.om_gas_native_watches -= key
+	qdel(native)
 
 /// Recomputes and (re)publishes the aggregate interest mask Rust should watch a mixture for,
 /// from the union of every watch currently armed on it. Cheap: the watch list per mixture is
@@ -430,6 +434,38 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	if(!length(entity_watches))
 		GLOB.om_watch_registry -= key
 	om_watch_unindex_gas(W)
+
+/// Disarms every watch of every entity in `entities` (their om_watch_entity_key()s) as one
+/// set (doc/rewrite/init_and_turfs.md sec 4.4 step 6): each entity leaves the registry once,
+/// each mixture's reverse index drops the set's watches in one `-=`, and each touched mixture
+/// is republished (or its native watch freed) once, not once per watch.
+/proc/om_watch_disarm_keys(list/keys)
+	var/list/by_mixture = list()
+	for(var/key in keys)
+		var/list/entity_watches = GLOB.om_watch_registry[key]
+		if(!entity_watches)
+			continue
+		for(var/watch_id in entity_watches)
+			var/datum/om_watch/W = entity_watches[watch_id]
+			if(!W)
+				continue
+			for(var/mixture_id in W.mixture_ids)
+				var/list/set_watches = by_mixture["[mixture_id]"]
+				if(!set_watches)
+					set_watches = list()
+					by_mixture["[mixture_id]"] = set_watches
+				set_watches += W
+			W.mixture_ids = null
+	GLOB.om_watch_registry -= keys
+	for(var/mixture_key in by_mixture)
+		var/list/L = GLOB.om_gas_watches_by_mixture[mixture_key]
+		if(!L)
+			continue
+		L -= by_mixture[mixture_key]
+		if(!length(L))
+			om_watch_drop_mixture(mixture_key)
+		else
+			om_watch_republish_mixture(text2num(mixture_key))
 
 /proc/om_watch_disarm_all(datum/entity)
 	var/key = om_watch_entity_key(entity)

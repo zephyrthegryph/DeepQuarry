@@ -6,10 +6,10 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 14
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_TRIGLYCERIDE = 2))
+
 /obj/item/reagent_containers/food/snacks/meat/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
-	reagents.add_reagent(REAGENT_ID_TRIGLYCERIDE, 2)
 	src.bitesize = 1.5
 
 /obj/item/reagent_containers/food/snacks/meat/cook()
@@ -67,9 +67,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	icon_state = "crabmeat"
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/crabmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SEAFOOD, 2)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/crabmeat, null, list(REAGENT_ID_SEAFOOD = 2))
 
 /obj/item/reagent_containers/food/snacks/hugemushroomslice
 	name = "fungus slice"
@@ -82,10 +80,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	nutriment_desc = list("raw" = 2, PLANT_MUSHROOMS = 2)
 	bitesize = 6
 
-/obj/item/reagent_containers/food/snacks/hugemushroomslice/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PSILOCYBIN, 3)
-	reagents.add_reagent(REAGENT_ID_FUNGI, 1)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/hugemushroomslice, null, list(REAGENT_ID_PSILOCYBIN = 3, REAGENT_ID_FUNGI = 1))
 
 /obj/item/reagent_containers/food/snacks/tomatomeat
 	name = "tomato slice"
@@ -107,10 +102,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	center_of_mass_y = 10
 	bitesize = 3
 
-/obj/item/reagent_containers/food/snacks/bearmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 12)
-	reagents.add_reagent(REAGENT_ID_HYPERZINE, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bearmeat, null, list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_HYPERZINE = 5))
 
 /obj/item/reagent_containers/food/snacks/xenomeat
 	name = "xenomeat"
@@ -121,10 +113,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	center_of_mass_y = 10
 	bitesize = 6
 
-/obj/item/reagent_containers/food/snacks/xenomeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
-	reagents.add_reagent(REAGENT_ID_PACID,6)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenomeat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_PACID = 6))
 
 /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat // Substitute for recipes requiring xeno meat.
 	name = "insect meat"
@@ -135,9 +124,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	center_of_mass_y = 10
 	bitesize = 6
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/xenomeat/spidermeat, null, list(REAGENT_ID_SPIDERTOXIN = 6))
+
 /obj/item/reagent_containers/food/snacks/xenomeat/spidermeat/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_SPIDERTOXIN,6)
 	reagents.remove_reagent(REAGENT_ID_PACID,6)
 
 /obj/item/reagent_containers/food/snacks/rawturkey
@@ -146,9 +136,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	icon_state = "rawturkey"
 	bitesize = 2.5
 
-/obj/item/reagent_containers/food/snacks/rawturkey/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 10)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawturkey, null, list(REAGENT_ID_PROTEIN = 10))
 
 /obj/item/reagent_containers/food/snacks/meat/fox
 	name = "foxmeat"
@@ -162,10 +150,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/grubmeat, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6))
+
 /obj/item/reagent_containers/food/snacks/meat/grubmeat/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 1)
-	reagents.add_reagent(REAGENT_ID_SHOCKCHEM, 6)
 	bitesize = 6
 
 GLOBAL_LIST_INIT(worm_meat_spawns, list (
@@ -192,11 +180,10 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 	center_of_mass_x = 16
 	center_of_mass_y = 14
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/worm, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_PHORON = 3, REAGENT_ID_MYELAMINE = 3))
+
 /obj/item/reagent_containers/food/snacks/meat/worm/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
-	reagents.add_reagent(REAGENT_ID_PHORON, 3)
-	reagents.add_reagent(REAGENT_ID_MYELAMINE, 3)
 	src.bitesize = 3
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT_ITEM(null, PROC_REF(worm_meat_item)))
@@ -226,10 +213,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_DEATHBLOOD = 6)
 	bitesize = 6
 
-/obj/item/reagent_containers/food/snacks/deathclawmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
-	reagents.add_reagent(REAGENT_ID_DEATHBLOOD, 6)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/deathclawmeat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_DEATHBLOOD = 6))
 
 /obj/item/reagent_containers/food/snacks/dragonmeat
 	name = "Dragon Meat"
@@ -241,10 +225,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_LIQUIDFIRE = 6)
 	bitesize = 6
 
-/obj/item/reagent_containers/food/snacks/dragonmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
-	reagents.add_reagent(REAGENT_ID_LIQUIDFIRE, 6)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/dragonmeat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_LIQUIDFIRE = 6))
 
 /obj/item/reagent_containers/food/snacks/phorondragonmeat
 	name = "Phoron Dragon Meat"
@@ -256,11 +237,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_NEOLIQUIDFIRE = 6, REAGENT_ID_PHORON = 3)
 	bitesize = 6
 
-/obj/item/reagent_containers/food/snacks/phorondragonmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 6)
-	reagents.add_reagent(REAGENT_ID_NEOLIQUIDFIRE, 6)
-	reagents.add_reagent(REAGENT_ID_PHORON, 3)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/phorondragonmeat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_NEOLIQUIDFIRE = 6, REAGENT_ID_PHORON = 3))
 
 /obj/item/reagent_containers/food/snacks/metroidmeat
 	name = "Metroid Slice"
@@ -272,10 +249,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_LIQUIDLIFE = 3)
 	bitesize = 6
 
-/obj/item/reagent_containers/food/snacks/metroidmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 3)
-	reagents.add_reagent(REAGENT_ID_LIQUIDLIFE, 3)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/metroidmeat, null, list(REAGENT_ID_PROTEIN = 3, REAGENT_ID_LIQUIDLIFE = 3))
 
 /obj/item/reagent_containers/food/snacks/meat/raymeat
 	name = "Solar Ray Meat"
@@ -318,10 +292,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_SHOCKCHEM = 5)
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/copperant/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
-	reagents.add_reagent(REAGENT_ID_SHOCKCHEM, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/copperant, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_SHOCKCHEM = 5))
 
 /obj/item/reagent_containers/food/snacks/tyrant_neoburn
 	name = "Painite Ant Slice"
@@ -333,10 +304,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_NEOLIQUIDFIRE = 5)
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/painiteant/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
-	reagents.add_reagent(REAGENT_ID_NEOLIQUIDFIRE, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/painiteant, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_NEOLIQUIDFIRE = 5))
 
 
 /obj/item/reagent_containers/food/snacks/tyrant_burn
@@ -349,10 +317,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDFIRE = 5)
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/tyrant_burn/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
-	reagents.add_reagent(REAGENT_ID_LIQUIDFIRE, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tyrant_burn, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDFIRE = 5))
 
 /obj/item/reagent_containers/food/snacks/tyrant_radiation
 	name = "Quartz Ant Slice"
@@ -364,10 +329,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_DEATHBLOOD = 5)
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/tyrant_radiation/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
-	reagents.add_reagent(REAGENT_ID_DEATHBLOOD, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tyrant_radiation, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_DEATHBLOOD = 5))
 
 /obj/item/reagent_containers/food/snacks/tyrant_bonus
 	name = "Agate Ant Slice"
@@ -379,7 +341,4 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDLIFE = 5)
 	bitesize = 1
 
-/obj/item/reagent_containers/food/snacks/tyrant_bonus/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
-	reagents.add_reagent(REAGENT_ID_LIQUIDLIFE, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/tyrant_bonus, null, list(REAGENT_ID_PROTEIN = 5, REAGENT_ID_LIQUIDLIFE = 5))

@@ -1,4 +1,11 @@
-GLOBAL_LIST_EMPTY(floor_light_cache)
+DECLARE_SHARED_CACHE(floor_light_overlays, GLOBAL_PROC_REF(build_floor_light_overlay), SC_NEVER)
+
+/// Builder for floor_light_overlays.
+/proc/build_floor_light_overlay(state, colour, layer)
+	var/image/I = image(state)
+	I.color = colour
+	I.layer = layer
+	return I
 
 MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 /obj/item/floor_light
@@ -157,23 +164,11 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	cut_overlays()
 	if(use_power && !broken())
 		if(isnull(damaged))
-			var/cache_key = "floorlight-[default_light_colour]"
-			if(!GLOB.floor_light_cache[cache_key])
-				var/image/I = image("on")
-				I.color = default_light_colour
-				I.layer = layer+0.001
-				GLOB.floor_light_cache[cache_key] = I
-			add_overlay(GLOB.floor_light_cache[cache_key])
+			add_overlay(CACHED_KEY(floor_light_overlays, "floorlight-[default_light_colour]", "on", default_light_colour, layer+0.001))
 		else
 			if(damaged == 0) //Needs init.
 				damaged = rand(1,4)
-			var/cache_key = "floorlight-broken[damaged]-[default_light_colour]"
-			if(!GLOB.floor_light_cache[cache_key])
-				var/image/I = image("flicker[damaged]")
-				I.color = default_light_colour
-				I.layer = layer+0.001
-				GLOB.floor_light_cache[cache_key] = I
-			add_overlay(GLOB.floor_light_cache[cache_key])
+			add_overlay(CACHED_KEY(floor_light_overlays, "floorlight-broken[damaged]-[default_light_colour]", "flicker[damaged]", default_light_colour, layer+0.001))
 
 /obj/machinery/floor_light/proc/broken()
 	return (stat & (BROKEN|NOPOWER))

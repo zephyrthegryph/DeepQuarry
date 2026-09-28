@@ -104,13 +104,9 @@
 		price_tag = null
 
 // for /obj/machinery/vending/sovietsoda
-/obj/item/reagent_containers/food/drinks/drinkingglass/soda/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SODAWATER, 50)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/soda, null, list(REAGENT_ID_SODAWATER = 50))
 
-/obj/item/reagent_containers/food/drinks/drinkingglass/cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_COLA, 50)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/cola, null, list(REAGENT_ID_COLA = 50))
 
 /obj/item/reagent_containers/food/drinks/drinkingglass/shotglass
 	name = "shot glass"
@@ -173,12 +169,7 @@
 /obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/proteinshake
 	name = "protein shake"
 
-/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/proteinshake/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 30)
-	reagents.add_reagent(REAGENT_ID_IRON, 10)
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 15)
-	reagents.add_reagent(REAGENT_ID_WATER, 45)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/drinkingglass/fitnessflask/proteinshake, null, list(REAGENT_ID_NUTRIMENT = 30, REAGENT_ID_IRON = 10, REAGENT_ID_PROTEIN = 15, REAGENT_ID_WATER = 45))
 
 
 ////////////////Fancy coffee cups

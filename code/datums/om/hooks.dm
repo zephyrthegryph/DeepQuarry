@@ -91,7 +91,12 @@
 /proc/om_teardown_hooks(datum/om/rec/rec)
 	var/datum/E = rec.owner
 	if(rec.hooks_out)
+		var/datum/destroy_batch/batch = GLOB.dq_destroy_batch
 		for(var/datum/source as anything in rec.hooks_out.Copy())
+			// A doomed source drops its whole hooks_in in its own teardown (below): no
+			// per-hook bookkeeping on it (doc/rewrite/init_and_turfs.md sec 4.4 step 3).
+			if(batch && batch.doomed[source] && source.gc_destroyed == GC_BATCH_DOOMED)
+				continue
 			om_unhook(source, null, E)
 		rec.hooks_out = null
 	if(rec.hooks_in)

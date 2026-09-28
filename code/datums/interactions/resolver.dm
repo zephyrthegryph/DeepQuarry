@@ -276,18 +276,16 @@ GLOBAL_LIST_EMPTY(interaction_entry_pass)
 
 /// A type's interactions for one entry, in dispatch order: priority, then declaration order. Cached per type.
 /proc/interaction_entry_candidates(atom/target, entry)
-	var/static/list/cache = list()
-	var/key = "[target.type]|[entry]"
-	var/list/candidates = cache[key]
-	if(candidates)
-		return candidates
-	candidates = list()
+	return CACHED_KEY(interaction_entry_candidates, "[target.type]|[entry]", target, entry)
+
+DECLARE_SHARED_CACHE(interaction_entry_candidates, GLOBAL_PROC_REF(build_interaction_entry_candidates), SC_NEVER)
+
+/proc/build_interaction_entry_candidates(atom/target, entry)
+	var/list/candidates = list()
 	for(var/datum/interaction/interaction as anything in interaction_candidates(target))
 		if(interaction.entry == entry)
 			candidates += interaction
-	candidates = sort_interactions(candidates)
-	cache[key] = candidates
-	return candidates
+	return sort_interactions(candidates)
 
 /**
  * Runs the interactions a converted legacy handler became, from that handler's

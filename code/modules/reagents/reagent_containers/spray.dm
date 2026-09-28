@@ -116,9 +116,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spr
 	volume = 40
 	var/safety = TRUE
 
-/obj/item/reagent_containers/spray/pepper/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 40)
+DECLARE_REAGENTS(/obj/item/reagent_containers/spray/pepper, null, list(REAGENT_ID_CONDENSEDCAPSAICIN = 40))
 
 /obj/item/reagent_containers/spray/pepper/examine(mob/user)
 	. = ..()
@@ -151,9 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 	drop_sound = 'sound/items/drop/herb.ogg'
 	pickup_sound = 'sound/items/pickup/herb.ogg'
 
-/obj/item/reagent_containers/spray/waterflower/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 10)
+DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAGENT_ID_WATER = 10))
 
 /obj/item/reagent_containers/spray/chemsprayer
 	name = "chem sprayer"
@@ -197,9 +193,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 	item_state = "plantbgone"
 	volume = 100
 
-/obj/item/reagent_containers/spray/plantbgone/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PLANTBGONE, 100)
+DECLARE_REAGENTS(/obj/item/reagent_containers/spray/plantbgone, null, list(REAGENT_ID_PLANTBGONE = 100))
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed
 	name = "hose nozzle"
@@ -311,6 +305,4 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 	max_transfer_amount = null
 	volume = 80
 
-/obj/item/reagent_containers/spray/windowsealant/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SILICATE, 80)
+DECLARE_REAGENTS(/obj/item/reagent_containers/spray/windowsealant, null, list(REAGENT_ID_SILICATE = 80))

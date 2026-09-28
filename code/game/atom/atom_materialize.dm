@@ -71,12 +71,19 @@
 	// Object model: attach the type's declared behaviours (code/datums/om/entity.dm).
 	if(table & TYPE_TABLE_HAS_OM)
 		om_start(src)
+	// Declared registries, service members, binds, behaviours, periodic work, timers
+	// (code/datums/lifecycle/declarations.dm), after the core joins above.
+	if(table & TYPE_TABLE_HAS_DECLS)
+		lifecycle_decls_materialize(src, lifecycle_decls_of(src))
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	if(atom_type_table(src) & TYPE_TABLE_HAS_REGISTRIES)
+	var/table = atom_type_table(src)
+	if(table & TYPE_TABLE_HAS_DECLS)
+		lifecycle_decls_dematerialize(src, lifecycle_decls_of(src))
+	if(table & TYPE_TABLE_HAS_REGISTRIES)
 		leave_registries() // L3: code/__defines/registries.dm
 	if(rule_binding)
 		dq_rules_on_dematerialize(src)

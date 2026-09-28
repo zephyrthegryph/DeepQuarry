@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	icon_state = "zone_sel"
 	screen_loc = ui_zonesel
 	var/selecting = BP_TORSO
-	var/static/list/hover_overlays_cache = list()
+	var/static/list/hover_overlays_cache = list() // ALLOW(cache): overlay objects placed in vis_contents (pooled objects)
 	var/hovering_choice
 	var/mutable_appearance/selecting_appearance
 

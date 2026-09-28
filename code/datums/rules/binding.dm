@@ -87,7 +87,7 @@ DECLARE_REF(/datum, "rule_binding", OWNED, null)
 /// The shared binding table for a rule list. dq_rules_for_type() returns one
 /// cached list per type, so every object of a type shares one table.
 /proc/dq_rule_table_for(list/rules)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): keyed by rule list identity; lists are not valid CACHED keys
 	var/datum/rule_type_table/table = cache[rules]
 	if(!table)
 		table = new(rules)
