@@ -144,5 +144,5 @@ REF_OWNED(/datum/node/statement/ReturnStatement, "value")
 	return om_resolve(object_handle)
 
 /// LC-refs: the block this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/node/statement/ForLoop/proc/block() as /datum/node/BlockDefinition
+/datum/node/statement/ForLoop/proc/block_node() as /datum/node/BlockDefinition
 	return om_resolve(block_handle)

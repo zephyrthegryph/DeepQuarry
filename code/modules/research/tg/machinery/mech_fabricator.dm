@@ -75,7 +75,9 @@
 	RefreshParts()
 	update_icon()
 	if(!stored_research())
-		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research(), src)
+		var/datum/techweb/connected_web
+		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
+		stored_research_handle = om_handle(connected_web)
 	if(stored_research())
 		on_connected_techweb()
 

@@ -33,7 +33,7 @@
 /datum/tgui_module/supermatter_monitor/tgui_data(mob/user)
 	var/list/data = ..()
 
-	if(istype(active()))
+	if(istype(active(), /obj/machinery/power/supermatter))
 		var/turf/T = get_turf(active())
 		if(!T)
 			active_handle = null

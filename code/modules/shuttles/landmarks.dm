@@ -54,7 +54,7 @@
 		return
 	var/docking_tag = docking_controller_tag
 	docking_controller_handle = om_handle(SSshuttles.docking_registry[docking_tag])
-	if(!istype(docking_controller()))
+	if(!istype(docking_controller(), /datum/embedded_program/docking))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
 	// No QDELETING registration: the controller is an OM handle, which reads null once it is deleted.
 	if(using_map.use_overmap)

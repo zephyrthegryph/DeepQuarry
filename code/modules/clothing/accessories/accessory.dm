@@ -614,7 +614,7 @@
 
 /obj/item/clothing/accessory/choker/proc/setUniqueSpeciesSprite()
 	var/mob/living/carbon/human/H = loc
-	if(!istype(H) && istype(has_suit()) && ishuman(has_suit().loc))
+	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
 		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
 		icon_override = sprite_sheets[H.species.get_bodytype(H)]
@@ -652,7 +652,7 @@
 
 /obj/item/clothing/accessory/collar/proc/setUniqueSpeciesSprite()
 	var/mob/living/carbon/human/H = loc
-	if(!istype(H) && istype(has_suit()) && ishuman(has_suit().loc))
+	if(!istype(H) && istype(has_suit(), /obj/item/clothing) && ishuman(has_suit().loc))
 		H = has_suit().loc
 	if(sprite_sheets && istype(H) && H.species.get_bodytype(H) && (H.species.get_bodytype(H) in sprite_sheets))
 		icon_override = sprite_sheets[H.species.get_bodytype(H)]

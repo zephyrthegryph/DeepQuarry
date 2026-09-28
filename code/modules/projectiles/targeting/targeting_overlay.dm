@@ -21,7 +21,7 @@
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
 	owner_handle = om_handle(loc)
-	if(!istype(owner()))
+	if(!istype(owner(), /mob))
 		return INITIALIZE_HINT_QDEL
 	moveToNullspace()
 	verbs.Cut()

@@ -188,15 +188,6 @@
 
 REF_OWNED(/client, list("fakeConversations", "tooltips", "volume_panel", "loot_panel"))
 
-/// LC-refs: /client is not a /datum, so it gets its own roots for the procs REF_OWNED and
-/// REF_HELD expand to. A client is never destroyed through the lifecycle transaction, so its
-/// declarations only document what each var holds (doc/rewrite/lifecycle.md sec 4).
-/client/proc/declared_owned_vars()
-	return null
-
-/client/proc/declared_held_vars()
-	return null
-
 // prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
 // GLOB.persistent_clients_by_ckey, GLOB.admin_datums).
 REF_HELD(/client, list("prefs", "persistent_client", "holder"))
@@ -206,7 +197,7 @@ REF_HELD(/client, list("prefs", "persistent_client", "holder"))
 	return om_resolve(click_intercept_handle)
 
 /// LC-refs: the obj_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/client/proc/obj_window() as /datum/object_window_info
+/client/proc/obj_window()
 	return om_resolve(obj_window_handle)
 
 /// LC-refs: Holder for examine icon, useful for statpanel -- an OM handle (om_handle()), so it reads null once that is deleted.

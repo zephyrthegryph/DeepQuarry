@@ -150,5 +150,5 @@
 		spot_add(3,3,/mob/living/simple_mob/animal/space/alien/sentinel/praetorian) //And maybe a big friend for big loot.
 
 /// LC-refs: The landmark I'm spawned at, if any. -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/rogue/asteroid/proc/mylandmark() as /obj/effect/landmark/asteroid_spawn
+/datum/rogue/asteroid/proc/mylandmark()
 	return om_resolve(mylandmark_handle)

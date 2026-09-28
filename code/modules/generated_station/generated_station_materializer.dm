@@ -217,7 +217,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
-	QDEL_NULL(transit_area())
+	qdel(transit_area()); transit_area_handle = null
 	if(maintenance_area())
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)

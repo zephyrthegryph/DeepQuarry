@@ -53,7 +53,7 @@
 		html += "<tr><td[row_options2]>Name</td><td[row_options2]>Type</td><td[row_options1]>Weight</td><td[row_options1]>OneShot</td></tr>"
 		html += "<tr>"
 		html += "<td><A align='right' href='byond://?src=\ref[src];set_name=\ref[new_event]'>[new_event.name ? new_event.name : "Enter Event"]</A></td>"
-		html += "<td><A align='right' href='byond://?src=\ref[src];set_type=\ref[new_event]'>[new_event.event_type() ? new_event.event_type() : "Select Type"]</A></td>"
+		html += "<td><A align='right' href='byond://?src=\ref[src];set_type=\ref[new_event]'>[new_event.event_type ? new_event.event_type : "Select Type"]</A></td>"
 		html += "<td><A align='right' href='byond://?src=\ref[src];set_weight=\ref[new_event]'>[new_event.weight ? new_event.weight : 0]</A></td>"
 		html += "<td><A align='right' href='byond://?src=\ref[src];toggle_oneshot=\ref[new_event]'>[new_event.one_shot]</A></td>"
 		html += "</tr>"
@@ -184,7 +184,7 @@
 		var/type = tgui_input_list(usr, "Select event type.", "Select", allEvents)
 		if(type)
 			var/datum/event_meta/EM = locate(href_list["set_type"])
-			EM.event_type_handle = om_handle(type)
+			EM.event_type = type
 	else if(href_list["set_weight"])
 		var/weight = tgui_input_number(usr, "Enter weight. A higher value means higher chance for the event of being selected.", "Set Weight")
 		if(weight && weight > 0)
@@ -209,13 +209,13 @@
 		EC.available_events -= EM
 		log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.")
 	else if(href_list["add"])
-		if(!new_event.name || !new_event.event_type())
+		if(!new_event.name || !new_event.event_type)
 			return
 		if(tgui_alert(usr, "This will add a new event to the rotation. Continue?","Add Event!",list("Yes","No")) != "Yes")
 			return
 		new_event.severity = selected_event_container().severity
 		selected_event_container().available_events += new_event
-		log_and_message_admins("has added \a [GLOB.severity_to_string[new_event.severity]] event '[new_event.name]' of type [new_event.event_type()] with weight [new_event.weight].")
+		log_and_message_admins("has added \a [GLOB.severity_to_string[new_event.severity]] event '[new_event.name]' of type [new_event.event_type] with weight [new_event.weight].")
 		new_event = new
 	else if(href_list["clear"])
 		var/datum/event_container/EC = locate(href_list["clear"])

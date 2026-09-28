@@ -649,7 +649,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!door())
 		var/turf/dT = get_step(src,dir)
-		door_handle = om_handle(locate() in dT)
+		door_handle = om_handle(locate(/obj/machinery/door/airlock/voidcraft/survival_pod) in dT)
 	if(door())
 		door().glass = !door().glass
 		door().opacity = !door().opacity
@@ -708,7 +708,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		target_light_handle = om_handle(locate() in dT)
+		target_light_handle = om_handle(locate(/obj/machinery/light) in dT)
 	if(target_light())
 		target_light().on = on
 		target_light().update()

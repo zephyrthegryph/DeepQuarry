@@ -25,7 +25,7 @@
 		if(lga.lg_id == lg_id)
 			my_area_handle = om_handle(lga)
 			break
-	if(!istype(my_area()))
+	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")
 	if(!supported_programs.len)
 		supported_programs["Off"] = null

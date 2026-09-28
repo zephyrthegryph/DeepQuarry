@@ -41,7 +41,7 @@
 		playsound(computer().loc, 'sound/arcade/win.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
 		game_active = FALSE
 		program_icon_state = "arcade_off"
-		if(istype(computer()))
+		if(istype(computer(), /obj/item/modular_computer))
 			computer().update_icon()
 		ticket_count += 1
 	else if(player_hp <= 0 || player_mp <= 0)
@@ -49,7 +49,7 @@
 		playsound(computer().loc, 'sound/arcade/lose.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
 		game_active = FALSE
 		program_icon_state = "arcade_off"
-		if(istype(computer()))
+		if(istype(computer(), /obj/item/modular_computer))
 			computer().update_icon()
 	else
 		ended = FALSE
@@ -190,5 +190,5 @@
 			program_icon_state = "arcade"
 			boss_id = rand(1,6)
 			pause_state = FALSE
-			if(istype(computer()))
+			if(istype(computer(), /obj/item/modular_computer))
 				computer().update_icon()

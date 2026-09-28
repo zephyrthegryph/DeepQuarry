@@ -106,7 +106,7 @@
 /obj/machinery/compressor/proc/locate_machinery()
 	if(turbine())
 		return
-	turbine_handle = om_handle(locate() in get_step(src, get_dir(inturf(), src)))
+	turbine_handle = om_handle(locate(/obj/machinery/power/turbine) in get_step(src, get_dir(inturf(), src)))
 	if(turbine())
 		turbine().locate_machinery()
 
@@ -237,7 +237,7 @@
 /obj/machinery/power/turbine/proc/locate_machinery()
 	if(compressor())
 		return
-	compressor_handle = om_handle(locate() in get_step(src, get_dir(outturf(), src)))
+	compressor_handle = om_handle(locate(/obj/machinery/compressor) in get_step(src, get_dir(outturf(), src)))
 	if(compressor())
 		compressor().locate_machinery()
 

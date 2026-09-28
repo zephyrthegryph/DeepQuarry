@@ -34,7 +34,7 @@
 	ASSERT(A)
 	myarea_handle = om_handle(A)
 	myshuttle_landmark_handle = om_handle(locate(/obj/effect/shuttle_landmark) in myarea())
-	if(!istype(myshuttle_landmark()))
+	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
 	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
 

@@ -28,7 +28,7 @@ D [1]/  ||
 	if(!isnull(new_data))
 		src.data = new_data
 	holder_handle = om_handle(newloc)
-	if(!istype(holder()))
+	if(!istype(holder(), /obj/item/integrated_circuit))
 		message_admins("ERROR: An integrated_io ([src.name]) spawned without a valid holder!  This is a bug.")
 
 // LIFECYCLE: a pin disconnects from its linked pins.

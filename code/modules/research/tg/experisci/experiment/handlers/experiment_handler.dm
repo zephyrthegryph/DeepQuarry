@@ -68,7 +68,9 @@
 	// Note this won't work at the moment for non-machines that have been included
 	// on the map as the servers aren't initialized when the non-machines are initializing
 	if (!(config_flags & EXPERIMENT_CONFIG_NO_AUTOCONNECT))
-		CONNECT_TO_RND_SERVER_ROUNDSTART(linked_web(), parent)
+		var/datum/techweb/connected_web
+		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, parent)
+		linked_web_handle = om_handle(connected_web)
 
 	join_registries()
 

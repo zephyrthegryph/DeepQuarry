@@ -82,7 +82,7 @@
 
 		var/markstring
 		if(!(VV_MARKED_DATUM in restricted_classes))
-			markstring = "[VV_MARKED_DATUM] (CURRENT: [(istype(holder) && istype(holder.marked_datum()))? holder.marked_datum().type : "NULL"])"
+			markstring = "[VV_MARKED_DATUM] (CURRENT: [(istype(holder) && istype(holder.marked_datum(), /datum))? holder.marked_datum().type : "NULL"])"
 			classes += markstring
 
 		var/list/tagstrings = new

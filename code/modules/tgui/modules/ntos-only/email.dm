@@ -124,7 +124,7 @@
 		data["down_size"] = downloading.size
 		data["down_speed"] = download_speed
 
-	else if(istype(current_account()))
+	else if(istype(current_account(), /datum/computer_file/data/email_account))
 		data["current_account"] = current_account().login
 		if(addressbook)
 			var/list/all_accounts = list()
@@ -187,7 +187,7 @@
 	return data
 
 /datum/tgui_module/email_client/proc/find_message_by_fuid(fuid)
-	if(!istype(current_account()))
+	if(!istype(current_account(), /datum/computer_file/data/email_account))
 		return
 
 	// params works with strings, so this makes it a bit easier for us
@@ -302,7 +302,7 @@
 			return 1
 
 		if("delete")
-			if(!istype(current_account()))
+			if(!istype(current_account(), /datum/computer_file/data/email_account))
 				return 1
 			var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["delete"])
 			if(!istype(M))
@@ -371,7 +371,7 @@
 			if(!newpassword2)
 				return 1
 
-			if(!istype(current_account()))
+			if(!istype(current_account(), /datum/computer_file/data/email_account))
 				error = "Please log in before proceeding."
 				return 1
 

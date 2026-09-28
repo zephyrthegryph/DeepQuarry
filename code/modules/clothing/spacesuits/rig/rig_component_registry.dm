@@ -39,20 +39,26 @@
 
 	// Spawn the six physical components
 	if(holder().cell_type)
-		holder().cell = new holder().cell_type(holder())
+		var/new_cell_type_path = holder().cell_type
+		holder().cell = new new_cell_type_path(holder())
 	if(holder().air_type)
-		holder().air_supply = new holder().air_type(holder())
+		var/new_air_type_path = holder().air_type
+		holder().air_supply = new new_air_type_path(holder())
 	if(holder().glove_type)
-		holder().gloves = new holder().glove_type(holder())
+		var/new_glove_type_path = holder().glove_type
+		holder().gloves = new new_glove_type_path(holder())
 		holder().verbs |= /obj/item/rig/proc/toggle_gauntlets
 	if(holder().helm_type)
-		holder().helmet = new holder().helm_type(holder())
+		var/new_helm_type_path = holder().helm_type
+		holder().helmet = new new_helm_type_path(holder())
 		holder().verbs |= /obj/item/rig/proc/toggle_helmet
 	if(holder().boot_type)
-		holder().boots = new holder().boot_type(holder())
+		var/new_boot_type_path = holder().boot_type
+		holder().boots = new new_boot_type_path(holder())
 		holder().verbs |= /obj/item/rig/proc/toggle_boots
 	if(holder().chest_type)
-		holder().chest = new holder().chest_type(holder())
+		var/new_chest_type_path = holder().chest_type
+		holder().chest = new new_chest_type_path(holder())
 		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
 		holder().verbs |= /obj/item/rig/proc/toggle_chest
 

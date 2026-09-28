@@ -299,7 +299,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			multibelt_holder_handle = om_handle(locate(params["multibelt"]))
 			return TRUE
 		if("install_tool")
-			if(!istype(multibelt_holder()))
+			if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
 				return FALSE
 			if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
 				target().add_new_material(text2path(params["tool"]))
@@ -311,7 +311,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			return TRUE
 
 		if("remove_tool")
-			if(!istype(multibelt_holder()))
+			if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
 				return FALSE
 			if(istype(multibelt_holder(), /obj/item/robotic_multibelt/materials))
 				var/datum/matter_synth/synth = locate(params["tool"])

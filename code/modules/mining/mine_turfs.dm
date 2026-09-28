@@ -585,7 +585,8 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		return
 	clear_ore_effects()
 	geologic_data = new /datum/geosample(src)
-	var/obj/item/ore/O = new mineral().ore (src)
+	var/new_ore_path = mineral().ore
+	var/obj/item/ore/O = new new_ore_path(src)
 	if(istype(O))
 		geologic_data.UpdateNearbyArtifactInfo(src)
 		O.geologic_data = geologic_data

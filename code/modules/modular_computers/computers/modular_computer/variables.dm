@@ -75,7 +75,7 @@ REF_OWNED(/obj/item/modular_computer, list("processor_unit", "network_card", "ha
 	return om_resolve(portable_drive_handle)
 
 /// LC-refs: AI slot, an intellicard housing that allows modifications of AIs. -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/modular_computer/proc/ai_slot() as /obj/item/computer_hardware/ai_slot
+/obj/item/modular_computer/proc/ai_slot()
 	return om_resolve(ai_slot_handle)
 
 /// LC-refs: the stored_pen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

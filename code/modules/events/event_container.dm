@@ -35,7 +35,8 @@
 		set_event_delay()
 		next_event().enabled = !next_event().one_shot	// This event will no longer be available in the random rotation if one shot
 
-		new next_event().event_type(next_event())	// Events are added and removed from the processing queue in their New/kill procs
+		var/new_event_type_path = next_event().event_type
+		new new_event_type_path(next_event())	// Events are added and removed from the processing queue in their New/kill procs
 
 		log_game("Starting event '[next_event().name]' of severity [GLOB.severity_to_string[severity]].")
 		next_event_handle = null						// When set to null, a random event will be selected next time

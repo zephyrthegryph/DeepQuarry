@@ -19,14 +19,14 @@
 	addtimer(CALLBACK(src, PROC_REF(try_tele), thing), teleport_delay, TIMER_DELETE_ME)
 
 /obj/belly/special/teleporter/periodic_step(wait)
-	if(istype(target()))
+	if(istype(target(), /atom/movable))
 		return ..()
 	for(var/atom/movable/AM in contents)
 		try_tele(AM)
 	. = ..()
 
 /obj/belly/special/teleporter/proc/try_tele(atom/movable/thing)
-	if(!istype(target()))
+	if(!istype(target(), /atom/movable))
 		return
 	if(isturf(target())) // if it's a turf, we dont need to do anything else, just teleport to it
 		thing.forceMove(target())

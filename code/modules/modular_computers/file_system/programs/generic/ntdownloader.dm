@@ -136,7 +136,7 @@
 
 /datum/computer_file/program/ntnetdownload/tgui_data(mob/user)
 	my_computer_handle = om_handle(computer())
-	if(!istype(my_computer()))
+	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
 
 	var/list/data = get_header_data()

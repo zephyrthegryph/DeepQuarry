@@ -211,7 +211,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 	return ..()
 
 /obj/item/rig/proc/suit_is_deployed()
-	if(!istype(wearer()) || src.loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
+	if(!istype(wearer(), /mob/living/carbon/human) || src.loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src))
 		return 0
 	if(helm_type && !(helmet && wearer().get_equipped_item(SLOT_ID_HEAD) == helmet))
 		return 0
@@ -495,7 +495,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 	// The offline-state machine now lives in power_system.
 	// We only invoke it when the original condition would have triggered
 	// the cell-check path, preserving the original conditional structure.
-	if(!istype(wearer()) || loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
+	if(!istype(wearer(), /mob/living/carbon/human) || loc != wearer() || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src) || canremove || !cell || cell.charge <= 0)
 		if(power_system.process_offline_state())
 			offline = power_system.offline
 			return
@@ -646,7 +646,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 	if((sealing || !cell || !cell.charge) && !forced)
 		return
 
-	if((!istype(wearer()) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src)) && !forced)
+	if((!istype(wearer(), /mob/living/carbon/human) || (wearer().get_equipped_item(SLOT_ID_BACK) != src && wearer().get_equipped_item(SLOT_ID_BELT) != src)) && !forced)
 		return
 
 	if(!H)

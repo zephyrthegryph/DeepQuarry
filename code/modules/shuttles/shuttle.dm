@@ -55,7 +55,7 @@
 		current_location_handle = om_handle(initial_location)
 	else
 		current_location_handle = om_handle(SSshuttles.get_landmark(current_location_tag))
-	if(!istype(current_location()))
+	if(!istype(current_location(), /obj/effect/shuttle_landmark))
 		// landmark missing usually means the shuttle's home map
 		// was removed. Log once and skip registration so subtype New()s
 		// don't trip null derefs on current_location.docking_controller.

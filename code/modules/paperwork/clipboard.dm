@@ -54,7 +54,7 @@
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
 		update_icon()
 
-	else if(istype(toppaper()) && istype(W, /obj/item/pen))
+	else if(istype(toppaper(), /obj/item) && istype(W, /obj/item/pen))
 		toppaper().attackby(W, user)
 		update_icon()
 

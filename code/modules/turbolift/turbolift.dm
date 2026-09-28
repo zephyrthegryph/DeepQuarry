@@ -75,19 +75,25 @@
 		if(floor.ext_panel())
 			floor.ext_panel().update_icon()
 
-/datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor = current_floor)
+/datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor)
+	if(!use_floor)
+		use_floor = current_floor()
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
 		if(!door.density)
 			return 1
 	return 0
 
-/datum/turbolift/proc/open_doors(datum/turbolift_floor/use_floor = current_floor)
+/datum/turbolift/proc/open_doors(datum/turbolift_floor/use_floor)
+	if(!use_floor)
+		use_floor = current_floor()
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
 		//door.command("open")
 		door.open()
 	return
 
-/datum/turbolift/proc/close_doors(datum/turbolift_floor/use_floor = current_floor)
+/datum/turbolift/proc/close_doors(datum/turbolift_floor/use_floor)
+	if(!use_floor)
+		use_floor = current_floor()
 	for(var/obj/machinery/door/airlock/door in (use_floor ? (doors + use_floor.doors) : doors))
 		//door.command("close")
 		door.close()

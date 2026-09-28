@@ -21,7 +21,7 @@
 	if(!arming_controller() && active_docking_controller())
 		arming_controller_tag = active_docking_controller().id_tag
 	arming_controller_handle = om_handle(SSshuttles.docking_registry[arming_controller_tag])
-	if(!istype(arming_controller()))
+	if(!istype(arming_controller(), /datum/embedded_program/docking/simple/escape_pod_berth))
 		CRASH("Could not find arming controller for escape pod \"[name]\", tag was '[arming_controller_tag]'.")
 	// Every pod references the shared berth program through an OM handle, which reads null once
 	// the program is deleted: no QDELETING registration.

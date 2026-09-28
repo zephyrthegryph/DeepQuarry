@@ -20,5 +20,5 @@
 	return om_resolve(parent_handle)
 
 /// LC-refs: the block this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/scope/proc/block() as /datum/node/BlockDefinition
+/datum/scope/proc/block_node() as /datum/node/BlockDefinition
 	return om_resolve(block_handle)

@@ -167,7 +167,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		html += "<br><b>usr</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[usr_ref]'>VV</a>"
 		html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayeropts=[usr_ref]'>PP</a>"
 		html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservefollow=[usr_ref]'>Follow</a>"
-		if (istype(usr_loc()))
+		if (istype(usr_loc(), /turf))
 			html += "<br><b>usr.loc</b>: <a href='byond://?_src_=vars;[HrefToken()];Vars=[REF(usr_loc())]'>VV</a>"
 			html += " <a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[usr_loc().x];Y=[usr_loc().y];Z=[usr_loc().z]'>JMP</a>"
 

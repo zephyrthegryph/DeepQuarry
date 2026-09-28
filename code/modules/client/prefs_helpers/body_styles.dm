@@ -74,5 +74,5 @@
 // Deleted; the new auto-renderer + accessories/markings apply_hooks own the equivalent.
 
 /// LC-refs: the markings_subwindow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/preferences/proc/markings_subwindow() as /datum/browser
+/datum/preferences/proc/markings_subwindow()
 	return om_resolve(markings_subwindow_handle)

@@ -36,7 +36,7 @@
 	if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
 		message = "A fatal hardware error has been detected."
 		return
-	if(!istype(RFID.stored_card()))
+	if(!istype(RFID.stored_card(), /obj/item/card/id))
 		message = "RFID card has been removed from the device. Operation aborted."
 		return
 
@@ -67,7 +67,7 @@
 			if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
 				message = "A fatal hardware error has been detected."
 				return
-			if(!istype(RFID.stored_card()))
+			if(!istype(RFID.stored_card(), /obj/item/card/id))
 				message = "RFID card is not present in the device. Operation aborted."
 				return
 			running = TRUE

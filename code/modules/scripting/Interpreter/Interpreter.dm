@@ -231,7 +231,7 @@ Runs a function block or a proc with the arguments specified in the script.
 	var/datum/node/statement/FunctionDefinition/def
 	if(!stmt.object())							//A scope's function is being called, stmt.object is null
 		def = GetFunction(stmt.func_name)
-	else if(istype(stmt.object()))				//A method of an object exposed as a variable is being called, stmt.object is a /node/identifier
+	else if(istype(stmt.object(), /datum/node/identifier))				//A method of an object exposed as a variable is being called, stmt.object is a /node/identifier
 		var/O = GetVariable(stmt.object().id_name)	//Gets a reference to the object which is the target of the function call.
 		if(!O) return							//Error already thrown in GetVariable()
 		def = Eval(O)

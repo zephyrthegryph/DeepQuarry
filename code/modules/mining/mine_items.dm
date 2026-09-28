@@ -158,7 +158,7 @@
 /obj/item/shovel/wood/Initialize(mapload, _mat)
 	. = ..()
 	material_handle = om_handle(get_material_by_name(_mat))
-	if(!istype(material()))
+	if(!istype(material(), /datum/material))
 		material_handle = null
 	else
 		name = "[material().display_name] shovel"

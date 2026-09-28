@@ -844,7 +844,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 REF_HELD(/obj/item/gun, "attached_lock")
 
 /// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/item/gun/proc/auto_target() as /atom/movable/screen/auto_target
+/obj/item/gun/proc/auto_target()
 	return om_resolve(auto_target_handle)
 
 /// LC-refs: Used to fire faster at more than one person. -- an OM handle (om_handle()), so it reads null once that is deleted.

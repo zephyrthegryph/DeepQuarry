@@ -13,7 +13,9 @@
 /obj/machinery/computer/rdservercontrol/Initialize(mapload)
 	. = ..()
 	if(!stored_research())
-		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research(), src)
+		var/datum/techweb/connected_web
+		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
+		stored_research_handle = om_handle(connected_web)
 
 /obj/machinery/computer/rdservercontrol/declare_interactions(list/into)
 	into += list(

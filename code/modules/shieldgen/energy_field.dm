@@ -44,7 +44,7 @@
 /obj/effect/energy_field/Destroy()
 	update_nearby_tiles()
 	if(my_gen())
-		if(istype(my_gen()))
+		if(istype(my_gen(), /obj/machinery/shield_gen))
 			LAZYREMOVE(my_gen().field, src)
 			my_gen_handle = null
 		else if(istype(my_gen(), /datum/artifact_effect/forcefield))

@@ -7,7 +7,7 @@
 /datum/tgui_module/computer_configurator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	movable_handle = om_handle(tgui_host())
 	// No computer connection, we can't get data from that.
-	if(!istype(movable()))
+	if(!istype(movable(), /obj/item/modular_computer))
 		return 0
 
 	var/list/data = ..()

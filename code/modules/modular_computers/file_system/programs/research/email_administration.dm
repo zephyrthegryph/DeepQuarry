@@ -26,7 +26,7 @@
 	data["cur_timestamp"] = null
 	data["cur_source"] = null
 
-	if(istype(current_message()))
+	if(istype(current_message(), /datum/computer_file/data/email_message))
 		data["cur_title"] = current_message().title
 		data["cur_body"] = pencode2html(current_message().stored_data)
 		data["cur_timestamp"] = current_message().timestamp
@@ -36,7 +36,7 @@
 	data["cur_suspended"] = null
 	data["messages"] = null
 
-	if(istype(current_account()))
+	if(istype(current_account(), /datum/computer_file/data/email_account))
 		data["current_account"] = current_account().login
 		data["cur_suspended"] = current_account().suspended
 		var/list/all_messages = list()
