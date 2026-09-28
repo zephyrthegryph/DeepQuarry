@@ -53,8 +53,9 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	return TRUE
 
 /obj/structure/railing/atom_destruction(damage_flag)
-	visible_message(span_warning("\The [src] breaks down!"))
-	playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+	if(dq_destroy_effects_once(src))
+		visible_message(span_warning("\The [src] breaks down!"))
+		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
 	return ..()
 
 /obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)

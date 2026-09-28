@@ -768,6 +768,28 @@ The measured destroy transaction is 1.0 s for 10.2 k qdels; batching the
 phases saves most of guard, links and scrub (~0.35 s) and the moves (~0.2 s).
 The large win is the domain hooks in step 6 (~5 s).
 
+**Status (rewrite/k-boot).** Implemented in `code/datums/lifecycle/batch.dm`:
+`qdel_batch()` and the collecting scope (`dq_destroy_collect_begin()`/`_end()`,
+used by explosion blast delivery, `gib()`, `death` and shuttle crush) do
+steps 1-3 (mark first with `GC_BATCH_DOOMED`, contents bound for a doomed
+destination are deleted unmoved, links to doomed ends dropped without
+back-list bookkeeping), step 4 for entity handles (`vg_entity_unbind_list()`)
+and SSvg's bound list, the one pass per registry (`registry_leaves` ->
+`remove_many()`), and step 5 for declared `destroy_effects()` (one per turf,
+neighbour updates once per turf). Step 6: contract damage reporting batches
+per atom and flushes once (`code/modules/contracts/damage_batch.dm`); the
+explosion epoch opens that batch, and now every collecting scope does too,
+so gibs and shuttle crushes are covered. `dq_destroy_effects_once(atom)` is
+the per-turf gate for cosmetic effects outside `destroy_effects()`: machinery
+destruction sparks and sound, catwalk and railing break messages use it.
+
+Remaining: heat bodies, pipe ports and power nodes still unbind one call each
+(Verdigris has no bulk release for them); material service cleanup is still
+per service (its `om_unhook` calls on a doomed owner could be skipped once OM
+teardown is confirmed to drop inbound hooks); other `atom_destruction()`
+messages (material weapons and armour, mob spawners, grave markers,
+expedition structures) can adopt `dq_destroy_effects_once()` the same way.
+
 ## 5. Lighting
 
 Today (TG-style): each light source walks the turfs in range, and updates four

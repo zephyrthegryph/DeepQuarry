@@ -175,10 +175,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	// Machines start asleep (roadmap S5): a type with machine_step() work joins the machine
 	// pipeline through /datum/om/decl/pipeline_machines, gets one frame to find out whether it
 	// has anything to do, and parks until a wake (MACHINE_WAKE(), its channels or watches).
-	if(speed_process)
-		PERIODIC_START(src, PERIODIC_FAST)
 	if(!mapload)
 		power_change()
+
+/// Lifecycle split (L2, atom_materialize.dm): a machine in fast mode joins the fast periodic
+/// pipeline when it becomes live, not in Initialize(), so a sandboxed machine starts nothing.
+/obj/machinery/on_materialize()
+	. = ..()
+	if(speed_process)
+		PERIODIC_START(src, PERIODIC_FAST)
+
+/obj/machinery/on_dematerialize()
+	if(speed_process)
+		PERIODIC_STOP(src)
+	return ..()
 
 // the base machine: board and parts deleted, occupants put out.
 /obj/machinery/on_destroy(force)
@@ -667,11 +677,12 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	return ..()
 
 /obj/machinery/atom_destruction(damage_flag)
-	playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)
-	var/datum/effect/effect/system/spark_spread/sparks = new
-	sparks.set_up(5, 0, src)
-	sparks.start()
-	qdel(sparks)
+	if(dq_destroy_effects_once(src)) // one per turf per blast (lifecycle/batch.dm)
+		playsound(src, 'sound/machines/machine_die_short.ogg', 50, TRUE)
+		var/datum/effect/effect/system/spark_spread/sparks = new
+		sparks.set_up(5, 0, src)
+		sparks.start()
+		qdel(sparks)
 	return ..()
 
 /**
