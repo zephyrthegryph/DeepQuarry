@@ -206,7 +206,7 @@
 				var/key = "[x],[y]"
 				TEST_ASSERT(!owned_modules[key], "Seed [seed] has overlapping room ownership at [key]")
 				owned_modules[key] = "[module.department_node_id]/[module.id]"
-	var/list/structural_areas = list(site.station_materialization.transit_area)
+	var/list/structural_areas = list(site.station_materialization.transit_area())
 	for(var/node_id in site.station_materialization.department_areas)
 		structural_areas += site.station_materialization.department_areas[node_id]
 	for(var/area/generated_station/station_area in structural_areas)

@@ -53,7 +53,7 @@
 	metrics.identical_room_shape_ratio = metrics.largest_identical_room_shape_count / max(1, metrics.module_count)
 
 	var/list/transit_floors = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		transit_floors[T] = TRUE
 	var/edge_count = 0
 	for(var/turf/simulated/floor/T as anything in transit_floors)
@@ -364,7 +364,7 @@
 		var/area/generated_station/module_area = module_areas[module_id]
 		for(var/turf/T in module_area)
 			station_turfs |= T
-	for(var/turf/T in transit_area)
+	for(var/turf/T in transit_area())
 		station_turfs |= T
 		if(istype(T, /turf/simulated/floor))
 			transit_floors |= T

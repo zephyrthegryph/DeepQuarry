@@ -144,7 +144,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/styled_floor_count = 0
 	var/accent_decal_count = 0
 	var/tmp/entry_handle
-	var/area/generated_station/transit/transit_area
+	var/transit_area_handle
 	var/tmp/maintenance_area_handle
 	var/list/department_areas
 	var/list/module_areas
@@ -213,11 +213,11 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 				ChangeArea(T, space_area)
 			qdel(A)
 		module_areas = null
-	if(transit_area)
-		var/list/owned_transit_turfs = transit_area.contents.Copy()
+	if(transit_area())
+		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
-	QDEL_NULL(transit_area)
+	QDEL_NULL(transit_area())
 	if(maintenance_area())
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
@@ -249,7 +249,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/list/nodes_by_id
 	var/list/department_areas
 	var/list/module_areas
-	var/area/generated_station/transit/transit_area
+	var/transit_area_handle
 	var/tmp/maintenance_area_handle
 	var/datum/generated_station_materialization/result
 	var/datum/generated_station_validation_result/last_architecture_validation
@@ -314,9 +314,9 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	nodes_by_id = list()
 	department_areas = list()
 	module_areas = list()
-	transit_area = new
-	transit_area.station_id = spec().id
-	transit_area.name = "[spec().name] Transit"
+	transit_area_handle = om_handle(new)
+	transit_area().station_id = spec().id
+	transit_area().name = "[spec().name] Transit"
 	maintenance_area_handle = om_handle(new)
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
@@ -325,7 +325,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	result.z_level = z_level
 	result.origin_x = min_x
 	result.origin_y = min_y
-	result.transit_area = transit_area
+	result.transit_area_handle = om_handle(transit_area())
 	result.maintenance_area_handle = om_handle(maintenance_area())
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		nodes_by_id[node.id] = node
@@ -536,7 +536,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			if(GENERATED_STATION_TILE_FLOOR)
 				T = T.ChangeTurf(intent.floor_type, tell_universe = FALSE)
 				if(intent.owner_id == "transit")
-					ChangeArea(T, transit_area)
+					ChangeArea(T, transit_area())
 					result.corridor_count++
 				else if(intent.owner_id == "maintenance")
 					ChangeArea(T, maintenance_area())
@@ -546,7 +546,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 					result.floor_count++
 			if(GENERATED_STATION_TILE_HULL)
 				T = T.ChangeTurf(wall_type, tell_universe = FALSE)
-				ChangeArea(T, transit_area)
+				ChangeArea(T, transit_area())
 				result.wall_count++
 			else
 				T = T.ChangeTurf(/turf/space, tell_universe = FALSE)
@@ -1300,7 +1300,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		return
 	if(istype(T, /turf/space))
 		T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-		ChangeArea(T, transit_area)
+		ChangeArea(T, transit_area())
 		result.corridor_count++
 
 /datum/generated_station_materializer/proc/carve_corridors()
@@ -1334,14 +1334,14 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Gives every exposed transit floor a real hull wall instead of leaving it open to space.
 /datum/generated_station_materializer/proc/enclose_corridors()
 	var/list/to_wall = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(T, direction)
 			if(istype(neighbor, /turf/space))
 				to_wall |= neighbor
 	for(var/turf/T as anything in to_wall)
 		T.ChangeTurf(spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
-		ChangeArea(T, transit_area)
+		ChangeArea(T, transit_area())
 		result.wall_count++
 
 /// Returns whether a department hull tile has clear room and transit approaches.
@@ -1349,7 +1349,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	var/turf/T = world_turf(local_x, local_y)
 	var/turf/outside = get_step(T, outward)
 	var/turf/inside = get_step(T, turn(outward, 180))
-	return istype(outside, /turf/simulated/floor) && get_area(outside) == transit_area && istype(inside, /turf/simulated/floor) && node_at(local_x, local_y) == node
+	return istype(outside, /turf/simulated/floor) && get_area(outside) == transit_area() && istype(inside, /turf/simulated/floor) && node_at(local_x, local_y) == node
 
 /// Converts the center of one continuous corridor frontage into an intentional entrance.
 /datum/generated_station_materializer/proc/place_interface_door_run(datum/generated_station_layout_node/node, datum/generated_station_department_instance/department, list/run, outward)
@@ -1456,7 +1456,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Department approaches are retained; only wall-bounded geometric fringes are removed.
 /datum/generated_station_materializer/proc/trim_short_transit_stubs()
 	var/list/transit_floors = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		transit_floors[T] = TRUE
 	var/list/to_wall = list()
 	for(var/turf/simulated/floor/start as anything in transit_floors)
@@ -1505,13 +1505,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				to_wall |= branch[i]
 	for(var/turf/T as anything in to_wall)
 		T.ChangeTurf(spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall, tell_universe = FALSE)
-		ChangeArea(T, transit_area)
+		ChangeArea(T, transit_area())
 		result.wall_count++
 
 /// Turns unavoidable short route termini into deliberate rest alcoves.
 /datum/generated_station_materializer/proc/furnish_transit_alcoves()
 	var/list/transit_floors = list()
-	for(var/turf/simulated/floor/T in transit_area)
+	for(var/turf/simulated/floor/T in transit_area())
 		transit_floors[T] = TRUE
 	for(var/turf/simulated/floor/T as anything in transit_floors)
 		var/list/neighbors = list()
@@ -1648,7 +1648,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	for(var/node_id in department_areas)
 		var/area/generated_station/A = department_areas[node_id]
 		A.power_change()
-	transit_area.power_change()
+	transit_area().power_change()
 
 REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_validation"))
 
@@ -1667,3 +1667,11 @@ REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_v
 /// LC-refs: the entry this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materialization/proc/entry() as /obj/effect/landmark/generated_station_entry
 	return om_resolve(entry_handle)
+
+/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization/proc/transit_area() as /area/generated_station/transit
+	return om_resolve(transit_area_handle)
+
+/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
+	return om_resolve(transit_area_handle)

@@ -184,7 +184,7 @@
 	// scheduling gates are that checkpoints yielded and total work stayed bound.
 	TEST_ASSERT(isnum(materializer.last_peak_tick_usage), "Materialization did not record peak tick telemetry")
 	TEST_ASSERT(materializer.last_elapsed_seconds < 60, "Materialization exceeded the 60-second focused-test target ([materializer.last_elapsed_seconds]s)")
-	TEST_ASSERT_EQUAL(materialized.transit_area.name, "[spec.name] Transit", "Transit area does not use the station designation")
+	TEST_ASSERT_EQUAL(materialized.transit_area().name, "[spec.name] Transit", "Transit area does not use the station designation")
 	var/list/room_designations = list()
 	for(var/module_id in materialized.module_areas)
 		var/area/generated_station/room_area = materialized.module_areas[module_id]

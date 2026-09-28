@@ -299,7 +299,7 @@ SUBSYSTEM_DEF(expedition)
 	emergency_area.station_id = spec.id
 	emergency_area.department_id = "emergency"
 	emergency_area.name = "[spec.name] Habitable Annex"
-	materialization.transit_area = emergency_area
+	materialization.transit_area_handle = om_handle(emergency_area)
 	for(var/local_x in 1 to spec.grid_width)
 		for(var/local_y in 1 to spec.grid_height)
 			var/turf/T = materialization.world_turf(local_x, local_y)
@@ -514,7 +514,7 @@ SUBSYSTEM_DEF(expedition)
 	if(!length(site.floors))
 		var/turf/fallback_floor = locate(round(world.maxx / 2), round(world.maxy / 2), z)
 		fallback_floor = fallback_floor.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-		ChangeArea(fallback_floor, station_materialization.transit_area)
+		ChangeArea(fallback_floor, station_materialization.transit_area())
 		generated_station_seed_air(fallback_floor)
 		site.floors += fallback_floor
 		station_materialization.degradation_events += "no planned floor survived; installed an emergency landing floor"

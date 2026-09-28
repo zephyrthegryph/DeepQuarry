@@ -20,7 +20,9 @@
 	var/cache_b_shade = 0.0
 	var/maxlum = 0.0
 	var/maxlumshade = 0.0
-	var/datum/simple_sun/sun
+	var/sun_handle
+	/// The planetary sun this handler made for itself (a fake sun hands in its own).
+	var/datum/simple_sun/owned_sun
 	var/atom/movable/sun_vis_simple/vis_overhead
 	var/atom/movable/sun_vis_simple/vis_shade
 	var/list/shandlers
@@ -30,18 +32,19 @@
 	var/datum/planet/P = planet
 	var/datum/simple_sun/S = planet
 	if(istype(P))
-		sun = new /datum/simple_sun/planetary(P)
+		owned_sun = new /datum/simple_sun/planetary(P)
+		sun_handle = om_handle(owned_sun)
 
 	if(istype(S))
-		sun = S
+		sun_handle = om_handle(S)
 
 	vis_overhead = new(null)
 	vis_shade = new(null)
 
 /datum/planet_sunlight_handler/proc/update_sun()
-	sun.update()
-	var/brightness = sun.brightness * SSlighting.sun_mult
-	var/list/color = hex2rgb(sun.color)
+	sun().update()
+	var/brightness = sun().brightness * SSlighting.sun_mult
+	var/list/color = hex2rgb(sun().color)
 	red = brightness * (color[1] / 255.0)
 	green = brightness * (color[2] / 255.0)
 	blue = brightness * (color[3] / 255.0)
@@ -127,8 +130,12 @@
 	brightness = CLAMP01(sun().our_brightness)
 	color = sun().our_color
 
-REF_OWNED(/datum/planet_sunlight_handler, list("vis_overhead", "vis_shade"))
+REF_OWNED(/datum/planet_sunlight_handler, list("vis_overhead", "vis_shade", "owned_sun"))
 
 /// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/simple_sun/planetary/proc/sun() as /datum/sun_holder
+	return om_resolve(sun_handle)
+
+/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/planet_sunlight_handler/proc/sun() as /datum/simple_sun
 	return om_resolve(sun_handle)

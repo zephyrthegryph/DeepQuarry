@@ -671,7 +671,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	for(var/node_id in materialization().department_areas)
 		var/area/generated_station/A = materialization().department_areas[node_id]
 		A.power_change()
-	materialization().transit_area?.power_change()
+	materialization().transit_area()?.power_change()
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
 	log_world("Generated station utility build failed for [spec()?.id]: [reason]")

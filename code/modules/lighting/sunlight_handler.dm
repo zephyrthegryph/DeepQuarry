@@ -40,7 +40,7 @@
 	var/tmp/only_sun_SE_handle
 	var/sunlight = FALSE
 	var/inherited = FALSE
-	var/datum/planet_sunlight_handler/pshandler
+	var/pshandler_handle
 	var/sleeping = FALSE
 
 /datum/sunlight_handler/New(parent)
@@ -285,23 +285,23 @@
 		var/datum/lighting_object/holder_object = holder.lighting_object
 		if(holder_object && !holder_object.sunlight_only)
 			only_sun_object_handle = om_handle(holder_object)
-			only_sun_object().set_sunonly(sunonly_val, pshandler)
+			only_sun_object().set_sunonly(sunonly_val, pshandler())
 
 
 	if(sunlightonly_corners < 4 && sunlightonly_shade_corners < 4 && only_sun_object())
-		only_sun_object().set_sunonly(FALSE, pshandler)
+		only_sun_object().set_sunonly(FALSE, pshandler())
 		only_sun_object_handle = null
 
 	if(only_sun_object())
 		//Edge cases but needed to make sure that the correct overlay is used in the case that all corners switch from shade to overhead or vice versa between updates
 		if(only_sun_object().sunlight_only == SUNLIGHT_ONLY_SHADE && sunlight == SUNLIGHT_OVERHEAD)
-			only_sun_object().set_sunonly(SUNLIGHT_ONLY, pshandler)
+			only_sun_object().set_sunonly(SUNLIGHT_ONLY, pshandler())
 		else if(only_sun_object().sunlight_only == SUNLIGHT_ONLY && sunlight == SUNLIGHT_CURRENT)
-			only_sun_object().set_sunonly(SUNLIGHT_ONLY_SHADE, pshandler)
+			only_sun_object().set_sunonly(SUNLIGHT_ONLY_SHADE, pshandler())
 		only_sun_object().update_sun()
 
 	for(var/datum/lighting_corner/corner in only_sun)
-		corner.update_sun(pshandler)
+		corner.update_sun(pshandler())
 
 	if(sleepable_corners == 4)
 		set_sleeping(TRUE)
@@ -348,7 +348,7 @@
 
 /datum/sunlight_handler/proc/corner_sunlight_change(datum/lighting_corner/sender)
 	if(only_sun_object())
-		only_sun_object().set_sunonly(FALSE, pshandler)
+		only_sun_object().set_sunonly(FALSE, pshandler())
 		only_sun_object_handle = null
 
 	set_sleeping(FALSE)
@@ -368,10 +368,10 @@
 		return
 	sleeping = val
 	if(val)
-		LAZYREMOVE(pshandler.shandlers, src)
+		LAZYREMOVE(pshandler().shandlers, src)
 		SSlighting.sunlight_queue -= src
 	else
-		LAZYOR(pshandler.shandlers, src)
+		LAZYOR(pshandler().shandlers, src)
 		SSlighting.sunlight_queue |= src //Just in case somehow gets set to false twice use |=
 
 /datum/sunlight_handler/proc/wake_sleepers(val)
@@ -382,9 +382,9 @@
 /datum/sunlight_handler/proc/try_get_sun()
 	if(sun()) return TRUE
 	if(!sleeping && SSlighting.get_pshandler_z(holder.z))
-		pshandler = SSlighting.get_pshandler_z(holder.z)
-		LAZYADD(pshandler.shandlers, src)
-		sun_handle = om_handle(pshandler.sun)
+		pshandler_handle = om_handle(SSlighting.get_pshandler_z(holder.z))
+		LAZYADD(pshandler().shandlers, src)
+		sun_handle = om_handle(pshandler().sun)
 		return TRUE
 	else
 		return FALSE
@@ -433,3 +433,7 @@ REF_PAIR(/datum/sunlight_handler, list("holder" = "shandler"))
 /// LC-refs: the only_sun_SE this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/sunlight_handler/proc/only_sun_SE() as /datum/lighting_corner
 	return om_resolve(only_sun_SE_handle)
+
+/// LC-refs: the pshandler this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/sunlight_handler/proc/pshandler() as /datum/planet_sunlight_handler
+	return om_resolve(pshandler_handle)

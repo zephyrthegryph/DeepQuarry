@@ -71,7 +71,7 @@
 		for(var/turf/T in room_area)
 			if(istype(T, /turf/simulated/floor))
 				pressurized_turfs[T] = TRUE
-	for(var/turf/T in station_materialization.transit_area)
+	for(var/turf/T in station_materialization.transit_area())
 		if(istype(T, /turf/simulated/floor))
 			pressurized_turfs[T] = TRUE
 	for(var/turf/T in station_materialization.maintenance_area())
