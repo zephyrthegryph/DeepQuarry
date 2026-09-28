@@ -351,7 +351,7 @@
 	var/initial_turf_o2 = turf_air.get_moles(/datum/gas/oxygen)
 
 	// Open the canister to release.
-	C.valve_open = TRUE
+	C.set_valve_open(TRUE)
 	C.release_pressure = 1000 // high release for fast transfer
 	// Drive the canister's release loop directly: one machine pipeline frame each
 	// (machine_pipeline.dm, power/canister) runs the valve transfer.
@@ -2011,7 +2011,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/portable_atmospherics/canister/phoron/C = allocate(/obj/machinery/portable_atmospherics/canister/phoron, T)
 	var/before_canister = C.air_contents.get_moles(/datum/gas/plasma)
 	var/before_turf = T.air.get_moles(/datum/gas/plasma)
-	C.valve_open = TRUE
+	C.set_valve_open(TRUE)
 	C.release_pressure = 10 * ONE_ATMOSPHERE
 	om_run_frame_now(C, /datum/om/pipeline/machine)
 	var/after_canister = C.air_contents.get_moles(/datum/gas/plasma)
@@ -3092,7 +3092,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	P.air_contents.adjust_gas(/datum/gas/nitrogen, 200)
 	P.air_contents.set_temperature(T20C)
-	P.on = TRUE
+	P.set_on(TRUE)
 	P.direction_out = TRUE
 	P.target_pressure = 5 * ONE_ATMOSPHERE
 	// Make sure the power gate doesn't short-circuit the test.
@@ -3131,7 +3131,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	TEST_ASSERT_NOTNULL(S, "portable scrubber construction failed")
 	TEST_ASSERT_NOTNULL(S.air_contents, "portable scrubber has no internal tank")
 
-	S.on = TRUE
+	S.set_on(TRUE)
 	if(S.cell)
 		S.cell.charge = S.cell.maxcharge
 
@@ -4510,7 +4510,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "empty recharger remained scheduled")
 	var/obj/item/cell/C = new(R)
 	C.charge = C.maxcharge
-	R.charging = C
+	R.set_charging(C)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
@@ -4530,7 +4530,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
 	var/obj/item/cell/dq_spill_probe/C = new(R)
-	R.charging = C
+	R.set_charging(C)
 	C.refreshed = FALSE
 	qdel(R)
 	TEST_ASSERT(!QDELETED(C), "the charging item was deleted with the recharger")
@@ -6352,7 +6352,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Place a plasma canister on A with the valve open.
 	var/obj/machinery/portable_atmospherics/canister/phoron/Can = new(A)
 	TEST_ASSERT_NOTNULL(Can, "phoron canister construct failed")
-	Can.valve_open = TRUE
+	Can.set_valve_open(TRUE)
 	Can.release_pressure = ONE_ATMOSPHERE * 50
 
 	// Run canister frames to release, then drive cells to share into B.
@@ -6930,7 +6930,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// scenario a player invokes via admin verb.
 	var/obj/machinery/portable_atmospherics/canister/phoron/Can = new(A)
 	TEST_ASSERT_NOTNULL(Can, "phoron canister construct failed")
-	Can.valve_open = TRUE
+	Can.set_valve_open(TRUE)
 	Can.release_pressure = ONE_ATMOSPHERE * 10
 
 	// Begin processing through the SSmachines list — this is what
@@ -6969,7 +6969,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"plasma DID NOT spread from canister-released A to adjacent B: A=[final_a_plasma] B=[final_b_plasma]. Even though A has plasma, SSair never spread it. THIS IS THE PRODUCTION BUG players see.")
 
 	// Cleanup
-	Can.valve_open = FALSE
+	Can.set_valve_open(FALSE)
 	qdel(Can)
 	for(var/datum/gas/g as anything in A.air.get_gases())
 		A.air.set_moles(g, 0)

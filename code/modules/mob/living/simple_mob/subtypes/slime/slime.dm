@@ -96,7 +96,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 /mob/living/simple_mob/slime/Initialize(mapload)
 	add_verb(src, /mob/living/proc/ventcrawl)
 	update_mood()
-	glow_color = color
+	set_glow_color(color)
 	refresh_glow()
 	update_icon()
 	return ..()

@@ -141,7 +141,7 @@
 		if(spawn_with_clothing)
 			SSjob.equip_rank(avatar,"Visitor", 1, FALSE)
 		add_verb(avatar,/mob/living/carbon/human/proc/perform_exit_vr)
-		avatar.virtual_reality_mob = FALSE //THIS IS THE BIG DIFFERENCE WITH ALIEN VR PODS. THEY ARE NOT VR, THEY ARE REAL.
+		avatar.set_virtual_reality_mob(FALSE) //THIS IS THE BIG DIFFERENCE WITH ALIEN VR PODS. THEY ARE NOT VR, THEY ARE REAL.
 
 		//This handles all the 'We make it look like ourself' code.
 		//We do this BEFORE any mob tf so prefs  carry over properly!

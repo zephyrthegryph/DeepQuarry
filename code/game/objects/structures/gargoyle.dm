@@ -116,7 +116,7 @@
 	dir = H.dir
 	initial_lying = H.lying
 	initial_lying_prev = H.lying_prev
-	H.sdisabilities |= MUTE
+	H.set_sdisabilities(H.sdisabilities | MUTE)
 	if(H.appearance_flags & PIXEL_SCALE)
 		appearance_flags |= PIXEL_SCALE
 	wagging = H.wagging
