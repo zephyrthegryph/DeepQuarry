@@ -143,7 +143,11 @@
 	icon_living = "piratemelee-shield"
 
 //This Should Allow all childs of the shield priate to block
-/mob/living/simple_mob/humanoid/pirate/shield/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM(null, PROC_REF(pirate_shield_interaction_item)))
+
+/// Old attackby: shield block.
+/mob/living/simple_mob/humanoid/pirate/shield/proc/pirate_shield_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(15))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
@@ -151,7 +155,7 @@
 				ai_brain.react_to_attack(user)
 			return
 		else
-			..()
+			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))

@@ -35,17 +35,25 @@
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 
-/mob/living/simple_mob/horror/bradley/attack_hand()
+EXTEND_INTERACTIONS(/mob/living/simple_mob/horror/bradley, \
+	INTERACT_ITEM(null, PROC_REF(bradley_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(bradley_interaction_hand)))
+
+/// Old attack_hand: holla, then the normal touch.
+/mob/living/simple_mob/horror/bradley/proc/bradley_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
+	return FALSE
 
 /mob/living/simple_mob/horror/bradley/hitby()
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
 	..()
 
-/mob/living/simple_mob/horror/bradley/attackby()
+/// Old attackby: holla, then the normal attack.
+/mob/living/simple_mob/horror/bradley/proc/bradley_interaction_item(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
-	..()
+	return FALSE
 
 /datum/say_list/bradley
 	speak = list("Uuurrgh?","Aauuugghh...", "AAARRRGH!")

@@ -194,12 +194,16 @@
 	else
 		..()
 
-/mob/living/simple_mob/slime/xenobio/dark_purple/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_ITEM(null, PROC_REF(darkpurple_slime_interaction_item)))
+
+/// Old attackby: burning weapons ignite it.
+/mob/living/simple_mob/slime/xenobio/dark_purple/proc/darkpurple_slime_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = TRUE
 	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("ignited due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		ignite()
 	else
-		..()
+		return FALSE
 
 
 
@@ -683,12 +687,16 @@
 	else
 		..()
 
-/mob/living/simple_mob/slime/xenobio/oil/attackby(obj/item/W, mob/living/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/oil, INTERACT_ITEM(null, PROC_REF(oilslime_interaction_item)))
+
+/// Old attackby: burning weapons make it explode.
+/mob/living/simple_mob/slime/xenobio/oil/proc/oilslime_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = TRUE
 	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("exploded due to being hit with a burning weapon ([W]) by [key_name(user)].", src)
 		explode()
 	else
-		..()
+		return FALSE
 
 
 /mob/living/simple_mob/slime/xenobio/sapphire

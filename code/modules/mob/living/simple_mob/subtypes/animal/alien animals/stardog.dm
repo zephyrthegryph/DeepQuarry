@@ -69,9 +69,13 @@
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return
 
-/mob/living/simple_mob/vore/overmap/stardog/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_UNGATED(null, PROC_REF(stardog_interaction_hand)))
+
+/// Old attack_hand: pick someone out of the fur.
+/mob/living/simple_mob/vore/overmap/stardog/proc/stardog_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(!(user.pickup_pref && user.pickup_active))
-		return ..()
+		return FALSE
 	var/list/possible_targets = list()
 
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -83,7 +87,7 @@
 			possible_targets |= player
 
 	if(!possible_targets.len)
-		return ..()
+		return FALSE
 	user.visible_message(span_warning("\The [user] reaches for something in \the [src]'s fur..."),span_notice("You look through \the [src]'s fur..."))
 	om_prompt(src, user, list("kind" = "list", "message" = "Select a mob:", "title" = "Select a mob to grab!", "choices" = possible_targets, "requires" = PROMPT_ADJACENT), PROC_REF(fur_pick_chosen))
 	return TRUE

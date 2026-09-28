@@ -62,17 +62,25 @@ REF_SPILL(/mob/living/simple_mob/animal/passive/armadillo, "hat")
 		add_overlay(I)
 
 // Clicked on by empty hand.
-/mob/living/simple_mob/animal/passive/armadillo/attack_hand(mob/living/L)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
+	INTERACT_ITEM(null, PROC_REF(armadillo_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(armadillo_interaction_hand)))
+
+/// Old attack_hand: grab the hat off.
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(IS_GRABBING(L) && hat)
 		remove_hat(L)
 	else
-		..()
+		return FALSE
 
-/mob/living/simple_mob/animal/passive/armadillo/attackby(obj/item/I, mob/user)
+/// Old attackby: hat simulator.
+/mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	. = TRUE
 	if(istype(I, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(I, user)
 		return
-	..()
+	return FALSE
 
 // Hat simulator
 /mob/living/simple_mob/animal/passive/armadillo/proc/give_hat(obj/item/clothing/head/new_hat, mob/living/user)

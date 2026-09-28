@@ -29,7 +29,11 @@
 	pain_emote_1p = list("yelp", "whine", "bark", "growl")
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
-/mob/living/simple_mob/animal/passive/dog/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(null, PROC_REF(dog_interaction_item)))
+
+/// Old attackby: newspaper bap.
+/mob/living/simple_mob/animal/passive/dog/proc/dog_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(istype(O, /obj/item/newspaper))
 		if(!stat)
 			for(var/mob/M in viewers(user, null))
@@ -37,7 +41,7 @@
 					M.show_message(span_blue("[user] baps [name] on the nose with the rolled up [O]."))
 			dir_sequence(list(1,2,4,8,4,2,1,2))
 	else
-		..()
+		return FALSE
 
 /mob/living/simple_mob/animal/passive/dog/regenerate_icons()
 	cut_overlays()

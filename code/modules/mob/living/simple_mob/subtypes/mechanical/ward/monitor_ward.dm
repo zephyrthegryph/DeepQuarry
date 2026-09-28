@@ -43,11 +43,15 @@
 /mob/living/simple_mob/mechanical/ward/monitor/crew
 	icon_state = "ward-nt"
 
-/mob/living/simple_mob/mechanical/ward/monitor/crew/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERACT_ITEM(null, PROC_REF(monitor_ward_interaction_item)))
+
+/// Old attackby: claim with an ID card.
+/mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(istype(O, /obj/item/card/id) && !owner)
 		owner = user
 		return
-	..()
+	return FALSE
 
 /mob/living/simple_mob/mechanical/ward/monitor/crew/IIsAlly(mob/living/L)
 	. = ..()

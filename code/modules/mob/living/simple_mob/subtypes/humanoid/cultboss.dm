@@ -139,8 +139,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/humanoid/cultist/magus/rift/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/magus/rift, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
 
 /mob/living/simple_mob/humanoid/cultist/magus/rift/load_default_bellies()
 	. = ..()

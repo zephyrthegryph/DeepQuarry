@@ -473,7 +473,11 @@
 	attack_sound = 'sound/weapons/bladeslice.ogg'
 
 
-/mob/living/simple_mob/humanoid/cultist/elite/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM(null, PROC_REF(cultist_elite_interaction_item)))
+
+/// Old attackby: shield block.
+/mob/living/simple_mob/humanoid/cultist/elite/proc/cultist_elite_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(O.force)
 		if(prob(30))
 			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
@@ -481,7 +485,7 @@
 				ai_brain.react_to_attack(user)
 			return
 		else
-			..()
+			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
 		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
@@ -756,8 +760,12 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
+
+/// Drag-onto effect: swallows the drop so /atom/movable/MouseDrop_T's drag-to-buckle never runs.
+/// Was a bare `return` MouseDrop_T.
+/mob/living/simple_mob/humanoid/cultist/proc/cultist_block_drag(mob/user, atom/movable/held, datum/interaction/interaction)
+	return TRUE
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
 	. = ..()
@@ -796,8 +804,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/humanoid/cultist/noodle/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/noodle, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
 	. = ..()
@@ -837,8 +844,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/humanoid/cultist/tesh/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/tesh, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
 
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
 	. = ..()
@@ -877,8 +883,7 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/humanoid/cultist/castertesh/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/castertesh, INTERACT_DRAG(null, PROC_REF(cultist_block_drag)))
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()
 	. = ..()

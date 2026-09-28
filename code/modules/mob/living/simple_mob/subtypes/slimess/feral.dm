@@ -101,12 +101,16 @@
 	else
 		..()
 
-/mob/living/simple_mob/slime/feral/dark_purple/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITEM(null, PROC_REF(feral_darkpurple_interaction_item)))
+
+/// Old attackby: burning weapons ignite it.
+/mob/living/simple_mob/slime/feral/dark_purple/proc/feral_darkpurple_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = TRUE
 	if(istype(W) && W.force && W.obj_damage_type() == BURN)
 		log_and_message_admins("[src] ignited due to being hit with a burning weapon ([W]) by [key_name(user)].")
 		ignite()
 	else
-		..()
+		return FALSE
 
 /mob/living/simple_mob/slime/feral/silver
 	desc = "This slime is shiny, and can deflect lasers or other energy weapons directed at it."

@@ -475,21 +475,27 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	add_overlay(skin_image)
 	/////HIGHEST LAYER/////
 
-/mob/living/simple_mob/vore/alienanimals/teppi/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
+	INTERACT_ITEM(null, PROC_REF(teppi_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(teppi_interaction_hand)))
+
+/// Old attackby: shearing, feeding, butchering, collars.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	if(stat == DEAD)
-		return ..()
+		return FALSE
 	/////GRABS AND HOLDERS/////
 	if(istype(O, /obj/item/grab))
-		return ..()
+		return FALSE
 	if(istype(O, /obj/item/holder))
-		return ..()
+		return FALSE
 	if(!IS_HELPING(user)) //be gentle
 		if(resting)
 			lay_down()
 		handle_affinity(user, -5)
 		user.visible_message(user, span_notice("\The [user] hits \the [src] with \the [O]. \The [src] grumbles at \the [user]."),span_notice("You hits \the [src] with \the [O]. \The [src] grumbles at you."))
 		playsound(src, 'sound/weapons/tap.ogg', 50, 1, -1)
-		return ..()
+		return FALSE
 	if(teppi_wool)
 		if(teppi_shear(user, O))
 			return
@@ -546,12 +552,12 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	/////WEAPONS/////
 	if(istype(O, /obj/item/material/knife))
 		if(client)
-			return ..()
+			return FALSE
 		if(resting)
 			user.visible_message(span_attack("\The [user] approaches \the [src]'s neck with \the [O]."),span_attack("You approach \the [src]'s neck with \the [O]."))
 			om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
 		else
-			return ..()
+			return FALSE
 	if(istype(O, /obj/item/clothing/accessory/collar/craftable))
 		var/obj/item/clothing/accessory/collar/craftable/C = O
 		if(item_type == "collar")
@@ -570,7 +576,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		log_admin("[key_name_admin(user)] renamed a teppi to [name] - [COORD(src)]")
 		return
 	/////EVERYTHING ELSE/////
-	return ..()
+	return FALSE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/attackby_teppi_done(mob/user)
 	if(resting)
@@ -581,9 +587,11 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		return
 
 //Wake up the teppi if it is resting, which they like to do sometimes.
-/mob/living/simple_mob/vore/alienanimals/teppi/attack_hand(mob/living/carbon/human/M as mob)
+/// Old attack_hand: petting, collar removal, affinity.
+/mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(stat == DEAD)
-		return ..()
+		return FALSE
 	if(IS_GRABBING(M) && item_type)
 		if(affinity[M.real_name] >= 30)
 			M.visible_message(span_notice("\The [M.name] removes \the [src]'s [item_type]."),span_notice("You remove \the [src]'s [item_type]."))
@@ -595,14 +603,14 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		to_chat(M, span_notice("\The [src] fusses at your rough treatment!!"))
 		if(resting)
 			lay_down()
-		return..()
+		return FALSE
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 		lay_down()
 		return
 	else if(!client)
-		..()
+		hand_default(M)
 		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 		if(wantpet >= 100) //We want pets sometimes
 			handle_affinity(M, 1)
@@ -631,7 +639,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 			teppi_pounce(M)
 			wantpet = 100
 	else
-		return ..()
+		return FALSE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/examine()
 	. = ..()

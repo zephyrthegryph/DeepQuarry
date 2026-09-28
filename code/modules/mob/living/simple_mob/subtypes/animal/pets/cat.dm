@@ -258,14 +258,18 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	say_maybe_target = list("Meow?","Mew?","Mao?")
 	say_got_target = list("MEOW!","HSSSS!","REEER!")
 
-/mob/living/simple_mob/animal/passive/cat/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cat, INTERACT_ITEM(null, PROC_REF(cat_interaction_item)))
+
+/// Old attackby: naming with a pen.
+/mob/living/simple_mob/animal/passive/cat/proc/cat_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = TRUE
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
 		if(named)
 			to_chat(user, span_notice("\The [name] already has a name!"))
 		else
 			om_prompt(src, user, list("kind" = "text", "message" = "Give \the [name] a name", "title" = "Name", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(cat_name_entered))
 	else
-		..()
+		return FALSE
 
 /mob/living/simple_mob/animal/passive/cat/proc/cat_name_entered(mob/user, tmp_name, datum/om/prompt/ask)
 	tmp_name = sanitizeSafe(tmp_name, MAX_NAME_LEN)

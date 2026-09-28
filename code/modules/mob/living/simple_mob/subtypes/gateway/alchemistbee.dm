@@ -57,8 +57,12 @@
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
-/mob/living/simple_mob/vr/alchemistbee/MouseDrop_T(mob/living/M, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vr/alchemistbee, INTERACT_DRAG(null, PROC_REF(alchemistbee_block_drag)))
+
+/// Drag-onto effect: swallows the drop so /atom/movable/MouseDrop_T's drag-to-buckle never runs
+/// (mounting goes through animal_mount). Was a bare `return` MouseDrop_T.
+/mob/living/simple_mob/vr/alchemistbee/proc/alchemistbee_block_drag(mob/user, atom/movable/held, datum/interaction/interaction)
+	return TRUE
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()
 	. = ..()

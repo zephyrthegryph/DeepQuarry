@@ -219,10 +219,14 @@
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
 	..()
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/attackby(obj/item/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime, INTERACT_ITEM(null, PROC_REF(tyrian_slime_interaction_item)))
+
+/// Old attackby: spawns antlings, then the normal handling.
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/proc/tyrian_slime_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = TRUE
 	for(var/i =1 to 4)
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
-	..()
+	return FALSE
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/do_special_attack(atom/A)
 	for(var/i =1 to 4)

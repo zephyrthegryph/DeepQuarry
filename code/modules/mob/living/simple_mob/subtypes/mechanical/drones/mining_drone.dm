@@ -132,8 +132,6 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mining_drone, list("ion_trail", "shi
 //the IFF retaliation hooks (attack_hand / bullet_act / hit_with_weapon)
 // poked legacy ai_brain.check_attacker / add_attacker. The modern brain handles
 // retaliation automatically via dq_notify_damage; these wrappers are noops now.
-/mob/living/simple_mob/mechanical/mining_drone/attack_hand(mob/living/L)
-	return ..()
 
 /mob/living/simple_mob/mechanical/mining_drone/bullet_act(obj/item/projectile/P, def_zone)
 	return ..()

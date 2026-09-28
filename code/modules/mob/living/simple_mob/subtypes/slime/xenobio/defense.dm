@@ -2,7 +2,11 @@
 
 // Clicked on by empty hand.
 // Handles trying to wrestle a slime off of someone being eatten.
-/mob/living/simple_mob/slime/xenobio/attack_hand(mob/living/L)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio, INTERACT_HAND_UNGATED(null, PROC_REF(xenoslime_interaction_hand)))
+
+/// Old attack_hand: wrestle it off its victim.
+/mob/living/simple_mob/slime/xenobio/proc/xenoslime_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(victim) // Are we eating someone?
 		var/fail_odds = 30
 		if(victim == L) // Harder to get the slime off if it's you that is being eatten.
@@ -22,7 +26,7 @@
 			step_away(src, L)
 
 	else
-		..()
+		return FALSE
 
 // Handles the actual harming by a melee weapon.
 /mob/living/simple_mob/slime/xenobio/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)

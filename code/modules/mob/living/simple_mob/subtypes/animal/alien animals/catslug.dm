@@ -115,12 +115,18 @@
 
 REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/attackby(obj/item/reagent_containers/food/snacks/O as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
+	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \
+INTERACT_HAND_UNGATED(null, PROC_REF(catslug_interaction_hand)))
+
+/// Old attackby: hats and feeding.
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
+	. = TRUE
 	if(istype(O, /obj/item/clothing/head)) // Handle hat simulator.
 		give_hat(O, user)
 		return
 	else if(!istype(O, /obj/item/reagent_containers/food/snacks))
-		return ..()
+		return FALSE
 	if(resting)
 		to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 		return
@@ -147,15 +153,17 @@ REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 			to_chat(src, span_notice("\The [user] feeds \the [O] to you."))
 	playsound(src, 'sound/items/eatfood.ogg', 75, 1)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/attack_hand(mob/living/carbon/human/M as mob)
+/// Old attack_hand; subtypes override this proc.
+/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 
 	if(stat == DEAD)
-		return ..()
+		return FALSE
 	if(!IS_HELPING(M))
 		if(IS_GRABBING(M) && hat)
 			remove_hat(M)
 			return
-		return ..()
+		return FALSE
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
@@ -195,7 +203,7 @@ REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return ..()
+		return FALSE
 
 /mob/living/simple_mob/vore/alienanimals/catslug/update_icon()
 	..()
@@ -332,12 +340,13 @@ REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 /datum/say_list/catslug/custom/spaceslug
 	speak = list("Have any porl?", "What is that?", "What kind of ship is that?", "What are you doing?", "How did you get here?", "Don't take off your helmet.", "SPAAAAAACE!", "WAOW!", "Nice weather we're having, isn't it?")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/attack_hand(mob/living/carbon/human/M as mob)
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/spaceslug/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 
 	if(stat == DEAD)
-		return ..()
+		return FALSE
 	if(!IS_HELPING(M))
-		return ..()
+		return FALSE
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
@@ -377,7 +386,7 @@ REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow, frantically pressing at the buttons [M] so carelessly pushed!"))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return ..()
+		return FALSE
 
 /obj/item/holder/catslug/custom/spaceslug
 	item_state = "spaceslug"
@@ -431,12 +440,13 @@ REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 /datum/say_list/catslug/custom/engislug
 	speak = list("Have any porl?", "What is that?", "Phoroncheck!", "Thump is mean work fine!", "What are you doing?", "How did you get here?", "Don't breathe in the spicy purple.", "Zap-zap ball bad.", "WAOW!", "The pipes make sense.")
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug/attack_hand(mob/living/carbon/human/M as mob)
+/mob/living/simple_mob/vore/alienanimals/catslug/custom/engislug/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 
 	if(stat == DEAD)
-		return ..()
+		return FALSE
 	if(!IS_HELPING(M))
-		return ..()
+		return FALSE
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
@@ -476,7 +486,7 @@ REF_SPILL(/mob/living/simple_mob/vore/alienanimals/catslug, "hat")
 		visible_message(span_notice("\The [src] pushes [M]'s hand away from their tummy and furrows their brow!"))
 		//prob(5) give_target on tummy rub removed.
 	else
-		return ..()
+		return FALSE
 
 /obj/item/holder/catslug/custom/engislug
 	item_state = "engislug"
