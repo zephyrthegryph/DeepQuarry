@@ -321,7 +321,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 	dirty &= ~BODY_DIRTY_TREATMENT
 	treatment_snapshot = null
 	reagent_interference = null
-	reagent_volumes = collect_reagent_volumes()
+	reagent_volumes = collect_reagent_volumes(reagent_volumes)
 
 	for(var/datum/affliction/A as anything in afflictions)
 		for(var/reagent_id in A.interferes_with)
@@ -353,20 +353,23 @@ REF_OWNED_LIST(/datum/body, "supports")
 	regeneration_read_at = null
 
 /// Reagent ID -> volume across every holder the mob metabolises from, or
-/// null when there are none.
-/datum/body/proc/collect_reagent_volumes()
-	. = null
+/// null when there are none. `reuse` (the previous result) is emptied and refilled
+/// instead of allocating a new list each metabolism tick.
+/datum/body/proc/collect_reagent_volumes(list/reuse)
+	reuse?.Cut()
+	var/list/volumes = reuse
 	if(iscarbon(owner))
 		// A carbon's `reagents` IS its bloodstream: count it once.
 		var/mob/living/carbon/C = owner
-		. = add_holder_volumes(., C.bloodstr)
-		. = add_holder_volumes(., C.ingested)
+		volumes = add_holder_volumes(volumes, C.bloodstr)
+		volumes = add_holder_volumes(volumes, C.ingested)
 		// B1: topicals on the skin treat too (a salve works where it sits).
-		. = add_holder_volumes(., C.touching)
+		volumes = add_holder_volumes(volumes, C.touching)
 		if(owner.reagents != C.bloodstr)
-			. = add_holder_volumes(., owner.reagents)
-		return
-	. = add_holder_volumes(., owner.reagents)
+			volumes = add_holder_volumes(volumes, owner.reagents)
+	else
+		volumes = add_holder_volumes(volumes, owner.reagents)
+	return length(volumes) ? volumes : null
 
 /datum/body/proc/add_holder_volumes(list/volumes, datum/reagents/holder)
 	if(!holder?.total_volume)

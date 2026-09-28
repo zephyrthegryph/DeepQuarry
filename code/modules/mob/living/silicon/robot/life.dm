@@ -51,7 +51,8 @@
 /datum/om/stage/life/robot_body/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	self.body?.life_tick()
 
-/// Client readouts: HUD, vision and module items. Camera, radio and lights change on events.
+/// Client readouts: HUD and vision. Module items go on screen from after_equip() and Login;
+/// camera, radio and lights change on events.
 /datum/om/stage/life/robot_interface
 	order = LIFE_PHASE_OUTPUT + 10
 	name = "robot interface"
@@ -63,7 +64,6 @@
 	if(self.client)
 		self.refresh_hud()
 		self.refresh_vision()
-		self.update_items()
 
 /// Queued alarms reach the robot.
 /datum/om/stage/life/robot_alarms
