@@ -174,6 +174,8 @@
 	if(isnull(chem_caused_types))
 		chem_caused_types = list()
 		for(var/T in subtypesof(/datum/affliction))
+			if(ispath(T, /datum/affliction/contagion)) // never chem-caused; engineered strains build on construction
+				continue
 			var/datum/affliction/proto = dq_proto(T)
 			if(length(proto.caused_by_chems))
 				chem_caused_types += T

@@ -168,7 +168,7 @@
 
 /obj/item/holder/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()
-	EXTRAPOLATOR_ACT_ADD_DISEASES(., held_mob.GetViruses())
+	EXTRAPOLATOR_ACT_ADD_DISEASES(., held_mob.get_contagions())
 
 //Mob specific holders.
 /obj/item/holder/diona

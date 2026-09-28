@@ -298,8 +298,8 @@
 	disabilities = 0
 	resting = FALSE
 
-	if(viruses)
-		viruses.Cut()
+	for(var/datum/affliction/contagion/D as anything in get_contagions())
+		D.cure(FALSE)
 
 	// fix blindness and deafness
 	blinded = 0

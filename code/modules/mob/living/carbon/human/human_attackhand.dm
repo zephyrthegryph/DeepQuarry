@@ -46,15 +46,15 @@
 			temp = H.organs_by_name[BP_L_HAND]
 		if(!temp || !temp.is_usable())
 			has_hands = FALSE
-		for(var/thing in GetViruses()) //This is intentionally not having a has_hands check. If you are clicking on someone next to them, you're close enough to sneeze/cough on them!
-			var/datum/disease/D = thing
+		for(var/thing in get_spreadable_contagions()) //This is intentionally not having a has_hands check. If you are clicking on someone next to them, you're close enough to sneeze/cough on them!
+			var/datum/affliction/contagion/D = thing
 			if(D.IsSpreadByTouch())
-				H.ContractDisease(D)
+				H.expose_contagion(D)
 
-		for(var/thing in H.GetViruses())
-			var/datum/disease/D = thing
+		for(var/thing in H.get_spreadable_contagions())
+			var/datum/affliction/contagion/D = thing
 			if(D.IsSpreadByTouch())
-				ContractDisease(D)
+				expose_contagion(D)
 
 	M.break_cloak()
 
@@ -75,9 +75,9 @@
 			return FALSE
 
 	if(istype(M,/mob/living/carbon) && has_hands)
-		for(var/datum/disease/D in M.GetViruses())
+		for(var/datum/affliction/contagion/D in M.get_spreadable_contagions())
 			if(D.spread_flags & DISEASE_SPREAD_CONTACT)
-				ContractDisease(D)
+				expose_contagion(D)
 
 	switch(M.use_stance())
 		//VARS:  (Placed here for your convenience, because it's confusing)

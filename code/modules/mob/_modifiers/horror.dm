@@ -35,9 +35,9 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 /datum/modifier/redspace_drain/on_applied()
 	unfortunate_soul = holder
 	to_chat(unfortunate_soul, span_cult("You feel as if your lifeforce is slowly being rended from your body."))
-	if(!unfortunate_soul.HasDisease(/datum/disease/fleshy_spread))
-		var/datum/disease/fleshy_spread/flesh_disease = new /datum/disease/fleshy_spread()
-		unfortunate_soul.ForceContractDisease(flesh_disease, BP_TORSO)
+	if(!unfortunate_soul.has_contagion(/datum/affliction/contagion/fleshy_spread))
+		var/datum/affliction/contagion/fleshy_spread/flesh_disease = new /datum/affliction/contagion/fleshy_spread()
+		unfortunate_soul.force_contagion(flesh_disease, BP_TORSO)
 	return
 
 /datum/modifier/redspace_drain/on_expire()
@@ -422,9 +422,9 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(isbelly(unfortunate_soul.loc))
 		bellied = TRUE
 		var/mob/living/carbon/human/predator = unfortunate_soul.loc.loc
-		if(istype(predator) && !predator.HasDisease(/datum/disease/fleshy_spread))
-			var/datum/disease/fleshy_spread/flesh_disease = new /datum/disease/fleshy_spread()
-			predator.ForceContractDisease(flesh_disease, BP_TORSO)
+		if(istype(predator) && !predator.has_contagion(/datum/affliction/contagion/fleshy_spread))
+			var/datum/affliction/contagion/fleshy_spread/flesh_disease = new /datum/affliction/contagion/fleshy_spread()
+			predator.force_contagion(flesh_disease, BP_TORSO)
 
 	if(unfortunate_soul.stat == DEAD)
 		handle_death()
@@ -484,9 +484,9 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 				return
 			to_chat(prey, span_bolddanger("You feel a tiny prick."))
 			prey.reagents.add_reagent(REAGENT_ID_ZOMBIEPOWDER, 5)
-			if(!prey.HasDisease(/datum/disease/fleshy_spread))
-				var/datum/disease/fleshy_spread/flesh_disease = new /datum/disease/fleshy_spread()
-				prey.ForceContractDisease(flesh_disease)
+			if(!prey.has_contagion(/datum/affliction/contagion/fleshy_spread))
+				var/datum/affliction/contagion/fleshy_spread/flesh_disease = new /datum/affliction/contagion/fleshy_spread()
+				prey.force_contagion(flesh_disease)
 			to_chat(unfortunate_soul, span_warning("[prey] walks too close to you, your body instinctually stinging them"))
 
 	return

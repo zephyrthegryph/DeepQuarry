@@ -269,14 +269,14 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(!B.data["viruses"])
 		B.data["viruses"] = list()
 
-	for(var/datum/disease/D in GetViruses())
+	for(var/datum/affliction/contagion/D in get_contagions())
 		B.data["viruses"] |= D.Copy()
 
 	if(!B.data["resistances"])
 		B.data["resistances"] = list()
 
 	if(B.data["resistances"])
-		B.data["resistances"] |= GetResistances()
+		B.data["resistances"] |= get_contagion_immunities()
 	B.data["blood_DNA"] = copytext(src.dna.unique_enzymes,1,0)
 	B.data["blood_type"] = copytext(src.dna.b_type,1,0)
 	B.data["changeling"] = (!isnull(mind) && is_changeling(mind)) || species?.ambulant_blood || HAS_TRAIT(src, TRAIT_REDSPACE_CORRUPTED)
@@ -312,10 +312,10 @@ BLOOD_VOLUME_SURVIVE = 40
 		return
 	var/list/sniffles = injected.data["viruses"]
 	for(var/ID in sniffles)
-		var/datum/disease/D = ID
+		var/datum/affliction/contagion/D = ID
 		if(D.spread_flags & (DISEASE_SPREAD_SPECIAL | DISEASE_SPREAD_NON_CONTAGIOUS)) // Special/Non-Contagious stay in the blood, but they won't spread
 			continue
-		ForceContractDisease(D)
+		force_contagion(D)
 	if (injected.data["resistances"] && prob(5))
 		antibodies |= injected.data["resistances"]
 	if (injected.data[REAGENT_ID_ANTIBODIES] && prob(5))

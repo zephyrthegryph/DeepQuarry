@@ -185,7 +185,7 @@
 	var/is_drunk = FALSE //Just so we don't have to do another ishuman() check down there in !problems
 	if(ishuman(user))
 		var/mob/living/carbon/human/our_user = user
-		if(our_user.has_virus())
+		if(our_user.has_known_contagion())
 			problems |= VIRUS
 		if(our_user.factor(BF_HEPATOTOXICITY))
 			problems |= ALCOHOL_POISONING

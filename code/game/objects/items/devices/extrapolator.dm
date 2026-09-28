@@ -163,9 +163,9 @@
 	if(length(diseases))
 		message += span_boldnotice("[costly_icon2html(target, user)] [target] scan results")
 		message += span_boldnotice("[icon2html(src, user)] \The [src] detects the following diseases:")
-		for(var/datum/disease/disease in diseases)
-			if(istype(disease, /datum/disease/advance))
-				var/datum/disease/advance/advance_disease = disease
+		for(var/datum/affliction/contagion/disease in diseases)
+			if(istype(disease, /datum/affliction/contagion/engineered))
+				var/datum/affliction/contagion/engineered/advance_disease = disease
 				var/list/properties
 				if(global_flag_check(advance_disease.virus_modifiers, CARRIER))
 					LAZYADD(properties, "carrier")
@@ -175,7 +175,7 @@
 				if(LAZYACCESS(extracted_ids, advance_disease.GetDiseaseID()))
 					message += "This virus has been extracted by \the [src] previously."
 				message += "[advance_disease.name] has the following symptoms:"
-				for(var/datum/symptom/symptom in advance_disease.symptoms)
+				for(var/datum/viral_trait/symptom in advance_disease.symptoms)
 					message += "[symptom.name]"
 			else
 				message += span_info("<b>[disease.name]</b>, [global_flag_check(disease.virus_modifiers, DORMANT) ? "<i>dormant virus</i>" : "stage [disease.stage]/[disease.max_stages]"].")
@@ -198,7 +198,7 @@
 	if(!length(diseases))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no valid diseases to make a culture from."))
 		return
-	var/datum/disease/advance/target_disease = length(diseases) > 1 ? tgui_input_list(user, "Select disease to extract", "Viral Extraction", diseases, default = diseases[1]) : diseases[1]
+	var/datum/affliction/contagion/engineered/target_disease = length(diseases) > 1 ? tgui_input_list(user, "Select disease to extract", "Viral Extraction", diseases, default = diseases[1]) : diseases[1]
 	if(!target_disease)
 		return
 	using = TRUE
@@ -209,21 +209,21 @@
 		. = isolate_disease(user, target, target_disease)
 	using = FALSE
 
-/obj/item/extrapolator/proc/isolate_symptom(mob/living/user, atom/target, datum/disease/advance/target_disease)
+/obj/item/extrapolator/proc/isolate_symptom(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease)
 	. = FALSE
 	var/list/symptoms = list()
-	for(var/datum/symptom/symptom in target_disease.symptoms)
+	for(var/datum/viral_trait/symptom in target_disease.symptoms)
 		if(symptom.level <= maximum_level)
 			symptoms += symptom
 			continue
 	if(!length(symptoms))
 		to_chat(user, span_warning("[icon2html(src, user)] There are no symptoms that could be isolated.."))
 		return
-	var/datum/symptom/chosen = length(symptoms) > 1 ? tgui_input_list(user, "Select symptom to isolate", "Symptom Extraction", symptoms, default = symptoms[1]) : symptoms[1]
+	var/datum/viral_trait/chosen = length(symptoms) > 1 ? tgui_input_list(user, "Select symptom to isolate", "Symptom Extraction", symptoms, default = symptoms[1]) : symptoms[1]
 	if(!chosen)
 		return
 	user.visible_message(span_notice("[user] slots [target] into [src], which begins to whir and beep!"), span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]..."),)
-	var/datum/disease/advance/symptom_holder = new
+	var/datum/affliction/contagion/engineered/symptom_holder = new
 	symptom_holder.name = chosen.name
 	symptom_holder.symptoms += chosen
 	symptom_holder.Finalize()
@@ -231,22 +231,22 @@
 	om_do_after(user, extract_time, target = target, receiver = src, on_done = PROC_REF(isolate_symptom_timed_done), done_args = list(user, target, symptom_holder))
 	return TRUE
 
-/obj/item/extrapolator/proc/isolate_symptom_timed_done(mob/living/user, atom/target, datum/disease/advance/symptom_holder)
+/obj/item/extrapolator/proc/isolate_symptom_timed_done(mob/living/user, atom/target, datum/affliction/contagion/engineered/symptom_holder)
 	create_culture(user, symptom_holder, target)
 	return TRUE
 
-/obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/disease/advance/target_disease, timer = 10 SECONDS)
+/obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease, timer = 10 SECONDS)
 	. = FALSE
 	user.visible_message(span_notice("[user] begins to thoroughly scan [target] with [src]..."), \
 		span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]..."))
 	om_do_after(user, isolate_time, target = target, receiver = src, on_done = PROC_REF(isolate_disease_timed_done), done_args = list(user, target, target_disease))
 	return TRUE
 
-/obj/item/extrapolator/proc/isolate_disease_timed_done(mob/living/user, atom/target, datum/disease/advance/target_disease)
+/obj/item/extrapolator/proc/isolate_disease_timed_done(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease)
 	create_culture(user, target_disease, target)
 	return TRUE
 
-/obj/item/extrapolator/proc/create_culture(mob/living/user, datum/disease/advance/disease)
+/obj/item/extrapolator/proc/create_culture(mob/living/user, datum/affliction/contagion/engineered/disease)
 	. = FALSE
 	disease = disease.Copy()
 	disease.virus_modifiers &= ~DORMANT

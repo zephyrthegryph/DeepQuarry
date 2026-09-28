@@ -413,9 +413,9 @@
 	..()
 	if(istype(A, /mob/living/carbon) && prob(10))
 		var/mob/living/carbon/human/H = A
-		for(var/datum/disease/D in GetViruses())
+		for(var/datum/affliction/contagion/D as anything in get_spreadable_contagions())
 			if(D.spread_flags & DISEASE_SPREAD_CONTACT)
-				H.ContractDisease(D)
+				H.expose_contagion(D)
 
 /mob/living/carbon/cannot_use_vents()
 	return
@@ -558,18 +558,6 @@
 	if(allergen_type in species.food_preference)
 		return species.food_preference_bonus
 	return FALSE
-
-/datum/om/stage/life/diseases/carbon
-	of = /mob/living/carbon
-
-/datum/om/stage/life/diseases/carbon/progress(mob/living/carbon/self)
-	for(var/thing in self.GetViruses())
-		var/datum/disease/D = thing
-		if(prob(D.infectivity))
-			D.spread()
-
-		if(self.stat != DEAD || global_flag_check(D.virus_modifiers, SPREAD_DEAD))
-			D.stage_act()
 
 /mob/living/carbon/vv_get_dropdown()
 	. = ..()

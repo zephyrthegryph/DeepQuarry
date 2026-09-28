@@ -5,9 +5,9 @@
 
 /// Possible diseases
 GLOBAL_LIST_INIT(floor_diseases, list(
-	/datum/disease/cold = 2,
-	/datum/disease/food_poisoning = 7,
-	/datum/disease/lycan = 1,
+	/datum/affliction/contagion/cold = 2,
+	/datum/affliction/contagion/food_poisoning = 7,
+	/datum/affliction/contagion/lycan = 1,
 ))
 
 /// Makes items infective if left on floor, also sending corresponding signals to parent

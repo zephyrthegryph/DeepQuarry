@@ -7,7 +7,8 @@
 	var/inflame_progress = 0
 
 /mob/living/carbon/human/proc/appendicitis()
-	return ForceContractDisease(new /datum/disease/appendicitis)
+	// The template is detached and unreferenced once the body holds its copy.
+	return force_contagion(new /datum/affliction/contagion/appendicitis)
 
 /*
 /obj/item/organ/internal/appendix/periodic_step()

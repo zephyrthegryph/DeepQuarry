@@ -2204,11 +2204,11 @@
 		else if(self.stat == DEAD || (self.status_flags & FAKEDEATH))
 			holder.icon_state = "huddead"
 			holder2.icon_state = "huddead"
-		else if(self.has_virus())
+		else if(self.has_known_contagion())
 			holder.icon_state = "hudill"
 		else
 			holder.icon_state = "hudhealthy"
-			if(self.has_virus())
+			if(self.has_known_contagion())
 				holder2.icon_state = "hudill"
 			else
 				holder2.icon_state = "hudhealthy"
@@ -2372,14 +2372,6 @@
 
 	brain.tick_defib_timer()
 
-/mob/living/carbon/human/proc/has_virus()
-	for(var/thing in viruses)
-		var/datum/disease/D = thing
-		if(!global_flag_check(D.virus_modifiers, DISCOVERED))
-			continue
-		if((!(D.visibility_flags & HIDDEN_SCANNER)) && (D.danger != DISEASE_NONTHREAT))
-			return TRUE
-	return FALSE
 
 
 #undef HEAT_DAMAGE_LEVEL_1

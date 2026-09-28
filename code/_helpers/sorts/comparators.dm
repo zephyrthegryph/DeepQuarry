@@ -123,8 +123,8 @@
 /proc/cmp_name_dsc(atom/a, atom/b)
 	return sorttext(a.name, b.name)
 
-/proc/cmp_advdisease_resistance_asc(datum/disease/advance/A, datum/disease/advance/B)
+/proc/cmp_advdisease_resistance_asc(datum/affliction/contagion/engineered/A, datum/affliction/contagion/engineered/B)
 	return A.resistance - B.resistance
 
-/proc/cmp_advdisease_symptomid_asc(datum/symptom/A, datum/symptom/B)
+/proc/cmp_advdisease_symptomid_asc(datum/viral_trait/A, datum/viral_trait/B)
 	return sorttext(B.id, A.id)

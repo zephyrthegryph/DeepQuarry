@@ -111,7 +111,7 @@
 /obj/structure/holosign/barrier/medical/proc/CheckHuman(mob/living/carbon/human/H)
 	if(H.get_species() == SPECIES_XENOCHIMERA)
 		return FALSE
-	var/threat = H.check_virus()
+	var/threat = H.contagion_threat()
 	if(get_disease_danger_value(threat) > get_disease_danger_value(DISEASE_MINOR))
 		return FALSE
 	return TRUE

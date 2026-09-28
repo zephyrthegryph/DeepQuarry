@@ -73,7 +73,7 @@
 
 
 /obj/machinery/bodyscanner/proc/dq_emit_abnormalities(mob/living/carbon/human/H, list/out)
-	out["hasVirus"] = H.isInfective()
+	out["hasVirus"] = H.is_infective()
 	out["hasBorer"] = H.has_brain_worms()
 	out["blind"] = (H.sdisabilities & BLIND)
 	out["nearsighted"] = (H.disabilities & NEARSIGHTED)
