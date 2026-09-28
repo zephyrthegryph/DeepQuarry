@@ -172,7 +172,7 @@
 		tracked += new /mob/living/carbon/human/generated_station_command_officer(T)
 
 /datum/expedition_objective/generated_capture_officer/check()
-	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle
+	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle()
 	if(!shuttle)
 		return state
 	for(var/area/A in shuttle.shuttle_area)

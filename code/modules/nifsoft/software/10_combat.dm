@@ -34,7 +34,7 @@
 
 /datum/nifsoft/painkillers/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		H.bloodstr.add_reagent(REAGENT_ID_NUMBENZYME,0.5)
 
 /datum/nifsoft/hardclaws
@@ -76,19 +76,19 @@ GLOBAL_DATUM_INIT(unarmed_hardclaws, /datum/unarmed_attack/hardclaws, new)
 /datum/nifsoft/hidelaser/activate()
 	if((. = ..()))
 		if(used)
-			nif.notify("You do not have a hidden weapon to deploy anymore!",TRUE)
+			nif().notify("You do not have a hidden weapon to deploy anymore!",TRUE)
 			deactivate()
 			return FALSE
-		if(!nif.use_charge(50))
-			nif.notify("Insufficient energy to deploy weapon!",TRUE)
+		if(!nif().use_charge(50))
+			nif().notify("Insufficient energy to deploy weapon!",TRUE)
 			deactivate()
 			return FALSE
 
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		H.injure(INJURY_PAIN, 30)
 		var/obj/item/gun/energy/gun/compact/dazzle/dgun = new(get_turf(H))
 		H.put_in_hands(dgun)
-		nif.notify("Weapon deployed!",TRUE)
+		nif().notify("Weapon deployed!",TRUE)
 		used = TRUE
 		om_after(src, 0, PROC_REF(uninstall))
 

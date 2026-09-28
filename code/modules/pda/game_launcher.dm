@@ -30,7 +30,7 @@
 				QDEL_NULL(voresweeper)
 				return TRUE
 			if(!voresweeper)
-				voresweeper = new(pda)
+				voresweeper = new(pda())
 			voresweeper.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_FOUR_ROW)
@@ -40,7 +40,7 @@
 				QDEL_NULL(fourrow)
 				return TRUE
 			if(!fourrow)
-				fourrow = new(pda)
+				fourrow = new(pda())
 			fourrow.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_SPACE_BATTLE)
@@ -50,7 +50,7 @@
 				QDEL_NULL(spacebattle)
 				return TRUE
 			if(!spacebattle)
-				spacebattle = new(pda)
+				spacebattle = new(pda())
 			spacebattle.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_RGP_DICE)
@@ -60,7 +60,7 @@
 				QDEL_NULL(rpgdice)
 				return TRUE
 			if(!rpgdice)
-				rpgdice = new(pda)
+				rpgdice = new(pda())
 			rpgdice.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_CHESS)
@@ -70,7 +70,7 @@
 				QDEL_NULL(chess)
 				return TRUE
 			if(!chess)
-				chess = new(pda)
+				chess = new(pda())
 			chess.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_CHECKERS)
@@ -80,7 +80,7 @@
 				QDEL_NULL(checkers)
 				return TRUE
 			if(!checkers)
-				checkers = new(pda)
+				checkers = new(pda())
 			checkers.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_NINE_MENS_MORRIS)
@@ -90,7 +90,7 @@
 				QDEL_NULL(ninemens)
 				return TRUE
 			if(!ninemens)
-				ninemens = new(pda)
+				ninemens = new(pda())
 			ninemens.tgui_interact(ui.user)
 			return TRUE
 		if(GAME_TIC_TAC_TOE)
@@ -100,7 +100,7 @@
 				QDEL_NULL(tictactoe)
 				return TRUE
 			if(!tictactoe)
-				tictactoe = new(pda)
+				tictactoe = new(pda())
 			tictactoe.tgui_interact(ui.user)
 			return TRUE
 	return TRUE

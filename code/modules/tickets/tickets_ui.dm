@@ -135,20 +135,20 @@
 				return
 
 			feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-			if(player.current_ticket)
+			if(player.current_ticket())
 				var/input = tgui_alert(ui.user, "The player already has a ticket open. Is this for the same issue?","Duplicate?",list("Yes","No"))
 				if(!input)
 					return
 				if(input == "Yes")
-					if(player.current_ticket)
-						player.current_ticket.MessageNoRecipient(ticket_text)
+					if(player.current_ticket())
+						player.current_ticket().MessageNoRecipient(ticket_text)
 						to_chat(ui.user, span_adminnotice("PM to-" + span_bold("Admins") + ": [ticket_text]"))
 						return
 					else
 						to_chat(ui.user, span_warning("Ticket not found, creating new one..."))
 				else
-					player.current_ticket.AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
-					player.current_ticket.Close(ui.user)
+					player.current_ticket().AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
+					player.current_ticket().Close(ui.user)
 
 			// Create a new ticket and handle it. You created it afterall!
 			var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level)

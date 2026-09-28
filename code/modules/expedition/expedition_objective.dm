@@ -50,7 +50,7 @@
 // Shared helpers -------------------------------------------------------------
 
 /datum/expedition_objective/proc/count_returned(typepath)
-	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle
+	var/datum/shuttle/autodock/overmap/shuttle = site()?.assigned_shuttle()
 	if(!shuttle)
 		return 0
 	var/count = 0

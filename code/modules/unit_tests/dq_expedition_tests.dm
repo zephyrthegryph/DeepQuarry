@@ -45,7 +45,7 @@
 	TEST_ASSERT_NOTNULL(site.landing(), "site has no landing turf — carve produced no walkable floor (verdigris likely not loaded)")
 	TEST_ASSERT(!site.landing().density, "landing turf is dense — not actually walkable")
 	TEST_ASSERT_EQUAL(site.landing().z, site.z_level, "landing turf z [site.landing().z] != site z [site.z_level]")
-	TEST_ASSERT_NULL(site.overmap_sector, "planet-bound site created a legacy space-sector marker")
+	TEST_ASSERT_NULL(site.overmap_sector(), "planet-bound site created a legacy space-sector marker")
 	TEST_ASSERT(site.generation_seed > 0, "generated station did not retain a reproducible planner seed")
 	TEST_ASSERT_NOTNULL(site.station_spec, "site did not retain its generated station specification")
 	TEST_ASSERT_NOTNULL(site.station_materialization, "site did not retain its station materialization")

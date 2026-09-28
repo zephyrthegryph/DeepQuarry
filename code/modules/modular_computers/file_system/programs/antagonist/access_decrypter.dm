@@ -31,8 +31,8 @@
 	. = ..()
 	if(!running)
 		return
-	var/obj/item/computer_hardware/processor_unit/CPU = computer.processor_unit
-	var/obj/item/computer_hardware/card_slot/RFID = computer.card_slot
+	var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
+	var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
 	if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
 		message = "A fatal hardware error has been detected."
 		return
@@ -45,7 +45,7 @@
 		reset()
 		RFID.stored_card().access |= target_access().id
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
-			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer.network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
+			GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access to primary keycode database from device: [computer().network_card.get_network_tag()]  - downloaded access codes for: [target_access().desc].")
 			GLOB.ntnet_global.intrusion_detection_alarm = 1
 		message = "Successfully decrypted and saved operational key codes. Downloaded access codes for: [target_access().desc]"
 		target_access_handle = null
@@ -62,8 +62,8 @@
 				return TRUE
 			if(text2num(params["allowed"]))
 				return TRUE
-			var/obj/item/computer_hardware/processor_unit/CPU = computer.processor_unit
-			var/obj/item/computer_hardware/card_slot/RFID = computer.card_slot
+			var/obj/item/computer_hardware/processor_unit/CPU = computer().processor_unit
+			var/obj/item/computer_hardware/card_slot/RFID = computer().card_slot
 			if(!istype(CPU) || !CPU.check_functionality() || !istype(RFID) || !RFID.check_functionality())
 				message = "A fatal hardware error has been detected."
 				return
@@ -77,7 +77,7 @@
 				running = FALSE
 				return
 			if(GLOB.ntnet_global.intrusion_detection_enabled)
-				GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer.network_card.get_network_tag()]")
+				GLOB.ntnet_global.add_log("IDS WARNING - Unauthorised access attempt to primary keycode database from device: [computer().network_card.get_network_tag()]")
 				GLOB.ntnet_global.intrusion_detection_alarm = TRUE
 			return TRUE
 
@@ -93,10 +93,10 @@
 		data["message"] = message
 	else if(running)
 		data["running"] = 1
-		data["rate"] = computer.processor_unit.max_idle_programs
+		data["rate"] = computer().processor_unit.max_idle_programs
 		data["factor"] = (progress / target_progress)
-	else if(computer?.card_slot?.stored_card())
-		var/obj/item/card/id/id_card = computer.card_slot.stored_card()
+	else if(computer()?.card_slot?.stored_card())
+		var/obj/item/card/id/id_card = computer().card_slot.stored_card()
 		for(var/i = 1; i <= 7; i++)
 			var/list/accesses = list()
 			for(var/access in SSaccess.get_region_accesses(i))

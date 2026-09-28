@@ -67,9 +67,9 @@ REF_OWNED_LIST(/obj/item/cartridge, list("programs", "messenger_plugins"))
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)
 	for(var/datum/data/pda/P as anything in programs)
-		P.pda = pda
+		P.pda_handle = om_handle(pda)
 	for(var/datum/data/pda/messenger_plugin/P as anything in messenger_plugins)
-		P.pda = pda
+		P.pda_handle = om_handle(pda)
 
 /obj/item/cartridge/engineering
 	name = "\improper Power-ON cartridge"

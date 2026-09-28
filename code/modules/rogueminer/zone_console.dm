@@ -59,7 +59,7 @@
 
 /obj/machinery/computer/roguezones/tgui_data(mob/user)
 	var/chargePercent = min(100, ((((world.time - GLOB.rm_controller.last_scan) / 10) / 60) / GLOB.rm_controller.scan_wait) * 100)
-	var/curZoneOccupied = GLOB.rm_controller.current_zone ? GLOB.rm_controller.current_zone.is_occupied() : 0
+	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0
 
 	var/list/data = ..()
 	data["timeout_percent"] = chargePercent
@@ -130,17 +130,17 @@
 
 	//Update shuttle destination.
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
-	S.landmark_offsite = ZM_target.myshuttle_landmark
+	S.landmark_offsite = ZM_target.myshuttle_landmark()
 	S.next_location_handle = om_handle(S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.
 	shuttle_control().shuttle_tag = "Belter"
 
 	//Update rm_previous
-	GLOB.rm_controller.previous_zone = GLOB.rm_controller.current_zone
+	GLOB.rm_controller.previous_zone_handle = om_handle(GLOB.rm_controller.current_zone())
 
 	//Update rm_current
-	GLOB.rm_controller.current_zone = ZM_target
+	GLOB.rm_controller.current_zone_handle = om_handle(ZM_target)
 
 	//Unset scanning
 	scanning = 0
@@ -153,7 +153,7 @@
 		return // Shuttle computer has been destroyed
 	if (!(shuttle_control().z in using_map.belter_belt_z))
 		return // Usable only when shuttle is away
-	if(GLOB.rm_controller.current_zone && GLOB.rm_controller.current_zone.is_occupied())
+	if(GLOB.rm_controller.current_zone() && GLOB.rm_controller.current_zone().is_occupied())
 		return // Not usable if shuttle is in occupied zone
 	// Okay do it
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]

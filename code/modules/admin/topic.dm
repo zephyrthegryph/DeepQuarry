@@ -532,7 +532,7 @@
 					to_chat(M, span_filter_system(span_warning("No ban appeals URL has been set.")))
 				log_admin("[usr.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes.")
 				message_admins(span_blue("[usr.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis will be removed in [mins] minutes."))
-				var/datum/ticket/T = M.client ? M.client.current_ticket : null
+				var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)
@@ -560,7 +560,7 @@
 				message_admins(span_blue("[usr.client.ckey] has banned [M.ckey].\nReason: [reason]\nThis is a permanent ban."))
 				feedback_inc("ban_perma",1)
 				DB_ban_record(BANTYPE_PERMA, M, -1, reason)
-				var/datum/ticket/T = M.client ? M.client.current_ticket : null
+				var/datum/ticket/T = M.client ? M.client.current_ticket() : null
 				if(T)
 					T.Resolve(usr)
 				qdel(M.client)

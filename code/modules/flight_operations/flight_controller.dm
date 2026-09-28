@@ -172,8 +172,8 @@ SUBSYSTEM_DEF(flight_operations)
 	destination.name = site.name
 	destination.description = site.mission?.desc || "A procedurally surveyed expedition site."
 	destination.kind = FLIGHT_DEST_EXPEDITION
-	destination.expedition = site
-	destination.target = site.overmap_sector
+	destination.expedition_handle = om_handle(site)
+	destination.target = site.overmap_sector()
 	destination.required_capabilities = FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND
 	destination.orbit_parent_id = site.parent_destination_id || first_planet_id()
 	destination.body_radius = 0.45
@@ -330,9 +330,9 @@ SUBSYSTEM_DEF(flight_operations)
 		return null
 	for(var/id in ports)
 		var/datum/flight_port/port = ports[id]
-		if(!port.serves(plan.destination.id) || !port.can_accept(plan.vessel, plan))
+		if(!port.serves(plan.destination().id) || !port.can_accept(plan.vessel, plan))
 			continue
-		port.reserved_by = plan
+		port.reserved_by_handle = om_handle(plan)
 		return port
 	return null
 
@@ -354,12 +354,12 @@ SUBSYSTEM_DEF(flight_operations)
 	var/datum/flight_destination/destination = destinations[destination_id]
 	if(!vessel || !destination?.is_available() || vessel.active_plan)
 		return null
-	if(destination.expedition)
-		var/datum/expedition_site/site = destination.expedition
+	if(destination.expedition())
+		var/datum/expedition_site/site = destination.expedition()
 		if(site.assigned_flight_vessel() && site.assigned_flight_vessel() != vessel)
 			return null
 		site.assigned_flight_vessel_handle = om_handle(vessel)
-		site.assigned_shuttle = vessel.shuttle
+		site.assigned_shuttle_handle = om_handle(vessel.shuttle)
 		vessel.active_expedition = site
 	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
@@ -432,7 +432,7 @@ SUBSYSTEM_DEF(flight_operations)
 		if(!execute_arrival(plan))
 			plan.fail("The reserved arrival port became unavailable.")
 			return
-		if(!plan.arrival_port && !plan.destination.expedition?.landing_waypoint)
+		if(!plan.arrival_port() && !plan.destination().expedition()?.landing_waypoint)
 			plan.state = FLIGHT_PLAN_ARRIVED
 			plan.arrival_at = world.time
 			plan.release_leases()
@@ -443,9 +443,9 @@ SUBSYSTEM_DEF(flight_operations)
 		return
 	if(plan.state == FLIGHT_PLAN_ARRIVING)
 		var/obj/effect/overmap/visitable/ship/landable/landable = plan.vessel.ship()
-		var/obj/effect/shuttle_landmark/expected_landmark = plan.arrival_port?.landmark() || plan.destination.expedition?.landing_waypoint
+		var/obj/effect/shuttle_landmark/expected_landmark = plan.arrival_port()?.landmark() || plan.destination().expedition()?.landing_waypoint
 		if(!plan.vessel.shuttle || (istype(landable) && landable.status == SHIP_STATUS_LANDED && plan.vessel.shuttle.moving_status == SHUTTLE_IDLE && plan.vessel.shuttle.current_location == expected_landmark))
-			set_vessel_docked_port(plan.vessel, plan.arrival_port)
+			set_vessel_docked_port(plan.vessel, plan.arrival_port())
 			plan.state = FLIGHT_PLAN_ARRIVED
 			plan.arrival_at = world.time
 			plan.release_leases()
@@ -462,23 +462,23 @@ SUBSYSTEM_DEF(flight_operations)
 	if(plan.generation_state != FLIGHT_GENERATION_RUNNING)
 		return TRUE
 	plan.generation_stage = "Generating destination during transit"
-	if(SSexpedition.materialize_site(plan.destination.expedition, plan))
+	if(SSexpedition.materialize_site(plan.destination().expedition(), plan))
 		return TRUE
 	plan.fail("Destination generation could not be started.")
 	return FALSE
 
 /datum/controller/subsystem/flight_operations/proc/execute_arrival(datum/flight_plan/plan)
 	var/datum/flight_vessel/vessel = plan.vessel
-	var/datum/flight_destination/destination = plan.destination
-	if(vessel.shuttle && destination.expedition?.landing_waypoint)
-		vessel.shuttle.set_destination(destination.expedition.landing_waypoint)
-		vessel.shuttle.short_jump(destination.expedition.landing_waypoint)
+	var/datum/flight_destination/destination = plan.destination()
+	if(vessel.shuttle && destination.expedition()?.landing_waypoint)
+		vessel.shuttle.set_destination(destination.expedition().landing_waypoint)
+		vessel.shuttle.short_jump(destination.expedition().landing_waypoint)
 		vessel.orbit_parent_id = destination.orbit_parent_id
 		vessel.docked_port_id = null
 		return TRUE
-	if(vessel.shuttle && plan.arrival_port?.can_accept(vessel, plan))
-		vessel.shuttle.set_destination(plan.arrival_port.landmark())
-		vessel.shuttle.short_jump(plan.arrival_port.landmark())
+	if(vessel.shuttle && plan.arrival_port()?.can_accept(vessel, plan))
+		vessel.shuttle.set_destination(plan.arrival_port().landmark())
+		vessel.shuttle.short_jump(plan.arrival_port().landmark())
 		vessel.orbit_parent_id = destination.orbit_parent_id
 		return TRUE
 	if(vessel.ship() && destination.kind != FLIGHT_DEST_STATION && destination.kind != FLIGHT_DEST_VESSEL)

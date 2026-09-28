@@ -21,31 +21,31 @@
 	if((. = ..()))
 		a_drain = initial(a_drain)
 		mode = initial(mode)
-		if(nif.human)				// What if we deactivate because human is gone?
-			nif.human.set_stasis(null, nif)
+		if(nif().human)				// What if we deactivate because human is gone?
+			nif().human.set_stasis(null, nif())
 
 /datum/nifsoft/medichines_org/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		var/HP_percent = 2 * H.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
 
 		//Mode changing state machine
 		if(HP_percent >= 0.9)
 			if(mode)
-				nif.notify("User Status: NORMAL. Medichines deactivating.")
+				nif().notify("User Status: NORMAL. Medichines deactivating.")
 				H << 'sound/voice/nifmed_normal.ogg'
 				deactivate()
 			return TRUE
 		else if(!mode && HP_percent < 0.8)
-			nif.notify("User Status: INJURED. Commencing medichine routines.",TRUE)
+			nif().notify("User Status: INJURED. Commencing medichine routines.",TRUE)
 			H << 'sound/voice/nifmed_injured.ogg'
 			activate()
 		else if(mode == 1 && HP_percent < 0.2)
-			nif.notify("User Status: DANGER. Seek medical attention!",TRUE)
+			nif().notify("User Status: DANGER. Seek medical attention!",TRUE)
 			H << 'sound/voice/nifmed_danger.ogg'
 			mode = 2
 		else if(mode == 2 && HP_percent < -0.4)
-			nif.notify("User Status: CRITICAL. Notifying medical, and starting emergency stasis!",TRUE)
+			nif().notify("User Status: CRITICAL. Notifying medical, and starting emergency stasis!",TRUE)
 			H << 'sound/voice/nifmed_critical.ogg'
 			mode = 3
 			if(!isbelly(H.loc)) //Not notified in case of vore, for gameplay purposes.
@@ -63,15 +63,15 @@
 			H.mend(TREAT_BURN_CARE, 0.1 * mode)
 
 			if(mode >= 2)
-				nif.use_charge(a_drain) //A second drain if we're in level 2+
+				nif().use_charge(a_drain) //A second drain if we're in level 2+
 
 			//Patient critical - emergency stasis
 			if(mode >= 3)
 				if(HP_percent <= 0)
-					H.set_stasis(/datum/modifier/stasis/moderate, nif)
+					H.set_stasis(/datum/modifier/stasis/moderate, nif())
 				if(HP_percent > 0.2)
-					H.set_stasis(null, nif)
-					nif.notify("Ending emergency stasis.",TRUE)
+					H.set_stasis(null, nif())
+					nif().notify("Ending emergency stasis.",TRUE)
 					mode = 2
 
 		return TRUE
@@ -103,34 +103,34 @@
 /datum/nifsoft/medichines_syn/life()
 	if((. = ..()))
 		//We're good!
-		var/mob/living/carbon/human/S = nif.human
+		var/mob/living/carbon/human/S = nif().human
 		var/HP_percent = 2 * S.vitality() - 1 // 1 = well, 0 = the crit line, -1 = dead
-		if(!nif.human.bad_external_organs.len)
+		if(!nif().human.bad_external_organs.len)
 			if(mode || active)
-				nif.notify("User Status: NORMAL. Medichines deactivating.")
+				nif().notify("User Status: NORMAL. Medichines deactivating.")
 //Needs fixing W << 'sound/voice/nifmedsynth_normal.ogg'
 				deactivate()
 			return TRUE
 
 		if(!mode && !active)
-			nif.notify("User Status: DAMAGED. Medichines performing minor repairs.",TRUE)
+			nif().notify("User Status: DAMAGED. Medichines performing minor repairs.",TRUE)
 //Needs fixing W << 'sound/voice/nifmedsynth_injured.ogg'
 			activate()
 
-		for(var/obj/item/organ/external/EO as anything in nif.human.bad_external_organs)
+		for(var/obj/item/organ/external/EO as anything in nif().human.bad_external_organs)
 			for(var/datum/affliction/wound/W as anything in EO.get_wounds())
 				if(W.damage <= 30)
 					W.heal_damage(0.1)
 					EO.update_damages()
 					if(EO.update_icon())
-						nif.human.UpdateDamageIcon(1)
-					nif.use_charge(0.1)
+						nif().human.UpdateDamageIcon(1)
+					nif().use_charge(0.1)
 					return TRUE //Return entirely, we only heal one at a time.
 				else if(mode == 1)
 					mode = 2
-					nif.notify("Medichines unable to repair all damage. Perform manual repairs.",TRUE)
+					nif().notify("Medichines unable to repair all damage. Perform manual repairs.",TRUE)
 				else if(mode == 2 && HP_percent < -0.4)
-					nif.notify("User Status: CRITICAL. Notifying medical!",TRUE)
+					nif().notify("User Status: CRITICAL. Notifying medical!",TRUE)
 					S << 'sound/voice/nifmed_critical.ogg'
 					mode = 0
 					if(!isbelly(S.loc)) //Not notified in case of vore, for gameplay purposes.
@@ -167,27 +167,27 @@
 
 /datum/nifsoft/spare_breath/activate()
 	if(!(filled > 50))
-		nif.notify("Respirocytes not saturated!",TRUE)
+		nif().notify("Respirocytes not saturated!",TRUE)
 		return FALSE
 	if((. = ..()))
-		nif.notify("Now taking air from reserves.")
+		nif().notify("Now taking air from reserves.")
 
 /datum/nifsoft/spare_breath/deactivate(force = FALSE)
 	if((. = ..()))
-		nif.notify("Now taking air from environment and refilling reserves.")
+		nif().notify("Now taking air from environment and refilling reserves.")
 
 /datum/nifsoft/spare_breath/life()
 	if((. = ..()))
 		if(active) //Supplying air, not recharging it
 			switch(filled) //Text warnings
 				if(75)
-					nif.notify("Respirocytes at 75% saturation.",TRUE)
+					nif().notify("Respirocytes at 75% saturation.",TRUE)
 				if(50)
-					nif.notify("Respirocytes at 50% saturation!",TRUE)
+					nif().notify("Respirocytes at 50% saturation!",TRUE)
 				if(25)
-					nif.notify("Respirocytes at 25% saturation, seek a habitable environment!",TRUE)
+					nif().notify("Respirocytes at 25% saturation, seek a habitable environment!",TRUE)
 				if(5)
-					nif.notify("Respirocytes at 5% saturation! Failure imminent!",TRUE)
+					nif().notify("Respirocytes at 5% saturation! Failure imminent!",TRUE)
 
 			if(filled == 0) //Ran out
 				deactivate()
@@ -197,8 +197,8 @@
 		else //Recharging air, not supplying it
 			if(filled == 100)
 				return TRUE
-			else if(nif.use_charge(0.1) && ++filled == 100)
-				nif.notify("Respirocytes now fully saturated.")
+			else if(nif().use_charge(0.1) && ++filled == 100)
+				nif().notify("Respirocytes now fully saturated.")
 
 /datum/nifsoft/spare_breath/proc/resp_breath()
 	if(!active) return null
@@ -215,11 +215,11 @@
 
 /datum/nifsoft/mindbackup/activate()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		SStranscore.m_backup(H.mind,H.nif,one_time = TRUE)
 		persist_nif_data(H)
-		nif.notify("Mind backed up!")
-		nif.use_charge(0.1)
+		nif().notify("Mind backed up!")
+		nif().use_charge(0.1)
 		deactivate()
 		return TRUE
 

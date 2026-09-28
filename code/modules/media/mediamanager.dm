@@ -40,7 +40,7 @@
 	if(!istype(M) || isEye(M))
 		return ..()
 	// Optimization, no need to call update_music() if both are null (or same instance, strange as that would be)
-	if(M.lastarea?.media_source == src.media_source)
+	if(M.lastarea?.media_source() == src.media_source())
 		return ..()
 	if(M.client?.media && !M.client.media.forced)
 		M.update_music()
@@ -97,7 +97,7 @@
 /area
 	// For now, only one media source per area allowed
 	// Possible Future: turn into a list, then only play the first one that's playing.
-	var/obj/machinery/media/media_source = null
+	var/media_source_handle
 
 //
 // ### Media Manager Datum
@@ -202,7 +202,7 @@
 		MP_DEBUG("client=[owner], mob=[owner.mob] not in an area! loc=[owner.mob.loc].  Aborting.")
 		stop_music()
 		return
-	var/obj/machinery/media/M = A.media_source
+	var/obj/machinery/media/M = A.media_source()
 	if(M && M.playing)
 		targetURL = M.media_url
 		targetStartTime = M.media_start_time
@@ -218,3 +218,7 @@
 REF_OWNED(/client, "media")
 
 REF_OWNED(/datum/media_manager, "media_window")
+
+/// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/area/proc/media_source() as /obj/machinery/media
+	return om_resolve(media_source_handle)

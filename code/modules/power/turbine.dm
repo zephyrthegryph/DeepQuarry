@@ -34,7 +34,7 @@
 	circuit = /obj/item/circuitboard/machine/power_compressor
 	var/obj/machinery/power/turbine/turbine
 	var/datum/gas_mixture/gas_contained
-	var/turf/simulated/inturf
+	var/inturf_handle
 	var/starter = 0
 	var/rpm = 0
 	var/rpmtarget = 0
@@ -52,8 +52,8 @@
 	anchored = TRUE
 	density = TRUE
 	circuit = /obj/item/circuitboard/machine/power_turbine
-	var/obj/machinery/compressor/compressor
-	var/turf/simulated/outturf
+	var/compressor_handle
+	var/outturf_handle
 	var/lastgen
 	var/productivity = 1
 
@@ -94,7 +94,7 @@
 	. = ..()
 	default_apply_parts()
 	gas_contained = new()
-	inturf = get_step(src, dir)
+	inturf_handle = om_handle(get_step(src, dir))
 	locate_machinery()
 	if(!turbine)
 		stat |= BROKEN
@@ -106,7 +106,7 @@
 /obj/machinery/compressor/proc/locate_machinery()
 	if(turbine)
 		return
-	turbine = locate() in get_step(src, get_dir(inturf, src))
+	turbine = locate() in get_step(src, get_dir(inturf(), src))
 	if(turbine)
 		turbine.locate_machinery()
 
@@ -152,7 +152,7 @@
 	if((. = ..()))
 		turbine = null
 		if(anchored)
-			inturf = get_step(src, dir)
+			inturf_handle = om_handle(get_step(src, dir))
 			locate_machinery()
 			if(turbine)
 				to_chat(user, span_notice("Turbine connected."))
@@ -181,11 +181,11 @@
 	cut_overlays()
 
 	rpm = 0.9* rpm + 0.1 * rpmtarget
-	var/datum/gas_mixture/environment = inturf.return_air()
+	var/datum/gas_mixture/environment = inturf().return_air()
 
 	// It's a simplified version taking only 1/10 of the moles from the turf nearby. It should be later changed into a better version
 	var/transfer_moles = environment.total_moles() / 10
-	var/datum/gas_mixture/removed = inturf.remove_air(transfer_moles)
+	var/datum/gas_mixture/removed = inturf().remove_air(transfer_moles)
 	gas_contained.merge(removed)
 
 	// RPM function to include compression friction - be advised that too low/high of a compfriction value can make things screwy
@@ -225,9 +225,9 @@
 	. = ..()
 	default_apply_parts()
 	// The outlet is pointed at the direction of the turbine component
-	outturf = get_step(src, dir)
+	outturf_handle = om_handle(get_step(src, dir))
 	locate_machinery()
-	if(!compressor)
+	if(!compressor())
 		stat |= BROKEN
 
 /obj/machinery/power/turbine/RefreshParts()
@@ -235,11 +235,11 @@
 	productivity = P / 6
 
 /obj/machinery/power/turbine/proc/locate_machinery()
-	if(compressor)
+	if(compressor())
 		return
-	compressor = locate() in get_step(src, get_dir(outturf, src))
-	if(compressor)
-		compressor.locate_machinery()
+	compressor_handle = om_handle(locate() in get_step(src, get_dir(outturf(), src)))
+	if(compressor())
+		compressor().locate_machinery()
 
 /// Old attackby: added a fingerprint for any item before trying the part replacer.
 /datum/interaction/machine_item/turbine_fingerprint
@@ -254,11 +254,11 @@
 
 /obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
-		compressor = null
+		compressor_handle = null
 		if(anchored)
-			outturf = get_step(src, dir)
+			outturf_handle = om_handle(get_step(src, dir))
 			locate_machinery()
-			if(compressor)
+			if(compressor())
 				to_chat(user, span_notice("Compressor connected."))
 				stat &= ~BROKEN
 			else
@@ -266,11 +266,11 @@
 				stat |= BROKEN
 
 /obj/machinery/power/turbine/machine_step()
-	if(!compressor)
+	if(!compressor())
 		stat = BROKEN
 	if(stat & BROKEN)
 		return PROCESS_KILL
-	if(!compressor.starter)
+	if(!compressor().starter)
 		return PROCESS_KILL
 	if(panel_open)
 		return
@@ -278,22 +278,22 @@
 
 	// This is the power generation function. If anything is needed it's good to plot it in EXCEL before modifying
 	// the TURBGENQ and TURBGENG values
-	lastgen = ((compressor.rpm / TURBGENQ)**TURBGENG) * TURBGENQ * productivity
+	lastgen = ((compressor().rpm / TURBGENQ)**TURBGENG) * TURBGENQ * productivity
 
 	add_avail(lastgen)
 
 	// Weird function but it works. Should be something else...
-	var/newrpm = ((compressor.gas_contained.return_temperature()) * compressor.gas_contained.total_moles())/4
+	var/newrpm = ((compressor().gas_contained.return_temperature()) * compressor().gas_contained.total_moles())/4
 
 	newrpm = max(0, newrpm)
 
-	if(!compressor.starter || newrpm > 1000)
-		compressor.rpmtarget = newrpm
+	if(!compressor().starter || newrpm > 1000)
+		compressor().rpmtarget = newrpm
 
-	if(compressor.gas_contained.total_moles()>0)
-		var/oamount = min(compressor.gas_contained.total_moles(), (compressor.rpm+100)/35000*compressor.capacity)
-		var/datum/gas_mixture/removed = compressor.gas_contained.remove(oamount)
-		outturf.assume_air(removed)
+	if(compressor().gas_contained.total_moles()>0)
+		var/oamount = min(compressor().gas_contained.total_moles(), (compressor().rpm+100)/35000*compressor().capacity)
+		var/datum/gas_mixture/removed = compressor().gas_contained.remove(oamount)
+		outturf().assume_air(removed)
 		qdel(removed)
 
 	// If it works, put an overlay that it works!
@@ -323,8 +323,8 @@
 /obj/machinery/power/turbine/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"display_power" = lastgen,
-		"turbine_rpm" = compressor?.rpm,
-		"starter" = compressor?.starter
+		"turbine_rpm" = compressor()?.rpm,
+		"starter" = compressor()?.starter
 	)
 
 /obj/machinery/power/turbine/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -334,9 +334,9 @@
 
 	switch(action)
 		if("start_stop")
-			if(!compressor)
+			if(!compressor())
 				return FALSE
-			compressor.set_starter(!compressor.starter)
+			compressor().set_starter(!compressor().starter)
 			return TRUE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -456,4 +456,16 @@ REF_OWNED(/obj/machinery/compressor, "gas_contained")
 
 /// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/turbine_computer/proc/compressor() as /obj/machinery/compressor
+	return om_resolve(compressor_handle)
+
+/// LC-refs: the inturf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/compressor/proc/inturf() as /turf/simulated
+	return om_resolve(inturf_handle)
+
+/// LC-refs: the outturf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/turbine/proc/outturf() as /turf/simulated
+	return om_resolve(outturf_handle)
+
+/// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/turbine/proc/compressor() as /obj/machinery/compressor
 	return om_resolve(compressor_handle)

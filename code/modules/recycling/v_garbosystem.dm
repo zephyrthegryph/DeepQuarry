@@ -12,7 +12,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	active_power_usage = 100
 	var/operating = FALSE
 	var/crusher_handle	//Connects to regular crusher
-	var/obj/machinery/button/garbosystem/button
+	var/button_handle
 	var/list/affecting
 	var/voracity = 5 //How much stuff is swallowed at once.
 
@@ -26,9 +26,9 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 			crusher().hand_fed = FALSE
 			break
 	for(var/dir in GLOB.cardinal)
-		src.button = locate(/obj/machinery/button/garbosystem, get_step(src, dir))
-		if(src.button)
-			button.grinder = src
+		src.button_handle = om_handle(locate(/obj/machinery/button/garbosystem, get_step(src, dir)))
+		if(src.button())
+			button().grinder_handle = om_handle(src)
 			break
 	return
 
@@ -134,7 +134,7 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	desc = "A power button for the big grinder."
 	icon = 'icons/obj/machines/doorbell_vr.dmi'
 	icon_state = "doorbell-standby"
-	var/obj/machinery/v_garbosystem/grinder
+	var/grinder_handle
 
 /obj/machinery/button/garbosystem/declare_interactions(list/into)
 	into += list(
@@ -149,8 +149,8 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 	effect = /obj/machinery/button/garbosystem/proc/interaction_press_impl
 
 /obj/machinery/button/garbosystem/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(grinder)
-		grinder.attack_hand(user)
+	if(grinder())
+		grinder().attack_hand(user)
 	return TRUE
 
 /obj/machinery/v_garbosystem/proc/grind_affecting()
@@ -239,3 +239,11 @@ GLOBAL_VAR_INIT(Recycled_Items, 0)
 /// LC-refs: Connects to regular crusher -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/v_garbosystem/proc/crusher() as /obj/machinery/recycling/crusher
 	return om_resolve(crusher_handle)
+
+/// LC-refs: the grinder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/button/garbosystem/proc/grinder() as /obj/machinery/v_garbosystem
+	return om_resolve(grinder_handle)
+
+/// LC-refs: the button this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/v_garbosystem/proc/button() as /obj/machinery/button/garbosystem
+	return om_resolve(button_handle)

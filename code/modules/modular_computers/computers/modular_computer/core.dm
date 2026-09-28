@@ -230,7 +230,7 @@
 		to_chat(user, span_danger("\The [src]'s screen shows \"I/O ERROR - Unable to run [prog]\" warning."))
 		return
 
-	P.computer = src
+	P.computer_handle = om_handle(src)
 
 	if(!P.is_supported_by_hardware(hardware_flag, 1, user))
 		return

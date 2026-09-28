@@ -67,7 +67,7 @@
 			"latitude" = destination.surface_latitude,
 			"longitude" = destination.surface_longitude,
 			"compatible" = viewing_vessel.has_capabilities(destination.required_capabilities),
-			"materialized" = !destination.expedition || destination.expedition.z_level > 0,
+			"materialized" = !destination.expedition() || destination.expedition().z_level > 0,
 			"is_current" = destination.target == viewing_ship,
 		)
 		if(destination.kind == FLIGHT_DEST_VESSEL)
@@ -115,9 +115,9 @@
 	if(plan)
 		data["plan"] = list(
 			"id" = plan.id,
-			"destination_id" = plan.destination?.id,
+			"destination_id" = plan.destination()?.id,
 			"origin_id" = plan.origin()?.id || vessel.orbit_parent_id,
-			"destination" = plan.destination?.name,
+			"destination" = plan.destination()?.name,
 			"state" = plan.state,
 			"state_name" = plan.state_name(),
 			"failure" = plan.failure_reason,
@@ -158,7 +158,7 @@
 			if(!jump_plan || !jump_plan.start())
 				to_chat(ui.user, span_warning("The jump could not be initiated."))
 				return TRUE
-			to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination.name]."))
+			to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
 			return TRUE
 		if("select_destination")
 			if(vessel.active_plan)

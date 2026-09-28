@@ -493,7 +493,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	for(var/key in spec.maintenance_tiles)
 		var/list/parts = splittext(key, ",")
 		var/turf/T = world_turf(text2num(parts[1]), text2num(parts[2]))
-		if(!istype(T, /turf/simulated/floor) || get_area(T) != maintenance_area)
+		if(!istype(T, /turf/simulated/floor) || get_area(T) != maintenance_area())
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-turf-mismatch", "Planned maintenance is not physical maintenance flooring.", key)
 			continue
 		maintenance_floors[T] = TRUE

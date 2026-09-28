@@ -369,7 +369,7 @@
 		if(istype(T, /turf/simulated/floor))
 			transit_floors |= T
 			circulation_floors |= T
-	for(var/turf/T in maintenance_area)
+	for(var/turf/T in maintenance_area())
 		station_turfs |= T
 		if(istype(T, /turf/simulated/floor))
 			circulation_floors |= T

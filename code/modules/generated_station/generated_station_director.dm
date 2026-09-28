@@ -55,7 +55,7 @@
 	var/next_report_id = 1
 	var/next_squad_id = 1
 	var/next_order_id = 1
-	var/datum/generated_station_defense_runtime/defense_runtime
+	var/defense_runtime_handle
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()
@@ -222,7 +222,7 @@ REF_OWNED_VALUES(/datum/generated_station_director, list("reports", "squads", "o
 	order.state = GENERATED_STATION_ORDER_ACTIVE
 	orders[order.id] = order
 	squad.active_order_id = order.id
-	defense_runtime?.apply_order(order)
+	defense_runtime()?.apply_order(order)
 	return order
 
 /datum/generated_station_director/proc/complete_order(order_id)
@@ -240,3 +240,7 @@ REF_OWNED_VALUES(/datum/generated_station_director, list("reports", "squads", "o
 /// LC-refs: the simulation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_director/proc/simulation() as /datum/generated_station_simulation
 	return om_resolve(simulation_handle)
+
+/// LC-refs: the defense_runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_director/proc/defense_runtime() as /datum/generated_station_defense_runtime
+	return om_resolve(defense_runtime_handle)

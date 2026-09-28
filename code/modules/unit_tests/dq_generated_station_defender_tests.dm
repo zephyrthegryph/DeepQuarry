@@ -29,7 +29,7 @@
 	var/datum/generated_station_defense_runtime/runtime = new(site, director)
 	TEST_ASSERT_EQUAL(length(runtime.active_patrols), 0, "Fresh defense runtime scheduled idle patrol work")
 	TEST_ASSERT_EQUAL(length(runtime.agents), 0, "Defense runtime spawned agents before explicit roster creation")
-	TEST_ASSERT(director.defense_runtime == runtime, "Director was not bound to its event-driven defense runtime")
+	TEST_ASSERT(director.defense_runtime() == runtime, "Director was not bound to its event-driven defense runtime")
 	qdel(runtime)
 	site.station_director = null
 	site.station_simulation = null

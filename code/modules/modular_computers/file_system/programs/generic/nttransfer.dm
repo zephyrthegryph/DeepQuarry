@@ -61,7 +61,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 // Finishes download and attempts to store the file on HDD
 /datum/computer_file/program/nttransfer/proc/finish_download()
-	if(!computer || !computer.hard_drive || !computer.hard_drive.store_file(downloaded_file))
+	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		error = "I/O Error:  Unable to save file. Check your hard drive and try again."
 	finalize_download()
 
@@ -100,7 +100,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	data["upload_filelist"] = list()
 	if(upload_menu)
 		var/list/all_files = list()
-		for(var/datum/computer_file/F in computer.hard_drive.stored_files)
+		for(var/datum/computer_file/F in computer().hard_drive.stored_files)
 			all_files.Add(list(list(
 			"uid" = F.uid,
 			"filename" = "[F.filename].[F.filetype]",
@@ -163,7 +163,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			server_password = pass
 			return TRUE
 		if("PRG_uploadfile")
-			for(var/datum/computer_file/F in computer.hard_drive.stored_files)
+			for(var/datum/computer_file/F in computer().hard_drive.stored_files)
 				if(F.uid == text2num(params["uid"]))
 					if(F.unsendable)
 						error = "I/O Error: File locked."

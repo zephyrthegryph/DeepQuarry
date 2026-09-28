@@ -22,7 +22,7 @@
 	if(defender())
 		UnregisterSignal(defender(), GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL)
 		UnregisterSignal(defender(), COMSIG_MOB_DEATH)
-		runtime()?.director?.unregister_defender(defender())
+		runtime()?.director()?.unregister_defender(defender())
 	defender_handle = null
 	runtime_handle = null
 	home_handle = null
@@ -61,7 +61,7 @@
 /// Owns the finite generated-station roster. It performs no periodic scans.
 /datum/generated_station_defense_runtime
 	var/site_handle
-	var/datum/generated_station_director/director
+	var/director_handle
 	var/list/agents
 	var/list/squads_by_department
 	var/list/department_turfs
@@ -85,17 +85,17 @@
 /datum/generated_station_defense_runtime/New(datum/expedition_site/new_site, datum/generated_station_director/new_director)
 	..()
 	site_handle = om_handle(new_site)
-	director = new_director
+	director_handle = om_handle(new_director)
 	agents = list()
 	squads_by_department = list()
 	department_turfs = list()
 	active_patrols = list()
-	director.defense_runtime = src
+	director().defense_runtime_handle = om_handle(src)
 
 // LIFECYCLE: its director forgets it; its defenders go with it.
 /datum/generated_station_defense_runtime/Destroy()
-	if(director?.defense_runtime == src)
-		director.defense_runtime = null
+	if(director()?.defense_runtime() == src)
+		director().defense_runtime_handle = null
 	for(var/datum/generated_station_defender_agent/agent in agents)
 		if(agent.defender() && !QDELETED(agent.defender()))
 			qdel(agent.defender())
@@ -104,7 +104,7 @@
 	squads_by_department = null
 	department_turfs = null
 	active_patrols = null
-	director = null
+	director_handle = null
 	site_handle = null
 	return ..()
 
@@ -123,7 +123,7 @@
 	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turfs[department_id])
 	if(!spawn_turf)
 		return
-	var/datum/generated_station_squad/squad = director.create_squad(department_id)
+	var/datum/generated_station_squad/squad = director().create_squad(department_id)
 	if(!squad)
 		return
 	squads_by_department[department_id] = squad.id
@@ -138,7 +138,7 @@
 		var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 		agents += agent
 		squad.add_member(REF(defender))
-		director.register_defender(defender)
+		director().register_defender(defender)
 
 /// Finds a walkable tile adjacent to the department core. The core itself is dense.
 /proc/generated_station_defender_spawn_turf(turf/core_turf)
@@ -159,30 +159,30 @@
 /// Cameras, relays, doors, and other event producers call this directly. Detection
 /// remains local if data or AI coordination is unavailable.
 /datum/generated_station_defense_runtime/proc/notify_sensor_contact(department_id, atom/contact, source_kind = "sensor", confidence = 80, issue_response = TRUE)
-	if(!contact || !(department_id in director.local_knowledge))
+	if(!contact || !(department_id in director().local_knowledge))
 		return null
-	var/datum/generated_station_knowledge_report/report = director.submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
+	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
 	if(!report)
 		return null
 	report.target_ref = om_handle(contact)
-	director.set_alert(GENERATED_STATION_ALERT_RED, department_id)
+	director().set_alert(GENERATED_STATION_ALERT_RED, department_id)
 	if(issue_response)
-		var/coordinated = director.ai_can_coordinate()
+		var/coordinated = director().ai_can_coordinate()
 		var/squad_id = coordinated ? squads_by_department["security-1"] : squads_by_department[department_id]
 		if(squad_id)
-			director.issue_order(squad_id, report.id, GENERATED_STATION_ORDER_INTERCEPT, coordinated)
+			director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_INTERCEPT, coordinated)
 	addtimer(CALLBACK(src, PROC_REF(contact_expired), report.id, department_id), GENERATED_STATION_CONTACT_LIFETIME)
 	return report
 
 /datum/generated_station_defense_runtime/proc/contact_expired(report_id, department_id)
-	if(director?.reports[report_id])
+	if(director()?.reports[report_id])
 		return
-	director?.set_alert(GENERATED_STATION_ALERT_BLUE, department_id)
+	director()?.set_alert(GENERATED_STATION_ALERT_BLUE, department_id)
 	addtimer(CALLBACK(src, PROC_REF(return_to_green), department_id), GENERATED_STATION_SEARCH_DURATION)
 
 /datum/generated_station_defense_runtime/proc/return_to_green(department_id)
-	if(director?.local_alert_levels[department_id] == GENERATED_STATION_ALERT_BLUE)
-		director.set_alert(GENERATED_STATION_ALERT_GREEN, department_id)
+	if(director()?.local_alert_levels[department_id] == GENERATED_STATION_ALERT_BLUE)
+		director().set_alert(GENERATED_STATION_ALERT_GREEN, department_id)
 
 /// Door controllers call this only after a denied or forced transition, avoiding
 /// any scan of idle doors.
@@ -192,23 +192,23 @@
 		return FALSE
 	var/squad_id = squads_by_department[department_id] || squads_by_department["security-1"]
 	if(squad_id)
-		director.issue_order(squad_id, report.id, GENERATED_STATION_ORDER_DEFEND, FALSE)
+		director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_DEFEND, FALSE)
 	return TRUE
 
 /datum/generated_station_defense_runtime/proc/apply_order(datum/generated_station_order/order)
-	var/datum/generated_station_squad/squad = director.squads[order.squad_id]
-	var/datum/generated_station_knowledge_report/report = director.reports[order.report_id]
+	var/datum/generated_station_squad/squad = director().squads[order.squad_id]
+	var/datum/generated_station_knowledge_report/report = director().reports[order.report_id]
 	for(var/datum/generated_station_defender_agent/agent in agents)
 		if(agent.squad_id == squad?.id)
 			agent.apply_order(order, report)
 	addtimer(CALLBACK(src, PROC_REF(finish_order), order.id), order.kind == GENERATED_STATION_ORDER_PATROL ? GENERATED_STATION_PATROL_DURATION : GENERATED_STATION_SEARCH_DURATION)
 
 /datum/generated_station_defense_runtime/proc/finish_order(order_id)
-	var/datum/generated_station_order/order = director?.orders[order_id]
+	var/datum/generated_station_order/order = director()?.orders[order_id]
 	if(!order)
 		return
-	var/datum/generated_station_squad/squad = director.squads[order.squad_id]
-	director.complete_order(order.id)
+	var/datum/generated_station_squad/squad = director().squads[order.squad_id]
+	director().complete_order(order.id)
 	for(var/datum/generated_station_defender_agent/agent in agents)
 		if(agent.squad_id == squad?.id && agent.defender()?.stat < DEAD)
 			agent.defender().ai_brain?.go_sleep()
@@ -218,11 +218,11 @@
 	var/squad_id = squads_by_department[department_id]
 	if(!squad_id || active_patrols[squad_id])
 		return FALSE
-	var/datum/generated_station_knowledge_report/report = director.submit_report(department_id, "patrol-[world.time]", "patrol", "Finite patrol route.", 100, GENERATED_STATION_PATROL_DURATION)
+	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, "patrol-[world.time]", "patrol", "Finite patrol route.", 100, GENERATED_STATION_PATROL_DURATION)
 	if(!report)
 		return FALSE
 	report.target_ref = om_handle(destination || department_turfs[department_id])
-	var/datum/generated_station_order/order = director.issue_order(squad_id, report.id, GENERATED_STATION_ORDER_PATROL, FALSE)
+	var/datum/generated_station_order/order = director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_PATROL, FALSE)
 	if(!order)
 		return FALSE
 	active_patrols[squad_id] = order.id
@@ -235,14 +235,14 @@
 
 /datum/generated_station_defense_runtime/proc/on_casualty(datum/generated_station_defender_agent/agent)
 	casualties++
-	director?.unregister_defender(agent.defender())
-	if(agent.department_id == "security-1" && director?.request_security_reserve())
+	director()?.unregister_defender(agent.defender())
+	if(agent.department_id == "security-1" && director()?.request_security_reserve())
 		addtimer(CALLBACK(src, PROC_REF(spawn_reinforcement), "security-1"), 10 SECONDS)
 
 /datum/generated_station_defense_runtime/proc/spawn_reinforcement(department_id)
 	var/turf/spawn_turf = generated_station_defender_spawn_turf(department_turfs[department_id])
 	var/squad_id = squads_by_department[department_id]
-	var/datum/generated_station_squad/squad = director?.squads[squad_id]
+	var/datum/generated_station_squad/squad = director()?.squads[squad_id]
 	if(!spawn_turf || !squad || length(squad.member_ids) >= GENERATED_STATION_MAX_SQUAD_MEMBERS)
 		return FALSE
 	suppress_sensor_events = TRUE
@@ -255,7 +255,7 @@
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
 	agents += agent
 	squad.add_member(REF(defender))
-	director.register_defender(defender)
+	director().register_defender(defender)
 	return TRUE
 
 /// Damage producers call this with the affected department. Engineering consumes
@@ -381,3 +381,7 @@ REF_OWNED(/datum/expedition_site, "station_defense")
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_defense_runtime/proc/site() as /datum/expedition_site
 	return om_resolve(site_handle)
+
+/// LC-refs: the director this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_defense_runtime/proc/director() as /datum/generated_station_director
+	return om_resolve(director_handle)

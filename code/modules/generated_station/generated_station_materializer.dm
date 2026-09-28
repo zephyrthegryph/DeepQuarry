@@ -145,7 +145,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/accent_decal_count = 0
 	var/obj/effect/landmark/generated_station_entry/entry
 	var/area/generated_station/transit/transit_area
-	var/area/generated_station/maintenance/maintenance_area
+	var/maintenance_area_handle
 	var/list/department_areas
 	var/list/module_areas
 	var/list/modules
@@ -218,11 +218,11 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
 	QDEL_NULL(transit_area)
-	if(maintenance_area)
-		var/list/owned_maintenance_turfs = maintenance_area.contents.Copy()
+	if(maintenance_area())
+		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
-	QDEL_NULL(maintenance_area)
+	QDEL_NULL(maintenance_area())
 	QDEL_LIST(modules)
 	QDEL_LIST(room_solutions)
 	QDEL_LIST(control_landmarks)
@@ -250,7 +250,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/list/department_areas
 	var/list/module_areas
 	var/area/generated_station/transit/transit_area
-	var/area/generated_station/maintenance/maintenance_area
+	var/maintenance_area_handle
 	var/datum/generated_station_materialization/result
 	var/datum/generated_station_validation_result/last_architecture_validation
 	var/datum/generated_station_tile_plan/tile_plan
@@ -317,16 +317,16 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	transit_area = new
 	transit_area.station_id = spec().id
 	transit_area.name = "[spec().name] Transit"
-	maintenance_area = new
-	maintenance_area.station_id = spec().id
-	maintenance_area.name = "[spec().name] Maintenance"
+	maintenance_area_handle = om_handle(new)
+	maintenance_area().station_id = spec().id
+	maintenance_area().name = "[spec().name] Maintenance"
 	result = new
 	result.station_id = spec().id
 	result.z_level = z_level
 	result.origin_x = min_x
 	result.origin_y = min_y
 	result.transit_area = transit_area
-	result.maintenance_area = maintenance_area
+	result.maintenance_area_handle = om_handle(maintenance_area())
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
 		nodes_by_id[node.id] = node
 		var/datum/generated_station_department_instance/department = department_for_node(node)
@@ -539,7 +539,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 					ChangeArea(T, transit_area)
 					result.corridor_count++
 				else if(intent.owner_id == "maintenance")
-					ChangeArea(T, maintenance_area)
+					ChangeArea(T, maintenance_area())
 					result.corridor_count++
 				else
 					ChangeArea(T, module_areas[intent.zone_id] || department_areas[intent.owner_id])
@@ -1655,3 +1655,11 @@ REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_v
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materializer/proc/spec() as /datum/generated_station_spec
 	return om_resolve(spec_handle)
+
+/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materializer/proc/maintenance_area() as /area/generated_station/maintenance
+	return om_resolve(maintenance_area_handle)
+
+/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/generated_station_materialization/proc/maintenance_area() as /area/generated_station/maintenance
+	return om_resolve(maintenance_area_handle)

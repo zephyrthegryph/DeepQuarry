@@ -40,7 +40,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 			to_chat(src, span_admin_pm_warning("Error: Admin-PM: Client not found."))
 		return
 
-	var/datum/ticket/T = C.current_ticket
+	var/datum/ticket/T = C.current_ticket()
 
 	if(T)
 		message_admins(span_pm("[key_name_admin(src)] has started replying to [key_name(C, 0, 0)]'s admin help."))
@@ -57,7 +57,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 		to_chat(src, span_admin_pm_warning("Error: Admin-PM: You are unable to use admin PM-s (muted)."))
 		return
 
-	if(!holder && !current_ticket)	//no ticket? https://www.youtube.com/watch?v=iHSPf6x1Fdo
+	if(!holder && !current_ticket())	//no ticket? https://www.youtube.com/watch?v=iHSPf6x1Fdo
 		to_chat(src, span_admin_pm_warning("You can no longer reply to this ticket, please open another one by using the Adminhelp verb if need be."))
 		if(!holder)
 			msg = trim(sanitize(copytext(msg,1,MAX_MESSAGE_LEN)))
@@ -90,12 +90,12 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 		return
 
 	if(!recipient)
-		if(!current_ticket)
+		if(!current_ticket())
 			to_chat(src, span_admin_pm_warning("Error: Admin-PM: Client not found."))
 			to_chat(src, msg)
 			return
 		log_admin("Adminhelp: [key_name(src)]: [msg]")
-		current_ticket.MessageNoRecipient(msg)
+		current_ticket().MessageNoRecipient(msg)
 		return
 
 	var/rawmsg = msg
@@ -125,7 +125,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 
 	else
 		if(holder)	//sender is an admin but recipient is not. Do BIG RED TEXT
-			if(!recipient.current_ticket)
+			if(!recipient.current_ticket())
 				new /datum/ticket(msg, recipient, TRUE, 1)
 
 			to_chat(recipient, span_admin_pm_warning(span_huge(span_bold("-- Administrator private message --"))))

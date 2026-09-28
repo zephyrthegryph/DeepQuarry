@@ -3,18 +3,18 @@
 //
 
 /datum/ticket_chat
-	var/datum/ticket/T
+	var/T_handle
 
 /datum/ticket_chat/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
-		ui = new(user, src, "TicketChat", "Ticket #[T.id] - [T.LinkedReplyName("\ref[T]")]")
+		ui = new(user, src, "TicketChat", "Ticket #[T().id] - [T().LinkedReplyName("\ref[T()]")]")
 		ui.open()
 		user.clear_alert("open ticket")
 
 /datum/ticket_chat/tgui_close(mob/user)
 	. = ..()
-	if(user.client?.current_ticket)
+	if(user.client?.current_ticket())
 		user.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
 /datum/ticket_chat/tgui_state(mob/user)
@@ -23,12 +23,12 @@
 /datum/ticket_chat/tgui_data(mob/user)
 	var/list/data = list()
 
-	data["id"] = T.id
+	data["id"] = T().id
 
-	data["level"] = T.level
-	data["handler"] = T.handler
+	data["level"] = T().level
+	data["handler"] = T().handler
 
-	data["log"] = T._interactions
+	data["log"] = T()._interactions
 
 	return data
 
@@ -41,12 +41,16 @@
 				return
 
 			var/sane_message = sanitize(params["msg"])
-			switch(T.level)
+			switch(T().level)
 				if (0)
-					ui.user.client.cmd_mentor_pm(om_resolve(T.handler_ref), sane_message, T)
+					ui.user.client.cmd_mentor_pm(om_resolve(T().handler_ref), sane_message, T())
 					return TRUE
 				if (1)
-					ui.user.client.cmd_admin_pm(om_resolve(T.handler_ref), sane_message, T)
+					ui.user.client.cmd_admin_pm(om_resolve(T().handler_ref), sane_message, T())
 					return TRUE
 
 			. = TRUE
+
+/// LC-refs: the T this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/ticket_chat/proc/T() as /datum/ticket
+	return om_resolve(T_handle)

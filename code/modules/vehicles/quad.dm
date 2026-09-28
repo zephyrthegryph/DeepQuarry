@@ -160,8 +160,8 @@ REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 	var/list/throw_dirs = list(1, 2, 4, 8, 5, 6, 9, 10)
 	if(!emagged)
 		throw_dirs -= dir
-		if(tow)
-			throw_dirs -= get_dir(M, tow) //Don't throw it at the trailer either.
+		if(tow())
+			throw_dirs -= get_dir(M, tow()) //Don't throw it at the trailer either.
 	var/turf/T = get_step(M, pick(throw_dirs))
 	M.throw_at(T, 1, 1, src)
 
@@ -219,7 +219,7 @@ REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 
 /obj/vehicle/train/trolley/trailer/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	if(lead)
+	if(lead())
 		switch(dir) //Due to being a Big Boy sprite, it has to have special pixel shifting to look 'normal'.
 			if(1)
 				pixel_y = -10

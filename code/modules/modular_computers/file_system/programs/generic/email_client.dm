@@ -38,10 +38,10 @@
 		TME.check_for_new_messages(1)
 
 /datum/computer_file/program/email_client/proc/new_mail_notify()
-	var/turf/T = get_turf(computer) // Because visible_message is being a butt
+	var/turf/T = get_turf(computer()) // Because visible_message is being a butt
 	if(T)
-		T.visible_message(span_notice("[computer] beeps softly, indicating a new email has been received."))
-	playsound(computer, 'sound/misc/server-ready.ogg', 100, 0)
+		T.visible_message(span_notice("[computer()] beeps softly, indicating a new email has been received."))
+	playsound(computer(), 'sound/misc/server-ready.ogg', 100, 0)
 
 /datum/computer_file/program/email_client/process_tick()
 	..()

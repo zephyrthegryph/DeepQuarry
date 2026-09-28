@@ -20,8 +20,8 @@
 	if(..())
 		return TRUE
 
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/RHDD = computer.portable_drive()
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	var/obj/item/computer_hardware/hard_drive/RHDD = computer().portable_drive()
 
 	switch(action)
 		if("PRG_openfile")
@@ -57,7 +57,7 @@
 				return
 			if(!open_file)
 				return
-			var/datum/computer_file/data/F = computer.find_file_by_uid(open_file)
+			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
 			if(!F || !istype(F))
 				return
 			if(F.do_not_edit && (tgui_alert(ui.user, "WARNING: This file is not compatible with editor. Editing it may result in permanently corrupted formatting or damaged data consistency. Edit anyway?", "Incompatible File", list("No", "Yes")) != "Yes"))
@@ -87,20 +87,20 @@
 				return
 			if(!open_file)
 				return
-			var/datum/computer_file/data/F = computer.find_file_by_uid(open_file)
+			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
 			if(!F || !istype(F))
 				return
-			if(!computer.nano_printer)
+			if(!computer().nano_printer)
 				error = "Missing Hardware: Your computer does not have required hardware to complete this operation."
 				return TRUE
-			if(!computer.nano_printer.print_text(pencode2html(F.stored_data)))
+			if(!computer().nano_printer.print_text(pencode2html(F.stored_data)))
 				error = "Hardware error: Printer was unable to print the file. It may be out of paper."
 				return TRUE
 			return TRUE
 		if("PRG_deletefile")
 			if(!HDD)
 				return
-			var/datum/computer_file/file = computer.find_file_by_uid(params["uid"])
+			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
 			if(!file || file.undeletable)
 				return
 			file.holder.remove_file(file)
@@ -108,7 +108,7 @@
 		if("PRG_rename")
 			if(!HDD)
 				return
-			var/datum/computer_file/file = computer.find_file_by_uid(params["uid"])
+			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
 			if(!file)
 				return
 			var/newname = params["new_name"]
@@ -150,13 +150,13 @@
 /datum/computer_file/program/filemanager/tgui_data(mob/user)
 	var/list/data = get_header_data()
 
-	var/obj/item/computer_hardware/hard_drive/HDD = computer.hard_drive
-	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer.portable_drive()
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	var/obj/item/computer_hardware/hard_drive/portable/RHDD = computer().portable_drive()
 
 	data["error"] = null
 	if(error)
 		data["error"] = error
-	if(!computer || !HDD)
+	if(!computer() || !HDD)
 		data["error"] = "I/O ERROR: Unable to access hard drive."
 
 	data["filedata"] = null
@@ -168,10 +168,10 @@
 	if(open_file)
 		var/datum/computer_file/data/file
 
-		if(!computer || (!computer.hard_drive && computer.portable_drive()))
+		if(!computer() || (!computer().hard_drive && computer().portable_drive()))
 			data["error"] = "I/O ERROR: Unable to access hard drive."
 		else
-			file = computer.find_file_by_uid(open_file)
+			file = computer().find_file_by_uid(open_file)
 			if(!istype(file))
 				data["error"] = "I/O ERROR: Unable to open file."
 			else

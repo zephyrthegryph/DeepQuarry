@@ -1,4 +1,4 @@
-/client/var/datum/ticket/current_ticket	//the current ticket the (usually) not-admin client is dealing with
+/client/var/current_ticket_handle	//the current ticket the (usually) not-admin client is dealing with
 /client/var/selected_ticket_handle	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
 
 /proc/get_ahelp_channel()
@@ -154,17 +154,17 @@ REF_OWNED_LIST(/datum/tickets, list("active_tickets", "closed_tickets", "resolve
 
 //Reassociate still open ticket if one exists
 /datum/tickets/proc/ClientLogin(client/C, only_alert = FALSE)
-	C.current_ticket = CKey2ActiveTicket(C.ckey)
-	if(C.current_ticket)
+	C.current_ticket_handle = om_handle(CKey2ActiveTicket(C.ckey))
+	if(C.current_ticket())
 		if(!only_alert)
-			C.current_ticket.AddInteraction("Client reconnected.")
-		C.current_ticket.initiator = C
-		C.current_ticket.initiator.mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
+			C.current_ticket().AddInteraction("Client reconnected.")
+		C.current_ticket().initiator = C
+		C.current_ticket().initiator.mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
 //Dissasociate ticket
 /datum/tickets/proc/ClientLogout(client/C)
-	if(C.current_ticket)
-		var/datum/ticket/T = C.current_ticket
+	if(C.current_ticket())
+		var/datum/ticket/T = C.current_ticket()
 		T.AddInteraction("Client disconnected.")
 		T.initiator?.mob?.clear_alert("open ticket")
 		T.initiator = null
@@ -263,11 +263,11 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	initiator = C
 	initiator_ckey = initiator.ckey
 	initiator_key_name = key_name(initiator, FALSE, TRUE)
-	if(initiator.current_ticket)	//This is a bug
+	if(initiator.current_ticket())	//This is a bug
 		log_admin("Ticket erroneously left open by code, closing...")
-		initiator.current_ticket.AddInteraction("Ticket erroneously left open by code")
-		initiator.current_ticket.Close(usr)
-	initiator.current_ticket = src
+		initiator.current_ticket().AddInteraction("Ticket erroneously left open by code")
+		initiator.current_ticket().Close(usr)
+	initiator.current_ticket_handle = om_handle(src)
 
 	var/parsed_message = keywords_lookup(msg)
 
@@ -413,7 +413,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	state = AHELP_ACTIVE
 	closed_at = null
 	if(initiator)
-		initiator.current_ticket = src
+		initiator.current_ticket_handle = om_handle(src)
 
 	var/admin_reopener_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_purple("Reopened by [admin_reopener_name]"))
@@ -433,8 +433,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	closed_at = world.time
 	QDEL_NULL(statclick)
 	GLOB.tickets.active_tickets -= src
-	if(initiator && initiator.current_ticket == src)
-		initiator.current_ticket = null
+	if(initiator && initiator.current_ticket() == src)
+		initiator.current_ticket_handle = null
 
 //Mark open ticket as closed/meme
 /datum/ticket/proc/Close(user, silent = FALSE)
@@ -648,9 +648,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 		C = Mob.client
 	else
 		C = what
-	if(istype(C) && C.current_ticket)
-		C.current_ticket.AddInteraction(message)
-		return C.current_ticket
+	if(istype(C) && C.current_ticket())
+		C.current_ticket().AddInteraction(message)
+		return C.current_ticket()
 	if(istext(what))	//ckey
 		var/datum/ticket/T = GLOB.tickets.CKey2ActiveTicket(what)
 		if(T)
@@ -760,3 +760,7 @@ REF_OWNED(/datum/ticket, "statclick")
 /// LC-refs: the current ticket being viewed in the Tickets Panel (usually) admin/mentor client -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/selected_ticket() as /datum/ticket
 	return om_resolve(selected_ticket_handle)
+
+/// LC-refs: the current ticket the (usually) not-admin client is dealing with -- an OM handle (om_handle()), so it reads null once that is deleted.
+/client/proc/current_ticket() as /datum/ticket
+	return om_resolve(current_ticket_handle)

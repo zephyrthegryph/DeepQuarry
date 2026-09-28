@@ -31,7 +31,7 @@
 /datum/industry/proc/generateInCharacterProductArticle(product_name, datum/stock/S)
 	var/datum/article/A = new
 	var/list/add_tokens = list("company_name" = S.name, "product_name" = product_name, "outlet" = A.outlet, "author" = A.author)
-	A.about = S
+	A.about_handle = om_handle(S)
 	A.opinion = rand(-1, 1)
 
 	A.subtitle = A.detokenize(pick(subtitle_templates), tokens, add_tokens)

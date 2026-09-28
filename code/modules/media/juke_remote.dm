@@ -8,25 +8,25 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bspeaker"
 
-	var/obj/machinery/media/jukebox/paired_juke
+	var/paired_juke_handle
 	var/our_area_handle
 
 // Pairing
 /obj/item/juke_remote/proc/pair_juke(obj/machinery/media/jukebox/juke, mob/user)
-	if(paired_juke)
-		to_chat(user, span_warning("The [src] is already paired to [paired_juke == juke ? "that" : "a different"] jukebox."))
+	if(paired_juke())
+		to_chat(user, span_warning("The [src] is already paired to [paired_juke() == juke ? "that" : "a different"] jukebox."))
 		return
-	paired_juke = juke
-	LAZYDISTINCTADD(paired_juke.remotes, src)
+	paired_juke_handle = om_handle(juke)
+	LAZYDISTINCTADD(paired_juke().remotes, src)
 	to_chat(user, span_notice("You pair the [src] to the [juke]."))
 	icon_state = "[initial(icon_state)]_ready"
 
 /obj/item/juke_remote/proc/unpair_juke(mob/user)
-	if(!paired_juke)
+	if(!paired_juke())
 		to_chat(user, span_warning("The [src] isn't paired to anything."))
 		return
-	LAZYREMOVE(paired_juke.remotes, src)
-	paired_juke = null
+	LAZYREMOVE(paired_juke().remotes, src)
+	paired_juke_handle = null
 	icon_state = initial(icon_state)
 	unanchor()
 	detach_area()
@@ -48,7 +48,7 @@
 // Deploying
 /obj/item/juke_remote/Moved(atom/old_loc, direction, forced)
 	. = ..()
-	if(paired_juke && !anchored && isturf(loc))
+	if(paired_juke() && !anchored && isturf(loc))
 		anchor()
 
 /obj/item/juke_remote/attack_hand(mob/living/user)
@@ -62,7 +62,7 @@
 	anchored = TRUE
 	if(attach_area())
 		visible_message("[src] attaches to the nearest surface and bounces happily, ready to pump tunes.", runemessage = "clank")
-		if(paired_juke) // we were able to claim the area
+		if(paired_juke()) // we were able to claim the area
 			icon_state = "[initial(icon_state)]_playing"
 		else
 			icon_state = "[initial(icon_state)]"
@@ -71,7 +71,7 @@
 	detach_area()
 	anchored = FALSE
 	visible_message("[src] detaches from it's mounting surface, able to be moved once again.", runemessage = "clunk")
-	if(paired_juke)
+	if(paired_juke())
 		icon_state = "[initial(icon_state)]_ready"
 	else
 		icon_state = "[initial(icon_state)]"
@@ -79,26 +79,26 @@
 // Area handling
 /obj/item/juke_remote/proc/attach_area()
 	var/area/A = get_area(src)
-	if(!A || !paired_juke)
+	if(!A || !paired_juke())
 		log_mapping("## ERROR Jukebox remote at [x],[y],[z] without paired juke tried to bind to an area.")
 		return FALSE
-	if(A.media_source)
+	if(A.media_source())
 		return FALSE // Already has a media source, won't overpower it with porta speaker
 	our_area_handle = om_handle(A)
-	A.media_source = paired_juke
+	A.media_source_handle = om_handle(paired_juke())
 	update_music()
 	return TRUE
 
 /obj/item/juke_remote/proc/detach_area()
-	if(!our_area() || (paired_juke && our_area().media_source != paired_juke))
+	if(!our_area() || (paired_juke() && our_area().media_source() != paired_juke()))
 		return
-	our_area().media_source = null
+	our_area().media_source_handle = null
 	update_music()
 	our_area_handle = null
 
 // Music handling
 /obj/item/juke_remote/proc/update_music()
-	if(!our_area() || !paired_juke)
+	if(!our_area() || !paired_juke())
 		return
 	// Send update to clients.
 	for(var/mob/M in mobs_in_area(our_area()))
@@ -108,3 +108,7 @@
 /// LC-refs: the our_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/juke_remote/proc/our_area() as /area
 	return om_resolve(our_area_handle)
+
+/// LC-refs: the paired_juke this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/juke_remote/proc/paired_juke() as /obj/machinery/media/jukebox
+	return om_resolve(paired_juke_handle)

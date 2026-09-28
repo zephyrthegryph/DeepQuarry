@@ -11,12 +11,12 @@
 
 /datum/nifsoft/apc_recharge/activate()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		apc = locate(/obj/machinery/power/apc) in get_step(H,H.dir)
 		if(!apc)
 			apc = locate(/obj/machinery/power/apc) in get_step(H,0)
 		if(!apc)
-			nif.notify("You must be facing an APC to connect to.",TRUE)
+			nif().notify("You must be facing an APC to connect to.",TRUE)
 			om_after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
@@ -28,13 +28,13 @@
 
 /datum/nifsoft/apc_recharge/life()
 	if((. = ..()))
-		var/mob/living/carbon/human/H = nif.human
+		var/mob/living/carbon/human/H = nif().human
 		if(apc && (get_dist(H,apc) <= 1) && H.nutrition < 440) // 440 vs 450, life() happens before we get here so it'll never be EXACTLY 450
 			H.nutrition = min(H.nutrition+10, 450)
 			apc.drain_power(7000/450*10) //This is from the large rechargers. No idea what the math is.
 			return TRUE
 		else
-			nif.notify("APC charging has ended.")
+			nif().notify("APC charging has ended.")
 			H.visible_message(span_warning("[H]'s snakelike tendrils whip back into their body from \the [apc]."),span_notice("The APC connector tendrils return to your body."))
 			deactivate()
 			return FALSE
@@ -64,7 +64,7 @@
 /datum/nifsoft/heatsinks/activate()
 	if((. = ..()))
 		if(used >= 1500)
-			nif.notify("Heat sinks not safe to operate again yet! Max 75% on activation.",TRUE)
+			nif().notify("Heat sinks not safe to operate again yet! Max 75% on activation.",TRUE)
 			om_after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
@@ -79,12 +79,12 @@
 
 		//Being used, and running out.
 		else if(active && ++used == 2000)
-			nif.notify("Heat sinks overloaded! Shutting down!",TRUE)
+			nif().notify("Heat sinks overloaded! Shutting down!",TRUE)
 			deactivate()
 
 		//Being cleaned, and finishing empty.
 		else if(!active && --used == 0)
-			nif.notify("Heat sinks re-chilled.")
+			nif().notify("Heat sinks re-chilled.")
 
 /datum/nifsoft/compliance
 	name = "Compliance Module"
@@ -103,14 +103,14 @@
 
 /datum/nifsoft/compliance/activate()
 	if((. = ..()))
-		to_chat(nif.human,span_danger("You are compelled to follow these rules:") + "\n" + span_notify("[laws]"))
+		to_chat(nif().human,span_danger("You are compelled to follow these rules:") + "\n" + span_notify("[laws]"))
 
 /datum/nifsoft/compliance/install()
 	if((. = ..()))
-		to_chat(nif.human,span_danger("You feel suddenly compelled to follow these rules:") + "\n" + span_notify("[laws]"))
+		to_chat(nif().human,span_danger("You feel suddenly compelled to follow these rules:") + "\n" + span_notify("[laws]"))
 
 /datum/nifsoft/compliance/uninstall()
-	nif.notify("ERROR! Unable to comply!",TRUE)
+	nif().notify("ERROR! Unable to comply!",TRUE)
 	return FALSE //NOPE.
 
 /datum/nifsoft/compliance/stat_text()
@@ -127,14 +127,14 @@
 	if((. = ..()))
 		var/new_size = tgui_input_number(usr, "Put the desired size (25-200%), or (1-600%) in dormitory areas.", "Set Size", 200, 600, 1)
 
-		if (!nif.human.size_range_check(new_size))
+		if (!nif().human.size_range_check(new_size))
 			if(new_size)
-				to_chat(nif.human,span_notice("The safety features of the NIF Program prevent you from choosing this size."))
+				to_chat(nif().human,span_notice("The safety features of the NIF Program prevent you from choosing this size."))
 			return
 		else
-			if(nif.human.resize(new_size/100, uncapped=nif.human.has_large_resize_bounds(), ignore_prefs = TRUE))
-				to_chat(nif.human,span_notice("You set the size to [new_size]%"))
-				nif.human.visible_message(span_warning("Swirling grey mist envelops [nif.human] as they change size!"),span_notice("Swirling streams of nanites wrap around you as you change size!"))
+			if(nif().human.resize(new_size/100, uncapped=nif().human.has_large_resize_bounds(), ignore_prefs = TRUE))
+				to_chat(nif().human,span_notice("You set the size to [new_size]%"))
+				nif().human.visible_message(span_warning("Swirling grey mist envelops [nif().human] as they change size!"),span_notice("Swirling streams of nanites wrap around you as you change size!"))
 		om_after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/sizechange/deactivate(force = FALSE)
@@ -153,23 +153,23 @@
 
 /datum/nifsoft/worldbend/activate()
 	if((. = ..()))
-		var/list/justme = list(nif.human)
+		var/list/justme = list(nif().human)
 		for(var/human in REGISTRY_MEMBERS(REGISTRY_HUMANS))
-			if(human == nif.human)
+			if(human == nif().human)
 				continue
 			var/mob/living/carbon/human/H = human
 			H.display_alt_appearance("animals", justme)
-			registry_join(REGISTRY_ALT_FARMANIMALS, nif.human)
+			registry_join(REGISTRY_ALT_FARMANIMALS, nif().human)
 
 /datum/nifsoft/worldbend/deactivate(force = FALSE)
 	if((. = ..()))
-		var/list/justme = list(nif.human)
+		var/list/justme = list(nif().human)
 		for(var/human in REGISTRY_MEMBERS(REGISTRY_HUMANS))
-			if(human == nif.human)
+			if(human == nif().human)
 				continue
 			var/mob/living/carbon/human/H = human
 			H.hide_alt_appearance("animals", justme)
-			registry_leave(REGISTRY_ALT_FARMANIMALS, nif.human)
+			registry_leave(REGISTRY_ALT_FARMANIMALS, nif().human)
 
 /datum/nifsoft/malware
 	name = "Cool Kidz Toolbar"
@@ -185,7 +185,7 @@
 
 /datum/nifsoft/malware/activate()
 	if((. = ..()))
-		to_chat(nif.human,span_danger("Runtime error in 15_misc.dm, line 191."))
+		to_chat(nif().human,span_danger("Runtime error in 15_misc.dm, line 191."))
 
 /datum/nifsoft/malware/install()
 	if((. = ..()))
@@ -193,6 +193,6 @@
 
 /datum/nifsoft/malware/life()
 	if((. = ..()))
-		if(nif.human.client && world.time - last_ads > rand(10 MINUTES, 15 MINUTES) && prob(1))
+		if(nif().human.client && world.time - last_ads > rand(10 MINUTES, 15 MINUTES) && prob(1))
 			last_ads = world.time
-			nif.human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
+			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)

@@ -26,13 +26,13 @@
 	if(!A)
 		return
 	// Check if there's a media source already.
-	if(A.media_source && A.media_source != src) // If it does, the new media source replaces it. basically, the last media source arrived gets played on top.
-		A.media_source.disconnect_media_source() // You can turn a media source off and on for it to come back on top.
-		A.media_source = src
+	if(A.media_source() && A.media_source() != src) // If it does, the new media source replaces it. basically, the last media source arrived gets played on top.
+		A.media_source().disconnect_media_source() // You can turn a media source off and on for it to come back on top.
+		A.media_source_handle = om_handle(src)
 		master_area_handle = om_handle(A)
 		return
 	else
-		A.media_source = src
+		A.media_source_handle = om_handle(src)
 	master_area_handle = om_handle(A)
 
 /obj/machinery/media/proc/disconnect_media_source()
@@ -42,11 +42,11 @@
 		master_area_handle = null
 		return
 	// Check if there's a media source already.
-	if(A && A.media_source && A.media_source != src)
+	if(A && A.media_source() && A.media_source() != src)
 		master_area_handle = null
 		return
 	// Update Media Source.
-	A.media_source = null
+	A.media_source_handle = null
 	// Clients
 	for(var/mob/M as anything in mobs_in_area(A))
 		M.update_music()

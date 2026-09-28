@@ -11,19 +11,19 @@
 
 /datum/nifsoft/commlink/install()
 	if((. = ..()))
-		nif.comm = new(nif,src)
-		if(nif.human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
-			nif.comm.initialize_exonet(nif.human) //no harm in running this twice.
+		nif().comm = new(nif(),src)
+		if(nif().human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
+			nif().comm.initialize_exonet(nif().human) //no harm in running this twice.
 
 /datum/nifsoft/commlink/uninstall()
-	var/obj/item/nif/lnif = nif //Awkward. Parent clears it in an attempt to clean up.
+	var/obj/item/nif/lnif = nif() //Awkward. Parent clears it in an attempt to clean up.
 	if((. = ..()) && lnif)
 		QDEL_NULL(lnif.comm)
 
 /datum/nifsoft/commlink/activate()
 	if((. = ..()))
-		nif.comm.initialize_exonet(nif.human)
-		nif.comm.tgui_interact(nif.human, custom_state = GLOB.tgui_commlink_state)
+		nif().comm.initialize_exonet(nif().human)
+		nif().comm.tgui_interact(nif().human, custom_state = GLOB.tgui_commlink_state)
 		om_after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/commlink/stat_text()

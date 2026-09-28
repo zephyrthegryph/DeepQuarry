@@ -244,12 +244,12 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 			travel_time = "[ (route.travel_time * travel_modifier) / (1 MINUTE)] minute\s"
 		else
 			travel_time = "[ (route.travel_time * travel_modifier) / (1 SECOND)] second\s"
-		routes.Add(list(list("name" = html_encode(capitalize(route.display_route(shuttle.web_master.current_destination) )), "index" = i, "travel_time" = travel_time)))
+		routes.Add(list(list("name" = html_encode(capitalize(route.display_route(shuttle.web_master.current_destination()) )), "index" = i, "travel_time" = travel_time)))
 
-	var/shuttle_location = shuttle.web_master.current_destination.name // Destination related, not loc.
+	var/shuttle_location = shuttle.web_master.current_destination().name // Destination related, not loc.
 	var/future_location = null
-	if(shuttle.web_master.future_destination)
-		future_location = shuttle.web_master.future_destination.name
+	if(shuttle.web_master.future_destination())
+		future_location = shuttle.web_master.future_destination().name
 
 	var/shuttle_state
 	switch(shuttle.moving_status)
@@ -358,7 +358,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 				return
 
 			var/index = text2num(params["traverse"])
-			var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination.routes, index)
+			var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination().routes, index)
 			if(!istype(new_route))
 				message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
 				return
@@ -366,7 +366,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 			if(!check_docking(ui.user, WS))
 				return TRUE
 
-			var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination)
+			var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination())
 			if(!istype(target_destination))
 				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 				return
@@ -375,7 +375,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 			if(!can_move(WS, ui.user))
 				return
 
-			WS.web_master.future_destination = target_destination
+			WS.web_master.future_destination_handle = om_handle(target_destination)
 			to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
 			WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 

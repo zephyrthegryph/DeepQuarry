@@ -4,7 +4,7 @@
 	template = "pda_supply_orders"
 
 /datum/data/pda/app/supply_orders/update_ui(mob/living/user, list/data)
-	var/datum/money_account/account = pda.id ? get_account(pda.id.associated_account_number) : null
+	var/datum/money_account/account = pda().id ? get_account(pda().id.associated_account_number) : null
 	var/list/orders = list()
 	if(account)
 		for(var/index = length(SSsupply.order_history), index >= 1, index--)
@@ -28,9 +28,9 @@
 /datum/data/pda/app/supply_orders/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(action != "cancel_personal_order" || pda.loc != ui.user || !pda.id)
+	if(action != "cancel_personal_order" || pda().loc != ui.user || !pda().id)
 		return FALSE
-	var/datum/money_account/account = get_account(pda.id.associated_account_number)
+	var/datum/money_account/account = get_account(pda().id.associated_account_number)
 	var/datum/supply_order/order = locate(params["ref"])
 	if(!(order in SSsupply.order_history))
 		return FALSE

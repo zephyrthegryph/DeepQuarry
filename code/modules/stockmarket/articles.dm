@@ -28,7 +28,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	var/spacetime = ""
 	var/opinion = 0
 	var/ticks = 0
-	var/datum/stock/about = null
+	var/about_handle
 	var/outlet = ""
 	var/static/list/outlets = list()
 	var/static/list/default_tokens = list( \
@@ -123,3 +123,7 @@ GLOBAL_LIST_EMPTY(FrozenAccounts)
 	for (var/I in T_list)
 		token_string = replacetext(token_string, "%[I]%", pick(T_list[I]))
 	return ucfirst(token_string)
+
+/// LC-refs: the about this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/article/proc/about() as /datum/stock
+	return om_resolve(about_handle)

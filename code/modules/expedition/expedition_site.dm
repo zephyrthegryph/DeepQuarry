@@ -30,14 +30,14 @@
 	/// Mobs that have deployed here (for reward payout).
 	var/list/participants
 	/// The short-jump craft assigned to this expedition.
-	var/datum/shuttle/autodock/overmap/assigned_shuttle
+	var/assigned_shuttle_handle
 	/// Authoritative vessel assignment; survives console replacement or deletion.
 	var/assigned_flight_vessel_handle
 	/// The craft's control console, used as the physical payout point.
 	var/origin_console_handle
 	var/payout_turf_handle
 	/// Overmap destination and landing waypoint owned by this site.
-	var/obj/effect/overmap/visitable/sector/expedition/overmap_sector
+	var/overmap_sector_handle
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/landing_waypoint
 	/// Stable destination registry key used before and after physical generation.
 	var/flight_destination_id
@@ -103,3 +103,11 @@ REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 /// LC-refs: the origin_console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_site/proc/origin_console() as /obj/machinery/computer/shuttle_control/explore
 	return om_resolve(origin_console_handle)
+
+/// LC-refs: the overmap_sector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_site/proc/overmap_sector() as /obj/effect/overmap/visitable/sector/expedition
+	return om_resolve(overmap_sector_handle)
+
+/// LC-refs: the assigned_shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
+	return om_resolve(assigned_shuttle_handle)

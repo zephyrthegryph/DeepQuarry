@@ -27,13 +27,13 @@
 	icon_state = "sector"
 	known = TRUE
 	in_space = FALSE
-	var/datum/expedition_site/site
+	var/site_handle
 
 // LIFECYCLE: its site forgets its sector.
 /obj/effect/overmap/visitable/sector/expedition/Destroy()
-	if(site && site.overmap_sector == src)
-		site.overmap_sector = null
-	site = null
+	if(site() && site().overmap_sector() == src)
+		site().overmap_sector_handle = null
+	site_handle = null
 	return ..()
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition
@@ -43,7 +43,7 @@
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/shuttle_arrived(datum/shuttle/shuttle)
 	. = ..()
-	if(!site() || shuttle != site().assigned_shuttle)
+	if(!site() || shuttle != site().assigned_shuttle())
 		return
 	site().status = EXP_STATUS_ACTIVE
 	site().deployed_at = world.time
@@ -95,4 +95,8 @@ REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/proc/site() as /datum/expedition_site
+	return om_resolve(site_handle)
+
+/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/overmap/visitable/sector/expedition/proc/site() as /datum/expedition_site
 	return om_resolve(site_handle)

@@ -10,8 +10,8 @@
 /datum/data/pda/messenger_plugin/virus/user_act(mob/user, obj/item/pda/P)
 	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 
-	if(M && !M.toff && pda.cartridge.charges > 0)
-		pda.cartridge.charges--
+	if(M && !M.toff && pda().cartridge.charges > 0)
+		pda().cartridge.charges--
 		return 1
 	return 0
 
@@ -49,20 +49,20 @@
 	if(.)
 		var/difficulty = 0
 
-		if(pda.cartridge)
-			difficulty += length(pda.cartridge.programs) / 2
+		if(pda().cartridge)
+			difficulty += length(pda().cartridge.programs) / 2
 		else
 			difficulty += 2
 
 		if(!P.detonate || P.hidden_uplink)
 			user.show_message(span_warning("The target PDA does not seem to respond to the detonation command."), 1)
-			pda.cartridge.charges++
+			pda().cartridge.charges++
 		else if(prob(difficulty * 12))
-			user.show_message(span_warning("An error flashes on your [pda]."), 1)
+			user.show_message(span_warning("An error flashes on your [pda()]."), 1)
 		else if(prob(difficulty * 3))
-			user.show_message(span_danger("Energy feeds back into your [pda]!"), 1)
-			pda.close(user)
-			pda.explode()
+			user.show_message(span_danger("Energy feeds back into your [pda()]!"), 1)
+			pda().close(user)
+			pda().explode()
 			log_admin("[key_name(user)] just attempted to blow up [P] with the Detomatix cartridge but failed, blowing themselves up")
 			message_admins("[key_name_admin(user)] just attempted to blow up [P] with the Detomatix cartridge but failed, blowing themselves up", 1)
 		else

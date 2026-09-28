@@ -45,8 +45,8 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	var/max_diffstep = 6
 
 	//The current mining zone that the shuttle goes to and whatnot
-	var/datum/rogue/zonemaster/current_zone = null
-	var/datum/rogue/zonemaster/previous_zone = null
+	var/current_zone_handle
+	var/previous_zone_handle
 
 	// The world.time at which the scanner was last run (for cooldown)
 	var/last_scan = 0
@@ -199,3 +199,11 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 			if(ZM_oldest) ZM_oldest.clean_zone()
 
 	return ZM_target
+
+/// LC-refs: the current_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/rogue/proc/current_zone() as /datum/rogue/zonemaster
+	return om_resolve(current_zone_handle)
+
+/// LC-refs: the previous_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/rogue/proc/previous_zone() as /datum/rogue/zonemaster
+	return om_resolve(previous_zone_handle)

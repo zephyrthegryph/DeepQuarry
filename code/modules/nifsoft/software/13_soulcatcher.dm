@@ -20,7 +20,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 /datum/nifsoft/soulcatcher/activate()
 	if((. = ..()))
-		show_settings(nif.human)
+		show_settings(nif().human)
 		om_after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/soulcatcher/deactivate(force = FALSE)
@@ -33,44 +33,44 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 /datum/nifsoft/soulcatcher/install()
 	if((. = ..()))
 		//nif.set_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)	//Only required on install if the flag is in the default setting_flags list defined few lines above.
-		if(nif?.human)
-			add_verb(nif.human, /mob/proc/nsay)
-			add_verb(nif.human, /mob/proc/nme)
+		if(nif()?.human)
+			add_verb(nif().human, /mob/proc/nsay)
+			add_verb(nif().human, /mob/proc/nme)
 
 /datum/nifsoft/soulcatcher/uninstall()
 	QDEL_LIST_NULL(brainmobs)
-	if((. = ..()) && nif?.human) //Sometimes NIFs are deleted outside of a human
-		remove_verb(nif.human, /mob/proc/nsay)
-		remove_verb(nif.human, /mob/proc/nme)
+	if((. = ..()) && nif()?.human) //Sometimes NIFs are deleted outside of a human
+		remove_verb(nif().human, /mob/proc/nsay)
+		remove_verb(nif().human, /mob/proc/nme)
 
 /datum/nifsoft/soulcatcher/proc/save_settings()
-	if(!nif)
+	if(!nif())
 		return
-	nif.save_data["[list_pos]"] = inside_flavor
+	nif().save_data["[list_pos]"] = inside_flavor
 	return TRUE
 
 /datum/nifsoft/soulcatcher/proc/load_settings()
-	if(!nif)
+	if(!nif())
 		return
-	var/load = nif.save_data["[list_pos]"]
+	var/load = nif().save_data["[list_pos]"]
 	if(load)
 		inside_flavor = load
 	return TRUE
 
 /datum/nifsoft/soulcatcher/proc/notify_into(message)
-	var/sound = nif.good_sound
+	var/sound = nif().good_sound
 
 	message = " " + span_bold("Soulcatcher") + " displays, \"" + span_notice(span_nif("[message]")) + "\""
 
-	to_chat(nif.human,
+	to_chat(nif().human,
 			type = MESSAGE_TYPE_NIF,
-			html = span_nif(span_bold("\[[icon2html(nif.big_icon, nif.human)]NIF\]") + message))
-	nif.human << sound
+			html = span_nif(span_bold("\[[icon2html(nif().big_icon, nif().human)]NIF\]") + message))
+	nif().human << sound
 
 	for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 		to_chat(CS,
 				type = MESSAGE_TYPE_NIF,
-				html = span_nif(span_bold("\[[icon2html(nif.big_icon, CS.client)]NIF\]") + message))
+				html = span_nif(span_bold("\[[icon2html(nif().big_icon, CS.client)]NIF\]") + message))
 		CS << sound
 
 /datum/nifsoft/soulcatcher/proc/say_into(message, mob/living/sender, mob/eyeobj, whisper)
@@ -90,21 +90,21 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	else
 		var/speak_verb = "speaks"
 		message = " " + span_bold("[sender_name]") + " [speak_verb], \"[message]\""
-		to_chat(nif.human,
+		to_chat(nif().human,
 				type = MESSAGE_TYPE_NIF,
-				html = span_nif(span_bold("\[[icon2html(nif.big_icon, nif.human.client)]NIF\]") + message))
+				html = span_nif(span_bold("\[[icon2html(nif().big_icon, nif().human.client)]NIF\]") + message))
 		if(whisper)
 			speak_verb = "whispers"
 			to_chat(sender,
 					type = MESSAGE_TYPE_NIF,
-					html = span_nif(span_bold("\[[icon2html(nif.big_icon, sender.client)]NIF\]") + span_italics(message)))
+					html = span_nif(span_bold("\[[icon2html(nif().big_icon, sender.client)]NIF\]") + span_italics(message)))
 		else
 			for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 				to_chat(CS,
 						type = MESSAGE_TYPE_NIF,
-						html = span_nif(span_bold("\[[icon2html(nif.big_icon, CS.client)]NIF\]") + message))
+						html = span_nif(span_bold("\[[icon2html(nif().big_icon, CS.client)]NIF\]") + message))
 
-	sender.log_talk("NSAY (NIF:[nif.human.real_name]): [message]", LOG_SAY, color="#ff00c8")
+	sender.log_talk("NSAY (NIF:[nif().human.real_name]): [message]", LOG_SAY, color="#ff00c8")
 
 /datum/nifsoft/soulcatcher/proc/emote_into(message, mob/living/sender, mob/eyeobj, whisper)
 	var/sender_name = eyeobj ? eyeobj.name : sender.name
@@ -119,20 +119,20 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	//Not AR Projecting
 	else
 		message = " " + span_bold("[sender_name]") + " [message]"
-		to_chat(nif.human,
+		to_chat(nif().human,
 				type = MESSAGE_TYPE_NIF,
-				html = span_nif(span_bold("\[[icon2html(nif.big_icon,nif.human.client)]NIF\]") + message))
+				html = span_nif(span_bold("\[[icon2html(nif().big_icon,nif().human.client)]NIF\]") + message))
 		if(whisper)
 			to_chat(sender,
 					type = MESSAGE_TYPE_NIF,
-					html = span_nif(span_bold("\[[icon2html(nif.big_icon,sender.client)]NIF\]") + span_italics(message)))
+					html = span_nif(span_bold("\[[icon2html(nif().big_icon,sender.client)]NIF\]") + span_italics(message)))
 		else
 			for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 				to_chat(CS,
 						type = MESSAGE_TYPE_NIF,
-						html = span_nif(span_bold("\[[icon2html(nif.big_icon,CS.client)]NIF\]") + message))
+						html = span_nif(span_bold("\[[icon2html(nif().big_icon,CS.client)]NIF\]") + message))
 
-	sender.log_message("NME (NIF:[nif.human.real_name]): [message]", LOG_EMOTE, color="#ff00c8")
+	sender.log_message("NME (NIF:[nif().human.real_name]): [message]", LOG_EMOTE, color="#ff00c8")
 
 /datum/nifsoft/soulcatcher/proc/show_settings(mob/living/carbon/human/H)
 	set waitfor = FALSE
@@ -145,26 +145,26 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	"AR Projecting \[[setting_flags & NIF_SC_PROJECTING ? "Enabled" : "Disabled"]\]" = NIF_SC_PROJECTING,
 	"Design Inside",
 	"Erase Contents")
-	var/choice = tgui_input_list(nif.human,"Select a setting to modify:","Soulcatcher NIFSoft", settings_list)
+	var/choice = tgui_input_list(nif().human,"Select a setting to modify:","Soulcatcher NIFSoft", settings_list)
 	if(choice in settings_list)
 		switch(choice)
 
 			if("Design Inside")
-				var/new_flavor = tgui_input_text(nif.human, "Type what the prey sees after being 'caught'. This will be \
+				var/new_flavor = tgui_input_text(nif().human, "Type what the prey sees after being 'caught'. This will be \
 				printed after an intro ending with: \"Around you, you see...\" to the prey. If you already \
 				have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", \
 				"VR Environment", html_decode(inside_flavor), MAX_MESSAGE_LEN*2, TRUE, prevent_enter = TRUE)
 				inside_flavor = new_flavor
-				nif.notify("Updating VR environment...")
+				nif().notify("Updating VR environment...")
 				for(var/mob/living/carbon/brain/caught_soul/CS as anything in brainmobs)
 					to_chat(CS,span_notice("Your surroundings change to...") + "\n[inside_flavor]")
 				save_settings()
 				return TRUE
 
 			if("Erase Contents")
-				var/mob/living/carbon/brain/caught_soul/brainpick = tgui_input_list(nif.human,"Select a mind to delete:","Erase Mind", brainmobs)
+				var/mob/living/carbon/brain/caught_soul/brainpick = tgui_input_list(nif().human,"Select a mind to delete:","Erase Mind", brainmobs)
 
-				var/warning = tgui_alert(nif.human,"Are you SURE you want to erase \"[brainpick]\"?","Erase Mind",list("CANCEL","DELETE"))
+				var/warning = tgui_alert(nif().human,"Are you SURE you want to erase \"[brainpick]\"?","Erase Mind",list("CANCEL","DELETE"))
 				if(warning == "DELETE")
 					brainmobs -= brainpick
 					qdel(brainpick)
@@ -189,14 +189,14 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 		if(NIF_SC_CATCHING_ME)
 			if(setting_flags & NIF_SC_CATCHING_ME)
-				nif.set_flag(NIF_O_SCMYSELF,NIF_FLAGS_OTHER)
+				nif().set_flag(NIF_O_SCMYSELF,NIF_FLAGS_OTHER)
 			else
-				nif.clear_flag(NIF_O_SCMYSELF,NIF_FLAGS_OTHER)
+				nif().clear_flag(NIF_O_SCMYSELF,NIF_FLAGS_OTHER)
 		if(NIF_SC_CATCHING_OTHERS)
 			if(setting_flags & NIF_SC_CATCHING_OTHERS)
-				nif.set_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)
+				nif().set_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)
 			else
-				nif.clear_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)
+				nif().clear_flag(NIF_O_SCOTHERS,NIF_FLAGS_OTHER)
 		if(NIF_SC_ALLOW_EARS)
 			if(setting_flags & NIF_SC_ALLOW_EARS)
 				for(var/mob/living/carbon/brain/caught_soul/brainmob as anything in brainmobs)
@@ -227,8 +227,8 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	if(!(M.soulcatcher_pref_flags & SOULCATCHER_ALLOW_CAPTURE) && !isobserver(M)) return // Bypass pref check for observer join
 
 	//Create a new brain mob
-	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif)
-	brainmob.nif = nif
+	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
+	brainmob.nif_handle = om_handle(nif())
 	brainmob.soulcatcher_handle = om_handle(src)
 	brainmob.container = src
 	brainmob.stat = 0
@@ -238,12 +238,12 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	brainmobs |= brainmob
 
 	//Put the mind and player into the mob
-	transfer_mind(M.mind, brainmob, "caught in [nif]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
+	transfer_mind(M.mind, brainmob, "caught in [nif()]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
 	brainmob.name = brainmob.mind.name
 	brainmob.real_name = brainmob.mind.name
 
 	//If we caught our owner, special settings.
-	if(M == nif.human)
+	if(M == nif().human)
 		brainmob.ext_deaf = FALSE
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
@@ -266,7 +266,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 	//Reminder on how this works to host
 	if(brainmobs.len == 1) //Only spam this on the first one
-		to_chat(nif.human,span_notice("Your occupant's messages/actions can only be seen by you, and you can \
+		to_chat(nif().human,span_notice("Your occupant's messages/actions can only be seen by you, and you can \
 		send messages that only they can hear/see by using the NSay and NMe verbs (or the *nsay and *nme emotes)."))
 
 	//Announce to host and other minds
@@ -286,7 +286,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	var/client_missing = 0		//How long the client has been missing
 	universal_understand = TRUE
 
-	var/obj/item/nif/nif
+	var/nif_handle
 	var/soulcatcher_handle
 	var/identifying_gender
 
@@ -306,7 +306,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	if(eyeobj)
 		reenter_soulcatcher()
 	container = null
-	nif = null
+	nif_handle = null
 	return ..()
 
 /datum/om/stage/life/type_pre/carbon/brain/caught_soul
@@ -608,7 +608,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	if(!client || !client.prefs)
 		return //Um...
 
-	new /mob/observer/eye/ar_soul(src, nif.human) // takes itself as our eye
+	new /mob/observer/eye/ar_soul(src, nif().human) // takes itself as our eye
 	soulcatcher().notify_into("[src] now AR projecting.")
 
 /mob/living/carbon/brain/caught_soul/verb/jump_to_owner()
@@ -621,7 +621,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		to_chat(src,span_warning("You're not projecting into AR!"))
 		return
 
-	eyeobj.forceMove(get_turf(nif))
+	eyeobj.forceMove(get_turf(nif()))
 
 /mob/living/carbon/brain/caught_soul/verb/reenter_soulcatcher()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -665,3 +665,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 /// LC-refs: the parent_human this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/observer/eye/ar_soul/proc/parent_human() as /mob/living
 	return om_resolve(parent_human_handle)
+
+/// LC-refs: the nif this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/mob/living/carbon/brain/caught_soul/proc/nif() as /obj/item/nif
+	return om_resolve(nif_handle)

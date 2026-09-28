@@ -158,7 +158,7 @@ SUBSYSTEM_DEF(expedition)
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
 	site.name += " — [expedition_faction_name(site.faction)]"
 	site.mission = mission
-	site.assigned_shuttle = assigned_shuttle
+	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
 	site.origin_console_handle = om_handle(origin_console)
 	site.parent_destination_id = parent_destination_id
 	site.payout_turf_handle = om_handle(get_turf(origin_console))
@@ -190,7 +190,7 @@ SUBSYSTEM_DEF(expedition)
 	descriptor.mission = null
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
-	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle, descriptor.origin_console(), plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
+	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle(), descriptor.origin_console(), plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
 
 /// The generated site replaces its descriptor (the destination the crew planned against).
 /datum/controller/subsystem/expedition/proc/site_materialized(datum/expedition_site/descriptor, datum/flight_plan/plan, datum/expedition_mission/mission, datum/expedition_site/site)
@@ -203,8 +203,8 @@ SUBSYSTEM_DEF(expedition)
 	var/descriptor_name = descriptor.name
 	var/old_destination_id = descriptor.flight_destination_id
 	site.name = descriptor_name
-	if(site.overmap_sector)
-		site.overmap_sector.name = descriptor_name
+	if(site.overmap_sector())
+		site.overmap_sector().name = descriptor_name
 	if(site.landing_waypoint)
 		site.landing_waypoint.name = "[descriptor_name] - Expedition Landing Zone"
 	if(descriptor.origin_console()?.active_expedition == descriptor)
@@ -219,13 +219,13 @@ SUBSYSTEM_DEF(expedition)
 		if(generated_destination_id && generated_destination_id != old_destination_id)
 			SSflight_operations.unregister_destination(generated_destination_id)
 		destination.name = descriptor_name
-		destination.expedition = site
-		destination.target = site.overmap_sector
-		if(site.overmap_sector)
-			SSflight_operations.destination_by_target[REF(site.overmap_sector)] = destination.id
+		destination.expedition_handle = om_handle(site)
+		destination.target = site.overmap_sector()
+		if(site.overmap_sector())
+			SSflight_operations.destination_by_target[REF(site.overmap_sector())] = destination.id
 		site.flight_destination_id = destination.id
 	descriptor.origin_console_handle = null
-	descriptor.assigned_shuttle = null
+	descriptor.assigned_shuttle_handle = null
 	descriptor.assigned_flight_vessel_handle = null
 	descriptor.payout_turf_handle = null
 	qdel(descriptor)
@@ -527,7 +527,7 @@ SUBSYSTEM_DEF(expedition)
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
 	site.name += " — [expedition_faction_name(site.faction)]"
-	site.assigned_shuttle = assigned_shuttle
+	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
 	site.origin_console_handle = om_handle(origin_console)
 	site.payout_turf_handle = om_handle(get_turf(origin_console))
 
@@ -640,7 +640,7 @@ SUBSYSTEM_DEF(expedition)
 	if(site.assigned_flight_vessel()?.active_expedition == site)
 		site.assigned_flight_vessel().active_expedition = null
 	QDEL_NULL(site.landing_waypoint)
-	QDEL_NULL(site.overmap_sector)
+	QDEL_NULL(site.overmap_sector())
 	teardown_z["[z]"] = TRUE
 	var/datum/expedition_teardown_job/job = new(src, site, reason)
 	job.execute()

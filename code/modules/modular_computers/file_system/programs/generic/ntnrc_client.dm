@@ -112,14 +112,14 @@
 				logfile.stored_data = "[logfile.stored_data][logstring]\[BR\]"
 			logfile.stored_data = "[logfile.stored_data]\[b\]Logfile dump completed.\[/b\]"
 			logfile.calculate_size()
-			if(!computer || !computer.hard_drive || !computer.hard_drive.store_file(logfile))
-				if(!computer)
+			if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(logfile))
+				if(!computer())
 					// This program shouldn't even be runnable without computer.
 					CRASH("Var computer is null!")
-				if(!computer.hard_drive)
-					computer.visible_message(span_warning("\The [computer] shows an \"I/O Error - Hard drive connection error\" warning."))
+				if(!computer().hard_drive)
+					computer().visible_message(span_warning("\The [computer()] shows an \"I/O Error - Hard drive connection error\" warning."))
 				else	// In 99.9% cases this will mean our HDD is full
-					computer.visible_message(span_warning("\The [computer] shows an \"I/O Error - Hard drive may be full. Please free some space and try again. Required space: [logfile.size]GQ\" warning."))
+					computer().visible_message(span_warning("\The [computer()] shows an \"I/O Error - Hard drive may be full. Please free some space and try again. Required space: [logfile.size]GQ\" warning."))
 			return TRUE
 		if("PRG_renamechannel")
 			if(!authed)

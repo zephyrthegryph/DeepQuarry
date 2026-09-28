@@ -294,7 +294,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	var/track = 0			// 0= off  1=timed  2=auto (tracker)
 	var/trackrate = 600		// 300-900 seconds
 	var/nexttime = 0		// time for a panel to rotate of 1° in manual tracking
-	var/obj/machinery/power/tracker/connected_tracker = null
+	var/connected_tracker_handle
 	var/needs_panel_check	// Powernet has been updated, need to check if panels are still connected.
 	var/connected_power		// Sum of power supplied by connected panels.
 	VAR_PRIVATE/list/connected_panels = list()
@@ -320,8 +320,8 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar_control/Destroy()
 	for(var/obj/machinery/power/solar/M in connected_panels)
 		M.unset_control()
-	if(connected_tracker)
-		connected_tracker.unset_control()
+	if(connected_tracker())
+		connected_tracker().unset_control()
 	return ..()
 
 /obj/machinery/power/solar_control/proc/auto_start(forced = FALSE)
@@ -329,8 +329,8 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	if(forced || auto_start == SOLAR_AUTO_START_YES || (auto_start == SOLAR_AUTO_START_CONFIG && CONFIG_GET(flag/autostart_solars)) )
 		track = 2 // Auto tracking mode.
 		search_for_connected()
-		if(connected_tracker)
-			connected_tracker.set_angle(SSsolars.get_solar_angle(get_turf(src)))
+		if(connected_tracker())
+			connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 		set_panels(cdir)
 
 /obj/machinery/power/solar_control/proc/add_panel(obj/machinery/power/solar/P)
@@ -381,10 +381,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				if(!S.control() && S.set_control(src)) //i.e unconnected
 					add_panel(S)
 			else if(istype(M, /obj/machinery/power/tracker))
-				if(!connected_tracker) //if there's already a tracker connected to the computer don't add another
+				if(!connected_tracker()) //if there's already a tracker connected to the computer don't add another
 					var/obj/machinery/power/tracker/T = M
-					if(!T.control) //i.e unconnected
-						connected_tracker = T
+					if(!T.control()) //i.e unconnected
+						connected_tracker_handle = om_handle(T)
 						T.set_control(src)
 
 //called by the sun controller, update the facing angle (either manually or via tracking) and rotates the panels accordingly
@@ -397,8 +397,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(trackrate) //we're manual tracking. If we set a rotation speed...
 				cdir = targetdir //...the current direction is the targetted one (and rotates panels to it)
 		if(2) // auto-tracking
-			if(connected_tracker)
-				connected_tracker.set_angle(SSsolars.get_solar_angle(get_turf(src)))
+			if(connected_tracker())
+				connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 
 /obj/machinery/power/solar_control/update_icon()
 	if(stat & BROKEN)
@@ -440,7 +440,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	data["tracking_state"] = track
 
 	data["connected_panels"] = connected_panels.len
-	data["connected_tracker"] = (connected_tracker ? TRUE : FALSE)
+	data["connected_tracker"] = (connected_tracker() ? TRUE : FALSE)
 
 	return data
 
@@ -478,9 +478,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	if(stat & (NOPOWER | BROKEN))
 		return
 
-	if(connected_tracker) //NOTE : handled here so that we don't add trackers to the processing list
-		if(connected_tracker.powernet != powernet)
-			connected_tracker.unset_control()
+	if(connected_tracker()) //NOTE : handled here so that we don't add trackers to the processing list
+		if(connected_tracker().powernet != powernet)
+			connected_tracker().unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
 		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°...
@@ -524,8 +524,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			var/mode = text2num(params["mode"])
 			track = mode
 			if(track == 2)
-				if(connected_tracker)
-					connected_tracker.set_angle(SSsolars.get_solar_angle(get_turf(src)))
+				if(connected_tracker())
+					connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 					set_panels(cdir)
 			else if(track == 1) //begin manual tracking
 				targetdir = cdir
@@ -570,3 +570,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 /// LC-refs: the control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/power/solar/proc/control() as /obj/machinery/power/solar_control
 	return om_resolve(control_handle)
+
+/// LC-refs: the connected_tracker this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/power/solar_control/proc/connected_tracker() as /obj/machinery/power/tracker
+	return om_resolve(connected_tracker_handle)

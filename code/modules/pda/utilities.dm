@@ -8,12 +8,12 @@
 /datum/data/pda/utility/flashlight/start()
 	fon = !fon
 	name = fon ? "Disable Flashlight" : "Enable Flashlight"
-	pda.update_shortcuts()
-	pda.set_light(fon ? f_lum : 0)
+	pda().update_shortcuts()
+	pda().set_light(fon ? f_lum : 0)
 	if(fon)
-		pda.add_overlay("light-o")
+		pda().add_overlay("light-o")
 	else
-		pda.cut_overlay("light-o")
+		pda().cut_overlay("light-o")
 
 /datum/data/pda/utility/honk
 	name = "Honk Synthesizer"
@@ -24,7 +24,7 @@
 
 /datum/data/pda/utility/honk/start()
 	if(!(last_honk && world.time < last_honk + 20))
-		playsound(pda.loc, 'sound/items/bikehorn.ogg', 50, 1)
+		playsound(pda().loc, 'sound/items/bikehorn.ogg', 50, 1)
 		last_honk = world.time
 
 /datum/data/pda/utility/toggle_door
@@ -117,14 +117,14 @@
 /datum/data/pda/utility/scanmode/notes
 	base_name = "Note Scanner"
 	icon = "clipboard"
-	var/datum/data/pda/app/notekeeper/notes
+	var/notes_handle
 
 /datum/data/pda/utility/scanmode/notes/start()
 	. = ..()
-	notes = pda.find_program(/datum/data/pda/app/notekeeper)
+	notes_handle = om_handle(pda().find_program(/datum/data/pda/app/notekeeper))
 
 /datum/data/pda/utility/scanmode/notes/scan_atom(atom/A, mob/user)
-	if(notes && istype(A, /obj/item/paper))
+	if(notes() && istype(A, /obj/item/paper))
 		var/obj/item/paper/P = A
 		var/list/brlist = list("p", "/p", "br", "hr", "h1", "h2", "h3", "h4", "/h1", "/h2", "/h3", "/h4")
 
@@ -156,21 +156,25 @@
 		// Anything that is left in the page. just tack it on to the end as is
 		formatted_scan = formatted_scan + raw_scan
 		// If there is something in there already, pad it out.
-		if(length(notes.note) > 0)
-			notes.note += "<br><br>"
+		if(length(notes().note) > 0)
+			notes().note += "<br><br>"
 		// Store the scanned document to the notes
-		notes.note += formatted_scan
-		notes.notetitle = sanitize_simple(P.name, list("\n" = "", "\t" = "", "ÿ" = ""))
+		notes().note += formatted_scan
+		notes().notetitle = sanitize_simple(P.name, list("\n" = "", "\t" = "", "ÿ" = ""))
 		// update the saved note too incase we kept the pda open, this is really silly due to how the notehtml is actually what's passed to the editor's text.
 		// If I don't update it here, it loses the data when you edit it!
-		notes.storednotes[notes.currentnote] = notes.note
-		notes.storedtitles[notes.currentnote] = notes.notetitle
-		notes.notehtml = html_decode(replacetext(notes.note,"<br>", "\n"))
+		notes().storednotes[notes().currentnote] = notes().note
+		notes().storedtitles[notes().currentnote] = notes().notetitle
+		notes().notehtml = html_decode(replacetext(notes().note,"<br>", "\n"))
 		// Inform the user
 		var/scannedtitle = "Paper"
-		if(!isnull(notes.notetitle) && notes.notetitle != "")
-			scannedtitle = "'[notes.notetitle]'"
-		to_chat(user, span_notice("[scannedtitle] scanned to Notekeeper in note [GLOB.alphabet_upper[notes.currentnote]]."))//concept of scanning paper copyright brainoblivion 2009
+		if(!isnull(notes().notetitle) && notes().notetitle != "")
+			scannedtitle = "'[notes().notetitle]'"
+		to_chat(user, span_notice("[scannedtitle] scanned to Notekeeper in note [GLOB.alphabet_upper[notes().currentnote]]."))//concept of scanning paper copyright brainoblivion 2009
 
 	else
 		to_chat(user, span_warning("Error scanning [A]."))
+
+/// LC-refs: the notes this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/utility/scanmode/notes/proc/notes() as /datum/data/pda/app/notekeeper
+	return om_resolve(notes_handle)

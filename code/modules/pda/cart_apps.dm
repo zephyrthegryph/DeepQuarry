@@ -44,11 +44,11 @@
 		if("message")
 			status_signal.data["msg1"] = data1
 			status_signal.data["msg2"] = data2
-			var/mob/user = pda.forensic_data?.get_lastprint()
-			if(isliving(pda.loc))
-				user = pda.loc
-			log_admin("STATUS: [user] set status screen with [pda]. Message: [data1] [data2]")
-			message_admins("STATUS: [user] set status screen with [pda]. Message: [data1] [data2]")
+			var/mob/user = pda().forensic_data?.get_lastprint()
+			if(isliving(pda().loc))
+				user = pda().loc
+			log_admin("STATUS: [user] set status screen with [pda()]. Message: [data1] [data2]")
+			message_admins("STATUS: [user] set status screen with [pda()]. Message: [data1] [data2]")
 
 		if("alert")
 			status_signal.data["picture_state"] = data1
@@ -62,8 +62,8 @@
 	category = "Utilities"
 
 /datum/data/pda/app/signaller/update_ui(mob/user, list/data)
-	if(pda.cartridge && istype(pda.cartridge.radio, /obj/item/radio/integrated/signal))
-		var/obj/item/radio/integrated/signal/R = pda.cartridge.radio
+	if(pda().cartridge && istype(pda().cartridge.radio, /obj/item/radio/integrated/signal))
+		var/obj/item/radio/integrated/signal/R = pda().cartridge.radio
 		data["frequency"] = R.frequency
 		data["minFrequency"] = RADIO_LOW_FREQ
 		data["maxFrequency"] = RADIO_HIGH_FREQ
@@ -72,8 +72,8 @@
 /datum/data/pda/app/signaller/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
-	if(pda.cartridge && istype(pda.cartridge.radio, /obj/item/radio/integrated/signal))
-		var/obj/item/radio/integrated/signal/R = pda.cartridge.radio
+	if(pda().cartridge && istype(pda().cartridge.radio, /obj/item/radio/integrated/signal))
+		var/obj/item/radio/integrated/signal/R = pda().cartridge.radio
 
 		switch(action)
 			if("signal")
@@ -251,7 +251,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 
 /datum/data/pda/app/janitor/update_ui(mob/user, list/data)
 	var/JaniData[0]
-	var/turf/cl = get_turf(pda)
+	var/turf/cl = get_turf(pda())
 
 	if(cl)
 		JaniData["user_loc"] = list("x" = cl.x, "y" = cl.y)
@@ -264,7 +264,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(ml)
 			if(ml.z != cl.z)
 				continue
-			var/direction = get_dir(pda, M)
+			var/direction = get_dir(pda(), M)
 			MopData[++MopData.len] = list ("x" = ml.x, "y" = ml.y, "dir" = uppertext(dir2text(direction)), "status" = M.reagents.total_volume ? "Wet" : "Dry")
 
 	var/BucketData[0]
@@ -273,7 +273,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(bl)
 			if(bl.z != cl.z)
 				continue
-			var/direction = get_dir(pda,B)
+			var/direction = get_dir(pda(),B)
 			BucketData[++BucketData.len] = list ("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "volume" = B.reagents.total_volume, "max_volume" = B.reagents.maximum_volume)
 
 	var/CbotData[0]
@@ -282,7 +282,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(bl)
 			if(bl.z != cl.z)
 				continue
-			var/direction = get_dir(pda,B)
+			var/direction = get_dir(pda(),B)
 			CbotData[++CbotData.len] = list("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "status" = B.on ? "Online" : "Offline")
 
 	var/CartData[0]
@@ -291,7 +291,7 @@ REF_OWNED(/datum/data/pda/app/power, "power_monitor")
 		if(bl)
 			if(bl.z != cl.z)
 				continue
-			var/direction = get_dir(pda,B)
+			var/direction = get_dir(pda(),B)
 			CartData[++CartData.len] = list("x" = bl.x, "y" = bl.y, "dir" = uppertext(dir2text(direction)), "volume" = B.mybucket?.reagents.total_volume || 0, "max_volume" = B.mybucket?.reagents.maximum_volume || 0)
 
 	JaniData["mops"] = MopData.len ? MopData : null

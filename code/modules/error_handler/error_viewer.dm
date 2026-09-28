@@ -88,7 +88,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		LAZYSET(error_sources, erroruid, error_source)
 
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
-	error_entry.error_source = error_source
+	error_entry.error_source_handle = om_handle(error_source)
 	errors += error_entry
 	error_source.errors += error_entry
 	if (skip_count)
@@ -129,7 +129,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	browse_to(user, html)
 
 /datum/error_viewer/error_entry
-	var/datum/error_viewer/error_source/error_source
+	var/error_source_handle
 	var/exception/exc
 	var/desc = ""
 	var/usr_ref
@@ -159,7 +159,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 /datum/error_viewer/error_entry/show_to(user, datum/error_viewer/back_to, linear)
 	if (!istype(back_to))
-		back_to = error_source
+		back_to = error_source()
 
 	var/html = build_header(back_to, linear)
 	html += "[name]<div class='runtime'>[desc]</div>"
@@ -181,3 +181,7 @@ REF_OWNED(/datum/error_viewer/error_entry, "exc")
 /// LC-refs: the usr_loc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/error_viewer/error_entry/proc/usr_loc() as /turf
 	return om_resolve(usr_loc_handle)
+
+/// LC-refs: the error_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/error_viewer/error_entry/proc/error_source() as /datum/error_viewer/error_source
+	return om_resolve(error_source_handle)

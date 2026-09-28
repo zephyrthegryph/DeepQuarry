@@ -6,7 +6,7 @@
 	var/name = "Prototype"
 	var/desc = "Contact a dev!"
 
-	var/obj/item/nif/nif	//The NIF that the software is stored in
+	var/nif_handle	//The NIF that the software is stored in
 
 	var/list_pos				// List position in the nifsoft list
 
@@ -50,33 +50,33 @@
 /datum/nifsoft/New(obj/item/nif/nif_load)
 	ASSERT(nif_load)
 
-	nif = nif_load
-	if(!install(nif))
+	nif_handle = om_handle(nif_load)
+	if(!install(nif()))
 		qdel(src)
 
 //Destructor cleans up the software and nif reference
 // LIFECYCLE: installed software uninstalls.
 /datum/nifsoft/Destroy()
-	if(nif)
+	if(nif())
 		uninstall()
-		nif = null
+		nif_handle = null
 	return ..()
 
 //Called when the software is installed in the NIF
 /datum/nifsoft/proc/install()
-	if(!nif)
+	if(!nif())
 		return
-	return nif.install(src)
+	return nif().install(src)
 
 //Called when the software is removed from the NIF
 /datum/nifsoft/proc/uninstall()
 	if(!can_uninstall)
-		return nif.uninstall(src)
-	if(nif)
+		return nif().uninstall(src)
+	if(nif())
 		if(active)
 			deactivate()
-		. = nif.uninstall(src)
-		nif = null
+		. = nif().uninstall(src)
+		nif_handle = null
 	if(!QDESTROYING(src))
 		qdel(src)
 
@@ -88,7 +88,7 @@
 /datum/nifsoft/proc/activate(force = FALSE)
 	if(active && !force)
 		return
-	var/nif_result = nif.activate(src)
+	var/nif_result = nif().activate(src)
 
 	//If the NIF was fine with it, or we're forcing it
 	if(nif_result || force)
@@ -96,21 +96,21 @@
 
 		//If we enable vision planes
 		if(planes_enabled)
-			nif.add_plane(planes_enabled)
-			nif.vis_update()
+			nif().add_plane(planes_enabled)
+			nif().vis_update()
 
 		//If we have other NIFsoft we need to turn off
 		if(incompatible_with)
-			nif.deactivate_these(incompatible_with)
+			nif().deactivate_these(incompatible_with)
 
 		//Set all our activation flags
-		nif.set_flag(vision_flags,NIF_FLAGS_VISION)
-		nif.set_flag(health_flags,NIF_FLAGS_HEALTH)
-		nif.set_flag(combat_flags,NIF_FLAGS_COMBAT)
-		nif.set_flag(other_flags,NIF_FLAGS_OTHER)
+		nif().set_flag(vision_flags,NIF_FLAGS_VISION)
+		nif().set_flag(health_flags,NIF_FLAGS_HEALTH)
+		nif().set_flag(combat_flags,NIF_FLAGS_COMBAT)
+		nif().set_flag(other_flags,NIF_FLAGS_OTHER)
 
 		if(vision_exclusive)
-			var/mob/living/carbon/human/H = nif.human
+			var/mob/living/carbon/human/H = nif().human
 			if(H && istype(H))
 				H.recalculate_vis()
 
@@ -120,7 +120,7 @@
 /datum/nifsoft/proc/deactivate(force = FALSE)
 	if(!active && !force)
 		return
-	var/nif_result = nif.deactivate(src)
+	var/nif_result = nif().deactivate(src)
 
 	//If the NIF was fine with it or we're forcing it
 	if(nif_result || force)
@@ -128,17 +128,17 @@
 
 		//If we enable vision planes, disable them
 		if(planes_enabled)
-			nif.del_plane(planes_enabled)
-			nif.vis_update()
+			nif().del_plane(planes_enabled)
+			nif().vis_update()
 
 		//Clear all our activation flags
-		nif.clear_flag(vision_flags,NIF_FLAGS_VISION)
-		nif.clear_flag(health_flags,NIF_FLAGS_HEALTH)
-		nif.clear_flag(combat_flags,NIF_FLAGS_COMBAT)
-		nif.clear_flag(other_flags,NIF_FLAGS_OTHER)
+		nif().clear_flag(vision_flags,NIF_FLAGS_VISION)
+		nif().clear_flag(health_flags,NIF_FLAGS_HEALTH)
+		nif().clear_flag(combat_flags,NIF_FLAGS_COMBAT)
+		nif().clear_flag(other_flags,NIF_FLAGS_OTHER)
 
 		if(vision_exclusive)
-			var/mob/living/carbon/human/H = nif.human
+			var/mob/living/carbon/human/H = nif().human
 			if(H && istype(H))
 				H.recalculate_vis()
 
@@ -429,3 +429,7 @@
 	. = ..()
 	for(var/i = 0 to 7)
 		new /obj/item/disk/nifsoft/sizechange(src)
+
+/// LC-refs: The NIF that the software is stored in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/nifsoft/proc/nif() as /obj/item/nif
+	return om_resolve(nif_handle)

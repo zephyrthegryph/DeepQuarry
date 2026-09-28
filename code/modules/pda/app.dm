@@ -5,7 +5,7 @@
 	var/notify_silent = 0
 	var/hidden = 0				// program not displayed in main menu
 	var/category = "General"	// the category to list it in on the main menu
-	var/obj/item/pda/pda	// if this is null, and the app is running code, something's gone wrong
+	var/pda_handle	// if this is null, and the app is running code, something's gone wrong
 
 /datum/data/pda/proc/start()
 	return
@@ -23,28 +23,28 @@
 	if(message)
 		//Search for holder of the PDA.
 		var/mob/living/L = null
-		if(pda.loc && isliving(pda.loc))
-			L = pda.loc
+		if(pda().loc && isliving(pda().loc))
+			L = pda().loc
 		//Maybe they are a pAI!
 		else
-			L = get(pda, /mob/living/silicon)
+			L = get(pda(), /mob/living/silicon)
 
 		if(L)
-			to_chat(L, "[icon2html(pda,L.client)] [message]")
-			SStgui.update_user_uis(L, pda) // Update the receiving user's PDA UI so that they can see the new message
+			to_chat(L, "[icon2html(pda(),L.client)] [message]")
+			SStgui.update_user_uis(L, pda()) // Update the receiving user's PDA UI so that they can see the new message
 
 	if(!notify_silent)
-		pda.play_ringtone()
+		pda().play_ringtone()
 
-	if(blink && !(src in pda.notifying_programs))
-		pda.add_overlay("pda-r")
-		LAZYOR(pda.notifying_programs, src)
+	if(blink && !(src in pda().notifying_programs))
+		pda().add_overlay("pda-r")
+		LAZYOR(pda().notifying_programs, src)
 
 /datum/data/pda/proc/unnotify()
-	if(src in pda.notifying_programs)
-		LAZYREMOVE(pda.notifying_programs, src)
-		if(!length(pda.notifying_programs))
-			pda.cut_overlay("pda-r")
+	if(src in pda().notifying_programs)
+		LAZYREMOVE(pda().notifying_programs, src)
+		if(!length(pda().notifying_programs))
+			pda().cut_overlay("pda-r")
 
 // An app has a button on the home screen and its own UI
 /datum/data/pda/app
@@ -56,16 +56,16 @@
 	var/has_back = 0
 
 /datum/data/pda/app/tgui_host(mob/user)
-	return pda || src
+	return pda() || src
 
 /datum/data/pda/app/New()
 	if(!title)
 		title = name
 
 /datum/data/pda/app/start()
-	if(pda.current_app())
-		pda.current_app().stop()
-	pda.current_app_handle = om_handle(src)
+	if(pda().current_app())
+		pda().current_app().stop()
+	pda().current_app_handle = om_handle(src)
 	return 1
 
 /datum/data/pda/app/proc/update_ui(mob/user, list/data)
@@ -86,18 +86,22 @@
 	name = "Enable [base_name]"
 
 /datum/data/pda/utility/scanmode/start()
-	if(pda.scanmode())
-		pda.scanmode().name = "Enable [pda.scanmode().base_name]"
+	if(pda().scanmode())
+		pda().scanmode().name = "Enable [pda().scanmode().base_name]"
 
-	if(pda.scanmode() == src)
-		pda.scanmode_handle = null
+	if(pda().scanmode() == src)
+		pda().scanmode_handle = null
 	else
-		pda.scanmode_handle = om_handle(src)
+		pda().scanmode_handle = om_handle(src)
 		name = "Disable [base_name]"
 
-	pda.update_shortcuts()
+	pda().update_shortcuts()
 	return 1
 
 /datum/data/pda/utility/scanmode/proc/scan_mob(mob/living/C, mob/living/user)
 
 /datum/data/pda/utility/scanmode/proc/scan_atom(atom/A, mob/user)
+
+/// LC-refs: if this is null, and the app is running code, something's gone wrong -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/data/pda/proc/pda() as /obj/item/pda
+	return om_resolve(pda_handle)

@@ -14,19 +14,19 @@
 
 	var/obj/item/card/id/inserted_id	// Inserted ID card, for points
 
-	var/obj/machinery/mineral/processing_unit/machine = null
+	var/machine_handle
 	var/show_all_ores = FALSE
 
 /// Settings changed from the console (ore modes, power): the processing unit re-evaluates.
 /obj/machinery/mineral/processing_unit_console/interaction_ran(mob/actor, datum/interaction/interaction)
 	. = ..()
-	machine?.wake_mining()
+	machine()?.wake_mining()
 
 /obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
-	src.machine = locate(/obj/machinery/mineral/processing_unit) in range(5, src)
-	if (machine)
-		machine.console = src
+	src.machine_handle = om_handle(locate(/obj/machinery/mineral/processing_unit) in range(5, src))
+	if (machine())
+		machine().console_handle = om_handle(src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
@@ -78,7 +78,7 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 
 /obj/machinery/mineral/processing_unit_console/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
-	data["unclaimedPoints"] = machine.points
+	data["unclaimedPoints"] = machine().points
 
 	if(inserted_id)
 		var/datum/money_account/account = get_account(inserted_id.associated_account_number)
@@ -91,8 +91,8 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 		data["has_id"] = FALSE
 
 	var/list/ores = list()
-	for(var/ore in machine.ores_processing)
-		if(!machine.ores_stored[ore] && !show_all_ores)
+	for(var/ore in machine().ores_processing)
+		if(!machine().ores_stored[ore] && !show_all_ores)
 			continue
 		var/datum/ore/O = GLOB.ore_data[ore]
 		if(!O)
@@ -100,13 +100,13 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 		ores.Add(list(list(
 			"ore" = ore,
 			"name" = O.display_name,
-			"amount" = machine.ores_stored[ore],
-			"processing" = LAZYACCESS(machine.ores_processing, ore) ? LAZYACCESS(machine.ores_processing, ore) : 0,
+			"amount" = machine().ores_stored[ore],
+			"processing" = LAZYACCESS(machine().ores_processing, ore) ? LAZYACCESS(machine().ores_processing, ore) : 0,
 		)))
 	data["ores"] = ores
 	data["showAllOres"] = show_all_ores
-	data["power"] = machine.active
-	data["speed"] = machine.speed_process
+	data["power"] = machine().active
+	data["speed"] = machine().speed_process
 
 	return data
 
@@ -128,11 +128,11 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 					if("Smelting") new_setting = PROCESS_SMELT
 					if("Compressing") new_setting = PROCESS_COMPRESS
 					if("Alloying") new_setting = PROCESS_ALLOY
-			LAZYSET(machine.ores_processing, ore, new_setting)
+			LAZYSET(machine().ores_processing, ore, new_setting)
 			. = TRUE
 		if("power")
-			machine.active = !machine.active
-			machine.wake_mining()
+			machine().active = !machine().active
+			machine().wake_mining()
 			. = TRUE
 		if("showAllOres")
 			show_all_ores = !show_all_ores
@@ -147,8 +147,8 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 			if(istype(inserted_id))
 				if(ACCESS_MINING_STATION in inserted_id.GetAccess())
 					var/datum/money_account/account = get_account(inserted_id.associated_account_number)
-					if(account?.credit(machine.points, name, "Processed ore proceeds", name))
-						machine.points = 0
+					if(account?.credit(machine().points, name, "Processed ore proceeds", name))
+						machine().points = 0
 				else
 					to_chat(ui.user, span_warning("Required access not found."))
 			. = TRUE
@@ -162,7 +162,7 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 				to_chat(ui.user, span_warning("No valid ID."))
 			. = TRUE
 		if("speed_toggle")
-			machine.toggle_speed()
+			machine().toggle_speed()
 			. = TRUE
 		else
 			return FALSE
@@ -178,7 +178,7 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 	light_range = 3
 	var/input_handle
 	var/output_handle
-	var/obj/machinery/mineral/console = null
+	var/console_handle
 	var/sheets_per_tick = 10
 	var/list/ores_processing
 	var/list/ores_stored = list()
@@ -383,3 +383,11 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 /// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mineral/processing_unit/proc/output_marker() as /obj/machinery/mineral
 	return om_resolve(output_handle)
+
+/// LC-refs: the console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/processing_unit/proc/console() as /obj/machinery/mineral
+	return om_resolve(console_handle)
+
+/// LC-refs: the machine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/mineral/processing_unit_console/proc/machine() as /obj/machinery/mineral/processing_unit
+	return om_resolve(machine_handle)
