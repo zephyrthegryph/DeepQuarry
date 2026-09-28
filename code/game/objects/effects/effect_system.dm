@@ -287,9 +287,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	opacity = FALSE
 	var/strength = 5 // How much damage to do inside each affect()
 
-/obj/effect/effect/smoke/elemental/Initialize(mapload)
-	om_task_periodic(src, PERIODIC_SLOW)
-	return ..()
+DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

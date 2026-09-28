@@ -24,8 +24,9 @@
 
 /obj/structure/mob_spawner/Initialize(mapload)
 	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
+
+DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 
 // its spawned mobs lose their nest.
 DECLARE_REF(/obj/structure/mob_spawner, "spawned_mobs", LIST_BACK, "nest")
@@ -308,9 +309,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	/mob/living/simple_mob/animal/passive/mouse/rat/strong = 10, // Because I'm a horrible person. <3
 	/obj/effect/spider/spiderling/non_growing = 5)
 
-/obj/structure/mob_spawner/mouse_nest/mousehole/Initialize(mapload)
-	. = ..()
-	icon_state = "tunnel_hole"
+DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "tunnel_hole")))
 
 /obj/structure/mob_spawner/recycler
 	desc = "A bizarre mess of robotic limbs, glowing microrefineries, and nanoassemblers gradually converting the pile of raw materials into active hivebots."

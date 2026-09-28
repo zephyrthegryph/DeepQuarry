@@ -9,9 +9,7 @@
 	var/datum/gas_mixture/GM = new()
 	var/current_temp = 0
 
-/obj/distilling_tester/Initialize(mapload)
-	create_reagents(5000,/datum/reagents/distilling)
-	. = ..()
+DECLARE_REAGENTS_TYPED(/obj/distilling_tester, 5000, null, /datum/reagents/distilling)
 
 /obj/distilling_tester/return_air()
 	return GM

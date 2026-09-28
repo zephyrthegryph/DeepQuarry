@@ -160,11 +160,12 @@ DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ
 	. = ..()
 	pixel_x = rand(6,-6)
 	pixel_y = rand(6,-6)
-	om_task_periodic(src, PERIODIC_SLOW)
 	//50% chance to grow up
 	if(amount_grown != -1 && prob(50))
 		amount_grown = 1
 	get_light_and_color(parent)
+
+DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 
 /obj/effect/spider/spiderling/Bump(atom/user)
 	if(istype(user, /obj/structure/table))
@@ -301,9 +302,7 @@ DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ
 	icon_state = pick("cocoon1","cocoon2","cocoon3")
 
 // the cocoon splits open and drops its contents.
-/obj/effect/spider/cocoon/on_destroy(force)
-	src.visible_message(span_warning("\The [src] splits open."))
-	..()
+DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
 DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever was wrapped falls out
 

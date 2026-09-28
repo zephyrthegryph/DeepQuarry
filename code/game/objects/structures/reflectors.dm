@@ -23,9 +23,10 @@
 	var/list/has_projectiles
 	var/bullet_act_in_progress = FALSE
 
+DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "reflector_base")))
+
 /obj/structure/reflector/Initialize(mapload)
 	. = ..()
-	icon_state = "reflector_base"
 	allowed_projectile_typecache = typecacheof(allowed_projectile_typecache)
 	if(deflector_icon_state)
 		deflector_overlay = image(icon, deflector_icon_state)

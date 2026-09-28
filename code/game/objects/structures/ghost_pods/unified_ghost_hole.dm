@@ -158,10 +158,10 @@
 	new_character.visible_message(span_warning("[new_character] appears to crawl out of somewhere."))
 	qdel(src)
 
+DECLARE_REGISTRY(/obj/structure/ghost_pod/ghost_activated/unified_hole, REGISTRY_GHOST_PODS)
+
 /obj/structure/ghost_pod/ghost_activated/unified_hole/Initialize(mapload)
 	. = ..()
-	registry_join(REGISTRY_GHOST_PODS, src)
-
 	update_icon()
 
 /obj/structure/ghost_pod/ghost_activated/unified_hole/update_icon()

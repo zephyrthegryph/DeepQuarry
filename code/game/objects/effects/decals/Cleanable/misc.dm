@@ -36,7 +36,8 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
 /obj/effect/decal/cleanable/greenglow/Initialize(mapload, _age)
 	. = ..()
 	expire(2 MINUTES)
-	om_task_periodic(src, PERIODIC_SLOW)
+
+DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/effect/decal/cleanable/greenglow/periodic_step()

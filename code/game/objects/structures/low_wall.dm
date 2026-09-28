@@ -26,9 +26,10 @@
 	var/datum/material/material
 	var/grille_type
 
+DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
+
 /obj/structure/low_wall/Initialize(mapload, materialtype)
 	. = ..()
-	icon_state = "blank"
 	var/turf/T = loc
 	if(!isturf(T) || T.density || T.opacity)
 		WARNING("[src] on invalid turf [T] at [x],[y],[z]")

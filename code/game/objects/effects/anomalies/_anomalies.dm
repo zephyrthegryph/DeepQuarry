@@ -26,7 +26,6 @@
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
-	om_task_periodic(src, PERIODIC_SLOW)
 	impact_area_handle = om_handle(get_area(src))
 
 	if(!impact_area())
@@ -45,7 +44,6 @@
 		lifespan = new_lifespan
 	death_time = world.time + lifespan
 
-	countdown = new(src)
 	if(countdown_colour)
 		countdown.color = countdown_colour
 
@@ -70,6 +68,8 @@
 	anomalyPulse()
 
 DECLARE_REF(/obj/effect/anomaly, "countdown", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/effect/anomaly, "countdown", /obj/effect/countdown/anomaly)
+DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 DECLARE_REF(/obj/effect/anomaly, "anomaly_core", OWNED, null)
 DECLARE_REF(/obj/effect/anomaly, "stats", OWNED, null)
 

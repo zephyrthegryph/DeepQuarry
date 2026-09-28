@@ -22,12 +22,13 @@
 /obj/structure/prop/nest/Initialize(mapload)
 	. = ..()
 	den_mobs = list()
-	om_task_periodic(src, PERIODIC_SLOW)
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay)
 	if(randomize_spawning) //Not the biggest shift in spawntime, but it's here.
 		var/delayshift_clamp = spawn_delay / 10
 		var/delayshift = rand(delayshift_clamp, -1 * delayshift_clamp)
 		spawn_delay += delayshift
+
+DECLARE_PERIODIC(/obj/structure/prop/nest, PERIODIC_SLOW)
 
 // The original attack_hand called ..() (prop's message) unconditionally, then always
 // continued below, so interaction_disturb() shows the message itself instead of also
