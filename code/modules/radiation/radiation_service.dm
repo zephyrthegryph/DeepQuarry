@@ -63,7 +63,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 			profile_pulses_completed++
 			processing.Cut(1, 2)
 
-		if (TICK_CHECK)
+		if (processing.len && TICK_CHECK)
 			profile_yields++
 			return FALSE
 	return TRUE
