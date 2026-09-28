@@ -78,7 +78,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	toggle_proc(user)
 
 /obj/vehicle/bike/proc/toggle_proc(mob/user)
-	if(!isliving(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
+	if(!isliving(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 		return CLICK_ACTION_BLOCKING
 
 	if(user.incapacitated())
@@ -102,7 +102,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 
 /// Old verb "Toggle Kickstand".
 /obj/vehicle/bike/proc/bike_kickstand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!isliving(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
+	if(!isliving(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
 	if(user.incapacitated()) return

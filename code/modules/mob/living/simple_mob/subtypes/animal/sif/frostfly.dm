@@ -68,7 +68,7 @@
 	smoke_special = new
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)
-	ADD_TRAIT(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
+	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 DECLARE_REF(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", OWNED, null)
 

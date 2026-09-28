@@ -138,9 +138,12 @@ This device can be easily used to break ERP preferences due to the nature of tel
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
 This device records all warnings given and teleport events for admin review in case of pref-breaking, so just don't do it.
 "},"OOC Warning")
-	var/choice = show_radial_menu(user, radial_menu_anchor, radial_images, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(beacon_chosen), choices = radial_images, anchor = radial_menu_anchor, require_near = TRUE, tooltips = TRUE)
 
-	if(!choice)
+/obj/item/perfect_tele/proc/beacon_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
+	if(!choice || !check_menu(user))
 		return
 
 	else if(choice == "New Beacon")

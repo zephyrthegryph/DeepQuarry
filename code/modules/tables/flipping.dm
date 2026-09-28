@@ -30,7 +30,7 @@ EXTEND_INTERACTIONS(/obj/structure/table, \
 
 /// Old Flip table verb: flips a non-reinforced table.
 /obj/structure/table/proc/table_verb_flip(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!can_touch(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
+	if (!can_touch(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
 	if(flipped < 0 || !flip(get_cardinal_dir(user,src)))

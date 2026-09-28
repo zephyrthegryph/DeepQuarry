@@ -2,7 +2,7 @@
 // protean_form.dm: simple styles pick a sprite; layered styles walk their
 // layers, and import/export serialise the same layer list.
 
-/// Radial editor. Returns TRUE if anything changed.
+/// Radial editor. The answer procs apply the change and refresh the worn appearance.
 /datum/form/protean_blob/proc/edit_appearance(mob/living/carbon/human/H)
 	var/list/choices = list(
 		"Primary" = image(icon = 'icons/mob/species/protean/protean.dmi', icon_state = "primary"),
@@ -12,26 +12,33 @@
 	for(var/id in styles)
 		var/datum/protean_blob_style/S = styles[id]
 		choices[id] = S.radial_image()
-	var/choice = show_radial_menu(H, H, choices, require_near = TRUE, tooltips = FALSE)
+	om_ask(H, /datum/om/prompt/choice/radial, PROC_REF(appearance_chosen), choices = choices, anchor = H, require_near = TRUE, tooltips = FALSE)
+
+/// First radial answer: a colour, or a style (layered styles open their layer menu).
+/datum/form/protean_blob/proc/appearance_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/choice = ask.choice
 	if(!choice || QDELETED(H) || H.incapacitated())
-		return FALSE
+		return
 	switch(choice)
 		if("Primary")
 			// The answer sets the colour and refreshes the appearance.
 			om_ask(H, /datum/om/prompt/color/protean_blob, PROC_REF(blob_color_picked), message = "Pick primary color:", title = "Protean Primary", default = color_primary, highlight = FALSE)
-			return FALSE
+			return
 		if("Highlight")
 			om_ask(H, /datum/om/prompt/color/protean_blob, PROC_REF(blob_color_picked), message = "Pick highlight color:", title = "Protean Highlight", default = color_highlight, highlight = TRUE)
-			return FALSE
+			return
+	var/list/styles = protean_blob_styles()
 	var/datum/protean_blob_style/picked = styles[choice]
 	if(!picked)
-		return FALSE
+		return
 	if(istype(picked, /datum/protean_blob_style/layered))
-		if(!edit_layers(H, picked))
-			return FALSE
-	return set_style(picked.id, H)
+		edit_layers(H, picked)
+		return
+	if(set_style(picked.id, H))
+		refresh_if_worn(H)
 
-/// Walk a layered style's menus. Returns TRUE if the style should be worn.
+/// Opens a layered style's layer menu; its answer walks on to the layer's states.
 /datum/form/protean_blob/proc/edit_layers(mob/living/carbon/human/H, datum/protean_blob_style/layered/S)
 	var/list/menu = list()
 	for(var/datum/protean_blob_layer/L as anything in S.layers)
@@ -39,16 +46,23 @@
 			menu[L.label] = image(S.label_icon, L.label)
 	menu["Import"] = image(S.label_icon, "Import")
 	menu["Export"] = image(S.label_icon, "Export")
-	var/choice = show_radial_menu(H, H, menu, radius = 60)
+	om_ask(H, /datum/om/prompt/choice/radial/protean_layers, PROC_REF(layer_menu_chosen), choices = menu, anchor = H, radius = 60, style = S)
+
+/datum/form/protean_blob/proc/layer_menu_chosen(datum/om/prompt/choice/radial/protean_layers/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/datum/protean_blob_style/layered/S = ask.style
+	var/choice = ask.choice
 	if(!choice || QDELETED(H) || H.incapacitated())
-		return FALSE
+		return
 	switch(choice)
 		if("Export")
 			to_chat(H, span_notice("Exported style string is \" [S.export_string(src)] \". Use this to get the same style in the future with Import."))
-			return TRUE
+			if(set_style(S.id, H))
+				refresh_if_worn(H)
+			return
 		if("Import")
 			om_ask(H, /datum/om/prompt/text/protean_style, PROC_REF(style_string_entered), style = S)
-			return FALSE // The answer imports and wears the style.
+			return // The answer imports and wears the style.
 	var/layer_index = 0
 	for(var/i in 1 to length(S.layers))
 		var/datum/protean_blob_layer/L = S.layers[i]
@@ -56,21 +70,38 @@
 			layer_index = i
 			break
 	if(!layer_index)
-		return FALSE
+		return
 	var/datum/protean_blob_layer/L = S.layers[layer_index]
 	var/list/options = list()
 	for(var/option in S.layer_options(L, H))
 		options[option] = image(S.icon, option, dir = L.preview_dir, pixel_x = L.preview_pixel_x, pixel_y = L.preview_pixel_y)
-	var/new_state = show_radial_menu(H, H, options, radius = 90)
+	om_ask(H, /datum/om/prompt/choice/radial/protean_layer_state, PROC_REF(layer_state_chosen), choices = options, anchor = H, radius = 90, style = S, layer_index = layer_index)
+
+/datum/form/protean_blob/proc/layer_state_chosen(datum/om/prompt/choice/radial/protean_layer_state/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/datum/protean_blob_style/layered/S = ask.style
+	var/new_state = ask.choice
 	if(!new_state || QDELETED(H) || H.incapacitated())
-		return FALSE
+		return
+	var/layer_index = ask.layer_index
+	var/datum/protean_blob_layer/L = S.layers[layer_index]
 	if(L.colorable)
 		// The answer sets the layer, wears the style and refreshes the appearance.
 		var/list/colors = colors_for(S)
 		om_ask(H, /datum/om/prompt/color/protean_layer, PROC_REF(layer_color_picked), message = "Pick [lowertext(L.label)] color:", title = "[L.label] Color", default = colors[layer_index], style = S, layer_index = layer_index, new_state = new_state)
-		return FALSE
+		return
 	set_layer(S, layer_index, new_state, "#FFFFFF")
-	return TRUE
+	if(set_style(S.id, H))
+		refresh_if_worn(H)
+
+/// A layered style's layer menu; carries the style.
+/datum/om/prompt/choice/radial/protean_layers
+	var/datum/protean_blob_style/layered/style
+
+/// A layer's state menu; carries the style and the layer.
+/datum/om/prompt/choice/radial/protean_layer_state
+	var/datum/protean_blob_style/layered/style
+	var/layer_index
 
 /// Sets one layer of a layered style and re-derives its states.
 /datum/form/protean_blob/proc/set_layer(datum/protean_blob_style/layered/S, layer_index, new_state, new_color)

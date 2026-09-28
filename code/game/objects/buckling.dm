@@ -53,7 +53,7 @@
 
 /// Whether the default drag does anything here: something can be buckled to it, or it can be climbed.
 /atom/movable/proc/offers_drag_buckle()
-	return drag_buckle && (can_buckle || HAS_TRAIT(src, TRAIT_CLIMBABLE))
+	return drag_buckle && (can_buckle || has_trait(src, TRAIT_CLIMBABLE))
 
 /atom/movable/proc/interaction_drag_buckle(mob/user, atom/movable/dropping, datum/interaction/interaction)
 	if(!drag_buckle)
@@ -62,7 +62,7 @@
 	if(can_buckle && istype(M))
 		if(user_buckle_mob(M, user))
 			return TRUE
-	if(M == user && HAS_TRAIT(src,TRAIT_CLIMBABLE)) // Buckling takes priority
+	if(M == user && has_trait(src,TRAIT_CLIMBABLE)) // Buckling takes priority
 		om_emit(src, new /datum/om/event/climb_start(user))
 		return TRUE
 	return FALSE

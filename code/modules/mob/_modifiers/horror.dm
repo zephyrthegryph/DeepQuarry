@@ -387,8 +387,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/mob/living/carbon/human/unfortunate_soul = L
 	var/datum/redspace_corruption_state/state = new
 	L.set_body_effect_state(type, state)
-	ADD_TRAIT(unfortunate_soul, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
-	ADD_TRAIT(unfortunate_soul, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
+	add_trait(unfortunate_soul, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
+	add_trait(unfortunate_soul, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
 	state.speech_name = pick("Lost Soul", "Rescued One", "The Embraced", "The Chosen", "The Unseen Horror", "Obedient Servant", "Willing Follower")
 
 	//SHUNT ALL THE IMPORTANT ORGANS TO THE CHEST!
@@ -413,8 +413,8 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		ex_organ.cannot_gib = FALSE
 
 /datum/body_effect/redspace_corruption/on_end(mob/living/L, expired)
-	REMOVE_TRAIT(L, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
-	REMOVE_TRAIT(L, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
+	remove_trait(L, TRAIT_REDSPACE_CORRUPTED, UNHOLY_TRAIT)
+	remove_trait(L, UNIQUE_MINDSTRUCTURE, UNHOLY_TRAIT)
 
 /datum/body_effect/redspace_corruption/on_tick(mob/living/L)
 	var/mob/living/carbon/human/unfortunate_soul = L

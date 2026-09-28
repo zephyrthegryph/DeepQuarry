@@ -366,6 +366,8 @@
 	var/frame_type = /obj/structure/frame
 	var/wall_frame_type = /obj/machinery/alarm
 	var/window_dir = "FULL"
+	/// A grille's window direction was just picked; the next rcd_values() on a grille uses window_dir without asking.
+	var/window_dir_confirmed = FALSE
 	var/emagged = 0
 	window_type = "rglass"
 	var/turret_faction = null
@@ -461,7 +463,11 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		)
 	if(emagged)
 		choices["Turrets"] = radial_image_turret
-	var/choice = show_radial_menu(user, user, choices, radius = 42, custom_check = CALLBACK(src, PROC_REF(check_menu), user), tooltips = TRUE)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_mode_chosen), choices = choices, anchor = user, radius = 42, tooltips = TRUE)
+
+/obj/item/rcd/proc/rcd_mode_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	var/choice = ask.choice
 	if(!check_menu(user))
 		return
 	switch(choice)
@@ -471,17 +477,9 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"BAY" = image(icon = 'icons/mob/radial.dmi', icon_state = "bay"),
 			"ERIS" = image(icon = 'icons/mob/radial.dmi', icon_state = "eris")
 			)
-			var/selected_girder_type = show_radial_menu(user, src, wall_types, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
-			if(!check_menu(user))
-				return
-			switch(selected_girder_type)
-				if("DEFAULT")
-					girder_type = /obj/structure/girder
-				if("BAY")
-					girder_type = /obj/structure/girder/bay
-				if("ERIS")
-					girder_type = /obj/structure/girder/eris
-			mode_index = modes.Find(RCD_FLOORWALL)
+			// optional: a cancelled sub-pick still switches the mode, as before.
+			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_girder_chosen), choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
+			return
 		if("Airlock")
 			mode_index = modes.Find(RCD_AIRLOCK)
 		if("Windoor")
@@ -519,56 +517,8 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"Light Switch" = image(icon = 'icons/mob/radial.dmi', icon_state = "lightswitch"),
 			"Entertainment Monitor" = image(icon = 'icons/mob/radial.dmi', icon_state = "entertainment")
 			)
-			var/selected_wall_frame_type = show_radial_menu(user, src, wall_frame_types, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE, tooltips = TRUE)
-			if(!check_menu(user))
-				return
-			switch(selected_wall_frame_type)
-				if("Air Alarm")
-					wall_frame_type = /obj/machinery/alarm
-				if("Light Bulb")
-					wall_frame_type = /obj/machinery/light/small
-				if("Light Tube")
-					wall_frame_type = /obj/machinery/light
-				if("Doorbell Chime")
-					wall_frame_type = /obj/machinery/doorbell_chime
-				if("Doorbell Button")
-					wall_frame_type = /obj/machinery/button/doorbell
-				if("Status Display")
-					wall_frame_type = /obj/machinery/status_display
-				if("Supply Requests Console")
-					wall_frame_type = /obj/machinery/requests_console
-				if("ATM")
-					wall_frame_type = /obj/machinery/atm
-				if("Newscaster")
-					wall_frame_type = /obj/machinery/newscaster
-				if("Wall Charger")
-					wall_frame_type = /obj/machinery/recharger/wallcharger
-				if("Fire Alarm")
-					wall_frame_type = /obj/machinery/firealarm
-				if("Guest Pass Terminal")
-					wall_frame_type = /obj/machinery/computer/guestpass
-				if("Intercom")
-					wall_frame_type = /obj/item/radio/intercom
-				if("Keycard Authenticator")
-					wall_frame_type = /obj/machinery/keycard_auth
-				if("Geiger Counter")
-					wall_frame_type = /obj/item/geiger/wall
-				if("Electrochromic Window Button")
-					wall_frame_type = /obj/machinery/button/windowtint
-				if("ID Restoration Terminal")
-					wall_frame_type = /obj/machinery/computer/id_restorer
-				if("Timeclock Terminal")
-					wall_frame_type = /obj/machinery/computer/timeclock
-				if("Station Map")
-					wall_frame_type = /obj/machinery/station_map
-				if("AI Status Display")
-					wall_frame_type = /obj/machinery/ai_status_display
-				if("Light Switch")
-					wall_frame_type = /obj/machinery/light_switch
-				if("Entertainment Monitor")
-					wall_frame_type = /obj/machinery/computer/security/telescreen/entertainment
-
-			mode_index = modes.Find(RCD_WALLFRAME)
+			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_wall_frame_chosen), choices = wall_frame_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
+			return
 		if("Change Access")
 			change_airlock_access(user)
 			return
@@ -582,19 +532,95 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
 			"HOSTILE TO ENEMIES" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret2")
 			)
-			var/selected_turret_faction = show_radial_menu(user, src, turret_factions, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!check_menu(user))
-				return
-			switch(selected_turret_faction)
-				if("HOSTILE TO ALL")
-					turret_faction = null
-				if("HOSTILE TO ENEMIES")
-					turret_faction = user.faction
-			mode_index = modes.Find(RCD_TURRET)
+			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_turret_faction_chosen), choices = turret_factions, anchor = src, require_near = ranged?FALSE:TRUE, tooltips = TRUE, optional = TRUE)
+			return
 		else
 			return
+	rcd_mode_changed(user, choice)
+
+/// The mode radial's (and its sub-radials') last step.
+/obj/item/rcd/proc/rcd_mode_changed(mob/living/user, choice)
 	playsound(src, 'sound/effects/pop.ogg', 50, FALSE)
 	to_chat(user, span_notice("You change RCD's mode to '[choice]'."))
+
+/obj/item/rcd/proc/rcd_girder_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	if(!check_menu(user))
+		return
+	switch(ask.choice)
+		if("DEFAULT")
+			girder_type = /obj/structure/girder
+		if("BAY")
+			girder_type = /obj/structure/girder/bay
+		if("ERIS")
+			girder_type = /obj/structure/girder/eris
+	mode_index = modes.Find(RCD_FLOORWALL)
+	rcd_mode_changed(user, "Floors & Walls")
+
+/obj/item/rcd/proc/rcd_wall_frame_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	if(!check_menu(user))
+		return
+	switch(ask.choice)
+		if("Air Alarm")
+			wall_frame_type = /obj/machinery/alarm
+		if("Light Bulb")
+			wall_frame_type = /obj/machinery/light/small
+		if("Light Tube")
+			wall_frame_type = /obj/machinery/light
+		if("Doorbell Chime")
+			wall_frame_type = /obj/machinery/doorbell_chime
+		if("Doorbell Button")
+			wall_frame_type = /obj/machinery/button/doorbell
+		if("Status Display")
+			wall_frame_type = /obj/machinery/status_display
+		if("Supply Requests Console")
+			wall_frame_type = /obj/machinery/requests_console
+		if("ATM")
+			wall_frame_type = /obj/machinery/atm
+		if("Newscaster")
+			wall_frame_type = /obj/machinery/newscaster
+		if("Wall Charger")
+			wall_frame_type = /obj/machinery/recharger/wallcharger
+		if("Fire Alarm")
+			wall_frame_type = /obj/machinery/firealarm
+		if("Guest Pass Terminal")
+			wall_frame_type = /obj/machinery/computer/guestpass
+		if("Intercom")
+			wall_frame_type = /obj/item/radio/intercom
+		if("Keycard Authenticator")
+			wall_frame_type = /obj/machinery/keycard_auth
+		if("Geiger Counter")
+			wall_frame_type = /obj/item/geiger/wall
+		if("Electrochromic Window Button")
+			wall_frame_type = /obj/machinery/button/windowtint
+		if("ID Restoration Terminal")
+			wall_frame_type = /obj/machinery/computer/id_restorer
+		if("Timeclock Terminal")
+			wall_frame_type = /obj/machinery/computer/timeclock
+		if("Station Map")
+			wall_frame_type = /obj/machinery/station_map
+		if("AI Status Display")
+			wall_frame_type = /obj/machinery/ai_status_display
+		if("Light Switch")
+			wall_frame_type = /obj/machinery/light_switch
+		if("Entertainment Monitor")
+			wall_frame_type = /obj/machinery/computer/security/telescreen/entertainment
+
+	mode_index = modes.Find(RCD_WALLFRAME)
+	rcd_mode_changed(user, "WallFrames")
+
+/obj/item/rcd/proc/rcd_turret_faction_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	if(!check_menu(user))
+		return
+	switch(ask.choice)
+		if("HOSTILE TO ALL")
+			turret_faction = null
+		if("HOSTILE TO ENEMIES")
+			turret_faction = user.faction
+	mode_index = modes.Find(RCD_TURRET)
+	rcd_mode_changed(user, "Turrets")
 
 /obj/item/rcd/proc/get_airlock_image(airlock_type)
 	var/obj/machinery/door/airlock/proto = airlock_type
@@ -614,112 +640,120 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		"Glass" = get_airlock_image(/obj/machinery/door/airlock/glass)
 	)
 
-	var/list/solid_choices = list(
-		"Standard" = get_airlock_image(/obj/machinery/door/airlock),
-		"Engineering" = get_airlock_image(/obj/machinery/door/airlock/engineering),
-		"Atmospherics" = get_airlock_image(/obj/machinery/door/airlock/atmos),
-		"Security" = get_airlock_image(/obj/machinery/door/airlock/security),
-		"Command" = get_airlock_image(/obj/machinery/door/airlock/command),
-		"Medical" = get_airlock_image(/obj/machinery/door/airlock/medical),
-		"Research" = get_airlock_image(/obj/machinery/door/airlock/research),
-		"Freezer" = get_airlock_image(/obj/machinery/door/airlock/freezer),
-		"Science" = get_airlock_image(/obj/machinery/door/airlock/science),
-		"Mining" = get_airlock_image(/obj/machinery/door/airlock/mining),
-		"Maintenance" = get_airlock_image(/obj/machinery/door/airlock/maintenance),
-		"External" = get_airlock_image(/obj/machinery/door/airlock/external),
-		"Airtight Hatch" = get_airlock_image(/obj/machinery/door/airlock/hatch),
-		"Maintenance Hatch" = get_airlock_image(/obj/machinery/door/airlock/maintenance_hatch)
-	)
+	// optional: a cancelled pick falls back to the default airlock, as before.
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_category_chosen), choices = solid_or_glass_choices, anchor = src, require_near = TRUE, optional = TRUE)
 
-	var/list/glass_choices = list(
-		"Standard" = get_airlock_image(/obj/machinery/door/airlock/glass),
-		"Engineering" = get_airlock_image(/obj/machinery/door/airlock/glass_engineering),
-		"Atmospherics" = get_airlock_image(/obj/machinery/door/airlock/glass_atmos),
-		"Security" = get_airlock_image(/obj/machinery/door/airlock/glass_security),
-		"Command" = get_airlock_image(/obj/machinery/door/airlock/glass_command),
-		"Medical" = get_airlock_image(/obj/machinery/door/airlock/glass_medical),
-		"Research" = get_airlock_image(/obj/machinery/door/airlock/glass_research),
-		"Science" = get_airlock_image(/obj/machinery/door/airlock/glass_science),
-		"Mining" = get_airlock_image(/obj/machinery/door/airlock/glass_mining),
-		"External" = get_airlock_image(/obj/machinery/door/airlock/glass_external),
-	)
-
-	var/airlockcat = show_radial_menu(user, src, solid_or_glass_choices, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE)
+/obj/item/rcd/proc/airlock_category_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
 	if(!check_menu(user))
 		return
-	switch(airlockcat)
+	switch(ask.choice)
 		if("Solid")
 			if(advanced_airlock_setting == 1)
-				var/airlockpaint = show_radial_menu(user, src, solid_choices, radius = 42, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE)
-				if(!check_menu(user))
-					return
-				switch(airlockpaint)
-					if("Standard")
-						airlock_type = /obj/machinery/door/airlock
-					if("Engineering")
-						airlock_type = /obj/machinery/door/airlock/engineering
-					if("Atmospherics")
-						airlock_type = /obj/machinery/door/airlock/atmos
-					if("Security")
-						airlock_type = /obj/machinery/door/airlock/security
-					if("Command")
-						airlock_type = /obj/machinery/door/airlock/command
-					if("Medical")
-						airlock_type = /obj/machinery/door/airlock/medical
-					if("Research")
-						airlock_type = /obj/machinery/door/airlock/research
-					if("Freezer")
-						airlock_type = /obj/machinery/door/airlock/freezer
-					if("Science")
-						airlock_type = /obj/machinery/door/airlock/science
-					if("Mining")
-						airlock_type = /obj/machinery/door/airlock/mining
-					if("Maintenance")
-						airlock_type = /obj/machinery/door/airlock/maintenance
-					if("External")
-						airlock_type = /obj/machinery/door/airlock/external
-					if("Airtight Hatch")
-						airlock_type = /obj/machinery/door/airlock/hatch
-					if("Maintenance Hatch")
-						airlock_type = /obj/machinery/door/airlock/maintenance_hatch
-				airlock_glass = FALSE
+				var/list/solid_choices = list(
+					"Standard" = get_airlock_image(/obj/machinery/door/airlock),
+					"Engineering" = get_airlock_image(/obj/machinery/door/airlock/engineering),
+					"Atmospherics" = get_airlock_image(/obj/machinery/door/airlock/atmos),
+					"Security" = get_airlock_image(/obj/machinery/door/airlock/security),
+					"Command" = get_airlock_image(/obj/machinery/door/airlock/command),
+					"Medical" = get_airlock_image(/obj/machinery/door/airlock/medical),
+					"Research" = get_airlock_image(/obj/machinery/door/airlock/research),
+					"Freezer" = get_airlock_image(/obj/machinery/door/airlock/freezer),
+					"Science" = get_airlock_image(/obj/machinery/door/airlock/science),
+					"Mining" = get_airlock_image(/obj/machinery/door/airlock/mining),
+					"Maintenance" = get_airlock_image(/obj/machinery/door/airlock/maintenance),
+					"External" = get_airlock_image(/obj/machinery/door/airlock/external),
+					"Airtight Hatch" = get_airlock_image(/obj/machinery/door/airlock/hatch),
+					"Maintenance Hatch" = get_airlock_image(/obj/machinery/door/airlock/maintenance_hatch)
+				)
+				om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_solid_paint_chosen), choices = solid_choices, anchor = src, radius = 42, require_near = TRUE, optional = TRUE)
 			else
 				airlock_type = /obj/machinery/door/airlock
 				airlock_glass = FALSE
 
 		if("Glass")
 			if(advanced_airlock_setting == 1)
-				var/airlockpaint = show_radial_menu(user, src , glass_choices, radius = 42, custom_check = CALLBACK(src, PROC_REF(check_menu), user), require_near = TRUE)
-				if(!check_menu(user))
-					return
-				switch(airlockpaint)
-					if("Standard")
-						airlock_type = /obj/machinery/door/airlock/glass
-					if("Engineering")
-						airlock_type = /obj/machinery/door/airlock/glass_engineering
-					if("Atmospherics")
-						airlock_type = /obj/machinery/door/airlock/glass_atmos
-					if("Security")
-						airlock_type = /obj/machinery/door/airlock/glass_security
-					if("Command")
-						airlock_type = /obj/machinery/door/airlock/glass_command
-					if("Medical")
-						airlock_type = /obj/machinery/door/airlock/glass_medical
-					if("Research")
-						airlock_type = /obj/machinery/door/airlock/glass_research
-					if("Science")
-						airlock_type = /obj/machinery/door/airlock/glass_science
-					if("Mining")
-						airlock_type = /obj/machinery/door/airlock/glass_mining
-					if("External")
-						airlock_type = /obj/machinery/door/airlock/glass_external
-				airlock_glass = TRUE
+				var/list/glass_choices = list(
+					"Standard" = get_airlock_image(/obj/machinery/door/airlock/glass),
+					"Engineering" = get_airlock_image(/obj/machinery/door/airlock/glass_engineering),
+					"Atmospherics" = get_airlock_image(/obj/machinery/door/airlock/glass_atmos),
+					"Security" = get_airlock_image(/obj/machinery/door/airlock/glass_security),
+					"Command" = get_airlock_image(/obj/machinery/door/airlock/glass_command),
+					"Medical" = get_airlock_image(/obj/machinery/door/airlock/glass_medical),
+					"Research" = get_airlock_image(/obj/machinery/door/airlock/glass_research),
+					"Science" = get_airlock_image(/obj/machinery/door/airlock/glass_science),
+					"Mining" = get_airlock_image(/obj/machinery/door/airlock/glass_mining),
+					"External" = get_airlock_image(/obj/machinery/door/airlock/glass_external),
+				)
+				om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(airlock_glass_paint_chosen), choices = glass_choices, anchor = src, radius = 42, require_near = TRUE, optional = TRUE)
 			else
 				airlock_type = /obj/machinery/door/airlock/glass
 				airlock_glass = TRUE
 		else
 			airlock_type = /obj/machinery/door/airlock
 			airlock_glass = FALSE
+
+/obj/item/rcd/proc/airlock_solid_paint_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	if(!check_menu(user))
+		return
+	switch(ask.choice)
+		if("Standard")
+			airlock_type = /obj/machinery/door/airlock
+		if("Engineering")
+			airlock_type = /obj/machinery/door/airlock/engineering
+		if("Atmospherics")
+			airlock_type = /obj/machinery/door/airlock/atmos
+		if("Security")
+			airlock_type = /obj/machinery/door/airlock/security
+		if("Command")
+			airlock_type = /obj/machinery/door/airlock/command
+		if("Medical")
+			airlock_type = /obj/machinery/door/airlock/medical
+		if("Research")
+			airlock_type = /obj/machinery/door/airlock/research
+		if("Freezer")
+			airlock_type = /obj/machinery/door/airlock/freezer
+		if("Science")
+			airlock_type = /obj/machinery/door/airlock/science
+		if("Mining")
+			airlock_type = /obj/machinery/door/airlock/mining
+		if("Maintenance")
+			airlock_type = /obj/machinery/door/airlock/maintenance
+		if("External")
+			airlock_type = /obj/machinery/door/airlock/external
+		if("Airtight Hatch")
+			airlock_type = /obj/machinery/door/airlock/hatch
+		if("Maintenance Hatch")
+			airlock_type = /obj/machinery/door/airlock/maintenance_hatch
+	airlock_glass = FALSE
+
+/obj/item/rcd/proc/airlock_glass_paint_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	if(!check_menu(user))
+		return
+	switch(ask.choice)
+		if("Standard")
+			airlock_type = /obj/machinery/door/airlock/glass
+		if("Engineering")
+			airlock_type = /obj/machinery/door/airlock/glass_engineering
+		if("Atmospherics")
+			airlock_type = /obj/machinery/door/airlock/glass_atmos
+		if("Security")
+			airlock_type = /obj/machinery/door/airlock/glass_security
+		if("Command")
+			airlock_type = /obj/machinery/door/airlock/glass_command
+		if("Medical")
+			airlock_type = /obj/machinery/door/airlock/glass_medical
+		if("Research")
+			airlock_type = /obj/machinery/door/airlock/glass_research
+		if("Science")
+			airlock_type = /obj/machinery/door/airlock/glass_science
+		if("Mining")
+			airlock_type = /obj/machinery/door/airlock/glass_mining
+		if("External")
+			airlock_type = /obj/machinery/door/airlock/glass_external
+	airlock_glass = TRUE
 
 /obj/item/rcd/proc/change_airlock_access(mob/user)
 
@@ -919,56 +953,10 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"default" = image(icon = 'icons/mob/radial.dmi', icon_state = "windoor"),
 			"secure" = image(icon = 'icons/mob/radial.dmi', icon_state = "swindoor")
 			)
-			var/selected_windoor_type = show_radial_menu(user, src, windoor_types, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!the_rcd.check_menu(user) || !selected_windoor_type)
-				return FALSE
-			var/list/windoor_dirs = list(
-			"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
-			"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
-			"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoors":"swindoors")),
-			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorw":"swindoorw"))
-			)
-			var/selected_windoor_dir = show_radial_menu(user, src, windoor_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!the_rcd.check_menu(user) || !selected_windoor_dir)
-				return FALSE
-			var/list/windoor_open_dirs = list(
-			"left" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
-			"right" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
-			)
-			var/selected_windoor_open_dir = show_radial_menu(user, src, windoor_open_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!the_rcd.check_menu(user) || !selected_windoor_open_dir)
-				return FALSE
-			var/obj/machinery/door/window/A = new(src)
-			if(selected_windoor_type == "default")
-				selected_windoor_type = ""
-			A.icon_state = selected_windoor_open_dir+selected_windoor_type
-			A.base_state = selected_windoor_open_dir+selected_windoor_type
-			switch(selected_windoor_dir)
-				if("NORTH")
-					A.dir = NORTH
-				if("SOUTH")
-					A.dir = SOUTH
-				if("EAST")
-					A.dir = EAST
-				if("WEST")
-					A.dir = WEST
-			if(selected_windoor_type == "secure")
-				A.max_integrity = 300
-				A.update_integrity(A.max_integrity)
-			A.electronics = new/obj/item/airlock_electronics(A)
-			A.electronics.req_access = null
-			A.electronics.req_one_access = null
-			A.electronics.one_access = null
-			if(the_rcd.conf_access)
-				if(the_rcd.use_one_access)
-					A.electronics.one_access = the_rcd.use_one_access
-					A.electronics.req_one_access = the_rcd.conf_access.Copy()
-					A.req_one_access = the_rcd.conf_access.Copy()
-				else
-					A.electronics.conf_access = the_rcd.conf_access.Copy()
-					A.req_access = the_rcd.conf_access.Copy()
-			A.autoclose = TRUE
-			return TRUE
+			// The build waits on the picks; the matter is paid when the last one lands (finish_deferred_build).
+			the_rcd.cleanup_effect(src)
+			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_type_chosen), choices = windoor_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			return FALSE
 		if(RCD_FIRELOCK)
 			if(locate_on(src, /obj/machinery/door/firedoor))
 				return FALSE
@@ -991,35 +979,9 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"Machine" = image(icon = 'icons/mob/radial.dmi', icon_state = "machine"),
 			"Computer" = image(icon = 'icons/mob/radial.dmi', icon_state = "computer_dir")
 			)
-			var/selected_frame_type = show_radial_menu(user, src, frame_types, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!the_rcd.check_menu(user) || !selected_frame_type)
-				return FALSE
-			var/list/frame_dirs = list(
-			"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "cnorth"),
-			"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = "ceast"),
-			"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "csouth"),
-			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "cwest")
-			)
-			var/selected_frame_dir = show_radial_menu(user, src, frame_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!the_rcd.check_menu(user) || !selected_frame_dir)
-				return FALSE
-			var/obj/structure/frame
-			if(selected_frame_type == "Machine")
-				frame = new/obj/structure/frame(src)
-			else
-				frame = new/obj/structure/frame/computer(src)
-			switch(selected_frame_dir)
-				if("NORTH")
-					frame.dir = NORTH
-				if("SOUTH")
-					frame.dir = SOUTH
-				if("EAST")
-					frame.dir = EAST
-				if("WEST")
-					frame.dir = WEST
-			frame.anchored = 1
-			to_chat(user, span_notice("You build a frame"))
-			return TRUE
+			the_rcd.cleanup_effect(src)
+			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_frame_type_chosen), choices = frame_types, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			return FALSE
 		if(RCD_CONVEYOR)
 			var/list/conveyor_dirs = list(
 			"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyorn"),
@@ -1027,27 +989,161 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyors"),
 			"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "conveyorw")
 			)
-			var/selected_conveyor_dir = show_radial_menu(user, src, conveyor_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-			if(!the_rcd.check_menu(user) || !selected_conveyor_dir)
-				return FALSE
-			var/obj/machinery/conveyor/C = new(src)
-			switch(selected_conveyor_dir)
-				if("NORTH")
-					C.set_dir(NORTH)
-				if("SOUTH")
-					C.set_dir(SOUTH)
-				if("EAST")
-					C.set_dir(EAST)
-				if("WEST")
-					C.set_dir(WEST)
-			to_chat(user, span_notice("You build a conveyor"))
-			return TRUE
+			the_rcd.cleanup_effect(src)
+			om_ask(user, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_conveyor_dir_chosen), choices = conveyor_dirs, anchor = src, rcd = the_rcd, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+			return FALSE
 		if(RCD_TURRET)
 			if(locate_on(src, /obj/machinery/porta_turret))
 				return FALSE
 			var/obj/machinery/porta_turret/T = new /obj/machinery/porta_turret/rcd(src)
 			T.faction = the_rcd.turret_faction
 			return TRUE
+
+/// A floor build that asks what to make after the RCD's timer: it carries the RCD and the picks so far.
+/datum/om/prompt/choice/radial/rcd_build
+	var/obj/item/rcd/rcd
+	var/windoor_type
+	var/windoor_dir
+	var/frame_type
+
+/// The pick can still be built: the RCD is usable and can pay for `mode` here.
+/turf/simulated/floor/proc/rcd_build_pick_ok(datum/om/prompt/choice/radial/rcd_build/ask, mode)
+	var/obj/item/rcd/rcd = ask.rcd
+	if(!ask.choice || !rcd.check_menu(ask.answerer))
+		return FALSE
+	var/list/results = rcd_values(ask.answerer, rcd, mode)
+	if(!islist(results))
+		return FALSE
+	var/cost = results[RCD_VALUE_COST]
+	if(!rcd.can_afford(cost * rcd.power_output_envelope(cost)))
+		to_chat(ask.answerer, span_warning("\The [rcd] lacks the required material to finish the operation."))
+		return FALSE
+	return TRUE
+
+/// Pays for a build whose rcd_act() deferred to a radial (use_rcd_timed_done's tail).
+/obj/item/rcd/proc/finish_deferred_build(atom/A, mob/living/user, mode)
+	var/list/results = A.rcd_values(user, src, mode)
+	if(!islist(results))
+		return
+	var/cost = results[RCD_VALUE_COST]
+	var/output_envelope = power_output_envelope(cost)
+	consume_resources(cost * output_envelope)
+	record_enhanced_output(cost, output_envelope)
+	playsound(A, 'sound/items/Deconstruct.ogg', 50, 1)
+
+/turf/simulated/floor/proc/rcd_windoor_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
+		return
+	var/selected_windoor_type = ask.choice
+	var/list/windoor_dirs = list(
+	"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorn":"swindoorn")),
+	"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoore":"swindoore")),
+	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoors":"swindoors")),
+	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"windoorw":"swindoorw"))
+	)
+	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_dir_chosen), choices = windoor_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, require_near = ask.require_near, tooltips = TRUE)
+
+/turf/simulated/floor/proc/rcd_windoor_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
+		return
+	var/selected_windoor_type = ask.windoor_type
+	var/list/windoor_open_dirs = list(
+	"left" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"left":"leftsecure")),
+	"right" = image(icon = 'icons/mob/radial.dmi', icon_state = (selected_windoor_type=="default"?"right":"rightsecure"))
+	)
+	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_windoor_open_dir_chosen), choices = windoor_open_dirs, anchor = src, rcd = ask.rcd, windoor_type = selected_windoor_type, windoor_dir = ask.choice, require_near = ask.require_near, tooltips = TRUE)
+
+/turf/simulated/floor/proc/rcd_windoor_open_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+	if(!rcd_build_pick_ok(ask, RCD_WINDOOR))
+		return
+	var/obj/item/rcd/rcd = ask.rcd
+	var/selected_windoor_type = ask.windoor_type
+	var/selected_windoor_dir = ask.windoor_dir
+	var/selected_windoor_open_dir = ask.choice
+	var/obj/machinery/door/window/A = new(src)
+	if(selected_windoor_type == "default")
+		selected_windoor_type = ""
+	A.icon_state = selected_windoor_open_dir+selected_windoor_type
+	A.base_state = selected_windoor_open_dir+selected_windoor_type
+	switch(selected_windoor_dir)
+		if("NORTH")
+			A.dir = NORTH
+		if("SOUTH")
+			A.dir = SOUTH
+		if("EAST")
+			A.dir = EAST
+		if("WEST")
+			A.dir = WEST
+	if(selected_windoor_type == "secure")
+		A.max_integrity = 300
+		A.update_integrity(A.max_integrity)
+	A.electronics = new/obj/item/airlock_electronics(A)
+	A.electronics.req_access = null
+	A.electronics.req_one_access = null
+	A.electronics.one_access = null
+	if(rcd.conf_access)
+		if(rcd.use_one_access)
+			A.electronics.one_access = rcd.use_one_access
+			A.electronics.req_one_access = rcd.conf_access.Copy()
+			A.req_one_access = rcd.conf_access.Copy()
+		else
+			A.electronics.conf_access = rcd.conf_access.Copy()
+			A.req_access = rcd.conf_access.Copy()
+	A.autoclose = TRUE
+	rcd.finish_deferred_build(src, ask.answerer, RCD_WINDOOR)
+
+/turf/simulated/floor/proc/rcd_frame_type_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+	if(!rcd_build_pick_ok(ask, RCD_FRAME))
+		return
+	var/list/frame_dirs = list(
+	"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "cnorth"),
+	"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = "ceast"),
+	"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "csouth"),
+	"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "cwest")
+	)
+	om_ask(ask.answerer, /datum/om/prompt/choice/radial/rcd_build, PROC_REF(rcd_frame_dir_chosen), choices = frame_dirs, anchor = src, rcd = ask.rcd, frame_type = ask.choice, require_near = ask.require_near, tooltips = TRUE)
+
+/turf/simulated/floor/proc/rcd_frame_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+	if(!rcd_build_pick_ok(ask, RCD_FRAME))
+		return
+	var/mob/living/user = ask.answerer
+	var/selected_frame_type = ask.frame_type
+	var/selected_frame_dir = ask.choice
+	var/obj/structure/frame
+	if(selected_frame_type == "Machine")
+		frame = new/obj/structure/frame(src)
+	else
+		frame = new/obj/structure/frame/computer(src)
+	switch(selected_frame_dir)
+		if("NORTH")
+			frame.dir = NORTH
+		if("SOUTH")
+			frame.dir = SOUTH
+		if("EAST")
+			frame.dir = EAST
+		if("WEST")
+			frame.dir = WEST
+	frame.anchored = 1
+	to_chat(user, span_notice("You build a frame"))
+	ask.rcd.finish_deferred_build(src, user, RCD_FRAME)
+
+/turf/simulated/floor/proc/rcd_conveyor_dir_chosen(datum/om/prompt/choice/radial/rcd_build/ask)
+	if(!rcd_build_pick_ok(ask, RCD_CONVEYOR))
+		return
+	var/mob/living/user = ask.answerer
+	var/selected_conveyor_dir = ask.choice
+	var/obj/machinery/conveyor/C = new(src)
+	switch(selected_conveyor_dir)
+		if("NORTH")
+			C.set_dir(NORTH)
+		if("SOUTH")
+			C.set_dir(SOUTH)
+		if("EAST")
+			C.set_dir(EAST)
+		if("WEST")
+			C.set_dir(WEST)
+	to_chat(user, span_notice("You build a conveyor"))
+	ask.rcd.finish_deferred_build(src, user, RCD_CONVEYOR)
 
 //////////////////////////////////////
 //////////////WALL////////////////////
@@ -1215,18 +1311,19 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			if(destroyed)
 				construct_cost = 1
 			else
-				var/list/window_dirs = list(
-				"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "wnorth"),
-				"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = "weast"),
-				"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "wsouth"),
-				"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "wwest"),
-				"FULL" = image(icon = 'icons/mob/radial.dmi', icon_state = "wfull"),
-				)
-				var/selected_window_dir = show_radial_menu(user, src, window_dirs, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
-				if(!the_rcd.check_menu(user) || !selected_window_dir)
-					return FALSE
-				the_rcd.window_dir = selected_window_dir
-				if(selected_window_dir != "FULL")
+				if(!the_rcd.window_dir_confirmed)
+					var/list/window_dirs = list(
+					"NORTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "wnorth"),
+					"EAST" = image(icon = 'icons/mob/radial.dmi', icon_state = "weast"),
+					"SOUTH" = image(icon = 'icons/mob/radial.dmi', icon_state = "wsouth"),
+					"WEST" = image(icon = 'icons/mob/radial.dmi', icon_state = "wwest"),
+					"FULL" = image(icon = 'icons/mob/radial.dmi', icon_state = "wfull"),
+					)
+					// Pick first; the answer re-runs use_rcd() with the direction confirmed.
+					om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_window_dir_chosen), choices = window_dirs, subject = the_rcd, anchor = src, require_near = the_rcd.ranged?FALSE:TRUE, tooltips = TRUE)
+					return 1
+				the_rcd.window_dir_confirmed = FALSE
+				if(the_rcd.window_dir != "FULL")
 					construct_cost = 1
 			// A full tile window costs 4 glass sheets.
 			return list(
@@ -1242,6 +1339,16 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				RCD_VALUE_COST = RCD_SHEETS_PER_MATTER_UNIT * 0
 			)
 	return FALSE
+
+/obj/structure/grille/proc/rcd_window_dir_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/living/user = ask.answerer
+	var/obj/item/rcd/the_rcd = ask.subject
+	if(!istype(the_rcd) || !ask.choice || !the_rcd.check_menu(user))
+		return
+	the_rcd.window_dir = ask.choice
+	the_rcd.window_dir_confirmed = TRUE
+	the_rcd.use_rcd(src, user)
+	the_rcd.window_dir_confirmed = FALSE
 
 /obj/structure/grille/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	switch(passed_mode)

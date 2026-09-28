@@ -132,7 +132,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	if(user.incapacitated())
 		return 0
 
-	if (!can_touch(user) || HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB))
+	if (!can_touch(user) || has_trait(user, TRAIT_AMBIENT_PEST_MOB))
 		return
 
 	if(anchored)

@@ -13,7 +13,7 @@
 	var/mob/living/living_user = user
 
 	// Must be some kind of electrovore to interact at all
-	if(!HAS_TRAIT(living_user, TRAIT_ELECTROVORE))
+	if(!has_trait(living_user, TRAIT_ELECTROVORE))
 		return
 
 	// Only cells should have special electrovore behavior
@@ -22,7 +22,7 @@
 	var/obj/item/cell/source_cell = source
 
 	// HELP: obligate electrovores only (charge the cell)
-	if(IS_HELPING(living_user) && HAS_TRAIT(living_user, TRAIT_ELECTROVORE_OBLIGATE))
+	if(IS_HELPING(living_user) && has_trait(living_user, TRAIT_ELECTROVORE_OBLIGATE))
 		if(source_cell.charge >= source_cell.maxcharge)
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 

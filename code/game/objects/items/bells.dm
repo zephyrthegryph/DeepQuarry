@@ -43,18 +43,16 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 	if(length(options) < 1)
 		return TRUE
 
-	// Right, if there's only one available radial...
-	// For example, say, the bell's broken so you can only examine, it just does that (doesn't show radial)..
-	var/list/choice = list()
-	if(length(options) == 1)
-		for(var/key in options)
-			choice = key
-	else
-	// If we have other options, it will show the radial menu for the player to decide.
-		choice = show_radial_menu(user, src, options, require_near = !issilicon(user))
+	// A single available option is answered at once (autopick_single_option); otherwise the player picks.
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(option_chosen), choices = options, anchor = src, require_near = !issilicon(user))
+	return TRUE
 
+/obj/item/deskbell/proc/option_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	if(!user || user.incapacitated())
+		return
 	// Once the player has decided their option, choose the behaviour that will happen under said option.
-	switch(choice)
+	switch(ask.choice)
 		if("examine")
 			user.examinate(src)
 
@@ -64,8 +62,9 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 				add_fingerprint(user)
 
 		if("pick up")
-			return FALSE
-	return TRUE
+			// The standard hand pickup (the item's "Pick up" interaction), with all its checks.
+			if(isliving(user) && user.Adjacent(src))
+				pick_up_by_hand(user)
 
 /obj/item/deskbell/proc/ring(mob/user)
 	if(IS_HARMING(user))

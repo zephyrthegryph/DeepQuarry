@@ -160,7 +160,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 /obj/machinery/recharger/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
 	if(!do_allowed_checks(G, user))
 		return TRUE
-	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10))
+	if(has_trait(user, TRAIT_UNLUCKY) && prob(10))
 		user.visible_message("[user] inserts [charging] into [src] backwards!", "You insert [charging] into [src] backwards!")
 		user.drop_item()
 		G.forceMove(get_turf(src))

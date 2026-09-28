@@ -59,7 +59,7 @@
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()
-	if(L && HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB)) // If they're a pest, swoop no matter what!
+	if(L && has_trait(L, TRAIT_AMBIENT_PEST_MOB)) // If they're a pest, swoop no matter what!
 		return FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/attack_target(atom/A)

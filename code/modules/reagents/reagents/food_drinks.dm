@@ -4068,14 +4068,14 @@
 
 /datum/reagent/ethanol/screwdrivercocktail/on_mob_life(mob/living/carbon/drinker, seconds_per_tick, metabolization_ratio)
 	. = ..()
-	ADD_TRAIT(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
-	if (HAS_TRAIT(drinker, TRAIT_IRRADIATED))
+	add_trait(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
+	if (has_trait(drinker, TRAIT_IRRADIATED))
 		// Only while irradiated, a gate a continuous tag can't express: mends directly.
 		drinker.mend(TREAT_ANTITOXIN, 2 * metabolization_ratio * seconds_per_tick)
 
 /datum/reagent/ethanol/screwdrivercocktail/on_mob_end_metabolize(mob/living/drinker)
 	. = ..()
-	REMOVE_TRAIT(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
+	remove_trait(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
 
 /datum/reagent/ethanol/silencer
 	name = REAGENT_SILENCER

@@ -28,7 +28,7 @@
 /obj/proc/rule_ignite(datum/rule/rule)
 	if((resistance_flags & ON_FIRE) || !(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
 		return
-	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR) || !uses_integrity)
+	if(has_trait(src, TRAIT_UNDERFLOOR) || !uses_integrity)
 		return
 	start_burning(custom_fire_overlay() || GLOB.fire_overlay, burning_particles)
 

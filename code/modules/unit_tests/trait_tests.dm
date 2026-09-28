@@ -32,8 +32,8 @@
 		for(var/datum/trait/EX in exempt_list)
 			TEST_ASSERT(EX.type in T.excludes, "[T.type]: Trait - Autohiss missing exclusion for [EX].")
 
-/// Regression test for the admin trait editor (modify_traits.dm) reading the real
-/// trait storage (_status_traits) instead of the removed dead `status_traits` var.
+/// The admin trait editor (modify_traits.dm) lists what a datum holds through trait_list(),
+/// and traits are grants: held per source, released per source.
 /datum/unit_test/admin_trait_listing_sees_added_trait
 
 /datum/unit_test/admin_trait_listing_sees_added_trait/Run()
@@ -44,20 +44,35 @@
 		break
 	TEST_ASSERT(test_trait, "No traits registered to test with.")
 
-	ADD_TRAIT(D, test_trait, "admin_trait_listing_test")
+	add_trait(D, test_trait, "admin_trait_listing_test")
+	TEST_ASSERT(has_trait(D, test_trait), "add_trait() did not grant the trait.")
+	TEST_ASSERT(test_trait in trait_list(D), "trait_list() (the admin listing) did not see the granted trait.")
+	TEST_ASSERT_EQUAL(length(trait_sources(D, test_trait)), 1, "trait_sources() should list the one source.")
+	TEST_ASSERT(has_trait_from(D, test_trait, "admin_trait_listing_test"), "has_trait_from() did not see the text source.")
 
-	// This mirrors what /datum/admins/proc/modify_traits does when listing traits
-	// to remove: iterate D._status_traits. Before the fix this iterated the dead
-	// `status_traits` var and always saw nothing.
-	var/found = FALSE
-	for(var/trait in D._status_traits)
-		if(trait == test_trait)
-			found = TRUE
-			break
-	TEST_ASSERT(found, "Admin trait listing (D._status_traits) did not see the trait added via ADD_TRAIT.")
+	remove_trait(D, test_trait, "admin_trait_listing_test")
+	TEST_ASSERT(!has_trait(D, test_trait), "remove_trait() did not release the grant.")
+	qdel(D)
 
-	var/list/sources = GET_TRAIT_SOURCES(D, test_trait)
-	TEST_ASSERT(length(sources), "GET_TRAIT_SOURCES did not return the source list for the added trait.")
+/// Traits held by two sources stay until both release; a datum source releases on deletion;
+/// ROUNDSTART_TRAIT survives a sourceless remove.
+/datum/unit_test/trait_grants_per_source
 
-	REMOVE_TRAIT(D, test_trait, "admin_trait_listing_test")
+/datum/unit_test/trait_grants_per_source/Run()
+	var/datum/D = new()
+	var/datum/source = new()
+	var/test_trait = TRAIT_UNLUCKY
+	add_trait(D, test_trait, source)
+	add_trait(D, test_trait, JOB_TRAIT)
+	remove_trait(D, test_trait, JOB_TRAIT)
+	TEST_ASSERT(has_trait(D, test_trait), "a trait with another source left must stay")
+	qdel(source)
+	TEST_ASSERT(!has_trait(D, test_trait), "deleting a datum source must release its grant")
+	add_trait(D, test_trait, ROUNDSTART_TRAIT)
+	add_trait(D, test_trait, JOB_TRAIT)
+	remove_trait(D, test_trait)
+	TEST_ASSERT(has_trait_from(D, test_trait, ROUNDSTART_TRAIT), "a sourceless remove keeps ROUNDSTART_TRAIT")
+	TEST_ASSERT(!has_trait_from(D, test_trait, JOB_TRAIT), "a sourceless remove releases the rest")
+	remove_traits_in(D, ROUNDSTART_TRAIT)
+	TEST_ASSERT(!has_trait(D, test_trait), "remove_traits_in() releases a source's traits")
 	qdel(D)

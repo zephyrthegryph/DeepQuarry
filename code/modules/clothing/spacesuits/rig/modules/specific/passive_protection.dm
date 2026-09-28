@@ -53,7 +53,7 @@
 	holder.set_armor_value("rad", 100)
 	items_to_update += holder
 	for(var/obj/item/part in items_to_update)
-		ADD_TRAIT(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
+		add_trait(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
 	H?.worn_protection_changed()
 
 /obj/item/rig_module/rad_shield/deactivate()
@@ -89,7 +89,7 @@
 	stored_rad_armor = 0
 
 	for(var/obj/item/part in items_to_update)
-		REMOVE_TRAIT(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
+		remove_trait(part, TRAIT_RADIATION_PROTECTED_CLOTHING, MOD_TRAIT)
 	H?.worn_protection_changed()
 
 /obj/item/rig_module/rad_shield/advanced

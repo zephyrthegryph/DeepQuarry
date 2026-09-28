@@ -79,11 +79,11 @@
 	om_detach(src, /datum/om/behaviour/omen)
 
 /datum/om/behaviour/omen/on_start(mob/living/person)
-	ADD_TRAIT(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+	add_trait(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 
 // Lifts the unlucky trait and tells the person.
 /datum/om/behaviour/omen/on_stop(mob/living/person)
-	REMOVE_TRAIT(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+	remove_trait(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
 	if(!QDELETED(person))
 		to_chat(person, span_warning(span_green("You feel a horrible omen lifted off your shoulders!")))
 

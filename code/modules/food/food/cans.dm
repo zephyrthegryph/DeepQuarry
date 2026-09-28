@@ -19,7 +19,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 			om_task_periodic(src, PERIODIC_SLOW)
 		shaken += 3
 		return TRUE
-	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
+	if(has_trait(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
 		if(!shaken)
 			om_task_periodic(src, PERIODIC_SLOW)
 		shaken += 10
@@ -34,7 +34,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 		reagents.splash(user, shaken/2)
 		reagents.trans_to(foam, shaken/2)
 		if(shaken > 50)
-			if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(0.1))
+			if(has_trait(user, TRAIT_UNLUCKY) && prob(0.1))
 				explosion(get_turf(src), -1, -1, -1, 7)
 				user.gib()
 			else

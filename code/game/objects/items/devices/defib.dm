@@ -417,7 +417,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		return
 
 	H.injure(INJURY_BURN, burn_damage_amt, BP_TORSO, src)
-	if(HAS_TRAIT(H, TRAIT_UNLUCKY) && prob(5))
+	if(has_trait(H, TRAIT_UNLUCKY) && prob(5))
 		make_announcement("buzzes, \"Unknown error occurred. Please try again.\"", "warning")
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, FALSE)
 		return

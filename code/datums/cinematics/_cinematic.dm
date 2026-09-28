@@ -110,7 +110,7 @@ DECLARE_REF(/datum/cinematic, "screen", OWNED, null)
 /// Whenever a mob watching the cinematic logs in, show them the ongoing cinematic
 /datum/cinematic/proc/show_to(mob/watching_mob, client/watching_client)
 
-	if(!HAS_TRAIT_FROM(watching_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE))
+	if(!has_trait_from(watching_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE))
 		lock_mob(watching_mob)
 
 	// Only show the actual cinematic to cliented mobs.
@@ -159,14 +159,14 @@ DECLARE_REF(/datum/cinematic, "screen", OWNED, null)
 /// Locks a mob, preventing them from moving, being hurt, or acting
 /datum/cinematic/proc/lock_mob(mob/to_lock)
 	locked += om_handle(to_lock)
-	ADD_TRAIT(to_lock, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
+	add_trait(to_lock, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
 
 /// Unlocks a previously locked mob (by OM handle)
 /datum/cinematic/proc/unlock_mob(mob_ref)
 	var/mob/locked_mob = om_resolve(mob_ref)
 	if(isnull(locked_mob))
 		return
-	REMOVE_TRAIT(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
+	remove_trait(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
 	om_unhook(locked_mob, /datum/om/event/mob_client_login, src)
 
 /// Removes the passed client from our watching list.

@@ -163,7 +163,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				if(L.size_multiplier < 0.5 || vac_power >= 6)
 					suckables += L
 					continue
-				if(HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB))
+				if(has_trait(L, TRAIT_AMBIENT_PEST_MOB))
 					suckables += L
 		if(LAZYLEN(suckables))
 			if(vac_power == 7)
@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 							auto_setting = min(I.w_class, 5)
 					if(isliving(F))
 						var/mob/living/L = F
-						if(L.size_multiplier < 0.5 || HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB))
+						if(L.size_multiplier < 0.5 || has_trait(L, TRAIT_AMBIENT_PEST_MOB))
 							if(auto_setting < 3)
 								auto_setting = 3
 						else
@@ -255,7 +255,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		if(L.anchored || !L.devourable || L == user || L?.buckled_to() || !L.can_be_drop_prey)
 			return
 		if(vac_power >= 3)
-			if(L.size_multiplier > 0.5 || HAS_TRAIT(L, TRAIT_AMBIENT_PEST_MOB))
+			if(L.size_multiplier > 0.5 || has_trait(L, TRAIT_AMBIENT_PEST_MOB))
 				valid_to_suck = TRUE
 				auto_setting = 3
 		if(vac_power >= 6)

@@ -245,10 +245,13 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/mob/alien.dmi', option)) // based off 'icons/effects/thinktank_labels.dmi'
 
-	var/choice = show_radial_menu(src, src, options, radius = 42, require_near = TRUE)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(resin_chosen), choices = options, anchor = src, radius = 42, require_near = TRUE)
 
+/// Radial answer: secrete the picked resin structure in front of us.
+/mob/living/carbon/human/proc/resin_chosen(datum/om/prompt/choice/radial/ask)
+	var/choice = ask.choice
 	if(!choice || QDELETED(src) || src.incapacitated())
-		return FALSE
+		return
 
 	var/targetLoc = get_step(src, dir)
 

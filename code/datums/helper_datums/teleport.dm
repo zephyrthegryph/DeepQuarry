@@ -171,8 +171,6 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 		return pick(turfs)
 
 /proc/check_teleport_valid(atom/teleported_atom, atom/destination, channel, atom/original_destination = null)
-	SHOULD_BE_PURE(TRUE)
-
 	if(isnull(destination))
 		return FALSE
 
@@ -180,7 +178,7 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 
 	var/area/destination_area = get_area(destination)
 
-	if(HAS_TRAIT(teleported_atom, TRAIT_NO_TELEPORT))
+	if(has_trait(teleported_atom, TRAIT_NO_TELEPORT))
 		return FALSE
 
 	if(origin_area.flag_check(AREA_BLOCK_PHASE_SHIFT) || destination_area.flag_check(AREA_BLOCK_PHASE_SHIFT))
@@ -202,7 +200,7 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 			var/mob/living/living = movable
 			if(!(container_flags & TELEPORT_CONTAINER_INCLUDE_INVENTORY))
 				var/list/equipped = living.get_equipped_items(INCLUDE_HELD|INCLUDE_POCKETS)
-				if((teleportable in equipped) && !HAS_TRAIT(teleportable, TRAIT_NODROP))
+				if((teleportable in equipped) && !has_trait(teleportable, TRAIT_NODROP))
 					if(istype(teleportable, /obj/item/rig) && (container_flags & TELEPORT_CONTAINER_INCLUDE_SEALED_RIGSUIT))
 						var/obj/item/rig/rigsuit = teleportable
 						var/sealed = TRUE

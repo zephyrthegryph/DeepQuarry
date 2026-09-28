@@ -50,7 +50,7 @@
 				to_chat(infected, "[user] waves [src] over your head, curing you of your infection.")
 
 		//Chaplain null rod removes ALL unholy traits.
-		REMOVE_TRAITS_IN(M, UNHOLY_TRAIT)
+		remove_traits_in(M, UNHOLY_TRAIT)
 
 		if(GLOB.cult && (M.mind in GLOB.cult.current_antagonists) && prob(33))
 			to_chat(M, span_danger("The power of [src] clears your mind of the cult's influence!"))

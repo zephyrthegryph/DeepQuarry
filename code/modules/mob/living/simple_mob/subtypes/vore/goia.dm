@@ -149,100 +149,66 @@
 	var/list/options = list("Belly","Spike","Ears","Spots","Claws","Spines","Fluff","Underbelly","Eyes")
 	for(var/option in options)
 		LAZYSET(options, option, image('icons/effects/goia_labels.dmi', option))
-	var/choice = show_radial_menu(src, src, options, radius = 60)
-	if(!choice || QDELETED(src) || src.incapacitated())
-		return FALSE
-	. = TRUE
-	switch(choice)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(appearance_part_chosen), choices = options, anchor = src, radius = 60)
 
+/// First radial answer: offer the styles of the picked part.
+/mob/living/simple_mob/vore/zorgoia/proc/appearance_part_chosen(datum/om/prompt/choice/radial/ask)
+	var/part = ask.choice
+	if(!part || QDELETED(src) || src.incapacitated())
+		return
+	var/list/options
+	var/offset = -16
+	switch(part)
 		if("Ears")
 			options = ear_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick ears spike color:", title = "Ears Color", default = goia_overlays["zorgoia_ears"], overlay = "zorgoia_ears", style_key = "ears", style = choice)
-
 		if("Spots")
 			options = spots_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spot colors:", title = "Spots Color", default = goia_overlays["zorgoia_spots"], overlay = "zorgoia_spots", style_key = "spots", style = choice)
-
 		if("Claws")
 			options = claws_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick claw colors:", title = "Claws Color", default = goia_overlays["zorgoia_claws"], overlay = "zorgoia_claws", style_key = "claws", style = choice)
-
 		if("Spines")
 			options = spines_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spines colors:", title = "Spines Color", default = goia_overlays["zorgoia_spines"], overlay = "zorgoia_spines", style_key = "spines", style = choice)
-
 		if("Fluff")
 			options = fluff_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick fluff colors:", title = "Fluff Color", default = goia_overlays["zorgoia_fluff"], overlay = "zorgoia_fluff", style_key = "fluff", style = choice)
-
 		if("Underbelly")
 			options = underbelly_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick underbelly colors:", title = "Underbelly Color", default = goia_overlays["zorgoia_underbelly"], overlay = "zorgoia_underbelly", style_key = "underbelly", style = choice)
-
 		if("Eyes")
 			options = eyes_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = -16)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick eye color:", title = "Eye Color", default = goia_overlays["zorgoia_eyes"], overlay = "zorgoia_eyes", style_key = "eyes", style = choice)
-
 		if("Spike")
 			options = spiky_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
-			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick tail spike color:", title = "Tail Color", default = goia_overlays["zorgoia_spike"], overlay = "zorgoia_spike", style_key = "spike", style = choice) //This is overlay 10, not 2, swapped with main body, im not rewriting this array
-
+			offset = 0
 		if("Belly")
 			options = belly_styles
-			for(var/option in options)
-				var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4)
-				LAZYSET(options, option, I)
-			choice = show_radial_menu(src, src, options, radius = 90)
-			if(!choice || QDELETED(src) || src.incapacitated())
-				return 0
+			offset = 0
+		else
+			return
+	for(var/option in options)
+		var/image/I = image('icons/mob/zorgoia64x32.dmi', option, dir = 4, pixel_x = offset)
+		LAZYSET(options, option, I)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(appearance_style_chosen), choices = options, anchor = src, radius = 90, subject = part)
+
+/// Second radial answer: pick the colour for the chosen style.
+/mob/living/simple_mob/vore/zorgoia/proc/appearance_style_chosen(datum/om/prompt/choice/radial/ask)
+	var/choice = ask.choice
+	if(!choice || QDELETED(src) || src.incapacitated())
+		return
+	switch(ask.subject)
+		if("Ears")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick ears spike color:", title = "Ears Color", default = goia_overlays["zorgoia_ears"], overlay = "zorgoia_ears", style_key = "ears", style = choice)
+		if("Spots")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spot colors:", title = "Spots Color", default = goia_overlays["zorgoia_spots"], overlay = "zorgoia_spots", style_key = "spots", style = choice)
+		if("Claws")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick claw colors:", title = "Claws Color", default = goia_overlays["zorgoia_claws"], overlay = "zorgoia_claws", style_key = "claws", style = choice)
+		if("Spines")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick spines colors:", title = "Spines Color", default = goia_overlays["zorgoia_spines"], overlay = "zorgoia_spines", style_key = "spines", style = choice)
+		if("Fluff")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick fluff colors:", title = "Fluff Color", default = goia_overlays["zorgoia_fluff"], overlay = "zorgoia_fluff", style_key = "fluff", style = choice)
+		if("Underbelly")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick underbelly colors:", title = "Underbelly Color", default = goia_overlays["zorgoia_underbelly"], overlay = "zorgoia_underbelly", style_key = "underbelly", style = choice)
+		if("Eyes")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick eye color:", title = "Eye Color", default = goia_overlays["zorgoia_eyes"], overlay = "zorgoia_eyes", style_key = "eyes", style = choice)
+		if("Spike")
+			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick tail spike color:", title = "Tail Color", default = goia_overlays["zorgoia_spike"], overlay = "zorgoia_spike", style_key = "spike", style = choice) //This is overlay 10, not 2, swapped with main body, im not rewriting this array
+		if("Belly")
 			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
 /mob/living/simple_mob/vore/zorgoia/Initialize(mapload)

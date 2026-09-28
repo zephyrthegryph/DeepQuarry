@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Radial action pickers (RCD, RSF, translocator, mob style menus and more) no longer freeze the caller while open; they answer through the typed prompt system."
+  - refactor: "Traits are now grants held per source; the old trait macros are gone."
+  - code_imp: "Leftover disease references moved to contagion afflictions; new lints keep radials, trait macros and /datum/disease at zero."

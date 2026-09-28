@@ -92,12 +92,33 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	for(var/Iname in pockets_by_name)
 		options[Iname] = photo_images[Iname]
 
-	var/list/choice = list()
-
 	in_radial_menu = TRUE
-	choice = show_radial_menu(user, src, options, radius = 40, require_near = TRUE, autopick_single_option = FALSE)
-	in_radial_menu = FALSE
+	// optional: a cancel still answers (with no choice) and falls through to the wrapped item.
+	// Not shown at all (no client, or the same menu toggled shut): the gripper is free again.
+	if(!om_ask(user,/datum/om/prompt/choice/radial/gripper_pocket, PROC_REF(pocket_chosen), choices = options, anchor = src, radius = 40, require_near = TRUE, autopick_single_option = FALSE, optional = TRUE))
+		in_radial_menu = FALSE
+	return TRUE
 
+/// The gripper's pocket picker; a dropped answer still frees the gripper.
+/datum/om/prompt/choice/radial/gripper_pocket
+
+/datum/om/prompt/choice/radial/gripper_pocket/refused(reason)
+	var/obj/item/gripper/gripper = receiver
+	if(istype(gripper))
+		gripper.in_radial_menu = FALSE
+	return ..()
+
+/datum/om/prompt/choice/radial/gripper_pocket/cancelled()
+	var/obj/item/gripper/gripper = receiver
+	if(istype(gripper))
+		gripper.in_radial_menu = FALSE
+	return ..()
+
+/// Pocket radial answer: select the pocket, or use the held item when cancelled.
+/obj/item/gripper/proc/pocket_chosen(datum/om/prompt/choice/radial/gripper_pocket/ask)
+	in_radial_menu = FALSE
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	var/obj/item/wrapped = get_wrapped_item()
 	if(choice)
 		var/obj/item/storage/internal/gripper/selected_pocket = pockets_by_name[choice]

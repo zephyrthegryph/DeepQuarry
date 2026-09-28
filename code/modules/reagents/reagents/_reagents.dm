@@ -288,7 +288,7 @@
 			if(CHEM_BLOOD)
 				affect_blood(M, alien, removed)
 			if(CHEM_INGEST)
-				if(istype(src, /datum/reagent/toxin) && HAS_TRAIT(M, INGESTED_TOXIN_IMMUNE))
+				if(istype(src, /datum/reagent/toxin) && has_trait(M, INGESTED_TOXIN_IMMUNE))
 					remove_self(removed)
 					return
 				affect_ingest(M, alien, removed * ingest_abs_mult)
@@ -435,4 +435,4 @@ DECLARE_REF(/datum/reagent, "data", DROP, null)
 /// Has the args 'affected_mob' and 'location' which allows us to remove any traits that is only being added by that reagent holder location. I.e stomach, bloodstream, dermal, etc.
 /datum/reagent/proc/on_mob_end_metabolize(mob/living/affected_mob, datum/reagents/location)
 	SHOULD_CALL_PARENT(TRUE)
-	REMOVE_TRAITS_IN(affected_mob, "metabolize_location:[location]reagent:[type]")
+	remove_traits_in(affected_mob, "metabolize_location:[location]reagent:[type]")

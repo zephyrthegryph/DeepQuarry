@@ -41,7 +41,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 /obj/item/ghost_trap/on_destroy(force)
 	var/mob/our_entity = om_resolve(captured_entity)
 	if(our_entity)
-		REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
+		remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
 	..()
 
@@ -59,7 +59,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	if(captured_entity)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src))
-			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
+			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
 			our_entity.forceMove(get_turf(src))
 			update_icon()
@@ -95,7 +95,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	if(captured_entity)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && our_entity.loc != src)
-			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
+			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
 			announce_escape(our_entity)
 			update_icon()
@@ -146,7 +146,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	om_task_timed(escapee, 2 MINUTES, target = src, receiver = src, on_done = PROC_REF(container_resist_timed_done), done_args = list(escapee))
 
 /obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
-	REMOVE_TRAIT(escapee, TRAIT_NO_TRANSFORM, src)
+	remove_trait(escapee, TRAIT_NO_TRANSFORM, src)
 	captured_entity = null
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
@@ -207,7 +207,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	passing_entity.forceMove(src)
 	var/area/our_area = get_area(src)
 	ghost_reporter.autosay("Attention: Spectral event detected. Trap activated at [our_area.name]", "Spectral Trap", "Science", using_map.get_map_levels(z))
-	ADD_TRAIT(passing_entity, TRAIT_NO_TRANSFORM, src)
+	add_trait(passing_entity, TRAIT_NO_TRANSFORM, src)
 
 	to_chat(passing_entity, span_danger("You feel a sudden sensation pulling you into \the [src]!"))
 	if(isobserver(passing_entity))
@@ -259,7 +259,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	if(captured_entity)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
-			REMOVE_TRAIT(our_entity, TRAIT_NO_TRANSFORM, src)
+			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 			captured_entity = null
 			user.begin_instant_nom(user, our_entity, user, user.vore_selected)
 			return

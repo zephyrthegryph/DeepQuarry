@@ -400,7 +400,7 @@
 			self.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
 	//Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
 	else if((self.life_tick % 5 == 0) || (self.radiation > 600))
-		if(HAS_TRAIT(self, TRAIT_HALT_RADIATION_EFFECTS)) //If we have a trait that halts radiation effects, then we just stop here.
+		if(has_trait(self, TRAIT_HALT_RADIATION_EFFECTS)) //If we have a trait that halts radiation effects, then we just stop here.
 			return
 		acute_radiation(self)
 	chronic_radiation(self)
@@ -1286,7 +1286,7 @@
 /datum/om/stage/life/status/carbon/human/idle(mob/living/carbon/human/self)
 	if(self.stat == DEAD)
 		return TRUE
-	if(self.stat != CONSCIOUS || HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
+	if(self.stat != CONSCIOUS || has_trait(self, TRAIT_CRITICAL_CONDITION))
 		return FALSE
 	var/datum/body/B = self.body
 	if(!B || LAZYLEN(B.afflictions) || B.dirty || self.current_pain() || self.oxygen_debt() || self.is_critical())
@@ -1354,14 +1354,14 @@
 	self.status_at_least(EFFECT_SLEEPING, 3)
 	self.set_stat(UNCONSCIOUS)
 	self.blinded = TRUE
-	if(!HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
-		ADD_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	if(!has_trait(self, TRAIT_CRITICAL_CONDITION))
+		add_trait(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 	return TRUE
 
 /datum/om/stage/life/status/carbon/human/proc/update_hallucinations(mob/living/carbon/human/self)
 	if(!self.has_status(EFFECT_HALLUCINATING))
 		return
-	if(self.status_units(EFFECT_HALLUCINATING) >= HALLUCINATION_THRESHOLD && !(self.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !HAS_TRAIT(self, TRAIT_MADNESS_IMMUNE))
+	if(self.status_units(EFFECT_HALLUCINATING) >= HALLUCINATION_THRESHOLD && !(self.species.flags & (NO_POISON|IS_PLANT|NO_HALLUCINATION)) && !has_trait(self, TRAIT_MADNESS_IMMUNE))
 		self.handle_hallucinations()
 
 /// Tiredness from vore drain wears off; very tired bodies fall asleep.
@@ -1403,8 +1403,8 @@
 	if(!self.has_status(EFFECT_SLEEPING))
 		if(!in_crit)
 			self.set_stat(CONSCIOUS)
-			if(HAS_TRAIT(self, TRAIT_CRITICAL_CONDITION))
-				REMOVE_TRAIT(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+			if(has_trait(self, TRAIT_CRITICAL_CONDITION))
+				remove_trait(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
 	self.blinded = TRUE
 	self.set_stat(UNCONSCIOUS)
@@ -2349,7 +2349,7 @@
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
 	OM_EMIT(src, /datum/om/event/human_burning)
 	var/no_protection = FALSE
-	if(HAS_TRAIT(src, TRAIT_IGNORE_FIRE_PROTECTION))
+	if(has_trait(src, TRAIT_IGNORE_FIRE_PROTECTION))
 		no_protection = TRUE
 	fire_handler.harm_human(seconds_per_tick, no_protection)
 

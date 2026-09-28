@@ -86,7 +86,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 /obj/structure/smoletrack/proc/smoletrack_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(IS_DISARMING(user))
-		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
 		playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
@@ -101,7 +101,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 //color roads
 /// Old Use Color Pieces verb.
 /obj/structure/smoletrack/proc/smoletrack_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
-	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	om_ask(user, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
 
@@ -122,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 // probably redundant, allows for direct way to dismantal without knowing intents
 /// Old Take Road Apart verb.
 /obj/structure/smoletrack/proc/smoletrack_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	var/turf/simulated/floor/F = get_turf(src)
@@ -183,7 +183,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 /obj/structure/smolebuilding/proc/smolebuilding_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(IS_DISARMING(user))
-		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
 		playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
@@ -194,7 +194,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 
 	else if (IS_HARMING(user))
 
-		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 
 		playsound(src, 'sound/items/smolebuildinghit2.ogg', 50, 1)
@@ -241,7 +241,7 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED(null, PROC
 /obj/structure/smoleruins/proc/smoleruins_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(IS_DISARMING(user))
-		if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
 		playsound(src, 'sound/items/smolelargeunbuild.ogg', 50, 1, volume_channel = VOLUME_CHANNEL_MASTER)
@@ -270,14 +270,14 @@ EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED(null, PROC
 //color buildings
 /// Old Use Color Pieces verb.
 /obj/structure/smolebuilding/proc/smolebuilding_verb_color(mob/user, obj/item/held, datum/interaction/interaction)
-	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	om_ask(user, /datum/om/prompt/color/smole_paint, PROC_REF(smole_paint_picked), default = color)
 
 //probably a bit redundant but gives a more direct way to disassemble buildings without using intents
 /// Old Take Building Apart verb.
 /obj/structure/smolebuilding/proc/smolebuilding_verb_dismantle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 		return
 	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
 	if(!isnull(loc))

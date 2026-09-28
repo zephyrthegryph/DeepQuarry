@@ -28,6 +28,7 @@ for lint in \
 	cooldown_lint.py \
 	i7_handler_lint.py \
 	dcs_lints.py \
+	leftovers_lints.py \
 	silent_catch_lint.py \
 	ownership_cycle_lint.py \
 	handle_kinds_lint.py \

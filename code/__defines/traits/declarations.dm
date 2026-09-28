@@ -10,7 +10,7 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
 /// Trait given to a mob that is currently thinking (giving off the "thinking" icon), used in an IC context
 #define TRAIT_THINKING_IN_CHARACTER "currently_thinking_IC"
 
-/// Climbable trait, given and taken by the climbable element when added or removed. Exists to be easily checked via HAS_TRAIT().
+/// Climbable trait, given and taken by the climbable element when added or removed. Exists to be easily checked via has_trait().
 #define TRAIT_CLIMBABLE "trait_climbable"
 
 /// Prevents the affected object from opening a loot window via alt click. See atom/click_alt()

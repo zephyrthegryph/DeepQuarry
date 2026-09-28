@@ -1676,10 +1676,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	if(stat) return
 	var/pulling = FALSE
-	if(HAS_TRAIT_FROM(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT))
-		REMOVE_TRAIT(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT)
+	if(has_trait_from(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT))
+		remove_trait(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT)
 	else
-		ADD_TRAIT(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT)
+		add_trait(src, TRAIT_NONLETHAL_BLOWS, ACTION_TRAIT)
 		pulling = TRUE
 	to_chat(src, span_notice("You are now [pulling ? "pulling your punches" : "not pulling your punches"]."))
 	return

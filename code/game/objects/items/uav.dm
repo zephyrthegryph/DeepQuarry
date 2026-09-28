@@ -87,16 +87,22 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		"(Dis)Assemble" = radial_wrench,
 		"Toggle Power" = radial_power,
 		"Pairing Mode" = radial_pair)
-	var/choice = show_radial_menu(user, src, options, require_near = !issilicon(user))
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(option_chosen), choices = options, anchor = src, require_near = !issilicon(user))
+	return TRUE
 
-	switch(choice)
+/obj/item/uav/proc/option_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	if(!user || user.incapacitated() || !isturf(loc))
+		return
+	switch(ask.choice)
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
-				return FALSE
+				// The standard hand pickup (the item's "Pick up" interaction), with all its checks.
+				if(isliving(user) && user.Adjacent(src))
+					pick_up_by_hand(user)
 			else
 				to_chat(user,span_warning("Turn [nickname] off or pack it first!"))
-				return TRUE
 		// Can disasemble or reassemble from packed or off (and this one takes time)
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
@@ -105,12 +111,11 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 		// Can toggle power from on and off
 		if("Toggle Power")
 			if(can_transition_to(state == UAV_ON ? UAV_OFF : UAV_ON, user))
-				return toggle_power(user)
+				toggle_power(user)
 		// Can pair when off
 		if("Pairing Mode")
 			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
-				return toggle_pairing(user)
-	return TRUE
+				toggle_pairing(user)
 
 /obj/item/uav/proc/attack_hand_timed_done(mob/user)
 	return toggle_packed(user)

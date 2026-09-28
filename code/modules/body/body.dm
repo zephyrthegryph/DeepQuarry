@@ -447,8 +447,8 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 	if(owner.is_dead() || om_has(owner, EFFECT_GODMODE))
 		return
 	if(OM_EMIT(owner, /datum/om/event/before/living_body_status) & COMPONENT_BODY_KEEP_ALIVE)
-		if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
-			REMOVE_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+		if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
+			remove_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
 	if(is_lethal())
 		owner.death()
@@ -482,13 +482,13 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 /// override to do nothing.
 /datum/body/proc/update_consciousness()
 	if(is_unconscious())
-		if(!HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
-			ADD_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+		if(!has_trait(owner, TRAIT_CRITICAL_CONDITION))
+			add_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		owner.status_at_least(EFFECT_PARALYZED, 3)
 		owner.status_at_least(EFFECT_SLEEPING, 3)
 		owner.set_stat(UNCONSCIOUS)
-	else if(HAS_TRAIT(owner, TRAIT_CRITICAL_CONDITION))
-		REMOVE_TRAIT(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	else if(has_trait(owner, TRAIT_CRITICAL_CONDITION))
+		remove_trait(owner, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 
 // --- Queries ----------------------------------------------------------------------------
 

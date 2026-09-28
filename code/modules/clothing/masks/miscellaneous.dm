@@ -366,6 +366,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/paper, INTERACT_USE("Change design",
 	if(!istype(user) || user.incapacitated())
 		return
 
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(papermask_design_chosen), choices = papermask_designs || list(), anchor = src, radius = 36, require_near = TRUE)
+
+/obj/item/clothing/mask/paper/proc/papermask_design_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	var/static/list/options = list("Blank" = "papermask", "Neutral" = "neutralmask", "Eyes" = "eyemask",
 							"Sleeping" ="sleepingmask", "Heart" = "heartmask", "Core" = "coremask",
 							"Plus" = "plusmask", "Square" ="squaremask", "Bullseye" = "bullseyemask",
@@ -375,14 +380,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/paper, INTERACT_USE("Change design",
 							"Diamond" = "diamondmask", "Cat" = "catmask", "Big Eyes" = "bigeyemask",
 							"Good" = "goodmask", "Bad" = "badmask", "Happy" = "happymask", "Sad" = "sadmask"
 							)
-
-	var/choice = show_radial_menu(user, src, papermask_designs || list(), custom_check = FALSE, radius = 36, require_near = TRUE)
-
-	if(src && choice && !user.incapacitated() && in_range(user,src))
-		icon_state = options[choice]
-		user.update_inv_wear_mask()
-		user.update_mob_action_buttons()
-		to_chat(user, span_notice("Your paper mask now is now [choice]."))
+	if(!istype(user) || !choice || !options[choice] || user.incapacitated() || !in_range(user, src))
+		return
+	icon_state = options[choice]
+	user.update_inv_wear_mask()
+	user.update_mob_action_buttons()
+	to_chat(user, span_notice("Your paper mask now is now [choice]."))
 
 /obj/item/clothing/mask/emotions
 	name = "emotional mask"
@@ -411,11 +414,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/emotions, INTERACT_USE("Change emoti
 	if(!istype(user) || user.incapacitated())
 		return
 
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(emotion_mask_design_chosen), choices = joymask_designs, anchor = src, radius = 36, require_near = TRUE)
+
+/obj/item/clothing/mask/emotions/proc/emotion_mask_design_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	var/static/list/options = list("Joy" = "joy", "Flushed" = "flushed", "Pensive" = "pensive","Angry" ="angry")
-
-	var/choice = show_radial_menu(user, src, joymask_designs, custom_check = FALSE, radius = 36, require_near = TRUE)
-
-	if(src && choice && !user.incapacitated() && in_range(user,src))
+	if(istype(user) && choice && options[choice] && !user.incapacitated() && in_range(user, src))
 		icon_state = options[choice]
 		user.update_inv_wear_mask()
 		user.update_mob_action_buttons()

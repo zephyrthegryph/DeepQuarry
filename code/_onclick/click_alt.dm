@@ -75,7 +75,7 @@
 	if(OM_EMIT(src, /datum/om/event/before/click_alt, user) & CLICK_ACTION_SUCCESS)
 		return TRUE
 
-	if(HAS_TRAIT(src, TRAIT_ALT_CLICK_BLOCKER) && !isobserver(user))
+	if(has_trait(src, TRAIT_ALT_CLICK_BLOCKER) && !isobserver(user))
 		return TRUE
 
 	var/turf/tile = get_turf(src)

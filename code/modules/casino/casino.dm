@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 		return
 	if(user.stat || user.restrained())
 		return
-	if(HAS_TRAIT(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user)))
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user)))
 		return
 
 	if(om_busy(src))

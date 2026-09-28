@@ -625,7 +625,7 @@
 
 /datum/trait/negative/heavy_landing/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	ADD_TRAIT(H, TRAIT_HEAVY_LANDING, ROUNDSTART_TRAIT)
+	add_trait(H, TRAIT_HEAVY_LANDING, ROUNDSTART_TRAIT)
 
 /*
  * So, I know what you're thinking.

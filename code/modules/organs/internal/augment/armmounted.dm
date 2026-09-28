@@ -154,6 +154,8 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	name = "rotary toolkit"
 	desc = "A large implant that fits into a subject's arm. It deploys an array of tools by some painful means."
+	/// Set by integrated_tool_chosen() so the re-entered augment_action() deploys without asking again.
+	var/tool_picked = FALSE
 
 	icon_state = "augment_toolkit"
 
@@ -255,16 +257,25 @@ DECLARE_REF(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, "synt
 	for(var/Iname in integrated_tools_by_name)
 		options[Iname] = integrated_tool_images[Iname]
 
-	var/list/choice = list()
+	if(tool_picked)
+		// Re-entry from integrated_tool_chosen(): the tool is already set.
+		tool_picked = FALSE
+		return ..()
+
 	if(length(options) == 1)
 		for(var/key in options)
-			choice = key
-	else
-		choice = show_radial_menu(owner, owner, options)
+			integrated_object = integrated_tools_by_name[key]
+		return ..()
 
-	integrated_object = integrated_tools_by_name[choice]
+	om_ask(owner, /datum/om/prompt/choice/radial, PROC_REF(integrated_tool_chosen), choices = options, anchor = owner)
 
-	..()
+/// Answer to augment_action(): set the picked tool and run the deploy (the old ..()).
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_chosen(datum/om/prompt/choice/radial/ask)
+	if(!owner || ask.answerer != owner || is_broken())
+		return
+	integrated_object = integrated_tools_by_name[ask.choice]
+	tool_picked = TRUE
+	augment_action()
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical
 	name = "rotary medical kit"

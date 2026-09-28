@@ -107,7 +107,7 @@
 	return FALSE
 
 /obj/heats_in_fire()
-	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR) || (resistance_flags & INDESTRUCTIBLE))
+	if(has_trait(src, TRAIT_UNDERFLOOR) || (resistance_flags & INDESTRUCTIBLE))
 		return FALSE
 	return dq_rules_for_type(type) ? TRUE : FALSE
 

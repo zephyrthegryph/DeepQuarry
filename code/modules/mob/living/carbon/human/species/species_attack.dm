@@ -208,7 +208,7 @@
 	sparring_variant_type = /datum/unarmed_attack/claws/chimera
 
 /datum/unarmed_attack/claws/chimera/get_unarmed_damage(mob/living/carbon/human/user)
-	if(HAS_TRAIT(user, TRAIT_NONLETHAL_BLOWS) && !user.get_feralness())//don't add extra species strength when pulling punches, but can't pull punches when feral
+	if(has_trait(user, TRAIT_NONLETHAL_BLOWS) && !user.get_feralness())//don't add extra species strength when pulling punches, but can't pull punches when feral
 		return damage
 	return user.species.unarmed_bonus + damage + min(user.get_feralness()/5, 40)
 

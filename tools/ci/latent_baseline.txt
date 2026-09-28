@@ -1,3 +1,2 @@
 # Raw contents walks on latent holders (tools/ci/latent_lint.py). rule<TAB>file<TAB>normalized line.
 # Shrink-only: fix a site through the ledger API, then `python tools/ci/latent_lint.py --update`.
-raw_walks	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)

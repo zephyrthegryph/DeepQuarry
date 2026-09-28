@@ -142,7 +142,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	message = "What would you like to isolate?"
 	choices = list("Symptom", "Disease")
 	buttons = TRUE
-	var/datum/disease/advance/disease
+	var/datum/affliction/contagion/engineered/disease
 
 /datum/om/prompt/choice/extrapolator/symptom
 	title = "Symptom Extraction"

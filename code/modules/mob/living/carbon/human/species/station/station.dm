@@ -646,7 +646,7 @@
 
 /datum/species/diona/handle_post_spawn(mob/living/carbon/human/H)
 	H.gender = NEUTER
-	ADD_TRAIT(H, UNIQUE_MINDSTRUCTURE, ROUNDSTART_TRAIT)
+	add_trait(H, UNIQUE_MINDSTRUCTURE, ROUNDSTART_TRAIT)
 	return ..()
 
 /datum/species/diona/handle_death(mob/living/carbon/human/H)
@@ -2011,10 +2011,13 @@
 	for(var/option in options)
 		LAZYSET(options, option, new /image('icons/mob/alien.dmi', option)) // based off 'icons/effects/thinktank_labels.dmi'
 
-	var/choice = show_radial_menu(src, src, options, radius = 42, require_near = TRUE)
+	om_ask(src, /datum/om/prompt/choice/radial, PROC_REF(resin_weak_chosen), choices = options, anchor = src, radius = 42, require_near = TRUE)
 
+/// Radial answer: secrete the picked resin structure in front of us.
+/mob/living/carbon/human/proc/resin_weak_chosen(datum/om/prompt/choice/radial/ask)
+	var/choice = ask.choice
 	if(!choice || QDELETED(src) || src.incapacitated())
-		return FALSE
+		return
 
 	var/targetLoc = get_step(src, dir)
 

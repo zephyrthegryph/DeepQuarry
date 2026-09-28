@@ -659,7 +659,7 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks as it vends an additional item."))
 
 /obj/machinery/vending/proc/delayed_vend(datum/stored_item/vending_product/R, mob/user)
-	if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(10))
+	if(has_trait(user, TRAIT_UNLUCKY) && prob(10))
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
 		vend_ready = 1

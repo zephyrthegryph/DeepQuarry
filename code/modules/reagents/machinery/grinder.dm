@@ -187,13 +187,15 @@
 	if(length(holdingitems))
 		options["grind"] = radial_grind
 
-	var/choice = show_radial_menu(user, src, options, require_near = !issilicon(user), autopick_single_option = FALSE)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(radial_option_chosen), choices = options, anchor = src, require_near = !issilicon(user), autopick_single_option = FALSE)
 
+/obj/machinery/reagentgrinder/proc/radial_option_chosen(datum/om/prompt/choice/radial/ask)
+	var/mob/user = ask.answerer
 	// post choice verification
-	if(om_busy(src) || (isAI(user) && stat & NOPOWER) || user.incapacitated())
+	if(!user || om_busy(src) || (isAI(user) && stat & NOPOWER) || user.incapacitated())
 		return
 
-	switch(choice)
+	switch(ask.choice)
 		if("eject")
 			eject(user)
 		if("grind")

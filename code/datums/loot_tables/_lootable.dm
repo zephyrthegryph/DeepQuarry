@@ -62,7 +62,7 @@
 	var/obj/item/loot = null
 	var/span = "notice" // Blue
 
-	if(HAS_TRAIT(L, TRAIT_UNLUCKY) && length(unlucky_loot)) // If you're unlucky, you will always find bad stuff.
+	if(has_trait(L, TRAIT_UNLUCKY) && length(unlucky_loot)) // If you're unlucky, you will always find bad stuff.
 		loot = produce_unlucky_item(source)
 		span = "cult" // Purple and bold.
 		if(prob(1))

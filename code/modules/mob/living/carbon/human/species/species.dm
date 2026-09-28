@@ -770,7 +770,7 @@
 			playsound(H, "rustle", 25, 1)
 		return TRUE
 
-	if(HAS_TRAIT(src, TRAIT_HEAVY_LANDING))
+	if(has_trait(src, TRAIT_HEAVY_LANDING))
 
 		if(!silent)
 			to_chat(H, span_danger("You land with a heavy crash!"))

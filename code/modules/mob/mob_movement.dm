@@ -147,7 +147,7 @@
 	// Used many times below, faster reference.
 	var/atom/loc = my_mob.loc
 
-	if(HAS_TRAIT(my_mob, TRAIT_NO_TRANSFORM))
+	if(has_trait(my_mob, TRAIT_NO_TRANSFORM))
 		return FALSE //This is sorta the goto stop mobs from moving trait
 
 	// We're controlling an object which is when admins possess an object.

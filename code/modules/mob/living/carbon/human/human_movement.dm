@@ -97,7 +97,7 @@
 	if(has_mutation(mRun))
 		. = min(., 0)
 
-	if(HAS_TRAIT(src, UNUSUAL_RUNNING) && !get_active_hand() && !get_inactive_hand()) //better not have any items on you mfer
+	if(has_trait(src, UNUSUAL_RUNNING) && !get_active_hand() && !get_inactive_hand()) //better not have any items on you mfer
 		. -= 0.5 // ok vibe check passed, take this small movement buff and leave
 
 	. = max(HUMAN_LOWEST_SLOWDOWN, . + CONFIG_GET(number/human_delay))	// Minimum return should be the same as force_max_speed

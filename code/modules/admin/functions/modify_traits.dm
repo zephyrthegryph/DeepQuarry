@@ -31,7 +31,7 @@
 		if("Remove")
 			if(!GLOB.trait_name_map)
 				GLOB.trait_name_map = generate_trait_name_map()
-			for(var/trait in D._status_traits)
+			for(var/trait in trait_list(D))
 				var/name = GLOB.trait_name_map[trait] || trait
 				availible_traits[name] = trait
 
@@ -51,10 +51,20 @@
 		traits_answered(ask.target, ask.mode, ask.trait)
 		return
 	var/list/traits = modifiable_traits(ask.target, "Remove")
-	om_ask(ask.answerer, /datum/om/prompt/choice/modify_trait, PROC_REF(trait_source_chosen), message = "Source to be removed", choices = GET_TRAIT_SOURCES(ask.target, traits[ask.trait]), target = ask.target, mode = ask.mode, trait = ask.trait, specific = ask.choice)
+	om_ask(ask.answerer, /datum/om/prompt/choice/modify_trait, PROC_REF(trait_source_chosen), message = "Source to be removed", choices = trait_source_names(ask.target, traits[ask.trait]), target = ask.target, mode = ask.mode, trait = ask.trait, specific = ask.choice)
 
 /datum/admins/proc/trait_source_chosen(datum/om/prompt/choice/modify_trait/ask)
-	traits_answered(ask.target, ask.mode, ask.trait, ask.choice)
+	var/list/traits = modifiable_traits(ask.target, "Remove")
+	for(var/datum/source as anything in trait_sources(ask.target, traits[ask.trait]))
+		if("[source]" == ask.choice)
+			traits_answered(ask.target, ask.mode, ask.trait, source)
+			return
+
+/// The names of the sources granting `trait`, for the pick list.
+/datum/admins/proc/trait_source_names(datum/D, trait)
+	. = list()
+	for(var/datum/source as anything in trait_sources(D, trait))
+		. |= "[source]"
 
 /// Applies the answers: `source` is null to remove the trait from every source.
 /datum/admins/proc/traits_answered(datum/D, mode, trait_name, source)
@@ -64,6 +74,6 @@
 		return
 	switch(mode)
 		if("Add") //Not doing source choosing here intentionally to make this bit faster to use, you can always vv it.
-			ADD_TRAIT(D,chosen_trait,"adminabuse")
+			add_trait(D,chosen_trait,"adminabuse")
 		if("Remove")
-			REMOVE_TRAIT(D,chosen_trait,source)
+			remove_trait(D,chosen_trait,source)

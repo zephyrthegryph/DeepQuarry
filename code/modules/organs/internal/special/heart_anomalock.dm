@@ -171,7 +171,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 
 /datum/body_effect/voltaic_overdrive/on_start(mob/living/L)
 	. = ..()
-	REMOVE_TRAIT(L, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
+	remove_trait(L, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 	L.reagents.add_reagent(REAGENT_ID_MYELAMINE, 5)
 	to_chat(L, span_userdanger("You feel a burst of energy! It's do or die!"))
 

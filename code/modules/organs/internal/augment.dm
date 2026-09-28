@@ -107,16 +107,17 @@ DECLARE_REF(/obj/item/organ/internal/augment, "my_radial_icon", OWNED, null)
 		var/obj/item/organ/internal/augment/iconsource = present_augs[augname]
 		options[augname] = iconsource.my_radial_icon
 
-	var/list/choice = list()
-	if(length(options) == 1)
-		for(var/key in options)
-			choice = key
-	else
-		choice = show_radial_menu(user, src, options)
+	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(augment_chosen), choices = options, anchor = src, subject = present_augs)
 
-	if(!isnull(choice) && options[choice])
-		var/obj/item/organ/internal/augment/A = present_augs[choice]
-		A.augment_action(user)
+/// Answer to enable_augments(): activate the picked augment. ask.subject is the name -> augment map.
+/mob/living/carbon/human/proc/augment_chosen(datum/om/prompt/choice/radial/ask)
+	var/list/present_augs = ask.subject
+	if(isnull(ask.choice) || !islist(present_augs))
+		return
+	var/obj/item/organ/internal/augment/A = present_augs[ask.choice]
+	if(!istype(A) || QDELETED(A) || A.owner != src || A.is_broken())
+		return
+	A.augment_action(ask.answerer)
 
 /* equip_augment_item
  * Used to equip an organ's augment items when possible.

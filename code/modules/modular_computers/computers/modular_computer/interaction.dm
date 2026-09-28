@@ -121,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 /// Old attack_self.
 /obj/item/modular_computer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(enabled && screen_on)
-		if(isliving(user) && HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(5))
+		if(isliving(user) && has_trait(user, TRAIT_UNLUCKY) && prob(5))
 			var/mob/living/unlucky_soul = user
 			to_chat(user, span_danger("You interact with \the [src] and are met with a sudden shock!"))
 			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 			return TRUE
 		tgui_interact(user)
 	else if(!enabled && screen_on)
-		if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(25))
+		if(has_trait(user, TRAIT_UNLUCKY) && prob(25))
 			to_chat(user, "You try to turn on \the [src] but it doesn't respond.")
 			return TRUE
 		turn_on(user)

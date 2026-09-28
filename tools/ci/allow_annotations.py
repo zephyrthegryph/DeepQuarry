@@ -44,6 +44,7 @@ LINTS = {
     "organ_slots": "tools/ci/organ_slots_lint.py (the deleted internal organ lists; ceiling 0)",
     "ownership_cycle": "tools/ci/ownership_cycle_lint.py (type-level DECLARE_REF(..., OWNED) cycles)",
     "pollers": "tools/ci/pollers_lint.py",
+    "radial": "tools/ci/leftovers_lints.py (radial menus that are not action pickers)",
     "registry": "tools/ci/registry_lint.py",
     "scheduler": "tools/ci/scheduler_lints.py",
     "silent_catch": "tools/ci/silent_catch_lint.py (catches that swallow an exception)",
