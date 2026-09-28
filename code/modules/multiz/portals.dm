@@ -220,5 +220,6 @@
 	src << 'sound/effects/bamf.ogg'
 	to_chat(src, span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
 
-/// LC-refs: two event portals point at each other.
-REF_PAIR(/obj/structure/portal_event, list("target" = "target"))
+/// LC-refs: a portal's other end goes with it (phase 4 deletes it; its own Destroy() then
+/// finds the link already gone).
+REF_OWNED(/obj/structure/portal_event, "target")
