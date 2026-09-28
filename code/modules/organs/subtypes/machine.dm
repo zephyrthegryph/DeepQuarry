@@ -55,10 +55,6 @@ REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 /obj/item/organ/internal/mmi_holder/LateInitialize()
 	update_from_mmi()
 
-/obj/item/organ/internal/mmi_holder/proc/get_control_efficiency()
-	. = max(0, 1 - round(damage / max_damage, 0.1))
-
-	return .
 
 /obj/item/organ/internal/mmi_holder/proc/update_from_mmi()
 	if(!owner) return

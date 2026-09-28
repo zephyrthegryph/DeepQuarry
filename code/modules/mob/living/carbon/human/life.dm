@@ -2125,7 +2125,7 @@ ef[limb_image][limb_image.color]"
 	if(!self.has_cardiac_output())
 		return isnull(modifier_set) ? PULSE_NONE : modifier_set
 
-	var/obj/item/organ/internal/brain/Control = self.internal_organs_by_name[O_BRAIN]
+	var/obj/item/organ/internal/Control = self.internal_organs_by_name[O_BRAIN] // any brain-slot occupant
 
 	if(Control)
 		brain_modifier = Control.get_control_efficiency()

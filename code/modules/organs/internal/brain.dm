@@ -191,10 +191,11 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	..()
 	sync_defib_window() // re-anchor on the new owner's clock
 
-/obj/item/organ/internal/brain/proc/get_control_efficiency()
-	. = max(0, 1 - (round(damage / max_damage * 10) / 10))
-
-	return .
+/// Brain-slot interface (audit P2-D9): whatever organ sits in O_BRAIN (a brain, an MMI holder,
+/// a posibrain) answers how well it still runs the body, 0..1 in tenths. Callers type the slot's
+/// occupant as /obj/item/organ/internal and ask this; no occupant duck-types brain procs.
+/obj/item/organ/internal/proc/get_control_efficiency()
+	return max_damage ? max(0, 1 - round(damage / max_damage, 0.1)) : 1
 
 /obj/item/organ/internal/brain/pariah_brain
 	name = "brain remnants"
