@@ -3,7 +3,7 @@
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
-	var/obj/machinery/atmospherics/pipe/target = null
+	var/target_handle
 	var/list/pipes_on_turf
 	anchored = TRUE
 	power_channel = ENVIRON
@@ -15,20 +15,20 @@
 
 /obj/machinery/meter/Initialize(mapload)
 	. = ..()
-	set_target(target || select_target())
+	set_target(target_ref() || select_target())
 
 /// Points the meter at `new_target`. The meter owns its lifetime watch on a
 /// pipe target: when the pipe is destroyed the meter comes off as an item.
 /obj/machinery/meter/proc/set_target(new_target)
-	if(istype(target, /obj/machinery/atmospherics/pipe))
-		UnregisterSignal(target, COMSIG_QDELETING)
-	target = new_target
-	if(istype(target, /obj/machinery/atmospherics/pipe))
-		RegisterSignal(target, COMSIG_QDELETING, PROC_REF(on_target_deleted))
+	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
+		UnregisterSignal(target_ref(), COMSIG_QDELETING)
+	target_handle = om_handle(new_target)
+	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
+		RegisterSignal(target_ref(), COMSIG_QDELETING, PROC_REF(on_target_deleted))
 
 /obj/machinery/meter/proc/on_target_deleted(datum/source)
 	SIGNAL_HANDLER
-	target = null
+	target_handle = null
 	if(QDELETED(src))
 		return
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
@@ -49,11 +49,11 @@
 /// changes (a value watch on current_display_signature()). Pressure noise below the display's
 /// resolution never wakes it.
 /obj/machinery/meter/proc/register_gas_dependency()
-	var/datum/gas_mixture/environment = target?.return_air()
+	var/datum/gas_mixture/environment = target_ref()?.return_air()
 	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(current_display_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/meter/proc/current_display_signature()
-	var/datum/gas_mixture/environment = target?.return_air()
+	var/datum/gas_mixture/environment = target_ref()?.return_air()
 	if(!frequency || !environment)
 		return pressure_icon_state(environment)
 	return "[pressure_icon_state(environment)]|[round(environment.return_pressure())]"
@@ -66,7 +66,7 @@
 	MACHINE_WAKE(src)
 
 /obj/machinery/meter/proc/current_pressure_icon_state()
-	return pressure_icon_state(target?.return_air())
+	return pressure_icon_state(target_ref()?.return_air())
 
 /obj/machinery/meter/proc/pressure_icon_state(datum/gas_mixture/environment)
 	if(!environment)
@@ -86,7 +86,7 @@
 	return "meter4"
 
 /obj/machinery/meter/machine_step()
-	if(!target)
+	if(!target_ref())
 		icon_state = "meterX"
 		return PROCESS_KILL
 
@@ -94,7 +94,7 @@
 		icon_state = "meter0"
 		return PROCESS_KILL
 
-	var/datum/gas_mixture/environment = target.return_air()
+	var/datum/gas_mixture/environment = target_ref().return_air()
 	if(!environment)
 		icon_state = "meterX"
 		return PROCESS_KILL
@@ -110,7 +110,7 @@
 			return PROCESS_KILL
 
 		var/datum/signal/signal = new
-		signal.source = src
+		signal.source_handle = om_handle(src)
 		signal.transmission_method = TRANSMISSION_RADIO
 		signal.data = list(
 			"tag" = id,
@@ -131,8 +131,8 @@
 	else if(stat & (NOPOWER|BROKEN))
 		. += span_warning("The display is off.")
 
-	else if(target)
-		var/datum/gas_mixture/environment = target.return_air()
+	else if(target_ref())
+		var/datum/gas_mixture/environment = target_ref().return_air()
 		if(environment)
 			var/environment_temperature = environment.return_temperature()
 			. += "The pressure gauge reads [round(environment.return_pressure(), 0.01)] kPa; [round(environment_temperature,0.01)]K ([round(environment_temperature-T0C,0.01)]&deg;C)"
@@ -174,9 +174,9 @@
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
 	set_target(LAZYACCESS(pipes_on_turf, 1))
-	LAZYREMOVE(pipes_on_turf, target)
-	LAZYADD(pipes_on_turf, target)
-	to_chat(user, span_notice("Pipe meter set to monitor \the [target]."))
+	LAZYREMOVE(pipes_on_turf, target_ref())
+	LAZYADD(pipes_on_turf, target_ref())
+	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/meter/proc/meter_id_entered(mob/user, new_id, datum/om/prompt/ask)
@@ -186,7 +186,7 @@
 	var/obj/item/tool = ask.get("tool")
 	var/obj/item/multitool/multitool = tool.get_multitool()
 	if(multitool)
-		multitool.connectable = src
+		multitool.connectable_handle = om_handle(src)
 	return ITEM_INTERACT_SUCCESS
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS
@@ -201,3 +201,7 @@
 /obj/machinery/meter/arm_wakes()
 	..()
 	register_gas_dependency()
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/meter/proc/target_ref() as /obj/machinery/atmospherics/pipe
+	return om_resolve(target_handle)

@@ -13,7 +13,7 @@
 
 	var/screen = 0				// the screen number:
 	var/list/machinelist	// the machines located by the computer
-	var/obj/machinery/telecomms/SelectedMachine
+	var/SelectedMachine_handle
 	circuit = /obj/item/circuitboard/comm_monitor
 
 	var/network = "NULL"		// the network to probe
@@ -35,13 +35,13 @@
 	data["machinelist"] = machinelistData
 
 	data["selectedMachine"] = null
-	if(SelectedMachine)
+	if(SelectedMachine())
 		data["selectedMachine"] = list(
-			"id" = SelectedMachine.id,
-			"name" = SelectedMachine.name,
+			"id" = SelectedMachine().id,
+			"name" = SelectedMachine().name,
 		)
 		var/list/links = list()
-		for(var/obj/machinery/telecomms/T in SelectedMachine.links)
+		for(var/obj/machinery/telecomms/T in SelectedMachine().links)
 			if(!T.hide)
 				links.Add(list(list(
 					"id" = T.id,
@@ -83,17 +83,17 @@
 		if("view")
 			for(var/obj/machinery/telecomms/T in machinelist)
 				if(T.id == params["id"])
-					SelectedMachine = T
+					SelectedMachine_handle = om_handle(T)
 					break
 			. = TRUE
 
 		if("mainmenu")
-			SelectedMachine = null
+			SelectedMachine_handle = null
 			. = TRUE
 
 		if("release")
 			machinelist = list()
-			SelectedMachine = null
+			SelectedMachine_handle = null
 			. = TRUE
 
 		if("scan")
@@ -141,3 +141,7 @@
 
 /obj/machinery/computer/telecomms/monitor/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)
+
+/// LC-refs: SelectedMachine -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telecomms/monitor/proc/SelectedMachine() as /obj/machinery/telecomms
+	return om_resolve(SelectedMachine_handle)

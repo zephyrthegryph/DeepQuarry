@@ -51,7 +51,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 	/// What raises the wake_on channels (audit messages).
 	var/woken_by
 	/// Declared fields (fields.dm) of `of` that idle() and perform() read to decide there is work.
-	/// The registry checks at boot that wake_on covers each one's channel.
+	/// The registry ORs their channels into wake_on at boot; list only the other channels there.
 	var/list/reads
 
 	// ---- compiled by the registry ----

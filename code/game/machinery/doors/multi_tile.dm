@@ -2,8 +2,6 @@
 /obj/machinery/door/airlock/multi_tile
 	width = 2
 	appearance_flags = 0
-	var/obj/machinery/filler_object/filler1
-	var/obj/machinery/filler_object/filler2
 	open_sound_powered = 'sound/machines/door/WideOpen.ogg'
 	close_sound_powered = 'sound/machines/door/WideClose.ogg'
 	update_adjacent_tiles = FALSE
@@ -51,3 +49,4 @@
 /obj/machinery/door/airlock/multi_tile/glass/polarized
 	name = "Electrochromic Glass Airlock"
 	icon_tinted = 'icons/obj/doors/Door2x1tinted_vr.dmi'
+

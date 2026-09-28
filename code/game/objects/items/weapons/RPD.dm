@@ -31,7 +31,7 @@
 	var/category = ATMOS_CATEGORY
 	var/piping_layer = PIPING_LAYER_DEFAULT
 	var/obj/item/tool/wrench/tool
-	var/datum/pipe_recipe/recipe = null	// pipe recipie selected for display/construction //, added = null
+	var/recipe_handle	// pipe recipie selected for display/construction //, added = null
 	var/static/datum/pipe_recipe/first_atmos
 	var/static/datum/pipe_recipe/first_disposal
 	var/mode = BUILD_MODE | DESTROY_MODE | WRENCH_MODE
@@ -55,8 +55,8 @@
 		first_atmos = GLOB.atmos_pipe_recipes[GLOB.atmos_pipe_recipes[1]][1]
 	if(!first_disposal)
 		first_disposal = GLOB.disposal_pipe_recipes[GLOB.disposal_pipe_recipes[1]][1]
-	if(!recipe)
-		recipe = first_atmos
+	if(!recipe())
+		recipe_handle = om_handle(first_atmos)
 
 REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 
@@ -86,7 +86,7 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 		"category" = category,
 		"piping_layer" = piping_layer,
 		"pipe_layers" = pipe_layers,
-		"preview_rows" = recipe.get_preview(p_dir),
+		"preview_rows" = recipe().get_preview(p_dir),
 		"categories" = list(),
 		"selected_color" = paint_color,
 		"paint_colors" = GLOB.pipe_colors,
@@ -106,7 +106,7 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 		var/list/r = list()
 		for(var/i in 1 to cat.len)
 			var/datum/pipe_recipe/info = cat[i]
-			r += list(list("pipe_name" = info.name, "pipe_index" = i, "selected" = (info == recipe)))
+			r += list(list("pipe_name" = info.name, "pipe_index" = i, "selected" = (info == recipe())))
 		data["categories"] += list(list("cat_name" = c, "recipes" = r))
 
 	return data
@@ -124,9 +124,9 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 			category = text2num(params["category"])
 			switch(category)
 				if(DISPOSALS_CATEGORY)
-					recipe = first_disposal
+					recipe_handle = om_handle(first_disposal)
 				if(ATMOS_CATEGORY)
-					recipe = first_atmos
+					recipe_handle = om_handle(first_atmos)
 				// if(TRANSIT_CATEGORY)
 				// 	recipe = first_transit
 			p_dir = NORTH
@@ -138,7 +138,7 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 			var/static/list/recipes
 			if(!recipes)
 				recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
-			recipe = recipes[params["category"]][text2num(params["pipe_type"])]
+			recipe_handle = om_handle(recipes[params["category"]][text2num(params["pipe_type"])])
 			p_dir = NORTH
 		if("setdir")
 			p_dir = text2dir(params["dir"])
@@ -193,19 +193,19 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 				if(!can_make_pipe)
 					return ..()
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
-				if(istype(recipe, /datum/pipe_recipe/meter))
+				if(istype(recipe(), /datum/pipe_recipe/meter))
 					to_chat(user, span_notice("You start building a meter..."))
 					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack, user, A, list("receiver" = src, "queued_piping_layer" = queued_piping_layer))
-				else if(istype(recipe, /datum/pipe_recipe/air_sensor))
+				else if(istype(recipe(), /datum/pipe_recipe/air_sensor))
 					to_chat(user, span_notice("You start building an air sensor..."))
 					om_do_after(user, 2, target = A, receiver = src, on_done = PROC_REF(afterattack_timed_done3), done_args = list(A, user))
-				else if(istype(recipe, /datum/pipe_recipe/pipe))
-					var/datum/pipe_recipe/pipe/R = recipe
+				else if(istype(recipe(), /datum/pipe_recipe/pipe))
+					var/datum/pipe_recipe/pipe/R = recipe()
 					to_chat(user, span_notice("You start building a pipe..."))
 					om_task_start(/datum/om/task/timed/pipe_dispenser_afterattack2, user, A, list("receiver" = src, "queued_piping_layer" = queued_piping_layer, "queued_p_dir" = queued_p_dir, "queued_p_flipped" = queued_p_flipped, "R" = R))
 
 			if(DISPOSALS_CATEGORY) //Making disposals pipes
-				var/datum/pipe_recipe/disposal/R = recipe
+				var/datum/pipe_recipe/disposal/R = recipe()
 				if(!istype(R) || !can_make_pipe)
 					return ..()
 				A = get_turf(A)
@@ -337,3 +337,7 @@ REF_OWNED(/obj/item/pipe_dispenser, list("spark_system", "tool"))
 #undef WRENCH_MODE
 #undef DESTROY_MODE
 #undef PAINT_MODE
+
+/// LC-refs: recipe -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/pipe_dispenser/proc/recipe() as /datum/pipe_recipe
+	return om_resolve(recipe_handle)

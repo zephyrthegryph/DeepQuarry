@@ -6,8 +6,8 @@
 
 	var/list/template_list = list()
 
-	for(var/the_symptom in subtypesof(/datum/symptom))
-		var/datum/symptom/symptom = new the_symptom
+	for(var/the_symptom in subtypesof(/datum/viral_trait))
+		var/datum/viral_trait/symptom = new the_symptom
 
 		if(symptom.level < 0) // Skip base/admin symptoms
 			continue

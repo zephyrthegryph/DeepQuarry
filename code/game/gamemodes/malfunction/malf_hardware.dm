@@ -2,13 +2,13 @@
 	var/name = ""								// Hardware name
 	var/desc = ""
 	var/driver = null							// Driver - if not null this verb is given to the AI to control hardware
-	var/mob/living/silicon/ai/owner = null		// AI which owns this.
+	var/owner_handle		// AI which owns this.
 
 /datum/malf_hardware/proc/install()
-	if(owner && istype(owner))
-		owner.hardware = src
+	if(owner_ref() && istype(owner_ref(), /mob/living/silicon/ai))
+		owner_ref().hardware = src
 		if(driver)
-			add_verb(owner, driver)
+			add_verb(owner_ref(), driver)
 
 /datum/malf_hardware/proc/get_examine_desc()
 	return "It has some sort of hardware attached to its core"
@@ -23,9 +23,9 @@
 
 /datum/malf_hardware/apu_gen/get_examine_desc()
 	var/msg = "It seems to have some sort of power generator attached to its core."
-	if(owner.hardware_integrity() < 50)
+	if(owner_ref().hardware_integrity() < 50)
 		msg += span_warning(" It seems to be too damaged to function properly.")
-	else if(owner.APU_power)
+	else if(owner_ref().APU_power)
 		msg += " The generator appears to be active."
 	return msg
 
@@ -49,7 +49,7 @@
 	driver = /datum/game_mode/malfunction/verb/ai_self_destruct
 
 /datum/malf_hardware/core_bomb/get_examine_desc()
-	return span_warning("It seems to have grey blocks of unknown substance and some circuitry connected to it's core. [owner.bombing_core ? "A red light is blinking on the circuit." : ""]")
+	return span_warning("It seems to have grey blocks of unknown substance and some circuitry connected to it's core. [owner_ref().bombing_core ? "A red light is blinking on the circuit." : ""]")
 
 /datum/malf_hardware/strong_turrets
 	name = "Turrets Focus Enhancer"
@@ -66,3 +66,7 @@
 		T.shot_delay = round(initial(T.shot_delay) / 2)
 		T.auto_repair = 1
 		T.update_active_power_usage(round(initial(T.active_power_usage) * 5))
+
+/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/malf_hardware/proc/owner_ref() as /mob/living/silicon/ai
+	return om_resolve(owner_handle)

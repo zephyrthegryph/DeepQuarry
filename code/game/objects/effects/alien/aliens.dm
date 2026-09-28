@@ -37,7 +37,7 @@
 	var/delete_me
 
 	max_integrity = 15
-	var/obj/effect/alien/weeds/node/linked_node = null
+	var/linked_node_handle
 	var/static/list/weedImageCache
 
 /obj/effect/alien/weeds/Initialize(mapload, node, newcolor)
@@ -45,7 +45,7 @@
 	if(isspace(loc) || delete_me)
 		return INITIALIZE_HINT_QDEL
 
-	linked_node = node
+	linked_node_handle = om_handle(node)
 //	if(newcolor)
 // color = newcolor // No coloration.
 
@@ -63,7 +63,7 @@
 	for (var/obj/effect/alien/weeds/W in range(1,T))
 		W.updateWeedOverlays()
 
-	linked_node = null
+	linked_node_handle = null
 	return ..()
 
 /obj/effect/alien/weeds/node
@@ -90,7 +90,7 @@
 				continue
 			qdel(existing)
 
-	linked_node = src
+	linked_node_handle = om_handle(src)
 
 	PERIODIC_START(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
 
@@ -132,10 +132,10 @@
 		qdel(src)
 		return
 
-	if(!linked_node)
+	if(!linked_node())
 		return
 
-	if(get_dist(linked_node, src) > linked_node.node_range)
+	if(get_dist(linked_node(), src) > linked_node().node_range)
 		return
 
 	for(var/dirn in GLOB.cardinal)
@@ -148,7 +148,7 @@
 		if(T1.c_airblock(T2) == BLOCKED)
 			continue
 
-		new /obj/effect/alien/weeds(T2, linked_node) // No coloration.
+		new /obj/effect/alien/weeds(T2, linked_node()) // No coloration.
 
 /obj/effect/alien/weeds/node/periodic_step()
 	set background = 1
@@ -160,8 +160,8 @@
 
 	for(var/obj/effect/alien/weeds/W as anything in nearby_weeds)
 
-		if(!W.linked_node)
-			W.linked_node = src
+		if(!W.linked_node())
+			W.linked_node_handle = om_handle(src)
 
 // W.color = W.linked_node.set_color // No coloration.
 
@@ -280,3 +280,9 @@
 	om_after(src, rand(150, 200), PROC_REF(tick))
 
 //Xenomorph Effect egg removed, replaced with Structure Egg.
+
+REF_OWNED(/obj/effect/alien/acid, list("target"))
+
+/// LC-refs: linked node -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/alien/weeds/proc/linked_node() as /obj/effect/alien/weeds/node
+	return om_resolve(linked_node_handle)

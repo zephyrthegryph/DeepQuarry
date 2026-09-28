@@ -9,15 +9,15 @@
 	var/visual = 1		//If you need to see to get the message
 	var/audio = 0		//If you need to hear to get the message
 	var/listening = 0
-	var/datum/language/langset
+	var/langset_handle
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/universal_translator/proc/language_chosen(mob/user, datum/language/choice, datum/om/prompt/ask)
 	if(listening)
 		return
-	langset = choice
-	if(langset && ((langset.flags & NONVERBAL) || (langset.flags & HIVEMIND) || (!langset.machine_understands)))
+	langset_handle = om_handle(choice)
+	if(langset() && ((langset().flags & NONVERBAL) || (langset().flags & HIVEMIND) || (!langset().machine_understands)))
 		//Nonverbal means no spoken words to translate, so I didn't see the need to remove it.
 		to_chat(user, span_warning("\The [src] cannot output that language."))
 		return
@@ -25,7 +25,7 @@
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	if(mult_icons)
 		icon_state = "[initial(icon_state)]1"
-	to_chat(user, span_notice("You enable \the [src], translating into [langset.name]."))
+	to_chat(user, span_notice("You enable \the [src], translating into [langset().name]."))
 
 /obj/item/universal_translator/get_interactions()
 	var/static/list/L = list(INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -37,7 +37,7 @@
 	else	//Turning OFF
 		listening = 0
 		registry_leave(REGISTRY_LISTENING_OBJECTS, src)
-		langset = null
+		langset_handle = null
 		icon_state = "[initial(icon_state)]"
 		to_chat(user, span_notice("You disable \the [src]."))
 
@@ -76,10 +76,10 @@
 
 		new_message += (S.message + " ")
 
-	if(!L.say_understands(null, langset))
-		new_message = langset.scramble(new_message)
+	if(!L.say_understands(null, langset()))
+		new_message = langset().scramble(new_message)
 
-	to_chat(L, span_filter_say(span_italics(span_bold("[src]") + " translates, ") + " \"<span class='[langset.colour]'>[new_message]</span>\""))
+	to_chat(L, span_filter_say(span_italics(span_bold("[src]") + " translates, ") + " \"<span class='[langset().colour]'>[new_message]</span>\""))
 
 /obj/item/universal_translator/proc/user_understands(mob/M, mob/living/L, list/message_pieces)
 	for(var/datum/multilingual_say_piece/S in message_pieces)
@@ -134,15 +134,15 @@
 			confirm = 1
 			new_message += (S.message + " ")
 
-	if(!L.say_understands(null, langset))
-		new_message = langset.scramble(new_message)
+	if(!L.say_understands(null, langset()))
+		new_message = langset().scramble(new_message)
 
 	//Show the "I heard something" animation, only if it's an appropriate language!
 	if(mult_icons && confirm)
 		flick("[initial(icon_state)]2",src)
 
 	if(confirm) //Don't show a message at all if there's no recognised language, that'd just be annoying.
-		to_chat(L, span_filter_say("<i><b>[src]</b> translates, </i>\"<span class='[langset.colour]'>[new_message]</span>\""))
+		to_chat(L, span_filter_say("<i><b>[src]</b> translates, </i>\"<span class='[langset().colour]'>[new_message]</span>\""))
 
 /obj/item/universal_translator/limited/sol
 	name = "handheld translator (solcom)"
@@ -239,3 +239,7 @@
 /obj/item/universal_translator/limited/teppi  //Admin spawn only, just here for utility
 	name = "handheld translator (teppi)"
 	known_languages = list(LANGUAGE_TEPPI)
+
+/// LC-refs: langset -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/universal_translator/proc/langset() as /datum/language
+	return om_resolve(langset_handle)

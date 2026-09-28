@@ -1,8 +1,8 @@
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer
 	name = "Cable Layer"
 	icon_state = "mecha_wire"
-	var/turf/old_turf
-	var/obj/structure/cable/last_piece
+	var/old_turf_handle
+	var/last_piece_handle
 	var/obj/item/stack/cable_coil/cable
 	var/max_cable = 1000
 	required_type = list(/obj/mecha/working)
@@ -87,7 +87,7 @@
 	return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/reset()
-	last_piece = null
+	last_piece_handle = null
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/dismantleFloor(turf/new_turf)
 	new_turf = get_turf(chassis)
@@ -113,11 +113,21 @@
 	NC.d2 = fdirn
 	NC.update_icon()
 
-	if(last_piece && last_piece.d2 != chassis.dir)
-		last_piece.d1 = min(last_piece.d2, chassis.dir)
-		last_piece.d2 = max(last_piece.d2, chassis.dir)
-		last_piece.update_icon()
-		last_piece.power_register()
+	if(last_piece() && last_piece().d2 != chassis.dir)
+		last_piece().d1 = min(last_piece().d2, chassis.dir)
+		last_piece().d2 = max(last_piece().d2, chassis.dir)
+		last_piece().update_icon()
+		last_piece().power_register()
 	NC.power_register()
-	last_piece = NC
+	last_piece_handle = om_handle(NC)
 	return 1
+
+REF_HELD(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, list("cable"))
+
+/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/old_turf() as /turf
+	return om_resolve(old_turf_handle)
+
+/// LC-refs: last piece -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/last_piece() as /obj/structure/cable
+	return om_resolve(last_piece_handle)

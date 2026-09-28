@@ -90,10 +90,10 @@
 			for(var/ID in vlist)
 				if(!ID)
 					continue
-				var/datum/disease/D = ID
+				var/datum/affliction/contagion/D = ID
 				if((D.spread_flags & DISEASE_SPREAD_SPECIAL) || (D.spread_flags & DISEASE_SPREAD_NON_CONTAGIOUS))
 					continue
-				D.try_infect(M)
+				M.force_contagion(D)
 
 /datum/reagent/blood/affect_touch(mob/living/carbon/M, alien, removed)
 	if(ishuman(M))
@@ -107,12 +107,12 @@
 		var/list/vlist = data["viruses"]
 		if(vlist.len)
 			for(var/ID in vlist)
-				var/datum/disease/D = ID
+				var/datum/affliction/contagion/D = ID
 				if((D.spread_flags & DISEASE_SPREAD_SPECIAL) || (D.spread_flags & DISEASE_SPREAD_NON_CONTAGIOUS))
 					continue
-				M.ContractDisease(D)
+				M.expose_contagion(D)
 	if(data && data["resistances"])
-		M.AddResistances(data["resistances"])
+		M.add_contagion_immunities(data["resistances"])
 
 /datum/reagent/blood/mix_data(newdata, newamount)
 	if(!data || !newdata)
@@ -128,30 +128,30 @@
 		var/list/to_mix = list()
 		var/list/preserve = list()
 
-		for(var/datum/disease/advance/AD in mix1)
+		for(var/datum/affliction/contagion/engineered/AD in mix1)
 			to_mix += AD
-		for(var/datum/disease/advance/AD in mix2)
+		for(var/datum/affliction/contagion/engineered/AD in mix2)
 			to_mix += AD
 
-		var/datum/disease/advance/mixed_AD = Advance_Mix(to_mix)
+		var/datum/affliction/contagion/engineered/mixed_AD = Advance_Mix(to_mix)
 
 		if(mixed_AD)
 			preserve += mixed_AD
 
-		for(var/datum/disease/D1 in mix1)
-			if(!istype(D1, /datum/disease/advance))
+		for(var/datum/affliction/contagion/D1 in mix1)
+			if(!istype(D1, /datum/affliction/contagion/engineered))
 				var/keep = TRUE
-				for(var/datum/disease/D2 in preserve)
+				for(var/datum/affliction/contagion/D2 in preserve)
 					if(D1.IsSame(D2))
 						keep = FALSE
 						break
 				if(keep)
 					preserve += D1
 
-		for(var/datum/disease/D1 in mix2)
-			if(!istype(D1, /datum/disease/advance))
+		for(var/datum/affliction/contagion/D1 in mix2)
+			if(!istype(D1, /datum/affliction/contagion/engineered))
 				var/keep = TRUE
-				for(var/datum/disease/D2 in preserve)
+				for(var/datum/affliction/contagion/D2 in preserve)
 					if(D1.IsSame(D2))
 						keep = FALSE
 						break
@@ -199,7 +199,7 @@
 	. = list()
 	if(data && data["viruses"])
 		for(var/thing in data["viruses"])
-			var/datum/disease/D = thing
+			var/datum/affliction/contagion/D = thing
 			. += D
 
 /datum/reagent/blood/synthblood

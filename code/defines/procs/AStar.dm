@@ -49,7 +49,9 @@ length to avoid portals or something i guess?? Not that they're counted right no
 	return !queue.len
 
 /datum/PriorityQueue/proc/Enqueue(data)
-	queue.Add(data)
+	// Indexed append, not Add(): the entry is a search node list.
+	queue.len++
+	queue[queue.len] = data
 	var/index = queue.len
 
 	//From what I can tell, this automagically sorts the added data into the correct location.
@@ -99,29 +101,18 @@ length to avoid portals or something i guess?? Not that they're counted right no
 	if(index)
 		return Remove(index)
 
-/datum/PathNode
-	var/datum/position
-	var/datum/PathNode/previous_node
+// Search nodes are plain lists local to one search (LC-refs: no datum holds a position or a
+// parent reference past the search): list(position, parent node, best estimate, estimate,
+// nodes traversed).
+#define ASTAR_PATHNO_POS 1
+#define ASTAR_PATHNO_PREV 2
+#define ASTAR_PATHNO_BEST 3
+#define ASTAR_PATHNO_EST 4
+#define ASTAR_PATHNO_DEPTH 5
+#define ASTAR_PATHNO_NEW(pos, prev, known, cost, depth) list(pos, prev, (cost) + (known), (cost) + (known), depth)
 
-	var/best_estimated_cost
-	var/estimated_cost
-	var/known_cost
-	var/cost
-	var/nodes_traversed
-
-/datum/PathNode/New(_position, _previous_node, _known_cost, _cost, _nodes_traversed)
-	position = _position
-	previous_node = _previous_node
-
-	known_cost = _known_cost
-	cost = _cost
-	estimated_cost = cost + known_cost
-
-	best_estimated_cost = estimated_cost
-	nodes_traversed = _nodes_traversed
-
-/proc/PathWeightCompare(datum/PathNode/a, datum/PathNode/b)
-	return a.estimated_cost - b.estimated_cost
+/proc/PathWeightCompare(list/a, list/b)
+	return a[ASTAR_PATHNO_EST] - b[ASTAR_PATHNO_EST]
 
 /proc/AStar(start, end, adjacent, dist, max_nodes, max_node_depth = 30, min_target_dist = 0, min_node_dist, id, datum/exclude)
 	var/datum/PriorityQueue/open = new /datum/PriorityQueue(/proc/PathWeightCompare)
@@ -132,46 +123,46 @@ length to avoid portals or something i guess?? Not that they're counted right no
 	if(!start)
 		return 0
 
-	open.Enqueue(new /datum/PathNode(start, null, 0, call(start, dist)(end), 0))
+	open.Enqueue(ASTAR_PATHNO_NEW(start, null, 0, call(start, dist)(end), 0))
 
 	while(!open.IsEmpty() && !path)
-		var/datum/PathNode/current = open.Dequeue()
-		closed.Add(current.position)
+		var/list/current = open.Dequeue()
+		closed.Add(current[ASTAR_PATHNO_POS])
 
-		if(current.position == end || call(current.position, dist)(end) <= min_target_dist)
-			path = new /list(current.nodes_traversed + 1)
-			path[path.len] = current.position
+		if(current[ASTAR_PATHNO_POS] == end || call(current[ASTAR_PATHNO_POS], dist)(end) <= min_target_dist)
+			path = new /list(current[ASTAR_PATHNO_DEPTH] + 1)
+			path[path.len] = current[ASTAR_PATHNO_POS]
 			var/index = path.len - 1
 
-			while(current.previous_node)
-				current = current.previous_node
-				path[index--] = current.position
+			while(current[ASTAR_PATHNO_PREV])
+				current = current[ASTAR_PATHNO_PREV]
+				path[index--] = current[ASTAR_PATHNO_POS]
 			break
 
 		if(min_node_dist && max_node_depth)
-			if(call(current.position, min_node_dist)(end) + current.nodes_traversed >= max_node_depth)
+			if(call(current[ASTAR_PATHNO_POS], min_node_dist)(end) + current[ASTAR_PATHNO_DEPTH] >= max_node_depth)
 				continue
 
 		if(max_node_depth)
-			if(current.nodes_traversed >= max_node_depth)
+			if(current[ASTAR_PATHNO_DEPTH] >= max_node_depth)
 				continue
 
-		for(var/datum/datum in call(current.position, adjacent)(id))
+		for(var/datum/datum in call(current[ASTAR_PATHNO_POS], adjacent)(id))
 			if(datum == exclude)
 				continue
 
-			var/best_estimated_cost = current.estimated_cost + call(current.position, dist)(datum)
+			var/best_estimated_cost = current[ASTAR_PATHNO_EST] + call(current[ASTAR_PATHNO_POS], dist)(datum)
 
 			//handle removal of sub-par positions
 			if(datum in path_node_by_position)
-				var/datum/PathNode/target = path_node_by_position[datum]
-				if(target.best_estimated_cost)
-					if(best_estimated_cost + call(datum, dist)(end) < target.best_estimated_cost)
+				var/list/target = path_node_by_position[datum]
+				if(target[ASTAR_PATHNO_BEST])
+					if(best_estimated_cost + call(datum, dist)(end) < target[ASTAR_PATHNO_BEST])
 						open.RemoveItem(target)
 					else
 						continue
 
-			var/datum/PathNode/next_node = new (datum, current, best_estimated_cost, call(datum, dist)(end), current.nodes_traversed + 1)
+			var/list/next_node = ASTAR_PATHNO_NEW(datum, current, best_estimated_cost, call(datum, dist)(end), current[ASTAR_PATHNO_DEPTH] + 1)
 			path_node_by_position[datum] = next_node
 			open.Enqueue(next_node)
 
@@ -179,3 +170,10 @@ length to avoid portals or something i guess?? Not that they're counted right no
 				open.Remove(open.Length())
 
 	return path
+
+#undef ASTAR_PATHNO_POS
+#undef ASTAR_PATHNO_PREV
+#undef ASTAR_PATHNO_BEST
+#undef ASTAR_PATHNO_EST
+#undef ASTAR_PATHNO_DEPTH
+#undef ASTAR_PATHNO_NEW

@@ -153,7 +153,7 @@
 /mob/living/bot/farmbot/calcTargetPath() // We need to land NEXT to the tray, because the tray itself is impassable
 	if(isnull(target))
 		return
-	target_path = SSpathfinder.default_bot_pathfinding(src, get_turf(target), 1, 32)
+	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 1, 32)
 	if(!target_path)
 		ignore_list |= target
 		target = null

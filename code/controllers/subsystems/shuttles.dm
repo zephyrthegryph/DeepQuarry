@@ -9,7 +9,7 @@ SUBSYSTEM_DEF(shuttles)
 	wait = 2 SECONDS
 	priority = FIRE_PRIORITY_SHUTTLES
 	dependencies = list(
-		/datum/controller/subsystem/machines,
+		/datum/controller/subsystem/air,
 		/datum/controller/subsystem/atoms,
 		/datum/controller/subsystem/radio
 	)

@@ -963,7 +963,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
-	O.host = user
+	O.host_handle = om_handle(user)
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()

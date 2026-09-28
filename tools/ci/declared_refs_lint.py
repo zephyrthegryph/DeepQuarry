@@ -74,12 +74,30 @@ UNSAVED_MODS = {"tmp", "static", "global", "const", "final"}
 DECLARED_PROCS = (
     "declared_owned_vars",
     "declared_owned_list_vars",
+    "declared_owned_value_vars",
+    "declared_spill_vars",
+    "declared_spill_list_vars",
+    "declared_held_vars",
     "declared_pair_vars",
     "declared_backlist_vars",
     "declared_cache_vars",
 )
 # Declarations that make an instance list var a legitimate holder of objects.
-OBJLIST_PROCS = ("declared_owned_list_vars", "declared_cache_vars")
+OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "declared_spill_list_vars",
+                 "declared_cache_vars")
+# The one-line forms (code/__defines/lifecycle.dm): REF_OWNED(/type, NAMES) and friends expand to
+# the matching declared_*_vars() override.
+REF_MACRO = re.compile(r"^REF_(OWNED_LIST|OWNED_VALUES|OWNED|SPILL_LIST|SPILL|HELD|PAIR|BACKLIST)\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
+REF_MACRO_PROC = {
+    "OWNED": "declared_owned_vars",
+    "OWNED_LIST": "declared_owned_list_vars",
+    "OWNED_VALUES": "declared_owned_value_vars",
+    "SPILL": "declared_spill_vars",
+    "SPILL_LIST": "declared_spill_list_vars",
+    "HELD": "declared_held_vars",
+    "PAIR": "declared_pair_vars",
+    "BACKLIST": "declared_backlist_vars",
+}
 CACHE_ENTRY = re.compile(r'"(\w+)"\s*(=\s*(\S.*?))?\s*,?\s*$')
 CACHE_RULE = re.compile(r"^CACHE_ON_(CHANGE|EVENT|RELATION)\(")
 
@@ -93,6 +111,7 @@ LIST_ADD = re.compile(r"^(?:src\.)?(\w+)\s*(?:\+=|\|=)\s*(.+)$")
 LIST_ASSIGN = re.compile(r"^(?:src\.)?(\w+)\s*=(?!=)\s*list\((.*)\)\s*$")
 BACKLIST_VALUE = re.compile(r'"\w+"\s*=\s*"(\w+)"')
 
+OM_FIELD_TYPED = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,\s*(\w+)\s*,")
 VAR_LINE = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
 STRING_LIT = re.compile(r'"([^"]*)"')
 
@@ -170,6 +189,10 @@ def scan_file(path):
             if cur_owner is not None:
                 close(cur_owner, cur_proc, capturing, cur_line)
                 cur_owner, capturing = None, []
+            m = REF_MACRO.match(stripped.rstrip())
+            if m:
+                close(m.group(2), REF_MACRO_PROC[m.group(1)], [m.group(3)], no)
+                continue
             m = PROC_HEADER.match(stripped.rstrip())
             if m:
                 cur_owner, cur_proc, cur_line = m.group(1), m.group(3), no
@@ -194,6 +217,14 @@ def scan_file(path):
         if indent == 0:
             m = TYPE_HEADER.match(text)
             cur_type = m.group(1) if m else None
+            # OM_FIELD_TYPED(type, vartype, name, ...) declares `type/var/vartype/name` (om.dm).
+            fm = OM_FIELD_TYPED.match(text)
+            if fm:
+                parsed = split_var((fm.group(2) + "/" + fm.group(3)).strip("/").split("/"))
+                if parsed:
+                    mods, vtype, name, _is_list = parsed
+                    if not (mods & UNSAVED_MODS) and under(vtype, REF_ROOTS)                             and name not in declared.get(fm.group(1), ()):
+                        sites.append((rel, no, "%s var/%s/%s" % (fm.group(1), vtype.strip("/"), name)))
             continue
         if indent != 1 or cur_type is None:
             continue
@@ -333,7 +364,7 @@ def scan():
     for path in paths:
         with open(path, encoding="utf-8", errors="replace") as handle:
             text = handle.read()
-        if "declared_backlist_vars" in text:
+        if "declared_backlist_vars" in text or "REF_BACKLIST(" in text:
             BACKLIST_TARGETS.update(BACKLIST_VALUE.findall(text))
     for path in paths:
         rel, sites, errors, objs = scan_file(path)

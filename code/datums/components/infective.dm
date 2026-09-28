@@ -1,5 +1,5 @@
 /datum/component/infective
-	var/list/datum/disease/diseases //make sure these are the static, non-processing versions!
+	var/list/datum/affliction/contagion/diseases //make sure these are the static, non-processing versions!
 	var/expire_time
 	var/required_clean_types = CLEAN_TYPE_DISEASE
 	/// The infection is weak and can only infect on consumption with small chance
@@ -7,7 +7,8 @@
 	/// Chance of weak infection on consumption
 	var/weak_infection_chance = 10
 
-/datum/component/infective/Initialize(list/datum/disease/diseases, expire_in, weak = FALSE, weak_infection_chance = 10)
+
+/datum/component/infective/Initialize(list/datum/affliction/contagion/diseases, expire_in, weak = FALSE, weak_infection_chance = 10)
 	if(!ismovable(parent))
 		return COMPONENT_INCOMPATIBLE
 
@@ -15,11 +16,11 @@
 		diseases = list(diseases)
 
 	///Make sure the diseases list is populated with instances of diseases so that it doesn't have to be for each AddComponent call.
-	for(var/datum/disease/disease as anything in diseases)
+	for(var/datum/affliction/contagion/disease as anything in diseases)
 		if(!disease) //empty entry, remove.
 			diseases -= disease
-		if(ispath(disease, /datum/disease))
-			var/datum/disease/instance = new disease
+		if(ispath(disease, /datum/affliction/contagion))
+			var/datum/affliction/contagion/instance = new disease
 			diseases -= disease
 			diseases += instance
 		else if(!istype(disease))
@@ -79,13 +80,13 @@ REF_OWNED_LIST(/datum/component/infective, "diseases")
 
 //	eater.add_mood_event("disgust", /datum/mood_event/disgust/dirty_food)
 
-	for(var/datum/disease/disease as anything in diseases)
+	for(var/datum/affliction/contagion/disease as anything in diseases)
 		if(is_weak && !prob(weak_infection_chance))
 			continue
 //		if(!disease.has_required_infectious_organ(eater, ORGAN_SLOT_STOMACH))
 //			continue
 
-		eater.ForceContractDisease(disease)
+		eater.force_contagion(disease)
 
 	if(!is_weak)
 		try_infect(feeder, BP_L_ARM)
@@ -106,13 +107,13 @@ REF_OWNED_LIST(/datum/component/infective, "diseases")
 			bodypart_type = BP_TORSO
 		try_infect(feeder, bodypart_type)
 
-	for(var/datum/disease/disease as anything in diseases)
+	for(var/datum/affliction/contagion/disease as anything in diseases)
 		if(is_weak && !prob(weak_infection_chance))
 			continue
 //		if(!disease.has_required_infectious_organ(drinker, ORGAN_SLOT_STOMACH))
 //			continue
 
-		drinker.ForceContractDisease(disease)
+		drinker.force_contagion(disease)
 
 /datum/component/infective/proc/clean(datum/source, clean_types)
 	SIGNAL_HANDLER
@@ -181,7 +182,7 @@ REF_OWNED_LIST(/datum/component/infective, "diseases")
 
 /datum/component/infective/proc/try_infect(mob/living/L, target_zone)
 	for(var/V in diseases)
-		L.ContractDisease(V, target_zone)
+		L.expose_contagion(V, target_zone)
 
 /datum/component/infective/proc/extrapolation(datum/source, mob/user, obj/item/extrapolator/extrapolator, dry_run = FALSE, list/result)
 	SIGNAL_HANDLER

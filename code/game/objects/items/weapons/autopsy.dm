@@ -184,3 +184,5 @@
 	SEND_GLOBAL_SIGNAL(COMSIG_GLOB_AUTOPSY_PERFORMED, user, M)
 
 	return 1
+
+REF_OWNED_LIST(/obj/item/autopsy_scanner, list("wdata", "chemtraces"))

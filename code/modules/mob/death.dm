@@ -146,13 +146,8 @@
 	drop_r_hand()
 	drop_l_hand()
 
-	for(var/datum/disease/D in viruses)
-		if(istype(D, /datum/disease/advance))
-			var/datum/disease/advance/AD = D
-			for(var/datum/symptom/S as anything in AD.symptoms)
-				S.OnDeath(AD)
-		else
-			D.OnDeath()
+	for(var/datum/affliction/contagion/D as anything in get_contagions())
+		D.OnDeath()
 
 	mind?.store_memory("Time of death: [stationtime2text()]", 0)
 	set_respawn_timer()

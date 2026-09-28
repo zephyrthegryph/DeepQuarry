@@ -650,7 +650,7 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 	use_external_power = 1
 
 /obj/item/weldingtool/electric/mounted/exosuit
-	var/obj/item/mecha_parts/mecha_equipment/equip_mount = null
+	var/equip_mount_handle
 	flame_intensity = 1
 	eye_safety_modifier = 2
 	always_process = TRUE
@@ -659,14 +659,14 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 	. = ..()
 
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
-		equip_mount = loc
+		equip_mount_handle = om_handle(loc)
 
 /obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
 	..()
 
-	if(equip_mount && equip_mount.chassis)
-		var/obj/mecha/M = equip_mount.chassis
-		if(M.selected == equip_mount && get_fuel())
+	if(equip_mount() && equip_mount().chassis)
+		var/obj/mecha/M = equip_mount().chassis
+		if(M.selected == equip_mount() && get_fuel())
 			setWelding(TRUE, M?.slot_item(MECHA_SLOT_PILOT))
 		else
 			setWelding(FALSE, M?.slot_item(MECHA_SLOT_PILOT))
@@ -689,3 +689,9 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 	return TRUE
 
 #undef WELDER_FUEL_BURN_INTERVAL
+
+REF_HELD(/obj/item/weldingtool/electric, list("power_supply"))
+
+/// LC-refs: equip mount -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/weldingtool/electric/mounted/exosuit/proc/equip_mount() as /obj/item/mecha_parts/mecha_equipment
+	return om_resolve(equip_mount_handle)

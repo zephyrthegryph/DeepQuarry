@@ -130,12 +130,15 @@ REF_OWNED(/obj/item/tank/jetpack, "ion_trail")
 
 /obj/item/tank/jetpack/rig
 	name = "jetpack"
-	var/obj/item/rig/holder
+	var/holder_handle
 
 /obj/item/tank/jetpack/rig/examine()
 	. = ..()
 	. += "It's a jetpack. If you can see this, report it on the bug tracker."
 
 /obj/item/tank/jetpack/rig/get_gas_supply()
-	return holder?.air_supply?.air_contents
+	return holder_ref()?.air_supply?.air_contents
 
+/// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/tank/jetpack/rig/proc/holder_ref() as /obj/item/rig
+	return om_resolve(holder_handle)

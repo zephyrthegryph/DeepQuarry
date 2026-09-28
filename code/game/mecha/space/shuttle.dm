@@ -94,3 +94,5 @@
 				if("Base")
 					base_paint = new_paint_color
 		update_icon()
+
+REF_OWNED(/obj/mecha/working/hoverpod/shuttlecraft, list("base_paint_mask", "engine_paint_mask", "central_paint_mask", "front_paint_mask"))

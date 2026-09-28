@@ -8,7 +8,7 @@
 	var/hack_icon = "error"
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
-	var/obj/machinery/message_server/linkedServer = null
+	var/linkedServer_handle
 	//Sparks effect - For emag
 	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread
 	//Messages - Saves me time if I want to change something.
@@ -23,7 +23,7 @@
 	var/optioncount = 8
 	// Custom temp Properties
 	var/customsender = "System Administrator"
-	var/obj/item/pda/customrecepient = null
+	var/customrecepient_handle
 	var/customjob		= "Admin"
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
@@ -43,7 +43,7 @@
 	// Will create sparks and print out the console's password. You will then have to wait a while for the console to be back online.
 	// It'll take more time if there's more characters in the password..
 	if(!emag && operable())
-		if(!isnull(linkedServer))
+		if(!isnull(linkedServer()))
 			emag = 1
 			spark_system.set_up(5, 0, src)
 			spark_system.start()
@@ -51,7 +51,7 @@
 			MK.loc = loc
 			// Will help make emagging the console not so easy to get away with.
 			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
-			om_after(src, 100*length(linkedServer.decryptkey), PROC_REF(UnmagConsole))
+			om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
 			update_icon()
 			return 1
@@ -71,9 +71,9 @@
 
 /obj/machinery/computer/message_monitor/LateInitialize()
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
-	if(!linkedServer)
+	if(!linkedServer())
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-			linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
+			linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 /obj/machinery/computer/message_monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -85,7 +85,7 @@
 	var/list/data = list()
 
 	data["customsender"] = customsender
-	data["customrecepient"] = "[customrecepient]"
+	data["customrecepient"] = "[customrecepient()]"
 	data["customjob"] = customjob
 	data["custommessage"] = custommessage
 
@@ -94,12 +94,12 @@
 	data["emag"] = !!emag
 	data["auth"] = !!auth
 	data["linkedServer"] = list()
-	if(linkedServer && auth)
-		data["linkedServer"]["active"] = linkedServer.active
-		data["linkedServer"]["broke"] = linkedServer.stat & (NOPOWER|BROKEN)
+	if(linkedServer() && auth)
+		data["linkedServer"]["active"] = linkedServer().active
+		data["linkedServer"]["broke"] = linkedServer().stat & (NOPOWER|BROKEN)
 
 		var/list/pda_msgs = list()
-		for(var/datum/data_pda_msg/pda in linkedServer.pda_msgs)
+		for(var/datum/data_pda_msg/pda in linkedServer().pda_msgs)
 			pda_msgs.Add(list(list(
 				"ref" = "\ref[pda]",
 				"sender" = pda.sender,
@@ -109,7 +109,7 @@
 		data["linkedServer"]["pda_msgs"] = pda_msgs
 
 		var/list/rc_msgs = list()
-		for(var/datum/data_rc_msg/rc in linkedServer.rc_msgs)
+		for(var/datum/data_rc_msg/rc in linkedServer().rc_msgs)
 			rc_msgs.Add(list(list(
 				"ref" = "\ref[rc]",
 				"sender" = rc.send_dpt,
@@ -123,7 +123,7 @@
 
 		var/spamIndex = 0
 		var/list/spamfilter = list()
-		for(var/token in linkedServer.spamfilter)
+		for(var/token in linkedServer().spamfilter)
 			spamIndex++
 			spamfilter.Add(list(list(
 				"index" = spamIndex,
@@ -168,10 +168,10 @@
 	return TRUE
 
 /obj/machinery/computer/message_monitor/proc/BruteForce(mob/user as mob)
-	if(isnull(linkedServer))
+	if(isnull(linkedServer()))
 		to_chat(user, span_warning("Could not complete brute-force: Linked Server Disconnected!"))
 	else
-		var/currentKey = linkedServer.decryptkey
+		var/currentKey = linkedServer().decryptkey
 		to_chat(user, span_warning("Brute-force completed! The key is '[currentKey]'."))
 	hacking = 0
 	update_icon()
@@ -182,7 +182,7 @@
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
-	customrecepient = null
+	customrecepient_handle = null
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
@@ -198,7 +198,7 @@
 		if("auth")
 			var/dkey = params["key"]
 			if(dkey && dkey != "")
-				if(linkedServer && linkedServer.decryptkey == dkey)
+				if(linkedServer() && linkedServer().decryptkey == dkey)
 					auth = TRUE
 				else
 					temp = incorrectkey
@@ -211,7 +211,7 @@
 			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
 				om_prompt(src, ui.user, list("kind" = "list", "message" = "Please select a server.", "title" = "Select a server.", "choices" = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), "requires" = PROMPT_USABLE), PROC_REF(server_selected))
 			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-				linkedServer = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1]
+				linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 			else
 				temp = noserver
@@ -222,28 +222,28 @@
 				hacking = 1
 				update_icon()
 				//Time it takes to bruteforce is dependant on the password length.
-				om_after(src, 100*length(linkedServer.decryptkey), PROC_REF(brute_force_done), ui.user)
+				om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), ui.user)
 
 	if(!auth)
 		return
 
-	if(!linkedServer || linkedServer.stat & (NOPOWER|BROKEN))
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
 		temp = noserver
 		return TRUE
 
 	switch(action)
 		//Turn the server on/off.
 		if("active")
-			linkedServer.active = !linkedServer.active
+			linkedServer().active = !linkedServer().active
 			. = TRUE
 		//Clears the logs - KEY REQUIRED
 		if("del_pda")
-			linkedServer.pda_msgs = list()
+			linkedServer().pda_msgs = list()
 			set_temp("NOTICE: Logs cleared.", "average")
 			. = TRUE
 		//Clears the request console logs - KEY REQUIRED
 		if("del_rc")
-			linkedServer.rc_msgs = list()
+			linkedServer().rc_msgs = list()
 			set_temp("NOTICE: Logs cleared.", "average")
 			. = TRUE
 		//Change the password - KEY REQUIRED
@@ -253,9 +253,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				LAZYREMOVE(linkedServer.pda_msgs, locate(params["id"]))
+				LAZYREMOVE(linkedServer().pda_msgs, locate(params["id"]))
 			else
-				LAZYREMOVE(linkedServer.rc_msgs, locate(params["id"]))
+				LAZYREMOVE(linkedServer().rc_msgs, locate(params["id"]))
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED
@@ -274,7 +274,7 @@
 			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 			if(!M || M.toff)
 				return FALSE
-			customrecepient = P
+			customrecepient_handle = om_handle(P)
 			. = TRUE
 		if("set_message")
 			custommessage = sanitize(params["val"])
@@ -283,7 +283,7 @@
 			if(isnull(customsender) || customsender == "")
 				customsender = "UNKNOWN"
 
-			if(isnull(customrecepient))
+			if(isnull(customrecepient()))
 				set_temp("NOTICE: No recepient selected!", "average")
 				return TRUE
 
@@ -302,15 +302,15 @@
 					PDARec = P
 			//Sender isn't faking as someone who exists
 			if(isnull(PDARec))
-				linkedServer.send_pda_message("[customrecepient.owner]", "[customsender]","[custommessage]")
-				var/datum/data/pda/app/messenger/M = customrecepient.find_program(/datum/data/pda/app/messenger)
+				linkedServer().send_pda_message("[customrecepient().owner]", "[customsender]","[custommessage]")
+				var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
 				if(M)
 					M.receive_message(list("sent" = 0, "owner" = customsender, "job" = customjob, "message" = custommessage), null)
 			//Sender is faking as someone who exists
 			else
-				linkedServer.send_pda_message("[customrecepient.owner]", "[PDARec.owner]","[custommessage]")
+				linkedServer().send_pda_message("[customrecepient().owner]", "[PDARec.owner]","[custommessage]")
 
-				var/datum/data/pda/app/messenger/M = customrecepient.find_program(/datum/data/pda/app/messenger)
+				var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
 				if(M)
 					M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
 			//Finally..
@@ -323,19 +323,19 @@
 
 		if("deltoken")
 			var/tokennum = text2num(params["deltoken"])
-			linkedServer.spamfilter.Cut(tokennum, tokennum + 1)
+			linkedServer().spamfilter.Cut(tokennum, tokennum + 1)
 			. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/server_selected(mob/user, server, datum/om/prompt/ask)
-	linkedServer = server
+	linkedServer_handle = om_handle(server)
 	set_temp("NOTICE: Server selected.", "alert")
 	SStgui.update_uis(src)
 
 /obj/machinery/computer/message_monitor/proc/current_key_entered(mob/user, dkey, datum/om/prompt/ask)
 	dkey = trim(dkey)
-	if(!dkey || !linkedServer)
+	if(!dkey || !linkedServer())
 		return
-	if(linkedServer.decryptkey != dkey)
+	if(linkedServer().decryptkey != dkey)
 		temp = incorrectkey
 		SStgui.update_uis(src)
 		return
@@ -343,20 +343,20 @@
 
 /obj/machinery/computer/message_monitor/proc/new_key_entered(mob/user, newkey, datum/om/prompt/ask)
 	newkey = trim(newkey)
-	if(!linkedServer)
+	if(!linkedServer())
 		return
 	if(length(newkey) <= 3)
 		set_temp("NOTICE: Decryption key too short!", "average")
 	else if(length(newkey) > 16)
 		set_temp("NOTICE: Decryption key too long!", "average")
 	else if(newkey && newkey != "")
-		linkedServer.decryptkey = newkey
+		linkedServer().decryptkey = newkey
 	set_temp("NOTICE: Decryption key set.", "average")
 	SStgui.update_uis(src)
 
 /obj/machinery/computer/message_monitor/proc/token_entered(mob/user, token, datum/om/prompt/ask)
-	if(linkedServer)
-		linkedServer.spamfilter += token
+	if(linkedServer())
+		linkedServer().spamfilter += token
 		SStgui.update_uis(src)
 
 /obj/machinery/computer/message_monitor/proc/set_temp(text = "", style = "info", update_now = FALSE)
@@ -380,5 +380,15 @@
 			break
 
 /obj/machinery/computer/message_monitor/proc/brute_force_done(mob/user)
-	if(linkedServer && user)
+	if(linkedServer() && user)
 		BruteForce(user)
+
+REF_OWNED(/obj/machinery/computer/message_monitor, list("spark_system"))
+
+/// LC-refs: linkedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
+	return om_resolve(linkedServer_handle)
+
+/// LC-refs: customrecepient -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/message_monitor/proc/customrecepient() as /obj/item/pda
+	return om_resolve(customrecepient_handle)

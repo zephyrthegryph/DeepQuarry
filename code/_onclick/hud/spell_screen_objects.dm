@@ -2,7 +2,7 @@
 	name = "Spells"
 	icon = 'icons/mob/screen_spells.dmi'
 	icon_state = "wiz_spell_ready"
-	var/list/atom/movable/screen/spell/spell_objects
+	// Our spell buttons are the spell_button_on relation: spell_buttons().
 	var/showing = 0
 
 	var/open_state = "master_open"
@@ -10,9 +10,27 @@
 
 	screen_loc = ui_spell_master
 
-	var/mob/spell_holder
+	/// OM handle of the mob whose spells these are; read with spell_holder().
+	var/spell_holder_handle
 
-REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "spell_masters"))
+/// A spell button -> the spell master it is listed on. The master reads its buttons with
+/// spell_buttons(), a button its master with spell_master_of(). Either end going drops the edge;
+/// an emptied master deletes itself when next clicked.
+/datum/om/relation/spell_button_on
+	name = "spell button"
+	source_single = TRUE
+
+// LIFECYCLE: the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
+/atom/movable/screen/movable/spell_master/Destroy()
+	. = ..()
+	var/mob/holder = spell_holder()
+	if(holder)
+		holder.spell_masters -= src
+		holder.client?.screen -= src
+
+/// LC-refs: the mob whose spells these are -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
+	return om_resolve(spell_holder_handle)
 
 /atom/movable/screen/movable/spell_master/MouseDrop()
 	if(showing)
@@ -21,7 +39,7 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 	return ..()
 
 /atom/movable/screen/movable/spell_master/Click()
-	if(!length(spell_objects))
+	if(!length(spell_buttons()))
 		qdel(src)
 		return
 
@@ -29,7 +47,8 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 
 /atom/movable/screen/movable/spell_master/proc/toggle_open(forced_state = 0)
 	if(showing && (forced_state != 2))
-		for(var/atom/movable/screen/spell/O in spell_objects)
+		var/mob/spell_holder = spell_holder()
+		for(var/atom/movable/screen/spell/O as anything in spell_buttons())
 			if(spell_holder && spell_holder.client)
 				spell_holder.client.screen -= O
 			O.handle_icon_updates = 0
@@ -56,8 +75,10 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 	var/y_position = decode_screen_Y(screen_loc_Y[1])
 	var/y_pix = screen_loc_Y[2]
 
+	var/mob/spell_holder = spell_holder()
+	var/list/spell_objects = spell_buttons()
 	for(var/i = 1; i <= length(spell_objects); i++)
-		var/atom/movable/screen/spell/S = LAZYACCESS(spell_objects, i)
+		var/atom/movable/screen/spell/S = spell_objects[i]
 		var/xpos = x_position + (x_position < 8 ? 1 : -1)*(i%7)
 		var/ypos = y_position + (y_position < 8 ? round(i/7) : -round(i/7))
 		if(spell_holder && spell_holder.client)
@@ -68,12 +89,13 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 /atom/movable/screen/movable/spell_master/proc/add_spell(datum/spell/spell)
 	if(!spell) return
 
+	var/mob/spell_holder = spell_holder()
 	if(spell.connected_button) //we have one already, for some reason
-		if(spell.connected_button in spell_objects)
+		if(spell.connected_button.spell_master_of() == src)
 			return
 		else
-			LAZYADD(spell_objects, spell.connected_button)
-			if(spell_holder.client)
+			om_link(spell.connected_button, src, /datum/om/relation/spell_button_on)
+			if(spell_holder?.client)
 				toggle_open(2)
 			return
 
@@ -81,8 +103,7 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 		return
 
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
-	newscreen.spellmaster = src
-	newscreen.spell = spell
+	newscreen.spell_handle = om_handle(spell)
 
 	spell.connected_button = newscreen
 
@@ -94,9 +115,9 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 	else
 		newscreen.spell_base = spell.override_base
 	newscreen.name = spell.name
+	om_link(newscreen, src, /datum/om/relation/spell_button_on)
 	newscreen.update_charge(1)
-	LAZYADD(spell_objects, newscreen)
-	if(spell_holder.client)
+	if(spell_holder?.client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/spell_master/proc/remove_spell(datum/spell/spell)
@@ -104,21 +125,23 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 
 	spell.connected_button = null
 
-	if(length(spell_objects))
+	if(length(spell_buttons()))
 		toggle_open(showing + 1)
 	else
 		qdel(src)
 
 /atom/movable/screen/movable/spell_master/proc/silence_spells(amount)
-	for(var/atom/movable/screen/spell/spell in spell_objects)
-		spell.spell.silenced = amount
+	for(var/atom/movable/screen/spell/spell as anything in spell_buttons())
+		var/datum/spell/its_spell = spell.spell()
+		if(its_spell)
+			its_spell.silenced = amount
 		spell.update_charge(1)
 
 /atom/movable/screen/movable/spell_master/proc/update_spells(forced = 0, mob/user)
 	if(user && user.client)
 		if(!(src in user.client.screen))
 			user.client.screen += src
-	for(var/atom/movable/screen/spell/spell in spell_objects)
+	for(var/atom/movable/screen/spell/spell as anything in spell_buttons())
 		spell.update_charge(forced)
 
 /atom/movable/screen/movable/spell_master/genetic
@@ -146,15 +169,21 @@ REF_BACKLIST(/atom/movable/screen/movable/spell_master, list("spell_holder" = "s
 	var/spell_base = "wiz"
 	var/last_charge = 0 //not a time, but the last remembered charge value
 
-	var/datum/spell/spell = null
+	/// OM handle of the spell this button casts; read with spell().
+	var/spell_handle
 	var/handle_icon_updates = 0
-	var/atom/movable/screen/movable/spell_master/spellmaster
+	// The master we are listed on is the spell_button_on relation: spell_master_of().
 
 	var/icon/last_charged_icon
 
-REF_BACKLIST(/atom/movable/screen/spell, list("spellmaster" = "spell_objects"))
+REF_OWNED(/atom/movable/screen/spell, list("last_charged_icon"))
+
+/// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/spell/proc/spell() as /datum/spell
+	return om_resolve(spell_handle)
 
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
+	var/datum/spell/spell = spell()
 	if(!spell)
 		qdel(src)
 		return
@@ -193,6 +222,7 @@ REF_BACKLIST(/atom/movable/screen/spell, list("spellmaster" = "spell_objects"))
 		overlays += "silence"
 
 /atom/movable/screen/spell/Click()
+	var/datum/spell/spell = spell()
 	if(!usr || !spell)
 		qdel(src)
 		return

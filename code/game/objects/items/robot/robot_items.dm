@@ -80,3 +80,5 @@
 /obj/item/borg/sight/hud/sec/Initialize(mapload)
 	. = ..()
 	hud = new /obj/item/clothing/glasses/hud/security(src)
+
+REF_HELD(/obj/item/borg/sight/hud, list("hud"))

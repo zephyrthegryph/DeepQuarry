@@ -10,24 +10,24 @@
 	required_type = list(/obj/mecha/working/ripley)
 
 	tooltype = /obj/item/inflatable_dispenser/robot
-	var/obj/item/inflatable_dispenser/my_deployer = null
+	var/my_deployer_handle
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/Initialize(mapload)
 	. = ..()
-	my_deployer = my_tool
+	my_deployer_handle = om_handle(my_tool)
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/Topic(href, href_list)
 	..()
 	if(href_list["toggle_deployable_mode"])
-		my_deployer.attack_self()
+		my_deployer().attack_self()
 		update_chassis_page()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/get_equip_info()
 	if(!chassis) return
-	var/data_return = (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"] - <a href='byond://?src=\ref[src];toggle_deployable_mode=1'>Deploy [my_deployer.mode?"Door":"Wall"]</a><br>\
-	&nbsp; - Doors left: " + span_yellow("[my_deployer.stored_doors]") + "/[my_deployer.max_doors]<br>\
-	&nbsp; - Walls left: " + span_yellow("[my_deployer.stored_walls]") + "/[my_deployer.max_walls]"
+	var/data_return = (equip_ready ? span_green("*") : span_red("*")) + "&nbsp;[chassis.selected==src?"<b>":"<a href='byond://?src=\ref[chassis];select_equip=\ref[src]'>"][src.name][chassis.selected==src?"</b>":"</a>"] - <a href='byond://?src=\ref[src];toggle_deployable_mode=1'>Deploy [my_deployer().mode?"Door":"Wall"]</a><br>\
+	&nbsp; - Doors left: " + span_yellow("[my_deployer().stored_doors]") + "/[my_deployer().max_doors]<br>\
+	&nbsp; - Walls left: " + span_yellow("[my_deployer().stored_walls]") + "/[my_deployer().max_walls]"
 
 	return data_return
 
@@ -36,11 +36,15 @@
 		return
 
 	if(istype(target, /turf))
-		my_deployer.try_deploy_inflatable(target, chassis?.slot_item(MECHA_SLOT_PILOT))
+		my_deployer().try_deploy_inflatable(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 	if(istype(target, /obj/item/inflatable) || istype(target, /obj/structure/inflatable))
-		my_deployer.pick_up(target, chassis?.slot_item(MECHA_SLOT_PILOT))
+		my_deployer().pick_up(target, chassis?.slot_item(MECHA_SLOT_PILOT))
 
 	set_ready_state(FALSE)
 	chassis.use_power(energy_drain)
 	do_after_cooldown()
 	return
+
+/// LC-refs: my deployer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/my_deployer() as /obj/item/inflatable_dispenser
+	return om_resolve(my_deployer_handle)

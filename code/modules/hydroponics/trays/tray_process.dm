@@ -85,7 +85,7 @@
 	var/turf/T = loc
 	var/datum/gas_mixture/environment
 	// If we're closed, take from our internal sources.
-	if(closed_system && (connected_port || holding))
+	if(closed_system && (connected_port() || holding))
 		environment = air_contents
 	// If atmos input is not there, grab from turf.
 	if(!environment && istype(T)) environment = T.return_air()
@@ -98,7 +98,7 @@
 		health -= seed.handle_environment(T,environment)
 
 	// If we're attached to a pipenet, then we should let the pipenet know we might have modified some gasses
-	if (closed_system && connected_port)
+	if (closed_system && connected_port())
 		update_connected_network()
 
 	// Toxin levels beyond the plant's tolerance cause damage, but
@@ -145,7 +145,7 @@
 		prob(2 * seed.get_trait(TRAIT_POTENCY)))
 		// Need to start processing the vine or it'll never spread.
 		var/obj/effect/plant/D = new /obj/effect/plant(get_turf(src), seed)
-		SSplants.add_plant(D)
+		GLOB.plant_service.add_plant(D)
 
 	if(prob(3))  // On each tick, there's a chance the pest population will increase
 		pestlevel += 0.1 * HYDRO_SPEED_MULTIPLIER

@@ -7,21 +7,21 @@
 	icon = 'icons/atmos/clamp.dmi'
 	icon_state = "pclamp0"
 	anchored = TRUE
-	var/obj/machinery/atmospherics/pipe/simple/target = null
+	var/target_handle
 	var/open = 1
 
-	var/datum/pipe_network/network_node1
-	var/datum/pipe_network/network_node2
+	var/network_node1_handle
+	var/network_node2_handle
 
 /obj/machinery/clamp/Initialize(mapload, obj/machinery/atmospherics/pipe/simple/to_attach = null)
 	. = ..()
 	if(istype(to_attach))
-		target = to_attach
+		target_handle = om_handle(to_attach)
 	else
-		target = locate(/obj/machinery/atmospherics/pipe/simple) in loc
-	if(target)
+		target_handle = om_handle(locate(/obj/machinery/atmospherics/pipe/simple) in loc)
+	if(target_ref())
 		update_networks()
-		dir = target.dir
+		dir = target_ref().dir
 
 /obj/machinery/clamp/declare_interactions(list/into)
 	into += list(
@@ -37,7 +37,7 @@
 	effect = /obj/machinery/clamp/proc/interaction_toggle
 
 /obj/machinery/clamp/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!target)
+	if(!target_ref())
 		return FALSE
 	if(!open)
 		open()
@@ -47,17 +47,17 @@
 	return TRUE
 
 /obj/machinery/clamp/proc/update_networks()
-	if(!target)
+	if(!target_ref())
 		return
 	else
-		var/obj/machinery/atmospherics/pipe/node1 = target.node1
-		var/obj/machinery/atmospherics/pipe/node2 = target.node2
+		var/obj/machinery/atmospherics/pipe/node1 = target_ref().node1
+		var/obj/machinery/atmospherics/pipe/node2 = target_ref().node2
 		if(istype(node1))
 			var/datum/pipeline/P1 = node1.parent
-			network_node1 = P1.network
+			network_node1_handle = om_handle(P1.network)
 		if(istype(node2))
 			var/datum/pipeline/P2 = node2.parent
-			network_node2 = P2.network
+			network_node2_handle = om_handle(P2.network)
 
 // LIFECYCLE: a closed clamp reopens its pipe.
 /obj/machinery/clamp/Destroy()
@@ -66,27 +66,27 @@
 	. = ..()
 
 /obj/machinery/clamp/proc/open()
-	if(open || !target)
+	if(open || !target_ref())
 		return 0
 
-	target.rust_set_physical_edges(TRUE)
+	target_ref().rust_set_physical_edges(TRUE)
 
 	update_networks()
 
 	open = 1
 	icon_state = "pclamp0"
-	target.in_stasis = 0
+	target_ref().in_stasis = 0
 	return 1
 
 /obj/machinery/clamp/proc/close()
 	if(!open)
 		return 0
 
-	target.rust_set_physical_edges(FALSE)
+	target_ref().rust_set_physical_edges(FALSE)
 
 	open = 0
 	icon_state = "pclamp1"
-	target.in_stasis = 1
+	target_ref().in_stasis = 1
 
 	return 1
 
@@ -143,3 +143,15 @@
 	to_chat(user, span_notice("You have attached \the [src] to \the [A]."))
 	new/obj/machinery/clamp(A.loc, A)
 	qdel(src)
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/clamp/proc/target_ref() as /obj/machinery/atmospherics/pipe/simple
+	return om_resolve(target_handle)
+
+/// LC-refs: network node1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/clamp/proc/network_node1() as /datum/pipe_network
+	return om_resolve(network_node1_handle)
+
+/// LC-refs: network node2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/clamp/proc/network_node2() as /datum/pipe_network
+	return om_resolve(network_node2_handle)

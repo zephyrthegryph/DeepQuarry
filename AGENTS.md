@@ -376,6 +376,9 @@ accident or assume they work:
   - **Diagnosis** (`code/modules/medical/diagnosis/`): readouts go through
     `diagnose(profile)` and renderers; no four-number damage readouts.
   - **Hibernation**: life systems sleep by rule and wake on events (see the Mob life entry).
+  - **Contagions** (`code/modules/medical/contagion/`): diseases are `/datum/affliction/contagion`
+    (stages, cures, host immunity, carriers); spread is `/datum/affliction_trigger/contagion` on a
+    parkable periodic lane. There is no `/datum/disease`, `viruses` or `resistances` on mobs.
 - **Body factors — every numeric mob stat.** `code/modules/body/factors.dm`, defines in
   `code/__defines/body_factors.dm`. Slowdown, accuracy, evasion, attack speed, incoming
   injury per category, stun duration, healing received, metabolism, bleeding, analgesia,
@@ -388,12 +391,19 @@ accident or assume they work:
   no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
   and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
   effects are short modifiers (`/datum/modifier/numbness`, `withdrawal_strain`, …).
+- **World services (fold wave F1).** `SSmachines`, `SSmobs` and `SSplants` are gone. Their global
+  state is a `/datum/world_service` singleton (`GLOB.machine_service`, `GLOB.mob_service`,
+  `GLOB.plant_service`) and their world-level periodic work is a cadence behaviour on the OM
+  global owner (`code/datums/om/world_lanes.dm`), run by SSbehaviours: gas wakes, pump commit and
+  the power step every `MACHINE_SERVICE_INTERVAL`, death reports and the Life profile every 2 s.
+  Growing plants are `REGISTRY_GROWING_PLANTS`. A new world-level periodic is a world service with
+  a lane, not a subsystem with `fire()`.
 - **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
   `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
   (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed
   steps, catch-up capped at 2), `life_derive` (canmove) and `life_present` (HUD and vision,
   clients only). Their stages are `/datum/om/stage/life` flyweights; a mob's plan is built once
-  per type. There is no `Life()` proc, no frame loop in Life and no SSmobs Life loop. Don't add
+  per type. There is no `Life()` proc, no frame loop in Life and no SSmobs (see World services). Don't add
   `handle_*` hooks on mobs: add a stage, or a variant whose path mirrors the mob path
   (`breathing/carbon/human`, `of = /mob/living/carbon/human`). Code outside Life uses
   `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `om_stage_run_now()`; components add

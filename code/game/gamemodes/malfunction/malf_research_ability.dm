@@ -11,3 +11,5 @@
 	invested += time
 	if(invested >= price)
 		unlocked = 1
+
+REF_OWNED(/datum/malf_research_ability, list("next"))

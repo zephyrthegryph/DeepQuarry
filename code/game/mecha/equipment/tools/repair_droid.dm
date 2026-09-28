@@ -99,3 +99,5 @@
 	else
 		set_ready_state(TRUE)
 	return
+
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/repair_droid, list("droid_overlay"))

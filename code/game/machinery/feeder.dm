@@ -4,11 +4,11 @@
 	desc = "This is a feeder. Put in a reagent container, then click and drag the feeder to someone!"
 	anchored = FALSE
 	density = FALSE
-	var/mob/living/carbon/human/attached = null
+	var/attached_handle
 	var/obj/item/reagent_containers/beaker = null
 
 /obj/machinery/feeder/update_icon()
-	if(attached)
+	if(attached())
 		icon_state = "feeding"
 	else
 		icon_state = ""
@@ -39,15 +39,15 @@
 	if(!isliving(usr))
 		return
 
-	if(attached)
-		visible_message("The feeding tube is pulled out of [attached].")
-		attached = null
+	if(attached())
+		visible_message("The feeding tube is pulled out of [attached()].")
+		attached_handle = null
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] inserts the feeding tube into \the [over_object].")
-		attached = over_object
+		attached_handle = om_handle(over_object)
 		update_icon()
 		MACHINE_WAKE(src)
 
@@ -109,19 +109,19 @@
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
 /obj/machinery/feeder/machine_step()
-	if(attached)
-		if(!(get_dist(src, attached) <= 1 && isturf(attached.loc)))
-			visible_message("The tube is pulled out of [attached].")
-			attached = null
+	if(attached())
+		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
+			visible_message("The tube is pulled out of [attached()].")
+			attached_handle = null
 			update_icon()
 			return PROCESS_KILL
 
-	if(!attached || !beaker)
+	if(!attached() || !beaker)
 		return PROCESS_KILL
 	// Give food
 	if(beaker.volume > 0)
 		var/transfer_amount = 2
-		beaker.reagents.trans_to_mob(attached, transfer_amount, CHEM_INGEST)
+		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
 		update_icon()
 
 /// Old attack_hand: took out the beaker, or fell through to ..() when there was none.
@@ -151,9 +151,15 @@
 	else
 		. += span_notice("No container is inserted.")
 
-	. += span_notice("[attached ? attached : "No one"] is being fed by it.")
+	. += span_notice("[attached() ? attached() : "No one"] is being fed by it.")
 
 /obj/machinery/feeder/CanPass(atom/movable/mover, turf/target, height = 0, air_group = 0)
 	if(height && istype(mover) && mover.checkpass(PASSTABLE)) //allow bullets, beams, thrown objects, mice, drones, and the like through.
 		return 1
 	return ..()
+
+REF_HELD(/obj/machinery/feeder, list("beaker"))
+
+/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/feeder/proc/attached() as /mob/living/carbon/human
+	return om_resolve(attached_handle)

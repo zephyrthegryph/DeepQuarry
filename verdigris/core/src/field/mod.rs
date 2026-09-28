@@ -297,8 +297,12 @@ impl<K: FieldKind> fmt::Debug for FieldState<K> {
 
 /// Fluxes of one owner chunk for one sub-step.
 struct ChunkFlux<F> {
+    /// Per cell, one flux per positive axis. Empty (with `present`) until the
+    /// chunk's first live edge: most owner chunks on a station map are
+    /// space, and a full-size pair for each of them was most of the first
+    /// frames' transient heap (Phase 4b).
     flux: Vec<[F; 3]>,
-    /// Bit `axis` set where the edge exists and is live.
+    /// Bit `axis` set where the edge exists and is live (empty: none).
     present: Vec<u8>,
     ledger: Vec<f64>,
     wake: Vec<usize>,
@@ -612,7 +616,7 @@ impl<K: FieldKind> FieldState<K> {
                     if owner[chunk] {
                         let own = &fluxes[slot[chunk] as usize];
                         for axis in 0..3 {
-                            if own.present[i] & (1 << axis) != 0 {
+                            if own.present.get(i).is_some_and(|p| p & (1 << axis) != 0) {
                                 add(-own.flux[i][axis]);
                             }
                         }
@@ -627,7 +631,7 @@ impl<K: FieldKind> FieldState<K> {
                         let Some(from) = fluxes.get(slot[nc] as usize) else {
                             continue;
                         };
-                        if from.present[ni] & (1 << axis) != 0 {
+                        if from.present.get(ni).is_some_and(|p| p & (1 << axis) != 0) {
                             add(from.flux[ni][axis]);
                         }
                     }
@@ -760,8 +764,8 @@ impl<K: FieldKind> FieldState<K> {
     ) -> ChunkFlux<K::Flux> {
         let len = self.layout.chunk_len();
         let mut out = ChunkFlux {
-            flux: vec![[K::Flux::default(); 3]; len],
-            present: vec![0; len],
+            flux: Vec::new(),
+            present: Vec::new(),
             ledger: vec![0.0; K::QUANTITIES],
             wake: Vec::new(),
             live: 0,
@@ -785,6 +789,10 @@ impl<K: FieldKind> FieldState<K> {
             };
             if boundary && settled {
                 return;
+            }
+            if out.present.is_empty() {
+                out.flux = vec![[K::Flux::default(); 3]; len];
+                out.present = vec![0; len];
             }
             out.flux[i][axis] = flux;
             out.present[i] |= 1 << axis;

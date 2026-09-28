@@ -69,7 +69,6 @@
 
 	var/prev_shuttle_queue_state = SSshuttles.block_init_queue
 	SSshuttles.block_init_queue = TRUE
-	//var/machinery_was_awake = SSmachines.suspend() // Suspend machinery (if it was not already suspended) //Old way to keep atmos machines from processing while being loaded. This killed ALL machines in the world...not good.
 
 	var/list/atom/atoms = list()
 	var/list/area/areas = list()
@@ -95,7 +94,7 @@
 	SSatoms.InitializeAtoms(initialization_targets)
 
 	admin_notice(span_danger("Initializing atmos pipenets and machinery in submap."), R_DEBUG)
-	// SSmachines.setup_atmos_machinery was stubbed by the LINDA
+	// The old SSmachines.setup_atmos_machinery was stubbed by the LINDA
 	// migration. SSair now owns atmos-machine init; for submap loads (which
 	// run after SSair.Initialize) wire just the freshly-loaded devices
 	// instead of re-scanning the whole all_machines list.
@@ -109,10 +108,6 @@
 	for(var/obj/machinery/atmospherics/atmos_to_reenable as anything in atmos_machines)
 		atmos_to_reenable.being_loaded = FALSE
 
-	/*//Old way to keep atmos machines from processing while being loaded. This killed ALL machines in the world...not good.
-	if(machinery_was_awake)
-		SSmachines.wake() // Wake only if it was awake before we tried to suspended it.
-	*///Old way to keep atmos machines from processing while being loaded. This killed ALL machines in the world...not good.
 	SSshuttles.block_init_queue = prev_shuttle_queue_state
 	SSshuttles.process_init_queues() // We will flush the queue unless there were other blockers, in which case they will do it.
 

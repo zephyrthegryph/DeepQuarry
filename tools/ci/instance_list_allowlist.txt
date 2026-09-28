@@ -70,8 +70,8 @@
 /datum/controller/master/perf_outliers # d: MC singleton, filled every tick
 /datum/controller/master/perf_tick_realtime # d: MC singleton, filled every tick
 /datum/controller/master/perf_tick_usage # d: MC singleton, filled every tick
-/datum/controller/subsystem/machines/power_dirty_areas # d: SSmachines singleton (M3 power); one instance
-/datum/controller/subsystem/machines/power_material_cables # d: SSmachines singleton (M3 power); one instance
+/datum/world_service/machines/power_dirty_areas # d: machine world service singleton (M3 power); one instance
+/datum/world_service/machines/power_material_cables # d: machine world service singleton (M3 power); one instance
 /datum/controller/subsystem/mapping/multiz_levels # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/mapping/z_list # d: subsystem singleton; one entry per z-level
 /datum/controller/subsystem/rolling_usage # d: one per subsystem; the usage ring buffer is always in use
@@ -85,8 +85,7 @@
 /datum/design_techweb/category # d: every design is in a category (singletons)
 /datum/dimension_theme/replace_floors # d: edited in place per instance (1 writers)
 /datum/dimension_theme/replace_objs # c: read-only per-subtype constant table (8 subtype overrides); a getter would share it, not worth it on a rare type
-/datum/disease/advance/symptoms # d: every advanced disease has symptoms
-/datum/disease/cures # d: every disease defines its cures
+/datum/affliction/contagion/engineered/symptoms # d: every engineered strain has traits
 /datum/dna/SE # d: fixed-size DNA block list, always filled
 /datum/dna/UI # d: fixed-size DNA block list, always filled
 /datum/element/footstep_override/occupied_turfs # d: element singleton; nested per-turf lists edited in place
@@ -188,9 +187,9 @@
 /datum/stockMarket/stocks # d: stock market singleton state
 /datum/supply_pack/contains # d: one per supply pack singleton; every pack has contents
 /datum/supply_pack/manifest # d: one per supply pack singleton, built from contains
-/datum/symptom/bodies # d: reset with initial() in severityset(); few symptom datums
-/datum/symptom/prefixes # d: reset with initial() in severityset(); few symptom datums
-/datum/symptom/suffixes # d: reset with initial() in severityset(); few symptom datums
+/datum/viral_trait/bodies # d: reset with initial() in severityset(); few symptom datums
+/datum/viral_trait/prefixes # d: reset with initial() in severityset(); few symptom datums
+/datum/viral_trait/suffixes # d: reset with initial() in severityset(); few symptom datums
 /datum/talking_atom/heard_words # d: speech memory of a talking item, filled as it hears
 /datum/tgui/children # d: tgui window tree; many call sites
 /datum/tgui_module/atmos_control/monitored_alarms # d: UI module state, filled on open
@@ -596,3 +595,16 @@
 /datum/destroy_batch/registry_leaves # one per batched destroy, filled in the teardown pass
 /datum/destroy_batch/effect_turfs # one per batched destroy, filled in the teardown pass
 /datum/destroy_batch/after_effects # one per batched destroy, filled in the teardown pass
+/datum/world_service/machines/pending_pump_transfers # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/mobs/death_list # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/mobs/last_counts # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/accessible_plant_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/accessible_product_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/gene_masked_list # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/gene_tag_masks # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_gene_datums # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_icon_cache # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_product_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/plant_sprites # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/product_descs # d: world service singleton (one instance in GLOB, was a subsystem)
+/datum/world_service/plants/seeds # d: world service singleton (one instance in GLOB, was a subsystem)

@@ -26,7 +26,7 @@
 
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
-	O.host = user
+	O.host_handle = om_handle(user)
 	O.focus_object(src)
 	return
 
@@ -35,7 +35,7 @@
 	if(user.has_telegrip() && !user.get_active_hand()) // both should already be true to get here
 		var/obj/item/tk_grab/O = new(src)
 		user.put_in_active_hand(O)
-		O.host = user
+		O.host_handle = om_handle(user)
 		O.focus_object(src)
 	else
 		WARNING("Strange attack_tk(): TK([user.has_telegrip()]) empty hand([!user.get_active_hand()])")
@@ -64,15 +64,15 @@
 	layer = HUD_LAYER
 
 	COOLDOWN_DECLARE(throw_cooldown)
-	var/atom/movable/focus = null
-	var/mob/living/host = null
+	var/focus_handle
+	var/host_handle
 	item_flags = DROPDEL | NOSTRIP
 
 /obj/item/tk_grab/dropped(mob/user, equipping, slot)
 	..()
-	if(focus && user && loc != user && loc != user.loc) // drop_item() gets called when you tk-attack a table/closet with an item
-		if(focus.Adjacent(loc))
-			focus.loc = loc
+	if(focus() && user && loc != user && loc != user.loc) // drop_item() gets called when you tk-attack a table/closet with an item
+		if(focus().Adjacent(loc))
+			focus().loc = loc
 
 //stops TK grabs being equipped anywhere but into hands
 /obj/item/tk_grab/equipped(mob/user, slot)
@@ -85,16 +85,16 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(focus)
-		focus.attack_self_tk(user)
+	if(focus())
+		focus().attack_self_tk(user)
 
 /obj/item/tk_grab/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity)//TODO: go over this
 	if(!target || !user)	return
 	if(!COOLDOWN_FINISHED(src, throw_cooldown))	return
-	if(!host || host != user)
+	if(!host() || host() != user)
 		consume(src, user)
 		return
-	if(!host.has_telegrip())
+	if(!host().has_telegrip())
 		consume(src, user)
 		return
 	if(isobj(target) && !isturf(target.loc))
@@ -105,29 +105,29 @@
 		return
 
 	var/d = get_dist(user, target)
-	if(focus)
-		d = max(d, get_dist(user, focus)) // whichever is further
+	if(focus())
+		d = max(d, get_dist(user, focus())) // whichever is further
 	if(d > TK_MAXRANGE)
 		to_chat(user, TK_OUTRANGED_MESSAGE)
 		return
 
-	if(!focus)
+	if(!focus())
 		focus_object(target, user)
 		return
 
-	if(target == focus)
+	if(target == focus())
 		target.attack_self_tk(user)
 		return // todo: something like attack_self not laden with assumptions inherent to attack_self
 
 
-	if(!istype(target, /turf) && istype(focus,/obj/item) && target.Adjacent(focus))
-		var/obj/item/I = focus
+	if(!istype(target, /turf) && istype(focus(),/obj/item) && target.Adjacent(focus()))
+		var/obj/item/I = focus()
 		var/resolved = target.attackby(I, user, user:get_organ_target())
 		if(!resolved && target && I)
 			I.afterattack(target,user,1) // for splashing with beakers
 	else
 		apply_focus_overlay()
-		focus.throw_at(target, 10, 1, user)
+		focus().throw_at(target, 10, 1, user)
 		COOLDOWN_START(src, throw_cooldown, 3)
 		if(ishuman(user))
 			var/mob/living/carbon/human/H_user = user
@@ -147,14 +147,14 @@
 	if(target.anchored || !isturf(target.loc))
 		consume(src, user)
 		return
-	focus = target
+	focus_handle = om_handle(target)
 	update_icon()
 	apply_focus_overlay()
 	return
 
 /obj/item/tk_grab/proc/apply_focus_overlay()
-	if(!focus)	return
-	var/obj/effect/overlay/O = new /obj/effect/overlay(locate(focus.x,focus.y,focus.z))
+	if(!focus())	return
+	var/obj/effect/overlay/O = new /obj/effect/overlay(locate(focus().x,focus().y,focus().z))
 	O.name = "sparkles"
 	O.anchored = TRUE
 	O.density = FALSE
@@ -168,6 +168,14 @@
 
 /obj/item/tk_grab/update_icon()
 	cut_overlays()
-	if(focus && focus.icon && focus.icon_state)
-		add_overlay(icon(focus.icon, focus.icon_state))
+	if(focus() && focus().icon && focus().icon_state)
+		add_overlay(icon(focus().icon, focus().icon_state))
 	return
+
+/// LC-refs: the thing held by telekinesis -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/tk_grab/proc/focus() as /atom/movable
+	return om_resolve(focus_handle)
+
+/// LC-refs: the mob using telekinesis -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/tk_grab/proc/host() as /mob/living
+	return om_resolve(host_handle)

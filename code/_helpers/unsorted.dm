@@ -744,8 +744,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					if(istype(T,/turf/simulated/shuttle))
 						shuttlework = 1
 						var/turf/simulated/shuttle/SS = T
-						if(!SS.landed_holder) SS.landed_holder = new(SS)
-						X = SS.landed_holder.land_on(B)
+						if(!SS.landed_holder()) SS.landed_holder_handle = om_handle(new /obj/landed_holder(SS))
+						X = SS.landed_holder().land_on(B)
 
 					//Generic non-shuttle turf move.
 					else
@@ -795,7 +795,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 
 					if(shuttlework)
 						var/turf/simulated/shuttle/SS = T
-						SS.landed_holder.leave_turf()
+						SS.landed_holder().leave_turf()
 					else if(turftoleave)
 						T.ChangeTurf(turftoleave)
 					else
@@ -1696,24 +1696,22 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /proc/admin_chat_message(message = "Debug Message", color = "#FFFFFF", sender)
 	if (!CONFIG_GET(string/chat_webhook_url) || !message)
 		return
-	spawn(0) // S7 keeps: world.Export() is a blocking external call
-		var/query_string = "type=adminalert"
-		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-		query_string += "&msg=[url_encode(message)]"
-		query_string += "&color=[url_encode(color)]"
-		if(sender)
-			query_string += "&from=[url_encode(sender)]"
-		world.Export("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	var/query_string = "type=adminalert"
+	query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
+	query_string += "&msg=[url_encode(message)]"
+	query_string += "&color=[url_encode(color)]"
+	if(sender)
+		query_string += "&from=[url_encode(sender)]"
+	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
 
 /proc/admin_action_message(admin = "INVALID", user = "INVALID", action = "INVALID", reason = "INVALID", time = "INVALID")
 	if (!CONFIG_GET(string/chat_webhook_url) || !action)
 		return
-	spawn(0) // S7 keeps: world.Export() is a blocking external call
-		var/query_string = "type=adminaction"
-		query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
-		query_string += "&admin=[url_encode(admin)]"
-		query_string += "&user=[url_encode(user)]"
-		query_string += "&action=[url_encode(action)]"
-		query_string += "&reason=[url_encode(reason)]"
-		query_string += "&time=[url_encode(time)]"
-		world.Export("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")
+	var/query_string = "type=adminaction"
+	query_string += "&key=[url_encode(CONFIG_GET(string/chat_webhook_key))]"
+	query_string += "&admin=[url_encode(admin)]"
+	query_string += "&user=[url_encode(user)]"
+	query_string += "&action=[url_encode(action)]"
+	query_string += "&reason=[url_encode(reason)]"
+	query_string += "&time=[url_encode(time)]"
+	om_http_get("[CONFIG_GET(string/chat_webhook_url)]?[query_string]")

@@ -9,7 +9,7 @@
 	var/base_state = null	// Used for stumps.
 	max_integrity = 200		// Used for chopping down trees.
 	var/shake_animation_degrees = 4	// How much to shake the tree when struck.  Larger trees should have smaller numbers or it looks weird.
-	var/obj/item/stack/material/product = null	// What you get when chopping this tree down.  Generally it will be a type of wood.
+	var/product = null	// What you get when chopping this tree down.  Generally it will be a type of wood.
 	var/product_amount = 10 // How much of a stack you get, if the above is defined.
 	var/is_stump = FALSE // If true, suspends damage tracking and most other effects.
 	var/indestructable = FALSE // If true, the tree cannot die.

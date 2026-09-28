@@ -13,7 +13,7 @@
 	w_class = ITEMSIZE_HUGE
 	unacidable = TRUE
 
-	var/obj/item/bork_medigun/linked/medigun_path = /obj/item/bork_medigun/linked
+	var/medigun_path = /obj/item/bork_medigun/linked
 	var/obj/item/cell/bcell = /obj/item/cell
 	var/obj/item/cell/ccell = null
 	var/obj/item/stock_parts/matter_bin/sbin = /obj/item/stock_parts/matter_bin
@@ -283,7 +283,7 @@
 	. = ..()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
-	medigun.medigun_base_unit = src
+	medigun.medigun_base_unit_handle = om_handle(src)
 
 	if(!is_twohanded())
 		medigun.beam_range = 4
@@ -581,3 +581,5 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
+
+REF_HELD(/obj/item/medigun_backpack, list("ccell", "sbin"))

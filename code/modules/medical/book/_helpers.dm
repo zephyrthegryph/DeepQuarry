@@ -46,6 +46,11 @@
 	if(!types)
 		types = list()
 		for(var/T in subtypesof(/datum/affliction))
+			var/datum/affliction/typed = T
+			// Checked before building a prototype: uncatalogued families
+			// (engineered contagion strains) have constructors with side effects.
+			if(!initial(typed.catalogued))
+				continue
 			var/datum/affliction/proto = dq_proto(T)
 			if(proto.catalogued && proto.abstract_type != T)
 				types += T

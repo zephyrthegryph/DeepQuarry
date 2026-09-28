@@ -29,17 +29,17 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 	var/console_path = null
 	if(istype(COM,/obj/machinery/computer/med_data))
 		var/obj/machinery/computer/med_data/MCOM = COM
-		active = MCOM.active2
+		active = MCOM.active2()
 		record_string = "medical"
 		console_path = /obj/machinery/computer/med_data
 	if(istype(COM,/obj/machinery/computer/skills))
 		var/obj/machinery/computer/skills/ECOM = COM
-		active = ECOM.active1
+		active = ECOM.active1()
 		record_string = "employment"
 		console_path = /obj/machinery/computer/skills
 	if(istype(COM,/obj/machinery/computer/secure_data))
 		var/obj/machinery/computer/secure_data/SCOM = COM
-		active = SCOM.active2
+		active = SCOM.active2()
 		record_string = "security"
 		console_path = /obj/machinery/computer/secure_data
 

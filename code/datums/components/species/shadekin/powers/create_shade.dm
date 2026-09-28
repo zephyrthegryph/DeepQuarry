@@ -52,16 +52,16 @@
 
 /datum/modifier/shadekin/create_shade/on_applied()
 	my_kin = holder
-	holder.glow_toggle = TRUE
-	holder.glow_range = 8
-	holder.glow_intensity = -10
-	holder.glow_color = "#FFFFFF"
+	holder.set_glow_toggle(TRUE)
+	holder.set_glow_range(8)
+	holder.set_glow_intensity(-10)
+	holder.set_glow_color("#FFFFFF")
 	holder.set_light(8, -10, "#FFFFFF")
 
 /datum/modifier/shadekin/create_shade/on_expire()
-	holder.glow_toggle = initial(holder.glow_toggle)
-	holder.glow_range = initial(holder.glow_range)
-	holder.glow_intensity = initial(holder.glow_intensity)
-	holder.glow_color = initial(holder.glow_color)
+	holder.set_glow_toggle(initial(holder.glow_toggle))
+	holder.set_glow_range(initial(holder.glow_range))
+	holder.set_glow_intensity(initial(holder.glow_intensity))
+	holder.set_glow_color(initial(holder.glow_color))
 	holder.set_light(0)
 	my_kin = null

@@ -149,19 +149,19 @@
 	icon = 'icons/effects/blood.dmi'
 	icon_state = "vomit_1"
 	random_icon_states = list("vomit_1", "vomit_2", "vomit_3", "vomit_4")
-	var/list/datum/disease/viruses
+	var/list/datum/affliction/contagion/viruses
 
 /obj/effect/decal/cleanable/vomit/old
 	name = "crusty dried vomit"
 	desc = "You try not to look at the chunks, and fail."
 
-/obj/effect/decal/cleanable/vomit/old/Initialize(mapload, list/datum/disease/diseases)
+/obj/effect/decal/cleanable/vomit/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
 	. = ..()
 	icon_state += "-old"
 	if(length(diseases))
 		LAZYADD(viruses, diseases)
 	if(prob(65))
-		var/datum/disease/advance/new_disease = new /datum/disease/advance/random(rand(2, 4), rand(7, 9), 4)
+		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
 		LAZYADD(viruses, new_disease)
 
 /obj/effect/decal/cleanable/vomit/old/Crossed(mob/living/carbon/human/perp)
@@ -171,14 +171,14 @@
 	dryname = "nasty dried blood"
 	drydesc = "Why hasn't anyone cleaned this up yet?"
 
-/obj/effect/decal/cleanable/blood/old/Initialize(mapload, list/datum/disease/diseases)
+/obj/effect/decal/cleanable/blood/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
 	. = ..()
 	basecolor = get_random_colour(rand(0, 1))
 	update_icon()
 	if(length(diseases))
 		LAZYADD(viruses, diseases)
 	if(prob(75))
-		var/datum/disease/advance/new_disease = new /datum/disease/advance/random(rand(2, 4), rand(7, 9), 4)
+		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
 		LAZYADD(viruses, new_disease)
 	dry()
 
@@ -236,3 +236,5 @@
 
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
 	qdel(src)
+
+REF_OWNED_LIST(/obj/effect/decal/cleanable/vomit, list("viruses"))

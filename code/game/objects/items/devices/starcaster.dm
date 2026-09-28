@@ -13,7 +13,7 @@
 	icon_state = "newscodex-open"
 //	catalogue_data = list(/datum/category_item/catalogue/information/starfire_news) Commented out until I can figure out why this won't scan.
 
-	var/datum/computer_file/data/news_article/loaded_article = null //You must specify the variable this far to avoid compilation errors.
+	var/loaded_article_handle //You must specify the variable this far to avoid compilation errors.
 	var/show_archived = null
 
 
@@ -39,11 +39,11 @@
 	var/list/all_articles = list()
 	data["showing_archived"] = show_archived
 	data["article"] = null
-	if(loaded_article) 	// Viewing an article.
+	if(loaded_article()) 	// Viewing an article.
 		data["article"] = list(
-			"title" = loaded_article.filename,
-			"cover" = loaded_article.cover,
-			"content" = loaded_article.stored_data,
+			"title" = loaded_article().filename,
+			"cover" = loaded_article().cover,
+			"content" = loaded_article().stored_data,
 		)
 	else										// Viewing list of articles
 		for(var/datum/computer_file/data/news_article/F in GLOB.ntnet_global.available_news)
@@ -64,16 +64,20 @@
 	switch(action)
 		if("PRG_openarticle")
 			. = TRUE
-			if(loaded_article)
+			if(loaded_article())
 				return TRUE
 
 			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 				if(N.uid == text2num(params["uid"]))
-					loaded_article = N.clone()
+					loaded_article_handle = om_handle(N.clone())
 					break
 		if("PRG_reset")
 			. = TRUE
-			loaded_article = null
+			loaded_article_handle = null
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived
+
+/// LC-refs: loaded article -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/starcaster_news/proc/loaded_article() as /datum/computer_file/data/news_article
+	return om_resolve(loaded_article_handle)

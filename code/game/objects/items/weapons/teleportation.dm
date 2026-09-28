@@ -181,7 +181,7 @@
 	for(var/mob/O in hearers(user, null))
 		O.show_message(span_notice("Locked In."), 2)
 	var/obj/effect/portal/NEWP = new /obj/effect/portal( get_turf(src) )
-	NEWP.target = T
+	NEWP.target_handle = om_handle(T)
 	NEWP.creator = src
 	NEWP.failchance = 0 // funny 5% chance to be spaced and die makes the hand tele kinda useless.
 	src.add_fingerprint(user)

@@ -123,3 +123,5 @@
 	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 	add_fingerprint(user)
 	return TRUE
+
+REF_HELD(/obj/item/cane/concealed, list("concealed_blade"))

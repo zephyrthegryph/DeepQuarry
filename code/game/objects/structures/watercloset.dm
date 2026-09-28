@@ -1230,14 +1230,14 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	anchored = TRUE
 	density = TRUE
 	var/muffin_mode = FALSE
-	var/mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
-	var/obj/machinery/recycling/crusher/crusher //Bluespace connection for recyclables
+	var/muffinmonster_handle
+	var/crusher_handle //Bluespace connection for recyclables
 
 /obj/structure/biowaste_tank/Initialize(mapload)
-	muffinmonster = new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src)
-	muffinmonster.name = "Activate Muffin Monster"
-	muffinmonster.init_vore(TRUE)
-	crusher = locate(/obj/machinery/recycling/crusher)
+	muffinmonster_handle = om_handle(new /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster(src))
+	muffinmonster().name = "Activate Muffin Monster"
+	muffinmonster().init_vore(TRUE)
+	crusher_handle = om_handle(locate(/obj/machinery/recycling/crusher))
 	return ..()
 
 /obj/structure/biowaste_tank/AllowDrop()
@@ -1257,12 +1257,12 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 			C.forceMove(src)
 		qdel(thing)
 		return
-	if(istype(crusher) && istype(thing, /obj/item/debris_pack))
-		crusher.take_item(thing)
+	if(istype(crusher(), /obj/machinery/recycling/crusher) && istype(thing, /obj/item/debris_pack))
+		crusher().take_item(thing)
 		return
 	if(muffin_mode)
-		if(muffinmonster)
-			thing.move_into(muffinmonster.vore_selected, BELLY_SLOT_INTERIOR)
+		if(muffinmonster())
+			thing.move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR)
 		else
 			muffin_mode = FALSE
 
@@ -1287,26 +1287,26 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	if(choice.loc == src)
 		if(!user.canmove)
 			return
-		if(choice == muffinmonster && muffinmonster.loc == src)
+		if(choice == muffinmonster() && muffinmonster().loc == src)
 			muffin_mode = !muffin_mode
 			if(muffin_mode)
-				muffinmonster.name = "Deactivate Muffin Monster"
+				muffinmonster().name = "Deactivate Muffin Monster"
 				for(var/atom/movable/C in contents)
-					if(C == muffinmonster)
+					if(C == muffinmonster())
 						continue
-					C.move_into(muffinmonster.vore_selected, BELLY_SLOT_INTERIOR)
+					C.move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR)
 			else
-				muffinmonster.name = "Activate Muffin Monster"
-				muffinmonster.release_vore_contents(include_absorbed = TRUE, silent = TRUE)
+				muffinmonster().name = "Activate Muffin Monster"
+				muffinmonster().release_vore_contents(include_absorbed = TRUE, silent = TRUE)
 			return
 		else
 			choice.forceMove(get_turf(src))
 
 /obj/structure/biowaste_tank/emag_act(remaining_charges, mob/user, emag_source)
-	if(muffinmonster && muffin_mode)
-		muffinmonster.name = "Muffin Monster"
-		muffinmonster.forceMove(get_turf(src))
-		muffinmonster = null
+	if(muffinmonster() && muffin_mode)
+		muffinmonster().name = "Muffin Monster"
+		muffinmonster().forceMove(get_turf(src))
+		muffinmonster_handle = null
 		muffin_mode = FALSE
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/muffinmonster
@@ -1328,3 +1328,15 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	B.digest_brute = 20
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
+
+REF_HELD(/obj/structure/toilet, list("teleplumb_crystal"))
+
+REF_OWNED(/obj/structure/toilet, list("bin"))
+
+/// LC-refs: muffinmonster -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/biowaste_tank/proc/muffinmonster() as /mob/living/simple_mob/vore/aggressive/corrupthound
+	return om_resolve(muffinmonster_handle)
+
+/// LC-refs: crusher -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/biowaste_tank/proc/crusher() as /obj/machinery/recycling/crusher
+	return om_resolve(crusher_handle)

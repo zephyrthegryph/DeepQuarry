@@ -1,14 +1,24 @@
 """Declared-field write lint (doc/rewrite/object_model_core.md sec 5.1).
 
-A declared field (a decl's `fields = list("name" = CHANNEL)`, code/datums/om/fields.dm) is
-written only through om_set() or its OM_SETTER() setter, which raise its channel. This finds
-direct writes (`name = x`, `src.name = x`, `thing.name = x`, `name |= x`, `name++`, ...) to a
-declared field in a proc of a related type (the declaring type, a subtype, or an ancestor an
-instance of it can run), outside Initialize()/New() and the setter itself. `thing` counts when
-its declared type in the proc (a typed var or argument) is related. It also checks every
-OM_SETTER(type, field) names a declared field.
+A declared field is declared once with OM_FIELD(type, name, default, channel) or
+OM_FIELD_TYPED(type, vartype, name, default, channel) (code/__defines/om.dm). The macro expands
+to the var `name` and its setter `set_name()`, which raises the channel. The only writers allowed
+are that generated setter and the initial value (the OM_FIELD default, or a subtype's
+`name = x` override in its type body). This finds every other write, in any proc (Initialize()
+and New() included) of any file, unit tests included:
 
-Used by tools/ci/api_lints.py (count `field_write`); run alone for a report:
+  - a bare write (`name = x`, `src.name = x`, `name |= x`, `name++`, ...) in a proc of a type
+    related to a declaring type (the type, a subtype, or an ancestor an instance of it runs);
+  - a dotted write (`thing.name = x`) whose receiver is not provably of an unrelated type: a
+    receiver typed as a related type, or one whose type the lint can't resolve (a member var, a
+    chained access), counts. Only a receiver declared in the proc as a type unrelated to every
+    declaring type is skipped, since that is a different var of the same name.
+
+om_set(E, "name", v) (fields.dm) is the by-name write path; `vars[...] =` is linted separately
+(api_lints.py vars_write).
+
+Used by tools/ci/api_lints.py (count `field_write`, which scans unit tests for this check);
+run alone for a report:
     python tools/ci/field_write_lint.py
 """
 import glob
@@ -21,14 +31,10 @@ from state_schema_lint import code_only  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-DECL_RE = re.compile(r"^(/datum/om/decl/[\w/]+)\s*$")
-OF_RE = re.compile(r"^\s+of\s*=\s*(.+)$")
-FIELD_ROW_RE = re.compile(r'"(\w+)"\s*=\s*([\w|() <>]+)')
-SETTER_RE = re.compile(r"OM_SETTER\(\s*(/[\w/]+)\s*,\s*(\w+)\s*\)")
+FIELD_RE = re.compile(r"^OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,")
+FIELD_TYPED_RE = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,")
 PROC_DEF_RE = re.compile(r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\((.*)$")
-TYPE_DEF_RE = re.compile(r"^(/[\w/]+)\s*$")
 TYPED_NAME_RE = re.compile(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
-EXEMPT_PROCS = {"Initialize", "New"}
 WRITE_OPS = r"(?:=(?!=)|\+=|-=|\|=|&=|\^=|\*=|/=|\+\+|--)"
 
 
@@ -44,38 +50,62 @@ def related(a, b):
 
 
 def declared_fields():
-    """(field -> list of declaring types), setters as (rel, line, type, field)."""
-    fields, setters = {}, []
-    for rel, path in dm_files():
+    """field name -> list of declaring types, from every OM_FIELD()/OM_FIELD_TYPED() line."""
+    fields = {}
+    for _, path in dm_files():
         with open(path, encoding="utf-8", errors="replace") as handle:
-            raw = handle.read()
-        lines = raw.split("\n")
-        i = 0
-        while i < len(lines):
-            m = DECL_RE.match(lines[i])
-            if not m:
-                i += 1
+            for line in handle:
+                m = FIELD_RE.match(line) or FIELD_TYPED_RE.match(line)
+                if m:
+                    fields.setdefault(m.group(2), []).append(m.group(1))
+    return fields
+
+
+TYPE_LINE_RE = re.compile(r"^(/[\w/]+)\s*(?:\{.*)?$")
+MEMBER_RE = re.compile(r"^\s+var/((?:[\w]+/)*)(\w+)\b")
+ABS_MEMBER_RE = re.compile(r"^(/[\w/]+?)/var/((?:[\w]+/)*)(\w+)\b")
+MODIFIERS = {"tmp", "static", "global", "const", "final"}
+
+
+def member_types():
+    """type path -> member var name -> declared type (only typed members)."""
+    members = {}
+
+    def add(owner, path, name):
+        parts = [p for p in path.split("/") if p and p not in MODIFIERS]
+        if parts:
+            members.setdefault(owner, {})[name] = "/" + "/".join(parts)
+
+    for _, path in dm_files():
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            text = code_only(handle.read())
+        current = None
+        for line in text.split("\n"):
+            if line and not line[0].isspace():
+                m = ABS_MEMBER_RE.match(line)
+                if m:
+                    add(m.group(1), m.group(2), m.group(3))
+                    current = None
+                    continue
+                m = TYPE_LINE_RE.match(line.rstrip())
+                current = m.group(1) if m and "(" not in line else None
                 continue
-            j, of, body = i + 1, [], []
-            while j < len(lines) and (lines[j].startswith(("\t", " ")) or not lines[j].strip()):
-                body.append(lines[j])
-                j += 1
-            text = "\n".join(body)
-            for b in body:
-                om = OF_RE.match(b)
-                if om:
-                    of = re.findall(r"/[\w/]+", om.group(1))
-            fm = re.search(r"\bfields\s*=\s*list\((.*?)\)\s*(?:\n\s*\w+\s*=|\Z)", text, re.S)
-            if fm and of:
-                for name, _ in FIELD_ROW_RE.findall(fm.group(1)):
-                    for t in of:
-                        fields.setdefault(name, []).append(t)
-            i = j
-        for no, line in enumerate(lines, 1):
-            for sm in SETTER_RE.finditer(line):
-                if not line.lstrip().startswith("#define"):
-                    setters.append((rel, no, sm.group(1), sm.group(2)))
-    return fields, setters
+            if current:
+                m = MEMBER_RE.match(line)
+                if m:
+                    add(current, m.group(1), m.group(2))
+    return members
+
+
+def member_type(owner, name):
+    members = index_members()
+    path = owner
+    while path:
+        t = members.get(path, {}).get(name)
+        if t:
+            return t
+        path = path.rsplit("/", 1)[0] if path.count("/") > 1 else None
+    return None
 
 
 def norm(path):
@@ -83,14 +113,12 @@ def norm(path):
 
 
 def violations(fields, rel, text):
-    """(line, field, how) for every direct write to a declared field in this file."""
-    if rel == "code/datums/om/fields.dm":
-        return
+    """(line, field, how) for every write to a declared field in this file outside its setter."""
     names = "|".join(sorted(fields, key=len, reverse=True))
     if not names:
         return
     bare = re.compile(r"(?<![\w./])(?:src\.)?(" + names + r")\s*" + WRITE_OPS)
-    dotted = re.compile(r"(?<![\w.])(\w+)(?:\?)?\.(" + names + r")\s*" + WRITE_OPS)
+    dotted = re.compile(r"(?<![\w])(\w+)(?:\?)?\.(" + names + r")\s*" + WRITE_OPS)
     owner, proc, locals_ = None, None, {}
     for no, line in enumerate(text.split("\n"), 1):
         if line and not line[0].isspace():
@@ -108,25 +136,27 @@ def violations(fields, rel, text):
         for tm in TYPED_NAME_RE.finditer(line):
             if "var/" in line[max(0, tm.start() - 4):tm.start() + 4] or line[tm.start():].startswith("var/"):
                 locals_[tm.group(2)] = norm(tm.group(1))
-        if proc in EXEMPT_PROCS:
-            continue
         for m in bare.finditer(line):
             field = m.group(1)
-            if proc == "set_" + field:
-                continue
             if line[:m.start()].rstrip().endswith("var") or re.search(r"var/(?:[\w/]+/)?$", line[:m.start()]):
                 continue
             if field in locals_:
                 continue  # a local of the same name shadows the field
+            if proc == "set_" + field and any(owner == t for t in fields[field]):
+                continue  # the generated setter (and only the declaring type's)
             if any(related(owner, t) for t in fields[field]):
                 yield no, field, "%s/%s" % (owner, proc)
         for m in dotted.finditer(line):
             recv, field = m.group(1), m.group(2)
             if recv == "src":
-                continue
-            rtype = locals_.get(recv)
-            if rtype and any(related(rtype, t) for t in fields[field]):
-                yield no, field, "%s.%s in %s/%s" % (recv, field, owner, proc)
+                continue  # handled as a bare write
+            if m.start() > 0 and line[m.start() - 1] == ".":
+                rtype = None  # a chained access: the receiver's type is unknown
+            else:
+                rtype = locals_.get(recv) or member_type(owner, recv)
+            if rtype and not any(related(rtype, t) for t in fields[field]):
+                continue  # a typed receiver of an unrelated type: a different var
+            yield no, field, "%s.%s in %s/%s" % (recv, field, owner, proc)
 
 
 _CACHE = {}
@@ -134,34 +164,30 @@ _CACHE = {}
 
 def index():
     if "fields" not in _CACHE:
-        _CACHE["fields"], _CACHE["setters"] = declared_fields()
-    return _CACHE["fields"], _CACHE["setters"]
+        _CACHE["fields"] = declared_fields()
+    return _CACHE["fields"]
+
+
+def index_members():
+    if "members" not in _CACHE:
+        _CACHE["members"] = member_types()
+    return _CACHE["members"]
 
 
 def check(rel, text):
-    """api_lints.py check: one line number per direct write (and per bad setter)."""
-    fields, setters = index()
-    for no, _, _ in violations(fields, rel, text):
+    """api_lints.py check: one line number per direct write."""
+    for no, _, _ in violations(index(), rel, text):
         yield no
-    for srel, no, t, f in setters:
-        if srel == rel and not any(t == d or t.startswith(d + "/") for d in fields.get(f, [])):
-            yield no
 
 
 def main():
-    fields, setters = index()
+    fields = index()
     total = 0
     for rel, path in dm_files():
-        if "/unit_tests/" in rel:
-            continue
         with open(path, encoding="utf-8", errors="replace") as handle:
             text = code_only(handle.read())
         for no, field, where in violations(fields, rel, text):
-            print("%s:%d: direct write to declared field %s (%s): use its setter" % (rel, no, field, where))
-            total += 1
-    for rel, no, t, f in setters:
-        if not any(t == d or t.startswith(d + "/") for d in fields.get(f, [])):
-            print("%s:%d: OM_SETTER(%s, %s) names no declared field" % (rel, no, t, f))
+            print("%s:%d: direct write to declared field %s (%s): use set_%s()" % (rel, no, field, where, field))
             total += 1
     print("declared fields: %d; direct writes: %d" % (len(fields), total))
     return 1 if total else 0

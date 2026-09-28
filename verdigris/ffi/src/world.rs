@@ -58,6 +58,16 @@ fn pending_dims() -> GridDims {
     PENDING_DIMS.with(std::cell::Cell::get)
 }
 
+/// Rebuilds the world for a `max_x` x `max_y` x `max_z` map, as
+/// [`configure_world`] does at boot (tests drive a boot without BYOND).
+#[cfg(test)]
+pub(crate) fn configure_for_test(max_x: u32, max_y: u32, max_z: u32) -> Result<()> {
+    let dims = GridDims::new(max_x, max_y, z_capacity(max_z))
+        .ok_or_else(|| eyre!("grid does not fit a u32 index"))?;
+    PENDING_DIMS.with(|d| d.set(dims));
+    reset()
+}
+
 /// Headroom for z-levels created at run time (expeditions): the grid is
 /// sized once, and cells past it are ignored.
 fn z_capacity(max_z: u32) -> u32 {

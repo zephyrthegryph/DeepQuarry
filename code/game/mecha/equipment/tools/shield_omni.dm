@@ -67,14 +67,14 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/omni_shield, "shields")
 	var/shift_x = 0
 	var/shift_y = 0
 
-	var/obj/mecha/my_mech = null
+	var/my_mech_handle
 
 /obj/item/shield_projector/rectangle/mecha/Initialize(mapload)
 	. = ..()
-	my_mech = loc
-	RegisterSignal(my_mech, COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/shield_projector/proc/update_shield_positions)
-	my_mech.AddComponent(/datum/component/recursive_move)
-	update_shift(my_mech)
+	my_mech_handle = om_handle(loc)
+	RegisterSignal(my_mech(), COMSIG_MOVABLE_ATTEMPTED_MOVE, /obj/item/shield_projector/proc/update_shield_positions)
+	my_mech().AddComponent(/datum/component/recursive_move)
+	update_shift(my_mech())
 
 /obj/item/shield_projector/rectangle/mecha/proc/update_shift(atom/movable/mech)
 	var/icon/my_icon = icon(mech.icon) //holy heck
@@ -92,8 +92,12 @@ REF_OWNED(/obj/item/mecha_parts/mecha_equipment/omni_shield, "shields")
 
 /obj/item/shield_projector/rectangle/mecha/adjust_health(amount)
 	. = ..()
-	my_mech.use_power(OMNI_SHIELD_DRAIN)
+	my_mech().use_power(OMNI_SHIELD_DRAIN)
 	if(!active && get_integrity() < shield_regen_amount)
-		my_mech.use_power(OMNI_SHIELD_DRAIN * 4)
+		my_mech().use_power(OMNI_SHIELD_DRAIN * 4)
 
 #undef OMNI_SHIELD_DRAIN
+
+/// LC-refs: my mech -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/shield_projector/rectangle/mecha/proc/my_mech() as /obj/mecha
+	return om_resolve(my_mech_handle)

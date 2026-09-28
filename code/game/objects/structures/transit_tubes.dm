@@ -565,3 +565,5 @@
 		if(10)
 			return "SW"
 	return
+
+REF_OWNED(/obj/structure/transit_tube_pod, list("air_contents"))

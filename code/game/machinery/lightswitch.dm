@@ -15,22 +15,22 @@
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
 	var/on = 1
-	var/area/area = null
+	var/area_handle
 	var/otherarea = null
 	var/image/overlay
 
 /obj/machinery/light_switch/Initialize(mapload)
 	. = ..()
 
-	area = get_area(src)
+	area_handle = om_handle(get_area(src))
 
 	if(otherarea)
-		area = locate(text2path("/area/[otherarea]"))
+		area_handle = om_handle(locate(text2path("/area/[otherarea]")))
 
 	if(!name)
-		name = "light switch ([area.name])"
+		name = "light switch ([area().name])"
 
-	on = area.lightswitch
+	on = area().lightswitch
 	update_icon()
 
 /obj/machinery/light_switch/update_icon()
@@ -68,15 +68,15 @@
 /obj/machinery/light_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 
-	area.lightswitch = on
-	area.update_icon()
+	area().lightswitch = on
+	area().update_icon()
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 
-	for(var/obj/machinery/light_switch/L in area)
+	for(var/obj/machinery/light_switch/L in area())
 		L.on = on
 		L.update_icon()
 
-	area.power_change()
+	area().power_change()
 	GLOB.lights_switched_on_roundstat++
 	return TRUE
 
@@ -107,3 +107,9 @@
 	icon = 'icons/obj/power_breaker.dmi'
 	icon_state = "light1"
 	on = 0
+
+REF_OWNED(/obj/machinery/light_switch, list("overlay"))
+
+/// LC-refs: area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/light_switch/proc/area() as /area
+	return om_resolve(area_handle)

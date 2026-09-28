@@ -2,7 +2,7 @@
 	name = "Picture-in-picture"
 	screen_loc = "CENTER"
 	plane = PLANE_WORLD
-	var/atom/center
+	var/center_handle
 	var/width = 0
 	var/height = 0
 	var/list/shown_to
@@ -21,7 +21,6 @@
 	popup_screen = new
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
-REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_shrink", "button_expand", "button_pop", "popup_screen"))
 
 // LIFECYCLE: hides itself from every client it is shown to.
 /atom/movable/screen/movable/pic_in_pic/Destroy()
@@ -137,7 +136,7 @@ REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_shri
 		refresh_view()
 
 /atom/movable/screen/movable/pic_in_pic/proc/set_view_center(atom/target, do_refresh = TRUE)
-	center = target
+	center_handle = om_handle(target)
 	if(do_refresh)
 		refresh_view()
 
@@ -152,7 +151,7 @@ REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_shri
 		if(length(viewing_turfs)) popup_screen.vis_contents += viewing_turfs
 
 /atom/movable/screen/movable/pic_in_pic/proc/get_visible_turfs()
-	var/turf/T = get_turf(center)
+	var/turf/T = get_turf(center())
 	if(!T)
 		return list()
 	var/turf/lowerleft = locate(max(1, T.x - round(width/2)), max(1, T.y - round(height/2)), T.z)
@@ -181,3 +180,9 @@ REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_shri
 	if(window == "camera-[REF(src)]")
 		UnregisterSignal(usr.client, COMSIG_POPUP_CLEARED)
 		popup_screen.hide_from(usr)
+
+/// LC-refs: the atom this view is centred on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/movable/pic_in_pic/proc/center() as /atom
+	return om_resolve(center_handle)
+
+REF_OWNED(/atom/movable/screen/movable/pic_in_pic, list("button_x", "button_expand", "button_shrink", "button_pop", "popup_screen", "standard_background"))

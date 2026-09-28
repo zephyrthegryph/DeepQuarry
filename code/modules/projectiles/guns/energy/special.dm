@@ -105,14 +105,14 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/genemask = rerun_prompt(usr, "k108", list("kind" = "list", "message" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = SSplants.plant_gene_datums), VERB_REF(select_gene), args)
+	var/genemask = rerun_prompt(usr, "k108", list("kind" = "list", "message" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = GLOB.plant_service.plant_gene_datums), VERB_REF(select_gene), args)
 	if(isnull(genemask))
 		return
 
 	if(!genemask)
 		return
 
-	gene = SSplants.plant_gene_datums[genemask]
+	gene = GLOB.plant_service.plant_gene_datums[genemask]
 
 	to_chat(usr, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 

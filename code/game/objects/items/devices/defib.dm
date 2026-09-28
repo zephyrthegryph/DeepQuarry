@@ -15,7 +15,7 @@
 	w_class = ITEMSIZE_LARGE
 	unacidable = TRUE
 
-	var/obj/item/shockpaddles/linked/paddle_path = /obj/item/shockpaddles/linked
+	var/paddle_path = /obj/item/shockpaddles/linked
 	var/obj/item/cell/bcell = null
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'

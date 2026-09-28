@@ -520,17 +520,17 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	return 0
 
 ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = verb_prompt(user, "a9", list("kind" = "list", "message" = "Select Seed.", "title" = "Seed Type", "choices" = SSplants.seeds), args)
+	var/seedtype = verb_prompt(user, "a9", list("kind" = "list", "message" = "Select Seed.", "title" = "Seed Type", "choices" = GLOB.plant_service.seeds), args)
 	if(isnull(seedtype))
 		return
-	if(!seedtype || !SSplants.seeds[seedtype])
+	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 		return
 	var/amount = verb_prompt(user, "a10", list("kind" = "number", "message" = "Amount of fruit to spawn", "title" = "Fruit Amount", "default" = 1), args)
 	if(isnull(amount))
 		return
 	var/mob/user_mob = user.mob
 	if(!isnull(amount))
-		var/datum/seed/S = SSplants.seeds[seedtype]
+		var/datum/seed/S = GLOB.plant_service.seeds[seedtype]
 		S.harvest(user_mob,0,0,amount)
 	log_admin("[key_name(user)] spawned [seedtype] fruit at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
@@ -568,13 +568,13 @@ ADMIN_VERB(check_custom_items, R_SPAWN, "Check Custom Items", "Check the custom 
 			to_chat(user, "- name: [item.name] icon: [item.item_icon] path: [item.item_path] desc: [item.item_desc]")
 
 ADMIN_VERB(spawn_plant, R_SPAWN, "Spawn Plant", "Spawn a spreading plant effect.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = verb_prompt(user, "a13", list("kind" = "list", "message" = "Select Seed.", "title" = "Seed Type", "choices" = SSplants.seeds), args)
+	var/seedtype = verb_prompt(user, "a13", list("kind" = "list", "message" = "Select Seed.", "title" = "Seed Type", "choices" = GLOB.plant_service.seeds), args)
 	if(isnull(seedtype))
 		return
-	if(!seedtype || !SSplants.seeds[seedtype])
+	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 		return
 	var/mob/user_mob = user.mob
-	new /obj/effect/plant(get_turf(user_mob), SSplants.seeds[seedtype])
+	new /obj/effect/plant(get_turf(user_mob), GLOB.plant_service.seeds[seedtype])
 	log_admin("[key_name(user)] spawned [seedtype] vines at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
 ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATEGORY_DEBUG_GAME, object as text|null)

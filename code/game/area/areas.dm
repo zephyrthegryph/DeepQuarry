@@ -50,7 +50,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	var/list/ambience
 	var/list/forced_ambience = null
 	var/sound_env = STANDARD_STATION
-	var/turf/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
+	var/base_turf //The base turf type of the area, which can be used to override the z-level's base turf
 	VAR_PROTECTED/color_grading = null // Color blending for clients that enter this area
 
 /area/New()
@@ -606,7 +606,7 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 /area
 	var/enter_message
 	var/exit_message
-	var/turf/ceiling_type
+	var/ceiling_type
 
 	// Size of the area in open turfs, only calculated for indoors areas.
 	var/areasize = 0
@@ -667,3 +667,5 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	power_change()		// all machines set to current power level, also updates lighting icon
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
+
+REF_PAIR(/area, list("apc" = "area"))

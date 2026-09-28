@@ -2,7 +2,7 @@
 	name = "neural framework implant"
 	desc = "A small metal casing with numerous wires stemming off of it."
 	initialize_loc = BP_HEAD
-	var/obj/item/organ/internal/brain/my_brain = null
+	var/my_brain_handle
 	var/target_state = null
 	var/robotic_brain = FALSE
 
@@ -11,24 +11,24 @@
 		var/mob/living/carbon/human/H = source
 		if(H.species.has_organ[O_BRAIN])
 			var/obj/item/organ/internal/brain/possible_brain = H.internal_organs_by_name[O_BRAIN]
-			my_brain = possible_brain //Organs will take damage all the same.
-			if(istype(possible_brain) && my_brain.can_assist())		//If the brain is infact a brain, and not something special like an MMI.
-				my_brain.implant_assist(target_state)
+			my_brain_handle = om_handle(possible_brain) //Organs will take damage all the same.
+			if(istype(possible_brain) && my_brain().can_assist())		//If the brain is infact a brain, and not something special like an MMI.
+				my_brain().implant_assist(target_state)
 		if(H.isSynthetic() && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
 			robotic_brain = TRUE
-	if(istype(my_brain) && my_brain.can_assist())
+	if(istype(my_brain(), /obj/item/organ/internal/brain) && my_brain().can_assist())
 		PERIODIC_START(src, PERIODIC_SLOW)
 
 // LIFECYCLE: the brain's owner feels it ripped away.
 /obj/item/implant/neural/Destroy()
-	if(my_brain?.owner)
-		to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
+	if(my_brain()?.owner)
+		to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))
 	return ..()
 
 /obj/item/implant/neural/periodic_step()
-	if(my_brain && part)
-		if(my_brain.loc != part.loc)
-			to_chat(my_brain.owner, span_critical("You feel a pressure in your mind as something is ripped away."))
+	if(my_brain() && part)
+		if(my_brain().loc != part.loc)
+			to_chat(my_brain().owner, span_critical("You feel a pressure in your mind as something is ripped away."))
 			meltdown()
 	return 1
 
@@ -50,38 +50,38 @@ Implant Specifics:<BR>"}
 
 /obj/item/implant/neural/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || !my_brain || malfunction)
+	if (. & EMP_PROTECT_SELF || !my_brain() || malfunction)
 		return
 	malfunction = MALFUNCTION_TEMPORARY
 
 	var/delay = 10 //Don't let it just get emped twice in a second to kill someone.
-	var/brain_location = my_brain.owner.organs_by_name[my_brain.parent_organ]
-	var/mob/living/L = my_brain.owner
+	var/brain_location = my_brain().owner.organs_by_name[my_brain().parent_organ]
+	var/mob/living/L = my_brain().owner
 	switch(severity)
 		if(1)
 			if(prob(10))
 				meltdown()
 			else if(prob(80))
-				L.injure(INJURY_NEURAL, 5, my_brain, src)
+				L.injure(INJURY_NEURAL, 5, my_brain(), src)
 				if(!robotic_brain)
 					to_chat(L, span_critical("Something in your [brain_location] burns!"))
 				else
 					to_chat(L, span_warning("Severe fault detected in [brain_location]."))
 		if(2)
 			if(prob(80))
-				L.injure(INJURY_NEURAL, 3, my_brain, src)
+				L.injure(INJURY_NEURAL, 3, my_brain(), src)
 				if(!robotic_brain)
 					to_chat(L, span_danger("It feels like something is digging into your [brain_location]!"))
 				else
 					to_chat(L, span_warning("Fault detected in [brain_location]."))
 		if(3)
 			if(prob(60))
-				L.injure(INJURY_NEURAL, 2, my_brain, src)
+				L.injure(INJURY_NEURAL, 2, my_brain(), src)
 				if(!robotic_brain)
 					to_chat(L, span_warning("There is a stabbing pain in your [brain_location]!"))
 		if(4)
 			if(prob(40))
-				L.injure(INJURY_NEURAL, 1, my_brain, src)
+				L.injure(INJURY_NEURAL, 1, my_brain(), src)
 				if(!robotic_brain)
 					to_chat(L, span_warning("Your [brain_location] aches."))
 
@@ -91,13 +91,17 @@ Implant Specifics:<BR>"}
 	..()
 	PERIODIC_STOP(src)
 	var/mob/living/carbon/human/H = null
-	if(my_brain && my_brain.owner)
-		if(ishuman(my_brain.owner))
-			H = my_brain.owner
+	if(my_brain() && my_brain().owner)
+		if(ishuman(my_brain().owner))
+			H = my_brain().owner
 			if(robotic_brain)
 				to_chat(H, span_critical("WARNING. Fault dete-ct-- in the \the [src]."))
 			H.status_at_least(EFFECT_CONFUSED, 30)
 			H.status_adjust(EFFECT_BLINDED, 5)
-		my_brain.owner?.injure(INJURY_NEURAL, 15, my_brain, src)
-		my_brain = null
+		my_brain().owner?.injure(INJURY_NEURAL, 15, my_brain(), src)
+		my_brain_handle = null
 	return
+
+/// LC-refs: my brain -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/implant/neural/proc/my_brain() as /obj/item/organ/internal/brain
+	return om_resolve(my_brain_handle)

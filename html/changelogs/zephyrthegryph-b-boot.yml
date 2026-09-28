@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Round-start atmos and heat registration no longer doubles the Rust heap, cutting the boot memory peak that let large explosions run out of memory."

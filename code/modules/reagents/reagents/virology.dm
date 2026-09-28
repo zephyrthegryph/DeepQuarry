@@ -11,11 +11,11 @@
 
 /datum/reagent/vaccine/affect_blood(mob/living/carbon/M, alien, removed)
 	if(islist(data))
-		for(var/thing in M.GetViruses())
-			var/datum/disease/D = thing
+		for(var/thing in M.get_contagions())
+			var/datum/affliction/contagion/D = thing
 			if(D.GetDiseaseID() in data)
 				D.cure()
-		M.AddResistances(data)
+		M.add_contagion_immunities(data)
 
 /datum/reagent/vaccine/mix_data(newdata, newamount)
 	if(islist(newdata))

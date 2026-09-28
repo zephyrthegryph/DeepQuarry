@@ -345,3 +345,5 @@
 /obj/machinery/portable_atmospherics/canister/phoron/cold/Initialize(mapload)
 	. = ..()
 	src.air_contents.set_temperature(2.72)
+
+REF_OWNED(/obj/structure/reflector, list("deflector_overlay"))

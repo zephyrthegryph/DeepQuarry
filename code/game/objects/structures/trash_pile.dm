@@ -7,7 +7,7 @@
 	anchored = TRUE
 
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
-	var/mob/living/hider		// A simple animal that might be hiding in the pile
+	var/hider_handle		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
 
 /obj/structure/trash_pile/Initialize(mapload)
@@ -60,20 +60,19 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		//They're in it, and want to get out.
 		if(L.loc == src)
 			om_prompt(src, user, list("message" = "Do you want to exit \the [src]?", "title" = "Un-Hide?", "choices" = list("Exit","Stay"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(hide_answered))
-		else if(!hider)
+		else if(!hider())
 			om_prompt(src, user, list("message" = "Do you want to hide in \the [src]?", "title" = "Un-Hide?", "choices" = list("Hide","Stay"), "requires" = PROMPT_ADJACENT), PROC_REF(hide_answered))
 	else
 		return ..()
 
 /obj/structure/trash_pile/proc/hide_answered(mob/living/L, choice, datum/om/prompt/ask)
 	if(choice == "Exit")
-		if(L == hider)
-			hider = null
+		if(L == hider())
+			hider_handle = null
 		L.forceMove(get_turf(src))
-	else if(choice == "Hide" && !hider) //Check again because PROMPT
+	else if(choice == "Hide" && !hider()) //Check again because PROMPT
 		L.forceMove(src)
-		hider = L
-
+		hider_handle = om_handle(L)
 /obj/structure/trash_pile/attack_ghost(mob/observer/user as mob)
 	if(CONFIG_GET(flag/disable_player_mice))
 		to_chat(user, span_warning("Spawning as a mouse is currently disabled."))
@@ -133,19 +132,19 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 			return TRUE
 
 		H.visible_message("[user] searches through \the [src].",span_notice("You search through \the [src]."))
-		if(hider)
-			to_chat(hider,span_warning("[user] is searching the trash pile you're in!"))
+		if(hider())
+			to_chat(hider(),span_warning("[user] is searching the trash pile you're in!"))
 
 		//Do the searching
 		om_do_after(user, rand(4 SECONDS,6 SECONDS), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/trash_pile/proc/attack_hand_timed_done(mob/user)
-	if(hider && prob(50))
+	if(hider() && prob(50))
 		//If there was a hider, chance to reveal them
-		to_chat(hider,span_danger("You've been discovered!"))
-		hider.forceMove(get_turf(src))
-		hider = null
+		to_chat(hider(),span_danger("You've been discovered!"))
+		hider().forceMove(get_turf(src))
+		hider_handle = null
 		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
 	else
 		SEND_SIGNAL(src,COMSIG_LOOT_REWARD,user,searchedby, 5)
@@ -186,3 +185,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 /obj/structure/mob_spawner/mouse_nest/get_death_report(mob/living/L)
 	..()
 	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
+
+/// LC-refs: hider -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/trash_pile/proc/hider() as /mob/living
+	return om_resolve(hider_handle)

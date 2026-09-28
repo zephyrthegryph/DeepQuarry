@@ -4,7 +4,7 @@
 # files not listed may have none. A Destroy() override with a same-line or
 # line-before `// LIFECYCLE: <reason>` comment doesn't count at all.
 # `python tools/ci/lifecycle_counts_lint.py --update` rewrites this.
-# Destroy total: 2 in 2 files. qdel total: 2126 in 914 files.
+# Destroy total: 2 in 2 files. qdel total: 2106 in 908 files.
 [destroy]
 code/datums/om/prompt.dm 1
 code/modules/random_map/drop/supply.dm 1
@@ -26,11 +26,9 @@ code/_helpers/atom_movables.dm 1
 code/_helpers/game.dm 1
 code/_helpers/icons.dm 4
 code/_helpers/icons/flatten.dm 5
-code/_helpers/legacy_tg_path.dm 1
-code/_helpers/logging/log_to_db.dm 2
 code/_helpers/refinery.dm 4
 code/_onclick/hud/ability_screen_objects.dm 1
-code/_onclick/hud/action/action.dm 2
+code/_onclick/hud/action/action.dm 1
 code/_onclick/hud/action/item_action.dm 1
 code/_onclick/hud/alert.dm 1
 code/_onclick/hud/fullscreen.dm 2
@@ -52,7 +50,7 @@ code/controllers/subsystems/admin_verbs.dm 1
 code/controllers/subsystems/atoms.dm 2
 code/controllers/subsystems/communications.dm 2
 code/controllers/subsystems/contracts.dm 3
-code/controllers/subsystems/dbcore.dm 8
+code/controllers/subsystems/dbcore.dm 5
 code/controllers/subsystems/inactivity.dm 1
 code/controllers/subsystems/instruments.dm 1
 code/controllers/subsystems/internal_wiki.dm 2
@@ -61,7 +59,7 @@ code/controllers/subsystems/media_tracks.dm 2
 code/controllers/subsystems/pois.dm 2
 code/controllers/subsystems/robot_sprites.dm 2
 code/controllers/subsystems/supply.dm 6
-code/controllers/subsystems/throwing.dm 2
+code/controllers/subsystems/throwing.dm 1
 code/controllers/subsystems/ticker.dm 3
 code/controllers/subsystems/transcore.dm 1
 code/controllers/subsystems/vis_overlays.dm 1
@@ -108,8 +106,6 @@ code/datums/components/turfslip.dm 6
 code/datums/containment/latent.dm 3
 code/datums/containment/stock.dm 1
 code/datums/datum.dm 2
-code/datums/diseases/_disease.dm 1
-code/datums/diseases/advance/advance.dm 1
 code/datums/elements/lootable/_lootable.dm 1
 code/datums/ghost_spawn.dm 1
 code/datums/helper_datums/teleport.dm 1
@@ -142,7 +138,6 @@ code/datums/status_effects/_status_effect_helpers.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 12
 code/datums/status_effects/grouped_effect.dm 1
 code/datums/vending/stored_item.dm 3
-code/defines/procs/statistics.dm 3
 code/game/antagonist/antagonist_equip.dm 1
 code/game/antagonist/antagonist_update.dm 3
 code/game/antagonist/station/rogue_ai.dm 1
@@ -393,7 +388,7 @@ code/modules/admin/DB ban/ban_panle_ui.dm 2
 code/modules/admin/DB ban/functions.dm 9
 code/modules/admin/IsBanned.dm 2
 code/modules/admin/admin.dm 2
-code/modules/admin/admin_ranks.dm 9
+code/modules/admin/admin_ranks.dm 4
 code/modules/admin/admin_report_panel.dm 1
 code/modules/admin/admin_tools.dm 2
 code/modules/admin/admin_verbs.dm 2
@@ -824,7 +819,6 @@ code/modules/recycling/disposal_machines.dm 3
 code/modules/recycling/disposal_mail.dm 1
 code/modules/recycling/recycling.dm 3
 code/modules/recycling/v_garbosystem.dm 3
-code/modules/research/message_server.dm 2
 code/modules/research/tg/designs.dm 1
 code/modules/research/tg/experisci/experiment/types/scanning.dm 1
 code/modules/research/tg/machinery/destructive_analyzer.dm 1

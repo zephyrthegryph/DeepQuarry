@@ -205,7 +205,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 /obj/machinery/botany/extractor/tgui_data(mob/user)
 	var/list/data = ..()
 
-	var/list/geneMasks = SSplants.gene_masked_list
+	var/list/geneMasks = GLOB.plant_service.gene_masked_list
 	data["geneMasks"] = geneMasks
 
 	data["activity"] = active
@@ -244,10 +244,10 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 				return
 			seed.forceMove(get_turf(src))
 
-			if(seed.seed.name == "new line" || isnull(SSplants.seeds[seed.seed.name]))
-				seed.seed.uid = SSplants.seeds.len + 1
+			if(seed.seed.name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed.name]))
+				seed.seed.uid = GLOB.plant_service.seeds.len + 1
 				seed.seed.name = "[seed.seed.uid]"
-				SSplants.seeds[seed.seed.name] = seed.seed
+				GLOB.plant_service.seeds[seed.seed.name] = seed.seed
 
 			seed.update_seed()
 			visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
@@ -299,8 +299,8 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			if(!genetics.roundstart)
 				loaded_disk.genesource += " (variety #[genetics.uid])"
 
-			loaded_disk.name += " ([SSplants.gene_tag_masks[params["get_gene"]]], #[genetics.uid])"
-			loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[params["get_gene"]]], sampled from [genetics.display_name]\'."
+			loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics.uid])"
+			loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics.display_name]\'."
 			eject_disk = 1
 
 			degradation += rand(20,60)
@@ -348,7 +348,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 
 		for(var/datum/plantgene/P in loaded_disk.genes)
 			if(data["locus"] != "") data["locus"] += ", "
-			data["locus"] += "[SSplants.gene_tag_masks[P.genetype]]"
+			data["locus"] += "[GLOB.plant_service.gene_tag_masks[P.genetype]]"
 
 	else
 		data["disk"] = 0
@@ -374,7 +374,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
-			if(!isnull(SSplants.seeds[seed.seed.name]))
+			if(!isnull(GLOB.plant_service.seeds[seed.seed.name]))
 				seed.seed = seed.seed.diverge(1)
 				seed.seed_type = seed.seed.name
 				seed.update_seed()

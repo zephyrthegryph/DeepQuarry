@@ -8,7 +8,7 @@
 	flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
 	var/timer = 10
-	var/atom/target = null
+	var/target_handle
 	var/open_panel = 0
 	var/image_overlay = null
 	var/blast_dev = 0
@@ -66,7 +66,7 @@
 	if(!(in_range(user, target)))
 		return
 	user.drop_item()
-	src.target = target
+	src.target_handle = om_handle(target_ref())
 	loc = null
 
 	if (ismob(target))
@@ -81,23 +81,23 @@
 	om_after(src, timer SECONDS, PROC_REF(explode), get_turf(target))
 
 /obj/item/plastique/proc/explode(location)
-	if(!target)
-		target = get_atom_on_turf(src)
-	if(!target)
-		target = src
+	if(!target_ref())
+		target_handle = om_handle(get_atom_on_turf(src))
+	if(!target_ref())
+		target_handle = om_handle(src)
 	if(location)
 		explosion(location, blast_dev, blast_heavy, blast_light, blast_flash)
 
-	if(target)
-		if (istype(target, /turf/simulated/wall))
-			var/turf/simulated/wall/W = target
+	if(target_ref())
+		if (istype(target_ref(), /turf/simulated/wall))
+			var/turf/simulated/wall/W = target_ref()
 			W.dismantle_wall(1,1,1)
-		else if(isliving(target))
-			target.ex_act(2) // c4 can't gib mobs anymore.
+		else if(isliving(target_ref()))
+			target_ref().ex_act(2) // c4 can't gib mobs anymore.
 		else
-			target.ex_act(1)
-	if(target)
-		target.cut_overlay(image_overlay)
+			target_ref().ex_act(1)
+	if(target_ref())
+		target_ref().cut_overlay(image_overlay)
 	consume(src)
 
 /obj/item/plastique/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -132,16 +132,20 @@
 	desc = "Used to dig holes in specific areas without too much extra hole. Has extra mechanism that safely implodes the bomb if it is used in close proximity to the facility."
 
 /obj/item/plastique/seismic/locked/explode(location)
-	if(!target)
-		target = get_atom_on_turf(src)
-	if(!target)
-		target = src
+	if(!target_ref())
+		target_handle = om_handle(get_atom_on_turf(src))
+	if(!target_ref())
+		target_handle = om_handle(src)
 
-	var/turf/T = get_turf(target)
+	var/turf/T = get_turf(target_ref())
 	if((T.z in using_map.station_levels) || (T.z in using_map.admin_levels))
-		target.visible_message(span_danger("\The [src] lets out a loud beep as safeties trigger, before imploding and falling apart."))
-		target.cut_overlay(image_overlay)
+		target_ref().visible_message(span_danger("\The [src] lets out a loud beep as safeties trigger, before imploding and falling apart."))
+		target_ref().cut_overlay(image_overlay)
 		consume(src)
 		return 0
 	else
 		return ..()
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/plastique/proc/target_ref() as /atom
+	return om_resolve(target_handle)

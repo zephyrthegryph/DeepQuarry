@@ -35,7 +35,7 @@
 	// 16 for nitrogen concentration
 	// 32 for carbon dioxide concentration
 
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 /obj/machinery/air_sensor/update_icon()
 	icon_state = "gsensor[on]"
@@ -75,7 +75,7 @@
 	return list2params(sensor_readings(return_air()))
 
 /obj/machinery/air_sensor/machine_step()
-	if(on && radio_connection)
+	if(on && radio_connection())
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
@@ -84,7 +84,7 @@
 		for(var/key in readings)
 			signal.data[key] = readings[key]
 		signal.data["sigtype"]="status"
-		radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+		radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 	register_gas_dependencies()
 	return PROCESS_KILL
 
@@ -121,7 +121,7 @@
 	invalidate_gas_dependencies()
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/air_sensor/Initialize(mapload)
 	. = ..()
@@ -187,7 +187,7 @@
 	id_tag = new_tag
 	var/obj/item/multitool/M = ask.get("tool")
 	if(istype(M) && M.loc == user)
-		M.connectable = src
+		M.connectable_handle = om_handle(src)
 		to_chat(user, span_notice("You save [src] into [M]'s buffer."))
 #undef ONOFF_TOGGLE
 
@@ -200,7 +200,7 @@
 	var/frequency = PUMPS_FREQ
 	var/list/sensors
 	var/list/sensor_information
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 	circuit = /obj/item/circuitboard/air_management
 
 /obj/machinery/computer/general_air_control/declare_interactions(list/into)
@@ -244,7 +244,7 @@
 /obj/machinery/computer/general_air_control/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Sensors", "Frequency", "Cancel")
@@ -279,7 +279,7 @@
 	switch(choice)
 		if("Add")
 			// Device must be a meter or gas sensor.
-			var/obj/machinery/device = tool.connectable
+			var/obj/machinery/device = tool.connectable()
 			if(!device || !(istype(device, /obj/machinery/meter)) && !(istype(device, /obj/machinery/air_sensor)))
 				to_chat(user, span_warning("Error: No device in multitool buffer, or incompatible device is not a sensor or meter."))
 				return
@@ -385,11 +385,11 @@
 			input_flow_setting = between(0, new_flow, ATMOS_DEFAULT_VOLUME_PUMP + 500) //default flow rate limit for air injectors
 			return TRUE
 
-	if(!radio_connection)
+	if(!radio_connection())
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -422,7 +422,7 @@
 			. = TRUE
 
 	signal.data["sigtype"]="command"
-	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
 /obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
@@ -437,12 +437,12 @@
 	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
-			to_chat(user, span_notice("The buffer is [tool.connectable]"))
-			if (!istype(tool.connectable, /obj/machinery/atmospherics/unary/vent_pump))
+			to_chat(user, span_notice("The buffer is [tool.connectable()]"))
+			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/vent_pump))
 				to_chat(user, span_notice("Error: Buffer is either empty, or object in buffer is invalid. Device should be a Unary Vent."))
 				return
 
-			var/obj/machinery/atmospherics/unary/vent_pump/pump = tool.connectable
+			var/obj/machinery/atmospherics/unary/vent_pump/pump = tool.connectable()
 			output_tag = pump.id_tag
 			pump.external_pressure_bound = 0
 			pump.external_pressure_bound_default = 0
@@ -461,11 +461,11 @@
 	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
-			if (!istype(tool.connectable, /obj/machinery/atmospherics/unary/outlet_injector))
+			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/outlet_injector))
 				to_chat(user, span_notice("Error: Buffer is either empty, or object in buffer is invalid. Device should be Injector"))
 				return
 
-			var/obj/machinery/atmospherics/unary/outlet_injector/injector = tool.connectable
+			var/obj/machinery/atmospherics/unary/outlet_injector/injector = tool.connectable()
 			input_tag = injector.id
 			to_chat(user, span_notice("You have set the inlet"))
 			return
@@ -537,11 +537,11 @@
 			input_flow_setting = between(0, new_flow, ATMOS_DEFAULT_VOLUME_PUMP + 500) //default flow rate limit for air injectors
 			return TRUE
 
-	if(!radio_connection)
+	if(!radio_connection())
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -574,7 +574,7 @@
 			. = TRUE
 
 	signal.data["sigtype"]="command"
-	radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
 /obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
@@ -589,11 +589,11 @@
 	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
-			if (!istype(tool.connectable, /obj/machinery/atmospherics/unary/vent_pump))
+			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/vent_pump))
 				to_chat(user, span_warning("Error: Buffer is either empty, or object in buffer is invalid. Device should be Air Vent"))
 				return
 
-			var/obj/machinery/atmospherics/unary/vent_pump/pump = tool.connectable
+			var/obj/machinery/atmospherics/unary/vent_pump/pump = tool.connectable()
 			output_tag = pump.id_tag
 			pump.external_pressure_bound = 0
 			pump.external_pressure_bound_default = 0
@@ -612,12 +612,12 @@
 	var/obj/item/multitool/tool = ask.get("tool")
 	switch(choice)
 		if ("Set")
-			to_chat(user, span_notice("The buffer is [tool.connectable]"))
-			if (!istype(tool.connectable, /obj/machinery/atmospherics/unary/outlet_injector))
+			to_chat(user, span_notice("The buffer is [tool.connectable()]"))
+			if (!istype(tool.connectable(), /obj/machinery/atmospherics/unary/outlet_injector))
 				to_chat(user, span_warning("Error: Buffer is either empty, or object in buffer is invalid. Device should be Injector"))
 				return
 
-			var/obj/machinery/atmospherics/unary/outlet_injector/injector = tool.connectable
+			var/obj/machinery/atmospherics/unary/outlet_injector/injector = tool.connectable()
 			input_tag = injector.id
 			to_chat(user, span_notice("You have set the inlet!"))
 			return
@@ -641,7 +641,7 @@
 /// on -- each frame re-reads the latest sensor broadcasts and commands the injectors -- and parked
 /// otherwise; toggling automation wakes it.
 /obj/machinery/computer/general_air_control/fuel_injection/machine_step()
-	if(!automation || !radio_connection)
+	if(!automation || !radio_connection())
 		return PROCESS_KILL
 	if(automation)
 
@@ -657,7 +657,7 @@
 
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.source = src
+		signal.source_handle = om_handle(src)
 
 		signal.data = list(
 			"tag" = device_tag,
@@ -665,7 +665,7 @@
 			"sigtype"="command"
 		)
 
-		radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+		radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
 /obj/machinery/computer/general_air_control/fuel_injection/tgui_data(mob/user)
 	var/list/data = ..()
@@ -696,18 +696,18 @@
 	switch(action)
 		if("refresh_status")
 			device_info = null
-			if(!radio_connection)
+			if(!radio_connection())
 				return FALSE
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source = src
+			signal.source_handle = om_handle(src)
 			signal.data = list(
 				"tag" = device_tag,
 				"status" = 1,
 				"sigtype"="command"
 			)
-			radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+			radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 			. = TRUE
 
 		if("toggle_automation")
@@ -717,35 +717,35 @@
 
 		if("toggle_injector")
 			device_info = null
-			if(!radio_connection)
+			if(!radio_connection())
 				return FALSE
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source = src
+			signal.source_handle = om_handle(src)
 			signal.data = list(
 				"tag" = device_tag,
 				"power_toggle" = 1,
 				"sigtype"="command"
 			)
 
-			radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+			radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 			. = TRUE
 
 		if("injection")
-			if(!radio_connection)
+			if(!radio_connection())
 				return FALSE
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source = src
+			signal.source_handle = om_handle(src)
 			signal.data = list(
 				"tag" = device_tag,
 				"inject" = 1,
 				"sigtype"="command"
 			)
 
-			radio_connection.post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+			radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 			. = TRUE
 
 #undef SENSOR_PRESSURE
@@ -758,9 +758,17 @@
 #undef SENSOR_CH4
 
 /obj/machinery/computer/general_air_control/fuel_injection/step_has_work()
-	return automation && radio_connection
+	return automation && radio_connection()
 
 /// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/air_sensor/arm_wakes()
 	..()
 	register_gas_dependencies()
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/air_sensor/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/general_air_control/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

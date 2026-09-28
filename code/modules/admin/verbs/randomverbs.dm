@@ -792,7 +792,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 /datum/admin_verb/despawn_player/proc/cryopods(robot)
 	var/list/pods = list()
 	for(var/obj/machinery/cryopod/selected_cryopod in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!selected_cryopod.control_computer)
+		if(!selected_cryopod.control_computer())
 			continue //Broken pod w/o computer, move on.
 		if(istype(selected_cryopod,/obj/machinery/cryopod/robot) == !!robot)
 			pods["[selected_cryopod.name] ([selected_cryopod.x],[selected_cryopod.y],[selected_cryopod.z])"] = selected_cryopod
@@ -817,7 +817,7 @@ ADMIN_VERB(despawn_player, R_ADMIN|R_EVENT, "Cryo Player", "Removes a player fro
 	var/list/robot_cryopods = list()
 
 	for(var/obj/machinery/cryopod/selected_cryopod in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!selected_cryopod.control_computer)
+		if(!selected_cryopod.control_computer())
 			continue //Broken pod w/o computer, move on.
 
 		var/listname = "[selected_cryopod.name] ([selected_cryopod.x],[selected_cryopod.y],[selected_cryopod.z])"

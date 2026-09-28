@@ -108,3 +108,5 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 
 /obj/item/material/ashtray/glass/Initialize(mapload)
 	. = ..(mapload, MAT_GLASS)
+
+REF_OWNED(/obj/item/material/ashtray, list("base_image"))

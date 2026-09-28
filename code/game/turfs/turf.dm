@@ -478,7 +478,7 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 
 /turf/proc/add_vomit_floor(mob/living/M, toxvomit = NONE, purge = TRUE)
 
-	var/obj/effect/decal/cleanable/vomit/V = new /obj/effect/decal/cleanable/vomit(src, M.GetSpreadableViruses())
+	var/obj/effect/decal/cleanable/vomit/V = new /obj/effect/decal/cleanable/vomit(src, contagion_copies(M.get_spreadable_contagions()))
 
 	if (QDELETED(V))
 		V = locate() in src

@@ -384,3 +384,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/partslathe/step_start_condition()
 	return busy
+
+REF_HELD(/obj/machinery/partslathe, list("copy_board"))

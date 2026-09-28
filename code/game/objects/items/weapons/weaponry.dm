@@ -42,8 +42,8 @@
 				to_chat(user, "You wave [src] over [infected]'s head, and feel a dark presence leave [M.p_their()] body.")
 				to_chat(infected, "[user] waves [src] over your head and you feel a dark presence leave your body.")
 
-			if(infected.HasDisease(/datum/disease/fleshy_spread))
-				for(var/datum/disease/fleshy_spread/disease in infected.GetViruses())
+			if(infected.has_contagion(/datum/affliction/contagion/fleshy_spread))
+				for(var/datum/affliction/contagion/fleshy_spread/disease in infected.get_contagions())
 					disease.cure()
 					break
 				to_chat(user, "You wave [src] over [infected]'s head, curing them of their infection.")

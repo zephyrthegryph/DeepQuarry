@@ -205,9 +205,9 @@
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
 		if(!non_kin_count && (self.comp.in_phase))
-			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
+			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
 		else if (non_kin_count && !(self.comp.in_phase))
-			dq_use_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
+			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
 	if(ctx.fact("alive"))

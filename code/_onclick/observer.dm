@@ -54,8 +54,8 @@
 		user.loc = get_turf(com.teleport_control.locked)
 
 /obj/effect/portal/attack_ghost(mob/user as mob)
-	if(target)
-		user.loc = get_turf(target)
+	if(target_ref())
+		user.loc = get_turf(target_ref())
 
 // -------------------------------------------
 // This was supposed to be used by adminghosts

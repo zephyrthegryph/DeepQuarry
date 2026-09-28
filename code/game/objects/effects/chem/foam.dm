@@ -97,9 +97,9 @@
 /datum/effect/effect/system/foam_spread/set_up(amt=5, loca, datum/reagents/carry = null, metalfoam = 0)
 	amount = round(sqrt(amt / 3), 1)
 	if(istype(loca, /turf/))
-		location = loca
+		location_handle = om_handle(loca)
 	else
-		location = get_turf(loca)
+		location_handle = om_handle(get_turf(loca))
 
 	carried_reagents = list()
 	metal = metalfoam
@@ -111,12 +111,12 @@
 			carried_reagents += R.id
 
 /datum/effect/effect/system/foam_spread/proc/do_start()
-	var/obj/effect/effect/foam/F = locate() in location
+	var/obj/effect/effect/foam/F = locate() in get_location()
 	if(F)
 		F.amount += amount
 		return
 
-	F = new /obj/effect/effect/foam(location, metal)
+	F = new /obj/effect/effect/foam(get_location(), metal)
 	F.amount = amount
 
 	if(!metal) // don't carry other chemicals if a metal foam

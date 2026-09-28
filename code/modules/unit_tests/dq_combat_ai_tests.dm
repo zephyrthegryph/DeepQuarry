@@ -66,11 +66,11 @@
 	B.primary_threat = null
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
-	TEST_ASSERT(!(B in SSai.processing), "hibernating brain remained in strategic processing")
+	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")
 	var/wakes = B.chunk_wakes
 	publish_mob_chunk(M)
 	om_test_ticks(4)
-	// Not `B in SSai.processing`: a woken calm brain with nothing to do is due at once
+	// Not loop_running(): a woken calm brain with nothing to do is due at once
 	// and may hibernate again before this line runs.
 	TEST_ASSERT(B.chunk_wakes > wakes, "movement publication did not wake nearby brain")
 // dq_get_behavior(T) must return the same singleton across calls — the
@@ -152,7 +152,7 @@
 
 
 // --- static: faction registry builds with every faction_key -----------
-// dq_build_faction_registry runs at world init. If a /datum/faction_data
+// dq_build_faction_registry runs on the first faction lookup. If a /datum/faction_data
 // subtype has a faction_key but isn't registered, lookups fall through to
 // the default datum and the relationships are silently ignored.
 
@@ -375,13 +375,13 @@
 /datum/unit_test/dq_combat_ai_fast_processing_is_combat_scoped/Run()
 	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human)
-	TEST_ASSERT(!(hunter.ai_brain in SSaifast.processing), \
+	TEST_ASSERT(!hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
 		"idle AI brain was registered for quarter-second tactical processing")
 	hunter.ai_brain.give_target(target, TRUE)
-	TEST_ASSERT(hunter.ai_brain in SSaifast.processing, \
+	TEST_ASSERT(hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
 		"AI brain did not enter tactical processing after receiving a combat target")
 	hunter.ai_brain.lose_target()
-	TEST_ASSERT(!(hunter.ai_brain in SSaifast.processing), \
+	TEST_ASSERT(!hunter.ai_brain.loop_running(DQAI_FASTPROCESSING), \
 		"AI brain remained in tactical processing after losing its combat target")
 
 

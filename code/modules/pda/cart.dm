@@ -279,7 +279,7 @@ REF_OWNED_LIST(/obj/item/cartridge, list("programs", "messenger_plugins"))
 	if(!frequency) return
 
 	var/datum/signal/status_signal = new
-	status_signal.source = src
+	status_signal.source_handle = om_handle(src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

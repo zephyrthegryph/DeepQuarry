@@ -413,7 +413,7 @@
 	reads = list("sdisabilities", "ear_damage")
 	order = LIFE_PHASE_MIND + 10
 	name = "disabilities"
-	wake_on = CHANGE_MOB_STATUS
+	wake_on = 0 // only its reads' channels (CHANGE_MOB_STATUS)
 	run_if = LIFE_RUN_IF_STATUS_OK
 	woken_by = "status changes (blindness starting or ending); set_stat; body invalidate"
 
@@ -557,42 +557,24 @@
 
 // ---------------------------------------------------------------- declared fields (code/datums/om/fields.dm)
 // What Life stages read to decide there is work, and the channel each raises. Written only through
-// the setters below (or om_set()); the registry checks each stage's wake_on covers them.
+// the generated set_<name>() setters (or om_set()); stages that read them wake on them.
 
-/datum/om/decl/living_fields
-	of = /mob/living
-	fields = list(
-		"instability" = CHANGE_MOB_CONDITIONS,
-		"virtual_reality_mob" = CHANGE_MOB_CONDITIONS,
-		"glow_toggle" = CHANGE_MOB_CONDITIONS,
-		"glow_override" = CHANGE_MOB_CONDITIONS,
-		"glow_range" = CHANGE_MOB_CONDITIONS,
-		"glow_intensity" = CHANGE_MOB_CONDITIONS,
-		"glow_color" = CHANGE_MOB_CONDITIONS,
-		"tf_mob_holder" = CHANGE_MOB_CONDITIONS,
-	)
-
+/// Technomancer instability.
+OM_FIELD(/mob/living, instability, 0, CHANGE_MOB_CONDITIONS)
+/// Gross boolean for keeping VR mobs in VR.
+OM_FIELD(/mob/living, virtual_reality_mob, FALSE, CHANGE_MOB_CONDITIONS)
+/// If they're glowing!
+OM_FIELD(/mob/living, glow_toggle, FALSE, CHANGE_MOB_CONDITIONS)
+/// Ignore the manual toggle.
+OM_FIELD(/mob/living, glow_override, FALSE, CHANGE_MOB_CONDITIONS)
+OM_FIELD(/mob/living, glow_range, 2, CHANGE_MOB_CONDITIONS)
+OM_FIELD(/mob/living, glow_intensity, null, CHANGE_MOB_CONDITIONS)
+/// The color they're glowing!
+OM_FIELD(/mob/living, glow_color, "#FFFFFF", CHANGE_MOB_CONDITIONS)
+/// The mob this one was transformed from (vore/mob_tf.dm).
+OM_FIELD_TYPED(/mob/living, mob/living, tf_mob_holder, null, CHANGE_MOB_CONDITIONS)
 /// sdisabilities and ear_damage are /mob vars (every mob type writes them); Life reads them.
-/datum/om/decl/mob_sense_fields
-	of = /mob
-	fields = list(
-		"sdisabilities" = CHANGE_MOB_STATUS,
-		"ear_damage" = CHANGE_MOB_STATUS,
-	)
-
-OM_SETTER(/mob/living, instability)
-OM_SETTER(/mob/living, virtual_reality_mob)
-OM_SETTER(/mob/living, glow_toggle)
-OM_SETTER(/mob/living, glow_override)
-OM_SETTER(/mob/living, glow_range)
-OM_SETTER(/mob/living, glow_intensity)
-OM_SETTER(/mob/living, glow_color)
-OM_SETTER(/mob/living, tf_mob_holder)
-OM_SETTER(/mob, sdisabilities)
-OM_SETTER(/mob, ear_damage)
-
-/datum/om/decl/simple_mob_fields
-	of = /mob/living/simple_mob
-	fields = list("purge" = CHANGE_MOB_STATUS)
-
-OM_SETTER(/mob/living/simple_mob, purge)
+OM_FIELD(/mob, sdisabilities, 0, CHANGE_MOB_STATUS)
+OM_FIELD(/mob, ear_damage, null, CHANGE_MOB_STATUS)
+/// Cult stuff.
+OM_FIELD(/mob/living/simple_mob, purge, 0, CHANGE_MOB_STATUS)

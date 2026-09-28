@@ -195,7 +195,7 @@
 	origin.move_contents_to(destination)
 
 	if((locate_in_area(destination, /obj/machinery/power)) || (locate_in_area(destination, /obj/structure/cable)))
-		SSmachines.power_reregister(get_area_turfs(destination))
+		GLOB.machine_service.power_reregister(get_area_turfs(destination))
 
 	current_floor = next_floor
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")

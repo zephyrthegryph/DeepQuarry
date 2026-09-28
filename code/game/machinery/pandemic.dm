@@ -78,7 +78,7 @@
 			if(!type)
 				atom_say("Unable to find requested strain.")
 				return FALSE
-			var/datum/disease/advance/A = GLOB.archive_diseases[type]
+			var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[type]
 			if(!A)
 				atom_say("Unable to find requested strain.")
 				return FALSE
@@ -136,7 +136,7 @@
 	beaker = null
 	icon_state = "pandemic0"
 
-/obj/machinery/computer/pandemic/proc/print_form(datum/disease/advance/D, mob/living/user)
+/obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)
 	D = GLOB.archive_diseases[D.GetDiseaseID()]
 	if(!istype(D))
 		visible_message(span_warning("ERROR: Unable to print form."))
@@ -149,14 +149,14 @@
 		), PROC_REF(release_form_written), list("requires" = PROMPT_USABLE, "data" = list("disease" = D)))
 
 /obj/machinery/computer/pandemic/proc/release_form_written(mob/living/user, datum/om/prompt/ask)
-	var/datum/disease/advance/D = ask.get("disease")
+	var/datum/affliction/contagion/engineered/D = ask.get("disease")
 	var/reason = ask.get("reason")
 	if(printing || !reason)
 		return
 	reason += "<span class=\"paper_field\"></span>"
 	var/english_symptoms = list()
 	for(var/I in D.symptoms)
-		var/datum/symptom/S = I
+		var/datum/viral_trait/S = I
 		english_symptoms += S.name
 	var/symptoms = english_list(english_symptoms)
 
@@ -229,25 +229,25 @@
 	var/list/viruses = blood.get_diseases()
 	var/index = 1
 
-	for(var/datum/disease/disease as anything in viruses)
+	for(var/datum/affliction/contagion/disease as anything in viruses)
 		if(CHECK_BITFIELD(disease.visibility_flags, HIDDEN_PANDEMIC))
 			continue
 
 		var/list/traits = list()
 		traits["name"] = disease.name
-		if(istype(disease, /datum/disease/advance))
-			var/datum/disease/advance/adv_disease = disease
+		if(istype(disease, /datum/affliction/contagion/engineered))
+			var/datum/affliction/contagion/engineered/adv_disease = disease
 			traits["can_rename"] = TRUE // Allow for all diseases to change currently. Mutable trait maybe?
 			traits["name"] = disease.name
 			traits["is_adv"] = TRUE
 			traits["symptoms"] = list()
-			for(var/datum/symptom/symptom as anything in adv_disease.symptoms)
+			for(var/datum/viral_trait/symptom as anything in adv_disease.symptoms)
 				traits["symptoms"] += list(symptom.get_symptom_data())
 			traits["resistance"] = adv_disease.resistance
 			traits["stealth"] = adv_disease.stealth
 			traits["stage_speed"] = adv_disease.stage_rate
 			traits["transmission"] = adv_disease.transmission
-			traits["severity"] = adv_disease.severity
+			traits["severity"] = adv_disease.threat
 
 		traits["index"] = index++
 		traits["agent"] = disease.agent
@@ -265,7 +265,7 @@
 	var/list/resistances = blood.data["resistances"]
 	for(var/id in resistances)
 		var/list/resistance = list()
-		var/datum/disease/disease = GLOB.archive_diseases[id]
+		var/datum/affliction/contagion/disease = GLOB.archive_diseases[id]
 		if(disease)
 			resistance["id"] = id
 			resistance["name"] = disease.name
@@ -281,7 +281,7 @@
 	return FALSE
 
 /obj/machinery/computer/pandemic/proc/get_virus_id_by_index(index)
-	var/datum/disease/disease = get_by_index("viruses", index)
+	var/datum/affliction/contagion/disease = get_by_index("viruses", index)
 	if(!disease)
 		return FALSE
 	return disease.GetDiseaseID()
@@ -289,7 +289,7 @@
 /obj/machinery/computer/pandemic/proc/create_vaccine_bottle(index)
 	use_power(active_power_usage)
 	var/id = get_virus_id_by_index(text2num(index))
-	var/datum/disease/disease = GLOB.archive_diseases[id]
+	var/datum/affliction/contagion/disease = GLOB.archive_diseases[id]
 	if(!disease)
 		return FALSE
 	var/obj/item/reagent_containers/glass/beaker/vial/vaccine/bottle = new(drop_location())
@@ -302,7 +302,7 @@
 
 /obj/machinery/computer/pandemic/proc/create_culture_bottle(index)
 	var/id = get_virus_id_by_index(text2num(index))
-	var/datum/disease/advance/adv_disease = GLOB.archive_diseases[id]
+	var/datum/affliction/contagion/engineered/adv_disease = GLOB.archive_diseases[id]
 
 	if(!istype(adv_disease))
 		to_chat(usr, span_warning("ERROR: Cannot replicate virus strain."))
@@ -345,7 +345,7 @@
 	if(!length(viruses))
 		return cures
 
-	for(var/datum/disease/advance/disease in viruses)
+	for(var/datum/affliction/contagion/engineered/disease in viruses)
 		if(disease.GetDiseaseID() == disease_id)
 			cures.Add(disease.cures)
 			cures.Add(disease.cure_text)
@@ -355,7 +355,7 @@
 
 /obj/machinery/computer/pandemic/proc/rename_disease(index, name)
 	var/id = get_virus_id_by_index(text2num(index))
-	var/datum/disease/advance/adv_disease = GLOB.archive_diseases[id]
+	var/datum/affliction/contagion/engineered/adv_disease = GLOB.archive_diseases[id]
 
 	if(adv_disease)
 		if(!name)
@@ -369,3 +369,5 @@
 	SStgui.update_uis(src)
 	playsound(src, 'sound/machines/ping.ogg', 30, TRUE)
 	return TRUE
+
+REF_HELD(/obj/machinery/computer/pandemic, list("beaker"))

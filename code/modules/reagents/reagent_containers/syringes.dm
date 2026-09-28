@@ -35,7 +35,8 @@
 	var/used = FALSE
 	var/dirtiness = 0
 	var/list/targets
-	var/list/datum/disease/viruses
+	/// Target hash -> detached contagion copies picked up from that target. Lazy.
+	var/list/viruses
 	drop_sound = 'sound/items/drop/glass.ogg'
 	pickup_sound = 'sound/items/pickup/glass.ogg'
 
@@ -87,7 +88,13 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 
 /obj/item/reagent_containers/syringe/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()
-	EXTRAPOLATOR_ACT_ADD_DISEASES(., viruses)
+	EXTRAPOLATOR_ACT_ADD_DISEASES(., carried_contagions())
+
+/// Every contagion copy on the syringe, flattened.
+/obj/item/reagent_containers/syringe/proc/carried_contagions()
+	. = list()
+	for(var/key in viruses)
+		. += viruses[key]
 
 /// Drawing `amount` of blood from the target.
 /datum/om/task/timed/syringe_draw
@@ -455,9 +462,8 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 	targets |= hash
 
 	//Grab any viruses they have
-	if(iscarbon(target) && LAZYLEN(target.IsInfected()))
-		LAZYINITLIST(viruses)
-		viruses[hash] = target.GetViruses()
+	if(iscarbon(target) && target.has_contagions())
+		LAZYSET(viruses, hash, contagion_copies(target.get_spreadable_contagions()))
 
 	//Dirtiness should be very low if you're the first injectee. If you're spam-injecting 4 people in a row around you though,
 	//This gives the last one a 30% chance of infection.
@@ -473,8 +479,9 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 	if(LAZYLEN(viruses) && prob(75))
 		var/old_hash = pick(viruses)
 		if(hash != old_hash) //Same virus you already had?
-			var/datum/disease/virus = viruses[old_hash]
-			target.ContractDisease(virus)
+			var/list/carried = viruses[old_hash]
+			for(var/datum/affliction/contagion/virus as anything in carried)
+				target.force_contagion(virus)
 
 	if(!used)
 		PERIODIC_START(src, PERIODIC_SLOW)
@@ -528,8 +535,8 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 /obj/item/reagent_containers/syringe/old/Initialize(mapload)
 	. = ..()
 	if(prob(75))
-		var/datum/disease/advance/new_disease = new /datum/disease/advance/random(rand(1, 3), rand(7, 9), 2, infected = src)
-		src.viruses += new_disease
+		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(1, 3), rand(7, 9), 2, infected = src)
+		LAZYSET(viruses, "old", list(new_disease))
 
 #undef SYRINGE_DRAW
 #undef SYRINGE_INJECT

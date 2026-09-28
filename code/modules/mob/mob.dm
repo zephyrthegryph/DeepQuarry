@@ -16,7 +16,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 REF_OWNED(/mob, "ability_master")
-REF_PAIR(/mob, list("ability_master" = "my_mob"))
 
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
@@ -43,7 +42,6 @@ REF_PAIR(/mob, list("ability_master" = "my_mob"))
 	QDEL_NULL(hud_used)
 	for(var/key in alerts) //clear out alerts
 		clear_alert(key)
-	QDEL_NULL_LIST(viruses)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 

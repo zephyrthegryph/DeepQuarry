@@ -11,7 +11,7 @@
 
 	var/flush = null
 
-	var/mob/living/silicon/ai/carded_ai
+	var/carded_ai_handle
 
 /obj/item/aicard/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/silicon/decoy))
@@ -45,24 +45,24 @@
 /obj/item/aicard/tgui_data(mob/user)
 	var/data[0]
 
-	data["has_ai"] = carded_ai != null
-	if(carded_ai)
-		data["name"] = carded_ai.name
-		data["integrity"] = carded_ai.hardware_integrity()
-		data["backup_capacitor"] = carded_ai.backup_capacitor()
-		data["radio"] = !carded_ai.aiRadio.disabledAi
-		data["wireless"] = !carded_ai.control_disabled
-		data["operational"] = carded_ai.stat != DEAD
+	data["has_ai"] = carded_ai() != null
+	if(carded_ai())
+		data["name"] = carded_ai().name
+		data["integrity"] = carded_ai().hardware_integrity()
+		data["backup_capacitor"] = carded_ai().backup_capacitor()
+		data["radio"] = !carded_ai().aiRadio.disabledAi
+		data["wireless"] = !carded_ai().control_disabled
+		data["operational"] = carded_ai().stat != DEAD
 		data["flushing"] = flush
 
 		var/laws[0]
-		for(var/datum/ai_law/law in carded_ai.laws.all_laws())
-			if(law in carded_ai.laws.ion_laws) // If we're an ion law, give it an ion index code
+		for(var/datum/ai_law/law in carded_ai().laws.all_laws())
+			if(law in carded_ai().laws.ion_laws) // If we're an ion law, give it an ion index code
 				laws.Add(ionnum() + ". " + law.law)
 			else
 				laws.Add(num2text(law.get_index()) + ". " + law.law)
 		data["laws"] = laws
-		data["has_laws"] = length(carded_ai.laws.all_laws())
+		data["has_laws"] = length(carded_ai().laws.all_laws())
 
 	return data
 
@@ -70,34 +70,34 @@
 	if(..())
 		return TRUE
 
-	if(!carded_ai)
+	if(!carded_ai())
 		return
 
 	switch(action)
 		if("wipe")
 			msg_admin_attack("[key_name_admin(ui.user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
-			add_attack_logs(ui.user,carded_ai,"Purged from AI Card")
+			add_attack_logs(ui.user,carded_ai(),"Purged from AI Card")
 			wipe_ai()
 		if("radio")
-			carded_ai.aiRadio.disabledAi = !carded_ai.aiRadio.disabledAi
-			to_chat(carded_ai, span_warning("Your Subspace Transceiver has been [carded_ai.aiRadio.disabledAi ? "disabled" : "enabled"]!"))
-			to_chat(ui.user, span_notice("You [carded_ai.aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
+			carded_ai().aiRadio.disabledAi = !carded_ai().aiRadio.disabledAi
+			to_chat(carded_ai(), span_warning("Your Subspace Transceiver has been [carded_ai().aiRadio.disabledAi ? "disabled" : "enabled"]!"))
+			to_chat(ui.user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
 		if("wireless")
-			carded_ai.control_disabled = !carded_ai.control_disabled
-			to_chat(carded_ai, span_warning("Your wireless interface has been [carded_ai.control_disabled ? "disabled" : "enabled"]!"))
-			to_chat(ui.user, span_notice("You [carded_ai.control_disabled ? "disable" : "enable"] the AI's wireless interface."))
-			if(carded_ai.control_disabled && carded_ai.deployed_shell)
-				carded_ai.disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
+			carded_ai().control_disabled = !carded_ai().control_disabled
+			to_chat(carded_ai(), span_warning("Your wireless interface has been [carded_ai().control_disabled ? "disabled" : "enabled"]!"))
+			to_chat(ui.user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
+			if(carded_ai().control_disabled && carded_ai().deployed_shell)
+				carded_ai().disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
 			update_icon()
 
 	return TRUE
 
 /obj/item/aicard/update_icon()
 	cut_overlays()
-	if(carded_ai)
-		if (!carded_ai.control_disabled)
+	if(carded_ai())
+		if (!carded_ai().control_disabled)
 			add_overlay("aicard-on")
-		if(carded_ai.stat)
+		if(carded_ai().stat)
 			icon_state = "aicard-404"
 		else
 			icon_state = "aicard-full"
@@ -109,7 +109,7 @@
 		to_chat(user, span_danger("ERROR:") + " AI [ai.name] is offline. Unable to transfer.")
 		return 0
 
-	if(carded_ai)
+	if(carded_ai())
 		to_chat(user, span_danger("Transfer failed:") + " Existing AI found on remote device. Remove existing AI to install a new one.")
 		return 0
 
@@ -125,7 +125,7 @@
 	return 1
 
 /obj/item/aicard/proc/grab_ai_timed_done(mob/living/silicon/ai/ai, mob/living/user)
-	if(carded_ai)
+	if(carded_ai())
 		to_chat(user, span_danger("Transfer failed:") + " Existing AI found on remote device. Remove existing AI to install a new one.")
 		return 0
 	if(istype(ai.loc, /turf/))
@@ -140,7 +140,7 @@
 	ai.cancel_camera()
 	ai.control_disabled = 1
 	ai.aiRestorePowerRoutine = 0
-	carded_ai = ai
+	carded_ai_handle = om_handle(ai)
 	ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
 
 	if(ai.client)
@@ -152,23 +152,23 @@
 	update_icon()
 
 /obj/item/aicard/proc/clear()
-	if(carded_ai && istype(carded_ai.loc, /turf))
-		carded_ai.canmove = 0
-		carded_ai.carded = 0
+	if(carded_ai() && istype(carded_ai().loc, /turf))
+		carded_ai().canmove = 0
+		carded_ai().carded = 0
 	name = initial(name)
-	carded_ai = null
+	carded_ai_handle = null
 	update_icon()
 
 /obj/item/aicard/see_emote(mob/living/M, text)
-	if(carded_ai && carded_ai.client)
+	if(carded_ai() && carded_ai().client)
 		var/rendered = span_message("[text]")
-		carded_ai.show_message(rendered, 2)
+		carded_ai().show_message(rendered, 2)
 	..()
 
 /obj/item/aicard/show_message(msg, type, alt, alt_type)
-	if(carded_ai && carded_ai.client)
+	if(carded_ai() && carded_ai().client)
 		var/rendered = span_message("[msg]")
-		carded_ai.show_message(rendered, type)
+		carded_ai().show_message(rendered, type)
 	..()
 
 /obj/item/aicard/relaymove(mob/user, direction)
@@ -179,7 +179,7 @@
 		rig.forced_move(direction, user)
 
 /obj/item/aicard/proc/wipe_ai()
-	var/mob/living/silicon/ai/our_ai = carded_ai
+	var/mob/living/silicon/ai/our_ai = carded_ai()
 	flush = TRUE
 	our_ai.suiciding = TRUE
 	to_chat(our_ai, "Your power has been disabled!")
@@ -195,3 +195,7 @@
 		our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
 	if(!om_after(src, 1 SECOND, PROC_REF(wipe_ai_tick), our_ai, power_lost + 2))
 		flush = FALSE
+
+/// LC-refs: carded ai -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/aicard/proc/carded_ai() as /mob/living/silicon/ai
+	return om_resolve(carded_ai_handle)

@@ -6,7 +6,7 @@
 	// Setup Variables
 	malfunctioning = 1
 	research = new/datum/malf_research()
-	research.owner = src
+	research.owner_handle = om_handle(src)
 	hacked_apcs = list()
 	recalc_cpu()
 
@@ -127,9 +127,9 @@
 			. += "Available CPU: [src.research.stored_cpu] TFlops"
 			. += "Maximal CPU: [src.research.max_cpu] TFlops"
 			. += "CPU generation rate: [src.research.cpu_increase_per_tick * 10] TFlops/s"
-			. += "Current research focus: [src.research.focus ? src.research.focus.name : "None"]"
-			if(src.research.focus)
-				. += "Research completed: [round(src.research.focus.invested, 0.1)]/[round(src.research.focus.price)]"
+			. += "Current research focus: [src.research.get_focus() ? src.research.get_focus().name : "None"]"
+			if(src.research.get_focus())
+				. += "Research completed: [round(src.research.get_focus().invested, 0.1)]/[round(src.research.get_focus().price)]"
 			if(system_override == 1)
 				. += "SYSTEM OVERRIDE INITIATED"
 			else if(system_override == 2)

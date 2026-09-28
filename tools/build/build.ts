@@ -386,7 +386,9 @@ export const VerdigrisTarget = new Juke.Target({
 // "Proceed with trusted mode?" dialog for any .dmb path it hasn't been told to
 // trust, which hangs headless runs in new worktrees forever. DQ_DD_SECURITY=safe
 // runs without it (safe mode still allows files and DLLs inside the world folder).
-// Test, bench and autowiki worlds default to safe; the server keeps trusted.
+// Every world defaults to safe, including the local run target: -trusted shows a modal
+// "Proceed with trusted mode?" dialog that halts unattended runs. Set DQ_DD_SECURITY=trusted
+// to opt back in for a run that really needs it.
 const ddSecurityFlag = (fallback = 'safe') => `-${process.env.DQ_DD_SECURITY || fallback}`;
 
 export const DmTarget = new Juke.Target({
@@ -2374,7 +2376,7 @@ export const ServerTarget = new Juke.Target({
       await DreamDaemon(
         options,
         port,
-        ddSecurityFlag('trusted'),
+        ddSecurityFlag(),
         '-invisible',
         '-params',
         'config-directory=config/example',

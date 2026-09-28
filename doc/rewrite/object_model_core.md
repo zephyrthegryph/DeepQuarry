@@ -490,7 +490,7 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
 
 **What stays.**
-- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. `waitfor = FALSE` remains in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL), behind async wrappers with callbacks. Admin prompt waits (tgui_input/alert) stay until S10.
+- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. External I/O (rust-g SQL and HTTP) is an `om_io` job (§4.12): the caller gets a callback, nothing waits. The one legacy wait left is `db_query/sync()` behind `Execute(async = TRUE)`, for admin panels, login gates and UI callers not yet moved to `om_io`. Admin prompt waits (tgui_input/alert) stay until S10.
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
 
 **Timer variants (S9: SStimer is deleted).** Every former `addtimer` flag has one replacement:
@@ -518,6 +518,51 @@ A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` o
 A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones and is ratcheted to 0. Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
 
 **Lints, ratcheted to zero outside the allowlist:** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
+
+### 4.12 I/O jobs
+
+Gameplay never waits on I/O. A database query or an HTTP request is a job owned by an entity:
+
+```dm
+om_io(E, /datum/om/io/<kind>, request args..., on_done, context args...)
+// on_done(result, error, context args...) runs later, on E
+```
+
+`om_io()` returns at once with a job id (0 if E or a datum context arg is already gone). The kind
+takes exactly its `arg_count` request args; the next arg is the callback (a proc on E, or a global
+`/proc/x`), and anything after it is passed to the callback after `result, error`.
+
+| Kind | Request args | `result` | rust-g |
+|---|---|---|---|
+| `/datum/om/io/sql` | `sql, arguments` (`:name` placeholders, parameterized only) | `list("rows", "affected", "last_insert_id")`; rows are positional lists | `rustg_sql_query_async` / `rustg_sql_check_query` |
+| `/datum/om/io/http` | `method, url, body, headers` | a `/datum/http_response` | `rustg_http_request_async` / `rustg_http_check_request` |
+
+- **Owned and weak, like `om_after`.** E and every datum context arg are held as OM handles. The
+  callback is dropped if any of them is gone when the job completes. E null means the global
+  owner. `om_io_cancel(id)` discards a result, since the rust-g job still runs to completion.
+- **The I/O lane.** The scheduler's global owner runs `/datum/om/behaviour/internal/io` off a
+  one-decisecond deadline while jobs are pending. Each pass checks every pending job once, resuming
+  by cursor, and stops when the scheduler budget runs out. With no jobs pending there is no
+  deadline, so the lane is parked. A kind's `active_limit()` caps jobs in flight (SQL:
+  `SSdbcore.max_concurrent_queries`) and the rest queue. A job unanswered after 5 minutes is
+  abandoned with an error. A job that can't start (no DB connection) is answered with its error on
+  the next pass, never inline.
+- **Profiler.** `om_diagnostics()["io"]` reports, per kind: started, completed, errors, dropped,
+  pending, queued, and average and max latency in ms.
+- **Helpers.** `om_sql_write(sql, arguments)` is a fire-and-forget write that logs failures.
+  `om_http_get(url)` is a fire-and-forget GET (webhooks). `SSdbcore.mass_insert_io(E, table,
+  rows, duplicate_key, ignore_errors, special_columns, on_done, context...)` is MassInsert on the
+  lane.
+- **A sequence of queries** chains callbacks: the first query's callback starts the next one
+  (`sql_commit_feedback`, `sync_admins_with_db`). Capture what the later step needs as text and
+  numbers, or as context args, which are held weakly.
+- **What stays synchronous.** Boot and MC-owned work that must finish before the world goes on:
+  `SSdbcore.Initialize`/`Connect`/`InitializeRound` (the round id), and `Shutdown` draining the
+  queue. These use `Execute(async = FALSE)` or `run_query_sync`. The legacy `Execute(async = TRUE)`
+  wait (`db_query/sync()`, allowlisted) serves callers that read rows inline and have not moved yet:
+  the admin panels (permissions, bans, polls), the login gates `log_client_to_db` and `IsBanned`,
+  and the library and TGS commands. The login-time `world.Export` calls in `client procs.dm`
+  (join date, IP reputation) also stay for now: they gate the login. New code uses `om_io`.
 
 ## 5. Change tracking (section B)
 
@@ -560,25 +605,44 @@ A setter writes its state, then calls `om_changed(E, bits)`:
 A missed wake is a var a stage reads changing without its channel being raised. Declared fields
 make that impossible by construction for the vars they cover:
 
-- **Declared.** A decl lists the vars its type's stages, behaviours and watches read, with the
-  channel each one's change raises: `fields = list("on" = CHANGE_MACHINE_SETTINGS)`
-  (`code/datums/om/fields.dm`). Fields merge down the type tree like every decl row.
-- **Written through the core.** `om_set(E, "on", TRUE)` or the typed setter
-  `OM_SETTER(/obj/machinery/portable_atmospherics/powered/pump, on)` generates (`E.set_on(TRUE)`)
-  write the var and raise the declared channel, and do nothing when the value is unchanged. A field
-  edited in place (a list) calls `om_field_changed(E, "name")`.
-- **Linted.** `tools/ci/field_write_lint.py` (count `field_write` in `api_lints.py`, ceiling 0) finds
-  every direct write (`on = x`, `src.on = x`, `thing.on = x` for a typed `thing`, `on |= x`, `on++`)
-  in a proc of a related type outside the setter and `Initialize()`/`New()`, and checks every
-  `OM_SETTER()` names a declared field.
-- **Checked at boot.** A stage names what it reads (`reads = list("on")`; behaviours add `reads_of`).
-  The registry's `check_field_reads()` fails boot (and `dq_om_declared_fields_cover_reads`) when a
-  stage's `wake_on` doesn't cover the channel of a field it reads, or reads an undeclared field.
+- **Declared once.** `OM_FIELD(type, name, default, channel)` (`code/__defines/om.dm`) declares
+  the var, generates its typed setter and registers the field, in one line:
+
+  ```dm
+  OM_FIELD(/obj/machinery/portable_atmospherics/powered/pump, on, 0, CHANGE_MACHINE_SETTINGS)
+  ```
+
+  `OM_FIELD_TYPED(type, vartype, name, default, channel)` is the same for a var with a declared
+  type or modifier (`tmp`, `obj/item/cell`). The name is a bare identifier: a typo in a setter call
+  or a second declaration is a compile error. The registration is a `/datum/om/field_def<type>/<name>`
+  subtype that `fields_of()` reads (`code/datums/om/fields.dm`); fields merge down the type tree.
+- **Written through the setter.** `E.set_on(TRUE)` writes the var and raises the declared channel,
+  and does nothing (returns FALSE) when the value is unchanged. `om_set(E, "on", TRUE)` is the same
+  where the name is data. A field edited in place (a list) calls `om_field_changed(E, "name")`.
+- **Deterministic expansion.** The var is always named exactly `name` and its setter is always the
+  proc `set_<name>` on the declaring type. Tools rely on this instead of expanding the macro: the
+  external AST analyzer (`tools/dm-health`) can treat an OM_FIELD field as
+  `tracked(setter=set_<name>)`, and `field_write_lint.py` does the equivalent today. Keep the naming
+  if the macro changes.
+- **wake_on derived from reads.** A stage names what it reads (`reads = list("on")`; behaviours add
+  `reads_of`). At boot the registry ORs the channels of the read fields into its `wake_on`
+  (`build_stages()`/`build_behaviours()`), so the two can't drift; `wake_on` lists only the extra
+  channels that aren't field reads (a stage whose only wakes are its reads sets `wake_on = 0` to
+  drop an inherited mask). `check_field_reads()` still fails boot (and
+  `dq_om_declared_fields_cover_reads`) on a read of an undeclared field.
+- **Linted everywhere.** `tools/ci/field_write_lint.py` (count `field_write` in `api_lints.py`,
+  ceiling 0) finds every write to a declared field that isn't its generated setter or its initial
+  value (the OM_FIELD default, a subtype's type-body override): `on = x`, `src.on = x`, `on |= x`,
+  `on++` in a proc of a related type, and `thing.on = x` for any receiver not provably of an
+  unrelated type (locals, arguments and member vars are resolved). It scans every file, unit tests
+  and `Initialize()`/`New()` included: a test that writes a field directly skips the channel the
+  code under test depends on and hides a missed wake. A test that needs a deliberately missed wake
+  (the audit test) writes through `vars[]`.
 
 Declared today: the machine step stage (`step_active`, `step_waiting_power`, `speed_process`),
 rechargers and cell chargers (`charging`), fire alarms (`timing`), air alarms
 (`regulating_temperature`), canisters (`valve_open`, `om_settled`), portable pumps and scrubbers
-(`on`); on mobs `instability`, `virtual_reality_mob`, the `glow_*` vars, `tf_mob_holder`,
+(`on`) in `code/game/machinery/machine_pipeline.dm`; on mobs (`living_systems.dm`) `instability`, `virtual_reality_mob`, the `glow_*` vars, `tf_mob_holder`,
 `sdisabilities`, `ear_damage` and simple mobs' `purge`. Stage rules that read procs
 (`step_has_work()`, `power_settled()`, `body.life_settled()`) or relations are covered by the
 producers of what those read, and by the audit.
@@ -885,9 +949,11 @@ counted total ratchets to 0.
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
 | Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, params)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()` | `api_lints.py` (`do_after_state`, `use_tool_state`), `scheduler_lints.py` (`do_after`) |
 | Ask a player | `om_prompt(E, user, spec, on_answer)` | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()` | `scheduler_lints.py` (`prompts`) |
+| Do I/O (SQL, HTTP) | `om_io(E, /datum/om/io/<kind>, args..., on_done)` with kind `sql` or `http` (§4.12); `om_sql_write()`, `om_http_get()` | `Execute()` waiting on rows, `world.Export()`, `set waitfor` / `INVOKE_ASYNC` around a query | `scheduler_lints.py` (`set_waitfor`, `invoke_async`, `stoplag`) |
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()`; a raw `world.time` compare against a hand-kept timestamp or deadline | `api_lints.py` (`timer_cooldown`), `cooldown_lint.py` |
-| Change a var that a stage, behaviour or watch reads | its declared field's setter, `E.set_x(v)` or `om_set(E, "x", v)` (§5.1) | `x = v`, `E.x = v`, `x |= v` on a declared field; `vars[name] = v` outside the reflection sites in `api_lints_allowlist.txt`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |
+| Declare a var that a stage, behaviour or watch reads | `OM_FIELD(type, name, default, channel)`, and name it in the stage's `reads` (wake_on is derived) (§5.1) | a plain `var/x` plus a hand-written setter; listing the field's channel in `wake_on` by hand | `api_lints.py` (`field_write`), boot `check_field_reads()` |
+| Change a var that a stage, behaviour or watch reads | its generated setter, `E.set_x(v)`, or `om_set(E, "x", v)` (§5.1), in game code and tests alike | `x = v`, `E.x = v`, `x |= v` on a declared field anywhere (unit tests, `Initialize()` included); `vars[name] = v` outside the reflection sites in `api_lints_allowlist.txt`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |
 | Read a relation or a slot | the typed accessor proc, `M.buckled_to()`, `I.slot_item(slot)` (§7) | `BUCKLED()`, `PULLING()`, `SLOT_ITEM()`... macros; `om_relation_of()` outside `code/datums/om` | `api_lints.py` (`accessor_macros`, `raw_relation`) |
 | Wake on Rust-owned state, a DM key, a rate crossing or a tick-precise time | a world watch, `om_world_at/on_key/on_change/when/on_rate()`, delivered on the watch's lane (§4.8) | `SSreactor`, `REACT_*`, `on_react()`; a raw `vg_world_*` subscription bind | `api_lints.py` (`reactor_api`, `raw_world_bind`) |
 | Name a DM-owned key | a number from `om_world_key_id()` | a string key | `api_lints.py` (`string_keys`), `check_grep.sh` |

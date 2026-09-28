@@ -126,3 +126,4 @@ REF_PAIR(/datum/embedded_program/docking/airlock, list("airlock_program" = "mast
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled
 		..(target)
 
+REF_OWNED(/obj/machinery/embedded_controller/radio/airlock/docking_port, list("airlock_program", "docking_program"))

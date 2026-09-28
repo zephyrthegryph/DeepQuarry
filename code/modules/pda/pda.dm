@@ -101,7 +101,7 @@
 		return
 	if(in_range(src, user) && loc == user)
 		if(t)
-			if(hidden_uplink && hidden_uplink.check_trigger(user, lowertext(t), lowertext(lock_code)))
+			if(item_hidden_uplink(src) && item_hidden_uplink(src).check_trigger(user, lowertext(t), lowertext(lock_code)))
 				to_chat(user, "The PDA softly beeps.")
 				close(user)
 			else

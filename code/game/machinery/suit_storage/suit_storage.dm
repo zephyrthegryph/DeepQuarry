@@ -502,3 +502,5 @@
 	isopen = 1
 	dump_everything()
 	update_icon()
+
+REF_OWNED(/obj/machinery/suit_storage_unit, list("SUIT", "HELMET", "MASK"))

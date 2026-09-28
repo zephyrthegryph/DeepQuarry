@@ -131,9 +131,9 @@
 	var/static/list/failure_strikes
 
 	/// Next subsystem in the queue of subsystems to run this tick
-	var/datum/controller/subsystem/queue_next
+	var/queue_next_handle
 	/// Previous subsystem in the queue of subsystems to run this tick
-	var/datum/controller/subsystem/queue_prev
+	var/queue_prev_handle
 
 	/// String to store an applicable error message for a subsystem crashing, used to help debug crashes in contexts such as Continuous Integration/Unit Tests
 	var/initialization_failure_message = null
@@ -227,7 +227,7 @@
 	var/queue_node_priority
 	var/queue_node_flags
 
-	for (queue_node = Master.queue_head; queue_node; queue_node = queue_node.queue_next)
+	for (queue_node = Master.queue_head(); queue_node; queue_node = queue_node.queue_next())
 		queue_node_priority = queue_node.queued_priority
 		queue_node_flags = queue_node.flags
 
@@ -259,33 +259,33 @@
 	else
 		Master.queue_priority_count += SS_priority
 
-	queue_next = queue_node
+	queue_next_handle = om_handle(queue_node)
 	if (!queue_node)//we stopped at the end, add to tail
-		queue_prev = Master.queue_tail
-		if (Master.queue_tail)
-			Master.queue_tail.queue_next = src
+		queue_prev_handle = om_handle(Master.queue_tail())
+		if (Master.queue_tail())
+			Master.queue_tail().queue_next_handle = om_handle(src)
 		else //empty queue, we also need to set the head
-			Master.queue_head = src
-		Master.queue_tail = src
+			Master.queue_head_handle = om_handle(src)
+		Master.queue_tail_handle = om_handle(src)
 
-	else if (queue_node == Master.queue_head)//insert at start of list
-		Master.queue_head.queue_prev = src
-		Master.queue_head = src
-		queue_prev = null
+	else if (queue_node == Master.queue_head())//insert at start of list
+		Master.queue_head().queue_prev_handle = om_handle(src)
+		Master.queue_head_handle = om_handle(src)
+		queue_prev_handle = null
 	else
-		queue_node.queue_prev.queue_next = src
-		queue_prev = queue_node.queue_prev
-		queue_node.queue_prev = src
+		queue_node.queue_prev().queue_next_handle = om_handle(src)
+		queue_prev_handle = om_handle(queue_node.queue_prev())
+		queue_node.queue_prev_handle = om_handle(src)
 
 /datum/controller/subsystem/proc/dequeue()
-	if (queue_next)
-		queue_next.queue_prev = queue_prev
-	if (queue_prev)
-		queue_prev.queue_next = queue_next
-	if (Master && (src == Master.queue_tail))
-		Master.queue_tail = queue_prev
-	if (Master && (src == Master.queue_head))
-		Master.queue_head = queue_next
+	if (queue_next())
+		queue_next().queue_prev_handle = om_handle(queue_prev())
+	if (queue_prev())
+		queue_prev().queue_next_handle = om_handle(queue_next())
+	if (Master && (src == Master.queue_tail()))
+		Master.queue_tail_handle = om_handle(queue_prev())
+	if (Master && (src == Master.queue_head()))
+		Master.queue_head_handle = om_handle(queue_next())
 	queued_time = 0
 	if (state == SS_QUEUED)
 		state = SS_IDLE
@@ -354,3 +354,11 @@
 		if (NAMEOF(src, queued_priority)) //editing this breaks things.
 			return FALSE
 	. = ..()
+
+/// LC-refs: the next subsystem in the MC run queue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/subsystem/proc/queue_next() as /datum/controller/subsystem
+	return om_resolve(queue_next_handle)
+
+/// LC-refs: the previous subsystem in the MC run queue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/subsystem/proc/queue_prev() as /datum/controller/subsystem
+	return om_resolve(queue_prev_handle)

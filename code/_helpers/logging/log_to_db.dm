@@ -1,13 +1,13 @@
+/// Logs a dialog line to the database: a write on the I/O lane (om_io), so nothing waits.
 /proc/db_log_insert(mob/log_target, message, type, color)
-	set waitfor = FALSE // S10b keeps: SQL leaf (dialog log insert)
 	if(!ismob(log_target))
 		return
 	if(!SSdbcore.IsConnected())
 		return
-	var/datum/db_query/query_insert = SSdbcore.NewQuery("INSERT INTO erro_dialog (mid, time, ckey, mob, area, type, color, message) VALUES (null, NOW(), :sender_ckey, :sender_mob, :message_area, :message_type, :message_color, :message_content)",
-		list("sender_ckey" = log_target.ckey, "sender_mob" = log_target.real_name, "message_area" = "[loc_name(log_target)]", "message_type" = "[type]", "message_color" = color, "message_content" = message))
-	if(!query_insert.Execute())
-		log_sql("Error during logging: "+query_insert.ErrorMsg())
-		qdel(query_insert)
-		return
-	qdel(query_insert)
+	om_io(null, /datum/om/io/sql, "INSERT INTO erro_dialog (mid, time, ckey, mob, area, type, color, message) VALUES (null, NOW(), :sender_ckey, :sender_mob, :message_area, :message_type, :message_color, :message_content)",
+		list("sender_ckey" = log_target.ckey, "sender_mob" = log_target.real_name, "message_area" = "[loc_name(log_target)]", "message_type" = "[type]", "message_color" = color, "message_content" = message),
+		/proc/db_log_insert_done)
+
+/proc/db_log_insert_done(list/result, error)
+	if(error)
+		log_sql("Error during logging: [error]")

@@ -5,14 +5,14 @@
 	opacity = 0
 	glass = 1
 
-	var/datum/radio_frequency/air_connection
+	var/air_connection_handle
 	var/air_frequency = ALERT_FREQ
 	autoclose = 0
 
 /obj/machinery/door/airlock/alarmlock/Initialize(mapload)
 	. = ..()
 	SSradio.remove_object(src, air_frequency)
-	air_connection = SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM)
+	air_connection_handle = om_handle(SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 	open()
 
 /obj/machinery/door/airlock/alarmlock/receive_signal(datum/signal/signal)
@@ -33,3 +33,7 @@
 			if("minor", "clear")
 				autoclose = 0
 				open()
+
+/// LC-refs: air connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/airlock/alarmlock/proc/air_connection() as /datum/radio_frequency
+	return om_resolve(air_connection_handle)

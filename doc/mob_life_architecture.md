@@ -68,7 +68,7 @@ pattern is the source of most of their bugs.
 | Area | Model today | Event-driven? |
 |---|---|---|
 | Machinery | Hibernates (`PROCESS_KILL` or `hibernate_*`); `subscribe_gas_dependency` with change masks; versioned reactive keys; timers; `audit_reactive_sleepers` checks for missed wakes | yes |
-| AI brains (`SSai`) | calm brains sleep | yes |
+| AI brains (OM behaviours, `combat_ai/brain/scheduling.dm`) | calm brains sleep | yes |
 | TG status effects | exist and process only while active | yes |
 | Mob `Life()` | life systems sleep by rule and wake on events; a mob with nothing awake hibernates out of `SSmobs` (§4.9). Humans, robots, the AI and pAIs still run most systems every 2 s until those systems get rules | partly |
 | Body core | dirty flags, the emergent dirty domains and HUD dirty bits are incremental. But the humanoid `life_tick` always recomputes (`humanoid.dm:246`), the metrics domain compares values every tick, and every metabolised reagent triggers a full side-effect reconcile | partly |
@@ -445,7 +445,7 @@ bit is left, `life_hibernate()` parks the mob.
 | statuses (root) | every counter at 0 and every alert cleared | |
 | canmove (root) | not stunned, weakened, paralysed or asleep | |
 | hud, vision (roots) | no component takes over the HUD or vision | 5 s with a client (darksight) |
-| modifiers, instability, diseases, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
+| modifiers, instability, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
 | simple statuses, supernatural, healing, guts | counters at 0; purge 0; not hurt or not fed; no organ objects | |
 | environment (simple mob) | the air is survivable and the body has nothing for it to treat | 15 s (air changing in place) |
 | human hud refresh, voice, visible name | always | 1 min; 10 s; 10 s |
@@ -727,7 +727,7 @@ files.
 ## 7. Other mob types
 
 - **Simple mobs.** Environment tolerance becomes event-driven through gas dependencies.
-  Regeneration is continuous only while injured. AI already sleeps through `SSai`. The
+  Regeneration is continuous only while injured. AI already sleeps through its OM behaviours (relevance parking and chunk hibernation). The
   split `death()` is merged.
 - **pAI.** Uses the body plan; the cable check becomes an event.
 - **Brains, aliens and constructs.** They get system sets like everything else. Their

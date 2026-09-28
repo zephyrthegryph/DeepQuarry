@@ -47,11 +47,6 @@
 
 	var/image/dsoverlay = null //Overlay used for darksight eye adjustments
 
-	var/glow_toggle = FALSE					// If they're glowing!
-	var/glow_override = FALSE				// Ignore the manual toggle
-	var/glow_range = 2
-	var/glow_intensity = null
-	var/glow_color = "#FFFFFF"			// The color they're glowing!
 	// Last params applied by the light life system, so we can skip redundant set_light() calls each tick.
 	var/last_glow_range = null
 	var/last_glow_intensity = null
@@ -106,7 +101,6 @@
 
 	var/touch_reaction_flags
 
-	var/virtual_reality_mob = FALSE // gross boolean for keeping VR mobs in VR
 
 	var/mob/living/tf_form // Shapeshifter shenanigans
 	/// The mind that occupied this shapeshift form before its owner took it.

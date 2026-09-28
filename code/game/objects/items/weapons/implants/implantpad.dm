@@ -91,3 +91,5 @@
 			T.id += text2num(params["delta"])
 			T.id = clamp(T.id, 1, 1000)
 			return TRUE
+
+REF_HELD(/obj/item/implantpad, list("case"))

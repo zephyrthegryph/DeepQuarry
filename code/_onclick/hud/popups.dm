@@ -11,7 +11,7 @@
 	var/close_button_y_start
 	var/close_button_y_end
 
-	var/client/holder
+	var/holder_handle
 
 /atom/movable/screen/popup/Click(location, control,params)
 	var/list/PL = params2list(params)
@@ -26,7 +26,7 @@
 	return
 
 /atom/movable/screen/popup/proc/close_popup()
-	holder.screen -= src
+	holder()?.screen -= src
 	qdel(src)
 
 /atom/movable/screen/popup/proc/check_click_spot(click_x, click_y)
@@ -48,7 +48,7 @@
 	var/atom/movable/screen/popup/ad = new popup_type()
 	ad.screen_loc = ad.get_random_screen_location()
 	src.screen |= ad
-	ad.holder = src
+	ad.holder_handle = om_handle(src)
 
 /client/proc/create_fake_ad_popup_multiple(popup_type, popup_amount)
 	if(!src)
@@ -69,3 +69,7 @@
 /atom/movable/screen/popup/default/Initialize(mapload)
 	icon_state = "popup[rand(1,10)]"
 	. = ..()
+
+/// LC-refs: the client this popup is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/popup/proc/holder() as /client
+	return om_resolve(holder_handle)

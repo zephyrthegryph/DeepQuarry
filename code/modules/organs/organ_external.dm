@@ -142,7 +142,7 @@
 	if(istype(source) && istype(target))
 		source.part = target
 		LAZYADD(target.implants, source)
-		source.imp_in = target.owner
+		source.imp_in_handle = om_handle(target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -156,7 +156,7 @@
 	// leaving `imp_in` stale until then would fail a "no dangling refs" check
 	// that inspects it before GC.
 	if(istype(source))
-		source.imp_in = null
+		source.imp_in_handle = null
 
 /obj/item/organ/external/emp_act(severity, recursive)
 	. = ..()

@@ -1,0 +1,204 @@
+//
+// The machine world service (fold wave F1; was SSmachines): gas wakes, the batched pump commit and
+// the power step (M3: the power network itself runs in Rust, see code/modules/power/power_bridge.dm),
+// run every MACHINE_SERVICE_INTERVAL by /datum/om/behaviour/world/machines on the OM global owner
+// (code/datums/om/world_lanes.dm). It polls no machines: their DM work runs on the machine pipeline
+// (code/game/machinery/machine_pipeline.dm), woken by MACHINE_WAKE(), their channels and their
+// watches (roadmap S5). Pipenets live on SSair (LINDA).
+//
+
+GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
+
+/datum/world_service/machines
+	name = "Machines"
+	lane = /datum/om/behaviour/world/machines
+
+	/// Stage costs (EMA of each logical stage, all resumed slices combined) and their last run.
+	var/cost_machinery     = 0
+	var/cost_powernets     = 0
+	var/last_cost_machinery = 0
+	var/last_cost_powernets = 0
+	/// In-flight machinery stage accumulator. It deliberately survives yields.
+	var/current_cost_machinery = 0
+
+	/// Machine gas transfers accumulated since the last commit. Rust commits this flat set under
+	/// one publication lock after the pipeline devices have calculated their requested flow.
+	var/list/pending_pump_transfers = list()
+	/// Cost and cardinality of the last atomic pump commit.
+	var/last_pump_commit_ms = 0
+	/// Independent monotonic wall time and its excess over BYOND active time.
+	/// This prevents an OS pause from being diagnosed as gas-transfer work.
+	var/last_pump_commit_wall_ms = 0
+	var/last_pump_commit_suspended_ms = 0
+	var/last_pump_commit_operations = 0
+	var/last_pump_commit_turfs = 0
+
+	/// Gas dependency observations (vg_drain_dirty_gas_observations()) retained while a step yields.
+	var/list/pending_dirty_gas_mixtures
+	var/pending_dirty_gas_index = 1
+	var/gas_dirty_last = 0
+	var/gas_woken_last = 0
+	var/gas_dead_last = 0
+	var/gas_wake_scan_last_ms = 0
+	var/gas_wake_subscribers_last = 0
+	var/current_gas_wake_scan_ms = 0
+	var/current_gas_wake_subscribers = 0
+
+/// Boot: one power step, then a complete gas wake and pump commit (SSair.Initialize calls this
+/// where SSmachines used to initialize, before the atmos machinery setup).
+/datum/world_service/machines/initialize()
+	process_power()
+	while(!wake_dirty_gas_subscribers(FALSE))
+		continue
+	flush_pump_transfers()
+	log_world("Machine service initialized: [length(power_regions)] power regions, [gas_dirty_last] gas observations.")
+
+/// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
+/// the power step. The gas wake may yield; the power step only runs once it has completed.
+/datum/world_service/machines/service_step(resumed)
+	var/started = TICK_USAGE
+	if(!resumed)
+		current_cost_machinery = 0
+		current_gas_wake_scan_ms = 0
+		current_gas_wake_subscribers = 0
+	var/complete = wake_dirty_gas_subscribers(TRUE)
+	if(complete)
+		flush_pump_transfers()
+	current_cost_machinery += TICK_USAGE_TO_MS(started)
+	if(!complete)
+		return FALSE
+	last_cost_machinery = current_cost_machinery
+	cost_machinery = MC_AVERAGE(cost_machinery, last_cost_machinery)
+	var/power_started = TICK_USAGE
+	process_power()
+	last_cost_powernets = TICK_USAGE_TO_MS(power_started)
+	cost_powernets = MC_AVERAGE(cost_powernets, last_cost_powernets)
+	return TRUE
+
+/datum/world_service/machines/stat_line()
+	. = "C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
+	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
+	. += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
+	. += "PN:[length(power_regions)]|"
+	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
+
+/datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
+	if(!M || !source || !sink || requested_moles <= 0)
+		return FALSE
+	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume))
+	return TRUE
+
+/datum/world_service/machines/proc/flush_pump_transfers()
+	if(!length(pending_pump_transfers))
+		last_pump_commit_ms = 0
+		last_pump_commit_wall_ms = 0
+		last_pump_commit_suspended_ms = 0
+		last_pump_commit_operations = 0
+		last_pump_commit_turfs = 0
+		return
+	var/commit_started = TICK_USAGE
+	var/commit_wall_timer = "machines-pump-commit"
+	rustg_time_reset(commit_wall_timer)
+	var/list/operations = list()
+	for(var/list/transfer as anything in pending_pump_transfers)
+		// List union silently removes repeated datum values. Many vents share one
+		// pipenet, so append by index to preserve the fixed source/sink/moles tuples.
+		var/operation_offset = length(operations)
+		operations.len += 3
+		// Pass stable arena IDs, not DM wrapper datums. Pipenet publication may
+		// replace a member's wrapper while preserving its authoritative Rust mix;
+		// resolving a private wrapper var inside the FFI made otherwise valid
+		// queued transfers silently report zero.
+		var/datum/gas_mixture/source = transfer[2]
+		var/datum/gas_mixture/sink = transfer[3]
+		operations[operation_offset + 1] = source.arena_id()
+		operations[operation_offset + 2] = sink.arena_id()
+		operations[operation_offset + 3] = transfer[4]
+	var/list/actual_moles = vg_batch_transfer_hook(operations)
+	var/list/touched_turfs = list()
+	for(var/i = 1 to length(pending_pump_transfers))
+		var/list/transfer = pending_pump_transfers[i]
+		var/obj/machinery/atmospherics/M = transfer[1]
+		var/actual = (islist(actual_moles) && i <= length(actual_moles)) ? actual_moles[i] : 0
+		if(!M || QDELETED(M))
+			continue
+		M.pump_transaction_committed(actual)
+		if(actual < MINIMUM_MOLES_TO_PUMP)
+			continue
+		var/source_moles = max(transfer[6], MINIMUM_MOLES_TO_PUMP)
+		M.last_flow_rate = (actual / source_moles) * transfer[7]
+		var/power_draw = transfer[5] * actual
+		var/datum/gas_mixture/destination = transfer[3]
+		M.record_material_pumping(power_draw, destination, actual)
+		M.last_power_draw = power_draw
+		M.use_power(power_draw)
+		if(isturf(M.loc))
+			var/turf/open/T = M.loc
+			if(istype(T))
+				touched_turfs[T] = TRUE
+		if(istype(M, /obj/machinery/atmospherics/unary))
+			var/obj/machinery/atmospherics/unary/U = M
+			U.network?.mark_dirty()
+	// Publication is atomic, so visuals and turf dependencies should observe it
+	// atomically too. Multiple devices on one turf now cause one semantic update.
+	for(var/turf/open/T as anything in touched_turfs)
+		T.update_visuals()
+		T.air_update_turf(FALSE, FALSE)
+	last_pump_commit_operations = length(pending_pump_transfers)
+	last_pump_commit_turfs = length(touched_turfs)
+	last_pump_commit_ms = TICK_DELTA_TO_MS(TICK_USAGE - commit_started)
+	last_pump_commit_wall_ms = rustg_time_milliseconds(commit_wall_timer)
+	last_pump_commit_suspended_ms = max(last_pump_commit_wall_ms - last_pump_commit_ms, 0)
+	pending_pump_transfers.Cut()
+
+/// Hands this batch of gas dependency observations to their native watches
+/// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
+/// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
+/// out to every om_watch armed on that mixture (om_watch_dispatch_gas()).
+/datum/world_service/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
+	var/scan_started = TICK_USAGE
+	if(!pending_dirty_gas_mixtures)
+		pending_dirty_gas_mixtures = vg_drain_dirty_gas_observations()
+		pending_dirty_gas_index = 1
+		gas_dirty_last = length(pending_dirty_gas_mixtures) / GAS_DEPENDENCY_OBSERVATION_STRIDE
+		gas_woken_last = 0
+		gas_dead_last = 0
+	var/list/observations = pending_dirty_gas_mixtures
+	while(pending_dirty_gas_index <= length(observations))
+		var/record = pending_dirty_gas_index
+		pending_dirty_gas_index += GAS_DEPENDENCY_OBSERVATION_STRIDE
+		var/datum/native_watch/gas/W = om_native_watch_of(observations[record])
+		if(!W)
+			gas_dead_last++
+			continue
+		current_gas_wake_subscribers++
+		// The owner reads the record from its mixture id on (index + 1).
+		W.fire(list(observations[record + 1], observations[record + 2], observations, record + 1))
+		if(budgeted && TICK_CHECK)
+			current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
+			return FALSE
+	pending_dirty_gas_mixtures = null
+	pending_dirty_gas_index = 1
+	current_gas_wake_scan_ms += TICK_DELTA_TO_MS(TICK_USAGE - scan_started)
+	gas_wake_scan_last_ms = current_gas_wake_scan_ms
+	gas_wake_subscribers_last = current_gas_wake_subscribers
+	return TRUE
+
+/// Wakes any /obj/machinery hibernating on a gas watch (an atom-agnostic force-wake, used by
+/// invalidate_gas_dependencies()-style callers whose device might not even be asleep, and by
+/// tests): if it has no watch armed it's already running and this is a no-op.
+/proc/om_watch_invalidate(datum/entity)
+	om_watch_fire_all(entity)
+
+/datum/world_service/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)
+	if(!S)
+		return
+	S.register_gas_dependencies()
+	MACHINE_SLEEP(S)
+
+/datum/world_service/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
+	if(!G)
+		return
+	G.register_gas_dependencies()
+	MACHINE_SLEEP(G)
+

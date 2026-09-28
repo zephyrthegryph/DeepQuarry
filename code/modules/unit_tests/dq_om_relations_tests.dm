@@ -261,7 +261,7 @@
 	var/obj/item/implant/I = allocate(/obj/item/implant)
 	I.handle_implant(H, BP_TORSO)
 	TEST_ASSERT_EQUAL(I.part, torso, "I.part should be the torso")
-	TEST_ASSERT_EQUAL(I.imp_in, H, "I.imp_in should be H")
+	TEST_ASSERT_EQUAL(I.imp_in(), H, "I.imp_in should be H")
 	TEST_ASSERT(I in torso.implants, "I should be in the torso's implants list")
 	TEST_ASSERT_EQUAL(om_relation_of(I, /datum/om/relation/slot/implant_site), torso, "om_relation_of should agree with the part var")
 
@@ -278,7 +278,7 @@
 	qdel(torso)
 	TEST_ASSERT(QDELETED(torso), "setup: the organ should be deleted")
 	TEST_ASSERT_NULL(I.part, "I.part should be cleared once the organ is deleted")
-	TEST_ASSERT_NULL(I.imp_in, "I.imp_in should be cleared once the organ is deleted")
+	TEST_ASSERT_NULL(I.imp_in(), "I.imp_in should be cleared once the organ is deleted")
 
 /// Hard-deleting the implant removes it from the organ's implants list, with
 /// no dangling reference left behind.

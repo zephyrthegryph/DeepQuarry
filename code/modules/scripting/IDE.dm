@@ -4,15 +4,15 @@
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || issilicon(mob))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
-			if(Machine.editingcode != mob)
+			if(Machine.editingcode() != mob)
 				return
 
-			if(Machine.SelectedServer)
-				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
+			if(Machine.SelectedServer())
+				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer()
 				var/tcscode=winget(src, "tcscode", "text")
 				var/msg="[mob.name] is adding script to server [Server]: [tcscode]"
 				log_world("## MISC [msg]")
-				message_admins("[mob.name] has uploaded a NTLS script to [Machine.SelectedServer] ([mob.x],[mob.y],[mob.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[mob.x];Y=[mob.y];Z=[mob.z]'>JMP</a>)")
+				message_admins("[mob.name] has uploaded a NTLS script to [Machine.SelectedServer()] ([mob.x],[mob.y],[mob.z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[mob.x];Y=[mob.y];Z=[mob.z]'>JMP</a>)")
 				Server.setcode( tcscode ) // this actually saves the code from input to the server
 				src << output(null, "tcserror") // clear the errors
 			else
@@ -32,11 +32,11 @@
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
-			if(Machine.editingcode != mob)
+			if(Machine.editingcode() != mob)
 				return
 
-			if(Machine.SelectedServer)
-				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
+			if(Machine.SelectedServer())
+				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer()
 				Server.setcode( winget(src, "tcscode", "text") ) // save code first
 				var/list/compileerrors = Server.compile() // then compile the code!
 
@@ -84,11 +84,11 @@
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
-			if(Machine.editingcode != mob)
+			if(Machine.editingcode() != mob)
 				return
 
-			if(Machine.SelectedServer)
-				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
+			if(Machine.SelectedServer())
+				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer()
 				Server.setcode( winget(src, "tcscode", "text") ) // save code first
 				var/list/compileerrors = Server.compile() // then compile the code!
 
@@ -151,9 +151,9 @@
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
-			if(Machine.editingcode == mob)
+			if(Machine.editingcode() == mob)
 				Machine.storedcode = "[winget(mob, "tcscode", "text")]"
-				Machine.editingcode = null
+				Machine.editingcode_handle = null
 			else
 				if(mob in Machine.viewingcode)
 					LAZYREMOVE(Machine.viewingcode, mob)
@@ -164,11 +164,11 @@
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
-			if(Machine.editingcode != mob)
+			if(Machine.editingcode() != mob)
 				return
 
-			if(Machine.SelectedServer)
-				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
+			if(Machine.SelectedServer())
+				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer()
 
 				// Replace quotation marks with quotation macros for proper winset() compatibility
 				var/showcode = replacetext(Server.rawcode, "\\\"", "\\\\\"")
@@ -194,11 +194,11 @@
 	if(machine || issilicon(mob))
 		if((istype(machine, /obj/machinery/computer/telecomms/traffic) && (machine in view(1, mob))) || (issilicon(mob) && istype(machine, /obj/machinery/computer/telecomms/traffic) ))
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
-			if(Machine.editingcode != mob)
+			if(Machine.editingcode() != mob)
 				return
 
-			if(Machine.SelectedServer)
-				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer
+			if(Machine.SelectedServer())
+				var/obj/machinery/telecomms/server/Server = Machine.SelectedServer()
 				Server.memory = list() // clear the memory
 				// Show results
 				src << output(null, "tcserror")

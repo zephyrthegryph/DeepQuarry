@@ -38,7 +38,7 @@
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
-		LAZYDISTINCTADD(SM.friends, src.owner)
+		LAZYDISTINCTADD(SM.friends, src.owner_ref())
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
@@ -57,7 +57,7 @@
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
-		LAZYREMOVE(SM.friends, owner)
+		LAZYREMOVE(SM.friends, owner_ref())
 
 	L.cut_overlay(control_overlay, TRUE)
 	LAZYREMOVE(controlled_mobs, L)
@@ -143,3 +143,5 @@
 			adjust_instability(length(controlled_mobs))
 			to_chat(user, span_notice("You command your [length(controlled_mobs) > 1 ? "entities" : "[LAZYACCESS(controlled_mobs, 1)]"] to move \
 			towards \the [T]."))
+
+REF_OWNED(/obj/item/spell/control, list("control_overlay"))

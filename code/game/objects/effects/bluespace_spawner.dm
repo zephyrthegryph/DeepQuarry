@@ -4,7 +4,7 @@
 	anchored = 1
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "portalgateway"
-	var/obj/item_to_spawn = /obj/item/stack/telecrystal
+	var/item_to_spawn = /obj/item/stack/telecrystal
 	var/item_arg = 8
 	var/time_between_spawn = 1 MINUTE
 	var/time_to_end = 45 MINUTES

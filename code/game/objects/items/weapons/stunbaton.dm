@@ -281,3 +281,5 @@
 	..(target, user, hit_zone)
 	if(status && (target.ai_brain != null))
 		target.taunt(user)
+
+REF_OWNED(/obj/item/melee/baton, list("bcell"))

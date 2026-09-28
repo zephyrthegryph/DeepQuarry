@@ -162,6 +162,16 @@
 		return FALSE
 	return A.attempt(actor, target, actor.get_active_hand()) == INTERACTION_TRY_RAN
 
+/// Runs a /self ability on `actor` without any picker path, so it can be called from code
+/// that must not sleep (Life stages, behaviours). Abilities that need a target go through
+/// dq_use_ability() from player input instead.
+/proc/dq_use_self_ability(mob/living/actor, id)
+	SHOULD_NOT_SLEEP(TRUE)
+	var/datum/interaction/ability/self/A = ABILITY_BY_ID(id)
+	if(!istype(A) || !A.applies_to(actor))
+		return FALSE
+	return A.attempt(actor, actor, actor.get_active_hand()) == INTERACTION_TRY_RAN
+
 // ---------------------------------------------------------------------------
 // Grants: source-tracked, so an ability stays available while any source remains. They are OM
 // grants (object_model_core.md §8, GRANT_ABILITY with the ability id as key): one store for

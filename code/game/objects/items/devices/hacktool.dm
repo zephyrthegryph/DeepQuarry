@@ -150,14 +150,14 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 	known_targets -= target
 
 /datum/tgui_state/default/must_hack
-	var/obj/item/multitool/hacktool/hacktool
+	var/hacktool_handle
 
 /datum/tgui_state/default/must_hack/New(hacktool)
-	src.hacktool = hacktool
+	src.hacktool_handle = om_handle(hacktool())
 	..()
 
 /datum/tgui_state/default/must_hack/can_use_topic(src_object, mob/user)
-	if(!hacktool || !hacktool.in_hack_mode || !(src_object in hacktool.known_targets))
+	if(!hacktool() || !hacktool().in_hack_mode || !(src_object in hacktool().known_targets))
 		return STATUS_CLOSE
 	return ..()
 
@@ -173,3 +173,7 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 	description_info = "You can use this on airlocks or APCs to try to hack them without cutting wires."
 	icon_state = "multitool_suspicious"
 	in_hack_mode = 1	//start in hackmode
+
+/// LC-refs: hacktool -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/tgui_state/default/must_hack/proc/hacktool() as /obj/item/multitool/hacktool
+	return om_resolve(hacktool_handle)

@@ -7,7 +7,7 @@
 	density = 1
 	unacidable = TRUE
 	anchored = TRUE
-	var/atom/destination
+	var/destination_handle
 	var/teleport_sound = 'sound/effects/portal_effect.ogg'
 
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
@@ -32,11 +32,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 	handle_teleport(AM)
 
 /obj/effect/simple_portal/proc/handle_teleport(atom/movable/AM)
-	if(destination)
-		AM.forceMove(destination)
+	if(destination())
+		AM.forceMove(destination())
 		if(!AM.is_incorporeal() && !istype(AM,/mob/observer))
 			playsound(get_turf(src),teleport_sound,60,1)
-			playsound(get_turf(destination),teleport_sound,60,1)
+			playsound(get_turf(destination()),teleport_sound,60,1)
 
 /obj/effect/simple_portal/attack_ghost(mob/observer/dead/user)
 	. = ..()
@@ -48,39 +48,39 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 	var/tele_z
 
 /obj/effect/simple_portal/coords/handle_teleport(atom/movable/AM)
-	destination = null
+	destination_handle = null
 	if(!isnull(tele_x) && !isnull(tele_y) && !isnull(tele_z))
-		destination = locate(tele_x,tele_y,tele_z)
+		destination_handle = om_handle(locate(tele_x,tele_y,tele_z))
 	. = ..()
 
 /obj/effect/simple_portal/linked
 	icon_state = "portal1"
-	var/obj/effect/simple_portal/linked/linked_portal
+	var/linked_portal_handle
 	var/portal_id
 
 /obj/effect/simple_portal/linked/handle_teleport(atom/movable/AM)
-	destination = null
+	destination_handle = null
 	update_icon()
-	if(linked_portal && icon_state == "portal")
+	if(linked_portal() && icon_state == "portal")
 		var/rel_x = round(rand(-1,1))
 		var/rel_y = round(rand(-1,1))
 		var/movingdir = get_dir(AM,src)
 		if(!isnull(movingdir))
-			destination = get_step(get_turf(linked_portal),movingdir)
+			destination_handle = om_handle(get_step(get_turf(linked_portal()),movingdir))
 		else
 			while(rel_x == 0 && rel_y == 0)
 				rel_x = round(rand(-1,1))
 				rel_y = round(rand(-1,1))
-			destination = locate(linked_portal.loc.x + rel_x, linked_portal.loc.y + rel_y, linked_portal.loc.z)
-		if(!valid_destination(destination))
+			destination_handle = om_handle(locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
+		if(!valid_destination(destination()))
 			var/list/possible_x = shuffle(list(-1,0,1))
 			var/list/possible_y = shuffle(list(-1,0,1))
 			for(rel_x in possible_x)
 				for(rel_y in possible_y)
 					if(rel_x == 0 && rel_y == 0)
 						continue
-					destination = locate(linked_portal.loc.x + rel_x, linked_portal.loc.y + rel_y, linked_portal.loc.z)
-					if(valid_destination(destination))
+					destination_handle = om_handle(locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
+					if(valid_destination(destination()))
 						break
 	. = ..()
 
@@ -89,7 +89,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 		return FALSE
 	if(dest.density)
 		return FALSE
-	if(dest == get_turf(linked_portal))
+	if(dest == get_turf(linked_portal()))
 		return FALSE
 	var/windows = 0
 	for(var/obj/struct in turf_contents_of_type(dest, /obj))
@@ -114,12 +114,20 @@ REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 		return "SET PORTAL ID FIRST"
 	for(var/obj/effect/simple_portal/linked/candidate in REGISTRY_MEMBERS(REGISTRY_SIMPLE_PORTALS))
 		if(istype(candidate) && portal_id == candidate.portal_id && candidate != src)
-			linked_portal = candidate
+			linked_portal_handle = om_handle(candidate)
 			break
 	update_icon()
 
 /obj/effect/simple_portal/linked/update_icon()
-	if(linked_portal && !QDELETED(linked_portal))
+	if(linked_portal() && !QDELETED(linked_portal()))
 		icon_state = "portal"
 	else
 		icon_state = "portal1"
+
+/// LC-refs: destination -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/simple_portal/proc/destination() as /atom
+	return om_resolve(destination_handle)
+
+/// LC-refs: linked portal -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/simple_portal/linked/proc/linked_portal() as /obj/effect/simple_portal/linked
+	return om_resolve(linked_portal_handle)

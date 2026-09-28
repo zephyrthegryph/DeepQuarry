@@ -24,7 +24,7 @@
 	taser_kill = FALSE
 	water_resist = 1
 
-	var/datum/disease/base_disease = null
+	var/datum/affliction/contagion/base_disease = null
 	var/list/infections = list()
 
 	melee_damage_lower = 1
@@ -63,7 +63,7 @@
 
 /mob/living/simple_mob/vore/aggressive/macrophage/Initialize(mapload)
 	. = ..()
-	var/datum/disease/advance/random/macrophage/D = new
+	var/datum/affliction/contagion/engineered/random/macrophage/D = new
 	endurance += D.resistance
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
@@ -94,7 +94,7 @@
 /mob/living/simple_mob/vore/aggressive/macrophage/apply_melee_effects(atom/A)
 	if(ishuman(A) && prob(25))
 		var/mob/living/carbon/human/H = A
-		H.ContractDisease(base_disease)
+		H.expose_contagion(base_disease)
 /*
 /mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A)
 	. = TRUE
@@ -122,7 +122,7 @@
 
 	if(ishuman(target))
 		var/mob/living/carbon/human/H = target
-		H.ContractDisease(base_disease)
+		H.expose_contagion(base_disease)
 	ai_busy_end()
 */
 /mob/living/simple_mob/vore/aggressive/macrophage
@@ -134,7 +134,7 @@
 		var/obj/belly/belly = loc
 		if(belly)
 			var/mob/living/pred = belly.owner
-			pred.ForceContractDisease(base_disease)
+			pred.force_contagion(base_disease)
 	else
 		visible_message(span_warning("\The [src] shrivels up and dies, unable to survive!"))
 		var/obj/effect/decal/cleanable/blood/sick = new(loc)
@@ -143,7 +143,7 @@
 		sick.update_icon()
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
-		sick.viruses += base_disease
+		LAZYADD(sick.viruses, base_disease.Copy())
 
 /obj/belly/macrophage
 	name = "capsid"
