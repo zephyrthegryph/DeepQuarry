@@ -89,15 +89,15 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/lacerated_artery/C = _spawn_affliction_on(H, BP_L_ARM, /datum/affliction/lacerated_artery)
 	TEST_ASSERT_NOTNULL(C, "spawn failed")
-	C.severity = 50
+	C.set_severity(50)
 
 	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "new", "first scan trend should be 'new'")
 	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "stable", "unchanged severity should read 'stable'")
-	C.severity = 70
+	C.set_severity(70)
 	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "worsening", "rising severity should read 'worsening'")
-	C.severity = 30
+	C.set_severity(30)
 	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "improving", "falling severity should read 'improving'")
-	C.severity = 31
+	C.set_severity(31)
 	TEST_ASSERT_EQUAL(_lacerated_artery_trend(H), "stable", "tiny drift should stay in the dead zone")
 
 

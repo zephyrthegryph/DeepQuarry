@@ -671,3 +671,6 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 #undef SLEEPER_INJECT_COST
 #undef DOGBORG_DIGEST_MAX_CATCHUP
+
+/obj/item/dogborg/sleeper/muffles_death_of(mob/occupant)
+	return TRUE

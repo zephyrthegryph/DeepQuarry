@@ -1557,7 +1557,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		W.message = message
 		W.add_fingerprint(src)
 
-/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE)
+/mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
 	. = 1
 
 	if(!target_zone)
@@ -1571,10 +1571,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!affecting)
 		. = 0
 		fail_msg = "They are missing that limb."
-	else if (affecting.robotic == ORGAN_ROBOT)
+	else if (affecting.robotic == ORGAN_ROBOT && method == INJECT_METHOD_NEEDLE)
 		. = 0
 		fail_msg = "That limb is robotic."
-	else if (affecting.robotic >= ORGAN_LIFELIKE)
+	else if (affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
 		. = 0
 		fail_msg = "Your needle refuses to penetrate more than a short distance..."
 	else if ((species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2)))	// Allows transplanted limbs with thick skin to maintain their resistance.
@@ -1871,13 +1871,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/can_feel_pain(obj/item/organ/check_organ)
 	if(isSynthetic())
 		return 0
-	if(!digest_pain)
-		if(istype(loc, /turf/simulated/floor/water/digestive_enzymes))
-			return FALSE
-		if(isbelly(loc))
-			var/obj/belly/b = loc
-			if(b.digest_mode == DM_DIGEST || b.digest_mode == DM_SELECT)
-				return FALSE
+	if(loc?.numbs_pain_of(src))
+		return FALSE
 	if(factor(BF_PAIN_IMMUNITY))
 		return 0
 	if(check_organ)

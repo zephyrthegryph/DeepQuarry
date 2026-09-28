@@ -1575,3 +1575,6 @@ REF_HELD(/obj/item/clothing/gloves, "cell")
 /// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/proc/master_rig() as /obj/item/rig
 	return om_resolve(master_rig_handle)
+
+/obj/item/clothing/shoes/muffles_death_of(mob/occupant)
+	return TRUE

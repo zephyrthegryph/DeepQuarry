@@ -1272,3 +1272,10 @@ REF_STATIC(/obj/belly, "tail_to_change_to_static")
 /// om_after() target: a temporary digest mode wears off.
 /obj/belly/proc/reset_digest_mode(mode)
 	digest_mode = mode
+
+/obj/belly/muffles_death_of(mob/occupant)
+	return TRUE
+
+/// A digesting belly numbs prey who opted out of digestion pain.
+/obj/belly/numbs_pain_of(mob/living/occupant)
+	return !occupant.digest_pain && (digest_mode == DM_DIGEST || digest_mode == DM_SELECT)

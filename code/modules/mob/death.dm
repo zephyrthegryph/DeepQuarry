@@ -156,15 +156,23 @@
 /mob/proc/get_death_message(gibbed)
 	return death_message
 
-/// A mob inside something (a belly, a sleeper, a shoe, its own transformation holder) dies quietly.
+/// A mob dies quietly when the thing holding it says so (muffles_death_of()): the core asks
+/// its container instead of knowing every kind of container.
 /mob/proc/death_message_suppressed()
-	if(istype(loc, /obj/belly) || istype(loc, /obj/item/dogborg/sleeper) || istype(loc, /obj/item/clothing/shoes))
-		return TRUE
-	if(isliving(loc))
-		var/mob/living/L = loc
-		if(L.tf_mob_holder == src)
-			return TRUE
+	return loc?.muffles_death_of(src)
+
+/// Does this container keep `occupant`'s death message quiet? Bellies, sleepers, shoes and a
+/// transformation holder answer TRUE.
+/atom/proc/muffles_death_of(mob/occupant)
 	return FALSE
+
+/// Does being here numb `occupant`'s pain? Asked by can_feel_pain(); digesting bellies and
+/// enzyme pools answer for occupants who opted out of digestion pain.
+/atom/proc/numbs_pain_of(mob/living/occupant)
+	return FALSE
+
+/mob/living/muffles_death_of(mob/occupant)
+	return tf_mob_holder == occupant
 
 /// Notify what this mob is bound to: soul links, nests, vore death flags. Runs once per death.
 /mob/proc/death_links(gibbed)

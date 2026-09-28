@@ -445,7 +445,7 @@
 	// Spawn an infection that's cured by spaceacillin.
 	var/datum/affliction/cellulitis/C = _spawn_affliction_on(H, BP_TORSO, /datum/affliction/cellulitis)
 	TEST_ASSERT_NOTNULL(C, "cellulitis spawn failed")
-	C.severity = 50
+	C.set_severity(50)
 
 	// Drop spaceacillin in the bloodstream — without the interaction
 	// marker, cellulitis should heal at full rate.
@@ -457,7 +457,7 @@
 
 	// Reset, add the interference marker, tick again — delta should
 	// be smaller.
-	C.severity = 50
+	C.set_severity(50)
 	var/datum/affliction/chem_interaction/bicaridine_antibiotic_interference/M = _spawn_affliction_on(H, O_LIVER, /datum/affliction/chem_interaction/bicaridine_antibiotic_interference)
 	TEST_ASSERT_NOTNULL(M, "interference marker spawn failed")
 	C.tick()
@@ -473,7 +473,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/subdural_hematoma/sh = _spawn_affliction_on(H, BP_HEAD, /datum/affliction/subdural_hematoma)
 	TEST_ASSERT_NOTNULL(sh, "hematoma should spawn")
-	sh.severity = 60
+	sh.set_severity(60)
 	var/start = sh.severity
 
 	// Bicaridine OD: 40u total, 10u over threshold of 30. Each call
@@ -493,7 +493,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/affliction/heart_damage/hd = _spawn_affliction_on(H, O_HEART, /datum/affliction/heart_damage)
 	TEST_ASSERT_NOTNULL(hd, "heart_damage should spawn")
-	hd.severity = 80
+	hd.set_severity(80)
 	var/start = hd.severity
 
 	H.bloodstr.add_reagent(REAGENT_ID_CORDRADAXON, 25)  // 15 over threshold 10
@@ -727,9 +727,9 @@
 	var/datum/affliction/cellulitis/C1 = _spawn_affliction_on(H1, BP_TORSO, /datum/affliction/cellulitis)
 	var/datum/affliction/cellulitis/C2 = _spawn_affliction_on(H2, BP_TORSO, /datum/affliction/cellulitis)
 	var/datum/affliction/cellulitis/C3 = _spawn_affliction_on(H3, BP_TORSO, /datum/affliction/cellulitis)
-	C1.severity = 50
-	C2.severity = 50
-	C3.severity = 50
+	C1.set_severity(50)
+	C2.set_severity(50)
+	C3.set_severity(50)
 
 	H1.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 1)   // sub-dose
 	H2.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 10)  // standard dose
@@ -756,8 +756,8 @@
 	var/mob/living/carbon/human/HB = allocate(/mob/living/carbon/human)
 	var/datum/affliction/cellulitis/CA = _spawn_affliction_on(HA, BP_TORSO, /datum/affliction/cellulitis)
 	var/datum/affliction/cellulitis/CB = _spawn_affliction_on(HB, BP_TORSO, /datum/affliction/cellulitis)
-	CA.severity = 50
-	CB.severity = 50
+	CA.set_severity(50)
+	CB.set_severity(50)
 	HA.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 40)  // at cap
 	HB.bloodstr.add_reagent(REAGENT_ID_SPACEACILLIN, 100) // way over cap
 
