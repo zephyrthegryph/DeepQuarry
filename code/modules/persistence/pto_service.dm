@@ -3,19 +3,22 @@
 //// For tracking how much department PTO time players have accured
 ////////////////////////////////
 
-SUBSYSTEM_DEF(persist)
+// Paid leave world service (was SSpersist): PTO accrues every 15 minutes on the background lane.
+GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
+
+/datum/world_service/persist
 	name = "Persist"
-	flags = SS_NO_INIT | SS_NO_FIRE // accrual: /datum/om/behaviour/world/feature/persist
+	lane = /datum/om/behaviour/world/persist
 	/// Accrual period; must match the lane's `every`.
 	var/accrual_interval = 15 MINUTES
-	var/list/currentrun = list()
-	var/list/query_stack = list()
+	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton
+	var/list/query_stack = list() // ALLOW(instance_list): d: world service singleton
 
-/datum/controller/subsystem/persist/lane_step(resumed)
+/datum/world_service/persist/service_step(resumed)
 	return update_department_hours(resumed)
 
 // Do PTO Accruals
-/datum/controller/subsystem/persist/proc/update_department_hours(resumed = FALSE)
+/datum/world_service/persist/proc/update_department_hours(resumed = FALSE)
 	if(!CONFIG_GET(flag/time_off))
 		return TRUE
 
@@ -103,7 +106,7 @@ SUBSYSTEM_DEF(persist)
 
 
 // This proc tries to find the job datum of an arbitrary mob.
-/datum/controller/subsystem/persist/proc/detect_job(mob/M)
+/datum/world_service/persist/proc/detect_job(mob/M)
 	// Records are usually the most reliable way to get what job someone is.
 	var/datum/data/record/R = find_general_record("name", M.real_name)
 	if(R) // We found someone with a record.
@@ -116,3 +119,13 @@ SUBSYSTEM_DEF(persist)
 	// Let's check the mind.
 	if(M.mind && M.mind.assigned_role)
 		. = SSjob.get_job(M.mind.assigned_role)
+
+/// PTO accrual
+/datum/om/behaviour/world/persist
+	name = "world: PTO accrual"
+	every = 15 MINUTES
+	lane = LANE_BACKGROUND
+	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+
+/datum/om/behaviour/world/persist/service()
+	return GLOB.persist_service

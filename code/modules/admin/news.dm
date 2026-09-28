@@ -42,7 +42,7 @@ ADMIN_VERB(modify_server_news, R_SERVER|R_EVENT, "Modify Public News", "Modify t
 	if(F)
 		if(GLOB.servernews_hash != prefs.lastnews)
 			prefs.lastnews = GLOB.servernews_hash
-			SScharacter_setup.queue_preferences_save(prefs)
+			GLOB.character_setup_service.queue_preferences_save(prefs)
 		return F
 
 // This is used when submitting the news input, so the safe markup can get past sanitize.

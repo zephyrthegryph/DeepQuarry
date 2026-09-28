@@ -821,7 +821,6 @@
 #include "code\datums\om\watch.dm"
 #include "code\datums\om\world_watch.dm"
 #include "code\datums\om\world_lanes.dm"
-#include "code\datums\om\feature_lanes.dm"
 #include "code\datums\om_events\atom_events.dm"
 #include "code\datums\behaviours\climbable.dm"
 #include "code\datums\behaviours\godmode.dm"

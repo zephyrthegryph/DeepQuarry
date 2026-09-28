@@ -1,9 +1,10 @@
 // The antagonist world service (fold wave F4; was SSantag_job): the antagonist templates, their
-// spawn points and the syndicate code phrases. Data only; SSatoms initializes it (after SSjob).
+// spawn points and the syndicate code phrases. Data only; boots after SSatoms (after SSjob).
 GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 
 /datum/world_service/antag
 	name = "Antag Job"
+	boot_after = /datum/controller/subsystem/atoms
 
 	var/list/syndicate_code_phrase
 	var/list/syndicate_code_response

@@ -556,7 +556,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	var/sql_computerid = src.computer_id
 	var/sql_admin_rank = admin_rank
 
-	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
+	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (GLOB.chat_service will queue it)
 
 	//Panic bunker code
 	if (isnum(player_age) && player_age == 0) //first connection
@@ -876,7 +876,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 			panel_tabs = list()
 		if("Set-Tab")
 			stat_tab = payload["tab"]
-			SSstatpanels.immediate_send_stat_data(src)
+			GLOB.statpanels_service.immediate_send_stat_data(src)
 
 // Mouse stuff
 /client/Click(atom/object, atom/location, control, params)

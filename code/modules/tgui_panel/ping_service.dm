@@ -3,20 +3,18 @@
  * SPDX-License-Identifier: MIT
  */
 
-SUBSYSTEM_DEF(ping)
+// The soft ping world service (was SSping): every 4 s it pings each ready tgui chat panel.
+GLOBAL_DATUM_INIT(ping_service, /datum/world_service/ping, new)
+
+/datum/world_service/ping
 	name = "Ping"
-	priority = FIRE_PRIORITY_PING
-	init_stage = INITSTAGE_EARLY
-	wait = 4 SECONDS
-	flags = SS_NO_INIT
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-	var/list/currentrun = list()
+	lane = /datum/om/behaviour/world/ping
+	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton
 
-/datum/controller/subsystem/ping/stat_entry(msg)
-	msg = "P:[length(GLOB.clients)]"
-	return ..()
+/datum/world_service/ping/stat_line()
+	return "P:[length(GLOB.clients)]"
 
-/datum/controller/subsystem/ping/fire(resumed = FALSE)
+/datum/world_service/ping/service_step(resumed)
 	// Prepare the new batch of clients
 	if (!resumed)
 		src.currentrun = GLOB.clients.Copy()
@@ -41,5 +39,15 @@ SUBSYSTEM_DEF(ping)
 				"afk" = client.is_afk(3.5 SECONDS),
 			))
 
-		if (MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
+
+/// ping (was SSping).
+/datum/om/behaviour/world/ping
+	name = "world: ping"
+	every = 4 SECONDS
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/ping/service()
+	return GLOB.ping_service

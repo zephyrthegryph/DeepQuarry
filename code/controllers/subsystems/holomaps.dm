@@ -18,9 +18,6 @@ SUBSYSTEM_DEF(holomaps)
 
 /datum/controller/subsystem/holomaps/Initialize()
 	generateHoloMinimaps()
-	// The boot POI queue loads here, after the holomaps and before air and persistence (fold wave
-	// F4; was SSpoints_of_interest, which depended on holomaps).
-	GLOB.poi_service.initialize()
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/holomaps/stat_entry(msg)

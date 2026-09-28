@@ -24,8 +24,6 @@ SUBSYSTEM_DEF(behaviours)
 	om_scheduler()
 	// World services' periodic lanes on the global owner (machines, mobs; world_lanes.dm).
 	om_start_world_lanes()
-	// Feature subsystems' periodic work (vote, supply, expedition, ...; feature_lanes.dm).
-	om_start_feature_lanes()
 	return SS_INIT_SUCCESS
 
 /datum/controller/subsystem/behaviours/fire(resumed)

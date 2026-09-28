@@ -72,7 +72,7 @@
 /// Waits for deferred asset generation so it isn't measured as scenario work.
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
 	var/waited = 0
-	while((length(SSasset_loading.generate_queue) || SSasset_loading.assets_generating || SSasset_loading.last_queue_len) && waited++ < world.fps * timeout_seconds)
+	while((length(GLOB.asset_loading_service.generate_queue) || GLOB.asset_loading_service.assets_generating || GLOB.asset_loading_service.last_queue_len) && waited++ < world.fps * timeout_seconds)
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")

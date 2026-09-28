@@ -221,7 +221,7 @@
 	// cache) and re-ran the priority-order read/sanitize loop, and save_preferences() re-wrote
 	// already-written player prefs — costing ~2s of synchronous, blocking savefile I/O on the
 	// close click. Keep the preview byte cache warm and queue one async straggler-flush.
-	SScharacter_setup.queue_preferences_save(src)
+	GLOB.character_setup_service.queue_preferences_save(src)
 
 /datum/preferences/proc/create_character_profiles()
 	var/list/profiles = list()

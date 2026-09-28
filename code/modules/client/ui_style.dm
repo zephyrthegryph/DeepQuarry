@@ -40,7 +40,7 @@
 		usr.write_preference_directly(/datum/preference/choiced/ui_style, UI_style_new, WRITE_PREF_MANUAL)
 		usr.write_preference_directly(/datum/preference/numeric/ui_style_alpha, UI_style_alpha_new, WRITE_PREF_MANUAL)
 		usr.write_preference_directly(/datum/preference/color/ui_style_color, UI_style_color_new, WRITE_PREF_MANUAL)
-		SScharacter_setup.queue_preferences_save(prefs)
+		GLOB.character_setup_service.queue_preferences_save(prefs)
 		to_chat(src, "UI was saved")
 		return
 

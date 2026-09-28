@@ -59,7 +59,7 @@
 /// (also forces it to run first in the tick, above even SS_NO_TICK_CHECK subsystems)
 /// (implies all runlevels because of how it works)
 /// (overrides SS_BACKGROUND)
-/// This is designed for basically anything that works as a mini-mc (like SSrunechat)
+/// This is designed for basically anything that works as a mini-mc (like GLOB.runechat_service)
 #define SS_TICKER 16
 
 /** keep the subsystem's timing on point by firing early if it fired late last fire because of lag */

@@ -21,26 +21,19 @@ from allow_annotations import allowed  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
-# The kernel and the engines that own their own frame (sec 3.6, "Core subsystems that stay").
+# The kernel and the engines that own their own frame (sec 3.6). Everything else is a world
+# service lane (code/datums/om/world_lanes.dm).
 CORE = {
     "air",            # drives the Rust world step
-    "asset_loading",
     "behaviours",     # the OM scheduler
-    "chat",
-    "dbcore",
+    "dbcore",         # async query pump
     "garbage",
-    "input",
-    "ping",
-    "profiler",
-    "runechat",
-    "server_maint",
-    "statpanels",
+    "input",          # player input must never wait on a lane budget
+    "profiler",       # MC profiling: reads subsystem diagnostics, config-driven interval
     "tgui",
     "ticker",
-    "time_track",
     "verb_manager",   # and its speech_controller subtype
-    "vg",
-    "vis_overlays",
+    "vg",             # verdigris frame
 }
 
 FIRE = re.compile(r"^/datum/controller/subsystem/(\w+)(?:/\w+)*/fire\(")

@@ -46,12 +46,12 @@ REF_OWNED(/datum/cogbar, "blank")
 /datum/cogbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)
-		SSvis_overlays.remove_vis_overlay(user, user.managed_vis_overlays)
+		GLOB.vis_overlays_service.remove_vis_overlay(user, user.managed_vis_overlays)
 		user_client()?.images -= blank
 
 /// Adds the cog to the user, visible by other players
 /datum/cogbar/proc/add_cog_to_user()
-	var/obj/effect/overlay/vis/cog = SSvis_overlays.add_vis_overlay(user(),
+	var/obj/effect/overlay/vis/cog = GLOB.vis_overlays_service.add_vis_overlay(user(),
 		icon = cogicon,
 		iconstate = cogiconstate,
 		plane = ABOVE_PLANE,
@@ -99,6 +99,6 @@ REF_OWNED(/datum/cogbar, "blank")
 /datum/cogbar/proc/user_client() as /client
 	return om_resolve(user_client_handle)
 
-/// LC-refs: the cog vis overlay (SSvis_overlays owns it) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the cog vis overlay (GLOB.vis_overlays_service owns it) -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/cogbar/proc/cog() as /obj/effect/overlay/vis
 	return om_resolve(cog_handle)

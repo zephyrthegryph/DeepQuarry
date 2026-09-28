@@ -572,7 +572,7 @@
 		if("cacheReloaded")
 			reinitialize()
 		if("chat/resend")
-			SSchat.handle_resend(client(), payload)
+			GLOB.chat_service.handle_resend(client(), payload)
 		if("oversizedPayloadRequest")
 			var/payload_id = payload["id"]
 			var/chunk_count = text2num(payload["chunkCount"])

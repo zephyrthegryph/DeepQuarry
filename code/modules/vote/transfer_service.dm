@@ -5,6 +5,7 @@ GLOBAL_DATUM_INIT(transfer_service, /datum/world_service/transfer, new)
 
 /datum/world_service/transfer
 	name = "Transfer"
+	boot_after = /datum/controller/subsystem/atoms
 	lane = /datum/om/behaviour/world/transfer
 
 	VAR_PRIVATE/timerbuffer = 0 //buffer for time check
@@ -29,7 +30,7 @@ GLOBAL_DATUM_INIT(transfer_service, /datum/world_service/transfer, new)
 		shift_hard_end = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval) //If shuttle somehow gets recalled, let's force it to call again next time a vote would occur.
 		timerbuffer = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval) //Just to make sure a vote doesn't occur immediately afterwords.
 	else if (round_duration_in_ds >= timerbuffer - 1 MINUTE)
-		SSvote.start_vote(new /datum/vote/crew_transfer)
+		GLOB.vote_service.start_vote(new /datum/vote/crew_transfer)
 		timerbuffer = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval)
 	return TRUE
 

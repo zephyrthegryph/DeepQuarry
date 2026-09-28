@@ -433,9 +433,13 @@ accident or assume they work:
   `SSinactivity`, `SSantag_job`, `SStransfer`, `SSproperties`. They are `GLOB.<x>_service`
   (`GLOB.sun` is the sun; `skybox_service()` is lazy). An **on-demand** service (`on_demand`,
   `has_work()`, `demand()`) parks its lane while idle: POIs, star movement, turf cascade,
-  explosions, planet lighting. The feature subsystems (vote, supply, research, emergency shuttle, expedition, …) keep
-  their `SSx` names but run on feature lanes (`code/datums/om/feature_lanes.dm`, `lane_step()`).
-  `tools/ci/subsystem_fire_lint.py` (K4) allows `fire()` only on the core allowlist.
+  explosions, planet lighting. The former feature and client-plumbing subsystems are world
+  services too (`GLOB.vote_service`, `GLOB.supply_service`, `GLOB.research_service`,
+  `GLOB.chat_service`, `GLOB.statpanels_service`, …). A service that needs setup declares
+  `boot_after = <subsystem type>` (and `order_after = list(<service types>)`); the MC initializes
+  it right after that subsystem and calls `on_shutdown()` at server shutdown.
+  `tools/ci/subsystem_fire_lint.py` (K4) allows `fire()` only on air, behaviours, dbcore, garbage,
+  input, profiler, tgui, ticker, verb_manager and vg (lighting keeps an ALLOW until F5).
 - **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
   `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
   (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed

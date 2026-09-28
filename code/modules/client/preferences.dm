@@ -599,7 +599,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		to_chat(src, "You are now catchable.")
 	if(L && istype(L))
 		L.capture_crystal = !cur
-	SScharacter_setup.queue_preferences_save(prefs)
+	GLOB.character_setup_service.queue_preferences_save(prefs)
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 

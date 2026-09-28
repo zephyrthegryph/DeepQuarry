@@ -235,7 +235,7 @@ REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 	return data
 
 /datum/component/shadekin/tgui_close(mob/user)
-	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
+	GLOB.character_setup_service.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
 /datum/component/shadekin/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)

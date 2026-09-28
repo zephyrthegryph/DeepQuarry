@@ -41,7 +41,7 @@
 	initialized = TRUE
 
 /// Server shutdown (MC Shutdown(), after the subsystems): flush whatever must survive the round.
-/datum/world_service/proc/shutdown()
+/datum/world_service/proc/on_shutdown()
 	return
 
 /// Initializes `S` after every service in its order_after (depth first; initialized guards cycles).
@@ -67,7 +67,7 @@
 	for(var/datum/world_service/S as anything in world_services())
 		if(S.initialized)
 			log_world("Shutting down [S.name] world service...")
-			S.shutdown()
+			S.on_shutdown()
 
 /// Lazy services: initializes on first use and returns the service (LAZY_SERVICE() in __defines/om.dm).
 /datum/world_service/proc/ready()

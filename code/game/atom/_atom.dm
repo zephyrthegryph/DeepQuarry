@@ -32,7 +32,7 @@
 	///Overlays that should remain on top and not normally removed when using cut_overlay functions, like c4.
 	/// A list, or a single overlay when there is only one (see add_overlay()).
 	var/tmp/priority_overlays
-	///vis overlays managed by SSvis_overlays to automaticaly turn them like other overlays
+	///vis overlays managed by GLOB.vis_overlays_service to automaticaly turn them like other overlays
 	var/tmp/list/managed_vis_overlays
 
 	//Detective Work, used for the duplicate data points kept in the scanners

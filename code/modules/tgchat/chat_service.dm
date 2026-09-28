@@ -3,23 +3,25 @@
  * SPDX-License-Identifier: MIT
  */
 
-SUBSYSTEM_DEF(chat)
+// The chat delivery world service (was SSchat): queued chat payloads go out every tick, parked
+// while nothing is queued.
+GLOBAL_DATUM_INIT(chat_service, /datum/world_service/chat, new)
+
+/datum/world_service/chat
 	name = "Chat"
-	flags = SS_TICKER|SS_NO_INIT
-	wait = 1
-	priority = FIRE_PRIORITY_CHAT
-	init_stage = INITSTAGE_LAST
+	lane = /datum/om/behaviour/world/chat
+	on_demand = TRUE
 
 	/// Assosciates a ckey with a list of messages to send to them.
-	var/list/list/datum/chat_payload/client_to_payloads = list()
+	var/list/list/datum/chat_payload/client_to_payloads = list() // ALLOW(instance_list): d: world service singleton
 
 	/// Associates a ckey with an assosciative list of their last CHAT_RELIABILITY_HISTORY_SIZE messages.
-	var/list/list/datum/chat_payload/client_to_reliability_history = list()
+	var/list/list/datum/chat_payload/client_to_reliability_history = list() // ALLOW(instance_list): d: world service singleton
 
 	/// Assosciates a ckey with their next sequence number.
-	var/list/client_to_sequence_number = list()
+	var/list/client_to_sequence_number = list() // ALLOW(instance_list): d: world service singleton
 
-/datum/controller/subsystem/chat/proc/generate_payload(client/target, message_data)
+/datum/world_service/chat/proc/generate_payload(client/target, message_data)
 	var/sequence = client_to_sequence_number[target.ckey]
 	client_to_sequence_number[target.ckey] += 1
 
@@ -41,11 +43,11 @@ SUBSYSTEM_DEF(chat)
 		client_history -= "[oldest]"
 	return payload
 
-/datum/controller/subsystem/chat/proc/send_payload_to_client(client/target, datum/chat_payload/payload)
+/datum/world_service/chat/proc/send_payload_to_client(client/target, datum/chat_payload/payload)
 	target.tgui_panel.window.send_message("chat/message", payload.into_message())
 	SEND_TEXT(target, payload.get_content_as_html())
 
-/datum/controller/subsystem/chat/fire()
+/datum/world_service/chat/service_step(resumed)
 	for(var/ckey in client_to_payloads)
 		var/client/target = GLOB.directory[ckey]
 		if(isnull(target)) // verify client still exists
@@ -56,18 +58,23 @@ SUBSYSTEM_DEF(chat)
 			send_payload_to_client(target, payload)
 		LAZYREMOVE(client_to_payloads, ckey)
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
 
-/datum/controller/subsystem/chat/proc/queue(queue_target, list/message_data)
+/datum/world_service/chat/has_work()
+	return length(client_to_payloads)
+
+/datum/world_service/chat/proc/queue(queue_target, list/message_data)
 	var/list/targets = islist(queue_target) ? queue_target : list(queue_target)
 	for(var/target in targets)
 		var/client/client = CLIENT_FROM_VAR(target)
 		if(isnull(client))
 			continue
 		LAZYADDASSOCLIST(client_to_payloads, client.ckey, generate_payload(client, message_data))
+	demand()
 
-/datum/controller/subsystem/chat/proc/send_immediate(send_target, list/message_data)
+/datum/world_service/chat/proc/send_immediate(send_target, list/message_data)
 	var/list/targets = islist(send_target) ? send_target : list(send_target)
 	for(var/target in targets)
 		var/client/client = CLIENT_FROM_VAR(target)
@@ -75,7 +82,7 @@ SUBSYSTEM_DEF(chat)
 			continue
 		send_payload_to_client(client, generate_payload(client, message_data))
 
-/datum/controller/subsystem/chat/proc/handle_resend(client/client, sequence)
+/datum/world_service/chat/proc/handle_resend(client/client, sequence)
 	var/list/client_history = client_to_reliability_history[client.ckey]
 	sequence = "[sequence]"
 	if(isnull(client_history) || !(sequence in client_history))
@@ -98,3 +105,11 @@ SUBSYSTEM_DEF(chat)
 		),
 	)
 	*/
+
+/// chat (was SSchat).
+/datum/om/behaviour/world/chat
+	name = "world: chat"
+	every = 1
+
+/datum/om/behaviour/world/chat/service()
+	return GLOB.chat_service
