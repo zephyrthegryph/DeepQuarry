@@ -145,3 +145,7 @@
 		var/maxlen = payload["maxlength"]
 		to_chat(client, span_warning(span_bold("Warning") + ": Message with [mlen] exceeded the maximum length of [maxlen]."))
 	return FALSE
+
+REF_OWNED(/client, "tgui_say")
+
+REF_OWNED(/datum/tgui_say, "window")

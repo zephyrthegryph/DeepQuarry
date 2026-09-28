@@ -137,3 +137,5 @@
 			affected_turf.vis_contents += pshandler.vis_shade
 		if(FALSE)
 			affected_turf.underlays |= current_underlay
+
+REF_OWNED(/datum/lighting_object, "current_underlay")

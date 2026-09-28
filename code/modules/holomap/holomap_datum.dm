@@ -30,3 +30,5 @@
 	legend.pixel_y = 7 * WORLD_ICON_SIZE
 	station_map.add_overlay(legend)
 
+
+REF_OWNED(/datum/station_holomap, list("station_map", "cursor", "legend"))

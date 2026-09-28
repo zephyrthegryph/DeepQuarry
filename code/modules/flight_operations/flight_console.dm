@@ -218,3 +218,7 @@
 	if(!flight_operations_ui)
 		flight_operations_ui = new(src)
 	flight_operations_ui.tgui_interact(user, ui)
+
+REF_OWNED(/obj/machinery/computer/ship, "flight_operations_ui")
+
+REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui")

@@ -226,3 +226,5 @@
 			return
 	else
 		..()
+
+REF_OWNED(/obj/item/gun/launcher/pneumatic, "item_storage")

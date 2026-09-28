@@ -97,3 +97,5 @@
 
 /obj/machinery/atmospherics/unary/isConnectable(obj/machinery/atmospherics/target)
 	return (target == node || ..())
+
+REF_OWNED(/obj/machinery/atmospherics, "pipe_image")

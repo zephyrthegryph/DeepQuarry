@@ -460,3 +460,7 @@
 
 /datum/expedition_objective/survive/objective_text()
 	return "Hold the site for [round(hold_time / 10)] seconds"
+
+REF_OWNED(/datum/expedition_objective/reach, "marker")
+
+REF_OWNED(/datum/expedition_objective/destroy, "target_obj")

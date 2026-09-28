@@ -38,3 +38,5 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 		if(F.channel_name == "Vir News Network")
 			station_newspaper = F
 			break
+
+REF_OWNED(/datum/lore/news, "news_codex")

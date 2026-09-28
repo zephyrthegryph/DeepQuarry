@@ -191,3 +191,5 @@
 	. = ..()
 	icon_state = newstate
 	dir = newdir
+
+REF_OWNED(/datum/sun_holder, "sun")

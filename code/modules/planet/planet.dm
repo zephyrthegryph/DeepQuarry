@@ -16,7 +16,7 @@
 	var/list/sun = list("brightness","color")
 	var/list/expected_z_levels
 
-	var/turf/unsimulated/wall/planetary/planetary_wall_type = /turf/unsimulated/wall/planetary
+	var/planetary_wall_type = /turf/unsimulated/wall/planetary
 
 	var/list/turf/simulated/floor/planet_floors
 	var/list/turf/unsimulated/wall/planetary/planet_walls
@@ -80,3 +80,5 @@
 /// Override for unique sun angle handling for stuff like northern/southern hemisphere sun angles during the day cycle
 /datum/planet/proc/get_sun_solar_position()
 	return 220 - (sun_position * 80) // this base version doesn't know how long a planet's day is, so just goes back and forth facing south-eastish based on midnight to noon intensity
+
+REF_OWNED(/datum/planet, list("weather_holder", "sun_holder"))

@@ -949,3 +949,5 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 // === merged from projectile_chomp.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/item/projectile
 	speed = 1.5 // Movespeed is in Deciseconds per movement. Lower is faster. default was 0.8, but we had it at 3.0 for a while.
+
+REF_OWNED(/obj/item/projectile, list("trajectory", "beam_components"))

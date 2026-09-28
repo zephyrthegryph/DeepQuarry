@@ -63,7 +63,7 @@
 	var/conditional_offer = FALSE
 	var/resupplies_used = 0
 
-REF_OWNED(/datum/contract/medical_trial, "profile")
+REF_OWNED(/datum/contract/medical_trial, list("profile", "observation_requirement", "analysis_requirement"))
 REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)

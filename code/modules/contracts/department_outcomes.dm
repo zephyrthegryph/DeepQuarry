@@ -605,3 +605,5 @@
 	reserve.description = "Close a funded budget cycle with at least 6,000 Thalers retained for Command. This directly conflicts with the public diversification mandate."
 	reserve.require_number("command_allocation", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 6000)
 	contract.add_requirement(reserve)
+
+REF_OWNED(/datum/contract/outcome/engine_performance, "performance_requirement")

@@ -810,3 +810,5 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/generator/generated_station/step_start_condition()
 	return !(stat & BROKEN)
+
+REF_OWNED(/datum/generated_station_utility_builder, "result")

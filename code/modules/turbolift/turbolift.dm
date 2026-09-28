@@ -222,3 +222,5 @@
 /datum/turbolift/proc/end_priority_mode()
 	priority_mode = FALSE
 	update_ext_panel_icons()
+
+REF_OWNED(/datum/turbolift, "control_panel_interior")

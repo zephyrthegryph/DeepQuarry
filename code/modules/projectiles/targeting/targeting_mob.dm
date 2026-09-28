@@ -53,3 +53,5 @@
 	if(hud_used)
 		if (hud_used.move_intent)
 			hud_used.move_intent.icon_state = intent == I_WALK ? "walking" : "running"
+
+REF_OWNED(/mob/living, "aiming")

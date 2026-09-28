@@ -589,3 +589,5 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 	SScharacter_setup.queue_preferences_save(prefs)
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+REF_OWNED(/datum/preferences, "savefile")

@@ -307,3 +307,5 @@
 // displayValues body relocated to code/modules/admin/admin_report_panel.dm (structured StockChart TGUI).
 /datum/stock/proc/displayValues(mob/user)
 	return  // body provided by modular override
+
+REF_OWNED(/datum/stock, "industry")

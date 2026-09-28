@@ -327,3 +327,5 @@
 	var/pass = S.relay_information(newsign, /obj/machinery/telecomms/hub)
 	if(!pass)
 		S.relay_information(newsign, /obj/machinery/telecomms/broadcaster) // send this simple message to broadcasters
+
+REF_OWNED(/datum/TCS_Compiler, "interpreter")

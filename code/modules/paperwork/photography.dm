@@ -355,3 +355,5 @@ GLOBAL_VAR_INIT(photo_count, 0)
 /obj/item/camera/proc/recharged()
 	icon_state = icon_on
 	on = 1
+
+REF_OWNED(/obj/item/photo, list("img", "tiny"))

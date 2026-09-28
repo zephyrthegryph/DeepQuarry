@@ -180,3 +180,5 @@
 		var/datum/node/expression/P=ParseParamExpression()
 		stmt.parameters+=P
 		if(istype(curToken, /datum/token/symbol) && curToken.value==",") NextToken()
+
+REF_OWNED(/datum/n_Parser, list("blocks", "global_block"))

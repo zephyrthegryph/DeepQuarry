@@ -39,3 +39,5 @@
 	if(!dq_exonet_log_panel_cache)
 		dq_exonet_log_panel_cache = new(src)
 	dq_exonet_log_panel_cache.tgui_interact(src)
+
+REF_OWNED(/mob/observer/dead, "dq_exonet_log_panel_cache")

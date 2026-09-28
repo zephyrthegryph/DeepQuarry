@@ -741,3 +741,5 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	oxygen = 0
 	nitrogen = 0
 	temperature	= TCMB
+
+REF_OWNED(/turf/simulated/mineral, list("geologic_data", "artifact_find"))

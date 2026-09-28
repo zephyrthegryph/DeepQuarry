@@ -216,3 +216,5 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 		return
 	if(dq_vv_panel && dq_vv_panel.thing == thing)
 		SStgui.update_uis(dq_vv_panel)
+
+REF_OWNED(/client, "dq_vv_panel")

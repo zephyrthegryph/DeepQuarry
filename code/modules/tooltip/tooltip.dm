@@ -199,3 +199,5 @@
 	if(!istype(user) || !user.client?.tooltips)
 		return
 	user.client.tooltips.hide(tip_src)
+
+REF_OWNED(/datum/tooltip, "tooltip_window")

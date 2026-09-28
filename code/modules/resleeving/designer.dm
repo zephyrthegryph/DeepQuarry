@@ -92,3 +92,5 @@ REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 #undef MENU_STOCKRECORDS
 #undef MENU_SPECIFICRECORD
 #undef MENU_OOCNOTES
+
+REF_OWNED(/obj/machinery/computer/transhuman/designer, "designer_gui")

@@ -412,3 +412,5 @@ REF_OWNED(/datum/contract_requirement/qualified_material_delivery, "assay_filter
 	projects.first_filter.require_value("target_is_department", TRUE)
 	projects.first_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 1000)
 	projects.second_filter.require_number("value", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 100)
+
+REF_OWNED(/datum/contract/social/alternative_fuel_trial, "output_requirement")

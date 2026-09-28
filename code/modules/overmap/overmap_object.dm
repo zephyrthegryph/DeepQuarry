@@ -60,7 +60,7 @@
 		cam_background.del_on_map_removal = FALSE
 		update_screen()
 
-REF_OWNED(/obj/effect/overmap, list("cam_screen", "cam_background"))
+REF_OWNED(/obj/effect/overmap, list("cam_screen", "cam_background", "cached_skybox_image", "real_appearance"))
 REF_OWNED_LIST(/obj/effect/overmap, "cam_plane_masters")
 
 // LIFECYCLE: its real appearance holder is detached.

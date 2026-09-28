@@ -473,3 +473,5 @@
 	if(hologram)
 		destroy_hologram()
 		set_pin_data(IC_INPUT, 1, FALSE)
+
+REF_OWNED(/obj/item/integrated_circuit/output/text_to_speech/advanced, "my_voice")

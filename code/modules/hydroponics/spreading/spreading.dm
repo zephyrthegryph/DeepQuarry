@@ -327,3 +327,5 @@
 		message_admins(span_notice("Event: Spacevines spawned at [T.loc] ([T.x],[T.y],[T.z])"))
 		return
 	message_admins(span_notice("Event: Spacevines failed to find a viable turf."))
+
+REF_OWNED(/obj/effect/plant, "plant")

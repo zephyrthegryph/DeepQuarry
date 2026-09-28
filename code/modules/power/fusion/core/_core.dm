@@ -270,3 +270,5 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 	radiation_scale()
 	temp_dump()
 	temp_color()
+
+REF_OWNED(/obj/machinery/power/fusion_core, "owned_field")

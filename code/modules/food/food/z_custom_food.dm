@@ -259,3 +259,5 @@ REF_OWNED_LIST(/obj/item/reagent_containers/food/snacks/customizable, "ingredien
 		return ..()
 
 #undef INGREDIENT_LIMIT
+
+REF_OWNED(/obj/item/reagent_containers/food/snacks/customizable, list("topping", "filling"))

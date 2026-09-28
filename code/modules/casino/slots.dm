@@ -439,3 +439,7 @@
 /obj/machinery/station_slot_machine/proc/lose_power()
 	ispowered = 0
 	update_icon()
+
+REF_OWNED(/obj/machinery/slot_machine, "confetti_spread")
+
+REF_OWNED(/obj/machinery/station_slot_machine, "confetti_spread")

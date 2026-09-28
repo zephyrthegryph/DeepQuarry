@@ -196,3 +196,5 @@
 	interface_name = "mounted phase rifle"
 	interface_desc = "A forearm-mounted suit-powered phase rifle."
 	gun_type = /obj/item/gun/energy/locked/phasegun/rifle/unlocked/mounted
+
+REF_OWNED(/obj/item/rig_module/mounted, "gun")

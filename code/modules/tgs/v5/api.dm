@@ -337,3 +337,5 @@
 /datum/tgs_api/v5/Visibility()
 	RequireInitialBridgeResponse()
 	return visibility
+
+REF_OWNED(/datum/tgs_api/v5, "revision")

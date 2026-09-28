@@ -220,3 +220,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 			continue
 		valid_types += BT
 	return pick(valid_types)
+
+REF_OWNED(/obj/structure/blob/core, "Q")

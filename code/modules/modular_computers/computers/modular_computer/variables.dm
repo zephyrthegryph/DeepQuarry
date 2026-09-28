@@ -63,3 +63,5 @@
 
 	var/interact_sounds
 	var/interact_sound_volume = 40
+
+REF_OWNED(/obj/item/modular_computer, list("processor_unit", "network_card", "hard_drive", "battery_module", "card_slot", "nano_printer", "tesla_link"))

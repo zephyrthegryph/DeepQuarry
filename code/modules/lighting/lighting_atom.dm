@@ -204,3 +204,7 @@
 	set_light_range(range)
 	set_light_power(power)
 	set_light_color(color)
+
+REF_OWNED(/atom, "light")
+
+REF_OWNED(/atom/movable, "em_block")

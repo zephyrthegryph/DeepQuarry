@@ -50,3 +50,5 @@
 			voice_holder.voice = raw_choice
 			to_chat(usr, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))
 	return 1
+
+REF_OWNED(/obj/item/rig_module/voice, "voice_holder")

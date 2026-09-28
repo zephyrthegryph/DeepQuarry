@@ -218,3 +218,5 @@ REF_BACKLIST(/obj/effect/shuttle_landmark/visiting_shuttle, list("core_landmark"
 			var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
 			var/datum/flight_destination/orbit = SSflight_operations?.destinations[vessel?.orbit_parent_id]
 			return "In orbit of [orbit?.name || "an unregistered body"]."
+
+REF_OWNED(/obj/effect/overmap/visitable/ship/landable, "landmark")

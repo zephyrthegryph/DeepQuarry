@@ -254,3 +254,5 @@ REF_PAIR(/obj/item/rig, list("visor" = "holder"))
 		processed_vision += vision_datum
 
 	vision_modes = processed_vision
+
+REF_OWNED(/datum/rig_vision, "glasses")

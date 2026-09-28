@@ -235,3 +235,5 @@
 /obj/item/clothing/suit/circuitry/dropped(mob/user, equipping, slot)
 	wearer = null
 	..()
+
+REF_OWNED(/obj/item/clothing, list("IC", "action_circuit"))

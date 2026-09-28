@@ -366,3 +366,5 @@
 	set name = "Scan for Anomalies"
 	set desc = "Scan for artifacts and anomalies within your vicinity."
 	anomaly_scanner.interact(user)
+
+REF_OWNED(/obj/item/xenoarch_multi_tool, list("anomaly_scanner", "depth_scanner"))

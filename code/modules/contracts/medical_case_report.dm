@@ -298,3 +298,5 @@
 	for(var/datum/contract_offer_candidate/candidate in offer_candidates.Copy())
 		if(candidate.definition_id == "medical_rare_case_report" && candidate.context["target_ref"] == subject_ref)
 			withdraw_candidate(candidate, "The patient is no longer available for this report.")
+
+REF_OWNED(/datum/contract/medical_case_report, "evidence_requirement")

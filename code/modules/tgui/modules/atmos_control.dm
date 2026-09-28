@@ -108,3 +108,5 @@
 /datum/tgui_module/atmos_control/robot
 /datum/tgui_module/atmos_control/robot/tgui_state(mob/user)
 	return GLOB.tgui_self_state
+
+REF_OWNED(/datum/tgui_module/atmos_control, "access")

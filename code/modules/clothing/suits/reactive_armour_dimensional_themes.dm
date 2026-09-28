@@ -2,10 +2,10 @@
 #define MIN_BARRIERS 2
 
 /datum/armour_dimensional_theme
-	var/datum/material/material
-	var/turf/replace_floor = /turf/simulated/floor/tiled
-	var/turf/replace_wall = /turf/simulated/wall
-	var/obj/barricade = /obj/structure/barricade
+	var/material
+	var/replace_floor = /turf/simulated/floor/tiled
+	var/replace_wall = /turf/simulated/wall
+	var/barricade = /obj/structure/barricade
 	var/barricade_anchored = TRUE
 
 /datum/armour_dimensional_theme/proc/apply_random(turf/source, dangerous = FALSE)

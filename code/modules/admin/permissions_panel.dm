@@ -399,3 +399,5 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			var/name = "[params["name"]]"
 			forward_topic("editrightsbrowserhousekeep=1;editrightsremoverank=[name]")
 			return TRUE
+
+REF_OWNED(/datum/admins, "dq_permissions_panel")

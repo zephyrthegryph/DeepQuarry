@@ -107,3 +107,5 @@
 	if(!AA)
 		return
 	AA.hide(hideFrom)
+
+REF_OWNED(/datum/alternate_appearance, "img")

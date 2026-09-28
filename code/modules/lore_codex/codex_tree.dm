@@ -167,3 +167,5 @@
 		SStgui.close_uis(src)
 		return
 	display(usr)
+
+REF_OWNED(/datum/codex_tree, "home")

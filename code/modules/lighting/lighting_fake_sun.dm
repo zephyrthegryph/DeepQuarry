@@ -247,3 +247,5 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 			"color" = "#4bd1f3"
 		)
 	)
+
+REF_OWNED(/obj/effect/fake_sun, list("sun", "visuals"))

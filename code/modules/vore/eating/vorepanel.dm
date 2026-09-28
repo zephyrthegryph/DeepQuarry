@@ -1494,3 +1494,5 @@
 #undef SOULCATCHER_TAB
 #undef PREFERENCE_TAB
 #undef GENERAL_TAB
+
+REF_OWNED(/mob, "vorePanel")

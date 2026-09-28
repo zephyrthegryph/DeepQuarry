@@ -267,3 +267,5 @@
 	item_state = "headphones_on"
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_HEAD
+
+REF_OWNED(/obj/item/walkpod, "deployed_headpods")

@@ -595,3 +595,5 @@
 		return final_icon
 
 	#undef PROCESS_OVERLAYS_OR_UNDERLAYS
+
+REF_OWNED(/datum/universal_icon, "icon_file")

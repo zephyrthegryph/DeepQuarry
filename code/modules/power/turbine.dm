@@ -451,3 +451,5 @@
 #undef TURBPRES
 #undef TURBGENQ
 #undef TURBGENG
+
+REF_OWNED(/obj/machinery/compressor, "gas_contained")

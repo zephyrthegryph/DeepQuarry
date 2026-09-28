@@ -171,3 +171,5 @@
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
+
+REF_OWNED(/obj/item/core_sampler, "filled_bag")

@@ -3,7 +3,7 @@
 	announceWhen = 1
 	var/area/impact_area
 	var/datum/anomaly_placer/placer = new()
-	var/obj/effect/anomaly/anomaly_path = /obj/effect/anomaly/flux
+	var/anomaly_path = /obj/effect/anomaly/flux
 
 /datum/event/anomaly/setup()
 	impact_area = placer.find_valid_area()
@@ -132,3 +132,5 @@
 	if(isnull(impact_area))
 		impact_area = placer.find_valid_area()
 	GLOB.command_announcement.Announce("Anomalous dust particles detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area.name].", "Anomaly Alert")
+
+REF_OWNED(/datum/event/anomaly, "placer")

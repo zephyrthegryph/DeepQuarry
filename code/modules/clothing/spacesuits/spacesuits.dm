@@ -145,3 +145,5 @@
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 		supporting_limbs |= E
+
+REF_OWNED(/obj/item/clothing/head/helmet/space, "camera")

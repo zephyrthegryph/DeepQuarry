@@ -275,3 +275,5 @@
 
 /obj/item/telecube/precursor/mated/mirrorcolor
 	mirror_colors = TRUE
+
+REF_OWNED(/obj/item/telecube, list("glow", "charge"))

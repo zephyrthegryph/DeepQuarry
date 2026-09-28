@@ -50,3 +50,5 @@
 	..()
 
 // Proof of concept.
+
+REF_OWNED(/datum/event2/event/legacy, "legacy_event")

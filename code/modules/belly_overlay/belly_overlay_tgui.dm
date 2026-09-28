@@ -187,3 +187,7 @@
 /mob
 	var/tmp/datum/belly_overlay_tgui/belly_overlay_tgui
 // /mob/Destroy() cleanup of belly_overlay_tgui folded into the canonical /mob/Destroy() in mob.dm
+
+REF_OWNED(/datum/belly_overlay_tgui, "active_ui")
+
+REF_OWNED(/mob, "belly_overlay_tgui")

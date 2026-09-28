@@ -185,3 +185,14 @@
 
 	/// Loot panel for the client
 	var/datum/lootpanel/loot_panel
+
+REF_OWNED(/client, list("fakeConversations", "tooltips", "volume_panel", "loot_panel"))
+
+/// LC-refs: /client is not a /datum, so it gets its own roots for the procs REF_OWNED and
+/// REF_HELD expand to. A client is never destroyed through the lifecycle transaction, so its
+/// declarations only document what each var holds (doc/rewrite/lifecycle.md sec 4).
+/client/proc/declared_owned_vars()
+	return null
+
+/client/proc/declared_held_vars()
+	return null

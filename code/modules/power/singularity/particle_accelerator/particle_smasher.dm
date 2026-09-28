@@ -702,3 +702,5 @@ REF_OWNED_LIST(/obj/machinery/particle_smasher, "recipes")
 
 #undef PS_RESULT_STACK
 #undef PS_RESULT_ITEM
+
+REF_OWNED(/obj/machinery/particle_smasher, list("material_layer", "material_glow", "reagent_layer"))

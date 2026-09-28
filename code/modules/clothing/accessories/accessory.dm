@@ -1485,3 +1485,5 @@
 	..()
 	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
 
+
+REF_OWNED(/obj/item/clothing/accessory, list("inv_overlay", "mob_overlay"))

@@ -207,3 +207,5 @@
 		to_chat(user, span_warning("There is no active AI within \the [ai]."))
 	update_verb_holder()
 	return
+
+REF_OWNED(/obj/item/rig_module/ai_container, "verb_holder")

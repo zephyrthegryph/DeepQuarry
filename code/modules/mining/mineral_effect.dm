@@ -32,3 +32,5 @@
 		else
 			to_chat(world, "No ore data for [src]!")
 	return scanner_image
+
+REF_OWNED(/obj/effect/mineral, "scanner_image")

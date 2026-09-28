@@ -251,3 +251,5 @@
 	var/id // used for icon_state of the marker on maps
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
+
+REF_OWNED(/obj/machinery/station_map, list("small_station_map", "floor_markings", "panel", "holomap_datum"))

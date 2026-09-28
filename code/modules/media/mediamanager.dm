@@ -213,3 +213,7 @@
 #undef DEBUG_MEDIAPLAYER
 #undef MP_DEBUG
 #endif
+
+REF_OWNED(/client, "media")
+
+REF_OWNED(/datum/media_manager, "media_window")

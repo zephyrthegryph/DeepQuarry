@@ -35,3 +35,5 @@
 /obj/item/clothing/mask/gas/voice/Initialize(mapload)
 	. = ..()
 	changer = new(src)
+
+REF_OWNED(/obj/item/clothing/mask/gas/voice, "changer")

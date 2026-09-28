@@ -386,3 +386,5 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 #undef RETURNING
 #undef BREAKING
 #undef CONTINUING
+
+REF_OWNED(/datum/n_Interpreter, list("scopes", "functions"))

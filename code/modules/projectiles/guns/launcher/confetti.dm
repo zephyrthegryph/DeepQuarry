@@ -106,3 +106,5 @@
 	if(istype(chambered,/obj/item/grenade/confetti/party_ball))
 		chambered.activate(null)
 	return chambered
+
+REF_OWNED(/obj/item/gun/launcher/confetti_cannon, "chambered")

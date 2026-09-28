@@ -256,3 +256,5 @@
 	density = 1
 
 REF_SPILL_LIST(/obj/effect/suspension_field, "contents")
+
+REF_OWNED(/obj/machinery/suspension_gen, "suspension_field")

@@ -173,3 +173,5 @@
 	icon = _icon
 	icon_state = _icon_state
 	color = _color
+
+REF_OWNED(/obj/item/nailpolish, list("top_underlay", "color_underlay"))

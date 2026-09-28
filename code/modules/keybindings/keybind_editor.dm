@@ -183,3 +183,5 @@
 	prefs.save_preferences()
 	log_input("Keybindings: [owner.key] changed their [profile] bindings.")
 	owner.apply_keybindings(force = TRUE)
+
+REF_OWNED(/client, "keybind_editor")

@@ -750,3 +750,5 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 			return founds
 
 	return msg
+
+REF_OWNED(/datum/ticket, "statclick")

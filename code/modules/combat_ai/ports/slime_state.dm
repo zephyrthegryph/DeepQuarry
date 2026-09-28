@@ -175,3 +175,5 @@
 	if(QDELETED(holder) || holder.stat >= UNCONSCIOUS)
 		return
 	holder.squish()
+
+REF_OWNED(/mob/living/simple_mob/slime/xenobio, "slime_state")

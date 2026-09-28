@@ -824,3 +824,5 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 /obj/item/reagent_containers/food/drinks/bottle/proc/finish_spin(spin_rotation)
 	icon_rotation = spin_rotation
 	update_transform()
+
+REF_OWNED(/obj/item/broken_bottle, "broken_outline")

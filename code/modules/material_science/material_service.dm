@@ -616,3 +616,5 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	if(material_service)
 		material_service.watches_dirty = TRUE
 	material_service?.schedule(0)
+
+REF_OWNED(/obj, "material_service")

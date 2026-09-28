@@ -501,3 +501,5 @@
 
 #undef COMM_MSGLEN_MINIMUM
 #undef COMM_CCMSGLEN_MINIMUM
+
+REF_OWNED(/datum/tgui_module/communications, "crew_announcement")

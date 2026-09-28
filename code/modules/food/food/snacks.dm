@@ -9368,3 +9368,5 @@
 /proc/food_finished_emote(mob/user, food_handle)
 	if(!om_resolve(food_handle) && !user.client)
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
+
+REF_OWNED(/obj/item/reagent_containers/food/snacks, "flat_icon")

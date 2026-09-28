@@ -104,3 +104,11 @@
 //
 /datum/node/statement/ReturnStatement
 	var/datum/node/expression/value
+
+REF_OWNED(/datum/node/statement/FunctionDefinition, "block")
+
+REF_OWNED(/datum/node/statement/VariableAssignment, "var_name")
+
+REF_OWNED(/datum/node/statement/IfStatement, list("block", "else_block"))
+
+REF_OWNED(/datum/node/statement/WhileLoop, "block")

@@ -126,3 +126,5 @@
 	. = ..()
 	brightness = CLAMP01(sun.our_brightness)
 	color = sun.our_color
+
+REF_OWNED(/datum/planet_sunlight_handler, list("vis_overhead", "vis_shade"))

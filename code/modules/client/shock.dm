@@ -147,3 +147,7 @@
 		if("duration")
 			duration = text2num(params["duration"])
 			. = TRUE
+
+REF_OWNED(/client, "tgui_shocker")
+
+REF_OWNED(/datum/tgui_shock, "window")

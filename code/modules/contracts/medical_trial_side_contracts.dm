@@ -560,3 +560,5 @@
 #undef MEDICAL_SIDE_ESPIONAGE
 #undef MEDICAL_SIDE_AUTOPSY
 #undef MEDICAL_SIDE_SAMPLE_AMOUNT
+
+REF_OWNED(/datum/contract/medical_trial_personal, "action_requirement")

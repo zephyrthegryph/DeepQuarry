@@ -19,7 +19,7 @@
 	var/last_change = 0
 	var/last_gravity_change = 0
 
-	var/area/projection_area = /area/holodeck/alphadeck
+	var/projection_area = /area/holodeck/alphadeck
 	var/current_program
 	var/powerdown_program = "Turn Off"
 	var/default_program = "Empty Court"

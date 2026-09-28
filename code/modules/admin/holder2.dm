@@ -286,3 +286,5 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 
 /proc/HrefTokenFormField(forceGlobal = FALSE)
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
+
+REF_OWNED(/datum/admins, list("admincaster_feed_message", "filteriffic", "particle_test", "whitelist_editor"))

@@ -173,3 +173,5 @@
 
 /datum/controller/subsystem/events
 	var/datum/event_manager_panel/tgui_event_manager_panel
+
+REF_OWNED(/datum/controller/subsystem/events, "tgui_event_manager_panel")

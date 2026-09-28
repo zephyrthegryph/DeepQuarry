@@ -104,3 +104,5 @@
 	for(var/mob/M in listening)
 		to_chat(M, "[icon2html(holder_atom,M.client)] " + span_bold("[holder_atom] reverberates") +" , \"[span_blue(msg)]\"")
 	last_talk_time = world.time
+
+REF_OWNED(/obj, "talking_atom")

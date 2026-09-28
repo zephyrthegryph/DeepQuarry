@@ -320,3 +320,5 @@
 
 /datum/tgs_api/v4/SecurityLevel()
 	return security_level
+
+REF_OWNED(/datum/tgs_api/v4, "cached_revision")

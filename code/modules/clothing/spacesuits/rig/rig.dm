@@ -138,7 +138,7 @@
 
 	update_icon(1)
 
-REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system"))
+REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", "chest", "helmet", "gloves", "mob_icon", "minihud", "component_registry"))
 
 // LIFECYCLE: the suit pieces are torn down by the component registry first.
 /obj/item/rig/Destroy()

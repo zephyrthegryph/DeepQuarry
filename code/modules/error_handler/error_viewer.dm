@@ -175,3 +175,5 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 /datum/error_viewer/error_entry/make_link(linktext, datum/error_viewer/back_to, linear)
 	return is_skip_count ? name : ..()
+
+REF_OWNED(/datum/error_viewer/error_entry, "exc")

@@ -500,3 +500,5 @@
 //Can do conversions here
 /datum/vore_preferences/proc/patch_version(list/json_from_file,version)
 	return json_from_file
+
+REF_OWNED(/client, "prefs_vr")

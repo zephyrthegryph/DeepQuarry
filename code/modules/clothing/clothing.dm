@@ -317,7 +317,7 @@
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-REF_OWNED(/obj/item/clothing/gloves, list("ring", "gloves"))
+REF_OWNED(/obj/item/clothing/gloves, list("ring", "gloves", "special_attack"))
 REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 
 /obj/item/clothing/proc/set_clothing_index()
@@ -1518,3 +1518,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/head/mob_werebeast.dmi')
+
+REF_OWNED(/obj/item/clothing/head, "helmet_light")
+
+REF_OWNED(/obj/item/clothing/under, list("rolled_down_icon", "rolled_down_sleeves_icon"))

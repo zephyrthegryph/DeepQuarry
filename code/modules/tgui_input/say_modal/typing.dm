@@ -75,3 +75,5 @@
 	if(!window_open)
 		return FALSE
 	return client.start_typing(channel)
+
+REF_OWNED(/mob, list("active_typing_indicator", "active_thinking_indicator"))

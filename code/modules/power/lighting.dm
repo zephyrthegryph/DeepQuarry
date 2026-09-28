@@ -350,7 +350,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
-REF_OWNED(/obj/machinery/light, "cell")
+REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 
 /// Phase 2: stops watching player chunks for flicker.
 /obj/machinery/light/lifecycle_dematerialize()

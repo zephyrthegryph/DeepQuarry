@@ -221,3 +221,5 @@
 
 				if(istype(user))
 					computer.tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
+
+REF_OWNED(/datum/computer_file/program, "TM")

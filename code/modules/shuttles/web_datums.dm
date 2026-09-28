@@ -167,7 +167,7 @@ REF_OWNED_LIST(/datum/shuttle_destination, "routes")
 	var/datum/shuttle/autodock/web_shuttle/my_shuttle = null	// Ref to the shuttle this datum is coordinating with.
 	var/datum/shuttle_destination/current_destination = null	// Where the shuttle currently is.  Bit of a misnomer.
 	var/datum/shuttle_destination/future_destination = null		// Where it will be in the near future.
-	var/datum/shuttle_destination/starting_destination = null	// Where the shuttle will start at, generally at the home base.
+	var/starting_destination = null	// Where the shuttle will start at, generally at the home base.
 	var/list/destinations = list()								// List of currently instanced destinations.
 	var/destination_class = null								// Type to use in typesof(), to build destinations.
 
@@ -314,7 +314,7 @@ REF_OWNED_LIST(/datum/shuttle_web_master, "destinations")
 // Fourth datum, this one essentially acts as directions for an autopilot to go to the correct places.
 /datum/shuttle_autopath
 	var/datum/shuttle_web_master/master = null
-	var/datum/shuttle_destination/start = null
+	var/start = null
 	var/list/path_nodes
 	var/index = 1
 

@@ -363,3 +363,5 @@
 	station_defense = new(src, station_director)
 	station_defense.create_roster()
 	return TRUE
+
+REF_OWNED(/datum/expedition_site, "station_defense")
