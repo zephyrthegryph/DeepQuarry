@@ -26,6 +26,9 @@
 	/// TRUE once initialize() has run. A lazy (data-only) service initializes on first use through
 	/// LAZY_SERVICE(); initialize() sets this first so a re-entrant lookup doesn't recurse.
 	var/initialized = FALSE
+	/// On-demand lane: parked while has_work() is FALSE, unparked by demand() when work is queued
+	/// (a cascade, an explosion, a star move). Idle services then cost the scheduler nothing.
+	var/on_demand = FALSE
 
 /// One-time setup, called by whatever used to be this service's Initialize() dependency slot, or
 /// on first use by ready() for a lazy service. Overrides set `initialized = TRUE` first.
@@ -46,6 +49,18 @@
 /datum/world_service/proc/service_step(resumed)
 	SHOULD_NOT_SLEEP(TRUE)
 	return TRUE
+
+/// On-demand services: TRUE while there is queued work for the lane.
+/datum/world_service/proc/has_work()
+	return TRUE
+
+/// On-demand services: call after queueing work; wakes the lane if it was parked.
+/datum/world_service/proc/demand()
+	if(!lane)
+		return
+	var/datum/om/global_owner/owner = om_global_owner()
+	if(owner && om_attached(owner, lane))
+		om_unpark(owner, lane)
 
 /// One line for the admin status/profiler readouts (was the subsystem's stat_entry()).
 /datum/world_service/proc/stat_line()
@@ -76,6 +91,8 @@
 		GLOB.radiation_service, GLOB.motiontracker_service, GLOB.pai_service, GLOB.mail_service,
 		GLOB.chemistry_service, GLOB.sound_service, GLOB.instrument_service, GLOB.circuit_service,
 		GLOB.xenoarch_service, GLOB.event_service,
+		// Fold wave F4.
+		GLOB.solar_service, GLOB.nightshift_service, GLOB.planet_service, GLOB.skybox_service,
 	)
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).
@@ -86,6 +103,8 @@
 			continue
 		if(!om_attached(owner, S.lane))
 			om_attach(owner, S.lane)
+		if(S.on_demand && !S.has_work())
+			om_park(owner, S.lane)
 		log_world("OM world lane started: [S.name] ([S.lane])")
 
 // ---------------------------------------------------------------- lanes
@@ -107,6 +126,8 @@
 		return
 	if(!S.run_step())
 		om_deadline(E, world.tick_lag, src)
+	else if(S.on_demand && !S.has_work())
+		om_park(E, src)
 
 /// A yielded step resumes here, one tick later.
 /datum/om/behaviour/world/on_deadline(datum/E)
@@ -115,6 +136,8 @@
 		return
 	if(!S.run_step())
 		om_deadline(E, world.tick_lag, src)
+	else if(S.on_demand && !S.has_work())
+		om_park(E, src)
 
 /// Gas watch dispatch, the batched pump commit and the power step (was SSmachines, 2 s).
 /datum/om/behaviour/world/machines
@@ -169,3 +192,31 @@
 
 /datum/om/behaviour/world/mail/service()
 	return GLOB.mail_service
+
+// ---------------------------------------------------------------- fold wave F4 lanes
+
+/// Sun position and the solar controllers and panels (was SSsun + SSsolars, 1 min).
+/datum/om/behaviour/world/solars
+	name = "world: solars"
+	every = 1 MINUTE
+
+/datum/om/behaviour/world/solars/service()
+	return GLOB.solar_service
+
+/// Night shift lighting (was SSnightshift, 60 s).
+/datum/om/behaviour/world/nightshift
+	name = "world: night shift"
+	every = 60 SECONDS
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/nightshift/service()
+	return GLOB.nightshift_service
+
+/// Planet sunlight and wall temperatures the planets queued (was SSplanets, 2 s). On demand.
+/datum/om/behaviour/world/planets
+	name = "world: planets"
+	every = 2 SECONDS
+	lane = LANE_BACKGROUND
+
+/datum/om/behaviour/world/planets/service()
+	return GLOB.planet_service

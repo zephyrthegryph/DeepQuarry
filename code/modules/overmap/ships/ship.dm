@@ -296,7 +296,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
 	forceMove(bellychoice)
-	SSskybox.rebuild_skyboxes(map_z)
+	skybox_service().rebuild_skyboxes(map_z)
 	L.visible_message(span_warning("[L] eats a spaceship! This is totally normal."),"You eat the the spaceship! Yum, metal.")
 
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()

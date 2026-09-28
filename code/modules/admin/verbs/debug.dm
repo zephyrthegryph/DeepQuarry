@@ -555,7 +555,7 @@ ADMIN_VERB(view_runtimes, R_DEBUG, "View Runtimes", "Opens the runtime viewer.",
 		tgui_alert_async(user, "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", "HEED THIS WARNING CAREFULLY MORTAL")
 
 ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the current weather.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_prompt(user, "a8", list("kind" = "list", "message" = "Which planet do you want to modify the weather on?", "title" = "Change Weather", "choices" = SSplanets.planets), args)
+	var/datum/planet/planet = verb_prompt(user, "a8", list("kind" = "list", "message" = "Which planet do you want to modify the weather on?", "title" = "Change Weather", "choices" = GLOB.planet_service.planets), args)
 	if(isnull(planet))
 		return
 	if(!istype(planet))
@@ -572,7 +572,7 @@ ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the curre
 	log_admin(log)
 
 ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework Override", "Toggles ability for weather fireworks to affect weather on planet of choice.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_prompt(user, "a10", list("kind" = "list", "message" = "Which planet do you want to toggle firework effects on?", "title" = "Change Weather", "choices" = SSplanets.planets), args)
+	var/datum/planet/planet = verb_prompt(user, "a10", list("kind" = "list", "message" = "Which planet do you want to toggle firework effects on?", "title" = "Change Weather", "choices" = GLOB.planet_service.planets), args)
 	if(isnull(planet))
 		return
 	if(istype(planet) && planet.weather_holder)
@@ -582,7 +582,7 @@ ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework O
 		log_admin(log)
 
 ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time of a planet.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_prompt(user, "a11", list("kind" = "list", "message" = "Which planet do you want to modify time on?", "title" = "Change Time", "choices" = SSplanets.planets), args)
+	var/datum/planet/planet = verb_prompt(user, "a11", list("kind" = "list", "message" = "Which planet do you want to modify time on?", "title" = "Change Time", "choices" = GLOB.planet_service.planets), args)
 	if(isnull(planet))
 		return
 	if(!istype(planet))

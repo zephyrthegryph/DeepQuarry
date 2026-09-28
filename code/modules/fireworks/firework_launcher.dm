@@ -138,7 +138,7 @@
 	if(!T.is_outdoors())
 		return
 
-	var/datum/planet/P = SSplanets.z_to_planet[T.z]
+	var/datum/planet/P = GLOB.planet_service.z_to_planet[T.z]
 	if(!P)
 		return
 	return P

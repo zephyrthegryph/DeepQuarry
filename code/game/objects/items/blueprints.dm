@@ -470,7 +470,7 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 			AO.charges -= 1
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in SSplanets.planets)
+	for(var/datum/planet/PL in GLOB.planet_service.planets)
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
@@ -853,7 +853,7 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in SSplanets.planets)
+	for(var/datum/planet/PL in GLOB.planet_service.planets)
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)

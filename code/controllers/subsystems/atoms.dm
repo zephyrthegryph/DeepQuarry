@@ -3,7 +3,6 @@ SUBSYSTEM_DEF(atoms)
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
 		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/planets,
 		/datum/controller/subsystem/transcore,
 		/datum/controller/subsystem/job
 	)
@@ -35,6 +34,8 @@ SUBSYSTEM_DEF(atoms)
 
 /datum/controller/subsystem/atoms/Initialize()
 	init_start_time = world.time
+	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
+	GLOB.planet_service.initialize()
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()
@@ -45,6 +46,8 @@ SUBSYSTEM_DEF(atoms)
 	GLOB.pai_service.initialize()
 	GLOB.xenoarch_service.initialize()
 	GLOB.event_service.initialize()
+	// Fold wave F4.
+	GLOB.nightshift_service.initialize()
 
 	return SS_INIT_SUCCESS
 

@@ -63,7 +63,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	var/list/destinations = list()
 	var/turf/myturf = get_turf(src.loc)
 	var/datum/planet/planet
-	for(var/datum/planet/P in SSplanets.planets)
+	for(var/datum/planet/P in GLOB.planet_service.planets)
 		if(myturf.z in P.expected_z_levels)
 			planet = P
 	for(var/obj/structure/micro_tunnel/t in REGISTRY_MEMBERS(REGISTRY_MICRO_TUNNELS))

@@ -73,7 +73,7 @@
 	if(climbable)
 		verbs += /turf/simulated/proc/climb_wall
 	if(is_outdoors())
-		SSplanets.addTurf(src)
+		GLOB.planet_service.addTurf(src)
 
 /turf/simulated/examine(mob/user)
 	. = ..()

@@ -131,16 +131,16 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			switch(val)
 				if("Automatic")
 					if(CONFIG_GET(flag/enable_night_shifts))
-						SSnightshift.can_fire = TRUE
-						SSnightshift.fire()
+						GLOB.nightshift_service.automatic = TRUE
+						GLOB.nightshift_service.check_nightshift(TRUE)
 					else
-						SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
+						GLOB.nightshift_service.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 				if("On")
-					SSnightshift.can_fire = FALSE
-					SSnightshift.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
+					GLOB.nightshift_service.automatic = FALSE
+					GLOB.nightshift_service.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
 				if("Off")
-					SSnightshift.can_fire = FALSE
-					SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
+					GLOB.nightshift_service.automatic = FALSE
+					GLOB.nightshift_service.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 
 		if("trigger_xenomorph_infestation")
 			GLOB.xenomorphs.attempt_random_spawn()

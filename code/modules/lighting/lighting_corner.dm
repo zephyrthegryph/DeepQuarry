@@ -72,7 +72,7 @@
 		master_SE = process_next
 		process_next.lighting_corner_NW = src
 
-	if(((SSplanets && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
+	if(((GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
 
 /datum/lighting_corner/proc/save_master(turf/master, dir)
 	switch (dir)

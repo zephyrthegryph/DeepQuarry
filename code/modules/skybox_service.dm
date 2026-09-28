@@ -1,8 +1,15 @@
 
 //Exists to handle a few global variables that change enough to justify this. Technically a parallax, but it exhibits a skybox effect.
-SUBSYSTEM_DEF(skybox)
+// The skybox world service (fold wave F4; was SSskybox): the space and dust appearances and the
+// per-z skybox images. Data only; it builds its caches on first use (skybox_service()).
+GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
+
+/proc/skybox_service() as /datum/world_service/skybox
+	RETURN_TYPE(/datum/world_service/skybox)
+	return LAZY_SERVICE(skybox_service)
+
+/datum/world_service/skybox
 	name = "Space skybox"
-	flags = SS_NO_FIRE | SS_NO_INIT
 	var/static/list/skybox_cache = list()
 
 	var/static/mutable_appearance/normal_space
@@ -12,7 +19,10 @@ SUBSYSTEM_DEF(skybox)
 	var/static/list/phase_shift_by_x = list()
 	var/static/list/phase_shift_by_y = list()
 
-/datum/controller/subsystem/skybox/PreInit()
+/datum/world_service/skybox/initialize()
+	if(initialized)
+		return
+	initialized = TRUE
 	//Shuffle some lists
 	phase_shift_by_x = get_cross_shift_list(15)
 	phase_shift_by_y = get_cross_shift_list(15)
@@ -86,16 +96,12 @@ SUBSYSTEM_DEF(skybox)
 
 		mapedge_cache["[dir]"] = MA
 
-	. = ..()
-
-/datum/controller/subsystem/skybox/proc/get_skybox(z)
-	if(!initialized)
-		return // WAIT
+/datum/world_service/skybox/proc/get_skybox(z)
 	if(!skybox_cache["[z]"])
 		skybox_cache["[z]"] = generate_skybox(z)
 	return skybox_cache["[z]"]
 
-/datum/controller/subsystem/skybox/proc/generate_skybox(z)
+/datum/world_service/skybox/proc/generate_skybox(z)
 	var/datum/skybox_settings/settings = using_map.get_skybox_datum(z)
 
 	var/new_overlays = list()
@@ -138,7 +144,7 @@ SUBSYSTEM_DEF(skybox)
 
 	return res
 
-/datum/controller/subsystem/skybox/proc/rebuild_skyboxes(list/zlevels)
+/datum/world_service/skybox/proc/rebuild_skyboxes(list/zlevels)
 	for(var/z in zlevels)
 		skybox_cache["[z]"] = generate_skybox(z)
 

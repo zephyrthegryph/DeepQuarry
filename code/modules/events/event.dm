@@ -70,7 +70,7 @@
 	var/processing_active 	= TRUE
 	var/tmp/event_meta_handle
 	var/list/affecting_z	= null // List of z-levels to affect, null lets the event choose (usally station_levels)
-	var/has_skybox_image	= FALSE // True if SSskybox should query this event for an image to put in the skybox.
+	var/has_skybox_image	= FALSE // True if the skybox service should query this event for an image to put in the skybox.
 	var/tmp/victim_handle	// Ship this event is acting upon (If this is event is due to overmap travel).nt etc.
 
 /datum/event/nothing
@@ -87,7 +87,7 @@
 //Only called once.
 /datum/event/proc/start()
 	if(has_skybox_image)
-		SSskybox.rebuild_skyboxes(affecting_z)
+		skybox_service().rebuild_skyboxes(affecting_z)
 	return
 
 //Called when the tick is equal to the announceWhen variable.
@@ -111,7 +111,7 @@
 //Only called once.
 /datum/event/proc/end()
 	if(has_skybox_image)
-		SSskybox.rebuild_skyboxes(affecting_z)
+		skybox_service().rebuild_skyboxes(affecting_z)
 	return
 
 //Returns the latest point of event processing.
