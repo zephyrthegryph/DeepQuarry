@@ -217,7 +217,7 @@ SUBSYSTEM_DEF(ticker)
 	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(S.name != JOB_AI)
 			continue
-		if(locate(/mob/living) in S.loc)
+		if(locate_within(S.loc, /mob/living))
 			continue
 		registry_join(REGISTRY_EMPTY_AI_CORES, new /obj/structure/AIcore/deactivated(get_turf(S)))
 

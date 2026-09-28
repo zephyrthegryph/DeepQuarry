@@ -36,7 +36,7 @@
 
 	var/list/available_turfs = list()
 	for(var/start_turf in start_turfs)
-		var/mob/M = locate() in start_turf
+		var/mob/M = locate_within(start_turf, /mob)
 		if(!M)
 			available_turfs += start_turf
 	if(!available_turfs.len)

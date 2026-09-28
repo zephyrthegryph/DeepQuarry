@@ -261,7 +261,7 @@
 	if(debris_type)
 		new debris_type(T)
 	if(update_neighbors)
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			AM.update_icon()
 	return T
 

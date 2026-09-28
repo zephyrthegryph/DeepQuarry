@@ -228,7 +228,8 @@
 					newarea.Entered(src, oldloc)
 
 				// Multi-tile objects can't reach here, otherwise you'd need to avoid uncrossing yourself
-				for(var/atom/movable/thing as anything in contents_of(loc))
+				// ALLOW(spatial): Move() hot path, raw Crossed loop avoids a list copy per step
+				for(var/atom/movable/thing as anything in loc)
 					// We don't call parent so we are calling this for byond
 					thing.Crossed(src, oldloc)
 

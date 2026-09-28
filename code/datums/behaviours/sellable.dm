@@ -179,7 +179,7 @@
 	var/sample_sum = 0
 	var/obj/item/research_sample/stored_sample
 	if(LAZYLEN(sample_can.contents))
-		for(stored_sample in sample_can.contents)
+		for(stored_sample in contents_of(sample_can))
 			sample_sum += stored_sample.supply_value
 	return sample_sum
 

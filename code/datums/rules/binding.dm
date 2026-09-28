@@ -312,7 +312,7 @@
 				var/atom/movable/M = thing
 				var/turf/T = get_turf(thing)
 				if(istype(M))
-					for(var/atom/movable/inside as anything in M.contents)
+					for(var/atom/movable/inside as anything in contents_of(M))
 						inside.forceMove(T)
 				var/path = op[2]
 				new path(T)

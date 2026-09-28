@@ -34,7 +34,7 @@
 	changeling.geneticdamage = 30
 	to_chat(H, span_warning("Our genes cry out!"))
 	var/list/implants = list() //Try to preserve implants.
-	for(var/obj/item/implant/W in H)
+	for(var/obj/item/implant/W in contents_of(H))
 		implants += W
 	H.monkeyize()
 	feedback_add_details("changeling_powers","LF")
@@ -92,7 +92,7 @@
 	var/datum/changeling/changeling = is_changeling(src)
 	qdel(animation)
 
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		C.drop_from_inventory(W)
 
 	var/mob/living/carbon/human/O = new /mob/living/carbon/human( src )

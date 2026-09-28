@@ -304,7 +304,7 @@ REF_BACK(/datum/material_container, list("owner" = null))
 
 			//storage items usually come here
 			//this is so players can insert items from their bags into machines for convinience
-			if(!target_item.contents.len)
+			if(!contents_count(target_item))
 				continue
 		//at this point we can check if we have enough for all items & other stuff
 		if(first_checks)
@@ -422,7 +422,7 @@ REF_BACK(/datum/material_container, list("owner" = null))
 		//If it has children then we will process them first in the 2nd round
 		//This is done so we don't delete the children when the parent is consumed
 		//We only do this on the 1st iteration so we don't re-iterate through its children again
-		if(target_item.contents.len)
+		if(contents_count(target_item))
 			//process children
 			items += target_item.contents
 

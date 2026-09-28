@@ -261,7 +261,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 					this is potentially a malicious exploit and worth noting."
 				)
 
-			var/datum/controller/subsystem/subsystem = locate(params["ref"]) in subsystems
+			var/datum/controller/subsystem/subsystem = locate_in_list(subsystems, params["ref"])
 			if(isnull(subsystem))
 				to_chat(ui.user, span_warning("Failed to locate subsystem."))
 				return

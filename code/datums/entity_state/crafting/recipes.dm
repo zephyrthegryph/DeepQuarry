@@ -81,7 +81,7 @@
 /datum/crafting_recipe/spear/on_craft_completion(mob/user, atom/result)
 	var/obj/item/material/M
 	for(var/path in parts)
-		var/obj/item/material/N = locate(path) in result
+		var/obj/item/material/N = locate_within(result, path)
 		if(istype(N, path))
 			if(!istype(M))
 				M = N

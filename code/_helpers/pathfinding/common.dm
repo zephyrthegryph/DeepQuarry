@@ -156,7 +156,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 
 	var/rdir = turn(dir, 180)
 
-	for(var/atom/movable/AM as anything in A)
+	for(var/atom/movable/AM as anything in contents_of(A))
 		if(!AM.can_pathfinding_exit(actor, dir, search))
 			return FALSE
 	for(var/atom/movable/AM as anything in B)

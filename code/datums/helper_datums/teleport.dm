@@ -59,7 +59,7 @@ GLOBAL_LIST_INIT(bluespace_item_types, list(
 
 	if(isliving(teleatom))
 		var/mob/living/telemob = teleatom
-		var/mob/living/mob = locate() in destturf
+		var/mob/living/mob = locate_within(destturf, /mob/living)
 		if(can_spontaneous_vore(mob, telemob))
 			destturf = mob.vore_selected
 		else if(can_spontaneous_vore(telemob, mob))

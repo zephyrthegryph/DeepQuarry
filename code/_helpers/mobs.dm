@@ -169,7 +169,7 @@ Proc for attack log creation, because really why not
 	return (thing in R.module.modules)
 
 /proc/get_exposed_defense_zone(atom/movable/target)
-	var/obj/item/grab/G = locate() in target
+	var/obj/item/grab/G = locate_within(target, /obj/item/grab)
 	if(G && G.state >= GRAB_NECK) //works because mobs are currently not allowed to upgrade to NECK if they are grabbing two people.
 		return pick(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_LEG, BP_R_LEG)
 	else
@@ -183,7 +183,7 @@ Proc for attack log creation, because really why not
 	for(var/mob/living/L in viewers)
 		living += L
 		if(count_held)
-			for(var/obj/item/holder/H in L.contents)
+			for(var/obj/item/holder/H in contents_of(L))
 				if(istype(H.held_mob, /mob/living))
 					living += H.held_mob
 	return living

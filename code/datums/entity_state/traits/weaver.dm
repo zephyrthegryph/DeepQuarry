@@ -164,7 +164,7 @@
 		to_chat(owner, span_warning("You can't weave here!"))
 		return
 
-	if(locate(weaved_object) in owner.loc)
+	if(locate_within(owner.loc, weaved_object))
 		to_chat(owner, span_warning("You can't create another one in the same tile here!"))
 		return
 
@@ -179,7 +179,7 @@
 		to_chat(owner, span_warning("You can't weave here!"))
 		return
 
-	if(locate(weaved_object) in owner.loc)
+	if(locate_within(owner.loc, weaved_object))
 		to_chat(owner, span_warning("You can't create another one in the same tile!"))
 		return
 

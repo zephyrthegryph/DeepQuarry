@@ -125,9 +125,9 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 		if(T)
 			if(isopenturf(T))
 				// Must be build adjacent to an existing floor/wall, no floating floors
-				var/turf/simulated/A = locate(/turf/simulated/floor) in T.CardinalTurfs()
+				var/turf/simulated/A = locate_in_list(T.CardinalTurfs(), /turf/simulated/floor)
 				if(!A)
-					A = locate(/turf/simulated/wall) in T.CardinalTurfs()
+					A = locate_in_list(T.CardinalTurfs(), /turf/simulated/wall)
 				if(!A)
 					to_chat(user, span_warning("There's nothing to attach the ceiling to!"))
 					return INTERACTION_HANDLED_PASS

@@ -274,6 +274,7 @@
 
 /turf/open/proc/high_pressure_movements()
 	var/atom/movable/moving_atom
+	// ALLOW(spatial): per-active-turf atmos tick, raw loop avoids a list copy
 	for(var/thing in src)
 		moving_atom = thing
 		if (moving_atom.last_high_pressure_movement_air_cycle < SSair.times_fired)

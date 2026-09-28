@@ -1,5 +1,5 @@
 /datum/tgui_module/ghost_spawn_menu/proc/jump_to_pod(mob/observer/dead/user, selected_pod)
-	var/atom/movable/target = locate(selected_pod) in REGISTRY_MEMBERS(REGISTRY_GHOST_PODS)
+	var/atom/movable/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_GHOST_PODS), selected_pod)
 	if(!target)
 		to_chat(user, span_warning("Invalid ghost pod selected!"))
 		return
@@ -94,7 +94,7 @@
 		to_chat(user, "You must wait 5 minutes to respawn as a drone!")
 		return
 
-	var/obj/machinery/drone_fabricator/chosen_fabricator = locate(fabricator) in REGISTRY_MEMBERS(REGISTRY_DRONE_FABRICATORS)
+	var/obj/machinery/drone_fabricator/chosen_fabricator = locate_in_list(REGISTRY_MEMBERS(REGISTRY_DRONE_FABRICATORS), fabricator)
 
 	if(!chosen_fabricator)
 		return
@@ -106,12 +106,12 @@
 	chosen_fabricator.create_drone(user.client)
 
 /datum/tgui_module/ghost_spawn_menu/proc/join_vr(mob/observer/dead/user, landmark)
-	var/S = locate(landmark) in REGISTRY_MEMBERS(REGISTRY_LANDMARKS)
+	var/S = locate_in_list(REGISTRY_MEMBERS(REGISTRY_LANDMARKS), landmark)
 
 	user.fake_enter_vr(S)
 
 /datum/tgui_module/ghost_spawn_menu/proc/soulcatcher_spawn(mob/observer/dead/user, selected_player)
-	var/mob/living/target = locate(selected_player) in REGISTRY_MEMBERS(REGISTRY_PLAYERS)
+	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
 		//Didn't pick anyone or picked a null
 	if(!target)
 		to_chat(user, span_warning("Invalid player selected!"))
@@ -146,7 +146,7 @@
 	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, nif_soulcatcher_spawn_prompt), user, req_time)
 
 /datum/tgui_module/ghost_spawn_menu/proc/soulcatcher_vore_spawn(mob/observer/dead/user, selected_player)
-	var/mob/living/target = locate(selected_player) in REGISTRY_MEMBERS(REGISTRY_PLAYERS)
+	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
 	if(!target)
 		to_chat(user, span_warning("Invalid player selected!"))
 		return
@@ -168,7 +168,7 @@
 	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, soulcatcher_spawn_prompt), user, req_time)
 
 /datum/tgui_module/ghost_spawn_menu/proc/vore_belly_spawn(mob/observer/dead/user, selected_player)
-	var/mob/living/target = locate(selected_player) in REGISTRY_MEMBERS(REGISTRY_PLAYERS)
+	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
 
 	if(!target)
 		to_chat(user, span_warning("Invalid player selected!"))

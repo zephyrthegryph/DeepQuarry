@@ -531,9 +531,9 @@ REF_BACK(/datum/remote_view/viewer_managed, list("view_coordinator" = null))
 		// Because nested vore bellies do NOT get handled correctly for recursive prey. We need to tell the belly's occupants to decouple too... Then their own belly's occupants...
 		// Yes, two loops is faster. Because we skip typechecking byondcode side and instead do it engine side when getting the contents of the mob,
 		// we also skip typechecking every /obj in the mob on the byondcode side... Evil wizard knowledge.
-		for(var/obj/belly/check_belly in cache_mob.contents)
+		for(var/obj/belly/check_belly in contents_of(cache_mob))
 			OM_EMIT(check_belly, /datum/om/event/remote_view_clear)
-		for(var/obj/item/dogborg/sleeper/check_sleeper in cache_mob.contents)
+		for(var/obj/item/dogborg/sleeper/check_sleeper in contents_of(cache_mob))
 			OM_EMIT(check_sleeper, /datum/om/event/remote_view_clear)
 	qdel(src)
 

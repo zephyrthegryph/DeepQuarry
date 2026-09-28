@@ -205,6 +205,7 @@
 	if(ispath(container))
 		if(istype(loc, container))
 			return 1
+	// ALLOW(spatial): container is an arbitrary caller-supplied object or list
 	else if(src in container)
 		return 1
 	return

@@ -39,7 +39,7 @@
 
 /// Wears on whoever hides inside every 2 s; empty, it sleeps.
 /obj/effect/phase_shift/periodic_step()
-	if(!(locate(/mob/living) in contents))
+	if(!(locate_within(src, /mob/living)))
 		return PROCESS_KILL
 	for(var/mob/living/L in contents)
 		L.adjust_instability(2)

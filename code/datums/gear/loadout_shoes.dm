@@ -326,7 +326,7 @@
 	if(istype(loc, /mob)) // are we in a mob?
 		var/mob/m = loc
 		m.drop_from_inventory(src, get_turf(m))
-	if(contents.len) // spill out contents (e.g. microholders)
+	if(contents_count(src)) // spill out contents (e.g. microholders)
 		for(var/atom/movable/thing in contents)
 			thing.forceMove(get_turf(src))
 	moveToNullspace() // go to nullspace

@@ -235,7 +235,7 @@ REF_OWNED(/datum/thrownthing, list("callback"))
 	var/atom/movable/hit_thing
 	var/atom/movable/thrownthing = throw_subject()
 	var/mob/thrower = get_thrower()
-	for (var/thing in T)
+	for (var/thing in contents_of(T))
 		var/atom/movable/AM = thing
 		if (AM == thrownthing || (AM == thrower && !ismob(thrownthing)))
 			continue

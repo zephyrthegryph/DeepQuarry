@@ -110,7 +110,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	owned |= value
 
 /proc/state_collect_subtree(atom/A, list/nodes)
-	for(var/atom/movable/child as anything in A.contents)
+	for(var/atom/movable/child as anything in contents_of(A))
 		nodes += child
 		state_collect_subtree(child, nodes)
 

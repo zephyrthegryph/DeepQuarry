@@ -461,7 +461,7 @@ SUBSYSTEM_DEF(job)
 		var/list/possible_spawns = list()
 		for(var/obj/effect/landmark/start/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(sloc.name != rank)	continue
-			if(locate(/mob/living) in sloc.loc)	continue
+			if(locate_within(sloc.loc, /mob/living))	continue
 			possible_spawns.Add(sloc)
 		if(length(possible_spawns))
 			spawn_point = pick(possible_spawns)
@@ -620,7 +620,7 @@ SUBSYSTEM_DEF(job)
 		//Deferred item spawning.
 		if(spawn_in_storage && length(spawn_in_storage))
 			var/obj/item/storage/storage_bag
-			for(var/obj/item/storage/worn_bag in human_mob.contents)
+			for(var/obj/item/storage/worn_bag in contents_of(human_mob))
 				storage_bag = worn_bag
 				break
 
@@ -637,11 +637,11 @@ SUBSYSTEM_DEF(job)
 	if(istype(human_mob)) //give humans wheelchairs, if they need them.
 		var/obj/item/organ/external/l_foot = human_mob.get_organ(BP_L_FOOT)
 		var/obj/item/organ/external/r_foot = human_mob.get_organ(BP_R_FOOT)
-		var/obj/item/storage/storage_bag = locate() in human_mob.contents
+		var/obj/item/storage/storage_bag = locate_within(human_mob, /obj/item/storage)
 		var/obj/item/wheelchair/used_wheelchair
 		if(storage_bag)
 			storage_bag.latent_materialize_all() // a walk needs real things (C5)
-			used_wheelchair = locate() in storage_bag.contents // ALLOW(latent): materialized above
+			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair) // ALLOW(latent): materialized above
 		if(!l_foot || !r_foot || used_wheelchair)
 			var/wheelchair_type = used_wheelchair?.unfolded_type || /obj/structure/bed/chair/wheelchair
 			var/obj/structure/bed/chair/wheelchair/active_wheelchair = new wheelchair_type(human_mob.loc)

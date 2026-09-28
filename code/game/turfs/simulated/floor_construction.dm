@@ -144,7 +144,7 @@
 	var/base_type = get_base_turf_by_area(src)
 	if(type == base_type || !base_type)
 		return "there's nothing under [src] to expose by cutting"
-	if(locate(/obj/structure) in contents)
+	if(locate_within(src, /obj/structure))
 		return "[src] has structures that must be removed before cutting"
 	return TRUE
 

@@ -111,7 +111,7 @@
 			carried_reagents += R.id
 
 /datum/effect/effect/system/foam_spread/proc/do_start()
-	var/obj/effect/effect/foam/F = locate() in get_location()
+	var/obj/effect/effect/foam/F = locate_within(get_location(), /obj/effect/effect/foam)
 	if(F)
 		F.amount += amount
 		return

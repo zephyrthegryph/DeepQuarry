@@ -70,7 +70,7 @@
 				L.Add(held_item)
 
 			//Now check our hand's item's contents, so we can recharge guns and other stuff.
-			for(var/obj/item/cell/cell in held_item.contents)
+			for(var/obj/item/cell/cell in contents_of(held_item))
 				L.Add(cell)
 
 			//Now for the actual recharging.
@@ -168,7 +168,7 @@
 			var/success = FALSE
 			var/obj/T = target
 			//We can also recharge things we touch, such as APCs or hardsuits.
-			for(var/obj/item/cell/cell in T.contents)
+			for(var/obj/item/cell/cell in contents_of(T))
 				visible_message(span_warning("Some sparks fall out from \the [target]!"),
 				span_warning("Our hand channels raw electricity into \the [target]."),
 				span_warningplain("You hear sparks!"))

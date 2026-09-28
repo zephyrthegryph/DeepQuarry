@@ -46,10 +46,10 @@
 
 	// scan irritants!
 	if(things.len)
-		if(locate(/obj/structure/flora) in things)
+		if(locate_in_list(things, /obj/structure/flora))
 			trigger_allergy(owner)
 			return
-		if(locate(/obj/effect/plant) in things)
+		if(locate_in_list(things, /obj/effect/plant))
 			trigger_allergy(owner)
 			return
 		for(var/obj/item/toy/bouquet/flowers in things)
