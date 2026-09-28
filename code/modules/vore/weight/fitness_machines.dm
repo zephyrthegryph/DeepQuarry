@@ -11,7 +11,12 @@
 	var/cooldown = 10
 	var/weightloss_power = 1
 
-/obj/machinery/fitness/attack_hand(mob/living/user)
+// Ungated, as the old attack_hand overrides never called ..(): the machinery operability checks never applied.
+EXTEND_INTERACTIONS(/obj/machinery/fitness, INTERACT_HAND_UNGATED("Work out", PROC_REF(fitness_workout_hand)))
+
+/// Old attack_hand: work out, burning nutrition and weight.
+/obj/machinery/fitness/proc/fitness_workout_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(user.nutrition < 70)
 		to_chat(user, span_notice("You need more energy to workout with the [src]!"))
 
@@ -61,17 +66,19 @@
 	playsound(src, tool.usesound, 50, TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/fitness/heavy/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/obj/machinery/fitness/heavy, INTERACT_HAND_UNGATED(null, PROC_REF(heavy_fitness_safety_hand)))
+
+/// Old attack_hand: safety checks; FALSE goes on to the workout.
+/obj/machinery/fitness/heavy/proc/heavy_fitness_safety_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!anchored)
 		to_chat(user, span_notice("For safety reasons, you are required to have this equipment wrenched down before using it!"))
-		return
+		return TRUE
 
 	else if(user.loc != loc)
 		to_chat(user, span_notice("For safety reasons, you need to be sitting in the [src] for it to work!"))
-		return
+		return TRUE
 
-	else
-		..()
+	return FALSE
 
 /obj/machinery/fitness/heavy/lifter
 	name = "fitness lifter"
@@ -99,7 +106,11 @@
 	idle_power_usage = 0
 	active_power_usage = 0
 
-/obj/machinery/scale/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/obj/machinery/scale, INTERACT_HAND_UNGATED("Weigh", PROC_REF(scale_weigh_hand)))
+
+/// Old attack_hand: read out the weight of whoever stands on it.
+/obj/machinery/scale/proc/scale_weigh_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(user.loc != loc)
 		to_chat(user, span_notice("You need to be standing on top of the scale for it to work!"))
 		return

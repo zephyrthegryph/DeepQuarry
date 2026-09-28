@@ -847,10 +847,12 @@
 /obj/item/clothing/head/fluff/pompom/gurgle_contaminate(atom/movable/item_storage = null)
 	return FALSE
 
-/obj/item/clothing/head/fluff/pompom/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// The inherited head-light and circuit self-uses step aside for special_handling, so this runs alone.
+EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/pompom, INTERACT_SELF("Toggle light", PROC_REF(pompom_light_self)))
+
+/// Old attack_self: light or dim the pom-pom.
+/obj/item/clothing/head/fluff/pompom/proc/pompom_light_self(mob/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	//if(!isturf(user.loc)) -- doesn't seem to cause problems to allow this and it's silly not to
 	//	to_chat(user, "You cannot turn the light on while in this [user.loc]")
 	//	return
@@ -2077,7 +2079,10 @@ Departamental Swimsuits, for general use
 
 	else return 1
 
-/obj/item/clothing/head/fluff/nikki/attackby(obj/item/I as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, 	INTERACT_ITEM(null, PROC_REF(nikki_hat_item)), 	INTERACT_HAND_UNGATED(null, PROC_REF(nikki_hat_unload_hand)), 	INTERACT_ALT("Remove translocator", PROC_REF(nikki_hat_unequip_alt)), 	INTERACT_SELF(null, PROC_REF(nikki_hat_self)), )
+
+/// Old attackby: slot in (or swap) a translocator, or hand the item to the one inside.
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if (istype(I, /obj/item/perfect_tele) && user.get_inactive_hand() == src)
 		if (translocator)
 			visible_message(span_notice("[user] starts to pull \a [translocator] out of \the [src] to swap it out with \the [I]..."), \
@@ -2087,11 +2092,11 @@ Departamental Swimsuits, for general use
 			span_notice("You begin to snap \the [I] into a small, hidden compartment inside \the [src]..."))
 		// This works for both adding and replacing a translocator
 		translocator_equip(I, user)
-		return
+		return TRUE
 	else if (translocator)
 		translocator.attackby(I, user)
-		return
-	..()
+		return TRUE
+	return FALSE
 
 /obj/item/clothing/head/fluff/nikki/get_description_interaction()
 	. = ..()
@@ -2103,27 +2108,30 @@ Departamental Swimsuits, for general use
 		. += "After doing this, it will function as both a head accessory and teleportation device."
 
 
-/obj/item/clothing/head/fluff/nikki/attack_hand(mob/user)
+/// Old attack_hand: held in the inactive hand, a touch unloads the translocator.
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unload_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (translocator && (user.get_inactive_hand() == src))
 		translocator.unload_ammo(user, ignore_inactive_hand_check = 1)
-		return
-	..()
+		return TRUE
+	return FALSE
 
-/obj/item/clothing/head/fluff/nikki/click_alt(mob/user)
+/// Old click_alt: held in the inactive hand, pull the translocator out.
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if (translocator && (user.get_inactive_hand() == src))
 		translocator_unequip(translocator, user)
-
-/obj/item/clothing/head/fluff/nikki/attack_self(mob/user)
-	. = ..(user)
-	if(.)
 		return TRUE
-	..(user, TRUE)
+	return FALSE
+
+/// Old attack_self: the inherited self-uses first (as the old ..() did), then work the translocator inside.
+/obj/item/clothing/head/fluff/nikki/proc/nikki_hat_self(mob/user, obj/item/held, datum/interaction/interaction)
+	head_light_self(user, held, interaction)
+	if(clothing_circuit_self(user, held, interaction))
+		return TRUE
 	if (translocator)
 		translocator.attack_self(user, user)
-		return
 	else
 		to_chat(user, span_warning("\The [src] doesn't have a translocator inside it right now."))
-		return
+	return TRUE
 
 /obj/item/clothing/head/fluff/nikki/examine(mob/user) // If it has a translocator installed, make it very obvious to viewers that something WEIRD is going on with this hat.
 	. = ..()
@@ -2176,378 +2184,6 @@ Departamental Swimsuits, for general use
 
 		add_attack_logs(user, target, "Teleported [target] with via \the [src]'s [translocator]!")
 	else ..()
-/*
-
-/obj/item/clothing/suit/storage/hooded/fluff
-	name = DEVELOPER_WARNING_NAME
-//Vitoras: Verie
-/obj/item/clothing/suit/storage/hooded/fluff/verie
-	name = "distressingly cyan hoodie"
-	desc = "A cute, brightly colored hoodie perfect for occasional concealment of a verie silly nerd. A little tag inside \
-	the collar bears only the letters \"VW.\""
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "verie_hoodie"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-	hoodtype = /obj/item/clothing/head/hood/winter/fluff/verie
-
-	var/owner = "vitoras"
-
-/obj/item/clothing/suit/storage/hooded/fluff/verie/ToggleHood()
-	// If you ain't the robutt, you probably don't have the hair style that the hooded icon states are made for. sorry!
-	var/mob/living/carbon/human/H = src.loc
-	if (H.ckey != owner)
-		to_chat(H, "Strange... the hood doesn't go over your head no matter how you try to put it up.")
-		return
-	..()
-
-/obj/item/clothing/head/hood/winter/fluff/verie
-	name = "not-so-cyan hood"
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "verie_hood"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/under/fluff/verie
-	name = "salaciously stylised suit"
-	desc = "It's kind of difficult to identify the type of material that makes up this form-fitting suit. It is stretchy and flexible, but \
-	is firm in its toughness, and clings tightly to the skin. Come to think of it, it glistens quite a bit in the light and- \
-	oh god it's latex.\
-	\n... A <b>Verie</b> appropriate material choice indeed." //the wordplay never ends
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "veriesuit"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-	body_parts_covered = CHEST|FEET|ARMS|HANDS
-
-//PastelPrinceDan: Masumi Maki
-/obj/item/clothing/accessory/poncho/roles/cloak/fluff/cloakglowing
-	name = "glowing cloak"
-	desc = "A fancy cloak with a RGB LED color strip along the trim, cycling through the colors of the rainbow."
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "rgb"
-	item_state = "rgb"
-	overlay_state = "rgb"
-	icon_override = 'icons/vore/custom_clothes_mob.dmi' //This one HAS to be icon_override due to accessory code in acessory.dm
-	var/is_dark = FALSE
-	item_icons = list(
-		slot_wear_suit_str = 'icons/vore/custom_clothes_mob.dmi'
-		)
-
-/obj/item/clothing/accessory/poncho/roles/cloak/fluff/cloakglowing/equipped()
-	..()
-	var/mob/living/carbon/human/H = loc
-	if(istype(H) && H.wear_suit == src)
-		icon_override = 'icons/vore/custom_clothes_mob.dmi'
-	update_clothing_icon()
-
-/obj/item/clothing/accessory/poncho/roles/cloak/fluff/cloakglowing/dropped(mob/user, equipping, slot)
-	..()
-	icon_override = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/accessory/poncho/roles/cloak/fluff/cloakglowing/proc/colorswap(mob/user)
-	if(user.canmove && !user.stat)
-		src.is_dark = !src.is_dark
-		if (src.is_dark)
-			icon_state = "rgbd"
-			item_state = "rgbd"
-			overlay_state = "rgbd"
-			to_chat(user, "The polychromic plates in your cloak activate, turning it black.")
-		else
-			icon_state = "rgb"
-			item_state = "rgb"
-			overlay_state = "rgb"
-			to_chat(user, "The polychromic plates in your cloak activate, turning it white.")
-		has_suit?.update_clothing_icon()
-		user.update_inv_wear_suit()
-
-/obj/item/clothing/accessory/poncho/roles/cloak/fluff/cloakglowing/verb/color_verb()
-	set name = "Swap color"
-	set category = "Object"
-	set src in usr
-	if(!isliving(usr)) return
-	if(usr.stat) return
-
-	colorswap(usr)
-
-//Hatterhat: Harold Robinson
-/obj/item/clothing/under/fluff/mechanic_overalls
-	name = "mechanic overalls"
-	desc = "A set of white and blue overalls, paired with a yellow shirt."
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "mechaoveralls"
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-//Hatterhat: Harold Robinson
-/obj/item/clothing/suit/storage/hooded/wintercoat/fluff/mechanic
-	name = "mechanic winter coat"
-	desc = "A blue and yellow winter coat, worn only by overachievers."
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "mechacoat"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	hoodtype = /obj/item/clothing/head/hood/winter/fluff/mechanic
-	has_hood_sprite = TRUE
-
-
-/obj/item/clothing/head/hood/winter/fluff/mechanic
-	name = "mechanic winter hood"
-	desc = "A blue and yellow winter coat's hood."
-	icon = 'icons/inventory/head/item.dmi'
-	icon_state = "mechahood"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-//Pandora029 : Evelyn Tareen
-/obj/item/clothing/suit/storage/hooded/wintercoat/security/fluff/evelyn
-	name = "warden's navy winter coat"
-	desc = "A custom tailored security winter coat in navy blue colors, this one has the rank markings of a warden on it."
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "evelyncoat"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	hoodtype = /obj/item/clothing/head/hood/winter/security/fluff/evelyn
-	has_hood_sprite = TRUE
-
-
-/obj/item/clothing/head/hood/winter/security/fluff/evelyn
-	name = "warden's navy winter hood"
-	desc = "A custom tailored security winter coat's hood in navy blue colors."
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "evelynhood"
-
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-//Allweek:Fifi the Magnificent
-/obj/item/clothing/head/fluff/fifi_hat
-	name = "fifi's hat"
-	desc = "It's a colorful hat for an eccentric entertaining cat."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "fifi_hat"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/under/fluff/fifi_jumpsuit
-	name = "fifi's jumpsuit"
-	desc = "It's a colorful outfit for an eccentric entertaining cat."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "fifi_jumpsuit"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/shoes/fluff/fifi_socks
-	name = "fifi's socks"
-	desc = "A pair of colorful socks for an eccentric entertaining cat."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "fifi_socks"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-
-
-//Uncle_Fruit_VEVO - Bradley Khatibi
-/obj/item/clothing/shoes/fluff/airjordans
-	name = "A pair of Air Jordan 1 Mid 'Black Gym Red's"
-	desc = "Appearing in a classic Jordan Brand colorway, the Air Jordan 1 Mid 'Black Gym Red' released in May 2021. Built with leather, the shoe's upper sports a white base, contrasted by black on the overlays and highlighted by Gym Red on the padded collar, 'Wings' logo and Swoosh branding. A breathable nylon tongue and perforated toe box support the fit, while underfoot, a standard rubber cupsole with Air in the heel anchors the build."
-	icon_state = "airjordans"
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-//Pandora029:Shona Young
-/obj/item/clothing/under/fluff/foxoflightsuit
-	name = "padded flightsuit"
-	desc = "A ruddy-orange combination immersion-and-flight suit, fitted with extra padding across the front of its legs. Warm, waterproof and practical, seveal patches are scattered across it alongside a hard-wearing harness."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "foxflightsuit"
-	rolled_sleeves = 0
-	rolled_down = 0
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	body_parts_covered = CHEST|ARMS|LEGS
-
-//Shalax: Cerise Duelliste
-/obj/item/storage/belt/security/fluff/cerise
-	name = "champion's belt"
-	desc = "Cerise's hard-won belt from her glory days. Her skill might have waned since then, but her renown lives on."
-	icon_state = "champion"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-//Sudate: Shea Corbett
-/obj/item/clothing/under/fluff/greek_dress
-	name = "mytilenean dress"
-	desc = "It's a breezy, colorful two-part dress woven from linen, with the top consisting of white linen, and the skirt of rougher, sturdy fabric. It's adorned with a yellow belt and embroidered stripes in the hem, and blue highlights at the sleeves. More notably, however, it exposes the wearer's chest entirely."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "greek_dress"
-	worn_state = "greek_dress"
-	rolled_sleeves = 0
-	rolled_down = 0
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	body_parts_covered = CHEST|ARMS|LEGS
-
-//JadeManique: Freyr
-/obj/item/clothing/mask/fluff/freyr_mask
-	name = "Freyr's Mask"
-	desc = "A pristine white mask with antlers. Its silky to the touch, like porcelain!"
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "freyrmask"
-	item_icons = list(
-		slot_wear_mask_str = 'icons/vore/custom_clothes_mob.dmi'
-		)
-	body_parts_covered = FACE
-	flags_inv = HIDEFACE
-	item_flags = FLEXIBLEMATERIAL
-
-//codeme: Perrin Kade
-/obj/item/clothing/shoes/fluff/gildedshoes_perrin
-	name = "gilded shoes"
-	desc = "Black shoes with gilding, revealing and comfortable for any wearer!"
-
-	icon_state = "perrinshoes"
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/under/fluff/gildedrobe_perrin
-	name = "gilded robe"
-	desc = "Black robe with gilding, revealing and comfortable for any wearer!"
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "perrinrobes"
-	worn_state = "perrinrobes_s"
-	rolled_sleeves = 0
-	rolled_down = 0
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	item_state = "perrinrobes_s"
-	body_parts_covered = CHEST
-
-//Fuackwit422: Zera Livanne
-/obj/item/clothing/suit/storage/toggle/labcoat/fluff/zera
-	name = "Zera's Labcloak"
-	desc = "Zera's custom-designed lab-coat and cloak hybrid. Designed to perfectly align with OSHA and NT's Health and Safety regulations, while also allowing her to completely ignore all that if she really wanted."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "zera_labcloak"
-	item_state = "zera_labcloak"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/suit/storage/toggle/labcoat/fluff/zera/toggle()
-	set name = "Toggle Coat Buttons"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
-		return FALSE
-
-	if(open) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
-		open = FALSE
-		icon_state = initial(icon_state)
-		item_state = initial(item_state)
-		flags_inv = HIDETIE|HIDEHOLSTER
-		to_chat(usr, "You button up the coat.")
-	else
-		open = TRUE
-		icon_state = "[icon_state]_open"
-		item_state = "[item_state]_open"
-		flags_inv = HIDEHOLSTER
-		to_chat(usr, "You unbutton the coat.")
-	update_clothing_icon()	//so our overlays update
-
-/obj/item/clothing/head/welding/fluff/zera
-	name = "White Welding Mask"
-	desc = "It's a white welding mask. Zera likes it because it matches her labcoat."
-	armor_spec = ""
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	icon_state = "zera_weld"
-	flags_inv = (HIDEEYES)
-	body_parts_covered = HEAD|EYES
-
-/obj/item/clothing/head/welding/fluff/zera/toggle() //overriding this 'cause it only conceals the eyes - it's a hat, not a mask
-	set category = "Object"
-	set src in usr
-
-	if(usr.canmove && !usr.stat && !usr.restrained())
-		if(up)
-			up = !up
-			body_parts_covered |= (EYES)
-			flags_inv |= (HIDEEYES)
-			icon_state = "zera_weld"
-			to_chat(usr, "You flip the helmet down to protect your eyes.")
-		else
-			up = !up
-			body_parts_covered &= ~(EYES)
-			flags_inv &= ~(HIDEEYES)
-			icon_state = "zera_weld_up"
-
-			to_chat(usr, "You push the helmet up out of your face.")
-		update_clothing_icon()	//so our mob-overlays
-		if (ismob(loc)) //should allow masks to update when it is opened/closed
-			var/mob/M = loc
-			M.update_inv_wear_mask()
-		usr.update_mob_action_buttons()
-
-/obj/item/clothing/suit/storage/toggle/labcoat/fluff/zeracloak
-	name = "Grand Purple Cloak"
-	desc = "Zera's custom-designed purple cloak. Nice and spooky, and the perfect length to hold up over your face with one hand like Count von Count."
-
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	icon_state = "grand_purple_cloak"
-
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-
-/obj/item/clothing/suit/storage/toggle/labcoat/fluff/zeracloak/toggle()
-	set name = "Toggle Coat Buttons"
-	set category = "Object"
-	set src in usr
-	if(!usr.canmove || usr.stat || usr.restrained())
-		return FALSE
-
-	if(open) //Will check whether icon state is currently set to the "open" or "closed" state and switch it around with a message to the user
-		open = FALSE
-		icon_state = initial(icon_state)
-		item_state = initial(item_state)
-		flags_inv = HIDETIE|HIDEHOLSTER
-		to_chat(usr, "You button up the coat.")
-	else
-		open = TRUE
-		icon_state = "[icon_state]_open"
-		item_state = "[item_state]_open"
-		flags_inv = HIDEHOLSTER
-		to_chat(usr, "You unbutton the coat.")
-	update_clothing_icon()	//so our overlays update
-
-/obj/item/clothing/head/fluff/zerahat
-	name = "Grand Purple Hat"
-	desc = "It's a pointy purple hat. Zera likes it because it matches her ominous purple cloak."
-	icon = 'icons/vore/custom_clothes_item.dmi'
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	icon_state = "grand_purple_cloak_hat"
-
-//verysoft:Dessa Ton
-/obj/item/clothing/head/fluff/giantbow/dessa
-	desc = "It's a huge bow! So pretty! This one is fitted specially for Dessa's rediculously large ears."
-	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	item_state = "dessabow_mob"
-
-/obj/item/clothing/head/fluff/giantbow/dessa/attack_hand(mob/user)
-
-	if(user.real_name == "Dessa Ton")
-		item_state = "dessabow_mob"
-	else
-		item_state = "giantbow_mob"
-	..()
-
-End */
 
 /obj/item/clothing/head/fluff/giantbow	//Public version
 	name = "Giant Bow"

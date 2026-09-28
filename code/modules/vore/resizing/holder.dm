@@ -2,8 +2,20 @@
 	..()
 	om_after(src, 1, PROC_REF(delete_if_dropped))
 
-/obj/item/holder/attack_hand(mob/living/user as mob) //straight up just copypasted from objects/items.dm with a few things changed (doesn't called dropped unless +actually dropped+)
+EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(holder_pick_up)))
+
+/**
+ * Old attack_hand (both of them: the egg check from holder_micro.dm ran first, then this). Replaces the
+ * item "Pick up": straight up just copypasted from objects/items.dm with a few things changed
+ * (doesn't call dropped unless +actually dropped+).
+ */
+/obj/item/holder/proc/holder_pick_up(mob/living/user, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if (!user) return
+	if(istype(src.loc, /obj/item/storage/vore_egg)) //Don't scoop up the egged mob
+		src.pickup(user)
+		user.drop_from_inventory(src)
+		return
 	if(anchored)
 		to_chat(user, span_notice("\The [src] won't budge, you can't pick it up!"))
 		return

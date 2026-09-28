@@ -83,14 +83,18 @@
 			. += span_deptradio("OOC Notes:") + "<a href='byond://?src=\ref[master];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[master];print_ooc_notes_chat=1'>\[Print\]</a>"
 
 // Allow dissipating ai holograms by attacking them
-/obj/effect/overlay/aiholo/attack_hand(mob/living/user)
+EXTEND_INTERACTIONS(/obj/effect/overlay/aiholo, 	INTERACT_HAND_UNGATED("Dissipate", PROC_REF(aiholo_dissipate_hand)), 	INTERACT_ITEM("Dissipate", PROC_REF(aiholo_dissipate_item)), )
+
+/// Old attack_hand: a harmful touch dissipates the hologram, then the touch goes on.
+/obj/effect/overlay/aiholo/proc/aiholo_dissipate_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		to_chat(user, span_attack("You dissipate [src]."))
 		master?.holo?.clear_holo(master)
-	return ..()
+	return FALSE
 
-/obj/effect/overlay/aiholo/attackby(obj/item/I, mob/user)
+/// Old attackby: a harmful hit dissipates the hologram, then the hit goes on.
+/obj/effect/overlay/aiholo/proc/aiholo_dissipate_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		to_chat(user, span_attack("You dissipate [src] with [I]."))
 		master?.holo?.clear_holo(master)
-	return ..()
+	return FALSE

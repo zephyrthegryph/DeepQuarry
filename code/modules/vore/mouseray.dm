@@ -21,8 +21,9 @@
 		"dust jumper" = /mob/living/simple_mob/vore/alienanimals/dustjumper
 		)
 
-/obj/item/gun/energy/mouseray/attack_self(mob/user)
-	. = ..(user)
+/// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a type to turn things into.
+/obj/item/gun/energy/mouseray/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
+	. = ..()
 	if(.)
 		return TRUE
 	if(tf_allow_select)

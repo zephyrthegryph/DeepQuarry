@@ -109,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	master = C
 	master.active_dummy = src
 
-DECLARE_INTERACTIONS(/obj/effect/dummy/chameleon, \
+EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)), \
 	INTERACT_HAND("Disrupt", PROC_REF(interaction_disrupt)), \
 )
