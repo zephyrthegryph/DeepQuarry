@@ -1228,7 +1228,7 @@ Each job has one mechanism. Every alternative in the third column is counted by 
 fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never rise. The
 ceilings are the `tools/ci/*_baseline.txt` files next to each lint (`api_lints_baseline.txt`,
 `scheduler_lints_baseline.txt`, `cooldown_baseline.txt`,
-`containment_baseline.txt`, `spatial_baseline.txt`, `latent_baseline.txt`,
+`latent_baseline.txt` (containment and spatial are outright bans since C11),
 `lifecycle_counts_baseline.txt`); lower
 one with the lint's `--update` after a sweep, never raise it.
 
