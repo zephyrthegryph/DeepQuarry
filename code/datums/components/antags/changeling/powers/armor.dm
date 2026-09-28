@@ -76,10 +76,11 @@
 	if (magpulse)
 		slowdown += 1		//It's already tied to a slowdown suit, 6 slowdown is huge.
 
-/obj/item/clothing/shoes/magboots/changeling/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots/changeling, INTERACT_USE("Toggle", PROC_REF(changeling_magboots_toggle_self)))
+
+/// Old attack_self. Runs the magboots toggle first, as the old ..() did (so it toggles twice; kept as it was).
+/obj/item/clothing/shoes/magboots/changeling/proc/changeling_magboots_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+	magboots_toggle_self(user, held, interaction)
 	if(magpulse)
 		item_flags &= ~NOSLIP
 		magpulse = 0

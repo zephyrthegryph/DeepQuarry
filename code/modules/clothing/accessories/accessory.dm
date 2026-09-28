@@ -89,11 +89,13 @@
 		forceMove(get_turf(src))
 
 
-//default attack_hand behaviour
-/obj/item/clothing/accessory/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PROC_REF(accessory_attached_hand)))
+
+/// Old attack_hand: an attached accessory isn't picked up.
+/obj/item/clothing/accessory/proc/accessory_attached_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_suit)
-		return	//we aren't an object on the ground so don't call parent
-	..()
+		return TRUE	//we aren't an object on the ground so don't call parent
+	return FALSE
 
 /obj/item/clothing/accessory/tie
 	name = "blue tie"
@@ -476,7 +478,14 @@
 		var/mob/M = src.loc
 		M.update_inv_wear_mask()
 
-/obj/item/clothing/accessory/gaiter/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
+	INTERACT_ITEM(null, PROC_REF(gaiter_tuck_mask_item)), \
+	INTERACT_ALT(null, PROC_REF(gaiter_remove_mask_alt)), \
+	INTERACT_USE("Adjust", PROC_REF(gaiter_adjust_self)), \
+)
+
+/// Old attackby: tuck a breath mask behind the gaiter. Always falls through, as the old ..() did.
+/obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/clothing/mask/breath))
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
 		breathmask = I
@@ -484,10 +493,10 @@
 		user.drop_from_inventory(I, drop_location())
 		I.forceMove(src)
 		item_flags &= ~FLEXIBLEMATERIAL
-	. = ..()
+	return FALSE
 
-/obj/item/clothing/accessory/gaiter/click_alt(mob/user)
-	. = ..()
+/// Old click_alt: pull the tucked mask out. Falls through to the clothing alt-click (which ran first before).
+/obj/item/clothing/accessory/gaiter/proc/gaiter_remove_mask_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(breath_masked && breathmask)
 		to_chat(user, span_notice("You pull [breathmask] out from behind [src], and it drops to your feet."))
 		breathmask.forceMove(drop_location())
@@ -495,11 +504,10 @@
 		breath_masked = FALSE
 		item_flags &= ~AIRTIGHT
 		item_flags |= FLEXIBLEMATERIAL
+	return FALSE
 
-/obj/item/clothing/accessory/gaiter/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: pull the gaiter up or down.
+/obj/item/clothing/accessory/gaiter/proc/gaiter_adjust_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/gaiterstring = "You pull [src] "
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_up"
@@ -726,10 +734,10 @@
 	frequency = new_frequency
 	radio_connection = SSradio.add_object(src, frequency, RADIO_CHAT)
 
-/obj/item/clothing/accessory/collar/shock/attack_self(mob/user, flag1)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null, PROC_REF(shock_collar_ui_self)))
+
+/// Old attack_self: open the collar's interface.
+/obj/item/clothing/accessory/collar/shock/proc/shock_collar_ui_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
 		return
 	tgui_interact(user)
@@ -855,10 +863,14 @@
 /obj/item/clothing/accessory/collar/holo/indigestible/digest_act(atom/movable/item_storage = null)
 	return FALSE
 
-/obj/item/clothing/accessory/collar/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
+	INTERACT_SELF(null, PROC_REF(collar_tag_self)), \
+	INTERACT_ITEM(null, PROC_REF(collar_tag_item)), \
+)
+
+/// Old attack_self: set the tag. Returns FALSE where the old body returned nothing, so subtypes'
+/// legacy attack_self bodies that ran after ..() still run.
+/obj/item/clothing/accessory/collar/proc/collar_tag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_collar)
 		return FALSE
 	if(istype(src,/obj/item/clothing/accessory/collar/holo))
@@ -866,10 +878,10 @@
 	else
 		if(writtenon)
 			to_chat(user,span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
-			return
+			return FALSE
 		to_chat(user,span_notice("You adjust the [name]'s tag."))
 
-	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Tag text?", "title" = "Set tag", "max_length" = MAX_NAME_LEN), PROC_REF(attack_self), args)
+	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Tag text?", "title" = "Set tag", "max_length" = MAX_NAME_LEN), PROC_REF(collar_tag_self), args)
 	if(isnull(_answer_a1))
 		return TRUE
 	var/str = copytext(reject_bad_text(_answer_a1),1,MAX_NAME_LEN)
@@ -881,6 +893,7 @@
 	else
 		to_chat(user,span_notice("You set the [name]'s tag to '[str]'."))
 		initialize_tag(str)
+	return FALSE
 
 /obj/item/clothing/accessory/collar/proc/initialize_tag(tag)
 		name = initial(name) + " ([tag])"
@@ -891,19 +904,21 @@
 		..()
 		desc = initial(desc) + " The tag says \"[tag]\"."
 
-/obj/item/clothing/accessory/collar/attackby(obj/item/I, mob/user)
+/// Old attackby: edit the tag with a pen or screwdriver. Never fell through to the clothing attackby.
+/obj/item/clothing/accessory/collar/proc/collar_tag_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(src,/obj/item/clothing/accessory/collar/holo))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		update_collartag(user, I, "scratched out", "scratch out", "engraved")
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(I,/obj/item/pen))
 		update_collartag(user, I, "crossed out", "cross out", "written")
-		return
+		return INTERACTION_HANDLED_PASS
 
 	to_chat(user,span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/collar/proc/update_collartag(mob/user, obj/item/I, erasemethod, erasing, writemethod)
 	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || (user.stat))
@@ -1015,17 +1030,17 @@
 /obj/item/clothing/accessory/collar/shock/bluespace/relaymove(mob/living/user,direction)
 	return //For some reason equipping this item was triggering this proc, putting the wearer inside of the collars belly for some reason.
 
-/obj/item/clothing/accessory/collar/shock/bluespace/attackby(obj/item/component, mob/user as mob)
-	if (!istype(component,/obj/item/assembly/signaler))
-		..()
-		return
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(bluespace_collar_wire_signaler), "Wire signaler"))
+
+/// Old attackby: wire a signaler in, making a modified collar.
+/obj/item/clothing/accessory/collar/shock/bluespace/proc/bluespace_collar_wire_signaler(mob/user, obj/item/component, datum/interaction/interaction)
 	to_chat(user, span_notice("You wire the signaler into the [src]."))
 	user.drop_item()
 	consume(component, user)
 	var/turf/T = get_turf(src)
 	new /obj/item/clothing/accessory/collar/shock/bluespace/modified(T)
 	consume(src, user)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src]."))
@@ -1044,12 +1059,12 @@
 	target_size = 1
 	on = 1
 
-/obj/item/clothing/accessory/collar/shock/bluespace/modified/attackby(obj/item/component, mob/user as mob)
-	if (!istype(component,/obj/item/assembly/signaler))
-		..()
-		return
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(modified_collar_signaler), "Wire signaler"))
+
+/// Old attackby: already has a signaler.
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/proc/modified_collar_signaler(mob/user, obj/item/component, datum/interaction/interaction)
 	to_chat(user, span_notice("There is already a signaler wired to the [src]."))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/modified/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You crack the bluespace crystal [src], the attached signaler disconnects."))
@@ -1121,12 +1136,12 @@
 	on = 1
 	var/currently_shrinking = 0
 
-/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/attackby(obj/item/component, mob/user as mob)
-	if (!istype(component,/obj/item/assembly/signaler))
-		..()
-		return
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(malfunctioning_collar_signaler), "Wire signaler"))
+
+/// Old attackby: the cracked crystal won't take a signaler.
+/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/proc/malfunctioning_collar_signaler(mob/user, obj/item/component, datum/interaction/interaction)
 	to_chat(user, span_notice("The signaler doesn't respond to the connection attempt [src]."))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -1237,12 +1252,12 @@
 	special_handling = TRUE
 	special_collar = TRUE
 
-/obj/item/clothing/accessory/collar/casinosentientprize/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+//keeping self-use blank so people don't tag and reset collar status
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/casinosentientprize, INTERACT_USE(null, PROC_REF(casino_collar_self)))
+
+/// Old attack_self: does nothing on purpose.
+/obj/item/clothing/accessory/collar/casinosentientprize/proc/casino_collar_self(mob/user, obj/item/held, datum/interaction/interaction)
 	return TRUE
-	//keeping it blank so people don't tag and reset collar status
 
 /obj/item/clothing/accessory/collar/casinosentientprize_fake
 	name = "Sentient Prize Collar"
@@ -1312,10 +1327,10 @@
 		var/mob/M = src.loc
 		M.update_inv_wear_suit()
 
-/obj/item/clothing/accessory/poncho/roles/cloak/half/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/cloak/half, INTERACT_USE("Flip cloak", PROC_REF(half_cloak_flip_self)))
+
+/// Old attack_self.
+/obj/item/clothing/accessory/poncho/roles/cloak/half/proc/half_cloak_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_open"
 		src.item_state = "[item_state]_open"
@@ -1397,10 +1412,10 @@
 		var/mob/M = src.loc
 		M.update_inv_wear_suit()
 
-/obj/item/clothing/accessory/poncho/roles/neo_ranger/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/neo_ranger, INTERACT_USE("Adjust", PROC_REF(neo_ranger_adjust_self)))
+
+/// Old attack_self.
+/obj/item/clothing/accessory/poncho/roles/neo_ranger/proc/neo_ranger_adjust_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]_open"
 		src.item_state = "[item_state]_open"

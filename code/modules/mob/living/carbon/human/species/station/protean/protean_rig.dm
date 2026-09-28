@@ -143,17 +143,23 @@
 	else
 		to_chat(usr, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
-/obj/item/rig/protean/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/rig/protean, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(protean_rig_hand)), \
+	INTERACT_ITEM(null, PROC_REF(protean_rig_item)), \
+)
+
+/// Old attack_hand: open the bag when worn; otherwise close it for onlookers, then the usual touch
+/// (the old ..(), which used to run before the closing).
+/obj/item/rig/protean/proc/protean_rig_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	src.add_fingerprint(user)
 	if (src.loc == user)
 		if(rig_storage)
 			src.rig_storage.open(user)
-	else
-		..()
-		for(var/mob/M in range(1))
-			if (M.s_active == src)
-				src.rig_storage.close(M)
-	src.add_fingerprint(user)
-	return
+		return TRUE
+	for(var/mob/M in range(1))
+		if (M.s_active == src)
+			src.rig_storage.close(M)
+	return FALSE
 
 /obj/item/clothing/head/helmet/space/rig/protean
 	name = "mass"
@@ -305,28 +311,29 @@
 /obj/item/clothing/suit/space/rig/protean/suit_storage_constraint()
 	var/list/stores = list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack)
 	return list(HOLD_ONLY(stores))
-/obj/item/rig/protean/attackby(obj/item/W, mob/living/user)
+/// Old attackby. It never fell through to the rig's own.
+/obj/item/rig/protean/proc/protean_rig_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(user))
-		return 0
+		return INTERACTION_HANDLED_PASS
 	var/datum/affliction/core_dormancy/dormancy = get_dormancy()
 	if(dormancy)
 		dormancy.repair_with(W, user, src)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W,/obj/item/rig))
 		if(!assimilated_rig)
 			AssimilateRig(user,W)
 	if(istype(W,/obj/item/tank)) //Todo, some kind of check for suits without integrated air supplies.
 		if(air_supply)
 			to_chat(user, "\The [src] already has a tank installed.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(!user.unEquip(W))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		air_supply = W
 		W.forceMove(src)
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
-		return
+		return INTERACTION_HANDLED_PASS
 
 		// Check if this is a hardsuit upgrade or a modification.
 	else if(istype(W,/obj/item/rig_module))
@@ -336,21 +343,22 @@
 			for(var/obj/item/rig_module/installed_mod in installed_modules)
 				if(!installed_mod.redundant && istype(installed_mod,W))
 					to_chat(user, "The hardsuit already has a module of that class installed.")
-					return 1
+					return TRUE
 
 		var/obj/item/rig_module/mod = W
 		to_chat(user, "You begin installing \the [mod] into \the [src].")
 		om_task_start(/datum/om/task/timed/protean_attackby_protean, user, src, list("receiver" = src, "W" = W, "mod" = mod))
-		return 1
+		return TRUE
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
-			return
+			return INTERACTION_HANDLED_PASS
 	if(rig_storage)
 		var/obj/item/storage/backpack = rig_storage
 		backpack.insert_item(W, user)
 	else
 		if(istype(W,/obj/item/storage/backpack))
 			AssimilateBag(user,0,W)
+	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/protean_attackby_protean
 	duration = 4 SECONDS

@@ -96,9 +96,11 @@
 	if(master_rig)
 		rig_self_detach()
 
-/obj/item/clothing/click_alt(mob/user)
+/// Old click_alt: take off an attached accessory. Falls through to the default alt-click, as before.
+/obj/item/clothing/proc/clothing_remove_accessory_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user) || user == src.loc)
 		removetie_proc(user)
+	return FALSE
 
 /obj/item/clothing/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	. = ..()
@@ -205,20 +207,21 @@
 		SPECIES_VOX = 'icons/inventory/ears/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/ears/mob_werebeast.dmi')
 
-/obj/item/clothing/ears/attack_hand(mob/user as mob)
-	if (!user) return
+EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_REF(ears_take_off_hand)))
+
+/// Old attack_hand: take worn ears off into the hand.
+/obj/item/clothing/ears/proc/ears_take_off_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if (!user) return FALSE
 
 	if (src.loc != user || !ishuman(user))
-		..()
-		return
+		return FALSE
 
 	var/mob/living/carbon/human/H = user
 	if(H.get_equipped_item(SLOT_ID_EAR_L) != src && H.get_equipped_item(SLOT_ID_EAR_R) != src)
-		..()
-		return
+		return FALSE
 
 	if(!canremove)
-		return
+		return TRUE
 
 	var/obj/item/clothing/ears/O
 	if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
@@ -238,6 +241,7 @@
 
 	if(istype(src,/obj/item/clothing/ears/offear))
 		consume(src, user)
+	return TRUE
 
 /obj/item/clothing/ears/update_clothing_icon()
 	if (ismob(src.loc))
@@ -439,18 +443,20 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 	pickup_sound = 'sound/items/pickup/hat.ogg'
 	helmet_handling = TRUE
 
-/obj/item/clothing/head/attack_self(mob/user, callback)
-	. = ..(user)
-	if(.)
-		return TRUE
-	if(special_handling && !callback)
+EXTEND_INTERACTIONS(/obj/item/clothing/head, INTERACT_SELF(null, PROC_REF(head_light_self)))
+
+/// Old attack_self: toggle the helmet light. Returns FALSE as the old body returned nothing,
+/// so subtypes' legacy attack_self bodies that ran after ..() still run.
+/obj/item/clothing/head/proc/head_light_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(special_handling)
 		return FALSE
 	if(light_range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
-			return
+			return FALSE
 		update_flashlight(user)
 		to_chat(user, "You [light_on ? "enable" : "disable"] the helmet light.")
+	return FALSE
 
 /obj/item/clothing/head/proc/update_flashlight(mob/user = null)
 	set_light_on(!light_on)
@@ -668,11 +674,12 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 	update_icon()
 	return
 
-/obj/item/clothing/shoes/attack_hand(mob/living/M)
+/// Old attack_hand: draw the knife held in worn shoes.
+/obj/item/clothing/shoes/proc/shoes_draw_knife_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
 	if(can_hold_knife == 1 && holding && src.loc == M)
 		draw_knife(M)
-		return
-	..()
+		return TRUE
+	return FALSE
 
 /obj/item/clothing/shoes/verb/toggle_layer()
 	set name = "Switch Shoe Layer"
@@ -808,10 +815,9 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 		var/mob/M = src.loc
 		M.update_inv_shoes()
 
-/obj/item/clothing/shoes/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
+/obj/item/clothing/shoes/proc/shoes_shake_out_self(mob/user, obj/item/held, datum/interaction/interaction)
+	clothing_circuit_self(user, held, interaction)
 	for(var/mob/M in src)
 		if(isvoice(M)) //Don't knock voices out!
 			continue
@@ -1087,12 +1093,15 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
-/obj/item/clothing/under/attack_hand(mob/user)
-	if(LAZYLEN(accessories))
-		..()
+EXTEND_INTERACTIONS(/obj/item/clothing/under, INTERACT_HAND_UNGATED(null, PROC_REF(under_worn_hand)))
+
+/// Old attack_hand: a worn uniform isn't pulled off by a click; its accessories get the touch.
+/obj/item/clothing/under/proc/under_worn_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if ((ishuman(user) || issmall(user)) && src.loc == user)
-		return
-	..()
+		if(LAZYLEN(accessories))
+			clothing_accessory_hand(user, held, interaction)
+		return TRUE
+	return FALSE
 
 /obj/item/clothing/under/Initialize(mapload)
 	. = ..()
@@ -1426,7 +1435,12 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 /obj/item/clothing
 	MATERIAL_BULK(MAT_FIBERS, 50)
 
-DECLARE_INTERACTIONS(/obj/item/clothing/shoes, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
+	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(shoes_draw_knife_hand)), \
+	INTERACT_USE(null, PROC_REF(shoes_shake_out_self)), \
+	INTERACT_ITEM(null, PROC_REF(shoes_stuff_item)), \
+)
 
 /// Old MouseDrop_T.
 /obj/item/clothing/shoes/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
@@ -1452,8 +1466,8 @@ DECLARE_INTERACTIONS(/obj/item/clothing/shoes, INTERACT_DRAG(null, PROC_REF(inte
 /obj/item/clothing
 	COOLDOWN_DECLARE(struggle_cooldown)
 
-//This is a crazy 'sideways' override.
-/obj/item/clothing/shoes/attackby(obj/item/I, mob/user)
+/// Old attackby ("sideways" override): stuff a micro or a knife into the shoes.
+/obj/item/clothing/shoes/proc/shoes_stuff_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/holder/micro))
 		var/full = 0
 		for(var/mob/M in src)
@@ -1470,22 +1484,22 @@ DECLARE_INTERACTIONS(/obj/item/clothing/shoes, INTERACT_DRAG(null, PROC_REF(inte
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
-		return
+		return INTERACTION_HANDLED_PASS
 	if((can_hold_knife == 1) && (istype(I, /obj/item/material/shard) || \
 		istype(I, /obj/item/material/butterfly) || \
 		istype(I, /obj/item/material/kitchen/utensil) || \
 		istype(I, /obj/item/material/knife/tacknife)))
 		if(holding)
 			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.unEquip(I)
 		I.forceMove(src)
 		holding = I
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " shoves \the [I] into \the [src]."))
 		verbs |= /obj/item/clothing/shoes/proc/draw_knife
 		update_icon()
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/clothing/gloves
 	sprite_sheets = list(

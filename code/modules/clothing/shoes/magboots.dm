@@ -32,10 +32,11 @@
 	if (magpulse)
 		slowdown += 3
 
-/obj/item/clothing/shoes/magboots/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PROC_REF(magboots_toggle_self)))
+
+/// Old attack_self: toggle the magnetic grip, after the shoes' own self-use (the old ..()).
+/obj/item/clothing/shoes/magboots/proc/magboots_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
+	shoes_shake_out_self(user, held, interaction)
 	if(magpulse)
 		item_flags &= ~NOSLIP
 		magpulse = FALSE

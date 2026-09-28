@@ -78,17 +78,24 @@
 		clear_holster()
 
 //YW change start
-/obj/item/clothing/accessory/holster/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(holster_draw_hand)), \
+	INTERACT_ITEM(null, PROC_REF(holster_item)), \
+)
+
+/// Old attack_hand: draw from an attached holster in combat mode.
+/obj/item/clothing/accessory/holster/proc/holster_draw_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (IS_HARMING(user) && has_suit && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
 		if (holstered)
 			unholster(user)
-		return
-
-	..(user)
+		return TRUE
+	return FALSE
 //YW change end
 
-/obj/item/clothing/accessory/holster/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: holster the item.
+/obj/item/clothing/accessory/holster/proc/holster_item(mob/user, obj/item/W, datum/interaction/interaction)
 	holster(W, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/accessory/holster/examine(mob/user)
 	. = ..(user)

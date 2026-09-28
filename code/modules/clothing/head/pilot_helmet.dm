@@ -191,10 +191,10 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 	actions_types = list(/datum/action/item_action/toggle_visor)
 	special_handling = TRUE
 
-/obj/item/clothing/head/pilot/alt/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot/alt, INTERACT_USE("Toggle visor", PROC_REF(pilot_alt_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/pilot/alt/proc/pilot_alt_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the visor on the pilot helmet.")
@@ -217,10 +217,10 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/head/pilot_vr/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot_vr, INTERACT_USE("Toggle visor", PROC_REF(pilot_vr_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/pilot_vr/proc/pilot_vr_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the visor on the pilot helmet.")

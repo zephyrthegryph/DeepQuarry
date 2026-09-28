@@ -268,13 +268,16 @@
 
 	var/resist_time = 4800	// Eight minutes.
 
-/obj/item/clothing/suit/straight_jacket/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGATED(null, PROC_REF(straight_jacket_worn_hand)))
+
+/// Old attack_hand: the wearer can't take it off themselves.
+/obj/item/clothing/suit/straight_jacket/proc/straight_jacket_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_SUIT))
 			to_chat(H, span_notice("You need help taking this off!"))
-			return
-	..()
+			return TRUE
+	return FALSE
 
 /obj/item/clothing/suit/straight_jacket/equipped(mob/living/user,slot)
 	. = ..()
@@ -1075,14 +1078,19 @@
 	armor_spec = "melee=5"
 	special_handling = TRUE
 
-/obj/item/clothing/suit/caution/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
+	INTERACT_USE("Toggle", PROC_REF(caution_toggle_self)), \
+	INTERACT_ALT("Toggle", PROC_REF(caution_toggle_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/clothing/suit/caution/proc/caution_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle(user)
 
-/obj/item/clothing/suit/caution/click_alt(mob/user)
+/// Old click_alt. It never reached the clothing alt-click.
+/obj/item/clothing/suit/caution/proc/caution_toggle_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle(user)
+	return TRUE
 
 /obj/item/clothing/suit/caution/proc/toggle(mob/user)
 	if(!user || user.stat || user.lying || user.restrained() || !Adjacent(user))

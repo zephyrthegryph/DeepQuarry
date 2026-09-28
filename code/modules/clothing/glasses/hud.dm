@@ -134,10 +134,10 @@ REF_OWNED(/obj/item/clothing/glasses/omnihud, "tgarscreen")
 		name = "[initial(name)]"
 		icon_state = "[initial(icon_state)]"
 
-/obj/item/clothing/glasses/omnihud/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud, INTERACT_SELF(null, PROC_REF(omnihud_display_self)))
+
+/// Old attack_self: show the AR display. FALSE where the old body fell through or returned nothing.
+/obj/item/clothing/glasses/omnihud/proc/omnihud_display_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!ishuman(user))
 		return FALSE
 	if(hud_goggles)
@@ -149,6 +149,7 @@ REF_OWNED(/obj/item/clothing/glasses/omnihud, "tgarscreen")
 	else
 		if(!ar_interact(H))
 			to_chat(user, span_warning("The [src] does not have any kind of special display."))
+	return FALSE
 
 //cosmetic shading, doesn't enhance eye protection
 /obj/item/clothing/glasses/omnihud/verb/chromatize()
@@ -294,10 +295,10 @@ REF_OWNED(/obj/item/clothing/glasses/omnihud, "tgarscreen")
 	specialty_goggles = TRUE
 	hud_goggles = TRUE
 
-/obj/item/clothing/glasses/omnihud/eng/meson/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/glasses/omnihud/eng/meson, INTERACT_USE("Toggle projector", PROC_REF(omnihud_meson_projector_self)))
+
+/// Old attack_self.
+/obj/item/clothing/glasses/omnihud/eng/meson/proc/omnihud_meson_projector_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!active)
 		toggleprojector()
 

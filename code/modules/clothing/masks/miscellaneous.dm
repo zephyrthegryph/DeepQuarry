@@ -21,10 +21,13 @@
 	say_verbs = list("mumbles", "says")
 
 // Clumsy folks can't take the mask off themselves.
-/obj/item/clothing/mask/muzzle/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/muzzle, INTERACT_HAND_UNGATED(null, PROC_REF(muzzle_worn_hand)))
+
+/// Old attack_hand.
+/obj/item/clothing/mask/muzzle/proc/muzzle_worn_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_equipped_item(SLOT_ID_MASK) == src && !user.IsAdvancedToolUser())
-		return 0
-	..()
+		return TRUE
+	return FALSE
 
 /obj/item/clothing/mask/surgical
 	name = "sterile mask"
@@ -355,10 +358,10 @@
 		"Sad" = image(icon = src.icon, icon_state = "sadmask")
 		)
 
-/obj/item/clothing/mask/paper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/paper, INTERACT_USE("Change design", PROC_REF(paper_mask_design_self)))
+
+/// Old attack_self.
+/obj/item/clothing/mask/paper/proc/paper_mask_design_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || user.incapacitated())
 		return
 
@@ -400,10 +403,10 @@
 		"Angry" = image(icon = src.icon, icon_state = "angry"),
 		)
 
-/obj/item/clothing/mask/emotions/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/emotions, INTERACT_USE("Change emotion", PROC_REF(emotion_mask_design_self)))
+
+/// Old attack_self.
+/obj/item/clothing/mask/emotions/proc/emotion_mask_design_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || user.incapacitated())
 		return
 

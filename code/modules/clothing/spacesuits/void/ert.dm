@@ -101,19 +101,22 @@
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/suit/space/void/responseteam/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_ITEM(null, PROC_REF(responseteam_worn_item)))
+
+/// Old attackby: no modifying it while worn.
+/obj/item/clothing/suit/space/void/responseteam/proc/responseteam_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(!isliving(user))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return ..()
+		return FALSE
 
 	if(user.get_inventory_slot(src) == slot_wear_suit)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 
 /obj/item/clothing/head/helmet/space/void/responseteam

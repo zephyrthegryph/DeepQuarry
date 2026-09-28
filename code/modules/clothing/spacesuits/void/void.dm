@@ -199,8 +199,15 @@
 			to_chat(H, span_info("You deploy your suit helmet, sealing you off from the world."))
 			playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
 
-/obj/item/clothing/suit/space/void/click_alt(mob/living/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
+	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt)), \
+	INTERACT_ITEM(null, PROC_REF(voidsuit_install_item)), \
+)
+
+/// Old click_alt. It never reached the clothing alt-click.
+/obj/item/clothing/suit/space/void/proc/voidsuit_eject_tank_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	eject_tank()
+	return TRUE
 
 /obj/item/clothing/suit/space/void/verb/eject_tank()
 	set name = "Eject Voidsuit Tank/Cooler"
@@ -231,16 +238,17 @@
 	removing.canremove = TRUE
 	H.drop_from_inventory(removing)
 
-/obj/item/clothing/suit/space/void/attackby(obj/item/W, mob/user)
+/// Old attackby: install a helmet, magboots, tank or cooler.
+/obj/item/clothing/suit/space/void/proc/voidsuit_install_item(mob/user, obj/item/W, datum/interaction/interaction)
 
-	if(!isliving(user)) return
+	if(!isliving(user)) return INTERACTION_HANDLED_PASS
 
 	if(istype(W,/obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return ..()
+		return FALSE
 
 	if(user.get_inventory_slot(src) == slot_wear_suit)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W,/obj/item/clothing/head/helmet/space))
 		if(hood)
@@ -249,7 +257,7 @@
 			to_chat(user, "You attach \the [W] to \the [src]'s helmet mount.")
 			user.drop_item()
 			attach_helmet(W)
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/clothing/shoes/magboots))
 		if(boots)
 			to_chat(user, "\The [src] already has magboots installed.")
@@ -258,7 +266,7 @@
 			user.drop_item()
 			W.forceMove(src)
 			boots = W
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/tank))
 		if(tank)
 			to_chat(user, "\The [src] already has an airtank installed.")
@@ -269,7 +277,7 @@
 			user.drop_item()
 			W.forceMove(src)
 			tank = W
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/suit_cooling_unit))
 		if(cooler)
 			to_chat(user, "\The [src] already has a suit cooling unit installed.")
@@ -280,9 +288,9 @@
 			user.drop_item()
 			W.forceMove(src)
 			cooler = W
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 
 //
@@ -376,20 +384,22 @@
 	. = ..()
 	hood = new /obj/item/clothing/head/helmet/space/void/autolok //autoinstall the helmet
 
-//override the attackby screwdriver proc so that people can't remove the helmet
-/obj/item/clothing/suit/space/void/autolok/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item)))
+
+/// Old attackby: no modifying it while worn.
+/obj/item/clothing/suit/space/void/autolok/proc/autolok_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(!isliving(user))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
-		return ..()
+		return FALSE
 
 	if(user.get_inventory_slot(src) == slot_wear_suit)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 /obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool)
 	if(!isliving(user))

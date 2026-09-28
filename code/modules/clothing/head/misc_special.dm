@@ -34,10 +34,10 @@
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
-/obj/item/clothing/head/welding/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/welding, INTERACT_USE("Flip", PROC_REF(welding_mask_flip_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/welding/proc/welding_mask_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle()
 
 /obj/item/clothing/head/welding/verb/toggle()
@@ -143,10 +143,10 @@
 	if (istype(location, /turf))
 		location.hotspot_expose(700, 1)
 
-/obj/item/clothing/head/cakehat/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_REF(cakehat_light_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/cakehat/proc/cakehat_light_self(mob/user, obj/item/held, datum/interaction/interaction)
 	onfire = !(onfire)
 	if (onfire)
 		force = 3
@@ -169,10 +169,10 @@
 	flags_inv = HIDEEARS
 	special_handling = TRUE
 
-/obj/item/clothing/head/ushanka/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear flaps", PROC_REF(ushanka_flaps_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the ear flaps on the ushanka.")

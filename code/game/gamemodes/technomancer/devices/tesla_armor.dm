@@ -50,10 +50,10 @@
 			return 1
 	return 0
 
-/obj/item/clothing/suit/armor/tesla/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/tesla, INTERACT_USE("Toggle", PROC_REF(tesla_armor_toggle_self)))
+
+/// Old attack_self.
+/obj/item/clothing/suit/armor/tesla/proc/tesla_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
 	update_icon()

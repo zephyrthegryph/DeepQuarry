@@ -29,10 +29,10 @@
 	icon_state = "diamond"
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/ring/engagement/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("Present", PROC_REF(engagement_ring_present_self)))
+
+/// Old attack_self.
+/obj/item/clothing/accessory/ring/engagement/proc/engagement_ring_present_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] gets down on one knee, presenting \the [src]."),span_warning("You get down on one knee, presenting \the [src]."))
 
 /obj/item/clothing/accessory/ring/cti
@@ -101,10 +101,10 @@
 	var/nameset = FALSE
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/ring/seal/signet/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE("Claim", PROC_REF(signet_ring_claim_self)))
+
+/// Old attack_self.
+/obj/item/clothing/accessory/ring/seal/signet/proc/signet_ring_claim_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(nameset)
 		to_chat(user, span_notice("The [src] has already been claimed!"))
 		return
@@ -126,11 +126,11 @@
 	var/partnername = ""
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/ring/wedding/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/input = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_length" = MAX_NAME_LEN), PROC_REF(attack_self), args)
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Engrave", PROC_REF(wedding_ring_engrave_self)))
+
+/// Old attack_self.
+/obj/item/clothing/accessory/ring/wedding/proc/wedding_ring_engrave_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/input = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_length" = MAX_NAME_LEN), PROC_REF(wedding_ring_engrave_self), args)
 	if(isnull(input))
 		return TRUE
 	if(!input)

@@ -21,30 +21,39 @@
 
 	return TRUE
 
-/obj/item/clothing/attackby(obj/item/I, mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing, \
+	INTERACT_ITEM(null, PROC_REF(clothing_accessory_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(clothing_accessory_hand)), \
+	INTERACT_ALT(null, PROC_REF(clothing_remove_accessory_alt)), \
+	INTERACT_SELF(null, PROC_REF(clothing_circuit_self)), \
+)
+
+/// Old attackby: attach an accessory, or forward the item to the attached accessories.
+/obj/item/clothing/proc/clothing_accessory_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/clothing/accessory))
 		var/obj/item/clothing/accessory/A = I
 		if(attempt_attach_accessory(A, user))
-			return
+			return INTERACTION_HANDLED_PASS
 
 	if(LAZYLEN(accessories))
 		for(var/obj/item/clothing/accessory/A in accessories)
 			A.attackby(I, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
-/obj/item/clothing/attack_hand(mob/user)
+/// Old attack_hand: forward to the attached accessories while worn.
+/obj/item/clothing/proc/clothing_accessory_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	//only forward to the attached accessory if the clothing is equipped (not in a storage)
 	if(LAZYLEN(accessories) && src.loc == user)
 		for(var/obj/item/clothing/accessory/A in accessories)
 			A.attack_hand(user)
-		return
+		return TRUE
 	if (ishuman(user) && src.loc == user)
 		var/mob/living/carbon/human/H = user
 		if(src == H.get_equipped_item(SLOT_ID_UNIFORM)) // Un-equip on single click, but not on uniform.
-			return
-	return ..()
+			return TRUE
+	return FALSE
 
 /obj/item/clothing/MouseDrop(obj/over_object)
 	if (over_object && (ishuman(usr) || issmall(usr)))

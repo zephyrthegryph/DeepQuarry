@@ -12,10 +12,13 @@
 	var/obj/item/held //Item inside locket.
 	special_handling = TRUE
 
-/obj/item/clothing/accessory/locket/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
+	INTERACT_USE("Flip open", PROC_REF(locket_flip_self)), \
+	INTERACT_ITEM(null, PROC_REF(locket_insert_item)), \
+)
+
+/// Old attack_self: flip the locket open or closed.
+/obj/item/clothing/accessory/locket/proc/locket_flip_self(mob/user, obj/item/held_item, datum/interaction/interaction)
 	if(!base_icon)
 		base_icon = icon_state
 
@@ -34,10 +37,11 @@
 	else
 		icon_state = "[base_icon]"
 
-/obj/item/clothing/accessory/locket/attackby(obj/item/O, mob/user)
+/// Old attackby: slip a paper or photo inside.
+/obj/item/clothing/accessory/locket/proc/locket_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!open)
 		to_chat(user, "You have to open it first.")
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(O,/obj/item/paper) || istype(O, /obj/item/photo))
 		if(held)
@@ -47,5 +51,5 @@
 			user.drop_item()
 			O.loc = src
 			held = O
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE

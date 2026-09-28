@@ -69,10 +69,10 @@
 	special_handling = TRUE
 	var/name_descriptor = "riot helmet" // for visor toggle messages
 
-/obj/item/clothing/head/helmet/riot/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/riot, INTERACT_USE("Toggle visor", PROC_REF(riot_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/helmet/riot/proc/riot_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the visor on the [name_descriptor].") // Visor toggle messages
@@ -274,10 +274,10 @@
 	var/up = FALSE
 	special_handling = TRUE
 
-/obj/item/clothing/head/helmet/combat/bedevere/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, INTERACT_USE("Toggle visor", PROC_REF(bedevere_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/helmet/combat/bedevere/proc/bedevere_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle()
 
 /obj/item/clothing/head/helmet/combat/bedevere/verb/toggle()
@@ -331,10 +331,10 @@
 	var/up = FALSE
 	special_handling = TRUE
 
-/obj/item/clothing/head/helmet/combat/bedevere_costume/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere_costume, INTERACT_USE("Toggle visor", PROC_REF(bedevere_costume_visor_self)))
+
+/// Old attack_self.
+/obj/item/clothing/head/helmet/combat/bedevere_costume/proc/bedevere_costume_visor_self(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle()
 
 /obj/item/clothing/head/helmet/combat/bedevere_costume/verb/toggle()

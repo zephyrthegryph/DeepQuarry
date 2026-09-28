@@ -25,7 +25,13 @@
 			else
 				playsound(src,'sound/machines/generator/generator_end.ogg',70,1)
 
-/obj/item/clothing/gloves/telekinetic/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(telekinetic_remove_cell_hand)), \
+	INTERACT_INSERT(/obj/item/cell, PROC_REF(telekinetic_insert_cell), "Insert cell"), \
+)
+
+/// Old attack_hand: take the cell out while holding the gloves in the other hand.
+/obj/item/clothing/gloves/telekinetic/proc/telekinetic_remove_cell_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(cell)
 			cell.update_icon()
@@ -33,26 +39,23 @@
 			cell = null
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			return
-		..()
-	else
-		return ..()
+			return TRUE
+	return FALSE
 
-/obj/item/clothing/gloves/telekinetic/attackby(obj/item/W, mob/user as mob)
-	if(istype(W, /obj/item/cell))
-		if(istype(W, /obj/item/cell/device))
-			if(!cell)
-				user.drop_item()
-				W.loc = src
-				cell = W
-				to_chat(user, span_notice("You install a cell in \the [src]."))
-				playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
-			else
-				to_chat(user, span_warning("\The [src] already has a cell."))
+/// Old attackby: install a device cell.
+/obj/item/clothing/gloves/telekinetic/proc/telekinetic_insert_cell(mob/user, obj/item/W, datum/interaction/interaction)
+	if(istype(W, /obj/item/cell/device))
+		if(!cell)
+			user.drop_item()
+			W.loc = src
+			cell = W
+			to_chat(user, span_notice("You install a cell in \the [src]."))
+			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)
 		else
-			to_chat(user, span_warning("\The [src] cannot use that type of cell."))
+			to_chat(user, span_warning("\The [src] already has a cell."))
 	else
-		..()
+		to_chat(user, span_warning("\The [src] cannot use that type of cell."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/gloves/telekinetic/examine(mob/user)
 	. = ..()

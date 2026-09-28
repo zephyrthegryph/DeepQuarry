@@ -9,17 +9,26 @@
 
 REF_OWNED(/obj/item/clothing/suit/storage, "pockets")
 
-/obj/item/clothing/suit/storage/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(suit_pockets_hand)), \
+	INTERACT_ITEM(null, PROC_REF(suit_pockets_item)), \
+)
+
+/// Old attack_hand: the pockets get the touch first.
+/obj/item/clothing/suit/storage/proc/suit_pockets_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (pockets.handle_attack_hand(user))
-		..(user)
+		return FALSE
+	return TRUE
 
 /obj/item/clothing/suit/storage/MouseDrop(obj/over_object as obj)
 	if (pockets.handle_mousedrop(usr, over_object))
 		..(over_object)
 
-/obj/item/clothing/suit/storage/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Old attackby: the clothing's own item use (the old ..()), then the pockets.
+/obj/item/clothing/suit/storage/proc/suit_pockets_item(mob/user, obj/item/W, datum/interaction/interaction)
+	clothing_accessory_item(user, W, interaction)
 	pockets.attackby(W, user)
+	return INTERACTION_HANDLED_PASS
 
 //Jackets with buttons, used for labcoats, IA jackets, First Responder jackets, and brown jackets.
 /obj/item/clothing/suit/storage/toggle

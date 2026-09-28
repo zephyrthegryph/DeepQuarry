@@ -175,11 +175,11 @@
 	body_parts_covered = null
 	special_handling = TRUE
 
-/obj/item/clothing/gloves/weddingring/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_length" = MAX_NAME_LEN), PROC_REF(attack_self), args)
+EXTEND_INTERACTIONS(/obj/item/clothing/gloves/weddingring, INTERACT_USE("Engrave", PROC_REF(wedding_ring_engrave_self)))
+
+/// Old attack_self: set the engraving.
+/obj/item/clothing/gloves/weddingring/proc/wedding_ring_engrave_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_length" = MAX_NAME_LEN), PROC_REF(wedding_ring_engrave_self), args)
 	if(isnull(_answer_a1))
 		return TRUE
 	partnername = _answer_a1

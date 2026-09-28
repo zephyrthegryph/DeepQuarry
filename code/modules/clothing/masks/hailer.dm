@@ -56,8 +56,12 @@
 /obj/item/clothing/mask/gas/sechailer/ui_action_click(mob/user, actiontype)
 	halt()
 
-/obj/item/clothing/mask/gas/sechailer/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, INTERACT_ALT("Select phrase", PROC_REF(sechailer_phrase_alt)))
+
+/// Old click_alt. It never reached the clothing alt-click.
+/obj/item/clothing/mask/gas/sechailer/proc/sechailer_phrase_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	selectphrase()
+	return TRUE
 
 /obj/item/clothing/mask/gas/sechailer/verb/selectphrase()
 	set name = "Select gas mask phrase"
