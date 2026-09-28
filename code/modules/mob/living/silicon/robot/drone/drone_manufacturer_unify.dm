@@ -10,14 +10,13 @@
 /// The player picks the drone type first; `chosen` is set once they have (or had no say).
 /obj/machinery/drone_fabricator/unify/create_drone(client/player, chosen = FALSE)
 	if(!chosen && player)
-		om_prompt(src, player, list("kind" = "list", "message" = "What module would you like to use?", "title" = "Drone Type", "choices" = possible_drones, "on_cancel" = PROC_REF(dronetype_default)), PROC_REF(dronetype_chosen))
+		// A cancel answers "": the drone is made with the current type.
+		om_ask(player, /datum/om/prompt/choice, PROC_REF(dronetype_chosen), title = "Drone Type", message = "What module would you like to use?", choices = possible_drones, cancel_answer = "")
 		return
 	return ..(player)
 
-/obj/machinery/drone_fabricator/unify/proc/dronetype_default(mob/user, datum/om/prompt/ask)
-	create_drone(user.client, TRUE)
-
-/obj/machinery/drone_fabricator/unify/proc/dronetype_chosen(mob/user, choice, datum/om/prompt/ask)
-	drone_type = possible_drones[choice]
-	create_drone(user.client, TRUE)
+/obj/machinery/drone_fabricator/unify/proc/dronetype_chosen(datum/om/prompt/choice/ask)
+	if(ask.choice)
+		drone_type = possible_drones[ask.choice]
+	create_drone(ask.answerer.client, TRUE)
 //UNIFY end

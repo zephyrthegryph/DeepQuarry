@@ -188,36 +188,53 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 		choices["Blitz"] = "blitzshell"
 
 	// If you add more, datumize these. Having 'basically two' is not enough to make me bother though.
-	om_prompt_sequence(src, src, list(
-		list("key" = "shell", "kind" = "list", "message" = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", "title" = "Customize Shell", "choices" = choices),
-		PROC_REF(ask_shell_eyes),
-		PROC_REF(ask_shell_plating),
-	), PROC_REF(shell_chosen), list("data" = list("shells" = choices)))
+	om_flow_start(/datum/om/flow/drone_shell, src, null, shells = choices)
 
-/mob/living/silicon/robot/drone/proc/ask_shell_eyes(mob/user, datum/om/prompt/ask)
-	var/list/choices = ask.get("shells")
-	if(choices[ask.get("shell")] in list("repairbot", "maintbot"))
-		return list("key" = "eyes", "kind" = "list", "message" = "Select eye color:", "title" = "Eye Color", "choices" = list("blue", "red", "orange", "green", "violet"), "optional" = TRUE)
+/// Picking a drone shell: the shell, then (for some shells) eye and plating colours. The colour
+/// picks are optional: a cancel leaves that accessory off.
+/datum/om/flow/drone_shell
+	name = "drone shell"
+	/// Shell name -> icon_state.
+	var/list/shells
+	var/shell_state
+	var/eyes
+	var/plating
 
-/mob/living/silicon/robot/drone/proc/ask_shell_plating(mob/user, datum/om/prompt/ask)
-	var/list/choices = ask.get("shells")
-	if(choices[ask.get("shell")] == "maintbot")
-		return list("key" = "plating", "kind" = "list", "message" = "Select plating color:", "title" = "Eye Color", "choices" = list("blue", "red", "orange", "green", "brown"), "optional" = TRUE)
+/datum/om/flow/drone_shell/valid()
+	var/mob/living/silicon/robot/drone/D = actor
+	return D.can_pick_shell ? null : "already picked"
 
-/mob/living/silicon/robot/drone/proc/shell_chosen(mob/user, datum/om/prompt/ask)
-	if(!can_pick_shell)
+/datum/om/flow/drone_shell/start()
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(shell_picked), title = "Customize Shell", message = "Select a shell. NOTE: You can only do this once during this drone-lifetime.", choices = shells)
+
+/datum/om/flow/drone_shell/proc/shell_picked(datum/om/prompt/choice/ask)
+	shell_state = shells[ask.choice]
+	if(shell_state in list("repairbot", "maintbot"))
+		om_ask(actor, /datum/om/prompt/choice, PROC_REF(eyes_picked), title = "Eye Color", message = "Select eye color:", choices = list("blue", "red", "orange", "green", "violet"), cancel_answer = "")
 		return
-	var/list/choices = ask.get("shells")
-	icon_state = choices[ask.get("shell")]
-	shell_accessories = null
-	if(ask.get("eyes"))
-		LAZYADD(shell_accessories, "[icon_state]-eyes-[ask.get("eyes")]")
-	if(ask.get("plating"))
-		LAZYADD(shell_accessories, "[icon_state]-shell-[ask.get("plating")]")
+	finish()
 
-	can_pick_shell = FALSE
-	update_icon()
-	return TRUE
+/datum/om/flow/drone_shell/proc/eyes_picked(datum/om/prompt/choice/ask)
+	eyes = ask.choice
+	if(shell_state == "maintbot")
+		om_ask(actor, /datum/om/prompt/choice, PROC_REF(plating_picked), title = "Eye Color", message = "Select plating color:", choices = list("blue", "red", "orange", "green", "brown"), cancel_answer = "")
+		return
+	finish()
+
+/datum/om/flow/drone_shell/proc/plating_picked(datum/om/prompt/choice/ask)
+	plating = ask.choice
+	finish()
+
+/datum/om/flow/drone_shell/proc/finish()
+	var/mob/living/silicon/robot/drone/D = actor
+	D.icon_state = shell_state
+	D.shell_accessories = null
+	if(eyes)
+		LAZYADD(D.shell_accessories, "[shell_state]-eyes-[eyes]")
+	if(plating)
+		LAZYADD(D.shell_accessories, "[shell_state]-shell-[plating]")
+	D.can_pick_shell = FALSE
+	D.update_icon()
 
 /datum/interaction/ability/self/robot_pick_shell
 	id = ABILITY_ID_ROBOT_PICK_SHELL
@@ -342,12 +359,26 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 
 /mob/living/silicon/robot/drone/proc/question(client/C)
 	if(!C || jobban_isbanned(C,JOB_CYBORG))	return
-	om_prompt(src, C, list("message" = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?", "title" = "Maintenance drone reboot", "choices" = list("Yes", "No", "Never for this round")), PROC_REF(question_answered))
+	om_ask(C, /datum/om/prompt/choice/drone_reboot, PROC_REF(question_answered))
 
-/mob/living/silicon/robot/drone/proc/question_answered(mob/user, response, datum/om/prompt/ask)
-	var/client/C = user.client
-	if(!C || ckey)
-		return
+/// A ghost is offered a rebooting drone. Re-checked on the answer: still has a client, and
+/// the drone is still unoccupied.
+/datum/om/prompt/choice/drone_reboot
+	title = "Maintenance drone reboot"
+	message = "Someone is attempting to reboot a maintenance drone. Would you like to play as one?"
+	buttons = TRUE
+
+/datum/om/prompt/choice/drone_reboot/prepare()
+	choices = list("Yes", "No", "Never for this round")
+	return TRUE
+
+/datum/om/prompt/choice/drone_reboot/valid()
+	var/mob/living/silicon/robot/drone/D = subject
+	return (!answerer.client || D.ckey) ? "taken" : null
+
+/mob/living/silicon/robot/drone/proc/question_answered(datum/om/prompt/choice/drone_reboot/ask)
+	var/client/C = ask.answerer.client
+	var/response = ask.choice
 	if(response == "Yes")
 		transfer_personality(C)
 	else if (response == "Never for this round")

@@ -3,10 +3,16 @@
 	set desc = "Talk telepathically to someone over a distance."
 	set category = "Abilities.General"
 
-	om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Project mind", "max_length" = MAX_MESSAGE_LEN, "data" = list("target" = M)), PROC_REF(telepathy_entered))
+	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(telepathy_entered), title = "Project mind", target = M)
 
-/mob/living/carbon/human/proc/telepathy_entered(mob/user, msg, datum/om/prompt/ask)
-	var/mob/M = ask.get("target")
+/// A telepathic message; carries who it's sent to.
+/datum/om/prompt/text/telepathy
+	message = "Message:"
+	var/mob/target
+
+/mob/living/carbon/human/proc/telepathy_entered(datum/om/prompt/text/telepathy/ask)
+	var/mob/M = ask.target
+	var/msg = ask.text
 	if(msg)
 		var/mob/living/carbon/human/H = M
 		log_say("(GreyTP to [key_name(M)]) [msg]", src)

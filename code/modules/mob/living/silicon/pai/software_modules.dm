@@ -70,12 +70,23 @@
 			count++
 
 		// Check the carrier
-		om_prompt(src, M, list("message" = "[P] is requesting a DNA sample from you. Will you allow it to confirm your identity?", "title" = "[P] Check DNA", "choices" = list("Yes", "No"), "data" = list("pai" = P)), PROC_REF(dna_sample_answered))
+		om_ask(M, /datum/om/prompt/confirm/pai_dna_sample, PROC_REF(dna_sample_answered), asker = P, pai = P)
 		return TRUE
 
-/datum/pai_software/directives/proc/dna_sample_answered(mob/living/M, answer, datum/om/prompt/ask)
-	var/mob/living/silicon/pai/P = ask.get("pai")
-	if(answer == "Yes")
+/// A pAI asks its carrier for a DNA sample. The answer proc runs on no too (the pAI is told).
+/datum/om/prompt/confirm/pai_dna_sample
+	answer_on_no = TRUE
+	var/mob/living/silicon/pai/pai
+
+/datum/om/prompt/confirm/pai_dna_sample/prepare()
+	title = "[pai] Check DNA"
+	message = "[pai] is requesting a DNA sample from you. Will you allow it to confirm your identity?"
+	return TRUE
+
+/datum/pai_software/directives/proc/dna_sample_answered(datum/om/prompt/confirm/pai_dna_sample/ask)
+	var/mob/living/M = ask.answerer
+	var/mob/living/silicon/pai/P = ask.pai
+	if(ask.yes)
 		var/turf/T = get_turf(P.loc)
 		for (var/mob/v in viewers(T))
 			v.show_message(span_notice("[M] presses [M.p_their()] thumb against [P]."), 3, span_notice("[P] makes a sharp clicking sound as it extracts DNA material from [M]."), 2)

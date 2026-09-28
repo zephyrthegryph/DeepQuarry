@@ -295,7 +295,7 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	var/obj/item/card/id/ID = W.GetID()
 	if(ID)
 		if (idaccessible == 1)
-			om_prompt(src, user, list("message" = "Do you wish to add access to [src] or remove access from [src]?", "title" = "Access Modify", "choices" = list("Add Access","Remove Access", "Cancel"), "requires" = PROMPT_ADJACENT, "data" = list("card" = W)), PROC_REF(access_modify_chosen))
+			om_ask(user, /datum/om/prompt/choice/pai_access, PROC_REF(access_modify_chosen), card = W)
 			return
 		else if (istype(W, /obj/item/card/id) && idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
@@ -308,12 +308,30 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 	om_after(src, 1, PROC_REF(close_up_unless_dead))
 	return
 
-/mob/living/silicon/pai/proc/access_modify_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/W = ask.get("card")
+/// Swiping an ID over a pAI. Re-checked on the answer: next to the pAI and able, it still
+/// accepts access changes, and the card (still an ID) is still held.
+/datum/om/prompt/choice/pai_access
+	title = "Access Modify"
+	buttons = TRUE
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/obj/item/card
+
+/datum/om/prompt/choice/pai_access/prepare()
+	message = "Do you wish to add access to [subject] or remove access from [subject]?"
+	choices = list("Add Access", "Remove Access", "Cancel")
+	return TRUE
+
+/datum/om/prompt/choice/pai_access/valid()
+	var/mob/living/silicon/pai/P = subject
+	if(!card.GetID() || P.idaccessible != 1 || !(card in answerer.get_all_held_items()))
+		return "can't modify access"
+	return null
+
+/mob/living/silicon/pai/proc/access_modify_chosen(datum/om/prompt/choice/pai_access/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/W = ask.card
 	var/obj/item/card/id/ID = W.GetID()
-	if(!ID || idaccessible != 1 || !(W in user.get_all_held_items()))
-		return
-	switch(choice)
+	switch(ask.choice)
 		if("Add Access")
 			idcard.access |= ID.GetAccess()
 			to_chat(user, span_notice("You add the access from the [W] to [src]."))

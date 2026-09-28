@@ -36,14 +36,12 @@
 	if(custom_name)
 		to_chat(src, "You can't pick another custom name. [isshell(src) ? "" : "Go ask for a name change."]")
 		return FALSE
-	om_prompt(src, src, list("kind" = "text", "message" = "You are a robot. Enter a name, or leave blank for the default name.", "title" = "Name change", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "on_cancel" = PROC_REF(robot_name_cancelled)), PROC_REF(robot_name_entered))
+	// A cancel answers "": the default name.
+	om_ask(src, /datum/om/prompt/text, PROC_REF(robot_name_entered), title = "Name change", message = "You are a robot. Enter a name, or leave blank for the default name.", max_length = MAX_NAME_LEN, encode = FALSE, cancel_answer = "")
 	return TRUE
 
-/mob/living/silicon/robot/proc/robot_name_cancelled(mob/user, datum/om/prompt/ask)
-	updatename()
-
-/mob/living/silicon/robot/proc/robot_name_entered(mob/user, newname, datum/om/prompt/ask)
-	newname = sanitizeSafe(newname, MAX_NAME_LEN)
+/mob/living/silicon/robot/proc/robot_name_entered(datum/om/prompt/text/ask)
+	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if (newname && !custom_name)
 		custom_name = newname
 		sprite_name = newname

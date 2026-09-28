@@ -213,7 +213,7 @@
 		return
 	if(istype(src?.buckled_to(),/obj/structure/bed/chair/office)) // WEEEE!!!
 		playsound(src, 'sound/effects/roll.ogg', 100, 1)
-	om_task_start(/datum/om/task/spin, src, null, list("left" = spintime, "speed" = speed, "facing" = dir))
+	om_task_start(/datum/om/task/spin, src, null, left = spintime, speed = speed, facing = dir)
 
 /// Spinning: one quarter turn every `speed` deciseconds until `left` runs out.
 /datum/om/task/spin

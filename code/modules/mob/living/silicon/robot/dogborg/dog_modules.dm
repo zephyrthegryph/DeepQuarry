@@ -274,15 +274,16 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	om_prompt(src, user, list("message" = "Do you wish to check the reserves or change the color?", "title" = "Selection List", "choices" = list("Reserves", "Color"), "requires" = PROMPT_HELD), PROC_REF(dogborg_choice_made))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(dogborg_choice_made), title = "Selection List", message = "Do you wish to check the reserves or change the color?", choices = list("Reserves", "Color"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/lightreplacer/dogborg/proc/dogborg_color_chosen(mob/user, new_color, datum/om/prompt/ask)
-	selected_color = new_color
-	to_chat(user, span_filter_notice("The light color has been changed."))
+/obj/item/lightreplacer/dogborg/proc/dogborg_color_chosen(datum/om/prompt/color/ask)
+	selected_color = ask.picked_color
+	to_chat(ask.answerer, span_filter_notice("The light color has been changed."))
 
-/obj/item/lightreplacer/dogborg/proc/dogborg_choice_made(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Color")
-		om_prompt(src, user, list("kind" = "color", "message" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = selected_color, "requires" = PROMPT_HELD), PROC_REF(dogborg_color_chosen))
+/obj/item/lightreplacer/dogborg/proc/dogborg_choice_made(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	if(ask.choice == "Color")
+		om_ask(user, /datum/om/prompt/color, PROC_REF(dogborg_color_chosen), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return
 	else
 		if(uses >= max_uses)
@@ -365,10 +366,18 @@
 			choices += M
 	choices -= src
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to leap at?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS, "data" = list("bluespace" = bluespace)), PROC_REF(leap_target_chosen))
+	om_ask(src, /datum/om/prompt/choice/robot_leap, PROC_REF(leap_target_chosen), choices = choices, bluespace = bluespace)
 
-/mob/living/silicon/robot/proc/leap_target_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
-	var/bluespace = ask.get("bluespace")
+/// A borg's leap target. `bluespace`: the longer, costlier bluespace leap.
+/datum/om/prompt/choice/robot_leap
+	title = "Target Choice"
+	message = "Who do you wish to leap at?"
+	ask_flags = ASK_CONSCIOUS
+	var/bluespace = FALSE
+
+/mob/living/silicon/robot/proc/leap_target_chosen(datum/om/prompt/choice/robot_leap/ask)
+	var/mob/living/T = ask.choice
+	var/bluespace = ask.bluespace
 	var/power_cost = bluespace ? 1000 : 750
 	var/minimum_power = bluespace ? 2500 : 1000
 	var/leap_distance = bluespace ? 5 : 3
@@ -471,11 +480,11 @@
 /obj/item/mining_scanner/robot/proc/change_size(mob/user)
 	if(!exact)
 		return
-	om_prompt(src, user, list("kind" = "list", "message" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7), "requires" = PROMPT_HELD), PROC_REF(range_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(range_chosen), title = "Pick a range to scan. ", message = "Scanner Range", choices = list(0,1,2,3,4,5,6,7), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/mining_scanner/robot/proc/range_chosen(mob/user, custom_range, datum/om/prompt/ask)
-	range = custom_range
-	to_chat(user, span_notice("Scanner will now look up to [range] tile(s) away."))
+/obj/item/mining_scanner/robot/proc/range_chosen(datum/om/prompt/choice/ask)
+	range = ask.choice
+	to_chat(ask.answerer, span_notice("Scanner will now look up to [range] tile(s) away."))
 
 //CHOMPEnable Start
 /obj/item/robot_tongue/examine(user)

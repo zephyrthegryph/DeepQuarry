@@ -124,12 +124,20 @@
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to shoot rainbows at?", "title" = "Rainbow", "choices" = targets, "requires" = PROMPT_CONSCIOUS), PROC_REF(rainbow_target_chosen))
+	om_ask(src, /datum/om/prompt/choice/rainbow_target, PROC_REF(rainbow_target_chosen), choices = targets)
 	return TRUE
 
-/mob/living/proc/rainbow_target_chosen(mob/user, mob/living/carbon/human/chosen_target, datum/om/prompt/ask)
-	if(!Adjacent(chosen_target))
-		return
+/// Re-checked on the answer: still conscious, and next to the one picked.
+/datum/om/prompt/choice/rainbow_target
+	title = "Rainbow"
+	message = "Who do you wish to shoot rainbows at?"
+	ask_flags = ASK_CONSCIOUS
+
+/datum/om/prompt/choice/rainbow_target/valid()
+	return answerer.Adjacent(choice) ? null : "too far away"
+
+/mob/living/proc/rainbow_target_chosen(datum/om/prompt/choice/rainbow_target/ask)
+	var/mob/living/carbon/human/chosen_target = ask.choice
 
 	visible_message(span_warning("[src] begins chargin' their lazor!"))
 	om_do_after(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))

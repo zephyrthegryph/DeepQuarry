@@ -60,9 +60,11 @@
 	if(!isrobot(R)) //sod off
 		return
 
-	om_prompt(src, R, list("kind" = "number", "message" = "How obscured do you want to be? In %", "title" = "Cloak Level", "default" = cloak_strength*100, "max" = 100, "min" = 0, "requires" = PROMPT_HELD), PROC_REF(cloaking_level_chosen))
+	om_ask(R, /datum/om/prompt/number, PROC_REF(cloaking_level_chosen), title = "Cloak Level", message = "How obscured do you want to be? In %", default = cloak_strength*100, max = 100, min = 0, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/borg/cloak/proc/cloaking_level_chosen(mob/living/silicon/robot/R, N, datum/om/prompt/ask)
+/obj/item/borg/cloak/proc/cloaking_level_chosen(datum/om/prompt/number/ask)
+	var/mob/living/silicon/robot/R = ask.answerer
+	var/N = ask.number
 	if(!isnull(N) && N >= 0 && N <= 100)
 		cloak_strength = N/100
 		to_chat(R, span_warning("You will now be [N]% obscured when the cloak is active."))

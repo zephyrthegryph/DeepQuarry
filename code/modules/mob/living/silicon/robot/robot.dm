@@ -986,14 +986,23 @@
 	if(!length(removable))
 		to_chat(user, span_filter_notice("There is nothing left to remove."))
 		return FALSE
-	om_prompt(src, user, list("kind" = "list", "message" = "Which component do you want to pry out?", "title" = "Remove Component", "choices" = removable, "requires" = PROMPT_ADJACENT, "data" = list("slots" = removable)), PROC_REF(pry_component_chosen))
+	om_ask(user, /datum/om/prompt/choice/pry_component, PROC_REF(pry_component_chosen), choices = removable)
 	return TRUE
 
-/mob/living/silicon/robot/proc/pry_component_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/list/removable = ask.get("slots")
-	if(!opened || cell)
-		return FALSE
-	var/datum/robot_component/C = get_component(removable[choice])
+/// Component name -> slot. Re-checked on the answer: next to the borg and able, and the borg is
+/// still open with no cell.
+/datum/om/prompt/choice/pry_component
+	title = "Remove Component"
+	message = "Which component do you want to pry out?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/choice/pry_component/valid()
+	var/mob/living/silicon/robot/R = subject
+	return (!R.opened || R.cell) ? "not open" : null
+
+/mob/living/silicon/robot/proc/pry_component_chosen(datum/om/prompt/choice/pry_component/ask)
+	var/mob/user = ask.answerer
+	var/datum/robot_component/C = get_component(ask.choices[ask.choice])
 	if(!C || C.installed == ROBOT_PART_MISSING || !C.wrapped)
 		return FALSE
 	var/obj/item/I = C.uninstall()
@@ -1173,16 +1182,22 @@
 
 /mob/living/silicon/robot/proc/grab_vore_interact(mob/living/carbon/human/H)
 	if(is_vore_predator(H) && H.devourable && src.feeding && src.devourable)
-		om_prompt(src, H, list("message" = "Do you wish to eat [src] or feed yourself to them?", "title" = "Feed or Eat", "choices" = list("Nevermind!", "Eat","Feed"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
+		om_ask(H, /datum/om/prompt/choice/robot_grab_vore, PROC_REF(grab_vore_chosen), title = "Feed or Eat", message = "Do you wish to eat [src] or feed yourself to them?", choices = list("Nevermind!", "Eat", "Feed"))
 		return
 	if(is_vore_predator(H) && src.devourable)
-		om_prompt(src, H, list("message" = "Do you wish to eat [src]?", "title" = "Eat?", "choices" = list("Nevermind!", "Eat"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
+		om_ask(H, /datum/om/prompt/choice/robot_grab_vore, PROC_REF(grab_vore_chosen), title = "Eat?", message = "Do you wish to eat [src]?", choices = list("Nevermind!", "Eat"))
 		return
 	if(H.devourable && src.feeding)
-		om_prompt(src, H, list("message" = "Do you wish to feed yourself to [src]?", "title" = "Feed?", "choices" = list("Nevermind!", "Feed"), "requires" = PROMPT_ADJACENT), PROC_REF(grab_vore_chosen))
+		om_ask(H, /datum/om/prompt/choice/robot_grab_vore, PROC_REF(grab_vore_chosen), title = "Feed?", message = "Do you wish to feed yourself to [src]?", choices = list("Nevermind!", "Feed"))
 
-/mob/living/silicon/robot/proc/grab_vore_chosen(mob/living/carbon/human/H, switchy, datum/om/prompt/ask)
-	switch(switchy)
+/// Grabbing a borg on grab intent: eat it or feed yourself to it. Re-checked on the answer: next to it and able.
+/datum/om/prompt/choice/robot_grab_vore
+	buttons = TRUE
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/mob/living/silicon/robot/proc/grab_vore_chosen(datum/om/prompt/choice/robot_grab_vore/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	switch(ask.choice)
 		if("Eat")
 			if(is_vore_predator(H) && devourable)
 				feed_grabbed_to_self(H, src)
@@ -1697,13 +1712,11 @@
 		rest_style = "Default"
 		return
 
-	om_prompt(src, src, list("message" = "Select resting pose", "title" = "Resting Pose", "choices" = sprite_datum.rest_sprite_options, "on_cancel" = PROC_REF(rest_style_cancelled)), PROC_REF(rest_style_chosen))
+	// A cancel picks "Default".
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(rest_style_chosen), title = "Resting Pose", message = "Select resting pose", choices = sprite_datum.rest_sprite_options, buttons = TRUE, cancel_answer = "Default")
 
-/mob/living/silicon/robot/proc/rest_style_cancelled(mob/user, datum/om/prompt/ask)
-	rest_style_chosen(user, "Default", ask)
-
-/mob/living/silicon/robot/proc/rest_style_chosen(mob/user, choice, datum/om/prompt/ask)
-	rest_style = choice
+/mob/living/silicon/robot/proc/rest_style_chosen(datum/om/prompt/choice/ask)
+	rest_style = ask.choice
 	update_icon()
 
 /// Riding is provided by the belly component; without it the chassis can't be mounted.

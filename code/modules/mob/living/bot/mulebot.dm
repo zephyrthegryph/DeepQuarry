@@ -118,7 +118,7 @@
 		if("sethome")
 			var/list/beaconlist = GetBeaconList()
 			if(beaconlist.len)
-				om_prompt(src, ui.user, list("kind" = "list", "message" = "Select new home tag", "title" = "Mulebot [suffix ? "([suffix])" : ""]", "choices" = beaconlist, "requires" = PROMPT_USABLE, "data" = list("beacons" = beaconlist)), PROC_REF(home_tag_chosen))
+				om_ask(ui.user, /datum/om/prompt/choice/mulebot_beacon, PROC_REF(home_tag_chosen), message = "Select new home tag", choices = beaconlist)
 			else
 				tgui_alert_async(ui.user, "No destination beacons available.")
 			. = TRUE
@@ -139,10 +139,18 @@
 			safety = !safety
 			. = TRUE
 
-/mob/living/bot/mulebot/proc/home_tag_chosen(mob/user, new_dest, datum/om/prompt/ask)
-	var/list/beaconlist = ask.get("beacons")
-	home = get_turf(beaconlist[new_dest])
-	homeName = new_dest
+/// Picking a beacon for the mulebot (the subject). Re-checked on the answer: its UI is still usable.
+/datum/om/prompt/choice/mulebot_beacon
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/choice/mulebot_beacon/prepare()
+	var/mob/living/bot/mulebot/bot = subject
+	title = "Mulebot [bot.suffix ? "([bot.suffix])" : ""]"
+	return TRUE
+
+/mob/living/bot/mulebot/proc/home_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
+	home = get_turf(ask.choices[ask.choice])
+	homeName = ask.choice
 
 /mob/living/bot/mulebot/attackby(obj/item/O, mob/user)
 	..()
@@ -163,7 +171,7 @@
 		if("SetD")
 			var/list/beaconlist = GetBeaconList()
 			if(beaconlist.len)
-				om_prompt(src, user, list("kind" = "list", "message" = "Select new destination tag", "title" = "Mulebot [suffix ? "([suffix])" : ""]", "choices" = beaconlist, "requires" = PROMPT_USABLE, "data" = list("beacons" = beaconlist)), PROC_REF(destination_tag_chosen))
+				om_ask(user, /datum/om/prompt/choice/mulebot_beacon, PROC_REF(destination_tag_chosen), message = "Select new destination tag", choices = beaconlist)
 			else
 				tgui_alert_async(user, "No destination beacons available.")
 		if("GoTD")
@@ -171,11 +179,10 @@
 		if("Stop")
 			paused = 1
 
-/mob/living/bot/mulebot/proc/destination_tag_chosen(mob/user, new_dest, datum/om/prompt/ask)
-	var/list/beaconlist = ask.get("beacons")
+/mob/living/bot/mulebot/proc/destination_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
 	resetTarget()
-	target = get_turf(beaconlist[new_dest])
-	targetName = new_dest
+	target = get_turf(ask.choices[ask.choice])
+	targetName = ask.choice
 
 /mob/living/bot/mulebot/emag_act(remaining_charges, user)
 	locked = !locked

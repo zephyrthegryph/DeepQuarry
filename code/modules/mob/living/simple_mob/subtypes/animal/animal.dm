@@ -34,9 +34,10 @@
 	set category = "IC.Settings"
 	set desc = "Set your flavour text."
 	set src = usr
-	om_prompt(src, src, list("kind" = "text", "message" = "Please describe yourself.", "title" = "Flavour Text", "default" = flavor_text, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(flavour_text_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(flavour_text_entered), title = "Flavour Text", message = "Please describe yourself.", default = flavor_text, multiline = TRUE)
 
-/mob/living/simple_mob/animal/proc/flavour_text_entered(mob/user, new_flavour_text, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/proc/flavour_text_entered(datum/om/prompt/text/ask)
+	var/new_flavour_text = ask.text
 	if(length(new_flavour_text))
 		flavor_text = new_flavour_text
 		to_chat(src, span_notice("Your flavour text has been updated."))

@@ -11,11 +11,11 @@
 	to_chat(src, span_bold("Hunters") + span_notice(" are strong and agile, able to hunt away from the hive and rapidly move through ventilation shafts. Hunters generate plasma slowly and have low reserves."))
 	to_chat(src, span_bold("Sentinels")  + span_notice(" are tasked with protecting the hive and are deadly up close and at a range. They are not as physically imposing nor fast as the hunters."))
 	to_chat(src, span_bold("Drones")  + span_notice(" are the working class, offering the largest plasma storage and generation. They are the only caste which may evolve again, turning into the dreaded Genaprawn queen."))
-	om_prompt(src, src, list("message" = "Please choose which alien caste you shall belong to.", "title" = "Alien Choice", "choices" = list("Hunter","Sentinel","Drone"), "requires" = PROMPT_CONSCIOUS), PROC_REF(caste_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(caste_chosen), message = "Please choose which alien caste you shall belong to.", title = "Alien Choice", choices = list("Hunter","Sentinel","Drone"), buttons = TRUE, ask_flags = ASK_CONSCIOUS)
 	return null
 
-/mob/living/carbon/alien/larva/proc/caste_chosen(mob/user, alien_caste, datum/om/prompt/ask)
-	evolve_into("Genaprawn [alien_caste]")
+/mob/living/carbon/alien/larva/proc/caste_chosen(datum/om/prompt/choice/ask)
+	evolve_into("Genaprawn [ask.choice]")
 
 /mob/living/carbon/alien/larva/show_evolution_blurb()
 	return

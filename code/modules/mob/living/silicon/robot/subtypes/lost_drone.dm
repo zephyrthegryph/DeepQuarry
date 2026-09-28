@@ -46,11 +46,11 @@
 /mob/living/silicon/robot/malf/lost/randomlaws/repick_laws()
 	if(!law_retries)
 		return
-	om_prompt(src, src, list("message" = "Do you want to keep your laws or reroll? (For specific laws, feel free to ahelp and we'll see what we can do)", "title" = "Confirm laws", "choices" = list("Keep", "Reroll ([law_retries])")), PROC_REF(repick_laws_answered))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(repick_laws_answered), title = "Confirm laws", message = "Do you want to keep your laws or reroll? (For specific laws, feel free to ahelp and we'll see what we can do)", choices = list("Keep", "Reroll ([law_retries])"), buttons = TRUE, cancel_answer = "Keep")
 
 /// A reroll asks again while retries are left; keeping (or closing the window) ends it.
-/mob/living/silicon/robot/malf/lost/randomlaws/proc/repick_laws_answered(mob/user, confirm, datum/om/prompt/ask)
-	if(!law_retries || copytext(confirm, 1, 7) != "Reroll")
+/mob/living/silicon/robot/malf/lost/randomlaws/proc/repick_laws_answered(datum/om/prompt/choice/ask)
+	if(!law_retries || copytext(ask.choice, 1, 7) != "Reroll")
 		law_retries = 0
 		return
 	apply_new_laws()

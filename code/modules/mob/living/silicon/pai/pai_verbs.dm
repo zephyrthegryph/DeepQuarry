@@ -36,10 +36,10 @@
 	set category = "Abilities.pAI Commands"
 	set name = "Choose Speech Verbs"
 
-	om_prompt(src, src, list("kind" = "list", "message" = "What theme would you like to use for your speech verbs?", "title" = "Theme Choice", "choices" = GLOB.possible_say_verbs), PROC_REF(speech_verbs_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_verbs_chosen), title = "Theme Choice", message = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs)
 
-/mob/living/silicon/pai/proc/speech_verbs_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/list/sayverbs = GLOB.possible_say_verbs[choice]
+/mob/living/silicon/pai/proc/speech_verbs_chosen(datum/om/prompt/choice/ask)
+	var/list/sayverbs = GLOB.possible_say_verbs[ask.choice]
 	speak_statement = sayverbs[1]
 	speak_exclamation = sayverbs[(sayverbs.len>1 ? 2 : sayverbs.len)]
 	speak_query = sayverbs[(sayverbs.len>2 ? 3 : sayverbs.len)]
@@ -60,11 +60,11 @@
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = "IC.Settings"
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a gender Identity:", "title" = "Set Gender Identity", "choices" = list(FEMALE, MALE, NEUTER, PLURAL, HERM)), PROC_REF(pai_gender_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(pai_gender_chosen), title = "Set Gender Identity", message = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
 	return 1
 
-/mob/living/silicon/pai/proc/pai_gender_chosen(mob/user, new_gender_identity, datum/om/prompt/ask)
-	gender = new_gender_identity
+/mob/living/silicon/pai/proc/pai_gender_chosen(datum/om/prompt/choice/ask)
+	gender = ask.choice
 
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"
@@ -90,11 +90,14 @@
 	if(loc != card)
 		to_chat(src, span_warning("Your message won't be visible while unfolded!"))
 	if (!message)
-		om_prompt(src, src, list("kind" = "text", "message" = "Enter text you would like to show on your screen.", "title" = "Screen Message", "encode" = FALSE), PROC_REF(screen_message_entered))
+		om_ask(src, /datum/om/prompt/text, PROC_REF(screen_message_entered), title = "Screen Message", message = "Enter text you would like to show on your screen.", encode = FALSE)
 		return
-	screen_message_entered(src, message)
+	show_screen_message(message)
 
-/mob/living/silicon/pai/proc/screen_message_entered(mob/user, message, datum/om/prompt/ask)
+/mob/living/silicon/pai/proc/screen_message_entered(datum/om/prompt/text/ask)
+	show_screen_message(ask.text)
+
+/mob/living/silicon/pai/proc/show_screen_message(message)
 	message = sanitize_or_reflect(message,src)
 	if (!message)
 		return
@@ -170,9 +173,11 @@
 		to_chat(src, span_warning("Your selected chassis eye color can not be modified. The color you pick will only apply to supporting chassis and your card screen."))
 		return
 
-	var/new_eye_color = tgui_color_picker(src, "Choose your character's eye color:", "Eye Color")
-	if(new_eye_color)
-		eye_color = new_eye_color
+	om_ask(src, /datum/om/prompt/color, PROC_REF(pai_eye_color_chosen), title = "Eye Color", message = "Choose your character's eye color:")
+
+/mob/living/silicon/pai/proc/pai_eye_color_chosen(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		eye_color = ask.picked_color
 		update_icon()
 		card.setEmotion(card.current_emotion)
 

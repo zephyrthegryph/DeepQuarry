@@ -132,8 +132,10 @@
 	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 	COOLDOWN_START(src, last_special, 2.5 SECONDS)
-	var/new_skin = tgui_color_picker(src, "Please select a new body color.", "Shapeshifter Colour", rgb(r_skin, g_skin, b_skin))
-	if(!new_skin || stat)
+	om_ask(src, /datum/om/prompt/color, PROC_REF(prommie_colour_chosen), message = "Please select a new body color.", title = "Shapeshifter Colour", default = rgb(r_skin, g_skin, b_skin), ask_flags = ASK_CONSCIOUS)
+
+/mob/living/carbon/human/proc/prommie_colour_chosen(datum/om/prompt/color/ask)
+	if(!ask.picked_color)
 		return
-	shapeshifter_set_colour(new_skin)
+	shapeshifter_set_colour(ask.picked_color)
 	get_forms()?.refresh_appearance()

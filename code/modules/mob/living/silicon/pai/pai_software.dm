@@ -65,11 +65,9 @@
 	set desc = "Upload your personality to the cloud and wipe your software from the card. This is functionally equivalent to cryo or robotic storage, freeing up your job slot."
 
 	// Make sure people don't kill themselves accidentally
-	om_prompt(src, src, list("message" = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", "title" = "Wipe Software", "choices" = list("No", "Yes")), PROC_REF(wipe_software_confirmed))
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(wipe_software_confirmed), title = "Wipe Software", message = "WARNING: This will immediately wipe your software and ghost you, removing your character from the round permanently (similar to cryo and robotic storage). Are you entirely sure you want to do this?", no_first = TRUE)
 
-/mob/living/silicon/pai/proc/wipe_software_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Yes")
-		return
+/mob/living/silicon/pai/proc/wipe_software_confirmed(datum/om/prompt/confirm/ask)
 	close_up()
 	visible_message(span_filter_notice(span_bold("[src]") + " fades away from the screen, the pAI device goes silent."))
 	card.removePersonality()
@@ -96,17 +94,30 @@
 			if(!(ram >= our_soft.ram_cost))
 				to_chat(src, span_warning("Insufficient RAM for download. (Cost [our_soft.ram_cost] : [ram] Remaining)"))
 				return
-			om_prompt(src, src, list("message" = "Do you want to download [our_soft.name]? It costs [our_soft.ram_cost], and you have [ram] remaining.", "title" = "Download [our_soft.name]", "choices" = list("Yes", "No"), "data" = list("software" = thing)), PROC_REF(download_software_confirmed))
+			om_ask(src, /datum/om/prompt/confirm/pai_download, PROC_REF(download_software_confirmed), software_key = thing)
 			return
 
-/mob/living/silicon/pai/proc/download_software_confirmed(mob/user, answer, datum/om/prompt/ask)
-	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[ask.get("software")]
-	if(answer != "Yes" || !our_soft)
-		return
-	if(!(ram >= our_soft.ram_cost))
-		return
-	if(software[our_soft.id])
-		return
+/// Downloading a software. Re-checked on the answer: it exists, isn't installed, and there's RAM for it.
+/datum/om/prompt/confirm/pai_download
+	/// The GLOB.pai_software_by_key key.
+	var/software_key
+
+/datum/om/prompt/confirm/pai_download/prepare()
+	var/mob/living/silicon/pai/P = answerer
+	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[software_key]
+	title = "Download [our_soft.name]"
+	message = "Do you want to download [our_soft.name]? It costs [our_soft.ram_cost], and you have [P.ram] remaining."
+	return TRUE
+
+/datum/om/prompt/confirm/pai_download/valid()
+	var/mob/living/silicon/pai/P = answerer
+	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[software_key]
+	if(!our_soft || P.ram < our_soft.ram_cost || P.software[our_soft.id])
+		return "can't download"
+	return null
+
+/mob/living/silicon/pai/proc/download_software_confirmed(datum/om/prompt/confirm/pai_download/ask)
+	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[ask.software_key]
 	ram -= our_soft.ram_cost
 	software[our_soft.id] = our_soft
 	to_chat(src, span_notice("You downloaded [our_soft.name]. ([ram] RAM remaining.)"))

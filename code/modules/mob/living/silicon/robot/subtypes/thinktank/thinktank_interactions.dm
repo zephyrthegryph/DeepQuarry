@@ -37,11 +37,26 @@
 	if(client || key || stat == DEAD || !SSticker || !SSticker.mode)
 		return ..()
 
-	om_prompt(src, user, list("message" = "Do you wish to take control of \the [src]?", "title" = "Platform Control", "choices" = list("No", "Yes")), PROC_REF(ghost_control_answered))
+	om_ask(user, /datum/om/prompt/confirm/platform_control, PROC_REF(ghost_control_answered))
 
-/mob/living/silicon/robot/platform/proc/ghost_control_answered(mob/observer/dead/user, confirm, datum/om/prompt/ask)
-	if(confirm != "Yes" || !isobserver(user) || client || key || stat == DEAD || !SSticker || !SSticker.mode)
-		return
+/// A ghost takes a platform. Re-checked on the answer: still a ghost, and the platform is
+/// still empty, alive, and the round is running.
+/datum/om/prompt/confirm/platform_control
+	title = "Platform Control"
+	no_first = TRUE
+
+/datum/om/prompt/confirm/platform_control/prepare()
+	message = "Do you wish to take control of \the [subject]?"
+	return TRUE
+
+/datum/om/prompt/confirm/platform_control/valid()
+	var/mob/living/silicon/robot/platform/P = subject
+	if(!isobserver(answerer) || P.client || P.key || P.stat == DEAD || !SSticker || !SSticker.mode)
+		return "unavailable"
+	return null
+
+/mob/living/silicon/robot/platform/proc/ghost_control_answered(datum/om/prompt/confirm/platform_control/ask)
+	var/mob/observer/dead/user = ask.answerer
 
 	if(jobban_isbanned(user, "Robot"))
 		to_chat(user, span_warning("You are banned from synthetic roles and cannot take control of \the [src]."))

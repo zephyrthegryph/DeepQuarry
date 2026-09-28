@@ -231,10 +231,10 @@
 	set name = "Change Colour"
 	set category = "Object"
 
-	om_prompt(src, user, list("kind" = "list", "message" = "Pick new colour.", "title" = "Cable Colour", "choices" = GLOB.possible_cable_coil_colours, "requires" = PROMPT_HELD), PROC_REF(cable_colour_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(cable_colour_chosen), title = "Cable Colour", message = "Pick new colour.", choices = GLOB.possible_cable_coil_colours, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(mob/user, selected_type, datum/om/prompt/ask)
-	set_cable_color(selected_type, user)
+/obj/item/stack/cable_coil/cyborg/proc/cable_colour_chosen(datum/om/prompt/choice/ask)
+	set_cable_color(ask.choice, ask.answerer)
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc
 		var/image/cable_image = our_belt.integrated_tool_images[name]

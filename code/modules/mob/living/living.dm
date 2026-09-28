@@ -123,27 +123,28 @@
 	set name = "Succumb to death"
 	set category = "IC.Game"
 	set desc = "Press this button if you are in crit and wish to die. Use this sparingly (ending a scene, no medical, etc.)"
-	om_prompt_sequence(src, src, list(
-		list("key" = "first", "message" = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?", "title" = "Confirm wish to succumb", "choices" = list("No","Yes")),
-		PROC_REF(succumb_ask_again),
-	), PROC_REF(succumb_answered), list("on_cancel" = PROC_REF(succumb_declined)))
+	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_ask_again), title = "Confirm wish to succumb", message = "Pressing this button will kill you instantenously! Are you sure you wish to proceed?", no_first = TRUE)
 
-/mob/living/proc/succumb_ask_again(mob/user, datum/om/prompt/ask)
-	if(ask.get("first") == "Yes")
-		return list("key" = "second", "message" = "Pressing this buttom will really kill you, no going back", "title" = "Are you sure?", "choices" = list("Yes", "No")) //Swapped answers to protect from accidental double clicks.
+/// One of the two succumb confirmations. A no or a cancel keeps the mob alive.
+/datum/om/prompt/confirm/succumb
 
-/mob/living/proc/succumb_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_blue("You chose to live another day."))
+/datum/om/prompt/confirm/succumb/declined()
+	to_chat(answerer, span_blue("You chose to live another day."))
 
-/mob/living/proc/succumb_answered(mob/user, datum/om/prompt/ask)
-	if (is_critical() && stat != DEAD && ask.get("first") == "Yes" && ask.get("second") == "Yes") // Checking both confirmations for good measure.
+/datum/om/prompt/confirm/succumb/cancelled()
+	to_chat(answerer, span_blue("You chose to live another day."))
+
+/mob/living/proc/succumb_ask_again(datum/om/prompt/confirm/succumb/ask)
+	//Swapped answers to protect from accidental double clicks.
+	om_ask(src, /datum/om/prompt/confirm/succumb, PROC_REF(succumb_answered), title = "Are you sure?", message = "Pressing this buttom will really kill you, no going back")
+
+/mob/living/proc/succumb_answered(datum/om/prompt/confirm/succumb/ask)
+	if (is_critical() && stat != DEAD)
 		src.death()
 		to_chat(src, span_blue("You have given up life and succumbed to death."))
 	else
 		if(stat == DEAD)
 			to_chat(src, span_blue("As much as you'd like, you can't die when already dead"))
-		else if(ask.get("first") != "Yes" || ask.get("second") != "Yes")
-			to_chat(src, span_blue("You chose to live another day."))
 		else
 			to_chat(src, span_blue("You are not injured enough to succumb to death!"))
 
@@ -1207,21 +1208,25 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	set desc = "Customize the text which appears when you type- e.g. 'says', 'asks', 'exclaims'."
 
 	if(src.client)
-		om_prompt(src, src, list("message" = "Which say-verb do you wish to customize?", "title" = "Select Verb", "choices" = list("Say","Whisper","Ask (?)","Exclaim/Shout/Yell (!)","Cancel")), PROC_REF(custom_say_verb_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(custom_say_verb_chosen), title = "Select Verb", message = "Which say-verb do you wish to customize?", choices = list("Say", "Whisper", "Ask (?)", "Exclaim/Shout/Yell (!)", "Cancel"), buttons = TRUE)
 
-/mob/living/proc/custom_say_verb_chosen(mob/user, sayselect, datum/om/prompt/ask)
-	switch(sayselect)
+/// A custom speech verb. `say_var` is the mob var it sets.
+/datum/om/prompt/text/custom_say
+	var/say_var
+
+/mob/living/proc/custom_say_verb_chosen(datum/om/prompt/choice/ask)
+	switch(ask.choice)
 		if("Say")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", "title" = "Custom Say", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_say")), PROC_REF(custom_say_entered))
+			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Say", message = "This word or phrase will appear instead of 'says': [src] says, \"Hi.\"", say_var = "custom_say")
 		if("Whisper")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", "title" = "Custom Whisper", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_whisper")), PROC_REF(custom_say_entered))
+			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Whisper", message = "This word or phrase will appear instead of 'whispers': [src] whispers, \"Hi...\"", say_var = "custom_whisper")
 		if("Ask (?)")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", "title" = "Custom Ask", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_ask")), PROC_REF(custom_say_entered))
+			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Ask", message = "This word or phrase will appear instead of 'asks': [src] asks, \"Hi?\"", say_var = "custom_ask")
 		if("Exclaim/Shout/Yell (!)")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", "title" = "Custom Exclaim", "max_length" = MAX_MESSAGE_LEN, "data" = list("var" = "custom_exclaim")), PROC_REF(custom_say_entered))
+			om_ask(src, /datum/om/prompt/text/custom_say, PROC_REF(custom_say_entered), title = "Custom Exclaim", message = "This word or phrase will appear instead of 'exclaims', 'shouts' or 'yells': [src] exclaims, \"Hi!\"", say_var = "custom_exclaim")
 
-/mob/living/proc/custom_say_entered(mob/user, text, datum/om/prompt/ask)
-	vars[ask.get("var")] = lowertext(text)
+/mob/living/proc/custom_say_entered(datum/om/prompt/text/custom_say/ask)
+	vars[ask.say_var] = lowertext(ask.text)
 
 /mob/living/verb/set_metainfo()
 	set name = "Set OOC Metainfo"
@@ -1265,12 +1270,24 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/ask_metainfo(mob/user, field, reopen = TRUE, list/chain)
 	var/list/F = metainfo_field(field)
 	var/message = F[3] ? "Enter any information you'd like others to see relating to your [F[3]] roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty." : "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!"
-	om_prompt(src, src, list("kind" = "text", "message" = message, "title" = "Game Preference", "default" = html_decode(identity.vars[F[1]]), "multiline" = TRUE, "on_cancel" = PROC_REF(metainfo_skipped), "data" = list("field" = field, "reopen" = reopen, "chain" = chain)), PROC_REF(metainfo_entered))
+	om_ask(src, /datum/om/prompt/text/metainfo, PROC_REF(metainfo_entered), message = message, default = html_decode(identity.vars[F[1]]), field = field, reopen = reopen, chain = chain)
 
-/mob/living/proc/metainfo_entered(mob/user, new_metadata, datum/om/prompt/ask)
-	var/field = ask.get("field")
+/// One OOC note field. A cancel skips to the next field of the chain.
+/datum/om/prompt/text/metainfo
+	title = "Game Preference"
+	multiline = TRUE
+	var/field
+	var/reopen = TRUE
+	var/list/chain
+
+/datum/om/prompt/text/metainfo/cancelled()
+	var/mob/living/L = answerer
+	L?.metainfo_skipped(src)
+
+/mob/living/proc/metainfo_entered(datum/om/prompt/text/metainfo/ask)
+	var/field = ask.field
 	var/list/F = metainfo_field(field)
-	new_metadata = strip_html_simple(new_metadata)
+	var/new_metadata = strip_html_simple(ask.text)
 	if(new_metadata && CanUseTopic(src))
 		if(F[3] && new_metadata == "!clear")
 			new_metadata = ""
@@ -1278,13 +1295,13 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 		client.prefs.update_preference_by_type(F[2], new_metadata)
 		to_chat(src, span_filter_notice(F[3] ? "OOC note [field] have been updated. Don't forget to save!" : "OOC notes updated. Don't forget to save!"))
 		log_admin("[key_name(src)] updated their OOC [F[3] ? "note [field]" : "notes"] mid-round.")
-		if(ask.get("reopen"))
+		if(ask.reopen)
 			ooc_notes_window(src)
-	metainfo_skipped(user, ask)
+	metainfo_skipped(ask)
 
 /// Asks the next field of the chain, if any.
-/mob/living/proc/metainfo_skipped(mob/user, datum/om/prompt/ask)
-	var/list/chain = ask.get("chain")
+/mob/living/proc/metainfo_skipped(datum/om/prompt/text/metainfo/ask)
+	var/list/chain = ask.chain
 	if(!length(chain))
 		return
 	if(chain[1] == "style")
@@ -1355,10 +1372,10 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 
 	if(usr != src)
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", "title" = "Custom Link", "default" = html_decode(custom_link), "max_length" = 100), PROC_REF(custom_link_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(custom_link_entered), title = "Custom Link", message = "Enter a link to add on to your examine text! This should be a related image link/gallery, or things like your F-list. This is not the place for memes.", default = html_decode(custom_link), max_length = 100)
 
-/mob/living/proc/custom_link_entered(mob/user, new_link, datum/om/prompt/ask)
-	new_link = strip_html_simple(new_link)
+/mob/living/proc/custom_link_entered(datum/om/prompt/text/ask)
+	var/new_link = strip_html_simple(ask.text)
 	if(new_link && CanUseTopic(src))
 		if(length(new_link) > 100)
 			to_chat(src, span_warning("Your entry is too long, it must be 100 characters or less."))
@@ -1374,17 +1391,19 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	set category = "OOC.Game Settings"
 
 	var/list/preset_voice_freqs = list("high" = MAX_VOICE_FREQ, "middle-high" = 56250, "middle" = 425000, "middle-low"= 28750, "low" = MIN_VOICE_FREQ, "custom" = 1, "random" = 0)
-	om_prompt(src, src, list("kind" = "list", "message" = "What would you like to set your voice frequency to?", "title" = "Voice Frequency", "choices" = preset_voice_freqs, "data" = list("presets" = preset_voice_freqs)), PROC_REF(voice_freq_preset_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_freq_preset_chosen), title = "Voice Frequency", message = "What would you like to set your voice frequency to?", choices = preset_voice_freqs)
 
-/mob/living/proc/voice_freq_preset_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/list/preset_voice_freqs = ask.get("presets")
-	choice = preset_voice_freqs[choice]
+/mob/living/proc/voice_freq_preset_chosen(datum/om/prompt/choice/ask)
+	var/choice = ask.choices[ask.choice]
 	if(choice == 1)
-		om_prompt_chain(ask, list("kind" = "number", "message" = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", "title" = "Custom Voice Frequency", "max" = MAX_VOICE_FREQ, "min" = MIN_VOICE_FREQ), PROC_REF(voice_freq_entered))
+		om_ask(src, /datum/om/prompt/number, PROC_REF(voice_freq_entered), title = "Custom Voice Frequency", message = "Choose your character's voice frequency, ranging from [MIN_VOICE_FREQ] to [MAX_VOICE_FREQ]", max = MAX_VOICE_FREQ, min = MIN_VOICE_FREQ)
 		return
-	voice_freq_entered(user, choice, ask)
+	apply_voice_freq(choice)
 
-/mob/living/proc/voice_freq_entered(mob/user, choice, datum/om/prompt/ask)
+/mob/living/proc/voice_freq_entered(datum/om/prompt/number/ask)
+	apply_voice_freq(ask.number)
+
+/mob/living/proc/apply_voice_freq(choice)
 	if(choice == 0)
 		voice_freq = choice
 		return
@@ -1395,13 +1414,20 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	set desc = "Sets your voice style!"
 	set category = "OOC.Game Settings"
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Which set of sounds would you like to use for your character's speech sounds?", "title" = "Voice Sounds", "choices" = SSsounds.talk_sound_map, "on_cancel" = PROC_REF(voice_type_cleared)), PROC_REF(voice_type_chosen))
+	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = SSsounds.talk_sound_map)
 
-/mob/living/proc/voice_type_cleared(mob/user, datum/om/prompt/ask)
-	voice_sounds_list = DEFAULT_TALK_SOUNDS
+/// A cancel resets the voice to the default sounds.
+/datum/om/prompt/choice/voice_type
+	title = "Voice Sounds"
+	message = "Which set of sounds would you like to use for your character's speech sounds?"
 
-/mob/living/proc/voice_type_chosen(mob/user, choice, datum/om/prompt/ask)
-	voice_sounds_list = get_talk_sound(choice)
+/datum/om/prompt/choice/voice_type/cancelled()
+	var/mob/living/L = answerer
+	if(L)
+		L.voice_sounds_list = DEFAULT_TALK_SOUNDS
+
+/mob/living/proc/voice_type_chosen(datum/om/prompt/choice/voice_type/ask)
+	voice_sounds_list = get_talk_sound(ask.choice)
 
 /mob/living/proc/save_private_notes(mob/user)
 	if(user != src)
@@ -1422,9 +1448,11 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/set_metainfo_private_notes(mob/user)
 	if(user != src)
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", "title" = "Private Notes", "default" = html_decode(private_notes), "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(private_notes_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(private_notes_entered), title = "Private Notes", message = "Write some notes for yourself. These can be anything that is useful, whether it's character events that you want to remember or a bit of lore. Things that you would normally stick in a txt file for yourself! This will not be saved unless you press save in the private notes panel.", default = html_decode(private_notes), multiline = TRUE)
 
-/mob/living/proc/private_notes_entered(mob/user, new_metadata, datum/om/prompt/ask)
+/mob/living/proc/private_notes_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/new_metadata = ask.text
 	if(new_metadata && CanUseTopic(src))
 		private_notes = new_metadata
 		client.prefs.update_preference_by_type(/datum/preference/text/living/private_notes, new_metadata)

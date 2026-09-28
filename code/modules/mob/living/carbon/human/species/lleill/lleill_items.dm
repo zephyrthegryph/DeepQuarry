@@ -144,12 +144,14 @@
 			to_chat(user, span_warning("There are no appropriate targets in range."))
 			return
 
-		om_prompt(src, user, list("kind" = "list", "message" = "Which target do you wish to create a homunculus of?", "title" = "homunculus", "choices" = targets, "requires" = PROMPT_HELD), PROC_REF(homunculus_target_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(homunculus_target_chosen), message = "Which target do you wish to create a homunculus of?", title = "homunculus", choices = targets, ask_flags = ASK_HELD | ASK_CAPABLE)
 		return
 	if(homunculus)
-		om_prompt(src, user, list("message" = "What would you like to do with your homunculus?", "title" = "Actions", "choices" = list("Recall", "Speak Through", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(homunculus_action_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(homunculus_action_chosen), message = "What would you like to do with your homunculus?", title = "Actions", choices = list("Recall", "Speak Through", "Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
 
-/obj/item/glamour_face/proc/homunculus_target_chosen(mob/user, mob/living/carbon/human/chosen_target, datum/om/prompt/ask)
+/obj/item/glamour_face/proc/homunculus_target_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/mob/living/carbon/human/chosen_target = ask.choice
 	if(homunculus)
 		return
 	if(chosen_target)
@@ -164,7 +166,9 @@
 		homunculus = H
 		H.owner = src
 
-/obj/item/glamour_face/proc/homunculus_action_chosen(mob/user, h_action, datum/om/prompt/ask)
+/obj/item/glamour_face/proc/homunculus_action_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/h_action = ask.choice
 	var/mob/living/simple_mob/homunculus/H = homunculus
 	if(!H)
 		return
@@ -174,11 +178,11 @@
 		homunculus = 0
 		return
 	if(h_action == "Speak Through")
-		om_prompt(src, user, list("kind" = "text", "message" = "What should the homunculus say:", "title" = "Speak Through", "requires" = PROMPT_HELD), PROC_REF(homunculus_words_entered))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(homunculus_words_entered), message = "What should the homunculus say:", title = "Speak Through", ask_flags = ASK_HELD | ASK_CAPABLE)
 
-/obj/item/glamour_face/proc/homunculus_words_entered(mob/user, words_to_say, datum/om/prompt/ask)
+/obj/item/glamour_face/proc/homunculus_words_entered(datum/om/prompt/text/ask)
 	var/mob/living/simple_mob/homunculus/H = homunculus
-	H?.say(words_to_say)
+	H?.say(ask.text)
 
 
 //Speaking Glamour (universal translator)
@@ -265,11 +269,19 @@
 		return
 
 	if(M == L)
-		om_prompt(src, M, list("message" = "Do you want to destroy the ring, or restore energy?", "title" = "Destroy ring", "choices" = list("Yes", "No", "Restore Energy"), "requires" = PROMPT_ADJACENT), PROC_REF(ring_action_chosen))
+		om_ask(M, /datum/om/prompt/choice/glamour_ring, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, or restore energy?", choices = list("Yes", "No", "Restore Energy"))
 	else
-		om_prompt(src, M, list("message" = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", "title" = "Destroy ring", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(ring_action_chosen))
+		om_ask(M, /datum/om/prompt/choice/glamour_ring, PROC_REF(ring_action_chosen), message = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", choices = list("Yes", "No"))
 
-/obj/structure/glamour_ring/proc/ring_action_chosen(mob/living/M, m_action, datum/om/prompt/ask)
+/// Re-checked on the answer: still next to the ring and able to act.
+/datum/om/prompt/choice/glamour_ring
+	title = "Destroy ring"
+	buttons = TRUE
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/obj/structure/glamour_ring/proc/ring_action_chosen(datum/om/prompt/choice/glamour_ring/ask)
+	var/mob/living/M = ask.answerer
+	var/m_action = ask.choice
 	var/mob/living/carbon/human/L = connected_mob
 	if(!istype(L) || m_action == "No")
 		return
@@ -284,7 +296,7 @@
 		if(LL.ring_cooldown + 10 MINUTES > world.time)
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
-		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, list("receiver" = src, "LL" = LL))
+		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, LL = LL)
 		return
 
 /datum/om/task/timed/glamour_ring_attack_hand_glamour_ring

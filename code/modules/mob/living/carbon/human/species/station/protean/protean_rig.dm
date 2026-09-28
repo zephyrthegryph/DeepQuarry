@@ -340,7 +340,7 @@
 
 		var/obj/item/rig_module/mod = W
 		to_chat(user, "You begin installing \the [mod] into \the [src].")
-		om_task_start(/datum/om/task/timed/protean_attackby_protean, user, src, list("receiver" = src, "W" = W, "mod" = mod))
+		om_task_start(/datum/om/task/timed/protean_attackby_protean, user, src, receiver = src, W = W, mod = mod)
 		return 1
 	for(var/obj/item/rig_module/module in installed_modules)
 		if(module.accepts_item(W,user)) //Item is handled in this proc
@@ -405,14 +405,22 @@
 			to_chat(user, "There are no installed modules to remove.")
 			return ITEM_INTERACT_BLOCKING
 
-		om_prompt(src, user, list("kind" = "list", "message" = "Which module would you like to remove?", "title" = "Removal Choice", "choices" = possible_removals, "requires" = PROMPT_ADJACENT, "data" = list("modules" = possible_removals)), PROC_REF(module_removal_chosen))
+		om_ask(user, /datum/om/prompt/choice/protean_rig_module, PROC_REF(module_removal_chosen), choices = possible_removals)
 		return ITEM_INTERACT_SUCCESS
 
-/obj/item/rig/protean/proc/module_removal_chosen(mob/living/user, removal_choice, datum/om/prompt/ask)
-	var/list/possible_removals = ask.get("modules")
-	var/obj/item/rig_module/removed = possible_removals[removal_choice]
-	if(!(removed in installed_modules))
-		return
+/// Re-checked on the answer: next to the rig, able to act, and the module is still installed.
+/datum/om/prompt/choice/protean_rig_module
+	title = "Removal Choice"
+	message = "Which module would you like to remove?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/choice/protean_rig_module/valid()
+	var/obj/item/rig/protean/rig = subject
+	return (choices[choice] in rig.installed_modules) ? null : "not installed"
+
+/obj/item/rig/protean/proc/module_removal_chosen(datum/om/prompt/choice/protean_rig_module/ask)
+	var/mob/living/user = ask.answerer
+	var/obj/item/rig_module/removed = ask.choices[ask.choice]
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
 	removed.removed()

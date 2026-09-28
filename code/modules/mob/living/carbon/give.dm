@@ -28,25 +28,34 @@
 	src.visible_message(span_notice("\The [src] holds out \the [I] to \the [target]."), span_notice("You hold out \the [I] to \the [target], waiting for them to accept it."))
 
 	// The offer is answered by the target; the answer runs on us.
-	om_prompt(src, target, list("message" = "[src] wants to give you \a [I]. Will you accept it?", "title" = "Item Offer", "choices" = list("Yes","No"), "data" = list("item" = I)), PROC_REF(give_answered))
+	om_ask(target, /datum/om/prompt/confirm/give_item, PROC_REF(give_answered), asker = src, subject = I)
 
-/mob/living/proc/give_answered(mob/living/carbon/human/target, answer, datum/om/prompt/ask)
-	var/obj/item/I = ask.get("item")
-	if(answer != "Yes")
-		target.visible_message(span_notice("\The [src] tried to hand \the [I] to \the [target], but \the [target] didn't want it."))
-		return
-	if(incapacitated() || target.incapacitated())
-		return
+/// An item offer (the subject), answered by the target. Re-checked on the answer: both able,
+/// still adjacent, and the item still in the giver's hands.
+/datum/om/prompt/confirm/give_item
+	title = "Item Offer"
+	ask_flags = ASK_CAPABLE | ASK_ADJACENT | ASK_HELD
 
-	if(!Adjacent(target))
-		to_chat(src, span_warning("You need to stay in reaching distance while giving an object"))
-		to_chat(target, span_warning("\The [src] moved too far away."))
-		return
+/datum/om/prompt/confirm/give_item/prepare()
+	message = "[asker] wants to give you \a [subject]. Will you accept it?"
+	return TRUE
 
-	if(I.loc != src || !src.item_is_in_hands(I))
-		to_chat(src, span_warning("You need to keep the item in your hands."))
-		to_chat(target, span_warning("\The [src] seems to have given up on passing \the [I] to you."))
+/datum/om/prompt/confirm/give_item/declined()
+	answerer.visible_message(span_notice("\The [asker] tried to hand \the [subject] to \the [answerer], but \the [answerer] didn't want it."))
+
+/datum/om/prompt/confirm/give_item/refused(reason)
+	if(!asker || !answerer || !subject)
 		return
+	if(reason == "too far away")
+		to_chat(asker, span_warning("You need to stay in reaching distance while giving an object"))
+		to_chat(answerer, span_warning("\The [asker] moved too far away."))
+	else if(reason != "not able to")
+		to_chat(asker, span_warning("You need to keep the item in your hands."))
+		to_chat(answerer, span_warning("\The [asker] seems to have given up on passing \the [subject] to you."))
+
+/mob/living/proc/give_answered(datum/om/prompt/confirm/give_item/ask)
+	var/obj/item/I = ask.subject
+	var/mob/living/carbon/human/target = ask.answerer
 
 	if(target.hands_are_full())
 		to_chat(target, span_warning("Your hands are full."))

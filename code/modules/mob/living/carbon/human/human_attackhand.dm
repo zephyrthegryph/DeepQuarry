@@ -522,7 +522,7 @@
 	//This USED to have a 'target_zone' check that never actually worked so whatever.
 	//Let it be said that it's a feature you can apply pressure to all sites on you all at once.
 	//You're already locking yourself down when you do so.
-	om_task_start(/datum/om/task/timed/apply_pressure, user, organ, list("receiver" = src))
+	om_task_start(/datum/om/task/timed/apply_pressure, user, organ, receiver = src)
 	return TRUE
 
 /// Pressure on a bleeding organ (the target), held until the user lets go or moves.

@@ -20,13 +20,11 @@
 			var/datum/sprite_accessory/hair/test = GLOB.hair_styles_list[hair_string]
 			if(test.flags & HAIR_TIEABLE)
 				valid_hairstyles.Add(hair_string)
-		om_prompt(src, src, list("kind" = "list", "message" = "Select a new hairstyle", "title" = "Your hairstyle", "choices" = valid_hairstyles), PROC_REF(tie_hair_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(tie_hair_chosen), message = "Select a new hairstyle", title = "Your hairstyle", choices = valid_hairstyles, ask_flags = ASK_CAPABLE)
 
-/mob/living/carbon/human/proc/tie_hair_chosen(mob/user, selected_string, datum/om/prompt/ask)
-	if(incapacitated())
-		to_chat(src, span_warning("You can't mess with your hair right now!"))
-		return
-	else if(selected_string && h_style != selected_string)
+/mob/living/carbon/human/proc/tie_hair_chosen(datum/om/prompt/choice/ask)
+	var/selected_string = ask.choice
+	if(selected_string && h_style != selected_string)
 		h_style = selected_string
 		regenerate_icons()
 		visible_message(span_notice("[src] pauses a moment to style their hair."))
@@ -51,18 +49,25 @@
 			choices += M
 	choices -= src
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to tackle?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(tackle_target_chosen))
+	om_ask(src, /datum/om/prompt/choice/tackle, PROC_REF(tackle_target_chosen), choices = choices)
 
-/mob/living/carbon/human/proc/tackle_target_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
+/// Re-checked on the answer: conscious, next to the target, off cooldown and able to tackle.
+/datum/om/prompt/choice/tackle
+	title = "Target Choice"
+	message = "Who do you wish to tackle?"
+	ask_flags = ASK_CONSCIOUS
 
-	if(!Adjacent(T)) return
+/datum/om/prompt/choice/tackle/valid()
+	var/mob/living/carbon/human/H = answerer
+	if(!H.Adjacent(choice) || !COOLDOWN_FINISHED(H, last_special))
+		return "can't reach"
+	if(H.stat || H.has_status(EFFECT_PARALYZED) || H.has_status(EFFECT_STUNNED) || H.has_status(EFFECT_WEAKENED) || H.lying || H.restrained() || H.buckled_to())
+		to_chat(H, span_notice("You cannot tackle in your current state."))
+		return "not able to"
+	return null
 
-	if(!COOLDOWN_FINISHED(src, last_special))
-		return
-
-	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_STUNNED) || has_status(EFFECT_WEAKENED) || lying || restrained() || src?.buckled_to())
-		to_chat(src, span_notice("You cannot tackle in your current state."))
-		return
+/mob/living/carbon/human/proc/tackle_target_chosen(datum/om/prompt/choice/tackle/ask)
+	var/mob/living/T = ask.choice
 
 	COOLDOWN_START(src, last_special, 50)
 
@@ -85,17 +90,17 @@
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
-	om_prompt_sequence(src, src, list(
-		list("key" = "target", "kind" = "list", "message" = "Select a creature!", "title" = "Speak to creature", "choices" = getmobs()),
-		list("key" = "text", "kind" = "text", "message" = "What would you like to say?", "title" = "Speak to creature", "max_length" = MAX_MESSAGE_LEN),
-	), PROC_REF(commune_answered))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(commune_target_chosen), message = "Select a creature!", title = "Speak to creature", choices = getmobs())
 
-/mob/living/carbon/human/proc/commune_answered(mob/user, datum/om/prompt/ask)
-	var/text = ask.get("text")
-	var/list/targets = getmobs()
-	var/mob/M = targets[ask.get("target")]
+/mob/living/carbon/human/proc/commune_target_chosen(datum/om/prompt/choice/ask)
+	var/mob/M = ask.choices[ask.choice]
 	if(!M)
 		return
+	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(commune_answered), message = "What would you like to say?", title = "Speak to creature", target = M)
+
+/mob/living/carbon/human/proc/commune_answered(datum/om/prompt/text/telepathy/ask)
+	var/text = ask.text
+	var/mob/M = ask.target
 
 	if(isobserver(M) || M.stat == DEAD)
 		to_chat(src, span_filter_notice("Not even a [src.species.name] can speak to the dead."))
@@ -116,10 +121,11 @@
 	set desc = "Whisper silently to someone over a distance."
 	set category = "Abilities.General"
 
-	om_prompt(src, src, list("kind" = "text", "message" = "Message:", "title" = "Psychic Whisper", "max_length" = MAX_MESSAGE_LEN, "data" = list("target" = M)), PROC_REF(psychic_whisper_entered))
+	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(psychic_whisper_entered), title = "Psychic Whisper", target = M)
 
-/mob/living/carbon/human/proc/psychic_whisper_entered(mob/user, msg, datum/om/prompt/ask)
-	var/mob/M = ask.get("target")
+/mob/living/carbon/human/proc/psychic_whisper_entered(datum/om/prompt/text/telepathy/ask)
+	var/mob/M = ask.target
+	var/msg = ask.text
 	log_talk("(PWHISPER to [key_name(M)]) [msg]", LOG_WHISPER)
 	to_chat(M, span_filter_say("[span_green("You hear a strange, alien voice in your head... <i>[msg]</i>")]"))
 	to_chat(src, span_filter_say("[span_green("You said: \"[msg]\" to [M]")]"))
@@ -358,13 +364,23 @@
 	var/list/states
 	if(!states)
 		states = params2list(robohead.monitor_styles)
-	om_prompt(src, src, list("kind" = "list", "message" = "Select a screen icon:", "title" = "Screen Icon Choice", "choices" = states, "requires" = PROMPT_CONSCIOUS, "data" = list("head" = E, "states" = states)), PROC_REF(monitor_state_chosen))
+	om_ask(src, /datum/om/prompt/choice/monitor_state, PROC_REF(monitor_state_chosen), choices = states, head = E)
 
-/mob/living/carbon/human/proc/monitor_state_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/organ/external/head/E = ask.get("head")
-	var/list/states = ask.get("states")
-	if(organs_by_name[BP_HEAD] != E)
-		return
+/// Re-checked on the answer: conscious, and it's still our head.
+/datum/om/prompt/choice/monitor_state
+	title = "Screen Icon Choice"
+	message = "Select a screen icon:"
+	ask_flags = ASK_CONSCIOUS
+	var/obj/item/organ/external/head/head
+
+/datum/om/prompt/choice/monitor_state/valid()
+	var/mob/living/carbon/human/H = answerer
+	return H.organs_by_name[BP_HEAD] == head ? null : "head changed"
+
+/mob/living/carbon/human/proc/monitor_state_chosen(datum/om/prompt/choice/monitor_state/ask)
+	var/obj/item/organ/external/head/E = ask.head
+	var/list/states = ask.choices
+	var/choice = ask.choice
 	var/datum/robolimb/robohead = GLOB.all_robolimbs[E.model]
 	if(robohead?.monitor_icon)
 		E.eye_icon_location = robohead.monitor_icon
@@ -456,16 +472,27 @@
 	if(!nearby.len)
 		to_chat(src, span_warning("There is nobody nearby to play games with!"))
 
-	om_prompt_sequence(src, src, list(
-		list("key" = "partner", "kind" = "list", "message" = "Choose a game partner:", "title" = "Hand games", "choices" = nearby),
-		PROC_REF(hand_games_ask_game),
-	), PROC_REF(hand_games_chosen), list("requires" = PROMPT_CONSCIOUS))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(hand_games_partner_chosen), message = "Choose a game partner:", title = "Hand games", choices = nearby, ask_flags = ASK_CONSCIOUS)
 
-/mob/living/carbon/human/proc/hand_games_ask_game(mob/user, datum/om/prompt/ask)
-	return list("key" = "game", "message" = "Choose a game to play with [ask.get("partner")]?", "title" = "Hand games", "choices" = list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel"), "abort" = "Cancel")
+/// Which game to play; carries the partner.
+/datum/om/prompt/choice/hand_game
+	title = "Hand games"
+	choices = list("Rock, Paper, Scissors", "Arm Wrestling", "Slap Hands", "Thumb Wars", "Cancel")
+	buttons = TRUE
+	ask_flags = ASK_CONSCIOUS
+	var/mob/living/carbon/human/partner
 
-/mob/living/carbon/human/proc/hand_games_chosen(mob/user, datum/om/prompt/ask)
-	hand_game_invite(ask.get("partner"), ask.get("game"))
+/datum/om/prompt/choice/hand_game/prepare()
+	message = "Choose a game to play with [partner]?"
+	return TRUE
+
+/mob/living/carbon/human/proc/hand_games_partner_chosen(datum/om/prompt/choice/ask)
+	om_ask(src, /datum/om/prompt/choice/hand_game, PROC_REF(hand_games_chosen), partner = ask.choice)
+
+/mob/living/carbon/human/proc/hand_games_chosen(datum/om/prompt/choice/hand_game/ask)
+	if(ask.choice == "Cancel")
+		return
+	hand_game_invite(ask.partner, ask.choice)
 
 // Checks to make sure everything is fine to continue playing.
 
@@ -479,25 +506,100 @@
 
 	return 1
 
-// A hand game runs on player 1 (src). Player 2 is asked to play; then, for the games with a
-// choice, player 1 and player 2 choose in turn. Each answer re-checks hand_games_check().
+// A hand game is a flow: player 1 (the actor) invites player 2 (the target); then, for the
+// games with a choice, player 1 and player 2 choose in turn. hand_games_check() is re-checked
+// before every step.
 
 /mob/living/carbon/human/proc/hand_game_invite(mob/living/carbon/human/player2, game)
-	if(!hand_games_check(src, player2))
-		return
-	to_chat(src, span_notice("Asking [player2] if they want to play [game]!"))
-	om_prompt(src, player2, list("message" = "[src] wants to play [game].", "title" = game, "choices" = list("Play", "Refuse"), "on_cancel" = PROC_REF(hand_game_declined), "data" = list("game" = game)), PROC_REF(hand_game_invite_answered))
+	om_flow_start(/datum/om/flow/hand_game, src, player2, game = game)
 
-/mob/living/carbon/human/proc/hand_game_declined(mob/living/carbon/human/player2, datum/om/prompt/ask)
-	to_chat(src, span_warning("[player2] declines to play the game."))
+/datum/om/flow/hand_game
+	var/game
+	/// Player 1's move.
+	var/choice1
 
-/mob/living/carbon/human/proc/hand_game_invite_answered(mob/living/carbon/human/player2, playgame, datum/om/prompt/ask)
-	if(playgame != "Play")
-		hand_game_declined(player2, ask)
-		return
-	if(!hand_games_check(src, player2))
-		return
-	var/game = ask.get("game")
+/datum/om/flow/hand_game/valid()
+	var/mob/living/carbon/human/player1 = actor
+	return player1.hand_games_check(actor, target) ? null : "can't play"
+
+/datum/om/flow/hand_game/ended(reason)
+	if(actor && target && (reason == "declined" || reason == "cancelled"))
+		to_chat(actor, span_warning("[target] declines to play the game."))
+
+/// Player 2 is asked to play.
+/datum/om/prompt/confirm/hand_game_invite
+	yes_text = "Play"
+	no_text = "Refuse"
+	var/game
+
+/datum/om/prompt/confirm/hand_game_invite/prepare()
+	title = game
+	message = "[asker] wants to play [game]."
+	return TRUE
+
+/datum/om/prompt/choice/hand_game_rps
+	message = "Choose your attack!"
+	title = "Rock, Paper, Scissors"
+	choices = list("Rock", "Paper", "Scissors", "Cancel")
+	buttons = TRUE
+
+/datum/om/prompt/number/hand_game_strength
+	message = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong)."
+	title = "Strength"
+	min = 1
+	max = 10
+	default = 5
+
+/datum/om/prompt/number/hand_game_speed
+	message = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast)."
+	title = "Speed"
+	min = 1
+	max = 10
+	default = 5
+
+/datum/om/flow/hand_game/start()
+	var/mob/living/carbon/human/player1 = actor
+	to_chat(player1, span_notice("Asking [target] if they want to play [game]!"))
+	om_ask(target, /datum/om/prompt/confirm/hand_game_invite, PROC_REF(invite_answered), game = game)
+
+/// Asks `player` for their move in this game; `next` gets the prompt.
+/datum/om/flow/hand_game/proc/ask_move(mob/living/carbon/human/player, next)
+	switch(game)
+		if("Rock, Paper, Scissors")
+			om_ask(player, /datum/om/prompt/choice/hand_game_rps, next)
+		if("Arm Wrestling")
+			om_ask(player, /datum/om/prompt/number/hand_game_strength, next)
+		if("Slap Hands")
+			om_ask(player, /datum/om/prompt/number/hand_game_speed, next)
+
+/// The move a move prompt answered.
+/datum/om/flow/hand_game/proc/move_of(datum/om/prompt/ask)
+	if(istype(ask, /datum/om/prompt/choice))
+		var/datum/om/prompt/choice/pick = ask
+		return pick.choice
+	var/datum/om/prompt/number/amount = ask
+	return amount.number
+
+/datum/om/flow/hand_game/proc/invite_answered(datum/om/prompt/confirm/hand_game_invite/ask)
+	var/mob/living/carbon/human/player1 = actor
+	var/mob/living/carbon/human/player2 = target
+	player1.hand_game_invite_answered(player2, game)
+	if(game != "Thumb Wars")
+		ask_move(player1, PROC_REF(first_choice))
+
+/datum/om/flow/hand_game/proc/first_choice(datum/om/prompt/ask)
+	var/mob/living/carbon/human/player1 = actor
+	choice1 = move_of(ask)
+	if(choice1 == "Cancel")
+		player1.visible_message(span_notice("[player1] chickens out!"))
+	to_chat(player1, span_warning("[target] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))
+	ask_move(target, PROC_REF(second_choice))
+
+/datum/om/flow/hand_game/proc/second_choice(datum/om/prompt/ask)
+	var/mob/living/carbon/human/player1 = actor
+	player1.hand_game_second_choice(target, game, choice1, move_of(ask))
+
+/mob/living/carbon/human/proc/hand_game_invite_answered(mob/living/carbon/human/player2, game)
 	switch(game)
 		if("Rock, Paper, Scissors")
 			visible_message(span_notice("[src] challenges [player2] to Rock, Paper, Scissors!"))
@@ -510,41 +612,11 @@
 			to_chat(player2, span_warning("[src] is getting ready."))
 		if("Thumb Wars")
 			visible_message(span_notice("[src] challenges [player2] to a thumb war!"))
-			om_task_start(/datum/om/task/timed/human_game_thumbwars_human, src, player2, list("receiver" = src))
-			return
-	var/list/spec = hand_game_choice_spec(game)
-	spec["data"] = list("partner" = player2, "game" = game)
-	om_prompt(src, src, spec, PROC_REF(hand_game_first_choice))
+			om_task_start(/datum/om/task/timed/human_game_thumbwars_human, src, player2, receiver = src)
 
-/// What each player is asked for their move.
-/mob/living/carbon/human/proc/hand_game_choice_spec(game)
-	switch(game)
-		if("Rock, Paper, Scissors")
-			return list("message" = "Choose your attack!", "title" = game, "choices" = list("Rock", "Paper", "Scissors", "Cancel"))
-		if("Arm Wrestling")
-			return list("kind" = "number", "message" = "How strong is your character on a scale of 1 to 10 (1 being a weakling, 10 being very strong).", "title" = "Strength", "min" = 1, "max" = 10, "default" = 5)
-		if("Slap Hands")
-			return list("kind" = "number", "message" = "How fast are your character's reaction times on a scale of 1 to 10 (1 being slow, 10 being very fast).", "title" = "Speed", "min" = 1, "max" = 10, "default" = 5)
-
-/mob/living/carbon/human/proc/hand_game_first_choice(mob/user, choice1, datum/om/prompt/ask)
-	var/mob/living/carbon/human/player2 = ask.get("partner")
-	var/game = ask.get("game")
-	if(choice1 == "Cancel")
-		visible_message(span_notice("[src] chickens out!"))
-	if(!hand_games_check(src, player2))
-		return
-	to_chat(src, span_warning("[player2] is [game == "Rock, Paper, Scissors" ? "deciding" : "getting ready"]."))
-	var/list/spec = hand_game_choice_spec(game)
-	spec["data"] = list("game" = game, "choice1" = choice1)
-	om_prompt(src, player2, spec, PROC_REF(hand_game_second_choice))
-
-/mob/living/carbon/human/proc/hand_game_second_choice(mob/living/carbon/human/player2, choice2, datum/om/prompt/ask)
-	var/choice1 = ask.get("choice1")
-	var/game = ask.get("game")
+/mob/living/carbon/human/proc/hand_game_second_choice(mob/living/carbon/human/player2, game, choice1, choice2)
 	if(choice2 == "Cancel")
 		player2.visible_message(span_notice("[player2] chickens out!"))
-	if(!hand_games_check(src, player2))
-		return
 	switch(game)
 		if("Rock, Paper, Scissors")
 			if(choice1 == choice2)
@@ -557,13 +629,13 @@
 			var/score1 = size_multiplier * clamp(choice1, 1, 10)
 			var/score2 = player2.size_multiplier * clamp(choice2, 1, 10)
 			var/competition = pick(score1;src, score2;player2)
-			om_task_start(/datum/om/task/timed/human_game_armwrestle_human, src, player2, list("receiver" = src, "competition" = competition))
+			om_task_start(/datum/om/task/timed/human_game_armwrestle_human, src, player2, receiver = src, competition = competition)
 		if("Slap Hands")
 			// This one gives the advantage to smaller players.
 			var/score1 = clamp(2.25 - size_multiplier, 0.1, 3) * clamp(choice1, 1, 10)
 			var/score2 = clamp(2.25 - player2.size_multiplier, 0.1, 3) * clamp(choice2, 1, 10)
 			var/competition = pick(score1;src, score2;player2)
-			om_task_start(/datum/om/task/timed/human_game_slaphands_human, src, player2, list("receiver" = src, "competition" = competition))
+			om_task_start(/datum/om/task/timed/human_game_slaphands_human, src, player2, receiver = src, competition = competition)
 
 /////// Arm wrestling! Each player gets a modifier based on their size and can choose the strength of their character, then a weighted roll is made.
 

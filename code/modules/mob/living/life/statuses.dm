@@ -130,13 +130,22 @@
 	set category = "IC.Game"
 	var/asleep = sleeping_voluntarily()
 	if(!asleep)
-		om_prompt(src, src, list("message" = "Are you sure you wish to go to sleep? You will snooze until you use the Sleep verb again.", "title" = "Sleepy Time", "choices" = list("No", "Yes")), PROC_REF(sleep_confirmed))
+		om_ask(src, /datum/om/prompt/confirm/voluntary_sleep, PROC_REF(sleep_confirmed))
 		return
 	toggle_voluntary_sleep()
 
-/mob/living/proc/sleep_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && !sleeping_voluntarily())
-		toggle_voluntary_sleep()
+/// Re-checked on the answer: not already sleeping by choice.
+/datum/om/prompt/confirm/voluntary_sleep
+	title = "Sleepy Time"
+	message = "Are you sure you wish to go to sleep? You will snooze until you use the Sleep verb again."
+	no_first = TRUE
+
+/datum/om/prompt/confirm/voluntary_sleep/valid()
+	var/mob/living/L = answerer
+	return L.sleeping_voluntarily() ? "already asleep" : null
+
+/mob/living/proc/sleep_confirmed(datum/om/prompt/confirm/voluntary_sleep/ask)
+	toggle_voluntary_sleep()
 
 /mob/living/proc/toggle_voluntary_sleep()
 	var/asleep = sleeping_voluntarily()

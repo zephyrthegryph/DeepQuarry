@@ -174,12 +174,20 @@
 	if(!length(detachable_limbs))
 		to_chat(src, span_warning("You have no detachable limbs."))
 		return FALSE
-	om_prompt(src, src, list("kind" = "list", "message" = "Which limb do you wish to detach?", "title" = "Limb Removal", "choices" = detachable_limbs), PROC_REF(detach_limb_chosen))
+	om_ask(src, /datum/om/prompt/choice/detach_limb, PROC_REF(detach_limb_chosen), choices = detachable_limbs)
 	return TRUE
 
-/mob/living/carbon/human/proc/detach_limb_chosen(mob/user, obj/item/organ/external/E, datum/om/prompt/ask)
-	if(!check_can_detach_modular_limb(E))
-		return
+/// Re-checked on the answer: the limb can still be detached.
+/datum/om/prompt/choice/detach_limb
+	title = "Limb Removal"
+	message = "Which limb do you wish to detach?"
+
+/datum/om/prompt/choice/detach_limb/valid()
+	var/mob/living/carbon/human/H = answerer
+	return H.check_can_detach_modular_limb(choice) ? null : "can't detach"
+
+/mob/living/carbon/human/proc/detach_limb_chosen(datum/om/prompt/choice/detach_limb/ask)
+	var/obj/item/organ/external/E = ask.choice
 	om_do_after(src, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(detach_limb_verb_human_done), done_args = list(E))
 
 /mob/living/carbon/human/proc/detach_limb_verb_human_done(obj/item/organ/external/E)

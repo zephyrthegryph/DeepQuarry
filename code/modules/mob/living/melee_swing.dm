@@ -127,7 +127,7 @@
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).
-	om_task_start(/datum/om/task/timed/living_begin_melee_swing_living, src, src, list("duration" = windup, "target_arg" = target, "weapon" = weapon, "swing_tiles" = swing_tiles, "progress" = FALSE, "interaction_key" = "melee_swing", "hidden" = TRUE))
+	om_task_start(/datum/om/task/timed/living_begin_melee_swing_living, src, src, duration = windup, target_arg = target, weapon = weapon, swing_tiles = swing_tiles, progress = FALSE, interaction_key = "melee_swing", hidden = TRUE)
 	return TRUE
 
 /datum/om/task/timed/living_begin_melee_swing_living
