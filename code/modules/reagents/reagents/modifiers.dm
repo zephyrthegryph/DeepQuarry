@@ -21,7 +21,7 @@
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
 /datum/reagent/modapplying/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 	M.apply_body_effect(modifier_to_add, modifier_duration, suppress_output = TRUE)
 

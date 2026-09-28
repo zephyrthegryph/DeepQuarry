@@ -420,10 +420,7 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_RAW
 	coolant_modifier = 0.25
-
-/datum/reagent/oxygen/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_VOX)
-		M.injure(INJURY_TOXIN, removed * 3, source = src)
+	species_injuries_blood = alist(IS_VOX = alist(INJURY_TOXIN = 3))
 
 /datum/reagent/phosphorus
 	name = REAGENT_PHOSPHORUS
@@ -675,19 +672,7 @@
 	if(issmall(M))
 		effective_dose *= 2
 
-	if(alien == IS_UNATHI)
-		if(effective_dose < 2)
-			if(effective_dose == metabolism * 2 || prob(5))
-				M.emote("yawn")
-		else if(effective_dose < 5)
-			M.status_at_least(EFFECT_BLURRY, 10)
-		else if(effective_dose < 20)
-			if(prob(50))
-				M.status_at_least(EFFECT_WEAKENED, 2)
-			M.status_at_least(EFFECT_DROWSY, 20)
-		else
-			M.status_at_least(EFFECT_SLEEPING, 20)
-			M.status_at_least(EFFECT_DROWSY, 60)
+	sugar_sedation(M, effective_dose, deep_sleep = TRUE)
 
 /datum/reagent/sulfur
 	name = REAGENT_SULFUR

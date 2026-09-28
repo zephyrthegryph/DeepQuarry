@@ -84,6 +84,8 @@
 	var/alist/species_injuries_blood
 	var/alist/species_injuries_ingest
 	var/alist/species_injuries_touch
+	/// SPECIES_TAG_BIT mask of species a sugary reagent sedates (see `sugar_sedation()`).
+	var/sugar_sedated_species = SPECIES_TAG_BIT(IS_UNATHI)
 
 /// Are this reagent's type-specific extras inert for `owner`'s species (`inert_species`)?
 /datum/reagent/proc/inert_for(mob/living/owner)
@@ -101,6 +103,28 @@
 		return 1
 	var/mult = species_strength[tag]
 	return isnull(mult) ? 1 : mult
+
+/// The sugar crash: species in `sugar_sedated_species` grow drowsy, then weak (or,
+/// with `deep_sleep`, asleep) as `effective_dose` of a sugary reagent builds.
+/datum/reagent/proc/sugar_sedation(mob/living/carbon/M, effective_dose, deep_sleep = FALSE)
+	var/tag = M?.reagent_tag()
+	if(isnull(tag) || !(sugar_sedated_species & SPECIES_TAG_BIT(tag)))
+		return
+	if(effective_dose < 2)
+		if(effective_dose == metabolism * 2 || prob(5))
+			M.emote("yawn")
+	else if(effective_dose < 5)
+		M.status_at_least(EFFECT_BLURRY, 10)
+	else if(effective_dose < 20)
+		if(prob(50))
+			M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(EFFECT_DROWSY, 20)
+	else
+		if(deep_sleep)
+			M.status_at_least(EFFECT_SLEEPING, 20)
+		else
+			M.status_at_least(EFFECT_WEAKENED, 10)
+		M.status_at_least(EFFECT_DROWSY, 60)
 
 /// Deal `owner`'s species' entry in a `species_injuries_*` table for `amount` units.
 /datum/reagent/proc/apply_species_injuries(mob/living/owner, alist/table, amount)

@@ -28,6 +28,8 @@
 
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_ILLDRUG
+	/// Prometheans feel drugs at ~1/6 strength (drug_strength / thresholds scale by species_mult()).
+	species_strength = alist(IS_SLIME = 0.15)
 
 // Every reagent datum in every holder carries these; share identical message tables (read-only).
 /datum/reagent/drugs/New()
@@ -36,7 +38,7 @@
 	return ..()
 
 /datum/reagent/drugs/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
+	if(inert_for(M))
 		return
 
 	if(high_messages == TRUE)
@@ -76,8 +78,7 @@
 	var/drug_strength = 15
 	if(M.species.chem_strength_tox > 0)
 		drug_strength *= M.species.chem_strength_tox
-	if(alien == IS_SLIME)
-		drug_strength *= 0.15 //~ 1/6
+	drug_strength *= species_mult(M)
 
 	M.status_at_least(EFFECT_DRUGGED, drug_strength)
 	if(prob_proc == TRUE && prob(10) && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained() && !M.resting) // CHOMPstation edit - Stop drug movement from forcing crawling
@@ -122,8 +123,7 @@
 	var/drug_strength = 3
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		drug_strength *= M.species.chem_strength_tox
-	if(alien == IS_SLIME)
-		drug_strength *= 0.15 //~ 1/6
+	drug_strength *= species_mult(M)
 
 	// Its restorative action is the treatment_tags profile.
 	M.status_at_least(EFFECT_DRUGGED, drug_strength)
@@ -156,8 +156,7 @@
 	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
 		threshold /= M.species.chem_strength_tox
 
-	if(alien == IS_SLIME)
-		threshold *= 0.15 //~1/6
+	threshold *= species_mult(M)
 
 	M.status_at_least(EFFECT_DRUGGED, 30)
 

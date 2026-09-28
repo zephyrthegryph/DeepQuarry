@@ -183,8 +183,7 @@
 	var/drug_strength = 20
 	if(M.species.chem_strength_tox > 0)
 		drug_strength *= M.species.chem_strength_tox
-	if(alien == IS_SLIME)
-		drug_strength *= 0.15 //~ 1/6
+	drug_strength *= species_mult(M)
 	M.status_at_least(EFFECT_DRUGGED, drug_strength)
 
 /datum/reagent/drugs/rainbow_toxin/overdose(mob/living/M as mob)

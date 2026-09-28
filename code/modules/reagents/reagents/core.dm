@@ -315,20 +315,19 @@
 						S.quench()
 						H.visible_message(span_notice("[H]\'s [S.name] is put out."))
 
-//YWedit start, readds promethean damage that was removed by vorestation.
-/datum/reagent/water/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_SLIME)
-		M.injure(INJURY_TOXIN, 6 * removed, source = src)
-	else
-		..()
+// Water poisons Prometheans in place of its normal action (holy water's extras still run).
+/datum/reagent/water
+	inert_species = SPECIES_TAG_BIT(IS_SLIME)
+	species_injuries_blood = alist(IS_SLIME = alist(INJURY_TOXIN = 6))
+	species_injuries_ingest = alist(IS_SLIME = alist(INJURY_TOXIN = 6))
 
 /datum/reagent/water/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_SLIME)
-		M.injure(INJURY_TOXIN, 6 * removed, source = src)
-	else
-		..()
+	if(inert_for(M))
+		return
+	..()
 
 /datum/reagent/water/affect_touch(mob/living/carbon/M, alien, removed)
+	// Kept: a flavour message only.
 	if(alien == IS_SLIME && prob(10))
 		M.visible_message(span_warning("[M]'s flesh sizzles where the water touches it!"), span_danger("Your flesh burns in the water!"))
 	..()

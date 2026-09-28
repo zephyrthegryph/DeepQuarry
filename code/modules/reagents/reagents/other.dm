@@ -598,13 +598,15 @@
 			return
 	M.wash(CLEAN_SCRUB)
 
+/datum/reagent/space_cleaner
+	// Prometheans take a doubled dose instead of the usual poisoning.
+	immune_species_ingest = SPECIES_TAG_BIT(IS_SLIME)
+	species_injuries_ingest = alist(IS_SLIME = alist(INJURY_TOXIN = 6))
+
 /datum/reagent/space_cleaner/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_SLIME)
-		M.injure(INJURY_TOXIN, 6 * removed, source = src)
-	else
-		M.injure(INJURY_TOXIN, 3 * removed, source = src)
-		if(prob(5))
-			M.vomit()
+	M.injure(INJURY_TOXIN, 3 * removed, source = src)
+	if(prob(5))
+		M.vomit()
 
 /datum/reagent/space_cleaner/touch_mob(mob/M, amount)
 	..()
@@ -1031,11 +1033,10 @@
 
 /datum/reagent/benzilate
 	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+	species_strength = alist(IS_SKRELL = 0.6)
 
 /datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)
-	var/drug_strength = 12
-	if(alien == IS_SKRELL)
-		drug_strength = drug_strength * 0.6
+	var/drug_strength = 12 * species_mult(M)
 	M.status_adjust(EFFECT_DIZZY, drug_strength)
 	M.status_at_least(EFFECT_CONFUSED, drug_strength * 14)
 

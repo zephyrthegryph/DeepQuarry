@@ -59,10 +59,9 @@
 
 /datum/reagent/epinephrine
 	treatment_tags = list(TREAT_ANALGESIC = 2.0, TREAT_STIMULANT = 1.0, TREAT_VASOPRESSOR = 1.0)
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/epinephrine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_adjust(EFFECT_PARALYZED, -2)
 	M.status_adjust(EFFECT_STUNNED, -2)
 	M.status_adjust(EFFECT_WEAKENED, -2)
