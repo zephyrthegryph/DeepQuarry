@@ -140,7 +140,7 @@
 	if(!istype(SL) || !iscarbon(target))
 		return DQ_BEHAVIOR_FAILED
 	var/mob/living/carbon/C = target
-	SL.last_special_attack = world.time
+	COOLDOWN_START(SL, special_attack_cooldown_until, SL.special_attack_cooldown)
 	SL.do_infest(SL, C)
 	return DQ_BEHAVIOR_DONE
 
@@ -182,6 +182,6 @@
 	if(!istype(SL) || !iscarbon(target))
 		return DQ_BEHAVIOR_FAILED
 	var/mob/living/carbon/C = target
-	SL.last_special_attack = world.time
+	COOLDOWN_START(SL, special_attack_cooldown_until, SL.special_attack_cooldown)
 	SL.poison_inject(SL, C)
 	return DQ_BEHAVIOR_DONE

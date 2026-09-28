@@ -166,7 +166,6 @@
 
 // A different type of much weaker bite with different effects for event spawned spiders before becoming hostile
 /mob/living/simple_mob/animal/giant_spider/proc/warning_bite(mob/living/A)
-	set waitfor = FALSE
 	ai_busy_begin()
 	// Telegraph, since getting bitten suddenly feels bad.
 	do_windup_animation(A, warning_warmup)

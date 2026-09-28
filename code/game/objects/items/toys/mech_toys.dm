@@ -117,9 +117,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(timer < world.time)
+	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You play with [src]."))
-		timer = world.time + cooldown
+		COOLDOWN_START(src, timer, cooldown)
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
 
 /obj/item/toy/mecha/attack_hand(mob/user)
@@ -178,9 +178,9 @@
  * Overrides attack_tk - Sorry, you have to be face to face to initiate a battle, it's good sportsmanship
  */
 /obj/item/toy/mecha/attack_tk(mob/user)
-	if(timer < world.time)
+	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You telekinetically play with [src]."))
-		timer = world.time + cooldown
+		COOLDOWN_START(src, timer, cooldown)
 		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
 
 /**
@@ -230,8 +230,8 @@
 	attacker.in_combat = TRUE
 
 	//1.5 second cooldown * 20 = 30 second cooldown after a fight
-	timer = world.time + cooldown*cooldown_multiplier
-	attacker.timer = world.time + attacker.cooldown*attacker.cooldown_multiplier
+	COOLDOWN_START(src, timer, cooldown*cooldown_multiplier)
+	COOLDOWN_START(attacker, timer, attacker.cooldown*attacker.cooldown_multiplier)
 
 	om_after(src, 1 SECOND, PROC_REF(brawl_round), attacker, attacker_controller, opponent, 0)
 
@@ -404,12 +404,12 @@
 		if(target)
 			to_chat(target, span_notice("[target.p_Their()] [name] is in combat."))
 		return FALSE
-	if(attacker && attacker.timer > world.time)
+	if(attacker && !COOLDOWN_FINISHED(attacker, timer))
 		to_chat(user, span_notice("[target ? target.p_their() : "Your" ] [attacker.name] isn't ready for battle."))
 		if(target)
 			to_chat(target, span_notice("Your [attacker.name] isn't ready for battle."))
 		return FALSE
-	if(timer > world.time)
+	if(!COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("Your [name] isn't ready for battle."))
 		if(target)
 			to_chat(target, span_notice("[target.p_Their()] [name] isn't ready for battle."))

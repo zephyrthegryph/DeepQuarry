@@ -68,14 +68,14 @@ SUBSYSTEM_DEF(pathfinder)
 	++pathfinding_blocked
 	if(pathfinding_blocked < 10)
 		while(pathfinding_mutex)
-			stoplag(1)
+			stoplag(1) // S10b keeps: mutex held across the search's CHECK_TICK yields
 			if(world.time > started + PATHFINDER_TIMEOUT)
 				stack_trace("pathfinder timeout; check debug logs.")
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 				return
 	else
 		while(pathfinding_mutex)
-			stoplag(3)
+			stoplag(3) // S10b keeps: mutex held across the search's CHECK_TICK yields
 			if(world.time > started + PATHFINDER_TIMEOUT)
 				stack_trace("pathfinder timeout; check debug logs.")
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")

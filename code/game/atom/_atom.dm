@@ -116,7 +116,6 @@
 		return null
 
 /atom/proc/Bumped(AM as mob|obj)
-	set waitfor = FALSE
 
 	SEND_SIGNAL(src, COMSIG_ATOM_BUMPED, AM)
 
@@ -504,7 +503,7 @@
 	if(length(speech_bubble_hearers))
 		var/image/I = generate_speech_bubble(src, "[bubble_icon][say_test(message)]", FLY_LAYER)
 		I.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
-		INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(flick_overlay), I, speech_bubble_hearers, 30)
+		flick_overlay(I, speech_bubble_hearers, 30)
 
 /atom/proc/speech_bubble(bubble_state = "", bubble_loc = src, list/bubble_recipients = list())
 	return

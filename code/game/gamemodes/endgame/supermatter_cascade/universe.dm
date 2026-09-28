@@ -132,8 +132,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	om_after(src, 5 MINUTES, PROC_REF(universe_collapses))
 
 /datum/universal_state/supermatter_cascade/proc/universe_collapses()
-	spawn(0) // S7 keeps: start_cinematic() sleeps through its animation (cinematics)
-		play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic
+	play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic. No longer sleeps: the blast is an om_after() timer.
 
 	// FIXME: Probably a better way
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))

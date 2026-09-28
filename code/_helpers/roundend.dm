@@ -1,5 +1,5 @@
 /datum/controller/subsystem/ticker/proc/declare_completion(was_forced = END_ROUND_AS_NORMAL)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: SQL (SSdbcore.SetRoundEnd) and TGS chat
 
 	for(var/datum/callback/roundend_callbacks as anything in round_end_events)
 		roundend_callbacks.InvokeAsync()

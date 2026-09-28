@@ -264,11 +264,11 @@ SUBSYSTEM_DEF(garbage)
 				// Based off the remaining and the ones we can account for
 				var/remaining_refs = refcount(D) - REFS_WE_EXPECT
 				if(reference_find_on_fail[ref(D)])
-					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs)
+					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // S10b keeps: find_references is a long CHECK_TICK-yielding scan
 					ref_searching = TRUE
 				#ifdef GC_FAILURE_HARD_LOOKUP
 				else
-					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs)
+					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // S10b keeps: find_references is a long CHECK_TICK-yielding scan
 					ref_searching = TRUE
 				#endif
 				reference_find_on_fail -= ref(D)
@@ -498,7 +498,7 @@ SUBSYSTEM_DEF(garbage)
 		#ifdef REFERENCE_TRACKING
 		if (QDEL_HINT_FINDREFERENCE) //qdel will, if REFERENCE_TRACKING is enabled, display all references to this object, then queue the object for deletion.
 			SSgarbage.Queue(to_delete)
-			INVOKE_ASYNC(to_delete, TYPE_PROC_REF(/datum, find_references))
+			INVOKE_ASYNC(to_delete, TYPE_PROC_REF(/datum, find_references)) // S10b keeps: find_references is a long CHECK_TICK-yielding scan
 		if (QDEL_HINT_IFFAIL_FINDREFERENCE) //qdel will, if REFERENCE_TRACKING is enabled and the object fails to collect, display all references to this object.
 			SSgarbage.Queue(to_delete)
 			SSgarbage.reference_find_on_fail[ref(to_delete)] = TRUE

@@ -72,7 +72,7 @@
 		return
 
 	var/delay
-	if(world.time >= G.next_fire_time)
+	if(COOLDOWN_FINISHED(G, next_fire_time))
 		G.Fire(target, src, autofire_params)
 		// Re-check: Fire()/handle_click_empty may have ended the session
 		// (dropped gun, ran dry) this tick.

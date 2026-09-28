@@ -42,6 +42,9 @@
 	var/datum/callback/special_callback
 	/// How long for the final screen remains shown
 	var/cleanup_time = 30 SECONDS
+	/// How long the intro plays before the blast (the blast runs on an om_after() timer).
+	/// Callers that act at the blast wait initial(intro_time).
+	var/intro_time = 0
 	/// Whether the cinematic turns off ooc when played globally.
 	var/stop_ooc = TRUE
 
@@ -74,11 +77,11 @@ REF_OWNED(/datum/cinematic, "screen")
 		// Close watcher ui's, too, so they can watch it.
 		SStgui.close_user_uis(watching_mob)
 
-	// Actually plays the animation. This will sleep, likely.
+	// Actually plays the animation (its later frames run on om_after() timers; nothing sleeps).
 	play_cinematic()
 
 	// Cleans up after it's done playing.
-	om_after(src, cleanup_time, PROC_REF(clean_up_cinematic), ooc_toggled)
+	om_after(src, intro_time + cleanup_time, PROC_REF(clean_up_cinematic), ooc_toggled)
 
 /// Cleans up the cinematic after a set timer of it sticking on the end screen.
 /datum/cinematic/proc/clean_up_cinematic(was_ooc_toggled = FALSE)

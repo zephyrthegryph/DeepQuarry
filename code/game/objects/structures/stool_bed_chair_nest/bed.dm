@@ -151,7 +151,7 @@
 	var/mob/user = task.actor
 	var/mob/living/affecting = task.affecting
 	affecting.forceMove(loc)
-	INVOKE_ASYNC(src, PROC_REF(deferred_buckle), affecting, user.name)
+	deferred_buckle(affecting, user.name)
 	consume(W, user)
 
 /obj/structure/bed/wrench_act(mob/user, obj/item/W)

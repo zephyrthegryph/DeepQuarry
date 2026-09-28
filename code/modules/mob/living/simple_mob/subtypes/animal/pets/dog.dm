@@ -146,10 +146,10 @@
 						self.movement_target = S
 						break
 			if(self.movement_target)
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 		if(prob(1))
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases their tail"))
+			om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases their tail"))
 			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //LISA! SQUEEEEEEEEE~
@@ -203,7 +203,7 @@
 				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(self.loc)
 
 		if(prob(1))
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases her tail"))
+			om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases her tail"))
 			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //NARSIAN HAS COME

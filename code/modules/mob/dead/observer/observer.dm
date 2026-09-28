@@ -36,11 +36,11 @@
 	incorporeal_move = TRUE
 	/// If set to TRUE, the ghost is able to whisper. Usually only set if a cultist drags them through the veil.
 	var/is_manifest = FALSE
-	var/toggled_invisible = FALSE
+	COOLDOWN_DECLARE(invisible_toggle_cooldown)
 	var/ghost_sprite = null
 	/// If TRUE, the ghost can be interacted with by the corporeal world (ghost traps, photon pack, etc)
 	var/interact_with_world = TRUE
-	var/last_revive_notification = null // world.time of last notification, used to avoid spamming players from defibs or cloners.
+	COOLDOWN_DECLARE(revive_notification_cooldown) // world.time of last notification, used to avoid spamming players from defibs or cloners.
 	var/selecting_ghostrole = FALSE
 
 	invisibility = INVISIBILITY_OBSERVER
@@ -813,12 +813,12 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!is_manifest)
 		to_chat(src, span_filter_notice("You are not strong enough to pierce the veil..."))
 		return
-	if(!forced && plane == PLANE_GHOSTS && world.time < toggled_invisible + 600)
+	if(!forced && plane == PLANE_GHOSTS && !COOLDOWN_FINISHED(src, invisible_toggle_cooldown))
 		to_chat(src, span_filter_notice("You must gather strength before you can turn visible again..."))
 		return
 
 	if(plane == PLANE_WORLD)
-		toggled_invisible = world.time
+		COOLDOWN_START(src, invisible_toggle_cooldown, 600)
 		visible_message(span_emote("It fades from sight..."), span_info("You are now invisible."))
 	else
 		to_chat(src, span_info("You are now visible!"))
@@ -1017,9 +1017,9 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 // Lets a ghost know someone's trying to bring them back, and for them to get into their body.
 // Mostly the same as TG's sans the hud element, since we don't have TG huds.
 /mob/observer/dead/proc/notify_revive(message, sound, flashwindow = TRUE, atom/source)
-	if((last_revive_notification + 2 MINUTES) > world.time)
+	if(!COOLDOWN_FINISHED(src, revive_notification_cooldown))
 		return
-	last_revive_notification = world.time
+	COOLDOWN_START(src, revive_notification_cooldown, 2 MINUTES)
 
 	if(flashwindow)
 		window_flash(client)

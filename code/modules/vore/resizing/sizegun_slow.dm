@@ -96,7 +96,6 @@
 		return
 
 	var/mob/living/L = target
-	var/mob/living/U = user
 
 	if(get_dist(target, user) > beam_range)
 		to_chat(user, span_warning("You are too far away from \the [target] to affect it. Get closer."))
@@ -139,25 +138,44 @@
 	var/active_hand = user.get_active_hand()
 	var/previous_scale = L.size_multiplier
 
-	if (trading == 0)
-		while(!should_stop(target, user, active_hand))
-			stoplag(3)
+	// The beam steps every 0.3 s on om_after() timers until should_stop() (S10b: was a
+	// stoplag() loop). Objects travel as OM handles so a deleted target or user still
+	// reaches sizegun_finish() and the effects are cleaned up.
+	var/list/state = list(om_handle(L), om_handle(user), active_hand ? om_handle(active_hand) : null, previous_scale, om_handle(scan_beam), filter, box_segments, user.client)
+	if(should_stop(L, user, active_hand))
+		sizegun_finish(state)
+		return
+	om_after(src, 0.3 SECONDS, PROC_REF(sizegun_step), state)
 
-			if(sizeshift_mode == SIZE_SHRINK)
-				L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
-			else if(sizeshift_mode == SIZE_GROW)
-				L.resize((L.size_multiplier + size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
+/// One step of the beam: resize, then stop or schedule the next step.
+/obj/item/slow_sizegun/proc/sizegun_step(list/state)
+	var/mob/living/L = om_resolve(state[1])
+	var/mob/living/U = om_resolve(state[2])
+	var/active_hand = om_resolve(state[3])
+	if(!L || !U || !busy)
+		sizegun_finish(state)
+		return
+	if(sizeshift_mode == SIZE_SHRINK)
+		L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
+		if(trading == 1)
+			U.resize((U.size_multiplier + size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
+	else if(sizeshift_mode == SIZE_GROW)
+		L.resize((L.size_multiplier + size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
+		if(trading == 1)
+			U.resize((U.size_multiplier - size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
+	if(should_stop(L, U, active_hand))
+		sizegun_finish(state)
+		return
+	om_after(src, 0.3 SECONDS, PROC_REF(sizegun_step), state)
 
-	if (trading == 1)
-		while(!should_stop(target, user, active_hand))
-			stoplag(3)
-
-			if(sizeshift_mode == SIZE_SHRINK)
-				L.resize((L.size_multiplier - size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
-				U.resize((U.size_multiplier + size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
-			else if(sizeshift_mode == SIZE_GROW)
-				L.resize((L.size_multiplier + size_increment), uncapped = L.has_large_resize_bounds(), aura_animation = FALSE)
-				U.resize((U.size_multiplier - size_increment), uncapped = U.has_large_resize_bounds(), aura_animation = FALSE)
+/// The beam ends: size-strip the target if it changed enough, then clean up the effects.
+/obj/item/slow_sizegun/proc/sizegun_finish(list/state)
+	var/mob/living/L = om_resolve(state[1])
+	var/previous_scale = state[4]
+	var/datum/beam/scan_beam = om_resolve(state[5])
+	var/filter = state[6]
+	var/list/box_segments = state[7]
+	var/client/C = state[8]
 	busy = FALSE
 	current_target = null
 
@@ -170,14 +188,14 @@
 			else if(our_target.size_strip_preference == SIZESTRIP_ALL)
 				our_target.drop_all_clothing(TRUE)
 
-
 	// Now clean up the effects.
 	update_icon()
-	QDEL_NULL(scan_beam)
-	if(target)
-		target.filters -= filter
-	if(user.client) // If for some reason they logged out mid-scan the box will be gone anyways.
-		delete_box(box_segments, user.client)
+	if(scan_beam)
+		qdel(scan_beam)
+	if(L)
+		L.filters -= filter
+	if(C) // If for some reason they logged out mid-scan the box will be gone anyways.
+		delete_box(box_segments, C)
 
 /obj/item/slow_sizegun/attack_self(mob/living/user)
 	. = ..(user)

@@ -123,7 +123,6 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, "e
 // Charges a tesla shot, while emitting a dangerous electric field. The exosuit is immune to electric damage while this is ongoing.
 // It also briefly blinds anyone looking directly at the mech without flash protection.
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/electric_defense(atom/target)
-	set waitfor = FALSE
 
 	// Temporary immunity to shock to avoid killing themselves with their own attack.
 	var/old_shock_resist = shock_resist
@@ -194,7 +193,6 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, "e
 #undef ELECTRIC_ZAP_POWER
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/launch_rockets(atom/target)
-	set waitfor = FALSE
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)

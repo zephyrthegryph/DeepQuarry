@@ -79,10 +79,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Hair"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 
 	var/list/valid_hairstyles = list()
 	var/list/valid_facialhairstyles = list()
@@ -136,10 +136,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Gender"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	om_prompt_sequence(src, src, list(
 		list("key" = "gender", "kind" = "list", "message" = "Please select a gender.", "title" = "Shapeshifter Gender", "choices" = list(FEMALE, MALE, NEUTER, PLURAL)),
@@ -156,10 +156,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Body Shape"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
 
@@ -183,10 +183,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Body Colour"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	om_prompt(src, src, list("kind" = "color", "message" = "Please select a new body color.", "title" = "Shapeshifter Colour", "default" = rgb(r_skin, g_skin, b_skin), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_colour_chosen))
 
@@ -213,10 +213,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Hair Colors"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	// Each colour applies as soon as it is picked; a cancel stops there.
 	om_prompt_sequence(src, src, list(
@@ -301,10 +301,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Eye Color"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	var/current_color = rgb(r_eyes,g_eyes,b_eyes)
 	om_prompt(src, src, list("kind" = "color", "message" = "Pick a new color for your eyes.", "title" = "Eye Color", "default" = current_color, "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_eye_colour_chosen))
@@ -331,10 +331,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Ears"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	shapeshifter_select_accessory("ears")
 
 // Ears, tail and wings share one flow: a style, up to three colours (the second and third only
@@ -431,9 +431,9 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Secondary Ears"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
-	last_special = world.time + 1 SECONDS
+	COOLDOWN_START(src, last_special, 1 SECONDS)
 
 	// Construct the list of names allowed for this user.
 	var/list/pretty_ear_styles = list("Normal" = null)
@@ -475,20 +475,20 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Select Tail"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	shapeshifter_select_accessory("tail")
 
 /mob/living/carbon/human/proc/shapeshifter_select_wings()
 	set name = "Select Wings"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 10
+	COOLDOWN_START(src, last_special, 10)
 	shapeshifter_select_accessory("wings")
 
 /mob/living/carbon/human/proc/promethean_select_opaqueness()
@@ -496,10 +496,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Toggle Transparency"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	for(var/obj/item/organ/external/L as anything in src.organs)
 		L.transparent = !L.transparent
@@ -632,10 +632,10 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 	set name = "Complete Reform"
 	set category = "Abilities.Shapeshift"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	om_prompt_sequence(src, src, list(
 		list("key" = "sure", "message" = "Are you sure you want to reform yourself? This will reset you to what you look like in your current preferences slot.", "title" = "Reform", "choices" = list("Yes","Cancel"), "confirm" = "Yes"),

@@ -437,10 +437,10 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 			L << sound(null, channel = CHANNEL_AMBIENCE_FORCED)
 	else if(src.ambience && length(src.ambience))
 		var/ambience_odds = L.read_preference(/datum/preference/numeric/ambience_chance)
-		if(prob(ambience_odds) && (world.time >= L.client.time_last_ambience_played + 1 MINUTE))
+		if(prob(ambience_odds) && (COOLDOWN_FINISHED(L.client, ambience_cooldown)))
 			var/sound = DEFAULTPICK(ambience, null)
 			L << sound(sound, repeat = 0, wait = 0, volume = 50 * volume_mod, channel = CHANNEL_AMBIENCE)
-			L.client.time_last_ambience_played = world.time
+			COOLDOWN_START(L.client, ambience_cooldown, 1 MINUTE)
 
 /area/proc/gravitychange(gravitystate = 0)
 	src.has_gravity = gravitystate

@@ -364,8 +364,8 @@
 	set name = "Resist"
 	set category = "IC.Game"
 
-	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (last_resist_time + RESIST_COOLDOWN < world.time))
-		last_resist_time = world.time
+	if(!incapacitated(INCAPACITATION_KNOCKOUT) && !is_paralyzed() && (COOLDOWN_FINISHED(src, resist_cooldown)))
+		COOLDOWN_START(src, resist_cooldown, RESIST_COOLDOWN)
 		resist_grab()
 		if(!has_status(EFFECT_WEAKENED))
 			process_resist()
@@ -1104,7 +1104,7 @@
 	SIGNAL_HANDLER
 	var/mob/owner = user
 	if(owner.client?.prefs)
-		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner)
+		INVOKE_ASYNC(owner.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), owner) // S10b keeps: ShowChoices opens tgui (asset/window setup)
 
 /**
  * Screen object for vore panel

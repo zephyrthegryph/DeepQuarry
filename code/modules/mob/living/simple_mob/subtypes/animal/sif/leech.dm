@@ -56,7 +56,7 @@
 	var/passive_reagent = REAGENT_ID_PARACETAMOL	// Reagent passively produced by the leech. Should usually be a painkiller.
 
 	var/feeding_delay = 30 SECONDS	// How long do we have to wait to bite our host's organs?
-	var/last_feeding = 0
+	COOLDOWN_DECLARE(feeding_cooldown)
 
 
 	holder_type = /obj/item/holder/leech
@@ -425,7 +425,7 @@
 		to_chat(src, span_alium("We are too tired to do this..."))
 		return
 
-	if(host && world.time >= last_feeding + feeding_delay)
+	if(host && COOLDOWN_FINISHED(src, feeding_cooldown))
 		var/list/host_internal_organs = host.internal_organs
 
 		for(var/obj/item/organ/internal/O in host_internal_organs)	// Remove organs with maximum damage.
@@ -451,7 +451,7 @@
 
 /// Feeds on an organ of the host without asking (the leech's own Life): never sleeps.
 /mob/living/simple_mob/animal/sif/leech/proc/feed_on_random_organ()
-	if(docile || !host || world.time < last_feeding + feeding_delay)
+	if(docile || !host || !COOLDOWN_FINISHED(src, feeding_cooldown))
 		return
 	var/list/organs = list()
 	for(var/obj/item/organ/internal/O in host.internal_organs)
@@ -461,7 +461,7 @@
 		bite_organ(pick(organs))
 
 /mob/living/simple_mob/animal/sif/leech/proc/bite_organ(obj/item/organ/internal/O)
-	last_feeding = world.time
+	COOLDOWN_START(src, feeding_cooldown, feeding_delay)
 
 	if(O)
 		to_chat(src, span_alien("We feed on [O]."))

@@ -358,9 +358,9 @@ SUBSYSTEM_DEF(dbcore)
 			continue
 
 		if (warn)
-			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, warn_execute))
+			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, warn_execute)) // S10b keeps: blocking SQL query
 		else
-			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, Execute))
+			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, Execute)) // S10b keeps: blocking SQL query
 
 	for (var/datum/db_query/query as anything in queries)
 		query.sync()
@@ -553,7 +553,7 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 /// Sleeps until execution of the query has finished.
 /datum/db_query/proc/sync()
 	while(status < DB_QUERY_FINISHED)
-		stoplag()
+		stoplag() // S10b keeps: waits on an SQL query (external)
 
 /datum/db_query/process(seconds_per_tick)
 	if(status >= DB_QUERY_FINISHED)

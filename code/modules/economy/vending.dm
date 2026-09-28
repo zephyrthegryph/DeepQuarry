@@ -64,7 +64,7 @@
 	var/shut_up = 1 //Stop spouting those godawful pitches!
 	var/vend_reply //Thank you for shopping!
 	var/last_reply = 0
-	var/last_slogan = 0 //When did we last pitch?
+	COOLDOWN_DECLARE(slogan_cooldown) //When did we last pitch?
 	var/slogan_delay = 6000 //How long until we can pitch again?
 
 	// Things that can go wrong
@@ -90,7 +90,7 @@
 		// So not all machines speak at the exact same time.
 		// The first time this machine says something will be at slogantime + this random value,
 		// so if slogantime is 10 minutes, it will say it at somewhere between 10 and 20 minutes after the machine is crated.
-		last_slogan = world.time + rand(0, slogan_delay)
+		COOLDOWN_START(src, slogan_cooldown, slogan_delay + rand(0, slogan_delay))
 
 	if(product_ads)
 		LAZYADD(ads_list, splittext(product_ads, ";"))
@@ -194,7 +194,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 
 /obj/machinery/vending/ex_act(severity)
 	if(severity == 3 && prob(25))
-		INVOKE_ASYNC(src, PROC_REF(malfunction))
+		malfunction()
 	return ..()
 
 /obj/machinery/vending/emag_act(remaining_charges, mob/user)
@@ -747,10 +747,10 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 		seconds_electrified--
 
 	//Pitch to the people!  Really sell it!
-	if(((last_slogan + slogan_delay) <= world.time) && length(slogan_list) && (!shut_up) && prob(5))
+	if((COOLDOWN_FINISHED(src, slogan_cooldown)) && length(slogan_list) && (!shut_up) && prob(5))
 		var/slogan = pick(slogan_list)
 		speak(slogan)
-		last_slogan = world.time
+		COOLDOWN_START(src, slogan_cooldown, slogan_delay)
 
 	if(shoot_inventory && prob(shoot_inventory_chance))
 		throw_item()
@@ -812,7 +812,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 	if(!throw_item)
 		return FALSE
 	throw_item.vendor_action(src)
-	INVOKE_ASYNC(throw_item, TYPE_PROC_REF(/atom/movable, throw_at), target, rand(3, 10), rand(1, 3), src)
+	throw_item.throw_at(target, rand(3, 10), rand(1, 3), src)
 	visible_message(span_warning("\The [src] launches \a [throw_item] at \the [target]!"))
 	return 1
 

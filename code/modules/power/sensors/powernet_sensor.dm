@@ -93,8 +93,8 @@
 
 // This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/proc/record()
-	if(world.time >= next_record)
-		next_record = world.time + record_interval
+	if(COOLDOWN_FINISHED(src, next_record))
+		COOLDOWN_START(src, next_record, record_interval)
 
 		var/datum/powernet/connected_powernet = powernet
 

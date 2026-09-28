@@ -23,7 +23,7 @@
 	var/time_to_heal = 10 SECONDS
 
 	///When we were last hit!
-	var/last_hit
+	COOLDOWN_DECLARE(heal_cooldown)
 
 	///If we're emagged or not.
 	var/emagged
@@ -114,7 +114,7 @@
 	if(!time_to_heal) //We have healing disabled.
 		return
 
-	if(world.time > last_hit + time_to_heal)
+	if(COOLDOWN_FINISHED(src, heal_cooldown))
 		if(lasertag_health < 0) //overkill protection
 			lasertag_health = 0
 		lasertag_health++
@@ -129,7 +129,7 @@
 			lasertag_health -= damage
 		else
 			lasertag_health--
-		last_hit = world.time
+		COOLDOWN_START(src, heal_cooldown, time_to_heal)
 		if(isliving(src.loc))
 			var/mob/living/wearer = src.loc
 

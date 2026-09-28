@@ -55,7 +55,7 @@
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
 
 
 

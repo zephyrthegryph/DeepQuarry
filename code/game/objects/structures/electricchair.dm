@@ -4,7 +4,7 @@
 	icon_state = "echair0"
 	var/on = 0
 	var/obj/item/assembly/shock_kit/part = null
-	var/last_time = 1.0
+	COOLDOWN_DECLARE(shock_cooldown)
 
 /obj/structure/bed/chair/e_chair/Initialize(mapload)
 	. = ..()
@@ -45,9 +45,9 @@
 /obj/structure/bed/chair/e_chair/proc/shock()
 	if(!on)
 		return
-	if(last_time + 50 > world.time)
+	if(!COOLDOWN_FINISHED(src, shock_cooldown))
 		return
-	last_time = world.time
+	COOLDOWN_START(src, shock_cooldown, 50)
 
 	// special power handling
 	var/area/A = get_area(src)

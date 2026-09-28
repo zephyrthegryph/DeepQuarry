@@ -2,7 +2,6 @@
 
 /// Called once every server tick
 /datum/proc/keyLoop(client/user)
-	set waitfor = FALSE
 	return
 
 /// Set mob's focus. TODO: Decide if required.

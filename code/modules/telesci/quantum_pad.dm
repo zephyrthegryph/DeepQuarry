@@ -11,7 +11,7 @@
 	circuit = /obj/item/circuitboard/quantumpad
 	var/teleport_cooldown = 400 //30 seconds base due to base parts
 	var/teleport_speed = 50
-	var/last_teleport //to handle the cooldown
+	COOLDOWN_DECLARE(teleport_cooldown_until) //to handle the cooldown
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/power_efficiency = 1
 	var/boosted = 0 // do we teleport mecha?
@@ -38,8 +38,8 @@
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
 	. += span_notice("It is [linked_pad ? "currently" : "not"] linked to another pad.")
-	if(world.time < last_teleport + teleport_cooldown)
-		. += span_warning("[src] is recharging power. A timer on the side reads <b>[round((last_teleport + teleport_cooldown - world.time)/10)]</b> seconds.")
+	if(!COOLDOWN_FINISHED(src, teleport_cooldown_until))
+		. += span_warning("[src] is recharging power. A timer on the side reads <b>[round(COOLDOWN_TIMELEFT(src, teleport_cooldown_until)/10)]</b> seconds.")
 	if(boosted)
 		. += span_notice("There appears to be a booster haphazardly jammed into the side of [src]. That looks unsafe.")
 	if(!panel_open)
@@ -152,8 +152,8 @@
 			to_chat(user, span_warning("There is no linked pad!"))
 			return TRUE
 
-	if(world.time < last_teleport + teleport_cooldown)
-		to_chat(user, span_warning("[src] is recharging power. Please wait [round((last_teleport + teleport_cooldown - world.time)/10)] seconds."))
+	if(!COOLDOWN_FINISHED(src, teleport_cooldown_until))
+		to_chat(user, span_warning("[src] is recharging power. Please wait [round(COOLDOWN_TIMELEFT(src, teleport_cooldown_until)/10)] seconds."))
 		return TRUE
 
 	if(teleporting)
@@ -268,7 +268,7 @@
 	// Linked pad or not, we can always re-scatter people
 	if(!can_traverse_gateway())
 		teleporting = 0
-		last_teleport = world.time
+		COOLDOWN_START(src, teleport_cooldown_until, teleport_cooldown)
 		gateway_scatter(user)
 		return
 	// Nothing to teleport to
@@ -283,7 +283,7 @@
 		return
 
 	teleporting = 0
-	last_teleport = world.time
+	COOLDOWN_START(src, teleport_cooldown_until, teleport_cooldown)
 	/* CHOMP remove
 	sparks()
 	linked_pad.sparks()

@@ -342,9 +342,9 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 // This gets called to do lightning periodically.
 // There is a seperate function to do the actual lightning strike, so that badmins can play with it.
 /datum/weather/virgo4/storm/proc/handle_lightning()
-	if(world.time < next_lightning_strike)
+	if(!COOLDOWN_FINISHED(src, next_lightning_strike))
 		return // It's too soon to strike again.
-	next_lightning_strike = world.time + rand(min_lightning_cooldown, max_lightning_cooldown)
+	COOLDOWN_START(src, next_lightning_strike, rand(min_lightning_cooldown, max_lightning_cooldown))
 	var/turf/T = DEFAULTPICK(holder.our_planet.planet_floors, null) // This has the chance to 'strike' the sky, but that might be a good thing, to scare reckless pilots.
 	lightning_strike(T)
 

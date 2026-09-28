@@ -4,15 +4,15 @@
 	effect_type = EFFECT_ELECTIC_FIELD
 
 	effect_color = "#ffff00"
-	var/last_used = 0
+	COOLDOWN_DECLARE(use_cooldown)
 	var/use_delay = 5 SECONDS //Time between uses.
 
 /datum/artifact_effect/electric_field/DoEffectTouch(mob/user)
 	var/atom/holder = get_master_holder()
-	if(world.time < last_used + use_delay)
+	if(!COOLDOWN_FINISHED(src, use_cooldown))
 		return
 	else
-		last_used = world.time
+		COOLDOWN_START(src, use_cooldown, use_delay)
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anobattery/battery = holder
 		var/obj/item/anodevice/utilizer = holder.loc
@@ -53,10 +53,10 @@
 
 /datum/artifact_effect/electric_field/DoEffectAura()
 	var/atom/holder = get_master_holder()
-	if(world.time < last_used + use_delay)
+	if(!COOLDOWN_FINISHED(src, use_cooldown))
 		return
 	else
-		last_used = world.time
+		COOLDOWN_START(src, use_cooldown, use_delay)
 	var/mob/living/user
 	if(istype(holder, /obj/item/anobattery))
 		var/obj/item/anobattery/battery = holder
@@ -106,10 +106,10 @@
 		user = utilizer.last_user_touched
 		battery.stored_charge = 0
 		use_delay = 0 //We're in an artifact, our delay is handled by the utilizer iself.
-	if(world.time < last_used + use_delay)
+	if(!COOLDOWN_FINISHED(src, use_cooldown))
 		return
 	else
-		last_used = world.time
+		COOLDOWN_START(src, use_cooldown, use_delay)
 	var/list/nearby_mobs = list()
 	for(var/mob/living/L in oview(effectrange, get_turf(holder)))
 		if(user && L == user)	// You're "grounded" when you contact the artifact...

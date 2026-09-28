@@ -17,7 +17,7 @@
 	return
 
 /obj/effect/decal/cleanable/blood/gibs/robot/streak(list/directions)
-	INVOKE_ASYNC(src, PROC_REF(streak_async), directions)
+	streak_async(directions)
 
 /obj/effect/decal/cleanable/blood/gibs/robot/streak_splat()
 	if (prob(40))

@@ -352,7 +352,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/revival_cooldown = 60 SECONDS
 
 	///When did we last do a 'heal tick' ?
-	var/heal_tick = 0
+	COOLDOWN_DECLARE(heal_tick_cooldown_until)
 
 	///How often do we do a 'heal tick' ?
 	var/heal_tick_cooldown = 5 SECONDS
@@ -498,7 +498,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(armor_deployed && (armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead.
 		exit_battle_stance()
 
-	if(heal_tick + heal_tick_cooldown > world.time)
+	if(!COOLDOWN_FINISHED(src, heal_tick_cooldown_until))
 		return
 
 	var/obj/item/organ/internal/brain/brain = LAZYACCESS(unfortunate_soul.internal_organs_by_name, O_BRAIN)
@@ -549,7 +549,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		if(limb.status & ORGAN_DEAD && (limb.damage < limb.is_broken()) && (limb.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
 			limb.status = 0
 
-	heal_tick = world.time
+	COOLDOWN_START(src, heal_tick_cooldown_until, heal_tick_cooldown)
 
 	//Big checks to see if there's a reason we CAN'T revive.
 	if(time_since_revival + revival_cooldown > world.time) //On cooldown.

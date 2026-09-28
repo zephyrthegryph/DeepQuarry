@@ -66,10 +66,10 @@
 			MACHINE_WAKE(S)
 			. = TRUE
 		if("allon")
-			INVOKE_ASYNC(src, PROC_REF(toggle_all), TRUE)
+			toggle_all(TRUE)
 			. = TRUE
 		if("alloff")
-			INVOKE_ASYNC(src, PROC_REF(toggle_all), FALSE)
+			toggle_all(FALSE)
 			. = TRUE
 		if("scan")
 			scanscrubbers_user(ui.user)

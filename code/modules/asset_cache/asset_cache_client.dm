@@ -43,7 +43,7 @@
 	src << browse({"<script>window.location.href="byond://?asset_cache_confirm_arrival=[job]"</script>"}, "window=asset_cache_browser&file=asset_cache_send_verify.htm")
 
 	while(!LAZYACCESS(completed_asset_jobs, "[job]") && t < timeout_time) // Reception is handled in Topic()
-		stoplag(1) // Lock up the caller until this is received.
+		stoplag(1) // Lock up the caller until this is received. // S10b keeps: waits on the client's Topic round trip (external)
 		t++
 	if (t < timeout_time)
 		return TRUE

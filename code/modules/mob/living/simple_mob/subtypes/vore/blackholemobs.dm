@@ -64,7 +64,6 @@
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/do_special_attack(atom/A)
-	set waitfor = FALSE
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A

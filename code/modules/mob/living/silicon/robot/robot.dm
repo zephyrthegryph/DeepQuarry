@@ -1537,7 +1537,7 @@
 /mob/living/silicon/robot/proc/on_master_laws_changed(datum/source)
 	SIGNAL_HANDLER
 	if(lawupdate)
-		INVOKE_ASYNC(src, PROC_REF(sync))
+		sync()
 
 /mob/living/silicon/robot/proc/on_master_deleted(datum/source)
 	SIGNAL_HANDLER

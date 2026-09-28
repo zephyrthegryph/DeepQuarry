@@ -62,8 +62,8 @@
 	vore_pounce_chance = 15
 
 	// Players have 2 seperate cooldowns for these, while the AI must choose one. Both respect special_attack_cooldown
-	var/last_strike_time = 0
-	var/last_flash_time = 0
+	COOLDOWN_DECLARE(strike_cooldown)
+	COOLDOWN_DECLARE(flash_cooldown)
 
 	var/instinct	// The points used by Kururaks to decide Who Is The Boss
 	var/obey_pack_rule = TRUE	// Decides if the Kururak will automatically assign itself to follow the one with the highest instinct.
@@ -149,11 +149,11 @@
 	set name = "Tail Blind"
 	set desc = "Disorient a creature within range."
 
-	if(world.time < last_flash_time + special_attack_cooldown)
+	if(!COOLDOWN_FINISHED(src, flash_cooldown))
 		to_chat(src, span_warning("You do not have the focus to do this so soon.."))
 		return
 
-	last_flash_time = world.time
+	COOLDOWN_START(src, flash_cooldown, special_attack_cooldown)
 	tail_flash()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash(atom/A)
@@ -242,11 +242,11 @@
 	set name = "Rending Strike"
 	set desc = "Strike viciously at an entity within range."
 
-	if(world.time < last_strike_time + special_attack_cooldown)
+	if(!COOLDOWN_FINISHED(src, strike_cooldown))
 		to_chat(src, span_warning("Your claws cannot take that much stress in so short a time.."))
 		return
 
-	last_strike_time = world.time
+	COOLDOWN_START(src, strike_cooldown, special_attack_cooldown)
 	rending_strike()
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(mob/user, atom/A, datum/om/prompt/ask)

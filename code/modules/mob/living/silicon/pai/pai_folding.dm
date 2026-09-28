@@ -29,11 +29,11 @@
 	if(card.projector != PP_FUNCTIONAL && card.emitter != PP_FUNCTIONAL)
 		to_chat(src, span_warning("ERROR: System malfunction. Service required!"))
 
-	if(world.time <= last_special)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_warning("You can't unfold yet."))
 		return
 
-	last_special = world.time + 100
+	COOLDOWN_START(src, last_special, 100)
 
 	if(istype(card.loc, /obj/machinery)) // this statement allows pAIs stuck in a machine to eject themselves.
 		var/obj/machinery/M = card.loc
@@ -83,7 +83,7 @@
 	if(src.loc == card)
 		return
 
-	if(world.time <= last_special)
+	if(!COOLDOWN_FINISHED(src, last_special))
 		to_chat(src, span_warning("You can't fold up yet."))
 		return
 
@@ -92,7 +92,7 @@
 //I'm not sure how much of this is necessary, but I would rather avoid issues.
 /mob/living/silicon/pai/proc/close_up(silent= FALSE)
 
-	last_special = world.time + 100
+	COOLDOWN_START(src, last_special, 100)
 
 	if(loc == card)
 		return

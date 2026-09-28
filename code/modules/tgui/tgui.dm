@@ -261,7 +261,6 @@
  *
  */
 /datum/tgui/proc/terminate_byondui_elements()
-	set waitfor = FALSE
 
 	for(var/byondui_element in open_byondui_elements)
 		winset(user.client, byondui_element, list("parent" = ""))

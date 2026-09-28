@@ -50,7 +50,7 @@
 
 	switch(action)
 		if("signal")
-			INVOKE_ASYNC(src, PROC_REF(signal))
+			signal()
 			. = TRUE
 		if("freq")
 			frequency = unformat_frequency(params["freq"])

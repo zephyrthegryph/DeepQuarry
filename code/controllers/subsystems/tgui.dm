@@ -498,7 +498,7 @@ SUBSYSTEM_DEF(tgui)
 	for(var/datum/tgui/ui in src_object.open_tguis)
 		// Check if UI is valid.
 		if(ui?.src_object && ui.user && ui.src_object.tgui_host(ui.user))
-			INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE)
+			INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE) // S10b keeps: tgui process re-runs arbitrary tgui_interact overrides / asset sends
 			count++
 	return count
 

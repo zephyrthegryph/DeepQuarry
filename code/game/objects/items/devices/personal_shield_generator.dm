@@ -225,9 +225,9 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 
 	var/mob/living/carbon/human/user = usr
 
-	if(user.last_special > world.time)
+	if(!COOLDOWN_FINISHED(user, last_special))
 		return
-	user.last_special = world.time + 10 //No spamming!
+	COOLDOWN_START(user, last_special, 10) //No spamming!
 
 	if(!bcell || !bcell.check_charge(generator_hit_cost) || !bcell.check_charge(generator_active_cost))
 		to_chat(user, span_warning("You require a charged cell to do this!"))
@@ -259,9 +259,9 @@ REF_OWNED(/obj/item/personal_shield_generator, list("active_weapon", "bcell"))
 
 	var/mob/living/carbon/human/user = usr
 
-	if(user.last_special > world.time)
+	if(!COOLDOWN_FINISHED(user, last_special))
 		return
-	user.last_special = world.time + 10 //No spamming!
+	COOLDOWN_START(user, last_special, 10) //No spamming!
 
 	if(!active_weapon)
 		to_chat(user, span_warning("The gun is missing!"))

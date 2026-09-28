@@ -302,7 +302,7 @@
 /turf/simulated/floor/tiled/material/uranium
 	icon_state = "uranium"
 	initial_flooring = /datum/decl/flooring/tiling/material/uranium
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
@@ -314,7 +314,7 @@
 	SIGNAL_HANDLER
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -326,7 +326,7 @@
 		strength = 1
 	)
 	propagate_radiation_pulse()
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /datum/decl/flooring/tiling/material/uranium

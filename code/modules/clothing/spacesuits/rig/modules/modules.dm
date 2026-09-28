@@ -148,7 +148,7 @@ REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
 		to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
 		return 0
 
-	if(world.time < next_use)
+	if(!COOLDOWN_FINISHED(src, next_use))
 		to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
 		return 0
 
@@ -171,7 +171,7 @@ REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
 	if(!holder.check_power_cost(usr, use_power_cost, 0, src, (istype(usr,/mob/living/silicon) ? 1 : 0) ) )
 		return 0
 
-	next_use = world.time + module_cooldown
+	COOLDOWN_START(src, next_use, module_cooldown)
 
 	return 1
 

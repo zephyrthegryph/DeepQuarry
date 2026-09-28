@@ -454,46 +454,47 @@ GLOBAL_VAR(bomb_set)
 				SSticker.mode:syndies_didnt_escape = (syndie_location.z > 1 ? 0 : 1)	//muskets will make me change this, but it will do for now
 			SSticker.mode:nuke_off_station = off_station
 
+		var/datum/cinematic/cinematic_type
 		switch(off_station)
 			if(0)
-				if(SSticker.mode.name == "mercenary")
-					play_cinematic(/datum/cinematic/nuke/ops_victory)
-				else
-					play_cinematic(/datum/cinematic/nuke/self_destruct)
-
-					// FIXME: Probably a better way
-					for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
-						switch(M.z)
-							if(0)	//inside a crate or something
-								var/turf/T = get_turf(M)
-								if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
-									M.set_stat(DEAD)
-							if(1)	//on a z-level 1 turf.
-								M.set_stat(DEAD)
+				cinematic_type = SSticker.mode.name == "mercenary" ? /datum/cinematic/nuke/ops_victory : /datum/cinematic/nuke/self_destruct
 			if(1)
-				if(SSticker.mode.name == "mercenary")
-					play_cinematic(/datum/cinematic/nuke/ops_miss)
-				else
-					play_cinematic(/datum/cinematic/nuke/self_destruct_miss)
+				cinematic_type = SSticker.mode.name == "mercenary" ? /datum/cinematic/nuke/ops_miss : /datum/cinematic/nuke/self_destruct_miss
 			if(2)
-				play_cinematic(/datum/cinematic/nuke/far_explosion)
+				cinematic_type = /datum/cinematic/nuke/far_explosion
+		play_cinematic(cinematic_type)
+		// The rest happens at the blast, once the intro has played (it slept through it before S10b).
+		om_after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), off_station, SSticker.mode.name == "mercenary")
 
-		if(SSticker.mode)
-			SSticker.mode.explosion_in_progress = 0
-			to_chat(world, span_boldannounce("The station was destoyed by the nuclear blast!"))
+/// A nuke's blast, after its cinematic's intro: kills the station for a self-destruct hit,
+/// then settles the round.
+/proc/nuke_blast_aftermath(off_station, mercenary)
+	if(off_station == 0 && !mercenary)
+		// FIXME: Probably a better way
+		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))
+			switch(M.z)
+				if(0)	//inside a crate or something
+					var/turf/T = get_turf(M)
+					if(T && (T.z in using_map.station_levels))				//we don't use M.death(0) because it calls a for(/mob) loop and
+						M.set_stat(DEAD)
+				if(1)	//on a z-level 1 turf.
+					M.set_stat(DEAD)
 
-			SSticker.mode.station_was_nuked = (off_station<2)	//offstation==1 is a draw. the station becomes irradiated and needs to be evacuated.
-															//kinda shit but I couldn't  get permission to do what I wanted to do.
+	if(SSticker?.mode)
+		SSticker.mode.explosion_in_progress = 0
+		to_chat(world, span_boldannounce("The station was destoyed by the nuclear blast!"))
 
-			if(!SSticker.mode.check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
-				to_chat(world, span_boldannounce("Resetting in 30 seconds!"))
+		SSticker.mode.station_was_nuked = (off_station<2)	//offstation==1 is a draw. the station becomes irradiated and needs to be evacuated.
+														//kinda shit but I couldn't  get permission to do what I wanted to do.
 
-				feedback_set_details("end_error","nuke - unhandled ending")
+		if(!SSticker.mode.check_finished())//If the mode does not deal with the nuke going off so just reboot because everyone is stuck as is
+			to_chat(world, span_boldannounce("Resetting in 30 seconds!"))
 
-				if(GLOB.blackbox)
-					GLOB.blackbox.save_all_data_to_sql()
-				om_after(null, 30 SECONDS, /proc/nuke_reboot)
-				return
+			feedback_set_details("end_error","nuke - unhandled ending")
+
+			if(GLOB.blackbox)
+				GLOB.blackbox.save_all_data_to_sql()
+			om_after(null, 30 SECONDS, /proc/nuke_reboot)
 
 /proc/nuke_reboot()
 	log_game("Rebooting due to nuclear detonation")

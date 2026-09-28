@@ -191,7 +191,7 @@
 	var/sky_visible = FALSE			// If the sky can be clearly seen while this is occuring, used for flavor text when looking up.
 
 	var/effect_message = null		// Should be a string, this is what is shown to a mob caught in the weather
-	var/last_message = 0			// Keeps track of when the weather last tells EVERY player it's hitting them
+	COOLDOWN_DECLARE(message_cooldown)			// Keeps track of when the weather last tells EVERY player it's hitting them
 	var/message_delay = 10 SECONDS	// Delay in between weather hit messages
 	var/show_message = FALSE		// Is set to TRUE and plays the messsage every [message_delay]
 
@@ -217,8 +217,8 @@
 /datum/weather/proc/process_effects()
 	show_message = FALSE	// Need to reset the show_message var, just in case
 	if(effect_message)	// Only bother with the code below if we actually need to display something
-		if(world.time >= last_message + message_delay)
-			last_message = world.time	// Reset the timer
+		if(COOLDOWN_FINISHED(src, message_cooldown))
+			COOLDOWN_START(src, message_cooldown, message_delay)// Reset the timer
 			show_message = TRUE			// Tell the rest of the process that we need to make a message
 	if(effect_flags & HAS_PLANET_EFFECT)
 		if(effect_flags & EFFECT_ALL_MOBS)

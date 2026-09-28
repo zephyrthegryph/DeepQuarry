@@ -620,7 +620,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 /turf/simulated/wall/uranium
 	icon_state = "uranium"
 	icon = 'icons/turf/wall_masks_vr.dmi'
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 
 /turf/simulated/wall/uranium/Initialize(mapload)
 	. = ..(mapload, MAT_URANIUM)
@@ -631,7 +631,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 	// inherits the contract and must not re-set the should_not_sleep pragma.
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -643,7 +643,7 @@ GLOBAL_LIST_EMPTY(flesh_overlay_cache)
 		strength = 5
 	)
 	propagate_radiation_pulse()
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /turf/simulated/wall/wood

@@ -261,19 +261,19 @@
 
 		if("announce")
 			if(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX)
-				if(message_cooldown > world.time)
+				if(!COOLDOWN_FINISHED(src, message_cooldown))
 					to_chat(ui.user, span_warning("Please allow at least one minute to pass between announcements."))
 					return
 				var/input = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Please write a message to announce to the station crew.", "title" = "Priority Announcement", "multiline" = TRUE))
 				if(isnull(input))
 					return
-				if(!input || message_cooldown > world.time || ..() || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
+				if(!input || !COOLDOWN_FINISHED(src, message_cooldown) || ..() || !(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX))
 					return
 				if(length(input) < COMM_MSGLEN_MINIMUM)
 					to_chat(ui.user, span_warning("Message '[input]' is too short. [COMM_MSGLEN_MINIMUM] character minimum."))
 					return
 				crew_announcement.Announce(input)
-				message_cooldown = world.time + 600 //One minute
+				COOLDOWN_START(src, message_cooldown, 600) //One minute
 
 		if("callshuttle")
 			if(!is_authenticated(ui.user))
@@ -353,7 +353,7 @@
 		// OMG CENTCOMM LETTERHEAD
 		if("MessageCentCom")
 			if(is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX)
-				if(centcomm_message_cooldown > world.time)
+				if(!COOLDOWN_FINISHED(src, centcomm_message_cooldown))
 					to_chat(ui.user, span_warning("Arrays recycling. Please stand by."))
 					return
 				var/input = act_prompt(ui.user, action, params, ui, "a7", list("kind" = "text", "message" = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement. Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "Central Command Quantum Messaging", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
@@ -367,13 +367,13 @@
 				CentCom_announce(input, ui.user)
 				to_chat(ui.user, span_blue("Message transmitted."))
 				log_game("[key_name(ui.user)] has made an IA [using_map.boss_short] announcement: [input]")
-				centcomm_message_cooldown = world.time + 300 // 30 seconds
+				COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
 			setMenuState(ui.user, COMM_SCREEN_MAIN)
 
 		// OMG SYNDICATE ...LETTERHEAD
 		if("MessageSyndicate")
 			if((is_authenticated(ui.user) == COMM_AUTHENTICATION_MAX) && (emagged))
-				if(centcomm_message_cooldown > world.time)
+				if(!COOLDOWN_FINISHED(src, centcomm_message_cooldown))
 					to_chat(ui.user, "Arrays recycling.  Please stand by.")
 					return
 				var/input = act_prompt(ui.user, action, params, ui, "a8", list("kind" = "text", "message" = "Please choose a message to transmit to \[ABNORMAL ROUTING CORDINATES\] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination. Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "To abort, send an empty message.", "max_length" = MAX_MESSAGE_LEN))
@@ -387,7 +387,7 @@
 				Syndicate_announce(input, ui.user)
 				to_chat(ui.user, span_blue("Message transmitted."))
 				log_game("[key_name(ui.user)] has made an illegal announcement: [input]")
-				centcomm_message_cooldown = world.time + 300 // 30 seconds
+				COOLDOWN_START(src, centcomm_message_cooldown, 300) // 30 seconds
 
 		if("RestoreBackup")
 			to_chat(ui.user, "Backup routing data restored!")

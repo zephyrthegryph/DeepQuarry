@@ -41,10 +41,10 @@
 	set name = "Select Body Shape"
 	set category = "Abilities.Lleill"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(lleill_shape_chosen))
 
@@ -68,10 +68,10 @@
 	set name = "Select Body Colour"
 	set category = "Abilities.Lleill"
 
-	if(stat || world.time < last_special)
+	if(stat || !COOLDOWN_FINISHED(src, last_special))
 		return
 
-	last_special = world.time + 50
+	COOLDOWN_START(src, last_special, 50)
 
 	om_prompt(src, src, list("kind" = "color", "message" = "Please select a new body color.", "title" = "Shapeshifter Colour", "default" = rgb(r_skin, g_skin, b_skin), "requires" = PROMPT_CONSCIOUS), PROC_REF(lleill_colour_chosen))
 

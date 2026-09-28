@@ -906,20 +906,20 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system"))
 /obj/item/rig/proc/forced_move(direction, mob/user, ai_moving = TRUE)
 
 	// Why is all this shit in client/Move()? Who knows?
-	if(world.time < wearer_move_delay)
+	if(!COOLDOWN_FINISHED(src, wearer_move_delay))
 		return
 
 	if(!wearer || !wearer.loc) // Removed some stuff for protean living hardsuit
 		return
 
 // Added this for protean living hardsuit
-	wearer_move_delay = world.time + 2
+	COOLDOWN_START(src, wearer_move_delay, 2)
 	if(ai_moving)
 		if(!ai_can_move_suit(user, check_user_module = 1))
 			return
 		// AIs are a bit slower than regular and ignore move intent.
 		// Moved this to where it's relevant
-		wearer_move_delay = world.time + ai_controlled_move_delay
+		COOLDOWN_START(src, wearer_move_delay, ai_controlled_move_delay)
 
 	//This is sota the goto stop mobs from moving var
 	if(wearer.transforming || !wearer.canmove)

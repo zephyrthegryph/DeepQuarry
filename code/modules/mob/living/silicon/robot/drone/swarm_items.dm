@@ -7,7 +7,7 @@
 	icon_state = "decompiler_swarm"
 
 	var/field_cooldown = 1 MINUTE
-	var/last_field = 0
+	COOLDOWN_DECLARE(field_cooldown_until)
 
 /obj/item/matter_decompiler/swarm/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity, params)
 
@@ -80,9 +80,9 @@
 		qdel(W)
 		grabbed_something = TRUE
 
-	if(istype(T,/turf/simulated/wall) && (last_field + field_cooldown < world.time))
+	if(istype(T,/turf/simulated/wall) && (COOLDOWN_FINISHED(src, field_cooldown_until)))
 		if(!(locate(/obj/effect/temporary_effect/pulse/disintegrate)))
-			last_field = world.time
+			COOLDOWN_START(src, field_cooldown_until, field_cooldown)
 			to_chat(user, span_alien("You deploy an energetic field through \the [T], beginning its deconstruction."))
 			to_chat(user, span_warning("You should stand back."))
 			new /obj/effect/temporary_effect/pulse/disintegrate(T)

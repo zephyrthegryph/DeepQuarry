@@ -66,13 +66,13 @@
 	limited to using them a specific number of times."
 	var/resupply_range = 5
 	var/resupply_cooldown = 4 SECONDS
-	var/last_resupply = null
+	COOLDOWN_DECLARE(resupply_cooldown_until)
 
 /datum/om/stage/life/special/mechanical/hivebot/support/logistics
 	of = /mob/living/simple_mob/mechanical/hivebot/support/logistics
 
 /datum/om/stage/life/special/mechanical/hivebot/support/logistics/perform(mob/living/simple_mob/mechanical/hivebot/support/logistics/self, datum/om/frame/life/ctx)
-	if(self.last_resupply + self.resupply_cooldown > world.time)
+	if(!COOLDOWN_FINISHED(self, resupply_cooldown_until))
 		return // On cooldown.
 
 	for(var/mob/living/simple_mob/SM in hearers(self.resupply_range, self))
@@ -83,7 +83,7 @@
 				SM.special_attack_charges += 1
 				to_chat(SM, span_notice("\The [self] has resupplied you, and you can use your special ability one additional time."))
 				to_chat(self, span_notice("You have resupplied \the [SM]."))
-				self.last_resupply = world.time
+				COOLDOWN_START(self, resupply_cooldown_until, self.resupply_cooldown)
 				break // Only one resupply per pulse.
 
 /datum/decl/mob_organ_names/hivebotsupport

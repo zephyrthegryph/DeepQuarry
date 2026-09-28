@@ -11,11 +11,11 @@
 	usr?.client?.note_hover(src)
 
 /client/proc/note_hover(atom/hovered)
-	if(!hover_tracking || world.time < hover_next_update)
+	if(!hover_tracking || !COOLDOWN_FINISHED(src, hover_next_update))
 		return
 	if(istype(hovered, /atom/movable/screen))
 		return
-	hover_next_update = world.time + INPUT_HOVER_THROTTLE
+	COOLDOWN_START(src, hover_next_update, INPUT_HOVER_THROTTLE)
 	hovered_ref = om_handle(hovered)
 	if(screentip || screentips_enabled())
 		update_screentip()

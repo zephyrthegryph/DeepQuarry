@@ -144,7 +144,7 @@
 	while(SSair.times_fired < start_cycle + cycles)
 		if(REALTIMEOFDAY > deadline)
 			fail("SSair ran [SSair.times_fired - start_cycle]/[cycles] cycles in 300s")
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		maxima["events"] = max(maxima["events"], SSair.gas_events_last)
 		maxima["reactions"] = max(maxima["reactions"], SSair.gas_reactions_last)
 		maxima["visuals"] = max(maxima["visuals"], SSair.gas_visuals_last)
@@ -212,7 +212,7 @@
 		event_turfs = build_floor_fixture(64)
 		var/turf/corner = event_turfs[1]
 		event_center = locate(33, 33, corner.z)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		switch(event_name)
 			if("large_explosion")
 				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_large_explosion)))
@@ -286,12 +286,12 @@
 		generated_site = null
 		generation_done = FALSE
 		begin_window()
-		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics)
+		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // S10b keeps: expedition generation yields; harness polls a deadline
 		var/deadline = REALTIMEOFDAY + 6000
 		while(!generation_done)
 			if(REALTIMEOFDAY > deadline)
 				fail("generation did not finish within 600s on cycle [cycle]")
-			stoplag()
+			stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		end_window("cycle[cycle]_generate")
 		detail("cycle[cycle]_diagnostics", diagnostics)
 		if(!generated_site)
@@ -301,7 +301,7 @@
 		generated_site = null
 		var/waited = 0
 		while((length(SSexpedition.teardown_z) || !length(SSexpedition.free_z)) && waited++ < world.fps * 180)
-			stoplag()
+			stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		if(waited >= world.fps * 180)
 			fail("expedition teardown did not return its z-level to the pool")
 		wait_fires(SSair, 60)
@@ -432,32 +432,32 @@
 	var/static/log_handle = load_ext(RUST_G, "log_write")
 	var/list/best = list()
 	for(var/round in 1 to rounds)
-		stoplag() // start each round on a fresh tick
+		stoplag() // start each round on a fresh tick // S10b keeps: benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text)
 		best["hash_string_by_name_us"] = min(best["hash_string_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(hash_handle)(RUSTG_HASH_XXH64, text)
 		best["hash_string_cached_us"] = min(best["hash_string_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "json_is_valid")(json)
 		best["json_is_valid_by_name_us"] = min(best["json_is_valid_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(json_handle)(json)
 		best["json_is_valid_cached_us"] = min(best["json_is_valid_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			RUSTG_CALL(RUST_G, "log_write")(log_file, text, "false")
 		best["log_write_by_name_us"] = min(best["log_write_by_name_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
 			call_ext(log_handle)(log_file, text, "false")
@@ -587,7 +587,7 @@
 		var/mob/living/simple_mob/animal/passive/mouse/white/mouse = new(locate(3 + (i * 11) % 46, 3 + (i * 17) % 46, fixture_z))
 		mouse.ai_brain?.go_sleep()
 	var/rounds = param("rounds", 30)
-	stoplag()
+	stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	var/cost_before = 0
 	for(var/key in SSradiation.profile_source_cost_ms)
 		cost_before += SSradiation.profile_source_cost_ms[key]
@@ -600,7 +600,7 @@
 		while(length(SSradiation.processing))
 			if(REALTIMEOFDAY > deadline)
 				fail("radiation pulses did not drain within 60s")
-			stoplag()
+			stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	end_window("radiation")
 	var/cost_after = 0
 	for(var/key in SSradiation.profile_source_cost_ms)

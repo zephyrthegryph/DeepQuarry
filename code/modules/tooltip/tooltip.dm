@@ -150,7 +150,7 @@
 
 /datum/tooltip/proc/on_target_qdel()
 	SIGNAL_HANDLER
-	INVOKE_ASYNC(src, PROC_REF(hide))
+	hide()
 	last_target = null
 
 /datum/tooltip/proc/do_hide(hide_revision)

@@ -441,7 +441,7 @@
 	SIGNAL_HANDLER
 
 	if(user == parent)
-		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user)
+		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // S10b keeps: tgui_interact may block on asset/window setup
 
 /datum/component/personal_crafting/tgui_state(mob/user)
 	return GLOB.tgui_not_incapacitated_turf_state

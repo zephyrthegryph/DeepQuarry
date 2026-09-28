@@ -159,7 +159,7 @@
 ///This is used so the mc knows when the subsystem sleeps. do not override.
 /datum/controller/subsystem/proc/ignite(resumed = FALSE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: MC code (subsystem fire trampoline)
 	. = SS_IDLE
 
 	tick_allocation_last = Master.current_ticklimit-(TICK_USAGE)

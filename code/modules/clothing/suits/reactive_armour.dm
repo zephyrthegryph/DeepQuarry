@@ -66,7 +66,7 @@
 /obj/item/clothing/suit/armor/reactive/handle_shield(mob/user, damage, atom/damage_source, mob/attacker, def_zone, attack_text)
 	if(!active || !prob(hit_reaction_chance))
 		return FALSE
-	if(world.time < reactivearmor_cooldown)
+	if(!COOLDOWN_FINISHED(src, reactivearmor_cooldown))
 		cooldown_activation(user)
 		return FALSE
 	if(!COOLDOWN_FINISHED(src, bad_effect))
@@ -104,7 +104,7 @@
 	owner.visible_message(span_danger("The reactive teleport system flings [owner] clear of [attack_text]!"))
 	playsound(get_turf(owner), 'sound/effects/phasein.ogg', 100, TRUE)
 	do_teleport(owner, get_turf(owner), tele_range, no_effects = TRUE, channel = TELEPORT_CHANNEL_BLUESPACE)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/teleport/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", final_block_chance = 0, damage = 0)
@@ -113,7 +113,7 @@
 	playsound(get_turf(owner),'sound/machines/buzz-sigh.ogg', 50, TRUE)
 	playsound(get_turf(owner), 'sound/effects/phasein.ogg', 100, TRUE)
 	do_teleport(src, get_turf(owner), tele_range, no_effects = TRUE, channel = TELEPORT_CHANNEL_BLUESPACE)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
 
@@ -135,7 +135,7 @@
 		repulsed.throw_at(throwtarget, 10, 1)
 		thrown_items[repulsed] = repulsed
 
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/repulse/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -149,7 +149,7 @@
 		repulsed.throw_at(owner, 10, 1)
 		thrown_items[repulsed] = repulsed
 
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
 
@@ -176,7 +176,7 @@
 /obj/item/clothing/suit/armor/reactive/tesla/reactive_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
 	owner.visible_message(span_danger("[src] blocks [attack_text], sending out arcs of lightning!"))
 	tesla_zap(owner, zap_range, zap_power, current_jumps = 1)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/tesla/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -184,7 +184,7 @@
 	REMOVE_CLOTHING_TRAIT(owner, TRAIT_TESLA_SHOCKIMMUNE)
 	electrocute_mob(owner, get_area(src), src, 1)
 	ADD_CLOTHING_TRAIT(owner, TRAIT_TESLA_SHOCKIMMUNE)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 // Sure we could, but- Not really THAT useful. Give them the stealth one.
@@ -214,7 +214,7 @@
 		if(prob(10))
 			to_chat(hallucinator, span_danger("Your nose bleeds!"))
 			hallucinator.drip(1)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/hallucinating/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -222,7 +222,7 @@
 	owner.status_adjust(EFFECT_HALLUCINATING, 75)
 	to_chat(owner, span_danger("Your nose bleeds!"))
 	owner.drip(1)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 // When the wearer gets hit, this armor will push people nearby and spawn some blocking objects.
@@ -243,7 +243,7 @@
 	theme.apply_random(get_turf(owner), dangerous = FALSE)
 	qdel(theme)
 
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/barricade/proc/repulse_targets(atom/source)
@@ -272,7 +272,7 @@
 	var/datum/armour_dimensional_theme/theme = new()
 	theme.apply_random(get_turf(owner), dangerous = TRUE)
 	qdel(theme)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
 // FIRE
@@ -290,7 +290,7 @@
 			carbon_victim.adjust_fire_stacks(8)
 			carbon_victim.ignite_mob()
 	owner.set_wet_stacks(20)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/fire/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -298,7 +298,7 @@
 	playsound(get_turf(owner), 'sound/magic/Fireball.ogg', 100, TRUE)
 	owner.adjust_fire_stacks(12)
 	owner.ignite_mob()
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
 /obj/item/clothing/suit/armor/reactive/weather
@@ -328,7 +328,7 @@
 
 		shock_turf_windup(attacker.loc)
 
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/weather/emp_activation(mob/living/carbon/human/owner, atom/movable/hitby, attack_text = "the attack", damage = 0)
@@ -379,7 +379,7 @@
 	decoy.say("*sidestep")
 	om_after(src, stealth_time, PROC_REF(destroy_illusion), decoy)
 	decoy.expire(stealth_time)
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
 
 /obj/item/clothing/suit/armor/reactive/stealth/proc/end_stealth(mob/living/carbon/human/owner)
@@ -399,7 +399,7 @@
 	owner.visible_message(span_danger("[src] activates, cloaking the wrong person!"))
 	attacker.alpha = 0
 	om_after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), attacker, initial(attacker.alpha))
-	reactivearmor_cooldown = world.time + reactivearmor_cooldown_duration
+	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 
 /// om_after() target: the misfired cloak wears off.

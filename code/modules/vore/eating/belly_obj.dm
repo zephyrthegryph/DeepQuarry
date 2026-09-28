@@ -338,11 +338,11 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 			if(world.time - last_transfer_log > ENTRY_MESSAGE_INTERVAL)
 				last_transfer_log = world.time
 				entrance_log_count = 0
-			if(world.time >= next_transfer_log)
+			if(COOLDOWN_FINISHED(src, next_transfer_log))
 				to_chat(owner,span_vnotice("[thing] slides into your [lowertext(name)]."))
 				entrance_log_count++
 				if(entrance_log_count >= MAX_ENTRY_MESSAAGES)
-					next_transfer_log = world.time + ENTRY_MESSAGE_INTERVAL
+					COOLDOWN_START(src, next_transfer_log, ENTRY_MESSAGE_INTERVAL)
 					last_transfer_log = world.time
 
 	//Sound w/ antispam flag setting

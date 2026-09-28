@@ -24,7 +24,7 @@
 	var/minor_fault = 0 //If not 100% reliable, it will build up faults.
 	var/self_recharge = FALSE // If true, the cell will recharge itself.
 	var/charge_amount = 25 // How much power to give, if self_recharge is true.  The number is in absolute cell charge, as it gets divided by CELLRATE later.
-	var/last_use = 0 // A tracker for use in self-charging
+	COOLDOWN_DECLARE(charge_cooldown) // A tracker for use in self-charging
 	var/connector_type = "standard" //What connector sprite to use when in a cell charger, null if no connectors
 	var/charge_delay = 0  // How long it takes for the cell to start recharging after last use
 	var/robot_durability = 50
@@ -65,7 +65,7 @@
 	if(self_recharge)
 		if(charge >= maxcharge)
 			return PROCESS_KILL
-		if(world.time >= last_use + charge_delay)
+		if(COOLDOWN_FINISHED(src, charge_cooldown))
 			give(charge_amount)
 			// TGMC Ammo HUD - Update the HUD every time we're called to recharge.
 			if(istype(loc, /obj/item/gun/energy)) // Are we in a gun currently?
@@ -163,9 +163,9 @@
 	return material_superconducting
 
 /obj/item/cell/proc/material_phase_feedback(quenching)
-	if(world.time < material_feedback_cooldown)
+	if(!COOLDOWN_FINISHED(src, material_feedback_cooldown))
 		return
-	material_feedback_cooldown = world.time + 2 SECONDS
+	COOLDOWN_START(src, material_feedback_cooldown, 2 SECONDS)
 	var/atom/device = isobj(loc) ? loc : src
 	if(quenching)
 		device.visible_message(span_warning("[device] snaps with a harsh electrical crack as frost flashes from its casing!"))
@@ -274,7 +274,7 @@
 		material_service.add_heat((debited - used) / CELLRATE)
 		run_material_heat_pump(used)
 	update_superconducting_state(amount)
-	last_use = world.time
+	COOLDOWN_START(src, charge_cooldown, charge_delay)
 	if(used && self_recharge)
 		PERIODIC_START(src, PERIODIC_SLOW)
 	if(used && istype(loc, /obj/machinery/power/apc))

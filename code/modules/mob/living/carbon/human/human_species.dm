@@ -39,7 +39,6 @@
 		turntable()
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/proc/dress_up()
-	set waitfor = FALSE
 
 	for(var/obj/item/I in loc)
 		if(istype(I, /obj/item/clothing))

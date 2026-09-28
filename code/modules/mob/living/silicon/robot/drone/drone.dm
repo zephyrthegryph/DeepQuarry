@@ -304,7 +304,7 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 /mob/living/silicon/robot/drone/on_death(gibbed)
 	. = ..()
 	if(!gibbed && vitality() <= 0)
-		INVOKE_ASYNC(src, TYPE_PROC_REF(/mob, gib))
+		gib()
 
 //CONSOLE PROCS
 /mob/living/silicon/robot/drone/proc/law_resync()

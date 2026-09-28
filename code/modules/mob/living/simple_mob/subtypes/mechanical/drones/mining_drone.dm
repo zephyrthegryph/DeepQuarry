@@ -62,7 +62,7 @@
 	var/obj/item/shield_projector/shields = null
 	var/obj/item/ore_bag/my_storage = null
 
-	var/last_search = 0
+	COOLDOWN_DECLARE(search_cooldown_until)
 	var/search_cooldown = 5 SECONDS
 	var/ignoreunarmed = TRUE
 	var/allowedtools = list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul)
@@ -144,8 +144,8 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mining_drone, list("ion_trail", "shi
 	of = /mob/living/simple_mob/mechanical/mining_drone
 
 /datum/om/stage/life/special/mechanical/mining_drone/perform(mob/living/simple_mob/mechanical/mining_drone/self, datum/om/frame/life/ctx)
-	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (world.time > self.last_search + self.search_cooldown) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
-		self.last_search = world.time
+	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (COOLDOWN_FINISHED(self, search_cooldown_until)) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
+		COOLDOWN_START(self, search_cooldown_until, self.search_cooldown)
 
 		for(var/turf/T in view(world.view,self))
 			if(self.my_storage.contents.len >= self.my_storage.max_storage_space)

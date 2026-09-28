@@ -62,7 +62,7 @@
 	vore_standing_too = 1
 
 	var/mob/living/chosen_target
-	var/last_effect = 0
+	COOLDOWN_DECLARE(effect_cooldown)
 	var/boost_health = 50
 
 	status_flags = null
@@ -149,18 +149,18 @@
 	if(!chosen_target)
 		return
 	chosen_target.fear = min((chosen_target.fear + 3),102)
-	if(world.time >= (last_effect + 30 SECONDS))
+	if(COOLDOWN_FINISHED(src, effect_cooldown))
 		if(prob(5))
 			chosen_target.status_at_least(EFFECT_HALLUCINATING, 10)
-			last_effect = world.time
+			COOLDOWN_START(src, effect_cooldown, 30 SECONDS)
 		if(prob(5))
 			var/chosen_threat = pick(emote_threats)
 			to_chat(chosen_target,span_danger("The words creep into your mind: [chosen_threat]"))
-			last_effect = world.time
+			COOLDOWN_START(src, effect_cooldown, 30 SECONDS)
 		if(prob(5))
 			var/chosen_sound = pick(AMBIENCE_GHOSTLY)
 			chosen_target << sound(chosen_sound, repeat = 0, wait = 0, volume = 15, channel = CHANNEL_AMBIENCE_FORCED)
-			last_effect = world.time
+			COOLDOWN_START(src, effect_cooldown, 30 SECONDS)
 
 /mob/living/simple_mob/ysbryd/bullet_act(obj/item/projectile/Proj)
 	if(istype(Proj ,/obj/item/projectile/beam/xray) || istype(Proj ,/obj/item/projectile/beam/gamma) || istype(Proj ,/obj/item/projectile/beam/emitter))

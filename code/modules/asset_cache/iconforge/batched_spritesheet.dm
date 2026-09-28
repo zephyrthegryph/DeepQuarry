@@ -247,7 +247,7 @@
 		return
 	queued_generation_active = TRUE
 	SSasset_loading.assets_generating++
-	INVOKE_ASYNC(src, PROC_REF(realize_spritesheets), TRUE) // The proc is called inside a subsystem and waits with an UNTIL
+	INVOKE_ASYNC(src, PROC_REF(realize_spritesheets), TRUE) // The proc is called inside a subsystem and waits with an UNTIL // S10b keeps: realize_spritesheets waits with UNTIL
 
 /datum/asset/spritesheet_batched/proc/finish_queued_generation()
 	if(!queued_generation_active)

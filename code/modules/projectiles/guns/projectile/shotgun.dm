@@ -26,7 +26,7 @@
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 	projectile_type = /obj/item/projectile/bullet/shotgun
 	handle_casings = HOLD_CASINGS
-	var/recentpump = 0 			//To prevent spammage
+	COOLDOWN_DECLARE(pump_cooldown) 			//To prevent spammage
 	var/action_sound = 'sound/weapons/shotgunpump.ogg'
 	var/empty_sprite = 0 		//This is just a dirty var so it doesn't fudge up.
 	var/pump_animation = "shotgun-pump"	//You put the reference to the animation in question here. Frees up namming. Ex: "shotgun_old_pump" or "sniper_cycle"
@@ -42,9 +42,9 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(world.time >= recentpump + 1 SECOND)
+	if(COOLDOWN_FINISHED(src, pump_cooldown))
 		pump(user)
-		recentpump = world.time
+		COOLDOWN_START(src, pump_cooldown, 1 SECOND)
 
 /obj/item/gun/projectile/shotgun/pump/proc/pump(mob/M as mob)
 	playsound(src, action_sound, 60, 1)

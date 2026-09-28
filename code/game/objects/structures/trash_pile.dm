@@ -164,7 +164,7 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
 /obj/structure/mob_spawner/mouse_nest/Initialize(mapload)
 	. = ..()
-	last_spawn = rand(world.time - spawn_delay, world.time)
+	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
 	icon_state = pick(
 		"pile1",
 		"pile2",
@@ -185,4 +185,4 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
 /obj/structure/mob_spawner/mouse_nest/get_death_report(mob/living/L)
 	..()
-	last_spawn = rand(world.time - spawn_delay, world.time)
+	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))

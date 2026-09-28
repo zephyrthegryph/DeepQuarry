@@ -63,7 +63,7 @@
 /datum/component/robot_belly/proc/on_death(datum/source, gibbed)
 	SIGNAL_HANDLER
 	for(var/obj/item/dogborg/sleeper/S as anything in get_sleepers())
-		INVOKE_ASYNC(S, TYPE_PROC_REF(/obj/item/dogborg/sleeper, go_out))
+		S.go_out()
 
 /// Ore bags autoload only while their compactor is equipped; the pounce turns
 /// bluespace while anomalous sight is active.

@@ -52,13 +52,12 @@
 /// table above). Return PROCESS_KILL when there is nothing left to do until the next
 /// PERIODIC_START. Like the old process(), a body that sleeps doesn't hold up the frame.
 /datum/proc/periodic_step(delta)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: core dispatch hook: guards the frame against a periodic_step() override that still sleeps
 	return PROCESS_KILL
 
 /// The core's own per-datum hook, kept for tgui windows and database queries (SStgui, SSdbcore).
 /// No gameplay type defines it any more (tools/ci/pollers_lint.py counts the overrides).
 /datum/proc/process()
-	set waitfor = FALSE
 	return PROCESS_KILL
 
 // ---------------------------------------------------------------- pipelines

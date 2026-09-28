@@ -215,11 +215,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	var/obj/item/item = parent
 	if(!material || !istype(item))
 		return
-	if(electrical_form && material.piezoelectric_coefficient > 0 && world.time >= next_piezo_response)
+	if(electrical_form && material.piezoelectric_coefficient > 0 && COOLDOWN_FINISHED(src, next_piezo_response))
 		var/obj/item/cell/cell = istype(item, /obj/item/cell) ? item : item.get_cell()
 		var/impact_force = max(item.force, item.throwforce)
 		if(cell && impact_force > 0)
-			next_piezo_response = world.time + 1 SECOND
+			COOLDOWN_START(src, next_piezo_response, 1 SECOND)
 			cell.give(max(1, round(material.piezoelectric_coefficient * impact_force)))
 	if(material.reagent_porosity > 0 && item.reagents?.total_volume && isliving(cause))
 		item.reagents.trans_to(cause, min(2, item.reagents.total_volume))

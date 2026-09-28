@@ -109,7 +109,7 @@
 /datum/om/stage/life/special/animal/borer/perform(mob/living/simple_mob/animal/borer/self, datum/om/frame/life/ctx)
 	self.handle_chemicals()
 	self.handle_docile()
-	INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/animal/borer, handle_braindamage))
+	om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/animal/borer, handle_braindamage))
 
 /mob/living/simple_mob/animal/borer/get_status_tab_items()
 	. = ..()

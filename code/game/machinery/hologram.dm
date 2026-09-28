@@ -41,7 +41,7 @@ Possible to do for anyone motivated enough:
 	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
 	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad
-	var/last_request = 0 //to prevent request spam. ~Carn
+	COOLDOWN_DECLARE(request_cooldown) //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
 /obj/machinery/hologram/holopad/declare_interactions(list/into)
@@ -73,8 +73,8 @@ Possible to do for anyone motivated enough:
 
 /obj/machinery/hologram/holopad/proc/ai_request_answered(mob/living/carbon/human/user, answer, datum/om/prompt/ask)
 	if(answer == "Yes")
-		if(last_request + 200 < world.time) //don't spam the AI with requests you jerk!
-			last_request = world.time
+		if(COOLDOWN_FINISHED(src, request_cooldown)) //don't spam the AI with requests you jerk!
+			COOLDOWN_START(src, request_cooldown, 200)
 			to_chat(user, span_notice("You request an AI's presence."))
 			var/area/area = get_area(src)
 			for(var/mob/living/silicon/ai/AI in REGISTRY_MEMBERS(REGISTRY_LIVING_MOBS))

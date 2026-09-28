@@ -134,7 +134,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return // should stop you from dragging through windows
 	if(user.is_incorporeal())
 		return
-	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params)
+	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params) // S10b keeps: MouseDrop_T overrides may prompt/do_after
 
 /// A category key: the best interaction of that category on the target.
 /datum/input_adapter/proc/perform_category(mob/user, atom/target, category)

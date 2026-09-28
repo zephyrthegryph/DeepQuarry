@@ -165,8 +165,8 @@
 		if(islist(emote_lists))
 			EL = emote_lists[digest_mode]
 
-		if((LAZYLEN(EL) || LAZYLEN(emote_lists[DM_HOLD_ABSORBED]) || (digest_mode == DM_DIGEST && LAZYLEN(emote_lists[DM_HOLD])) || (digest_mode == DM_SELECT && (LAZYLEN(emote_lists[DM_HOLD])||LAZYLEN(emote_lists[DM_DIGEST])||LAZYLEN(emote_lists[DM_ABSORB])) )) && next_emote <= world.time)
-			next_emote = world.time + (emote_time SECONDS)
+		if((LAZYLEN(EL) || LAZYLEN(emote_lists[DM_HOLD_ABSORBED]) || (digest_mode == DM_DIGEST && LAZYLEN(emote_lists[DM_HOLD])) || (digest_mode == DM_SELECT && (LAZYLEN(emote_lists[DM_HOLD])||LAZYLEN(emote_lists[DM_DIGEST])||LAZYLEN(emote_lists[DM_ABSORB])) )) && COOLDOWN_FINISHED(src, next_emote))
+			COOLDOWN_START(src, next_emote, (emote_time SECONDS))
 			for(var/mob/living/M in contents)
 				if(M.absorbed)
 					EL = emote_lists[DM_HOLD_ABSORBED]
@@ -282,7 +282,7 @@
 		// We don't want the sounds to overlap, but we do want them to steadily replay.
 		// We also don't want the sounds to play if the pred hasn't marked this belly as fleshy, or doesn't
 		// have the right sounds to play.
-		if(is_wet && wet_loop && (world.time > M.next_preyloop)) //Removed isbelly(M.loc) as some viewers might be indirectly in the belly
+		if(is_wet && wet_loop && (COOLDOWN_FINISHED(M, next_preyloop))) //Removed isbelly(M.loc) as some viewers might be indirectly in the belly
 			M.stop_sound_channel(CHANNEL_PREYLOOP)
 			var/sound/preyloop = sound('sound/vore/sunesound/prey/loop.ogg')
 			M.playsound_local(get_turf(src), preyloop, 80, 0, channel = CHANNEL_PREYLOOP, frequency = noise_freq)

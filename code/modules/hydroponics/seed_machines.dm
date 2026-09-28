@@ -51,7 +51,7 @@
 	var/open = 0
 	var/active = 0
 	var/action_time = 5
-	var/last_action = 0
+	COOLDOWN_DECLARE(action_cooldown)
 	var/eject_disk = 0
 	var/failed_task = 0
 	var/disk_needs_genes = 0
@@ -72,7 +72,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 	..()
 	if(!active) return
 
-	if(world.time > last_action + action_time)
+	if(COOLDOWN_FINISHED(src, action_cooldown))
 		finished_task()
 
 /// Old attack_hand (never called ..()): open the interface.
@@ -272,7 +272,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			if(!seed)
 				return
 
-			last_action = world.time
+			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
 			if(seed && seed.seed)
@@ -287,7 +287,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			if(!genetics || !loaded_disk)
 				return
 
-			last_action = world.time
+			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
 			var/datum/plantgene/P = genetics.get_gene(params["get_gene"])
@@ -371,7 +371,7 @@ REF_SPILL(/obj/machinery/botany, list("seed", "loaded_disk"))
 			if(!loaded_disk || !seed)
 				return
 
-			last_action = world.time
+			COOLDOWN_START(src, action_cooldown, action_time)
 			active = 1
 
 			if(!isnull(SSplants.seeds[seed.seed.name]))

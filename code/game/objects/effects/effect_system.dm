@@ -82,7 +82,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system/steam_spread/start()
 	var/i = 0
 	for(i=0, i<src.number, i++)
-		INVOKE_ASYNC(src, PROC_REF(emit_one_steam))
+		emit_one_steam()
 
 /////////////////////////////////////////////
 //SPARK SYSTEM (like steam system)
@@ -154,7 +154,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	for(i=0, i<src.number, i++)
 		if(src.total_sparks > 20)
 			return
-		INVOKE_ASYNC(src, PROC_REF(emit_one_spark))
+		emit_one_spark()
 
 /////////////////////////////////////////////
 //// SMOKE SYSTEMS
@@ -390,7 +390,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	for(i=0, i<src.number, i++)
 		if(src.total_smoke > 20)
 			return
-		INVOKE_ASYNC(src, PROC_REF(emit_one_smoke), I)
+		emit_one_smoke(I)
 
 /datum/effect/effect/system/smoke_spread/bad
 	smoke_type = /obj/effect/effect/smoke/bad
@@ -465,7 +465,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		src.processing = 1
 	if(src.processing)
 		src.processing = 0
-		INVOKE_ASYNC(src, PROC_REF(trail_step))
+		trail_step()
 
 /datum/effect/effect/system/ion_trail_follow/proc/stop()
 		src.processing = 0
@@ -509,7 +509,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		src.processing = 1
 	if(src.processing)
 		src.processing = 0
-		INVOKE_ASYNC(src, PROC_REF(steam_step))
+		steam_step()
 
 /datum/effect/effect/system/steam_trail_follow/proc/stop()
 	src.processing = 0
@@ -669,7 +669,7 @@ would spawn and follow the beaker, even if it is carried or thrown.
 	for(i=0, i<src.number, i++)
 		if(src.total_confetti > 20)
 			return
-		INVOKE_ASYNC(src, PROC_REF(emit_one_confetti), I)
+		emit_one_confetti(I)
 
 /////////////////////////////////////////////
 // Snow fall

@@ -45,7 +45,6 @@
  */
 
 /mob/living/carbon/proc/dream()
-	set waitfor = FALSE
 
 	var/datum/dream/chosen_dream = pick_weight(GLOB.dreams)
 

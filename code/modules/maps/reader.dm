@@ -323,10 +323,10 @@ GLOBAL_LIST_EMPTY(cached_maps)
 	if(TICK_CHECK) { \
 		if(loading) { \
 			SSatoms.map_loader_stop(REF(src)); \
-			stoplag(); \
+			stoplag(); /* S10b keeps: map loading yields per chunk (lane-work conversion pending) */ \
 			SSatoms.map_loader_begin(REF(src)); \
 		} else { \
-			stoplag(); \
+			stoplag(); /* S10b keeps: map loading yields per chunk (lane-work conversion pending) */ \
 		} \
 	}
 #endif
@@ -975,7 +975,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 ////////////////
 
 /datum/parsed_map/proc/create_atom(path, crds)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: guards map loading against a New() that sleeps
 	. = new path (crds)
 
 //find the position of the next delimiter,skipping whatever is comprised between opening_escape and closing_escape

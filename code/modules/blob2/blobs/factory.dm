@@ -29,10 +29,10 @@
 	. = ..()
 	if(length(spores) >= max_spores)
 		return
-	if(spore_delay > world.time)
+	if(!COOLDOWN_FINISHED(src, spore_delay))
 		return
 	flick("blob_factory_glow", src)
-	spore_delay = world.time + spore_cooldown
+	COOLDOWN_START(src, spore_delay, spore_cooldown)
 	var/mob/living/simple_mob/blob/spore/S = null
 	if(overmind)
 		S = new overmind.blob_type.spore_type(src.loc, src)

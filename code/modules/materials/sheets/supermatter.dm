@@ -5,7 +5,7 @@
 	item_state = "diamond"
 	default_type = MAT_SUPERMATTER
 	apply_colour = TRUE
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
@@ -23,7 +23,7 @@
 /obj/item/stack/material/supermatter/proc/radiate()
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -34,7 +34,7 @@
 		minimum_exposure_time = NEBULA_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = amount * 0.5 //2 sheets = 1 rad, 50 sheets = 25 rads.
 	)
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /obj/item/stack/material/supermatter/proc/update_mass()	// Due to how dangerous they can be, the item will get heavier and larger the more are in the stack.

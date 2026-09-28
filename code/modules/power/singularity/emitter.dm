@@ -20,7 +20,7 @@
 	var/max_burst_delay = 100
 	var/min_burst_delay = 20
 	var/burst_shots = 3
-	var/last_shot = 0
+	COOLDOWN_DECLARE(shot_cooldown)
 	var/shot_number = 0
 	var/state = 0
 	var/locked = 0
@@ -101,7 +101,7 @@
 	if(!active)
 		return PROCESS_KILL
 	charge_emitter()
-	if(((src.last_shot + src.fire_delay) <= world.time) && (src.active == 1))
+	if((COOLDOWN_FINISHED(src, shot_cooldown)) && (src.active == 1))
 		var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
 		var/desired_beam = active_power_usage * (burst_time / 10) / burst_shots * material_output_setting
 		var/efficiency = emitter_efficiency()
@@ -120,7 +120,7 @@
 				investigate_log("lost power and turned" + span_red("off"),"singulo")
 			return
 
-		src.last_shot = world.time
+		COOLDOWN_START(src, shot_cooldown, src.fire_delay)
 		if(src.shot_number < burst_shots)
 			src.fire_delay = get_burst_delay() //R-UST port
 			src.shot_number ++

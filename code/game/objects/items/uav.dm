@@ -274,7 +274,7 @@ REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 
 /obj/item/uav/relaymove(mob/user, direction, signal = 1)
 	if(signal && state == UAV_ON && (user in src?.uav_masters()))
-		if(next_move <= world.time)
+		if(COOLDOWN_FINISHED(src, next_move))
 			next_move = world.time + (1 SECOND/signal)
 			step(src, direction)
 		return TRUE // Even if we couldn't step, we're taking credit for absorbing the move

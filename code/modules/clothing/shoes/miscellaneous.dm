@@ -313,7 +313,7 @@
 	if(user.throwing)
 		return // User is already being thrown
 
-	if(recharging_time > world.time)
+	if(!COOLDOWN_FINISHED(src, recharging_time))
 		to_chat(user, span_warning("The boot's internal propulsion needs to recharge still!"))
 		return
 
@@ -322,7 +322,7 @@
 	playsound(src, 'sound/effects/stealthoff.ogg', 50, 1, 1)
 	user.visible_message(span_warning("[user] dashes forward into the air!"))
 	user.throw_at(target, jumpdistance, jumpspeed)
-	recharging_time = world.time + recharging_rate
+	COOLDOWN_START(src, recharging_time, recharging_rate)
 
 /obj/item/clothing/shoes/magboots/adv
 	name = "advanced magboots"

@@ -221,9 +221,9 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 		. += span_notice("The material cradle is empty. Apply alloy stock to load it.")
 
 /obj/machinery/power/fusion_core/proc/process_material_sample()
-	if(!material_sample || QDELETED(material_sample) || !owned_field || world.time < next_material_treatment)
+	if(!material_sample || QDELETED(material_sample) || !owned_field || !COOLDOWN_FINISHED(src, next_material_treatment))
 		return
-	next_material_treatment = world.time + 5 SECONDS
+	COOLDOWN_START(src, next_material_treatment, 5 SECONDS)
 	var/datum/material_batch/batch = material_sample.physical_batch()?.copy_batch()
 	if(!batch)
 		return

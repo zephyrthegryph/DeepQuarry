@@ -19,7 +19,7 @@
 
 	//spitting
 	var/spit_delay = 20 // maximum spit fire rate
-	var/spit_last = 0
+	COOLDOWN_DECLARE(spit_cooldown)
 	var/icon_overlay_spit = null // spit iconstate
 	var/icon_overlay_spit_pounce = null // spit while pouncing
 
@@ -124,13 +124,13 @@
 	//trying/permitted to pounce
 	if(pouncing)
 		//able to pounce (not dead or stunned or on CD)
-		if(isliving(src) && !src.has_status(EFFECT_WEAKENED) && (world.time > pounce_last) && !(status_flags & LEAPING))
+		if(isliving(src) && !src.has_status(EFFECT_WEAKENED) && (COOLDOWN_FINISHED(src, pounce_last)) && !(status_flags & LEAPING))
 			//can see pounce target
 			if((A in view(src, world.view)))
 				//make sure we're targetting a turf!
 				var/turf/T = get_turf(A)
 				//handle delay spam
-				pounce_last = world.time + pounce_delay
+				COOLDOWN_START(src, pounce_last, pounce_delay)
 				status_flags |= LEAPING
 
 				//deal with passflag - give flags if don't have, mark for removal. Prevent removal if already has flags.
@@ -227,11 +227,11 @@
 	if(isnull(spit_projectile))
 		return
 
-	if((spit_last + spit_delay) > world.time) //To prevent YATATATATATAT spitting.
+	if(!COOLDOWN_FINISHED(src, spit_cooldown)) //To prevent YATATATATATAT spitting.
 		to_chat(src, span_warning("You have not yet prepared your chemical glands. You must wait before spitting again."))
 		return
 	else
-		spit_last = world.time
+		COOLDOWN_START(src, spit_cooldown, spit_delay)
 
 	if(spitting && incapacitated(INCAPACITATION_DISABLED))
 		to_chat(src, "You cannot spit in your current state.")
@@ -316,11 +316,11 @@
 	set desc = "Spins to strike enemies away from you."
 	set category = "Abilities.Mob"
 
-	if(world.time < speen_last)
+	if(!COOLDOWN_FINISHED(src, speen_last))
 		to_chat(src, span_warning("You cannot spin again so soon."))
 		return
 
-	speen_last = world.time + speen_delay
+	COOLDOWN_START(src, speen_last, speen_delay)
 	var/list/thrownatoms = list()
 	for(var/mob/living/victim in oview(range, src))
 		thrownatoms += victim

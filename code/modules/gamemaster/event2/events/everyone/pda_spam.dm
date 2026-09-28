@@ -26,10 +26,10 @@
 	if(!can_spam())
 		return
 
-	if(world.time < next_spam_attempt_time)
+	if(!COOLDOWN_FINISHED(src, next_spam_attempt_time))
 		return
 
-	next_spam_attempt_time = world.time + rand(30 SECONDS, 2 MINUTES)
+	COOLDOWN_START(src, next_spam_attempt_time, rand(30 SECONDS, 2 MINUTES))
 
 	var/obj/item/pda/P = null
 	var/list/viables = list()

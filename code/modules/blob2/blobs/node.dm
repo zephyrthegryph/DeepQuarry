@@ -26,7 +26,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/node, REGISTRY_BLOB_NODES)
 	add_overlay("blob_node_overlay")
 
 /obj/structure/blob/node/periodic_step()
-	set waitfor = FALSE
 	if(overmind) // This check is so that if the core is killed, the nodes stop.
 		pulse_area(overmind, 10, BLOB_NODE_PULSE_RANGE, BLOB_NODE_EXPAND_RANGE)
 

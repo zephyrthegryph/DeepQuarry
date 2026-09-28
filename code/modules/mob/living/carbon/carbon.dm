@@ -421,7 +421,7 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop"))
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))
 	playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
 	if(HAS_TRAIT(src, SLIP_REFLEX_TRAIT) && !lying)
-		if(world.time >= next_emote)
+		if(COOLDOWN_FINISHED(src, next_emote))
 			src.emote("sflip")
 			return TRUE
 	status_at_least(EFFECT_WEAKENED, FLOOR(stun_duration/2, 1))

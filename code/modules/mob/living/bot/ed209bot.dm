@@ -17,7 +17,7 @@
 	used_weapon = /obj/item/gun/energy/taser
 
 	var/shot_delay = 4
-	var/last_shot = 0
+	COOLDOWN_DECLARE(shot_cooldown)
 
 /mob/living/bot/secbot/ed209/update_icons()
 	if(on && om_busy(src))
@@ -54,11 +54,11 @@
 	RangedAttack(target)
 
 /mob/living/bot/secbot/ed209/RangedAttack(atom/A)
-	if(last_shot + shot_delay > world.time)
+	if(!COOLDOWN_FINISHED(src, shot_cooldown))
 		to_chat(src, "You are not ready to fire yet!")
 		return
 
-	last_shot = world.time
+	COOLDOWN_START(src, shot_cooldown, shot_delay)
 
 	var/projectile = /obj/item/projectile/beam/stun
 	if(emagged)

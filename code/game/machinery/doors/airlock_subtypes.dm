@@ -380,7 +380,7 @@
 	desc = "And they said I was crazy."
 	icon = 'icons/obj/doors/Dooruranium.dmi'
 	mineral = MAT_URANIUM
-	var/last_event = 0
+	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
@@ -388,7 +388,7 @@
 	SIGNAL_HANDLER
 	if(active)
 		return
-	if(world.time <= last_event + 1.5 SECONDS)
+	if(!COOLDOWN_FINISHED(src, event_cooldown))
 		return
 	active = TRUE
 	radiation_pulse(
@@ -399,7 +399,7 @@
 		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 		strength = 5,
 	)
-	last_event = world.time
+	COOLDOWN_START(src, event_cooldown, 1.5 SECONDS)
 	active = FALSE
 
 /obj/machinery/door/airlock/uranium_appearance

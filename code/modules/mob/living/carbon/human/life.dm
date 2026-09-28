@@ -819,10 +819,10 @@
 		var/turf = get_turf(self)
 		var/mob/living/carbon/human/M = self
 		if(L && L.robotic < ORGAN_ROBOT && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
-			if(!failed_inhale && (world.time >= (self.last_breath_sound + 7 SECONDS))) // Were we able to inhale successfully? Play inhale.
+			if(!failed_inhale && (COOLDOWN_FINISHED(self, breath_sound_cooldown))) // Were we able to inhale successfully? Play inhale.
 				var/exhale = failed_exhale // Pass through if we passed exhale or not
 				self.play_inhale(M, exhale)
-				self.last_breath_sound = world.time
+				COOLDOWN_START(self, breath_sound_cooldown, 7 SECONDS)
 
 
 	// Hot air hurts :(
@@ -1402,9 +1402,9 @@
 		if(self.fear)
 			self.fear = (self.fear - 1)
 			if(self.fear >= 80 && self.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
-				if(self.last_fear_sound + 51 SECONDS <= world.time)
+				if(COOLDOWN_FINISHED(self, fear_sound_cooldown))
 					self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
-					self.last_fear_sound = world.time
+					COOLDOWN_START(self, fear_sound_cooldown, 51 SECONDS)
 			if(self.fear >= 80 && !self.isSynthetic())
 				if(prob(1) && self.get_active_hand())
 					var/stuff_to_drop = self.get_active_hand()
@@ -2423,7 +2423,7 @@
 	if(!self.nif) return
 
 	//Process regular life stuff
-	INVOKE_ASYNC(self.nif, TYPE_PROC_REF(/obj/item/nif, life))
+	self.nif.life()
 
 //Overriding carbon move proc that forces default hunger factor
 /mob/living/carbon/Moved(atom/old_loc, direction, forced = FALSE)

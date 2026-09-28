@@ -39,8 +39,8 @@
 				user.add_ventcrawl(target_move)
 			user.forceMove(target_move)
 			user.reset_perspective(target_move) //if we don't do this, Byond only updates the eye every tick - required for smooth movement
-			if(world.time > user.next_play_vent)
-				user.next_play_vent = world.time+30
+			if(COOLDOWN_FINISHED(user, next_play_vent))
+				COOLDOWN_START(user, next_play_vent, 30)
 				var/turf/T = get_turf(src)
 				SSmotiontracker.ping(T,40) // Teshari rattler
 				playsound(T, 'sound/machines/ventcrawl.ogg', 50, 1, -3)

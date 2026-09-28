@@ -30,11 +30,11 @@
 		icon_state = "sled209[on]"
 
 /mob/living/bot/secbot/ed209/slime/RangedAttack(atom/A)
-	if(last_shot + shot_delay > world.time)
+	if(!COOLDOWN_FINISHED(src, shot_cooldown))
 		to_chat(src, "You are not ready to fire yet!")
 		return
 
-	last_shot = world.time
+	COOLDOWN_START(src, shot_cooldown, shot_delay)
 
 	var/projectile = /obj/item/projectile/beam/stun/xeno
 	if(emagged)

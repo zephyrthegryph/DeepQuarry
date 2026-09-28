@@ -116,13 +116,13 @@
 			if(ismob(M))
 				mylist |= M
 		if(mylist.len > 0)
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/vore/alienanimals/succlet, succlet_move), pick(mylist))
+			self.succlet_move(pick(mylist))
 		else
 			for(var/turf/T in view(world.view, get_turf(self)))	//No, so let's pick a turf to travel to
 				if(isturf(T))
 					mylist |= T
 			if(mylist.len)
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living/simple_mob/vore/alienanimals/succlet, succlet_move), pick(mylist))
+				self.succlet_move(pick(mylist))
 	self.succlet_last_health = self.vitality()	//The succlet will try to move if it has taken damage
 
 /mob/living/simple_mob/vore/alienanimals/succlet

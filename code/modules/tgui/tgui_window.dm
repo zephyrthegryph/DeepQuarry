@@ -26,7 +26,7 @@
 	/// browser payload so React does not repeat an asynchronous storage lookup.
 	var/list/preapplied_geometry
 	/// Rate limit for automatic local-development browser telemetry.
-	var/last_perf_log_at = 0
+	COOLDOWN_DECLARE(perf_log_cooldown)
 	/// Opaque token for the page most recently browse()'d into this window. Every
 	/// message the page sends carries it, so a late message from a superseded page
 	/// (e.g. its `ready` arriving after a reinitialize) cannot be mistaken for the
@@ -511,7 +511,7 @@
 				"files" = asset_generation.chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
-		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden))
+		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden)) // S10b keeps: winget round-trip
 	// Pass message to UI that requested the lock
 	if(locked && locked_by)
 		var/prevent_default = locked_by.on_message(type, payload, href_list)
@@ -600,9 +600,9 @@
 	if(client?.address != "127.0.0.1" && client?.address != "::1")
 		return FALSE
 	#endif
-	if(world.time < last_perf_log_at + TGUI_PERF_LOG_COOLDOWN)
+	if(!COOLDOWN_FINISHED(src, perf_log_cooldown))
 		return FALSE
-	last_perf_log_at = world.time
+	COOLDOWN_START(src, perf_log_cooldown, TGUI_PERF_LOG_COOLDOWN)
 	return TRUE
 
 /// Bounds a browser telemetry payload before it is written to the log.

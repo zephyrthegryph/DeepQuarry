@@ -303,7 +303,7 @@ code/game/objects/items/weapons/autopsy.dm 1
 code/game/objects/items/weapons/capture_crystal.dm 2
 code/game/objects/items/weapons/chewables.dm 1
 code/game/objects/items/weapons/cigs_lighters.dm 4
-code/game/objects/items/weapons/dna_injector.dm 1
+code/game/objects/items/weapons/dna_injector.dm 2
 code/game/objects/items/weapons/flamethrower.dm 2
 code/game/objects/items/weapons/gift_wrappaper.dm 1
 code/game/objects/items/weapons/grenades/anti_photon_grenade.dm 1
@@ -898,7 +898,7 @@ code/modules/vore/mob_tf.dm 2
 code/modules/vore/mouseray.dm 2
 code/modules/vore/resizing/holder.dm 1
 code/modules/vore/resizing/resize.dm 2
-code/modules/vore/resizing/sizegun_slow.dm 1
+code/modules/vore/resizing/sizegun_slow.dm 2
 code/modules/vore/smoleworld/smoleworld.dm 5
 code/modules/vote/vote_datum.dm 1
 code/modules/weapons/MadokaSpear.dm 2

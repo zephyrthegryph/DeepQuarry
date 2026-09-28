@@ -65,7 +65,6 @@
 
 // Yes? Throw the grenade
 /mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A)
-	set waitfor = FALSE
 	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
@@ -319,7 +318,7 @@
 	 * This new ranged_cooldown_time is smarter in the sense that it is an internalized timer. Try not to confuse the names.
 	*/
 	if(ranged_cooldown_time) //If you have a non-zero number in a mob's variables, this pattern begins.
-		if(ranged_cooldown <= world.time) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
+		if(COOLDOWN_FINISHED(src, ranged_cooldown)) //Further down, a timer keeps adding to the ranged_cooldown variable automatically.
 			visible_message(span_danger(span_bold("\The [src]") + " fires at \the [A]!")) //Leave notice of shooting.
 			shoot(A) //Perform the shoot action
 			if(casingtype) //If the mob is designated to leave casings...

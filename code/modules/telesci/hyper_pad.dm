@@ -12,7 +12,7 @@
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
-	var/last_teleport //to handle the cooldown
+	COOLDOWN_DECLARE(teleport_cooldown_until) //to handle the cooldown
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/obj/machinery/hyperpad/centre/linked_pad
 	icon_state = "hpad_centre"
@@ -82,8 +82,8 @@
 	if(teleporting)
 		to_chat(user, span_warning("[src] is charging up. Please wait."))
 		return TRUE
-	if(world.time < last_teleport + teleport_cooldown)
-		to_chat(user, span_warning("[src] is recharging power. Please wait [round((last_teleport + teleport_cooldown - world.time)/10)] seconds."))
+	if(!COOLDOWN_FINISHED(src, teleport_cooldown_until))
+		to_chat(user, span_warning("[src] is recharging power. Please wait [round(COOLDOWN_TIMELEFT(src, teleport_cooldown_until)/10)] seconds."))
 		return TRUE
 	if(linked_pad.teleporting)
 		to_chat(user, span_warning("Linked pad is busy. Please wait."))
@@ -156,7 +156,7 @@
 		return
 
 	teleporting = 0
-	last_teleport = world.time
+	COOLDOWN_START(src, teleport_cooldown_until, teleport_cooldown)
 	var/limit = 0
 	var/list/turfs = trange(1, src)
 	for(var/turf/T in turfs)

@@ -333,7 +333,7 @@ GLOBAL_PROTECT(protected_ranks)
 	return dbfail
 
 /proc/sync_ranks_with_db()
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: SQL leaf (rank sync)
 
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)

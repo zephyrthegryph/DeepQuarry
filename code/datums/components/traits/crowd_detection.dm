@@ -63,11 +63,11 @@
 	if(discomfort < warning_cap)
 		discomfort = min(warning_cap,discomfort+escalation_speed)
 	// Handle message delay
-	if(world.time >= next_message_time)
+	if(COOLDOWN_FINISHED(src, next_message_time))
 		var/ms = get_discomfort_message(discomfort)
 		if(ms)
 			to_chat(human_parent, ms)
-		next_message_time = world.time + 50 SECONDS
+		COOLDOWN_START(src, next_message_time, 50 SECONDS)
 		human_parent.fear = min((human_parent.fear + 3), 102)
 		is_calm = FALSE // We'll only get one message early
 	// Hallucinations
@@ -122,12 +122,12 @@
 	SHOULD_CALL_PARENT(TRUE)
 	PROTECTED_PROC(TRUE)
 	discomfort = max(discomfort - amount, 0)
-	if(world.time >= next_message_time && (discomfort > 0 || !is_calm))
+	if(COOLDOWN_FINISHED(src, next_message_time) && (discomfort > 0 || !is_calm))
 		if(message)
 			to_chat(human_parent, message)
 		if(discomfort < MIN_DISCOMFORT_MESSAGE)
 			is_calm = TRUE
-		next_message_time = world.time + 50 SECONDS
+		COOLDOWN_START(src, next_message_time, 50 SECONDS)
 
 /datum/component/crowd_detection/proc/find_held_by(atom/item)
 	SHOULD_NOT_OVERRIDE(TRUE)

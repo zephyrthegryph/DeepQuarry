@@ -60,8 +60,8 @@
 		return
 
 	if(aug_cooldown)
-		if(cooldown <= world.time)
-			cooldown = world.time + aug_cooldown
+		if(COOLDOWN_FINISHED(src, cooldown))
+			COOLDOWN_START(src, cooldown, aug_cooldown)
 		else
 			return
 

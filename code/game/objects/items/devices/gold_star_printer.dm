@@ -7,7 +7,7 @@
 	icon_state = "gold_star_printer"
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
-	var/last_print
+	COOLDOWN_DECLARE(print_cooldown_until)
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
@@ -16,7 +16,7 @@
 	return L
 
 /obj/item/gold_star_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(last_print + print_cooldown <= world.time)
+	if(COOLDOWN_FINISHED(src, print_cooldown_until))
 		make_star(user)
 	else
 		to_chat(user, span_warning("\The [src] is not ready to print another star yet."))
@@ -45,7 +45,7 @@
 	playsound(user, 'sound/items/ticket_printer.ogg', 75, 1)
 
 	log_admin("[key_name(user)] has printed a Gold Star for [star_title] with the description: \"[star_desc]\"")
-	last_print = world.time
+	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
 
 /obj/item/clothing/accessory/gold_sticker
 	name = "Gold Star"

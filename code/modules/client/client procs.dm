@@ -339,7 +339,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	)
 	om_after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
-	INVOKE_ASYNC(src, PROC_REF(acquire_dpi))
+	INVOKE_ASYNC(src, PROC_REF(acquire_dpi)) // S10b keeps: winget round-trip
 
 	tgui_panel.initialize()
 

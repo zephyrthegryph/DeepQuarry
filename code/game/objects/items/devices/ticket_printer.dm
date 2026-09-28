@@ -5,7 +5,7 @@
 	icon_state = "sec_ticket_printer"
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
-	var/last_print
+	COOLDOWN_DECLARE(print_cooldown_until)
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 	w_class = ITEMSIZE_SMALL //because something so small, trivial, and used for silly RP should not be practically gigantic.
@@ -15,7 +15,7 @@
 	return L
 
 /obj/item/ticket_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(last_print + print_cooldown <= world.time)
+	if(COOLDOWN_FINISHED(src, print_cooldown_until))
 		print_a_ticket(user)
 	else
 		to_chat(user, span_warning("\The [src] is not ready to print another ticket yet."))
@@ -50,7 +50,7 @@
 
 	GLOB.security_printer_tickets |= details
 	log_and_message_admins("has issued '[ticket_name]' a security citation: \"[details]\"", user)
-	last_print = world.time
+	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
 
 /obj/item/paper/sec_ticket
 	name = "Security Citation"
@@ -90,7 +90,7 @@
 	playsound(user, 'sound/items/ticket_printer.ogg', 75, 1)
 
 	log_and_message_admins("has issued '[ticket_name]' a permit ticket: \"[details]\"", user)
-	last_print = world.time
+	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
 
 /obj/item/paper/permit_ticket
 	name = "Permit Ticket"

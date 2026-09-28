@@ -52,8 +52,8 @@
 					pull_allowed = TRUE
 			if(!pull_allowed)
 				var/mob/living/L = puller
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob, UnarmedAttack), L)
-				INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), "Do not interfere with active law enforcement routines!")
+				om_after(self, 0, TYPE_PROC_REF(/mob, UnarmedAttack), L)
+				om_after(self, 0, TYPE_PROC_REF(/mob/living, say), "Do not interfere with active law enforcement routines!")
 				GLOB.global_announcer.autosay("[self] was interfered with in <b>[get_area(self)]</b>, activating defense routines.", "[self]", "Security")
 /mob/living/bot/secbot/beepsky
 	name = "Officer Beepsky"
@@ -199,11 +199,11 @@
 		attacker = injury_source.loc // a held weapon
 	if(!attacker || attacker == src || on != TRUE)
 		return
-	INVOKE_ASYNC(src, PROC_REF(react_to_attack), attacker)
+	om_after(src, 0, PROC_REF(react_to_attack), attacker)
 
 /mob/living/bot/secbot/attack_generic(mob/attacker)
 	if(attacker)
-		react_to_attack(attacker)
+		om_after(src, 0, PROC_REF(react_to_attack), attacker)
 	..()
 
 /mob/living/bot/secbot/proc/react_to_attack(mob/attacker)
@@ -309,14 +309,14 @@
 
 // So Beepsky talks while beating up simple mobs.
 /mob/living/bot/secbot/proc/insult(mob/living/L)
-	if(can_next_insult > world.time)
+	if(!COOLDOWN_FINISHED(src, can_next_insult))
 		return
 	if(threat >= 10)
 		playsound(src, 'sound/voice/binsult.ogg', 75)
-		can_next_insult = world.time + 20 SECONDS
+		COOLDOWN_START(src, can_next_insult, 20 SECONDS)
 	else
 		playsound(src, pick(fighting_sounds), 75)
-		can_next_insult = world.time + 5 SECONDS
+		COOLDOWN_START(src, can_next_insult, 5 SECONDS)
 
 
 /mob/living/bot/secbot/UnarmedAttack(mob/M, proximity)

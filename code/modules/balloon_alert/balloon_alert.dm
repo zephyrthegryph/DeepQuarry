@@ -10,7 +10,7 @@
 /atom/proc/balloon_alert(mob/viewer, text)
 	SHOULD_NOT_SLEEP(TRUE)
 
-	INVOKE_ASYNC(src, PROC_REF(balloon_alert_perform), viewer, text)
+	INVOKE_ASYNC(src, PROC_REF(balloon_alert_perform), viewer, text) // S10b keeps: MeasureText is a client round trip
 
 /atom/proc/balloon_alert_visible(message, self_message, blind_message, range = world.view, list/exclude_mobs = null)
 	SHOULD_NOT_SLEEP(TRUE)

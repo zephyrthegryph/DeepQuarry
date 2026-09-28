@@ -51,7 +51,6 @@
 
 // This is just fragmentate, but less specific. Don't know how to make either of them less awful, at the moment
 /obj/proc/launch_many_projectiles(turf/T=get_turf(src), spreading_range = 5, list/projectiletypes=list(/obj/item/projectile/bullet/pistol/rubber))
-	set waitfor = 0
 	var/list/target_turfs = getcircle(T, spreading_range)
 
 	for(var/turf/O in target_turfs)

@@ -56,7 +56,7 @@
 	var/turf/T = get_turf(self)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, say), pick("Blub", "Glub", "Burble"))
+			om_after(self, 0, TYPE_PROC_REF(/mob/living, say), pick("Blub", "Glub", "Burble"))
 		self.add_oxygen_debt(self.unsuitable_atoms_damage, T)
 
 // Subtypes.

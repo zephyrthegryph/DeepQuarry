@@ -81,7 +81,7 @@
 
 /mob/living/simple_mob/vore/morph/ShiftClickOn(atom/movable/A)
 	if(Adjacent(A))
-		if(morph_time <= world.time && !stat)
+		if(COOLDOWN_FINISHED(src, morph_time) && !stat)
 			if(A == src)
 				restore()
 				return
@@ -133,7 +133,7 @@
 	melee_damage_upper = melee_damage_disguised
 	movement_cooldown = 1
 
-	morph_time = world.time + MORPH_COOLDOWN
+	COOLDOWN_START(src, morph_time, MORPH_COOLDOWN)
 
 	return
 
@@ -180,7 +180,7 @@
 	melee_damage_upper = initial(melee_damage_upper)
 	movement_cooldown = initial(movement_cooldown)
 
-	morph_time = world.time + MORPH_COOLDOWN
+	COOLDOWN_START(src, morph_time, MORPH_COOLDOWN)
 
 /mob/living/simple_mob/vore/morph/on_death(gibbed)
 	if(morphed)

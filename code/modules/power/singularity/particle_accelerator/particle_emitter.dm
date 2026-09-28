@@ -6,7 +6,7 @@
 	icon = 'icons/obj/machines/particle_accelerator2.dmi'
 	icon_state = "none"
 	var/fire_delay = 50
-	var/last_shot = 0
+	COOLDOWN_DECLARE(shot_cooldown)
 
 /obj/structure/particle_accelerator/particle_emitter/center
 	icon_state = "emitter_center"
@@ -28,8 +28,8 @@
 	return 0
 
 /obj/structure/particle_accelerator/particle_emitter/proc/emit_particle(strength = 0)
-	if((last_shot + fire_delay) <= world.time)
-		last_shot = world.time
+	if(COOLDOWN_FINISHED(src, shot_cooldown))
+		COOLDOWN_START(src, shot_cooldown, fire_delay)
 		var/obj/effect/accelerated_particle/A = null
 		var/turf/T = src.loc // if it doesn't spawn here, it won't bump stuff directly infront of the PA
 		switch(strength)

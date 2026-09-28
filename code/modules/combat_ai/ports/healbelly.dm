@@ -27,7 +27,7 @@
 // ---------------------------------------------------------------------------
 
 /// True if P is a valid heal patient: edible, alive, hurt below 95% HP. Also
-/// barks an occasional "hold still" line, rate-limited via dq_healbelly_last_speak.
+/// barks an occasional "hold still" line, rate-limited via dq_healbelly_speak_cooldown.
 /mob/living/simple_mob/proc/dq_confirm_patient(mob/living/P)
 	if(!istype(P))
 		return FALSE
@@ -45,14 +45,14 @@
 	if(P.vitality() > 0.95)
 		return FALSE
 	// Vocal nag, throttled to one line per 30s.
-	if(dq_healbelly_vocal && (dq_healbelly_last_speak + 30 SECONDS < world.time))
+	if(dq_healbelly_vocal && (COOLDOWN_FINISHED(src, dq_healbelly_speak_cooldown)))
 		var/list/message_options = list(
 			"Hey, [P.name]! You are injured, hold still.",
 			"[P.name]! Come here, let me help.",
 			"[P.name], you need help.",
 		)
 		say(pick(message_options))
-		dq_healbelly_last_speak = world.time
+		COOLDOWN_START(src, dq_healbelly_speak_cooldown, 30 SECONDS)
 	return TRUE
 
 /// Performs the HELP-intent heal pounce: swallow the patient into a heal belly
@@ -84,7 +84,7 @@
 	/// Whether this healbelly mob nags hurt patients with "hold still" lines.
 	var/dq_healbelly_vocal = TRUE
 	/// world.time of the last patient nag, for the 30s throttle.
-	var/dq_healbelly_last_speak = 0
+	COOLDOWN_DECLARE(dq_healbelly_speak_cooldown)
 
 // ---------------------------------------------------------------------------
 // Heal-belly behavior — find a wounded ally, approach, swallow to heal.
@@ -225,7 +225,7 @@
 	/// Escalating-warning count for the friendly dragon's ally retaliation.
 	var/dq_dragon_warnings = 0
 	/// world.time of the last warning, used to cool the counter back down.
-	var/dq_dragon_last_warning = 0
+	COOLDOWN_DECLARE(dq_dragon_warning_cooldown)
 
 /datum/ai_behavior/dragon_friendly_warn
 	name = "warn provocateur"
@@ -251,7 +251,7 @@
 		return null
 	// Decay the warning count if it's been quiet for a minute (legacy
 	// handle_special_strategical reset).
-	if(D.dq_dragon_last_warning + 1 MINUTE < world.time)
+	if(COOLDOWN_FINISHED(D, dq_dragon_warning_cooldown))
 		D.dq_dragon_warnings = 0
 	return DQAI_RESULT(110, attacker)
 
@@ -271,7 +271,7 @@
 			// the attacker as a target (handled by the mob's enrage proc).
 			D.enrage(target)
 			return DQ_BEHAVIOR_DONE
-	D.dq_dragon_last_warning = world.time
+	COOLDOWN_START(D, dq_dragon_warning_cooldown, 1 MINUTE)
 	D.dq_dragon_warnings += 1
 	// Bat them back if we have a clear line — legacy dissuade()/chargeend().
 	if(target in check_trajectory(target, D, pass_flags = PASSTABLE))

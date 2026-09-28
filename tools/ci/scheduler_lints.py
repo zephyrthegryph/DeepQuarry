@@ -28,6 +28,10 @@ an object-typed var at all. Vars of task types (/datum/om/task/...) are task
 state, held by the task_holds relation, and don't count. Medical, body, organs, surgery and Life are
 included (lifecycle.md sec 7).
 
+Justified keeps (MC, GC, failsafe, world and client procs, savefiles, vendored
+TGS, blocking external I/O) are listed per count and file, with a required
+reason, in tools/ci/scheduler_lints_allowlist.txt and don't count.
+
 Usage:
     python tools/ci/scheduler_lints.py                 # the CI check
     python tools/ci/scheduler_lints.py --report NAME   # every site of one count
@@ -43,6 +47,10 @@ from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "scheduler_lints_baseline.txt")
+# Justified keeps (sec 4.11 "What stays"): `NAME path count  # reason`, one line per
+# count and file. The reason is required. Allowlisted sites don't count toward the
+# ceiling; a file with more sites than its line allows counts the excess.
+ALLOWLIST = os.path.join(ROOT, "tools", "ci", "scheduler_lints_allowlist.txt")
 
 PATTERNS = [
     ("spawn", re.compile(r"(?<![\w.])spawn\s*\(")),
@@ -185,6 +193,35 @@ def read_baseline():
     return base
 
 
+def read_allowlist():
+    allowed = {}
+    if not os.path.exists(ALLOWLIST):
+        return allowed
+    with open(ALLOWLIST, encoding="utf-8") as handle:
+        for no, line in enumerate(handle, 1):
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            body, _, reason = line.partition("#")
+            parts = body.split()
+            if len(parts) < 3 or not parts[-1].isdigit() or not reason.strip():
+                raise SystemExit("%s:%d: expected `NAME path count  # reason`" % (ALLOWLIST, no))
+            allowed[(parts[0], " ".join(parts[1:-1]))] = int(parts[-1])
+    return allowed
+
+
+def counted(sites, allowed):
+    """Sites per count after the allowlist, plus stale allowlist lines."""
+    per_file = {}
+    for name in NAMES:
+        for rel, _, _ in sites[name]:
+            per_file[(name, rel)] = per_file.get((name, rel), 0) + 1
+    counts = {name: 0 for name in NAMES}
+    for (name, rel), n in per_file.items():
+        counts[name] += max(n - allowed.get((name, rel), 0), 0)
+    stale = [(k, v, per_file.get(k, 0)) for k, v in allowed.items() if per_file.get(k, 0) < v]
+    return counts, stale
+
+
 def write_baseline(counts):
     lines = [
         "# One-scheduler lint ceilings (roadmap S6, doc/rewrite/object_model_core.md sec 4.11).",
@@ -199,7 +236,9 @@ def write_baseline(counts):
 
 def main(argv):
     sites = scan()
-    counts = {name: len(sites[name]) for name in NAMES}
+    counts, stale = counted(sites, read_allowlist())
+    for (name, rel), allow, have in stale:
+        print("note: allowlist %s %s %d, now %d: lower it" % (name, rel, allow, have))
     if "--update" in argv:
         write_baseline(counts)
         print("scheduler lints baseline: " + ", ".join("%s %d" % (n, counts[n]) for n in NAMES))

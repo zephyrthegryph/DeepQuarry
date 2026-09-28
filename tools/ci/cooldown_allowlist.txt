@@ -1,0 +1,141 @@
+# Raw world.time compares that are not cooldowns (tools/ci/cooldown_lint.py).
+# One per line: `path|line text # reason`. The line text is matched with whitespace collapsed.
+code/ATMOSPHERICS/components/binary_devices/circulator.dm|if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50) # transfer recency (elapsed math)
+code/_helpers/time.dm|if(GLOB.last_round_duration && world.time < GLOB.next_duration_update) # round duration cache
+code/_onclick/hud/alert.dm|if(alert.timeout && LAZYACCESS(alerts, category) == alert && world.time >= alert.timeout) # alert timeout
+code/datums/beam.dm|if(finished || !origin || !target || world.time >= endtime || get_dist(origin,target) >= max_distance || origin.z != target.z) # beam lifetime
+code/datums/components/traits/hallucinations.dm|if(world.time > episode["next_episode_begin"]) # episode schedule
+code/datums/components/traits/hallucinations.dm|if(world.time > episode["next_episode_end"]) # episode schedule
+code/datums/looping_sounds/_looping_sound.dm|if(max_loops && world.time >= loop_starttime + mid_length * max_loops) # loop count timing
+code/datums/mind.dm|return (duration <= world.time - brigged_since) # elapsed brig time
+code/datums/repositories/crew.dm|if(world.time < cache_entry.timestamp) # cache freshness timestamp
+code/datums/repositories/repository.dm|return world.time < timestamp # cache freshness timestamp
+code/datums/status_effects/_status_effect.dm|if(duration > world.time || tick_interval > world.time) //don't process if we don't care # status effect duration/tick core
+code/datums/status_effects/_status_effect.dm|else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time) # status effect duration/tick core
+code/datums/status_effects/_status_effect.dm|if(duration < world.time) # status effect duration/tick core
+code/datums/status_effects/_status_effect.dm|if(duration <= world.time) # status effect duration/tick core
+code/game/gamemodes/events/wormholes.dm|if( end_time < world.time + delay ) # event end time
+code/game/gamemodes/meteor/meteor.dm|if(world.time >= next_wave) # wave schedule
+code/game/gamemodes/technomancer/spells/resurrect.dm|if(L.timeofdeath && world.time > L.timeofdeath + 30 MINUTES) # elapsed time since death
+code/game/machinery/air_alarm.dm|if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time) # report freshness
+code/game/machinery/air_alarm.dm|if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time) # report freshness
+code/game/machinery/bomb_tester.dm|if(simulating && world.time >= simulation_started + simulation_delay) # simulation progress
+code/game/machinery/camera/camera.dm|if((stat & EMPED) && world.time >= affected_by_emp_until) # EMP state expiry
+code/game/machinery/camera/camera.dm|if(!affected_by_emp_until || (world.time > affected_by_emp_until)) # EMP state expiry
+code/game/machinery/computer/guestpass.dm|if(world.time > expiration_time) # guest pass expiry
+code/game/machinery/computer/guestpass.dm|if(world.time < expiration_time) # guest pass expiry
+code/game/machinery/computer/guestpass.dm|if(world.time > expiration_time) # guest pass expiry
+code/game/machinery/computer/guestpass.dm|if(expired == 0 && world.time >= expiration_time) # guest pass expiry
+code/game/machinery/computer/supply.dm|if(world.time < reqtime) # supply request timeout state
+code/game/machinery/computer/supply.dm|if(world.time > timeout) # supply request timeout state
+code/game/machinery/computer/supply.dm|if(world.time < reqtime) # supply request timeout state
+code/game/machinery/computer/supply.dm|if(world.time > timeout) # supply request timeout state
+code/game/machinery/doors/airlock.dm|if(main_power_lost_until > 0 && world.time >= main_power_lost_until) # timed power-loss/electrified state expiry
+code/game/machinery/doors/airlock.dm|if(backup_power_lost_until > 0 && world.time >= backup_power_lost_until) # timed power-loss/electrified state expiry
+code/game/machinery/doors/airlock.dm|else if(electrified_until > 0 && world.time >= electrified_until) # timed power-loss/electrified state expiry
+code/game/machinery/doors/door.dm|if(close_door_at && world.time >= close_door_at) # scheduled auto-close deadline
+code/game/machinery/jukebox.dm|if(current_track && world.time < media_start_time + current_track.duration) # track playback position
+code/game/machinery/machine_pipeline.dm|if(M.failure_until && world.time >= M.failure_until) # machine failure state (pipeline core)
+code/game/machinery/machine_pipeline.dm|return M.failure_until > world.time ? M.failure_until - world.time : 0 # machine failure state (pipeline core)
+code/game/machinery/supplybeacon.dm|else if(world.time >= target_drop_time) # drop schedule
+code/game/objects/effects/anomalies/_anomalies.dm|if(world.time < stats.next_activation) # anomaly activation schedule
+code/game/objects/items/devices/communicator/cartridge.dm|if(world.time < internal_data["supply_reqtime"]) # supply request timeout state
+code/game/objects/items/devices/communicator/cartridge.dm|if(world.time > timeout) # supply request timeout state
+code/game/objects/items/weapons/grenades/supermatter.dm|if(world.time > implode_at) # implosion schedule
+code/game/objects/items/weapons/implants/implant.dm|if(world.time >= implant_mob.timeofdeath + degrade_time) # elapsed time since death
+code/game/objects/structures/bonfire.dm|if(world.time >= next_fuel_consumption) # fuel consumption schedule
+code/game/objects/structures/bonfire.dm|if(world.time >= next_fuel_consumption) # fuel consumption schedule
+code/game/periodic_news.dm|if(news.round_time * 10 <= world.time && !(subtype in GLOB.announced_news_types)) # round timing
+code/modules/admin/verbs/striketeam.dm|if(world.time < 6000) # round timing
+code/modules/alarm/alarm.dm|if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration))) # alarm expiry
+code/modules/alarm/alarm_handler.dm|if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources)) # alarm expiry
+code/modules/body/physiology.dm|if(expires_at && world.time >= expires_at) # physiology factor expiry
+code/modules/client/preferences/preview_async.dm|if(length(outputs) < length(jobs) && world.time <= state[8]) # bounded wait deadline
+code/modules/combat_ai/brain/brain.dm|if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT) # threat memory expiry
+code/modules/combat_ai/brain/brain.dm|if(entry["expires"] && entry["expires"] < world.time) # threat memory expiry
+code/modules/combat_ai/world_model/world_model.dm|if(entry[3] < world.time) # memory entry expiry
+code/modules/contracts/agent_fieldwork.dm|if(!bid || bid.completed_at || world.time >= bid.expires_at) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/agent_operations.dm|if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract.dm|if(offer_expires_at && world.time >= offer_expires_at) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract.dm|if(deadline > world.time) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract.dm|if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract.dm|else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract.dm|if(state == CONTRACT_ACTIVE && deadline && world.time > deadline) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract_offer.dm|if(cooldown_until > world.time) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract_offer.dm|if(!definition || (candidate.expires_at && world.time >= candidate.expires_at) || !definition.is_available(candidate.context)) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/contract_offer.dm|if((offer_cooldowns[candidate.offer_key] || 0) > world.time || !make_priority_capacity(candidate, definition)) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/medical_case_report.dm|if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || evidence["scan_time"] > world.time) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/medical_trial_side_contracts.dm|if(!isnum(scan_time) || scan_time > world.time) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/opportunity_broker.dm|if(cooldown_until > world.time) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/social_framework.dm|if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) # contract/offer expiry and deadline state, not a rate limit
+code/modules/contracts/social_framework.dm|else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until) # contract/offer expiry and deadline state, not a rate limit
+code/modules/economy/cargo_market.dm|if(existing_listing.reservation_key && existing_listing.stock > 0 && world.time < existing_listing.expires_at) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(existing_bid.reservation_key && !existing_bid.completed_at && world.time < existing_bid.expires_at) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(world.time >= next_market_refresh) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(!listing || listing.retired || !counterparty || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key)) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(listing && !listing.retired && world.time < listing.expires_at) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(!bid || !counterparty || bid.completed_at || world.time >= bid.expires_at || !bid.profile.matches(item)) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(!bid || bid.reservation_key || bid.completed_at || world.time >= bid.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key)) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|var/expiry = contract.deadline > world.time ? contract.deadline : world.time + 30 MINUTES # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(listing.retired || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key)) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|if(bid.completed_at || bid.remaining_units() <= 0 || world.time >= bid.expires_at || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key)) # market listing/bid expiry state
+code/modules/economy/cargo_market.dm|var/assigned_active = assigned_visible && market_reserved_access(assigned_bid.reserved_account, user, assigned_bid.reservation_key) && !assigned_bid.completed_at && world.time < assigned_bid.expires_at # market listing/bid expiry state
+code/modules/error_handler/error_viewer.dm|if (error_source.next_message_at <= world.time) # error log throttling (debug infrastructure)
+code/modules/events/event_container.dm|else if(world.time > next_event_time) # event scheduler
+code/modules/events/money_hacker.dm|if(world.time >= end_time) # event end time
+code/modules/expedition/expedition_mission.dm|if(deadline && world.time > deadline) # mission deadline
+code/modules/flight_operations/flight_controller.dm|if(world.time >= plan.terminal_cleanup_at) # flight plan schedule deadlines
+code/modules/flight_operations/flight_controller.dm|if(world.time > plan.departure_deadline) # flight plan schedule deadlines
+code/modules/flight_operations/flight_controller.dm|if(world.time < plan.estimated_arrival_at) # flight plan schedule deadlines
+code/modules/flight_operations/flight_controller.dm|if(world.time > plan.departure_deadline) # flight plan schedule deadlines
+code/modules/gamemaster/event2/event.dm|return time_to_announce <= world.time # event lifecycle schedule
+code/modules/gamemaster/event2/event.dm|return time_to_start <= world.time # event lifecycle schedule
+code/modules/gamemaster/event2/event.dm|return time_to_end <= world.time # event lifecycle schedule
+code/modules/hydroponics/spreading/spreading.dm|return (health >= (max_health/3) && world.time > mature_time) # plant maturity
+code/modules/integrated_electronics/subtypes/time.dm|if(world.time > next_fire) # timer circuit schedule
+code/modules/media/walkpod.dm|if(current_track && world.time < media_start_time + current_track.duration) # track playback position
+code/modules/medical/conditions/wounds.dm|if(created + 10 MINUTES > world.time) // Wounds don't autoheal for ten minutes if not bandaged. # wound age
+code/modules/mob/_modifiers/horror.dm|if(expire_at && expire_at < world.time) # modifier expiry
+code/modules/mob/_modifiers/horror.dm|if(armor_deployed && ((armor_deployed_time + armor_duration) < world.time)) //Time ran out. # armor duration
+code/modules/mob/_modifiers/horror.dm|if(armor_deployed && (armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead. # armor duration
+code/modules/mob/_modifiers/modifiers.dm|if(expire_at && expire_at < world.time) // Is our time up? # modifier expiry
+code/modules/mob/living/carbon/human/life.dm|if(world.time >= self.hud_full_refresh_at) # HUD refresh schedule
+code/modules/mob/new_player/new_player.dm|if(timer <= world.time) # lobby timer
+code/modules/multiz/movement.dm|if(!L || world.time <= fall_after) # fall scheduling
+code/modules/multiz/movement.dm|if(world.time <= fall_after) # fall scheduling
+code/modules/organs/organ_external.dm|if(W.damage <= 0 && W.created + 10 MINUTES <= world.time) # wound age
+code/modules/planet/planet.dm|if(sun_last_process <= world.time - sun_process_interval) # sun process interval
+code/modules/planet/sun.dm|if(world.time >= end) # sun transition end time
+code/modules/planet/weather.dm|if(imminent_weather && world.time >= imminent_weather_shift) # weather shift schedule
+code/modules/planet/weather.dm|else if(!imminent_weather && world.time >= next_weather_shift) # weather shift schedule
+code/modules/power/apc.dm|"failTime" = failure_until > world.time ? CEILING((failure_until - world.time) / 10, 1) : 0, # UI readout of failure time left
+code/modules/power/lighting.dm|if(emergency_discharge_at && world.time >= emergency_discharge_at) # scheduled light state transitions
+code/modules/power/lighting.dm|if(emergency_recharge_at && world.time >= emergency_recharge_at) # scheduled light state transitions
+code/modules/power/lighting.dm|if(flicker_check_at && world.time >= flicker_check_at) # scheduled light state transitions
+code/modules/power/material_power_graph.dm|if(changed && !has_superconductors && world.time < next_solve) # solver scheduling
+code/modules/power/solar.dm|if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°... # tracker schedule
+code/modules/projectiles/targeting/targeting_overlay.dm|if(!locked && lock_time <= world.time) # aim lock progress
+code/modules/recycling/disposal_outlet.dm|if((start_eject + 30) < world.time) # eject progress
+code/modules/research/tg/machinery/mech_fabricator.dm|if(being_built && (build_finish < world.time)) # build progress
+code/modules/resleeving/autoresleever.dm|if(vore_respawn <= world.time - user.timeofdeath) # elapsed time since death
+code/modules/resleeving/autoresleever.dm|else if(respawn <= world.time - user.timeofdeath) # elapsed time since death
+code/modules/resleeving/autoresleever.dm|if(respawn >= world.time - ghost.timeofdeath) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive. # elapsed time since death
+code/modules/shuttles/escape_pods.dm|if (arming_controller.eject_time && world.time < arming_controller.eject_time + 50) # pod eject schedule
+code/modules/shuttles/escape_pods.dm|if (eject_time && world.time >= eject_time && !closing) # pod eject schedule
+code/modules/shuttles/shuttle.dm|if(world.time >= arrive_time) # shuttle arrival schedule
+code/modules/shuttles/shuttle.dm|if(arrive_time - world.time <= 5 SECONDS && !made_warning) # shuttle arrival schedule
+code/modules/shuttles/shuttle_autodock.dm|if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked()) # dock attempt timeout
+code/modules/shuttles/shuttle_specops.dm|if(world.time <= reset_time) # shuttle reset schedule
+code/modules/stockmarket/events.dm|if (world.time > next_phase) # stock lease/offer expiry and market phases
+code/modules/stockmarket/stocks.dm|if (world.time > borrow.grace_expires) # stock lease/offer expiry and market phases
+code/modules/stockmarket/stocks.dm|else if (world.time > borrow.lease_expires) # stock lease/offer expiry and market phases
+code/modules/stockmarket/stocks.dm|if (borrow.offer_expires < world.time) # stock lease/offer expiry and market phases
+code/modules/tgui/modules/communications.dm|if(world.time < 6000) // Ten minute grace period to let the game get going without lolmetagaming. -- TLE # round-start grace period
+code/modules/tgui/modules/communications.dm|if(world.time < 54000) // 30 minute grace period to let the game get going # round-start grace period
+code/modules/tgui/modules/teleporter.dm|if(M.timeofdeath + 6000 < world.time) # elapsed time since death
+code/modules/tgui_panel/telemetry.dm|if(world.time > telemetry_requested_at + TGUI_TELEMETRY_RESPONSE_WINDOW) # telemetry response window
+code/modules/turbolift/turbolift.dm|if(world.time < next_process) # lift movement state machine
+code/modules/xenoarcheaology/effects/gravitational_waves.dm|if(world.time >= last_wave_pull+10) //NO INFINITE LOOPS. do not touch this line or you WILL crash the server. I am not kidding. Go ahead, remove it on a test server and see what happens. # pull interval with elapsed-time math
+code/modules/xenoarcheaology/tools/ano_device_battery.dm|else if(world.time > time_end) # activation end time
+code/modules/xenoarcheaology/tools/artifact_analyser.dm|if(world.time <= scan_completion_time) # scan progress
+code/modules/xenoarcheaology/tools/artifact_analyser.dm|if(scan_in_progress && world.time > scan_completion_time) # scan progress

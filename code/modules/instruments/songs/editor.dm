@@ -68,7 +68,7 @@
 		//SETTINGS
 		if("play_music")
 			if(!playing)
-				INVOKE_ASYNC(src, PROC_REF(start_playing), user)
+				start_playing(user)
 			else
 				stop_playing()
 			return TRUE
@@ -200,7 +200,6 @@
  * Parses a song the user has input into lines and stores them.
  */
 /datum/song/proc/ParseSong(mob/user, new_song)
-	set waitfor = FALSE
 	//split into lines
 	lines = islist(new_song) ? new_song : splittext(new_song, "\n")
 	if(lines.len)

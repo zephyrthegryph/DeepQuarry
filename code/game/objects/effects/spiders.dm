@@ -129,7 +129,7 @@
 	anchored = FALSE
 	layer = HIDING_LAYER
 	max_integrity = 3
-	var/last_itch = 0
+	COOLDOWN_DECLARE(itch_cooldown)
 	var/amount_grown = 0
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 	var/travelling_in_vent = 0
@@ -179,7 +179,7 @@
 			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent)
 			if(!exit_vent)
 				return
-			INVOKE_ASYNC(src, PROC_REF(vent_crawl_async), entry_vent, exit_vent)
+			vent_crawl_async(entry_vent, exit_vent)
 
 	if(isturf(loc))
 		skitter()
@@ -195,8 +195,8 @@
 				O.owner.injure(INJURY_PIERCE, 1, O.organ_tag, src)
 		else if(prob(1))
 			O.owner.injure(INJURY_TOXIN, 1, O.organ_tag, src)
-			if(world.time > last_itch + 30 SECONDS)
-				last_itch = world.time
+			if(COOLDOWN_FINISHED(src, itch_cooldown))
+				COOLDOWN_START(src, itch_cooldown, 30 SECONDS)
 				to_chat(O.owner, span_notice("Your [O.name] itches..."))
 	else if(prob(1))
 		src.visible_message(span_infoplain(span_bold("\The [src]") + " skitters."))

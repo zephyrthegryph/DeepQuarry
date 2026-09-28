@@ -14,7 +14,7 @@
 	return (..() && !(has_status(EFFECT_MUTED) && emote_type == AUDIBLE_MESSAGE))
 
 /mob/proc/emote(act, m_type, message)
-	set waitfor = FALSE
+	set waitfor = FALSE // S10b keeps: waits on a prompt (custom emote tgui_input_text/tgui_alert)
 	// s-s-snowflake
 	if(src.stat == DEAD && act != "deathgasp")
 		return
@@ -26,7 +26,7 @@
 			to_chat(src, span_warning("You cannot send IC messages (muted)."))
 			return
 
-		if(world.time < next_emote)
+		if(!COOLDOWN_FINISHED(src, next_emote))
 			to_chat(src, span_warning("You cannot use another emote yet."))
 			return
 		if(forced_psay)
@@ -36,9 +36,9 @@
 			return me_verb_subtle(message)
 
 		if(act == "help")
-			if(world.time >= next_emote_refresh)
+			if(COOLDOWN_FINISHED(src, next_emote_refresh))
 				var/list/usable_emotes = list()
-				next_emote_refresh = world.time + EMOTE_REFRESH_SPAM_COOLDOWN
+				COOLDOWN_START(src, next_emote_refresh, EMOTE_REFRESH_SPAM_COOLDOWN)
 				for(var/emote in get_available_emotes())
 					var/datum/decl/emote/emote_datum = GLOB.decls_repository.get_decl(emote)
 					if(emote_datum.mob_can_use(src))
@@ -107,7 +107,7 @@
 	if(m_type != use_emote.message_type && use_emote.conscious && stat != CONSCIOUS)
 		return
 
-	next_emote = world.time + use_emote.emote_delay
+	COOLDOWN_START(src, next_emote, use_emote.emote_delay)
 	if(use_emote.message_type == AUDIBLE_MESSAGE && is_muzzled())
 		var/muffle_message = use_emote.emote_message_muffled || "makes a muffled sound."
 		audible_message(span_bold("\The [src]") + " [muffle_message]", runemessage = "[muffle_message]")

@@ -16,7 +16,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 /obj/effect/portal/Bumped(mob/M as mob|obj)
 	if(ismob(M) && !(isliving(M)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
-	INVOKE_ASYNC(src, PROC_REF(teleport), M)
+	teleport(M)
 	return
 
 /obj/effect/portal/Crossed(atom/movable/AM as mob|obj)
@@ -30,13 +30,13 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 				SK.attack_dephase(null, src)
 	if(ismob(AM) && !(isliving(AM)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
-	INVOKE_ASYNC(src, PROC_REF(teleport), AM)
+	teleport(AM)
 	return
 
 /obj/effect/portal/attack_hand(mob/user as mob)
 	if(istype(user) && !(isliving(user)))
 		return	//do not send ghosts, zshadows, ai eyes, etc
-	INVOKE_ASYNC(src, PROC_REF(teleport), user)
+	teleport(user)
 	return
 
 /obj/effect/portal/Initialize(mapload)

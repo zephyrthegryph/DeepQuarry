@@ -93,10 +93,10 @@
 			to_chat(user, span_warning("\The [ridden] can only be controlled by one person at a time, and is currently being controlled by \the [driver]."))
 			return
 
-	if(world.time < next_vehicle_move)
+	if(!COOLDOWN_FINISHED(src, next_vehicle_move))
 		return
 
-	next_vehicle_move = world.time + vehicle_move_delay
+	COOLDOWN_START(src, next_vehicle_move, vehicle_move_delay)
 
 	if(keycheck(user))
 		if(!Process_Spacemove(direction) || !isturf(ridden.loc))

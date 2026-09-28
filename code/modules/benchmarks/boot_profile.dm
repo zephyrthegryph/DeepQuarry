@@ -362,12 +362,12 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	while(SSexplosions.can_fire || SSexplosions.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	var/resolved_at = REALTIMEOFDAY
 	while(length(SSlighting.sources_queue) || length(SSlighting.corners_queue) || length(SSlighting.objects_queue))
 		if(REALTIMEOFDAY > deadline)
 			fail("lighting did not settle within 300s")
-		stoplag()
+		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	var/lit_at = REALTIMEOFDAY
 	wait_fires(SSair, 3)
 	var/list/profile
