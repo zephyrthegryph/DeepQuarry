@@ -539,3 +539,5 @@ REF_OWNED_LIST(/obj/item/pda, "programs")
 
 /obj/item/pda/pilot
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
+
+REF_HELD(/obj/item/pda, "id")

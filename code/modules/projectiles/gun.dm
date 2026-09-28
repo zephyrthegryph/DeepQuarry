@@ -848,3 +848,5 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	user.hud_used?.remove_ammo_hud(user, src)
 
 	..()
+
+REF_HELD(/obj/item/gun, "attached_lock")

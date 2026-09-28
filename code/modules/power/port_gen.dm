@@ -1189,3 +1189,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/port_gen/step_start_condition()
 	return active
+
+REF_HELD(/obj/machinery/power/rtg/abductor, "cell")

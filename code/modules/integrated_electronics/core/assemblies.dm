@@ -538,3 +538,5 @@
 // Returns TRUE if I is something that could/should have a valid interaction. Used to tell circuitclothes to hit the circuit with something instead of the clothes
 /obj/item/electronic_assembly/proc/is_valid_tool(obj/item/I)
 	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
+
+REF_HELD(/obj/item/electronic_assembly, "battery")

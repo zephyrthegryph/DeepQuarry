@@ -278,3 +278,5 @@
 		return 0
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
+
+REF_HELD(/obj/item/gun/energy, "power_supply")

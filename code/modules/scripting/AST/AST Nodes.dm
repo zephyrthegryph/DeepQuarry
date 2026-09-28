@@ -117,3 +117,5 @@
 	return "ref: [src.value] ([src.value.type])"
 
 REF_OWNED(/datum/node/expression/FunctionCall, "object")
+
+REF_HELD(/datum/node/expression/value/variable, "id")

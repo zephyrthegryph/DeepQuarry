@@ -55,3 +55,5 @@
 		return
 	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in M.contents)
 		M.drop_from_inventory(gaming, src)
+
+REF_HELD(/obj/item/rig_module/gauntlets, "stored_gauntlets")

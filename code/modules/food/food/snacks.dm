@@ -9370,3 +9370,5 @@
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
 REF_OWNED(/obj/item/reagent_containers/food/snacks, "flat_icon")
+
+REF_HELD(/obj/item/pizzabox, "pizza")

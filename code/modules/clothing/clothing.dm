@@ -1522,3 +1522,5 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 REF_OWNED(/obj/item/clothing/head, "helmet_light")
 
 REF_OWNED(/obj/item/clothing/under, list("rolled_down_icon", "rolled_down_sleeves_icon"))
+
+REF_HELD(/obj/item/clothing/gloves, "cell")

@@ -592,3 +592,5 @@
 		slot_l_hand_str = 'icons/obj/guns/supercannon/lefthand_guns.dmi',
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
+
+REF_HELD(/obj/item/gun/energy/floragun, "emitter")

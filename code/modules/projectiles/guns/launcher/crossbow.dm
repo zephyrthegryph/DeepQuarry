@@ -305,3 +305,5 @@
 			return
 	else
 		..()
+
+REF_HELD(/obj/item/gun/launcher/crossbow, "bolt")

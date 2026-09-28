@@ -1733,3 +1733,5 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 /obj/machinery/light/proc/surge_break()
 	on = 1
 	broken()
+
+REF_HELD(/obj/machinery/light, "installed_light")

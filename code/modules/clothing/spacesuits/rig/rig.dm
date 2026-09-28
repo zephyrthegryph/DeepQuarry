@@ -1002,3 +1002,5 @@ REF_OWNED(/obj/item/rig, list("power_system", "wires", "spark_system", "boots", 
 /proc/rig_boot_hud_clear(mob/M, atom/movable/screen/booting_R)
 	M.client?.screen -= booting_R
 	qdel(booting_R)
+
+REF_HELD(/obj/item/rig, list("air_supply", "cell"))

@@ -239,3 +239,5 @@
 				flick("harpoon-1-change",src)
 				icon_state = "harpoon-2"
 		transforming = 0
+
+REF_HELD(/obj/item/bluespace_harpoon, "scanmod")

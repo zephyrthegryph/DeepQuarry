@@ -209,3 +209,5 @@
 	return
 
 REF_OWNED(/obj/item/rig_module/ai_container, "verb_holder")
+
+REF_HELD(/obj/item/rig_module/ai_container, "ai_card")

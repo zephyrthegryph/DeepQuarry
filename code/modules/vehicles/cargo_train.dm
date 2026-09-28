@@ -540,3 +540,5 @@
 
 /obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
 	update_icon()
+
+REF_HELD(/obj/vehicle/train/engine, "key")

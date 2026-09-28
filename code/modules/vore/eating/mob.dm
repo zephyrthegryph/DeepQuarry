@@ -105,3 +105,5 @@
 	var/last_move_time = 0 //For movement smoothing
 
 	var/max_voreoverlay_alpha = 255
+
+REF_HELD(/mob, "soulgem")

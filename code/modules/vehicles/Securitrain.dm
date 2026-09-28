@@ -386,3 +386,5 @@
 		anchored = FALSE
 	else
 		anchored = TRUE
+
+REF_HELD(/obj/vehicle/train/security/engine, "key")
