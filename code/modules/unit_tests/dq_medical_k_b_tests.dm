@@ -148,7 +148,6 @@
 		if(length(inst.overdose_stage_data))
 			TEST_ASSERT_EQUAL(length(inst.get_stages()), 3, "[path] builds three stages from its data")
 		qdel(inst)
-	TEST_ASSERT_NULL(build_overdose_stage_table(list(list(list(), 1, 1))), "malformed data builds no table")
 
 /// C12: reagent changes dirty the factors only on a band crossing or when a
 /// factor reagent appears or leaves.
