@@ -34,8 +34,6 @@
 // Non TG signals:
 ///From the disabilities life system.
 #define COMSIG_HANDLE_DISABILITIES "handle_disabilities"
-///From /living/handle_allergens().
-#define COMSIG_HANDLE_ALLERGENS "handle_allergens"
 
 ///before a weakness increase (amount)
 #define COMSIG_LIVING_STATUS_WEAKEN "living_weaken"

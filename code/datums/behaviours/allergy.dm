@@ -1,21 +1,14 @@
-// Element for handling allergic reactions. This is only added to humans with allergies actually set in their species datum.
-// Is added to the mob in species.produceCopy() after all traits have been resolved.
-/datum/element/allergy/Attach(datum/target)
-	. = ..()
-	if(!ishuman(target))
-		return ELEMENT_INCOMPATIBLE
-	RegisterSignal(target, COMSIG_HANDLE_ALLERGENS, PROC_REF(handle_allergic_reaction), override = TRUE)
+// Allergic reactions (was /datum/element/allergy, added to humans whose species has
+// allergies). The medical life stage calls handle_allergic_reaction() directly for humans
+// whose species has allergens (was COMSIG_HANDLE_ALLERGENS).
+/mob/living/carbon/human/proc/has_allergies()
+	return species && (species.allergens || species.medallergens)
 
-/datum/element/allergy/Detach(datum/target)
-	. = ..()
-	UnregisterSignal(target, COMSIG_HANDLE_ALLERGENS)
-
-/datum/element/allergy/proc/handle_allergic_reaction(datum/source,allergen_CE_amount)
-	SIGNAL_HANDLER
+/mob/living/carbon/human/proc/handle_allergic_reaction(allergen_CE_amount)
 	if(allergen_CE_amount <= 0)
 		return
 	//first, multiply the basic species-level value by our allergen effect rating, so consuming multiple seperate allergen typess simultaneously hurts more
-	var/mob/living/carbon/human/H = source
+	var/mob/living/carbon/human/H = src
 	var/datum/species/species = H.species
 	var/damage_severity = species.allergen_damage_severity * allergen_CE_amount
 	var/disable_severity = species.allergen_disable_severity * allergen_CE_amount
@@ -57,7 +50,7 @@
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
-			om_after(src, rand(3,6), PROC_REF(allergy_gib), H)
+			om_after(H, rand(3,6), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
 			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)
@@ -69,7 +62,7 @@
 			else if(prob(80))
 				if(prob(30))
 					to_chat(H, span_warning("You feel like you are about to sneeze!"))
-				om_after(src, rand(0.75,3) SECOND, PROC_REF(allergy_sneeze), H)
+				om_after(H, rand(0.75,3) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_sneeze))
 
 	if(species.allergen_reaction & AG_COUGH)
 		if(prob(disable_severity/2))
@@ -78,20 +71,20 @@
 				H.drop_item()
 
 // Helpers for delayed actions
-/datum/element/allergy/proc/allergy_sneeze(mob/living/carbon/human/H)
+/mob/living/carbon/human/proc/allergy_sneeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
+	var/mob/living/carbon/human/H = src
 	H.emote("sneeze")
 	if(prob(23))
 		H.drop_item()
 
-/datum/element/allergy/proc/allergy_gib(mob/living/carbon/human/H,remaining)
+/mob/living/carbon/human/proc/allergy_gib(remaining)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
+	var/mob/living/carbon/human/H = src
 	if(remaining > 0)
 		H.emote(pick(list("whimper","belch","shiver")))
 		remaining--
-		om_after(src, rand(1,1.2) SECOND, PROC_REF(allergy_gib), H, remaining)
+		om_after(H, rand(1,1.2) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib), remaining)
 		return
 	H.emote("belch")
 	H.gib()
