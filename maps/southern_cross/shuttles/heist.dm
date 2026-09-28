@@ -15,7 +15,6 @@
 	cloaked = TRUE
 	shuttle_area = /area/skipjack_station/start
 	current_location_tag = "skipjack_start"
-//	docking_controller_tag = "skipjack_shuttle"
 	web_master_type = /datum/shuttle_web_master/heist
 
 /datum/shuttle_web_master/heist
@@ -29,7 +28,6 @@
 	my_landmark_tag = "skipjack_start"
 	preferred_interim_tag = "skipjack_transit"
 
-//	dock_target = "skipjack_base"
 
 	routes_to_make = list(
 		/datum/shuttle_destination/heist/orbit = 1 MINUTE,
@@ -86,7 +84,6 @@
 	my_landmark_tag = "skipjack_arrivals_dock"
 	preferred_interim_tag = "skipjack_transit"
 
-//	dock_target = "skipjack_shuttle_dock_airlock"
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/heist/docked_SC/get_arrival_message()

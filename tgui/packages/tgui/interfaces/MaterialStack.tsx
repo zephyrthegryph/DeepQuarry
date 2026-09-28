@@ -69,9 +69,7 @@ const RecipeList = (props: {
   // let nonCategories = sortedKeys.filter(item => recipes[item].ref !== undefined);
   // let categories = sortedKeys.filter(item => recipes[item].ref === undefined);
 
-  // categories.unshift("--DIVIDER--");
 
-  // let newSortedKeys = nonCategories.concat(categories);
 
   return filteredKeys.map((title, index) => {
     // if (title === "--DIVIDER--") {

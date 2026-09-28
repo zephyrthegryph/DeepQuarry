@@ -141,7 +141,6 @@ const ApcContent = (props) => {
   const chargingPowerStatus: powerStatus =
     powerStatusMap[chargingStatus] || powerStatusMap[0];
   const channelArray: any = powerChannels || [];
-  // const malfStatus = malfMap[data.malfStatus] || null;
   const adjustedCellChange: number = powerCellStatus / 100;
 
   return (

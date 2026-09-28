@@ -111,7 +111,6 @@ function handleImageError(e: ErrorEvent) {
     const attempts =
       parseInt(node.getAttribute('data-reload-n') || '', 10) || 0;
     if (attempts >= IMAGE_RETRY_LIMIT) {
-      // logger.error(`failed to load an image after ${attempts} attempts`);
       return;
     }
     const src = node.src;

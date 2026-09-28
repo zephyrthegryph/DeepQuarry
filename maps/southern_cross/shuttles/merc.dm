@@ -25,7 +25,6 @@
 	my_landmark_tag = "syndie_start"
 	preferred_interim_tag = "syndie_transit"
 
-	// dock_target = "merc_base"
 
 	routes_to_make = list(
 		/datum/shuttle_destination/syndie/orbit = 1.5 MINUTES,
@@ -81,7 +80,6 @@
 	my_landmark_tag = "syndie_arrivals_dock"
 	preferred_interim_tag = "syndie_transit"
 
-	// dock_target = "nuke_shuttle_dock_airlock"
 	announcer = "Southern Cross Docking Computer"
 
 /datum/shuttle_destination/syndie/docked_SC/get_arrival_message()
