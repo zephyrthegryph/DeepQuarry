@@ -321,7 +321,7 @@
 		state = 0
 
 	// If we started anchored we'll need to disable rotation
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 	update_verbs()
 
 	ini_dir = dir

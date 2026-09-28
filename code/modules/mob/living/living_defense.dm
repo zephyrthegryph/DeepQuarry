@@ -84,7 +84,8 @@
 //Handles the effects of "stun" weapons
 /mob/living/proc/stun_effect_act(stun_amount, agony_amount, def_zone, used_weapon=null, electric = FALSE)
 	flash_pain()
-	SEND_SIGNAL(src, COMSIG_STUN_EFFECT_ACT, stun_amount, agony_amount, def_zone, used_weapon, electric)
+	if(om_wants(src, /datum/om/event/stun_effect))
+		om_emit(src, new /datum/om/event/stun_effect(stun_amount, agony_amount, def_zone, used_weapon, electric))
 
 	if (stun_amount)
 		status_at_least(EFFECT_STUNNED, stun_amount)
@@ -181,7 +182,7 @@
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
 
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HIT_BY_THROWN_ENTITY, source, thrower, speed) & COMSIG_CANCEL_HITBY)
+	if(om_wants(src, /datum/om/event/before/hit_by_thrown) && om_emit(src, new /datum/om/event/before/hit_by_thrown(source, thrower, speed)) == EVENT_VETO)
 		return
 
 	if(isitem(source))

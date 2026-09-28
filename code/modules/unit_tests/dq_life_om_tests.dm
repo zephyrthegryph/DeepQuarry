@@ -916,11 +916,11 @@
 	// Godmode is an effect implying all three; removing it releases only its own.
 	var/datum/other = new /datum
 	om_hold(H, EFFECT_IMMUNE_WEAKEN, other)
-	H.AddElement(/datum/element/godmode)
+	H.enable_godmode()
 	TEST_ASSERT(om_has(H, EFFECT_GODMODE), "the godmode element holds EFFECT_GODMODE")
 	H.status_at_least(EFFECT_STUNNED, 2)
 	TEST_ASSERT(!H.has_status(EFFECT_STUNNED), "godmode blocks stuns")
-	H.RemoveElement(/datum/element/godmode)
+	H.disable_godmode()
 	TEST_ASSERT(!om_has(H, EFFECT_GODMODE), "removing the element ends godmode")
 	TEST_ASSERT(!H.status_immune(EFFECT_STUNNED), "ending godmode ends its stun immunity")
 	TEST_ASSERT(H.status_immune(EFFECT_WEAKENED), "but not another source's immunity (the old flags were cleared wholesale)")
@@ -944,11 +944,11 @@
 	TEST_ASSERT(life_test_place(H), "no floor to place the test human on")
 	om_suspend(H, H)
 	TEST_ASSERT(!om_has(H, EFFECT_GODMODE), "no godmode by default")
-	H.AddElement(/datum/element/godmode)
+	H.enable_godmode()
 	TEST_ASSERT(om_has(H, EFFECT_GODMODE), "the element holds the effect")
 	TEST_ASSERT(om_has(H, EFFECT_IMMUNE_PARALYZE), "godmode implies the incapacitation immunities")
 	TEST_ASSERT_EQUAL(H.injure(INJURY_BLUNT, 20), 0, "injure() lands nothing in godmode")
-	H.RemoveElement(/datum/element/godmode)
+	H.disable_godmode()
 	TEST_ASSERT(!om_has(H, EFFECT_IMMUNE_PARALYZE), "the implied immunities end with it")
 	TEST_ASSERT(H.injure(INJURY_BLUNT, 1) > 0, "and harm lands again")
 

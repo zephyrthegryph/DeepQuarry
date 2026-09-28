@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 		max_integrity *= 2
 		update_integrity(max_integrity)
 	update_icon()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
@@ -157,7 +157,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	stat |= BROKEN
 	unset_control()
 	update_icon()
-	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, null)
+	om_emit(src, new /datum/om/event/climb_shake(null))
 	return
 
 //trace towards sun to see if we're in shadow

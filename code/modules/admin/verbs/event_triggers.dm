@@ -24,7 +24,7 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 		if("Manage Personal Triggers")
 			event_triggers_list(C, user, C.ckey)
 		if("Manage Other's Triggers")
-			om_prompt_chain(ask, list("kind" = "text", "message" = "input trigger owner's ckey", "title" = "CKEY", "default" = "", "max_length" = MAX_MESSAGE_LEN), GLOBAL_PROC_REF(event_triggers_other))
+			ask.chain(list("kind" = "text", "message" = "input trigger owner's ckey", "title" = "CKEY", "default" = "", "max_length" = MAX_MESSAGE_LEN), GLOBAL_PROC_REF(event_triggers_other))
 
 /proc/event_triggers_other(client/C, mob/user, other_ckey, datum/om/prompt/ask)
 	event_triggers_list(C, user, other_ckey)
@@ -55,17 +55,17 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 	if(choice == "Delete All")
 		var/mob/stat_mob = event_triggers_owner_active(C, owner_ckey)
 		if(stat_mob)
-			om_prompt_chain(ask, list("message" = "[stat_mob] has only been inactive for [stat_mob.client.inactivity / (1 MINUTE)] minutes.\n \
+			ask.chain(list("message" = "[stat_mob] has only been inactive for [stat_mob.client.inactivity / (1 MINUTE)] minutes.\n \
 				If you want to delete their event triggers, ask them in asay or discord to do it themselves or wait 30 minutes. \n \
 				Only proceed if you are absolutely certain.", "title" = "Force Delete", "choices" = list("Confirm", "Cancel")), GLOBAL_PROC_REF(event_triggers_delete_all))
 			return
-		om_prompt_chain(ask, list("message" = "ARE YOU SURE? THERE IS NO GOING BACK", "title" = "CONFIRM", "choices" = list("Go Back", "Delete all my event triggers")), GLOBAL_PROC_REF(event_triggers_delete_all))
+		ask.chain(list("message" = "ARE YOU SURE? THERE IS NO GOING BACK", "title" = "CONFIRM", "choices" = list("Go Back", "Delete all my event triggers")), GLOBAL_PROC_REF(event_triggers_delete_all))
 		return
 	var/obj/effect/landmark/event_trigger/ET = choice
 	if(!istype(ET))
 		return
 	ask.put("trigger", ET)
-	om_prompt_chain(ask, list("message" = "Teleport to Landmark or Delete it?", "title" = "Manage [ET.name]", "choices" = list("Teleport", "Delete")), GLOBAL_PROC_REF(event_triggers_manage))
+	ask.chain(list("message" = "Teleport to Landmark or Delete it?", "title" = "Manage [ET.name]", "choices" = list("Teleport", "Delete")), GLOBAL_PROC_REF(event_triggers_manage))
 
 /proc/event_triggers_delete_all(client/C, mob/user, confirm, datum/om/prompt/ask)
 	if(confirm != "Confirm" && confirm != "Delete all my event triggers")
@@ -81,7 +81,7 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 	var/obj/effect/landmark/event_trigger/ET = ask.get("trigger")
 	if(decision == "Teleport")
 		if(isobserver(user))
-			om_prompt_chain(ask, list("message" = "You're not a ghost! Admin-ghost?", "title" = "You're not a ghost", "choices" = list("Cancel", "Teleport me with my character")), GLOBAL_PROC_REF(event_triggers_teleport))
+			ask.chain(list("message" = "You're not a ghost! Admin-ghost?", "title" = "You're not a ghost", "choices" = list("Cancel", "Teleport me with my character")), GLOBAL_PROC_REF(event_triggers_teleport))
 			return
 		user.forceMove(get_turf(ET))
 		return
@@ -89,11 +89,11 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 		return
 	var/mob/stat_mob = event_triggers_owner_active(C, ask.get("owner"))
 	if(stat_mob)
-		om_prompt_chain(ask, list("message" = "[stat_mob] has only been inactive for [stat_mob.client.inactivity / (1 MINUTE)] minutes.\n \
+		ask.chain(list("message" = "[stat_mob] has only been inactive for [stat_mob.client.inactivity / (1 MINUTE)] minutes.\n \
 			If you want to delete their event triggers, ask them in asay or discord to do it themselves or wait 30 minutes. \n \
 			Only proceed if you are absolutely certain.", "title" = "Force Delete", "choices" = list("Confirm", "Cancel")), GLOBAL_PROC_REF(event_triggers_delete_one))
 		return
-	om_prompt_chain(ask, list("message" = "ARE YOU SURE? THERE IS NO GOING BACK FROM DELETING [ET.name]", "title" = "CONFIRM", "choices" = list("Go Back", "Delete it!")), GLOBAL_PROC_REF(event_triggers_delete_one))
+	ask.chain(list("message" = "ARE YOU SURE? THERE IS NO GOING BACK FROM DELETING [ET.name]", "title" = "CONFIRM", "choices" = list("Go Back", "Delete it!")), GLOBAL_PROC_REF(event_triggers_delete_one))
 
 /proc/event_triggers_teleport(client/C, mob/user, confirm, datum/om/prompt/ask)
 	if(confirm == "Teleport me with my character")

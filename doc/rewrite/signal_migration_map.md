@@ -11,39 +11,36 @@ followed by return flags, is a `before/` event; a name describing a state change
 (`CHANGE`, `UPDATE`, `_SET`, `_MOVED`...) is a channel/watch; the rest are events.
 Review each during its folder's sweep; the classification is a starting point.
 
-Signals in use: **210** (defined: 218; defined but unused: 8).
-Send sites: 288; listener sites: 444.
+Signals in use: **172** (defined: 182; defined but unused: 10).
+Send sites: 228; listener sites: 378.
 
 | Replacement | Signals |
 |---|---|
-| before/ event (EVENT_VETO) | 64 |
-| channel / watch | 21 |
-| event | 125 |
+| before/ event (EVENT_VETO) | 45 |
+| channel / watch | 18 |
+| event | 109 |
 
 ## All signals
 
 | Signal | Senders | Listeners | Replacement | Defined in |
 |---|---|---|---|---|
-| `COMSIG_ACTION_OVERLAY_APPLY` | 1 | 1 | event | `code/__defines/dcs/signals/signals_action.dm` |
 | `COMSIG_AFFLICTION_SEVERITY_CHANGED` | 1 | 2 | channel / watch | `code/__defines/dcs/signals/signals_medical.dm` |
 | `COMSIG_ARCADE_PRIZEVEND` | 1 | 1 | event | `code/__defines/dcs/signals/signals_arcade.dm` |
 | `COMSIG_ATOM_AFTER_SUCCESSFUL_INITIALIZED_ON` | 1 | 0 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
-| `COMSIG_ATOM_ATTACKBY` | 2 | 8 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
-| `COMSIG_ATOM_ATTACK_HAND` | 1 | 3 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
+| `COMSIG_ATOM_ATTACKBY` | 2 | 7 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
+| `COMSIG_ATOM_ATTACK_HAND` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
 | `COMSIG_ATOM_BULLET_ACT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
 | `COMSIG_ATOM_BUMPED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_ATOM_DIR_CHANGE` | 1 | 2 | channel / watch | `code/__defines/dcs/signals/signals_atom/signals_atom_movement.dm` |
 | `COMSIG_ATOM_EMP_ACT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
 | `COMSIG_ATOM_ENTERED` | 1 | 4 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
-| `COMSIG_ATOM_ENTERING` | 1 | 5 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
-| `COMSIG_ATOM_EXAMINE` | 1 | 11 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
+| `COMSIG_ATOM_ENTERING` | 1 | 4 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
+| `COMSIG_ATOM_EXAMINE` | 1 | 6 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_ATOM_EXITED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
-| `COMSIG_ATOM_EXTINGUISH` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
-| `COMSIG_ATOM_EXTRAPOLATOR_ACT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
+| `COMSIG_ATOM_EXTINGUISH` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
 | `COMSIG_ATOM_EX_ACT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
-| `COMSIG_ATOM_FIRE_ACT` | 1 | 2 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
-| `COMSIG_ATOM_HITBY` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
-| `COMSIG_ATOM_PRE_EMP_ACT` | 1 | 3 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
+| `COMSIG_ATOM_FIRE_ACT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
+| `COMSIG_ATOM_PRE_EMP_ACT` | 1 | 2 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
 | `COMSIG_ATOM_PROPAGATE_RAD_PULSE` | 1 | 3 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_ATOM_SECONDARY_TOOL_ACT` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
 | `COMSIG_ATOM_TAKE_DAMAGE` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_attack.dm` |
@@ -55,23 +52,15 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_ATOM_UPDATE_LIGHT_RANGE` | 1 | 1 | channel / watch | `code/__defines/dcs/signals/signals_atom/signals_atom_lighting.dm` |
 | `COMSIG_ATOM_USED_IN_CRAFT` | 1 | 2 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
 | `COMSIG_AUTOPSY_PERFORMED` | 1 | 0 | event | `code/__defines/dcs/signals/signals_surgery.dm` |
-| `COMSIG_BEING_ELECTROCUTED` | 2 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_carbon.dm` |
-| `COMSIG_BELLY_UPDATE_VORE_FX` | 3 | 2 | channel / watch | `code/__defines/dcs/signals/signals_vore.dm` |
+| `COMSIG_BELLY_UPDATE_VORE_FX` | 3 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_vore.dm` |
 | `COMSIG_BODY_AFFLICTIONS_CHANGED` | 2 | 2 | channel / watch | `code/__defines/dcs/signals/signals_medical.dm` |
-| `COMSIG_CANCEL_EFFECT` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
-| `COMSIG_CANCEL_EMBED` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_carbon.dm` |
-| `COMSIG_CANCEL_FALL` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_vore.dm` |
-| `COMSIG_CANCEL_HITBY` | 2 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_vore.dm` |
+| `COMSIG_BODY_PART_ATTACHED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_medical.dm` |
+| `COMSIG_BODY_PART_DETACHED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_medical.dm` |
 | `COMSIG_CLICK` | 1 | 4 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_mouse.dm` |
 | `COMSIG_CLICK_ALT` | 2 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_mouse.dm` |
 | `COMSIG_CLIENT_CLICK` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_mouse.dm` |
-| `COMSIG_CLIMBABLE_SHAKE_CLIMBERS` | 4 | 1 | event | `code/__defines/dcs/signals/signals_cliff.dm` |
-| `COMSIG_CLIMBABLE_START_CLIMB` | 5 | 1 | event | `code/__defines/dcs/signals/signals_cliff.dm` |
-| `COMSIG_CLOSET_CLOSED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_container.dm` |
-| `COMSIG_COMPONENT_CLEAN_ACT` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_janitor.dm` |
 | `COMSIG_COMPONENT_HANDLED_HEALTH_ICON` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_COMPONENT_HANDLED_HUD` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
-| `COMSIG_CONFLICT_ELEMENT_CHECK` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_component.dm` |
 | `COMSIG_DISPOSAL_FLUSH` | 2 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_disposals.dm` |
 | `COMSIG_DISPOSAL_LINK` | 3 | 1 | event | `code/__defines/dcs/signals/signals_disposals.dm` |
 | `COMSIG_DISPOSAL_RECEIVE` | 1 | 3 | event | `code/__defines/dcs/signals/signals_disposals.dm` |
@@ -83,8 +72,6 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_DQAI_DAMAGE_TAKEN` | 1 | 0 | event | `code/modules/combat_ai/_defines.dm` |
 | `COMSIG_DQAI_TARGET_CHANGED` | 4 | 0 | channel / watch | `code/modules/combat_ai/_defines.dm` |
 | `COMSIG_DQAI_TARGET_LOST` | 2 | 0 | event | `code/modules/combat_ai/_defines.dm` |
-| `COMSIG_EMBED_OBJECT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_carbon.dm` |
-| `COMSIG_FOOD_EATEN` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_food.dm` |
 | `COMSIG_FORM_CHANGED` | 1 | 0 | channel / watch | `code/__defines/forms.dm` |
 | `COMSIG_GARGOYLE_CHECK_ENERGY` | 1 | 1 | event | `code/__defines/dcs/signals/signals_gargoyle.dm` |
 | `COMSIG_GARGOYLE_PAUSE` | 1 | 1 | event | `code/__defines/dcs/signals/signals_gargoyle.dm` |
@@ -92,7 +79,6 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_GEIGER_COUNTER_SCAN` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_radiation.dm` |
 | `COMSIG_GEIGER_COUNTER_SCAN_SUCCESSFUL` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_radiation.dm` |
 | `COMSIG_GHOST_QUERY_COMPLETE` | 1 | 5 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
-| `COMSIG_GLASS_DRANK` | 2 | 1 | event | `code/__defines/dcs/signals/signals_food.dm` |
 | `COMSIG_GLOB_AUTOPSY_PERFORMED` | 1 | 0 | event | `code/__defines/dcs/signals/signals_global.dm` |
 | `COMSIG_GLOB_BRAIN_REMOVED` | 1 | 0 | event | `code/__defines/dcs/signals/signals_global.dm` |
 | `COMSIG_GLOB_EXPLOSION` | 1 | 1 | event | `code/__defines/dcs/signals/signals_global.dm` |
@@ -103,7 +89,6 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_GLOB_PLAY_CINEMATIC` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_global.dm` |
 | `COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART` | 1 | 1 | event | `code/__defines/dcs/signals/signals_global.dm` |
 | `COMSIG_GLOB_WIGHT_CAPTURED` | 1 | 0 | event | `code/__defines/dcs/signals/signals_trasheating.dm` |
-| `COMSIG_HANDLE_ALLERGENS` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_HANDLE_DISABILITIES` | 1 | 8 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_HANDLE_MUTATIONS` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_HANDLE_RADIATION` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
@@ -113,42 +98,33 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_HUMAN_GET_ALT_NAME` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_HUMAN_GET_VISIBLE_NAME` | 2 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_carbon.dm` |
 | `COMSIG_HUMAN_GET_VOICE` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
-| `COMSIG_HUMAN_ON_CATCH_THROW` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_carbon.dm` |
 | `COMSIG_INSTRUMENT_END` | 1 | 1 | event | `code/__defines/dcs/signals/signals_music.dm` |
 | `COMSIG_INSTRUMENT_START` | 1 | 1 | event | `code/__defines/dcs/signals/signals_music.dm` |
-| `COMSIG_IN_RANGE_OF_IRRADIATION` | 4 | 6 | event | `code/__defines/dcs/signals/signals_radiation.dm` |
-| `COMSIG_IN_THRESHOLD_OF_IRRADIATION` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_radiation.dm` |
-| `COMSIG_ITEM_ATTACK` | 1 | 2 | event | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_ITEM_ATTACK_SELF` | 6 | 5 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_ITEM_BARBEQUE_GRILLED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_food.dm` |
+| `COMSIG_IN_RANGE_OF_IRRADIATION` | 4 | 6 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_radiation.dm` |
+| `COMSIG_ITEM_ATTACK` | 1 | 1 | event | `code/__defines/dcs/signals/signals_object.dm` |
+| `COMSIG_ITEM_ATTACK_SELF` | 1 | 3 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_ITEM_DROPPED` | 1 | 2 | event | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_ITEM_EQUIPPED` | 1 | 4 | event | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_ITEM_EXPORTED` | 5 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_ITEM_FRIED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_food.dm` |
-| `COMSIG_ITEM_PICKUP` | 2 | 1 | event | `code/__defines/dcs/signals/signals_object.dm` |
+| `COMSIG_ITEM_EQUIPPED` | 1 | 3 | event | `code/__defines/dcs/signals/signals_object.dm` |
+| `COMSIG_ITEM_PICKUP` | 2 | 0 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_ITEM_PRE_ATTACK` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_ITEM_SCAN_PROFIT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_exports.dm` |
 | `COMSIG_ITEM_TOOL_ACTED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_x_act.dm` |
 | `COMSIG_LIVING_AHEAL` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_LIVING_BODY_STATUS` | 4 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
+| `COMSIG_LIVING_DEATH_FINAL` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_FACTORS_CHANGED` | 1 | 0 | channel / watch | `code/__defines/dcs/signals/signals_medical.dm` |
-| `COMSIG_LIVING_FALLING_DOWN` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_vore.dm` |
-| `COMSIG_LIVING_HIT_BY_THROWN_ENTITY` | 2 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_vore.dm` |
-| `COMSIG_LIVING_INJURE` | 1 | 5 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_medical.dm` |
+| `COMSIG_LIVING_INJURE` | 1 | 3 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_medical.dm` |
 | `COMSIG_LIVING_INJURED` | 1 | 3 | event | `code/__defines/dcs/signals/signals_medical.dm` |
 | `COMSIG_LIVING_INJURY_EXPLAINED` | 1 | 4 | event | `code/__defines/dcs/signals/signals_medical.dm` |
 | `COMSIG_LIVING_IRRADIATE_EFFECT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_REGENERATE_LIMBS` | 1 | 0 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
-| `COMSIG_LIVING_REVIVE` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
+| `COMSIG_LIVING_REVIVED` | 1 | 4 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_SHIELD_INJURY` | 1 | 2 | event | `code/__defines/dcs/signals/signals_medical.dm` |
 | `COMSIG_LIVING_STATUS_BLIND` | 0 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_STATUS_PARALYZE` | 0 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_STATUS_SLEEP` | 0 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_STATUS_STUN` | 0 | 2 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_LIVING_STATUS_WEAKEN` | 0 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
-| `COMSIG_LIVING_STUMBLED_INTO` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_vore.dm` |
 | `COMSIG_LIVING_TURF_COLLISION` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
-| `COMSIG_LOOT_REWARD` | 2 | 1 | event | `code/__defines/dcs/signals/signals_lootpiles.dm` |
 | `COMSIG_MACHINERY_BROKEN` | 1 | 2 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_MACHINERY_DESTRUCTIVE_SCAN` | 2 | 0 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_MACHINERY_EXPLOSION_DETECTED` | 1 | 0 | event | `code/__defines/dcs/signals/signals_object.dm` |
@@ -161,7 +137,7 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_MOB_CANCEL_CLICKON` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_MOB_CLIENT_LOGIN` | 1 | 5 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_MOB_COMBAT_MODE_CHANGED` | 1 | 0 | channel / watch | `code/__defines/combat_mode.dm` |
-| `COMSIG_MOB_DEATH` | 1 | 8 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
+| `COMSIG_MOB_DEATH` | 1 | 9 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_MOB_DNA_MUTATION` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_MOB_EQUIPPED_ITEM` | 1 | 2 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_MOB_GRANTED_ACTION` | 1 | 1 | event | `code/__defines/dcs/signals/signals_action.dm` |
@@ -177,20 +153,15 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_MOB_RELAY_MOVEMENT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_MOB_REMOVED_ACTION` | 1 | 1 | event | `code/__defines/dcs/signals/signals_action.dm` |
 | `COMSIG_MOB_RESET_PERSPECTIVE` | 1 | 2 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
-| `COMSIG_MOB_ROLLED_DICE` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_MOB_STATCHANGE` | 1 | 2 | channel / watch | `code/__defines/dcs/signals/signals_mob/signals_mob_main.dm` |
 | `COMSIG_MOB_UNEQUIPPED_ITEM` | 1 | 1 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 7 | 27 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
-| `COMSIG_MOVABLE_BUCKLE` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
-| `COMSIG_MOVABLE_BUMP` | 1 | 3 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
-| `COMSIG_MOVABLE_CROSS` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
-| `COMSIG_MOVABLE_EXITED_AREA` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
+| `COMSIG_MOVABLE_BUMP` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
 | `COMSIG_MOVABLE_IMPACT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
 | `COMSIG_MOVABLE_MOTIONTRACKER` | 1 | 2 | event | `code/__defines/dcs/signals/signals_motiontracker.dm` |
-| `COMSIG_MOVABLE_MOVED` | 1 | 47 | channel / watch | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
+| `COMSIG_MOVABLE_MOVED` | 1 | 34 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
 | `COMSIG_MOVABLE_PRE_MOVE` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
 | `COMSIG_MOVABLE_Z_CHANGED` | 1 | 3 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_atom/signals_atom_movable.dm` |
-| `COMSIG_MOVED_DOWN_STAIRS` | 2 | 1 | channel / watch | `code/__defines/dcs/signals/signals_stairs.dm` |
 | `COMSIG_OBJ_DECONSTRUCT` | 2 | 1 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_OBSERVER_APC` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_OBSERVER_DESTROYED` | 1 | 13 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
@@ -199,37 +170,28 @@ Send sites: 288; listener sites: 444.
 | `COMSIG_OBSERVER_SHUTTLE_MOVED` | 1 | 2 | channel / watch | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_OBSERVER_SHUTTLE_PRE_MOVE` | 1 | 1 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
 | `COMSIG_OBSERVER_TURF_ENTERED` | 1 | 2 | event | `code/__defines/dcs/signals/signals_atom/signals_atom_main.dm` |
-| `COMSIG_ON_CARBON_SLIP` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_carbon.dm` |
 | `COMSIG_POPUP_CLEARED` | 1 | 1 | event | `code/__defines/dcs/signals/signals_client.dm` |
-| `COMSIG_QDELETING` | 2 | 60 | event | `code/__defines/dcs/signals/signals_datum.dm` |
+| `COMSIG_QDELETING` | 2 | 59 | event | `code/__defines/dcs/signals/signals_datum.dm` |
 | `COMSIG_REAGENTS_HOLDER_REACTED` | 1 | 2 | event | `code/__defines/dcs/signals/signals_reagent.dm` |
 | `COMSIG_REAGENT_EXPOSE_OBJ` | 1 | 1 | event | `code/__defines/dcs/signals/signals_reagent.dm` |
 | `COMSIG_REMOTE_VIEW_CLEAR` | 6 | 4 | event | `code/__defines/dcs/signals/signals_remote_view.dm` |
 | `COMSIG_ROBOT_BELLY_FULLNESS` | 1 | 1 | event | `code/__defines/robot_parts.dm` |
-| `COMSIG_ROBOT_EMP_ACT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_silicon.dm` |
 | `COMSIG_ROBOT_EQUIPMENT_CHANGED` | 1 | 1 | channel / watch | `code/__defines/robot_parts.dm` |
-| `COMSIG_ROBOT_ITEM_ATTACK` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_silicon.dm` |
+| `COMSIG_ROBOT_ITEM_ATTACK` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_silicon.dm` |
 | `COMSIG_SHADEKIN_COMPONENT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_shadekin.dm` |
 | `COMSIG_SHOES_STEP_ACTION` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_object.dm` |
-| `COMSIG_SILICON_EMP_ACT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_silicon.dm` |
 | `COMSIG_SILICON_LAWS_CHANGED` | 1 | 1 | channel / watch | `code/__defines/robot_parts.dm` |
 | `COMSIG_SLOT_INSERTED` | 2 | 1 | event | `code/__defines/dcs/signals/signals_container.dm` |
 | `COMSIG_SLOT_PRE_INSERT` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_container.dm` |
 | `COMSIG_SLOT_PRE_REMOVE` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_container.dm` |
 | `COMSIG_SLOT_REMOVED` | 2 | 1 | event | `code/__defines/dcs/signals/signals_container.dm` |
-| `COMSIG_STUN_EFFECT_ACT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
-| `COMSIG_TAKING_APPLY_EFFECT` | 1 | 2 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_mob/signals_mob_living.dm` |
 | `COMSIG_TECHWEB_ADD_DESIGN` | 1 | 0 | event | `code/__defines/dcs/signals/signals_techweb.dm` |
-| `COMSIG_TECHWEB_POINT_CHECK` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_TECHWEB_REMOVE_DESIGN` | 1 | 0 | event | `code/__defines/dcs/signals/signals_techweb.dm` |
-| `COMSIG_TECHWEB_TYPE_CHECK` | 1 | 1 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_TELESCI_TELEPORT` | 2 | 1 | event | `code/__defines/dcs/signals/signals_object.dm` |
 | `COMSIG_TGUI_WINDOW_VISIBLE` | 1 | 1 | event | `code/__defines/dcs/signals/signals_tgui.dm` |
 | `COMSIG_TOOL_ATOM_ACTED_PRIMARY` | 1 | 1 | event | `code/__defines/dcs/signals/signals_tools.dm` |
 | `COMSIG_TOOL_ATOM_ACTED_SECONDARY` | 1 | 0 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_tools.dm` |
 | `COMSIG_TURF_CHANGE` | 1 | 2 | channel / watch | `code/__defines/dcs/signals/signals_turf.dm` |
-| `COMSIG_TURF_MULTIZ_DEL` | 1 | 1 | event | `code/__defines/dcs/signals/signals_turf.dm` |
-| `COMSIG_TURF_MULTIZ_NEW` | 1 | 1 | event | `code/__defines/dcs/signals/signals_turf.dm` |
 | `COMSIG_TURF_PREPARE_STEP_SOUND` | 1 | 1 | before/ event (EVENT_VETO) | `code/__defines/dcs/signals/signals_turf.dm` |
 | `COMSIG_UI_ACT` | 1 | 1 | event | `code/__defines/dcs/signals/signals_datum.dm` |
 | `COMSIG_UNITTEST_DATA` | 1 | 1 | event | `code/__defines/dcs/signals/signals_unittest.dm` |
@@ -239,21 +201,17 @@ Send sites: 288; listener sites: 444.
 
 Counts are the sites in that folder only.
 
-### `code/datums/components` (86 signals, 175 sites)
+### `code/datums/components` (64 signals, 135 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_ATOM_ATTACKBY` | 0 | 4 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_ATTACK_HAND` | 0 | 2 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_ATTACKBY` | 0 | 3 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_ATTACK_HAND` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_ATOM_DIR_CHANGE` | 0 | 2 | channel / watch |
 | `COMSIG_ATOM_ENTERED` | 0 | 1 | event |
-| `COMSIG_ATOM_ENTERING` | 0 | 4 | event |
-| `COMSIG_ATOM_EXAMINE` | 0 | 6 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_ENTERING` | 0 | 3 | event |
+| `COMSIG_ATOM_EXAMINE` | 0 | 4 | before/ event (EVENT_VETO) |
 | `COMSIG_ATOM_EXITED` | 0 | 1 | event |
-| `COMSIG_ATOM_EXTINGUISH` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_EXTRAPOLATOR_ACT` | 0 | 1 | event |
-| `COMSIG_ATOM_FIRE_ACT` | 0 | 1 | event |
-| `COMSIG_ATOM_HITBY` | 0 | 1 | event |
 | `COMSIG_ATOM_UPDATE_LIGHT_COLOR` | 0 | 1 | channel / watch |
 | `COMSIG_ATOM_UPDATE_LIGHT_FLAGS` | 0 | 1 | channel / watch |
 | `COMSIG_ATOM_UPDATE_LIGHT_ON` | 0 | 1 | channel / watch |
@@ -261,19 +219,15 @@ Counts are the sites in that folder only.
 | `COMSIG_ATOM_UPDATE_LIGHT_RANGE` | 0 | 1 | channel / watch |
 | `COMSIG_ATOM_USED_IN_CRAFT` | 1 | 2 | event |
 | `COMSIG_CLICK` | 0 | 1 | event |
-| `COMSIG_CLOSET_CLOSED` | 0 | 1 | event |
-| `COMSIG_COMPONENT_CLEAN_ACT` | 0 | 2 | before/ event (EVENT_VETO) |
 | `COMSIG_DISPOSAL_FLUSH` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_DISPOSAL_LINK` | 0 | 1 | event |
 | `COMSIG_DISPOSAL_RECEIVE` | 1 | 0 | event |
 | `COMSIG_DISPOSAL_SEND` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_DISPOSAL_UNLINK` | 0 | 1 | event |
-| `COMSIG_FOOD_EATEN` | 0 | 2 | before/ event (EVENT_VETO) |
 | `COMSIG_GARGOYLE_CHECK_ENERGY` | 1 | 1 | event |
 | `COMSIG_GARGOYLE_PAUSE` | 1 | 1 | event |
 | `COMSIG_GARGOYLE_TRANSFORMATION` | 1 | 1 | event |
 | `COMSIG_GEIGER_COUNTER_SCAN` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_GLASS_DRANK` | 0 | 1 | event |
 | `COMSIG_HANDLE_DISABILITIES` | 0 | 8 | event |
 | `COMSIG_HANDLE_RADIATION` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_HOSE_FORCEPUMP` | 0 | 1 | event |
@@ -281,16 +235,10 @@ Counts are the sites in that folder only.
 | `COMSIG_HUMAN_GET_ALT_NAME` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_HUMAN_GET_VISIBLE_NAME` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_HUMAN_GET_VOICE` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_HUMAN_ON_CATCH_THROW` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 2 | event |
-| `COMSIG_IN_THRESHOLD_OF_IRRADIATION` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_ATTACK` | 0 | 1 | event |
-| `COMSIG_ITEM_ATTACK_SELF` | 1 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_BARBEQUE_GRILLED` | 0 | 1 | event |
+| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 2 | before/ event (EVENT_VETO) |
+| `COMSIG_ITEM_ATTACK_SELF` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_ITEM_DROPPED` | 0 | 2 | event |
-| `COMSIG_ITEM_EQUIPPED` | 0 | 4 | event |
-| `COMSIG_ITEM_FRIED` | 0 | 1 | event |
-| `COMSIG_ITEM_PICKUP` | 0 | 1 | event |
+| `COMSIG_ITEM_EQUIPPED` | 0 | 3 | event |
 | `COMSIG_ITEM_PRE_ATTACK` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_LIVING_IRRADIATE_EFFECT` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_LIVING_STATUS_BLIND` | 0 | 1 | event |
@@ -310,34 +258,23 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_LOGOUT` | 0 | 2 | event |
 | `COMSIG_MOB_RELAY_MOVEMENT` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_MOB_RESET_PERSPECTIVE` | 0 | 2 | event |
-| `COMSIG_MOB_ROLLED_DICE` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 2 | 4 | event |
-| `COMSIG_MOVABLE_BUCKLE` | 0 | 1 | event |
-| `COMSIG_MOVABLE_BUMP` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVABLE_EXITED_AREA` | 0 | 1 | event |
+| `COMSIG_MOVABLE_BUMP` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_MOVABLE_IMPACT` | 0 | 1 | event |
-| `COMSIG_MOVABLE_MOVED` | 0 | 23 | channel / watch |
+| `COMSIG_MOVABLE_MOVED` | 0 | 17 | before/ event (EVENT_VETO) |
 | `COMSIG_MOVABLE_Z_CHANGED` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVED_DOWN_STAIRS` | 0 | 1 | channel / watch |
 | `COMSIG_OBJ_DECONSTRUCT` | 0 | 1 | event |
-| `COMSIG_ON_CARBON_SLIP` | 0 | 1 | event |
-| `COMSIG_QDELETING` | 0 | 16 | event |
+| `COMSIG_QDELETING` | 0 | 15 | event |
 | `COMSIG_REMOTE_VIEW_CLEAR` | 2 | 4 | event |
 | `COMSIG_SHADEKIN_COMPONENT` | 0 | 1 | event |
 | `COMSIG_SHOES_STEP_ACTION` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_STUN_EFFECT_ACT` | 0 | 1 | event |
-| `COMSIG_TECHWEB_POINT_CHECK` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_TECHWEB_TYPE_CHECK` | 0 | 1 | event |
 | `COMSIG_XENOCHIMERA_COMPONENT` | 0 | 1 | event |
 
-### `code/modules/mob` (63 signals, 84 sites)
+### `code/modules/mob` (52 signals, 70 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_ATOM_PRE_EMP_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_BEING_ELECTROCUTED` | 2 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_CANCEL_EFFECT` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_CANCEL_HITBY` | 2 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_PRE_EMP_ACT` | 0 | 1 | event |
 | `COMSIG_CLICK` | 0 | 1 | event |
 | `COMSIG_COMPONENT_HANDLED_HEALTH_ICON` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_COMPONENT_HANDLED_HUD` | 1 | 0 | before/ event (EVENT_VETO) |
@@ -347,7 +284,6 @@ Counts are the sites in that folder only.
 | `COMSIG_GHOST_QUERY_COMPLETE` | 0 | 2 | event |
 | `COMSIG_GLOB_MOB_CREATED` | 1 | 0 | event |
 | `COMSIG_GLOB_MOB_DEATH` | 1 | 0 | event |
-| `COMSIG_HANDLE_ALLERGENS` | 1 | 0 | event |
 | `COMSIG_HANDLE_DISABILITIES` | 1 | 0 | event |
 | `COMSIG_HANDLE_MUTATIONS` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_HANDLE_RADIATION` | 1 | 0 | before/ event (EVENT_VETO) |
@@ -356,13 +292,11 @@ Counts are the sites in that folder only.
 | `COMSIG_HUMAN_GET_ALT_NAME` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_HUMAN_GET_VISIBLE_NAME` | 2 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_HUMAN_GET_VOICE` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_HUMAN_ON_CATCH_THROW` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_LIVING_AHEAL` | 1 | 0 | event |
-| `COMSIG_LIVING_HIT_BY_THROWN_ENTITY` | 2 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_LIVING_DEATH_FINAL` | 1 | 0 | event |
 | `COMSIG_LIVING_INJURE` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_LIVING_INJURED` | 0 | 2 | event |
 | `COMSIG_LIVING_IRRADIATE_EFFECT` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_REVIVE` | 1 | 0 | event |
 | `COMSIG_LIVING_SHIELD_INJURY` | 0 | 2 | event |
 | `COMSIG_LIVING_TURF_COLLISION` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_MACHINERY_DESTRUCTIVE_SCAN` | 1 | 0 | event |
@@ -382,30 +316,22 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_UNEQUIPPED_ITEM` | 1 | 0 | event |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 3 | event |
 | `COMSIG_MOVABLE_MOTIONTRACKER` | 0 | 1 | event |
-| `COMSIG_MOVABLE_MOVED` | 0 | 3 | channel / watch |
+| `COMSIG_MOVABLE_MOVED` | 0 | 3 | before/ event (EVENT_VETO) |
 | `COMSIG_MOVABLE_PRE_MOVE` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ON_CARBON_SLIP` | 1 | 0 | event |
 | `COMSIG_QDELETING` | 0 | 4 | event |
 | `COMSIG_ROBOT_BELLY_FULLNESS` | 1 | 1 | event |
-| `COMSIG_ROBOT_EMP_ACT` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_ROBOT_EQUIPMENT_CHANGED` | 1 | 1 | channel / watch |
-| `COMSIG_ROBOT_ITEM_ATTACK` | 0 | 1 | event |
+| `COMSIG_ROBOT_ITEM_ATTACK` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_SHADEKIN_COMPONENT` | 1 | 0 | event |
 | `COMSIG_SHOES_STEP_ACTION` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_SILICON_EMP_ACT` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_SILICON_LAWS_CHANGED` | 1 | 1 | channel / watch |
-| `COMSIG_STUN_EFFECT_ACT` | 1 | 0 | event |
-| `COMSIG_TAKING_APPLY_EFFECT` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_XENOCHIMERA_COMPONENT` | 1 | 0 | event |
 
-### `code/game/objects` (30 signals, 54 sites)
+### `code/game/objects` (25 signals, 42 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
 | `COMSIG_AUTOPSY_PERFORMED` | 1 | 0 | event |
-| `COMSIG_CLIMBABLE_SHAKE_CLIMBERS` | 2 | 0 | event |
-| `COMSIG_CLIMBABLE_START_CLIMB` | 3 | 0 | event |
-| `COMSIG_CLOSET_CLOSED` | 1 | 0 | event |
 | `COMSIG_DISPOSAL_FLUSH` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_DISPOSAL_LINK` | 1 | 0 | event |
 | `COMSIG_DISPOSAL_RECEIVE` | 0 | 1 | event |
@@ -416,71 +342,41 @@ Counts are the sites in that folder only.
 | `COMSIG_GLOB_GHOST_CAPTURED` | 1 | 0 | event |
 | `COMSIG_GLOB_WIGHT_CAPTURED` | 1 | 0 | event |
 | `COMSIG_HUMAN_DNA_FINALIZED` | 2 | 0 | event |
-| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 2 | event |
-| `COMSIG_ITEM_ATTACK_SELF` | 4 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 2 | before/ event (EVENT_VETO) |
 | `COMSIG_ITEM_DROPPED` | 1 | 0 | event |
 | `COMSIG_ITEM_EQUIPPED` | 1 | 0 | event |
 | `COMSIG_ITEM_PICKUP` | 2 | 0 | event |
 | `COMSIG_LIVING_INJURE` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LOOT_REWARD` | 2 | 0 | event |
 | `COMSIG_MOB_EQUIPPED_ITEM` | 1 | 0 | event |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 2 | 4 | event |
 | `COMSIG_MOVABLE_MOTIONTRACKER` | 0 | 1 | event |
-| `COMSIG_MOVABLE_MOVED` | 0 | 4 | channel / watch |
+| `COMSIG_MOVABLE_MOVED` | 0 | 4 | before/ event (EVENT_VETO) |
 | `COMSIG_OBJ_DECONSTRUCT` | 1 | 0 | event |
 | `COMSIG_OBSERVER_APC` | 0 | 1 | event |
 | `COMSIG_QDELETING` | 0 | 6 | event |
 | `COMSIG_REMOTE_VIEW_CLEAR` | 1 | 0 | event |
 | `COMSIG_UNITTEST_DATA` | 1 | 0 | event |
 
-### `code/datums/elements` (28 signals, 42 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_ATOM_EXAMINE` | 0 | 3 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_PRE_EMP_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_BEING_ELECTROCUTED` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_CLIMBABLE_SHAKE_CLIMBERS` | 0 | 1 | event |
-| `COMSIG_CLIMBABLE_START_CLIMB` | 1 | 1 | event |
-| `COMSIG_CONFLICT_ELEMENT_CHECK` | 1 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_EMBED_OBJECT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_HANDLE_ALLERGENS` | 0 | 1 | event |
-| `COMSIG_ITEM_ATTACK_SELF` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_EXPORTED` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_SCAN_PROFIT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_BODY_STATUS` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_FALLING_DOWN` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_HIT_BY_THROWN_ENTITY` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_INJURE` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_STUMBLED_INTO` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LOOT_REWARD` | 0 | 1 | event |
-| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
-| `COMSIG_MOVABLE_CROSS` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVABLE_MOVED` | 0 | 8 | channel / watch |
-| `COMSIG_OBSERVER_TURF_ENTERED` | 0 | 1 | event |
-| `COMSIG_QDELETING` | 0 | 1 | event |
-| `COMSIG_ROBOT_EMP_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_SILICON_EMP_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_TAKING_APPLY_EFFECT` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_TURF_MULTIZ_DEL` | 0 | 1 | event |
-| `COMSIG_TURF_MULTIZ_NEW` | 0 | 1 | event |
-| `COMSIG_TURF_PREPARE_STEP_SOUND` | 1 | 1 | before/ event (EVENT_VETO) |
-
-### `code/modules/unit_tests` (20 signals, 29 sites)
+### `code/modules/unit_tests` (25 signals, 34 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
 | `COMSIG_AFFLICTION_SEVERITY_CHANGED` | 0 | 1 | channel / watch |
 | `COMSIG_BODY_AFFLICTIONS_CHANGED` | 0 | 1 | channel / watch |
+| `COMSIG_BODY_PART_ATTACHED` | 0 | 1 | event |
+| `COMSIG_BODY_PART_DETACHED` | 0 | 1 | event |
 | `COMSIG_GLOB_PLAY_CINEMATIC` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_EXPORTED` | 3 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_ITEM_TOOL_ACTED` | 0 | 1 | event |
+| `COMSIG_LIVING_BODY_STATUS` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_LIVING_DEATH_FINAL` | 0 | 1 | event |
 | `COMSIG_LIVING_INJURE` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_LIVING_INJURY_EXPLAINED` | 0 | 4 | event |
+| `COMSIG_LIVING_REVIVED` | 0 | 3 | event |
 | `COMSIG_LIVING_STATUS_STUN` | 0 | 1 | event |
 | `COMSIG_MACHINERY_BROKEN` | 0 | 2 | event |
 | `COMSIG_MACHINERY_POWER_LOST` | 0 | 1 | event |
 | `COMSIG_MACHINERY_POWER_RESTORED` | 0 | 1 | event |
+| `COMSIG_MOB_DEATH` | 0 | 1 | event |
 | `COMSIG_MOB_LOGOUT` | 1 | 0 | event |
 | `COMSIG_QDELETING` | 0 | 3 | event |
 | `COMSIG_REAGENTS_HOLDER_REACTED` | 0 | 2 | event |
@@ -504,11 +400,11 @@ Counts are the sites in that folder only.
 | `COMSIG_MACHINERY_POWER_RESTORED` | 1 | 1 | event |
 | `COMSIG_MOB_STATCHANGE` | 0 | 1 | channel / watch |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 2 | event |
-| `COMSIG_MOVABLE_MOVED` | 0 | 4 | channel / watch |
+| `COMSIG_MOVABLE_MOVED` | 0 | 4 | before/ event (EVENT_VETO) |
 | `COMSIG_OBJ_DECONSTRUCT` | 1 | 0 | event |
 | `COMSIG_QDELETING` | 0 | 8 | event |
 
-### `code/controllers/subsystems` (22 signals, 27 sites)
+### `code/controllers/subsystems` (20 signals, 24 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
@@ -519,10 +415,8 @@ Counts are the sites in that folder only.
 | `COMSIG_GLOB_MOB_DEATH` | 0 | 1 | event |
 | `COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS` | 0 | 1 | event |
 | `COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART` | 1 | 0 | event |
-| `COMSIG_IN_RANGE_OF_IRRADIATION` | 4 | 0 | event |
-| `COMSIG_IN_THRESHOLD_OF_IRRADIATION` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_EXPORTED` | 2 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_REVIVE` | 0 | 1 | event |
+| `COMSIG_IN_RANGE_OF_IRRADIATION` | 4 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_LIVING_REVIVED` | 0 | 1 | event |
 | `COMSIG_LIVING_TURF_COLLISION` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_MOB_EQUIPPED_ITEM` | 0 | 1 | event |
 | `COMSIG_MOB_LOGIN` | 0 | 1 | event |
@@ -532,10 +426,28 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_MIND_TRANSFERRED_OUT_OF` | 0 | 1 | event |
 | `COMSIG_MOB_UNEQUIPPED_ITEM` | 0 | 1 | event |
 | `COMSIG_MOVABLE_MOTIONTRACKER` | 1 | 0 | event |
-| `COMSIG_MOVABLE_MOVED` | 0 | 1 | channel / watch |
+| `COMSIG_MOVABLE_MOVED` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_QDELETING` | 0 | 2 | event |
 
-### `code/game/atom` (19 signals, 19 sites)
+### `code/modules/body` (13 signals, 18 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_AFFLICTION_SEVERITY_CHANGED` | 1 | 0 | channel / watch |
+| `COMSIG_ATOM_ATTACKBY` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_TOOL_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_BODY_AFFLICTIONS_CHANGED` | 2 | 0 | channel / watch |
+| `COMSIG_BODY_PART_ATTACHED` | 1 | 0 | event |
+| `COMSIG_BODY_PART_DETACHED` | 1 | 0 | event |
+| `COMSIG_LIVING_BODY_STATUS` | 4 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_LIVING_FACTORS_CHANGED` | 1 | 0 | channel / watch |
+| `COMSIG_LIVING_INJURE` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_LIVING_INJURED` | 1 | 0 | event |
+| `COMSIG_LIVING_INJURY_EXPLAINED` | 1 | 0 | event |
+| `COMSIG_LIVING_REVIVED` | 1 | 0 | event |
+| `COMSIG_LIVING_SHIELD_INJURY` | 1 | 0 | event |
+
+### `code/game/atom` (16 signals, 16 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
@@ -549,46 +461,12 @@ Counts are the sites in that folder only.
 | `COMSIG_ATOM_EXAMINE` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_ATOM_EXITED` | 1 | 0 | event |
 | `COMSIG_ATOM_EXTINGUISH` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_EXTRAPOLATOR_ACT` | 1 | 0 | event |
 | `COMSIG_ATOM_EX_ACT` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_ATOM_FIRE_ACT` | 1 | 0 | event |
-| `COMSIG_ATOM_HITBY` | 1 | 0 | event |
-| `COMSIG_ATOM_PRE_EMP_ACT` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_PRE_EMP_ACT` | 1 | 0 | event |
 | `COMSIG_ATOM_TAKE_DAMAGE` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_COMPONENT_CLEAN_ACT` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 1 | 0 | event |
 | `COMSIG_OBSERVER_TURF_ENTERED` | 0 | 1 | event |
-
-### `code/modules/body` (10 signals, 15 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_AFFLICTION_SEVERITY_CHANGED` | 1 | 0 | channel / watch |
-| `COMSIG_ATOM_ATTACKBY` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_TOOL_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_BODY_AFFLICTIONS_CHANGED` | 2 | 0 | channel / watch |
-| `COMSIG_LIVING_BODY_STATUS` | 4 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_FACTORS_CHANGED` | 1 | 0 | channel / watch |
-| `COMSIG_LIVING_INJURE` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_INJURED` | 1 | 0 | event |
-| `COMSIG_LIVING_INJURY_EXPLAINED` | 1 | 0 | event |
-| `COMSIG_LIVING_SHIELD_INJURY` | 1 | 0 | event |
-
-### `code/modules/material_science` (11 signals, 14 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_ATOM_ATTACKBY` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_EXAMINE` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_FIRE_ACT` | 0 | 1 | event |
-| `COMSIG_ATOM_PRE_EMP_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_PROPAGATE_RAD_PULSE` | 0 | 1 | event |
-| `COMSIG_ATOM_SECONDARY_TOOL_ACT` | 0 | 2 | before/ event (EVENT_VETO) |
-| `COMSIG_ATOM_TAKE_DAMAGE` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 1 | event |
-| `COMSIG_MATERIAL_SURGERY` | 0 | 1 | event |
-| `COMSIG_MOVABLE_MOVED` | 0 | 1 | channel / watch |
-| `COMSIG_TURF_CHANGE` | 0 | 1 | channel / watch |
 
 ### `code/_onclick` (12 signals, 14 sites)
 
@@ -607,17 +485,21 @@ Counts are the sites in that folder only.
 | `COMSIG_TOOL_ATOM_ACTED_PRIMARY` | 1 | 0 | event |
 | `COMSIG_TOOL_ATOM_ACTED_SECONDARY` | 1 | 0 | before/ event (EVENT_VETO) |
 
-### `code/_onclick/hud` (7 signals, 14 sites)
+### `code/modules/material_science` (11 signals, 14 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_ACTION_OVERLAY_APPLY` | 1 | 1 | event |
-| `COMSIG_CLIENT_CLICK` | 0 | 1 | event |
-| `COMSIG_MOB_GRANTED_ACTION` | 1 | 1 | event |
-| `COMSIG_MOB_REMOVED_ACTION` | 1 | 1 | event |
-| `COMSIG_POPUP_CLEARED` | 1 | 1 | event |
-| `COMSIG_QDELETING` | 0 | 4 | event |
-| `COMSIG_TGUI_WINDOW_VISIBLE` | 0 | 1 | event |
+| `COMSIG_ATOM_ATTACKBY` | 0 | 2 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_EXAMINE` | 0 | 2 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_FIRE_ACT` | 0 | 1 | event |
+| `COMSIG_ATOM_PRE_EMP_ACT` | 0 | 1 | event |
+| `COMSIG_ATOM_PROPAGATE_RAD_PULSE` | 0 | 1 | event |
+| `COMSIG_ATOM_SECONDARY_TOOL_ACT` | 0 | 2 | before/ event (EVENT_VETO) |
+| `COMSIG_ATOM_TAKE_DAMAGE` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_MATERIAL_SURGERY` | 0 | 1 | event |
+| `COMSIG_MOVABLE_MOVED` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_TURF_CHANGE` | 0 | 1 | channel / watch |
 
 ### `code/modules/recycling` (6 signals, 13 sites)
 
@@ -629,6 +511,28 @@ Counts are the sites in that folder only.
 | `COMSIG_DISPOSAL_RECEIVE` | 0 | 2 | event |
 | `COMSIG_DISPOSAL_SEND` | 1 | 0 | before/ event (EVENT_VETO) |
 | `COMSIG_DISPOSAL_UNLINK` | 5 | 0 | event |
+
+### `code/modules/tgui` (6 signals, 12 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
+| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 5 | event |
+| `COMSIG_MOVABLE_Z_CHANGED` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_REMOTE_VIEW_CLEAR` | 3 | 0 | event |
+| `COMSIG_TGUI_WINDOW_VISIBLE` | 1 | 0 | event |
+| `COMSIG_UI_ACT` | 1 | 0 | event |
+
+### `code/_onclick/hud` (6 signals, 12 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_CLIENT_CLICK` | 0 | 1 | event |
+| `COMSIG_MOB_GRANTED_ACTION` | 1 | 1 | event |
+| `COMSIG_MOB_REMOVED_ACTION` | 1 | 1 | event |
+| `COMSIG_POPUP_CLEARED` | 1 | 1 | event |
+| `COMSIG_QDELETING` | 0 | 4 | event |
+| `COMSIG_TGUI_WINDOW_VISIBLE` | 0 | 1 | event |
 
 ### `code/modules/combat_ai` (7 signals, 12 sites)
 
@@ -642,32 +546,6 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_LOGIN` | 0 | 1 | event |
 | `COMSIG_MOB_STATCHANGE` | 0 | 1 | channel / watch |
 
-### `code/modules/tgui` (6 signals, 12 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
-| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 5 | event |
-| `COMSIG_MOVABLE_Z_CHANGED` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_REMOTE_VIEW_CLEAR` | 3 | 0 | event |
-| `COMSIG_TGUI_WINDOW_VISIBLE` | 1 | 0 | event |
-| `COMSIG_UI_ACT` | 1 | 0 | event |
-
-### `code/modules/research` (10 signals, 10 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_ARCADE_PRIZEVEND` | 0 | 1 | event |
-| `COMSIG_CLICK_ALT` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_ATTACK_SELF` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_MACHINERY_DESTRUCTIVE_SCAN` | 1 | 0 | event |
-| `COMSIG_TECHWEB_ADD_DESIGN` | 1 | 0 | event |
-| `COMSIG_TECHWEB_POINT_CHECK` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_TECHWEB_REMOVE_DESIGN` | 1 | 0 | event |
-| `COMSIG_TECHWEB_TYPE_CHECK` | 1 | 0 | event |
-| `COMSIG_TELESCI_TELEPORT` | 0 | 1 | event |
-| `COMSIG_UI_ACT` | 0 | 1 | event |
-
 ### `code/datums` (7 signals, 10 sites)
 
 | Signal | Senders | Listeners | Replacement |
@@ -680,28 +558,6 @@ Counts are the sites in that folder only.
 | `COMSIG_OBSERVER_DESTROYED` | 1 | 0 | event |
 | `COMSIG_QDELETING` | 0 | 4 | event |
 
-### `code/modules/vore` (5 signals, 9 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_BELLY_UPDATE_VORE_FX` | 3 | 2 | channel / watch |
-| `COMSIG_CLICK` | 0 | 1 | event |
-| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
-| `COMSIG_LIVING_STUMBLED_INTO` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_MOB_CLIENT_LOGIN` | 0 | 1 | event |
-
-### `code/game` (7 signals, 8 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_MOVABLE_BUMP` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVABLE_CROSS` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVABLE_IMPACT` | 1 | 0 | event |
-| `COMSIG_MOVABLE_MOVED` | 1 | 1 | channel / watch |
-| `COMSIG_MOVABLE_PRE_MOVE` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVABLE_Z_CHANGED` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_QDELETING` | 0 | 1 | event |
-
 ### `code/modules/xenoarcheaology` (8 signals, 8 sites)
 
 | Signal | Senders | Listeners | Replacement |
@@ -712,8 +568,41 @@ Counts are the sites in that folder only.
 | `COMSIG_ATOM_BUMPED` | 0 | 1 | event |
 | `COMSIG_ATOM_EX_ACT` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_MOVABLE_BUMP` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVABLE_MOVED` | 0 | 1 | channel / watch |
+| `COMSIG_MOVABLE_MOVED` | 0 | 1 | before/ event (EVENT_VETO) |
 | `COMSIG_REAGENT_EXPOSE_OBJ` | 0 | 1 | event |
+
+### `code/modules/research` (8 signals, 8 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_ARCADE_PRIZEVEND` | 0 | 1 | event |
+| `COMSIG_CLICK_ALT` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_ITEM_ATTACK_SELF` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_MACHINERY_DESTRUCTIVE_SCAN` | 1 | 0 | event |
+| `COMSIG_TECHWEB_ADD_DESIGN` | 1 | 0 | event |
+| `COMSIG_TECHWEB_REMOVE_DESIGN` | 1 | 0 | event |
+| `COMSIG_TELESCI_TELEPORT` | 0 | 1 | event |
+| `COMSIG_UI_ACT` | 0 | 1 | event |
+
+### `code/modules/vore` (4 signals, 8 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_BELLY_UPDATE_VORE_FX` | 3 | 2 | before/ event (EVENT_VETO) |
+| `COMSIG_CLICK` | 0 | 1 | event |
+| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
+| `COMSIG_MOB_CLIENT_LOGIN` | 0 | 1 | event |
+
+### `code/game` (6 signals, 7 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_MOVABLE_BUMP` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_MOVABLE_IMPACT` | 1 | 0 | event |
+| `COMSIG_MOVABLE_MOVED` | 1 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_MOVABLE_PRE_MOVE` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_MOVABLE_Z_CHANGED` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_QDELETING` | 0 | 1 | event |
 
 ### `code/modules/events` (2 signals, 7 sites)
 
@@ -739,15 +628,14 @@ Counts are the sites in that folder only.
 | `COMSIG_OBSERVER_SHUTTLE_PRE_MOVE` | 1 | 0 | event |
 | `COMSIG_QDELETING` | 0 | 4 | event |
 
-### `code/modules/multiz` (5 signals, 6 sites)
+### `code/datums/containment` (4 signals, 6 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_CANCEL_FALL` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_FALLING_DOWN` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_MOVED_DOWN_STAIRS` | 2 | 0 | channel / watch |
-| `COMSIG_TURF_MULTIZ_DEL` | 1 | 0 | event |
-| `COMSIG_TURF_MULTIZ_NEW` | 1 | 0 | event |
+| `COMSIG_SLOT_INSERTED` | 2 | 0 | event |
+| `COMSIG_SLOT_PRE_INSERT` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_SLOT_PRE_REMOVE` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_SLOT_REMOVED` | 2 | 0 | event |
 
 ### `code/datums/observation` (5 signals, 6 sites)
 
@@ -759,15 +647,6 @@ Counts are the sites in that folder only.
 | `COMSIG_OBSERVER_SHUTTLE_ADDED` | 1 | 0 | event |
 | `COMSIG_OBSERVER_TURF_ENTERED` | 1 | 0 | event |
 
-### `code/datums/containment` (4 signals, 6 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_SLOT_INSERTED` | 2 | 0 | event |
-| `COMSIG_SLOT_PRE_INSERT` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_SLOT_PRE_REMOVE` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_SLOT_REMOVED` | 2 | 0 | event |
-
 ### `code/modules/lighting` (5 signals, 5 sites)
 
 | Signal | Senders | Listeners | Replacement |
@@ -778,34 +657,39 @@ Counts are the sites in that folder only.
 | `COMSIG_ATOM_UPDATE_LIGHT_POWER` | 1 | 0 | channel / watch |
 | `COMSIG_ATOM_UPDATE_LIGHT_RANGE` | 1 | 0 | channel / watch |
 
-### `code/modules/organs` (5 signals, 5 sites)
+### `code/datums/elements` (5 signals, 5 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_ATOM_EMP_ACT` | 0 | 1 | event |
-| `COMSIG_CANCEL_EMBED` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_EMBED_OBJECT` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_GLOB_BRAIN_REMOVED` | 1 | 0 | event |
-| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
+| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
+| `COMSIG_MOVABLE_MOVED` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_OBSERVER_TURF_ENTERED` | 0 | 1 | event |
+| `COMSIG_QDELETING` | 0 | 1 | event |
+| `COMSIG_TURF_PREPARE_STEP_SOUND` | 0 | 1 | before/ event (EVENT_VETO) |
 
-### `code/modules/reagents` (5 signals, 5 sites)
+### `code/modules/reagents` (4 signals, 4 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_GLASS_DRANK` | 1 | 0 | event |
 | `COMSIG_HOSE_FORCEPUMP` | 1 | 0 | event |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
 | `COMSIG_REAGENTS_HOLDER_REACTED` | 1 | 0 | event |
 | `COMSIG_REAGENT_EXPOSE_OBJ` | 1 | 0 | event |
 
-### `code/modules/food` (4 signals, 4 sites)
+### `code/datums/proximity_monitor` (3 signals, 4 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_FOOD_EATEN` | 1 | 0 | before/ event (EVENT_VETO) |
-| `COMSIG_GLASS_DRANK` | 1 | 0 | event |
-| `COMSIG_ITEM_BARBEQUE_GRILLED` | 1 | 0 | event |
-| `COMSIG_ITEM_FRIED` | 1 | 0 | event |
+| `COMSIG_MOVABLE_MOVED` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_MOVABLE_Z_CHANGED` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_QDELETING` | 0 | 2 | event |
+
+### `code/modules/instruments` (2 signals, 4 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_INSTRUMENT_END` | 1 | 1 | event |
+| `COMSIG_INSTRUMENT_START` | 1 | 1 | event |
 
 ### `code/modules/nifsoft` (4 signals, 4 sites)
 
@@ -816,22 +700,6 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_DEATH` | 0 | 1 | event |
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
 
-### `code/modules/economy` (4 signals, 4 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS` | 1 | 0 | event |
-| `COMSIG_ITEM_ATTACK` | 0 | 1 | event |
-| `COMSIG_ITEM_ATTACK_SELF` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_ITEM_SCAN_PROFIT` | 1 | 0 | before/ event (EVENT_VETO) |
-
-### `code/modules/instruments` (2 signals, 4 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_INSTRUMENT_END` | 1 | 1 | event |
-| `COMSIG_INSTRUMENT_START` | 1 | 1 | event |
-
 ### `code/datums/cinematics` (3 signals, 4 sites)
 
 | Signal | Senders | Listeners | Replacement |
@@ -840,20 +708,28 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_CLIENT_LOGIN` | 0 | 1 | event |
 | `COMSIG_QDELETING` | 0 | 1 | event |
 
-### `code/datums/proximity_monitor` (3 signals, 4 sites)
+### `code/modules/organs` (3 signals, 3 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_MOVABLE_MOVED` | 0 | 1 | channel / watch |
-| `COMSIG_MOVABLE_Z_CHANGED` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_QDELETING` | 0 | 2 | event |
+| `COMSIG_ATOM_EMP_ACT` | 0 | 1 | event |
+| `COMSIG_GLOB_BRAIN_REMOVED` | 1 | 0 | event |
+| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
 
-### `code/modules/contracts` (2 signals, 3 sites)
+### `code/modules/surgery` (2 signals, 3 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_MOB_DEATH` | 0 | 1 | event |
-| `COMSIG_MOB_MEDICAL_ISSUES_CHANGED` | 2 | 0 | channel / watch |
+| `COMSIG_LIVING_REGENERATE_LIMBS` | 1 | 0 | event |
+| `COMSIG_MATERIAL_SURGERY` | 2 | 0 | event |
+
+### `code/modules/economy` (3 signals, 3 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS` | 1 | 0 | event |
+| `COMSIG_ITEM_ATTACK` | 0 | 1 | event |
+| `COMSIG_ITEM_ATTACK_SELF` | 0 | 1 | before/ event (EVENT_VETO) |
 
 ### `code/game/turfs` (2 signals, 3 sites)
 
@@ -861,19 +737,6 @@ Counts are the sites in that folder only.
 |---|---|---|---|
 | `COMSIG_ATOM_PROPAGATE_RAD_PULSE` | 0 | 2 | event |
 | `COMSIG_TURF_CHANGE` | 1 | 0 | channel / watch |
-
-### `code/modules/admin` (2 signals, 3 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
-| `COMSIG_QDELETING` | 0 | 2 | event |
-
-### `code/modules/resleeving` (1 signals, 3 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_HUMAN_DNA_FINALIZED` | 3 | 0 | event |
 
 ### `code/modules/maint_recycler` (3 signals, 3 sites)
 
@@ -883,14 +746,6 @@ Counts are the sites in that folder only.
 | `COMSIG_MOB_LOGIN` | 0 | 1 | event |
 | `COMSIG_MOB_LOGOUT` | 0 | 1 | event |
 
-### `code/datums/om` (3 signals, 3 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_DO_AFTER_BEGAN` | 1 | 0 | event |
-| `COMSIG_DO_AFTER_ENDED` | 1 | 0 | event |
-| `COMSIG_MOVABLE_BUCKLE` | 1 | 0 | event |
-
 ### `code/modules/blob2` (2 signals, 3 sites)
 
 | Signal | Senders | Listeners | Replacement |
@@ -898,41 +753,32 @@ Counts are the sites in that folder only.
 | `COMSIG_GHOST_QUERY_COMPLETE` | 0 | 1 | event |
 | `COMSIG_OBSERVER_GLOBALMOVED` | 1 | 1 | event |
 
-### `code/modules/power` (3 signals, 3 sites)
+### `code/modules/contracts` (2 signals, 3 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_CLIMBABLE_SHAKE_CLIMBERS` | 1 | 0 | event |
-| `COMSIG_HOSE_FORCEPUMP` | 1 | 0 | event |
-| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 1 | event |
+| `COMSIG_MOB_DEATH` | 0 | 1 | event |
+| `COMSIG_MOB_MEDICAL_ISSUES_CHANGED` | 2 | 0 | channel / watch |
 
-### `code/modules/surgery` (2 signals, 3 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_LIVING_REGENERATE_LIMBS` | 1 | 0 | event |
-| `COMSIG_MATERIAL_SURGERY` | 2 | 0 | event |
-
-### `code/modules/lootpanel` (2 signals, 2 sites)
+### `code/modules/resleeving` (1 signals, 3 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_QDELETING` | 0 | 1 | event |
-| `COMSIG_TURF_CHANGE` | 0 | 1 | channel / watch |
+| `COMSIG_HUMAN_DNA_FINALIZED` | 3 | 0 | event |
 
-### `code/datums/status_effects` (2 signals, 2 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_ATOM_EXTINGUISH` | 0 | 1 | before/ event (EVENT_VETO) |
-| `COMSIG_LIVING_AHEAL` | 0 | 1 | event |
-
-### `code/modules/integrated_electronics` (2 signals, 2 sites)
+### `code/modules/admin` (2 signals, 3 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
-| `COMSIG_OBSERVER_DESTROYED` | 0 | 1 | event |
+| `COMSIG_HUMAN_DNA_FINALIZED` | 1 | 0 | event |
+| `COMSIG_QDELETING` | 0 | 2 | event |
+
+### `code/modules/keybindings` (2 signals, 2 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_CLICK` | 1 | 0 | event |
+| `COMSIG_ROBOT_ITEM_ATTACK` | 1 | 0 | before/ event (EVENT_VETO) |
 
 ### `code/modules/holomap` (2 signals, 2 sites)
 
@@ -941,19 +787,26 @@ Counts are the sites in that folder only.
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
 | `COMSIG_OBSERVER_DESTROYED` | 0 | 1 | event |
 
-### `code/modules/client` (2 signals, 2 sites)
+### `code/modules/integrated_electronics` (2 signals, 2 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_CLIENT_CLICK` | 1 | 0 | event |
-| `COMSIG_QDELETING` | 1 | 0 | event |
+| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
+| `COMSIG_OBSERVER_DESTROYED` | 0 | 1 | event |
 
-### `code/modules/keybindings` (2 signals, 2 sites)
+### `code/datums/status_effects` (2 signals, 2 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_CLICK` | 1 | 0 | event |
-| `COMSIG_ROBOT_ITEM_ATTACK` | 1 | 0 | event |
+| `COMSIG_ATOM_EXTINGUISH` | 0 | 1 | before/ event (EVENT_VETO) |
+| `COMSIG_LIVING_AHEAL` | 0 | 1 | event |
+
+### `code/modules/lootpanel` (2 signals, 2 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_QDELETING` | 0 | 1 | event |
+| `COMSIG_TURF_CHANGE` | 0 | 1 | channel / watch |
 
 ### `code/modules/telesci` (1 signals, 2 sites)
 
@@ -961,53 +814,26 @@ Counts are the sites in that folder only.
 |---|---|---|---|
 | `COMSIG_TELESCI_TELEPORT` | 2 | 0 | event |
 
-### `code/modules/generated_station` (1 signals, 1 sites)
+### `code/datums/om` (2 signals, 2 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_MOB_DEATH` | 0 | 1 | event |
+| `COMSIG_DO_AFTER_BEGAN` | 1 | 0 | event |
+| `COMSIG_DO_AFTER_ENDED` | 1 | 0 | event |
 
-### `code/modules/gamemaster` (1 signals, 1 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_OBSERVER_DESTROYED` | 0 | 1 | event |
-
-### `code/modules/vehicles` (1 signals, 1 sites)
+### `code/modules/power` (2 signals, 2 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_CLIMBABLE_START_CLIMB` | 1 | 0 | event |
+| `COMSIG_HOSE_FORCEPUMP` | 1 | 0 | event |
+| `COMSIG_IN_RANGE_OF_IRRADIATION` | 0 | 1 | before/ event (EVENT_VETO) |
 
-### `code/modules/tooltip` (1 signals, 1 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_QDELETING` | 0 | 1 | event |
-
-### `code/datums/lifecycle` (1 signals, 1 sites)
+### `code/modules/client` (2 signals, 2 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
+| `COMSIG_CLIENT_CLICK` | 1 | 0 | event |
 | `COMSIG_QDELETING` | 1 | 0 | event |
-
-### `code/modules/mining` (1 signals, 1 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_ATOM_ENTERED` | 0 | 1 | event |
-
-### `code/_helpers` (1 signals, 1 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_ATOM_PROPAGATE_RAD_PULSE` | 1 | 0 | event |
-
-### `code/game/area` (1 signals, 1 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_MOVABLE_EXITED_AREA` | 1 | 0 | event |
 
 ### `code/game/dna` (1 signals, 1 sites)
 
@@ -1015,23 +841,17 @@ Counts are the sites in that folder only.
 |---|---|---|---|
 | `COMSIG_MOB_DNA_MUTATION` | 1 | 0 | event |
 
-### `code/modules/games` (1 signals, 1 sites)
+### `code/modules/gamemaster` (1 signals, 1 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_MOB_ROLLED_DICE` | 1 | 0 | before/ event (EVENT_VETO) |
+| `COMSIG_OBSERVER_DESTROYED` | 0 | 1 | event |
 
-### `code/modules/tables` (1 signals, 1 sites)
-
-| Signal | Senders | Listeners | Replacement |
-|---|---|---|---|
-| `COMSIG_CLIMBABLE_SHAKE_CLIMBERS` | 1 | 0 | event |
-
-### `code/modules/clothing` (1 signals, 1 sites)
+### `code/modules/generated_station` (1 signals, 1 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
-| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
+| `COMSIG_MOB_DEATH` | 0 | 1 | event |
 
 ### `code/modules/shieldgen` (1 signals, 1 sites)
 
@@ -1045,11 +865,47 @@ Counts are the sites in that folder only.
 |---|---|---|---|
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
 
+### `code/modules/clothing` (1 signals, 1 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
+
 ### `code/modules/paperwork` (1 signals, 1 sites)
 
 | Signal | Senders | Listeners | Replacement |
 |---|---|---|---|
 | `COMSIG_MOVABLE_ATTEMPTED_MOVE` | 0 | 1 | event |
+
+### `code/_helpers` (1 signals, 1 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_ATOM_PROPAGATE_RAD_PULSE` | 1 | 0 | event |
+
+### `code/modules/mining` (1 signals, 1 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_ATOM_ENTERED` | 0 | 1 | event |
+
+### `code/datums/behaviours` (1 signals, 1 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_TURF_PREPARE_STEP_SOUND` | 1 | 0 | before/ event (EVENT_VETO) |
+
+### `code/modules/tooltip` (1 signals, 1 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_QDELETING` | 0 | 1 | event |
+
+### `code/datums/lifecycle` (1 signals, 1 sites)
+
+| Signal | Senders | Listeners | Replacement |
+|---|---|---|---|
+| `COMSIG_QDELETING` | 1 | 0 | event |
 
 ## Components and elements
 
@@ -1059,8 +915,6 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 
 | Type | Kind | Add sites | Folders adding it | Equivalent | Defined in |
 |---|---|---|---|---|---|
-| `/datum/component/absorbent` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/absorbent.dm` |
-| `/datum/component/action_item_overlay` | component | 2 | `code/_onclick/hud` 2 | behaviour (entity state) | `code/_onclick/hud/action/action_item_overlay.dm` |
 | `/datum/component/alt_appearances_owner` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/sparse_vars/alt_appearance.dm` |
 | `/datum/component/alt_appearances_viewer` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/sparse_vars/alt_appearance.dm` |
 | `/datum/component/antag` | component | 0 |  | behaviour (entity state) | `code/datums/components/antags/antag.dm` |
@@ -1071,17 +925,12 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/artifact_master/gravity` | component | 0 |  | behaviour (entity state) | `code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm` |
 | `/datum/component/artifact_master/hungry_statue` | component | 0 |  | behaviour (entity state) | `code/modules/xenoarcheaology/artifacts/predefined/hungry_statue.dm` |
 | `/datum/component/artifact_master/nightmare` | component | 0 |  | behaviour (entity state) | `code/modules/mob/living/simple_mob/subtypes/vore/spacecritters.dm` |
-| `/datum/component/bluespace_connection` | component | 2 | `code/modules/event` 2 | behaviour (entity state) | `code/datums/components/structures/bluespace_connection.dm` |
-| `/datum/component/bluespace_connection/permanent_network` | component | 1 | `code/game/objects` 1 | behaviour (entity state) | `code/datums/components/structures/bluespace_connection.dm` |
-| `/datum/component/burning` | component | 1 | `code/datums/rules` 1 | behaviour (entity state) | `code/datums/components/burning.dm` |
 | `/datum/component/burninlight` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/burninlight.dm` |
 | `/datum/component/burninlight/shadow` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/burninlight.dm` |
 | `/datum/component/carried_afflictions` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/modules/mob/living/silicon/robot/component.dm` |
-| `/datum/component/catalogue_delay_override` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/sparse_vars/catalogue_delay.dm` |
 | `/datum/component/character_setup` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/modules/mob/living/living.dm` |
-| `/datum/component/chat_color_cache` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/sparse_vars/chat_color_cache.dm` |
 | `/datum/component/connect_containers` | component | 1 | `code/datums/proximity_monitor` 1 | behaviour (entity state) | `code/datums/components/connect_containers.dm` |
-| `/datum/component/connect_loc_behalf` | component | 3 | `code/datums/components` 3 | behaviour (entity state) | `code/datums/components/connect_loc_behalf.dm` |
+| `/datum/component/connect_loc_behalf` | component | 0 |  | behaviour (entity state) | `code/datums/components/connect_loc_behalf.dm` |
 | `/datum/component/connect_mob_behalf` | component | 0 |  | behaviour (entity state) | `code/datums/components/connect_mob_behalf.dm` |
 | `/datum/component/connect_range` | component | 3 | `code/datums/proximity_monitor` 2, `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/connect_range.dm` |
 | `/datum/component/contract_document` | component | 1 | `code/modules/contracts` 1 | behaviour (entity state) | `code/modules/contracts/medical_trial_side_contracts.dm` |
@@ -1092,7 +941,6 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/crowd_detection/agoraphobia` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/crowd_detection.dm` |
 | `/datum/component/crowd_detection/lonely` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/crowd_detection.dm` |
 | `/datum/component/crowd_detection/lonely/major` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/crowd_detection.dm` |
-| `/datum/component/deconstructable_research` | component | 1 | `code/modules/xenoarcheaology` 1 | behaviour (entity state) | `code/datums/components/deconstructable_research.dm` |
 | `/datum/component/diabetic` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/low_sugar.dm` |
 | `/datum/component/disposal_system_connection` | component | 3 | `code/modules/recycling` 2, `code/game/objects` 1 | behaviour (entity state) | `code/datums/components/machinery/disposal_connection.dm` |
 | `/datum/component/dizzy_shake` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/animations/dizzy.dm` |
@@ -1110,10 +958,8 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/gargoyle` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/gargoyle.dm` |
 | `/datum/component/geiger_sound` | component | 1 | `code/game/objects` 1 | behaviour (entity state) | `code/datums/components/geiger_sound.dm` |
 | `/datum/component/geiger_sound/wall` | component | 1 | `code/game/objects` 1 | behaviour (entity state) | `code/datums/components/geiger_sound.dm` |
-| `/datum/component/germ_sensitive` | component | 0 |  | behaviour (entity state) | `code/datums/components/food/germ_sensitive.dm` |
 | `/datum/component/gibbing_disability` | component | 0 |  | behaviour (entity state) | `code/datums/components/disabilities/gibbing.dm` |
 | `/datum/component/hallucinations` | component | 1 | `code/modules/flufftext` 1 | behaviour (entity state) | `code/modules/flufftext/Hallucination.dm` |
-| `/datum/component/holographic_nature` | component | 1 | `code/modules/vore` 1 | behaviour (entity state) | `code/datums/components/holographic_nature.dm` |
 | `/datum/component/hose_connector` | component | 0 |  | behaviour (entity state) | `code/datums/components/reagent_hose/connector.dm` |
 | `/datum/component/hose_connector/endless_drain` | component | 2 | `code/game/objects` 2 | behaviour (entity state) | `code/datums/components/reagent_hose/connector.dm` |
 | `/datum/component/hose_connector/endless_source` | component | 0 |  | behaviour (entity state) | `code/datums/components/reagent_hose/connector.dm` |
@@ -1125,9 +971,7 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/hose_connector/output` | component | 9 | `code/ATMOSPHERICS/components` 2, `code/modules/reagents` 2, `code/modules/refinery` 2, `code/modules/power` 1 | behaviour (entity state) | `code/datums/components/reagent_hose/connector.dm` |
 | `/datum/component/hose_connector/output/borg` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/reagent_hose/inflation.dm` |
 | `/datum/component/hose_connector/output/cow` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/reagent_hose/connector.dm` |
-| `/datum/component/infective` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/infective.dm` |
 | `/datum/component/jittery_shake` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/animations/jittery.dm` |
-| `/datum/component/material_behaviors` | component | 2 | `code/modules/materials` 1, `code/modules/unit_tests` 1 | behaviour (entity state) | `code/modules/materials/material_behaviors.dm` |
 | `/datum/component/material_container` | component | 0 |  | behaviour (entity state) | `code/datums/components/materials/material_container.dm` |
 | `/datum/component/material_response` | component | 1 | `code/modules/material_science` 1 | behaviour (entity state) | `code/modules/material_science/material_responses.dm` |
 | `/datum/component/mind_host` | component | 2 | `code/modules/mob` 1, `code/modules/organs` 1 | behaviour (entity state) | `code/datums/components/mind_host.dm` |
@@ -1138,26 +982,17 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/nutrition_size_change/growing` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/nutrition_size_change.dm` |
 | `/datum/component/nutrition_size_change/shrinking` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/nutrition_size_change.dm` |
 | `/datum/component/observer_events` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/sparse_vars/observer_events.dm` |
-| `/datum/component/omen` | component | 2 | `code/modules/games` 2 | behaviour (entity state) | `code/datums/components/traits/unlucky.dm` |
-| `/datum/component/omen/bible` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/unlucky.dm` |
-| `/datum/component/omen/trait` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/unlucky.dm` |
-| `/datum/component/omen/trait/major` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/unlucky.dm` |
-| `/datum/component/omen/trait/safe_disposals` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/unlucky.dm` |
-| `/datum/component/omen/trait/safe_disposals/major` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/unlucky.dm` |
-| `/datum/component/overheating` | component | 1 | `code/datums/rules` 1 | behaviour (entity state) | `code/modules/heat/heat_objects.dm` |
 | `/datum/component/overlay_lighting` | component | 2 | `code/game` 2 | behaviour (entity state) | `code/datums/components/overlay_lighting.dm` |
 | `/datum/component/personal_crafting` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/crafting/crafting.dm` |
 | `/datum/component/photosynth` | component | 1 | `code/modules/unit_tests` 1 | behaviour (entity state) | `code/datums/components/traits/photosynth.dm` |
 | `/datum/component/pollen_disability` | component | 0 |  | behaviour (entity state) | `code/datums/components/disabilities/pollen.dm` |
 | `/datum/component/promethean_biology` | component | 0 |  | behaviour (entity state) | `code/modules/mob/living/carbon/human/species/station/prometheans.dm` |
-| `/datum/component/radiation_countdown` | component | 1 | `code/controllers/subsystems` 1 | behaviour (entity state) | `code/datums/components/radiation_countdown.dm` |
 | `/datum/component/radiation_effects` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/radiation_effects.dm` |
 | `/datum/component/radiation_effects/besk` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/radiation_effects.dm` |
 | `/datum/component/radiation_effects/diona` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/radiation_effects.dm` |
 | `/datum/component/radiation_effects/promethean` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/radiation_effects.dm` |
 | `/datum/component/radiation_effects/radiation_immune` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/radiation_effects.dm` |
 | `/datum/component/radiation_effects/shadekin` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/radiation_effects.dm` |
-| `/datum/component/radioactive_exposure` | component | 0 |  | behaviour (entity state) | `code/datums/components/radioactive_exposure.dm` |
 | `/datum/component/reactive_icon_update` | component | 1 | `code/datums/components` 1 | behaviour (entity state) | `code/datums/components/reactive_icon_update.dm` |
 | `/datum/component/reactive_icon_update/clothing` | component | 1 | `code/modules/vore` 1 | behaviour (entity state) | `code/datums/components/reactive_icon_update.dm` |
 | `/datum/component/recursive_move` | component | 24 | `code/modules/tgui` 5, `code/datums/components` 4, `code/game/objects` 3, `code/game/machinery` 2 | behaviour (entity state) | `code/datums/components/recursive_move.dm` |
@@ -1167,7 +1002,6 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/remote_view/mob_holding_item` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/remote_view.dm` |
 | `/datum/component/remote_view/mremote_mutation` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/datums/components/remote_view.dm` |
 | `/datum/component/remote_view/viewer_managed` | component | 1 | `code/datums` 1 | behaviour (entity state) | `code/datums/components/remote_view.dm` |
-| `/datum/component/resize_guard` | component | 1 | `code/modules/vore` 1 | behaviour (entity state) | `code/datums/components/resize_guard.dm` |
 | `/datum/component/robot_belly` | component | 1 | `code/modules/mob` 1 | behaviour (entity state) | `code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm` |
 | `/datum/component/rotting_disability` | component | 0 |  | behaviour (entity state) | `code/datums/components/disabilities/rotting.dm` |
 | `/datum/component/schizophrenia` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/hallucinations.dm` |
@@ -1175,10 +1009,7 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/shadekin/full` | component | 2 | `code/modules/unit_tests` 2 | behaviour (entity state) | `code/datums/components/species/shadekin/shadekin.dm` |
 | `/datum/component/shadekin/full/rakshasa` | component | 0 |  | behaviour (entity state) | `code/datums/components/species/shadekin/shadekin.dm` |
 | `/datum/component/shadekin/phase_only` | component | 2 | `code/modules/unit_tests` 2 | behaviour (entity state) | `code/datums/components/species/shadekin/shadekin.dm` |
-| `/datum/component/slip_prone` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/slip_prone.dm` |
 | `/datum/component/squeak` | component | 2 | `code/modules/clothing` 2 | behaviour (entity state) | `code/datums/components/squeak.dm` |
-| `/datum/component/swarming` | component | 5 | `code/modules/mob` 5 | behaviour (entity state) | `code/datums/components/swarm.dm` |
-| `/datum/component/tethered_item` | component | 4 | `code/game/objects` 4 | behaviour (entity state) | `code/datums/components/tethered_item.dm` |
 | `/datum/component/topturfcrossed` | component | 1 | `code/datums/elements` 1 | behaviour (entity state) | `code/datums/elements/topturfcrossed.dm` |
 | `/datum/component/tourettes_disability` | component | 0 |  | behaviour (entity state) | `code/datums/components/disabilities/tourettes.dm` |
 | `/datum/component/turfslip` | component | 1 | `code/game/turfs` 1 | behaviour (entity state) | `code/datums/components/turfslip.dm` |
@@ -1189,56 +1020,6 @@ count `AddComponent`/`AddComponentFrom`/`LoadComponent`/`AddElement` calls namin
 | `/datum/component/weaver` | component | 0 |  | behaviour (entity state) | `code/datums/components/traits/weaver.dm` |
 | `/datum/component/xenochimera` | component | 1 | `code/datums/diseases` 1 | behaviour (entity state) | `code/datums/components/species/xenochimera.dm` |
 | `/datum/component/xenoqueenbuff` | component | 0 |  | behaviour (entity state) | `code/datums/components/xenoqueen.dm` |
-| `/datum/element/cleaning` | element | 0 |  | shared behaviour singleton | `code/datums/elements/cleaning.dm` |
-| `/datum/element/climbable` | element | 72 | `code/game/objects` 13, `code/game/machinery` 11, `code/modules/reagents` 9, `code/modules/power` 7 | shared behaviour singleton | `code/datums/elements/climbable.dm` |
-| `/datum/element/conflict_checking` | element | 2 | `code/modules/mining` 1, `code/modules/projectiles` 1 | shared behaviour singleton | `code/datums/elements/conflict_checking.dm` |
-| `/datum/element/connect_loc` | element | 4 | `code/game/objects` 3, `code/ATMOSPHERICS/environmental` 1 | shared behaviour singleton | `code/datums/elements/connect_loc.dm` |
 | `/datum/element/dcs_get_id_from_arguments_mock_element` | element | 0 |  | shared behaviour singleton | `code/modules/unit_tests/dcs_get_id_from_elements.dm` |
 | `/datum/element/dcs_get_id_from_arguments_mock_element2` | element | 0 |  | shared behaviour singleton | `code/modules/unit_tests/dcs_get_id_from_elements.dm` |
-| `/datum/element/electrovoreable` | element | 1 | `code/modules/power` 1 | shared behaviour singleton | `code/datums/elements/electrovoreable.dm` |
-| `/datum/element/empprotection` | element | 17 | `code/datums/components` 8, `code/modules/power` 5, `code/modules/clothing` 1, `code/modules/integrated_electronics` 1 | shared behaviour singleton | `code/datums/elements/empprotection.dm` |
-| `/datum/element/footstep` | element | 3 | `code/modules/mob` 3 | shared behaviour singleton | `code/datums/elements/footstep.dm` |
 | `/datum/element/footstep_override` | element | 0 |  | shared behaviour singleton | `code/datums/elements/footstep_override.dm` |
-| `/datum/element/godmode` | element | 7 | `code/game/gamemodes` 2, `code/modules/mob` 2, `code/modules/unit_tests` 2, `code/modules/admin` 1 | shared behaviour singleton | `code/datums/elements/godmode.dm` |
-| `/datum/element/light_blocking` | element | 3 | `code/game` 1, `code/modules/lighting` 1, `code/modules/mining` 1 | shared behaviour singleton | `code/datums/elements/light_blocking.dm` |
-| `/datum/element/lite_godmode` | element | 0 |  | shared behaviour singleton | `code/datums/elements/godmode.dm` |
-| `/datum/element/lootable` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/_lootable.dm` |
-| `/datum/element/lootable/boxes` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/boxes.dm` |
-| `/datum/element/lootable/christmas_tree` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/christmas_present.dm` |
-| `/datum/element/lootable/expired_medicine` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/misc.dm` |
-| `/datum/element/lootable/fresh_medicine` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/misc.dm` |
-| `/datum/element/lootable/maint/junk` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/maint.dm` |
-| `/datum/element/lootable/maint/technical` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/maint.dm` |
-| `/datum/element/lootable/maint/trash` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/maint.dm` |
-| `/datum/element/lootable/mecha` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/deathripley` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/durand` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/gygax` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/mouse_tank` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/mouse_tank/eraticator` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/mouse_tank/livewire` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/odd_gygax` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/odd_riplay` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/odysseus` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/phazon` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/mecha/ripley` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/mecha.dm` |
-| `/datum/element/lootable/surface` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/alien` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/alien/end` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/alien/engineering` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/alien/medical` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/alien/security` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/bones` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/surface/drone` | element | 0 |  | shared behaviour singleton | `code/datums/elements/lootable/surface.dm` |
-| `/datum/element/lootable/trash_pile` | element | 1 | `code/game/objects` 1 | shared behaviour singleton | `code/datums/elements/lootable/trash.dm` |
-| `/datum/element/radiation_protected_clothing` | element | 2 | `code/modules/clothing` 2 | shared behaviour singleton | `code/datums/elements/radiation_protected_clothing.dm` |
-| `/datum/element/rotatable` | element | 28 | `code/game/objects` 6, `code/modules/power` 6, `code/ATMOSPHERICS/components` 3, `code/game/machinery` 3 | shared behaviour singleton | `code/datums/elements/rotatable.dm` |
-| `/datum/element/rotatable/onlyflip` | element | 2 | `code/game/objects` 2 | shared behaviour singleton | `code/datums/elements/rotatable.dm` |
-| `/datum/element/sellable` | element | 1 | `code/modules/research` 1 | shared behaviour singleton | `code/datums/elements/sellable.dm` |
-| `/datum/element/sellable/organ` | element | 1 | `code/modules/organs` 1 | shared behaviour singleton | `code/datums/elements/sellable.dm` |
-| `/datum/element/sellable/salvage` | element | 1 | `code/modules/salvage` 1 | shared behaviour singleton | `code/datums/elements/sellable.dm` |
-| `/datum/element/sellable/trolley_tank` | element | 1 | `code/modules/vehicles` 1 | shared behaviour singleton | `code/datums/elements/sellable.dm` |
-| `/datum/element/sellable/vaccine` | element | 1 | `code/game/machinery` 1 | shared behaviour singleton | `code/datums/elements/sellable.dm` |
-| `/datum/element/slosh` | element | 2 | `code/modules/mob` 1, `code/modules/vore` 1 | shared behaviour singleton | `code/datums/elements/slosh.dm` |
-| `/datum/element/spontaneous_vore` | element | 2 | `code/modules/mob` 1, `code/modules/vore` 1 | shared behaviour singleton | `code/datums/elements/vore/spontaneous_vore.dm` |
-| `/datum/element/turf_z_transparency` | element | 5 | `code/game/turfs` 2, `code/modules/multiz` 2, `code/modules/overmap` 1 | shared behaviour singleton | `code/datums/elements/turf_transparency.dm` |

@@ -622,7 +622,6 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 /area/Exited(atom/movable/AM, newLoc)
 	. = ..()
-	SEND_SIGNAL(AM, COMSIG_MOVABLE_EXITED_AREA, src, get_dir(AM, newLoc))
 	if(exit_message && isliving(AM))
 		to_chat(AM, exit_message)
 

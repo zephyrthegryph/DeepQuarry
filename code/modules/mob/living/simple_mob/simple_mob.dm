@@ -211,7 +211,7 @@
 	if(CONFIG_GET(flag/allow_simple_mob_recolor))
 		add_verb(src, /mob/living/simple_mob/proc/ColorMate)
 
-	AddElement(/datum/element/footstep, FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
+	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
 
 	add_verb(src,/mob/living/simple_mob/proc/use_headset) // TGPanel
 	add_verb(src,/mob/living/simple_mob/proc/use_pda) // TGPanel
@@ -672,7 +672,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	if(!vore_active || no_vore || !voremob_loaded)
 		return
 
-	AddElement(/datum/element/slosh) // Sloshy element
+	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
 
 	if(!soulgem)
 		soulgem = new(src)

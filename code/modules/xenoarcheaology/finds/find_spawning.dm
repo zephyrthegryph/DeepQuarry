@@ -853,11 +853,7 @@
 			new_item.become_anomalous()
 
 		//Add the component that allows for deconstruction for points.
-		new_item.AddComponent(
-			/datum/component/deconstructable_research, \
-			techweb_points = rand(20,60), \
-			techweb_point_type = TECHWEB_POINT_TYPE_GENERIC \
-			)
+		new_item.make_deconstructable_research(techweb_points = rand(20,60), techweb_point_type = TECHWEB_POINT_TYPE_GENERIC)
 
 		var/turf/simulated/mineral/T = get_turf(new_item)
 		if(istype(T))

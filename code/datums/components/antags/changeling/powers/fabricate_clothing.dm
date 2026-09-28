@@ -54,7 +54,7 @@
 
 /obj/item/clothing/head/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/clothing/head/chameleon/changeling/verb/shred() //The copypasta is real.
 	set name = "Shred Helmet"
@@ -79,7 +79,7 @@
 
 /obj/item/clothing/suit/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/clothing/suit/chameleon/changeling/verb/shred()
 	set name = "Shred Suit"
@@ -104,7 +104,7 @@
 
 /obj/item/clothing/shoes/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/clothing/shoes/chameleon/changeling/verb/shred()
 	set name = "Shred Shoes"
@@ -129,7 +129,7 @@
 
 /obj/item/storage/backpack/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/storage/backpack/chameleon/changeling/verb/shred()
 	set name = "Shred Backpack"
@@ -158,7 +158,7 @@
 
 /obj/item/clothing/gloves/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/clothing/gloves/chameleon/changeling/verb/shred()
 	set name = "Shred Gloves"
@@ -184,7 +184,7 @@
 
 /obj/item/clothing/mask/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/clothing/mask/chameleon/changeling/verb/shred()
 	set name = "Shred Mask"
@@ -205,7 +205,7 @@
 
 /obj/item/clothing/glasses/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/clothing/glasses/chameleon/changeling/verb/shred()
 	set name = "Shred Glasses"
@@ -230,7 +230,7 @@
 
 /obj/item/storage/belt/chameleon/changeling/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/item/storage/belt/chameleon/changeling/verb/shred()
 	set name = "Shred Belt"

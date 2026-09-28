@@ -288,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 		)
 	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 /obj/item/storage/bag/circuits/basic/Initialize(mapload)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
 	new /obj/item/storage/bag/circuits/mini/trig(src)
 	new /obj/item/storage/bag/circuits/mini/input(src)

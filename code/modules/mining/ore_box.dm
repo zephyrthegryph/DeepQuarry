@@ -31,7 +31,7 @@
 
 /obj/structure/ore_box/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

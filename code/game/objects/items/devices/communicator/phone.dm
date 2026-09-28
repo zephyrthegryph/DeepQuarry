@@ -337,7 +337,7 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	om_prompt_chain(ask, list("kind" = "list", "message" = "Send a voice request to whom?", "title" = "Recipient Choice", "choices" = choices), PROC_REF(voice_request_target_chosen))
+	ask.chain(list("kind" = "list", "message" = "Send a voice request to whom?", "title" = "Recipient Choice", "choices" = choices), PROC_REF(voice_request_target_chosen))
 
 /mob/observer/dead/proc/voice_request_target_chosen(mob/user, obj/item/communicator/chosen_communicator, datum/om/prompt/ask)
 	var/mob/observer/dead/O = src

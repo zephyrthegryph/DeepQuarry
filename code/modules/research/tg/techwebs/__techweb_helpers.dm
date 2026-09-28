@@ -19,12 +19,10 @@
 	if(SSresearch.techweb_point_items[I.type])
 		return SSresearch.techweb_point_items[I.type]
 
-	//cursed pointer usage lay here
-	var/list/type_pointer = list() //yes this is a pointer.
-	var/point_value = SEND_SIGNAL(I, COMSIG_TECHWEB_POINT_CHECK)
-	SEND_SIGNAL(I, COMSIG_TECHWEB_TYPE_CHECK, type_pointer)
-	if(point_value && LAZYLEN(type_pointer))
-		return list(type_pointer["type"] = point_value)
+	if(I.techweb_points && I.techweb_point_type)
+		var/list/point_list = list()
+		point_list[I.techweb_point_type] = I.techweb_points
+		return point_list
 	return FALSE
 
 /proc/techweb_item_generate_points(obj/item/thing, datum/techweb/target_techweb)
@@ -33,7 +31,7 @@
 	var/list/point_value = techweb_item_point_check(thing)
 	//If it has a point value and we haven't deconstructed it OR we've deconstructed it but it's a repeatable.
 	if(point_value && (!LAZYACCESS(target_techweb.deconstructed_items, thing.type) || (LAZYACCESS(target_techweb.deconstructed_items, thing.type) && (thing.type in SSresearch.techweb_repeatable_items))))
-		if(SSresearch.techweb_point_items[thing.type]) //Don't add things that have the deconstructable_research component
+		if(SSresearch.techweb_point_items[thing.type]) //Don't add things with per-object research values
 			LAZYSET(target_techweb.deconstructed_items, thing.type, TRUE)
 		target_techweb.add_point_list(point_value)
 

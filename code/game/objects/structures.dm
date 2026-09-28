@@ -28,7 +28,7 @@
 			var/shreddamage = H.species.can_shred(user, FALSE, 11)
 			if(shreddamage)
 				attack_generic(user, shreddamage, "attacks")
-	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, user)
+	om_emit(src, new /datum/om/event/climb_shake(user))
 	return ..()
 
 /obj/structure/attack_tk()

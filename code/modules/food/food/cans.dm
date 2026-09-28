@@ -39,10 +39,10 @@
 				explosion(get_turf(src), -1, -1, -1, 1)
 			consume(src, user)
 
-/obj/item/reagent_containers/food/drinks/cans/periodic_step(seconds_per_tick)
+/obj/item/reagent_containers/food/drinks/cans/periodic_step(delta)
 	if(shaken <= 0)
 		return PROCESS_KILL
-	shaken -= seconds_per_tick
+	shaken -= delta / (1 SECONDS) // the periodic lane passes deciseconds
 
 //DRINKS
 

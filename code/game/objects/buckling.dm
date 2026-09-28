@@ -44,7 +44,7 @@
 		if(user_buckle_mob(M, user))
 			return TRUE
 	if(M == user && HAS_TRAIT(src,TRAIT_CLIMBABLE)) // Buckling takes priority
-		SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
+		om_emit(src, new /datum/om/event/climb_start(user))
 		return TRUE
 
 /atom/movable/proc/has_buckled_mobs()

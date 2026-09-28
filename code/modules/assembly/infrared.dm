@@ -16,7 +16,7 @@
 
 /obj/item/assembly/infra/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/item/assembly/infra/activate()
 	if(!..())

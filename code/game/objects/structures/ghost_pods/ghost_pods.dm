@@ -145,7 +145,7 @@
 
 /obj/structure/ghost_pod/proc/maint_critter_chosen(mob/M, choice, datum/om/prompt/ask)
 	ask.put("choice", choice)
-	om_prompt_chain(ask, list("message" = "Are you sure you want to play as [choice]?", "title" = "Confirmation", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(maint_critter_cancelled)), PROC_REF(maint_critter_confirmed))
+	ask.chain(list("message" = "Are you sure you want to play as [choice]?", "title" = "Confirmation", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(maint_critter_cancelled)), PROC_REF(maint_critter_confirmed))
 
 /obj/structure/ghost_pod/proc/maint_critter_confirmed(mob/M, confirm, datum/om/prompt/ask)
 	if(confirm != "Yes")

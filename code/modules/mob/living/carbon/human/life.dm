@@ -150,7 +150,8 @@
 	return 5 SECONDS
 
 /datum/om/stage/life/medical/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	SEND_SIGNAL(self,COMSIG_HANDLE_ALLERGENS, self.factor(BF_ALLERGY))
+	if(self.has_allergies())
+		self.handle_allergic_reaction(self.factor(BF_ALLERGY))
 
 	side_effects(self)
 	self.dq_check_ischemic_damage()

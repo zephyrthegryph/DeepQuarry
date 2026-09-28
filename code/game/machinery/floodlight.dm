@@ -16,8 +16,8 @@
 /obj/machinery/floodlight/Initialize(mapload)
 	. = ..()
 	cell = new(src)
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/rotatable)
+	make_climbable()
+	make_rotatable()
 
 /obj/machinery/floodlight/update_icon()
 	cut_overlays()

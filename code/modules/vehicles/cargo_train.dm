@@ -432,8 +432,8 @@
 	update_icon()
 	AddComponent(/datum/component/hose_connector/input)
 	AddComponent(/datum/component/hose_connector/output)
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/sellable/trolley_tank)
+	make_climbable()
+	make_sellable(/datum/sellable/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
 	return
@@ -445,7 +445,7 @@
 
 /obj/vehicle/train/trolley_tank/MouseDrop_T(atom/movable/C, mob/user as mob)
 	if(C == user)
-		SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
+		om_emit(src, new /datum/om/event/climb_start(user))
 		return
 
 	if(istype(C,/obj/item/reagent_containers/glass))

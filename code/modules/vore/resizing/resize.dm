@@ -145,16 +145,12 @@
 				new_size = clamp(new_size, RESIZE_MINIMUM, RESIZE_MAXIMUM) //If the sprite is below 32, we clamp it to only go to the resize max.
 		else
 			new_size = clamp(new_size, RESIZE_MINIMUM, RESIZE_MAXIMUM)
-		var/datum/component/resize_guard/guard = GetComponent(/datum/component/resize_guard)
-		if(guard)
-			qdel(guard)
+		om_detach(src, /datum/om/behaviour/resize_guard)
 	else if(has_large_resize_bounds())
 		if(is_extreme_size(new_size))
-			AddComponent(/datum/component/resize_guard)
+			om_attach(src, /datum/om/behaviour/resize_guard)
 		else
-			var/datum/component/resize_guard/guard = GetComponent(/datum/component/resize_guard)
-			if(guard)
-				qdel(guard)
+			om_detach(src, /datum/om/behaviour/resize_guard)
 
 	if(size_multiplier == new_size)
 		return 1

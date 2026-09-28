@@ -241,8 +241,6 @@ REF_OWNED_VALUES(/datum/action, "viewers")
  * force - whether an update is forced regardless of existing status
  */
 /datum/action/proc/apply_button_overlay(atom/movable/screen/movable/action_button/current_button, force = FALSE)
-	SEND_SIGNAL(src, COMSIG_ACTION_OVERLAY_APPLY, current_button, force)
-
 	if(!overlay_icon || !overlay_icon_state || (current_button.active_overlay_icon_state == overlay_icon_state && !force))
 		return
 

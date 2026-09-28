@@ -367,9 +367,9 @@
 	previous_state = state
 	if(state == 2 && anchored)
 		connect_to_network()
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/rotatable)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	make_climbable()
+	make_rotatable()
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/power/emitter/update_icon()
 	cut_overlays()

@@ -331,7 +331,7 @@ emp_act
 
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()
-	if(SEND_SIGNAL(src, COMSIG_LIVING_HIT_BY_THROWN_ENTITY, source, thrower, speed) & COMSIG_CANCEL_HITBY)
+	if(om_wants(src, /datum/om/event/before/hit_by_thrown) && om_emit(src, new /datum/om/event/before/hit_by_thrown(source, thrower, speed)) == EVENT_VETO)
 		return
 
 	if(isitem(source))
@@ -339,7 +339,7 @@ emp_act
 		if(in_throw_mode && speed <= THROWFORCE_SPEED_DIVISOR)	//empty active hand and we're in throw mode
 			if(canmove && !restrained() && !src.is_incorporeal())
 				if(isturf(thrown_object.loc) && can_catch(thrown_object))
-					if(!SEND_SIGNAL(src, COMSIG_HUMAN_ON_CATCH_THROW, source, speed))
+					if(!(om_wants(src, /datum/om/event/before/catch_throw) && om_emit(src, new /datum/om/event/before/catch_throw(source, speed)) == EVENT_VETO))
 						put_in_active_hand(thrown_object)
 						visible_message(span_warning("[src] catches [thrown_object]!"))
 						throw_mode_off()

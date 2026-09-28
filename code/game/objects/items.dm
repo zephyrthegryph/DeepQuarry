@@ -477,6 +477,8 @@
 /obj/item/proc/pickup(mob/user)
 	SEND_SIGNAL(src, COMSIG_ITEM_PICKUP, user)
 	SEND_SIGNAL(user, COMSIG_ITEM_PICKUP, src)
+	if(om_wants(user, /datum/om/event/picked_up_item))
+		om_emit(user, new /datum/om/event/picked_up_item(src))
 	pixel_x = 0
 	pixel_y = 0
 	return

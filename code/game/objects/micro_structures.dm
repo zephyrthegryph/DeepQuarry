@@ -162,7 +162,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			if(destinations.len == 1 || random)
 				tunnel_move_chosen(user, pick(destinations), ask)
 				return
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a tunnel", "choices" = destinations), PROC_REF(tunnel_move_chosen))
+			ask.chain(list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a tunnel", "choices" = destinations), PROC_REF(tunnel_move_chosen))
 		if("Eat")
 			var/list/our_targets = list()
 			for(var/mob/living/L in src.contents)
@@ -175,7 +175,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			if(our_targets.len == 1)
 				tunnel_eat_chosen(user, pick(our_targets), ask)
 				return
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Who would you like to eat?", "title" = "Pick a target to eat", "choices" = our_targets), PROC_REF(tunnel_eat_chosen))
+			ask.chain(list("kind" = "list", "message" = "Who would you like to eat?", "title" = "Pick a target to eat", "choices" = our_targets), PROC_REF(tunnel_eat_chosen))
 
 /obj/structure/micro_tunnel/proc/tunnel_move_chosen(mob/living/user, choice, datum/om/prompt/ask)
 	to_chat(user,span_notice("You begin moving..."))
@@ -338,7 +338,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 			if(destinations.len == 1)
 				micro_move_chosen(user, pick(destinations), ask)
 				return
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a destination", "choices" = destinations), PROC_REF(micro_move_chosen))
+			ask.chain(list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a destination", "choices" = destinations), PROC_REF(micro_move_chosen))
 
 /obj/proc/micro_move_chosen(mob/living/user, choice, datum/om/prompt/ask)
 	var/list/contained_mobs = list()

@@ -765,7 +765,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 /obj/item/paper/manifest/Initialize(mapload, text, title)
 	. = ..()
-	AddElement(/datum/element/sellable/manifest)
+	make_sellable(/datum/sellable/manifest)
 
 /obj/item/paper/crumpled/sampatti
 	info = "Sampatti Relay Sif-833 <BR> Decryption Key for 12-04-2488: <BR> 849B0022FBA920C244 <BR> Eyes Only.  <BR> The insider who knows all the secrets can bring down Lanka.";

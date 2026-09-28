@@ -4,7 +4,7 @@
 	danger_mult = 1.3
 	var/ticks = 0
 	/// How many seconds between each gas release
-	var/releasedelay = 15 SECONDS
+	var/releasedelay = 15 // seconds (anomalyEffect() gets seconds)
 	anomaly_core = /obj/item/assembly/signaler/anomaly/pyro
 
 /obj/effect/anomaly/pyro/Initialize(mapload, new_lifespan, drops_core)

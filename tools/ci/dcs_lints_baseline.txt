@@ -1,4 +1,4 @@
 # DCS ratchet ceilings (tools/ci/dcs_lints.py). Lower with --update.
-register_signal 455
-add_component 177
-add_element 166
+register_signal 387
+add_component 147
+add_element 0

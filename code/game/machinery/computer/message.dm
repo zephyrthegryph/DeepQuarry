@@ -339,7 +339,7 @@
 		temp = incorrectkey
 		SStgui.update_uis(src)
 		return
-	om_prompt_chain(ask, list("kind" = "text", "message" = "Please enter the new key (3 - 16 characters max):", "max_length" = 16), PROC_REF(new_key_entered))
+	ask.chain(list("kind" = "text", "message" = "Please enter the new key (3 - 16 characters max):", "max_length" = 16), PROC_REF(new_key_entered))
 
 /obj/machinery/computer/message_monitor/proc/new_key_entered(mob/user, newkey, datum/om/prompt/ask)
 	newkey = trim(newkey)

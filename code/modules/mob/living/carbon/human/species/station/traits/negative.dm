@@ -588,8 +588,18 @@
 	is_genetrait = FALSE
 	hidden = FALSE
 	custom_only = FALSE
-	added_component_path = /datum/component/omen/trait
 	excludes = list(/datum/trait/negative/unlucky/major, /datum/trait/neutral/slip_prone)
+	/// The trait omen: permanent, only a 30% chance of bad things happening.
+	var/omen_damage = 0.25 // 25% of normal damage
+	var/omen_evil = FALSE // less dramatic things happen
+
+/datum/trait/negative/unlucky/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs = null)
+	. = ..()
+	H?.add_omen(INFINITY, 0.3, omen_damage, omen_evil, FALSE, TRUE)
+
+/datum/trait/negative/unlucky/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs = null)
+	. = ..()
+	H?.remove_omen()
 
 
 /datum/trait/negative/unlucky/major
@@ -599,7 +609,8 @@
 	tutorial = "You should avoid disposal bins."
 	is_genetrait = TRUE
 	hidden = FALSE // Note: Disabled // Enable
-	added_component_path = /datum/component/omen/trait/major
+	omen_damage = 0.75 //75% of normal damage
+	omen_evil = TRUE
 	excludes = list(/datum/trait/negative/unlucky, /datum/trait/neutral/slip_prone)
 	activation_message= span_cult(span_bold("What a terrible night to have a curse!"))
 	primitive_expression_messages=list("unluckily stubs their toe!")

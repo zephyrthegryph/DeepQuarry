@@ -70,8 +70,8 @@
 	. = ..()
 	fields = list()
 	connected_gens = list()
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	make_climbable()
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/field_generator/machine_step()
 	if(Varedit_start == 1)

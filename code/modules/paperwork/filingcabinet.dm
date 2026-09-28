@@ -30,7 +30,7 @@
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
 			I.forceMove(src)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /// Old attackby.
 /obj/structure/filingcabinet/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)

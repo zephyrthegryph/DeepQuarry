@@ -134,7 +134,7 @@
 	robot_durability = 200
 
 /obj/item/cell/infinite/Initialize(mapload)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 	return ..()
 
 /obj/item/cell/infinite/check_charge()

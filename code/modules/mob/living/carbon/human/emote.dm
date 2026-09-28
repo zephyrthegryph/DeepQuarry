@@ -382,7 +382,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		pose_cleared(user, ask)
 		return
 	ask.put("pose", new_pose)
-	om_prompt_chain(ask, list("kind" = "checkboxes", "message" = "Which options would you like to enable for your poses?", "title" = "Pose Options", "choices" = list("Cancel Pose on Movement", "Disable Pose Icon", "Quiet Pose"), "min" = 0, "on_cancel" = null), PROC_REF(pose_options_chosen))
+	ask.chain(list("kind" = "checkboxes", "message" = "Which options would you like to enable for your poses?", "title" = "Pose Options", "choices" = list("Cancel Pose on Movement", "Disable Pose Icon", "Quiet Pose"), "min" = 0, "on_cancel" = null), PROC_REF(pose_options_chosen))
 
 /mob/living/carbon/human/proc/pose_options_chosen(mob/user, list/pose_options, datum/om/prompt/ask)
 	var/new_pose = ask.get("pose")

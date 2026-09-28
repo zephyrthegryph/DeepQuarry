@@ -1573,7 +1573,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 /obj/machinery/light_construct/floortube/Initialize(mapload, newdir, building, datum/frame/frame_types/frame_type, obj/machinery/light/fixture)
 	. = ..()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/light_construct/floortube/update_icon()
 	switch(stage)

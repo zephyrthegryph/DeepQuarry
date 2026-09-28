@@ -27,7 +27,7 @@ DECLARE_INTERACTIONS(/obj/item/gold_star_printer, INTERACT_USE(null, PROC_REF(in
 	if(!star_title)
 		return
 	ask.put("title", star_title)
-	om_prompt_chain(ask, list("kind" = "text", "message" = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)", "title" = "Ticket Details", "max_length" = 200), PROC_REF(star_described))
+	ask.chain(list("kind" = "text", "message" = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)", "title" = "Ticket Details", "max_length" = 200), PROC_REF(star_described))
 
 /obj/item/gold_star_printer/proc/star_described(mob/user, star_desc, datum/om/prompt/ask)
 	var/star_title = ask.get("title")

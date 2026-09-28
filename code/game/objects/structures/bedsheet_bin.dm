@@ -28,7 +28,7 @@ LINEN BINS
 
 /obj/item/bedsheet/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/rotatable/onlyflip)
+	make_rotatable(only_flip = TRUE)
 
 /obj/item/bedsheet/attack_self(mob/user)
 	. = ..(user)

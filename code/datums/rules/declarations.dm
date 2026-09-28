@@ -24,13 +24,13 @@
 	effect_kind = RULE_EFFECT_BEHAVIOUR
 	effect_proc = /obj/proc/rule_ignite
 
-/// Catch fire: the burning state (code/datums/components/burning.dm).
+/// Catch fire: the burning state (code/datums/behaviours/burning.dm).
 /obj/proc/rule_ignite(datum/rule/rule)
 	if((resistance_flags & ON_FIRE) || !(resistance_flags & FLAMMABLE) || (resistance_flags & FIRE_PROOF))
 		return
 	if(HAS_TRAIT(src, TRAIT_UNDERFLOOR) || !uses_integrity)
 		return
-	AddComponent(/datum/component/burning, custom_fire_overlay() || GLOB.fire_overlay, burning_particles)
+	start_burning(custom_fire_overlay() || GLOB.fire_overlay, burning_particles)
 
 /// An item slumps into a molten mass at its material's melting point; what it
 /// held drops out. Fire-, lava- and indestructible items are exempt.
@@ -73,10 +73,10 @@
 /obj/proc/rule_overheat(datum/rule/rule)
 	if(resistance_flags & (INDESTRUCTIBLE|FIRE_PROOF))
 		return
-	AddComponent(/datum/component/overheating)
+	om_attach(src, /datum/om/behaviour/overheating)
 
 /obj/proc/rule_cooled(datum/rule/rule)
-	qdel(GetComponent(/datum/component/overheating))
+	om_detach(src, /datum/om/behaviour/overheating)
 
 /// Food held at cooking temperature for long enough cooks (cook() sets the
 /// raw/cooked differences). Appliances heat their contents; this rule decides.

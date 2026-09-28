@@ -55,7 +55,7 @@
 			else	//none
 				name_suffix = "[pick("object","sample","thing","fragment","specimen","element","alloy","chunk","remnant","scrap","sliver")]"
 		name = "[name_prefix] [name_suffix]"
-	AddElement(/datum/element/sellable/research_sample)
+	make_sellable(/datum/sellable/research_sample)
 
 /// Old attack_hand: runs after the touch tried to pick it up (hand_pickup()).
 /obj/item/research_sample/hand_pickup(mob/user)

@@ -110,7 +110,7 @@
 /obj/structure/closet/crate/oldreactor/Initialize(mapload)
 	. = ..()
 	// Not climbable!
-	RemoveElement(/datum/element/climbable)
+	unmake_climbable()
 
 /obj/item/poi/brokenoldreactor
 	icon_state = "poireactor_broken"

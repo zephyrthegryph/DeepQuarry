@@ -23,7 +23,7 @@
 	. = ..()
 	power_change()
 	update_icon()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/machinery/computer/emp_act(severity, recursive)
 	. = ..()

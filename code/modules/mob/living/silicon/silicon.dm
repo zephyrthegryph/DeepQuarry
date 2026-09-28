@@ -40,7 +40,7 @@
 		apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 		init_subsystems()
 
-		AddElement(/datum/element/footstep, FOOTSTEP_MOB_SHOE, 1, -6)
+		enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6)
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
@@ -75,7 +75,7 @@ REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
 /// An EMP is an electrical injury that brings a power fault with it. Blocking
 /// components are asked before anything is pulsed, and the parent runs once.
 /mob/living/silicon/emp_act(severity, recursive)
-	if(SEND_SIGNAL(src, COMSIG_SILICON_EMP_ACT, severity) & COMPONENT_BLOCK_EMP)
+	if(om_has(src, EFFECT_GODMODE))
 		return EMP_PROTECT_SELF
 	. = ..()
 	if(. & EMP_PROTECT_SELF)

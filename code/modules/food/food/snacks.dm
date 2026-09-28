@@ -63,7 +63,6 @@
 
 //Placeholder for effect that trigger on eating that aren't tied to reagents.
 /obj/item/reagent_containers/food/snacks/proc/On_Consume(mob/living/eater, mob/living/feeder)
-	SEND_SIGNAL(src, COMSIG_FOOD_EATEN, eater, feeder)
 	if(SScontracts && eater)
 		contract_consumption_sequence++
 		emit_contract_event(CONTRACT_EVENT_FOOD_CONSUMED, list(

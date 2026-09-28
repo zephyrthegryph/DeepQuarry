@@ -116,7 +116,7 @@
 		cell = new cell(src)
 	default_apply_parts()
 	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 
@@ -487,8 +487,8 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 /obj/machinery/mining/brace/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/rotatable)
+	make_climbable()
+	make_rotatable()
 
 /obj/machinery/mining/brace/RefreshParts()
 	..()

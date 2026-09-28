@@ -113,7 +113,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	if(length_char(text) > maxlen)
 		text = copytext_char(text, 1, maxlen + 1) + "..." // BYOND index moment
 
-	// chat_color cache moved to /datum/component/chat_color_cache.
+	// chat_color cache: /atom tmp vars read through dq_get_chat_color() and friends.
 	if(!dq_get_chat_color(target) || dq_get_chat_color_name(target) != target.name)
 		var/c = colorize_string(target.name)
 		var/cd = colorize_string(target.name, 0.85, 0.85)

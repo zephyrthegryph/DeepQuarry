@@ -18,7 +18,7 @@
 
 /obj/structure/casino_table/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_REF(interaction_place)))
 

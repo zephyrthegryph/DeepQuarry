@@ -732,7 +732,7 @@
 		if(!O.CanFallThru(src, landing))
 			return TRUE
 
-	if(SEND_SIGNAL(src, COMSIG_LIVING_FALLING_DOWN, landing, drop_mob) & COMSIG_CANCEL_FALL)
+	if(om_wants(src, /datum/om/event/before/falling_down) && om_emit(src, new /datum/om/event/before/falling_down(landing, drop_mob)) == EVENT_VETO)
 		return
 
 	if(drop_mob && drop_mob != src)

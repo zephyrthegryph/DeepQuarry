@@ -22,7 +22,7 @@
 
 // ---- Item application ------------------------------------------------------
 // Called from each material item's set_material once the material is assigned.
-// Attaches the behaviour component if the material does anything active.
+// Configures the item's emissions (light now; rad/tox while carried).
 
 /datum/material/proc/dq_apply_material_behaviors(obj/item/I)
 	if(!I)
@@ -30,73 +30,61 @@
 	// Geometry-specific consumers can override thickness; ordinary fabricated
 	// items use a five-millimeter representative path through their material.
 	I.set_rad_insulation(material_radiation_transmission(5))
-	var/datum/component/material_behaviors/behavior = I.GetComponent(/datum/component/material_behaviors)
-	if(behavior)
-		behavior.configure(luminescence, radioactivity, toxicity, icon_colour)
-	else if(luminescence > 0 || radioactivity > 0 || toxicity > 0)
-		I.AddComponent(/datum/component/material_behaviors, luminescence, radioactivity, toxicity, icon_colour)
+	I.configure_material_behaviors(luminescence, radioactivity, toxicity, icon_colour)
 	dq_apply_material_responses(I)
 
-// ---- The behaviour component -----------------------------------------------
-// Lights the item once, and (if it irradiates or poisons) self-processes to do
-// so while it is carried. One per item.
+// ---- The emission behaviour ------------------------------------------------
+// (was /datum/component/material_behaviors). The magnitudes live on the item;
+// the light is set once, and an item that irradiates or poisons carries the
+// shared material_emission behaviour, which ticks every 2 s while attached.
 
-/datum/component/material_behaviors
-	dupe_mode = COMPONENT_DUPE_UNIQUE
-	var/luminescence = 0
-	var/radioactivity = 0
-	var/toxicity = 0
-	var/processing = FALSE
+/obj/item
+	var/mat_luminescence = 0
+	var/mat_radioactivity = 0
+	var/mat_toxicity = 0
 
-/datum/component/material_behaviors/Initialize(_lum = 0, _rad = 0, _tox = 0, colour = null)
-	. = ..()
-	if(!isitem(parent))
-		return COMPONENT_INCOMPATIBLE
-	configure(_lum, _rad, _tox, colour)
+/datum/om/behaviour/material_emission
+	every = 2 SECONDS
 
-/datum/component/material_behaviors/proc/configure(_lum, _rad, _tox, colour)
-	var/old_luminescence = luminescence
-	luminescence = _lum
-	radioactivity = _rad
-	toxicity = _tox
-	var/obj/item/I = parent
-	if(luminescence > 0)
-		var/range = clamp(luminescence / 20, 0.5, 4)
-		var/power = clamp(luminescence / 30, 0.3, 2)
-		I.set_light(range, power, colour)
+/obj/item/proc/configure_material_behaviors(_lum = 0, _rad = 0, _tox = 0, colour = null)
+	var/old_luminescence = mat_luminescence
+	mat_luminescence = _lum
+	mat_radioactivity = _rad
+	mat_toxicity = _tox
+	if(mat_luminescence > 0)
+		var/range = clamp(mat_luminescence / 20, 0.5, 4)
+		var/power = clamp(mat_luminescence / 30, 0.3, 2)
+		set_light(range, power, colour)
 	else if(old_luminescence > 0)
-		I.set_light(0)
-	if((radioactivity > 0 || toxicity > 0) && !processing)
-		PERIODIC_START(src, PERIODIC_SLOW)
-		processing = TRUE
-	else if(radioactivity <= 0 && toxicity <= 0 && processing)
-		PERIODIC_STOP(src)
-		processing = FALSE
+		set_light(0)
+	if(mat_radioactivity > 0 || mat_toxicity > 0)
+		om_attach(src, /datum/om/behaviour/material_emission)
+	else
+		om_detach(src, /datum/om/behaviour/material_emission)
 
-// ALLOW(lifecycle): a luminescent item goes dark.
-/datum/component/material_behaviors/Destroy(force)
-	var/obj/item/I = parent
-	if(istype(I) && luminescence > 0)
-		I.set_light(0)
-	return ..()
+/// TRUE while the item's material irradiates or poisons.
+/obj/item/proc/material_emitting()
+	return om_attached(src, /datum/om/behaviour/material_emission)
 
-/datum/component/material_behaviors/periodic_step(seconds_per_tick)
-	var/obj/item/I = parent
+/datum/om/behaviour/material_emission/tick(obj/item/I, dt)
+	I.material_emission_step()
+
+/obj/item/proc/material_emission_step()
+	var/obj/item/I = src
 	if(QDELETED(I))
-		return PROCESS_KILL
-	if(radioactivity > 0)
+		return
+	if(mat_radioactivity > 0)
 		radiation_pulse(
 			I,
 			max_range = 3,
 			threshold = RAD_LIGHT_INSULATION,
-			chance = round(radioactivity * 0.5, 1),
+			chance = round(mat_radioactivity * 0.5, 1),
 			minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
-			strength = radioactivity,
+			strength = mat_radioactivity,
 		)
-	if(toxicity > 0)
+	if(mat_toxicity > 0)
 		// Sub-lethal but real, only while held bare in hand (loc is the mob). Dose is
-		// per fixed SSobj tick (wait = 20 ds); SSobj passes a deciseconds delta, not
-		// seconds, so this is deliberately NOT multiplied by the process arg.
+		// per fixed 2 s tick; deliberately not scaled by dt.
 		var/mob/living/carbon/human/H = I.loc
 		if(istype(H))
-			H.injure(INJURY_TOXIN, toxicity * 0.01, null, I, 0, null, INJURE_SILENT)
+			H.injure(INJURY_TOXIN, mat_toxicity * 0.01, null, I, 0, null, INJURE_SILENT)

@@ -32,6 +32,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 		CRASH("attack_self was called without a user!")
 	if(SEND_SIGNAL(src, COMSIG_ITEM_ATTACK_SELF, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
+	if(om_wants(src, /datum/om/event/before/attack_self) && om_emit(src, new /datum/om/event/before/attack_self(user)) == EVENT_VETO)
+		return TRUE
 	// Converted handlers (I7): interactions with entry = INTERACTION_ENTRY_SELF.
 	if(run_interaction_entry(user, src, src, INTERACTION_ENTRY_SELF))
 		return TRUE
@@ -170,6 +172,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	if(answered)
 		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return TRUE
+	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(W, user, click_parameters)) == EVENT_VETO)
 		return TRUE
 	return FALSE
 

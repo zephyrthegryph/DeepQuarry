@@ -275,7 +275,7 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(in
 	if(new_lawpos < MIN_SUPPLIED_LAW_NUMBER)
 		return
 	lawpos = min(new_lawpos, MAX_SUPPLIED_LAW_NUMBER)
-	om_prompt_chain(ask, list("kind" = "text", "message" = "Please enter a new law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN), PROC_REF(law_entered))
+	ask.chain(list("kind" = "text", "message" = "Please enter a new law for the AI.", "title" = "Freeform Law Entry", "default" = "", "max_length" = MAX_MESSAGE_LEN), PROC_REF(law_entered))
 
 /obj/item/aiModule/freeform/proc/law_entered(mob/user, targName, datum/om/prompt/ask)
 	newFreeFormLaw = targName

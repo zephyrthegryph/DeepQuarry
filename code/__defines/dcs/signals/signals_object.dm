@@ -70,8 +70,6 @@
 // /obj signals for economy
 
 // /obj/item signals for economy
-///called when an item is sold by the exports subsystem
-#define COMSIG_ITEM_EXPORTED "item_sold"
 	/// Stops the export from adding the export information to the report, so you can handle it manually.
 	#define COMPONENT_STOP_EXPORT_REPORT (1<<0)
 
@@ -143,7 +141,3 @@
 
 
 //Non TG signals:
-///from /proc/techweb_item_point_check(obj/item/I): Runs when assessing an item's techweb point value.
-#define COMSIG_TECHWEB_POINT_CHECK "techweb_point_check"
-///from /proc/techweb_item_point_check(obj/item/I): Runs when assessing an item's techweb point type.
-#define COMSIG_TECHWEB_TYPE_CHECK "techweb_type_check"

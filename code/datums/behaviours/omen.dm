@@ -1,0 +1,586 @@
+/**
+ * Ripped from /tg/ with modifications.
+ * unlucky.dm: For when you want someone to have a really bad day
+ *
+ * An omen (was /datum/component/omen) makes a mob run the risk of all sorts of bad environmental
+ * injuries, like nearby vending machines randomly falling on it, or hitting its head really hard
+ * when it slips and falls.
+ *
+ * Omens end once the victim has used up its incidents (or on remove_omen()).
+ *
+ * A shared OM behaviour: the omen's numbers live on the mob (omen_*), and the behaviour reacts
+ * to the moved, carbon_slip, moved_down_stairs, stun_effect, picked_up_item events and the
+ * before/dice_roll and before/catch_throw events. Add with L.add_omen().
+ */
+/datum/om/behaviour/omen
+	handles = list(
+		/datum/om/event/moved,
+		/datum/om/event/carbon_slip,
+		/datum/om/event/moved_down_stairs,
+		/datum/om/event/stun_effect,
+		/datum/om/event/picked_up_item,
+		/datum/om/event/before/dice_roll,
+		/datum/om/event/before/catch_throw,
+	)
+
+#define OMEN_TRAIT_SOURCE "omen"
+
+/mob/living
+	/// How many incidents are left. If 0 exactly, the omen ends.
+	var/omen_incidents = INFINITY
+	/// Base probability of negative events. Cursed are half as unlucky.
+	var/omen_luck = 1
+	/// Base damage from negative events. Cursed take 25% of this damage.
+	var/omen_damage = 1
+	/// If we want to do more evil events, such as spontaneous combustion
+	var/omen_evil = TRUE
+	/// If our codebase has safe disposals or not
+	var/omen_safe_disposals = FALSE
+	/// If we have vore interactions or not
+	var/omen_vorish = TRUE
+
+/// TRUE while the mob carries an omen.
+/mob/living/proc/has_omen()
+	return om_attached(src, /datum/om/behaviour/omen)
+
+/**
+ * Curses the mob. A second omen on an already cursed mob: this is a omen eat omen world!
+ * The stronger omen survives (weaker, longer lasting omens take priority, but keep some of
+ * the strength of the original).
+ */
+/mob/living/proc/add_omen(incidents_left = INFINITY, luck_mod = 1, damage_mod = 1, evil = TRUE, safe_disposals = FALSE, vorish = TRUE)
+	if(!has_omen())
+		omen_incidents = incidents_left
+		omen_luck = luck_mod
+		omen_damage = damage_mod
+		omen_evil = evil
+		omen_safe_disposals = safe_disposals
+		omen_vorish = vorish
+		om_attach(src, /datum/om/behaviour/omen)
+		return
+	// If we have more incidents left the new one is dropped.
+	if(omen_incidents > incidents_left)
+		return
+	omen_incidents = incidents_left
+	// The new omen is weaker than our current omen? Let's split the difference.
+	if(omen_luck > luck_mod)
+		omen_luck += luck_mod * 0.5
+	if(omen_damage > damage_mod)
+		omen_damage += damage_mod * 0.5
+	// If the new omen has special modifiers, we take them on forever!
+	if(evil)
+		omen_evil = TRUE
+	if(safe_disposals)
+		omen_safe_disposals = TRUE
+	if(vorish)
+		omen_vorish = TRUE
+
+/mob/living/proc/remove_omen()
+	om_detach(src, /datum/om/behaviour/omen)
+
+/datum/om/behaviour/omen/on_start(mob/living/person)
+	ADD_TRAIT(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+
+// Lifts the unlucky trait and tells the person.
+/datum/om/behaviour/omen/on_stop(mob/living/person)
+	REMOVE_TRAIT(person, TRAIT_UNLUCKY, OMEN_TRAIT_SOURCE)
+	if(!QDELETED(person))
+		to_chat(person, span_warning(span_green("You feel a horrible omen lifted off your shoulders!")))
+
+/datum/om/behaviour/omen/on_moved(mob/living/L, datum/om/event/moved/event)
+	L.omen_check_accident(L)
+
+/datum/om/behaviour/omen/on_carbon_slip(mob/living/L, datum/om/event/carbon_slip/event)
+	L.omen_check_slip(L, event.stun_duration)
+
+/datum/om/behaviour/omen/on_moved_down_stairs(mob/living/L, datum/om/event/moved_down_stairs/event)
+	L.omen_check_stairs(L)
+
+/datum/om/behaviour/omen/on_stun_effect(mob/living/L, datum/om/event/stun_effect/event)
+	L.omen_check_taser(L, event.stun_amount, event.agony_amount, event.def_zone, event.used_weapon, event.electric)
+
+/datum/om/behaviour/omen/on_picked_up_item(mob/living/L, datum/om/event/picked_up_item/event)
+	L.omen_check_pickup(L, event.item)
+
+/datum/om/behaviour/omen/on_before_dice_roll(mob/living/L, datum/om/event/before/dice_roll/event)
+	var/override = L.omen_check_roll(L, event.dice, event.silent, event.result)
+	if(override)
+		event.result_override = override
+
+/datum/om/behaviour/omen/on_before_catch_throw(mob/living/L, datum/om/event/before/catch_throw/event)
+	return L.omen_check_throw(L, event.source, event.speed) ? EVENT_VETO : null
+
+/mob/living/proc/omen_consume()
+	omen_incidents--
+	if(omen_incidents < 1)
+		remove_omen()
+
+/**
+ * check_accident() is called each step we take
+ *
+ * While we're walking around, roll to see if there's any environmental hazards on one of the adjacent tiles we can trigger.
+ * We do the prob() at the beginning to A. add some tension for /when/ it will strike, and B. (more importantly) ameliorate the fact that we're checking up to 5 turfs's contents each time
+ */
+/mob/living/proc/omen_check_accident(atom/movable/our_guy)
+
+	if(!isliving(our_guy) || isbelly(our_guy.loc))
+		return
+
+	var/mob/living/living_guy = our_guy
+	if(living_guy.is_incorporeal()) //no being unlucky if you don't even exist on the same plane.
+		return
+
+	if(omen_evil && prob(0.0001) && (living_guy.stat != DEAD)) // 1 in a million
+		living_guy.visible_message(span_danger("[living_guy] suddenly bursts into flames!"), span_danger("You suddenly burst into flames!"))
+		living_guy.emote("scream")
+		living_guy.adjust_fire_stacks(20)
+		living_guy.ignite_mob()
+		omen_consume()
+		return
+
+	var/effective_luck = omen_luck
+
+	// If there's nobody to witness the misfortune, make it less likely.
+	// This way, we allow for people to be able to get into hilarious situations without making the game nigh unplayable most of the time.
+
+	var/has_watchers = FALSE
+	for(var/mob/viewer in viewers(our_guy, world.view))
+		if(viewer.client && !viewer.client.is_afk())
+			has_watchers = TRUE
+			break
+	if(!has_watchers)
+		effective_luck *= 0.5
+
+	if(!prob(2 * effective_luck))
+		return
+
+	var/turf/our_guy_pos = get_turf(our_guy)
+	if(!our_guy_pos)
+		return
+	if(omen_evil)
+		for(var/obj/machinery/door/airlock/darth_airlock in turf_contents_of_type(our_guy_pos, /obj/machinery/door/airlock))
+			if(darth_airlock.locked || !darth_airlock.arePowerSystemsOn())
+				continue
+			to_chat(living_guy, span_warning("The airlock suddenly closes on you!"))
+			living_guy.status_at_least(EFFECT_PARALYZED, 5)
+			living_guy.status_at_least(EFFECT_SLEEPING, 5)
+			omen_slam_airlock(darth_airlock)
+			omen_consume()
+			return
+
+	for(var/turf/the_turf as anything in our_guy_pos.AdjacentTurfs(check_blockage = FALSE)) //need false so we can check disposal units
+		if(iswall(the_turf))
+			continue
+		if(the_turf.CanZPass(our_guy, DOWN) && !isspace(the_turf))
+			to_chat(living_guy, span_warning("You lose your balance and slip towards the edge!"))
+			living_guy.status_at_least(EFFECT_WEAKENED, 5)
+			living_guy.throw_at(the_turf, 1, 20)
+			omen_consume()
+			return
+
+		if(omen_vorish)
+			for(var/mob/living/living_mob in the_turf)
+				if(living_mob == our_guy || (living_mob.vore_selected == living_guy.vore_selected))
+					continue //Don't do anything to ourselves.
+				if(living_mob.stat)
+					continue
+				if(!can_stumble_vore(living_guy, living_mob) && !can_stumble_vore(living_mob, living_guy)) //Works both ways! Either way, someone's getting eaten!
+					continue
+				living_mob.stumble_into(living_guy) //logic reversed here because the game is DUMB. This means that living_guy is stumbling into the target!
+				living_guy.visible_message(span_danger("[living_guy] loses their balance and slips into [living_mob]!"), span_boldwarning("You lose your balance, slipping into [living_mob]!"))
+				omen_consume()
+				return
+
+		for(var/obj/machinery/washing_machine/evil_washer in the_turf)
+			if(evil_washer.state == 1) //Empty and open door
+				our_guy.visible_message(span_danger("[our_guy] slips near the [evil_washer] and falls in, the door shutting!"), span_boldwarning("You slip on a wet spot near the [evil_washer] and fall in, the door shutting! You're stuck!"))
+				our_guy.forceMove(evil_washer)
+				LAZYADD(evil_washer.washing, our_guy)
+				evil_washer.state = 4
+				evil_washer.visible_message(span_danger("[evil_washer] begins its spin cycle!"))
+				evil_washer.start(TRUE, omen_damage)
+				omen_consume()
+				return
+
+		if((omen_evil || omen_safe_disposals) && living_guy.m_intent == I_RUN) //On servers without safe disposals, this is a death sentence. With servers with safe disposals, it's just funny. Either way, walk near disposals.
+			for(var/obj/machinery/disposal/evil_disposal in the_turf)
+				if(evil_disposal.stat & (BROKEN|NOPOWER))
+					continue
+				if(evil_disposal.loc == living_guy.loc) //Let's not do a continual loop of them falling into it as soon as they climb out, as funny as that is.
+					continue
+				our_guy.visible_message(span_danger("[our_guy] slips on a spill near the [evil_disposal] and falls in!"), span_boldwarning("You slip on a spill near the [evil_disposal] and fall in!"))
+				living_guy.forceMove(evil_disposal)
+				evil_disposal.flush = TRUE
+				evil_disposal.update_icon()
+				living_guy.status_at_least(EFFECT_STUNNED, 5)
+				omen_consume()
+				return
+
+		if(omen_evil && prob(33)) //This has an additional 2 in 3 chance to not happen as there's a LOT of lights on stations. This should be rarer.
+			for(var/obj/machinery/light/evil_light in the_turf)
+				if((evil_light.status == LIGHT_BURNED || evil_light.status == LIGHT_BROKEN) || (living_guy.get_shock_protection() == 1)) // we can't do anything :(
+					to_chat(living_guy, span_warning("[evil_light] sparks weakly for a second."))
+					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread //this shit is copy pasted all over the code...this needs to just be made into a proc at this point jesus christ
+					s.set_up(4, FALSE, evil_light)
+					s.start()
+					//We don't clear the omen as nothing really happened.
+					break
+
+				to_chat(living_guy, span_warning("[evil_light] glows ominously...")) // ominously
+				evil_light.visible_message(span_boldwarning("[evil_light] suddenly flares brightly and sparks!"))
+				//evil_light.broken(skip_sound_and_sparks = FALSE) //Let's not break it actually.
+				evil_light.Beam(living_guy, icon_state = "lightning[rand(1,12)]", time = 0.5 SECONDS)
+				living_guy.electrocute_act(35 * (omen_damage * 0.5), evil_light, stun = TRUE) //Stun is binary and scales on damage..Lame.
+				living_guy.emote("scream")
+				omen_consume()
+				return
+
+		for(var/obj/machinery/vending/darth_vendor in the_turf)
+			if(darth_vendor.stat & (BROKEN|NOPOWER))
+				continue
+			darth_vendor.visible_message(span_warning("[darth_vendor] suddenly clunks and the delivery chute raises up!"))
+			darth_vendor.throw_item(living_guy)
+			omen_consume()
+			return
+
+		for(var/obj/structure/mirror/evil_mirror in the_turf)
+			to_chat(living_guy, span_warning("You pass by the mirror and glance at it..."))
+			if(evil_mirror.shattered)
+				to_chat(living_guy, span_notice("You feel lucky, somehow."))
+				return
+			var/mirror_rand
+			if(omen_evil)
+				mirror_rand = rand(1,5)
+			else
+				mirror_rand = rand(1,3)
+			switch(mirror_rand)
+				if(1)
+					to_chat(living_guy, span_boldwarning("You see your reflection, but it is grinning malevolently and staring directly at you!"))
+					living_guy.emote("scream")
+				if(2 to 3)
+					to_chat(living_guy, span_large(span_cult("Oh god, you can't see your reflection!!")))
+					living_guy.emote("scream")
+				if(4 to 5)
+					to_chat(living_guy, span_warning("The mirror explodes into a million pieces! Wait, does that mean you're even more unlucky?"))
+					evil_mirror.shatter()
+					if(prob(50 * effective_luck)) // sometimes
+						omen_luck += 0.25
+						omen_damage += 0.25
+					var/max_health_coefficient = (living_guy.get_endurance() * 0.06)
+					for(var/obj/item/organ/external/limb in living_guy.organs)
+						living_guy.injure(INJURY_CUT, max_health_coefficient * omen_damage, limb.organ_tag, evil_mirror)
+
+			living_guy.status_adjust(EFFECT_JITTERY, 250)
+			if(omen_evil && prob(7 * effective_luck))
+				to_chat(living_guy, span_warning("You are completely shocked by this turn of events!"))
+				if(ishuman(living_guy))
+					var/mob/living/carbon/human/human_guy = living_guy
+					if(human_guy.should_have_organ(O_HEART))
+						for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organs)
+							heart.bruise() //Closest thing we have to a heart attack.
+						to_chat(living_guy, span_boldwarning("You clutch at your heart!"))
+
+			omen_consume()
+			return
+		if(omen_evil)
+			for(var/obj/item/reagent_containers/glass/beaker/evil_beaker in the_turf)
+				if(!evil_beaker.is_open_container() && (evil_beaker.reagents.total_volume > 0)) //A closed beaker is a safe beaker!
+					continue
+				living_guy.visible_message(span_danger("[evil_beaker] tilts, spilling its contents on [living_guy]!"), span_bolddanger("[evil_beaker] spills all over you!"))
+				evil_beaker.balloon_alert_visible("[evil_beaker]'s contents splashes onto [living_guy]!")
+				evil_beaker.reagents.splash(living_guy, evil_beaker.reagents.total_volume)
+				omen_consume()
+				return
+
+		for(var/obj/structure/table/evil_table in the_turf)
+			if(!evil_table.material) //We only want tables, not just table frames.
+				continue
+			if(!prob(10)) //Reduce the chance further, due to the number of tables that are passed in normal play.
+				continue
+			living_guy.visible_message(span_danger("[living_guy] stubs [living_guy.p_their()] toe on [evil_table]!"), span_bolddanger("You stub your toe on [evil_table]!"))
+			living_guy.injure(INJURY_BLUNT, 2 * omen_damage, pick(BP_L_FOOT, BP_R_FOOT), evil_table)
+			living_guy.injure(INJURY_PAIN, 25) //It REALLY hurts.
+			living_guy.status_at_least(EFFECT_WEAKENED, 3)
+			omen_consume()
+			return
+	//Ran out of turf options. Let's do more generic options.
+
+	if(prob(omen_luck * 5))
+		// In complete darkness
+		if(our_guy_pos.get_lumcount() <= LIGHTING_SOFT_THRESHOLD)
+			living_guy.status_at_least(EFFECT_BLINDED, 5) //10 seconds of 'OH GOD WHAT'S HAPPENING'
+			living_guy.status_at_least(EFFECT_MUTED, 5)
+			living_guy.status_at_least(EFFECT_PARALYZED, 5)
+			to_chat(living_guy, span_bolddanger("You feel the ground buckle underneath you, falling down, your vision going dark as you feel paralyzed in place!"))
+			omen_consume()
+			return
+
+/mob/living/proc/omen_slam_airlock(obj/machinery/door/airlock/darth_airlock)
+	. = darth_airlock.close(forced = TRUE, ignore_safties = TRUE, crush_damage = 15) //Not enough to cause any IB or massively injured organs.
+	if(.)
+		omen_consume()
+
+/// If we get knocked down, see if we have a really bad slip and bash our head hard
+/mob/living/proc/omen_check_slip(mob/living/our_guy, amount)
+
+	if(prob(30)) // AAAA
+		our_guy.emote("scream")
+		to_chat(our_guy, span_cult("What a horrible night... To have a curse!"))
+
+	if(prob(30 * omen_luck) && our_guy.get_bodypart_name(BP_HEAD)) /// Bonk!
+		playsound(our_guy, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
+		our_guy.visible_message(span_danger("[our_guy] hits [our_guy.p_their()] head really badly falling down!"), span_bolddanger("You hit your head really badly falling down!"))
+		var/max_health_coefficient = (our_guy.get_endurance() * 0.5)
+		our_guy.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, BP_HEAD)
+		if(ishuman(our_guy))
+			var/mob/living/carbon/human/human_guy = our_guy
+			if(human_guy.should_have_organ(O_BRAIN))
+				for(var/obj/item/organ/internal/brain/brain in human_guy.internal_organs)
+					human_guy.injure(INJURY_NEURAL, 30 * omen_damage, brain, src) //60 damage kills.
+			if(human_guy.get_equipped_item(SLOT_ID_EYES) && human_guy.canUnEquip(human_guy.get_equipped_item(SLOT_ID_EYES)))
+				var/turf/T = get_turf(human_guy)
+				if(T)
+					var/obj/item/our_glasses = human_guy.get_equipped_item(SLOT_ID_EYES)
+					human_guy.unEquip(human_guy.get_equipped_item(SLOT_ID_EYES), target = T)
+					to_chat(human_guy, span_warning("Your glasses fly off as you hit the ground!"))
+					our_glasses.throw_at_random(FALSE, 3, 2)
+		omen_consume()
+
+	return
+
+/mob/living/proc/omen_check_roll(mob/living/unlucky_soul, obj/item/dice/the_dice, silent, result)
+	if(prob(20 * omen_luck))
+		//unlucky_soul.visible_message(span_danger("[unlucky_soul] rolls [the_dice] with it landing on the edge of [result] before tilting over!"), span_boldwarning("You feel dreadfully unlucky as you roll the dice!"))
+		//I had thought about making this have a notice that it happened.
+		//However, gaslighting the user by providing no visible notice is MUCH funnier.
+		return 1 // We override the roll to a 1.
+
+///Returns TRUE and stops us from catching
+/mob/living/proc/omen_check_throw(mob/living/unlucky_soul, source, speed)
+	if(prob(30 * omen_luck)) //~9% chance
+		if(istype(source, /obj/item/grenade))
+			var/obj/item/grenade/bad_grenade = source
+			if(bad_grenade.active)
+				unlucky_soul.put_in_active_hand(bad_grenade)
+				unlucky_soul.visible_message(span_warning("[src] catches [source] as it goes off in their hand!"), span_bolddanger("You catch [source] and it goes off in your hand!"))
+				unlucky_soul.throw_mode_off()
+				bad_grenade.detonate()
+				return TRUE
+		else
+			unlucky_soul.visible_message(span_attack("[unlucky_soul] tries to catch [source] and fumbles it, getting thrown back!"))
+			unlucky_soul.status_at_least(EFFECT_WEAKENED, 5)
+			return TRUE
+
+/*
+ * Dynamic injury system for when you pick up objects!
+ * Some objects might cut, burn, or otherwise injure you if you pick them up!
+ * Genenerally more of an annoyance than anything.
+ * Variables that can be changed:
+ * damage_to_inflict, damage_type, injury_verb, is_sharp, is_edge.
+*/
+/mob/living/proc/omen_check_pickup(mob/living/unlucky_soul, obj/item/item)
+	if(prob(3 * omen_luck) && ishuman(unlucky_soul)) // ~3% chance
+		var/mob/living/carbon/human/unlucky_human = unlucky_soul
+
+		///How much damage we'll inflect.
+		var/damage_to_inflict = 0
+
+		///What we'll inflict (a paper cut by default).
+		var/injury_kind = INJURY_CUT
+
+		///What verb we use to describe the injury.
+		var/injury_verb = "cuts"
+
+		///What hand we are currently using, so we injure the correct one.
+		var/current_hand = BP_R_HAND
+		if(unlucky_human.hand)
+			current_hand = BP_L_HAND
+
+		if(istype(item, /obj/item/paper))
+			injury_verb = "cuts"
+			damage_to_inflict = 2
+
+		else if(istype(item, /obj/item/material/knife))
+			var/obj/item/material/knife = item
+
+			injury_verb = "cuts"
+			injury_kind = knife.injury_kind
+			damage_to_inflict = knife.force
+
+		else if(istype(item, /obj/item/material/shard))
+			var/obj/item/material/shard/shard = item
+
+			injury_verb = "cuts"
+			injury_kind = shard.injury_kind
+			damage_to_inflict = shard.force
+
+		else if(istype(item, /obj/item/flame/lighter))
+			var/obj/item/flame/lighter/lighter = item
+			if(!lighter.lit)
+				return
+
+			injury_verb = "burns"
+			injury_kind = INJURY_BURN
+			damage_to_inflict = 5
+
+		else if(istype(item, /obj/item/tool/transforming/jawsoflife))
+			var/obj/item/tool/transforming/jawsoflife/jaws = item
+
+			injury_verb = "clamps"
+			injury_kind = jaws.injury_kind
+			damage_to_inflict = jaws.force
+
+		else if(istype(item, /obj/item/tool/screwdriver))
+			var/obj/item/tool/screwdriver/screwdriver = item
+
+			injury_verb = "stabs"
+			injury_kind = screwdriver.injury_kind
+			damage_to_inflict = screwdriver.force
+
+		else if(istype(item, /obj/item/tool/wirecutters))
+			var/obj/item/tool/wirecutters/wirecutters = item
+
+			injury_verb = "nips"
+			injury_kind = wirecutters.injury_kind
+			damage_to_inflict = wirecutters.force
+
+		if(!damage_to_inflict)
+			return
+
+		unlucky_human.visible_message(span_danger("[unlucky_human] accidentally [injury_verb] [unlucky_human.p_their()] hand on [item]!"))
+		unlucky_human.injure(injury_kind, damage_to_inflict * omen_damage, current_hand, item)
+
+/mob/living/proc/omen_check_stairs(mob/living/unlucky_soul)
+	if(prob(3 * omen_luck)) /// Bonk!
+		playsound(unlucky_soul, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
+		unlucky_soul.visible_message(span_danger("One of the stairs give way as [unlucky_soul] steps onto it, tumbling them down to the bottom!"), span_bolddanger("A stair gives way and you trip to the bottom!"))
+		var/max_health_coefficient = (unlucky_soul.get_endurance() * 0.09)
+		for(var/obj/item/organ/external/limb in unlucky_soul.organs) //In total, you should have 11 limbs (generally, unless you have an amputation). The full omen variant we want to leave you at 1 hp, the trait version less. As of writing, the trait version is 25% of the damage, so you take 24.75 across all limbs.
+			unlucky_soul.injure(INJURY_BLUNT, max_health_coefficient * omen_damage, limb.organ_tag)
+		unlucky_soul.status_at_least(EFFECT_WEAKENED, 5)
+		omen_consume()
+
+/mob/living/proc/omen_check_taser(mob/living/unlucky_soul, stun_amount, agony_amount, def_zone, used_weapon, electric)
+	if(!electric || !omen_evil) //If it's not electric we don't care! Likewise, if we don't have the omen_evil variant, don't care!
+		return
+	if(!ishuman(unlucky_soul))
+		return
+	if(prob(3 * omen_luck))
+		var/mob/living/carbon/human/human_guy = unlucky_soul
+		if(human_guy.should_have_organ(O_HEART))
+			for(var/obj/item/organ/internal/heart/heart in human_guy.internal_organs)
+				if(heart.robotic)
+					continue //Robotic hearts are immune to this.
+				human_guy.injure(INJURY_BLUNT, 10 * stun_amount * omen_damage, heart, src)
+				human_guy.injure(INJURY_BLUNT, 0.25 * agony_amount * omen_damage, heart, src)
+			playsound(src, 'sound/effects/singlebeat.ogg', 50, FALSE)
+			to_chat(unlucky_soul, span_bolddanger("You feel as though your heart stopped"))
+			human_guy.status_at_least(EFFECT_STUNNED, 5)
+			omen_consume()
+			return
+
+#undef OMEN_TRAIT_SOURCE
+
+// ---------------------------------------------------------------- events
+
+/// Notification (was COMSIG_ON_CARBON_SLIP): the carbon slipped on `slipped_on`.
+/datum/om/event/carbon_slip
+	coalesce = FALSE
+	var/slipped_on
+	var/stun_duration
+
+/datum/om/event/carbon_slip/New(slipped_on, stun_duration)
+	src.slipped_on = slipped_on
+	src.stun_duration = stun_duration
+
+/datum/om/event/carbon_slip/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_carbon_slip(E, src)
+
+/datum/om/behaviour/proc/on_carbon_slip(datum/E, datum/om/event/carbon_slip/event)
+	return
+
+/// Notification (was COMSIG_MOVED_DOWN_STAIRS): the movable went down stairs.
+/datum/om/event/moved_down_stairs
+	coalesce = FALSE
+	var/old_loc
+
+/datum/om/event/moved_down_stairs/New(old_loc)
+	src.old_loc = old_loc
+
+/datum/om/event/moved_down_stairs/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_moved_down_stairs(E, src)
+
+/datum/om/behaviour/proc/on_moved_down_stairs(datum/E, datum/om/event/moved_down_stairs/event)
+	return
+
+/// Notification (was COMSIG_STUN_EFFECT_ACT): the mob took a stun weapon hit.
+/datum/om/event/stun_effect
+	coalesce = FALSE
+	var/stun_amount
+	var/agony_amount
+	var/def_zone
+	var/used_weapon
+	var/electric
+
+/datum/om/event/stun_effect/New(stun_amount, agony_amount, def_zone, used_weapon, electric)
+	src.stun_amount = stun_amount
+	src.agony_amount = agony_amount
+	src.def_zone = def_zone
+	src.used_weapon = used_weapon
+	src.electric = electric
+
+/datum/om/event/stun_effect/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_stun_effect(E, src)
+
+/datum/om/behaviour/proc/on_stun_effect(datum/E, datum/om/event/stun_effect/event)
+	return
+
+/// Notification (beside COMSIG_ITEM_PICKUP on the user): the mob is picking up `item`.
+/datum/om/event/picked_up_item
+	coalesce = FALSE
+	var/item
+
+/datum/om/event/picked_up_item/New(item)
+	src.item = item
+
+/datum/om/event/picked_up_item/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_picked_up_item(E, src)
+
+/datum/om/behaviour/proc/on_picked_up_item(datum/E, datum/om/event/picked_up_item/event)
+	return
+
+/// Synchronous (was COMSIG_MOB_ROLLED_DICE): the mob rolled `dice`; a handler may set
+/// `result_override` to force the result.
+/datum/om/event/before/dice_roll
+	var/dice
+	var/silent
+	var/result
+	/// Set by a handler to force the roll.
+	var/result_override
+
+/datum/om/event/before/dice_roll/New(dice, silent, result)
+	src.dice = dice
+	src.silent = silent
+	src.result = result
+
+/datum/om/event/before/dice_roll/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_dice_roll(E, src)
+
+/datum/om/behaviour/proc/on_before_dice_roll(datum/E, datum/om/event/before/dice_roll/event)
+	return
+
+/// Veto (was COMSIG_HUMAN_ON_CATCH_THROW): the mob is about to catch thrown `source`;
+/// EVENT_VETO stops the catch.
+/datum/om/event/before/catch_throw
+	var/source
+	var/speed
+
+/datum/om/event/before/catch_throw/New(source, speed)
+	src.source = source
+	src.speed = speed
+
+/datum/om/event/before/catch_throw/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_catch_throw(E, src)
+
+/datum/om/behaviour/proc/on_before_catch_throw(datum/E, datum/om/event/before/catch_throw/event)
+	return

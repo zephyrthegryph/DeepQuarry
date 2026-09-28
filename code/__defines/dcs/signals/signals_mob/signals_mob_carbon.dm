@@ -1,8 +1,6 @@
 
 
 
-///When a carbon slips. Called on /turf/open/handle_slip()
-#define COMSIG_ON_CARBON_SLIP "carbon_slip"
 // /mob/living/carbon physiology signals
 
 
@@ -32,18 +30,9 @@
 //NON TG Signals
 ///When the mob's dna and species have been fully applied
 #define COMSIG_HUMAN_DNA_FINALIZED "human_dna_finished"
-///from the base of mob/living/carbon/human/hitby(): (atom/movable/source, speed)
-#define COMSIG_HUMAN_ON_CATCH_THROW "human_on_catch_throw"
 
 
 // Organ specific signals
 
-///From /obj/item/organ/external/proc/embed(W, silent)
-#define COMSIG_EMBED_OBJECT "embed_object"
-///Return this in response if you don't want the embed to go through.
-	#define COMSIG_CANCEL_EMBED (1<<0)
 
 //NON TG Signals:
-///called when being electrocuted, from /mob/living/carbon/electrocute_act(shock_damage, source, siemens_coeff, def_zone, stun)
-#define COMSIG_BEING_ELECTROCUTED "being_electrocuted"
-	#define COMPONENT_CARBON_CANCEL_ELECTROCUTE (1<<0) //If this is set, the carbon will be not be electrocuted.

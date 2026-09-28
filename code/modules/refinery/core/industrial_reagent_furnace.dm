@@ -25,7 +25,7 @@
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 REF_OWNED(/obj/machinery/reagent_refinery/furnace, "beaker")
 

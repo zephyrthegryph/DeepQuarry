@@ -44,6 +44,8 @@
 /atom/proc/hand_gate(mob/user)
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACK_HAND, user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
+	if(om_wants(src, /datum/om/event/before/attack_hand) && om_emit(src, new /datum/om/event/before/attack_hand(user)) == EVENT_VETO)
+		return TRUE
 	return FALSE
 
 /mob/living/carbon/human/RestrainedClickOn(atom/A)

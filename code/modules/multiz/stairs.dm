@@ -245,7 +245,7 @@ REF_PAIR(/obj/structure/stairs/bottom, list("top" = "bottom", "middle" = "bottom
 	if(!GetAbove(src))
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 REF_PAIR(/obj/structure/stairs/middle, list("top" = "middle", "bottom" = "middle"))
 
@@ -441,7 +441,8 @@ REF_PAIR(/obj/structure/stairs/top, list("middle" = "top", "bottom" = "top"))
 				var/mob/living/L = P
 				if(L.client)
 					L.client.Process_Grab() // Update any miscellanous grabs, possibly break grab-chains
-		SEND_SIGNAL(AM, COMSIG_MOVED_DOWN_STAIRS, AM, oldloc)
+		if(om_wants(AM, /datum/om/event/moved_down_stairs))
+			om_emit(AM, new /datum/om/event/moved_down_stairs(oldloc))
 	return TRUE
 
 /obj/structure/stairs/top/use_stairs_instant(atom/movable/AM)
@@ -481,7 +482,8 @@ REF_PAIR(/obj/structure/stairs/top, list("middle" = "top", "bottom" = "top"))
 			L.client.Process_Grab()
 	else
 		AM.forceMove(get_turf(bottom))
-	SEND_SIGNAL(AM, COMSIG_MOVED_DOWN_STAIRS, AM, null)
+	if(om_wants(AM, /datum/om/event/moved_down_stairs))
+		om_emit(AM, new /datum/om/event/moved_down_stairs(null))
 
 // Mapping pieces, placed at the bottommost part of the stairs
 /obj/structure/stairs/spawner

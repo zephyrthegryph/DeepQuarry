@@ -488,7 +488,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			chose_name = 1
 			break
 	D.universal_speak = 1
-	D.RemoveElement(/datum/element/godmode)
+	D.disable_godmode()
 	D.b_eyes = 200
 	D.r_eyes = 200
 	D.g_eyes = 200

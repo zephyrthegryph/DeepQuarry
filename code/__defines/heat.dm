@@ -65,7 +65,7 @@
 #define DISTILLERY_THERMOSTAT_GAIN 200
 /// Distillery heat exchanger to its port's gas, W/K.
 #define DISTILLERY_GAS_CONDUCTANCE 100
-/// Why a burning object went out (/datum/component/burning/var/ended_by).
+/// Why a burning object went out (/obj/var/burn_ended_by).
 #define BURN_ENDED_FUEL "fuel"
 #define BURN_ENDED_OXYGEN "oxygen"
 #define BURN_ENDED_COOLED "cooled"

@@ -34,15 +34,11 @@
 // Non TG signals:
 ///From the disabilities life system.
 #define COMSIG_HANDLE_DISABILITIES "handle_disabilities"
-///From /living/handle_allergens().
-#define COMSIG_HANDLE_ALLERGENS "handle_allergens"
 
 ///before a weakness increase (amount)
 #define COMSIG_LIVING_STATUS_WEAKEN "living_weaken"
 ///before a blindness increase (amount)
 #define COMSIG_LIVING_STATUS_BLIND "living_blind"
-///from /mob/living/proc/stun_effect_act(var/stun_amount, var/agony_amount, var/def_zone, var/used_weapon=null, var/electric = FALSE)
-#define COMSIG_STUN_EFFECT_ACT "stun_effect_act"
 
 ///from the radiation life system
 #define COMSIG_HANDLE_RADIATION "handle_radiation"
@@ -51,10 +47,6 @@
 #define COMSIG_LIVING_IRRADIATE_EFFECT "living_irradiate_effect"
 	#define COMPONENT_BLOCK_IRRADIATION (1<<0)
 
-///from /mob/living/proc/apply_effect(effect, effecttype, blocked, check_protection)
-#define COMSIG_TAKING_APPLY_EFFECT "applying_effect"
-///Return this in response if you don't want the effect to be applied
-	#define COMSIG_CANCEL_EFFECT (1<<0)
 ///from the mutations life system
 #define COMSIG_HANDLE_MUTATIONS "handle_mutations"
 	#define COMPONENT_BLOCK_LIVING_MUTATIONS (1<<0)

@@ -20,8 +20,6 @@
 #define COMSIG_ATOM_EXITED "atom_exited"
 ///from base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
 #define COMSIG_ATOM_BUMPED "atom_bumped"
-///from base of atom/hitby(atom/movable/AM, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
-#define COMSIG_ATOM_HITBY "atom_hitby"
 
 
 /// from internal loop in /atom/proc/propagate_radiation_pulse: (atom/pulse_source)
@@ -31,11 +29,7 @@
 //Non /TG/ signals:
 
 
-///from base atom/Exited(): (mob/user, obj/item/extrapolator/extrapolator, dry_run, list/result)
-#define COMSIG_ATOM_EXTRAPOLATOR_ACT "atom_extrapolator_act"
 
-///from base of /obj/item/dice/proc/rollDice(mob/user as mob, var/silent = 0). Has the arguments of 'src, silent, result'
-#define COMSIG_MOB_ROLLED_DICE "mob_rolled_dice" //can give a return value if we want it to make the dice roll a specific number!
 
 ///from base of /datum/destroy
 #define COMSIG_OBSERVER_DESTROYED "observer_destroyed"

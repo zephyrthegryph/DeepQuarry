@@ -63,10 +63,10 @@
 	qdel(src)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/effect/anomaly/periodic_step(seconds_per_tick)
+/obj/effect/anomaly/periodic_step(delta)
 	if(!mob_near(world.view * 2, TRUE))
 		return sleep_until_mob_near(world.view * 2, TRUE)
-	anomalyEffect(seconds_per_tick)
+	anomalyEffect(delta / (1 SECONDS)) // the periodic lane passes deciseconds
 	anomalyPulse()
 
 REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))

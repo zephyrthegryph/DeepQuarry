@@ -109,7 +109,7 @@ GLOBAL_VAR_INIT(jellyfish_count, 0)
 
 /mob/living/simple_mob/vore/alienanimals/space_jellyfish/Initialize(mapload, jellyfish)
 	. = ..()
-	AddComponent(/datum/component/swarming)
+	enable_swarming()
 	GLOB.jellyfish_count ++
 	var/mob/living/simple_mob/vore/alienanimals/space_jellyfish/parent = jellyfish
 	if(parent)

@@ -58,7 +58,7 @@
 	icon_state = "s_st"
 
 /obj/item/cell/device/empproof/Initialize(mapload)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 	return ..()
 
 /obj/item/cell/device/empproof/empty
@@ -87,7 +87,7 @@
 	icon_state = "s_hi"
 
 /obj/item/cell/device/weapon/empproof/Initialize(mapload)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 	return ..()
 
 /obj/item/cell/device/weapon/empproof/empty

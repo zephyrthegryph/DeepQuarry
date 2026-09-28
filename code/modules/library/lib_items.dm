@@ -26,7 +26,7 @@
 		if(istype(I, /obj/item/book))
 			I.forceMove(src)
 	update_icon()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /// Old attackby.
 /obj/structure/bookcase/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)

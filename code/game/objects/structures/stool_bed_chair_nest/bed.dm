@@ -38,9 +38,9 @@
 	if(flippable) // If we can't change directions, don't bother.
 		// Ugly check for chairs, beds can only be flipped north and south...
 		if(istype(src,/obj/structure/bed/chair))
-			AddElement(/datum/element/rotatable)
+			make_rotatable()
 		else
-			AddElement(/datum/element/rotatable/onlyflip)
+			make_rotatable(only_flip = TRUE)
 	return INITIALIZE_HINT_NORMAL
 
 /obj/structure/bed/get_material()

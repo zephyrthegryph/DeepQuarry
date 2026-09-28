@@ -15,7 +15,7 @@
 
 /obj/structure/easel/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/easel/declare_interactions(list/into)
 	into += list(
@@ -625,7 +625,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		paintings[key] = current
 		current += 1
 	ask.put("paintings", paintings)
-	om_prompt_chain(ask, list("kind" = "list", "message" = "Choose which painting to spawn!", "title" = "Spawn painting", "choices" = paintings), PROC_REF(lateload_picked))
+	ask.chain(list("kind" = "list", "message" = "Choose which painting to spawn!", "title" = "Spawn painting", "choices" = paintings), PROC_REF(lateload_picked))
 
 /obj/structure/sign/painting/proc/lateload_picked(mob/user, choice, datum/om/prompt/ask)
 	var/list/paintings = ask.get("paintings")

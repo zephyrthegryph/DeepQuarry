@@ -35,7 +35,7 @@
 // E may be a /client (admin verbs); it is held by ckey. `user` may be a client too; the
 // continuation always gets the client's current mob.
 // New code asks with typed prompts, om_ask() (ask.dm); multi-step actions are flows (flow.dm).
-// Multi-question flows: om_prompt_chain(P, spec, on_answer) asks the same user about the
+// Multi-question flows: P.chain(spec, on_answer) asks the same user about the
 // same E again, carrying P's data, target, requires and on_refused forward (P.put() adds to
 // the data). om_prompt_sequence() runs a
 // list of questions and calls one proc with every answer at the end.
@@ -74,7 +74,7 @@
 		return values[key]
 	return om_prompt_unwrap(data?[key])
 
-/// Adds a value to the data carried by om_prompt_chain().
+/// Adds a value to the data carried by chain().
 /datum/om/prompt/proc/put(key, value)
 	LAZYINITLIST(data)
 	data[key] = om_prompt_wrap(value)
@@ -132,32 +132,32 @@
 		return P
 	if(!user.client)
 		return null
-	P.ui = om_prompt_show(P, user)
+	P.ui = P.show(user)
 	return P.ui ? P : null
 
 /// Asks P's user about P's E again, carrying P's data (and target, unless `spec` names its own).
-/proc/om_prompt_chain(datum/om/prompt/P, list/spec, on_answer)
-	var/datum/E = om_prompt_entity(P)
-	var/mob/user = om_resolve(P.user_h)
+/datum/om/prompt/proc/chain(list/spec, on_answer)
+	var/datum/E = entity()
+	var/mob/user = om_resolve(user_h)
 	if(!E || !user)
 		return null
 	spec = spec ? spec.Copy() : list()
 	for(var/key in list("requires", "on_refused", "timeout"))
-		if(isnull(spec[key]) && !isnull(P.spec[key]))
-			spec[key] = P.spec[key]
+		if(isnull(spec[key]) && !isnull(src.spec[key]))
+			spec[key] = src.spec[key]
 	var/datum/om/prompt/next = om_prompt(E, user, spec, on_answer)
 	if(!next)
 		return null
-	if(P.data)
-		var/list/merged = P.data.Copy()
+	if(data)
+		var/list/merged = data.Copy()
 		if(next.data)
 			merged |= next.data
 			for(var/key in next.data)
 				merged[key] = next.data[key]
 		next.data = merged
-	if(isnull(spec["target"]) && !isnull(P.spec["target"]))
+	if(isnull(spec["target"]) && !isnull(src.spec["target"]))
 		next.spec = next.spec.Copy()
-		next.spec["target"] = P.spec["target"]
+		next.spec["target"] = src.spec["target"]
 	return next
 
 // ---------------------------------------------------------------- sequences
@@ -214,18 +214,18 @@
 			P.seq_steps[i] = step
 	P.seq_done = on_done
 	P.seq_user_h = uh
-	return om_prompt_sequence_next(P)
+	return P.sequence_next()
 
 /// Asks the sequence's next question, or calls on_done when there are none left.
-/proc/om_prompt_sequence_next(datum/om/prompt/P)
+/datum/om/prompt/proc/sequence_next()
 	var/static/list/inherited = list("requires", "target", "on_refused", "on_cancel", "timeout")
-	var/datum/E = om_prompt_entity(P)
-	var/mob/user = om_resolve(P.seq_user_h || P.user_h)
-	if(!E || !user || !om_prompt_resolve_data(P))
+	var/datum/E = entity()
+	var/mob/user = om_resolve(seq_user_h || user_h)
+	if(!E || !user || !resolve_data())
 		return null
-	while(P.seq_index < length(P.seq_steps))
-		P.seq_index++
-		var/step = P.seq_steps[P.seq_index]
+	while(seq_index < length(seq_steps))
+		seq_index++
+		var/step = seq_steps[seq_index]
 		if(isnull(step))
 			continue
 		var/list/spec = step
@@ -233,9 +233,9 @@
 			spec = null
 			try
 				if(copytext("[step]", 1, 7) == "/proc/")
-					spec = call(step)(E, user, P)
+					spec = call(step)(E, user, src)
 				else
-					spec = call(E, step)(user, P)
+					spec = call(E, step)(user, src)
 			catch(var/exception/e)
 				stack_trace("om prompt sequence step [step] on [E]: [e]")
 				return null
@@ -245,8 +245,8 @@
 			continue
 		spec = spec.Copy()
 		for(var/key in inherited)
-			if(isnull(spec[key]) && !isnull(P.spec[key]))
-				spec[key] = P.spec[key]
+			if(isnull(spec[key]) && !isnull(src.spec[key]))
+				spec[key] = src.spec[key]
 		spec["om_seq_key"] = spec["key"] || "[step]"
 		if(spec["optional"])
 			spec["on_cancel"] = /proc/om_prompt_sequence_skipped
@@ -261,21 +261,21 @@
 		var/datum/om/prompt/next = om_prompt(E, asked, spec, /proc/om_prompt_sequence_answered)
 		if(!next)
 			return null
-		next.data = P.data?.Copy()
-		next.seq_steps = P.seq_steps
-		next.seq_index = P.seq_index
-		next.seq_done = P.seq_done
-		next.seq_user_h = P.seq_user_h
+		next.data = data?.Copy()
+		next.seq_steps = seq_steps
+		next.seq_index = seq_index
+		next.seq_done = seq_done
+		next.seq_user_h = seq_user_h
 		return next
-	if(P.seq_done)
+	if(seq_done)
 		try
-			if(copytext("[P.seq_done]", 1, 7) == "/proc/")
-				call(P.seq_done)(E, user, P)
+			if(copytext("[seq_done]", 1, 7) == "/proc/")
+				call(seq_done)(E, user, src)
 			else
-				call(E, P.seq_done)(user, P)
+				call(E, seq_done)(user, src)
 		catch(var/exception/e)
-			stack_trace("om prompt sequence [P.seq_done] on [E]: [e]")
-	return P
+			stack_trace("om prompt sequence [seq_done] on [E]: [e]")
+	return src
 
 /proc/om_prompt_sequence_answered(datum/E, mob/user, answer, datum/om/prompt/P)
 	var/abort = P.spec["abort"]
@@ -283,7 +283,7 @@
 		om_prompt_sequence_stopped(E, user, P)
 		return
 	P.put(P.spec["om_seq_key"], answer)
-	om_prompt_sequence_next(P)
+	P.sequence_next()
 
 /// A step ended the sequence: its on_stop runs with the sequence's user.
 /proc/om_prompt_sequence_stopped(datum/E, mob/user, datum/om/prompt/P)
@@ -294,96 +294,96 @@
 /// An optional step was cancelled: its answer is null, and the sequence goes on once the
 /// requires still hold.
 /proc/om_prompt_sequence_skipped(datum/E, mob/user, datum/om/prompt/P)
-	if(!isnull(om_prompt_recheck(P, E, user)))
+	if(!isnull(P.recheck(E, user)))
 		return
 	P.put(P.spec["om_seq_key"], null)
-	om_prompt_sequence_next(P)
+	P.sequence_next()
 
-/proc/om_prompt_entity(datum/om/prompt/P)
-	if(copytext(P.entity_h, 1, 6) == "ckey:")
-		return om_prompt_unwrap(P.entity_h)
-	return om_resolve(P.entity_h)
+/datum/om/prompt/proc/entity()
+	if(copytext(entity_h, 1, 6) == "ckey:")
+		return om_prompt_unwrap(entity_h)
+	return om_resolve(entity_h)
 
 /// Resolves P's data into P.values. FALSE if a datum in it is gone.
-/proc/om_prompt_resolve_data(datum/om/prompt/P)
-	P.values = list()
-	for(var/key in P.data)
-		var/raw = P.data[key]
+/datum/om/prompt/proc/resolve_data()
+	values = list()
+	for(var/key in data)
+		var/raw = data[key]
 		var/value = om_prompt_unwrap(raw)
 		if(isnull(value) && (islist(raw) || (istext(raw) && copytext(raw, 1, 6) == "ckey:")))
 			return FALSE
-		P.values[key] = value
+		values[key] = value
 	return TRUE
 
 /// Delivers an answer (tgui, or a test). Returns null when on_answer ran, else the reason it did not.
-/proc/om_prompt_answer(datum/om/prompt/P, answer)
-	if(P.answered)
+/datum/om/prompt/proc/answer(answer)
+	if(answered)
 		return "answered"
-	P.answered = TRUE
-	P.ui = null
-	var/datum/E = om_prompt_entity(P)
-	var/mob/user = om_resolve(P.user_h)
-	if(!E || !user || !om_prompt_resolve_data(P))
+	answered = TRUE
+	ui = null
+	var/datum/E = entity()
+	var/mob/user = om_resolve(user_h)
+	if(!E || !user || !resolve_data())
 		return "gone"
-	if(P.kind_name && isnull(answer) && isnull(P.spec["cancel_answer"]))
+	if(kind_name && isnull(answer) && isnull(spec["cancel_answer"]))
 		// A typed prompt's cancel: om_ask_cancelled() restores its state.
-		if(P.spec["on_cancel"])
-			om_prompt_call(E, P.spec["on_cancel"], user, P)
+		if(spec["on_cancel"])
+			om_prompt_call(E, spec["on_cancel"], user, src)
 		return "no answer"
-	if(P.kind_name && !P.unpark())
-		P.refused("gone")
+	if(kind_name && !unpark())
+		refused("gone")
 		return "gone"
-	if(P.spec["kind"] == "typepath" && istext(answer))
+	if(spec["kind"] == "typepath" && istext(answer))
 		// The typed part of a path: one match is the answer, several are picked from a list.
-		var/list/matches = om_prompt_typepaths(answer, P.spec["root"] || /atom)
+		var/list/matches = om_prompt_typepaths(answer, spec["root"] || /atom)
 		if(length(matches) == 1)
 			answer = matches[1]
 		else if(length(matches))
-			P.answered = FALSE
-			var/datum/tgui_list_input/om/L = new(user, "Select a type", P.spec["title"] || "Typepath", matches, null, 0, GLOB.tgui_always_state)
-			L.om_prompt = P
-			P.ui = L
+			answered = FALSE
+			var/datum/tgui_list_input/om/L = new(user, "Select a type", spec["title"] || "Typepath", matches, null, 0, GLOB.tgui_always_state)
+			L.om_prompt = src
+			ui = L
 			L.tgui_interact(user)
 			return "picking"
 		else
 			to_chat(user, span_warning("No results found.  Sorry."))
 			answer = null
 	if(isnull(answer))
-		answer = P.spec["cancel_answer"]
+		answer = spec["cancel_answer"]
 	if(isnull(answer))
-		if(P.spec["on_cancel"])
-			om_prompt_call(E, P.spec["on_cancel"], user, P)
+		if(spec["on_cancel"])
+			om_prompt_call(E, spec["on_cancel"], user, src)
 		return "no answer"
 	if(isdatum(answer))
 		var/datum/answered_datum = answer
 		if(QDELETED(answered_datum))
 			return "gone"
-	if(P.kind_name && !P.take_answer(answer))
+	if(kind_name && !take_answer(answer))
 		// A typed prompt answered no (confirm): nothing to re-check.
-		P.declined()
+		declined()
 		return "declined"
-	var/reason = om_prompt_recheck(P, E, user)
+	var/reason = recheck(E, user)
 	if(!isnull(reason))
-		if((reason != "gone" || P.kind_name) && P.spec["on_refused"])
-			om_prompt_call(E, P.spec["on_refused"], user, reason, P)
+		if((reason != "gone" || kind_name) && spec["on_refused"])
+			om_prompt_call(E, spec["on_refused"], user, reason, src)
 		return reason
-	om_prompt_call(E, P.on_answer, user, answer, P)
+	om_prompt_call(E, on_answer, user, answer, src)
 	return null
 
 /// Re-checks P's requires (and that its target is still there). Null when they hold, else the reason.
-/proc/om_prompt_recheck(datum/om/prompt/P, datum/E, mob/user)
+/datum/om/prompt/proc/recheck(datum/E, mob/user)
 	var/datum/check_target = E
-	var/list/target = P.spec["target"]
+	var/list/target = spec["target"]
 	if(islist(target))
 		check_target = om_prompt_unwrap(target[1])
 		if(!check_target)
 			return "gone"
-	for(var/check_spec in om_spec_list(P.spec["requires"]))
+	for(var/check_spec in om_spec_list(spec["requires"]))
 		var/reason = om_why_not(check_spec, user, check_target)
 		if(!isnull(reason))
 			return reason
-	if(P.kind_name)
-		return P.typed_recheck(E, user)
+	if(kind_name)
+		return typed_recheck(E, user)
 	return null
 
 
@@ -407,25 +407,25 @@
 	return matches
 
 /// The user closed the window without answering (or it timed out).
-/proc/om_prompt_closed(datum/om/prompt/P)
-	if(P.answered)
+/datum/om/prompt/proc/closed()
+	if(answered)
 		return
-	if(!isnull(P.spec["cancel_answer"]))
-		om_prompt_answer(P, P.spec["cancel_answer"])
+	if(!isnull(spec["cancel_answer"]))
+		answer(spec["cancel_answer"])
 		return
-	P.answered = TRUE
-	P.ui = null
-	if(!P.spec["on_cancel"])
+	answered = TRUE
+	ui = null
+	if(!spec["on_cancel"])
 		return
-	var/datum/E = om_prompt_entity(P)
-	var/mob/user = om_resolve(P.user_h)
-	if(E && user && om_prompt_resolve_data(P))
-		om_prompt_call(E, P.spec["on_cancel"], user, P)
+	var/datum/E = entity()
+	var/mob/user = om_resolve(user_h)
+	if(E && user && resolve_data())
+		om_prompt_call(E, spec["on_cancel"], user, src)
 
 // ---------------------------------------------------------------- tgui
 
-/proc/om_prompt_show(datum/om/prompt/P, mob/user)
-	var/list/S = P.spec
+/datum/om/prompt/proc/show(mob/user)
+	var/list/S = spec
 	var/timeout = S["timeout"] || 0
 	switch(S["kind"] || "alert")
 		if("list")
@@ -435,36 +435,36 @@
 			if(L.invalid)
 				qdel(L)
 				return null
-			L.om_prompt = P
+			L.om_prompt = src
 			L.tgui_interact(user)
 			return L
 		if("text", "typepath")
 			var/datum/tgui_input_text/om/T = new(user, S["message"], S["title"] || "Text Input", S["default"], S["max_length"] || MAX_TGUI_INPUT, S["multiline"], isnull(S["encode"]) ? TRUE : S["encode"], timeout, GLOB.tgui_always_state)
-			T.om_prompt = P
+			T.om_prompt = src
 			T.tgui_interact(user)
 			return T
 		if("number")
 			var/datum/tgui_input_number/om/N = new(user, S["message"], S["title"] || "Number Input", S["default"] || 0, isnull(S["max"]) ? INFINITY : S["max"], S["min"] || 0, timeout, isnull(S["round"]) ? TRUE : S["round"], GLOB.tgui_always_state)
-			N.om_prompt = P
+			N.om_prompt = src
 			N.tgui_interact(user)
 			return N
 		if("color")
 			var/datum/tgui_color_picker/om/C = new(user, S["message"], S["title"] || "Pick a color", S["default"] || "#000000", timeout, TRUE, GLOB.tgui_always_state)
-			C.om_prompt = P
+			C.om_prompt = src
 			C.tgui_interact(user)
 			return C
 		if("checkboxes")
 			if(!length(S["choices"]))
 				return null
 			var/datum/tgui_checkbox_input/om/X = new(user, S["message"], S["title"] || "Select", S["choices"], isnull(S["min"]) ? 1 : S["min"], S["max"] || 50, timeout, GLOB.tgui_always_state)
-			X.om_prompt = P
+			X.om_prompt = src
 			X.tgui_interact(user)
 			return X
 		if("bitfield")
 			if(!length(get_valid_bitflags(S["bitfield"])))
 				return null
 			var/datum/tgui_bitfield_input/om/B = new(user, S["title"] || S["message"] || "Bitfield", get_valid_bitflags(S["bitfield"]), S["default"] || 0, isnull(S["editable"]) ? ALL : S["editable"], timeout)
-			B.om_prompt = P
+			B.om_prompt = src
 			B.tgui_interact(user)
 			return B
 		if("colormatrix")
@@ -478,11 +478,11 @@
 				default = default.Copy()
 				default.len = 12
 			var/datum/tgui_input_colormatrix/om/M = new(user, S["message"], S["title"] || "Matrix Recolor", shown, default, S["matrix_only"], timeout || 30 MINUTES, S["ui_state"] || GLOB.tgui_always_state, was_path)
-			M.om_prompt = P
+			M.om_prompt = src
 			M.tgui_interact(user)
 			return M
 	var/datum/tgui_alert/om/A = new(user, S["message"], S["title"], S["choices"] || list("Ok"), timeout, TRUE, GLOB.tgui_always_state)
-	A.om_prompt = P
+	A.om_prompt = src
 	A.tgui_interact(user)
 	return A
 
@@ -498,12 +498,12 @@
 	if(om_prompt && !isnull(src.choice))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.choice)
+		P.answer(src.choice)
 
 /datum/tgui_alert/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -519,12 +519,12 @@
 	if(om_prompt && !isnull(src.choice))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.choice)
+		P.answer(src.choice)
 
 /datum/tgui_list_input/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -540,12 +540,12 @@
 	if(om_prompt && !isnull(src.entry))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.entry)
+		P.answer(src.entry)
 
 /datum/tgui_input_text/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -561,12 +561,12 @@
 	if(om_prompt && !isnull(src.entry))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.entry)
+		P.answer(src.entry)
 
 /datum/tgui_input_number/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -582,12 +582,12 @@
 	if(om_prompt && !isnull(src.choice))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.choice)
+		P.answer(src.choice)
 
 /datum/tgui_color_picker/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -603,12 +603,12 @@
 	if(om_prompt && !isnull(src.choices))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.choices)
+		P.answer(src.choices)
 
 /datum/tgui_checkbox_input/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -626,12 +626,12 @@
 	if(om_prompt && !isnull(src.entry))
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, src.entry)
+		P.answer(src.entry)
 
 /datum/tgui_input_colormatrix/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)
 
@@ -653,7 +653,7 @@
 	if(om_prompt && action == "submit")
 		var/datum/om/prompt/P = om_prompt
 		om_prompt = null
-		om_prompt_answer(P, value)
+		P.answer(value)
 		SStgui.close_uis(src)
 		return TRUE
 	return ..()
@@ -661,6 +661,6 @@
 /datum/tgui_bitfield_input/om/tgui_close(mob/user)
 	. = ..()
 	if(om_prompt)
-		om_prompt_closed(om_prompt)
+		om_prompt.closed()
 		om_prompt = null
 	qdel(src)

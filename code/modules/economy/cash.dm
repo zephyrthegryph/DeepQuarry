@@ -23,7 +23,7 @@
 
 /obj/item/spacecash/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/sellable/spacecash)
+	make_sellable(/datum/sellable/spacecash)
 
 /// Old attackby.
 /obj/item/spacecash/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

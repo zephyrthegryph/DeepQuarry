@@ -90,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/watertank/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_WATER, 1000)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/reagent_dispensers/watertank/high
 	name = "high-capacity water tank"
@@ -118,7 +118,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/fueltank/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_FUEL,1000)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
@@ -139,7 +139,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/foam/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_FIREFOAM,1000)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 //Helium3
 /obj/structure/reagent_dispensers/he3
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/he3/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_HELIUM3,1000)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /*
  * Misc
@@ -358,8 +358,8 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 	if(bottle)
 		reagents.add_reagent(REAGENT_ID_WATER,2000)
 	update_icon()
-	AddElement(/datum/element/climbable)
-	AddElement(/datum/element/rotatable)
+	make_climbable()
+	make_rotatable()
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
 	. = ..()
@@ -494,7 +494,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 /obj/structure/reagent_dispensers/beerkeg/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BEER,1000)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/reagent_dispensers/beerkeg/wood
 	name = "beer keg"
@@ -527,7 +527,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 /obj/structure/reagent_dispensers/cookingoil/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_COOKINGOIL,5000)
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/reagent_dispensers/cookingoil/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -551,7 +551,7 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/water_cooler, \
 /obj/structure/reagent_dispensers/bloodbarrel/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 
 /obj/structure/reagent_dispensers/space_cleaner

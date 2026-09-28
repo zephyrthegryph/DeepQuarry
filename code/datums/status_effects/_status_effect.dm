@@ -104,7 +104,7 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 // Status effect process. Handles adjusting its duration and ticks.
 // If you're adding processed effects, put them in [proc/tick]
 // instead of extending / overriding the process() proc.
-/datum/status_effect/periodic_step(seconds_per_tick)
+/datum/status_effect/periodic_step(delta)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(QDELETED(owner))
@@ -112,7 +112,7 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 		return
 
 	if(tick_interval == STATUS_EFFECT_AUTO_TICK)
-		tick(seconds_per_tick)
+		tick(delta / (1 SECONDS)) // the periodic lane passes deciseconds
 	else if(tick_interval != STATUS_EFFECT_NO_TICK && tick_interval < world.time) // ALLOW(cooldown): status effect duration/tick core
 		var/tick_length = (tick_interval_upperbound && tick_interval_lowerbound) ? rand(tick_interval_lowerbound, tick_interval_upperbound) : initial(tick_interval)
 		tick(tick_length / (1 SECONDS))

@@ -157,12 +157,16 @@
 		UnregisterSignal(T, COMSIG_OBSERVER_TURF_ENTERED)
 
 
+/atom
+	/// EMP_PROTECT_* flags this atom always has (was /datum/element/empprotection).
+	var/emp_protection_flags = NONE
+
 /atom/proc/emp_act(severity, recursive)
 	SHOULD_CALL_PARENT(TRUE)
 	recursive++
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
-	var/protection = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
+	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
 	if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
 		wires.emp_pulse()
 
@@ -259,6 +263,7 @@
 		output += damage_flavour_text(damage_band)
 
 	SEND_SIGNAL(src, COMSIG_ATOM_EXAMINE, user, output)
+	om_emit_examine(src, user, output)
 	return output
 
 // Don't make these call bicon or anything, these are what bicon uses. They need to return an icon.
@@ -336,7 +341,8 @@
 
 
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	SEND_SIGNAL(src, COMSIG_ATOM_HITBY, source)
+	if(om_wants(src, /datum/om/event/hitby))
+		om_emit(src, new /datum/om/event/hitby(source, throwingdatum))
 	thrown_damage(source, throwingdatum)
 
 /// The thrown-impact adapter. Types whose shape changes how hard a throw lands
@@ -653,14 +659,13 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 /**
 *	Respond to our atom being checked by a virus extrapolator.
 *
-*	Default behaviour is to send COMSIG_ATOM_EXTRAPOLATOR_ACT and return an empty list (which may be populated by the signal)
+*	Default behaviour is to return an empty list (overrides populate it)
 *
 *	Returns a list of viruses in the atom.
 *	Include EXTRAPOLATOR_SPECIAL_HANDLED in the list if the extrapolation act has been handled by this proc or a signal, and should not be handled by the extrapolator itself.
 */
 /atom/proc/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = list(EXTRAPOLATOR_RESULT_DISEASES = list())
-	SEND_SIGNAL(src, COMSIG_ATOM_EXTRAPOLATOR_ACT, user, extrapolator, dry_run, .)
 
 /**
 *	Wash this atom
@@ -674,8 +679,6 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 	SHOULD_CALL_PARENT(TRUE)
 
 	. = FALSE
-	if(SEND_SIGNAL(src, COMSIG_COMPONENT_CLEAN_ACT, clean_types))
-		. = TRUE
 
 	// Basically "if has washable coloration"
 	if(length(atom_colours) >= WASHABLE_COLOUR_PRIORITY && atom_colours[WASHABLE_COLOUR_PRIORITY])

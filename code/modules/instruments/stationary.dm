@@ -56,7 +56,7 @@ DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_R
 
 /obj/structure/musician/piano/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /** FIXME: We do not have atom_break implemented yet
 /obj/structure/musician/piano/atom_break(damage_flag)

@@ -33,7 +33,7 @@
 /obj/machinery/washing_machine/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 

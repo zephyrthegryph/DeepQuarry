@@ -16,7 +16,7 @@
 	density = TRUE
 	anchored = FALSE
 
-	loot_element_path = /datum/element/lootable/mecha/odd_gygax
+	loot_table_type = /datum/loot_table/mecha/odd_gygax
 
 /obj/structure/loot_pile/mecha/odd_ripley
 	name = "\improper mecha wreckage"
@@ -25,7 +25,7 @@
 	density = TRUE
 	anchored = FALSE
 
-	loot_element_path = /datum/element/lootable/mecha/odd_riplay
+	loot_table_type = /datum/loot_table/mecha/odd_riplay
 
 /obj/structure/loot_pile/christmas_tree
 	name = "festive tree"
@@ -38,4 +38,4 @@
 	bound_height = 64
 	density = 1
 
-	loot_element_path = /datum/element/lootable/christmas_tree
+	loot_table_type = /datum/loot_table/christmas_tree

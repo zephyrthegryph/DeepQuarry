@@ -28,7 +28,7 @@
 
 	usr.visible_message(span_warning("[usr] flips \the [src]!"))
 
-	SEND_SIGNAL(src, COMSIG_CLIMBABLE_SHAKE_CLIMBERS, usr)
+	om_emit(src, new /datum/om/event/climb_shake(usr))
 
 	return
 

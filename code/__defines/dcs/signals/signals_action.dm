@@ -6,8 +6,6 @@
 #define COMSIG_MOB_GRANTED_ACTION "mob_action_grant"
 /// From /datum/action/Remove(): (datum/action)
 #define COMSIG_MOB_REMOVED_ACTION "mob_action_removed"
-/// From /datum/action/apply_button_overlay()
-#define COMSIG_ACTION_OVERLAY_APPLY "action_overlay_applied"
 
 // Cooldown action signals
 

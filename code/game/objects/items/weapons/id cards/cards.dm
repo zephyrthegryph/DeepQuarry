@@ -210,9 +210,9 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/card_fluff/proc/customize_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)
 		if("Band")
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Select colour", "title" = "Band colour", "choices" = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black")), PROC_REF(band_chosen))
+			ask.chain(list("kind" = "list", "message" = "Select colour", "title" = "Band colour", "choices" = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black")), PROC_REF(band_chosen))
 		if("Stamp")
-			om_prompt_chain(ask, list("kind" = "list", "message" = "Select image", "title" = "Stamp image", "choices" = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation")), PROC_REF(stamp_chosen))
+			ask.chain(list("kind" = "list", "message" = "Select image", "title" = "Stamp image", "choices" = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation")), PROC_REF(stamp_chosen))
 		if("Reset")
 			reset_icon()
 

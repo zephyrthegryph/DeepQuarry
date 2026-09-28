@@ -84,7 +84,7 @@
 		SEND_SIGNAL(src, COMSIG_TURF_CHANGE, N, null, NONE, post_change_callbacks)
 
 	cut_overlays(TRUE)
-	RemoveElement(/datum/element/turf_z_transparency)
+	unmake_z_transparent()
 	changing_turf = TRUE
 	qdel(src)
 

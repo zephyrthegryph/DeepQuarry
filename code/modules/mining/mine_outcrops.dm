@@ -14,7 +14,7 @@
 	. = ..()
 	if(prob(1))
 		add_overlay("[initial(icon_state)]-egg")
-	AddElement(/datum/element/climbable)
+	make_climbable()
 
 /obj/structure/outcrop/diamond
 	name = "shiny outcrop"

@@ -233,7 +233,8 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	if(initial(density))
 		density = !density
 	animate_door(TRUE)
-	SEND_SIGNAL(src, COMSIG_CLOSET_CLOSED, contents)
+	if(om_wants(src, /datum/om/event/closet_closed))
+		om_emit(src, new /datum/om/event/closet_closed)
 	return 1
 
 // Each store_* proc moves what it finds on the turf into the interior slot and
@@ -396,7 +397,7 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 	if(!opened)
 		// Attempt to climb if not opened!
 		if(O == user)
-			SEND_SIGNAL(src, COMSIG_CLIMBABLE_START_CLIMB, user)
+			om_emit(src, new /datum/om/event/climb_start(user))
 		return INTERACTION_HANDLED_PASS
 	if(istype(O, /obj/structure/closet))
 		return INTERACTION_HANDLED_PASS
@@ -642,7 +643,7 @@ REF_OWNED(/obj/structure/closet, "door_obj")
 
 /obj/structure/closet/bluespace/Initialize(mapload)
 	. = ..()
-	AddComponent(/datum/component/bluespace_connection/permanent_network, GLOB.bslockers)
+	join_bluespace_network()
 
 /// The icon is derived from closet_appearance in LateInitialize (C5 parity).
 /obj/structure/closet/state_exclude()

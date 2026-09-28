@@ -84,3 +84,23 @@
 					om_task_cancel(T, "interrupted")
 					break
 	return null
+
+/// TRUE when a started behaviour on E handles `path` (or a task on E could be
+/// interrupted by it). Senders on hot paths (movement, examine) test this before
+/// allocating the event, so entities with no interested behaviour pay a lookup.
+/proc/om_wants(datum/E, path)
+	var/datum/om/rec/rec = E?.om_rec
+	if(!rec || rec.torn_down)
+		return FALSE
+	if(length(rec.tasks))
+		return TRUE
+	var/datum/om/registry/reg = om_registry()
+	var/e = reg.event_idx[path]
+	var/list/flags = e ? reg.event_handlers[e] : null
+	if(!flags)
+		return FALSE
+	for(var/i in 1 to length(rec.att))
+		var/datum/om/behaviour/B = rec.att[i]
+		if(flags[B.id] && (rec.att_state[i] & OM_ATT_STARTED))
+			return TRUE
+	return FALSE

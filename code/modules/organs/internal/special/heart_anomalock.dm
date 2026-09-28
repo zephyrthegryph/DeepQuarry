@@ -30,7 +30,7 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	if(!removed)
 		add_lightning_overlay(30 SECONDS)
 		playsound(owner, 'sound/machines/defib_zap.ogg', 50, TRUE, -1)
-		owner.AddElement(/datum/element/empprotection, EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)
+		owner.emp_protection_flags |= EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS
 		RegisterSignal(owner, SIGNAL_ADDTRAIT(TRAIT_CRITICAL_CONDITION), PROC_REF(activate_survival))
 		RegisterSignal(owner, COMSIG_ATOM_EMP_ACT, PROC_REF(on_emp_act))
 
@@ -38,7 +38,7 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 		clear_lightning_overlay(owner)
 		UnregisterSignal(owner, SIGNAL_ADDTRAIT(TRAIT_CRITICAL_CONDITION))
 		UnregisterSignal(owner, COMSIG_ATOM_EMP_ACT)
-		owner.RemoveElement(/datum/element/empprotection)
+		owner.emp_protection_flags &= ~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
 		expire(0)
 
