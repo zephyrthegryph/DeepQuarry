@@ -263,15 +263,15 @@
 	metabolism = REM * 0.1 //Slow metabolization to try and mimic permanent nerve damage without actually being too cruel to people
 	color = "#FFFFFF"
 	overdose = REAGENTS_OVERDOSE * 4 //But takes a lot to OD
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA)
 
 /datum/reagent/inaprovaline/synxchem/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		if(prob(8))
-			M.custom_pain("You [pick("feel numb!","feel dizzy and heavy.","feel strange!")]",60)
-		if(prob(2))
-			M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
-			M.status_adjust(EFFECT_PARALYZED, 1)
-		M.apply_body_effect(/datum/body_effect/numbness, 3 SECONDS)
+	if(prob(8))
+		M.custom_pain("You [pick("feel numb!","feel dizzy and heavy.","feel strange!")]",60)
+	if(prob(2))
+		M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
+		M.status_adjust(EFFECT_PARALYZED, 1)
+	M.apply_body_effect(/datum/body_effect/numbness, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/holo
 	name = "SX type simulation nanomachines" //Educational!
@@ -284,13 +284,12 @@
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.1, TREAT_ANTITOXIN = 0.1, TREAT_BURN_CARE = 0.1)
 
 /datum/reagent/inaprovaline/synxchem/holo/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		if(prob(5))
-			M.custom_pain("You feel no pain!",60)
-		if(prob(2))
-			M.custom_pain("You suddenly lose control over your body!",60)
-			M.status_adjust(EFFECT_PARALYZED, 1)
-		M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
+	if(prob(5))
+		M.custom_pain("You feel no pain!",60)
+	if(prob(2))
+		M.custom_pain("You suddenly lose control over your body!",60)
+		M.status_adjust(EFFECT_PARALYZED, 1)
+	M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/clown
 	name = "HONK"
@@ -300,6 +299,7 @@
 	color = "#FFFFFF"
 	overdose = REAGENTS_OVERDOSE * 200
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.5)
+	immune_species_blood = 0 // the honk reaches everyone
 
 /datum/reagent/inaprovaline/synxchem/clown/affect_blood(mob/living/carbon/M, alien, removed)
 	M.injure(INJURY_TOXIN, 0.01, flags = INJURE_SILENT)
@@ -327,7 +327,7 @@
 
 /datum/reagent/inaprovaline/synxchem/overdose(mob/living/carbon/M, alien, removed)
 	..()
-	if(alien != IS_DIONA)
+	if(!inert_for(M))
 		M.status_adjust(EFFECT_DIZZY, 10)
 		if(prob(5))
 			M.status_adjust(EFFECT_STUNNED, 1)
