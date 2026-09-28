@@ -324,7 +324,7 @@
 /obj/item/projectile/beam/tungsten/on_hit(atom/target, blocked = 0)
 	if(isliving(target))
 		var/mob/living/L = target
-		L.add_modifier(/datum/modifier/grievous_wounds, 30 SECONDS)
+		L.apply_body_effect(/datum/body_effect/grievous_wounds, 30 SECONDS)
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
 

@@ -388,7 +388,7 @@
 	)
 
 /mob/living/simple_mob/slime/xenobio/ruby/Initialize(mapload)
-	add_modifier(/datum/modifier/slime_strength, null, src) // Slime is always swole.
+	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
 	return ..()
 
 /mob/living/simple_mob/slime/xenobio/ruby/apply_melee_effects(atom/A)

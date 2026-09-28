@@ -191,8 +191,6 @@
 	if(alien != IS_DIONA)
 		M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
 		M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
-		if(prob(10))
-			M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 
 /datum/reagent/carthatoline
 	name = REAGENT_CARTHATOLINE
@@ -212,8 +210,6 @@
 		return
 	if(M.injury_load(INJURY_CATEGORY_TOXIC) && prob(10))
 		M.vomit(1)
-	if(prob(30))
-		M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
@@ -1517,11 +1513,11 @@
 		if(prob(3))
 			M.status_at_least(EFFECT_WEAKENED, 2)
 			M.emote("vomit")
-			M.add_modifier(/datum/modifier/withdrawal_strain/severe, 3 SECONDS)
+			M.apply_body_effect(/datum/body_effect/withdrawal_strain/severe, 3 SECONDS)
 	else if(current_addiction <= 40)
 		if(prob(3))
 			M.emote("vomit")
-			M.add_modifier(/datum/modifier/withdrawal_strain/moderate, 3 SECONDS)
+			M.apply_body_effect(/datum/body_effect/withdrawal_strain/moderate, 3 SECONDS)
 	else if(current_addiction <= 50)
 		if(prob(2))
 			M.emote("vomit")
@@ -2314,17 +2310,17 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/curea/affect_blood(mob/living/carbon/M, alien, removed)
-	M.remove_a_modifier_of_type(/datum/modifier/poisoned)
-	M.remove_a_modifier_of_type(/datum/modifier/chilled)
-	M.remove_a_modifier_of_type(/datum/modifier/doomed)
-	M.remove_a_modifier_of_type(/datum/modifier/invulnerable)
-	M.remove_a_modifier_of_type(/datum/modifier/elemental_vulnerability)
-	M.remove_a_modifier_of_type(/datum/modifier/grievous_wounds)
-	M.remove_a_modifier_of_type(/datum/modifier/deep_wounds)
-	M.remove_a_modifier_of_type(/datum/modifier/hivebot_weaken)
+	M.mend(TREAT_ANTITOXIN, 100)
+	M.remove_body_effect(/datum/body_effect/chilled)
+	M.remove_body_effect(/datum/body_effect/doomed)
+	M.remove_body_effect(/datum/body_effect/invulnerable)
+	M.remove_body_effect(/datum/body_effect/elemental_vulnerability)
+	M.remove_body_effect(/datum/body_effect/grievous_wounds)
+	M.remove_body_effect(/datum/body_effect/deep_wounds)
+	M.remove_body_effect(/datum/body_effect/hivebot_weaken)
 	M.extinguish_mob()
-	M.remove_a_modifier_of_type(/datum/modifier/berserk_exhaustion)
-	M.remove_a_modifier_of_type(/datum/modifier/entangled)
+	M.remove_body_effect(/datum/body_effect/berserk_exhaustion)
+	M.remove_body_effect(/datum/body_effect/entangled)
 	M.remove_a_modifier_of_type(/datum/modifier/wizfire)
 	M.remove_a_modifier_of_type(/datum/modifier/wizpoison)
 

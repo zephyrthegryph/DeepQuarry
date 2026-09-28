@@ -339,7 +339,7 @@
 /mob/living/simple_mob/vore/candy/greencabold/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
-		L.add_modifier(/datum/modifier/deep_wounds, 15 SECONDS)
+		L.apply_body_effect(/datum/body_effect/deep_wounds, 15 SECONDS)
 
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent //Long range grab
@@ -583,7 +583,7 @@
 	armor_penetration = 30
 	speed = 4.0
 	flash_strength = 0
-	modifier_type_to_apply = /datum/modifier/chilled
+	modifier_type_to_apply = /datum/body_effect/chilled
 	modifier_duration = 6 SECONDS
 
 /obj/item/projectile/energy/canearrow
@@ -594,7 +594,7 @@
 	armor_penetration = 40
 	speed = 2.5
 	flash_strength = 0
-	modifier_type_to_apply = /datum/modifier/grievous_wounds
+	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 12 SECONDS
 
 /obj/item/projectile/arc/fragmentation/cherrybomb

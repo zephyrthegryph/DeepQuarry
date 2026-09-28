@@ -549,7 +549,7 @@
 		M.adjust_nutrition(strength * removed)
 		return
 	else
-		M.add_modifier(/datum/modifier/slow_pulse, 30 SECONDS)
+		M.apply_body_effect(/datum/body_effect/slow_pulse, 30 SECONDS)
 	..()
 
 /datum/reagent/toxin/sifslurry/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.

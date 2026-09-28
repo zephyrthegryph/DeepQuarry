@@ -282,7 +282,7 @@
 				M.emote(pick("pale","shiver","twitch"))
 				M.drop_item() //Hand tremors
 				if(realistic_addiction)
-					M.add_modifier(/datum/modifier/withdrawal_strain/moderate, 3 SECONDS)
+					M.apply_body_effect(/datum/body_effect/withdrawal_strain/moderate, 3 SECONDS)
 	else //Stabilization effects
 		if(current_addiction <= 60)
 			M.pulse = PULSE_FAST

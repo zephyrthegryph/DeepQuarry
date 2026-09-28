@@ -48,7 +48,7 @@
 
 /datum/blob_type/volatile_alluvium/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
 	if(user)
-		user.add_modifier(/datum/modifier/fortify, 60 SECONDS)
+		user.apply_body_effect(/datum/body_effect/fortify, 60 SECONDS)
 
 /obj/structure/blob/proc/alluvium_crumble(damage, blob_name)
 	adjust_integrity(-(damage))

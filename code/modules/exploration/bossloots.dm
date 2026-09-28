@@ -21,10 +21,10 @@
 		user.mend(TREAT_TISSUE_REPAIR, 7)
 	else if(IS_DISARMING(user)) //DoT mode
 		. = ..()
-		target.add_modifier(/datum/modifier/poisoned, 20)
+		target.lingering_poison(1, 2 SECONDS, user)
 	else if(IS_GRABBING(user)) //weaken mode
 		. = ..()
-		target.add_modifier(/datum/modifier/hivebot_weaken, 20)
+		target.apply_body_effect(/datum/body_effect/hivebot_weaken, 20)
 
 /obj/item/cell/slime/jellyfish //Less max charge then slime but faster recharge
 	name = "Jellyfish Cell Core"
@@ -62,11 +62,11 @@
 	if(IS_GRABBING(user)) //Anti-Heal mode
 		. = ..()
 		if(active)
-			target.add_modifier(/datum/modifier/grievous_wounds, 20)
+			target.apply_body_effect(/datum/body_effect/grievous_wounds, 20)
 	else if(IS_DISARMING(user)) //weaken mode
 		. = ..()
 		if(active)
-			target.add_modifier(/datum/modifier/berserk_exhaustion, 3)
+			target.apply_body_effect(/datum/body_effect/berserk_exhaustion, 3)
 	else if(IS_HARMING(user)) //Tiny Chance to crit
 		. = ..()
 		if(active && prob(2))

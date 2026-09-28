@@ -9,5 +9,5 @@
 
 	combustion = FALSE
 
-	modifier_type_to_apply = /datum/modifier/entangled
+	modifier_type_to_apply = /datum/body_effect/entangled
 	modifier_duration = 0.5 MINUTE

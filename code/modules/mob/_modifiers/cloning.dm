@@ -3,7 +3,8 @@
  */
 
 // Gives rather nasty downsides for awhile, making them less robust.
-/datum/modifier/cloning_sickness
+/datum/body_effect/cloning_sickness
+	stacks = MODIFIER_STACK_FORBID
 	name = "cloning sickness"
 	desc = "You feel rather weak, having been cloned not so long ago."
 
@@ -49,7 +50,7 @@
 //Species-Specific Cloning Modifiers//
 /////////////////////////////////////
 
-/datum/modifier/cloning_sickness/promethean
+/datum/body_effect/cloning_sickness/promethean
 	name = "reformation sickness"
 	desc = "Your core feels damaged, as you were reformed with the improper machinery."
 

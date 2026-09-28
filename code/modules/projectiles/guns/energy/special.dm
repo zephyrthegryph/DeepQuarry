@@ -518,7 +518,7 @@
 /obj/item/projectile/energy/plasmastun/slow/on_hit(atom/target)
 	if(isliving(target))
 		var/mob/living/L = target
-		L.add_modifier(/datum/modifier/entangled, 10 SECONDS)
+		L.apply_body_effect(/datum/body_effect/entangled, 10 SECONDS)
 
 
 /obj/item/gun/energy/rednetgun
@@ -538,11 +538,12 @@
 	hud_state = "pistol_tranq"
 	fire_sound = 'sound/weapons/taser.ogg'
 	nodamage = 1
-	modifier_type_to_apply = /datum/modifier/rednet
+	modifier_type_to_apply = /datum/body_effect/rednet
 	modifier_duration = 0.5 MINUTE
 	speed = 1.5
 
-/datum/modifier/rednet
+/datum/body_effect/rednet
+	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "red_electricity_constant"
 
 /obj/item/projectile/bullet/magnetic/supercannon

@@ -1,4 +1,4 @@
-/datum/modifier/medbeameffect
+/datum/body_effect/medbeameffect
 	name = "medgunffect"
 	desc = "You're being stabilized"
 	mob_overlay_state = "medigun_effect"

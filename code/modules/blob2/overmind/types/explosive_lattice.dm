@@ -54,4 +54,4 @@
 		return
 
 	for(var/mob/living/L in view(1, T))
-		L.add_modifier(/datum/modifier/blastshield, 30 SECONDS)
+		L.apply_body_effect(/datum/body_effect/blastshield, 30 SECONDS)

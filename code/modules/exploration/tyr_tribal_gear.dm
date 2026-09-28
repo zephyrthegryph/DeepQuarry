@@ -289,9 +289,9 @@
 			if(I_DISARM)
 				user.add_modifier(/datum/modifier/technomancer/haste, 2 SECONDS)
 			if(I_HURT)
-				target.add_modifier(/datum/modifier/phase_armor, 5 SECONDS)
+				target.apply_body_effect(/datum/body_effect/phase_armor, 5 SECONDS)
 
-/datum/modifier/phase_armor
+/datum/body_effect/phase_armor
 	name = "Phased Armor"
 	desc = "Your defense has been phased out."
 	on_created_text = span_notice("Part of your form phases out.")

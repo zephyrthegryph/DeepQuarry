@@ -26,4 +26,4 @@
 
 	shock(L, 100, target_zone)
 
-	L.add_modifier(/datum/modifier/entangled, 3 SECONDS)
+	L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS)

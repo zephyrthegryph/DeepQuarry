@@ -208,8 +208,8 @@
 /mob/living/proc/shadekin_complete_phase_in(original_canmove, datum/component/shadekin/SK)
 	canmove = original_canmove
 	alpha = initial(alpha)
-	remove_modifiers_of_type(/datum/modifier/shadekin_phase_vision)
-	remove_modifiers_of_type(/datum/modifier/phased_out)
+	remove_body_effect(/datum/body_effect/shadekin_phase_vision)
+	remove_body_effect(/datum/body_effect/phased_out)
 
 	//Potential phase-in vore
 
@@ -306,9 +306,9 @@
 		phaseanim.adjust_scale(src.size_multiplier, src.size_multiplier)
 		phaseanim.dir = dir
 		alpha = 0
-		add_modifier(/datum/modifier/shadekin_phase_vision)
+		apply_body_effect(/datum/body_effect/shadekin_phase_vision)
 		if(SK.normal_phase)
-			add_modifier(/datum/modifier/phased_out)
+			apply_body_effect(/datum/body_effect/phased_out)
 		om_after(src, SK.phase_time, PROC_REF(complete_phase_out), original_canmove, SK)
 
 
@@ -324,11 +324,13 @@
 	density = FALSE
 	SK.doing_phase = FALSE
 
-/datum/modifier/shadekin_phase_vision
+/datum/body_effect/shadekin_phase_vision
+	stacks = MODIFIER_STACK_FORBID
 	name = "Shadekin Phase Vision"
 	factors = alist(BF_SIGHT_FLAGS = SEE_THRU)
 
-/datum/modifier/phased_out
+/datum/body_effect/phased_out
+	stacks = MODIFIER_STACK_FORBID
 	name = "Phased Out"
 	desc = "You are currently phased out of realspace, and cannot interact with it."
 	hidden = TRUE

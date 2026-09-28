@@ -85,7 +85,7 @@
 /mob/living/simple_mob/vr/glitch/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
-		L.add_modifier(/datum/modifier/digitizing, 60 SECONDS)
+		L.apply_body_effect(/datum/body_effect/digitizing, 60 SECONDS)
 
 /mob/living/simple_mob/vr/doomknight
 	name = "hardlight creation doomknight"
@@ -103,7 +103,7 @@
 /mob/living/simple_mob/vr/doomknight/apply_melee_effects(atom/A) //If you get hit by this slow thing, you have 5 minuites to live.
 	if(isliving(A))
 		var/mob/living/L = A
-		L.add_modifier(/datum/modifier/doomed, 300 SECONDS)
+		L.apply_body_effect(/datum/body_effect/doomed, 300 SECONDS)
 
 
 //Spells
@@ -181,7 +181,7 @@
 	damage_per_tick = 1
 	factors = alist(BF_SLOWDOWN = 0.5)
 
-/datum/modifier/digitizing
+/datum/body_effect/digitizing
 	name = "digital"
 	desc = "Can you even see this in game?."
 	mob_overlay_state = "corana"

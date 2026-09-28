@@ -102,7 +102,7 @@ the artifact triggers the rage.
 
 /datum/modifier/berserk/on_expire()
 	if(exhaustion_duration > 0 && holder.stat != DEAD)
-		holder.add_modifier(/datum/modifier/berserk_exhaustion, exhaustion_duration)
+		holder.apply_body_effect(/datum/body_effect/berserk_exhaustion, exhaustion_duration)
 
 		if(prob(last_shock_stage))
 			to_chat(holder, span_warning("You pass out from the pain you were suppressing."))
@@ -122,7 +122,7 @@ the artifact triggers the rage.
 	if(!L.is_sentient())
 		return FALSE // Drones don't feel anything.
 
-	if(L.has_modifier_of_type(/datum/modifier/berserk_exhaustion))
+	if(L.has_body_effect(/datum/body_effect/berserk_exhaustion))
 		if(!suppress_failure)
 			to_chat(L, span_warning("You recently berserked, and cannot do so again while exhausted."))
 		return FALSE // On cooldown.
@@ -150,7 +150,7 @@ the artifact triggers the rage.
 
 
 // Applied when berserk expires. Acts as a downside as well as the cooldown for berserk.
-/datum/modifier/berserk_exhaustion
+/datum/body_effect/berserk_exhaustion
 	name = "exhaustion"
 	desc = "You recently exerted yourself extremely hard, and need a rest."
 
@@ -160,8 +160,8 @@ the artifact triggers the rage.
 
 	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -30, BF_ATTACK_SPEED = 1.5, BF_MELEE_DAMAGE = 0.6, BF_DISABLE_DURATION = 1.5)
 
-/datum/modifier/berserk_exhaustion/on_applied()
-	holder.visible_message(span_warning("\The [holder] looks exhausted."))
+/datum/body_effect/berserk_exhaustion/on_start(mob/living/L)
+	L.visible_message(span_warning("\The [L] looks exhausted."))
 
 
 // Synth version with no benefits due to a loss of focus inside a metal shell, which can't be pushed harder just be being mad.
@@ -184,7 +184,7 @@ the artifact triggers the rage.
 	factors = alist(BF_ACCURACY = -75, BF_DISPERSION = 3, BF_EVASION = -45)
 
 // Speedy, but not hasted.
-/datum/modifier/sprinting
+/datum/body_effect/sprinting
 	name = "sprinting"
 	desc = "You are filled with energy!"
 
@@ -195,7 +195,7 @@ the artifact triggers the rage.
 	factors = alist(BF_SLOWDOWN = -1, BF_DISABLE_DURATION = 0.8)
 
 // Speedy, but not berserked.
-/datum/modifier/melee_surge
+/datum/body_effect/melee_surge
 	name = "melee surge"
 	desc = "You are filled with energy!"
 
@@ -207,7 +207,7 @@ the artifact triggers the rage.
 
 // Non-cult version of deep wounds.
 // Surprisingly, more dangerous.
-/datum/modifier/grievous_wounds
+/datum/body_effect/grievous_wounds
 	name = "grievous wounds"
 	desc = "Your wounds are not easily mended."
 
@@ -225,7 +225,7 @@ the artifact triggers the rage.
 
 // Applied when near something very cold.
 // Reduces mobility, attack speed.
-/datum/modifier/chilled
+/datum/body_effect/chilled
 	name = "chilled"
 	desc = "You feel yourself freezing up. Its hard to move."
 	mob_overlay_state = "chilled"
@@ -240,50 +240,8 @@ the artifact triggers the rage.
 // Similar to being on fire, except poison tends to be more long term.
 // Antitoxins will remove stacks over time.
 // Synthetics can't receive this.
-/datum/modifier/poisoned
-	name = "poisoned"
-	desc = "You have poison inside of you. It will cause harm over a long span of time if not cured."
-	mob_overlay_state = "poisoned"
-
-	on_created_text = span_warning("You feel sick...")
-	on_expired_text = span_notice("You feel a bit better.")
-	stacks = MODIFIER_STACK_ALLOWED // Multiple instances will hurt a lot.
-	var/damage_per_tick = 1
-
-/datum/modifier/poisoned/weak
-	damage_per_tick = 0.5
-
-/datum/modifier/poisoned/strong
-	damage_per_tick = 2
-
-/datum/modifier/poisoned/tick()
-	if(holder.stat == DEAD)
-		expire(silent = TRUE)
-	holder.inflict_poison_damage(damage_per_tick)
-
-/datum/modifier/poisoned/can_apply(mob/living/L)
-	if(L.isSynthetic())
-		return FALSE
-	if(L.get_poison_protection() >= 1)
-		return FALSE
-	return TRUE
-
-/datum/modifier/poisoned/paralysis
-	desc = "You have poison inside of you. It will cause harm over a long span of time if not cured, and may cause temporary paralysis."
-	on_created_text = span_warning("You feel incredibly weak...")
-	damage_per_tick = 0.75
-
-/datum/modifier/poisoned/paralysis/tick()
-	..()
-	if(prob(5))
-		holder.status_at_least(EFFECT_PARALYZED, 3)
-
-/datum/modifier/poisoned/paralysis/on_applied()
-	..()
-	holder.status_at_least(EFFECT_PARALYZED, 4)
-
 // Pulse modifier.
-/datum/modifier/false_pulse
+/datum/body_effect/false_pulse
 	name = "false pulse"
 	desc = "Your blood flows, despite all other factors."
 
@@ -293,7 +251,7 @@ the artifact triggers the rage.
 
 	factors = alist(BF_PULSE_SET = PULSE_NORM)
 
-/datum/modifier/slow_pulse
+/datum/body_effect/slow_pulse
 	name = "slow pulse"
 	desc = "Your blood flows slower."
 
@@ -344,7 +302,7 @@ the artifact triggers the rage.
 		holder.bodytemperature = round((holder.bodytemperature + T20C) / 2)
 
 // Nullifies EMP.
-/datum/modifier/faraday
+/datum/body_effect/faraday
 	name = "EMP shielding"
 	desc = "You are covered in some form of faraday shielding. EMPs have no effect."
 	mob_overlay_state = "electricity"
@@ -356,7 +314,7 @@ the artifact triggers the rage.
 	factors = alist(BF_EMP_SHIFT = 5)
 
 // Nullifies explosions.
-/datum/modifier/blastshield
+/datum/body_effect/blastshield
 	name = "Blast Shielding"
 	desc = "You are protected from explosions somehow."
 	mob_overlay_state = "electricity"
@@ -368,7 +326,7 @@ the artifact triggers the rage.
 	factors = alist(BF_EXPLOSION_SHIFT = 3)
 
 // Kills on expiration.
-/datum/modifier/doomed
+/datum/body_effect/doomed
 	name = "Doomed"
 	desc = "You are doomed."
 
@@ -376,10 +334,11 @@ the artifact triggers the rage.
 	on_expired_text = span_warning("You feel the life drain from your body.")
 	stacks = MODIFIER_STACK_EXTEND
 
-/datum/modifier/doomed/on_expire()
-	if(holder.stat != DEAD)
-		holder.visible_message(span_alien("\The [holder] collapses, the life draining from their body."))
-		holder.death()
+/// Only running out kills: curing or removing the doom (curea) lifts it.
+/datum/body_effect/doomed/on_end(mob/living/L, expired)
+	if(expired && L.stat != DEAD)
+		L.visible_message(span_alien("\The [L] collapses, the life draining from their body."))
+		L.death()
 
 /datum/modifier/outline_test
 	name = "Outline Test"
@@ -394,7 +353,7 @@ the artifact triggers the rage.
 
 // Acts as a psuedo-godmode, yet probably is more reliable than the actual var for it nowdays.
 // Can't protect from instantly killing things like singulos.
-/datum/modifier/invulnerable
+/datum/body_effect/invulnerable
 	name = "invulnerable"
 	desc = "You are almost immune to harm, for a little while at least."
 	stacks = MODIFIER_STACK_EXTEND
@@ -404,14 +363,14 @@ the artifact triggers the rage.
 // Reduces resistance to "elements".
 // Note that most things that do give resistance gives 100% protection,
 // and due to multiplicitive stacking, this modifier won't do anything to change that.
-/datum/modifier/elemental_vulnerability
+/datum/body_effect/elemental_vulnerability
 	name = "elemental vulnerability"
 	desc = "You're more vulnerable to extreme temperatures and electricity."
 	stacks = MODIFIER_STACK_EXTEND
 
 	factors = alist(BF_HEAT_EXPOSURE = 1.5, BF_COLD_EXPOSURE = 1.5, BF_SIEMENS = 1.5)
 
-/datum/modifier/entangled
+/datum/body_effect/entangled
 	name = "entangled"
 	desc = "Its hard to move."
 
@@ -441,6 +400,7 @@ the artifact triggers the rage.
 	name = "Major Emp Weakness"
 	desc = "You are weak to EMPs."
 
-/datum/modifier/rednet //Not used here currently, but used downstream. Todo: Port it.
+/datum/body_effect/rednet //Not used here currently, but used downstream. Todo: Port it.
+	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "red_electricity_constant"
 	factors = alist(BF_SLOWDOWN = 1)

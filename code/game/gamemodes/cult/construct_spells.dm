@@ -293,10 +293,10 @@
 	charge_max = 600
 
 /datum/spell/targeted/fortify/cast(list/targets, mob/living/user)
-	if(findNullRod(user) || user.has_modifier_of_type(/datum/modifier/fortify))
+	if(findNullRod(user) || user.has_body_effect(/datum/body_effect/fortify))
 		charge_counter = 400
 		return
-	user.add_modifier(/datum/modifier/fortify, 1 MINUTES)
+	user.apply_body_effect(/datum/body_effect/fortify, 1 MINUTES)
 
 /datum/spell/targeted/occult_repair_aura
 	name = "Repair Aura"
@@ -340,10 +340,10 @@
 	if(findNullRod(user))
 		charge_counter = 50
 		return
-	if(user.has_modifier_of_type(/datum/modifier/ambush))
-		user.remove_modifiers_of_type(/datum/modifier/ambush)
+	if(user.has_body_effect(/datum/body_effect/ambush))
+		user.remove_body_effect(/datum/body_effect/ambush)
 		return
-	user.add_modifier(/datum/modifier/ambush, 0)
+	user.apply_body_effect(/datum/body_effect/ambush, 0)
 
 /*
  *

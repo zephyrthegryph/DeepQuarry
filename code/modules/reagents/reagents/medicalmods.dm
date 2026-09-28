@@ -1,4 +1,4 @@
-/datum/modifier/eletricalsurge //grub
+/datum/body_effect/eletricalsurge //grub
 	name = "Eletrical Surge"
 	desc = "You are filled with an overwhelming energy."
 
@@ -7,7 +7,7 @@
 	stacks = MODIFIER_STACK_EXTEND
 	factors = alist(BF_EVASION = 20, BF_ATTACK_SPEED = 0.75, BF_SIEMENS = 3)
 
-/datum/modifier/healingtide //carp
+/datum/body_effect/healingtide //carp
 	name = "Healing Tide"
 	desc = "Your body is more receptive to chemicals."
 
@@ -17,7 +17,7 @@
 
 	factors = alist(BF_METABOLISM = 0.5, BF_HEALING_RECEIVED = 1.25)
 
-/datum/modifier/radiationhide //deathclaw
+/datum/body_effect/radiationhide //deathclaw
 	name = "Radiation Hide"
 	desc = "Your body is adorn with scales."
 
@@ -39,7 +39,7 @@
 
 	factors = alist(BF_METABOLISM = 3.0, BF_BLEEDING = 3.0, BF_SLOWDOWN = -3, BF_ATTACK_SPEED = 0.25, BF_DISABLE_DURATION = 0.1, BF_ENDURANCE_MULT = 0.25)
 
-/datum/modifier/protectivenumbing //spider
+/datum/body_effect/protectivenumbing //spider
 	name = "Protective Numbing"
 	desc = "Your senses dull."
 
@@ -49,7 +49,7 @@
 
 	factors = alist(BF_ATTACK_SPEED = 1.25, BF_HEAT_EXPOSURE = 0, BF_COLD_EXPOSURE = 0)
 
-/datum/modifier/juggernog
+/datum/body_effect/juggernog
 	name = "Juggernog"
 	desc = "Your body is prepared for conflict."
 
@@ -68,13 +68,13 @@
 	stacks = MODIFIER_STACK_EXTEND
 
 /datum/modifier/life_cloak/can_apply(mob/living/L, suppress_failure = FALSE)
-	if(L.has_modifier_of_type(/datum/modifier/life_cloak_exhaustion))
+	if(L.has_body_effect(/datum/body_effect/life_cloak_exhaustion))
 		return FALSE
 	return ..()
 
 /datum/modifier/life_cloak/tick()
 	if(holder.stat != DEAD)
-		holder.add_modifier(/datum/modifier/life_cloak_exhaustion, 360 SECONDS)
+		holder.apply_body_effect(/datum/body_effect/life_cloak_exhaustion, 360 SECONDS)
 		// A revival burst from a power, not a reagent: mend by mechanism,
 		// organic and synthetic alike.
 		holder.mend(TREAT_TISSUE_REPAIR, 150)
@@ -86,7 +86,7 @@
 		holder.failed_last_breath = 0
 		expire()
 
-/datum/modifier/life_cloak_exhaustion
+/datum/body_effect/life_cloak_exhaustion
 	name = "Life Cloak Recovery"
 	desc = "Your body is recovering."
 

@@ -90,7 +90,7 @@
 /mob/living/simple_mob/slime/feral/dark_blue/proc/chill(mob/living/L)
 	L.inflict_cold_damage(10)
 	if(L.get_cold_protection() < 1)
-		L.add_modifier(/datum/modifier/chilled, 5 SECONDS, src)
+		L.apply_body_effect(/datum/body_effect/chilled, 5 SECONDS, src)
 
 	if((L.ai_brain != null)) // Other AIs should react to hostile auras.
 		L.ai_brain.react_to_attack(src)

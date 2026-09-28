@@ -17,10 +17,10 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		L.taunt(src, TRUE)
-		L.add_modifier(/datum/modifier/hivebot_weaken, 3 SECONDS)
+		L.apply_body_effect(/datum/body_effect/hivebot_weaken, 3 SECONDS)
 
 // Modifier applied to whatever a tank hivebot hits, intended to make the target do even less damage.
-/datum/modifier/hivebot_weaken
+/datum/body_effect/hivebot_weaken
 	name = "Shocked"
 	desc = "You feel less able to exert yourself after being prodded."
 	on_created_text = span_warning("You feel weak...")

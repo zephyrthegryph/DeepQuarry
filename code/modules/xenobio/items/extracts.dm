@@ -715,10 +715,10 @@
 
 /datum/decl/chemical_reaction/instant/slime/dark_blue_temp_resist/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
-		L.add_modifier(/datum/modifier/slime_temp_resist, 5 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/slime_temp_resist, 5 MINUTES, src)
 	..()
 
-/datum/modifier/slime_temp_resist
+/datum/body_effect/slime_temp_resist
 	name = "slime temperature resistance"
 	desc = "You feel immune to heat and cold."
 	mob_overlay_state = "corona"
@@ -1287,10 +1287,10 @@
 
 /datum/decl/chemical_reaction/instant/slime/ruby_swole/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
-		L.add_modifier(/datum/modifier/slime_strength, 10 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/slime_strength, 10 MINUTES, src)
 	..()
 
-/datum/modifier/slime_strength
+/datum/body_effect/slime_strength
 	name = "slime strength"
 	desc = "You feel much stronger than usual."
 	mob_overlay_state = "pink_sparkles"
@@ -1369,10 +1369,10 @@
 
 /datum/decl/chemical_reaction/instant/slime/emerald_agility/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
-		L.add_modifier(/datum/modifier/slime_agility, 10 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/slime_agility, 10 MINUTES, src)
 	..()
 
-/datum/modifier/slime_agility
+/datum/body_effect/slime_agility
 	name = "slime agility"
 	desc = "You feel much more agile than usual."
 	mob_overlay_state = "green_sparkles"
@@ -1392,10 +1392,10 @@
 
 /datum/decl/chemical_reaction/instant/slime/emerald_speed/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(1, holder.my_atom))
-		L.add_modifier(/datum/modifier/slime_speed, 1 MINUTE, src)
+		L.apply_body_effect(/datum/body_effect/slime_speed, 1 MINUTE, src)
 	..()
 
-/datum/modifier/slime_speed
+/datum/body_effect/slime_speed
 	name = "slime speed"
 	desc = "You feel much faster than usual."
 	mob_overlay_state = "haste"

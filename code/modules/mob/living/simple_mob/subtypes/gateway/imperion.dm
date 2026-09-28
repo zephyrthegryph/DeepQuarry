@@ -461,7 +461,7 @@
 	projectile_types = list(/obj/item/projectile/energy/mob/midlaser)
 
 //te,porarly removing 	mob_overlay_state = "red_electricity_constant" to try and fix the visual bug
-/datum/modifier/bossbuff
+/datum/body_effect/bossbuff
 	name = "boss_buff"
 
 	on_created_text = span_critical("You feel an intense and overwhelming rage overtake you as you go berserk!")
@@ -471,7 +471,7 @@
 	factors = alist(BF_DISABLE_DURATION = 0)
 
 /mob/living/simple_mob/mechanical/mecha/imperion/Initialize(mapload)
-	add_modifier(/datum/modifier/bossbuff, null, src) // Slime is always swole.
+	apply_body_effect(/datum/body_effect/bossbuff, null, src) // Slime is always swole.
 	return ..()
 
 /datum/modifier/aura/despair

@@ -378,6 +378,21 @@
 	if(amount > 0)
 		injure(INJURY_TOXIN, amount)
 
+/// Seconds of Life per unit of the old poisoned modifier's damage_per_tick (one Life cycle).
+#define LINGERING_POISON_CYCLE (2 SECONDS)
+
+/// A lingering, self-resolving poisoning (the old /datum/modifier/poisoned): `per_cycle` toxin a
+/// Life cycle for about `duration`, dealt as one lingering_poison affliction dose. Poison
+/// protection scales it; the affliction's biology keeps it off synthetics.
+/mob/living/proc/lingering_poison(per_cycle, duration, atom/source, paralytic = FALSE)
+	var/amount = per_cycle * max(duration, 0) / LINGERING_POISON_CYCLE
+	amount *= 1 - get_poison_protection()
+	if(amount <= 0)
+		return 0
+	return injure(INJURY_TOXIN, amount, null, source, 0, paralytic ? /datum/affliction/venom/lingering_poison/paralytic : /datum/affliction/venom/lingering_poison)
+
+#undef LINGERING_POISON_CYCLE
+
 /mob/living/proc/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE)
 	return 1
 

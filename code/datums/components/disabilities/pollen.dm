@@ -71,5 +71,5 @@
 
 /datum/component/pollen_disability/proc/trigger_allergy()
 	to_chat(owner, span_danger("[pick("The air feels itchy!","Your face feels uncomfortable!","Your body tingles!")]"))
-	owner.add_modifier(/datum/modifier/allergic_flare, 3 SECONDS)
+	owner.apply_body_effect(/datum/body_effect/allergic_flare, 3 SECONDS)
 

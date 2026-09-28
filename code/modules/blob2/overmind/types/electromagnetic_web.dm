@@ -31,4 +31,4 @@
 		return
 
 	for(var/mob/living/L in view(2, T))
-		L.add_modifier(/datum/modifier/faraday, 30 SECONDS)
+		L.apply_body_effect(/datum/body_effect/faraday, 30 SECONDS)

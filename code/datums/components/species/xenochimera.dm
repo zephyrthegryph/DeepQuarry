@@ -444,7 +444,7 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 		xc.chimera_hatch((reload_slot == "From Slot" && client))
 		visible_message(span_warning(span_huge("[src] rises to \his feet."))) //Bloody hell...
 		if(has_braindamage)
-			// add_modifier(/datum/modifier/resleeving_sickness/chimera, sickness_duration) //
+			// apply_body_effect(/datum/body_effect/resleeving_sickness/chimera, sickness_duration) //
 			injure(INJURY_NEURAL, 5) // if they're reviving from dead, they come back with 5 brain damage on top of whatever's unhealed.
 
 /datum/component/xenochimera/proc/chimera_hatch(from_save_slot)
@@ -485,7 +485,8 @@ REF_OWNED(/datum/component/xenochimera, "revival_record")
 
 	revive_ready = world.time + 10 MINUTES //set the cooldown, Reduced this to 10 minutes, you're playing with fire if you're reviving that often.
 
-/datum/modifier/resleeving_sickness/chimera //near identical to the regular version, just with different flavortexts
+/datum/body_effect/resleeving_sickness/chimera //near identical to the regular version, just with different flavortexts
+	stacks = MODIFIER_STACK_FORBID
 	name = "imperfect regeneration"
 	desc = "You feel rather weak and unfocused, having just regrown your body not so long ago."
 

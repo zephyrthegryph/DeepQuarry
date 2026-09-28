@@ -113,7 +113,7 @@
 
 		visible_message(span_danger("\The [src] erupts from underneath, and hits \the [L]!"))
 		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
-		L.add_modifier(/datum/modifier/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
+		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
@@ -168,7 +168,7 @@
 		to_chat(src, span_critical("You hit something really solid!"))
 		playsound(src, "punch", 75, 1)
 		status_at_least(EFFECT_WEAKENED, 5)
-		add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
+		apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 		tunnel_finish(FALSE, then_proc, extra) // Hit a wall.
 		return
 
@@ -212,7 +212,7 @@
 	icon_state = "tunnel_hole"
 	time_to_die = 1 MINUTE
 
-/datum/modifier/tunneler_vulnerable
+/datum/body_effect/tunneler_vulnerable
 	name = "Vulnerable"
 	desc = "You are vulnerable to more harm than usual."
 	on_created_text = span_warning("You feel vulnerable...")

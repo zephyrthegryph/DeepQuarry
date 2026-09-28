@@ -416,6 +416,18 @@ if $grep -n '\b(M|mod|modifier)\.(slowdown|haste|evasion|accuracy|siemens_coeffi
 	FAILED=1
 fi;
 
+part "modifiers: ratchet on /datum/modifier types (MED-5)"
+# Factor-only timed effects are body effects (code/modules/body/body_effects.dm: OM contributions
+# on the body clock); medically real conditions are afflictions. /datum/modifier is kept only for
+# effects with behaviour. This count may only go down: lower it when you convert one.
+modifier_type_max=193
+modifier_type_count=$($grep -c '^/datum/modifier(/[A-Za-z0-9_]+)*\s*(//.*)?$' "${code_files[@]}" | awk -F: '{s += $NF} END {print s + 0}')
+if [ "$modifier_type_count" -gt "$modifier_type_max" ]; then
+	echo
+	echo -e "${RED}ERROR: $modifier_type_count /datum/modifier types (ratchet: $modifier_type_max). A factor-only effect is a /datum/body_effect (apply_body_effect()); a medical condition is an affliction.${NC}"
+	FAILED=1
+fi;
+
 part "weapon vocabulary: injury kinds, not damage types"
 # Weapons, projectiles, blobs, unarmed and animal attacks declare what they
 # inflict as INJURY_* kinds (`injury_kind`, or an `injury_kinds` alist for a

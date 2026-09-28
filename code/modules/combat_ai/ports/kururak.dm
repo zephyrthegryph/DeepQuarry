@@ -7,7 +7,7 @@
 //   flee_when_dying = TRUE.
 //
 //   handle_special_strategical(): recomputed the pack hierarchy every strategic
-//     tick — the kururak with the highest `instinct` gets the /datum/modifier/ace
+//     tick — the kururak with the highest `instinct` gets the /datum/body_effect/ace
 //     buff (via pack_gauge()/detect_instinct()), everyone else follows the ace,
 //     and ONLY an ace becomes hostile (hunts on sight). Non-aces stay passive
 //     and only retaliate.
@@ -70,11 +70,11 @@
 	// Recompute the ace buff (highest instinct in range gets it).
 	var/mob/living/simple_mob/animal/sif/kururak/highest = K.detect_instinct()
 	if(highest == K)
-		K.add_modifier(/datum/modifier/ace, 60 SECONDS)
+		K.apply_body_effect(/datum/body_effect/ace, 60 SECONDS)
 	else
-		K.remove_modifiers_of_type(/datum/modifier/ace)
+		K.remove_body_effect(/datum/body_effect/ace)
 
-	var/has_ace = K.has_modifier_of_type(/datum/modifier/ace)
+	var/has_ace = K.has_body_effect(/datum/body_effect/ace)
 	if(K.obey_pack_rule)
 		if(has_ace)
 			// The pack leader never follows another kururak.
@@ -155,7 +155,7 @@
 	var/mob/threat = brain.primary_threat
 	if(!istype(K) || !threat)
 		return null
-	if(!K.has_modifier_of_type(/datum/modifier/ace))
+	if(!K.has_body_effect(/datum/body_effect/ace))
 		return null
 	if(!brain.model || !length(brain.model.visible_friendlies))
 		return null

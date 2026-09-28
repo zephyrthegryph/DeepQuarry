@@ -378,7 +378,7 @@
 
 	shock(L, 100, target_zone)
 
-	L.add_modifier(/datum/modifier/entangled, 3 SECONDS)
+	L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS)
 
 	if(!L.injure(injury_kind, force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
 		return

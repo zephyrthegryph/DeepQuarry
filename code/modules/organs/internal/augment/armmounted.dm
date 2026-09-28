@@ -139,7 +139,7 @@
 
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner
-		H.add_modifier(/datum/modifier/melee_surge, 0.75 MINUTES)
+		H.apply_body_effect(/datum/body_effect/melee_surge, 0.75 MINUTES)
 
 /obj/item/organ/internal/augment/armmounted/shoulder/blade
 	name = "armblade implant"

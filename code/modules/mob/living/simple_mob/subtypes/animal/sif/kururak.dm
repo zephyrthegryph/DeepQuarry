@@ -130,7 +130,7 @@
 	return ..()
 
 /mob/living/simple_mob/animal/sif/kururak/should_special_attack(atom/A)
-	return has_modifier_of_type(/datum/modifier/ace)
+	return has_body_effect(/datum/body_effect/ace)
 
 /mob/living/simple_mob/animal/sif/kururak/do_special_attack(atom/A)
 	. = TRUE
@@ -289,7 +289,7 @@
 		else
 			L.injure(INJURY_CUT, damage_to_apply, source = src)
 
-		L.add_modifier(/datum/modifier/grievous_wounds, 60 SECONDS)
+		L.apply_body_effect(/datum/body_effect/grievous_wounds, 60 SECONDS)
 
 	else if(istype(A, /obj/mecha))
 		visible_message(span_danger("\The [src] rakes its claws against \the [A]."))
@@ -311,7 +311,7 @@
 	set desc = "Tries to command your fellow pack members to follow you."
 	set category = "Abilities.Kururak"
 
-	if(has_modifier_of_type(/datum/modifier/ace))
+	if(has_body_effect(/datum/body_effect/ace))
 		for(var/mob/living/simple_mob/animal/sif/kururak/K in hearers(7, src))
 			if(K == src)
 				continue
@@ -344,9 +344,9 @@
 /mob/living/simple_mob/animal/sif/kururak/proc/pack_gauge()	// Check incase we have a client.
 	var/mob/living/simple_mob/animal/sif/kururak/highest_instinct = detect_instinct()
 	if(highest_instinct == src)
-		add_modifier(/datum/modifier/ace, 60 SECONDS)
+		apply_body_effect(/datum/body_effect/ace, 60 SECONDS)
 	else
-		remove_modifiers_of_type(/datum/modifier/ace)
+		remove_body_effect(/datum/body_effect/ace)
 
 /mob/living/simple_mob/animal/sif/kururak/hibernate/Initialize(mapload)
 	. = ..()
@@ -359,7 +359,7 @@
 
 // Kururak Ace modifier, given to the one with the highest Instinct.
 
-/datum/modifier/ace
+/datum/body_effect/ace
 	name = "Ace"
 	desc = "You are universally superior, in terms of physical prowess."
 	on_created_text = "You feel superior."

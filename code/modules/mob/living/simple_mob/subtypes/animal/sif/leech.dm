@@ -388,7 +388,8 @@
 			to_chat(user, span_notice("You cannot get through that host's protective gear."))
 			return
 
-	H.add_modifier(/datum/modifier/poisoned/paralysis, 15 SECONDS)
+	H.lingering_poison(0.75, 15 SECONDS, src, TRUE)
+	H.status_at_least(EFFECT_PARALYZED, 4)
 
 /mob/living/simple_mob/animal/sif/leech/verb/medicate_host()
 	set category = "Abilities.Leech"
@@ -467,7 +468,7 @@
 		to_chat(src, span_alien("We feed on [O]."))
 		O.owner?.injure(INJURY_PIERCE, 2, O, src, flags = prob(10) ? INJURE_SILENT : NONE)
 		chemicals = min(max_chemicals, chemicals + 60)
-		host.add_modifier(/datum/modifier/grievous_wounds, 60 SECONDS)
+		host.apply_body_effect(/datum/body_effect/grievous_wounds, 60 SECONDS)
 		mend(TREAT_TISSUE_REPAIR, rand(10,60))
 		mend(TREAT_BURN_CARE, rand(10,60))
 

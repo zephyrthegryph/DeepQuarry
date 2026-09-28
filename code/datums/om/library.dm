@@ -69,6 +69,8 @@
 		// Source-keyed mob overrides (rewrite/mobsrc, reconciled onto the contribution store).
 		EFFECT_UNPUSHABLE = list("combine" = COMBINE_ANY),
 		EFFECT_ALPHA_MULT = list("combine" = COMBINE_MULTIPLY, "default" = 1),
+		// Body effects (body_effects.dm): factor tables keyed by definition type, value = stacks.
+		EFFECT_BODY_EFFECTS = list("combine" = COMBINE_SUM_PER_KEY, "channel" = CHANGE_MOB_CONDITIONS, "type" = /datum/om/effect/body_effects),
 		// Grant kinds.
 		GRANT_ABILITY = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_LANGUAGE = list("combine" = COMBINE_SUM_PER_KEY),

@@ -537,7 +537,7 @@
 
 /obj/item/organ/internal/malignant/parasite/painleech/feed()
 	..()
-	owner.add_modifier(growth >= 5 ? /datum/modifier/numbness/deep : /datum/modifier/numbness, 3 SECONDS)
+	owner.apply_body_effect(growth >= 5 ? /datum/body_effect/numbness/deep : /datum/body_effect/numbness, 3 SECONDS)
 	return prob(10) && growth < 10
 
 

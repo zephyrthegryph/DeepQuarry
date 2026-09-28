@@ -166,6 +166,9 @@
 /// Product of every stealth/cloak effect's opacity (0..1); the mob's alpha is 255 x this
 /// (code/modules/mob/_alpha_sources.dm). Keyed per source (ALPHA_SOURCE_*).
 #define EFFECT_ALPHA_MULT "alpha_mult"
+/// Body effects on a mob (code/modules/body/body_effects.dm): keyed by /datum/body_effect type,
+/// value = stacks. Timed ones expire on the mob's body clock.
+#define EFFECT_BODY_EFFECTS "body_effects"
 
 // Clock domains and their generated effect ids ("clock:<id>:mult"/":inhibit").
 #define CLOCK_BIO "bio"

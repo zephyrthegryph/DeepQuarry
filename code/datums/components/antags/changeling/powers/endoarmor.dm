@@ -7,7 +7,8 @@
 	isVerb = FALSE
 	verbpath = /mob/proc/changeling_endoarmor
 
-/datum/modifier/endoarmor
+/datum/body_effect/endoarmor
+	stacks = MODIFIER_STACK_FORBID
 	name = "endoarmor"
 	desc = "We have hard plating underneath our skin, making us more durable."
 
@@ -18,5 +19,5 @@
 /mob/proc/changeling_endoarmor()
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
-		H.add_modifier(/datum/modifier/endoarmor)
+		H.apply_body_effect(/datum/body_effect/endoarmor)
 	return 1

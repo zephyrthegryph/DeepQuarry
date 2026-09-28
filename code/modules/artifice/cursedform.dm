@@ -54,4 +54,4 @@
 		var/mob/living/L = user
 		L.visible_message(span_danger("[L] convulses, the very letters of \the [src] searing themselves into their eyes!"), \
 			span_critical("You convulse, the very letters of \the [src] searing themselves into your eyes!"))
-		L.add_modifier(/datum/modifier/grievous_wounds, 10 MINUTES)
+		L.apply_body_effect(/datum/body_effect/grievous_wounds, 10 MINUTES)

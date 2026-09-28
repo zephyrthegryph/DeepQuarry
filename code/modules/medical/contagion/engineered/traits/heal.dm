@@ -222,7 +222,7 @@
 		return
 	H.mend(TREAT_OXYGENATION, 3 * power)
 	if(regenerate_blood && H.vessel.get_reagent_amount(REAGENT_ID_BLOOD) < H.species.blood_volume)
-		H.add_modifier(/datum/modifier/blood_regeneration, 3 SECONDS)
+		H.apply_body_effect(/datum/body_effect/blood_regeneration, 3 SECONDS)
 
 /datum/viral_trait/heal/water
 	name = "Tissue Hydration"
