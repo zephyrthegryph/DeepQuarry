@@ -29,7 +29,7 @@
 		keyslot1 = new ks1type(src)
 	if(ks2type)
 		keyslot2 = new ks2type(src)
-	// Compute channels but don't register with SSradio yet (C5): on_materialize()
+	// Compute channels but don't register with GLOB.radio_service yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
 
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encrypti
 		to_chat(user, span_notice("This headset doesn't have any encryption keys! How useless..."))
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
-		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
 		secure_radio_connections[ch_name] = null
 	var/turf/T = get_turf(user)
 	if(keyslot1)
@@ -173,15 +173,15 @@ DECLARE_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encrypti
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(register)
-		if(!SSradio && initial_run)
+		if(!GLOB.radio_service && initial_run)
 			om_after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), setDescription, FALSE)
 			return
-		if(!SSradio && !initial_run)
+		if(!GLOB.radio_service && !initial_run)
 			name = "broken radio headset"
 			return
 
 		for (var/ch_name in channels)
-			secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 
 	if(setDescription)
 		setupRadioDescription()
@@ -658,7 +658,7 @@ DECLARE_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encrypti
 
 /obj/item/radio/headset/raider/Initialize(mapload)
 	. = ..()
-	// Just the data; on_materialize() (C5) registers it with SSradio.
+	// Just the data; on_materialize() (C5) registers it with GLOB.radio_service.
 	frequency = RAID_FREQ
 
 /obj/item/radio/headset/binary

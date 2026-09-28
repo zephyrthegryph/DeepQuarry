@@ -17,7 +17,7 @@
 		to_chat(src, span_warning("\The [player.current] already serves the [faction.faction_descriptor]."))
 		return
 
-	if(SSantag_job.player_is_antag(player))
+	if(GLOB.antag_service.player_is_antag(player))
 		to_chat(src, span_warning("\The [player.current]'s loyalties seem to be elsewhere..."))
 		return
 

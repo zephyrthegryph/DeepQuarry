@@ -3,11 +3,15 @@
 #define DEFAULT_CONVERSION_PROB 60
 #define DEFAULT_CONVERSION_DELAY 2.5 SECONDS
 
-SUBSYSTEM_DEF(turf_cascade)
+// The turf cascade world service (fold wave F4; was SSturf_cascade): a spreading turf conversion
+// (the supermatter cascade). /datum/om/behaviour/world/turf_cascade (code/datums/om/world_lanes.dm)
+// grows it every 0.2 s while one is running and parks otherwise.
+GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
+
+/datum/world_service/turf_cascade
 	name = "Turf Cascade"
-	wait = 2
-	flags = SS_NO_INIT
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	lane = /datum/om/behaviour/world/turf_cascade
+	on_demand = TRUE
 
 	VAR_PRIVATE/last_group_time = 0
 	VAR_PRIVATE/next_group_delay = DEFAULT_CONVERSION_DELAY
@@ -20,17 +24,19 @@ SUBSYSTEM_DEF(turf_cascade)
 	VAR_PRIVATE/conversion_probability = DEFAULT_CONVERSION_PROB // Randomized rate of conversion, 0 to 100
 	VAR_PRIVATE/conversion_rate = DEFAULT_CONVERSION_RATE // Maximum number of turfs converted in each batch
 
-/datum/controller/subsystem/turf_cascade/stat_entry(msg)
-	msg = "C: [length(currentrun)] | R: [length(remaining_turf)] | R: [conversion_rate] | P: [turf_replace_type]"
-	. = ..()
+/datum/world_service/turf_cascade/stat_line()
+	return "C: [length(currentrun)] | R: [length(remaining_turf)] | R: [conversion_rate] | P: [turf_replace_type]"
 
-/datum/controller/subsystem/turf_cascade/fire(resumed = FALSE)
+/datum/world_service/turf_cascade/has_work()
+	return !isnull(turf_replace_type)
+
+/datum/world_service/turf_cascade/service_step(resumed)
 	if(!resumed)
 		if(world.time < (last_group_time + next_group_delay)) // Wait for next expansion
-			return
+			return TRUE
 		if(!turf_replace_type || (!length(remaining_turf) && !length(currentrun)))
 			stop_cascade()
-			return
+			return TRUE
 		last_group_time = world.time
 
 		if(!length(currentrun) && length(remaining_turf) && turf_iterations <= 0)
@@ -54,8 +60,8 @@ SUBSYSTEM_DEF(turf_cascade)
 		currentrun += next
 		if(!length(remaining_turf))
 			break
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 
 	while(length(currentrun))
 		var/turf/changing = currentrun[1]
@@ -66,11 +72,13 @@ SUBSYSTEM_DEF(turf_cascade)
 			changing.ChangeTurf(turf_replace_type)
 			remaining_turf += changing.conversion_cascade_act(remaining_turf)
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 
-/// Starts the turf cascade and boots up the subsystem. If a cascade is already in process, it will not allow another another to start.
-/datum/controller/subsystem/turf_cascade/proc/start_cascade(turf/start_turf, turf_path, max_per_fire = DEFAULT_CONVERSION_RATE, time_delay = DEFAULT_CONVERSION_DELAY, convert_probability = DEFAULT_CONVERSION_PROB)
+	return TRUE
+
+/// Starts the turf cascade and wakes the service's lane. If a cascade is already in process, it will not allow another another to start.
+/datum/world_service/turf_cascade/proc/start_cascade(turf/start_turf, turf_path, max_per_fire = DEFAULT_CONVERSION_RATE, time_delay = DEFAULT_CONVERSION_DELAY, convert_probability = DEFAULT_CONVERSION_PROB)
 	if(turf_replace_type)
 		return
 	if(!isturf(start_turf) || !max_per_fire)
@@ -79,19 +87,18 @@ SUBSYSTEM_DEF(turf_cascade)
 	remaining_turf.Add(start_turf)
 	conversion_rate = max_per_fire
 	conversion_probability = convert_probability
-	// Configure subsystem for the cascade... Doing it with tick delays is uglier than just making the subsystem slower or faster. Considering this will end the round anyway.
-	can_fire = TRUE
 	next_group_delay = DEFAULT_CONVERSION_DELAY
+	log_world("Turf cascade started at [AREACOORD(start_turf)] converting to [turf_path].")
+	demand()
 
 /// Called when we have no more turfs to convert, or an admin wants to emergency stop
-/datum/controller/subsystem/turf_cascade/proc/stop_cascade()
+/datum/world_service/turf_cascade/proc/stop_cascade()
 	turf_replace_type = null
 	remaining_turf.Cut()
 	currentrun.Cut()
 	conversion_rate = DEFAULT_CONVERSION_RATE
 	conversion_probability = DEFAULT_CONVERSION_PROB
 	next_group_delay = DEFAULT_CONVERSION_DELAY
-	can_fire = FALSE
 
 #undef DEFAULT_CONVERSION_RATE
 #undef DEFAULT_CONVERSION_PROB

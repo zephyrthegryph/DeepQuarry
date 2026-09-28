@@ -34,9 +34,9 @@ REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
 
 /datum/edit_memory_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(target_mind && SSantag_job?.all_antag_types)
-		for(var/antag_type in SSantag_job.all_antag_types)
-			var/datum/antagonist/A = SSantag_job.all_antag_types[antag_type]
+	if(target_mind && GLOB.antag_service.all_antag_types)
+		for(var/antag_type in GLOB.antag_service.all_antag_types)
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[antag_type]
 			var/list/entry = A?.get_panel_data(target_mind)
 			if(entry)
 				blocks += list(entry)
@@ -149,33 +149,33 @@ REF_PAIR(/datum/mind, list("tgui_edit_memory_panel" = "target_mind"))
 			SStgui.update_uis(src)
 			return TRUE
 		if("antag_add")
-			var/datum/antagonist/A = SSantag_job.all_antag_types[params["id"]]
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 			if(A && A.add_antagonist(target_mind, 1, 1, 0, 1, 1))
 				log_admin("[key_name_admin(ui.user)] made [key_name(target_mind)] into a [A.role_text].")
 			snapshot_antag_blocks()
 			SStgui.update_uis(src)
 			return TRUE
 		if("antag_remove")
-			var/datum/antagonist/A = SSantag_job.all_antag_types[params["id"]]
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 			if(A)
 				A.remove_antagonist(target_mind)
 			snapshot_antag_blocks()
 			SStgui.update_uis(src)
 			return TRUE
 		if("antag_equip")
-			var/datum/antagonist/A = SSantag_job.all_antag_types[params["id"]]
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 			if(A && target_mind.current)
 				A.equip(target_mind.current)
 			SStgui.update_uis(src)
 			return TRUE
 		if("antag_unequip")
-			var/datum/antagonist/A = SSantag_job.all_antag_types[params["id"]]
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 			if(A && target_mind.current)
 				A.unequip(target_mind.current)
 			SStgui.update_uis(src)
 			return TRUE
 		if("antag_move_to_spawn")
-			var/datum/antagonist/A = SSantag_job.all_antag_types[params["id"]]
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 			if(A && target_mind.current)
 				A.place_mob(target_mind.current)
 			SStgui.update_uis(src)

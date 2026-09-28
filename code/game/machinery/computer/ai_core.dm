@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					return INTERACTION_HANDLED_PASS
 
 				if(occupant.mind)
-					SSantag_job.clear_antag_roles(occupant.mind, 1)
+					GLOB.antag_service.clear_antag_roles(occupant.mind, 1)
 
 				user.drop_item()
 				P.loc = src

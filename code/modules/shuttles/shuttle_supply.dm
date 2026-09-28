@@ -17,7 +17,7 @@
 	var/datum/signal/S = new()
 	S.source_handle = om_handle(src)
 	S.data = list("command" = "supply")
-	var/datum/radio_frequency/F = SSradio.return_frequency(1435)
+	var/datum/radio_frequency/F = GLOB.radio_service.return_frequency(1435)
 	F.post_signal(src, S)
 
 	//it would be cool to play a sound here

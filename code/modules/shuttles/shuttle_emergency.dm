@@ -6,7 +6,7 @@
 
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, null))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, null))
 	if(SSemergency_shuttle.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
 	SSemergency_shuttle.shuttle = src

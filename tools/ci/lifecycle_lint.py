@@ -8,7 +8,7 @@ lint rejects these inside Initialize():
     global list writes     GLOB.x += / -= / |= / &= / ^= / [k] = / .Add( .Remove( .Insert( .Cut( .Swap(
     processing starts      START_PROCESSING(...) and friends
     global signals         RegisterSignal(SSdcs, ...)
-    radio joins            SSradio.add_object(...), set_frequency(...)
+    radio joins            GLOB.radio_service.add_object(...), set_frequency(...)
 
 It reads the source statically, so a call made through a helper proc is not
 seen here; the dq_lifecycle_sandbox unit test catches those at runtime.
@@ -30,7 +30,7 @@ FORBIDDEN = [
         r"|\bGLOB\.\w+\.(?:Add|Remove|Insert|Cut|Swap)\(")),
     ("processing start", re.compile(r"\bSTART_PROCESSING\w*\(")),
     ("global signal registration", re.compile(r"\bRegisterSignal\(\s*SSdcs\b")),
-    ("radio join", re.compile(r"\bSSradio\.add_object\(|\bset_frequency\(")),
+    ("radio join", re.compile(r"\bGLOB\.radio_service\.add_object\(|\bset_frequency\(")),
 ]
 
 # Not latent-safe yet, but registering only in on_materialize() (L3). Keep in

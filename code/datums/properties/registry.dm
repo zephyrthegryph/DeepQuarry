@@ -16,7 +16,7 @@
 // state_adapter.dm, else the type value), then fold in contributors
 // (components, equipment) with the property's aggregator.
 
-/// The global registry, built and validated on first use. SSproperties builds
+/// The global registry, built and validated on first use. validate_property_registry() builds
 /// it at boot and reports validation errors.
 /proc/dq_property_registry()
 	var/static/datum/property_registry/registry

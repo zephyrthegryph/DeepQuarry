@@ -359,7 +359,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	explosion(center, devastation, devastation * 2, devastation * 3, 0, FALSE, 0)
 	// Resolve: explosions idle, then lighting queues empty.
 	var/deadline = REALTIMEOFDAY + 3000
-	while(SSexplosions.can_fire || SSexplosions.pending_blast_count())
+	while(GLOB.explosion_service.awake || GLOB.explosion_service.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -379,7 +379,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
 	metric("explosion_resolve_wall_ms", (resolved_at - started) * 100, "ms")
 	metric("explosion_lighting_settle_wall_ms", (lit_at - resolved_at) * 100, "ms")
-	var/list/diagnostics = SSexplosions.performance_diagnostics()
+	var/list/diagnostics = GLOB.explosion_service.performance_diagnostics()
 	detail("explosion_epoch", diagnostics)
 	metric("explosion_prepare_ms", diagnostics["epoch_prepare_ms"], "ms")
 	metric("explosion_turf_resolve_ms", diagnostics["epoch_resolve_ms"], "ms")

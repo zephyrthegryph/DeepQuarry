@@ -353,7 +353,7 @@ REF_TRANSIENT(/datum/damage_packet, list("source", "attacker", "weapon", "zone",
 	return receive_split(packet, generic_attack_kind(user), null, amount)
 
 /// Explosion: blast from the propagated severity. Explosions deliver it in
-/// type batches (SSexplosions.deliver_blast_batches); objects are destroyed by
+/// type batches (GLOB.explosion_service.deliver_blast_batches); objects are destroyed by
 /// integrity, never by a severity ladder.
 /atom/proc/receive_explosion(severity)
 	if(!uses_integrity || (resistance_flags & BOMB_PROOF))

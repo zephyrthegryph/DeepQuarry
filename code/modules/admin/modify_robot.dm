@@ -349,7 +349,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				target().radio.syndie = 1
 			target().module.channels += list("[selected_radio_channel]" = 1)
 			target().radio.channels[selected_radio_channel] = target().module.channels[selected_radio_channel]
-			target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
+			target().radio.secure_radio_connections[selected_radio_channel] = GLOB.radio_service.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
 			return TRUE
 		if("rem_channel")
 			var/selected_radio_channel = params["channel"]
@@ -363,7 +363,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			target().radio.channels = list()
 			for(var/n_chan in target().module.channels)
 				target().radio.channels[n_chan] = target().module.channels[n_chan]
-			SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
+			GLOB.radio_service.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
 			target().radio.secure_radio_connections -= selected_radio_channel
 			return TRUE
 		if("add_component")

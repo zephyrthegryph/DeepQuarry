@@ -445,14 +445,14 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	var/mob/living/carbon/human/H = M
 	if(!H.mind)
 		return
-	var/datum/antagonist/antag_data = SSantag_job.get_antag_data(H.mind.special_role)
+	var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(H.mind.special_role)
 	if(antag_data && (antag_data.flags & ANTAG_IMPLANT_IMMUNE))
 		H.visible_message("[H] seems to resist the implant!", "You feel the corporate tendrils of [using_map.company_name] try to invade your mind!")
 		. = FALSE
 
 /obj/item/implant/loyalty/post_implant(mob/M)
 	var/mob/living/carbon/human/H = M
-	SSantag_job.clear_antag_roles(H.mind, 1)
+	GLOB.antag_service.clear_antag_roles(H.mind, 1)
 	to_chat(H, span_notice("You feel a surge of loyalty towards [using_map.company_name]."))
 
 //////////////////////////////

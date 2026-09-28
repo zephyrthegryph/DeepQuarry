@@ -11,8 +11,8 @@
 
 /obj/machinery/door/airlock/alarmlock/Initialize(mapload)
 	. = ..()
-	SSradio.remove_object(src, air_frequency)
-	air_connection_handle = om_handle(SSradio.add_object(src, air_frequency, RADIO_TO_AIRALARM))
+	GLOB.radio_service.remove_object(src, air_frequency)
+	air_connection_handle = om_handle(GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 	open()
 
 /obj/machinery/door/airlock/alarmlock/receive_signal(datum/signal/signal)

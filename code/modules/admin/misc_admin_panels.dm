@@ -414,11 +414,11 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	departments += list(civilian)
 	departments += list(build_dept_block(DEPARTMENT_SYNTHETIC, "Synthetic Positions", "nonhumandept", "#ccffcc"))
 
-	// Antagonist block — driven by SSantag_job, not by SSjob department.
+	// Antagonist block — driven by the antag service, not by SSjob department.
 	var/list/antag_jobs = list()
 	var/dept_antag_ban = !!jobban_isbanned(target(), JOB_SYNDICATE)
-	for(var/antag_type in SSantag_job.all_antag_types)
-		var/datum/antagonist/antag = SSantag_job.all_antag_types[antag_type]
+	for(var/antag_type in GLOB.antag_service.all_antag_types)
+		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
 		if(!antag || !antag.bantype)
 			continue
 		antag_jobs += list(list(

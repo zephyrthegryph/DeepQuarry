@@ -243,7 +243,7 @@
 		if("Code")
 			S.code = newVal
 		if("Frequency")
-			// set_frequency() re-registers with SSradio; a bare var
+			// set_frequency() re-registers with GLOB.radio_service; a bare var
 			// write leaves the signaler listening (and later stranded,
 			// unable to GC) on its old frequency.
 			S.set_frequency(sanitize_frequency(newVal, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
@@ -335,7 +335,7 @@
 // Copied from /obj/item/cartridge/proc/post_status(),
 // code/game/objects/items/PDA/cart.dm, line 251
 /obj/item/commcard/proc/post_status(command, data1, data2)
-	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
+	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
 	if(!frequency)
 		return
 
@@ -612,7 +612,7 @@
 
 /obj/item/commcard/head/Initialize(mapload)
 	// Have to register the commcard with the Radio controller to receive updates to the status displays
-	SSradio.add_object(src, 1435)
+	GLOB.radio_service.add_object(src, 1435)
 	. = ..()
 	internal_data["stat_display_line1"] = null
 	internal_data["stat_display_line2"] = null

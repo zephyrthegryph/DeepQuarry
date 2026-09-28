@@ -132,23 +132,23 @@
 /obj/item/assembly/signaler/proc/set_frequency(new_frequency)
 	if(!frequency)
 		return
-	if(!SSradio)
+	if(!GLOB.radio_service)
 		om_after(src, 2 SECONDS, PROC_REF(radio_checkup), new_frequency)
 		return
 	set_radio(new_frequency)
 
 /obj/item/assembly/signaler/proc/radio_checkup(new_frequency)
 	PROTECTED_PROC(TRUE)
-	if(!SSradio)
+	if(!GLOB.radio_service)
 		return
 	set_radio(new_frequency)
 
 /obj/item/assembly/signaler/proc/set_radio(new_frequency)
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
 	if(!deadman)

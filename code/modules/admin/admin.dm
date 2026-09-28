@@ -759,14 +759,14 @@ ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn",
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
-	var/antag_type = verb_prompt(user, "a14", list("kind" = "list", "message" = "Choose a template.", "title" = "Force Latespawn", "choices" = SSantag_job.all_antag_types), args)
+	var/antag_type = verb_prompt(user, "a14", list("kind" = "list", "message" = "Choose a template.", "title" = "Force Latespawn", "choices" = GLOB.antag_service.all_antag_types), args)
 	if(isnull(antag_type))
 		return
-	if(!antag_type || !SSantag_job.all_antag_types[antag_type])
+	if(!antag_type || !GLOB.antag_service.all_antag_types[antag_type])
 		to_chat(user, span_warning("Aborting."))
 		return
 
-	var/datum/antagonist/antag = SSantag_job.all_antag_types[antag_type]
+	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
 	message_admins("[key_name(user)] attempting to force latespawn with template [antag.id].")
 	antag.attempt_late_spawn()
 

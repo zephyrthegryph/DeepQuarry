@@ -48,6 +48,10 @@ SUBSYSTEM_DEF(atoms)
 	GLOB.event_service.initialize()
 	// Fold wave F4.
 	GLOB.nightshift_service.initialize()
+	GLOB.antag_service.initialize()
+	GLOB.radio_service.initialize()
+	GLOB.transfer_service.initialize()
+	validate_property_registry()
 
 	return SS_INIT_SUCCESS
 

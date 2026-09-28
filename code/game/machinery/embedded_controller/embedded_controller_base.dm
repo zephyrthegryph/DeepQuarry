@@ -125,9 +125,9 @@ REF_OWNED(/obj/machinery/embedded_controller, "program")
 		qdel(signal)
 
 /obj/machinery/embedded_controller/radio/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, radio_filter))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, radio_filter))
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/embedded_controller/radio/proc/radio_connection() as /datum/radio_frequency

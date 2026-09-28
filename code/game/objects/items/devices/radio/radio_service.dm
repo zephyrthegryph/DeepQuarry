@@ -1,7 +1,7 @@
 /*
 	HOW IT WORKS
 
-	The SSradio is a global object maintaining all radio transmissions, think about it as about "ether".
+	The radio service (GLOB.radio_service) is a global object maintaining all radio transmissions, think about it as about "ether".
 	Note that walkie-talkie, intercoms and headsets handle transmission using nonstandard way.
 	procs:
 
@@ -61,19 +61,22 @@
 
 */
 
-SUBSYSTEM_DEF(radio)
+// The radio world service (fold wave F4; was GLOB.radio_service). Data only: devices join frequencies as they
+// initialize; SSatoms initializes it after the map (the global announcer).
+GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
+
+/datum/world_service/radio
 	name = "Radio"
-	flags = SS_NO_FIRE
-	dependencies = list(
-		/datum/controller/subsystem/air
-	)
-	var/list/datum/radio_frequency/frequencies = list()
+	var/list/datum/radio_frequency/frequencies = list() // ALLOW(instance_list): d: world service singleton
 
-/datum/controller/subsystem/radio/Initialize()
+/datum/world_service/radio/initialize()
+	if(initialized)
+		return
+	initialized = TRUE
 	GLOB.autospeaker = new (null, FALSE, null, null, TRUE) //Set up Global Announcer
-	return SS_INIT_SUCCESS
+	log_world("World service [name] initialized: [length(frequencies)] frequencies in use.")
 
-/datum/controller/subsystem/radio/proc/add_object(obj/device as obj, new_frequency as num, radio_filter = null as text|null)
+/datum/world_service/radio/proc/add_object(obj/device as obj, new_frequency as num, radio_filter = null as text|null)
 	var/f_text = num2text(new_frequency)
 	var/datum/radio_frequency/frequency = frequencies[f_text]
 
@@ -85,7 +88,7 @@ SUBSYSTEM_DEF(radio)
 	frequency.add_listener(device, radio_filter)
 	return frequency
 
-/datum/controller/subsystem/radio/proc/remove_object(obj/device, old_frequency)
+/datum/world_service/radio/proc/remove_object(obj/device, old_frequency)
 	var/f_text = num2text(old_frequency)
 	var/datum/radio_frequency/frequency = frequencies[f_text]
 
@@ -98,7 +101,7 @@ SUBSYSTEM_DEF(radio)
 
 	return 1
 
-/datum/controller/subsystem/radio/proc/return_frequency(new_frequency as num)
+/datum/world_service/radio/proc/return_frequency(new_frequency as num)
 	var/f_text = num2text(new_frequency)
 	var/datum/radio_frequency/frequency = frequencies[f_text]
 
@@ -162,7 +165,7 @@ SUBSYSTEM_DEF(radio)
 
 /datum/radio_frequency/proc/on_listener_deleted(obj/device)
 	SIGNAL_HANDLER
-	SSradio.remove_object(device, frequency)
+	GLOB.radio_service.remove_object(device, frequency)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
 	UnregisterSignal(device, COMSIG_QDELETING)

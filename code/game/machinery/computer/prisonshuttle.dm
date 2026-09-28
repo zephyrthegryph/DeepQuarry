@@ -124,7 +124,7 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 
 
 /obj/machinery/computer/prison_shuttle/proc/post_signal(command)
-	var/datum/radio_frequency/frequency = SSradio.return_frequency(1311)
+	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1311)
 	if(!frequency) return
 	var/datum/signal/status_signal = new
 	status_signal.source_handle = om_handle(src)

@@ -38,9 +38,9 @@ REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 
 /datum/round_status_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(SSantag_job?.all_antag_types)
-		for(var/antag_type in SSantag_job.all_antag_types)
-			var/datum/antagonist/A = SSantag_job.all_antag_types[antag_type]
+	if(GLOB.antag_service.all_antag_types)
+		for(var/antag_type in GLOB.antag_service.all_antag_types)
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[antag_type]
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)

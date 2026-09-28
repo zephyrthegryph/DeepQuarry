@@ -400,7 +400,7 @@ SUBSYSTEM_DEF(ticker)
 		if(player && player.mind && player.mind.assigned_role)
 			if(player.mind.assigned_role == JOB_SITE_MANAGER)
 				captainless=0
-			if(!SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1))
+			if(!GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1))
 				SSjob.equip_rank(player, player.mind.assigned_role, 0)
 				UpdateFactionList(player)
 				// equip_custom_items(player) // Removal

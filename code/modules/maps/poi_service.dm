@@ -1,39 +1,57 @@
+// The points of interest world service (fold wave F4; was SSpoints_of_interest). POI loader
+// landmarks queue here as they initialize. SSholomaps loads the boot queue at the end of its
+// Initialize() (air and persistence boot after it); a POI loaded mid-round is placed by
+// /datum/om/behaviour/world/pois (code/datums/om/world_lanes.dm), parked while the queue is empty.
 GLOBAL_LIST_EMPTY(global_used_pois)
-SUBSYSTEM_DEF(points_of_interest)
-	name = "Points of Interest"
-	wait = 1 SECONDS
-	priority = FIRE_PRIORITY_POIS
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT //POIs can be loaded mid-round.
-	dependencies = list(
-		/datum/controller/subsystem/holomaps
-	)
-	var/list/obj/effect/landmark/poi_loader/poi_queue = list()
+GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 
-/datum/controller/subsystem/points_of_interest/Initialize()
+/datum/world_service/pois
+	name = "Points of Interest"
+	lane = /datum/om/behaviour/world/pois
+	on_demand = TRUE
+	var/list/obj/effect/landmark/poi_loader/poi_queue = list() // ALLOW(instance_list): d: world service singleton
+
+/datum/world_service/pois/initialize()
+	if(initialized)
+		return
+	initialized = TRUE
+	var/loaded = length(poi_queue)
 	while (length(poi_queue))
 		load_next_poi()
 	log_mapping("Initializing POIs")
+	log_world("World service [name] initialized: [loaded] POI\s loaded.")
 	admin_notice(span_danger("Initializing POIs"), R_DEBUG)
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/points_of_interest/fire(resumed = FALSE)
+/// Queues a POI loader; the lane places it (or the boot load does, before initialize()).
+/datum/world_service/pois/proc/enqueue(obj/effect/landmark/poi_loader/loader)
+	poi_queue += loader
+	demand()
+
+/datum/world_service/pois/has_work()
+	return length(poi_queue)
+
+/datum/world_service/pois/stat_line()
+	return "Queued: [length(poi_queue)]"
+
+/datum/world_service/pois/service_step(resumed)
 	while (length(poi_queue))
 		load_next_poi()
 
-		if (MC_TICK_CHECK)
-			return
+		if (TICK_CHECK)
+			return FALSE
+	return TRUE
 
 /// We select and fire the next PoI in the list.
-/datum/controller/subsystem/points_of_interest/proc/load_next_poi()
+/datum/world_service/pois/proc/load_next_poi()
 	var/obj/effect/landmark/poi_loader/poi_to_load = poi_queue[1]
 	poi_queue -= poi_to_load
 	//We then fire it!
 	load_poi(poi_to_load)
 
-/datum/controller/subsystem/points_of_interest/proc/get_turfs_to_clean(obj/effect/landmark/poi_loader/poi_to_load)
+/datum/world_service/pois/proc/get_turfs_to_clean(obj/effect/landmark/poi_loader/poi_to_load)
 	return block(locate(poi_to_load.x, poi_to_load.y, poi_to_load.z), locate((poi_to_load.x + poi_to_load.size_x - 1), (poi_to_load.y + poi_to_load.size_y - 1), poi_to_load.z))
 
-/datum/controller/subsystem/points_of_interest/proc/annihilate_bounds(obj/effect/landmark/poi_loader/poi_to_load)
+/datum/world_service/pois/proc/annihilate_bounds(obj/effect/landmark/poi_loader/poi_to_load)
 	//var/deleted_atoms = 0
 	//admin_notice(span_danger("Annihilating objects in poi loading location."), R_DEBUG)
 	var/list/turfs_to_clean = get_turfs_to_clean(poi_to_load)
@@ -45,7 +63,7 @@ SUBSYSTEM_DEF(points_of_interest)
 					qdel(AM)
 	//admin_notice(span_danger("Annihilated [deleted_atoms] objects."), R_DEBUG)
 
-/datum/controller/subsystem/points_of_interest/proc/load_poi(obj/effect/landmark/poi_loader/poi_to_load)
+/datum/world_service/pois/proc/load_poi(obj/effect/landmark/poi_loader/poi_to_load)
 	if(!poi_to_load)
 		return
 	var/turf/T = get_turf(poi_to_load)

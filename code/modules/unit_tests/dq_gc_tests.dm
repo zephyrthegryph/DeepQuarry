@@ -201,7 +201,7 @@
 	TEST_ASSERT_NULL(case.EA, "destroyed electronic assembly retained its internal device")
 	TEST_ASSERT_NULL(device.holder(), "destroyed electronic device retained its case")
 
-// A radio whose frequency was changed must not strand itself in SSradio's
+// A radio whose frequency was changed must not strand itself in GLOB.radio_service's
 // per-frequency listener list on deletion (registered at old freq, removed at
 // new). set_frequency() is the only legal way to retune.
 /datum/unit_test/dq_retuned_radio_unregisters_from_ssradio
@@ -212,16 +212,16 @@
 	// re-registration)... which is now impossible to test through the public
 	// API since callers were fixed — so retune correctly and assert both
 	// directions of the registration moved.
-	var/datum/radio_frequency/old_freq = SSradio.return_frequency(R.frequency)
+	var/datum/radio_frequency/old_freq = GLOB.radio_service.return_frequency(R.frequency)
 	R.set_frequency(ERT_FREQ)
 	if(old_freq)
 		for(var/list/devices in old_freq.devices)
 			TEST_ASSERT(!(R in old_freq.devices[devices]), "retuned radio still registered on its old frequency")
-	var/datum/radio_frequency/new_freq = SSradio.return_frequency(ERT_FREQ)
+	var/datum/radio_frequency/new_freq = GLOB.radio_service.return_frequency(ERT_FREQ)
 	TEST_ASSERT_NOTNULL(new_freq, "ERT frequency datum missing after retune")
 	qdel(R)
 	var/found = FALSE
 	for(var/filter_key in new_freq.devices)
 		if(R in new_freq.devices[filter_key])
 			found = TRUE
-	TEST_ASSERT(!found, "deleted radio still registered in SSradio listener list — hard GC leak")
+	TEST_ASSERT(!found, "deleted radio still registered in GLOB.radio_service listener list — hard GC leak")

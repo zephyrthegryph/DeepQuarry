@@ -396,7 +396,7 @@ REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
 		qdel(mind.objectives)
 		mind.special_role = null
 
-	SSantag_job.clear_antag_roles(mind)
+	GLOB.antag_service.clear_antag_roles(mind)
 
 	ghostize(0)
 	qdel(src)

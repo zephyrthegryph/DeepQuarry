@@ -439,7 +439,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				return
 			if(choice == "NO TIME TO EXPLAIN")
 				explosion(get_turf(holder().mob), 8, 16, 24, 32, 1)
-				SSturf_cascade.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
+				GLOB.turf_cascade_service.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
 				SetUniversalState(/datum/universal_state/supermatter_cascade)
 				message_admins("[key_name_admin(holder())] has managed to destroy the universe with a supermatter cascade. Good job, [key_name_admin(holder())]")
 
