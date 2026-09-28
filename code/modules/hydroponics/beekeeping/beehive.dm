@@ -411,23 +411,19 @@ DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(int
 	icon_state = "beepack"
 	var/full = 1
 
-/obj/item/bee_pack/Initialize(mapload)
-	. = ..()
-	add_overlay("beepack-full")
+DECLARE_APPEARANCE(/obj/item/bee_pack, "full", list("0" = list(APPEARANCE_OVERLAYS = list("beepack-empty")), "1" = list(APPEARANCE_OVERLAYS = list("beepack-full"))))
 
 /obj/item/bee_pack/proc/empty()
 	full = 0
 	name = "empty bee pack"
 	desc = "A stasis pack for moving bees. It's empty."
-	cut_overlays()
-	add_overlay("beepack-empty")
+	update_icon()
 
 /obj/item/bee_pack/proc/fill()
 	full = initial(full)
 	name = initial(name)
 	desc = initial(desc)
-	cut_overlays()
-	add_overlay("beepack-full")
+	update_icon()
 
 /obj/machinery/honey_extractor/wrench_act(mob/user, obj/item/tool)
 	if(processing)

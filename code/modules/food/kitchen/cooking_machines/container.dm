@@ -19,9 +19,10 @@
 		/obj/item/clothing/head/beret
 	)
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/cooking_container, "max_reagents", null)
+
 /obj/item/reagent_containers/cooking_container/Initialize(mapload)
 	. = ..()
-	create_reagents(max_reagents)
 	flags |= OPENCONTAINER | NOREACT
 
 

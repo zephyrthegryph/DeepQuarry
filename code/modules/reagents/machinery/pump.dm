@@ -19,8 +19,9 @@
 	var/unlocked = 0
 	var/open = 0
 
+DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
+
 /obj/machinery/pump/Initialize(mapload)
-	create_reagents(200)
 	. = ..()
 	default_apply_parts()
 	cell = default_use_hicell()

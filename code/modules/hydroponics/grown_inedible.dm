@@ -8,11 +8,10 @@
 	var/plantname
 	var/potency = 1
 
+DECLARE_REAGENTS(/obj/item/grown, 50, null)
+
 /obj/item/grown/Initialize(mapload, planttype)
-
 	. = ..()
-
-	create_reagents(50)
 
 	//Handle some post-spawn var stuff.
 	if(planttype)

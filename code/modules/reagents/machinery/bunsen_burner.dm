@@ -9,9 +9,8 @@
 	var/heat_power = BUNSEN_HEAT_POWER
 	var/obj/item/reagent_containers/held_container
 
-/obj/machinery/bunsen_burner/Initialize(mapload)
-	. = ..()
-	create_reagents(1, /datum/reagents/distilling) //  resizes based on the boiling container
+// The holder resizes to match the boiling container.
+DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/distilling)
 
 /obj/machinery/bunsen_burner/declare_interactions(list/into)
 	into += list(

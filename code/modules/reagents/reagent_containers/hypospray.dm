@@ -94,11 +94,12 @@
 	volume = 0
 
 DECLARE_REF(/obj/item/reagent_containers/hypospray/vial, "loaded_vial", HELD, null)
+// Comes with an empty vial.
+DECLARE_DEFAULT_CHILD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial", /obj/item/reagent_containers/glass/beaker/vial)
 
 /obj/item/reagent_containers/hypospray/vial/Initialize(mapload)
 	. = ..()
-	icon_state = "[initial(icon_state)]"
-	loaded_vial = new /obj/item/reagent_containers/glass/beaker/vial(src) //Comes with an empty vial
+	icon_state = "[initial(icon_state)]" // ALLOW(decl): discards a map-edited icon_state
 	volume = loaded_vial.volume
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 

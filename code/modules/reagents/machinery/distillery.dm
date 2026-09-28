@@ -57,10 +57,10 @@
 // A multiplier for the production amount. This should really only ever be lower than one, otherwise you end up with duping.
 	var/efficiency = 1
 
+DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, 600, null, /datum/reagents/distilling)
+
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/Initialize(mapload)
 	. = ..()
-
-	create_reagents(600, /datum/reagents/distilling)
 
 	if(!base_state)
 		base_state = icon_state
