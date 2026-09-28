@@ -76,11 +76,11 @@
 
 /obj/item/projectile/energy/homing_bolt/wizard/boss
 	damage = 10
-	modifier_type_to_apply = /datum/modifier/wizweakness
+	modifier_type_to_apply = /datum/body_effect/wizweakness
 	modifier_duration = 30 SECONDS
 	icon_state = "arcane_barrage"
 
-/datum/modifier/wizweakness
+/datum/body_effect/wizweakness
 	name = "wizweakness"
 	desc = "Can you even see this in game?"
 	mob_overlay_state = "cult_aura"
@@ -236,6 +236,6 @@
 	armor_penetration = 50
 	agony = 50
 	speed = 24.0
-	modifier_type_to_apply = /datum/modifier/grievous_wounds
+	modifier_type_to_apply = /datum/body_effect/grievous_wounds
 	modifier_duration = 120 SECONDS
 	flash_strength = 15

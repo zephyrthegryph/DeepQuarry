@@ -66,3 +66,12 @@
 			if(H.ingested?.total_volume && H.bloodstr)
 				H.ingested.trans_to_holder(H.bloodstr, rand(2,5))
 */
+
+// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+/// The acid top-up is left to the organs stage's rewake; a broken stomach keeps it awake.
+/obj/item/organ/internal/stomach/life_step_idle()
+	return ..() && !is_broken()
+
+/// A reagent cycler sheds heat every step.
+/obj/item/organ/internal/stomach/machine/life_step_idle()
+	return FALSE

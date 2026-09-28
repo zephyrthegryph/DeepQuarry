@@ -181,7 +181,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
 	if(lastier >= 2)
 		if(checked_use(5))
-			H.add_modifier(/datum/modifier/medbeameffect, 2 SECONDS)
+			H.apply_body_effect(/datum/body_effect/medbeameffect, 2 SECONDS)
 		if(demand?[TREAT_ANALGESIC] && checked_use(5))
 			H.mend(TREAT_ANALGESIC, 20)
 		if(H.has_status(EFFECT_WEAKENED) && checked_use(5))

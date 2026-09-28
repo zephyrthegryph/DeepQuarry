@@ -82,9 +82,9 @@
 		if(dam > maxdam && (maxdam == 0 || prob(70)) )
 			damaged_organ = E
 			maxdam = dam
-			if(ishuman(self))
-				var/mob/living/carbon/human/H = self
-				maxdam *= H.species.trauma_mod // end
+	// D22: the species scaling applies once, after the pick (inside the loop it compared scaled
+	// against unscaled damage), and the level is rounded so fractions still hit a message band.
+	maxdam = round(maxdam * (self.species ? self.species.trauma_mod : 1))
 	if(damaged_organ && self.factor(BF_ANALGESIA) < maxdam)
 		if(maxdam > 10 && self.has_status(EFFECT_PARALYZED))
 			self.status_adjust(EFFECT_PARALYZED, -round(maxdam/10))
@@ -108,7 +108,8 @@
 		if((I.status & ORGAN_DEAD) || I.robotic >= ORGAN_ROBOT) continue
 		if(I.damage > 2) if(prob(2))
 			var/obj/item/organ/external/parent = self.get_organ(I.parent_organ)
-			self.custom_pain("You feel a sharp pain in your [parent.name]", 50)
+			if(parent) // D22: the parent limb can be gone
+				self.custom_pain("You feel a sharp pain in your [parent.name]", 50)
 
 	if(prob(2))
 		var/toxic = self.injury_load(INJURY_CATEGORY_TOXIC)

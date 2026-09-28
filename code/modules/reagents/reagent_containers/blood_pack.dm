@@ -28,6 +28,9 @@
 
 	var/blood_type = null
 	var/reag_id = REAGENT_ID_BLOOD
+	/// Species and colour of stock blood (blood_incompatible() reads the species).
+	var/blood_species = SPECIES_HUMAN
+	var/blood_colour = COLOR_BLOOD_HUMAN
 
 /obj/item/reagent_containers/blood/Initialize(mapload)
 	. = ..()
@@ -36,7 +39,8 @@
 	if(blood_type != null)
 		label_text = "[blood_type]"
 		update_iv_label()
-		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+		// B17: stock packs are human blood; without "species" they matched every species.
+		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
 		update_icon()
 
 /obj/item/reagent_containers/blood/on_reagent_change()

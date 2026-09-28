@@ -35,7 +35,7 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
-	source.add_modifier(/datum/modifier/leash)
+	source.apply_body_effect(/datum/body_effect/leash)
 	source.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = target)
 	target.RegisterSignal(source, COMSIG_MOVABLE_MOVED, TYPE_PROC_REF(/obj/item/leash, on_pet_move))
 	PERIODIC_START(target, PERIODIC_SLOW)
@@ -44,7 +44,7 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && !QDELETED(source))
 		source.clear_alert("leashed")
-		source.remove_a_modifier_of_type(/datum/modifier/leash)
+		source.remove_body_effect(/datum/body_effect/leash)
 	if(istype(target))
 		target.UnregisterSignal(source, COMSIG_MOVABLE_MOVED)
 		PERIODIC_STOP(target)
@@ -344,7 +344,8 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 			return TRUE
 	return FALSE
 
-/datum/modifier/leash
+/datum/body_effect/leash
+	stacks = MODIFIER_STACK_FORBID
 	name = "Leash"
 	factors = alist(BF_SLOWDOWN = 5)
 

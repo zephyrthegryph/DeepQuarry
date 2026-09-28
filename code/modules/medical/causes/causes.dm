@@ -162,7 +162,7 @@
 
 /datum/affliction_trigger/organ_integrity/lungs/setup()
 	..()
-	declare(/datum/affliction/respiratory_failure, threshold = 70, tier = "Severe")
+	declare(/datum/affliction/respiratory_failure, threshold = 70) // C14: no stage table, so no tier
 
 
 /datum/affliction_trigger/organ_integrity/liver
@@ -173,7 +173,7 @@
 
 /datum/affliction_trigger/organ_integrity/liver/setup()
 	..()
-	declare(/datum/affliction/hepatic_failure, threshold = 70, tier = "Severe")
+	declare(/datum/affliction/hepatic_failure, threshold = 70) // C14: no stage table, so no tier
 
 
 /datum/affliction_trigger/organ_integrity/kidneys
@@ -184,7 +184,7 @@
 
 /datum/affliction_trigger/organ_integrity/kidneys/setup()
 	..()
-	declare(/datum/affliction/renal_failure, threshold = 70, tier = "Severe")
+	declare(/datum/affliction/renal_failure, threshold = 70) // C14: no stage table, so no tier
 
 
 /datum/affliction_trigger/organ_integrity/eyes
@@ -195,7 +195,7 @@
 
 /datum/affliction_trigger/organ_integrity/eyes/setup()
 	..()
-	declare(/datum/affliction/ischemic_vision_loss, threshold = 70, tier = "Severe")
+	declare(/datum/affliction/ischemic_vision_loss, threshold = 70) // C14: no stage table, so no tier
 
 
 // --- Severity-gate causes -----------------------------------------------

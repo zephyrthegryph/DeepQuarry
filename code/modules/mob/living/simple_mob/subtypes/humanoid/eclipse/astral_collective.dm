@@ -118,7 +118,8 @@
 	expirmental = rand(1,4)
 	expirmentresult()
 
-/datum/modifier/astralcollect_swift
+/datum/body_effect/astralcollect_swift
+	stacks = MODIFIER_STACK_FORBID
 	factors = alist(BF_SLOWDOWN = -0.5, BF_EVASION = 20)
 
 /datum/modifier/astralcollect_regen
@@ -133,18 +134,22 @@
 	holder.mend(TREAT_OXYGENATION, 8)
 	holder.mend(TREAT_GENETIC_REPAIR, 8)
 
-/datum/modifier/astralcollect_titan
+/datum/body_effect/astralcollect_titan
+	stacks = MODIFIER_STACK_FORBID
 	factors = alist(BF_SLOWDOWN = 3, BF_ENDURANCE_MULT = 1.5)
 
-/datum/modifier/astralcollect_mistake
+/datum/body_effect/astralcollect_mistake
+	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "poisoned"
 	factors = alist(BF_SLOWDOWN = 1, BF_INCOMING_ALL = 1.35, BF_ENDURANCE_MULT = 0.75)
 
-/datum/modifier/astralcollect_solar
+/datum/body_effect/astralcollect_solar
+	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "red_electricity_constant"
 	factors = alist(BF_INCOMING_THERMAL = 0.7)
 
-/datum/modifier/astralcollect_lunar
+/datum/body_effect/astralcollect_lunar
+	stacks = MODIFIER_STACK_FORBID
 	mob_overlay_state = "blue_electricity_constant"
 	factors = alist(BF_INCOMING_PHYSICAL = 0.7)
 
@@ -155,15 +160,15 @@
 /mob/living/simple_mob/humanoid/astral_collective/proc/expirmentresult()
 	switch(expirmental)
 		if(1)
-			add_modifier(/datum/modifier/astralcollect_swift, null, src)
+			apply_body_effect(/datum/body_effect/astralcollect_swift, null, src)
 			size_multiplier -= 0.4
 		if(2)
 			add_modifier(/datum/modifier/astralcollect_regen, null, src)
 		if(3)
-			add_modifier(/datum/modifier/astralcollect_titan, null, src)
+			apply_body_effect(/datum/body_effect/astralcollect_titan, null, src)
 			size_multiplier += 0.5
 		if(4)
-			add_modifier(/datum/modifier/astralcollect_mistake, null, src)
+			apply_body_effect(/datum/body_effect/astralcollect_mistake, null, src)
 
 /mob/living/simple_mob/humanoid/astral_collective/purity
 	name = "Astral Collective Purity"
@@ -302,7 +307,7 @@
 	for(var/mob/living/L in orange(src, 5))
 		if(IIsAlly(L))
 			Beam(L, icon_state = "g_beam", time = 2.5 SECONDS, maxdistance = INFINITY)
-			L.add_modifier(/datum/modifier/astralcollect_solar, null, src)
+			L.apply_body_effect(/datum/body_effect/astralcollect_solar, null, src)
 
 /mob/living/simple_mob/humanoid/astral_collective/proc/brute_beam(atom/target)
 	if(!target)
@@ -310,7 +315,7 @@
 	for(var/mob/living/L in orange(src, 5))
 		if(IIsAlly(L))
 			Beam(L, icon_state = "g_beam", time = 2.5 SECONDS, maxdistance = INFINITY)
-			L.add_modifier(/datum/modifier/astralcollect_lunar, null, src)
+			L.apply_body_effect(/datum/body_effect/astralcollect_lunar, null, src)
 
 /mob/living/simple_mob/humanoid/astral_collective/proc/teleport_attack(atom/target)
 	// Teleport attack.

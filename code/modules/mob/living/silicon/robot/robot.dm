@@ -440,9 +440,19 @@
 /mob/living/silicon/robot/proc/set_cell(obj/item/cell/new_cell)
 	if(cell == new_cell)
 		return
-	if(cell)
-		UnregisterSignal(cell, list(COMSIG_ATOM_PRE_EMP_ACT, COMSIG_QDELETING))
+	var/obj/item/cell/old_cell = cell
+	if(old_cell)
+		UnregisterSignal(old_cell, list(COMSIG_ATOM_PRE_EMP_ACT, COMSIG_QDELETING))
 	cell = new_cell
+	// A5: a replacement (not a removal: remove_cell() uninstalls first and keeps the cell) takes
+	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
+	// suit-built borg's default cell, overwritten by the chest's).
+	if(old_cell && new_cell)
+		var/datum/robot_component/old_mount = get_component(ROBOT_SLOT_POWER)
+		if(old_mount?.wrapped == old_cell)
+			old_mount.uninstall()
+		if(old_cell.loc == src)
+			qdel(old_cell)
 	if(new_cell)
 		if(new_cell.loc != src)
 			new_cell.forceMove(src)

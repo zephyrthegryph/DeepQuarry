@@ -54,7 +54,7 @@
 		if(L.can_inject(src, null, target_zone))
 			to_chat(L, span_warning("You feel a tiny prick."))
 			if(L.get_poison_protection() < 1)
-				L.add_modifier(/datum/modifier/poisoned, 30 SECONDS)
+				L.lingering_poison(1, 30 SECONDS, src)
 				L.inflict_poison_damage(5)
 
 
@@ -76,5 +76,10 @@
 
 // Fake syringe, which inflicts a long lasting modifier that slowly kills them.
 /obj/item/projectile/fake_syringe/poison
-	modifier_type_to_apply = /datum/modifier/poisoned
-	modifier_duration = 1 MINUTE // About 30 damage per stack over a minute.
+
+/// About 30 toxin over a minute, as a lingering poisoning.
+/obj/item/projectile/fake_syringe/poison/on_hit(atom/target, blocked = 0, def_zone = null)
+	. = ..()
+	if(. && isliving(target) && blocked < 100)
+		var/mob/living/L = target
+		L.lingering_poison(1, 1 MINUTE, firer)

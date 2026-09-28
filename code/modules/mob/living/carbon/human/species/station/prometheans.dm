@@ -61,7 +61,7 @@
 
 	chem_strength_alcohol = 0.5
 
-	cloning_modifier = /datum/modifier/cloning_sickness/promethean
+	cloning_modifier = /datum/body_effect/cloning_sickness/promethean
 
 	cold_level_1 = 280 //Default 260 - Lower is better
 	cold_level_2 = 220 //Default 200

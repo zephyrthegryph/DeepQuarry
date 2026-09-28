@@ -49,11 +49,7 @@
 	if(!injectable && alien != IS_SLIME && alien != IS_CHIMERA && !M.isSynthetic())
 		M.injure(INJURY_TOXIN, 0.1 * removed, source = src)
 		return
-	affect_ingest(M, alien, removed)
-	// s Start
-	if(M.isSynthetic())
-		M.adjust_nutrition((nutriment_factor * removed) * M.species?.synthetic_food_coeff)
-	// s End
+	affect_ingest(M, alien, removed) // B18: this already feeds every body; no second add
 	..()
 
 /datum/reagent/nutriment/affect_ingest(mob/living/carbon/M, alien, removed)
@@ -1059,6 +1055,16 @@
 	M.injure(INJURY_TOXIN, removed * strength_mod, source = src) // Probably not a good idea; not very deadly though
 	return
 
+/// A drink's pull on body temperature toward `target` (B12). A warm drink (adj > 0) only warms
+/// a body below the target and a cold one (adj < 0) only cools a body above it, and neither
+/// overshoots. The cold branch used to subtract a negative number, heating the drinker.
+/proc/drink_temperature_step(current, target, adj)
+	if(adj > 0 && current < target)
+		return min(target, current + adj * TEMPERATURE_DAMAGE_COEFFICIENT)
+	if(adj < 0 && current > target)
+		return max(target, current + adj * TEMPERATURE_DAMAGE_COEFFICIENT)
+	return current
+
 /datum/reagent/drink/affect_ingest(mob/living/carbon/M, alien, removed)
 	if(!(M.species.allergens & allergen_type) && !(M.species.medallergens & medallergen_type))
 		var/bonus = M.food_preference(allergen_type)
@@ -1066,13 +1072,11 @@
 	M.status_adjust(EFFECT_DIZZY, adj_dizzy)
 	M.status_adjust(EFFECT_DROWSY, adj_drowsy)
 	M.status_adjust(EFFECT_SLEEPING, adj_sleepy)
-	if(adj_temp > 0 && M.bodytemperature < BODYTEMP_NORMAL)
-		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
-	if(adj_temp < 0 && M.bodytemperature > BODYTEMP_NORMAL)
-		M.bodytemperature = min(BODYTEMP_NORMAL, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
+	M.bodytemperature = drink_temperature_step(M.bodytemperature, BODYTEMP_NORMAL, adj_temp)
 	if(issmall(M)) removed *= 2
+	// B18: through adjust_nutrition (its clamp), scaled by the coefficient instead of gated on it.
 	if(M.species.organic_food_coeff)
-		M.nutrition += nutriment_factor * removed
+		M.adjust_nutrition(nutriment_factor * removed * M.species.organic_food_coeff)
 
 /datum/reagent/drink/overdose(mob/living/carbon/M, alien) //Add special interactions here in the future if desired.
 	..()

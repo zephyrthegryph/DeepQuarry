@@ -4,6 +4,14 @@
 	wake_on = 0
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "its rewake (phobias gained)"
+
+/// MED-6: someone with no phobias has nothing to fear. (A phobic mob keeps scanning its view.)
+/datum/om/stage/life/phobias/idle(mob/living/carbon/human/self)
+	return !self.phobias
+
+/datum/om/stage/life/phobias/rewake_delay(mob/living/carbon/human/self)
+	return 30 SECONDS
 
 /datum/om/stage/life/phobias/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(!self.phobias)

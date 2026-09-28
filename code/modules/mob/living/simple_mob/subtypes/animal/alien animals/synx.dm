@@ -272,7 +272,7 @@
 		if(prob(2))
 			M.custom_pain("You [pick("suddenly lose control over your body!", "can't move!", "are frozen in place.", "can't struggle!")]",60)
 			M.status_adjust(EFFECT_PARALYZED, 1)
-		M.add_modifier(/datum/modifier/numbness, 3 SECONDS)
+		M.apply_body_effect(/datum/body_effect/numbness, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/holo
 	name = "SX type simulation nanomachines" //Educational!
@@ -291,7 +291,7 @@
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",60)
 			M.status_adjust(EFFECT_PARALYZED, 1)
-		M.add_modifier(/datum/modifier/numbness/synx, 3 SECONDS)
+		M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 
 /datum/reagent/inaprovaline/synxchem/clown
 	name = "HONK"
@@ -320,7 +320,7 @@
 		if(prob(2))
 			M.custom_pain("You suddenly lose control over your body!",0)
 			M.status_adjust(EFFECT_PARALYZED, 1)
-		M.add_modifier(/datum/modifier/numbness/synx, 3 SECONDS)
+		M.apply_body_effect(/datum/body_effect/numbness/synx, 3 SECONDS)
 		(legacy duplicate removed)
 		// ^ I have no idea what this might cause, my ideal plan is that once the pain killer wears off you suddenly collapse;
 		//Since Halloss is not "real" damage this should not cause death

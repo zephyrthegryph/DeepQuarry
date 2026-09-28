@@ -21,6 +21,8 @@
 	// body it keeps dealing toxin load while it lasts.
 	body_plans = BODY_PLAN_ALL
 	simple_load_rate = 1
+	// C2: a venom with no drift of its own wears off a simple body instead of loading forever.
+	simple_clearance_rate = -1
 	/// If FALSE this venom is felt, not suffered: it contributes nothing to a
 	/// simple creature's injury load.
 	var/counts_on_simple_bodies = TRUE
@@ -116,3 +118,34 @@
 	min_symptoms = 1
 	max_symptoms = 3
 
+
+
+// --- Lingering poison (poison syringes, jellyfish whips, nightmare jelly, leeches) ------------
+// Was the /datum/modifier/poisoned damage-over-time (MED-5): a slow systemic toxin that fades on
+// its own over roughly its old duration and clears faster with antitoxin. Dealt through
+// /mob/living/proc/lingering_poison().
+/datum/affliction/venom/lingering_poison
+	name = "lingering poisoning"
+	subcategory = "Poisoning"
+	clinical_description = "A slow-acting systemic toxin in the bloodstream. Nausea, pallor and fatigue while it lasts. Self-limiting; antitoxin clears it quickly."
+	progression_rate = -1
+	simple_load_rate = 1
+	treated_by = list(TREAT_ANTITOXIN = 2)
+	symptom_pool = list(
+		/datum/affliction_symptom/nausea  = 80,
+		/datum/affliction_symptom/pallor  = 60,
+		/datum/affliction_symptom/fatigue = 50,
+	)
+	min_symptoms = 1
+	max_symptoms = 2
+
+/// The paralytic kind (leech bites): heavy doses dull consciousness and weaken the limbs.
+/datum/affliction/venom/lingering_poison/paralytic
+	name = "paralytic poisoning"
+	clinical_description = "A paralytic toxin blocking neuromuscular signalling: weak, heavy limbs and episodes of paralysis while it lasts. Self-limiting; antitoxin clears it."
+	consciousness_at_max = 60
+	symptom_pool = list(
+		/datum/affliction_symptom/limb_weakness = 90,
+		/datum/affliction_symptom/numbness_leg  = 60,
+		/datum/affliction_symptom/nausea        = 40,
+	)

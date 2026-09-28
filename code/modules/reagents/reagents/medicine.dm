@@ -191,8 +191,6 @@
 	if(alien != IS_DIONA)
 		M.status_adjust(EFFECT_DROWSY, -(6 * removed * chem_effective))
 		M.status_adjust(EFFECT_HALLUCINATING, -(9 * removed * chem_effective))
-		if(prob(10))
-			M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 
 /datum/reagent/carthatoline
 	name = REAGENT_CARTHATOLINE
@@ -212,8 +210,6 @@
 		return
 	if(M.injury_load(INJURY_CATEGORY_TOXIC) && prob(10))
 		M.vomit(1)
-	if(prob(30))
-		M.remove_a_modifier_of_type(/datum/modifier/poisoned)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
@@ -997,6 +993,8 @@
 
 /datum/reagent/skrellimmuno/affect_blood(mob/living/carbon/M, alien, removed)
 	var/strength_mod = 0.5 * M.species.chem_strength_heal
+	// B16: a species with no healing strength must not divide the rejection toxin by zero.
+	var/toxin_divisor = max(strength_mod, 0.1)
 
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -1023,7 +1021,7 @@
 					var/rejectmem = I.can_reject
 					I.can_reject = initial(I.can_reject)
 					if(rejectmem != I.can_reject)
-						H.injure(INJURY_TOXIN, (10 / strength_mod), source = src)
+						H.injure(INJURY_TOXIN, (10 / toxin_divisor) * removed, source = src) // B16: per unit metabolised
 						H.injure(INJURY_TOXIN, 1, I, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /datum/reagent/ryetalyn
@@ -1517,11 +1515,11 @@
 		if(prob(3))
 			M.status_at_least(EFFECT_WEAKENED, 2)
 			M.emote("vomit")
-			M.add_modifier(/datum/modifier/withdrawal_strain/severe, 3 SECONDS)
+			M.apply_body_effect(/datum/body_effect/withdrawal_strain/severe, 3 SECONDS)
 	else if(current_addiction <= 40)
 		if(prob(3))
 			M.emote("vomit")
-			M.add_modifier(/datum/modifier/withdrawal_strain/moderate, 3 SECONDS)
+			M.apply_body_effect(/datum/body_effect/withdrawal_strain/moderate, 3 SECONDS)
 	else if(current_addiction <= 50)
 		if(prob(2))
 			M.emote("vomit")
@@ -1560,16 +1558,31 @@
 			M.injure(INJURY_TOXIN, 50, source = src)//instant crit for tesh
 
 		if(prob(0.1))
-			pick(M.custom_pain("You suddenly feel inexplicably angry!",30),
-			M.custom_pain("You suddenly lose your train of thought!",30),
-			M.custom_pain("Your mouth feels dry!",30),
-			M.status_adjust(EFFECT_DIZZY, 2),
-			M.status_adjust(EFFECT_WEAKENED, 10),
-			M.status_adjust(EFFECT_STUNNED, 1),
-			M.status_adjust(EFFECT_PARALYZED, 0.1),
-			M.status_set(EFFECT_HALLUCINATING, max(M.status_units(EFFECT_HALLUCINATING), 2)),
-			M.flash_eyes(),
-			M.custom_pain("Your vision becomes blurred!",30))
+			claridyl_side_effect(M, rand(1, 10))
+
+/// One of claridyl's rare side effects (B5: pick() used to evaluate all ten at once).
+/datum/reagent/claridyl/proc/claridyl_side_effect(mob/living/carbon/M, which)
+	switch(which)
+		if(1)
+			M.custom_pain("You suddenly feel inexplicably angry!",30)
+		if(2)
+			M.custom_pain("You suddenly lose your train of thought!",30)
+		if(3)
+			M.custom_pain("Your mouth feels dry!",30)
+		if(4)
+			M.status_adjust(EFFECT_DIZZY, 2)
+		if(5)
+			M.status_adjust(EFFECT_WEAKENED, 10)
+		if(6)
+			M.status_adjust(EFFECT_STUNNED, 1)
+		if(7)
+			M.status_adjust(EFFECT_PARALYZED, 0.1)
+		if(8)
+			M.status_set(EFFECT_HALLUCINATING, max(M.status_units(EFFECT_HALLUCINATING), 2))
+		if(9)
+			M.flash_eyes()
+		else
+			M.custom_pain("Your vision becomes blurred!",30)
 
 /datum/reagent/claridyl/bloodburn
 	name = REAGENT_BLOODBURN
@@ -1579,6 +1592,9 @@
 	dermal_absorption = 0
 	color = "#000000"
 	metabolism = REM * 5
+	// B19: a stomach-scouring agent, not a painkiller: none of claridyl's factors.
+	factors = null
+	species_factors = null
 
 /datum/reagent/claridyl/bloodburn/affect_blood(mob/living/carbon/M, alien, removed)
 	if(M.bloodstr)//No seriously dont inject this wtf is wrong with you.
@@ -1600,7 +1616,8 @@
 	scannable = SCANNABLE_BENEFICIAL
 	color = "#00FFBE"
 	overdose = REAGENTS_OVERDOSE * 1
-	metabolism = 0
+	// B8: it used to be 0, so a dose stayed in the blood forever.
+	metabolism = REM * 0.5
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
@@ -1665,16 +1682,19 @@
 
 /datum/reagent/hannoa/affect_blood(mob/living/carbon/M, alien, removed) //Sleepy if not overdosing.
 	..()
-	var/effective_dose = dose
+	hannoa_sedation(M, dose)
+
+/// Hannoa's sedation by dose (B7: one flat chain; the <5 and <20 bands used to be unreachable).
+/datum/reagent/hannoa/proc/hannoa_sedation(mob/living/carbon/M, effective_dose)
 	if(effective_dose < 2)
-		if(effective_dose == metabolism * 2 || prob(5))
+		if(effective_dose <= metabolism * 2 || prob(5))
 			M.emote("yawn")
-		else if(effective_dose < 5)
-			M.status_at_least(EFFECT_BLURRY, 10)
-		else if(effective_dose < 20)
-			if(prob(50))
-				M.status_at_least(EFFECT_WEAKENED, 2)
-			M.status_at_least(EFFECT_DROWSY, 20)
+	else if(effective_dose < 5)
+		M.status_at_least(EFFECT_BLURRY, 10)
+	else if(effective_dose < 20)
+		if(prob(50))
+			M.status_at_least(EFFECT_WEAKENED, 2)
+		M.status_at_least(EFFECT_DROWSY, 20)
 	else
 		M.status_at_least(EFFECT_SLEEPING, 20)
 
@@ -1874,7 +1894,7 @@
 /datum/reagent/lipozilase/affect_blood(mob/living/carbon/M, alien, removed)
 	M.adjust_nutrition(-20 * removed)
 	if(M.weight > 50)
-		M.weight -= 0.3
+		M.weight = max(50, M.weight - 1.5 * removed) // B23: 0.3 a tick at REM, scaled by what was metabolised
 
 /datum/reagent/lipostipo // The drug that rapidly increases weight.
 	name = REAGENT_LIPOSTIPO
@@ -1890,9 +1910,10 @@
 	industrial_use = REFINERYEXPORT_REASON_DIET
 
 /datum/reagent/lipostipo/affect_blood(mob/living/carbon/M, alien, removed)
-	M.adjust_nutrition(-20 * removed)
+	// B23: the weight-gain drug feeds (it was a copy of lipozilase and starved you).
+	M.adjust_nutrition(20 * removed)
 	if(M.weight < 500)
-		M.weight += 0.3
+		M.weight = min(500, M.weight + 1.5 * removed)
 
 /datum/reagent/polymorph
 	name = REAGENT_POLYMORPH
@@ -2314,17 +2335,17 @@
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
 /datum/reagent/curea/affect_blood(mob/living/carbon/M, alien, removed)
-	M.remove_a_modifier_of_type(/datum/modifier/poisoned)
-	M.remove_a_modifier_of_type(/datum/modifier/chilled)
-	M.remove_a_modifier_of_type(/datum/modifier/doomed)
-	M.remove_a_modifier_of_type(/datum/modifier/invulnerable)
-	M.remove_a_modifier_of_type(/datum/modifier/elemental_vulnerability)
-	M.remove_a_modifier_of_type(/datum/modifier/grievous_wounds)
-	M.remove_a_modifier_of_type(/datum/modifier/deep_wounds)
-	M.remove_a_modifier_of_type(/datum/modifier/hivebot_weaken)
+	M.mend(TREAT_ANTITOXIN, 100)
+	M.remove_body_effect(/datum/body_effect/chilled)
+	M.remove_body_effect(/datum/body_effect/doomed)
+	M.remove_body_effect(/datum/body_effect/invulnerable)
+	M.remove_body_effect(/datum/body_effect/elemental_vulnerability)
+	M.remove_body_effect(/datum/body_effect/grievous_wounds)
+	M.remove_body_effect(/datum/body_effect/deep_wounds)
+	M.remove_body_effect(/datum/body_effect/hivebot_weaken)
 	M.extinguish_mob()
-	M.remove_a_modifier_of_type(/datum/modifier/berserk_exhaustion)
-	M.remove_a_modifier_of_type(/datum/modifier/entangled)
+	M.remove_body_effect(/datum/body_effect/berserk_exhaustion)
+	M.remove_body_effect(/datum/body_effect/entangled)
 	M.remove_a_modifier_of_type(/datum/modifier/wizfire)
 	M.remove_a_modifier_of_type(/datum/modifier/wizpoison)
 

@@ -227,3 +227,17 @@
 			var/obj/item/organ/O = owner.internal_organs_by_name[o_tag]
 			if(O)
 				owner.mend(TREAT_RESTORATION, 0.01 * modifier, O) //Very very slow regen, but still cool flavour
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/xenos/plasmavessel/replicant/crew/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/immunehub/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/heart/replicant/rage/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/lungs/replicant/mending/life_step_idle()
+	return FALSE
+

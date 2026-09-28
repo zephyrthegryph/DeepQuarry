@@ -36,7 +36,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		L.taunt(src, TRUE)
-		L.add_modifier(/datum/modifier/hivebot_weaken, 3 SECONDS)
+		L.apply_body_effect(/datum/body_effect/hivebot_weaken, 3 SECONDS)
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/do_special_attack(atom/A)
 	. = TRUE // So we don't fire a bolt as well.

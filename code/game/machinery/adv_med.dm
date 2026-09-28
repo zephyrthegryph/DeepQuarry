@@ -232,7 +232,7 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 			dat += span_blue("Sapient Species: [occupant.custom_species]")
 		else
 			dat += span_blue("Sapient Species: [occupant.custom_species] \[Similar biology to [occupant.species.name]\]")
-	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/body_scanner)
+	var/datum/diagnosis/D = occupant.diagnose(/datum/diagnostic_profile/body_scanner, src, TRUE) // D9: a printed scan is an explicit scan
 	dat += D.render_chat()
 	qdel(D)
 	dat += "<hr>"

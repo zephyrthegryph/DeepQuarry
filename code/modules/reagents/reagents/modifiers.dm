@@ -33,7 +33,7 @@
 	color = "#4CDBDB"
 	metabolism = REM * 0.5
 
-	modifier_to_add = /datum/modifier/cryogelled
+	modifier_to_add = /datum/body_effect/cryogelled
 	modifier_duration = 3 SECONDS
 
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
@@ -76,7 +76,7 @@
 	color = "#060501"
 	metabolism = REM * 0.2
 
-	modifier_to_add = /datum/modifier/clone_stabilizer
+	modifier_to_add = /datum/body_effect/clone_stabilizer
 	modifier_duration = 30 SECONDS
 
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY

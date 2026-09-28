@@ -316,3 +316,10 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	if(!tissue)
 		return ..()
 	return tissue.damage > 0
+
+// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+/// A living owner's brain counts its defib window back up to the cap; after that it rests.
+/obj/item/organ/internal/brain/life_step_idle()
+	if(!..())
+		return FALSE
+	return !owner || defib_timer >= (CONFIG_GET(number/defib_timer) MINUTES) / 2

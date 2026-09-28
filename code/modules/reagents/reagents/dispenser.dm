@@ -174,10 +174,7 @@
 		if(druggy != 0)
 			M.status_at_least(EFFECT_DRUGGED, druggy*3)
 
-		if(adj_temp > 0 && M.bodytemperature < targ_temp)
-			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
-		if(adj_temp < 0 && M.bodytemperature > targ_temp)
-			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
+		M.bodytemperature = drink_temperature_step(M.bodytemperature, targ_temp, adj_temp) // B12
 
 		if(halluci)
 			M.status_at_least(EFFECT_HALLUCINATING, halluci*3)
@@ -220,10 +217,7 @@
 		if(halluci)
 			M.status_at_least(EFFECT_HALLUCINATING, halluci)
 
-		if(adj_temp > 0 && M.bodytemperature < targ_temp)
-			M.bodytemperature = min(targ_temp, M.bodytemperature + (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
-		if(adj_temp < 0 && M.bodytemperature > targ_temp)
-			M.bodytemperature = min(targ_temp, M.bodytemperature - (adj_temp * TEMPERATURE_DAMAGE_COEFFICIENT))
+		M.bodytemperature = drink_temperature_step(M.bodytemperature, targ_temp, adj_temp) // B12
 
 /datum/reagent/ethanol/touch_obj(obj/O)
 	..()
@@ -282,7 +276,7 @@
 				M.emote(pick("pale","shiver","twitch"))
 				M.drop_item() //Hand tremors
 				if(realistic_addiction)
-					M.add_modifier(/datum/modifier/withdrawal_strain/moderate, 3 SECONDS)
+					M.apply_body_effect(/datum/body_effect/withdrawal_strain/moderate, 3 SECONDS)
 	else //Stabilization effects
 		if(current_addiction <= 60)
 			M.pulse = PULSE_FAST

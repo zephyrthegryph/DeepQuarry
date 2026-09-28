@@ -149,7 +149,7 @@
 	var/death_sound
 	var/death_message = "seizes up and falls limp, their eyes dead and lifeless..."
 	var/knockout_message = "has been knocked unconscious!"
-	var/cloning_modifier = /datum/modifier/cloning_sickness
+	var/cloning_modifier = /datum/body_effect/cloning_sickness
 
 	// Environment tolerance/life processes vars.
 	var/reagent_tag											//Used for metabolizing reagents.
@@ -671,6 +671,11 @@
 	return shreds
 
 // Strategy called by the human NPC system each cycle the mob has no client.
+/// Does npc_behaviour() have anything to do for `H` right now? The life stage idles while it
+/// doesn't (MED-6). Override alongside npc_behaviour().
+/datum/species/proc/npc_behaviour_active(mob/living/carbon/human/H)
+	return H.stat == CONSCIOUS && H.ai_brain && H.resting
+
 /datum/species/proc/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat == CONSCIOUS && H.ai_brain)
 		if(H.resting)

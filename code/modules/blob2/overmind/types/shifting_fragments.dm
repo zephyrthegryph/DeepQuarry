@@ -35,5 +35,5 @@
 		B.forceMove(T)
 
 /datum/blob_type/shifting_fragments/on_chunk_use(obj/item/blobcore_chunk/B, mob/living/user)
-	user.add_modifier(/datum/modifier/sprinting, 2 MINUTES)
+	user.apply_body_effect(/datum/body_effect/sprinting, 2 MINUTES)
 	return

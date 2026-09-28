@@ -64,7 +64,7 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/proc/frozen_aura()
 	for(var/mob/living/L in view(src, 14))
 		if(!IIsAlly(L))
-			L.add_modifier(/datum/modifier/chilled, 3, src)
+			L.apply_body_effect(/datum/body_effect/chilled, 3, src)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo
 	name = "astral collective deflection saucer"

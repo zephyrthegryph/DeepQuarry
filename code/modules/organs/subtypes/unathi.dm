@@ -57,3 +57,8 @@
 
 /obj/item/organ/internal/intestine/unathi
 	color = "#b3cbc3"
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/liver/unathi/life_step_idle()
+	return FALSE
+

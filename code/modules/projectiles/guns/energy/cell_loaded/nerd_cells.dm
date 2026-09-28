@@ -68,11 +68,11 @@
 					if (W.internal)
 						continue
 					W.disinfect()
-			target.add_modifier(/datum/modifier/stabilize, 20 SECONDS)
+			target.apply_body_effect(/datum/body_effect/stabilize, 20 SECONDS)
 	else
 		return 1
 
-/datum/modifier/stabilize
+/datum/body_effect/stabilize
 	name = "stabilize"
 	desc = "Your injuries are stabilized and your pain abates!"
 	mob_overlay_state = "cyan_sparkles"
@@ -171,7 +171,7 @@
 					if(O.is_salved() == FALSE)
 						W.salve()
 					W.disinfect()
-			target.add_modifier(/datum/modifier/stabilize, 20 SECONDS)
+			target.apply_body_effect(/datum/body_effect/stabilize, 20 SECONDS)
 	else
 		return 1
 
@@ -213,11 +213,11 @@
 /obj/item/projectile/beam/medical_cell/haste/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.add_modifier(/datum/modifier/nerdhaste, 20 SECONDS)
+			target.apply_body_effect(/datum/body_effect/nerdhaste, 20 SECONDS)
 	else
 		return 1
 
-/datum/modifier/nerdhaste
+/datum/body_effect/nerdhaste
 	name = "haste"
 	desc = "You can move much faster!"
 	mob_overlay_state = "haste"
@@ -235,11 +235,11 @@
 /obj/item/projectile/beam/medical_cell/resist/on_hit(mob/living/carbon/human/target)
 	if(istype(target, /mob/living/carbon/human))
 		if(target.stat != DEAD)
-			target.add_modifier(/datum/modifier/resistance, 20 SECONDS)
+			target.apply_body_effect(/datum/body_effect/resistance, 20 SECONDS)
 	else
 		return 1
 
-/datum/modifier/resistance
+/datum/body_effect/resistance
 	name = "resistance"
 	desc = "You resist 15% of all incoming damage and stuns!"
 	mob_overlay_state = "repel_missiles"

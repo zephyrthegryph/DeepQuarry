@@ -46,7 +46,7 @@
 /datum/unit_test/dq_ambush_and_underwater_stealth_modifiers_dont_clobber_each_other/Run()
 	var/mob/living/carbon/human/H = new(null)
 
-	var/datum/modifier/ambush/ambush_mod = H.add_modifier(/datum/modifier/ambush)
+	var/ambush_mod = H.apply_body_effect(/datum/body_effect/ambush)
 	TEST_ASSERT(ambush_mod, "ambush modifier should have applied to a fresh human")
 	TEST_ASSERT(H.alpha == 30, "ambush should fade the wearer to alpha 30, got [H.alpha]")
 
@@ -58,7 +58,7 @@
 	// Expire ambush first (order matters for the historical bug: the *first*
 	// one to expire is the one whose blind "reset to 255" would clobber the
 	// other still-active modifier).
-	H.remove_modifiers_of_type(/datum/modifier/ambush, silent = TRUE)
+	H.remove_body_effect(/datum/body_effect/ambush, silent = TRUE)
 	TEST_ASSERT(H.alpha == 50, "expiring ambush while underwater_stealth is still active should leave alpha at underwater_stealth's own value, got [H.alpha]")
 
 	H.remove_modifiers_of_type(/datum/modifier/underwater_stealth, silent = TRUE)

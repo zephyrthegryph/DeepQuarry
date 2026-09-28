@@ -36,6 +36,10 @@
 		var/load_type = simple_load_type_for_category(A.injury_category, owner.biology)
 		if(load_type)
 			afflict(load_type)?.receive_injury(A.simple_load_rate * A.severity / AFFLICTION_SEVERITY_TERMINAL)
+	// C17: the factor step runs here too (the humanoid plan runs it every cycle), so a stale
+	// table is rebuilt before the vitals read it.
+	if(dirty & BODY_DIRTY_FACTORS)
+		recompute_factors()
 	recompute_vitals()
 	evaluate_status()
 

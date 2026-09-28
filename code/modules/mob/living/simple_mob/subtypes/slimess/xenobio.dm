@@ -190,7 +190,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/dark_liquidlife/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(49, holder.my_atom))
-		L.add_modifier(/datum/modifier/sprinting, 5 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/sprinting, 5 MINUTES, src)
 	..()
 
 
@@ -365,7 +365,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/oceanboon/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(21, holder.my_atom))
-		L.add_modifier(/datum/modifier/healingtide, 10 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/healingtide, 10 MINUTES, src)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/warplague
@@ -583,8 +583,8 @@
 
 /datum/decl/chemical_reaction/instant/slime/nightmarewater/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(3, holder.my_atom))
-		L.add_modifier(/datum/modifier/faraday, 1 MINUTES, src)
-		L.add_modifier(/datum/modifier/blastshield, 1 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/faraday, 1 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/blastshield, 1 MINUTES, src)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/nightmarejelly
@@ -596,7 +596,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/nightmarejelly/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(14, holder.my_atom))
-		L.add_modifier(/datum/modifier/poisoned/strong, 3 MINUTES, src)
+		L.lingering_poison(2, 3 MINUTES)
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/nightmareblood
@@ -619,7 +619,7 @@
 
 /datum/decl/chemical_reaction/instant/slime/nightmarephoron/on_reaction(datum/reagents/holder)
 	for(var/mob/living/L in range(14, holder.my_atom))
-		L.add_modifier(/datum/modifier/berserk_exhaustion, 1 MINUTES, src)
+		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 1 MINUTES, src)
 	..()
 
 

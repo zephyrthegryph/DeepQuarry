@@ -487,7 +487,7 @@ ANT STRUCTURES
 
 /obj/effect/ant_structure/trap/slowdown
 	icon_state = "slow_trap"
-	modifiertype = /datum/modifier/chilled
+	modifiertype = /datum/body_effect/chilled
 
 /obj/effect/ant_structure/trap/confusion
 	icon_state = "confusion_trap"

@@ -186,9 +186,6 @@
 /obj/item/stack/medical/advanced/bruise_pack/wound_needs_treatment(datum/affliction/wound/W)
 	return !W.internal && !(W.bandaged && W.disinfected)
 
-/obj/item/stack/medical/advanced/bruise_pack/wound_limited_by_amount()
-	return FALSE
-
 /obj/item/stack/medical/advanced/bruise_pack/wound_already_treated(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting)
 	if(affecting.is_bandaged() && affecting.is_disinfected()) // We do a second check after the delay, in case it was bandaged after the first check.
 		balloon_alert(user, "[H]'s [affecting.name] is already bandaged.")
@@ -207,10 +204,16 @@
 									"smeared bioglue over \a [W.desc] on [H]'s [affecting.name]." )
 	W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 	W.disinfect()
-	H.mend(TREAT_TISSUE_REPAIR, heal_brute, affecting.organ_tag)
 	playsound(src, pick(apply_sounds), 25)
 	update_icon()
-	return 1
+	// B9: one charge per wound treated; the tissue repair is applied once, in finish.
+	return used + 1
+
+/// The kit's tissue repair lands once for the whole pass, not once per wound.
+/obj/item/stack/medical/advanced/bruise_pack/wound_treat_finish(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
+	if(used && affecting && H)
+		H.mend(TREAT_TISSUE_REPAIR, heal_brute, affecting.organ_tag)
+	return ..()
 
 /obj/item/stack/medical/proc/upgrade_stack(upgrade_amount)
 	. = FALSE
@@ -402,6 +405,7 @@
 
 		if(affecting.open)
 			user.balloon_alert(user, "the [affecting.name] is cut open!")
+			return ITEM_INTERACT_FAILURE // B20: an open limb is surgery's, not a burn kit's
 
 		if(affecting.is_salved())
 			user.balloon_alert(user, "[M]'s [affecting.name] has already been salved.")

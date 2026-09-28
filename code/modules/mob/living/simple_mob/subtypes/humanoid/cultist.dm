@@ -133,7 +133,7 @@
 		visible_message(span_danger("\The [src] suddenly rises from a pool of blood \the [L]!"))
 		new /obj/effect/decal/cleanable/blood (src.loc)
 		playsound(L, 'sound/weapons/heavysmash.ogg', 75, 1)
-		L.add_modifier(/datum/modifier/entangled, 1 SECONDS)
+		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
@@ -177,7 +177,7 @@
 			to_chat(src, span_critical("You hit something really solid!"))
 			playsound(src, "punch", 75, 1)
 			status_at_least(EFFECT_WEAKENED, 5)
-			add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
+			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 
 		// Get into the tile.

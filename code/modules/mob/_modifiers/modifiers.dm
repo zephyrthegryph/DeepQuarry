@@ -110,6 +110,9 @@
 // The SECONDS/MINUTES macro is very helpful for this.  E.g. M.add_modifier(/datum/modifier/example, 5 MINUTES)
 // The fourth argument is a boolean to suppress failure messages, set it to true if the modifier is repeatedly applied (as chem-based modifiers are) to prevent chat-spam
 /mob/living/proc/add_modifier(modifier_type, expire_at = null, mob/living/origin = null, suppress_failure = FALSE)
+	// Compatibility: factor-only effects are body effects now (body_effects.dm).
+	if(ispath(modifier_type, /datum/body_effect))
+		return apply_body_effect(modifier_type, expire_at, origin)
 	// First, check if the mob already has this modifier.
 	for(var/datum/modifier/M in modifiers)
 		if(ispath(modifier_type, M.type))
@@ -158,6 +161,8 @@
 
 // Removes one modifier of a type
 /mob/living/proc/remove_a_modifier_of_type(modifier_type, silent = FALSE)
+	if(ispath(modifier_type, /datum/body_effect))
+		return remove_body_effect(modifier_type, silent)
 	for(var/datum/modifier/M in modifiers)
 		if(ispath(M.type, modifier_type))
 			M.expire(silent)
@@ -165,17 +170,22 @@
 
 // Removes all modifiers of a type
 /mob/living/proc/remove_modifiers_of_type(modifier_type, silent = FALSE)
+	if(ispath(modifier_type, /datum/body_effect))
+		return remove_body_effect(modifier_type, silent)
 	for(var/datum/modifier/M in modifiers)
 		if(ispath(M.type, modifier_type))
 			M.expire(silent)
 
 // Removes all modifiers, useful if the mob's being deleted
 /mob/living/proc/remove_all_modifiers(silent = FALSE)
+	clear_body_effects(silent)
 	for(var/datum/modifier/M in modifiers)
 		M.expire(silent)
 
 // Checks if the mob has a modifier type.
 /mob/living/proc/has_modifier_of_type(modifier_type)
+	if(ispath(modifier_type, /datum/body_effect))
+		return has_body_effect(modifier_type)
 	return get_modifier_of_type(modifier_type) ? TRUE : FALSE
 
 // Gets the first instance of a specific modifier type or subtype.

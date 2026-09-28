@@ -201,10 +201,10 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 		if(M.has_modifier_of_type(/datum/modifier/underwater_stealth))
 			to_chat(user, span_warning("You cannot use guns whilst hiding underwater!"))
 			return FALSE
-		else if(M.has_modifier_of_type(/datum/modifier/phased_out))
+		else if(M.has_body_effect(/datum/body_effect/phased_out))
 			to_chat(user, span_warning("You cannot use guns whilst incorporeal!"))
 			return FALSE
-		else if(M.has_modifier_of_type(/datum/modifier/rednet))
+		else if(M.has_body_effect(/datum/body_effect/rednet))
 			to_chat(user, span_warning("Your gun refuses to fire!"))
 			return FALSE
 		else if(M.has_modifier_of_type(/datum/modifier/trait/thickdigits))

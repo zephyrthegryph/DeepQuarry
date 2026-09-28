@@ -208,10 +208,11 @@
 	..()
 
 	var/drug_strength = 29
-	if(M.species.chem_strength_tox > 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
-		drug_strength *= M.species.chem_strength_tox
-	else
-		M.injure(INJURY_TOXIN, 10 * removed, source = src) //Given incorporations of other toxins with similiar damage, this seems right.
+	var/tox_strength = max(M.species.chem_strength_tox, 0) //Closer to 0 means they're more resistant to toxins. Higher than 1 means they're weaker to toxins.
+	if(tox_strength > 0)
+		drug_strength *= tox_strength
+	// B21: everyone takes the toxin, scaled by their toxin strength (it used to hit only the immune).
+	M.injure(INJURY_TOXIN, 10 * removed * tox_strength, source = src)
 
 	M.status_at_least(EFFECT_DRUGGED, drug_strength)
 	if(prob(10) && prob_proc == TRUE && isturf(M.loc) && !istype(M.loc, /turf/space) && M.canmove && !M.restrained())

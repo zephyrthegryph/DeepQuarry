@@ -169,18 +169,23 @@ REF_OWNED_LIST(/datum/body, "supports")
 /datum/body/proc/afflict(affliction_type, location = null, severity = 0)
 	if(!ispath(affliction_type, /datum/affliction))
 		return null
-	var/datum/affliction/A = find_affliction(affliction_type, location)
+	var/datum/affliction/proto = dq_proto(affliction_type)
+	// C9: a whole-body condition exists once, wherever its causes put it.
+	var/list/same_type = afflictions_by_type?[affliction_type]
+	var/datum/affliction/A = proto.systemic_singleton ? (length(same_type) ? same_type[1] : null) : find_affliction(affliction_type, location)
 	if(A)
 		if(severity)
 			A.adjust_severity(severity)
 		return A
-	var/datum/affliction/proto = dq_proto(affliction_type)
 	if(!proto.can_afflict(src, location))
 		return null
 	A = new affliction_type(location)
 	add_affliction(A, location)
+	// C22: an explicit severity wins; otherwise the type's initial_severity, through the setter.
 	if(severity)
 		A.set_severity(severity)
+	else if(A.initial_severity)
+		A.set_severity(A.initial_severity)
 	return A
 
 /// Remove every affliction: admin heal, resleeve, rejuvenate.

@@ -5,7 +5,7 @@
 	taste_description = "high voltage"
 	color = "#FFFF66"
 
-	modifier_to_add = /datum/modifier/eletricalsurge
+	modifier_to_add = /datum/body_effect/eletricalsurge
 	modifier_duration = 3 SECONDS
 
 /datum/reagent/modapplying/oceaniccure
@@ -15,7 +15,7 @@
 	taste_description = "sea breeze"
 	color = "#C8A5DC"
 
-	modifier_to_add = /datum/modifier/healingtide
+	modifier_to_add = /datum/body_effect/healingtide
 	modifier_duration = 3 SECONDS
 
 /datum/reagent/modapplying/deathclawmutagen
@@ -25,7 +25,7 @@
 	taste_description = "buzzing radiation"
 	color = "#00A000"
 
-	modifier_to_add = /datum/modifier/radiationhide
+	modifier_to_add = /datum/body_effect/radiationhide
 	modifier_duration = 3 SECONDS
 
 /datum/reagent/modapplying/senseenhancer
@@ -45,7 +45,7 @@
 	taste_description = "nothing"
 	color = "#561EC3"
 
-	modifier_to_add = /datum/modifier/protectivenumbing
+	modifier_to_add = /datum/body_effect/protectivenumbing
 	modifier_duration = 3 SECONDS
 
 
@@ -57,5 +57,5 @@
 	reagent_state = LIQUID
 	color = "#660066"
 
-	modifier_to_add = /datum/modifier/juggernog
+	modifier_to_add = /datum/body_effect/juggernog
 	modifier_duration = 3 SECONDS

@@ -93,7 +93,7 @@
 /// The end of an ectoplasmic lash: the blob siphons energy through the beam.
 /obj/structure/blob/proc/ectoplasm_siphon(mob/living/L, datum/beam/drain_beam)
 	visible_message(span_alien("\The [src] siphons energy from \the [L]"))
-	L.add_modifier(/datum/modifier/berserk_exhaustion, 60 SECONDS)
+	L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 60 SECONDS)
 	overmind.add_points(rand(10,30))
 	qdel(drain_beam)
 
@@ -101,7 +101,7 @@
 	var/obj/item/blobcore_chunk/B = src
 	if(B && drain_beam)
 		carrier.visible_message(span_alien("\The [B] siphons energy from \the [L]"))
-		L.add_modifier(/datum/modifier/berserk_exhaustion, 30 SECONDS)
+		L.apply_body_effect(/datum/body_effect/berserk_exhaustion, 30 SECONDS)
 		var/total_heal = 0
 
 		if(carrier.injury_load(INJURY_CATEGORY_PHYSICAL))
@@ -124,6 +124,6 @@
 			carrier.mend(TREAT_GENETIC_REPAIR, 5)
 			total_heal += 5
 
-		carrier.add_modifier(/datum/modifier/berserk_exhaustion, total_heal SECONDS)
+		carrier.apply_body_effect(/datum/body_effect/berserk_exhaustion, total_heal SECONDS)
 		if(!QDELETED(drain_beam))
 			qdel(drain_beam)

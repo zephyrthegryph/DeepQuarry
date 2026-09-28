@@ -55,3 +55,8 @@
 /obj/item/organ/internal/stack/vox/stack
 	name = "vox cortical stack"
 	icon_state = "cortical_stack"
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/borer/life_step_idle()
+	return FALSE
+

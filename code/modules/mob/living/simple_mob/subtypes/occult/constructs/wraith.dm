@@ -33,7 +33,7 @@
 /mob/living/simple_mob/construct/wraith/apply_melee_effects(atom/A)
 	if(isliving(A))
 		var/mob/living/L = A
-		L.add_modifier(/datum/modifier/deep_wounds, 30 SECONDS)
+		L.apply_body_effect(/datum/body_effect/deep_wounds, 30 SECONDS)
 
 /datum/decl/mob_organ_names/wraith
 	hit_zones = list("body", "eye", "crystaline spike", "left claw", "right claw")
@@ -89,7 +89,7 @@
 
 		visible_message(span_danger("\The [src] appears in a flurry of slashes \the [L]!"))
 		playsound(L, 'sound/weapons/heavysmash.ogg', 75, 1)
-		L.add_modifier(/datum/modifier/entangled, 1 SECONDS)
+		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
 		overshoot = FALSE
 
 	if(!overshoot) // We hit the target, or something, at destination, so we're done.
@@ -133,7 +133,7 @@
 			to_chat(src, span_critical("You hit something really solid!"))
 			playsound(src, "punch", 75, 1)
 			status_at_least(EFFECT_WEAKENED, 5)
-			add_modifier(/datum/modifier/tunneler_vulnerable, 10 SECONDS)
+			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.
 
 		// Get into the tile.

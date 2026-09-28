@@ -243,6 +243,9 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	return null
 
 /obj/item/shockpaddles/proc/can_revive(mob/living/carbon/human/H) //This is checked right before attempting to revive
+	// D11: there is nothing to restart without a heart.
+	if(H.should_have_organ(O_HEART) && !H.internal_organs_by_name[O_HEART])
+		return "buzzes, \"Resuscitation failed - No cardiac activity: patient has no heart. Further attempts futile without replacement.\""
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
 	if(H.should_have_organ(O_BRAIN))
 		if(!brain)

@@ -4,7 +4,7 @@
 
 
 ////////// Self-Enhancing
-/datum/modifier/fortify
+/datum/body_effect/fortify
 	name = "fortified body"
 	desc = "You are taking less damage from outside sources."
 
@@ -18,7 +18,7 @@
 	factors = alist(BF_SLOWDOWN = 2, BF_EVASION = -20, BF_INCOMING_ALL = 0.5, BF_DISABLE_DURATION = 0.25, BF_ICON_SCALE_X = 1.2, BF_ICON_SCALE_Y = 1.2, BF_PAIN_IMMUNITY = 1)
 
 
-/datum/modifier/ambush
+/datum/body_effect/ambush
 	name = "phased"
 	desc = "You are partially shifted from the material plane."
 
@@ -33,17 +33,14 @@
 	factors = alist(BF_EVASION = 50, BF_MELEE_DAMAGE = 0, BF_INCOMING_ALL = 0.1, BF_PAIN_IMMUNITY = 1)
 
 
-/datum/modifier/ambush/on_applied()
-	holder.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
-	return
+/datum/body_effect/ambush/on_start(mob/living/L)
+	L.set_alpha_source(ALPHA_SOURCE_AMBUSH, 30/255)
 
-// Override this for special effects when it gets removed.
-/datum/modifier/ambush/on_expire()
-	holder.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
-	return
+/datum/body_effect/ambush/on_end(mob/living/L, expired)
+	L.clear_alpha_source(ALPHA_SOURCE_AMBUSH)
 
 ////////// On-hit
-/datum/modifier/deep_wounds
+/datum/body_effect/deep_wounds
 	name = "deep wounds"
 	desc = "Your wounds are mysteriously harder to mend."
 
@@ -154,7 +151,7 @@
 	if(!L.is_sentient())
 		return FALSE // Drones don't feel anything, not even hunger.
 
-	if(L.has_modifier_of_type(/datum/modifier/berserk_exhaustion))
+	if(L.has_body_effect(/datum/body_effect/berserk_exhaustion))
 		to_chat(L, span_warning("You recently berserked, so you are too tired to consume."))
 		return FALSE
 

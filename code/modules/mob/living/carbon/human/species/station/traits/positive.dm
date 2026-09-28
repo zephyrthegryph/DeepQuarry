@@ -742,9 +742,10 @@
 /datum/modifier/adrenaline/on_expire()	//Your time is up, time to suffer the consequences.
 	holder.apply_effects(original_values["stun"] + 30,original_values["weaken"] + 20,original_values["paralyze"] + 15,0,original_values["stutter"] + 40,original_values["eye_blur"] + 20,original_values["drowsy"] + 75,original_values["agony"])
 	holder.status_at_least(EFFECT_CONFUSED, original_values["confused"])
-	holder.add_modifier(/datum/modifier/adrenaline_recovery,original_length*17.5)
+	holder.apply_body_effect(/datum/body_effect/adrenaline_recovery,original_length*17.5)
 
-/datum/modifier/adrenaline_recovery
+/datum/body_effect/adrenaline_recovery
+	stacks = MODIFIER_STACK_FORBID
 	name = "Adrenaline detox"
 	desc = "After an adrenaline rush, one will find themselves suffering from adrenaline detox, which is their body recovering from an intense adrenaline rush."
 	on_created_text = span_danger("Your body aches and groans, forcing you into a period of rest as it recovers from the intense adrenaline rush.")

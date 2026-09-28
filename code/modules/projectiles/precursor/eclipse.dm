@@ -67,7 +67,7 @@
 	icon_state = "ice_2"
 	fire_sound = 'sound/weapons/pulse3.ogg'
 	damage = 20
-	modifier_type_to_apply = /datum/modifier/cryogelled
+	modifier_type_to_apply = /datum/body_effect/cryogelled
 	modifier_duration = 0.25 MINUTE
 	speed = 2.5
 	range = 12
@@ -121,7 +121,7 @@
 	icon_state = "ice_wind"
 	damage = 15
 	armor_penetration = 70
-	modifier_type_to_apply = /datum/modifier/cryogelled
+	modifier_type_to_apply = /datum/body_effect/cryogelled
 	modifier_duration = 0.25 MINUTE
 
 /obj/item/projectile/energy/eclipse_boss/metalsphere

@@ -257,7 +257,6 @@
 		// Pain and consciousness read analgesia, pain and sedation; the
 		// physiology reads the oxygen-transport factors.
 		invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_PHYSIOLOGY)
-		SEND_SIGNAL(owner, COMSIG_LIVING_FACTORS_CHANGED)
 
 /datum/body/proc/factors_equal(list/a, list/b)
 	if(a == b)
@@ -341,14 +340,34 @@
 	/// A tag mapped to null gets nothing (diona ignore most drugs).
 	var/alist/species_factors
 
-/// The table this reagent contributes to `L`: its species' entry in
-/// `species_factors` if it has one, else `factors`. Null contributes nothing.
+/// The table this reagent contributes to `L`: `factors`, with its species' entry in
+/// `species_factors` merged over it (B19: an entry overrides the factors it names and keeps the
+/// rest; it used to replace the whole table). A species mapped to null gets nothing.
 /datum/reagent/proc/get_factors(mob/living/L)
 	if(species_factors)
 		var/tag = L.reagent_tag()
 		if(!isnull(tag) && (tag in species_factors))
-			return species_factors[tag]
+			return merged_species_factors(tag)
 	return factors
+
+/// `factors` with species `tag`'s overrides on top; built once per reagent type and tag.
+/datum/reagent/proc/merged_species_factors(tag)
+	var/alist/over = species_factors[tag]
+	if(isnull(over))
+		return null
+	if(!length(factors))
+		return over
+	var/static/list/merged_cache = list()
+	var/key = "[type]|[tag]"
+	var/alist/merged = merged_cache[key]
+	if(!merged)
+		merged = alist()
+		for(var/id in factors)
+			merged[id] = factors[id]
+		for(var/id in over)
+			merged[id] = over[id]
+		merged_cache[key] = merged
+	return merged
 
 /// Contributions that depend on the patient rather than the reagent: the
 /// mob's allergies, and blood rebuilt from its own blood reagent. Called at

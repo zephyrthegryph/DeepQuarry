@@ -68,7 +68,7 @@
 	flick("[icon_state]-scan", src)
 	user.visible_message(span_notice("[user] has analyzed [M]'s vitals."), span_notice("You have analyzed [M]'s vitals."))
 
-	var/datum/diagnosis/D = M.diagnose(active_profile())
+	var/datum/diagnosis/D = M.diagnose(active_profile(), src, TRUE) // D9: each use is an explicit scan with this analyzer's baseline
 	if(!D)
 		return
 	var/list/dat = list(D.render_chat())

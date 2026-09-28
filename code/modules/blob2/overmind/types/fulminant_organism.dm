@@ -49,4 +49,4 @@
 		S.blob_type = src
 		S.update_icons()
 		S.ai_brain.forget_everything()
-		S.add_modifier(/datum/modifier/doomed, 2 MINUTES)
+		S.apply_body_effect(/datum/body_effect/doomed, 2 MINUTES)

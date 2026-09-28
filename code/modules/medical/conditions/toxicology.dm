@@ -22,6 +22,8 @@
 	body_plans = BODY_PLAN_ALL
 	simple_load_rate = 1.5
 	progression_rate = 0
+	// C2: on a simple body (no medic) the poison wears off instead of loading forever.
+	simple_clearance_rate = -1
 	treated_by = list(TREAT_ANTITOXIN = 1.2)
 	min_symptoms = 1
 	max_symptoms = 3

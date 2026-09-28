@@ -71,7 +71,7 @@
 	for(var/i in 1 to randomization)
 		process_blood()
 
-/datum/modifier/cryogelled
+/datum/body_effect/cryogelled
 	name = "cryogelled"
 	desc = "Your body begins to freeze."
 	mob_overlay_state = "chilled"
@@ -82,7 +82,7 @@
 
 	factors = alist(BF_SLOWDOWN = 0.1, BF_EVASION = -5, BF_ATTACK_SPEED = 1.1, BF_DISABLE_DURATION = 1.05)
 
-/datum/modifier/clone_stabilizer
+/datum/body_effect/clone_stabilizer
 	name = "clone stabilized"
 	desc = "Your body's regeneration is highly restricted."
 
@@ -98,48 +98,48 @@
 // crises, allergy flares). Each is a short modifier carrying a static factor
 // table; re-applying one while it runs extends it.
 
-/datum/modifier/numbness
+/datum/body_effect/numbness
 	name = "numbness"
 	desc = "You can barely feel your body."
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
 	factors = alist(BF_ANALGESIA = 60)
 
-/datum/modifier/numbness/mild
+/datum/body_effect/numbness/mild
 	factors = alist(BF_ANALGESIA = 20)
 
-/datum/modifier/numbness/deep
+/datum/body_effect/numbness/deep
 	factors = alist(BF_ANALGESIA = 150)
 
 /// Synx venom: numbs and steadies the prey.
-/datum/modifier/numbness/synx
+/datum/body_effect/numbness/synx
 	factors = alist(BF_ANALGESIA = 50, BF_STABILIZATION = 15)
 
 /// A withdrawal crisis strains the liver, kidneys and spleen.
-/datum/modifier/withdrawal_strain
+/datum/body_effect/withdrawal_strain
 	name = "withdrawal strain"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
 	factors = alist(BF_WITHDRAWAL = 0.5)
 
-/datum/modifier/withdrawal_strain/mild
+/datum/body_effect/withdrawal_strain/mild
 	factors = alist(BF_WITHDRAWAL = 0.5)
 
-/datum/modifier/withdrawal_strain/moderate
+/datum/body_effect/withdrawal_strain/moderate
 	factors = alist(BF_WITHDRAWAL = 1.4)
 
-/datum/modifier/withdrawal_strain/severe
+/datum/body_effect/withdrawal_strain/severe
 	factors = alist(BF_WITHDRAWAL = 2.3)
 
 /// Airborne allergens (pollen) set off the mob's allergies.
-/datum/modifier/allergic_flare
+/datum/body_effect/allergic_flare
 	name = "allergic flare"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND
 	factors = alist(BF_ALLERGY = 2.5)
 
 /// A disease symptom rebuilding blood.
-/datum/modifier/blood_regeneration
+/datum/body_effect/blood_regeneration
 	name = "blood regeneration"
 	hidden = TRUE
 	stacks = MODIFIER_STACK_EXTEND

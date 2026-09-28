@@ -14,8 +14,11 @@
 
 /// Diagnose this mob through `profile` (a /datum/diagnostic_profile typepath
 /// or instance). Null when the mob has no body.
-/mob/living/proc/diagnose(profile) as /datum/diagnosis
-	return body?.diagnose(profile)
+/// `baseline_holder`: the device whose trend baseline to read (D9); null uses the profile's.
+/// `update_baseline`: this is an explicit scan, so it becomes that device's new baseline. A
+/// passive read (a UI refresh) only sets a baseline where there is none.
+/mob/living/proc/diagnose(profile, datum/baseline_holder = null, update_baseline = FALSE) as /datum/diagnosis
+	return body?.diagnose(profile, baseline_holder, update_baseline)
 
 /// Write one line to the game log for a player-initiated scan.
 /proc/log_diagnosis(mob/user, mob/living/patient, datum/diagnosis/D)
@@ -23,7 +26,7 @@
 		return
 	log_game("DIAGNOSIS: [key_name(user)] scanned [key_name(patient)] with [D.profile.name]: status [D.status], band [D.band], [LAZYLEN(D.findings)] finding(s).")
 
-/datum/body/proc/diagnose(profile) as /datum/diagnosis
+/datum/body/proc/diagnose(profile, datum/baseline_holder = null, update_baseline = FALSE) as /datum/diagnosis
 	var/datum/diagnostic_profile/P = ispath(profile) ? diagnostic_profile(profile) : profile
 	if(!istype(P))
 		CRASH("diagnose() called with an invalid profile: [profile]")
@@ -44,7 +47,7 @@
 		D.band = dq_qualitative_vitality_band(get_vitality())
 
 	diagnose_vitals(D, P)
-	diagnose_afflictions(D, P)
+	diagnose_afflictions(D, P, baseline_holder ? REF(baseline_holder) : "[P.type]", update_baseline)
 	diagnose_plan(D, P)
 	if(P.part_detail != DIAG_PARTS_NONE)
 		diagnose_parts(D, P)
@@ -89,7 +92,7 @@
 			D.consciousness = "alert"
 
 /// Conditions the profile perceives, plus the signs every affliction presents.
-/datum/body/proc/diagnose_afflictions(datum/diagnosis/D, datum/diagnostic_profile/P)
+/datum/body/proc/diagnose_afflictions(datum/diagnosis/D, datum/diagnostic_profile/P, baseline_key, update_baseline = FALSE)
 	var/instrument = P.senses & (PRESENT_SURFACE | PRESENT_INTERNAL | PRESENT_LAB | PRESENT_SYNTHETIC | PRESENT_NANITE)
 	var/eyes = P.senses & PRESENT_VISIBLE
 	for(var/datum/affliction/A as anything in afflictions)
@@ -102,8 +105,11 @@
 			if(P.hints)
 				F.hint = A.diagnostic_hint(P)
 			if(P.trends && !istype(A, /datum/affliction/wound))
-				F.trend = _dq_trend_for_condition(A)
-				A.last_scanned_severity = A.severity
+				// D9: each device keeps its own baseline, moved only by an explicit scan (or set
+				// the first time it sees the condition), so a refreshing UI still shows a trend.
+				F.trend = _dq_trend_for_condition(A, baseline_key)
+				if(update_baseline || isnull(A.scan_baselines?[baseline_key]))
+					LAZYSET(A.scan_baselines, baseline_key, A.severity)
 		if(!A.active_symptoms || !(biology_of(A.location) & P.biology))
 			continue
 		for(var/datum/affliction_symptom/S as anything in affliction_symptoms_of(A))

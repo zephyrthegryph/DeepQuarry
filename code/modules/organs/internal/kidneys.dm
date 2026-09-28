@@ -57,3 +57,11 @@
 	if(ishuman(owner)) // placed in its limb by now
 		var/mob/living/carbon/human/H = owner
 		color = H.species.blood_color
+
+// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+/obj/item/organ/internal/kidneys/life_step_idle()
+	if(!..())
+		return FALSE
+	if(!owner)
+		return TRUE
+	return !is_bruised() && !owner.injury_load(INJURY_CATEGORY_TOXIC) && !owner.factor(BF_WITHDRAWAL)

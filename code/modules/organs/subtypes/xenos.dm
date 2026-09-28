@@ -218,3 +218,8 @@
 	cannot_gib = 1
 	cannot_amputate = 1
 	eye_icon = "blank_eyes"
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/xenos/plasmavessel/life_step_idle()
+	return FALSE
+

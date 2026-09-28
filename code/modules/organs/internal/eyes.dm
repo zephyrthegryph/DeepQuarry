@@ -116,3 +116,7 @@
 	if (. & EMP_PROTECT_SELF || !robotic || !owner)
 		return
 	owner.status_adjust(EFFECT_BLURRY, (4/severity))
+
+// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+/obj/item/organ/internal/eyes/life_step_idle()
+	return ..() && !is_bruised()

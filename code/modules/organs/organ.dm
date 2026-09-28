@@ -680,6 +680,14 @@ DECLARE_INTERACTIONS(/obj/item/organ, INTERACT_ITEM(null, PROC_REF(interaction_i
 				remove_verb(owner, verb_path)
 	return
 
+/// MED-6: TRUE when periodic_step() has nothing to do for this organ right now, so the organs
+/// life stage may sleep: no germs, no rejection under way, not at its damage limit. Organs with
+/// their own handle_organ_proc_special() work say FALSE unless they know better.
+/obj/item/organ/proc/life_step_idle()
+	if((status & ORGAN_DEAD) || preserved || istype(loc, /obj/item/mmi))
+		return TRUE
+	return !germ_level && !rejecting && damage < max_damage
+
 /obj/item/organ/proc/handle_organ_proc_special()	// Called when processed.
 	return
 

@@ -546,7 +546,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 
 /obj/item/organ/internal/malignant/parasite/painleech/feed()
 	..()
-	owner.add_modifier(growth >= 5 ? /datum/modifier/numbness/deep : /datum/modifier/numbness, 3 SECONDS)
+	owner.apply_body_effect(growth >= 5 ? /datum/body_effect/numbness/deep : /datum/body_effect/numbness, 3 SECONDS)
 	return prob(10) && growth < 10
 
 
@@ -815,3 +815,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 	deg_chance = 1
 	deg_intensity = 3
 	side_effect_multiplier = 2
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/malignant/life_step_idle()
+	return FALSE
+

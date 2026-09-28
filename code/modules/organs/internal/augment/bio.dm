@@ -99,7 +99,7 @@
 
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner
-		H.add_modifier(/datum/modifier/sprinting, 1 MINUTES)
+		H.apply_body_effect(/datum/body_effect/sprinting, 1 MINUTES)
 
 /obj/item/organ/internal/augment/bioaugment/health_scan
 	name = "health scanner implant"

@@ -139,7 +139,7 @@
 
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner
-		H.add_modifier(/datum/modifier/melee_surge, 0.75 MINUTES)
+		H.apply_body_effect(/datum/body_effect/melee_surge, 0.75 MINUTES)
 
 /obj/item/organ/internal/augment/armmounted/shoulder/blade
 	name = "armblade implant"
@@ -284,3 +284,8 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical/synth_types()
 	var/static/list/types = list(/datum/matter_synth/bandage)
 	return types
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/life_step_idle()
+	return FALSE
+

@@ -93,7 +93,7 @@
 	armor_penetration = 20
 	speed = 10
 	color = "#FF6600"
-	modifier_type_to_apply = /datum/modifier/deep_wounds //reduced healing
+	modifier_type_to_apply = /datum/body_effect/deep_wounds //reduced healing
 	modifier_duration = 1 MINUTE
 
 /obj/item/projectile/energy/eclipse_boss/tyrjavelin/speed
