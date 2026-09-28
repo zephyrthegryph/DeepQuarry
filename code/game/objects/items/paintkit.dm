@@ -50,12 +50,25 @@
 
 /**
  * Generic use: a customisation kit on any item. It goes ahead of every other item
- * interaction, as the old /obj/item/attackby override ran before the converted ones.
+ * interaction, as the old /obj/item/attackby override ran before the converted ones,
+ * except on suits whose own handling ran first and could refuse it (a worn voidsuit,
+ * a protean rig): there it goes last.
  */
 /obj/item/declare_interactions(list/into)
 	..()
 	var/static/list/kit_spec = INTERACT_INSERT(/obj/item/kit, PROC_REF(interaction_kit_customize), "Customise")
-	into.Insert(1, dq_interaction_from_spec(/obj/item, kit_spec))
+	var/static/list/kit_last_types = list(
+		/obj/item/clothing/head/helmet/space/void,
+		/obj/item/clothing/suit/space/void,
+		/obj/item/clothing/suit/storage/hooded,
+		/obj/item/rig,
+	)
+	var/datum/interaction/kit = dq_interaction_from_spec(/obj/item, kit_spec)
+	for(var/kit_last_type in kit_last_types)
+		if(ispath(type, kit_last_type))
+			into += kit
+			return
+	into.Insert(1, kit)
 
 /// Old attackby: a kit customises the item if it can. Either way nothing else handles the kit.
 /obj/item/proc/interaction_kit_customize(mob/user, obj/item/kit/K, datum/interaction/interaction)
