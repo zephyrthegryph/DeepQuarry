@@ -145,6 +145,8 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
 	if(D.om_rec)
 		om_behaviours_on_destroy(D) // each attached behaviour's on_entity_destroy(E)
+	if(ismovable(D))
+		dq_lifecycle_leave_own_slot(D) // slot-exit hooks see live back-refs
 	dq_lifecycle_clear_links(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")
@@ -207,6 +209,20 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	return hint
 
 #undef DQ_LIFECYCLE_TRACE
+
+/// Phase 4, after on_destroy() and before the links clear: the dying movable
+/// leaves its holder's ledger slot now, so its on_unslotted() hooks (a body
+/// part's detach, which reads `owner`) run while REF_BACK vars still name their
+/// partners. It keeps its loc until Destroy() (phase 7) moves it out; that
+/// move's note_exit() then finds no entry. The ledger never re-adopts it:
+/// sync() skips things being deleted.
+/proc/dq_lifecycle_leave_own_slot(atom/movable/AM)
+	var/atom/holder = AM.loc
+	var/datum/ledger/L = holder?.ledger
+	if(!L?.entries[AM])
+		return
+	L.pending_exit_flags = LEDGER_MOVE_FORCED
+	L.note_exit(AM)
 
 /// Accumulates the milliseconds since `start_tick` onto phase `id`. Cheap:
 /// one TICK_USAGE_TO_MS and one list write, mirroring how destroy_time

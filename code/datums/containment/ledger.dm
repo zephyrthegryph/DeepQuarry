@@ -243,7 +243,9 @@ REF_BACK(/datum/ledger, list("holder" = "ledger"))
 		if(thing.loc != holder)
 			note_exit(thing)
 	for(var/atom/movable/thing as anything in holder.contents)
-		if(!entries[thing])
+		// A thing being deleted left its slot in destroy phase 4 (it keeps its
+		// loc until phase 7): never re-adopt it.
+		if(!entries[thing] && !QDELETED(thing))
 			note_enter(thing)
 
 // ---- Bookkeeping (called from doMove) ----
