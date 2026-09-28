@@ -1,6 +1,6 @@
 // Contains loads of different types of boxes, which may have items inside!
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/boxes
+/datum/loot_table/boxes
 
 	unlucky_loot = list(
 		/obj/item/grenade/flashbang/clusterbang/primed,

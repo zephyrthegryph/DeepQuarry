@@ -1,6 +1,6 @@
 // Has large amounts of possible items, most of which may or may not be useful.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/maint/junk
+/datum/loot_table/maint/junk
 	unlucky_loot = list(
 		/obj/item/grenade/flashbang/clusterbang/primed,
 		/obj/item/storage/box/old_syringes,
@@ -131,7 +131,7 @@
 
 // Contains mostly useless garbage.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/maint/trash
+/datum/loot_table/maint/trash
 	unlucky_loot = list(
 		/obj/item/grenade/flashbang/clusterbang/primed,
 		/obj/item/storage/box/old_syringes,
@@ -217,7 +217,7 @@
 
 // One of the more useful maint piles, contains electrical components.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/maint/technical
+/datum/loot_table/maint/technical
 	common_loot = list(
 		/obj/item/stock_parts/gear,
 		/obj/item/stock_parts/console_screen,

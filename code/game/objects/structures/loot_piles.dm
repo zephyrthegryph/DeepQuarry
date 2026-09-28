@@ -25,7 +25,6 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	var/list/icon_states_to_use // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
 
 	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
-	var/loot_element_path = null
 
 /obj/structure/loot_pile/attack_ai(mob/user)
 	if(isrobot(user) && Adjacent(user))
@@ -59,14 +58,12 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	return TRUE
 
 /obj/structure/loot_pile/proc/attack_hand_timed_done(mob/living/L)
-	SEND_SIGNAL(src,COMSIG_LOOT_REWARD,L,searchedby, 0)
+	loot_reward(L, searchedby, 0)
 
 /obj/structure/loot_pile/Initialize(mapload)
 	if(icon_states_to_use && length(icon_states_to_use))
 		icon_state = DEFAULTPICK(icon_states_to_use, null)
 	. = ..()
-	if(loot_element_path)
-		AddElement(loot_element_path)
 
 
 // Maintenance junk piles with common to fun loot
@@ -74,27 +71,27 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	name = "pile of junk"
 	desc = "Lots of junk lying around.  They say one man's trash is another man's treasure."
 	icon_states_to_use = list("junk_pile1", "junk_pile2", "junk_pile3", "junk_pile4", "junk_pile5")
-	loot_element_path = /datum/element/lootable/maint/junk
+	loot_table_type = /datum/loot_table/maint/junk
 
 /obj/structure/loot_pile/maint/trash
 	name = "pile of trash"
 	desc = "Lots of garbage in one place.  Might be able to find something if you're in the mood for dumpster diving."
 	icon_states_to_use = list("trash_pile1", "trash_pile2")
-	loot_element_path = /datum/element/lootable/maint/trash
+	loot_table_type = /datum/loot_table/maint/trash
 
 /obj/structure/loot_pile/maint/boxfort
 	name = "pile of boxes"
 	desc = "A large pile of boxes sits here."
 	density = TRUE
 	icon_states_to_use = list("boxfort")
-	loot_element_path = /datum/element/lootable/boxes
+	loot_table_type = /datum/loot_table/boxes
 
 /obj/structure/loot_pile/maint/technical
 	name = "broken machine"
 	desc = "A destroyed machine with unknown purpose, and doesn't look like it can be fixed.  It might still have some functional components?"
 	density = TRUE
 	icon_states_to_use = list("technical_pile1", "technical_pile2", "technical_pile3")
-	loot_element_path = /datum/element/lootable/maint/technical
+	loot_table_type = /datum/loot_table/maint/technical
 
 
 // Surface piles for POIs, most have rarer loot
@@ -102,29 +99,29 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	name = "alien pod"
 	desc = "A pod which looks bigger on the inside. Something quite shiny might be inside?"
 	icon_state = "alien_pile1"
-	loot_element_path = /datum/element/lootable/surface/alien
+	loot_table_type = /datum/loot_table/surface/alien
 /obj/structure/loot_pile/surface/alien/engineering
-	loot_element_path = /datum/element/lootable/surface/alien/engineering
+	loot_table_type = /datum/loot_table/surface/alien/engineering
 /obj/structure/loot_pile/surface/alien/medical
-	loot_element_path = /datum/element/lootable/surface/alien/medical
+	loot_table_type = /datum/loot_table/surface/alien/medical
 /obj/structure/loot_pile/surface/alien/security
-	loot_element_path = /datum/element/lootable/surface/alien/security
+	loot_table_type = /datum/loot_table/surface/alien/security
 /obj/structure/loot_pile/surface/alien/end
-	loot_element_path = /datum/element/lootable/surface/alien/end
+	loot_table_type = /datum/loot_table/surface/alien/end
 
 /obj/structure/loot_pile/surface/bones
 	name = "bone pile"
 	desc = "A pile of various dusty bones. Your graverobbing instincts tell you there might be valuables here."
 	icon = 'icons/obj/bones.dmi'
 	icon_state = "bonepile"
-	loot_element_path = /datum/element/lootable/surface/bones
+	loot_table_type = /datum/loot_table/surface/bones
 
 /obj/structure/loot_pile/surface/drone
 	name = "drone wreckage"
 	desc = "The ruins of some unfortunate drone. Perhaps something is salvageable."
 	icon = 'icons/mob/animal.dmi'
 	icon_state = "drone_dead"
-	loot_element_path = /datum/element/lootable/surface/drone
+	loot_table_type = /datum/loot_table/surface/drone
 
 /obj/structure/loot_pile/surface/drone/large
 	//icon = 'icons/mob/animal_vr64x64.dmi' //This file doesn't exist anymore.
@@ -136,7 +133,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	desc = "The ruins of some unfortunate pod. Perhaps something is salvageable."
 	icon = 'icons/mecha/mecha.dmi'
 	icon_state = "engineering_pod-broken"
-	loot_element_path = /datum/element/lootable/mecha
+	loot_table_type = /datum/loot_table/mecha
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
@@ -144,7 +141,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	name = "ripley wreckage"
 	desc = "The ruins of some unfortunate ripley. Perhaps something is salvageable."
 	icon_state = "ripley-broken"
-	loot_element_path = /datum/element/lootable/mecha/ripley
+	loot_table_type = /datum/loot_table/mecha/ripley
 /obj/structure/loot_pile/mecha/ripley/firefighter
 	icon_state = "firefighter-broken"
 /obj/structure/loot_pile/mecha/ripley/random_sprite
@@ -153,13 +150,13 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 /obj/structure/loot_pile/mecha/deathripley
 	name = "strange ripley wreckage"
 	icon_state = "deathripley-broken"
-	loot_element_path = /datum/element/lootable/mecha/deathripley
+	loot_table_type = /datum/loot_table/mecha/deathripley
 
 /obj/structure/loot_pile/mecha/odysseus
 	name = "odysseus wreckage"
 	desc = "The ruins of some unfortunate odysseus. Perhaps something is salvageable."
 	icon_state = "odysseus-broken"
-	loot_element_path = /datum/element/lootable/mecha/odysseus
+	loot_table_type = /datum/loot_table/mecha/odysseus
 /obj/structure/loot_pile/mecha/odysseus/murdysseus
 	icon_state = "murdysseus-broken"
 
@@ -172,7 +169,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	name = "gygax wreckage"
 	desc = "The ruins of some unfortunate gygax. Perhaps something is salvageable."
 	icon_state = "gygax-broken"
-	loot_element_path = /datum/element/lootable/mecha/gygax
+	loot_table_type = /datum/loot_table/mecha/gygax
 /obj/structure/loot_pile/mecha/gygax/dark
 	icon_state = "darkgygax-broken"
 /obj/structure/loot_pile/mecha/gygax/dark/adv
@@ -187,7 +184,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	name = "durand wreckage"
 	desc = "The ruins of some unfortunate durand. Perhaps something is salvageable."
 	icon_state = "durand-broken"
-	loot_element_path = /datum/element/lootable/mecha/durand
+	loot_table_type = /datum/loot_table/mecha/durand
 
 /obj/structure/loot_pile/mecha/marauder // Todo: Better loot.
 	name = "marauder wreckage"
@@ -207,7 +204,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	name = "phazon wreckage"
 	desc = "The ruins of some unfortunate phazon. Perhaps something is salvageable."
 	icon_state = "phazon-broken"
-	loot_element_path = /datum/element/lootable/mecha/phazon
+	loot_table_type = /datum/loot_table/mecha/phazon
 
 
 /obj/structure/loot_pile/surface/medicine_cabinet
@@ -215,14 +212,14 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	desc = "An old cabinet, it might still have something of use inside."
 	icon_state = "medicine_cabinet"
 	density = FALSE
-	loot_element_path = /datum/element/lootable/expired_medicine
+	loot_table_type = /datum/loot_table/expired_medicine
 
 /obj/structure/loot_pile/surface/medicine_cabinet/fresh
 	name = "medicine cabinet"
 	desc = "A cabinet designed to hold medicine, it might still have something of use inside."
 	icon_state = "medicine_cabinet"
 	density = FALSE
-	loot_element_path = /datum/element/lootable/fresh_medicine
+	loot_table_type = /datum/loot_table/fresh_medicine
 
 //Micro mecha loot.
 /obj/structure/loot_pile/mecha/mouse_tank
@@ -233,7 +230,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
-	loot_element_path = /datum/element/lootable/mecha/mouse_tank
+	loot_table_type = /datum/loot_table/mecha/mouse_tank
 
 /obj/structure/loot_pile/mecha/mouse_tank/livewire
 	name = "\improper Livewire wreckage"
@@ -242,7 +239,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
-	loot_element_path = /datum/element/lootable/mecha/mouse_tank/livewire
+	loot_table_type = /datum/loot_table/mecha/mouse_tank/livewire
 
 /obj/structure/loot_pile/mecha/mouse_tank/eraticator
 	name = "\improper Eraticator wreckage"
@@ -251,7 +248,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	density = TRUE
 	anchored = FALSE // In case a dead mecha-mob dies in a b
 
-	loot_element_path = /datum/element/lootable/mecha/mouse_tank/eraticator
+	loot_table_type = /datum/loot_table/mecha/mouse_tank/eraticator
 
 /obj/structure/loot_pile/mecha/ripley/pirate
 	icon = 'icons/mob/pirates.dmi'

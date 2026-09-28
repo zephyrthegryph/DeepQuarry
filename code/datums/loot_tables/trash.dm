@@ -1,6 +1,6 @@
 // Special loot pile that uses gamma items. These spawn only once!
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/trash_pile
+/datum/loot_table/trash_pile
 	chance_uncommon = 20
 	chance_rare = 2
 	chance_gamma = 1 // Special single drop table

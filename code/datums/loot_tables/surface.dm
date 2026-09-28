@@ -1,6 +1,6 @@
 // Surface loot piles are considerably harder and more dangerous to reach, so you're more likely to get rare things.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface
+/datum/loot_table/surface
 	chance_uncommon = 20
 	chance_rare = 5
 	loot_depletion = TRUE
@@ -8,7 +8,7 @@
 
 // Base type for alien piles.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface/alien
+/datum/loot_table/surface/alien
 	common_loot = list(
 		/obj/item/prop/alien/junk
 	)
@@ -16,7 +16,7 @@
 
 // May contain alien tools.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface/alien/engineering
+/datum/loot_table/surface/alien/engineering
 	uncommon_loot = list(
 		/obj/item/multitool/alien,
 		/obj/item/stack/cable_coil/alien,
@@ -33,7 +33,7 @@
 
 // May contain alien surgery equipment or powerful medication.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface/alien/medical
+/datum/loot_table/surface/alien/medical
 	uncommon_loot = list(
 		/obj/item/surgical/FixOVein/alien,
 		/obj/item/surgical/bone_clamp/alien,
@@ -50,7 +50,7 @@
 
 // May contain powercells or alien weaponry.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface/alien/security
+/datum/loot_table/surface/alien/security
 	uncommon_loot = list(
 		/obj/item/cell/device/weapon/recharge/alien,
 		/obj/item/clothing/suit/armor/alien,
@@ -63,7 +63,7 @@
 
 // The pile found at the very end, and as such has the best loot.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface/alien/end
+/datum/loot_table/surface/alien/end
 	chance_uncommon = 30
 	chance_rare = 10
 
@@ -97,7 +97,7 @@
 
 // POI bones of other less fortunate explos
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/surface/bones
+/datum/loot_table/surface/bones
 	delete_on_depletion = TRUE
 	common_loot = list(
 		/obj/item/bone,
@@ -141,7 +141,7 @@
 // Surface drone loot
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Since the actual drone loot is a bit stupid in how it is handled, this is a sparse and empty list with items I don't exactly want in it. But until we can get the proper items in . . .
-/datum/element/lootable/surface/drone
+/datum/loot_table/surface/drone
 	common_loot = list(
 		/obj/random/tool,
 		/obj/item/stack/cable_coil/random,

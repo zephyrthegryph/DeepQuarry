@@ -1,6 +1,6 @@
 // Subtype for mecha and mecha accessories. These might not always be on the surface.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha
+/datum/loot_table/mecha
 	chance_uncommon = 20
 	chance_rare = 10
 
@@ -39,7 +39,7 @@
 
 // Stuff you may find attached to a ripley.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/ripley
+/datum/loot_table/mecha/ripley
 	common_loot = list(
 		/obj/random/tool,
 		/obj/item/stack/cable_coil/random,
@@ -74,7 +74,7 @@
 
 // Death-Ripley, same common, but more combat-exosuit-based
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/deathripley
+/datum/loot_table/mecha/deathripley
 	common_loot = list(
 		/obj/random/tool,
 		/obj/item/stack/cable_coil/random,
@@ -107,7 +107,7 @@
 
 // Medimech loot
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/odysseus
+/datum/loot_table/mecha/odysseus
 	common_loot = list(
 		/obj/random/tool,
 		/obj/item/stack/cable_coil/random,
@@ -140,7 +140,7 @@
 
 // Gygax loot
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/gygax
+/datum/loot_table/mecha/gygax
 	common_loot = list(
 		/obj/random/tool,
 		/obj/item/stack/cable_coil/random,
@@ -178,7 +178,7 @@
 
 // Gygax loot
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/durand
+/datum/loot_table/mecha/durand
 	common_loot = list(
 		/obj/random/tool,
 		/obj/item/stack/cable_coil/random,
@@ -216,7 +216,7 @@
 
 // Phazon loot
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/phazon
+/datum/loot_table/mecha/phazon
 	common_loot = list(
 		/obj/item/storage/toolbox/syndicate/powertools,
 		/obj/item/stack/material/plasteel{amount = 20},
@@ -246,7 +246,7 @@
 
 // Stuff you may find attached to a mouse tank.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/mouse_tank
+/datum/loot_table/mecha/mouse_tank
 	loot_left= 5
 
 	common_loot = list(
@@ -272,7 +272,7 @@
 
 // Stuff you may find attached to a livewire mouse tank.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/mouse_tank/livewire
+/datum/loot_table/mecha/mouse_tank/livewire
 
 	uncommon_loot = list(
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer/rigged,
@@ -286,7 +286,7 @@
 
 // Stuff you may find attached to a eraticator mouse tank.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/mouse_tank/eraticator
+/datum/loot_table/mecha/mouse_tank/eraticator
 
 	uncommon_loot = list(
 		/obj/item/ammo_magazine/m75,
@@ -301,7 +301,7 @@
 
 // Stuff you may find attached to an odd gygax.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/odd_gygax
+/datum/loot_table/mecha/odd_gygax
 	loot_depletion = FALSE
 
 	common_loot = list(
@@ -326,7 +326,7 @@
 
 // Stuff you may find attached to an odd gygax.
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/element/lootable/mecha/odd_riplay
+/datum/loot_table/mecha/odd_riplay
 	chance_uncommon = 30
 	chance_rare = 20
 

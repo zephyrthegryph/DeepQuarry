@@ -1,4 +1,6 @@
-/datum/element/lootable
+/// Loot tables (was /datum/loot_table). Shared singletons, not attached to
+/// anything: an atom names its table in `loot_table_type` and loot_reward() rolls it.
+/datum/loot_table
 	var/chance_nothing = 0			// Unlucky people might need to loot multiple spots to find things.
 	var/chance_uncommon = 10		// Probability of pulling from the uncommon_loot list.
 	var/chance_rare = 1				// Ditto, but for rare_loot list.
@@ -16,21 +18,27 @@
 
 	var/static/list/piles_looted = list() // Keeps track of the number of times a specific pile has been looted if the specific lootable type has loot_depletion on
 
-/datum/element/lootable/Attach(atom/target)
-	. = ..()
-	if(!isatom(target))
-		return ELEMENT_INCOMPATIBLE
-	RegisterSignal(target, COMSIG_LOOT_REWARD, PROC_REF(loot))
+/// The shared loot table singleton for `path`.
+/proc/get_loot_table(path)
+	var/static/list/tables = list()
+	. = tables[path]
+	if(!.)
+		. = new path
+		tables[path] = .
 
-/datum/element/lootable/Detach(atom/target)
-	. = ..()
-	if(loot_depletion)
-		piles_looted -= REF(target)
-	UnregisterSignal(target, COMSIG_LOOT_REWARD)
+/atom
+	/// The /datum/loot_table this atom drops from when searched, or null.
+	var/loot_table_type
+
+/// Drops loot from this atom's loot table for `L` (was COMSIG_LOOT_REWARD).
+/atom/proc/loot_reward(mob/living/L, list/searched_by, wake_chance = 0)
+	if(!loot_table_type)
+		return
+	var/datum/loot_table/table = get_loot_table(loot_table_type)
+	table.loot(src, L, searched_by, wake_chance)
 
 /// Calculates and drops loot, the source's turf is where it will be dropped, L is the searching mob, and searched_by is a passed list for storing who has searched a loot pile.
-/datum/element/lootable/proc/loot(atom/source,mob/living/L,list/searched_by, wake_chance = 0)
-	SIGNAL_HANDLER
+/datum/loot_table/proc/loot(atom/source,mob/living/L,list/searched_by, wake_chance = 0)
 	// The loot's all gone.
 	if(loot_depletion)
 		var/looted_count = piles_looted[REF(source)]
@@ -117,24 +125,24 @@
 	if(delete_on_depletion)
 		qdel(source)
 
-/datum/element/lootable/proc/produce_unlucky_item(atom/source)
+/datum/loot_table/proc/produce_unlucky_item(atom/source)
 	var/path = DEFAULTPICK(unlucky_loot, null)
 	return new path(source)
 
-/datum/element/lootable/proc/produce_common_item(atom/source)
+/datum/loot_table/proc/produce_common_item(atom/source)
 	var/path = DEFAULTPICK(common_loot, null)
 	return new path(source)
 
-/datum/element/lootable/proc/produce_uncommon_item(atom/source)
+/datum/loot_table/proc/produce_uncommon_item(atom/source)
 	var/path = DEFAULTPICK(uncommon_loot, null)
 	return new path(source)
 
-/datum/element/lootable/proc/produce_rare_item(atom/source)
+/datum/loot_table/proc/produce_rare_item(atom/source)
 	var/path = DEFAULTPICK(rare_loot, null)
 	return new path(source)
 
 /// These are types that can only spawn once, and then will be removed from this list.
-/datum/element/lootable/proc/produce_gamma_item(atom/source)
+/datum/loot_table/proc/produce_gamma_item(atom/source)
 	var/path = pick_n_take(GLOB.unique_gamma_loot)
 	if(!path) //Tapped out, reallocate?
 		for(var/P in GLOB.allocated_gamma_loot)
