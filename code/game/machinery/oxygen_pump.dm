@@ -57,19 +57,25 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 	attach_mask(target)
 	src.add_fingerprint(user)
 
-/obj/machinery/oxygen_pump/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(oxygen_pump_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(oxygen_pump_interaction_item)), \
+)
+
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.is_incorporeal())
-		return
+		return TRUE
 	if((stat & MAINT) && tank)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [tank] from \the [src]."), span_notice("You remove \the [tank] from \the [src]."))
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
 		tank = null
-		return
+		return TRUE
 	if (!tank)
 		to_chat(user, span_warning("There is no tank in \the [src]!"))
-		return
+		return TRUE
 	if(breather)
 		if(tank)
 			tank.forceMove(src)
@@ -81,6 +87,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 			breather.internals.icon_state = "internal0"
 		breather = null
 		update_use_power(USE_POWER_IDLE)
+	return TRUE
 
 /obj/machinery/oxygen_pump
 	silicon_use = SILICON_USE_UI
@@ -137,9 +144,10 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 		return
 	return 1
 
-/obj/machinery/oxygen_pump/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby. It never called ..(), so every item stops here.
+/obj/machinery/oxygen_pump/proc/oxygen_pump_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(user.is_incorporeal())
-		return
+		return TRUE
 	if(istype(W, /obj/item/tank) && (stat & MAINT))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
@@ -151,6 +159,7 @@ REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 			src.add_fingerprint(user)
 	if(istype(W, /obj/item/tank) && !stat)
 		to_chat(user, span_warning("Please open the maintenance hatch first."))
+	return TRUE
 
 /obj/machinery/oxygen_pump/screwdriver_act(mob/user, obj/item/tool)
 	if(user.is_incorporeal())

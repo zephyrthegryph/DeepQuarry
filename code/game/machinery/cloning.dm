@@ -107,13 +107,19 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return om_resolve(occupant_handle)
 
-/obj/machinery/clonepod/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(clonepod_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(clonepod_interaction_item)), \
+)
+
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/clonepod/proc/clonepod_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/occupant = get_occupant()
 	if((isnull(occupant)) || (stat & NOPOWER))
-		return
-	if((!isnull(occupant)) && (occupant.stat != 2))
+		return TRUE
+	if(occupant.stat != DEAD)
 		to_chat(user, "Current clone cycle is [round(get_completion())]% complete.")
-	return
+	return TRUE
 
 //Start growing a human clone in the pod!
 /obj/machinery/clonepod/proc/growclone(datum/transhuman/body_record/BR)
@@ -254,31 +260,31 @@
 	user.drop_item()
 	W.forceMove(src)
 
-/obj/machinery/clonepod/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/machinery/clonepod/proc/clonepod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	var/mob/living/occupant = get_occupant()
 	if(isnull(occupant))
 		if(default_part_replacement(user, W))
-			return
+			return TRUE
 	if(istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if(!check_access(W))
 			to_chat(user, span_warning("Access Denied."))
-			return
+			return TRUE
 		if((!locked) || (isnull(occupant)))
-			return
+			return TRUE
 		if((clone_growth_load(occupant) > DQ_CLONE_UNLOCK_LOAD) && (occupant.stat != DEAD))
 			to_chat(user, span_warning("Access Refused."))
-			return
-		else
-			locked = 0
-			to_chat(user, "System unlocked.")
-	else if(istype(W,/obj/item/reagent_containers/glass))
+			return TRUE
+		locked = 0
+		to_chat(user, "System unlocked.")
+		return TRUE
+	if(istype(W,/obj/item/reagent_containers/glass))
 		if(LAZYLEN(containers) >= container_limit)
 			to_chat(user, span_warning("\The [src] has too many containers loaded!"))
 		else
 			om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, W))
-		return
-	else
-		..()
+		return TRUE
+	return FALSE
 
 /obj/machinery/clonepod/screwdriver_act(mob/user, obj/item/tool)
 	if(get_occupant())

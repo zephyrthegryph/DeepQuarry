@@ -81,10 +81,14 @@
 		)
 	// end
 
-/obj/machinery/organ_printer/attackby(obj/item/O, mob/user)
-	if(default_part_replacement(user, O))
-		return
-	return ..()
+EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
+	INTERACT_ITEM(null, PROC_REF(organ_printer_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(organ_printer_interaction_hand)), \
+)
+
+/// Old attackby.
+/obj/machinery/organ_printer/proc/organ_printer_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	return default_part_replacement(user, O) ? TRUE : FALSE
 
 /obj/machinery/organ_printer/update_icon()
 	cut_overlays()
@@ -133,23 +137,25 @@
 
 	. = ..()
 
-/obj/machinery/organ_printer/attack_hand(mob/user)
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/organ_printer/proc/organ_printer_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	if(panel_open)
 		to_chat(user, span_warning("Close the panel first!"))
-		return
+		return TRUE
 
 	if(printing)
 		to_chat(user, span_notice("\The [src] is busy!"))
-		return
+		return TRUE
 
 	if(container)
 		om_prompt(src, user, list("message" = "What do you want to do?", "title" = "Bioprinter Menu", "choices" = list("Print Limbs", "Cancel"), "requires" = PROMPT_ADJACENT), PROC_REF(bioprinter_menu_answered))
 	else
 		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
+	return TRUE
 
 /obj/machinery/organ_printer/proc/bioprinter_menu_answered(mob/user, response, datum/om/prompt/ask)
 	if(response == "Print Limbs")
@@ -321,7 +327,10 @@
 	user.drop_item()
 	G.forceMove(src)
 
-/obj/machinery/organ_printer/flesh/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC_REF(flesh_printer_interaction_item)))
+
+/// Old attackby; anything else falls through to the base printer's.
+/obj/machinery/organ_printer/flesh/proc/flesh_printer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// DNA sample from syringe.
 	if(istype(W,/obj/item/reagent_containers/syringe))	//TODO: Make this actually empty the syringe
 		var/obj/item/reagent_containers/syringe/S = W
@@ -330,15 +339,15 @@
 			loaded_dna = injected.data.Copy()
 			S.reagents.remove_reagent(REAGENT_ID_BLOOD, injected.volume)
 			to_chat(user, span_info("You scan the blood sample into the bioprinter."))
-		return
+		return TRUE
 	else if(istype(W,/obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = W
 		if(container)
 			to_chat(user, span_warning("\The [src] already has a container loaded!"))
-			return
+			return TRUE
 		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(load_container_done), done_args = list(user, G))
-		return
+		return TRUE
 
-	return ..()
+	return FALSE
 // END FLESH ORGAN PRINTER
 

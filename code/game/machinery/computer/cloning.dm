@@ -95,17 +95,22 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 			P.connected = src
 			P.name = "[initial(P.name)] #[num++]"
 
-/obj/machinery/computer/cloning/attackby(obj/item/W as obj, mob/user as mob, params)
-	if(istype(W, /obj/item/disk/body_record/)) //Traitgenes Storing the entire body record
-		if(!diskette)
-			user.drop_item()
-			W.forceMove(src)
-			diskette = W
-			to_chat(user, "You insert [W].")
-			SStgui.update_uis(src)
-			return
-	else
-		return ..()
+EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
+	INTERACT_ITEM(null, PROC_REF(cloning_console_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(cloning_console_interaction_hand)), \
+)
+
+/// Old attackby.
+/obj/machinery/computer/cloning/proc/cloning_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/disk/body_record)) //Traitgenes Storing the entire body record
+		return FALSE
+	if(!diskette)
+		user.drop_item()
+		W.forceMove(src)
+		diskette = W
+		to_chat(user, "You insert [W].")
+		SStgui.update_uis(src)
+	return TRUE
 
 /obj/machinery/computer/cloning/multitool_act(mob/user, obj/item/tool)
 	if(!istype(tool, /obj/item/multitool))
@@ -119,14 +124,16 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/computer/cloning/attack_hand(mob/user as mob)
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/computer/cloning/proc/cloning_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 
 	updatemodules()
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/cloning/resleeving/ui_assets(mob/user)
 	return list(

@@ -37,11 +37,15 @@ REF_PAIR(/obj/machinery/optable, list("computer" = "table"))
 		return
 	tgui_interact(user)
 
-/obj/machinery/computer/operating/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/computer/operating, INTERACT_HAND_UNGATED(null, PROC_REF(operating_console_interaction_hand)))
+
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/computer/operating/proc/operating_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(stat & (BROKEN|NOPOWER))
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/operating/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)

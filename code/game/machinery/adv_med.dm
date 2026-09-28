@@ -47,35 +47,43 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 	else
 		set_light(0)
 
-/obj/machinery/bodyscanner/attackby(obj/item/G, user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
+	INTERACT_ITEM(null, PROC_REF(bodyscanner_interaction_item)), \
+	INTERACT_DRAG("Put inside", PROC_REF(bodyscanner_interaction_drag)), \
+)
+
+/// Old attackby.
+/obj/machinery/bodyscanner/proc/bodyscanner_interaction_item(mob/user, obj/item/G, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
-	if(istype(G, /obj/item/grab))
-		var/obj/item/grab/H = G
-		var/mob/M = H?.grab_target()
-		if(panel_open)
-			to_chat(user, span_notice("Close the maintenance panel first."))
-			return
-		if(!ismob(M))
-			return
-		if(!ishuman(M))
-			to_chat(user, span_warning("\The [src] is not designed for that organism!"))
-			return
-		if(occupant)
-			to_chat(user, span_notice("\The [src] is already occupied!"))
-			return
-		if(M.has_buckled_mobs())
-			to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
-			return
-		if(M.abiotic())
-			to_chat(user, span_notice("Subject cannot have abiotic items on."))
-			return
-		if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
-			return
-		update_icon()
-		playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
-		add_fingerprint(user)
-		qdel(G)
-		SStgui.update_uis(src)
+	if(!istype(G, /obj/item/grab))
+		return FALSE
+	var/obj/item/grab/H = G
+	var/mob/M = H?.grab_target()
+	if(panel_open)
+		to_chat(user, span_notice("Close the maintenance panel first."))
+		return TRUE
+	if(!ismob(M))
+		return FALSE
+	if(!ishuman(M))
+		to_chat(user, span_warning("\The [src] is not designed for that organism!"))
+		return TRUE
+	if(occupant)
+		to_chat(user, span_notice("\The [src] is already occupied!"))
+		return TRUE
+	if(M.has_buckled_mobs())
+		to_chat(user, span_warning("\The [M] has other entities attached to it. Remove them first."))
+		return TRUE
+	if(M.abiotic())
+		to_chat(user, span_notice("Subject cannot have abiotic items on."))
+		return TRUE
+	if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
+		return TRUE
+	update_icon()
+	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
+	add_fingerprint(user)
+	qdel(G)
+	SStgui.update_uis(src)
+	return TRUE
 
 /obj/machinery/bodyscanner/screwdriver_act(mob/user, obj/item/tool)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
@@ -85,33 +93,34 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	return occupant ? ITEM_INTERACT_BLOCKING : ..()
 
-/obj/machinery/bodyscanner/MouseDrop_T(mob/living/carbon/human/O, mob/user as mob)
+/// Old MouseDrop_T.
+/obj/machinery/bodyscanner/proc/bodyscanner_interaction_drag(mob/user, mob/living/carbon/human/O, datum/interaction/interaction)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	if(!istype(O))
-		return 0 //not a mob
+		return FALSE //not a mob
 	if(user.incapacitated())
-		return 0 //user shouldn't be doing things
+		return FALSE //user shouldn't be doing things
 	if(O.anchored)
-		return 0 //mob is anchored???
+		return FALSE //mob is anchored???
 	if(get_dist(user, src) > 1 || get_dist(user, O) > 1)
-		return 0 //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
+		return FALSE //doesn't use adjacent() to allow for non-GLOB.cardinal (fuck my life)
 	if(!ishuman(user) && !isrobot(user))
-		return 0 //not a borg or human
+		return FALSE //not a borg or human
 	if(panel_open)
 		to_chat(user, span_notice("Close the maintenance panel first."))
-		return 0 //panel open
+		return FALSE //panel open
 	if(occupant)
 		to_chat(user, span_notice("\The [src] is already occupied."))
-		return 0 //occupied
+		return FALSE //occupied
 
 	if(O?.buckled_to())
-		return 0
+		return FALSE
 	if(O.abiotic())
 		to_chat(user, span_notice("Subject cannot have abiotic items on."))
-		return 0
+		return FALSE
 	if(O.has_buckled_mobs())
 		to_chat(user, span_warning("\The [O] has other entities attached to it. Remove them first."))
-		return
+		return TRUE
 
 	if(O == user)
 		visible_message("[user] climbs into \the [src].")
@@ -119,11 +128,12 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 		visible_message("[user] puts [O] into the body scanner.")
 
 	if(!O.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
-		return
+		return TRUE
 	update_icon()
 	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
 	add_fingerprint(user)
 	SStgui.update_uis(src)
+	return TRUE
 
 /obj/machinery/bodyscanner/relaymove(mob/user as mob)
 	if(user.incapacitated())
@@ -304,8 +314,15 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 
 REF_PAIR(/obj/machinery/body_scanconsole, list("scanner" = "console"))
 
-/obj/machinery/body_scanconsole/attackby(obj/item/I, mob/user)
-	return attack_hand(user)
+EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
+	INTERACT_ITEM(null, PROC_REF(body_scanconsole_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(body_scanconsole_interaction_hand)), \
+)
+
+/// Old attackby: any item just opens the console.
+/obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /obj/machinery/body_scanconsole/multitool_act(mob/user, obj/item/tool)
 	if(!istype(tool, /obj/item/multitool))
@@ -328,24 +345,26 @@ REF_PAIR(/obj/machinery/body_scanconsole, list("scanner" = "console"))
 	om_after(src, 5, PROC_REF(findscanner_now))
 
 /obj/machinery/body_scanconsole/attack_ghost(user as mob)
-	return attack_hand(user)
+	return body_scanconsole_interaction_hand(user)
 
-/obj/machinery/body_scanconsole/attack_hand(user as mob)
+/// Old attack_hand (it never reached the machinery gate).
+/obj/machinery/body_scanconsole/proc/body_scanconsole_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat & (NOPOWER|BROKEN))
-		return
+		return TRUE
 
 	if(!scanner)
 		findscanner()
 		if(!scanner)
 			to_chat(user, span_notice("Scanner not found!"))
-			return
+			return TRUE
 
 	if(scanner.panel_open)
 		to_chat(user, span_notice("Close the maintenance panel first."))
-		return
+		return TRUE
 
 	if(scanner)
-		return scanner.tgui_interact(user)
+		scanner.tgui_interact(user)
+	return TRUE
 
 // === merged from adv_med_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/machinery/bodyscanner

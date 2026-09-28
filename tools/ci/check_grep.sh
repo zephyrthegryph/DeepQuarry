@@ -353,7 +353,7 @@ part "interactions: converted domains (I7)"
 # cooking, vore) and test fixtures. It must not grow.
 i7_converted_types='/obj/machinery'
 i7_converted_dirs='code/game/machinery/|code/ATMOSPHERICS/|code/modules/power/'
-i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|medical_kiosk|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/(Operating|cloning|medical)\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
+i7_allowlist='code/modules/unit_tests/|code/game/dna/dna_modifier\.dm|code/game/machinery/(OpTable|Sleeper|adv_med|bioprinter|cloning|cryo|iv_drip|oxygen_pump|protean_reconstitutor|vitals_monitor)\.dm|code/game/machinery/computer/medical\.dm|code/modules/resleeving/|code/modules/food/kitchen/|code/modules/vore/|code/modules/examine/descriptions/medical\.dm'
 if $grep -n "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T|verb/[A-Za-z0-9_]+)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)"; then
 	echo
 	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
@@ -364,7 +364,7 @@ fi;
 # overrides on these types. Declare interactions with DECLARE_INTERACTIONS/EXTEND_INTERACTIONS
 # (code/__defines/interactions.dm) instead. The allowlist below must not grow.
 i7_handler_types='/obj/structure'
-i7_handler_allowlist='code/game/objects/structures/medical_stand\.dm'
+i7_handler_allowlist=''
 if $grep -n "^($i7_handler_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)" | grep -vE "^($i7_handler_allowlist):"; then
 	echo
 	echo -e "${RED}ERROR: converted domains take interactions, not attackby/attack_hand/attack_self/click_alt/MouseDrop_T overrides. Use DECLARE_INTERACTIONS or EXTEND_INTERACTIONS (code/__defines/interactions.dm).${NC}"

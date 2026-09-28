@@ -193,7 +193,13 @@
 		PERIODIC_START(src, PERIODIC_SLOW)
 	return
 
-/obj/structure/medical_stand/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(medical_stand_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(medical_stand_interaction_item)), \
+)
+
+/// Old attack_hand (it never reached the structure gate).
+/obj/structure/medical_stand/proc/medical_stand_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/available_options = list()
 	if (tank)
 		available_options += "Toggle valve"
@@ -203,9 +209,10 @@
 
 	if(available_options.len > 1)
 		om_prompt(src, user, list("kind" = "list", "message" = "What do you want to do?", "title" = "Stand Choice", "choices" = available_options, "requires" = PROMPT_ADJACENT), PROC_REF(stand_action_chosen))
-		return
+		return TRUE
 	if(available_options.len)
 		stand_action_chosen(user, available_options[1])
+	return TRUE
 
 /obj/structure/medical_stand/proc/stand_action_chosen(mob/user, action_type, datum/om/prompt/ask)
 	switch (action_type)
@@ -323,7 +330,8 @@
 		return
 	return 1
 
-/obj/structure/medical_stand/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/structure/medical_stand/proc/medical_stand_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/tank))
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
@@ -336,18 +344,19 @@
 			user.visible_message(span_bold("\The [user]") + " attaches \the [tank] to \the [src].", span_notice("You attach \the [tank] to \the [src]."))
 			src.add_fingerprint(user)
 			update_icon()
+		return TRUE
 
-	else if (istype(W, /obj/item/reagent_containers))
+	if (istype(W, /obj/item/reagent_containers))
 		if(!isnull(src.beaker))
 			to_chat(user, "There is already a reagent container loaded!")
-			return
+			return TRUE
 		user.drop_item()
 		W.forceMove(src)
 		beaker = W
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 /obj/structure/medical_stand/wrench_act(mob/user, obj/item/W)
 	if(valve_opened)

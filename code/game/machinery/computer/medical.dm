@@ -79,20 +79,26 @@
 		to_chat(usr, "There is nothing to remove from the console.")
 	return
 
-/obj/machinery/computer/med_data/attackby(obj/item/O, mob/user)
+EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
+	INTERACT_ITEM(null, PROC_REF(med_data_interaction_item)), \
+	INTERACT_HAND(null, PROC_REF(med_data_interaction_hand)), \
+)
+
+/// Old attackby.
+/obj/machinery/computer/med_data/proc/med_data_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/card/id) && !scan && user.unEquip(O))
 		O.loc = src
 		scan = O
 		to_chat(user, "You insert \the [O].")
 		tgui_interact(user)
-	else
-		..()
+		return TRUE
+	return FALSE
 
-/obj/machinery/computer/med_data/attack_hand(mob/user as mob)
-	if(..())
-		return
+/// Old attack_hand.
+/obj/machinery/computer/med_data/proc/med_data_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/machinery/computer/med_data/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
