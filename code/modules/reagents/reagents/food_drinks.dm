@@ -793,17 +793,19 @@
 	industrial_use = REFINERYEXPORT_REASON_FOOD
 	coolant_modifier = 2.5
 
+/datum/reagent/frostoil
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/frostoil/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.bodytemperature, 215))
 	if(prob(1))
 		M.emote("shiver")
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5)
 
+/datum/reagent/frostoil
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/frostoil/affect_ingest(mob/living/carbon/M, alien, removed) // Eating frostoil now acts like capsaicin. Wee!
-	if(alien == IS_DIONA)
-		return
 	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a chilly, tingling sensation in your mouth."))
@@ -848,9 +850,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_WEAPONS
 
+/datum/reagent/capsaicin
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/capsaicin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.injure(INJURY_TOXIN, 0.5 * removed, source = src)
 
 /datum/reagent/capsaicin/affect_ingest(mob/living/carbon/M, alien, removed)
@@ -6109,9 +6112,10 @@
 	cup_name = "Medicinal tea cup"
 	color = "#00FF00"
 
+/datum/reagent/drink/tea/dyloteane
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/drink/tea/dyloteane/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(M.ingested)
 		for(var/datum/reagent/R in M.ingested.reagent_list)
 			if(istype(R, /datum/reagent/ethanol))
@@ -6203,9 +6207,10 @@
 	glass_name = REAGENT_ID_HIGHPOWER
 	glass_desc = "A strange, softly crackling drink, smelling just like lightning's just struck, twice. It's rather difficult to make this without busting the lights."
 
+/datum/reagent/drink/highpower
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/drink/highpower/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(prob(5))
 		M.say("!skin's crackles with energy and seems to be in pain.")
 		M.custom_pain("You feel painful electricity running through your body, like adrenaline, and like your blood's boiling!",30)
@@ -6248,10 +6253,10 @@
 	glass_name = REAGENT_BOOKWYRM
 	glass_desc = "A cold lime mint drink. Dont drink to much or you might fall asleep."
 
-/datum/reagent/ethanol/bookwyrm/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
+/datum/reagent/ethanol/bookwyrm
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
 
+/datum/reagent/ethanol/bookwyrm/affect_ingest(mob/living/carbon/M, alien, removed)
 	var/threshold = 1
 	if(alien == IS_SKRELL)
 		threshold = 1.2

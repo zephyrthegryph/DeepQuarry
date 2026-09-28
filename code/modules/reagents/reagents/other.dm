@@ -371,9 +371,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/adrenaline
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/adrenaline/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_set(EFFECT_PARALYZED, 0)
 	M.status_set(EFFECT_WEAKENED, 0)
 	M.injure(INJURY_TOXIN, rand(3), source = src)
@@ -1028,9 +1029,10 @@
 	holder.remove_reagent(src.id, 0.2)
 	return
 
+/datum/reagent/benzilate
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	var/drug_strength = 12
 	if(alien == IS_SKRELL)
 		drug_strength = drug_strength * 0.6

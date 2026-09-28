@@ -7,6 +7,9 @@
 #define CHEM_BLOOD 3
 #define CHEM_VORE 4 // vore belly interactions
 
+/// Bit for a species reagent tag (IS_*) in a reagent's immune_species_* masks (P2-S13).
+#define SPECIES_TAG_BIT(tag) (1 << (tag))
+
 #define MINIMUM_CHEMICAL_VOLUME 0.01
 
 #define SOLID 1

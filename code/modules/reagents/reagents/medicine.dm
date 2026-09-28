@@ -32,9 +32,11 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
+/datum/reagent/inaprovaline/topical
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/inaprovaline/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.injure(INJURY_TOXIN, 2 * removed, source = src)
+	M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/bicaridine
 	name = REAGENT_BICARIDINE
@@ -104,9 +106,11 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 	medallergen_type = MEDALLERGEN_BICARD
 
+/datum/reagent/bicaridine/topical
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/bicaridine/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.injure(INJURY_TOXIN, 2 * removed, source = src)
+	M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/calciumcarbonate
 	factors = alist(BF_ANTIEMETIC = 3)
@@ -124,9 +128,11 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
+/datum/reagent/calciumcarbonate
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/calciumcarbonate/affect_blood(mob/living/carbon/M, alien, removed) // Why would you inject this.
-	if(alien != IS_DIONA)
-		M.injure(INJURY_TOXIN, 3 * removed, source = src)
+	M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/kelotane
 	name = REAGENT_KELOTANE
@@ -179,9 +185,11 @@
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 	medallergen_type = MEDALLERGEN_KELOTANE
 
+/datum/reagent/dermaline/topical
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/dermaline/topical/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.injure(INJURY_TOXIN, 2 * removed, source = src)
+	M.injure(INJURY_TOXIN, 2 * removed, source = src)
 
 /datum/reagent/dylovene
 	name = REAGENT_ANTITOXIN
@@ -219,9 +227,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
+/datum/reagent/carthatoline
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/carthatoline/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(M.injury_load(INJURY_CATEGORY_TOXIC) && prob(10))
 		M.vomit(1)
 	if(ishuman(M))
@@ -334,9 +343,11 @@
 	medallergen_type = MEDALLERGEN_TRICORD
 
 // Tricorlidaze's topical healing is its treatment_tags profile.
+/datum/reagent/tricorlidaze
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/tricorlidaze/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.injure(INJURY_TOXIN, 3 * removed, source = src)
+	M.injure(INJURY_TOXIN, 3 * removed, source = src)
 
 /datum/reagent/tricorlidaze/touch_obj(obj/O)
 	..()
@@ -583,10 +594,11 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
+/datum/reagent/synaptizine
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/synaptizine/affect_blood(mob/living/carbon/M, alien, removed)
 	var/chem_effective = 1 * M.species.chem_strength_heal
-	if(alien == IS_DIONA)
-		return
 	if(alien == IS_SLIME)
 		if(dose >= 5) //Not effective in small doses, though it causes toxins at higher ones, it will make the regeneration for brute and burn more 'efficient' at the cost of more nutrition.
 			// Species-specific dose-gated regeneration boost: mends directly.
@@ -653,9 +665,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
+/datum/reagent/alkysine
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/alkysine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(alien == IS_SLIME)
 		if(M.injury_load(INJURY_CATEGORY_NEURAL) >= 10)
 			M.status_at_least(EFFECT_WEAKENED, 5)
@@ -740,9 +753,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
+/datum/reagent/osteodaxon
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/osteodaxon/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	// Light tissue repair ("gives the bones a chance to set") is in the treatment_tags profile.
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -775,9 +789,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
+/datum/reagent/myelamine
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/myelamine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + (repair_strength * removed), 250))
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -1096,9 +1111,10 @@
 	mrate_static = TRUE
 	overdose = REAGENTS_OVERDOSE * 0.5
 
+/datum/reagent/hyperzine
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/hyperzine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver"))
 */
@@ -1115,9 +1131,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_RECDRUG
 
+/datum/reagent/ethylredoxrazine
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/ethylredoxrazine/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_end(EFFECT_DIZZY)
 	M.status_set(EFFECT_DROWSY, 0)
 	M.status_set(EFFECT_STUTTERING, 0)
@@ -1127,9 +1144,10 @@
 			if(istype(R, /datum/reagent/ethanol))
 				R.remove_self(removed * 30)
 
+/datum/reagent/ethylredoxrazine
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/ethylredoxrazine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_end(EFFECT_DIZZY)
 	M.status_set(EFFECT_DROWSY, 0)
 	M.status_set(EFFECT_STUTTERING, 0)
@@ -1153,9 +1171,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_SPECIALDRUG
 
+/datum/reagent/hyronalin
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/hyronalin/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	// B14: radiation purge is the TREAT_ANTIRADIATION tag (purge_radiation()).
 
 /datum/reagent/arithrazine
@@ -1173,9 +1192,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
 
+/datum/reagent/arithrazine
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/arithrazine/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	// B14: radiation purge is the TREAT_ANTIRADIATION tag (purge_radiation()).
 	// Its antitoxin action is in the treatment_tags profile.
 	if(prob(60))
@@ -1418,9 +1438,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_MASSINDUSTRY
 	industrial_use = REFINERYEXPORT_REASON_CLONEDRUG
 
+/datum/reagent/rezadone
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/rezadone/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	var/mob/living/carbon/human/H = M
 	if(alien == IS_SLIME && istype(H))
 		if(prob(50))
@@ -1806,9 +1827,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_DRUG
 
+/datum/reagent/adranol
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/adranol/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(M.has_status(EFFECT_CONFUSED))
 		M.status_at_least(EFFECT_CONFUSED, -8*removed)
 	if(M.has_status(EFFECT_BLURRY))
@@ -2217,9 +2239,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/flamecure
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/flamecure/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	M.status_set(EFFECT_BLURRY, min(M.status_units(EFFECT_BLURRY) + (repair_strength * removed), 250))
 	// The legacy negative burn-heal here was a burn (twice for humans).
 	M.injure(INJURY_BURN, (ishuman(M) ? 2 : 1) * removed, source = src)
@@ -2265,9 +2288,11 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_HIGHREFINED
 	industrial_use = REFINERYEXPORT_REASON_MEDSCI
 
+/datum/reagent/bloodsealer
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/bloodsealer/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		M.injure(INJURY_BURN, 1 * removed, source = src) // the legacy negative burn-heal: a burn
+	M.injure(INJURY_BURN, 1 * removed, source = src) // the legacy negative burn-heal: a burn
 
 //meteroidliquid
 /datum/reagent/livingagent

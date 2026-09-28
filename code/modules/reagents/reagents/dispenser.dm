@@ -44,9 +44,10 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_UNWANTED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
+/datum/reagent/carbon
+	immune_species_ingest = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/carbon/affect_ingest(mob/living/carbon/M, alien, removed)
-	if(alien == IS_DIONA)
-		return
 	if(M.ingested && M.ingested.reagent_list.len > 1) // Need to have at least 2 reagents - cabon and something to remove
 		var/effect = 1 / (M.ingested.reagent_list.len - 1)
 		for(var/datum/reagent/R in M.ingested.reagent_list)
@@ -365,12 +366,14 @@
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 	coolant_modifier = 0.15
 
+/datum/reagent/lithium
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/lithium/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		if(M.canmove && !M.restrained() && istype(M.loc, /turf/space))
-			step(M, pick(GLOB.cardinal))
-		if(prob(5))
-			M.emote(pick("twitch", "drool", "moan"))
+	if(M.canmove && !M.restrained() && istype(M.loc, /turf/space))
+		step(M, pick(GLOB.cardinal))
+	if(prob(5))
+		M.emote(pick("twitch", "drool", "moan"))
 
 /datum/reagent/mercury
 	name = REAGENT_MERCURY
@@ -383,14 +386,16 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_COMMON
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
+/datum/reagent/mercury
+	immune_species_blood = SPECIES_TAG_BIT(IS_DIONA) // P2-S13
+
 /datum/reagent/mercury/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien != IS_DIONA)
-		if(M.canmove && !M.restrained() && istype(M.loc, /turf/space))
-			step(M, pick(GLOB.cardinal))
-		if(prob(5))
-			M.emote(pick("twitch", "drool", "moan"))
-		M.injure(INJURY_NEURAL, 0.5 * removed, source = src)
-		M.injure(INJURY_TOXIN, 0.25 * removed, source = src, affliction = /datum/affliction/poisoning/heavy_metal)
+	if(M.canmove && !M.restrained() && istype(M.loc, /turf/space))
+		step(M, pick(GLOB.cardinal))
+	if(prob(5))
+		M.emote(pick("twitch", "drool", "moan"))
+	M.injure(INJURY_NEURAL, 0.5 * removed, source = src)
+	M.injure(INJURY_TOXIN, 0.25 * removed, source = src, affliction = /datum/affliction/poisoning/heavy_metal)
 
 /datum/reagent/nitrogen
 	name = REAGENT_NITROGEN
@@ -498,15 +503,17 @@
 	supply_conversion_value = REFINERYEXPORT_VALUE_PROCESSED
 	industrial_use = REFINERYEXPORT_REASON_PRECURSOR
 
+/datum/reagent/acid
+	immune_species_blood = SPECIES_TAG_BIT(IS_GREY) // P2-S13
+
 /datum/reagent/acid/affect_blood(mob/living/carbon/M, alien, removed)
-	if(alien == IS_GREY)
-		return
 	if(issmall(M)) removed *= 2
 	M.injure(INJURY_CORROSIVE, removed * power * 2, source = src)
 
+/datum/reagent/acid
+	immune_species_touch = SPECIES_TAG_BIT(IS_GREY) // P2-S13
+
 /datum/reagent/acid/affect_touch(mob/living/carbon/M, alien, removed) // This is the most interesting
-	if(alien == IS_GREY)
-		return
 	if(ishuman(M) && !isbelly(M.loc))
 		var/mob/living/carbon/human/H = M
 		if(H.get_equipped_item(SLOT_ID_HEAD))

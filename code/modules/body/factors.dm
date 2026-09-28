@@ -420,6 +420,9 @@
 /datum/reagent/proc/acts_on_body(mob/living/L)
 	if(!L)
 		return FALSE
+	// P2-S13: a species that ignores the reagent by every route gets none of its tags or factors.
+	if(species_immune(L))
+		return FALSE
 	if(!affects_dead && L.stat == DEAD && !L.has_body_effect(/datum/body_effect/bloodpump_corpse))
 		return FALSE
 	if(HAS_SYNTHETIC_BIOLOGY(L))
