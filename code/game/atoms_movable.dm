@@ -566,9 +566,7 @@
 	if(spin && does_spin)
 		SpinAnimation(4,1)
 
-	SSthrowing.processing[src] = TT
-	if (SSthrowing.state == SS_PAUSED && length(SSthrowing.currentrun))
-		SSthrowing.currentrun[src] = TT
+	PERIODIC_START(TT, PERIODIC_THROWING) // code/datums/thrownthing.dm
 
 //Overlays
 /atom/movable/overlay

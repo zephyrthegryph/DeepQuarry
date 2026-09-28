@@ -291,8 +291,8 @@ SUBSYSTEM_DEF(internal_wiki)
 	return get_donor_value(highest_cached_donator)
 // Helpers for formatting wiki data for tgui pages
 /datum/controller/subsystem/internal_wiki/proc/assemble_reaction_data(list/data, datum/reagent/R)
-	var/list/reaction_list = SSchemistry.chemical_reactions_by_product[R.id]
-	var/list/distilled_list = SSchemistry.distilled_reactions_by_product[R.id]
+	var/list/reaction_list = chemistry_service().chemical_reactions_by_product[R.id]
+	var/list/distilled_list = chemistry_service().distilled_reactions_by_product[R.id]
 
 	data["instant_reactions"] = null
 	if(reaction_list != null && length(reaction_list) > 0)
@@ -307,7 +307,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			var/list/assemble_reaction = list()
 			var/list/reqs = list()
 			for(var/RQ in CR.required_reagents)
-				var/datum/decl/chemical_reaction/r_RQ = SSchemistry.chemical_reagents[RQ]
+				var/datum/decl/chemical_reaction/r_RQ = chemistry_service().chemical_reagents[RQ]
 				if(!r_RQ)
 					log_runtime(EXCEPTION("Invalid reagent id: [RQ]"))
 					continue
@@ -315,7 +315,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			assemble_reaction["required"] = reqs
 			var/list/inhib = list()
 			for(var/IH in CR.inhibitors)
-				var/datum/decl/chemical_reaction/r_IH = SSchemistry.chemical_reagents[IH]
+				var/datum/decl/chemical_reaction/r_IH = chemistry_service().chemical_reagents[IH]
 				if(!r_IH)
 					log_runtime(EXCEPTION("Invalid reagent id: [IH]"))
 					continue
@@ -323,7 +323,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			assemble_reaction["inhibitor"] = inhib
 			var/list/catal = list()
 			for(var/CL in CR.catalysts)
-				var/datum/decl/chemical_reaction/r_CL = SSchemistry.chemical_reagents[CL]
+				var/datum/decl/chemical_reaction/r_CL = chemistry_service().chemical_reagents[CL]
 				if(!r_CL)
 					log_runtime(EXCEPTION("Invalid reagent id: [CL]"))
 					continue
@@ -357,7 +357,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			assemble_reaction["rejects_xgm_gas"] = CR.rejects_xgm_gas ? GLOB.gas_data.name[CR.rejects_xgm_gas] : null
 			var/list/reqs = list()
 			for(var/RQ in CR.required_reagents)
-				var/datum/decl/chemical_reaction/r_RQ = SSchemistry.chemical_reagents[RQ]
+				var/datum/decl/chemical_reaction/r_RQ = chemistry_service().chemical_reagents[RQ]
 				if(!r_RQ)
 					log_runtime(EXCEPTION("Invalid reagent id: [RQ]"))
 					continue
@@ -365,7 +365,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			assemble_reaction["required"] = reqs
 			var/list/inhib = list()
 			for(var/IH in CR.inhibitors)
-				var/datum/decl/chemical_reaction/r_IH = SSchemistry.chemical_reagents[IH]
+				var/datum/decl/chemical_reaction/r_IH = chemistry_service().chemical_reagents[IH]
 				if(!r_IH)
 					log_runtime(EXCEPTION("Invalid reagent id: [IH]"))
 					continue
@@ -373,7 +373,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			assemble_reaction["inhibitor"] = inhib
 			var/list/catal = list()
 			for(var/CL in CR.catalysts)
-				var/datum/decl/chemical_reaction/r_CL = SSchemistry.chemical_reagents[CL]
+				var/datum/decl/chemical_reaction/r_CL = chemistry_service().chemical_reagents[CL]
 				if(!r_CL)
 					log_runtime(EXCEPTION("Invalid reagent id: [CL]"))
 					continue
@@ -526,9 +526,9 @@ SUBSYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// assemble chemical reactions wiki
-	for(var/reagent in SSchemistry.chemical_reagents)
+	for(var/reagent in chemistry_service().chemical_reagents)
 		var/datum/internal_wiki/page/P = null
-		var/datum/reagent/R = SSchemistry.chemical_reagents[reagent]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[reagent]
 		if(!allow_reagent(R.id))
 			continue
 		if((R.wiki_flag & WIKI_FOOD)) // Processed later
@@ -624,7 +624,7 @@ SUBSYSTEM_DEF(internal_wiki)
 						)
 		qdel(R)
 	// basically condiments, tofu, cheese, soysauce, etc
-	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.chemical_reactions)
+	for(var/datum/decl/chemical_reaction/instant/CR in chemistry_service().chemical_reactions)
 		if(!allow_reagent(CR.result))
 			continue
 		if(CR.wiki_flag & WIKI_SPOILER)
@@ -685,7 +685,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	//Reagents can be resolved to nicer names as well
 	for(var/Rp in food_recipes)
 		for(var/rid in food_recipes[Rp]["Reagents"])
-			var/datum/reagent/Rd = SSchemistry.chemical_reagents[rid]
+			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -696,7 +696,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			food_recipes[Rp]["Allergens"] |= Rd.allergen_type
 			food_recipes[Rp]["Medallergens"] |= Rd.medallergen_type
 		for(var/rid in food_recipes[Rp]["Catalysts"])
-			var/datum/reagent/Rd = SSchemistry.chemical_reagents[rid]
+			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -833,7 +833,7 @@ SUBSYSTEM_DEF(internal_wiki)
 
 	data["pump_reagent"] = null
 	if(O.reagent)
-		var/datum/reagent/REG = SSchemistry.chemical_reagents[O.reagent]
+		var/datum/reagent/REG = chemistry_service().chemical_reagents[O.reagent]
 		data["pump_reagent"] = REG.name
 
 	data["grind_reagents"] = null
@@ -842,7 +842,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		var/list/collect = list()
 		var/total_parts = 0
 		for(var/Rid in output)
-			var/datum/reagent/CBR = SSchemistry.chemical_reagents[Rid]
+			var/datum/reagent/CBR = chemistry_service().chemical_reagents[Rid]
 			if(!collect[CBR.name])
 				collect[CBR.name] = 0
 			collect[CBR.name] += 1
@@ -916,7 +916,7 @@ SUBSYSTEM_DEF(internal_wiki)
 			var/list/collect = list()
 			var/total_parts = 0
 			for(var/Rid in output)
-				var/datum/reagent/CBR = SSchemistry.chemical_reagents[Rid]
+				var/datum/reagent/CBR = chemistry_service().chemical_reagents[Rid]
 				if(CBR)
 					if(!collect[CBR.name])
 						collect[CBR.name] = 0
@@ -1033,7 +1033,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	if(S.chems && length(S.chems) > 0)
 		var/list/chems = list()
 		for(var/CB in S.chems)
-			var/datum/reagent/CBR = SSchemistry.chemical_reagents[CB]
+			var/datum/reagent/CBR = chemistry_service().chemical_reagents[CB]
 			if(CBR)
 				chems.Add(CBR.name)
 			else
@@ -1141,7 +1141,7 @@ SUBSYSTEM_DEF(internal_wiki)
 		var/list/inducers = list()
 		for(var/R in M.reagents)
 			var/amnt = M.reagents[R]
-			var/datum/reagent/Rd = SSchemistry.chemical_reagents[R]
+			var/datum/reagent/Rd = chemistry_service().chemical_reagents[R]
 			if(Rd)
 				inducers["[Rd.name]"] = amnt
 			else

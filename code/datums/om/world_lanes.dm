@@ -23,10 +23,23 @@
 	var/current_ms = 0
 	/// TRUE while a yielded step is waiting to resume.
 	var/resuming = FALSE
+	/// TRUE once initialize() has run. A lazy (data-only) service initializes on first use through
+	/// LAZY_SERVICE(); initialize() sets this first so a re-entrant lookup doesn't recurse.
+	var/initialized = FALSE
 
-/// One-time setup, called by whatever used to be this service's Initialize() dependency slot.
+/// One-time setup, called by whatever used to be this service's Initialize() dependency slot, or
+/// on first use by ready() for a lazy service. Overrides set `initialized = TRUE` first.
 /datum/world_service/proc/initialize()
-	return
+	initialized = TRUE
+
+/// Lazy services: initializes on first use and returns the service (LAZY_SERVICE() in __defines/om.dm).
+/datum/world_service/proc/ready()
+	RETURN_TYPE(/datum/world_service)
+	if(!initialized)
+		var/started = REALTIMEOFDAY
+		initialize()
+		log_world("World service [name] initialized lazily in [(REALTIMEOFDAY - started) / 10]s.")
+	return src
 
 /// World-level periodic work. `resumed`: continuing a step that yielded. Return FALSE to yield
 /// (the lane resumes next tick), TRUE when the step is complete.
@@ -57,7 +70,13 @@
 
 /// Every world service with a lane, for the profiler and the admin readouts.
 /proc/world_services()
-	return list(GLOB.machine_service, GLOB.mob_service, GLOB.plant_service)
+	return list(
+		GLOB.machine_service, GLOB.mob_service, GLOB.plant_service,
+		// Fold wave F3.
+		GLOB.radiation_service, GLOB.motiontracker_service, GLOB.pai_service, GLOB.mail_service,
+		GLOB.chemistry_service, GLOB.sound_service, GLOB.instrument_service, GLOB.circuit_service,
+		GLOB.xenoarch_service, GLOB.event_service,
+	)
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).
 /proc/om_start_world_lanes()
@@ -112,3 +131,41 @@
 
 /datum/om/behaviour/world/mobs/service()
 	return GLOB.mob_service
+
+// ---------------------------------------------------------------- fold wave F3 lanes
+
+/// Radiation pulse queue and the shielding flush to the Rust insulation layer (was SSradiation, 0.5 s).
+/datum/om/behaviour/world/radiation
+	name = "world: radiation"
+	every = 0.5 SECONDS
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/radiation/service()
+	return GLOB.radiation_service
+
+/// Motion tracker echo drawing (was SSmotiontracker, 1 s).
+/datum/om/behaviour/world/motiontracker
+	name = "world: motion tracker"
+	every = 1 SECOND
+
+/datum/om/behaviour/world/motiontracker/service()
+	return GLOB.motiontracker_service
+
+/// pAI candidate list refresh from the observers (was SSpai, 4 s).
+/datum/om/behaviour/world/pai
+	name = "world: pai candidates"
+	every = 4 SECONDS
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/pai/service()
+	return GLOB.pai_service
+
+/// Mail accrual for the supply shuttle (was SSmail, 60 s).
+/datum/om/behaviour/world/mail
+	name = "world: mail"
+	every = 60 SECONDS
+	lane = LANE_BACKGROUND
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/mail/service()
+	return GLOB.mail_service

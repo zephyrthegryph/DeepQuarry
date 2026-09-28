@@ -5,8 +5,6 @@ SUBSYSTEM_DEF(atoms)
 		/datum/controller/subsystem/mapping,
 		/datum/controller/subsystem/planets,
 		/datum/controller/subsystem/transcore,
-		/datum/controller/subsystem/chemistry,
-		/datum/controller/subsystem/sounds,
 		/datum/controller/subsystem/job
 	)
 	flags = SS_NO_FIRE
@@ -41,6 +39,12 @@ SUBSYSTEM_DEF(atoms)
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
+
+	// World services that set up on the initialized map (fold wave F3). Each was a subsystem that
+	// depended on atoms; they have no boot slot of their own now.
+	GLOB.pai_service.initialize()
+	GLOB.xenoarch_service.initialize()
+	GLOB.event_service.initialize()
 
 	return SS_INIT_SUCCESS
 

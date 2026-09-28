@@ -77,7 +77,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 		to_chat(user,span_warning("You cannot join a pAI card when you are banned from playing as a pAI."))
 		return
 
-	if(SSpai.check_is_already_pai(user.ckey))
+	if(GLOB.pai_service.check_is_already_pai(user.ckey))
 		to_chat(user, span_warning("You can't just rejoin any old pAI card!!! Your card still exists."))
 		return
 
@@ -135,9 +135,9 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 		return data
 
 	if(selected_pai)
-		data["selected_pai_data"] = SSpai.get_detailed_invite_data(selected_pai)
+		data["selected_pai_data"] = GLOB.pai_service.get_detailed_invite_data(selected_pai)
 	// Only get the invite list if we can browse for them
-	data["available_pais"] = SSpai.get_invite_list_data()
+	data["available_pais"] = GLOB.pai_service.get_invite_list_data()
 	return data
 
 /obj/item/paicard/proc/get_active_data()
@@ -156,7 +156,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 		)
 
 	var/datum/asset/spritesheet_batched/pai_icons/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/pai_icons)
-	var/datum/pai_sprite/sprite_datum = SSpai.chassis_data(pai.chassis_name)
+	var/datum/pai_sprite/sprite_datum = GLOB.pai_service.chassis_data(pai.chassis_name)
 	var/css_class = sanitize_css_class_name("[sprite_datum.type]")
 	return list(
 		"name" = pai.name,
@@ -289,7 +289,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
 			if(in_use)
 				return FALSE
 			in_use = TRUE
-			SSpai.invite_ghost(ui.user, params["ref"], src)
+			GLOB.pai_service.invite_ghost(ui.user, params["ref"], src)
 			in_use = FALSE
 			selected_pai = null
 			return TRUE

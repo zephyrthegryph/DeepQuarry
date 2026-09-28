@@ -439,12 +439,12 @@
 	// fixers…) only treats if it declares its own, different profile. DM
 	// builds list defaults per instance, so compare contents, not refs.
 	var/list/tags_by_type = list()
-	for(var/id in SSchemistry.chemical_reagents)
-		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+	for(var/id in chemistry_service().chemical_reagents)
+		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
 		if(R)
 			tags_by_type[R.type] = R.treatment_tags
-	for(var/id in SSchemistry.chemical_reagents)
-		var/datum/reagent/R = SSchemistry.chemical_reagents[id]
+	for(var/id in chemistry_service().chemical_reagents)
+		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
 		if(!length(R?.treatment_tags))
 			continue
 		var/parent = R.parent_type
@@ -463,7 +463,7 @@
 			return FALSE
 	return TRUE
 
-/// treatment_tags of a reagent type that isn't registered in SSchemistry
+/// treatment_tags of a reagent type that isn't registered in the chemistry service
 /// (abstract intermediates). Instantiated once per type.
 /proc/dq_proto_reagent_tags(reagent_type)
 	var/static/list/cache = list()

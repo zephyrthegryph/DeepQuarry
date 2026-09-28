@@ -10,7 +10,7 @@ code/_helpers/unsorted.dm 7
 code/_onclick/hud/screen_objects.dm 12
 code/_onclick/observer.dm 2
 code/_onclick/telekinesis.dm 1
-code/controllers/subsystems/mail.dm 1
+code/game/objects/mail_service.dm 1
 code/datums/components/antags/changeling/powers/lesser_form.dm 1
 code/datums/components/structures/bluespace_connection.dm 1
 code/datums/gear/loadout_shoes.dm 1

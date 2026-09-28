@@ -147,14 +147,14 @@
 	var/list/data = ..()
 
 	var/list/categories = list()
-	for(var/category in SScircuit.circuit_fabricator_recipe_list)
+	for(var/category in circuit_service().circuit_fabricator_recipe_list)
 		var/list/cat_obj = list(
 			"name" = category,
 			"items" = null
 		)
 		if(cat_obj["name"] == "Illegal Parts" && !illegal_upgraded)
 			continue
-		var/list/circuit_list = SScircuit.circuit_fabricator_recipe_list[category]
+		var/list/circuit_list = circuit_service().circuit_fabricator_recipe_list[category]
 		var/list/items = list()
 		for(var/path in circuit_list)
 			var/obj/O = path
@@ -234,8 +234,8 @@
 				cost = I::w_class
 
 			var/in_some_category = FALSE
-			for(var/category in SScircuit.circuit_fabricator_recipe_list)
-				if(build_type in SScircuit.circuit_fabricator_recipe_list[category])
+			for(var/category in circuit_service().circuit_fabricator_recipe_list)
+				if(build_type in circuit_service().circuit_fabricator_recipe_list[category])
 					in_some_category = TRUE
 					break
 			if(!in_some_category)
@@ -367,10 +367,10 @@
 	var/list/components_to_create = list()
 
 	// Build list of available components
-	for(var/category in SScircuit.circuit_fabricator_recipe_list)
+	for(var/category in circuit_service().circuit_fabricator_recipe_list)
 		if(category == "Illegal Parts" && !illegal_upgraded)
 			continue
-		var/list/circuit_list = SScircuit.circuit_fabricator_recipe_list[category]
+		var/list/circuit_list = circuit_service().circuit_fabricator_recipe_list[category]
 		for(var/path in circuit_list)
 			available_components += path
 

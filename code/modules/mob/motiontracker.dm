@@ -6,13 +6,13 @@
 	if(!is_motion_tracking)
 		is_motion_tracking = TRUE
 		wants_to_see_motion_echos = TRUE
-		RegisterSignal(SSmotiontracker, COMSIG_MOVABLE_MOTIONTRACKER, PROC_REF(handle_motion_tracking))
+		RegisterSignal(GLOB.motiontracker_service, COMSIG_MOVABLE_MOTIONTRACKER, PROC_REF(handle_motion_tracking))
 		add_verb(src,/mob/proc/toggle_motion_echo_vis)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
 	if(is_motion_tracking)
 		is_motion_tracking = FALSE
-		UnregisterSignal(SSmotiontracker, COMSIG_MOVABLE_MOTIONTRACKER)
+		UnregisterSignal(GLOB.motiontracker_service, COMSIG_MOVABLE_MOTIONTRACKER)
 		remove_verb(src,/mob/proc/toggle_motion_echo_vis)
 
 /mob/living/carbon/human/motiontracker_unsubscribe(destroying = FALSE)
@@ -29,15 +29,15 @@
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return
 	var/atom/echo_source = om_resolve(RW)
-	if(!echo_source || get_dist(src,echo_source) > SSmotiontracker.max_range || src.z != echo_source.z)
+	if(!echo_source || get_dist(src,echo_source) > GLOB.motiontracker_service.max_range || src.z != echo_source.z)
 		return
 	// Blind characters see all pings around them. Otherwise remove the closest, or any we can see. Pings behind walls or in the dark are always visible
-	if(!is_blind() && (get_dist(src,echo_source) < SSmotiontracker.min_range || (T.get_lumcount() >= 0.20 && can_see(src, T, 7)) ))
+	if(!is_blind() && (get_dist(src,echo_source) < GLOB.motiontracker_service.min_range || (T.get_lumcount() >= 0.20 && can_see(src, T, 7)) ))
 		return
 	var/echos = 1
 	if(prob(30))
 		echos = rand(1,3)
-	SSmotiontracker.queue_echo(get_turf(src),T,echos,client ? om_handle(client) : null)
+	GLOB.motiontracker_service.queue_echo(get_turf(src),T,echos,client ? om_handle(client) : null)
 
 /mob/proc/toggle_motion_echo_vis()
 	set name = "Toggle Vibration Senses"

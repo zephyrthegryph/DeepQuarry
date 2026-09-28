@@ -321,7 +321,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)
-		SSmail.admin_mail += new_mail
+		GLOB.mail_service.admin_mail += new_mail
 		log_and_message_admins("spawned [chosen] inside an envelope at the shuttle")
 	else
 		var/obj/item/mail/ground_mail = new /obj/item/mail(user_mob.loc)

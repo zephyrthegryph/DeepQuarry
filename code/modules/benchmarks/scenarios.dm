@@ -564,7 +564,7 @@
 			.++
 
 /// Radiation: pulses from many sources over a walled fixture full of mobs and
-/// insulating objects. Reports the time SSradiation spent inside pulses.
+/// insulating objects. Reports the time the radiation service spent inside pulses.
 /datum/benchmark/radiation
 	id = "radiation"
 	description = "Radiation pulse cost: rays from 20 sources to mobs through walls (bench_rounds, default 30)"
@@ -589,27 +589,27 @@
 	var/rounds = param("rounds", 30)
 	stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	var/cost_before = 0
-	for(var/key in SSradiation.profile_source_cost_ms)
-		cost_before += SSradiation.profile_source_cost_ms[key]
-	var/pulses_before = SSradiation.profile_pulses_completed
+	for(var/key in GLOB.radiation_service.profile_source_cost_ms)
+		cost_before += GLOB.radiation_service.profile_source_cost_ms[key]
+	var/pulses_before = GLOB.radiation_service.profile_pulses_completed
 	begin_window()
 	for(var/round in 1 to rounds)
 		for(var/atom/source as anything in sources)
 			radiation_pulse(source, 14, 0.05, 10, 0, 1)
 		var/deadline = REALTIMEOFDAY + 600
-		while(length(SSradiation.processing))
+		while(length(GLOB.radiation_service.processing))
 			if(REALTIMEOFDAY > deadline)
 				fail("radiation pulses did not drain within 60s")
 			stoplag() // S10b keeps: benchmark harness measures across real MC ticks
 	end_window("radiation")
 	var/cost_after = 0
-	for(var/key in SSradiation.profile_source_cost_ms)
-		cost_after += SSradiation.profile_source_cost_ms[key]
-	var/pulses = SSradiation.profile_pulses_completed - pulses_before
+	for(var/key in GLOB.radiation_service.profile_source_cost_ms)
+		cost_after += GLOB.radiation_service.profile_source_cost_ms[key]
+	var/pulses = GLOB.radiation_service.profile_pulses_completed - pulses_before
 	count_metric("radiation_pulses", pulses, "pulses", "none")
 	metric("radiation_pulse_ms_total", cost_after - cost_before, "ms")
 	metric("radiation_pulse_ms_each", pulses ? (cost_after - cost_before) / pulses : 0, "ms")
-	detail("radiation_diagnostics", SSradiation.performance_diagnostics())
+	detail("radiation_diagnostics", GLOB.radiation_service.performance_diagnostics())
 
 /// Where the memory outside DM objects goes (init_and_turfs.md §0.4). Counts
 /// unique appearances (atoms' own and their overlay/underlay entries), icons,

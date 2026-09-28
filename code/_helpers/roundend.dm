@@ -79,7 +79,7 @@
 	RoundTrivia()
 
 	//Ask the event manager to print round end information
-	SSevents.RoundEnd()
+	GLOB.event_service.RoundEnd()
 
 	//Print a list of antagonists to the server log
 	var/list/total_antagonists = list()

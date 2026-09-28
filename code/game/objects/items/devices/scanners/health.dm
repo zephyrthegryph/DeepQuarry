@@ -116,7 +116,7 @@
 		return
 	var/mob/living/carbon/human/H = M
 	for(var/datum/genetics/side_effect/side_effect in H.genetic_side_effects)
-		var/datum/reagent/Rd = SSchemistry.chemical_reagents[side_effect.antidote_reagent]
+		var/datum/reagent/Rd = chemistry_service().chemical_reagents[side_effect.antidote_reagent]
 		. += span_danger("Patient is suffering from [side_effect.name]. [Rd ? "Treatment: [Rd]" : "There is no known treatment."]")
 	if(H.get_addiction_to_reagent(REAGENT_ID_ASUSTENANCE) > 0)
 		. += span_warning("Biologically unstable, requires [REAGENT_ASUSTENANCE] to function properly.")
@@ -126,7 +126,7 @@
 			continue
 		if(scan_level < SCANNABLE_DIFFICULT && level > 120)
 			continue
-		var/datum/reagent/R = SSchemistry.chemical_reagents[addic]
+		var/datum/reagent/R = chemistry_service().chemical_reagents[addic]
 		if(scan_level < SCANNABLE_ADVANCED)
 			. += span_warning("Chemical dependance detected.")
 			break

@@ -181,12 +181,12 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 
 /datum/game_mode/proc/refresh_event_modifiers()
 	if(event_delay_mod_moderate || event_delay_mod_major)
-		SSevents.report_at_round_end = TRUE
+		GLOB.event_service.report_at_round_end = TRUE
 		if(event_delay_mod_moderate)
-			var/datum/event_container/EModerate = SSevents.event_containers[EVENT_LEVEL_MODERATE]
+			var/datum/event_container/EModerate = GLOB.event_service.event_containers[EVENT_LEVEL_MODERATE]
 			EModerate.delay_modifier = event_delay_mod_moderate
 		if(event_delay_mod_moderate)
-			var/datum/event_container/EMajor = SSevents.event_containers[EVENT_LEVEL_MAJOR]
+			var/datum/event_container/EMajor = GLOB.event_service.event_containers[EVENT_LEVEL_MAJOR]
 			EMajor.delay_modifier = event_delay_mod_major
 
 /datum/game_mode/proc/pre_setup()

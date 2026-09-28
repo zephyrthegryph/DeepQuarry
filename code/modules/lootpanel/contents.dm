@@ -38,7 +38,7 @@
 	window?.send_update()
 
 	if(length(to_image))
-		SSlooting.backlog += src
+		PERIODIC_START(src, PERIODIC_LOOT_ICONS) // icon generation (was SSlooting): misc.dm process_images()
 
 
 /// For: Resetting to empty. Ignores the searchable qdel event

@@ -62,8 +62,8 @@
 		var/nearestSimpleTargetDist = -1
 		var/turf/cur_turf = get_turf(src)
 
-		if(SSxenoarch) //Sanity check due to runtimes ~Z
-			for(var/turf/simulated/mineral/T as anything in SSxenoarch.artifact_spawning_turfs)
+		if(GLOB.xenoarch_service) //Sanity check due to runtimes ~Z
+			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.artifact_spawning_turfs)
 				if(T.density && T.artifact_find)
 					if(T.z == cur_turf.z)
 						var/cur_dist = get_dist(cur_turf, T) * 2
@@ -71,22 +71,22 @@
 							nearestTargetDist = cur_dist + rand() * 2 - 1
 							nearestTargetId = T.artifact_find.artifact_id
 				else
-					SSxenoarch.artifact_spawning_turfs.Remove(T)
+					GLOB.xenoarch_service.artifact_spawning_turfs.Remove(T)
 
-			for(var/turf/simulated/mineral/T as anything in SSxenoarch.digsite_spawning_turfs)
+			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
 				if(T.density && T.finds && T.finds.len)
 					if(T.z == cur_turf.z)
 						var/cur_dist = get_dist(cur_turf, T) * 2
 						if(nearestSimpleTargetDist < 0 || cur_dist < nearestSimpleTargetDist)
 							nearestSimpleTargetDist = cur_dist + rand() * 2 - 1
 				else
-					SSxenoarch.digsite_spawning_turfs.Remove(T)
+					GLOB.xenoarch_service.digsite_spawning_turfs.Remove(T)
 
-		if(SSxenoarch && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (world.time - last_repopulation_time >= repopulation_delay))
+		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (world.time - last_repopulation_time >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
 				last_repopulation_time = world.time
 				to_chat(user, "The [src] beeps and buzzes, a warning popping up on screen stating 'No artifacts detected on current wavelength. Swapping to different wavelength. Please try scanning momentarily.'")
-				SSxenoarch.continual_generation(user)
+				GLOB.xenoarch_service.continual_generation(user)
 
 		if(nearestTargetDist >= 0)
 			to_chat(user, "Large artifact energy signature detected on wavelength '[nearestTargetId]' in a radius of [nearestTargetDist]m[nearestSimpleTargetDist > 0 ? "; small anomaly detected in a radius of [nearestSimpleTargetDist]m" : ""]")

@@ -5,16 +5,16 @@
 // reached via View. The structured tgui_data mirrors both views; React
 // switches on `selected_severity` being set or null.
 //
-// Actions dispatch through the existing SSevents Topic handler so the
+// Actions dispatch through the existing event service Topic handler so the
 // behaviour, validation and admin logging are identical to the legacy
 // panel. SStgui.update_uis refreshes the panel after each action.
 
 /datum/event_manager_panel
 
-// LIFECYCLE: SSevents forgets its manager panel.
+// LIFECYCLE: the event service forgets its manager panel.
 /datum/event_manager_panel/Destroy()
-	if(SSevents?.tgui_event_manager_panel == src)
-		SSevents.tgui_event_manager_panel = null
+	if(GLOB.event_service?.tgui_event_manager_panel == src)
+		GLOB.event_service.tgui_event_manager_panel = null
 	return ..()
 
 /datum/event_manager_panel/tgui_state(mob/user)
@@ -33,10 +33,10 @@
 /datum/event_manager_panel/tgui_data(mob/user)
 	var/list/data = list()
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)
-	data["report_at_round_end"] = !!SSevents.report_at_round_end
+	data["report_at_round_end"] = !!GLOB.event_service.report_at_round_end
 
-	if(SSevents.selected_event_container)
-		var/datum/event_container/EC = SSevents.selected_event_container
+	if(GLOB.event_service.selected_event_container)
+		var/datum/event_container/EC = GLOB.event_service.selected_event_container
 		var/event_time = max(0, EC.next_event_time - world.time)
 		data["selected_severity"] = GLOB.severity_to_string[EC.severity]
 		data["selected_time_left_minutes"] = round(event_time / 600, 0.1)
@@ -54,7 +54,7 @@
 				"current_weight" = EC.get_weight(EM, active_with_role),
 			))
 		data["available_events"] = avail
-		var/datum/event_meta/NE = SSevents.new_event
+		var/datum/event_meta/NE = GLOB.event_service.new_event
 		data["new_event"] = list(
 			"ref" = "\ref[NE]",
 			"name" = NE.name,
@@ -68,7 +68,7 @@
 		var/list/severities = list()
 		var/list/next_events = list()
 		for(var/severity = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-			var/datum/event_container/EC = SSevents.event_containers[severity]
+			var/datum/event_container/EC = GLOB.event_service.event_containers[severity]
 			var/next_event_at = max(0, EC.next_event_time - world.time)
 			severities += list(list(
 				"ref" = "\ref[EC]",
@@ -86,7 +86,7 @@
 		data["severities"] = severities
 		data["next_events"] = next_events
 		var/list/running = list()
-		for(var/datum/event/E in SSevents.active_events)
+		for(var/datum/event/E in GLOB.event_service.active_events())
 			if(!E.event_meta)
 				continue
 			var/datum/event_meta/EM = E.event_meta
@@ -102,10 +102,10 @@
 		data["running_events"] = running
 	return data
 
-// Forwards an action to the existing SSevents Topic handler so the
+// Forwards an action to the existing event service Topic handler so the
 // validation/logging stays in one place. Each call refreshes the panel.
 /datum/event_manager_panel/proc/forward(list/href_list)
-	SSevents.Topic("", href_list)
+	GLOB.event_service.Topic("", href_list)
 	SStgui.update_uis(src)
 
 /datum/event_manager_panel/tgui_act(action, list/params, datum/tgui/ui)
@@ -171,5 +171,5 @@
 			forward(list("add" = "[params["container_ref"]]"))
 			return TRUE
 
-/datum/controller/subsystem/events
+/datum/world_service/events
 	var/datum/event_manager_panel/tgui_event_manager_panel

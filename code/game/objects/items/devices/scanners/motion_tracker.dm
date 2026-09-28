@@ -16,7 +16,7 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/motiontracker/Initialize(mapload)
-	RegisterSignal(SSmotiontracker, COMSIG_MOVABLE_MOTIONTRACKER, PROC_REF(handle_motion_tracking))
+	RegisterSignal(GLOB.motiontracker_service, COMSIG_MOVABLE_MOTIONTRACKER, PROC_REF(handle_motion_tracking))
 	. = ..()
 	if(ismob(loc))
 		var/mob/M = loc
@@ -37,7 +37,7 @@
 	var/atom/scan_pos = src
 	if(!isturf(loc))
 		scan_pos = loc
-	if(!echo_source || get_dist(scan_pos,echo_source) > SSmotiontracker.max_range || scan_pos.z != echo_source.z)
+	if(!echo_source || get_dist(scan_pos,echo_source) > GLOB.motiontracker_service.max_range || scan_pos.z != echo_source.z)
 		return
 	flick("pinondirect",src)
 

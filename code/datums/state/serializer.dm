@@ -358,7 +358,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			return list(STATE_REGISTRY_SPECIES, S.name)
 	else if(istype(D, /datum/reagent))
 		var/datum/reagent/R = D
-		if(SSchemistry.chemical_reagents[R.id] == R)
+		if(chemistry_service().chemical_reagents[R.id] == R)
 			return list(STATE_REGISTRY_REAGENT, R.id)
 	return null
 
@@ -372,7 +372,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		if(STATE_REGISTRY_SPECIES)
 			return GLOB.all_species[id]
 		if(STATE_REGISTRY_REAGENT)
-			return SSchemistry.chemical_reagents[id]
+			return chemistry_service().chemical_reagents[id]
 	return null
 
 // ---------------------------------------------------------------------------

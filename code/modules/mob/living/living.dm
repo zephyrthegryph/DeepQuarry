@@ -1395,7 +1395,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 	set desc = "Sets your voice style!"
 	set category = "OOC.Game Settings"
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Which set of sounds would you like to use for your character's speech sounds?", "title" = "Voice Sounds", "choices" = SSsounds.talk_sound_map, "on_cancel" = PROC_REF(voice_type_cleared)), PROC_REF(voice_type_chosen))
+	om_prompt(src, src, list("kind" = "list", "message" = "Which set of sounds would you like to use for your character's speech sounds?", "title" = "Voice Sounds", "choices" = sound_service().talk_sound_map, "on_cancel" = PROC_REF(voice_type_cleared)), PROC_REF(voice_type_chosen))
 
 /mob/living/proc/voice_type_cleared(mob/user, datum/om/prompt/ask)
 	voice_sounds_list = DEFAULT_TALK_SOUNDS

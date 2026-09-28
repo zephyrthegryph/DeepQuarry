@@ -355,6 +355,14 @@
 #define PERIODIC_INSTRUMENTS /datum/om/pipeline/periodic/continuous/instruments
 #define PERIODIC_STATUS_EFFECTS /datum/om/pipeline/periodic/continuous/status_effects
 #define PERIODIC_TAB_ITEMS /datum/om/pipeline/periodic/continuous/tab_items
+#define PERIODIC_THROWING /datum/om/pipeline/periodic/continuous/throwing
+#define PERIODIC_REFLECTORS /datum/om/pipeline/periodic/reflectors
+#define PERIODIC_LOOT_ICONS /datum/om/pipeline/periodic/loot_icons
+
+/// A lazy (data-only) world service, initialized on first use (code/datums/om/world_lanes.dm).
+/// `NAME` is its GLOB var. Each lazy service has a typed accessor proc built on this, e.g.
+/// chemistry_service().chemical_reagents.
+#define LAZY_SERVICE(NAME) (GLOB.NAME.initialized ? GLOB.NAME : GLOB.NAME.ready())
 
 // ---------------------------------------------------------------- published facts as change channels
 // What S2's reactor keys were is now plain change channels on the entity the fact belongs to;

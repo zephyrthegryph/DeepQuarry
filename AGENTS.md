@@ -395,6 +395,15 @@ accident or assume they work:
   the power step every `MACHINE_SERVICE_INTERVAL`, death reports and the Life profile every 2 s.
   Growing plants are `REGISTRY_GROWING_PLANTS`. A new world-level periodic is a world service with
   a lane, not a subsystem with `fire()`.
+  **Fold wave F3** removed `SSchemistry`, `SSradiation`, `SSinstruments`, `SSthrowing`, `SSsounds`,
+  `SSmotiontracker`, `SSreflector`, `SSpai`, `SScircuit`, `SSxenoarch`, `SSlooting`, `SSmail`,
+  `SSevents`. World lanes: radiation (0.5 s), motion tracker (1 s), pAI candidates (4 s), mail
+  (60 s). Lazy data services, built on first use through typed accessors (`LAZY_SERVICE()`):
+  `chemistry_service()`, `sound_service()`, `instrument_service()`, `circuit_service()`. SSatoms sets
+  up `GLOB.pai_service`, `GLOB.xenoarch_service` and `GLOB.event_service` once the map is loaded.
+  Per-object work is periodic: throws on `PERIODIC_THROWING` (every tick), reflectors on
+  `PERIODIC_REFLECTORS` (machine clock, started when they catch a beam), loot panels on
+  `PERIODIC_LOOT_ICONS`. Songs are `REGISTRY_SONGS`; running events are `REGISTRY_ACTIVE_EVENTS`.
 - **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
   `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
   (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed

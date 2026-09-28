@@ -1,10 +1,15 @@
-SUBSYSTEM_DEF(chemistry)
+// The chemistry world service (fold wave F3; was SSchemistry): the reagent and reaction tables.
+// It has no periodic work (reactions run on the holders), so it is a lazy service: the tables are
+// built on first use through chemistry_service(), not in a boot slot.
+GLOBAL_DATUM_INIT(chemistry_service, /datum/world_service/chemistry, new)
+
+/// The chemistry service, initialized on first use.
+/proc/chemistry_service() as /datum/world_service/chemistry
+	RETURN_TYPE(/datum/world_service/chemistry)
+	return LAZY_SERVICE(chemistry_service)
+
+/datum/world_service/chemistry
 	name = "Chemistry"
-	wait = 20
-	flags = SS_NO_FIRE
-	dependencies = list(
-		/datum/controller/subsystem/garbage
-	)
 
 	var/list/chemical_reactions = list()
 	var/list/chemical_reactions_by_product = list()
@@ -14,18 +19,14 @@ SUBSYSTEM_DEF(chemistry)
 //	var/list/fusion_reactions_by_reagent = list() // TODO: Fusion reactions as chemical reactions
 	var/list/chemical_reagents = list()
 
-/datum/controller/subsystem/chemistry/Recover()
-	chemical_reactions = SSchemistry.chemical_reactions
-	chemical_reagents = SSchemistry.chemical_reagents
-
-/datum/controller/subsystem/chemistry/Initialize()
+/datum/world_service/chemistry/initialize()
+	initialized = TRUE
 	initialize_chemical_reagents()
 	initialize_chemical_reactions()
-	return SS_INIT_SUCCESS
+	log_world("Chemistry service initialized: [length(chemical_reagents)] reagents, [length(chemical_reactions)] reactions.")
 
-/datum/controller/subsystem/chemistry/stat_entry(msg)
-	msg = "C: [length(chemical_reagents)] | R: [length(chemical_reactions)]"
-	return ..()
+/datum/world_service/chemistry/stat_line()
+	return "C: [length(chemical_reagents)] | R: [length(chemical_reactions)]"
 
 //Chemical Reactions - Initialises all /datum/decl/chemical_reaction into a list
 // It is filtered into multiple lists within a list.
@@ -33,7 +34,7 @@ SUBSYSTEM_DEF(chemistry)
 // chemical_reactions_by_reagent[REAGENT_ID_PHORON] is a list of all reactions relating to phoron
 // Note that entries in the list are NOT duplicated. So if a reaction pertains to
 // more than one chemical it will still only appear in only one of the sublists.
-/datum/controller/subsystem/chemistry/proc/initialize_chemical_reactions()
+/datum/world_service/chemistry/proc/initialize_chemical_reactions()
 	var/list/paths = GLOB.decls_repository.get_decls_of_subtype(/datum/decl/chemical_reaction)
 
 	for(var/path in paths)
@@ -70,7 +71,7 @@ SUBSYSTEM_DEF(chemistry)
 			add_to[reagent_id] |= D
 
 //Chemical Reagents - Initialises all /datum/reagent into a list indexed by reagent id
-/datum/controller/subsystem/chemistry/proc/initialize_chemical_reagents()
+/datum/world_service/chemistry/proc/initialize_chemical_reagents()
 	var/paths = subtypesof(/datum/reagent)
 	chemical_reagents = list()
 	for(var/path in paths)

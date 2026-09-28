@@ -1,13 +1,12 @@
-/// Event bookkeeping: the containers and the active and finished events. It schedules nothing:
-/// each active event and each container runs on the slow periodic lane (code/datums/om/periodic.dm).
-SUBSYSTEM_DEF(events)
-	name = "Events"
-	flags = SS_NO_FIRE
-	dependencies = list(
-		/datum/controller/subsystem/atoms
-	)
+// The event world service (fold wave F3; was SSevents): the event containers and the finished
+// events. It schedules nothing of its own: each active event and each container runs on the slow
+// periodic lane (code/datums/om/periodic.dm), and the running events are REGISTRY_ACTIVE_EVENTS.
+// SSatoms.Initialize() calls initialize() once the map is up (the subsystem's atoms dependency).
+GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
-	var/list/datum/event/active_events = list()
+/datum/world_service/events
+	name = "Events"
+
 	var/list/datum/event/finished_events = list()
 
 	var/list/datum/event/allEvents
@@ -15,7 +14,10 @@ SUBSYSTEM_DEF(events)
 
 	var/datum/event_meta/new_event = new
 
-/datum/controller/subsystem/events/Initialize()
+/datum/world_service/events/initialize()
+	if(initialized)
+		return
+	initialized = TRUE
 	allEvents = subtypesof(/datum/event)
 	event_containers = list(
 			/*EVENT_LEVEL_MUNDANE 	= */ new/datum/event_container/mundane,
@@ -27,20 +29,17 @@ SUBSYSTEM_DEF(events)
 	if(using_map.use_overmap)
 		if(using_map.overmap_z)
 			GLOB.overmap_event_handler.create_events(using_map.overmap_z, using_map.overmap_size, using_map.overmap_event_areas)
-	return SS_INIT_SUCCESS
+	log_world("Event service initialized: [length(allEvents)] event types, [length(event_containers)] containers started.")
 
-/datum/controller/subsystem/events/stat_entry(msg)
-	msg = "E:[length(active_events)]"
-	return ..()
+/datum/world_service/events/stat_line()
+	return "E:[REGISTRY_COUNT(REGISTRY_ACTIVE_EVENTS)]"
 
-/datum/controller/subsystem/events/Recover()
-	if(SSevents.active_events)
-		active_events |= SSevents.active_events
-	if(SSevents.finished_events)
-		finished_events |= SSevents.finished_events
+/// The events that are running now (a copy, safe to walk while events complete).
+/datum/world_service/events/proc/active_events()
+	return REGISTRY_COPY(REGISTRY_ACTIVE_EVENTS)
 
-/datum/controller/subsystem/events/proc/event_complete(datum/event/E)
-	active_events -= E
+/datum/world_service/events/proc/event_complete(datum/event/E)
+	registry_leave(REGISTRY_ACTIVE_EVENTS, E)
 	PERIODIC_STOP(E)
 
 	if(!E.event_meta || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
@@ -57,16 +56,16 @@ SUBSYSTEM_DEF(events)
 
 	log_game("Event '[EM.name]' has completed at [stationtime2text()].")
 
-/datum/controller/subsystem/events/proc/delay_events(severity, delay)
+/datum/world_service/events/proc/delay_events(severity, delay)
 	var/datum/event_container/EC = event_containers[severity]
 	EC.next_event_time += delay
 
-/datum/controller/subsystem/events/proc/RoundEnd()
+/datum/world_service/events/proc/RoundEnd()
 	if(!report_at_round_end)
 		return
 
 	to_chat(world, "<br><br><br>" + span_large(span_bold("Random Events This Round:")))
-	for(var/datum/event/E in active_events|finished_events)
+	for(var/datum/event/E in active_events() | finished_events)
 		var/datum/event_meta/EM = E.event_meta
 		if(EM.name == "Nothing")
 			continue

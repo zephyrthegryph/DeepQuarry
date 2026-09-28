@@ -6,7 +6,7 @@
 	. = ..()
 	PERIODIC_START(src, PERIODIC_SLOW)
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
-		var/new_chem = pick(SSchemistry.chemical_reagents)
+		var/new_chem = pick(chemistry_service().chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
 			continue
 		else

@@ -4,13 +4,12 @@ SUBSYSTEM_DEF(mapping)
 	//dependencies = list(
 	//	/datum/controller/subsystem/job,
 		///datum/controller/subsystem/processing/station,
-	//	/datum/controller/subsystem/chemistry
 	//	///datum/controller/subsystem/processing/reagents
 	//)
 	dependencies = list(
-		///datum/controller/subsystem/garbage,
-		/datum/controller/subsystem/vis_overlays,
-		/datum/controller/subsystem/chemistry
+		/datum/controller/subsystem/garbage, // was transitive through chemistry
+		// Chemistry was a dependency; it is a lazy world service now (chemistry_service()).
+		/datum/controller/subsystem/vis_overlays
 	)
 	flags = SS_NO_FIRE
 

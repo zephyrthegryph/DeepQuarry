@@ -479,8 +479,8 @@
 
 	//delay events in case of an autotransfer
 	if (isnull(user))
-		SSevents.delay_events(EVENT_LEVEL_MODERATE, 9000) //15 minutes
-		SSevents.delay_events(EVENT_LEVEL_MAJOR, 9000)
+		GLOB.event_service.delay_events(EVENT_LEVEL_MODERATE, 9000) //15 minutes
+		GLOB.event_service.delay_events(EVENT_LEVEL_MAJOR, 9000)
 
 	log_game("[user? key_name(user) : "Autotransfer"] has called the shuttle.")
 	message_admins("[user? key_name_admin(user) : "Autotransfer"] has called the shuttle.", 1)

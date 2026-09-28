@@ -51,15 +51,15 @@
 	return "rarely present"
 
 /proc/dq_reagent_display_name(reagent_id)
-	if(!SSchemistry?.chemical_reagents)
+	if(!chemistry_service().chemical_reagents)
 		return reagent_id
-	var/datum/reagent/R = SSchemistry.chemical_reagents[reagent_id]
+	var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
 	if(R?.name)
 		return R.name
 	return reagent_id
 
 /proc/dq_reagent_description(reagent_id)
-	if(!SSchemistry?.chemical_reagents)
+	if(!chemistry_service().chemical_reagents)
 		return ""
-	var/datum/reagent/R = SSchemistry.chemical_reagents[reagent_id]
+	var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
 	return R?.description || ""

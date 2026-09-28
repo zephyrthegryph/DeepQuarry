@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 2562 vars in 1159 files.
+# Total: 2568 vars in 1162 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -66,7 +66,6 @@ code/controllers/subsystems/dbcore.dm 2
 code/controllers/subsystems/internal_wiki.dm 1
 code/controllers/subsystems/supply.dm 1
 code/controllers/subsystems/tgui.dm 2
-code/controllers/subsystems/throwing.dm 4
 code/controllers/subsystems/transcore.dm 4
 code/datums/EPv2.dm 1
 code/datums/ai_laws.dm 6
@@ -153,6 +152,7 @@ code/datums/rules/rule.dm 5
 code/datums/soul_link.dm 2
 code/datums/status_effects/_status_effect.dm 1
 code/datums/status_effects/debuffs/fire_stacks.dm 2
+code/datums/thrownthing.dm 4
 code/datums/uplink/uplink_categories.dm 1
 code/datums/uplink/uplink_items.dm 4
 code/datums/wires/wires.dm 1
@@ -625,6 +625,7 @@ code/modules/events/electrified_door.dm 1
 code/modules/events/event.dm 3
 code/modules/events/event_container.dm 1
 code/modules/events/event_manager.dm 1
+code/modules/events/event_service.dm 3
 code/modules/events/meteor_strike.dm 1
 code/modules/events/money_hacker.dm 1
 code/modules/events/money_spam.dm 2
@@ -688,6 +689,7 @@ code/modules/hydroponics/trays/tray.dm 8
 code/modules/hydroponics/trays/tray_tools.dm 1
 code/modules/identification/identification.dm 1
 code/modules/instruments/instrument_data/_instrument_data.dm 1
+code/modules/instruments/instrument_service.dm 1
 code/modules/instruments/items.dm 1
 code/modules/instruments/songs/_song.dm 3
 code/modules/instruments/stationary.dm 1
@@ -1007,6 +1009,7 @@ code/modules/projectiles/projectile/hook.dm 1
 code/modules/projectiles/projectile/special.dm 1
 code/modules/projectiles/projectile_effects.dm 1
 code/modules/projectiles/targeting/targeting_overlay.dm 3
+code/modules/radiation/radiation_service.dm 2
 code/modules/random_map/drop/supply.dm 1
 code/modules/reagents/Chemistry-Metabolism.dm 1
 code/modules/reagents/holder/holder.dm 1

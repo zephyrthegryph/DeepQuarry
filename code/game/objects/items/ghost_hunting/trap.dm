@@ -235,7 +235,7 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 
 	if(deployed)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src]!"))
-		SSmotiontracker.ping(src,100) // Clunk!
+		GLOB.motiontracker_service.ping(src,100) // Clunk!
 		catch_ghost(passing_entity)
 		deployed = FALSE
 		anchored = FALSE

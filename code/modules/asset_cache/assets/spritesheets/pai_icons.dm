@@ -2,7 +2,7 @@
 	name = "pai_icons"
 
 /datum/asset/spritesheet_batched/pai_icons/create_spritesheets()
-	for(var/name, current_sprite in SSpai.get_chassis_list())
+	for(var/name, current_sprite in GLOB.pai_service.get_chassis_list())
 		var/datum/pai_sprite/sprite = current_sprite
 		if(!sprite.name || !sprite.sprite_icon_state)
 			continue

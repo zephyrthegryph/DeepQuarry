@@ -278,7 +278,7 @@ REF_PAIR(/obj/machinery/bodyscanner, list("console" = "scanner"))
 	for(var/addic in occupant.get_all_addictions())
 		var/level = occupant.get_addiction_to_reagent(addic)
 		if(level > 0 && level < 80)
-			var/datum/reagent/R = SSchemistry.chemical_reagents[addic]
+			var/datum/reagent/R = chemistry_service().chemical_reagents[addic]
 			dat += span_red("Experiencing withdrawal symptoms: [R.name]")
 			break
 	return dat.Join("<br>")

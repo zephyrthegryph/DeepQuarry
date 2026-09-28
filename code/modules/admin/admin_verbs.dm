@@ -535,8 +535,8 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 	GLOB.ghostnet.removeArea(target_area)
 
 ADMIN_VERB(hide_motion_tracker_feedback, R_ADMIN|R_EVENT, "Toggle Motion Echos", "Hides or reveals motion tracker echos globally.", ADMIN_CATEGORY_EVENTS)
-	SSmotiontracker.hide_all = !SSmotiontracker.hide_all
-	log_admin("[key_name(user)] changed the motion echo visibility to [SSmotiontracker.hide_all ? "hidden" : "visible"].")
+	GLOB.motiontracker_service.hide_all = !GLOB.motiontracker_service.hide_all
+	log_admin("[key_name(user)] changed the motion echo visibility to [GLOB.motiontracker_service.hide_all ? "hidden" : "visible"].")
 
 ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around something else.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/center

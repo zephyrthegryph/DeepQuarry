@@ -20,13 +20,6 @@
 	maximum_volume = max
 	my_atom = A
 
-	// Map-objects can be initialised before SSchemistry.Initialize() runs during world/New().
-	// If that happens, trigger the reagent registry init exactly once here rather than duplicating
-	// the full subtypesof scan inline — the proc is idempotent and SSchemistry.Initialize() will
-	// call it again when it runs, which is correct (Recover() also re-sets the list).
-	if(!length(SSchemistry.chemical_reagents))
-		SSchemistry.initialize_chemical_reagents()
-
 REF_OWNED_LIST(/datum/reagents, "reagent_list")
 
 // LIFECYCLE: its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
@@ -95,10 +88,10 @@ REF_OWNED_LIST(/datum/reagents, "reagent_list")
 /datum/reagents/proc/get_temperature()
 	return my_atom ? my_atom.get_temperature() : T20C
 
-/// Returns the SSchemistry reaction lookup list used by handle_reactions().
+/// Returns the chemistry service reaction lookup list used by handle_reactions().
 /// Subtypes override this to select a different reaction bucket (e.g. distilled_reactions_by_reagent).
 /datum/reagents/proc/get_reaction_lookup()
-	return SSchemistry.instant_reactions_by_reagent
+	return chemistry_service().instant_reactions_by_reagent
 
 /// Returns TRUE if this holder type tracks and passes belly-reagent state when processing reactions.
 /// Distilling holders override this to return FALSE.
@@ -174,7 +167,7 @@ REF_OWNED_LIST(/datum/reagents, "reagent_list")
 			my_atom.on_reagent_change()
 		return 1
 
-	var/datum/reagent/D = SSchemistry.chemical_reagents[id]
+	var/datum/reagent/D = chemistry_service().chemical_reagents[id]
 	if(D)
 		var/datum/reagent/R = new D.type()
 		own_reagent_lists()

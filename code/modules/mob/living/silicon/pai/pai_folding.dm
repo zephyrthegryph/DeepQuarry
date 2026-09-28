@@ -138,7 +138,7 @@
 
 	canmove = 1
 	resting = 0
-	icon_state = SSpai.chassis_data(chassis_name).sprite_icon_state
+	icon_state = GLOB.pai_service.chassis_data(chassis_name).sprite_icon_state
 	if(isopenspace(card.loc))
 		fall()
 	remove_verb(src, /mob/living/silicon/pai/proc/pai_nom)

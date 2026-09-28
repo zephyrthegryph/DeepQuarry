@@ -88,17 +88,17 @@
 /datum/preference/text/pai_chassis/create_default_value()
 	return PAI_DEFAULT_CHASSIS
 
-// dropdown of available pAI chassis keys. SSpai.get_chassis_list() returns the
+// dropdown of available pAI chassis keys. GLOB.pai_service.get_chassis_list() returns the
 // full list (assoc name -> /datum/pai_sprite); we expose all of them since pref-time has
 // no card/emag context.
 /datum/preference/text/pai_chassis/get_pref_choices(datum/preferences/preferences)
-	var/list/chassis = SSpai?.get_chassis_list()
+	var/list/chassis = GLOB.pai_service.get_chassis_list()
 	if(!chassis)
 		return null
 	return assoc_to_keys(chassis)
 
 /datum/preference/text/pai_chassis/is_valid(value)
-	if(!(value in SSpai.get_chassis_list()) && value != PAI_DEFAULT_CHASSIS)
+	if(!(value in GLOB.pai_service.get_chassis_list()) && value != PAI_DEFAULT_CHASSIS)
 		return FALSE
 	. = ..()
 

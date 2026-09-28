@@ -44,9 +44,9 @@
 
 /// Try and irradiate them. If we chance fail, we come back harder
 /datum/component/radioactive_exposure/proc/attempt_irradiate()
-	if(!SSradiation.wearing_rad_protected_clothing(parent) && SSradiation.can_irradiate_basic(parent))
+	if(!GLOB.radiation_service.wearing_rad_protected_clothing(parent) && GLOB.radiation_service.can_irradiate_basic(parent))
 		if(prob(irradiation_chance))
-			SSradiation.irradiate(parent)
+			GLOB.radiation_service.irradiate(parent)
 			var/atom/atom = parent
 			atom.investigate_log("was irradiated by [source].", INVESTIGATE_RADIATION)
 		else

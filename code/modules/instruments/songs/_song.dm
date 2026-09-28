@@ -70,7 +70,7 @@
 	var/current_chord
 	/// Channel as text = current volume percentage but it's 0 to 100 instead of 0 to 1.
 	var/list/channels_playing
-	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from SSsounds/SSinstruments.
+	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from the sound and instrument services.
 	var/list/channels_idle
 	/// Who or what's playing us
 	var/atom/music_player
@@ -121,7 +121,7 @@
 	/////////////////////////////////////////////////////////////////////////
 
 /datum/song/New(atom/parent, list/instrument_ids, new_range)
-	SSinstruments.on_song_new(src)
+	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
 	lines = list()
 	tempo = sanitize_tempo(tempo, TRUE)
 	src.parent = parent
@@ -138,7 +138,6 @@
 // LIFECYCLE: stops playing and leaves its instrument.
 /datum/song/Destroy()
 	stop_playing()
-	SSinstruments.on_song_del(src)
 	lines = null
 	if(using_instrument)
 		LAZYREMOVE(using_instrument.songs_using, src)
@@ -179,7 +178,7 @@
 	cached_legacy_dir = null
 	legacy = null
 	if(istext(I) || ispath(I))
-		I = SSinstruments.instrument_data[I]
+		I = instrument_service().instrument_data[I]
 	if(istype(I))
 		using_instrument = I
 		LAZYADD(I.songs_using, src)
@@ -224,8 +223,10 @@
 /**
  * Attempts to find other instruments with the same ID and syncs them to our song.
  */
+REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
+
 /datum/song/proc/sync_play()
-	for(var/datum/song/other_instrument as anything in SSinstruments.songs)
+	for(var/datum/song/other_instrument as anything in REGISTRY_MEMBERS(REGISTRY_SONGS))
 		if(other_instrument == src || other_instrument.id != id)
 			continue
 		if(other_instrument.playing)

@@ -1,43 +1,9 @@
 #define MAX_THROWING_DIST 1280 // 5 z-levels on default width
 #define MAX_TICKS_TO_MAKE_UP 3 //how many missed ticks will we attempt to make up for this run.
 
-SUBSYSTEM_DEF(throwing)
-	name = "Throwing"
-	priority = FIRE_PRIORITY_THROWING
-	wait = 1
-	flags = SS_NO_INIT|SS_KEEP_TIMING|SS_TICKER
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-
-	var/list/currentrun
-	var/list/processing = list()
-
-/datum/controller/subsystem/throwing/stat_entry(msg)
-	msg = "P:[length(processing)]"
-	return ..()
-
-/datum/controller/subsystem/throwing/fire(resumed = 0)
-	if (!resumed)
-		src.currentrun = processing.Copy()
-
-	//cache for sanic speed (lists are references anyways)
-	var/list/currentrun = src.currentrun
-
-	while(length(currentrun))
-		var/atom/movable/AM = currentrun[length(currentrun)]
-		var/datum/thrownthing/TT = currentrun[AM]
-		currentrun.len--
-		if (QDELETED(AM) || QDELETED(TT))
-			processing -= AM
-			if (MC_TICK_CHECK)
-				return
-			continue
-
-		TT.tick()
-
-		if (MC_TICK_CHECK)
-			return
-
-	currentrun = null
+// A throw in flight (fold wave F3; SSthrowing is gone). Each /datum/thrownthing runs on the
+// continuous throwing lane (PERIODIC_THROWING, code/datums/om/periodic.dm): throw_at() starts it,
+// periodic_step() moves it once per server tick, and it parks when it lands (finalize() deletes it).
 
 /datum/thrownthing
 	///Defines the atom that has been thrown (Objects and Mobs, mostly.)
@@ -133,14 +99,21 @@ SUBSYSTEM_DEF(throwing)
 
 	start_time = world.time
 
-/// Phase 2: the throw leaves SSthrowing's run (keyed by the thrown movable).
+/// Phase 2: the throw leaves the throwing lane.
 /datum/thrownthing/lifecycle_dematerialize()
 	. = ..()
+	PERIODIC_STOP(src)
 	if(thrownthing)
-		SSthrowing.processing -= thrownthing
-		SSthrowing.currentrun -= thrownthing
 		if(thrownthing.throwing == src)
 			thrownthing.throwing = null
+
+/// One server tick of flight on the throwing lane (was SSthrowing.fire()).
+/datum/thrownthing/periodic_step(delta)
+	if(QDELETED(src) || QDELETED(thrownthing))
+		return PROCESS_KILL
+	tick()
+	if(QDELETED(src))
+		return PROCESS_KILL
 
 ///Defines the datum behavior on the thrownthing's qdeletion event.
 /datum/thrownthing/proc/on_thrownthing_qdel(atom/movable/source, force)
@@ -174,7 +147,7 @@ SUBSYSTEM_DEF(throwing)
 	last_move = world.time
 
 	//calculate how many tiles to move, making up for any missed ticks.
-	var/tilestomove = CEILING(min(((((world.time+world.tick_lag) - start_time + delayed_time) * speed) - (dist_travelled ? dist_travelled : -1)), speed*MAX_TICKS_TO_MAKE_UP) * (world.tick_lag * SSthrowing.wait), 1)
+	var/tilestomove = CEILING(min(((((world.time+world.tick_lag) - start_time + delayed_time) * speed) - (dist_travelled ? dist_travelled : -1)), speed*MAX_TICKS_TO_MAKE_UP) * world.tick_lag, 1) // one lane step per server tick (SSthrowing.wait was 1 tick)
 	while (tilestomove-- > 0)
 		if ((dist_travelled >= maxrange || AM.loc == target_turf) && (A && A.get_gravity()))
 			finalize()
