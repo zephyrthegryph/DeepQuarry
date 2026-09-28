@@ -169,7 +169,7 @@
 	//Move the objects. Not forceMove because the object isn't "moving" really, it's supposed to be on the "same" turf.
 	for(var/obj/O in turf_contents_of_type(T, /obj))
 		if(O.simulated)
-			O.loc = X
+			O.forceMove(X)
 			if(O.light_system == STATIC_LIGHT)
 				O.update_light()
 			if(z_level_change) // The objects still need to know if their z-level changed.
@@ -178,7 +178,7 @@
 	//Move the mobs unless it's an AI eye or other eye type.
 	for(var/mob/M in turf_contents_of_type(T, /mob))
 		if(isEye(M)) continue // If we need to check for more mobs, I'll add a variable
-		M.loc = X
+		M.forceMove(X)
 
 		if(z_level_change) // Same goes for mobs.
 			M.onTransitZ(T.z, X.z)
