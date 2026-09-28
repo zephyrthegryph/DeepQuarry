@@ -22,6 +22,7 @@
 //   /datum/om/prompt/choice     choice: one of `choices` (a list, or alert buttons with buttons = TRUE)
 //   /datum/om/prompt/text       text (sanitised by the tgui input unless encode = FALSE)
 //   /datum/om/prompt/number     number, within min/max
+//   /datum/om/prompt/color      picked_color ("#rrggbb")
 //   /datum/om/prompt/checklist  picked: the ticked `choices`
 //
 // Roles: the answerer sees the window; the asker started it (default: the answerer, or the
@@ -53,7 +54,12 @@
 	var/timeout = 0
 	/// The proc called with the prompt when no on_answer is passed to om_ask().
 	var/answer_proc
+	/// The answer a cancel, a closed window or a timeout gives instead (re-checked like any
+	/// answer). Null: a cancel calls cancelled().
+	var/cancel_answer
 	// ---- roles (held as handles while open)
+	/// Who sees the window.
+	var/mob/answerer
 	var/mob/asker
 	var/datum/subject
 	// ---- run state
@@ -69,7 +75,8 @@
 /datum/om/prompt/proc/prepare()
 	return TRUE
 
-/// The type's own re-check when the answer arrives: null, or the reason to drop the answer.
+/// The type's own re-check when the answer arrives (the answer var is already set): null, or
+/// the reason to drop the answer.
 /datum/om/prompt/proc/valid()
 	return null
 
@@ -91,7 +98,9 @@
 
 /// The spec om_prompt_show() reads, from the typed vars.
 /datum/om/prompt/proc/build_spec()
-	return list("kind" = kind_name, "title" = title, "message" = message, "timeout" = timeout)
+	. = list("kind" = kind_name, "title" = title, "message" = message, "timeout" = timeout)
+	if(!isnull(cancel_answer))
+		.["cancel_answer"] = cancel_answer
 
 // ---------------------------------------------------------------- kinds
 
@@ -174,6 +183,20 @@
 	number = answer
 	return TRUE
 
+/datum/om/prompt/color
+	kind_name = "color"
+	var/default = "#000000"
+	/// The answer: "#rrggbb".
+	var/picked_color
+
+/datum/om/prompt/color/build_spec()
+	. = ..()
+	.["default"] = default
+
+/datum/om/prompt/color/take_answer(answer)
+	picked_color = answer
+	return TRUE
+
 /datum/om/prompt/checklist
 	kind_name = "checkboxes"
 	var/list/choices
@@ -222,6 +245,7 @@
 			P.asker = F.actor
 		if(isnull(P.subject))
 			P.subject = F.target
+	P.answerer = answerer
 	if(isnull(P.asker))
 		P.asker = answerer
 	if(isnull(P.subject) && isatom(receiver))
@@ -234,7 +258,7 @@
 	spec["on_refused"] = /proc/om_ask_refused
 	if(P.flow && !P.flow.park())
 		return null
-	var/list/names = om_state_var_names(P, /datum/om/prompt, list("asker", "subject"))
+	var/list/names = om_state_var_names(P, /datum/om/prompt, list("answerer", "asker", "subject"))
 	P.parked = om_park_state(P, names)
 	if(isnull(P.parked))
 		P.flow?.stop("gone")
@@ -288,10 +312,8 @@
 
 // ---------------------------------------------------------------- continuations (om_prompt plumbing)
 
+/// The answer passed its re-checks (take_answer() already stored it, so valid() could read it).
 /proc/om_ask_answered(datum/E, mob/user, answer, datum/om/prompt/P)
-	if(!P.take_answer(answer))
-		P.declined()
-		return
 	var/proc_ref = P.answer_ref
 	if(P.flow)
 		P.flow.resume(proc_ref, P)

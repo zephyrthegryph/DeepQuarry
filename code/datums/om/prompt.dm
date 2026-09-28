@@ -358,6 +358,10 @@
 		var/datum/answered_datum = answer
 		if(QDELETED(answered_datum))
 			return "gone"
+	if(P.kind_name && !P.take_answer(answer))
+		// A typed prompt answered no (confirm): nothing to re-check.
+		P.declined()
+		return "declined"
 	var/reason = om_prompt_recheck(P, E, user)
 	if(!isnull(reason))
 		if((reason != "gone" || P.kind_name) && P.spec["on_refused"])

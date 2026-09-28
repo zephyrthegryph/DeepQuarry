@@ -245,14 +245,19 @@
 		return
 
 	if(avatar)
-		om_prompt(src, avatar, list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(leave_vr_answered))
+		om_ask(avatar, /datum/om/prompt/confirm/leave_vr, PROC_REF(perform_exit))
 		return
 
 	perform_exit()
 
-/obj/machinery/vr_sleeper/proc/leave_vr_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && user == avatar)
-		perform_exit()
+/// The avatar is asked to leave. Re-checked on the answer: they are still this pod's avatar.
+/datum/om/prompt/confirm/leave_vr
+	title = "Leave VR?"
+	message = "Someone wants to remove you from virtual reality. Do you want to leave?"
+
+/datum/om/prompt/confirm/leave_vr/valid()
+	var/obj/machinery/vr_sleeper/pod = subject
+	return pod.avatar == answerer ? null : "not the avatar"
 
 //The actual bulk of the exit code.
 /obj/machinery/vr_sleeper/proc/perform_exit()
@@ -295,12 +300,19 @@
 	avatar = occupant.vr_link
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar)
-		om_prompt(src, occupant, list("message" = "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", "title" = "New avatar", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(vr_reuse_answered))
+		om_ask(occupant, /datum/om/prompt/confirm/vr_reuse, PROC_REF(vr_reuse_answered), message = "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?")
 		return
 	vr_choose_avatar(occupant)
 
-/obj/machinery/vr_sleeper/proc/vr_reuse_answered(mob/living/carbon/human/occupant, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && avatar)
+/// Re-checked on the answer: the occupant is still inside the pod.
+/datum/om/prompt/confirm/vr_reuse
+	title = "New avatar"
+	answer_on_no = TRUE
+	requires = list(/datum/om/check/inside_target)
+
+/obj/machinery/vr_sleeper/proc/vr_reuse_answered(datum/om/prompt/confirm/vr_reuse/ask)
+	var/mob/living/carbon/human/occupant = ask.answerer
+	if(ask.yes && avatar)
 		vr_reenter(occupant)
 		return
 	// Delink the mob

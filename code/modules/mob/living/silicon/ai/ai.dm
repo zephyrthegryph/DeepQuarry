@@ -401,13 +401,17 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	om_prompt(src, src, list("message" = "Are you sure you want to call the shuttle?", "title" = "Confirm Shuttle Call", "choices" = list("Yes", "No")), PROC_REF(ai_call_shuttle_confirmed))
+	om_ask(src, /datum/om/prompt/confirm/ai_command, PROC_REF(ai_call_shuttle_confirmed), title = "Confirm Shuttle Call", message = "Are you sure you want to call the shuttle?", answer_on_no = TRUE)
 
-/mob/living/silicon/ai/proc/ai_call_shuttle_confirmed(mob/user, confirm, datum/om/prompt/ask)
-	if(check_unable(AI_CHECK_WIRELESS))
-		return
+/// An AI station command's "are you sure?". Re-checked on the answer: the AI still has wireless.
+/datum/om/prompt/confirm/ai_command
 
-	if(confirm == "Yes")
+/datum/om/prompt/confirm/ai_command/valid()
+	var/mob/living/silicon/ai/AI = answerer
+	return AI.check_unable(AI_CHECK_WIRELESS) ? "no wireless" : null
+
+/mob/living/silicon/ai/proc/ai_call_shuttle_confirmed(datum/om/prompt/confirm/ai_command/ask)
+	if(ask.yes)
 		call_shuttle_proc(src)
 
 	// hack to display shuttle timer
@@ -421,14 +425,10 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	om_prompt(src, src, list("message" = "Are you sure you want to recall the shuttle?", "title" = "Confirm Shuttle Recall", "choices" = list("Yes", "No")), PROC_REF(ai_recall_shuttle_confirmed))
+	om_ask(src, /datum/om/prompt/confirm/ai_command, PROC_REF(ai_recall_shuttle_confirmed), title = "Confirm Shuttle Recall", message = "Are you sure you want to recall the shuttle?")
 
-/mob/living/silicon/ai/proc/ai_recall_shuttle_confirmed(mob/user, confirm, datum/om/prompt/ask)
-	if(check_unable(AI_CHECK_WIRELESS))
-		return
-
-	if(confirm == "Yes")
-		cancel_call_proc(src)
+/mob/living/silicon/ai/proc/ai_recall_shuttle_confirmed(datum/om/prompt/confirm/ai_command/ask)
+	cancel_call_proc(src)
 
 /mob/living/silicon/ai/var/emergency_message_cooldown = 0
 
