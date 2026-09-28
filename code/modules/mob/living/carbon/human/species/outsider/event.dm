@@ -202,6 +202,10 @@ Variables you may want to make use of are:
 
 /datum/species/event1/proc/toggle_pain()
 	flags ^= NO_PAIN
+	// The flag feeds BF_PAIN_IMMUNITY: refresh the factors of every body wearing this species.
+	for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_HUMANS))
+		if(H.species == src)
+			H.body?.invalidate(BODY_DIRTY_FACTORS)
 
 /datum/species/event1/proc/toggle_embedding()
 	flags ^= NO_EMBED

@@ -207,7 +207,7 @@
 
 	attacker.visible_message(span_danger("[attacker] [pick("bent", "twisted")] [target]'s [organ.name] into a jointlock!"))
 
-	if(target.species.flags & NO_PAIN)
+	if(!target.can_feel_pain(organ))
 		return
 
 	var/armor = target.armor_against(INJURY_PAIN)
