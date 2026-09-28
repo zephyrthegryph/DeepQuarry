@@ -49,7 +49,7 @@
 	var/cooldown //Anti-spam. If spammed, this can be REALLY laggy.
 
 /datum/tgui_module/appearance_changer/New(
-		host(),
+		host,
 		mob/living/carbon/human/H,
 		check_species_whitelist = 1,
 		list/species_whitelist = list(),
