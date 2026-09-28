@@ -139,6 +139,40 @@ init and the first frames. The unmeasured part is SSair init (14.8 s:
 pipenets, machinery, heat bodies), and it needs `RUST_ALLOC_PROFILE` marks
 around its stages to find out what allocates there.
 
+### 0.2b Phase 4 on the live map (2026-09-28, `rewrite/k-boot`)
+
+Southern Cross bench boots (`bench -DCITESTING_FULL_MAP --scenario=boot_profile`),
+one boot each on a quiet machine. The base is integrate/b7 (7c907512ab) with
+its prebuilt DLL; "after" is `rewrite/k-boot` with the 4b DLL.
+
+| | Base | After (2 boots) |
+|---|---|---|
+| Init total | 65.6 s | 59.8 s, 55.9 s |
+| Atoms | 47.2 s | 41.1 s, 37.5 s |
+| Atmospherics | 8.9 s | 9.0 s, 8.5 s |
+| Lighting | 4.0 s | 3.9 s, 4.1 s |
+| Rust heap peak | **403 MB** | **176 MB**, 176 MB |
+| Rust heap steady | 189 MB | 151 MB |
+| DreamDaemon private, booted | ~1,550 MB | 1,440-1,540 MB |
+
+Two earlier base boots taken while two Rust/DM builds ran on the machine gave
+110 s and 85 s, so treat single-boot timings as ฑ5 s.
+
+`benchmark_rust_mark()` now also logs `BENCH_RUST_MARK` lines, and SSair marks
+its turf visuals step and its first eight fires, so a boot keeps its memory
+marks even when the scenario never starts. After-boot marks: 70 MB after Atoms,
+137 MB after `air: turfs registered` (+67 MB: the uniform-chunk sharing
+that took the vg-ffi test's registration from 64 to 15 MB does not show up
+here yet), 153 MB peak after pipenets, 168 MB at round start, then 118-126 MB
+over the first fires.
+
+**Measuring caveat.** On this tree the bench scenario never starts on the full
+map: after round start the latency sweep keeps hitting a runtime in
+`state_count_refs_in` (a recharge station's circuit board) and the test-build
+reference finder spends its whole 323 s budget on it, while atmos uses ~125 ms
+a tick. The numbers above come from the boot log (`Initialized ... within`,
+`RUST_ALLOC_PROFILE`, `BENCH_RUST_MARK`) and `data/bench/process.json`.
+
 ### 0.3 DM memory census (boot_memory, sampled)
 
 809,798 instances: 393,216 turfs, 85,819 objs, 321,633 datums. The per-type
@@ -729,6 +763,22 @@ burnt, decal set).
 
 ### 3.6 Ratchet lint on Initialize overrides
 
+**Built (k-boot):** `tools/ci/init_lint.py`, run by `check_ratchets.sh`, with
+ceilings in `tools/ci/init_baseline.txt`: `initialize` (3,325 overrides),
+`late_initialize` (95), `unreasoned` (overrides without `// INIT: <reason>`,
+3,420), `world_reads` (`range(`/`orange(`/`view(`/`GetAbove`/`GetBelow`/`GLOB.`/
+`START_PROCESSING` inside an `Initialize()` body, 312) and
+`turf_on_materialize` (0). All may fall, never rise. The first type table is
+`atom_type_table()` (`code/game/atom/atom_type_table.dm`): one cached row per
+type saying whether materialize must join registries, subscribe rules or start
+OM. `on_materialize()`/`on_dematerialize()` read it, and `InitAtom()` flags a
+turf whose row needs none of the three as materialized without the call chain
+(hence the zero ceiling on turf `on_materialize()` overrides). Space turfs pick
+their dust appearance from a flat index and share one immutable-air lookup;
+`/turf/Initialize` checks multi-z neighbours without `GetAbove`/`GetBelow`.
+Not done: skipping `Initialize()` altogether for no-state types, the per-type
+appearance cache (ง3.5), and the air template / material facts as table data.
+
 `tools/ci/check_grep.sh` gets a count of `/Initialize(` overrides (and
 separately of `/LateInitialize(`), with the baseline in the ratchet file.
 New overrides must carry `// INIT: <reason>` naming the per-instance state
@@ -765,6 +815,13 @@ its cached appearance (ยง3.5). Today each wall re-smooths its neighbours
 (17,279 `update_connections` for 7,261 walls at boot). The explosion subsystem
 already does this for appearances (`deferred_appearance_updates`); the same
 deferral belongs in the map loader and in `ChangeTurf` under any batch.
+
+**Built for walls (k-boot):** inside `SSatoms.InitializeAtoms()` a wall's
+`update_material()` and integrity change queue it in
+`SSatoms.deferred_wall_smoothing` instead of smoothing it and its neighbours;
+`flush_wall_smoothing()` smooths each queued wall and its wall neighbours once
+after the batch's atoms are initialized, before `LateInitialize()`. Windows,
+low walls, tables and catwalks still propagate per object.
 
 ### 4.3 One Rust field write per batch
 
