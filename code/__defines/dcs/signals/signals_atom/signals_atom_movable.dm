@@ -9,8 +9,6 @@
 	#define COMPONENT_MOVABLE_BLOCK_PRE_MOVE (1<<0)
 ///from base of atom/movable/Moved(): (atom/old_loc, dir, forced, list/old_locs)
 #define COMSIG_MOVABLE_MOVED "movable_moved"
-///from base of atom/movable/Cross(): (/atom/movable)
-#define COMSIG_MOVABLE_CROSS "movable_cross"
 	#define COMPONENT_BLOCK_CROSS (1<<0)
 ///from base of atom/movable/Bump(): (/atom)
 #define COMSIG_MOVABLE_BUMP "movable_bump"

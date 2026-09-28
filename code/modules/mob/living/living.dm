@@ -1163,7 +1163,7 @@
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	AddElement(/datum/element/spontaneous_vore)
+	om_attach(src, /datum/om/behaviour/spontaneous_vore)
 
 	deaf_loop = new(list(src), FALSE)
 	firesoundloop = new(list(src), FALSE)

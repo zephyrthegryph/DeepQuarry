@@ -1,29 +1,25 @@
-/datum/element/spontaneous_vore
-	/// Automatically call Detach() when the host mob is qdel'd, so signal
-	/// registrations are explicitly cleaned up rather than relying on implicit GC.
-	element_flags = ELEMENT_DETACH_ON_HOST_DESTROY
+/// Spontaneous vore (stumble/drop/throw/slip vore; was /datum/element/spontaneous_vore).
+/// A shared behaviour singleton handling synchronous before/ events: returning EVENT_VETO
+/// cancels the stumble, fall, hit or cross. Each handler checks the mob's preference flags.
+/// Attach with om_attach(L, /datum/om/behaviour/spontaneous_vore) (idempotent).
+/datum/om/behaviour/spontaneous_vore
+	handles = list(/datum/om/event/before/stumbled_into, /datum/om/event/before/falling_down, /datum/om/event/before/hit_by_thrown, /datum/om/event/before/cross)
 
-/datum/element/spontaneous_vore/Attach(datum/target)
-	. = ..()
-	if(!isliving(target))
-		return ELEMENT_INCOMPATIBLE
-	// override = TRUE: init_vore() (and thus AddElement) can run more than once
-	// on the same mob (admin effects, AI retargeting, species changes), so the
-	// element may re-attach to a mob that already has these handlers. Re-pointing
-	// to the same proc is idempotent and avoids spurious "overridden" runtimes.
-	RegisterSignal(target, COMSIG_LIVING_STUMBLED_INTO, PROC_REF(handle_stumble), override = TRUE)
-	RegisterSignal(target, COMSIG_LIVING_FALLING_DOWN, PROC_REF(handle_fall), override = TRUE)
-	RegisterSignal(target, COMSIG_LIVING_HIT_BY_THROWN_ENTITY, PROC_REF(handle_hitby), override = TRUE)
-	RegisterSignal(target, COMSIG_MOVABLE_CROSS, PROC_REF(handle_crossed), override = TRUE)
+/datum/om/behaviour/spontaneous_vore/on_before_stumbled_into(mob/living/source, datum/om/event/before/stumbled_into/event)
+	return handle_stumble(source, event.bumper) ? EVENT_VETO : null
 
-/datum/element/spontaneous_vore/Detach(datum/target)
-	. = ..()
-	UnregisterSignal(target, list(COMSIG_LIVING_STUMBLED_INTO, COMSIG_LIVING_FALLING_DOWN, COMSIG_LIVING_HIT_BY_THROWN_ENTITY, COMSIG_MOVABLE_CROSS))
+/datum/om/behaviour/spontaneous_vore/on_before_falling_down(mob/living/source, datum/om/event/before/falling_down/event)
+	return handle_fall(source, event.landing, event.drop_mob) ? EVENT_VETO : null
+
+/datum/om/behaviour/spontaneous_vore/on_before_hit_by_thrown(mob/living/source, datum/om/event/before/hit_by_thrown/event)
+	return handle_hitby(source, event.hitby, event.thrower, event.speed) ? EVENT_VETO : null
+
+/datum/om/behaviour/spontaneous_vore/on_before_cross(mob/living/source, datum/om/event/before/cross/event)
+	return handle_crossed(source, event.crosser) ? EVENT_VETO : null
 
 ///Source is the one being bumped into (Owner of this component)
 ///Target is the one bumping into us.
-/datum/element/spontaneous_vore/proc/handle_stumble(mob/living/source, mob/living/target)
-	SIGNAL_HANDLER
+/datum/om/behaviour/spontaneous_vore/proc/handle_stumble(mob/living/source, mob/living/target)
 
 	//Prevents slipping into ourselves if we have a blobform.
 	if(!isturf(target.loc) || !isturf(source.loc)) //No slipping into things that aren't even on a valid turf.
@@ -52,8 +48,7 @@
 //Source is the one dropping (us)
 //Landing is the tile we're falling onto
 //drop_mob is whatever mob is found in the turf we're dropping onto.
-/datum/element/spontaneous_vore/proc/handle_fall(mob/living/source, turf/landing, mob/living/drop_mob)
-	SIGNAL_HANDLER
+/datum/om/behaviour/spontaneous_vore/proc/handle_fall(mob/living/source, turf/landing, mob/living/drop_mob)
 
 	if(!drop_mob || drop_mob == source)
 		return
@@ -80,8 +75,7 @@
 		source.visible_message(span_vdanger("\The [drop_mob] falls right into \the [source]!"))
 		return COMSIG_CANCEL_FALL
 
-/datum/element/spontaneous_vore/proc/handle_hitby(mob/living/source, atom/movable/hitby, mob/thrower, speed)
-	SIGNAL_HANDLER
+/datum/om/behaviour/spontaneous_vore/proc/handle_hitby(mob/living/source, atom/movable/hitby, mob/thrower, speed)
 
 	//Handle object throw vore
 	if(isitem(hitby))
@@ -141,8 +135,7 @@
 
 //source = person standing up
 //crossed = person sliding
-/datum/element/spontaneous_vore/proc/handle_crossed(mob/living/source, mob/living/crossed)
-	SIGNAL_HANDLER
+/datum/om/behaviour/spontaneous_vore/proc/handle_crossed(mob/living/source, mob/living/crossed)
 
 	if(source == crossed || !istype(crossed))
 		return
@@ -163,3 +156,51 @@
 			return
 		source.begin_instant_nom(crossed, prey = source, pred = crossed, belly = destination_belly) //Must be
 		return //We DON'T block it here. Pred can slip onto the prey's tile, no problem.
+
+// ---------------------------------------------------------------- events
+
+/// Veto (was COMSIG_LIVING_STUMBLED_INTO): `bumper` stumbles into the mob.
+/datum/om/event/before/stumbled_into
+	/// The mob stumbling in.
+	var/bumper
+
+/datum/om/event/before/stumbled_into/New(bumper)
+	src.bumper = bumper
+
+/datum/om/event/before/stumbled_into/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_stumbled_into(E, src)
+
+/datum/om/behaviour/proc/on_before_stumbled_into(datum/E, datum/om/event/before/stumbled_into/event)
+	return
+
+/// Veto (was COMSIG_LIVING_FALLING_DOWN): the mob falls onto `landing`, onto `drop_mob` if any.
+/datum/om/event/before/falling_down
+	var/landing
+	var/drop_mob
+
+/datum/om/event/before/falling_down/New(landing, drop_mob)
+	src.landing = landing
+	src.drop_mob = drop_mob
+
+/datum/om/event/before/falling_down/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_falling_down(E, src)
+
+/datum/om/behaviour/proc/on_before_falling_down(datum/E, datum/om/event/before/falling_down/event)
+	return
+
+/// Veto (was COMSIG_LIVING_HIT_BY_THROWN_ENTITY): the mob is hit by thrown `hitby`.
+/datum/om/event/before/hit_by_thrown
+	var/hitby
+	var/thrower
+	var/speed
+
+/datum/om/event/before/hit_by_thrown/New(hitby, thrower, speed)
+	src.hitby = hitby
+	src.thrower = thrower
+	src.speed = speed
+
+/datum/om/event/before/hit_by_thrown/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_hit_by_thrown(E, src)
+
+/datum/om/behaviour/proc/on_before_hit_by_thrown(datum/E, datum/om/event/before/hit_by_thrown/event)
+	return

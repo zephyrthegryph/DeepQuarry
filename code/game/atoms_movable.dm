@@ -352,7 +352,7 @@
 // Make sure you know what you're doing if you call this, this is intended to only be called by byond directly.
 // You probably want CanPass()
 /atom/movable/Cross(atom/movable/AM)
-	if(SEND_SIGNAL(src, COMSIG_MOVABLE_CROSS, AM) & COMPONENT_BLOCK_CROSS)
+	if(om_cross_vetoed(src, AM))
 		return FALSE
 	return CanPass(AM, loc)
 
