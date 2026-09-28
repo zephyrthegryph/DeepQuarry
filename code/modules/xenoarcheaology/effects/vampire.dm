@@ -69,7 +69,7 @@
 			holder.Beam(M, icon_state = "drainbeam", time = 1 SECOND)
 
 	if(world.time - last_eat >= eat_interval)
-		var/obj/effect/decal/cleanable/blood/B = locate() in range(2,holder)
+		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,holder), /obj/effect/decal/cleanable/blood)
 		if(B)
 			last_eat = world.time
 			B.moveToNullspace()

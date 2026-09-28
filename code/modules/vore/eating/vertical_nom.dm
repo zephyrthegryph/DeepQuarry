@@ -18,7 +18,7 @@
 			while(isopenspace(T))
 				T = GetBelow(T)
 			if(T)
-				for(var/mob/living/L in T)
+				for(var/mob/living/L in contents_of(T))
 					if(L.devourable && L.can_be_drop_prey)
 						targets += L
 

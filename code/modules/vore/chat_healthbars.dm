@@ -125,10 +125,10 @@
 		nuffin = FALSE
 
 	for(var/obj/belly/b in vore_organs)
-		if(!b.contents.len)
+		if(!contents_count(b))
 			continue
 		var/belly_announce = FALSE	//We only want to announce the belly once
-		for(var/thing as anything in b.contents)
+		for(var/thing as anything in contents_of(b))
 			if(!isliving(thing))
 				continue
 			if(!belly_announce)

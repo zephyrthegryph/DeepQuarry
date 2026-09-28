@@ -20,9 +20,9 @@
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
 	. = ..()
-	owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in get_step(src, dir))
+	owned_scanner_handle = om_handle(locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
-		owned_scanner_handle = om_handle(locate(/obj/machinery/artifact_scanpad) in orange(1, src))
+		owned_scanner_handle = om_handle(locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 	default_apply_parts()
 	update_icon()
 

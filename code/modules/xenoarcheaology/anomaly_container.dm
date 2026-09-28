@@ -10,12 +10,12 @@
 /obj/structure/anomaly_container/Initialize(mapload)
 	. = ..()
 
-	var/obj/machinery/artifact/A = locate() in loc
+	var/obj/machinery/artifact/A = locate_within(loc, /obj/machinery/artifact)
 	if(A)
 		contain(A)
 
 	else
-		for(var/obj/Ob in loc)
+		for(var/obj/Ob in contents_of(loc))
 			if(can_contain(Ob))
 				contain(Ob)
 				break

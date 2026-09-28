@@ -7,7 +7,7 @@
 
 /// Its bellies go back to the AI before phase 4 clears master (REF_BACK).
 /obj/effect/overlay/aiholo/lifecycle_prerelease()
-	for(var/obj/belly/B in src)
+	for(var/obj/belly/B in contents_of(src))
 		B.forceMove(master)
 	return ..()
 

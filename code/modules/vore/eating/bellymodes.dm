@@ -25,7 +25,7 @@
 	HandleBellyReagents()	// reagent belly stuff, here to jam it into subsystems and avoid too much cpu usage
 	update_belly_surrounding() // Updates belly_surrounding list for indirect vore usage
 	// VERY early exit
-	if(!contents.len)
+	if(!contents_count(src))
 		if(owner.previewing_belly == src)
 			HandleBellyReagentEffects()
 		return

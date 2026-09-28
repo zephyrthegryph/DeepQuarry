@@ -67,7 +67,7 @@
 /obj/belly/proc/belly_occupied()
 	if(!isliving(owner) || QDELETED(src))
 		return FALSE
-	return length(contents) || owner.previewing_belly == src
+	return contents_count(src) || owner.previewing_belly == src
 
 /// Whether this belly makes liquid from its owner's nutrition over time.
 /obj/belly/proc/belly_generates_liquid()

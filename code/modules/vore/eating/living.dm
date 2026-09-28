@@ -164,7 +164,7 @@
 
 		var/mob/living/attacker = user  // Typecast to living
 		if(is_vore_predator(src))
-			for(var/mob/living/M in H.contents)
+			for(var/mob/living/M in contents_of(H))
 				if(attacker.eat_held_mob(attacker, M, src))
 					return TRUE //return TRUE to exit upper procs
 		else
@@ -1575,7 +1575,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 
 	var/list/transfer_from = mobs_in_view(1,user)
 	for(var/obj/belly/B in vore_organs)
-		for(var/mob/living/L in B.contents)
+		for(var/mob/living/L in contents_of(B))
 			transfer_from |= L
 	var/mob/living/TG = rerun_ask(user, "a1", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
 	if(isnull(TG))
@@ -1610,7 +1610,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 		if("Vore belly")
 			var/list/transfer_to = mobs_in_view(1,user)
 			for(var/obj/belly/B in vore_organs)
-				for(var/mob/living/L in B.contents)
+				for(var/mob/living/L in contents_of(B))
 					transfer_to |= L
 			var/mob/living/TR = rerun_ask(user, "a5", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
 			if(isnull(TR))
@@ -1670,7 +1670,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 		if("Stomach")
 			var/list/transfer_to = mobs_in_view(1,user)
 			for(var/obj/belly/B in vore_organs)
-				for(var/mob/living/L in B.contents)
+				for(var/mob/living/L in contents_of(B))
 					transfer_to |= L
 			var/mob/living/TR = rerun_ask(user, "a8", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
 			if(isnull(TR))

@@ -77,7 +77,7 @@
 
 	//suck up some blood to gain power
 	if(world.time - last_eat > eat_interval)
-		var/obj/effect/decal/cleanable/blood/B = locate() in range(2,src)
+		var/obj/effect/decal/cleanable/blood/B = locate_in_list(range(2,src), /obj/effect/decal/cleanable/blood)
 		if(B)
 			last_eat = world.time
 			B.moveToNullspace()
@@ -194,7 +194,7 @@
 		return sleep_until_mob_near(world.view, TRUE)
 	if(src.loc)
 		src.forceMove(get_turf(pick(orange(1,src))))
-		var/mob/living/carbon/M = locate() in src.loc
+		var/mob/living/carbon/M = locate_within(src.loc, /mob/living/carbon)
 		if(M)
 			playsound(src, pick('sound/hallucinations/behind_you1.ogg',\
 			'sound/hallucinations/behind_you2.ogg',\

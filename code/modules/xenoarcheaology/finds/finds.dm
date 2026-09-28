@@ -52,7 +52,7 @@ DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strange
 /// Old attackby: mine it away or sample it; anything else may crumble it (after a bag gathers it, as its ..() did first).
 /obj/item/strangerock/proc/strangerock_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/pickaxe)) //Whatever, if you use a hand pick it should work just like a brush. No reason for otherwise.
-		var/obj/item/inside = locate() in src
+		var/obj/item/inside = locate_within(src, /obj/item)
 		if(inside)
 			inside.forceMove(get_turf(src))
 			visible_message(span_info("\The [src] is mined away, revealing \the [inside]."))
@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strange
 		visible_message(span_info("A few sparks fly off \the [src], but nothing else happens."))
 		welder.remove_fuel(1)
 		return ITEM_INTERACT_SUCCESS
-	var/obj/item/inside = locate() in src
+	var/obj/item/inside = locate_within(src, /obj/item)
 	if(inside)
 		inside.forceMove(get_turf(src))
 		visible_message(span_info("\The [src] burns away revealing \the [inside]."))

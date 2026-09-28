@@ -93,7 +93,7 @@
 		return 0
 
 	if(user != load)
-		if(user in src)		//for handling players stuck in src - this shouldn't happen - but just in case it does
+		if(user?.loc == src)		//for handling players stuck in src - this shouldn't happen - but just in case it does
 			user.forceMove(T)
 			return 1
 		return 0
@@ -129,7 +129,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 	if(user.stat || user.restrained() || !Adjacent(user))
 		return TRUE
 
-	if(user != load && (user in src))
+	if(user != load && (user?.loc == src))
 		user.forceMove(loc)			//for handling players stuck in src
 	else if(load)
 		unload(user)			//unload if loaded

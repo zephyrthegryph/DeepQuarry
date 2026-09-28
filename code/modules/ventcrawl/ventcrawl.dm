@@ -21,7 +21,7 @@
 	if(restrict_vore_ventcrawl)
 		var/foundstuff = FALSE
 		for(var/obj/belly/B in vore_organs)
-			if(B.contents.len)
+			if(contents_count(B))
 				foundstuff = TRUE
 				break
 		if(foundstuff)
