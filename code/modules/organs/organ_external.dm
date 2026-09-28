@@ -289,7 +289,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 		if(2)
 			if(istype(W,/obj/item/surgical/hemostat))
 				if(LAZYLEN(contents))
-					var/obj/item/removing = rerun_prompt(user, "k308", list("kind" = "list", "message" = "What would you like to remove?", "title" = "Extraction", "choices" = contents, "timeout" = 20 SECONDS), PROC_REF(external_interaction_item), args)
+					var/obj/item/removing = rerun_ask(user, "k308", PROC_REF(external_interaction_item), args, /datum/om/prompt/choice, message = "What would you like to remove?", title = "Extraction", choices = contents, timeout = 20 SECONDS)
 					if(isnull(removing))
 						return TRUE
 					if(!removing || removing.loc != src || !Adjacent(user)) //Didn't select anything or selected something that was already removed OR we walked away.
@@ -674,7 +674,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 			return 0
 	*/
 	user.setClickCooldown(user.get_attack_speed(tool))
-	var/started = om_task_start(/datum/om/task/timed/external_robo_repair, user, src, list("receiver" = src, "repair_amount" = repair_amount, "damage_type" = damage_type, "damage_desc" = damage_desc, "tool" = tool, "damage_amount" = damage_amount, "tool_proc" = tool_proc, "tool_args" = tool_args))
+	var/started = om_task_start(/datum/om/task/timed/external_robo_repair, user, src, receiver = src, repair_amount = repair_amount, damage_type = damage_type, damage_desc = damage_desc, tool = tool, damage_amount = damage_amount, tool_proc = tool_proc, tool_args = tool_args)
 	return !istext(started)
 
 /obj/item/organ/external/proc/robo_repair_failed(datum/om/task/timed/external_robo_repair/task)

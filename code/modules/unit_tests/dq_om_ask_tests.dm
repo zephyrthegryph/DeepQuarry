@@ -37,7 +37,7 @@
 	var/datum/om_test_entity/holder = entity(made)
 	var/datum/om/prompt/confirm/test_offer/P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_offer, /datum/om_test_entity/proc/offer_taken, list("holder" = holder, "subject" = E))
 	TEST_ASSERT(istype(P), "om_ask returns the pending typed prompt")
-	TEST_ASSERT_EQUAL(P.spec["message"], "Take it from [holder]?", "prepare() built the message from the typed state")
+	TEST_ASSERT_EQUAL(P.message, "Take it from [holder]?", "prepare() built the message from the typed state")
 	TEST_ASSERT_NULL(P.holder, "a datum in the state is held as a handle while the window is open")
 	TEST_ASSERT_NULL(P.answer("Yes"), "a yes passes and is delivered")
 	TEST_ASSERT_EQUAL(E.log.Join(","), "taken", "the answer proc ran on the receiver")
@@ -102,11 +102,6 @@
 	TEST_ASSERT_EQUAL(T.tool, tool, "a datum argument is set (and held)")
 	TEST_ASSERT_EQUAL(T.receiver, target, "the receiver defaults to the first of src, target, actor that has the complete_proc")
 	om_task_cancel(T)
-
-	var/datum/om/task/test_named/L = om_task_start(/datum/om/task/test_named, actor, target, list("amount" = 4))
-	TEST_ASSERT_EQUAL(L.amount, 4, "the old params-list form still works")
-	TEST_ASSERT_EQUAL(L.receiver, actor, "the old form keeps the actor as the receiver default")
-	om_task_cancel(L)
 
 	var/datum/om/task/test_named/own/O = om_task_start(/datum/om/task/test_named/own, actor, null, amount = 5)
 	om_task_complete(O)

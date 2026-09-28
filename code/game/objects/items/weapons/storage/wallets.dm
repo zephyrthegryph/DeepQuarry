@@ -123,10 +123,11 @@
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return
 
-	var/new_color = tgui_color_picker(usr, "Pick a new color", "Wallet Color", color)
+	om_ask(usr, /datum/om/prompt/color, PROC_REF(wallet_color_chosen), title = "Wallet Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-	if(new_color && (new_color != color))
-		color = new_color
+/obj/item/storage/wallet/poly/proc/wallet_color_chosen(datum/om/prompt/color/ask)
+	if(ask.picked_color && (ask.picked_color != color))
+		color = ask.picked_color
 
 /obj/item/storage/wallet/poly/emp_act(severity, recursive)
 	. = ..()

@@ -263,7 +263,7 @@
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k272 = rerun_prompt(usr, "k272", list("kind" = "text", "message" = "What do you want to name this?", "title" = "Rename", "default" = src.name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	var/_answer_k272 = rerun_ask(usr, "k272", VERB_REF(rename), args, /datum/om/prompt/text, message = "What do you want to name this?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k272))
 		return
 	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
@@ -489,7 +489,7 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 
 	var/obj/item/integrated_circuit/input/choice
 	if(available_inputs)
-		var/selection = rerun_prompt(user, "k490", list("kind" = "list", "message" = "What do you want to interact with?", "title" = "Interaction", "choices" = input_selection), PROC_REF(interaction_self), args)
+		var/selection = rerun_ask(user, "k490", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What do you want to interact with?", title = "Interaction", choices = input_selection)
 		if(isnull(selection))
 			return TRUE
 		if(selection)

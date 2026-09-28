@@ -24,11 +24,12 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 	// single-action panel; tgui_alert with the existing
 	// uses count is the right primitive.
 	user.set_machine(src)
-	om_prompt(src, user, list("message" = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.", "title" = "Teleportation Scroll", "choices" = list("Teleport", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(scroll_answered))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(scroll_answered), title = "Teleportation Scroll", yes_text = "Teleport", no_text = "Cancel", ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS, message = "You have [uses] uses left.\n\nKind regards, the Wizards Federation.\nP.S. Don't forget to bring your gear, you'll need it to cast most spells.")
 	return TRUE
 
-/obj/item/teleportation_scroll/proc/scroll_answered(mob/living/carbon/human/user, choice, datum/om/prompt/ask)
-	if(choice == "Teleport" && ishuman(user) && !user.stat && !user.restrained() && uses >= 1)
+/obj/item/teleportation_scroll/proc/scroll_answered(datum/om/prompt/confirm/ask)
+	var/mob/living/carbon/human/user = ask.answerer
+	if(ishuman(user) && !user.restrained() && uses >= 1)
 		teleportscroll(user)
 
 /obj/item/teleportation_scroll/Topic(href, href_list)
@@ -48,14 +49,15 @@ DECLARE_INTERACTIONS(/obj/item/teleportation_scroll, INTERACT_USE(null, PROC_REF
 	return
 
 /obj/item/teleportation_scroll/proc/teleportscroll(mob/user)
-	om_prompt(src, user, list("kind" = "list", "message" = "Area to jump to:", "title" = "Teleportation Scroll", "choices" = GLOB.teleportlocs, "requires" = PROMPT_HELD), PROC_REF(area_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(area_chosen), title = "Teleportation Scroll", message = "Area to jump to:", choices = GLOB.teleportlocs, ask_flags = ASK_CARRIED | ASK_CAPABLE | ASK_CONSCIOUS)
 
-/obj/item/teleportation_scroll/proc/area_chosen(mob/user, A, datum/om/prompt/ask)
-	var/area/thearea = GLOB.teleportlocs[A]
+/obj/item/teleportation_scroll/proc/area_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/area/thearea = GLOB.teleportlocs[ask.choice]
 	if(!thearea || uses < 1)
 		return
 
-	if (user.stat || user.restrained())
+	if (user.restrained())
 		return
 	if(!((user == loc || (in_range(src, user) && istype(src.loc, /turf)))))
 		return

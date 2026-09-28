@@ -36,14 +36,12 @@
 	if(custom_name)
 		to_chat(src, "You can't pick another custom name. [isshell(src) ? "" : "Go ask for a name change."]")
 		return FALSE
-	om_prompt(src, src, list("kind" = "text", "message" = "You are a robot. Enter a name, or leave blank for the default name.", "title" = "Name change", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "on_cancel" = PROC_REF(robot_name_cancelled)), PROC_REF(robot_name_entered))
+	// A cancel answers "": the default name.
+	om_ask(src, /datum/om/prompt/text, PROC_REF(robot_name_entered), title = "Name change", message = "You are a robot. Enter a name, or leave blank for the default name.", max_length = MAX_NAME_LEN, encode = FALSE, cancel_answer = "")
 	return TRUE
 
-/mob/living/silicon/robot/proc/robot_name_cancelled(mob/user, datum/om/prompt/ask)
-	updatename()
-
-/mob/living/silicon/robot/proc/robot_name_entered(mob/user, newname, datum/om/prompt/ask)
-	newname = sanitizeSafe(newname, MAX_NAME_LEN)
+/mob/living/silicon/robot/proc/robot_name_entered(datum/om/prompt/text/ask)
+	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if (newname && !custom_name)
 		custom_name = newname
 		sprite_name = newname
@@ -189,7 +187,7 @@
 
 /mob/living/silicon/robot/proc/dq_do_recolour(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	om_prompt(src, src, list("kind" = "colormatrix", "message" = "Allows you to recolor yourself", "title" = "Robot Recolor", "preview" = src, "ui_state" = GLOB.tgui_conscious_state), null)
+	om_ask(src, /datum/om/prompt/colormatrix, null, title = "Robot Recolor", message = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 	return TRUE
 
 // ---------------------------------------------------------------------------

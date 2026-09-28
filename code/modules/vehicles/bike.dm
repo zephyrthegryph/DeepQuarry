@@ -47,12 +47,22 @@
 
 /obj/vehicle/bike/attackby(obj/item/W, mob/user)
 	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
-		if(new_paint)
-			paint_color = new_paint
-			update_icon()
-			return
+		om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
+		return
 	..()
+
+/// A vehicle's paint colour (multitool, panel open). Re-checked on the answer: the painter is
+/// still next to it and able. Shared by the bike, the quad and its trailer.
+/datum/om/prompt/color/vehicle_paint
+	title = "Paint Color"
+	message = "Please select paint color."
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/obj/vehicle/proc/vehicle_paint_picked(datum/om/prompt/color/vehicle_paint/ask)
+	if(!ask.picked_color)
+		return
+	paint_color = ask.picked_color
+	update_icon()
 
 /obj/vehicle/bike/click_ctrl(mob/user)
 	if(Adjacent(user) && anchored)

@@ -2,9 +2,10 @@
 	set category = "IC.Game"
 	set name = "Pray"
 
-	om_prompt(src, src, list("kind" = "text", "message" = "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", "title" = "Pray", "max_length" = MAX_MESSAGE_LEN), PROC_REF(prayer_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(prayer_entered), title = "Pray", message = "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", max_length = MAX_MESSAGE_LEN)
 
-/mob/proc/prayer_entered(mob/user, raw_msg, datum/om/prompt/ask)
+/mob/proc/prayer_entered(datum/om/prompt/text/ask)
+	var/raw_msg = ask.text
 	if(!raw_msg)	return
 
 	if(src.client)

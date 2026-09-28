@@ -128,7 +128,7 @@
 	return list()
 
 /**
- * Asks `actor` to pick one candidate (om_prompt: nothing waits) and returns null;
+ * Asks `actor` to pick one candidate (om_ask: nothing waits) and returns null;
  * the pick runs the ability through target_picked(). Tells `actor` why if
  * there's nothing to pick. Overridable for a picker whose "no valid target"
  * case is itself an action (robot_mount's dismount) rather than a plain refusal.
@@ -138,12 +138,14 @@
 	if(!length(choices))
 		to_chat(actor, span_warning("There's nothing nearby to [lowertext(name)]."))
 		return null
-	om_prompt(src, actor, list("kind" = "list", "message" = picker_prompt, "title" = picker_title, "choices" = choices, "requires" = list(/datum/om/check/not_incapacitated)), PROC_REF(target_picked))
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_picked), message = picker_prompt, title = picker_title, choices = choices, requires = list(/datum/om/check/not_incapacitated))
 	return null
 
 /// pick_target()'s answer: the pick must still be a candidate (re-checked now), then the
 /// ability runs on it as the keybind would have.
-/datum/interaction/ability/picker/proc/target_picked(mob/living/actor, atom/target, datum/om/prompt/ask)
+/datum/interaction/ability/picker/proc/target_picked(datum/om/prompt/choice/ask)
+	var/mob/living/actor = ask.answerer
+	var/atom/target = ask.choice
 	if(!istype(actor) || !target || !(target in candidates(actor)))
 		return
 	if(!applies_to(target))

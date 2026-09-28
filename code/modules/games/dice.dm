@@ -31,7 +31,7 @@
 	else if(tamper_proof)
 		to_chat(user, span_warning("This [name] is proofed against tampering!"))
 	else
-		var/to_weight = rerun_prompt(user, "k33", list("kind" = "number", "message" = "What should the [name] be weighted towards? You can't undo this later, only change the number!", "title" = "Set the desired result", "default" = 1, "max" = 6, "min" = 1), PROC_REF(weight_die), args)
+		var/to_weight = rerun_ask(user, "k33", PROC_REF(weight_die), args, /datum/om/prompt/number, message = "What should the [name] be weighted towards? You can't undo this later, only change the number!", title = "Set the desired result", default = 1, max = 6, min = 1)
 		if(isnull(to_weight))
 			return
 		if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides))
@@ -46,7 +46,7 @@
 /obj/item/dice/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cheater)
 		if(!loaded)
-			var/to_weight = rerun_prompt(user, "k46", list("kind" = "number", "message" = "What should the [name] be weighted towards?", "title" = "Set the desired result", "default" = 1, "max" = sides, "min" = 1), PROC_REF(interaction_alt), args)
+			var/to_weight = rerun_ask(user, "k46", PROC_REF(interaction_alt), args, /datum/om/prompt/number, message = "What should the [name] be weighted towards?", title = "Set the desired result", default = 1, max = sides, min = 1)
 			if(isnull(to_weight))
 				return TRUE
 			if(isnull(to_weight) || (to_weight < 1) || (to_weight > sides) ) //You must input a number higher than 0 and no greater than the number of sides
@@ -157,7 +157,7 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 /obj/item/dice/proc/set_dice(mob/user)
 	if(user.stat || !Adjacent(user))
 		return
-	var/to_value = rerun_prompt(user, "k147", list("kind" = "number", "message" = "What face should \the [src] be turned to?", "title" = "Set die face", "default" = 1, "max" = sides, "min" = 1), PROC_REF(set_dice), args)
+	var/to_value = rerun_ask(user, "k147", PROC_REF(set_dice), args, /datum/om/prompt/number, message = "What face should \the [src] be turned to?", title = "Set die face", default = 1, max = sides, min = 1)
 	if(isnull(to_value))
 		return
 	if(!to_value)

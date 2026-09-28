@@ -1,4 +1,6 @@
-/mob/living/carbon/human/proc/strip_underwear_chosen(mob/user, datum/category_group/underwear/UWC, datum/om/prompt/ask)
+/mob/living/carbon/human/proc/strip_underwear_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/datum/category_group/underwear/UWC = ask.choice
 	var/datum/category_item/underwear/UWI = LAZYACCESS(all_underwear, UWC.name)
 	if(!UWI || UWI.name == "None")
 		to_chat(user, span_notice("\The [src] does not have [UWC.gender==PLURAL ? "[UWC.display_name]" : "a [UWC.display_name]"]."))
@@ -46,10 +48,10 @@
 				return
 			visible_message(span_danger("\The [user] is trying to remove \the [src]'s [A.name]!"))
 
-			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, list("receiver" = src, "duration" = HUMAN_STRIP_DELAY, "suit" = suit, "A" = A))
+			om_task_start(/datum/om/task/timed/human_handle_strip_human, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, suit = suit, A = A)
 			return
 		if("underwear")
-			om_prompt(src, user, list("kind" = "list", "message" = "Choose underwear. (Do not do this without OOC permission from the other player)", "title" = "Show/hide underwear", "choices" = GLOB.global_underwear.categories, "requires" = PROMPT_ADJACENT), PROC_REF(strip_underwear_chosen))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(strip_underwear_chosen), title = "Show/hide underwear", message = "Choose underwear. (Do not do this without OOC permission from the other player)", choices = GLOB.global_underwear.categories, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 			return
 
 	// Are we placing or stripping?
@@ -91,7 +93,7 @@
 		else
 			visible_message(span_danger("\The [user] is trying to put \a [wrapped] on \the [src]!"))
 
-	om_task_start(/datum/om/task/timed/human_handle_strip_human2, user, src, list("receiver" = src, "duration" = HUMAN_STRIP_DELAY, "slot_to_strip" = slot_to_strip, "target_slot" = target_slot, "stripping" = stripping, "held_arg" = held, "max_interact_count" = 15))
+	om_task_start(/datum/om/task/timed/human_handle_strip_human2, user, src, receiver = src, duration = HUMAN_STRIP_DELAY, slot_to_strip = slot_to_strip, target_slot = target_slot, stripping = stripping, held_arg = held, max_interact_count = 15)
 	return TRUE
 
 /mob/living/carbon/human/proc/handle_strip_human_done(mob/living/user)

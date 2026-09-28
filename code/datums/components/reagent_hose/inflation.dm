@@ -52,7 +52,7 @@
 		options.Add("Bloodstream")
 
 	// Choose destination
-	var/choice = rerun_prompt(user, "a1", list("message" = "Select where this hose connects.", "title" = "Hose Connection", "choices" = options), PROC_REF(inflation_setup), args)
+	var/choice = rerun_ask(user, "a1", PROC_REF(inflation_setup), args, /datum/om/prompt/choice/alert, message = "Select where this hose connects.", title = "Hose Connection", choices = options)
 	if(isnull(choice))
 		return
 	if(!user.Adjacent(human_owner()) || !choice)
@@ -76,7 +76,7 @@
 	// Display action
 	name = "[human_owner()]'s [feedback]"
 	user.visible_message("\The [user] starts to connect the hose to \the [human_owner()]'s [feedback]...")
-	var/started = om_task_start(/datum/om/task/timed/inflation_inflation_connected, user, human_owner(), list("receiver" = src, "other" = other, "origin" = origin, "target_arg" = target, "distancetonode" = distancetonode, "tubing" = tubing, "feedback" = feedback))
+	var/started = om_task_start(/datum/om/task/timed/inflation_inflation_connected, user, human_owner(), other = other, origin = origin, target_arg = target, distancetonode = distancetonode, tubing = tubing, feedback = feedback)
 	return !istext(started)
 
 /datum/om/task/timed/inflation_inflation_connected

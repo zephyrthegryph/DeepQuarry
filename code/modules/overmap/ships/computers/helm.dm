@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			. = TRUE
 		if("add")
 			var/datum/computer_file/data/waypoint/R = new()
-			var/sec_name = act_prompt(ui.user, action, params, ui, "k180", list("kind" = "text", "message" = "Input navigation entry name", "title" = "New navigation entry", "default" = "Sector #[length(known_sectors)]", "max_length" = MAX_NAME_LEN))
+			var/sec_name = act_ask(ui.user, action, params, ui, "k180", /datum/om/prompt/text, message = "Input navigation entry name", title = "New navigation entry", default = "Sector #[length(known_sectors)]", max_length = MAX_NAME_LEN)
 			if(isnull(sec_name))
 				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
@@ -194,12 +194,12 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 					R.fields["x"] = linked().x
 					R.fields["y"] = linked().y
 				if("new")
-					var/newx = act_prompt(ui.user, action, params, ui, "k194", list("kind" = "number", "message" = "Input new entry x coordinate", "title" = "Coordinate input", "default" = linked().x, "max" = world.maxx, "min" = 1))
+					var/newx = act_ask(ui.user, action, params, ui, "k194", /datum/om/prompt/number, message = "Input new entry x coordinate", title = "Coordinate input", default = linked().x, max = world.maxx, min = 1)
 					if(isnull(newx))
 						return
 					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 						return TRUE
-					var/newy = act_prompt(ui.user, action, params, ui, "k197", list("kind" = "number", "message" = "Input new entry y coordinate", "title" = "Coordinate input", "default" = linked().y, "max" = world.maxy, "min" = 1))
+					var/newy = act_ask(ui.user, action, params, ui, "k197", /datum/om/prompt/number, message = "Input new entry y coordinate", title = "Coordinate input", default = linked().y, max = world.maxy, min = 1)
 					if(isnull(newy))
 						return
 					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
@@ -218,7 +218,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		if("setcoord")
 			if(params["setx"])
-				var/newx = act_prompt(ui.user, action, params, ui, "k214", list("kind" = "number", "message" = "Input new destiniation x coordinate", "title" = "Coordinate input", "default" = dx, "max" = world.maxx, "min" = 1))
+				var/newx = act_ask(ui.user, action, params, ui, "k214", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)
 				if(isnull(newx))
 					return
 				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
@@ -227,7 +227,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 					dx = CLAMP(newx, 1, world.maxx)
 
 			if(params["sety"])
-				var/newy = act_prompt(ui.user, action, params, ui, "k221", list("kind" = "number", "message" = "Input new destiniation y coordinate", "title" = "Coordinate input", "default" = dy, "max" = world.maxy, "min" = 1))
+				var/newy = act_ask(ui.user, action, params, ui, "k221", /datum/om/prompt/number, message = "Input new destiniation y coordinate", title = "Coordinate input", default = dy, max = world.maxy, min = 1)
 				if(isnull(newy))
 					return
 				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
@@ -247,7 +247,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			. = TRUE
 
 		if("speedlimit")
-			var/newlimit = act_prompt(ui.user, action, params, ui, "k239", list("kind" = "number", "message" = "Input new speed limit for autopilot (0 to brake)", "title" = "Autopilot speed limit", "default" = speedlimit*1000, "max" = 100000, "round" = FALSE))
+			var/newlimit = act_ask(ui.user, action, params, ui, "k239", /datum/om/prompt/number, message = "Input new speed limit for autopilot (0 to brake)", title = "Autopilot speed limit", default = speedlimit*1000, max = 100000, round_entry = FALSE)
 			if(isnull(newlimit))
 				return
 			if(newlimit)
@@ -255,7 +255,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			. = TRUE
 
 		if("accellimit")
-			var/newlimit = act_prompt(ui.user, action, params, ui, "k245", list("kind" = "number", "message" = "Input new acceleration limit", "title" = "Acceleration limit", "default" = accellimit*1000, "round" = FALSE))
+			var/newlimit = act_ask(ui.user, action, params, ui, "k245", /datum/om/prompt/number, message = "Input new acceleration limit", title = "Acceleration limit", default = accellimit*1000, round_entry = FALSE)
 			if(isnull(newlimit))
 				return
 			if(newlimit)

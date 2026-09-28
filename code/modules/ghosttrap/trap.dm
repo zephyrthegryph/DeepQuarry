@@ -93,7 +93,7 @@ GLOBAL_LIST(ghost_traps)
 
 // Allows people to set their own name. May or may not need to be removed for posibrains if people are dumbasses.
 /datum/ghosttrap/proc/set_new_name(mob/target)
-	var/_answer_k96 = rerun_prompt(target, "k96", list("kind" = "text", "message" = "Enter a name, or leave blank for the default name.", "title" = "Name change", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(set_new_name), args)
+	var/_answer_k96 = rerun_ask(target, "k96", PROC_REF(set_new_name), args, /datum/om/prompt/text, message = "Enter a name, or leave blank for the default name.", title = "Name change", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k96))
 		return
 	var/newname = sanitizeSafe(_answer_k96, MAX_NAME_LEN)

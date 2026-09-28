@@ -22,7 +22,7 @@
 		to_chat(src, span_danger("We have no genomes, not even our own, and cannot regenerate."))
 		return 0
 
-	var/_answer_a1 = rerun_prompt(src, "a1", list("message" = "Are we sure we wish to regenerate? We will appear to be dead while doing so.", "title" = "Revival", "choices" = list("Yes","No")), PROC_REF(changeling_fakedeath), args)
+	var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(changeling_fakedeath), args, /datum/om/prompt/choice/alert, message = "Are we sure we wish to regenerate? We will appear to be dead while doing so.", title = "Revival", choices = list("Yes","No"))
 	if(isnull(_answer_a1))
 		return
 	if(!C.stat && _answer_a1 != "Yes")

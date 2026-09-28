@@ -19,7 +19,7 @@
 		user.visible_message("<span class='[class]'>[user] holds \the [P] up to \the [src], it looks like [user.p_they()] [user.p_are()] trying to burn it!</span>", \
 		"<span class='[class]'>You hold \the [P] up to \the [src], burning it slowly.</span>")
 
-		om_task_start(/datum/om/task/timed/cursed_burn, user, src, list("receiver" = src, "flame" = P, "class" = class))
+		om_task_start(/datum/om/task/timed/cursed_burn, user, src, flame = P, class = class)
 
 /// Holding a flame to the cursed form: letting go sears you.
 /datum/om/task/timed/cursed_burn

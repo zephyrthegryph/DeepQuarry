@@ -223,7 +223,7 @@
 			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 			return TRUE
 		to_chat(user, span_notice("You begin repairing [src]..."))
-		om_task_start(/datum/om/task/timed/blast_interaction_attackby, user, src, list("receiver" = src, "amt" = amt, "P" = P))
+		om_task_start(/datum/om/task/timed/blast_interaction_attackby, user, src, receiver = src, amt = amt, P = P)
 
 	else if(src.density && (IS_HARMING(user))) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
 		var/obj/item/W = C

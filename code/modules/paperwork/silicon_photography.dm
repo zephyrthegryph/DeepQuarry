@@ -45,7 +45,7 @@ REF_OWNED_LIST(/obj/item/camera/siliconcam, "aipictures")
 		return
 	for(var/obj/item/photo/t in cam.aipictures)
 		nametemp += t.name
-	var/_answer_k50 = rerun_prompt(user, "k50", list("kind" = "list", "message" = "Select image (numbered in order taken)", "title" = "Picture Choice", "choices" = nametemp), PROC_REF(selectpicture), args)
+	var/_answer_k50 = rerun_ask(user, "k50", PROC_REF(selectpicture), args, /datum/om/prompt/choice, message = "Select image (numbered in order taken)", title = "Picture Choice", choices = nametemp)
 	if(isnull(_answer_k50))
 		return
 	find = _answer_k50

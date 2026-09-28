@@ -59,7 +59,7 @@
 						areaindex[tmpname] = 1
 					L[tmpname] = I
 
-			var/desc = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "list", "message" = "Please select a location to lock in.", "title" = "Locking Menu", "choices" = L))
+			var/desc = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice, message = "Please select a location to lock in.", title = "Locking Menu", choices = L)
 			if(isnull(desc))
 				return
 			if(!desc)

@@ -223,7 +223,7 @@
 					var/mob/living/feeder = user
 					swallow_whole = feeder.stuffing_feeder
 				if(swallow_whole)
-					var/_answer_k227 = rerun_prompt(user, "k227", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = human_eater.feedable_bellies()), PROC_REF(attack), args)
+					var/_answer_k227 = rerun_ask(user, "k227", PROC_REF(attack), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = human_eater.feedable_bellies())
 					if(isnull(_answer_k227))
 						return TRUE
 					belly_target = _answer_k227
@@ -255,7 +255,7 @@
 					feed_duration = 5 SECONDS
 
 				user.setClickCooldown(user.get_attack_speed(src))
-				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, list("receiver" = src, "duration" = feed_duration, "swallow_whole" = swallow_whole, "belly_target" = belly_target))
+				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, duration = feed_duration, swallow_whole = swallow_whole, belly_target = belly_target)
 				return ITEM_INTERACT_SUCCESS
 
 			else
@@ -267,7 +267,7 @@
 		var/swallow_whole = user.stuffing_feeder
 		var/obj/belly/belly_target
 		if(swallow_whole)
-			var/_answer_k268 = rerun_prompt(user, "k268", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = eater.feedable_bellies()), PROC_REF(attack), args)
+			var/_answer_k268 = rerun_ask(user, "k268", PROC_REF(attack), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = eater.feedable_bellies())
 			if(isnull(_answer_k268))
 				return TRUE
 			belly_target = _answer_k268
@@ -283,7 +283,7 @@
 			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
 			var/feed_duration = 3 SECONDS
 			user.setClickCooldown(user.get_attack_speed(src))
-			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, list("receiver" = src, "duration" = feed_duration, "belly_target" = belly_target))
+			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, duration = feed_duration, belly_target = belly_target)
 			return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE
@@ -416,7 +416,7 @@
 			if (W.w_class >= src.w_class || is_robot_module(W) || istype(W, /obj/item/holder))
 				return
 
-			var/_answer_k397 = rerun_prompt(user, "k397", list("message" = "You can't slice \the [src] here. Would you like to hide \the [W] inside it instead?", "title" = "No Cutting Surface!", "choices" = list("Yes","No")), TYPE_PROC_REF(/atom, attackby), args)
+			var/_answer_k397 = rerun_ask(user, "k397", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/choice/alert, message = "You can't slice \the [src] here. Would you like to hide \the [W] inside it instead?", title = "No Cutting Surface!", choices = list("Yes","No"))
 			if(isnull(_answer_k397))
 				return TRUE
 			if(_answer_k397 != "Yes")
@@ -4344,7 +4344,7 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 		if( src.open )
 			return INTERACTION_HANDLED_PASS
 
-		var/t = rerun_prompt(user, "k4329", list("kind" = "text", "message" = "Enter what you want to add to the tag:", "title" = "Write", "max_length" = 30), PROC_REF(interaction_item), args)
+		var/t = rerun_ask(user, "k4329", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter what you want to add to the tag:", title = "Write", max_length = 30)
 		if(isnull(t))
 			return TRUE
 

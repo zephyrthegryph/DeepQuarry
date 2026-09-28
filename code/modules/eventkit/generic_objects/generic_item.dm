@@ -180,17 +180,17 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 
 	var/check_togglable
 
-	var/s_name = verb_prompt(user, "a1", list("kind" = "text", "message" = "Item Name:", "title" = "Name"), args)
+	var/s_name = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Item Name:", title = "Name")
 	if(isnull(s_name))
 		return
-	var/s_desc = verb_prompt(user, "a2", list("kind" = "text", "message" = "Item Description:", "title" = "Description"), args)
+	var/s_desc = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Item Description:", title = "Description")
 	if(isnull(s_desc))
 		return
-	var/s_icon_state_off = verb_prompt(user, "a3", list("kind" = "list", "message" = "Choose starting icon state:", "title" = "icon_state_off", "choices" = icon_state_options), args)
+	var/s_icon_state_off = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Choose starting icon state:", title = "icon_state_off", choices = icon_state_options)
 	if(isnull(s_icon_state_off))
 		return
 	// Uploads (s_icon) are asked last: a file upload is a native dialog that waits.
-	var/check_activatable = verb_prompt(user, "a4", list("message" = "Allow it to be turned on?", "title" = "activatable", "choices" = list("Yes", "No", "Cancel")), args)
+	var/check_activatable = verb_ask(user, "a4", args, /datum/om/prompt/choice/alert, message = "Allow it to be turned on?", title = "activatable", choices = list("Yes", "No", "Cancel"))
 	if(isnull(check_activatable))
 		return
 	if(!check_activatable || check_activatable == "Cancel")
@@ -199,11 +199,11 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 		s_activatable = 0
 	if(check_activatable == "Yes")
 		s_activatable = 1
-		var/_answer_a5 = verb_prompt(user, "a5", list("kind" = "text", "message" = "Activation text:", "title" = "Activation Text"), args)
+		var/_answer_a5 = verb_ask(user, "a5", args, /datum/om/prompt/text, message = "Activation text:", title = "Activation Text")
 		if(isnull(_answer_a5))
 			return
 		s_text_activated = _answer_a5
-		var/_answer_a6 = verb_prompt(user, "a6", list("message" = "Allow it to be turned back off again?", "title" = "togglable", "choices" = list("Yes", "No", "Cancel")), args)
+		var/_answer_a6 = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Allow it to be turned back off again?", title = "togglable", choices = list("Yes", "No", "Cancel"))
 		if(isnull(_answer_a6))
 			return
 		check_togglable = _answer_a6
@@ -212,21 +212,21 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 		if(check_togglable == "No")
 			s_togglable = 0
 		if(check_togglable == "Yes")
-			var/_answer_a7 = verb_prompt(user, "a7", list("kind" = "text", "message" = "Deactivation text:", "title" = "Deactivation Text"), args)
+			var/_answer_a7 = verb_ask(user, "a7", args, /datum/om/prompt/text, message = "Deactivation text:", title = "Deactivation Text")
 			if(isnull(_answer_a7))
 				return
 			s_text_deactivated = _answer_a7
 			s_togglable = 1
-		var/_answer_a8 = verb_prompt(user, "a8", list("kind" = "list", "message" = "Choose activated icon state:", "title" = "icon_state_on", "choices" = icon_state_options), args)
+		var/_answer_a8 = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "Choose activated icon state:", title = "icon_state_on", choices = icon_state_options)
 		if(isnull(_answer_a8))
 			return
 		s_icon_state_on = _answer_a8
 		// Uploads (s_icon2) are asked last: a file upload is a native dialog that waits.
-		var/_answer_a9 = verb_prompt(user, "a9", list("kind" = "number", "message" = "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", "title" = "Delay"), args)
+		var/_answer_a9 = verb_ask(user, "a9", args, /datum/om/prompt/number, message = "Do you want it to take time to put turn on? Choose a number of deciseconds to activate, or 0 for instant.", title = "Delay")
 		if(isnull(_answer_a9))
 			return
 		s_delay = _answer_a9
-		var/check_effect = verb_prompt(user, "a10", list("message" = "Produce an effect on activation?", "title" = "Effect?", "choices" = list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Cancel")), args)
+		var/check_effect = verb_ask(user, "a10", args, /datum/om/prompt/choice/alert, message = "Produce an effect on activation?", title = "Effect?", choices = list("No", "Spark", "Flicker Lights", "Flash", "Spawn Item", "Cancel"))
 		if(isnull(check_effect))
 			return
 		if(!check_effect || check_effect == "Cancel")
@@ -241,16 +241,16 @@ ADMIN_VERB(generic_item, R_SPAWN, "Spawn Generic Item", "Spawn a customisable it
 			s_effect = 3
 		if(check_effect == "Spawn Item")
 			s_effect = 4
-			s_object = verb_prompt(user, "object", list("kind" = "typepath", "message" = "Enter full or partial typepath.", "title" = "Typepath"), args)
+			s_object = verb_ask(user, "object", args, /datum/om/prompt/typepath, message = "Enter full or partial typepath.", title = "Typepath")
 			if(isnull(s_object))
 				return
-		var/check_sound = verb_prompt(user, "a11", list("message" = "Play a sound when turning on?", "title" = "Sound", "choices" = list("Yes", "No", "Cancel")), args)
+		var/check_sound = verb_ask(user, "a11", args, /datum/om/prompt/choice/alert, message = "Play a sound when turning on?", title = "Sound", choices = list("Yes", "No", "Cancel"))
 		if(isnull(check_sound))
 			return
 		if(!check_sound || check_sound == "Cancel")
 			return
 		if(check_sound == "Yes")
-			var/_answer_a12 = verb_prompt(user, "a12", list("kind" = "list", "message" = "Choose a sound to play on activation:", "title" = "Sound", "choices" = sound_options), args)
+			var/_answer_a12 = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Choose a sound to play on activation:", title = "Sound", choices = sound_options)
 			if(isnull(_answer_a12))
 				return
 			s_sound = _answer_a12

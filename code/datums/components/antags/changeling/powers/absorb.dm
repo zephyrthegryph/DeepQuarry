@@ -64,7 +64,7 @@
 			T.injure(INJURY_PIERCE, 39, affecting, src)
 
 	feedback_add_details("changeling_powers","A[stage]")
-	om_task_start(/datum/om/task/timed/changeling_absorb, src, T, list("grab" = G, "stage" = stage))
+	om_task_start(/datum/om/task/timed/changeling_absorb, src, T, grab = G, stage = stage)
 
 /// One stage of absorbing the target: 15 seconds holding it in a kill grab.
 /datum/om/task/timed/changeling_absorb

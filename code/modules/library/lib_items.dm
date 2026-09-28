@@ -35,7 +35,7 @@
 		O.forceMove(src)
 		update_icon()
 	else if(istype(O, /obj/item/pen))
-		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to title this bookshelf?", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
+		var/_answer_k37 = rerun_ask(user, "k37", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to title this bookshelf?", max_length = MAX_NAME_LEN, encode = FALSE)
 		if(isnull(_answer_k37))
 			return TRUE
 		var/newname = sanitizeSafe(_answer_k37, MAX_NAME_LEN)
@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 /// Old attack_hand.
 /obj/structure/bookcase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
-		var/obj/item/book/choice = rerun_prompt(user, "k65", list("kind" = "list", "message" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = contents), PROC_REF(interaction_hand), args)
+		var/obj/item/book/choice = rerun_ask(user, "k65", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Which book would you like to remove from the shelf?", title = "Book Selection", choices = contents)
 		if(isnull(choice))
 			return TRUE
 		if(choice)
@@ -266,12 +266,12 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 		if(unique)
 			to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
 			return INTERACTION_HANDLED_PASS
-		var/choice = rerun_prompt(user, "k248", list("kind" = "list", "message" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel")), PROC_REF(interaction_item), args)
+		var/choice = rerun_ask(user, "k248", PROC_REF(interaction_item), args, /datum/om/prompt/choice, message = "What would you like to change?", title = "Change What?", choices = list("Title", "Contents", "Author", "Cancel"))
 		if(isnull(choice))
 			return TRUE
 		switch(choice)
 			if("Title")
-				var/_answer_k251 = rerun_prompt(user, "k251", list("kind" = "text", "message" = "Write a new title:", "encode" = FALSE), PROC_REF(interaction_item), args)
+				var/_answer_k251 = rerun_ask(user, "k251", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write a new title:", encode = FALSE)
 				if(isnull(_answer_k251))
 					return TRUE
 				var/newtitle = reject_bad_text(sanitizeSafe(_answer_k251))
@@ -282,7 +282,7 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 					src.name = newtitle
 					src.title = newtitle
 			if("Contents")
-				var/content = rerun_prompt(user, "k259", list("kind" = "text", "message" = "Write your book's contents (HTML NOT allowed):", "max_length" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(interaction_item), args)
+				var/content = rerun_ask(user, "k259", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write your book's contents (HTML NOT allowed):", max_length = MAX_BOOK_MESSAGE_LEN, multiline = TRUE)
 				if(isnull(content))
 					return TRUE
 				if(!content)
@@ -291,7 +291,7 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 				else
 					src.dat += content
 			if("Author")
-				var/newauthor = rerun_prompt(user, "k266", list("kind" = "text", "message" = "Write the author's name:", "max_length" = MAX_LNAME_LEN), PROC_REF(interaction_item), args)
+				var/newauthor = rerun_ask(user, "k266", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write the author's name:", max_length = MAX_LNAME_LEN)
 				if(isnull(newauthor))
 					return TRUE
 				if(!newauthor)

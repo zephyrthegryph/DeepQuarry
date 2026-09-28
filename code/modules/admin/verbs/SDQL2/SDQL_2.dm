@@ -187,7 +187,7 @@ Example: USING PROCCALL = BLOCKING, SELECT = FORCE_NULLS, PRIORITY = HIGH SELECT
 		CRASH("SDQL2 fatal error");};
 
 ADMIN_VERB(sdql2_query, R_DEBUG, "SDQL2 Query", "Run a SDQL2 query.", ADMIN_CATEGORY_DEBUG_GAME, query_text as message)
-	var/prompt = verb_prompt(user, "a1", list("message" = "Run SDQL2 Query?", "title" = "SDQL2", "choices" = list("Yes", "Cancel")), args)
+	var/prompt = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Run SDQL2 Query?", title = "SDQL2", choices = list("Yes", "Cancel"))
 	if(isnull(prompt))
 		return
 	if (prompt != "Yes")

@@ -79,11 +79,15 @@
 		"Kal om neth — summon a soul stone" = "soulstone",
 		"Da A'ig Osk — summon a construct shell" = "construct",
 	)
-	om_prompt(src, usr, list("kind" = "list", "message" = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", "title" = "Talisman", "choices" = rune_options, "requires" = PROMPT_HELD, "data" = list("options" = rune_options)), PROC_REF(talisman_chant_chosen))
+	om_ask(usr, /datum/om/prompt/choice/carried_item, PROC_REF(talisman_chant_chosen), title = "Talisman", message = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
 
-/obj/item/paper/talisman/proc/talisman_chant_chosen(mob/user, picked_label, datum/om/prompt/ask)
-	var/list/rune_options = ask.get("options")
-	var/rune = rune_options[picked_label]
+/// A pick made with an item the answerer carries (a talisman, a pinpointer, a technomancer
+/// device or spell): re-checked that it's still carried and they're able.
+/datum/om/prompt/choice/carried_item
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/obj/item/paper/talisman/proc/talisman_chant_chosen(datum/om/prompt/choice/carried_item/ask)
+	var/rune = ask.choices[ask.choice]
 	if(rune && uses > 0)
 		Topic("rune=[rune]", list("rune" = rune))
 

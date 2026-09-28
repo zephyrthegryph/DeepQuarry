@@ -60,7 +60,7 @@
 	if(target == user)
 		to_chat(user, span_notice("You can't pull \the [src] by yourself, that would just be sad!"))
 		return ITEM_INTERACT_FAILURE
-	var/check_pull = rerun_prompt(target, "a1", list("message" = "\The [user] is offering to pull \the [src] with you, do you want to pull it?", "title" = "Pull Cracker", "choices" = list("Yes", "No")), PROC_REF(attack), args)
+	var/check_pull = rerun_ask(target, "a1", PROC_REF(attack), args, /datum/om/prompt/choice/alert, message = "\The [user] is offering to pull \the [src] with you, do you want to pull it?", title = "Pull Cracker", choices = list("Yes", "No"))
 	if(isnull(check_pull))
 		to_chat(user, span_notice("You offer \the [src] to \the [target] to pull and wait to see how whether they do."))
 		return ITEM_INTERACT_SUCCESS

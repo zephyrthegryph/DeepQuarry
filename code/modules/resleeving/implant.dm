@@ -131,7 +131,7 @@
 
 		var/turf/T1 = get_turf(M)
 		if(T1)
-			om_task_start(/datum/om/task/timed/backup_implanter_backup_implant, user, M, list("receiver" = src, "duration" = M == user ? 0 : 5 SECONDS, "T1" = T1))
+			om_task_start(/datum/om/task/timed/backup_implanter_backup_implant, user, M, receiver = src, duration = (M == user ? 0 : 5 SECONDS), T1 = T1)
 		return ITEM_INTERACT_SUCCESS
 
 //The glass case for the implant

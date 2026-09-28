@@ -298,7 +298,7 @@
 	if(new_signature)
 		signature = new_signature
 	*/
-	var/_answer_k301 = rerun_prompt(user, "k301", list("kind" = "text", "message" = "Enter new signature. Leave blank for 'Anonymous'", "title" = "New Signature", "default" = signature, "max_length" = MAX_MESSAGE_LEN), PROC_REF(attack_self), args)
+	var/_answer_k301 = rerun_ask(user, "k301", PROC_REF(attack_self), args, /datum/om/prompt/text, message = "Enter new signature. Leave blank for 'Anonymous'", title = "New Signature", default = signature)
 	if(isnull(_answer_k301))
 		return TRUE
 	signature = _answer_k301
@@ -314,7 +314,7 @@
 	set category = "Object"
 
 	var/list/possible_colours = list ("Yellow", "Green", "Pink", "Blue", "Orange", "Cyan", "Red", "Invisible", "Black")
-	var/selected_type = rerun_prompt(usr, "k314", list("kind" = "list", "message" = "Pick new colour.", "title" = "Pen Colour", "choices" = possible_colours), VERB_REF(set_colour), args)
+	var/selected_type = rerun_ask(usr, "k314", VERB_REF(set_colour), args, /datum/om/prompt/choice, message = "Pick new colour.", title = "Pen Colour", choices = possible_colours)
 	if(isnull(selected_type))
 		return
 

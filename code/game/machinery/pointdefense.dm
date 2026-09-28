@@ -95,10 +95,12 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	return data
 
 /obj/machinery/pointdefense_control/multitool_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "[src]", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_USABLE_BY("physical")), PROC_REF(ident_entered))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(ident_entered), message = "Enter a new ident tag.", title = "[src]", default = id_tag, max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/pointdefense_control/proc/ident_entered(mob/user, new_ident, datum/om/prompt/ask)
+/obj/machinery/pointdefense_control/proc/ident_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/new_ident = ask.text
 	if(new_ident && new_ident != id_tag && user.Adjacent(src))
 		for(var/obj/machinery/pointdefense_control/PC as anything in REGISTRY_MEMBERS(REGISTRY_POINTDEFENSE_CONTROLLERS))
 			if(PC != src && PC.id_tag == new_ident)
@@ -167,7 +169,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 			return PDC
 
 /obj/machinery/pointdefense/multitool_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "[src]", "default" = id_tag, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(ident_entered))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(ident_entered), message = "Enter a new ident tag.", title = "[src]", default = id_tag, max_length = MAX_NAME_LEN, requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/pointdefense/proc/ident_entered(mob/user, new_ident, datum/om/prompt/ask)

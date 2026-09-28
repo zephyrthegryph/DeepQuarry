@@ -69,7 +69,7 @@
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	om_task_start(/datum/om/task/timed/sandbag_build, user, src, list("duration" = recipe.time, "receiver" = src, "recipe" = recipe, "required" = required, "produced" = produced))
+	om_task_start(/datum/om/task/timed/sandbag_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
 
 /datum/om/task/timed/sandbag_build
 	complete_proc = /obj/item/stack/sandbags/proc/produce_sandbag_done

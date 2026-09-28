@@ -166,17 +166,17 @@
 		if(antag) antag.place_mob(src.current)
 
 	else if (href_list["role_edit"])
-		om_prompt(src, usr, list("kind" = "list", "message" = "Select new role", "title" = "Assigned role", "default" = assigned_role, "choices" = SSjob.occupations_by_name, "requires" = PROMPT_ADMIN(R_ADMIN)), PROC_REF(role_edited))
+		om_ask(usr, /datum/om/prompt/choice, PROC_REF(role_edited), title = "Assigned role", message = "Select new role", default = assigned_role, choices = SSjob.occupations_by_name, requires = PROMPT_ADMIN(R_ADMIN))
 
 	else if (href_list["memory_edit"])
-		om_prompt(src, usr, list("kind" = "text", "message" = "Write new memory", "title" = "Memory", "default" = memory, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE, "requires" = PROMPT_ADMIN(R_ADMIN)), PROC_REF(memory_edited))
+		om_ask(usr, /datum/om/prompt/text/mind_edit, PROC_REF(memory_edited), message = "Write new memory", default = memory)
 
 
 	else if (href_list["amb_edit"])
 		var/datum/mind/mind = locate(href_list["amb_edit"])
 		if(!mind)
 			return
-		om_prompt(src, usr, list("kind" = "text", "message" = "Enter a new ambition", "title" = "Memory", "default" = mind.ambitions, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE, "requires" = PROMPT_ADMIN(R_ADMIN), "data" = list("mind" = mind)), PROC_REF(ambition_edited))
+		om_ask(usr, /datum/om/prompt/text/mind_edit, PROC_REF(ambition_edited), message = "Enter a new ambition", default = mind.ambitions, edited = mind)
 
 	else if (href_list["obj_edit"] || href_list["obj_add"])
 		var/datum/objective/objective
@@ -195,12 +195,7 @@
 				def_value = "custom"
 
 		var/list/choices = list("assassinate", "debrain", "protect", "prevent", "harm", "brig", "hijack", "escape", "survive", "steal", "mercenary", "capture", "absorb", "custom")
-		om_prompt_sequence(src, usr, list(
-			list("key" = "type", "kind" = "list", "message" = "Select objective type:", "title" = "Objective type", "choices" = choices, "default" = def_value),
-			PROC_REF(objective_ask_detail),
-			PROC_REF(objective_ask_steal_type),
-			PROC_REF(objective_ask_steal_name),
-		), PROC_REF(objective_edited), list("requires" = PROMPT_ADMIN(R_ADMIN), "data" = list("objective" = objective, "pos" = objective_pos)))
+		om_flow_start(/datum/om/flow/mind_objective_edit, usr, null, mind = src, objective = objective, pos = objective_pos, choices = choices, def_value = def_value)
 
 	else if (href_list["obj_delete"])
 		var/datum/objective/objective = locate(href_list["obj_delete"])
@@ -270,7 +265,7 @@
 			if("crystals")
 				if (check_rights_for(usr.client, R_FUN))
 				//	var/obj/item/uplink/hidden/suplink = find_syndicate_uplink() No longer needed, uses stored in mind
-					om_prompt(src, usr, list("kind" = "number", "message" = "Amount of telecrystals for [key]", "default" = tcrystals, "requires" = PROMPT_ADMIN(R_FUN)), PROC_REF(telecrystals_set))
+					om_ask(usr, /datum/om/prompt/number, PROC_REF(telecrystals_set), message = "Amount of telecrystals for [key]", default = tcrystals, requires = PROMPT_ADMIN(R_FUN))
 
 	else if (href_list["obj_announce"])
 		var/obj_count = 1
@@ -280,66 +275,108 @@
 			obj_count++
 	edit_memory(usr)
 
-/datum/mind/proc/role_edited(mob/user, new_role, datum/om/prompt/ask)
-	assigned_role = new_role
-	edit_memory(user)
+/datum/om/prompt/text/mind_edit
+	title = "Memory"
+	multiline = TRUE
+	requires = PROMPT_ADMIN(R_ADMIN)
+	/// The mind whose ambitions are edited.
+	var/datum/mind/edited
 
-/datum/mind/proc/memory_edited(mob/user, new_memo, datum/om/prompt/ask)
-	memory = new_memo
-	edit_memory(user)
+/datum/mind/proc/role_edited(datum/om/prompt/choice/ask)
+	assigned_role = ask.choice
+	edit_memory(ask.answerer)
 
-/datum/mind/proc/ambition_edited(mob/user, new_ambition, datum/om/prompt/ask)
-	var/datum/mind/mind = ask.get("mind")
-	if(mind)
-		mind.ambitions = new_ambition
-		to_chat(mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [mind.ambitions]"))
+/datum/mind/proc/memory_edited(datum/om/prompt/text/mind_edit/ask)
+	memory = ask.text
+	edit_memory(ask.answerer)
+
+/datum/mind/proc/ambition_edited(datum/om/prompt/text/mind_edit/ask)
+	var/datum/mind/mind = ask.edited
+	mind.ambitions = ask.text
+	to_chat(mind.current, span_warning("Your ambitions have been changed by higher powers, they are now: [mind.ambitions]"))
 	log_and_message_admins("made [key_name(mind.current)]'s ambitions be '[mind.ambitions]'.")
 
-/// The second question of the objective editor, which depends on the objective type.
-/datum/mind/proc/objective_ask_detail(mob/user, datum/om/prompt/ask)
-	var/datum/objective/objective = ask.get("objective")
-	var/new_obj_type = ask.get("type")
-	switch(new_obj_type)
+/// The admin objective editor: the type, then a detail that depends on it (a target, a number,
+/// a text, an item to steal; a custom steal asks its type and name too), then the edit.
+/datum/om/flow/mind_objective_edit
+	requires = PROMPT_ADMIN(R_ADMIN)
+	var/datum/mind/mind
+	var/datum/objective/objective
+	var/pos
+	var/list/choices
+	var/def_value
+	var/obj_type
+	var/detail
+	var/steal_type
+	var/steal_name
+
+/datum/om/flow/mind_objective_edit/start()
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(type_chosen), title = "Objective type", message = "Select objective type:", choices = choices, default = def_value)
+
+/// The second question, which depends on the objective type.
+/datum/om/flow/mind_objective_edit/proc/type_chosen(datum/om/prompt/choice/ask)
+	obj_type = ask.choice
+	switch(obj_type)
 		if("assassinate","protect","debrain", "harm", "brig")
 			var/list/possible_targets = list("Free objective")
 			for(var/datum/mind/possible_target in SSticker.minds)
-				if ((possible_target != src) && ishuman(possible_target.current))
+				if ((possible_target != mind) && ishuman(possible_target.current))
 					possible_targets += possible_target.current
 			var/mob/def_target = null
 			var/objective_list[] = list(/datum/objective/assassinate, /datum/objective/protect, /datum/objective/debrain)
 			if (objective&&(objective.type in objective_list) && objective.target)
 				def_target = objective.target.current
-			return list("key" = "detail", "kind" = "list", "message" = "Select target:", "title" = "Objective target", "choices" = possible_targets, "default" = def_target)
+			om_ask(actor, /datum/om/prompt/choice, PROC_REF(detail_chosen), title = "Objective target", message = "Select target:", choices = possible_targets, default = def_target)
 		if("capture","absorb", "vore")
 			var/def_num
-			if(objective&&objective.type==text2path("/datum/objective/[new_obj_type]"))
+			if(objective&&objective.type==text2path("/datum/objective/[obj_type]"))
 				def_num = objective.target_amount
-			return list("key" = "detail", "kind" = "number", "message" = "Input target number:", "title" = "Objective", "default" = def_num)
+			om_ask(actor, /datum/om/prompt/number, PROC_REF(detail_entered), title = "Objective", message = "Input target number:", default = def_num)
 		if("custom")
-			return list("key" = "detail", "kind" = "text", "message" = "Custom objective:", "title" = "Objective", "default" = objective ? objective.explanation_text : "", "max_length" = MAX_MESSAGE_LEN)
+			om_ask(actor, /datum/om/prompt/text, PROC_REF(detail_written), title = "Objective", message = "Custom objective:", default = objective ? objective.explanation_text : "")
 		if("steal")
 			var/datum/objective/steal/S = new
 			var/list/possible_items_all = S.possible_items + S.possible_items_special + "custom"
 			qdel(S)
-			return list("key" = "detail", "kind" = "list", "message" = "Select target:", "title" = "Objective target", "choices" = possible_items_all)
+			om_ask(actor, /datum/om/prompt/choice, PROC_REF(detail_chosen), title = "Objective target", message = "Select target:", choices = possible_items_all)
+		else
+			finish()
 
-/datum/mind/proc/objective_ask_steal_type(mob/user, datum/om/prompt/ask)
-	if(ask.get("type") == "steal" && ask.get("detail") == "custom")
-		return list("key" = "steal_type", "kind" = "list", "message" = "Select type:", "title" = "Type", "choices" = typesof(/obj/item))
+/datum/om/flow/mind_objective_edit/proc/detail_chosen(datum/om/prompt/choice/ask)
+	detail = ask.choice
+	if(obj_type == "steal" && detail == "custom")
+		om_ask(actor, /datum/om/prompt/choice, PROC_REF(steal_type_chosen), title = "Type", message = "Select type:", choices = typesof(/obj/item))
+		return
+	finish()
 
-/datum/mind/proc/objective_ask_steal_name(mob/user, datum/om/prompt/ask)
-	var/obj/item/custom_target = ask.get("steal_type")
-	if(ask.get("type") == "steal" && custom_target)
-		return list("key" = "steal_name", "kind" = "text", "message" = "Enter target name:", "title" = "Objective target", "default" = initial(custom_target.name), "max_length" = MAX_MESSAGE_LEN)
+/datum/om/flow/mind_objective_edit/proc/detail_entered(datum/om/prompt/number/ask)
+	detail = ask.number
+	finish()
 
-/datum/mind/proc/objective_edited(mob/user, datum/om/prompt/ask)
-	objective_edit_apply(user, ask)
-	edit_memory(user)
+/datum/om/flow/mind_objective_edit/proc/detail_written(datum/om/prompt/text/ask)
+	detail = ask.text
+	finish()
 
-/datum/mind/proc/objective_edit_apply(mob/user, datum/om/prompt/ask)
-	var/datum/objective/objective = ask.get("objective")
-	var/objective_pos = ask.get("pos")
-	var/new_obj_type = ask.get("type")
+/datum/om/flow/mind_objective_edit/proc/steal_type_chosen(datum/om/prompt/choice/ask)
+	steal_type = ask.choice
+	var/obj/item/custom_target = steal_type
+	if(!custom_target)
+		finish()
+		return
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(steal_name_entered), title = "Objective target", message = "Enter target name:", default = initial(custom_target.name))
+
+/datum/om/flow/mind_objective_edit/proc/steal_name_entered(datum/om/prompt/text/ask)
+	steal_name = ask.text
+	finish()
+
+/datum/om/flow/mind_objective_edit/proc/finish()
+	mind.objective_edit_apply(actor, src)
+	mind.edit_memory(actor)
+
+/datum/mind/proc/objective_edit_apply(mob/user, datum/om/flow/mind_objective_edit/edit)
+	var/datum/objective/objective = edit.objective
+	var/objective_pos = edit.pos
+	var/new_obj_type = edit.obj_type
 	var/datum/objective/new_objective = null
 
 	switch (new_obj_type)
@@ -349,7 +386,7 @@
 			var/objective_type_text = copytext(new_obj_type, 2)//Leave the rest of the text.
 			var/objective_type = "[objective_type_capital][objective_type_text]"//Add them together into a text string.
 
-			var/new_target = ask.get("detail")
+			var/new_target = edit.detail
 			if (!new_target) return
 
 			var/objective_path = text2path("/datum/objective/[new_obj_type]")
@@ -392,11 +429,11 @@
 			else
 				new_objective = objective
 			var/datum/objective/steal/steal = new_objective
-			if (!steal.apply_steal_choice(ask.get("detail"), ask.get("steal_type"), ask.get("steal_name")))
+			if (!steal.apply_steal_choice(edit.detail, edit.steal_type, edit.steal_name))
 				return
 
 		if("capture","absorb", "vore")
-			var/target_number = ask.get("detail")
+			var/target_number = edit.detail
 			if (isnull(target_number))//Ordinarily, you wouldn't need isnull. In this case, the value may already exist.
 				return
 
@@ -414,7 +451,7 @@
 			new_objective.target_amount = target_number
 
 		if ("custom")
-			var/expl = ask.get("detail")
+			var/expl = edit.detail
 			if (!expl) return
 			new_objective = new /datum/objective
 			new_objective.owner = src
@@ -428,9 +465,9 @@
 	else
 		objectives += new_objective
 
-/datum/mind/proc/telecrystals_set(mob/user, crystals, datum/om/prompt/ask)
-	tcrystals = crystals
-	edit_memory(user)
+/datum/mind/proc/telecrystals_set(datum/om/prompt/number/ask)
+	tcrystals = ask.number
+	edit_memory(ask.answerer)
 
 /datum/mind/proc/find_syndicate_uplink()
 	var/list/L = current.get_contents()

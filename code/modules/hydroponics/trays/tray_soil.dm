@@ -40,7 +40,7 @@
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
 		return TRUE
 	if(!seed)
-		var/choice= rerun_prompt(user, "k43", list("message" = "Do you want to destroy the growplot?", "title" = "Destroy growplot?", "choices" = list("Yes", "No")), PROC_REF(interaction_shovel), args)
+		var/choice= rerun_ask(user, "k43", PROC_REF(interaction_shovel), args, /datum/om/prompt/choice/alert, message = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"))
 		if(isnull(choice))
 			return
 		if(!choice||choice=="No")

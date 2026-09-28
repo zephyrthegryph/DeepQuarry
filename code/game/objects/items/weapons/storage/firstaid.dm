@@ -139,12 +139,13 @@
 
 /obj/item/storage/pill_bottle/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(label_entered))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(label_entered), title = "Label", message = "Enter a label for [name]", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	else
 		..()
 
-/obj/item/storage/pill_bottle/proc/label_entered(mob/user, tmp_label, datum/om/prompt/ask)
-	tmp_label = sanitizeSafe(tmp_label, MAX_NAME_LEN)
+/obj/item/storage/pill_bottle/proc/label_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/tmp_label = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(length(tmp_label) > 50)
 		to_chat(user, span_notice("The label can be at most 50 characters long."))
 	else if(length(tmp_label) > 10)

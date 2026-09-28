@@ -28,10 +28,10 @@
 DECLARE_INTERACTIONS(/obj/item/pipe_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/pipe_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_prompt(src, user, list("kind" = "list", "message" = "Which colour do you want to use?", "title" = "Pipe painter", "choices" = modes, "requires" = PROMPT_HELD), PROC_REF(mode_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(mode_chosen), title = "Pipe painter", message = "Which colour do you want to use?", choices = modes, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/pipe_painter/proc/mode_chosen(mob/user, new_mode, datum/om/prompt/ask)
-	mode = new_mode
+/obj/item/pipe_painter/proc/mode_chosen(datum/om/prompt/choice/ask)
+	mode = ask.choice
 
 /obj/item/pipe_painter/examine(mob/user)
 	. = ..()

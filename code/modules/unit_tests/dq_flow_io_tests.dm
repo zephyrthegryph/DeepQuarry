@@ -88,9 +88,9 @@
 	A.test_candidate = candidate
 	TEST_ASSERT_NULL(A.pick_target(actor), "pick_target() asks and returns at once")
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the pick is an om_prompt")
-	var/datum/om/prompt/P = sched.test_prompts[1]
-	TEST_ASSERT_EQUAL(P.spec["kind"], "list", "a list of the candidates")
-	TEST_ASSERT(candidate in P.spec["choices"], "offering the candidates")
+	var/datum/om/prompt/choice/P = sched.test_prompts[1]
+	TEST_ASSERT(istype(P, /datum/om/prompt/choice), "a list of the candidates")
+	TEST_ASSERT(candidate in P.choices, "offering the candidates")
 
 /datum/unit_test/om/rainbow_crayon_asks_colours
 
@@ -99,8 +99,7 @@
 	var/datum/om_test_entity/user = entity(made)
 	var/obj/item/pen/crayon/rainbow/crayon = new
 	made += crayon
-	crayon.ask_rainbow_colours(user, "Crayon colour", "Crayon shade colour")
+	crayon.ask_rainbow_colour(user, "Crayon colour", "Crayon shade colour")
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the colours are asked with om_prompt, not a blocking picker")
 	var/datum/om/prompt/P = sched.test_prompts[1]
-	TEST_ASSERT_EQUAL(P.spec["kind"], "color", "a colour prompt")
-	TEST_ASSERT(P.spec["optional"], "either colour may be cancelled")
+	TEST_ASSERT(istype(P, /datum/om/prompt/color/crayon_colour), "a colour prompt for the main colour first")

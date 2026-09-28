@@ -47,7 +47,9 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 
 // show_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
-/obj/item/tvcamera/proc/channel_named(mob/user, nc, datum/om/prompt/ask)
+/obj/item/tvcamera/proc/channel_named(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/nc = ask.text
 	if(nc)
 		channel = nc
 		camera.c_tag = channel
@@ -57,7 +59,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	if(..())
 		return 1
 	if(href_list["channel"])
-		om_prompt(src, usr, list("kind" = "text", "message" = "Channel name", "title" = "Select new channel name", "default" = channel, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_USABLE_BY("physical")), PROC_REF(channel_named))
+		om_ask(usr, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
 	if(href_list["video"])
 		camera.set_status(!camera.status)
 		if(camera.status)
@@ -195,8 +197,9 @@ DECLARE_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PR
 
 // show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 
-/obj/item/clothing/accessory/bodycam/proc/channel_named(mob/user, nc, datum/om/prompt/ask)
-	nc = sanitize(nc,MAX_NAME_LEN)
+/obj/item/clothing/accessory/bodycam/proc/channel_named(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/nc = sanitize(ask.text, MAX_NAME_LEN)
 	if(nc)
 		channel = nc
 		bcamera.c_tag = channel
@@ -207,7 +210,7 @@ DECLARE_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PR
 	if(..())
 		return 1
 	if(href_list["channel"])
-		om_prompt(src, usr, list("kind" = "text", "message" = "Channel name", "title" = "Select new channel name", "default" = channel, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_USABLE_BY("physical")), PROC_REF(channel_named))
+		om_ask(usr, /datum/om/prompt/text, PROC_REF(channel_named), default = channel, title = "Select new channel name", message = "Channel name", max_length = MAX_NAME_LEN, requires = PROMPT_USABLE_BY("physical"))
 	if(href_list["video"])
 		bcamera.set_status(!bcamera.status)
 		var/turf/here = get_turf(usr)

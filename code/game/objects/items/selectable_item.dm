@@ -14,14 +14,15 @@ DECLARE_INTERACTIONS(/obj/item/selectable_item, INTERACT_USE(null, PROC_REF(inte
 
 /// Old attack_self.
 /obj/item/selectable_item/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_prompt_sequence(src, user, list(
-		list("key" = "preface", "message" = {"[preface_string]"}, "title" = preface_title),
-		list("key" = "item", "kind" = "list", "message" = selection_string, "title" = selection_title, "choices" = item_options),
-	), PROC_REF(item_selected), list("requires" = PROMPT_HELD))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(preface_confirmed), title = preface_title, message = preface_string, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/selectable_item/proc/item_selected(mob/user, datum/om/prompt/ask)
-	var/chosen_item = item_options[ask.get("item")]
+/obj/item/selectable_item/proc/preface_confirmed(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(item_selected), title = selection_title, message = selection_string, choices = item_options, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+
+/obj/item/selectable_item/proc/item_selected(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/chosen_item = item_options[ask.choice]
 	if(chosen_item)
 		user.drop_item()
 		var/obj/item/result = new chosen_item(get_turf(user))

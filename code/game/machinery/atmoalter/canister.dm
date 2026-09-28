@@ -398,7 +398,7 @@ update_flag
 					"\[Air\]" = "grey", \
 					"\[CAUTION\]" = "yellow", \
 				)
-				om_prompt(src, ui.user, list("kind" = "list", "message" = "Choose canister label", "title" = "Gas canister", "choices" = colors, "requires" = PROMPT_USABLE, "data" = list("colors" = colors)), PROC_REF(label_chosen))
+				om_ask(ui.user, /datum/om/prompt/choice/canister_label, PROC_REF(label_chosen), choices = colors)
 		if("pressure")
 			var/pressure = params["pressure"]
 			if(pressure == "reset")
@@ -411,7 +411,7 @@ update_flag
 				pressure = 10*ONE_ATMOSPHERE
 				. = TRUE
 			else if(pressure == "input")
-				om_prompt(src, ui.user, list("kind" = "number", "message" = "New release pressure ([ONE_ATMOSPHERE/10]-[10*ONE_ATMOSPHERE] kPa):", "title" = name, "default" = release_pressure, "max" = 10*ONE_ATMOSPHERE, "min" = ONE_ATMOSPHERE/10, "requires" = PROMPT_USABLE), PROC_REF(release_pressure_entered))
+				om_ask(ui.user, /datum/om/prompt/number/canister_pressure, PROC_REF(release_pressure_entered), title = name, default = release_pressure, ui_refresh = src)
 				return TRUE
 			else if(text2num(pressure) != null)
 				pressure = text2num(pressure)
@@ -447,18 +447,33 @@ update_flag
 	add_fingerprint(ui.user)
 	update_icon()
 
-/obj/machinery/portable_atmospherics/canister/proc/label_chosen(mob/user, label, datum/om/prompt/ask)
-	var/list/colors = ask.get("colors")
-	if(!can_label)
-		return
+/datum/om/prompt/choice/canister_label
+	title = "Gas canister"
+	message = "Choose canister label"
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/choice/canister_label/valid()
+	var/obj/machinery/portable_atmospherics/canister/C = subject
+	return C.can_label ? null : "can't label"
+
+/obj/machinery/portable_atmospherics/canister/proc/label_chosen(datum/om/prompt/choice/canister_label/ask)
+	var/label = ask.choice
 	if(label)
-		canister_color = colors[label]
-		icon_state = colors[label]
+		canister_color = ask.choices[label]
+		icon_state = ask.choices[label]
 		name = "Canister: [label]"
 
-/obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(mob/user, pressure, datum/om/prompt/ask)
-	release_pressure = clamp(round(pressure), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
-	SStgui.update_uis(src)
+/datum/om/prompt/number/canister_pressure
+	min = ONE_ATMOSPHERE/10
+	max = 10*ONE_ATMOSPHERE
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/number/canister_pressure/prepare()
+	message = "New release pressure ([min]-[max] kPa):"
+	return TRUE
+
+/obj/machinery/portable_atmospherics/canister/proc/release_pressure_entered(datum/om/prompt/number/canister_pressure/ask)
+	release_pressure = clamp(round(ask.number), ONE_ATMOSPHERE/10, 10*ONE_ATMOSPHERE)
 
 /obj/machinery/portable_atmospherics/canister/phoron/Initialize(mapload)
 	. = ..()

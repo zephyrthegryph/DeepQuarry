@@ -109,7 +109,7 @@
 	if(pipes.len == 1)
 		pipe = pipes[1]
 	else
-		pipe = rerun_prompt(src, "pipe", list("kind" = "list", "message" = "Crawl Through Vent", "title" = "Pick a pipe", "choices" = pipes), caller_verb, list())
+		pipe = rerun_ask(src, "pipe", caller_verb, list(), /datum/om/prompt/choice, message = "Crawl Through Vent", title = "Pick a pipe", choices = pipes)
 		if(!(pipe in pipes))
 			return
 	if(canmove && pipe)

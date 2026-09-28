@@ -27,7 +27,7 @@
 
 //ADMINVERBS
 ADMIN_VERB(investigate_show, R_ADMIN|R_MOD|R_SERVER, "Investigate", "Check hrefs, notes or singulo and telesci logs.", ADMIN_CATEGORY_INVESTIGATE)
-	var/subject = verb_prompt(user, "a1", list("kind" = "list", "message" = "Select Subject", "title" = "Select the subject to investigate.", "choices" = list("hrefs","notes","singulo","telesci")), args)
+	var/subject = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select Subject", title = "Select the subject to investigate.", choices = list("hrefs","notes","singulo","telesci"))
 	if(isnull(subject))
 		return
 	if(!subject)

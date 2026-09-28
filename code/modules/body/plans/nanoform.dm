@@ -334,9 +334,9 @@
 			if(!paddles.can_use(user))
 				return
 			to_chat(user, span_notice("You hook up [W] to the contact points in the maintenance assembly."))
-			om_task_start(/datum/om/task/timed/core_dormancy_paddles_charge, user, site, list("receiver" = src, "W" = W, "step" = step))
+			om_task_start(/datum/om/task/timed/core_dormancy_paddles_charge, user, site, W = W, step = step)
 			return
-	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, list("receiver" = src, "duration" = 5 SECONDS, "W" = W, "step" = step))
+	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 5 SECONDS, W = W, step = step)
 
 /datum/om/task/timed/core_dormancy_paddles_charge
 	duration = 5 SECONDS
@@ -350,7 +350,7 @@
 	var/atom/site = task.target
 	var/step = task.step
 	playsound(site, 'sound/machines/defib_charge.ogg', 50, 0)
-	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, list("receiver" = src, "duration" = 1 SECOND, "W" = W, "step" = step))
+	om_task_start(/datum/om/task/timed/core_dormancy_repair_step, user, site, duration = 1 SECOND, W = W, step = step)
 
 /datum/om/task/timed/core_dormancy_repair_step
 	complete_proc = /datum/affliction/core_dormancy/proc/repair_step_done

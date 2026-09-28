@@ -219,7 +219,7 @@
 		if(module.selectable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Which module do you wish to select?", "title" = "Select Module", "choices" = selectable), VERB_REF(select_module), args)
+	var/obj/item/rig_module/module = rerun_ask(usr, "a1", VERB_REF(select_module), args, /datum/om/prompt/choice, message = "Which module do you wish to select?", title = "Select Module", choices = selectable)
 	if(isnull(module))
 		return
 
@@ -257,7 +257,7 @@
 		if(module.toggleable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = rerun_prompt(usr, "a2", list("kind" = "list", "message" = "Which module do you wish to toggle?", "title" = "Toggle Module", "choices" = selectable), VERB_REF(toggle_module), args)
+	var/obj/item/rig_module/module = rerun_ask(usr, "a2", VERB_REF(toggle_module), args, /datum/om/prompt/choice, message = "Which module do you wish to toggle?", title = "Toggle Module", choices = selectable)
 	if(isnull(module))
 		return
 
@@ -297,7 +297,7 @@
 		if(module.usable)
 			selectable |= module
 
-	var/obj/item/rig_module/module = rerun_prompt(usr, "a3", list("kind" = "list", "message" = "Which module do you wish to engage?", "title" = "Engage Module", "choices" = selectable), VERB_REF(engage_module), args)
+	var/obj/item/rig_module/module = rerun_ask(usr, "a3", VERB_REF(engage_module), args, /datum/om/prompt/choice, message = "Which module do you wish to engage?", title = "Engage Module", choices = selectable)
 	if(isnull(module))
 		return
 

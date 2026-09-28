@@ -281,12 +281,12 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 			open_load_dialog(usr)
 			return 1
 	else if(href_list["resetslot"])
-		var/_answer_k290 = topic_prompt(usr, href_list, "k290", list("message" = "This will reset the current slot. Continue?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+		var/_answer_k290 = topic_ask(usr, href_list, "k290", /datum/om/prompt/choice/alert, message = "This will reset the current slot. Continue?", title = "Reset current slot?", choices = list("No", "Yes"))
 		if(isnull(_answer_k290))
 			return
 		if("Yes" != _answer_k290)
 			return 0
-		var/_answer_k292 = topic_prompt(usr, href_list, "k292", list("message" = "Are you completely sure that you want to reset this character slot?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+		var/_answer_k292 = topic_ask(usr, href_list, "k292", /datum/om/prompt/choice/alert, message = "Are you completely sure that you want to reset this character slot?", title = "Reset current slot?", choices = list("No", "Yes"))
 		if(isnull(_answer_k292))
 			return
 		if("Yes" != _answer_k292)
@@ -372,7 +372,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	var/choice = rerun_prompt(user, "k375", list("kind" = "list", "message" = "Select a character to load:", "title" = "Load Slot", "choices" = charlist, "default" = default), PROC_REF(open_load_dialog), args)
+	var/choice = rerun_ask(user, "k375", PROC_REF(open_load_dialog), args, /datum/om/prompt/choice, message = "Select a character to load:", title = "Load Slot", choices = charlist, default = default)
 	if(isnull(choice))
 		return
 	selecting_slots = FALSE
@@ -415,7 +415,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	var/choice = rerun_prompt(user, "k416", list("kind" = "list", "message" = "Select a character to COPY TO:", "title" = "Copy Slot", "choices" = charlist), PROC_REF(open_copy_dialog), args)
+	var/choice = rerun_ask(user, "k416", PROC_REF(open_copy_dialog), args, /datum/om/prompt/choice, message = "Select a character to COPY TO:", title = "Copy Slot", choices = charlist)
 	if(isnull(choice))
 		return
 	selecting_slots = FALSE
@@ -427,7 +427,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		log_world("## ERROR Player picked [choice] slot to copy to, but that wasn't one we sent.")
 		return
 
-	var/_answer_k426 = rerun_prompt(user, "k426", list("message" = "Are you sure you want to override slot [slotnum], [choice]'s savedata?", "title" = "Confirm Override", "choices" = list("No", "Yes")), PROC_REF(open_copy_dialog), args)
+	var/_answer_k426 = rerun_ask(user, "k426", PROC_REF(open_copy_dialog), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to override slot [slotnum], [choice]'s savedata?", title = "Confirm Override", choices = list("No", "Yes"))
 	if(isnull(_answer_k426))
 		return
 	if(_answer_k426 == "Yes")

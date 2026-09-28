@@ -388,24 +388,39 @@
 	set category = "OOC.Game Settings"
 	set name = "Set Incorporeal Speed"
 
-	om_prompt(src, usr, list("kind" = "number", "message" = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", "title" = "Incorporeal movement speed", "default" = (0.5/world.tick_lag), "max" = 5, "min" = 0), /client/proc/incorporeal_speed_entered)
+	om_ask(usr, /datum/om/prompt/number, PROC_REF(incorporeal_speed_entered), title = "Incorporeal movement speed", message = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max = 5, min = 0)
 
-/client/proc/incorporeal_speed_entered(mob/user, input, datum/om/prompt/ask)
-	incorporeal_speed = input * world.tick_lag
+/client/proc/incorporeal_speed_entered(datum/om/prompt/number/ask)
+	incorporeal_speed = ask.number * world.tick_lag
 
 ///Process_Incorpmove
 ///Called by client/Move()
 ///Allows mobs to run though walls
-/client/proc/leave_belly_cancelled(mob/user, datum/om/prompt/ask)
-	is_leaving_belly = FALSE
+/// Leaving a predator's belly as a ghost; any answer but yes clears the pending leave.
+/datum/om/prompt/confirm/leave_belly
+	title = "Leave belly?"
+	message = "Do you want to leave your predator's belly?"
+	/// The direction the ghost pressed.
+	var/dir
+
+/datum/om/prompt/confirm/leave_belly/proc/reset_leaving()
+	if(answerer?.client)
+		answerer.client.is_leaving_belly = FALSE
+
+/datum/om/prompt/confirm/leave_belly/cancelled()
+	unpark()
+	reset_leaving()
+
+/datum/om/prompt/confirm/leave_belly/declined()
+	reset_leaving()
+
+/datum/om/prompt/confirm/leave_belly/refused(reason)
+	reset_leaving()
 
 /// Confirmed: the ghost moves out on the direction it pressed.
-/client/proc/leave_belly_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Yes")
-		is_leaving_belly = FALSE
-		return
+/client/proc/leave_belly_answered(datum/om/prompt/confirm/leave_belly/ask)
 	is_leaving_belly = 2
-	Process_Incorpmove(ask.get("dir"))
+	Process_Incorpmove(ask.dir)
 
 /client/proc/Process_Incorpmove(direct)
 	if(isbelly(mob.loc) && isobserver(mob))
@@ -413,7 +428,7 @@
 			return
 		if(!is_leaving_belly)
 			is_leaving_belly = TRUE
-			om_prompt(src, mob, list("message" = "Do you want to leave your predator's belly?", "title" = "Leave belly?", "choices" = list("Yes", "No"), "on_cancel" = /client/proc/leave_belly_cancelled, "data" = list("dir" = direct)), /client/proc/leave_belly_answered)
+			om_ask(mob, /datum/om/prompt/confirm/leave_belly, PROC_REF(leave_belly_answered), dir = direct)
 			return
 		is_leaving_belly = FALSE
 	if(isghosttrap(mob.loc))

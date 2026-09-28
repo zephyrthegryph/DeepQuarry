@@ -82,10 +82,18 @@
 	storage_capacity = (MOB_MEDIUM * 12) - 1 //Holds 12 bodys
 	item_path = /obj/item/bodybag/large
 
-/obj/structure/closet/body_bag/proc/label_entered(mob/user, t, datum/om/prompt/ask)
-	if (!in_range(src, user) && src.loc != user)
-		return
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+/// Labelling a body bag with a pen (the subject, still in hand). Re-checked on the answer: the bag is still in reach.
+/datum/om/prompt/text/body_bag_label
+	message = "What would you like the label to be?"
+	max_length = MAX_NAME_LEN
+	requires = PROMPT_IN_HAND
+	var/obj/structure/closet/body_bag/bag
+
+/datum/om/prompt/text/body_bag_label/valid()
+	return (in_range(bag, answerer) || bag.loc == answerer) ? null : "too far away"
+
+/obj/structure/closet/body_bag/proc/label_entered(datum/om/prompt/text/body_bag_label/ask)
+	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if (t)
 		src.name = "body bag - "
 		src.name += t
@@ -100,7 +108,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 /// (a body bag can't be welded or have things stuffed in by hand).
 /obj/structure/closet/body_bag/proc/body_bag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "max_length" = MAX_NAME_LEN, "target" = W, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
+		om_ask(user, /datum/om/prompt/text/body_bag_label, PROC_REF(label_entered), subject = W, bag = src, title = "[src.name]")
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/closet/body_bag/store_mobs()
@@ -189,15 +197,14 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 /// Old attack_hand.
 /obj/structure/closet/body_bag/cryobag/proc/cryobag_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(used)
-		om_prompt(src, user, list("message" = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", "title" = "Confirm Opening", "choices" = list("No", "Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(open_confirmed))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(open_confirmed), message = "Are you sure you want to open \the [src]? \The [src] will expire upon opening it.", title = "Confirm Opening", no_first = TRUE, requires = PROMPT_ADJACENT)
 	else
 		return FALSE
 	return TRUE
 
-/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
-	if(confirm == "Yes")
-		add_fingerprint(user)
-		toggle(user) // What the parent attack_hand does: opens the bag.
+/obj/structure/closet/body_bag/cryobag/proc/open_confirmed(datum/om/prompt/confirm/ask)
+	add_fingerprint(ask.answerer)
+	toggle(ask.answerer) // What the parent attack_hand does: opens the bag.
 
 /obj/structure/closet/body_bag/cryobag/open()
 	. = ..()

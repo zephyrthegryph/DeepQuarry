@@ -85,23 +85,31 @@
 	effect = /obj/machinery/button/mob_spawner_button/proc/interaction_spawn
 
 /obj/machinery/button/mob_spawner_button/proc/interaction_spawn(mob/living/user, obj/item/held, datum/interaction/interaction)
-	om_prompt_sequence(src, user, list(
-		list("key" = "mob", "kind" = "list", "message" = "Which Mob do you want to spawn?", "title" = "Mob spawn", "choices" = GLOB.vr_mob_spawner_options),
-		list("key" = "faction", "message" = "Do you want the mob's faction to remain the same or be passive?", "title" = "Faction", "choices" = list("Normal","Neutral")),
-	), PROC_REF(spawn_choices_made), list("requires" = PROMPT_ADJACENT))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(spawn_mob_chosen), choices = GLOB.vr_mob_spawner_options, title = "Mob spawn", message = "Which Mob do you want to spawn?", requires = PROMPT_ADJACENT)
 	return TRUE
 
-/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(mob/living/user, datum/om/prompt/ask)
-	var/neutral = FALSE
-	var/mobtype = GLOB.vr_mob_spawner_options[ask.get("mob")]
-	var/faction = ask.get("faction")
-	if(!mobtype || !faction)
-		return TRUE
+/obj/machinery/button/mob_spawner_button/proc/spawn_mob_chosen(datum/om/prompt/choice/ask)
+	var/mobtype = GLOB.vr_mob_spawner_options[ask.choice]
+	if(!mobtype)
+		return
+	om_ask(ask.answerer, /datum/om/prompt/confirm/mob_spawner_faction, PROC_REF(spawn_choices_made), mobtype = mobtype)
+
+/datum/om/prompt/confirm/mob_spawner_faction
+	title = "Faction"
+	message = "Do you want the mob's faction to remain the same or be passive?"
+	yes_text = "Neutral"
+	no_text = "Normal"
+	no_first = TRUE
+	answer_on_no = TRUE
+	requires = PROMPT_ADJACENT
+	var/mobtype
+
+/obj/machinery/button/mob_spawner_button/proc/spawn_choices_made(datum/om/prompt/confirm/mob_spawner_faction/ask)
+	var/neutral = ask.yes
+	var/mobtype = ask.mobtype
 	var/mob/living/simple_mob/old_mob = mobspawned()
 	mobspawned_handle = null
 	QDEL_NULL(old_mob)
-	if(faction == "Neutral")
-		neutral = TRUE
 	mobspawned_handle = om_handle(new mobtype(get_turf(GLOB.button_mob_spawner_landmark[link])))
 	if(!istype(mobspawned(), /mob/living/simple_mob))
 		mobspawned_handle = null

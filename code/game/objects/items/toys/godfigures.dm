@@ -48,10 +48,11 @@
 	options["Moon Gem"] = "moon"
 	options["Tajaran Figure"] = "catrobe"
 
-	om_prompt(src, M, list("kind" = "list", "message" = "Choose your icon!", "title" = "Customize Figure", "choices" = options, "requires" = PROMPT_ADJACENT, "data" = list("options" = options)), PROC_REF(figure_chosen))
+	om_ask(M, /datum/om/prompt/choice, PROC_REF(figure_chosen), title = "Customize Figure", message = "Choose your icon!", choices = options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/godfig/proc/figure_chosen(mob/M, choice, datum/om/prompt/ask)
-	var/list/options = ask.get("options")
+/obj/item/godfig/proc/figure_chosen(datum/om/prompt/choice/ask)
+	var/list/options = ask.choices
+	var/choice = ask.choice
 	icon_state = options[choice]
 	if(options[choice] == "frobe")
 		desc = "A painted holy figure of a plain looking human woman in a robe."
@@ -112,7 +113,7 @@
 	else if(options[choice] == "catrobe")
 		desc = "A painted holy figure of a plain looking Tajaran in a robe."
 
-	to_chat(M, "The religious icon is now a [choice]. All hail!")
+	to_chat(ask.answerer, "The religious icon is now a [choice]. All hail!")
 	return 1
 
 
@@ -125,9 +126,11 @@
 	var/mob/M = usr
 	if(!M.mind)	return 0
 
-	om_prompt(src, M, list("kind" = "text", "message" = "What do you want to name the icon?", "default" = "", "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(figure_named))
+	om_ask(M, /datum/om/prompt/text, PROC_REF(figure_named), message = "What do you want to name the icon?", default = "", max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/godfig/proc/figure_named(mob/M, input, datum/om/prompt/ask)
+/obj/item/godfig/proc/figure_named(datum/om/prompt/text/ask)
+	var/mob/M = ask.answerer
+	var/input = ask.text
 	if(input)
 		name = "icon of " + input
 		to_chat(M, "You name the figure. Glory to [input]!.")

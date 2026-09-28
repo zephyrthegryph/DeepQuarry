@@ -223,7 +223,7 @@
 			if(is_authenticated() && modify)
 				var/t1 = params["assign_target"]
 				if(t1 == "Custom")
-					om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter a custom job assignment.", "title" = "Assignment", "default" = "", "max_length" = 45, "requires" = PROMPT_USABLE), PROC_REF(custom_assignment_entered))
+					om_ask(ui.user, /datum/om/prompt/text, PROC_REF(custom_assignment_entered), title = "Assignment", message = "Enter a custom job assignment.", default = "", max_length = 45, requires = PROMPT_USABLE)
 				else
 					var/list/access = list()
 					if(is_centcom())
@@ -276,7 +276,8 @@
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-/obj/machinery/computer/card/proc/custom_assignment_entered(mob/user, temp_t, datum/om/prompt/ask)
+/obj/machinery/computer/card/proc/custom_assignment_entered(datum/om/prompt/text/ask)
+	var/temp_t = ask.text
 	//let custom jobs function as an impromptu alt title, mainly for sechuds
 	if(temp_t && modify && is_authenticated())
 		modify.assignment = temp_t

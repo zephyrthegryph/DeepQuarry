@@ -56,7 +56,7 @@
 	log_world("ToR data update aborted: no data.")
 
 ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", ADMIN_CATEGORY_SERVER_CONFIG)
-	var/task = verb_prompt(user, "a1", list("kind" = "list", "message" = "What do you want to do?", "title" = "Select Option", "choices" = list("update","toggle","show","remove","remove all","find")), args)
+	var/task = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "What do you want to do?", title = "Select Option", choices = list("update","toggle","show","remove","remove all","find"))
 	if(isnull(task))
 		return
 	switch(task)
@@ -82,7 +82,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 
 		if("remove")
 			var/savefile/F = new(TORFILE)
-			var/choice = verb_prompt(user, "a2", list("kind" = "list", "message" = "Please select an IP address to remove from the ToR banlist:", "title" = "Remove ToR ban", "choices" = F.dir), args)
+			var/choice = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Please select an IP address to remove from the ToR banlist:", title = "Remove ToR ban", choices = F.dir)
 			if(isnull(choice))
 				return
 			if(choice)
@@ -91,7 +91,7 @@ ADMIN_VERB(ToRban, R_ADMIN|R_SERVER, "ToRban", "Modifies the TorBan settings.", 
 		if("remove all")
 			to_chat(user, span_filter_adminlog(span_bold("[TORFILE] was [fdel(TORFILE)?"":"not "]removed.")))
 		if("find")
-			var/input = verb_prompt(user, "a3", list("kind" = "text", "message" = "Please input an IP address to search for:", "title" = "Find ToR ban"), args)
+			var/input = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Please input an IP address to search for:", title = "Find ToR ban")
 			if(isnull(input))
 				return
 			if(input)

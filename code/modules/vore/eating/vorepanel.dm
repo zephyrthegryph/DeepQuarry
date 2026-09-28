@@ -329,13 +329,13 @@
 
 		if("saveprefs")
 			if(isnewplayer(host()))
-				var/choice = act_prompt(ui.user, action, params, ui, "a1", list("message" = "Warning: Saving your vore panel while in the lobby will save it to the CURRENTLY LOADED character slot, and potentially overwrite it. Are you SURE you want to overwrite your current slot with these vore bellies?", "title" = "WARNING!", "choices" = list("No, abort!", "Yes, save.")))
+				var/choice = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while in the lobby will save it to the CURRENTLY LOADED character slot, and potentially overwrite it. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
 				if(isnull(choice))
 					return
 				if(choice != "Yes, save.")
 					return TRUE
 			else if(host().real_name != host().client.prefs.read_preference(/datum/preference/name/real_name) || (!ishuman(host()) && !issilicon(host())))
-				var/choice = act_prompt(ui.user, action, params, ui, "a2", list("message" = "Warning: Saving your vore panel while playing what is very-likely not your normal character will overwrite whatever character you have loaded in character setup. Maybe this is your 'playing a simple mob' slot, though. Are you SURE you want to overwrite your current slot with these vore bellies?", "title" = "WARNING!", "choices" = list("No, abort!", "Yes, save.")))
+				var/choice = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while playing what is very-likely not your normal character will overwrite whatever character you have loaded in character setup. Maybe this is your 'playing a simple mob' slot, though. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
 				if(isnull(choice))
 					return
 				if(choice != "Yes, save.")
@@ -346,7 +346,7 @@
 				if(B.prevent_saving)
 					unsavable_bellies += B.name
 			if(LAZYLEN(unsavable_bellies))
-				var/choice = act_prompt(ui.user, action, params, ui, "a3", list("message" = "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", "title" = "WARNING!", "choices" = list("No, abort!", "Yes, save.")))
+				var/choice = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
 				if(isnull(choice))
 					return
 				if(choice != "Yes, save.")
@@ -358,7 +358,7 @@
 				unsaved_changes = FALSE
 			return TRUE
 		if("reloadprefs")
-			var/alert = act_prompt(ui.user, action, params, ui, "a4", list("message" = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", "title" = "Confirmation", "choices" = list("Reload","Cancel")))
+			var/alert = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", title = "Confirmation", choices = list("Reload","Cancel"))
 			if(isnull(alert))
 				return
 			if(alert != "Reload")
@@ -370,7 +370,7 @@
 				unsaved_changes = FALSE
 			return TRUE
 		if("loadprefsfromslot")
-			var/alert = act_prompt(ui.user, action, params, ui, "a5", list("message" = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", "title" = "Confirmation", "choices" = list("Load","Cancel")))
+			var/alert = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/choice/alert, message = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", title = "Confirmation", choices = list("Load","Cancel"))
 			if(isnull(alert))
 				return
 			if(alert != "Load")
@@ -950,7 +950,7 @@
 			if(params["option"] in list("Examine","Help Out","Devour"))
 				intent = params["option"]
 			else
-				var/_answer_a1 = rerun_prompt(user, "a1", list("message" = "What do you want to do to them?", "title" = "Query", "choices" = list("Examine","Help Out","Devour")), PROC_REF(pick_from_inside), args)
+				var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_inside), args, /datum/om/prompt/choice/alert, message = "What do you want to do to them?", title = "Query", choices = list("Examine","Help Out","Devour"))
 				if(isnull(_answer_a1))
 					return
 				intent = _answer_a1
@@ -959,7 +959,7 @@
 			if(params["option"] in list("Examine","Use Hand"))
 				intent = params["option"]
 			else
-				var/_answer_a2 = rerun_prompt(user, "a2", list("message" = "What do you want to do to that?", "title" = "Query", "choices" = list("Examine","Use Hand")), PROC_REF(pick_from_inside), args)
+				var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_inside), args, /datum/om/prompt/choice/alert, message = "What do you want to do to that?", title = "Query", choices = list("Examine","Use Hand"))
 				if(isnull(_answer_a2))
 					return
 				intent = _answer_a2
@@ -1094,7 +1094,7 @@
 	if((params["option"] in available_options))
 		intent = params["option"]
 	else
-		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "list", "message" = "What would you like to do with [target]?", "title" = "Vore Pick", "choices" = available_options), PROC_REF(pick_from_outside), args)
+		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "What would you like to do with [target]?", title = "Vore Pick", choices = available_options)
 		if(isnull(_answer_a1))
 			return
 		intent = _answer_a1
@@ -1133,7 +1133,7 @@
 				return TRUE
 			var/obj/belly/choice = locate(params["targetBelly"])
 			if(!(choice in host().vore_organs))
-				var/_answer_a2 = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Move [target] where?", "title" = "Select Belly", "choices" = host().vore_organs), PROC_REF(pick_from_outside), args)
+				var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
 				if(isnull(_answer_a2))
 					return
 				choice = _answer_a2
@@ -1159,7 +1159,7 @@
 			if(!viable_candidates.len)
 				to_chat(user, span_notice("There are no viable candidates around you!"))
 				return TRUE
-			var/_answer_a3 = rerun_prompt(user, "a3", list("kind" = "list", "message" = "Who do you want to receive the target?", "title" = "Select Predator", "choices" = viable_candidates), PROC_REF(pick_from_outside), args)
+			var/_answer_a3 = rerun_ask(user, "a3", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "Who do you want to receive the target?", title = "Select Predator", choices = viable_candidates)
 			if(isnull(_answer_a3))
 				return
 			belly_owner = _answer_a3
@@ -1167,7 +1167,7 @@
 			if(!belly_owner || !(belly_owner in range(1, host())))
 				return TRUE
 
-			var/obj/belly/choice = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Move [target] where?", "title" = "Select Belly", "choices" = belly_owner.vore_organs), PROC_REF(pick_from_outside), args)
+			var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
 			if(isnull(choice))
 				return
 			if(!choice || !(target in host().vore_selected) || !belly_owner || !(belly_owner in range(1, host())))
@@ -1175,7 +1175,7 @@
 
 			if(belly_owner != host())
 				to_chat(user, span_vnotice("Transfer offer sent. Await their response."))
-				var/accepted = rerun_prompt(belly_owner, "a5", list("message" = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", "title" = "Feeding Offer", "choices" = list("Yes", "No")), PROC_REF(pick_from_outside), args)
+				var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice/alert, message = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"))
 				if(isnull(accepted))
 					return
 				if(accepted != "Yes")
@@ -1220,7 +1220,7 @@
 					to_chat(user,span_warning("They don't seem to be reformable!"))
 					return TRUE
 
-				var/accepted = rerun_prompt(T, "a6", list("message" = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", "title" = "Reforming Attempt", "choices" = list("Yes", "No")), PROC_REF(pick_from_outside), args)
+				var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
 				if(isnull(accepted))
 					return
 				if(accepted != "Yes")
@@ -1260,7 +1260,7 @@
 				if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
 					to_chat(user,span_warning("They don't seem to be reformable!"))
 					return TRUE
-				var/accepted = rerun_prompt(mmi_occupant, "a7", list("message" = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", "title" = "Reforming Attempt", "choices" = list("Yes", "No")), PROC_REF(pick_from_outside), args)
+				var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
 				if(isnull(accepted))
 					return
 				if(accepted != "Yes")
@@ -1324,7 +1324,7 @@
 				to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
 				return FALSE
 
-			var/ourchoice = rerun_prompt(user, "a8", list("kind" = "list", "message" = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", "title" = "Instant Process", "choices" = process_options), PROC_REF(pick_from_outside), args)
+			var/ourchoice = rerun_ask(user, "a8", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", title = "Instant Process", choices = process_options)
 			if(isnull(ourchoice))
 				return
 			if(!ourchoice)

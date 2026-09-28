@@ -72,7 +72,7 @@
 
 		else
 			in_use = TRUE // Prevent opening a million uis
-			var/choice = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a target hose connector.", "title" = "Socket Selection", "choices" = available_sockets), PROC_REF(afterattack), args)
+			var/choice = rerun_ask(user, "a1", PROC_REF(afterattack), args, /datum/om/prompt/choice, message = "Select a target hose connector.", title = "Socket Selection", choices = available_sockets)
 			if(isnull(choice))
 				return TRUE
 			in_use = FALSE

@@ -301,14 +301,27 @@ Turf and target are seperate in case you want to teleport some distance from a t
 /mob/proc/rename_self(role, allow_numbers=0, attempt = 1, started_at)
 	if(isnull(started_at))
 		started_at = world.time
-	om_prompt(src, src, list("kind" = "text", "message" = "You are \a [role]. Would you like to change your name to something else?", "title" = "Name change", "default" = real_name, "max_length" = MAX_NAME_LEN, "data" = list("role" = role, "allow_numbers" = allow_numbers, "attempt" = attempt, "started_at" = started_at)), TYPE_PROC_REF(/mob, rename_self_entered))
+	om_ask(src, /datum/om/prompt/text/rename_self, TYPE_PROC_REF(/mob, rename_self_entered), default = real_name, role = role, allow_numbers = allow_numbers, attempt = attempt, started_at = started_at)
+
+/// A mob picking its own name for a role (rename_self()).
+/datum/om/prompt/text/rename_self
+	title = "Name change"
+	max_length = MAX_NAME_LEN
+	var/role
+	var/allow_numbers
+	var/attempt
+	var/started_at
+
+/datum/om/prompt/text/rename_self/prepare()
+	message = "You are \a [role]. Would you like to change your name to something else?"
+	return TRUE
 
 /// We get 3 attempts to pick a suitable name, within five minutes; a cancel keeps the old one.
-/mob/proc/rename_self_entered(mob/user, newname, datum/om/prompt/P)
-	var/role = P.get("role")
-	if((world.time - P.get("started_at")) > 5 MINUTES)
+/mob/proc/rename_self_entered(datum/om/prompt/text/rename_self/P)
+	var/role = P.role
+	if((world.time - P.started_at) > 5 MINUTES)
 		return	//took too long
-	newname = sanitizeName(newname, , P.get("allow_numbers"))	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
+	var/newname = sanitizeName(P.text, , P.allow_numbers)	//returns null if the name doesn't meet some basic requirements. Tidies up a few other things like bad-characters.
 	for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M == src)
 			continue
@@ -317,8 +330,8 @@ Turf and target are seperate in case you want to teleport some distance from a t
 			break
 	if(!newname)
 		to_chat(src, "Sorry, that [role]-name wasn't appropriate, please try another. It's possibly too long/short, has bad characters or is already taken.")
-		if(P.get("attempt") < 3)
-			rename_self(role, P.get("allow_numbers"), P.get("attempt") + 1, P.get("started_at"))
+		if(P.attempt < 3)
+			rename_self(role, P.allow_numbers, P.attempt + 1, P.started_at)
 		return
 
 	var/oldname = real_name
@@ -342,7 +355,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/list/borgs = free_borg_choices()
 	if(!borgs.len)
 		return
-	var/select = asker.rerun_prompt(user, "borg", list("kind" = "list", "message" = "Unshackled borg signals detected:", "title" = "Borg selection", "choices" = borgs), proc_name, proc_args)
+	var/select = rerun_ask_on(asker, user, "borg", proc_name, proc_args, /datum/om/prompt/choice, message = "Unshackled borg signals detected:", title = "Borg selection", choices = borgs)
 	if(select)
 		return borgs[select]
 
@@ -384,7 +397,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		return
 	if(!user || !asker)
 		return pick(ais)
-	var/mob/living/silicon/ai/picked = asker.rerun_prompt(user, "ai", list("kind" = "list", "message" = "AI signals detected:", "title" = "AI selection", "choices" = ais), proc_name, proc_args)
+	var/mob/living/silicon/ai/picked = rerun_ask_on(asker, user, "ai", proc_name, proc_args, /datum/om/prompt/choice, message = "AI signals detected:", title = "AI selection", choices = ais)
 	return (picked in active_ais()) ? picked : null
 
 //Returns a list of all mobs with their name
@@ -1329,7 +1342,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /// (flow_ask()): null until answered. `key` keeps its answers apart.
 /proc/pick_closest_path(value, list/matches = get_fancy_list_of_atom_types(), key = "path")
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
-		value = flow_ask(usr, "[key]:filter", list("kind" = "text", "message" = "Enter type to find (blank for all, cancel to cancel)", "title" = "Search for type"))
+		value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 		if (isnull(value))
 			return
 	value = trim(value)
@@ -1343,7 +1356,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(matches.len==1)
 		chosen = matches[1]
 	else
-		chosen = flow_ask(usr, "[key]:pick", list("kind" = "list", "message" = "Select a type", "title" = "Pick Type", "choices" = matches))
+		chosen = flow_ask(usr, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
 		if(!chosen || !(chosen in matches))
 			return
 	chosen = matches[chosen]

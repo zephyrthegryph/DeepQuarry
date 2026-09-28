@@ -134,7 +134,7 @@ GENERAL_PROTECT_DATUM(/datum/json_savefile)
 		tgui_alert_async(requester, "You must wait [DisplayTimeText(COOLDOWN_TIMELEFT(src, download_cooldown))] before exporting your preferences again!", "Export Preferences JSON")
 		return FALSE
 
-	if(rerun_prompt(requester, "confirm", list("message" = "Are you sure you want to export your preferences as a JSON file? This will save to a file on your computer.", "title" = "Export Preferences JSON", "choices" = list("Cancel", "Yes")), PROC_REF(export_json_to_client), list(requester, account_name)) == "Yes")
+	if(rerun_ask(requester, "confirm", PROC_REF(export_json_to_client), list(requester, account_name), /datum/om/prompt/choice/alert, message = "Are you sure you want to export your preferences as a JSON file? This will save to a file on your computer.", title = "Export Preferences JSON", choices = list("Cancel", "Yes")) == "Yes")
 		return TRUE
 
 	return FALSE

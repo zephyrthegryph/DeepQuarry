@@ -54,7 +54,7 @@
 	user.visible_message(span_danger("\The [user] begins to slit [src]'s throat with \the [W]!"))
 
 	user.next_move = world.time + 20 //also should prevent user from triggering this repeatedly
-	om_task_start(/datum/om/task/timed/carbon_attack_throat_carbon, user, src, list("receiver" = src, "W" = W, "G" = G))
+	om_task_start(/datum/om/task/timed/carbon_attack_throat_carbon, user, src, receiver = src, W = W, G = G)
 	return TRUE
 
 /datum/om/task/timed/carbon_attack_throat_carbon

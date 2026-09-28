@@ -191,7 +191,7 @@
 			if(computer && program.can_run(ui.user, 1) && id_card)
 				var/t1 = params["assign_target"]
 				if(t1 == "Custom")
-					var/temp_t = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "text", "message" = "Enter a custom job assignment.", "title" = "Assignment", "default" = id_card.assignment, "max_length" = 45))
+					var/temp_t = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a custom job assignment.", title = "Assignment", default = id_card.assignment, max_length = 45)
 					if(isnull(temp_t))
 						return
 					//let custom jobs function as an impromptu alt title, mainly for sechuds

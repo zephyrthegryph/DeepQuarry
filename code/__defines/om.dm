@@ -467,8 +467,8 @@
 #define PROMPT_ALIVE list(/datum/om/check/stat_at_most = UNCONSCIOUS)
 /// The user still holds these admin rights (R_* flags; 0 = any admin rank).
 #define PROMPT_ADMIN(rights) list(CHECK(/datum/om/check/admin_rights, rights))
-/// Returned by an om_prompt_sequence() step proc: end the sequence here (on_done does not run).
-#define PROMPT_STOP "om_prompt_stop"
+/// Returned by an om_ask_sequence() step proc: end the sequence here (on_done does not run).
+#define ASK_STOP "om_ask_stop"
 
 // ---------------------------------------------------------------- named-argument launchers
 // DM rejects a named argument a proc doesn't declare, so these are macros: the named arguments
@@ -478,10 +478,34 @@
 /// The target is optional (om_task_start(/datum/om/task/x, actor)).
 #define om_task_start(task, actor, rest...) om_task_begin(task, actor, list(rest), src)
 /// Asks `answerer` a typed prompt (ask.dm): om_ask(answerer, /datum/om/prompt/confirm/x, PROC_REF(cb), var = value, ...).
-/// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt.
+/// `prompt` is a /datum/om/prompt/<kind> type or instance; cb runs on the caller's src with the prompt
+/// (`receiver = X` runs it on X instead; in a global proc, where src is null, pass a /proc/ path).
 #define om_ask(answerer, prompt, on_answer, params...) om_ask_begin(src, answerer, prompt, on_answer, list(params))
 /// Starts a flow (flow.dm): om_flow_start(/datum/om/flow/x, actor, target, var = value, ...).
 #define om_flow_start(flow, actor, target, params...) om_flow_begin(flow, actor, target, list(params))
+/// Asks a list of typed prompts in turn (flow.dm): om_ask_sequence(/datum/om/flow/ask_sequence/x, answerer, subject, steps = list(...), on_done = PROC_REF(cb), var = value, ...).
+/// Step procs, on_done and on_stop run on the caller's src (`owner = X` runs them on X).
+#define om_ask_sequence(sequence, answerer, subject, params...) om_ask_sequence_begin(src, sequence, answerer, subject, list(params))
+
+// Re-run prompts (prompt_helpers.dm): the first call asks and returns null; the answer re-runs
+// the caller, where the same call returns the answer. `prompt` is a /datum/om/prompt/<kind>;
+// the named arguments set its vars, as in om_ask().
+/// In a Topic() handler.
+#define topic_ask(user, href_list, key, prompt, fields...) om_topic_ask(user, href_list, key, prompt, list(fields))
+/// In a tgui_act() action.
+#define act_ask(user, action, act_params, ui, key, prompt, fields...) om_act_ask(user, action, act_params, ui, key, prompt, list(fields))
+/// In an ADMIN_VERB body (`verb_args`: the verb's args).
+#define verb_ask(user, key, verb_args, prompt, fields...) om_verb_ask(user, key, verb_args, prompt, list(fields))
+/// In a /client proc: re-runs proc_name with proc_args; `rights` (R_*) are re-checked.
+#define client_ask(key, proc_name, proc_args, rights, prompt, fields...) om_client_ask(key, proc_name, proc_args, rights, prompt, list(fields))
+/// In any datum proc: re-runs proc_name on src with proc_args.
+#define rerun_ask(user, key, proc_name, proc_args, prompt, fields...) om_rerun_ask(user, key, proc_name, proc_args, prompt, list(fields))
+/// The same, re-running proc_name on `target` instead of src.
+#define rerun_ask_on(target, user, key, proc_name, proc_args, prompt, fields...) target.om_rerun_ask(user, key, proc_name, proc_args, prompt, list(fields))
+/// Deep inside a prompt_flow().
+#define flow_ask(user, key, prompt, fields...) om_flow_ask(user, key, prompt, list(fields))
+/// Returned by a prompt kind's refine_answer() when it asked again instead of answering.
+#define OM_PROMPT_REOPENED "om_prompt_reopened"
 
 // ---------------------------------------------------------------- typed prompt re-checks (ask.dm)
 // The prompt's ask_flags: re-checked when the answer arrives, before the answer proc runs.
@@ -502,6 +526,8 @@
 #define ASK_CAPABLE (1<<5)
 /// The subject is next to the answerer.
 #define ASK_NEAR_SUBJECT (1<<6)
+/// Neither the answerer nor the asker is restrained (cuffed, buckled in restraints).
+#define ASK_RESTRAINED (1<<7)
 /// The common "someone offers you something" set: both alive, awake and adjacent.
 #define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)
 

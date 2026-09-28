@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			players += player
 	//players -= usr
 
-	var/mob/living/M = rerun_prompt(usr, "k148", list("kind" = "list", "message" = "Who do you wish to deal a card?", "title" = "Deal to whom?", "choices" = players), VERB_REF(deal_card), args)
+	var/mob/living/M = rerun_ask(usr, "k148", VERB_REF(deal_card), args, /datum/om/prompt/choice, message = "Who do you wish to deal a card?", title = "Deal to whom?", choices = players)
 	if(isnull(M))
 		return
 	if(!usr || !src || !M) return
@@ -181,12 +181,12 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			players += player
 	//players -= usr
 	var/maxcards = max(min(cards.len,10),1)
-	var/dcard = rerun_prompt(usr, "k172", list("kind" = "number", "message" = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", "max" = maxcards), VERB_REF(deal_card_multi), args)
+	var/dcard = rerun_ask(usr, "k172", VERB_REF(deal_card_multi), args, /datum/om/prompt/number, message = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", max = maxcards)
 	if(isnull(dcard))
 		return
 	if(dcard > maxcards)
 		return
-	var/mob/living/M = rerun_prompt(usr, "k175", list("kind" = "list", "message" = "Who do you wish to deal [dcard] card(s)?", "title" = "Deal to whom?", "choices" = players), VERB_REF(deal_card_multi), args)
+	var/mob/living/M = rerun_ask(usr, "k175", VERB_REF(deal_card_multi), args, /datum/om/prompt/choice, message = "Who do you wish to deal [dcard] card(s)?", title = "Deal to whom?", choices = players)
 	if(isnull(M))
 		return
 	if(!usr || !src || !M) return
@@ -241,7 +241,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		for(var/i = 0, i < length(L), i++)
 			cards_to_choose += "[key] ([i+1])"
 
-	var/list/cards_to_draw = rerun_prompt(user, "k228", list("kind" = "checkboxes", "message" = "Which cards do you want to retrieve?", "title" = "Choose your cards", "choices" = cards_to_choose, "min" = 1), VERB_REF(search_cards), args)
+	var/list/cards_to_draw = rerun_ask(user, "k228", VERB_REF(search_cards), args, /datum/om/prompt/checklist, message = "Which cards do you want to retrieve?", title = "Choose your cards", choices = cards_to_choose, min_picks = 1)
 	if(isnull(cards_to_draw))
 		return
 
@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		if(P.name != "Blank Card")
 			to_chat(user,span_notice("You cannot write on that card."))
 			return INTERACTION_HANDLED_PASS
-		var/cardtext = rerun_prompt(user, "k284", list("kind" = "text", "message" = "What do you wish to write on the card?", "title" = "Card Editing", "max_length" = MAX_PAPER_MESSAGE_LEN), PROC_REF(interaction_item), args)
+		var/cardtext = rerun_ask(user, "k284", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What do you wish to write on the card?", title = "Card Editing", max_length = MAX_PAPER_MESSAGE_LEN)
 		if(isnull(cardtext))
 			return TRUE
 		if(!cardtext)
@@ -451,7 +451,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 
 	var/i
 	var/maxcards = min(cards.len,5) // Maximum of 5 cards at once
-	var/discards = rerun_prompt(usr, "k432", list("kind" = "number", "message" = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", "max" = maxcards, "min" = 0), VERB_REF(discard), args)
+	var/discards = rerun_ask(usr, "k432", VERB_REF(discard), args, /datum/om/prompt/number, message = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", max = maxcards)
 	if(isnull(discards))
 		return
 	if(discards > maxcards)
@@ -463,7 +463,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		for(var/datum/playingcard/P in cards)
 			if(!(P in picked))
 				to_discard[P.name] = P
-		var/discarding = rerun_prompt(usr, "card[i]", list("kind" = "list", "message" = "Which card do you wish to put down?", "title" = "Card Selection", "choices" = to_discard), VERB_REF(discard), args)
+		var/discarding = rerun_ask(usr, "card[i]", VERB_REF(discard), args, /datum/om/prompt/choice, message = "Which card do you wish to put down?", title = "Card Selection", choices = to_discard)
 		if(!discarding || !to_discard[discarding] || !usr || !src) return
 		picked += to_discard[discarding]
 
@@ -522,7 +522,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	var/pickablecards = list()
 	for(var/datum/playingcard/P in cards)
 		pickablecards[P.name] = P
-	var/pickedcard = rerun_prompt(user, "k493", list("kind" = "list", "message" = "Which card do you want to remove from the hand?", "title" = "Card Selection", "choices" = pickablecards), VERB_REF(Removecard), args)
+	var/pickedcard = rerun_ask(user, "k493", VERB_REF(Removecard), args, /datum/om/prompt/choice, message = "Which card do you want to remove from the hand?", title = "Card Selection", choices = pickablecards)
 	if(isnull(pickedcard))
 		return
 

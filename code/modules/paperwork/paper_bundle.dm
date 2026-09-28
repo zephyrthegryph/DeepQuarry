@@ -191,7 +191,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	set category = "Object"
 	set src in usr
 
-	var/_answer_k189 = rerun_prompt(usr, "k189", list("kind" = "text", "message" = "What would you like to label the bundle?", "title" = "Bundle Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	var/_answer_k189 = rerun_ask(usr, "k189", VERB_REF(rename), args, /datum/om/prompt/text, message = "What would you like to label the bundle?", title = "Bundle Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k189))
 		return
 	var/n_name = sanitizeSafe(_answer_k189, MAX_NAME_LEN)

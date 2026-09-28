@@ -141,38 +141,73 @@ list[](
 		//Now that we're removed from them, we gotta remove them from us.
 		LAZYREMOVE(linked, their_io)
 
-/// Asks `user` for a value (a type, then the value). When they finish, `on_value` is called on this
-/// pin as (user, value, P), with `data` readable from P; "null" gives a null value.
-/datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"), on_value, list/data)
-	var/list/all_data = data ? data.Copy() : list()
-	all_data["default"] = default
-	all_data["on_value"] = on_value
-	om_prompt_sequence(src, user, list(
-		list("key" = "type", "kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = allowed_data_types),
-		PROC_REF(ask_for_typed_value),
-	), PROC_REF(typed_value_entered), list("data" = all_data))
+/// A pin value being asked: the type picked, then the value. Subtype it to carry more state
+/// to the on_value callback (see /datum/om/flow/ask_sequence/pin_value/list_edit).
+/datum/om/flow/ask_sequence/pin_value
+	name = "pin_value"
+	/// "string", "number" or "null": the answer of the prompt keyed "type_name".
+	var/type_name
+	/// The answer of the prompt keyed "value".
+	var/value
+	var/default
+	/// Called on the pin as (user, new_value, sequence).
+	var/on_value
 
-/datum/integrated_io/proc/ask_for_typed_value(mob/user, datum/om/prompt/P)
-	var/default = P.get("default")
-	switch(P.get("type"))
+/datum/om/prompt/choice/pin_type
+	key = "type_name"
+	message = "Please choose a type to use."
+
+/datum/om/prompt/text/pin_value
+	key = "value"
+	message = "Now type in a string."
+	max_length = MAX_NAME_LEN
+	encode = FALSE
+
+/datum/om/prompt/number/pin_value
+	key = "value"
+	message = "Now type in a number."
+	max = INFINITY
+	min = -INFINITY
+	round_entry = FALSE
+
+/// Asks `user` for a value (a type, then the value). When they finish, `on_value` is called on this
+/// pin as (user, value, sequence); "null" gives a null value. `sequence` is an optional
+/// /datum/om/flow/ask_sequence/pin_value subtype instance carrying the caller's own state.
+/datum/integrated_io/proc/ask_for_data_type(mob/user, default, list/allowed_data_types = list("string","number","null"), on_value, datum/om/flow/ask_sequence/pin_value/sequence)
+	var/datum/om/prompt/choice/pin_type/type_ask = new
+	type_ask.title = "[src] type setting"
+	type_ask.choices = allowed_data_types
+	om_ask_sequence(sequence || /datum/om/flow/ask_sequence/pin_value, user, null, 		steps = list(type_ask, PROC_REF(ask_for_typed_value)), on_done = PROC_REF(typed_value_entered), 		default = default, on_value = on_value)
+
+/// Step proc: the value prompt for the chosen type (none for "null").
+/datum/integrated_io/proc/ask_for_typed_value(datum/om/flow/ask_sequence/pin_value/seq)
+	var/default = seq.default
+	switch(seq.type_name)
 		if("string")
-			return list("key" = "value", "kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "default" = istext(default) ? default : null, "max_length" = MAX_NAME_LEN, "encode" = FALSE)
+			var/datum/om/prompt/text/pin_value/text_ask = new
+			text_ask.title = "[src] string writing"
+			text_ask.default = istext(default) ? default : null
+			return text_ask
 		if("number")
-			return list("key" = "value", "kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "default" = isnum(default) ? default : 0, "max" = INFINITY, "min" = -INFINITY, "round" = FALSE)
+			var/datum/om/prompt/number/pin_value/number_ask = new
+			number_ask.title = "[src] number writing"
+			number_ask.default = isnum(default) ? default : 0
+			return number_ask
 	return null
 
-/datum/integrated_io/proc/typed_value_entered(mob/user, datum/om/prompt/P)
+/datum/integrated_io/proc/typed_value_entered(datum/om/flow/ask_sequence/pin_value/seq)
+	var/mob/user = seq.actor
 	if(!holder()?.check_interactivity(user))
 		return
 	var/new_data = null
-	switch(P.get("type"))
+	switch(seq.type_name)
 		if("string")
-			new_data = sanitizeSafe(P.get("value"), MAX_NAME_LEN, 0, 0)
+			new_data = sanitizeSafe(seq.value, MAX_NAME_LEN, 0, 0)
 			if(!istext(new_data))
 				return
 			to_chat(user, span_notice("You input [new_data] into the pin."))
 		if("number")
-			new_data = P.get("value")
+			new_data = seq.value
 			if(!isnum(new_data))
 				return
 			to_chat(user, span_notice("You input [new_data] into the pin."))
@@ -180,7 +215,7 @@ list[](
 			to_chat(user, span_notice("You clear the pin's memory."))
 		else
 			return
-	call(src, P.get("on_value"))(user, new_data, P)
+	call(src, seq.on_value)(user, new_data, seq)
 
 // Basically a null check
 /datum/integrated_io/proc/is_valid()
@@ -190,7 +225,7 @@ list[](
 /datum/integrated_io/proc/ask_for_pin_data(mob/user, obj/item/I)
 	ask_for_data_type(user, on_value = PROC_REF(pin_data_chosen))
 
-/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/om/prompt/P)
+/datum/integrated_io/proc/pin_data_chosen(mob/user, new_data, datum/om/flow/ask_sequence/pin_value/seq)
 	write_data_to_pin(new_data)
 
 /datum/integrated_io/activate/ask_for_pin_data(mob/user) // This just pulses the pin.

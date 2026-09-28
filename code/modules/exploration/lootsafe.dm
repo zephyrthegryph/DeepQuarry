@@ -118,7 +118,7 @@
 		return
 
 	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = rerun_prompt(usr, "k121", list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock"), PROC_REF(togglelock), args)
+	var/input = rerun_ask(usr, "k121", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock")
 	if(isnull(input))
 		return
 	if(!Adjacent(user))
@@ -225,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/numberlock, INTE
 		return
 
 	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = rerun_prompt(usr, "k223", list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock"), PROC_REF(togglelock), args)
+	var/input = rerun_ask(usr, "k223", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock")
 	if(isnull(input))
 		return
 	if(!Adjacent(user))

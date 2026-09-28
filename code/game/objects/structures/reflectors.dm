@@ -203,13 +203,23 @@
 	if (!can_rotate || admin)
 		to_chat(user, span_warning("The rotation is locked!"))
 		return FALSE
-	om_prompt(src, user, list("kind" = "number", "message" = "Input a new angle for primary reflection face.", "title" = "Reflector Angle", "default" = rotation_angle, "max" = 360, "min" = -360, "requires" = PROMPT_USABLE), PROC_REF(angle_entered))
+	om_ask(user, /datum/om/prompt/number/reflector_angle, PROC_REF(angle_entered), default = rotation_angle)
 	return TRUE
 
-/obj/structure/reflector/proc/angle_entered(mob/user, new_angle, datum/om/prompt/ask)
-	if(!can_rotate || admin)
-		return
-	setAngle(SIMPLIFY_DEGREES(new_angle))
+/// Re-checked: the reflector is still usable and its rotation unlocked.
+/datum/om/prompt/number/reflector_angle
+	title = "Reflector Angle"
+	message = "Input a new angle for primary reflection face."
+	max = 360
+	min = -360
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/number/reflector_angle/valid()
+	var/obj/structure/reflector/R = subject
+	return (R.can_rotate && !R.admin) ? null : "rotation locked"
+
+/obj/structure/reflector/proc/angle_entered(datum/om/prompt/number/reflector_angle/ask)
+	setAngle(SIMPLIFY_DEGREES(ask.number))
 
 /// Old click_alt: rotate the finished reflector.
 /datum/interaction/entry_alt/reflector_alt

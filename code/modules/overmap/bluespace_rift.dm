@@ -34,7 +34,7 @@ REF_PAIR(/obj/effect/overmap/bluespace_rift, list("partner" = "partner"))
 
 /obj/effect/overmap/bluespace_rift/attack_ghost(mob/observer/dead/user)
 	if(!partner && check_rights_for(user?.client, R_HOLDER))
-		var/response = rerun_prompt(user, "k42", list("message" = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", "title" = "Bluespace Rift", "choices" = list("Cancel","Make Here")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/response = rerun_ask(user, "k42", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice/alert, message = "You appear to be staff. This rift has no exit point. If you want to make one, move to where you want it to go, and click 'Make Here', otherwise click 'Cancel'", title = "Bluespace Rift", choices = list("Cancel","Make Here"))
 		if(isnull(response))
 			return
 		if(response == "Make Here")

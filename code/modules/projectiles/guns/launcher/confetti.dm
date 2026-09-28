@@ -80,7 +80,7 @@
 /obj/item/gun/launcher/confetti_cannon/robot/pump(mob/user)
 	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
 	if(!chambered)
-		var/choice = rerun_prompt(user, "k83", list("message" = "Load the Party Canon with?", "title" = "Change What?", "choices" = list("Confetti","Banana Peel","Cream Pie")), PROC_REF(pump), args)
+		var/choice = rerun_ask(user, "k83", PROC_REF(pump), args, /datum/om/prompt/choice/alert, message = "Load the Party Canon with?", title = "Change What?", choices = list("Confetti","Banana Peel","Cream Pie"))
 		if(isnull(choice))
 			return
 		if(!choice)

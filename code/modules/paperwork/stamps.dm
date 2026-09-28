@@ -121,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(inte
 
 	var/list/show_stamps = list("EXIT" = null) + sortList(stamps) // the list that will be shown to the user to pick from
 
-	var/input_stamp = rerun_prompt(user, "k124", list("kind" = "list", "message" = "Choose a stamp to disguise as:", "title" = "Stamp Choice", "choices" = show_stamps), PROC_REF(interaction_self), args)
+	var/input_stamp = rerun_ask(user, "k124", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Choose a stamp to disguise as:", title = "Stamp Choice", choices = show_stamps)
 	if(isnull(input_stamp))
 		return TRUE
 

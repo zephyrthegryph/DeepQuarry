@@ -26,14 +26,29 @@
 		return
 
 	if(redgate_restricted)
-		om_prompt(src, user, list("message" = "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "title" = "Redgate Critter Spawner", "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(critter_type_chosen))
+		om_ask(user, /datum/om/prompt/choice/critter_hole/redgate, PROC_REF(critter_type_chosen))
 	else
-		om_prompt(src, user, list("message" = "Which type of critter do you wish to spawn as?", "title" = "Critter Spawner", "choices" = list("Mob", "Morph", "Lurker", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(critter_type_chosen))
+		om_ask(user, /datum/om/prompt/choice/critter_hole, PROC_REF(critter_type_chosen))
 
-/obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_type_chosen(mob/observer/dead/user, choice, datum/om/prompt/ask)
-	if(used)
-		return
-	switch(choice)
+/// Re-checked: the ghost still has a client and the hole is unused.
+/datum/om/prompt/choice/critter_hole
+	title = "Critter Spawner"
+	message = "Which type of critter do you wish to spawn as?"
+	choices = list("Mob", "Morph", "Lurker", "Cancel")
+	buttons = TRUE
+	requires = list(/datum/om/check/has_client)
+
+/datum/om/prompt/choice/critter_hole/valid()
+	var/obj/structure/ghost_pod/pod = subject
+	return pod.used ? "already used" : null
+
+/datum/om/prompt/choice/critter_hole/redgate
+	title = "Redgate Critter Spawner"
+	message = "Which type of critter do you wish to spawn as? Note that this is a Redgate Spawner: if you choose the Lurker role you will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?"
+
+/obj/structure/ghost_pod/ghost_activated/unified_hole/proc/critter_type_chosen(datum/om/prompt/choice/critter_hole/ask)
+	var/mob/observer/dead/user = ask.answerer
+	switch(ask.choice)
 		if("Cancel")
 			return
 		if("Mob")

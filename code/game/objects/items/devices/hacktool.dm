@@ -103,7 +103,7 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 		to_chat(user, span_notice("You begin hacking \the [D]..."))
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
 		// Reduced hack duration to compensate for the reduced functionality, multiplied by door sec level
-		om_task_start(/datum/om/task/timed/hacktool_airlock, user, src, list("duration" = (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), "receiver" = src, "door" = D))
+		om_task_start(/datum/om/task/timed/hacktool_airlock, user, src, duration = (((10 SECONDS + rand(0, 10 SECONDS) + rand(0, 10 SECONDS))*hackspeed)*D.security_level), receiver = src, door = D)
 		return 0 // the hack is under way; the door is handled when it lands
 
 /// Hacking an airlock: the tool is busy with it (claimed) until it lands.

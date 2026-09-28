@@ -88,11 +88,8 @@ REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 
 /obj/vehicle/train/engine/quadbike/attackby(obj/item/W, mob/user)
 	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
-		if(new_paint)
-			paint_color = new_paint
-			update_icon()
-			return
+		om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
+		return
 	..()
 
 /obj/vehicle/train/engine/quadbike/update_icon()
@@ -275,9 +272,6 @@ REF_OWNED(/obj/vehicle/train/engine/quadbike, "soundloop")
 
 /obj/vehicle/train/trolley/trailer/attackby(obj/item/W, mob/user)
 	if(W.has_tool_quality(TOOL_MULTITOOL) && open)
-		var/new_paint = tgui_color_picker(user, "Please select paint color.", "Paint Color", paint_color)
-		if(new_paint)
-			paint_color = new_paint
-			update_icon()
-			return
+		om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
+		return
 	..()

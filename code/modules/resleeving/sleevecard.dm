@@ -36,7 +36,7 @@
 			var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(M.name)
 			if(db)
 				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
-				om_task_start(/datum/om/task/timed/sleevecard_upload_mind, user, src, list("receiver" = src, "S" = S, "mind_name" = M.name))
+				om_task_start(/datum/om/task/timed/sleevecard_upload_mind, user, src, receiver = src, S = S, mind_name = M.name)
 			else
 				to_chat(user, span_notice("Your sleevemate flashes an error, apparently this mind doesn't have a backup."))
 	else if(istype(I, /obj/item/card/emag))

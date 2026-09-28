@@ -27,7 +27,7 @@
 	if(user.stat == DEAD || !(ishuman(user) || isrobot(user)))
 		to_chat(user, span_warning("You can't cook!"))
 		return
-	var/_answer_k30 = rerun_prompt(user, "k30", list("kind" = "text", "message" = "What would you like to name \the [src]? Leave blank to reset.", "title" = "Food Naming", "default" = initial(name), "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(handle_name_change), args)
+	var/_answer_k30 = rerun_ask(user, "k30", PROC_REF(handle_name_change), args, /datum/om/prompt/text, message = "What would you like to name \the [src]? Leave blank to reset.", title = "Food Naming", default = initial(name), max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k30))
 		return
 	var/n_name = sanitizeSafe(_answer_k30)

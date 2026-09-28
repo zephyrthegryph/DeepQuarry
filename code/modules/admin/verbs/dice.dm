@@ -1,16 +1,16 @@
 
 ADMIN_VERB(roll_dices, R_FUN, "Roll Dice", "Allows to roll a dice.", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	// Everything is asked first; the roll happens once, after the last answer.
-	var/sum = verb_prompt(user, "sum", list("kind" = "number", "message" = "How many times should we throw?"), args)
+	var/sum = verb_ask(user, "sum", args, /datum/om/prompt/number, message = "How many times should we throw?")
 	if(isnull(sum))
 		return
-	var/side = verb_prompt(user, "side", list("kind" = "number", "message" = "Select the number of sides."), args)
+	var/side = verb_ask(user, "side", args, /datum/om/prompt/number, message = "Select the number of sides.")
 	if(isnull(side))
 		return
-	var/show_game = verb_prompt(user, "show_game", list("message" = "Do you want to inform the world about your game?", "title" = "Show world?", "choices" = list("Yes", "No")), args)
+	var/show_game = verb_ask(user, "show_game", args, /datum/om/prompt/choice/alert, message = "Do you want to inform the world about your game?", title = "Show world?", choices = list("Yes", "No"))
 	if(isnull(show_game))
 		return
-	var/show_result = verb_prompt(user, "show_result", list("message" = "Do you want to inform the world about the result?", "title" = "Show world?", "choices" = list("Yes", "No")), args)
+	var/show_result = verb_ask(user, "show_result", args, /datum/om/prompt/choice/alert, message = "Do you want to inform the world about the result?", title = "Show world?", choices = list("Yes", "No"))
 	if(isnull(show_result))
 		return
 	if(!side)

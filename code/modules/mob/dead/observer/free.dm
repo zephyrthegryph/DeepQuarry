@@ -5,12 +5,9 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 	set category = "OOC.Game"
 	set desc = "Free your job slot, remove yourself from the manifest, and prevent respawning as this character for this round."
 
-	om_prompt(src, src, list("message" = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another \
-	character if you like. Do this now?", "title" = "Quit This Round", "choices" = list("Quit Round","Cancel")), PROC_REF(quit_round_confirmed))
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(quit_round_confirmed), title = "Quit This Round", message = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another character if you like. Do this now?", yes_text = "Quit Round", no_text = "Cancel")
 
-/mob/observer/dead/proc/quit_round_confirmed(mob/user, confirm, datum/om/prompt/ask)
-	if(confirm != "Quit Round")
-		return
+/mob/observer/dead/proc/quit_round_confirmed(datum/om/prompt/confirm/ask)
 
 	//Why are you clicking this button?
 	if(!mind || !mind.assigned_role)

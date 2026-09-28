@@ -121,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 
 /// Old attack_self.
 /obj/item/integrated_electronics/debugger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/type_to_use = rerun_prompt(user, "k123", list("kind" = "list", "message" = "Please choose a type to use.", "title" = "[src] type setting", "choices" = list("string","number","ref", "null")), PROC_REF(interaction_self), args)
+	var/type_to_use = rerun_ask(user, "k123", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Please choose a type to use.", title = "[src] type setting", choices = list("string","number","ref", "null"))
 	if(isnull(type_to_use))
 		return TRUE
 	if(!CanInteract(user, GLOB.tgui_physical_state))
@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	switch(type_to_use)
 		if("string")
 			accepting_refs = 0
-			var/_answer_k131 = rerun_prompt(user, "k131", list("kind" = "text", "message" = "Now type in a string.", "title" = "[src] string writing", "max_length" = MAX_MESSAGE_LEN, "encode" = FALSE), PROC_REF(interaction_self), args)
+			var/_answer_k131 = rerun_ask(user, "k131", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Now type in a string.", title = "[src] string writing", encode = FALSE)
 			if(isnull(_answer_k131))
 				return TRUE
 			new_data = _answer_k131
@@ -141,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 				to_chat(user, span_notice("You set \the [src]'s memory to \"[new_data]\"."))
 		if("number")
 			accepting_refs = 0
-			var/_answer_k138 = rerun_prompt(user, "k138", list("kind" = "number", "message" = "Now type in a number.", "title" = "[src] number writing", "min" = -INFINITY, "round" = FALSE), PROC_REF(interaction_self), args)
+			var/_answer_k138 = rerun_ask(user, "k138", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "Now type in a number.", title = "[src] number writing", min = -INFINITY, round_entry = FALSE)
 			if(isnull(_answer_k138))
 				return TRUE
 			new_data = _answer_k138

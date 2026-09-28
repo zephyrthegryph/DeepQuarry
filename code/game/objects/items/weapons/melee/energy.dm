@@ -213,21 +213,15 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
 
-	om_prompt_sequence(src, user, list(
-		list("key" = "sure", "message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
-		PROC_REF(ask_blade_color),
-	), PROC_REF(blade_recolored), list("requires" = PROMPT_ADJACENT))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_blade_color), message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/melee/energy/proc/ask_blade_color(mob/user, datum/om/prompt/ask)
-	if(ask.get("sure") == "Yes")
-		return list("key" = "color", "kind" = "color", "message" = "", "title" = "Choose Energy Color", "default" = lcolor)
+/obj/item/melee/energy/proc/ask_blade_color(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(blade_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/melee/energy/proc/blade_recolored(mob/user, datum/om/prompt/ask)
-	if(ask.get("sure") != "Yes")
-		return
-	if(ask.get("color"))
-		lcolor = sanitize_hexcolor(ask.get("color"))
+/obj/item/melee/energy/proc/blade_recolored(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		lcolor = sanitize_hexcolor(ask.picked_color)
 	update_icon()
 	if(active)
 		set_light(lrange, lpower, lcolor)

@@ -156,7 +156,7 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	if(!can_rename)
 		to_chat(user, span_warning("You can't rename this vessel."))
 		return
-	var/new_name = rerun_prompt(user, "k161", list("kind" = "text", "message" = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", "title" = "Rename Shuttle", "default" = visible_name), PROC_REF(rename_shuttle), args)
+	var/new_name = rerun_ask(user, "k161", PROC_REF(rename_shuttle), args, /datum/om/prompt/text, message = "Please enter a new name for this vessel. Note that you can only set its name once, so choose wisely.", title = "Rename Shuttle", default = visible_name)
 	if(isnull(new_name))
 		return
 	var/sanitized_name = sanitizeName(new_name, MAX_NAME_LEN, TRUE)
@@ -394,13 +394,13 @@ REF_OWNED(/datum/shuttle/autodock/web_shuttle, "web_master")
 	if(MS.skip_docking_checks() || MS.check_undocked())
 		return 1
 
-	var/choice = rerun_prompt(user, "k398", list("message" = "The shuttle is currently docked! Please undock before continuing.", "title" = "Error", "choices" = list("Cancel","Force Launch")), PROC_REF(check_docking), args)
+	var/choice = rerun_ask(user, "k398", PROC_REF(check_docking), args, /datum/om/prompt/choice/alert, message = "The shuttle is currently docked! Please undock before continuing.", title = "Error", choices = list("Cancel","Force Launch"))
 	if(isnull(choice))
 		return
 	if(!choice || choice == "Cancel")
 		return 0
 
-	var/_answer_k402 = rerun_prompt(user, "k402", list("message" = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", "title" = "Force Launch", "choices" = list("Force Launch", "Cancel")), PROC_REF(check_docking), args)
+	var/_answer_k402 = rerun_ask(user, "k402", PROC_REF(check_docking), args, /datum/om/prompt/choice/alert, message = "Forcing a shuttle launch while docked may result in severe injury, death and/or damage to property. Are you sure you wish to continue?", title = "Force Launch", choices = list("Force Launch", "Cancel"))
 	if(isnull(_answer_k402))
 		return
 	choice = _answer_k402

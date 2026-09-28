@@ -60,20 +60,49 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		var/mob/living/L = user
 		//They're in it, and want to get out.
 		if(L.loc == src)
-			om_prompt(src, user, list("message" = "Do you want to exit \the [src]?", "title" = "Un-Hide?", "choices" = list("Exit","Stay"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(hide_answered))
+			om_ask(user, /datum/om/prompt/confirm/trash_pile_exit, PROC_REF(exit_answered))
 		else if(!hider())
-			om_prompt(src, user, list("message" = "Do you want to hide in \the [src]?", "title" = "Un-Hide?", "choices" = list("Hide","Stay"), "requires" = PROMPT_ADJACENT), PROC_REF(hide_answered))
+			om_ask(user, /datum/om/prompt/confirm/trash_pile_hide, PROC_REF(hide_answered))
 	else
 		return ..()
 
-/obj/structure/trash_pile/proc/hide_answered(mob/living/L, choice, datum/om/prompt/ask)
-	if(choice == "Exit")
-		if(L == hider())
-			hider_handle = null
-		L.forceMove(get_turf(src))
-	else if(choice == "Hide" && !hider()) //Check again because PROMPT
-		L.forceMove(src)
-		hider_handle = om_handle(L)
+/// Re-checked: still inside the pile.
+/datum/om/prompt/confirm/trash_pile_exit
+	title = "Un-Hide?"
+	yes_text = "Exit"
+	no_text = "Stay"
+	requires = list(/datum/om/check/inside_target)
+
+/datum/om/prompt/confirm/trash_pile_exit/prepare()
+	message = "Do you want to exit \the [subject]?"
+	return TRUE
+
+/// Re-checked: still next to the pile, and nobody else hid in it meanwhile.
+/datum/om/prompt/confirm/trash_pile_hide
+	title = "Un-Hide?"
+	yes_text = "Hide"
+	no_text = "Stay"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/confirm/trash_pile_hide/prepare()
+	message = "Do you want to hide in \the [subject]?"
+	return TRUE
+
+/datum/om/prompt/confirm/trash_pile_hide/valid()
+	var/obj/structure/trash_pile/pile = subject
+	return pile.hider() ? "occupied" : null
+
+/obj/structure/trash_pile/proc/exit_answered(datum/om/prompt/confirm/trash_pile_exit/ask)
+	var/mob/living/L = ask.answerer
+	if(L == hider())
+		hider_handle = null
+	L.forceMove(get_turf(src))
+
+/obj/structure/trash_pile/proc/hide_answered(datum/om/prompt/confirm/trash_pile_hide/ask)
+	var/mob/living/L = ask.answerer
+	L.forceMove(src)
+	hider_handle = om_handle(L)
+
 /obj/structure/trash_pile/attack_ghost(mob/observer/user as mob)
 	if(CONFIG_GET(flag/disable_player_mice))
 		to_chat(user, span_warning("Spawning as a mouse is currently disabled."))
@@ -98,10 +127,21 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		to_chat(user, span_warning("You may only spawn again as a mouse more than [CONFIG_GET(number/mouse_respawn_time)] minutes after your death. You have [timedifference_text] left."))
 		return
 
-	om_prompt(src, user, list("message" = "Are you -sure- you want to become a mouse?", "title" = "Are you sure you want to squeek?", "choices" = list("Squeek!","Nope!"), "requires" = list(/datum/om/check/has_client)), PROC_REF(mouse_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/become_mouse, PROC_REF(mouse_confirmed))
 
-/obj/structure/trash_pile/proc/mouse_confirmed(mob/observer/user, response, datum/om/prompt/ask)
-	if(response != "Squeek!" || !isobserver(user)) return  //Hit the wrong key...again.
+/// Re-checked: still a ghost with a client.
+/datum/om/prompt/confirm/become_mouse
+	title = "Are you sure you want to squeek?"
+	message = "Are you -sure- you want to become a mouse?"
+	yes_text = "Squeek!"
+	no_text = "Nope!"
+	requires = list(/datum/om/check/has_client)
+
+/datum/om/prompt/confirm/become_mouse/valid()
+	return isobserver(answerer) ? null : "not a ghost"
+
+/obj/structure/trash_pile/proc/mouse_confirmed(datum/om/prompt/confirm/become_mouse/ask)
+	var/mob/observer/user = ask.answerer
 
 	var/mob/living/simple_mob/animal/passive/mouse/host
 	host = new /mob/living/simple_mob/animal/passive/mouse(get_turf(src))

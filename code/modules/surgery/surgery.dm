@@ -218,7 +218,7 @@ GLOBAL_PROTECT(surgical_steps)
 		return null
 	if(length(choices) == 1)
 		return choices[choices[1]]
-	var/choice = tool.surgery_prompt(user, "target", list("kind" = "list", "message" = "Which organ do you want to work on?", "title" = name, "choices" = choices))
+	var/choice = surgery_ask(tool, user, "target", /datum/om/prompt/choice, message = "Which organ do you want to work on?", title = name, choices = choices)
 	return choice ? choices[choice] : null
 
 /// Is the chosen target still valid after the step's delay?
@@ -379,7 +379,7 @@ GLOBAL_PROTECT(surgical_steps)
 
 	if(target == user)
 		to_chat(user, span_critical("You focus on attempting to perform surgery upon yourself."))
-	om_task_start(/datum/om/task/timed/surgery_focus, user, target, list("duration" = target == user ? 3 SECONDS : 0, "receiver" = src, "zone" = zone, "cleanliness" = cleanliness))
+	om_task_start(/datum/om/task/timed/surgery_focus, user, target, duration = (target == user ? 3 SECONDS : 0), receiver = src, zone = zone, cleanliness = cleanliness)
 	return TRUE
 
 /// Getting ready to operate: at once, or three seconds of focus to operate on yourself.
@@ -392,17 +392,12 @@ GLOBAL_PROTECT(surgical_steps)
 /// (target, confirmation) re-run it with the same arguments. Only set while it runs.
 GLOBAL_LIST_EMPTY(surgery_rerun_args)
 
-/// Asks a question for the surgery being chosen: every answer re-runs choose_surgical_step_for(),
-/// which asks the same questions again and gets the answers given so far. Null while waiting.
-/obj/item/proc/surgery_prompt(mob/living/user, key, list/spec)
-	return rerun_prompt(user, key, spec, PROC_REF(choose_surgical_step_for), GLOB.surgery_rerun_args)
-
 /// The focus task's completion: choose the step from the task's arguments.
 /obj/item/proc/choose_surgical_step(datum/om/task/timed/surgery_focus/task)
 	choose_surgical_step_for(task.actor, task.target, task.zone, task.cleanliness)
 
 /// Picks the step to perform at `zone` (asking when there are several) and runs it. Takes plain
-/// arguments (not the task) so surgery_prompt() answers can re-run it after the task is gone.
+/// arguments (not the task) so surgery_ask() answers can re-run it after the task is gone.
 /obj/item/proc/choose_surgical_step_for(mob/living/user, mob/living/carbon/human/target, zone, cleanliness)
 	var/list/available = available_surgical_steps(user, target, zone, src)
 	if(!length(available))
@@ -410,7 +405,7 @@ GLOBAL_LIST_EMPTY(surgery_rerun_args)
 	GLOB.surgery_rerun_args = args.Copy()
 	var/datum/surgical_step/step
 	if(length(available) > 1)
-		var/choice = surgery_prompt(user, "step", list("kind" = "list", "message" = "Select which surgery step you wish to perform", "title" = "Surgery Select", "choices" = available))
+		var/choice = surgery_ask(src, user, "step", /datum/om/prompt/choice, message = "Select which surgery step you wish to perform", title = "Surgery Select", choices = available)
 		if(!choice)
 			return
 		step = available[choice]
@@ -435,7 +430,7 @@ GLOBAL_LIST_EMPTY(surgery_rerun_args)
 
 	var/chance = step.success_chance(user, target, part, src, cleanliness)
 	var/delay = step.duration * (2 - cleanliness / 100) * toolspeed
-	var/started = om_task_start(/datum/om/task/timed/surgical_step, user, target, list("duration" = delay, "receiver" = target, "tool" = src, "surgery_step" = step, "zone" = zone, "cleanliness" = cleanliness, "part" = part, "work_target" = work_target, "chance" = chance, "target_zone" = zone, "max_distance" = reach))
+	var/started = om_task_start(/datum/om/task/timed/surgical_step, user, target, duration = delay, receiver = target, tool = src, surgery_step = step, zone = zone, cleanliness = cleanliness, part = part, work_target = work_target, chance = chance, target_zone = zone, max_distance = reach)
 	if(istext(started))
 		LAZYREMOVE(target.surgery_zones_in_progress, zone)
 		return FALSE

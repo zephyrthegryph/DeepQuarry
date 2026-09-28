@@ -26,9 +26,11 @@ DECLARE_INTERACTIONS(/obj/item/grenade/smokebomb, INTERACT_ITEM(null, PROC_REF(i
 /// Old attackby.
 /obj/item/grenade/smokebomb/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(I.has_tool_quality(TOOL_MULTITOOL))
-		var/new_smoke_color = tgui_color_picker(user, "Choose a color for the smoke:", "Smoke Color", smoke_color)
-		if(new_smoke_color)
-			smoke_color = new_smoke_color
+		om_ask(user, /datum/om/prompt/color, PROC_REF(smoke_color_chosen), title = "Smoke Color", message = "Choose a color for the smoke:", default = smoke_color, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+
+/obj/item/grenade/smokebomb/proc/smoke_color_chosen(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		smoke_color = ask.picked_color
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/grenade/smokebomb/primed

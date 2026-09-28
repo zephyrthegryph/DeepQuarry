@@ -57,26 +57,56 @@
 	return
 
 // Handle placing a mind into a mob
-/obj/item/mindbinder/proc/self_bind_mob_confirmed(mob/user, choice, datum/om/prompt/ask)
-	var/mob/living/target = ask.get("target")
-	if(choice != "Continue" || target.ckey)
-		return
+/// Mind binder "are you sure?"s.
+/datum/om/prompt/confirm/mindbinder
+	title = "Confirmation"
+	yes_text = "Continue"
+	no_text = "Cancel"
+
+/// Binding yourself into the subject (a mob or an item). Re-checked on the answer: still next to it.
+/datum/om/prompt/confirm/mindbinder/self_bind
+	requires = PROMPT_ADJACENT
+
+/// ...and a mob must still be mindless.
+/datum/om/prompt/confirm/mindbinder/self_bind/mob
+	message = "This will bind YOUR mind to the target! You may not be able to go back without help. Continue?"
+
+/datum/om/prompt/confirm/mindbinder/self_bind/mob/valid()
+	var/mob/living/target = subject
+	return target.ckey ? "already sentient" : null
+
+/datum/om/prompt/confirm/mindbinder/self_bind/item
+	message = "This will bind YOUR mind to the target! You will not be able to go back without help. Continue?"
+
+/// Downloading a mind. Re-checked on the answer: the binder is in hand and empty, the victim next to the user.
+/datum/om/prompt/confirm/mindbinder/store_mob
+	message = "This will download the target's mind into the device. Once their mind is loaded you can then bind it into an item. This will result in the target being stuck until you put them back in their original body. Please make sure OOC prefs align! Continue?"
+	requires = PROMPT_IN_HAND
+	var/mob/living/victim
+
+/datum/om/prompt/confirm/mindbinder/store_mob/valid()
+	var/obj/item/mindbinder/binder = subject
+	if(binder.possessed_voice.len != 0 || !answerer.Adjacent(victim))
+		return "can't download"
+	return null
+
+/obj/item/mindbinder/proc/self_bind_mob_confirmed(datum/om/prompt/confirm/mindbinder/self_bind/mob/ask)
+	var/mob/user = ask.answerer
+	var/mob/living/target = ask.subject
 	user.visible_message(span_warning("[user] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [target]!"))
 	log_and_message_admins("attempted to bind themselves to \an [target] with a Mind Binder.", user)
 	om_do_after(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done), done_args = list(target, user))
 
-/obj/item/mindbinder/proc/self_bind_item_confirmed(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/item = ask.get("target")
-	if(choice != "Continue")
-		return
+/obj/item/mindbinder/proc/self_bind_item_confirmed(datum/om/prompt/confirm/mindbinder/self_bind/item/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/item = ask.subject
 	log_and_message_admins("attempted to bind themselves to \an [item] with a Mind Binder.", user)
 	user.visible_message(span_warning("[user] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind yourself into [item]!"))
 	om_do_after(user, 30 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done), done_args = list(item, user))
 
-/obj/item/mindbinder/proc/store_mob_confirmed(mob/user, choice, datum/om/prompt/ask)
-	var/mob/living/target = ask.get("target")
-	if(choice != "Continue" || possessed_voice.len != 0 || !user.Adjacent(target))
-		return
+/obj/item/mindbinder/proc/store_mob_confirmed(datum/om/prompt/confirm/mindbinder/store_mob/ask)
+	var/mob/user = ask.answerer
+	var/mob/living/target = ask.victim
 	if(target.ckey && !target.client)
 		log_and_message_admins("attempted to take [key_name(target)]'s mind with a Mind Binder while they were SSD!", user)
 	else
@@ -94,7 +124,7 @@
 		return
 
 	if(self_bind)
-		om_prompt(src, usr, list("message" = "This will bind YOUR mind to the target! You may not be able to go back without help. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "target" = target, "requires" = PROMPT_ADJACENT, "data" = list("target" = target)), PROC_REF(self_bind_mob_confirmed))
+		om_ask(usr, /datum/om/prompt/confirm/mindbinder/self_bind/mob, PROC_REF(self_bind_mob_confirmed), subject = target)
 		return
 
 	usr.visible_message(span_warning("[usr] presses [src] against [target]. The device beginning to let out a series of beeps!"),span_notice("You begin to bind someone's mind into [target]!"))
@@ -143,7 +173,7 @@
 		return
 
 	if(self_bind)
-		om_prompt(src, usr, list("message" = "This will bind YOUR mind to the target! You will not be able to go back without help. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "target" = item, "requires" = PROMPT_ADJACENT, "data" = list("target" = item)), PROC_REF(self_bind_item_confirmed))
+		om_ask(usr, /datum/om/prompt/confirm/mindbinder/self_bind/item, PROC_REF(self_bind_item_confirmed), subject = item)
 		return
 
 	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.")
@@ -175,7 +205,7 @@
 		to_chat(usr,span_warning("The device beeps a warning that the target isn't sentient."))
 		return
 
-	om_prompt(src, usr, list("message" = "This will download the target's mind into the device. Once their mind is loaded you can then bind it into an item. This will result in the target being stuck until you put them back in their original body. Please make sure OOC prefs align! Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "requires" = PROMPT_IN_HAND, "data" = list("target" = target)), PROC_REF(store_mob_confirmed))
+	om_ask(usr, /datum/om/prompt/confirm/mindbinder/store_mob, PROC_REF(store_mob_confirmed), victim = target)
 
 	update_icon()
 
@@ -197,7 +227,7 @@
 
 	log_and_message_admins("attempted to take [key_name(target)]'s mind out of \an [item] with a Mind Binder.")
 	usr.visible_message(span_warning("[usr] presses [src] against [item]. The device beginning to let out a series of beeps!"),span_notice("You begin to download someone's mind from [item]!"))
-	om_task_start(/datum/om/task/timed/mindbinder_store_item, usr, item, list("receiver" = src, "target_arg" = target))
+	om_task_start(/datum/om/task/timed/mindbinder_store_item, usr, item, receiver = src, target_arg = target)
 
 	update_icon()
 

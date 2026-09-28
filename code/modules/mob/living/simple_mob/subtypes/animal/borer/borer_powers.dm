@@ -30,11 +30,14 @@
 		to_chat(src, span_notice("There are no viable targets within range..."))
 		return
 	if(choices.len > 1)
-		om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to dominate?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(knockout_target_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(knockout_target_chosen), title = "Target Choice", message = "Who do you wish to dominate?", choices = choices, ask_flags = ASK_CONSCIOUS)
 		return
-	knockout_target_chosen(src, choices[1])
+	psychic_knockout(choices[1])
 
-/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(mob/user, mob/living/carbon/human/attack_target, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/borer/proc/knockout_target_chosen(datum/om/prompt/choice/ask)
+	psychic_knockout(ask.choice)
+
+/mob/living/simple_mob/animal/borer/proc/psychic_knockout(mob/living/carbon/human/attack_target)
 	var/attack_range = 5
 	if(world.time - used_dominate < 150 || src?.borer_host())
 		return
@@ -76,13 +79,22 @@
 		return
 
 	if(choices.len > 1)
-		om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to infest?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(infest_target_chosen))
+		om_ask(src, /datum/om/prompt/choice/borer_infest, PROC_REF(infest_target_chosen), choices = choices)
 		return
 	infest_target(choices[1])
 
-/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(mob/user, mob/living/carbon/human/chosen, datum/om/prompt/ask)
-	if(!src?.borer_host() && Adjacent(chosen))
-		infest_target(chosen)
+/// Re-checked on the answer: still conscious and hostless, and next to the one picked.
+/datum/om/prompt/choice/borer_infest
+	title = "Target Choice"
+	message = "Who do you wish to infest?"
+	ask_flags = ASK_CONSCIOUS
+
+/datum/om/prompt/choice/borer_infest/valid()
+	var/mob/living/simple_mob/animal/borer/B = answerer
+	return (!B.borer_host() && B.Adjacent(choice)) ? null : "unable"
+
+/mob/living/simple_mob/animal/borer/proc/infest_target_chosen(datum/om/prompt/choice/borer_infest/ask)
+	infest_target(ask.choice)
 
 /// Infests mob with borer.
 /mob/living/simple_mob/animal/borer/proc/infest_dislodged(mob/living/carbon/human/infest_target)
@@ -175,9 +187,10 @@
 		to_chat(src, span_warning("You cannot do that while in full control of a host."))
 		return
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Select a chemical to secrete.", "title" = "Chemicals", "choices" = borer_chem_list), PROC_REF(secrete_chemical_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(secrete_chemical_chosen), title = "Chemicals", message = "Select a chemical to secrete.", choices = borer_chem_list)
 
-/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(mob/user, injection_choice, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/borer/proc/secrete_chemical_chosen(datum/om/prompt/choice/ask)
+	var/injection_choice = ask.choice
 	var/mob/living/carbon/human/host = src?.borer_host() // may have changed while choosing
 	if(!host)
 		return

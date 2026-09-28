@@ -43,7 +43,7 @@
 		to_chat(src, span_vwarning("There's no one in range to eat."))
 		return
 
-	var/mob/living/prey = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select a mob to eat", "title" = "Holonoms", "choices" = possible_prey), VERB_REF(holo_nom), args)
+	var/mob/living/prey = rerun_ask(src, "a1", VERB_REF(holo_nom), args, /datum/om/prompt/choice, message = "Select a mob to eat", title = "Holonoms", choices = possible_prey)
 	if(isnull(prey))
 		return
 	if(!prey)

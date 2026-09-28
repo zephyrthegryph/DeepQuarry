@@ -115,12 +115,12 @@
 			if(!isnewplayer(ui.user))
 				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
 				return FALSE
-			var/_answer_k119 = act_prompt(ui.user, action, params, ui, "k119", list("message" = "This will reset the current slot. Continue?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+			var/_answer_k119 = act_ask(ui.user, action, params, ui, "k119", /datum/om/prompt/choice/alert, message = "This will reset the current slot. Continue?", title = "Reset current slot?", choices = list("No", "Yes"))
 			if(isnull(_answer_k119))
 				return
 			if("Yes" != _answer_k119)
 				return FALSE
-			var/_answer_k121 = act_prompt(ui.user, action, params, ui, "k121", list("message" = "Are you completely sure that you want to reset this character slot?", "title" = "Reset current slot?", "choices" = list("No", "Yes")))
+			var/_answer_k121 = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice/alert, message = "Are you completely sure that you want to reset this character slot?", title = "Reset current slot?", choices = list("No", "Yes"))
 			if(isnull(_answer_k121))
 				return
 			if("Yes" != _answer_k121)
@@ -189,21 +189,8 @@
 
 			var/default_value = read_preference(requested_preference.type)
 
-			// Yielding
-			var/new_color = tgui_color_picker(
-				ui.user,
-				"Select new color",
-				null,
-				default_value || COLOR_WHITE,
-			)
-
-			if(!new_color)
-				return FALSE
-
-			if(!update_preference(requested_preference, new_color))
-				return FALSE
-
-			return TRUE
+			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key, ui_refresh = src, ui_refresh_if_true = TRUE)
+			return FALSE
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
 		. = preference_middleware.tgui_act(action, params, ui, state)

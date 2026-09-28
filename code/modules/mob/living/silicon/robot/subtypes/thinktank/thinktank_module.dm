@@ -29,12 +29,22 @@
 	set category = "Abilities.Silicon"
 	set src in usr
 
-	var/new_pupil_color = tgui_color_picker(usr, "Select a pupil colour.", "Pupil Colour Selection")
-	if(usr.incapacitated() || QDELETED(usr) || QDELETED(src) || loc != usr)
-		return
+	// A cancel answers "": the default colour.
+	om_ask(usr, /datum/om/prompt/color/platform_pupil, PROC_REF(pupil_color_chosen), cancel_answer = "")
 
-	pupil_color = new_pupil_color || initial(pupil_color)
-	usr.update_icon()
+/// Re-checked on the answer: able, and the module is still in the platform.
+/datum/om/prompt/color/platform_pupil
+	title = "Pupil Colour Selection"
+	message = "Select a pupil colour."
+	ask_flags = ASK_CAPABLE
+
+/datum/om/prompt/color/platform_pupil/valid()
+	var/obj/item/module = subject
+	return module.loc == answerer ? null : "not installed"
+
+/obj/item/robot_module/robot/platform/proc/pupil_color_chosen(datum/om/prompt/color/platform_pupil/ask)
+	pupil_color = ask.picked_color || initial(pupil_color)
+	ask.answerer.update_icon()
 
 /obj/item/robot_module/robot/platform/explorer
 	armor_color = "#528052"

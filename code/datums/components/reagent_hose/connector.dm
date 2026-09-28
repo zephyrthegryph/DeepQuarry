@@ -244,7 +244,7 @@ REF_BACK(/datum/hose_connector, list("carrier" = null))
 		var/datum/hose_connector/AC = available_sockets[key]
 		AC.disconnect_action(usr)
 	else
-		var/choice = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Select a target hose connector.", "title" = "Socket Disconnect", "choices" = available_sockets), PROC_REF(disconnect_hose), args)
+		var/choice = rerun_ask(usr, "a1", PROC_REF(disconnect_hose), args, /datum/om/prompt/choice, message = "Select a target hose connector.", title = "Socket Disconnect", choices = available_sockets)
 		if(isnull(choice))
 			return
 		if(choice)

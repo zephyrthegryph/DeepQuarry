@@ -36,7 +36,7 @@
 			var/datum/reputation_faction/faction = GLOB.reputation_factions[params["faction"]]
 			if(!faction || !GLOB.station_faction_relations.account_agent_eligibility(account.account_number, faction.id))
 				return FALSE
-			var/_answer_k39 = act_prompt(ui.user, action, params, ui, "k39", list("message" = "Open exclusive vetting with [faction.name] for the remainder of this round? You must complete an authenticated trade before accreditation. The relationship grants no legal immunity or special permission.", "title" = "Faction vetting", "choices" = list("Cancel", "Begin vetting")))
+			var/_answer_k39 = act_ask(ui.user, action, params, ui, "k39", /datum/om/prompt/choice/alert, message = "Open exclusive vetting with [faction.name] for the remainder of this round? You must complete an authenticated trade before accreditation. The relationship grants no legal immunity or special permission.", title = "Faction vetting", choices = list("Cancel", "Begin vetting"))
 			if(isnull(_answer_k39))
 				return
 			if(_answer_k39 != "Begin vetting")
@@ -61,7 +61,7 @@
 				return FALSE
 			var/datum/contract/faction_agent/agent_contract = contract
 			if(istype(agent_contract) && agent_contract.red_contract)
-				var/_answer_k57 = act_prompt(ui.user, action, params, ui, "k57", list("message" = "This is a RED CONTRACT. Acceptance explicitly registers you as a contract antagonist for the written objective until it closes. This is not unrestricted permission to antagonize or grief. Accept?", "title" = "Explicit antagonist opt-in", "choices" = list("Cancel", "Accept red contract")))
+				var/_answer_k57 = act_ask(ui.user, action, params, ui, "k57", /datum/om/prompt/choice/alert, message = "This is a RED CONTRACT. Acceptance explicitly registers you as a contract antagonist for the written objective until it closes. This is not unrestricted permission to antagonize or grief. Accept?", title = "Explicit antagonist opt-in", choices = list("Cancel", "Accept red contract"))
 				if(isnull(_answer_k57))
 					return
 				if(_answer_k57 != "Accept red contract")

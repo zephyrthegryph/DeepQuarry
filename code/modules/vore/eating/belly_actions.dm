@@ -2,7 +2,7 @@
 	if(target.absorbed)
 		to_chat(user, span_vwarning("\The [target] is absorbed, and cannot presently be digested."))
 		return FALSE
-	var/_answer_a1 = rerun_prompt(target, "a1", list("message" = "\The [user] is attempting to instantly digest you. Is this something you are okay with happening to you?", "title" = "Instant Digest", "choices" = list("No", "Yes")), PROC_REF(instant_digest), args)
+	var/_answer_a1 = rerun_ask(target, "a1", PROC_REF(instant_digest), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to instantly digest you. Is this something you are okay with happening to you?", title = "Instant Digest", choices = list("No", "Yes"))
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")
@@ -39,7 +39,7 @@
 	if(target.absorbed)
 		to_chat(user, span_vwarning("\The [target] is absorbed, and cannot presently be broken."))
 		return FALSE
-	var/_answer_a2 = rerun_prompt(target, "a2", list("message" = "\The [user] is attempting to break one of your bones. Is this something you are okay with happening to you?", "title" = "Break Bones", "choices" = list("No", "Yes")), PROC_REF(instant_break_bone), args)
+	var/_answer_a2 = rerun_ask(target, "a2", PROC_REF(instant_break_bone), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to break one of your bones. Is this something you are okay with happening to you?", title = "Break Bones", choices = list("No", "Yes"))
 	if(isnull(_answer_a2))
 		return
 	if(_answer_a2 != "Yes")
@@ -59,7 +59,7 @@
 	return TRUE
 
 /obj/belly/proc/instant_absorb(mob/user, mob/living/target)
-	var/_answer_a3 = rerun_prompt(target, "a3", list("message" = "\The [user] is attempting to instantly absorb you. Is this something you are okay with happening to you?", "title" = "Instant Absorb", "choices" = list("No", "Yes")), PROC_REF(instant_absorb), args)
+	var/_answer_a3 = rerun_ask(target, "a3", PROC_REF(instant_absorb), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to instantly absorb you. Is this something you are okay with happening to you?", title = "Instant Absorb", choices = list("No", "Yes"))
 	if(isnull(_answer_a3))
 		return
 	if(_answer_a3 != "Yes")
@@ -78,7 +78,7 @@
 	return TRUE
 
 /obj/belly/proc/instant_knockout(mob/user, mob/living/target)
-	var/_answer_a4 = rerun_prompt(target, "a4", list("message" = "\The [user] is attempting to instantly make you unconscious, you will be unable until ejected from the pred. Is this something you are okay with happening to you?", "title" = "Instant Knockout", "choices" = list("No", "Yes")), PROC_REF(instant_knockout), args)
+	var/_answer_a4 = rerun_ask(target, "a4", PROC_REF(instant_knockout), args, /datum/om/prompt/choice/alert, message = "\The [user] is attempting to instantly make you unconscious, you will be unable until ejected from the pred. Is this something you are okay with happening to you?", title = "Instant Knockout", choices = list("No", "Yes"))
 	if(isnull(_answer_a4))
 		return
 	if(_answer_a4 != "Yes")

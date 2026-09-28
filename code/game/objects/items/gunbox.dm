@@ -24,15 +24,20 @@
 
 /// Asks which kit to unpack; `options` maps a name to the types it spawns (the gun first).
 /obj/item/gunbox/proc/offer_guns(mob/user, message, title, list/options, greeting = "Say hello to your new friend.")
-	om_prompt(src, user, list("kind" = "list", "message" = message, "title" = title, "choices" = options, "requires" = PROMPT_HELD, "data" = list("options" = options, "greeting" = greeting)), PROC_REF(gun_chosen))
+	om_ask(user, /datum/om/prompt/choice/gunbox, PROC_REF(gun_chosen), title = title, message = message, choices = options, greeting = greeting)
 
-/obj/item/gunbox/proc/gun_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/list/options = ask.get("options")
-	var/list/things_to_spawn = options[choice]
+/// Picking a kit out of a gun box. Re-checked on the answer: the box is still carried.
+/datum/om/prompt/choice/gunbox
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	var/greeting
+
+/obj/item/gunbox/proc/gun_chosen(datum/om/prompt/choice/gunbox/ask)
+	var/mob/user = ask.answerer
+	var/list/things_to_spawn = ask.choices[ask.choice]
 	for(var/new_type in things_to_spawn) // Spawn all the things, the gun and the ammo.
 		var/atom/movable/AM = new new_type(get_turf(src))
 		if(istype(AM, /obj/item/gun))
-			to_chat(user, "You have chosen \the [AM]. [ask.get("greeting")]")
+			to_chat(user, "You have chosen \the [AM]. [ask.greeting]")
 	consume(src, user)
 
 /*

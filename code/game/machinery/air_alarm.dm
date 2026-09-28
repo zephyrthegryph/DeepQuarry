@@ -876,7 +876,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		var/list/selected = TLV["temperature"]
 		var/max_temperature = min(selected[3] - T0C, MAX_TEMPERATURE)
 		var/min_temperature = max(selected[2] - T0C, MIN_TEMPERATURE)
-		om_prompt(src, ui.user, list("kind" = "number", "message" = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", "title" = "Thermostat Controls", "default" = target_temperature - T0C, "max" = max_temperature, "min" = min_temperature, "round" = FALSE, "requires" = PROMPT_USABLE_BY("default"), "data" = list("max" = max_temperature, "min" = min_temperature)), PROC_REF(thermostat_entered))
+		om_ask(ui.user, /datum/om/prompt/number, PROC_REF(thermostat_entered), message = "What temperature would you like the system to mantain? (Capped between [min_temperature] and [max_temperature]C)", default = target_temperature - T0C, max = max_temperature, min = min_temperature, title = "Thermostat Controls", round_entry = FALSE, requires = PROMPT_USABLE_BY("default"))
 		return TRUE
 
 	// Account for remote users here.
@@ -926,7 +926,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 			var/env = params["env"]
 
 			var/name = params["var"]
-			om_prompt(src, ui.user, list("kind" = "number", "message" = "New [name] for [env]:", "title" = name, "default" = TLV[env][name], "min" = -1, "round" = FALSE, "requires" = PROMPT_USABLE, "data" = list("env" = env, "var" = name)), PROC_REF(threshold_entered))
+			om_ask(ui.user, /datum/om/prompt/number/machine_ui, PROC_REF(threshold_entered), title = name, message = "New [name] for [env]:", default = TLV[env][name], min = -1, round_entry = FALSE, env = env, setting = name)
 			. = TRUE
 		if("mode")
 			mode = text2num(params["mode"])
@@ -943,9 +943,11 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
 		AA.update_icon()
 
-/obj/machinery/alarm/proc/thermostat_entered(mob/user, input_temperature, datum/om/prompt/ask)
-	var/max_temperature = ask.get("max")
-	var/min_temperature = ask.get("min")
+/obj/machinery/alarm/proc/thermostat_entered(datum/om/prompt/number/ask)
+	var/mob/user = ask.answerer
+	var/input_temperature = ask.number
+	var/max_temperature = ask.max
+	var/min_temperature = ask.min
 	if(isnum(input_temperature))
 		if(input_temperature > max_temperature || input_temperature < min_temperature)
 			to_chat(user, "Temperature must be between [min_temperature]C and [max_temperature]C")
@@ -955,9 +957,10 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 				AA.invalidate_gas_dependencies()
 	return TRUE
 
-/obj/machinery/alarm/proc/threshold_entered(mob/user, value, datum/om/prompt/ask)
-	var/env = ask.get("env")
-	var/name = ask.get("var")
+/obj/machinery/alarm/proc/threshold_entered(datum/om/prompt/number/machine_ui/ask)
+	var/value = ask.number
+	var/env = ask.env
+	var/name = ask.setting
 	if(!isnull(value))
 		own_TLV()
 		if(value < 0)

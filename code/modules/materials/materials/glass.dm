@@ -36,7 +36,7 @@
 		return 1
 
 	var/message = "Sheet-[used_stack.name] ([used_stack.get_amount()] sheet\s left)"
-	var/choice = rerun_prompt(user, "k39", list("kind" = "list", "message" = message, "title" = "Window Construction", "choices" = window_options), PROC_REF(build_windows), args)
+	var/choice = rerun_ask(user, "k39", PROC_REF(build_windows), args, /datum/om/prompt/choice, message = message, title = "Window Construction", choices = window_options)
 	if(isnull(choice))
 		return
 

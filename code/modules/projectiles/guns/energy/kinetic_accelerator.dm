@@ -720,7 +720,11 @@ EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_US
 
 /// Old attack_self.
 /obj/item/borg/upgrade/modkit/tracer/adjustable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	bolt_color = tgui_color_picker(user,"","Choose Color",bolt_color)
+	om_ask(user, /datum/om/prompt/color, PROC_REF(bolt_color_picked), default = bolt_color, title = "Choose Color", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+
+/obj/item/borg/upgrade/modkit/tracer/adjustable/proc/bolt_color_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		bolt_color = ask.picked_color
 	return TRUE
 
 #undef KA_ENVIRO_TYPE_COLD

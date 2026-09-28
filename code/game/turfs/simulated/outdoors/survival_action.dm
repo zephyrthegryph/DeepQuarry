@@ -15,11 +15,19 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 		to_chat(user, span_notice("The [name] isn't clear."))
 		return
 	else
-		om_prompt(src, user, list("message" = "Do you want to build a growplot out of the dirt?", "title" = "Build growplot?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(growplot_answered))
+		om_ask(user, /datum/om/prompt/confirm/build_growplot, PROC_REF(growplot_answered))
 
-/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice != "Yes" || locate_on(src, /obj))
-		return
+/// Re-checked: next to the dirt, and it's still clear.
+/datum/om/prompt/confirm/build_growplot
+	title = "Build growplot?"
+	message = "Do you want to build a growplot out of the dirt?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/confirm/build_growplot/valid()
+	return locate_on(subject, /obj) ? "not clear" : null
+
+/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/om/prompt/confirm/build_growplot/ask)
+	var/mob/user = ask.answerer
 	user.visible_message("[user] starts piling up \the [src]...", "You start piling up \the [src]...")
 	om_do_after(user, 5 SECONDS, src, src, PROC_REF(pile_done))
 

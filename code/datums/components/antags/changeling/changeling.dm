@@ -281,7 +281,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/list/victims = list()
 	for(var/mob/living/carbon/C in oview(comp.sting_range))
 		victims += C
-	var/mob/living/carbon/T = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Who will we sting?", "title" = "Sting!", "choices" = victims), PROC_REF(changeling_sting), args)
+	var/mob/living/carbon/T = rerun_ask(src, "a1", PROC_REF(changeling_sting), args, /datum/om/prompt/choice, message = "Who will we sting?", title = "Sting!", choices = victims)
 	if(isnull(T))
 		return
 

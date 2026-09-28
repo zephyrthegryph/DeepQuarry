@@ -46,6 +46,9 @@
 	var/waiting = FALSE
 	/// name -> wrapped handle of the state held between steps.
 	var/list/parked
+	/// State var names held strongly (not as handles) between steps: datums the flow made
+	/// and nothing else owns.
+	var/list/hold_strong
 
 /// Step 1: runs inside om_flow_start(), after the requires hold.
 /datum/om/flow/proc/start()
@@ -135,6 +138,8 @@
 	if(parked)
 		return TRUE
 	var/list/names = state_var_names(/datum/om/flow, list("actor", "target"))
+	if(length(hold_strong))
+		names = names - hold_strong
 	parked = park_state(names)
 	if(isnull(parked))
 		stop("gone")
@@ -193,3 +198,115 @@
 	var/datum/om/flow/F = flow
 	flow = null
 	F?.stop(reason || "interrupted")
+
+// ---------------------------------------------------------------- question sequences
+//
+// om_ask_sequence(sequence, answerer, subject, steps = list(...), on_done = PROC_REF(cb), ...)
+// asks a list of typed prompts one after another as a flow. `sequence` is
+// /datum/om/flow/ask_sequence or a subtype declaring the sequence's typed state:
+//
+//	/datum/om/flow/ask_sequence/pin_value
+//		var/type_name          // the answer of the prompt with key = "type_name"
+//		var/value
+//		var/datum/integrated_io/pin   // caller state, set by name; held as a handle between steps
+//
+//	om_ask_sequence(/datum/om/flow/ask_sequence/pin_value, user, null, steps = list(type_ask, PROC_REF(value_ask)), on_done = PROC_REF(value_entered), pin = src)
+//
+// Each step is a typed prompt (a type, or an instance with its vars set), null (skipped), or a
+// proc on the owner called as (sequence) that returns a prompt, null to skip, or ASK_STOP to
+// end there. Each answer (answer_value()) lands in the sequence var named by its prompt's
+// `key` when the type declares one, else in `answers` under the key (default: the step's
+// index), read with get(key); later steps can depend on earlier answers. A prompt whose
+// `answerer` is set asks that mob instead (consent from the other party). An optional prompt's
+// cancel stores null and goes on; any other cancel, a "no" or a failed re-check ends the
+// sequence and calls on_stop on the owner as (sequence, reason). When the last step is
+// answered, on_done runs on the owner as (sequence). The owner is the caller's src (`owner = X`
+// instead); a /proc/ path is called globally with the same arguments.
+
+/datum/om/flow/ask_sequence
+	name = "ask_sequence"
+	var/list/steps
+	var/step_index = 0
+	/// key -> answer, for keys the type declares no var for.
+	var/list/answers
+	/// What step procs, on_done and on_stop run on.
+	var/datum/owner
+	var/on_done
+	var/on_stop
+
+/// An answer so far, by key: the declared var, else from `answers`.
+/datum/om/flow/ask_sequence/proc/get(key)
+	if(answers && (key in answers))
+		return answers[key]
+	if(sequence_var(key))
+		return vars[key]
+	return null
+
+/// Stores an answer: in the declared var named `key`, else in `answers`.
+/datum/om/flow/ask_sequence/proc/put(key, value)
+	if(sequence_var(key))
+		vars[key] = value
+		return
+	LAZYINITLIST(answers)
+	answers[key] = value
+
+/// TRUE when `key` names a var the sequence type declares (its typed state).
+/datum/om/flow/ask_sequence/proc/sequence_var(key)
+	return istext(key) && (key in state_var_names(/datum/om/flow/ask_sequence, null))
+
+/datum/om/flow/ask_sequence/start()
+	next_step()
+
+/datum/om/flow/ask_sequence/proc/call_owner(proc_ref, ...)
+	var/list/call_args = list(src) + args.Copy(2)
+	if(copytext("[proc_ref]", 1, 7) == "/proc/")
+		return call(proc_ref)(arglist(call_args))
+	if(!owner)
+		return null
+	return call(owner, proc_ref)(arglist(call_args))
+
+/datum/om/flow/ask_sequence/proc/next_step()
+	while(step_index < length(steps))
+		step_index++
+		var/step = steps[step_index]
+		if(isnull(step))
+			continue
+		var/datum/om/prompt/P = step
+		if(!istype(P) && !ispath(step, /datum/om/prompt))
+			var/result = call_owner(step)
+			if(result == ASK_STOP)
+				stop("stopped")
+				return
+			if(isnull(result))
+				continue
+			P = result
+		if(ispath(P))
+			P = new P
+		if(isnull(P.key))
+			P.key = "[step_index]"
+		var/mob/asked = P.answerer || actor
+		if(!om_ask_begin(src, asked, P, PROC_REF(step_answered), null) && !done)
+			stop("not asked")
+		return
+	if(on_done)
+		call_owner(on_done)
+
+/datum/om/flow/ask_sequence/proc/step_answered(datum/om/prompt/P)
+	put(P.key, P.answer_value())
+	next_step()
+
+/datum/om/flow/ask_sequence/ended(reason)
+	if(on_stop)
+		call_owner(on_stop, reason)
+
+/// om_ask_sequence()'s body. `owner` is the caller's src. Returns the flow, or the text reason
+/// it didn't start.
+/proc/om_ask_sequence_begin(datum/owner, sequence, mob/answerer, datum/subject, list/params)
+	if(istype(answerer, /client))
+		var/client/C = answerer
+		answerer = C.mob
+	var/datum/om/flow/ask_sequence/F = ispath(sequence) ? new sequence : sequence
+	if(!istype(F))
+		CRASH("om_ask_sequence: [sequence] is not a /datum/om/flow/ask_sequence")
+	F.owner = owner
+	return om_flow_begin(F, answerer, subject, params)

@@ -3,7 +3,7 @@
 	name = "string pin"
 
 /datum/integrated_io/string/ask_for_pin_data(mob/user)
-	var/new_data = rerun_prompt(user, "k6", list("kind" = "text", "message" = "Please type in a string.", "title" = "[src] string writing", "encode" = FALSE), PROC_REF(ask_for_pin_data), args)
+	var/new_data = rerun_ask(user, "k6", PROC_REF(ask_for_pin_data), args, /datum/om/prompt/text, message = "Please type in a string.", title = "[src] string writing", encode = FALSE)
 	if(isnull(new_data))
 		return
 	new_data = sanitizeSafe(new_data, MAX_MESSAGE_LEN, 0, 0)

@@ -144,18 +144,17 @@ DECLARE_INTERACTIONS(/obj/item/royal_spider_egg, INTERACT_USE(null, PROC_REF(int
 
 /// Old attack_self.
 /obj/item/royal_spider_egg/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_prompt(src, user, list("message" = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", "title" = "Royal Spider Egg", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(release_confirmed))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(release_confirmed), title = "Royal Spider Egg", message = "Are you sure you want to release the royal spiderling right now? It appears ready to imprint the moment its born.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/royal_spider_egg/proc/release_confirmed(mob/user, response, datum/om/prompt/ask)
-	if(response == "Yes")
+/obj/item/royal_spider_egg/proc/release_confirmed(datum/om/prompt/confirm/ask)
+	var/mob/user = ask.answerer
+	var/turf/drop_loc = user.loc
+	if(istype(drop_loc))
+		var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)
+		royalty.faction = user.faction
 
-		var/turf/drop_loc = user.loc
-		if(istype(drop_loc))
-			var/obj/effect/spider/spiderling/princess/royalty = new(drop_loc)
-			royalty.faction = user.faction
+		consume(src, user)
 
-			consume(src, user)
-
-		else
-			to_chat(user, "You need more space to release the egg!")
+	else
+		to_chat(user, "You need more space to release the egg!")

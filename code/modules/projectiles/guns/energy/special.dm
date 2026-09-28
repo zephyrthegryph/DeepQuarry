@@ -105,7 +105,7 @@
 	set category = "Object"
 	set src in view(1)
 
-	var/genemask = rerun_prompt(usr, "k108", list("kind" = "list", "message" = "Choose a gene to modify.", "title" = "Gene Choice", "choices" = GLOB.plant_service.plant_gene_datums), VERB_REF(select_gene), args)
+	var/genemask = rerun_ask(usr, "k108", VERB_REF(select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = GLOB.plant_service.plant_gene_datums)
 	if(isnull(genemask))
 		return
 
@@ -293,7 +293,7 @@
 		user.visible_message(span_cult("[user] aims \the [src] at \the [A]."))
 	if(power_supply && power_supply.charge >= charge_cost) //Do a delay for pointblanking too.
 		power_cycle = TRUE
-		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, list("receiver" = src, "A" = A, "target_turf" = target_turf, "melee" = TRUE, "arg3" = target_zone, "arg4" = attack_modifier, "beam_holder" = list(beameffect), "click_empty" = FALSE))
+		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = TRUE, arg3 = target_zone, arg4 = attack_modifier, beam_holder = list(beameffect), click_empty = FALSE)
 		return ITEM_INTERACT_SUCCESS
 	else
 		..(A, user, target_zone, attack_modifier) //If it can't fire, just bash with no delay.
@@ -314,7 +314,7 @@
 
 	if(!power_cycle)
 		power_cycle = TRUE
-		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, list("receiver" = src, "A" = A, "target_turf" = target_turf, "melee" = FALSE, "arg3" = adjacent, "arg4" = params, "beam_holder" = list(beameffect), "click_empty" = TRUE))
+		om_task_start(/datum/om/task/timed/maghowitzer_howitzer_charged, user, src, receiver = src, A = A, target_turf = target_turf, melee = FALSE, arg3 = adjacent, arg4 = params, beam_holder = list(beameffect), click_empty = TRUE)
 	else
 		to_chat(user, span_notice("\The [src] is already powering up!"))
 
@@ -422,7 +422,7 @@
 	update_icon()
 	user.visible_message(span_notice("[user] starts charging the [src]!"), \
 						span_notice("You start charging the [src]!"))
-	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, list("receiver" = src, "target_arg" = target, "clickparams" = clickparams, "pointblank" = pointblank, "reflex" = reflex))
+	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex)
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE
 

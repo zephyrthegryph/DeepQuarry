@@ -174,15 +174,13 @@
 		if(!choices.len)
 			choices["radial"] = get_turf(src)
 
-		// A cancel flashes everyone around, as the tails flare either way.
-		om_prompt(src, src, list("kind" = "list", "message" = "What do we wish to flash?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS, "on_cancel" = PROC_REF(tail_flash_cancelled)), PROC_REF(tail_flash_chosen))
+		// A cancel (optional) flashes everyone around, as the tails flare either way.
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(tail_flash_chosen), title = "Target Choice", message = "What do we wish to flash?", choices = choices, ask_flags = ASK_CONSCIOUS, optional = TRUE)
 		return
 	tail_flash_now(A)
 
-/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_cancelled(mob/user, datum/om/prompt/ask)
-	tail_flash_now(null)
-
-/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(mob/user, atom/A, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_chosen(datum/om/prompt/choice/ask)
+	var/atom/A = ask.choice
 	tail_flash_now(isatom(A) ? A : null)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/tail_flash_now(atom/A)
@@ -249,7 +247,8 @@
 	COOLDOWN_START(src, strike_cooldown, special_attack_cooldown)
 	rending_strike()
 
-/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(mob/user, atom/A, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/sif/kururak/proc/rending_strike_chosen(datum/om/prompt/choice/ask)
+	var/atom/A = ask.choice
 	rending_strike(A)
 
 /mob/living/simple_mob/animal/sif/kururak/proc/rending_strike(atom/A)
@@ -271,7 +270,7 @@
 			to_chat(src, span_warning("There are no viable targets within range..."))
 			return
 
-		om_prompt(src, src, list("kind" = "list", "message" = "What do we wish to strike?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(rending_strike_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(rending_strike_chosen), title = "Target Choice", message = "What do we wish to strike?", choices = choices, ask_flags = ASK_CONSCIOUS)
 		return
 
 	if(!A) return

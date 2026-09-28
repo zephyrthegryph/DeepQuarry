@@ -82,15 +82,12 @@
 		if("set_blood_color")
 			// open BYOND's color picker so the user can actually pick a color.
 			var/current = preferences.read_preference(/datum/preference/color/human/blood_color) || "#A10808"
-			var/picked = tgui_color_picker(user, "Blood color", "Color picker", current)
-			if(!picked)
-				return PREF_UPDATE_UNCHANGED
-			// tgui_color_picker sleeps — re-verify prefs ownership before writing.
-			if(!user?.client?.prefs || user.client.prefs != preferences)
-				return PREF_UPDATE_UNCHANGED
-			preferences.update_preference_by_type(/datum/preference/color/human/blood_color, sanitize_hexcolor(picked, default="#A10808"))
-			return PREF_UPDATE_ACCEPTED
+			om_ask(user, /datum/om/prompt/color/prefs, PROC_REF(blood_color_picked), title = "Color picker", message = "Blood color", default = current, preferences = preferences, ui_refresh = preferences)
+			return PREF_UPDATE_UNCHANGED
 	return PREF_UPDATE_UNCHANGED
+
+/datum/preference_editor/trait_picker/proc/blood_color_picked(datum/om/prompt/color/prefs/ask)
+	ask.preferences.update_preference_by_type(/datum/preference/color/human/blood_color, sanitize_hexcolor(ask.picked_color, default="#A10808"))
 
 /datum/preference_editor/trait_picker/proc/add_trait_atomic(datum/preferences/preferences, list_type, trait_path)
 	var/list/current = preferences.read_preference(list_type)

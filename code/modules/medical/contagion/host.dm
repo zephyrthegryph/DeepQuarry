@@ -209,12 +209,12 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 		if(!initial(proto.max_stages))
 			continue
 		choices += path
-	var/disease = verb_prompt(user, "k247", list("kind" = "list", "message" = "Choose virus", "title" = "Viruses", "choices" = choices), args)
+	var/disease = verb_ask(user, "k247", args, /datum/om/prompt/choice, message = "Choose virus", title = "Viruses", choices = choices)
 
 	if(isnull(disease))
 		return FALSE
 
-	var/mob/living/carbon/human/H = verb_prompt(user, "k252", list("kind" = "list", "message" = "Choose infectee", "title" = "Characters", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+	var/mob/living/carbon/human/H = verb_ask(user, "k252", args, /datum/om/prompt/choice, message = "Choose infectee", title = "Characters", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 
 	if(isnull(H))
 		return FALSE

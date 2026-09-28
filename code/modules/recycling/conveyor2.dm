@@ -171,7 +171,7 @@
 /obj/machinery/conveyor/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_prompt(user, "k166", list("kind" = "text", "message" = "What id would you like to give this conveyor?", "title" = "Multitool-Conveyor interface", "default" = id, "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/input = rerun_ask(user, "k166", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What id would you like to give this conveyor?", title = "Multitool-Conveyor interface", default = id)
 	if(isnull(input))
 		return ITEM_INTERACT_BLOCKING
 	if(!input)
@@ -360,7 +360,7 @@
 /obj/machinery/conveyor_switch/multitool_act(mob/user, obj/item/I)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	var/input = rerun_prompt(user, "k363", list("kind" = "text", "message" = "What id would you like to give this conveyor switch?", "title" = "Multitool-Conveyor interface", "default" = id, "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/input = rerun_ask(user, "k363", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "What id would you like to give this conveyor switch?", title = "Multitool-Conveyor interface", default = id)
 	if(isnull(input))
 		return ITEM_INTERACT_BLOCKING
 	if(!input)

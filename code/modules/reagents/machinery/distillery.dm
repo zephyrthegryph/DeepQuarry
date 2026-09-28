@@ -216,14 +216,14 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 				OutputBeaker = null
 
 		if("adjust temp")
-			om_prompt(src, user, list("kind" = "number", "message" = "Choose a target temperature.", "title" = "Temperature.", "default" = T20C, "max" = max_temp, "min" = min_temp, "round" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(target_temp_entered))
+			om_ask(user, /datum/om/prompt/number, PROC_REF(target_temp_entered), max = max_temp, min = min_temp, title = "Temperature.", message = "Choose a target temperature.", default = T20C, round_entry = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
 	update_icon()
 	return TRUE
 
-/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/target_temp_entered(mob/user, new_temp, datum/om/prompt/ask)
-	if(isnum(new_temp) && !use_atmos)
-		target_temp = clamp(new_temp, min_temp, max_temp)
+/obj/machinery/portable_atmospherics/powered/reagent_distillery/proc/target_temp_entered(datum/om/prompt/number/ask)
+	if(isnum(ask.number) && !use_atmos)
+		target_temp = clamp(ask.number, min_temp, max_temp)
 		update_icon()
 
 /datum/interaction/machine_item/distillery_install_beaker

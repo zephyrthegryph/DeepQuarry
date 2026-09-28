@@ -92,7 +92,7 @@
 	else if(choices.len == 1)
 		choice = choices[1]
 	else
-		var/_answer_k95 = rerun_prompt(user, "k95", list("kind" = "list", "message" = "What kind of evidence are you looking for?", "title" = "Evidence Collection", "choices" = choices), PROC_REF(afterattack), args)
+		var/_answer_k95 = rerun_ask(user, "k95", PROC_REF(afterattack), args, /datum/om/prompt/choice, message = "What kind of evidence are you looking for?", title = "Evidence Collection", choices = choices)
 		if(isnull(_answer_k95))
 			return TRUE
 		choice = _answer_k95

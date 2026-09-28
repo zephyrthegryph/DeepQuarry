@@ -272,7 +272,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 /obj/machinery/mining/drill/multitool_act(mob/user, obj/item/tool)
 	if(active)
 		return ITEM_INTERACT_BLOCKING
-	var/_answer_k279 = rerun_prompt(user, "k279", list("kind" = "text", "message" = "Enter new ID number or leave empty to cancel.", "title" = "Assign ID number", "max_length" = 4, "encode" = FALSE), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/_answer_k279 = rerun_ask(user, "k279", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "Enter new ID number or leave empty to cancel.", title = "Assign ID number", max_length = 4, encode = FALSE)
 	if(isnull(_answer_k279))
 		return ITEM_INTERACT_BLOCKING
 	var/newtag = text2num(sanitizeSafe(_answer_k279, 4))

@@ -836,13 +836,20 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 // Will delete the specified order from the user-side list
 /datum/world_service/supply/proc/delete_order(datum/supply_order/O, mob/user)
 	// Making sure they know what they're doing
-	om_prompt_sequence(src, user, list(
-		list("key" = "sure", "message" = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
-		list("key" = "really", "message" = "Are you really sure? There is no way to recover the order once deleted.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
-	), PROC_REF(delete_order_confirmed), list("data" = list("order" = O)))
+	om_ask(user, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_order_sure), message = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", record = O)
 
-/datum/world_service/supply/proc/delete_order_confirmed(mob/user, datum/om/prompt/ask)
-	var/datum/supply_order/O = ask.get("order")
+/// "Delete this supply record?" (asked twice). `record` is the order or export receipt.
+/datum/om/prompt/confirm/supply_delete_record
+	title = "Delete Record"
+	no_first = TRUE
+	var/datum/record
+
+/datum/world_service/supply/proc/delete_order_sure(datum/om/prompt/confirm/supply_delete_record/ask)
+	om_ask(ask.answerer, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_order_confirmed), message = "Are you really sure? There is no way to recover the order once deleted.", record = ask.record)
+
+/datum/world_service/supply/proc/delete_order_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
+	var/mob/user = ask.answerer
+	var/datum/supply_order/O = ask.record
 	if(!(O in order_history)) // deleted by someone else meanwhile
 		return
 	refund_order(O, "Refund deleted order #[O.ordernum]: [O.supply_pack_of().name]")
@@ -926,13 +933,14 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 // Will delete the specified export receipt from the user-side list
 /datum/world_service/supply/proc/delete_export(datum/exported_crate/E, mob/user)
 	// Making sure they know what they're doing
-	om_prompt_sequence(src, user, list(
-		list("key" = "sure", "message" = "Are you sure you want to delete this record?", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
-		list("key" = "really", "message" = "Are you really sure? There is no way to recover the receipt once deleted.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
-	), PROC_REF(delete_export_confirmed), list("data" = list("receipt" = E)))
+	om_ask(user, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_export_sure), message = "Are you sure you want to delete this record?", record = E)
 
-/datum/world_service/supply/proc/delete_export_confirmed(mob/user, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("receipt")
+/datum/world_service/supply/proc/delete_export_sure(datum/om/prompt/confirm/supply_delete_record/ask)
+	om_ask(ask.answerer, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_export_confirmed), message = "Are you really sure? There is no way to recover the receipt once deleted.", record = ask.record)
+
+/datum/world_service/supply/proc/delete_export_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
+	var/mob/user = ask.answerer
+	var/datum/exported_crate/E = ask.record
 	if(!(E in exported_crates))
 		return
 	log_admin("[key_name(user)] has deleted export receipt [REF(E)] [E] from the user-side export history.")
@@ -940,17 +948,29 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 
 // Will add an item entry to the specified export receipt on the user-side list
 /datum/world_service/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
-	om_prompt_sequence(src, user, list(
-		list("key" = "name", "kind" = "text", "message" = "Please enter the name of the item.", "title" = "Name"),
-		list("key" = "quantity", "kind" = "number", "message" = "Please enter the quantity of the item.", "title" = "Quantity"),
-		list("key" = "value", "kind" = "number", "message" = "Please enter the value of the item.", "title" = "Value"),
-	), PROC_REF(export_item_entered), list("data" = list("receipt" = E)))
+	om_flow_start(/datum/om/flow/supply_export_item, user, null, receipt = E)
 
-/datum/world_service/supply/proc/export_item_entered(mob/user, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("receipt")
-	var/new_name = ask.get("name")
-	var/new_quantity = ask.get("quantity")
-	var/new_value = ask.get("value")
+/// Adding an item line to an export receipt: its name, quantity and value.
+/datum/om/flow/supply_export_item
+	var/datum/exported_crate/receipt
+	var/item_name
+	var/quantity
+
+/datum/om/flow/supply_export_item/start()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(name_entered), title = "Name", message = "Please enter the name of the item.")
+
+/datum/om/flow/supply_export_item/proc/name_entered(datum/om/prompt/text/ask)
+	item_name = ask.text
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(quantity_entered), title = "Quantity", message = "Please enter the quantity of the item.")
+
+/datum/om/flow/supply_export_item/proc/quantity_entered(datum/om/prompt/number/ask)
+	quantity = ask.number
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(value_entered), title = "Value", message = "Please enter the value of the item.")
+
+/datum/om/flow/supply_export_item/proc/value_entered(datum/om/prompt/number/ask)
+	GLOB.supply_service.export_item_entered(receipt, item_name, quantity, ask.number)
+
+/datum/world_service/supply/proc/export_item_entered(datum/exported_crate/E, new_name, new_quantity, new_value)
 	if(!(E in exported_crates) || !new_name || !new_quantity || !new_value)
 		return
 

@@ -395,32 +395,51 @@
 	if(!check_rights(R_FUN|R_ADMIN))
 		return
 
-	om_prompt_sequence(src, usr, list(
-		list("key" = "url", "kind" = "text", "message" = "REQUIRED: Provide URL for track", "title" = "Track URL"),
-		list("key" = "title", "kind" = "text", "message" = "REQUIRED: Provide title for track", "title" = "Track Title"),
-		list("key" = "duration", "kind" = "number", "message" = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", "title" = "Track Duration"),
-		list("key" = "artist", "kind" = "text", "message" = "Optional: Provide artist for track", "title" = "Track Artist"),
-	), PROC_REF(manual_track_entered), list("requires" = PROMPT_ADMIN(R_FUN|R_ADMIN)))
+	om_flow_start(/datum/om/flow/jukebox_track_add, usr, src)
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_entered(mob/user, datum/om/prompt/ask)
-	var/url = ask.get("url")
-	var/title = ask.get("title")
-	var/duration = ask.get("duration")
-	var/artist = ask.get("artist")
-	if(!url || !title || !duration)
+/// An admin adds a custom track: url, title, duration, then an optional artist.
+/datum/om/flow/jukebox_track_add
+	name = "jukebox track add"
+	var/url
+	var/title
+	var/duration
+
+/datum/om/flow/jukebox_track_add/start()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(url_entered), title = "Track URL", message = "REQUIRED: Provide URL for track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+
+/datum/om/flow/jukebox_track_add/proc/url_entered(datum/om/prompt/text/ask)
+	url = ask.text
+	if(!url)
 		return
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Track Title", message = "REQUIRED: Provide title for track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+
+/datum/om/flow/jukebox_track_add/proc/title_entered(datum/om/prompt/text/ask)
+	title = ask.text
+	if(!title)
+		return
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(duration_entered), title = "Track Duration", message = "REQUIRED: Provide duration for track (in deciseconds, aka seconds*10)", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+
+/datum/om/flow/jukebox_track_add/proc/duration_entered(datum/om/prompt/number/ask)
+	duration = ask.number
+	if(!duration)
+		return
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(artist_entered), title = "Track Artist", message = "Optional: Provide artist for track", cancel_answer = "", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+
+/datum/om/flow/jukebox_track_add/proc/artist_entered(datum/om/prompt/text/ask)
+	var/obj/machinery/media/jukebox/ghost/jukebox = target
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
-
-	LAZYADD(custom_tracks, new /datum/track(url, title, duration, artist, genre))
+	LAZYADD(jukebox.custom_tracks, new /datum/track(url, title, duration, ask.text, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
 	if(!check_rights(R_FUN|R_ADMIN))
 		return
 
-	om_prompt(src, usr, list("kind" = "text", "message" = "Input track title or URL to remove (must be exact)", "title" = "Remove Track", "requires" = PROMPT_ADMIN(R_FUN|R_ADMIN)), PROC_REF(manual_track_removal_entered))
+	om_ask(usr, /datum/om/prompt/text, PROC_REF(manual_track_removal_entered), message = "Input track title or URL to remove (must be exact)", title = "Remove Track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(mob/user, track, datum/om/prompt/ask)
+/obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/track = ask.text
 	var/client/C = user.client
 	if(!track)
 		return

@@ -137,7 +137,7 @@
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return TRUE
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		om_task_start(/datum/om/task/timed/bed_attackby, user, src, list("receiver" = src, "W" = W, "affecting" = affecting))
+		om_task_start(/datum/om/task/timed/bed_attackby, user, src, W = W, affecting = affecting)
 	return TRUE
 
 /datum/om/task/timed/bed_attackby

@@ -8,29 +8,31 @@
 
 /obj/structure/portal_event/resize/attack_ghost(mob/observer/dead/user)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
-		om_prompt_sequence(src, user, list(
-			list("key" = "adjust", "message" = "Would you like to adjust the portal's size settings?", "title" = "Change portal size settings", "choices" = list("No","Yes")),
-			PROC_REF(ask_size_mode),
-			PROC_REF(ask_size_limit),
-		), PROC_REF(size_settings_chosen), list("requires" = PROMPT_ADMIN(R_HOLDER)))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_size_mode), title = "Change portal size settings", message = "Would you like to adjust the portal's size settings?", no_first = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
 	return ..()
 
-/obj/structure/portal_event/resize/proc/ask_size_mode(mob/user, datum/om/prompt/ask)
-	if(ask.get("adjust") == "Yes")
-		return list("key" = "mode", "message" = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", "title" = "Change portal size settings", "choices" = list("Shrink","Grow"))
+/datum/om/prompt/number/portal_size_limit
+	title = "Pick a Size"
+	default = 1
+	round_entry = FALSE
+	requires = PROMPT_ADMIN(R_HOLDER)
+	var/shrinking = TRUE
 
-/obj/structure/portal_event/resize/proc/ask_size_limit(mob/user, datum/om/prompt/ask)
-	switch(ask.get("mode"))
-		if("Shrink")
-			return list("key" = "limit", "kind" = "number", "message" = "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)", "title" = "Pick a Size", "default" = 1, "round" = FALSE)
-		if("Grow")
-			return list("key" = "limit", "kind" = "number", "message" = "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)", "title" = "Pick a Size", "default" = 1, "round" = FALSE)
+/datum/om/prompt/number/portal_size_limit/prepare()
+	message = shrinking ? "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)" : "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
+	return TRUE
 
-/obj/structure/portal_event/resize/proc/size_settings_chosen(mob/user, datum/om/prompt/ask)
-	if(isnull(ask.get("limit")))
+/obj/structure/portal_event/resize/proc/ask_size_mode(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(ask_size_limit), title = "Change portal size settings", message = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
+
+/obj/structure/portal_event/resize/proc/ask_size_limit(datum/om/prompt/choice/ask)
+	om_ask(ask.answerer, /datum/om/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), shrinking = (ask.choice == "Shrink"))
+
+/obj/structure/portal_event/resize/proc/size_settings_chosen(datum/om/prompt/number/portal_size_limit/ask)
+	if(isnull(ask.number))
 		return
-	shrinking = ask.get("mode") == "Shrink"
-	size_limit = ask.get("limit")
+	shrinking = ask.shrinking
+	size_limit = ask.number
 
 /obj/structure/portal_event/resize/teleport(atom/movable/M as mob|obj)
 	if(!isliving(M))

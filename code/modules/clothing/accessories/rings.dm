@@ -130,7 +130,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/input = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_length" = MAX_NAME_LEN), PROC_REF(attack_self), args)
+	var/input = rerun_ask(user, "a1", PROC_REF(attack_self), args, /datum/om/prompt/text, message = "Would you like to change the holoengraving on the ring?", title = "Name your spouse", default = "Bae", max_length = MAX_NAME_LEN)
 	if(isnull(input))
 		return TRUE
 	if(!input)

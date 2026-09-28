@@ -189,7 +189,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_R
 
 /// Old attack_self.
 /obj/item/entrepreneur/horoscope/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/zodiac = rerun_prompt(user, "k192", list("kind" = "list", "message" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = zodiacs), PROC_REF(interaction_self), args)
+	var/zodiac = rerun_ask(user, "k192", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Which of todays zodiacs do you want to read?", title = "Zodiac", choices = zodiacs)
 	if(isnull(zodiac))
 		return TRUE
 	if(zodiac)
@@ -462,7 +462,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 /obj/item/entrepreneur/spirit_board/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user)) //admins can be cheeky
 		return TRUE
-	var/_answer_k451 = rerun_prompt(user, "k451", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), PROC_REF(interaction_alt), args)
+	var/_answer_k451 = rerun_ask(user, "k451", PROC_REF(interaction_alt), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
 	if(isnull(_answer_k451))
 		return TRUE
 	next_result = _answer_k451
@@ -474,7 +474,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot interact with this board because you are banned from playing ghost roles."))
 		return
-	var/_answer_k459 = rerun_prompt(user, "k459", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, attack_ghost), args)
+	var/_answer_k459 = rerun_ask(user, "k459", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice, message = "What should it land on next?", title = "Next result", choices = possible_results)
 	if(isnull(_answer_k459))
 		return
 	next_result = _answer_k459

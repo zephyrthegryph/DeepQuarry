@@ -9,9 +9,18 @@
 	var/max_buckled_mobs = 1
 
 
-/atom/movable/proc/unbuckle_chosen(mob/living/user, mob/living/unbuckled, datum/om/prompt/ask)
-	if(unbuckled in buckled_mob_list())
-		user_unbuckle_mob(unbuckled, user)
+/// Re-checked on the answer: still next to it, and the pick is still buckled to it.
+/datum/om/prompt/choice/unbuckle_who
+	title = "Unbuckle Who?"
+	message = "Who do you wish to unbuckle?"
+	requires = PROMPT_ADJACENT
+
+/datum/om/prompt/choice/unbuckle_who/valid()
+	var/atom/movable/AM = subject
+	return (choice in AM.buckled_mob_list()) ? null : "not buckled"
+
+/atom/movable/proc/unbuckle_chosen(datum/om/prompt/choice/unbuckle_who/ask)
+	user_unbuckle_mob(ask.choice, ask.answerer)
 
 /atom/movable/hand_gate(mob/living/user)
 	. = ..()
@@ -21,7 +30,7 @@
 	if(can_buckle && has_buckled_mobs())
 		var/list/mobs = src?.buckled_mob_list()
 		if(mobs.len > 1)
-			om_prompt(src, user, list("kind" = "list", "message" = "Who do you wish to unbuckle?", "title" = "Unbuckle Who?", "choices" = mobs, "requires" = PROMPT_ADJACENT), PROC_REF(unbuckle_chosen))
+			om_ask(user, /datum/om/prompt/choice/unbuckle_who, PROC_REF(unbuckle_chosen), choices = mobs)
 			return TRUE
 		else
 			if(user_unbuckle_mob(mobs[1], user))

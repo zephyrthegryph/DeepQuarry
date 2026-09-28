@@ -65,6 +65,25 @@
 	)
 	return data
 
+/// A plushie colour: its base (overlay_state null) or one added overlay. Re-checked on the answer: awake and next to it.
+/datum/om/prompt/color/plushie
+	message = "Choose a color:"
+	ask_flags = ASK_CONSCIOUS | ASK_NEAR_SUBJECT
+	/// The overlay's icon_state; null recolours the base.
+	var/overlay_state
+
+/obj/item/toy/plushie/customizable/proc/plushie_color_chosen(datum/om/prompt/color/plushie/ask)
+	if(!ask.picked_color)
+		return
+	if(ask.overlay_state)
+		var/list/target = added_overlays?[ask.overlay_state]
+		if(!target)
+			return
+		target["color"] = ask.picked_color
+	else
+		base_color = ask.picked_color
+	update_icon()
+
 /obj/item/toy/plushie/customizable/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
@@ -104,12 +123,7 @@
 			var/target = added_overlays[selected_icon_state]
 			if(!target)
 				return FALSE
-			var/mob/our_user = ui.user
-			var/new_color = tgui_color_picker(our_user, "Choose a color:", possible_overlays[selected_icon_state], base_color)
-			if(!new_color || our_user.stat || !Adjacent(our_user))
-				return FALSE
-			target["color"] = new_color
-			update_icon()
+			om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = possible_overlays[selected_icon_state], default = base_color, overlay_state = selected_icon_state, ui_refresh = src)
 
 		if("move_overlay_up")
 			var/target = params["icon"]
@@ -133,12 +147,7 @@
 
 		if("change_base_color")
 			. = TRUE
-			var/mob/our_user = ui.user
-			var/new_color = tgui_color_picker(our_user, "Choose a color:", "Plushie base color", base_color)
-			if(!new_color || our_user.stat || !Adjacent(our_user))
-				return FALSE
-			base_color = new_color
-			update_icon()
+			om_ask(ui.user, /datum/om/prompt/color/plushie, PROC_REF(plushie_color_chosen), title = "Plushie base color", default = base_color, ui_refresh = src)
 
 		if("set_overlay_alpha")
 			var/target = added_overlays[params["icon_state"]]

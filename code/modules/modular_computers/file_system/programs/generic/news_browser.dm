@@ -106,7 +106,7 @@
 			if(downloading || !loaded_article)
 				return
 
-			var/savename = act_prompt(ui.user, action, params, ui, "k109", list("kind" = "text", "message" = "Enter file name or leave blank to cancel:", "title" = "Save article", "default" = loaded_article.filename, "max_length" = MAX_MESSAGE_LEN))
+			var/savename = act_ask(ui.user, action, params, ui, "k109", /datum/om/prompt/text, message = "Enter file name or leave blank to cancel:", title = "Save article", default = loaded_article.filename)
 			if(isnull(savename))
 				return
 			if(!savename)

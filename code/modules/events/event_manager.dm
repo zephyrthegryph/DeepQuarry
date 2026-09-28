@@ -157,7 +157,7 @@
 		CONFIG_SET(flag/allow_random_events, text2num(href_list["pause_all"]))
 		log_and_message_admins("has [CONFIG_GET(flag/allow_random_events) ? "resumed" : "paused"] countdown for all events.")
 	else if(href_list["interval"])
-		var/delay = topic_prompt(usr, href_list, "k160", list("kind" = "number", "message" = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", "title" = "Set Interval Modifier"))
+		var/delay = topic_ask(usr, href_list, "k160", /datum/om/prompt/number, message = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", title = "Set Interval Modifier")
 		if(isnull(delay))
 			return
 		if(delay && delay > 0)
@@ -165,7 +165,7 @@
 			EC.delay_modifier = delay
 			log_and_message_admins("has set the interval modifier for [GLOB.severity_to_string[EC.severity]] events to [EC.delay_modifier].")
 	else if(href_list["stop"])
-		var/_answer_k166 = topic_prompt(usr, href_list, "k166", list("message" = "Stopping an event may have unintended side-effects. Continue?", "title" = "Stopping Event!", "choices" = list("Yes","No")))
+		var/_answer_k166 = topic_ask(usr, href_list, "k166", /datum/om/prompt/choice/alert, message = "Stopping an event may have unintended side-effects. Continue?", title = "Stopping Event!", choices = list("Yes","No"))
 		if(isnull(_answer_k166))
 			return
 		if(_answer_k166 != "Yes")
@@ -179,21 +179,21 @@
 	else if(href_list["back"])
 		selected_event_container_handle = null
 	else if(href_list["set_name"])
-		var/name = topic_prompt(usr, href_list, "k177", list("kind" = "text", "message" = "Enter event name.", "title" = "Set Name", "max_length" = MAX_LNAME_LEN))
+		var/name = topic_ask(usr, href_list, "k177", /datum/om/prompt/text, message = "Enter event name.", title = "Set Name", max_length = MAX_LNAME_LEN)
 		if(isnull(name))
 			return
 		if(name)
 			var/datum/event_meta/EM = locate(href_list["set_name"])
 			EM.name = name
 	else if(href_list["set_type"])
-		var/type = topic_prompt(usr, href_list, "k182", list("kind" = "list", "message" = "Select event type.", "title" = "Select", "choices" = allEvents))
+		var/type = topic_ask(usr, href_list, "k182", /datum/om/prompt/choice, message = "Select event type.", title = "Select", choices = allEvents)
 		if(isnull(type))
 			return
 		if(type)
 			var/datum/event_meta/EM = locate(href_list["set_type"])
 			EM.event_type = type
 	else if(href_list["set_weight"])
-		var/weight = topic_prompt(usr, href_list, "k187", list("kind" = "number", "message" = "Enter weight. A higher value means higher chance for the event of being selected.", "title" = "Set Weight"))
+		var/weight = topic_ask(usr, href_list, "k187", /datum/om/prompt/number, message = "Enter weight. A higher value means higher chance for the event of being selected.", title = "Set Weight")
 		if(isnull(weight))
 			return
 		if(weight && weight > 0)
@@ -211,7 +211,7 @@
 		EM.enabled = !EM.enabled
 		log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.")
 	else if(href_list["remove"])
-		var/_answer_k203 = topic_prompt(usr, href_list, "k203", list("message" = "This will remove the event from rotation. Continue?", "title" = "Removing Event!", "choices" = list("Yes","No")))
+		var/_answer_k203 = topic_ask(usr, href_list, "k203", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
 		if(isnull(_answer_k203))
 			return
 		if(_answer_k203 != "Yes")
@@ -223,7 +223,7 @@
 	else if(href_list["add"])
 		if(!new_event.name || !new_event.event_type)
 			return
-		var/_answer_k212 = topic_prompt(usr, href_list, "k212", list("message" = "This will add a new event to the rotation. Continue?", "title" = "Add Event!", "choices" = list("Yes","No")))
+		var/_answer_k212 = topic_ask(usr, href_list, "k212", /datum/om/prompt/choice/alert, message = "This will add a new event to the rotation. Continue?", title = "Add Event!", choices = list("Yes","No"))
 		if(isnull(_answer_k212))
 			return
 		if(_answer_k212 != "Yes")

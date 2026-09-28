@@ -241,11 +241,14 @@
 			to_chat(user, span_warning("There are no viable hosts within range..."))
 			return
 
-		om_prompt(src, src, list("kind" = "list", "message" = "Who do we wish to infest?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(infest_target_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(infest_target_answered), title = "Target Choice", message = "Who do we wish to infest?", choices = choices, ask_flags = ASK_CONSCIOUS)
 		return
 	infest_target_chosen(user, M)
 
-/mob/living/simple_mob/animal/sif/leech/proc/infest_target_chosen(mob/living/user, mob/living/carbon/M, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/sif/leech/proc/infest_target_answered(datum/om/prompt/choice/ask)
+	infest_target_chosen(ask.answerer, ask.choice)
+
+/mob/living/simple_mob/animal/sif/leech/proc/infest_target_chosen(mob/living/user, mob/living/carbon/M)
 	if(!M || host) return
 
 	if(!(src.Adjacent(M))) return
@@ -268,7 +271,7 @@
 				to_chat(user, span_notice("We cannot get through that host's protective gear."))
 				return
 
-	om_task_start(/datum/om/task/timed/leech_do_infest_leech, src, M, list("user" = user, "M" = M))
+	om_task_start(/datum/om/task/timed/leech_do_infest_leech, src, M, user = user, M = M)
 	return TRUE
 
 /datum/om/task/timed/leech_do_infest_leech
@@ -359,7 +362,7 @@
 			to_chat(src, span_warning("There are no viable hosts within range..."))
 			return
 
-		om_prompt(src, src, list("kind" = "list", "message" = "Who do we wish to inject?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(poison_inject))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(poison_inject_answered), title = "Target Choice", message = "Who do we wish to inject?", choices = choices, ask_flags = ASK_CONSCIOUS)
 		return
 
 	if(!M || stat)
@@ -367,7 +370,10 @@
 
 	poison_inject(src, M)
 
-/mob/living/simple_mob/animal/sif/leech/proc/poison_inject(mob/living/user, mob/living/carbon/L, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/sif/leech/proc/poison_inject_answered(datum/om/prompt/choice/ask)
+	poison_inject(ask.answerer, ask.choice)
+
+/mob/living/simple_mob/animal/sif/leech/proc/poison_inject(mob/living/user, mob/living/carbon/L)
 	if(!L || !Adjacent(L) || stat)
 		return
 
@@ -405,9 +411,10 @@
 		return
 
 	if(host)
-		om_prompt(src, src, list("kind" = "list", "message" = "Select a chemical to produce.", "title" = "Chemicals", "choices" = produceable_chemicals), PROC_REF(meds_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(meds_chosen), title = "Chemicals", message = "Select a chemical to produce.", choices = produceable_chemicals)
 
-/mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(mob/user, chem, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/sif/leech/proc/meds_chosen(datum/om/prompt/choice/ask)
+	var/chem = ask.choice
 	if(chemicals > 50 && !docile)
 		inject_meds(chem)
 
@@ -434,7 +441,7 @@
 				host_internal_organs -= O
 
 		if(client)
-			om_prompt(src, src, list("kind" = "list", "message" = "Select an organ to feed on.", "title" = "Organs", "choices" = host_internal_organs, "on_cancel" = PROC_REF(feed_declined)), PROC_REF(feed_organ_chosen))
+			om_ask(src, /datum/om/prompt/choice/leech_feed_organ, PROC_REF(feed_organ_chosen), choices = host_internal_organs)
 			return
 
 		if(length(host_internal_organs))
@@ -443,10 +450,15 @@
 	else
 		to_chat(src, span_warning("We cannot feed now."))
 
-/mob/living/simple_mob/animal/sif/leech/proc/feed_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_alien("We decide not to feed."))
+/datum/om/prompt/choice/leech_feed_organ
+	title = "Organs"
+	message = "Select an organ to feed on."
 
-/mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(mob/user, obj/item/organ/internal/target, datum/om/prompt/ask)
+/datum/om/prompt/choice/leech_feed_organ/cancelled()
+	to_chat(answerer, span_alien("We decide not to feed."))
+
+/mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(datum/om/prompt/choice/leech_feed_organ/ask)
+	var/obj/item/organ/internal/target = ask.choice
 	if(host && target.owner == host && !docile && COOLDOWN_FINISHED(src, feeding_cooldown))
 		bite_organ(target)
 

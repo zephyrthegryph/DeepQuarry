@@ -316,20 +316,42 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 // Proc: tgui-act()
 // Parameters: 4 (standard tgui_act arguments)
 // Description: Responds to UI button presses.
-/obj/item/communicator/proc/name_entered(mob/user, new_name, datum/om/prompt/ask)
-	new_name = sanitizeSafe(new_name)
+/// Communicator text entry: re-checked on the answer, the communicator is still usable.
+/datum/om/prompt/text/communicator
+	requires = PROMPT_USABLE
+
+/datum/om/prompt/text/communicator/name
+	title = "Communicator"
+	message = "Please enter your name."
+	encode = FALSE
+
+/datum/om/prompt/text/communicator/ringtone
+	title = "Ringer"
+	message = "Set Ringer Tone"
+
+/datum/om/prompt/text/communicator/text_message
+	title = "Text Message"
+	message = "Enter your message."
+	encode = FALSE
+	var/address
+
+/// A cancel clears the note.
+/datum/om/prompt/text/communicator/note
+	message = "Please enter message"
+	multiline = TRUE
+	cancel_answer = ""
+
+/obj/item/communicator/proc/name_entered(datum/om/prompt/text/communicator/name/ask)
+	var/new_name = sanitizeSafe(ask.text)
 	if(new_name)
 		register_device(new_name)
 
-/obj/item/communicator/proc/ringtone_entered(mob/user, ringtone, datum/om/prompt/ask)
-	if(ringtone)
-		ttone = ringtone
+/obj/item/communicator/proc/ringtone_entered(datum/om/prompt/text/communicator/ringtone/ask)
+	if(ask.text)
+		ttone = ask.text
 
-/obj/item/communicator/proc/note_cleared(mob/user, datum/om/prompt/ask)
-	note_entered(user, null, ask)
-
-/obj/item/communicator/proc/note_entered(mob/user, n, datum/om/prompt/ask)
-	n = sanitizeSafe(n, extra = 0)
+/obj/item/communicator/proc/note_entered(datum/om/prompt/text/communicator/note/ask)
+	var/n = sanitizeSafe(ask.text, extra = 0)
 	if(n)
 		note = html_decode(n)
 		notehtml = note
@@ -338,9 +360,10 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 		note = ""
 		notehtml = note
 
-/obj/item/communicator/proc/text_message_entered(mob/user, text, datum/om/prompt/ask)
-	var/their_address = ask.get("address")
-	text = sanitizeSafe(text)
+/obj/item/communicator/proc/text_message_entered(datum/om/prompt/text/communicator/text_message/ask)
+	var/mob/user = ask.answerer
+	var/their_address = ask.address
+	var/text = sanitizeSafe(ask.text)
 	if(!text || !get_connection_to_tcomms())
 		return
 	exonet.send_message(their_address, "text", text)
@@ -364,7 +387,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 	. = TRUE
 	switch(action)
 		if("rename")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Please enter your name.", "title" = "Communicator", "default" = ui.user.name, "encode" = FALSE, "requires" = PROMPT_USABLE), PROC_REF(name_entered))
+			om_ask(ui.user, /datum/om/prompt/text/communicator/name, PROC_REF(name_entered), default = ui.user.name)
 
 		if("toggle_visibility")
 			switch(network_visibility)
@@ -381,7 +404,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			ringer = !ringer
 
 		if("set_ringer_tone")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Set Ringer Tone", "title" = "Ringer", "requires" = PROMPT_USABLE), PROC_REF(ringtone_entered))
+			om_ask(ui.user, /datum/om/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered))
 
 		if("selfie_mode")
 			selfie_mode = !selfie_mode
@@ -413,7 +436,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			if(!get_connection_to_tcomms())
 				to_chat(ui.user, span_danger("Error: Cannot connect to Exonet node."))
 				return FALSE
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter your message.", "title" = "Text Message", "encode" = FALSE, "requires" = PROMPT_USABLE, "data" = list("address" = params["message"])), PROC_REF(text_message_entered))
+			om_ask(ui.user, /datum/om/prompt/text/communicator/text_message, PROC_REF(text_message_entered), address = params["message"])
 
 		if("disconnect")
 			var/name_to_disconnect = params["disconnect"]
@@ -450,7 +473,7 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 			selected_tab = params["switch_tab"]
 
 		if("edit")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Please enter message", "title" = name, "default" = notehtml, "multiline" = TRUE, "requires" = PROMPT_USABLE, "on_cancel" = PROC_REF(note_cleared)), PROC_REF(note_entered))
+			om_ask(ui.user, /datum/om/prompt/text/communicator/note, PROC_REF(note_entered), title = name, default = notehtml)
 
 		if("Light")
 			fon = !fon

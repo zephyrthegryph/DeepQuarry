@@ -126,12 +126,24 @@
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
 		return
 
-	om_prompt(src, user, list("message" = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?", "title" = "Stowaway Spawner", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/has_client)), PROC_REF(lurker_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/lurker_spawn, PROC_REF(lurker_confirmed))
 
-/obj/structure/ghost_pod/ghost_activated/maint_lurker/proc/lurker_confirmed(mob/observer/dead/user, choice, datum/om/prompt/ask)
-	if(choice != "Yes" || used)
-		return
-	create_occupant(user)
+/// Re-checked: the ghost still has a client and the spawner is unused.
+/datum/om/prompt/confirm/lurker_spawn
+	title = "Stowaway Spawner"
+	message = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should not be used with characters you regularly play on station. Are you absolutely sure you wish to continue?"
+	requires = list(/datum/om/check/has_client)
+
+/datum/om/prompt/confirm/lurker_spawn/valid()
+	var/obj/structure/ghost_pod/pod = subject
+	return pod.used ? "already used" : null
+
+/datum/om/prompt/confirm/lurker_spawn/redgate
+	title = "Redspace Inhabitant Spawner"
+	message = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should be a character who has a suitable reason for existing within this redspace location. You will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?"
+
+/obj/structure/ghost_pod/ghost_activated/maint_lurker/proc/lurker_confirmed(datum/om/prompt/confirm/lurker_spawn/ask)
+	create_occupant(ask.answerer)
 
 /obj/structure/ghost_pod/ghost_activated/maint_lurker/create_occupant(mob/M)
 	..()
@@ -204,4 +216,4 @@
 		//to_chat(user, span_warning("You must have proper out-of-character notes and flavor text configured for your current character slot to use this spawnpoint."))
 		return
 
-	om_prompt(src, user, list("message" = "Using this spawner will spawn you as your currently loaded character slot in a special role. It should be a character who has a suitable reason for existing within this redspace location. You will not be able to leave through the redgate until another character grants you permission by clicking on the redgate with you nearby. Are you absolutely sure you wish to continue?", "title" = "Redspace Inhabitant Spawner", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/has_client)), PROC_REF(lurker_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/lurker_spawn/redgate, PROC_REF(lurker_confirmed))

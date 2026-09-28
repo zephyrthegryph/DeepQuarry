@@ -22,7 +22,7 @@
 		to_chat(src, span_notice("We return our vocal glands to their original location."))
 		return
 
-	var/mimic_voice = rerun_prompt(src, "a1", list("kind" = "text", "message" = "Enter a name to mimic.", "title" = "Mimic Voice", "max_length" = MAX_NAME_LEN), PROC_REF(changeling_mimicvoice), args)
+	var/mimic_voice = rerun_ask(src, "a1", PROC_REF(changeling_mimicvoice), args, /datum/om/prompt/text, message = "Enter a name to mimic.", title = "Mimic Voice", max_length = MAX_NAME_LEN)
 	if(isnull(mimic_voice))
 		return
 	if(!mimic_voice)

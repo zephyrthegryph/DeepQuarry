@@ -54,7 +54,7 @@
 /obj/item/clothing/suit/lasertag/proc/adjust_health_proc(mob/living/user)
 	var/max_health = 10
 	var/min_health = 1
-	var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "number", "message" = "Select Suit Health (Between 1 and 10)", "title" = "Tag Health", "default" = lasertag_max_health, "max" = max_health, "min" = min_health, "round" = TRUE), PROC_REF(adjust_health_proc), args)
+	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(adjust_health_proc), args, /datum/om/prompt/number, message = "Select Suit Health (Between 1 and 10)", title = "Tag Health", default = lasertag_max_health, max = max_health, min = min_health)
 	if(isnull(_answer_a1))
 		return
 	var/new_health = _answer_a1 //If you need to go above 10, ask admins.
@@ -80,7 +80,7 @@
 /obj/item/clothing/suit/lasertag/proc/adjust_heal_time_proc(mob/living/user)
 	var/max_heal_time = 60
 	var/min_heal_time = 0
-	var/_answer_a2 = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Select Heal Timer (Between 0(off) to 60 seconds)", "title" = "Heal Timer", "default" = time_to_heal*0.1, "max" = max_heal_time, "min" = min_heal_time, "round" = TRUE), PROC_REF(adjust_heal_time_proc), args)
+	var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(adjust_heal_time_proc), args, /datum/om/prompt/number, message = "Select Heal Timer (Between 0(off) to 60 seconds)", title = "Heal Timer", default = time_to_heal*0.1, max = max_heal_time, min = min_heal_time)
 	if(isnull(_answer_a2))
 		return
 	var/new_heal_timer = _answer_a2 //If you need to go above 10, ask admins.

@@ -10,7 +10,7 @@
 	var/list/keys = list()
 	for(var/mob/playerMob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		keys += playerMob.client
-	var/client/selection = client_prompt("a1", list("kind" = "list", "message" = "Please, select a player!", "title" = "Set CKey", "choices" = sortKey(keys)), PROC_REF(SetCKey), args, 0)
+	var/client/selection = client_ask("a1", PROC_REF(SetCKey), args, 0, /datum/om/prompt/choice, message = "Please, select a player!", title = "Set CKey", choices = sortKey(keys))
 	if(isnull(selection))
 		return
 	if(!selection || !istype(selection))

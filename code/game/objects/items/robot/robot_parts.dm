@@ -92,9 +92,9 @@
 				return 1
 	return 0
 
-/obj/item/robot_parts/robot_suit/proc/robot_named(mob/user, t, datum/om/prompt/ask)
-	if (t)
-		src.created_name = t
+/obj/item/robot_parts/robot_suit/proc/robot_named(datum/om/prompt/text/ask)
+	if (ask.text)
+		src.created_name = ask.text
 
 DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -225,7 +225,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			to_chat(user, span_warning("The MMI must go in after everything else!"))
 
 	if (istype(W, /obj/item/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "Enter new robot name", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(robot_named))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(robot_named), title = src.name, message = "Enter new robot name", default = src.created_name, max_length = MAX_NAME_LEN, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
 	return INTERACTION_HANDLED_PASS
 

@@ -65,17 +65,22 @@
 
 			var/tag = params["tag"]
 			var/current = airlock_program.get_tag(tag)
-			om_prompt(src, usr, list("kind" = "text", "message" = "What would you like to set [tag] to?", "title" = "New [tag]?", "default" = current, "max_length" = 30, "requires" = PROMPT_USABLE, "data" = list("tag" = tag)), PROC_REF(airlock_tag_entered))
+			om_ask(usr, /datum/om/prompt/text/airlock_tag, PROC_REF(airlock_tag_entered), message = "What would you like to set [tag] to?", title = "New [tag]?", default = current, max_length = 30, tag_name = tag)
 			return TRUE
 
 		if("set_frequency")
 			set_frequency(sanitize_frequency(text2num(params["freq"]), RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 			return TRUE
 
-/obj/machinery/embedded_controller/radio/airlock/proc/airlock_tag_entered(mob/user, new_tag, datum/om/prompt/ask)
+/datum/om/prompt/text/airlock_tag
+	requires = PROMPT_USABLE
+	var/tag_name
+
+/obj/machinery/embedded_controller/radio/airlock/proc/airlock_tag_entered(datum/om/prompt/text/airlock_tag/ask)
+	var/new_tag = ask.text
 	var/datum/embedded_program/airlock/airlock_program = program
 	if(new_tag && airlock_program)
-		airlock_program.set_tag(ask.get("tag"), new_tag)
+		airlock_program.set_tag(ask.tag_name, new_tag)
 		SStgui.update_uis(src)
 
 /obj/machinery/embedded_controller/radio/airlock/update_icon()

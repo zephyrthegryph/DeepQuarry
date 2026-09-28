@@ -3,41 +3,90 @@
 /datum/gear_tweak/proc/get_contents(metadata)
 	return
 
-/// The questions a change of this tweak asks (a list of om_prompt_sequence step specs, each
-/// with a "key"), or null when there is nothing to ask. `gear` is the gear datum, when known.
-/// The caller runs them and hands the answers to metadata_answered().
+/// A gear tweak's questions as a sequence. The prompt keyed "value" lands in `value` (and a
+/// second answer keyed "detail" in `detail`); keyed "[i]" answers are read with get("[i]").
+/// Callers that need their own state on the answer subtype this with typed vars and hand
+/// ask_metadata() an instance (see /datum/om/flow/ask_sequence/gear_tweak/loadout).
+/datum/om/flow/ask_sequence/gear_tweak
+	name = "gear_tweak"
+	var/value
+	var/detail
+	/// The metadata before the change.
+	var/metadata
+	/// Called as on_changed(user, new_value, sequence) when the answers give a new value.
+	var/datum/requester
+	var/on_changed
+
+/// The questions a change of this tweak asks: a list of om_ask_sequence() steps (typed prompt
+/// instances with `key` set, see gear_ask_*()), or null when there is nothing to ask. `gear` is
+/// the gear datum, when known. ask_metadata() runs them and hands the answers to metadata_answered().
 /datum/gear_tweak/proc/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
 	return null
 
-/// The new metadata from the answers to metadata_steps() (P.get(key)), or null to keep it.
-/datum/gear_tweak/proc/metadata_answered(datum/om/prompt/P, metadata)
-	return P.get("value")
+/// The new metadata from the answers to metadata_steps() (seq.value, seq.detail, seq.get("[i]")),
+/// or null to keep it. The old metadata is seq.metadata.
+/datum/gear_tweak/proc/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	return seq.value
 
 /// Asks `user` for a new value of this tweak. When they finish, `on_changed` is called on
-/// `requester` as (user, new_value, P) with `data` readable from P; a cancel changes nothing.
-/// Returns FALSE when there is nothing to ask.
-/datum/gear_tweak/proc/ask_metadata(mob/user, metadata, datum/gear/gear, title, datum/requester, on_changed, list/data, list/requires)
+/// `requester` as (user, new_value, sequence); a cancel changes nothing. `sequence` is an
+/// optional /datum/om/flow/ask_sequence/gear_tweak subtype instance carrying the caller's own
+/// typed state. Returns FALSE when there is nothing to ask.
+/datum/gear_tweak/proc/ask_metadata(mob/user, metadata, datum/gear/gear, title, datum/requester, on_changed, datum/om/flow/ask_sequence/gear_tweak/sequence, list/requires)
 	var/list/steps = metadata_steps(user, metadata, gear, title || "Character Preference")
 	if(!length(steps))
 		return FALSE
-	var/list/all_data = data ? data.Copy() : list()
-	all_data["metadata"] = metadata
-	all_data["requester"] = requester
-	all_data["on_changed"] = on_changed
-	var/list/base = list("data" = all_data)
-	if(requires)
-		base["requires"] = requires
-		if(isatom(requester))
-			base["target"] = requester
-	om_prompt_sequence(src, user, steps, PROC_REF(metadata_sequence_done), base)
-	return TRUE
+	var/result = om_ask_sequence(sequence || /datum/om/flow/ask_sequence/gear_tweak, user, isatom(requester) ? requester : null, 		steps = steps, on_done = PROC_REF(metadata_sequence_done), requires = requires, 		metadata = metadata, requester = requester, on_changed = on_changed)
+	return !istext(result)
 
-/datum/gear_tweak/proc/metadata_sequence_done(mob/user, datum/om/prompt/P)
-	var/new_value = metadata_answered(P, P.get("metadata"))
+/datum/gear_tweak/proc/metadata_sequence_done(datum/om/flow/ask_sequence/gear_tweak/seq)
+	var/new_value = metadata_answered(seq)
 	if(isnull(new_value))
 		return
-	var/datum/requester = P.get("requester")
-	call(requester, P.get("on_changed"))(user, new_value, P)
+	var/datum/requester = seq.requester
+	if(!requester || QDELETED(requester))
+		return
+	call(requester, seq.on_changed)(seq.actor, new_value, seq)
+
+// Step builders for metadata_steps().
+
+/proc/gear_ask_choice(key, title, message, list/choices, default)
+	var/datum/om/prompt/choice/P = new
+	P.key = key
+	P.title = title
+	P.message = message
+	P.choices = choices
+	P.default = default
+	return P
+
+/proc/gear_ask_color(key, title, message, default)
+	var/datum/om/prompt/color/P = new
+	P.key = key
+	P.title = title
+	P.message = message
+	if(default)
+		P.default = default
+	return P
+
+/proc/gear_ask_text(key, title, message, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE)
+	var/datum/om/prompt/text/P = new
+	P.key = key
+	P.title = title
+	P.message = message
+	P.default = default
+	P.max_length = max_length
+	P.multiline = multiline
+	return P
+
+/proc/gear_ask_colormatrix(key, title, message, preview, list/default, matrix_only = FALSE)
+	var/datum/om/prompt/colormatrix/P = new
+	P.key = key
+	P.title = title
+	P.message = message
+	P.preview = preview
+	P.default = default
+	P.matrix_only = matrix_only
+	return P
 
 /datum/gear_tweak/proc/get_default()
 	return
@@ -89,8 +138,8 @@
 
 /datum/gear_tweak/color/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
 	if(valid_colors)
-		return list(list("key" = "value", "kind" = "list", "message" = "Choose a color.", "title" = title, "choices" = valid_colors, "default" = metadata))
-	return list(list("key" = "value", "kind" = "color", "message" = "Choose a color.", "title" = title, "default" = metadata))
+		return list(gear_ask_choice("value", title, "Choose a color.", valid_colors, metadata))
+	return list(gear_ask_color("value", title, "Choose a color.", metadata))
 
 /datum/gear_tweak/color/tweak_item(obj/item/I, metadata)
 	if(valid_colors && !(metadata in valid_colors))
@@ -117,10 +166,10 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 /datum/gear_tweak/matrix_recolor/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
 	if(!istype(gear))
 		CRASH("Matrix metadata called by [user] without gear!")
-	return list(list("key" = "value", "kind" = "colormatrix", "message" = "Pick a color matrix for this item", "title" = "Matrix Recolor", "preview" = gear.path, "default" = metadata, "matrix_only" = TRUE))
+	return list(gear_ask_colormatrix("value", "Matrix Recolor", "Pick a color matrix for this item", gear.path, metadata, TRUE))
 
-/datum/gear_tweak/matrix_recolor/metadata_answered(datum/om/prompt/P, metadata)
-	var/list/returned = P.get("value")
+/datum/gear_tweak/matrix_recolor/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	var/list/returned = seq.value
 	if(!islist(returned))
 		return null
 	var/identity = TRUE
@@ -162,7 +211,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 	return valid_paths[1]
 
 /datum/gear_tweak/path/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
-	return list(list("key" = "value", "kind" = "list", "message" = "Choose a type.", "title" = title, "choices" = valid_paths, "default" = metadata))
+	return list(gear_ask_choice("value", title, "Choose a type.", valid_paths, metadata))
 
 /datum/gear_tweak/path/tweak_gear_data(metadata, datum/gear_data/gear_data)
 	if(!(metadata in valid_paths))
@@ -191,12 +240,12 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 /datum/gear_tweak/contents/metadata_steps(mob/user, list/metadata, datum/gear/gear, title = "Character Preference")
 	. = list()
 	for(var/i = 1 to valid_contents.len)
-		. += list(list("key" = "[i]", "kind" = "list", "message" = "Choose an entry.", "title" = title, "choices" = valid_contents[i] + list("Random", "None"), "default" = LAZYACCESS(metadata, i)))
+		. += list(gear_ask_choice("[i]", title, "Choose an entry.", valid_contents[i] + list("Random", "None"), LAZYACCESS(metadata, i)))
 
-/datum/gear_tweak/contents/metadata_answered(datum/om/prompt/P, list/metadata)
+/datum/gear_tweak/contents/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
 	. = list()
 	for(var/i = 1 to valid_contents.len)
-		var/entry = P.get("[i]")
+		var/entry = seq.get("[i]")
 		if(!entry)
 			return null
 		. += entry
@@ -239,7 +288,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 	return "Random"
 
 /datum/gear_tweak/reagents/metadata_steps(mob/user, list/metadata, datum/gear/gear, title = "Character Preference")
-	return list(list("key" = "value", "kind" = "list", "message" = "Choose an entry.", "title" = title, "choices" = valid_reagents + list("Random", "None"), "default" = metadata))
+	return list(gear_ask_choice("value", title, "Choose an entry.", valid_reagents + list("Random", "None"), metadata))
 
 /datum/gear_tweak/reagents/tweak_item(obj/item/I, list/metadata)
 	if(metadata == "None")
@@ -278,11 +327,11 @@ GLOBAL_DATUM_INIT(gear_tweak_free_name, /datum/gear_tweak/custom_name, new)
 		to_chat(user, span_warning("You are banned from using custom loadout names/descriptions."))
 		return null
 	if(valid_custom_names)
-		return list(list("key" = "value", "kind" = "list", "message" = "Choose an item name.", "title" = title, "choices" = valid_custom_names, "default" = metadata))
-	return list(list("key" = "value", "kind" = "text", "message" = "Choose the item's name. Leave it blank to use the default name.", "title" = "Item Name", "default" = metadata, "max_length" = MAX_LNAME_LEN))
+		return list(gear_ask_choice("value", title, "Choose an item name.", valid_custom_names, metadata))
+	return list(gear_ask_text("value", "Item Name", "Choose the item's name. Leave it blank to use the default name.", metadata, MAX_LNAME_LEN, FALSE))
 
-/datum/gear_tweak/custom_name/metadata_answered(datum/om/prompt/P, metadata)
-	var/answer = P.get("value")
+/datum/gear_tweak/custom_name/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	var/answer = seq.value
 	if(isnull(answer))
 		return null
 	return answer ? answer : get_default()
@@ -315,11 +364,11 @@ GLOBAL_DATUM_INIT(gear_tweak_free_desc, /datum/gear_tweak/custom_desc, new)
 		to_chat(user, span_warning("You are banned from using custom loadout names/descriptions."))
 		return null
 	if(valid_custom_desc)
-		return list(list("key" = "value", "kind" = "list", "message" = "Choose an item description.", "title" = title, "choices" = valid_custom_desc, "default" = metadata))
-	return list(list("key" = "value", "kind" = "text", "message" = "Choose the item's description. Leave it blank to use the default description.", "title" = "Item Description", "default" = metadata, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE))
+		return list(gear_ask_choice("value", title, "Choose an item description.", valid_custom_desc, metadata))
+	return list(gear_ask_text("value", "Item Description", "Choose the item's description. Leave it blank to use the default description.", metadata, MAX_MESSAGE_LEN, TRUE))
 
-/datum/gear_tweak/custom_desc/metadata_answered(datum/om/prompt/P, metadata)
-	var/answer = P.get("value")
+/datum/gear_tweak/custom_desc/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	var/answer = seq.value
 	if(isnull(answer))
 		return null
 	return answer ? answer : get_default()
@@ -344,10 +393,12 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	return TRUE
 
 /datum/gear_tweak/toggle_digestable/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
-	return list(list("key" = "value", "message" = "Turn digestable on or off", "title" = "Toggle Digestable", "choices" = list("Enable", "Disable", "Cancel")))
+	var/datum/om/prompt/choice/P = gear_ask_choice("value", "Toggle Digestable", "Turn digestable on or off", list("Enable", "Disable", "Cancel"), null)
+	P.buttons = TRUE
+	return list(P)
 
-/datum/gear_tweak/toggle_digestable/metadata_answered(datum/om/prompt/P, metadata)
-	switch(P.get("value"))
+/datum/gear_tweak/toggle_digestable/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	switch(seq.value)
 		if("Enable")
 			return TRUE
 		if("Disable")
@@ -398,8 +449,8 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 /datum/gear_tweak/tablet/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
 	return computer_hardware_steps("Tablet Gear", list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
 
-/datum/gear_tweak/tablet/metadata_answered(datum/om/prompt/P, metadata)
-	return computer_hardware_answered(P, list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
+/datum/gear_tweak/tablet/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	return computer_hardware_answered(seq, list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
 
 /datum/gear_tweak/tablet/get_default()
 	return list(1, 1, 1, 1, 1, 1, 1)
@@ -466,8 +517,8 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 /datum/gear_tweak/laptop/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
 	return computer_hardware_steps("Laptop Gear", list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
 
-/datum/gear_tweak/laptop/metadata_answered(datum/om/prompt/P, metadata)
-	return computer_hardware_answered(P, list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
+/datum/gear_tweak/laptop/metadata_answered(datum/om/flow/ask_sequence/gear_tweak/seq)
+	return computer_hardware_answered(seq, list(ValidProcessors, ValidBatteries, ValidHardDrives, ValidNetworkCards, ValidNanoPrinters, ValidCardSlots, ValidTeslaLinks))
 
 /// A modular computer's parts are picked one slot at a time; the metadata is each pick's index.
 /proc/computer_hardware_part_names(list/parts)
@@ -484,13 +535,13 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	var/static/list/questions = list("Choose a processor:", "Choose a battery:", "Choose a hard drive:", "Choose a network card:", "Choose a nanoprinter:", "Choose a card slot:", "Choose a tesla link:")
 	. = list()
 	for(var/i in 1 to length(slots))
-		. += list(list("key" = "[i]", "kind" = "list", "message" = questions[i], "title" = title, "choices" = computer_hardware_part_names(slots[i])))
+		. += list(gear_ask_choice("[i]", title, questions[i], computer_hardware_part_names(slots[i]), null))
 
-/proc/computer_hardware_answered(datum/om/prompt/P, list/slots)
+/proc/computer_hardware_answered(datum/om/flow/ask_sequence/seq, list/slots)
 	. = list()
 	for(var/i in 1 to length(slots))
 		var/list/names = computer_hardware_part_names(slots[i])
-		. += names[P.get("[i]")]
+		. += names[seq.get("[i]")]
 
 /datum/gear_tweak/laptop/get_default()
 	return list(1, 1, 1, 1, 1, 1, 1)
@@ -565,7 +616,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	return "Location: [metadata]"
 
 /datum/gear_tweak/implant_location/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
-	return list(list("key" = "value", "kind" = "list", "message" = "Select a bodypart for the implant to be implanted inside.", "title" = "Implant Location", "choices" = bodypart_names_to_tokens))
+	return list(gear_ask_choice("value", "Implant Location", "Select a bodypart for the implant to be implanted inside.", bodypart_names_to_tokens, null))
 
 /datum/gear_tweak/collar_tag/get_contents(metadata)
 	return "Tag: [metadata]"
@@ -574,7 +625,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	return ""
 
 /datum/gear_tweak/collar_tag/metadata_steps(mob/user, metadata, datum/gear/gear, title = "Character Preference")
-	return list(list("key" = "value", "kind" = "text", "message" = "Choose the tag text.", "title" = title, "default" = metadata, "max_length" = MAX_NAME_LEN))
+	return list(gear_ask_text("value", title, "Choose the tag text.", metadata, MAX_NAME_LEN, FALSE))
 
 /datum/gear_tweak/collar_tag/tweak_item(obj/item/clothing/accessory/collar/C, metadata)
 	if(metadata == "")

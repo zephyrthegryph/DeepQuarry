@@ -117,12 +117,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 		our_options |= "Cancel"
 
-		om_prompt(src, user, list("message" = "It's dark and gloomy in here. What would you like to do?", "title" = "Tunnel", "choices" = our_options, "requires" = list(/datum/om/check/inside_target)), PROC_REF(tunnel_action_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_action_chosen), choices = our_options, title = "Tunnel", message = "It's dark and gloomy in here. What would you like to do?", buttons = TRUE, requires = list(/datum/om/check/inside_target))
 		return
 
 	if(!can_enter(user))
 		if(may_choose_to_enter(user))
-			om_prompt(src, user, list("message" = "Would you like to enter the tunnel, or reach inside it?", "title" = "Enter or reach", "choices" = list("Enter","Reach"), "requires" = PROMPT_ADJACENT, "data" = list("dropped" = FALSE)), PROC_REF(enter_or_reach_chosen))
+			om_ask(user, /datum/om/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen))
 			return
 		tunnel_reach(user)
 		return
@@ -138,18 +138,30 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	user.visible_message(span_notice("\The [user] begins climbing into \the [src]!"))
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
 
-/obj/structure/micro_tunnel/proc/enter_or_reach_chosen(mob/living/user, choice, datum/om/prompt/ask)
-	if(ask.get("dropped"))
-		if(choice == "Enter")
+/// A big mob picks between squeezing into the tunnel and reaching in.
+/datum/om/prompt/choice/tunnel_enter_or_reach
+	title = "Enter or reach"
+	message = "Would you like to enter the tunnel, or reach inside it?"
+	choices = list("Enter","Reach")
+	buttons = TRUE
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	/// Asked from a mouse drop: only entering does anything.
+	var/dropped = FALSE
+
+/obj/structure/micro_tunnel/proc/enter_or_reach_chosen(datum/om/prompt/choice/tunnel_enter_or_reach/ask)
+	var/mob/living/user = ask.answerer
+	if(ask.dropped)
+		if(ask.choice == "Enter")
 			mouse_drop_climb(user)
 		return
-	if(choice == "Enter")
+	if(ask.choice == "Enter")
 		tunnel_climb(user)
 	else
 		tunnel_reach(user)
 
-/obj/structure/micro_tunnel/proc/tunnel_action_chosen(mob/living/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/obj/structure/micro_tunnel/proc/tunnel_action_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/user = ask.answerer
+	switch(ask.choice)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
@@ -160,9 +172,9 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 				to_chat(user, span_warning("There are no other tunnels connected to this one!"))
 				return
 			if(destinations.len == 1 || random)
-				tunnel_move_chosen(user, pick(destinations), ask)
+				tunnel_move(user, pick(destinations))
 				return
-			ask.chain(list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a tunnel", "choices" = destinations), PROC_REF(tunnel_move_chosen))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_move_chosen), choices = destinations, title = "Pick a tunnel", message = "Where would you like to go?", requires = list(/datum/om/check/inside_target))
 		if("Eat")
 			var/list/our_targets = list()
 			for(var/mob/living/L in src.contents)
@@ -173,15 +185,21 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 				to_chat(user, span_warning("There is no one in here except for you!"))
 				return
 			if(our_targets.len == 1)
-				tunnel_eat_chosen(user, pick(our_targets), ask)
+				tunnel_eat(user, pick(our_targets))
 				return
-			ask.chain(list("kind" = "list", "message" = "Who would you like to eat?", "title" = "Pick a target to eat", "choices" = our_targets), PROC_REF(tunnel_eat_chosen))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(tunnel_eat_chosen), choices = our_targets, title = "Pick a target to eat", message = "Who would you like to eat?", requires = list(/datum/om/check/inside_target))
 
-/obj/structure/micro_tunnel/proc/tunnel_move_chosen(mob/living/user, choice, datum/om/prompt/ask)
+/obj/structure/micro_tunnel/proc/tunnel_move_chosen(datum/om/prompt/choice/ask)
+	tunnel_move(ask.answerer, ask.choice)
+
+/obj/structure/micro_tunnel/proc/tunnel_move(mob/living/user, choice)
 	to_chat(user,span_notice("You begin moving..."))
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done), done_args = list(user, choice))
 
-/obj/structure/micro_tunnel/proc/tunnel_eat_chosen(mob/living/user, mob/our_choice, datum/om/prompt/ask)
+/obj/structure/micro_tunnel/proc/tunnel_eat_chosen(datum/om/prompt/choice/ask)
+	tunnel_eat(ask.answerer, ask.choice)
+
+/obj/structure/micro_tunnel/proc/tunnel_eat(mob/living/user, mob/our_choice)
 	if(our_choice.loc != src)
 		to_chat(user, span_warning("\The [our_choice] is no longer inside \the [src], and so cannot be eaten."))
 		return
@@ -261,7 +279,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 	if(!can_enter(user))
 		if(may_choose_to_enter(user))
-			om_prompt(src, user, list("message" = "Would you like to enter the tunnel, or reach inside it?", "title" = "Enter or reach", "choices" = list("Enter","Reach"), "requires" = PROMPT_ADJACENT, "data" = list("dropped" = TRUE)), PROC_REF(enter_or_reach_chosen))
+			om_ask(user, /datum/om/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen), dropped = TRUE)
 		return INTERACTION_HANDLED_PASS
 
 	mouse_drop_climb(M)
@@ -315,8 +333,20 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 	if(micro_target)
 		verbs += /obj/proc/micro_interact
 
-/obj/proc/micro_action_chosen(mob/living/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/// Someone inside a micro-enterable object picks what to do. Re-checked: still inside.
+/datum/om/prompt/choice/micro_action
+	message = "What would you like to do?"
+	choices = list("Exit", "Move", "Cancel")
+	buttons = TRUE
+	requires = list(/datum/om/check/inside_target)
+
+/datum/om/prompt/choice/micro_action/prepare()
+	title = "[subject]"
+	return TRUE
+
+/obj/proc/micro_action_chosen(datum/om/prompt/choice/micro_action/ask)
+	var/mob/living/user = ask.answerer
+	switch(ask.choice)
 		if("Exit")
 			user.forceMove(get_turf(src.loc))
 			user.cancel_camera()
@@ -336,11 +366,14 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 				to_chat(user, span_warning("There is nowhere to move to!"))
 				return
 			if(destinations.len == 1)
-				micro_move_chosen(user, pick(destinations), ask)
+				micro_move(user, pick(destinations))
 				return
-			ask.chain(list("kind" = "list", "message" = "Where would you like to go?", "title" = "Pick a destination", "choices" = destinations), PROC_REF(micro_move_chosen))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(micro_move_chosen), choices = destinations, title = "Pick a destination", message = "Where would you like to go?", requires = list(/datum/om/check/inside_target))
 
-/obj/proc/micro_move_chosen(mob/living/user, choice, datum/om/prompt/ask)
+/obj/proc/micro_move_chosen(datum/om/prompt/choice/ask)
+	micro_move(ask.answerer, ask.choice)
+
+/obj/proc/micro_move(mob/living/user, choice)
 	var/list/contained_mobs = list()
 	for(var/mob/living/issamob in src.contents)
 		contained_mobs |= issamob
@@ -362,7 +395,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 			contained_mobs |= issamob
 
 	if(usr.loc == src)
-		om_prompt(src, usr, list("message" = "What would you like to do?", "title" = "[src]", "choices" = list("Exit", "Move", "Cancel"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(micro_action_chosen))
+		om_ask(usr, /datum/om/prompt/choice/micro_action, PROC_REF(micro_action_chosen))
 		return
 
 	if(!(usr.mob_size <= MOB_TINY || usr.get_effective_size(TRUE) <= micro_accepted_scale))

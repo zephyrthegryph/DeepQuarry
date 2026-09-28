@@ -481,7 +481,7 @@
 		return
 
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/new_paint = rerun_prompt(user, "paint", list("kind" = "color", "message" = "Please select paint color.", "title" = "Paint Color", "default" = paint_color), TYPE_PROC_REF(/atom, attackby), args)
+		var/new_paint = rerun_ask(user, "paint", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/color, message = "Please select paint color.", title = "Paint Color", default = paint_color)
 		if(isnull(new_paint))
 			return TRUE
 		if(new_paint)
@@ -490,7 +490,7 @@
 			return
 
 	if(istype(W, /obj/item/pen))
-		var/t = rerun_prompt(user, "k491", list("kind" = "text", "message" = "What would you like the label to be?", "title" = text("[]", src.name), "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		var/t = rerun_ask(user, "k491", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "What would you like the label to be?", title = text("[]", src.name), max_length = MAX_NAME_LEN)
 		if(isnull(t))
 			return TRUE
 		if (user.get_active_hand() != W)

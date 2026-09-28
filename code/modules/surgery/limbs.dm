@@ -30,7 +30,7 @@
 	var/message = "Amputate [target]'s [part.name]? This cannot be undone."
 	if(part.vital)
 		message = "WARNING: [target]'s [part.name] is VITAL. Amputating it will KILL [target.p_them()]. Amputate anyway?"
-	var/answer = tool.surgery_prompt(user, "amputate", list("message" = message, "title" = "Confirm Amputation", "choices" = list("Amputate", "Cancel")))
+	var/answer = surgery_ask(tool, user, "amputate", /datum/om/prompt/choice/alert, message = message, title = "Confirm Amputation", choices = list("Amputate", "Cancel"))
 	if(isnull(answer))
 		return FALSE
 	if(answer != "Amputate")

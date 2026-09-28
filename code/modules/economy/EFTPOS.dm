@@ -146,11 +146,11 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 		return
 	switch(action)
 		if("change_code")
-			var/attempt_code = act_prompt(usr, action, params, ui, "k147", list("kind" = "number", "message" = "Re-enter the current EFTPOS access code", "title" = "Confirm old EFTPOS code"))
+			var/attempt_code = act_ask(usr, action, params, ui, "k147", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm old EFTPOS code")
 			if(isnull(attempt_code))
 				return
 			if(attempt_code == access_code)
-				var/trycode = act_prompt(usr, action, params, ui, "k149", list("kind" = "number", "message" = "Enter a new access code for this device (4-6 digits, numbers only)", "title" = "Enter new EFTPOS code", "max" = 999999, "min" = 1000))
+				var/trycode = act_ask(usr, action, params, ui, "k149", /datum/om/prompt/number, message = "Enter a new access code for this device (4-6 digits, numbers only)", title = "Enter new EFTPOS code", max = 999999, min = 1000)
 				if(isnull(trycode))
 					return
 				if(trycode >= 1000 && trycode <= 999999)
@@ -162,11 +162,11 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
 			return TRUE
 		if("change_id")
-			var/attempt_code = act_prompt(usr, action, params, ui, "k159", list("kind" = "number", "message" = "Re-enter the current EFTPOS access code", "title" = "Confirm EFTPOS code"))
+			var/attempt_code = act_ask(usr, action, params, ui, "k159", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm EFTPOS code")
 			if(isnull(attempt_code))
 				return
 			if(attempt_code == access_code)
-				var/_answer_k161 = act_prompt(usr, action, params, ui, "k161", list("kind" = "text", "message" = "Enter a new terminal ID for this device", "title" = "Enter new EFTPOS ID", "max_length" = MAX_NAME_LEN))
+				var/_answer_k161 = act_ask(usr, action, params, ui, "k161", /datum/om/prompt/text, message = "Enter a new terminal ID for this device", title = "Enter new EFTPOS ID", max_length = MAX_NAME_LEN)
 				if(isnull(_answer_k161))
 					return
 				eftpos_name = _answer_k161 + " EFTPOS scanner"
@@ -175,10 +175,10 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
 			return TRUE
 		if("link_account")
-			var/attempt_account_num = act_prompt(usr, action, params, ui, "k167", list("kind" = "number", "message" = "Enter account number to pay EFTPOS charges into", "title" = "New account number"))
+			var/attempt_account_num = act_ask(usr, action, params, ui, "k167", /datum/om/prompt/number, message = "Enter account number to pay EFTPOS charges into", title = "New account number")
 			if(isnull(attempt_account_num))
 				return
-			var/attempt_pin = act_prompt(usr, action, params, ui, "k168", list("kind" = "number", "message" = "Enter pin code", "title" = "Account pin"))
+			var/attempt_pin = act_ask(usr, action, params, ui, "k168", /datum/om/prompt/number, message = "Enter pin code", title = "Account pin")
 			if(isnull(attempt_pin))
 				return
 			linked_account_handle = om_handle(attempt_account_access(attempt_account_num, attempt_pin, 1))
@@ -190,14 +190,14 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
 			return TRUE
 		if("trans_purpose")
-			var/choice = act_prompt(usr, action, params, ui, "k178", list("kind" = "text", "message" = "Enter reason for EFTPOS transaction", "title" = "Transaction purpose", "max_length" = MAX_MESSAGE_LEN))
+			var/choice = act_ask(usr, action, params, ui, "k178", /datum/om/prompt/text, message = "Enter reason for EFTPOS transaction", title = "Transaction purpose")
 			if(isnull(choice))
 				return
 			if(choice)
 				transaction_purpose = choice
 			return TRUE
 		if("trans_value")
-			var/try_num = act_prompt(usr, action, params, ui, "k183", list("kind" = "number", "message" = "Enter amount for EFTPOS transaction", "title" = "Transaction amount"))
+			var/try_num = act_ask(usr, action, params, ui, "k183", /datum/om/prompt/number, message = "Enter amount for EFTPOS transaction", title = "Transaction amount")
 			if(isnull(try_num))
 				return
 			if(!isnum(try_num) || try_num <= 0 || try_num > EFTPOS_MAX_TRANSACTION)
@@ -211,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 					transaction_locked = 0
 					transaction_paid = 0
 				else
-					var/attempt_code = act_prompt(usr, action, params, ui, "k195", list("kind" = "number", "message" = "Enter EFTPOS access code", "title" = "Reset Transaction"))
+					var/attempt_code = act_ask(usr, action, params, ui, "k195", /datum/om/prompt/number, message = "Enter EFTPOS access code", title = "Reset Transaction")
 					if(isnull(attempt_code))
 						return
 					if(attempt_code == access_code)
@@ -262,7 +262,7 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 					var/attempt_pin = ""
 					var/datum/money_account/D = get_account(C.associated_account_number)
 					if(D.security_level)
-						var/_answer_k244 = rerun_prompt(usr, "k244", list("kind" = "number", "message" = "Enter pin code", "title" = "EFTPOS transaction"), PROC_REF(scan_card), args)
+						var/_answer_k244 = rerun_ask(usr, "k244", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter pin code", title = "EFTPOS transaction")
 						if(isnull(_answer_k244))
 							return
 						attempt_pin = _answer_k244

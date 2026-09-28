@@ -214,7 +214,7 @@
 	if(E.len == 1)
 		B = pick(E)
 	else
-		var/_answer_k218 = rerun_prompt(src, "k218", list("kind" = "list", "message" = "What would you like to examine?", "title" = "Examine", "choices" = E), VERB_REF(mob_examine), args)
+		var/_answer_k218 = rerun_ask(src, "k218", VERB_REF(mob_examine), args, /datum/om/prompt/choice, message = "What would you like to examine?", title = "Examine", choices = E)
 		if(isnull(_answer_k218))
 			return
 		B = _answer_k218

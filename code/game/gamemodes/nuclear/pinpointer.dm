@@ -125,26 +125,34 @@
 	target_handle = null
 	location_handle = null
 
-	om_prompt(src, usr, list("message" = "Please select the mode you want to put the pinpointer in.", "title" = "Pinpointer Mode Select", "choices" = list("Location", "Disk Recovery", "Other Signature"), "requires" = PROMPT_HELD), PROC_REF(pinpointer_mode_chosen))
+	om_ask(usr, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(mob/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/// A pinpointer coordinate (x, then y: `location_x` carries the first). Re-checked: it's in view.
+/datum/om/prompt/number/pinpointer_location
+	title = "Location?"
+	requires = list(CHECK(/datum/om/check/can_see, 1))
+	var/location_x
+
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_mode_chosen(datum/om/prompt/choice/carried_item/ask)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Location")
 			mode = 1
-			om_prompt_sequence(src, user, list(
-				list("key" = "x", "kind" = "number", "message" = "Please input the x coordinate to search for.", "title" = "Location?"),
-				list("key" = "y", "kind" = "number", "message" = "Please input the y coordinate to search for.", "title" = "Location?"),
-			), PROC_REF(pinpointer_location_chosen), list("requires" = list(CHECK(/datum/om/check/can_see, 1))))
+			om_ask(user, /datum/om/prompt/number/pinpointer_location, PROC_REF(pinpointer_location_x_chosen), message = "Please input the x coordinate to search for.")
 		if("Disk Recovery")
 			mode = 0
 			attack_self(user)
 		if("Other Signature")
 			mode = 2
-			ask.chain(list("message" = "Search for item signature or DNA fragment?", "title" = "Signature Mode Select", "choices" = list("Item", "DNA")), PROC_REF(pinpointer_signature_chosen))
+			om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_signature_chosen), title = "Signature Mode Select", message = "Search for item signature or DNA fragment?", choices = list("Item", "DNA"), buttons = TRUE)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(mob/user, datum/om/prompt/ask)
-	var/locationx = ask.get("x")
-	var/locationy = ask.get("y")
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_x_chosen(datum/om/prompt/number/pinpointer_location/ask)
+	om_ask(ask.answerer, /datum/om/prompt/number/pinpointer_location, PROC_REF(pinpointer_location_chosen), message = "Please input the y coordinate to search for.", location_x = ask.number)
+
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_location_chosen(datum/om/prompt/number/pinpointer_location/ask)
+	var/mob/user = ask.answerer
+	var/locationx = ask.location_x
+	var/locationy = ask.number
 	if(!locationx || !locationy)
 		return
 	var/turf/Z = get_turf(src)
@@ -152,17 +160,19 @@
 	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_signature_chosen(datum/om/prompt/choice/carried_item/ask)
 	var/static/datum/objective/steal/itemlist
-	switch(choice)
+	switch(ask.choice)
 		if("Item")
 			if(!itemlist)
 				itemlist = new
-			ask.chain(list("kind" = "list", "message" = "Select item to search for.", "title" = "Item Mode Select", "choices" = itemlist.possible_items), PROC_REF(pinpointer_item_chosen))
+			om_ask(ask.answerer, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_item_chosen), title = "Item Mode Select", message = "Select item to search for.", choices = itemlist.possible_items)
 		if("DNA")
-			ask.chain(list("kind" = "text", "message" = "Input DNA string to search for.", "title" = "Please Enter String.", "default" = ""), PROC_REF(pinpointer_dna_entered))
+			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(pinpointer_dna_entered), title = "Please Enter String.", message = "Input DNA string to search for.", default = "", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(mob/user, targetitem, datum/om/prompt/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_item_chosen(datum/om/prompt/choice/carried_item/ask)
+	var/mob/user = ask.answerer
+	var/targetitem = ask.choice
 	var/datum/objective/steal/itemlist = new
 	target_handle = om_handle(locate(itemlist.possible_items[targetitem]))
 	qdel(itemlist)
@@ -172,7 +182,9 @@
 	to_chat(user, "You set the pinpointer to locate [targetitem]")
 	attack_self(user)
 
-/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(mob/user, DNAstring, datum/om/prompt/ask)
+/obj/item/pinpointer/advpinpointer/proc/pinpointer_dna_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/DNAstring = ask.text
 	if(!DNAstring)
 		return
 	for(var/mob/living/carbon/M in REGISTRY_MEMBERS(REGISTRY_MOBS))

@@ -118,7 +118,7 @@
 			return TRUE
 
 		if("set_codes")
-			var/newcode = act_prompt(ui.user, action, params, ui, "k121", list("kind" = "text", "message" = "Input new docking codes", "title" = "Docking codes", "default" = shuttle.docking_codes, "max_length" = MAX_NAME_LEN))
+			var/newcode = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/text, message = "Input new docking codes", title = "Docking codes", default = shuttle.docking_codes, max_length = MAX_NAME_LEN)
 			if(isnull(newcode))
 				return
 			if(newcode && !..())

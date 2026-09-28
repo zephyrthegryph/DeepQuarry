@@ -44,11 +44,19 @@
 			if(params["amount"])
 				release_crystals(ui.user, params["amount"], params["index"])
 				return TRUE
-			om_prompt(src, ui.user, list("kind" = "number", "message" = "How many items?", "title" = "How many items would you like to take out?", "default" = 1, "requires" = PROMPT_ADJACENT, "data" = list("index" = params["index"])), PROC_REF(crystal_amount_entered))
+			om_ask(ui.user, /datum/om/prompt/number/tcrystal_amount, PROC_REF(crystal_amount_entered), index = params["index"])
 			return TRUE
 
-/obj/machinery/smartfridge/tcrystal/proc/crystal_amount_entered(mob/user, amount, datum/om/prompt/ask)
-	release_crystals(user, amount, ask.get("index"))
+/// How many crystals to take out. Re-checked on the answer: still next to the fridge.
+/datum/om/prompt/number/tcrystal_amount
+	title = "How many items would you like to take out?"
+	message = "How many items?"
+	default = 1
+	requires = PROMPT_ADJACENT
+	var/index
+
+/obj/machinery/smartfridge/tcrystal/proc/crystal_amount_entered(datum/om/prompt/number/tcrystal_amount/ask)
+	release_crystals(ask.answerer, ask.number, ask.index)
 	return FALSE
 
 /obj/machinery/smartfridge/tcrystal/proc/release_crystals(mob/user, amount, index_param)

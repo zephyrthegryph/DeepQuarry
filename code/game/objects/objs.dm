@@ -231,11 +231,7 @@
 	if(href_list[VV_HK_MASS_DEL_TYPE])
 		if(!check_rights(R_DEBUG|R_SERVER))
 			return
-		om_prompt_sequence(src, usr, list(
-			list("key" = "scope", "message" = "Strict type ([type]) or type and all subtypes?", "choices" = list("Strict type","Type and subtypes","Cancel")),
-			list("key" = "sure", "message" = "Are you really sure you want to delete all objects of type [type]?", "choices" = list("Yes","No")),
-			list("key" = "sure2", "message" = "Second confirmation required. Delete?", "choices" = list("Yes","No")),
-		), PROC_REF(mass_delete_confirmed), list("requires" = PROMPT_ADMIN(R_DEBUG|R_SERVER)))
+		om_ask(usr, /datum/om/prompt/choice/mass_delete_scope, PROC_REF(mass_delete_scope_chosen))
 		return
 	if(href_list[VV_HK_FAKE_CONVO])
 		if(!check_rights(R_FUN))
@@ -248,10 +244,36 @@
 
 		P.createPropFakeConversation_admin(usr)
 
-/obj/proc/mass_delete_confirmed(mob/user, datum/om/prompt/ask)
-	var/action_type = ask.get("scope")
-	if(action_type == "Cancel" || ask.get("sure") != "Yes" || ask.get("sure2") != "Yes")
+/datum/om/prompt/choice/mass_delete_scope
+	choices = list("Strict type","Type and subtypes","Cancel")
+	buttons = TRUE
+	requires = PROMPT_ADMIN(R_DEBUG|R_SERVER)
+
+/datum/om/prompt/choice/mass_delete_scope/prepare()
+	message = "Strict type ([subject.type]) or type and all subtypes?"
+	return TRUE
+
+/datum/om/prompt/confirm/mass_delete
+	requires = PROMPT_ADMIN(R_DEBUG|R_SERVER)
+	var/scope
+	/// The second, final confirmation.
+	var/second = FALSE
+
+/datum/om/prompt/confirm/mass_delete/prepare()
+	message = second ? "Second confirmation required. Delete?" : "Are you really sure you want to delete all objects of type [subject.type]?"
+	return TRUE
+
+/obj/proc/mass_delete_scope_chosen(datum/om/prompt/choice/mass_delete_scope/ask)
+	if(ask.choice == "Cancel")
 		return
+	om_ask(ask.answerer, /datum/om/prompt/confirm/mass_delete, PROC_REF(mass_delete_sure), scope = ask.choice)
+
+/obj/proc/mass_delete_sure(datum/om/prompt/confirm/mass_delete/ask)
+	om_ask(ask.answerer, /datum/om/prompt/confirm/mass_delete, PROC_REF(mass_delete_confirmed), scope = ask.scope, second = TRUE)
+
+/obj/proc/mass_delete_confirmed(datum/om/prompt/confirm/mass_delete/ask)
+	var/mob/user = ask.answerer
+	var/action_type = ask.scope
 	var/O_type = type
 	switch(action_type)
 		if("Strict type")
@@ -262,10 +284,10 @@
 					qdel(Obj)
 				CHECK_TICK
 			if(!i)
-				to_chat(usr, "No objects of this type exist")
+				to_chat(user, "No objects of this type exist")
 				return
-			log_admin("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) ")
-			message_admins(span_notice("[key_name(usr)] deleted all objects of type [O_type] ([i] objects deleted) "))
+			log_admin("[key_name(user)] deleted all objects of type [O_type] ([i] objects deleted) ")
+			message_admins(span_notice("[key_name(user)] deleted all objects of type [O_type] ([i] objects deleted) "))
 		if("Type and subtypes")
 			var/i = 0
 			for(var/obj/Obj in world)
@@ -274,8 +296,8 @@
 					qdel(Obj)
 				CHECK_TICK
 			if(!i)
-				to_chat(usr, "No objects of this type exist")
+				to_chat(user, "No objects of this type exist")
 				return
-			log_admin("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
-			message_admins(span_notice("[key_name(usr)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) "))
+			log_admin("[key_name(user)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) ")
+			message_admins(span_notice("[key_name(user)] deleted all objects of type or subtype of [O_type] ([i] objects deleted) "))
 

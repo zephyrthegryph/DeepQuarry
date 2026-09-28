@@ -85,11 +85,21 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 		to_chat(user, span_danger("You have no pai name set."))
 		return
 
-	om_prompt(src, user, list("message" = "Do you want to inhabit this pAI using \"[pai_name]\"?", "title" = "Load pAI", "choices" = list("Load pAI Data", "Cancel"), "requires" = list(/datum/om/check/has_client)), PROC_REF(inhabit_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/pai_inhabit, PROC_REF(inhabit_confirmed), message = "Do you want to inhabit this pAI using \"[pai_name]\"?")
 
-/obj/item/paicard/proc/inhabit_confirmed(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Load pAI Data" && !pai)
-		ghost_inhabit(user)
+/// A ghost loading into an empty card. Re-checked on the answer: still has a client, the card is still empty.
+/datum/om/prompt/confirm/pai_inhabit
+	title = "Load pAI"
+	yes_text = "Load pAI Data"
+	no_text = "Cancel"
+	requires = list(/datum/om/check/has_client)
+
+/datum/om/prompt/confirm/pai_inhabit/valid()
+	var/obj/item/paicard/card = subject
+	return card.pai ? "already inhabited" : null
+
+/obj/item/paicard/proc/inhabit_confirmed(datum/om/prompt/confirm/pai_inhabit/ask)
+	ghost_inhabit(ask.answerer)
 
 /obj/item/paicard/proc/ghost_inhabit(mob/user)
 	RETURN_TYPE(/mob/living/silicon/pai)
@@ -481,7 +491,7 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 			if(speech_synthesizer != PP_MISSING)
 				parts |= "speech synthesizer"
 
-			om_prompt(src, user, list("kind" = "list", "message" = "Which part would you like to check?", "title" = "Check part", "choices" = parts, "requires" = PROMPT_ADJACENT), PROC_REF(check_part))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(check_part), title = "Check part", message = "Which part would you like to check?", choices = parts, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	if(istype(I,/obj/item/paiparts/cell))
 		if(cell == PP_MISSING)
 			om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(I, user))
@@ -521,14 +531,16 @@ REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_laye
 	var/obj/item/card/id/ID = I.GetID()
 	if(ID && pai)
 		if (pai.idaccessible == 1)
-			om_prompt(src, user, list("message" = "Do you wish to add access to [src] or remove access from [src]?", "choices" = list("Add Access","Remove Access", "Cancel"), "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(id_access_chosen))
+			om_ask(user, /datum/om/prompt/choice/pai_id_access, PROC_REF(id_access_chosen), message = "Do you wish to add access to [src] or remove access from [src]?", subject = I, card = src)
 			return TRUE
 		else if (pai.idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifications at this time."))
 			return TRUE
 	return TRUE
 
-/obj/item/paicard/proc/check_part(mob/user, choice, datum/om/prompt/ask)
+/obj/item/paicard/proc/check_part(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	switch(choice)
 		if("cell")
 			if(cell == PP_FUNCTIONAL)
@@ -649,21 +661,34 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(speech_synthesizer != PP_MISSING)
 		parts |= "speech synthesizer"
 
-	om_prompt(src, user, list("kind" = "list", "message" = "Which part would you like to remove?", "title" = "Remove part", "choices" = parts, "requires" = PROMPT_HELD), PROC_REF(part_to_remove_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(part_to_remove_chosen), title = "Remove part", message = "Which part would you like to remove?", choices = parts, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/paicard/proc/part_to_remove_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/item/paicard/proc/part_to_remove_chosen(datum/om/prompt/choice/ask)
 	if(!panel_open)
 		return
+	var/mob/user = ask.answerer
 	playsound(src, 'sound/items/pickup/component.ogg', vary = TRUE)
-	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, choice))
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, ask.choice))
 
-/obj/item/paicard/proc/id_access_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/I = user.get_active_hand()
-	var/obj/item/card/id/ID = I?.GetID()
-	if(!ID || !pai || pai.idaccessible != 1)
-		return
-	switch(choice)
+/// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
+/datum/om/prompt/choice/pai_id_access
+	buttons = TRUE
+	choices = list("Add Access", "Remove Access", "Cancel")
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/obj/item/paicard/card
+
+/datum/om/prompt/choice/pai_id_access/valid()
+	var/obj/item/I = subject
+	if(!I.GetID() || !card.pai || card.pai.idaccessible != 1)
+		return "no access to change"
+	return null
+
+/obj/item/paicard/proc/id_access_chosen(datum/om/prompt/choice/pai_id_access/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/I = ask.subject
+	var/obj/item/card/id/ID = I.GetID()
+	switch(ask.choice)
 		if("Add Access")
 			pai.idcard.access |= ID.access
 			to_chat(user, span_notice("You add the access from the [I] to [src]."))

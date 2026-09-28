@@ -283,7 +283,7 @@
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
 		return
 	var/price = S.current_value
-	var/_answer_k289 = rerun_prompt(user, "k289", list("kind" = "number", "message" = "How many shares? \n(Have: [avail], unit price: [price])", "title" = "Sell shares in [S.name]", "default" = 0), PROC_REF(sell_some_shares), args)
+	var/_answer_k289 = rerun_ask(user, "k289", PROC_REF(sell_some_shares), args, /datum/om/prompt/number, message = "How many shares? \n(Have: [avail], unit price: [price])", title = "Sell shares in [S.name]", default = 0)
 	if(isnull(_answer_k289))
 		return
 	var/amt = round(_answer_k289)
@@ -321,7 +321,7 @@
 	var/avail = S.available_shares
 	var/price = S.current_value
 	var/canbuy = round(b / price)
-	var/_answer_k324 = rerun_prompt(user, "k324", list("kind" = "number", "message" = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", "title" = "Buy shares in [S.name]", "default" = 0), PROC_REF(buy_some_shares), args)
+	var/_answer_k324 = rerun_ask(user, "k324", PROC_REF(buy_some_shares), args, /datum/om/prompt/number, message = "How many shares? \n(Available: [avail], unit price: [price], can buy: [canbuy])", title = "Buy shares in [S.name]", default = 0)
 	if(isnull(_answer_k324))
 		return
 	var/amt = round(_answer_k324)

@@ -31,7 +31,7 @@ ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.
 ADMIN_VERB(admin_ghost, R_HOLDER, "Aghost", "Ghost out of your body with the option to return at any time.", ADMIN_CATEGORY_GAME)
 	var/build_mode
 	if(user.buildmode)
-		var/_answer_a1 = verb_prompt(user, "a1", list("message" = "You appear to be currently in buildmode. Do you want to re-enter buildmode after aghosting?", "title" = "Buildmode", "choices" = list("Yes", "No")), args)
+		var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "You appear to be currently in buildmode. Do you want to re-enter buildmode after aghosting?", title = "Buildmode", choices = list("Yes", "No"))
 		if(isnull(_answer_a1))
 			return
 		build_mode = _answer_a1
@@ -170,7 +170,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 		if(isnewplayer(user.mob))
 			user.mob.name = capitalize(user.ckey)
 	else
-		var/_answer_a2 = verb_prompt(user, "a2", list("kind" = "text", "message" = "Enter your desired display name.", "title" = "Fake Key", "default" = user.key), args)
+		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Enter your desired display name.", title = "Fake Key", default = user.key)
 		if(isnull(_answer_a2))
 			return
 		var/new_key = ckeyEx(_answer_a2)
@@ -230,7 +230,7 @@ ADMIN_VERB(stealth, R_STEALTH, "Stealth Mode", "Toggle stealth.", ADMIN_CATEGORY
 ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strength at your location.", ADMIN_CATEGORY_FUN_DO_NOT) // Some admin dickery that can probably be done better -- TLE
 	var/turf/epicenter = user.mob.loc
 	var/list/choices = list("Small Bomb", "Medium Bomb", "Big Bomb", "Maxcap Bomb", "SM Blast", "Custom Bomb", "Cancel")
-	var/choice = verb_prompt(user, "a3", list("kind" = "list", "message" = "What size explosion would you like to produce?", "title" = "Explosion Choice", "choices" = choices), args)
+	var/choice = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "What size explosion would you like to produce?", title = "Explosion Choice", choices = choices)
 	if(isnull(choice))
 		return
 	switch(choice)
@@ -249,16 +249,16 @@ ADMIN_VERB(drop_bomb, R_FUN, "Drop Bomb", "Cause an explosion of varying strengt
 		if("SM Blast")
 			explosion(epicenter, 8, 16, 24, 32)
 		if("Custom Bomb")
-			var/devastation_range = verb_prompt(user, "a4", list("kind" = "number", "message" = "Devastation range (in tiles):"), args)
+			var/devastation_range = verb_ask(user, "a4", args, /datum/om/prompt/number, message = "Devastation range (in tiles):")
 			if(isnull(devastation_range))
 				return
-			var/heavy_impact_range = verb_prompt(user, "a5", list("kind" = "number", "message" = "Heavy impact range (in tiles):"), args)
+			var/heavy_impact_range = verb_ask(user, "a5", args, /datum/om/prompt/number, message = "Heavy impact range (in tiles):")
 			if(isnull(heavy_impact_range))
 				return
-			var/light_impact_range = verb_prompt(user, "a6", list("kind" = "number", "message" = "Light impact range (in tiles):"), args)
+			var/light_impact_range = verb_ask(user, "a6", args, /datum/om/prompt/number, message = "Light impact range (in tiles):")
 			if(isnull(light_impact_range))
 				return
-			var/flash_range = verb_prompt(user, "a7", list("kind" = "number", "message" = "Flash range (in tiles):"), args)
+			var/flash_range = verb_ask(user, "a7", args, /datum/om/prompt/number, message = "Flash range (in tiles):")
 			if(isnull(flash_range))
 				return
 			explosion(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
@@ -272,12 +272,12 @@ ADMIN_VERB(admin_give_modifier, R_EVENT, "Give Modifier", "Makes a mob weaker or
 
 	var/list/possible_modifiers = subtypesof(/datum/body_effect)
 
-	var/new_modifier_type = verb_prompt(user, "a8", list("kind" = "list", "message" = "What modifier should we add to [living_target]?", "title" = "Modifier Type", "choices" = possible_modifiers), args)
+	var/new_modifier_type = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "What modifier should we add to [living_target]?", title = "Modifier Type", choices = possible_modifiers)
 	if(isnull(new_modifier_type))
 		return
 	if(!new_modifier_type)
 		return
-	var/duration = verb_prompt(user, "a9", list("kind" = "number", "message" = "How long should the new modifier last, in seconds.  To make it last forever, write '0'.", "title" = "Modifier Duration"), args)
+	var/duration = verb_ask(user, "a9", args, /datum/om/prompt/number, message = "How long should the new modifier last, in seconds.  To make it last forever, write '0'.", title = "Modifier Duration")
 	if(isnull(duration))
 		return
 	if(duration == 0)
@@ -292,7 +292,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(make_sound, R_FUN, "Make Sound", "Display a message 
 	if(!target_object)
 		return
 
-	var/message = verb_prompt(user, "a10", list("kind" = "text", "message" = "What do you want the message to be?", "title" = "Make Sound", "max_length" = MAX_MESSAGE_LEN), args)
+	var/message = verb_ask(user, "a10", args, /datum/om/prompt/text, message = "What do you want the message to be?", title = "Make Sound")
 	if(isnull(message))
 		return
 	if(!message)
@@ -345,13 +345,13 @@ ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the c
 	user.holder.output_ai_laws()
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/silicon_target = verb_prompt(user, "a11", list("kind" = "list", "message" = "Select silicon.", "title" = "Rename Silicon.", "choices" = REGISTRY_MEMBERS(REGISTRY_SILICONS)), args)
+	var/mob/living/silicon/silicon_target = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Rename Silicon.", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
 	if(isnull(silicon_target))
 		return
 	if(!silicon_target)
 		return
 
-	var/_answer_a12 = verb_prompt(user, "a12", list("kind" = "text", "message" = "Enter new name. Leave blank or as is to cancel.", "title" = "[silicon_target.real_name] - Enter new silicon name", "default" = silicon_target.real_name, "encode" = FALSE), args)
+	var/_answer_a12 = verb_ask(user, "a12", args, /datum/om/prompt/text, message = "Enter new name. Leave blank or as is to cancel.", title = "[silicon_target.real_name] - Enter new silicon name", default = silicon_target.real_name, encode = FALSE)
 	if(isnull(_answer_a12))
 		return
 	var/new_name = sanitizeSafe(_answer_a12)
@@ -361,7 +361,7 @@ ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a si
 	feedback_add_details("admin_verb","RAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows to modify silicon laws.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/selected_silicon = verb_prompt(user, "a13", list("kind" = "list", "message" = "Select silicon.", "title" = "Manage Silicon Laws", "choices" = REGISTRY_MEMBERS(REGISTRY_SILICONS)), args)
+	var/mob/living/silicon/selected_silicon = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Manage Silicon Laws", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
 	if(isnull(selected_silicon))
 		return
 	if(!selected_silicon)
@@ -373,12 +373,12 @@ ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows 
 	feedback_add_details("admin_verb","MSL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets the station security level.", ADMIN_CATEGORY_EVENTS)
-	var/sec_level = verb_prompt(user, "a14", list("kind" = "list", "message" = "It's currently code [get_security_level()].", "title" = "Select Security Level", "choices" = (list("green","yellow","violet","orange","blue","red","delta")-get_security_level())), args)
+	var/sec_level = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "It's currently code [get_security_level()].", title = "Select Security Level", choices = (list("green","yellow","violet","orange","blue","red","delta")-get_security_level()))
 	if(isnull(sec_level))
 		return
 	if(!sec_level)
 		return
-	var/_answer_a15 = verb_prompt(user, "a15", list("message" = "Switch from code [get_security_level()] to code [sec_level]?", "title" = "Change security level?", "choices" = list("Yes","No")), args)
+	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "Switch from code [get_security_level()] to code [sec_level]?", title = "Change security level?", choices = list("Yes","No"))
 	if(isnull(_answer_a15))
 		return
 	if(_answer_a15 == "Yes")
@@ -399,7 +399,7 @@ ADMIN_VERB(free_slot, R_ADMIN|R_FUN|R_EVENT, "Free Job Slot", "Frees another job
 	if(!jobs.len)
 		to_chat(usr, "There are no fully staffed jobs.")
 		return
-	var/job = verb_prompt(usr, "a16", list("kind" = "list", "message" = "Please select job slot to free", "title" = "Free job slot", "choices" = jobs), args)
+	var/job = verb_ask(usr, "a16", args, /datum/om/prompt/choice, message = "Please select job slot to free", title = "Free job slot", choices = jobs)
 	if(isnull(job))
 		return
 	if(job)
@@ -420,13 +420,13 @@ ADMIN_VERB(toggledrones, R_ADMIN|R_FUN|R_EVENT, "Toggle maintenance drones", "To
 	message_admins("Admin [key_name_admin(user)] has [CONFIG_GET(flag/allow_drone_spawn) ? "en" : "dis"]abled maintenance drones.")
 
 ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/mob/living/living_target = verb_prompt(user, "a17", list("kind" = "list", "message" = "Who to tell to man up and deal with it.", "title" = "Man up", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)), args)
+	var/mob/living/living_target = verb_ask(user, "a17", args, /datum/om/prompt/choice, message = "Who to tell to man up and deal with it.", title = "Man up", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(isnull(living_target))
 		return
 	if(!living_target)
 		return
 
-	var/_answer_a18 = verb_prompt(user, "a18", list("message" = "Are you sure you want to tell them to man up?", "title" = "Confirmation", "choices" = list("Deal with it","No")), args)
+	var/_answer_a18 = verb_ask(user, "a18", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to tell them to man up?", title = "Confirmation", choices = list("Deal with it","No"))
 	if(isnull(_answer_a18))
 		return
 	if(_answer_a18 != "Deal with it")
@@ -439,7 +439,7 @@ ADMIN_VERB(man_up, R_ADMIN|R_FUN, "Man Up", "Tells mob to man up and deal with i
 	message_admins(span_blue("[key_name_admin(user)] told [key_name(living_target)] to man up and deal with it."), 1)
 
 ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man up and deal with it.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/_answer_a19 = verb_prompt(user, "a19", list("message" = "Are you sure you want to tell the whole server up?", "title" = "Confirmation", "choices" = list("Deal with it","No")), args)
+	var/_answer_a19 = verb_ask(user, "a19", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to tell the whole server up?", title = "Confirmation", choices = list("Deal with it","No"))
 	if(isnull(_answer_a19))
 		return
 	if(_answer_a19 != "Deal with it")
@@ -452,7 +452,7 @@ ADMIN_VERB(global_man_up, R_ADMIN|R_FUN, "Man Up Global", "Tells everyone to man
 	log_and_message_admins("told everyone to man up and deal with it.", user)
 
 ADMIN_VERB(give_spell, R_FUN, "Give Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, mob/spell_recipient)
-	var/datum/spell/S = verb_prompt(user, "a20", list("kind" = "list", "message" = "Choose the spell to give to that guy", "title" = "ABRAKADABRA", "choices" = typesof(/datum/spell)), args)
+	var/datum/spell/S = verb_ask(user, "a20", args, /datum/om/prompt/choice, message = "Choose the spell to give to that guy", title = "ABRAKADABRA", choices = typesof(/datum/spell))
 	if(isnull(S))
 		return
 	if(!S)
@@ -470,7 +470,7 @@ ADMIN_VERB(remove_spell, R_FUN, "Remove Spell", ADMIN_VERB_NO_DESCRIPTION, ADMIN
 	if(!length(target_spell_list))
 		return
 
-	var/chosen_spell = verb_prompt(user, "a21", list("kind" = "list", "message" = "Choose the spell to remove from [removal_target]", "title" = "ABRAKADABRA", "choices" = sortList(target_spell_list)), args)
+	var/chosen_spell = verb_ask(user, "a21", args, /datum/om/prompt/choice, message = "Choose the spell to remove from [removal_target]", title = "ABRAKADABRA", choices = sortList(target_spell_list))
 	if(isnull(chosen_spell))
 		return
 	if(isnull(chosen_spell))
@@ -489,7 +489,7 @@ ADMIN_VERB(debug_statpanel, R_DEBUG, "Debug Stat Panel", "Toggles local debug of
 	user.stat_panel.send_message("create_debug")
 
 ADMIN_VERB(spawn_reagent, R_DEBUG|R_EVENT, "Spawn Reagent", "Spawn any reagent.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/datum/reagent/new_reagent = verb_prompt(user, "a22", list("kind" = "list", "message" = "Select a reagent to spawn", "title" = "Reagent Spawner", "choices" = subtypesof(/datum/reagent)), args)
+	var/datum/reagent/new_reagent = verb_ask(user, "a22", args, /datum/om/prompt/choice, message = "Select a reagent to spawn", title = "Reagent Spawner", choices = subtypesof(/datum/reagent))
 	if(isnull(new_reagent))
 		return
 	if(!new_reagent)
@@ -509,7 +509,7 @@ ADMIN_VERB(add_hidden_area, R_ADMIN|R_FUN, "Add Ghostsight Block Area", "Blocks 
 		if(!current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
 			blocked_areas[current_area.name] = current_area
 	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
-	var/selected_area = verb_prompt(user, "a23", list("kind" = "list", "message" = "Pick an area to hide from ghost", "title" = "Select Area to hide", "choices" = blocked_areas), args)
+	var/selected_area = verb_ask(user, "a23", args, /datum/om/prompt/choice, message = "Pick an area to hide from ghost", title = "Select Area to hide", choices = blocked_areas)
 	if(isnull(selected_area))
 		return
 	var/area/target_area = blocked_areas[selected_area]
@@ -525,7 +525,7 @@ ADMIN_VERB(remove_hidden_area, R_ADMIN|R_FUN, "Remove Ghostsight Block Area", "U
 		if(current_area.flag_check(AREA_BLOCK_GHOST_SIGHT))
 			blocked_areas[current_area.name] = current_area
 	blocked_areas = sortTim(blocked_areas, GLOBAL_PROC_REF(cmp_text_asc))
-	var/selected_area = verb_prompt(user, "a24", list("kind" = "list", "message" = "Pick a from ghost hidden area to let them see it again", "title" = "Select Hidden Area", "choices" = blocked_areas), args)
+	var/selected_area = verb_ask(user, "a24", args, /datum/om/prompt/choice, message = "Pick a from ghost hidden area to let them see it again", title = "Select Hidden Area", choices = blocked_areas)
 	if(isnull(selected_area))
 		return
 	var/area/target_area = blocked_areas[selected_area]
@@ -545,7 +545,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 
 	var/datum/marked_datum = user.holder.marked_datum()
 	if(marked_datum)
-		var/_answer_a25 = verb_prompt(user, "a25", list("message" = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", "title" = "Orbit", "choices" = list("Center", "Orbiter", "Neither")), args)
+		var/_answer_a25 = verb_ask(user, "a25", args, /datum/om/prompt/choice/alert, message = "You have \n[marked_datum] marked, should this be the center of the orbit, or the orbiter?", title = "Orbit", choices = list("Center", "Orbiter", "Neither"))
 		if(isnull(_answer_a25))
 			return
 		input = _answer_a25
@@ -562,13 +562,13 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		if(isobj(T))
 			possible_things |= T
 	if(!center)
-		var/_answer_a26 = verb_prompt(user, "a26", list("kind" = "list", "message" = "What should act as the center of the orbit?", "title" = "Center", "choices" = possible_things), args)
+		var/_answer_a26 = verb_ask(user, "a26", args, /datum/om/prompt/choice, message = "What should act as the center of the orbit?", title = "Center", choices = possible_things)
 		if(isnull(_answer_a26))
 			return
 		center = _answer_a26
 		possible_things -= center
 	if(!orbiter)
-		var/_answer_a27 = verb_prompt(user, "a27", list("kind" = "list", "message" = "What should act as the orbiter of the orbit?", "title" = "Orbiter", "choices" = possible_things), args)
+		var/_answer_a27 = verb_ask(user, "a27", args, /datum/om/prompt/choice, message = "What should act as the orbiter of the orbit?", title = "Orbiter", choices = possible_things)
 		if(isnull(_answer_a27))
 			return
 		orbiter = _answer_a27
@@ -581,13 +581,13 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 	if(isturf(orbiter))
 		to_chat(user, span_warning("The orbiter cannot be a turf. It can only be used as a center."))
 		return
-	var/distance = verb_prompt(user, "a28", list("kind" = "number", "message" = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", "title" = "Orbit Radius", "default" = 32), args)
+	var/distance = verb_ask(user, "a28", args, /datum/om/prompt/number, message = "How large will their orbit radius be? (In pixels. 32 is 'near around a character)", title = "Orbit Radius", default = 32)
 	if(isnull(distance))
 		return
-	var/speed = verb_prompt(user, "a29", list("kind" = "number", "message" = "How fast will they orbit (negative numbers spin clockwise)", "title" = "Orbit Speed", "default" = 20), args)
+	var/speed = verb_ask(user, "a29", args, /datum/om/prompt/number, message = "How fast will they orbit (negative numbers spin clockwise)", title = "Orbit Speed", default = 20)
 	if(isnull(speed))
 		return
-	var/segments = verb_prompt(user, "a30", list("kind" = "number", "message" = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", "title" = "Orbit Segments", "default" = 36), args)
+	var/segments = verb_ask(user, "a30", args, /datum/om/prompt/number, message = "How many segments will they have in their orbit? (3 is a triangle, 36 is a circle, etc)", title = "Orbit Segments", default = 36)
 	if(isnull(segments))
 		return
 	var/clock = FALSE
@@ -600,7 +600,7 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 		speed *= -1
 	if(!segments)
 		segments = 36
-	var/_answer_a31 = verb_prompt(user, "a31", list("message" = "\The [orbiter] will orbit around [center]. Is this okay?", "title" = "Confirm Orbit", "choices" = list("Yes", "No")), args)
+	var/_answer_a31 = verb_ask(user, "a31", args, /datum/om/prompt/choice/alert, message = "\The [orbiter] will orbit around [center]. Is this okay?", title = "Confirm Orbit", choices = list("Yes", "No"))
 	if(isnull(_answer_a31))
 		return
 	if(_answer_a31 == "Yes")
@@ -608,12 +608,12 @@ ADMIN_VERB(adminorbit, R_FUN, "Orbit Things", "Makes something orbit around some
 
 ADMIN_VERB(removetickets, R_ADMIN, "Security Tickets", "Allows one to remove tickets from the global list.", ADMIN_CATEGORY_INVESTIGATE)
 	if(GLOB.security_printer_tickets.len >= 1)
-		var/input = verb_prompt(user, "a32", list("kind" = "list", "message" = "Which message?", "title" = "Security Tickets", "choices" = GLOB.security_printer_tickets), args)
+		var/input = verb_ask(user, "a32", args, /datum/om/prompt/choice, message = "Which message?", title = "Security Tickets", choices = GLOB.security_printer_tickets)
 		if(isnull(input))
 			return
 		if(!input)
 			return
-		var/_answer_a33 = verb_prompt(user, "a33", list("message" = "Do you want to remove the following message from the global list? \"[input]\"", "title" = "Remove Ticket", "choices" = list("Yes", "No")), args)
+		var/_answer_a33 = verb_ask(user, "a33", args, /datum/om/prompt/choice/alert, message = "Do you want to remove the following message from the global list? \"[input]\"", title = "Remove Ticket", choices = list("Yes", "No"))
 		if(isnull(_answer_a33))
 			return
 		if(_answer_a33 == "Yes")
@@ -658,7 +658,7 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 	panel.tgui_interact(C.mob)
 
 ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/Robot recolour verb", "Makes it so new robots/simple_mobs spawn with a verb to recolour themselves for this round. You must set them separately.", ADMIN_CATEGORY_SERVER_GAME)
-	var/which = verb_prompt(user, "a34", list("message" = "Which do you want to toggle?", "title" = "Choose Recolour Toggle", "choices" = list("Robot", "Simple Mob")), args)
+	var/which = verb_ask(user, "a34", args, /datum/om/prompt/choice/alert, message = "Which do you want to toggle?", title = "Choose Recolour Toggle", choices = list("Robot", "Simple Mob"))
 	if(isnull(which))
 		return
 	switch(which)

@@ -4,7 +4,7 @@
 //	data = 0
 
 /datum/integrated_io/number/ask_for_pin_data(mob/user)
-	var/new_data = rerun_prompt(user, "k7", list("kind" = "number", "message" = "Please type in a number.", "title" = "[src] number writing"), PROC_REF(ask_for_pin_data), args)
+	var/new_data = rerun_ask(user, "k7", PROC_REF(ask_for_pin_data), args, /datum/om/prompt/number, message = "Please type in a number.", title = "[src] number writing")
 	if(isnull(new_data))
 		return
 	if(isnum(new_data) && holder().check_interactivity(user) )

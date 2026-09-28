@@ -122,7 +122,7 @@
 	if (istype(A, /obj/machinery/atmospherics/pipe/simple))
 		to_chat(user, span_notice("You begin to attach \the [src] to \the [A]..."))
 		var/C = locate(/obj/machinery/clamp) in get_turf(A)
-		om_task_start(/datum/om/task/timed/clamp_afterattack, user, src, list("receiver" = src, "A" = A, "C" = C))
+		om_task_start(/datum/om/task/timed/clamp_afterattack, user, src, receiver = src, A = A, C = C)
 		if(C)
 			to_chat(user, span_notice("\The [C] is already attached to the pipe at this location!"))
 

@@ -13,16 +13,25 @@
 
 
 /obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
-	om_prompt_sequence(src, user, list(
-		list("key" = "name", "kind" = "text", "message" = "Who is \the [src.name] for?", "title" = "Gravestone Naming", "max_length" = MAX_NAME_LEN, "encode" = FALSE),
-		list("key" = "epitaph", "kind" = "text", "message" = "What message should \the [src.name] have?", "title" = "Epitaph Carving", "max_length" = MAX_NAME_LEN, "encode" = FALSE),
-	), PROC_REF(carvings_chosen), list("target" = W, "requires" = PROMPT_IN_HAND, "data" = list("tool" = W)))
+	om_ask(user, /datum/om/prompt/text/gravemarker_carving, PROC_REF(grave_name_chosen), title = "Gravestone Naming", message = "Who is \the [src.name] for?", subject = W)
 	return NONE
 
-/obj/item/material/gravemarker/proc/carvings_chosen(mob/user, datum/om/prompt/ask)
-	var/obj/item/W = ask.get("tool")
-	var/carving_1 = sanitizeSafe(ask.get("name"), MAX_NAME_LEN)
-	var/carving_2 = sanitizeSafe(ask.get("epitaph"), MAX_NAME_LEN)
+/// A carving for a grave marker (the name, then the epitaph). Re-checked on the answer: the tool (the subject) is still in hand.
+/datum/om/prompt/text/gravemarker_carving
+	max_length = MAX_NAME_LEN
+	encode = FALSE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	/// The name given at the first step.
+	var/carved_name
+
+/obj/item/material/gravemarker/proc/grave_name_chosen(datum/om/prompt/text/gravemarker_carving/ask)
+	om_ask(ask.answerer, /datum/om/prompt/text/gravemarker_carving, PROC_REF(carvings_chosen), title = "Epitaph Carving", message = "What message should \the [src.name] have?", subject = ask.subject, carved_name = ask.text)
+
+/obj/item/material/gravemarker/proc/carvings_chosen(datum/om/prompt/text/gravemarker_carving/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/W = ask.subject
+	var/carving_1 = sanitizeSafe(ask.carved_name, MAX_NAME_LEN)
+	var/carving_2 = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(carving_1)
 		use_tool(user, W, src, delay = material.hardness, quality = TOOL_SCREWDRIVER, message_self = "You start carving \the [src.name].", message_others = "[user] starts carving \the [src.name].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user, carving_1))
 	if(carving_2)

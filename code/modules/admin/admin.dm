@@ -129,20 +129,20 @@ ADMIN_VERB(restart, R_SERVER, "Reboot World", "Restarts the world immediately.",
 		options += TGS_RESTART;
 
 	if(SSticker.admin_delay_notice)
-		var/sure = verb_prompt(user, "delayed", list("message" = "Are you sure? An admin has already delayed the round end for the following reason: [SSticker.admin_delay_notice]", "title" = "Confirmation", "choices" = list("Yes", "No")), args)
+		var/sure = verb_ask(user, "delayed", args, /datum/om/prompt/choice/alert, message = "Are you sure? An admin has already delayed the round end for the following reason: [SSticker.admin_delay_notice]", title = "Confirmation", choices = list("Yes", "No"))
 		if(sure != "Yes")
 			return FALSE
 
-	var/result = verb_prompt(user, "method", list("kind" = "list", "message" = "Select reboot method", "title" = "World Reboot", "choices" = options, "default" = options[1]), args)
+	var/result = verb_ask(user, "method", args, /datum/om/prompt/choice, message = "Select reboot method", title = "World Reboot", choices = options, default = options[1])
 	if(isnull(result))
 		return
 	var/delay = 0
 	if(result == REGULAR_RESTART_DELAYED)
-		delay = verb_prompt(user, "delay", list("kind" = "number", "message" = "What delay should the restart have (in seconds)?", "title" = "Restart Delay", "default" = 5), args)
+		delay = verb_ask(user, "delay", args, /datum/om/prompt/number, message = "What delay should the restart have (in seconds)?", title = "Restart Delay", default = 5)
 		if(!delay)
 			return FALSE
 	if((result == REGULAR_RESTART || result == REGULAR_RESTART_DELAYED) && !user.is_localhost())
-		var/live = verb_prompt(user, "live", list("message" = "Are you sure you want to restart the server?", "title" = "This server is live", "choices" = list("Restart", "Cancel")), args)
+		var/live = verb_ask(user, "live", args, /datum/om/prompt/choice/alert, message = "Are you sure you want to restart the server?", title = "This server is live", choices = list("Restart", "Cancel"))
 		if(live != "Restart")
 			return FALSE
 
@@ -179,7 +179,7 @@ ADMIN_VERB(cancel_reboot, R_SERVER, "Cancel Reboot", "Cancels a pending world re
 	message_admins("[key_name_admin(user)] cancelled the pending world reboot.")
 
 ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desires to the world.", ADMIN_CATEGORY_CHAT)
-	var/message = verb_prompt(user, "a1", list("kind" = "text", "message" = "Global message to send:", "title" = "Admin Announce", "multiline" = TRUE), args)
+	var/message = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Global message to send:", title = "Admin Announce", multiline = TRUE, max_length = MAX_TGUI_INPUT)
 	if(isnull(message))
 		return
 	if(!message)
@@ -193,23 +193,23 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 	feedback_add_details("admin_verb","A") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message, like an arrivals announcement.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/channel = verb_prompt(user, "a2", list("kind" = "list", "message" = "Channel for message:", "title" = "Channel", "choices" = GLOB.radiochannels), args)
+	var/channel = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Channel for message:", title = "Channel", choices = GLOB.radiochannels)
 	if(isnull(channel))
 		return
 
 	if(!channel) //They didn't pick a channel
 		return
 
-	var/sender = verb_prompt(user, "a3", list("kind" = "text", "message" = "Name of sender (max 75):", "title" = "Announcement", "default" = "Announcement Computer"), args)
+	var/sender = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Name of sender (max 75):", title = "Announcement", default = "Announcement Computer")
 	if(isnull(sender))
 		return
 
 	if(sender) //They put a sender
 		sender = sanitize(sender, 75, extra = 0)
-		var/message = verb_prompt(user, "a4", list("kind" = "text", "message" = "Message content (max 500):", "title" = "Contents", "default" = "This is a test of the announcement system.", "multiline" = TRUE), args)
+		var/message = verb_ask(user, "a4", args, /datum/om/prompt/text, message = "Message content (max 500):", title = "Contents", default = "This is a test of the announcement system.", multiline = TRUE, max_length = MAX_TGUI_INPUT)
 		if(isnull(message))
 			return
-		var/msgverb = verb_prompt(user, "a5", list("kind" = "text", "message" = "Name of verb (Such as 'states', 'says', 'asks', etc):", "title" = "Verb", "default" = "says"), args)
+		var/msgverb = verb_ask(user, "a5", args, /datum/om/prompt/text, message = "Name of verb (Such as 'states', 'says', 'asks', etc):", title = "Verb", default = "says")
 		if(isnull(msgverb))
 			return
 		if(message) //They put a message
@@ -224,14 +224,14 @@ ADMIN_VERB(intercom, R_ADMIN|R_EVENT, "Intercom Msg", "Send an intercom message,
 	feedback_add_details("admin_verb","IN") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom conversation, like several uses of the Intercom Msg verb.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/channel = verb_prompt(user, "a6", list("kind" = "list", "message" = "Channel for message:", "title" = "Channel", "choices" = GLOB.radiochannels), args)
+	var/channel = verb_ask(user, "a6", args, /datum/om/prompt/choice, message = "Channel for message:", title = "Channel", choices = GLOB.radiochannels)
 	if(isnull(channel))
 		return
 
 	if(!channel) //They picked a channel
 		return
 
-	var/speech_verb = verb_prompt(user, "a7", list("message" = "What speech verb to use for the conversation?", "title" = "Type", "choices" = list("states", "says")), args)
+	var/speech_verb = verb_ask(user, "a7", args, /datum/om/prompt/choice/alert, message = "What speech verb to use for the conversation?", title = "Type", choices = list("states", "says"))
 	if(isnull(speech_verb))
 		return
 	if(!speech_verb)
@@ -250,7 +250,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 		The above will result in those messages playing, with a 5 second gap between each. Maximum of 20 messages allowed."))
 
 	var/list/decomposed
-	var/message = verb_prompt(user, "a8", list("kind" = "text", "message" = "See your chat box for instructions. Keep a copy elsewhere in case it is rejected when you click OK.", "title" = "Input Conversation", "multiline" = TRUE), args)
+	var/message = verb_ask(user, "a8", args, /datum/om/prompt/text, message = "See your chat box for instructions. Keep a copy elsewhere in case it is rejected when you click OK.", title = "Input Conversation", multiline = TRUE, max_length = MAX_TGUI_INPUT)
 	if(isnull(message))
 		return
 
@@ -520,12 +520,12 @@ ADMIN_VERB(adrev, R_SERVER, "Toggle Revive", "Toggle admin revives.", ADMIN_CATE
 	return 0
 
 ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = verb_prompt(user, "a9", list("kind" = "list", "message" = "Select Seed.", "title" = "Seed Type", "choices" = GLOB.plant_service.seeds), args)
+	var/seedtype = verb_ask(user, "a9", args, /datum/om/prompt/choice, message = "Select Seed.", title = "Seed Type", choices = GLOB.plant_service.seeds)
 	if(isnull(seedtype))
 		return
 	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
 		return
-	var/amount = verb_prompt(user, "a10", list("kind" = "number", "message" = "Amount of fruit to spawn", "title" = "Fruit Amount", "default" = 1), args)
+	var/amount = verb_ask(user, "a10", args, /datum/om/prompt/number, message = "Amount of fruit to spawn", title = "Fruit Amount", default = 1)
 	if(isnull(amount))
 		return
 	var/mob/user_mob = user.mob
@@ -535,7 +535,7 @@ ADMIN_VERB(spawn_fruit, R_SPAWN, "Spawn Fruit", "Spawn the product of a seed.", 
 	log_admin("[key_name(user)] spawned [seedtype] fruit at ([user_mob.x],[user_mob.y],[user_mob.z])")
 
 ADMIN_VERB(spawn_custom_item, R_SPAWN, "Spawn Custom Item", "Spawn a custom item.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/owner = verb_prompt(user, "a11", list("kind" = "list", "message" = "Select a ckey.", "title" = "Spawn Custom Item", "choices" = GLOB.custom_items), args)
+	var/owner = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Select a ckey.", title = "Spawn Custom Item", choices = GLOB.custom_items)
 	if(isnull(owner))
 		return
 	if(!owner)
@@ -544,7 +544,7 @@ ADMIN_VERB(spawn_custom_item, R_SPAWN, "Spawn Custom Item", "Spawn a custom item
 	var/list/possible_items = GLOB.custom_items[owner]
 	if(!possible_items)
 		return
-	var/datum/custom_item/item_to_spawn = verb_prompt(user, "a12", list("kind" = "list", "message" = "Select an item to spawn.", "title" = "Spawn Custom Item", "choices" = possible_items), args)
+	var/datum/custom_item/item_to_spawn = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Select an item to spawn.", title = "Spawn Custom Item", choices = possible_items)
 	if(isnull(item_to_spawn))
 		return
 	if(!item_to_spawn)
@@ -568,7 +568,7 @@ ADMIN_VERB(check_custom_items, R_SPAWN, "Check Custom Items", "Check the custom 
 			to_chat(user, "- name: [item.name] icon: [item.item_icon] path: [item.item_path] desc: [item.item_desc]")
 
 ADMIN_VERB(spawn_plant, R_SPAWN, "Spawn Plant", "Spawn a spreading plant effect.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/seedtype = verb_prompt(user, "a13", list("kind" = "list", "message" = "Select Seed.", "title" = "Seed Type", "choices" = GLOB.plant_service.seeds), args)
+	var/seedtype = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Select Seed.", title = "Seed Type", choices = GLOB.plant_service.seeds)
 	if(isnull(seedtype))
 		return
 	if(!seedtype || !GLOB.plant_service.seeds[seedtype])
@@ -732,14 +732,23 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	if (tomob.ckey)
 		question = "This mob already has a user ([tomob.key]) in control of it! "
 	question += "Are you sure you want to place [frommob.name]([frommob.key]) in control of [tomob.name]?"
-	om_prompt(src, usr, list("message" = question, "title" = "Place ghost in control of mob?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_VAREDIT), "data" = list("from" = frommob, "to" = tomob)), PROC_REF(ghost_drag_confirmed))
+	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 	return 1
 
-/datum/admins/proc/ghost_drag_confirmed(mob/admin, ask, datum/om/prompt/prompt)
-	var/mob/observer/dead/frommob = prompt.get("from")
-	var/mob/living/tomob = prompt.get("to")
-	if (ask != "Yes" || !frommob.ckey)
-		return
+/// Re-checked: the ghost still has a player.
+/datum/om/prompt/confirm/ghost_drag
+	title = "Place ghost in control of mob?"
+	requires = PROMPT_ADMIN(R_VAREDIT)
+	var/mob/observer/dead/frommob
+	var/mob/living/tomob
+
+/datum/om/prompt/confirm/ghost_drag/valid()
+	return frommob.ckey ? null : "no player"
+
+/datum/admins/proc/ghost_drag_confirmed(datum/om/prompt/confirm/ghost_drag/ask)
+	var/mob/admin = ask.answerer
+	var/mob/observer/dead/frommob = ask.frommob
+	var/mob/living/tomob = ask.tomob
 	if(tomob.client) //No need to ghostize if there is no client
 		tomob.ghostize(0)
 	if(frommob.mind && frommob.mind.current) //Preserve teleop for original body when adminghosting.
@@ -759,7 +768,7 @@ ADMIN_VERB(force_antag_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Template Spawn",
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
-	var/antag_type = verb_prompt(user, "a14", list("kind" = "list", "message" = "Choose a template.", "title" = "Force Latespawn", "choices" = GLOB.antag_service.all_antag_types), args)
+	var/antag_type = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "Choose a template.", title = "Force Latespawn", choices = GLOB.antag_service.all_antag_types)
 	if(isnull(antag_type))
 		return
 	if(!antag_type || !GLOB.antag_service.all_antag_types[antag_type])
@@ -785,7 +794,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 		msg = "has paralyzed [key_name(living_target)]."
 		log_and_message_admins(msg)
 		return
-	var/_answer_a15 = verb_prompt(user, "a15", list("message" = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", "title" = "Paralyze Mob", "choices" = list("Yes","No")), args)
+	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", title = "Paralyze Mob", choices = list("Yes","No"))
 	if(isnull(_answer_a15))
 		return
 	if(_answer_a15 == "Yes")
@@ -794,7 +803,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 		log_and_message_admins(msg)
 
 ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to change telecrystals of a user.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	var/crystals = verb_prompt(user, "a16", list("kind" = "number", "message" = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals]."), args)
+	var/crystals = verb_ask(user, "a16", args, /datum/om/prompt/number, message = "Amount of telecrystals for [human_mob.ckey], currently [human_mob.mind.tcrystals].")
 	if(isnull(crystals))
 		return
 	if (!isnull(crystals))
@@ -803,7 +812,7 @@ ADMIN_VERB(set_tcrystals, R_ADMIN|R_EVENT, "Set Telecrystals", "Allows admins to
 		message_admins(msg)
 
 ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to change telecrystals of a user by addition.", ADMIN_CATEGORY_DEBUG_GAME, mob/living/carbon/human/human_mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-	var/crystals = verb_prompt(user, "a17", list("kind" = "number", "message" = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals]."), args)
+	var/crystals = verb_ask(user, "a17", args, /datum/om/prompt/number, message = "Amount of telecrystals to give to [human_mob.ckey], currently [human_mob.mind.tcrystals].")
 	if(isnull(crystals))
 		return
 	if (!isnull(crystals))
@@ -813,10 +822,10 @@ ADMIN_VERB(add_tcrystals, R_ADMIN|R_EVENT, "Add Telecrystals", "Allows admins to
 
 
 ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this machine.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/department = verb_prompt(user, "department", list("kind" = "list", "message" = "Choose a fax", "title" = "Fax", "choices" = GLOB.alldepartments), args)
+	var/department = verb_ask(user, "department", args, /datum/om/prompt/choice, message = "Choose a fax", title = "Fax", choices = GLOB.alldepartments)
 	if(isnull(department))
 		return
-	var/replyorigin = verb_prompt(user, "origin", list("kind" = "text", "message" = "Please specify who the fax is coming from", "title" = "Origin"), args)
+	var/replyorigin = verb_ask(user, "origin", args, /datum/om/prompt/text, message = "Please specify who the fax is coming from", title = "Origin")
 	if(isnull(replyorigin))
 		return
 	for(var/obj/machinery/photocopier/faxmachine/sendto in REGISTRY_MEMBERS(REGISTRY_FAXES))
@@ -834,20 +843,39 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
-	om_prompt_sequence(src, owner(), list(
-		list("key" = "title", "kind" = "text", "message" = "Pick a title for the report", "title" = "Title", "optional" = TRUE),
-		P.sender() ? null : list("key" = "stamp", "message" = "Would you like the fax stamped?", "title" = "Stamped?", "choices" = list("Yes", "No"), "optional" = TRUE),
-	), PROC_REF(fax_answered), list("data" = list("paper" = P, "destination" = destination)))
+	om_ask(owner(), /datum/om/prompt/text/fax_title, PROC_REF(fax_titled), paper = P, destination = destination)
 
-/datum/admins/proc/fax_answered(mob/admin, datum/om/prompt/ask)
-	var/obj/item/paper/admin/P = ask.get("paper")
-	var/obj/machinery/photocopier/faxmachine/destination = ask.get("destination")
-	var/customname = ask.get("title")
+/// An admin fax reply: its title, then (admin-initiated) whether to stamp it. A cancel skips either.
+/datum/om/prompt/text/fax_title
+	title = "Title"
+	message = "Pick a title for the report"
+	cancel_answer = ""
+	var/obj/item/paper/admin/paper
+	var/obj/machinery/photocopier/faxmachine/destination
 
+/datum/om/prompt/confirm/fax_stamp
+	title = "Stamped?"
+	message = "Would you like the fax stamped?"
+	answer_on_no = TRUE
+	cancel_answer = "No"
+	var/obj/item/paper/admin/paper
+	var/obj/machinery/photocopier/faxmachine/destination
+	var/custom_title
+
+/datum/admins/proc/fax_titled(datum/om/prompt/text/fax_title/ask)
+	if(ask.paper.sender())
+		fax_answered(ask.paper, ask.destination, ask.text, FALSE)
+		return
+	om_ask(ask.answerer, /datum/om/prompt/confirm/fax_stamp, PROC_REF(fax_stamp_answered), paper = ask.paper, destination = ask.destination, custom_title = ask.text)
+
+/datum/admins/proc/fax_stamp_answered(datum/om/prompt/confirm/fax_stamp/ask)
+	fax_answered(ask.paper, ask.destination, ask.custom_title, ask.yes)
+
+/datum/admins/proc/fax_answered(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination, customname, stamp)
 	P.name = "[P.origin] - [customname]"
 	P.desc = "This is a paper titled '" + P.name + "'."
 
-	var/shouldStamp = P.sender() || ask.get("stamp") == "Yes" // admin initiated faxes are stamped when asked
+	var/shouldStamp = P.sender() || stamp // admin initiated faxes are stamped when asked
 
 	if(shouldStamp)
 		P.stamps += "<hr>" + span_italics("This paper has been stamped by the [P.origin] Quantum Relay.")
@@ -904,7 +932,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	return
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/mob/living/carbon/human/traitor_human = verb_prompt(user, "a18", list("kind" = "list", "message" = "Select whom to give an uplink.", "title" = "Set uplink", "choices" = REGISTRY_MEMBERS(REGISTRY_HUMANS)), args)
+	var/mob/living/carbon/human/traitor_human = verb_ask(user, "a18", args, /datum/om/prompt/choice, message = "Select whom to give an uplink.", title = "Set uplink", choices = REGISTRY_MEMBERS(REGISTRY_HUMANS))
 	if(isnull(traitor_human))
 		return
 	if(!traitor_human)

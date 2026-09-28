@@ -46,7 +46,7 @@
 		if("send_message")
 			var/obj/item/mecha_parts/mecha_tracking/MT = locate(params["mt"])
 			if(istype(MT))
-				om_prompt(src, ui.user, list("kind" = "text", "message" = "Input message", "title" = "Transmit message", "default" = "", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("tracker" = MT)), PROC_REF(mecha_message_entered))
+				om_ask(ui.user, /datum/om/prompt/text/mecha_tracker_message, PROC_REF(mecha_message_entered), tracker = MT)
 			return TRUE
 
 		if("shock")
@@ -65,11 +65,17 @@
 			stored_data = null
 			return TRUE
 
-/obj/machinery/computer/mecha/proc/mecha_message_entered(mob/user, message, datum/om/prompt/ask)
-	var/obj/item/mecha_parts/mecha_tracking/MT = ask.get("tracker")
-	var/obj/mecha/M = MT.in_mecha()
-	if(message && M)
-		M.occupant_message(message)
+/datum/om/prompt/text/mecha_tracker_message
+	title = "Transmit message"
+	message = "Input message"
+	default = ""
+	requires = PROMPT_USABLE
+	var/obj/item/mecha_parts/mecha_tracking/tracker
+
+/obj/machinery/computer/mecha/proc/mecha_message_entered(datum/om/prompt/text/mecha_tracker_message/ask)
+	var/obj/mecha/M = ask.tracker.in_mecha()
+	if(ask.text && M)
+		M.occupant_message(ask.text)
 
 /obj/item/mecha_parts/mecha_tracking
 	name = "Exosuit tracking beacon"

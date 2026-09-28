@@ -227,7 +227,7 @@
 		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
 		return TRUE
 	to_chat(user, span_notice("You begin repairing \the [src]..."))
-	om_task_start(/datum/om/task/timed/emitter_repair, user, src, list("receiver" = src, "P" = P, "amt" = amt))
+	om_task_start(/datum/om/task/timed/emitter_repair, user, src, receiver = src, P = P, amt = amt)
 	return TRUE
 
 /datum/om/task/timed/emitter_repair
@@ -289,7 +289,7 @@
 /obj/machinery/power/emitter/multitool_act(mob/user, obj/item/W)
 	if(!anomalous)
 		return ITEM_INTERACT_BLOCKING
-	var/chosen_particle = rerun_prompt(user, "k282", list("kind" = "list", "message" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/chosen_particle = rerun_ask(user, "k282", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
 	if(isnull(chosen_particle))
 		return ITEM_INTERACT_BLOCKING
 	if(!chosen_particle)

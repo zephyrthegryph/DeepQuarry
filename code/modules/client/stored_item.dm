@@ -92,7 +92,7 @@
 		return
 	var/I = persist_item_savefile_load(user, "type")
 	var/Iname = persist_item_savefile_load(user, "name")
-	var/choice = rerun_prompt(user, "choice", list("message" = "What would you like to do [src]?", "title" = "[src]", "choices" = list("Check contents", "Retrieve item", "Info", "Cancel"), "timeout" = 10 SECONDS), PROC_REF(start_using), args)
+	var/choice = rerun_ask(user, "choice", PROC_REF(start_using), args, /datum/om/prompt/choice/alert, message = "What would you like to do [src]?", title = "[src]", choices = list("Check contents", "Retrieve item", "Info", "Cancel"), timeout = 10 SECONDS)
 	if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open)
 		return
 	else if(choice == "Check contents" && I)
@@ -104,7 +104,7 @@
 		if(user.ckey in item_takers)
 			to_chat(user, span_warning("You have already taken something out of \the [src] this shift."))
 			return
-		choice = rerun_prompt(user, "retrieve", list("message" = "If you remove this item from the bank, it will be unable to be stored again. Do you still want to remove it?", "title" = "[src]", "choices" = list("No", "Yes"), "timeout" = 10 SECONDS), PROC_REF(start_using), args)
+		choice = rerun_ask(user, "retrieve", PROC_REF(start_using), args, /datum/om/prompt/choice/alert, message = "If you remove this item from the bank, it will be unable to be stored again. Do you still want to remove it?", title = "[src]", choices = list("No", "Yes"), timeout = 10 SECONDS)
 		if(!choice || choice == "No" || !Adjacent(user) || inoperable() || panel_open || busy_bank)
 			return
 		busy_bank = TRUE
@@ -169,7 +169,7 @@
 		if(ispath(I))
 			to_chat(user, span_warning("You cannot store \the [O]. You already have something stored."))
 			return TRUE
-		var/choice = rerun_prompt(user, "store", list("message" = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", "title" = "[src]", "choices" = list("Store", "Cancel"), "timeout" = 10 SECONDS), PROC_REF(interaction_store), args)
+		var/choice = rerun_ask(user, "store", PROC_REF(interaction_store), args, /datum/om/prompt/choice/alert, message = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", title = "[src]", choices = list("Store", "Cancel"), timeout = 10 SECONDS)
 		if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open || busy_bank || O.loc != user)
 			return TRUE
 		for(var/obj/item/check in O.contents)

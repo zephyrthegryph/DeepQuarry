@@ -86,12 +86,22 @@
 	if(!possible_targets.len)
 		return ..()
 	user.visible_message(span_warning("\The [user] reaches for something in \the [src]'s fur..."),span_notice("You look through \the [src]'s fur..."))
-	om_prompt(src, user, list("kind" = "list", "message" = "Select a mob:", "title" = "Select a mob to grab!", "choices" = possible_targets, "requires" = PROMPT_ADJACENT), PROC_REF(fur_pick_chosen))
+	om_ask(user, /datum/om/prompt/choice/stardog_fur_pick, PROC_REF(fur_pick_chosen), choices = possible_targets)
 	return TRUE
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(mob/living/user, mob/living/that_one, datum/om/prompt/ask)
-	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))
-		return
+/// Re-checked on the answer: next to the stardog and able, and the one picked is still in its fur.
+/datum/om/prompt/choice/stardog_fur_pick
+	title = "Select a mob to grab!"
+	message = "Select a mob:"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/choice/stardog_fur_pick/valid()
+	var/mob/living/that_one = choice
+	return istype(that_one.loc, /turf/simulated/floor/outdoors/fur) ? null : "not in the fur"
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_chosen(datum/om/prompt/choice/stardog_fur_pick/ask)
+	var/mob/living/user = ask.answerer
+	var/mob/living/that_one = ask.choice
 	to_chat(that_one, span_danger("\The [user]'s hand reaches toward you!!!"))
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(fur_pick_done), done_args = list(user, that_one))
 	return TRUE
@@ -253,7 +263,7 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 
 	to_chat(src, span_notice("You begin to eat \the [E]..."))
 
-	om_task_start(/datum/om/task/timed/stardog_eat_space_weather_stardog, src, E, list("nut" = nut, "aff" = aff, "mob" = mob, "ore" = ore, "tre" = tre, "msg" = msg, "heal" = heal, "delet" = delet))
+	om_task_start(/datum/om/task/timed/stardog_eat_space_weather_stardog, src, E, nut = nut, aff = aff, mob = mob, ore = ore, tre = tre, msg = msg, heal = heal, delet = delet)
 	return TRUE
 
 /datum/om/task/timed/stardog_eat_space_weather_stardog
@@ -343,17 +353,25 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 			to_chat(src, span_warning("There is nowhere nearby to land! You need to get closer to somewhere else that you can transition to before you can transition."))
 			return
 		//for(var/obj/effect/landmark/stardog/l in destinations)
-		om_prompt(src, src, list("kind" = "list", "message" = "Where would you like to try to go?", "title" = "Transition", "choices" = destinations, "timeout" = 15 SECONDS, "requires" = PROMPT_CONSCIOUS, "on_cancel" = PROC_REF(transition_declined)), PROC_REF(transition_destination_chosen))
+		om_ask(src, /datum/om/prompt/choice/stardog_transition, PROC_REF(transition_destination_chosen), choices = destinations)
 
 	else
 		to_chat(src, span_notice("You begin to transition back to space, stay still..."))
 		om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_stardog_done), done_args = list(), on_fail = PROC_REF(transition_stardog_failed), fail_args = list())
 		return
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_warning("You decide not to transition."))
+/// Where to land. A cancel (or the timeout) decides not to.
+/datum/om/prompt/choice/stardog_transition
+	title = "Transition"
+	message = "Where would you like to try to go?"
+	timeout = 15 SECONDS
+	ask_flags = ASK_CONSCIOUS
 
-/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(mob/user, obj/effect/overmap/visitable/our_dest, datum/om/prompt/ask)
+/datum/om/prompt/choice/stardog_transition/cancelled()
+	to_chat(answerer, span_warning("You decide not to transition."))
+
+/mob/living/simple_mob/vore/overmap/stardog/proc/transition_destination_chosen(datum/om/prompt/choice/stardog_transition/ask)
+	var/obj/effect/overmap/visitable/our_dest = ask.choice
 	to_chat(src, span_notice("You begin to transition down to \the [our_dest], stay still..."))
 	om_do_after(src, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(transition_down_done), done_args = list(our_dest), on_fail = PROC_REF(transition_stardog_failed))
 
@@ -465,11 +483,14 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
 	if (!message)
-		om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))
+		om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_answered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 		return
 	emote_beyond_entered(L, message)
 
-/turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message, datum/om/prompt/ask)
+/turf/simulated/floor/outdoors/fur/proc/emote_beyond_answered(datum/om/prompt/text/ask)
+	emote_beyond_entered(ask.answerer, ask.text)
+
+/turf/simulated/floor/outdoors/fur/proc/emote_beyond_entered(mob/living/L, message)
 	message = sanitize_or_reflect(message,L)
 	if (!message)
 		return
@@ -947,11 +968,12 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	if(L.client?.prefs?.muted & MUTE_IC)
 		to_chat(L, span_warning("You cannot speak in IC (muted)."))
 		return
-	om_prompt(src, L, list("kind" = "text", "message" = "Type a message to emote.", "title" = "Emote Beyond", "encode" = FALSE), PROC_REF(emote_beyond_entered))
+	om_ask(L, /datum/om/prompt/text, PROC_REF(emote_beyond_entered), title = "Emote Beyond", message = "Type a message to emote.", encode = FALSE)
 	return TRUE
 
-/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(mob/living/L, message, datum/om/prompt/ask)
-	message = sanitize_or_reflect(message,L)
+/obj/machinery/computer/ship/navigation/proc/emote_beyond_entered(datum/om/prompt/text/ask)
+	var/mob/living/L = ask.answerer
+	var/message = sanitize_or_reflect(ask.text, L)
 	if (!message)
 		return
 	if (L.stat == DEAD)

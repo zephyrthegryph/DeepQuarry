@@ -36,11 +36,11 @@
 
 /obj/item/spell/summon/on_use_cast(mob/living/user)
 	if(length(summon_options))
-		om_prompt(src, user, list("kind" = "list", "message" = "Choose a creature to kidnap from somewhere!", "title" = "Summon", "choices" = summon_options, "requires" = PROMPT_HELD), PROC_REF(summon_choice_made))
+		om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(summon_choice_made), title = "Summon", message = "Choose a creature to kidnap from somewhere!", choices = summon_options)
 
-/obj/item/spell/summon/proc/summon_choice_made(mob/living/user, choice, datum/om/prompt/ask)
-	if(choice)
-		summoned_mob_type = LAZYACCESS(summon_options, choice)
+/obj/item/spell/summon/proc/summon_choice_made(datum/om/prompt/choice/carried_item/ask)
+	if(ask.choice)
+		summoned_mob_type = LAZYACCESS(summon_options, ask.choice)
 
 // Called when a new mob is summoned, override for special behaviour.
 /obj/item/spell/summon/proc/on_summon(mob/living/summoned)

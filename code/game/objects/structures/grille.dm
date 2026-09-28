@@ -141,7 +141,7 @@
 				to_chat(user, span_notice("There is already a window facing this way there."))
 				return TRUE
 		to_chat(user, span_notice("You start placing the window."))
-		om_task_start(/datum/om/task/timed/grille_attackby, user, src, list("receiver" = src, "ST" = ST, "dir_to_set" = dir_to_set))
+		om_task_start(/datum/om/task/timed/grille_attackby, user, src, ST = ST, dir_to_set = dir_to_set)
 		return TRUE
 
 //window placing end

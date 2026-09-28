@@ -289,7 +289,7 @@
 					set_temp(client_update_record(src,ui.user))
 			if("edit_notes")
 				// The modal input in tgui is busted for this sadly...
-				om_prompt(src, ui.user, list("kind" = "text", "message" = "Enter new information here.", "title" = "Character Preference", "default" = html_decode(active2().fields["notes"]), "max_length" = MAX_RECORD_LENGTH, "multiline" = TRUE, "requires" = PROMPT_ADJACENT, "data" = list("record" = active2())), PROC_REF(record_notes_entered))
+				om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
 			if("new")
 				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
 					var/datum/data/record/R = new /datum/data/record()
@@ -349,19 +349,37 @@
 			else
 				return FALSE
 
-/obj/machinery/computer/med_data/proc/record_notes_entered(mob/user, new_notes, datum/om/prompt/ask)
-	new_notes = strip_html_simple(new_notes, MAX_RECORD_LENGTH)
-	ask.put("notes", new_notes)
+/obj/machinery/computer/med_data/proc/record_notes_entered(datum/om/prompt/text/record_notes/ask)
+	var/new_notes = strip_html_simple(ask.text, MAX_RECORD_LENGTH)
 	if(new_notes != "")
-		record_notes_confirmed(user, "Delete", ask)
+		set_record_notes(ask.record, new_notes)
 		return
-	ask.chain(list("message" = "Are you sure you want to delete the current record's notes?", "title" = "Confirm Delete", "choices" = list("Delete", "No")), PROC_REF(record_notes_confirmed))
+	om_ask(ask.answerer, /datum/om/prompt/confirm/record_notes_delete, PROC_REF(record_notes_confirmed), record = ask.record)
 
-/obj/machinery/computer/med_data/proc/record_notes_confirmed(mob/user, answer, datum/om/prompt/ask)
-	var/datum/data/record/R = ask.get("record")
-	if(answer == "Delete" && R == active2())
-		active2().fields["notes"] = ask.get("notes")
+/obj/machinery/computer/med_data/proc/record_notes_confirmed(datum/om/prompt/confirm/record_notes_delete/ask)
+	set_record_notes(ask.record, "")
+
+/obj/machinery/computer/med_data/proc/set_record_notes(datum/data/record/R, notes)
+	if(R == active2())
+		active2().fields["notes"] = notes
 		SStgui.update_uis(src)
+
+/// A records console's notes editor (medical, security and employment records).
+/datum/om/prompt/text/record_notes
+	title = "Character Preference"
+	message = "Enter new information here."
+	max_length = MAX_RECORD_LENGTH
+	multiline = TRUE
+	requires = PROMPT_ADJACENT
+	var/datum/data/record/record
+
+/// Empty notes: confirm clearing the record's notes.
+/datum/om/prompt/confirm/record_notes_delete
+	title = "Confirm Delete"
+	message = "Are you sure you want to delete the current record's notes?"
+	yes_text = "Delete"
+	requires = PROMPT_ADJACENT
+	var/datum/data/record/record
 
 /**
  * Called in tgui_act() to process modal actions

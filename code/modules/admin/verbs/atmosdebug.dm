@@ -4,7 +4,7 @@ ADMIN_VERB(atmosscan, R_DEBUG, "Check Piping", "Check all pipes in game (Only us
 
 	feedback_add_details("admin_verb","CP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	var/_answer_a1 = verb_prompt(user, "a1", list("message" = "WARNING: This command should not be run on a live server. Do you want to continue?", "title" = "Check Piping", "choices" = list("No", "Yes")), args)
+	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "WARNING: This command should not be run on a live server. Do you want to continue?", title = "Check Piping", choices = list("No", "Yes"))
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")

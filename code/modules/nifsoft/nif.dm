@@ -717,7 +717,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),
 		span_notice("You begin installing [src] into [T]'s chest by just stuffing it in."),
 		"There's a wet SQUISH noise.")
-		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, list("receiver" = src, "eo" = eo, "target_zone" = BP_TORSO))
+		om_task_start(/datum/om/task/timed/nif_stuff_in, user, T, receiver = src, eo = eo, target_zone = BP_TORSO)
 		return ITEM_INTERACT_SUCCESS
 	else
 		return ..()
@@ -747,7 +747,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		to_chat(src,span_warning("You don't have a NIF, not sure why this was here."))
 		return
 
-	var/new_flavor = rerun_prompt(src, "k726", list("kind" = "text", "message" = "Describe how your NIF alters your appearance, like glowy eyes or metal plate on your head, etc. Be sensible. Clear this for no examine text. 128ch max.", "title" = "Describe NIF", "default" = nif.examine_msg, "max_length" = 128), PROC_REF(set_nif_examine), args)
+	var/new_flavor = rerun_ask(src, "k726", PROC_REF(set_nif_examine), args, /datum/om/prompt/text, message = "Describe how your NIF alters your appearance, like glowy eyes or metal plate on your head, etc. Be sensible. Clear this for no examine text. 128ch max.", title = "Describe NIF", default = nif.examine_msg, max_length = 128)
 	if(isnull(new_flavor))
 		return
 	//They clicked cancel or meanwhile lost their NIF

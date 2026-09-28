@@ -92,7 +92,7 @@ DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction
 				Hyd.die()
 	if (istype(A, /obj/structure/reagent_dispensers/fueltank) && get_dist(src,A) <= 1)
 		to_chat(user, span_notice("You begin filling the tank on the chainsaw."))
-		om_task_start(/datum/om/task/timed/chainsaw_afterattack, user, src, list("receiver" = src, "A" = A))
+		om_task_start(/datum/om/task/timed/chainsaw_afterattack, user, src, receiver = src, A = A)
 
 /datum/om/task/timed/chainsaw_afterattack
 	duration = 15

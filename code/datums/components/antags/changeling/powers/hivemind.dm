@@ -38,7 +38,7 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		to_chat(src, span_notice("The airwaves already have all of our DNA."))
 		return
 
-	var/S = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select a DNA to channel:", "title" = "Channel DNA", "choices" = names), PROC_REF(changeling_hiveupload), args)
+	var/S = rerun_ask(src, "a1", PROC_REF(changeling_hiveupload), args, /datum/om/prompt/choice, message = "Select a DNA to channel:", title = "Channel DNA", choices = names)
 	if(isnull(S))
 		return
 	if(!S)
@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY_TYPED(hivemind_bank, /datum/dna)
 		to_chat(src, span_notice("There's no new DNA to absorb from the air."))
 		return
 
-	var/S = rerun_prompt(src, "a2", list("kind" = "list", "message" = "Select a DNA to absorb:", "title" = "Absorb DNA", "choices" = names), PROC_REF(changeling_hivedownload), args)
+	var/S = rerun_ask(src, "a2", PROC_REF(changeling_hivedownload), args, /datum/om/prompt/choice, message = "Select a DNA to absorb:", title = "Absorb DNA", choices = names)
 	if(isnull(S))
 		return
 	if(!S)

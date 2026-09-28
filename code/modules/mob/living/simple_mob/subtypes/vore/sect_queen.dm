@@ -94,9 +94,11 @@
 	set desc = "Customize your eyes and abdomen glow color."
 	set category = "Abilities.Sect Queen"
 
-	var/new_color = tgui_color_picker(src, "Please select color.", "Glow Color", custom_eye_color)
-	if(new_color)
-		custom_eye_color = new_color
+	om_ask(src, /datum/om/prompt/color, PROC_REF(abdomen_color_picked), title = "Glow Color", message = "Please select color.", default = custom_eye_color)
+
+/mob/living/simple_mob/vore/sect_queen/proc/abdomen_color_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		custom_eye_color = ask.picked_color
 		remove_eyes()
 		add_eyes()
 

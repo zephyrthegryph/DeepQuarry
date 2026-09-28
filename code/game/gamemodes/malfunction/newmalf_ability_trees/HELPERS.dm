@@ -23,12 +23,46 @@
 	for(var/datum/malf_hardware/H in hardware_list)
 		possible_choices += H.name
 
-	om_prompt(user, user, list("kind" = "list", "message" = "Select desired hardware. You may only choose one hardware piece!: ", "title" = "Hardware Choice", "choices" = possible_choices, "requires" = PROMPT_CONSCIOUS, "data" = list("hardware" = hardware_list)), GLOBAL_PROC_REF(malf_hardware_chosen))
+	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_chosen), receiver = user, title = "Hardware Choice", message = "Select desired hardware. You may only choose one hardware piece!: ", choices = possible_choices, options = hardware_list)
 
-/proc/malf_hardware_chosen(mob/living/silicon/ai/user, mob/answerer, choice, datum/om/prompt/ask)
+/// A malfunctioning AI's question. Re-checked: conscious, and, when `price` is set, that the
+/// AI can still use the ability (ability_prechecks(), which does not spend the CPU).
+/datum/om/prompt/confirm/malf
+	ask_flags = ASK_CONSCIOUS
+	var/price
+	var/precheck_override = 0
+	/// The silicon or machine the ability is used on.
+	var/atom/malf_target
+	/// The hardware piece being confirmed (made for the question: held strongly).
+	var/datum/malf_hardware/hardware
+
+/datum/om/prompt/confirm/malf/valid()
+	if(!isnull(price) && !ability_prechecks(answerer, price, precheck_override))
+		return "can't use the ability"
+	return null
+
+/datum/om/prompt/choice/malf
+	ask_flags = ASK_CONSCIOUS
+	var/price
+	var/atom/malf_target
+	/// The datums the choices name (the hardware pieces, the cyborgs).
+	var/list/options
+
+/datum/om/prompt/choice/malf/valid()
+	if(!isnull(price) && !ability_prechecks(answerer, price))
+		return "can't use the ability"
+	return null
+
+/datum/om/prompt/text/malf
+	ask_flags = ASK_CONSCIOUS
+	/// The message title, once asked.
+	var/message_title
+
+/mob/living/silicon/ai/proc/malf_hardware_chosen(datum/om/prompt/choice/malf/ask)
+	var/mob/living/silicon/ai/user = src
 	var/datum/malf_hardware/C
-	for (var/datum/malf_hardware/H in ask.get("hardware"))
-		if(H.name == choice)
+	for (var/datum/malf_hardware/H in ask.options)
+		if(H.name == ask.choice)
 			C = H
 			break
 	if(!C)
@@ -37,17 +71,17 @@
 	if(!C.desc)
 		log_world("## ERROR Hardware without description: [C]")
 		return
-	ask.put("chosen", C)
-	ask.chain(list("message" = "[C.desc] - Is this what you want?", "title" = "Hardware selection", "choices" = list("Yes", "No")), GLOBAL_PROC_REF(malf_hardware_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_hardware_confirmed), receiver = user, title = "Hardware selection", message = "[C.desc] - Is this what you want?", answer_on_no = TRUE, hardware = C, hold_strong = list("hardware"))
 
-/proc/malf_hardware_confirmed(mob/living/silicon/ai/user, mob/answerer, confirmation, datum/om/prompt/ask)
-	if(confirmation != "Yes")
+/mob/living/silicon/ai/proc/malf_hardware_confirmed(datum/om/prompt/confirm/malf/ask)
+	var/mob/living/silicon/ai/user = src
+	if(!ask.yes)
 		to_chat(user, "Selection cancelled. Use command again to select")
 		return
 	if(user.hardware)
 		to_chat(user, "You have already selected your hardware.")
 		return
-	var/datum/malf_hardware/C = ask.get("chosen")
+	var/datum/malf_hardware/C = ask.hardware
 	C.owner_handle = om_handle(user)
 	C.install()
 
@@ -81,9 +115,11 @@
 		return
 
 	var/datum/malf_research/res = user.research
-	om_prompt(user, user, list("kind" = "list", "message" = "Select your next research target", "title" = "Select Research", "choices" = res.available_abilities, "requires" = PROMPT_CONSCIOUS), GLOBAL_PROC_REF(malf_research_chosen))
+	om_ask(user, /datum/om/prompt/choice/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_research_chosen), receiver = user, title = "Select Research", message = "Select your next research target", choices = res.available_abilities)
 
-/proc/malf_research_chosen(mob/living/silicon/ai/user, mob/answerer, datum/malf_research_ability/tar, datum/om/prompt/ask)
+/mob/living/silicon/ai/proc/malf_research_chosen(datum/om/prompt/choice/malf/ask)
+	var/mob/living/silicon/ai/user = src
+	var/datum/malf_research_ability/tar = ask.choice
 	var/datum/malf_research/res = user.research
 	res.focus_static = tar
 	to_chat(user, "Research set: [tar.name]")

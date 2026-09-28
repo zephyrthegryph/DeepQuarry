@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 /// Old attackby.
 /obj/item/photo/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if(istype(P, /obj/item/pen))
-		var/txt = rerun_prompt(user, "k53", list("kind" = "text", "message" = "What would you like to write on the back?", "title" = "Photo Writing", "max_length" = 128), PROC_REF(interaction_item), args)
+		var/txt = rerun_ask(user, "k53", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to write on the back?", title = "Photo Writing", max_length = 128)
 		if(isnull(txt))
 			return TRUE
 		if(loc == user && user.stat == 0)
@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 	set category = "Object"
 	set src in usr
 
-	var/_answer_k97 = rerun_prompt(usr, "k97", list("kind" = "text", "message" = "What would you like to label the photo?", "title" = "Photo Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename), args)
+	var/_answer_k97 = rerun_ask(usr, "k97", VERB_REF(rename), args, /datum/om/prompt/text, message = "What would you like to label the photo?", title = "Photo Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k97))
 		return
 	var/n_name = sanitizeSafe(_answer_k97, MAX_NAME_LEN)
@@ -172,7 +172,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 /obj/item/camera/verb/change_size()
 	set name = "Set Photo Focus"
 	set category = "Object"
-	var/nsize = rerun_prompt(usr, "k165", list("kind" = "list", "message" = "Photo Size", "title" = "Pick a size of resulting photo.", "choices" = list(1,3,5,7)), VERB_REF(change_size), args)
+	var/nsize = rerun_ask(usr, "k165", VERB_REF(change_size), args, /datum/om/prompt/choice, message = "Photo Size", title = "Pick a size of resulting photo.", choices = list(1,3,5,7))
 	if(isnull(nsize))
 		return
 	if(nsize)

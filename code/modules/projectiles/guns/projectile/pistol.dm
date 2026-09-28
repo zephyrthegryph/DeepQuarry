@@ -44,7 +44,7 @@
 		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
 		return 0
 
-	var/_answer_k47 = rerun_prompt(M, "k47", list("kind" = "text", "message" = "What do you want to name the gun?", "title" = "Rename Gun", "max_length" = MAX_NAME_LEN, "encode" = FALSE), VERB_REF(rename_gun), args)
+	var/_answer_k47 = rerun_ask(M, "k47", VERB_REF(rename_gun), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Gun", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k47))
 		return
 	var/input = sanitizeSafe(_answer_k47)
@@ -68,7 +68,7 @@
 	options["MarsTech P11 Spur (Dark)"] = "dark_colt"
 	options["MarsTech P11 Spur (Green)"] = "green_colt"
 	options["MarsTech P11 Spur (Blue)"] = "blue_colt"
-	var/choice = rerun_prompt(M, "k68", list("kind" = "list", "message" = "Choose your sprite!", "title" = "Resprite Gun", "choices" = options), VERB_REF(reskin_gun), args)
+	var/choice = rerun_ask(M, "k68", VERB_REF(reskin_gun), args, /datum/om/prompt/choice, message = "Choose your sprite!", title = "Resprite Gun", choices = options)
 	if(isnull(choice))
 		return
 	if(src && choice && !M.stat && in_range(M,src))

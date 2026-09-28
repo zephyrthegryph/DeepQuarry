@@ -59,17 +59,31 @@
 	religion_prompts(H, B, I)
 
 /datum/job/chaplain/proc/religion_prompts(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I)
-	om_prompt_sequence(H, H, list(
-		list("key" = "religion", "kind" = "text", "message" = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", "title" = "Name change", "default" = "Unitarianism", "max_length" = MAX_NAME_LEN),
-		list("key" = "deity", "kind" = "text", "message" = "Would you like to change your deity? Default is Hashem", "title" = "Name change", "default" = "Hashem", "max_length" = MAX_NAME_LEN),
-		list("key" = "title", "kind" = "text", "message" = "Would you like to change your title?", "title" = "Title Change", "default" = I.assignment, "max_length" = MAX_NAME_LEN),
-	), GLOBAL_PROC_REF(chaplain_religion_chosen), list("data" = list("bible" = B, "id" = I)))
+	om_flow_start(/datum/om/flow/chaplain_religion, H, null, bible = B, id = I)
 
-/proc/chaplain_religion_chosen(mob/living/carbon/human/H, mob/user, datum/om/prompt/ask)
-	var/obj/item/storage/bible/B = ask.get("bible")
-	var/obj/item/card/id/I = ask.get("id")
+/// The chaplain's religion, deity and title, asked in turn, then applied to their bible and ID.
+/datum/om/flow/chaplain_religion
+	var/obj/item/storage/bible/bible
+	var/obj/item/card/id/id
+	var/religion
+	var/deity
+
+/datum/om/flow/chaplain_religion/start()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(religion_entered), message = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", default = "Unitarianism", title = "Name change", max_length = MAX_NAME_LEN)
+
+/datum/om/flow/chaplain_religion/proc/religion_entered(datum/om/prompt/text/ask)
+	religion = ask.text
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(deity_entered), message = "Would you like to change your deity? Default is Hashem", default = "Hashem", title = "Name change", max_length = MAX_NAME_LEN)
+
+/datum/om/flow/chaplain_religion/proc/deity_entered(datum/om/prompt/text/ask)
+	deity = ask.text
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Title Change", message = "Would you like to change your title?", default = id.assignment, max_length = MAX_NAME_LEN)
+
+/datum/om/flow/chaplain_religion/proc/title_entered(datum/om/prompt/text/ask)
+	chaplain_religion_chosen(actor, bible, id, religion, deity, ask.text)
+
+/proc/chaplain_religion_chosen(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I, new_religion, new_deity, new_title)
 	var/religion_name = "Unitarianism"
-	var/new_religion = ask.get("religion")
 	if(!new_religion)
 		new_religion = religion_name
 
@@ -110,12 +124,9 @@
 			B.name = "The Holy Book of [new_religion]"
 
 	var/deity_name = "Hashem"
-	var/new_deity = ask.get("deity")
 
 	if((length(new_deity) == 0) || (new_deity == "Hashem"))
 		new_deity = deity_name
-
-	var/new_title = ask.get("title")
 
 	var/list/all_jobs = get_job_datums()
 

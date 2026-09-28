@@ -30,7 +30,7 @@
 		if("PRG_newtextfile")
 			if(!HDD)
 				return
-			var/newname = act_prompt(ui.user, action, params, ui, "k33", list("kind" = "text", "message" = "Enter file name or leave blank to cancel:", "title" = "File rename", "max_length" = MAX_MESSAGE_LEN))
+			var/newname = act_ask(ui.user, action, params, ui, "k33", /datum/om/prompt/text, message = "Enter file name or leave blank to cancel:", title = "File rename")
 			if(isnull(newname))
 				return
 			if(!newname)
@@ -62,7 +62,7 @@
 			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
 			if(!F || !istype(F))
 				return
-			var/_answer_k63 = act_prompt(ui.user, action, params, ui, "k63", list("message" = "WARNING: This file is not compatible with editor. Editing it may result in permanently corrupted formatting or damaged data consistency. Edit anyway?", "title" = "Incompatible File", "choices" = list("No", "Yes")))
+			var/_answer_k63 = act_ask(ui.user, action, params, ui, "k63", /datum/om/prompt/choice/alert, message = "WARNING: This file is not compatible with editor. Editing it may result in permanently corrupted formatting or damaged data consistency. Edit anyway?", title = "Incompatible File", choices = list("No", "Yes"))
 			if(isnull(_answer_k63))
 				return
 			if(F.do_not_edit && (_answer_k63 != "Yes"))
@@ -71,7 +71,7 @@
 			var/oldtext = html_decode(F.stored_data)
 			oldtext = replacetext(oldtext, "\[br\]", "\n")
 
-			var/_answer_k69 = act_prompt(ui.user, action, params, ui, "k69", list("kind" = "text", "message" = "Editing file [F.filename].[F.filetype]. You may use most tags used in paper formatting:", "title" = "Text Editor", "default" = oldtext, "max_length" = MAX_TEXTFILE_LENGTH, "multiline" = TRUE))
+			var/_answer_k69 = act_ask(ui.user, action, params, ui, "k69", /datum/om/prompt/text, message = "Editing file [F.filename].[F.filetype]. You may use most tags used in paper formatting:", title = "Text Editor", default = oldtext, max_length = MAX_TEXTFILE_LENGTH, multiline = TRUE)
 			if(isnull(_answer_k69))
 				return
 			var/newtext = replacetext(_answer_k69, "\n", "\[br\]")

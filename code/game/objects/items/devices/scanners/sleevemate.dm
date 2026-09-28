@@ -59,13 +59,25 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 				choices += H
 	// Subtargets
 	if(choices.len > 1)
-		om_prompt(src, user, list("kind" = "list", "message" = "Ambiguous target. Please validate target:", "title" = "Target Validation", "choices" = choices, "default" = M, "target" = M, "requires" = PROMPT_ADJACENT), PROC_REF(scan_target_chosen))
+		om_ask(user, /datum/om/prompt/choice/sleevemate_target, PROC_REF(scan_target_chosen), choices = choices, default = M, subject = M, sleevemate = src)
 		return ITEM_INTERACT_SUCCESS
-	return scan_target_chosen(user, M)
+	return scan_target(user, M)
 
-/obj/item/sleevemate/proc/scan_target_chosen(mob/living/user, mob/living/M, datum/om/prompt/ask)
-	if(ask && user.get_active_hand() != src)
-		return ITEM_INTERACT_FAILURE
+/// Picking which of the mobs (the target and the ones in its bellies) to scan. Re-checked on the
+/// answer: still next to the target and holding the scanner.
+/datum/om/prompt/choice/sleevemate_target
+	title = "Target Validation"
+	message = "Ambiguous target. Please validate target:"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/obj/item/sleevemate/sleevemate
+
+/datum/om/prompt/choice/sleevemate_target/valid()
+	return answerer.get_active_hand() == sleevemate ? null : "not holding it"
+
+/obj/item/sleevemate/proc/scan_target_chosen(datum/om/prompt/choice/sleevemate_target/ask)
+	scan_target(ask.answerer, ask.choice)
+
+/obj/item/sleevemate/proc/scan_target(mob/living/user, mob/living/M)
 	if(isrobot(M))
 		var/mob/living/silicon/robot/R = M
 		var/obj/item/dogborg/sleeper/S = locate() in R.module.modules
@@ -87,12 +99,13 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 		to_chat(user,span_warning("No stored mind in \the [src]."))
 		return
 
-	om_prompt(src, user, list("message" = "What would you like to do?", "title" = "Stored: [stored_mind().name]", "choices" = list("Delete","Backup","Cancel"), "requires" = PROMPT_IN_HAND), PROC_REF(stored_mind_action))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(stored_mind_action), title = "Stored: [stored_mind().name]", message = "What would you like to do?", choices = list("Delete","Backup","Cancel"), buttons = TRUE, ask_flags = ASK_HELD | ASK_CAPABLE)
 
-/obj/item/sleevemate/proc/stored_mind_action(mob/living/user, choice, datum/om/prompt/ask)
+/obj/item/sleevemate/proc/stored_mind_action(datum/om/prompt/choice/ask)
 	if(!stored_mind())
 		return
-	switch(choice)
+	var/mob/living/user = ask.answerer
+	switch(ask.choice)
 		if("Delete")
 			to_chat(user,span_notice("Internal copy of [stored_mind().name] deleted."))
 			clear_mind()
@@ -209,7 +222,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 			persist_nif_data(H)
 
 		usr.visible_message("[usr] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
-		om_task_start(/datum/om/task/timed/sleevemate_topic, usr, target, list("receiver" = src, "nif" = nif))
+		om_task_start(/datum/om/task/timed/sleevemate_topic, usr, target, receiver = src, nif = nif)
 
 		return
 
@@ -221,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 		var/mob/living/carbon/human/H = target
 
 		usr.visible_message("[usr] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
-		om_task_start(/datum/om/task/timed/sleevemate_topic2, usr, target, list("receiver" = src, "H" = H))
+		om_task_start(/datum/om/task/timed/sleevemate_topic2, usr, target, receiver = src, H = H)
 
 		return
 
@@ -234,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 			to_chat(usr,span_warning("There is already someone's mind stored inside"))
 			return
 
-		om_prompt(src, usr, list("message" = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "requires" = PROMPT_IN_HAND, "data" = list("target" = target)), PROC_REF(mindsteal_confirmed))
+		om_ask(usr, /datum/om/prompt/confirm/sleevemate_mindsteal, PROC_REF(mindsteal_confirmed), victim = target)
 		return
 
 	if(href_list["mindput"])
@@ -354,19 +367,37 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 	else
 		icon_state = initial(icon_state)
 
-/obj/item/sleevemate/proc/mindsteal_confirmed(mob/living/user, choice, datum/om/prompt/ask)
-	var/mob/living/target = ask.get("target")
-	if(choice != "Continue" || stored_mind() || !user.Adjacent(target))
-		return
+/// Pulling a mind out. Re-checked on the answer: the scanner is still in hand and empty, the victim still next to the user.
+/datum/om/prompt/confirm/sleevemate_mindsteal
+	title = "Confirmation"
+	message = "This will remove the target's mind from their body (and from the game as long as they're in the sleevemate). You can put them into a (mindless) body, a NIF, or back them up for normal resleeving, but you should probably have a plan in advance so you don't leave them unable to interact for too long. Continue?"
+	yes_text = "Continue"
+	no_text = "Cancel"
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/mob/living/victim
+
+/datum/om/prompt/confirm/sleevemate_mindsteal/valid()
+	var/obj/item/sleevemate/sleevemate = subject
+	if(sleevemate.stored_mind())
+		return "already holding a mind"
+	if(!answerer.Adjacent(victim))
+		return "too far away"
+	return null
+
+/obj/item/sleevemate/proc/mindsteal_confirmed(datum/om/prompt/confirm/sleevemate_mindsteal/ask)
+	var/mob/living/user = ask.answerer
+	var/mob/living/target = ask.victim
 	user.visible_message(span_warning("[user] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
 	om_do_after(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
 /obj/item/sleevemate/emag_act(remaining_charges, mob/user)
 	var/list/choices = list("Body Snatcher","Mind Binder")
-	om_prompt(src, user, list("kind" = "list", "message" = "How would you like to modify the [src]?", "title" = "", "choices" = choices, "requires" = PROMPT_ADJACENT), PROC_REF(hack_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(hack_chosen), message = "How would you like to modify the [src]?", choices = choices, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return 1
 
-/obj/item/sleevemate/proc/hack_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/item/sleevemate/proc/hack_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	if(!(choice in list("Body Snatcher","Mind Binder")))
 		return
 	to_chat(user,span_danger("You hack [src]!"))

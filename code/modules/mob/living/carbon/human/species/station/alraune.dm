@@ -409,13 +409,18 @@
 	if(!fruit_gland)
 		to_chat(src, span_notice("You lack the organ required to produce fruit."))
 		return
-	om_prompt(src, src, list("kind" = "list", "message" = "Choose your character's fruit type. Choosing nothing will result in a default of apples.", "title" = "Fruit Type", "choices" = GLOB.acceptable_fruit_types, "data" = list("gland" = fruit_gland)), PROC_REF(alraune_fruit_chosen))
+	om_ask(src, /datum/om/prompt/choice/fruit_gland, PROC_REF(alraune_fruit_chosen), message = "Choose your character's fruit type. Choosing nothing will result in a default of apples.", title = "Fruit Type", choices = GLOB.acceptable_fruit_types, gland = fruit_gland)
 
-/mob/living/carbon/human/proc/alraune_fruit_chosen(mob/user, selection, datum/om/prompt/ask)
-	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.get("gland")
-	if(fruit_gland.loc != src)
-		return
-	fruit_gland.fruit_type = selection
+/// A fruit gland setting. Re-checked on the answer: the gland is still in the answerer.
+/datum/om/prompt/choice/fruit_gland
+	var/obj/item/organ/internal/fruitgland/gland
+
+/datum/om/prompt/choice/fruit_gland/valid()
+	return gland.loc == answerer ? null : "gland gone"
+
+/mob/living/carbon/human/proc/alraune_fruit_chosen(datum/om/prompt/choice/fruit_gland/ask)
+	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
+	fruit_gland.fruit_type = ask.choice
 	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_pick)
 	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_reagent)
 	// remove_verb(src, /mob/living/carbon/human/proc/alraune_fruit_select)
@@ -485,15 +490,12 @@
 			break
 
 	if(fruit_gland)
-		om_prompt(src, src, list("kind" = "list", "message" = "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", "title" = "Select reagent", "choices" = fruit_gland.poison_options(), "requires" = PROMPT_CONSCIOUS, "on_cancel" = PROC_REF(alraune_poison_cleared), "data" = list("gland" = fruit_gland)), PROC_REF(alraune_poison_chosen))
+		// A cancel answers "" and clears the poison.
+		om_ask(src, /datum/om/prompt/choice/fruit_gland, PROC_REF(alraune_poison_chosen), message = "Choose which reagent to poison your fruit with! Be aware, this option is intended for use in scenes and ERP. This is not for use as pranks or to change the gender of unsuspecting crew, and you must be aware of the preferences of the people who eat it. Do not just leave it out unattended.", title = "Select reagent", choices = fruit_gland.poison_options(), ask_flags = ASK_CONSCIOUS, cancel_answer = "", gland = fruit_gland)
 
-/mob/living/carbon/human/proc/alraune_poison_cleared(mob/user, datum/om/prompt/ask)
-	alraune_poison_chosen(user, null, ask)
-
-/mob/living/carbon/human/proc/alraune_poison_chosen(mob/user, poison_choice, datum/om/prompt/ask)
-	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.get("gland")
-	if(fruit_gland.loc != src)
-		return
+/mob/living/carbon/human/proc/alraune_poison_chosen(datum/om/prompt/choice/fruit_gland/ask)
+	var/obj/item/organ/internal/fruitgland/fruit_gland = ask.gland
+	var/poison_choice = ask.choice
 	if(!poison_choice)
 		to_chat(src, span_notice("You have chosen no poison to add, any previously chosen poisons have been cleared and no poison will be added to produced fruits."))
 		fruit_gland.poison_reagent = null

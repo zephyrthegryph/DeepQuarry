@@ -35,9 +35,10 @@ GLOBAL_DATUM_INIT(transfer_service, /datum/world_service/transfer, new)
 	return TRUE
 
 /datum/world_service/transfer/proc/modify_hard_end(client/user)
-	om_prompt(src, user, list("kind" = "number", "message" = "Modify the shift end timer (Input in Minutes)", "title" = "Shift End", "default" = shift_hard_end / 600, "requires" = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_SERVER)), PROC_REF(hard_end_entered))
+	om_ask(user, /datum/om/prompt/number, PROC_REF(hard_end_entered), default = shift_hard_end / 600, title = "Shift End", message = "Modify the shift end timer (Input in Minutes)", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_SERVER))
 
-/datum/world_service/transfer/proc/hard_end_entered(mob/user, new_shift_end, datum/om/prompt/ask)
+/datum/world_service/transfer/proc/hard_end_entered(datum/om/prompt/number/ask)
+	var/new_shift_end = ask.number
 	if(!new_shift_end)
 		return
 

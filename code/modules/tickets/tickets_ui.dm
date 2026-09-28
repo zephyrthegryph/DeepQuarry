@@ -104,7 +104,7 @@
 		return
 	switch(action)
 		if("legacy")
-			var/choice = act_prompt(ui.user, action, params, ui, "k107", list("kind" = "list", "message" = "Which tickets do you want to list?", "title" = "Tickets", "choices" = list("Active", "Closed", "Resolved")))
+			var/choice = act_ask(ui.user, action, params, ui, "k107", /datum/om/prompt/choice, message = "Which tickets do you want to list?", title = "Tickets", choices = list("Active", "Closed", "Resolved"))
 			if(isnull(choice))
 				return
 			TicketListLegacy(ui.user, choice)
@@ -114,7 +114,7 @@
 			for(var/client/C in GLOB.clients)
 				ckeys += C.key
 
-			var/_answer_k115 = act_prompt(ui.user, action, params, ui, "k115", list("kind" = "list", "message" = "Please select the ckey of the user.", "title" = "Select CKEY", "choices" = ckeys))
+			var/_answer_k115 = act_ask(ui.user, action, params, ui, "k115", /datum/om/prompt/choice, message = "Please select the ckey of the user.", title = "Select CKEY", choices = ckeys)
 			if(isnull(_answer_k115))
 				return
 			var/ckey = lowertext(_answer_k115)
@@ -130,14 +130,14 @@
 				to_chat(ui.user, span_warning("Ckey ([ckey]) not online."))
 				return
 
-			var/ticket_text = act_prompt(ui.user, action, params, ui, "k128", list("kind" = "text", "message" = "What should the initial text be?", "title" = "New Ticket"))
+			var/ticket_text = act_ask(ui.user, action, params, ui, "k128", /datum/om/prompt/text, message = "What should the initial text be?", title = "New Ticket")
 			if(isnull(ticket_text))
 				return
 			if(!ticket_text)
 				to_chat(ui.user, span_warning("Ticket message cannot be empty."))
 				return
 
-			var/level = act_prompt(ui.user, action, params, ui, "k133", list("message" = "Is this ticket Admin-Level or Mentor-Level?", "title" = "Ticket Level", "choices" = list("Admin", "Mentor")))
+			var/level = act_ask(ui.user, action, params, ui, "k133", /datum/om/prompt/choice/alert, message = "Is this ticket Admin-Level or Mentor-Level?", title = "Ticket Level", choices = list("Admin", "Mentor"))
 			if(isnull(level))
 				return
 			if(!level)
@@ -145,7 +145,7 @@
 
 			feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 			if(player.current_ticket())
-				var/input = act_prompt(ui.user, action, params, ui, "k139", list("message" = "The player already has a ticket open. Is this for the same issue?", "title" = "Duplicate?", "choices" = list("Yes","No")))
+				var/input = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/choice/alert, message = "The player already has a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
 				if(isnull(input))
 					return
 				if(!input)
@@ -203,7 +203,7 @@
 	if(..())
 		return
 
-	var/choice = rerun_prompt(user, "k195", list("kind" = "list", "message" = "Which tickets do you want to list?", "title" = "Tickets", "choices" = list("Active", "Closed", "Resolved")), PROC_REF(tgui_fallback), args)
+	var/choice = rerun_ask(user, "k195", PROC_REF(tgui_fallback), args, /datum/om/prompt/choice, message = "Which tickets do you want to list?", title = "Tickets", choices = list("Active", "Closed", "Resolved"))
 	if(isnull(choice))
 		return
 

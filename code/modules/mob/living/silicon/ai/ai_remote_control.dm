@@ -40,7 +40,7 @@
 
 	if(!picked && (!target || !(target in possible))) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
 		if(LAZYLEN(possible))
-			om_prompt(src, src, list("kind" = "list", "message" = "Which body to control?", "title" = "Shell Choice", "choices" = possible, "on_cancel" = PROC_REF(deploy_aborted)), PROC_REF(shell_picked))
+			om_ask(src, /datum/om/prompt/choice/ai_shell, PROC_REF(shell_picked), choices = possible)
 			return
 		target = null
 
@@ -69,11 +69,16 @@
 		teleop = target // So the AI 'hears' messages near its core.
 		target.post_deploy()
 
-/mob/living/silicon/ai/proc/deploy_aborted(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_notice("Deployment aborted."))
+/// Picking a shell to deploy to (AIs and shells moving between shells). A cancel aborts deployment.
+/datum/om/prompt/choice/ai_shell
+	title = "Shell Choice"
+	message = "Which body to control?"
 
-/mob/living/silicon/ai/proc/shell_picked(mob/user, mob/living/silicon/robot/target, datum/om/prompt/ask)
-	deploy_to_shell(target, TRUE)
+/datum/om/prompt/choice/ai_shell/cancelled()
+	to_chat(answerer, span_notice("Deployment aborted."))
+
+/mob/living/silicon/ai/proc/shell_picked(datum/om/prompt/choice/ai_shell/ask)
+	deploy_to_shell(ask.choice, TRUE)
 
 /mob/living/silicon/ai/proc/deploy_to_shell_act()
 	set category = "AI.Commands"

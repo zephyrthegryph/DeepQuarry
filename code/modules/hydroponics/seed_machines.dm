@@ -18,7 +18,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 /// Old attack_self.
 /obj/item/disk/botany/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(LAZYLEN(genes))
-		var/choice = rerun_prompt(user, "k21", list("message" = "Are you sure you want to wipe the disk?", "title" = "Xenobotany Data", "choices" = list("No", "Yes")), PROC_REF(interaction_self), args)
+		var/choice = rerun_ask(user, "k21", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe the disk?", title = "Xenobotany Data", choices = list("No", "Yes"))
 		if(isnull(choice))
 			return TRUE
 		if(src && user && genes && choice && choice == "Yes" && user.Adjacent(get_turf(src)))

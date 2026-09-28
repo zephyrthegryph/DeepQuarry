@@ -144,7 +144,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 	use_external_power = 1
 
 /obj/item/gun/energy/anomaly/attack_self(mob/user)
-	var/chosen_particle = rerun_prompt(user, "k147", list("kind" = "list", "message" = "Select particle type", "title" = "Particle Selection", "choices" = ANOMALY_PARTICLE_ALL), PROC_REF(attack_self), args)
+	var/chosen_particle = rerun_ask(user, "k147", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
 	if(isnull(chosen_particle))
 		return TRUE
 	if(!chosen_particle)
@@ -210,7 +210,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 			choices[capitalize(anom.name)] = type
 			qdel(anom) // only the type is kept; don't leak the sample object
 
-	var/choice = rerun_prompt(user, "k211", list("kind" = "list", "message" = "Choose an anomaly core.", "title" = "Anomaly Core Selection", "choices" = choices), PROC_REF(attack_self), args)
+	var/choice = rerun_ask(user, "k211", PROC_REF(attack_self), args, /datum/om/prompt/choice, message = "Choose an anomaly core.", title = "Anomaly Core Selection", choices = choices)
 	if(isnull(choice))
 		return TRUE
 

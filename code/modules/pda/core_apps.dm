@@ -72,7 +72,7 @@
 		return TRUE
 	switch(action)
 		if("Edit")
-			var/n = act_prompt(ui.user, action, params, ui, "k75", list("kind" = "text", "message" = "Please enter message", "title" = name, "default" = notehtml, "multiline" = TRUE))
+			var/n = act_ask(ui.user, action, params, ui, "k75", /datum/om/prompt/text, message = "Please enter message", title = name, default = notehtml, multiline = TRUE, max_length = MAX_TGUI_INPUT)
 			if(isnull(n))
 				return
 			if(pda().loc == ui.user)
@@ -83,7 +83,7 @@
 				pda().close(ui.user)
 			return TRUE
 		if("Titleset")
-			var/n = act_prompt(ui.user, action, params, ui, "k84", list("kind" = "text", "message" = "Please enter title", "title" = name, "default" = notetitle, "multiline" = FALSE))
+			var/n = act_ask(ui.user, action, params, ui, "k84", /datum/om/prompt/text, message = "Please enter title", title = name, default = notetitle)
 			if(isnull(n))
 				return
 			if(pda().loc == ui.user)

@@ -91,34 +91,17 @@
 					if(markings[M][zone]["color"])
 						seed = markings[M][zone]["color"]
 						break
-			var/picked = tgui_color_picker(user, "Marking color", "Color picker", seed)
-			if(!picked)
-				return PREF_UPDATE_UNCHANGED
-			// tgui_color_picker sleeps — re-verify the prefs are still owned
-			// by the same player after it returns. Without this, a char swap
-			// mid-pick writes to the wrong /datum/preferences.
-			if(!user?.client?.prefs || user.client.prefs != preferences)
-				return PREF_UPDATE_UNCHANGED
-			var/color = sanitize_hexcolor(picked)
-			markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = color)
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
+			// The pick lands in marking_color_picked(), which writes and refreshes the UI.
+			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(marking_color_picked), title = "Color picker", message = "Marking color", default = seed, preferences = preferences, marking = M, ui_refresh = preferences)
+			return PREF_UPDATE_UNCHANGED
 		if("set_zone_color")
 			var/M = params["marking"]
 			var/zone = params["zone"]
 			if(!(M in markings) || !islist(markings[M]) || !(zone in markings[M]))
 				return PREF_UPDATE_REJECTED
 			var/seed = markings[M][zone]["color"] || "#FFFFFF"
-			var/picked = tgui_color_picker(user, "Zone color: [zone]", "Color picker", seed)
-			if(!picked)
-				return PREF_UPDATE_UNCHANGED
-			// Same post-sleep re-validation as above.
-			if(!user?.client?.prefs || user.client.prefs != preferences)
-				return PREF_UPDATE_UNCHANGED
-			var/color = sanitize_hexcolor(picked)
-			markings[M][zone]["color"] = color
-			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
-			return PREF_UPDATE_ACCEPTED
+			om_ask(user, /datum/om/prompt/color/prefs/marking, PROC_REF(zone_color_picked), title = "Color picker", message = "Zone color: [zone]", default = seed, preferences = preferences, marking = M, zone = zone, ui_refresh = preferences)
+			return PREF_UPDATE_UNCHANGED
 		if("toggle_zone")
 			var/M = params["marking"]
 			var/zone = params["zone"]
@@ -136,3 +119,38 @@
 			preferences.update_preference_by_type(/datum/preference/body_markings, markings)
 			return PREF_UPDATE_ACCEPTED
 	return PREF_UPDATE_UNCHANGED
+
+/// A colour for a preference, picked from the character setup UI. Re-checked on the answer:
+/// the picker's prefs are still the ones being edited (a character swap mid-pick must not write
+/// to the wrong /datum/preferences). The answer proc writes and refreshes the UI itself.
+/datum/om/prompt/color/prefs
+	var/datum/preferences/preferences
+
+/datum/om/prompt/color/prefs/valid()
+	return (answerer.client?.prefs && answerer.client.prefs == preferences) ? null : "prefs changed"
+
+/// A body marking's colour (all zones, or one `zone`). Re-checked: the marking (and zone) still exists.
+/datum/om/prompt/color/prefs/marking
+	var/marking
+	var/zone
+
+/datum/om/prompt/color/prefs/marking/valid()
+	. = ..()
+	if(.)
+		return
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	if(!(marking in markings) || (zone && (!islist(markings[marking]) || !(zone in markings[marking]))))
+		return "marking gone"
+
+/datum/preference_editor/body_markings/proc/marking_color_picked(datum/om/prompt/color/prefs/marking/ask)
+	var/datum/preferences/preferences = ask.preferences
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	var/M = ask.marking
+	markings[M] = preferences.mass_edit_marking_list(M, FALSE, TRUE, markings[M], color = sanitize_hexcolor(ask.picked_color))
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)
+
+/datum/preference_editor/body_markings/proc/zone_color_picked(datum/om/prompt/color/prefs/marking/ask)
+	var/datum/preferences/preferences = ask.preferences
+	var/list/markings = preferences.read_preference(/datum/preference/body_markings)
+	markings[ask.marking][ask.zone]["color"] = sanitize_hexcolor(ask.picked_color)
+	preferences.update_preference_by_type(/datum/preference/body_markings, markings)

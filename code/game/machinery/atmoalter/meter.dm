@@ -167,7 +167,7 @@
 
 /obj/machinery/meter/multitool_act(mob/user, obj/item/tool)
 	if(open)
-		om_prompt(src, user, list("kind" = "text", "message" = "Please insert an ID tag for [src], example 'exhaust_pipe'.", "title" = "Set ID Tag", "default" = id, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT, "data" = list("tool" = tool)), PROC_REF(meter_id_entered))
+		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in loc)
 		LAZYOR(pipes_on_turf, pipe)
@@ -179,12 +179,19 @@
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/meter/proc/meter_id_entered(mob/user, new_id, datum/om/prompt/ask)
-	if(!open)
-		return
-	id = new_id
-	var/obj/item/tool = ask.get("tool")
-	var/obj/item/multitool/multitool = tool.get_multitool()
+/datum/om/prompt/text/meter_id
+	title = "Set ID Tag"
+	max_length = MAX_NAME_LEN
+	requires = PROMPT_ADJACENT
+	var/obj/item/tool
+
+/datum/om/prompt/text/meter_id/valid()
+	var/obj/machinery/meter/M = subject
+	return M.open ? null : "closed"
+
+/obj/machinery/meter/proc/meter_id_entered(datum/om/prompt/text/meter_id/ask)
+	id = ask.text
+	var/obj/item/multitool/multitool = ask.tool.get_multitool()
 	if(multitool)
 		multitool.connectable_handle = om_handle(src)
 	return ITEM_INTERACT_SUCCESS

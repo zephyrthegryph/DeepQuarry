@@ -210,9 +210,10 @@
 	set name = "Set Mouse Colour"
 	set category = "Abilities.Mouse"
 	set desc = "Set the colour of your mouse."
-	om_prompt(src, src, list("kind" = "list", "message" = "Set Mouse Colour", "title" = "Pick a colour", "choices" = list("brown","gray","white","black")), PROC_REF(mouse_colour_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(mouse_colour_chosen), title = "Pick a colour", message = "Set Mouse Colour", choices = list("brown","gray","white","black"))
 
-/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(mob/user, new_mouse_colour, datum/om/prompt/ask)
+/mob/living/simple_mob/animal/passive/mouse/proc/mouse_colour_chosen(datum/om/prompt/choice/ask)
+	var/new_mouse_colour = ask.choice
 	icon_state = resting ? "mouse_[new_mouse_colour]_sleep" : "mouse_[new_mouse_colour]"
 	item_state = "mouse_[new_mouse_colour]"
 	icon_living = "mouse_[new_mouse_colour]"

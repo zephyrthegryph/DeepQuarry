@@ -2,7 +2,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize", mob/li
 	user.do_resize(living_target)
 
 ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any living mob without any restrictions on size.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/mob/target_mob = verb_prompt(user, "a1", list("kind" = "list", "message" = "Select target to resize.", "title" = "Resize Target", "choices" = REGISTRY_MEMBERS(REGISTRY_MOBS)), args)
+	var/mob/target_mob = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select target to resize.", title = "Resize Target", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(isnull(target_mob))
 		return
 	if(!target_mob)
@@ -10,7 +10,7 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 	user.do_resize(target_mob)
 
 /client/proc/do_resize(mob/living/living_target)
-	var/size_multiplier = client_prompt("a1", list("kind" = "number", "message" = "Input size multiplier.", "title" = "Resize", "default" = 1, "round" = FALSE), PROC_REF(do_resize), args, (R_ADMIN|R_FUN|R_VAREDIT))
+	var/size_multiplier = client_ask("a1", PROC_REF(do_resize), args, (R_ADMIN|R_FUN|R_VAREDIT), /datum/om/prompt/number, message = "Input size multiplier.", title = "Resize", default = 1, round_entry = FALSE)
 	if(isnull(size_multiplier))
 		return
 	if(!size_multiplier)

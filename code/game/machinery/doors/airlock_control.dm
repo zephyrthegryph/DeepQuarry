@@ -276,10 +276,12 @@
 			. += "It's panel is open."
 
 /obj/machinery/airlock_sensor/multitool_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("message" = "What would you like to configure?", "title" = "[src] Configuration", "choices" = list("Master Tag", "ID Tag", "Frequency", "Command", "None"), "requires" = PROMPT_ADJACENT), PROC_REF(config_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(config_chosen), message = "What would you like to configure?", title = "[src] Configuration", choices = list("Master Tag", "ID Tag", "Frequency", "Command", "None"), requires = PROMPT_ADJACENT, buttons = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/airlock_sensor/proc/config_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/machinery/airlock_sensor/proc/config_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	switch(choice)
 		if("Master Tag")
 			ask_text_var(user, "master_tag", "The current master tag is \"[master_tag]\", what would you like it to be?", "[src] Master Tag", 30)
@@ -361,10 +363,12 @@
 	return TRUE
 
 /obj/machinery/access_button/multitool_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("message" = "What would you like to change?", "title" = "[src] Settings", "choices" = list("Tag", "Frequency", "Command", "None"), "requires" = PROMPT_ADJACENT), PROC_REF(setting_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), message = "What would you like to change?", title = "[src] Settings", choices = list("Tag", "Frequency", "Command", "None"), requires = PROMPT_ADJACENT, buttons = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/access_button/proc/setting_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/machinery/access_button/proc/setting_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	switch(choice)
 		if("Tag")
 			ask_text_var(user, "master_tag", "[src] has an master tag of \"[master_tag]\". What would you like it to be?", "[src] ID", 30)

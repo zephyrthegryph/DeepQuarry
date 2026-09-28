@@ -172,7 +172,7 @@
 	var/datum/ghosttrap/plant/G = get_ghost_trap("living plant")
 	if(!G.assess_candidate(user))
 		return
-	var/response = rerun_prompt(user, "k175", list("message" = "Are you sure you want to harvest this [seed.display_name]?", "title" = "Living plant request", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, attack_ghost), args)
+	var/response = rerun_ask(user, "k175", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to harvest this [seed.display_name]?", title = "Living plant request", choices = list("Yes", "No"))
 	if(isnull(response))
 		return
 	if(response == "Yes")
@@ -495,7 +495,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/interaction_set_light(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user) || isrobot(user))
-		var/new_light = rerun_prompt(user, "k502", list("kind" = "list", "message" = "Specify a light level.", "title" = "Light Level", "choices" = list(0,1,2,3,4,5,6,7,8,9,10)), PROC_REF(interaction_set_light), args)
+		var/new_light = rerun_ask(user, "k502", PROC_REF(interaction_set_light), args, /datum/om/prompt/choice, message = "Specify a light level.", title = "Light Level", choices = list(0,1,2,3,4,5,6,7,8,9,10))
 		if(isnull(new_light))
 			return
 		if(new_light)

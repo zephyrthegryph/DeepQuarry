@@ -312,17 +312,19 @@
 
 	return data
 
+/datum/component/radiation_effects/proc/radiation_color_picked(datum/om/prompt/color/ask)
+	if(!ask.picked_color)
+		return
+	radiation_color = ask.picked_color
+
 /datum/trait_state/radiation_effects/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
 		return TRUE
 
 	switch(action)
 		if("toggle_color")
-			var/set_new_color = tgui_color_picker(ui.user, "Select a color you wish your radioactive glow to be!", "Color Selector", radiation_color)
-			if(!set_new_color)
-				return FALSE
-			radiation_color = set_new_color
-			return TRUE
+			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
+			return FALSE
 		if("toggle_glow")
 			glows = !glows
 			to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))

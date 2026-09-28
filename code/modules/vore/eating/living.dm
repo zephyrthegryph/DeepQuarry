@@ -172,10 +172,7 @@
 
 	//Handle case: /obj/item/radio/beacon
 	else if(istype(I,/obj/item/radio/beacon))
-		om_prompt_sequence(src, user, list(
-			list("key" = "sure", "message" = "[src == user ? "Eat the beacon?" : "Feed the beacon to [src]?"]", "title" = "Confirmation", "choices" = list("Yes!", "Cancel"), "confirm" = "Yes!"),
-			list("key" = "belly", "kind" = "list", "message" = "Which belly?", "title" = "Select A Belly", "choices" = vore_organs),
-		), PROC_REF(beacon_feed_answered), list("requires" = PROMPT_ADJACENT, "data" = list("beacon" = I)))
+		om_ask(user, /datum/om/prompt/confirm/beacon_feed, PROC_REF(beacon_feed_confirmed), beacon = I)
 		return TRUE //You don't get to hit someone 'later'
 
 	// Body writing
@@ -197,7 +194,7 @@
 			to_chat(attacker, span_danger("They are missing that limb!"))
 			return TRUE
 
-		om_prompt(src, attacker, list("kind" = "text", "message" = "What would you like to write on [src]'s [affecting]? (This will replace existing writing.)", "title" = "Body Writing", "max_length" = 128, "requires" = PROMPT_ADJACENT, "data" = list("limb" = affecting)), PROC_REF(body_writing_entered))
+		om_ask(attacker, /datum/om/prompt/text/body_writing, PROC_REF(body_writing_entered), limb = affecting)
 		return TRUE
 
 	return FALSE
@@ -217,26 +214,73 @@
 	user.drop_item()
 	B.belly_insert(I, user)
 
-/mob/living/proc/beacon_feed_answered(mob/user, datum/om/prompt/ask)
-	var/obj/item/I = ask.get("beacon")
-	var/obj/belly/B = ask.get("belly")
-	if(!istype(B) || B.owner != src || user.get_active_hand() != I)
-		return
+/// Feeding a beacon: confirmed, then the belly picked. Re-checked on each answer: the feeder is
+/// still next to the eater, able, and holding the beacon.
+/datum/om/prompt/confirm/beacon_feed
+	title = "Confirmation"
+	yes_text = "Yes!"
+	no_text = "Cancel"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/obj/item/beacon
+
+/datum/om/prompt/confirm/beacon_feed/prepare()
+	message = subject == answerer ? "Eat the beacon?" : "Feed the beacon to [subject]?"
+	return TRUE
+
+/datum/om/prompt/confirm/beacon_feed/valid()
+	return answerer.get_active_hand() == beacon ? null : "not holding it"
+
+/datum/om/prompt/choice/beacon_belly
+	title = "Select A Belly"
+	message = "Which belly?"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/obj/item/beacon
+
+/datum/om/prompt/choice/beacon_belly/valid()
+	var/obj/belly/B = choice
+	if(!istype(B) || B.owner != subject)
+		return "no belly"
+	return answerer.get_active_hand() == beacon ? null : "not holding it"
+
+/mob/living/proc/beacon_feed_confirmed(datum/om/prompt/confirm/beacon_feed/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice/beacon_belly, PROC_REF(beacon_feed_answered), choices = vore_organs, beacon = ask.beacon)
+
+/mob/living/proc/beacon_feed_answered(datum/om/prompt/choice/beacon_belly/ask)
+	var/mob/user = ask.answerer
+	var/obj/item/I = ask.beacon
+	var/obj/belly/B = ask.choice
 	visible_message(span_warning("[user] is trying to stuff a beacon into [src]'s [B.get_belly_name()]!"),
 		span_warning("[user] is trying to stuff a beacon into you!"))
-	om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, list("receiver" = src, "I" = I, "B" = B))
+	om_task_start(/datum/om/task/timed/living_beacon_insert, user, src, receiver = src, I = I, B = B)
 
-/mob/living/proc/body_writing_entered(mob/living/attacker, message, datum/om/prompt/ask)
-	var/obj/item/organ/external/affecting = ask.get("limb")
+/// What to write on a limb. Re-checked on the answer: the writer is still next to the canvas,
+/// able, and the limb is still theirs.
+/datum/om/prompt/text/body_writing
+	title = "Body Writing"
+	max_length = 128
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	var/obj/item/organ/external/limb
+
+/datum/om/prompt/text/body_writing/prepare()
+	message = "What would you like to write on [subject]'s [limb]? (This will replace existing writing.)"
+	return TRUE
+
+/datum/om/prompt/text/body_writing/valid()
+	if(!text || limb.owner != subject)
+		return "no writing"
+	return null
+
+/mob/living/proc/body_writing_entered(datum/om/prompt/text/body_writing/ask)
+	var/mob/living/attacker = ask.answerer
+	var/obj/item/organ/external/affecting = ask.limb
+	var/message = ask.text
 	var/mob/living/carbon/human/canvas_user = src
-	if(!message || affecting.owner != canvas_user)
-		return
 	to_chat(canvas_user, span_notice("[attacker] is attempting to write on your [affecting.name]!"))
 	attacker.visible_message(span_notice("[attacker] starts writing on [canvas_user]'s [affecting.name]."), \
 		span_notice("You start writing on [canvas_user]'s [affecting.name]..."))
 
 	// Progress bar for writing on someone for better consent check.
-	om_task_start(/datum/om/task/timed/living_body_writing, attacker, canvas_user, list("receiver" = src, "affecting" = affecting, "message" = message, "max_distance" = 1))
+	om_task_start(/datum/om/task/timed/living_body_writing, attacker, canvas_user, receiver = src, affecting = affecting, message = message, max_distance = 1)
 
 /mob/living/proc/body_writing_stopped(datum/om/task/timed/living_body_writing/task)
 	var/mob/living/attacker = task.actor
@@ -397,14 +441,23 @@
 		charlist["[name][nickname ? " ([nickname])" : ""]"] = i
 
 	selecting_slots = TRUE
-	om_prompt(src, user, list("kind" = "list", "message" = "Select a character to load:", "title" = "Load Slot", "choices" = charlist, "default" = default, "on_cancel" = PROC_REF(vore_slot_selection_closed), "data" = list("slots" = charlist)), PROC_REF(vore_slot_chosen))
+	om_ask(user, /datum/om/prompt/choice/vore_slot, PROC_REF(vore_slot_chosen), choices = charlist, default = default, prefs = src)
 
-/datum/preferences/proc/vore_slot_selection_closed(mob/user, datum/om/prompt/ask)
-	selecting_slots = FALSE
+/// A character slot to load. Closing it ends the selection.
+/datum/om/prompt/choice/vore_slot
+	title = "Load Slot"
+	message = "Select a character to load:"
+	var/datum/preferences/prefs
 
-/datum/preferences/proc/vore_slot_chosen(mob/user, choice, datum/om/prompt/ask)
+/datum/om/prompt/choice/vore_slot/cancelled()
+	if(prefs)
+		prefs.selecting_slots = FALSE
+
+/datum/preferences/proc/vore_slot_chosen(datum/om/prompt/choice/vore_slot/ask)
 	selecting_slots = FALSE
-	var/list/charlist = ask.get("slots")
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
+	var/list/charlist = ask.choices
 	var/remember_default = default_slot
 	var/slotnum = charlist[choice]
 	if(!slotnum)
@@ -600,7 +653,7 @@
 			s.undo_prey_takeover(TRUE)
 			return
 		var/obj/belly/B = loc
-		var/confirm = rerun_prompt(src, "a1", list("message" = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", "title" = "Confirmation", "choices" = list("Okay", "Cancel")), PROC_REF(escapeOOC), args)
+		var/confirm = rerun_ask(src, "a1", PROC_REF(escapeOOC), args, /datum/om/prompt/choice/alert, message = "Please feel free to use this button at any time you are uncomfortable and in a belly. Consent is important.", title = "Confirmation", choices = list("Okay", "Cancel"))
 		if(isnull(confirm))
 			return
 		if(confirm != "Okay" || loc != B)
@@ -621,7 +674,7 @@
 		var/mob/living/silicon/pred = loc.loc //Thing holding the belly!
 		var/obj/item/dogborg/sleeper/belly = loc //The belly!
 
-		var/confirm = rerun_prompt(src, "a2", list("message" = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", "title" = "Confirmation", "choices" = list("Okay", "Cancel")), PROC_REF(escapeOOC), args)
+		var/confirm = rerun_ask(src, "a2", PROC_REF(escapeOOC), args, /datum/om/prompt/choice/alert, message = "You're in a cyborg sleeper. This is for escaping from preference-breaking or if your predator disconnects/AFKs. If your preferences were being broken, please admin-help as well.", title = "Confirmation", choices = list("Okay", "Cancel"))
 		if(isnull(confirm))
 			return
 		if(confirm != "Okay" || loc != belly)
@@ -737,7 +790,7 @@
 /mob/living/proc/eat_held_mob(mob/living/user, mob/living/prey, mob/living/pred)
 	var/belly
 	if(user != pred)
-		belly = rerun_prompt(user, "belly", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = pred.feedable_bellies()), PROC_REF(eat_held_mob), args)
+		belly = rerun_ask(user, "belly", PROC_REF(eat_held_mob), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
 		if(isnull(belly))
 			return TRUE
 	else
@@ -745,13 +798,13 @@
 	return perform_the_nom(user, prey, pred, belly)
 
 /mob/living/proc/feed_self_to_grabbed(mob/living/user, mob/living/pred)
-	var/belly = rerun_prompt(user, "belly", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = pred.feedable_bellies()), PROC_REF(feed_self_to_grabbed), args)
+	var/belly = rerun_ask(user, "belly", PROC_REF(feed_self_to_grabbed), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, user, pred, belly)
 
 /mob/living/proc/feed_grabbed_to_other(mob/living/user, mob/living/prey, mob/living/pred)
-	var/belly = rerun_prompt(user, "belly", list("kind" = "list", "message" = "Choose Belly", "title" = "Belly Choice", "choices" = pred.feedable_bellies()), PROC_REF(feed_grabbed_to_other), args)
+	var/belly = rerun_ask(user, "belly", PROC_REF(feed_grabbed_to_other), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = pred.feedable_bellies())
 	if(isnull(belly))
 		return TRUE
 	return perform_the_nom(user, prey, pred, belly)
@@ -897,9 +950,11 @@
 
 	//Again, no real need for a check on this. I'm unsure how it could be somehow abused.
 	//Even if they open the box 900 times, who cares, they get the wrong color and do it again.
-	var/new_color = tgui_color_picker(src,"Select a new color","Body Glow",glow_color)
-	if(new_color)
-		set_glow_color(new_color)
+	om_ask(src, /datum/om/prompt/color, PROC_REF(glow_color_picked), default = glow_color, title = "Body Glow", message = "Select a new color")
+
+/mob/living/proc/glow_color_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		set_glow_color(ask.picked_color)
 
 /mob/living/proc/get_digestion_nutrition_modifier()
 	return 1
@@ -1089,7 +1144,7 @@
 		var/T = (istype(M) ? M.hardness/40 : 1) SECONDS //1.5 seconds to eat a sheet of metal. 2.5 for durasteel and diamond & 1 by default (applies to some ores like raw carbon, slag, etc.
 		to_chat(src, span_notice("You start crunching on [I] with your powerful jaws, attempting to tear it apart..."))
 		//Eat on the move, but not multiple things at once.
-		om_task_start(/datum/om/task/timed/living_eat_minerals, feeder, src, list("receiver" = src, "duration" = T, "I" = I, "nom" = nom))
+		om_task_start(/datum/om/task/timed/living_eat_minerals, feeder, src, receiver = src, duration = T, I = I, nom = nom)
 		return TRUE
 
 	else //Not the droids we're looking for.
@@ -1227,7 +1282,7 @@
 	set category = "Preferences.Vore"
 	set desc = "Print out your vorebelly messages into chat for copypasting."
 
-	var/result = rerun_prompt(src, "a1", list("message" = "Would you rather open the export panel?", "title" = "Selected Belly Export", "choices" = list("Open Panel", "Print to Chat")), PROC_REF(vorebelly_printout), args)
+	var/result = rerun_ask(src, "a1", PROC_REF(vorebelly_printout), args, /datum/om/prompt/choice/alert, message = "Would you rather open the export panel?", title = "Selected Belly Export", choices = list("Open Panel", "Print to Chat"))
 	if(isnull(result))
 		return
 	if(!result)
@@ -1494,7 +1549,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 	set category = "Abilities.Vore"
 	set desc = "Check the amount of liquid in your belly."
 
-	var/obj/belly/RTB = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Choose which vore belly to check", "title" = "Select Belly", "choices" = vore_organs), PROC_REF(vore_check_reagents), args)
+	var/obj/belly/RTB = rerun_ask(src, "a1", PROC_REF(vore_check_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to check", title = "Select Belly", choices = vore_organs)
 	if(isnull(RTB))
 		return
 	if(!RTB)
@@ -1522,7 +1577,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 	for(var/obj/belly/B in vore_organs)
 		for(var/mob/living/L in B.contents)
 			transfer_from |= L
-	var/mob/living/TG = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Choose who to transfer from", "title" = "Transfer From", "choices" = transfer_from), PROC_REF(vore_transfer_reagents), args)
+	var/mob/living/TG = rerun_ask(user, "a1", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer from", title = "Transfer From", choices = transfer_from)
 	if(isnull(TG))
 		return
 	if(!TG)
@@ -1534,19 +1589,19 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 	if(!LAZYLEN(TG.vore_organs))
 		return FALSE
 
-	var/obj/belly/RTB = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Choose which vore belly to transfer from", "title" = "Select Belly", "choices" = TG.vore_organs), PROC_REF(vore_transfer_reagents), args)
+	var/obj/belly/RTB = rerun_ask(user, "a2", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which vore belly to transfer from", title = "Select Belly", choices = TG.vore_organs)
 	if(isnull(RTB))
 		return
 	if(!RTB)
 		return FALSE
 
-	var/transfer_amount = rerun_prompt(user, "a3", list("kind" = "list", "message" = "How much to transfer?", "title" = "Transfer Amount", "choices" = list(5,10,25,50,100)), PROC_REF(vore_transfer_reagents), args)
+	var/transfer_amount = rerun_ask(user, "a3", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "How much to transfer?", title = "Transfer Amount", choices = list(5,10,25,50,100))
 	if(isnull(transfer_amount))
 		return
 	if(!transfer_amount)
 		return FALSE
 
-	var/_answer_a4 = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Choose what to transfer to", "title" = "Select Target", "choices" = list("Vore belly", "Stomach", "Container", "Floor", "Cancel")), PROC_REF(vore_transfer_reagents), args)
+	var/_answer_a4 = rerun_ask(user, "a4", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = list("Vore belly", "Stomach", "Container", "Floor", "Cancel"))
 	if(isnull(_answer_a4))
 		return
 	switch(_answer_a4)
@@ -1557,13 +1612,13 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 			for(var/obj/belly/B in vore_organs)
 				for(var/mob/living/L in B.contents)
 					transfer_to |= L
-			var/mob/living/TR = rerun_prompt(user, "a5", list("kind" = "list", "message" = "Choose who to transfer to", "title" = "Select Target", "choices" = transfer_to), PROC_REF(vore_transfer_reagents), args)
+			var/mob/living/TR = rerun_ask(user, "a5", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
 			if(isnull(TR))
 				return
 			if(!TR)  return FALSE
 
 			if(TR == user) //Proceed, we dont need to have prefs enabled for transfer within user
-				var/obj/belly/TB = rerun_prompt(user, "a6", list("kind" = "list", "message" = "Choose which organ to transfer to", "title" = "Select Belly", "choices" = user.vore_organs), PROC_REF(vore_transfer_reagents), args)
+				var/obj/belly/TB = rerun_ask(user, "a6", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = user.vore_organs)
 				if(isnull(TB))
 					return
 				if(!TB)
@@ -1588,7 +1643,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 				return FALSE
 
 			else
-				var/obj/belly/TB = rerun_prompt(user, "a7", list("kind" = "list", "message" = "Choose which organ to transfer to", "title" = "Select Belly", "choices" = TR.vore_organs), PROC_REF(vore_transfer_reagents), args)
+				var/obj/belly/TB = rerun_ask(user, "a7", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose which organ to transfer to", title = "Select Belly", choices = TR.vore_organs)
 				if(isnull(TB))
 					return
 				if(!TB)
@@ -1617,7 +1672,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 			for(var/obj/belly/B in vore_organs)
 				for(var/mob/living/L in B.contents)
 					transfer_to |= L
-			var/mob/living/TR = rerun_prompt(user, "a8", list("kind" = "list", "message" = "Choose who to transfer to", "title" = "Select Target", "choices" = transfer_to), PROC_REF(vore_transfer_reagents), args)
+			var/mob/living/TR = rerun_ask(user, "a8", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose who to transfer to", title = "Select Target", choices = transfer_to)
 			if(isnull(TR))
 				return
 			if(!TR)  return
@@ -1662,7 +1717,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 			if(istype(irc,/obj/item/reagent_containers))
 				choices += irc
 
-			var/obj/item/reagent_containers/T = rerun_prompt(user, "a9", list("kind" = "list", "message" = "Choose what to transfer to", "title" = "Select Target", "choices" = choices), PROC_REF(vore_transfer_reagents), args)
+			var/obj/item/reagent_containers/T = rerun_ask(user, "a9", PROC_REF(vore_transfer_reagents), args, /datum/om/prompt/choice, message = "Choose what to transfer to", title = "Select Target", choices = choices)
 			if(isnull(T))
 				return
 			if(!T)
@@ -1755,7 +1810,7 @@ REF_BACK(/datum/vore_panel_button, list("owner" = "vore_panel_button"))
 	set desc = "Fix certain vore effects lingering after you've exited a belly."
 
 	if(!isbelly(src.loc))
-		var/sure = rerun_prompt(src, "sure", list("message" = "Only use this verb if you are affected by certain vore effects outside of a belly, such as muffling or a stuck belly fullscreen.", "title" = "Clear Vore Effects", "choices" = list("Continue", "Nevermind")), PROC_REF(fix_vore_effects), args)
+		var/sure = rerun_ask(src, "sure", PROC_REF(fix_vore_effects), args, /datum/om/prompt/choice/alert, message = "Only use this verb if you are affected by certain vore effects outside of a belly, such as muffling or a stuck belly fullscreen.", title = "Clear Vore Effects", choices = list("Continue", "Nevermind"))
 		if(sure != "Continue")
 			return
 

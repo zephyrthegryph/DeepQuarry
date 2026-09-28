@@ -45,7 +45,7 @@
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	var/_answer_a1 = rerun_prompt(M, "a1", list("kind" = "list", "message" = "Which suit style would you like?", "title" = "Suit Style", "choices" = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")), VERB_REF(custom_suit), args)
+	var/_answer_a1 = rerun_ask(M, "a1", VERB_REF(custom_suit), args, /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Suit Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a1))
 		return
 	suit_style = _answer_a1
@@ -182,7 +182,7 @@
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	var/_answer_a2 = rerun_prompt(M, "a2", list("kind" = "list", "message" = "Which suit style would you like?", "title" = "Select Style", "choices" = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")), TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args)
+	var/_answer_a2 = rerun_ask(M, "a2", TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args, /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a2))
 		return
 	suit_style = _answer_a2
@@ -261,7 +261,7 @@
 		to_chat(M, "This Shroud has already been customized!")
 		return FALSE
 
-	var/_answer_a3 = rerun_prompt(M, "a3", list("kind" = "list", "message" = "Which suit style would you like?", "title" = "Select Style", "choices" = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft")), TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args)
+	var/_answer_a3 = rerun_ask(M, "a3", TYPE_VERB_REF(/obj/item/clothing/suit/space/void/zaddat, custom_suit), args, /datum/om/prompt/choice, message = "Which suit style would you like?", title = "Select Style", choices = list("Engineer", "Spacer", "Knight", "Fashion", "Bishop", "Hegemony", "Rugged", "Soft"))
 	if(isnull(_answer_a3))
 		return
 	suit_style = _answer_a3

@@ -378,7 +378,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 
 	//placed on chest and short delay to shock for dramatic effect, revive time is 5sec total
 	var/output_envelope = power_output_envelope(chargecost)
-	om_task_start(/datum/om/task/timed/shockpaddles_do_revive_charged, user, H, list("receiver" = src, "duration" = chargetime / output_envelope, "output_envelope" = output_envelope, "busy" = src))
+	om_task_start(/datum/om/task/timed/shockpaddles_do_revive_charged, user, H, receiver = src, duration = chargetime / output_envelope, output_envelope = output_envelope, busy = src)
 
 /datum/om/task/timed/shockpaddles_do_revive_charged
 	complete_proc = /obj/item/shockpaddles/proc/do_revive_charged
@@ -462,7 +462,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	audible_message(span_warning("\The [src] lets out a steadily rising hum..."), runemessage = "whines")
 
 	var/output_envelope = power_output_envelope(chargecost)
-	om_task_start(/datum/om/task/timed/shockpaddles_do_electrocute, user, H, list("receiver" = src, "duration" = chargetime / output_envelope, "target_zone_arg" = target_zone, "output_envelope" = output_envelope, "busy" = src))
+	om_task_start(/datum/om/task/timed/shockpaddles_do_electrocute, user, H, receiver = src, duration = chargetime / output_envelope, target_zone_arg = target_zone, output_envelope = output_envelope, busy = src)
 	return TRUE
 
 /datum/om/task/timed/shockpaddles_do_electrocute

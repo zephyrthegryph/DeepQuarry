@@ -52,13 +52,25 @@
 
 /obj/machinery/door/blast/puzzle/tyrdoor/keypad/multitool_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("The door is locked."))
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock", "default" = "", "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(code_cancelled)), PROC_REF(code_entered))
+	om_ask(user, /datum/om/prompt/text/deca_code, PROC_REF(code_entered))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_cancelled(mob/user, datum/om/prompt/ask)
-	to_chat(user, span_notice("You leave the lock alone."))
+/datum/om/prompt/text/deca_code
+	title = "Deca-Code Lock"
+	default = ""
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(mob/user, input, datum/om/prompt/ask)
+/datum/om/prompt/text/deca_code/prepare()
+	var/obj/machinery/door/blast/puzzle/tyrdoor/keypad/door = subject
+	message = "Enter [door.codelen] digits. All digits must be unique."
+	return TRUE
+
+/datum/om/prompt/text/deca_code/cancelled()
+	to_chat(answerer, span_notice("You leave the lock alone."))
+
+/obj/machinery/door/blast/puzzle/tyrdoor/keypad/proc/code_entered(datum/om/prompt/text/deca_code/ask)
+	var/mob/user = ask.answerer
+	var/input = ask.text
 	var/list/sanitised = list()
 	var/sanitycheck = TRUE
 	for(var/i in 1 to length(input))

@@ -96,7 +96,7 @@
 		if(W.move_into(src, CONTAINER_SLOT_PAGES, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k98 = rerun_prompt(user, "k98", list("kind" = "text", "message" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
+		var/_answer_k98 = rerun_ask(user, "k98", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "What would you like to label the folder?", title = "Folder Labelling", max_length = MAX_NAME_LEN, encode = FALSE)
 		if(isnull(_answer_k98))
 			return TRUE
 		var/n_name = sanitizeSafe(_answer_k98, MAX_NAME_LEN)

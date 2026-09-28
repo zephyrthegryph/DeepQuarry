@@ -166,12 +166,14 @@
 
 	if(href_list["network"])
 
-		om_prompt(src, usr, list("kind" = "text", "message" = "Which network do you want to view?", "title" = "Comm Monitor", "default" = network, "max_length" = 15, "requires" = PROMPT_USABLE), PROC_REF(network_entered))
+		om_ask(usr, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
 
 	updateUsrDialog(usr)
 	return
 
-/obj/machinery/computer/telecomms/traffic/proc/network_entered(mob/user, newnet, datum/om/prompt/ask)
+/obj/machinery/computer/telecomms/traffic/proc/network_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/newnet = ask.text
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)
 			temp = span_red("- FAILED: NETWORK TAG STRING TOO LENGHTLY -")

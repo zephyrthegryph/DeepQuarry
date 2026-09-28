@@ -30,7 +30,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collecto
 		"Force Clear Blockers"
 	)
 
-	var/option = verb_prompt(user, "a1", list("kind" = "list", "message" = "What Would You Like To Do?", "title" = "Event Collector", "choices" = options, "default" = "Cancel"), args)
+	var/option = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "What Would You Like To Do?", title = "Event Collector", choices = options, default = "Cancel")
 	if(isnull(option))
 		return
 	switch(option)

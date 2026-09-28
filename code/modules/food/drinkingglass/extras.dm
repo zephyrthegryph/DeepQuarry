@@ -37,7 +37,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, INTERACT_HA
 		to_chat(user, span_warning("There's nothing on the glass to remove!"))
 		return TRUE
 
-	var/choice = rerun_prompt(user, "k37", list("kind" = "list", "message" = "What would you like to remove from the glass?", "title" = "Removal Choice", "choices" = extras), PROC_REF(interaction_hand), args)
+	var/choice = rerun_ask(user, "k37", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "What would you like to remove from the glass?", title = "Removal Choice", choices = extras)
 	if(isnull(choice))
 		return TRUE
 	if(!choice || !(choice in extras))
@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, INTERACT_HA
 		return
 
 	user.visible_message(span_infoplain(span_bold("[user]") + " starts sipping on [victim] with [src]!"), span_info("You start sipping on [victim] with [src]."))
-	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, list("receiver" = src, "reagent_type" = reagent_type))
+	om_task_start(/datum/om/task/timed/straw_sipp, user, victim, reagent_type = reagent_type)
 
 /datum/om/task/timed/straw_sipp
 	duration = 3 SECONDS

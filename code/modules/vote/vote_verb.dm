@@ -19,7 +19,7 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 	for(var/vtype in vote_types)
 		votemap["[vtype]"] = vtype
 
-	var/choice = verb_prompt(user, "k22", list("kind" = "list", "message" = "Select a vote type", "title" = "Vote", "choices" = vote_types), args)
+	var/choice = verb_ask(user, "k22", args, /datum/om/prompt/choice, message = "Select a vote type", title = "Vote", choices = vote_types)
 	if(isnull(choice))
 		return
 
@@ -31,7 +31,7 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 		GLOB.vote_service.start_vote(new votetype(user.ckey))
 		return
 
-	var/question = verb_prompt(user, "k32", list("kind" = "text", "message" = "What is the vote for?", "title" = "Create Vote", "max_length" = MAX_MESSAGE_LEN), args)
+	var/question = verb_ask(user, "k32", args, /datum/om/prompt/text, message = "What is the vote for?", title = "Create Vote")
 	if(isnull(question))
 		return
 	if(isnull(question))
@@ -40,17 +40,17 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 	var/list/choices = list()
 	for(var/i in 1 to 10)
 		// Cancel (or an empty option) finishes the list.
-		var/option = verb_prompt(user, "option[i]", list("kind" = "text", "message" = "Please enter an option or hit cancel to finish", "title" = "Create Vote", "max_length" = MAX_MESSAGE_LEN, "cancel_answer" = ""), args)
+		var/option = verb_ask(user, "option[i]", args, /datum/om/prompt/text, message = "Please enter an option or hit cancel to finish", title = "Create Vote", cancel_answer = "")
 		if(isnull(option))
 			return
 		if(!option)
 			break
 		choices |= option
 
-	var/c2 = verb_prompt(user, "k43", list("message" = "Show counts while vote is happening?", "title" = "Counts", "choices" = list("Yes", "No")), args)
+	var/c2 = verb_ask(user, "k43", args, /datum/om/prompt/choice/alert, message = "Show counts while vote is happening?", title = "Counts", choices = list("Yes", "No"))
 	if(isnull(c2))
 		return
-	var/c3 = verb_prompt(user, "k44", list("kind" = "list", "message" = "Select a result calculation type", "title" = "Vote", "choices" = list(VOTE_RESULT_TYPE_MAJORITY)), args)
+	var/c3 = verb_ask(user, "k44", args, /datum/om/prompt/choice, message = "Select a result calculation type", title = "Vote", choices = list(VOTE_RESULT_TYPE_MAJORITY))
 	if(isnull(c3))
 		return
 

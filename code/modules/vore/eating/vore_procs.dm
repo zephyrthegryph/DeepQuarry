@@ -58,7 +58,7 @@
 	if(!user.client && prey.has_status(EFFECT_WEAKENED)) // stop crwaling instantly break swallow attempt for mobvore
 		prey.status_at_least(EFFECT_STUNNED, min(prey.status_units(EFFECT_WEAKENED), 2)) // stop crawling instantly break swallow attempt for mobvore
 	// If it completes, nom successful! Announce it and move the prey (devour_timed_done()).
-	var/started = om_task_start(/datum/om/task/timed/proc_devour, user, prey, list("duration" = swallow_time, "pred" = pred, "belly" = belly, "message_range" = message_range, "hidden" = TRUE))
+	var/started = om_task_start(/datum/om/task/timed/proc_devour, user, prey, receiver = user, duration = swallow_time, pred = pred, belly = belly, message_range = message_range, hidden = TRUE)
 	return !istext(started)
 
 /datum/om/task/timed/proc_devour

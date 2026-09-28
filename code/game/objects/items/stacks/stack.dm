@@ -183,7 +183,7 @@
 
 	if (recipe.time)
 		to_chat(user, span_notice("Building [recipe.title] ..."))
-	om_task_start(/datum/om/task/timed/stack_build, user, src, list("duration" = recipe.time, "receiver" = src, "recipe" = recipe, "required" = required, "produced" = produced))
+	om_task_start(/datum/om/task/timed/stack_build, user, src, duration = recipe.time, receiver = src, recipe = recipe, required = required, produced = produced)
 
 /// Building a stack recipe (at once when it takes no time): the stack is claimed meanwhile.
 /datum/om/task/timed/stack_build
@@ -417,12 +417,14 @@
 
 /obj/item/stack/attack_hand(mob/user as mob)
 	if (user.get_inactive_hand() == src)
-		om_prompt(src, user, list("kind" = "number", "message" = "How many stacks of [src] would you like to split off?  There are currently [amount].", "title" = "Split stacks", "default" = 1, "max" = amount, "min" = 1, "requires" = PROMPT_HELD), PROC_REF(split_amount_chosen))
+		om_ask(user, /datum/om/prompt/number, PROC_REF(split_amount_chosen), title = "Split stacks", message = "How many stacks of [src] would you like to split off?  There are currently [amount].", default = 1, max = amount, min = 1, round_entry = FALSE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	else
 		..()
 	return
 
-/obj/item/stack/proc/split_amount_chosen(mob/user, N, datum/om/prompt/ask)
+/obj/item/stack/proc/split_amount_chosen(datum/om/prompt/number/ask)
+	var/mob/user = ask.answerer
+	var/N = ask.number
 	if(N != round(N))
 		to_chat(user, span_warning("You cannot separate a non-whole number of stacks!"))
 		return

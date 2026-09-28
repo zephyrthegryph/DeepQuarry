@@ -184,11 +184,11 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/thermoregulator/multitool_act(mob/user, obj/item/tool)
-	om_prompt(src, user, list("kind" = "number", "message" = "Input a new target temperature, in degrees C.", "title" = "Target Temperature", "default" = convert_k2c(target_temp), "max" = MAX_ATMOS_TEMPERATURE, "min" = convert_k2c(TCMB), "round" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(target_temperature_entered))
+	om_ask(user, /datum/om/prompt/number, PROC_REF(target_temperature_entered), default = convert_k2c(target_temp), min = convert_k2c(TCMB), title = "Target Temperature", message = "Input a new target temperature, in degrees C.", max = MAX_ATMOS_TEMPERATURE, round_entry = FALSE, ask_flags = ASK_ADJACENT | ASK_CAPABLE)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/thermoregulator/proc/target_temperature_entered(mob/user, new_temp, datum/om/prompt/ask)
-	new_temp = convert_c2k(new_temp)
+/obj/machinery/power/thermoregulator/proc/target_temperature_entered(datum/om/prompt/number/ask)
+	var/new_temp = convert_c2k(ask.number)
 	target_temp = max(new_temp, TCMB)
 	wake_for_state_change()
 	return ITEM_INTERACT_SUCCESS

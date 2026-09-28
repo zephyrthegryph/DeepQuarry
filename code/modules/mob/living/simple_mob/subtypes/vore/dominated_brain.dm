@@ -73,13 +73,13 @@
 		dominate_predator()
 		return
 	if(mind == pred_mind && pred_body.prey_controlled)
-		om_prompt(src, src, list("message" = "Do you want to wrest control over your body back from \the [prey_name]?", "title" = "Regain Control", "choices" = list("No","Yes")), PROC_REF(resist_domination_confirmed))
+		om_ask(src, /datum/om/prompt/confirm, PROC_REF(resist_domination_confirmed), title = "Regain Control", message = "Do you want to wrest control over your body back from \the [prey_name]?", no_first = TRUE)
 	else
 		to_chat(src, span_warning("\The [pred_body] is already dominated, and cannot be controlled at this time."))
 		..()
 
-/mob/living/dominated_brain/proc/resist_domination_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Yes" || mind != pred_mind || !pred_body?.prey_controlled)
+/mob/living/dominated_brain/proc/resist_domination_confirmed(datum/om/prompt/confirm/ask)
+	if(mind != pred_mind || !pred_body?.prey_controlled)
 		return
 	to_chat(src, span_danger("You begin to resist \the [prey_name]'s control!!!"))
 	to_chat(pred_body, span_danger("You feel the captive mind of [src] begin to resist your control."))
@@ -95,13 +95,12 @@
 /mob/living/dominated_brain/proc/restore_control(ask = TRUE)
 
 	if(ask && disconnect_time || client && ((client.inactivity / 10) / 60 > 10))
-		om_prompt(src, src, list("message" = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?", "title" = "Release Control", "choices" = list("No","Yes")), PROC_REF(restore_control_confirmed))
+		om_ask(src, /datum/om/prompt/confirm, PROC_REF(restore_control_confirmed), title = "Release Control", message = "Your predator's mind does not seem to be active presently. Releasing control in this state may leave you stuck in whatever state you find yourself in. Are you sure?", no_first = TRUE)
 		return
 	restore_control_now()
 
-/mob/living/dominated_brain/proc/restore_control_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		restore_control_now()
+/mob/living/dominated_brain/proc/restore_control_confirmed(datum/om/prompt/confirm/ask)
+	restore_control_now()
 
 /mob/living/dominated_brain/proc/restore_control_now()
 	if(!pred_body)
@@ -212,27 +211,47 @@
 		to_chat(prey, span_warning("\The [pred] is already dominated, and cannot be controlled at this time."))
 		return
 	// The predator, when it's a player, consents twice.
-	om_prompt_sequence(src, src, list(
-		list("key" = "sure", "message" = "You are attempting to take over [pred], are you sure? Ensure that their preferences align with this kind of play.", "title" = "Take Over Predator", "choices" = list("No","Yes"), "confirm" = "Yes"),
+	om_ask_sequence(/datum/om/flow/ask_sequence/dominate_predator, src, null, pred = pred, on_done = PROC_REF(dominate_predator_agreed), steps = list(
+		domination_confirm("sure", "Take Over Predator", "You are attempting to take over [pred], are you sure? Ensure that their preferences align with this kind of play."),
 		PROC_REF(dominate_predator_ask_pred),
-		pred.ckey ? list("key" = "sure2", "user" = pred, "requires" = list(), "message" = "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes") : null,
-	), PROC_REF(dominate_predator_agreed), list("data" = list("pred" = pred)))
+		pred.ckey ? domination_confirm("sure2", "Allow Prey Domination", "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", pred) : null,
+	))
 	return TRUE
 
-/mob/proc/dominate_predator_ask_pred(mob/user, datum/om/prompt/ask)
-	var/mob/living/pred = ask.get("pred")
+/datum/om/flow/ask_sequence/dominate_predator
+	var/mob/living/pred
+
+/// A No/Yes question in a domination sequence. `answerer` set: asked of the other party, and
+/// `decline_text` (if any) tells the asker when they say no.
+/datum/om/prompt/confirm/domination
+	no_first = TRUE
+	var/decline_text
+
+/datum/om/prompt/confirm/domination/declined()
+	if(decline_text)
+		to_chat(asker, span_warning("\The [answerer] [decline_text]"))
+	..()
+
+/proc/domination_confirm(key, title, message, mob/answerer, decline_text)
+	var/datum/om/prompt/confirm/domination/ask = new
+	ask.key = key
+	ask.title = title
+	ask.message = message
+	ask.answerer = answerer
+	ask.decline_text = decline_text
+	return ask
+
+/mob/proc/dominate_predator_ask_pred(datum/om/flow/ask_sequence/dominate_predator/seq)
+	var/mob/living/pred = seq.pred
 	to_chat(src, span_notice("You attempt to exert your control over \the [pred]..."))
 	log_admin("[key_name_admin(src)] attempted to take over [pred].")
 	if(!pred.ckey) //check if body is assigned to another player currently
 		return null
-	return list("key" = "allow", "user" = pred, "requires" = list(), "message" = "\The [src] has elected to attempt to take control of you. Is this something you will allow to happen?", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(dominate_predator_declined))
+	return domination_confirm("allow", "Allow Prey Domination", "\The [src] has elected to attempt to take control of you. Is this something you will allow to happen?", pred, "declined your request for control.")
 
-/mob/proc/dominate_predator_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_warning("\The [ask.get("pred")] declined your request for control."))
-
-/mob/proc/dominate_predator_agreed(mob/user, datum/om/prompt/ask)
+/mob/proc/dominate_predator_agreed(datum/om/flow/ask_sequence/dominate_predator/seq)
 	var/mob/living/prey = src
-	var/mob/living/pred = ask.get("pred")
+	var/mob/living/pred = seq.pred
 	if(prey.stat == DEAD || prey.prey_controlled || pred.prey_controlled || !pred.allow_mind_transfer)
 		return
 	if(!pred.client && ("original_player" in pred.vars)) //check if the body belonged to a player and give proper log about it while preparing it
@@ -240,7 +259,7 @@
 
 	to_chat(pred, span_warning("You can feel the will of another overwriting your own, control of your body being sapped away from you..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you exert your will over them!"))
-	om_task_start(/datum/om/task/timed/mob_dominate_predator_mob, prey, pred, list("receiver" = src))
+	om_task_start(/datum/om/task/timed/mob_dominate_predator_mob, prey, pred, receiver = src)
 	return TRUE
 
 /datum/om/task/timed/mob_dominate_predator_mob
@@ -328,38 +347,45 @@
 	if(!possible_mobs)
 		to_chat(src, span_warning("There are no valid targets inside of you."))
 		return
-	om_prompt_sequence(src, src, list(
-		list("key" = "target", "kind" = "list", "message" = "Select a mob to dominate:", "title" = "Dominate Prey", "choices" = possible_mobs),
+	var/datum/om/prompt/choice/pick_target = new
+	pick_target.key = "prey"
+	pick_target.title = "Dominate Prey"
+	pick_target.message = "Select a mob to dominate:"
+	pick_target.choices = possible_mobs
+	om_ask_sequence(/datum/om/flow/ask_sequence/dominate_prey, src, null, grab = G, on_done = PROC_REF(dominate_prey_agreed), steps = list(
+		pick_target,
 		PROC_REF(dominate_prey_ask_sure),
 		PROC_REF(dominate_prey_ask_consent),
 		PROC_REF(dominate_prey_ask_consent_again),
-	), PROC_REF(dominate_prey_agreed), list("data" = list("grab" = G)))
+	))
 
-/mob/living/proc/dominate_prey_ask_sure(mob/user, datum/om/prompt/ask)
-	var/mob/living/M = ask.get("target")
+/datum/om/flow/ask_sequence/dominate_prey
+	/// The answer of the prompt keyed "prey".
+	var/mob/living/prey
+	var/obj/item/grab/grab
+
+/mob/living/proc/dominate_prey_ask_sure(datum/om/flow/ask_sequence/dominate_prey/seq)
+	var/mob/living/M = seq.prey
 	if(!istype(M))
 		to_chat(src, span_warning("You must have a tighter grip to dominate this creature."))
-		return PROMPT_STOP
+		return ASK_STOP
 	if(!M.allow_mind_transfer) //check if the dominated mob pref is enabled
 		to_chat(src, span_warning("[M] is unable to be dominated."))
-		return PROMPT_STOP
-	return list("key" = "sure", "message" = "You selected [M] to attempt to dominate. Are you sure?", "title" = "Dominate Prey", "choices" = list("No","Yes"), "confirm" = "Yes")
+		return ASK_STOP
+	return domination_confirm("sure", "Dominate Prey", "You selected [M] to attempt to dominate. Are you sure?")
 
-/mob/living/proc/dominate_prey_ask_consent(mob/user, datum/om/prompt/ask)
-	var/mob/living/M = ask.get("target")
+/mob/living/proc/dominate_prey_ask_consent(datum/om/flow/ask_sequence/dominate_prey/seq)
+	var/mob/living/M = seq.prey
 	log_admin("[key_name_admin(src)] offered to use dominate prey on [M] ([M.ckey]).")
 	to_chat(src, span_warning("Attempting to dominate and gather \the [M]'s mind..."))
-	return list("key" = "allow", "user" = M, "requires" = list(), "message" = "\The [src] has elected collect your mind into their own. Is this something you will allow to happen?", "title" = "Allow Dominate Prey", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(dominate_prey_declined))
+	return domination_confirm("allow", "Allow Dominate Prey", "\The [src] has elected collect your mind into their own. Is this something you will allow to happen?", M, "has declined your Dominate Prey attempt.")
 
-/mob/living/proc/dominate_prey_ask_consent_again(mob/user, datum/om/prompt/ask)
-	return list("key" = "allow2", "user" = ask.get("target"), "requires" = list(), "message" = "Are you sure? You can only undo this while your body is inside of [src]. (You can resist, or use the resist verb in the abilities tab)", "title" = "Allow Dominate Prey", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(dominate_prey_declined))
+/mob/living/proc/dominate_prey_ask_consent_again(datum/om/flow/ask_sequence/dominate_prey/seq)
+	return domination_confirm("allow2", "Allow Dominate Prey", "Are you sure? You can only undo this while your body is inside of [src]. (You can resist, or use the resist verb in the abilities tab)", seq.prey, "has declined your Dominate Prey attempt.")
 
-/mob/living/proc/dominate_prey_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_warning("\The [ask.get("target")] has declined your Dominate Prey attempt."))
-
-/mob/living/proc/dominate_prey_agreed(mob/user, datum/om/prompt/ask)
-	var/mob/living/M = ask.get("target")
-	var/obj/item/grab/G = ask.get("grab")
+/mob/living/proc/dominate_prey_agreed(datum/om/flow/ask_sequence/dominate_prey/seq)
+	var/mob/living/M = seq.prey
+	var/obj/item/grab/G = seq.grab
 	if(!M.allow_mind_transfer)
 		return
 	to_chat(M, span_warning("You can feel the will of another pulling you away from your body..."))
@@ -367,7 +393,7 @@
 
 	if(istype(G) && M == G?.grab_target())
 		src.visible_message(span_danger("[src] seems to be doing something to [M], resulting in [M]'s body looking increasingly drowsy with every passing moment!"))
-	om_task_start(/datum/om/task/timed/living_dominate_prey_living, src, M, list("G" = G))
+	om_task_start(/datum/om/task/timed/living_dominate_prey_living, src, M, G = G)
 	return TRUE
 
 /datum/om/task/timed/living_dominate_prey_living
@@ -436,7 +462,7 @@
 	if(!possible_mobs)
 		to_chat(src, span_warning("There are no valid targets inside of you."))
 		return
-	om_prompt(src, src, list("kind" = "list", "message" = "Select a mob to give control:", "title" = "Give Prey Control", "choices" = possible_mobs), PROC_REF(lend_prey_control_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(lend_prey_control_chosen), title = "Give Prey Control", message = "Select a mob to give control:", choices = possible_mobs)
 
 /// Whether we can hand our body to `prey` right now; says why not.
 /mob/living/proc/can_lend_prey_control(mob/living/prey)
@@ -458,32 +484,33 @@
 		return FALSE
 	return TRUE
 
-/mob/living/proc/lend_prey_control_chosen(mob/user, mob/living/prey, datum/om/prompt/ask)
+/mob/living/proc/lend_prey_control_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/prey = ask.choice
 	if(!can_lend_prey_control(prey))
 		return
-	om_prompt_sequence(src, src, list(
-		list("key" = "sure", "message" = "You are attempting to give [prey] control over you, are you sure? Ensure that their preferences align with this kind of play.", "title" = "Give Prey Control", "choices" = list("No","Yes"), "confirm" = "Yes"),
+	om_ask_sequence(/datum/om/flow/ask_sequence/lend_prey_control, src, null, prey = prey, on_done = PROC_REF(lend_prey_control_agreed), steps = list(
+		domination_confirm("sure", "Give Prey Control", "You are attempting to give [prey] control over you, are you sure? Ensure that their preferences align with this kind of play."),
 		PROC_REF(lend_prey_control_ask_prey),
-		list("key" = "allow2", "user" = prey, "requires" = list(), "message" = "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes"),
-	), PROC_REF(lend_prey_control_agreed), list("data" = list("prey" = prey)))
+		domination_confirm("allow2", "Allow Prey Domination", "Are you sure? If you should decide to revoke this, you will have the ability to do so in your 'Abilities' tab.", prey),
+	))
 
-/mob/living/proc/lend_prey_control_ask_prey(mob/user, datum/om/prompt/ask)
-	var/mob/living/prey = ask.get("prey")
+/datum/om/flow/ask_sequence/lend_prey_control
+	var/mob/living/prey
+
+/mob/living/proc/lend_prey_control_ask_prey(datum/om/flow/ask_sequence/lend_prey_control/seq)
+	var/mob/living/prey = seq.prey
 	to_chat(src, span_notice("You attempt to give your control over to \the [prey]..."))
 	log_admin("[key_name_admin(src)] attempted to give control to [prey].")
-	return list("key" = "allow", "user" = prey, "requires" = list(), "message" = "\The [src] has elected to attempt to give you control of them. Is this something you will allow to happen?", "title" = "Allow Prey Domination", "choices" = list("No","Yes"), "confirm" = "Yes", "on_stop" = PROC_REF(lend_prey_control_declined))
+	return domination_confirm("allow", "Allow Prey Domination", "\The [src] has elected to attempt to give you control of them. Is this something you will allow to happen?", prey, "declined your request for control.")
 
-/mob/living/proc/lend_prey_control_declined(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_warning("\The [ask.get("prey")] declined your request for control."))
-
-/mob/living/proc/lend_prey_control_agreed(mob/user, datum/om/prompt/ask)
-	var/mob/living/prey = ask.get("prey")
+/mob/living/proc/lend_prey_control_agreed(datum/om/flow/ask_sequence/lend_prey_control/seq)
+	var/mob/living/prey = seq.prey
 	var/mob/living/pred = src
 	if(!can_lend_prey_control(prey))
 		return
 	to_chat(pred, span_warning("You diminish your will, reducing it and allowing will of your prey to take over..."))
 	to_chat(prey, span_warning("You can feel the will of your host diminishing as you are given control over them!"))
-	om_task_start(/datum/om/task/timed/living_lend_prey_control_living, pred, prey, list("receiver" = src))
+	om_task_start(/datum/om/task/timed/living_lend_prey_control_living, pred, prey, receiver = src)
 
 /datum/om/task/timed/living_lend_prey_control_living
 	duration = 10 SECONDS

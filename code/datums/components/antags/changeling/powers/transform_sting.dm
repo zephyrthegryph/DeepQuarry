@@ -24,7 +24,7 @@
 		return FALSE
 	var/S
 	if(LAZYLEN(names) > 1)
-		var/_answer_a1 = rerun_prompt(src, "a1", list("kind" = "list", "message" = "Select the target DNA:", "title" = "Target DNA", "choices" = names), PROC_REF(changeling_transformation_sting), args)
+		var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(changeling_transformation_sting), args, /datum/om/prompt/choice, message = "Select the target DNA:", title = "Target DNA", choices = names)
 		if(isnull(_answer_a1))
 			return
 		S = _answer_a1

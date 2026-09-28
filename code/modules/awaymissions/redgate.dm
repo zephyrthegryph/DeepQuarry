@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, INTERACT_HAND_UNGATED(null, PROC_RE
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
 			else
-				var/mob/living/carbon/human/restricted_human = rerun_prompt(M, "k121", list("kind" = "list", "message" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = nearby_restricted), PROC_REF(interaction_hand), args)
+				var/mob/living/carbon/human/restricted_human = rerun_ask(M, "k121", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Who do you wish to give access through the redgate?", title = "Nearby Redgate Inhabitants", choices = nearby_restricted)
 				if(isnull(restricted_human))
 					return TRUE
 				if(!restricted_human)

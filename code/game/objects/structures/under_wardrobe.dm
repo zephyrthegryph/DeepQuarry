@@ -91,10 +91,18 @@
 	return ..()
 
 // Topic switch lifted into tgui_act with stable action names.
-/obj/structure/undies_wardrobe/proc/underwear_chosen(mob/living/carbon/human/H, datum/category_item/underwear/selected_underwear, datum/om/prompt/ask)
+/datum/om/prompt/choice/underwear
+	title = "Choose underwear"
+	message = "Choose underwear:"
+	requires = PROMPT_USABLE
+	var/category
+
+/obj/structure/undies_wardrobe/proc/underwear_chosen(datum/om/prompt/choice/underwear/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/datum/category_item/underwear/selected_underwear = ask.choice
 	if(!istype(H))
 		return
-	var/category = ask.get("category")
+	var/category = ask.category
 	LAZYSET(H.all_underwear, category, selected_underwear)
 	H.hide_underwear[category] = FALSE
 	H.update_underwear()
@@ -116,7 +124,7 @@
 			var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
 			if(!UWC)
 				return TRUE
-			om_prompt(src, H, list("kind" = "list", "message" = "Choose underwear:", "title" = "Choose underwear", "choices" = UWC.items, "default" = LAZYACCESS(H.all_underwear, UWC.name), "requires" = PROMPT_USABLE, "data" = list("category" = UWC.name)), PROC_REF(underwear_chosen))
+			om_ask(H, /datum/om/prompt/choice/underwear, PROC_REF(underwear_chosen), choices = UWC.items, default = LAZYACCESS(H.all_underwear, UWC.name), category = UWC.name)
 		if("tweak")
 			var/underwear = params["category"]
 			if(!(underwear in H.all_underwear))
@@ -124,14 +132,24 @@
 			var/datum/gear_tweak/gt = locate(params["tweak"])
 			if(!gt)
 				return TRUE
-			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), list("category" = underwear, "tweak" = gt), PROMPT_USABLE)
+			gt.ask_metadata(H, get_metadata(H, underwear, gt), null, "Wardrobe Underwear Selection", src, PROC_REF(underwear_tweak_answered), new /datum/om/flow/ask_sequence/gear_tweak/underwear(underwear, gt), PROMPT_USABLE)
 	if(changed)
 		H.update_underwear()
 	return TRUE
 
-/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/prompt/P)
-	var/underwear = P.get("category")
-	var/datum/gear_tweak/gt = P.get("tweak")
+/// An underwear gear tweak change: which underwear category and tweak it is for.
+/datum/om/flow/ask_sequence/gear_tweak/underwear
+	var/category
+	var/datum/gear_tweak/tweak
+
+/datum/om/flow/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
+	..()
+	src.category = category
+	src.tweak = tweak
+
+/obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/gear_tweak/underwear/seq)
+	var/underwear = seq.category
+	var/datum/gear_tweak/gt = seq.tweak
 	if(!istype(H) || !(underwear in H.all_underwear))
 		return
 	set_metadata(H, underwear, gt, new_metadata)

@@ -46,10 +46,11 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 		return
 
 	update_icon()
-	om_prompt(src, user, list("message" = "What do you want to do with \the [src]?", "title" = "Multitool Menu", "choices" = list("Switch Mode", "Clear Buffers", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(menu_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(menu_chosen), message = "What do you want to do with \the [src]?", title = "Multitool Menu", choices = list("Switch Mode", "Clear Buffers", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/multitool/proc/menu_chosen(mob/living/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/obj/item/multitool/proc/menu_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/user = ask.answerer
+	switch(ask.choice)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
 			buffer_handle = null
@@ -120,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 		return ..()
 	user.visible_message(span_notice("[user] plugs \the [src] into a diagnostic port on [H]'s [E.name] and starts recalibrating."), \
 		span_notice("You start recalibrating [H]'s [E.name]."))
-	om_task_start(/datum/om/task/timed/multitool_attack, user, H, list("receiver" = src, "E" = E))
+	om_task_start(/datum/om/task/timed/multitool_attack, user, H, receiver = src, E = E)
 	return TRUE
 
 /datum/om/task/timed/multitool_attack

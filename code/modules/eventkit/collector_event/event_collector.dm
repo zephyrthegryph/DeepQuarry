@@ -206,7 +206,7 @@ DECLARE_INTERACTIONS(/obj/structure/event_collector, INTERACT_ITEM(null, PROC_RE
 		//put it in
 		user.visible_message("[user] begins to [pick(step_initiation_verbs)] \The [O] into \The [src]")
 		//wait a second or two
-		om_task_start(/datum/om/task/timed/event_collector_insert, user, src, list("receiver" = src, "duration" = step_insertion_time, "O" = O, "stored_index" = stored_index))
+		om_task_start(/datum/om/task/timed/event_collector_insert, user, src, duration = step_insertion_time, O = O, stored_index = stored_index)
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/event_collector/proc/insert_gave_up(datum/om/task/timed/event_collector_insert/task)

@@ -96,7 +96,7 @@
 		return
 
 	if(!set_content && !sealed)
-		om_task_start(/datum/om/task/timed/blank_attackby, user, user, list("receiver" = src, "W" = W))
+		om_task_start(/datum/om/task/timed/blank_attackby, user, user, receiver = src, W = W)
 		return
 	return
 
@@ -125,10 +125,11 @@
 		if(!GLOB.antag_service.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose recipient", "title" = "Recipients", "choices" = recipients, "requires" = PROMPT_HELD), PROC_REF(recipient_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(recipient_chosen), title = "Recipients", message = "Choose recipient", choices = recipients, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/mail/proc/recipient_chosen(mob/user, mob/living/recipient_mob, datum/om/prompt/ask)
-	if(recipient_mob?.mind)
+/obj/item/mail/proc/recipient_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/recipient_mob = ask.choice
+	if(istype(recipient_mob) && recipient_mob?.mind)
 		initialize_for_recipient(recipient_mob.mind, preset_goodies = TRUE)
 		if(istype(src, /obj/item/mail/blank))
 			var/obj/item/mail/blank/B = src
@@ -154,11 +155,11 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interactio
 /obj/item/mail/blank/ShiftClick(mob/user)
 	..()
 	if(!sealed)
-		om_prompt(src, user, list("kind" = "text", "message" = "Write name", "title" = "Name", "default" = user.name, "requires" = PROMPT_HELD), PROC_REF(sender_named))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(sender_named), title = "Name", message = "Write name", default = user.name, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/mail/blank/proc/sender_named(mob/user, sender, datum/om/prompt/ask)
-	if(sender && !sealed)
-		desc = "A signed envelope, from [sender]."
+/obj/item/mail/blank/proc/sender_named(datum/om/prompt/text/ask)
+	if(ask.text && !sealed)
+		desc = "A signed envelope, from [ask.text]."
 
 /obj/item/mail/blank/attack_self(mob/user)
 	. = ..(user)
@@ -304,26 +305,38 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	if(matches.len==0)
 		return
 	if(matches.len==1)
-		spawn_mail_type_chosen(user, user.mob, matches[1])
+		user.spawn_mail_type_chosen(matches[1])
 		return
-	om_prompt(user, user, list("kind" = "list", "message" = "Select an atom type", "title" = "Spawn Atom in Mail", "choices" = matches, "requires" = PROMPT_ADMIN(R_SPAWN)), GLOBAL_PROC_REF(spawn_mail_type_chosen))
+	om_ask(user.mob, /datum/om/prompt/choice/admin_mail, TYPE_PROC_REF(/client, spawn_mail_type_picked), receiver = user, title = "Spawn Atom in Mail", message = "Select an atom type", choices = matches)
 
-/proc/spawn_mail_type_chosen(client/C, mob/user, chosen, datum/om/prompt/ask)
+/// The admin "Spawn Mail" questions: the type, the recipient, then where. Re-checked on each answer: still holds R_SPAWN.
+/datum/om/prompt/choice/admin_mail
+	requires = PROMPT_ADMIN(R_SPAWN)
+	/// The atom type to put in the envelope.
+	var/chosen
+	/// The recipient picked at the second step.
+	var/mob/living/recipient
+
+/client/proc/spawn_mail_type_picked(datum/om/prompt/choice/admin_mail/ask)
+	spawn_mail_type_chosen(ask.choice)
+
+/client/proc/spawn_mail_type_chosen(chosen)
 	var/list/recipients = list()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		recipients += player
-	om_prompt_sequence(C, user, list(
-		list("key" = "recipient", "kind" = "list", "message" = "Choose recipient", "title" = "Recipients", "choices" = recipients),
-		list("key" = "where", "message" = "Spawn mail at location or in the shuttle?", "title" = "Spawn mail", "choices" = list("Location", "Shuttle")),
-	), GLOBAL_PROC_REF(spawn_mail_finish), list("requires" = PROMPT_ADMIN(R_SPAWN), "data" = list("chosen" = chosen)))
+	om_ask(mob, /datum/om/prompt/choice/admin_mail, PROC_REF(spawn_mail_recipient_picked), title = "Recipients", message = "Choose recipient", choices = recipients, chosen = chosen)
 
-/proc/spawn_mail_finish(client/C, mob/user_mob, datum/om/prompt/ask)
-	var/mob/living/chosen_player = ask.get("recipient")
+/client/proc/spawn_mail_recipient_picked(datum/om/prompt/choice/admin_mail/ask)
+	om_ask(mob, /datum/om/prompt/choice/admin_mail, PROC_REF(spawn_mail_finish), title = "Spawn mail", message = "Spawn mail at location or in the shuttle?", choices = list("Location", "Shuttle"), buttons = TRUE, chosen = ask.chosen, recipient = ask.choice)
+
+/client/proc/spawn_mail_finish(datum/om/prompt/choice/admin_mail/ask)
+	var/mob/user_mob = mob
+	var/mob/living/chosen_player = ask.recipient
 	var/datum/mind/recipient_mind = chosen_player?.mind
-	var/chosen = ask.get("chosen")
-	if(!recipient_mind)
+	var/chosen = ask.chosen
+	if(!recipient_mind || !user_mob)
 		return
-	if(ask.get("where") == "Shuttle")
+	if(ask.choice == "Shuttle")
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)

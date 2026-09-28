@@ -1,5 +1,5 @@
 // Object-model core S6 (doc/rewrite/object_model_core.md §4.11): om_after timers, task
-// steps, om_prompt re-checks, the global owner and OM handles.
+// steps, typed prompt re-checks, the global owner and OM handles.
 
 /datum/om_test_entity/bio
 
@@ -65,11 +65,16 @@
 	if(!istype(target) || !target.enabled)
 		return "disabled"
 
-/datum/om_test_entity/proc/prompt_answered(user, answer)
-	log += "answer:[answer]"
+/datum/om/prompt/confirm/test_recheck
+	message = "go?"
+	requires = list(/datum/om/check/test_target_enabled)
 
-/datum/om_test_entity/proc/prompt_refused(user, reason)
-	log += "refused:[reason]"
+/datum/om/prompt/confirm/test_recheck/refused(reason)
+	var/datum/om_test_entity/E = subject
+	E?.log += "refused:[reason]"
+
+/datum/om_test_entity/proc/prompt_answered(datum/om/prompt/confirm/test_recheck/ask)
+	log += "answer:[ask.yes ? "Yes" : "No"]"
 
 // ---------------------------------------------------------------- om_after
 
@@ -237,7 +242,7 @@
 
 	E.log.Cut()
 	var/datum/om_test_entity/thing = entity(made)
-	var/datum/om/task/W = om_task_start(/datum/om/task/test_steps, E, null, list("thing" = thing))
+	var/datum/om/task/W = om_task_start(/datum/om/task/test_steps, E, null, thing = thing)
 	var/datum/om/task/test_steps/WS = W
 	TEST_ASSERT_EQUAL(WS.thing, thing, "a datum param is task state")
 	qdel(thing)
@@ -254,9 +259,8 @@
 	sched.test_prompts = list()
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/user = entity(made)
-	var/list/spec = list("kind" = "alert", "message" = "go?", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/test_target_enabled), "on_refused" = /datum/om_test_entity/proc/prompt_refused)
-	var/datum/om/prompt/P = om_prompt(E, user, spec, /datum/om_test_entity/proc/prompt_answered)
-	TEST_ASSERT(istype(P), "om_prompt returns the pending prompt")
+	var/datum/om/prompt/P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
+	TEST_ASSERT(istype(P), "om_ask returns the pending prompt")
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the test scheduler collected it")
 	E.enabled = FALSE
 	TEST_ASSERT_EQUAL(P.answer("Yes"), "disabled", "the requires are re-checked when the answer arrives")
@@ -265,12 +269,12 @@
 
 	E.enabled = TRUE
 	E.log.Cut()
-	var/datum/om/prompt/P2 = om_prompt(E, user, spec, /datum/om_test_entity/proc/prompt_answered)
+	var/datum/om/prompt/P2 = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
 	TEST_ASSERT_NULL(P2.answer("Yes"), "a passing re-check delivers the answer")
 	TEST_ASSERT_EQUAL(E.log.Join(","), "answer:Yes", "on_answer ran with the answer")
 
 	E.log.Cut()
-	var/datum/om/prompt/P3 = om_prompt(E, user, spec, /datum/om_test_entity/proc/prompt_answered)
+	var/datum/om/prompt/P3 = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
 	qdel(user)
 	TEST_ASSERT_EQUAL(P3.answer("Yes"), "gone", "an answer after the user is deleted does nothing")
 	TEST_ASSERT_EQUAL(length(E.log), 0, "nothing ran")

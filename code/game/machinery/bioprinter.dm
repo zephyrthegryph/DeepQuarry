@@ -147,13 +147,12 @@
 		return
 
 	if(container)
-		om_prompt(src, user, list("message" = "What do you want to do?", "title" = "Bioprinter Menu", "choices" = list("Print Limbs", "Cancel"), "requires" = PROMPT_ADJACENT), PROC_REF(bioprinter_menu_answered))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(bioprinter_menu_answered), title = "Bioprinter Menu", message = "What do you want to do?", yes_text = "Print Limbs", no_text = "Cancel", requires = PROMPT_ADJACENT)
 	else
 		to_chat(user, span_warning("\The [src] can't operate without a reagent reservoir!"))
 
-/obj/machinery/organ_printer/proc/bioprinter_menu_answered(mob/user, response, datum/om/prompt/ask)
-	if(response == "Print Limbs")
-		printing_menu(user)
+/obj/machinery/organ_printer/proc/bioprinter_menu_answered(datum/om/prompt/confirm/ask)
+	printing_menu(ask.answerer)
 
 /obj/machinery/organ_printer/proc/printing_menu(mob/user)
 	var/list/possible_list = list()
@@ -171,12 +170,22 @@
 		possible_list |= engineered_products
 	// end
 
-	om_prompt(src, user, list("kind" = "list", "message" = "What would you like to print?", "title" = "Print Choice", "choices" = possible_list, "requires" = PROMPT_ADJACENT, "data" = list("options" = possible_list)), PROC_REF(print_choice_made))
+	om_ask(user, /datum/om/prompt/choice/bioprinter_print, PROC_REF(print_choice_made), choices = possible_list)
 
-/obj/machinery/organ_printer/proc/print_choice_made(mob/user, choice, datum/om/prompt/ask)
-	var/list/possible_list = ask.get("options")
-	if(printing || (stat & (BROKEN|NOPOWER)))
-		return
+/datum/om/prompt/choice/bioprinter_print
+	title = "Print Choice"
+	message = "What would you like to print?"
+	requires = PROMPT_ADJACENT
+
+/datum/om/prompt/choice/bioprinter_print/valid()
+	var/obj/machinery/organ_printer/P = subject
+	if(P.printing || (P.stat & (BROKEN|NOPOWER)))
+		return "busy"
+	return null
+
+/obj/machinery/organ_printer/proc/print_choice_made(datum/om/prompt/choice/bioprinter_print/ask)
+	var/list/possible_list = ask.choices
+	var/choice = ask.choice
 
 	if(!can_print(choice, possible_list[choice][2]))
 		return

@@ -519,7 +519,7 @@ REF_BACK(/datum/economic_adoption, list("parent" = "economic_adoption"))
 				"detail" = "Closed staff service ledger for accounting period [accounting_period]",
 			), "service-period:[accounting_period]:[department]:staff:[staff_account]")
 
-/// Asks the customer to confirm a service purchase and pick a tip, through `asker`'s rerun_prompt
+/// Asks the customer to confirm a service purchase and pick a tip, through `asker`'s rerun_ask
 /// (`proc_name` with `proc_args` runs again on the answer). Returns the tip, or null while waiting or
 /// when declined.
 /proc/service_tip_choice(mob/user, datum/money_account/customer, list/quote, description, datum/asker, proc_name, list/proc_args, key = "tip")
@@ -531,7 +531,7 @@ REF_BACK(/datum/economic_adoption, list("parent" = "economic_adoption"))
 		options += "Confirm + [ten_percent] Th tip"
 	if(twenty_percent > 0 && twenty_percent <= available && twenty_percent != ten_percent)
 		options += "Confirm + [twenty_percent] Th tip"
-	var/choice = asker.rerun_prompt(user, key, list("message" = service_quote_text(quote, description, ten_percent, twenty_percent), "title" = "Confirm Service Purchase", "choices" = options), proc_name, proc_args)
+	var/choice = rerun_ask_on(asker, user, key, proc_name, proc_args, /datum/om/prompt/choice/alert, message = service_quote_text(quote, description, ten_percent, twenty_percent), title = "Confirm Service Purchase", choices = options)
 	if(choice == "Confirm - no tip")
 		return 0
 	if(choice == "Confirm + [ten_percent] Th tip")

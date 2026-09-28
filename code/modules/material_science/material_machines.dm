@@ -613,11 +613,11 @@ ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", 
 		if(!length(nearby_stock))
 			to_chat(operator, span_warning("Hold alloy sheets in your active hand or stand near a stack."))
 			return
-		var/_answer_k597 = verb_prompt(operator, "k597", list("kind" = "list", "message" = "Choose nearby alloy sheets.", "title" = "Material Treatment", "choices" = nearby_stock), args)
+		var/_answer_k597 = verb_ask(operator, "k597", args, /datum/om/prompt/choice, message = "Choose nearby alloy sheets.", title = "Material Treatment", choices = nearby_stock)
 		if(isnull(_answer_k597))
 			return
 		stock = _answer_k597
-	var/selection = verb_prompt(operator, "k598", list("kind" = "list", "message" = "Choose a treatment to apply at full test strength.", "title" = "Material Treatment", "choices" = treatments), args)
+	var/selection = verb_ask(operator, "k598", args, /datum/om/prompt/choice, message = "Choose a treatment to apply at full test strength.", title = "Material Treatment", choices = treatments)
 	if(isnull(selection))
 		return
 	if(!selection || QDELETED(stock) || !operator.Adjacent(stock))

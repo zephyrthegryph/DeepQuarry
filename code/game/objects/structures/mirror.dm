@@ -151,24 +151,22 @@ REF_OWNED(/obj/structure/mirror, "M")
 /obj/structure/mirror/raider/interaction_open_ui(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(istype(get_area(src),/area/syndicate_mothership))
 		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user.client, SPECIES_VOX))
-			om_prompt(src, user, list("message" = "Do you wish to become a true Vox of the Shoal? This is not reversible.", "title" = "Become Vox?", "choices" = list("No","Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(become_vox_answered))
+			om_ask(user, /datum/om/prompt/confirm, PROC_REF(become_vox_answered), title = "Become Vox?", message = "Do you wish to become a true Vox of the Shoal? This is not reversible.", no_first = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return ..()
 
-/obj/structure/mirror/raider/proc/become_vox_answered(mob/living/carbon/human/user, choice, datum/om/prompt/ask)
-	if(choice != "Yes")
-		return
+/obj/structure/mirror/raider/proc/become_vox_answered(datum/om/prompt/confirm/ask)
+	var/mob/living/carbon/human/user = ask.answerer
 	var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
 	vox.gender = user.gender
 	GLOB.raiders.equip(vox)
 	if(user.mind)
 		user.mind.transfer_to(vox)
-	om_prompt(vox, vox, list("kind" = "text", "message" = "Enter a name, or leave blank for the default name.", "title" = "Name change", "default" = "", "max_length" = MAX_NAME_LEN, "encode" = FALSE, "on_cancel" = GLOBAL_PROC_REF(raider_vox_named)), GLOBAL_PROC_REF(raider_vox_named))
+	om_ask(vox, /datum/om/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, raider_vox_named), receiver = vox, title = "Name change", message = "Enter a name, or leave blank for the default name.", default = "", max_length = MAX_NAME_LEN, encode = FALSE, cancel_answer = "")
 	qdel(user)
 
-/proc/raider_vox_named(mob/living/carbon/human/vox, mob/user, newname, datum/om/prompt/ask)
-	if(istype(newname, /datum/om/prompt))
-		newname = null
-	newname = sanitizeSafe(newname, MAX_NAME_LEN)
+/mob/living/carbon/human/proc/raider_vox_named(datum/om/prompt/text/ask)
+	var/mob/living/carbon/human/vox = src
+	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(!newname || newname == "")
 		var/datum/language/L = GLOB.all_languages[vox.species.default_language]
 		newname = L.get_random_name()

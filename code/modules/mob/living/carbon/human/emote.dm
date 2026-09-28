@@ -370,26 +370,41 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set category = "IC.Settings"
 
 	// An empty pose (or a cancel) clears it.
-	om_prompt(src, src, list("kind" = "text", "message" = "This is [src]. [p_they()]...", "title" = "Pose", "on_cancel" = PROC_REF(pose_cleared)), PROC_REF(pose_entered))
+	om_ask(src, /datum/om/prompt/text/pose, PROC_REF(pose_entered), message = "This is [src]. [p_they()]...")
 
-/mob/living/carbon/human/proc/pose_cleared(mob/user, datum/om/prompt/ask)
+/// Entering a pose; a cancel clears it.
+/datum/om/prompt/text/pose
+	title = "Pose"
+
+/datum/om/prompt/text/pose/cancelled()
+	var/mob/living/carbon/human/H = subject
+	H?.pose_cleared()
+
+/// The pose's options, carrying the entered pose.
+/datum/om/prompt/checklist/pose_options
+	title = "Pose Options"
+	message = "Which options would you like to enable for your poses?"
+	choices = list("Cancel Pose on Movement", "Disable Pose Icon", "Quiet Pose")
+	min_picks = 0
+	var/pose
+
+/mob/living/carbon/human/proc/pose_cleared()
 	pose = null
 	remove_pose_indicator()
 
-/mob/living/carbon/human/proc/pose_entered(mob/user, new_pose, datum/om/prompt/ask)
-	new_pose = strip_html_simple(new_pose)
+/mob/living/carbon/human/proc/pose_entered(datum/om/prompt/text/pose/ask)
+	var/new_pose = strip_html_simple(ask.text)
 	if(!new_pose)
-		pose_cleared(user, ask)
+		pose_cleared()
 		return
-	ask.put("pose", new_pose)
-	ask.chain(list("kind" = "checkboxes", "message" = "Which options would you like to enable for your poses?", "title" = "Pose Options", "choices" = list("Cancel Pose on Movement", "Disable Pose Icon", "Quiet Pose"), "min" = 0, "on_cancel" = null), PROC_REF(pose_options_chosen))
+	om_ask(src, /datum/om/prompt/checklist/pose_options, PROC_REF(pose_options_chosen), pose = new_pose)
 
-/mob/living/carbon/human/proc/pose_options_chosen(mob/user, list/pose_options, datum/om/prompt/ask)
-	var/new_pose = ask.get("pose")
+/mob/living/carbon/human/proc/pose_options_chosen(datum/om/prompt/checklist/pose_options/ask)
+	var/new_pose = ask.pose
 	var/quiet_pose = FALSE
 	var/include_icon = TRUE
 	pose_move = FALSE
-	for(var/o in pose_options)
+	for(var/o in ask.picked)
 		if(o == "Cancel Pose on Movement")
 			pose_move = TRUE
 		if(o == "Disable Pose Icon")
@@ -528,11 +543,11 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
 	set category = "IC.Settings"
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a gender Identity:", "title" = "Set Gender Identity", "choices" = list(FEMALE, MALE, NEUTER, PLURAL, HERM)), PROC_REF(gender_identity_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(gender_identity_chosen), message = "Please select a gender Identity:", title = "Set Gender Identity", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
 	return 1
 
-/mob/living/carbon/human/proc/gender_identity_chosen(mob/user, new_gender_identity, datum/om/prompt/ask)
-	change_gender_identity(new_gender_identity)
+/mob/living/carbon/human/proc/gender_identity_chosen(datum/om/prompt/choice/ask)
+	change_gender_identity(ask.choice)
 
 /mob/living/carbon/human/verb/hide_wings_vr()
 	set name = "Show/Hide wings"

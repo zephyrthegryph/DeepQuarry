@@ -89,13 +89,12 @@
 
 /obj/item/spell/control/on_use_cast(mob/living/user)
 	if(length(controlled_mobs) != 0)
-		om_prompt(src, user, list("message" = "Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.", "title" = "Release Control?", "choices" = list("No","Yes"), "requires" = PROMPT_HELD), PROC_REF(release_control_answered))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(release_control_answered), title = "Release Control?", message = "Would you like to release control of the entities you are controlling? They won't be friendly to you anymore if you do this, so be careful.", no_first = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/spell/control/proc/release_control_answered(mob/living/user, choice, datum/om/prompt/ask)
-	if(choice == "Yes")
-		for(var/mob/living/L in controlled_mobs)
-			deselect(L)
-		to_chat(user, span_notice("You've released control of all entities you had in control."))
+/obj/item/spell/control/proc/release_control_answered(datum/om/prompt/confirm/ask)
+	for(var/mob/living/L in controlled_mobs)
+		deselect(L)
+	to_chat(ask.answerer, span_notice("You've released control of all entities you had in control."))
 
 /obj/item/spell/control/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(isliving(hit_atom))

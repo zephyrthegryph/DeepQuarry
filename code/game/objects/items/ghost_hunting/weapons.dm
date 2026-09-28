@@ -119,7 +119,7 @@
 	// The delay, and test for if the scan succeeds or not. The grab claims the catcher
 	// (om_busy()) until it ends; the effects travel in a list (the beam ends itself).
 	var/list/effects = list(scan_beam, filter, box_segments)
-	var/started = om_task_start(/datum/om/task/timed/ghost_grab, user, target, list("receiver" = src, "max_distance" = grab_range, "effects" = effects, "busy" = src))
+	var/started = om_task_start(/datum/om/task/timed/ghost_grab, user, target, receiver = src, max_distance = grab_range, effects = effects, busy = src)
 	if(istext(started))
 		grab_ended(target, user, effects)
 		return

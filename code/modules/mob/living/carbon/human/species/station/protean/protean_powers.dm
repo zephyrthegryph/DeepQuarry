@@ -197,12 +197,12 @@ REF_OWNED(/datum/protean_power, "button")
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
 		return
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = list(species?.vanity_base_fit) | species?.get_valid_shapeshifter_forms(), "requires" = PROMPT_CONSCIOUS), PROC_REF(nano_fitting_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(nano_fitting_chosen), message = "Please select a species to emulate.", title = "Shapeshifter Body", choices = list(species?.vanity_base_fit) | species?.get_valid_shapeshifter_forms(), ask_flags = ASK_CONSCIOUS)
 
-/mob/living/carbon/human/proc/nano_fitting_chosen(mob/user, new_species, datum/om/prompt/ask)
+/mob/living/carbon/human/proc/nano_fitting_chosen(datum/om/prompt/choice/ask)
 	if(!species)
 		return
-	species.base_species = new_species
+	species.base_species = ask.choice
 	regenerate_icons()
 
 /datum/protean_power/hide_self
@@ -255,12 +255,32 @@ REF_OWNED(/datum/protean_power, "button")
 	if(!refactory)
 		to_chat(H, span_warning("You don't have a working refactory module!"))
 		return
-	om_prompt(src, H, list("kind" = "list", "message" = "Pick the bodypart to change:", "title" = "Refactor - One Bodypart", "choices" = H.species.has_limbs, "data" = list("form" = F)), PROC_REF(limb_chosen))
+	om_ask(H, /datum/om/prompt/choice/protean_power, PROC_REF(limb_chosen), message = "Pick the bodypart to change:", title = "Refactor - One Bodypart", choices = H.species.has_limbs, power = src, form = F)
 
-/datum/protean_power/reform_limb/proc/limb_chosen(mob/living/carbon/human/H, choice, datum/om/prompt/ask)
-	var/datum/forms/protean/F = ask.get("form")
+/// A protean power's pick. Re-checked on the answer: the power can still be used.
+/datum/om/prompt/choice/protean_power
+	var/datum/protean_power/power
+	var/datum/component/forms/protean/form
+	/// The limb the pick is about, for the limb refactor.
+	var/limb
+
+/datum/om/prompt/choice/protean_power/valid()
+	return power.can_use(answerer, form) ? null : "can't use"
+
+/datum/om/prompt/confirm/protean_power
+	var/datum/protean_power/power
+	var/datum/component/forms/protean/form
+	var/limb
+
+/datum/om/prompt/confirm/protean_power/valid()
+	return power.can_use(answerer, form) ? null : "can't use"
+
+/datum/protean_power/reform_limb/proc/limb_chosen(datum/om/prompt/choice/protean_power/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/datum/forms/protean/F = ask.form
+	var/choice = ask.choice
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
-	if(!refactory || !can_use(H, F))
+	if(!refactory)
 		return
 	var/obj/item/organ/external/existing = H.organs_by_name[choice]
 	if(!existing || existing.is_stump())
@@ -278,28 +298,28 @@ REF_OWNED(/datum/protean_power, "button")
 		usable_manufacturers[company] = M
 	if(!length(usable_manufacturers))
 		return
-	om_prompt(src, H, list("kind" = "list", "message" = "Which manufacturer do you wish to mimic for this limb?", "title" = "Manufacturer for [choice]", "choices" = usable_manufacturers, "data" = list("form" = F, "limb" = choice)), PROC_REF(manufacturer_chosen))
+	om_ask(H, /datum/om/prompt/choice/protean_power, PROC_REF(manufacturer_chosen), message = "Which manufacturer do you wish to mimic for this limb?", title = "Manufacturer for [choice]", choices = usable_manufacturers, power = src, form = F, limb = choice)
 
-/datum/protean_power/reform_limb/proc/manufacturer_chosen(mob/living/carbon/human/H, manu_choice, datum/om/prompt/ask)
-	if(!can_use(H, ask.get("form")))
-		return
-	var/obj/item/organ/external/eo = H.organs_by_name[ask.get("limb")]
+/datum/protean_power/reform_limb/proc/manufacturer_chosen(datum/om/prompt/choice/protean_power/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/obj/item/organ/external/eo = H.organs_by_name[ask.limb]
 	if(!eo)
 		return
-	eo.robotize(manu_choice)
+	eo.robotize(ask.choice)
 	H.update_icons_body()
 
 /datum/protean_power/reform_limb/proc/regrow_limb(mob/living/carbon/human/H, datum/forms/protean/F, obj/item/organ/internal/nano/refactory/refactory, choice)
 	if(refactory.get_stored_material(MAT_STEEL) < PER_LIMB_STEEL_COST)
 		to_chat(H, span_warning("You're missing that limb, and need to store at least [PER_LIMB_STEEL_COST] steel to regenerate it."))
 		return
-	om_prompt(src, H, list("message" = "That limb is missing, do you want to regenerate it in exchange for [PER_LIMB_STEEL_COST] steel?", "title" = "Regenerate limb?", "choices" = list("Yes", "No"), "data" = list("form" = F, "limb" = choice)), PROC_REF(regrow_limb_confirmed))
+	om_ask(H, /datum/om/prompt/confirm/protean_power, PROC_REF(regrow_limb_confirmed), message = "That limb is missing, do you want to regenerate it in exchange for [PER_LIMB_STEEL_COST] steel?", title = "Regenerate limb?", power = src, form = F, limb = choice)
 
-/datum/protean_power/reform_limb/proc/regrow_limb_confirmed(mob/living/carbon/human/H, answer, datum/om/prompt/ask)
-	var/datum/forms/protean/F = ask.get("form")
-	var/choice = ask.get("limb")
+/datum/protean_power/reform_limb/proc/regrow_limb_confirmed(datum/om/prompt/confirm/protean_power/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/datum/forms/protean/F = ask.form
+	var/choice = ask.limb
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
-	if(answer != "Yes" || !refactory || !can_use(H, F) || !refactory.use_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST))
+	if(!refactory || !refactory.use_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST))
 		return
 	F.set_form(/datum/form/protean_blob)
 	H.active_regen = TRUE
@@ -352,12 +372,22 @@ REF_OWNED(/datum/protean_power, "button")
 	log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly ([TOTAL_REBUILD_STEEL_COST] steel, [repaired] points repaired).")
 
 /datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/forms/protean/F)
-	om_prompt(src, H, list("message" = {"Do you want to rebuild or reassemble yourself?
+	var/question = {"Do you want to rebuild or reassemble yourself?
 	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs and your cohesion, and spend the steel repairing your plating and wiring over a 40s period.
-	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."}, "title" = "Reassembly", "choices" = list("Rebuild", "Reassemble", "Cancel"), "data" = list("form" = F)), PROC_REF(reform_chosen))
+	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."}
+	om_ask(H, /datum/om/prompt/choice/protean_power, PROC_REF(reform_chosen), power = src, form = F, title = "Reassembly", choices = list("Rebuild", "Reassemble", "Cancel"), buttons = TRUE, message = question)
 
-/datum/protean_power/reform_body/proc/reform_chosen(mob/living/carbon/human/H, input, datum/om/prompt/ask)
-	if(input == "Cancel" || !can_use(H, ask.get("form")))
+/// Whether to include flavour text / OOC notes in a reassembly; carries the flavour answer.
+/datum/om/prompt/choice/protean_power/reassemble_include
+	title = "Reassembly"
+	choices = list("Yes", "No", "Cancel")
+	buttons = TRUE
+	var/flavour
+
+/datum/protean_power/reform_body/proc/reform_chosen(datum/om/prompt/choice/protean_power/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/input = ask.choice
+	if(input == "Cancel")
 		return
 	if(input == "Rebuild")
 		var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
@@ -367,16 +397,19 @@ REF_OWNED(/datum/protean_power, "button")
 		to_chat(H, span_notify("You begin to rebuild. You will need to remain still."))
 		om_do_after(H, 40 SECONDS, target = H, receiver = src, on_done = PROC_REF(rebuild_done), done_args = list(H))
 		return
-	om_prompt_sequence(src, H, list(
-		list("key" = "flavour", "message" = "Include Flavourtext?", "title" = "Reassembly", "choices" = list("Yes", "No", "Cancel"), "abort" = "Cancel"),
-		list("key" = "ooc", "message" = "Include OOC notes?", "title" = "Reassembly", "choices" = list("Yes", "No", "Cancel"), "abort" = "Cancel"),
-	), PROC_REF(reassemble_answered), list("data" = ask.values))
+	om_ask(H, /datum/om/prompt/choice/protean_power/reassemble_include, PROC_REF(reassemble_flavour_chosen), message = "Include Flavourtext?", power = src, form = ask.form)
 
-/datum/protean_power/reform_body/proc/reassemble_answered(mob/living/carbon/human/H, datum/om/prompt/ask)
-	if(!can_use(H, ask.get("form")))
+/datum/protean_power/reform_body/proc/reassemble_flavour_chosen(datum/om/prompt/choice/protean_power/reassemble_include/ask)
+	if(ask.choice == "Cancel")
 		return
-	var/flavour = ask.get("flavour")
-	var/oocnotes = ask.get("ooc")
+	om_ask(ask.answerer, /datum/om/prompt/choice/protean_power/reassemble_include, PROC_REF(reassemble_answered), message = "Include OOC notes?", power = src, form = ask.form, flavour = ask.choice)
+
+/datum/protean_power/reform_body/proc/reassemble_answered(datum/om/prompt/choice/protean_power/reassemble_include/ask)
+	if(ask.choice == "Cancel")
+		return
+	var/mob/living/carbon/human/H = ask.answerer
+	var/flavour = ask.flavour
+	var/oocnotes = ask.choice
 	to_chat(H, span_notify("You begin to reassemble. You will need to remain still."))
 	H.visible_message(span_notify("[H] rapidly contorts and shifts!"), span_danger("You begin to reassemble."))
 	om_task_start(/datum/om/task/timed/reform_body_activate_reform_body, H, H, flavour = flavour, oocnotes = oocnotes)
@@ -427,18 +460,31 @@ REF_OWNED(/datum/protean_power, "button")
 		to_chat(H, span_notice("The person you try this on must have a client!"))
 		return
 	to_chat(H, span_notice("Waiting for other person's consent."))
-	om_prompt_sequence(src, H, list(
-		list("key" = "consent", "user" = victim, "message" = "Allow [H] to copy what you look like?", "title" = "Consent", "choices" = list("Yes", "No"), "confirm" = "Yes", "on_stop" = PROC_REF(copy_declined)),
-		list("key" = "flavour", "message" = "Copy [victim]'s flavourtext?", "title" = "Copy Form", "choices" = list("Yes", "No", "Cancel"), "abort" = "Cancel"),
-	), PROC_REF(copy_agreed), list("data" = list("victim" = victim)))
+	om_flow_start(/datum/om/flow/protean_copy_form, H, victim, power = src)
 	return TRUE
 
-/datum/protean_power/copy_form/proc/copy_declined(mob/living/carbon/human/H, datum/om/prompt/ask)
-	to_chat(H, span_notice("They declined your request."))
+/// The victim consents, then the protean chooses whether to copy their flavour text.
+/datum/om/flow/protean_copy_form
+	var/datum/protean_power/copy_form/power
+	var/consented = FALSE
 
-/datum/protean_power/copy_form/proc/copy_agreed(mob/living/carbon/human/H, datum/om/prompt/ask)
-	var/mob/living/carbon/human/victim = ask.get("victim")
-	var/input = ask.get("flavour")
+/datum/om/flow/protean_copy_form/ended(reason)
+	if(actor && !consented && (reason == "declined" || reason == "cancelled"))
+		to_chat(actor, span_notice("They declined your request."))
+
+/datum/om/flow/protean_copy_form/start()
+	om_ask(target, /datum/om/prompt/confirm/copy_body_consent, PROC_REF(consent_given))
+
+/datum/om/flow/protean_copy_form/proc/consent_given(datum/om/prompt/confirm/ask)
+	consented = TRUE
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(flavour_chosen), message = "Copy [target]'s flavourtext?", title = "Copy Form", choices = list("Yes", "No", "Cancel"), buttons = TRUE)
+
+/datum/om/flow/protean_copy_form/proc/flavour_chosen(datum/om/prompt/choice/ask)
+	if(ask.choice == "Cancel")
+		return
+	power.copy_agreed(actor, target, ask.choice)
+
+/datum/protean_power/copy_form/proc/copy_agreed(mob/living/carbon/human/H, mob/living/carbon/human/victim, input)
 	if(!aggressive_grab_on(H, victim))
 		to_chat(H, span_warning("You lost your grip on [victim]!"))
 		return
@@ -489,12 +535,25 @@ REF_OWNED(/datum/protean_power, "button")
 	if(!(substance in PROTEAN_EDIBLE_MATERIALS))
 		to_chat(H, span_warning("You can't process [substance]!"))
 		return
-	om_prompt(src, H, list("kind" = "number", "message" = "How much do you want to store? (0-[matstack.get_amount()])", "title" = "Select amount", "max" = matstack.get_amount(), "data" = list("stack" = matstack)), PROC_REF(store_amount_chosen))
+	om_ask(H, /datum/om/prompt/number/protean_store, PROC_REF(store_amount_chosen), message = "How much do you want to store? (0-[matstack.get_amount()])", max = matstack.get_amount(), stack = matstack)
 
-/datum/protean_power/metal_nom/proc/store_amount_chosen(mob/living/carbon/human/H, howmuch, datum/om/prompt/ask)
-	var/obj/item/stack/material/matstack = ask.get("stack")
+/// How much of the held stack to store. Re-checked on the answer: the stack is still in the
+/// active hand and has that much.
+/datum/om/prompt/number/protean_store
+	title = "Select amount"
+	var/obj/item/stack/material/stack
+
+/datum/om/prompt/number/protean_store/valid()
+	if(stack != answerer.get_active_hand() || number > stack.get_amount())
+		return "stack changed"
+	return null
+
+/datum/protean_power/metal_nom/proc/store_amount_chosen(datum/om/prompt/number/protean_store/ask)
+	var/mob/living/carbon/human/H = ask.answerer
+	var/obj/item/stack/material/matstack = ask.stack
+	var/howmuch = ask.number
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
-	if(!howmuch || !refactory || matstack != H.get_active_hand() || howmuch > matstack.get_amount())
+	if(!howmuch || !refactory)
 		return
 	var/substance = matstack.material.name
 	var/actually_added = refactory.add_stored_material(substance, howmuch * matstack.perunit)

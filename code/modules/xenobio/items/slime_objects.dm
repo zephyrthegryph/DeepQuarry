@@ -32,11 +32,11 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	spawn(0) // ALLOW(scheduler): tgui_alert() sleeps (prompts, S10)
 		if(!C)
 			return
-		var/response = rerun_prompt(C, "k34", list("message" = "Someone is requesting a soul for a promethean. Would you like to play as one?", "title" = "Promethean request", "choices" = list("Yes", "No", "Never for this round")), PROC_REF(question), args)
+		var/response = rerun_ask(C, "k34", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Someone is requesting a soul for a promethean. Would you like to play as one?", title = "Promethean request", choices = list("Yes", "No", "Never for this round"))
 		if(isnull(response))
 			return
 		if(response == "Yes")
-			var/_answer_k36 = rerun_prompt(C, "k36", list("message" = "Are you sure you want to play as a promethean?", "title" = "Promethean request", "choices" = list("Yes", "No")), PROC_REF(question), args)
+			var/_answer_k36 = rerun_ask(C, "k36", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to play as a promethean?", title = "Promethean request", choices = list("Yes", "No"))
 			if(isnull(_answer_k36))
 				return
 			response = _answer_k36
@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	S.set_species("Promethean")
 	S.shapeshifter_set_colour("#2398FF")
 	visible_message(span_warning("The monkey cube suddenly takes the shape of a humanoid!"))
-	var/newname = rerun_prompt(S, "k62", list("kind" = "text", "message" = "You are a Promethean. Would you like to change your name to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(transfer_personality), args)
+	var/newname = rerun_ask(S, "k62", PROC_REF(transfer_personality), args, /datum/om/prompt/text, message = "You are a Promethean. Would you like to change your name to something else?", title = "Name change", max_length = MAX_NAME_LEN)
 	if(isnull(newname))
 		return
 	if(newname)

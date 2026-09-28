@@ -102,7 +102,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 			balloon_alert(user, "can't remove core!")
 			return INTERACTION_HANDLED_PASS
 		balloon_alert(user, "removing core...")
-		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, list("receiver" = src))
+		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, receiver = src)
 		return TRUE
 
 	return FALSE

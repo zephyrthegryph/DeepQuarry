@@ -74,7 +74,7 @@ ADMIN_VERB(debug_controller, R_DEBUG, "Debug Controller", "Debug the various per
 	//Goon PS stuff, and other yet-to-be-subsystem things.
 	options["LEGACY: cameranet"] = GLOB.cameranet
 
-	var/pick = verb_prompt(user, "pick", list("kind" = "list", "message" = "Choose a controller to debug/view variables of.", "title" = "VV controller:", "choices" = options), args)
+	var/pick = verb_ask(user, "pick", args, /datum/om/prompt/choice, message = "Choose a controller to debug/view variables of.", title = "VV controller:", choices = options)
 	if(!pick)
 		return
 	var/datum/D = options[pick]

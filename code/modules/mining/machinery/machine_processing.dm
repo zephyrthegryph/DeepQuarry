@@ -120,7 +120,7 @@ REF_SPILL(/obj/machinery/mineral/processing_unit_console, "inserted_id")
 			var/ore = params["ore"]
 			var/new_setting = params["set"]
 			if(new_setting == null)
-				new_setting = act_prompt(ui.user, action, params, ui, "setting", list("kind" = "list", "message" = "What setting do you wish to use for processing [ore]?", "title" = "Process Setting", "choices" = list("Smelting","Compressing","Alloying","Nothing")))
+				new_setting = act_ask(ui.user, action, params, ui, "setting", /datum/om/prompt/choice, message = "What setting do you wish to use for processing [ore]?", title = "Process Setting", choices = list("Smelting","Compressing","Alloying","Nothing"))
 				if(!new_setting)
 					return
 				switch(new_setting)

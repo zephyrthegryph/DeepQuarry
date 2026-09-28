@@ -15,50 +15,84 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/last_trigger = 0
 	var/isLoud = FALSE
 	var/isNarrate = FALSE
+	/// The setup questions set_vars() asks.
+	var/setup_flow = /datum/om/flow/event_trigger_setup
 
 /obj/effect/landmark/event_trigger/Initialize(mapload)
 	. = ..()
 	coordinates = "(X:[loc.x];Y:[loc.y];Z:[loc.z])"
 
-/// Asks the creator how the trigger behaves (om_prompt_sequence); the answers land in apply_vars().
+/// Asks the creator how the trigger behaves (setup_flow); the answers land in apply_vars().
 /obj/effect/landmark/event_trigger/proc/set_vars(mob/M)
-	om_prompt_sequence(src, M, setup_steps(), PROC_REF(apply_vars), list("requires" = PROMPT_ADMIN(R_FUN), "on_cancel" = PROC_REF(setup_cancelled)))
+	om_flow_start(setup_flow, M, src)
 
-/obj/effect/landmark/event_trigger/proc/setup_steps()
-	return list(
-		list("key" = "name", "kind" = "text", "message" = "Input Name for the trigger", "title" = "Naming", "default" = "Event Trigger", "max_length" = MAX_MESSAGE_LEN),
-		list("key" = "team", "message" = "Notify rest of team?", "title" = "Teamwork", "choices" = list("No", "Yes")),
-		PROC_REF(ask_loud),
-		list("key" = "repeat", "message" = "Make it fire repeatedly?", "title" = "Repetition", "choices" = list("No", "Yes")),
-		PROC_REF(ask_cooldown),
-	)
+/// The trigger's setup questions: name, teamwork, bwoink, repetition, cooldown. The creator
+/// keeps their event rights throughout; any cancel deletes the unfinished trigger.
+/datum/om/flow/event_trigger_setup
+	requires = PROMPT_ADMIN(R_FUN)
+	var/trigger_name
+	var/team = FALSE
+	var/loud = FALSE
+	var/repeat = FALSE
+	var/cooldown_seconds = 0
 
-/obj/effect/landmark/event_trigger/proc/ask_loud(mob/user, datum/om/prompt/ask)
-	if(ask.get("team") != "Yes")
-		return list("key" = "loud", "message" = "Should it make a bwoink when triggered for YOU?", "title" = "bwoink", "choices" = list("No", "Yes"))
+/datum/om/flow/event_trigger_setup/ended(reason)
+	qdel(target)
 
-/obj/effect/landmark/event_trigger/proc/ask_cooldown(mob/user, datum/om/prompt/ask)
-	if(ask.get("repeat") == "Yes")
-		return list("key" = "cooldown", "kind" = "number", "message" = "Set cooldown in seconds. Minimum 5 seconds!", "title" = "Cooldown", "default" = 60, "min" = 5)
+/datum/om/flow/event_trigger_setup/start()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(named), title = "Naming", message = "Input Name for the trigger", default = "Event Trigger", max_length = MAX_MESSAGE_LEN)
 
-/obj/effect/landmark/event_trigger/proc/setup_cancelled(mob/user, datum/om/prompt/ask)
-	qdel(src)
-
-/obj/effect/landmark/event_trigger/proc/apply_vars(mob/M, datum/om/prompt/ask)
-	var/new_name = ask.get("name")
-	if(!new_name)
-		qdel(src)
+/datum/om/flow/event_trigger_setup/proc/named(datum/om/prompt/text/ask)
+	if(!ask.text)
+		qdel(target)
 		return
-	name = new_name
+	trigger_name = ask.text
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(team_answered), title = "Teamwork", message = "Notify rest of team?", no_first = TRUE, answer_on_no = TRUE)
+
+/datum/om/flow/event_trigger_setup/proc/team_answered(datum/om/prompt/confirm/ask)
+	team = ask.yes
+	if(team)
+		ask_repeat()
+		return
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(loud_answered), title = "bwoink", message = "Should it make a bwoink when triggered for YOU?", no_first = TRUE, answer_on_no = TRUE)
+
+/datum/om/flow/event_trigger_setup/proc/loud_answered(datum/om/prompt/confirm/ask)
+	loud = ask.yes
+	ask_repeat()
+
+/datum/om/flow/event_trigger_setup/proc/ask_repeat()
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(repeat_answered), title = "Repetition", message = "Make it fire repeatedly?", no_first = TRUE, answer_on_no = TRUE)
+
+/datum/om/flow/event_trigger_setup/proc/repeat_answered(datum/om/prompt/confirm/ask)
+	repeat = ask.yes
+	if(!repeat)
+		basics_done()
+		return
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(cooldown_entered), title = "Cooldown", message = "Set cooldown in seconds. Minimum 5 seconds!", default = 60, min = 5)
+
+/datum/om/flow/event_trigger_setup/proc/cooldown_entered(datum/om/prompt/number/ask)
+	cooldown_seconds = ask.number
+	basics_done()
+
+/// The shared questions are answered: subtypes ask theirs here, then apply.
+/datum/om/flow/event_trigger_setup/proc/basics_done()
+	finish()
+
+/datum/om/flow/event_trigger_setup/proc/finish()
+	var/obj/effect/landmark/event_trigger/ET = target
+	ET.apply_vars(actor, src)
+
+/obj/effect/landmark/event_trigger/proc/apply_vars(mob/M, datum/om/flow/event_trigger_setup/setup)
+	name = setup.trigger_name
 	creator_ckey = M.ckey
 	if(!GLOB.event_triggers[creator_ckey])
 		GLOB.event_triggers[creator_ckey] = list()
 	GLOB.event_triggers[creator_ckey] |= list(src)
-	isTeamwork = ask.get("team") == "Yes"
-	isLoud = !isTeamwork && ask.get("loud") == "Yes"
-	isRepeating = ask.get("repeat") == "Yes"
+	isTeamwork = setup.team
+	isLoud = !isTeamwork && setup.loud
+	isRepeating = setup.repeat
 	if(isRepeating)
-		cooldown = ask.get("cooldown") SECONDS
+		cooldown = setup.cooldown_seconds SECONDS
 	else
 		delete_me = TRUE
 	log_admin("[M.ckey] has created a [isNarrate ? "Narrtion" : "Notification"] landmark trigger at [coordinates]")
@@ -111,41 +145,58 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/message_range	//Leave at 0 for world.view
 	var/isWarning = FALSE 	//For personal messages
 	isNarrate = TRUE
+	setup_flow = /datum/om/flow/event_trigger_setup/narrate
 
 /obj/effect/landmark/event_trigger/auto_narrate/Initialize(mapload)
 	. = ..()
 	message_range = world.view
 
-/obj/effect/landmark/event_trigger/auto_narrate/setup_steps()
-	return ..() + list(
-		list("key" = "message", "kind" = "text", "message" = "What should the automatic narration say?", "title" = "Message", "default" = "", "max_length" = MAX_MESSAGE_LEN),
-		list("key" = "target", "message" = "Should it send directly to the player, or send to the turf?", "title" = "Target", "choices" = list("Player", "Turf")),
-		PROC_REF(ask_style),
-		PROC_REF(ask_range),
-	)
+/// Then: the narration, where it goes, its style and its range.
+/datum/om/flow/event_trigger_setup/narrate
+	var/narration
+	var/to_player = FALSE
+	var/scary = FALSE
+	var/audible = FALSE
+	var/range = 11
 
-/obj/effect/landmark/event_trigger/auto_narrate/proc/ask_style(mob/user, datum/om/prompt/ask)
-	if(ask.get("target") == "Player")
-		return list("key" = "scary", "message" = "Should it be a normal message or a big scary red text?", "title" = "Scary Red", "choices" = list("Big Red", "Normal"))
-	return list("key" = "mode", "message" = "Should it be visible or audible?", "title" = "Mode", "choices" = list("Visible", "Audible"))
+/datum/om/flow/event_trigger_setup/narrate/basics_done()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(narration_entered), title = "Message", message = "What should the automatic narration say?", default = "", max_length = MAX_MESSAGE_LEN)
 
-/obj/effect/landmark/event_trigger/auto_narrate/proc/ask_range(mob/user, datum/om/prompt/ask)
-	if(ask.get("target") != "Player")
-		return list("key" = "range", "kind" = "number", "message" = "Give narration range! Input value over 10 to use world.view", "title" = "Range", "default" = 11, "min" = 0)
+/datum/om/flow/event_trigger_setup/narrate/proc/narration_entered(datum/om/prompt/text/ask)
+	narration = ask.text
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(target_chosen), title = "Target", message = "Should it send directly to the player, or send to the turf?", choices = list("Player", "Turf"), buttons = TRUE)
 
-/obj/effect/landmark/event_trigger/auto_narrate/apply_vars(mob/M, datum/om/prompt/ask)
+/datum/om/flow/event_trigger_setup/narrate/proc/target_chosen(datum/om/prompt/choice/ask)
+	to_player = (ask.choice == "Player")
+	if(to_player)
+		om_ask(actor, /datum/om/prompt/choice, PROC_REF(scary_chosen), title = "Scary Red", message = "Should it be a normal message or a big scary red text?", choices = list("Big Red", "Normal"), buttons = TRUE)
+		return
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(mode_chosen), title = "Mode", message = "Should it be visible or audible?", choices = list("Visible", "Audible"), buttons = TRUE)
+
+/datum/om/flow/event_trigger_setup/narrate/proc/scary_chosen(datum/om/prompt/choice/ask)
+	scary = (ask.choice == "Big Red")
+	finish()
+
+/datum/om/flow/event_trigger_setup/narrate/proc/mode_chosen(datum/om/prompt/choice/ask)
+	audible = (ask.choice == "Audible")
+	om_ask(actor, /datum/om/prompt/number, PROC_REF(range_entered), title = "Range", message = "Give narration range! Input value over 10 to use world.view", default = 11, min = 0)
+
+/datum/om/flow/event_trigger_setup/narrate/proc/range_entered(datum/om/prompt/number/ask)
+	range = ask.number
+	finish()
+
+/obj/effect/landmark/event_trigger/auto_narrate/apply_vars(mob/M, datum/om/flow/event_trigger_setup/narrate/setup)
 	..()
 	if(QDELETED(src))
 		return
-	message = encode_html_emphasis(ask.get("message"))
-	if(ask.get("target") == "Player")
+	message = encode_html_emphasis(setup.narration)
+	if(setup.to_player)
 		isPersonal_orVis_orAud = 0
-		isWarning = ask.get("scary") == "Big Red"
+		isWarning = setup.scary
 	else
-		isPersonal_orVis_orAud = ask.get("mode") == "Audible" ? 2 : 1
-		var/range = ask.get("range")
-		if(range <= 10)
-			message_range = range
+		isPersonal_orVis_orAud = setup.audible ? 2 : 1
+		if(setup.range <= 10)
+			message_range = setup.range
 
 /obj/effect/landmark/event_trigger/auto_narrate/Crossed(atom/movable/AM)
 	. = ..()	//Checks if AM is mob/living and notifies admin(s)

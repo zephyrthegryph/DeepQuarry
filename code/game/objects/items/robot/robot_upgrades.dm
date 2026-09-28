@@ -70,12 +70,12 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 
 /// Old attack_self.
 /obj/item/borg/upgrade/utility/rename/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter new robot name", "title" = "Robot Reclassification", "default" = heldname, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_HELD), PROC_REF(name_entered))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(name_entered), title = "Robot Reclassification", message = "Enter new robot name", default = heldname, max_length = MAX_NAME_LEN, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/borg/upgrade/utility/rename/proc/name_entered(mob/user, new_name, datum/om/prompt/ask)
-	if(new_name)
-		heldname = new_name
+/obj/item/borg/upgrade/utility/rename/proc/name_entered(datum/om/prompt/text/ask)
+	if(ask.text)
+		heldname = ask.text
 
 /obj/item/borg/upgrade/utility/rename/action(mob/user, mob/living/silicon/robot/R)
 	if(..()) return FALSE

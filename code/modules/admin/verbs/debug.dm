@@ -132,7 +132,7 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	for(var/mob/current_client in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(current_client.key && isobserver(current_client))
 			available += current_client
-	var/mob/choice = verb_prompt(user, "player", list("kind" = "list", "message" = "Choose a player to play the pAI", "title" = "Spawn pAI", "choices" = available), args)
+	var/mob/choice = verb_ask(user, "player", args, /datum/om/prompt/choice, message = "Choose a player to play the pAI", title = "Spawn pAI", choices = available)
 	if(!choice || !choice.key)
 		return
 
@@ -142,18 +142,22 @@ ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a 
 	pai.key = choice.key
 	card.setPersonality(pai)
 	// The new pAI answers these in its own time.
-	om_prompt(pai, pai, list("message" = "Do you want to load your pAI data?", "title" = "Load", "choices" = list("Yes", "No")), TYPE_PROC_REF(/mob/living/silicon/pai, admin_spawn_load_chosen))
+	pai.offer_admin_spawn_load()
 	log_admin("made a pAI with key=[pai.key] at ([target_turf.x],[target_turf.y],[target_turf.z])")
 	feedback_add_details("admin_verb","MPAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/mob/living/silicon/pai/proc/admin_spawn_load_chosen(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
+/// An admin-spawned pAI loads its saved data, or else names itself.
+/mob/living/silicon/pai/proc/offer_admin_spawn_load()
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(admin_spawn_load_chosen), title = "Load", message = "Do you want to load your pAI data?", answer_on_no = TRUE)
+
+/mob/living/silicon/pai/proc/admin_spawn_load_chosen(datum/om/prompt/confirm/ask)
+	if(ask.yes)
 		apply_preferences(client)
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Enter your pAI name:", "title" = "pAI Name", "default" = "Personal AI", "encode" = FALSE), PROC_REF(admin_spawn_name_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(admin_spawn_name_entered), title = "pAI Name", message = "Enter your pAI name:", default = "Personal AI", encode = FALSE)
 
-/mob/living/silicon/pai/proc/admin_spawn_name_entered(mob/user, new_name, datum/om/prompt/ask)
-	new_name = sanitizeName(new_name, allow_numbers = TRUE)
+/mob/living/silicon/pai/proc/admin_spawn_name_entered(datum/om/prompt/text/ask)
+	var/new_name = sanitizeName(ask.text, allow_numbers = TRUE)
 	if(new_name)
 		name = new_name
 
@@ -175,7 +179,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make A
 ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instances of a type.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
 	// to prevent REALLY stupid deletions
 	var/blocked = list(/obj, /mob, /mob/living, /mob/living/carbon, /mob/living/carbon/human, /mob/observer/dead, /mob/living/silicon, /mob/living/silicon/robot, /mob/living/silicon/ai)
-	var/hsbitem = verb_prompt(user, "a1", list("kind" = "list", "message" = "Choose an object to delete.", "title" = "Delete:", "choices" = typesof(/obj) + typesof(/mob) - blocked), args)
+	var/hsbitem = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose an object to delete.", title = "Delete:", choices = typesof(/obj) + typesof(/mob) - blocked)
 	if(isnull(hsbitem))
 		return
 	if(hsbitem)
@@ -272,7 +276,7 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 
 ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct Control", "Assume direct control of a mob.", ADMIN_CATEGORY_GAME, mob/M)
 	if(M.ckey)
-		var/_answer_a2 = verb_prompt(user, "a2", list("message" = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.", "title" = "Confirmation", "choices" = list("Yes","No")), args)
+		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.", title = "Confirmation", choices = list("Yes","No"))
 		if(isnull(_answer_a2))
 			return
 		if(_answer_a2 != "Yes")
@@ -383,7 +387,7 @@ ADMIN_VERB(cmd_admin_areatest, R_DEBUG, "Test areas", "Manually tests all areas 
 
 ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mob.", ADMIN_CATEGORY_FUN_EVENT_KIT, input)
 	if(!input)
-		var/_answer_a3 = verb_prompt(user, "a3", list("kind" = "list", "message" = "Pick Target", "title" = "Select the target to dress.", "choices" = getmobs()), args)
+		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Pick Target", title = "Select the target to dress.", choices = getmobs())
 		if(isnull(_answer_a3))
 			return
 		input = _answer_a3
@@ -397,7 +401,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 
 	var/mob/living/carbon/human/target_human = target
 
-	var/datum/decl/hierarchy/outfit/outfit = verb_prompt(user, "a4", list("kind" = "list", "message" = "Select outfit.", "title" = "Select equipment.", "choices" = outfits()), args)
+	var/datum/decl/hierarchy/outfit/outfit = verb_ask(user, "a4", args, /datum/om/prompt/choice, message = "Select outfit.", title = "Select equipment.", choices = outfits())
 	if(isnull(outfit))
 		return
 	if(!outfit)
@@ -415,7 +419,7 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 	log_and_message_admins("changed the equipment of [key_name(H)] to [outfit.name].")
 
 ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singularity and all machines to get power flowing through the station.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/_answer_a5 = verb_prompt(user, "a5", list("message" = "Are you sure? This will start up the engine. Should only be used during debug!", "title" = "Start Singularity", "choices" = list("Yes","No")), args)
+	var/_answer_a5 = verb_ask(user, "a5", args, /datum/om/prompt/choice/alert, message = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Start Singularity", choices = list("Yes","No"))
 	if(isnull(_answer_a5))
 		return
 	if(_answer_a5 != "Yes")
@@ -452,7 +456,7 @@ ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singu
 	message_admins(span_blue("[key_name_admin(user)] setup the singulo engine"))
 
 ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets up the supermatter engine.", ADMIN_CATEGORY_DEBUG_GAME)
-	var/response = verb_prompt(user, "a6", list("message" = "Are you sure? This will start up the engine. Should only be used during debug!", "title" = "Setup Supermatter", "choices" = list("Setup Completely","Setup except coolant","No")), args)
+	var/response = verb_ask(user, "a6", args, /datum/om/prompt/choice/alert, message = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Setup Supermatter", choices = list("Setup Completely","Setup except coolant","No"))
 	if(isnull(response))
 		return
 
@@ -506,7 +510,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 
 
 ADMIN_VERB(cmd_debug_mob_lists, R_DEBUG, "Debug Mob Lists", "For when you just gotta know.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	var/_answer_a7 = verb_prompt(user, "a7", list("kind" = "list", "message" = "Which list?", "title" = "List Choice", "choices" = list("Players","Admins","Mobs","Living Mobs","Dead Mobs", "Clients")), args)
+	var/_answer_a7 = verb_ask(user, "a7", args, /datum/om/prompt/choice, message = "Which list?", title = "List Choice", choices = list("Players","Admins","Mobs","Living Mobs","Dead Mobs", "Clients"))
 	if(isnull(_answer_a7))
 		return
 	switch(_answer_a7)
@@ -555,12 +559,12 @@ ADMIN_VERB(view_runtimes, R_DEBUG, "View Runtimes", "Opens the runtime viewer.",
 		tgui_alert_async(user, "[warning]. Proceed with caution. If you really need to see the runtimes, download the runtime log and view it in a text editor.", "HEED THIS WARNING CAREFULLY MORTAL")
 
 ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the current weather.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_prompt(user, "a8", list("kind" = "list", "message" = "Which planet do you want to modify the weather on?", "title" = "Change Weather", "choices" = GLOB.planet_service.planets), args)
+	var/datum/planet/planet = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "Which planet do you want to modify the weather on?", title = "Change Weather", choices = GLOB.planet_service.planets)
 	if(isnull(planet))
 		return
 	if(!istype(planet))
 		return
-	var/datum/weather/new_weather = verb_prompt(user, "a9", list("kind" = "list", "message" = "What weather do you want to change to?", "title" = "Change Weather", "choices" = planet.weather_holder.allowed_weather_types), args)
+	var/datum/weather/new_weather = verb_ask(user, "a9", args, /datum/om/prompt/choice, message = "What weather do you want to change to?", title = "Change Weather", choices = planet.weather_holder.allowed_weather_types)
 	if(isnull(new_weather))
 		return
 	if(!new_weather)
@@ -572,7 +576,7 @@ ADMIN_VERB(change_weather, R_DEBUG|R_EVENT, "Change Weather", "Changes the curre
 	log_admin(log)
 
 ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework Override", "Toggles ability for weather fireworks to affect weather on planet of choice.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_prompt(user, "a10", list("kind" = "list", "message" = "Which planet do you want to toggle firework effects on?", "title" = "Change Weather", "choices" = GLOB.planet_service.planets), args)
+	var/datum/planet/planet = verb_ask(user, "a10", args, /datum/om/prompt/choice, message = "Which planet do you want to toggle firework effects on?", title = "Change Weather", choices = GLOB.planet_service.planets)
 	if(isnull(planet))
 		return
 	if(istype(planet) && planet.weather_holder)
@@ -582,20 +586,20 @@ ADMIN_VERB(toggle_firework_override, R_DEBUG|R_EVENT, "Toggle Weather Firework O
 		log_admin(log)
 
 ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time of a planet.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/datum/planet/planet = verb_prompt(user, "a11", list("kind" = "list", "message" = "Which planet do you want to modify time on?", "title" = "Change Time", "choices" = GLOB.planet_service.planets), args)
+	var/datum/planet/planet = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Which planet do you want to modify time on?", title = "Change Time", choices = GLOB.planet_service.planets)
 	if(isnull(planet))
 		return
 	if(!istype(planet))
 		return
 	var/datum/time/current_time_datum = planet.current_time
 	var/planet_hours = max(round(current_time_datum.seconds_in_day / 36000) - 1, 0)
-	var/new_hour = verb_prompt(user, "a12", list("kind" = "number", "message" = "What hour do you want to change to?", "title" = "Change Time", "default" = text2num(current_time_datum.show_time("hh")), "max" = planet_hours), args)
+	var/new_hour = verb_ask(user, "a12", args, /datum/om/prompt/number, message = "What hour do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("hh")), max = planet_hours)
 	if(isnull(new_hour))
 		return
 	if(isnull(new_hour))
 		return
 	var/planet_minutes = max(round(current_time_datum.seconds_in_hour / 600) - 1, 0)
-	var/new_minute = verb_prompt(user, "a13", list("kind" = "number", "message" = "What minute do you want to change to?", "title" = "Change Time", "default" = text2num(current_time_datum.show_time("mm")), "max" = planet_minutes), args)
+	var/new_minute = verb_ask(user, "a13", args, /datum/om/prompt/number, message = "What minute do you want to change to?", title = "Change Time", default = text2num(current_time_datum.show_time("mm")), max = planet_minutes)
 	if(isnull(new_minute))
 		return
 	if(isnull(new_minute))
@@ -645,7 +649,7 @@ ADMIN_VERB(cmd_reload_robot_sprite_test, R_DEBUG|R_SERVER, "Reload Robot Test Sp
 
 ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-implant mode.", ADMIN_CATEGORY_FUN_ADD_NIF)
 	var/input_NIF
-	var/mob/living/carbon/human/H = verb_prompt(user, "a14", list("kind" = "list", "message" = "Pick a mob with a player", "title" = "Quick NIF", "choices" = REGISTRY_MEMBERS(REGISTRY_PLAYERS)), args)
+	var/mob/living/carbon/human/H = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "Pick a mob with a player", title = "Quick NIF", choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	if(isnull(H))
 		return
 
@@ -678,7 +682,7 @@ ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-
 
 		var/list/show_NIFs = sortList(NIFs) // the list that will be shown to the user to pick from
 
-		var/_answer_a15 = verb_prompt(user, "a15", list("kind" = "list", "message" = "Pick the NIF type", "title" = "Quick NIF", "choices" = show_NIFs), args)
+		var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice, message = "Pick the NIF type", title = "Quick NIF", choices = show_NIFs)
 		if(isnull(_answer_a15))
 			return
 		input_NIF = _answer_a15
@@ -693,7 +697,7 @@ ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-
 	feedback_add_details("admin_verb","QNIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the configuration from the default path on the disk, wiping any in-round modifications.", ADMIN_CATEGORY_DEBUG_SERVER)
-	var/_answer_a16 = verb_prompt(user, "a16", list("message" = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", "title" = "Really reset?", "choices" = list("No", "Yes")), args)
+	var/_answer_a16 = verb_ask(user, "a16", args, /datum/om/prompt/choice/alert, message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", title = "Really reset?", choices = list("No", "Yes"))
 	if(isnull(_answer_a16))
 		return
 	if(_answer_a16 != "Yes")
@@ -709,9 +713,11 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	if(!check_rights(R_ADMIN|R_EVENT|R_DEBUG)) // TFF 24/4/19: Allow Devs to use Quick-NIF verb.
 		return
 
-	om_prompt(src, usr, list("kind" = "list", "message" = "Pick a mob with a player", "title" = "Quick Authentic NIF", "choices" = REGISTRY_MEMBERS(REGISTRY_PLAYERS), "requires" = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG)), PROC_REF(quick_authentic_nif_chosen))
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(quick_authentic_nif_chosen), choices = REGISTRY_MEMBERS(REGISTRY_PLAYERS), title = "Quick Authentic NIF", message = "Pick a mob with a player", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT|R_DEBUG))
 
-/datum/admins/proc/quick_authentic_nif_chosen(mob/admin, mob/living/carbon/human/H, datum/om/prompt/ask)
+/datum/admins/proc/quick_authentic_nif_chosen(datum/om/prompt/choice/ask)
+	var/mob/admin = ask.answerer
+	var/mob/living/carbon/human/H = ask.choice
 	if(!istype(H))
 		to_chat(admin,span_warning("That mob type ([H.type]) doesn't support NIFs, sorry."))
 		return
@@ -739,8 +745,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 	set desc = "Force config reload to world default"
 	if(!check_rights(R_DEBUG))
 		return
-	om_prompt(src, usr, list("message" = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", "title" = "Really reset?", "choices" = list("No", "Yes"), "requires" = PROMPT_ADMIN(R_DEBUG)), PROC_REF(reload_configuration_confirmed))
+	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(reload_configuration_confirmed), title = "Really reset?", message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", no_first = TRUE, requires = PROMPT_ADMIN(R_DEBUG))
 
-/client/proc/reload_configuration_confirmed(mob/admin, answer, datum/om/prompt/ask)
-	if(answer == "Yes")
-		config.admin_reload()
+/client/proc/reload_configuration_confirmed(datum/om/prompt/confirm/ask)
+	config.admin_reload()

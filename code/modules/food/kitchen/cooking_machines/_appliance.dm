@@ -703,7 +703,7 @@
 			if (CI.container())
 				menuoptions[CI.container().label(menuoptions.len)] = CI
 
-		var/selection = rerun_prompt(user, "k713", list("kind" = "list", "message" = "Which item would you like to remove?", "title" = "Remove ingredients", "choices" = menuoptions), PROC_REF(removal_menu), args)
+		var/selection = rerun_ask(user, "k713", PROC_REF(removal_menu), args, /datum/om/prompt/choice, message = "Which item would you like to remove?", title = "Remove ingredients", choices = menuoptions)
 		if(isnull(selection))
 			return
 		if (selection)

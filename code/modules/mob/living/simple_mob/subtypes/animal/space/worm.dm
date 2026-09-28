@@ -284,7 +284,7 @@
 	eat_consume(objectOrMob)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_door_hit(obj/machinery/door/D, hit, total_hits)
-	om_task_start(/datum/om/task/timed/worm_batter_door, src, D, list("hits_left" = total_hits - hit + 1))
+	om_task_start(/datum/om/task/timed/worm_batter_door, src, D, hits_left = total_hits - hit + 1)
 
 /// Battering a door (the target) a hit every half second until it breaks or the hits run out,
 /// then swallowing it.

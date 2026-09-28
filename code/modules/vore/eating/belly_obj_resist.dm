@@ -70,7 +70,7 @@
 	to_chat(living_prey, escape_attempt_prey_message)
 	to_chat(owner, escape_attempt_owner_message)
 
-	om_task_start(/datum/om/task/timed/belly_escape, living_prey, src, list("duration" = escapetime, "receiver" = src, "prey_item" = prey_item))
+	om_task_start(/datum/om/task/timed/belly_escape, living_prey, src, duration = escapetime, receiver = src, prey_item = prey_item)
 
 /// Prey (the actor) working its way out of a belly, with `prey_item` if it is one.
 /datum/om/task/timed/belly_escape

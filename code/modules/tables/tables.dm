@@ -245,7 +245,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 	if(om_busy(src))
 		return
 	to_chat(user, span_notice("You begin [verb]ing \the [src] with [M.display_name]."))
-	om_task_start(/datum/om/task/timed/table_material_add, user, src, list("receiver" = src, "S" = S, "verb" = verb, "done_proc" = done_proc, "M" = M))
+	om_task_start(/datum/om/task/timed/table_material_add, user, src, receiver = src, S = S, "verb" = verb, done_proc = done_proc, M = M)
 
 /datum/om/task/timed/table_material_add
 	duration = 2 SECONDS

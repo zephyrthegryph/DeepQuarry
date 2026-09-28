@@ -341,14 +341,27 @@
 	. = ..()
 
 // This is awful but its literally say code.
-/mob/living/simple_mob/animal/borer/proc/psychic_say_unheard(mob/user, datum/om/prompt/ask)
-	to_chat(src, span_alien("..But nothing heard it.."))
+/// The mob a hostless borer's psionic pulse makes speak. Re-checked on the answer: the borer is
+/// still hostless, and the speaker is conscious and within 7 tiles. A cancel: nothing heard it.
+/datum/om/prompt/choice/borer_psychic_speaker
+	title = "Target Choice"
+	message = "Choose a target speaker:"
+	/// What the speaker is made to say.
+	var/said_text
 
-/// The mob a hostless borer's psionic pulse makes speak.
-/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(mob/user, mob/living/speaker, datum/om/prompt/ask)
-	var/message = ask.get("message")
-	if(borer_host() || speaker.stat || get_dist(src, speaker) > 7)
-		return
+/datum/om/prompt/choice/borer_psychic_speaker/cancelled()
+	to_chat(answerer, span_alien("..But nothing heard it.."))
+
+/datum/om/prompt/choice/borer_psychic_speaker/valid()
+	var/mob/living/simple_mob/animal/borer/B = answerer
+	var/mob/living/speaker = choice
+	if(B.borer_host() || speaker.stat || get_dist(B, speaker) > 7)
+		return "unable"
+	return null
+
+/mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(datum/om/prompt/choice/borer_psychic_speaker/ask)
+	var/mob/living/speaker = ask.choice
+	var/message = ask.said_text
 	log_admin("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
 	message_admins("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
 	speaker.say("[message]")
@@ -389,7 +402,7 @@
 				if(!LM.stat)
 					nearby_mobs += LM
 			if(nearby_mobs.len)
-				om_prompt(src, src, list("kind" = "list", "message" = "Choose a target speaker:", "title" = "Target Choice", "choices" = nearby_mobs, "on_cancel" = PROC_REF(psychic_say_unheard), "data" = list("message" = message)), PROC_REF(psychic_speaker_chosen))
+				om_ask(src, /datum/om/prompt/choice/borer_psychic_speaker, PROC_REF(psychic_speaker_chosen), choices = nearby_mobs, said_text = message)
 				return
 			to_chat(src, span_alien("..But nothing heard it.."))
 		else

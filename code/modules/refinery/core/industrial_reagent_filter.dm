@@ -110,7 +110,7 @@
 	else if(filter_reagent_id != "")
 		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
-	var/select = rerun_prompt(user, "k113", list("kind" = "list", "message" = "Select chemical to filter. It is currently [filter].", "title" = "Chemical Select", "choices" = tgui_list), PROC_REF(set_filter), args)
+	var/select = rerun_ask(user, "k113", PROC_REF(set_filter), args, /datum/om/prompt/choice, message = "Select chemical to filter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
 	if(isnull(select))
 		return
 

@@ -3,12 +3,19 @@
 	if(!D)
 		return
 
-	om_prompt_sequence(src, usr, list(
-		list("key" = "mode", "kind" = "list", "message" = "Remove/Add?", "title" = "Trait Remove/Add", "choices" = list("Add","Remove")),
-		PROC_REF(ask_trait),
-		PROC_REF(ask_trait_source_kind),
-		PROC_REF(ask_trait_source),
-	), PROC_REF(traits_answered), list("requires" = PROMPT_ADMIN(R_VAREDIT), "data" = list("datum" = D)))
+	om_ask(usr, /datum/om/prompt/choice/modify_trait, PROC_REF(ask_trait), message = "Remove/Add?", choices = list("Add","Remove"), target = D)
+
+/// One step of modifying a datum's traits; the answers so far ride along to the next step.
+/datum/om/prompt/choice/modify_trait
+	title = "Trait Remove/Add"
+	requires = PROMPT_ADMIN(R_VAREDIT)
+	var/datum/target
+	/// "Add" or "Remove".
+	var/mode
+	/// The trait's name.
+	var/trait
+	/// "All" or "Specific" (removing).
+	var/specific
 
 /// The traits of D that can be added ("Add") or removed ("Remove"), by name.
 /datum/admins/proc/modifiable_traits(datum/D, add_or_remove)
@@ -30,27 +37,33 @@
 
 	return availible_traits
 
-/datum/admins/proc/ask_trait(mob/admin, datum/om/prompt/ask)
-	return list("key" = "trait", "kind" = "list", "message" = "Select trait to modify", "title" = "Trait", "choices" = modifiable_traits(ask.get("datum"), ask.get("mode")))
+/datum/admins/proc/ask_trait(datum/om/prompt/choice/modify_trait/ask)
+	om_ask(ask.answerer, /datum/om/prompt/choice/modify_trait, PROC_REF(ask_trait_source_kind), title = "Trait", message = "Select trait to modify", choices = modifiable_traits(ask.target, ask.choice), target = ask.target, mode = ask.choice)
 
-/datum/admins/proc/ask_trait_source_kind(mob/admin, datum/om/prompt/ask)
-	if(ask.get("mode") == "Remove")
-		return list("key" = "specific", "kind" = "list", "message" = "All or specific source ?", "title" = "Trait Remove/Add", "choices" = list("All","Specific"))
+/datum/admins/proc/ask_trait_source_kind(datum/om/prompt/choice/modify_trait/ask)
+	if(ask.mode != "Remove")
+		traits_answered(ask.target, ask.mode, ask.choice)
+		return
+	om_ask(ask.answerer, /datum/om/prompt/choice/modify_trait, PROC_REF(ask_trait_source), message = "All or specific source ?", choices = list("All","Specific"), target = ask.target, mode = ask.mode, trait = ask.choice)
 
-/datum/admins/proc/ask_trait_source(mob/admin, datum/om/prompt/ask)
-	if(ask.get("specific") == "Specific")
-		var/datum/D = ask.get("datum")
-		var/list/traits = modifiable_traits(D, "Remove")
-		return list("key" = "source", "kind" = "list", "message" = "Source to be removed", "title" = "Trait Remove/Add", "choices" = GET_TRAIT_SOURCES(D, traits[ask.get("trait")]))
+/datum/admins/proc/ask_trait_source(datum/om/prompt/choice/modify_trait/ask)
+	if(ask.choice != "Specific")
+		traits_answered(ask.target, ask.mode, ask.trait)
+		return
+	var/list/traits = modifiable_traits(ask.target, "Remove")
+	om_ask(ask.answerer, /datum/om/prompt/choice/modify_trait, PROC_REF(trait_source_chosen), message = "Source to be removed", choices = GET_TRAIT_SOURCES(ask.target, traits[ask.trait]), target = ask.target, mode = ask.mode, trait = ask.trait, specific = ask.choice)
 
-/datum/admins/proc/traits_answered(mob/admin, datum/om/prompt/ask)
-	var/datum/D = ask.get("datum")
-	var/list/availible_traits = modifiable_traits(D, ask.get("mode"))
-	var/chosen_trait = availible_traits[ask.get("trait")]
+/datum/admins/proc/trait_source_chosen(datum/om/prompt/choice/modify_trait/ask)
+	traits_answered(ask.target, ask.mode, ask.trait, ask.choice)
+
+/// Applies the answers: `source` is null to remove the trait from every source.
+/datum/admins/proc/traits_answered(datum/D, mode, trait_name, source)
+	var/list/availible_traits = modifiable_traits(D, mode)
+	var/chosen_trait = availible_traits[trait_name]
 	if(!chosen_trait)
 		return
-	switch(ask.get("mode"))
+	switch(mode)
 		if("Add") //Not doing source choosing here intentionally to make this bit faster to use, you can always vv it.
 			ADD_TRAIT(D,chosen_trait,"adminabuse")
 		if("Remove")
-			REMOVE_TRAIT(D,chosen_trait,ask.get("specific") == "All" ? null : ask.get("source"))
+			REMOVE_TRAIT(D,chosen_trait,source)

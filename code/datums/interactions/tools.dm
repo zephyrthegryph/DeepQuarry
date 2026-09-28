@@ -90,12 +90,14 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 		"fail_proc" = on_fail,
 		"fail_args" = fail_args,
 		"extra_checks" = extra_checks,
-		"busy" = busy)
+		"busy" = busy,
+		// The job runs as the actor: its callbacks go to on_behalf_of.
+		"receiver" = actor)
 	for(var/key in job_params)
 		job_vars[key] = job_params[key]
 	if(!job_type)
 		job_type = claims ? /datum/om/task/timed/tool_job/claiming : /datum/om/task/timed/tool_job
-	var/datum/om/task/timed/tool_job/job = om_task_start(job_type, actor, target, job_vars)
+	var/datum/om/task/timed/tool_job/job = om_task_launch(job_type, actor, target, job_vars, src)
 	if(istext(job))
 		return FALSE
 	if(job.state == OM_TASK_DONE)

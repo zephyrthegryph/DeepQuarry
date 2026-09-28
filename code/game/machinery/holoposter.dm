@@ -85,10 +85,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	if(stat & (NOPOWER))
 		return ITEM_INTERACT_BLOCKING
 	playsound(src, 'sound/items/penclick.ogg', 60, TRUE)
-	om_prompt(src, user, list("kind" = "list", "message" = "Available Posters", "title" = "Holographic Poster", "choices" = postertypes + "random", "requires" = PROMPT_ADJACENT), PROC_REF(poster_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(poster_chosen), message = "Available Posters", title = "Holographic Poster", choices = postertypes + "random", requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/holoposter/proc/poster_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/machinery/holoposter/proc/poster_chosen(datum/om/prompt/choice/ask)
+	var/choice = ask.choice
 	if(stat & (NOPOWER))
 		return
 	icon_state = choice

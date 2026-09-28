@@ -304,17 +304,24 @@
 		var/datum/language/L = locate(href_list["set_lang_key"])
 		if(L && (L in languages))
 			var/old_key = get_custom_prefix_by_lang(src, L)
-			om_prompt(src, src, list("kind" = "text", "message" = "Input a new key for [L.name]", "title" = "Language Key", "default" = old_key, "data" = list("language" = L, "old" = old_key)), PROC_REF(language_key_entered))
+			om_ask(src, /datum/om/prompt/text/language_key, PROC_REF(language_key_entered), message = "Input a new key for [L.name]", default = old_key, language = L)
 			return 1
 		check_languages()
 	else
 		return ..()
 
-/mob/living/proc/language_key_entered(mob/user, custom_key, datum/om/prompt/ask)
-	var/datum/language/L = ask.get("language")
-	var/old_key = ask.get("old")
-	if(!(L in languages))
-		return
+/// Re-checked on the answer: the answerer still knows the language.
+/datum/om/prompt/text/language_key
+	title = "Language Key"
+	var/datum/language/language
+
+/datum/om/prompt/text/language_key/valid()
+	return (language in answerer.languages) ? null : "language lost"
+
+/mob/living/proc/language_key_entered(datum/om/prompt/text/language_key/ask)
+	var/datum/language/L = ask.language
+	var/old_key = ask.default
+	var/custom_key = ask.text
 	if(custom_key && length(custom_key) == 1)
 		if(contains_az09(custom_key))
 			language_keys[custom_key] = L

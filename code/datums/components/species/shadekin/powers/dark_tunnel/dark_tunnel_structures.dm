@@ -64,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
 			return TRUE
 		if(locked != src)
-			var/confirm = rerun_prompt(user, "a1", list("message" = "This portal is currently open to [locked_name]. Change the portal destination?", "title" = "Change Portal Destination", "choices" = list("Yes", "Cancel")), PROC_REF(interaction_hand), args)
+			var/confirm = rerun_ask(user, "a1", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "This portal is currently open to [locked_name]. Change the portal destination?", title = "Change Portal Destination", choices = list("Yes", "Cancel"))
 			if(isnull(confirm))
 				return TRUE
 			if(!confirm || confirm == "Cancel")
@@ -78,7 +78,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/hub, INTERACT_HAND_UNGATED(null,
 		for(var/obj/structure/dark_portal/minion/M in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_MINIONS))
 			var/tmpname = "Dark Portal ([get_area(M)])"
 			L[tmpname] = M
-		var/desc = rerun_prompt(user, "a2", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), PROC_REF(interaction_hand), args)
+		var/desc = rerun_ask(user, "a2", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Please select a hub portal to connect to.", title = "Portal Menu", choices = L)
 		if(isnull(desc))
 			return TRUE
 		if(!desc)
@@ -158,7 +158,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 			to_chat(user, span_warning("You can't use this while phase shifted!"))
 			return TRUE
 		if(icon_state == "minion1")
-			var/confirm = rerun_prompt(user, "a3", list("message" = "This portal is currently open to [locked_name]. Close this portal to the dark?", "title" = "Close Portal", "choices" = list("Yes", "Cancel")), PROC_REF(interaction_hand), args)
+			var/confirm = rerun_ask(user, "a3", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "This portal is currently open to [locked_name]. Close this portal to the dark?", title = "Close Portal", choices = list("Yes", "Cancel"))
 			if(isnull(confirm))
 				return TRUE
 			if(!confirm || confirm == "Cancel")
@@ -183,7 +183,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
 			L[H.name] = H
-		var/desc = rerun_prompt(user, "a4", list("kind" = "list", "message" = "Please select a hub portal to connect to.", "title" = "Portal Menu", "choices" = L), PROC_REF(interaction_hand), args)
+		var/desc = rerun_ask(user, "a4", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Please select a hub portal to connect to.", title = "Portal Menu", choices = L)
 		if(isnull(desc))
 			return TRUE
 		if(!desc)

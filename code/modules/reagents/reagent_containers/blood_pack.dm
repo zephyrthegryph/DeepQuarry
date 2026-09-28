@@ -61,7 +61,7 @@
 /// Old attackby.
 /obj/item/reagent_containers/blood/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
+		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter a label for [name]", title = "Label", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE)
 		if(isnull(_answer_a1))
 			return TRUE
 		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)

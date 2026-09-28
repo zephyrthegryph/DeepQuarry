@@ -67,11 +67,21 @@
 		to_chat(src, span_alium("Their plasma vessel is missing."))
 		return
 
-	om_prompt(src, src, list("kind" = "number", "message" = "Amount:", "title" = "Transfer Plasma to [M]", "requires" = PROMPT_CONSCIOUS, "data" = list("target" = M)), PROC_REF(plasma_amount_chosen))
+	om_ask(src, /datum/om/prompt/number/plasma_transfer, PROC_REF(plasma_amount_chosen), recipient = M)
 
-/mob/living/carbon/human/proc/plasma_amount_chosen(mob/user, amount, datum/om/prompt/ask)
-	var/mob/living/carbon/human/M = ask.get("target")
-	amount = abs(round(amount))
+/// How much plasma to give. Re-checked on the answer: still conscious, and the recipient still exists.
+/datum/om/prompt/number/plasma_transfer
+	message = "Amount:"
+	ask_flags = ASK_CONSCIOUS
+	var/mob/living/carbon/human/recipient
+
+/datum/om/prompt/number/plasma_transfer/prepare()
+	title = "Transfer Plasma to [recipient]"
+	return TRUE
+
+/mob/living/carbon/human/proc/plasma_amount_chosen(datum/om/prompt/number/plasma_transfer/ask)
+	var/mob/living/carbon/human/M = ask.recipient
+	var/amount = abs(round(ask.number))
 	if(amount && check_alien_ability(amount,0,O_PLASMA))
 		M.gain_plasma(amount)
 		to_chat(M, span_alium("[src] has transfered [amount] plasma to you."))
@@ -294,9 +304,10 @@
 			choices += M
 	choices -= src
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to leap at?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(alien_leap_target_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(alien_leap_target_chosen), title = "Target Choice", message = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS)
 
-/mob/living/carbon/human/proc/alien_leap_target_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
+/mob/living/carbon/human/proc/alien_leap_target_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/T = ask.choice
 
 	if(get_dist(get_turf(T), get_turf(src)) > 4) return
 

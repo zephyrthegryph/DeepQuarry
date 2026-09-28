@@ -387,7 +387,7 @@
 	set desc = "Change the color of the helmet"
 	set category = "Object"
 
-	var/choice = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Select a new color:", "title" = "[src] Color", "choices" = list("White", "Blue", "Purple", "Yellow", "Red", "Green")), VERB_REF(select_color), args)
+	var/choice = rerun_ask(usr, "a1", VERB_REF(select_color), args, /datum/om/prompt/choice, message = "Select a new color:", title = "[src] Color", choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green"))
 	if(isnull(choice))
 		return
 	if(!choice)

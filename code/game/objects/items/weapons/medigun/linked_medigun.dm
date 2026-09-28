@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 	if(should_stop(H, user, user.get_active_hand()))
 		return
 
-	om_task_start(/datum/om/task/timed/linked_process_medigun, user, user, list("receiver" = src, "H" = H, "filter" = filter, "ishealing" = ishealing, "hidden" = TRUE))
+	om_task_start(/datum/om/task/timed/linked_process_medigun, user, user, receiver = src, H = H, filter = filter, ishealing = ishealing, hidden = TRUE)
 
 
 /datum/om/task/timed/linked_process_medigun

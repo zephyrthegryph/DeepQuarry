@@ -119,11 +119,20 @@
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 
 /datum/event_container/proc/SelectEvent()
-	om_prompt(src, usr, list("kind" = "list", "message" = "Select an event to queue up.", "title" = "Event Selection", "choices" = available_events), PROC_REF(event_selected))
+	om_ask(usr, /datum/om/prompt/choice/queue_event, PROC_REF(event_selected), choices = available_events, subject = src)
 
-/datum/event_container/proc/event_selected(mob/user, datum/event_meta/EM, datum/om/prompt/P)
-	if(!EM || !(EM in available_events))
-		return
+/// Picking the next event of a container (subject). Re-checked on the answer: still available.
+/datum/om/prompt/choice/queue_event
+	title = "Event Selection"
+	message = "Select an event to queue up."
+
+/datum/om/prompt/choice/queue_event/valid()
+	var/datum/event_container/container = subject
+	return (choice && (choice in container.available_events)) ? null : "not available"
+
+/datum/event_container/proc/event_selected(datum/om/prompt/choice/queue_event/ask)
+	var/mob/user = ask.answerer
+	var/datum/event_meta/EM = ask.choice
 	if(next_event())
 		available_events += next_event()
 	available_events -= EM

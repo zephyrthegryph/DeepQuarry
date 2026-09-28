@@ -122,10 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 /// Old attackby.
 /obj/item/canvas/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/paint_palette))
-		om_prompt_sequence(src, user, list(
-			list("key" = "confirm", "message" = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?", "title" = "Confirm Color Fill", "choices" = list("Yes", "No")),
-			PROC_REF(ask_base_color),
-		), PROC_REF(base_color_chosen), list("target" = I, "requires" = PROMPT_IN_HAND, "data" = list("palette" = I)))
+		om_ask(user, /datum/om/prompt/confirm/canvas_fill, PROC_REF(ask_base_color), subject = I, canvas = src)
 		return INTERACTION_HANDLED_PASS
 
 	if(IS_HELPING(user))
@@ -230,22 +227,42 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 	else if(istype(I, /obj/item/soap) || istype(I, /obj/item/reagent_containers/glass/rag))
 		return canvas_color
 
-/obj/item/canvas/proc/ask_base_color(mob/living/user, datum/om/prompt/ask)
-	if(ask.get("confirm") == "Yes")
-		return list("key" = "color", "kind" = "color", "message" = "Select a base color for the canvas:", "title" = "Base Color", "default" = canvas_color)
+/// Filling a canvas with a palette (the subject, held throughout); the canvas stays next to the painter.
+/datum/om/prompt/confirm/canvas_fill
+	title = "Confirm Color Fill"
+	message = "Adjusting the base color of this canvas will replace ALL pixels with the selected color. Are you sure?"
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/obj/item/canvas/canvas
 
-/obj/item/canvas/proc/base_color_chosen(mob/living/user, datum/om/prompt/ask)
-	var/basecolor = ask.get("color")
-	if(basecolor && Adjacent(user))
+/datum/om/prompt/confirm/canvas_fill/valid()
+	return canvas.Adjacent(answerer) ? null : "too far away"
+
+/datum/om/prompt/color/canvas_base
+	title = "Base Color"
+	message = "Select a base color for the canvas:"
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/obj/item/canvas/canvas
+
+/datum/om/prompt/color/canvas_base/valid()
+	return canvas.Adjacent(answerer) ? null : "too far away"
+
+/obj/item/canvas/proc/ask_base_color(datum/om/prompt/confirm/canvas_fill/ask)
+	om_ask(ask.answerer, /datum/om/prompt/color/canvas_base, PROC_REF(base_color_chosen), subject = ask.subject, canvas = src, default = canvas_color)
+
+/obj/item/canvas/proc/base_color_chosen(datum/om/prompt/color/canvas_base/ask)
+	var/mob/living/user = ask.answerer
+	var/basecolor = ask.picked_color
+	if(basecolor)
 		canvas_color = basecolor
 		reset_grid()
 		user.visible_message("[user] smears paint on [src], covering the entire thing in paint.", "You smear paint on [src], changing the color of the entire thing.", runemessage = "smears paint")
 		update_appearance()
 
 /obj/item/canvas/proc/try_rename(mob/user)
-	om_prompt(src, user, list("kind" = "text", "message" = "What do you want to name the painting?", "max_length" = 250, "requires" = PROMPT_USABLE_BY("physical")), PROC_REF(renamed))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(renamed), message = "What do you want to name the painting?", max_length = 250, requires = PROMPT_USABLE_BY("physical"))
 
-/obj/item/canvas/proc/renamed(mob/user, new_name, datum/om/prompt/ask)
+/obj/item/canvas/proc/renamed(datum/om/prompt/text/ask)
+	var/new_name = ask.text
 	if(new_name != painting_name && new_name)
 		painting_name = new_name
 		SStgui.update_uis(src)
@@ -339,12 +356,24 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 /obj/item/paint_palette/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/paint_brush))
 		var/obj/item/paint_brush/P = W
-		var/newcolor = tgui_color_picker(user, "Select a new paint color:", "Paint Palette", P.selected_color)
-		if(newcolor && Adjacent(user, P) && Adjacent(user, src))
-			P.update_paint(newcolor)
+		om_ask(user, /datum/om/prompt/color/paint_palette, PROC_REF(brush_color_picked), brush = P, default = P.selected_color)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
+
+/// Picking a brush colour at a palette (the subject): both stay next to the painter.
+/datum/om/prompt/color/paint_palette
+	title = "Paint Palette"
+	message = "Select a new paint color:"
+	ask_flags = ASK_NEAR_SUBJECT
+	var/obj/item/paint_brush/brush
+
+/datum/om/prompt/color/paint_palette/valid()
+	return answerer.Adjacent(brush) ? null : "too far away"
+
+/obj/item/paint_palette/proc/brush_color_picked(datum/om/prompt/color/paint_palette/ask)
+	if(ask.picked_color)
+		ask.brush.update_paint(ask.picked_color)
 
 /obj/item/frame/painting
 	name = "painting frame"
@@ -609,32 +638,39 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		Title: [title] \n \
 		Author's Name: [author_name]. \n \
 		Author's CKey: [author_ckey]"))
-		om_prompt(src, usr, list("message" = "Check your chat log (if filtering for notices, check where you don't) for painting details.", "title" = "Is this the painting you want?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_HOLDER), "data" = list("which" = which_painting)), PROC_REF(lateload_confirmed))
+		om_ask(usr, /datum/om/prompt/confirm/painting_lateload, PROC_REF(lateload_confirmed), which = which_painting)
 	else
-		om_prompt(src, usr, list("message" = "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
-		If you do not wish to do that, you may request a list to be generated of painting titles. This might be resource intensive. \
-		Proceed? It will likely have over 500 entries", "title" = "Generate list?", "choices" = list("Proceed!", "Cancel"), "requires" = PROMPT_ADMIN(R_HOLDER)), PROC_REF(lateload_list_confirmed))
+		om_ask(usr, /datum/om/prompt/confirm/painting_list, PROC_REF(lateload_list_confirmed))
 
-/obj/structure/sign/painting/proc/lateload_list_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Proceed!")
-		return
+/datum/om/prompt/confirm/painting_lateload
+	title = "Is this the painting you want?"
+	message = "Check your chat log (if filtering for notices, check where you don't) for painting details."
+	requires = PROMPT_ADMIN(R_HOLDER)
+	var/which
+
+/datum/om/prompt/confirm/painting_list
+	title = "Generate list?"
+	message = "No painting list ID was given. You may obtain such by debugging SSPersistence and checking the all_paintings entry. \
+		If you do not wish to do that, you may request a list to be generated of painting titles. This might be resource intensive. \
+		Proceed? It will likely have over 500 entries"
+	yes_text = "Proceed!"
+	no_text = "Cancel"
+	requires = PROMPT_ADMIN(R_HOLDER)
+
+/obj/structure/sign/painting/proc/lateload_list_confirmed(datum/om/prompt/confirm/painting_list/ask)
 	var/list/paintings = list()
 	var/current = 1
 	for(var/entry in SSpersistence.all_paintings)
 		var/key = "[entry["title"]] by [entry["author"]]"
 		paintings[key] = current
 		current += 1
-	ask.put("paintings", paintings)
-	ask.chain(list("kind" = "list", "message" = "Choose which painting to spawn!", "title" = "Spawn painting", "choices" = paintings), PROC_REF(lateload_picked))
+	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(lateload_picked), choices = paintings, title = "Spawn painting", message = "Choose which painting to spawn!", requires = PROMPT_ADMIN(R_HOLDER))
 
-/obj/structure/sign/painting/proc/lateload_picked(mob/user, choice, datum/om/prompt/ask)
-	var/list/paintings = ask.get("paintings")
-	admin_lateload_painting(1, paintings[choice])
+/obj/structure/sign/painting/proc/lateload_picked(datum/om/prompt/choice/ask)
+	admin_lateload_painting(1, ask.choices[ask.choice])
 
-/obj/structure/sign/painting/proc/lateload_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Yes")
-		return
-	var/which_painting = ask.get("which")
+/obj/structure/sign/painting/proc/lateload_confirmed(datum/om/prompt/confirm/painting_lateload/ask)
+	var/which_painting = ask.which
 	var/list/painting = SSpersistence.all_paintings[which_painting]
 	var/title = painting["title"]
 	var/author_name = painting["author"]
@@ -672,7 +708,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	current_canvas = new_canvas
 	loaded = TRUE
 	update_appearance()
-	log_and_message_admins("spawned painting from [author_ckey] with title [title]", user)
+	log_and_message_admins("spawned painting from [author_ckey] with title [title]", ask.answerer)
 
 /obj/structure/sign/painting/proc/save_persistent()
 	if(!persistence_id || !current_canvas || current_canvas.no_save)

@@ -23,9 +23,19 @@
 /obj/item/gps/emergency_beacon
 	gps_tag = "EMERGENCY BEACON"
 
-/obj/item/emergency_beacon/proc/activation_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && !beacon_active)	//short delay, so they can still abort if they want to
-		om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
+/// Re-checked on the answer: still carried, and not already active.
+/datum/om/prompt/confirm/emergency_beacon
+	message = "Would you like to activate this personal emergency beacon?"
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
+/datum/om/prompt/confirm/emergency_beacon/valid()
+	var/obj/item/emergency_beacon/B = subject
+	return B.beacon_active ? "already active" : null
+
+/obj/item/emergency_beacon/proc/activation_answered(datum/om/prompt/confirm/emergency_beacon/ask)
+	var/mob/user = ask.answerer
+	//short delay, so they can still abort if they want to
+	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(activate_done), done_args = list(user))
 
 DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 	INTERACT_USE("Activate", PROC_REF(interaction_self)), \
@@ -43,7 +53,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 			to_chat(user,span_warning("You cannot activate the beacon when you are not on sufficiently solid ground!"))
 			return
 		else
-			om_prompt(src, user, list("message" = "Would you like to activate this personal emergency beacon?", "title" = "\The [src]", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(activation_answered))
+			om_ask(user, /datum/om/prompt/confirm/emergency_beacon, PROC_REF(activation_answered), title = "\The [src]")
 	else
 		to_chat(user,"\The [src] is already active, or is otherwise malfunctioning. There's nothing you can do but wait. And possibly pray.")
 	return TRUE

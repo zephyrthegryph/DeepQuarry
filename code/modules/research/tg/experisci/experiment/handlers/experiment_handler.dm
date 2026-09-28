@@ -138,7 +138,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
 			to_chat(user, span_notice("You do not have an experiment selected!"))
 		return
-	om_task_start(/datum/om/task/timed/handheld_experiment, user, target, list("duration" = (config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION) ? 0 : 1 SECOND, "receiver" = src, "scanner" = source))
+	om_task_start(/datum/om/task/timed/handheld_experiment, user, target, duration = ((config_flags & EXPERIMENT_CONFIG_IMMEDIATE_ACTION) ? 0 : 1 SECOND), receiver = src, scanner = source)
 
 /// Scanning the target for the selected experiment with a handheld handler (`scanner`).
 /datum/om/task/timed/handheld_experiment

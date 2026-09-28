@@ -366,14 +366,21 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 		return
 
 	if (!custom_sprite)
-		om_prompt(src, src, list("kind" = "list", "message" = "Select an icon!", "title" = "AI", "choices" = GLOB.ai_icons), PROC_REF(ai_icon_chosen))
+		om_ask(src, /datum/om/prompt/choice/ai_icon, PROC_REF(ai_icon_chosen), choices = GLOB.ai_icons)
 		return
 	update_icon()
 
-/mob/living/silicon/ai/proc/ai_icon_chosen(mob/user, new_sprite, datum/om/prompt/ask)
-	if(stat || aiRestorePowerRoutine || custom_sprite)
-		return
-	selected_sprite = new_sprite
+/// Re-checked on the answer: the AI is up, powered and has no custom sprite.
+/datum/om/prompt/choice/ai_icon
+	title = "AI"
+	message = "Select an icon!"
+
+/datum/om/prompt/choice/ai_icon/valid()
+	var/mob/living/silicon/ai/AI = answerer
+	return (AI.stat || AI.aiRestorePowerRoutine || AI.custom_sprite) ? "unable" : null
+
+/mob/living/silicon/ai/proc/ai_icon_chosen(datum/om/prompt/choice/ai_icon/ask)
+	selected_sprite = ask.choice
 	update_icon()
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
@@ -386,13 +393,21 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(!COOLDOWN_FINISHED(src, announcement_cooldown))
 		to_chat(src, span_filter_notice("Please allow one minute to pass between announcements."))
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Please write a message to announce to the station crew.", "title" = "A.I. Announcement"), PROC_REF(ai_announcement_entered))
+	om_ask(src, /datum/om/prompt/text/ai_announcement, PROC_REF(ai_announcement_entered))
 
-/mob/living/silicon/ai/proc/ai_announcement_entered(mob/user, input, datum/om/prompt/ask)
-	if(!COOLDOWN_FINISHED(src, announcement_cooldown) || check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
-		return
+/// Re-checked on the answer: off cooldown, with wireless and radio.
+/datum/om/prompt/text/ai_announcement
+	title = "A.I. Announcement"
+	message = "Please write a message to announce to the station crew."
 
-	announcement.Announce(input)
+/datum/om/prompt/text/ai_announcement/valid()
+	var/mob/living/silicon/ai/AI = answerer
+	if(!COOLDOWN_FINISHED(AI, announcement_cooldown) || AI.check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
+		return "unable"
+	return null
+
+/mob/living/silicon/ai/proc/ai_announcement_entered(datum/om/prompt/text/ai_announcement/ask)
+	announcement.Announce(ask.text)
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
@@ -441,11 +456,24 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(!COOLDOWN_FINISHED(src, emergency_message_cooldown))
 		to_chat(src, span_warning("Arrays recycling. Please stand by."))
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "To abort, send an empty message.", "max_length" = MAX_MESSAGE_LEN), PROC_REF(ai_emergency_message_entered))
+	om_ask(src, /datum/om/prompt/text/ai_emergency_message, PROC_REF(ai_emergency_message_entered))
 
-/mob/living/silicon/ai/proc/ai_emergency_message_entered(mob/user, input, datum/om/prompt/ask)
-	if(!COOLDOWN_FINISHED(src, emergency_message_cooldown) || check_unable(AI_CHECK_WIRELESS))
-		return
+/// Re-checked on the answer: off cooldown, with wireless.
+/datum/om/prompt/text/ai_emergency_message
+	title = "To abort, send an empty message."
+
+/datum/om/prompt/text/ai_emergency_message/prepare()
+	message = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise."
+	return TRUE
+
+/datum/om/prompt/text/ai_emergency_message/valid()
+	var/mob/living/silicon/ai/AI = answerer
+	if(!COOLDOWN_FINISHED(AI, emergency_message_cooldown) || AI.check_unable(AI_CHECK_WIRELESS))
+		return "unable"
+	return null
+
+/mob/living/silicon/ai/proc/ai_emergency_message_entered(datum/om/prompt/text/ai_emergency_message/ask)
+	var/input = ask.text
 	CentCom_announce(input, src)
 	to_chat(src, span_notice("Message transmitted."))
 	log_game("[key_name(src)] has made an IA [using_map.boss_short] announcement: [input]")
@@ -604,7 +632,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
 
-	set_ai_status_displays(src)
+	set_ai_status_displays()
 	return
 
 //I am the icon meister. Bow fefore me.	//>fefore
@@ -623,28 +651,31 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	if(check_unable())
 		return
 
-	om_prompt(src, src, list("message" = "Would you like to modify your hologram's model, or color?", "title" = "Modify Hologram", "choices" = list("Model","Color","Cancel")), PROC_REF(hologram_change_chosen))
+	om_ask(src, /datum/om/prompt/choice/ai_able, PROC_REF(hologram_change_chosen), title = "Modify Hologram", message = "Would you like to modify your hologram's model, or color?", choices = list("Model", "Color", "Cancel"), buttons = TRUE)
 
-/mob/living/silicon/ai/proc/hologram_change_chosen(mob/user, choice, datum/om/prompt/ask)
-	if(check_unable())
-		return
-	switch(choice)
+/// An AI settings choice. Re-checked on the answer: the AI is able to act (check_unable()).
+/datum/om/prompt/choice/ai_able
+
+/datum/om/prompt/choice/ai_able/valid()
+	var/mob/living/silicon/ai/AI = answerer
+	return AI.check_unable() ? "unable" : null
+
+/mob/living/silicon/ai/proc/hologram_change_chosen(datum/om/prompt/choice/ai_able/ask)
+	switch(ask.choice)
 		if("Color")
-			om_prompt(src, src, list("kind" = "color", "message" = "Choose a color:", "title" = "Hologram Color", "default" = holo_color), PROC_REF(hologram_color_chosen))
+			om_ask(src, /datum/om/prompt/color, PROC_REF(hologram_color_chosen), title = "Hologram Color", message = "Choose a color:", default = holo_color)
 		if("Model")
-			om_prompt(src, src, list("message" = "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?", "title" = "Hologram Selection", "choices" = list("Crew Member","Unique","My Character")), PROC_REF(hologram_model_kind_chosen))
+			om_ask(src, /datum/om/prompt/choice/ai_able, PROC_REF(hologram_model_kind_chosen), title = "Hologram Selection", message = "Would you like to select a hologram based on a (visible) crew member, switch to unique avatar, or load your character from your character slot?", choices = list("Crew Member", "Unique", "My Character"), buttons = TRUE)
 
-/mob/living/silicon/ai/proc/hologram_color_chosen(mob/user, input, datum/om/prompt/ask)
-	holo_color = input
+/mob/living/silicon/ai/proc/hologram_color_chosen(datum/om/prompt/color/ask)
+	holo_color = ask.picked_color
 
-/mob/living/silicon/ai/proc/hologram_model_kind_chosen(mob/user, choice, datum/om/prompt/ask)
-	if(check_unable())
-		return
-	switch(choice)
+/mob/living/silicon/ai/proc/hologram_model_kind_chosen(datum/om/prompt/choice/ai_able/ask)
+	switch(ask.choice)
 		if("Crew Member") //A seeable crew member (or a dog)
 			var/list/targets = trackable_mobs()
 			if(targets.len)
-				om_prompt(src, src, list("kind" = "list", "message" = "Select a crew member:", "title" = "Hologram Choice", "choices" = targets), PROC_REF(hologram_crew_chosen)) //The definition of "crew member" is a little loose...
+				om_ask(src, /datum/om/prompt/choice, PROC_REF(hologram_crew_chosen), title = "Hologram Choice", message = "Select a crew member:", choices = targets) //The definition of "crew member" is a little loose...
 			else
 				tgui_alert_async(src, "No suitable records found. Aborting.")
 
@@ -683,9 +714,10 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 				"male skrell",
 				"female skrell"
 			)
-			om_prompt(src, src, list("kind" = "list", "message" = "Please select a hologram:", "title" = "Hologram Choice", "choices" = icon_list), PROC_REF(hologram_premade_chosen))
+			om_ask(src, /datum/om/prompt/choice, PROC_REF(hologram_premade_chosen), title = "Hologram Choice", message = "Please select a hologram:", choices = icon_list)
 
-/mob/living/silicon/ai/proc/hologram_crew_chosen(mob/user, input, datum/om/prompt/ask)
+/mob/living/silicon/ai/proc/hologram_crew_chosen(datum/om/prompt/choice/ask)
+	var/input = ask.choice
 	//This is torture, I know. If someone knows a better way...
 	var/list/targets = trackable_mobs()
 	if(!targets[input])
@@ -694,9 +726,9 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	qdel(holo_icon)
 	holo_icon = new_holo
 
-/mob/living/silicon/ai/proc/hologram_premade_chosen(mob/user, input, datum/om/prompt/ask)
+/mob/living/silicon/ai/proc/hologram_premade_chosen(datum/om/prompt/choice/ask)
 	qdel(holo_icon)
-	switch(input)
+	switch(ask.choice)
 		if("default")
 			holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 		if("floating face")
@@ -893,17 +925,28 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 				A = D
 
 		if(istype(A))
-			om_prompt(src, src, list("message" = "Do you want to open \the [A] for [target]?", "title" = "Doorknob_v2a.exe", "choices" = list("Yes", "No"), "data" = list("door" = A, "target" = target)), PROC_REF(open_door_request_answered))
+			om_ask(src, /datum/om/prompt/confirm/ai_door_request, PROC_REF(open_door_request_answered), door = A, requester = target)
 		else
 			to_chat(src, span_warning("Unable to locate an airlock near [target]."))
 
 	else
 		to_chat(src, span_warning("Target is not on or near any active cameras on the station."))
 
-/mob/living/silicon/ai/proc/open_door_request_answered(mob/user, answer, datum/om/prompt/ask)
-	var/obj/machinery/door/airlock/A = ask.get("door")
-	var/mob/living/target = ask.get("target")
-	if(answer == "Yes" && !check_unable(AI_CHECK_WIRELESS))
+/// Someone asks the AI to open a door. The answer proc runs on no too (it reports the denial).
+/datum/om/prompt/confirm/ai_door_request
+	title = "Doorknob_v2a.exe"
+	answer_on_no = TRUE
+	var/obj/machinery/door/airlock/door
+	var/mob/living/requester
+
+/datum/om/prompt/confirm/ai_door_request/prepare()
+	message = "Do you want to open \the [door] for [requester]?"
+	return TRUE
+
+/mob/living/silicon/ai/proc/open_door_request_answered(datum/om/prompt/confirm/ai_door_request/ask)
+	var/obj/machinery/door/airlock/A = ask.door
+	var/mob/living/target = ask.requester
+	if(ask.yes && !check_unable(AI_CHECK_WIRELESS))
 		A.AIShiftClick(src)
 		to_chat(src, span_notice("You open \the [A] for [target]."))
 	else

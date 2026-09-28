@@ -56,7 +56,7 @@
 				if(!istype(user)) // Ref no longer valid
 					return
 
-				om_prompt(src, user, list("kind" = "number", "message" = "Input a new [href_list["signaler_value"]].", "title" = href_list["signaler_value"], "default" = (href_list["signaler_value"] == "Code" ? S.code : S.frequency), "round" = FALSE, "requires" = PROMPT_USABLE, "data" = list("signaler" = S, "field" = href_list["signaler_value"])), PROC_REF(signaler_value_entered))
+				om_ask(user, /datum/om/prompt/number/commcard_signaler, PROC_REF(signaler_value_entered), title = href_list["signaler_value"], message = "Input a new [href_list["signaler_value"]].", default = (href_list["signaler_value"] == "Code" ? S.code : S.frequency), signaler = S, field = href_list["signaler_value"])
 
 	// Refresh list of powernet sensors
 	if(href_list["powernet_refresh"])
@@ -91,7 +91,7 @@
 				if(!istype(user)) // Ref no longer valid
 					return
 
-				om_prompt(src, user, list("kind" = "text", "message" = "Please enter desired tag.", "title" = "Name Tag", "default" = G.tag, "requires" = PROMPT_USABLE, "data" = list("gps" = G)), PROC_REF(gps_tag_entered))
+				om_ask(user, /datum/om/prompt/text/commcard/gps_tag, PROC_REF(gps_tag_entered), default = G.tag, gps = G)
 
 		if(href_list["active_category"])
 			internal_data["supply_category"] = href_list["active_category"]
@@ -121,7 +121,7 @@
 				visible_message(span_warning("[src] flashes, \"[internal_data["supply_reqtime"] - world.time] seconds remaining until another requisition form may be printed.\""))
 				return
 
-			om_prompt(src, user, list("kind" = "text", "message" = "Reason:", "title" = "Why do you require this item?", "default" = "", "max_length" = MAX_MESSAGE_LEN, "timeout" = 1 MINUTE, "requires" = PROMPT_USABLE, "data" = list("pack" = S)), PROC_REF(supply_reason_entered))
+			om_ask(user, /datum/om/prompt/text/commcard/supply_reason, PROC_REF(supply_reason_entered), pack = S)
 
 	if(href_list["order_ref"])
 		var/datum/supply_order/O = locate(href_list["order_ref"])
@@ -135,7 +135,7 @@
 			return
 
 		if(href_list["edit"])
-			om_prompt(src, user, list("kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("order" = O, "field" = href_list["edit"])), PROC_REF(order_field_entered))
+			om_ask(user, /datum/om/prompt/text/commcard/field/order, PROC_REF(order_field_entered), message = href_list["edit"], default = href_list["default"], order = O, field = href_list["edit"])
 
 		if(href_list["approve"])
 			GLOB.supply_service.approve_order(O, user)
@@ -166,17 +166,14 @@
 
 		if(href_list["index"])
 			if(href_list["edit"])
-				om_prompt_sequence(src, user, list(
-					list("key" = "field", "message" = "Select which field to edit", "title" = "Field?", "choices" = list("Name", "Quantity", "Value")),
-					list("key" = "value", "kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"]),
-				), PROC_REF(export_item_edited), list("requires" = PROMPT_USABLE, "data" = list("crate" = E, "index" = href_list["index"])))
+				om_ask(user, /datum/om/prompt/choice/commcard_export_field, PROC_REF(export_item_field_chosen), crate = E, index = href_list["index"], edit_message = href_list["edit"], edit_default = href_list["default"])
 
 			if(href_list["delete"])
 				E.contents.Cut(href_list["index"], href_list["index"] + 1)
 
 		// Else clause means they're editing/deleting the whole export report, rather than a specific item in it
 		else if(href_list["edit"])
-			om_prompt(src, user, list("kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"], "requires" = PROMPT_USABLE, "data" = list("crate" = E, "field" = href_list["edit"])), PROC_REF(export_field_entered))
+			om_ask(user, /datum/om/prompt/text/commcard/field/export, PROC_REF(export_field_entered), message = href_list["edit"], default = href_list["default"], crate = E, field = href_list["edit"])
 
 		else if(href_list["delete"])
 			GLOB.supply_service.delete_export(E, user)
@@ -212,7 +209,7 @@
 			post_status("alert", href_list["alert"])
 			internal_data["stat_display_special"] = href_list["alert"]
 		if("setmsg")
-			om_prompt(src, usr, list("kind" = "text", "message" = "Line 1", "title" = "Enter Message Text", "default" = internal_data["stat_display_line[href_list["line"]]"], "max_length" = 40, "requires" = PROMPT_USABLE, "data" = list("line" = href_list["line"])), PROC_REF(status_line_entered))
+			om_ask(usr, /datum/om/prompt/text/commcard/status_line, PROC_REF(status_line_entered), default = internal_data["stat_display_line[href_list["line"]]"], line = href_list["line"])
 		else
 			post_status(href_list["stat_display"])
 			internal_data["stat_display_special"] = href_list["stat_display"]
@@ -235,11 +232,76 @@
 			return
 		om_after(src, 0, PROC_REF(toggle_blast_door_deferred), B)
 
-/obj/item/commcard/proc/signaler_value_entered(mob/user, newVal, datum/om/prompt/ask)
-	var/obj/item/assembly/signaler/S = ask.get("signaler")
-	if(!newVal || S.loc != src)
+/// Cartridge entries: re-checked on the answer, the communicator is still usable.
+/datum/om/prompt/text/commcard
+	requires = PROMPT_USABLE
+
+/// Re-checked on the answer: the signaler is still in the cartridge.
+/datum/om/prompt/number/commcard_signaler
+	round_entry = FALSE
+	requires = PROMPT_USABLE
+	var/obj/item/assembly/signaler/signaler
+	var/field
+
+/datum/om/prompt/number/commcard_signaler/valid()
+	return signaler.loc == subject ? null : "not in the cartridge"
+
+/// Re-checked on the answer: the GPS is still in the cartridge.
+/datum/om/prompt/text/commcard/gps_tag
+	title = "Name Tag"
+	message = "Please enter desired tag."
+	var/obj/item/gps/gps
+
+/datum/om/prompt/text/commcard/gps_tag/valid()
+	return gps.loc == subject ? null : "not in the cartridge"
+
+/datum/om/prompt/text/commcard/supply_reason
+	title = "Why do you require this item?"
+	message = "Reason:"
+	default = ""
+	timeout = 1 MINUTE
+	var/datum/supply_pack/pack
+
+/datum/om/prompt/text/commcard/status_line
+	title = "Enter Message Text"
+	message = "Line 1"
+	max_length = 40
+	var/line
+
+/// Editing one field of a supply order or export report (the message names the field).
+/datum/om/prompt/text/commcard/field
+	title = "Enter the new value for this field:"
+	var/field
+
+/datum/om/prompt/text/commcard/field/order
+	var/datum/supply_order/order
+
+/datum/om/prompt/text/commcard/field/export
+	var/datum/exported_crate/crate
+
+/datum/om/prompt/choice/commcard_export_field
+	title = "Field?"
+	message = "Select which field to edit"
+	choices = list("Name", "Quantity", "Value")
+	buttons = TRUE
+	requires = PROMPT_USABLE
+	var/datum/exported_crate/crate
+	var/index
+	var/edit_message
+	var/edit_default
+
+/datum/om/prompt/text/commcard/export_item
+	title = "Enter the new value for this field:"
+	var/datum/exported_crate/crate
+	var/index
+	var/field
+
+/obj/item/commcard/proc/signaler_value_entered(datum/om/prompt/number/commcard_signaler/ask)
+	var/newVal = ask.number
+	var/obj/item/assembly/signaler/S = ask.signaler
+	if(!newVal)
 		return
-	switch(ask.get("field"))
+	switch(ask.field)
 		if("Code")
 			S.code = newVal
 		if("Frequency")
@@ -248,24 +310,26 @@
 			// unable to GC) on its old frequency.
 			S.set_frequency(sanitize_frequency(newVal, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 
-/obj/item/commcard/proc/gps_tag_entered(mob/user, newTag, datum/om/prompt/ask)
-	var/obj/item/gps/G = ask.get("gps")
-	if(newTag && G.loc == src)
-		G.tag = newTag
+/obj/item/commcard/proc/gps_tag_entered(datum/om/prompt/text/commcard/gps_tag/ask)
+	if(ask.text)
+		ask.gps.tag = ask.text
 
-/obj/item/commcard/proc/supply_reason_entered(mob/user, reason, datum/om/prompt/ask)
-	if(!reason)
+/obj/item/commcard/proc/supply_reason_entered(datum/om/prompt/text/commcard/supply_reason/ask)
+	if(!ask.text)
 		return
-	GLOB.supply_service.create_order(ask.get("pack"), user, reason)
+	GLOB.supply_service.create_order(ask.pack, ask.answerer, ask.text)
 	internal_data["supply_reqtime"] = (world.time + 5) % 1e5
 
-/obj/item/commcard/proc/export_item_edited(mob/user, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("crate")
-	var/new_val = ask.get("value")
-	var/list/L = E.contents[ask.get("index")]
+/obj/item/commcard/proc/export_item_field_chosen(datum/om/prompt/choice/commcard_export_field/ask)
+	om_ask(ask.answerer, /datum/om/prompt/text/commcard/export_item, PROC_REF(export_item_edited), message = ask.edit_message, default = ask.edit_default, crate = ask.crate, index = ask.index, field = ask.choice)
+
+/obj/item/commcard/proc/export_item_edited(datum/om/prompt/text/commcard/export_item/ask)
+	var/datum/exported_crate/E = ask.crate
+	var/new_val = ask.text
+	var/list/L = E.contents[ask.index]
 	if(!new_val || !islist(L))
 		return
-	switch(ask.get("field"))
+	switch(ask.field)
 		if("Name")
 			L["object"] = new_val
 		if("Quantity")
@@ -277,11 +341,12 @@
 			if(num)
 				L["value"] = num
 
-/obj/item/commcard/proc/export_field_entered(mob/user, new_val, datum/om/prompt/ask)
-	var/datum/exported_crate/E = ask.get("crate")
+/obj/item/commcard/proc/export_field_entered(datum/om/prompt/text/commcard/field/export/ask)
+	var/datum/exported_crate/E = ask.crate
+	var/new_val = ask.text
 	if(!new_val)
 		return
-	switch(ask.get("field"))
+	switch(ask.field)
 		if("Name")
 			E.name = new_val
 		if("Value")
@@ -289,14 +354,15 @@
 			if(num)
 				E.value = num
 
-/obj/item/commcard/proc/status_line_entered(mob/user, text, datum/om/prompt/ask)
-	internal_data["stat_display_line[ask.get("line")]"] = reject_bad_text(text, 40)
+/obj/item/commcard/proc/status_line_entered(datum/om/prompt/text/commcard/status_line/ask)
+	internal_data["stat_display_line[ask.line]"] = reject_bad_text(ask.text, 40)
 
-/obj/item/commcard/proc/order_field_entered(mob/user, new_val, datum/om/prompt/ask)
-	var/datum/supply_order/O = ask.get("order")
+/obj/item/commcard/proc/order_field_entered(datum/om/prompt/text/commcard/field/order/ask)
+	var/datum/supply_order/O = ask.order
+	var/new_val = ask.text
 	if(!new_val)
 		return
-	switch(ask.get("field"))
+	switch(ask.field)
 		if("Supply Pack")
 			O.name = new_val
 

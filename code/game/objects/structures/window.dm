@@ -542,8 +542,9 @@
 	// So, they should block stuff like lasers at that time.
 	return opacity
 
-/obj/structure/window/reinforced/polarized/proc/window_id_entered(mob/user, t, datum/om/prompt/ask)
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+/obj/structure/window/reinforced/polarized/proc/window_id_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if(t)
 		src.id = t
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'."))
@@ -561,7 +562,7 @@
 		// Otherwise fall back to asking them... and remind them what the current ID is.
 		if(id)
 			to_chat(user, "The window's current ID is [id].")
-		om_prompt(src, user, list("kind" = "text", "message" = "Enter the new ID for the window.", "title" = src.name, "default" = id, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(window_id_entered))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(window_id_entered), title = name, default = id, message = "Enter the new ID for the window.", encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 		return TRUE
 	return ..()
 
@@ -621,14 +622,32 @@
 /obj/machinery/button/windowtint/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
 	if(!id)
-		om_prompt(src, user, list("kind" = "text", "message" = "Enter an ID for \the [src].", "title" = name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "target" = tool, "requires" = PROMPT_IN_HAND), PROC_REF(button_id_entered))
+		om_ask(user, /datum/om/prompt/text/windowtint_button_id, PROC_REF(button_id_entered), subject = tool, button = src)
 		return ITEM_INTERACT_SUCCESS
 	store_in_multitool(user, multitool)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/button/windowtint/proc/button_id_entered(mob/user, new_id, datum/om/prompt/ask)
-	new_id = sanitizeSafe(new_id, MAX_NAME_LEN)
-	if(new_id && !id && Adjacent(user))
+/// Setting a tint button's ID with a multitool (the subject, held throughout); the button stays next to them and unset.
+/datum/om/prompt/text/windowtint_button_id
+	max_length = MAX_NAME_LEN
+	encode = FALSE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/obj/machinery/button/windowtint/button
+
+/datum/om/prompt/text/windowtint_button_id/prepare()
+	title = button.name
+	message = "Enter an ID for \the [button]."
+	return TRUE
+
+/datum/om/prompt/text/windowtint_button_id/valid()
+	if(button.id)
+		return "already set"
+	return button.Adjacent(answerer) ? null : "too far away"
+
+/obj/machinery/button/windowtint/proc/button_id_entered(datum/om/prompt/text/windowtint_button_id/ask)
+	var/mob/user = ask.answerer
+	var/new_id = sanitizeSafe(ask.text, MAX_NAME_LEN)
+	if(new_id)
 		id = new_id
 		to_chat(user, span_notice("The new ID of \the [src] is '[id]'. To reset this, rebuild the control."))
 		store_in_multitool(user, user.get_active_hand())

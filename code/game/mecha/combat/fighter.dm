@@ -80,7 +80,6 @@
 	var/this_x = x
 	var/this_y = y
 	var/this_z = z
-	var/this_occupant = occupant
 
 	var/what_edge
 
@@ -111,35 +110,48 @@
 	for(var/obj/effect/overmap/visitable/V in range(1, our_ship))
 		choices[V.name] = V
 
-	om_prompt(src, occupant, list("kind" = "list", "message" = "Choose an overmap destination:", "title" = "Destination", "choices" = choices, "requires" = list(/datum/om/check/inside_target), "on_cancel" = PROC_REF(overmap_destination_cancelled), "data" = list("choices" = choices, "edge" = what_edge, "x" = this_x, "y" = this_y, "z" = this_z, "new_x" = new_x, "new_y" = new_y, "occupant" = this_occupant)), PROC_REF(overmap_destination_chosen))
+	om_ask(occupant, /datum/om/prompt/choice/fighter_destination, PROC_REF(overmap_destination_chosen), choices = choices, edge = what_edge, start_x = this_x, start_y = this_y, start_z = this_z, new_x = new_x, new_y = new_y)
 
-/obj/mecha/combat/fighter/proc/overmap_destination_cancelled(mob/user, datum/om/prompt/ask)
-	var/backwards = turn(ask.get("edge"), 180)
+/// Where a fighter leaving the map edge goes. Re-checked on the answer: the pilot is still in it,
+/// it hasn't moved, and the destination is still next to its sector. A cancel backs it off the edge.
+/datum/om/prompt/choice/fighter_destination
+	title = "Destination"
+	message = "Choose an overmap destination:"
+	requires = list(/datum/om/check/inside_target)
+	var/edge
+	var/start_x
+	var/start_y
+	var/start_z
+	var/new_x
+	var/new_y
+
+/datum/om/prompt/choice/fighter_destination/valid()
+	var/obj/mecha/combat/fighter/F = subject
+	var/obj/effect/overmap/visitable/V = choices[choice]
+	if(F.slot_item(MECHA_SLOT_PILOT) != answerer || F.x != start_x || F.y != start_y || F.z != start_z || get_dist(V, get_overmap_sector(F.z)) > 1)
+		to_chat(answerer, span_warning("You or they appear to have moved!"))
+		return "moved"
+	return null
+
+/datum/om/prompt/choice/fighter_destination/cancelled()
+	var/obj/mecha/combat/fighter/F = subject
+	F?.back_off_edge(edge)
+
+/obj/mecha/combat/fighter/proc/back_off_edge(what_edge)
+	var/backwards = turn(what_edge, 180)
 	forceMove(get_step(src,backwards)) //Move them back a step, then.
 	set_dir(backwards)
 
-/obj/mecha/combat/fighter/proc/overmap_destination_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/mecha/combat/fighter/proc/overmap_destination_chosen(datum/om/prompt/choice/fighter_destination/ask)
 	var/mob/living/carbon/occupant = slot_item(MECHA_SLOT_PILOT)
-	var/obj/effect/overmap/visitable/our_ship = get_overmap_sector(z)
-	var/list/choices = ask.get("choices")
-	var/what_edge = ask.get("edge")
-	var/this_x = ask.get("x")
-	var/this_y = ask.get("y")
-	var/this_z = ask.get("z")
-	var/this_occupant = ask.get("occupant")
-	var/new_x = ask.get("new_x")
-	var/new_y = ask.get("new_y")
+	var/new_x = ask.new_x
+	var/new_y = ask.new_y
 	var/new_z
-	if(!choice)
-		var/backwards = turn(what_edge, 180)
-		forceMove(get_step(src,backwards)) //Move them back a step, then.
-		set_dir(backwards)
+	if(!ask.choice)
+		back_off_edge(ask.edge)
 		return
 	else
-		var/obj/effect/overmap/visitable/V = choices[choice]
-		if(occupant != this_occupant || this_x != x || this_y != y || this_z != z || get_dist(V,our_ship) > 1) //Sanity after user input
-			to_chat(occupant, span_warning("You or they appear to have moved!"))
-			return
+		var/obj/effect/overmap/visitable/V = ask.choices[ask.choice]
 		var/list/levels = V.get_space_zlevels()
 		if(!levels.len)
 			to_chat(occupant, span_warning("You don't appear to be able to get there from here!"))
@@ -303,30 +315,29 @@
 
 /obj/mecha/combat/fighter/gunpod/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/multitool) && state == 1)
-		om_prompt_sequence(src, user, list(
-			list("key" = "zone", "kind" = "list", "message" = "Please select a target zone.", "title" = "Paint Zone", "choices" = list("Fore Stripe", "Aft Stripe", "CANCEL")),
-			PROC_REF(ask_stripe_color),
-		), PROC_REF(stripe_painted), list("target" = W, "requires" = PROMPT_IN_HAND))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
 	else ..()
 
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(mob/user, datum/om/prompt/ask)
-	if(ask.get("zone") != "CANCEL")
-		return list("key" = "color", "kind" = "color", "message" = "Please select a paint color.", "title" = "Paint Color")
+/datum/om/prompt/color/mech_paint
+	title = "Paint Color"
+	message = "Please select a paint color."
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/zone
 
-/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(mob/user, datum/om/prompt/ask)
-	var/new_paint_location = ask.get("zone")
-	var/new_paint_color = ask.get("color")
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/om/prompt/choice/ask)
+	if(ask.choice != "CANCEL")
+		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(stripe_painted), subject = ask.subject, zone = ask.choice)
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/om/prompt/color/mech_paint/ask)
 	if(state != 1)
 		return
-	if(new_paint_location && new_paint_location != "CANCEL")
-		if(new_paint_color)
-			switch(new_paint_location)
-				if("Fore Stripe")
-					stripe1_color = new_paint_color
-				if("Aft Stripe")
-					stripe2_color = new_paint_color
-
-		update_icon()
+	if(ask.picked_color)
+		switch(ask.zone)
+			if("Fore Stripe")
+				stripe1_color = ask.picked_color
+			if("Aft Stripe")
+				stripe2_color = ask.picked_color
+	update_icon()
 
 /obj/effect/decal/mecha_wreckage/gunpod
 	name = "Gunpod wreckage"

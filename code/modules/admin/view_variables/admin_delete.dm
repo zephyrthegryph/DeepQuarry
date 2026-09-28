@@ -14,7 +14,7 @@
 		else
 			jmp_coords = coords = "in nullspace"
 
-	if (flow_ask(mob, "delete", list("message" = "Are you sure you want to delete:\n[D]\n[coords]?", "title" = "Confirmation", "choices" = list("Yes", "No"))) == "Yes")
+	if (flow_ask(mob, "delete", /datum/om/prompt/choice/alert, message = "Are you sure you want to delete:\n[D]\n[coords]?", title = "Confirmation", choices = list("Yes", "No")) == "Yes")
 		log_admin("[key_name(usr)] deleted [D] [coords]")
 		message_admins("[key_name_admin(usr)] deleted [D] [jmp_coords]")
 		//BLACKBOX_LOG_ADMIN_VERB("Delete")

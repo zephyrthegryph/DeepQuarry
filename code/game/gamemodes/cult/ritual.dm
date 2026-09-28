@@ -333,21 +333,13 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 			tgui_alert_async(user, "The cloth of reality can't take that much of a strain. Remove some runes first!")
 			return
 		else
-			om_ask(user, /datum/om/prompt/choice/tome_menu, PROC_REF(tome_menu_chosen))
+			om_ask(user, /datum/om/prompt/choice, PROC_REF(tome_menu_chosen), title = "Tome", message = "You open the tome", buttons = TRUE, choices = list("Read it", "Scribe a rune", "Cancel"), ask_flags = ASK_HELD | ASK_CAPABLE)
 			return
 	else
 		to_chat(user, "The book seems full of illegible scribbles. Is this a joke?")
 		return
 
-/// The tome's menu. Re-checked on the answer: the tome is still in the reader's hands.
-/datum/om/prompt/choice/tome_menu
-	title = "Tome"
-	message = "You open the tome"
-	buttons = TRUE
-	choices = list("Read it", "Scribe a rune", "Cancel")
-	ask_flags = ASK_HELD | ASK_CAPABLE
-
-/obj/item/book/tome/proc/tome_menu_chosen(datum/om/prompt/choice/tome_menu/ask)
+/obj/item/book/tome/proc/tome_menu_chosen(datum/om/prompt/choice/ask)
 	switch(ask.choice)
 		if("Read it")
 			// structured TGUI AdminReport.
@@ -479,17 +471,24 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 		if (!istype(user.loc,/turf))
 			to_chat(user, span_notice("You do not have enough space to write a proper rune."))
 		var/list/runes = list("teleport", "itemport", "tome", "armor", "convert", "tear in reality", "emp", "drain", "seer", "raise", "obscure", "reveal", "astral journey", "manifest", "imbue talisman", "sacrifice", "wall", "freedom", "cultsummon", "deafen", "blind", "bloodboil", "communicate", "stun")
-		om_prompt_sequence(src, user, list(
-			list("key" = "rune", "kind" = "list", "message" = "Choose a rune to scribe", "title" = "Rune Scribing", "choices" = runes),
-			PROC_REF(imbued_ask_beacon),
-		), PROC_REF(imbued_rune_chosen), list("timeout" = 30 SECONDS))
+		om_ask(user, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_rune_picked), message = "Choose a rune to scribe", choices = runes)
 
-/obj/item/book/tome/imbued/proc/imbued_ask_beacon(mob/user, datum/om/prompt/ask)
-	if(ask.get("rune") == "teleport" || ask.get("rune") == "itemport")
-		return list("key" = "beacon", "kind" = "list", "message" = "Select the last rune", "title" = "Rune Scribing", "choices" = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"))
+/// The admin tome's rune pick, then (for a teleport rune) its last word. `rune` carries the first answer.
+/datum/om/prompt/choice/imbued_rune
+	title = "Rune Scribing"
+	timeout = 30 SECONDS
+	var/rune
 
-/obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, datum/om/prompt/ask)
-	var/r = ask.get("rune")
+/obj/item/book/tome/imbued/proc/imbued_rune_picked(datum/om/prompt/choice/imbued_rune/ask)
+	if(ask.choice == "teleport" || ask.choice == "itemport")
+		om_ask(ask.answerer, /datum/om/prompt/choice/imbued_rune, PROC_REF(imbued_beacon_picked), message = "Select the last rune", choices = list("ire", "ego", "nahlizet", "certum", "veri", "jatkaa", "balaq", "mgar", "karazet", "geeri"), rune = ask.choice)
+		return
+	imbued_rune_chosen(ask.answerer, ask.choice)
+
+/obj/item/book/tome/imbued/proc/imbued_beacon_picked(datum/om/prompt/choice/imbued_rune/ask)
+	imbued_rune_chosen(ask.answerer, ask.rune, ask.choice)
+
+/obj/item/book/tome/imbued/proc/imbued_rune_chosen(mob/user, r, beacon)
 	var/obj/effect/rune/R = new /obj/effect/rune
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -498,14 +497,12 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	log_and_message_admins("created \an [r] rune at \the [A.name] - [user.loc.x]-[user.loc.y]-[user.loc.z].")
 	switch(r)
 		if("teleport")
-			var/beacon = ask.get("beacon")
 			R.word1=GLOB.cultwords["travel"]
 			R.word2=GLOB.cultwords["self"]
 			R.word3=beacon
 			R.forceMove(user.loc)
 			R.check_icon()
 		if("itemport")
-			var/beacon = ask.get("beacon")
 			R.word1=GLOB.cultwords["travel"]
 			R.word2=GLOB.cultwords["other"]
 			R.word3=beacon

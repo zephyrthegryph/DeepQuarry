@@ -112,14 +112,16 @@
 			. = TRUE
 
 		if("network")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Which network do you want to view?", "title" = "Comm Monitor", "default" = network, "max_length" = 15, "requires" = PROMPT_USABLE), PROC_REF(network_entered))
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
 			. = TRUE
 
 		if("cleartemp")
 			temp = null
 			. = TRUE
 
-/obj/machinery/computer/telecomms/monitor/proc/network_entered(mob/user, newnet, datum/om/prompt/ask)
+/obj/machinery/computer/telecomms/monitor/proc/network_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/newnet = ask.text
 	SStgui.update_uis(src)
 	if(newnet && ((user in range(1, src)) || issilicon(user)))
 		if(length(newnet) > 15)

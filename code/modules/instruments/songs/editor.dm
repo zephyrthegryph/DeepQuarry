@@ -100,7 +100,7 @@
 		if("import_song")
 			var/song_text = ""
 			do
-				var/_answer_k103 = act_prompt(user, action, params, ui, "k103", list("kind" = "text", "message" = "Please paste the entire song, formatted:", "title" = name, "max_length" = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), "multiline" = TRUE))
+				var/_answer_k103 = act_ask(user, action, params, ui, "k103", /datum/om/prompt/text, message = "Please paste the entire song, formatted:", title = name, max_length = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), multiline = TRUE)
 				if(isnull(_answer_k103))
 					return
 				song_text = _answer_k103
@@ -108,7 +108,7 @@
 					return
 
 				if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-					var/should_continue = act_prompt(user, action, params, ui, "k108", list("message" = "Your message is too long! Would you like to continue editing it?", "title" = "Warning", "choices" = list("Yes", "No")))
+					var/should_continue = act_ask(user, action, params, ui, "k108", /datum/om/prompt/choice/alert, message = "Your message is too long! Would you like to continue editing it?", title = "Warning", choices = list("Yes", "No"))
 					if(isnull(should_continue))
 						return
 					if(should_continue != "Yes")
@@ -122,7 +122,7 @@
 			tempo = sanitize_tempo(5) // default 120 BPM
 			return TRUE
 		if("add_new_line")
-			var/newline = act_prompt(user, action, params, ui, "k120", list("kind" = "text", "message" = "Enter your line", "title" = parent().name, "max_length" = MUSIC_MAXLINECHARS))
+			var/newline = act_ask(user, action, params, ui, "k120", /datum/om/prompt/text, message = "Enter your line", title = parent().name, max_length = MUSIC_MAXLINECHARS)
 			if(isnull(newline))
 				return
 			if(!newline || !in_range(parent(), user))
@@ -142,7 +142,7 @@
 			var/line_to_edit = params["line_editing"]
 			if(line_to_edit > lines.len || line_to_edit < 1)
 				return FALSE
-			var/new_line_text = act_prompt(user, action, params, ui, "k138", list("kind" = "text", "message" = "Enter your line ", "title" = parent().name, "default" = lines[line_to_edit], "max_length" = MUSIC_MAXLINECHARS))
+			var/new_line_text = act_ask(user, action, params, ui, "k138", /datum/om/prompt/text, message = "Enter your line ", title = parent().name, default = lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
 			if(isnull(new_line_text))
 				return
 			if(isnull(new_line_text) || !in_range(parent(), user))

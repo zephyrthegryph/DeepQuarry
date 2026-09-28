@@ -125,7 +125,7 @@
 
 /datum/nifsoft/sizechange/activate()
 	if((. = ..()))
-		var/new_size = rerun_prompt(usr, "k128", list("kind" = "number", "message" = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", "title" = "Set Size", "default" = 200, "max" = 600, "min" = 1), PROC_REF(activate), args)
+		var/new_size = rerun_ask(usr, "k128", PROC_REF(activate), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max = 600, min = 1)
 		if(isnull(new_size))
 			return
 

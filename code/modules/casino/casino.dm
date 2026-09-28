@@ -418,7 +418,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	if(user.incapacitated())
 		return TRUE
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k410 = rerun_prompt(user, "k410", list("kind" = "list", "message" = "Choose what to do", "title" = "Wheel Of Fortune", "choices" = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel")), PROC_REF(interaction_use), args)
+		var/_answer_k410 = rerun_ask(user, "k410", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Choose what to do", title = "Wheel Of Fortune", choices = list("Spin the Wheel! (Not Lottery)", "Set the interval", "Cancel"))
 		if(isnull(_answer_k410))
 			return
 		switch(_answer_k410)
@@ -455,7 +455,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k445 = rerun_prompt(user, "k445", list("kind" = "list", "message" = "Choose what to do (Management)", "title" = "Wheel Of Fortune (Management)", "choices" = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel")), PROC_REF(interaction_id), args)
+		var/_answer_k445 = rerun_ask(user, "k445", PROC_REF(interaction_id), args, /datum/om/prompt/choice, message = "Choose what to do (Management)", title = "Wheel Of Fortune (Management)", choices = list("Spin the Lottery Wheel!", "Toggle Lottery Sales", "Toggle Public Spins", "Reset Lottery", "Cancel"))
 		if(isnull(_answer_k445))
 			return
 		switch(_answer_k445)
@@ -482,7 +482,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 				to_chat(user,span_notice("Public spins has been disabled."))
 
 			if("Reset Lottery")
-				var/confirm = rerun_prompt(user, "k469", list("message" = "Are you sure you want to reset Lottery?", "title" = "Confirm Lottery Reset", "choices" = list("Yes", "No")), PROC_REF(interaction_id), args)
+				var/confirm = rerun_ask(user, "k469", PROC_REF(interaction_id), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to reset Lottery?", title = "Confirm Lottery Reset", choices = list("Yes", "No"))
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")
@@ -570,7 +570,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	if(user.incapacitated())
 		return
 	if(ishuman(user) || isrobot(user))
-		var/new_interval = rerun_prompt(user, "k556", list("kind" = "number", "message" = "Put the desired interval (1-1000)", "title" = "Set Interval", "max" = 1000, "min" = 1), PROC_REF(interaction_setinterval), args)
+		var/new_interval = rerun_ask(user, "k556", PROC_REF(interaction_setinterval), args, /datum/om/prompt/number, message = "Put the desired interval (1-1000)", title = "Set Interval", max = 1000, min = 1)
 		if(isnull(new_interval))
 			return
 		if(!isnum(new_interval) || new_interval < 1 || new_interval > 1000)
@@ -620,7 +620,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 		return TRUE
 
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k604 = rerun_prompt(user, "k604", list("kind" = "list", "message" = "Choose what to do", "title" = "SPASM", "choices" = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel")), PROC_REF(interaction_use), args)
+		var/_answer_k604 = rerun_ask(user, "k604", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Choose what to do", title = "SPASM", choices = list("Show selected Prize", "Select Prize", "Become Prize (Please examine yourself first)", "Cancel"))
 		if(isnull(_answer_k604))
 			return
 		switch(_answer_k604)
@@ -643,7 +643,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 					to_chat(user, span_warning("This prize is already owned by [selected_collar.ownername]"))
 
 			if("Select Prize")
-				var/_answer_k624 = rerun_prompt(user, "k624", list("kind" = "list", "message" = "Select a prize", "title" = "Chose a collar", "choices" = collar_list), PROC_REF(interaction_use), args)
+				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Select a prize", title = "Chose a collar", choices = collar_list)
 				if(isnull(_answer_k624))
 					return
 				selected_collar = _answer_k624
@@ -661,7 +661,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 				if(safety_ckey in sentientprizes_ckeys_list)
 					to_chat(user, span_warning("The SPASM beeps in an upset manner, you already have a collar!"))
 					return TRUE
-				var/confirm = rerun_prompt(user, "k639", list("message" = "Are you sure you want to become a sentient prize?", "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No")), PROC_REF(interaction_use), args)
+				var/confirm = rerun_ask(user, "k639", PROC_REF(interaction_use), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to become a sentient prize?", title = "Confirm Sentient Prize", choices = list("Yes", "No"))
 				if(isnull(confirm))
 					return
 				if(!confirm)
@@ -669,7 +669,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 				if(confirm == "No")
 					to_chat(user, span_warning("The SPASM beeps in a sad manner at your impolite decline..."))
 					return TRUE
-				var/confirmitemtf = rerun_prompt(user, "k645", list("message" = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", "title" = "Confirm Item TF Preference", "choices" = list("Yes", "No")), PROC_REF(interaction_use), args)
+				var/confirmitemtf = rerun_ask(user, "k645", PROC_REF(interaction_use), args, /datum/om/prompt/choice/alert, message = "Would you like to allow others to turn you into an item upon claiming you if they choose to?", title = "Confirm Item TF Preference", choices = list("Yes", "No"))
 				if(isnull(confirmitemtf))
 					return
 				var/allowitemtf = FALSE
@@ -743,7 +743,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 			to_chat(user,span_notice("If collar isn't disabled and entry removed, please ask your owner to free you with collar swipe on the SPASM, or contact staff if you need assistance."))
 			return TRUE
 	if(user.name == C.ownername)
-		var/confirm = rerun_prompt(user, "k717", list("message" = "Are you sure you want to wipe [C.sentientprizename] entry?", "title" = "Confirm Sentient Prize Release", "choices" = list("Yes", "No")), PROC_REF(interaction_collar), args)
+		var/confirm = rerun_ask(user, "k717", PROC_REF(interaction_collar), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe [C.sentientprizename] entry?", title = "Confirm Sentient Prize Release", choices = list("Yes", "No"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -771,7 +771,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 
 	to_chat(user, span_warning("Proper access, allowed staff controls."))
 	if(ishuman(user) || isrobot(user))
-		var/_answer_k743 = rerun_prompt(user, "k743", list("kind" = "list", "message" = "Choose what to do (Management)", "title" = "SPASM (Management)", "choices" = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel")), PROC_REF(interaction_id), args)
+		var/_answer_k743 = rerun_ask(user, "k743", PROC_REF(interaction_id), args, /datum/om/prompt/choice, message = "Choose what to do (Management)", title = "SPASM (Management)", choices = list("Toggle Sentient Prize Sales", "Wipe Selected Prize Entry", "Change Prize Value", "Cancel"))
 		if(isnull(_answer_k743))
 			return
 		switch(_answer_k743)
@@ -801,7 +801,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 					selected_collar = null
 					return TRUE
 				var/safety_ckey = selected_collar.sentientprizeckey
-				var/confirm = rerun_prompt(user, "k770", list("message" = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", "title" = "Confirm Sentient Prize", "choices" = list("Yes", "No")), PROC_REF(interaction_id), args)
+				var/confirm = rerun_ask(user, "k770", PROC_REF(interaction_id), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"))
 				if(isnull(confirm))
 					return
 				if(confirm == "Yes")
@@ -828,38 +828,56 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	var/item_type = GLOB.item_tf_options[target_item_name]
 	if(!ispath(item_type))
 		return
+	om_flow_start(/datum/om/flow/casino_item_tf, sentient_prize, src, item_type = item_type)
+
+/// The prize customises the item they become: name, description and colour, each optional (a
+/// cancel keeps the default). Then they are transformed, if still alive.
+/datum/om/flow/casino_item_tf
+	name = "casino item tf"
+	var/item_type
+	var/item_name
+	var/item_desc
+	var/item_color
+
+/datum/om/flow/casino_item_tf/valid()
+	var/mob/living/sentient_prize = actor
+	return sentient_prize.stat == DEAD ? "dead" : null
+
+/datum/om/flow/casino_item_tf/proc/item_label()
 	var/obj/item/item_path = item_type
-	var/item_label = initial(item_path.name)
-	om_prompt_sequence(src, sentient_prize, list(
-		list("key" = "name", "kind" = "text", "message" = "Choose your item name for \the [item_label] (Leave blank or cancel to use its default name)", "title" = "TF Item Name", "optional" = TRUE),
-		list("key" = "desc", "kind" = "text", "message" = "Choose your item description for \the [item_label] (Leave blank or cancel to use its default description)", "title" = "TF Item Description", "optional" = TRUE),
-		list("key" = "recolor", "message" = "Do you want to customize your item's color?", "title" = "Item TF Color", "choices" = list("Yes", "No"), "optional" = TRUE),
-		PROC_REF(item_tf_ask_color),
-	), PROC_REF(item_tf_customised), list("data" = list("item_type" = item_type), "on_cancel" = PROC_REF(item_tf_uncustomised)))
+	return initial(item_path.name)
 
-/obj/machinery/casinosentientprize_handler/proc/item_tf_ask_color(mob/living/sentient_prize, datum/om/prompt/P)
-	if(P.get("recolor") != "Yes")
-		return null
-	var/obj/item/item_path = P.get("item_type")
-	return list("key" = "color", "kind" = "color", "message" = "Choose the color for your item.", "title" = "Item TF Color", "default" = initial(item_path.color), "optional" = TRUE)
+/datum/om/flow/casino_item_tf/start()
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(name_entered), title = "TF Item Name", message = "Choose your item name for \the [item_label()] (Leave blank or cancel to use its default name)", cancel_answer = "")
 
-/// A closed question still transforms them, with the defaults.
-/obj/machinery/casinosentientprize_handler/proc/item_tf_uncustomised(mob/living/sentient_prize, datum/om/prompt/P)
-	item_tf_customised(sentient_prize, P)
+/datum/om/flow/casino_item_tf/proc/name_entered(datum/om/prompt/text/ask)
+	item_name = ask.text
+	om_ask(actor, /datum/om/prompt/text, PROC_REF(desc_entered), title = "TF Item Description", message = "Choose your item description for \the [item_label()] (Leave blank or cancel to use its default description)", cancel_answer = "")
 
-/obj/machinery/casinosentientprize_handler/proc/item_tf_customised(mob/living/sentient_prize, datum/om/prompt/P)
-	if(QDELETED(sentient_prize) || sentient_prize.stat == DEAD)
+/datum/om/flow/casino_item_tf/proc/desc_entered(datum/om/prompt/text/ask)
+	item_desc = ask.text
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(recolor_answered), title = "Item TF Color", message = "Do you want to customize your item's color?", answer_on_no = TRUE, cancel_answer = "No")
+
+/datum/om/flow/casino_item_tf/proc/recolor_answered(datum/om/prompt/confirm/ask)
+	if(!ask.yes)
+		transform()
 		return
-	var/item_type = P.get("item_type")
+	var/obj/item/item_path = item_type
+	om_ask(actor, /datum/om/prompt/color, PROC_REF(color_picked), title = "Item TF Color", message = "Choose the color for your item.", default = initial(item_path.color), cancel_answer = "")
+
+/datum/om/flow/casino_item_tf/proc/color_picked(datum/om/prompt/color/ask)
+	item_color = ask.picked_color
+	transform()
+
+/datum/om/flow/casino_item_tf/proc/transform()
+	var/mob/living/sentient_prize = actor
 	var/obj/item/newitem = new item_type(get_turf(sentient_prize)) // This might be a bad idea, but if the prize is in something/someone it would be potentially diastrous to use loc. Better to move 'em out than move it in!
-	var/item_name = P.get("name")
-	var/item_desc = P.get("desc")
 	if(LAZYLEN(item_name))
 		newitem.name = item_name
 	if(LAZYLEN(item_desc))
 		newitem.desc = item_desc
-	if(P.get("color"))
-		newitem.color = P.get("color")
+	if(item_color)
+		newitem.color = item_color
 	sentient_prize.tf_into(newitem, TRUE, item_name)
 
 /obj/machinery/casinosentientprize_handler/proc/insert_chip(obj/item/spacecasinocash/cashmoney, mob/user, buystate)
@@ -887,7 +905,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	var/list/tf_choice = null
 	var/declined_tf = FALSE
 	if(buystate == "buy" && collar.sentientprizeitemtf)
-		var/confirm_item_tf_claim = rerun_prompt(user, "k854", list("message" = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", "title" = "Confirm Prize Item Transformation", "choices" = list("Yes", "No")), PROC_REF(insert_chip), args)
+		var/confirm_item_tf_claim = rerun_ask(user, "k854", PROC_REF(insert_chip), args, /datum/om/prompt/choice/alert, message = "This prize has opted in to being transformed into an item! Would you like to claim your prize as an item?", title = "Confirm Prize Item Transformation", choices = list("Yes", "No"))
 		if(isnull(confirm_item_tf_claim))
 			return
 		// Re-validate the snapshotted collar after the sleeping dialog: it may have been
@@ -896,7 +914,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 			to_chat(user,span_warning("That prize was claimed by someone else while you decided!"))
 			return
 		if(confirm_item_tf_claim == "Yes")
-			var/_answer_k861 = rerun_prompt(user, "k861", list("kind" = "list", "message" = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", "title" = "Choose Sentient Prize Item", "choices" = GLOB.item_tf_options, "cancel_answer" = ""), PROC_REF(insert_chip), args)
+			var/_answer_k861 = rerun_ask(user, "k861", PROC_REF(insert_chip), args, /datum/om/prompt/choice, message = "Choose the item to claim your prize as. (Cancelling will default you to claiming your prize without transformation!)", title = "Choose Sentient Prize Item", choices = GLOB.item_tf_options, cancel_answer = "")
 			if(isnull(_answer_k861))
 				return
 			tf_choice = _answer_k861
@@ -952,7 +970,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	if(user.incapacitated())
 		return
 	if(ishuman(user) || isrobot(user))
-		var/new_price = rerun_prompt(user, "k915", list("kind" = "number", "message" = "Select the desired price (1-1000)", "title" = "Set Price", "max" = 1000, "min" = 1), PROC_REF(setprice), args)
+		var/new_price = rerun_ask(user, "k915", PROC_REF(setprice), args, /datum/om/prompt/number, message = "Select the desired price (1-1000)", title = "Set Price", max = 1000, min = 1)
 		if(isnull(new_price))
 			return
 		if(!isnum(new_price) || new_price < 1 || new_price > 1000)

@@ -9,7 +9,7 @@
 				mod_list(target, null, "list", "contents", target_index, autodetect_class = FALSE)
 			if(href_list[VV_HK_LIST_REMOVE])
 				var/variable = target[target_index]
-				var/prompt = flow_ask(mob, "list:remove", list("message" = "Do you want to remove item number [target_index] from list?", "title" = "Confirm", "choices" = list("Yes", "No")))
+				var/prompt = flow_ask(mob, "list:remove", /datum/om/prompt/choice/alert, message = "Do you want to remove item number [target_index] from list?", title = "Confirm", choices = list("Yes", "No"))
 				if (prompt != "Yes")
 					return
 				target.Cut(target_index, target_index+1)

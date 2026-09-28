@@ -50,7 +50,7 @@
 				user.setClickCooldown(user.get_attack_speed(src))
 				// Nanites rebuild plating and wiring alike.
 				var/restoration = S.open >= 2 ? restoration_internal : restoration_external
-				om_task_start(/datum/om/task/timed/nanopaste_repair_limb, user, S, list("receiver" = src, "duration" = 5 * toolspeed, "H" = H, "restoration" = restoration))
+				om_task_start(/datum/om/task/timed/nanopaste_repair_limb, user, S, receiver = src, duration = 5 * toolspeed, H = H, restoration = restoration)
 				return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/nanopaste/proc/attack_timed_done(mob/living/user, mob/living/silicon/robot/R)

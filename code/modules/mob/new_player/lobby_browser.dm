@@ -108,7 +108,7 @@
 			if(!SSticker || SSticker.current_state == GAME_STATE_STARTUP)
 				to_chat(src, span_warning("The game is still setting up, please try again later."))
 				return TRUE
-			om_prompt(src, src, list("message" = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.", "title" = "Observe Round?", "choices" = list("Yes","No")), PROC_REF(observe_confirmed))
+			om_ask(src, /datum/om/prompt/confirm, PROC_REF(observe_confirmed), title = "Observe Round?", message = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.")
 			return TRUE
 		if("give_feedback")
 			if(!SSsqlite.can_submit_feedback(persistent_client.client()))
@@ -137,8 +137,8 @@
 			if(SSticker.current_state == GAME_STATE_STARTUP)
 				to_chat(usr, span_admin("The server is still setting up, but the round will be started as soon as possible."))
 
-/mob/new_player/proc/observe_confirmed(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && !spawning)
+/mob/new_player/proc/observe_confirmed(datum/om/prompt/confirm/ask)
+	if(!spawning)
 		if(QDELETED(src) || !client)
 			return TRUE
 

@@ -67,32 +67,26 @@
 
 /obj/mecha/working/hoverpod/shuttlecraft/attackby(obj/item/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/multitool) && state == 1)
-		om_prompt_sequence(src, user, list(
-			list("key" = "zone", "kind" = "list", "message" = "Please select a target zone.", "title" = "Paint Zone", "choices" = list("Central", "Engine", "Base", "Front", "CANCEL")),
-			PROC_REF(ask_paint_color),
-		), PROC_REF(hull_painted), list("target" = W, "requires" = PROMPT_IN_HAND))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_paint_color), subject = W, choices = list("Central", "Engine", "Base", "Front", "CANCEL"), title = "Paint Zone", message = "Please select a target zone.", ask_flags = ASK_HELD | ASK_CAPABLE)
 	else ..()
 
-/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(mob/user, datum/om/prompt/ask)
-	if(ask.get("zone") != "CANCEL")
-		return list("key" = "color", "kind" = "color", "message" = "Please select a paint color.", "title" = "Paint Color")
+/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/om/prompt/choice/ask)
+	if(ask.choice != "CANCEL")
+		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(hull_painted), subject = ask.subject, zone = ask.choice)
 
-/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(mob/user, datum/om/prompt/ask)
-	var/new_paint_location = ask.get("zone")
-	var/new_paint_color = ask.get("color")
+/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(datum/om/prompt/color/mech_paint/ask)
 	if(state != 1)
 		return
-	if(new_paint_location && new_paint_location != "CANCEL")
-		if(new_paint_color)
-			switch(new_paint_location)
-				if("Central")
-					central_paint = new_paint_color
-				if("Engine")
-					engine_paint = new_paint_color
-				if("Front")
-					front_paint = new_paint_color
-				if("Base")
-					base_paint = new_paint_color
-		update_icon()
+	if(ask.picked_color)
+		switch(ask.zone)
+			if("Central")
+				central_paint = ask.picked_color
+			if("Engine")
+				engine_paint = ask.picked_color
+			if("Front")
+				front_paint = ask.picked_color
+			if("Base")
+				base_paint = ask.picked_color
+	update_icon()
 
 REF_OWNED(/obj/mecha/working/hoverpod/shuttlecraft, list("base_paint_mask", "engine_paint_mask", "central_paint_mask", "front_paint_mask"))

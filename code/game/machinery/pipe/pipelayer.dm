@@ -69,7 +69,7 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 		if(metal < 1)
 			to_chat(user, "\The [src] is empty.")
 			return TRUE
-		om_prompt(src, user, list("message" = "Do you want to eject all the metal in \the [src]?", "title" = "Eject?", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(eject_answered))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(eject_answered), message = "Do you want to eject all the metal in \the [src]?", title = "Eject?", requires = PROMPT_ADJACENT)
 		return TRUE
 	if(!metal && !on)
 		to_chat(user, span_warning("\The [src] doesn't work without metal."))
@@ -80,8 +80,9 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
 	return TRUE
 
-/obj/machinery/pipelayer/proc/eject_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && panel_open)
+/obj/machinery/pipelayer/proc/eject_answered(datum/om/prompt/confirm/ask)
+	var/mob/user = ask.answerer
+	if(panel_open)
 		var/amount_ejected = eject_metal()
 		user.visible_message(span_notice("[user] removes [amount_ejected] sheet\s of [MAT_STEEL] from the \the [src]."),
 			span_notice("You remove [amount_ejected] sheet\s of [MAT_STEEL] from \the [src]."))
@@ -131,10 +132,12 @@ REF_OWNED(/obj/machinery/pipelayer, "W")
 /obj/machinery/pipelayer/wrench_act(mob/user, obj/item/tool)
 	if(panel_open)
 		return ITEM_INTERACT_BLOCKING
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose pipe type", "title" = "Pipe type", "choices" = Pipes, "requires" = PROMPT_ADJACENT), PROC_REF(pipe_type_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(pipe_type_chosen), message = "Choose pipe type", title = "Pipe type", choices = Pipes, requires = PROMPT_ADJACENT)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/pipelayer/proc/pipe_type_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/machinery/pipelayer/proc/pipe_type_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	P_type_t = choice
 	P_type = Pipes[P_type_t]
 	user.visible_message(span_notice("[user] has set \the [src] to manufacture [P_type_t]."), span_notice("You set \the [src] to manufacture [P_type_t]."))

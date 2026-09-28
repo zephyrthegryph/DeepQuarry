@@ -88,7 +88,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath, INTERACT_ITEM(null, PROC_REF(bath_i
 			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
 			return INTERACTION_HANDLED_PASS
 		user.visible_message(span_notice("[user] attempts to buckle [affecting] into \the [src]!"))
-		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), list("receiver" = src, "I" = I, "affecting" = affecting))
+		om_task_start(/datum/om/task/timed/bath_bath_buckle, user, G?.grab_target(), receiver = src, I = I, affecting = affecting)
 	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/bath_bath_buckle
@@ -176,7 +176,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 				if(open && !swirlie)
 					user.visible_message(span_danger("[user] starts to give [GM.name] a swirlie!"), span_notice("You start to give [GM.name] a swirlie!"))
 					swirlie_mob = om_handle(GM)
-					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, list("receiver" = src))
+					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
 					swirlie_mob = null
 				else
 					user.visible_message(span_danger("[user] slams [GM.name] into the [src]!"), span_notice("You slam [GM.name] into the [src]!"))
@@ -360,14 +360,16 @@ This device records all warnings given and teleport events for admin review in c
 			to_chat(user, span_warning("The tome can't support any more pages!"))
 			return
 
-		om_prompt(src, user, list("kind" = "text", "message" = "New pages's name (2-20 char):", "title" = "[src]", "max_length" = 20, "requires" = PROMPT_HELD), PROC_REF(page_named))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(page_named), title = "[src]", message = "New pages's name (2-20 char):", max_length = 20, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return
 
 	else
 		destination_handle = om_handle(LAZYACCESS(beacons, choice))
 		rebuild_radial_images()
 
-/obj/item/perfect_tele/magic/proc/page_named(mob/user, new_name, datum/om/prompt/ask)
+/obj/item/perfect_tele/magic/proc/page_named(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/new_name = ask.text
 	if(!check_menu(user))
 		return
 	if(beacons_left <= 0)

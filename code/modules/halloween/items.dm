@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 		return
 
 	if(LAZYACCESS(treated, user.ckey))
-		var/choice = rerun_prompt(user, "k101", list("message" = "You already took one! Take more?", "title" = "Take another...", "choices" = list("Reach in...", "Leave it!")), PROC_REF(search_done), args)
+		var/choice = rerun_ask(user, "k101", PROC_REF(search_done), args, /datum/om/prompt/choice/alert, message = "You already took one! Take more?", title = "Take another...", choices = list("Reach in...", "Leave it!"))
 		if(isnull(choice))
 			return
 		if(!choice)

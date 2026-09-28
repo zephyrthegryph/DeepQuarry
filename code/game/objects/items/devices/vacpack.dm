@@ -33,11 +33,14 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!om_resolve(output_dest))
-		setting_chosen(user, "output destination")
+		apply_setting(user, "output destination")
 		return
-	om_prompt(src, user, list("kind" = "list", "message" = "Set your [suckverb] attachment's power level or output mode.", "title" = "Vac Settings", "choices" = vac_settings, "requires" = PROMPT_HELD), PROC_REF(setting_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = vac_settings, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/vac_attachment/proc/setting_chosen(mob/user, set_input, datum/om/prompt/ask)
+/obj/item/vac_attachment/proc/setting_chosen(datum/om/prompt/choice/ask)
+	apply_setting(ask.answerer, ask.choice)
+
+/obj/item/vac_attachment/proc/apply_setting(mob/user, set_input)
 	if(set_input == "output destination")
 		if(vac_owner && user != vac_owner)
 			to_chat(user, span_warning("Only designated owner can change this setting."))
@@ -45,13 +48,14 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		var/vac_options = list("Vore Belly", "Trash Bag") //Dont show option for borg belly if the user isnt even a borg. QOL!
 		if(isrobot(user))
 			vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
-		om_prompt(src, user, list("kind" = "list", "message" = "Set your [suckverb] attachment's connection port", "title" = "Vac Settings", "choices" = vac_options, "requires" = PROMPT_HELD), PROC_REF(output_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(output_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return
 	vac_power = vac_settings[set_input]
 	icon_state = "sucker-[vac_power]"
 
-/obj/item/vac_attachment/proc/output_chosen(mob/user, set_output, datum/om/prompt/ask)
-	switch(set_output)
+/obj/item/vac_attachment/proc/output_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Borg Belly")
 			if(isrobot(user))
 				var/mob/living/silicon/robot/R = user
@@ -355,10 +359,11 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	set desc = "Toggle Vac-Pack sprite visibility"
 	set category = "Object"
 
-	om_prompt(src, usr, list("kind" = "list", "message" = "Vac-Pack Visibility Options", "title" = "Vac-Pack Visibility Options", "choices" = list("Show Pack", "Show Tube", "Hidden"), "requires" = PROMPT_HELD), PROC_REF(visibility_chosen))
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(visibility_chosen), title = "Vac-Pack Visibility Options", message = "Vac-Pack Visibility Options", choices = list("Show Pack", "Show Tube", "Hidden"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/vac_attachment/proc/visibility_chosen(mob/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/obj/item/vac_attachment/proc/visibility_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Show Pack")
 			item_state = "sucker"
 		if("Show Tube")

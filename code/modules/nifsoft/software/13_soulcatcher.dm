@@ -144,14 +144,14 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	"AR Projecting \[[setting_flags & NIF_SC_PROJECTING ? "Enabled" : "Disabled"]\]" = NIF_SC_PROJECTING,
 	"Design Inside",
 	"Erase Contents")
-	var/choice = rerun_prompt(nif().human, "k150", list("kind" = "list", "message" = "Select a setting to modify:", "title" = "Soulcatcher NIFSoft", "choices" = settings_list), PROC_REF(show_settings), args)
+	var/choice = rerun_ask(nif().human, "k150", PROC_REF(show_settings), args, /datum/om/prompt/choice, message = "Select a setting to modify:", title = "Soulcatcher NIFSoft", choices = settings_list)
 	if(isnull(choice))
 		return
 	if(choice in settings_list)
 		switch(choice)
 
 			if("Design Inside")
-				var/new_flavor = rerun_prompt(nif().human, "k155", list("kind" = "text", "message" = "Type what the prey sees after being 'caught'. This will be printed after an intro ending with: \"Around you, you see...\" to the prey. If you already have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", "title" = "VR Environment", "default" = html_decode(inside_flavor), "max_length" = MAX_MESSAGE_LEN*2, "multiline" = TRUE), PROC_REF(show_settings), args)
+				var/new_flavor = rerun_ask(nif().human, "k155", PROC_REF(show_settings), args, /datum/om/prompt/text, message = "Type what the prey sees after being 'caught'. This will be printed after an intro ending with: \"Around you, you see...\" to the prey. If you already have prey, this will be printed to them after \"Your surroundings change to...\". Limit 2048 char.", title = "VR Environment", default = html_decode(inside_flavor), max_length = MAX_MESSAGE_LEN*2, multiline = TRUE)
 				if(isnull(new_flavor))
 					return
 				inside_flavor = new_flavor
@@ -162,11 +162,11 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 				return TRUE
 
 			if("Erase Contents")
-				var/mob/living/carbon/brain/caught_soul/brainpick = rerun_prompt(nif().human, "k164", list("kind" = "list", "message" = "Select a mind to delete:", "title" = "Erase Mind", "choices" = brainmobs), PROC_REF(show_settings), args)
+				var/mob/living/carbon/brain/caught_soul/brainpick = rerun_ask(nif().human, "k164", PROC_REF(show_settings), args, /datum/om/prompt/choice, message = "Select a mind to delete:", title = "Erase Mind", choices = brainmobs)
 				if(isnull(brainpick))
 					return
 
-				var/warning = rerun_prompt(nif().human, "k166", list("message" = "Are you SURE you want to erase \"[brainpick]\"?", "title" = "Erase Mind", "choices" = list("CANCEL","DELETE")), PROC_REF(show_settings), args)
+				var/warning = rerun_ask(nif().human, "k166", PROC_REF(show_settings), args, /datum/om/prompt/choice/alert, message = "Are you SURE you want to erase \"[brainpick]\"?", title = "Erase Mind", choices = list("CANCEL","DELETE"))
 				if(isnull(warning))
 					return
 				if(warning == "DELETE")
@@ -555,7 +555,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		to_chat(src,span_warning("You need a loaded mind to use NSay."))
 		return
 	if(!message)
-		var/_answer_k560 = rerun_prompt(src, "k560", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "encode" = FALSE), PROC_REF(nsay_act), args)
+		var/_answer_k560 = rerun_ask(src, "k560", PROC_REF(nsay_act), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
 		if(isnull(_answer_k560))
 			return ITEM_INTERACT_BLOCKING
 		message = _answer_k560
@@ -589,7 +589,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 		return
 
 	if(!message)
-		var/_answer_k591 = rerun_prompt(src, "k591", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "encode" = FALSE), PROC_REF(nme_act), args)
+		var/_answer_k591 = rerun_ask(src, "k591", PROC_REF(nme_act), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)
 		if(isnull(_answer_k591))
 			return ITEM_INTERACT_BLOCKING
 		message = _answer_k591
@@ -650,7 +650,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	set category = "Soulcatcher"
 
 	if(!message)
-		var/_answer_k649 = rerun_prompt(src, "k649", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "encode" = FALSE), VERB_REF(nsay_brain), args)
+		var/_answer_k649 = rerun_ask(src, "k649", VERB_REF(nsay_brain), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
 		if(isnull(_answer_k649))
 			return
 		message = _answer_k649
@@ -664,7 +664,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	set category = "Soulcatcher"
 
 	if(!message)
-		var/_answer_k660 = rerun_prompt(src, "k660", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "encode" = FALSE), VERB_REF(nme_brain), args)
+		var/_answer_k660 = rerun_ask(src, "k660", VERB_REF(nme_brain), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)
 		if(isnull(_answer_k660))
 			return
 		message = _answer_k660

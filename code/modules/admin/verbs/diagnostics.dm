@@ -68,7 +68,7 @@ ADMIN_VERB(print_jobban_old, R_ADMIN|R_MOD, "Print Jobban Log", "This spams all 
 		to_chat(user, span_debug_info("[t]"))
 
 ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This searches all the active jobban entries for the current round and outputs the results to standard output.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	var/job_filter = verb_prompt(user, "a1", list("kind" = "text", "message" = "Contains what?", "title" = "Job Filter"), args)
+	var/job_filter = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Contains what?", title = "Job Filter")
 	if(isnull(job_filter))
 		return
 	if(!job_filter)

@@ -87,7 +87,7 @@
 	set category = "Object"
 	set src in usr
 
-	var/_answer_a1 = rerun_prompt(usr, "a1", list("message" = "Are you sure you want to empty that?", "title" = "Empty Bottle:", "choices" = list("Yes", "No")), VERB_REF(empty), args)
+	var/_answer_a1 = rerun_ask(usr, "a1", VERB_REF(empty), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to empty that?", title = "Empty Bottle:", choices = list("Yes", "No"))
 	if(isnull(_answer_a1))
 		return
 	if (_answer_a1 != "Yes")

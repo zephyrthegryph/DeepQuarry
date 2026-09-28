@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 		if(scribble_page == curr_page)
 			to_chat(user, span_blue("There's already a scribble in this page... You wouldn't want to make things too cluttered, would you?"))
 		else
-			var/s = rerun_prompt(user, "k108", list("kind" = "text", "message" = "Write something", "title" = "Newspaper", "max_length" = MAX_MESSAGE_LEN), PROC_REF(interaction_item), args)
+			var/s = rerun_ask(user, "k108", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Write something", title = "Newspaper")
 			if(isnull(s))
 				return TRUE
 			if(!s)

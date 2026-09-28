@@ -305,12 +305,14 @@
 		return //something is terribly wrong
 
 	var/prefs_name = src.client.prefs.read_preference(/datum/preference/name/real_name)
-	om_prompt(src, src, list("message" = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", "title" = "Join as Voice?", "choices" = list("Yes","No"), "data" = list("name" = prefs_name)), PROC_REF(join_as_voice_confirmed))
+	om_ask(src, /datum/om/prompt/confirm/join_as_voice, PROC_REF(join_as_voice_confirmed), message = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)
 
-/mob/observer/dead/proc/join_as_voice_confirmed(mob/user, confirm, datum/om/prompt/ask)
-	if(confirm != "Yes")
-		return
-	var/prefs_name = ask.get("name")
+/datum/om/prompt/confirm/join_as_voice
+	title = "Join as Voice?"
+	var/prefs_name
+
+/mob/observer/dead/proc/join_as_voice_confirmed(datum/om/prompt/confirm/join_as_voice/ask)
+	var/prefs_name = ask.prefs_name
 
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD == 1)
 		to_chat(src, span_danger("You have used the antagHUD and cannot respawn or use communicators!"))
@@ -337,9 +339,10 @@
 		to_chat(src, span_danger("There are no available communicators, sorry."))
 		return
 
-	ask.chain(list("kind" = "list", "message" = "Send a voice request to whom?", "title" = "Recipient Choice", "choices" = choices), PROC_REF(voice_request_target_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(voice_request_target_chosen), choices = choices, title = "Recipient Choice", message = "Send a voice request to whom?")
 
-/mob/observer/dead/proc/voice_request_target_chosen(mob/user, obj/item/communicator/chosen_communicator, datum/om/prompt/ask)
+/mob/observer/dead/proc/voice_request_target_chosen(datum/om/prompt/choice/ask)
+	var/obj/item/communicator/chosen_communicator = ask.choice
 	var/mob/observer/dead/O = src
 	if(O.exonet && chosen_communicator.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "voice")

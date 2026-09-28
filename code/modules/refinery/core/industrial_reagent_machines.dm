@@ -138,7 +138,7 @@
 	effect = /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount
 
 /obj/machinery/reagent_refinery/proc/interaction_set_transfer_amount(mob/user, obj/item/held, datum/interaction/interaction)
-	var/N = rerun_prompt(user, "k140", list("kind" = "list", "message" = "Amount per transfer from this:", "title" = "[src]", "choices" = possible_transfer_amounts), PROC_REF(interaction_set_transfer_amount), args)
+	var/N = rerun_ask(user, "k140", PROC_REF(interaction_set_transfer_amount), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
 	if(isnull(N))
 		return
 	if(N && Adjacent(user))

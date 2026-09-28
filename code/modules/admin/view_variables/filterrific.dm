@@ -67,7 +67,7 @@
 			target().add_filter(params["name"], old_filter_data["priority"], new_filter_data)
 			. = TRUE
 		if("modify_color_value")
-			var/new_color = act_prompt(usr, action, params, ui, "color", list("kind" = "color", "message" = "Pick new filter color", "title" = "Filteriffic Colors!"))
+			var/new_color = act_ask(usr, action, params, ui, "color", /datum/om/prompt/color, message = "Pick new filter color", title = "Filteriffic Colors!")
 			if(new_color)
 				target().transition_filter(params["name"], list("color" = new_color), 4)
 				. = TRUE

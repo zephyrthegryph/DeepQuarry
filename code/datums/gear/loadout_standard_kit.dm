@@ -122,7 +122,7 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 	if(GLOB.device_ringtones)
 		for(var/key in GLOB.device_ringtones)
 			choices += key
-	return list(list("key" = "value", "kind" = "list", "message" = "Pick a ringtone", "title" = "Ringtone", "choices" = choices, "default" = metadata))
+	return list(gear_ask_choice("value", "Ringtone", "Pick a ringtone", choices, metadata))
 
 /datum/gear_tweak/pda_ringtone/tweak_item(obj/item/I, metadata)
 	if(istype(I, /obj/item/pda) && istext(metadata))

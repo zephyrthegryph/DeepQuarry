@@ -187,7 +187,7 @@ DECLARE_INTERACTIONS(/obj/item/shreddedp, INTERACT_ITEM(null, PROC_REF(interacti
 		return
 	user.visible_message(span_warning("\The [user] holds \the [P] up to \the [src]. It looks like [user.p_theyre()] trying to burn it!"), \
 		span_warning("You hold \the [P] up to \the [src], burning it slowly."))
-	om_task_start(/datum/om/task/timed/shreddedp_burnpaper, user, src, list("receiver" = src, "fail_message" = span_warning("You must hold \the [P] steady to burn \the [src].")))
+	om_task_start(/datum/om/task/timed/shreddedp_burnpaper, user, src, receiver = src, fail_message = span_warning("You must hold \the [P] steady to burn \the [src]."))
 
 /datum/om/task/timed/shreddedp_burnpaper
 	duration = 2 SECONDS

@@ -80,11 +80,11 @@
 	generateFooter()
 	tgui_view = "write"
 	// Closing the logo question opens the fax without a header.
-	om_prompt(src, usr, list("message" = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", "title" = "Fax Logo", "choices" = list("NanoTrasen","SolGov", "Talon", "Trader"), "cancel_answer" = "", "requires" = PROMPT_ADMIN(R_ADMIN|R_EVENT)), PROC_REF(header_logo_chosen))
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
 
-/obj/item/paper/admin/proc/header_logo_chosen(mob/user, logo, datum/om/prompt/ask)
-	generateHeader(logo)
-	tgui_interact(user)
+/obj/item/paper/admin/proc/header_logo_chosen(datum/om/prompt/choice/ask)
+	generateHeader(ask.choice)
+	tgui_interact(ask.answerer)
 
 /obj/item/paper/admin/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -116,7 +116,7 @@
 			admin_write("end", usr)
 			return TRUE
 		if("confirm")
-			switch(act_prompt(usr, action, params, ui, "send", list("message" = "Are you sure you want to send the fax as is?", "title" = "Send Fax", "choices" = list("Yes", "No"))))
+			switch(act_ask(usr, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
 				if("Yes")
 					if(headerOn)
 						info = header + info
@@ -150,11 +150,11 @@
 		to_chat(user, span_info("There isn't enough space left on \the [src] to write anything."))
 		return
 	// The answers re-run this write.
-	var/t = rerun_prompt(user, "text", list("kind" = "text", "message" = "Enter what you want to write:", "title" = "Write", "max_length" = free_space, "multiline" = TRUE), PROC_REF(admin_write), args)
+	var/t = rerun_ask(user, "text", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter what you want to write:", title = "Write", max_length = free_space, multiline = TRUE)
 	if(!t)
 		return
 	if(findtext(t, "\[sign\]"))
-		var/signature = rerun_prompt(user, "signature", list("kind" = "text", "message" = "Enter the name you wish to sign the paper with", "title" = "Signature"), PROC_REF(admin_write), args)
+		var/signature = rerun_ask(user, "signature", PROC_REF(admin_write), args, /datum/om/prompt/text, message = "Enter the name you wish to sign the paper with", title = "Signature")
 		if(isnull(signature))
 			return
 		admin_signature = signature

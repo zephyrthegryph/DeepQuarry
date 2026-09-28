@@ -60,7 +60,7 @@
 		balloon_alert(user, "\the [E.name] already has a tourniquet!")
 		return ITEM_INTERACT_FAILURE
 	user.balloon_alert_visible("[user] starts cinching \a [src] around [H == user ? "their" : "[H]'s"] [E.name].", "cinching \the [src] around the [E.name].")
-	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, list("receiver" = src, "duration" = TOURNIQUET_APPLY_TIME, "E" = E))
+	om_task_start(/datum/om/task/timed/tourniquet_cinch, user, H, duration = TOURNIQUET_APPLY_TIME, E = E)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/tourniquet/proc/cinch_failed(datum/om/task/timed/tourniquet_cinch/task)
@@ -163,7 +163,7 @@
 	if(!length(cinched))
 		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
 		return
-	var/_answer_k142 = rerun_prompt(user, "k142", list("kind" = "list", "message" = "Loosen which tourniquet?", "title" = "Tourniquet", "choices" = cinched), VERB_REF(loosen_tourniquet), args)
+	var/_answer_k142 = rerun_ask(user, "k142", VERB_REF(loosen_tourniquet), args, /datum/om/prompt/choice, message = "Loosen which tourniquet?", title = "Tourniquet", choices = cinched)
 	if(isnull(_answer_k142))
 		return
 	var/choice = length(cinched) == 1 ? cinched[1] : _answer_k142

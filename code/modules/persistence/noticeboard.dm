@@ -74,7 +74,7 @@ REF_OWNED_LIST(/obj/structure/noticeboard, "notices")
 	return FALSE
 
 /obj/structure/noticeboard/screwdriver_act(mob/user, obj/item/tool)
-	var/choice = rerun_prompt(user, "k79", list("kind" = "list", "message" = "Which direction do you wish to place the noticeboard?", "title" = "Noticeboard Offset", "choices" = list("North", "South", "East", "West", "No Offset")), TYPE_PROC_REF(/atom, screwdriver_act), args)
+	var/choice = rerun_ask(user, "k79", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which direction do you wish to place the noticeboard?", title = "Noticeboard Offset", choices = list("North", "South", "East", "West", "No Offset"))
 	if(isnull(choice))
 		return ITEM_INTERACT_BLOCKING
 	if(!choice || !Adjacent(user) || tool.loc != user || user.incapacitated())

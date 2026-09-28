@@ -48,13 +48,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
 			return
 	else if(spawntype)
-		var/_answer_k54 = rerun_prompt(user, "k54", list("message" = "This [src] spawns something special, would you like to play as it?", "title" = "Creachur", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/_answer_k54 = rerun_ask(user, "k54", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice/alert, message = "This [src] spawns something special, would you like to play as it?", title = "Creachur", choices = list("No","Yes"))
 		if(isnull(_answer_k54))
 			return
 		if(_answer_k54 == "Yes")
 			autoresleeve(user)
 	else if(ghost_spawns)
-		var/_answer_k57 = rerun_prompt(user, "k57", list("message" = "Would you like to be spawned here as your presently loaded character?", "title" = "Spawn here", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/_answer_k57 = rerun_ask(user, "k57", TYPE_PROC_REF(/atom, attack_ghost), args, /datum/om/prompt/choice/alert, message = "Would you like to be spawned here as your presently loaded character?", title = "Spawn here", choices = list("No","Yes"))
 		if(isnull(_answer_k57))
 			return
 		if(_answer_k57 == "Yes")
@@ -78,7 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	var/mob/living/body = ghost.mind?.current
 	if(ghost.mind && ghost.mind.current && ghost.mind.current.stat != DEAD && !(istype(body) && om_value_of(body, EFFECT_SUSPENDED))) // A suspended body (kept for reforming) shouldn't block this.
 		if(istype(ghost.mind.current.loc, /obj/item/mmi))
-			var/_answer_k78 = rerun_prompt(ghost, "k78", list("message" = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", "title" = "Delete Brain", "choices" = list("No","Yes")), PROC_REF(autoresleeve), args)
+			var/_answer_k78 = rerun_ask(ghost, "k78", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Your brain is still alive, using the auto-resleever will delete that brain. Are you sure?", title = "Delete Brain", choices = list("No","Yes"))
 			if(isnull(_answer_k78))
 				return
 			if(_answer_k78 != "Yes")
@@ -156,7 +156,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 			return
 
 	var/slot = ghost.client.prefs.default_slot
-	var/_answer_k153 = rerun_prompt(ghost, "k153", list("message" = "Would you like to be resleeved?", "title" = "Resleeve", "choices" = list("No","Yes")), PROC_REF(autoresleeve), args)
+	var/_answer_k153 = rerun_ask(ghost, "k153", PROC_REF(autoresleeve), args, /datum/om/prompt/choice/alert, message = "Would you like to be resleeved?", title = "Resleeve", choices = list("No","Yes"))
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")

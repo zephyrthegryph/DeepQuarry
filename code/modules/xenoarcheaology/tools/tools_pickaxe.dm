@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/item/pickaxe/excavationdrill, INTERACT_USE(null, PROC_
 
 /// Old attack_self.
 /obj/item/pickaxe/excavationdrill/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/depth = rerun_prompt(user, "k171", list("kind" = "number", "message" = "Put the desired depth (1-60 centimeters).", "title" = "Set Depth", "default" = excavation_amount, "max" = 60, "min" = 1), PROC_REF(interaction_self), args)
+	var/depth = rerun_ask(user, "k171", PROC_REF(interaction_self), args, /datum/om/prompt/number, message = "Put the desired depth (1-60 centimeters).", title = "Set Depth", default = excavation_amount, max = 60, min = 1)
 	if(isnull(depth))
 		return TRUE
 	if(depth>60 || depth<1)

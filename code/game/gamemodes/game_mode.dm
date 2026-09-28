@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				round_autoantag = !round_autoantag
 		message_admins("Admin [key_name_admin(usr)] toggled game mode option '[href_list["toggle"]]'.")
 	else if(href_list["set"])
-		om_prompt(src, usr, list("kind" = "number", "message" = game_mode_option_prompt(href_list["set"]), "min" = 0, "max" = href_list["set"] == "shuttle_delay" ? 20 : 100, "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER), "data" = list("option" = href_list["set"])), PROC_REF(game_mode_option_entered))
+		om_ask(usr, /datum/om/prompt/number/game_mode_option, PROC_REF(game_mode_option_entered), message = game_mode_option_prompt(href_list["set"]), max = href_list["set"] == "shuttle_delay" ? 20 : 100, option = href_list["set"])
 	else if(href_list["debug_antag"])
 		if(href_list["debug_antag"] == "self")
 			usr.client.debug_variables(src)
@@ -75,7 +75,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			GLOB.additional_antag_types -= antag.id
 			message_admins("Admin [key_name_admin(usr)] removed [antag.role_text] template from game mode.")
 	else if(href_list["add_antag_type"])
-		om_prompt(src, usr, list("kind" = "list", "message" = "Which type do you wish to add?", "title" = "Select Antag Type", "choices" = GLOB.antag_service.all_antag_types, "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER)), PROC_REF(antag_type_added))
+		om_ask(usr, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = GLOB.antag_service.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
 		return
 
 	SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/show_game_mode)
@@ -89,8 +89,15 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		if("event_modifier_moderate", "event_modifier_severe")
 			return "Enter a new moderate event time modifier."
 
-/datum/game_mode/proc/game_mode_option_entered(mob/user, choice, datum/om/prompt/ask)
-	switch(ask.get("option"))
+/// An admin sets a numeric game mode option (`option`).
+/datum/om/prompt/number/game_mode_option
+	requires = PROMPT_ADMIN(R_ADMIN|R_SERVER)
+	var/option
+
+/datum/game_mode/proc/game_mode_option_entered(datum/om/prompt/number/game_mode_option/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.number
+	switch(ask.option)
 		if("shuttle_delay")
 			if(!choice || choice < 1 || choice > 20)
 				return
@@ -109,10 +116,11 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 				return
 			event_delay_mod_major = choice
 			refresh_event_modifiers()
-	message_admins("Admin [key_name_admin(user)] set game mode option '[ask.get("option")]' to [choice].")
+	message_admins("Admin [key_name_admin(user)] set game mode option '[ask.option]' to [choice].")
 
-/datum/game_mode/proc/antag_type_added(mob/user, choice, datum/om/prompt/ask)
-	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[choice]
+/datum/game_mode/proc/antag_type_added(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[ask.choice]
 	if(antag)
 		if(!islist(SSticker.mode.antag_templates))
 			SSticker.mode.antag_templates = list()

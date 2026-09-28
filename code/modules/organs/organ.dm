@@ -603,7 +603,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, INTERACT_ITEM(null, PROC_REF(interaction_i
 		to_chat(user, span_danger("You are preparing to butcher \the [src]!"))
 		user.visible_message(span_danger("[user] prepares to butcher \the [src]!"))
 		//They can queue this up on multiple organs.
-		var/started = om_task_start(/datum/om/task/timed/organ_butcher, user, src, list("duration" = 10 SECONDS * O.toolspeed, "receiver" = src, "meat_dest" = newtarget))
+		var/started = om_task_start(/datum/om/task/timed/organ_butcher, user, src, duration = 10 SECONDS * O.toolspeed, receiver = src, meat_dest = newtarget)
 		return !istext(started)
 	return butcher_done(null, newtarget)
 

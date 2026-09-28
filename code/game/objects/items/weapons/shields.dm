@@ -217,21 +217,15 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 	if(user.incapacitated() || !istype(user))
 		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
-	om_prompt_sequence(src, user, list(
-		list("key" = "sure", "message" = "Are you sure you want to recolor your shield?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")),
-		PROC_REF(ask_shield_color),
-	), PROC_REF(shield_recolored), list("requires" = PROMPT_ADJACENT))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_shield_color), message = "Are you sure you want to recolor your shield?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/shield/energy/proc/ask_shield_color(mob/user, datum/om/prompt/ask)
-	if(ask.get("sure") == "Yes")
-		return list("key" = "color", "kind" = "color", "message" = "", "title" = "Choose Energy Color", "default" = lcolor)
+/obj/item/shield/energy/proc/ask_shield_color(datum/om/prompt/confirm/ask)
+	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(shield_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/item/shield/energy/proc/shield_recolored(mob/user, datum/om/prompt/ask)
-	if(ask.get("sure") != "Yes")
-		return
-	if(ask.get("color"))
-		lcolor = sanitize_hexcolor(ask.get("color"))
+/obj/item/shield/energy/proc/shield_recolored(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		lcolor = sanitize_hexcolor(ask.picked_color)
 	update_icon()
 
 /obj/item/shield/energy/examine(mob/user)

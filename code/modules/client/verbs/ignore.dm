@@ -31,7 +31,7 @@
 		to_chat(usr, span_warning("You aren't ignoring any players."))
 		return
 
-	var/key_to_unignore = client_prompt("a1", list("kind" = "list", "message" = "Ignored players", "title" = "Unignore", "choices" = ignored_players), VERB_REF(unignore), args, 0)
+	var/key_to_unignore = client_ask("a1", VERB_REF(unignore), args, 0, /datum/om/prompt/choice, message = "Ignored players", title = "Unignore", choices = ignored_players)
 	if(isnull(key_to_unignore))
 		return
 	if(!key_to_unignore)

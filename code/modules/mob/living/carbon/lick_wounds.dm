@@ -3,7 +3,7 @@
 	while(index <= length(wounds))
 		var/datum/affliction/wound/W = wounds[index]
 		if(!QDELETED(W) && !(W.bandaged && W.salved && W.disinfected))
-			om_task_start(/datum/om/task/timed/human_lick, src, src, list("duration" = W.damage/5, "H" = H, "affecting" = affecting, "wounds" = wounds, "index" = index))
+			om_task_start(/datum/om/task/timed/human_lick, src, src, duration = W.damage/5, H = H, affecting = affecting, wounds = wounds, index = index)
 			return
 		index++
 

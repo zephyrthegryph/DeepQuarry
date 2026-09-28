@@ -42,17 +42,25 @@
 			to_chat(user, "The access level of [W:registered_name]\'s card is not high enough. ")
 			return TRUE
 
-		om_prompt(src, user, list("message" = text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), "title" = "Shuttle Launch", "choices" = list("Authorize", "Repeal", "Abort"), "target" = W, "requires" = PROMPT_IN_HAND, "data" = list("card" = W)), PROC_REF(authorization_chosen))
+		om_ask(user, /datum/om/prompt/choice/shuttle_authorization, PROC_REF(authorization_chosen), message = text("Would you like to (un)authorize a shortened launch time? [] authorization\s are still needed. Use abort to cancel all authorizations.", src.auth_need - src.authorized.len), subject = W, card = W)
 		return TRUE
 
 	else if (istype(W, /obj/item/card/emag) && !emagged)
-		om_prompt(src, user, list("message" = "Would you like to launch the shuttle?", "title" = "Shuttle control", "choices" = list("Launch", "Cancel"), "target" = W, "requires" = PROMPT_IN_HAND), PROC_REF(emag_launch_chosen))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(emag_launch_chosen), title = "Shuttle control", message = "Would you like to launch the shuttle?", yes_text = "Launch", no_text = "Cancel", subject = W, ask_flags = ASK_HELD | ASK_CAPABLE)
 		return TRUE
 	return TRUE
 
-/obj/machinery/computer/shuttle/proc/authorization_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/card/id/W = ask.get("card")
-	switch(choice)
+/datum/om/prompt/choice/shuttle_authorization
+	title = "Shuttle Launch"
+	choices = list("Authorize", "Repeal", "Abort")
+	buttons = TRUE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/obj/item/card/id/card
+
+/obj/machinery/computer/shuttle/proc/authorization_chosen(datum/om/prompt/choice/shuttle_authorization/ask)
+	var/obj/item/card/id/W = ask.card
+	var/mob/user = ask.answerer
+	switch(ask.choice)
 		if("Authorize")
 			src.authorized -= W:registered_name
 			src.authorized += W:registered_name
@@ -76,12 +84,8 @@
 			src.authorized.len = 0
 			src.authorized = list(  )
 
-/obj/machinery/computer/shuttle/proc/emag_launch_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/om/prompt/confirm/ask)
 	if(!emagged && !GLOB.emergency_shuttle_service.location())
-		switch(choice)
-			if("Launch")
-				to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
-				GLOB.emergency_shuttle_service.set_launch_countdown(10)
-				emagged = 1
-			if("Cancel")
-				return TRUE
+		to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
+		GLOB.emergency_shuttle_service.set_launch_countdown(10)
+		emagged = 1

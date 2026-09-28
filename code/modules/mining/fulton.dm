@@ -30,7 +30,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	else
 		var/A
 
-		var/_answer_k33 = rerun_prompt(user, "k33", list("kind" = "list", "message" = "Select a beacon to connect to", "title" = "Balloon Extraction Pack", "choices" = possible_beacons), PROC_REF(interaction_self), args)
+		var/_answer_k33 = rerun_ask(user, "k33", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Select a beacon to connect to", title = "Balloon Extraction Pack", choices = possible_beacons)
 		if(isnull(_answer_k33))
 			return TRUE
 		A = _answer_k33

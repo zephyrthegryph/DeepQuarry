@@ -222,13 +222,15 @@ EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
 /// Old attackby.
 /obj/structure/barricade/cutout/proc/cutout_interaction_item(mob/user, obj/I, datum/interaction/interaction)
 	if(is_type_in_list(I, painters))
-		om_prompt(src, user, list("kind" = "list", "message" = "What would you like to paint the cutout as?", "title" = "Cutout Painting", "choices" = cutout_types, "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(cutout_type_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(cutout_type_chosen), message = "What would you like to paint the cutout as?", title = "Cutout Painting", choices = cutout_types, subject = I, requires = PROMPT_IN_HAND)
 		return TRUE
 
 	else
 		return FALSE
 
-/obj/structure/barricade/cutout/proc/cutout_type_chosen(mob/user, choice, datum/om/prompt/ask)
+/obj/structure/barricade/cutout/proc/cutout_type_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/choice = ask.choice
 	if(!Adjacent(user))
 		return
 	om_do_after(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(cutout_paint_done), done_args = list(choice))

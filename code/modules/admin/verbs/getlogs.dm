@@ -14,11 +14,19 @@ ADMIN_VERB(get_current_logs, (R_ADMIN | R_SERVER), "Get Current Logs", "View or 
 	message_admins("[key_name_admin(src)] accessed file: [path]")
 	feedback_add_details("admin_verb","VTL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-	om_prompt(src, src, list("message" = "View (in game), Open (in your system's text editor), or Download?", "title" = path, "choices" = list("View", "Open", "Download"), "requires" = PROMPT_ADMIN(R_ADMIN|R_SERVER), "data" = list("path" = path)), PROC_REF(serverlog_action_chosen))
+	om_ask(src, /datum/om/prompt/choice/serverlog_action, PROC_REF(serverlog_action_chosen), title = path, path = path)
 
-/client/proc/serverlog_action_chosen(mob/user, action, datum/om/prompt/ask)
-	var/path = ask.get("path")
-	switch(action)
+/// What to do with a picked log file. Re-checked on the answer: still an admin with server rights.
+/datum/om/prompt/choice/serverlog_action
+	message = "View (in game), Open (in your system's text editor), or Download?"
+	buttons = TRUE
+	choices = list("View", "Open", "Download")
+	requires = PROMPT_ADMIN(R_ADMIN|R_SERVER)
+	var/path
+
+/client/proc/serverlog_action_chosen(datum/om/prompt/choice/serverlog_action/ask)
+	var/path = ask.path
+	switch(ask.choice)
 		if ("View")
 			// structured TGUI AdminReport.
 			dq_admin_report_html(src.mob, path, "<pre style='word-wrap: break-word; white-space: pre-wrap;'>[html_encode(file2text(file(path)))]</pre>")

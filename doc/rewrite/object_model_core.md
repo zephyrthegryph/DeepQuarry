@@ -947,9 +947,10 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   typed vars, and the caller's `src` rides along as the receiver default (the first of src,
   target and actor that has the `complete_proc`/`cancel_proc`/`check_proc`/a step proc, else
   src). A `complete_proc` of the task's own type runs on the task with no arguments, so it reads
-  the state as its own vars. A var the type doesn't declare is a CRASH on first run. The old
-  `list("key" = value)` form still works (receiver defaults to the actor) and is ratcheted by
-  `api_lints.py` (`task_params_list`).
+  the state as its own vars. A var the type doesn't declare is a CRASH on first run. A positional
+  `list("key" = value)` is refused; `api_lints.py` (`task_params_list`, ceiling 0) keeps it out.
+  Code that builds its own params list calls `om_task_launch(task, actor, target, params, starter)`
+  (there is no legacy positional-params form).
 
   Before (`code/game/objects/items/stacks/medical.dm`, `code/modules/clothing/glasses/glasses.dm`):
 
@@ -981,7 +982,9 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
 - **Typed prompts** (`code/datums/om/ask.dm`). A question is a `/datum/om/prompt/<kind>` type:
   `confirm` (answer `yes`; the answer proc runs on yes unless `answer_on_no`, `declined()` on
   no), `choice` (`choice`; `buttons = TRUE` for alert buttons), `text` (`text`), `number`
-  (`number`), `color` (`picked_color`) and `checklist` (`picked`). `title`, `message`,
+  (`number`), `color` (`picked_color`), `checklist` (`picked`), `choice/alert` (`choice`: alert
+  buttons, default "Ok"), `typepath` (`path`: a type under `root` matching the typed text) and
+  `bitfield` (`value`: the flags of `bitfield`, only those in `editable` may change). `title`, `message`,
   `ask_flags`, `requires`, `timeout` and `cancel_answer` are declared on the type (or passed by
   name); `prepare()` builds the message from the state; `valid()` is the type's own re-check,
   run with the answer already stored. Roles: `answerer` (sees the window), `asker` (started it;
@@ -989,15 +992,36 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   receiver when it's an atom). `ask_flags` cover the common re-checks: `ASK_ALIVE`,
   `ASK_CONSCIOUS`, `ASK_CAPABLE` (answerer and asker), `ASK_ADJACENT` (answerer next to the
   asker, or to the subject when they're the same mob), `ASK_NEAR_SUBJECT`, `ASK_HELD` /
-  `ASK_CARRIED` (the subject is still in the asker's hands / on them), `ASK_FACE_TO_FACE`. Any
+  `ASK_CARRIED` (the subject is still in the asker's hands / on them), `ASK_RESTRAINED`,
+  `ASK_FACE_TO_FACE`. Any
   failure drops the answer and calls `refused(reason)`. Datums in the type's scalar vars (and
   the three roles) are held as handles while the window is open, so a deleted one drops the
   answer. `om_ask(answerer, type, PROC_REF(cb), var = value...)` is a macro: `cb` runs on the
-  caller's `src` with the prompt as its one argument. The string-keyed
-  `om_prompt(E, user, list(...), cb)` form still works and is ratcheted (`api_lints.py`,
-  `prompt_spec`).
+  caller's `src` with the prompt as its one argument (`receiver = X` runs it on X; the prompt's
+  typed `receiver` var is that datum in every hook). The receiver may be a `/client`: a client proc
+  asks with `PROC_REF` (or `TYPE_PROC_REF(/client, x), receiver = C` from an admin verb), and the
+  client is held by ckey while the window is open. A `/proc/` path is only for code with no owner.
+  More options, on every kind: `optional = TRUE` (a cancel answers null instead of calling
+  `cancelled()`), confirm `cancel_text` / choice `cancel_choice` (a cancel button: Yes/No/Cancel,
+  which stops a flow), `hold_strong = list("var")` (state the prompt created and nothing else
+  owns, held as a plain reference), `ui_refresh = X` (X's tgui windows refresh after the answer
+  proc; with `ui_refresh_if_true = TRUE` only when the answer proc returned TRUE, so the answer
+  proc returns TRUE on change instead of calling `SStgui.update_uis()`), and `answer_value()` for
+  procs serving several kinds. A cancel, and a `cancel_answer`,
+  is never refused by the re-checks. Kind `colormatrix` is the ColorMate window (`preview`,
+  `matrix_only`, `ui_state`; answer `matrix`).
+  A list of questions is `om_ask_sequence(/datum/om/flow/ask_sequence/x, answerer, subject,
+  steps = ..., on_done = ..., var = value...)` (flow.dm, a macro: the caller's src is the owner
+  `on_done`/`on_stop` run on). Steps are typed prompts (with `key`) or procs returning one; each
+  answer lands in the sequence type's typed var named by `key`, so state is typed vars, not a
+  data list. Re-run helpers are typed macros that ask once and re-enter the entry point with the
+  answer: `topic_ask(user, href_list, key, prompt, ...)`, `act_ask(user, action, params, ui, key,
+  prompt, ...)`, `verb_ask(user, key, args, prompt, ...)`, `client_ask(key, proc, args, rights,
+  prompt, ...)`, `rerun_ask(user, key, proc, args, prompt, ...)`, `rerun_ask_on(target, ...)`,
+  `flow_ask(user, key, prompt, ...)`, plus `surgery_ask()` and `cast_ask()`. The string-keyed
+  `om_prompt()` spec lists and `om_prompt_sequence()`/`om_prompt_chain()` are deleted.
 
-  Before (`code/modules/mob/living/carbon/human/species/species_shapeshift.dm`):
+  Before (`code/modules/mob/living/carbon/human/species/species_shapeshift.dm`, the old spec form):
 
   ```dm
   om_prompt(src, src, list("kind" = "list", "message" = "Please select a species to emulate.", "title" = "Shapeshifter Body", "choices" = species.get_valid_shapeshifter_forms(src), "requires" = PROMPT_CONSCIOUS), PROC_REF(shapeshifter_shape_chosen))
@@ -1231,7 +1255,7 @@ spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 |---|---|---|---|
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
 | Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, var = value...)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()`; a `list("key" = value)` params list | `api_lints.py` (`do_after_state`, `use_tool_state`, `task_params_list`), `scheduler_lints.py` (`do_after`) |
-| Ask a player | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value...)` (§11) | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()`; the string-keyed spec of `om_prompt()`/`om_prompt_sequence()`/`om_prompt_chain()` | `scheduler_lints.py` (`prompts`), `api_lints.py` (`prompt_spec`) |
+| Ask a player | a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x, PROC_REF(cb), var = value...)` (§11) | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()`; the removed spec-list forms (`om_prompt()`, `topic_prompt()`, `rerun_prompt()` and kin) | `scheduler_lints.py` (`prompts`), `api_lints.py` (`prompt_spec`) |
 | Do an action in steps (take time, ask, act) | one flow type, `om_flow_start(/datum/om/flow/x, actor, target, var = value...)`, its steps chained with `wait()` / `om_ask()` (§11) | several procs passing state through `done_args`, prompt `data` or chained task params, each re-checking by hand | `api_lints.py` (`prompt_spec`, `task_params_list`) |
 | Do I/O (SQL, HTTP) | `om_io(E, /datum/om/io/<kind>, args..., on_done)` with kind `sql` or `http` (§4.12); `om_sql_write()`, `om_http_get()`; inline reads inside a prompt flow; `om_sql_view()` for panels | `Execute()` outside a flow, `world.Export()`, `set waitfor` / `INVOKE_ASYNC` around a query | `scheduler_lints.py` (`set_waitfor`, `invoke_async`, `stoplag`) |
 | Read a client's window or text size, or run a process | DX-exec: `dx_winget()`, `dx_winexists()`, `dx_measure_text()`, `dx_shell()`, `dx_shelleo()` (§4.12) | `winget()`, `winexists()`, `MeasureText()`, `shell()` | `scheduler_lints.py` (`blocking_builtins`) |

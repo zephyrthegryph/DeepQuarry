@@ -186,25 +186,25 @@
 				update_icons()
 				visible_message(span_notice("[src] starts [T.dead? "removing the plant from" : "harvesting"] \the [A]."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, list("job" = FARMBOT_COLLECT, "busy" = src))
+				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_COLLECT, busy = src)
 			if(FARMBOT_WATER)
 				action = "water"
 				update_icons()
 				visible_message(span_notice("[src] starts watering \the [A]."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, list("job" = FARMBOT_WATER, "busy" = src))
+				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_WATER, busy = src)
 			if(FARMBOT_UPROOT)
 				action = "hoe"
 				update_icons()
 				visible_message(span_notice("[src] starts uprooting the weeds in \the [A]."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, list("job" = FARMBOT_UPROOT, "busy" = src))
+				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_UPROOT, busy = src)
 			if(FARMBOT_NUTRIMENT)
 				action = "fertile"
 				update_icons()
 				visible_message(span_notice("[src] starts fertilizing \the [A]."))
 
-				om_task_start(/datum/om/task/timed/farm_job, src, T, list("job" = FARMBOT_NUTRIMENT, "busy" = src))
+				om_task_start(/datum/om/task/timed/farm_job, src, T, job = FARMBOT_NUTRIMENT, busy = src)
 
 	else if(istype(A, /obj/structure/sink))
 		if(!tank || tank.reagents.total_volume >= tank.reagents.maximum_volume)

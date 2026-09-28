@@ -62,7 +62,7 @@
 
 	to_chat(user, span_notice("The microscope whirrs as you examine \the [sample()]."))
 
-	om_task_start(/datum/om/task/timed/microscope_examine, user, sample(), list("receiver" = src))
+	om_task_start(/datum/om/task/timed/microscope_examine, user, sample())
 	return TRUE
 
 /obj/machinery/microscope/proc/examine_stopped(datum/om/task/timed/microscope_examine/task)

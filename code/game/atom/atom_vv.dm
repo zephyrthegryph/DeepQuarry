@@ -21,54 +21,101 @@
 	//if(greyscale_colors)
 	//	VV_DROPDOWN_OPTION(VV_HK_MODIFY_GREYSCALE, "Modify greyscale colors")
 
-/atom/proc/vv_transform_question_x(mob/user, datum/om/prompt/ask)
-	switch(ask.get("kind"))
+/// Admin var-edit questions about an atom (vv_do_topic()).
+/datum/om/prompt/number/vv_edit
+	requires = PROMPT_ADMIN(R_VAREDIT)
+	min = -INFINITY
+
+/// "Modify Transform": the kind, then the x (and for all but a rotation, the y) mod.
+/datum/om/flow/vv_transform
+	requires = PROMPT_ADMIN(R_VAREDIT)
+	var/transform_kind
+	var/x_mod
+
+/datum/om/flow/vv_transform/start()
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(kind_chosen), title = "Transform Mod", message = "Choose the transformation to apply", choices = list("Scale","Translate","Rotate","Shear"), requires = PROMPT_ADMIN(R_VAREDIT))
+
+/datum/om/flow/vv_transform/proc/kind_chosen(datum/om/prompt/choice/ask)
+	transform_kind = ask.choice
+	var/question
+	switch(transform_kind)
 		if("Scale", "Shear")
-			return list("key" = "x", "kind" = "number", "message" = "Choose x mod", "title" = "Transform Mod", "min" = -INFINITY)
+			question = "Choose x mod"
 		if("Translate")
-			return list("key" = "x", "kind" = "number", "message" = "Choose x mod (negative = left, positive = right)", "title" = "Transform Mod", "min" = -INFINITY)
+			question = "Choose x mod (negative = left, positive = right)"
 		if("Rotate")
-			return list("key" = "x", "kind" = "number", "message" = "Choose angle to rotate", "title" = "Transform Mod", "min" = -INFINITY)
+			question = "Choose angle to rotate"
+		else
+			return
+	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(x_entered), title = "Transform Mod", message = question)
 
-/atom/proc/vv_transform_question_y(mob/user, datum/om/prompt/ask)
-	switch(ask.get("kind"))
+/datum/om/flow/vv_transform/proc/x_entered(datum/om/prompt/number/vv_edit/ask)
+	x_mod = ask.number
+	var/question
+	switch(transform_kind)
 		if("Scale", "Shear")
-			return list("key" = "y", "kind" = "number", "message" = "Choose y mod", "title" = "Transform Mod", "min" = -INFINITY)
+			question = "Choose y mod"
 		if("Translate")
-			return list("key" = "y", "kind" = "number", "message" = "Choose y mod (negative = down, positive = up)", "title" = "Transform Mod", "min" = -INFINITY)
+			question = "Choose y mod (negative = down, positive = up)"
+		else
+			apply()
+			return
+	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(y_entered), title = "Transform Mod", message = question)
 
-/atom/proc/vv_transform_chosen(mob/user, datum/om/prompt/ask)
-	var/matrix/M = transform
-	var/x = ask.get("x")
-	var/y = ask.get("y")
-	switch(ask.get("kind"))
+/datum/om/flow/vv_transform/proc/y_entered(datum/om/prompt/number/vv_edit/ask)
+	apply(ask.number)
+
+/datum/om/flow/vv_transform/proc/apply(y_mod)
+	var/atom/A = target
+	var/matrix/M = A.transform
+	switch(transform_kind)
 		if("Scale")
-			transform = M.Scale(x,y)
+			A.transform = M.Scale(x_mod, y_mod)
 		if("Translate")
-			transform = M.Translate(x,y)
+			A.transform = M.Translate(x_mod, y_mod)
 		if("Shear")
-			transform = M.Shear(x,y)
+			A.transform = M.Shear(x_mod, y_mod)
 		if("Rotate")
-			transform = M.Turn(x)
+			A.transform = M.Turn(x_mod)
 
-/atom/proc/vv_spin_question_count(mob/user, datum/om/prompt/ask)
-	if(ask.get("infinite") == "No")
-		return list("key" = "count", "kind" = "number", "message" = "How many spins?", "title" = "Spin Animation")
+/// "Spin Animation": infinite or a count, the rate, and the direction.
+/datum/om/flow/vv_spin
+	requires = PROMPT_ADMIN(R_VAREDIT)
+	var/num_spins = -1
+	var/spins_per_sec
 
-/atom/proc/vv_spin_chosen(mob/user, datum/om/prompt/ask)
-	var/num_spins = ask.get("infinite") == "No" ? ask.get("count") : -1
-	var/spins_per_sec = ask.get("rate")
+/datum/om/flow/vv_spin/start()
+	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(infinite_answered), title = "Spin Animation", message = "Do you want infinite spins?", answer_on_no = TRUE, requires = PROMPT_ADMIN(R_VAREDIT))
+
+/datum/om/flow/vv_spin/proc/infinite_answered(datum/om/prompt/confirm/ask)
+	if(ask.yes)
+		ask_rate()
+		return
+	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(count_entered), title = "Spin Animation", message = "How many spins?", min = 0)
+
+/datum/om/flow/vv_spin/proc/count_entered(datum/om/prompt/number/vv_edit/ask)
+	num_spins = ask.number
+	ask_rate()
+
+/datum/om/flow/vv_spin/proc/ask_rate()
+	om_ask(actor, /datum/om/prompt/number/vv_edit, PROC_REF(rate_entered), title = "Spin Animation", message = "How many spins per second?", min = 0)
+
+/datum/om/flow/vv_spin/proc/rate_entered(datum/om/prompt/number/vv_edit/ask)
+	spins_per_sec = ask.number
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(direction_chosen), title = "Spin Animation", message = "Which direction?", choices = list("Clockwise", "Counter-clockwise"), buttons = TRUE, requires = PROMPT_ADMIN(R_VAREDIT))
+
+/datum/om/flow/vv_spin/proc/direction_chosen(datum/om/prompt/choice/ask)
 	if(!num_spins || !spins_per_sec)
 		return
-	SpinAnimation(1 SECONDS / spins_per_sec, num_spins, ask.get("direction") == "Clockwise" ? 1 : 0)
+	var/atom/A = target
+	A.SpinAnimation(1 SECONDS / spins_per_sec, num_spins, ask.choice == "Clockwise" ? 1 : 0)
 
-/atom/proc/vv_stop_animations_answered(mob/user, result, datum/om/prompt/ask)
-	if(result == "Yes")
-		animate(src, transform = null, flags = ANIMATION_END_NOW) // Literally just fucking stop animating entirely because admin said so
+/atom/proc/vv_stop_animations_answered(datum/om/prompt/confirm/ask)
+	animate(src, transform = null, flags = ANIMATION_END_NOW) // Literally just fucking stop animating entirely because admin said so
 
-/atom/proc/vv_auto_rename_entered(mob/user, newname, datum/om/prompt/ask)
-	if(newname)
-		vv_auto_rename(src, newname)
+/atom/proc/vv_auto_rename_entered(datum/om/prompt/text/ask)
+	if(ask.text)
+		vv_auto_rename(src, ask.text)
 
 /atom/vv_do_topic(list/href_list)
 	. = ..()
@@ -85,32 +132,23 @@
 	if(href_list[VV_HK_MODIFY_TRANSFORM])
 		if(!check_rights(R_VAREDIT))
 			return
-		om_prompt_sequence(src, usr, list(
-			list("key" = "kind", "kind" = "list", "message" = "Choose the transformation to apply", "title" = "Transform Mod", "choices" = list("Scale","Translate","Rotate","Shear")),
-			/atom/proc/vv_transform_question_x,
-			/atom/proc/vv_transform_question_y,
-		), /atom/proc/vv_transform_chosen, list("requires" = PROMPT_ADMIN(R_VAREDIT)))
+		om_flow_start(/datum/om/flow/vv_transform, usr, src)
 
 	if(href_list[VV_HK_SPIN_ANIMATION])
 		if(!check_rights(R_VAREDIT))
 			return
-		om_prompt_sequence(src, usr, list(
-			list("key" = "infinite", "message" = "Do you want infinite spins?", "title" = "Spin Animation", "choices" = list("Yes", "No")),
-			/atom/proc/vv_spin_question_count,
-			list("key" = "rate", "kind" = "number", "message" = "How many spins per second?", "title" = "Spin Animation"),
-			list("key" = "direction", "message" = "Which direction?", "title" = "Spin Animation", "choices" = list("Clockwise", "Counter-clockwise")),
-		), /atom/proc/vv_spin_chosen, list("requires" = PROMPT_ADMIN(R_VAREDIT)))
+		om_flow_start(/datum/om/flow/vv_spin, usr, src)
 
 	if(href_list[VV_HK_STOP_ALL_ANIMATIONS])
 		if(!check_rights(R_VAREDIT))
 			return
-		om_prompt(src, usr, list("message" = "Are you sure?", "title" = "Stop Animating", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_VAREDIT)), /atom/proc/vv_stop_animations_answered)
+		om_ask(usr, /datum/om/prompt/confirm, TYPE_PROC_REF(/atom, vv_stop_animations_answered), title = "Stop Animating", message = "Are you sure?", requires = PROMPT_ADMIN(R_VAREDIT))
 		return
 
 	if(href_list[VV_HK_AUTO_RENAME])
 		if(!check_rights(R_VAREDIT))
 			return
-		om_prompt(src, usr, list("kind" = "text", "message" = "What do you want to rename this to?", "title" = "Automatic Rename", "requires" = PROMPT_ADMIN(R_VAREDIT)), /atom/proc/vv_auto_rename_entered)
+		om_ask(usr, /datum/om/prompt/text, TYPE_PROC_REF(/atom, vv_auto_rename_entered), title = "Automatic Rename", message = "What do you want to rename this to?", requires = PROMPT_ADMIN(R_VAREDIT))
 		// Check the new name against the chat filter. If it triggers the IC chat filter, give an option to confirm.
 		//if(newname && !(is_ic_filtered(newname) || is_soft_ic_filtered(newname) && tgui_alert(usr, "Your selected name contains words restricted by IC chat filters. Confirm this new name?", "IC Chat Filter Conflict", list("Confirm", "Cancel")) != "Confirm"))
 

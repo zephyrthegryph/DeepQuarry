@@ -250,9 +250,10 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return
 
 	var/nagmessage = "Pick a size between [RESIZE_MINIMUM * 100] to [RESIZE_MAXIMUM * 100]%. (Only usable once!)"
-	om_prompt(src, src, list("kind" = "number", "message" = nagmessage, "title" = "Pick a Size", "default" = size_multiplier*100, "max" = RESIZE_MAXIMUM * 100, "min" = RESIZE_MINIMUM * 100), PROC_REF(size_picked))
+	om_ask(src, /datum/om/prompt/number, PROC_REF(size_picked), title = "Pick a Size", message = nagmessage, default = size_multiplier*100, max = RESIZE_MAXIMUM * 100, min = RESIZE_MINIMUM * 100)
 
-/mob/living/simple_mob/proc/size_picked(mob/user, new_size, datum/om/prompt/ask)
+/mob/living/simple_mob/proc/size_picked(datum/om/prompt/number/ask)
+	var/new_size = ask.number
 	if(!picked_size && size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 		picked_size = TRUE
@@ -264,11 +265,11 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
 		return
-	om_prompt(src, usr, list("kind" = "color", "message" = "Choose a color.", "default" = color), PROC_REF(color_picked))
+	om_ask(usr, /datum/om/prompt/color, PROC_REF(color_picked), message = "Choose a color.", default = color)
 
-/mob/living/simple_mob/proc/color_picked(mob/user, newcolor, datum/om/prompt/ask)
+/mob/living/simple_mob/proc/color_picked(datum/om/prompt/color/ask)
 	if(!picked_color)
-		color = newcolor
+		color = ask.picked_color
 	picked_color = TRUE
 	update_icon()
 
@@ -414,7 +415,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		return
 
 	// The window paints us in place (and sets has_recoloured); there's no answer to act on.
-	om_prompt(src, src, list("kind" = "colormatrix", "message" = "Allows you to recolor yourself", "title" = "Animal Recolor", "preview" = src, "ui_state" = GLOB.tgui_conscious_state), null)
+	om_ask(src, /datum/om/prompt/colormatrix, null, title = "Animal Recolor", message = "Allows you to recolor yourself", preview = src, ui_state = GLOB.tgui_conscious_state)
 
 //Thermal vision adding
 
@@ -893,9 +894,10 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 		choices += M
 	choices -= src
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to leap at?", "title" = "Target Choice", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(leap_target_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(leap_target_chosen), title = "Target Choice", message = "Who do you wish to leap at?", choices = choices, ask_flags = ASK_CONSCIOUS)
 
-/mob/living/simple_mob/proc/leap_target_chosen(mob/user, mob/living/T, datum/om/prompt/ask)
+/mob/living/simple_mob/proc/leap_target_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/T = ask.choice
 
 	if(get_dist(get_turf(T), get_turf(src)) > 3) return
 

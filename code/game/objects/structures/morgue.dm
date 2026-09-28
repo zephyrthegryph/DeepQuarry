@@ -117,14 +117,25 @@ REF_OWNED(/obj/structure/morgue, "connected")
 
 /obj/structure/morgue/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if (istype(P, /obj/item/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "target" = P, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
+		om_ask(user, /datum/om/prompt/text/morgue_label, PROC_REF(label_entered), subject = P, morgue = src)
 	src.add_fingerprint(user)
 	return TRUE
 
-/obj/structure/morgue/proc/label_entered(mob/user, t, datum/om/prompt/ask)
-	if ((!in_range(src, user) && src.loc != user))
-		return
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+/// Relabelling a morgue or crematorium with a pen (the subject, held throughout); still in range of it.
+/datum/om/prompt/text/morgue_label
+	message = "What would you like the label to be?"
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/obj/structure/morgue/morgue
+
+/datum/om/prompt/text/morgue_label/prepare()
+	title = "[morgue.name]"
+	return TRUE
+
+/datum/om/prompt/text/morgue_label/valid()
+	return (in_range(morgue, answerer) || morgue.loc == answerer) ? null : "too far away"
+
+/obj/structure/morgue/proc/label_entered(datum/om/prompt/text/morgue_label/ask)
+	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if (t)
 		src.name = text("Morgue- '[]'", t)
 	else
@@ -277,14 +288,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 
 /obj/structure/morgue/crematorium/proc/interaction_crema_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if (istype(P, /obj/item/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "What would you like the label to be?", "title" = "[src.name]", "target" = P, "requires" = PROMPT_IN_HAND), PROC_REF(label_entered))
+		om_ask(user, /datum/om/prompt/text/morgue_label, PROC_REF(label_entered), subject = P, morgue = src)
 	src.add_fingerprint(user)
 	return TRUE
 
-/obj/structure/morgue/crematorium/label_entered(mob/user, t, datum/om/prompt/ask)
-	if ((!in_range(src, user) && src.loc != user))
-		return
-	t = sanitizeSafe(t, MAX_NAME_LEN)
+/obj/structure/morgue/crematorium/label_entered(datum/om/prompt/text/morgue_label/ask)
+	var/t = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	if (t)
 		src.name = text("Crematorium- '[]'", t)
 	else

@@ -52,7 +52,7 @@
 	if(length(updated) > 0)
 		alert_msg += "update [length(updated)] existing bell[length(updated) == 1 ? "y" : "ies"]. Please make sure you have saved a copy of your existing bellies"
 
-	var/confirm = rerun_prompt(host, "a1", list("message" = "WARNING: This will [jointext(alert_msg," and ")]. You can revert the import by using the Reload Prefs button under Preferences as long as you don't Save Prefs. Are you sure?", "title" = "Import bellies?", "choices" = list("Yes","Cancel")), PROC_REF(import_belly), args)
+	var/confirm = rerun_ask(host, "a1", PROC_REF(import_belly), args, /datum/om/prompt/choice/alert, message = "WARNING: This will [jointext(alert_msg," and ")]. You can revert the import by using the Reload Prefs button under Preferences as long as you don't Save Prefs. Are you sure?", title = "Import bellies?", choices = list("Yes","Cancel"))
 	if(isnull(confirm))
 		return
 	if(confirm != "Yes") return FALSE

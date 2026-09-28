@@ -65,10 +65,10 @@
 		return TRUE
 
 /obj/structure/windoor_assembly/proc/rename_door(mob/living/user)
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter the name for the windoor.", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(windoor_named))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(windoor_named), title = name, message = "Enter the name for the windoor.", default = created_name, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/structure/windoor_assembly/proc/windoor_named(mob/living/user, t, datum/om/prompt/ask)
-	created_name = sanitizeSafe(t, MAX_NAME_LEN)
+/obj/structure/windoor_assembly/proc/windoor_named(datum/om/prompt/text/ask)
+	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	update_state()
 
 /obj/structure/windoor_assembly/attack_robot(mob/living/silicon/robot/user)
@@ -106,7 +106,7 @@
 			playsound(src, 'sound/items/Screwdriver.ogg', 100, 1)
 			user.visible_message("[user] installs the electronics into the airlock assembly.", "You start to install electronics into the airlock assembly.")
 
-			om_task_start(/datum/om/task/timed/windoor_assembly_attackby, user, src, list("receiver" = src, "W" = W))
+			om_task_start(/datum/om/task/timed/windoor_assembly_attackby, user, src, W = W)
 
 	//Update to reflect changes(if applicable)
 	update_state()

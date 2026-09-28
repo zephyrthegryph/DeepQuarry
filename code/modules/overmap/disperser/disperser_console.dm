@@ -170,7 +170,7 @@
 			. = TRUE
 
 		if("calibration")
-			var/input = act_prompt(ui.user, action, params, ui, "k177", list("kind" = "number", "message" = "0-9", "title" = "disperser calibration", "default" = 0, "max" = 9, "min" = 0))
+			var/input = act_ask(ui.user, action, params, ui, "k177", /datum/om/prompt/number, message = "0-9", title = "disperser calibration", default = 0, max = 9)
 			if(isnull(input))
 				return
 			if(!isnull(input)) //can be zero so we explicitly check for null
@@ -184,7 +184,7 @@
 			. = TRUE
 
 		if("strength")
-			var/input = act_prompt(ui.user, action, params, ui, "k189", list("kind" = "number", "message" = "1-5", "title" = "disperser strength", "default" = 1, "max" = 5, "min" = 1))
+			var/input = act_ask(ui.user, action, params, ui, "k189", /datum/om/prompt/number, message = "1-5", title = "disperser strength", default = 1, max = 5, min = 1)
 			if(isnull(input))
 				return
 			if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
@@ -193,7 +193,7 @@
 			. = TRUE
 
 		if("range")
-			var/input = act_prompt(ui.user, action, params, ui, "k196", list("kind" = "number", "message" = "1-5", "title" = "disperser radius", "default" = 1, "max" = 5, "min" = 1))
+			var/input = act_ask(ui.user, action, params, ui, "k196", /datum/om/prompt/number, message = "1-5", title = "disperser radius", default = 1, max = 5, min = 1)
 			if(isnull(input))
 				return
 			if(input && tgui_status(ui.user, state) == STATUS_INTERACTIVE)

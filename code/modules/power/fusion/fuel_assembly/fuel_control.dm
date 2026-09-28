@@ -47,7 +47,7 @@ REF_OWNED(/obj/machinery/computer/fusion_fuel_control, "monitor")
 	effect = /obj/machinery/computer/fusion_fuel_control/proc/interaction_set_tag
 
 /obj/machinery/computer/fusion_fuel_control/proc/interaction_set_tag(mob/user, obj/item/W, datum/interaction/interaction)
-	var/new_ident = rerun_prompt(user, "k52", list("kind" = "text", "message" = "Enter a new ident tag.", "title" = "Fuel Control", "default" = monitor.fuel_tag, "max_length" = MAX_NAME_LEN), PROC_REF(interaction_set_tag), args)
+	var/new_ident = rerun_ask(user, "k52", PROC_REF(interaction_set_tag), args, /datum/om/prompt/text, message = "Enter a new ident tag.", title = "Fuel Control", default = monitor.fuel_tag, max_length = MAX_NAME_LEN)
 	if(isnull(new_ident))
 		return
 	if(new_ident && user.Adjacent(src))

@@ -41,11 +41,20 @@
 			choices += M
 
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", "title" = "Suck Blood", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(bloodsuck_target_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_target_chosen), message = "Who do you wish to bite? Select yourself to bring up configuration for privacy and bleeding. Beware! Configuration resets on new round!", title = "Suck Blood", choices = choices, ask_flags = ASK_CONSCIOUS)
 
-/mob/living/carbon/human/proc/bloodsuck_target_chosen(mob/user, mob/living/carbon/human/B, datum/om/prompt/ask)
+/// A pop-up bloodsuck question (Yes/No); carries the target and the privacy answer.
+/datum/om/prompt/choice/bloodsuck
+	choices = list("Yes", "No")
+	buttons = TRUE
+	ask_flags = ASK_CONSCIOUS
+	var/mob/living/carbon/human/target
+	var/subtle
+
+/mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/carbon/human/B = ask.choice
 	if(B == src) //We are using this to minimize the amount of pop-ups or buttons.
-		om_prompt(src, src, list("kind" = "list", "message" = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and intents modes. Choosing intents prints controls to chat.", "title" = "Configure Bloodsuck", "choices" = list("always loud", "pop-up", "intents", "always subtle"), "default" = "always loud"), PROC_REF(bloodsuck_mode_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_mode_chosen), message = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and intents modes. Choosing intents prints controls to chat.", title = "Configure Bloodsuck", choices = list("always loud", "pop-up", "intents", "always subtle"), default = "always loud")
 		return
 	if(!bloodsuck_can(B))
 		return
@@ -56,10 +65,7 @@
 		if("always subtle")
 			noise = FALSE
 		if("pop-up")
-			om_prompt_sequence(src, src, list(
-				list("key" = "subtle", "message" = "Do you want to be subtle?", "title" = "Privacy", "choices" = list("Yes", "No")),
-				list("key" = "bleed", "message" = "Do you want your target to keep bleeding?", "title" = "Continue Bleeding", "choices" = list("Yes", "No")),
-			), PROC_REF(bloodsuck_popup_answered), list("data" = list("target" = B), "requires" = PROMPT_CONSCIOUS))
+			om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_subtle), message = "Do you want to be subtle?", title = "Privacy", target = B)
 			return
 		if("intents")
 			/*
@@ -79,15 +85,19 @@
 					bleed =TRUE
 	bloodsuck_begin(B, noise, bleed)
 
-/mob/living/carbon/human/proc/bloodsuck_mode_chosen(mob/user, mode, datum/om/prompt/ask)
+/mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/om/prompt/choice/ask)
+	var/mode = ask.choice
 	species.bloodsucker_controlmode = mode
 	if(mode == "intents") //We are printing to chat for better readability
 		to_chat(src, span_notice("You've chosen to use intents for blood draining.\n HELP - Loud, No Bleeding\n DISARM - Subtle, Causes bleeding\n GRAB - Subtle, No Bleeding\n HARM - Loud, Causes Bleeding"))
 
-/mob/living/carbon/human/proc/bloodsuck_popup_answered(mob/user, datum/om/prompt/ask)
-	var/mob/living/carbon/human/B = ask.get("target")
+/mob/living/carbon/human/proc/bloodsuck_popup_subtle(datum/om/prompt/choice/bloodsuck/ask)
+	om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), message = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = ask.choice)
+
+/mob/living/carbon/human/proc/bloodsuck_popup_answered(datum/om/prompt/choice/bloodsuck/ask)
+	var/mob/living/carbon/human/B = ask.target
 	if(bloodsuck_can(B))
-		bloodsuck_begin(B, ask.get("subtle") != "Yes", ask.get("bleed") == "Yes")
+		bloodsuck_begin(B, ask.subtle != "Yes", ask.choice == "Yes")
 
 /// Whether we can bite B right now (next to us, not on cooldown, has blood); says why not.
 /mob/living/carbon/human/proc/bloodsuck_can(mob/living/carbon/human/B)
@@ -115,7 +125,7 @@
 		to_chat(src, span_warning("This is going to cause [B] to keep bleeding!"))
 		to_chat(B, span_danger("You are going to keep bleeding from this bite!"))
 
-	om_task_start(/datum/om/task/timed/human_bloodsuck_human, src, B, list("noise" = noise, "bleed" = bleed))
+	om_task_start(/datum/om/task/timed/human_bloodsuck_human, src, B, noise = noise, bleed = bleed)
 
 /datum/om/task/timed/human_bloodsuck_human
 	duration = 30 SECONDS
@@ -172,7 +182,7 @@
 	stage = call(src, stage_proc)(T, stage)
 	if(!stage)
 		return
-	om_task_start(/datum/om/task/timed/grab_drain, src, T, list("grab" = G, "stage" = stage, "stage_proc" = stage_proc, "needed_grab" = needed_grab, "what" = what))
+	om_task_start(/datum/om/task/timed/grab_drain, src, T, grab = G, stage = stage, stage_proc = stage_proc, needed_grab = needed_grab, what = what)
 
 /mob/living/carbon/human/proc/grab_drain_held(datum/om/task/timed/grab_drain/task)
 	var/obj/item/grab/G = task.grab
@@ -477,9 +487,10 @@
 	if(!choices.len)
 		to_chat(src,span_warning("There's nobody nearby to use this on."))
 		return
-	om_prompt(src, src, list("kind" = "list", "message" = "Who do you wish to target?", "title" = "Damage/Remove Prey's Organ", "choices" = choices, "requires" = PROMPT_CONSCIOUS), PROC_REF(shred_target_picked))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(shred_target_picked), message = "Who do you wish to target?", title = "Damage/Remove Prey's Organ", choices = choices, ask_flags = ASK_CONSCIOUS)
 
-/mob/living/proc/shred_target_picked(mob/user, mob/living/carbon/human/T, datum/om/prompt/ask)
+/mob/living/proc/shred_target_picked(datum/om/prompt/choice/ask)
+	var/mob/living/carbon/human/T = ask.choice
 	if(can_shred(T) == T)
 		shred_limb_begin(T)
 
@@ -497,37 +508,53 @@
 
 /// Asks which organs to shred (and where to swallow them), then starts on T.
 /mob/living/proc/shred_limb_begin(mob/living/carbon/human/T)
-	om_prompt_sequence(src, src, list(
-		//Let them pick any of the target's external organs. Picking something here is critical.
-		list("key" = "external", "kind" = "list", "message" = "What do you wish to severely damage?", "title" = "Organ Choice", "choices" = T.organs),
-		PROC_REF(shred_confirm_external),
-		//Any internal organ, if there are any
-		PROC_REF(shred_ask_internal),
-		PROC_REF(shred_confirm_internal),
-		//And a belly, if they want
-		list("key" = "belly", "kind" = "list", "message" = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", "title" = "Organ Choice", "choices" = vore_organs, "optional" = TRUE),
-	), PROC_REF(shred_limb_answered), list("data" = list("target" = T), "requires" = PROMPT_CONSCIOUS))
+	om_flow_start(/datum/om/flow/shred_limb, src, T)
 
-/mob/living/proc/shred_confirm_external(mob/user, datum/om/prompt/ask)
-	var/obj/item/organ/external/T_ext = ask.get("external")
+/// Which external organ (confirmed when vital), which internal one if any (likewise), and a
+/// belly to swallow it into if any. The actor stays conscious throughout.
+/datum/om/flow/shred_limb
+	requires = PROMPT_CONSCIOUS
+	var/obj/item/organ/external/T_ext
+	var/obj/item/organ/internal/T_int
+	var/obj/belly/B
+
+/datum/om/flow/shred_limb/start()
+	//Let them pick any of the target's external organs. Picking something here is critical.
+	var/mob/living/carbon/human/T = target
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(external_chosen), message = "What do you wish to severely damage?", choices = T.organs, title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+
+/datum/om/flow/shred_limb/proc/external_chosen(datum/om/prompt/choice/ask)
+	T_ext = ask.choice
 	if(T_ext.vital)
-		return list("key" = "external_ok", "message" = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [ask.get("target")]...", "title" = "Shred Limb", "choices" = list("Yes", "No"), "confirm" = "Yes")
+		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_internal), message = "Are you sure you wish to severely damage their [T_ext]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
+		return
+	ask_internal()
 
-/mob/living/proc/shred_ask_internal(mob/user, datum/om/prompt/ask)
-	var/obj/item/organ/external/T_ext = ask.get("external")
-	if(length(T_ext.internal_organs))
-		return list("key" = "internal", "kind" = "list", "message" = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", "title" = "Organ Choice", "choices" = T_ext.internal_organs, "optional" = TRUE)
+//Any internal organ, if there are any
+/datum/om/flow/shred_limb/proc/ask_internal()
+	if(!length(T_ext.internal_organs))
+		ask_belly()
+		return
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(internal_chosen), message = "Do you wish to severely damage an internal organ, as well? If not, click 'cancel'", choices = T_ext.internal_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
 
-/mob/living/proc/shred_confirm_internal(mob/user, datum/om/prompt/ask)
-	var/obj/item/organ/internal/T_int = ask.get("internal")
+/datum/om/flow/shred_limb/proc/internal_chosen(datum/om/prompt/choice/ask)
+	T_int = ask.choice || null
 	if(T_int?.vital)
-		return list("key" = "internal_ok", "message" = "Are you sure you wish to severely damage their [T_int]? It will likely kill [ask.get("target")]...", "title" = "Shred Limb", "choices" = list("Yes", "No"), "confirm" = "Yes")
+		om_ask(actor, /datum/om/prompt/confirm, PROC_REF(ask_belly), message = "Are you sure you wish to severely damage their [T_int]? It will likely kill [target]...", title = "Shred Limb", ask_flags = ASK_CONSCIOUS)
+		return
+	ask_belly()
 
-/mob/living/proc/shred_limb_answered(mob/user, datum/om/prompt/ask)
-	var/mob/living/carbon/human/T = ask.get("target")
-	var/obj/item/organ/external/T_ext = ask.get("external")
-	var/obj/item/organ/internal/T_int = ask.get("internal")
-	var/obj/belly/B = ask.get("belly")
+//And a belly, if they want
+/datum/om/flow/shred_limb/proc/ask_belly()
+	var/mob/living/L = actor
+	om_ask(actor, /datum/om/prompt/choice, PROC_REF(belly_chosen), message = "To where do you wish to swallow the organ if you tear if out? If not at all, click 'cancel'", choices = L.vore_organs, cancel_answer = "", title = "Organ Choice", ask_flags = ASK_CONSCIOUS)
+
+/datum/om/flow/shred_limb/proc/belly_chosen(datum/om/prompt/choice/ask)
+	B = ask.choice || null
+	var/mob/living/L = actor
+	L.shred_limb_answered(target, T_ext, T_int, B)
+
+/mob/living/proc/shred_limb_answered(mob/living/carbon/human/T, obj/item/organ/external/T_ext, obj/item/organ/internal/T_int, obj/belly/B)
 	if(can_shred(T) != T || T_ext.owner != T || (T_int && T_int.owner != T) || (B && B.owner != src))
 		to_chat(src,span_warning("Looks like you lost your chance..."))
 		return
@@ -535,7 +562,7 @@
 	COOLDOWN_START(src, last_special, vore_shred_time)
 	visible_message(span_danger("[src] appears to be preparing to do something to [T]!")) //Let everyone know that bad times are ahead
 
-	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, list("duration" = vore_shred_time, "T_ext" = T_ext, "T_int" = T_int, "B" = B))
+	om_task_start(/datum/om/task/timed/living_shred_limb_living, src, T, duration = vore_shred_time, T_ext = T_ext, T_int = T_int, B = B)
 
 /datum/om/task/timed/living_shred_limb_living
 	complete_proc = /mob/living/proc/shred_limb_living_done
@@ -773,11 +800,25 @@
 		to_chat(src, span_notice("No eligible targets found."))
 		return
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "requires" = PROMPT_CONSCIOUS), PROC_REF(underwater_devour_target_chosen))
+	om_ask(src, /datum/om/prompt/choice/victim/underwater, PROC_REF(underwater_devour_target_chosen), choices = targets)
 
-/mob/living/carbon/human/proc/underwater_devour_target_chosen(mob/user, mob/living/target, datum/om/prompt/ask)
-	if(!has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(src, target) > 1)
-		return
+/// Picking a victim for a vore ability. Re-checked on the answer: conscious.
+/datum/om/prompt/choice/victim
+	title = "Victim"
+	message = "Please select a target."
+	ask_flags = ASK_CONSCIOUS
+
+/// Also re-checked: still stealthed underwater, and the target is still next to us.
+/datum/om/prompt/choice/victim/underwater
+
+/datum/om/prompt/choice/victim/underwater/valid()
+	var/mob/living/L = answerer
+	if(!L.has_body_effect(/datum/body_effect/underwater_stealth) || get_dist(L, choice) > 1)
+		return "lost the chance"
+	return null
+
+/mob/living/carbon/human/proc/underwater_devour_target_chosen(datum/om/prompt/choice/victim/underwater/ask)
+	var/mob/living/target = ask.choice
 	to_chat(target, span_critical("Something begins to circle around you in the water!")) //Dun dun...
 	var/starting_loc = target.loc
 
@@ -827,14 +868,14 @@
 		to_chat(src, span_warning("It doesn't work that way."))
 		return
 
-	om_prompt(src, src, list("message" = "Do you wish to change the color of your appendage, use it, or change its functionality?", "title" = "Selection List", "choices" = list("Use it", "Color", "Functionality")), PROC_REF(long_vore_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(long_vore_chosen), message = "Do you wish to change the color of your appendage, use it, or change its functionality?", title = "Selection List", choices = list("Use it", "Color", "Functionality"), buttons = TRUE)
 
-/mob/living/proc/long_vore_chosen(mob/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/mob/living/proc/long_vore_chosen(datum/om/prompt/choice/ask)
+	switch(ask.choice)
 		if("Color") //Easy way to set color so we don't bloat up the menu with even more buttons.
-			om_prompt(src, src, list("kind" = "color", "message" = "Choose a color to set your appendage to!", "default" = appendage_color), PROC_REF(appendage_color_chosen))
+			om_ask(src, /datum/om/prompt/color, PROC_REF(appendage_color_chosen), message = "Choose a color to set your appendage to!", default = appendage_color)
 		if("Functionality")
-			om_prompt(src, src, list("message" = "Choose if you want to be pulled to the target or pull them to you!", "title" = "Functionality Setting", "choices" = list("Pull target to self", "Pull self to target")), PROC_REF(appendage_setting_chosen))
+			om_ask(src, /datum/om/prompt/choice, PROC_REF(appendage_setting_chosen), message = "Choose if you want to be pulled to the target or pull them to you!", title = "Functionality Setting", choices = list("Pull target to self", "Pull self to target"), buttons = TRUE)
 		if("Use it")
 			var/list/targets = list() //IF IT IS NOT BROKEN. DO NOT FIX IT.
 			for(var/mob/living/L in range(5, src))
@@ -845,15 +886,16 @@
 			if(!(targets.len))
 				to_chat(src, span_notice("No eligible targets found."))
 				return
-			om_prompt(src, src, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "requires" = PROMPT_CONSCIOUS), PROC_REF(long_vore_target_chosen))
+			om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(long_vore_target_chosen), choices = targets)
 
-/mob/living/proc/appendage_color_chosen(mob/user, new_color, datum/om/prompt/ask)
-	appendage_color = new_color
+/mob/living/proc/appendage_color_chosen(datum/om/prompt/color/ask)
+	appendage_color = ask.picked_color
 
-/mob/living/proc/appendage_setting_chosen(mob/user, choice2, datum/om/prompt/ask)
-	appendage_alt_setting = (choice2 != "Pull target to self")
+/mob/living/proc/appendage_setting_chosen(datum/om/prompt/choice/ask)
+	appendage_alt_setting = (ask.choice != "Pull target to self")
 
-/mob/living/proc/long_vore_target_chosen(mob/user, mob/living/target, datum/om/prompt/ask)
+/mob/living/proc/long_vore_target_chosen(datum/om/prompt/choice/victim/ask)
+	var/mob/living/target = ask.choice
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1045,9 +1087,15 @@
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_prompt(src, src, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "requires" = PROMPT_CONSCIOUS, "data" = list("warmup" = leap_warmup, "sound" = leap_sound)), PROC_REF(target_lunge_chosen))
+		om_ask(src, /datum/om/prompt/choice/victim/lunge, PROC_REF(target_lunge_chosen), choices = targets, leap_warmup = leap_warmup, leap_sound = leap_sound)
 
-/mob/living/proc/target_lunge_chosen(mob/user, mob/living/target, datum/om/prompt/ask)
+/// Carries the lunge's warm-up and sound.
+/datum/om/prompt/choice/victim/lunge
+	var/leap_warmup
+	var/leap_sound
+
+/mob/living/proc/target_lunge_chosen(datum/om/prompt/choice/victim/lunge/ask)
+	var/mob/living/target = ask.choice
 	if(!isliving(target)) //Safety.
 		to_chat(src, span_warning("You need to select a living target!"))
 		return
@@ -1058,12 +1106,12 @@
 		to_chat(src, span_warning("You need to be closer to do that."))
 		return
 
-	var/leap_warmup = ask.get("warmup")
+	var/leap_warmup = ask.leap_warmup
 	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
 	to_chat(target, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(target, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(target_lunge_leap), target, ask.get("sound")) // For the telegraphing.
+	om_after(src, leap_warmup, PROC_REF(target_lunge_leap), target, ask.leap_sound) // For the telegraphing.
 
 /mob/living/proc/target_lunge_leap(mob/living/target, leap_sound)
 	if(target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
@@ -1106,30 +1154,32 @@
 	choices += "Change verb"
 	choices += "Chemical Refresher"
 
-	om_prompt(src, src, list("message" = "Do you wish to inject somebody, or adjust settings?", "title" = "Selection List", "choices" = choices), PROC_REF(injection_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(injection_chosen), message = "Do you wish to inject somebody, or adjust settings?", title = "Selection List", choices = choices, buttons = TRUE)
 
-/mob/living/proc/injection_reagent_chosen(mob/user, reagent_choice, datum/om/prompt/ask)
+/mob/living/proc/injection_reagent_chosen(datum/om/prompt/choice/ask)
+	var/reagent_choice = ask.choice
 	if(reagent_choice in trait_injection_reagents)
 		trait_injection_selected = reagent_choice
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
-/mob/living/proc/injection_amount_chosen(mob/user, amount_choice, datum/om/prompt/ask)
-	trait_injection_amount = clamp(amount_choice, 0, 5)
+/mob/living/proc/injection_amount_chosen(datum/om/prompt/number/ask)
+	trait_injection_amount = clamp(ask.number, 0, 5)
 	to_chat(src, span_notice("You prepare to inject [trait_injection_amount] units of [trait_injection_selected ? "[trait_injection_selected]" : "...nothing. Select a reagent before trying to inject anything."]"))
 
-/mob/living/proc/injection_verb_chosen(mob/user, verb_choice, datum/om/prompt/ask)
-	trait_injection_verb = verb_choice
+/mob/living/proc/injection_verb_chosen(datum/om/prompt/text/ask)
+	trait_injection_verb = ask.text
 	to_chat(src, span_notice("You will [trait_injection_verb] your targets."))
 
-/mob/living/proc/injection_chosen(mob/user, choice, datum/om/prompt/ask)
+/mob/living/proc/injection_chosen(datum/om/prompt/choice/ask)
+	var/choice = ask.choice
 	if(choice == "Change reagent")
-		om_prompt(src, src, list("kind" = "list", "message" = "Choose which reagent to inject!", "title" = "Select reagent", "choices" = trait_injection_reagents || list()), PROC_REF(injection_reagent_chosen))
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(injection_reagent_chosen), message = "Choose which reagent to inject!", title = "Select reagent", choices = trait_injection_reagents || list())
 		return
 	if(choice == "Change amount")
-		om_prompt(src, src, list("kind" = "number", "message" = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", "title" = "How much?", "default" = trait_injection_amount, "max" = 5, "min" = 0, "round" = FALSE), PROC_REF(injection_amount_chosen))
+		om_ask(src, /datum/om/prompt/number, PROC_REF(injection_amount_chosen), message = "How much of the reagent do you want to inject? (Up to 5 units) (Can select 0 for a bite that doesn't inject venom!)", title = "How much?", default = trait_injection_amount, max = 5, min = 0, round_entry = FALSE)
 		return
 	if(choice == "Change verb")
-		om_prompt(src, src, list("kind" = "text", "message" = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", "title" = "How are you injecting?", "default" = trait_injection_verb, "max_length" = 60), PROC_REF(injection_verb_chosen)) //Whoaa there cowboy don't put a novel in there.
+		om_ask(src, /datum/om/prompt/text, PROC_REF(injection_verb_chosen), message = "Choose the percieved manner of injection, such as 'bite' or 'sting', don't be misleading or abusive. This will show up in game as ('X' manages to 'Verb' 'Y'. Example: X manages to bite Y.)", title = "How are you injecting?", default = trait_injection_verb, max_length = 60) //Whoaa there cowboy don't put a novel in there.
 		return
 	if(choice == "Chemical Refresher")
 		var/output = {"<HR>
@@ -1183,9 +1233,10 @@
 			to_chat(src, span_notice("No eligible targets found."))
 			return
 
-		om_prompt(src, src, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "requires" = PROMPT_CONSCIOUS), PROC_REF(injection_target_chosen))
+		om_ask(src, /datum/om/prompt/choice/victim, PROC_REF(injection_target_chosen), choices = targets)
 
-/mob/living/proc/injection_target_chosen(mob/user, mob/living/target, datum/om/prompt/ask)
+/mob/living/proc/injection_target_chosen(datum/om/prompt/choice/victim/ask)
+	var/mob/living/target = ask.choice
 	if(has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !Adjacent(target))
 		to_chat(src, span_warning("You can't do that in your current state."))
 		return
@@ -1265,14 +1316,26 @@
 		return
 
 	COOLDOWN_START(src, last_special, 600)
-	om_prompt(src, src, list("kind" = "list", "message" = "What do you wish to inject?", "title" = "Reagent", "choices" = list(REAGENT_APHRODISIAC, "Numbing", "Paralyzing"), "requires" = PROMPT_CONSCIOUS, "data" = list("grab" = G, "target" = T)), PROC_REF(succubus_bite_chosen))
+	om_ask(src, /datum/om/prompt/choice/succubus_bite, PROC_REF(succubus_bite_chosen), grab = G, target = T)
 
-/mob/living/proc/succubus_bite_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/obj/item/grab/G = ask.get("grab")
-	var/mob/living/carbon/human/T = ask.get("target")
-	if(get_active_hand() != G || G?.grab_target() != T || G.state != GRAB_NECK)
-		to_chat(src, span_warning("You must have a tighter grip to bite this creature."))
-		return
+/// Re-checked on the answer: conscious, and still holding the target by the neck.
+/datum/om/prompt/choice/succubus_bite
+	title = "Reagent"
+	message = "What do you wish to inject?"
+	choices = list(REAGENT_APHRODISIAC, "Numbing", "Paralyzing")
+	ask_flags = ASK_CONSCIOUS
+	var/obj/item/grab/grab
+	var/mob/living/carbon/human/target
+
+/datum/om/prompt/choice/succubus_bite/valid()
+	if(answerer.get_active_hand() != grab || grab.grab_target() != target || grab.state != GRAB_NECK)
+		to_chat(answerer, span_warning("You must have a tighter grip to bite this creature."))
+		return "lost grip"
+	return null
+
+/mob/living/proc/succubus_bite_chosen(datum/om/prompt/choice/succubus_bite/ask)
+	var/mob/living/carbon/human/T = ask.target
+	var/choice = ask.choice
 	src.visible_message(span_bolddanger("[src] moves their head next to [T]'s neck, seemingly looking for something!"))
 
 	om_do_after(src, 30 SECONDS, target = T, receiver = src, on_done = PROC_REF(succubus_bite_living_done), done_args = list(T, choice))
@@ -1359,10 +1422,10 @@
 		return
 
 	COOLDOWN_START(src, last_special, 600)
-	om_prompt(src, src, list("kind" = "list", "message" = "What do you want to do?", "title" = "Egg Option", "choices" = list("Make a Egg", "lay your Eggs"), "requires" = PROMPT_CONSCIOUS), PROC_REF(mobegglaying_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(mobegglaying_chosen), message = "What do you want to do?", title = "Egg Option", choices = list("Make a Egg", "lay your Eggs"), ask_flags = ASK_CONSCIOUS)
 
-/mob/living/proc/mobegglaying_chosen(mob/user, choice, datum/om/prompt/ask)
-	om_do_after(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, choice))
+/mob/living/proc/mobegglaying_chosen(datum/om/prompt/choice/ask)
+	om_do_after(src, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(mobegglaying_living_done), done_args = list(src, ask.choice))
 
 /mob/living/proc/mobegglaying_living_done(mob/living/carbon/human/C, choice)
 	if(choice == "Make a Egg" && eggs > 5)
@@ -1398,11 +1461,22 @@
 	var/list/victims = list()
 	for(var/mob/living/carbon/C in oview(1))
 		victims += C
-	om_prompt(src, src, list("kind" = "list", "message" = "Who will we sting?", "title" = "Target", "choices" = victims, "requires" = PROMPT_CONSCIOUS), PROC_REF(insect_sting_chosen))
+	om_ask(src, /datum/om/prompt/choice/insect_sting, PROC_REF(insect_sting_chosen), choices = victims)
 
-/mob/living/proc/insect_sting_chosen(mob/user, mob/living/carbon/T, datum/om/prompt/ask)
-	if(!COOLDOWN_FINISHED(src, last_special) || !Adjacent(T))
-		return
+/// Re-checked on the answer: conscious, off cooldown, and next to the target.
+/datum/om/prompt/choice/insect_sting
+	title = "Target"
+	message = "Who will we sting?"
+	ask_flags = ASK_CONSCIOUS
+
+/datum/om/prompt/choice/insect_sting/valid()
+	var/mob/living/L = answerer
+	if(!COOLDOWN_FINISHED(L, last_special) || !L.Adjacent(choice))
+		return "can't reach"
+	return null
+
+/mob/living/proc/insect_sting_chosen(datum/om/prompt/choice/insect_sting/ask)
+	var/mob/living/carbon/T = ask.choice
 	if(T.isSynthetic())
 		to_chat(src, span_notice("We are unable to pierce the outer shell of [T]."))
 		return
@@ -1431,13 +1505,22 @@
 	if(!(targets.len))
 		to_chat(src, span_notice("No eligible targets found."))
 		return
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a target.", "title" = "Victim", "choices" = targets, "data" = list("belly" = belly)), PROC_REF(absorb_devour_chosen))
+	om_ask(src, /datum/om/prompt/choice/victim/absorbed, PROC_REF(absorb_devour_chosen), choices = targets, belly = belly)
 
-/mob/living/proc/absorb_devour_chosen(mob/user, mob/living/target, datum/om/prompt/ask)
-	if(!absorbed || loc != ask.get("belly"))
-		return
-	if(!isliving(loc.loc))
-		return
+/// An absorbed prey picking a victim for its pred's belly. Re-checked on the answer: still
+/// absorbed in that belly, inside a living pred. (No consciousness check.)
+/datum/om/prompt/choice/victim/absorbed
+	ask_flags = NONE
+	var/obj/belly/belly
+
+/datum/om/prompt/choice/victim/absorbed/valid()
+	var/mob/living/L = answerer
+	if(!L.absorbed || L.loc != belly || !isliving(belly.loc))
+		return "not absorbed"
+	return null
+
+/mob/living/proc/absorb_devour_chosen(datum/om/prompt/choice/victim/absorbed/ask)
+	var/mob/living/target = ask.choice
 	var/mob/living/pred = loc.loc
 	var/obj/belly/belly = loc
 	if(!isliving(target)) //Safety.
@@ -1451,7 +1534,7 @@
 	to_chat(pred, span_vnotice("Your [belly] tries to [lowertext(belly.vore_verb)] \the [target].")) //people who want this will often be unaware pred players, so I'm making the warning a bit smaller text for them
 	to_chat(pred, span_vwarning("You look for a chance to [lowertext(belly.vore_verb)] \the [target]."))
 	var/starting_loc = target.loc
-	om_task_start(/datum/om/task/timed/living_absorb_devour_living, src, target, list("pred" = pred, "belly" = belly, "starting_loc" = starting_loc))
+	om_task_start(/datum/om/task/timed/living_absorb_devour_living, src, target, pred = pred, belly = belly, starting_loc = starting_loc)
 
 /datum/om/task/timed/living_absorb_devour_living
 	duration = 5 SECONDS
@@ -1484,9 +1567,10 @@
 	if(!COOLDOWN_FINISHED(src, last_special))
 		return
 
-	om_prompt(src, src, list("kind" = "text", "message" = "What would you like your name to become?", "title" = "Name change", "default" = name, "max_length" = MAX_NAME_LEN), PROC_REF(name_change_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(name_change_entered), message = "What would you like your name to become?", title = "Name change", default = name, max_length = MAX_NAME_LEN)
 
-/mob/living/proc/name_change_entered(mob/user, chosen_name, datum/om/prompt/ask)
+/mob/living/proc/name_change_entered(datum/om/prompt/text/ask)
+	var/chosen_name = ask.text
 	if(!length(chosen_name) || !COOLDOWN_FINISHED(src, last_special))
 		return
 

@@ -41,10 +41,10 @@
 	set category = "Abilities.VR"
 	set desc = "Become a different creature"
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select a creature:", "title" = "Mob list", "choices" = GLOB.vr_mob_tf_options, "requires" = PROMPT_CONSCIOUS), PROC_REF(vr_creature_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(vr_creature_chosen), choices = GLOB.vr_mob_tf_options, ask_flags = ASK_CONSCIOUS, title = "Mob list", message = "Please select a creature:")
 
-/mob/living/carbon/human/proc/vr_creature_chosen(mob/user, k, datum/om/prompt/ask)
-	var/tf = GLOB.vr_mob_tf_options[k]
+/mob/living/carbon/human/proc/vr_creature_chosen(datum/om/prompt/choice/ask)
+	var/tf = GLOB.vr_mob_tf_options[ask.choice]
 
 	var/mob/living/new_form = transform_into_mob(tf, TRUE, TRUE)
 	if(isliving(new_form)) // Sanity check
@@ -62,11 +62,9 @@
 	set name = "Log Out Of Virtual Reality"
 	set category = "Abilities.VR"
 
-	om_prompt(src, src, list("message" = "Would you like to log out of virtual reality?", "title" = "Log out?", "choices" = list("Yes", "No")), PROC_REF(fake_exit_vr_answered))
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(fake_exit_vr_answered), title = "Log out?", message = "Would you like to log out of virtual reality?")
 
-/mob/living/carbon/human/proc/fake_exit_vr_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Yes")
-		return
+/mob/living/carbon/human/proc/fake_exit_vr_answered(datum/om/prompt/confirm/ask)
 	release_vore_contents(TRUE)
 	for(var/obj/item/I in src)
 		drop_from_inventory(I)
@@ -104,9 +102,12 @@
 	avatar.set_virtual_reality_mob(TRUE)
 	log_and_message_admins("[key_name_admin(avatar)] joined virtual reality from the ghost menu.")
 
-	om_prompt(avatar, avatar, list("kind" = "text", "message" = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), GLOBAL_PROC_REF(vr_avatar_renamed))
+	avatar.ask_vr_ghost_name(src.name)
 
-/proc/vr_avatar_renamed(mob/living/carbon/human/avatar, mob/user, newname, datum/om/prompt/ask)
-	if(newname)
-		avatar.real_name = newname
-		avatar.name = newname
+/mob/living/carbon/human/proc/ask_vr_ghost_name(old_name)
+	om_ask(src, /datum/om/prompt/text, PROC_REF(vr_avatar_renamed), message = "You are entering virtual reality. Your username is currently [old_name]. Would you like to change it to something else?", title = "Name change", max_length = MAX_NAME_LEN)
+
+/mob/living/carbon/human/proc/vr_avatar_renamed(datum/om/prompt/text/ask)
+	if(ask.text)
+		real_name = ask.text
+		name = ask.text

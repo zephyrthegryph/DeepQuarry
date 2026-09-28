@@ -250,23 +250,21 @@ REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
 	set desc = "Sets a description which will be shown when someone examines you."
 	set category = "IC.Settings"
 
-	om_prompt(src, src, list("kind" = "text", "message" = "This is [src]. It is...", "title" = "Pose", "on_cancel" = PROC_REF(silicon_pose_cleared)), PROC_REF(silicon_pose_entered))
+	// A cancel answers "": the pose is cleared.
+	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_pose_entered), title = "Pose", message = "This is [src]. It is...", cancel_answer = "")
 
-/mob/living/silicon/proc/silicon_pose_cleared(mob/user, datum/om/prompt/ask)
-	pose = null
-
-/mob/living/silicon/proc/silicon_pose_entered(mob/user, new_pose, datum/om/prompt/ask)
-	pose = strip_html_simple(new_pose)
+/mob/living/silicon/proc/silicon_pose_entered(datum/om/prompt/text/ask)
+	pose = ask.text ? strip_html_simple(ask.text) : null
 
 /mob/living/silicon/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
 	set category = "IC.Settings"
 
-	om_prompt(src, src, list("kind" = "text", "message" = "Please enter your new flavour text.", "title" = "Flavour text", "default" = flavor_text, "multiline" = TRUE), PROC_REF(silicon_flavor_entered))
+	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_flavor_entered), title = "Flavour text", message = "Please enter your new flavour text.", default = flavor_text, multiline = TRUE)
 
-/mob/living/silicon/proc/silicon_flavor_entered(mob/user, new_flavortext, datum/om/prompt/ask)
-	new_flavortext = strip_html_simple(new_flavortext)
+/mob/living/silicon/proc/silicon_flavor_entered(datum/om/prompt/text/ask)
+	var/new_flavortext = strip_html_simple(ask.text)
 	if(new_flavortext)
 		flavor_text = new_flavortext
 

@@ -52,7 +52,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	set name = "Set transfer amount"
 	set category = "Object"
 	set src in view(1)
-	var/N = rerun_prompt(usr, "a1", list("kind" = "list", "message" = "Amount per transfer from this:", "title" = "[src]", "choices" = possible_transfer_amounts), VERB_REF(set_APTFT), args)
+	var/N = rerun_ask(usr, "a1", VERB_REF(set_APTFT), args, /datum/om/prompt/choice, message = "Amount per transfer from this:", title = "[src]", choices = possible_transfer_amounts)
 	if(isnull(N))
 		return
 	if (N)

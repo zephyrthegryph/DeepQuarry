@@ -302,19 +302,19 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		return
 	// Sanity is mostly handled in chimera_regenerate()
 	if(stat == DEAD)
-		var/confirm = rerun_prompt(src, "a1", list("message" = "Are you sure you want to regenerate your corpse? This process can take up to thirty minutes. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(reconstitute_form), args)
+		var/confirm = rerun_ask(src, "a1", PROC_REF(reconstitute_form), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to regenerate your corpse? This process can take up to thirty minutes. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", title = "Confirm Regeneration", choices = list("Yes", "No"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 	else if(quickcheckuninjured())
-		var/confirm = rerun_prompt(src, "a2", list("message" = "Are you sure you want to regenerate? As you are uninjured this will only take 30 seconds. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(reconstitute_form), args)
+		var/confirm = rerun_ask(src, "a2", PROC_REF(reconstitute_form), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to regenerate? As you are uninjured this will only take 30 seconds. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot.", title = "Confirm Regeneration", choices = list("Yes", "No"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
 			xc.chimera_regenerate()
 	else
-		var/confirm = rerun_prompt(src, "a3", list("message" = "Are you sure you want to completely reconstruct your form? This process can take up to fifteen minutes, depending on how hungry you are, and you will be unable to move. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(reconstitute_form), args)
+		var/confirm = rerun_ask(src, "a3", PROC_REF(reconstitute_form), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to completely reconstruct your form? This process can take up to fifteen minutes, depending on how hungry you are, and you will be unable to move. Additionally, you may regenerate your appearance based on your current form or the appearance of the currently loaded slot", title = "Confirm Regeneration", choices = list("Yes", "No"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Yes")
@@ -407,7 +407,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		return //Hwhat?
 
 	// Default is use internal record, even if closes menu
-	var/reload_slot = rerun_prompt(src, "a4", list("message" = "Regenerate from your current form, or from the appearance of your current character slot(This will not change your current species or traits.)", "title" = "Regenerate Form", "choices" = list("Current Form", "From Slot"), "cancel_answer" = "Current Form"), PROC_REF(hatch), args)
+	var/reload_slot = rerun_ask(src, "a4", PROC_REF(hatch), args, /datum/om/prompt/choice/alert, message = "Regenerate from your current form, or from the appearance of your current character slot(This will not change your current species or traits.)", title = "Regenerate Form", choices = list("Current Form", "From Slot"), cancel_answer = "Current Form")
 	if(isnull(reload_slot))
 		return
 
@@ -425,7 +425,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 			return
 		from_slot = "You'll hatch using [client.prefs.read_preference(/datum/preference/name/real_name)]'s appearance"
 
-	var/confirm = rerun_prompt(src, "a5", list("message" = "Are you sure you want to hatch right now? This will be very obvious to anyone in view. [from_slot]! Are you sure?", "title" = "Confirm Regeneration", "choices" = list("Yes", "No")), PROC_REF(hatch), args)
+	var/confirm = rerun_ask(src, "a5", PROC_REF(hatch), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to hatch right now? This will be very obvious to anyone in view. [from_slot]! Are you sure?", title = "Confirm Regeneration", choices = list("Yes", "No"))
 	if(isnull(confirm))
 		return
 	if(confirm == "Yes")

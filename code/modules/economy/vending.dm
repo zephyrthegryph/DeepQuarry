@@ -558,7 +558,7 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 			if(!istype(ui.user.get_active_hand(), /obj/item/spacecash))
 				var/obj/item/card/id/pin_card = ui.user.GetIdCard()
 				if(istype(pin_card) && id_card_needs_pin(pin_card))
-					pin = act_prompt(ui.user, action, params, ui, "pin", list("kind" = "number", "message" = "Enter pin code", "title" = "Vendor transaction"))
+					pin = act_ask(ui.user, action, params, ui, "pin", /datum/om/prompt/number, message = "Enter pin code", title = "Vendor transaction")
 					if(isnull(pin))
 						return TRUE
 

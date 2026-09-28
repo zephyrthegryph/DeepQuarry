@@ -116,7 +116,7 @@
 	var/list/roles = list()
 	for(var/role in owner().material_roles())
 		roles += role
-	var/role = rerun_prompt(user, "k105", list("kind" = "list", "message" = "Which component should be replaced?", "title" = "Service assembly", "choices" = roles), PROC_REF(fit_stock), args)
+	var/role = rerun_ask(user, "k105", PROC_REF(fit_stock), args, /datum/om/prompt/choice, message = "Which component should be replaced?", title = "Service assembly", choices = roles)
 	if(isnull(role))
 		return
 	if(!role || !can_service(user) || !maintenance_open || QDELETED(stock) || stock.loc != user || !(role in owner().material_roles()))
@@ -126,7 +126,7 @@
 		to_chat(user, span_warning("This component requires [quantity] sheets."))
 		return
 	var/material_id = stock.get_material_name()
-	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner(), list("receiver" = src, "stock" = stock, "role" = role, "quantity" = quantity, "material_id" = material_id))
+	om_task_start(/datum/om/task/timed/material_service_fit_stock, user, owner(), stock = stock, role = role, quantity = quantity, material_id = material_id)
 
 /datum/om/task/timed/material_service_fit_stock
 	duration = 2 SECONDS

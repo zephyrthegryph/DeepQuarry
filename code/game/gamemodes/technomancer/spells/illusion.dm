@@ -42,23 +42,23 @@
 				illusion.ai_brain?.give_destination(T)
 /obj/item/spell/illusion/on_use_cast(mob/user)
 	if(illusion)
-		om_prompt(src, user, list("message" = "Would you like to have \the [illusion] speak, or do an emote?", "title" = "Illusion", "choices" = list("Speak","Emote","Cancel")), PROC_REF(illusion_action_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(illusion_action_chosen), title = "Illusion", message = "Would you like to have \the [illusion] speak, or do an emote?", choices = list("Speak","Emote","Cancel"), buttons = TRUE)
 
-/obj/item/spell/illusion/proc/illusion_action_chosen(mob/user, choice, datum/om/prompt/ask)
-	switch(choice)
+/obj/item/spell/illusion/proc/illusion_action_chosen(datum/om/prompt/choice/ask)
+	switch(ask.choice)
 		if("Speak")
-			ask.chain(list("kind" = "text", "message" = "What do you want \the [illusion] to say?", "title" = "Illusion Speak", "encode" = FALSE), PROC_REF(illusion_speak))
+			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(illusion_speak), title = "Illusion Speak", message = "What do you want \the [illusion] to say?", encode = FALSE)
 		if("Emote")
-			ask.chain(list("kind" = "text", "message" = "What do you want \the [illusion] to do?", "title" = "Illusion Emote", "encode" = FALSE), PROC_REF(illusion_emote))
+			om_ask(ask.answerer, /datum/om/prompt/text, PROC_REF(illusion_emote), title = "Illusion Emote", message = "What do you want \the [illusion] to do?", encode = FALSE)
 
-/obj/item/spell/illusion/proc/illusion_speak(mob/user, what_to_say, datum/om/prompt/ask)
+/obj/item/spell/illusion/proc/illusion_speak(datum/om/prompt/text/ask)
 	//Sanitize occurs inside say() already.
-	if(what_to_say && illusion)
-		illusion.say(what_to_say)
+	if(ask.text && illusion)
+		illusion.say(ask.text)
 
-/obj/item/spell/illusion/proc/illusion_emote(mob/user, what_to_emote, datum/om/prompt/ask)
-	if(what_to_emote && illusion)
-		illusion.emote(what_to_emote)
+/obj/item/spell/illusion/proc/illusion_emote(datum/om/prompt/text/ask)
+	if(ask.text && illusion)
+		illusion.emote(ask.text)
 
 REF_OWNED(/obj/item/spell/illusion, "illusion")
 

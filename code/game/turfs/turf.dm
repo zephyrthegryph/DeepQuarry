@@ -391,18 +391,27 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 		to_chat(vandal, span_warning("There's too much graffiti here to add more."))
 		return FALSE
 
-	om_prompt(src, vandal, list("kind" = "text", "message" = "Enter a message to engrave.", "title" = "Graffiti", "default" = "", "max_length" = MAX_MESSAGE_LEN, "target" = tool, "requires" = PROMPT_IN_HAND, "data" = list("params" = click_parameters)), PROC_REF(graffiti_entered))
+	om_ask(vandal, /datum/om/prompt/text/graffiti, PROC_REF(graffiti_entered), subject = tool, wall = src, click_parameters = click_parameters)
 	return TRUE
 
-/turf/proc/graffiti_entered(mob/vandal, message, datum/om/prompt/ask)
-	var/click_parameters = ask.get("params")
-	var/obj/item/tool = vandal.get_active_hand()
+/// Engraving with a tool (the subject, held throughout) next to the turf.
+/datum/om/prompt/text/graffiti
+	title = "Graffiti"
+	message = "Enter a message to engrave."
+	default = ""
+	max_length = MAX_MESSAGE_LEN
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	var/turf/wall
+	var/click_parameters
 
-	if(!vandal || vandal.incapacitated() || !Adjacent(vandal) || !tool.loc == vandal)
-		return FALSE
+/datum/om/prompt/text/graffiti/valid()
+	return wall.Adjacent(answerer) ? null : "too far away"
 
+/turf/proc/graffiti_entered(datum/om/prompt/text/graffiti/ask)
+	var/mob/vandal = ask.answerer
+	var/message = ask.text
 	vandal.visible_message(span_warning("\The [vandal] begins carving something into \the [src]."))
-	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, list("receiver" = src, "duration" = max(2 SECONDS, length(message)), "message" = message, "click_parameters" = click_parameters))
+	om_task_start(/datum/om/task/timed/turf_graffiti, vandal, src, duration = max(2 SECONDS, length(message)), message = message, click_parameters = ask.click_parameters)
 	return TRUE
 
 /datum/om/task/timed/turf_graffiti

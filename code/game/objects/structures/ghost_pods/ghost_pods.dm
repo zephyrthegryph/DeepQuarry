@@ -75,9 +75,9 @@
 /obj/structure/ghost_pod/manual/proc/interaction_open(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!used)
 		if(confirm_before_open)
-			om_prompt(src, user, list("message" = "Are you sure you want to touch \the [src]?", "title" = "Confirm", "choices" = list("No", "Yes"), "requires" = PROMPT_ADJACENT), PROC_REF(touch_confirmed))
+			om_ask(user, /datum/om/prompt/confirm/ghost_pod_touch, PROC_REF(touch_confirmed))
 			return TRUE
-		touch_confirmed(user, "Yes")
+		touch_pod(user)
 	return TRUE
 
 /obj/structure/ghost_pod/manual/attack_ai(mob/living/silicon/user)
@@ -116,19 +116,48 @@
 		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
 		return
 
-	om_prompt(src, user, list("message" = "Are you certain you wish to activate this pod?", "title" = "Control Pod", "choices" = list("Yes", "No")), PROC_REF(activation_confirmed))
+	om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed))
 
-/obj/structure/ghost_pod/proc/activation_confirmed(mob/observer/dead/user, choice, datum/om/prompt/ask)
+/// A ghost confirms taking a pod. The pod is busy while it's open (manual pods): any answer
+/// or a cancel frees it.
+/datum/om/prompt/confirm/ghost_pod_activate
+	title = "Control Pod"
+	message = "Are you certain you wish to activate this pod?"
+	answer_on_no = TRUE
+
+/datum/om/prompt/confirm/ghost_pod_activate/cancelled()
+	var/obj/structure/ghost_pod/pod = subject
+	if(pod)
+		pod.busy = FALSE
+
+/obj/structure/ghost_pod/proc/activation_confirmed(datum/om/prompt/confirm/ghost_pod_activate/ask)
+	var/mob/observer/dead/user = ask.answerer
 	busy = FALSE
-	if(choice != "Yes")
+	if(!ask.yes)
 		return
 	if(used)
 		to_chat(user, span_warning("Another spirit appears to have gotten to \the [src] before you.  Sorry."))
 		return
 	create_occupant(user)
 
-/obj/structure/ghost_pod/manual/proc/touch_confirmed(mob/living/user, choice, datum/om/prompt/ask)
-	if(choice != "Yes" || used)
+/datum/om/prompt/confirm/ghost_pod_touch
+	title = "Confirm"
+	no_first = TRUE
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/datum/om/prompt/confirm/ghost_pod_touch/prepare()
+	message = "Are you sure you want to touch \the [subject]?"
+	return TRUE
+
+/datum/om/prompt/confirm/ghost_pod_touch/valid()
+	var/obj/structure/ghost_pod/pod = subject
+	return pod.used ? "already used" : null
+
+/obj/structure/ghost_pod/manual/proc/touch_confirmed(datum/om/prompt/confirm/ghost_pod_touch/ask)
+	touch_pod(ask.answerer)
+
+/obj/structure/ghost_pod/manual/proc/touch_pod(mob/living/user)
+	if(used)
 		return
 	trigger(user)
 	if(!used)
@@ -137,41 +166,73 @@
 
 /// Asks a ghost which maintenance critter to become; spawn_maint_critter() makes it once confirmed.
 /obj/structure/ghost_pod/proc/ask_maint_critter(mob/M, message, title)
-	om_prompt(src, M, list("kind" = "list", "message" = message, "title" = title, "choices" = GLOB.maint_mob_pred_options, "requires" = list(/datum/om/check/has_client), "on_cancel" = PROC_REF(maint_critter_cancelled), "data" = list("message" = message, "title" = title)), PROC_REF(maint_critter_chosen))
+	om_ask(M, /datum/om/prompt/choice/maint_critter, PROC_REF(maint_critter_chosen), message = message, title = title, choices = GLOB.maint_mob_pred_options)
 
-/obj/structure/ghost_pod/proc/maint_critter_cancelled(mob/M, datum/om/prompt/ask)
+/// A ghost picks a maintenance critter (message and title from the call). A cancel resets the pod.
+/datum/om/prompt/choice/maint_critter
+	requires = list(/datum/om/check/has_client)
+
+/datum/om/prompt/choice/maint_critter/cancelled()
+	var/obj/structure/ghost_pod/pod = subject
+	pod?.maint_critter_cancelled(answerer)
+
+/// Confirms the pick; a no asks again with the first prompt's message and title.
+/datum/om/prompt/confirm/maint_critter
+	title = "Confirmation"
+	no_first = TRUE
+	answer_on_no = TRUE
+	var/critter
+	var/first_message
+	var/first_title
+
+/datum/om/prompt/confirm/maint_critter/prepare()
+	message = "Are you sure you want to play as [critter]?"
+	return TRUE
+
+/datum/om/prompt/confirm/maint_critter/cancelled()
+	var/obj/structure/ghost_pod/pod = subject
+	pod?.maint_critter_cancelled(answerer)
+
+/obj/structure/ghost_pod/proc/maint_critter_cancelled(mob/M)
 	to_chat(M, span_notice("No mob selected, cancelling."))
 	reset_ghostpod()
 
-/obj/structure/ghost_pod/proc/maint_critter_chosen(mob/M, choice, datum/om/prompt/ask)
-	ask.put("choice", choice)
-	ask.chain(list("message" = "Are you sure you want to play as [choice]?", "title" = "Confirmation", "choices" = list("No", "Yes"), "on_cancel" = PROC_REF(maint_critter_cancelled)), PROC_REF(maint_critter_confirmed))
+/obj/structure/ghost_pod/proc/maint_critter_chosen(datum/om/prompt/choice/maint_critter/ask)
+	om_ask(ask.answerer, /datum/om/prompt/confirm/maint_critter, PROC_REF(maint_critter_confirmed), critter = ask.choice, first_message = ask.message, first_title = ask.title)
 
-/obj/structure/ghost_pod/proc/maint_critter_confirmed(mob/M, confirm, datum/om/prompt/ask)
-	if(confirm != "Yes")
-		ask_maint_critter(M, ask.get("message"), ask.get("title"))
+/obj/structure/ghost_pod/proc/maint_critter_confirmed(datum/om/prompt/confirm/maint_critter/ask)
+	if(!ask.yes)
+		ask_maint_critter(ask.answerer, ask.first_message, ask.first_title)
 		return
-	spawn_maint_critter(M, ask.get("choice"))
+	spawn_maint_critter(ask.answerer, ask.critter)
 
 /obj/structure/ghost_pod/proc/spawn_maint_critter(mob/M, choice)
 	return
 
 /// Offers the new mob's player their saved vore bellies.
 /mob/living/proc/offer_load_bellies()
-	om_prompt(src, src, list("message" = "Do you want to load the vore bellies from your current slot?", "title" = "Load Bellies", "choices" = list("Yes", "No")), PROC_REF(load_bellies_answered))
+	om_ask(src, /datum/om/prompt/confirm, PROC_REF(load_bellies_answered), title = "Load Bellies", message = "Do you want to load the vore bellies from your current slot?")
 
-/mob/living/proc/load_bellies_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer != "Yes")
-		return
+/mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
 		vore_selected = vore_organs[1]
 
 /// Lets a freshly spawned character pick a new name.
 /mob/living/carbon/human/proc/offer_spawn_rename()
-	om_prompt(src, src, list("kind" = "text", "message" = "Your mind feels foggy, and you recall your name might be [real_name]. Would you like to change your name?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(spawn_renamed))
+	om_ask(src, /datum/om/prompt/text/spawn_rename, PROC_REF(spawn_renamed))
 
-/mob/living/carbon/human/proc/spawn_renamed(mob/user, newname, datum/om/prompt/ask)
+/datum/om/prompt/text/spawn_rename
+	title = "Name change"
+	max_length = MAX_NAME_LEN
+
+/datum/om/prompt/text/spawn_rename/prepare()
+	var/mob/living/carbon/human/H = answerer
+	message = "Your mind feels foggy, and you recall your name might be [H.real_name]. Would you like to change your name?"
+	return TRUE
+
+/mob/living/carbon/human/proc/spawn_renamed(datum/om/prompt/text/spawn_rename/ask)
+	var/newname = ask.text
 	if(newname)
 		real_name = newname
 
@@ -206,11 +267,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 		return
 
 	busy = TRUE
-	if(!om_prompt(src, user, list("message" = "Are you certain you wish to activate this pod?", "title" = "Control Pod", "choices" = list("Yes", "No"), "on_cancel" = PROC_REF(activation_cancelled)), PROC_REF(activation_confirmed)))
+	if(!om_ask(user, /datum/om/prompt/confirm/ghost_pod_activate, PROC_REF(activation_confirmed)))
 		busy = FALSE
-
-/obj/structure/ghost_pod/proc/activation_cancelled(mob/observer/dead/user, datum/om/prompt/ask)
-	busy = FALSE
 
 /obj/structure/ghost_pod/proc/ghostpod_startup(notify = FALSE)
 	registry_join(REGISTRY_GHOST_PODS, src)

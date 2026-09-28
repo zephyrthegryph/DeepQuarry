@@ -152,10 +152,10 @@
 		bound_height = width * world.icon_size
 
 /obj/structure/door_assembly/proc/rename_door(mob/living/user)
-	om_prompt(src, user, list("kind" = "text", "message" = "Enter the name for the [base_name].", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(door_named))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(door_named), title = name, message = "Enter the name for the [base_name].", default = created_name, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 
-/obj/structure/door_assembly/proc/door_named(mob/living/user, t, datum/om/prompt/ask)
-	created_name = sanitizeSafe(t, MAX_NAME_LEN)
+/obj/structure/door_assembly/proc/door_named(datum/om/prompt/text/ask)
+	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
 	update_state()
 
 /obj/structure/door_assembly/attack_robot(mob/living/silicon/robot/user)
@@ -210,7 +210,7 @@
 					if(S.get_amount() >= 2)
 						playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
 						user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
-						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, list("receiver" = src, "S" = S, "material_name" = material_name))
+						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, S = S, material_name = material_name)
 
 	update_state()
 	return TRUE

@@ -10,13 +10,13 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 	if(GLOB.send_beruang)
 		to_chat(user, span_danger("The Beruang has already been sent this round!"))
 		return
-	var/_answer_a1 = verb_prompt(user, "a1", list("message" = "Do you want to dispatch the Beruang trade ship?", "title" = "Trade Ship", "choices" = list("Yes","No")), args)
+	var/_answer_a1 = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Do you want to dispatch the Beruang trade ship?", title = "Trade Ship", choices = list("Yes","No"))
 	if(isnull(_answer_a1))
 		return
 	if(_answer_a1 != "Yes")
 		return
 	if(get_security_level() == "red") // Allow admins to reconsider if the alert level is Red
-		var/_answer_a2 = verb_prompt(user, "a2", list("message" = "The station is in red alert. Do you still want to send traders?", "title" = "Trade Ship", "choices" = list("Yes","No")), args)
+		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "The station is in red alert. Do you still want to send traders?", title = "Trade Ship", choices = list("Yes","No"))
 		if(isnull(_answer_a2))
 			return
 		if(_answer_a2 != "Yes")

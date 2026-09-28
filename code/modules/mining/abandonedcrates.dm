@@ -153,7 +153,7 @@ vorestation edit end */
 		return
 
 	to_chat(user, span_notice("The crate is locked with a Deca-code lock."))
-	var/input = rerun_prompt(user, "k156", list("kind" = "text", "message" = "Enter [codelen] digits. All digits must be unique.", "title" = "Deca-Code Lock", "max_length" = codelen), PROC_REF(togglelock), args)
+	var/input = rerun_ask(user, "k156", PROC_REF(togglelock), args, /datum/om/prompt/text, message = "Enter [codelen] digits. All digits must be unique.", title = "Deca-Code Lock", max_length = codelen)
 	if(isnull(input))
 		return
 	if(!Adjacent(user))

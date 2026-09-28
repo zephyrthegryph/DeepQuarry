@@ -41,11 +41,17 @@
 		to_chat(src, span_warning("While you may perhaps have goals, this verb's meant to only be visible \
 		to antagonists.  Please make a bug report!"))
 		return
-	om_prompt(src, src, list("kind" = "text", "message" = "Write a short sentence of what your character hopes to accomplish \
-	today as an antagonist.  Remember that this is purely optional.  It will be shown at the end of the \
-	round for everybody else.", "title" = "Ambitions", "default" = mind.ambitions, "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(ambitions_written))
+	om_ask(src, /datum/om/prompt/text/ambitions, PROC_REF(ambitions_written), default = mind.ambitions)
 
-/mob/living/proc/ambitions_written(mob/user, new_ambitions, datum/om/prompt/ask)
+/datum/om/prompt/text/ambitions
+	title = "Ambitions"
+	message = "Write a short sentence of what your character hopes to accomplish \
+	today as an antagonist.  Remember that this is purely optional.  It will be shown at the end of the \
+	round for everybody else."
+	multiline = TRUE
+
+/mob/living/proc/ambitions_written(datum/om/prompt/text/ambitions/ask)
+	var/new_ambitions = ask.text
 	if(!mind)
 		return
 	if(isnull(new_ambitions))

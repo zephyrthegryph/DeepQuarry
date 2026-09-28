@@ -18,13 +18,12 @@
 /obj/structure/ghost_pod/manual/clegg/create_occupant(mob/M)
 	lightning_strike(get_turf(src), cosmetic = TRUE)
 	var/list/choices = list(/mob/living/simple_mob/clowns/normal, /mob/living/simple_mob/clowns/honkling, /mob/living/simple_mob/clowns/mayor, /mob/living/simple_mob/clowns/blob, /mob/living/simple_mob/clowns/mutant, /mob/living/simple_mob/clowns/clowns, /mob/living/simple_mob/clowns/flesh, /mob/living/simple_mob/clowns/scary, /mob/living/simple_mob/clowns/chlown, /mob/living/simple_mob/clowns/destroyer, /mob/living/simple_mob/clowns/giggles, /mob/living/simple_mob/clowns/longface, /mob/living/simple_mob/clowns/hulk, /mob/living/simple_mob/clowns/thin, /mob/living/simple_mob/clowns/wide, /mob/living/simple_mob/clowns/perm, /mob/living/simple_mob/clowns/thicc, /mob/living/simple_mob/clowns/punished, /mob/living/simple_mob/clowns/sentinel, /mob/living/simple_mob/clowns/tunnelclown, /mob/living/simple_mob/clowns/cluwne, /mob/living/simple_mob/clowns/honkmunculus)
-	// A cancel gets a random theme: the egg is already hatching.
-	om_prompt(src, M, list("kind" = "list", "message" = "Redspace clowns like themes, what's yours?", "title" = "Theme Choice", "choices" = choices, "on_cancel" = PROC_REF(clown_theme_cancelled), "data" = list("themes" = choices)), PROC_REF(clown_theme_chosen))
+	// A cancel (optional) gets a random theme: the egg is already hatching.
+	om_ask(M, /datum/om/prompt/choice, PROC_REF(clown_theme_chosen), title = "Theme Choice", message = "Redspace clowns like themes, what's yours?", choices = choices, optional = TRUE)
 
-/obj/structure/ghost_pod/manual/clegg/proc/clown_theme_cancelled(mob/M, datum/om/prompt/ask)
-	clown_theme_chosen(M, pick(ask.get("themes")), ask)
-
-/obj/structure/ghost_pod/manual/clegg/proc/clown_theme_chosen(mob/M, chosen_clown, datum/om/prompt/ask)
+/obj/structure/ghost_pod/manual/clegg/proc/clown_theme_chosen(datum/om/prompt/choice/ask)
+	var/mob/M = ask.answerer
+	var/chosen_clown = ask.choice || pick(ask.choices)
 	if(used || !M.ckey)
 		return
 	density = FALSE

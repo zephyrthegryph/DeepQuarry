@@ -12,10 +12,23 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 	flags = NOBLUDGEON
 
-/obj/item/bodysnatcher/proc/swap_confirmed(mob/living/user, choice, datum/om/prompt/ask)
-	var/mob/living/M = ask.get("victim")
-	if(choice != "Continue" || !user.Adjacent(M) || M.stat == DEAD)
-		return
+/// Re-checked on the answer: the device is still in hand, and the victim is next to the user and alive.
+/datum/om/prompt/confirm/bodysnatch
+	title = "Confirmation"
+	message = "This will swap your mind with the target's mind. This will result in them controlling your body, and you controlling their body. Continue?"
+	yes_text = "Continue"
+	no_text = "Cancel"
+	requires = PROMPT_IN_HAND
+	var/mob/living/victim
+
+/datum/om/prompt/confirm/bodysnatch/valid()
+	if(!answerer.Adjacent(victim) || victim.stat == DEAD)
+		return "no longer a target"
+	return null
+
+/obj/item/bodysnatcher/proc/swap_confirmed(datum/om/prompt/confirm/bodysnatch/ask)
+	var/mob/living/user = ask.answerer
+	var/mob/living/M = ask.victim
 	if(M.ckey && !M.client)
 		log_and_message_admins("attempted to body swap with [key_name(M)] while they were SSD!")
 	else
@@ -48,7 +61,7 @@
 			to_chat(user,span_warning("A warning pops up on the device, informing you that [M] is dead, and, as such, the mind transfer can not be done."))
 			return ITEM_INTERACT_FAILURE
 
-		om_prompt(src, user, list("message" = "This will swap your mind with the target's mind. This will result in them controlling your body, and you controlling their body. Continue?", "title" = "Confirmation", "choices" = list("Continue","Cancel"), "requires" = PROMPT_IN_HAND, "data" = list("victim" = M)), PROC_REF(swap_confirmed))
+		om_ask(user, /datum/om/prompt/confirm/bodysnatch, PROC_REF(swap_confirmed), victim = M)
 		return ITEM_INTERACT_BLOCKING
 
 	else

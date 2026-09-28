@@ -23,7 +23,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/animalhide, INTERACT_ITEM(null, PROC_REF(ani
 		//visible message on mobs is defined as visible_message(var/message, var/self_message, var/blind_message)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " starts cutting hair off \the [src]"), span_notice("You start cutting the hair off \the [src]"), "You hear the sound of a knife rubbing against flesh")
 		if(amount > 0)
-			om_task_start(/datum/om/task/timed/scrape_hides, user, null, list("duration" = 2.5 SECONDS, "receiver" = src))
+			om_task_start(/datum/om/task/timed/scrape_hides, user, null, duration = 2.5 SECONDS)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS

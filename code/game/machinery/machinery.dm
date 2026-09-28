@@ -760,23 +760,29 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/proc/asleep_on_keys()
 	return !isnull(react_sleep_tokens) && !step_active
 
-// ---------------------------------------------------------------- configuration prompts (om_prompt)
+// ---------------------------------------------------------------- configuration prompts (om_ask)
 
 /// Asks for a new radio frequency; frequency_entered() applies it through the machine's set_frequency().
 /obj/machinery/proc/ask_frequency(mob/user, current)
-	om_prompt(src, user, list("kind" = "number", "message" = "[src] has a frequency of [current]. What would you like it to be?", "title" = "[src] frequency", "default" = current, "max" = RADIO_HIGH_FREQ, "min" = RADIO_LOW_FREQ, "requires" = PROMPT_ADJACENT), PROC_REF(frequency_entered))
+	om_ask(user, /datum/om/prompt/number, PROC_REF(frequency_entered), message = "[src] has a frequency of [current]. What would you like it to be?", title = "[src] frequency", default = current, max = RADIO_HIGH_FREQ, min = RADIO_LOW_FREQ, requires = PROMPT_ADJACENT)
 
-/obj/machinery/proc/frequency_entered(mob/user, new_frequency, datum/om/prompt/ask)
+/obj/machinery/proc/frequency_entered(datum/om/prompt/number/ask)
+	var/new_frequency = ask.number
 	if(!new_frequency || !hascall(src, "set_frequency"))
 		return
 	call(src, "set_frequency")(sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
 
 /// Asks for a new value of a text var (a tag, a command); an empty answer keeps the old one.
 /obj/machinery/proc/ask_text_var(mob/user, var_name, message, title, max_length = MAX_NAME_LEN)
-	om_prompt(src, user, list("kind" = "text", "message" = message, "title" = title, "default" = vars[var_name], "max_length" = max_length, "requires" = PROMPT_ADJACENT, "data" = list("var" = var_name)), PROC_REF(text_var_entered))
+	om_ask(user, /datum/om/prompt/text/machine_var, PROC_REF(text_var_entered), message = message, title = title, default = vars[var_name], max_length = max_length, var_name = var_name)
 
-/obj/machinery/proc/text_var_entered(mob/user, value, datum/om/prompt/ask)
-	if(value)
-		vars[ask.get("var")] = value
+/datum/om/prompt/text/machine_var
+	requires = PROMPT_ADJACENT
+	/// The machine var the answer is written to.
+	var/var_name
+
+/obj/machinery/proc/text_var_entered(datum/om/prompt/text/machine_var/ask)
+	if(ask.text)
+		vars[ask.var_name] = ask.text
 
 REF_OWNED(/obj/machinery, list("circuit"))

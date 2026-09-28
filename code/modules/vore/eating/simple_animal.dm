@@ -56,14 +56,14 @@
 		return
 
 	if(vore_selected.digest_mode == DM_HOLD)
-		var/confirm = rerun_prompt(user, "a1", list("message" = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", "title" = "Enabling [name]'s Digestion", "choices" = list("Enable", "Cancel")), PROC_REF(toggle_digestion), args)
+		var/confirm = rerun_ask(user, "a1", PROC_REF(toggle_digestion), args, /datum/om/prompt/choice/alert, message = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", choices = list("Enable", "Cancel"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Enable")
 			vore_selected.digest_mode = DM_DIGEST
 			om_after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), vore_default_mode)
 	else
-		var/confirm = rerun_prompt(user, "a2", list("message" = "This mob is currently set to process all stomach contents. Do you want to disable this?", "title" = "Disabling [name]'s Digestion", "choices" = list("Disable", "Cancel")), PROC_REF(toggle_digestion), args)
+		var/confirm = rerun_ask(user, "a2", PROC_REF(toggle_digestion), args, /datum/om/prompt/choice/alert, message = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", choices = list("Disable", "Cancel"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Disable")
@@ -125,7 +125,7 @@
 		to_chat(src, span_warning("You are too hungry to regenerate health."))
 		return
 	var/endurance_now = get_endurance()
-	var/heal_amount = rerun_prompt(src, "a3", list("kind" = "number", "message" = "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]", "title" = "Regenerate health.", "default" = 1, "min" = 1), PROC_REF(nutrition_heal), args)
+	var/heal_amount = rerun_ask(src, "a3", PROC_REF(nutrition_heal), args, /datum/om/prompt/number, message = "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]", title = "Regenerate health.", default = 1, min = 1)
 	if(isnull(heal_amount))
 		return
 	if(!heal_amount)

@@ -78,12 +78,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, INTERACT_ALT(null, PROC_REF(i
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = options, title = "Beacon Color", message = "Choose a color.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
-/obj/item/stack/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
-	if(input_color)
-		picked_color = input_color
+/obj/item/stack/marker_beacon/proc/color_chosen(datum/om/prompt/choice/ask)
+	if(ask.choice)
+		picked_color = ask.choice
 		update_icon()
 
 /obj/structure/marker_beacon
@@ -174,10 +174,10 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
-	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = options, title = "Beacon Color", message = "Choose a color.", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
-/obj/structure/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
-	if(input_color)
-		picked_color = input_color
+/obj/structure/marker_beacon/proc/color_chosen(datum/om/prompt/choice/ask)
+	if(ask.choice)
+		picked_color = ask.choice
 		update_icon()

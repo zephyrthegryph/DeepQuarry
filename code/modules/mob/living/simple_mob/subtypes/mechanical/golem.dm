@@ -84,13 +84,13 @@ REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 	active_spell = new path(src)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/verb/test_giving_spells()
-	om_prompt(src, usr, list("kind" = "list", "message" = "What spell?", "title" = "Give spell", "choices" = known_spells, "on_cancel" = PROC_REF(test_spell_cleared)), PROC_REF(test_spell_chosen))
+	om_ask(usr, /datum/om/prompt/choice, PROC_REF(test_spell_chosen), choices = known_spells, title = "Give spell", message = "What spell?", optional = TRUE)
 
-/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_cleared(mob/user, datum/om/prompt/ask)
-	qdel(active_spell)
-
-/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(mob/user, choice, datum/om/prompt/ask)
-	place_spell_in_hand(known_spells[choice])
+/mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/om/prompt/choice/ask)
+	if(isnull(ask.choice))
+		qdel(active_spell)
+		return
+	place_spell_in_hand(known_spells[ask.choice])
 
 /mob/living/simple_mob/mechanical/technomancer_golem/get_technomancer_core()
 	return core

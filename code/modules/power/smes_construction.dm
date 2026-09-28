@@ -409,7 +409,7 @@
 		if(failing)
 			to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
 		return ITEM_INTERACT_BLOCKING
-	var/new_tag = rerun_prompt(user, "k418", list("kind" = "text", "message" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_length" = MAX_NAME_LEN), TYPE_PROC_REF(/atom, multitool_act), args)
+	var/new_tag = rerun_ask(user, "k418", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", title = "SMES RCON system", max_length = MAX_NAME_LEN)
 	if(isnull(new_tag))
 		return ITEM_INTERACT_BLOCKING
 	if(!new_tag)

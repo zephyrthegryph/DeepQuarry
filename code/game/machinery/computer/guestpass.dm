@@ -53,15 +53,16 @@
 			to_chat(user, span_warning("This guest pass is already deactivated!"))
 			return
 
-		om_prompt(src, user, list("message" = "Do you really want to deactivate this guest pass? (you can't reactivate it)", "title" = "Confirm Deactivation", "choices" = list("Yes", "No"), "requires" = PROMPT_HELD), PROC_REF(deactivation_confirmed))
+		om_ask(user, /datum/om/prompt/confirm, PROC_REF(deactivation_confirmed), title = "Confirm Deactivation", message = "Do you really want to deactivate this guest pass? (you can't reactivate it)", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 	else
 		user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
 			"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
 
 		src.add_fingerprint(user)
 
-/obj/item/card/id/guest/proc/deactivation_confirmed(mob/living/user, confirm, datum/om/prompt/ask)
-	if(confirm == "Yes" && icon_state != "guest-invalid")
+/obj/item/card/id/guest/proc/deactivation_confirmed(datum/om/prompt/confirm/ask)
+	var/mob/living/user = ask.answerer
+	if(icon_state != "guest-invalid")
 		//rip guest pass </3
 		user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
 		icon_state = "guest-invalid"
@@ -219,11 +220,11 @@
 			mode = params["mode"]
 
 		if("giv_name")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Person pass is issued to", "title" = "Name", "default" = giv_name, "requires" = PROMPT_USABLE), PROC_REF(pass_name_entered))
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_name_entered), title = "Name", message = "Person pass is issued to", default = giv_name, requires = PROMPT_USABLE)
 		if("reason")
-			om_prompt(src, ui.user, list("kind" = "text", "message" = "Reason why pass is issued", "title" = "Reason", "default" = reason, "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE), PROC_REF(pass_reason_entered))
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_reason_entered), title = "Reason", message = "Reason why pass is issued", default = reason, requires = PROMPT_USABLE)
 		if("duration")
-			om_prompt(src, ui.user, list("kind" = "number", "message" = "Duration (in minutes) during which pass is valid (up to 360 minutes).", "title" = "Duration", "max" = 360, "min" = 0, "requires" = PROMPT_USABLE), PROC_REF(pass_duration_entered))
+			om_ask(ui.user, /datum/om/prompt/number, PROC_REF(pass_duration_entered), title = "Duration", message = "Duration (in minutes) during which pass is valid (up to 360 minutes).", max = 360, min = 0, requires = PROMPT_USABLE)
 		if("access")
 			var/A = text2num(params["access"])
 			if(A in accesses)
@@ -284,18 +285,21 @@
 	add_fingerprint(ui.user)
 	return TRUE
 
-/obj/machinery/computer/guestpass/proc/pass_name_entered(mob/user, nam, datum/om/prompt/ask)
-	nam = sanitizeName(nam)
+/obj/machinery/computer/guestpass/proc/pass_name_entered(datum/om/prompt/text/ask)
+	var/nam = sanitizeName(ask.text)
 	if(nam)
 		giv_name = nam
 		SStgui.update_uis(src)
 
-/obj/machinery/computer/guestpass/proc/pass_reason_entered(mob/user, reas, datum/om/prompt/ask)
+/obj/machinery/computer/guestpass/proc/pass_reason_entered(datum/om/prompt/text/ask)
+	var/reas = ask.text
 	if(reas)
 		reason = reas
 		SStgui.update_uis(src)
 
-/obj/machinery/computer/guestpass/proc/pass_duration_entered(mob/user, dur, datum/om/prompt/ask)
+/obj/machinery/computer/guestpass/proc/pass_duration_entered(datum/om/prompt/number/ask)
+	var/dur = ask.number
+	var/mob/user = ask.answerer
 	if(!dur)
 		return
 	if(dur > 0 && dur <= 360)

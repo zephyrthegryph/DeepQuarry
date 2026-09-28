@@ -8,14 +8,11 @@
 /obj/structure/signpost/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return attack_hand(user)
 
-DECLARE_INTERACTIONS(/obj/structure/signpost, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+DECLARE_INTERACTIONS(/obj/structure/signpost, 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), 	INTERACT_ITEM(null, PROC_REF(interaction_item)), )
 
 /// Old attack_hand.
 /obj/structure/signpost/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), PROC_REF(interaction_hand), args)
+	var/_answer_k11 = rerun_ask(user, "k11", PROC_REF(interaction_hand), args, /datum/om/prompt/choice/alert, message = "Travel back to ss13?", title = "Return?", choices = list("Yes","No"))
 	if(isnull(_answer_k11))
 		return TRUE
 	if(_answer_k11 == "Yes")

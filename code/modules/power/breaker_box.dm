@@ -122,7 +122,7 @@
 
 /obj/machinery/power/breakerbox/proc/interaction_use(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL))
-		var/newtag = rerun_prompt(user, "k125", list("kind" = "text", "message" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", "title" = "SMES RCON system", "max_length" = MAX_NAME_LEN), PROC_REF(interaction_use), args)
+		var/newtag = rerun_ask(user, "k125", PROC_REF(interaction_use), args, /datum/om/prompt/text, message = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", title = "SMES RCON system", max_length = MAX_NAME_LEN)
 		if(isnull(newtag))
 			return
 		if(newtag)

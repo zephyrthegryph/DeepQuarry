@@ -169,9 +169,10 @@
 		to_chat(src, span_warning("There are no alternative apperances selectable!"))
 		return
 
-	om_prompt(src, src, list("kind" = "list", "message" = "Please select which alternate appearance you want to swap to.", "title" = "Variant Sprite", "choices" = alt_demon_appearances), PROC_REF(alt_appearance_chosen))
+	om_ask(src, /datum/om/prompt/choice, PROC_REF(alt_appearance_chosen), title = "Variant Sprite", message = "Please select which alternate appearance you want to swap to.", choices = alt_demon_appearances)
 
-/mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(mob/user, alternate_selection, datum/om/prompt/ask)
+/mob/living/simple_mob/vore/demon/proc/alt_appearance_chosen(datum/om/prompt/choice/ask)
+	var/alternate_selection = ask.choice
 	alternate_selection = lowertext(alternate_selection)
 
 	//Change the all the icon info.

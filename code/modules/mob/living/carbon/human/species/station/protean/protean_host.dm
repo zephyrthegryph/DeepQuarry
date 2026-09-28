@@ -17,7 +17,7 @@
 		to_chat(H, span_warning("You can only do this while standing."))
 		return
 	to_chat(H, span_notice("You rapidly condense into your module."))
-	om_task_start(/datum/om/task/timed/hardsuit_activate_hardsuit, H, H, list("receiver" = src, "F" = F))
+	om_task_start(/datum/om/task/timed/hardsuit_activate_hardsuit, H, H, receiver = src, F = F)
 	return TRUE
 
 /datum/om/task/timed/hardsuit_activate_hardsuit
@@ -74,7 +74,7 @@
 		to_chat(H, span_warning("You need a more aggressive grab to do this!"))
 		return
 	H.visible_message(span_warning("[H] is attempting to latch onto [target]!"), span_danger("You attempt to latch onto [target]!"))
-	om_task_start(/datum/om/task/timed/latch_host_activate_latch_host, H, target, list("receiver" = src, "F" = F, "G" = G))
+	om_task_start(/datum/om/task/timed/latch_host_activate_latch_host, H, target, receiver = src, F = F, G = G)
 	return TRUE
 
 /datum/om/task/timed/latch_host_activate_latch_host

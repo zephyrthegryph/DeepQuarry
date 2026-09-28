@@ -114,7 +114,7 @@
 		return
 
 	if(!message)
-		var/_answer_a1 = rerun_prompt(src, "a1", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "multiline" = TRUE, "encode" = FALSE), PROC_REF(nsay_vore_act), args)
+		var/_answer_a1 = rerun_ask(src, "a1", PROC_REF(nsay_vore_act), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
 		if(isnull(_answer_a1))
 			return
 		message = _answer_a1
@@ -148,7 +148,7 @@
 		return
 
 	if(!message)
-		var/_answer_a2 = rerun_prompt(src, "a2", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "multiline" = TRUE, "encode" = FALSE), PROC_REF(nme_vore_act), args)
+		var/_answer_a2 = rerun_ask(src, "a2", PROC_REF(nme_vore_act), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE, encode = FALSE, max_length = MAX_TGUI_INPUT)
 		if(isnull(_answer_a2))
 			return
 		message = _answer_a2
@@ -215,7 +215,7 @@
 	set desc = "Speak to your Soulcatcher (circumventing SR speaking)."
 	set category = "Soulcatcher"
 
-	var/message = rerun_prompt(src, "a3", list("kind" = "text", "message" = "Type a message to say.", "title" = "Speak into Soulcatcher", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), VERB_REF(nsay_brain), args)
+	var/message = rerun_ask(src, "a3", VERB_REF(nsay_brain), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", multiline = TRUE)
 	if(isnull(message))
 		return
 	if(message)
@@ -226,7 +226,7 @@
 	set desc = "Emote to your Soulcatcher (circumventing SR speaking)."
 	set category = "Soulcatcher"
 
-	var/message = rerun_prompt(src, "a4", list("kind" = "text", "message" = "Type an action to perform.", "title" = "Emote into Soulcatcher", "max_length" = MAX_MESSAGE_LEN, "multiline" = TRUE), VERB_REF(nme_brain), args)
+	var/message = rerun_ask(src, "a4", VERB_REF(nme_brain), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", multiline = TRUE)
 	if(isnull(message))
 		return
 	if(message)
@@ -250,7 +250,7 @@
 	if(!valid_objects || !valid_objects.len)
 		return
 
-	var/obj/target = rerun_prompt(src, "a5", list("kind" = "list", "message" = "Select where you want to store your own mind into.", "title" = "Mind Transfer Target", "choices" = valid_objects), PROC_REF(transfer_self), args)
+	var/obj/target = rerun_ask(src, "a5", PROC_REF(transfer_self), args, /datum/om/prompt/choice, message = "Select where you want to store your own mind into.", title = "Mind Transfer Target", choices = valid_objects)
 	if(isnull(target))
 		return
 

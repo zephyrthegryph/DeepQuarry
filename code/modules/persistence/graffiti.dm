@@ -47,7 +47,7 @@
 			to_chat(user, span_warning("You are banned from leaving persistent information across rounds."))
 			return
 
-		var/_message = rerun_prompt(user, "k49", list("kind" = "text", "message" = "Enter an additional message to engrave.", "title" = "Graffiti", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+		var/_message = rerun_ask(user, "k49", TYPE_PROC_REF(/atom, attackby), args, /datum/om/prompt/text, message = "Enter an additional message to engrave.", title = "Graffiti")
 		if(isnull(_message))
 			return TRUE
 		if(_message && loc && user && !user.incapacitated() && user.Adjacent(loc) && thing.loc == user)

@@ -18,7 +18,7 @@
 	if(is_valid(new_entry))
 		Add(new_entry)
 
-/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/prompt/P)
+/datum/integrated_io/list/proc/list_entry_chosen(mob/user, new_entry, datum/om/flow/ask_sequence/pin_value/seq)
 	if(is_valid(new_entry))
 		Add(new_entry)
 
@@ -45,7 +45,7 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to remove."))
 		return
 	if(!target_entry)
-		var/_answer_k48 = rerun_prompt(user, "k48", list("kind" = "list", "message" = "Which piece of data do you want to remove?", "title" = "Remove", "choices" = my_list), PROC_REF(remove_from_list), args)
+		var/_answer_k48 = rerun_ask(user, "k48", PROC_REF(remove_from_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to remove?", title = "Remove", choices = my_list)
 		if(isnull(_answer_k48))
 			return
 		target_entry = _answer_k48
@@ -58,24 +58,34 @@
 		to_chat(user, span_warning("The list is empty, there's nothing to modify."))
 		return
 	if(!target_entry)
-		var/_answer_k58 = rerun_prompt(user, "k58", list("kind" = "list", "message" = "Which piece of data do you want to edit?", "title" = "Edit", "choices" = my_list), PROC_REF(edit_in_list), args)
+		var/_answer_k58 = rerun_ask(user, "k58", PROC_REF(edit_in_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to edit?", title = "Edit", choices = my_list)
 		if(isnull(_answer_k58))
 			return
 		target_entry = _answer_k58
 	if(target_entry)
-		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry))
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = new /datum/om/flow/ask_sequence/pin_value/list_edit(target_entry))
+
+/// A list entry being edited: the entry, and its position when edited by position.
+/datum/om/flow/ask_sequence/pin_value/list_edit
+	var/entry
+	var/position
+
+/datum/om/flow/ask_sequence/pin_value/list_edit/New(entry, position)
+	..()
+	src.entry = entry
+	src.position = position
 
 /// The entry is found again by value: it may have moved while they typed.
-/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/prompt/P)
+/datum/integrated_io/list/proc/list_entry_edited(mob/user, edited_entry, datum/om/flow/ask_sequence/pin_value/list_edit/seq)
 	var/list/my_list = data
 	if(!edited_entry)
 		return
-	var/position = P.get("position")
+	var/position = seq.position
 	if(position)
-		if(position <= my_list.len && my_list[position] == P.get("target"))
+		if(position <= my_list.len && my_list[position] == seq.entry)
 			my_list[position] = edited_entry
 		return
-	var/idx = my_list.Find(P.get("target"))
+	var/idx = my_list.Find(seq.entry)
 	if(idx)
 		my_list[idx] = edited_entry
 
@@ -88,7 +98,7 @@
 		return
 	var/target_entry = my_list[position]
 	if(target_entry)
-		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), data = list("target" = target_entry, "position" = position))
+		ask_for_data_type(user, target_entry, on_value = PROC_REF(list_entry_edited), sequence = new /datum/om/flow/ask_sequence/pin_value/list_edit(target_entry, position))
 
 /datum/integrated_io/list/proc/swap_inside_list(mob/user, first_target, second_target)
 	var/list/my_list = data
@@ -96,14 +106,14 @@
 		to_chat(user, span_warning("The list is empty, or too small to do any meaningful swapping."))
 		return
 	if(!first_target)
-		var/_answer_k93 = rerun_prompt(user, "k93", list("kind" = "list", "message" = "Which piece of data do you want to swap? (1)", "title" = "Swap", "choices" = my_list), PROC_REF(swap_inside_list), args)
+		var/_answer_k93 = rerun_ask(user, "k93", PROC_REF(swap_inside_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to swap? (1)", title = "Swap", choices = my_list)
 		if(isnull(_answer_k93))
 			return
 		first_target = _answer_k93
 
 	if(first_target)
 		if(!second_target)
-			var/_answer_k97 = rerun_prompt(user, "k97", list("kind" = "list", "message" = "Which piece of data do you want to swap? (2)", "title" = "Swap", "choices" = my_list - first_target), PROC_REF(swap_inside_list), args)
+			var/_answer_k97 = rerun_ask(user, "k97", PROC_REF(swap_inside_list), args, /datum/om/prompt/choice, message = "Which piece of data do you want to swap? (2)", title = "Swap", choices = my_list - first_target)
 			if(isnull(_answer_k97))
 				return
 			second_target = _answer_k97

@@ -151,14 +151,16 @@ This device records all warnings given and teleport events for admin review in c
 			to_chat(user, span_warning("The translocator can't support any more beacons!"))
 			return
 
-		om_prompt(src, user, list("kind" = "text", "message" = "New beacon's name (2-20 char):", "title" = "[src]", "max_length" = 20, "requires" = PROMPT_HELD), PROC_REF(beacon_named))
+		om_ask(user, /datum/om/prompt/text, PROC_REF(beacon_named), title = "[src]", message = "New beacon's name (2-20 char):", max_length = 20, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return
 
 	else
 		destination_handle = om_handle(LAZYACCESS(beacons, choice))
 		rebuild_radial_images()
 
-/obj/item/perfect_tele/proc/beacon_named(mob/user, new_name, datum/om/prompt/ask)
+/obj/item/perfect_tele/proc/beacon_named(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/new_name = ask.text
 	if(!check_menu(user))
 		return
 	if(beacons_left <= 0)
@@ -284,7 +286,7 @@ This device records all warnings given and teleport events for admin review in c
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
 					struggle = 3 SECONDS
-	om_task_start(/datum/om/task/timed/translocate, user, target, list("duration" = struggle, "receiver" = src, "ignore_fail_chance" = ignore_fail_chance))
+	om_task_start(/datum/om/task/timed/translocate, user, target, duration = struggle, receiver = src, ignore_fail_chance = ignore_fail_chance)
 
 /// Sending the target to the chosen beacon: at once, or after a struggle with someone resisting.
 /datum/om/task/timed/translocate
@@ -420,17 +422,24 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele_beacon, \
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		warned_users |= user.ckey
-		om_prompt(src, user, list("message" = {"
-This device is a translocator beacon. Having it on your person may mean that anyone
-who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
-or don't wish to potentially have a random person teleported into you, it's suggested that you
-not carry this around."}, "title" = "OOC Warning", "choices" = list("Take It","Leave It"), "requires" = PROMPT_ADJACENT), PROC_REF(warning_answered))
+		om_ask(user, /datum/om/prompt/confirm/tele_beacon_warning, PROC_REF(warning_answered))
 		return TRUE
 	return FALSE
 
-/obj/item/perfect_tele_beacon/proc/warning_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice == "Take It")
-		attack_hand(user)
+/// The OOC warning before first picking up someone else's beacon. Re-checked on the answer: still next to it.
+/datum/om/prompt/confirm/tele_beacon_warning
+	title = "OOC Warning"
+	message = {"
+This device is a translocator beacon. Having it on your person may mean that anyone
+who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
+or don't wish to potentially have a random person teleported into you, it's suggested that you
+not carry this around."}
+	yes_text = "Take It"
+	no_text = "Leave It"
+	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+
+/obj/item/perfect_tele_beacon/proc/warning_answered(datum/om/prompt/confirm/ask)
+	attack_hand(ask.answerer)
 
 /obj/item/perfect_tele_beacon/stationary
 	name = "stationary translocator beacon"
@@ -444,18 +453,15 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return
-	var/mob/living/L = user
-	om_prompt_sequence(src, user, list(
-		list("key" = "confirm", "message" = "You COULD eat the beacon...", "title" = "Eat beacon?", "choices" = list("Eat it!", "No, thanks.")),
-		PROC_REF(ask_belly),
-	), PROC_REF(belly_chosen), list("requires" = PROMPT_HELD, "data" = list("pred" = L)))
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_belly), title = "Eat beacon?", message = "You COULD eat the beacon...", yes_text = "Eat it!", no_text = "No, thanks.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/perfect_tele_beacon/proc/ask_belly(mob/living/user, datum/om/prompt/ask)
-	if(ask.get("confirm") == "Eat it!")
-		return list("key" = "belly", "kind" = "list", "message" = "Which belly?", "title" = "Select A Belly", "choices" = user.vore_organs)
+/obj/item/perfect_tele_beacon/proc/ask_belly(datum/om/prompt/confirm/ask)
+	var/mob/living/user = ask.answerer
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(belly_chosen), choices = user.vore_organs, title = "Select A Belly", message = "Which belly?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-/obj/item/perfect_tele_beacon/proc/belly_chosen(mob/living/user, datum/om/prompt/ask)
-	var/obj/belly/bellychoice = ask.get("belly")
+/obj/item/perfect_tele_beacon/proc/belly_chosen(datum/om/prompt/choice/ask)
+	var/mob/living/user = ask.answerer
+	var/obj/belly/bellychoice = ask.choice
 	if(istype(bellychoice) && bellychoice.owner == user)
 		user.visible_message(span_warning("[user] is trying to stuff \the [src] into [user.gender == MALE ? "his" : user.gender == FEMALE ? "her" : "their"] [bellychoice.name]!"),span_notice("You begin putting \the [src] into your [bellychoice.name]!"))
 		om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, bellychoice))

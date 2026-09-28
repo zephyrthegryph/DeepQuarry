@@ -73,8 +73,9 @@
 /obj/structure/toilet/update_icon()
 	icon_state = "[initial(icon_state)][open][cistern]"
 
-/obj/structure/toilet/proc/crystal_answered(mob/living/user, answer, datum/om/prompt/ask)
-	if(answer != "Take it!" || !teleplumb_crystal || !cistern)
+/obj/structure/toilet/proc/crystal_answered(datum/om/prompt/confirm/ask)
+	var/mob/living/user = ask.answerer
+	if(!ask.yes || !teleplumb_crystal || !cistern)
 		to_chat(user, span_notice("You decide to leave it."))
 		return
 	user.put_in_hands(teleplumb_crystal)
@@ -115,7 +116,7 @@
 		if(!length(cistern_loot))
 			//You can take the bluespace crystal out if there's nothing else in the cistern.
 			if(teleplumb_crystal && ishuman(user)) //Only humans can grief the toilets
-				om_prompt(src, user, list("message" = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", "title" = "Toilet Crystal", "choices" = list("Take it!", "Leave it."), "requires" = PROMPT_ADJACENT), PROC_REF(crystal_answered))
+				om_ask(user, /datum/om/prompt/confirm, PROC_REF(crystal_answered), title = "Toilet Crystal", message = "You see a glimmering crystal attached to parts of the toilet's components... Do you want to take it?", yes_text = "Take it!", no_text = "Leave it.", answer_on_no = TRUE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 			to_chat(user, span_notice("The cistern is empty."))
 			return TRUE
 		var/obj/item/I = pick(cistern_loot)
@@ -162,7 +163,7 @@
 			if(open && !swirlie)
 				user.visible_message(span_danger("[user] starts to give [GM] a swirlie!"), span_notice("You start to give [GM] a swirlie!"))
 				swirlie_mob = om_handle(GM)
-				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, list("receiver" = src))
+				om_task_start(/datum/om/task/timed/toilet_attackby, user, GM, receiver = src)
 				swirlie_mob = null
 			else
 				user.visible_message(span_danger("[user] slams [GM] into the [src]!"), span_notice("You slam [GM] into the [src]!"))
@@ -586,10 +587,12 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 /obj/machinery/shower/proc/interaction_set_temperature(mob/user, obj/item/held, datum/interaction/interaction)
 	var/list/temperature_settings = list(SHOWER_NORMAL, SHOWER_BOILING, SHOWER_FREEZING)
-	om_prompt(src, user, list("kind" = "list", "message" = "What setting would you like to set the temperature valve to?", "title" = "Water Temperature Valve", "choices" = temperature_settings, "requires" = PROMPT_ADJACENT), PROC_REF(temperature_chosen))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(temperature_chosen), choices = temperature_settings, title = "Water Temperature Valve", message = "What setting would you like to set the temperature valve to?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
-/obj/machinery/shower/proc/temperature_chosen(mob/user, newtemp, datum/om/prompt/ask)
+/obj/machinery/shower/proc/temperature_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/newtemp = ask.choice
 	to_chat(user, span_notice("You begin to adjust the temperature..."))
 	om_do_after(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(interaction_set_temperature_timed_done), done_args = list(user, newtemp))
 	handle_mist()
@@ -1159,7 +1162,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 	to_chat(user, span_notice("You start washing \the [I]."))
 
-	om_task_start(/datum/om/task/timed/sink_attackby, user, src, list("receiver" = src, "O" = O, "I" = I))
+	om_task_start(/datum/om/task/timed/sink_attackby, user, src, O = O, I = I)
 	return TRUE
 
 /datum/om/task/timed/sink_attackby
@@ -1289,10 +1292,12 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 
 /obj/structure/biowaste_tank/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
-		om_prompt(src, user, list("kind" = "list", "message" = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", "title" = "Item Retrieval Console", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(eject_chosen))
+		om_ask(user, /datum/om/prompt/choice, PROC_REF(eject_chosen), choices = contents, title = "Item Retrieval Console", message = "It appears the machine has caught some items in the lost-and-found filter system. Would you like to eject something?", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return TRUE
 
-/obj/structure/biowaste_tank/proc/eject_chosen(mob/user, atom/movable/choice, datum/om/prompt/ask)
+/obj/structure/biowaste_tank/proc/eject_chosen(datum/om/prompt/choice/ask)
+	var/mob/user = ask.answerer
+	var/atom/movable/choice = ask.choice
 	if(choice.loc == src)
 		if(!user.canmove)
 			return

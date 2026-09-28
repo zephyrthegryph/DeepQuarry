@@ -56,7 +56,7 @@
 		if(!check_rights(R_DEBUG))
 			return
 		var/list/names = sortList(subtypesof(/datum/om/behaviour), GLOBAL_PROC_REF(cmp_typepaths_asc))
-		var/result = flow_ask(mob, "behaviour:add", list("kind" = "list", "message" = "Choose an OM behaviour to attach", "title" = "Attach Behaviour", "choices" = names))
+		var/result = flow_ask(mob, "behaviour:add", /datum/om/prompt/choice, message = "Choose an OM behaviour to attach", title = "Attach Behaviour", choices = names)
 		if(isnull(result) || !usr)
 			return
 		if(QDELETED(target))
@@ -75,7 +75,7 @@
 		if(!length(names))
 			to_chat(usr, "[target] has no OM behaviours attached.")
 			return
-		var/path = flow_ask(mob, "behaviour:remove", list("kind" = "list", "message" = "Choose an OM behaviour to detach", "title" = "Detach Behaviour", "choices" = names))
+		var/path = flow_ask(mob, "behaviour:remove", /datum/om/prompt/choice, message = "Choose an OM behaviour to detach", title = "Detach Behaviour", choices = names)
 		if(isnull(path) || !usr)
 			return
 		if(QDELETED(target))
@@ -86,7 +86,7 @@
 			var/method = vv_subtype_prompt(target.type, "behaviour")
 			if(isnull(method))
 				return
-			if(flow_ask(mob, "behaviour:mass", list("message" = "Are you sure you want to mass-detach [path] on [target.type]?", "title" = "Mass Detach Confirmation", "choices" = list("Yes", "No"))) != "Yes")
+			if(flow_ask(mob, "behaviour:mass", /datum/om/prompt/choice/alert, message = "Are you sure you want to mass-detach [path] on [target.type]?", title = "Mass Detach Confirmation", choices = list("Yes", "No")) != "Yes")
 				return
 			targets_to_remove_from = get_all_of_type(target.type, method)
 		for(var/datum/target_to_remove_from as anything in targets_to_remove_from)

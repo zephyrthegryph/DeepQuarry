@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 
 /// Old attack_self.
 /obj/item/resonator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k87 = rerun_prompt(user, "k87", list("message" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time")), PROC_REF(interaction_self), args)
+	var/_answer_k87 = rerun_ask(user, "k87", PROC_REF(interaction_self), args, /datum/om/prompt/choice/alert, message = "Change Detonation Time or toggle Cascading?", title = "Setting", choices = list("Toggle Cascade", "Resonance Time"))
 	if(isnull(_answer_k87))
 		return TRUE
 	switch(_answer_k87)

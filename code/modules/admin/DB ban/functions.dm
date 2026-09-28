@@ -66,7 +66,7 @@
 	if(!validckey && !unseen_ok)
 		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) // .
 			// The answer records the ban again from the start, re-reading the target's identifiers.
-			om_prompt(src, usr, list("message" = "This ckey hasn't been seen, are you sure?", "title" = "Confirm Badmin", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_MOD|R_BAN), "data" = list("args" = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid), "mob" = banned_mob)), PROC_REF(unseen_ban_confirmed))
+			om_ask(usr, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid), banned_mob_h = om_handle(banned_mob))
 			return
 
 	var/a_ckey
@@ -172,11 +172,19 @@
 
 	DB_ban_unban_by_id(ban_id)
 
-/datum/admins/proc/unseen_ban_confirmed(mob/admin, confirm, datum/om/prompt/ask)
-	if(confirm != "Yes")
-		return
-	var/list/ban_args = ask.get("args")
-	var/mob/banned_mob = ask.get("mob")
+/datum/om/prompt/confirm/unseen_ban
+	title = "Confirm Badmin"
+	message = "This ckey hasn't been seen, are you sure?"
+	requires = PROMPT_ADMIN(R_MOD|R_BAN)
+	/// DB_ban_record()'s arguments (the target's identifiers as they were when asked).
+	var/list/ban_args
+	/// The banned mob as a handle: the ban goes ahead by ckey if the mob is gone meanwhile.
+	var/banned_mob_h
+
+/datum/admins/proc/unseen_ban_confirmed(datum/om/prompt/confirm/unseen_ban/ask)
+	var/mob/admin = ask.answerer
+	var/list/ban_args = ask.ban_args
+	var/mob/banned_mob = om_resolve(ask.banned_mob_h)
 	if(banned_mob)
 		ban_args[2] = banned_mob
 	usr = admin // DB_ban_record() reads usr for the banning admin, as when it asked.
@@ -215,7 +223,7 @@
 	switch(param)
 		if("reason")
 			if(!value)
-				om_prompt(src, user, list("kind" = "text", "message" = "Insert the new reason for [pckey]'s ban", "title" = "New Reason", "default" = "[reason]", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_ADMIN(R_BAN), "data" = list("banid" = banid, "param" = param)), PROC_REF(ban_edit_value_entered))
+				om_ask(user, /datum/om/prompt/text/ban_edit_reason, PROC_REF(ban_edit_value_entered), message = "Insert the new reason for [pckey]'s ban", default = "[reason]", banid = banid, param = param)
 				return
 			value = sql_sanitize_text(value)
 			if(!value)
@@ -227,7 +235,7 @@
 			return
 		if("duration")
 			if(!value)
-				om_prompt(src, user, list("kind" = "number", "message" = "Insert the new duration (in minutes) for [pckey]'s ban", "title" = "New Duration", "default" = text2num(duration), "requires" = PROMPT_ADMIN(R_BAN), "data" = list("banid" = banid, "param" = param)), PROC_REF(ban_edit_value_entered))
+				om_ask(user, /datum/om/prompt/number/ban_edit_duration, PROC_REF(ban_edit_value_entered), message = "Insert the new duration (in minutes) for [pckey]'s ban", default = text2num(duration), banid = banid, param = param)
 				return
 			if(!isnum(value) || !value)
 				to_chat(user, "Cancelled")
@@ -241,17 +249,56 @@
 				DB_ban_unban_by_id(banid)
 				return
 			if(!value)
-				om_prompt(src, user, list("message" = "Unban [pckey]?", "title" = "Unban?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADMIN(R_BAN), "data" = list("banid" = banid, "param" = param)), PROC_REF(ban_edit_value_entered))
+				om_ask(user, /datum/om/prompt/confirm/ban_edit_unban, PROC_REF(ban_edit_value_entered), message = "Unban [pckey]?", banid = banid, param = param)
 				return
 	to_chat(user, span_filter_adminlog("Cancelled"))
 	return
 
 /// The value asked for re-enters DB_ban_edit(), which re-reads the ban.
-/datum/admins/proc/ban_edit_value_entered(mob/admin, value, datum/om/prompt/ask)
+/datum/om/prompt/text/ban_edit_reason
+	title = "New Reason"
+	max_length = MAX_MESSAGE_LEN
+	requires = PROMPT_ADMIN(R_BAN)
+	var/banid
+	var/param
+
+/datum/om/prompt/number/ban_edit_duration
+	title = "New Duration"
+	requires = PROMPT_ADMIN(R_BAN)
+	var/banid
+	var/param
+
+/datum/om/prompt/confirm/ban_edit_unban
+	title = "Unban?"
+	answer_on_no = TRUE
+	requires = PROMPT_ADMIN(R_BAN)
+	var/banid
+	var/param
+
+/datum/admins/proc/ban_edit_value_entered(datum/om/prompt/ask)
+	var/mob/admin = ask.answerer
 	if(!admin.client)
 		return
+	var/value
+	var/banid
+	var/param
+	if(istype(ask, /datum/om/prompt/text/ban_edit_reason))
+		var/datum/om/prompt/text/ban_edit_reason/reason_ask = ask
+		value = reason_ask.text
+		banid = reason_ask.banid
+		param = reason_ask.param
+	else if(istype(ask, /datum/om/prompt/number/ban_edit_duration))
+		var/datum/om/prompt/number/ban_edit_duration/duration_ask = ask
+		value = duration_ask.number
+		banid = duration_ask.banid
+		param = duration_ask.param
+	else
+		var/datum/om/prompt/confirm/ban_edit_unban/unban_ask = ask
+		value = unban_ask.yes ? "Yes" : "No"
+		banid = unban_ask.banid
+		param = unban_ask.param
 	usr = admin // DB_ban_edit() reads usr for the editing admin.
-	DB_ban_edit(admin.client, ask.get("banid"), ask.get("param"), value)
+	DB_ban_edit(admin.client, banid, param, value)
 
 /datum/admins/proc/DB_ban_unban_by_id(id)
 	if(!GLOB.prompt_flow)

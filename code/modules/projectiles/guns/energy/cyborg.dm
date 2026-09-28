@@ -352,14 +352,16 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
 
-	var/_answer_k349 = rerun_prompt(user, "k349", list("message" = "Are you sure you want to recolor your blade?", "title" = "Confirm Recolor", "choices" = list("Yes", "No")), PROC_REF(interaction_alt), args)
+	var/_answer_k349 = rerun_ask(user, "k349", PROC_REF(interaction_alt), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"))
 	if(isnull(_answer_k349))
 		return TRUE
 	if(_answer_k349 == "Yes")
-		var/energy_color_input = tgui_color_picker(user,"","Choose Energy Color",lcolor)
-		if(energy_color_input)
-			lcolor = sanitize_hexcolor(energy_color_input)
-		update_icon()
+		om_ask(user, /datum/om/prompt/color, PROC_REF(blade_color_picked), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_CAPABLE)
+
+/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color)
+		lcolor = sanitize_hexcolor(ask.picked_color)
+	update_icon()
 	return TRUE
 
 /obj/item/melee/robotic/blade/examine(mob/user)

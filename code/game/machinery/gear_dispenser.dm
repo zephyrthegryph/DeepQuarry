@@ -197,18 +197,30 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 			dispenser_flags &= ~GD_BUSY
 			return TRUE
 
-		om_prompt(src, user, list("kind" = "list", "message" = "Select equipment to dispense.", "title" = "Equipment Dispenser", "choices" = gear_list, "requires" = PROMPT_ADJACENT, "on_cancel" = PROC_REF(dispense_cancelled), "on_refused" = PROC_REF(dispense_cancelled), "data" = list("gear" = gear_list)), PROC_REF(gear_chosen))
+		om_ask(user, /datum/om/prompt/choice/gear_dispense, PROC_REF(gear_chosen), choices = gear_list)
 	else
 		dispense(one_setting,user)
 	return TRUE
 
-/obj/machinery/gear_dispenser/proc/dispense_cancelled(mob/living/carbon/human/user, datum/om/prompt/ask)
+/// The dispenser is busy while the list is open; a cancel or a failed re-check frees it.
+/datum/om/prompt/choice/gear_dispense
+	title = "Equipment Dispenser"
+	message = "Select equipment to dispense."
+	requires = PROMPT_ADJACENT
+
+/datum/om/prompt/choice/gear_dispense/cancelled()
+	var/obj/machinery/gear_dispenser/D = subject
+	D?.dispense_cancelled()
+
+/datum/om/prompt/choice/gear_dispense/refused(reason)
+	var/obj/machinery/gear_dispenser/D = subject
+	D?.dispense_cancelled()
+
+/obj/machinery/gear_dispenser/proc/dispense_cancelled()
 	dispenser_flags &= ~GD_BUSY
 
-/obj/machinery/gear_dispenser/proc/gear_chosen(mob/living/carbon/human/user, choice, datum/om/prompt/ask)
-	var/list/gear_list = ask.get("gear")
-
-	dispense(gear_list[choice],user)
+/obj/machinery/gear_dispenser/proc/gear_chosen(datum/om/prompt/choice/gear_dispense/ask)
+	dispense(ask.choices[ask.choice], ask.answerer)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
@@ -708,9 +720,11 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
 	 * "req_one_access" = array of numbers (accesses)
 	 */
-	om_prompt(src, usr, list("kind" = "text", "message" = "Paste new gear pack JSON below. See example/code comments.", "title" = "Admin-load Dispenser", "default" = example, "multiline" = TRUE, "requires" = PROMPT_ADMIN(R_DEBUG|R_FUN)), PROC_REF(gear_pack_entered))
+	om_ask(usr, /datum/om/prompt/text, PROC_REF(gear_pack_entered), message = "Paste new gear pack JSON below. See example/code comments.", title = "Admin-load Dispenser", default = example, multiline = TRUE, requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
 
-/obj/machinery/gear_dispenser/proc/gear_pack_entered(mob/user, input, datum/om/prompt/ask)
+/obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/om/prompt/text/ask)
+	var/mob/user = ask.answerer
+	var/input = ask.text
 
 	var/list/parsed = json_decode(input)
 

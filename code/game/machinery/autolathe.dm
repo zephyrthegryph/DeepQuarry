@@ -309,7 +309,7 @@ REF_OWNED(/obj/machinery/autolathe, list("print_sound", "materials"))
 		target_location = get_turf(src)
 
 	// The print run is a task claiming the lathe: busy (om_busy()) until the last item or a stop.
-	var/datum/om/task/run = om_task_start(/datum/om/task/lathe_print, src, null, list("design" = design, "remaining" = build_count, "build_time" = build_time_per_item, "cost_coefficient" = material_cost_coefficient, "charge" = charge_per_item, "materials" = materials_needed, "drop_turf" = target_location, "chosen" = chosen_materials))
+	var/datum/om/task/run = om_task_start(/datum/om/task/lathe_print, src, null, receiver = src, design = design, remaining = build_count, build_time = build_time_per_item, cost_coefficient = material_cost_coefficient, charge = charge_per_item, materials = materials_needed, drop_turf = target_location, chosen = chosen_materials)
 	if(!istype(run))
 		print_sound.stop()
 		icon_state = initial(icon_state)
@@ -493,7 +493,7 @@ REF_OWNED(/obj/machinery/autolathe, list("print_sound", "materials"))
 		balloon_alert(user, "uploading design..."),
 		span_hear("You hear the chatter of a floppy drive."))
 
-	om_task_start(/datum/om/task/timed/autolathe_interaction_attackby, user, src, list("receiver" = src, "O" = O, "busy" = src))
+	om_task_start(/datum/om/task/timed/autolathe_interaction_attackby, user, src, receiver = src, O = O, busy = src)
 	return TRUE
 
 /datum/om/task/timed/autolathe_interaction_attackby

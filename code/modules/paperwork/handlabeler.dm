@@ -75,7 +75,7 @@ DECLARE_INTERACTIONS(/obj/item/hand_labeler, INTERACT_USE(null, PROC_REF(interac
 	if(mode)
 		to_chat(user, span_notice("You turn on \the [src]."))
 		//Now let them chose the text.
-		var/_answer_k78 = rerun_prompt(user, "k78", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_self), args)
+		var/_answer_k78 = rerun_ask(user, "k78", PROC_REF(interaction_self), args, /datum/om/prompt/text, message = "Label text?", title = "Set label", max_length = MAX_NAME_LEN, encode = FALSE)
 		if(isnull(_answer_k78))
 			return TRUE
 		var/str = sanitizeSafe(_answer_k78, MAX_NAME_LEN)

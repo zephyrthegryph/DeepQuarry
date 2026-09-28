@@ -241,7 +241,7 @@
 
 	//If we're a mob it's a timed action; non mobs will instead instantly construct the item
 	if(ismob(a))
-		var/started = om_task_start(/datum/om/task/timed/craft, a, null, list("duration" = R.time, "receiver" = src, "recipe" = R, "material_choices" = material_choices, "on_built" = on_built, "busy" = busy))
+		var/started = om_task_start(/datum/om/task/timed/craft, a, null, duration = R.time, recipe = R, material_choices = material_choices, on_built = on_built, busy = busy)
 		return istext(started) ? "." : null
 	return construct_item_now(a, R, material_choices, null)
 

@@ -1,5 +1,5 @@
 ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning to strike on your tile. This can be made to hurt things on or nearby it severely.", ADMIN_CATEGORY_FUN_DO_NOT)
-	var/result = verb_prompt(user, "a1", list("message" = "Really strike your tile with lightning?", "title" = "Confirm Badmin", "choices" = list("No", "Yes (Cosmetic)", "Yes (Real)")), args)
+	var/result = verb_ask(user, "a1", args, /datum/om/prompt/choice/alert, message = "Really strike your tile with lightning?", title = "Confirm Badmin", choices = list("No", "Yes (Cosmetic)", "Yes (Real)"))
 	if(isnull(result))
 		return
 

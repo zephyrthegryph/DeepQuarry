@@ -401,7 +401,7 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(hood || boots || tank)
-		var/choice = rerun_prompt(user, "a1", list("kind" = "list", "message" = "What component would you like to remove?", "title" = "Remove Component", "choices" = list(hood,boots,tank,cooler)), TYPE_PROC_REF(/atom, screwdriver_act), args)
+		var/choice = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "What component would you like to remove?", title = "Remove Component", choices = list(hood,boots,tank,cooler))
 		if(isnull(choice))
 			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS
@@ -436,7 +436,7 @@
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(boots || tank || cooler)
-		var/choice = rerun_prompt(user, "a2", list("kind" = "list", "message" = "What component would you like to remove?", "title" = "Remove Component", "choices" = list(boots,tank,cooler)), TYPE_PROC_REF(/atom, screwdriver_act), args)
+		var/choice = rerun_ask(user, "a2", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "What component would you like to remove?", title = "Remove Component", choices = list(boots,tank,cooler))
 		if(isnull(choice))
 			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS

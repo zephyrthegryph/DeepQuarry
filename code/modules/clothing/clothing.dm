@@ -185,10 +185,11 @@
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return
 
-	var/new_color = tgui_color_picker(usr, "Pick a new color", "Color", color)
+	om_ask(usr, /datum/om/prompt/color, PROC_REF(recolor_picked), title = "Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
-	if(new_color && (new_color != color))
-		color = new_color
+/obj/item/clothing/proc/recolor_picked(datum/om/prompt/color/ask)
+	if(ask.picked_color && (ask.picked_color != color))
+		color = ask.picked_color
 	update_icon()
 	update_clothing_icon()
 // end
@@ -842,7 +843,7 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 
 	to_chat(micro, span_notice("[escape_message_micro]"))
 	to_chat(macro, span_danger("[escape_message_macro]"))
-	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, list("receiver" = src, "duration" = escape_time))
+	om_task_start(/datum/om/task/timed/shoes_micro_escaped_macro, micro, macro, duration = escape_time)
 
 /obj/item/clothing/shoes/proc/micro_climbed_out(mob/living/micro)
 	to_chat(micro, span_notice("You climb out of [src]!"))
@@ -1218,7 +1219,7 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 		if(value == sensor_mode)
 			default_choice = key
 			break
-	var/switchMode = rerun_prompt(user, "a1", list("kind" = "list", "message" = "Select a sensor mode:", "title" = "Suit Sensor Mode", "choices" = modes, "default" = default_choice), PROC_REF(set_sensors), args)
+	var/switchMode = rerun_ask(user, "a1", PROC_REF(set_sensors), args, /datum/om/prompt/choice, message = "Select a sensor mode:", title = "Suit Sensor Mode", choices = modes, default = default_choice)
 	if(isnull(switchMode))
 		return
 	if(get_dist(user, src) > 1)
