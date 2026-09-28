@@ -183,4 +183,3 @@ REF_OWNED(/obj/item/core_sampler, "filled_bag")
 /obj/item/rocksliver/proc/geological_data() as /datum/geosample
 	return geological_data_static
 REF_STATIC(/obj/item/rocksliver, "geological_data_static")
-	return TRUE
