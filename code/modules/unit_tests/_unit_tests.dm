@@ -209,7 +209,6 @@
 #include "dq_medical_p0_tests.dm"
 #include "dq_medical_p1_tests.dm"
 #include "dq_medical_med7_own_tests.dm"
-#include "dq_medical_med8_tests.dm"
 #include "dq_medical_med7_expo_tests.dm"
 #include "dq_medical_med8_tests.dm"
 #include "dq_mutation_tests.dm"
