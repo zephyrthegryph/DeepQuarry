@@ -531,15 +531,15 @@ SUBSYSTEM_DEF(job)
 				// Try desperately (and sorta poorly) to equip the item. Now with increased desperation!
 				if(gaar_thing.slot && !(gaar_thing.slot in custom_equip_slots))
 					var/metadata = active_gear_list[gaar_thing.display_name]
-					//if(G.slot == slot_wear_mask || G.slot == slot_wear_suit || G.slot == slot_head)
+					//if(G.slot == SLOT_ID_MASK || G.slot == SLOT_ID_SUIT || G.slot == SLOT_ID_HEAD)
 					//	custom_equip_leftovers += thing
 					//else
 					// no_jacket pref deleted; this gate is dead code now.
-// if(gaar_thing.slot == slot_shoes && human_mob.client?.prefs?.shoe_hater) //RS ADD // Disable
+// if(gaar_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) //RS ADD // Disable
 // continue // Disable
 					if(human_mob.equip_to_slot_or_del(gaar_thing.spawn_item(human_mob, metadata), gaar_thing.slot))
 						to_chat(human_mob, span_notice("Equipping you with \the [thing]!"))
-						if(gaar_thing.slot != slot_tie)
+						if(gaar_thing.slot != SLOT_ID_TIE)
 							custom_equip_slots.Add(gaar_thing.slot)
 					else
 						custom_equip_leftovers.Add(thing)
@@ -564,7 +564,7 @@ SUBSYSTEM_DEF(job)
 		for(var/thing in custom_equip_leftovers)
 			var/datum/gear/gear_thing = GLOB.gear_datums[thing]
 			// no_jacket pref deleted; this gate is dead code now.
-// if(gear_thing.slot == slot_shoes && human_mob.client?.prefs?.shoe_hater) // Disable
+// if(gear_thing.slot == SLOT_ID_SHOES && human_mob.client?.prefs?.shoe_hater) // Disable
 // continue // Disable
 			if(gear_thing.slot in custom_equip_slots)
 				spawn_in_storage += thing
@@ -580,7 +580,7 @@ SUBSYSTEM_DEF(job)
 		/* 
 		//Give new players a welcome guide!
 		if(isnum(human_mob.client?.player_age) && human_mob.client.player_age < 10)
-			human_mob.equip_to_slot_or_del(new /obj/item/book/manual/virgo_pamphlet(human_mob), slot_r_hand)
+			human_mob.equip_to_slot_or_del(new /obj/item/book/manual/virgo_pamphlet(human_mob), SLOT_ID_HAND_R)
 		*/
 	else
 		to_chat(human_mob, span_filter_notice("Your job is [rank] and the game just can't handle it! Please report this bug to an administrator."))
@@ -658,7 +658,7 @@ SUBSYSTEM_DEF(job)
 	if(job.supervisors)
 		to_chat(human_mob, span_filter_notice(span_bold("As the [alt_title ? alt_title : rank] you answer directly to [job.supervisors]. Special circumstances may change this.")))
 	if(job.has_headset)
-		human_mob.equip_to_slot_or_del(new /obj/item/radio/headset(human_mob), slot_l_ear)
+		human_mob.equip_to_slot_or_del(new /obj/item/radio/headset(human_mob), SLOT_ID_EAR_L)
 		to_chat(human_mob, span_filter_notice(span_bold("To speak on your department's radio channel use :h. For the use of other channels, examine your headset.")))
 
 	if(job.req_admin_notify)
@@ -691,7 +691,7 @@ SUBSYSTEM_DEF(job)
 
 	//Gives glasses to the vision impaired
 	if(human_mob.disabilities & NEARSIGHTED)
-		var/equipped = human_mob.equip_to_slot_or_del(new /obj/item/clothing/glasses/regular(human_mob), slot_glasses)
+		var/equipped = human_mob.equip_to_slot_or_del(new /obj/item/clothing/glasses/regular(human_mob), SLOT_ID_EYES)
 		if(equipped != 1)
 			var/obj/item/clothing/glasses/worn_glasses = human_mob.get_equipped_item(SLOT_ID_EYES)
 			worn_glasses.prescription = TRUE

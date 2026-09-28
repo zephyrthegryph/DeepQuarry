@@ -89,6 +89,13 @@
 #define SLOT_ID_ID "id"
 #define SLOT_ID_HANDCUFFED "handcuffed"
 #define SLOT_ID_LEGCUFFED "legcuffed"
+// Action slots: equip targets with no ledger slot of their own.
+/// An accessory: attached to the first worn clothing that takes it.
+#define SLOT_ID_TIE "tie"
+/// Into the worn back item's storage.
+#define SLOT_ID_IN_BACKPACK "in_backpack"
+/// Fluff loadout layer; no slot.
+#define SLOT_ID_LEGS "legs"
 /// A cyborg's three active module slots.
 #define SLOT_ID_MODULE_1 "module_1"
 #define SLOT_ID_MODULE_2 "module_2"

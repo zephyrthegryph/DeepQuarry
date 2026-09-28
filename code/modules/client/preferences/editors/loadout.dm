@@ -2,7 +2,7 @@
 //
 // Data model:
 //   gear_list saves {loadout_slot_num_str: {gear_name: metadata}}. Multiple items can be
-//   in one loadout slot, but the editor enforces one-per-body-slot (with slot_tie being
+//   in one loadout slot, but the editor enforces one-per-body-slot (with SLOT_ID_TIE being
 //   the multi-allowed exception). Items with no body slot land in an "other" bucket.
 //
 // Wire actions:
@@ -92,27 +92,27 @@
 	static_invalidator_keys = list("species", "custom_base", "tail_style")
 
 /// Body slot display table. Keep in head-down order; `multi` controls whether the slot can
-/// hold more than one item (only slot_tie should). slot_legs is generally fluff layer.
+/// hold more than one item (only SLOT_ID_TIE should). SLOT_ID_LEGS is generally fluff layer.
 /// `group` collapses related slots into one section in the UI for visual scanability.
 /datum/preference_editor/loadout/proc/body_slot_table()
 	var/static/list/L = list(
-		list("id" = slot_head,       "label" = "Head",         "group" = "Face & Head"),
-		list("id" = slot_glasses,    "label" = "Eyes",         "group" = "Face & Head"),
-		list("id" = slot_wear_mask,  "label" = "Mask",         "group" = "Face & Head"),
-		list("id" = slot_l_ear,      "label" = "Left Ear",     "group" = "Face & Head"),
-		list("id" = slot_r_ear,      "label" = "Right Ear",    "group" = "Face & Head"),
-		list("id" = slot_w_uniform,  "label" = "Uniform",      "group" = "Clothing"),
-		list("id" = slot_wear_suit,  "label" = "Outer Suit",   "group" = "Clothing"),
-		list("id" = slot_tie,        "label" = "Accessories",  "group" = "Clothing", "multi" = TRUE),
-		list("id" = slot_gloves,     "label" = "Gloves",       "group" = "Hands & Feet"),
-		list("id" = slot_shoes,      "label" = "Shoes",        "group" = "Hands & Feet"),
-		list("id" = slot_back,       "label" = "Back",         "group" = "Carry"),
-		list("id" = slot_belt,       "label" = "Belt",         "group" = "Carry"),
-		list("id" = slot_wear_id,    "label" = "ID",           "group" = "Carry"),
-		list("id" = slot_l_store,    "label" = "Left Pocket",  "group" = "Pockets"),
-		list("id" = slot_r_store,    "label" = "Right Pocket", "group" = "Pockets"),
-		list("id" = slot_s_store,    "label" = "Suit Storage", "group" = "Pockets"),
-		list("id" = slot_legs,       "label" = "Legs Layer",   "group" = "Other"),
+		list("id" = SLOT_ID_HEAD,       "label" = "Head",         "group" = "Face & Head"),
+		list("id" = SLOT_ID_EYES,    "label" = "Eyes",         "group" = "Face & Head"),
+		list("id" = SLOT_ID_MASK,  "label" = "Mask",         "group" = "Face & Head"),
+		list("id" = SLOT_ID_EAR_L,      "label" = "Left Ear",     "group" = "Face & Head"),
+		list("id" = SLOT_ID_EAR_R,      "label" = "Right Ear",    "group" = "Face & Head"),
+		list("id" = SLOT_ID_UNIFORM,  "label" = "Uniform",      "group" = "Clothing"),
+		list("id" = SLOT_ID_SUIT,  "label" = "Outer Suit",   "group" = "Clothing"),
+		list("id" = SLOT_ID_TIE,        "label" = "Accessories",  "group" = "Clothing", "multi" = TRUE),
+		list("id" = SLOT_ID_GLOVES,     "label" = "Gloves",       "group" = "Hands & Feet"),
+		list("id" = SLOT_ID_SHOES,      "label" = "Shoes",        "group" = "Hands & Feet"),
+		list("id" = SLOT_ID_BACK,       "label" = "Back",         "group" = "Carry"),
+		list("id" = SLOT_ID_BELT,       "label" = "Belt",         "group" = "Carry"),
+		list("id" = SLOT_ID_ID,    "label" = "ID",           "group" = "Carry"),
+		list("id" = SLOT_ID_POCKET_L,    "label" = "Left Pocket",  "group" = "Pockets"),
+		list("id" = SLOT_ID_POCKET_R,    "label" = "Right Pocket", "group" = "Pockets"),
+		list("id" = SLOT_ID_SUIT_STORAGE,    "label" = "Suit Storage", "group" = "Pockets"),
+		list("id" = SLOT_ID_LEGS,       "label" = "Legs Layer",   "group" = "Other"),
 	)
 	return L
 
@@ -130,17 +130,17 @@
 /// themed kit instead of being blank.
 /datum/preference_editor/loadout/proc/outfit_field_to_slot()
 	var/static/list/L = list(
-		"uniform"    = "[slot_w_uniform]",
-		"suit"       = "[slot_wear_suit]",
-		"belt"       = "[slot_belt]",
-		"gloves"     = "[slot_gloves]",
-		"shoes"      = "[slot_shoes]",
-		"head"       = "[slot_head]",
-		"mask"       = "[slot_wear_mask]",
-		"glasses"    = "[slot_glasses]",
-		"l_pocket"   = "[slot_l_store]",
-		"r_pocket"   = "[slot_r_store]",
-		"suit_store" = "[slot_s_store]",
+		"uniform"    = "[SLOT_ID_UNIFORM]",
+		"suit"       = "[SLOT_ID_SUIT]",
+		"belt"       = "[SLOT_ID_BELT]",
+		"gloves"     = "[SLOT_ID_GLOVES]",
+		"shoes"      = "[SLOT_ID_SHOES]",
+		"head"       = "[SLOT_ID_HEAD]",
+		"mask"       = "[SLOT_ID_MASK]",
+		"glasses"    = "[SLOT_ID_EYES]",
+		"l_pocket"   = "[SLOT_ID_POCKET_L]",
+		"r_pocket"   = "[SLOT_ID_POCKET_R]",
+		"suit_store" = "[SLOT_ID_SUIT_STORAGE]",
 	)
 	return L
 
@@ -170,18 +170,18 @@
 	// generic headsets; the job's themed kit is the default the ghost should show.
 	if(outfit.headset && ispath(outfit.headset))
 		var/atom/H = outfit.headset
-		out["[slot_l_ear]"] = initial(H.name)
+		out["[SLOT_ID_EAR_L]"] = initial(H.name)
 	// Back slot: canonical backpack.
 	if(outfit.backpack && ispath(outfit.backpack))
 		var/atom/B = outfit.backpack
-		out["[slot_back]"] = initial(B.name)
+		out["[SLOT_ID_BACK]"] = initial(B.name)
 	// ID slot: outfit.id_slot says where the ID lands; outfit.id_type is what.
 	if(outfit.id_slot && outfit.id_type && ispath(outfit.id_type))
 		var/atom/I = outfit.id_type
 		out["[outfit.id_slot]"] = initial(I.name)
 	// PDA slot: outfit.pda_slot is per-job (belt for command, l_store for others, etc.).
 	// Only render if the slot doesn't already have something (the job's ID can co-locate
-	// with the PDA on slot_wear_id for some outfits — let the more important ID win).
+	// with the PDA on SLOT_ID_ID for some outfits — let the more important ID win).
 	if(outfit.pda_slot && outfit.pda_type && ispath(outfit.pda_type) && !out["[outfit.pda_slot]"])
 		var/atom/P = outfit.pda_type
 		out["[outfit.pda_slot]"] = initial(P.name)
@@ -194,7 +194,7 @@
 				var/atom/A = path
 				tie_names += initial(A.name)
 		if(length(tie_names))
-			out["[slot_tie]"] = tie_names.Join(", ")
+			out["[SLOT_ID_TIE]"] = tie_names.Join(", ")
 	return out
 
 /datum/preference_editor/loadout/build_ui_data(datum/preferences/preferences)
@@ -359,8 +359,8 @@
 	for(var/title in priorities)
 		prioritized_jobs += title
 
-	// Which slot the player's preview-job parks its PDA in — varies per job (slot_belt
-	// for command, slot_l_store for engineering/cargo, slot_r_store for science, etc.).
+	// Which slot the player's preview-job parks its PDA in — varies per job (SLOT_ID_BELT
+	// for command, SLOT_ID_POCKET_L for engineering/cargo, SLOT_ID_POCKET_R for science, etc.).
 	// The React side uses this so the ringtone control surfaces inside the right slot's
 	// catalog header (instead of floating somewhere disconnected).
 	var/pda_slot = null
@@ -696,7 +696,7 @@
 				return PREF_UPDATE_REJECTED
 			var/slot = _current_slot(preferences)
 			var/list/active = _active_list(preferences, slot)
-			var/multi = body_slot_str == "[slot_tie]" || body_slot_str == DQ_LOADOUT_OTHER_SLOT
+			var/multi = body_slot_str == "[SLOT_ID_TIE]" || body_slot_str == DQ_LOADOUT_OTHER_SLOT
 			if(!multi)
 				// Evict any item currently in this body slot.
 				for(var/existing_name in active.Copy())

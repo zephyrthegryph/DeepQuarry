@@ -17,7 +17,6 @@
 	TEST_ASSERT_NULL(H.temp_languages, "a fresh human owns no temp_languages list")
 	TEST_ASSERT_NULL(H.custom_heat, "a fresh human owns no custom_heat list")
 	TEST_ASSERT_NULL(H.custom_cold, "a fresh human owns no custom_cold list")
-	TEST_ASSERT_NULL(H.worn_clothing, "a fresh human owns no worn_clothing list")
 	TEST_ASSERT_NULL(H.all_underwear, "a fresh human owns no all_underwear list")
 	TEST_ASSERT_NULL(H.flavor_texts, "a fresh human owns no flavor_texts list")
 	TEST_ASSERT_NULL(H.trait_injection_reagents, "a fresh human owns no trait_injection_reagents list")

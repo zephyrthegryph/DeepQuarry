@@ -1285,8 +1285,8 @@
 /// slot needs one).
 /proc/dq_test_wear_id(mob/living/carbon/human/H, obj/item/card/id/id)
 	if(!H.get_equipped_item(SLOT_ID_UNIFORM))
-		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), slot_w_uniform)
-	H.equip_to_slot(id, slot_wear_id)
+		H.equip_to_slot_or_del(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
+	H.equip_to_slot(id, SLOT_ID_ID)
 
 /// Empties REGISTRY_PLAYERS for a test; returns who was in it.
 /proc/dq_test_players_clear()

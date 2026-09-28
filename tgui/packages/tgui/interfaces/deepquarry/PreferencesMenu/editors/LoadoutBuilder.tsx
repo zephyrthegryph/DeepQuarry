@@ -168,21 +168,21 @@ const HUD_ICON = 'icons/mob/screen/midnight.dmi';
 
 // Valid icon_states in screen/midnight.dmi (matches the in-game inventory HUD).
 const SLOT_HUD: Record<string, string> = {
-  '12': 'hair',
-  '9': 'glasses',
-  '10': 'mask',
-  '16': 'ears',
-  '17': 'ears',
-  '15': 'center',
-  '14': 'suit',
-  '11': 'gloves',
-  '13': 'shoes',
-  '3': 'back',
-  '4': 'belt',
-  '5': 'id',
-  '7': 'pocket',
-  '8': 'pocket',
-  '6': 'suitstore',
+  'head': 'hair',
+  'eyes': 'glasses',
+  'mask': 'mask',
+  'ear_l': 'ears',
+  'ear_r': 'ears',
+  'uniform': 'center',
+  'suit': 'suit',
+  'gloves': 'gloves',
+  'shoes': 'shoes',
+  'back': 'back',
+  'belt': 'belt',
+  'id': 'id',
+  'pocket_l': 'pocket',
+  'pocket_r': 'pocket',
+  'suit_storage': 'suitstore',
 };
 
 // Paper-doll grid (3 columns, head→toe). Compact 5-row layout — all cells visible at
@@ -193,11 +193,11 @@ const SLOT_HUD: Record<string, string> = {
 //   '_uw'     = Consolidated underwear slot (opens an in-panel multi-category picker)
 //   null      = truly empty cell
 const DOLL_GRID: Array<Array<string | null>> = [
-  ['_acc', '12', '_other'], // Accessories / Head / Other
-  ['9', '10', '16'], // Eyes / Mask / L.Ear
-  ['15', '14', '_uw'], // Uniform / Suit / Underwear
-  ['3', '4', '11'], // Back / Belt / Gloves
-  [null, '13', null], // — / Shoes / —
+  ['_acc', 'head', '_other'], // Accessories / Head / Other
+  ['eyes', 'mask', 'ear_l'], // Eyes / Mask / L.Ear
+  ['uniform', 'suit', '_uw'], // Uniform / Suit / Underwear
+  ['back', 'belt', 'gloves'], // Back / Belt / Gloves
+  [null, 'shoes', null], // — / Shoes / —
 ];
 
 type OptimisticOp = { kind: 'add' | 'remove'; item: CatalogItem; slot: string };
@@ -212,7 +212,7 @@ const applyOps = (
   for (const op of ops) {
     const cur = [...(by_body_slot[op.slot] ?? [])];
     if (op.kind === 'add') {
-      if (op.slot === '19' || op.slot === 'other') {
+      if (op.slot === 'tie' || op.slot === 'other') {
         // multi-occupancy buckets (accessories / other): append
         if (!cur.includes(op.item.name)) cur.push(op.item.name);
       } else {
@@ -253,9 +253,9 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
   // Always have a slot selected. Default to Uniform (most common starting point) if it
   // exists, otherwise the first body slot in the table.
   const defaultSlot =
-    bodySlots.find((b) => bodySlotKey(b) === '15')?.id ?? bodySlots[0]?.id;
+    bodySlots.find((b) => bodySlotKey(b) === 'uniform')?.id ?? bodySlots[0]?.id;
   const [filterSlot, setFilterSlot] = useState<string>(
-    defaultSlot != null ? String(defaultSlot) : '15',
+    defaultSlot != null ? String(defaultSlot) : 'uniform',
   );
 
   // Always reset to the "_default" loadout when this panel mounts — switching tabs and
@@ -464,9 +464,9 @@ export const LoadoutBuilder = ({ data, staticData }: EditorProps) => {
                       key={cellKey}
                       label="Accessories"
                       hudState="hair"
-                      occupants={d.by_body_slot?.['19'] ?? []}
-                      selected={filterSlot === '19'}
-                      onClick={() => setFilterSlot('19')}
+                      occupants={d.by_body_slot?.['tie'] ?? []}
+                      selected={filterSlot === 'tie'}
+                      onClick={() => setFilterSlot('tie')}
                     />
                   );
                 }

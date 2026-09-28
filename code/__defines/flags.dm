@@ -49,7 +49,7 @@ GLOBAL_LIST_INIT(bitflags, list(1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 204
 #define ATOM_RUNTIME_FLAGS (ATOM_INITIALIZED|ATOM_MATERIALIZED)
 
 //Flags for items (equipment) - Used in /obj/item/var/item_flags
-#define THICKMATERIAL			(1<<0)	// Prevents syringes, parapens and hyposprays if equipped to slot_suit or slot_head.
+#define THICKMATERIAL			(1<<0)	// Prevents syringes, parapens and hyposprays if equipped to slot_suit or SLOT_ID_HEAD.
 #define AIRTIGHT				(1<<1)	// Functions with internals.
 #define NOSLIP					(1<<2)	// Prevents from slipping on wet floors, in space, etc.
 #define BLOCK_GAS_SMOKE_EFFECT	(1<<3)	// Blocks the effect that chemical clouds would have on a mob -- glasses, mask and helmets ONLY! (NOTE: flag shared with ONESIZEFITSALL)

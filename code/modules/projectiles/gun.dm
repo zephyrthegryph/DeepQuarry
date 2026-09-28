@@ -834,7 +834,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	return FALSE
 
 /obj/item/gun/equipped(mob/living/user, slot) // When a gun is equipped to your hands, we'll add the HUD to the user. Pending porting over TGMC guncode where wielding is far more sensible.
-	if(slot == slot_l_hand || slot == slot_r_hand)
+	if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		user.hud_used?.add_ammo_hud(user, src)
 	else
 		user.hud_used?.remove_ammo_hud(user, src)

@@ -345,7 +345,7 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 		magichead.flags_inv = null	//so you can still see their face
 		magichead.voicechange = 1	//NEEEEIIGHH
 		user.drop_from_inventory(user.get_equipped_item(SLOT_ID_MASK))
-		user.equip_to_slot_if_possible(magichead, slot_wear_mask, 1, 1)
+		user.equip_to_slot_if_possible(magichead, SLOT_ID_MASK, 1, 1)
 		consume(src, user)
 	else
 		to_chat(user, span_notice("I say thee neigh"))

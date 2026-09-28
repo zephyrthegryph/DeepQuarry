@@ -6553,7 +6553,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	// Airtight breath mask in the wear_mask slot.
 	var/obj/item/clothing/mask/breath/M = new(H)
-	TEST_ASSERT(H.equip_to_slot(M, slot_wear_mask), "couldn't put the test mask on")
+	TEST_ASSERT(H.equip_to_slot(M, SLOT_ID_MASK), "couldn't put the test mask on")
 	TEST_ASSERT(M.item_flags & AIRTIGHT, "test mask not AIRTIGHT — setup invalid")
 
 	// Oxygen tank in the human's contents, set as the internal supply.

@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 /obj/item/clothing/shoes/magboots/equipped(mob/user, slot)
 
 	var/mob/living/carbon/human/H = user
-	if(slot && slot != slot_shoes)
+	if(slot && slot != SLOT_ID_SHOES)
 		return ..()
 	set_slowdown()
 	wearer = om_handle(H)
@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 		return
 
 	//Equipping shoes. If you put it so you can put your shoes somewhere BUT your shoe slot, make sure this shit works.
-	if(equipping && (slot == slot_shoes))
+	if(equipping && (slot == SLOT_ID_SHOES))
 		if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES) != src)
 			shoes = H.get_equipped_item(SLOT_ID_SHOES)
 			H.unEquip(shoes, TRUE, src)
@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 		return
 
 	if(shoes)
-		if(!H.equip_to_slot_if_possible(shoes, slot_shoes, FALSE, TRUE, TRUE, TRUE))
+		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE, TRUE))
 			shoes.forceMove(get_turf(src))
 		shoes = null
 

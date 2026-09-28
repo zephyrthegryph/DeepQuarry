@@ -94,7 +94,7 @@
 		else
 			to_chat(H, span_vwarning("You can't assimilate your current host."))
 	rig.forceMove(H)
-	H.equip_to_slot_if_possible(rig, slot_back)
+	H.equip_to_slot_if_possible(rig, SLOT_ID_BACK)
 	log_game("FORMS: [key_name(H)] unfolded from their control cluster at [AREACOORD(H)]")
 	return TRUE
 

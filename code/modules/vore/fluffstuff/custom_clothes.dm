@@ -2145,7 +2145,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 
 /obj/item/clothing/head/fluff/nikki/equipped(mob/living/carbon/human/user, slot)
 	. = ..()
-	if (slot == slot_head && translocator && user.ckey != owner) // This way we don't unnecessarily spam the chat with hat/translocator errors
+	if (slot == SLOT_ID_HEAD && translocator && user.ckey != owner) // This way we don't unnecessarily spam the chat with hat/translocator errors
 		// hey, are we actually able to teleport this poor person?
 		if (hat_warp_checks(user, user, proximity_flag = 1))
 			// YOU FOOL! YOU HAVE ACTIVATED MY STAND, 「ＶＯＲＥ　ＢＹ　ＨＡＴ」！

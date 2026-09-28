@@ -5,7 +5,7 @@
 
 /datum/gear/accessory
 	display_name = "accessory"
-	slot = slot_tie
+	slot = SLOT_ID_TIE
 	sort_category = "Accessories"
 	type_category = /datum/gear/accessory
 	path = /obj/item/clothing/accessory
@@ -383,7 +383,7 @@
 /datum/gear/choker //A colorable choker
 	display_name = "choker (colorable, tagless)"
 	path = /obj/item/clothing/accessory/choker
-	slot = slot_tie
+	slot = SLOT_ID_TIE
 	sort_category = "Accessories"
 
 /datum/gear/choker/New()
@@ -393,7 +393,7 @@
 /datum/gear/collar
 	display_name = "collar, silver"
 	path = /obj/item/clothing/accessory/collar/silver
-	slot = slot_tie
+	slot = SLOT_ID_TIE
 	sort_category = "Accessories"
 
 /datum/gear/collar/New()

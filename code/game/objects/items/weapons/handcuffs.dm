@@ -102,7 +102,7 @@
 		cuffs = new(get_turf(user))
 	else
 		user.drop_from_inventory(cuffs)
-	victim.equip_to_slot(cuffs, slot_handcuffed)
+	victim.equip_to_slot(cuffs, SLOT_ID_HANDCUFFED)
 	victim.drop_r_hand()
 	victim.drop_l_hand()
 	victim.stop_pulling()
@@ -110,7 +110,7 @@
 
 /obj/item/handcuffs/equipped(mob/living/user,slot)
 	. = ..()
-	if(slot == slot_handcuffed)
+	if(slot == SLOT_ID_HANDCUFFED)
 		user.drop_r_hand()
 		user.drop_l_hand()
 		user.stop_pulling()
@@ -286,7 +286,7 @@
 		lcuffs = new(get_turf(user))
 	else
 		user.drop_from_inventory(lcuffs)
-	target.equip_to_slot(lcuffs, slot_legcuffed)
+	target.equip_to_slot(lcuffs, SLOT_ID_LEGCUFFED)
 	if(target.m_intent != I_WALK)
 		target.m_intent = I_WALK
 		if(target.hud_used && target.hud_used.move_intent)
@@ -295,7 +295,7 @@
 
 /obj/item/handcuffs/legcuffs/equipped(mob/living/user,slot)
 	. = ..()
-	if(slot == slot_legcuffed)
+	if(slot == SLOT_ID_LEGCUFFED)
 		if(user.m_intent != I_WALK)
 			user.m_intent = I_WALK
 			if(user.hud_used && user.hud_used.move_intent)
@@ -338,7 +338,7 @@
 
 	// Apply cuffs.
 	var/obj/item/handcuffs/legcuffs/lcuffs = src
-	target.equip_to_slot(lcuffs, slot_legcuffed)
+	target.equip_to_slot(lcuffs, SLOT_ID_LEGCUFFED)
 	if(target.m_intent != I_WALK)
 		target.m_intent = I_WALK
 		if(target.hud_used && target.hud_used.move_intent)

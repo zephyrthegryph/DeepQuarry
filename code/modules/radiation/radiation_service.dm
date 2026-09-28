@@ -231,16 +231,13 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/protected_limbs = 0
 	for(var/obj/item/organ/external/limb as anything in human.organs)
 		limb_count++
-
+		var/protected = FALSE
 		for(var/obj/item/clothing as anything in human.get_clothing_on_part(limb))
-			if(HAS_TRAIT(clothing, TRAIT_RADIATION_PROTECTED_CLOTHING)) //If our clothing
-				protected_limbs++
+			if(HAS_TRAIT(clothing, TRAIT_RADIATION_PROTECTED_CLOTHING))
+				protected = TRUE
 				break
-
-			var/rad_resistance = clothing.get_armor().value("rad")
-			if(prob(rad_resistance))
-				protected_limbs++
-				break
+		// Deterministic: the limb counts as protected by the fraction its worn rad armour stops.
+		protected_limbs += protected ? 1 : min(human.body.worn_armor(limb.body_part, ARMOR_RAD), 100) / 100
 
 	if(!limb_count)
 		return 0

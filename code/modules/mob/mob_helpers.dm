@@ -693,12 +693,12 @@ GLOBAL_DATUM_INIT(backplane, /image, generate_backplane())
 		return
 
 	//They may have hidden their entire hud but the hands
-	if(!hud_used.hud_shown && slot > slot_r_hand)
+	if(!hud_used.hud_shown && slot > SLOT_ID_HAND_R)
 		item.screen_loc = null
 		return
 
 	//They may have hidden the icons in the bottom left with the hide button
-	if(!hud_used.inventory_shown && slot > slot_r_store)
+	if(!hud_used.inventory_shown && slot > SLOT_ID_POCKET_R)
 		item.screen_loc = null
 		return
 

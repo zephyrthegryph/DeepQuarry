@@ -98,20 +98,20 @@
 		return
 
 	if(boots)
-		if (H.equip_to_slot_if_possible(boots, slot_shoes))
+		if (H.equip_to_slot_if_possible(boots, SLOT_ID_SHOES))
 			boots.canremove = FALSE
 
 	if(hood)
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(M, "You are unable to deploy your suit's helmet as \the [H.get_equipped_item(SLOT_ID_HEAD)] is in the way.")
-		else if (H.equip_to_slot_if_possible(hood, slot_head))
+		else if (H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD))
 			to_chat(M, "Your suit's helmet deploys with a hiss.")
 			hood.canremove = FALSE
 
 	if(cooler)
 		if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) //Ditto
 			to_chat(M, "Alarmingly, the cooling unit installed into your suit fails to deploy.")
-		else if (H.equip_to_slot_if_possible(cooler, slot_s_store))
+		else if (H.equip_to_slot_if_possible(cooler, SLOT_ID_SUIT_STORAGE))
 			to_chat(M, "Your suit's cooling unit deploys.")
 			cooler.canremove = FALSE
 
@@ -194,7 +194,7 @@
 		if(H.get_equipped_item(SLOT_ID_HEAD))
 			to_chat(H, span_danger("You cannot deploy your helmet while wearing \the [H.get_equipped_item(SLOT_ID_HEAD)]."))
 			return
-		if(H.equip_to_slot_if_possible(hood, slot_head))
+		if(H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD))
 			hood.canremove = FALSE
 			to_chat(H, span_info("You deploy your suit helmet, sealing you off from the world."))
 			playsound(src.loc, 'sound/machines/click2.ogg', 75, 1)
@@ -245,7 +245,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	if(istype(W,/obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
 		return FALSE
 
-	if(user.get_inventory_slot(src) == slot_wear_suit)
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return INTERACTION_HANDLED_PASS
 
@@ -394,7 +394,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
 		return FALSE
 
-	if(user.get_inventory_slot(src) == slot_wear_suit)
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return INTERACTION_HANDLED_PASS
 
@@ -403,7 +403,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 /obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool)
 	if(!isliving(user))
 		return ITEM_INTERACT_BLOCKING
-	if(user.get_inventory_slot(src) == slot_wear_suit)
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(hood || boots || tank)
@@ -438,7 +438,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 /obj/item/clothing/suit/space/void/autolok/screwdriver_act(mob/user, obj/item/tool)
 	if(!isliving(user))
 		return ITEM_INTERACT_BLOCKING
-	if(user.get_inventory_slot(src) == slot_wear_suit)
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(boots || tank || cooler)

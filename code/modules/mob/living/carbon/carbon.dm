@@ -366,7 +366,7 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop", "bloodstr
 
 /mob/living/carbon/equipped_to_slot(obj/item/W, slot)
 	..()
-	if(slot == slot_handcuffed)
+	if(slot == SLOT_ID_HANDCUFFED)
 		update_handcuffed()
 
 /mob/living/carbon/slot_vacated(slot_id, obj/item/I)
@@ -678,7 +678,7 @@ REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop", "bloodstr
 		return TRUE
 	if(get_equipped_item(SLOT_ID_GLOVES)?.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE)
 		return TRUE
-	for(var/obj/item/clothing/clothing in worn_clothing)
+	for(var/obj/item/clothing/clothing in get_worn_clothing())
 		if(clothing.max_heat_protection_temperature >= BURNING_ITEM_MINIMUM_TEMPERATURE && (clothing.heat_protection & HANDS) && (clothing.body_parts_covered & HANDS))
 			return TRUE
 	return FALSE

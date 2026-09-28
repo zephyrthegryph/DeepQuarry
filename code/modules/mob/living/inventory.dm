@@ -319,7 +319,7 @@ REF_OWNED(/mob/living, "inventory_panel")
 	var/list/slots = list()
 	for(var/entry in H.species.hud.gear)
 		var/list/slot_ref = H.species.hud.gear[entry]
-		if((slot_ref["slot"] in list(slot_l_store, slot_r_store)))
+		if((slot_ref["slot"] in list(SLOT_ID_POCKET_L, SLOT_ID_POCKET_R)))
 			continue
 		var/obj/item/thing_in_slot = H.get_equipped_item(slot_ref["slot"])
 		UNTYPED_LIST_ADD(slots, list(
@@ -338,14 +338,14 @@ REF_OWNED(/mob/living, "inventory_panel")
 			"item" = H.get_equipped_item(SLOT_ID_HAND_L),
 			"icon" = H.get_equipped_item(SLOT_ID_HAND_L) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_HAND_L).icon, H.get_equipped_item(SLOT_ID_HAND_L).icon_state, frame = 1)) : null,
 			"act" = "targetSlot",
-			"params" = list("slot" = slot_l_hand),
+			"params" = list("slot" = SLOT_ID_HAND_L),
 		))
 		UNTYPED_LIST_ADD(specialSlots, list(
 			"name" = "Right Hand",
 			"item" = H.get_equipped_item(SLOT_ID_HAND_R),
 			"icon" = H.get_equipped_item(SLOT_ID_HAND_R) ? icon2base64(icon(H.get_equipped_item(SLOT_ID_HAND_R).icon, H.get_equipped_item(SLOT_ID_HAND_R).icon_state, frame = 1)) : null,
 			"act" = "targetSlot",
-			"params" = list("slot" = slot_r_hand),
+			"params" = list("slot" = SLOT_ID_HAND_R),
 		))
 	data["specialSlots"] = specialSlots
 
@@ -359,12 +359,12 @@ REF_OWNED(/mob/living, "inventory_panel")
 	data["handcuffed"] = FALSE
 	if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		data["handcuffed"] = TRUE
-		data["handcuffedParams"] = list("slot" = slot_handcuffed)
+		data["handcuffedParams"] = list("slot" = SLOT_ID_HANDCUFFED)
 
 	data["legcuffed"] = FALSE
 	if(H.get_equipped_item(SLOT_ID_LEGCUFFED))
 		data["legcuffed"] = TRUE
-		data["legcuffedParams"] = list("slot" = slot_legcuffed)
+		data["legcuffedParams"] = list("slot" = SLOT_ID_LEGCUFFED)
 
 	data["accessory"] = FALSE
 	if(suit && LAZYLEN(suit.accessories))

@@ -232,31 +232,31 @@ modular computers
 /datum/gear/utility/saddlebag
 	display_name = "saddle bag, horse"
 	path = /obj/item/storage/backpack/saddlebag
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 2
 
 /datum/gear/utility/saddlebag_common
 	display_name = "saddle bag, common"
 	path = /obj/item/storage/backpack/saddlebag_common
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 2
 
 /datum/gear/utility/saddlebag_common/robust
 	display_name = "saddle bag, robust"
 	path = /obj/item/storage/backpack/saddlebag_common/robust
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 2
 
 /datum/gear/utility/saddlebag_common/vest
 	display_name = "taur duty vest (backpack)"
 	path = /obj/item/storage/backpack/saddlebag_common/vest
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 1
 
 /datum/gear/utility/dufflebag
 	display_name = "dufflebag"
 	path = /obj/item/storage/backpack/dufflebag
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 2
 
 /datum/gear/utility/dufflebag/black

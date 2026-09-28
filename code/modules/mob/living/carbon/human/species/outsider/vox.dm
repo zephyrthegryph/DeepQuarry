@@ -98,12 +98,12 @@
 /datum/species/vox/equip_survival_gear(mob/living/carbon/human/H, extendedtank = 0,comprehensive = 0)
 	. = ..()
 
-	H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), slot_wear_mask)
+	H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), SLOT_ID_MASK)
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_back)
+		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), SLOT_ID_BACK)
 		H.internal = H.get_equipped_item(SLOT_ID_BACK)
 	else
-		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), slot_r_hand)
+		H.equip_to_slot_or_del(new /obj/item/tank/nitrogen(H), SLOT_ID_HAND_R)
 		H.internal = H.get_equipped_item(SLOT_ID_HAND_R)
 	H.internal = locate(/obj/item/tank) in H.contents
 	if(istype(H.internal,/obj/item/tank) && H.internals)

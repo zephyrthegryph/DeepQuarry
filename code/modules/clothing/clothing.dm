@@ -358,7 +358,7 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 	var/mob/living/carbon/human/H = user
 
 	//Equipping to our glove slot? Cover our former gloves, if applicable.
-	if(equipping && slot && slot == slot_gloves)
+	if(equipping && slot && slot == SLOT_ID_GLOVES)
 		var/obj/item/clothing/G = H.get_equipped_item(SLOT_ID_GLOVES)
 		if(istype(G))
 			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
@@ -376,13 +376,13 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 
 	//Taking our gloves off? Put our former gloves / ring on.
 	if(gloves)
-		if(!H.equip_to_slot_if_possible(gloves, slot_gloves))
+		if(!H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES))
 			gloves.forceMove(get_turf(src))
 		gloves = null
 		return
 
 	if(ring) //We do NOT have gloves under our gloves but have a ring under our glove instead!
-		if(!H.equip_to_slot_if_possible(ring, slot_gloves))
+		if(!H.equip_to_slot_if_possible(ring, SLOT_ID_GLOVES))
 			ring.forceMove(get_turf(src))
 		ring = null
 		return
@@ -987,7 +987,7 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 		else
 			if(color != hood.color)
 				hood.color = color
-			H.equip_to_slot_if_possible(hood,slot_head,0,0,1)
+			H.equip_to_slot_if_possible(hood,SLOT_ID_HEAD,0,0,1)
 			hood_up = TRUE
 			hood.canremove = FALSE
 			update_icon()
@@ -1399,7 +1399,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 	handle_digitigrade(user)
 
 /obj/item/clothing/suit/equipped(mob/user, slot)
-	if(slot != slot_wear_suit)
+	if(slot != SLOT_ID_SUIT)
 		RemoveHood()
 
 	if(ishuman(user))
@@ -1421,7 +1421,7 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 
 	LAZYOR(clothing_traits, trait_or_traits)
 	var/mob/wearer = loc
-	if(istype(wearer) && (wearer.get_inventory_slot(src) & slot_flags))
+	if(istype(wearer) && dq_item_fits_slot_flags(src, wearer.inventory_slot_id(src)))
 		for(var/new_trait in trait_or_traits)
 			ADD_CLOTHING_TRAIT(wearer, new_trait)
 

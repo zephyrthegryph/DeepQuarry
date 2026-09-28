@@ -29,7 +29,7 @@
 	new /obj/item/gun/projectile/pistol/toy(new_briefcase)
 	new /obj/item/ammo_magazine/mfoam_dart/pistol(new_briefcase)
 	new /obj/item/clothing/mask/gas/clown_hat(new_briefcase)
-	H.equip_to_slot_or_del(new_briefcase, slot_l_hand)
+	H.equip_to_slot_or_del(new_briefcase, SLOT_ID_HAND_L)
 
 /datum/decl/hierarchy/outfit/costume/horrorcop
 	name = OUTFIT_COSTUME("Slasher Movie Cop")

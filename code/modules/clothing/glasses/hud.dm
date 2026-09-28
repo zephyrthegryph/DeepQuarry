@@ -70,7 +70,7 @@
 	var/tgarscreen_path
 	var/flash_prot = 0 //0 for none, 1 for flash weapon protection, 2 for welder protection
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
-	plane_slots = list(slot_glasses)
+	plane_slots = list(SLOT_ID_EYES)
 	var/ar_toggled = TRUE //Used for toggle_ar_planes() verb
 	var/can_shade = TRUE
 	specialty_goggles = TRUE

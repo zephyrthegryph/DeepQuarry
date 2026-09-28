@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(
 
 	src.pickup(user)
 	if (src.loc == user)
-		if(!mob_can_unequip(user, user.get_inventory_slot(src)))
+		if(!mob_can_unequip(user, user.inventory_slot_id(src)))
 			return
 		else
 			user.temporarilyRemoveItemFromInventory(src)

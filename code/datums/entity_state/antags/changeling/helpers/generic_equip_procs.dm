@@ -36,13 +36,13 @@
 		return 0
 
 	var/obj/item/clothing/suit/A = new armor_type(src)
-	equip_to_slot_or_del(A, slot_wear_suit)
+	equip_to_slot_or_del(A, SLOT_ID_SUIT)
 
 	var/obj/item/clothing/suit/H = new helmet_type(src)
-	equip_to_slot_or_del(H, slot_head)
+	equip_to_slot_or_del(H, SLOT_ID_HEAD)
 
 	var/obj/item/clothing/shoes/B = new boot_type(src)
-	equip_to_slot_or_del(B, slot_shoes)
+	equip_to_slot_or_del(B, SLOT_ID_SHOES)
 
 	changeling.chem_charges -= chem_cost
 	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
@@ -133,16 +133,16 @@
 
 /// The pieces a changeling grows, in order: key in stuff_to_equip, slot id, slot, name, sound.
 GLOBAL_LIST_INIT(changeling_grown_pieces, list(
-	list("head", SLOT_ID_HEAD, slot_head, "a helmet", 'sound/effects/blobattack.ogg'),
-	list("w_uniform", SLOT_ID_UNIFORM, slot_w_uniform, "a uniform", 'sound/effects/blobattack.ogg'),
-	list("gloves", SLOT_ID_GLOVES, slot_gloves, "some gloves", 'sound/effects/splat.ogg'),
-	list("shoes", SLOT_ID_SHOES, slot_shoes, "shoes", 'sound/effects/splat.ogg'),
-	list("belt", SLOT_ID_BELT, slot_belt, "a belt", 'sound/effects/splat.ogg'),
-	list("glasses", SLOT_ID_EYES, slot_glasses, "some glasses", 'sound/effects/splat.ogg'),
-	list("wear_mask", SLOT_ID_MASK, slot_wear_mask, "a mask", 'sound/effects/splat.ogg'),
-	list("back", SLOT_ID_BACK, slot_back, "a backpack", 'sound/effects/blobattack.ogg'),
-	list("wear_suit", SLOT_ID_SUIT, slot_wear_suit, "an exosuit", 'sound/effects/blobattack.ogg'),
-	list("wear_id", SLOT_ID_ID, slot_wear_id, "an ID card", 'sound/effects/splat.ogg'),
+	list("head", SLOT_ID_HEAD, SLOT_ID_HEAD, "a helmet", 'sound/effects/blobattack.ogg'),
+	list("w_uniform", SLOT_ID_UNIFORM, SLOT_ID_UNIFORM, "a uniform", 'sound/effects/blobattack.ogg'),
+	list("gloves", SLOT_ID_GLOVES, SLOT_ID_GLOVES, "some gloves", 'sound/effects/splat.ogg'),
+	list("shoes", SLOT_ID_SHOES, SLOT_ID_SHOES, "shoes", 'sound/effects/splat.ogg'),
+	list("belt", SLOT_ID_BELT, SLOT_ID_BELT, "a belt", 'sound/effects/splat.ogg'),
+	list("glasses", SLOT_ID_EYES, SLOT_ID_EYES, "some glasses", 'sound/effects/splat.ogg'),
+	list("wear_mask", SLOT_ID_MASK, SLOT_ID_MASK, "a mask", 'sound/effects/splat.ogg'),
+	list("back", SLOT_ID_BACK, SLOT_ID_BACK, "a backpack", 'sound/effects/blobattack.ogg'),
+	list("wear_suit", SLOT_ID_SUIT, SLOT_ID_SUIT, "an exosuit", 'sound/effects/blobattack.ogg'),
+	list("wear_id", SLOT_ID_ID, SLOT_ID_ID, "an ID card", 'sound/effects/splat.ogg'),
 ))
 
 /// Grows the next missing piece from `index` on, one a second, then reports.

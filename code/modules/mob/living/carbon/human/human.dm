@@ -97,7 +97,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			qdel(o)
 	if(nif)
 		QDEL_NULL(nif)
-	LAZYCLEARLIST(worn_clothing)
 
 	if(vessel)
 		QDEL_NULL(vessel)

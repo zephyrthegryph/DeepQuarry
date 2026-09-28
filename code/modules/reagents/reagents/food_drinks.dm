@@ -942,7 +942,7 @@
 				if(!safe_thing)
 					safe_thing = H.get_equipped_item(SLOT_ID_EYES)
 		if(alien == IS_SLIME)
-			for(var/obj/item/clothing/C in H.worn_clothing)
+			for(var/obj/item/clothing/C in H.get_worn_clothing())
 				if(C.body_parts_covered & HEAD)
 					head_covered = 1
 				if(C.body_parts_covered & UPPER_TORSO)

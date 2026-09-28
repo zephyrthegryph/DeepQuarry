@@ -46,7 +46,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/shibari, \
 /obj/item/clothing/suit/shibari/equipped(mob/living/user,slot)
 	. = ..()
 	if((rope_mode == SHIBARI_ARMS) || (rope_mode == SHIBARI_BOTH))
-		if(slot == slot_wear_suit)
+		if(slot == SLOT_ID_SUIT)
 			if(user.get_left_hand() != src)
 				user.drop_l_hand()
 			if(user.get_right_hand() != src)
@@ -55,7 +55,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/shibari, \
 				var/mob/living/carbon/human/H = user
 				H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 	if((rope_mode == SHIBARI_LEGS) || (rope_mode == SHIBARI_BOTH))
-		if(slot == slot_wear_suit)
+		if(slot == SLOT_ID_SUIT)
 			if(ishuman(user))
 				var/mob/living/carbon/human/H = user
 				// The ropes bind the legs, but the suit can't also sit in the legcuff

@@ -45,13 +45,7 @@
 /// (clothing in the armour slots) and their accessories. Null when nothing
 /// armoured covers it.
 /proc/dq_worn_armor_scan(list/items, part)
-	var/list/covering = list()
-	for(var/obj/item/clothing/gear in items)
-		if(gear.body_parts_covered & part)
-			covering |= gear
-		for(var/obj/item/clothing/accessory/bling in gear.accessories)
-			if(bling.body_parts_covered & part)
-				covering |= bling
+	var/list/covering = dq_worn_covering(items, part)
 	var/datum/armor/combined
 	for(var/obj/item/clothing/gear as anything in covering)
 		var/datum/armor/layer = gear.get_armor()
@@ -59,6 +53,29 @@
 			continue
 		combined = combined ? combined.add(layer) : layer
 	return combined
+
+/// The clothing in `items` and the accessories on it that cover body part flag `part`.
+/proc/dq_worn_covering(list/items, part)
+	. = list()
+	for(var/obj/item/clothing/gear in items)
+		if(gear.body_parts_covered & part)
+			. |= gear
+		for(var/obj/item/clothing/accessory/bling in gear.accessories)
+			if(bling.body_parts_covered & part)
+				. |= bling
+
+/// Clothing and accessories in this mob's armour slots covering body part flag `part`.
+/mob/living/proc/covering_items(part)
+	return dq_worn_covering(body_slot_items(BODY_SLOT_ARMOR), part)
+
+/// The body part flag (HEAD, UPPER_TORSO, ...) of body zone `zone` (BP_*), or NONE.
+/proc/dq_zone_body_part_flag(zone)
+	var/static/alist/flags = alist(
+		BP_HEAD = HEAD, BP_TORSO = UPPER_TORSO, BP_GROIN = LOWER_TORSO,
+		BP_L_ARM = ARM_LEFT, BP_R_ARM = ARM_RIGHT, BP_L_HAND = HAND_LEFT, BP_R_HAND = HAND_RIGHT,
+		BP_L_LEG = LEG_LEFT, BP_R_LEG = LEG_RIGHT, BP_L_FOOT = FOOT_LEFT, BP_R_FOOT = FOOT_RIGHT,
+	)
+	return flags[zone] || NONE
 
 /// Product of the conductivity of `items` (clothing in the insulation slots) covering `part`.
 /proc/dq_worn_siemens_scan(list/items, part)

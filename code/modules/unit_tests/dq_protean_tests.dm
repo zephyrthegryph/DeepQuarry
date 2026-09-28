@@ -63,7 +63,7 @@
 	if(ismob(R.loc))
 		var/mob/M = R.loc
 		M.drop_from_inventory(R, test_floor())
-	TEST_ASSERT(wearer.equip_to_slot_if_possible(R, slot_back, 0, 1), "the wearer should put the cluster on")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(R, SLOT_ID_BACK, 0, 1), "the wearer should put the cluster on")
 	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	wearer.injure(INJURY_BLUNT, 20, BP_TORSO, flags = INJURE_ARMORED | INJURE_SILENT)
 	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_PHYSICAL), before, "a dormant cluster must not soak hits for its wearer")
@@ -87,9 +87,9 @@
 	if(ismob(R.loc))
 		var/mob/M = R.loc
 		M.drop_from_inventory(R, test_floor())
-	TEST_ASSERT(wearer.equip_to_slot_if_possible(R, slot_back, 0, 1), "the wearer should put the cluster on")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(R, SLOT_ID_BACK, 0, 1), "the wearer should put the cluster on")
 	R.chest.forceMove(wearer)
-	TEST_ASSERT(wearer.equip_to_slot_if_possible(R.chest, slot_wear_suit, 0, 1), "the chest piece should deploy onto the wearer")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(R.chest, SLOT_ID_SUIT, 0, 1), "the chest piece should deploy onto the wearer")
 	R.chest.set_armor_value("melee", 50)
 	R.chest.worn_protection_changed()
 	load_before = H.injury_load(INJURY_CATEGORY_PHYSICAL)

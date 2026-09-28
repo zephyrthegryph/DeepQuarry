@@ -73,7 +73,7 @@
 /obj/item/clothing/suit/space/void/responseteam/screwdriver_act(mob/user, obj/item/tool)
 	if(!isliving(user))
 		return ITEM_INTERACT_BLOCKING
-	if(user.get_inventory_slot(src) == slot_wear_suit)
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(boots || tank || cooler)
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
 		return FALSE
 
-	if(user.get_inventory_slot(src) == slot_wear_suit)
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return INTERACTION_HANDLED_PASS
 
@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 	siemens_coefficient = 0.5
 	enables_planes = list(VIS_CH_ID,VIS_CH_HEALTH_VR,VIS_AUGMENTED)
 	var/away_planes = null
-	plane_slots = list(slot_head)
+	plane_slots = list(SLOT_ID_HEAD)
 	var/hud_active = 1
 	var/activation_sound = 'sound/items/nif_click.ogg'
 	min_pressure_protection = 0 * ONE_ATMOSPHERE

@@ -72,7 +72,7 @@
 
 	// Used to specify the icon file to be used when the item is worn. If not set the default icon for that slot will be used.
 	// If icon_override or sprite_sheets are set they will take precendence over this, assuming they apply to the slot in question.
-	// Only slot_l_hand/slot_r_hand are implemented at the moment. Others to be implemented as needed.
+	// Only SLOT_ID_HAND_L/slot_r_hand are implemented at the moment. Others to be implemented as needed.
 	var/list/item_icons
 
 	//** These specify item/icon overrides for _species_
@@ -228,7 +228,7 @@
 		// We're being held or are equipped by someone while adding an action?
 		// Then they should also probably be granted the action, given it's in a correct slot
 		var/mob/holder = loc
-		give_item_action(action, holder, holder.get_inventory_slot(src))
+		give_item_action(action, holder, holder.inventory_slot_id(src))
 
 	return action
 
@@ -522,7 +522,7 @@
 			playsound(src, equip_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
 		else if(!muffled_by_belly(user))
 			playsound(src, drop_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
-	else if(slot == slot_l_hand || slot == slot_r_hand)
+	else if(slot == SLOT_ID_HAND_L || slot == SLOT_ID_HAND_R)
 		if(!muffled_by_belly(user))
 			playsound(src, pickup_sound, 20, preference = /datum/preference/toggle/pickup_sounds)
 	OM_EMIT(src, /datum/om/event/item_equipped, user, slot)

@@ -46,11 +46,11 @@ GLOBAL_DATUM(ert, /datum/antagonist/ert)
 /datum/antagonist/ert/equip(mob/living/carbon/human/player)
 
 	//Special radio setup
-	player.equip_to_slot_or_del(new /obj/item/radio/headset/ert(player), slot_l_ear)
-	player.equip_to_slot_or_del(new /obj/item/clothing/under/ert(player), slot_w_uniform)
-	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/boots/swat(player), slot_shoes)
-	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/swat(player), slot_gloves)
-	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(player), slot_glasses)
+	player.equip_to_slot_or_del(new /obj/item/radio/headset/ert(player), SLOT_ID_EAR_L)
+	player.equip_to_slot_or_del(new /obj/item/clothing/under/ert(player), SLOT_ID_UNIFORM)
+	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/boots/swat(player), SLOT_ID_SHOES)
+	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/swat(player), SLOT_ID_GLOVES)
+	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(player), SLOT_ID_EYES)
 
 	create_id(role_text, player)
 	return 1

@@ -341,13 +341,13 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/p
 
 		// Instead of running equip_to_slot_if_possible() we check here first,
 		// to avoid dousing cig with reagents if we're not going to equip it
-		if(cig.equip_refusal(user, slot_wear_mask))
+		if(cig.equip_refusal(user, SLOT_ID_MASK))
 			return ITEM_INTERACT_FAILURE
 
 		// We call remove_from_storage first to manage the reagent transfer and
 		// UI updates.
 		remove_from_storage(cig, null, user)
-		user.equip_to_slot(cig, slot_wear_mask)
+		user.equip_to_slot(cig, SLOT_ID_MASK)
 
 		reagents.maximum_volume = 15 * length(slot_contents(CONTAINER_SLOT_STORAGE))
 		to_chat(user, span_notice("You take a cigarette out of the pack."))

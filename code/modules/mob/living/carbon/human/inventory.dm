@@ -62,11 +62,6 @@ This saves us from having to call add_fingerprint() any time something is put in
 
 /mob/living/carbon/human/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
-	if(slot_id in GLOB.slot_ids_worn_clothing)
-		if(inserted)
-			LAZYDISTINCTADD(worn_clothing, thing)
-		else
-			LAZYREMOVE(worn_clothing, thing)
 	var/obj/item/I = thing
 	switch(slot_id)
 		if(SLOT_ID_HEAD)
@@ -89,26 +84,16 @@ This saves us from having to call add_fingerprint() any time something is put in
 			BITSET(hud_updateflag, ID_HUD)
 			BITSET(hud_updateflag, WANTED_HUD)
 
-/mob/living/carbon/human/slot_vacated(slot_id, obj/item/I)
-	..()
-	switch(slot_id)
-		if(SLOT_ID_SUIT)
-			drop_from_inventory(get_equipped_item(SLOT_ID_SUIT_STORAGE))
-		if(SLOT_ID_UNIFORM)
-			drop_from_inventory(get_equipped_item(SLOT_ID_POCKET_R))
-			drop_from_inventory(get_equipped_item(SLOT_ID_POCKET_L))
-			drop_from_inventory(get_equipped_item(SLOT_ID_ID))
-
 /mob/living/carbon/human/equipped_to_slot(obj/item/W, slot)
 	..()
-	if(slot == slot_l_ear || slot == slot_r_ear)
+	if(slot == SLOT_ID_EAR_L || slot == SLOT_ID_EAR_R)
 		equip_offear(W, slot)
 
 /// A two-ear item fills the other ear with a placeholder.
 /mob/living/carbon/human/proc/equip_offear(obj/item/W, slot)
 	if(!(W.slot_flags & SLOT_TWOEARS) || istype(W, /obj/item/clothing/ears/offear))
 		return
-	var/other = (slot == slot_l_ear) ? SLOT_ID_EAR_R : SLOT_ID_EAR_L
+	var/other = (slot == SLOT_ID_EAR_L) ? SLOT_ID_EAR_R : SLOT_ID_EAR_L
 	if(get_equipped_item(other))
 		return
 	var/obj/item/clothing/ears/offear/O = new(W)
@@ -118,28 +103,8 @@ This saves us from having to call add_fingerprint() any time something is put in
 	dq_ledger_commit(O, src, other)
 	O.hud_layerise()
 
-//Checks if a given slot can be accessed at this time, either to equip or unequip I
-/mob/living/carbon/human/slot_is_accessible(slot, obj/item/I, mob/user=null)
-	var/obj/item/covering = null
-	var/check_flags = 0
-
-	switch(slot)
-		if(slot_wear_mask)
-			covering = get_equipped_item(SLOT_ID_HEAD)
-			check_flags = FACE
-		if(slot_glasses)
-			covering = get_equipped_item(SLOT_ID_HEAD)
-			check_flags = EYES
-		if(slot_gloves, slot_w_uniform)
-			covering = get_equipped_item(SLOT_ID_SUIT)
-
-	if(covering && (covering.body_parts_covered & (I.body_parts_covered|check_flags)))
-		to_chat(user, span_warning("\The [covering] is in the way."))
-		return 0
-	return 1
-
 /mob/living/carbon/human/proc/drop_all_clothing(remove_underwear = FALSE)
-	for(var/obj/item/equipped_thing in worn_clothing)
+	for(var/obj/item/equipped_thing in get_worn_clothing())
 		if(istype(equipped_thing,/obj/item/clothing/accessory/collar/shock/bluespace))
 			continue
 		drop_from_inventory(equipped_thing)

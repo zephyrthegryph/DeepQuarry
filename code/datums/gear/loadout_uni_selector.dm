@@ -7,7 +7,7 @@
 	allowed_roles = list("")
 	show_roles = FALSE
 	path =
-	slot = slot_w_uniform
+	slot = SLOT_ID_UNIFORM
 	sort_category = "Uniforms"
 	cost = 2
 

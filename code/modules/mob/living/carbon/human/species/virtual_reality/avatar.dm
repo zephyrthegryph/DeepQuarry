@@ -125,7 +125,7 @@
 		om_after(src, 3000, PROC_REF(cleanup_vr)) //Delete the body after 5 minutes
 
 /mob/living/carbon/human/proc/cleanup_vr()
-	var/list/slots = list(slot_back,slot_handcuffed,slot_l_store,slot_r_store,slot_wear_mask,slot_l_hand,slot_r_hand,slot_wear_id,slot_glasses,slot_gloves,slot_head,slot_shoes,slot_belt,slot_wear_suit,slot_w_uniform,slot_s_store,slot_l_ear,slot_r_ear)
+	var/list/slots = list(SLOT_ID_BACK,SLOT_ID_HANDCUFFED,SLOT_ID_POCKET_L,SLOT_ID_POCKET_R,SLOT_ID_MASK,SLOT_ID_HAND_L,SLOT_ID_HAND_R,SLOT_ID_ID,SLOT_ID_EYES,SLOT_ID_GLOVES,SLOT_ID_HEAD,SLOT_ID_SHOES,SLOT_ID_BELT,SLOT_ID_SUIT,SLOT_ID_UNIFORM,SLOT_ID_SUIT_STORAGE,SLOT_ID_EAR_L,SLOT_ID_EAR_R)
 	for(var/slot in slots)
 		var/obj/item/I = get_equipped_item(slot = slot)
 		if(I)

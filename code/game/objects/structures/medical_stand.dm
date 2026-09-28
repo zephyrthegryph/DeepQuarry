@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 
 /obj/structure/medical_stand/proc/attach_mask(mob/living/carbon/C)
 	if(C && istype(C))
-		if(C.equip_to_slot_if_possible(contained, slot_wear_mask))
+		if(C.equip_to_slot_if_possible(contained, SLOT_ID_MASK))
 			if(tank)
 				tank.forceMove(C)
 			breather_handle = om_handle(C)

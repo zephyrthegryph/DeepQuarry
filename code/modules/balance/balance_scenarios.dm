@@ -150,7 +150,7 @@
 	for(var/i in 2 to length(spec))
 		var/obj/item/worn = spawn_thing(spec[i])
 		var/mob/living/carbon/human/H = L
-		var/slot = istype(worn, /obj/item/clothing/head) ? slot_head : slot_wear_suit
+		var/slot = istype(worn, /obj/item/clothing/head) ? SLOT_ID_HEAD : SLOT_ID_SUIT
 		if(!istype(H) || !H.equip_to_slot_if_possible(worn, slot, disable_warning = TRUE))
 			note("[target_id]: [worn.type] would not equip")
 			return null

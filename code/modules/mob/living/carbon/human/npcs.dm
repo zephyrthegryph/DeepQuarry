@@ -13,6 +13,6 @@
 	. = ..()
 	name = "Pun Pun"
 	real_name = name
-	equip_to_slot_or_del(new /obj/item/clothing/under/punpun(src), slot_w_uniform)
+	equip_to_slot_or_del(new /obj/item/clothing/under/punpun(src), SLOT_ID_UNIFORM)
 	regenerate_icons()
 	can_be_drop_prey = TRUE

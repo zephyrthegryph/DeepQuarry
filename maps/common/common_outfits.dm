@@ -8,8 +8,8 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	name = OUTFIT_JOB_NAME("Explorer")
 	shoes = /obj/item/clothing/shoes/boots/winter/explorer
 	uniform = /obj/item/clothing/under/explorer
-	id_slot = slot_wear_id
-	pda_slot = slot_l_store
+	id_slot = SLOT_ID_ID
+	pda_slot = SLOT_ID_POCKET_L
 	pda_type = /obj/item/pda/explorer
 	id_type = /obj/item/card/id/exploration // fix conflicts with citrp ID port
 	id_pda_assignment = "Explorer"
@@ -28,13 +28,13 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 /datum/decl/hierarchy/outfit/job/explorer2/technician
 	name = OUTFIT_JOB_NAME(JOB_ALT_EXPLORERE_TECHNICIAN)
 	belt = /obj/item/storage/belt/utility/full
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 	id_pda_assignment = JOB_ALT_EXPLORERE_TECHNICIAN
 
 /datum/decl/hierarchy/outfit/job/explorer2/medic
 	name = OUTFIT_JOB_NAME(JOB_ALT_EXPLORER_MEDIC)
 	l_hand = /obj/item/storage/firstaid/regular
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 	id_pda_assignment = JOB_ALT_EXPLORER_MEDIC
 
 /datum/decl/hierarchy/outfit/job/pilot
@@ -45,8 +45,8 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	gloves = /obj/item/clothing/gloves/fingerless
 	glasses = /obj/item/clothing/glasses/fakesunglasses/aviator
 	uniform_accessories = list(/obj/item/clothing/accessory/storage/webbing/pilot1 = 1)
-	id_slot = slot_wear_id
-	pda_slot = slot_belt
+	id_slot = SLOT_ID_ID
+	pda_slot = SLOT_ID_BELT
 	pda_type = /obj/item/pda // Civilian
 	id_type = /obj/item/card/id/civilian/pilot
 	id_pda_assignment = JOB_PILOT
@@ -63,7 +63,7 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	shoes = /obj/item/clothing/shoes/boots/winter/explorer
 	l_hand = /obj/item/storage/firstaid/regular
 	belt = /obj/item/storage/belt/medical/emt
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 	id_type = /obj/item/card/id/medical/sar
 	pda_type = /obj/item/pda/sar
 	id_pda_assignment = "Field Medic"

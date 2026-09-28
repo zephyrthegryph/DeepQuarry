@@ -5,10 +5,10 @@
 // (job.equip runs after loadout — empty slots get filled). Players who DO pick get the
 // generic version regardless of department theming.
 //
-// Note re. the slot_l_ear warning in loadout_ears.dm: that warning predates the
+// Note re. the SLOT_ID_EAR_L warning in loadout_ears.dm: that warning predates the
 // loadout-equips-first ordering. With the current spawn pipeline (loadout layer first,
 // job fills empty slots after), a loadout l_ear pick correctly overrides the job's
-// themed headset. The headsets below intentionally use slot_l_ear.
+// themed headset. The headsets below intentionally use SLOT_ID_EAR_L.
 
 // ── Headsets ────────────────────────────────────────────────────────────────────────
 
@@ -16,7 +16,7 @@
 	display_name = "standard headset"
 	description = "A generic, no-channel radio headset. If you don't want your job's themed headset, pick this."
 	path = /obj/item/radio/headset
-	slot = slot_l_ear
+	slot = SLOT_ID_EAR_L
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -24,7 +24,7 @@
 	display_name = "bowman headset"
 	description = "Over-the-ear variant. Generic, no channels."
 	path = /obj/item/radio/headset/alt
-	slot = slot_l_ear
+	slot = SLOT_ID_EAR_L
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -32,7 +32,7 @@
 	display_name = "earbud headset"
 	description = "Discreet in-ear variant. Generic, no channels."
 	path = /obj/item/radio/headset/earbud
-	slot = slot_l_ear
+	slot = SLOT_ID_EAR_L
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -42,7 +42,7 @@
 	display_name = "backpack"
 	description = "A generic backpack. Overrides your job-themed default bag."
 	path = /obj/item/storage/backpack
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -50,7 +50,7 @@
 	display_name = "satchel"
 	description = "Generic over-the-shoulder satchel."
 	path = /obj/item/storage/backpack/satchel/norm
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -58,7 +58,7 @@
 	display_name = "leather satchel"
 	description = "Generic leather satchel."
 	path = /obj/item/storage/backpack/satchel
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -66,7 +66,7 @@
 	display_name = "messenger bag"
 	description = "Generic messenger bag."
 	path = /obj/item/storage/backpack/messenger
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -74,7 +74,7 @@
 	display_name = "sports bag"
 	description = "Generic sports bag."
 	path = /obj/item/storage/backpack/sport
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -82,14 +82,14 @@
 
 // PDA is a single item type; chassis variants are cosmetic skins driven by H.pdachoice
 // (now always default = 1, since the pdachoice pref is gone). The Standard PDA goes in
-// slot_belt — the most common pda_slot across job outfits. Players whose job's pda_slot
+// SLOT_ID_BELT — the most common pda_slot across job outfits. Players whose job's pda_slot
 // is a pocket (Engineering, Cargo) can still pick this and the job's themed PDA falls
 // back to the unoccupied slot the job specified.
 /datum/gear/standard_pda
 	display_name = "personal data assistant"
 	description = "A generic PDA. Configure your ringtone here. Job-themed PDAs (with department channels, ID rank) still spawn in their normal slot if you don't pick this — this generic version has neither."
 	path = /obj/item/pda
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	cost = 0
 	sort_category = "Standard Issue"
 
@@ -143,7 +143,7 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 	display_name = "utility belt"
 	description = "An empty utility belt — eight pouches for whatever tools you scrounge up."
 	path = /obj/item/storage/belt/utility
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	cost = 1
 	sort_category = "Belts"
 
@@ -151,7 +151,7 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 	display_name = "medical belt"
 	description = "An empty medical belt."
 	path = /obj/item/storage/belt/medical
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	cost = 1
 	sort_category = "Belts"
 	allowed_roles = list(JOB_MEDICAL_DOCTOR, JOB_PARAMEDIC, JOB_CHIEF_MEDICAL_OFFICER, JOB_PSYCHIATRIST, JOB_CHEMIST)
@@ -160,7 +160,7 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 	display_name = "security belt"
 	description = "An empty security belt."
 	path = /obj/item/storage/belt/security
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	cost = 1
 	sort_category = "Belts"
 	allowed_roles = list(JOB_SECURITY_OFFICER, JOB_WARDEN, JOB_HEAD_OF_SECURITY, JOB_DETECTIVE)
@@ -169,7 +169,7 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 	display_name = "utility belt (filled)"
 	description = "A utility belt pre-loaded with screwdriver, wrench, wirecutters, multitool, and crowbar."
 	path = /obj/item/storage/belt/utility/full
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	cost = 3
 	sort_category = "Belts"
 	allowed_roles = list(JOB_ENGINEER, JOB_ATMOSPHERIC_TECHNICIAN, JOB_CHIEF_ENGINEER, JOB_QUARTERMASTER, JOB_ROBOTICIST)
@@ -178,7 +178,7 @@ GLOBAL_DATUM_INIT(gear_tweak_pda_ringtone, /datum/gear_tweak/pda_ringtone, new)
 	display_name = "EMT belt"
 	description = "An EMT-style medical belt."
 	path = /obj/item/storage/belt/medical/emt
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	cost = 1
 	sort_category = "Belts"
 	allowed_roles = list(JOB_MEDICAL_DOCTOR, JOB_PARAMEDIC, JOB_CHIEF_MEDICAL_OFFICER)

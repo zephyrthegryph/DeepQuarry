@@ -281,7 +281,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/straight_jacket, INTERACT_HAND_UNGAT
 
 /obj/item/clothing/suit/straight_jacket/equipped(mob/living/user,slot)
 	. = ..()
-	if(slot == slot_wear_suit)
+	if(slot == SLOT_ID_SUIT)
 		user.drop_l_hand()
 		user.drop_r_hand()
 		if(ishuman(user))

@@ -172,7 +172,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/suit/armor/vest/vest = allocate(/obj/item/clothing/suit/armor/vest)
 	vest.set_armor(dq_armor(list(MELEE = 99)))
-	TEST_ASSERT(H.equip_to_slot_if_possible(vest, slot_wear_suit, disable_warning = TRUE), "the vest should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
 	om_hook(H, /datum/om/event/living_injury_explained, src, PROC_REF(on_explained))
 	var/turned = 0
 	for(var/i in 1 to 20)
@@ -197,8 +197,8 @@
 	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey)
 	uniform.body_parts_covered = UPPER_TORSO | LOWER_TORSO
 	uniform.set_armor(dq_armor(list(MELEE = 5, BIO = 10)))
-	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, slot_w_uniform, disable_warning = TRUE), "the uniform should equip")
-	TEST_ASSERT(H.equip_to_slot_if_possible(vest, slot_wear_suit, disable_warning = TRUE), "the vest should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(uniform, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform should equip")
+	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "the vest should equip")
 	TEST_ASSERT_EQUAL(H.body.worn_armor_set(UPPER_TORSO), dq_armor(list(MELEE = 35, BULLET = 20, BIO = 10)), "the torso holds both layers, interned")
 	TEST_ASSERT_EQUAL(H.body.worn_armor_set(LOWER_TORSO), uniform.get_armor(), "the groin holds the uniform alone, the same datum")
 	TEST_ASSERT_EQUAL(H.body.worn_armor_set(HEAD), dq_armor_none(), "the head holds nothing")

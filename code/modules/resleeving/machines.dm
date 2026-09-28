@@ -33,7 +33,7 @@
 
 	//Give breathing equipment if needed
 	if(current_project.breath_type != null && current_project.breath_type != GAS_O2)
-		H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), slot_wear_mask)
+		H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), SLOT_ID_MASK)
 		var/obj/item/tank/tankpath
 		if(current_project.breath_type == GAS_PHORON)
 			tankpath = /obj/item/tank/vox
@@ -41,7 +41,7 @@
 			tankpath = text2path("/obj/item/tank/" + current_project.breath_type)
 
 		if(tankpath)
-			H.equip_to_slot_or_del(new tankpath(H), slot_back)
+			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_BACK)
 			H.internal = H.get_equipped_item(SLOT_ID_BACK)
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"

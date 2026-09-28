@@ -175,7 +175,7 @@ REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 
 /obj/item/clothing/head/pilot/equipped(mob/user,slot)
 	. = ..()
-	if(slot == slot_head && user.client)
+	if(slot == SLOT_ID_HEAD && user.client)
 		user.client.screen |= pilot_hud
 		user.client.images |= raw_images
 

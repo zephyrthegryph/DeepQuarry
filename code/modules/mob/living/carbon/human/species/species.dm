@@ -477,9 +477,9 @@
 	box.calibrate_size()
 
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(box, slot_r_hand)
+		H.equip_to_slot_or_del(box, SLOT_ID_HAND_R)
 	else
-		H.equip_to_slot_or_del(box, slot_in_backpack)
+		H.equip_to_slot_or_del(box, SLOT_ID_IN_BACKPACK)
 
 /// Builds `H`'s part tree from this species' tables, replacing whatever tree
 /// it had. The old tree is deleted through its root (the slot policies delete

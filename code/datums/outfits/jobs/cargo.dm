@@ -42,5 +42,5 @@
 	name = OUTFIT_JOB_NAME(JOB_ALT_MAILMAN)
 	uniform = /obj/item/clothing/under/rank/mailman2
 	head = /obj/item/clothing/head/mailman2
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 	backpack_contents = list(/obj/item/storage/bag/mail = 1, /obj/item/mail_scanner = 1)

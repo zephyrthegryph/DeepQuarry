@@ -5,7 +5,7 @@
 	return ..()
 
 /obj/item/gun/equipped(mob/living/user, slot)
-	if(istype(user) && (slot != slot_l_hand && slot != slot_r_hand))
+	if(istype(user) && (slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R))
 		user.stop_aiming(src)
 	return ..()
 

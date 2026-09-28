@@ -96,7 +96,7 @@
 /datum/species/custom/equip_survival_gear(mob/living/carbon/human/H, extendedtank = 0, comprehensive = 0)
 	. = ..()
 	if(breath_type != GAS_O2)
-		H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), slot_wear_mask)
+		H.equip_to_slot_or_del(new /obj/item/clothing/mask/breath(H), SLOT_ID_MASK)
 		var/obj/item/tank/tankpath
 		if(breath_type == GAS_PHORON)
 			tankpath = /obj/item/tank/vox
@@ -104,7 +104,7 @@
 			tankpath = text2path("/obj/item/tank/" + breath_type)
 
 		if(tankpath)
-			H.equip_to_slot_or_del(new tankpath(H), slot_r_hand)
+			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_HAND_R)
 			H.internal = H.get_equipped_item(SLOT_ID_HAND_R)
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"

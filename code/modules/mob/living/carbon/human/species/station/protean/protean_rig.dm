@@ -133,7 +133,7 @@
 		P.drop_item(B)
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
-			P.equip_to_slot_if_possible(src, slot_back)
+			P.equip_to_slot_if_possible(src, SLOT_ID_BACK)
 		src.Moved()
 	else
 		to_chat(P,span_warning("Your rigsuit can only assimilate a backpack into itself. If you are seeing this message, and you do not have a rigsuit, tell a coder."))

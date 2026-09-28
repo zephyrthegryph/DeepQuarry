@@ -42,10 +42,10 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 	to_chat(player.current, "You may want to discuss a collective story with the rest of your crew. More members may be joining, so don't move out straight away!")
 
 /datum/antagonist/trader/equip(mob/living/carbon/human/player)
-	player.equip_to_slot_or_del(new /obj/item/clothing/under/rank/cargotech(player), slot_w_uniform)
-	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(player), slot_shoes)
-	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/brown(player), slot_gloves)
-	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(player), slot_glasses)
+	player.equip_to_slot_or_del(new /obj/item/clothing/under/rank/cargotech(player), SLOT_ID_UNIFORM)
+	player.equip_to_slot_or_del(new /obj/item/clothing/shoes/black(player), SLOT_ID_SHOES)
+	player.equip_to_slot_or_del(new /obj/item/clothing/gloves/brown(player), SLOT_ID_GLOVES)
+	player.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses(player), SLOT_ID_EYES)
 
 	create_radio(PUB_FREQ, player) //Assume they tune their headsets into the station's public radio as they approach
 
@@ -55,7 +55,7 @@ GLOBAL_DATUM(traders, /datum/antagonist/trader)
 	id.access |= ACCESS_TRADER
 	var/obj/item/storage/wallet/W = new(player)
 	W.insert_item(id)
-	player.equip_to_slot_or_del(W, slot_wear_id)
+	player.equip_to_slot_or_del(W, SLOT_ID_ID)
 	spawn_money(rand(50,150)*10,W)
 
 	return 1

@@ -155,11 +155,11 @@
 		var/everything = species_name == SPECIES_HUMAN
 		for(var/state in list("naked", "dressed"))
 			if(state == "dressed")
-				H.equip_to_slot(new /obj/item/clothing/under/color/grey(H), slot_w_uniform)
-				H.equip_to_slot(new /obj/item/clothing/suit/storage/hazardvest(H), slot_wear_suit)
-				H.equip_to_slot(new /obj/item/clothing/gloves/black(H), slot_gloves)
-				H.equip_to_slot(new /obj/item/clothing/shoes/black(H), slot_shoes)
-				H.equip_to_slot(new /obj/item/storage/backpack(H), slot_back)
+				H.equip_to_slot(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
+				H.equip_to_slot(new /obj/item/clothing/suit/storage/hazardvest(H), SLOT_ID_SUIT)
+				H.equip_to_slot(new /obj/item/clothing/gloves/black(H), SLOT_ID_GLOVES)
+				H.equip_to_slot(new /obj/item/clothing/shoes/black(H), SLOT_ID_SHOES)
+				H.equip_to_slot(new /obj/item/storage/backpack(H), SLOT_ID_BACK)
 			var/list/masks = splittext(rows["[species_name]|[state]"], ",")
 			var/list/indices = everything ? null : sensitive
 			var/count = everything ? length(items) : length(indices)
@@ -238,17 +238,17 @@
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 
 	// Pockets need a jumpsuit, then take small things.
-	TEST_ASSERT_EQUAL(pen.equip_refusal(H, slot_l_store, TRUE), "you need a jumpsuit first", "pocket without a jumpsuit")
-	H.equip_to_slot(new /obj/item/clothing/under/color/grey(H), slot_w_uniform)
-	TEST_ASSERT_NULL(pen.equip_refusal(H, slot_l_store, TRUE), "pen into a pocket")
+	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "you need a jumpsuit first", "pocket without a jumpsuit")
+	H.equip_to_slot(new /obj/item/clothing/under/color/grey(H), SLOT_ID_UNIFORM)
+	TEST_ASSERT_NULL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "pen into a pocket")
 	var/obj/item/storage/toolbox/toolbox = allocate(/obj/item/storage/toolbox, T)
-	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, slot_l_store, TRUE), "too big for a pocket", "toolbox into a pocket")
+	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "too big for a pocket", "toolbox into a pocket")
 
 	// The slot tag (the old slot_flags check) gives a reason too.
-	TEST_ASSERT(findtext(wrench.equip_refusal(H, slot_head, TRUE), "worn on the head"), "wrench on the head")
+	TEST_ASSERT(findtext(wrench.equip_refusal(H, SLOT_ID_HEAD, TRUE), "worn on the head"), "wrench on the head")
 
 	// Suit storage asks the worn suit.
-	TEST_ASSERT_EQUAL(pen.equip_refusal(H, slot_s_store, TRUE), "you need a suit first", "suit storage without a suit")
+	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_SUIT_STORAGE, TRUE), "you need a suit first", "suit storage without a suit")
 
 	// Fit: Teshari-only goggles refuse a human with a reason, and fit a Teshari.
 	var/obj/item/clothing/glasses/aerogelgoggles/goggles = allocate(/obj/item/clothing/glasses/aerogelgoggles, T)
