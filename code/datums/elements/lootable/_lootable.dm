@@ -60,9 +60,9 @@
 		if(prob(1))
 			to_chat(L, span_danger("You cut your hand on something in the trash!"))
 			L.injure(INJURY_CUT, 2, pick(BP_L_HAND, BP_R_HAND), source)
-			var/datum/disease/advance/random/random_disease = new /datum/disease/advance/random()
+			var/datum/affliction/contagion/engineered/random/random_disease = new /datum/affliction/contagion/engineered/random()
 			random_disease.spread_flags |= DISEASE_SPREAD_NON_CONTAGIOUS
-			L.ForceContractDisease(random_disease)
+			L.force_contagion(random_disease)
 
 	else if(prob(chance_uncommon) && length(uncommon_loot)) // You might still get something good.
 		loot = produce_uncommon_item(source)

@@ -44,9 +44,8 @@ code/datums/components/species/shadekin/powers/phase_shift.dm 2
 code/datums/components/structures/bluespace_connection.dm 1
 code/datums/components/traits/crowd_detection.dm 3
 code/datums/components/traits/weaver.dm 2
-code/datums/diseases/_MobProcs.dm 2
-code/datums/diseases/_disease.dm 2
-code/datums/diseases/advance/symptoms/sneeze.dm 1
+code/modules/medical/contagion/contagion.dm 2
+code/modules/medical/contagion/engineered/traits/sneeze.dm 1
 code/datums/elements/sellable.dm 3
 code/datums/gear/loadout_shoes.dm 1
 code/datums/ghost_spawn_options.dm 6

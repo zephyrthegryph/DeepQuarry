@@ -260,7 +260,6 @@
 		/datum/om/stage/life/random_events/carbon/human,
 		/datum/om/stage/life/afk,
 		/datum/om/stage/life/chemicals/carbon/human,
-		/datum/om/stage/life/diseases/carbon,
 		/datum/om/stage/life/environment/carbon/human,
 		/datum/om/stage/life/ambience,
 		/datum/om/stage/life/movement,

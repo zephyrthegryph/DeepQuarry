@@ -176,7 +176,7 @@ every stage. Producers raise channels with `om_changed()`:
 | `CHANGE_MOB_STATUS` | a status starting or ending (§7), immunities, pulling |
 | `CHANGE_MOB_LOC` | `/mob/living/Moved()` |
 | `CHANGE_MOB_EQUIPMENT` | equip and unequip |
-| `CHANGE_MOB_CONDITIONS` | modifiers, instability, diseases |
+| `CHANGE_MOB_CONDITIONS` | modifiers, instability |
 | `CHANGE_MOB_STAT` | `set_stat()` |
 | `CHANGE_MOB_CLIENT` | Login, Logout |
 | `CHANGE_EXPLICIT` | `om_wake()`, a plan change, the audit |

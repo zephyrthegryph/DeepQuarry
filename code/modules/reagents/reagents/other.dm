@@ -408,13 +408,13 @@
 				M.remove_modifiers_of_type(/datum/modifier/redspace_corruption)
 				to_chat(M, span_notice("You feel calmer."))
 
-			if(M.HasDisease(/datum/disease/fleshy_spread))
-				for(var/datum/disease/fleshy_spread/disease in M.GetViruses())
+			if(M.has_contagion(/datum/affliction/contagion/fleshy_spread))
+				for(var/datum/affliction/contagion/fleshy_spread/disease in M.get_contagions())
 					disease.cure()
 					break
 				to_chat(M, span_notice("Your fever subsides.."))
 		if(volume <= max_dose * 0.5 && !failed_message)
-			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption) || M.HasDisease(/datum/disease/fleshy_spread))
+			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption) || M.has_contagion(/datum/affliction/contagion/fleshy_spread))
 				to_chat(M, span_notice("The power of the holy water courses through you, but seems to have failed to cure your ailments. Perhaps a larger dose is needed?"))
 				failed_message = TRUE
 
@@ -428,13 +428,13 @@
 				M.remove_modifiers_of_type(/datum/modifier/redspace_corruption)
 				to_chat(M, span_notice("You feel calmer."))
 
-			if(M.HasDisease(/datum/disease/fleshy_spread))
-				for(var/datum/disease/fleshy_spread/disease in M.GetViruses())
+			if(M.has_contagion(/datum/affliction/contagion/fleshy_spread))
+				for(var/datum/affliction/contagion/fleshy_spread/disease in M.get_contagions())
 					disease.cure()
 					break
 				to_chat(M, span_notice("Your fever subsides.."))
 		if(volume <= max_dose * 0.25 && !failed_message)
-			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption) || M.HasDisease(/datum/disease/fleshy_spread))
+			if(M.has_modifier_of_type(/datum/modifier/redspace_corruption) || M.has_contagion(/datum/affliction/contagion/fleshy_spread))
 				to_chat(M, span_notice("The power of the holy water courses through you, but seems to have failed to cure your ailments. Perhaps a larger dose is needed?"))
 				failed_message = TRUE
 	return

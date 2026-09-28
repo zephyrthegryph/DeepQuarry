@@ -1134,7 +1134,7 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/salmonella/on_mob_life(mob/living/carbon/M)
-	M.ForceContractDisease(new /datum/disease/food_poisoning(0))
+	M.force_contagion(new /datum/affliction/contagion/food_poisoning(0))
 	return ..()
 
 /mob/living/carbon/human/proc/slime_color_shift(color_shift)

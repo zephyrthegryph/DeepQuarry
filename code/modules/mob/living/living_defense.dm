@@ -397,4 +397,4 @@
 
 /mob/living/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run)
 	. = ..()
-	EXTRAPOLATOR_ACT_ADD_DISEASES(., viruses)
+	EXTRAPOLATOR_ACT_ADD_DISEASES(., get_contagions())

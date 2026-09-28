@@ -211,6 +211,7 @@
 #include "dq_lesion_tests.dm"
 #include "dq_stabilisation_tests.dm"
 #include "dq_vital_systems_tests.dm"
+#include "dq_contagion_tests.dm"
 #include "dq_physiology_tests.dm"
 #include "dq_melee_swing_tests.dm"
 #include "dq_movement_tests.dm"

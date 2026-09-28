@@ -445,7 +445,7 @@ bit is left, `life_hibernate()` parks the mob.
 | statuses (root) | every counter at 0 and every alert cleared | |
 | canmove (root) | not stunned, weakened, paralysed or asleep | |
 | hud, vision (roots) | no component takes over the HUD or vision | 5 s with a client (darksight) |
-| modifiers, instability, diseases, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
+| modifiers, instability, tf holder, vr derez | nothing to expire, decay, spread or link; a VR mob inside the VR area | |
 | simple statuses, supernatural, healing, guts | counters at 0; purge 0; not hurt or not fed; no organ objects | |
 | environment (simple mob) | the air is survivable and the body has nothing for it to treat | 15 s (air changing in place) |
 | human hud refresh, voice, visible name | always | 1 min; 10 s; 10 s |

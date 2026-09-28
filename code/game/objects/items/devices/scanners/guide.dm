@@ -43,8 +43,8 @@
 			lines += line
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		for(var/datum/disease/D in H.GetViruses())
-			if(D.visibility_flags & HIDDEN_SCANNER)
+		for(var/datum/affliction/contagion/D in H.get_contagions())
+			if((D.visibility_flags & HIDDEN_SCANNER) || !global_flag_check(D.virus_modifiers, DISCOVERED))
 				continue
 			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin. Limit exposure to other personnel."
 			break
