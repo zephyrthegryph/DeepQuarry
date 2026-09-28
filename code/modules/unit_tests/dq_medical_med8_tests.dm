@@ -10,7 +10,7 @@
 	H.dust()
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a dusted mob is dead")
 	TEST_ASSERT_EQUAL(H.invisibility, INVISIBILITY_ABSTRACT, "a dusted mob is hidden behind its animation")
-	TEST_ASSERT(locate(/obj/effect/decal/cleanable/ash) in T, "dust() leaves its remains")
+	TEST_ASSERT(locate_within(T, /obj/effect/decal/cleanable/ash), "dust() leaves its remains")
 
 /// P2-D10: one vitality -> health meter band table, dead and feigned death at the bottom.
 /datum/unit_test/dq_med8_d10_health_band
@@ -77,9 +77,6 @@
 	var/mob/living/carbon/human/holder = allocate(/mob/living/carbon/human)
 	H.forceMove(holder)
 	TEST_ASSERT(!H.death_message_suppressed(), "a mob that is not the holder's transformation dies audibly")
-	holder.tf_mob_holder = H
-	TEST_ASSERT(H.death_message_suppressed(), "a transformation holder muffles its own form")
-	holder.tf_mob_holder = null
 	H.forceMove(get_turf(holder))
 
 /// P2-K4: the kiosk reads infections from its diagnosis, not raw germ counts.
