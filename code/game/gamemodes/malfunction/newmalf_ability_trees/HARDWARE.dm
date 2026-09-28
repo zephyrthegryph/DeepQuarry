@@ -113,7 +113,7 @@
 
 	if(SSticker)
 		var/datum/cinematic/malf/malf_type = /datum/cinematic/malf
-		play_cinematic(malf_type, world)
+		play_cinematic(malf_type)
 		// The station dies at the blast, once the intro has played (it slept through it before S10b).
 		om_after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
 

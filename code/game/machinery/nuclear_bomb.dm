@@ -462,7 +462,7 @@ GLOBAL_VAR(bomb_set)
 				cinematic_type = SSticker.mode.name == "mercenary" ? /datum/cinematic/nuke/ops_miss : /datum/cinematic/nuke/self_destruct_miss
 			if(2)
 				cinematic_type = /datum/cinematic/nuke/far_explosion
-		play_cinematic(cinematic_type, world)
+		play_cinematic(cinematic_type)
 		// The rest happens at the blast, once the intro has played (it slept through it before S10b).
 		om_after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), off_station, SSticker.mode.name == "mercenary")
 
