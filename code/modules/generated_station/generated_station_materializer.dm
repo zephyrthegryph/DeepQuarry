@@ -268,7 +268,7 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
 
-REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan"))
+REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validation", "tile_plan", "result"))
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
@@ -1649,3 +1649,5 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/area/generated_station/A = department_areas[node_id]
 		A.power_change()
 	transit_area.power_change()
+
+REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_validation"))

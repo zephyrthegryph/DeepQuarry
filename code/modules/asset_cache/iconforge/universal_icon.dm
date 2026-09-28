@@ -596,4 +596,4 @@
 
 	#undef PROCESS_OVERLAYS_OR_UNDERLAYS
 
-REF_OWNED(/datum/universal_icon, "icon_file")
+REF_OWNED(/datum/universal_icon, list("icon_file", "transform"))

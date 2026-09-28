@@ -150,3 +150,6 @@
 	for(var/obj/machinery/light/L in src)
 		L.subscribe_area_power()
 		L.area_power_changed()
+
+// Held: corners are shared by four turfs and freed by the lighting subsystem; turfs are never destroyed.
+REF_HELD(/turf, list("lighting_corner_NE", "lighting_corner_SE", "lighting_corner_SW", "lighting_corner_NW"))

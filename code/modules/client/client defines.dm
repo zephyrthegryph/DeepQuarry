@@ -196,3 +196,6 @@ REF_OWNED(/client, list("fakeConversations", "tooltips", "volume_panel", "loot_p
 
 /client/proc/declared_held_vars()
 	return null
+
+// prefs and persistent_client outlive the connection (GLOB.preferences_datums, GLOB.persistent_clients_by_ckey).
+REF_HELD(/client, list("prefs", "persistent_client"))

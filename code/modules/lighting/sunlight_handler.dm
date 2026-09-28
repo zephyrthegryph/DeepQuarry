@@ -388,3 +388,5 @@
 		return TRUE
 	else
 		return FALSE
+
+REF_OWNED(/turf/simulated, "shandler")

@@ -220,4 +220,4 @@
 	say_stand_down = list("Good.", "That's right run you lilly livers.")
 	say_escalate = list("Yarr! The booty is mine!", "Going to gut you landlubber.")
 
-REF_OWNED(/mob/living, list("deaf_loop", "firesoundloop"))
+REF_OWNED(/mob/living, list("deaf_loop", "firesoundloop", "say_list"))
