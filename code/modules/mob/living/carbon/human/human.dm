@@ -52,8 +52,7 @@
 		if(mind)
 			mind.name = real_name
 
-	nutrition = rand(200,400)
-
+	set_nutrition(rand(200,400))
 	. = ..()
 
 	hide_underwear.Cut()
@@ -1922,9 +1921,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()
 	VV_DROPDOWN_OPTION("", "---------")
-	//VV_DROPDOWN_OPTION(VV_HK_COPY_OUTFIT, "Copy Outfit")
-	//VV_DROPDOWN_OPTION(VV_HK_MOD_MUTATIONS, "Add/Remove Mutation")
-	//VV_DROPDOWN_OPTION(VV_HK_MOD_QUIRKS, "Add/Remove Quirks")
 	VV_DROPDOWN_OPTION(VV_HK_SET_SPECIES, "Set Species")
 	VV_DROPDOWN_OPTION(VV_HK_TURN_MONKEY, "Make Monkey")
 	VV_DROPDOWN_OPTION(VV_HK_TURN_ALIEN, "Make Alien")
@@ -1932,166 +1928,28 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	VV_DROPDOWN_OPTION(VK_HK_TURN_AI, "Make AI")
 	VV_DROPDOWN_OPTION(VK_HK_TURN_ROBOT, "Make Robot")
 
-	//VV_DROPDOWN_OPTION(VV_HK_PURRBATION, "Toggle Purrbation")
-	//VV_DROPDOWN_OPTION(VV_HK_APPLY_DNA_INFUSION, "Apply DNA Infusion")
-	//VV_DROPDOWN_OPTION(VV_HK_TURN_INTO_MMI, "Turn into MMI")
-
 /mob/living/carbon/human/vv_do_topic(list/href_list)
 	. = ..()
-
 	if(!.)
 		return
-
-	/*
-	if(href_list[VV_HK_COPY_OUTFIT])
-		if(!check_rights(R_SPAWN))
-			return
-		copy_outfit()
-
-	if(href_list[VV_HK_MOD_MUTATIONS])
-		if(!check_rights(R_SPAWN))
-			return
-		var/list/options = list("Clear"="Clear")
-		for(var/x in subtypesof(/datum/mutation))
-			var/datum/mutation/mut = x
-			var/name = initial(mut.name)
-			options[dna.check_mutation(mut) ? "[name] (Remove)" : "[name] (Add)"] = mut
-		var/result = tgui_input_list(usr, "Choose mutation to add/remove","Mutation Mod", sort_list(options))
-		if(result)
-			if(result == "Clear")
-				for(var/datum/mutation/mutation as anything in dna.mutations)
-					dna.remove_mutation(mutation, mutation.sources)
-			else
-				var/mut = options[result]
-				if(dna.check_mutation(mut))
-					var/datum/mutation/mutation = dna.get_mutation(mut)
-					dna.remove_mutation(mut, mutation.sources)
-				else
-					dna.add_mutation(mut, MUTATION_SOURCE_VV)
-
-	if(href_list[VV_HK_MOD_QUIRKS])
-		if(!check_rights(R_SPAWN))
-			return
-		var/list/options = list("Clear"="Clear")
-		for(var/type in subtypesof(/datum/quirk))
-			var/datum/quirk/quirk_type = type
-			if(initial(quirk_type.abstract_parent_type) == type)
-				continue
-			var/qname = initial(quirk_type.name)
-			options[has_quirk(quirk_type) ? "[qname] (Remove)" : "[qname] (Add)"] = quirk_type
-		var/result = tgui_input_list(usr, "Choose quirk to add/remove","Quirk Mod", sort_list(options))
-		if(result)
-			if(result == "Clear")
-				for(var/datum/quirk/q in quirks)
-					remove_quirk(q.type)
-			else
-				var/T = options[result]
-				if(has_quirk(T))
-					remove_quirk(T)
-				else
-					add_quirk(T)
-	*/
 
 	if(href_list[VV_HK_SET_SPECIES])
 		if(!check_rights(R_SPAWN))
 			return
 		om_ask(usr, /datum/om/prompt/choice, PROC_REF(vv_species_chosen), message = "Please choose a new species", title = "Species", choices = sortTim(GLOB.all_species, GLOBAL_PROC_REF(cmp_text_asc)), requires = PROMPT_ADMIN(R_SPAWN))
 
-	if(href_list[VV_HK_TURN_MONKEY])
-		if(!check_rights(R_SPAWN))	return
-		vv_confirm_transform(usr, "monkey")
-
-	if(href_list[VV_HK_TURN_ALIEN])
-		if(!check_rights(R_SPAWN))	return
-		vv_confirm_transform(usr, "alien")
-
 	if(href_list[VK_HK_TURN_SKELETON])
 		if(!check_rights(R_FUN))
 			return
-
-		var/mob/living/carbon/human/H = src
-		if(!istype(H))
-			to_chat(usr, "This can only be used on instances of type /mob/living/carbon/human")
-			return
-
-		H.ChangeToSkeleton()
+		ChangeToSkeleton()
 		href_list[VV_HK_DATUM_REFRESH] = "\ref[src]"
 
-	if(href_list[VK_HK_TURN_AI])
-		if(!check_rights(R_SPAWN))
-			return
-
-		var/mob/living/carbon/human/H = src
-		if(!istype(H))
-			to_chat(usr, "This can only be done to instances of type /mob/living/carbon/human")
-			return
-
-		vv_confirm_transform(usr, "ai")
-
-	if(href_list[VK_HK_TURN_ROBOT])
-		if(!check_rights(R_SPAWN))	return
-		vv_confirm_transform(usr, "robot")
-
-	/*
-	if(href_list[VV_HK_PURRBATION])
-		if(!check_rights(R_SPAWN))
-			return
-		if(!ishuman(src))
-			to_chat(usr, "This can only be done to human species at the moment.")
-			return
-		var/success = purrbation_toggle(src)
-		if(success)
-			to_chat(usr, "Put [src] on purrbation.")
-			log_admin("[key_name(usr)] has put [key_name(src)] on purrbation.")
-			var/msg = span_notice("[key_name_admin(usr)] has put [key_name(src)] on purrbation.")
-			message_admins(msg)
-			admin_ticket_log(src, msg)
-		else
-			to_chat(usr, "Removed [src] from purrbation.")
-			log_admin("[key_name(usr)] has removed [key_name(src)] from purrbation.")
-			var/msg = span_notice("[key_name_admin(usr)] has removed [key_name(src)] from purrbation.")
-			message_admins(msg)
-			admin_ticket_log(src, msg)
-
-	if(href_list[VV_HK_APPLY_DNA_INFUSION])
-		if(!check_rights(R_SPAWN))
-			return
-		if(!ishuman(src))
-			to_chat(usr, "This can only be done to human species.")
-			return
-		var/result = usr.client.grant_dna_infusion(src)
-		if(result)
-			to_chat(usr, "Successfully applied DNA Infusion [result] to [src].")
-			log_admin("[key_name(usr)] has applied DNA Infusion [result] to [key_name(src)].")
-		else
-			to_chat(usr, "Failed to apply DNA Infusion to [src].")
-			log_admin("[key_name(usr)] failed to apply a DNA Infusion to [key_name(src)].")
-
-	if(href_list[VV_HK_TURN_INTO_MMI])
-		if(!check_rights(R_DEBUG))
-			return
-
-		var/result = tgui_alert(usr, "This will delete the mob, are you sure?", "Turn into MMI", list("Yes", "No"))
-		if(result != "Yes")
-			return
-
-		var/obj/item/organ/brain/target_brain = get_organ_slot(ORGAN_SLOT_BRAIN)
-
-		if(isnull(target_brain))
-			to_chat(usr, "This mob has no brain to insert into an MMI.")
-			return
-
-		var/obj/item/mmi/new_mmi = new(get_turf(src))
-
-		target_brain.Remove(src)
-		new_mmi.force_brain_into(target_brain)
-
-		to_chat(usr, "Turned [src] into an MMI.")
-		log_admin("[key_name(usr)] turned [key_name_and_tag(src)] into an MMI.")
-
-		qdel(src)
-	*/
-
+	var/static/list/transforms = list(VV_HK_TURN_MONKEY = "monkey", VV_HK_TURN_ALIEN = "alien", VK_HK_TURN_AI = "ai", VK_HK_TURN_ROBOT = "robot")
+	for(var/hk in transforms)
+		if(href_list[hk])
+			if(!check_rights(R_SPAWN))
+				return
+			vv_confirm_transform(usr, transforms[hk])
 
 /mob/living/carbon/human/proc/vv_species_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
