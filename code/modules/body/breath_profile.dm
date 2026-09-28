@@ -54,6 +54,7 @@
 
 /// How this mob breathes (a /datum/breath_profile), or null.
 /mob/living/proc/breath_profile()
+	RETURN_TYPE(/datum/breath_profile)
 	return body?.breath_profile()
 
 /// The one writer of does_not_breathe (changeling self-respiration, the nobreathe trait,

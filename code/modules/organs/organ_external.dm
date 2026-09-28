@@ -1395,7 +1395,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	// flag so the guard below passes, force-keep organs, and restore the
 	// nanoform vars afterwards.
 	var/original_robotic = robotic
-	var/restore_nanoform = (original_is_nanoform())
+	var/restore_nanoform = (original_robotic >= ORGAN_NANOFORM)
 	var/o_encased
 	var/o_max_damage
 	var/o_min_broken_damage
