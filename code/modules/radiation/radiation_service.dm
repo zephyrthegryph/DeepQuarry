@@ -57,12 +57,15 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		profile_source_cost_ms[source_type] += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
 		profile_source_targets[source_type] += targets_before - pulse_information.remaining_targets()
 
+		// A pulse that has reached all its targets leaves the queue before any yield,
+		// or an overloaded tick would keep re-running a finished pulse forever.
+		if(!pulse_information.remaining_targets())
+			profile_pulses_completed++
+			processing.Cut(1, 2)
+
 		if (TICK_CHECK)
 			profile_yields++
 			return FALSE
-
-		profile_pulses_completed++
-		processing.Cut(1, 2)
 	return TRUE
 
 /datum/world_service/radiation/proc/performance_diagnostics()
