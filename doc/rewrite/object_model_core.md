@@ -555,7 +555,7 @@ bellies back to its master, a projectile drawing tracers from its owned segments
 What is left, a real domain consequence, is the type's `on_destroy(force)`, run right after
 `lifecycle_prerelease()` (declared vars and handles still live), then each behaviour's
 `on_entity_destroy(E)`; the core `Destroy()` chain runs later, in phase 7. A partner that holds us in a
-list and that we name by handle is `REF_BACKLIST_HANDLE(type, list("gen_handle" = "fields"))`. `Destroy()` itself is overridden only by the core chain (`/datum`, `/atom`,
+list and that we name by handle is `REF_BACKLIST_HANDLE(type, list("gen_handle" = "fields"))` (the value may be keyed by partner type); a partner we name by handle whose var names us back is `REF_BACK_HANDLE(type, list("owner_handle" = "panel"))`. `Destroy()` itself is overridden only by the core chain (`/datum`, `/atom`,
 `/atom/movable`, `/client`, `/datum/controller`); `lifecycle_counts_lint.py` bans every other
 override. The GC hint is the `destroy_hint` type var; refusing deletion is `lifecycle_keep(force)`
 or `LIFECYCLE_KEEP_UNLESS_FORCED(type)`, checked before the transaction starts.
