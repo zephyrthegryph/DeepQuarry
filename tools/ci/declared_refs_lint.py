@@ -11,6 +11,12 @@ Every object-typed var on a datum is declared as exactly one kind:
     REF_PAIR             two-sided, kept in sync by link_set()/link_clear() --
                          declared_pair_vars()
     REF_BACKLIST         membership in another object's list -- declared_backlist_vars()
+    REF_DEF              a frozen definition / registry object, never deleted --
+                         declared_def_vars(); implicit for types in DEF_TYPES
+                         (state_schema_lint.py), which need no declaration
+    REF_TRANSIENT        a pooled type's per-use field, reset by pool_release() --
+                         declared_transient_vars(); an error on a type that isn't
+                         POOL_DECLAREd
     handle               a text var holding om_handle(x) -- resolved on read, never cleaned
     tmp cache            `tmp` (or `static`/`global`/`const`) -- scrubbed or shared,
                          not a per-instance relationship at all
@@ -71,33 +77,11 @@ OBJLIST_ALLOWLIST = os.path.join(ROOT, "tools", "ci", "object_keyed_lists_allowl
 EXCLUDED_DIRS = ()
 
 UNSAVED_MODS = {"tmp", "static", "global", "const", "final"}
-DECLARED_PROCS = (
-    "declared_owned_vars",
-    "declared_owned_list_vars",
-    "declared_owned_value_vars",
-    "declared_spill_vars",
-    "declared_spill_list_vars",
-    "declared_held_vars",
-    "declared_pair_vars",
-    "declared_backlist_vars",
-    "declared_cache_vars",
-)
+# The REF_* kinds, REF_VAR forms, pooled types and implicit REF_DEF types (ref_kinds.py).
+from ref_kinds import DECLARED_PROCS, REF_MACRO, REF_MACRO_PROC, is_def_type, is_pooled, ref_var_decl  # noqa: E402
 # Declarations that make an instance list var a legitimate holder of objects.
-OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "declared_spill_list_vars",
+OBJLIST_PROCS = ("declared_owned_list_vars", "declared_owned_value_vars", "declared_spill_list_vars", "declared_def_vars",
                  "declared_cache_vars")
-# The one-line forms (code/__defines/lifecycle.dm): REF_OWNED(/type, NAMES) and friends expand to
-# the matching declared_*_vars() override.
-REF_MACRO = re.compile(r"^REF_(OWNED_LIST|OWNED_VALUES|OWNED|SPILL_LIST|SPILL|HELD|PAIR|BACKLIST)\(\s*(/[\w/]+)\s*,(.*)\)\s*$")
-REF_MACRO_PROC = {
-    "OWNED": "declared_owned_vars",
-    "OWNED_LIST": "declared_owned_list_vars",
-    "OWNED_VALUES": "declared_owned_value_vars",
-    "SPILL": "declared_spill_vars",
-    "SPILL_LIST": "declared_spill_list_vars",
-    "HELD": "declared_held_vars",
-    "PAIR": "declared_pair_vars",
-    "BACKLIST": "declared_backlist_vars",
-}
 CACHE_ENTRY = re.compile(r'"(\w+)"\s*(=\s*(\S.*?))?\s*,?\s*$')
 CACHE_RULE = re.compile(r"^CACHE_ON_(CHANGE|EVENT|RELATION)\(")
 
@@ -163,6 +147,11 @@ def scan_file(path):
     cur_owner, cur_proc, capturing, cur_line = None, None, [], 0
 
     def close(owner, proc, body, line):
+        if proc == "declared_transient_vars" and declared_names(body) and not is_pooled(owner):
+            cache_errors.append("%s:%d: %s declares REF_TRANSIENT %s but is not a pooled type "
+                                "(POOL_DECLARE); transient fields exist only on pooled objects"
+                                % (rel, line, owner, ", ".join(sorted(declared_names(body)))))
+            return
         declared.setdefault(owner, set()).update(declared_names(body))
         if proc in OBJLIST_PROCS:
             objlist_ok.update(declared_names(body))
@@ -191,6 +180,10 @@ def scan_file(path):
             m = REF_MACRO.match(stripped.rstrip())
             if m:
                 close(m.group(2), REF_MACRO_PROC[m.group(1)], [m.group(3)], no)
+                continue
+            decl = ref_var_decl(stripped.rstrip())
+            if decl:
+                close(decl[0], REF_MACRO_PROC[decl[1]], ['"%s"' % decl[3]], no)
                 continue
             m = PROC_HEADER.match(stripped.rstrip())
             if m:
@@ -231,6 +224,9 @@ def scan_file(path):
         if not under(vtype, REF_ROOTS):
             continue
         if name in declared.get(cur_type, ()):
+            continue
+        # A frozen definition or registry object (DEF_TYPES): an implicit REF_DEF.
+        if is_def_type(vtype):
             continue
         # A task's vars are its state: every datum in them is held by the task_holds relation,
         # which clears the var and cancels the task when the datum is deleted (the same rule as
@@ -456,7 +452,7 @@ def main(argv):
             where = ["%s:%d: %s" % s for s in sites if s[0] == rel]
             failures.append(
                 "%s has %d undeclared object-typed var(s), allowed %d. Declare each as "
-                "REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (code/datums/lifecycle/links.dm), "
+                "REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST/REF_DEF (code/__defines/lifecycle.dm), "
                 "tmp, or an OM handle:\n    %s" % (rel, counts[rel], limit, "\n    ".join(where))
             )
         elif counts[rel] < limit:

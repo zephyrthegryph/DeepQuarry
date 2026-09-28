@@ -7,6 +7,8 @@
 //   - REF_BACKLIST             membership in another object's list, removed automatically
 //   - handle (om_handle())     the default for everything else -- resolved on read, never cleaned
 //   - tmp cache                recomputable; scrubbed in phase 8
+//   - REF_DEF                  a frozen definition or registry object: nothing to clear
+//   - REF_TRANSIENT            a pooled object's per-use field, reset by pool_release()
 //
 // A type declares its kinds by overriding one or more of the four procs
 // below, each returning a proc-local `var/static/list` (the usual pattern
@@ -76,6 +78,17 @@
 /// rule fires (om_cache_scan(), entity.dm), and tools/ci/declared_refs_lint.py
 /// rejects an entry with no rule.
 /datum/proc/declared_cache_vars()
+	return null
+
+/// Names of `src`'s vars that point at frozen definitions or registry objects
+/// (REF_DEF): never deleted, so destruction leaves them alone. Read by the lint
+/// and by tests; nothing at runtime needs them.
+/datum/proc/declared_def_vars()
+	return null
+
+/// Names of a pooled type's per-use fields (REF_TRANSIENT): pool_release()
+/// resets each to its initial value (code/datums/lifecycle/pool.dm).
+/datum/proc/declared_transient_vars()
 	return null
 
 /// `D`'s declared_*_vars() results, cached per type on first use (see file

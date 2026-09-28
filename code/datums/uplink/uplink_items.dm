@@ -5,6 +5,8 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	var/list/datum/uplink_item/items
 	var/list/datum/uplink_category/categories
 
+REF_DEF(/datum/uplink, list("items", "categories"))
+
 /datum/uplink/New(type)
 	items_assoc = list()
 	items = init_subtypes(/datum/uplink_item)
@@ -32,6 +34,8 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	var/datum/uplink_category/category		// Item category
 	var/list/datum/antagonist/antag_roles	// Antag roles this item is displayed to. If empty, display to all.
 	var/blacklisted = FALSE
+
+REF_DEF(/datum/uplink_item, list("category"))
 
 /datum/uplink_item/item
 	var/path = null

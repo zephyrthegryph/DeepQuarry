@@ -2,6 +2,8 @@
 	var/name = ""
 	var/list/datum/uplink_item/items
 
+REF_DEF(/datum/uplink_category, list("items"))
+
 /datum/uplink_category/New()
 	..()
 	items = list()

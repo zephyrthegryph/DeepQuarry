@@ -3,7 +3,7 @@
 # this file: a file may not exceed its count. Make the list an owned-children
 # list, a backlist, a declared cache with an invalidation rule, a relation or
 # a registry, or key it by OM handle, and lower the count with --update.
-# Total: 265 writes in 123 files.
+# Total: 261 writes in 121 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
@@ -112,8 +112,6 @@ code/modules/reagents/machinery/dispenser/chem_synthesizer.dm 1
 code/modules/reagents/machinery/dispenser/dispenser2.dm 1
 code/modules/recycling/conveyor2.dm 2
 code/modules/research/message_server.dm 1
-code/modules/research/tg/machinery/_production.dm 1
-code/modules/research/tg/machinery/mech_fabricator.dm 3
 code/modules/resleeving/computers.dm 4
 code/modules/resleeving/implant.dm 2
 code/modules/scripting/Parser/Parser.dm 11
