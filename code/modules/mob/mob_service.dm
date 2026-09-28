@@ -28,7 +28,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 		insert_deaths(batch)
 	if(!profile_next_dump)
 		profile_next_dump = world.time + 2 MINUTES
-	else if(world.time >= profile_next_dump)
+	else if(world.time >= profile_next_dump) // ALLOW(cooldown): scheduled profile dump time in service
 		dump_profile()
 	return TRUE
 

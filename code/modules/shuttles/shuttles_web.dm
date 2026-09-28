@@ -10,7 +10,7 @@
 	var/cloaked = FALSE
 	var/can_cloak = FALSE
 	var/cooldown = 0
-	var/last_move = 0	//the time at which we last moved
+	COOLDOWN_DECLARE(drive_cooldown)	//the drive is charging until cooldown after we last moved
 	var/datum/shuttle_web_master/web_master = null
 	var/web_master_type = null
 	var/flight_time_modifier = 1.0
@@ -45,7 +45,7 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 /datum/shuttle/autodock/web_shuttle/perform_shuttle_move()
 	..()
-	last_move = world.time
+	COOLDOWN_START(src, drive_cooldown, cooldown)
 
 /datum/shuttle/autodock/web_shuttle/short_jump()
 	. = ..()
@@ -356,7 +356,7 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 				to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 				return
 
-			if((WS.last_move + WS.cooldown) > world.time)
+			if(COOLDOWN_TIMELEFT(WS, drive_cooldown) > 0)
 				to_chat(ui.user, span_red("The ship's drive is inoperable while the engines are charging."))
 				return
 

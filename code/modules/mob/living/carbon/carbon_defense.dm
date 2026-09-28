@@ -97,7 +97,7 @@
 		if(W.hitsound)
 			playsound(src, W.hitsound, 50, 1, -1)
 
-	G.last_action = world.time
+	G.note_action()
 	flick(G.hud.icon_state, G.hud)
 
 	add_attack_logs(user,src,"Knifed (throat slit)")

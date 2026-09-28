@@ -749,7 +749,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	PRIVATE_PROC(TRUE)
 
 	if(speed_process) // Even while in fast processing mode we want to popdown and heal at the tickrate of the standard machine loop.
-		if(world.time < (last_process_time + MACHINE_SERVICE_INTERVAL))
+		if(world.time < (last_process_time + MACHINE_SERVICE_INTERVAL)) // ALLOW(cooldown): service tick interval gating
 			return
 		last_process_time = world.time
 

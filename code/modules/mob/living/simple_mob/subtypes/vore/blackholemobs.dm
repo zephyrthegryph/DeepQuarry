@@ -609,7 +609,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	vore_active = 0
 
 	var/scent_strength = 5 //How much can a hungry pitcher confuse nearby people?
-	var/last_lifechecks = 0 //Timing variable to limit vore/hungry proc calls
+	COOLDOWN_DECLARE(lifechecks_cooldown) //Throttle to limit vore/hungry proc calls
 	var/list/obelisk_lure_messages = null
 
 	old_x = -16
@@ -658,8 +658,8 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	..()
 	if(!ctx.fact("alive"))
 		return
-	if(world.time > self.last_lifechecks + 15 SECONDS)
-		self.last_lifechecks = world.time
+	if(COOLDOWN_FINISHED(self, lifechecks_cooldown))
+		COOLDOWN_START(self, lifechecks_cooldown, 15 SECONDS)
 		self.handle_hungry()
 
 // hackified shitcode poached from the pitcher plant for ~~cool flavor text~~ when you're near either 'structure'

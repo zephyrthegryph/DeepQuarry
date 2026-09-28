@@ -6,8 +6,8 @@
 	var/harvest_cooldown = 10 MINUTES
 	// How long does it take to harvest?
 	var/harvest_delay = 30 SECONDS
-	// What world.time was the last harvest?
-	var/harvest_recent = 0
+	// When can we be harvested again? (harvest_cooldown after the last harvest)
+	COOLDOWN_DECLARE(harvest_ready_cooldown)
 	// How many times can we roll at max on the chance table?
 	var/harvest_per_hit = 1
 	// Verb for harvesting. "sheared" "clipped" etc.
@@ -19,7 +19,7 @@
 	. = ..()
 	if(stat != DEAD && user && harvest_tool && (get_dist(user, src) <= 3))
 		. += span_notice("\The [src] can be [harvest_verb] with a [initial(harvest_tool.name)] every [harvest_cooldown / 600] minutes.")
-		var/time_to_harvest = (harvest_recent + harvest_cooldown) - world.time
+		var/time_to_harvest = COOLDOWN_TIMELEFT(src, harvest_ready_cooldown)
 		if(time_to_harvest > 0)
 			. += span_notice("It can be [harvest_verb] in [(time_to_harvest)] second(s).")
 		else
@@ -32,11 +32,11 @@
 
 /mob/living/simple_mob/proc/livestock_harvest(obj/item/tool, mob/living/user)
 	if(!LAZYLEN(harvest_results))	// Might be a unique interaction of an object using the proc to do something weird, or just someone's a donk.
-		harvest_recent = world.time
+		COOLDOWN_START(src, harvest_ready_cooldown, harvest_cooldown)
 		return
 
 	if(istype(tool, harvest_tool))	// Sanity incase something incorrect is passed in.
-		harvest_recent = world.time
+		COOLDOWN_START(src, harvest_ready_cooldown, harvest_cooldown)
 
 		var/max_harvests = rand(1,harvest_per_hit)
 

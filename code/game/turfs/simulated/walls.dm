@@ -1441,8 +1441,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/door/firedoor/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 //////////////////////////////////////
@@ -1459,8 +1458,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/security/telescreen/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1475,8 +1473,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/doorbell_chime/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1491,8 +1488,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/status_display/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1507,8 +1503,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/requests_console/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1523,8 +1518,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/atm/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1539,8 +1533,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/newscaster/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1555,8 +1548,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/recharger/wallcharger/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1571,8 +1563,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/firealarm/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1587,8 +1578,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/alarm/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1603,8 +1593,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/guestpass/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1619,8 +1608,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/item/radio/intercom/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1635,8 +1623,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/keycard_auth/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1651,8 +1638,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/item/geiger/wall/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1667,8 +1653,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/button/windowtint/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1683,8 +1668,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/id_restorer/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1699,8 +1683,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/computer/timeclock/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1715,8 +1698,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/station_map/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1731,8 +1713,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/trash_pile/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1747,8 +1728,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/loot_pile/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1763,8 +1743,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/frame/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1779,8 +1758,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/ai_status_display/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1795,8 +1773,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/light/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1811,8 +1788,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/hologram/holopad/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1827,8 +1803,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/light_switch/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1843,8 +1818,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/table/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1859,8 +1833,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/conveyor/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1875,8 +1848,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/door/window/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1891,8 +1863,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/firedoor_assembly/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1907,8 +1878,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/structure/door_assembly/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
 
@@ -1923,7 +1893,12 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 
 /obj/machinery/button/doorbell/rcd_act(mob/living/user, obj/item/rcd/the_rcd, passed_mode)
 	if(passed_mode == RCD_DECONSTRUCT)
-		to_chat(user, span_notice("You deconstruct \the [src]."))
-		qdel(src)
+		rcd_deconstruct(user)
 		return TRUE
 	return FALSE
+
+/// The shared RCD deconstruct: tell the user and destroy the target. Every rcd_act() above that
+/// simply removes its atom goes through here, so the removal has one site (D-qdel).
+/atom/proc/rcd_deconstruct(mob/living/user)
+	to_chat(user, span_notice("You deconstruct \the [src]."))
+	qdel(src)

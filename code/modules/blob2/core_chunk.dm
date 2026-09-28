@@ -9,12 +9,12 @@
 	var/datum/blob_type/blob_type	// The blob type this dropped from.
 
 	var/active_ability_cooldown = 20 SECONDS
-	var/last_active_use = 0
+	COOLDOWN_DECLARE(active_use_cooldown)
 
 	var/should_tick = TRUE	// Incase it's a toggle.
 
 	var/passive_ability_cooldown = 5 SECONDS
-	var/last_passive_use = 0
+	COOLDOWN_DECLARE(passive_use_cooldown)
 
 	var/can_genesis = TRUE	// Can the core chunk be used to grow a new blob?
 
@@ -82,8 +82,8 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 
 /// Old attack_self.
 /obj/item/blobcore_chunk/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(blob_type && world.time > active_ability_cooldown + last_active_use)
-		last_active_use = world.time
+	if(blob_type && COOLDOWN_FINISHED(src, active_use_cooldown))
+		COOLDOWN_START(src, active_use_cooldown, active_ability_cooldown)
 		to_chat(user, span_alien("[icon2html(src, user.client)] \The [src] gesticulates."))
 		blob_type.on_chunk_use(src, user)
 	else
@@ -91,8 +91,8 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 	return TRUE
 
 /obj/item/blobcore_chunk/periodic_step()
-	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
-		last_passive_use = world.time
+	if(blob_type && should_tick && COOLDOWN_FINISHED(src, passive_use_cooldown))
+		COOLDOWN_START(src, passive_use_cooldown, passive_ability_cooldown)
 		blob_type.on_chunk_tick(src)
 
 /// Old click_alt.

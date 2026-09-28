@@ -18,7 +18,7 @@
 	var/close_blastdoors 	= TRUE	//close all blast doors in the area when triggered?
 	var/power_fields	= TRUE	//do we activate all ARFs when triggered? use w/ impassable fieldgens. requires area_lockdown = TRUE to do anything.
 
-	var/last_trigger			//when were we last triggered? combined with the cooldown below for sanity reasons
+	COOLDOWN_DECLARE(trigger_cooldown)	//retrigger lockout, started with the cooldown below for sanity reasons
 	var/cooldown		= 15 SECONDS	//minimum time between retriggers, so people can't spam trigger the scanner to be obnoxious
 	var/auto_cancel		= TRUE	//automatically cancel alarm states after a delay? same duration as the cooldown for sanity
 	var/trigger_message	=	"The contraband scanner has been tripped!"
@@ -31,7 +31,7 @@
 		return
 	if(isliving(M))
 		var/area/A = src.loc.loc
-		if(last_trigger > world.time - cooldown)
+		if(COOLDOWN_TIMELEFT(src, trigger_cooldown))
 			return
 		for(var/obj/O in contents_of(M))
 			if(is_type_in_list(O,contraband))
@@ -40,11 +40,11 @@
 				for(var/obj/O2 in contents_of(O))	//one layer deep is fine for now I think
 					if(is_type_in_list(O2,contraband))
 						contraband_count++
-		if(contraband_count && last_trigger < world.time - cooldown)
+		if(contraband_count && COOLDOWN_FINISHED(src, trigger_cooldown))
 			visible_message(span_danger(trigger_message))
 			playsound(src, trigger_sound, 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
 			for(var/obj/machinery/contraband_scanner/CS in area_contents_of_type(A, /obj/machinery/contraband_scanner))
-				CS.last_trigger = world.time	//set everyone's trigger time at once, to cut down on spam
+				COOLDOWN_START(CS, trigger_cooldown, CS.cooldown)	//set everyone's trigger time at once, to cut down on spam
 				CS.contraband_count = 0		//clear all our contraband counts too
 			if(area_lockdown)
 				if(close_blastdoors)

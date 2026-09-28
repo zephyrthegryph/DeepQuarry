@@ -23,7 +23,10 @@
 	var/state = GRAB_PASSIVE
 
 	var/allow_upgrade = 1
-	var/last_action = 0
+	/// Blocks grab upgrades until UPGRADE_COOLDOWN after the last grab action.
+	COOLDOWN_DECLARE(upgrade_cooldown)
+	/// Blocks special grab moves until 2 seconds after the last grab action.
+	COOLDOWN_DECLARE(action_cooldown)
 	var/last_hit_zone = 0
 	var/force_down //determines if the affecting mob will be pinned to the ground
 	var/dancing //determines if assailant and affecting keep looking at each other. Basically a wrestling position
@@ -236,13 +239,13 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 		return
 	if(state == GRAB_UPGRADING)
 		return
-	if(world.time < (last_action + UPGRADE_COOLDOWN))
+	if(!COOLDOWN_FINISHED(src, upgrade_cooldown))
 		return
 	if(!assailant.canmove || assailant.lying)
 		qdel(src)
 		return
 
-	last_action = world.time
+	note_action()
 
 	if(state < GRAB_AGGRESSIVE)
 		if(!allow_upgrade)
@@ -304,10 +307,10 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	var/mob/living/affecting = src?.grab_target()
 	if(!affecting)
 		return ITEM_INTERACT_FAILURE
-	if(world.time < (last_action + 20))
+	if(!COOLDOWN_FINISHED(src, action_cooldown))
 		return ITEM_INTERACT_FAILURE
 
-	last_action = world.time
+	note_action()
 	reset_kill_state() //using special grab moves will interrupt choking them
 
 	//clicking on the victim while grabbing them
@@ -404,3 +407,8 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 DECLARE_REF(/obj/item/grab, "hud", OWNED, null)
 
 #undef UPGRADE_KILL_TIMER
+
+/// Starts both grab action cooldowns (upgrade and special-move) together.
+/obj/item/grab/proc/note_action()
+	COOLDOWN_START(src, upgrade_cooldown, UPGRADE_COOLDOWN)
+	COOLDOWN_START(src, action_cooldown, 2 SECONDS)

@@ -63,7 +63,7 @@
 	layer = ABOVE_WINDOW_LAYER
 	var/id = null
 	var/disable = 0
-	var/last_spark = 0
+	COOLDOWN_DECLARE(spark_cooldown)
 	var/base_state = "migniter"
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
@@ -102,14 +102,14 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	if(!(powered()))
 		return
 
-	if((disable) || (last_spark && world.time < last_spark + 50))
+	if((disable) || !COOLDOWN_FINISHED(src, spark_cooldown))
 		return
 
 	flick("[base_state]-spark", src)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(2, 1, src)
 	s.start()
-	last_spark = world.time
+	COOLDOWN_START(src, spark_cooldown, 5 SECONDS)
 	use_power(1000)
 	var/turf/location = src.loc
 	if(isturf(location))

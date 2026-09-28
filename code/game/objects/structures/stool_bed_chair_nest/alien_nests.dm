@@ -24,9 +24,9 @@
 				buckled_mob.old_y = 0
 				unbuckle_mob(buckled_mob)
 			else
-				if(world.time <= buckled_mob.last_special+NEST_RESIST_TIME)
+				if(!COOLDOWN_FINISHED(buckled_mob, last_special))
 					return
-				buckled_mob.last_special = world.time
+				COOLDOWN_START(buckled_mob, last_special, NEST_RESIST_TIME)
 				buckled_mob.visible_message(\
 					span_warning("[buckled_mob.name] struggles to break free of the gelatinous resin..."),\
 					span_warning("You struggle to break free from the gelatinous resin..."),\
@@ -38,7 +38,7 @@
 /// The end of a struggle out of the resin.
 /obj/structure/bed/nest/proc/struggle_free(mob/user, mob/living/buckled_mob)
 	if(user?.buckled_to() == src)
-		buckled_mob.last_special = world.time
+		COOLDOWN_START(buckled_mob, last_special, NEST_RESIST_TIME)
 		buckled_mob.pixel_y = 0
 		buckled_mob.old_y = 0
 		unbuckle_mob(buckled_mob)

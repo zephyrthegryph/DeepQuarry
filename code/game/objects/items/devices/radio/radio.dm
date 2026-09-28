@@ -10,7 +10,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	item_state = "radio"
 
 	var/on = 1 // 0 for off
-	var/last_transmission
+	COOLDOWN_DECLARE(transmission_cooldown)
 	var/frequency = PUB_FREQ //common chat
 	var/traitor_frequency = 0 //tune to frequency to unlock traitor supplies
 	var/canhear_range = 3 // the range which mobs can hear this radio from

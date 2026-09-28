@@ -245,7 +245,8 @@
 	// Each disarm knocks the item loose 60% of the time.
 	for(var/i in 1 to 20)
 		attacker.next_click = 0
-		victim.last_push_time = 0
+		COOLDOWN_RESET(victim, push_lying_cooldown)
+		COOLDOWN_RESET(victim, disarm_cooldown)
 		attacker.attack_variant_key(ATTACK_VARIANT_DISARM)
 		GLOB.input_router.route_click(attacker, victim, "left=1")
 		attacker.attack_variant_key_release(ATTACK_VARIANT_DISARM)

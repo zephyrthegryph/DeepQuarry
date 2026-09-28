@@ -205,7 +205,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 	var/generator_state = GEN_OFF
 	var/datum/looping_sound/small_motor/soundloop
-	var/time_started //to keep the soundloop from being "stopped" too soon and playing indefinitely
+	COOLDOWN_DECLARE(stop_lockout_cooldown) //to keep the soundloop from being "stopped" too soon and playing indefinitely
 
 /obj/item/gun/magnetic/matfed/phoronbore/consume_next_projectile()
 	if(!check_ammo() || !capacitor || capacitor.charge < power_cost)
@@ -277,7 +277,7 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop", OWNED, null)
 		generator_state = GEN_STARTING
 		pull_cord(user, (!cell || cell.charge < 100) ? rand(1,4) : 0)
 
-	else if(generator_state > GEN_OFF && time_started + 3 SECONDS < world.time)
+	else if(generator_state > GEN_OFF && COOLDOWN_FINISHED(src, stop_lockout_cooldown))
 		soundloop.stop()
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		generator_state = GEN_OFF
@@ -289,7 +289,7 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop", OWNED, null)
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(pull_cord), list(user, pulls - 1), on_fail = PROC_REF(pull_abandoned))
 		return
 	soundloop.start()
-	time_started = world.time
+	COOLDOWN_START(src, stop_lockout_cooldown, 3 SECONDS)
 	cell?.use(100)
 	audible_message(span_notice("\The [src] starts chugging."),span_notice("A motor noise starts up."), runemessage = "whirr")
 	generator_state = GEN_IDLE

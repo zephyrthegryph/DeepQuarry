@@ -334,7 +334,7 @@ DECLARE_REF(/datum/physiology, "body", BACK, "physiology")
 	log_runtime("PHYSIOLOGY: [key_name(body?.owner)] circulation restored by [source]; post-revival grace for [PHYSIOLOGY_REVIVAL_GRACE / (1 SECONDS)]s with [round(oxygen_debt)] debt outstanding")
 
 /datum/physiology/proc/in_revival_grace()
-	return revival_grace_until && world.time < revival_grace_until
+	return revival_grace_until && world.time < revival_grace_until // ALLOW(cooldown): revival grace deadline in body model
 
 /datum/physiology/proc/add_debt(amount, source)
 	var/before = oxygen_debt

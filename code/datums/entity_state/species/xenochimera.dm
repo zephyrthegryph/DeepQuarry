@@ -327,7 +327,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		if(REVIVING_DONE)
 			to_chat(owner, "Your reconstruction is done, but you need to hatch now.")
 			return
-	if(revive_ready > world.time)
+	if(revive_ready > world.time) // ALLOW(cooldown): revive readiness deadline, shared with elapsed display
 		to_chat(owner, "You can't use that ability again so soon!")
 		return
 

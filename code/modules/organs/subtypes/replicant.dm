@@ -149,7 +149,7 @@
 	desc = "A mass of rubber, muscle, and complex chemical networks used for pumping fluid."
 	description_info = "This organ, when connected properly to the body, will attempt to induce an adrenaline surge in the implantee."
 	var/prev_damage_tally = 0
-	var/last_activation_time = 0
+	COOLDOWN_DECLARE(activation_cd)
 	/// Minimum time between surges.
 	var/activation_cooldown = 60 SECONDS
 	/// How long a surge lasts.
@@ -167,8 +167,8 @@
 	pain_tally += owner.current_pain()
 
 	if(((damage_tally >= 50 || prev_damage_tally >= 50) && prev_damage_tally - damage_tally < 0) || pain_tally >= 60)
-		if(world.time > last_activation_time + activation_cooldown)
-			last_activation_time = world.time
+		if(COOLDOWN_FINISHED(src, activation_cd))
+			COOLDOWN_START(src, activation_cd, activation_cooldown)
 			owner.apply_body_effect(/datum/body_effect/berserk, berserk_duration)
 			apply_lesion_damage(5)
 	prev_damage_tally = damage_tally

@@ -23,6 +23,8 @@
 	var/recharge_time = 4
 	var/charge_tick = 0
 	var/charge_delay = 75	//delay between firing and charging
+	/// Self-recharge is held off until charge_delay after the last shot.
+	COOLDOWN_DECLARE(recharge_cooldown)
 	var/shot_counter = TRUE // does this gun tell you how many shots it has?
 
 	var/battery_lock = 0	//If set, weapon cannot switch batteries
@@ -48,7 +50,7 @@
 
 /obj/item/gun/energy/periodic_step()
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the battery
-		if(world.time > last_shot + charge_delay)	//Doesn't work if you've fired recently
+		if(COOLDOWN_FINISHED(src, recharge_cooldown))	//Doesn't work if you've fired recently
 			if(!power_supply || power_supply.charge >= power_supply.maxcharge)
 				return PROCESS_KILL
 
@@ -279,3 +281,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
 
 DECLARE_REF(/obj/item/gun/energy, "power_supply", HELD, null)
+
+/obj/item/gun/energy/note_shot()
+	..()
+	COOLDOWN_START(src, recharge_cooldown, charge_delay)

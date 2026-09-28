@@ -47,8 +47,6 @@
 	harvest_cooldown = 10 MINUTES
 	// How long does it take to harvest?
 	harvest_delay = 30 SECONDS
-	// What world.time was the last harvest?
-	harvest_recent = 0
 	// How many times do we roll on the chance table?
 	harvest_per_hit = 1
 	// Verb for harvesting. "sheared" "clipped" etc.

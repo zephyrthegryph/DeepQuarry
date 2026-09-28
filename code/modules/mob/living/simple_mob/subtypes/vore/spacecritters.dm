@@ -345,7 +345,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	harvest_tool = /obj/item/weldingtool
 	harvest_cooldown = 10 MINUTES
 	harvest_delay = 30 SECONDS
-	harvest_recent = 0
 	harvest_per_hit = 1
 	harvest_verb = "harvested"
 	harvest_results = list(
@@ -367,7 +366,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	harvest_tool = /obj/item/tool/wirecutters
 	harvest_cooldown = 10 MINUTES
 	harvest_delay = 30 SECONDS
-	harvest_recent = 0
 	harvest_per_hit = 1
 	harvest_verb = "harvested"
 	harvest_results = list(
@@ -389,7 +387,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	harvest_tool = /obj/item/tool/crowbar
 	harvest_cooldown = 10 MINUTES
 	harvest_delay = 30 SECONDS
-	harvest_recent = 0
 	harvest_per_hit = 1
 	harvest_verb = "harvested"
 	harvest_results = list(
@@ -411,7 +408,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	harvest_tool = /obj/item/tool/wirecutters
 	harvest_cooldown = 10 MINUTES
 	harvest_delay = 30 SECONDS
-	harvest_recent = 0
 	harvest_per_hit = 1
 	harvest_verb = "harvested"
 	harvest_results = list(
@@ -433,7 +429,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	harvest_tool = /obj/item/tool/crowbar
 	harvest_cooldown = 10 MINUTES
 	harvest_delay = 30 SECONDS
-	harvest_recent = 0
 	harvest_per_hit = 1
 	harvest_verb = "harvested"
 	harvest_results = list(

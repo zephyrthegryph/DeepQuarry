@@ -9,7 +9,7 @@
 	var/excavation_level = 0
 	var/tmp/datum/geosample/geological_data_static
 	var/tmp/datum/artifact_find/artifact_find_static
-	var/last_act = 0
+	COOLDOWN_DECLARE(dig_cooldown)
 
 /obj/structure/boulder/Initialize(mapload)
 	. = ..()
@@ -54,9 +54,9 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 	if(istype(I, /obj/item/pickaxe))
 		var/obj/item/pickaxe/P = I
 
-		if(last_act + P.digspeed > world.time)//prevents message spam
+		if(!COOLDOWN_FINISHED(src, dig_cooldown))//prevents message spam
 			return INTERACTION_HANDLED_PASS
-		last_act = world.time
+		COOLDOWN_START(src, dig_cooldown, P.digspeed)
 
 		to_chat(user, span_warning("You start [P.drill_verb] [src]."))
 		om_task_timed(user, P.digspeed, src, src, PROC_REF(dig_done), list(user, P))

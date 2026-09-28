@@ -29,7 +29,7 @@
 	embed_chance = 0
 	var/tmp/last_touched_handle	//The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
-	var/last_special = 0 //How recently our powers were used! Can be admin-set to a high number to keep from having the mode able to be changed.
+	COOLDOWN_DECLARE(special_cooldown) //When our powers may next be used. Can be admin-set to a high number to keep the mode from being changed.
 	var/static/list/abilities = list("Consecrate", "Summon")
 	var/static/list/summonables = list("Soulstone" = SOULSTONE, "Shell" = SHELL, "Cultic Artifact" = ARTIFACT)
 	var/consecrating = FALSE //If we are consecrating or not!
@@ -160,10 +160,10 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 
 /// Old attack_self.
 /obj/item/melee/artifact_blade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(last_special > world.time - 12 SECONDS)
+	if(!COOLDOWN_FINISHED(src, special_cooldown))
 		to_chat(user, span_cult("The blade does not respond to your attempts, having recently performed an action!"))
 		return TRUE
-	last_special = world.time
+	COOLDOWN_START(src, special_cooldown, 12 SECONDS)
 	if(stored_blood < 10)
 		to_chat(user, span_cult("The blade does not respond to your attempts, seeming to have not enough blood to perform any actions!"))
 		return TRUE

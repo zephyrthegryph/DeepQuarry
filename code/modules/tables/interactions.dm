@@ -101,7 +101,7 @@
 			if (G.state < 2)
 				to_chat(user, span_danger("You need a better grip to do that!"))
 				return INTERACTION_HANDLED_PASS
-			else if(G.state > GRAB_AGGRESSIVE || world.time >= (G.last_action + UPGRADE_COOLDOWN))
+			else if(G.state > GRAB_AGGRESSIVE || COOLDOWN_FINISHED(G, upgrade_cooldown))
 				M.forceMove(get_turf(src))
 				M.status_at_least(EFFECT_WEAKENED, 5)
 				visible_message(span_danger("[G?.grab_assailant()] puts [G?.grab_target()] on \the [src]."))

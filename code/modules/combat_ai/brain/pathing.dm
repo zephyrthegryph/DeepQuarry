@@ -69,6 +69,7 @@
 		// A recent A* to this same goal (same nav revision, goal hasn't
 		// drifted) came back empty: honour the backoff instead of recomputing
 		// on every fast tick. A moved goal or a map change retries at once.
+		// ALLOW(cooldown): AI path backoff scheduling
 		if(next_path_attempt_at && world.time < next_path_attempt_at \
 			&& path_goal() && get_dist(path_goal(), target_turf) <= path_recompute_tolerance \
 			&& path_navigation_revision == GLOB.ai_navigation_revision)

@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		return
 
 	if(m_action == "Restore Energy")
-		if(LL.ring_cooldown + 10 MINUTES > world.time)
+		if(!COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
 		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, LL = LL)
@@ -306,6 +306,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 
 /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
 	var/datum/species/lleill/LL = task.LL
+	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)
 	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
 
 /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)

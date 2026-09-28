@@ -2,7 +2,7 @@
 	next_move = max(world.time + timeout, next_move)
 
 /mob/proc/checkMoveCooldown()
-	if(world.time < next_move)
+	if(COOLDOWN_TIMELEFT(src, next_move) > 0) // Inclusive deadline: moving is allowed on the tick next_move is reached.
 		return FALSE // Need to wait more.
 	return TRUE
 

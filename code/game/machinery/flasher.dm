@@ -9,7 +9,7 @@
 	var/id = null
 	var/range = 2 //this is roughly the size of brig cell
 	var/disable = 0
-	var/last_flash = 0 //Don't want it getting spammed like regular flashes
+	COOLDOWN_DECLARE(flash_cooldown) //Don't want it getting spammed like regular flashes
 	var/strength = 10 //How weakened targets are when flashed.
 	var/base_state = "mflash"
 	anchored = TRUE
@@ -62,12 +62,12 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	if(!(powered()))
 		return
 
-	if((disable) || (last_flash && world.time < last_flash + 150))
+	if((disable) || !COOLDOWN_FINISHED(src, flash_cooldown))
 		return
 
 	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
 	flick("[base_state]_flash", src)
-	last_flash = world.time
+	COOLDOWN_START(src, flash_cooldown, 15 SECONDS)
 	use_power(1500)
 
 	for (var/mob/O in viewers(src, null))
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
-	if(disable || !anchored || (last_flash && world.time < last_flash + 150))
+	if(disable || !anchored || !COOLDOWN_FINISHED(src, flash_cooldown))
 		return
 
 	if(iscarbon(AM))

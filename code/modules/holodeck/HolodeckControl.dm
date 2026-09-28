@@ -16,8 +16,12 @@
 	var/damaged = 0
 	var/safety_disabled = 0
 	var/tmp/last_to_emag_handle
-	var/last_change = 0
-	var/last_gravity_change = 0
+	/// Program-change spam throttle: inside the short window clicks are ignored, inside the long one they warn.
+	COOLDOWN_DECLARE(change_short_cooldown)
+	COOLDOWN_DECLARE(change_long_cooldown)
+	/// Same two-tier throttle for gravity toggles.
+	COOLDOWN_DECLARE(gravity_short_cooldown)
+	COOLDOWN_DECLARE(gravity_long_cooldown)
 
 	var/projection_area = /area/holodeck/alphadeck
 	var/current_program
@@ -287,15 +291,15 @@
 		return
 
 	if(check_delay)
-		if(world.time < (last_change + 25))
-			if(world.time < (last_change + 15))//To prevent super-spam clicking, reduced process size and annoyance -Sieve
+		if(COOLDOWN_TIMELEFT(src, change_long_cooldown))
+			if(COOLDOWN_TIMELEFT(src, change_short_cooldown))//To prevent super-spam clicking, reduced process size and annoyance -Sieve
 				return 0
 			for(var/mob/M in range(3,src))
 				M.show_message(span_warningplain(span_bold("ERROR. Recalibrating projection apparatus.")))
-				last_change = world.time
+				start_change_cooldowns()
 				return 0
 
-	last_change = world.time
+	start_change_cooldowns()
 	active = 1
 	update_use_power(USE_POWER_ACTIVE)
 
@@ -349,16 +353,22 @@
 
 	return 1
 
+/// Starts both tiers of the program-change throttle together.
+/obj/machinery/computer/HolodeckControl/proc/start_change_cooldowns()
+	COOLDOWN_START(src, change_short_cooldown, 1.5 SECONDS)
+	COOLDOWN_START(src, change_long_cooldown, 2.5 SECONDS)
+
 /obj/machinery/computer/HolodeckControl/proc/toggleGravity(area/A)
-	if(world.time < (last_gravity_change + 25))
-		if(world.time < (last_gravity_change + 15))//To prevent super-spam clicking
+	if(COOLDOWN_TIMELEFT(src, gravity_long_cooldown))
+		if(COOLDOWN_TIMELEFT(src, gravity_short_cooldown))//To prevent super-spam clicking
 			return
 		for(var/mob/M in range(3,src))
 			M.show_message(span_warningplain(span_bold("ERROR. Recalibrating gravity field.")))
-			last_change = world.time
+			start_change_cooldowns()
 			return
 
-	last_gravity_change = world.time
+	COOLDOWN_START(src, gravity_short_cooldown, 1.5 SECONDS)
+	COOLDOWN_START(src, gravity_long_cooldown, 2.5 SECONDS)
 	active = 1
 	update_use_power(USE_POWER_IDLE)
 

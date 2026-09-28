@@ -31,7 +31,7 @@
 
 	//Specific abilities
 
-	var/ring_cooldown = 0
+	COOLDOWN_DECLARE(ring_cooldown)
 
 	darksight = 10 //Can see in dark
 

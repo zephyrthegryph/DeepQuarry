@@ -114,7 +114,7 @@
 // ---------------------------------------------------------------------------
 
 /datum/slime_state/proc/discipline_decay()
-	if(discipline > 0 && (isnull(last_discipline_decay) || last_discipline_decay + discipline_decay_time < world.time))
+	if(discipline > 0 && (isnull(last_discipline_decay) || last_discipline_decay + discipline_decay_time < world.time)) // ALLOW(cooldown): nullable decay timer
 		if(!prob(75 + (obedience * 5)))
 			adjust_discipline(-1)
 			last_discipline_decay = world.time

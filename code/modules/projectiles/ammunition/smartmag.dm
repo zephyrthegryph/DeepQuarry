@@ -15,10 +15,12 @@
 	can_remove_ammo = FALSE	// Interferes with batteries
 
 	var/production_time = 6 SECONDS		// Delay in between bullets forming
-	var/last_production_time = 0		// Used in determining if we should make a new bullet
+	COOLDOWN_DECLARE(production_cooldown)		// When the next bullet may form (production_time after the last)
 	var/production_cost = null			// Set when an ammo type is scanned in
 	var/production_modifier = 2			// Multiplier on the ammo_casing's matter cost
 	var/production_delay = 75			// If we're in a gun, how long since it last shot do we need to wait before making bullets?
+	/// Started by the holding gun's note_shot() for production_delay.
+	COOLDOWN_DECLARE(gun_fired_cooldown)
 
 	var/tmp/holding_gun_handle	// What gun are we in, if any?
 
@@ -37,12 +39,12 @@
 
 	if(caliber && ammo_type && attached_cell())
 		if(stored_ammo.len == max_ammo)
-			last_production_time = world.time	// Otherwise the max_ammo var is basically always off by 1
+			COOLDOWN_START(src, production_cooldown, production_time)	// Otherwise the max_ammo var is basically always off by 1
 			return
-		if(holding_gun() && world.time < holding_gun().last_shot + production_delay)	// Same as recharging energy weapons.
+		if(holding_gun() && !COOLDOWN_FINISHED(src, gun_fired_cooldown))	// Same as recharging energy weapons.
 			return
-		if(world.time > last_production_time + production_time)
-			last_production_time = world.time
+		if(COOLDOWN_FINISHED(src, production_cooldown))
+			COOLDOWN_START(src, production_cooldown, production_time)
 			produce()
 
 /obj/item/ammo_magazine/smart/examine(mob/user)
