@@ -479,3 +479,7 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 		var/needs = edge.requirement_text()
 		lines += span_notice("Next: [edge.step_text][needs ? " ([needs])" : ""]")
 	return length(lines) ? lines : null
+
+REF_OWNED_LIST(/datum/construction_graph, list("edges", "wildcard_edges"))
+
+REF_OWNED_VALUES(/datum/construction_graph, "edges_by_id")

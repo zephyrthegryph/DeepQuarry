@@ -192,7 +192,7 @@
 			department = primary_department.name
 	var/datum/money_account/requester_budget = GLOB.department_accounts[department]
 	data["supply_points"] = requester_budget?.available_funds() || 0
-	var/datum/money_account/personal_account = user?.mind?.initial_account
+	var/datum/money_account/personal_account = user?.mind?.initial_account()
 	data["can_personal_order"] = !!personal_account
 	data["personal_balance"] = personal_account?.money || 0
 	data["orders"] = orders

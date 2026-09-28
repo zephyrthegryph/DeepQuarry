@@ -1122,7 +1122,7 @@
 	. = ..()
 	if(custom_link)
 		. += "Custom link: " + span_linkify("[custom_link]")
-	if(identity.ooc_notes)
+	if(identity().ooc_notes)
 		. += "OOC Notes: <a href='byond://?src=\ref[src];ooc_notes=1'>\[View\]</a> - <a href='byond://?src=\ref[src];print_ooc_notes_chat=1'>\[Print\]</a>"
 	. += "<a href='byond://?src=\ref[src];vore_prefs=1'>\[Mechanical Vore Preferences\]</a>"
 

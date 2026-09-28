@@ -398,11 +398,11 @@
 				Target = Potential
 				target_urgency = urgency
 
-		if(MyBeam && !valid_target(MyBeam.target))
+		if(MyBeam && !valid_target(MyBeam.target()))
 			QDEL_NULL(MyBeam)
 
 		if(Target)
-			if(MyBeam && MyBeam.target != Target)
+			if(MyBeam && MyBeam.target() != Target)
 				QDEL_NULL(MyBeam)
 
 			if(valid_target(Target))

@@ -49,3 +49,5 @@ REF_DEF(/datum/uplink_category, list("items"))
 
 /datum/uplink_category/backup
 	name = "Backup"
+
+REF_OWNED_LIST(/datum/uplink_category, "items")

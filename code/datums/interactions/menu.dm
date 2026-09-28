@@ -6,17 +6,17 @@
  * used to offer (examine, pull, point).
  */
 /datum/interaction_menu
-	var/client/owner
+	var/owner_handle
 	var/target_ref
 
 /datum/interaction_menu/New(client/owner)
-	src.owner = owner
+	src.owner_handle = om_handle(owner)
 
 // ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
 /datum/interaction_menu/Destroy()
-	if(owner?.interaction_menu == src)
-		owner.interaction_menu = null
-	owner = null
+	if(owner()?.interaction_menu == src)
+		owner().interaction_menu = null
+	owner_handle = null
 	target_ref = null
 	return ..()
 
@@ -152,3 +152,7 @@
 	var/atom/target = hovered_atom() || get_step(mob, mob.dir)
 	if(target)
 		open_interaction_menu(mob, target)
+
+/// LC-refs: the client using the menu -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/interaction_menu/proc/owner() as /client
+	return om_resolve(owner_handle)

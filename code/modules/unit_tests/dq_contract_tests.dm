@@ -381,7 +381,7 @@
 	registry_join(REGISTRY_MONEY_ACCOUNTS, contributor_account)
 	var/mob/living/carbon/human/contributor = new(test_turf)
 	var/datum/mind/contributor_mind = new("contract_economy_test")
-	contributor_mind.initial_account = contributor_account
+	contributor_mind.initial_account_handle = om_handle(contributor_account)
 	contributor_mind.transfer_to(contributor)
 	registry_join(REGISTRY_PLAYERS, contributor)
 	var/datum/money_account/medical_account = GLOB.department_accounts[DEPARTMENT_MEDICAL]
@@ -913,7 +913,7 @@
 	fallback_clinician.real_name = fallback_account.owner_name
 	fallback_clinician.job = JOB_MEDICAL_DOCTOR
 	var/datum/mind/fallback_mind = new("fallback_clinician")
-	fallback_mind.initial_account = fallback_account
+	fallback_mind.initial_account_handle = om_handle(fallback_account)
 	fallback_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	fallback_mind.transfer_to(fallback_clinician)
 	registry_join(REGISTRY_PLAYERS, fallback_clinician)
@@ -1259,7 +1259,7 @@
 	registry_join(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	var/mob/living/carbon/human/owner = new(test_turf)
 	var/datum/mind/owner_mind = new("linked_personal_contract_test")
-	owner_mind.initial_account = owner_account
+	owner_mind.initial_account_handle = om_handle(owner_account)
 	owner_mind.transfer_to(owner)
 	registry_join(REGISTRY_PLAYERS, owner)
 	owner.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_WORKERS_UNION, REPUTATION_NEUTRAL)
@@ -1307,7 +1307,7 @@
 	registry_join(REGISTRY_MONEY_ACCOUNTS, actor_account)
 	var/mob/living/carbon/human/actor = new(test_turf)
 	var/datum/mind/actor_mind = new("contract_producer_test")
-	actor_mind.initial_account = actor_account
+	actor_mind.initial_account_handle = om_handle(actor_account)
 	actor_mind.transfer_to(actor)
 	registry_join(REGISTRY_PLAYERS, actor)
 
@@ -1612,7 +1612,7 @@
 		player.real_name = account.owner_name
 		player.job = "Scientist"
 		var/datum/mind/player_mind = new("reassignment_test_[index]")
-		player_mind.initial_account = account
+		player_mind.initial_account_handle = om_handle(account)
 		player_mind.transfer_to(player)
 		player.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_WORKERS_UNION, REPUTATION_NEUTRAL)
 		registry_join(REGISTRY_PLAYERS, player)

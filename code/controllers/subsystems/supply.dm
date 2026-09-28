@@ -316,7 +316,7 @@ SUBSYSTEM_DEF(supply)
 		return 0
 	var/projected = 0
 	for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(QDELETED(employee) || employee.stat == DEAD || !employee.mind?.initial_account || department_for_mob(employee) != department)
+		if(QDELETED(employee) || employee.stat == DEAD || !employee.mind?.initial_account() || department_for_mob(employee) != department)
 			continue
 		var/datum/job/job = SSjob.get_job(employee.job)
 		if(job)
@@ -333,7 +333,7 @@ SUBSYSTEM_DEF(supply)
 /datum/controller/subsystem/supply/proc/active_department_employee_count(department)
 	var/count = 0
 	for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(!QDELETED(employee) && employee.stat != DEAD && employee.mind?.initial_account && department_for_mob(employee) == department)
+		if(!QDELETED(employee) && employee.stat != DEAD && employee.mind?.initial_account() && department_for_mob(employee) == department)
 			count++
 	return count
 
@@ -387,7 +387,7 @@ SUBSYSTEM_DEF(supply)
 		var/list/pay_due = list()
 		var/total_due = 0
 		for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-			if(QDELETED(employee) || employee.stat == DEAD || !employee.mind?.initial_account || department_for_mob(employee) != department)
+			if(QDELETED(employee) || employee.stat == DEAD || !employee.mind?.initial_account() || department_for_mob(employee) != department)
 				continue
 			var/datum/job/job = SSjob.get_job(employee.job)
 			if(!job)
@@ -411,7 +411,7 @@ SUBSYSTEM_DEF(supply)
 			var/pay = remaining_due == due ? remaining_funds : min(due, round(remaining_funds * due / remaining_due))
 			remaining_due -= due
 			remaining_funds -= pay
-			if(pay <= 0 || !transfer_account_funds(budget, employee.mind.initial_account, pay, "Department payroll", "Automated payroll"))
+			if(pay <= 0 || !transfer_account_funds(budget, employee.mind.initial_account(), pay, "Department payroll", "Automated payroll"))
 				continue
 			// Only pay that actually landed counts toward coverage; a rejected
 			// transfer (suspended account, etc.) is not delivered payroll.
@@ -874,7 +874,7 @@ SUBSYSTEM_DEF(supply)
 		if(primary_department?.name in GLOB.department_accounts)
 			new_order.funding_department = primary_department.name
 		if(personal_funding)
-			var/datum/money_account/personal_account = requester.mind?.initial_account
+			var/datum/money_account/personal_account = requester.mind?.initial_account()
 			var/price = order_price(new_order)
 			if(!personal_account || !personal_account.debit(price, "Supply procurement", "Personal order #[new_order.ordernum]: [S.name]", "Supply console"))
 				qdel(new_order)

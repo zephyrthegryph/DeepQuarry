@@ -36,7 +36,7 @@
 	var/tint = "#FFFFFF"
 	if(comp)
 		comp.cooldown = world.time + (15 SECONDS)
-		comp.statue = src
+		comp.statue_handle = om_handle(src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
 		identifier = length(comp.identifier) > 0 ? comp.identifier : initial(identifier)
@@ -188,7 +188,7 @@
 	var/datum/component/gargoyle/comp = gargoyle.GetComponent(/datum/component/gargoyle)
 	if(comp)
 		comp.cooldown = world.time + (15 SECONDS)
-		comp.statue = null
+		comp.statue_handle = null
 		comp.transformed = FALSE
 	else
 		if(was_rayed)

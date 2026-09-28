@@ -50,15 +50,15 @@
 	only_one_driver = TRUE			// If true, only the person in 'front' (first on list of riding mobs) can drive.
 
 /datum/riding/taur/handle_vehicle_layer()
-	if(ridden.has_buckled_mobs())
-		ridden.layer = initial(ridden.layer)
+	if(ridden().has_buckled_mobs())
+		ridden().restore_initial_layer()
 	else
-		var/mob/living/L = ridden
+		var/mob/living/L = ridden()
 		if(!(istype(L) && (L.status_flags & HIDING)))
-			ridden.layer = initial(ridden.layer)
+			ridden().restore_initial_layer()
 
 /datum/riding/taur/ride_check(mob/living/M)
-	var/mob/living/L = ridden
+	var/mob/living/L = ridden()
 	if(L.stat)
 		force_dismount(M)
 		return FALSE
@@ -66,11 +66,11 @@
 
 /datum/riding/taur/force_dismount(mob/M)
 	. = ..()
-	ridden.visible_message(span_notice("[M] stops riding [ridden]!"))
+	ridden().visible_message(span_notice("[M] stops riding [ridden()]!"))
 
 //Hoooo boy.
 /datum/riding/taur/get_offsets(pass_index) // list(dir = x, y, layer)
-	var/mob/living/L = ridden
+	var/mob/living/L = ridden()
 	var/scale_x = L.icon_scale_x * L.size_multiplier
 	var/scale_y = L.icon_scale_y * L.size_multiplier
 	var/scale_difference = (L.size_multiplier - rider_size) * 10

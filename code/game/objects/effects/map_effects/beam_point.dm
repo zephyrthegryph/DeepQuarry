@@ -74,16 +74,16 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 /obj/effect/map_effect/beam_point/proc/has_active_beam(obj/effect/map_effect/beam_point/them)
 	// First, check our beams.
 	for(var/datum/beam/B in my_beams)
-		if(B.target == them)
+		if(B.target() == them)
 			return TRUE
-		if(B.origin == them) // This shouldn't be needed unless the beam gets built backwards but why not.
+		if(B.origin() == them) // This shouldn't be needed unless the beam gets built backwards but why not.
 			return TRUE
 
 	// Now check theirs, to see if they have a beam on us.
 	for(var/datum/beam/B in them.my_beams)
-		if(B.target == src)
+		if(B.target() == src)
 			return TRUE
-		if(B.origin == src) // Same story as above.
+		if(B.origin() == src) // Same story as above.
 			return TRUE
 
 	return FALSE

@@ -68,3 +68,5 @@ GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 			. = rand(min, max)
 		while(. in ids)
 		ids += .
+
+REF_OWNED_VALUES(/datum/repository/unique, "generators")

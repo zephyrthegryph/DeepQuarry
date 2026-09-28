@@ -94,7 +94,7 @@
 	. = outfit_by_type(.)
 
 /datum/job/proc/setup_account(mob/living/carbon/human/H)
-	if(!account_allowed || (H.mind && H.mind.initial_account))
+	if(!account_allowed || (H.mind && H.mind.initial_account()))
 		return
 
 	var/income = 1
@@ -121,7 +121,7 @@
 			remembered_info += span_bold("Your account was created:") + " [T.time], [T.date] at [T.source_terminal]<br>"
 		H.mind.store_memory(remembered_info)
 
-		H.mind.initial_account = M
+		H.mind.initial_account_handle = om_handle(M)
 
 	to_chat(H, span_boldnotice("Your account number is: [M.account_number], your account pin is: [M.remote_access_pin]"))
 

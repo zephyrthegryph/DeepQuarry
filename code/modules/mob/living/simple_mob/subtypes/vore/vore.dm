@@ -19,12 +19,12 @@
 
 /mob/living/proc/login_prefs()
 
-	identity.ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
-	identity.ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
-	identity.ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
-	identity.ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
-	identity.ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
-	identity.ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+	identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
+	identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
+	identity().ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
+	identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
+	identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
+	identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 	private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
 	digestable = client.prefs_vr.digestable
 	devourable = client.prefs_vr.devourable

@@ -73,6 +73,8 @@ NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
 LINT = "scheduler"
 
 UNSAVED_MODS = {"static", "global", "const"}
+STRUCTURAL_TYPES = ("/datum/om/task", "/datum/om/edge", "/datum/om/rec", "/datum/om/frame", "/datum/om/event",
+                    "/datum/om/scheduler", "/datum/ledger", "/datum/registry")
 ALL_MODS = {"tmp", "static", "global", "const", "final"}
 # The REF_* kinds, REF_VAR forms, pooled types and implicit REF_DEF types (ref_kinds.py).
 from ref_kinds import DECLARED_PROCS, REF_MACRO, is_def_type, is_pooled, ref_var_decl  # noqa: E402
@@ -163,9 +165,9 @@ def lc_ref_sites(rel, raw_text, code_text, raw_lines):
         # A frozen definition or registry object (DEF_TYPES): an implicit REF_DEF.
         if is_def_type(vtype):
             continue
-        # A task's vars are its state: every datum in them is held by the task_holds
-        # relation, which clears the var and cancels the task when the datum is deleted.
-        if owner_type == "/datum/om/task" or owner_type.startswith("/datum/om/task/"):
+        # Tasks, edges, records, ledgers and registries hold references by construction
+        # (declared_refs_lint.STRUCTURAL_TYPES says why each).
+        if any(owner_type == t or owner_type.startswith(t + "/") for t in STRUCTURAL_TYPES):
             continue
         # Typed prompts and flows (ask.dm, flow.dm) hold their state vars as handles while they
         # wait (park_state()), and a prompt's `flow` is the one strong ref keeping its flow alive.

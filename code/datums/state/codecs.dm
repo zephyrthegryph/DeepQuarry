@@ -37,10 +37,11 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 /datum/state_codec/child/encode(datum/owner, var_name, value, datum/state_context/ctx)
 	if(isnull(value))
 		return null
-	if(!isdatum(value) || !ctx.ids || !(value in ctx.ids))
+	var/value_handle = isdatum(value) && ctx.ids && om_handle(value)
+	if(!value_handle || !(value_handle in ctx.ids))
 		ctx.refuse("[owner.type].[var_name] refers to [value] outside the subtree")
 		return null
-	return list(STATE_WRAP_CHILD = ctx.ids[value])
+	return list(STATE_WRAP_CHILD = ctx.ids[value_handle])
 
 // ---------------------------------------------------------------------------
 // owned: a datum only this owner refers to, saved as its own nested blob

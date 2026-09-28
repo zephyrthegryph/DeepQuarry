@@ -59,9 +59,9 @@
 	///Lazy list to track the turfs being affected by our light, to determine their visibility.
 	var/list/turf/affected_turfs
 	///Movable atom currently holding the light. Parent might be a flashlight, for example, but that might be held by a mob or something else.
-	var/atom/movable/current_holder
+	var/current_holder_handle
 	///Movable atom the parent is attached to. For example, a flashlight into a helmet or gun. We'll need to track the thing the parent is attached to as if it were the parent itself.
-	var/atom/movable/parent_attached_to
+	var/parent_attached_to_handle
 	///Whether we're a directional light
 	var/directional
 	///Abstractional atom for directional light, we move this around to make the directional effect
@@ -173,7 +173,7 @@
 
 ///Populates the affected_turfs lazylist, adding to its contents the effects of being near the light.
 /datum/component/overlay_lighting/proc/get_new_turfs()
-	if(!current_holder)
+	if(!current_holder())
 		return
 	var/atom/movable/light_source = GET_LIGHT_SOURCE
 	. = list()
@@ -186,7 +186,7 @@
 ///Clears the old affected turfs and populates the new ones.
 /datum/component/overlay_lighting/proc/make_luminosity_update()
 	clean_old_turfs()
-	if(!isturf(current_holder?.loc))
+	if(!isturf(current_holder()?.loc))
 		return
 	if(directional)
 		cast_directional_light()
@@ -199,7 +199,7 @@
 	light_source.vis_contents += visible_mask
 	light_source.update_dynamic_luminosity()
 	if(directional)
-		current_holder.vis_contents += cone
+		current_holder().vis_contents += cone
 
 ///Removes the luminosity and source for the afected movable atoms to keep track of their visibility.
 /datum/component/overlay_lighting/proc/remove_dynamic_lumi()
@@ -208,47 +208,47 @@
 	light_source.vis_contents -= visible_mask
 	light_source.update_dynamic_luminosity()
 	if(directional)
-		current_holder.vis_contents -= cone
+		current_holder().vis_contents -= cone
 		directional_atom.moveToNullspace()
 
 ///Called to change the value of parent_attached_to.
 /datum/component/overlay_lighting/proc/set_parent_attached_to(atom/movable/new_parent_attached_to)
-	if(new_parent_attached_to == parent_attached_to)
+	if(new_parent_attached_to == parent_attached_to())
 		return
 
-	. = parent_attached_to
-	parent_attached_to = new_parent_attached_to
+	. = parent_attached_to()
+	parent_attached_to_handle = om_handle(new_parent_attached_to)
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
 		UnregisterSignal(old_parent_attached_to, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
-		if(old_parent_attached_to == current_holder)
+		if(old_parent_attached_to == current_holder())
 			RegisterSignal(old_parent_attached_to, COMSIG_QDELETING, PROC_REF(on_holder_qdel))
 			RegisterSignal(old_parent_attached_to, COMSIG_MOVABLE_MOVED, PROC_REF(on_holder_moved))
-	if(parent_attached_to)
-		if(parent_attached_to == current_holder)
-			UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
-		RegisterSignal(parent_attached_to, COMSIG_QDELETING, PROC_REF(on_parent_attached_to_qdel))
-		RegisterSignal(parent_attached_to, COMSIG_MOVABLE_MOVED, PROC_REF(on_parent_attached_to_moved))
+	if(parent_attached_to())
+		if(parent_attached_to() == current_holder())
+			UnregisterSignal(current_holder(), list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+		RegisterSignal(parent_attached_to(), COMSIG_QDELETING, PROC_REF(on_parent_attached_to_qdel))
+		RegisterSignal(parent_attached_to(), COMSIG_MOVABLE_MOVED, PROC_REF(on_parent_attached_to_moved))
 	check_holder()
 
 ///Called to change the value of current_holder.
 /datum/component/overlay_lighting/proc/set_holder(atom/movable/new_holder)
-	if(new_holder == current_holder)
+	if(new_holder == current_holder())
 		return
 	if(istype(new_holder,/obj/structure/closet))
 		new_holder = null // Forbid crates from holding lights, this only applies to contents 'holding', when you put a flashlight into a crate for example. Not crates with lights... Not that there are any.
-	if(current_holder)
-		if(current_holder != parent && current_holder != parent_attached_to)
-			UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+	if(current_holder())
+		if(current_holder() != parent && current_holder() != parent_attached_to())
+			UnregisterSignal(current_holder(), list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
 			if(directional)
-				UnregisterSignal(current_holder, COMSIG_ATOM_DIR_CHANGE)
+				UnregisterSignal(current_holder(), COMSIG_ATOM_DIR_CHANGE)
 		if(overlay_lighting_flags & LIGHTING_ON)
 			remove_dynamic_lumi()
-	current_holder = new_holder
+	current_holder_handle = om_handle(new_holder)
 	if(new_holder == null)
 		clean_old_turfs()
 		return
-	if(new_holder != parent && new_holder != parent_attached_to)
+	if(new_holder != parent && new_holder != parent_attached_to())
 		RegisterSignal(new_holder, COMSIG_QDELETING, PROC_REF(on_holder_qdel))
 		RegisterSignal(new_holder, COMSIG_MOVABLE_MOVED, PROC_REF(on_holder_moved))
 		if(directional)
@@ -275,9 +275,9 @@
 ///Called when the current_holder is qdeleted, to remove the light effect.
 /datum/component/overlay_lighting/proc/on_holder_qdel(atom/movable/source, force)
 	SIGNAL_HANDLER
-	UnregisterSignal(current_holder, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+	UnregisterSignal(current_holder(), list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
 	if(directional)
-		UnregisterSignal(current_holder, COMSIG_ATOM_DIR_CHANGE)
+		UnregisterSignal(current_holder(), COMSIG_ATOM_DIR_CHANGE)
 	set_holder(null)
 
 ///Called when current_holder changes loc.
@@ -294,17 +294,17 @@
 	if(overlay_lighting_flags & LIGHTING_ATTACHED)
 		set_parent_attached_to(ismovable(movable_parent.loc) ? movable_parent.loc : null)
 	check_holder()
-	if(!(overlay_lighting_flags & LIGHTING_ON) || !current_holder)
+	if(!(overlay_lighting_flags & LIGHTING_ON) || !current_holder())
 		return
 	make_luminosity_update()
 
 ///Called when the current_holder is qdeleted, to remove the light effect.
 /datum/component/overlay_lighting/proc/on_parent_attached_to_qdel(atom/movable/source, force)
 	SIGNAL_HANDLER
-	UnregisterSignal(parent_attached_to, list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
+	UnregisterSignal(parent_attached_to(), list(COMSIG_QDELETING, COMSIG_MOVABLE_MOVED))
 	if(directional)
-		UnregisterSignal(parent_attached_to, COMSIG_ATOM_DIR_CHANGE)
-	if(parent_attached_to == current_holder)
+		UnregisterSignal(parent_attached_to(), COMSIG_ATOM_DIR_CHANGE)
+	if(parent_attached_to() == current_holder())
 		set_holder(null)
 	set_parent_attached_to(null)
 
@@ -312,7 +312,7 @@
 /datum/component/overlay_lighting/proc/on_parent_attached_to_moved(atom/movable/source, OldLoc, Dir, Forced)
 	SIGNAL_HANDLER
 	check_holder()
-	if(!(overlay_lighting_flags & LIGHTING_ON) || !current_holder)
+	if(!(overlay_lighting_flags & LIGHTING_ON) || !current_holder())
 		return
 	make_luminosity_update()
 
@@ -387,7 +387,7 @@
 /datum/component/overlay_lighting/proc/turn_on()
 	if(overlay_lighting_flags & LIGHTING_ON)
 		return
-	if(current_holder)
+	if(current_holder())
 		if(directional)
 			cast_directional_light()
 		add_dynamic_lumi()
@@ -398,7 +398,7 @@
 /datum/component/overlay_lighting/proc/turn_off()
 	if(!(overlay_lighting_flags & LIGHTING_ON))
 		return
-	if(current_holder)
+	if(current_holder())
 		remove_dynamic_lumi()
 	overlay_lighting_flags &= ~LIGHTING_ON
 	clean_old_turfs()
@@ -420,7 +420,7 @@
 	//Lower the distance by 1 if we're not looking at a GLOB.cardinal direction, and we're not a short cast
 	if(final_distance > SHORT_CAST && !(ALL_CARDINALS & current_direction))
 		final_distance -= 1
-	var/turf/scanning = get_turf(current_holder)
+	var/turf/scanning = get_turf(current_holder())
 
 	. = 0
 	for(var/i in 1 to final_distance)
@@ -535,3 +535,13 @@
 #undef GET_PARENT
 #undef GET_LIGHT_SOURCE
 #undef SHORT_CAST
+
+/// LC-refs: the atom the light is currently drawn on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/overlay_lighting/proc/current_holder() as /atom/movable
+	return om_resolve(current_holder_handle)
+
+/// LC-refs: the atom our parent is attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/overlay_lighting/proc/parent_attached_to() as /atom/movable
+	return om_resolve(parent_attached_to_handle)
+
+REF_OWNED(/datum/component/overlay_lighting, list("visible_mask", "directional_atom", "cone"))

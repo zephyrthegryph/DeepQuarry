@@ -228,12 +228,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	// Meta Info for AI's. Mostly used for Holograms
 	if (client)
-		identity.ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
-		identity.ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
-		identity.ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
-		identity.ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
-		identity.ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
-		identity.ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
+		identity().ooc_notes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes)
+		identity().ooc_notes_likes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_likes)
+		identity().ooc_notes_dislikes = client.prefs.read_preference(/datum/preference/text/living/ooc_notes_dislikes)
+		identity().ooc_notes_favs = read_preference(/datum/preference/text/living/ooc_notes_favs)
+		identity().ooc_notes_maybes = read_preference(/datum/preference/text/living/ooc_notes_maybes)
+		identity().ooc_notes_style = read_preference(/datum/preference/toggle/living/ooc_notes_style)
 		private_notes = client.prefs.read_preference(/datum/preference/text/living/private_notes)
 
 	if (GLOB.malf && !(mind in GLOB.malf.current_antagonists))

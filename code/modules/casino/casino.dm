@@ -684,7 +684,7 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 				C.sentientprizename = "[user.name]"
 				C.sentientprizeckey = "[user.ckey]"
 				C.sentientprizeflavor = user.flavor_text
-				C.sentientprizeooc = user.identity.ooc_notes
+				C.sentientprizeooc = user.identity().ooc_notes
 				C.sentientprizeitemtf = allowitemtf
 				C.name = "Sentient Prize Collar: Available! [user.name] purchaseable at the SPASM!"
 				C.desc = "Golden Goose Sentient Prize collar. The tags shows in flashy colorful text the wearer is [user.name] and is currently available to buy at the Sentient Prize Automated Sales Machinery!" //CHOMNPEdit

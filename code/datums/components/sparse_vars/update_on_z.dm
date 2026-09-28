@@ -25,3 +25,5 @@
 	c.images -= img
 	if(!c.images.len)
 		qdel(c)
+
+REF_OWNED_LIST(/datum/component/update_on_z, "images")

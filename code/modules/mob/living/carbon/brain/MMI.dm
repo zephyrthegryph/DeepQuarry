@@ -45,7 +45,7 @@
 /obj/item/mmi/proc/take_identity(mob/living/L, move_mind = FALSE)
 	var/datum/component/mind_host/host = get_mind_host(src)
 	var/mob/living/carbon/brain/view = host.receive_mind(move_mind ? L.mind : null, "[L] placed into [src]")
-	view.bind_identity(L.mind ? L.mind.get_identity() : L.identity)
+	view.bind_identity(L.mind ? L.mind.get_identity() : L.identity())
 	update_occupied_state()
 	return view
 
@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		if(!view)
 			to_chat(user, span_warning("You aren't sure where this brain came from, but you're pretty sure it's useless."))
 			return INTERACTION_HANDLED_PASS
-		if(view.identity.has_genetic_modifier(/datum/modifier/no_borg))	//Can't be shoved in an MMI.
+		if(view.identity().has_genetic_modifier(/datum/modifier/no_borg))	//Can't be shoved in an MMI.
 			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
 			return INTERACTION_HANDLED_PASS
 
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_
 	var/mob/living/carbon/brain/view = get_occupant()
 	view.real_name = "[pick(list("ADA","DOS","GNU","MAC","WIN","NJS","SKS","DRD","IOS","CRM","IBM","TEX","LVM","BSD",))]-[rand(1000, 9999)]"
 	view.name = view.real_name
-	view.identity.real_name = view.real_name
+	view.identity().real_name = view.real_name
 	name = "[initial(name)] ([view.name])"
 
 /obj/item/mmi/digital/robot/take_identity(mob/living/L, move_mind = TRUE)
@@ -380,7 +380,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_
 	var/mob/living/carbon/brain/view = get_occupant()
 	view.real_name = "[pick(list("PBU","HIU","SINA","ARMA","OSI"))]-[rand(100, 999)]"
 	view.name = view.real_name
-	view.identity.real_name = view.real_name
+	view.identity().real_name = view.real_name
 
 // This type hosts no mind.
 /obj/item/mmi/inert

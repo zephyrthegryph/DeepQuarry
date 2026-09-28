@@ -136,7 +136,7 @@
 	var/kind
 	var/property
 	/// The domain provider, for channel-backed triggers.
-	var/datum/property_provider/domain/provider
+	var/provider_handle
 	/// Thresholds: PRED_CMP_* with NOT applied.
 	var/op
 	/// Literal level, or null when it comes from value_property.
@@ -148,7 +148,7 @@
 	var/hi
 	/// Difference: the second side.
 	var/property_b
-	var/datum/property_provider/domain/provider_b
+	var/provider_b_handle
 	/// Key triggers.
 	var/key_kind
 
@@ -174,15 +174,15 @@
 // ---- Compiler ----
 
 /datum/rule_compiler
-	var/datum/rule/rule
-	var/datum/property_registry/registry
+	var/rule_handle
+	var/registry_handle
 	var/list/triggers = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
 	var/list/errors = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
 
 /datum/rule_compiler/New(datum/rule/rule)
 	..()
-	src.rule = rule
-	registry = dq_property_registry()
+	src.rule_handle = om_handle(rule)
+	registry_handle = om_handle(dq_property_registry())
 
 /datum/rule_compiler/proc/error(text)
 	errors += "[text]"
@@ -190,7 +190,7 @@
 /// The domain provider answering `id` on the rule's types, or null.
 /datum/rule_compiler/proc/domain_provider(id)
 	var/datum/property_provider/domain/found
-	for(var/datum/property_provider/provider as anything in registry.base_providers[id])
+	for(var/datum/property_provider/provider as anything in registry().base_providers[id])
 		if(provider.source != PROP_SOURCE_DOMAIN)
 			continue
 		if(!istype(provider, /datum/property_provider/domain))
@@ -200,7 +200,7 @@
 	return found
 
 /datum/rule_compiler/proc/dm_key(id)
-	var/datum/property_def/def = registry.defs[id]
+	var/datum/property_def/def = registry().defs[id]
 	return def?.dm_key_kind
 
 /datum/rule_compiler/proc/visit(datum/pred_node/node)
@@ -420,3 +420,23 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 
 /proc/dq_rule_fire_count(datum/thing, datum/rule/rule)
 	return GLOB.dq_rule_fire_log["[REF(thing)]|[rule.type]"] || 0
+
+/// LC-refs: the domain provider for channel-backed triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rule_trigger/proc/provider() as /datum/property_provider/domain
+	return om_resolve(provider_handle)
+
+/// LC-refs: the second domain provider -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
+	return om_resolve(provider_b_handle)
+
+/// LC-refs: the rule being compiled -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rule_compiler/proc/rule() as /datum/rule
+	return om_resolve(rule_handle)
+
+/// LC-refs: the property registry compiling against -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/rule_compiler/proc/registry() as /datum/property_registry
+	return om_resolve(registry_handle)
+
+REF_OWNED(/datum/rule, "predicate")
+
+REF_OWNED_LIST(/datum/rule, "triggers")

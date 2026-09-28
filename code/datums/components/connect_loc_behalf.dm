@@ -7,29 +7,29 @@
 
 	/// An assoc list of signal -> procpath to register to the loc this object is on.
 	var/list/connections
-	var/atom/movable/tracked
-	var/atom/tracked_loc
+	var/tracked_handle
+	var/tracked_loc_handle
 
 /datum/component/connect_loc_behalf/Initialize(atom/movable/tracked, list/connections)
 	. = ..()
 	if(!istype(tracked))
 		return COMPONENT_INCOMPATIBLE
 	src.connections = connections
-	src.tracked = tracked
+	src.tracked_handle = om_handle(tracked)
 
 /datum/component/connect_loc_behalf/RegisterWithParent()
-	RegisterSignal(tracked, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
-	RegisterSignal(tracked, COMSIG_QDELETING, PROC_REF(handle_tracked_qdel))
+	RegisterSignal(tracked(), COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
+	RegisterSignal(tracked(), COMSIG_QDELETING, PROC_REF(handle_tracked_qdel))
 	update_signals()
 
 /datum/component/connect_loc_behalf/UnregisterFromParent()
 	unregister_signals()
-	UnregisterSignal(tracked, list(
+	UnregisterSignal(tracked(), list(
 		COMSIG_MOVABLE_MOVED,
 		COMSIG_QDELETING,
 	))
 
-	tracked = null
+	tracked_handle = null
 
 /datum/component/connect_loc_behalf/proc/handle_tracked_qdel()
 	SIGNAL_HANDLER // COMSIG_QDELETING
@@ -45,22 +45,30 @@
 	//And sending a signal should be agnostic of the order of listeners
 	//So we need to either pick the order agnositic, or destroy safe
 	//And I picked destroy safe. Let's hope this is the right path!
-	if(isnull(tracked.loc))
+	if(isnull(tracked().loc))
 		return
 
-	tracked_loc = tracked.loc
+	tracked_loc_handle = om_handle(tracked().loc)
 
 	for(var/signal in connections)
-		parent.RegisterSignal(tracked_loc, signal, connections[signal])
+		parent.RegisterSignal(tracked_loc(), signal, connections[signal])
 
 /datum/component/connect_loc_behalf/proc/unregister_signals()
-	if(isnull(tracked_loc))
+	if(isnull(tracked_loc()))
 		return
 
-	parent.UnregisterSignal(tracked_loc, connections)
+	parent.UnregisterSignal(tracked_loc(), connections)
 
-	tracked_loc = null
+	tracked_loc_handle = null
 
 /datum/component/connect_loc_behalf/proc/on_moved(sigtype, atom/movable/tracked, atom/old_loc)
 	SIGNAL_HANDLER // COMSIG_MOVABLE_MOVED
 	update_signals()
+
+/// LC-refs: the movable being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/connect_loc_behalf/proc/tracked() as /atom/movable
+	return om_resolve(tracked_handle)
+
+/// LC-refs: the loc whose signals we hooked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/connect_loc_behalf/proc/tracked_loc() as /atom
+	return om_resolve(tracked_loc_handle)

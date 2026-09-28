@@ -234,7 +234,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 			atom_say("Warning. Exit port obstructed. Please clear obstructions or reorient machine, then retry.")
 		return FALSE
 
-	var/datum/component/material_container/materials = rmat.mat_container
+	var/datum/component/material_container/materials = rmat.mat_container()
 	if (!materials)
 		if(verbose)
 			atom_say("No access to material storage, please contact the quartermaster.")
@@ -418,7 +418,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 
 	data["designs"] = designs
 
-	var/list/material_data = rmat.mat_container?.tgui_static_data(user)
+	var/list/material_data = rmat.mat_container()?.tgui_static_data(user)
 	if(material_data)
 		data += material_data
 
@@ -427,7 +427,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 /obj/machinery/mecha_part_fabricator_tg/tgui_data(mob/user)
 	var/list/data = list()
 
-	var/list/material_data =rmat.mat_container?.tgui_data(user)
+	var/list/material_data =rmat.mat_container()?.tgui_data(user)
 	if(material_data)
 		data["materials"] = material_data
 	data["queue"] = list()

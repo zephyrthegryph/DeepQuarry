@@ -58,8 +58,8 @@
 	return TRUE
 
 /obj/effect/abstract/dark_maw
-	var/mob/living/owner = null
-	var/obj/belly/target = null
+	var/owner_handle
+	var/target_handle
 	var/has_signal = FALSE
 	icon = 'icons/obj/Shadekin_powers.dmi'
 	icon_state = "dark_maw_waiting"
@@ -70,12 +70,12 @@
 		return INITIALIZE_HINT_QDEL
 	var/datum/component/shadekin/SK
 	if(user && isliving(user))
-		owner = user
-		if(owner.vore_selected)
-			target = owner.vore_selected
-		RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(drop_everything_and_delete))
+		owner_handle = om_handle(user)
+		if(owner().vore_selected)
+			target_handle = om_handle(owner().vore_selected)
+		RegisterSignal(owner(), COMSIG_QDELETING, PROC_REF(drop_everything_and_delete))
 		has_signal = TRUE
-		SK = owner.get_shadekin_component()
+		SK = owner().get_shadekin_component()
 
 	var/turf/T = loc
 	if(T.get_lumcount() >= 0.5)
@@ -85,7 +85,7 @@
 
 	var/mob/living/target_user = null
 	for(var/mob/living/L in turf_contents_of_type(T, /mob/living))
-		if(L != owner && !L.is_incorporeal())
+		if(L != owner() && !L.is_incorporeal())
 			target_user = L
 			break
 
@@ -110,7 +110,7 @@
 
 // ALLOW(lifecycle): leaves its shadekin's maw list (the component lives on the owner, not in a var).
 /obj/effect/abstract/dark_maw/Destroy()
-	var/datum/component/shadekin/SK = owner?.get_shadekin_component()
+	var/datum/component/shadekin/SK = owner()?.get_shadekin_component()
 	if(SK)
 		LAZYREMOVE(SK.active_dark_maws, src)
 	return ..()
@@ -122,7 +122,7 @@
 	if(icon_state != "dark_maw_waiting")
 		return
 	var/mob/living/L = O
-	if(!L.is_incorporeal() && (!owner || L != owner))
+	if(!L.is_incorporeal() && (!owner() || L != owner()))
 		triggered_by(L)
 
 /obj/effect/abstract/dark_maw/periodic_step()
@@ -144,14 +144,14 @@
 	flick("dark_maw_tr", src)
 	L.status_adjust(EFFECT_STUNNED, 4)
 	visible_message(span_warning("A set of crystals spring out of the ground and shadowy tendrils start wrapping around [L]."))
-	if(owner && !triggered_instantly)
-		to_chat(owner, span_warning("A dark maw you deployed has triggered!"))
+	if(owner() && !triggered_instantly)
+		to_chat(owner(), span_warning("A dark maw you deployed has triggered!"))
 	om_after(src, 1 SECOND, PROC_REF(do_trigger), L)
 
 /obj/effect/abstract/dark_maw/proc/do_trigger(mob/living/L)
 	var/will_vore = 1
 
-	if(!(target in owner) || !can_phase_vore(owner, L, TRUE))
+	if(!(target() in owner()) || !can_phase_vore(owner(), L, TRUE))
 		will_vore = 0
 
 	if(!src || src.gc_destroyed)
@@ -165,7 +165,7 @@
 
 	if(will_vore)
 		visible_message(span_warning("The shadowy tendrils grab around [L] and drag them into the floor, leaving nothing behind."))
-		target.nom_atom(L)
+		target().nom_atom(L)
 		qdel(src)
 		return
 
@@ -200,3 +200,11 @@
 	if(!istype(T) || T.get_lumcount() >= 0.6)
 		visible_message(span_notice("The tangle of dark tendrils fades away in the light."))
 		qdel(src)
+
+/// LC-refs: the shadekin who opened the maw -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/abstract/dark_maw/proc/owner() as /mob/living
+	return om_resolve(owner_handle)
+
+/// LC-refs: the belly the maw feeds -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/abstract/dark_maw/proc/target() as /obj/belly
+	return om_resolve(target_handle)

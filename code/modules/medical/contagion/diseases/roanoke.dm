@@ -22,16 +22,15 @@
 	disease_flags = CURABLE | CAN_CARRY | CAN_NOT_POPULATE
 	virus_modifiers = BYPASSES_IMMUNITY | SPREAD_DEAD
 
-
 /// A random organ of the host (the old cached organ list held hard refs).
 /datum/affliction/contagion/roanoke/proc/pick_organ()
 	var/list/candidates = host.organs + host.internal_organs
 	return length(candidates) ? pick(candidates) : null
-
 /datum/affliction/contagion/roanoke/stage_act()
 	if(!..())
 		return FALSE
 	var/mob/living/carbon/human/M = host
+	var/obj/item/organ/O // picked from the host's current organs, not a snapshot taken at infection
 	switch(stage)
 		if(2)
 			if(prob(1))

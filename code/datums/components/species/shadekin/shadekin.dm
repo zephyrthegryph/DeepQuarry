@@ -43,9 +43,9 @@
 	///If cameras count as watchers for us
 	var/camera_counts_as_watcher = FALSE
 	///Phase in animation
-	var/obj/effect/temp_visual/phase_in_anim = /obj/effect/temp_visual/shadekin/phase_in
+	var/phase_in_anim = /obj/effect/temp_visual/shadekin/phase_in
 	///Phase out animation
-	var/obj/effect/temp_visual/phase_out_anim = /obj/effect/temp_visual/shadekin/phase_out
+	var/phase_out_anim = /obj/effect/temp_visual/shadekin/phase_out
 	//How long does it take to complete
 	var/phase_time = 0.5 SECONDS
 	//Phase sound

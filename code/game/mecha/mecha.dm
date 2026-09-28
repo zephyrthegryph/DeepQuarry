@@ -1665,7 +1665,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	else if(occupant)
 		to_chat(user, "Occupant detected.")
 		return 0
-	else if(dna && dna != mmi_occupant.identity.get_dna()?.unique_enzymes)
+	else if(dna && dna != mmi_occupant.identity().get_dna()?.unique_enzymes)
 		to_chat(user, "Genetic sequence or serial number incompatible with locking mechanism.")
 		return 0
 	//Added a message here since people assume their first click failed or something./N

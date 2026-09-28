@@ -243,7 +243,7 @@
 	var/item_ref = REF(item)
 	stock_suggested_prices[item_ref] = suggested
 	stock_prices[item_ref] = price
-	stock_stocker_accounts[item_ref] = user.mind?.initial_account?.account_number || 0
+	stock_stocker_accounts[item_ref] = user.mind?.initial_account()?.account_number || 0
 	to_chat(user, span_notice("You stock [item] at [price] Thalers (suggested [suggested])."))
 	SStgui.update_uis(src)
 	return TRUE

@@ -452,7 +452,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 	service_staff_name = null
 	if(!linked_account?.is_department_budget() || !user)
 		return
-	var/datum/money_account/staff_account = user.mind?.initial_account
+	var/datum/money_account/staff_account = user.mind?.initial_account()
 	if(!staff_account || department_for_mob(user) != linked_account.department_id)
 		return
 	service_staff_account_number = staff_account.account_number

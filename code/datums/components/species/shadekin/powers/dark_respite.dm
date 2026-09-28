@@ -64,17 +64,17 @@
 
 /datum/modifier/dark_respite
 	name = "Dark Respite"
-	var/datum/component/shadekin/SK
+	var/SK_handle
 
 // Override this for special effects when it gets added to the mob.
 /datum/modifier/dark_respite/on_applied()
-	SK = holder.get_shadekin_component()
-	if(!SK)
+	SK_handle = om_handle(holder.get_shadekin_component())
+	if(!SK())
 		expire()
 	return
 
 /datum/modifier/dark_respite/tick()
-	if(!SK)
+	if(!SK())
 		expire()
 		return
 	var/mob/living/carbon/human/H
@@ -105,9 +105,9 @@
 						if(W.damage <= 0)
 							O.remove_wound(W)
 	else
-		if(SK.manual_respite)
+		if(SK().manual_respite)
 			to_chat(holder, span_notice("As you leave the Dark, you stop focusing the Dark on healing yourself."))
-			SK.manual_respite = FALSE
+			SK().manual_respite = FALSE
 			expire()
 
 /// The Dark numbs pain and fights infection; a fed body rebuilds blood.
@@ -121,4 +121,8 @@
 		set_factors(wanted)
 
 /datum/modifier/dark_respite/on_expire()
-	SK = null
+	SK_handle = null
+
+/// LC-refs: the holder's shadekin component -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/modifier/dark_respite/proc/SK() as /datum/component/shadekin
+	return om_resolve(SK_handle)

@@ -981,3 +981,7 @@ GLOBAL_LIST_EMPTY(om_traced)
 
 /proc/om_untrace(datum/E)
 	GLOB.om_traced -= E
+
+REF_OWNED(/datum/om/stage, "compiled_run_if")
+
+REF_OWNED_VALUES(/datum/om/pipeline, "plans")

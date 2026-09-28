@@ -7,12 +7,13 @@ GLOBAL_DATUM_INIT(ammo_repository, /datum/repository/ammomaterial, new)
 	ammotypes = list()
 	..()
 
-/datum/repository/ammomaterial/proc/get_materials_from_object(obj/item/ammo_casing/I)
+/// `ammo_type`: an /obj/item/ammo_casing type path (the table is keyed by type).
+/datum/repository/ammomaterial/proc/get_materials_from_object(ammo_type)
 
-	if(!(I in ammotypes))
-		ammotypes += I
-		var/obj/item/ammo_casing/temp = new I
-		ammotypes[I] = temp.material_totals()
+	if(!(ammo_type in ammotypes))
+		ammotypes += ammo_type
+		var/obj/item/ammo_casing/temp = new ammo_type
+		ammotypes[ammo_type] = temp.material_totals()
 		qdel(temp)
 
-	return ammotypes[I]
+	return ammotypes[ammo_type]

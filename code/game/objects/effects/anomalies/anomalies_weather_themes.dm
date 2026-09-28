@@ -116,9 +116,9 @@
 	if(!sounds)
 		return
 	if(adding)
-		loop_sounds.output_atoms |= M
+		loop_sounds.add_output(M)
 		return
-	loop_sounds.output_atoms -= M
+	loop_sounds.remove_output(M)
 
 /datum/anomalous_weather/rain
 	name = "Rain"

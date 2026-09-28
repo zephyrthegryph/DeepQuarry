@@ -99,14 +99,14 @@
 // ---- Compiler ----
 
 /datum/predicate_compiler
-	var/datum/property_registry/registry
+	var/registry_handle
 	var/label
 	var/list/errors = list() // ALLOW(instance_list): d: compiler state (generic name, too many ambiguous call sites)
 	var/list/watchable = list() // ALLOW(instance_list): d: singleton compiler table
 
 /datum/predicate_compiler/New(datum/property_registry/registry, label)
 	..()
-	src.registry = registry
+	src.registry_handle = om_handle(registry)
 	src.label = label
 
 /datum/predicate_compiler/proc/error(text)
@@ -262,7 +262,7 @@
 
 /// The measure definition for `id`, or null after reporting why not.
 /datum/predicate_compiler/proc/measure(id)
-	var/datum/property_def/def = LAZYACCESS(registry.defs, id)
+	var/datum/property_def/def = LAZYACCESS(registry().defs, id)
 	if(!def)
 		error("unknown property [id]")
 		return null
@@ -283,7 +283,7 @@
 
 /// Channel-backed properties can become reactor watches (P4).
 /datum/predicate_compiler/proc/channel_backed(id)
-	for(var/datum/property_provider/provider as anything in LAZYACCESS(registry.base_providers, id))
+	for(var/datum/property_provider/provider as anything in LAZYACCESS(registry().base_providers, id))
 		if(provider.source == PROP_SOURCE_DOMAIN)
 			return TRUE
 	return FALSE
@@ -291,7 +291,7 @@
 /datum/predicate_compiler/proc/compile_tag(list/clause, negate)
 	if(!arity(clause, 3) || !valid_subject(clause[2]))
 		return null
-	var/datum/property_def/def = LAZYACCESS(registry.defs, clause[3])
+	var/datum/property_def/def = LAZYACCESS(registry().defs, clause[3])
 	if(!def)
 		error("unknown tag [clause[3]]")
 		return null
@@ -541,14 +541,14 @@
 /datum/pred_node/tag
 	var/subject
 	var/property
-	var/datum/property_def/def
+	var/def_handle
 
 /datum/pred_node/tag/test(mob/actor, atom/target, obj/item/held)
 	var/datum/thing = dq_pred_subject(subject, actor, target, held)
 	return thing ? dq_has_tag(thing, property) : FALSE
 
 /datum/pred_node/tag/generate_reason(mob/actor, atom/target, obj/item/held)
-	var/adjective = def.adjective || lowertext(def.name || def.id)
+	var/adjective = def().adjective || lowertext(def().name || def().id)
 	switch(subject)
 		if(PRED_ACTOR)
 			return negate ? "you must not be [adjective]" : "you must be [adjective]"
@@ -559,7 +559,7 @@
 /datum/pred_node/cmp
 	var/subject
 	var/property
-	var/datum/property_def/def
+	var/def_handle
 	/// Effective operator, with any NOT already applied.
 	var/op
 	var/value
@@ -577,7 +577,7 @@
 	var/datum/thing = dq_pred_subject(subject, actor, target, held)
 	if(!thing)
 		return "needs something in hand"
-	return dq_pred_cmp_reason(def, subject, dq_property(thing, property), op, value)
+	return dq_pred_cmp_reason(def(), subject, dq_property(thing, property), op, value)
 
 /// Reason for `current op limit` having failed, e.g. "too heavy: 12 kg > 5 kg".
 /proc/dq_pred_cmp_reason(datum/property_def/def, subject, current, op, limit)
@@ -600,7 +600,7 @@
 /datum/pred_node/band
 	var/subject
 	var/property
-	var/datum/property_def/def
+	var/def_handle
 	var/lo
 	var/hi
 	/// Negated: pass outside lo..hi.
@@ -624,16 +624,16 @@
 		return "needs something in hand"
 	var/current = dq_property(thing, property)
 	if(isnull(current))
-		return "[lowertext(def.name || def.id)] unknown"
-	var/range = "[dq_format_measure(lo, def.unit)] to [dq_format_measure(hi, def.unit)]"
+		return "[lowertext(def().name || def().id)] unknown"
+	var/range = "[dq_format_measure(lo, def().unit)] to [dq_format_measure(hi, def().unit)]"
 	if(outside)
-		return "[lowertext(def.name || def.id)] must be outside [range], is [dq_format_measure(current, def.unit)]"
-	return "[dq_pred_extreme_text(def, subject, current > hi)]: [dq_format_measure(current, def.unit)], must be [range]"
+		return "[lowertext(def().name || def().id)] must be outside [range], is [dq_format_measure(current, def().unit)]"
+	return "[dq_pred_extreme_text(def(), subject, current > hi)]: [dq_format_measure(current, def().unit)], must be [range]"
 
 /datum/pred_node/rel
 	var/subject
 	var/property
-	var/datum/property_def/def
+	var/def_handle
 	var/op
 	var/subject_b
 	var/property_b
@@ -657,7 +657,7 @@
 	var/datum/b = dq_pred_subject(subject_b, actor, target, held)
 	if(!a || !b)
 		return "needs something in hand"
-	return dq_pred_cmp_reason(def, subject, dq_property(a, property), op, dq_property(b, property_b))
+	return dq_pred_cmp_reason(def(), subject, dq_property(a, property), op, dq_property(b, property_b))
 
 // ---- Types and fit (constraints, rules.md �3) ----
 
@@ -829,3 +829,27 @@
 
 /mob/living/simple_mob/dq_has_free_hand()
 	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))
+
+/// LC-refs: the property registry compiling against -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/predicate_compiler/proc/registry() as /datum/property_registry
+	return om_resolve(registry_handle)
+
+/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/pred_node/tag/proc/def() as /datum/property_def
+	return om_resolve(def_handle)
+
+/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/pred_node/cmp/proc/def() as /datum/property_def
+	return om_resolve(def_handle)
+
+/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/pred_node/band/proc/def() as /datum/property_def
+	return om_resolve(def_handle)
+
+/// LC-refs: the property this node tests -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/pred_node/rel/proc/def() as /datum/property_def
+	return om_resolve(def_handle)
+
+REF_OWNED(/datum/predicate, "root")
+
+REF_OWNED_LIST(/datum/predicate, "watchable")

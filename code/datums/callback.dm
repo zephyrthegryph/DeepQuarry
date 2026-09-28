@@ -39,14 +39,16 @@
 */
 
 /datum/callback
-	var/datum/object = GLOBAL_PROC
+	/// What to call: GLOBAL_PROC, or the OM handle of the datum (a turf's or client's handle
+	/// works too). Read with target_object(); a deleted target reads null and nothing is called.
+	var/object_handle = GLOBAL_PROC
 	var/delegate
 	var/list/arguments
 	var/user
 
 /datum/callback/New(thingtocall, proctocall, ...)
 	if (thingtocall)
-		object = thingtocall
+		object_handle = thingtocall == GLOBAL_PROC ? GLOBAL_PROC : om_handle(thingtocall)
 	delegate = proctocall
 	if (length(args) > 2)
 		arguments = args.Copy(3)
@@ -74,6 +76,7 @@
 			if(M)
 				return world.PushUsr(M, src)
 
+	var/object = target_object()
 	if (!object)
 		return
 
@@ -98,6 +101,7 @@
 			if(M)
 				return world.PushUsr(M, src)
 
+	var/object = target_object()
 	if (!object)
 		return
 
@@ -119,3 +123,9 @@
 	usr = M
 	. = CB.Invoke()
 	usr = temp
+
+/// GLOBAL_PROC, the datum this callback calls, or null once that datum is deleted.
+/datum/callback/proc/target_object()
+	if(object_handle == GLOBAL_PROC)
+		return GLOBAL_PROC
+	return om_resolve(object_handle)

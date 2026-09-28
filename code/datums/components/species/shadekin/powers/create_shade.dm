@@ -43,15 +43,15 @@
 	on_created_text = span_notice("You drag part of The Dark into realspace, enveloping yourself.")
 	on_expired_text = span_warning("You lose your grasp on The Dark and realspace reasserts itself.")
 	stacks = MODIFIER_STACK_EXTEND
-	var/mob/living/my_kin
+	var/my_kin_handle
 
 /datum/modifier/shadekin/create_shade/tick()
-	var/datum/component/shadekin/SK = my_kin.get_shadekin_component()
+	var/datum/component/shadekin/SK = my_kin().get_shadekin_component()
 	if(SK && SK.in_phase)
 		expire()
 
 /datum/modifier/shadekin/create_shade/on_applied()
-	my_kin = holder
+	my_kin_handle = om_handle(holder)
 	holder.set_glow_toggle(TRUE)
 	holder.set_glow_range(8)
 	holder.set_glow_intensity(-10)
@@ -64,4 +64,8 @@
 	holder.set_glow_intensity(initial(holder.glow_intensity))
 	holder.set_glow_color(initial(holder.glow_color))
 	holder.set_light(0)
-	my_kin = null
+	my_kin_handle = null
+
+/// LC-refs: the shadekin that made this shade -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/modifier/shadekin/create_shade/proc/my_kin() as /mob/living
+	return om_resolve(my_kin_handle)

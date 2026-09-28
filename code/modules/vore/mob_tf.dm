@@ -149,7 +149,7 @@
 	//For primarily copying vore preference settings from a carbon mob to a simplemob
 	//It can be used for other things, but be advised, if you're using it to put a simplemob into a carbon mob, you're gonna be overriding a bunch of prefs
 
-	new_mob.share_identity(identity) // the character's OOC notes, by reference
+	new_mob.share_identity(identity()) // the character's OOC notes, by reference
 	new_mob.appendage_color = appendage_color
 	new_mob.appendage_alt_setting = appendage_alt_setting
 

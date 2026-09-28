@@ -7,16 +7,14 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 */
 
 /datum/component/jittery_shake
-	var/mob/owner
 	/// Whether the owner was resting when the status's rate was last checked.
 	var/was_resting
 
 /datum/component/jittery_shake/Initialize()
 	if (!ismob(parent))
 		return COMPONENT_INCOMPATIBLE
-	owner = parent
-	was_resting = owner.resting
-	RegisterSignal(owner, COMSIG_MOB_DEATH, PROC_REF(mob_death))
+	was_resting = owner().resting
+	RegisterSignal(owner(), COMSIG_MOB_DEATH, PROC_REF(mob_death))
 	om_after(src, 1, PROC_REF(handle_tick)) // Needs to be a LOT faster than life ticks
 
 /datum/component/jittery_shake/proc/handle_tick()
@@ -24,25 +22,29 @@ status starts and deletes it when it ends (the status row's on_start/on_end hook
 		return
 
 	// Resting wears jitters off faster.
-	if(owner.resting != was_resting)
-		was_resting = owner.resting
-		owner.status_rate_check(EFFECT_JITTERY)
+	if(owner().resting != was_resting)
+		was_resting = owner().resting
+		owner().status_rate_check(EFFECT_JITTERY)
 
 	// Shakey shakey
-	var/jitteriness = owner.status_units(EFFECT_JITTERY)
+	var/jitteriness = owner().status_units(EFFECT_JITTERY)
 	if(jitteriness > 100)
 		var/amplitude = min(4, jitteriness / 100)
-		owner.pixel_x = owner.old_x + rand(-amplitude, amplitude)
-		owner.pixel_y = owner.old_y + rand(-amplitude/3, amplitude/3)
+		owner().pixel_x = owner().old_x + rand(-amplitude, amplitude)
+		owner().pixel_y = owner().old_y + rand(-amplitude/3, amplitude/3)
 
 	om_after(src, 1, PROC_REF(handle_tick))
 
 /datum/component/jittery_shake/proc/mob_death()
 	SIGNAL_HANDLER
-	owner.status_end(EFFECT_JITTERY)
+	owner().status_end(EFFECT_JITTERY)
 
 // ALLOW(lifecycle): the jittering mob's pixel offsets reset.
 /datum/component/jittery_shake/Destroy(force = FALSE)
-	owner.pixel_x = owner.old_x
-	owner.pixel_y = owner.old_y
+	owner().pixel_x = owner().old_x
+	owner().pixel_y = owner().old_y
 	. = ..()
+
+/// LC-refs: the jittery mob (our parent) (was a var copying parent).
+/datum/component/jittery_shake/proc/owner() as /mob
+	return parent

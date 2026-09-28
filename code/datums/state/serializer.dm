@@ -94,9 +94,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/flags = NONE
 	/// Reasons the call failed; null when it succeeded.
 	var/list/errors
-	/// Serialize: datum -> child ID for every atom in the subtree.
+	/// Serialize: the datum's OM handle -> child ID for every atom in the subtree.
 	var/list/ids
-	/// Materialize: child ID -> atom.
+	/// Materialize: child ID -> the atom's OM handle.
 	var/list/by_id
 	/// Materialize: list(target, blob) pairs whose vars are applied once the tree exists.
 	var/list/pending
@@ -119,7 +119,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		refuse("[D] is not a live datum")
 		return null
 	ids = list()
-	ids[D] = ""
+	ids[om_handle(D)] = ""
 	var/atom/movable/movable = D
 	latent_root = istype(movable) && movable.latent_safe
 	if((flags & STATE_CONTENTS) && isatom(D))
@@ -133,7 +133,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	for(var/atom/movable/child as anything in state_children(A))
 		index++
 		var/id = prefix == "" ? "[index]" : "[prefix].[index]"
-		ids[child] = id
+		ids[om_handle(child)] = id
 		assign_ids(child, id)
 
 /// Serializes one datum: type, version, delta, and (per flags) contents and components.
@@ -310,8 +310,9 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			return null
 		return list(STATE_WRAP_RESOURCE = rsc_path)
 	if(isdatum(value))
-		if(ids && (value in ids))
-			return list(STATE_WRAP_CHILD = ids[value])
+		var/value_handle = ids && om_handle(value)
+		if(value_handle && (value_handle in ids))
+			return list(STATE_WRAP_CHILD = ids[value_handle])
 		var/list/registry = state_registry_id(value)
 		if(registry)
 			return list(STATE_WRAP_REGISTRY = registry)
@@ -430,7 +431,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(path != D.type)
 		refuse("blob is a [path], target is a [D.type]")
 		return FALSE
-	by_id[""] = D
+	by_id[""] = om_handle(D)
 	pending += list(list(D, blob))
 	if(isatom(D))
 		create_children(D, blob, "")
@@ -443,7 +444,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	if(!path)
 		return null
 	var/datum/D = ispath(path, /atom) ? new path(loc) : new path
-	by_id[id] = D
+	by_id[id] = om_handle(D)
 	pending += list(list(D, blob))
 	if(isatom(D))
 		create_children(D, blob, id)
@@ -572,7 +573,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 					if(!(inner in by_id))
 						refuse("child [inner] is not in the subtree")
 						return null
-					return by_id[inner]
+					return om_resolve(by_id[inner])
 				if(STATE_WRAP_REGISTRY)
 					var/found = state_registry_lookup(inner)
 					if(!found)

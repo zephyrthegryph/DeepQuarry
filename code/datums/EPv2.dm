@@ -32,10 +32,10 @@ It's suggested to start with an if or switch statement for the message, to deter
 
 /datum/exonet_protocol
 	var/address = "" //Resembles IPv6, but with only five 'groups', e.g. XXXX:XXXX:XXXX:XXXX:XXXX
-	var/atom/movable/holder = null
+	var/holder_handle
 
 /datum/exonet_protocol/New(atom/holder)
-	src.holder = holder
+	src.holder_handle = om_handle(holder)
 	..()
 
 // Proc: make_address()
@@ -103,7 +103,7 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 /datum/exonet_protocol/proc/get_atom_from_address(target_address)
 	for(var/datum/exonet_protocol/exonet in REGISTRY_MEMBERS(REGISTRY_EXONET_CONNECTIONS))
 		if(exonet.address == target_address)
-			return exonet.holder
+			return exonet.holder()
 	return null
 
 // Proc: send_message()
@@ -119,14 +119,14 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 	for(var/datum/exonet_protocol/exonet in REGISTRY_MEMBERS(REGISTRY_EXONET_CONNECTIONS))
 		if(exonet.address == target_address)
 			node.write_log(src.address, target_address, data_type, content)
-			return exonet.receive_message(holder, address, data_type, content)
+			return exonet.receive_message(holder(), address, data_type, content)
 
 // Proc: receive_message()
 // Parameters: 4 (origin_atom - the origin datum's holder, origin_address - the address the message originated from,
 // 		data_type - text stating what the content is meant to be used for, content - the actual 'message' being sent from origin_atom)
 // Description: Called when send_message() successfully reaches the intended datum.  By default, calls receive_exonet_message() on the holder atom.
 /datum/exonet_protocol/proc/receive_message(atom/origin_atom, origin_address, data_type, content)
-	holder.receive_exonet_message(origin_atom, origin_address, data_type, content)
+	holder().receive_exonet_message(origin_atom, origin_address, data_type, content)
 	return TRUE // for send_message()
 
 // Proc: receive_exonet_message()
@@ -134,3 +134,7 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 // Description: Override this to make your atom do something when a message is received.
 /atom/proc/receive_exonet_message(atom/origin_atom, origin_address, message, text)
 	return
+
+/// LC-refs: the atom this protocol speaks for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/exonet_protocol/proc/holder() as /atom/movable
+	return om_resolve(holder_handle)

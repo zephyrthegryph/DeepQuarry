@@ -1,32 +1,34 @@
 /datum/component/coprolalia_disability
-	var/mob/living/owner
 
 /datum/component/coprolalia_disability/Initialize()
 	if (!ishuman(parent))
 		return COMPONENT_INCOMPATIBLE
 
-	owner = parent
-	RegisterSignal(owner, COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
+	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
 
 /datum/component/coprolalia_disability/proc/process_component()
 	SIGNAL_HANDLER
 
 	if(QDELETED(parent))
 		return
-	if(isbelly(owner.loc))
+	if(isbelly(owner().loc))
 		return
-	if(owner.stat != CONSCIOUS)
+	if(owner().stat != CONSCIOUS)
 		return
-	if(owner.transforming)
+	if(owner().transforming)
 		return
-	if(owner.client && (owner.client.prefs.muted & MUTE_IC))
+	if(owner().client && (owner().client.prefs.muted & MUTE_IC))
 		return
-	if((prob(1) && prob(2) && owner.status_units(EFFECT_PARALYZED) <= 1))
-		owner.status_at_least(EFFECT_STUNNED, 10)
-		owner.status_adjust(EFFECT_JITTERY, 100)
+	if((prob(1) && prob(2) && owner().status_units(EFFECT_PARALYZED) <= 1))
+		owner().status_at_least(EFFECT_STUNNED, 10)
+		owner().status_adjust(EFFECT_JITTERY, 100)
 		switch(rand(1, 3))
 			if(1)
-				owner.emote("twitch")
+				owner().emote("twitch")
 			if(2 to 3)
-				owner.direct_say("[prob(50) ? ";" : ""][pick("SHIT", "PISS", "FUCK", "CUNT", "COCKSUCKER", "MOTHERFUCKER", "TITS")]")
+				owner().direct_say("[prob(50) ? ";" : ""][pick("SHIT", "PISS", "FUCK", "CUNT", "COCKSUCKER", "MOTHERFUCKER", "TITS")]")
 
+
+/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
+/datum/component/coprolalia_disability/proc/owner() as /mob/living
+	return parent

@@ -355,7 +355,7 @@
 		for (var/obj/item/organ/internal/brain/CH in REGISTRY_MEMBERS(REGISTRY_BRAIN_ORGANS))
 			var/datum/component/mind_host/host = get_mind_host(CH)
 			var/datum/mind/brain_mind = host?.hosted_mind()
-			if(brain_mind && brain_mind.get_identity() == H.identity)
+			if(brain_mind && brain_mind.get_identity() == H.identity())
 				host.release_mind(H, "regrown body reclaimed its brain")
 				qdel(CH)
 				break

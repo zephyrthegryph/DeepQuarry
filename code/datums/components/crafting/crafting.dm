@@ -632,3 +632,5 @@
 	icon = 'icons/mob/screen/midnight.dmi'
 	icon_state = "craft"
 	screen_loc = ui_smallquad
+
+REF_OWNED(/datum/component/personal_crafting, "button")

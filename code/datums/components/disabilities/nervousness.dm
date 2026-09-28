@@ -1,26 +1,28 @@
 /datum/component/nervousness_disability
-	var/mob/owner
 
 /datum/component/nervousness_disability/Initialize()
 	if (!ishuman(parent))
 		return COMPONENT_INCOMPATIBLE
 
-	owner = parent
-	RegisterSignal(owner, COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
+	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
 
 /datum/component/nervousness_disability/proc/process_component()
 	SIGNAL_HANDLER
 
 	if(QDELETED(parent))
 		return
-	if(isbelly(owner.loc))
+	if(isbelly(owner().loc))
 		return
-	if(owner.stat != CONSCIOUS)
+	if(owner().stat != CONSCIOUS)
 		return
-	if(owner.transforming)
+	if(owner().transforming)
 		return
 	if(prob(5) && prob(7))
-		owner.status_at_least(EFFECT_STUTTERING, 15)
-		if(owner.status_units(EFFECT_JITTERY) < 50)
-			owner.status_adjust(EFFECT_JITTERY, 65)
+		owner().status_at_least(EFFECT_STUTTERING, 15)
+		if(owner().status_units(EFFECT_JITTERY) < 50)
+			owner().status_adjust(EFFECT_JITTERY, 65)
 
+
+/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
+/datum/component/nervousness_disability/proc/owner() as /mob
+	return parent

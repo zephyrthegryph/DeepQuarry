@@ -178,7 +178,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 // ---------------------------------------------------------------- rings
 
 /datum/om/ring
-	var/datum/om/behaviour/B
+	/// The behaviour this ring runs, by registry id (om_registry().behaviours); read with behaviour().
+	var/behaviour_id
 	var/interval
 	/// Slot width, deciseconds (the scheduler's slot_ds when the ring was made).
 	var/slot_ds = OM_SLOT_DS
@@ -203,7 +204,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/list/pending_adds
 
 /datum/om/ring/New(datum/om/behaviour/B, interval, now, slot_ds = OM_SLOT_DS)
-	src.B = B
+	behaviour_id = B.id
 	src.interval = interval
 	src.slot_ds = slot_ds
 	size = max(1, round(interval / slot_ds))
@@ -271,7 +272,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/pos = length(lane) + 1
 	for(var/i in 1 to length(lane))
 		var/datum/om/ring/other = lane[i]
-		if(other.B.id > B.id)
+		if(other.behaviour_id > B.id)
 			pos = i
 			break
 	lane.Insert(pos, R)
@@ -365,13 +366,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/s = (R.next_abs % R.size) + 1
 	if(!length(R.slots[s]))
 		return FALSE
-	return (t - R.last_run[s]) >= R.B.compiled_max_interval * borrow_fraction
+	return (t - R.last_run[s]) >= R.behaviour().compiled_max_interval * borrow_fraction
 
 /// Processes every due slot of `R` in order. Never skips a slot: a slot not
 /// reached this run is processed next run with its real elapsed dt.
 /datum/om/scheduler/proc/run_ring(datum/om/ring/R, t)
 	var/now_abs = round(t / R.slot_ds)
-	var/datum/om/behaviour/B = R.B
+	var/datum/om/behaviour/B = R.behaviour()
 	if(B.runlevels)
 		if(!(runlevel & B.runlevels))
 			// Dormant: nothing runs and nothing accumulates, so resuming is no catch-up.
@@ -425,7 +426,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// behaviour's step_idx, on_step called directly; hooks go through call_hook
 /// only when the behaviour holds), and everything else (tick_slow()).
 /datum/om/scheduler/proc/run_slot(datum/om/ring/R, list/L)
-	var/datum/om/behaviour/B = R.B
+	var/datum/om/behaviour/B = R.behaviour()
 	var/dt = R.cur_dt
 	var/mode = OM_SLOT_SLOW
 	if(!(B.clock_idx || B.max_dt))
@@ -905,5 +906,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	.["runs"] = sched.runs
 	.["errors"] = sched.errors.Copy()
 	.["registry_errors"] = reg.errors.Copy()
+
+/// The behaviour this ring runs.
+/datum/om/ring/proc/behaviour() as /datum/om/behaviour
+	return om_registry().behaviours[behaviour_id]
 	.["io"] = om_io_diagnostics(sched)
 	.["pools"] = pool_diagnostics()

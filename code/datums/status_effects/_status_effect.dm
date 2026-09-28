@@ -65,7 +65,7 @@
 
 	if(alert_type)
 		var/atom/movable/screen/alert/status_effect/new_alert = owner.throw_alert(id, alert_type)
-		new_alert.attached_effect = src //so the alert can reference us, if it needs to
+		new_alert.attached_effect_handle = om_handle(src) //so the alert can reference us, if it needs to
 		linked_alert = new_alert //so we can reference the alert, if we need to
 		update_shown_duration()
 
@@ -238,5 +238,9 @@ REF_OWNED(/datum/status_effect, "particle_effect")
 	desc = "You don't feel any different..."
 	// maptext_y = 2
 	/// The status effect we're linked to
-	var/datum/status_effect/attached_effect
+	var/attached_effect_handle
 
+
+/// LC-refs: the status effect this alert shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/atom/movable/screen/alert/status_effect/proc/attached_effect() as /datum/status_effect
+	return om_resolve(attached_effect_handle)

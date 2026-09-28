@@ -39,7 +39,7 @@
 	var/datum/money_account/account = id_card ? get_account(id_card.associated_account_number) : null
 	// A worn ID whose account number does not resolve should not strip the
 	// actor of their own account.
-	return account || actor?.mind?.initial_account
+	return account || actor?.mind?.initial_account()
 
 /datum/contract_event/New(_event_type, atom/source, mob/living/actor, mob/living/subject, list/context, _occurrence_id)
 	. = ..()

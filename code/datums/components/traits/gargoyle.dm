@@ -4,8 +4,7 @@
 	var/paused = FALSE
 	var/cooldown
 
-	var/mob/living/carbon/human/gargoyle //easy reference
-	var/obj/structure/gargoyle/statue //another easy ref
+	var/statue_handle	//another easy ref
 
 	//Adjustable mod
 	var/identifier = "statue"
@@ -16,7 +15,6 @@
 /datum/component/gargoyle/Initialize()
 	if (!ishuman(parent))
 		return COMPONENT_INCOMPATIBLE
-	gargoyle = parent
 	add_verb(parent,/mob/living/carbon/human/proc/gargoyle_transformation)
 	add_verb(parent,/mob/living/carbon/human/proc/gargoyle_pause)
 	add_verb(parent,/mob/living/carbon/human/proc/gargoyle_checkenergy)
@@ -38,37 +36,37 @@
 
 /datum/component/gargoyle/proc/process_component()
 	SIGNAL_HANDLER
-	if(QDELETED(gargoyle))
+	if(QDELETED(gargoyle()))
 		return
 	if(transformed)
-		if(!statue)
+		if(!statue())
 			transformed = FALSE
 			return
 		if(paused) //We somehow lost our energy while paused.
 			unpause()
-		statue.damage(-0.5)
+		statue().damage(-0.5)
 		energy = min(energy+0.3, 100)
 
 		//This is where we do all the 'make sure we don't die in statue form' stuff (unless you succumb or take MASSIVE damage.)
 		//Bloodloss will still kill us, but if we are patient enough, we'll survive most other stuff.
 		//If we had 150 brute (crit for most species) it'll take 3000 seconds (50 minutes) to heal back to full hp...So yes, while you can heal, it's not a good idea.
-		if(gargoyle.is_injured())
-			gargoyle.mend(TREAT_TISSUE_REPAIR, 0.1)
-			gargoyle.mend(TREAT_BURN_CARE, 0.1)
-			gargoyle.mend(TREAT_OXYGENATION, 1) //So you don't suffocate to death.
-			gargoyle.mend(TREAT_ANTITOXIN, 0.1)
-			gargoyle.mend(TREAT_GENETIC_REPAIR, 0.02) //yeah this is uber slow, no cheese allowed by combining it with bad genetics.
+		if(gargoyle().is_injured())
+			gargoyle().mend(TREAT_TISSUE_REPAIR, 0.1)
+			gargoyle().mend(TREAT_BURN_CARE, 0.1)
+			gargoyle().mend(TREAT_OXYGENATION, 1) //So you don't suffocate to death.
+			gargoyle().mend(TREAT_ANTITOXIN, 0.1)
+			gargoyle().mend(TREAT_GENETIC_REPAIR, 0.02) //yeah this is uber slow, no cheese allowed by combining it with bad genetics.
 		return //Early return. If we're transformed, we can stop, we don't need to check anything else.
 	if(energy > 0)
 		if(!transformed && !paused)
 			energy = max(0,energy-0.05)
-	else if(!transformed && isturf(gargoyle.loc))
-		gargoyle.gargoyle_transformation()
+	else if(!transformed && isturf(gargoyle().loc))
+		gargoyle().gargoyle_transformation()
 
 /datum/component/gargoyle/proc/unpause()
 	SIGNAL_HANDLER
 	paused = FALSE
-	UnregisterSignal(gargoyle, COMSIG_MOVABLE_MOVED)
+	UnregisterSignal(gargoyle(), COMSIG_MOVABLE_MOVED)
 	return
 
 //verbs or action buttons...?
@@ -80,18 +78,18 @@
 
 /datum/component/gargoyle/proc/gargoyle_transformation()
 	SIGNAL_HANDLER
-	if(gargoyle.stat == DEAD)
+	if(gargoyle().stat == DEAD)
 		return
-	if(energy <= 0 && isturf(gargoyle.loc))
-		to_chat(gargoyle, span_danger("You suddenly turn into a [identifier] as you run out of energy!"))
+	if(energy <= 0 && isturf(gargoyle().loc))
+		to_chat(gargoyle(), span_danger("You suddenly turn into a [identifier] as you run out of energy!"))
 	else if(!COOLDOWN_FINISHED(src, cooldown))
 		var/time_to_wait = (cooldown - world.time) / (1 SECONDS)
-		to_chat(gargoyle, span_warning("You can't transform just yet again! Wait for another [round(time_to_wait,0.1)] seconds!"))
+		to_chat(gargoyle(), span_warning("You can't transform just yet again! Wait for another [round(time_to_wait,0.1)] seconds!"))
 		return
-	if(istype(gargoyle.loc, /obj/structure/gargoyle))
-		qdel(gargoyle.loc)
-	else if(isturf(gargoyle.loc))
-		new /obj/structure/gargoyle(gargoyle.loc, gargoyle)
+	if(istype(gargoyle().loc, /obj/structure/gargoyle))
+		qdel(gargoyle().loc)
+	else if(isturf(gargoyle().loc))
+		new /obj/structure/gargoyle(gargoyle().loc, gargoyle())
 
 /mob/living/carbon/human/proc/gargoyle_pause()
 	set name = "Gargoyle - Pause"
@@ -101,7 +99,7 @@
 
 /datum/component/gargoyle/proc/gargoyle_pause()
 	SIGNAL_HANDLER
-	if(gargoyle.stat)
+	if(gargoyle().stat)
 		return
 
 	if(!transformed && !paused)
@@ -126,3 +124,11 @@
 
 /datum/om/stage/life/trait/gargoyle/tick_component(mob/living/self, datum/component/gargoyle/component)
 	component.process_component()
+
+/// LC-refs: the gargoyle mob (our parent) (was a var copying parent).
+/datum/component/gargoyle/proc/gargoyle() as /mob/living/carbon/human
+	return parent
+
+/// LC-refs: the statue the gargoyle is standing as -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/gargoyle/proc/statue() as /obj/structure/gargoyle
+	return om_resolve(statue_handle)

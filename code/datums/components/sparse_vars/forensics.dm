@@ -70,3 +70,5 @@ GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 	if(!c)
 		c = a.AddComponent(/datum/component/forensics_state)
 	c.fluorescent = v
+
+REF_OWNED(/datum/component/forensics_state, "forensic_data")

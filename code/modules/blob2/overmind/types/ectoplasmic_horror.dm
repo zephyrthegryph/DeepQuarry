@@ -40,7 +40,7 @@
 
 				if(length(active_beams))
 					for(var/datum/beam/Beam in active_beams)
-						if(Beam.target == L)
+						if(Beam.target() == L)
 							beamtarget_exists = TRUE
 							break
 
@@ -80,7 +80,7 @@
 
 				if(length(active_beams))
 					for(var/datum/beam/Beam in active_beams)
-						if(Beam.target == L)
+						if(Beam.target() == L)
 							beamtarget_exists = TRUE
 							break
 

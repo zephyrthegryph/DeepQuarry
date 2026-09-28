@@ -7,7 +7,7 @@
 	/// Callback invoked with removal is done.
 	var/datum/callback/on_clear_callback
 	/// A typecache of all effects we can clear with our item.
-	var/list/obj/effect/effects_we_clear
+	var/list/effects_we_clear // typecache
 	/// If above 0, how long it takes while standing still to remove the effect.
 	var/time_to_remove = 0 SECONDS
 
@@ -48,3 +48,5 @@
 
 	if(!QDELETED(target))
 		qdel(target)
+
+REF_OWNED(/datum/component/effect_remover, "on_clear_callback")

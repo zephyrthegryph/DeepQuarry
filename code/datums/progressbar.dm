@@ -5,11 +5,11 @@
 	///The progress bar visual element.
 	var/image/bar
 	///The target where this progress bar is applied and where it is shown.
-	var/atom/bar_loc
+	var/bar_loc_handle
 	///The mob whose client sees the progress bar.
-	var/mob/user
+	var/user_handle
 	///The client seeing the progress bar.
-	var/client/user_client
+	var/user_client_handle
 	///Effectively the number of steps the progress bar will need to do before reaching completion.
 	var/goal = 1
 	///Control check to see if the progress was interrupted before reaching its goal.
@@ -39,37 +39,39 @@
 		qdel(src)
 		return
 	goal = goal_number
-	bar_loc = target
-	location_type = bar_loc.type
+	bar_loc_handle = om_handle(target)
+	location_type = bar_loc().type
 
 	var/list/icon_offsets = target.get_oversized_icon_offsets()
 	var/offset_x = icon_offsets["x"]
 	offset_y = icon_offsets["y"]
 
-	bar = image('icons/effects/progressbar.dmi', bar_loc, "prog_bar_0", pixel_x = offset_x)
+	bar = image('icons/effects/progressbar.dmi', bar_loc(), "prog_bar_0", pixel_x = offset_x)
 	bar.plane = PLANE_PLAYER_HUD //Swap to SET_PLANE_EXPLICIT(bar, LAYER_HUD_ITEM, User) if we ever get the plane update
 	bar.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
-	user = User
+	user_handle = om_handle(User)
 
-	LAZYADDASSOCLIST(user.progressbars, bar_loc, src)
-	var/list/bars = user.progressbars[bar_loc]
+	LAZYADDASSOCLIST(user().progressbars, bar_loc_handle, src)
+	var/list/bars = user().progressbars[bar_loc_handle]
 	listindex = bars.len
 
-	if(user.client)
-		user_client = user.client
+	if(user().client)
+		user_client_handle = om_handle(user().client)
 		add_prog_bar_image_to_client()
 
-	RegisterSignal(user, COMSIG_QDELETING, PROC_REF(on_user_delete))
-	RegisterSignal(user, COMSIG_MOB_LOGOUT, PROC_REF(clean_user_client))
-	RegisterSignal(user, COMSIG_MOB_LOGIN, PROC_REF(on_user_login))
+	RegisterSignal(user(), COMSIG_QDELETING, PROC_REF(on_user_delete))
+	RegisterSignal(user(), COMSIG_MOB_LOGOUT, PROC_REF(clean_user_client))
+	RegisterSignal(user(), COMSIG_MOB_LOGIN, PROC_REF(on_user_login))
 
 	if(starting_amount)
 		update(starting_amount)
 
-// ALLOW(lifecycle): the bars above it on the same mob slide down to close the gap.
-/datum/progressbar/Destroy()
+/// Phase 1: the bars above it on the same mob slide down to close the gap, and its image (owned,
+/// dropped in phase 4) leaves the client. The user's bars are keyed by the target's handle.
+/datum/progressbar/lifecycle_unbind()
+	var/mob/user = user()
 	if(user)
-		for(var/pb in user.progressbars[bar_loc])
+		for(var/pb in user.progressbars?[bar_loc_handle])
 			var/datum/progressbar/progress_bar = pb
 			if(progress_bar == src || progress_bar.listindex <= listindex)
 				continue
@@ -79,52 +81,49 @@
 			var/dist_to_travel = ICON_SIZE_Y + offset_y + (PROGRESSBAR_HEIGHT * (progress_bar.listindex - 1)) - PROGRESSBAR_HEIGHT
 			animate(progress_bar.bar, pixel_z = dist_to_travel, time = PROGRESSBAR_ANIMATION_TIME, easing = SINE_EASING)
 
-		LAZYREMOVEASSOC(user.progressbars, bar_loc, src)
-		user = null
+		LAZYREMOVEASSOC(user.progressbars, bar_loc_handle, src)
 
-	if(user_client)
+	if(user_client())
 		clean_user_client()
 
-	bar_loc = null
-	bar = null
-
-	return ..()
+REF_OWNED(/datum/progressbar, "bar")
 
 ///Called right before the user's Destroy()
 /datum/progressbar/proc/on_user_delete(datum/source)
 	SIGNAL_HANDLER
 
-	user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
-	user = null
+	var/mob/dying_user = source
+	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
+	user_handle = null
 	qdel(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
 /datum/progressbar/proc/clean_user_client(datum/source)
 	SIGNAL_HANDLER
 
-	if(!user_client) //Disconnected, already gone.
+	if(!user_client()) //Disconnected, already gone.
 		return
-	user_client.images -= bar
-	user_client = null
+	user_client().images -= bar
+	user_client_handle = null
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
 /datum/progressbar/proc/on_user_login(datum/source)
 	SIGNAL_HANDLER
 
-	if(user_client)
-		if(user_client == user.client) //If this was not client handling I'd condemn this sanity check. But clients are fickle things.
+	if(user_client())
+		if(user_client() == user().client) //If this was not client handling I'd condemn this sanity check. But clients are fickle things.
 			return
 		clean_user_client()
-	if(!user.client) //Clients can vanish at any time, the bastards.
+	if(!user().client) //Clients can vanish at any time, the bastards.
 		return
-	user_client = user.client
+	user_client_handle = om_handle(user().client)
 	add_prog_bar_image_to_client()
 
 ///Adds a smoothly-appearing progress bar image to the player's screen.
 /datum/progressbar/proc/add_prog_bar_image_to_client()
 	bar.pixel_z = 0
 	bar.alpha = 0
-	user_client.images += bar
+	user_client().images += bar
 	animate(bar, pixel_z = ICON_SIZE_Y + offset_y + (PROGRESSBAR_HEIGHT * (listindex - 1)), alpha = 255, time = PROGRESSBAR_ANIMATION_TIME, easing = SINE_EASING)
 
 ///Updates the progress bar image visually.
@@ -168,3 +167,15 @@
 
 #undef PROGRESSBAR_ANIMATION_TIME
 #undef PROGRESSBAR_HEIGHT
+
+/// LC-refs: the atom the bar floats over -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/progressbar/proc/bar_loc() as /atom
+	return om_resolve(bar_loc_handle)
+
+/// LC-refs: the mob whose client sees the bar -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/progressbar/proc/user() as /mob
+	return om_resolve(user_handle)
+
+/// LC-refs: the client seeing the bar -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/progressbar/proc/user_client() as /client
+	return om_resolve(user_client_handle)

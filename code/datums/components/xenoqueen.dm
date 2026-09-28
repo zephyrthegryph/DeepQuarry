@@ -1,28 +1,26 @@
 /datum/component/xenoqueenbuff
-	var/mob/living/carbon/human/xeno
 	var/aura_active = 0
-	var/datum/modifier/aura/applying = /datum/modifier/aura/xenoqueenbuff // In case we want to add more than one buff in the future.
+	var/applying = /datum/modifier/aura/xenoqueenbuff // In case we want to add more than one buff in the future.
 
 /datum/component/xenoqueenbuff/Initialize()
 	if(!ishuman(parent))
 		return COMPONENT_INCOMPATIBLE
-	xeno = parent //asigning the reference
-	add_verb(xeno,/mob/living/carbon/human/proc/queen_aura_toggle) // TGPanel
+	add_verb(xeno(),/mob/living/carbon/human/proc/queen_aura_toggle) // TGPanel
 
 /datum/component/xenoqueenbuff/periodic_step()
-	if(QDELETED(xeno))
+	if(QDELETED(xeno()))
 		PERIODIC_STOP(src)
 		aura_active = 0  //Turn off the aura if our host gets deleted
 		return
-	if(xeno.stat == DEAD)
+	if(xeno().stat == DEAD)
 		PERIODIC_STOP(src)
 		aura_active = 0  //Turn off the aura when we die.
 		return
 
-	for(var/mob/living/L in range(7, xeno))
-		if(L == xeno)
+	for(var/mob/living/L in range(7, xeno()))
+		if(L == xeno())
 			continue //Don't buff ourselves
-		if(xeno.IIsAlly(L))
+		if(xeno().IIsAlly(L))
 			L.add_modifier(applying, null, parent)
 
 /datum/modifier/aura/xenoqueenbuff
@@ -65,3 +63,7 @@
 			PERIODIC_START(X, PERIODIC_SECOND)
 			X.aura_active = 1
 			to_chat (src, span_notice("You begin empowering those around you."))
+
+/// LC-refs: the queen (our parent) (was a var copying parent).
+/datum/component/xenoqueenbuff/proc/xeno() as /mob/living/carbon/human
+	return parent

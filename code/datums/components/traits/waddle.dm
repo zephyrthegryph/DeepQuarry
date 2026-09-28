@@ -1,6 +1,4 @@
 /datum/component/waddle_trait
-	var/atom/movable/our_atom
-	var/mob/living/living_owner
 
 	var/waddling = 1
 	var/waddle_z = 4
@@ -12,27 +10,25 @@
 	if (!isobj(parent) && !ismob(parent))
 		return COMPONENT_INCOMPATIBLE
 	if(isliving(parent))
-		living_owner = parent
-		add_verb(living_owner, /mob/living/proc/waddle_adjust)
-		//add_verb(living_owner, /mob/living/proc/waddle_debug)
-	our_atom = parent
-	RegisterSignal(our_atom, COMSIG_MOVABLE_MOVED, PROC_REF(handle_comp))
+		add_verb(parent, /mob/living/proc/waddle_adjust)
+		//add_verb(living_owner(), /mob/living/proc/waddle_debug)
+	RegisterSignal(our_atom(), COMSIG_MOVABLE_MOVED, PROC_REF(handle_comp))
 
 /datum/component/waddle_trait/proc/handle_comp()
 	SIGNAL_HANDLER
-	if (QDELETED(our_atom))
+	if (QDELETED(our_atom()))
 		return
 	//Living owner only. No waddling while downed.
-	if(living_owner)
-		if(living_owner.stat != CONSCIOUS || living_owner.resting)
+	if(living_owner())
+		if(living_owner().stat != CONSCIOUS || living_owner().resting)
 			return
 	if(waddling)
-		waddle_waddle(our_atom)
+		waddle_waddle(our_atom())
 
 // ALLOW(lifecycle): the owner loses the waddle verb.
 /datum/component/waddle_trait/Destroy(force = FALSE)
-	if(living_owner)
-		remove_verb(living_owner, /mob/living/proc/waddle_adjust)
+	if(living_owner())
+		remove_verb(living_owner(), /mob/living/proc/waddle_adjust)
 	. = ..()
 
 /mob/living/verb/toggle_waddle()
@@ -111,9 +107,17 @@
 		comp.waddling = 1 //Activate it!
 
 /datum/component/waddle_trait/proc/waddle_waddle(atom/movable/target)
-	var/prev_pixel_z = our_atom.pixel_z
+	var/prev_pixel_z = our_atom().pixel_z
 
 	animate(target, pixel_z = target.pixel_z + waddle_z, time = 0)
 	var/prev_transform = target.transform //The person's default state.
 	animate(pixel_z = prev_pixel_z, transform = turn(target.transform, pick(waddle_min, 0, waddle_max)), time=waddle_time)
 	animate(transform = prev_transform, time = 0)
+
+/// LC-refs: the waddling atom (our parent) (was a var copying parent).
+/datum/component/waddle_trait/proc/our_atom() as /atom/movable
+	return parent
+
+/// LC-refs: our parent when it is a living mob (was a var copying it).
+/datum/component/waddle_trait/proc/living_owner() as /mob/living
+	return isliving(parent) ? parent : null

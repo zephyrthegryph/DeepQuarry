@@ -163,7 +163,7 @@
 
 /proc/charge_mob_for_department_service(mob/living/customer_mob, department, amount, purpose, provider_name)
 	var/obj/item/card/id/id = customer_mob?.GetIdCard()
-	var/datum/money_account/customer = id ? get_account(id.associated_account_number) : customer_mob?.mind?.initial_account
+	var/datum/money_account/customer = id ? get_account(id.associated_account_number) : customer_mob?.mind?.initial_account()
 	return charge_department_service(customer, department, amount, purpose, provider_name)
 
 /proc/transfer_account_funds(datum/money_account/source, datum/money_account/target, amount, purpose, terminal_id = "Station budget ledger")

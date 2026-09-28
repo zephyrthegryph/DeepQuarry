@@ -415,8 +415,8 @@
 			title = user.job
 		assignment = title
 	user.set_id_info(src)
-	if(user.mind && user.mind.initial_account)
-		associated_account_number = user.mind.initial_account.account_number
+	if(user.mind && user.mind.initial_account())
+		associated_account_number = user.mind.initial_account().account_number
 	if(length(title_strings))
 		var/tempname = DEFAULTPICK(title_strings, null)
 		name = tempname + " ([assignment] Contractor)" // Suffix contractor IDs

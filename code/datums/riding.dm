@@ -6,21 +6,21 @@
 	var/keytype = null					// Can give this a type to require the rider to hold the item type inhand to move the ridden atom.
 	var/nonhuman_key_exemption = FALSE	// If true, nonhumans who can't hold keys don't need them, like borgs and simplemobs.
 	var/key_name = "the keys"			// What the 'keys' for the thing being rided on would be called.
-	var/atom/movable/ridden = null 		// The thing that the datum is attached to.
+	var/ridden_handle	// The thing that the datum is attached to.
 	var/only_one_driver = FALSE			// If true, only the person in 'front' (first on list of riding mobs) can drive.
 	var/rider_size = 1 // to figure out offsets for rider.
 
 /datum/riding/New(atom/movable/_ridden)
-	ridden = _ridden
+	ridden_handle = om_handle(_ridden)
 
 /datum/riding/proc/handle_vehicle_layer()
-	if(ridden.dir != NORTH)
-		ridden.layer = ABOVE_MOB_LAYER
+	if(ridden().dir != NORTH)
+		ridden().layer = ABOVE_MOB_LAYER
 	else
-		ridden.layer = OBJ_LAYER
+		ridden().layer = OBJ_LAYER
 
 /datum/riding/proc/on_vehicle_move()
-	for(var/mob/living/M in ridden?.buckled_mob_list())
+	for(var/mob/living/M in ridden()?.buckled_mob_list())
 		ride_check(M)
 	handle_vehicle_offsets()
 	handle_vehicle_layer()
@@ -29,13 +29,13 @@
 	return TRUE
 
 /datum/riding/proc/force_dismount(mob/living/M)
-	ridden.unbuckle_mob(M)
+	ridden().unbuckle_mob(M)
 
 /datum/riding/proc/handle_vehicle_offsets()
-	var/ridden_dir = "[ridden.dir]"
+	var/ridden_dir = "[ridden().dir]"
 	var/passindex = 0
-	if(ridden.has_buckled_mobs())
-		for(var/m in ridden?.buckled_mob_list())
+	if(ridden().has_buckled_mobs())
+		for(var/m in ridden()?.buckled_mob_list())
 			passindex++
 			var/mob/living/buckled_mob = m
 			var/list/offsets = get_offsets(passindex)
@@ -59,7 +59,7 @@
 // Override this to set the passengers/riders dir based on which passenger they are.
 // ie: rider facing the vehicle's dir, but passenger 2 facing backwards, etc.
 /datum/riding/proc/get_rider_dir(pass_index)
-	return ridden.dir
+	return ridden().dir
 
 // KEYS
 /datum/riding/proc/keycheck(mob/user)
@@ -86,11 +86,11 @@
 		Unbuckle(user)
 		return
 
-	var/list/ridden_buckled = ridden?.buckled_mob_list()
+	var/list/ridden_buckled = ridden()?.buckled_mob_list()
 	if(only_one_driver && ridden_buckled.len)
 		var/mob/living/driver = ridden_buckled[1]
 		if(driver != user)
-			to_chat(user, span_warning("\The [ridden] can only be controlled by one person at a time, and is currently being controlled by \the [driver]."))
+			to_chat(user, span_warning("\The [ridden()] can only be controlled by one person at a time, and is currently being controlled by \the [driver]."))
 			return
 
 	if(!COOLDOWN_FINISHED(src, next_vehicle_move))
@@ -99,22 +99,22 @@
 	COOLDOWN_START(src, next_vehicle_move, vehicle_move_delay)
 
 	if(keycheck(user))
-		if(!Process_Spacemove(direction) || !isturf(ridden.loc))
+		if(!Process_Spacemove(direction) || !isturf(ridden().loc))
 			return
-		ridden.Move(get_step(ridden, direction), direction, vehicle_move_delay)
+		ridden().Move(get_step(ridden(), direction), direction, vehicle_move_delay)
 
 		handle_vehicle_layer()
 		handle_vehicle_offsets()
 	else
-		to_chat(user, span_warning("You'll need [key_name] in one of your hands to move \the [ridden]."))
+		to_chat(user, span_warning("You'll need [key_name] in one of your hands to move \the [ridden()]."))
 
 /datum/riding/proc/Unbuckle(atom/movable/M)
 //	om_after_unique(ridden, 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), M)
 	// Deferred to the next scheduler slot, as /tg/ does with a zero-length timer.
-	om_after(ridden, 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), M)
+	om_after(ridden(), 0, TYPE_PROC_REF(/atom/movable, unbuckle_mob), M)
 
 /datum/riding/proc/Process_Spacemove(direction)
-	if(ridden.get_gravity())
+	if(ridden().get_gravity())
 		return TRUE
 
 	return FALSE
@@ -132,8 +132,8 @@
 	only_one_driver = TRUE // Would be pretty crazy if five people try to move at the same time.
 
 /datum/riding/boat/handle_ride(mob/user, direction)
-	var/turf/next = get_step(ridden, direction)
-	var/turf/current = get_turf(ridden)
+	var/turf/next = get_step(ridden(), direction)
+	var/turf/current = get_turf(ridden())
 
 	if(istype(current, /turf/simulated/floor/water/underwater)) //don't work at the bottom of the ocean!
 		to_chat(user, span_warning("The boat has sunk!"))
@@ -169,7 +169,7 @@
 			return null // This will runtime, but we want that since this is out of bounds.
 
 /datum/riding/boat/small/handle_vehicle_layer()
-	ridden.layer = ABOVE_MOB_LAYER
+	ridden().layer = ABOVE_MOB_LAYER
 
 /datum/riding/boat/big // 'Big' boats can hold up to five people.
 
@@ -217,7 +217,7 @@
 			return null // This will runtime, but we want that since this is out of bounds.
 
 /datum/riding/boat/big/handle_vehicle_layer()
-	ridden.layer = MOB_LAYER+0.4
+	ridden().layer = MOB_LAYER+0.4
 
 /datum/riding/boat/get_offsets(pass_index) // list(dir = x, y, layer)
 	return list("[NORTH]" = list(1, 2), "[SOUTH]" = list(1, 2), "[EAST]" = list(1, 2), "[WEST]" = list(1, 2))
@@ -246,3 +246,11 @@
 				)
 		else
 			return null // This will runtime, but we want that since this is out of bounds.
+
+/// LC-refs: the atom being ridden -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/riding/proc/ridden() as /atom/movable
+	return om_resolve(ridden_handle)
+
+/// Puts the atom back on its type's layer (riding datums read their ridden atom through a handle).
+/atom/proc/restore_initial_layer()
+	layer = initial(layer)

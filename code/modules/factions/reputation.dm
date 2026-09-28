@@ -486,7 +486,7 @@ REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 	var/list/faction_affiliations
 
 /mob/living/proc/ensure_faction_reputation() as /datum/faction_reputation_ledger
-	var/account_number = mind?.initial_account?.account_number
+	var/account_number = mind?.initial_account()?.account_number
 	if(account_number)
 		var/datum/faction_reputation_ledger/stable_ledger = GLOB.station_faction_relations.get_personal_ledger(account_number, FALSE)
 		if(!stable_ledger)

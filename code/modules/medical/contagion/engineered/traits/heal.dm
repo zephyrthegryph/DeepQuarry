@@ -93,7 +93,7 @@
 	var/tetsuo = FALSE
 	var/bruteheal = FALSE
 
-	var/tmp/datum/mind/ownermind
+	var/tmp/ownermind_handle
 
 	threshold_descs = list(
 		"Stage Speed 6" = "The disease heals brute damage at a fast rate, but causes expulsion of benign tumors.",
@@ -113,7 +113,7 @@
 			power = 3
 
 	var/mob/living/carbon/human/H = A.host
-	ownermind = H.mind
+	ownermind_handle = om_handle(H.mind)
 
 /datum/viral_trait/growth/Activate(datum/affliction/contagion/engineered/A)
 	if(!..())
@@ -137,12 +137,12 @@
 								H.visible_message(span_warning("[H]'s missing limbs reform, making a loud, grotesque sound!"), span_userdanger("You limbs regrow, making a loud, crunchy sound and giving you great pain!"))
 								H.emote("scream")
 								if(Z == BP_HEAD)
-									if(isliving(ownermind.current))
-										var/mob/living/owner = ownermind.current
+									if(isliving(ownermind().current))
+										var/mob/living/owner = ownermind().current
 										if(owner.stat != DEAD)
-											ownermind = null
+											ownermind_handle = null
 											break
-									ownermind.transfer_to(H)
+									ownermind().transfer_to(H)
 									H.grab_ghost()
 								break
 			if(bruteheal)
@@ -315,3 +315,7 @@ Bonus
 	M.radiation = max(M.radiation - 3, 0)
 	return TRUE
 */
+
+/// LC-refs: the mind to put back in its body -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/symptom/growth/proc/ownermind() as /datum/mind
+	return om_resolve(ownermind_handle)

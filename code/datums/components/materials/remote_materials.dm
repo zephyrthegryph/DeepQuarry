@@ -12,9 +12,9 @@ handles linking back and forth.
 	// 3. silo is null, materials is null
 
 	///The silo machine this container is connected to
-	var/obj/machinery/ore_silo/silo
+	var/silo_handle
 	///Material container. the value is either the silo or local
-	var/datum/component/material_container/mat_container
+	var/mat_container_handle
 	///Should we create a local storage if we can't connect to silo
 	var/allow_standalone
 	///Local size of container when silo = null
@@ -61,29 +61,29 @@ handles linking back and forth.
 	PRIVATE_PROC(TRUE)
 
 	if (connect_to_silo)
-		silo = GLOB.ore_silo_default
-		if (silo)
-			LAZYADD(silo.ore_connected_machines, src)
-			mat_container = silo.materials
+		silo_handle = om_handle(GLOB.ore_silo_default)
+		if (silo())
+			LAZYADD(silo().ore_connected_machines, src)
+			mat_container_handle = om_handle(silo().materials)
 
-	if(!mat_container && allow_standalone)
+	if(!mat_container() && allow_standalone)
 		_MakeLocal()
 
 // ALLOW(lifecycle): disconnects from its ore silo.
 /datum/component/remote_materials/Destroy()
-	if(silo)
+	if(silo())
 		allow_standalone = FALSE
 		disconnect()
-	mat_container = null
+	mat_container_handle = null
 
 	return ..()
 
 /datum/component/remote_materials/proc/_MakeLocal()
 	PRIVATE_PROC(TRUE)
 
-	silo = null
+	silo_handle = null
 
-	mat_container = parent.AddComponent( \
+	var/datum/component/material_container/local_container = parent.AddComponent( \
 		/datum/component/material_container, \
 		subtypesof(/datum/material), \
 		local_size, \
@@ -91,16 +91,17 @@ handles linking back and forth.
 		container_signals = mat_container_signals, \
 		allowed_items = /obj/item/stack \
 	)
+	mat_container_handle = om_handle(local_container)
 
 /// Adds/Removes this connection from the silo
 /datum/component/remote_materials/proc/toggle_holding()
-	if(isnull(silo))
+	if(isnull(silo()))
 		return
 
-	if(!LAZYACCESS(silo.holds, src))
-		LAZYSET(silo.holds, src, TRUE)
+	if(!LAZYACCESS(silo().holds, src))
+		LAZYSET(silo().holds, src, TRUE)
 	else
-		LAZYREMOVE(silo.holds, src)
+		LAZYREMOVE(silo().holds, src)
 
 /**
  * Sets the storage size for local materials when not linked with silo
@@ -110,17 +111,17 @@ handles linking back and forth.
  */
 /datum/component/remote_materials/proc/set_local_size(size)
 	local_size = size
-	if (!silo && mat_container)
-		mat_container.max_amount = size
+	if (!silo() && mat_container())
+		mat_container().max_amount = size
 
 ///Disconnects this component from the silo
 /datum/component/remote_materials/proc/disconnect()
-	if(isnull(silo))
+	if(isnull(silo()))
 		return
 
-	LAZYREMOVE(silo.ore_connected_machines, src)
-	silo = null
-	mat_container = null
+	LAZYREMOVE(silo().ore_connected_machines, src)
+	silo_handle = null
+	mat_container_handle = null
 
 	if (allow_standalone)
 		_MakeLocal()
@@ -130,8 +131,8 @@ handles linking back and forth.
 
 	. = NONE
 	if (!QDELETED(M.buffer()) && istype(M.buffer(), /obj/machinery/ore_silo))
-		if (silo == M.buffer())
-			to_chat(user, span_warning("[parent] is already connected to [silo]!"))
+		if (silo() == M.buffer())
+			to_chat(user, span_warning("[parent] is already connected to [silo()]!"))
 			return FALSE
 		if(!check_z_level(M.buffer()))
 			to_chat(user, span_warning("[parent] is too far away to get a connection signal!"))
@@ -139,23 +140,23 @@ handles linking back and forth.
 
 		var/obj/machinery/ore_silo/new_silo = M.buffer()
 		var/datum/component/material_container/new_container = new_silo.GetComponent(/datum/component/material_container)
-		if (silo)
-			LAZYREMOVE(silo.ore_connected_machines, src)
-			LAZYREMOVE(silo.holds, src)
-		else if (mat_container)
+		if (silo())
+			LAZYREMOVE(silo().ore_connected_machines, src)
+			LAZYREMOVE(silo().holds, src)
+		else if (mat_container())
 			//transfer all mats to silo. whatever cannot be transfered is dumped out as sheets
-			if(mat_container.total_amount())
-				for(var/datum/material/mat as anything in mat_container.materials)
-					var/mat_amount = mat_container.materials[mat]
+			if(mat_container().total_amount())
+				for(var/datum/material/mat as anything in mat_container().materials)
+					var/mat_amount = mat_container().materials[mat]
 					if(!mat_amount || !new_container.has_space(mat_amount) || !new_container.can_hold_material(mat))
 						continue
 					new_container.materials[mat] += mat_amount
-					mat_container.materials[mat] = 0
-			qdel(mat_container)
-		silo = new_silo
-		LAZYADD(silo.ore_connected_machines, src)
-		mat_container = new_container
-		to_chat(user, span_notice("You connect [parent] to [silo] from the multitool's buffer."))
+					mat_container().materials[mat] = 0
+			qdel(mat_container())
+		silo_handle = om_handle(new_silo)
+		LAZYADD(silo().ore_connected_machines, src)
+		mat_container_handle = om_handle(new_container)
+		to_chat(user, span_notice("You connect [parent] to [silo()] from the multitool's buffer."))
 		return TRUE
 
 /datum/component/remote_materials/proc/on_item_insert(datum/source, obj/item/target, mob/living/user)
@@ -171,7 +172,7 @@ handles linking back and forth.
 		return FALSE
 
 	if(istype(target, /obj/item/storage/bag/sheetsnatcher))
-		return mat_container.OnSheetSnatcher(source, user, target)
+		return mat_container().OnSheetSnatcher(source, user, target)
 
 	if(istype(target, /obj/item/gripper))
 		var/obj/item/gripper/robot_gripper = target
@@ -183,16 +184,16 @@ handles linking back and forth.
 
 /// Insert mats into silo
 /datum/component/remote_materials/proc/attempt_insert(mob/living/user, obj/item/target)
-	if(silo)
-		mat_container.user_insert(target, user, parent)
+	if(silo())
+		mat_container().user_insert(target, user, parent)
 		return TRUE
 
 /**
- * Checks if the param silo is in the same level as this components parent i.e. connected machine, rcd, etc
+ * Checks if the param silo() is in the same level as this components parent i.e. connected machine, rcd, etc
  *
  * Arguments
- * silo_to_check- Is this components parent in the same Z level as this param silo. If null
- * then check this components connected silo
+ * silo_to_check- Is this components parent in the same Z level as this param silo(). If null
+ * then check this components connected silo()
  *
  * Returns true if both are on the station or same z level
  */
@@ -204,22 +205,22 @@ handles linking back and forth.
 
 /// returns TRUE if this connection put on hold by the silo
 /datum/component/remote_materials/proc/on_hold()
-	return check_z_level() ? LAZYACCESS(silo.holds, src) : FALSE
+	return check_z_level() ? LAZYACCESS(silo().holds, src) : FALSE
 
 /**
- * Check if this connection can use any materials from the silo
+ * Check if this connection can use any materials from the silo()
  * Returns true only if
  * - The parent is of type movable atom
  * - A mat container is actually present
- * - The silo in not on hold
+ * - The silo() in not on hold
  * Arguments
- * * check_hold - should we check if the silo is on hold
+ * * check_hold - should we check if the silo() is on hold
  */
 /datum/component/remote_materials/proc/can_use_resource(check_hold = TRUE)
 	var/atom/movable/movable_parent = parent
 	if (!istype(movable_parent))
 		return FALSE
-	if (!mat_container) //no silolink & local storage not supported
+	if (!mat_container()) //no silolink & local storage not supported
 		movable_parent.atom_say("No access to material storage, please contact the quartermaster.")
 		return FALSE
 	if(check_hold && on_hold()) //silo on hold
@@ -228,7 +229,7 @@ handles linking back and forth.
 	return TRUE
 
 /**
- * Use materials from either the silo(if connected) or from the local storage. If silo then this action
+ * Use materials from either the silo(if connected) or from the local storage. If silo() then this action
  * is logged else not e.g. action="build" & name="matter bin" means you are trying to build a matter bin
  *
  * Arguments
@@ -249,13 +250,13 @@ handles linking back and forth.
 			req_mat = GET_MATERIAL_REF(req_mat)
 		rebuilt_mats[req_mat] = imat
 
-	var/amount_consumed = mat_container.use_materials(rebuilt_mats, coefficient, multiplier)
+	var/amount_consumed = mat_container().use_materials(rebuilt_mats, coefficient, multiplier)
 
-	if (silo)//log only if silo is linked
+	if (silo())//log only if silo is linked
 		var/list/scaled_mats = list()
 		for(var/i in rebuilt_mats)
 			scaled_mats[i] = OPTIMAL_COST(OPTIMAL_COST(rebuilt_mats[i] * coefficient) * multiplier)
-		silo.silo_log(parent, action, -multiplier, name, scaled_mats)
+		silo().silo_log(parent, action, -multiplier, name, scaled_mats)
 
 	return amount_consumed
 
@@ -275,7 +276,7 @@ handles linking back and forth.
 	if(isnull(drop_target))
 		drop_target = movable_parent.drop_location()
 
-	return mat_container.retrieve_sheets(eject_amount, material_ref, target = drop_target, context = parent)
+	return mat_container().retrieve_sheets(eject_amount, material_ref, target = drop_target, context = parent)
 
 /**
  * Insert an item into the mat container, helper proc to insert items with the correct context
@@ -288,4 +289,12 @@ handles linking back and forth.
 	if(!can_use_resource(FALSE))
 		return MATERIAL_INSERT_ITEM_FAILURE
 
-	return mat_container.insert_item(weapon, multiplier, parent)
+	return mat_container().insert_item(weapon, multiplier, parent)
+
+/// LC-refs: the silo we are connected to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/remote_materials/proc/silo() as /obj/machinery/ore_silo
+	return om_resolve(silo_handle)
+
+/// LC-refs: the material container in use (the silo's or our parent's) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/remote_materials/proc/mat_container() as /datum/component/material_container
+	return om_resolve(mat_container_handle)

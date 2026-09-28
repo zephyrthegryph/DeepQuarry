@@ -98,6 +98,24 @@ LIST_ASSIGN = re.compile(r"^(?:src\.)?(\w+)\s*=(?!=)\s*list\((.*)\)\s*$")
 BACKLIST_VALUE = re.compile(r'"\w+"\s*=\s*"(\w+)"')
 
 OM_FIELD_TYPED = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,\s*(\w+)\s*,")
+# The machinery the four kinds are made of holds references by construction; its vars are not
+# relationships of their own. Kept in step with scheduler_lints.py's lc_refs.
+STRUCTURAL_TYPES = {
+    "/datum/om/task": "a task's vars are its state, held by the task_holds relation",
+    "/datum/om/edge": "an edge is the relation itself: both ends hold it and it goes when either end does",
+    "/datum/om/rec": "an entity's own record (its edges, timers, scheduler), torn down in its destroy transaction",
+    "/datum/om/frame": "an entity's pipeline state, kept in its record (or a scratch frame for one run)",
+    "/datum/om/event": "an event in delivery: the entity it is emitted on, for the length of the call",
+    "/datum/om/scheduler": "the dispatch context: the record whose code is running",
+    "/datum/ledger": "a holder's slot contents: the slot mechanism itself",
+    "/datum/registry": "registry membership, left in phase 2 of the member's destroy transaction",
+}
+
+
+def structural(type_path):
+    return any(type_path == t or type_path.startswith(t + "/") for t in STRUCTURAL_TYPES)
+
+
 VAR_LINE = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
 STRING_LIT = re.compile(r'"([^"]*)"')
 
@@ -239,10 +257,8 @@ def scan_file(path):
         # A frozen definition or registry object (DEF_TYPES): an implicit REF_DEF.
         if is_def_type(vtype):
             continue
-        # A task's vars are its state: every datum in them is held by the task_holds relation,
-        # which clears the var and cancels the task when the datum is deleted (the same rule as
-        # scheduler_lints.py's lc_refs).
-        if cur_type == "/datum/om/task" or cur_type.startswith("/datum/om/task/"):
+        # Tasks, edges, records, ledgers and registries: see STRUCTURAL_TYPES.
+        if structural(cur_type):
             continue
         # Typed prompts and flows (ask.dm, flow.dm) hold their state vars as handles while they
         # wait (park_state()), and a prompt's `flow` is the one strong ref keeping its flow alive.
@@ -295,6 +311,8 @@ def objlist_candidates(rel, raw_lines, objlist_ok):
         while segs and segs[0] in UNSAVED_MODS:
             mods.add(segs.pop(0))
         if mods & {"static", "global", "const"} or len(segs) < 2 or segs[0] != "list":
+            continue
+        if structural(cur_type):
             continue
         list_vars.add(segs[-1])
     list_vars -= objlist_ok

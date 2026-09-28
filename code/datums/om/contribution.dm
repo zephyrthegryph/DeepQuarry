@@ -522,9 +522,10 @@
 	return length(rec.clocks) - 3
 
 /proc/om_clock_compute(datum/om/rec/rec, cidx)
-	var/datum/om/clock_def/C = om_registry().clocks[cidx]
-	var/mult = om_effect_value(rec, C.mult)
-	var/inhibit = om_effect_value(rec, C.inhibit)
+	var/datum/om/registry/reg = om_registry()
+	var/datum/om/clock_def/C = reg.clocks[cidx]
+	var/mult = om_effect_value(rec, reg.effects[C.mult_idx])
+	var/inhibit = om_effect_value(rec, reg.effects[C.inhibit_idx])
 	return clamp(mult * (1 - clamp(inhibit, 0, 1)), C.min_rate, C.max_rate)
 
 /// The entity's rate in clock `cidx` (1 when nothing modifies it).

@@ -334,8 +334,9 @@
 	var/idx = 0
 	var/min_rate = 0
 	var/max_rate = 10
-	var/datum/om/effect/mult
-	var/datum/om/effect/inhibit
+	/// Registry indices (om_registry().effects) of the effects that multiply and inhibit this clock.
+	var/mult_idx
+	var/inhibit_idx
 
 // ===================================================================== services
 
@@ -349,3 +350,9 @@
 /datum/om/service/proc/on_changes(datum/E, bits)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
+
+REF_OWNED(/datum/om/behaviour, "compiled_wake_if")
+
+REF_OWNED(/datum/om/relation, list("compiled_active_if", "compiled_break_if"))
+
+REF_OWNED(/datum/om/derived, "compiled_expr")

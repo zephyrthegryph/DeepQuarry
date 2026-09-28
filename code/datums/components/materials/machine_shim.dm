@@ -8,37 +8,35 @@
  * All this does is ensure that the mob releases the machine when they leave it.
  */
 /datum/component/using_machine_shim
-	var/mob/host_mob
-	var/obj/machinery/linked_machine
+	var/linked_machine_handle
 
 /datum/component/using_machine_shim/Initialize(obj/machinery/machine)
 	// Mob
-	host_mob = parent
-	om_stage_add(host_mob, /datum/om/stage/life/trait/using_machine_shim)
-	RegisterSignal(host_mob, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_mob_action))
-	RegisterSignal(host_mob, COMSIG_MOB_LOGOUT, PROC_REF(on_mob_logout))
+	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
+	RegisterSignal(host_mob(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_mob_action))
+	RegisterSignal(host_mob(), COMSIG_MOB_LOGOUT, PROC_REF(on_mob_logout))
 
 	// Machine
-	linked_machine = machine
-	RegisterSignal(linked_machine, COMSIG_QDELETING, PROC_REF(on_machine_qdelete))
-	linked_machine.in_use = TRUE
+	linked_machine_handle = om_handle(machine)
+	RegisterSignal(linked_machine(), COMSIG_QDELETING, PROC_REF(on_machine_qdelete))
+	linked_machine().in_use = TRUE
 
 	// Lets complain if an object uses TGUI but is still setting the machine.
-	if(length(linked_machine.tgui_data()))
+	if(length(linked_machine().tgui_data()))
 		log_world("## ERROR [machine.type] implements tgui_data(), and has likely been ported to tgui already. It should no longer use set_machine().")
 
 // ALLOW(lifecycle): the machine is free again and the operator's perspective and trait reset.
 /datum/component/using_machine_shim/Destroy(force)
 	. = ..()
-	linked_machine.in_use = FALSE
-	om_stage_remove(host_mob, /datum/om/stage/life/trait/using_machine_shim)
-	host_mob.reset_perspective()
+	linked_machine().in_use = FALSE
+	om_stage_remove(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
+	host_mob().reset_perspective()
 
 /datum/component/using_machine_shim/proc/on_mob_action()
 	SIGNAL_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	if(host_mob.stat == DEAD || !host_mob.client || !host_mob.Adjacent(linked_machine))
+	if(host_mob().stat == DEAD || !host_mob().client || !host_mob().Adjacent(linked_machine()))
 		qdel(src)
 
 /// Called by the using machine shim trait system each Life() cycle.
@@ -66,14 +64,14 @@
 	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
 	if(!shim)
 		return
-	return shim.linked_machine
+	return shim.linked_machine()
 
 /// deprecated, do not use
 /mob/proc/check_current_machine(obj/checking)
 	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
 	if(!shim)
 		return FALSE
-	return (shim.linked_machine == checking)
+	return (shim.linked_machine() == checking)
 
 /// deprecated, do not use
 /mob/proc/unset_machine()
@@ -85,7 +83,7 @@
 /mob/proc/set_machine(obj/O)
 	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
 	if(shim)
-		if(shim.linked_machine == O) // Already in use
+		if(shim.linked_machine() == O) // Already in use
 			return
 		qdel(shim)
 		return
@@ -133,3 +131,11 @@
 
 /datum/om/stage/life/trait/using_machine_shim/tick_component(mob/living/self, datum/component/using_machine_shim/component)
 	component.on_mob_life()
+
+/// LC-refs: the mob using the machine (our parent) (was a var copying parent).
+/datum/component/using_machine_shim/proc/host_mob() as /mob
+	return parent
+
+/// LC-refs: the machine being used -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/component/using_machine_shim/proc/linked_machine() as /obj/machinery
+	return om_resolve(linked_machine_handle)

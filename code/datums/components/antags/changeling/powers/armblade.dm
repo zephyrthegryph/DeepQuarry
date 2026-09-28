@@ -66,7 +66,7 @@
 	throw_speed = 0
 	embed_chance = 0 //No embedding.
 	item_flags = DROPDEL | NOSTRIP
-	var/mob/living/creator //This is just like ninja swords, needed to make sure dumb shit that removes the sword doesn't make it stay around.
+	var/creator_handle	//This is just like ninja swords, needed to make sure dumb shit that removes the sword doesn't make it stay around.
 	var/weapType = "weapon"
 	var/weapLocation = "arm"
 
@@ -79,10 +79,10 @@
 		visible_message(span_warning("A grotesque weapon forms around [loc.name]\'s arm!"),
 		span_warning("Our arm twists and mutates, transforming it into a deadly weapon."),
 		span_warningplain("You hear organic matter ripping and tearing!"))
-		src.creator = loc
+		src.creator_handle = om_handle(loc)
 
 /obj/item/melee/changeling/dropped(mob/user, equipping, slot)
-	visible_message(span_warning("With a sickening crunch, [creator] reforms their arm!"),
+	visible_message(span_warning("With a sickening crunch, [creator()] reforms their arm!"),
 	span_notice("We assimilate the weapon back into our body."),
 	span_warningplain("You hear organic matter ripping and tearing!"))
 	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
@@ -150,3 +150,7 @@
 	pry = 1
 	defend_chance = 60
 	projectile_parry_chance = 25
+
+/// LC-refs: the changeling who grew this -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/melee/changeling/proc/creator() as /mob/living
+	return om_resolve(creator_handle)

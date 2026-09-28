@@ -38,7 +38,7 @@
 
 	if(riding_datum) //Bit of slowdown for taur rides if rider is bigger or fatter than mount.
 		var/datum/riding/R = riding_datum
-		var/mob/living/L = R.ridden
+		var/mob/living/L = R.ridden()
 		for(var/mob/living/M in L?.buckled_mob_list())
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M

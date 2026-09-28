@@ -28,8 +28,8 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 
 // ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
 /datum/managed_browser/feedback_form/Destroy()
-	if(my_client)
-		my_client.feedback_form = null
+	if(my_client())
+		my_client().feedback_form = null
 	return ..()
 
 // Privacy option is allowed if both the config allows it, and the pepper file exists and isn't blank.
@@ -40,11 +40,11 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 // renderer with a structured TGUI feedback form. The Topic() href
 // dispatch and get_html() are gone; everything flows through tgui_act.
 /datum/managed_browser/feedback_form/display()
-	if(!my_client)
+	if(!my_client())
 		return
-	if(!SSsqlite.can_submit_feedback(my_client))
+	if(!SSsqlite.can_submit_feedback(my_client()))
 		return
-	tgui_interact(my_client.mob)
+	tgui_interact(my_client().mob)
 
 /datum/managed_browser/feedback_form/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -60,8 +60,8 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	data["topic"] = feedback_topic
 	data["body"] = feedback_body || ""
 	data["hide_author"] = feedback_hide_author
-	data["author_ckey"] = my_client?.ckey
-	data["author_hashed"] = my_client ? md5(ckey(lowertext(my_client.ckey + (SSsqlite.get_feedback_pepper() || "")))) : ""
+	data["author_ckey"] = my_client()?.ckey
+	data["author_hashed"] = my_client() ? md5(ckey(lowertext(my_client().ckey + (SSsqlite.get_feedback_pepper() || "")))) : ""
 	data["can_be_private"] = can_be_private() ? TRUE : FALSE
 	data["topics"] = CONFIG_GET(str_list/sqlite_feedback_topics)
 	data["max_length"] = MAX_FEEDBACK_LENGTH
@@ -72,12 +72,12 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	. = ..()
 	if(.)
 		return
-	if(!my_client)
+	if(!my_client())
 		return
 
 	switch(action)
 		if("edit_body")
-			var/_answer_k80 = act_prompt(my_client, action, params, ui, "k80", list("kind" = "text", "message" = "Please write your feedback here.", "title" = "Feedback Body", "default" = feedback_body, "multiline" = TRUE))
+			var/_answer_k80 = act_prompt(my_client(), action, params, ui, "k80", list("kind" = "text", "message" = "Please write your feedback here.", "title" = "Feedback Body", "default" = feedback_body, "multiline" = TRUE))
 			if(isnull(_answer_k80))
 				return
 			feedback_body = _answer_k80
@@ -91,7 +91,7 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 			return TRUE
 
 		if("choose_topic")
-			var/picked = act_prompt(my_client, action, params, ui, "k91", list("kind" = "list", "message" = "Choose the topic you want to submit your feedback under.", "title" = "Feedback Topic", "choices" = CONFIG_GET(str_list/sqlite_feedback_topics)))
+			var/picked = act_prompt(my_client(), action, params, ui, "k91", list("kind" = "list", "message" = "Choose the topic you want to submit your feedback under.", "title" = "Feedback Topic", "choices" = CONFIG_GET(str_list/sqlite_feedback_topics)))
 			if(isnull(picked))
 				return
 			if(picked)
@@ -100,31 +100,33 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 
 		if("submit")
 			if(length(feedback_body) > MAX_FEEDBACK_LENGTH)
-				to_chat(my_client, span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
+				to_chat(my_client(), span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
 				limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
 				return TRUE
 
 			var/text = sanitize(feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE)
 			if(!text)
-				to_chat(my_client, span_warning("It appears you didn't write anything, or it was invalid."))
+				to_chat(my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
 				return TRUE
 
-			var/_answer_k107 = act_prompt(my_client, action, params, ui, "k107", list("message" = "Are you sure you want to submit your feedback?", "title" = "Confirm Submission", "choices" = list("No", "Yes")))
+			var/_answer_k107 = act_prompt(my_client(), action, params, ui, "k107", list("message" = "Are you sure you want to submit your feedback?", "title" = "Confirm Submission", "choices" = list("No", "Yes")))
 			if(isnull(_answer_k107))
 				return
 			if(_answer_k107 != "Yes")
 				return TRUE
 
-			var/author_text = my_client.ckey
+			var/author_text = my_client().ckey
 			if(can_be_private() && feedback_hide_author)
-				author_text = md5(my_client.ckey + SSsqlite.get_feedback_pepper())
+				author_text = md5(my_client().ckey + SSsqlite.get_feedback_pepper())
 
 			var/success = SSsqlite.insert_feedback(author = author_text, topic = feedback_topic, content = feedback_body, sqlite_object = SSsqlite.sqlite_db)
 			if(!success)
-				to_chat(my_client, span_warning("Something went wrong while inserting your feedback into the database. Please try again. \
+				to_chat(my_client(), span_warning("Something went wrong while inserting your feedback into the database. Please try again. \
 				If this happens again, you should contact a developer."))
 				return TRUE
 
 			SStgui.close_uis(src)
 			qdel(src)
 			return TRUE
+
+REF_OWNED(/client, "feedback_form")
