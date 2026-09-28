@@ -11,10 +11,10 @@
 
 /obj/item/grenade/confetti/Initialize(mapload)
 	. = ..()
-	confetti_spread = new /datum/effect/effect/system/confetti_spread()
 	confetti_spread.attach(src)
 
 DECLARE_REF(/obj/item/grenade/confetti, "confetti_spread", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/grenade/confetti, "confetti_spread", /datum/effect/effect/system/confetti_spread)
 
 /obj/item/grenade/confetti/detonate() //Find a good confetti firework or pop sound effect later
 	start_effect_sprayer(confetti_spread, confetti_strength, 'sound/effects/snap.ogg')

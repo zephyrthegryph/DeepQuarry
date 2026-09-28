@@ -24,9 +24,9 @@
 	pixel_x = rand(-10,10)
 	pixel_y = rand(-10,10)
 	if(w_class > 0 && w_class < ITEMSIZE_LARGE)
-		icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]"
+		icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): random pick
 	else
-		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]"
+		icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]" // ALLOW(decl): random pick
 
 DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -206,7 +206,7 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 /obj/item/a_gift/advanced/Initialize(mapload)
 	. = ..()
 	if(prob(1))
-		icon_state = "chomp_present_chaos"
+		icon_state = "chomp_present_chaos" // ALLOW(decl): random pick
 		chaos = TRUE
 		name = "chaotic present"
 		desc = "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!"

@@ -22,7 +22,7 @@
 
 /obj/item/dnainjector/Initialize(mapload) // Traitgenes edit - Moved to init
 	if(datatype && block)
-		buf=new
+		buf=new // ALLOW(decl): only when datatype and block are set, then configured
 		buf.dna=new
 		buf.types = datatype
 		buf.dna.ResetSE()

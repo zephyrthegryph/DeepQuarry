@@ -25,11 +25,10 @@
 /obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
 	make_tethered(paddle_path)
 	. = ..()
-	if(ispath(bcell))
-		bcell = new bcell(src)
 	update_icon()
 
 DECLARE_REF(/obj/item/defib_kit, "bcell", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 
 /obj/item/defib_kit/loaded //starts with a cell
 	bcell = /obj/item/cell/apc

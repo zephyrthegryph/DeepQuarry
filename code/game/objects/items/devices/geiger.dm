@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	. = ..()
 	if(scanning)
 		if(!geiger_sound)
-			geiger_sound = new /datum/geiger_sound/wall(src)
+			geiger_sound = new /datum/geiger_sound/wall(src) // ALLOW(decl): only while scanning
 
 /obj/item/geiger/wall/update_icon()
 	if(!scanning)

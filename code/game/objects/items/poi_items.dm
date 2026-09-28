@@ -31,9 +31,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/poi/pascalb/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/item/poi/pascalb, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/poi/pascalb/periodic_step()
@@ -120,9 +118,7 @@
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
 	var/active = null
 
-/obj/item/poi/brokenoldreactor/Initialize(mapload)
-	. = ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 
 /// Radiates only while a mob is close enough to be affected; otherwise it sleeps until one comes near.
 /obj/item/poi/brokenoldreactor/periodic_step()

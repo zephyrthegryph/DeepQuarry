@@ -50,12 +50,15 @@
 	sprite_name = "atmos_extinguisher"
 	rand_overlays = 0
 
+DECLARE_REAGENTS(/obj/item/extinguisher, "max_water", list(REAGENT_ID_FIREFOAM = 300))
+DECLARE_NO_REAGENTS(/obj/item/extinguisher/mini)
+DECLARE_REAGENTS(/obj/item/extinguisher/mini, "max_water", list(REAGENT_ID_FIREFOAM = 150))
+DECLARE_REAGENTS(/obj/item/extinguisher/atmo, null, list(REAGENT_ID_FIREFOAM = 300)) // 600 total
+
 /obj/item/extinguisher/Initialize(mapload)
-	create_reagents(max_water)
-	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
 	if(rand_overlays)
 		var/choice = rand(1,rand_overlays)
-		add_overlay("[item_state]O[choice]")
+		add_overlay("[item_state]O[choice]") // ALLOW(decl): random overlay pick
 	. = ..()
 
 /obj/item/extinguisher/examine(mob/user)

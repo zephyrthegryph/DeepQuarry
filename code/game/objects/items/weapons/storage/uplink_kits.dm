@@ -223,7 +223,7 @@
 	pack.desc += " 'MB' has been scribbled on it."
 
 	pack = new /obj/item/storage/fancy/cigarettes(src)
-	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots)
+	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots) // ALLOW(decl): fills a child pack, amount from its slots
 	pack.desc += " 'T' has been scribbled on it."
 
 	new /obj/item/flame/lighter/zippo(src)

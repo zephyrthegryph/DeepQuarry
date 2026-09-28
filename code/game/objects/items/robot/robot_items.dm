@@ -67,9 +67,7 @@
 	icon_state = "healthhud"
 	icon = 'icons/inventory/eyes/item.dmi'
 
-/obj/item/borg/sight/hud/med/Initialize(mapload)
-	. = ..()
-	hud = new /obj/item/clothing/glasses/hud/health(src)
+DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/med, "hud", /obj/item/clothing/glasses/hud/health)
 
 
 /obj/item/borg/sight/hud/sec
@@ -77,8 +75,6 @@
 	icon_state = "securityhud"
 	icon = 'icons/inventory/eyes/item.dmi'
 
-/obj/item/borg/sight/hud/sec/Initialize(mapload)
-	. = ..()
-	hud = new /obj/item/clothing/glasses/hud/security(src)
+DECLARE_DEFAULT_CHILD(/obj/item/borg/sight/hud/sec, "hud", /obj/item/clothing/glasses/hud/security)
 
 DECLARE_REF(/obj/item/borg/sight/hud, "hud", HELD, null)

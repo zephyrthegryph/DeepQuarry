@@ -57,12 +57,10 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 	apply_blueprint_effects()
 
 	src.init_proxy()
-	src.air_contents = new /datum/gas_mixture()
-	src.air_contents.set_volume(volume) //liters
-	src.air_contents.set_temperature(T20C)
 	update_gauge()
 
 DECLARE_REF(/obj/item/tank, "air_contents", OWNED, null)
+DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 DECLARE_REF(/obj/item/tank, "proxyassembly", OWNED, null)
 
 // a tank in a transfer valve leaves the valve.

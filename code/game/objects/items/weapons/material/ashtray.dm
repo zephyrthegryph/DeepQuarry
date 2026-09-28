@@ -15,7 +15,7 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 	. = ..()
 	if(!material)
 		return INITIALIZE_HINT_QDEL
-	icon_state = "blank"
+	icon_state = "blank" // ALLOW(decl): material-coloured, drawn by update_icon()
 	max_butts = round(material.hardness/5) //This is arbitrary but whatever.
 	randpixel_xy()
 	update_icon()

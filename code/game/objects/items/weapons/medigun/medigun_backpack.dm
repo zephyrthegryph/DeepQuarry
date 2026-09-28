@@ -291,20 +291,10 @@
 		medigun.base_icon_state = "medblaster_cmo"
 		medigun.wielded_item_state = ""
 		medigun.update_icon()
-	if(ispath(bcell))
-		bcell = new bcell(src)
+	if(bcell) // declared default: starts empty
 		bcell.charge = 0
-	if(ispath(sbin))
-		sbin = new sbin(src)
-	if(ispath(smodule))
-		smodule = new smodule(src)
-		om_task_periodic(src, PERIODIC_SLOW)
-	if(ispath(smanipulator))
-		smanipulator = new smanipulator(src)
-	if(ispath(scapacitor))
-		scapacitor = new scapacitor(src)
-	if(ispath(slaser))
-		slaser = new slaser(src)
+	if(smodule)
+		om_task_periodic(src, PERIODIC_SLOW) // ALLOW(decl): only with a scanning module fitted
 	update_icon()
 
 DECLARE_REF(/obj/item/medigun_backpack, "bcell", OWNED, null)
@@ -312,6 +302,11 @@ DECLARE_REF(/obj/item/medigun_backpack, "smodule", OWNED, null)
 DECLARE_REF(/obj/item/medigun_backpack, "smanipulator", OWNED, null)
 DECLARE_REF(/obj/item/medigun_backpack, "scapacitor", OWNED, null)
 DECLARE_REF(/obj/item/medigun_backpack, "slaser", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "bcell", null)
+DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smodule", null)
+DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smanipulator", null)
+DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "scapacitor", null)
+DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "slaser", null)
 
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()
@@ -594,3 +589,4 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 
 DECLARE_REF(/obj/item/medigun_backpack, "ccell", HELD, null)
 DECLARE_REF(/obj/item/medigun_backpack, "sbin", HELD, null)
+DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)

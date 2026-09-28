@@ -33,18 +33,19 @@
 	var/volume_per_max_burn = 20 // gets divided by the intended burn ratio
 
 /obj/item/flamethrower/Initialize(mapload)
-	weldtool = new /obj/item/weldingtool(src)
+	. = ..()
 	weldtool.status = 0 // for disassembly
 	update_icon()
-	. = ..()
+
+DECLARE_DEFAULT_CHILD(/obj/item/flamethrower/full, "igniter", /obj/item/assembly/igniter)
 
 /obj/item/flamethrower/full/Initialize(mapload)
-	igniter = new /obj/item/assembly/igniter(src)
-	igniter.secured = 0 // for disassembly
 	. = ..()
+	igniter.secured = 0 // for disassembly
 	status = TRUE
 
 DECLARE_REF(/obj/item/flamethrower, "weldtool", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 DECLARE_REF(/obj/item/flamethrower, "igniter", OWNED, null)
 DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 

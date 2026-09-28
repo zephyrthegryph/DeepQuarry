@@ -21,7 +21,7 @@
 /obj/item/storage/firstaid/Initialize(mapload)
 	. = ..()
 	if(icon_variety)
-		icon_state = pick(icon_variety)
+		icon_state = pick(icon_variety) // ALLOW(decl): random pick
 		icon_variety = null
 
 /obj/item/storage/firstaid/fire

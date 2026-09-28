@@ -23,15 +23,15 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()
-	if(ispath(mytape))
-		mytape = new mytape(src)
+	if(mytape)
 		update_icon()
-	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 /obj/item/taperecorder/empty
 	mytape = null
 
 DECLARE_REF(/obj/item/taperecorder, "mytape", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/taperecorder, "mytape", null)
+DECLARE_REGISTRY(/obj/item/taperecorder, REGISTRY_LISTENING_OBJECTS)
 
 DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	INTERACT_INSERT(/obj/item/rectape, PROC_REF(interaction_item), "Insert tape"), \
@@ -429,7 +429,7 @@ DECLARE_INTERACTIONS(/obj/item/rectape, \
 //Random colour tapes
 /obj/item/rectape/random/Initialize(mapload)
 	. = ..()
-	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]"
+	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]" // ALLOW(decl): random pick
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/taperecorder, \

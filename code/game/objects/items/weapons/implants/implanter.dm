@@ -95,35 +95,31 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 /obj/item/implanter/loyalty
 	name = "implanter-loyalty"
 
-/obj/item/implanter/loyalty/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/loyalty(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/loyalty, "imp", /obj/item/implant/loyalty)
+/obj/item/implanter/loyalty
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/explosive
 	name = "implanter (E)"
 
-/obj/item/implanter/explosive/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/explosive(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/explosive, "imp", /obj/item/implant/explosive)
+/obj/item/implanter/explosive
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/adrenalin
 	name = "implanter-adrenalin"
 
-/obj/item/implanter/adrenalin/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/adrenalin(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/adrenalin, "imp", /obj/item/implant/adrenalin)
+/obj/item/implanter/adrenalin
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/compressed
 	name = "implanter (C)"
 	icon_state = "cimplanter1"
 
-/obj/item/implanter/compressed/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/compressed(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/compressed)
+/obj/item/implanter/compressed
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implanter/compressed/update()
 	if (imp)
@@ -174,10 +170,9 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 /obj/item/implanter/restrainingbolt
 	name = "implanter (bolt)"
 
-/obj/item/implanter/restrainingbolt/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/restrainingbolt(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/restrainingbolt, "imp", /obj/item/implant/restrainingbolt)
+/obj/item/implanter/restrainingbolt
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 
 // universal translator implant.
@@ -185,10 +180,9 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 /obj/item/implanter/vrlanguage
 	name = "implanter-language"
 
-/obj/item/implanter/vrlanguage/Initialize(mapload)
-	. = ..()
-	imp = new /obj/item/implant/vrlanguage( src )
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/vrlanguage, "imp", /obj/item/implant/vrlanguage)
+/obj/item/implanter/vrlanguage
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 DECLARE_REF(/obj/item/implanter, "imp", HELD, null)
 

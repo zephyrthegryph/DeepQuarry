@@ -171,17 +171,14 @@
 	var/verb_name = "Transfer From Reagent Implant"
 	var/verb_desc = "Remove reagents from an internal reagent into a container"
 
-/obj/item/implant/reagent_generator/Initialize(mapload)
-	. = ..()
-	create_reagents(usable_volume)
+DECLARE_REAGENTS(/obj/item/implant/reagent_generator, "usable_volume", null)
 
 /obj/item/implanter/reagent_generator
 	var/implant_type = /obj/item/implant/reagent_generator
 
-/obj/item/implanter/reagent_generator/Initialize(mapload)
-	. = ..()
-	imp = new implant_type(src)
-	update()
+DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_type")
+/obj/item/implanter/reagent_generator
+	icon_state = "implanter1_1" // loaded: what update() would show
 
 /obj/item/implant/reagent_generator/post_implant(mob/living/carbon/source)
 	om_task_periodic(src, PERIODIC_SLOW)

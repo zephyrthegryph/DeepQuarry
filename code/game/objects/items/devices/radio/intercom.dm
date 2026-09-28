@@ -19,7 +19,6 @@
 
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
-	circuit = new circuit(src)
 	var/area/A = get_area(src)
 	if(A)
 		om_hook(A, /datum/om/event/observer_apc, src, PROC_REF(on_observer_apc))
@@ -30,6 +29,7 @@
 	update_icon()
 
 DECLARE_REF(/obj/item/radio/intercom, "circuit", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 
 /obj/item/radio/intercom/custom
 	name = "station intercom (Custom)"

@@ -286,7 +286,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/p
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 	flags |= NOREACT
-	create_reagents(15 * storage_slots)//so people can inject cigarettes without opening a packet, now with being able to inject the whole one
+	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT. So people can inject cigarettes without opening a packet, now with being able to inject the whole one
 	flags |= OPENCONTAINER
 	if(brand)
 		for(var/obj/item/clothing/mask/smokable/cigarette/C in slot_contents(CONTAINER_SLOT_STORAGE))
@@ -433,7 +433,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/p
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 	flags |= NOREACT
-	create_reagents(15 * storage_slots)
+	create_reagents(15 * storage_slots) // ALLOW(decl): volume computed from storage_slots, after NOREACT
 
 /obj/item/storage/fancy/cigar/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	var/obj/item/clothing/mask/smokable/cigarette/cigar/C = W

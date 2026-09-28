@@ -16,6 +16,9 @@
 
 DECLARE_REF(/obj/item/tvcamera, "camera", OWNED, null)
 DECLARE_REF(/obj/item/tvcamera, "radio", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "camera", /obj/machinery/camera/network/thunder)
+DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "radio", /obj/item/radio)
+DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 
 /obj/item/tvcamera/examine()
 	. = ..()
@@ -24,11 +27,8 @@ DECLARE_REF(/obj/item/tvcamera, "radio", OWNED, null)
 
 /obj/item/tvcamera/Initialize(mapload)
 	. = ..()
-	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	camera = new(src)
 	camera.c_tag = channel
 	camera.status = FALSE
-	radio = new(src)
 	radio.listening = FALSE
 	radio.set_frequency(ENT_FREQ)
 	radio.icon = src.icon
@@ -167,6 +167,9 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 
 DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bcamera", OWNED, null)
 DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bradio", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bcamera", /obj/machinery/camera/network/bodycamera)
+DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bradio", /obj/item/radio)
+DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
 
 /obj/item/clothing/accessory/bodycam/examine()
 	. = ..()
@@ -175,11 +178,8 @@ DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bradio", OWNED, null)
 
 /obj/item/clothing/accessory/bodycam/Initialize(mapload)
 	. = ..()
-	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	bcamera = new(src)
 	bcamera.c_tag = channel
 	bcamera.status = FALSE
-	bradio = new(src)
 	bradio.listening = FALSE
 	bradio.set_frequency(BDCM_FREQ)
 	bradio.icon = src.icon

@@ -15,10 +15,7 @@
 	desc = "A tank of oxygen."
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
-/obj/item/tank/oxygen/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/oxygen, "air_contents", "volume", T20C, list(GAS_O2 = 6*ONE_ATMOSPHERE))
 /obj/item/tank/oxygen/examine(mob/user)
 	. = ..()
 	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 10))
@@ -39,13 +36,7 @@
 	name = "anesthetic tank"
 	desc = "A tank with an N2O/O2 gas mix."
 
-/obj/item/tank/anesthetic/Initialize(mapload)
-	. = ..()
-
-	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
-	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
-	// update_values() removed; no-op under LINDA.
-
+DECLARE_GAS(/obj/item/tank/anesthetic, "air_contents", "volume", T20C, list(GAS_O2 = 3*ONE_ATMOSPHERE*O2STANDARD, GAS_N2O = 3*ONE_ATMOSPHERE*N2STANDARD))
 /*
  * Air
  */
@@ -59,10 +50,7 @@
 		. += span_warning("The meter on \the [src] indicates you are almost out of air!")
 		user << sound('sound/effects/alert.ogg')
 
-/obj/item/tank/air/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_multi(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD, GAS_N2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD)
-
+DECLARE_GAS(/obj/item/tank/air, "air_contents", "volume", T20C, list(GAS_O2 = 6*ONE_ATMOSPHERE*O2STANDARD, GAS_N2 = 6*ONE_ATMOSPHERE*N2STANDARD))
 /*
  * Phoron
  */
@@ -72,10 +60,7 @@
 	gauge_icon = null
 	slot_flags = null	//they have no straps!
 
-/obj/item/tank/phoron/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_PHORON, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/phoron, "air_contents", "volume", T20C, list(GAS_PHORON = 3*ONE_ATMOSPHERE))
 EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_tank_item)))
 
 /// Old attackby: the tank's handling first (its old ..()), then fitting into a flamethrower.
@@ -99,19 +84,17 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 	slot_flags = SLOT_BACK	//these ones have straps!
 
-/obj/item/tank/vox/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/vox, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
 /obj/item/tank/phoron/pressurized
 	name = "fuel can"
 	icon_state = "phoron_vox"
 	w_class = ITEMSIZE_NORMAL
 
+DECLARE_GAS(/obj/item/tank/phoron/pressurized, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
+
 /obj/item/tank/phoron/pressurized/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.8)
-	air_contents.adjust_gas(GAS_PHORON, (7*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 /*
  * Emergency Oxygen
@@ -129,10 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	name = "emergency oxygen tank"
 	desc = "Used for emergencies. Contains very little oxygen, so try to conserve it until you actually need it."
 
-/obj/item/tank/emergency/oxygen/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_O2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/emergency/oxygen, "air_contents", "volume", T20C, list(GAS_O2 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/oxygen/examine(mob/user)
 	. = ..()
 	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_O2) < 0.2))
@@ -155,18 +135,12 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	gauge_icon = "indicator_stasis"			// CHOMP ADD
 	volume = 10
 
-/obj/item/tank/stasis/oxygen/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_O2, (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/stasis/oxygen, "air_contents", "volume", T20C, list(GAS_O2 = 3*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/nitrogen
 	name = "emergency nitrogen tank"
 	desc = "An emergency nitrogen tank."			// CHOMP EDIT They get their own :)
 
-/obj/item/tank/emergency/nitrogen/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/emergency/nitrogen, "air_contents", "volume", T20C, list(GAS_N2 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/nitrogen/double
 	name = "double emergency nitrogen tank"
 
@@ -174,20 +148,14 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	name = "emergency phoron tank"
 	desc = "An emergency phoron tank."  			// CHOMP EDIT You get a unique sprite!
 
-/obj/item/tank/emergency/phoron/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/emergency/phoron, "air_contents", "volume", T20C, list(GAS_PHORON = 10*ONE_ATMOSPHERE))
 // for CO2 breathers
 /obj/item/tank/carbon_dioxide
 	name = "carbon dioxide tank"
 	desc = "A tank of carbon dioxide"
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
-/obj/item/tank/carbon_dioxide/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/carbon_dioxide, "air_contents", "volume", T20C, list(GAS_CO2 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/carbon_dioxide
 	slot_flags = SLOT_BELT
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
@@ -197,10 +165,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	desc = "An double tank of carbon dioxide"
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
-/obj/item/tank/emergency/carbon_dioxide/double/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/emergency/carbon_dioxide/double, "air_contents", "volume", T20C, list(GAS_CO2 = 20*ONE_ATMOSPHERE))
 /*
  * Nitrogen
  */
@@ -209,10 +174,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	desc = "A tank of nitrogen."
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
-/obj/item/tank/nitrogen/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/nitrogen, "air_contents", "volume", T20C, list(GAS_N2 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/nitrogen/examine(mob/user)
 	. = ..()
 	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_N2) < 10))
@@ -226,10 +188,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	gauge_icon = "indicator_stasis"		// CHOMP ADD
 	volume = 10
 
-/obj/item/tank/stasis/nitro_cryo/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas_temp(GAS_N2, (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*TN60C), TN60C)
-
+DECLARE_GAS(/obj/item/tank/stasis/nitro_cryo, "air_contents", "volume", TN60C, list(GAS_N2 = 3*ONE_ATMOSPHERE))
 /*
  * Methane
  */
@@ -239,10 +198,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	icon_state = "methane"
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
-/obj/item/tank/methane/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_CH4, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/methane, "air_contents", "volume", T20C, list(GAS_CH4 = 3*ONE_ATMOSPHERE))
 /obj/item/tank/methane/examine(mob/user)
 	. = ..()
 	if(loc == user && (LINDA_GAS_AMT(air_contents, GAS_CH4) < 10))
@@ -255,10 +211,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	name = "emergency carbon dioxide tank"
 	desc = "An emergency air tank hastily painted yellow."
 
-/obj/item/tank/emergency/carbon_dioxide/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/emergency/carbon_dioxide, "air_contents", "volume", T20C, list(GAS_CO2 = 10*ONE_ATMOSPHERE))
 /*
  * Emergency Methane
  */
@@ -269,11 +222,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	gauge_icon = "indicator_emergency"
 	gauge_cap = 3
 
-/obj/item/tank/emergency/methane/Initialize(mapload)
-	. = ..()
-	src.air_contents.adjust_gas(GAS_CH4, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
-
+DECLARE_GAS(/obj/item/tank/emergency/methane, "air_contents", "volume", T20C, list(GAS_CH4 = 10*ONE_ATMOSPHERE))
 /obj/item/tank/emergency/phoron/double
 	name = "double emergency phoron tank"
 	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
@@ -284,10 +233,7 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 	gauge_cap = 3
 	volume = 12		// CHOMP EDIT double extended
 
-/obj/item/tank/emergency/phoron/double/Initialize(mapload)
-	. = ..()
-	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-
+DECLARE_GAS(/obj/item/tank/emergency/phoron/double, "air_contents", "volume", T20C, list(GAS_PHORON = 20*ONE_ATMOSPHERE))
 //New icons
 /obj/item/tank/oxygen
 	icon = 'icons/obj/tank_vr.dmi'
