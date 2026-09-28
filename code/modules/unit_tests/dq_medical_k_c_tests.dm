@@ -58,3 +58,15 @@
 	TEST_ASSERT_EQUAL(H.name, "shifter", "the default options don't copy the name")
 	H.transform_into_other_human(victim, new /datum/human_transform_options(copy_name = TRUE))
 	TEST_ASSERT_EQUAL(H.name, "target", "copy_name copies the name")
+
+/// P2-F2: examine reads a visible infection from the glance diagnosis, not the organ's germ level.
+/datum/unit_test/dq_k_c_f2_examine_infection_from_diagnosis
+
+/datum/unit_test/dq_k_c_f2_examine_infection_from_diagnosis/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
+	arm.germ_level = INFECTION_LEVEL_THREE
+	TEST_ASSERT(!findtext(jointext(H.examine_diagnosis_lines(), ""), "looks very infected"), "germs alone, with no infection affliction, don't show on examine")
+	arm.germ_level = 0
+	H.body.afflict(/datum/affliction/wound_infection, arm, 80)
+	TEST_ASSERT(findtext(jointext(H.examine_diagnosis_lines(), ""), "looks very infected"), "a severe wound infection shows on examine through the diagnosis")
