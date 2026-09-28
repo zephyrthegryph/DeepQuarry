@@ -11,7 +11,7 @@
 // `overrides`, or boot validation reports a conflict.
 //
 // Contributors fold into the base value through the property's aggregator:
-//   /datum/property_provider/component  a component on the instance.
+//   /datum/property_provider/behaviour  an OM behaviour attached to the instance.
 //   /datum/property_provider/equipment  a mob's equipped items.
 
 /datum/property_provider
@@ -110,20 +110,22 @@
 /proc/dq_property_type_matter(path)
 	return dq_type_material_totals(path)
 
-// ---- Components ----
+// ---- Behaviours ----
 
-/datum/property_provider/component
-	source = PROP_SOURCE_COMPONENT
+/datum/property_provider/behaviour
+	source = PROP_SOURCE_BEHAVIOUR
 	applies_to = /datum
-	/// Component type whose presence contributes.
-	var/component_type
+	/// OM behaviour type whose attachment contributes.
+	var/behaviour_type
 
-/datum/property_provider/component/contribute(datum/D)
-	var/datum/component/C = D.GetComponent(component_type)
-	return C?.property_value(property)
+/datum/property_provider/behaviour/contribute(datum/D)
+	if(!om_attached(D, behaviour_type))
+		return null
+	var/datum/om/behaviour/B = om_registry().behaviour(behaviour_type)
+	return B?.property_value(D, property)
 
-/// A component's contribution to property `id`, or null.
-/datum/component/proc/property_value(id)
+/// An attached behaviour's contribution to property `id` on `E`, or null.
+/datum/om/behaviour/proc/property_value(datum/E, id)
 	return null
 
 // ---- Equipment ----

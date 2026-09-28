@@ -2,49 +2,56 @@
 jittery shake - wiggles the mob's pixel offset while the mob is jittery.
 
 Jitters are the EFFECT_JITTERY status (0-1000 points, below 100 is not jittery), which wears off
-on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob adds this component when the
-status starts and deletes it when it ends (the status row's on_start/on_end hooks).
+on its own: 3 points per LIFE_CYCLE, 15 while resting. The mob attaches this behaviour when the
+status starts and detaches it when it ends (the status row's on_start/on_end hooks).
+(Was /datum/component/jittery_shake; its state lives on the mob.)
 */
 
-/datum/component/jittery_shake
-	/// Whether the owner was resting when the status's rate was last checked.
-	var/was_resting
+/datum/om/behaviour/jittery_shake
+	handles = list(/datum/om/event/mob_death)
 
-/datum/component/jittery_shake/Initialize()
-	if (!ismob(parent))
-		return COMPONENT_INCOMPATIBLE
-	was_resting = owner().resting
-	RegisterSignal(owner(), COMSIG_MOB_DEATH, PROC_REF(mob_death))
-	om_after(src, 1, PROC_REF(handle_tick)) // Needs to be a LOT faster than life ticks
+/mob
+	/// Jittery shake: whether the mob was resting when the status's rate was last checked.
+	var/jittery_was_resting
+	/// Jittery shake: the running om_after() timer id, 0 when not shaking.
+	var/jittery_shake_timer = 0
 
-/datum/component/jittery_shake/proc/handle_tick()
-	if(QDELETED(parent))
+/datum/om/behaviour/jittery_shake/on_start(mob/M)
+	if(!ismob(M))
+		return
+	M.jittery_was_resting = M.resting
+	M.jittery_shake_timer = om_after(M, 1, TYPE_PROC_REF(/mob, jittery_shake_tick)) // Needs to be a LOT faster than life ticks
+
+/datum/om/behaviour/jittery_shake/on_stop(mob/M)
+	if(!ismob(M))
+		return
+	if(M.jittery_shake_timer)
+		om_cancel_timer(M, M.jittery_shake_timer)
+		M.jittery_shake_timer = 0
+	// The jittering mob's pixel offsets reset.
+	M.pixel_x = M.old_x
+	M.pixel_y = M.old_y
+
+/datum/om/behaviour/jittery_shake/on_event(mob/M, datum/om/event/event)
+	if(istype(event, /datum/om/event/mob_death) && ismob(M))
+		M.status_end(EFFECT_JITTERY)
+
+/mob/proc/jittery_shake_tick()
+	jittery_shake_timer = 0
+	if(QDELETED(src) || !om_attached(src, /datum/om/behaviour/jittery_shake))
 		return
 
 	// Resting wears jitters off faster.
-	if(owner().resting != was_resting)
-		was_resting = owner().resting
-		owner().status_rate_check(EFFECT_JITTERY)
+	if(resting != jittery_was_resting)
+		jittery_was_resting = resting
+		status_rate_check(EFFECT_JITTERY)
 
 	// Shakey shakey
-	var/jitteriness = owner().status_units(EFFECT_JITTERY)
+	var/jitteriness = status_units(EFFECT_JITTERY)
 	if(jitteriness > 100)
 		var/amplitude = min(4, jitteriness / 100)
-		owner().pixel_x = owner().old_x + rand(-amplitude, amplitude)
-		owner().pixel_y = owner().old_y + rand(-amplitude/3, amplitude/3)
+		pixel_x = old_x + rand(-amplitude, amplitude)
+		pixel_y = old_y + rand(-amplitude/3, amplitude/3)
 
-	om_after(src, 1, PROC_REF(handle_tick))
-
-/datum/component/jittery_shake/proc/mob_death()
-	SIGNAL_HANDLER
-	owner().status_end(EFFECT_JITTERY)
-
-// ALLOW(lifecycle): the jittering mob's pixel offsets reset.
-/datum/component/jittery_shake/Destroy(force = FALSE)
-	owner().pixel_x = owner().old_x
-	owner().pixel_y = owner().old_y
-	. = ..()
-
-/// LC-refs: the jittery mob (our parent) (was a var copying parent).
-/datum/component/jittery_shake/proc/owner() as /mob
-	return parent
+	if(om_attached(src, /datum/om/behaviour/jittery_shake))
+		jittery_shake_timer = om_after(src, 1, TYPE_PROC_REF(/mob, jittery_shake_tick))

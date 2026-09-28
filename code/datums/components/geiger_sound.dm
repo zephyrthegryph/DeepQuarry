@@ -1,61 +1,84 @@
-/// Atoms with this component will play sounds depending on nearby radiation
-/datum/component/geiger_sound
+/// Makes a geiger counter play sounds depending on nearby radiation.
+/// (Was /datum/component/geiger_sound; now a plain datum owned by the geiger, /obj/item/geiger var geiger_sound.)
+/datum/geiger_sound
+	/// The geiger counter we belong to.
+	var/atom/owner
 	var/last_parent = null
 	var/wall_mounted = FALSE
 
-/// The geiger loop, owned: deleted with the component.
-REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound)
+/// The geiger loop, owned: deleted with this datum.
+REF_VAR(/datum/geiger_sound, OWNED, /datum/looping_sound/geiger, sound)
 
-/datum/component/geiger_sound/Initialize(...)
-	if (!isatom(parent))
-		return COMPONENT_INCOMPATIBLE
+REF_BACK(/datum/geiger_sound, list("owner" = "geiger_sound"))
 
-/datum/component/geiger_sound/RegisterWithParent()
+/// Owned: the active geiger sound loop while the counter is scanning.
+REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
+
+/datum/geiger_sound/New(atom/new_owner)
+	..()
+	if(!isatom(new_owner))
+		log_world("[type] was created for a non-atom ([new_owner]); it does nothing.")
+		return
+	owner = new_owner
+	attach()
+
+/datum/geiger_sound/proc/attach()
 	if(!wall_mounted)
-		sound = new(list(parent), TRUE)
+		sound = new(list(owner), TRUE)
 
-	RegisterSignal(parent, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
+	om_hook(owner, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
-	ADD_TRAIT(parent, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
+	ADD_TRAIT(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
 
-	if (isitem(parent))
-		var/atom/atom_parent = parent
-		RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
+	if (isitem(owner))
+		var/atom/atom_parent = owner
+		om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
 		register_to_loc(atom_parent.loc)
 
-/datum/component/geiger_sound/UnregisterFromParent()
-	UnregisterSignal(parent, list(
-		COMSIG_MOVABLE_MOVED,
-		COMSIG_IN_RANGE_OF_IRRADIATION,
-	))
+/datum/geiger_sound/proc/detach()
+	if(!owner)
+		return
+	om_unhook(owner, list(
+		/datum/om/event/moved,
+		/datum/om/event/before/in_range_of_irradiation,
+	), src)
 
-	REMOVE_TRAIT(parent, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
+	REMOVE_TRAIT(owner, TRAIT_BYPASS_EARLY_IRRADIATED_CHECK, REF(src))
 
-/datum/component/geiger_sound/proc/on_pre_potential_irradiation(datum/source, datum/radiation_pulse_information/pulse_information, insulation_to_target)
-	SIGNAL_HANDLER
+/datum/geiger_sound/Destroy(force)
+	detach()
+	if(!isnull(last_parent))
+		om_unhook(last_parent, /datum/om/event/before/in_range_of_irradiation, src)
+	last_parent = null
+	owner = null
+	return ..()
 
-	sound.last_insulation_to_target = insulation_to_target
+/datum/geiger_sound/proc/on_pre_potential_irradiation(datum/source, datum/om/event/before/in_range_of_irradiation/event)
+	EVENT_HANDLER
+	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
+
+	sound.last_insulation_to_target = event.insulation_to_target
 	sound.last_radiation_pulse_handle = om_handle(pulse_information)
 	sound.start(source)
 
 	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
 
-/datum/component/geiger_sound/proc/on_moved(atom/source)
-	SIGNAL_HANDLER
+/datum/geiger_sound/proc/on_moved(atom/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	register_to_loc(source.loc)
 
-/datum/component/geiger_sound/proc/register_to_loc(new_loc)
+/datum/geiger_sound/proc/register_to_loc(new_loc)
 	if(last_parent == new_loc)
 		return
 
 	if(!isnull(last_parent))
 		sound.stop(last_parent)
-		UnregisterSignal(last_parent, COMSIG_IN_RANGE_OF_IRRADIATION)
+		om_unhook(last_parent, /datum/om/event/before/in_range_of_irradiation, src)
 
 	last_parent = new_loc
 
 	if(!isnull(new_loc))
-		RegisterSignal(new_loc, COMSIG_IN_RANGE_OF_IRRADIATION, PROC_REF(on_pre_potential_irradiation))
+		om_hook(new_loc, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
 /datum/looping_sound/geiger
 	mid_sounds = list(
@@ -92,11 +115,11 @@ REF_VAR(/datum/component/geiger_sound, OWNED, /datum/looping_sound/geiger, sound
 
 	last_radiation_pulse_handle = null
 
-/datum/component/geiger_sound/wall
+/datum/geiger_sound/wall
 	wall_mounted = TRUE
 
-/datum/component/geiger_sound/wall/RegisterWithParent()
-	sound = new /datum/looping_sound/geiger/wall(list(parent), TRUE)
+/datum/geiger_sound/wall/attach()
+	sound = new /datum/looping_sound/geiger/wall(list(owner), TRUE)
 	..()
 
 //Subtype for wall mounted geiger counters, which should be quieter and not have the chance to play when radiation is low.

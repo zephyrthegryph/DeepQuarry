@@ -64,7 +64,7 @@
 	if(can_drop_vore(prey = source, pred = drop_mob))
 		drop_mob.feed_grabbed_to_self_falling_nom(drop_mob, prey = source)
 		drop_mob.visible_message(span_vdanger("\The [drop_mob] falls right onto \the [source]!"))
-		return COMSIG_CANCEL_FALL
+		return EVENT_VETO
 
 	//pred = source
 	//prey = drop_mob
@@ -73,7 +73,7 @@
 		source.feed_grabbed_to_self_falling_nom(source, prey = drop_mob)
 		source.status_at_least(EFFECT_WEAKENED, 4)
 		source.visible_message(span_vdanger("\The [drop_mob] falls right into \the [source]!"))
-		return COMSIG_CANCEL_FALL
+		return EVENT_VETO
 
 /datum/om/behaviour/spontaneous_vore/proc/handle_hitby(mob/living/source, atom/movable/hitby, mob/thrower, speed)
 
@@ -87,7 +87,7 @@
 			if(source.adminbus_trash || is_type_in_list(O, GLOB.edible_trash) && O.trash_eatable && !is_type_in_list(O, GLOB.item_vore_blacklist))
 				source.visible_message(span_vwarning("[O] is thrown directly into [source]'s [lowertext(destination_belly.name)]!"))
 				destination_belly.nom_atom(O)
-				return COMSIG_CANCEL_HITBY
+				return EVENT_VETO
 
 	//Throwing a prey into a pred takes priority. After that it checks to see if the person being thrown is a pred.
 	if(isliving(hitby))
@@ -115,7 +115,7 @@
 				add_attack_logs(thrower,source,"Devoured [thrown_mob.name] via throw vore.")
 			else
 				log_vore("[source] devoured [thrown_mob.name] via throw vore.")
-			return COMSIG_CANCEL_HITBY //We can stop here. We don't need to calculate damage or anything else. They're eaten.
+			return EVENT_VETO //We can stop here. We don't need to calculate damage or anything else. They're eaten.
 
 		// PERSON BEING HIT: CAN BE DROP PREY, ALLOWS THROW VORE, AND IS DEVOURABLE.
 		// PERSON BEING THROWN: CAN BE DROP PRED, ALLOWS THROW VORE.
@@ -131,7 +131,7 @@
 				add_attack_logs(thrower,source,"Was Devoured by [thrown_mob.name] via throw vore.")
 			else
 				log_vore("[source] Was Devoured by [thrown_mob.name] via throw vore.")
-			return COMSIG_CANCEL_HITBY
+			return EVENT_VETO
 
 //source = person standing up
 //crossed = person sliding

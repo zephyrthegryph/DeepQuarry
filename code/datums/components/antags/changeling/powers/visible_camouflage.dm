@@ -13,7 +13,7 @@
 	set category = "Changeling"
 	set name = "Visible Camouflage (10)"
 	set desc = "Turns yourself almost invisible, as long as you move slowly."
-	var/datum/component/antag/changeling/changeling = changeling_power(0,0,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(0,0,100,CONSCIOUS)
 	if(!changeling)
 		return
 
@@ -54,12 +54,12 @@
 	must_walk = FALSE
 
 /datum/modifier/changeling_camouflage/can_apply(mob/living/L, suppress_failure = FALSE)
-	comp_handle = om_handle(L.GetComponent(/datum/component/antag/changeling))
+	comp_handle = om_handle(L.get_changeling_state())
 	if(!comp())
 		return FALSE
 
 /datum/modifier/changeling_camouflage/on_applied()
-	comp_handle = om_handle(holder.GetComponent(/datum/component/antag/changeling))
+	comp_handle = om_handle(holder.get_changeling_state())
 	if(must_walk)
 		holder.set_m_intent(I_WALK)
 	old_regen_rate = comp().chem_recharge_rate
@@ -89,6 +89,6 @@
 		old_regen_rate += comp().chem_recharge_rate
 		comp().chem_recharge_rate = 0
 
-/// LC-refs: the holder's changeling component -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/modifier/changeling_camouflage/proc/comp() as /datum/component/antag/changeling
+/// LC-refs: the holder's changeling state -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/modifier/changeling_camouflage/proc/comp() as /datum/changeling
 	return om_resolve(comp_handle)

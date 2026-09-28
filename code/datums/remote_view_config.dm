@@ -1,5 +1,5 @@
 /datum/remote_view_config
-	// Signal config for remote view component. This controls what signals will be subbed to during init.
+	// Signal config for remote view. This controls what signals will be subbed to during init.
 	var/forbid_movement = TRUE
 	var/relay_movement = FALSE
 	var/use_zoom_hud = FALSE
@@ -15,49 +15,49 @@
 	var/override_health_hud = FALSE
 	var/override_darkvision_hud = FALSE
 
-/// Called when remote view component finishes attaching to the mob
-/datum/remote_view_config/proc/attached_to_mob( datum/component/remote_view/owner_component, mob/host_mob)
+/// Called when remote view finishes attaching to the mob
+/datum/remote_view_config/proc/attached_to_mob( datum/remote_view/owner_component, mob/host_mob)
 	RETURN_TYPE(null)
 	return
 
-/// Called when remote view component is destroyed
-/datum/remote_view_config/proc/detatch_from_mob( datum/component/remote_view/owner_component, mob/host_mob)
+/// Called when remote view is destroyed
+/datum/remote_view_config/proc/detatch_from_mob( datum/remote_view/owner_component, mob/host_mob)
 	RETURN_TYPE(null)
 	return
 
 /// Handles relayed movement during a remote view. Override this in a subtype to handle specialized logic. If it returns true, the mob will not move, allowing you to handle remotely controlled movement.
-/datum/remote_view_config/proc/handle_relay_movement( datum/component/remote_view/owner_component, mob/host_mob, datum/coordinator, atom/movable/remote_view_target, direction)
-	SIGNAL_HANDLER
+/datum/remote_view_config/proc/handle_relay_movement( datum/remote_view/owner_component, mob/host_mob, datum/coordinator, atom/movable/remote_view_target, direction)
+	SHOULD_NOT_SLEEP(TRUE)
 	// By default, we ask our remote_view_target to handle relaymove for us.
 	if(!remote_view_target)
 		return FALSE
 	return remote_view_target.relaymove(host_mob, direction)
 
 /// Handles visual changes to mob's hud or flags when in use, it is fired every life tick.
-/datum/remote_view_config/proc/handle_apply_visuals( datum/component/remote_view/owner_component, mob/host_mob)
-	SIGNAL_HANDLER
+/datum/remote_view_config/proc/handle_apply_visuals( datum/remote_view/owner_component, mob/host_mob)
+	SHOULD_NOT_SLEEP(TRUE)
 	RETURN_TYPE(null)
 	return
 
 /// Handles visual changes when ending the view
-/datum/remote_view_config/proc/handle_remove_visuals( datum/component/remote_view/owner_component, mob/host_mob)
-	SIGNAL_HANDLER
+/datum/remote_view_config/proc/handle_remove_visuals( datum/remote_view/owner_component, mob/host_mob)
+	SHOULD_NOT_SLEEP(TRUE)
 	RETURN_TYPE(null)
 	return
 
 /// Handles hud health indicator being replaced with a custom one (like showing the remote_view_target's health).
-/datum/remote_view_config/proc/handle_hud_override( datum/component/remote_view/owner_component, mob/host_mob)
-	SIGNAL_HANDLER
-	return COMSIG_COMPONENT_HANDLED_HUD
+/datum/remote_view_config/proc/handle_hud_override( datum/remote_view/owner_component, mob/host_mob)
+	SHOULD_NOT_SLEEP(TRUE)
+	return HUD_EVENT_HANDLED
 
 /// Handles hud health indicator being replaced with a custom one (like showing the remote_view_target's health).
-/datum/remote_view_config/proc/handle_hud_health( datum/component/remote_view/owner_component, mob/host_mob)
-	SIGNAL_HANDLER
-	return COMSIG_COMPONENT_HANDLED_HEALTH_ICON
+/datum/remote_view_config/proc/handle_hud_health( datum/remote_view/owner_component, mob/host_mob)
+	SHOULD_NOT_SLEEP(TRUE)
+	return HEALTH_ICON_EVENT_HANDLED
 
 /// Handles hud darkvision for if the remote view uses it's own logic for darkvision, or asks the remote_view_target to calculate it.
-/datum/remote_view_config/proc/handle_hud_darkvision( datum/component/remote_view/owner_component, mob/host_mob)
-	SIGNAL_HANDLER
+/datum/remote_view_config/proc/handle_hud_darkvision( datum/remote_view/owner_component, mob/host_mob)
+	SHOULD_NOT_SLEEP(TRUE)
 	RETURN_TYPE(null)
 	return
 
@@ -115,7 +115,7 @@
 /datum/remote_view_config/camera_standard
 	use_zoom_hud = TRUE
 
-/datum/remote_view_config/camera_standard/handle_apply_visuals( datum/component/remote_view/owner_component, mob/host_mob)
+/datum/remote_view_config/camera_standard/handle_apply_visuals( datum/remote_view/owner_component, mob/host_mob)
 	var/obj/machinery/camera/view_camera = owner_component.get_target()
 	if(!view_camera || !view_camera.can_use())
 		host_mob.reset_perspective()

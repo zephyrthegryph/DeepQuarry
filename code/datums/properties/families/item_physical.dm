@@ -2,7 +2,7 @@
 //
 // Size class comes from the `w_class` var (initial, variant, then saved
 // state). Mass comes from the item's `matter` list; a mob's mass is the sum of
-// what it has equipped, plus any component contribution.
+// what it has equipped, plus any behaviour contribution.
 
 /datum/property_def/size_class
 	id = PROP_SIZE_CLASS

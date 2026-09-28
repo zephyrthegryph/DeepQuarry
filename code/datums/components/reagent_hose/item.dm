@@ -32,9 +32,11 @@
 		to_chat(user, span_danger("You must choose which connector this hose will connect to before you can attach the hose to something else."))
 		return
 
-	var/datum/component/hose_connector/REMB = om_resolve(remembered)
+	var/datum/hose_connector/REMB = om_resolve(remembered)
 	var/list/available_sockets = list()
-	for(var/datum/component/hose_connector/HC in target.GetComponents(/datum/component/hose_connector))
+	var/atom/movable/target_movable = target
+	var/list/target_connectors = istype(target_movable) ? target_movable.get_hose_connectors() : list()
+	for(var/datum/hose_connector/HC as anything in target_connectors)
 		if(!HC.get_hose())
 			if(REMB)
 				if(HC.get_flow_direction() == HOSE_NEUTRAL || HC.get_flow_direction() != REMB.get_flow_direction())
@@ -45,7 +47,7 @@
 	if(LAZYLEN(available_sockets))
 		if(available_sockets.len == 1)
 			var/key = available_sockets[1]
-			var/datum/component/hose_connector/AC = available_sockets[key]
+			var/datum/hose_connector/AC = available_sockets[key]
 			if(REMB && REMB.get_carrier() == AC.get_carrier())
 				to_chat(user, span_notice("Connecting \the [REMB.get_carrier()] to itself seems like a bad idea. You wind \the [src] back up."))
 				remembered = null // Unintuitive if it does not reset state
@@ -76,7 +78,7 @@
 			in_use = FALSE
 
 			if(choice && user.Adjacent(target))
-				var/datum/component/hose_connector/CC = available_sockets[choice]
+				var/datum/hose_connector/CC = available_sockets[choice]
 				if(REMB)
 					if(REMB.get_carrier() == CC.get_carrier())
 						to_chat(user, span_notice("Connecting \the [REMB.get_carrier()] to itself seems like a bad idea. You wind \the [src] back up."))

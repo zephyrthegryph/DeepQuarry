@@ -2,7 +2,7 @@
 ///  PHASE SHIFT  ///
 /////////////////////
 // Ported to the ability framework (doc/rewrite/rules.md §5). Every shadekin
-// component variant grants this ability (shadekin.dm's shadekin_granted_abilities),
+// variant (shadekin.dm) grants this ability (shadekin.dm's shadekin_granted_abilities),
 // so every shadekin has it.
 //
 // Fixes doc/rewrite/fixes.md B13: the legacy verb (git history) spent energy
@@ -61,13 +61,13 @@
 
 /mob/living/var/tmp/dq_phase_shift_pending_cost = 0
 
-/// TRUE if `actor` has the shadekin component, else a reason.
+/// TRUE if `actor` has shadekin state, else a reason.
 /mob/living/proc/dq_pred_shadekin(mob/living/actor, atom/target, obj/item/held)
 	return actor.get_shadekin_component() ? TRUE : "you aren't shadekin"
 
 /// TRUE if `actor` isn't already mid-phase, else a reason.
 /mob/living/proc/dq_pred_not_phasing(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return "you aren't shadekin"
 	return !SK.doing_phase || "you are already trying to phase"
@@ -95,7 +95,7 @@
  * pay_cost() spends precisely the amount that was checked.
  */
 /mob/living/proc/dq_phase_shift_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return "you aren't shadekin"
 	if(SK.in_phase)
@@ -131,7 +131,7 @@
 // ---- Effect: phase in or out. Runs only once every requirement passed and the cost was paid. ----
 
 /mob/living/proc/dq_do_phase_shift(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return FALSE
 	var/turf/T = get_turf(actor)
@@ -148,7 +148,7 @@
 		phase_out(T)
 	return TRUE
 
-/mob/living/proc/phase_in(turf/T, datum/component/shadekin/SK)
+/mob/living/proc/phase_in(turf/T, datum/shadekin/SK)
 	//In case we're not passed args, do it ourself.
 	if(!T)
 		T = get_turf(src)
@@ -205,7 +205,7 @@
 		om_after(src, SK.phase_time, PROC_REF(shadekin_complete_phase_in), original_canmove, SK)
 
 
-/mob/living/proc/shadekin_complete_phase_in(original_canmove, datum/component/shadekin/SK)
+/mob/living/proc/shadekin_complete_phase_in(original_canmove, datum/shadekin/SK)
 	canmove = original_canmove
 	alpha = initial(alpha)
 	remove_body_effect(/datum/body_effect/shadekin_phase_vision)
@@ -262,7 +262,7 @@
 			held_lights.flicker(SK.flicker_time, SK.flicker_color, TRUE)
 
 /mob/living/proc/phase_out(turf/T)
-	var/datum/component/shadekin/SK = get_shadekin_component()
+	var/datum/shadekin/SK = get_shadekin_component()
 	if(!(SK.in_phase))
 		// pre-change
 		forceMove(T)
@@ -312,7 +312,7 @@
 		om_after(src, SK.phase_time, PROC_REF(complete_phase_out), original_canmove, SK)
 
 
-/mob/living/proc/complete_phase_out(original_canmove, datum/component/shadekin/SK)
+/mob/living/proc/complete_phase_out(original_canmove, datum/shadekin/SK)
 	invisibility = INVISIBILITY_SHADEKIN
 	see_invisible = INVISIBILITY_SHADEKIN
 	see_invisible_default = INVISIBILITY_SHADEKIN // Allow seeing phased entities while phased.

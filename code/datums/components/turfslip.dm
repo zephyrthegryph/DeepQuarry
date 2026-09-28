@@ -1,15 +1,36 @@
-/datum/component/turfslip
+/// An ongoing slide across a slippery floor. (Was /datum/component/turfslip; now a plain datum
+/// owned by the sliding mob, /mob/living var turfslip.)
+/datum/turfslip
+	/// The sliding mob.
+	var/mob/living/owner
 	var/slipping_dir = null
 	var/slip_dist = 1
 	var/dirtslip = FALSE
 
-/datum/component/turfslip/Initialize()
-	if (!isliving(parent))
-		return COMPONENT_INCOMPATIBLE
-	slipping_dir = owner().dir
-	RegisterSignal(owner(), COMSIG_MOVABLE_MOVED, PROC_REF(move_react))
+/// Owned: the slide in progress, if any.
+REF_VAR(/mob/living, OWNED, /datum/turfslip, turfslip)
 
-/datum/component/turfslip/proc/start_slip(turf/simulated/start, is_dirt)
+REF_BACK(/datum/turfslip, list("owner" = "turfslip"))
+
+/datum/turfslip/New(mob/living/new_owner)
+	..()
+	owner = new_owner
+	slipping_dir = owner.dir
+	om_hook(owner, /datum/om/event/moved, src, PROC_REF(move_react))
+
+/// The mob's slide, starting one if it has none (was LoadComponent).
+/mob/living/proc/get_or_start_turfslip() as /datum/turfslip
+	if(!turfslip)
+		turfslip = new /datum/turfslip(src)
+	return turfslip
+
+/// Ends the slide: detaches from the mob and deletes this datum (was qdel(src) on the component).
+/datum/turfslip/proc/end_slip()
+	if(owner?.turfslip == src)
+		owner.turfslip = null
+	qdel(src)
+
+/datum/turfslip/proc/start_slip(turf/simulated/start, is_dirt)
 	var/slip_stun = 6
 	var/floor_type = "wet"
 	var/already_slipping = (slip_dist > 1)
@@ -24,7 +45,7 @@
 			floor_type = "uneven"
 
 	// Unlucky behavior
-	if(HAS_TRAIT(owner(), TRAIT_UNLUCKY) && start.wet)
+	if(HAS_TRAIT(owner, TRAIT_UNLUCKY) && start.wet)
 		slip_dist = rand(5,9) // Random longer distances on slip
 		slip_stun = 10
 		dirtslip = FALSE
@@ -34,8 +55,8 @@
 		switch(start.wet)
 			if(TURFSLIP_WET)
 				// Slipping on wet turf doesn't push you a turf
-				owner().slip("the [floor_type] floor", slip_stun)
-				qdel(src)
+				owner.slip("the [floor_type] floor", slip_stun)
+				end_slip()
 				return
 
 			if(TURFSLIP_LUBE)
@@ -52,26 +73,26 @@
 
 	// Only start the slip timer if we are not already sliding
 	if(!already_slipping)
-		owner().slip("the [floor_type] floor", slip_stun)
+		owner.slip("the [floor_type] floor", slip_stun)
 		om_after(src, 1, PROC_REF(next_slip))
 
-/datum/component/turfslip/proc/move_react(atom/source, atom/oldloc, direction, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
+/datum/turfslip/proc/move_react(atom/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 
 	// Can the mob slip?
-	if(QDELETED(owner()) || !isturf(owner().loc))
-		qdel(src)
+	if(QDELETED(owner) || !isturf(owner.loc))
+		end_slip()
 		return
 
 	// Can the turf be slipped on?
-	var/turf/simulated/ground = get_turf(owner())
+	var/turf/simulated/ground = get_turf(owner)
 	if(!ground)
-		qdel(src)
+		end_slip()
 		return
-	if(!ground.check_slipping(owner(),dirtslip))
+	if(!ground.check_slipping(owner,dirtslip))
 		// End our slip if we have no more slip remaining
 		if(slip_dist <= 0)
-			qdel(src)
+			end_slip()
 			return
 		// reduce absurd slip distances to something reasonable if we are no longer standing on lube
 		if(slip_dist > 4)
@@ -83,22 +104,27 @@
 
 	om_after(src, 1, PROC_REF(next_slip))
 
-/datum/component/turfslip/proc/next_slip()
+/datum/turfslip/proc/next_slip()
 	// check tile for next slip
-	owner().is_slipping = TRUE
-	if(!step(owner(), slipping_dir) || dirtslip) // done sliding, failed to move, dirt also only slips once
+	owner.is_slipping = TRUE
+	if(!step(owner, slipping_dir) || dirtslip) // done sliding, failed to move, dirt also only slips once
 		slip_dist = 0
-		qdel(src)
+		end_slip()
 		return
 	// Kill the slip if it's over
 	if(!--slip_dist)
-		qdel(src)
+		end_slip()
 		return
 
 // ALLOW(lifecycle): the slipping mob stops sliding.
-/datum/component/turfslip/Destroy(force = FALSE)
-	owner().inertia_dir = 0
-	owner().is_slipping = FALSE
+/datum/turfslip/Destroy(force = FALSE)
+	if(owner)
+		om_unhook(owner, /datum/om/event/moved, src)
+		owner.inertia_dir = 0
+		owner.is_slipping = FALSE
+		if(owner.turfslip == src)
+			owner.turfslip = null
+	owner = null
 	. = ..()
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -127,6 +153,3 @@
 		return FALSE
 	return TRUE
 
-/// LC-refs: the slipping mob (our parent) (was a var copying parent).
-/datum/component/turfslip/proc/owner() as /mob/living
-	return parent

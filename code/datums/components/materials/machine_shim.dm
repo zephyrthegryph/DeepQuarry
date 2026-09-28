@@ -2,23 +2,32 @@
  * THIS IS A SHIM. IT SHOULD NOT BE INCLUDED IN FUTURE CODE. DEPRECATED, DO NOT USE.
  *
  * This is used to replace the machine var in mob, it is a holdover of pre-tgui code.
- * This component operates similar to how the machine var did previous, but better contained.
+ * This owned datum operates similar to how the machine var did previous, but better contained.
  * Any uses of set_machine() should eventually be removed in favor of tgui handling instead.
  *
  * All this does is ensure that the mob releases the machine when they leave it.
  */
-/datum/component/using_machine_shim
+/datum/using_machine_shim
 	var/linked_machine_handle
+	/// The mob using the machine.
+	var/mob/owner
 
-/datum/component/using_machine_shim/Initialize(obj/machinery/machine)
+/mob/var/datum/using_machine_shim/machine_shim
+REF_OWNED(/mob, "machine_shim")
+REF_BACK(/datum/using_machine_shim, list("owner" = "machine_shim"))
+
+/datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
+	..()
+	owner = new_owner
+	owner.machine_shim = src
 	// Mob
 	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
-	RegisterSignal(host_mob(), COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(on_mob_action))
-	RegisterSignal(host_mob(), COMSIG_MOB_LOGOUT, PROC_REF(on_mob_logout))
+	om_hook(host_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_mob_moved))
+	om_hook(host_mob(), /datum/om/event/mob_logout, src, PROC_REF(on_mob_logout))
 
 	// Machine
 	linked_machine_handle = om_handle(machine)
-	RegisterSignal(linked_machine(), COMSIG_QDELETING, PROC_REF(on_machine_qdelete))
+	om_hook(linked_machine(), /datum/om/event/qdeleting, src, PROC_REF(on_machine_qdelete))
 	linked_machine().in_use = TRUE
 
 	// Lets complain if an object uses TGUI but is still setting the machine.
@@ -26,31 +35,43 @@
 		log_world("## ERROR [machine.type] implements tgui_data(), and has likely been ported to tgui already. It should no longer use set_machine().")
 
 // ALLOW(lifecycle): the machine is free again and the operator's perspective and trait reset.
-/datum/component/using_machine_shim/Destroy(force)
+/datum/using_machine_shim/Destroy(force)
+	om_unhook_all(src)
+	var/mob/M = owner
+	if(M?.machine_shim == src)
+		M.machine_shim = null
+	owner = null
 	. = ..()
-	linked_machine().in_use = FALSE
-	om_stage_remove(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
-	host_mob().reset_perspective()
+	var/obj/machinery/machine = linked_machine()
+	if(machine)
+		machine.in_use = FALSE
+	if(M)
+		om_stage_remove(M, /datum/om/stage/life/trait/using_machine_shim)
+		M.reset_perspective()
 
-/datum/component/using_machine_shim/proc/on_mob_action()
-	SIGNAL_HANDLER
+/datum/using_machine_shim/proc/on_mob_moved(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
+	on_mob_action()
+
+/datum/using_machine_shim/proc/on_mob_action()
+	SHOULD_NOT_OVERRIDE(TRUE)
 	if(host_mob().stat == DEAD || !host_mob().client || !host_mob().Adjacent(linked_machine()))
 		qdel(src)
 
 /// Called by the using machine shim trait system each Life() cycle.
-/datum/component/using_machine_shim/proc/on_mob_life()
+/datum/using_machine_shim/proc/on_mob_life()
 	on_mob_action()
 
-/datum/component/using_machine_shim/proc/on_machine_qdelete()
-	SIGNAL_HANDLER
+/datum/using_machine_shim/proc/on_machine_qdelete(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	qdel(src)
 
-/datum/component/using_machine_shim/proc/on_mob_logout()
-	SIGNAL_HANDLER
+/datum/using_machine_shim/proc/on_mob_logout(datum/source, datum/om/event/mob_logout/event)
+	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	qdel(src)
@@ -61,33 +82,33 @@
 /// deprecated, do not use
 /mob/proc/get_current_machine()
 	RETURN_TYPE(/obj)
-	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
+	var/datum/using_machine_shim/shim = machine_shim
 	if(!shim)
 		return
 	return shim.linked_machine()
 
 /// deprecated, do not use
 /mob/proc/check_current_machine(obj/checking)
-	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
+	var/datum/using_machine_shim/shim = machine_shim
 	if(!shim)
 		return FALSE
 	return (shim.linked_machine() == checking)
 
 /// deprecated, do not use
 /mob/proc/unset_machine()
-	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
+	var/datum/using_machine_shim/shim = machine_shim
 	if(shim)
 		qdel(shim)
 
 /// deprecated, do not use
 /mob/proc/set_machine(obj/O)
-	var/datum/component/using_machine_shim/shim = GetComponent(/datum/component/using_machine_shim)
+	var/datum/using_machine_shim/shim = machine_shim
 	if(shim)
 		if(shim.linked_machine() == O) // Already in use
 			return
 		qdel(shim)
 		return
-	AddComponent(/datum/component/using_machine_shim, O)
+	new /datum/using_machine_shim(src, O)
 
 /// deprecated, do not use
 /obj/proc/updateUsrDialog(mob/user)
@@ -127,15 +148,14 @@
 /// Trait system: release the machine when the user leaves it. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/using_machine_shim
 	name = "using machine shim"
-	component_type = /datum/component/using_machine_shim
 
-/datum/om/stage/life/trait/using_machine_shim/tick_component(mob/living/self, datum/component/using_machine_shim/component)
-	component.on_mob_life()
+/datum/om/stage/life/trait/using_machine_shim/perform(mob/living/self, datum/om/frame/life/ctx)
+	self.machine_shim?.on_mob_life()
 
-/// LC-refs: the mob using the machine (our parent) (was a var copying parent).
-/datum/component/using_machine_shim/proc/host_mob() as /mob
-	return parent
+/// The mob using the machine (our owner).
+/datum/using_machine_shim/proc/host_mob() as /mob
+	return owner
 
 /// LC-refs: the machine being used -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/component/using_machine_shim/proc/linked_machine() as /obj/machinery
+/datum/using_machine_shim/proc/linked_machine() as /obj/machinery
 	return om_resolve(linked_machine_handle)

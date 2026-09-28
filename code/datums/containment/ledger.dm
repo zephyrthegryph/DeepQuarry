@@ -282,7 +282,7 @@
 	// once that lands (medical_frameworks.md).
 	dq_latent_touch(thing)
 	holder.on_slot_changed(id, thing, TRUE)
-	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, id)
+	OM_EMIT(holder, /datum/om/event/slot_inserted, thing, id)
 	om_slot_entered(holder, thing, def)
 	if(thing.has_slot_hooks)
 		thing.on_slotted(holder, id, flags)
@@ -307,7 +307,7 @@
 	if(thing.move_hooks)
 		adjust_hooked(-1)
 	holder.on_slot_changed(id, thing, FALSE)
-	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, id)
+	OM_EMIT(holder, /datum/om/event/slot_removed, thing, id)
 	om_slot_left(holder, thing, def)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, id, flags)
@@ -325,7 +325,7 @@
 	if(old_def?.keyed)
 		unindex_key(old_id, entry[LEDGER_E_KEY], thing)
 	holder.on_slot_changed(old_id, thing, FALSE)
-	SEND_SIGNAL(holder, COMSIG_SLOT_REMOVED, thing, old_id)
+	OM_EMIT(holder, /datum/om/event/slot_removed, thing, old_id)
 	om_slot_left(holder, thing, old_def)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, old_id, flags)
@@ -341,7 +341,7 @@
 	new_things += thing
 	used[new_id] += entry[LEDGER_E_COST]
 	holder.on_slot_changed(new_id, thing, TRUE)
-	SEND_SIGNAL(holder, COMSIG_SLOT_INSERTED, thing, new_id)
+	OM_EMIT(holder, /datum/om/event/slot_inserted, thing, new_id)
 	om_slot_entered(holder, thing, def)
 	if(thing.has_slot_hooks)
 		thing.on_slotted(holder, new_id, flags)

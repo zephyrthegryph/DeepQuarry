@@ -15,7 +15,7 @@
 	set name = "Bioelectrogenesis (20 + 10/shock)"
 	set desc = "Recharges anything in your hand, or shocks people."
 
-	var/datum/component/antag/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
 
 	var/obj/held_item = get_active_hand()
 
@@ -125,7 +125,7 @@
 		siemens = gloves.siemens_coefficient
 
 	//Excuse the copypasta.
-	var/datum/component/antag/changeling/comp = is_changeling(user)
+	var/datum/changeling/comp = is_changeling(user)
 	if(istype(target,/mob/living/carbon))
 		var/mob/living/carbon/C = target
 

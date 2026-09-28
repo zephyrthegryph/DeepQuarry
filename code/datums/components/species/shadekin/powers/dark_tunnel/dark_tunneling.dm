@@ -34,7 +34,7 @@
 	return istext(started) ? FALSE : USE_TOOL_PENDING
 
 /mob/living/proc/dq_pred_no_dark_tunnel_yet(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return "you aren't shadekin"
 	return !SK.created_dark_tunnel || "you have already made a tunnel to the Dark"
@@ -55,7 +55,7 @@
 	return "you can't do that here"
 
 /mob/living/proc/dq_pred_dark_tunnel_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return "you aren't shadekin"
 	return (SK.shadekin_get_energy() >= DARK_TUNNEL_COST) || "not enough energy for that ability"
@@ -70,7 +70,7 @@
 	return template
 
 /mob/living/proc/dq_do_dark_tunneling(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return FALSE
 	var/turf/T = get_turf(actor)

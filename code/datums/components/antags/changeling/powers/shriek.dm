@@ -23,7 +23,7 @@
 	set name = "Resonant Shriek (20)"
 	set desc = "Emits a high-frequency sound that confuses and deafens organics, blows out nearby lights, and overloads synthetics' sensors."
 
-	var/datum/component/antag/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
 	if(!changeling)
 		return FALSE
 	if(changeling.is_on_cooldown(CHANGELING_SCREECH))
@@ -57,7 +57,7 @@
 	var/list/affected = list()
 	for(var/mob/living/M in range(range, src))
 		if(iscarbon(M))
-			var/datum/component/antag/changeling/m_comp = M.GetComponent(/datum/component/antag/changeling)
+			var/datum/changeling/m_comp = M.get_changeling_state()
 			if(!M.mind || !m_comp)
 				if(M.get_ear_protection() >= 2)
 					continue
@@ -95,7 +95,7 @@
 	set name = "Dissonant Shriek (20)"
 	set desc = "We shift our vocal cords to release a high-frequency sound that overloads nearby electronics."
 
-	var/datum/component/antag/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(20,0,100,CONSCIOUS)
 	if(!changeling)
 		return FALSE
 

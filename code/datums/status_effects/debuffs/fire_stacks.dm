@@ -276,8 +276,12 @@
  * Handles mob extinguishing, should be the only way to set on_fire to FALSE
  */
 
+/// Hooked to before/atom_extinguish on the owner.
+/datum/status_effect/fire_handler/fire_stacks/proc/on_extinguish_event(datum/source, datum/om/event/before/atom_extinguish/event)
+	EVENT_HANDLER
+	extinguish()
+
 /datum/status_effect/fire_handler/fire_stacks/proc/extinguish()
-	SIGNAL_HANDLER
 	QDEL_NULL(moblight)
 	on_fire = FALSE
 	// owner.clear_mood_event("on_fire")
@@ -298,14 +302,12 @@
 
 /datum/status_effect/fire_handler/fire_stacks/on_apply()
 	. = ..()
-	RegisterSignal(owner, COMSIG_ATOM_EXTINGUISH, PROC_REF(extinguish))
+	om_hook(owner, /datum/om/event/before/atom_extinguish, src, PROC_REF(on_extinguish_event))
 	owner.update_fire()
 	// add_fire_overlay(owner)
 	// owner.update_appearance(UPDATE_OVERLAYS)
 
 /datum/status_effect/fire_handler/fire_stacks/proc/add_fire_overlay(mob/living/source)
-	SIGNAL_HANDLER
-
 	if(stacks <= 0 || !on_fire)
 		return
 
@@ -325,10 +327,8 @@
 
 /datum/status_effect/fire_handler/wet_stacks/on_apply()
 	. = ..()
-	RegisterSignals(owner, list(SIGNAL_ADDTRAIT(TRAIT_WET_FOR_LONGER), SIGNAL_REMOVETRAIT(TRAIT_WET_FOR_LONGER)), PROC_REF(update_wet_stack_modifier))
+	om_hook(owner, list(/datum/om/event/trait_gained, /datum/om/event/trait_lost), src, PROC_REF(on_owner_trait_changed))
 	update_wet_stack_modifier()
-	RegisterSignal(owner, SIGNAL_ADDTRAIT(TRAIT_SLIPPERY_WHEN_WET), PROC_REF(become_slippery))
-	RegisterSignal(owner, SIGNAL_REMOVETRAIT(TRAIT_SLIPPERY_WHEN_WET), PROC_REF(no_longer_slippery))
 	if(HAS_TRAIT(owner, TRAIT_SLIPPERY_WHEN_WET))
 		become_slippery()
 	ADD_TRAIT(owner, TRAIT_IS_WET,  TRAIT_STATUS_EFFECT(id))
@@ -341,17 +341,31 @@
 		no_longer_slippery()
 	owner.remove_shared_particles(/particles/droplets)
 
+/// Trait gain/loss on the owner: TRAIT_WET_FOR_LONGER retunes the stack
+/// modifier, TRAIT_SLIPPERY_WHEN_WET toggles slipperiness.
+/datum/status_effect/fire_handler/wet_stacks/proc/on_owner_trait_changed(datum/source, datum/om/event/event)
+	EVENT_HANDLER
+	if(istype(event, /datum/om/event/trait_gained))
+		var/datum/om/event/trait_gained/gained = event
+		if(gained.trait == TRAIT_WET_FOR_LONGER)
+			update_wet_stack_modifier()
+		else if(gained.trait == TRAIT_SLIPPERY_WHEN_WET)
+			become_slippery()
+	else if(istype(event, /datum/om/event/trait_lost))
+		var/datum/om/event/trait_lost/lost = event
+		if(lost.trait == TRAIT_WET_FOR_LONGER)
+			update_wet_stack_modifier()
+		else if(lost.trait == TRAIT_SLIPPERY_WHEN_WET)
+			no_longer_slippery()
+
 /datum/status_effect/fire_handler/wet_stacks/proc/update_wet_stack_modifier()
-	SIGNAL_HANDLER
 	stack_modifier = HAS_TRAIT(owner, TRAIT_WET_FOR_LONGER) ? -3.5 : -1
 
 /datum/status_effect/fire_handler/wet_stacks/proc/become_slippery()
-	SIGNAL_HANDLER
 	// slipperiness = owner.AddComponent(/datum/component/slippery, 5 SECONDS, lube_flags = SLIPPERY_WHEN_LYING_DOWN|NO_SLIP_WHEN_WALKING|WEAK_SLIDE)
 	ADD_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 
 /datum/status_effect/fire_handler/wet_stacks/proc/no_longer_slippery()
-	SIGNAL_HANDLER
 	// QDEL_NULL(slipperiness)
 	REMOVE_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 

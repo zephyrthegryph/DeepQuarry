@@ -1,20 +1,20 @@
 /*
  * Inflation subtype, Big and round!
  */
-/datum/component/hose_connector/inflation
+/datum/hose_connector/inflation
 	flow_direction = HOSE_NEUTRAL
 	var/connection_mode = CHEM_INGEST
 
-/datum/component/hose_connector/inflation/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/hose_connector/inflation/attach(atom/movable/new_carrier, set_unique_name = null)
+	if(!ishuman(new_carrier))
+		return FALSE
 	. = ..()
 	remove_verb(human_owner(),/atom/proc/disconnect_hose)
 
-/datum/component/hose_connector/inflation/on_examine(datum/source, mob/user, list/examine_texts)
+/datum/hose_connector/inflation/on_examine(datum/source, datum/om/event/examine/event)
 	return
 
-/datum/component/hose_connector/inflation/proc/get_destination_name()
+/datum/hose_connector/inflation/proc/get_destination_name()
 	switch(connection_mode)
 		if(CHEM_INGEST)
 			return "mouth"
@@ -24,22 +24,22 @@
 			return "bloodstream"
 	return "something"
 
-/datum/component/hose_connector/inflation/get_id()
+/datum/hose_connector/inflation/get_id()
 	return "\The [human_owner()]'s [get_destination_name()]"
 
 // Adding and removing the verb is more complex on humans... This code also expects only ONE hose connector
-/datum/component/hose_connector/inflation/connect(datum/hose/H)
+/datum/hose_connector/inflation/connect(datum/hose/H)
 	. = ..()
 	add_verb(human_owner(),/atom/proc/disconnect_hose)
 
-/datum/component/hose_connector/inflation/remove_hose()
+/datum/hose_connector/inflation/remove_hose()
 	remove_verb(human_owner(),/atom/proc/disconnect_hose)
 	. = ..()
 
 // Succ command center
 /// Chooses where the hose goes into the owner, then (a timed action) connects it and calls
 /// origin.setup_hoses_finish(target, distancetonode, user, tubing).
-/datum/component/hose_connector/inflation/proc/inflation_setup(mob/user,datum/component/hose_connector/other, datum/component/hose_connector/origin, datum/component/hose_connector/target, distancetonode, obj/item/stack/tubing)
+/datum/hose_connector/inflation/proc/inflation_setup(mob/user,datum/hose_connector/other, datum/hose_connector/origin, datum/hose_connector/target, distancetonode, obj/item/stack/tubing)
 	if(!other || QDELETED(other))
 		to_chat(user,span_danger("You couldn't connect the hose, as the connection stopped existing! Ohno!"))
 		return FALSE
@@ -81,20 +81,20 @@
 
 /datum/om/task/timed/inflation_inflation_connected
 	duration = 7 SECONDS
-	complete_proc = /datum/component/hose_connector/inflation/proc/inflation_connected
+	complete_proc = /datum/hose_connector/inflation/proc/inflation_connected
 	fail_message = span_warning("You couldn't connect the hose!")
-	var/datum/component/hose_connector/other
-	var/datum/component/hose_connector/origin
-	var/datum/component/hose_connector/target_arg
+	var/datum/hose_connector/other
+	var/datum/hose_connector/origin
+	var/datum/hose_connector/target_arg
 	var/distancetonode
 	var/obj/item/stack/tubing
 	var/feedback
 
-/datum/component/hose_connector/inflation/proc/inflation_connected(datum/om/task/timed/inflation_inflation_connected/task)
+/datum/hose_connector/inflation/proc/inflation_connected(datum/om/task/timed/inflation_inflation_connected/task)
 	var/mob/user = task.actor
-	var/datum/component/hose_connector/other = task.other
-	var/datum/component/hose_connector/origin = task.origin
-	var/datum/component/hose_connector/target = task.target_arg
+	var/datum/hose_connector/other = task.other
+	var/datum/hose_connector/origin = task.origin
+	var/datum/hose_connector/target = task.target_arg
 	var/distancetonode = task.distancetonode
 	var/obj/item/stack/tubing = task.tubing
 	var/feedback = task.feedback
@@ -108,7 +108,7 @@
 	to_chat(user, span_notice("You connect the hose to \the [human_owner()]'s [feedback]..."))
 	origin.setup_hoses_finish(target, distancetonode, user, tubing)
 
-/datum/component/hose_connector/inflation/connected_reagents()
+/datum/hose_connector/inflation/connected_reagents()
 	if(!human_owner())
 		return null
 	switch(connection_mode)
@@ -118,7 +118,7 @@
 			return human_owner().vore_selected?.reagents
 		if(CHEM_BLOOD)
 			// Inflating
-			var/datum/component/hose_connector/other = get_pairing()
+			var/datum/hose_connector/other = get_pairing()
 			if(!other || other.flow_direction == HOSE_OUTPUT)
 				return human_owner().bloodstr // Pump into blood reagents
 			// Draining
@@ -126,9 +126,9 @@
 				return human_owner().vessel // Suck blood
 			return human_owner().bloodstr // Suck reagents from blood
 
-/datum/component/hose_connector/inflation/handle_pump(datum/reagents/connected_to)
+/datum/hose_connector/inflation/handle_pump(datum/reagents/connected_to)
 	ASSERT(connected_to)
-	var/datum/component/hose_connector/other = get_pairing()
+	var/datum/hose_connector/other = get_pairing()
 	var/rate = reagents.maximum_volume * 0.5
 	if(connection_mode == CHEM_BLOOD)
 		rate = 10 // SLOW here
@@ -180,37 +180,41 @@
  */
 
 /// Pumps reagents out of carrier
-/datum/component/hose_connector/input/borg
-	VAR_PRIVATE/mob/living/silicon/robot/borg_owner
+/datum/hose_connector/input/borg
 
-/datum/component/hose_connector/input/borg/Initialize()
-	if(!isrobot(parent))
-		return COMPONENT_INCOMPATIBLE
-	. = ..()
-	borg_owner = parent
+/datum/hose_connector/input/borg/attach(atom/movable/new_carrier, set_unique_name = null)
+	if(!isrobot(new_carrier))
+		return FALSE
+	return ..()
 
-/datum/component/hose_connector/input/borg/connected_reagents()
-	return borg_owner?.vore_selected?.reagents
+/datum/hose_connector/input/borg/proc/borg_owner() as /mob/living/silicon/robot
+	return carrier
 
-/datum/component/hose_connector/input/borg/on_examine(datum/source, mob/user, list/examine_texts)
+/datum/hose_connector/input/borg/connected_reagents()
+	var/mob/living/silicon/robot/R = borg_owner()
+	return R?.vore_selected?.reagents
+
+/datum/hose_connector/input/borg/on_examine(datum/source, datum/om/event/examine/event)
 	return
 
 /// Pumps reagents into carrier
-/datum/component/hose_connector/output/borg
-	VAR_PRIVATE/mob/living/silicon/robot/borg_owner
+/datum/hose_connector/output/borg
 
-/datum/component/hose_connector/output/borg/Initialize()
-	if(!isrobot(parent))
-		return COMPONENT_INCOMPATIBLE
-	. = ..()
-	borg_owner = parent
+/datum/hose_connector/output/borg/attach(atom/movable/new_carrier, set_unique_name = null)
+	if(!isrobot(new_carrier))
+		return FALSE
+	return ..()
 
-/datum/component/hose_connector/output/borg/connected_reagents()
-	return borg_owner?.vore_selected?.reagents
+/datum/hose_connector/output/borg/proc/borg_owner() as /mob/living/silicon/robot
+	return carrier
 
-/datum/component/hose_connector/output/borg/on_examine(datum/source, mob/user, list/examine_texts)
+/datum/hose_connector/output/borg/connected_reagents()
+	var/mob/living/silicon/robot/R = borg_owner()
+	return R?.vore_selected?.reagents
+
+/datum/hose_connector/output/borg/on_examine(datum/source, datum/om/event/examine/event)
 	return
 
-/// LC-refs: the human the hose connects to (our parent) (was a var copying parent).
-/datum/component/hose_connector/inflation/proc/human_owner() as /mob/living/carbon/human
-	return parent
+/// The human the hose connects to (our carrier).
+/datum/hose_connector/inflation/proc/human_owner() as /mob/living/carbon/human
+	return carrier

@@ -1,11 +1,12 @@
 #define MIN_DISCOMFORT_MESSAGE 50
 
 /**
- * Component that serves as a base type for detecting groups of mobs or players around us.
+ * Trait state that serves as a base type for detecting groups of mobs or players around us.
  * It functions as a framework for lonely and agoraphobia to share large sections of code.
  * Can be extended for other situations in the future.
  *  */
-/datum/component/crowd_detection
+/datum/trait_state/crowd_detection
+	life_stage = /datum/om/stage/life/trait/crowd_detection
 	VAR_PROTECTED/mob/living/carbon/human/human_parent
 	VAR_PROTECTED/discomfort = 0
 	VAR_PROTECTED/hallucination_cap = 25
@@ -18,23 +19,17 @@
 	VAR_PRIVATE/is_calm = TRUE
 	VAR_PRIVATE/next_message_time = 0
 
-/datum/component/crowd_detection/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
-	human_parent = parent
-
-/datum/component/crowd_detection/RegisterWithParent()
-	om_stage_add(parent, /datum/om/stage/life/trait/crowd_detection)
-
-/datum/component/crowd_detection/UnregisterFromParent()
-	om_stage_remove(parent, /datum/om/stage/life/trait/crowd_detection)
+/datum/trait_state/crowd_detection/setup()
+	if(!ishuman(owner))
+		return FALSE
+	human_parent = owner
+	return TRUE
 
 /// Called by the crowd detection trait system each Life() cycle.
-/datum/component/crowd_detection/proc/life_tick()
+/datum/trait_state/crowd_detection/life_tick()
 	handle_life()
 
-/datum/component/crowd_detection/proc/handle_life()
-	SIGNAL_HANDLER
+/datum/trait_state/crowd_detection/proc/handle_life()
 	SHOULD_CALL_PARENT(TRUE)
 	PROTECTED_PROC(TRUE)
 	// If they're dead or unconcious they're a bit beyond this kind of thing.
@@ -51,12 +46,12 @@
 			calm_discomfort()
 		return TRUE
 	// Changelings are immune to these, so we may as well stop handling it... It's unlikely you will turn back from a changeling as well.
-	if(human_parent.GetComponent(/datum/component/antag/changeling)) // We are never alone~
+	if(human_parent.get_changeling_state()) // We are never alone~
 		qdel(src)
 		return TRUE
 	return FALSE
 
-/datum/component/crowd_detection/proc/increase_discomfort()
+/datum/trait_state/crowd_detection/proc/increase_discomfort()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PROTECTED_PROC(TRUE)
 	// No company? Suffer :(
@@ -74,7 +69,7 @@
 	if(discomfort >= warning_cap && human_parent.status_units(EFFECT_HALLUCINATING) < hallucination_cap)
 		human_parent.status_set(EFFECT_HALLUCINATING, min(hallucination_cap,human_parent.status_units(EFFECT_HALLUCINATING)+2.5*escalation_speed))
 
-/datum/component/crowd_detection/proc/check_contents(atom/item, max_layer = 3, current_layer = 1)
+/datum/trait_state/crowd_detection/proc/check_contents(atom/item, max_layer = 3, current_layer = 1)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PROTECTED_PROC(TRUE)
 	RETURN_TYPE(/list)
@@ -89,7 +84,7 @@
 			in_range |= check_contents(content,max_layer,current_layer+1)
 	return in_range
 
-/datum/component/crowd_detection/proc/check_mob_company(mob/living/M)
+/datum/trait_state/crowd_detection/proc/check_mob_company(mob/living/M)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PROTECTED_PROC(TRUE)
 	RETURN_TYPE(/list)
@@ -113,12 +108,12 @@
 						in_range |= check_mob_company(content)
 	return in_range
 
-/datum/component/crowd_detection/proc/get_discomfort_message(current_discomfort)
+/datum/trait_state/crowd_detection/proc/get_discomfort_message(current_discomfort)
 	SHOULD_CALL_PARENT(TRUE)
 	PROTECTED_PROC(TRUE)
 	return null
 
-/datum/component/crowd_detection/proc/calm_discomfort(amount = 4, message = null)
+/datum/trait_state/crowd_detection/proc/calm_discomfort(amount = 4, message = null)
 	SHOULD_CALL_PARENT(TRUE)
 	PROTECTED_PROC(TRUE)
 	discomfort = max(discomfort - amount, 0)
@@ -129,7 +124,7 @@
 			is_calm = TRUE
 		COOLDOWN_START(src, next_message_time, 50 SECONDS)
 
-/datum/component/crowd_detection/proc/find_held_by(atom/item)
+/datum/trait_state/crowd_detection/proc/find_held_by(atom/item)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PROTECTED_PROC(TRUE)
 	RETURN_TYPE(/atom)
@@ -140,26 +135,26 @@
 	else
 		return find_held_by(item.loc)
 
-/datum/component/crowd_detection/proc/get_calm()
+/datum/trait_state/crowd_detection/proc/get_calm()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return is_calm
 
-/datum/component/crowd_detection/proc/get_discomfort()
+/datum/trait_state/crowd_detection/proc/get_discomfort()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return discomfort
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Lonelyness
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/component/crowd_detection/lonely
+/datum/trait_state/crowd_detection/lonely
 
-/datum/component/crowd_detection/lonely/major
+/datum/trait_state/crowd_detection/lonely/major
 	only_people = TRUE
 	warning_cap = 300
 	hallucination_cap = 50
 	escalation_speed = 1.3
 
-/datum/component/crowd_detection/lonely/handle_life()
+/datum/trait_state/crowd_detection/lonely/handle_life()
 	if(..())
 		return
 
@@ -205,7 +200,7 @@
 
 	increase_discomfort()
 
-/datum/component/crowd_detection/lonely/get_discomfort_message(current_discomfort)
+/datum/trait_state/crowd_detection/lonely/get_discomfort_message(current_discomfort)
 	if(current_discomfort >= warning_cap)
 		human_parent.status_adjust(EFFECT_STUTTERING, 25)
 		return span_danger(span_bold(pick("Where are the others?", "Please, there has to be someone nearby!", "I don't want to be alone!","Please, anyone! I don't want to be alone!")))
@@ -219,7 +214,7 @@
 		return pick("Well.. No one is around you anymore...","Well.. You're alone now...","You suddenly feel alone...")
 	. = ..()
 
-/datum/component/crowd_detection/lonely/calm_discomfort(amount = 4, message)
+/datum/trait_state/crowd_detection/lonely/calm_discomfort(amount = 4, message)
 	if(!message && !get_calm())
 		message = span_infoplain("The nearby company calms you down...")
 	. = ..(amount, message)
@@ -227,10 +222,10 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Agoraphobia
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/datum/component/crowd_detection/agoraphobia
+/datum/trait_state/crowd_detection/agoraphobia
 	belly_is_calming = FALSE // Stops message spam, but doesn't decrease discomfort
 
-/datum/component/crowd_detection/agoraphobia/handle_life()
+/datum/trait_state/crowd_detection/agoraphobia/handle_life()
 	if(..())
 		return
 
@@ -250,7 +245,7 @@
 
 	increase_discomfort()
 
-/datum/component/crowd_detection/agoraphobia/get_discomfort_message( current_discomfort)
+/datum/trait_state/crowd_detection/agoraphobia/get_discomfort_message( current_discomfort)
 	if(current_discomfort >= warning_cap)
 		human_parent.status_adjust(EFFECT_STUTTERING, 25)
 		return span_bolddanger(pick("Why am I still here? I have to leave and get some space!",
@@ -266,12 +261,12 @@
 		return "You notice there's more people than you feel comfortable with around you..."
 	. = ..()
 
-/datum/component/crowd_detection/agoraphobia/calm_discomfort(amount = 4, message)
+/datum/trait_state/crowd_detection/agoraphobia/calm_discomfort(amount = 4, message)
 	if(!message && !get_calm())
 		message = span_infoplain("You feel calmer with noone around...")
 	. = ..(amount, message)
 
-/datum/component/crowd_detection/agoraphobia/proc/holder_check(obj/item/holder/H_holder)
+/datum/trait_state/crowd_detection/agoraphobia/proc/holder_check(obj/item/holder/H_holder)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(/list)
@@ -283,7 +278,7 @@
 		in_range |= holder_check(human_parent,held_by)
 	return in_range
 
-/datum/component/crowd_detection/agoraphobia/proc/belly_check(obj/belly/B)
+/datum/trait_state/crowd_detection/agoraphobia/proc/belly_check(obj/belly/B)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(/list)
@@ -299,7 +294,4 @@
 /// Trait system: crowd and loneliness effects. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/crowd_detection
 	name = "crowd detection"
-	component_type = /datum/component/crowd_detection
-
-/datum/om/stage/life/trait/crowd_detection/tick_component(mob/living/self, datum/component/crowd_detection/component)
-	component.life_tick()
+	state_type = /datum/trait_state/crowd_detection

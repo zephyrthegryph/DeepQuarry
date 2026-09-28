@@ -9,7 +9,7 @@
 	set category = "Changeling"
 	set name = "Lesser Form (1)"
 
-	var/datum/component/antag/changeling/changeling = changeling_power(1,0,0)
+	var/datum/changeling/changeling = changeling_power(1,0,0)
 	if(!changeling)
 		return
 
@@ -45,7 +45,7 @@
 	set category = "Changeling"
 	set name = "Transform (1)"
 
-	var/datum/component/antag/changeling/changeling = changeling_power(1,1,0)
+	var/datum/changeling/changeling = changeling_power(1,1,0)
 	if(!changeling)	return
 
 	var/list/names = list()
@@ -89,7 +89,7 @@
 /// The transformation, once its animation has played.
 /mob/proc/changeling_lesser_transform_finish(atom/movable/overlay/animation, datum/dna/chosen_dna, list/implants)
 	var/mob/living/carbon/C = src
-	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	var/datum/changeling/changeling = is_changeling(src)
 	qdel(animation)
 
 	for(var/obj/item/W in src)

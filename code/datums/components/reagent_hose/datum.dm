@@ -5,16 +5,16 @@
 /datum/hose
 	VAR_PRIVATE/name = "hose"
 
-	VAR_PRIVATE/datum/component/hose_connector/node1 = null
-	VAR_PRIVATE/datum/component/hose_connector/node2 = null
+	VAR_PRIVATE/datum/hose_connector/node1 = null
+	VAR_PRIVATE/datum/hose_connector/node2 = null
 
 	VAR_PRIVATE/hose_color = "#ffffff"
 
 	VAR_PRIVATE/initial_distance = HOSE_MAX_DISTANCE
 	VAR_PRIVATE/datum/beam/current_beam = null
 
-/datum/hose/proc/get_pairing(datum/component/hose_connector/target)
-	RETURN_TYPE(/datum/component/hose_connector)
+/datum/hose/proc/get_pairing(datum/hose_connector/target)
+	RETURN_TYPE(/datum/hose_connector)
 	if(target)
 		if(target == node1)
 			return node2
@@ -58,7 +58,7 @@
 		initial_distance = 0
 	update_beam()
 
-/datum/hose/proc/set_hose(datum/component/hose_connector/target1, datum/component/hose_connector/target2, distancetonode)
+/datum/hose/proc/set_hose(datum/hose_connector/target1, datum/hose_connector/target2, distancetonode)
 	if(target1 && target2)
 		node1 = target1
 		node2 = target2

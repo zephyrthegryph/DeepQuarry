@@ -44,12 +44,12 @@
 	..()
 	updateinfolinks()
 
-/// Its recursive_move component relays moves of whatever it is stuck to.
+/// Its recursive move relay (/datum/recursive_move) relays moves of whatever it is stuck to.
 /obj/item/paper/sticky
 	latent_safe = FALSE
 
 /obj/item/paper/sticky/latent_unsafe_reason()
-	return "Its recursive_move component relays moves of whatever it is stuck to."
+	return "Its recursive move relay (/datum/recursive_move) relays moves of whatever it is stuck to."
 
 /obj/item/pen
 	latent_safe = TRUE

@@ -104,7 +104,7 @@
 		STEP_SOUND_PRIORITY = STEP_SOUND_NO_PRIORITY
 		)
 
-	var/overriden = SEND_SIGNAL(turf, COMSIG_TURF_PREPARE_STEP_SOUND, .) & FOOTSTEP_OVERRIDEN
+	var/overriden = OM_EMIT(turf, /datum/om/event/before/turf_prepare_step_sound, .) & FOOTSTEP_OVERRIDEN
 	//The turf has no footstep sound (e.g. open space) and none of the objects on that turf (e.g. catwalks) overrides it
 	if(!overriden && isnull(turf.footstep))
 		return null

@@ -59,11 +59,11 @@ REF_OWNED(/datum/cinematic, "screen")
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
 /datum/cinematic/proc/start_cinematic(list/watchers)
-	if(SEND_GLOBAL_SIGNAL(COMSIG_GLOB_PLAY_CINEMATIC, src) & COMPONENT_GLOB_BLOCK_CINEMATIC)
+	if(OM_EMIT_WORLD(/datum/om/event/before/world_play_cinematic, src) & COMPONENT_GLOB_BLOCK_CINEMATIC)
 		return
 
 	// Register a signal to handle what happens when a different cinematic tries to play over us.
-	RegisterSignal(SSdcs, COMSIG_GLOB_PLAY_CINEMATIC, PROC_REF(handle_replacement_cinematics))
+	om_hook(OM_WORLD, /datum/om/event/before/world_play_cinematic, src, PROC_REF(handle_replacement_cinematics))
 
 	// Pause OOC
 	// NOT IMPLEMENTED
@@ -73,7 +73,7 @@ REF_OWNED(/datum/cinematic, "screen")
 	for(var/mob/watching_mob in watchers)
 		//show_to(watching_mob, GET_CLIENT(watching_mob)) // NOT IMPLEMENTED (GET_CLIENT)
 		show_to(watching_mob, watching_mob.client)
-		RegisterSignal(watching_mob, COMSIG_MOB_CLIENT_LOGIN, PROC_REF(show_to))
+		om_hook(watching_mob, /datum/om/event/mob_client_login, src, PROC_REF(on_watcher_client_login))
 		// Close watcher ui's, too, so they can watch it.
 		SStgui.close_user_uis(watching_mob)
 
@@ -92,8 +92,9 @@ REF_OWNED(/datum/cinematic, "screen")
 	stop_cinematic()
 
 /// Whenever another cinematic starts to play over us, we have the chacne to block it.
-/datum/cinematic/proc/handle_replacement_cinematics(datum/source, datum/cinematic/other)
-	SIGNAL_HANDLER
+/datum/cinematic/proc/handle_replacement_cinematics(datum/source, datum/om/event/before/world_play_cinematic/event)
+	EVENT_HANDLER
+	var/datum/cinematic/other = event.new_cinematic
 
 	// Stop our's and allow others to play if we're local and it's global
 	if(!is_global && other.is_global)
@@ -102,9 +103,13 @@ REF_OWNED(/datum/cinematic, "screen")
 
 	return COMPONENT_GLOB_BLOCK_CINEMATIC
 
+/// Hooked to mob_client_login on each watching mob.
+/datum/cinematic/proc/on_watcher_client_login(mob/watching_mob, datum/om/event/mob_client_login/event)
+	EVENT_HANDLER
+	show_to(watching_mob, event.client)
+
 /// Whenever a mob watching the cinematic logs in, show them the ongoing cinematic
 /datum/cinematic/proc/show_to(mob/watching_mob, client/watching_client)
-	SIGNAL_HANDLER
 
 	if(!HAS_TRAIT_FROM(watching_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE))
 		lock_mob(watching_mob)
@@ -116,7 +121,8 @@ REF_OWNED(/datum/cinematic, "screen")
 	LAZYADD(watching, om_handle(watching_client))
 	watching_mob.overlay_fullscreen("cinematic", /atom/movable/screen/fullscreen/cinematic_backdrop)
 	watching_client.screen += screen
-	RegisterSignal(watching_client, COMSIG_QDELETING, PROC_REF(remove_watcher))
+	// Clients cannot be hooked; a client that goes away is dropped by
+	// stop_cinematic() when its handle no longer resolves.
 
 /// Simple helper for playing sounds from the cinematic.
 /datum/cinematic/proc/play_cinematic_sound(sound_to_play)
@@ -162,17 +168,15 @@ REF_OWNED(/datum/cinematic, "screen")
 	if(isnull(locked_mob))
 		return
 	REMOVE_TRAIT(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
-	UnregisterSignal(locked_mob, COMSIG_MOB_CLIENT_LOGIN)
+	om_unhook(locked_mob, /datum/om/event/mob_client_login, src)
 
 /// Removes the passed client from our watching list.
 /datum/cinematic/proc/remove_watcher(client/no_longer_watching)
-	SIGNAL_HANDLER
 
 	var/watcher_handle = om_handle(no_longer_watching)
 	if(!(watcher_handle in watching))
 		CRASH("cinematic remove_watcher was passed a client which wasn't watching.")
 
-	UnregisterSignal(no_longer_watching, COMSIG_QDELETING)
 	// We'll clear the cinematic if they have a mob which has one,
 	// but we won't remove TRAIT_NO_TRANSFORM. Wait for the cinematic end to do that.
 	no_longer_watching.mob?.clear_fullscreen("cinematic")

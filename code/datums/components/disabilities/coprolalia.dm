@@ -1,34 +1,24 @@
-/datum/component/coprolalia_disability
+/// Was /datum/component/coprolalia_disability: a perk-granted disability ticking on the disabilities life stage.
+/datum/om/behaviour/disability/coprolalia
+	required_type = /mob/living/carbon/human
 
-/datum/component/coprolalia_disability/Initialize()
-	if (!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/om/behaviour/disability/coprolalia/disability_tick(mob/living/carbon/human/owner)
 
-	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
-
-/datum/component/coprolalia_disability/proc/process_component()
-	SIGNAL_HANDLER
-
-	if(QDELETED(parent))
+	if(QDELETED(owner))
 		return
-	if(isbelly(owner().loc))
+	if(isbelly(owner.loc))
 		return
-	if(owner().stat != CONSCIOUS)
+	if(owner.stat != CONSCIOUS)
 		return
-	if(owner().transforming)
+	if(owner.transforming)
 		return
-	if(owner().client && (owner().client.prefs.muted & MUTE_IC))
+	if(owner.client && (owner.client.prefs.muted & MUTE_IC))
 		return
-	if((prob(1) && prob(2) && owner().status_units(EFFECT_PARALYZED) <= 1))
-		owner().status_at_least(EFFECT_STUNNED, 10)
-		owner().status_adjust(EFFECT_JITTERY, 100)
+	if((prob(1) && prob(2) && owner.status_units(EFFECT_PARALYZED) <= 1))
+		owner.status_at_least(EFFECT_STUNNED, 10)
+		owner.status_adjust(EFFECT_JITTERY, 100)
 		switch(rand(1, 3))
 			if(1)
-				owner().emote("twitch")
+				owner.emote("twitch")
 			if(2 to 3)
-				owner().direct_say("[prob(50) ? ";" : ""][pick("SHIT", "PISS", "FUCK", "CUNT", "COCKSUCKER", "MOTHERFUCKER", "TITS")]")
-
-
-/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
-/datum/component/coprolalia_disability/proc/owner() as /mob/living
-	return parent
+				owner.direct_say("[prob(50) ? ";" : ""][pick("SHIT", "PISS", "FUCK", "CUNT", "COCKSUCKER", "MOTHERFUCKER", "TITS")]")

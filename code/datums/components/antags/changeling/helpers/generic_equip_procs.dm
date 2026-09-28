@@ -9,7 +9,7 @@
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), armor_type) || istype(M.get_equipped_item(SLOT_ID_HEAD), helmet_type) || istype(M.get_equipped_item(SLOT_ID_SHOES), boot_type))
 		chem_cost = 0
 
-	var/datum/component/antag/changeling/changeling = changeling_power(chem_cost, 1, 100, CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(chem_cost, 1, 100, CONSCIOUS)
 
 	if(!changeling)
 		return
@@ -53,7 +53,7 @@
 	return 1
 
 /mob/proc/changeling_generic_equip_all_slots(list/stuff_to_equip, cost)
-	var/datum/component/antag/changeling/changeling = changeling_power(cost,1,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(cost,1,100,CONSCIOUS)
 	if(!changeling)
 		return
 
@@ -165,14 +165,14 @@ GLOBAL_LIST_INIT(changeling_grown_pieces, list(
 
 	to_chat(M, span_notice("We have grown [feedback]."))
 
-	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	var/datum/changeling/changeling = is_changeling(src)
 	if(length(grown_items_list) && changeling)
 		changeling.armor_deployed = 1
 		changeling.chem_charges -= 10
 
 //This is a generic proc that should be called by other ling weapon procs to equip them.
 /mob/proc/changeling_generic_weapon(weapon_type, make_sound = 1, cost = 20)
-	var/datum/component/antag/changeling/changeling = changeling_power(cost,1,100,CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(cost,1,100,CONSCIOUS)
 	if(!changeling)
 		return
 

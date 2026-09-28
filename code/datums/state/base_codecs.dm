@@ -56,14 +56,25 @@
 		"paicard" = /datum/state_codec/child,
 	)
 
-// Sparse-var components (code/datums/components/sparse_vars/) come first, as
-// state.md section 2 asks: the per-instance ones save, the caches are dropped.
+// Sparse per-instance state (code/datums/sparse_vars/) lives in plain vars:
+// forensics saves with the atom's delta, the caches are tmp. Live references
+// (HUD alternate appearances, observer listeners, movement relays, cloak and
+// light state) keep the object real, as their components used to.
 
-/datum/component/forensics_state
-	state_mode = STATE_COMPONENT_SAVE
+/atom/state_refusal()
+	. = ..()
+	if(.)
+		return
+	if(alt_appearances_owned || alt_appearances_viewing)
+		return "has alternate appearances, which cannot be serialized"
+	if(observer_event_listeners)
+		return "has observer-event listeners, which cannot be serialized"
 
-/datum/component/forensics_state/state_codecs()
-	return ..() + list("forensic_data" = /datum/state_codec/owned)
-
-/datum/component/update_on_z
-	state_mode = STATE_COMPONENT_DERIVED
+/atom/movable/state_refusal()
+	. = ..()
+	if(.)
+		return
+	if(recursive_move)
+		return "has a recursive move relay, which cannot be serialized"
+	if(dq_movable_state_set(src))
+		return "has live movement state (sparse movable vars), which cannot be serialized"

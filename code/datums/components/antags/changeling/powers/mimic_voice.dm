@@ -14,7 +14,7 @@
 	set desc = "Shape our vocal glands to form a voice of someone we choose. We cannot regenerate chemicals when mimicing."
 
 
-	var/datum/component/antag/changeling/changeling = changeling_power()
+	var/datum/changeling/changeling = changeling_power()
 	if(!changeling)	return
 
 	if(changeling.mimicing)
@@ -38,7 +38,7 @@
 
 /// Mimicry costs a chemical every 4 seconds while it lasts.
 /mob/proc/changeling_mimic_drain()
-	var/datum/component/antag/changeling/changeling = is_changeling(src)
+	var/datum/changeling/changeling = is_changeling(src)
 	if(!src.mind || !changeling)
 		return
 	if(!changeling.mimicing)

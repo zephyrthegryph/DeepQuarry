@@ -15,7 +15,7 @@
 	set name = "Ranged Sting (10)"
 	set desc="Your next sting ability can be used against targets 2 squares away."
 
-	var/datum/component/antag/changeling/changeling = changeling_power(10,0,100)
+	var/datum/changeling/changeling = changeling_power(10,0,100)
 	if(!changeling)
 		return FALSE
 	if(!changeling.recursive_enhancement && changeling.sting_range > 1)

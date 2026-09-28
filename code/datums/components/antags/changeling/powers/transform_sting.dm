@@ -12,7 +12,7 @@
 	set name = "Transformation sting (40)"
 	set desc="Sting target"
 
-	var/datum/component/antag/changeling/changeling = changeling_power(40, 1, 100, CONSCIOUS)
+	var/datum/changeling/changeling = changeling_power(40, 1, 100, CONSCIOUS)
 	if(!changeling)
 		return FALSE
 

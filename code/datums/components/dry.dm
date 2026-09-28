@@ -1,15 +1,14 @@
-/datum/component/dry
+/// Dries the floor (and blood) under the wearer at every step. Attached to dry galoshes.
+/// (Was /datum/component/dry; a stateless behaviour singleton.)
+/datum/om/behaviour/dry
+	handles = list(/datum/om/event/before/shoes_step_action)
 
-/datum/component/dry/Initialize()
-	if(!isatom(parent))
-		return COMPONENT_INCOMPATIBLE
-	if(istype(parent, /obj/item/clothing/shoes))
-		RegisterSignal(parent, COMSIG_SHOES_STEP_ACTION, PROC_REF(step_dry))
-
-/datum/component/dry/proc/step_dry(obj/item/clothing/shoes/source)
-	SIGNAL_HANDLER
-
-	var/turf/simulated/T = get_turf(parent)
+/datum/om/behaviour/dry/on_event(datum/E, datum/om/event/event)
+	if(!istype(event, /datum/om/event/before/shoes_step_action))
+		return
+	if(!istype(E, /obj/item/clothing/shoes))
+		return
+	var/turf/simulated/T = get_turf(E)
 	var/obj/effect/decal/cleanable/blood/B = locate(/obj/effect/decal/cleanable/blood) in T
 
 	if(istype(T))

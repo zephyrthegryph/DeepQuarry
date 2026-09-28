@@ -38,7 +38,7 @@
 
 	add_cog_to_user()
 
-	RegisterSignal(user, COMSIG_QDELETING, PROC_REF(on_user_delete))
+	om_hook(user, /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
 
 REF_OWNED(/datum/cogbar, "blank")
 
@@ -84,8 +84,8 @@ REF_OWNED(/datum/cogbar, "blank")
 	om_qdel_after(src, COGBAR_ANIMATION_TIME)
 
 /// When the user is deleted, remove the cog
-/datum/cogbar/proc/on_user_delete(datum/source)
-	SIGNAL_HANDLER
+/datum/cogbar/proc/on_user_delete(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 
 	qdel(src)
 

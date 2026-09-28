@@ -379,28 +379,6 @@
 /datum/om/event/dqai_target_lost/New(old_target)
 	src.old_target = old_target
 
-/// Was COMSIG_FORM_CHANGED. From /datum/component/forms/proc/set_form(): (datum/form/old_form, datum/form/new_form)
-/datum/om/event/form_changed
-	sync = TRUE
-	var/old_form
-	var/new_form
-
-/datum/om/event/form_changed/New(old_form, new_form)
-	src.old_form = old_form
-	src.new_form = new_form
-
-/// Was COMSIG_GARGOYLE_CHECK_ENERGY. from /mob/living/carbon/human/proc/gargoyle_checkenergy()
-/datum/om/event/gargoyle_check_energy
-	sync = TRUE
-
-/// Was COMSIG_GARGOYLE_PAUSE. from /mob/living/carbon/human/proc/gargoyle_pause()
-/datum/om/event/gargoyle_pause
-	sync = TRUE
-
-/// Was COMSIG_GARGOYLE_TRANSFORMATION. Gargoyle Component from /mob/living/carbon/human/proc/gargoyle_transformation()
-/datum/om/event/gargoyle_transformation
-	sync = TRUE
-
 /// Was COMSIG_GEIGER_COUNTER_SCAN. Fired when scanning something with a geiger counter. (mob/user, obj/item/geiger_counter/geiger_counter)
 /datum/om/event/before/geiger_counter_scan
 	accumulate = TRUE
@@ -1189,17 +1167,18 @@
 /datum/om/event/reagents_holder_reacted/New(chemical_reaction)
 	src.chemical_reaction = chemical_reaction
 
-/// Was COMSIG_REAGENT_EXPOSE_OBJ. from base of [/datum/reagent/proc/touch_obj]: (var/obj/O, var/amount)
+/// Was COMSIG_REAGENT_EXPOSE_OBJ. sent to the obj from base of [/datum/reagent/proc/touch_obj]: (datum/reagent/reagent, amount)
 /datum/om/event/reagent_expose_obj
 	sync = TRUE
-	var/o
+	/// The /datum/reagent touching the obj.
+	var/reagent
 	var/amount
 
-/datum/om/event/reagent_expose_obj/New(o, amount)
-	src.o = o
+/datum/om/event/reagent_expose_obj/New(reagent, amount)
+	src.reagent = reagent
 	src.amount = amount
 
-/// Was COMSIG_REMOTE_VIEW_CLEAR. /datum/component/remote_view signals Signal that can be sent from the mob remote viewing, the viewed mob, or object being used to view to forcibly end all related remote viewing components
+/// Was COMSIG_REMOTE_VIEW_CLEAR. /datum/remote_view event that can be sent from the mob remote viewing, the viewed mob, or object being used to view to forcibly end all related remote viewing components
 /datum/om/event/remote_view_clear
 	sync = TRUE
 
@@ -1232,10 +1211,6 @@
 	src.item = item
 	src.user = user
 	src.params = params
-
-/// Was COMSIG_SHADEKIN_COMPONENT. Species Components from the species components life system
-/datum/om/event/shadekin_component
-	sync = TRUE
 
 /// Was COMSIG_SHOES_STEP_ACTION. from [/mob/living/carbon/human/Move]: ()
 /datum/om/event/before/shoes_step_action
@@ -1372,10 +1347,6 @@
 
 /datum/om/event/unittest_data/New(data)
 	src.data = data
-
-/// Was COMSIG_XENOCHIMERA_COMPONENT. from the species components life system
-/datum/om/event/xenochimera_component
-	sync = TRUE
 
 // ---------------------------------------------------------------- computed-name signals
 

@@ -14,7 +14,7 @@
 //
 // Instance reads take the base provider's instance value (saved state through
 // state_adapter.dm, else the type value), then fold in contributors
-// (components, equipment) with the property's aggregator.
+// (behaviours, equipment) with the property's aggregator.
 
 /// The global registry, built and validated on first use. SSproperties builds
 /// it at boot and reports validation errors.
@@ -119,7 +119,7 @@
 		if(!def)
 			out += "[label] provides unknown property [provider.property]"
 			continue
-		if(!(provider.source in list(PROP_SOURCE_TYPE, PROP_SOURCE_MATERIAL, PROP_SOURCE_DOMAIN, PROP_SOURCE_COMPONENT, PROP_SOURCE_EQUIPMENT)))
+		if(!(provider.source in list(PROP_SOURCE_TYPE, PROP_SOURCE_MATERIAL, PROP_SOURCE_DOMAIN, PROP_SOURCE_BEHAVIOUR, PROP_SOURCE_EQUIPMENT)))
 			out += "[label] has unknown source [provider.source]"
 		if(!ispath(provider.applies_to))
 			out += "[label] applies to [provider.applies_to], which is not a type"
@@ -127,10 +127,10 @@
 			out += "[label] yields [isnull(provider.unit) ? "no unit" : provider.unit] but [def.id] is in [isnull(def.unit) ? "no unit" : def.unit]"
 		if(!provider.is_base() && def.aggregator == PROP_AGG_NONE)
 			out += "[label] contributes to [def.id], which has no aggregator"
-		if(provider.source == PROP_SOURCE_COMPONENT)
-			var/datum/property_provider/component/comp = provider
-			if(!ispath(comp.component_type, /datum/component))
-				out += "[label] names [comp.component_type], which is not a component"
+		if(provider.source == PROP_SOURCE_BEHAVIOUR)
+			var/datum/property_provider/behaviour/beh = provider
+			if(!ispath(beh.behaviour_type, /datum/om/behaviour))
+				out += "[label] names [beh.behaviour_type], which is not a behaviour"
 	// Conflicting base providers: two answering for the same types.
 	for(var/id in base_providers)
 		var/list/bases = LAZYACCESS(base_providers, id)

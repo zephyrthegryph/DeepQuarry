@@ -3,8 +3,8 @@
  * into a latent entry only if nothing live depends on it. The checks:
  *   - outgoing references the codecs refuse (the serializer's errors);
  *   - active timers and processing (state_refusal());
- *   - per-instance signal registrations with anything outside the subtree
- *     (type elements are fine: they are type behaviour, state.md section 8);
+ *   - OM event hooks (om_hook()) with anything outside the subtree
+ *     (behaviours are fine: they are type behaviour, state.md section 8);
  *   - incoming references: refcount() of each object in the subtree must equal
  *     the references its container, its contents and the subtree itself account
  *     for. Anything extra is an outside holder, and the object stays real.
@@ -61,13 +61,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	var/list/nodes = list(src)
 	if(isatom(src))
 		state_collect_subtree(src, nodes)
-	// Components of the subtree are part of it: their parent refs and signal
-	// registrations are internal.
 	var/list/internal = nodes.Copy()
-	for(var/i in 1 to length(nodes))
-		var/list/components = state_components_of(nodes[i])
-		if(components)
-			internal |= components
 	// Owned parts: datums and loc-less atoms the subtree's vars hold (HUD
 	// objects, wires, reagent holders). Their references back are internal.
 	var/list/owned = list()
@@ -77,7 +71,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	owned.Cut()
 	for(var/i in 1 to length(nodes))
 		. += state_running_blockers(nodes[i])
-	. += state_signal_blockers(nodes, internal)
+	. += state_hook_blockers(nodes, internal)
 	. += state_refcount_blockers(nodes, internal, held_refs)
 
 /// Running behaviour: timers and processing.
@@ -100,7 +94,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 			state_add_owned_part(value, internal, owned)
 
 /proc/state_add_owned_part(value, list/internal, list/owned)
-	if(!isdatum(value) || (value in internal) || istype(value, /datum/element))
+	if(!isdatum(value) || (value in internal))
 		return
 	if(ismovable(value))
 		var/atom/movable/movable = value
@@ -110,30 +104,27 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		return
 	owned |= value
 
-/proc/state_components_of(datum/D)
-	for(var/key in D._datum_components)
-		var/entry = D._datum_components[key]
-		LAZYOR(., entry)
-
 /proc/state_collect_subtree(atom/A, list/nodes)
 	for(var/atom/movable/child as anything in A.contents)
 		nodes += child
 		state_collect_subtree(child, nodes)
 
-/// Signal registrations that tie the subtree to something outside it.
-/proc/state_signal_blockers(list/nodes, list/internal)
+/// OM event hooks that tie the subtree to something outside it.
+/proc/state_hook_blockers(list/nodes, list/internal)
 	. = list()
 	for(var/datum/node as anything in internal)
-		for(var/datum/target as anything in node._signal_procs)
+		for(var/datum/target as anything in node.om_rec?.hooks_out)
 			if(!(target in internal))
-				. += "[node.type] listens to signals from [target.type]"
+				. += "[node.type] hooks events on [target.type]"
 	for(var/datum/node as anything in nodes)
-		for(var/signal in node._listen_lookup)
-			var/listeners = node._listen_lookup[signal]
-			for(var/datum/listener as anything in (islist(listeners) ? listeners : list(listeners)))
-				if(istype(listener, /datum/element) || (listener in internal))
+		var/list/hooks_in = node.om_rec?.hooks_in
+		for(var/path in hooks_in)
+			var/list/hooks = hooks_in[path]
+			for(var/i in 1 to length(hooks) step 2)
+				var/datum/listener = hooks[i]
+				if(listener in internal)
 					continue
-				. += "[listener.type] listens to [signal] on [node.type]"
+				. += "[listener.type] hooks [path] on [node.type]"
 
 /// Compares refcount() of each object in the subtree with the references accounted for.
 /proc/state_refcount_blockers(list/nodes, list/internal, held_refs)
@@ -144,11 +135,11 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		if(extra > 0)
 			. += state_describe_outside_refs(nodes[i], extra)
 
-/// refcount() of nodes[i] less the references its container, contents, subtree and elements account for.
+/// refcount() of nodes[i] less the references its container, contents and subtree account for.
 /proc/state_refcount_excess(list/nodes, list/internal, i)
 	return refcount(nodes[i]) - state_accounted_refs(nodes[i], internal)
 
-/// References to `node` that its container, its contents, the subtree and type elements account for.
+/// References to `node` that its container, its contents and the subtree account for.
 /proc/state_accounted_refs(datum/node, list/internal)
 	. = state_internal_refs(node, internal)
 	if(ismovable(node))
@@ -163,15 +154,8 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	if(isatom(node))
 		var/atom/A = node
 		. += STATE_REFS_PER_CONTENT * length(A.contents)
-	// Each element listening to the node holds it once, as a key of its _signal_procs.
-	var/list/elements = list()
-	for(var/signal in node._listen_lookup)
-		var/listeners = node._listen_lookup[signal]
-		for(var/datum/element/E in (islist(listeners) ? listeners : list(listeners)))
-			elements |= E
-	. += length(elements)
 
-/// References to `node` from the vars of the subtree and its components.
+/// References to `node` from the vars of the subtree and its owned parts.
 /proc/state_internal_refs(datum/node, list/internal)
 	. = 0
 	for(var/datum/holder as anything in internal)

@@ -1,0 +1,98 @@
+/**
+ * Trait states: the per-mob state of a trait/species/perk ability (burning in light, weaving,
+ * gargoyle energy, radiation effects, ...). These replaced the old trait components.
+ *
+ * A trait state is a plain datum OWNED by its mob, held in `/mob/living/var/list/trait_states`
+ * and deleted with it. Add one with `L.add_trait_state(/datum/trait_state/x, args...)`, look it
+ * up with `L.get_trait_state(/datum/trait_state/x)` (matches subtypes) and remove it with
+ * `L.remove_trait_state(/datum/trait_state/x)` or `qdel()`.
+ *
+ * A state that needs to tick each Life() cycle sets `life_stage` to a
+ * `/datum/om/stage/life/trait` subtype whose `state_type` points back at the state; the stage is
+ * added to the mob's life plan while the state is attached and calls `life_tick()`.
+ */
+/datum/trait_state
+	/// Life trait stage (a /datum/om/stage/life/trait subtype) added while attached, if any.
+	var/life_stage
+	/// When set, a mob holds at most one state of this type (or any subtype of it): adding another
+	/// returns the existing one. Defaults to the state's own exact type.
+	var/unique_type
+
+REF_BACKLIST_VAR(/datum/trait_state, /mob/living, owner, "trait_states")
+
+/datum/trait_state/New(mob/living/owner)
+	..()
+	src.owner = owner
+
+/// Called once after New() with the extra add_trait_state() args. Return FALSE when the state
+/// can't live on this mob (was COMPONENT_INCOMPATIBLE); it is then deleted without attaching.
+/datum/trait_state/proc/setup()
+	return isliving(owner)
+
+/// Called when the state joins its mob (was RegisterWithParent). Hook events here.
+/datum/trait_state/proc/attach()
+	SHOULD_CALL_PARENT(TRUE)
+	if(life_stage)
+		om_stage_add(owner, life_stage)
+
+/// Called when the state leaves its mob (was UnregisterFromParent). Undo attach().
+/datum/trait_state/proc/detach()
+	SHOULD_CALL_PARENT(TRUE)
+	om_unhook_all(src)
+	if(life_stage && owner)
+		om_stage_remove(owner, life_stage)
+
+/// One Life() cycle, called by the state's life trait stage.
+/datum/trait_state/proc/life_tick()
+	return
+
+// ALLOW(lifecycle): a state leaving its mob takes its life stage, hooks and verbs with it.
+/datum/trait_state/Destroy(force)
+	if(owner)
+		detach()
+		LAZYREMOVE(owner.trait_states, src)
+	owner = null
+	return ..()
+
+// --- Mob API ------------------------------------------------------------------------------------
+
+REF_VAR(/mob/living, OWNED_LIST, /list, trait_states)
+
+/// First trait state of `state_type` (or a subtype) this mob holds, or null.
+/mob/living/proc/get_trait_state(state_type)
+	RETURN_TYPE(/datum/trait_state)
+	for(var/datum/trait_state/S as anything in trait_states)
+		if(istype(S, state_type))
+			return S
+	return null
+
+/// Adds a trait state of `state_type`, passing any extra args to its setup(). Returns the new
+/// state, the existing one when the mob already holds one of its unique type, or null when the
+/// state refused this mob.
+/mob/living/proc/add_trait_state(state_type, ...)
+	RETURN_TYPE(/datum/trait_state)
+	if(!ispath(state_type, /datum/trait_state))
+		CRASH("add_trait_state: [state_type] is not a /datum/trait_state")
+	var/datum/trait_state/proto = state_type
+	var/unique = initial(proto.unique_type) || state_type
+	var/datum/trait_state/existing = get_trait_state(unique)
+	if(existing)
+		return existing
+	var/datum/trait_state/S = new state_type(src)
+	var/list/setup_args = args.Copy(2)
+	if(!S.setup(arglist(setup_args)))
+		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
+		S.owner = null
+		qdel(S)
+		return null
+	LAZYADD(trait_states, S)
+	S.attach()
+	return S
+
+/// Deletes this mob's trait state of `state_type` (or a subtype), if any. TRUE when one went.
+/mob/living/proc/remove_trait_state(state_type)
+	var/datum/trait_state/S = get_trait_state(state_type)
+	if(!S)
+		return FALSE
+	qdel(S)
+	return TRUE

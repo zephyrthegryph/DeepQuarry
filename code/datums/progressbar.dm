@@ -59,9 +59,9 @@
 		user_client_handle = om_handle(user().client)
 		add_prog_bar_image_to_client()
 
-	RegisterSignal(user(), COMSIG_QDELETING, PROC_REF(on_user_delete))
-	RegisterSignal(user(), COMSIG_MOB_LOGOUT, PROC_REF(clean_user_client))
-	RegisterSignal(user(), COMSIG_MOB_LOGIN, PROC_REF(on_user_login))
+	om_hook(user(), /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
+	om_hook(user(), /datum/om/event/mob_logout, src, PROC_REF(clean_user_client))
+	om_hook(user(), /datum/om/event/mob_login, src, PROC_REF(on_user_login))
 
 	if(starting_amount)
 		update(starting_amount)
@@ -89,8 +89,8 @@
 REF_OWNED(/datum/progressbar, "bar")
 
 ///Called right before the user's Destroy()
-/datum/progressbar/proc/on_user_delete(datum/source)
-	SIGNAL_HANDLER
+/datum/progressbar/proc/on_user_delete(datum/source, datum/om/event/qdeleting/event)
+	EVENT_HANDLER
 
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
@@ -98,8 +98,8 @@ REF_OWNED(/datum/progressbar, "bar")
 	qdel(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
-/datum/progressbar/proc/clean_user_client(datum/source)
-	SIGNAL_HANDLER
+/datum/progressbar/proc/clean_user_client(datum/source, datum/om/event/mob_logout/event)
+	EVENT_HANDLER
 
 	if(!user_client()) //Disconnected, already gone.
 		return
@@ -107,8 +107,8 @@ REF_OWNED(/datum/progressbar, "bar")
 	user_client_handle = null
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
-/datum/progressbar/proc/on_user_login(datum/source)
-	SIGNAL_HANDLER
+/datum/progressbar/proc/on_user_login(datum/source, datum/om/event/mob_login/event)
+	EVENT_HANDLER
 
 	if(user_client())
 		if(user_client() == user().client) //If this was not client handling I'd condemn this sanity check. But clients are fickle things.

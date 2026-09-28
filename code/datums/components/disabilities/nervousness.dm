@@ -1,28 +1,18 @@
-/datum/component/nervousness_disability
+/// Was /datum/component/nervousness_disability: a perk-granted disability ticking on the disabilities life stage.
+/datum/om/behaviour/disability/nervousness
+	required_type = /mob/living/carbon/human
 
-/datum/component/nervousness_disability/Initialize()
-	if (!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/om/behaviour/disability/nervousness/disability_tick(mob/living/carbon/human/owner)
 
-	RegisterSignal(owner(), COMSIG_HANDLE_DISABILITIES, PROC_REF(process_component))
-
-/datum/component/nervousness_disability/proc/process_component()
-	SIGNAL_HANDLER
-
-	if(QDELETED(parent))
+	if(QDELETED(owner))
 		return
-	if(isbelly(owner().loc))
+	if(isbelly(owner.loc))
 		return
-	if(owner().stat != CONSCIOUS)
+	if(owner.stat != CONSCIOUS)
 		return
-	if(owner().transforming)
+	if(owner.transforming)
 		return
 	if(prob(5) && prob(7))
-		owner().status_at_least(EFFECT_STUTTERING, 15)
-		if(owner().status_units(EFFECT_JITTERY) < 50)
-			owner().status_adjust(EFFECT_JITTERY, 65)
-
-
-/// LC-refs: the afflicted mob (our parent) (was a var copying parent).
-/datum/component/nervousness_disability/proc/owner() as /mob
-	return parent
+		owner.status_at_least(EFFECT_STUTTERING, 15)
+		if(owner.status_units(EFFECT_JITTERY) < 50)
+			owner.status_adjust(EFFECT_JITTERY, 65)

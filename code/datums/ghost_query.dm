@@ -31,7 +31,7 @@
 			if(!evaluate_candidate(D))
 				candidates -= D
 		finished = TRUE
-		SEND_SIGNAL(src, COMSIG_GHOST_QUERY_COMPLETE)
+		OM_EMIT(src, /datum/om/event/ghost_query_complete)
 
 /// Test a candidate for allowance to join as this
 /datum/ghost_query/proc/evaluate_candidate(mob/observer/dead/candidate)

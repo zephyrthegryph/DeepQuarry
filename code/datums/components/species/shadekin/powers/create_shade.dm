@@ -21,13 +21,13 @@
 
 /// TRUE if `actor` can afford the flat 25-energy cost, else a reason.
 /mob/living/proc/dq_create_shade_afford(mob/living/actor, atom/target, obj/item/held)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return "you aren't shadekin"
 	return (SK.shadekin_get_energy() >= 25) || "not enough energy for that ability"
 
 /mob/living/proc/dq_do_create_shade(mob/living/actor, obj/item/held, datum/interaction/ability/interaction)
-	var/datum/component/shadekin/SK = actor.get_shadekin_component()
+	var/datum/shadekin/SK = actor.get_shadekin_component()
 	if(!SK)
 		return FALSE
 	SK.shadekin_adjust_energy(-25)
@@ -46,7 +46,7 @@
 	var/my_kin_handle
 
 /datum/modifier/shadekin/create_shade/tick()
-	var/datum/component/shadekin/SK = my_kin().get_shadekin_component()
+	var/datum/shadekin/SK = my_kin().get_shadekin_component()
 	if(SK && SK.in_phase)
 		expire()
 

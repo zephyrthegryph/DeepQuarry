@@ -13,7 +13,8 @@
  *     "version" = 1,                   // STATE_KEY_VERSION, the type's state_version
  *     "vars" = list(name = value),     // STATE_KEY_VARS, the delta, only if not empty
  *     "contents" = list(blob, ...),    // STATE_KEY_CONTENTS, with STATE_CONTENTS
- *     "components" = list(blob, ...),  // STATE_KEY_COMPONENTS, with STATE_COMPONENTS, only if any
+ *     (legacy blobs may carry "components" = list(blob, ...), STATE_KEY_COMPONENTS; with
+ *      STATE_COMPONENTS they are read back through GLOB.state_legacy_component_vars)
  *   )
  *
  * The delta is the saved vars whose values differ from the type's defaults
@@ -70,12 +71,20 @@
 	/// The state lint checks every saved var of these types, and dq_state_tests round-trips each one.
 	var/tmp/latent_safe = FALSE
 
-/datum/component
-	/// What the serializer does with this component: STATE_COMPONENT_REFUSE, _SAVE or _DERIVED.
-	var/tmp/state_mode = STATE_COMPONENT_REFUSE
-
 /// Renamed or removed types: "/old/path" = /new/path, or "/old/path" = null to drop blobs of it.
 GLOBAL_LIST_INIT(state_type_migrations, list())
+
+/// Component blobs written before components went away (STATE_KEY_COMPONENTS):
+/// component type -> list(component var name = the atom var it now lives in).
+/// A component type not listed is refused.
+GLOBAL_LIST_INIT(state_legacy_component_vars, list(
+	"/datum/component/forensics_state" = list(
+		"was_bloodied" = "forensic_was_bloodied",
+		"blood_color" = "forensic_blood_color",
+		"fluorescent" = "forensic_fluorescent",
+		"forensic_data" = "forensic_data",
+	),
+))
 
 /// Built-in vars that belong in the saved state. Every other built-in var is skipped.
 #define STATE_BUILTIN_SAVED list("name", "desc", "icon", "icon_state", "dir", "color", "alpha", "pixel_x", "pixel_y", "pixel_w", "pixel_z", "density", "opacity", "invisibility", "gender", "maptext")
