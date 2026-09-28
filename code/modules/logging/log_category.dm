@@ -8,7 +8,8 @@
 	var/schema_version = LOG_CATEGORY_SCHEMA_VERSION_NOT_SET
 
 	/// The master category that contains this category
-	var/datum/log_category/master_category
+	var/master_category	// the master category's type; the log holder links the instance (master())
+	var/tmp/master_handle
 
 	/// Flags to apply to our /datum/log_entry's
 	/// See code/__DEFINES/logging/dm
@@ -64,8 +65,9 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 /// Allows for category specific file splitting. Needs to accept a null entry for the default file.
 /// If master_category it will always return the output of master_category.get_output_file(entry)
 /datum/log_category/proc/get_output_file(list/entry, extension = "log.json")
-	if(master_category)
-		return master_category.get_output_file(entry, extension)
+	var/datum/log_category/master = master()
+	if(master)
+		return master.get_output_file(entry, extension)
 	if(secret)
 		return "[GLOB.log_directory]/secret/[category].[extension]"
 	return "[GLOB.log_directory]/[category].[extension]"
@@ -105,3 +107,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 		))
 
 	return entries
+
+/// LC-refs: the master category instance (the log holder owns it) -- an OM handle.
+/datum/log_category/proc/master() as /datum/log_category
+	return om_resolve(master_handle)

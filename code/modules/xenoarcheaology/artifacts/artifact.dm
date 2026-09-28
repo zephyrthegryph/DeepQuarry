@@ -102,3 +102,5 @@
 
 /obj/machinery/artifact
 	icon = 'icons/obj/xenoarchaeology.dmi'
+
+REF_OWNED(/obj/machinery/artifact, "artifact_master")

@@ -38,11 +38,12 @@
 	///Which stock part are we looking for in the machine.
 	///We use obj instead of datum here, as some stock parts aren't datumised, and in datumised ones
 	///we can just look for the physical_object_reference to match up the requirement.
-	var/obj/item/stock_parts/required_stock_part = /obj/item/stock_parts
+	var/required_stock_part = /obj/item/stock_parts
 
 /datum/experiment/scanning/points/machinery_pinpoint_scan/check_progress()
 	. = ..()
-	.[1] = EXPERIMENT_PROG_INT("Scan samples of the following machines upgraded with \a [initial(required_stock_part.name)] to accumulate enough points to complete this experiment.", points, required_points)[1]
+	var/obj/item/stock_parts/part_type = required_stock_part
+	.[1] = EXPERIMENT_PROG_INT("Scan samples of the following machines upgraded with \a [initial(part_type.name)] to accumulate enough points to complete this experiment.", points, required_points)[1]
 
 /datum/experiment/scanning/points/machinery_pinpoint_scan/final_contributing_index_checks(datum/component/experiment_handler/experiment_handler, atom/target, typepath)
 	. = ..()
@@ -57,5 +58,6 @@
 	for(var/datum/latent_entry/entry as anything in machine.latent_entries(CONTAINER_SLOT_INTERNALS))
 		if(ispath(entry.path, required_stock_part))
 			return TRUE
-	experiment_handler.announce_message("Scanned machine is missing an exact quality part. Expecting tier [required_stock_part.name] part.")
+	var/obj/item/stock_parts/part_type = required_stock_part
+	experiment_handler.announce_message("Scanned machine is missing an exact quality part. Expecting tier [initial(part_type.name)] part.")
 	return FALSE

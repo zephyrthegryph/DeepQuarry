@@ -241,7 +241,7 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 	for(var/datum/log_category/sub_category as anything in sub_categories)
 		sub_category = new sub_category
 		var/sub_category_actual = sub_category.category
-		sub_category.master_category = category_instance
+		sub_category.master_handle = om_handle(category_instance)
 		log_categories[sub_category_actual] = sub_category
 
 		if(!semver_to_list(sub_category.schema_version))
