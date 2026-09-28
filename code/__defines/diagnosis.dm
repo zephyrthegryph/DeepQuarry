@@ -37,6 +37,9 @@
 #define DIAG_PARTS_NONE  0
 /// Per-part qualitative band.
 #define DIAG_PARTS_BANDS 1
+/// A part entry's "kind": a limb, or an internal organ (D19).
+#define DIAG_PART_EXTERNAL "external"
+#define DIAG_PART_INTERNAL "internal"
 
 // --- Patient status (one per report) ------------------------------------------------
 #define DIAG_STATUS_ALIVE    "alive"

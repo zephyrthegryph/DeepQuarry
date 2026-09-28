@@ -5,9 +5,10 @@
 // wounds and presenting signs, with trends and hints) and per-limb bands,
 // rendered by /datum/diagnosis/proc/report_data() into `diagnosis`.
 //
-// Alongside it: identity, abnormality flags, reagents, implants and the
-// discrete organ states (broken, bleeding, splinted, robotic, dead, missing,
-// lung rupture, internal bleeding).
+// Per-limb and per-organ state (bands, fractures, bleeding, prostheses,
+// necrosis, missing organs, implants) is the diagnosis `parts` list built by
+// /datum/body/humanoid/diagnose_parts(). Alongside it: identity, abnormality
+// flags and reagents.
 
 /obj/machinery/bodyscanner/proc/dq_build_tgui_data()
 	var/list/data = list()
@@ -27,8 +28,6 @@
 	dq_emit_vitals(H, occupantData)
 	dq_emit_abnormalities(H, occupantData)
 	dq_emit_reagents(H, occupantData)
-	dq_emit_external_organs(H, occupantData)
-	dq_emit_internal_organs(H, occupantData)
 
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner, src) // D9: this scanner's baseline; the UI refresh doesn't move it
 	occupantData["diagnosis"] = D.report_data()
@@ -126,84 +125,6 @@
 			))
 	out["ingested"] = length(ingestedData) ? ingestedData : null
 
-
-/obj/machinery/bodyscanner/proc/dq_emit_external_organs(mob/living/carbon/human/H, list/out)
-	var/list/extOrganData = list()
-	for(var/obj/item/organ/external/E in H.organs)
-		var/list/od = list()
-		od["name"] = E.name
-		od["open"] = E.open
-		od["germ_level"] = E.germ_level
-		od["injuryBand"] = dq_qualitative_damage_band(E.get_trauma() + E.get_burn(), E.max_damage)
-
-		var/list/implantData = list()
-		for(var/obj/thing in E.implants)
-			var/obj/item/implant/I = thing
-			var/obj/item/nif/N = thing
-			if(istype(I))
-				implantData += list(list("name" = I.name, "known" = I.known_implant))
-			else
-				implantData += list(list("name" = N.name, "known" = N.known_implant))
-		od["implants"] = implantData
-		od["implants_len"] = implantData.len
-
-		var/list/organStatus = list()
-		if(E.status & ORGAN_DESTROYED)
-			organStatus["destroyed"] = 1
-		if(E.is_fractured())
-			organStatus["broken"] = E.broken_description
-		if(E.robotic >= ORGAN_ROBOT)
-			organStatus["robotic"] = 1
-		if(E.splinted)
-			organStatus["splinted"] = 1
-		if(E.status & ORGAN_BLEEDING)
-			organStatus["bleeding"] = 1
-		if(E.status & ORGAN_DEAD)
-			organStatus["dead"] = 1
-		od["status"] = organStatus
-
-		if(istype(E, /obj/item/organ/external/chest) && H.is_lung_ruptured())
-			od["lungRuptured"] = 1
-
-		if(length(dq_limb_internal_bleeds(E)))
-			od["internalBleeding"] = 1
-
-		extOrganData += list(od)
-	out["extOrgan"] = extOrganData
-
-
-/obj/machinery/bodyscanner/proc/dq_emit_internal_organs(mob/living/carbon/human/H, list/out)
-	var/list/intOrganData = list()
-	var/fakedeath = (H.status_flags & FAKEDEATH)
-
-	for(var/organ_tag in H.species.has_organ)
-		var/obj/item/organ/O = H.species.has_organ[organ_tag]
-		var/name = initial(O.name)
-		O = H.internal_organs_by_name[organ_tag]
-		if(!O)
-			intOrganData += list(list("name" = name, "missing" = TRUE))
-
-	for(var/obj/item/organ/I in H.internal_organs)
-		var/list/od = list()
-		od["name"] = I.name
-		var/kind = bodyscanner_organ_kind(I)
-		if(kind)
-			od["desc"] = kind
-		od["germ_level"] = I.germ_level
-		var/effective_damage = I.damage
-		if(fakedeath)
-			if(istype(I, /obj/item/organ/internal/brain))
-				effective_damage = 200
-			else if(istype(I, /obj/item/organ/internal/lungs))
-				effective_damage = 25
-		od["injuryBand"] = dq_qualitative_damage_band(effective_damage, I.max_damage)
-		od["robotic"] = (I.robotic >= ORGAN_ROBOT) ? 1 : 0
-		od["dead"] = (I.status & ORGAN_DEAD) ? 1 : 0
-		if(istype(I, /obj/item/organ/internal/appendix))
-			var/obj/item/organ/internal/appendix/A = I
-			od["inflamed"] = A.inflamed
-		intOrganData += list(od)
-	out["intOrgan"] = intOrganData
 
 /// The scanner's prosthesis label for an internal organ (D7: the robotic LEVEL is compared,
 /// not a bit of the status bitfield that happened to share ORGAN_ASSISTED's value).

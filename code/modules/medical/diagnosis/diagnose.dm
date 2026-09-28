@@ -246,9 +246,74 @@
 			flags += "open"
 		if(E.robotic >= ORGAN_ROBOT)
 			flags += "prosthetic"
+		if(E.status & ORGAN_DESTROYED)
+			flags += "destroyed"
+		var/list/implants
+		if(P.senses & PRESENT_INTERNAL)
+			if(istype(E, /obj/item/organ/external/chest) && H.is_lung_ruptured())
+				flags += "ruptured lung"
+			if(length(dq_limb_internal_bleeds(E)))
+				flags += "internal bleeding"
+			implants = diagnose_part_implants(E)
 		LAZYADD(D.parts, list(list(
 			"name" = E.name,
+			"kind" = DIAG_PART_EXTERNAL,
 			"band" = dq_qualitative_damage_band(E.get_trauma() + E.get_burn(), E.max_damage),
+			"flags" = flags,
+			"implants" = implants,
+		)))
+	if(P.senses & PRESENT_INTERNAL)
+		diagnose_internal_organs(D, P)
+
+/// What an instrument sees lodged in `E`: implant names, or "unknown object" for unregistered ones.
+/datum/body/humanoid/proc/diagnose_part_implants(obj/item/organ/external/E)
+	for(var/obj/thing in E.implants)
+		var/known = FALSE
+		if(istype(thing, /obj/item/implant))
+			var/obj/item/implant/I = thing
+			known = I.known_implant
+		else if(istype(thing, /obj/item/nif))
+			var/obj/item/nif/N = thing
+			known = N.known_implant
+		LAZYADD(., known ? thing.name : "unknown object")
+
+/// Internal organs as parts (D19): missing organs, prosthesis kind, necrosis and
+/// appendicitis. A feigned death reads as brain death and failing lungs.
+/datum/body/humanoid/proc/diagnose_internal_organs(datum/diagnosis/D, datum/diagnostic_profile/P)
+	var/mob/living/carbon/human/H = owner
+	for(var/organ_tag in H.species.has_organ)
+		if(H.internal_organs_by_name[organ_tag])
+			continue
+		var/obj/item/organ/missing_type = H.species.has_organ[organ_tag]
+		LAZYADD(D.parts, list(list(
+			"name" = initial(missing_type.name),
+			"kind" = DIAG_PART_INTERNAL,
+			"band" = DIAG_BAND_CRITICAL,
+			"flags" = list("missing"),
+		)))
+	for(var/obj/item/organ/I as anything in H.internal_organs)
+		if(!(biology_of(I) & P.biology))
+			continue
+		var/list/flags = list()
+		var/kind = bodyscanner_organ_kind(I)
+		if(kind)
+			flags += lowertext(kind)
+		if(I.status & ORGAN_DEAD)
+			flags += "necrotic"
+		if(istype(I, /obj/item/organ/internal/appendix))
+			var/obj/item/organ/internal/appendix/A = I
+			if(A.inflamed)
+				flags += "appendicitis"
+		var/band = dq_qualitative_damage_band(I.damage, I.max_damage)
+		if(D.fake_death)
+			if(istype(I, /obj/item/organ/internal/brain))
+				band = DIAG_BAND_CRITICAL
+			else if(istype(I, /obj/item/organ/internal/lungs))
+				band = dq_qualitative_damage_band(max(I.damage, 25), I.max_damage)
+		LAZYADD(D.parts, list(list(
+			"name" = I.name,
+			"kind" = DIAG_PART_INTERNAL,
+			"band" = band,
 			"flags" = flags,
 		)))
 

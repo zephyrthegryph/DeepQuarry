@@ -7,8 +7,7 @@ import {
 } from '../common/Diagnosis';
 import { BodyScannerMainAbnormalities } from './BodyScannerMainAbnormalities';
 import { BodyScannerMainOccupant } from './BodyScannerMainOccupant';
-import { BodyScannerMainOrgansExternal } from './BodyScannerMainOrgansExternal';
-import { BodyScannerMainOrgansInternal } from './BodyScannerMainOrgansInternal';
+import { BodyScannerMainParts } from './BodyScannerMainParts';
 import { BodyScannerMainReagents } from './BodyScannerMainReagents';
 import type { occupant } from './types';
 
@@ -24,8 +23,16 @@ export const BodyScannerMain = (props: { occupant: occupant }) => {
         findings={occupant.diagnosis.findings}
       />
       <DiagnosisHintsSection hints={occupant.diagnosis.hints} />
-      <BodyScannerMainOrgansExternal organs={occupant.extOrgan} />
-      <BodyScannerMainOrgansInternal organs={occupant.intOrgan} />
+      <BodyScannerMainParts
+        title="External Organs"
+        kind="external"
+        parts={occupant.diagnosis.parts}
+      />
+      <BodyScannerMainParts
+        title="Internal Organs"
+        kind="internal"
+        parts={occupant.diagnosis.parts}
+      />
       <BodyScannerMainReagents occupant={occupant} />
     </Box>
   );
