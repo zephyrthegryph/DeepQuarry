@@ -159,15 +159,12 @@
 			embed_chance = max(5, round(force/(w_class*3)))
 
 // the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
+// Machine components are normally located inside their owner: a component
+// destroyed on its own (upgrade, explosion, bulk teardown) leaves the owner's
+// component_parts, or that list would keep it as a hard delete.
+REF_BACK_VIA(/obj/item, list("loc" = list(/obj/machinery = "component_parts")))
+
 /obj/item/on_destroy(force)
-	// Machine components are normally located inside their owner. Detach the
-	// owner's strong bookkeeping reference before qdel continues so a component
-	// queued independently (upgrade, explosion, or bulk teardown) cannot become a
-	// hard delete retained by component_parts.
-	if(istype(loc, /obj/machinery))
-		var/obj/machinery/owner = loc
-		if(owner.component_parts)
-			owner.component_parts -= src
 	if(ismob(loc))
 		var/mob/m = loc
 		m.drop_from_inventory(src)

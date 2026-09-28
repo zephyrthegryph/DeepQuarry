@@ -136,10 +136,10 @@
 		instrument_range = new_range
 
 // stops playing and leaves its instrument.
+REF_BACK_VIA(/datum/song, list("using_instrument_static" = "songs_using"))
+
 /datum/song/on_destroy(force)
 	stop_playing()
-	if(using_instrument())
-		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
 	..()
 
 /**

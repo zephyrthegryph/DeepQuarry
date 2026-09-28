@@ -74,10 +74,7 @@
 	..()
 
 // the mech points at its minihud; the minihud going clears that var.
-/datum/mini_hud/mech/on_destroy(force)
-	if(owner_mech())
-		owner_mech().minihud = null
-	..()
+REF_BACK_HANDLE(/datum/mini_hud/mech, list("owner_mech_handle" = "minihud"))
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())

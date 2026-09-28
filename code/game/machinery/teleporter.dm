@@ -161,9 +161,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	default_apply_parts()
 
 // the teleporter console forgets its hub.
-/obj/machinery/teleport/hub/on_destroy(force)
-	com()?.teleport_control.hub_handle = null
-	..()
+REF_BACK_VIA(/obj/machinery/teleport/hub, list("com_handle.teleport_control" = "hub_handle"))
 
 /obj/machinery/teleport/hub/Bumped(M as mob|obj)
 	if(icon_state == "tele1")
@@ -227,9 +225,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 	default_apply_parts()
 
 // the teleporter console forgets its station.
-/obj/machinery/teleport/station/on_destroy(force)
-	com()?.com()?.teleport_control.station_handle = null
-	..()
+REF_BACK_VIA(/obj/machinery/teleport/station, list("com_handle.com_handle.teleport_control" = "station_handle"))
 
 /obj/machinery/teleport/station/proc/engage(mob/user)
 	if(stat & (BROKEN|NOPOWER))

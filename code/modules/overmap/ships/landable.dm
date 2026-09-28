@@ -30,6 +30,7 @@
 // We autobuild our z levels.
 /obj/effect/overmap/visitable/ship/landable/find_z_levels()
 	src.landmark = new(null, shuttle) // Create in nullspace since we lazy-create overmap z
+	landmark.ship_handle = om_handle(src)
 	add_landmark(landmark, shuttle)
 
 /obj/effect/overmap/visitable/ship/landable/proc/setup_overmap_location()
@@ -80,6 +81,8 @@
 	flags = SLANDMARK_FLAG_ZERO_G // *Not* AUTOSET, these must be world.turf and world.area for lazy loading to work.
 	var/shuttle_name
 	var/list/visitors // landmark -> visiting shuttle stationed there
+	/// OM handle of the landable ship that made this landmark (its `landmark`).
+	var/tmp/ship_handle
 
 /obj/effect/shuttle_landmark/ship/Initialize(mapload, shuttle_name)
 	landmark_tag += "_[shuttle_name]"
@@ -87,12 +90,8 @@
 	. = ..()
 	base_turf = world.turf
 
-// its ship forgets its landmark.
-/obj/effect/shuttle_landmark/ship/on_destroy(force)
-	var/obj/effect/overmap/visitable/ship/landable/ship = get_overmap_sector(z)
-	if(istype(ship) && ship.landmark == src)
-		ship.landmark = null
-	..()
+// Its ship forgets its landmark.
+REF_BACK_HANDLE(/obj/effect/shuttle_landmark/ship, list("ship_handle" = "landmark"))
 
 /obj/effect/shuttle_landmark/ship/is_valid(datum/shuttle/shuttle)
 	return (isnull(loc) || ..()) // If it doesn't exist yet, its clear

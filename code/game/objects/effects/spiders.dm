@@ -98,12 +98,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	get_light_and_color(parent)
 
 // leaves the implant list of the limb it was laid in.
-/obj/effect/spider/eggcluster/on_destroy(force)
-	if(istype(loc, /obj/item/organ/external))
-		var/obj/item/organ/external/O = loc
-		LAZYREMOVE(O.implants, src)
-
-	..()
+REF_BACK_VIA(/obj/effect/spider/eggcluster, list("loc" = list(/obj/item/organ/external = "implants")))
 
 /// Hatches (its growth timer).
 /obj/effect/spider/eggcluster/proc/hatch()

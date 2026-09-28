@@ -58,11 +58,8 @@
 	icon = 'icons/misc/buildmode.dmi'
 	var/tmp/master_handle
 
-// comes off its builder's screen (clients aren't datums).
-/obj/effect/bmode/on_destroy(force)
-	if(master() && master().cl())
-		master().cl().screen -= src
-	..()
+// Comes off its builder's screen: its holder's client, two handles away.
+REF_BACK_VIA(/obj/effect/bmode, list("master_handle.cl_handle" = "screen"))
 
 /obj/effect/bmode/builddir
 	icon_state = "build"

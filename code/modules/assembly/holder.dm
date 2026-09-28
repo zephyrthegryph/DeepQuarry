@@ -13,12 +13,8 @@
 	var/obj/item/assembly/a_right = null
 	var/tmp/special_assembly_handle
 
-// assemblies still inside it go with it (ones already taken out stay).
-/obj/item/assembly_holder/on_destroy(force)
-	for(var/obj/item/assembly/part in list(a_left, a_right))
-		if(part.loc != src)
-			part.holder_handle = null
-	..()
+// Its assemblies stop naming it (ones inside go with it; ones taken out stay).
+REF_BACK_VIA(/obj/item/assembly_holder, list("a_left" = "holder_handle", "a_right" = "holder_handle"))
 
 /obj/item/assembly_holder/proc/attach(obj/item/assembly/D, obj/item/assembly/D2, mob/user)
 	if(!D || !D2)

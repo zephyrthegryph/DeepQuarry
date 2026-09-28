@@ -804,6 +804,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	vis_contents.Add(frame)
 
 REF_OWNED(/atom/movable/screen/movable/mapper_holder, list("mask_full", "mask_ping", "bg", "frame", "powbutton", "mapbutton"))
+REF_BACK_HANDLE(/atom/movable/screen/movable/mapper_holder, list("owner_handle" = "hud_item"))
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)

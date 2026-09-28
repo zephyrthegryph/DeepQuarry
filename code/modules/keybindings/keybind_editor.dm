@@ -9,10 +9,7 @@
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
 // clears the client's cached editor (clients aren't datums).
-/datum/keybind_editor/on_destroy(force)
-	if(owner()?.keybind_editor == src)
-		owner().keybind_editor = null
-	..()
+REF_BACK_HANDLE(/datum/keybind_editor, list("owner_handle" = "keybind_editor"))
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 

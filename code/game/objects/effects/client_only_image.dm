@@ -21,12 +21,7 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 	LAZYADD(clients, om_handle(C))
 
 // comes off every client it was shown to (clients aren't datums).
-/image/client_only/on_destroy(force)
-	..()
-	for(var/CW in clients)
-		var/client/C = om_resolve(CW)
-		if(C)
-			C.images -= src
+REF_LIST_BACK(/image/client_only, list("clients" = "images"))
 
 /image/client_only/lifecycle_dematerialize()
 	..()

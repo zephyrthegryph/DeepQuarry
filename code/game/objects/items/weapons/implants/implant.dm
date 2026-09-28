@@ -116,10 +116,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	PERIODIC_START(src, PERIODIC_SLOW)
 
 // leaves its limb's implant list.
-/obj/item/implant/tracking/on_destroy(force)
-	if(part)
-		LAZYREMOVE(part.implants, src)
-	..()
+REF_BACK_VIA(/obj/item/implant/tracking, list("part" = "implants"))
 
 /obj/item/implant/tracking/periodic_step()
 	var/mob/living/implant_mob // Get implant's mob from our host organ

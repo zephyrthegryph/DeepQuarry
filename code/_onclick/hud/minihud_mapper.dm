@@ -7,11 +7,9 @@
 	screenobjs = list(new /atom/movable/screen/movable/mapper_holder(null, owner))
 	..()
 
-// the mapping unit points at its hud datum; the hud going clears those vars.
-/datum/mini_hud/mapper/on_destroy(force)
-	owner()?.hud_item = null
-	owner()?.hud_datum = null
-	..()
+// The mapping unit points at its hud datum and at the holder screen object; each
+// going clears the var naming it (the holder declares its own).
+REF_BACK_HANDLE(/datum/mini_hud/mapper, list("owner_handle" = "hud_datum"))
 
 /// LC-refs: the mapping unit this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mini_hud/mapper/proc/owner() as /obj/item/mapping_unit

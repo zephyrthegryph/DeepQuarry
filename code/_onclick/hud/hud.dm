@@ -221,10 +221,7 @@ REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions", "hotkeybuttons")
 REF_OWNED_VALUES(/datum/hud, "ammo_hud_list")
 
 // the mob's hud_used points at us (our side is a handle); a hud going clears it.
-/datum/hud/on_destroy(force)
-	if(mymob()?.hud_used == src)
-		mymob().hud_used = null
-	..()
+REF_BACK_HANDLE(/datum/hud, list("mymob_handle" = "hud_used"))
 
 /datum/hud/proc/hidden_inventory_update()
 	if(!mymob()) return
