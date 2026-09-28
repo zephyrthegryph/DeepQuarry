@@ -675,7 +675,7 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 	var/mob/living/L = target
 	// taser_effect projectiles already delivered their agony through
 	// stun_effect_act() in /mob/living/bullet_act (the electric path: halloss on
-	// the zone, stutter, blur, COMSIG_STUN_EFFECT_ACT). Passing it again here
+	// the zone, stutter, blur, the omen stun notification). Passing it again here
 	// double-applied every taser's agony. Subtype overrides that read `agony`
 	// directly (e.g. the disabler's borg power drain) still see the real value.
 	L.apply_effects(stun, weaken, paralyze, irradiate, stutter, eyeblur, drowsy, taser_effect ? 0 : agony, blocked, incendiary, flammability)

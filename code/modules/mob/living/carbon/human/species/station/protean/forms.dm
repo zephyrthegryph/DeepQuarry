@@ -271,7 +271,7 @@ DECLARE_REF(/datum/forms, "current", HELD, null)
 		if(istype(I, /obj/item/holder))
 			root.remove_from_mob(I)
 
-/// Trait system: form upkeep. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: form upkeep.
 /datum/om/stage/life/trait/forms
 	name = "forms"
 	wake_on = CHANGE_MOB_STAT | CHANGE_EXPLICIT

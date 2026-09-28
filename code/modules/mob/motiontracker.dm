@@ -21,7 +21,7 @@
 		return
 	. = ..()
 
-// For COMSIG_MOVABLE_MOTIONTRACKER
+// For /datum/om/event/movable_motiontracker
 /mob/proc/handle_motion_tracking(datum/source, datum/om/event/movable_motiontracker/event)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)

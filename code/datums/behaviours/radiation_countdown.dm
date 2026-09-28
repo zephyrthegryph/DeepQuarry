@@ -1,10 +1,10 @@
 // Should be more than any minimum exposure time coming in
 #define TIME_UNTIL_DELETION (10 SECONDS)
 
-/// The countdown before a target can be irradiated (was /datum/component/radiation_countdown).
+/// The countdown before a target can be irradiated.
 /// Started by the radiation subsystem when pulse information has a minimum exposure time;
 /// clears itself after a while. Mob state plus one om_after_replace() timer: the subsystem
-/// asks radiation_countdown_check() directly (was COMSIG_IN_THRESHOLD_OF_IRRADIATION).
+/// asks radiation_countdown_check() directly.
 /mob/living
 	/// world.time the countdown started, or 0 when none is running.
 	var/rad_countdown_started = 0

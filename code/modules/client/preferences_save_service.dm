@@ -7,9 +7,9 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	lane = /datum/om/behaviour/world/character_setup
 	on_demand = TRUE
 
-	var/list/prefs_awaiting_setup = list() // ALLOW(instance_list): d: world service singleton
-	var/list/preferences_datums = list() // ALLOW(instance_list): d: world service singleton
-	var/list/newplayers_requiring_init = list() // ALLOW(instance_list): d: world service singleton
+	var/list/prefs_awaiting_setup = list()
+	var/list/preferences_datums = list()
+	var/list/newplayers_requiring_init = list()
 
 	/// Preferences waiting to be saved, as a weak list (DECLARE_REF(..., WEAK_LIST)): the client owns them.
 	var/list/save_queue

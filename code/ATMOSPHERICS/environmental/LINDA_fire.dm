@@ -371,7 +371,7 @@
 	. = ..()
 	on_entered(loc, AM, oldloc)
 
-/// Something entered our turf (was a connect_loc COMSIG_ATOM_ENTERED listener; now Crossed()).
+/// Something entered our turf: Crossed().
 /obj/effect/hotspot/proc/on_entered(datum/source, atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 	if(cold_fire)
 		return

@@ -16,7 +16,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	boot_after = /datum/controller/subsystem/shuttles
 
 	var/datum/shuttle/autodock/ferry/emergency/shuttle // Set in shuttle_emergency.dm TODO - is it really?
-	var/list/escape_pods = list() // ALLOW(instance_list): d: world service singleton
+	var/list/escape_pods = list()
 
 	var/launch_time				//the time at which the shuttle will be launched
 	var/auto_recall = FALSE		//if set, the shuttle will be auto-recalled

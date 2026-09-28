@@ -8,7 +8,7 @@
 // - The swarm's own troubles are nanite afflictions
 //   (code/modules/medical/conditions/nanite.dm); this plan triggers them.
 // - A body that would die instead goes dormant: the core_dormancy affliction
-//   holds it alive through COMSIG_LIVING_BODY_STATUS, knocks it out through
+//   holds it alive through /datum/om/event/before/living_body_status, knocks it out through
 //   the consciousness model and leaves its control cluster inert, until it is
 //   revived by calibration, plating repair and defibrillation.
 
@@ -202,7 +202,7 @@
 // --- Core dormancy ---------------------------------------------------------------------
 
 /// A nanoform body that lost cohesion retreats into its core. It neither dies
-/// nor acts: it is held alive (COMSIG_LIVING_BODY_STATUS) and unconscious
+/// nor acts: it is held alive and unconscious
 /// (consciousness_at_max), its control cluster goes inert, and it is revived
 /// step by step by treatment mechanisms.
 /datum/affliction/core_dormancy
@@ -219,7 +219,7 @@
 	treated_by = list(TREAT_CALIBRATION = 1, TREAT_PLATING_REPAIR = 1, TREAT_DEFIBRILLATION = 1)
 	/// DORMANCY_* revival step.
 	var/revival_step = DORMANCY_SEALED
-	/// The mob whose COMSIG_LIVING_BODY_STATUS we answer.
+	/// The mob whose /datum/om/event/before/living_body_status we answer.
 	var/mob/living/held_mob
 	/// The reboot timer, once the core is jump-started.
 	var/reboot_timer

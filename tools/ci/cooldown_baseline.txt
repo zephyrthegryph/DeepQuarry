@@ -1,3 +1,115 @@
-# Raw world.time cooldown compares (tools/ci/cooldown_lint.py). May fall, never rise.
-# Lower it after a sweep: `python tools/ci/cooldown_lint.py --update`.
-114
+# Raw world.time cooldown compares (tools/ci/cooldown_lint.py). rule<TAB>file<TAB>normalized line.
+# Shrink-only: after a sweep, `python tools/ci/cooldown_lint.py --update`.
+raw_compare	code/_helpers/pathfinding/pathfinder.dm	if(world.time > started + PATHFINDER_TIMEOUT)
+raw_compare	code/_helpers/pathfinding/pathfinder.dm	if(world.time > started + PATHFINDER_TIMEOUT)
+raw_compare	code/_helpers/pathfinding/pathfinder.dm	if(world.time > started + PATHFINDER_TIMEOUT)
+raw_compare	code/_helpers/vore.dm	if(world.time <= prey.slip_protect)
+raw_compare	code/_onclick/click.dm	if(next_click > world.time && !CONFIG_GET(flag/no_click_cooldown))
+raw_compare	code/_onclick/click_ctrl.dm	if(. || world.time < next_move) // || !can_perform_action(target, NOT_INSIDE_TARGET | SILENT_ADJACENCY | ALLOW_RESTING | FORBID_TELEKINESIS_REACH))
+raw_compare	code/_onclick/hud/human.dm	if(world.time >= next) //And trying to check the cooldown doesn't work because when you click the UI it sets a cooldown
+raw_compare	code/datums/containment/latency_policy.dm	if(world.time < A.latent_last_touch + delay)
+raw_compare	code/datums/containment/latency_policy.dm	if(world.time < A.latent_refused_until)
+raw_compare	code/datums/entity_state/antags/changeling/changeling.dm	return (world.time < changeling_cooldowns[id])
+raw_compare	code/datums/entity_state/species/xenochimera.dm	if(revive_ready > world.time)
+raw_compare	code/datums/vis_overlay_service.dm	else if(overlay.unused && overlay.unused + overlay.cache_expiration < world.time)
+raw_compare	code/game/machinery/bluespace_denier.dm	if((last_pulse && world.time < last_pulse + 150))
+raw_compare	code/game/machinery/bluespace_denier.dm	if(!anchored || (last_pulse && world.time < last_pulse + 150))
+raw_compare	code/game/machinery/contraband_scanner.dm	if(last_trigger > world.time - cooldown)
+raw_compare	code/game/machinery/contraband_scanner.dm	if(contraband_count && last_trigger < world.time - cooldown)
+raw_compare	code/game/machinery/doors/brigdoors.dm	if(F.last_flash && (F.last_flash + 150) > world.time)
+raw_compare	code/game/machinery/flasher.dm	if((disable) || (last_flash && world.time < last_flash + 150))
+raw_compare	code/game/machinery/flasher.dm	if(disable || !anchored || (last_flash && world.time < last_flash + 150))
+raw_compare	code/game/machinery/igniter.dm	if((disable) || (last_spark && world.time < last_spark + 50))
+raw_compare	code/game/machinery/portable_turret.dm	if(world.time < (last_process_time + MACHINE_SERVICE_INTERVAL))
+raw_compare	code/game/objects/effects/landmarks_events.dm	if(world.time < (last_trigger + cooldown))
+raw_compare	code/game/objects/items/devices/paicard.dm	if(last_notify == 0 || (5 MINUTES <= world.time - last_notify))
+raw_compare	code/game/objects/items/toys/toys.dm	if(cooldown < world.time - 8)
+raw_compare	code/game/objects/structures/stool_bed_chair_nest/alien_nests.dm	if(world.time <= buckled_mob.last_special+NEST_RESIST_TIME)
+raw_compare	code/modules/blob2/blobs/base_blob.dm	if(pulse_timestamp <= world.time)
+raw_compare	code/modules/blob2/blobs/base_blob.dm	if(heal_timestamp <= world.time)
+raw_compare	code/modules/blob2/blobs/base_blob.dm	if(blobs_to_affect.len >= 120 && B.heal_timestamp > world.time)
+raw_compare	code/modules/blob2/blobs/base_blob.dm	if(!expanded && can_expand && B.pulse_timestamp <= world.time && prob(expand_probablity))
+raw_compare	code/modules/blob2/core_chunk.dm	if(blob_type && world.time > active_ability_cooldown + last_active_use)
+raw_compare	code/modules/blob2/core_chunk.dm	if(blob_type && should_tick && world.time > passive_ability_cooldown + last_passive_use)
+raw_compare	code/modules/blob2/overmind/types/reactive_spines.dm	if(isliving(A) && world.time > (B.last_passive_use + B.passive_ability_cooldown) && B.should_tick)
+raw_compare	code/modules/body/physiology.dm	return revival_grace_until && world.time < revival_grace_until
+raw_compare	code/modules/client/statpanel_service.dm	if(!mc_metrics || world.time >= mc_metrics_generated_at + 5 SECONDS)
+raw_compare	code/modules/clothing/masks/hailer.dm	if(cooldown < world.time - 35) // A cooldown, to stop people being jerks
+raw_compare	code/modules/combat_ai/behaviors/_behavior.dm	return brain.cooldown_until(type, source) <= world.time
+raw_compare	code/modules/combat_ai/behaviors/tactical.dm	if(!brain.last_attack_at || world.time > brain.last_attack_at + 4)
+raw_compare	code/modules/combat_ai/behaviors/tactical.dm	if(!brain.last_attack_at || world.time > brain.last_attack_at + 6)
+raw_compare	code/modules/combat_ai/brain/pathing.dm	if(next_path_attempt_at && world.time < next_path_attempt_at \
+raw_compare	code/modules/combat_ai/brain/scheduling.dm	if(A.next_strategic_at > world.time)
+raw_compare	code/modules/combat_ai/ports/blaidd.dm	if(world.time < B.blaidd_watched_since + stare_grace)
+raw_compare	code/modules/combat_ai/ports/kururak.dm	if(world.time > brain.last_attack_at + 5 SECONDS)
+raw_compare	code/modules/combat_ai/ports/slime_state.dm	if(discipline > 0 && (isnull(last_discipline_decay) || last_discipline_decay + discipline_decay_time < world.time))
+raw_compare	code/modules/combat_ai/ports/ysbryd.dm	if(Y.chosen_target && Y.chosen_target != threat && world.time < Y.ysbryd_reacquire_after && Y.chosen_target.stat < DEAD)
+raw_compare	code/modules/economy/supply_service.dm	if(world.time < next_payroll)
+raw_compare	code/modules/economy/vending.dm	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
+raw_compare	code/modules/gamemaster/event2/events/everyone/pda_spam.dm	if(last_spam_time + give_up_after < world.time)
+raw_compare	code/modules/games/cards.dm	if (cooldown < world.time - 10) // 15 ticks cooldown
+raw_compare	code/modules/games/tarot.dm	if (cooldown < world.time - 10)
+raw_compare	code/modules/games/tarot.dm	if (cooldown < world.time - 10)
+raw_compare	code/modules/holodeck/HolodeckControl.dm	if(world.time < (last_change + 25))
+raw_compare	code/modules/holodeck/HolodeckControl.dm	if(world.time < (last_change + 15))//To prevent super-spam clicking, reduced process size and annoyance -Sieve
+raw_compare	code/modules/holodeck/HolodeckControl.dm	if(world.time < (last_gravity_change + 25))
+raw_compare	code/modules/holodeck/HolodeckControl.dm	if(world.time < (last_gravity_change + 15))//To prevent super-spam clicking
+raw_compare	code/modules/hydroponics/spreading/spreading_growth.dm	if(world.time >= last_tick+NEIGHBOR_REFRESH_TIME)
+raw_compare	code/modules/hydroponics/trays/tray_process.dm	else if(world.time < (lastcycle + cycledelay))
+raw_compare	code/modules/looking_glass/lg_console.dm	if(world.time < (last_gravity_change + 3 SECONDS))
+raw_compare	code/modules/looking_glass/lg_console.dm	if(world.time < (last_gravity_change + 1 SECOND))
+raw_compare	code/modules/mining/mine_turfs.dm	if(last_act + P.digspeed > world.time)//prevents message spam
+raw_compare	code/modules/mob/_modifiers/horror.dm	if(state.armor_deployed && ((state.armor_deployed_time + armor_duration) < world.time)) //Time ran out.
+raw_compare	code/modules/mob/_modifiers/horror.dm	if(state.armor_deployed && (state.armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead.
+raw_compare	code/modules/mob/_modifiers/horror.dm	if(state.time_since_revival + revival_cooldown > world.time) //On cooldown.
+raw_compare	code/modules/mob/_modifiers/traits_phobias.dm	if(world.time >= (L.body_effect_state(type) || 0))
+raw_compare	code/modules/mob/living/carbon/human/human_attackhand.dm	if(world.time <= (last_push_time + 6 SECONDS))
+raw_compare	code/modules/mob/living/carbon/human/human_attackhand.dm	if(last_push_time + 30 > world.time) //The fact that we're repeatedly doing it doesn't lessen the severity of the action! Send it full blast!
+raw_compare	code/modules/mob/living/carbon/human/human_modular_limbs.dm	if(world.time < last_special + (2 SECONDS) || get_active_hand() != E)
+raw_compare	code/modules/mob/living/carbon/human/human_modular_limbs.dm	if(world.time < last_special + (2 SECONDS))
+raw_compare	code/modules/mob/living/carbon/human/species/lleill/lleill_items.dm	if(LL.ring_cooldown + 10 MINUTES > world.time)
+raw_compare	code/modules/mob/living/carbon/human/species/station/traits/positive.dm	if(last_adrenaline_rush && last_adrenaline_rush + (30 MINUTES) > world.time)
+raw_compare	code/modules/mob/living/carbon/taste.dm	if(last_taste_time + 50 < world.time)
+raw_compare	code/modules/mob/living/carbon/taste.dm	if(text_output != last_taste_text || last_taste_time + 100 < world.time) //We dont want to spam the same message over and over again at the person. Give it a bit of a buffer.
+raw_compare	code/modules/mob/living/life/living_systems.dm	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
+raw_compare	code/modules/mob/living/silicon/pai/pai_service.dm	if(world.time < asked[ghost_ref] + PAI_DELAY_TIME)
+raw_compare	code/modules/mob/living/silicon/robot/robot_items.dm	if(flash_count && (last_flash + shield_refresh < world.time))
+raw_compare	code/modules/mob/living/silicon/robot/robot_items.dm	else if(overload_time + shield_refresh < world.time)
+raw_compare	code/modules/mob/living/simple_mob/defense.dm	if(world.time > (harvest_recent + harvest_cooldown))
+raw_compare	code/modules/mob/living/simple_mob/simple_mob.dm	if(hunting_cooldown + 5 MINUTES < world.time)
+raw_compare	code/modules/mob/living/simple_mob/simple_mob.dm	else if(hunting_cooldown + 5 MINUTES > world.time)
+raw_compare	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(world.time < time_maw_opened + maw_cooldown)
+raw_compare	code/modules/mob/living/simple_mob/subtypes/animal/space/worm.dm	if(world.time > self.time_maw_opened + self.maw_cooldown) // Auto-stop eating.
+raw_compare	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	if(world.time > self.last_lifechecks + 15 SECONDS)
+raw_compare	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	if(world.time > self.last_lifechecks + 30 SECONDS)
+raw_compare	code/modules/mob/mob_grab.dm	if(world.time < (last_action + UPGRADE_COOLDOWN))
+raw_compare	code/modules/mob/mob_grab.dm	if(world.time < (last_action + 20))
+raw_compare	code/modules/mob/mob_movement.dm	if(world.time < next_move)
+raw_compare	code/modules/mob/mob_service.dm	else if(world.time >= profile_next_dump)
+raw_compare	code/modules/nifsoft/nif_softshop.dm	if(((last_reply + (vend_delay + 200)) <= world.time) && vend_reply)
+raw_compare	code/modules/organs/subtypes/replicant.dm	if(world.time > last_activation_time + activation_cooldown)
+raw_compare	code/modules/pda/messenger.dm	if(last_text && world.time < last_text + 5)
+raw_compare	code/modules/pda/radio.dm	if(last_transmission && world.time < (last_transmission + 5))
+raw_compare	code/modules/pda/utilities.dm	if(!(last_honk && world.time < last_honk + 20))
+raw_compare	code/modules/power/apc.dm	if(last_nightshift_switch > world.time - 1 SECOND)
+raw_compare	code/modules/power/privacy_switch.dm	if(nextUse - world.time > 0)
+raw_compare	code/modules/projectiles/ammunition/smartmag.dm	if(holding_gun() && world.time < holding_gun().last_shot + production_delay) // Same as recharging energy weapons.
+raw_compare	code/modules/projectiles/ammunition/smartmag.dm	if(world.time > last_production_time + production_time)
+raw_compare	code/modules/projectiles/guns/energy.dm	if(world.time > last_shot + charge_delay) //Doesn't work if you've fired recently
+raw_compare	code/modules/projectiles/guns/magnetic/bore.dm	else if(generator_state > GEN_OFF && time_started + 3 SECONDS < world.time)
+raw_compare	code/modules/reagents/reagents/drugs.dm	if(world.time > data + 90 SECONDS && volume > 0.5) /// Spam prevention.
+raw_compare	code/modules/reagents/reagents/medicine.dm	if(world.time > data + delay)
+raw_compare	code/modules/reagents/reagents/medicine.dm	if(world.time > data + delay)
+raw_compare	code/modules/reagents/reagents/medicine.dm	if(world.time > data + delay)
+raw_compare	code/modules/recycling/disposal_machines.dm	if(last_sound < world.time + 1)
+raw_compare	code/modules/refinery/core/industrial_reagent_hub.dm	if(tanker && tanker.reagents.total_volume > 0 && world.time > tanker.l_move_time + wait_delay)
+raw_compare	code/modules/refinery/core/industrial_reagent_hub.dm	if(world.time < tanker.l_move_time + wait_delay) // await cooldown to avoid spamming moving tanks
+raw_compare	code/modules/shuttles/emergency_shuttle_service.dm	if(evac && auto_recall && world.time >= auto_recall_time)
+raw_compare	code/modules/shuttles/emergency_shuttle_service.dm	if(world.time >= launch_time) //time to launch the shuttle
+raw_compare	code/modules/shuttles/shuttle.dm	if(last_progress_sound + 4 SECONDS < world.time)
+raw_compare	code/modules/shuttles/shuttles_web.dm	if((WS.last_move + WS.cooldown) > world.time)
+raw_compare	code/modules/tables/interactions.dm	else if(G.state > GRAB_AGGRESSIVE || world.time >= (G.last_action + UPGRADE_COOLDOWN))
+raw_compare	code/modules/tgui/tgui_window.dm	if(world.time >= payload_chunk_window_started_at + 1 SECOND)
+raw_compare	code/modules/vehicles/vehicle.dm	if(!zmove && world.time < l_move_time + move_delay) //This AND the riding datum move speed limit?
+raw_compare	code/modules/xenoarcheaology/boulder.dm	if(last_act + P.digspeed > world.time)//prevents message spam
+raw_compare	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	if(last_special > world.time - 12 SECONDS)

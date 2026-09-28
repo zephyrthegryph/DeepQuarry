@@ -140,7 +140,7 @@ DECLARE_REF(/datum/using_machine_shim, "owner", BACK, "machine_shim")
 /obj/machinery/CouldNotUseTopic(mob/user)
 	user.unset_machine()
 
-/// Trait system: release the machine when the user leaves it. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: release the machine when the user leaves it.
 /datum/om/stage/life/trait/using_machine_shim
 	name = "using machine shim"
 

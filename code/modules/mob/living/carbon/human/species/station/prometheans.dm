@@ -235,7 +235,7 @@
 #define PROMETHEAN_PAIN_CAP 70
 #define PROMETHEAN_STARVING_PAIN_CAP 90
 
-/// A trait state (was /datum/component/promethean_biology), added by the species.
+/// A trait state, added by the species.
 /datum/trait_state/promethean_biology
 	life_stage = /datum/om/stage/life/trait/promethean_biology
 	/// Held still for PROMETHEAN_STILLNESS_TIME.
@@ -410,7 +410,7 @@
 #undef PROMETHEAN_PAIN_CAP
 #undef PROMETHEAN_STARVING_PAIN_CAP
 
-/// Trait system: promethean biology. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: promethean biology.
 /datum/om/stage/life/trait/promethean_biology
 	name = "promethean biology"
 	state_type = /datum/trait_state/promethean_biology

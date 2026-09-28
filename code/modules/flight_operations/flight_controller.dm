@@ -10,13 +10,13 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	boot_after = /datum/controller/subsystem/shuttles
 	// rebuild_registry() registers any live expedition sites.
 	order_after = list(/datum/world_service/expedition)
-	var/list/destinations = list() // ALLOW(instance_list): d: world service singleton
-	var/list/destination_by_target = list() // ALLOW(instance_list): d: world service singleton
-	var/list/vessels = list() // ALLOW(instance_list): d: world service singleton
-	var/list/vessel_by_ship = list() // ALLOW(instance_list): d: world service singleton
-	var/list/ports = list() // ALLOW(instance_list): d: world service singleton
-	var/list/port_by_landmark = list() // ALLOW(instance_list): d: world service singleton
-	var/list/plans = list() // ALLOW(instance_list): d: world service singleton
+	var/list/destinations = list()
+	var/list/destination_by_target = list()
+	var/list/vessels = list()
+	var/list/vessel_by_ship = list()
+	var/list/ports = list()
+	var/list/port_by_landmark = list()
+	var/list/plans = list()
 	var/tmp/list/current_run
 
 /datum/world_service/flight/initialize()

@@ -1,4 +1,4 @@
-/// Resize guard (was /datum/component/resize_guard). While a mob is at an extreme size
+/// Resize guard. While a mob is at an extreme size
 /// allowed only in AREA_ALLOW_LARGE_SIZE areas, moving anywhere else resizes it back
 /// within bounds. A shared behaviour singleton on the moved event; the check runs out
 /// of the delivery (om_after) because resize() detaches the guard itself.

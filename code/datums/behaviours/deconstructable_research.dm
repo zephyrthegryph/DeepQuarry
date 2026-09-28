@@ -1,6 +1,6 @@
 /// Per-object research value for the destructive analyzer (was
 /// /datum/component/deconstructable_research). Object state, read directly by
-/// techweb_item_point_check() (was COMSIG_TECHWEB_POINT_CHECK / _TYPE_CHECK).
+/// techweb_item_point_check().
 /obj
 	///Used by R&D to determine how many points the item gives (0: none).
 	var/techweb_points = 0

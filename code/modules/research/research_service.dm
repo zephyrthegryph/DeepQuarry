@@ -10,37 +10,37 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	/// Income period; must match the lane's `every`.
 	var/income_interval = 1 SECOND
 	//TECHWEB STATIC
-	var/list/techweb_nodes = list() //associative id = node datum // ALLOW(instance_list): d: world service singleton
-	var/list/techweb_designs = list() //associative id = node datum // ALLOW(instance_list): d: world service singleton
-	var/list/list/datum/design_techweb/item_to_design = list() //typepath = list of design datums // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_nodes = list() //associative id = node datum
+	var/list/techweb_designs = list() //associative id = node datum
+	var/list/list/datum/design_techweb/item_to_design = list() //typepath = list of design datums
 
 	///List of all techwebs, generating points or not.
 	///Autolathes, Mechfabs, and others all have shared techwebs, for example.
-	var/list/datum/techweb/techwebs = list() // ALLOW(instance_list): d: world service singleton
+	var/list/datum/techweb/techwebs = list()
 
 	var/datum/techweb_node/error_node/error_node //These two are what you get if a node/design is deleted and somehow still stored in a console.
 	var/datum/design_techweb/error_design/error_design
 
 	//ERROR LOGGING
 	///associative id = number of times
-	var/list/invalid_design_ids = list() // ALLOW(instance_list): d: world service singleton
+	var/list/invalid_design_ids = list()
 	///associative id = number of times
-	var/list/invalid_node_ids = list() // ALLOW(instance_list): d: world service singleton
+	var/list/invalid_node_ids = list()
 	///associative id = error message
-	var/list/invalid_node_boost = list() // ALLOW(instance_list): d: world service singleton
+	var/list/invalid_node_boost = list()
 
 	///associative id = TRUE
-	var/list/techweb_nodes_starting = list() // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_nodes_starting = list()
 	///category name = list(node.id = TRUE)
-	var/list/techweb_categories = list() // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_categories = list()
 	///List of all items that can unlock a node. (node.id = list(items))
-	var/list/techweb_unlock_items = list() // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_unlock_items = list()
 	///Node ids that should be hidden by default.
-	var/list/techweb_nodes_hidden = list() // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_nodes_hidden = list()
 	///Node ids that are exclusive to the BEPIS.
-	var/list/techweb_nodes_experimental = list() // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_nodes_experimental = list()
 	///path = list(point type = value)
-	var/list/techweb_point_items = list( // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_point_items = list(
 		/obj/item/research_sample/common = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS*0.5),
 		/obj/item/research_sample/uncommon = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_2_POINTS*0.5),
 		/obj/item/research_sample/rare = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_3_POINTS*0.5),
@@ -87,7 +87,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 		/obj/item/slime_extract/sound = list(TECHWEB_POINT_TYPE_GENERIC = TECHWEB_TIER_1_POINTS),
 	)
 	///Allows repeated deconstruction of these items for points. These items MUST be in techweb_point_items as well.
-	var/list/techweb_repeatable_items = list( // ALLOW(instance_list): d: world service singleton
+	var/list/techweb_repeatable_items = list(
 		/obj/item/research_sample/common,
 		/obj/item/research_sample/uncommon,
 		/obj/item/research_sample/rare,
@@ -114,11 +114,11 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 		/obj/item/slime_extract/emerald,
 		/obj/item/slime_extract/rainbow,
 	)
-	var/list/errored_datums = list() // ALLOW(instance_list): d: world service singleton
+	var/list/errored_datums = list()
 	///Associated list of all point types that techwebs will have and their respective 'abbreviated' name.
-	var/list/point_types = list(TECHWEB_POINT_TYPE_GENERIC = "Gen. Res.") // ALLOW(instance_list): d: world service singleton
+	var/list/point_types = list(TECHWEB_POINT_TYPE_GENERIC = "Gen. Res.")
 	//----------------------------------------------
-	var/list/single_server_income = list( // ALLOW(instance_list): d: world service singleton
+	var/list/single_server_income = list(
 		TECHWEB_POINT_TYPE_GENERIC = TECHWEB_SINGLE_SERVER_INCOME,
 	)
 	//^^^^^^^^ ALL OF THESE ARE PER SECOND! ^^^^^^^^
@@ -131,9 +131,9 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	/// The hard limits of cores created for each anomaly type. For faster code lookup without switch statements.
 
 	/// Lookup list for ordnance briefers.
-	var/list/ordnance_experiments = list() // ALLOW(instance_list): d: world service singleton
+	var/list/ordnance_experiments = list()
 	/// Lookup list for scipaper partners.
-	var/list/datum/scientific_partner/scientific_partners = list() // ALLOW(instance_list): d: world service singleton
+	var/list/datum/scientific_partner/scientific_partners = list()
 
 /datum/world_service/research/initialize()
 	initialized = TRUE

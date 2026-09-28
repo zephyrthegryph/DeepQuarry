@@ -13,13 +13,13 @@ GLOBAL_DATUM_INIT(chat_service, /datum/world_service/chat, new)
 	on_demand = TRUE
 
 	/// Assosciates a ckey with a list of messages to send to them.
-	var/list/list/datum/chat_payload/client_to_payloads = list() // ALLOW(instance_list): d: world service singleton
+	var/list/list/datum/chat_payload/client_to_payloads = list()
 
 	/// Associates a ckey with an assosciative list of their last CHAT_RELIABILITY_HISTORY_SIZE messages.
-	var/list/list/datum/chat_payload/client_to_reliability_history = list() // ALLOW(instance_list): d: world service singleton
+	var/list/list/datum/chat_payload/client_to_reliability_history = list()
 
 	/// Assosciates a ckey with their next sequence number.
-	var/list/client_to_sequence_number = list() // ALLOW(instance_list): d: world service singleton
+	var/list/client_to_sequence_number = list()
 
 /datum/world_service/chat/proc/generate_payload(client/target, message_data)
 	var/sequence = client_to_sequence_number[target.ckey]

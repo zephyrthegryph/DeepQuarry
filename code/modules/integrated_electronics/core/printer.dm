@@ -494,7 +494,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	is_printing = TRUE
 	print_end_time = world.time + print_time
 
-	// Use addtimer instead of processing for efficiency
 	om_after(src, print_time, PROC_REF(finish_printing))
 
 	var/print_minutes = round(print_time / 600, 0.1) // Convert to minutes for display

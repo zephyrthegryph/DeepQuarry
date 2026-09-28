@@ -81,17 +81,17 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	// follow the station mapload, so boot right after SSmapping.
 	boot_after = /datum/controller/subsystem/mapping
 	/// "[z]" -> /datum/expedition_site for every live site.
-	var/list/sites = list() // ALLOW(instance_list): d: world service singleton
+	var/list/sites = list()
 	/// Surveyed site descriptors not yet materialized (z_level 0). Flight
 	/// destinations and vessels name a descriptor only by handle, so this list
 	/// is what owns it until it is materialized, abandoned or deleted.
 	var/list/descriptors
 	/// Wiped z-levels available for reuse.
-	var/list/free_z = list() // ALLOW(instance_list): d: world service singleton
+	var/list/free_z = list()
 	/// Running survey-point score earned by completed missions this round.
 	var/survey_points_total = 0
 	/// Z-levels currently being cleared incrementally and unavailable for reuse.
-	var/list/teardown_z = list() // ALLOW(instance_list): d: world service singleton
+	var/list/teardown_z = list()
 
 /datum/world_service/expedition/initialize()
 	initialized = TRUE

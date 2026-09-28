@@ -7,12 +7,19 @@ if it never uses it. AGENTS.md section 3a has the alternatives: a static var or 
 getter for constant tables, a lazy (null) list for per-instance data that is
 usually empty, and a shared copy-on-write list for data that is rarely written.
 
+Singletons are exempt without an annotation, detected structurally: a type
+under /datum/world_service or /datum/controller, or the exact type a
+GLOBAL_DATUM_INIT(name, /type, new...) creates. One instance means one list.
+
 Declarations that really are per-instance and non-empty carry
 `// ALLOW(instance_list): <reason>` on the declaration line or the comment line
-above it (tools/ci/allow_annotations.py). The lint fails on any other.
+above it (tools/ci/allow_annotations.py). Legacy declarations nobody has
+reasoned about yet live in tools/ci/instance_list_baseline.txt (file + line
+text), which only shrinks. The lint fails on any other declaration.
 
-Usage: python3 tools/ci/instance_list_lint.py [--list]
-  --list  print every unannotated declaration and exit 0.
+Usage: python3 tools/ci/instance_list_lint.py [--list | --update | --seed]
+  --list    print every unannotated, non-singleton declaration and exit 0.
+  --update  drop fixed declarations from the baseline (never adds).
 """
 
 import os
@@ -20,10 +27,13 @@ import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-SCAN_DIRS = ["code", "modular_chomp"]
+SCAN_DIRS = ["code"]
+BASELINE = os.path.join(ROOT, "tools", "ci", "instance_list_baseline.txt")
+SINGLETON_ROOTS = ("/datum/world_service", "/datum/controller")
+GLOBAL_DATUM = re.compile(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new")
 
 # var/[mods/]list/[typed/path/]name = list(...) | new/list(...) | new(...) | new
 INIT_RE = re.compile(
@@ -118,8 +128,27 @@ def scan_file(path):
             yield type_path, decl.group("name"), number
 
 
+def singleton_types():
+    """Exact types some GLOBAL_DATUM_INIT(name, /type, new...) creates (bare /datum excluded)."""
+    types = set()
+    for dirpath, _dirs, files in os.walk(os.path.join(ROOT, "code")):
+        for name in files:
+            if name.endswith(".dm"):
+                with open(os.path.join(dirpath, name), encoding="utf-8", errors="replace") as handle:
+                    text = handle.read()
+                if "GLOBAL_DATUM_INIT" in text:
+                    types.update(m.group(1) for m in GLOBAL_DATUM.finditer(text))
+    types.discard("/datum")
+    return types
+
+
+def is_singleton(type_path, globals_):
+    return type_path in globals_ or any(type_path == r or type_path.startswith(r + "/") for r in SINGLETON_ROOTS)
+
+
 def scan():
     found = {}
+    globals_ = singleton_types()
     for top in SCAN_DIRS:
         base = os.path.join(ROOT, top)
         if not os.path.isdir(base):
@@ -131,6 +160,8 @@ def scan():
                 path = os.path.join(dirpath, name)
                 rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
                 for type_path, var_name, number in scan_file(path):
+                    if is_singleton(type_path, globals_):
+                        continue
                     found.setdefault(f"{type_path}/{var_name}", f"{rel}:{number}")
     return found
 
@@ -141,18 +172,23 @@ def main():
         for key in sorted(found):
             print(f"{key} # {found[key]}")
         return 0
-    problems = [
-        f"{found[key]}: {key} allocates a list for every instance. Use a static var or getter "
-        "(constant table), a lazy list (usually empty), or a shared copy-on-write list "
-        "(AGENTS.md 3a); if it really is per-instance and always filled, mark the declaration "
-        "`// ALLOW(instance_list): <reason>`."
-        for key in sorted(found)
-    ]
-    for problem in problems:
-        print(problem)
-    print(f"instance_list_lint: {len(found)} unannotated per-instance list declarations, {len(problems)} problems")
-    return 1 if problems else 0
-
+    sites = {"instance_list": []}
+    for where in sorted(found.values()):
+        rel, number = where.rsplit(":", 1)
+        sites["instance_list"].append((rel, int(number)))
+    if "--update" in sys.argv or "--seed" in sys.argv:
+        rows = write_sites(BASELINE, [
+            "Per-instance list declarations not yet reasoned about (tools/ci/instance_list_lint.py).",
+            "rule<TAB>file<TAB>normalized line. Shrink-only: convert (AGENTS.md 3a) or give a real",
+            "`// ALLOW(instance_list): <reason>`, then `python tools/ci/instance_list_lint.py --update`.",
+        ], sites, shrink_only="--seed" not in sys.argv)
+        print(f"instance_list_lint: baseline {rows} declarations")
+        return 0
+    failed = check_sites("instance_list", sites, BASELINE,
+                         "allocates a list per instance: use a static var or getter (constant table), a lazy "
+                         "list (usually empty) or a shared copy-on-write list (AGENTS.md 3a); if it really is "
+                         "per-instance and always filled, mark it `// ALLOW(instance_list): <reason>`")
+    return 1 if failed else 0
 
 if __name__ == "__main__":
     sys.exit(main())

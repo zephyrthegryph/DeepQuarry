@@ -34,7 +34,7 @@
 	dq_apply_material_responses(I)
 
 // ---- The emission behaviour ------------------------------------------------
-// (was /datum/component/material_behaviors). The magnitudes live on the item;
+//. The magnitudes live on the item;
 // the light is set once, and an item that irradiates or poisons carries the
 // shared material_emission behaviour, which ticks every 2 s while attached.
 

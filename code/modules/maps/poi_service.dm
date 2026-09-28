@@ -10,7 +10,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	boot_after = /datum/controller/subsystem/holomaps
 	lane = /datum/om/behaviour/world/pois
 	on_demand = TRUE
-	var/list/obj/effect/landmark/poi_loader/poi_queue = list() // ALLOW(instance_list): d: world service singleton
+	var/list/obj/effect/landmark/poi_loader/poi_queue = list()
 	/// TRUE while drain_queue() is loading the queue.
 	var/loading = FALSE
 

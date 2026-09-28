@@ -40,7 +40,7 @@
 #undef GROW_MULTIPLIER
 #undef SHRINK_MULTIPLIER
 
-/// Trait system: size change from nutrition. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: size change from nutrition.
 /datum/om/stage/life/trait/nutrition_size_change
 	name = "nutrition size change"
 	state_type = /datum/trait_state/nutrition_size_change

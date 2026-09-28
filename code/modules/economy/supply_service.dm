@@ -35,21 +35,21 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	var/currency_internal_refunded = 0
 	var/service_subsidies = 0
 	var/service_invoice_counter = 0
-	var/list/service_invoices = list() // ALLOW(instance_list): d: world service singleton
+	var/list/service_invoices = list()
 	/// Identifies the current 15-minute accounting window for Service invoices.
 	var/service_accounting_period = 1
 	/// Portion of an optional gratuity paid directly to the identified worker.
 	var/service_tip_staff_share = 0.5
-	var/list/currency_sources = list() // ALLOW(instance_list): d: world service singleton
-	var/list/currency_sinks = list() // ALLOW(instance_list): d: world service singleton
+	var/list/currency_sources = list()
+	var/list/currency_sinks = list()
 	//control
 	var/ordernum = 0						// Start at zero, it's per-shift tracking
-	var/list/shoppinglist = list()			// Approved orders // ALLOW(instance_list): d: world service singleton
-	var/list/supply_pack = list()			// All supply packs // ALLOW(instance_list): d: world service singleton
-	var/list/exported_crates = list()		// Crates sent from the station // ALLOW(instance_list): d: world service singleton
-	var/list/order_history = list()			// History of orders, showing edits made by users // ALLOW(instance_list): d: world service singleton
-	var/list/adm_order_history = list() 	// Complete history of all orders, for admin use // ALLOW(instance_list): d: world service singleton
-	var/list/adm_export_history = list()	// Complete history of all crates sent back on the shuttle, for admin use // ALLOW(instance_list): d: world service singleton
+	var/list/shoppinglist = list()			// Approved orders
+	var/list/supply_pack = list()			// All supply packs
+	var/list/exported_crates = list()		// Crates sent from the station
+	var/list/order_history = list()			// History of orders, showing edits made by users
+	var/list/adm_order_history = list() 	// Complete history of all orders, for admin use
+	var/list/adm_export_history = list()	// Complete history of all crates sent back on the shuttle, for admin use
 	//shuttle movement
 	var/movetime = 1200
 	var/datum/shuttle/autodock/ferry/supply/shuttle

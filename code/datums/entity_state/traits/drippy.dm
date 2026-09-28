@@ -58,7 +58,7 @@
 		var/mob/living/carbon/human/temp_human = owner
 		blood_color = rgb(temp_human.r_skin,temp_human.g_skin,temp_human.b_skin)
 
-/// Trait system: dripping. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: dripping.
 /datum/om/stage/life/trait/drippy
 	name = "drippy"
 	state_type = /datum/trait_state/drippy

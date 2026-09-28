@@ -26,7 +26,7 @@
 	if((living_guy.nutrition < nutrition_critical) && prob(5))
 		living_guy.status_set(EFFECT_DROWSY, min(100,living_guy.status_units(EFFECT_DROWSY)+30))
 
-/// Trait system: low blood sugar. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: low blood sugar.
 /datum/om/stage/life/trait/diabetic
 	name = "diabetic"
 	state_type = /datum/trait_state/diabetic

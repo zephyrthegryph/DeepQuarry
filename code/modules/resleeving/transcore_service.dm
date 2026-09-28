@@ -30,10 +30,10 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 	var/cost_backups = 0
 	var/cost_implants = 0
 
-	var/list/datum/transcore_db/databases = list()	// Holds instances of each database // ALLOW(instance_list): d: world service singleton
+	var/list/datum/transcore_db/databases = list()	// Holds instances of each database
 	var/datum/transcore_db/default_db // The default if no specific one is used
 
-	var/list/current_run = list() // ALLOW(instance_list): d: world service singleton
+	var/list/current_run = list()
 
 /datum/world_service/transcore/initialize()
 	initialized = TRUE

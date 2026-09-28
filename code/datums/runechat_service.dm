@@ -6,7 +6,7 @@ GLOBAL_DATUM_INIT(runechat_service, /datum/world_service/runechat, new)
 	lane = /datum/om/behaviour/world/runechat
 	on_demand = TRUE
 
-	var/list/datum/callback/message_queue = list() // ALLOW(instance_list): d: world service singleton
+	var/list/datum/callback/message_queue = list()
 
 /datum/world_service/runechat/has_work()
 	return length(message_queue)

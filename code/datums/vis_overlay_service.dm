@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	name = "Vis contents overlays"
 	lane = /datum/om/behaviour/world/vis_overlays
 
-	var/list/vis_overlay_cache = list() // ALLOW(instance_list): d: world service singleton
+	var/list/vis_overlay_cache = list()
 	var/list/currentrun
 
 /datum/world_service/vis_overlays/service_step(resumed)

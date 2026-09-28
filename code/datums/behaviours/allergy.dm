@@ -1,6 +1,6 @@
 // Allergic reactions (was /datum/element/allergy, added to humans whose species has
 // allergies). The medical life stage calls handle_allergic_reaction() directly for humans
-// whose species has allergens (was COMSIG_HANDLE_ALLERGENS).
+// whose species has allergens.
 /mob/living/carbon/human/proc/has_allergies()
 	return species && (species.allergens || species.medallergens)
 

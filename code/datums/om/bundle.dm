@@ -67,17 +67,17 @@
 /// The compiled table for one concrete entity type: what om_start() attaches.
 /datum/om/type_table
 	/// Behaviour defs, sorted by id (run order).
-	var/list/behaviours = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/behaviours = list()
 	/// Stage types from `stages` rows (pipeline.dm).
-	var/list/stages = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/stages = list()
 	/// name -> /datum/om/task
-	var/list/tasks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/tasks = list()
 	/// UI rows.
-	var/list/ui = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/ui = list()
 	/// Stride 2: effect id, value spec.
-	var/list/self_effects = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/self_effects = list()
 	/// Stride 2: grant kind, id.
-	var/list/self_grants = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/self_grants = list()
 	/// Global observer mask for this type (services).
 	var/service_mask = 0
 	/// Services observing this type.

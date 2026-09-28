@@ -9,8 +9,8 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 	var/list/syndicate_code_phrase
 	var/list/syndicate_code_response
 
-	var/list/all_antag_types = list() // ALLOW(instance_list): d: world service singleton
-	var/list/all_antag_spawnpoints = list() // ALLOW(instance_list): d: world service singleton
+	var/list/all_antag_types = list()
+	var/list/all_antag_spawnpoints = list()
 	VAR_PRIVATE/list/antag_names_to_ids = list()
 
 /// The service owns its antagonist templates (keyed by id).

@@ -9,7 +9,7 @@ GLOBAL_DATUM_INIT(asset_loading_service, /datum/world_service/asset_loading, new
 	name = "Asset Loading"
 	lane = /datum/om/behaviour/world/asset_loading
 	on_demand = TRUE
-	var/list/datum/asset/generate_queue = list() // ALLOW(instance_list): d: world service singleton
+	var/list/datum/asset/generate_queue = list()
 	var/assets_generating = 0
 	var/max_concurrent_batched_generations = 2
 	var/last_queue_len = 0

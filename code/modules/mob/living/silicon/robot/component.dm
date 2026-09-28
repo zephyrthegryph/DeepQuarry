@@ -359,7 +359,7 @@ DECLARE_REF(/datum/robot_component, "wrapped", OWNED, null)
 // --- Carried afflictions ------------------------------------------------------------
 // Holds a removed part's afflictions while it sits outside a robot.
 
-// Owned by the item's `carried_afflictions` var (was /datum/component/carried_afflictions).
+// Owned by the item's `carried_afflictions` var.
 
 /datum/carried_afflictions
 	/// The removed part carrying them.

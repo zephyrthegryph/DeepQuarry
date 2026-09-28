@@ -9,16 +9,16 @@ DECLARE_REF(/datum/world_service/plants, "plant_gene_datums", STATIC, null)
 
 /datum/world_service/plants
 	name = "Plants"
-	var/list/product_descs = list()					// Stores generated fruit descs. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/seeds = list()							// All seed data stored here. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/gene_tag_masks = list()				// Gene obfuscation for delicious trial and error goodness. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/plant_icon_cache = list()				// Stores images of growth, fruits and seeds. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/plant_sprites = list()					// List of all growth sprites plus number of growth stages. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/accessible_plant_sprites = list()		// List of all plant sprites allowed to appear in random generation. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/plant_product_sprites = list()			// List of all harvested product sprites. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/accessible_product_sprites = list()	// List of all product sprites allowed to appear in random generation. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/gene_masked_list = list()				// Stored gene masked list, rather than recreating it when needed. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-	var/list/plant_gene_datums = list()				// Stored datum versions of the gene masked list. // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/product_descs = list()					// Stores generated fruit descs.
+	var/list/seeds = list()							// All seed data stored here.
+	var/list/gene_tag_masks = list()				// Gene obfuscation for delicious trial and error goodness.
+	var/list/plant_icon_cache = list()				// Stores images of growth, fruits and seeds.
+	var/list/plant_sprites = list()					// List of all growth sprites plus number of growth stages.
+	var/list/accessible_plant_sprites = list()		// List of all plant sprites allowed to appear in random generation.
+	var/list/plant_product_sprites = list()			// List of all harvested product sprites.
+	var/list/accessible_product_sprites = list()	// List of all product sprites allowed to appear in random generation.
+	var/list/gene_masked_list = list()				// Stored gene masked list, rather than recreating it when needed.
+	var/list/plant_gene_datums = list()				// Stored datum versions of the gene masked list.
 
 /datum/world_service/plants/stat_line()
 	return "P:[REGISTRY_COUNT(REGISTRY_GROWING_PLANTS)]|S:[length(seeds)]"

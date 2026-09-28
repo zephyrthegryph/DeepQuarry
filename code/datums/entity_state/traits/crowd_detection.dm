@@ -291,7 +291,7 @@
 
 #undef MIN_DISCOMFORT_MESSAGE
 
-/// Trait system: crowd and loneliness effects. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: crowd and loneliness effects.
 /datum/om/stage/life/trait/crowd_detection
 	name = "crowd detection"
 	state_type = /datum/trait_state/crowd_detection

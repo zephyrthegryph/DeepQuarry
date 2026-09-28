@@ -1,7 +1,7 @@
 //You know, with some intelligent coding.. you could add onto this code to handle the turf based footstep sounds, and be away with those turf lists all together
 //Partial squeak port from tg. Commented out stuff we don't have.
 /// Squeaky footsteps/handling for shoes. An owned state datum held in the shoes' `squeak` var
-/// (was /datum/component/squeak); add it with /obj/item/clothing/shoes/proc/make_squeaky().
+///; add it with /obj/item/clothing/shoes/proc/make_squeaky().
 /datum/squeak
 	var/static/list/default_squeak_sounds = list('sound/items/bikehorn.ogg'=1, 'sound/voice/quack.ogg'=1)
 	var/list/override_squeak_sounds
@@ -45,11 +45,6 @@ DECLARE_REF(/obj/item/clothing/shoes, "squeak", OWNED, null)
 	..()
 	src.owner = owner
 	om_hook(owner, list(/datum/om/event/atom_entered, /datum/om/event/before/movable_bump, /datum/om/event/movable_impact), src, PROC_REF(on_squeak_event))
-
-	//Disposals stuff we don't have
-	//(was a loc-behalf connection for item_connections)
-	//RegisterSignal(parent, COMSIG_MOVABLE_DISPOSING, PROC_REF(disposing_react))
-	//RegisterSignals(parent, list(COMSIG_ITEM_ATTACK, COMSIG_ITEM_ATTACK_ATOM, COMSIG_ITEM_HIT_REACT), PROC_REF(play_squeak))
 	om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
 	om_hook(owner, /datum/om/event/item_equipped, src, PROC_REF(on_equip))
 	om_hook(owner, /datum/om/event/item_dropped, src, PROC_REF(on_drop))

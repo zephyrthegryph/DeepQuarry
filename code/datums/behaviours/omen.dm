@@ -2,7 +2,7 @@
  * Ripped from /tg/ with modifications.
  * unlucky.dm: For when you want someone to have a really bad day
  *
- * An omen (was /datum/component/omen) makes a mob run the risk of all sorts of bad environmental
+ * An omen makes a mob run the risk of all sorts of bad environmental
  * injuries, like nearby vending machines randomly falling on it, or hitting its head really hard
  * when it slips and falls.
  *
@@ -483,7 +483,7 @@
 
 // ---------------------------------------------------------------- events
 
-/// Notification (was COMSIG_ON_CARBON_SLIP): the carbon slipped on `slipped_on`.
+/// Notification: the carbon slipped on `slipped_on`.
 /datum/om/event/carbon_slip
 	coalesce = FALSE
 	var/slipped_on
@@ -499,7 +499,7 @@
 /datum/om/behaviour/proc/on_carbon_slip(datum/E, datum/om/event/carbon_slip/event)
 	return
 
-/// Notification (was COMSIG_MOVED_DOWN_STAIRS): the movable went down stairs.
+/// Notification: the movable went down stairs.
 /datum/om/event/moved_down_stairs
 	coalesce = FALSE
 	var/old_loc
@@ -513,7 +513,7 @@
 /datum/om/behaviour/proc/on_moved_down_stairs(datum/E, datum/om/event/moved_down_stairs/event)
 	return
 
-/// Notification (was COMSIG_STUN_EFFECT_ACT): the mob took a stun weapon hit.
+/// Notification: the mob took a stun weapon hit.
 /datum/om/event/stun_effect
 	coalesce = FALSE
 	var/stun_amount
@@ -535,7 +535,7 @@
 /datum/om/behaviour/proc/on_stun_effect(datum/E, datum/om/event/stun_effect/event)
 	return
 
-/// Notification (beside COMSIG_ITEM_PICKUP on the user): the mob is picking up `item`.
+/// Notification: the mob is picking up `item`.
 /datum/om/event/picked_up_item
 	coalesce = FALSE
 	var/item
@@ -549,7 +549,7 @@
 /datum/om/behaviour/proc/on_picked_up_item(datum/E, datum/om/event/picked_up_item/event)
 	return
 
-/// Synchronous (was COMSIG_MOB_ROLLED_DICE): the mob rolled `dice`; a handler may set
+/// Synchronous: the mob rolled `dice`; a handler may set
 /// `result_override` to force the result.
 /datum/om/event/before/dice_roll
 	var/dice
@@ -569,7 +569,7 @@
 /datum/om/behaviour/proc/on_before_dice_roll(datum/E, datum/om/event/before/dice_roll/event)
 	return
 
-/// Veto (was COMSIG_HUMAN_ON_CATCH_THROW): the mob is about to catch thrown `source`;
+/// Veto: the mob is about to catch thrown `source`;
 /// EVENT_VETO stops the catch.
 /datum/om/event/before/catch_throw
 	var/source

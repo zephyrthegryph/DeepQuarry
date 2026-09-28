@@ -1,4 +1,4 @@
-/// Absorbent (was /datum/component/absorbent): cleans what the barefoot mob walks over and
+/// Absorbent: cleans what the barefoot mob walks over and
 /// feeds on it. A shared OM behaviour on the moved event; attached by the Absorbent trait.
 /datum/om/behaviour/absorbent
 	handles = list(/datum/om/event/moved)

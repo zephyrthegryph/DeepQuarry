@@ -16,7 +16,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	return GLOB.om_reg
 
 /datum/om/registry
-	var/list/errors = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/errors = list()
 	/// Collect errors without stack traces (tests of broken tables).
 	var/quiet = FALSE
 	/// Null: every non-skipped bundle/decl. Else only these (plus their includes).
@@ -25,46 +25,46 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 	var/include_skipped = FALSE
 	var/built = FALSE
 
-	var/list/behaviours = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/behaviour_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/effects = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/effect_by_id = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/clocks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/clock_by_id = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/relations = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/relation_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/behaviours = list()
+	var/list/behaviour_by_type = list()
+	var/list/effects = list()
+	var/list/effect_by_id = list()
+	var/list/clocks = list()
+	var/list/clock_by_id = list()
+	var/list/relations = list()
+	var/list/relation_by_type = list()
 	/// Holder type (as slot_holder_key() returns it) -> ordered list of
 	/// /datum/om/relation/slot instances declared for it (build_slot_holders()).
-	var/list/slot_groups_by_holder = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/slot_groups_by_holder = list()
 	/// Every declared holder type, longest-declared-path-first, so
 	/// slot_group_for() finds the most-derived match first.
-	var/list/slot_holder_types = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/event_types = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/event_idx = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/slot_holder_types = list()
+	var/list/event_types = list()
+	var/list/event_idx = list()
 	/// event idx -> list of behaviour ids handling it (subtypes flattened).
 	/// Per event index: list(type, parent, ...) up to (not including) /datum/om/event.
 	var/list/event_lineage
-	var/list/event_handlers = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/derived = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/derived_by_name = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/checks_cache = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/named_checks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/tasks = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/task_by_name = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/task_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/services = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/event_handlers = list()
+	var/list/derived = list()
+	var/list/derived_by_name = list()
+	var/list/checks_cache = list()
+	var/list/named_checks = list()
+	var/list/tasks = list()
+	var/list/task_by_name = list()
+	var/list/task_by_type = list()
+	var/list/services = list()
 	/// Every stage type -> its def (categories included), and the pipelines in id order.
-	var/list/stage_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/pipelines = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/bundles = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/bundle_by_type = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/decls = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/stage_by_type = list()
+	var/list/pipelines = list()
+	var/list/bundles = list()
+	var/list/bundle_by_type = list()
+	var/list/decls = list()
 	/// Every type some decl applies to (on_materialize checks this).
-	var/list/decl_typecache = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/decl_typecache = list()
 	/// bundle type -> flattened list of bundles (includes first, then itself).
-	var/list/expansions = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/expansions = list()
 	/// entity type -> /datum/om/type_table (lazy).
-	var/list/type_tables = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/type_tables = list()
 	/// Internal behaviours (expiry, rates, tasks, ui, edge refresh).
 	var/datum/om/behaviour/expiry_behaviour
 	var/datum/om/behaviour/rate_behaviour

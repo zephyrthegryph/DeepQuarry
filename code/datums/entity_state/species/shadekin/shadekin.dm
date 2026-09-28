@@ -73,7 +73,7 @@
 	///the datum is held: the source-tracked grant API, revoked in
 	///Destroy(). Every shadekin gets phase shift, regenerate other and create
 	///shade; phase_only and full override this to add or remove ids.
-	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE) // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
 
 	//Misc Vars
 	///Eyecolor
@@ -356,7 +356,7 @@ DECLARE_REF(/mob/living, "shadekin", OWNED, null)
 
 	SK.tgui_interact(src)
 
-/// Trait system: shadekin energy for non-human mobs. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: shadekin energy for non-human mobs.
 /datum/om/stage/life/trait/shadekin
 	name = "shadekin"
 

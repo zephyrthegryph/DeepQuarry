@@ -117,6 +117,8 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
   the table in `doc/rewrite/om_in_10_minutes.md` §3.
 - Delete with a lifecycle verb (`consume()`, `replace_with()`, `expire()`, `slot_clear()`)
   when one fits, else `qdel()`; never `del()`.
+- **Don't unhook, cancel timers or null declared vars by hand on deletion**: the transaction
+  tears down OM timers (`om_after`), tasks, hooks and UIs, and clears declared refs.
 
 ### 3d. Events & callbacks (OM events; the DCS is gone)
 
@@ -135,6 +137,15 @@ bans them). See `doc/rewrite/object_model_core.md` §10:
   and deleting either end drops it.
 - Every event handler's first line is `EVENT_HANDLER`; it must not sleep.
 - Deferred or state-driven reactions use a channel, a watch or `om_after()`.
+- **Delays**: `om_after(entity, 2 SECONDS, PROC_REF(x), args...)` returns a timer id for
+  `om_cancel_timer(entity, id)`; the timer runs on the entity's clock and dies with it. A
+  repeating job is a behaviour cadence (`every`) or `PERIODIC_START`; a rate limit is
+  `COOLDOWN_START`/`COOLDOWN_FINISHED`. There is no `addtimer`, `spawn`, gameplay `sleep`,
+  `INVOKE_ASYNC` or `do_after` (`om_task_start()` for timed actions).
+- **Global state and world-level work** live in a `/datum/world_service` singleton
+  (`GLOB.<x>_service` or a lazy `<x>_service()` accessor), with periodic work on a world lane
+  (`code/datums/om/world_lanes.dm`). Don't add a subsystem or a `fire()`
+  (`subsystem_fire_lint.py`); see §9 "World services".
 - Pass procs via `PROC_REF()` / `TYPE_PROC_REF()` / `GLOBAL_PROC_REF()`, never a
   bare string proc name.
 
@@ -161,8 +172,13 @@ bans them). See `doc/rewrite/object_model_core.md` §10:
 
 `tools/ci/check_ratchets.sh` runs the rewrite lints (scheduler, cooldown, DCS, API,
 declared refs, containment, spatial, latent, lifecycle counts, registry, instance lists,
-state refs, base procs, ...). Each count has a ceiling in a `tools/ci/*_baseline.txt`
-that may fall, never rise: lower it with the lint's `--update` after a sweep.
+state refs, base procs, ...). A ratcheted lint's `tools/ci/*_baseline.txt` lists each
+legacy site as a fingerprint (rule, file, whitespace-normalized line text; no line number,
+so unrelated edits don't disturb it). A failure prints only the **new** sites as
+`file:line: [lint/rule] text -- fix hint`. Baselines only shrink: after a sweep run the
+lint's `--update`, which drops fixed sites and never adds one (`--seed` exists only to
+create a baseline). World-service and singleton types are exempt from
+`instance_list_lint.py` automatically.
 
 There are **no allowlist files**. A site that is right as it is carries one inline
 annotation, read by every lint, on its own line or a comment-only line directly above:
@@ -203,8 +219,6 @@ Windows is the supported dev OS. Entry points (`bin/`):
 
 **Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
 
-**Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
-
 Runtime DMI note: because repacked `.dmi` live only in `icons/gen/`, code that reads
 DMI metadata at runtime via rust-g resolves the `icons/gen/` copy automatically
 (`icon_metadata()`, `universal_icon.to_list()`).
@@ -225,7 +239,7 @@ warning.
 | What | Command |
 |---|---|
 | Full unit-test suite (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` |
-| Only some tests | `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` |
+| Only some tests | `bash tools/dq_focused_test.sh <name> [...]` (bare names, quoted `*` globs, `--repeat=N`; other `--flags` go to dm-test) |
 | Same, on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` |
 | DM and TGUI lint | `tools/build/build.sh lint` (other CI checks: `doc/testing.md`) |
 | TGUI tests | `tools/build/build.sh tgui-test` |

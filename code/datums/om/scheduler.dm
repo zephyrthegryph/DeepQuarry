@@ -61,23 +61,23 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/gen = 0
 
 	/// behaviour id -> list of rings (one per interval in use).
-	var/list/rings = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/rings = list()
 	/// lane -> rings, in behaviour id order.
 	var/list/lane_rings
 	/// lane -> recs with pending wakes.
 	var/list/wake_q
 	/// lane -> an empty list swapped in for wake_q[lane] while it drains.
 	var/list/wake_spare
-	var/list/service_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/service_queue = list()
 	/// run_services()' second buffer.
 	var/list/service_spare = list() // ALLOW(instance_list): scheduler singleton's double buffer
 	/// run_bucket()'s buffer for deadlines inserted into the bucket being run.
 	var/list/bucket_spare = list() // ALLOW(instance_list): scheduler singleton's double buffer
 	/// Recs with eager derived values to recompute.
-	var/list/derived_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/derived_queue = list()
 
 	var/bulk_depth = 0
-	var/list/bulk_list = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/bulk_list = list()
 
 	/// Deadline wheel: OM_DEADLINE_BUCKETS lists of (rec, bid, gen, due) entries.
 	var/list/buckets
@@ -87,7 +87,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 	/// Events (event.dm).
 	var/emit_depth = 0
-	var/list/event_queue = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/event_queue = list()
 
 	/// Hook context for holds reconciliation (contribution.dm).
 	var/hook_epoch = 0
@@ -96,7 +96,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/ctx_bid = 0
 
 	/// Budget shares per lane (fractions of the run's budget).
-	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.1) // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.1)
 	/// Tests: max hook calls per lane per run (list of 5), and for deadlines.
 	var/list/harness_caps
 	var/harness_deadline_cap = 0
@@ -113,18 +113,18 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 	/// Pipelines (pipeline.dm), indexed by pipeline pipe_idx: free frames, parked entities
 	/// (each entity's pipe state knows its index) and the audit's round-robin cursor.
-	var/list/free_frames = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/parked = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/audit_cursor = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/free_frames = list()
+	var/list/parked = list()
+	var/list/audit_cursor = list()
 	/// Stage profile: "[stage type]" -> sampled ms and calls (pipeline profile_stride).
-	var/list/stage_cost = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/stage_calls = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/stage_cost = list()
+	var/list/stage_calls = list()
 	/// Frames run by profiling pipelines (the stage profiler samples every Nth).
 	var/pipe_frames = 0
 
 	/// behaviour id -> list(OM_STAT_LEN) counters.
-	var/list/stats = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/list/errors = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/stats = list()
+	var/list/errors = list()
 	/// Tests expecting an error: recorded, no stack trace.
 	var/expect_errors = FALSE
 	var/last_run_ms = 0

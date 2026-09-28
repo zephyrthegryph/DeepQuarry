@@ -293,7 +293,7 @@
 
 // ---------------------------------------------------------------- events
 
-/// Notification (was COMSIG_CLIMBABLE_START_CLIMB): `user` tries to climb the object.
+/// Notification: `user` tries to climb the object.
 /datum/om/event/climb_start
 	coalesce = FALSE
 	/// The climbing mob.
@@ -308,7 +308,7 @@
 /datum/om/behaviour/proc/on_climb_start(datum/E, datum/om/event/climb_start/event)
 	return
 
-/// Notification (was COMSIG_CLIMBABLE_SHAKE_CLIMBERS): the object is shaken; climbers
+/// Notification: the object is shaken; climbers
 /// fall off. `user` is who shook it, or null (a crate opening, a solar panel moving).
 /datum/om/event/climb_shake
 	coalesce = FALSE

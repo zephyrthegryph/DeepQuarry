@@ -159,7 +159,7 @@
 
 // ---------------------------------------------------------------- events
 
-/// Veto (was COMSIG_LIVING_STUMBLED_INTO): `bumper` stumbles into the mob.
+/// Veto: `bumper` stumbles into the mob.
 /datum/om/event/before/stumbled_into
 	/// The mob stumbling in.
 	var/bumper
@@ -173,7 +173,7 @@
 /datum/om/behaviour/proc/on_before_stumbled_into(datum/E, datum/om/event/before/stumbled_into/event)
 	return
 
-/// Veto (was COMSIG_LIVING_FALLING_DOWN): the mob falls onto `landing`, onto `drop_mob` if any.
+/// Veto: the mob falls onto `landing`, onto `drop_mob` if any.
 /datum/om/event/before/falling_down
 	var/landing
 	var/drop_mob
@@ -188,7 +188,7 @@
 /datum/om/behaviour/proc/on_before_falling_down(datum/E, datum/om/event/before/falling_down/event)
 	return
 
-/// Veto (was COMSIG_LIVING_HIT_BY_THROWN_ENTITY): the mob is hit by thrown `hitby`.
+/// Veto: the mob is hit by thrown `hitby`.
 /datum/om/event/before/hit_by_thrown
 	var/hitby
 	var/thrower

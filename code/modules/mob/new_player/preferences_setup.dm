@@ -257,12 +257,11 @@
 //   1. update_preview_icon() — dresses the mannequin and queues an async
 //      iconforge render of character_preview_b64 (see preview_async.dm).
 //      Stays inside update_preference's call stack, but isn't itself recursive.
-//   2. After the rebuild, mark "push pending" and addtimer the actual
+//   2. After the rebuild, mark "push pending" and om_after the actual
 //      send_full_update fan-out. The push runs on a fresh stack one tick later.
 //
-// Multiple rapid pref changes coalesce because both the addtimer call uses
-// TIMER_UNIQUE | TIMER_OVERRIDE and the dq_push_pending guard skips re-queuing
-// if a push is already on its way.
+// Multiple rapid pref changes coalesce because the dq_push_pending guard
+// skips re-queuing if a push is already on its way.
 
 /datum/preferences/proc/update_preview_icon_lazy()
 	if(updating_preview_icon)

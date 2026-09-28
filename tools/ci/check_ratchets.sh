@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Ratcheted rewrite lints (doc/rewrite/roadmap.md, Guardrails). Each fails when a
-# count rises above its ceiling (tools/ci/*_baseline.txt); a justified keep is an inline
+# Ratcheted rewrite lints (doc/rewrite/roadmap.md, Guardrails). Each fails on a site
+# not held in its fingerprint baseline (tools/ci/*_baseline.txt, printed as file:line); a justified keep is an inline
 # `// ALLOW(<lint>): <reason>` (tools/ci/allow_annotations.py). Runs every lint, then reports.
 # doc/rewrite/object_model_core.md sec 16 ("One way to do X") maps each banned
 # alternative to the lint here that counts it.

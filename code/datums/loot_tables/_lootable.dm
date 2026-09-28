@@ -30,7 +30,7 @@
 	/// The /datum/loot_table this atom drops from when searched, or null.
 	var/loot_table_type
 
-/// Drops loot from this atom's loot table for `L` (was COMSIG_LOOT_REWARD).
+/// Drops loot from this atom's loot table for `L`.
 /atom/proc/loot_reward(mob/living/L, list/searched_by, wake_chance = 0)
 	if(!loot_table_type)
 		return

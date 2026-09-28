@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 /datum/world_service/statpanels
 	name = "Stat Panels"
 	lane = /datum/om/behaviour/world/statpanels
-	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton
+	var/list/currentrun = list()
 	var/list/global_data
 	var/list/mc_data
 	var/list/mc_metrics
