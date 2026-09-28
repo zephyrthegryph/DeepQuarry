@@ -31,6 +31,12 @@ SUBSYSTEM_DEF(atoms)
 	/// nodes before the batch ends.
 	var/list/deferred_cable_binds
 
+	/// While a map-load batch initializes, anchored power machines queue their node here
+	/// (machine -> TRUE) instead of one vg_power_bind_machine() each; the batch binds them in one
+	/// vg_power_bind_machine_list() call (doc/rewrite/init_and_turfs.md sec 4.6). Null outside a
+	/// batch. The handle is the machine's own vg_entity, already live, so nothing waits on it.
+	var/list/deferred_machine_binds
+
 	/// Atoms that will be deleted once the subsystem is initialized
 	var/list/queued_deletions = list()
 
@@ -75,6 +81,11 @@ SUBSYSTEM_DEF(atoms)
 	var/cable_owner = isnull(deferred_cable_binds)
 	if(cable_owner)
 		deferred_cable_binds = list()
+	var/machine_owner = isnull(deferred_machine_binds)
+	if(machine_owner)
+		deferred_machine_binds = list()
+	// Heat bodies created by the batch take pre-reserved handles and configure in one call (heat_bind_batch.dm).
+	dq_heat_bind_begin()
 	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
 	CreateAtoms(atoms, atoms_to_return, source)
 	clear_tracked_initalize(source)
@@ -82,6 +93,9 @@ SUBSYSTEM_DEF(atoms)
 		flush_wall_smoothing()
 	if(cable_owner)
 		flush_cable_binds()
+	if(machine_owner)
+		flush_machine_binds()
+	dq_heat_bind_end()
 
 	if(length(late_loaders))
 		for(var/I in 1 to length(late_loaders))
@@ -138,6 +152,14 @@ SUBSYSTEM_DEF(atoms)
 	deferred_cable_binds = null
 	if(length(queued))
 		power_bind_cables(queued)
+
+/// Binds every power machine node the batch queued in one Rust call (after the cables, so the
+/// machines join the batch's knots).
+/datum/controller/subsystem/atoms/proc/flush_machine_binds()
+	var/list/queued = deferred_machine_binds
+	deferred_machine_binds = null
+	if(length(queued))
+		power_bind_machines(queued)
 
 /// Actually creates the list of atoms. Exists solely so a runtime in the creation logic doesn't cause initialized to totally break
 /datum/controller/subsystem/atoms/proc/CreateAtoms(list/atoms, list/atoms_to_return = null, mapload_source = null)

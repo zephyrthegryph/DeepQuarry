@@ -43,6 +43,8 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 	var/can_engrave = FALSE
 	var/is_plating = FALSE
 	var/list/flooring_cache = null // Cached overlays for our edges and corners and junk
+	/// Edge/corner overlay lists by border state (get_edge_overlays()): shared by every floor in that state.
+	var/list/edge_overlay_sets = null
 
 	//Plating types, can be overridden
 	var/plating_type = null
@@ -120,6 +122,29 @@ GLOBAL_LIST_INIT(flooring_types, populate_flooring_types())
 		I.layer = layer
 		LAZYSET(flooring_cache, cache_key, I)
 	return LAZYACCESS(flooring_cache, cache_key)
+
+/// The edge and inner-corner overlays for a floor of this flooring with borders on `has_border`
+/// (cardinal bits) and inner corners on `inner_corners` (diagonal bits), in the order
+/// update_icon() always added them: edges, outer corners, inner corners (doc/rewrite/
+/// init_and_turfs.md sec 3.5). Built once per (flooring, border, corners) and shared by every
+/// floor in that state. Read-only: callers pass it to add_overlay(), which copies.
+/datum/decl/flooring/proc/get_edge_overlays(has_border, inner_corners)
+	var/key = has_border | (inner_corners << 4)
+	var/list/images = LAZYACCESS(edge_overlay_sets, "[key]")
+	if(images)
+		return images
+	images = list()
+	for(var/step_dir in GLOB.cardinal)
+		if(has_border & step_dir)
+			images += get_flooring_overlay("[icon_base]-edge-[step_dir]", "[icon_base]_edges", step_dir)
+	for(var/corner_dir in GLOB.cornerdirs)
+		if((has_border & corner_dir) == corner_dir)
+			images += get_flooring_overlay("[icon_base]-edge-[corner_dir]", "[icon_base]_edges", corner_dir)
+	for(var/corner_dir in GLOB.cornerdirs)
+		if(inner_corners & corner_dir)
+			images += get_flooring_overlay("[icon_base]-corner-[corner_dir]", "[icon_base]_corners", corner_dir)
+	LAZYSET(edge_overlay_sets, "[key]", images)
+	return images
 
 /datum/decl/flooring/grass
 	name = "grass"

@@ -25,6 +25,7 @@
 /// temperature its surroundings impose.
 /atom/proc/get_temperature()
 	if(!isnull(heat_body))
+		HEAT_BODY_RESOLVE(src)
 		var/temperature = vg_heat_body_temperature(heat_body)
 		if(!isnull(temperature))
 			return temperature
@@ -65,6 +66,7 @@
 /atom/proc/heat_capacity_changed()
 	if(isnull(heat_body))
 		return
+	HEAT_BODY_RESOLVE(src)
 	var/list/properties = thermal_properties()
 	if(properties[THERMAL_CAPACITY] > 0)
 		vg_heat_body_capacity(heat_body, properties[THERMAL_CAPACITY])
@@ -79,16 +81,29 @@
 	if(!(capacity > 0))
 		return FALSE
 	var/list/coupling = heat_coupling()
-	heat_body = vg_heat_body_create(capacity, isnull(start_temperature) ? get_ambient_temperature() : start_temperature, coupling[1], coupling[2], heat_path_conductance(properties[THERMAL_CONDUCTANCE]), keep)
+	var/temperature = isnull(start_temperature) ? get_ambient_temperature() : start_temperature
+	var/conductance = heat_path_conductance(properties[THERMAL_CONDUCTANCE])
+	// Inside a bind scope (heat_bind_batch.dm) the handle is a pre-reserved body, usable at
+	// once; its configuration goes to Rust with the rest of the scope's in one call.
+	if(GLOB.dq_heat_bind_depth)
+		heat_body = dq_heat_body_reserve_for(src, capacity, temperature, coupling[1], coupling[2], conductance, keep)
+		if(!isnull(heat_body))
+			return TRUE
+	heat_body = vg_heat_body_create(capacity, temperature, coupling[1], coupling[2], conductance, keep)
 	if(isnull(heat_body))
 		return FALSE
+	heat_body_created()
+	return TRUE
+
+/// This atom's heat body now exists in Rust with its real configuration: what follows its
+/// arrival (create_heat_body(), or a bind scope's flush for a reserved body).
+/atom/proc/heat_body_created()
 	// Watches following this object move onto the new body.
 	for(var/datum/native_watch/heat/W as anything in heat_watches?.Copy())
 		W.relink()
 	// Rules watching this object's temperature subscribe to the new body.
 	if(dq_rules_for_type(type))
 		dq_rules_heat_body_created(src)
-	return TRUE
 
 /// list(HEAT_TARGET_*, target) this atom's body couples to: its turf's air (or
 /// the turf's solid when it has none), or its container's body, or else the
@@ -108,6 +123,7 @@
 /atom/proc/heat_recouple()
 	if(isnull(heat_body))
 		return
+	HEAT_BODY_RESOLVE(src)
 	var/list/coupling = heat_coupling()
 	var/list/properties = thermal_properties()
 	if(!vg_heat_body_couple(heat_body, 0, coupling[1], coupling[2], heat_path_conductance(properties[THERMAL_CONDUCTANCE])))
@@ -123,6 +139,7 @@
 /atom/proc/release_heat_body()
 	if(isnull(heat_body))
 		return
+	dq_heat_bind_forget(src)
 	dq_heat_body_release(src, heat_body)
 	heat_body = null
 
@@ -252,6 +269,7 @@ DECLARE_REF(/datum/native_watch/heat, "target", BACKLIST, "heat_watches")
 
 /datum/native_watch/heat/register()
 	if(!isturf(target))
+		HEAT_BODY_RESOLVE(target)
 		if(keep_body)
 			if(!target.create_heat_body(TRUE))
 				return FALSE

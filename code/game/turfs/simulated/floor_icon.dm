@@ -25,43 +25,21 @@ GLOBAL_DATUM_INIT(no_ceiling_image, /image, new)
 				flooring_override = icon_state
 
 		// Apply edges, corners, and inner corners.
-		var/has_border = 0
 		if(flooring.flags & TURF_HAS_EDGES)
+			var/has_border = 0
 			for(var/step_dir in GLOB.cardinal)
-				var/turf/simulated/floor/T = get_step(src, step_dir)
-				if(!flooring.test_link(src, T))
+				if(!flooring.test_link(src, get_step(src, step_dir)))
 					has_border |= step_dir
-					add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[step_dir]", "[flooring.icon_base]_edges", step_dir))
-
 			//Note: Doesn't actually check northeast, this is bitmath to check if we're edge'd (aka not smoothed) to NORTH and EAST
 			//North = 0001, East = 0100, Northeast = 0101, so (North|East) == Northeast, therefore (North|East)&Northeast == Northeast
-			if((has_border & NORTHEAST) == NORTHEAST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[NORTHEAST]", "[flooring.icon_base]_edges", NORTHEAST))
-			if((has_border & NORTHWEST) == NORTHWEST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[NORTHWEST]", "[flooring.icon_base]_edges", NORTHWEST))
-			if((has_border & SOUTHEAST) == SOUTHEAST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[SOUTHEAST]", "[flooring.icon_base]_edges", SOUTHEAST))
-			if((has_border & SOUTHWEST) == SOUTHWEST)
-				add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-edge-[SOUTHWEST]", "[flooring.icon_base]_edges", SOUTHWEST))
-
+			var/inner_corners = 0
 			if(flooring.flags & TURF_HAS_CORNERS)
 				//Like above but checking for NO similar bits rather than both similar bits.
-				if((has_border & NORTHEAST) == 0) //Are connected NORTH and EAST
-					var/turf/simulated/floor/T = get_step(src, NORTHEAST)
-					if(!flooring.test_link(src, T)) //But not NORTHEAST
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[NORTHEAST]", "[flooring.icon_base]_corners", NORTHEAST))
-				if((has_border & NORTHWEST) == 0)
-					var/turf/simulated/floor/T = get_step(src, NORTHWEST)
-					if(!flooring.test_link(src, T))
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[NORTHWEST]", "[flooring.icon_base]_corners", NORTHWEST))
-				if((has_border & SOUTHEAST) == 0)
-					var/turf/simulated/floor/T = get_step(src, SOUTHEAST)
-					if(!flooring.test_link(src, T))
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[SOUTHEAST]", "[flooring.icon_base]_corners", SOUTHEAST))
-				if((has_border & SOUTHWEST) == 0)
-					var/turf/simulated/floor/T = get_step(src, SOUTHWEST)
-					if(!flooring.test_link(src, T))
-						add_overlay(flooring.get_flooring_overlay("[flooring.icon_base]-corner-[SOUTHWEST]", "[flooring.icon_base]_corners", SOUTHWEST))
+				for(var/corner_dir in GLOB.cornerdirs)
+					if((has_border & corner_dir) == 0 && !flooring.test_link(src, get_step(src, corner_dir))) //Connected on both cardinals, but not the diagonal
+						inner_corners |= corner_dir
+			if(has_border || inner_corners)
+				add_overlay(flooring.get_edge_overlays(has_border, inner_corners))
 
 	// Re-apply floor decals
 	if(LAZYLEN(decals))

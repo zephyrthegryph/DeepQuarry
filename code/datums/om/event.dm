@@ -129,7 +129,12 @@
 			// A handler may hook or unhook while we deliver.
 			hooks = hooks.Copy()
 			for(var/i in 1 to length(hooks) step 2)
-				var/result = call(hooks[i], hooks[i + 1])(E, event)
+				var/datum/listener = hooks[i]
+				// A listener whose OM state is torn down never hears anything: a batched destroy
+				// leaves its hooks on a doomed source for that source's own teardown to drop.
+				if(!listener?.om_rec)
+					continue
+				var/result = call(listener, hooks[i + 1])(E, event)
 				if(isnum(result) && result)
 					event.result |= result
 					if(veto && result == EVENT_VETO)

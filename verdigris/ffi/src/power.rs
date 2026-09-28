@@ -188,6 +188,41 @@ fn power_bind_machine(
     Ok(entity)
 }
 
+/// Bulk bind (`doc/rewrite/init_and_turfs.md` sec 4.6): [`power_bind_machine`]
+/// for every entity in `entities`, with `coords` its `x, y, z` flattened, in
+/// one topology edit. The handles are the machines' existing `vg_entity`s,
+/// so nothing is minted. Bad entries (unbound handle, bad cell) are skipped.
+/// Returns how many nodes were bound.
+#[auxmacros::bind("/proc/vg_power_bind_machine_list")]
+fn power_bind_machine_list(entities: ByondValue, coords: ByondValue) -> Result<ByondValue> {
+    let entities = entities.get_list_values()?;
+    let coords = coords.get_list_values()?;
+    if coords.len() != entities.len() * 3 {
+        bail!("coords must hold 3 values per entity");
+    }
+    let mut nodes = Vec::with_capacity(entities.len());
+    for (entity, xyz) in entities.iter().zip(coords.chunks_exact(3)) {
+        let [x, y, z] = xyz else {
+            unreachable!("chunks_exact(3)");
+        };
+        let (Ok(e), Ok(p)) = (num(entity).and_then(entity::decode), cell(x, y, z)) else {
+            continue;
+        };
+        nodes.push((e, p));
+    }
+    let count = nodes.len();
+    with_world(|w| {
+        w.edit_network::<Cables>(move |host| {
+            for (e, p) in nodes {
+                let _ = host.bind_node(e, p, NODE_MACHINE, PowerNode::Machine);
+            }
+        })
+        .map_err(|err| eyre!("{err}"))
+    })?;
+    #[allow(clippy::cast_precision_loss)]
+    Ok(ByondValue::from(count as f32))
+}
+
 /// Drops `entity`'s cable/machine node (the entity and any component it
 /// holds are untouched; `entity_unbind`/`vg_component_detach` handle
 /// those).

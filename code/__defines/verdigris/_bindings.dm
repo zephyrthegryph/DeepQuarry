@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "809787cfafb47a2b"
+#define VERDIGRIS_ABI "00d63bbd20739000"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -750,6 +750,16 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(h, capacity)
 
+/// Bulk bind, step 2: configures reserved bodies from `args`, flattened 7 per
+/// body: `handle, capacity, temperature, HEAT_TARGET_*, target, conductance,
+/// keep` (as `heat_body_create` takes them). Entries whose handle is not a
+/// reserved body are skipped. Returns how many were configured.
+// /proc/heat_body_configure_list (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_configure_list(args_ref)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_configure_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(args_ref)
+
 // /proc/heat_body_couple (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_couple(h, slot, target_kind, target_ref, conductance)
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_couple_ffi")
@@ -806,6 +816,19 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_release_list_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(bodies)
+
+/// Bulk bind, step 1 (`doc/rewrite/init_and_turfs.md` sec 4.6): `n`
+/// heat-body handles in one call. Each is a live, kept, inert body at once,
+/// so DM may use it immediately (keep, power, couple, set temperature all
+/// work); [`heat_body_configure_list`] gives it its real capacity,
+/// temperature, environment and keep flag later without undoing those
+/// writes. Reads before the configure see the placeholder: DM configures a
+/// pending body before reading it (`/atom/proc/resolve_heat_body()`).
+// /proc/heat_body_reserve (verdigris/ffi/src/heat.rs)
+/proc/vg_heat_body_reserve(n)
+	var/static/__f = load_ext(VERDIGRIS, "byond:heat_body_reserve_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(n)
 
 // /proc/heat_body_set_temperature (verdigris/ffi/src/heat.rs)
 /proc/vg_heat_body_set_temperature(h, temperature)
@@ -1225,6 +1248,17 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_bind_machine_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(entity, x, y, z)
+
+/// Bulk bind (`doc/rewrite/init_and_turfs.md` sec 4.6): [`power_bind_machine`]
+/// for every entity in `entities`, with `coords` its `x, y, z` flattened, in
+/// one topology edit. The handles are the machines' existing `vg_entity`s,
+/// so nothing is minted. Bad entries (unbound handle, bad cell) are skipped.
+/// Returns how many nodes were bound.
+// /proc/vg_power_bind_machine_list (verdigris/ffi/src/power.rs)
+/proc/vg_power_bind_machine_list(entities, coords)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_bind_machine_list_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(entities, coords)
 
 /// Commits pending topology now, instead of at the next `vg_world_tick`
 /// (an explosion or a construction burst wants its region split/merge

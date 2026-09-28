@@ -193,6 +193,7 @@
 #include "dq_latent_tests.dm"
 #include "dq_rule_tests.dm"
 #include "dq_h3_heat_tests.dm"
+#include "dq_boot_bind_tests.dm"
 #include "dq_h4_machine_heat_tests.dm"
 #include "dq_containment_path_tests.dm"
 #include "dq_vore_slot_tests.dm"

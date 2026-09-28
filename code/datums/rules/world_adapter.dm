@@ -121,6 +121,7 @@ DECLARE_REF(/atom, "rx_node", OWNED, null)
 /datum/native_watch/heat/body_appears/register()
 	if(QDELETED(target))
 		return TRUE
+	HEAT_BODY_RESOLVE(target)
 	if(!isnull(target.heat_body) && isnull(vg_heat_body_temperature(target.heat_body)))
 		target.heat_body = null
 	if(!isnull(target.heat_body) && target.heat_body != body)

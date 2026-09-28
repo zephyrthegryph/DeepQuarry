@@ -241,6 +241,7 @@ DECLARE_REF(/datum/material/processed_alloy, "batch_template", OWNED, null)
 			dominant_amount = LAZYACCESS(batch.composition, component)
 	if(dominant)
 		material.icon_colour = dominant.icon_colour
+	material.material_facts_changed()
 	GLOB.name_to_material[key] = material
 	GLOB.processed_material_dedup[fingerprint] = key
 	return key

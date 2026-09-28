@@ -2725,6 +2725,7 @@
 #include "code\modules\games\wizoff.dm"
 #include "code\modules\genetics\side_effects.dm"
 #include "code\modules\ghosttrap\trap.dm"
+#include "code\modules\heat\heat_bind_batch.dm"
 #include "code\modules\heat\heat.dm"
 #include "code\modules\heat\heat_entities.dm"
 #include "code\modules\heat\heat_mobs.dm"
