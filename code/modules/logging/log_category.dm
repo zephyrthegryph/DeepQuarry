@@ -9,7 +9,7 @@
 
 	/// The master category that contains this category
 	var/master_category	// the master category's type; the log holder links the instance (master())
-	var/tmp/master_handle
+	var/tmp/datum/log_category/master_static
 
 	/// Flags to apply to our /datum/log_entry's
 	/// See code/__DEFINES/logging/dm
@@ -108,6 +108,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 
 	return entries
 
-/// LC-refs: the master category instance (the log holder owns it) -- an OM handle.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/log_category/proc/master() as /datum/log_category
-	return om_resolve(master_handle)
+	return master_static
+REF_STATIC(/datum/log_category, "master_static")

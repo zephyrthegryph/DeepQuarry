@@ -50,8 +50,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	/// The type of the last subsystem to be fire()'d.
 	var/last_type_processed
 
-	var/queue_head_handle	//!Start of queue linked list
-	var/queue_tail_handle	//!End of queue linked list (used for appending to the list)
+	var/datum/controller/subsystem/queue_head_static	//!Start of queue linked list
+	var/datum/controller/subsystem/queue_tail_static	//!End of queue linked list (used for appending to the list)
 	var/queue_priority_count = 0 //Running total so that we don't have to loop thru the queue each run to split up the tick
 	var/queue_priority_count_bg = 0 //Same, but for background subsystems
 	var/map_loading = FALSE //!Are we loading in a new map?
@@ -602,8 +602,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		if (SS.init_stage > init_stage)
 			continue
 		SS.queued_time = 0
-		SS.queue_next_handle = null
-		SS.queue_prev_handle = null
+		SS.queue_next_static = null
+		SS.queue_prev_static = null
 		SS.state = SS_IDLE
 		if ((SS.flags & (SS_TICKER|SS_BACKGROUND)) == SS_TICKER)
 			tickersubsystems += SS
@@ -632,8 +632,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		if(!added_to_any)
 			WARNING("[SS.name] subsystem is not SS_NO_FIRE but also does not have any runlevels set!")
 
-	queue_head_handle = null
-	queue_tail_handle = null
+	queue_head_static = null
+	queue_tail_static = null
 	//these sort by lower priorities first to reduce the number of loops needed to add subsequent SS's to the queue
 	//(higher subsystems will be sooner in the queue, adding them later in the loop means we don't have to loop thru them next queue add)
 	sortTim(tickersubsystems, GLOBAL_PROC_REF(cmp_subsystem_priority))
@@ -1112,13 +1112,13 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			log_world("MC: SoftReset: Found bad entry in subsystem list, '[SS]'")
 			continue
 		// The queue links are OM handles: they can't hold bad data, only go stale.
-		SS.queue_next_handle = null
-		SS.queue_prev_handle = null
+		SS.queue_next_static = null
+		SS.queue_prev_static = null
 		SS.queued_priority = 0
 		SS.queued_time = 0
 		SS.state = SS_IDLE
-	queue_head_handle = null
-	queue_tail_handle = null
+	queue_head_static = null
+	queue_tail_static = null
 	queue_priority_count = 0
 	queue_priority_count_bg = 0
 	log_world("MC: SoftReset: Finished.")
@@ -1177,12 +1177,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)
 
-/// LC-refs: the subsystem at the front of the run queue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/controller/master/proc/queue_head() as /datum/controller/subsystem
-	return om_resolve(queue_head_handle)
+	return queue_head_static
+REF_STATIC(/datum/controller/master, "queue_head_static")
 
-/// LC-refs: the subsystem at the back of the run queue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
-	return om_resolve(queue_tail_handle)
+	return queue_tail_static
+REF_STATIC(/datum/controller/master, "queue_tail_static")
 
 REF_OWNED(/datum/controller/master, "stack_end_detector")

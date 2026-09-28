@@ -28,11 +28,11 @@ REF_OWNED_LIST(/datum/category_collection, "categories")
 	var/category_item_type                      // Type of items to initialize
 	var/list/datum/category_item/items          // List of initialized items
 	var/list/datum/category_item/items_by_name  // Associative list of initialized items, by name
-	var/collection_handle	// The collection this group belongs to
+	var/datum/category_collection/collection_static	// The collection this group belongs to
 
 /datum/category_group/New(datum/category_collection/cc)
 	..()
-	collection_handle = om_handle(cc)
+	collection_static = cc
 	items = new()
 	items_by_name = new()
 
@@ -57,22 +57,24 @@ REF_OWNED_LIST(/datum/category_group, "items")
 *****************/
 /datum/category_item
 	var/name = ""
-	var/category_handle	// The group this item belongs to
+	var/datum/category_group/category_static	// The group this item belongs to
 
 /datum/category_item/New(datum/category_group/cg)
 	..()
-	category_handle = om_handle(cg)
+	category_static = cg
 
 /datum/category_item/dd_SortValue()
 	return name
 
-/// LC-refs: the collection this group belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/category_group/proc/collection() as /datum/category_collection
-	return om_resolve(collection_handle)
+	return collection_static
+REF_STATIC(/datum/category_group, "collection_static")
 
-/// LC-refs: the group this item belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/category_item/proc/category() as /datum/category_group
-	return om_resolve(category_handle)
+	return category_static
+REF_STATIC(/datum/category_item, "category_static")
 
 REF_OWNED_VALUES(/datum/category_collection, "categories_by_name")
 

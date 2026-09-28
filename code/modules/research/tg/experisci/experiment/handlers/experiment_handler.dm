@@ -7,7 +7,7 @@
  */
 /datum/component/experiment_handler
 	/// Holds the currently linked techweb to get experiments from
-	var/tmp/linked_web_handle
+	var/tmp/datum/techweb/linked_web_static
 	/// Holds the currently selected experiment
 	var/tmp/selected_experiment_handle
 	/// Holds the list of types of experiments that this experiment_handler can interact with
@@ -70,7 +70,7 @@
 	if (!(config_flags & EXPERIMENT_CONFIG_NO_AUTOCONNECT))
 		var/datum/techweb/connected_web
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, parent)
-		linked_web_handle = om_handle(connected_web)
+		linked_web_static = connected_web
 
 	join_registries()
 
@@ -262,7 +262,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 		return
 	selected_experiment()?.on_unselected(src)
 	selected_experiment_handle = null
-	linked_web_handle = om_handle(new_web)
+	linked_web_static = new_web
 
 /**
  * Unlinks this handler from the selected techweb
@@ -270,7 +270,7 @@ REGISTRY_MEMBERSHIP(/datum/component/experiment_handler, REGISTRY_EXPERIMENT_HAN
 /datum/component/experiment_handler/proc/unlink_techweb()
 	selected_experiment()?.on_unselected(src)
 	selected_experiment_handle = null
-	linked_web_handle = null
+	linked_web_static = null
 
 /**
  * Attempts to link this experiment_handler to a provided experiment
@@ -402,6 +402,7 @@ REF_OWNED(/datum/component/experiment_handler, "start_experiment_callback")
 /datum/component/experiment_handler/proc/selected_experiment() as /datum/experiment
 	return om_resolve(selected_experiment_handle)
 
-/// LC-refs: the linked_web this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/component/experiment_handler/proc/linked_web() as /datum/techweb
-	return om_resolve(linked_web_handle)
+	return linked_web_static
+REF_STATIC(/datum/component/experiment_handler, "linked_web_static")

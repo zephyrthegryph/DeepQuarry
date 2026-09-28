@@ -36,7 +36,7 @@
 	/// Timed refreshing state
 	var/refreshing = FALSE
 	/// Topic state used to determine status/interactability.
-	var/tmp/state_handle
+	var/tmp/datum/tgui_state/state_static
 	/// Rate limit client refreshes to prevent DoS.
 	COOLDOWN_DECLARE(refresh_cooldown)
 	/// The id of any ByondUi elements that we have opened
@@ -74,7 +74,7 @@
 	src.interface = interface
 	if(title)
 		src.title = title
-	src.state_handle = om_handle(src_object.tgui_state())
+	src.state_static = src_object.tgui_state()
 	src.parent_ui_handle = om_handle(parent_ui)
 	if(parent_ui)
 		parent_ui.children += src
@@ -247,7 +247,7 @@
 	if(!QDELETED(user))
 		user.unset_machine()
 
-	state_handle = null
+	state_static = null
 	if(parent_ui())
 		parent_ui().children -= src
 	parent_ui_handle = null
@@ -283,7 +283,7 @@
  * required state datum/ui_state/state Next state
  */
 /datum/tgui/proc/set_state(datum/tgui_state/state)
-	src.state_handle = om_handle(state)
+	src.state_static = state
 
 /**
  * public
@@ -540,9 +540,10 @@
 /datum/tgui/proc/window() as /datum/tgui_window
 	return om_resolve(window_handle)
 
-/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui/proc/state() as /datum/tgui_state
-	return om_resolve(state_handle)
+	return state_static
+REF_STATIC(/datum/tgui, "state_static")
 
 /// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/parent_ui() as /datum/tgui

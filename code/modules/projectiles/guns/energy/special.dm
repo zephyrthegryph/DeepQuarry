@@ -48,7 +48,7 @@
 	cell_type = /obj/item/cell/device/weapon/recharge
 	battery_lock = 1
 
-	var/tmp/gene_handle
+	var/tmp/datum/decl/plantgene/gene_static
 	recoil_mode = 0
 	var/obj/item/stock_parts/micro_laser/emitter
 
@@ -112,7 +112,7 @@
 	if(!genemask)
 		return
 
-	gene_handle = om_handle(GLOB.plant_service.plant_gene_datums[genemask])
+	gene_static = GLOB.plant_service.plant_gene_datums[genemask]
 
 	to_chat(usr, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 
@@ -126,7 +126,7 @@
 	var/obj/item/projectile/energy/floraprune/GP = .
 	// Inserting the upgrade level of the gun to the projectile as there isn't a better way to do this.
 	if(istype(G))
-		G.gene_handle = om_handle(gene())
+		G.gene_static = gene()
 		G.lasermod = emitter.rating
 	else if(istype(GY))
 		GY.lasermod = emitter.rating
@@ -598,6 +598,7 @@
 
 REF_HELD(/obj/item/gun/energy/floragun, "emitter")
 
-/// LC-refs: the gene this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene
-	return om_resolve(gene_handle)
+	return gene_static
+REF_STATIC(/obj/item/gun/energy/floragun, "gene_static")

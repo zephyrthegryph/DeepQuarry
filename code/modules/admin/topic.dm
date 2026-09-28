@@ -1499,7 +1499,7 @@
 					WANTED.body = src.admincaster_feed_message.body                   //Wanted desc
 					WANTED.backup_author = src.admincaster_signature                  //Submitted by
 					WANTED.is_admin_message = 1
-					GLOB.news_network.wanted_issue_handle = om_handle(WANTED)
+					GLOB.news_network.wanted_issue_owned = WANTED
 					for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 						NEWSCASTER.newsAlert()
 						NEWSCASTER.update_icon()
@@ -1517,7 +1517,7 @@
 		if(isnull(choice))
 			return
 		if(choice=="Confirm")
-			GLOB.news_network.wanted_issue_handle = null
+			GLOB.news_network.wanted_issue_owned = null
 			for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 				NEWSCASTER.update_icon()
 			src.admincaster_screen=17

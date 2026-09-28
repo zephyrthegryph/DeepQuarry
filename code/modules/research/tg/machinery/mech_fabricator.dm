@@ -40,7 +40,7 @@
 	var/component_coeff = 1
 
 	/// Reference to the techweb.
-	var/tmp/stored_research_handle
+	var/tmp/datum/techweb/stored_research_static
 
 	/// Reference to a remote material inventory, such as an ore silo.
 	var/datum/component/remote_materials/rmat
@@ -78,7 +78,7 @@ REF_VAR(/obj/machinery/mecha_part_fabricator_tg, DEF, /datum/design_techweb, bei
 	if(!stored_research())
 		var/datum/techweb/connected_web
 		CONNECT_TO_RND_SERVER_ROUNDSTART(connected_web, src)
-		stored_research_handle = om_handle(connected_web)
+		stored_research_static = connected_web
 	if(stored_research())
 		on_connected_techweb()
 
@@ -87,7 +87,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
 		UnregisterSignal(stored_research(), list(COMSIG_TECHWEB_ADD_DESIGN, COMSIG_TECHWEB_REMOVE_DESIGN))
-	stored_research_handle = om_handle(new_techweb)
+	stored_research_static = new_techweb
 	if(!isnull(stored_research()))
 		on_connected_techweb()
 
@@ -579,9 +579,10 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()
 	return process_queue
 
-/// LC-refs: the stored_research this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
-	return om_resolve(stored_research_handle)
+	return stored_research_static
+REF_STATIC(/obj/machinery/mecha_part_fabricator_tg, "stored_research_static")
 
 /// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb

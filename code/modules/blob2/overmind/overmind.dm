@@ -25,7 +25,7 @@
 	universal_understand = TRUE
 
 	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/tmp/default_language_handle
+	var/tmp/datum/language/default_language_static
 
 /mob/observer/blob/get_default_language()
 	return default_language()
@@ -50,7 +50,7 @@
 	for(var/L in has_langs)
 		languages |= GLOB.all_languages[L]
 	if(languages.len)
-		default_language_handle = om_handle(languages[1])
+		default_language_static = languages[1]
 
 	return ..()
 
@@ -168,6 +168,7 @@ REF_OWNED(/mob/observer/blob, "blob_type")
 /mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
 	return om_resolve(blob_core_handle)
 
-/// LC-refs: the default_language this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /mob/observer/blob/proc/default_language() as /datum/language
-	return om_resolve(default_language_handle)
+	return default_language_static
+REF_STATIC(/mob/observer/blob, "default_language_static")

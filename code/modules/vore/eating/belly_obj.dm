@@ -91,7 +91,7 @@
 	var/resist_triggers_animation = TRUE
 	var/size_factor_for_sprite = 1
 	var/belly_sprite_to_affect = "stomach"
-	var/tmp/tail_to_change_to_handle
+	var/tmp/datum/sprite_accessory/tail/tail_to_change_to_static
 	var/tmp/tail_colouration = FALSE
 	var/tmp/tail_extra_overlay = FALSE
 	var/tmp/tail_extra_overlay2 = FALSE
@@ -1258,9 +1258,10 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
 
-/// LC-refs: the tail_to_change_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
-	return om_resolve(tail_to_change_to_handle)
+	return tail_to_change_to_static
+REF_STATIC(/obj/belly, "tail_to_change_to_static")
 
 /// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg

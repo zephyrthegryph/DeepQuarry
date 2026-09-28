@@ -7,8 +7,8 @@
 	opacity = 1
 	anchored = TRUE
 	var/excavation_level = 0
-	var/tmp/geological_data_handle
-	var/tmp/artifact_find_handle
+	var/tmp/datum/geosample/geological_data_static
+	var/tmp/datum/artifact_find/artifact_find_static
 	var/last_act = 0
 
 /obj/structure/boulder/Initialize(mapload)
@@ -103,10 +103,12 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 		if(istype(M.selected,/obj/item/mecha_parts/mecha_equipment/tool/drill))
 			M.selected.action(src)
 
-/// LC-refs: the geological_data this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/boulder/proc/geological_data() as /datum/geosample
-	return om_resolve(geological_data_handle)
+	return geological_data_static
+REF_STATIC(/obj/structure/boulder, "geological_data_static")
 
-/// LC-refs: the artifact_find this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/boulder/proc/artifact_find() as /datum/artifact_find
-	return om_resolve(artifact_find_handle)
+	return artifact_find_static
+REF_STATIC(/obj/structure/boulder, "artifact_find_static")

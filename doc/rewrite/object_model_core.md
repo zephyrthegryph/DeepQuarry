@@ -511,10 +511,51 @@ One mechanism does this for every deferred record: `om_capture_args()` at record
 - *live links* (this object is attached to, controls or watches that one) become relations or slots (§7);
 - *"remember who it was"* references (last attacker, forensics, logs, UI selections, refs held by tgui or clients, saved IDs) become OM handles, stored as the handle and resolved with `om_resolve(h)` when read.
 
+**Ownership: every datum has exactly one owner.** A datum is owned by exactly one thing: its
+location (an atom in the world or in contents), a holder that created it (`REF_OWNED`), a
+registry or subsystem (singletons, flyweights, definitions), or a relation. Everything else that
+names it is a *non-owning* reference, and the kind of that reference follows from who the owner is:
+
+- the target is a **singleton, service or flyweight** (a subsystem, a `/datum/material`, a seed, a
+  `tgui_state`, a techweb, a decl): hold it strongly with `REF_STATIC`, or better keep no var at all
+  and read it from its registry or service accessor at the use site;
+- the target was **created by the holder** and nothing else keeps it: the holder owns it
+  (`REF_OWNED`), or holds it (`REF_HELD`, or a `tmp` strong var for an internal cursor);
+- the target is **another live entity whose lifetime something else manages** (a mob, a machine,
+  a ticket, an expedition site): only then an OM handle.
+
+A handle is not a reference. When a handle was the only thing naming its target, BYOND collected
+the target at once (the shuttle `landed_holder` bug; a draft warrant, a newscaster wanted issue, a
+cloned starcaster article, the script interpreter's scopes, a diverged seed). The LC-refs sweep
+turned ~860 vars into `X_handle` + `X()` accessors without asking who owns the target; the handle
+audit (`rewrite/g-handles`) re-classified them. Singleton and flyweight types are marked with
+`OM_STATIC_TYPE(path)` (`code/datums/lifecycle/static_types.dm`, or next to the type), which also
+answers `om_static_type()` at runtime. `tools/ci/handle_kinds_lint.py` (in `check_ratchets.sh`)
+refuses (a) a handle var whose typed accessor targets an `OM_STATIC_TYPE`/`DEF_TYPES` type, or
+`om_handle(SSfoo)`, and (b) a handle that is a new datum's only owner: `om_handle(new /datum/...)`,
+`om_handle(x.clone())`, or a `new` local handed to `om_handle()` with no other use that keeps it.
+Escape: `// ALLOW(handle_kinds): <reason>`.
+
+| Kind | Declared with | Holds | On the holder's destruction | Leak check | Use for |
+|---|---|---|---|---|---|
+| STATIC | `REF_STATIC(type, names)` | strong | untouched | never reported | round-long singletons, services, flyweights, definitions |
+| OWNED | `REF_OWNED` / `_LIST` / `_VALUES` | strong | target deleted (phase 4) | reported if left | a child the holder created and nothing else owns |
+| HELD | `REF_HELD` | strong | var nulled if the target is destroyed inside the holder | reported if left | a thing in the holder's contents with no policy of its own |
+| PAIR | `REF_PAIR` / `REF_PAIR_VAR` | strong, both sides | both sides nulled | reported if left | a two-sided link kept in sync by `link_set()` / `link_clear()` |
+| BACK | `REF_BACK` | strong | ours nulled, theirs too if it points at us | reported if left | a child naming its owner (never `REF_OWNED`: ownership is a tree) |
+| BACKLIST | `REF_BACKLIST` / `_VAR` | strong | removed from the owner's list | reported if left | membership in another object's list |
+| KEEP | `REF_KEEP` | strong | deliberately left set | never reported | a value read after destruction (an id the GC report reads) |
+| DEF | `REF_DEF` (implicit for `DEF_TYPES`) | strong | untouched | reported only if deleted | frozen definitions and registry objects |
+| handle | a text var, `om_handle()` / `om_resolve()` | weak | nothing to clear | text, never reported | another live entity whose lifetime something else manages |
+
+`REF_STATIC` and `REF_DEF` differ only in the leak check (a static var is exempt from it
+outright, like `REF_KEEP`); new code uses `REF_STATIC` for singletons and flyweights.
+
 **LC-refs: every object-typed var is declared.** Every datum-typed instance var or list is exactly one of:
 1. a **relation or slot** (no view field: the relation's accessor is the reader);
 2. an **owned child** (`REF_OWNED`/`REF_OWNED_LIST`), deleted with its owner;
-3. an **OM handle** (a text var, not an object reference);
+3. an **OM handle** (a text var, not an object reference), only for another live entity whose lifetime something else manages (see Ownership above);
+3a. a **static reference** (`REF_STATIC`) to a singleton or flyweight;
 4. a **declared cache** with an invalidation rule (`declared_cache_vars()`, naming the channel or event that clears it).
 
 A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones and is ratcheted to 0. Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
@@ -1184,7 +1225,7 @@ spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 | Name a DM-owned key | a number from `om_world_key_id()` | a string key | `api_lints.py` (`string_keys`), `check_grep.sh` |
 | Run periodic work | a periodic lane (`PERIODIC_START(E, lane)`) or the machine pipeline, parked when idle (§4.10) | `process()`, `START_PROCESSING` | `pollers_lint.py` |
 | Wait for a deadline | `om_after()` / `om_deadline()` | comparing `world.time` with a stored deadline in periodic work | `check_deadline_polling.py` |
-| Remember an object | an OM handle, `om_handle(E)` / `om_resolve(h)` (§4.11) | `weakref` | `scheduler_lints.py` (`weakref`) |
+| Remember an object | an OM handle, `om_handle(E)` / `om_resolve(h)` (§4.11), for another live entity only | `weakref`; a handle to a singleton/flyweight; a handle as a new datum's only owner | `scheduler_lints.py` (`weakref`), `handle_kinds_lint.py` |
 | Hold an object reference | a relation or slot, an owned child, an OM handle, a declared cache (§4.11), `REF_DEF` for a frozen definition or registry object (implicit for `DEF_TYPES`), or `REF_TRANSIENT` on a pooled type; declared with the `REF_*` forms or one-place `REF_VAR` ([lifecycle.md §4](lifecycle.md#4-declared-references)) | an undeclared object-typed var; `REF_TRANSIENT` on a type that isn't pooled | `scheduler_lints.py` (`lc_refs`), `declared_refs_lint.py` |
 | Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `REF_TRANSIENT` ([lifecycle.md §4.1](lifecycle.md#41-one-place-declarations-and-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
 | Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |

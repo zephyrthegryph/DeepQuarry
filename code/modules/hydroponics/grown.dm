@@ -11,7 +11,7 @@
 	pickup_sound = 'sound/items/pickup/herb.ogg'
 
 	var/plantname
-	var/tmp/seed_handle
+	var/tmp/datum/seed/seed_static
 	var/potency = -1
 	special_handling = TRUE
 
@@ -31,7 +31,7 @@
 		log_runtime("Plantname not provided and [src] requires it at [x],[y],[z]")
 		return INITIALIZE_HINT_QDEL
 
-	seed_handle = om_handle(GLOB.plant_service.seeds[plantname])
+	seed_static = GLOB.plant_service.seeds[plantname]
 
 	if(!seed())
 		log_runtime("Plant name '[plantname]' does not exist and [src] requires it at [x],[y],[z]")
@@ -378,6 +378,7 @@ GLOBAL_LIST_EMPTY(fruit_icon_cache)
 		GLOB.fruit_icon_cache["slice-[rind_colour]"] = I
 	add_overlay(GLOB.fruit_icon_cache["slice-[rind_colour]"])
 
-/// LC-refs: the seed this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
-	return om_resolve(seed_handle)
+	return seed_static
+REF_STATIC(/obj/item/reagent_containers/food/snacks/grown, "seed_static")

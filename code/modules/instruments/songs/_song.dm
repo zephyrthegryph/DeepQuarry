@@ -43,7 +43,7 @@
 
 	//////////// Cached instrument variables /////////////
 	/// Instrument we are currently using
-	var/tmp/using_instrument_handle
+	var/tmp/datum/instrument/using_instrument_static
 	/// Cached legacy ext for legacy instruments
 	var/cached_legacy_ext
 	/// Cached legacy dir for legacy instruments
@@ -141,7 +141,7 @@
 	lines = null
 	if(using_instrument())
 		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
-		using_instrument_handle = null
+		using_instrument_static = null
 	allowed_instrument_ids = null
 	parent_handle = null
 	return ..()
@@ -172,7 +172,7 @@
 	if(using_instrument())
 		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
-	using_instrument_handle = null
+	using_instrument_static = null
 	cached_samples = null
 	cached_legacy_ext = null
 	cached_legacy_dir = null
@@ -180,7 +180,7 @@
 	if(istext(I) || ispath(I))
 		I = instrument_service().instrument_data[I]
 	if(istype(I))
-		using_instrument_handle = om_handle(I)
+		using_instrument_static = I
 		LAZYADD(I.songs_using, om_handle(src))
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
@@ -448,9 +448,10 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/parent() as /atom
 	return om_resolve(parent_handle)
 
-/// LC-refs: the using_instrument this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/song/proc/using_instrument() as /datum/instrument
-	return om_resolve(using_instrument_handle)
+	return using_instrument_static
+REF_STATIC(/datum/song, "using_instrument_static")
 
 /// LC-refs: the music_player this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/song/proc/music_player() as /atom

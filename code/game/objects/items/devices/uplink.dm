@@ -19,7 +19,7 @@
 
 	var/offer_time = 10 MINUTES			//The time increment per discount offered
 	var/next_offer_time
-	var/discount_item_handle	//The item to be discounted
+	var/datum/uplink_item/discount_item_static	//The item to be discounted
 	var/discount_amount					//The amount as a percent the item will be discounted by
 	var/compact_mode = FALSE
 
@@ -63,7 +63,7 @@
 		return INITIALIZE_HINT_QDEL
 
 /obj/item/uplink/hidden/next_offer()
-	discount_item_handle = om_handle(GLOB.default_uplink_selection.get_random_item(INFINITY))
+	discount_item_static = GLOB.default_uplink_selection.get_random_item(INFINITY)
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
 	next_offer_time = world.time + offer_time
 	SStgui.update_uis(src)
@@ -254,6 +254,7 @@
 	. = ..()
 	hidden_uplink_handle = om_handle(new /obj/item/uplink/hidden(src))
 
-/// LC-refs: discount item -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item
-	return om_resolve(discount_item_handle)
+	return discount_item_static
+REF_STATIC(/obj/item/uplink, "discount_item_static")

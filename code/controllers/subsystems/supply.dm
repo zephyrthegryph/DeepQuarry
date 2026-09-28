@@ -860,7 +860,7 @@ SUBSYSTEM_DEF(supply)
 
 	new_order.ordernum = ++ordernum // Ordernum is used to track the order between the playerside list of orders and the adminside list
 	new_order.index = new_order.ordernum // Index can be fabricated, or falsified. Ordernum is a permanent marker used to track the order
-	new_order.object_handle = om_handle(S)
+	new_order.supply_pack_static = S
 	new_order.name = S.name
 	new_order.cost = S.cost
 	new_order.market_listing_id = market_listing_id
@@ -894,7 +894,7 @@ SUBSYSTEM_DEF(supply)
 
 	adm_order.ordernum = new_order.ordernum
 	adm_order.index = new_order.index
-	adm_order.object_handle = om_handle(new_order.supply_pack_of())
+	adm_order.supply_pack_static = new_order.supply_pack_of()
 	adm_order.name = new_order.name
 	adm_order.cost = new_order.cost
 	adm_order.funding_department = new_order.funding_department
@@ -976,7 +976,7 @@ SUBSYSTEM_DEF(supply)
 /datum/supply_order
 	var/ordernum							// Unfabricatable index
 	var/index								// Fabricatable index
-	var/object_handle
+	var/datum/supply_pack/supply_pack_static
 	var/cost								// Cost of the supply pack (Fabricatable) (Changes not reflected when purchasing supply packs, this is cosmetic only)
 	var/name								// Name of the supply pack datum (Fabricatable)
 	var/ordered_by = null					// Who requested the order
@@ -997,6 +997,7 @@ SUBSYSTEM_DEF(supply)
 #undef ALLOCATION_POLICY_PAYROLL
 #undef DEPARTMENT_BASE_OPERATING_ALLOCATION
 
-/// LC-refs: the supply pack this order is for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: the supply pack this order is for (a shared definition, held strongly).
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
-	return om_resolve(object_handle)
+	return supply_pack_static
+REF_STATIC(/datum/supply_order, "supply_pack_static")

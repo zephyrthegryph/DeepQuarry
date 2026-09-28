@@ -120,7 +120,7 @@
 
 	if(istype(object, /obj/structure/table) && material)
 		var/obj/structure/table/table = object
-		table.material_handle = om_handle(material)
+		table.material_static = material
 		table.update_connections(TRUE)
 		table.update_icon()
 		table.update_desc()

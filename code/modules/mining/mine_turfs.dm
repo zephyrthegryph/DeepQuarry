@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	var/rock_icon_path = 'icons/turf/walls.dmi' // Override this on a subtype turf if you want a custom icon
 	var/random_icon = 0
 
-	var/tmp/mineral_handle
+	var/tmp/datum/ore/mineral_static
 	var/sand_dug
 	var/mined_ore = 0
 	var/last_act = 0
@@ -321,7 +321,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 			if(prob(mineral().spread_chance))
 				var/turf/simulated/mineral/target_turf = get_step(src, trydir)
 				if(istype(target_turf) && target_turf.density && !target_turf.mineral())
-					target_turf.mineral_handle = om_handle(mineral())
+					target_turf.mineral_static = mineral()
 					target_turf.UpdateMineral()
 					target_turf.MineralSpread()
 
@@ -597,7 +597,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 	if(artifact_find)
 		//boulder with an artifact inside
 		B = new(src)
-		B.artifact_find_handle = om_handle(artifact_find)
+		B.artifact_find_static = artifact_find
 
 	if(B)
 		GetDrilled(0)
@@ -716,7 +716,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 		mineral_name = pickweight(list(ORE_MARBLE = 3, ORE_QUARTZ = 10, ORE_COPPER = 20, ORE_TIN = 15, ORE_BAUXITE = 15, ORE_URANIUM = 10, ORE_PLATINUM = 10, ORE_HEMATITE = 70, ORE_RUTILE = 15, ORE_CARBON = 70, ORE_DIAMOND = 2, ORE_GOLD = 10, ORE_SILVER = 10, ORE_PHORON = 20, ORE_LEAD = 3, ORE_VOPAL = 1, ORE_VERDANTIUM = 1, ORE_PAINITE = 1))
 
 	if(mineral_name && (mineral_name in GLOB.ore_data))
-		mineral_handle = om_handle(GLOB.ore_data[mineral_name])
+		mineral_static = GLOB.ore_data[mineral_name]
 		UpdateMineral()
 	update_icon()
 
@@ -745,6 +745,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache)
 
 REF_OWNED(/turf/simulated/mineral, list("geologic_data", "artifact_find"))
 
-/// LC-refs: the mineral this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /turf/simulated/mineral/proc/mineral() as /datum/ore
-	return om_resolve(mineral_handle)
+	return mineral_static
+REF_STATIC(/turf/simulated/mineral, "mineral_static")

@@ -1,13 +1,13 @@
 /datum/sun_holder
 	var/atom/movable/sun_visuals/sun
-	var/tmp/our_planet_handle
+	var/tmp/datum/planet/our_planet_static
 
 	var/our_color = "#FFFFFF"
 	var/our_brightness = 1.0
 
 /datum/sun_holder/New(source)
 	sun = new(null)
-	our_planet_handle = om_handle(source)
+	our_planet_static = source
 
 /datum/sun_holder/proc/update_color(new_color)
 	// Doesn't save much work, but might save a smidge of client work
@@ -194,6 +194,7 @@
 
 REF_OWNED(/datum/sun_holder, "sun")
 
-/// LC-refs: the our_planet this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/sun_holder/proc/our_planet() as /datum/planet
-	return om_resolve(our_planet_handle)
+	return our_planet_static
+REF_STATIC(/datum/sun_holder, "our_planet_static")

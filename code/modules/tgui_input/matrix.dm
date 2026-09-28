@@ -79,7 +79,7 @@
 	/// The title of the TGUI window
 	var/title
 	/// The TGUI UI state that will be returned in ui_state(). Default: always_state
-	var/tmp/state_handle
+	var/tmp/datum/tgui_state/state_static
 	/// Internal var to remember if we only passed a path before
 	var/was_path
 
@@ -104,7 +104,7 @@
 	src.message = message
 	src.target_handle = om_handle(target)
 	src.title = title
-	src.state_handle = om_handle(ui_state)
+	src.state_static = ui_state
 	src.was_path = was_path
 	src.matrix_only = matrix_only
 	if(matrix_only)
@@ -337,9 +337,10 @@
 			return FALSE
 		return TRUE
 
-/// LC-refs: the state this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_input_colormatrix/proc/state() as /datum/tgui_state
-	return om_resolve(state_handle)
+	return state_static
+REF_STATIC(/datum/tgui_input_colormatrix, "state_static")
 
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_input_colormatrix/proc/target() as /atom/movable

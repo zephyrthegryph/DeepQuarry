@@ -14,10 +14,10 @@
 #define BREAKING   2
 #define CONTINUING 4
 /datum/n_Interpreter
-	var/tmp/curScope_handle
+	var/tmp/datum/scope/curScope_ref
 	var/datum/scope/globalScope
 	var/datum/node/BlockDefinition/program
-	var/tmp/curFunction_handle
+	var/tmp/datum/node/statement/FunctionDefinition/curFunction_ref
 	var/datum/stack/scopes	= new()
 	var/datum/stack/functions	= new()
 
@@ -76,7 +76,7 @@
 /datum/n_Interpreter/proc/CreateScope(datum/node/BlockDefinition/B)
 	var/datum/scope/S = new(B, curScope())
 	scopes.Push(curScope())
-	curScope_handle = om_handle(S)
+	curScope_ref = S
 	return S
 
 /datum/n_Interpreter/proc/CreateGlobalScope()
@@ -93,17 +93,17 @@ Runs each statement in a block of code.
 	var/is_global = istype(Block, /datum/node/BlockDefinition/GlobalBlock)
 	if(!is_global)
 		if(scope)
-			curScope_handle = om_handle(scope)
+			curScope_ref = scope
 		else
 			CreateScope(Block)
 	else
 		if(!persist)
 			CreateGlobalScope()
-		curScope_handle = om_handle(globalScope)
+		curScope_ref = globalScope
 
 	RunStatements(Block, 1)
 
-	curScope_handle = om_handle(scopes.Pop())
+	curScope_ref = scopes.Pop()
 
 /// The script's sleep(time): suspends the run after the current statement (see <yield_for>).
 /datum/n_Interpreter/proc/script_sleep(time)
@@ -125,9 +125,9 @@ Runs each statement in a block of code.
 		switch(frame[1])
 			if("block")
 				scopes.Push(curScope())
-				curScope_handle = om_handle(frame[4])
+				curScope_ref = frame[4]
 				RunStatements(frame[2], frame[3])
-				curScope_handle = om_handle(scopes.Pop())
+				curScope_ref = scopes.Pop()
 			if("while")
 				RunWhile(frame[2], frame[3], frame[3] - 1)
 			if("func")
@@ -249,7 +249,7 @@ Runs a function block or a proc with the arguments specified in the script.
 			//else
 			//	unspecified param
 			AssignVariable(def.parameters[i], new/datum/node/expression/value/literal(Eval(val)), S)
-		curFunction_handle=om_handle(stmt)
+		curFunction_ref=stmt
 		RunBlock(def.block, S)
 		if(!isnull(yield_for))
 			PushResume(list("func")) // the return handling runs when the run resumes
@@ -286,7 +286,7 @@ Checks a condition and runs either the if block or else block.
 /datum/n_Interpreter/proc/FinishFunction()
 	status &= ~RETURNING
 	returnVal=null
-	curFunction_handle=om_handle(functions.Pop())
+	curFunction_ref=functions.Pop()
 	cur_recursion--
 
 /*
@@ -389,14 +389,14 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 
 REF_OWNED(/datum/n_Interpreter, list("scopes", "functions", "globalScope", "program"))
 
-/// LC-refs: the curFunction this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Interpreter/proc/curFunction() as /datum/node/statement/FunctionDefinition
-	return om_resolve(curFunction_handle)
+	return curFunction_ref
 
 /// LC-refs: associated container for interpeter -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/n_Interpreter/proc/container() as /datum
 	return om_resolve(container_handle)
 
-/// LC-refs: the curScope this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Interpreter/proc/curScope() as /datum/scope
-	return om_resolve(curScope_handle)
+	return curScope_ref

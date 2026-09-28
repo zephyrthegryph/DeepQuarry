@@ -41,7 +41,7 @@ REF_OWNED_LIST(/datum/generated_station_department_definition, list("requirement
 /// Per-station realization of an authored department definition.
 /datum/generated_station_department_instance
 	var/id
-	var/tmp/definition_handle
+	var/tmp/datum/generated_station_department_definition/definition_static
 	var/desired_area = 1
 	var/layout_node_id
 
@@ -445,6 +445,7 @@ REF_OWNED_VALUES(/datum/generated_station_spec, "maintenance_doors")
 #define GENERATED_STATION_TILE_FLOOR "floor"
 #define GENERATED_STATION_TILE_HULL "hull"
 
-/// LC-refs: the definition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/generated_station_department_instance/proc/definition() as /datum/generated_station_department_definition
-	return om_resolve(definition_handle)
+	return definition_static
+REF_STATIC(/datum/generated_station_department_instance, "definition_static")

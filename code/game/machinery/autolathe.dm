@@ -31,7 +31,7 @@
 	///modifier for lathe build speed. Lower values are faster.
 	var/lathe_build_rate = 0.8
 	///Designs related to the autolathe
-	var/stored_research_handle
+	var/datum/techweb/autounlocking/stored_research_static
 	///Designs imported from technology disks that we can print.
 	var/list/imported_designs
 	///The container to hold materials
@@ -56,7 +56,7 @@
 
 	if(!GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
 		GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe] = new /datum/techweb/autounlocking/autolathe
-	stored_research_handle = om_handle(GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
+	stored_research_static = GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe]
 
 	default_apply_parts()
 	RefreshParts()
@@ -571,6 +571,7 @@ REF_OWNED(/obj/machinery/autolathe, "print_sound")
 	if(om_busy(src))
 		icon_state = "[icon_state]_work"
 
-/// LC-refs: stored research -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking
-	return om_resolve(stored_research_handle)
+	return stored_research_static
+REF_STATIC(/obj/machinery/autolathe, "stored_research_static")

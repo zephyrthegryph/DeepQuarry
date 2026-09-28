@@ -21,11 +21,11 @@
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/tmp/our_db_handle	// These persist all round and are never destroyed, just keep a hard ref
+	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
-	our_db_handle = om_handle(SStranscore.db_by_key(db_key))
+	our_db_static = SStranscore.db_by_key(db_key)
 
 REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 
@@ -92,6 +92,7 @@ REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 
 REF_OWNED(/obj/machinery/computer/transhuman/designer, "designer_gui")
 
-/// LC-refs: These persist all round and are never destroyed, just keep a hard ref -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/computer/transhuman/designer/proc/our_db() as /datum/transcore_db
-	return om_resolve(our_db_handle)
+	return our_db_static
+REF_STATIC(/obj/machinery/computer/transhuman/designer, "our_db_static")

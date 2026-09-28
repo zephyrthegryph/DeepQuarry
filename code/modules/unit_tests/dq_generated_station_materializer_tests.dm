@@ -36,12 +36,12 @@
 	docking_definition.minimum_area = 16
 	var/datum/generated_station_department_instance/command = new
 	command.id = "command-1"
-	command.definition_handle = om_handle(command_definition)
+	command.definition_static = command_definition
 	command.desired_area = 165
 	command.layout_node_id = "node-command"
 	var/datum/generated_station_department_instance/docking = new
 	docking.id = "docking-1"
-	docking.definition_handle = om_handle(docking_definition)
+	docking.definition_static = docking_definition
 	docking.desired_area = 165
 	docking.layout_node_id = "node-docking"
 	var/datum/generated_station_layout_node/command_node = new

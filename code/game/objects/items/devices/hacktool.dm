@@ -153,7 +153,7 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 	var/hacktool_handle
 
 /datum/tgui_state/default/must_hack/New(hacktool)
-	src.hacktool_handle = om_handle(hacktool())
+	src.hacktool_handle = om_handle(hacktool)
 	..()
 
 /datum/tgui_state/default/must_hack/can_use_topic(src_object, mob/user)

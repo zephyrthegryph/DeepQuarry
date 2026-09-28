@@ -9,7 +9,7 @@
 	anchored = TRUE
 	density = TRUE
 	circuit = /obj/item/circuitboard/ntnet_relay
-	var/tmp/NTNet_handle	// This is mostly for backwards reference and to allow varedit modifications from ingame.
+	var/tmp/datum/ntnet/NTNet_static	// This is mostly for backwards reference and to allow varedit modifications from ingame.
 	var/enabled = 1				// Set to 0 if the relay was turned off
 	var/dos_failure = 0			// Set to 1 if the relay failed due to (D)DoS attack
 	var/list/dos_sources	// Backwards reference for qdel() stuff
@@ -111,7 +111,7 @@
 	default_apply_parts()
 	if(GLOB.ntnet_global)
 		LAZYADD(GLOB.ntnet_global.relays, src)
-		NTNet_handle = om_handle(GLOB.ntnet_global)
+		NTNet_static = GLOB.ntnet_global
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
 	soundloop = new(list(src), FALSE)
 	if(prob(60)) // 60% chance to change the midloop
@@ -131,7 +131,7 @@
 	if(GLOB.ntnet_global)
 		LAZYREMOVE(GLOB.ntnet_global.relays, src)
 		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet().relays)]")
-		NTNet_handle = null
+		NTNet_static = null
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
 		D.target_handle = null
 		D.error = "Connection to quantum relay severed"
@@ -147,6 +147,7 @@
 
 REF_OWNED(/obj/machinery/ntnet_relay, "soundloop")
 
-/// LC-refs: This is mostly for backwards reference and to allow varedit modifications from ingame. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/ntnet_relay/proc/NTNet() as /datum/ntnet
-	return om_resolve(NTNet_handle)
+	return NTNet_static
+REF_STATIC(/obj/machinery/ntnet_relay, "NTNet_static")

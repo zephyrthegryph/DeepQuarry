@@ -171,7 +171,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Flashes of danger
 	//to_chat(our_human, "Danger Flash")
-	if(om_resolve(halimage))
+	if(halimage)
 		return
 
 	var/list/possible_points = list()
@@ -192,7 +192,7 @@
 		if(3)
 			//to_chat(our_human, "C4")
 			CI = new('icons/obj/assemblies.dmi',target,"plastic-explosive2",OBJ_LAYER+0.01)
-	halimage = om_handle(CI)
+	halimage = CI
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(1,5) SECONDS) //Only seen for a brief moment.
 
@@ -201,7 +201,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//Flashes of danger
 	//to_chat(our_human, "Danger Flash")
-	if(om_resolve(halbody))
+	if(halbody)
 		return
 
 	var/list/possible_points = list()
@@ -221,7 +221,7 @@
 			CI = new('icons/mob/alien.dmi',target,"alienother",TURF_LAYER)
 //		if(5)
 //			CI = new('xcomalien.dmi',target,"chryssalid",TURF_LAYER)
-	halbody = om_handle(CI)
+	halbody = CI
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
 
@@ -259,7 +259,7 @@
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	//food
-	if(om_resolve(halbody))
+	if(halbody)
 		return
 
 	var/list/possible_points = list()
@@ -292,7 +292,7 @@
 		if(10)
 			CI = new('icons/obj/food.dmi',target,"monkeysdelight",TURF_LAYER)
 
-	halbody = om_handle(CI)
+	halbody = CI
 	CI.append_client(our_human.client)
 	om_qdel_after(CI, rand(5,8) SECONDS) //Only seen for a brief moment.
 

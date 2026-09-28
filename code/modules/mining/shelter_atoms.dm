@@ -167,9 +167,9 @@
 /obj/item/survivalcapsule/superpose/get_template()
 	if(template())
 		return
-	template_handle = om_handle(SSmapping.shelter_templates[template_id])
+	template_static = SSmapping.shelter_templates[template_id]
 	if(!template())
-		template_handle = null
+		template_static = null
 
 /obj/item/survivalcapsule/superpose/attack_self(mob/user, modifiers)
 	if(!pod_initialized) // Populate list after round start as map templates might not exist when this item is created.
@@ -198,7 +198,7 @@
 	set category = "Object"
 	if(!used)
 		template_id = null
-		template_handle = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
+		template_static = null // Important to reset both, otherwise the template cannot be reset once the pod has been deployed.
 		unique_id = null
 		to_chat(usr, span_notice("You reset the pod's selection."))
 
@@ -264,7 +264,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	icon = 'icons/obj/device_alt.dmi'
 	w_class = ITEMSIZE_TINY
 	var/template_id = "shelter_alpha"
-	var/tmp/template_handle
+	var/tmp/datum/map_template/shelter/template_static
 	var/used = FALSE
 	var/is_ship = FALSE
 	var/unique_id = null
@@ -273,7 +273,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 /obj/item/survivalcapsule/proc/get_template()
 	if(template())
 		return
-	template_handle = om_handle(SSmapping.shelter_templates[get_template_id()])
+	template_static = SSmapping.shelter_templates[get_template_id()]
 	if(!template())
 		throw EXCEPTION("Shelter template ([template_id]) not found!")
 		qdel(src)
@@ -775,7 +775,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 	icon_state = "table"
 
 /obj/structure/table/survival_pod/Initialize(mapload)
-	material_handle = om_handle(get_material_by_name(MAT_STEEL))
+	material_static = get_material_by_name(MAT_STEEL)
 	. = ..()
 	verbs -= /obj/structure/table/verb/do_flip
 	verbs -= /obj/structure/table/proc/do_put
@@ -942,9 +942,10 @@ EXTEND_INTERACTIONS(/obj/item/gps/computer, INTERACT_HAND_UNGATED(null, PROC_REF
 	layer = BELOW_MOB_LAYER
 	density = FALSE
 
-/// LC-refs: the template this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/survivalcapsule/proc/template() as /datum/map_template/shelter
-	return om_resolve(template_handle)
+	return template_static
+REF_STATIC(/obj/item/survivalcapsule, "template_static")
 
 /// LC-refs: the door this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/button/remote/airlock/survival_pod/proc/door() as /obj/machinery/door/airlock/voidcraft/survival_pod

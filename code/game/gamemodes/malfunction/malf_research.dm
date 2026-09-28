@@ -6,7 +6,7 @@
 	var/list/available_abilities = null				// List of available abilities that may be researched.
 	var/list/unlocked_abilities = null				// List of already unlocked abilities.
 	var/owner_handle			// AI which owns this research datum.
-	var/focus_handle	// Currently researched item
+	var/datum/malf_research_ability/focus_static	// Currently researched item
 
 /datum/malf_research/New()
 	setup_abilities()
@@ -37,7 +37,7 @@
 	if(get_focus().next)
 		available_abilities += get_focus().next
 	unlocked_abilities += get_focus()
-	focus_handle = null
+	focus_static = null
 
 
 // Proc:		process()
@@ -67,6 +67,7 @@
 /datum/malf_research/proc/owner_ref() as /mob/living/silicon/ai
 	return om_resolve(owner_handle)
 
-/// LC-refs: focus -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /datum/malf_research/proc/get_focus() as /datum/malf_research_ability
-	return om_resolve(focus_handle)
+	return focus_static
+REF_STATIC(/datum/malf_research, "focus_static")

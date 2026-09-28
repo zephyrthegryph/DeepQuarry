@@ -97,6 +97,16 @@
 /datum/proc/declared_def_vars()
 	return null
 
+/// Names of `src`'s vars that hold round-long singletons or flyweights strongly
+/// (REF_STATIC): never cleared by destruction, never reported by the leak check.
+/datum/proc/declared_static_vars()
+	return null
+
+/// TRUE for a singleton / flyweight / definition type (OM_STATIC_TYPE): what a
+/// handle may never point at (tools/ci/handle_kinds_lint.py).
+/datum/proc/om_static_type()
+	return FALSE
+
 /// Names of a pooled type's per-use fields (REF_TRANSIENT): pool_release()
 /// resets each to its initial value (code/datums/lifecycle/pool.dm).
 /datum/proc/declared_transient_vars()
@@ -125,6 +135,7 @@
 			"held" = D.declared_held_vars(),
 			"back" = D.declared_back_vars(),
 			"keep" = D.declared_keep_vars(),
+			"static" = D.declared_static_vars(),
 		)
 		// A declaration naming a var the type no longer has (the var was
 		// removed, the REF_* line wasn't) would runtime on D.vars[name] in the

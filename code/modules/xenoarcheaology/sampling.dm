@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	var/tmp/geological_data_handle
+	var/tmp/datum/geosample/geological_data_static
 
 /obj/item/rocksliver/Initialize(mapload)
 	. = ..()
@@ -144,7 +144,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			R.geological_data_handle = om_handle(geo_data)
+			R.geological_data_static = geo_data
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
@@ -179,7 +179,7 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 
 REF_OWNED(/obj/item/core_sampler, "filled_bag")
 
-/// LC-refs: the geological_data this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/item/rocksliver/proc/geological_data() as /datum/geosample
-	return om_resolve(geological_data_handle)
-	return TRUE
+	return geological_data_static
+REF_STATIC(/obj/item/rocksliver, "geological_data_static")

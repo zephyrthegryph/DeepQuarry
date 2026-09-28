@@ -33,10 +33,10 @@
 	Var: curToken
 	The token at <index> in <tokens>.
 */
-	var/tmp/curToken_handle
+	var/tmp/datum/token/curToken_ref
 	var/datum/stack/blocks=new
 	var/datum/node/BlockDefinition/GlobalBlock/global_block=new
-	var/tmp/curBlock_handle
+	var/tmp/datum/node/BlockDefinition/curBlock_ref
 
 /*
 	Proc: Parse
@@ -50,9 +50,9 @@
 */
 /datum/n_Parser/proc/NextToken()
 	if(index>=tokens.len)
-		curToken_handle=null
+		curToken_ref=null
 	else
-		curToken_handle=om_handle(tokens[++index])
+		curToken_ref=tokens[++index]
 	return curToken()
 
 /*
@@ -60,7 +60,7 @@
 	An implmentation of a parser for n_Script.
 */
 /datum/n_Parser/nS_Parser
-	var/tmp/options_handle
+	var/tmp/datum/n_scriptOptions/nS_Options/options_ref
 /*
 	Constructor: New
 
@@ -70,14 +70,14 @@
 */
 /datum/n_Parser/nS_Parser/New(tokens[], datum/n_scriptOptions/options)
 	src.tokens=tokens
-	src.options_handle=om_handle(options)
-	curBlock_handle=om_handle(global_block)
+	src.options_ref=options
+	curBlock_ref=global_block
 	return ..()
 
 /datum/n_Parser/nS_Parser/Parse()
 	ASSERT(tokens)
 	for(,src.index<=src.tokens.len, src.index++)
-		curToken_handle=om_handle(tokens[index])
+		curToken_ref=tokens[index]
 		switch(curToken().type)
 			if(/datum/token/keyword)
 				var/datum/n_Keyword/kw=options().keywords[curToken().value]
@@ -130,11 +130,11 @@
 
 /datum/n_Parser/nS_Parser/proc/AddBlock(datum/node/BlockDefinition/B)
 	blocks.Push(curBlock())
-	curBlock_handle=om_handle(B)
+	curBlock_ref=B
 
 /datum/n_Parser/nS_Parser/proc/EndBlock()
 	if(curBlock()==global_block) return 0
-	curBlock_handle=om_handle(blocks.Pop())
+	curBlock_ref=blocks.Pop()
 	return 1
 
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
@@ -183,16 +183,16 @@
 
 REF_OWNED(/datum/n_Parser, list("blocks", "global_block"))
 
-/// LC-refs: the curToken this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Parser/proc/curToken() as /datum/token
-	return om_resolve(curToken_handle)
+	return curToken_ref
 
-/// LC-refs: the curBlock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Parser/proc/curBlock() as /datum/node/BlockDefinition
-	return om_resolve(curBlock_handle)
+	return curBlock_ref
 
-/// LC-refs: the options this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Parser/nS_Parser/proc/options() as /datum/n_scriptOptions/nS_Options
-	return om_resolve(options_handle)
+	return options_ref
 
 REF_OWNED_LIST(/datum/n_Parser, "errors")

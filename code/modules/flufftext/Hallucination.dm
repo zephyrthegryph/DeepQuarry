@@ -14,8 +14,10 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	dupe_mode = COMPONENT_DUPE_UNIQUE // First come first serve
 
 	VAR_PRIVATE/mob/living/carbon/human/our_human = null
-	VAR_PRIVATE/halimage
-	VAR_PRIVATE/halbody
+	/// The flash-of-danger image this event made and owns; nulled when it is deleted.
+	VAR_PRIVATE/image/client_only/halimage
+	/// The body/food image this event made and owns; nulled when it is deleted.
+	VAR_PRIVATE/image/client_only/halbody
 	VAR_PRIVATE/list/halitem = list() // OM handle pair of obj-key, client-value
 
 	VAR_PRIVATE/hal_crit = FALSE
@@ -32,6 +34,11 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	if(halitem.len)
 		remove_hallucination_item()
 	our_human = null
+	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
+	if(halbody)
+		qdel(halbody)
+	if(halimage)
+		qdel(halimage)
 	halbody = null
 	halimage = null
 	. = ..()

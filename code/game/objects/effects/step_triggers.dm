@@ -188,7 +188,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 /* Teleporter which simulates falling out of the sky. */
 
 /obj/effect/step_trigger/teleporter/planetary_fall
-	var/planet_handle
+	var/datum/planet/planet_static
 
 // First time setup, which planet are we aiming for?
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/find_planet()
@@ -386,9 +386,10 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/teleporter/landmark/proc/the_landmark() as /obj/effect/landmark
 	return om_resolve(the_landmark_handle)
 
-/// LC-refs: planet -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// REF_STATIC: a shared definition/flyweight, held strongly and never cleared.
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/planet() as /datum/planet
-	return om_resolve(planet_handle)
+	return planet_static
+REF_STATIC(/obj/effect/step_trigger/teleporter/planetary_fall, "planet_static")
 
 /// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/step_trigger/autostrip/proc/target_ref() as /obj/effect/autostriptarget
