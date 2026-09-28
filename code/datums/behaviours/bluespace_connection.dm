@@ -1,0 +1,131 @@
+/// Bluespace connection (was /datum/component/bluespace_connection). Makes lockers into
+/// portals: close one with something inside and it comes out of a connected exit. A shared
+/// OM behaviour on the closet_closed and hitby events; the exits live on the closet as
+/// om_handle()s, or, on the permanent network, are GLOB.bslockers.
+/// Connect with C.connect_bluespace(exits) or C.join_bluespace_network().
+/datum/om/behaviour/bluespace_connection
+	handles = list(/datum/om/event/closet_closed, /datum/om/event/hitby)
+
+#define BLUESPACE_EXIT_SOUND 'sound/effects/clang.ogg'
+#define BLUESPACE_THROW_RANGE 3
+#define BLUESPACE_THROW_RANGE_X 5
+#define BLUESPACE_THROW_RANGE_Y 5
+
+/obj/structure/closet
+	/// om_handle()s of the exits this closet's bluespace connection leads to (lazy).
+	var/list/bluespace_exit_handles
+	/// TRUE: the exits are the permanent network (GLOB.bslockers), never severed.
+	var/bluespace_permanent = FALSE
+
+/// Connects this closet to `exits` (closets or other atoms).
+/obj/structure/closet/proc/connect_bluespace(list/exits)
+	for(var/atom/exit_point as anything in exits)
+		var/h = om_handle(exit_point)
+		if(h)
+			LAZYOR(bluespace_exit_handles, h)
+	om_attach(src, /datum/om/behaviour/bluespace_connection)
+
+/// Joins the permanent network of bluespace lockers (GLOB.bslockers).
+/obj/structure/closet/proc/join_bluespace_network()
+	bluespace_permanent = TRUE
+	om_attach(src, /datum/om/behaviour/bluespace_connection)
+
+/obj/structure/closet/proc/bluespace_exits()
+	if(bluespace_permanent)
+		return GLOB.bslockers.Copy()
+	. = list()
+	for(var/h in bluespace_exit_handles)
+		var/atom/exit_point = om_resolve(h)
+		if(exit_point)
+			. += exit_point
+
+/datum/om/behaviour/bluespace_connection/on_closet_closed(obj/structure/closet/assigned_closet, datum/om/event/closet_closed/event)
+	if(isemptylist(assigned_closet.contents))
+		return
+	var/list/exits = assigned_closet.bluespace_exits()
+	if(!length(exits))
+		assigned_closet.sever_bluespace(null)
+		return
+
+	var/exit_point = pick(exits)
+
+	if(exit_point == assigned_closet)
+		assigned_closet.sever_bluespace(exit_point)
+		return
+
+	if(istype(exit_point, /obj/structure/closet))
+		var/obj/structure/closet/exit_closet = exit_point
+		exit_closet.visible_message(span_notice("\The [exit_closet] rumbles..."), span_notice("Something rumbles..."))
+		exit_closet.animate_shake()
+		om_after(exit_closet, 1 SECONDS, TYPE_PROC_REF(/obj/structure/closet, open))
+
+	playsound(exit_point, BLUESPACE_EXIT_SOUND, 50, TRUE)
+	om_after(assigned_closet, 1.3 SECONDS, TYPE_PROC_REF(/obj/structure/closet, bluespace_exit), exit_point, assigned_closet.contents.Copy())
+
+/obj/structure/closet/proc/bluespace_exit(atom/exit_point, list/moving)
+	// Nope, must be closed.
+	if(opened)
+		return
+
+	if(QDELETED(exit_point))
+		sever_bluespace(exit_point)
+		return
+
+	// Now the fun begins
+	if(istype(exit_point, /obj/structure/closet))
+		var/obj/structure/closet/exit_closet = exit_point
+		if(!exit_closet.can_open()) // Bwomp. You're locked now. :)
+			for(var/atom/movable/AM in moving)
+				do_teleport(AM, exit_closet, channel = TELEPORT_CHANNEL_BLUESPACE, no_effects = TRUE)
+			return
+		exit_closet.open()
+
+	var/turf/target = get_offset_target_turf(get_turf(src), rand(BLUESPACE_THROW_RANGE_X)-rand(BLUESPACE_THROW_RANGE_X), rand(BLUESPACE_THROW_RANGE_Y)-rand(BLUESPACE_THROW_RANGE_Y))
+
+	for(var/atom/movable/AM in moving)
+		if(QDELETED(AM))
+			continue
+		do_teleport(AM, get_turf(exit_point), channel = TELEPORT_CHANNEL_BLUESPACE, no_effects = TRUE)
+		if(!isbelly(exit_point))
+			AM.throw_at(target, BLUESPACE_THROW_RANGE, 1)
+
+/datum/om/behaviour/bluespace_connection/on_hitby(obj/structure/closet/assigned_closet, datum/om/event/hitby/event)
+	if(assigned_closet.opened)
+		assigned_closet.close()
+
+/// Drops `removed_exit`; with no exits left the connection is severed. The permanent network only sparks.
+/obj/structure/closet/proc/sever_bluespace(removed_exit)
+	bluespace_sparks()
+	if(bluespace_permanent)
+		return TRUE
+	if(removed_exit)
+		var/h = om_handle(removed_exit)
+		if(h)
+			LAZYREMOVE(bluespace_exit_handles, h)
+	if(!length(bluespace_exits())) // No exit points left, bluespace connection severed.
+		bluespace_exit_handles = null
+		om_detach(src, /datum/om/behaviour/bluespace_connection)
+	return TRUE
+
+/obj/structure/closet/proc/bluespace_sparks()
+	playsound(src, 'sound/effects/sparks6.ogg', 100, TRUE)
+	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
+	sparks.set_up(2, 1, loc)
+	sparks.start()
+
+#undef BLUESPACE_EXIT_SOUND
+#undef BLUESPACE_THROW_RANGE
+#undef BLUESPACE_THROW_RANGE_X
+#undef BLUESPACE_THROW_RANGE_Y
+
+// ---------------------------------------------------------------- events
+
+/// Notification (was COMSIG_CLOSET_CLOSED): the closet closed.
+/datum/om/event/closet_closed
+	coalesce = FALSE
+
+/datum/om/event/closet_closed/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_closet_closed(E, src)
+
+/datum/om/behaviour/proc/on_closet_closed(datum/E, datum/om/event/closet_closed/event)
+	return

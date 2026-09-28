@@ -341,7 +341,8 @@
 
 
 /atom/proc/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	SEND_SIGNAL(src, COMSIG_ATOM_HITBY, source)
+	if(om_wants(src, /datum/om/event/hitby))
+		om_emit(src, new /datum/om/event/hitby(source, throwingdatum))
 	thrown_damage(source, throwingdatum)
 
 /// The thrown-impact adapter. Types whose shape changes how hard a throw lands

@@ -51,8 +51,8 @@
 	if(!entry_point || !exit_point)
 		return
 
-	entry_point.AddComponent(/datum/component/bluespace_connection, list(exit_point))
-	exit_point.AddComponent(/datum/component/bluespace_connection, list(entry_point))
+	entry_point.connect_bluespace(list(exit_point))
+	exit_point.connect_bluespace(list(entry_point))
 
 	log_and_message_admins("Bluespace lockers linked. Entry: [get_area(entry_point)] Exit: [get_area(exit_point)]")
 

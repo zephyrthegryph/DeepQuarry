@@ -20,8 +20,6 @@
 #define COMSIG_ATOM_EXITED "atom_exited"
 ///from base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
 #define COMSIG_ATOM_BUMPED "atom_bumped"
-///from base of atom/hitby(atom/movable/AM, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
-#define COMSIG_ATOM_HITBY "atom_hitby"
 
 
 /// from internal loop in /atom/proc/propagate_radiation_pulse: (atom/pulse_source)

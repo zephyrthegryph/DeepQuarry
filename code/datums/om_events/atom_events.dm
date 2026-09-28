@@ -126,3 +126,21 @@
 
 /datum/om/behaviour/proc/on_before_attack_hand(datum/E, datum/om/event/before/attack_hand/event)
 	return
+
+// ---------------------------------------------------------------- hitby
+
+/// Notification (was COMSIG_ATOM_HITBY): the atom was hit by thrown `source`.
+/datum/om/event/hitby
+	coalesce = FALSE
+	var/source
+	var/throwingdatum
+
+/datum/om/event/hitby/New(source, throwingdatum)
+	src.source = source
+	src.throwingdatum = throwingdatum
+
+/datum/om/event/hitby/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_hitby(E, src)
+
+/datum/om/behaviour/proc/on_hitby(datum/E, datum/om/event/hitby/event)
+	return

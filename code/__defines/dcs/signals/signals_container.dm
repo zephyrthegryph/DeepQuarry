@@ -1,8 +1,6 @@
 // /datum/component/container_item
 
 //NON TG Signals:
-///from /obj/structure/closet/close()
-#define COMSIG_CLOSET_CLOSED "closet_closed"
 
 // Containment ledger (code/datums/containment/). Sent on the holder.
 ///from the ledger before a thing enters one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
