@@ -71,7 +71,7 @@ REF_OWNED(/mob/living/carbon, "cozyloop")
 		germ_level++
 */
 /mob/living/carbon/gib()
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		M.forceMove(src.loc)
 		for(var/mob/N in viewers(src, null))
 			if(N.client)

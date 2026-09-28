@@ -436,7 +436,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 			for(var/x in 1 to w)
 				var/turf/T = locate(x, y, z)
 				var/count = 0
-				for(var/atom/movable/AM as anything in T)
+				for(var/atom/movable/AM as anything in contents_of(T))
 					// Furnishings: pipes and cables would make every block an
 					// engineering corridor.
 					if(istype(AM, /obj/machinery/atmospherics) || istype(AM, /obj/structure/cable))
@@ -484,7 +484,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		turfs++
 		if(T.density)
 			walls++
-		for(var/atom/movable/AM as anything in T)
+		for(var/atom/movable/AM as anything in contents_of(T))
 			movables++
 			if(isobj(AM))
 				objs++

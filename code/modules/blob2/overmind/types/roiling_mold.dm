@@ -24,7 +24,7 @@
 /datum/blob_type/roiling_mold/proc/find_target(obj/structure/blob/B, tries = 0, list/previous_targets = null)
 	if(tries > 3)
 		return
-	var/mob/living/L = locate() in (view(world.view + 3, get_turf(B)) - view(2,get_turf(B)) - previous_targets)	// No adjacent mobs.
+	var/mob/living/L = locate_in_list(view(world.view + 3, get_turf(B)) - view(2,get_turf(B)) - previous_targets, /mob/living)	// No adjacent mobs.
 
 	if(!(L in check_trajectory(L, B, PASSTABLE)))
 		if(!LAZYLEN(previous_targets))

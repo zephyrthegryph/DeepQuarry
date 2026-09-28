@@ -365,7 +365,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 
 	load = null
 
-	for(var/atom/movable/AM in src)
+	for(var/atom/movable/AM in contents_of(src))
 		if(AM == botcard || AM == access_scanner)
 			continue
 

@@ -469,19 +469,19 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 
 	// Cross-pref orchestration that the per-pref apply() can't express alone.
 	if(copy_name)
-		var/datum/preference_apply_hook/name_sanitization/name_hook = locate() in GLOB.preference_apply_hooks
+		var/datum/preference_apply_hook/name_sanitization/name_hook = locate_in_list(GLOB.preference_apply_hooks, )
 		if(name_hook)
 			name_hook.apply(character, src)
 
-	var/datum/preference_apply_hook/gender/gender_hook = locate() in GLOB.preference_apply_hooks
+	var/datum/preference_apply_hook/gender/gender_hook = locate_in_list(GLOB.preference_apply_hooks, )
 	if(gender_hook)
 		gender_hook.apply(character, src)
 
-	var/datum/preference_apply_hook/accessories/accessory_hook = locate() in GLOB.preference_apply_hooks
+	var/datum/preference_apply_hook/accessories/accessory_hook = locate_in_list(GLOB.preference_apply_hooks, )
 	if(accessory_hook)
 		accessory_hook.apply(character, src)
 
-	var/datum/preference_apply_hook/markings/markings_hook = locate() in GLOB.preference_apply_hooks
+	var/datum/preference_apply_hook/markings/markings_hook = locate_in_list(GLOB.preference_apply_hooks, )
 	if(markings_hook)
 		markings_hook.apply(character, src)
 
@@ -567,7 +567,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 		GLOB.wrapped_species_by_ref["\ref[character]"] = bodytype_selected
 
 	// Finalize: same post-apply work the /datum/preference_apply_hook/finalize hook does.
-	for(var/obj/item/clothing/O in character.contents)
+	for(var/obj/item/clothing/O in contents_of(character))
 		O.handle_digitigrade(character)
 	if(character.dna)
 		character.dna.ResetUIFrom(character)

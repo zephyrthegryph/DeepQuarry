@@ -176,7 +176,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	if(operating || !occupant)
 		return
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in src) // ALLOW(latent): materialized above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
 	update_icon()

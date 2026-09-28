@@ -237,13 +237,13 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 			else
 				startPatrol()
 		else
-			if((locate(/obj/machinery/door) in loc) && !src?.pulled_by_mob()) //Don't hang around blocking doors, but don't run off if someone tries to pull us through one.
+			if((locate_within(loc, /obj/machinery/door)) && !src?.pulled_by_mob()) //Don't hang around blocking doors, but don't run off if someone tries to pull us through one.
 				var/turf/my_turf = get_turf(src)
 				var/list/can_go = my_turf.CardinalTurfsWithAccess(botcard)
 				if(LAZYLEN(can_go))
 					if(step_towards(src, pick(can_go)))
 						return
-			for(var/mob in loc)
+			for(var/mob in contents_of(loc))
 				if(isbot(mob) && mob != src) // Same as above, but we also don't want to have bots ontop of bots. Cleanbots shouldn't stack >:(
 					var/turf/my_turf = get_turf(src)
 					var/list/can_go = my_turf.CardinalTurfsWithAccess(botcard)
@@ -339,7 +339,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 /mob/living/bot/proc/getPatrolTurf()
 	var/minDist = INFINITY
-	var/obj/machinery/navbeacon/targ = locate() in get_turf(src)
+	var/obj/machinery/navbeacon/targ = locate_within(get_turf(src), )
 
 	if(!targ)
 		for(var/obj/machinery/navbeacon/N in REGISTRY_MEMBERS(REGISTRY_NAVBEACONS))

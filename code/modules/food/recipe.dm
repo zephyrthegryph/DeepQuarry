@@ -92,7 +92,7 @@
 		var/list/checklist = list()
 		// You should trust Copy().
 		checklist = fruit.Copy()
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in container)
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(container))
 			if(!G.seed() || !G.seed().kitchen_tag || isnull(checklist[G.seed().kitchen_tag]))
 				continue
 			if(check_coating(G))
@@ -130,7 +130,7 @@
 				if(!found && exact)
 					return FALSE
 		else
-			for(var/obj/O in container.contents)
+			for(var/obj/O in contents_of(container))
 				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
 					continue // Fruit is handled in check_fruit().
 				var/found = FALSE
@@ -209,7 +209,7 @@
 	//Find items we need
 	if (items && items.len)
 		for (var/i in items)
-			var/obj/item/I = locate(i) in container
+			var/obj/item/I = locate_in_list(container, i)
 			if (I && I.reagents)
 				I.reagents.trans_to_holder(buffer,I.reagents.total_volume)
 			if(istype(I,/obj/item/holder))
@@ -225,7 +225,7 @@
 		var/list/checklist = list()
 		checklist = fruit.Copy()
 
-		for(var/obj/item/reagent_containers/food/snacks/grown/G in container)
+		for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(container))
 			if(!G.seed() || !G.seed().kitchen_tag || isnull(checklist[G.seed().kitchen_tag]))
 				continue
 

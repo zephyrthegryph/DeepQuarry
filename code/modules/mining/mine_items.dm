@@ -270,7 +270,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 
 /// Old attack_self: plant a flag.
 /obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/stack/flag/F = locate() in get_turf(src)
+	var/obj/item/stack/flag/F = locate_within(get_turf(src), )
 
 	var/turf/T = get_turf(src)
 	if(!T || !ismineralturf(T))
@@ -328,7 +328,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	if(!T || (!istype(T,/turf/simulated/mineral) && !istype(T,/turf/simulated/floor/outdoors) && !istype(T,/turf/simulated/floor/snow) && !istype(T,/turf/snow)))
 		to_chat(user, span_warning("The light won't stand up in this terrain."))
 		return TRUE
-	var/obj/structure/trailblazer/F = locate() in get_turf(src)
+	var/obj/structure/trailblazer/F = locate_within(get_turf(src), )
 	if(F)
 		to_chat(user, span_warning("There is already a light here."))
 		return TRUE
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	return TRUE
 
 /obj/item/stack/lightpole/proc/plant_done(mob/user, turf/T)
-	if(locate(/obj/structure/trailblazer) in T)
+	if(locate_within(T, /obj/structure/trailblazer))
 		return
 	var/obj/structure/trailblazer/newlightpole = new blazer_type(T)
 	newlightpole.visible_message("\The [user] plants \the [newlightpole] firmly in the ground.")

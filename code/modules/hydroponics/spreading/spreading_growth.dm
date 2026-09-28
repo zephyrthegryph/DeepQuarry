@@ -17,7 +17,7 @@
 			continue
 
 		var/blocked = 0
-		for(var/obj/effect/plant/other in floor.contents)
+		for(var/obj/effect/plant/other in contents_of(floor))
 			if(other.seed() == src.seed())
 				blocked = 1
 				break
@@ -139,7 +139,7 @@
 	for(var/turf/simulated/check_turf in get_cardinal_neighbors())
 		if(!istype(check_turf))
 			continue
-		for(var/obj/effect/plant/neighbor in check_turf.contents)
+		for(var/obj/effect/plant/neighbor in contents_of(check_turf))
 			LAZYOR(neighbor.neighbors, check_turf)
 			GLOB.plant_service.add_plant(neighbor)
 	om_qdel_after(src, 1)

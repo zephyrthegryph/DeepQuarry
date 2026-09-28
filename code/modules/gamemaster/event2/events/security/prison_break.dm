@@ -212,7 +212,7 @@
 	for(var/area/A in areas_to_break)
 		var/obj/machinery/power/apc/apc = A.get_apc()
 		if(istype(apc) && apc.operating)	//If the apc's off, it's a little hard to overload the lights.
-			for(var/obj/machinery/light/L in A)
+			for(var/obj/machinery/light/L in contents_of(A))
 				L.flicker(10)
 
 /datum/event2/event/prison_break/start()

@@ -97,7 +97,7 @@ REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "s
 			return
 		if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 			return
-		if(locate(/mob/living/simple_mob/animal/solargrub_larva) in M) // ALLOW(latent): mobs are never latent
+		if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva)) // ALLOW(latent): mobs are never latent
 			return
 		enter_machine(M)
 		return TRUE
@@ -237,7 +237,7 @@ REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "s
 /obj/item/multitool/afterattack(obj/O, mob/user, proximity)
 	if(proximity)
 		if(istype(O, /obj/machinery))
-			var/mob/living/simple_mob/animal/solargrub_larva/grub = locate() in O
+			var/mob/living/simple_mob/animal/solargrub_larva/grub = locate_in_list(O, )
 			if(grub)
 				grub.eject_from_machine(O)
 				to_chat(user, span_warning("You disturb a grub nesting in \the [O]!"))
@@ -247,7 +247,7 @@ REF_OWNED(/mob/living/simple_mob/animal/solargrub_larva, list("powermachine", "s
 /obj/item/melee/baton/afterattack(obj/O, mob/user, proximity)
 	if(proximity)
 		if(istype(O, /obj/machinery))
-			var/mob/living/simple_mob/animal/solargrub_larva/grub = locate() in O
+			var/mob/living/simple_mob/animal/solargrub_larva/grub = locate_in_list(O, )
 			if(grub)
 				grub.eject_from_machine(O)
 				to_chat(user, span_warning("You disturb a grub nesting in \the [O]!"))

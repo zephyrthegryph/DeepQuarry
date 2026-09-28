@@ -34,7 +34,7 @@
 
 /mob/living/carbon/human/proc/get_coverage()
 	var/list/coverage = list()
-	for(var/obj/item/clothing/C in src)
+	for(var/obj/item/clothing/C in contents_of(src))
 		if(item_is_in_hands(C))
 			continue
 		if(C.body_parts_covered & HEAD)
@@ -64,7 +64,7 @@
 		for(var/obj/item/rig_module/stealth_field/cloaker in suit.installed_modules)
 			if(cloaker.active)
 				cloaker.deactivate()
-	for(var/obj/item/deadringer/dr in src)
+	for(var/obj/item/deadringer/dr in contents_of(src))
 		dr.uncloak()
 
 /mob/living/carbon/human/is_cloaked()
@@ -76,7 +76,7 @@
 		for(var/obj/item/rig_module/stealth_field/cloaker in suit.installed_modules)
 			if(cloaker.active)
 				return TRUE
-	for(var/obj/item/deadringer/dr in src)
+	for(var/obj/item/deadringer/dr in contents_of(src))
 		if(dr.timer > 20)
 			return TRUE
 	return ..()
@@ -226,7 +226,7 @@
 	var/obj/item/implant/restrainingbolt/RB
 
 	for(var/obj/item/organ/external/EX in organs)
-		RB = locate() in EX
+		RB = locate_in_list(EX, )
 		if(istype(RB) && !(RB.malfunction))
 			break
 

@@ -826,7 +826,7 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 /// Old attack_self: shake micros out. Runs the clothing circuit first, as the old ..() did.
 /obj/item/clothing/shoes/proc/shoes_shake_out_self(mob/user, obj/item/held, datum/interaction/interaction)
 	clothing_circuit_self(user, held, interaction)
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		if(isvoice(M)) //Don't knock voices out!
 			continue
 		M.forceMove(get_turf(user))
@@ -1119,11 +1119,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 
 /// Requirement: a holster is attached (replaces the holster adding its verb to the uniform).
 /obj/item/clothing/under/proc/pred_has_holster(mob/actor, atom/target, obj/item/held)
-	return !!(locate(/obj/item/clothing/accessory/holster) in accessories)
+	return !!(locate_in_list(accessories, /obj/item/clothing/accessory/holster))
 
 /// Old holster verb the holster added to the uniform: holster or draw with the attached holster.
 /obj/item/clothing/under/proc/under_holster_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/clothing/accessory/holster/H = locate() in accessories
+	var/obj/item/clothing/accessory/holster/H = locate_in_list(accessories, )
 	if(H)
 		H.holster_quick_holster_verb(user)
 
@@ -1478,7 +1478,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 	if(ishuman(user) && user.get_effective_size() > 0.25) return FALSE // Only micro characters
 
 	var/full = 0
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		if(istype(M,/mob/living/voice)) //Don't count voices as people!
 			continue
 		full++
@@ -1497,7 +1497,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 /obj/item/clothing/shoes/proc/shoes_stuff_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/holder/micro))
 		var/full = 0
-		for(var/mob/M in src)
+		for(var/mob/M in contents_of(src))
 			if(isvoice(M)) //Don't count voices as people!
 				continue
 			full++
@@ -1505,7 +1505,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 			to_chat(user, span_warning("You can't fit anyone else into \the [src]!"))
 		else
 			var/obj/item/holder/micro/holder = I
-			if(holder.held_mob && (holder.held_mob in holder))
+			if(holder.held_mob && (holder.held_mob in contents_of(holder)))
 				var/mob/living/M = holder.held_mob
 				holder.dump_mob()
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))

@@ -172,7 +172,7 @@
 		var/choice = rerun_ask(user, "store", PROC_REF(interaction_store), args, /datum/om/prompt/choice/alert, message = "If you store \the [O], anything it contains may be lost to \the [src]. Are you sure?", title = "[src]", choices = list("Store", "Cancel"), timeout = 10 SECONDS)
 		if(!choice || choice == "Cancel" || !Adjacent(user) || inoperable() || panel_open || busy_bank || O.loc != user)
 			return TRUE
-		for(var/obj/item/check in O.contents)
+		for(var/obj/item/check in contents_of(O))
 			if(!check.persist_storable || check?.tether_host())
 				to_chat(user, span_warning("\The [src] buzzes. \The [O] contains [check], which cannot be stored. Please remove this item before attempting to store \the [O]. As a reminder, any contents of \the [O] will be lost if you store it with contents."))
 				return TRUE

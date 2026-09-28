@@ -173,7 +173,7 @@
 		return
 
 	// Stun anyone in our way.
-	for(var/mob/living/L in T)
+	for(var/mob/living/L in contents_of(T))
 		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
 		L.status_at_least(EFFECT_WEAKENED, 2)
 

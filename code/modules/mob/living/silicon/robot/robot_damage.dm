@@ -42,7 +42,7 @@
 		return NONE
 	if(!has_active_type(/obj/item/borg/combat/shield))
 		return NONE
-	var/obj/item/borg/combat/shield/shield = locate() in src
+	var/obj/item/borg/combat/shield/shield = locate_within(src, )
 	if(!shield?.active)
 		return NONE
 	var/absorbed = amount_ref[1] * shield.shield_level

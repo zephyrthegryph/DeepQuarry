@@ -502,11 +502,11 @@
 	if(!istype(H))
 		return TRUE
 	if(H.get_equipped_item(SLOT_ID_GLOVES) && (H.get_equipped_item(SLOT_ID_GLOVES).body_parts_covered & ARMS))
-		for(var/obj/item/clothing/accessory/A in src)
+		for(var/obj/item/clothing/accessory/A in contents_of(src))
 			if(A.body_parts_covered & ARMS)
 				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_GLOVES)] are in each other's way"
 	if(H.get_equipped_item(SLOT_ID_SHOES) && (H.get_equipped_item(SLOT_ID_SHOES).body_parts_covered & LEGS))
-		for(var/obj/item/clothing/accessory/A in src)
+		for(var/obj/item/clothing/accessory/A in contents_of(src))
 			if(A.body_parts_covered & LEGS)
 				return "\the [A] and \the [H.get_equipped_item(SLOT_ID_SHOES)] are in each other's way"
 	return TRUE

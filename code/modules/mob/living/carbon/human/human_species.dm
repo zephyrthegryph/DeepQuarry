@@ -40,7 +40,7 @@
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/proc/dress_up()
 
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/clothing))
 			var/obj/item/clothing/C = I
 			C.restrict_fit(null)

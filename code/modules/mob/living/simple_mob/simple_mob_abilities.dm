@@ -191,7 +191,7 @@
 		//if we're adjacent to our target turf (but not ontop of it) and we are not blocked from moving there
 		if(Adjacent(T) && get_dist(src, T) && !LinkBlocked(src, T))
 			//if a mob is on our target (This should be the only reason we didn't arrive)
-			for(var/mob/living/M in T)
+			for(var/mob/living/M in contents_of(T))
 				if(isliving(M) && M != src)
 					var/mob/living/LM = M
 
@@ -213,7 +213,7 @@
 		else
 			//if we arrived, and weren't blocked, and are STILL pouncing, see if we landed on any living things that didn't block us that ISN't ourselves lmfao.
 			if(pouncing)
-				for(var/mob/living/M in T)
+				for(var/mob/living/M in contents_of(T))
 					if(isliving(M) && M != src)
 						var/mob/living/LM = M
 						LM.status_at_least(EFFECT_WEAKENED, 5)

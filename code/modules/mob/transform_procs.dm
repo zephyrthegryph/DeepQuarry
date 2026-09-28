@@ -1,7 +1,7 @@
 /mob/living/carbon/human/proc/monkeyize()
 	if (transforming)
 		return
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		if (W==get_equipped_item(SLOT_ID_UNIFORM)) // will be torn
 			continue
 		drop_from_inventory(W)
@@ -33,7 +33,7 @@
 		gib()
 		return
 
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	set_species(species.primitive_form)
 
@@ -64,7 +64,7 @@
 /mob/living/carbon/AIize(move = TRUE)
 	if (transforming)
 		return
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	transforming = 1
 	canmove = 0
@@ -149,7 +149,7 @@
 /mob/living/carbon/human/proc/Robotize()
 	if (transforming)
 		return
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
 	transforming = 1
@@ -199,7 +199,7 @@
 /mob/living/carbon/human/proc/Alienize()
 	if (transforming)
 		return
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
 	transforming = 1
@@ -223,7 +223,7 @@
 /mob/living/carbon/human/proc/corgize()
 	if (transforming)
 		return
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	regenerate_icons()
 	transforming = 1
@@ -255,7 +255,7 @@
 
 	if(transforming)
 		return
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 
 	regenerate_icons()

@@ -325,7 +325,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	var/mob/living/carbon/human/C = M
 	if(!istype(C) || !C.vessel)
 		return
-	var/datum/reagent/blood/organ_blood = reagents ? locate(/datum/reagent/blood) in reagents.reagent_list : null
+	var/datum/reagent/blood/organ_blood = reagents ? locate_in_list(reagents.reagent_list, /datum/reagent/blood) : null
 	if(!organ_blood || !organ_blood.data["blood_DNA"])
 		C.vessel.trans_to(src, 5, 1, 1)
 

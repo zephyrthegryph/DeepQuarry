@@ -85,7 +85,7 @@
 		return
 	if(istype(get_turf(src), /turf/simulated/floor/water)) //Important to stop my_slime from filling with null entries in water.
 		return
-	if(locate(/obj/effect/slug_glue) in get_turf(src)) // Don't stack slime forever
+	if(locate_within(get_turf(src), /obj/effect/slug_glue)) // Don't stack slime forever
 		return
 	var/obj/effect/slug_glue/G = new /obj/effect/slug_glue/(get_turf(src))
 	G.owner_slug = om_handle(src)
@@ -104,7 +104,7 @@
 	else //This is the parent do_attack() code for determining whether or not attacks can hit.
 		face_atom(A)
 		var/missed = FALSE
-		if(!isturf(A) && !(A in T) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
+		if(!isturf(A) && !(A in contents_of(T)) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
 			missed = TRUE
 		else if(!T.AdjacentQuick(src))
 			missed = TRUE

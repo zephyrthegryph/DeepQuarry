@@ -59,14 +59,14 @@ REF_OWNED(/obj/machinery/atm, "spark_system")
 			number_incorrect_tries = 0
 
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/spacecash/S in src) // ALLOW(latent): materialized above
+	for(var/obj/item/spacecash/S in contents_of(src)) // ALLOW(latent): materialized above
 		S.forceMove(src.loc)
 		if(prob(50))
 			playsound(src, 'sound/items/polaroid1.ogg', 50, 1)
 		else
 			playsound(src, 'sound/items/polaroid2.ogg', 50, 1)
 		break
-	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate(/obj/item/spacecash) in src)) // ALLOW(latent): materialized above
+	if(ticks_left_timeout <= 0 && ticks_left_locked_down <= 0 && !(locate_within(src, /obj/item/spacecash))) // ALLOW(latent): materialized above
 		return PROCESS_KILL
 
 /obj/machinery/atm/power_change()

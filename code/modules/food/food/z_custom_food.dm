@@ -25,7 +25,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTER
 /// Old attackby. FALSE falls to the snack handling, as the old ..() did.
 /obj/item/reagent_containers/food/snacks/customizable/proc/customizable_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I,/obj/item/reagent_containers/food/snacks))
-		if((contents.len >= ingMax) || (contents.len >= INGREDIENT_LIMIT))
+		if((contents_count(src) >= ingMax) || (contents_count(src) >= INGREDIENT_LIMIT))
 			to_chat(user, span_warning("That's already looking pretty stuffed."))
 			return INTERACTION_HANDLED_PASS
 

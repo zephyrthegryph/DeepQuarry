@@ -67,7 +67,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 /datum/om/stage/life/special/animal/passive/cat/perform(mob/living/simple_mob/animal/passive/cat/self, datum/om/frame/life/ctx)
 	if(!self.stat && prob(2)) // spooky
-		var/mob/observer/dead/spook = locate() in range(self, 5)
+		var/mob/observer/dead/spook = locate_in_list(range(self, 5), )
 		if(spook)
 			var/turf/T = get_turf(spook)
 			var/list/visible = list()

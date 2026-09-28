@@ -189,7 +189,7 @@
 	if(!shuttle)
 		return state
 	for(var/area/A in shuttle.shuttle_area)
-		for(var/mob/living/carbon/human/generated_station_command_officer/officer in A)
+		for(var/mob/living/carbon/human/generated_station_command_officer/officer in contents_of(A))
 			if(officer.stat != DEAD)
 				progress = 1
 				state = EXP_OBJ_COMPLETE

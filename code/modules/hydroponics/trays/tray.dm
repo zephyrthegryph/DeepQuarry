@@ -236,7 +236,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 // Give the seeds time to initialize itself
 /obj/machinery/portable_atmospherics/hydroponics/LateInitialize()
 	. = ..()
-	var/obj/item/seeds/S = locate() in loc
+	var/obj/item/seeds/S = locate_within(loc, )
 	if(S)
 		plant_seeds(S)
 
@@ -669,7 +669,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_hold
 /obj/machinery/portable_atmospherics/hydroponics/wrench_act(mob/user, obj/item/tool)
 	if(!mechanical)
 		return ..()
-	if(locate(/obj/machinery/atmospherics/portables_connector/) in loc)
+	if(locate_within(loc, /obj/machinery/atmospherics/portables_connector/))
 		return ..()
 	playsound(src, tool.usesound, 50, TRUE)
 	anchored = !anchored

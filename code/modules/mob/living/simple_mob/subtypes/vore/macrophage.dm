@@ -86,7 +86,7 @@
 	death()
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()
-	if(locate(/mob/living/carbon/human) in vore_selected)
+	if(locate_in_list(vore_selected, /mob/living/carbon/human))
 		om_after(src, 3 MINUTES, TYPE_PROC_REF(/mob/living/simple_mob/vore/aggressive/macrophage, deathcheck))
 	else
 		death()

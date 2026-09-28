@@ -83,7 +83,7 @@
 /obj/item/rig_module/mounted/energy_blade/periodic_step()
 
 	if(holder && holder.wearer())
-		if(!(locate(/obj/item/melee/energy/blade) in holder.wearer()))
+		if(!(locate_in_list(holder.wearer(), /obj/item/melee/energy/blade)))
 			deactivate()
 			return 0
 
@@ -113,7 +113,7 @@
 	if(!M)
 		return
 
-	for(var/obj/item/melee/energy/blade/blade in M.contents)
+	for(var/obj/item/melee/energy/blade/blade in contents_of(M))
 		consume(blade, M)
 
 /obj/item/rig_module/mounted/mop
@@ -140,7 +140,7 @@
 /obj/item/rig_module/mounted/mop/periodic_step()
 
 	if(holder && holder.wearer())
-		if(!(locate(/obj/item/mop_deploy) in holder.wearer()))
+		if(!(locate_in_list(holder.wearer(), /obj/item/mop_deploy)))
 			deactivate()
 			return 0
 
@@ -170,7 +170,7 @@
 	if(!M)
 		return
 
-	for(var/obj/item/mop_deploy/blade in M.contents)
+	for(var/obj/item/mop_deploy/blade in contents_of(M))
 		consume(blade, M)
 
 

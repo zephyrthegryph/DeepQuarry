@@ -117,7 +117,7 @@
 		return FALSE
 	if(!M.idle_power_usage && !M.active_power_usage && !(istype(M, /obj/machinery/power/apc) || istype(M, /obj/machinery/power/smes)))
 		return FALSE
-	if(locate(/mob/living/simple_mob/animal/solargrub_larva) in M)
+	if(locate_in_list(M, /mob/living/simple_mob/animal/solargrub_larva))
 		return FALSE
 	if(LAZYFIND(LV.dq_ignored_machines, M))
 		return FALSE

@@ -123,7 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 
 /datum/body_effect/robot_cloak/on_start(mob/living/L)
 	var/mob/living/silicon/robot/R = L
-	var/obj/item/borg/cloak/cloak = locate() in R //Find the borg cloak module
+	var/obj/item/borg/cloak/cloak = locate_in_list(R, ) //Find the borg cloak module
 	var/cloak_strength = cloak ? cloak.cloak_strength : 0.5
 	var/datum/robot_cloak_state/state = new
 	state.visibility = 255 * (1 - cloak_strength)

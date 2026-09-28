@@ -59,14 +59,14 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 
 /obj/item/assembly/electronic_assembly/pulsed(radio = 0)						//Called when another assembly acts on this one, var/radio will determine where it came from for wire calcs
 	if(EA)
-		for(var/obj/item/integrated_circuit/built_in/device_input/I in EA.contents)
+		for(var/obj/item/integrated_circuit/built_in/device_input/I in contents_of(EA))
 			I.do_work()
 		return
 
 /obj/item/assembly/electronic_assembly/examine(mob/user)
 	. = ..()
 	if(EA)
-		for(var/obj/item/integrated_circuit/IC in EA.contents)
+		for(var/obj/item/integrated_circuit/IC in contents_of(EA))
 			. += IC.external_examine(user)
 
 /// Old Open/Close Device Assembly verb: Open or close device assembly!

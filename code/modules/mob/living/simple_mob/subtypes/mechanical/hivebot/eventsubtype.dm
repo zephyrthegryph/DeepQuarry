@@ -114,7 +114,7 @@
 
 /obj/item/projectile/metalball/on_hit(atom/target, blocked = 0)
 	if(isturf(target.loc))
-		var/obj/structure/foamedmetal/W = locate() in get_turf(target)
+		var/obj/structure/foamedmetal/W = locate_within(get_turf(target), )
 		if(!W)
 			visible_message(span_danger("\The [src] splatters a lump of metal on \the [target]!"))
 			new /obj/structure/foamedmetal(target.loc)

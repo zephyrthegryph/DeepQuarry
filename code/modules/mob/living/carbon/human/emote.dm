@@ -514,7 +514,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 		SpinAnimation(7,1,1)
 
 	if(isturf(loc)) // You aren't very smart, are you?
-		for(var/obj/structure/stairs/top/S in loc.contents)
+		for(var/obj/structure/stairs/top/S in contents_of(loc))
 			S.use_stairs_instant(src)
 			visible_message(span_warning("\The [src] falls down the stairs!"), span_warning("You fall down the stairs!"))
 			status_at_least(EFFECT_CONFUSED, 10) //Thud

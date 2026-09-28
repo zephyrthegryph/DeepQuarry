@@ -124,7 +124,7 @@
 		if(material_belt.selected_item == O)
 			return TRUE
 	for(var/obj/item/gripper/gripper in contents)
-		if(gripper.current_pocket == O || (O in gripper.current_pocket.contents))
+		if(gripper.current_pocket == O || (O in contents_of(gripper.current_pocket)))
 			return TRUE
 	return FALSE
 
@@ -242,7 +242,7 @@
 	return
 
 /mob/living/silicon/robot/proc/activate_module(obj/item/O)
-	if(!(locate(O) in src.module.modules) && !(locate(O) in src.module.emag))
+	if(!(locate_in_list(src.module.modules, O)) && !(locate_in_list(src.module.emag, O)))
 		return
 	if(weapon_lock)
 		to_chat(src, span_danger("Error: Modules locked."))

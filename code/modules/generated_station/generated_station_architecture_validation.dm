@@ -462,7 +462,7 @@
 		var/apc_count = 0
 		var/machinery_count = 0
 		var/list/machinery_types = list()
-		for(var/obj/machinery/machine in T)
+		for(var/obj/machinery/machine in contents_of(T))
 			// Wall-mounted fixtures occupy distinct structural edges and may
 			// legitimately share a floor coordinate with one floor device.
 			// The tile-plan edge registry prevents two of them using one edge.
@@ -470,9 +470,9 @@
 			if(!wall_mounted && !istype(machine, /obj/machinery/door) && !istype(machine, /obj/machinery/power/terminal) && !istype(machine, /obj/machinery/atmospherics/pipe))
 				machinery_count++
 				machinery_types += "[machine.type]"
-		for(var/obj/machinery/power/terminal/terminal in T)
+		for(var/obj/machinery/power/terminal/terminal in contents_of(T))
 			terminal_count++
-		for(var/obj/machinery/power/apc/apc in T)
+		for(var/obj/machinery/power/apc/apc in contents_of(T))
 			apc_count++
 		if(terminal_count > 1)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "stacked-terminals", "Multiple power terminals occupy one tile.", generated_station_coordinate(T))
@@ -480,7 +480,7 @@
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "stacked-apcs", "Multiple APCs occupy one tile.", generated_station_coordinate(T))
 		if(machinery_count > 1)
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "stacked-machinery", "Multiple machines occupy one tile: [jointext(machinery_types, ", ")].", generated_station_coordinate(T))
-		for(var/obj/structure/bed/chair/chair in T)
+		for(var/obj/structure/bed/chair/chair in contents_of(T))
 			var/turf/facing = get_step(T, chair.dir)
 			if(!facing || facing.density)
 				validation.add(GENERATED_STATION_ISSUE_ERROR, "chair-faces-wall", "Chair faces into a wall or the map boundary.", generated_station_coordinate(chair))
@@ -499,7 +499,7 @@
 				if(istype(get_area(nearby_door), /area/generated_station) && !istype(get_area(nearby_door), /area/generated_station/transit))
 					entrance_apron = TRUE
 					break
-		if(locate(/obj/structure/bed/chair) in hall)
+		if(locate_in_list(hall, /obj/structure/bed/chair))
 			entrance_apron = TRUE
 		var/branch_length = open_sides < 2 ? generated_station_dead_end_branch_length(hall, transit_floors) : 0
 		if(open_sides < 2 && !entrance_apron && branch_length > 3)

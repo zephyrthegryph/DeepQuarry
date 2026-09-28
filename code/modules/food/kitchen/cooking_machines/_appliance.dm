@@ -743,7 +743,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	var/obj/item/reagent_containers/cooking_container/cook_container
 
 	if (status == 1)//If theres only one object in a container then we extract that
-		thing = locate(/obj/item) in CI.container()
+		thing = locate_in_list(CI.container(), /obj/item)
 		delete = 0
 	else//If the container is empty OR contains more than one thing, then we must extract the container
 		thing = CI.container()

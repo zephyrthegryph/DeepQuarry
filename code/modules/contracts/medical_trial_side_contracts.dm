@@ -540,7 +540,7 @@ REF_BACK(/datum/contract_document, list("holder" = "contract_document"))
 
 /proc/contract_export_contents(atom/root)
 	var/list/result = list(root)
-	for(var/atom/content in root.contents)
+	for(var/atom/content in contents_of(root))
 		result += contract_export_contents(content)
 	return result
 

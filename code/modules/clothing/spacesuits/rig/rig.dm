@@ -863,7 +863,7 @@ REF_OWNED(/obj/item/rig, list("power_system", "spark_system", "boots", "chest", 
 /obj/item/rig/proc/ai_can_move_suit(mob/user, check_user_module = 0, check_for_ai = 0)
 
 	if(check_for_ai)
-		if(!(locate(/obj/item/rig_module/ai_container) in contents))
+		if(!(locate_within(src, /obj/item/rig_module/ai_container)))
 			return 0
 		var/found_ai
 		for(var/obj/item/rig_module/ai_container/module in contents)

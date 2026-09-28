@@ -97,11 +97,11 @@
 	if(!has_custom_equipment_sprites)
 		return
 
-	var/obj/item/melee/robotic/blade/dagger/CBB = locate() in module.modules
+	var/obj/item/melee/robotic/blade/dagger/CBB = locate_in_list(module.modules, )
 	if(CBB)
 		CBB.name = "sword tail"
 		CBB.desc = "A glowing dagger normally attached to the end of a cyborg's tail. It appears to be extremely sharp."
-	var/obj/item/melee/robotic/borg_combat_shocker/BCS = locate() in module.modules
+	var/obj/item/melee/robotic/borg_combat_shocker/BCS = locate_in_list(module.modules, )
 	if(BCS)
 		BCS.name = "combat jaws"
 		BCS.desc = "Shockingly chompy!"
@@ -216,11 +216,11 @@
 	if(!has_custom_equipment_sprites)
 		return
 
-	var/obj/item/melee/robotic/blade/CBB = locate() in module.modules
+	var/obj/item/melee/robotic/blade/CBB = locate_in_list(module.modules, )
 	if(CBB)
 		CBB.name = "combat saw"
 		CBB.desc = "A high frequency blade attached to the end of a cyborg's tail. It appears to be extremely sharp."
-	var/obj/item/melee/robotic/borg_combat_shocker/BCS = locate() in module.modules
+	var/obj/item/melee/robotic/borg_combat_shocker/BCS = locate_in_list(module.modules, )
 	if(BCS)
 		BCS.name = "combat jaws"
 		BCS.desc = "Shockingly chompy!"

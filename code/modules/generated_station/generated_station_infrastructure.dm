@@ -94,13 +94,13 @@
 		var/turf/placement
 		var/turf/camera_placement
 		for(var/turf/T in area_contents_of_type(A, /turf))
-			if(!T.density && !(locate(/obj/machinery) in T))
+			if(!T.density && !(locate_within(T, /obj/machinery)))
 				placement = T
 				break
 		if(!placement)
 			continue
 		for(var/turf/T in area_contents_of_type(A, /turf))
-			if(T != placement && !T.density && !(locate(/obj/machinery) in T) && generated_station_adjacent_wall_direction(T))
+			if(T != placement && !T.density && !(locate_within(T, /obj/machinery)) && generated_station_adjacent_wall_direction(T))
 				camera_placement = T
 				break
 		if(!camera_placement)

@@ -141,11 +141,11 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	if(..())
 		return TRUE
 
-	var/datum/integrated_io/pin = locate(params["pin"]) in inputs + outputs + activators
+	var/datum/integrated_io/pin = locate_in_list(inputs, params["pin"]) + outputs + activators
 	var/datum/integrated_io/linked = null
 
 	if(params["link"] && pin)
-		linked = locate(params["link"]) in pin.linked
+		linked = locate_in_list(pin.linked, params["link"])
 
 	var/obj/item/held_item = ui.user.get_active_hand()
 

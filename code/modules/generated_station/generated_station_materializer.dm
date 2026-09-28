@@ -535,7 +535,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/turf/T = world_turf(intent.local_x, intent.local_y)
 		if(!T)
 			return abort_structural("tile-application")
-		for(var/atom/movable/occupant in T)
+		for(var/atom/movable/occupant in contents_of(T))
 			if(!ismob(occupant))
 				qdel(occupant)
 		switch(intent.structure_kind)
@@ -720,7 +720,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		if(furnishing.density && !istype(furnishing, /obj/machinery/door))
 			var/blocks_door = FALSE
 			for(var/direction in GLOB.cardinal)
-				if(locate(/obj/machinery/door) in get_step(current, direction))
+				if(locate_in_list(get_step(current, direction), /obj/machinery/door))
 					blocks_door = TRUE
 					break
 			if(blocks_door)
@@ -861,7 +861,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		if(occupant.density || istype(occupant, /obj/machinery))
 			return FALSE
 	for(var/direction in GLOB.cardinal)
-		if(locate(/obj/machinery/door) in get_step(candidate, direction))
+		if(locate_in_list(get_step(candidate, direction), /obj/machinery/door))
 			return FALSE
 	var/datum/generated_station_tile_intent/intent = result.tile_plan?.tile(candidate.x - min_x + 1, candidate.y - min_y + 1)
 	return !intent?.has_utility_fixture()
@@ -1151,20 +1151,20 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /datum/generated_station_materializer/proc/find_emergency_fixture_turf(area/generated_station/A, list/excluded)
 	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		generation_checkpoint("Selecting emergency closet position", 55)
-		if((excluded && (T in excluded)) || T.density || locate(/obj/machinery/door) in T)
+		if((excluded && (T in excluded)) || T.density || locate_within(T, /obj/machinery/door))
 			continue
 		var/datum/generated_station_tile_intent/intent = result.tile_plan?.tile(T.x - min_x + 1, T.y - min_y + 1)
 		if(intent?.has_utility_fixture())
 			continue
 		var/blocked = FALSE
-		for(var/atom/movable/occupant in T)
+		for(var/atom/movable/occupant in contents_of(T))
 			if(occupant.density || istype(occupant, /obj/machinery))
 				blocked = TRUE
 				break
 		if(blocked || !generated_station_adjacent_wall_direction(T))
 			continue
 		for(var/direction in GLOB.cardinal)
-			if(locate(/obj/machinery/door) in get_step(T, direction))
+			if(locate_in_list(get_step(T, direction), /obj/machinery/door))
 				blocked = TRUE
 				break
 		if(!blocked && generated_station_area_removal_preserves_connectivity(T, A))
@@ -1224,7 +1224,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	for(var/turf/simulated/floor/T in area_contents_of_type(A, /turf/simulated/floor))
 		if(!generated_station_architectural_passable(T))
 			continue
-		if(locate(/obj/machinery/door) in T)
+		if(locate_within(T, /obj/machinery/door))
 			return TRUE
 		for(var/direction in GLOB.cardinal)
 			var/turf/neighbor = get_step(T, direction)
@@ -1421,7 +1421,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			if(!istype(get_area(door), /area/generated_station/transit))
 				near_entrance = TRUE
 				break
-		if(near_entrance || locate(/obj/structure/bed/chair) in T)
+		if(near_entrance || locate_within(T, /obj/structure/bed/chair))
 			continue
 		var/obj/structure/bed/chair/seat = new(T)
 		seat.set_dir(get_dir(T, neighbors[1]))

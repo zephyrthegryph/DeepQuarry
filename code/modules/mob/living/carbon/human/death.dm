@@ -31,7 +31,7 @@
 	for(var/obj/item/organ/external/E in src.organs.Copy())
 		E.droplimb(0,DROPLIMB_EDGE,1)
 
-	for(var/obj/item/I in src)
+	for(var/obj/item/I in contents_of(src))
 		drop_from_inventory(I)
 		I.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)), rand(1,3), round(30/I.w_class))
 
@@ -131,7 +131,7 @@
 		src.died_in_vr = TRUE //so avatar.dm can delete bodies
 		src.exit_vr()
 		src.vr_holder.vr_link = null
-		for(var/obj/item/W in src)
+		for(var/obj/item/W in contents_of(src))
 			src.drop_from_inventory(W)
 
 

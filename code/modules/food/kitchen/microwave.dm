@@ -220,7 +220,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	if(istype(O, /obj/item/storage/bag/plants)) // There might be a better way about making plant bags dump their contents into a microwave, but it works.
 		var/obj/item/storage/bag/plants/bag = O
 		var/failed = 1
-		for(var/obj/item/G in O.contents)
+		for(var/obj/item/G in contents_of(O))
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
@@ -613,7 +613,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	. = ..()
 
 /datum/recipe/splat/make_food(obj/container)
-	for(var/obj/item/holder/H in container)
+	for(var/obj/item/holder/H in contents_of(container))
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))
 			qdel(H.held_mob)

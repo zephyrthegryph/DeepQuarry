@@ -199,7 +199,7 @@ REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")
 		if(!container || container.loc != src)
 			continue
 		cooker_couple(container, heat_body)
-		for(var/obj/item/food in container)
+		for(var/obj/item/food in contents_of(container))
 			cooker_couple(food, container.heat_body)
 
 /// Couples `thing` to `holder_body`, kept while the cooker heats.
@@ -217,7 +217,7 @@ REF_OWNED(/obj/machinery/appliance/cooker, "thermostat_watch")
 			continue
 		if(!isnull(container.heat_body))
 			vg_heat_body_keep(container.heat_body, FALSE)
-		for(var/obj/item/food in container)
+		for(var/obj/item/food in contents_of(container))
 			if(!isnull(food.heat_body))
 				vg_heat_body_keep(food.heat_body, FALSE)
 

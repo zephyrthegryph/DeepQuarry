@@ -238,13 +238,13 @@ EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 
 /obj/item/storage/dicecup/proc/rollCup(mob/user)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/dice/I in src.contents) // ALLOW(latent): materialized above
+	for(var/obj/item/dice/I in contents_of(src)) // ALLOW(latent): materialized above
 		var/obj/item/dice/D = I
 		D.rollDice(user, 1)
 
 /obj/item/storage/dicecup/proc/revealDice(mob/viewer)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/dice/I in src.contents) // ALLOW(latent): materialized above
+	for(var/obj/item/dice/I in contents_of(src)) // ALLOW(latent): materialized above
 		var/obj/item/dice/D = I
 		to_chat(viewer, "The [D.name] shows a [D.result].")
 

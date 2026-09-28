@@ -9,7 +9,7 @@
 /datum/preference_apply_hook/finalize/apply(mob/living/carbon/human/target, datum/preferences/preferences)
 	if(!ishuman(target))
 		return
-	for(var/obj/item/clothing/O in target.contents)
+	for(var/obj/item/clothing/O in contents_of(target))
 		O.handle_digitigrade(target)
 	if(target.dna)
 		target.dna.ResetUIFrom(target)

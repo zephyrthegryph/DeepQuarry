@@ -363,7 +363,7 @@
 
 /// Busy while pulling or grabbing. Gravity is re-read on Moved, and on a timer for players.
 /datum/om/stage/life/movement/idle(mob/living/self)
-	return !self?.pulling_target() && !(locate(/obj/item/grab) in self)
+	return !self?.pulling_target() && !(locate_in_list(self, /obj/item/grab))
 
 /datum/om/stage/life/movement/rewake_delay(mob/living/self)
 	return self.client ? 30 SECONDS : 0

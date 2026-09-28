@@ -122,7 +122,7 @@
 			automatic_custom_emote(AUDIBLE_MESSAGE, "begins to clean up \the [D]")
 		bot_work(cleantime * cTimeMult, D, PROC_REF(UnarmedAttack_cleanbot_done), list(D))
 	else if(D == src)
-		for(var/obj/effect/O in loc)
+		for(var/obj/effect/O in contents_of(loc))
 			if(istype(O, /obj/effect/decal/cleanable/dirt))
 				cleantime += 10
 			if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
@@ -169,7 +169,7 @@
 	if(istype(loc, /turf/simulated))
 		var/turf/simulated/T = loc
 		T.dirt = 0
-	for(var/obj/effect/O in loc)
+	for(var/obj/effect/O in contents_of(loc))
 		if(istype(O,/obj/effect/rune) || istype(O,/obj/effect/decal/cleanable) || istype(O,/obj/effect/overlay))
 			qdel(O)
 	if(SScontracts)

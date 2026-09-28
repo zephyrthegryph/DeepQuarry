@@ -142,23 +142,23 @@ REF_OWNED(/mob/living/simple_mob/mechanical/mining_drone, list("ion_trail", "shi
 	of = /mob/living/simple_mob/mechanical/mining_drone
 
 /datum/om/stage/life/special/mechanical/mining_drone/perform(mob/living/simple_mob/mechanical/mining_drone/self, datum/om/frame/life/ctx)
-	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (COOLDOWN_FINISHED(self, search_cooldown_until)) && (self.my_storage.contents.len < self.my_storage.max_storage_space))
+	if(self.my_storage && ((self.ai_brain ? (self.ai_brain.primary_threat ? STANCE_FIGHT : STANCE_IDLE) : STANCE_IDLE) in list(STANCE_APPROACH, STANCE_IDLE, STANCE_FOLLOW)) && !om_busy(self) && isturf(self.loc) && (COOLDOWN_FINISHED(self, search_cooldown_until)) && (contents_count(self.my_storage) < self.my_storage.max_storage_space))
 		COOLDOWN_START(self, search_cooldown_until, self.search_cooldown)
 
 		for(var/turf/T in view(world.view,self))
-			if(self.my_storage.contents.len >= self.my_storage.max_storage_space)
+			if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
 				break
 
-			if((locate(/obj/item/ore) in T) && prob(40))
+			if((locate_within(T, /obj/item/ore)) && prob(40))
 				self.Beam(T, icon_state = "holo_beam", time = 0.5 SECONDS)
 				self.my_storage.rangedload(T, self)
 
-		if(self.my_storage.contents.len >= self.my_storage.max_storage_space)
+		if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
 			self.visible_message(span_infoplain(span_bold("\The [self]") + " emits a shrill beep, indicating its storage is full."))
 
-		var/obj/structure/ore_box/OB = locate() in view(2, self)
+		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), )
 
-		if(istype(OB) && self.my_storage && self.my_storage.contents.len)
+		if(istype(OB) && self.my_storage && contents_count(self.my_storage))
 			self.Beam(OB, icon_state = "rped_upgrade", time = 1 SECONDS)
 			for(var/obj/item/I in self.my_storage)
 				self.my_storage.remove_from_storage(I, OB)

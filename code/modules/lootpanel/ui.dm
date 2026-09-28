@@ -20,12 +20,12 @@
 	if(isnull(ref))
 		return FALSE
 
-	var/datum/search_object/index = locate(ref) in searchables
+	var/datum/search_object/index = locate_in_list(searchables, ref)
 	var/atom/thing = index?.item()
 	if(QDELETED(index) || QDELETED(thing)) // Obj is gone
 		return FALSE
 
-	if(thing != source_turf() && !(locate(thing) in source_turf().contents))
+	if(thing != source_turf() && !(locate_within(source_turf(), thing)))
 		qdel(index) // Item has moved
 		return TRUE
 

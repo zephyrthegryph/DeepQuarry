@@ -22,7 +22,7 @@
 
 /obj/structure/bookcase/Initialize(mapload)
 	. = ..()
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/book))
 			I.forceMove(src)
 	update_icon()
@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 
 /// Old attack_hand.
 /obj/structure/bookcase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(contents.len)
+	if(contents_count(src))
 		var/obj/item/book/choice = rerun_ask(user, "k65", PROC_REF(interaction_hand), args, /datum/om/prompt/choice, message = "Which book would you like to remove from the shelf?", title = "Book Selection", choices = contents)
 		if(isnull(choice))
 			return TRUE
@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 	return ..()
 
 /obj/structure/bookcase/update_icon()
-	if(contents.len < 5)
+	if(contents_count(src) < 5)
 		icon_state = "book-[contents.len]"
 	else
 		icon_state = "book-5"
@@ -125,7 +125,7 @@ EXTEND_INTERACTIONS(/obj/structure/bookcase/bookcart, INTERACT_ITEM(null, PROC_R
 	return INTERACTION_HANDLED_PASS
 
 /obj/structure/bookcase/bookcart/update_icon()
-	if(contents.len < 5)
+	if(contents_count(src) < 5)
 		icon_state = "bookcart-[contents.len]"
 	else
 		icon_state = "bookcart-5"
@@ -433,7 +433,7 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 	. = ..()
 	if(.)
 		return
-	if(!((src in usr.contents) || (istype(src.loc, /obj/item/folder) && (src.loc in usr.contents))))
+	if(!((src in contents_of(usr)) || (istype(src.loc, /obj/item/folder) && (src.loc in contents_of(usr)))))
 		to_chat(usr, span_notice("You need to hold it in your hands!"))
 		return TRUE
 	usr.set_machine(src)

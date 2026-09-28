@@ -498,7 +498,7 @@ REF_OWNED_LIST(/datum/generated_room_fragment, list("sockets", "constraints"))
 		return FALSE
 	var/list/existing = list()
 	for(var/turf/T in block(origin, locate(origin.x + width - 1, origin.y + height - 1, origin.z)))
-		for(var/atom/movable/movable in T)
+		for(var/atom/movable/movable in contents_of(T))
 			existing[movable] = TRUE
 	var/datum/map_template/template = new(template_path, "generated room fragment [id]", TRUE)
 	if(template.width != width || template.height != height)
@@ -507,7 +507,7 @@ REF_OWNED_LIST(/datum/generated_room_fragment, list("sockets", "constraints"))
 	template.load(origin)
 	var/created = FALSE
 	for(var/turf/T in block(origin, locate(origin.x + width - 1, origin.y + height - 1, origin.z)))
-		for(var/atom/movable/movable in T)
+		for(var/atom/movable/movable in contents_of(T))
 			if(existing[movable])
 				continue
 			owner.register_furnishing(movable)

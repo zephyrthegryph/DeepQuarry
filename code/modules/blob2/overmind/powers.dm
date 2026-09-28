@@ -73,11 +73,11 @@
 	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
 		var/obj/structure/blob/temp = pick(potential_blobs)
-		if(!(locate(/obj/structure/blob/node) in range(temp, BLOB_NODE_PULSE_RANGE) ) && !(locate(/obj/structure/blob/core) in range(temp, BLOB_CORE_PULSE_RANGE) ))
+		if(!(locate_in_list(range(temp, BLOB_NODE_PULSE_RANGE), /obj/structure/blob/node) ) && !(locate_in_list(range(temp, BLOB_CORE_PULSE_RANGE), /obj/structure/blob/core) ))
 			potential_blobs -= temp // Can't be pulsed.
-		else if(locate(/obj/structure/blob/resource) in range(temp, 4) )
+		else if(locate_in_list(range(temp, 4), /obj/structure/blob/resource) )
 			potential_blobs -= temp // Too close to another resource blob.
-		else if(locate(/obj/structure/blob/core) in range(temp, 1) )
+		else if(locate_in_list(range(temp, 1), /obj/structure/blob/core) )
 			potential_blobs -= temp // Don't take up the core's shield spot.
 		else if(!istype(temp, /obj/structure/blob/normal))
 			potential_blobs -= temp // Not a normal blob.
@@ -116,11 +116,11 @@
 	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
 		var/obj/structure/blob/temp = pick(potential_blobs)
-		if(!(locate(/obj/structure/blob/node) in range(temp, BLOB_NODE_PULSE_RANGE) ) && !(locate(/obj/structure/blob/core) in range(temp, BLOB_CORE_PULSE_RANGE) ))
+		if(!(locate_in_list(range(temp, BLOB_NODE_PULSE_RANGE), /obj/structure/blob/node) ) && !(locate_in_list(range(temp, BLOB_CORE_PULSE_RANGE), /obj/structure/blob/core) ))
 			potential_blobs -= temp // Can't be pulsed.
-		else if(locate(/obj/structure/blob/factory) in range(temp, 7) )
+		else if(locate_in_list(range(temp, 7), /obj/structure/blob/factory) )
 			potential_blobs -= temp // Too close to another factory blob.
-		else if(locate(/obj/structure/blob/core) in range(temp, 1) )
+		else if(locate_in_list(range(temp, 1), /obj/structure/blob/core) )
 			potential_blobs -= temp // Don't take up the core's shield spot.
 		else if(!istype(temp, /obj/structure/blob/normal))
 			potential_blobs -= temp // Not a normal blob.
@@ -160,9 +160,9 @@
 	var/list/potential_blobs = REGISTRY_COPY(REGISTRY_BLOBS)
 	while(potential_blobs.len)
 		var/obj/structure/blob/temp = pick(potential_blobs)
-		if(locate(/obj/structure/blob/node) in range(temp, 5) )
+		if(locate_in_list(range(temp, 5), /obj/structure/blob/node) )
 			potential_blobs -= temp
-		else if(locate(/obj/structure/blob/core) in range(temp, 5) )
+		else if(locate_in_list(range(temp, 5), /obj/structure/blob/core) )
 			potential_blobs -= temp
 		else if(!istype(temp, /obj/structure/blob/normal))
 			potential_blobs -= temp
@@ -236,7 +236,7 @@
 		return FALSE
 	if(L.faction == blob_type.faction)
 		return FALSE // No friendly fire.
-	if(locate(/obj/structure/blob) in get_turf(L))
+	if(locate_within(get_turf(L), /obj/structure/blob))
 		return FALSE // Already has a blob over them.
 
 	for(var/direction in GLOB.cardinal)

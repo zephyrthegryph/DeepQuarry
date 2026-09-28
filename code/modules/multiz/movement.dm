@@ -404,7 +404,7 @@
 // Another check that we probably can just merge into can_fall exept for messing up overrides
 /atom/movable/proc/can_fall_to(turf/landing)
 	// Check if there is anything in our turf we are standing on to prevent falling.
-	for(var/obj/O in loc)
+	for(var/obj/O in contents_of(loc))
 		if(!O.CanFallThru(src, landing))
 			return FALSE
 	// See if something in turf below prevents us from falling into it.
@@ -551,7 +551,7 @@
 /atom/movable/proc/fall_impact(atom/hit_atom, damage_min = 0, damage_max = 10, silent = FALSE, planetary = FALSE)
 	if(!silent)
 		visible_message("\The [src] falls from above and slams into \the [hit_atom]!", "You hear something slam into \the [hit_atom].")
-	for(var/atom/movable/A in src.contents)
+	for(var/atom/movable/A in contents_of(src))
 		A.fall_impact(hit_atom, damage_min, damage_max, silent = TRUE)
 
 // Take damage from falling and hitting the ground
@@ -664,7 +664,7 @@
 
 /obj/mecha/fall_impact(atom/hit_atom, damage_min = 15, damage_max = 30, silent = FALSE, planetary = FALSE)
 	// Anything on the same tile as the landing tile is gonna have a bad day.
-	for(var/mob/living/L in hit_atom.contents)
+	for(var/mob/living/L in contents_of(hit_atom))
 		L.visible_message(span_danger("\The [src] crushes \the [L] as it lands on them!"))
 		L.injure(INJURY_BLUNT, rand(70, 100), null, src)
 		L.status_at_least(EFFECT_WEAKENED, 8)
@@ -701,7 +701,7 @@
 	if(!planetary)
 		take_damage(rand(damage_min, damage_max))
 	else
-		for(var/atom/movable/A in src.contents)
+		for(var/atom/movable/A in contents_of(src))
 			A.fall_impact(hit_atom, damage_min, damage_max, silent = TRUE)
 		qdel(src)
 
@@ -728,7 +728,7 @@
 				L_pulling.forceMove(landing)
 		return TRUE
 
-	for(var/obj/O in loc)
+	for(var/obj/O in contents_of(loc))
 		if(!O.CanFallThru(src, landing))
 			return TRUE
 

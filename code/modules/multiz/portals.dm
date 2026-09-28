@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	else
 		place = target.loc
 	var/portalfind = FALSE
-	for(var/obj/structure/S in place.contents)
+	for(var/obj/structure/S in contents_of(place))
 		if(istype(S, /obj/structure/portal_event))
 			portalfind = TRUE
 		else if (S.density)

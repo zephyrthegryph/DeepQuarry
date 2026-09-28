@@ -195,7 +195,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	user.face_atom(A) // change direction to face what you clicked on
 
 	if(istype(user.loc, /obj/mecha))
-		if(!locate(/turf) in list(A, A.loc)) // Prevents inventory from being drilled
+		if(!locate_in_list(list(A, A.loc), /turf)) // Prevents inventory from being drilled
 			return
 		var/obj/mecha/M = user.loc
 		return M.click_action(A, user, params)
@@ -510,7 +510,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return
 
 	// cyborgs are prohibited from using storage items, so (A.loc in contents) is not needed
-	if(A == user.loc || (A in user.loc) || (A in user.contents))
+	if(A == user.loc || (A in user.loc) || (A in contents_of(user)))
 		// No adjacency checks
 		var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)

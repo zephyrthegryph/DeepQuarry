@@ -17,7 +17,7 @@
 /mob/living/silicon/robot/on_death(gibbed)
 	. = ..()
 	if(module)
-		var/obj/item/gripper/G = locate(/obj/item/gripper) in module
+		var/obj/item/gripper/G = locate_in_list(module, /obj/item/gripper)
 		G?.drop_item()
 	remove_robot_verbs()
 	GLOB.mob_service.report_death(src)

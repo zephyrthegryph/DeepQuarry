@@ -167,14 +167,14 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		var/obj/item/storage/bag/P = O
 		var/plants_loaded = 0
 		P.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/G in P.contents) // ALLOW(latent): materialized above
+		for(var/obj/G in contents_of(P)) // ALLOW(latent): materialized above
 			if(accept_check(G))
 				P.remove_from_storage(G) //fixes ui bug - Pull Request 5515
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
 			user.visible_message(span_notice("[user] loads \the [src] with \the [P]."), span_notice("You load \the [src] with \the [P]."))
-			if(P.contents.len > 0) // ALLOW(latent): materialized above
+			if(contents_count(P) > 0) // ALLOW(latent): materialized above
 				to_chat(user, span_notice("Some items are refused."))
 
 	else if(istype(O, /obj/item/gripper)) // Grippers. ~Mechoid.
@@ -318,7 +318,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /obj/machinery/smartfridge/proc/throw_item()
 	var/obj/throw_item = null
-	var/mob/living/target = locate() in view(7,src)
+	var/mob/living/target = locate_in_list(view(7,src), )
 	if(!target)
 		return FALSE
 

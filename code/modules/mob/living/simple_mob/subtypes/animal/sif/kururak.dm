@@ -207,7 +207,7 @@
 				var/flashfail = FALSE
 				var/mob/living/silicon/robot/R = L
 				if(R.has_active_type(/obj/item/borg/combat/shield))
-					var/obj/item/borg/combat/shield/shield = locate() in R
+					var/obj/item/borg/combat/shield/shield = locate_in_list(R, )
 					if(shield)
 						if(shield.active)
 							shield.adjust_flash_count(R, 1)
@@ -229,7 +229,7 @@
 					C.flash_eyes()
 		for(var/mob/living/silicon/robot/R in oviewers(special_attack_max_range, null))
 			if(R.has_active_type(/obj/item/borg/combat/shield))
-				var/obj/item/borg/combat/shield/shield = locate() in R
+				var/obj/item/borg/combat/shield/shield = locate_in_list(R, )
 				if(shield)
 					if(shield.active)
 						continue

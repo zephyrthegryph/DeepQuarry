@@ -46,7 +46,7 @@
 			// The answer runs on the adult (src is deleted below), so the receiver is passed explicitly.
 			om_ask(adult, /datum/om/prompt/text, TYPE_PROC_REF(/mob/living/carbon/human, adult_name_chosen), receiver = adult, title = "Adult Name", message = "You have become an adult. Choose a name for yourself.", max_length = MAX_NAME_LEN)
 
-	for (var/obj/item/W in src.contents)
+	for (var/obj/item/W in contents_of(src))
 		src.drop_from_inventory(W)
 
 	for(var/datum/language/L in languages)

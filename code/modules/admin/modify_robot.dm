@@ -75,7 +75,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			.["model_options"] = module_options
 			// Data for the upgrade options
 			.["target"] += get_upgrades()
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target().module.modules
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, )
 			if(kin)
 				.["target"]["pka"] += get_pka(kin)
 			for(var/obj/item/robotic_multibelt/multibelt in target().module.modules)
@@ -292,12 +292,12 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			return TRUE
 		if("install_modkit")
 			var/new_modkit = text2path(params["modkit"])
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target().module.modules
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, )
 			var/obj/item/borg/upgrade/modkit/M = new new_modkit(null)
 			M.install(kin, target())
 			return TRUE
 		if("remove_modkit")
-			var/obj/item/gun/energy/kinetic_accelerator/kin = locate() in target().module.modules
+			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, )
 			var/obj/item/rem_kit = locate(params["modkit"])
 			LAZYREMOVE(kin.modkits, rem_kit)
 			qdel(rem_kit)
@@ -367,7 +367,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			target().radio.secure_radio_connections -= selected_radio_channel
 			return TRUE
 		if("add_component")
-			var/datum/robot_component/C = locate(params["component"]) in target().components
+			var/datum/robot_component/C = locate_in_list(target().components, params["component"])
 			if(!C || C.internal)
 				return FALSE
 			var/new_component = text2path(params["new_part"])
@@ -385,7 +385,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			C.install(new new_component(target()))
 			return TRUE
 		if("rem_component")
-			var/datum/robot_component/C = locate(params["component"]) in target().components
+			var/datum/robot_component/C = locate_in_list(target().components, params["component"])
 			if(!C?.wrapped || C.internal)
 				return FALSE
 			if(C.slot == ROBOT_SLOT_POWER)
@@ -404,13 +404,13 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				target().draw_power(ROBOT_CELL_JOULES(-delta), src, 0, TRUE)
 			return TRUE
 		if("adjust_brute")
-			var/datum/robot_component/C = locate(params["component"]) in target().components
+			var/datum/robot_component/C = locate_in_list(target().components, params["component"])
 			if(!C)
 				return FALSE
 			C.set_located_damage(text2num(params["damage"]), C.get_wiring_damage())
 			return TRUE
 		if("adjust_electronics")
-			var/datum/robot_component/C = locate(params["component"]) in target().components
+			var/datum/robot_component/C = locate_in_list(target().components, params["component"])
 			if(!C)
 				return FALSE
 			C.set_located_damage(C.get_structural_damage(), text2num(params["damage"]))
@@ -440,7 +440,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				target().lawchannel = params["law_channel"]
 			return TRUE
 		if("state_law")
-			var/datum/ai_law/AL = locate(params["ref"]) in target().laws.all_laws()
+			var/datum/ai_law/AL = locate_in_list(target().laws.all_laws(), params["ref"])
 			if(AL)
 				var/state_law = text2num(params["state_law"])
 				target().laws.set_state_law(AL, state_law)
@@ -496,7 +496,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				target().lawsync()
 			return TRUE
 		if("edit_law")
-			var/datum/ai_law/AL = locate(params["edit_law"]) in target().laws.all_laws()
+			var/datum/ai_law/AL = locate_in_list(target().laws.all_laws(), params["edit_law"])
 			if(AL)
 				var/new_law = act_ask(ui.user, action, params, ui, "law", /datum/om/prompt/text, message = "Enter new law. Leaving the field blank will cancel the edit.", title = "Edit Law", default = AL.law)
 				if(new_law && new_law != AL.law)
@@ -504,7 +504,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 					target().lawsync()
 				return TRUE
 		if("delete_law")
-			var/datum/ai_law/AL = locate(params["delete_law"]) in target().laws.all_laws()
+			var/datum/ai_law/AL = locate_in_list(target().laws.all_laws(), params["delete_law"])
 			if(AL)
 				target().delete_law(AL)
 				target().lawsync()
@@ -513,12 +513,12 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 			target().statelaws(target().laws)
 			return TRUE
 		if("state_law_set")
-			var/datum/ai_laws/ALs = locate(params["state_law_set"]) in law_list
+			var/datum/ai_laws/ALs = locate_in_list(law_list, params["state_law_set"])
 			if(ALs)
 				target().statelaws(ALs)
 			return TRUE
 		if("transfer_laws")
-			var/datum/ai_laws/ALs = locate(params["transfer_laws"]) in law_list
+			var/datum/ai_laws/ALs = locate_in_list(law_list, params["transfer_laws"])
 			if(ALs)
 				ALs.sync(target(), 0)
 				target().lawsync()
@@ -700,7 +700,7 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 				continue
 			tools += list(list("name" = tool, "path" = material_path))
 	else
-		for(var/obj/tool in mult_belt.contents)
+		for(var/obj/tool in contents_of(mult_belt))
 			integrated_tools += list(list("name" = tool.name, "ref" = "\ref[tool]"))
 		for(var/tool in GLOB.all_borg_multitool_options)
 			if(tool in mult_belt.cyborg_integrated_tools) //Don't add it to the list if we already have it!

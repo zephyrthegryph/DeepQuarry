@@ -682,9 +682,9 @@
 	src.visible_message("[src] whirs as it prints and binds a new book.")
 	var/obj/item/book/bundle/b = new(src.loc)
 	b.pages = source_bundle.pages
-	for(var/obj/item/paper/P in source_bundle.contents)
+	for(var/obj/item/paper/P in contents_of(source_bundle))
 		P.forceMove(b)
-	for(var/obj/item/photo/P in source_bundle.contents)
+	for(var/obj/item/photo/P in contents_of(source_bundle))
 		P.forceMove(b)
 	b.name = "Print Job #" + "[rand(100, 999)]"
 	b.icon_state = "book[rand(1,7)]"

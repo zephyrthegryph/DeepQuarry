@@ -243,7 +243,7 @@ REF_SPILL_LIST(/datum/seed_pile, "seeds")
 
 /obj/machinery/seed_storage/proc/interaction_insert_bag(mob/user, obj/item/storage/P, datum/interaction/interaction)
 	var/loaded = 0
-	for(var/obj/item/seeds/G in P.contents)
+	for(var/obj/item/seeds/G in contents_of(P))
 		++loaded
 		add(G)
 	if (loaded)

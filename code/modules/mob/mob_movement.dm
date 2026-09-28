@@ -8,7 +8,7 @@
 
 /mob/proc/movement_delay(oldloc, direct)
 	. = 0
-	if(locate(/obj/item/grab) in src)
+	if(locate_within(src, /obj/item/grab))
 		. += 5
 
 	if(lying)
@@ -554,10 +554,10 @@
 		dense_object++
 		break
 
-	if(!dense_object && (locate(/obj/structure/lattice) in oview(1, src)))
+	if(!dense_object && (locate_in_list(oview(1, src), /obj/structure/lattice)))
 		dense_object++
 
-	if(!dense_object && (locate(/obj/structure/catwalk) in oview(1, src)))
+	if(!dense_object && (locate_in_list(oview(1, src), /obj/structure/catwalk)))
 		dense_object++
 
 

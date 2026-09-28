@@ -763,7 +763,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	// drop policy), so sweep again until only connected players are left.
 	for(var/pass in 1 to 8)
 		var/list/doomed = list()
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(ismob(AM))
 				var/mob/M = AM
 				if(M.client || M.ckey || M.mind)

@@ -27,7 +27,7 @@
 
 /obj/item/reagent_containers/cooking_container/examine(mob/user)
 	. = ..()
-	if (contents.len)
+	if (contents_count(src))
 		var/string = "It contains....</br>"
 		for (var/atom/movable/A in contents)
 			string += "[A.name] </br>"
@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 		to_chat(user, span_filter_notice("You can't reach [src] from here."))
 		return
 
-	if (!contents.len)
+	if (!contents_count(src))
 		to_chat(user, span_warning("There's nothing in the [src] you can remove!"))
 		return
 
@@ -96,10 +96,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 	update_icon()
 
 /obj/item/reagent_containers/cooking_container/proc/check_contents()
-	if (contents.len == 0)
+	if (contents_count(src) == 0)
 		if (!reagents || reagents.total_volume == 0)
 			return 0//Completely empty
-	else if (contents.len == 1)
+	else if (contents_count(src) == 1)
 		if (!reagents || reagents.total_volume == 0)
 			return 1//Contains only a single object which can be extracted alone
 	return 2//Contains multiple objects and/or reagents
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 	.+= " - "
 	if (CT)
 		.+=CT
-	else if (contents.len)
+	else if (contents_count(src))
 		for (var/obj/O in contents)
 			.+=O.name//Just append the name of the first object
 			return

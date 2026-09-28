@@ -53,7 +53,7 @@
 	var/mob/living/M = holder.wearer()
 	if(!M)
 		return
-	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in M.contents)
+	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in contents_of(M))
 		M.drop_from_inventory(gaming, src)
 
 REF_HELD(/obj/item/rig_module/gauntlets, "stored_gauntlets")

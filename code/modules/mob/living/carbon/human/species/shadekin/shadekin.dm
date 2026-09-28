@@ -246,6 +246,6 @@
 
 /// A species death that leaves only the carried items.
 /mob/living/carbon/human/proc/species_death_vanish()
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 	qdel(src)

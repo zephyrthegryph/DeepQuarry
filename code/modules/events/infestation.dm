@@ -30,7 +30,7 @@
 	var/spawn_area_type = get_spawn_area()
 	for(var/areapath in typesof(spawn_area_type))
 		var/area/A = locate(areapath)
-		for(var/turf/simulated/floor/F in A.contents)
+		for(var/turf/simulated/floor/F in contents_of(A))
 			// Fixes event
 			var/blocked = FALSE
 			for(var/atom/movable/AM in F)

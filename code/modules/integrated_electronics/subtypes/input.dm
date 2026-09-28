@@ -786,7 +786,7 @@ REF_OWNED(/obj/item/integrated_circuit/input/EPv2, "exonet")
 		if(istype(AM, /obj/item/cell)) // Is this already a cell?
 			cell = AM
 		else // If not, maybe there's a cell inside it?
-			for(var/obj/item/cell/C in AM.contents)
+			for(var/obj/item/cell/C in contents_of(AM))
 				if(C) // Find one cell to charge.
 					cell = C
 					break

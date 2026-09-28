@@ -214,21 +214,21 @@
 			return TRUE
 
 		if("open_circuit")
-			var/obj/item/integrated_circuit/C = locate(params["ref"]) in contents
+			var/obj/item/integrated_circuit/C = locate_within(src, params["ref"])
 			if(!istype(C))
 				return
 			C.tgui_interact(ui.user, null, ui)
 			return TRUE
 
 		if("remove_circuit")
-			var/obj/item/integrated_circuit/C = locate(params["ref"]) in contents
+			var/obj/item/integrated_circuit/C = locate_within(src, params["ref"])
 			if(!istype(C))
 				return
 			C.remove(ui.user)
 			return TRUE
 
 		if("update_component_position")
-			var/obj/item/integrated_circuit/C = locate(params["ref"]) in contents
+			var/obj/item/integrated_circuit/C = locate_within(src, params["ref"])
 			if(!istype(C))
 				return FALSE
 

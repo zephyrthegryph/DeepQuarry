@@ -441,7 +441,7 @@ REF_OWNED(/datum/protean_power, "button")
 	verb_path = /mob/living/carbon/human/proc/nano_copy_body
 
 /datum/protean_power/copy_form/proc/aggressive_grab_on(mob/living/carbon/human/H, mob/living/victim)
-	for(var/obj/item/grab/G in H)
+	for(var/obj/item/grab/G in contents_of(H))
 		if(G.state >= GRAB_AGGRESSIVE && (!victim || G?.grab_target() == victim))
 			return G
 	return null

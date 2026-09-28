@@ -61,7 +61,7 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 			return
 		for(var/turf/T in range(range, origin))
 			var/use_alpha = 255 - (step_alpha * get_dist(origin, T))
-			for(var/atom/A in T.contents)
+			for(var/atom/A in contents_of(T))
 				if(dq_get_fluorescent(A) == 1)
 					dq_set_fluorescent(A, 2) //To prevent light crosstalk.
 					if(A.invisibility)

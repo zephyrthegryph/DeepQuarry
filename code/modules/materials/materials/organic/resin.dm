@@ -19,15 +19,15 @@
 
 /datum/material/resin/can_open_material_door(mob/living/user)
 	var/mob/living/carbon/M = user
-	if(istype(M) && locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+	if(istype(M) && locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 		return TRUE
-	if(istype(M) && locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)
+	if(istype(M) && locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/resinspinner/replicant))
 		return TRUE
 	return FALSE
 
 /datum/material/resin/wall_touch_special(turf/simulated/wall/W, mob/living/L)
 	var/mob/living/carbon/M = L
-	if(istype(M) && ((locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs) || (locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)))
+	if(istype(M) && ((locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode)) || (locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/resinspinner/replicant))))
 		to_chat(M, "\The [W] shudders under your touch, starting to become porous.")
 		playsound(W, 'sound/effects/attackblob.ogg', 50, 1)
 		om_do_after(L, 5 SECONDS, W, null, GLOBAL_PROC_REF(resin_wall_dissolve), list(W))

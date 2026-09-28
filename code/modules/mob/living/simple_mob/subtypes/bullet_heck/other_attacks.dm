@@ -78,7 +78,7 @@
 	icon_state = "arti"
 
 /obj/effect/callstrike/end_fall(crushing = FALSE)
-	for(var/mob/living/L in loc)
+	for(var/mob/living/L in contents_of(loc))
 		var/target_zone = ran_zone()
 		if(!L.injure(INJURY_BURN, 70, target_zone, src, flags = INJURE_ARMORED))
 			break

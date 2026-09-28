@@ -418,7 +418,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	update_material_multibelts()
 
 /mob/living/silicon/robot/proc/update_material_multibelts()
-	for(var/obj/item/robotic_multibelt/materials/mat_belt in module.contents) //If it's stowed in our inventory
+	for(var/obj/item/robotic_multibelt/materials/mat_belt in contents_of(module)) //If it's stowed in our inventory
 		mat_belt.generate_tools()
 	for(var/obj/item/robotic_multibelt/materials/mat_belt in contents) //If it's in our handstory
 		mat_belt.generate_tools()

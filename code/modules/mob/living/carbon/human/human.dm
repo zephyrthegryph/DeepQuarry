@@ -263,7 +263,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		L.post_implant(src)
 
 /mob/living/carbon/human/proc/is_loyalty_implanted()
-	for(var/L in src.contents)
+	for(var/L in contents_of(src))
 		if(istype(L, /obj/item/implant/loyalty))
 			for(var/obj/item/organ/external/O in src.organs)
 				if(L in O.implants)
@@ -1988,7 +1988,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 			var/obj/item/organ/external/limb = organs_by_name[name]
 			if(!limb)
 				continue
-			if((limb.is_fractured() && (!limb.splinted || ((limb.splinted in limb.contents) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
+			if((limb.is_fractured() && (!limb.splinted || ((limb.splinted in contents_of(limb)) && prob(30))) || limb.status & ORGAN_BLEEDING) && (injury_load(INJURY_CATEGORY_PHYSICAL) + injury_load(INJURY_CATEGORY_THERMAL) >= 100))
 				return TRUE
 	else
 		return ..()

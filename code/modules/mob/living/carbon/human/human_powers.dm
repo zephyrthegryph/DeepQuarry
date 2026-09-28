@@ -151,7 +151,7 @@
 
 	var/nymphs = 1
 
-	for(var/mob/living/carbon/alien/diona/D in src)
+	for(var/mob/living/carbon/alien/diona/D in contents_of(src))
 		nymphs++
 		D.forceMove(T)
 		transfer_languages(src, D, WHITELISTED|RESTRICTED)
@@ -164,7 +164,7 @@
 			M.set_dir(pick(NORTH, SOUTH, EAST, WEST))
 
 
-	for(var/obj/item/W in src)
+	for(var/obj/item/W in contents_of(src))
 		drop_from_inventory(W)
 
 	var/obj/item/organ/external/Chest = organs_by_name[BP_TORSO]

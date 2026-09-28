@@ -31,7 +31,7 @@ ADMIN_VERB(atmosscan, R_DEBUG, "Check Piping", "Check all pipes in game (Only us
 		for(var/turf/T in world)
 			for(var/dir in GLOB.cardinal)
 				var/list/connect_types = list(0, 0, 0)
-				for(var/obj/machinery/atmospherics/pipe in T)
+				for(var/obj/machinery/atmospherics/pipe in contents_of(T))
 					if(dir & pipe.initialize_directions)
 						for(var/connect_type in pipe.connect_types)
 							connect_types[connect_type] += 1

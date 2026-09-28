@@ -61,7 +61,7 @@
 	if(isAI(input_device))
 		target_ai = input_device
 	else
-		target_ai = locate(/mob/living/silicon/ai) in input_device.contents
+		target_ai = locate_within(input_device, /mob/living/silicon/ai)
 
 	var/obj/item/aicard/card = ai_card
 
@@ -80,9 +80,9 @@
 		input_device.attackby(card,user)
 
 		// If the transfer failed we can delete the card.
-		if(locate(/mob/living/silicon/ai) in card)
+		if(locate_in_list(card, /mob/living/silicon/ai))
 			ai_card = card
-			integrated_ai_handle = om_handle(locate(/mob/living/silicon/ai) in card)
+			integrated_ai_handle = om_handle(locate_in_list(card, /mob/living/silicon/ai))
 		else
 			eject_ai()
 		update_verb_holder()
@@ -170,7 +170,7 @@
 	if(!ai) return
 
 	// The ONLY THING all the different AI systems have in common is that they all store the mob inside an item.
-	var/mob/living/ai_mob = locate(/mob/living) in ai.contents
+	var/mob/living/ai_mob = locate_within(ai, /mob/living)
 	if(ai_mob)
 
 		if(ai_mob.key && ai_mob.client)

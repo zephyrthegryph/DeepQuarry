@@ -49,7 +49,7 @@
 	site().deployed_at = world.time
 	site().last_occupied = world.time
 	for(var/area/A in shuttle.shuttle_area)
-		for(var/mob/living/L in A)
+		for(var/mob/living/L in contents_of(A))
 			site().participants |= L
 
 // ALLOW(lifecycle): its site forgets its landing waypoint.

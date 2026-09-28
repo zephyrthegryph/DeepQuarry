@@ -84,7 +84,7 @@
 		if(T.density || T == get_turf(src))		// Our turf is always eligible
 			continue
 		var/blocked = FALSE
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(AM.density)
 				blocked = TRUE
 				break

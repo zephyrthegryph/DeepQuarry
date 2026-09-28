@@ -223,7 +223,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		consume(O, user)
 		return TRUE
 	if(istype(O, /obj/item/stack/cable_coil)) //How to free people without killing the pitcher. I guess cable is SS13 rope.
-		var/mob/living/carbon/human/H = locate() in vore_selected.contents //Only works for carbons, RIP mice. Should pick the first human the code finds.
+		var/mob/living/carbon/human/H = locate_within(vore_selected, ) //Only works for carbons, RIP mice. Should pick the first human the code finds.
 		if(!H)
 			to_chat(user, span_infoplain("The pitcher is empty."))
 		else
@@ -239,12 +239,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 /mob/living/simple_mob/vore/pitcher_plant/proc/vore_checks()
 	if(ckey) //This isn't intended to be a playable mob but skip all of this if it's player-controlled.
 		return
-	if(vore_selected && vore_selected.contents.len) //Looping through all (potential) vore bellies would be more thorough but probably not worth the processing power if this check happens every 30 seconds.
+	if(vore_selected && contents_count(vore_selected)) //Looping through all (potential) vore bellies would be more thorough but probably not worth the processing power if this check happens every 30 seconds.
 		var/mob/living/L
 		var/N = 0
 		var/hasdigestable = 0
 		var/hasindigestable = 0
-		for(L in vore_selected.contents)
+		for(L in contents_of(vore_selected))
 			if(istype(L, /mob/living/carbon/human/monkey))
 				L.nutrition = 0 //No stuffing monkeys with protein shakes for massive nutrition.
 			if(!L.digestable)

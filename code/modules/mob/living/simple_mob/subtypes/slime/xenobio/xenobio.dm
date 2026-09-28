@@ -178,7 +178,7 @@
 				var/free = TRUE
 				if(T.density) // No walls.
 					continue
-				for(var/atom/movable/AM in T)
+				for(var/atom/movable/AM in contents_of(T))
 					if(istype(AM, /mob/living/simple_mob/slime) || !(AM.CanPass(src, T)))
 						free = FALSE
 						break
