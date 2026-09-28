@@ -84,7 +84,7 @@
 			om_after(chassis, get_step_delay(), TYPE_PROC_REF(/obj/mecha, reset_can_move))
 			return 1
 		return 0
-	if(chassis.hasInternalDamage(MECHA_INT_CONTROL_LOST))
+	if(mech_body_plan().has_affliction(chassis, MECHA_INT_CONTROL_LOST))
 		move_result = step_rand(chassis)
 	else if(chassis.dir!=direction)
 		chassis.set_dir(direction)

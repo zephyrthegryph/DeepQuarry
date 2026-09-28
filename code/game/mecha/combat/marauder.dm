@@ -6,7 +6,6 @@
 	initial_icon = "marauder"
 	step_in = 5
 	max_integrity = 350		//Don't forget to update the /old variant if  you change this number.
-	deflect_chance = 25
 	max_temperature = 60000
 	infra_luminosity = 3
 	operation_req_access = list(ACCESS_CENT_SPECOPS)
@@ -102,7 +101,7 @@
 	var/tmp_step_in = step_in
 	var/tmp_step_energy_drain = step_energy_drain
 	var/move_result = 0
-	if(internal_damage&MECHA_INT_CONTROL_LOST)
+	if(mech_body_plan().has_affliction(src, MECHA_INT_CONTROL_LOST))
 		move_result = mechsteprand()
 	else if(src.dir!=direction)
 		move_result = mechturn(direction)

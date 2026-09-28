@@ -20,7 +20,7 @@
 	if(!action_checks(user))
 		return inc_damage
 	chassis.log_message("Attacked by [W]. Attacker - [user]", LOG_GAME)
-	if(prob(chassis.deflect_chance*deflect_coeff))
+	if(prob(mech_body_plan().deflect_chance(chassis)*deflect_coeff))
 		to_chat(user, span_danger("\The [W] bounces off \the [chassis]'s armor."))
 		chassis.log_append_to_last("Armor saved.")
 		inc_damage = 0

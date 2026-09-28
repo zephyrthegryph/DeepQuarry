@@ -23,7 +23,6 @@
 	dir_in = 2 //Facing south.
 	max_integrity = 150
 	step_energy_drain = 4 // less efficient than base micromech, but still a micromech.
-	deflect_chance = 10
 	max_temperature = 15000
 	infra_luminosity = 6
 	wreckage = /obj/effect/decal/mecha_wreckage/micro/sec/polecat
@@ -45,7 +44,6 @@
 	step_in = 1 // zoom zoom
 	dir_in = 2 //Facing south.
 	max_integrity = 100
-	deflect_chance = 5
 	max_temperature = 5000
 	wreckage = /obj/effect/decal/mecha_wreckage/micro/sec/weasel
 	internal_damage_threshold = 20

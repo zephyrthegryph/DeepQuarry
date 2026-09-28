@@ -8,6 +8,9 @@
 	var/base_icon_state = "RD-server"
 	circuit = /obj/item/circuitboard/machine/rdserver
 	req_access = list(ACCESS_RD)
+	/// Declared machine heat (heat_objects.dm): watts dumped into the room while working.
+	heat_output = 500
+	heat_dissipation = 150
 
 	/// if TRUE, we are currently operational and giving out research points.
 	var/working = TRUE
@@ -23,6 +26,7 @@
 		connect_techweb(science_web)
 	LAZYOR(stored_research.techweb_servers, src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
+	refresh_working()
 
 DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_servers")
 
@@ -46,7 +50,14 @@ DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_ser
 		working = TRUE
 
 	// update_current_power_usage()
+	update_heat_output()
 	update_icon()
+
+/// Only a working server runs hot; halted or EMP'd it emits nothing.
+/obj/machinery/rnd/server/current_heat_output()
+	if(!working)
+		return 0
+	return ..()
 
 /obj/machinery/rnd/server/emp_act(severity, recursive)
 	. = ..()

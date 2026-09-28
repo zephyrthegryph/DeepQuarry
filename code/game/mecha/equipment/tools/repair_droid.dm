@@ -59,12 +59,12 @@
 		return PROCESS_KILL
 	var/repaired = 0
 	var/effective_boost = health_boost
-	if(chassis.hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
+	if(mech_body_plan().has_affliction(chassis, MECHA_INT_SHORT_CIRCUIT))
 		effective_boost *= -2
-	else if(chassis.hasInternalDamage() && prob(15))
+	else if(mech_body_plan().has_affliction(chassis) && prob(15))
 		for(var/int_dam_flag in repairable_damage)
-			if(chassis.hasInternalDamage(int_dam_flag))
-				chassis.clearInternalDamage(int_dam_flag)
+			if(mech_body_plan().has_affliction(chassis, int_dam_flag))
+				mech_body_plan().cure(chassis, int_dam_flag)
 				repaired = 1
 				break
 

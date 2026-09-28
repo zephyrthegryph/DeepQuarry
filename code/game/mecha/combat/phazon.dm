@@ -7,7 +7,6 @@
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
 	max_integrity = 250 // Don't forget to update the /old variant if you change this number.
-	deflect_chance = 30
 	max_temperature = 25000
 	infra_luminosity = 3
 	wreckage = /obj/effect/decal/mecha_wreckage/phazon
@@ -90,7 +89,6 @@
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
 	max_integrity = 350
-	deflect_chance = 30
 	inherent_damage_absorption = list("brute"=0.6,"fire"=0.7,"bullet"=0.7,"laser"=0.9,"energy"=0.7,"bomb"=0.5)
 	max_temperature = 10000
 	infra_luminosity = 3
@@ -125,19 +123,20 @@
 
 	return
 
-/obj/mecha/combat/phazon/janus/dynbulletdamage(obj/item/projectile/Proj)
+/// Phase armour: absorbs kinetic rounds and reflects beams before they reach the body.
+/obj/mecha/combat/phazon/janus/negate_projectile(obj/item/projectile/Proj)
 	if((Proj.damage && !Proj.nodamage) && !istype(Proj, /obj/item/projectile/beam) && prob(max(1, 33 - round(Proj.damage / 4))))
 		src.occupant_message(span_alien("The armor absorbs the incoming projectile's force, negating it!"))
 		src.visible_message(span_alien("The [src.name] absorbs the incoming projectile's force, negating it!"))
 		src.log_append_to_last("Armor negated.")
-		return
+		return TRUE
 	else if((Proj.damage && !Proj.nodamage) && istype(Proj, /obj/item/projectile/beam) && prob(max(1, (50 - round((Proj.damage / 2) * inherent_damage_absorption["laser"])) * (1 - (Proj.armor_penetration / 100)))))	// Base 50% chance to deflect a beam,lowered by half the beam's damage scaled to laser absorption, then multiplied by the remaining percent of non-penetrated armor, with a minimum chance of 1%.
 		src.occupant_message(span_alien("The armor reflects the incoming beam, negating it!"))
 		src.visible_message(span_alien("The [src.name] reflects the incoming beam, negating it!"))
 		src.log_append_to_last("Armor reflected.")
-		return
+		return TRUE
 
-	..()
+	return ..()
 
 /obj/mecha/combat/phazon/janus/dynattackby(obj/item/W as obj, mob/user as mob)
 	if(prob(max(1, (50 - round((W.force / 2) * inherent_damage_absorption["brute"])) * (1 - (W.armor_penetration / 100)))))

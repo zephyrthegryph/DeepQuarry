@@ -6,7 +6,6 @@
 	step_in = 4
 	dir_in = 1 //Facing North.
 	max_integrity = 300			//Don't forget to update the /old variant if  you change this number.
-	deflect_chance = 20
 	max_temperature = 30000
 	infra_luminosity = 8
 	force = 40

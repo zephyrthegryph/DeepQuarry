@@ -137,8 +137,11 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 /turf/simulated/floor/outdoors/snow/chill()
 	return // Todo: Add heavy snow.
 
-/turf/simulated/floor/outdoors/ex_act(severity)
-	switch(severity)
+/// Outdoor ground erodes a layer (demote) instead of losing integrity.
+/turf/simulated/floor/outdoors/receive_explosion(severity)
+	if(resistance_flags & BOMB_PROOF)
+		return 0
+	switch(round(severity))
 		// Outdoor turfs less explosion resistant
 		if(1)
 			if(prob(66))

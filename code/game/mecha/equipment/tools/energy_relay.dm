@@ -10,7 +10,7 @@
 	equip_type = EQUIP_UTILITY
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/periodic_step()
-	if(!chassis || chassis.hasInternalDamage(MECHA_INT_SHORT_CIRCUIT))
+	if(!chassis || mech_body_plan().has_affliction(chassis, MECHA_INT_SHORT_CIRCUIT))
 		set_ready_state(TRUE)
 		return PROCESS_KILL
 	var/cur_charge = chassis.get_charge()

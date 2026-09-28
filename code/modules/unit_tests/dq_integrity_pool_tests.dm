@@ -418,9 +418,8 @@ DECLARE_REF(/datum/unit_test/dq_integrity_pool, "before_contents", WEAK_LIST, nu
 /datum/unit_test/dq_integrity_pool/mech_packet/Run()
 	var/turf/T = scratch_turf()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
-	// Mechs deflect hits at random (deflect_chance, and the armour component's); pin both
-	// to zero so the packet always lands.
-	mech.deflect_chance = 0
+	// Mechs deflect hits at random (the armour plates' deflect_chance); pin it to zero so
+	// the packet always lands.
 	var/obj/item/mecha_parts/component/armor/armour = mech.internal_components[MECH_ARMOR]
 	if(armour)
 		armour.deflect_chance = 0
@@ -430,5 +429,5 @@ DECLARE_REF(/datum/unit_test/dq_integrity_pool, "before_contents", WEAK_LIST, nu
 	TEST_ASSERT(dq_near(applied, before - mech.get_integrity(), 0.01), "the sink reports what it applied")
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
 	P.damage = 30
-	TEST_ASSERT_EQUAL(mech.projectile_damage(P, null), 0, "rounds go through dynbulletdamage, not the generic adapter")
+	TEST_ASSERT_EQUAL(mech.projectile_damage(P, null), 0, "rounds go through the mech body plan, not the generic adapter")
 	clear_debris(T)

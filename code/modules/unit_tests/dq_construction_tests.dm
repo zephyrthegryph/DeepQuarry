@@ -333,10 +333,10 @@
 		TEST_ASSERT_EQUAL(mech.state, step[2], "[tool] back -> state [step[2]]")
 		H.drop_from_inventory(tool)
 
-	mech.setInternalDamage(MECHA_INT_TEMP_CONTROL)
+	mech_body_plan().afflict(mech, MECHA_INT_TEMP_CONTROL)
 	H.put_in_active_hand(screwdriver)
 	mech.tool_interaction(H, screwdriver)
-	TEST_ASSERT(!mech.hasInternalDamage(MECHA_INT_TEMP_CONTROL), "the screwdriver fixes temperature control first")
+	TEST_ASSERT(!mech_body_plan().has_affliction(mech, MECHA_INT_TEMP_CONTROL), "the screwdriver fixes temperature control first")
 	TEST_ASSERT_EQUAL(mech.state, MECHA_BOLTS_SECURED, "without a step")
 	H.drop_from_inventory(screwdriver)
 

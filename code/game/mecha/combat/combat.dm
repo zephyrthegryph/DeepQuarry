@@ -25,7 +25,7 @@
 
 /*
 /obj/mecha/combat/range_action(target as obj|mob|turf)
-	if(internal_damage&MECHA_INT_CONTROL_LOST)
+	if(mech_body_plan().has_affliction(src, MECHA_INT_CONTROL_LOST))
 		target = pick(view(3,target))
 	if(selected_weapon)
 		selected_weapon.fire(target)
@@ -33,7 +33,7 @@
 */
 
 /obj/mecha/combat/melee_action(atom/T)
-	if(internal_damage&MECHA_INT_CONTROL_LOST)
+	if(mech_body_plan().has_affliction(src, MECHA_INT_CONTROL_LOST))
 		T = safepick(oview(1,src))
 	if(!melee_can_hit)
 		return

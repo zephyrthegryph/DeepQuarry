@@ -6,7 +6,6 @@
 	step_in = 3
 	dir_in = 1 //Facing North.
 	max_integrity = 250			//Don't forget to update the /old variant if  you change this number.
-	deflect_chance = 15
 	max_temperature = 25000
 	infra_luminosity = 6
 	wreckage = /obj/effect/decal/mecha_wreckage/gygax
@@ -51,7 +50,6 @@
 	icon_state = "darkgygax"
 	initial_icon = "darkgygax"
 	max_integrity = 400
-	deflect_chance = 25
 	max_temperature = 45000
 	overload_coeff = 1
 	wreckage = /obj/effect/decal/mecha_wreckage/gygax/dark
@@ -85,7 +83,6 @@
 	icon_state = "medgax"
 	initial_icon = "medgax"
 	max_integrity = 150
-	deflect_chance = 20
 	step_in = 2
 	max_temperature = 20000
 	overload_coeff = 1

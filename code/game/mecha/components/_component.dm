@@ -86,7 +86,7 @@
 
 	if(chassis && internal_damage_flag)
 		if(get_efficiency() < 0.5)
-			chassis.check_for_internal_damage(list(internal_damage_flag), TRUE)
+			mech_body_plan().roll_affliction(chassis, list(internal_damage_flag), TRUE)
 
 	return TRUE
 
@@ -120,11 +120,11 @@
 
 		if(internal_damage_flag)
 			if(get_integrity() > (max_integrity * integrity_danger_mod))
-				if(chassis.hasInternalDamage(internal_damage_flag))
-					chassis.clearInternalDamage(internal_damage_flag)
+				if(mech_body_plan().has_affliction(chassis, internal_damage_flag))
+					mech_body_plan().cure(chassis, internal_damage_flag)
 
 			else
-				chassis.check_for_internal_damage(list(internal_damage_flag))
+				mech_body_plan().roll_affliction(chassis, list(internal_damage_flag))
 
 		chassis.internal_components[component_type] = src
 
@@ -137,8 +137,8 @@
 	if(chassis)
 		chassis.internal_components[component_type] = null
 
-		if(internal_damage_flag && chassis.hasInternalDamage(internal_damage_flag))	// If the module has been removed, it's kind of unfair to keep it causing problems by being damaged. It's nonfunctional either way.
-			chassis.clearInternalDamage(internal_damage_flag)
+		if(internal_damage_flag && mech_body_plan().has_affliction(chassis, internal_damage_flag))	// If the module has been removed, it's kind of unfair to keep it causing problems by being damaged. It's nonfunctional either way.
+			mech_body_plan().cure(chassis, internal_damage_flag)
 
 		forceMove(get_turf(chassis))
 	chassis = null

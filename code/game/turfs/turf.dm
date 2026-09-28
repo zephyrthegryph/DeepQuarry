@@ -151,8 +151,10 @@ REGISTRY_MEMBERSHIP(/turf, REGISTRY_CLEANBOT_RESERVED_TURFS)
 	..()
 	registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, src)
 
+/// Explosion entry point: every turf is a sink of the blast packet (damage.md §3, D-turf).
+/// Turfs that change turf instead of losing integrity override receive_explosion().
 /turf/ex_act(severity)
-	return 0
+	return receive_explosion(severity)
 
 /turf/proc/is_space()
 	return 0

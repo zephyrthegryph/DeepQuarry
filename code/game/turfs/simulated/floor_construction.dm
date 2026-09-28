@@ -112,6 +112,7 @@
 	floor.icon_state = "plating"
 	floor.burnt = null
 	floor.broken = null
+	floor.restore_floor_integrity()
 	return TRUE
 
 /datum/interaction/construction/floor/cut_plating

@@ -9,7 +9,6 @@
 	step_in = 10
 	max_integrity = 5000
 	opacity = 0 // Because there's big tall legs to look through. Also it looks fucky if this is set to 1.
-	deflect_chance = 50
 	max_temperature = 35000 //Just a bit better than the Durand.
 	infra_luminosity = 3
 	wreckage = /obj/effect/decal/mecha_wreckage/gorilla
@@ -83,7 +82,7 @@
 	var/tmp_step_in = step_in
 	var/tmp_step_energy_drain = step_energy_drain
 	var/move_result = 0
-	if(internal_damage&MECHA_INT_CONTROL_LOST)
+	if(mech_body_plan().has_affliction(src, MECHA_INT_CONTROL_LOST))
 		move_result = mechsteprand()
 	else if(src.dir!=direction)
 		move_result = mechturn(direction)

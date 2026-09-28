@@ -21,7 +21,7 @@
 	minimum_penetration = 0		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
 
 /obj/mecha/micro/melee_action(target as obj|mob|turf)
-	if(internal_damage&MECHA_INT_CONTROL_LOST)
+	if(mech_body_plan().has_affliction(src, MECHA_INT_CONTROL_LOST))
 		target = safepick(oview(1,src))
 	if(!melee_can_hit || !istype(target, /atom)) return
 	if(isliving(target))

@@ -5119,6 +5119,7 @@
 #include "code\modules\body\breath_profile.dm"
 #include "code\modules\body\factors.dm"
 #include "code\modules\body\injury.dm"
+#include "code\modules\body\mech_body.dm"
 #include "code\modules\body\physiology.dm"
 #include "code\modules\body\revival.dm"
 #include "code\modules\body\vital_state.dm"

@@ -70,8 +70,8 @@
 // Old attackby: items do nothing here.
 EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYPE_PROC_REF(/atom, interaction_pass)))
 
-/turf/simulated/wall/solidrock/ex_act()
-	return
+/turf/simulated/wall/solidrock
+	resistance_flags = INDESTRUCTIBLE | BOMB_PROOF
 
 
 //Mossy rocks for POI. Unbreakable, no teleport.

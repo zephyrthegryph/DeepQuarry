@@ -8,7 +8,6 @@
 	step_energy_drain = 5 //Half of normal step drain. Faster mech, more movement.
 	opacity = 0
 	max_integrity = 250
-	deflect_chance = 10
 	max_temperature = 20000
 	infra_luminosity = 6
 
