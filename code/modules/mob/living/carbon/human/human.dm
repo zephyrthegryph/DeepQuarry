@@ -1417,8 +1417,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!(gender in species.genders))
 		gender = species.genders[1]
 
-	//icon_state = lowertext(species.name) //Necessary?
-
 	// Swap the body plan before the organs are built so they attach to the new body.
 	// On the first set_species() (before /mob/living/Initialize()) the body is
 	// built here: organs attach into the plan's part slots as they are made.
@@ -2064,16 +2062,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	set desc = "Toggle glasses worn icon visibility."
 	hide_glasses = !hide_glasses
 	update_inv_glasses()
-
-///mob/living/carbon/human/vv_edit_var(var_name, var_value)
-//	if(var_name == NAMEOF(src, mob_height))
-//		// you wanna edit this one not that one
-//		var_name = NAMEOF(src, base_mob_height)
-//	. = ..()
-//	if(!.)
-//		return .
-//	if(var_name == NAMEOF(src, base_mob_height))
-//		update_mob_height()
 
 /mob/living/carbon/human/vv_get_dropdown()
 	. = ..()

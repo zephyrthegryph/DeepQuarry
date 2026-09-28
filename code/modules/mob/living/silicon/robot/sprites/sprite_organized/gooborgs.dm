@@ -4,7 +4,6 @@
 /datum/robot_sprite/dogborg/tall/mining/gooborg
 	name = "Gooborg - Cargo"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "catgo"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -21,7 +20,6 @@
 /datum/robot_sprite/dogborg/tall/mining/gooborg/miner
 	name = "Gooborg - Miner"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "catgo"
 	sprite_icon = 'icons/mob/robot/gooborgs/departmental/gooborg_miner.dmi'
 	rest_sprite_options = list("Default", "Bellyup", "Sit")
 	belly_capacity_list = list("sleeper" = 2, "throat" = 2)
@@ -32,7 +30,6 @@
 /datum/robot_sprite/dogborg/tall/engineering/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "engi"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -49,7 +46,6 @@
 /datum/robot_sprite/dogborg/tall/crisis/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "meowdical"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -67,7 +63,6 @@
 /datum/robot_sprite/dogborg/tall/science/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "sci"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -84,7 +79,6 @@
 /datum/robot_sprite/dogborg/tall/security/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "sec"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -108,7 +102,6 @@
 /datum/robot_sprite/dogborg/tall/service/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "service"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -125,7 +118,6 @@
 /datum/robot_sprite/dogborg/tall/janitor/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "service"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -141,7 +133,6 @@
 /datum/robot_sprite/dogborg/tall/combat/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "malf"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -163,7 +154,6 @@
 /datum/robot_sprite/dogborg/tall/clown/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "syndicat"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -180,7 +170,6 @@
 /datum/robot_sprite/dogborg/tall/explorer/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "explo"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -196,7 +185,6 @@
 /datum/robot_sprite/dogborg/tall/ninja/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "syndicat"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -221,7 +209,6 @@
 /datum/robot_sprite/dogborg/tall/combat_medic/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "malf"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -245,7 +232,6 @@
 /datum/robot_sprite/dogborg/tall/command/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "clerical"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -262,7 +248,6 @@
 /datum/robot_sprite/dogborg/tall/standard/gooborg
 	name = "Gooborg"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "standard"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE
@@ -278,7 +263,6 @@
 /datum/robot_sprite/dogborg/tall/standard/gooborg_rgb
 	name = "Gooborg - RGB"
 	sprite_icon_state = "base"
-	//sprite_hud_icon_state = "standard"
 	has_eye_sprites = TRUE
 	has_eye_light_sprites = TRUE
 	has_sleeper_light_indicator = FALSE

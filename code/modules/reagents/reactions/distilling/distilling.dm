@@ -1,27 +1,18 @@
 /datum/decl/chemical_reaction/distilling
 	name = REAGENT_DEVELOPER_WARNING // Unit test ignore
-//	id = null
-//	result = null
-//	required_reagents = list()
-//	catalysts = list()
-//	inhibitors = list()
-//	result_amount = 0
 
 	//how far the reaction proceeds each time it is processed. Used with either REACTION_RATE or HALF_LIFE macros.
 	reaction_rate = HALF_LIFE(6)
 
 	//if less than 1, the reaction will be inhibited if the ratio of products/reagents is too high.
 	//0.5 = 50% yield -> reaction will only proceed halfway until products are removed.
-//	yield = 1.0
 
 	//If limits on reaction rate would leave less than this amount of any reagent (adjusted by the reaction ratios),
 	//the reaction goes to completion. This is to prevent reactions from going on forever with tiny reagent amounts.
-//	min_reaction = 2
 
 	mix_message = "The solution churns."
 	reaction_sound = 'sound/effects/slosh.ogg'
 
-//	log_is_important = 0 // If this reaction should be considered important for logging. Important recipes message admins when mixed, non-important ones just log to file.
 
 	var/list/temp_range = list(T0C, T20C) // ALLOW(instance_list): c: read-only per-subtype constant table (54 subtype overrides); a getter would share it, not worth it on a rare type
 	var/temp_shift = 0 // How much the temperature changes when the reaction occurs.

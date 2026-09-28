@@ -539,7 +539,6 @@
 	deform = 'icons/mob/human_races/r_def_plant.dmi'
 	language = LANGUAGE_ROOTLOCAL
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/diona)
-	//primitive_form = "Nymph"
 	factor_baseline = alist(BF_SLOWDOWN = 0.5)
 	snow_movement = -2 	//Ignore light snow
 	water_movement = -4	//Ignore shallow water
@@ -719,10 +718,6 @@
 	tail = "tail"
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
-	//darksight = 8
-	//slowdown = -0.5
-	//brute_mod = 1.15
-	//burn_mod =  1.15
 	num_alternate_languages = 3
 	secondary_langs = list(LANGUAGE_SAGARU)
 	name_language = LANGUAGE_SAGARU
@@ -786,10 +781,6 @@
 	tail = "tail"
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
-	//darksight = 8
-	//slowdown = -0.5
-	//brute_mod = 1.15
-	//burn_mod =  1.15
 	num_alternate_languages = 3
 	secondary_langs = list(LANGUAGE_SPACER)
 	name_language = LANGUAGE_SPACER
@@ -835,10 +826,6 @@
 	tail = "tail"
 	icobase_tail = 1
 	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
-	//darksight = 8
-	//slowdown = -0.5
-	//brute_mod = 1.15
-	//burn_mod =  1.15
 	soft_landing = TRUE
 	num_alternate_languages = 3
 	secondary_langs = list(LANGUAGE_BIRDSONG)
@@ -909,7 +896,6 @@
 
 	catalogue_data = list(/datum/category_item/catalogue/fauna/zorren)
 
-	//primitive_form = "" //We don't have fox-monkey sprites.
 
 	spawn_flags = SPECIES_CAN_JOIN
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
@@ -1123,12 +1109,9 @@
 	snow_movement = -2	// Ignores light snow
 	item_slowdown_mod = 2	// Tiny birds don't like heavy things
 	total_health = 75
-	//brute_mod = 1.35
-	//burn_mod = 1.35
 	mob_size = MOB_MEDIUM
 	pass_flags = PASSTABLE
 	holder_type = /obj/item/holder/micro
-//	short_sighted = 1
 	has_vibration_sense = TRUE
 	blood_volume = 400
 	hunger_factor = 0.2
@@ -1210,7 +1193,6 @@
 		)
 
 	inherent_verbs = list(
-		///mob/living/carbon/human/proc/sonar_ping,
 		/mob/living/proc/hide,
 		/mob/living/proc/toggle_pass_table
 		)
@@ -1225,7 +1207,6 @@
 
 /datum/species/teshari/equip_survival_gear(mob/living/carbon/human/H)
 	..()
-	// if(!(H.client?.prefs?.shoe_hater)) // . Disables shoe_hater. Un-indents below line by 1.
 	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),SLOT_ID_SHOES)
 /*
 /datum/species/teshari/handle_falling(mob/living/carbon/human/H, atom/hit_atom, damage_min, damage_max, silent, planetary)
@@ -1341,7 +1322,6 @@
 	base_color = "#f0f0f0"
 	color_mult = 1
 
-	//has_glowing_eyes = TRUE			// Applicable through traits.
 
 	speech_bubble_appearance = "ghost"
 
@@ -1407,7 +1387,6 @@
 
 	species_sounds = "Vulpine"
 
-	//primitive_form = "" //We don't have fennec-monkey sprites.
 	spawn_flags = SPECIES_IS_RESTRICTED
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
 	genders = list(MALE, FEMALE, PLURAL, NEUTER)
@@ -1445,7 +1424,6 @@
 	removed if they had the ability to, although hybrids that previously contained this ability is extremely rare."
 	// No wiki page for xenohybrids at present
 
-	//primitive_form = "" //None for these guys
 
 	spawn_flags = SPECIES_IS_RESTRICTED
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
@@ -1565,7 +1543,6 @@
 	cold_level_2 = -1
 	cold_level_3 = -1
 
-	//primitive_form = SPECIES_MONKEY //I dunno. Replace this in the future.
 
 	flags = NO_MINOR_CUT
 	spawn_flags = SPECIES_CAN_JOIN
@@ -1678,7 +1655,6 @@
 	num_alternate_languages = 3
 	species_language = null
 	secondary_langs = list("Sol Common")
-	//color_mult = 1 //It seemed to work fine in testing, but I've been informed it's unneeded.
 	tail = "tail"
 	icobase_tail = 1
 	inherent_verbs = list(
@@ -1707,7 +1683,6 @@
 	cold_level_2 = -1
 	cold_level_3 = -1
 
-	//primitive_form = SPECIES_MONKEY_TAJ
 
 	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE//Whitelisted as restricted is broken.
 	flags = NO_SLEEVE | NO_DNA | NO_INFECT // | NO_DEFIB // Dying as a chimera is, quite literally, a death sentence. Well, if it wasn't for their revive, that is. Leaving NO_DEFIB there for the future/in case reversion to old 'chimera no-defib.
@@ -2131,14 +2106,7 @@
 // === merged from station_chomp.dm during hard-fork de-suffix. Placed in this file because it
 // is the highest-positioned definer in the override chain for the members it
 // sets, so every override stays after its base definition (resolution preserved). ===
-//Any species commented out here must be made restricted elsewhere. They are kept here for easy reference of what we disabled.
 //Note that at the time of this PR we are simply disabling everything new to discuss keeping versus scrapping later.
-
-///datum/species/zaddat
-//	spawn_flags = SPECIES_IS_RESTRICTED //Species has been enabled elsewhere.
-
-///datum/species/crew_shadekin
-//	spawn_flags = SPECIES_IS_RESTRICTED
 
 /datum/species/human/gravworlder
 	spawn_flags = SPECIES_IS_RESTRICTED
@@ -2146,29 +2114,6 @@
 /datum/species/human/spacer
 	spawn_flags = SPECIES_IS_RESTRICTED
 
-///datum/species/alraune
-//	spawn_flags = SPECIES_IS_RESTRICTED //Species has been enabled, keeping this here for reference.
-
-///datum/species/werebeast
-//	spawn_flags = SPECIES_IS_RESTRICTED
-
 /datum/species/shadekin_yw
 	spawn_flags = SPECIES_IS_RESTRICTED
 
-// /datum/species/shadekin
-	//spawn_flags = SPECIES_IS_RESTRICTED
-
-//datum/species/protean
-//	spawn_flags = SPECIES_IS_RESTRICTED
-
-//TFF 20/1/20 - More whitelisted species listed here. Unable to force overrides to be enabled here.
-/*
-/datum/species/xenochimera
-	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
-
-/datum/species/diona
-	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
-
-/datum/species/vox
-	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
-*/

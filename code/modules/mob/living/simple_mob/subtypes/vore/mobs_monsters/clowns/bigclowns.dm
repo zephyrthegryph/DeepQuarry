@@ -346,15 +346,3 @@
 	vis_height = 32
 
 
-//template
-
-///mob/living/simple_mob/clowns/big/
-//	name = "A Clown?"
-//	desc = "Oh sweet space christ."
-//	tt_desc = "E Homo sapiens corydon horrificus" //this is a redspace clown
-//	icon = 'icons/mob/mobs_monsters/tgclowns.dmi'
-//	icon_state = ""
-//	icon_living = ""
-//	icon_dead = "_dead"
-//	icon_gib = "generic_gib"
-//	vis_height = 64
