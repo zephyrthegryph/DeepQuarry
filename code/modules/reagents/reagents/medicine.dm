@@ -1303,7 +1303,8 @@
 	//One of the levofloxacin side effects is 'spontaneous tendon rupture', which I'll immitate here. 1:1000 chance, so, pretty darn rare.
 	if(ishuman(M) && rand(1,10000) == 1) //Adjusted to 1:10000
 		var/obj/item/organ/external/eo = pick(H.organs) //Misleading variable name, 'organs' is only external organs
-		eo.fracture()
+		// P2-K5: an injury the body resolves into a fracture, not a direct write.
+		H.injure(INJURY_BLUNT, eo.min_broken_damage, eo, source = src, affliction = /datum/affliction/untreated_fracture)
 
 /datum/reagent/spacomycaze
 	factors = alist(BF_ANALGESIA = 20, BF_ANTIMICROBIAL = ANTIBIO_NORM)
@@ -1373,7 +1374,7 @@
 	return
 
 /datum/reagent/sterilizine/affect_touch(mob/living/carbon/M, alien, removed)
-	M.germ_level -= min(removed*20, M.germ_level)
+	M.adjust_germ_level(-removed * 20)
 	for(var/obj/item/I in contents_of(M))
 		dq_set_was_bloodied(I, null)
 	dq_set_was_bloodied(M, null)
@@ -1383,12 +1384,12 @@
 
 /datum/reagent/sterilizine/touch_obj(obj/O)
 	..()
-	O.germ_level -= min(volume*200, O.germ_level)
+	O.adjust_germ_level(-volume * 200)
 	dq_set_was_bloodied(O, null)
 
 /datum/reagent/sterilizine/touch_turf(turf/T)
 	..()
-	T.germ_level -= min(volume*200, T.germ_level)
+	T.adjust_germ_level(-volume * 200)
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
 		dq_set_was_bloodied(I, null)
 	for(var/obj/effect/decal/cleanable/blood/B in turf_contents_of_type(T, /obj/effect/decal/cleanable/blood))

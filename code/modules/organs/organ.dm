@@ -161,7 +161,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /obj/item/organ/proc/saturate_damage()
 	damage = max_damage
 
-/obj/item/organ/proc/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
+/obj/item/organ/adjust_germ_level(amount)		// Unless you're setting germ level directly to 0, use this proc instead
 	germ_level = CLAMP(germ_level + amount, 0, INFECTION_LEVEL_MAX)
 
 /obj/item/organ/periodic_step()

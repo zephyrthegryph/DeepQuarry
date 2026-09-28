@@ -221,9 +221,9 @@
 	M.fire_stacks = 0
 	M.mend(TREAT_ANTITOXIN, 100)
 	if(M.bodytemperature > BODYTEMP_NORMAL)
-		M.set_bodytemperature(max(BODYTEMP_NORMAL, M.bodytemperature - (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+		M.adjust_bodytemperature(-(40 * TEMPERATURE_DAMAGE_COEFFICIENT), min_temp = BODYTEMP_NORMAL)
 	else if(M.bodytemperature < 311)
-		M.set_bodytemperature(min(BODYTEMP_NORMAL, M.bodytemperature + (40 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+		M.adjust_bodytemperature(40 * TEMPERATURE_DAMAGE_COEFFICIENT, max_temp = BODYTEMP_NORMAL)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/wound_heal = 5
