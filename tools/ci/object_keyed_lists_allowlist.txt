@@ -3,7 +3,7 @@
 # this file: a file may not exceed its count. Make the list an owned-children
 # list, a backlist, a declared cache with an invalidation rule, a relation or
 # a registry, or key it by OM handle, and lower the count with --update.
-# Total: 314 writes in 126 files.
+# Total: 237 writes in 99 files.
 code/ATMOSPHERICS/components/omni_devices/filter.dm 1
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/omni_devices/omni_base.dm 1
@@ -49,40 +49,27 @@ code/game/objects/items/weapons/material/kitchen.dm 1
 code/game/objects/items/weapons/storage/ore_bag.dm 1
 code/game/objects/structures/props/nest.dm 1
 code/modules/assembly/infrared.dm 1
-code/modules/asset_cache/asset_list.dm 1
 code/modules/benchmarks/_benchmark.dm 1
-code/modules/clothing/head/pilot_helmet.dm 16
 code/modules/clothing/spacesuits/spacesuits.dm 2
 code/modules/combat_ai/brain/brain.dm 2
 code/modules/combat_ai/world_model/world_model.dm 3
 code/modules/contracts/contract.dm 1
-code/modules/contracts/damage_batch.dm 1
-code/modules/detectivework/tools/scanner.dm 1
-code/modules/economy/cargo_market.dm 6
 code/modules/economy/trader.dm 1
 code/modules/entopics/alternate_appearance.dm 1
-code/modules/error_handler/error_viewer.dm 1
 code/modules/expedition/expedition_objective.dm 7
 code/modules/expedition/expedition_site.dm 1
 code/modules/gamemaster/event2/events/everyone/electrical_fault.dm 1
-code/modules/games/cards.dm 4
 code/modules/generated_station/generated_station_defenders.dm 2
-code/modules/generated_station/generated_station_director.dm 1
 code/modules/generated_station/generated_station_jobs.dm 1
 code/modules/generated_station/generated_station_materializer.dm 5
 code/modules/generated_station/generated_station_runtime.dm 2
 code/modules/generated_station/generated_station_simulation.dm 1
 code/modules/generated_station/generated_station_tile_plan.dm 3
-code/modules/hydroponics/seed_storage.dm 2
-code/modules/instruments/instrument_data/_instrument_data.dm 4
+code/modules/hydroponics/seed_storage.dm 1
 code/modules/instruments/songs/_song.dm 1
 code/modules/lighting/lighting_source.dm 2
-code/modules/logging/log_holder.dm 2
 code/modules/looking_glass/lg_imageholder.dm 1
 code/modules/lore_codex/codex_tree.dm 1
-code/modules/maps/reader.dm 1
-code/modules/materials/materials/_materials.dm 2
-code/modules/mining/ore_redemption_machine/equipment_vendor.dm 1
 code/modules/mob/freelook/ai/chunk.dm 1
 code/modules/mob/freelook/chunk.dm 1
 code/modules/mob/living/bot/bot.dm 1
@@ -103,30 +90,16 @@ code/modules/organs/internal/augment/armmounted.dm 3
 code/modules/organs/organ.dm 1
 code/modules/organs/organ_external.dm 1
 code/modules/overmap/events/event_handler.dm 1
-code/modules/overmap/overmap_shuttle.dm 1
-code/modules/power/powernet.dm 4
-code/modules/power/singularity/field_generator.dm 1
 code/modules/power/singularity/particle_accelerator/particle_smasher.dm 1
-code/modules/projectiles/ammunition.dm 1
-code/modules/projectiles/guns/projectile.dm 2
 code/modules/projectiles/projectile.dm 2
 code/modules/reagents/holder/holder.dm 3
 code/modules/reagents/machinery/dispenser/chem_synthesizer.dm 1
 code/modules/reagents/machinery/dispenser/dispenser2.dm 1
 code/modules/recycling/conveyor2.dm 2
-code/modules/research/message_server.dm 1
 code/modules/research/tg/machinery/_production.dm 1
 code/modules/research/tg/machinery/mech_fabricator.dm 3
 code/modules/resleeving/computers.dm 4
-code/modules/resleeving/implant.dm 2
-code/modules/scripting/Parser/Parser.dm 11
-code/modules/scripting/Scanner/Scanner.dm 3
 code/modules/shuttles/crashes.dm 1
 code/modules/shuttles/shuttles_web.dm 2
-code/modules/stockmarket/stockmarket.dm 1
-code/modules/stockmarket/stocks.dm 1
-code/modules/tgs/v4/api.dm 1
-code/modules/tgs/v5/api.dm 2
 code/modules/tgui/modules/atmos_control.dm 1
 code/modules/tgui/modules/power_monitor.dm 1
-code/modules/xenoarcheaology/effect_master.dm 4
