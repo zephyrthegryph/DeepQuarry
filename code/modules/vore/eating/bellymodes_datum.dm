@@ -287,14 +287,7 @@ GLOBAL_LIST_INIT(digest_modes, list())
 					scale_clamp = M.size_multiplier
 				var/obj/item/holder/H = new mob_holder_type(B.ownegg(), M)
 				B.ownegg().max_storage_space = H.w_class
-				//B.ownegg.icon_scale_x = 0.25 * B.ownegg.w_class
-				//B.ownegg.icon_scale_y = 0.25 * B.ownegg.w_class
-				//B.ownegg.update_transform()
 				egg_contents -= M
-				//if(B.ownegg.w_class > 4)
-				//	B.ownegg.slowdown = B.ownegg.w_class - 4
-				//B.ownegg = null
-				//return list("to_update" = TRUE)
 		B.ownegg().calibrate_size()
 		B.ownegg().orient2hud()
 		B.ownegg().w_class = clamp(B.ownegg().w_class * 0.25, 1, 8) //A total w_class of 16 will result in a backpack sized egg.

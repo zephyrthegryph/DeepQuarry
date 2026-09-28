@@ -22,8 +22,6 @@
 	tail = "chimptail"
 	fire_icon_state = "monkey"
 
-	// male_scream_sound = null //
-	// female_scream_sound = null //
 
 	unarmed_types = list(/datum/unarmed_attack/bite, /datum/unarmed_attack/claws)
 	inherent_verbs = list(/mob/living/proc/ventcrawl)

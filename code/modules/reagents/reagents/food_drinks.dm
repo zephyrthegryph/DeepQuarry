@@ -1656,23 +1656,16 @@
 		return
 	..()
 
-	// if(alien == IS_TAJARA) //
-		//M.make_jittery(4) //extra sensitive to caffine
 	if(adj_temp > 0)
 		holder.remove_reagent(REAGENT_ID_FROSTOIL, 10 * removed)
 
 /datum/reagent/drink/coffee/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 
-	//if(alien == IS_TAJARA)
-		//M.make_jittery(4)
-		//return
 
 /datum/reagent/drink/coffee/overdose(mob/living/carbon/M, alien)
 	if(alien == IS_DIONA)
 		return
-	//if(alien == IS_TAJARA)
-		// M.apply_effect(3, STUTTER) // end
 	M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/drink/coffee/handle_addiction(mob/living/carbon/M, alien)
@@ -2647,7 +2640,6 @@
 
 	glass_name = REAGENT_ENTDRAUGHT
 	glass_desc = "You can almost smell the tranquility emanating from this."
-	//allergen_type = ALLERGEN_FRUIT Sorry to break the news, chief. Honey is not a fruit.
 
 /datum/reagent/drink/love_potion
 	name = REAGENT_LOVEPOTION
@@ -3188,19 +3180,13 @@
 		if(M.bodytemperature > BODYTEMP_NORMAL)
 			drive_body_temperature(M, BODYTEMP_NORMAL, 5 * TEMPERATURE_DAMAGE_COEFFICIENT, removed)
 
-		//if(alien == IS_TAJARA)
-			//M.make_jittery(4) //extra sensitive to caffine
 
 /datum/reagent/ethanol/coffee/affect_blood(mob/living/carbon/M, alien, removed)
-	//if(alien == IS_TAJARA)
-		//M.make_jittery(4)
-		//return
+	return // Coffee liqueur has no blood effect of its own.
 
 /datum/reagent/ethanol/coffee/overdose(mob/living/carbon/M, alien)
 	if(alien == IS_DIONA)
 		return
-	//if(alien == IS_TAJARA)
-		// M.apply_effect(3, STUTTER) // end
 	if(!(HAS_SYNTHETIC_BIOLOGY(M)))
 		M.status_adjust(EFFECT_JITTERY, 5)
 
@@ -3215,7 +3201,6 @@
 
 	glass_name = "RR coffee liquor"
 	glass_desc = "A widely known, Mexican coffee-flavored liqueur. In production since 1936!"
-//	glass_desc = "DAMN, THIS THING LOOKS ROBUST" //If this isn't what our players should talk like, it isn't what our game should say to them.
 
 /datum/reagent/ethanol/melonliquor
 	name = REAGENT_MELONLIQUOR
@@ -4094,8 +4079,6 @@
 
 /datum/reagent/ethanol/screwdrivercocktail/on_mob_life(mob/living/carbon/drinker, seconds_per_tick, metabolization_ratio)
 	. = ..()
-//	var/obj/item/organ/internal/liver/liver = drinker.internal_organs_by_name[O_LIVER]
-//	if(HAS_TRAIT(liver, TRAIT_ENGINEER_METABOLISM))
 	ADD_TRAIT(drinker, TRAIT_HALT_RADIATION_EFFECTS, "[type]")
 	if (HAS_TRAIT(drinker, TRAIT_IRRADIATED))
 		// Only while irradiated, a gate a continuous tag can't express: mends directly.

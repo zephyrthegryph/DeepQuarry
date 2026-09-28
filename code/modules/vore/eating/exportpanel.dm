@@ -16,8 +16,6 @@
 	if(..())
 		return TRUE
 
-	//var/mob/living/host = usr
-	//host.vorebelly_printout(TRUE)
 
 /datum/vore_look/export_panel/tgui_act(action, params)
 	if(..())

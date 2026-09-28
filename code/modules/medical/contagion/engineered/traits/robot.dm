@@ -15,7 +15,6 @@
 
 	var/replaceorgans = FALSE
 	var/replacebody = FALSE
-	//var/robustbits = FALSE
 
 	threshold_descs = list(
 		"Stage Speed 4" = "The virus will replace the host's organic organs with mundane, biometallic versions.",

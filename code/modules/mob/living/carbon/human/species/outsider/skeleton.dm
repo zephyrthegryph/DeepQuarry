@@ -16,8 +16,6 @@
 	appearance_flags = null
 
 	// No sounds for this species
-	// male_scream_sound = null // Screaming skeletons would be funny, but needs better sounds
-	// female_scream_sound = null //
 
 	show_ssd = null
 

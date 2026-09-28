@@ -81,7 +81,6 @@
 /obj/item/organ/internal/malignant/tumor
 	name = "tumor"
 	icon_state = "tumor"
-	//dead_icon = "tumor-dead"
 
 	var/stage = 1
 	var/stage_progress = 0
@@ -553,7 +552,6 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 // honks and tells you jokes in your head
 /obj/item/organ/internal/malignant/parasite/honker
 	name = "honkworm"
-	//icon_state = "honker"
 	feedchance = 4
 	feedmodmin = 2
 	feedmodmax = 3

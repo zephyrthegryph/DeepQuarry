@@ -854,9 +854,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/pompom, INTERACT_SELF("Toggle 
 /// Old attack_self: light or dim the pom-pom.
 /obj/item/clothing/head/fluff/pompom/proc/pompom_light_self(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	//if(!isturf(user.loc)) -- doesn't seem to cause problems to allow this and it's silly not to
-	//	to_chat(user, "You cannot turn the light on while in this [user.loc]")
-	//	return
 
 	if(light_on)
 		to_chat(user, "You dim your pom-pom.")
@@ -1528,7 +1525,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
 	armor_spec = "melee=40;bullet=30;laser=30;energy=10;bomb=10;cold=40"
 
 	default_worn_icon = 'icons/vore/custom_clothes_mob.dmi'
-	//hoodtype = ??? //Needs a hoodtype to be created for it.
 	has_hood_sprite = TRUE
 
 

@@ -367,7 +367,6 @@
 					if(!length(answer))
 						answer = reagents.get_master_reagent_name()
 					var/amount_per_patch = CLAMP(reagents.total_volume / count, 0, MAX_UNITS_PER_PATCH)
-					// var/is_medical_patch = chemical_safety_check(reagents)
 					while(count--)
 						if(reagents.total_volume <= 0)
 							to_chat(ui.user, span_notice("Not enough reagents to create these patches!"))
@@ -456,7 +455,6 @@
 
 			printing = TRUE
 			visible_message(span_notice("[src] rattles and prints out a sheet of paper."))
-			// playsound(loc, 'sound/goonstation/machines/printer_dotmatrix.ogg', 50, 1)
 
 			var/obj/item/paper/P = new /obj/item/paper(loc)
 			P.info = "<center><b>Chemical Analysis</b></center><br>"

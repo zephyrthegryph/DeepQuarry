@@ -47,7 +47,6 @@
 	//Moving some vars here for both borgs and carbons to use
 	var/bones_amount = rand(2,4) //some random variety in amount of bones left
 	if(isrobot(M)) //If borg, handle differently
-		//var/mob/living/silicon/robot/R = M // Not Needed at the moment. Uncomment if you need borg stuff
 
 		var/list/borg_bones = list( //Borg bones are the same at this point. might change in the future if borgs or synths get
 			/obj/item/digestion_remains/synth, // different remains in the future.

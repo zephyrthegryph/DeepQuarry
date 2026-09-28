@@ -1837,7 +1837,6 @@
 	//Not noted here, but a movement debuff of 1.5 is handed out in human_movement.dm when numbing_enzyme is in a person's bloodstream!
 
 /datum/reagent/numbing_enzyme/overdose(mob/living/carbon/M, alien)
-	//..() //Add this if you want it to do toxin damage. Personally, let's allow them to have the horrid effects below without toxin damage.
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(prob(1))

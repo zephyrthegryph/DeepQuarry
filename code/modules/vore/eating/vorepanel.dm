@@ -275,7 +275,6 @@
 			var/failure_msg
 			if(length(new_name) > BELLIES_NAME_MAX || length(new_name) < BELLIES_NAME_MIN)
 				failure_msg = "Entered belly name length invalid (must be longer than [BELLIES_NAME_MIN], no more than than [BELLIES_NAME_MAX])."
-			// else if(whatever) //Next test here.
 			else
 				for(var/obj/belly/B as anything in host().vore_organs)
 					if(lowertext(new_name) == lowertext(B.name))

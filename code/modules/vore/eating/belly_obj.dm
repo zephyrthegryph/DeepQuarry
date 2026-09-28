@@ -491,15 +491,12 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 	//Determines privacy
 	var/privacy_range = world.view
-	//var/privacy_volume = 100
 	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
 		if("default")
 			if(owner.eating_privacy_global)
 				privacy_range = 1
-				//privacy_volume = 25
 		if("subtle")
 			privacy_range = 1
-			//privacy_volume = 25
 
 	//Print notifications/sound if necessary
 	if(!silent && count)
@@ -575,15 +572,12 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
 	//Determines privacy
 	var/privacy_range = world.view
-	//var/privacy_volume = 100
 	switch(eating_privacy_local) //Third case of if("loud") not defined, as it'd just leave privacy_range and volume untouched
 		if("default")
 			if(owner.eating_privacy_global)
 				privacy_range = 1
-				//privacy_volume = 25
 		if("subtle")
 			privacy_range = 1
-			//privacy_volume = 25
 
 	//Print notifications/sound if necessary
 	if(isobserver(M))
@@ -1246,7 +1240,6 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 /obj/belly/proc/effective_emote_hearers()
 	. = list(loc)
 	for(var/atom/movable/AM as anything in contents)
-		//if(AM.atom_flags & ATOM_HEAR)
 		. += AM
 
 /obj/belly/proc/get_belly_name(original)

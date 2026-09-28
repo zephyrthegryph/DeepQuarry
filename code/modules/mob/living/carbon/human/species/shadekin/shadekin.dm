@@ -56,7 +56,6 @@
 	base_color = "#f0f0f0"
 	color_mult = 1
 
-	// has_glowing_eyes = TRUE			//Applicable through neutral taits.
 
 	death_message = "phases to somewhere far away!"
 	speech_bubble_appearance = "ghost"

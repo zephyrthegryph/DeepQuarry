@@ -474,8 +474,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	if(head_organ.transparent)
 		face_standing += rgb(,,,120)
-		//if (ears_s) //maybe cap this instead of removing it? ae, if your ears are above 180 a reduce it down?
-			//ears_s += rgb(,,,180)
 
 	var/image/em_block_ears
 	if(ears_s)

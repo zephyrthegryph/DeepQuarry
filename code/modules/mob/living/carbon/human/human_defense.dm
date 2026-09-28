@@ -326,8 +326,6 @@ emp_act
 /mob/living/carbon/human/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	if(src.is_incorporeal())
 		return
-//	if(BUCKLED(src) && BUCKLED(src) == AM)
-//		return // Don't get hit by the thing we're BUCKLED(src) to.
 
 	var/speed = throwingdatum?.speed || THROWFORCE_SPEED_DIVISOR
 	var/mob/living/thrower = throwingdatum?.get_thrower()

@@ -12,7 +12,6 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		)
 
 	var/list/valid_transform_species
-	// var/default_form = SPECIES_HUMAN //
 
 	base_species = SPECIES_HUMAN
 	selects_bodytype = SELECTS_BODYTYPE_SHAPESHIFTER
@@ -334,7 +333,6 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 
 	species = GLOB.all_species[new_species]
 	species.create_organs(src)
-//	species.handle_post_spawn(src)
 
 	// A copy: deleting a limb that was missing before takes it out of the cache.
 	for(var/limb in organs_by_name.Copy())

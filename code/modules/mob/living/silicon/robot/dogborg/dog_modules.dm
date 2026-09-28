@@ -83,7 +83,6 @@ DECLARE_INTERACTIONS(/obj/item/boop_module, INTERACT_USE(null, PROC_REF(interact
 /obj/item/reagent_containers/borghypo/hound
 	name = "MediHound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."
-// charge_cost = 10 // Water requirement removal.
 	reagent_ids = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_DEXALIN, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL, REAGENT_ID_ADRANOL) // More chems for Medihound
 	var/datum/matter_synth/water = null
 

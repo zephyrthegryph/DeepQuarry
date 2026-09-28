@@ -28,8 +28,6 @@
 	darksight = 5
 	reagent_tag = IS_GREY
 
-	// male_scream_sound = null //
-	// female_scream_sound = null //
 
 	min_age = 18
 	max_age = 130

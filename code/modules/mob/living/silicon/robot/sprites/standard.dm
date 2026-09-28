@@ -141,7 +141,6 @@
 
 /datum/robot_sprite/dogborg/tall/standard
 	module_type = "Standard"
-	//sprite_icon = 'icons/mob/robot/standard_large.dmi' NOT USED YET
 
 /datum/robot_sprite/dogborg/tall/standard/dullataurstandard
 	name = "Dullataur"

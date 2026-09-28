@@ -103,7 +103,6 @@
 		total_damage = H.injury_load(INJURY_CATEGORY_PHYSICAL) + H.injury_load(INJURY_CATEGORY_THERMAL) + H.oxygen_debt() + H.injury_load(INJURY_CATEGORY_TOXIC)
 
 	// Move the mind back to the original mob
-//	vr_holder.Sleeping(1)
 	src.mind.transfer_to(vr_holder)
 	to_chat(vr_holder, span_notice("You black out for a moment, and wake to find yourself back in your own body."))
 	// Two-thirds damage is transferred as agony for /humans

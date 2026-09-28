@@ -17,8 +17,6 @@
 	var/static/radial_examine = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_examine")
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_grind = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_grind")
-	// var/static/radial_juice = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_juice")
-	// var/static/radial_mix = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_mix")
 
 /obj/machinery/reagentgrinder/Initialize(mapload)
 	. = ..()

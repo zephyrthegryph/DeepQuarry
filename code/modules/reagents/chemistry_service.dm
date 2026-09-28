@@ -16,7 +16,6 @@ GLOBAL_DATUM_INIT(chemistry_service, /datum/world_service/chemistry, new)
 	var/list/instant_reactions_by_reagent = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	var/list/distilled_reactions_by_reagent = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	var/list/distilled_reactions_by_product = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
-//	var/list/fusion_reactions_by_reagent = list() // TODO: Fusion reactions as chemical reactions
 	var/list/chemical_reagents = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
 // Reaction decls and reagent definitions: round-long registry singletons.
@@ -54,8 +53,6 @@ REF_STATIC(/datum/world_service/chemistry, list("chemical_reactions", "chemical_
 			var/reagent_id = scan_list[i]
 
 			var/list/add_to = instant_reactions_by_reagent // Default to instant reactions list, if something's gone wrong
-//			if(istype(D, /datum/decl/chemical_reaction/fusion)) // TODO: fusion reactions as chemical reactions
-//				add_to = fusion_reactions_by_reagent
 			if(istype(D, /datum/decl/chemical_reaction/distilling))
 				add_to = distilled_reactions_by_reagent
 

@@ -214,7 +214,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	icon = 'icons/inventory/head/item.dmi'
 	default_worn_icon = 'icons/mob/head.dmi'
 	icon_state = "nanomachine_rig"
-	//item_state = "nanomachine_rig"
 
 /obj/item/clothing/head/helmet/space/rig/protean/fit_constraint()
 	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
@@ -267,7 +266,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	icon = 'icons/inventory/hands/item.dmi'
 	default_worn_icon = 'icons/mob/hands.dmi'
 	icon_state = "nanomachine_rig"
-	//item_state = "nanomachine_rig"
 
 /obj/item/clothing/gloves/gauntlets/rig/protean/fit_constraint()
 	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
@@ -285,7 +283,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	icon = 'icons/inventory/feet/item.dmi'
 	default_worn_icon = 'icons/mob/feet.dmi'
 	icon_state = "nanomachine_rig"
-	//item_state = "nanomachine_rig"
 
 /obj/item/clothing/shoes/magboots/rig/protean/fit_constraint()
 	var/list/bodytypes = list(SPECIES_PROTEAN, SPECIES_HUMAN, SPECIES_SKRELL, SPECIES_TAJARAN, SPECIES_UNATHI, SPECIES_NEVREAN, SPECIES_AKULA, SPECIES_SERGAL, SPECIES_ZORREN_HIGH, SPECIES_VULPKANIN, SPECIES_PROMETHEAN, SPECIES_XENOHYBRID, SPECIES_VOX, SPECIES_TESHARI, SPECIES_VASILISSAN, SPECIES_XENOMORPH_HYBRID, SPECIES_SHADEKIN, SPECIES_SHADEKIN_CREW)
@@ -305,7 +302,6 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	icon = 'icons/inventory/suit/item.dmi'
 	default_worn_icon = 'icons/mob/spacesuit.dmi'
 	icon_state = "nanomachine_rig"
-	//item_state = "nanomachine_rig"
 
 //Copy pasted most of this proc from base because I don't feel like rewriting the base proc with a shit load of exceptions
 

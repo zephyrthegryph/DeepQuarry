@@ -1026,7 +1026,6 @@
 				if(prob(9)) to_chat(M, span_warning("You can't help but want to touch yourself then and now!"))
 		data["count"]++
 	holder.remove_reagent(src.id, 0.2)
-	//..()
 	return
 
 /datum/reagent/benzilate/affect_blood(mob/living/carbon/M, alien, removed)

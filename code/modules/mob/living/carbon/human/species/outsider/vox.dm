@@ -23,7 +23,6 @@
 	wikilink="https://wiki.chompstation13.net/index.php?title=Vox"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/vox)
 
-//	taste_sensitivity = TASTE_DULL
 	min_age = 18
 
 	factor_baseline = alist(BF_SLOWDOWN = -0.5)

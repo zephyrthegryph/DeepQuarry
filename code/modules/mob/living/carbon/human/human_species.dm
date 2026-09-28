@@ -84,7 +84,6 @@
 /mob/living/carbon/human/dummy/mannequin/autoequip/teshari
 	icon = 'icons/mob/human_races/r_teshari.dmi'
 /mob/living/carbon/human/dummy/mannequin/autoequip/teshari/Initialize(mapload)
-	//h_style = "teshari, dual-color"
 	return ..(mapload, SPECIES_TESHARI)
 
 /mob/living/carbon/human/skrell/Initialize(mapload)

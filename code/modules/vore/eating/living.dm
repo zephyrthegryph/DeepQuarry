@@ -87,18 +87,7 @@
 		return FALSE
 	return ..()
 
-//
-// Hide vore organs in contents
-//
-///mob/living/view_variables_filter_contents(list/L)
-//	. = ..()
-//	var/len_before = L.len
-//	L -= vore_organs
-//	. += len_before - L.len
-//
-//
 // Handle being clicked, perhaps with something to devour
-//
 /mob/living/proc/vore_attackby(obj/item/I, mob/user)
 	//Handle case: /obj/item/grab
 	if(istype(I, /obj/item/grab))

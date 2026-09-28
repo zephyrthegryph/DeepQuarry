@@ -269,14 +269,6 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	// progression, and necrosis-by-germs (still ticks below), but the
 	// damage-doing side is now a condition that presents with symptoms,
 	// can cascade, and reacts to specific reagents.
-	//
-	// Original upstream behavior preserved for reference:
-	//   if((status & ORGAN_DEAD) && antibiotics < ANTIBIO_OD && germ_level >= INFECTION_LEVEL_TWO)
-	//       infection_damage = CLAMP(round((germ_level - INFECTION_LEVEL_TWO)/1000), 0.25, 1)
-	//   else if(germ_level > INFECTION_LEVEL_TWO && antibiotics < ANTIBIO_OD)
-	//       infection_damage = CLAMP(round((germ_level - INFECTION_LEVEL_TWO)/1000), 0, 0.1)
-	//   if(infection_damage)
-	//       owner.injure(INJURY_TOXIN, infection_damage)
 
 	if (germ_level > 0 && germ_level < INFECTION_LEVEL_ONE/2 && prob(30))
 		adjust_germ_level(-antibiotics)
@@ -296,8 +288,6 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	//Level 1 qualifies for specific organ processing effects
 	if(germ_level >= INFECTION_LEVEL_ONE)
 		. = 1 //Organ qualifies for effect-specific processing
-		//var/fever_temperature = (owner.species.heat_level_1 - owner.species.body_temperature - 5)* min(germ_level/INFECTION_LEVEL_TWO, 1) + owner.species.body_temperature
-		//owner.bodytemperature += between(0, (fever_temperature - T20C)/BODYTEMP_COLD_DIVISOR + 1, fever_temperature - owner.bodytemperature)
 		var/fever_temperature = owner?.species.heat_discomfort_level * 1.10 //Heat discomfort level plus 10%
 		if(owner?.bodytemperature < fever_temperature)
 			owner?.adjust_bodytemperature(min(0.2,(fever_temperature - owner?.bodytemperature) / 10)) //Will usually climb by 0.2, else 10% of the difference if less

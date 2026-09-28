@@ -727,7 +727,6 @@
 	C.icon_scale_x = 0.25 * C.w_class
 	C.icon_scale_y = 0.25 * C.w_class
 	C.update_transform()
-	//egg_contents -= src
 	var/datum/tgui_module/appearance_changer/cocoon/V = new(src, src)
 	V.tgui_interact(src)
 

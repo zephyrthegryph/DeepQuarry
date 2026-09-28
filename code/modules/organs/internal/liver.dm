@@ -56,7 +56,6 @@
 			owner.custom_pain("There's a sharp pain in your upper-right abdomen!",1)
 	if (. >= 2)
 		if(prob(1) && owner.injury_load(INJURY_CATEGORY_TOXIC) < owner.get_endurance()*0.3)
-			//to_chat(owner, "") //Toxins provide their own messages for pain
 			owner.injure(INJURY_TOXIN, 5, flags = INJURE_SILENT) //Not realistic to PA but there are basically no 'real' liver infections
 
 /obj/item/organ/internal/liver/grey

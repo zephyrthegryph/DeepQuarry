@@ -16,8 +16,6 @@
 	you select and set this species as your species. Please look at the VORE tab if you select this species."
 	catalogue_data = list(/datum/category_item/catalogue/fauna/custom_species)
 
-	// male_scream_sound = null // These are going to be a hassle for custom species if not null
-	// female_scream_sound = null //
 
 	name_language = null // Use the first-name last-name generator rather than a language scrambler
 	min_age = 18

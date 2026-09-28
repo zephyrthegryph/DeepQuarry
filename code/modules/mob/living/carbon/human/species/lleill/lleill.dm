@@ -35,8 +35,6 @@
 
 	darksight = 10 //Can see in dark
 
-	// burn_mod = 0.25 //Very resistant to fire Less overtune species stats pleas
-	// pain_mod = 0.25 //Whilst not resistant to brute or stunning, they are quite resistant to pain, making them tanky in their own way. See above
 
 	warning_low_pressure = 50
 	hazard_low_pressure = -1
@@ -85,12 +83,6 @@
 		/mob/living/proc/set_size,
 		/mob/living/carbon/human/proc/shapeshifter_copy_body,
 		/mob/living/carbon/human/proc/shapeshifter_regenerate,
-//		/mob/living/carbon/human/proc/lleill_invisibility,
-//		/mob/living/carbon/human/proc/lleill_transmute,
-//		/mob/living/carbon/human/proc/lleill_rings,
-//		/mob/living/carbon/human/proc/lleill_contact,
-//		/mob/living/carbon/human/proc/lleill_alchemy,
-//		/mob/living/carbon/human/proc/lleill_beast_form
 		)
 
 	//organs, going with just the basics for now

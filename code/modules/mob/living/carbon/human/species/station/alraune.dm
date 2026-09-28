@@ -19,8 +19,6 @@
 	base_species = SPECIES_ALRAUNE
 	selects_bodytype = SELECTS_BODYTYPE_CUSTOM
 
-	// male_scream_sound = null //
-	// female_scream_sound = null //
 	wikilink="https://wiki.chompstation13.net/index.php?title=Alraune" // add wiki link
 
 	body_temperature = T20C
@@ -423,7 +421,6 @@
 	fruit_gland.fruit_type = ask.choice
 	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_pick)
 	add_verb(src, /mob/living/carbon/human/proc/alraune_fruit_reagent)
-	// remove_verb(src, /mob/living/carbon/human/proc/alraune_fruit_select)
 	fruit_gland.organ_owner = src
 	fruit_gland.emote_descriptor = list("fruit right off of [fruit_gland.organ_owner]!", "a fruit from [fruit_gland.organ_owner]!")
 
@@ -433,7 +430,6 @@
 	set category = "Object"
 	set src in view(1)
 
-	//do_reagent_implant(usr)
 	if(!isliving(usr) || !usr.checkClickCooldown())
 		return
 
