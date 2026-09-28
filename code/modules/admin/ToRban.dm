@@ -32,12 +32,12 @@
 	om_io(null, /datum/om/io/http, RUSTG_HTTP_METHOD_GET, "https://check.torproject.org/exit-addresses", "", null, /proc/ToRban_update_done, requester?.ckey)
 
 /// om_io() callback: stores the downloaded exit addresses.
-/proc/ToRban_update_done(datum/http_response/response, error, requester_ckey)
+/proc/ToRban_update_done(response_arg, error, requester_ckey)
+	var/datum/http_response/response = response_arg
 	if(error || !response?.body)
 		log_world("ToR data update aborted: [error || "no data"].")
 		return
-	var/list/rawlist = splittext(response.body, "
-")
+	var/list/rawlist = splittext(response.body, "\n")
 	if(rawlist.len)
 		fdel(TORFILE)
 		var/savefile/F = new(TORFILE)

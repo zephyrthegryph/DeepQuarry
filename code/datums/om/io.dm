@@ -166,7 +166,8 @@
 #define OM_IO_STAT_LAT_TOTAL 5
 #define OM_IO_STAT_LAT_MAX 6
 
-/proc/om_io_stat(datum/om/scheduler/sched, datum/om/io/K, stat, amount = 1)
+/proc/om_io_stat(sched_arg, datum/om/io/K, stat, amount = 1)
+	var/datum/om/scheduler/sched = sched_arg
 	LAZYINITLIST(sched.io_stats)
 	var/list/S = sched.io_stats[K.name]
 	if(!S)
@@ -180,7 +181,8 @@
 
 /// Starts an I/O job owned by E and returns at once: the job id, or 0 if E or a datum
 /// context arg is already gone. See the header for the argument layout.
-/proc/om_io(datum/E, kind_type, ...)
+/proc/om_io(owner, kind_type, ...)
+	var/datum/E = owner
 	var/datum/om/io/K = om_io_kind(kind_type)
 	if(!K)
 		CRASH("om_io: [kind_type] is not an I/O kind")
@@ -244,14 +246,16 @@
 
 // ---------------------------------------------------------------- the lane
 
-/proc/om_io_active(datum/om/scheduler/sched, kind_type)
+/proc/om_io_active(sched_arg, kind_type)
+	var/datum/om/scheduler/sched = sched_arg
 	. = 0
 	for(var/datum/om/io_job/J as anything in sched.io_jobs)
 		if(J.kind_type == kind_type && !isnull(J.job_id))
 			.++
 
 /// Hands `J` to rust-g if its kind has a free slot. A failed start is answered next pass.
-/proc/om_io_try_start(datum/om/scheduler/sched, datum/om/io/K, datum/om/io_job/J)
+/proc/om_io_try_start(sched_arg, datum/om/io/K, datum/om/io_job/J)
+	var/datum/om/scheduler/sched = sched_arg
 	if(!isnull(J.job_id) || J.preset_error)
 		return
 	var/limit = K.active_limit()
@@ -267,7 +271,8 @@
 	om_io_stat(sched, K, OM_IO_STAT_STARTED)
 
 /// Puts the I/O lane on the wheel (next pass) if it isn't already.
-/proc/om_io_wake(datum/om/scheduler/sched)
+/proc/om_io_wake(sched_arg)
+	var/datum/om/scheduler/sched = sched_arg
 	var/datum/om/global_owner/G = sched.global_owner || om_global_owner()
 	var/datum/om/behaviour/B = om_registry().behaviour(/datum/om/behaviour/internal/io)
 	if(!B || om_deadline_pending(G, B))
@@ -286,7 +291,8 @@
 
 /// One pass of the I/O lane: check each pending job once, resuming at the cursor, until the
 /// budget runs out. Answered jobs leave the list before their callback runs.
-/proc/om_io_poll(datum/om/scheduler/sched)
+/proc/om_io_poll(sched_arg)
+	var/datum/om/scheduler/sched = sched_arg
 	var/list/jobs = sched.io_jobs
 	if(!length(jobs))
 		sched.io_cursor = 1
@@ -328,7 +334,8 @@
 		sched.io_cursor = 1
 
 /// Runs the callback for an answered job on its owner, if the owner and context still exist.
-/proc/om_io_deliver(datum/om/scheduler/sched, datum/om/io/K, datum/om/io_job/J, raw)
+/proc/om_io_deliver(sched_arg, datum/om/io/K, datum/om/io_job/J, raw)
+	var/datum/om/scheduler/sched = sched_arg
 	var/list/outcome = J.preset_error ? list(null, J.preset_error) : K.decode(raw)
 	if(J.started_at)
 		var/latency = REALTIMEOFDAY - J.started_at
@@ -354,7 +361,8 @@
 		stack_trace("om io [K.name] callback [J.on_done] on [E]: [e]")
 
 /// The I/O section of om_diagnostics().
-/proc/om_io_diagnostics(datum/om/scheduler/sched)
+/proc/om_io_diagnostics(sched_arg)
+	var/datum/om/scheduler/sched = sched_arg
 	. = list()
 	var/list/pending = list()
 	var/list/queued = list()
@@ -402,7 +410,7 @@
 /proc/om_http_get(url)
 	return om_io(null, /datum/om/io/http, RUSTG_HTTP_METHOD_GET, url, "", null, /proc/om_io_log_http_error, url)
 
-/proc/om_io_log_http_error(datum/http_response/result, error, url)
+/proc/om_io_log_http_error(result, error, url)
 	if(error)
 		log_world("OM IO: HTTP GET failed ([error]): [url]")
 
