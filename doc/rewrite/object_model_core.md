@@ -490,7 +490,7 @@ A framework in which gameplay code never sleeps doesn't need it. The rule is **n
 A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` or `STEP_FAIL(reason)`. Cancelling a task is always safe because no proc is ever suspended inside it. `om_after` and task deadlines share the wheel with stage rewakes, so they get lanes, budgets, relevance and parking for free: a timer on a parked entity is due on its clock, not on the wall clock.
 
 **What stays.**
-- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. `waitfor = FALSE` remains in the leaf that calls a genuinely blocking external API (rust-g HTTP, SQL), behind async wrappers with callbacks. Admin prompt waits (tgui_input/alert) stay until S10.
+- `sleep` remains only in the MC (master.dm, failsafe.dm), vendored TGS and `stoplag()` itself. Map and station generation runs as lane work (`om_lane_work()`: a slice proc resumed by cursor within the scheduler's budget); world hooks, client init and admin verb delays are `om_after` timers; NTSL `delay()` is a task step. External I/O (rust-g SQL and HTTP) is an `om_io` job (§4.12): the caller gets a callback, nothing waits. The one legacy wait left is `db_query/sync()` behind `Execute(async = TRUE)`, for admin panels, login gates and UI callers not yet moved to `om_io`. Admin prompt waits (tgui_input/alert) stay until S10.
 - Timers with no entity owner (round events, client real-time) use a global owner entity on the same wheel.
 
 **Timer variants (S9: SStimer is deleted).** Every former `addtimer` flag has one replacement:
@@ -518,6 +518,51 @@ A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` o
 A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones and is ratcheted to 0. Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
 
 **Lints, ratcheted to zero outside the allowlist:** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
+
+### 4.12 I/O jobs
+
+Gameplay never waits on I/O. A database query or an HTTP request is a job owned by an entity:
+
+```dm
+om_io(E, /datum/om/io/<kind>, request args..., on_done, context args...)
+// on_done(result, error, context args...) runs later, on E
+```
+
+`om_io()` returns at once with a job id (0 if E or a datum context arg is already gone). The kind
+takes exactly its `arg_count` request args; the next arg is the callback (a proc on E, or a global
+`/proc/x`), and anything after it is passed to the callback after `result, error`.
+
+| Kind | Request args | `result` | rust-g |
+|---|---|---|---|
+| `/datum/om/io/sql` | `sql, arguments` (`:name` placeholders, parameterized only) | `list("rows", "affected", "last_insert_id")`; rows are positional lists | `rustg_sql_query_async` / `rustg_sql_check_query` |
+| `/datum/om/io/http` | `method, url, body, headers` | a `/datum/http_response` | `rustg_http_request_async` / `rustg_http_check_request` |
+
+- **Owned and weak, like `om_after`.** E and every datum context arg are held as OM handles. The
+  callback is dropped if any of them is gone when the job completes. E null means the global
+  owner. `om_io_cancel(id)` discards a result, since the rust-g job still runs to completion.
+- **The I/O lane.** The scheduler's global owner runs `/datum/om/behaviour/internal/io` off a
+  one-decisecond deadline while jobs are pending. Each pass checks every pending job once, resuming
+  by cursor, and stops when the scheduler budget runs out. With no jobs pending there is no
+  deadline, so the lane is parked. A kind's `active_limit()` caps jobs in flight (SQL:
+  `SSdbcore.max_concurrent_queries`) and the rest queue. A job unanswered after 5 minutes is
+  abandoned with an error. A job that can't start (no DB connection) is answered with its error on
+  the next pass, never inline.
+- **Profiler.** `om_diagnostics()["io"]` reports, per kind: started, completed, errors, dropped,
+  pending, queued, and average and max latency in ms.
+- **Helpers.** `om_sql_write(sql, arguments)` is a fire-and-forget write that logs failures.
+  `om_http_get(url)` is a fire-and-forget GET (webhooks). `SSdbcore.mass_insert_io(E, table,
+  rows, duplicate_key, ignore_errors, special_columns, on_done, context...)` is MassInsert on the
+  lane.
+- **A sequence of queries** chains callbacks: the first query's callback starts the next one
+  (`sql_commit_feedback`, `sync_admins_with_db`). Capture what the later step needs as text and
+  numbers, or as context args, which are held weakly.
+- **What stays synchronous.** Boot and MC-owned work that must finish before the world goes on:
+  `SSdbcore.Initialize`/`Connect`/`InitializeRound` (the round id), and `Shutdown` draining the
+  queue. These use `Execute(async = FALSE)` or `run_query_sync`. The legacy `Execute(async = TRUE)`
+  wait (`db_query/sync()`, allowlisted) serves callers that read rows inline and have not moved yet:
+  the admin panels (permissions, bans, polls), the login gates `log_client_to_db` and `IsBanned`,
+  and the library and TGS commands. The login-time `world.Export` calls in `client procs.dm`
+  (join date, IP reputation) also stay for now: they gate the login. New code uses `om_io`.
 
 ## 5. Change tracking (section B)
 
@@ -904,6 +949,7 @@ counted total ratchets to 0.
 | Do something after a delay | `om_after(E, delay, proc, args...)` (§4.11) | `addtimer()`, `spawn()`, `sleep()` | `scheduler_lints.py` (`addtimer`, `spawn`, `sleep`) |
 | Take time over an action with state | a named task type, `om_task_start(/datum/om/task/timed/x, actor, target, params)` (§11) | `om_do_after()`/`use_tool()` carrying more than two args, `do_after()` | `api_lints.py` (`do_after_state`, `use_tool_state`), `scheduler_lints.py` (`do_after`) |
 | Ask a player | `om_prompt(E, user, spec, on_answer)` | `input()`, `alert()`, `tgui_input_*()`, `tgui_alert()` | `scheduler_lints.py` (`prompts`) |
+| Do I/O (SQL, HTTP) | `om_io(E, /datum/om/io/<kind>, args..., on_done)` with kind `sql` or `http` (§4.12); `om_sql_write()`, `om_http_get()` | `Execute()` waiting on rows, `world.Export()`, `set waitfor` / `INVOKE_ASYNC` around a query | `scheduler_lints.py` (`set_waitfor`, `invoke_async`, `stoplag`) |
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()`; a raw `world.time` compare against a hand-kept timestamp or deadline | `api_lints.py` (`timer_cooldown`), `cooldown_lint.py` |
 | Declare a var that a stage, behaviour or watch reads | `OM_FIELD(type, name, default, channel)`, and name it in the stage's `reads` (wake_on is derived) (§5.1) | a plain `var/x` plus a hand-written setter; listing the field's channel in `wake_on` by hand | `api_lints.py` (`field_write`), boot `check_field_reads()` |

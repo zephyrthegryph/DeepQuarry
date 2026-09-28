@@ -33,14 +33,14 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 	return TRUE
 
 /// The database insert sleeps, so the lane hands it off (the lane itself must not sleep).
+/// Queues the batch as one om_io insert: returns at once, nothing here waits on SQL.
 /datum/world_service/mobs/proc/insert_deaths(list/batch)
-	set waitfor = FALSE
 	if(!CONFIG_GET(flag/sql_enabled))
 		return
 	if(!SSdbcore.IsConnected())
 		log_game("SQL ERROR during death reporting. Failed to connect.")
 		return
-	SSdbcore.MassInsert(format_table_name("death"), batch)
+	SSdbcore.mass_insert_io(null, format_table_name("death"), batch)
 
 /// MOB_PROFILE lines (sampled cost per mob type and per stage, every Nth frame) and one
 /// MOB_PARK_SUMMARY line, every two minutes.

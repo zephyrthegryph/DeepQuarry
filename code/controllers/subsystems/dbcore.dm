@@ -283,26 +283,24 @@ SUBSYSTEM_DEF(dbcore)
 	GLOB.round_id = "[query_round_initialize.last_insert_id]"
 	qdel(query_round_initialize)
 
+/// Stamps the round's start time: a write on the I/O lane (om_io), so the ticker never waits.
 /datum/controller/subsystem/dbcore/proc/SetRoundStart()
 	if(!Connect())
 		return
-	var/datum/db_query/query_round_start = SSdbcore.NewQuery(
+	om_sql_write(
 		"UPDATE [format_table_name("round")] SET start_datetime = Now() WHERE id = :round_id",
 		list("round_id" = GLOB.round_id)
 	)
-	query_round_start.Execute()
-	qdel(query_round_start)
 
+/// Stamps the round's end: a write on the I/O lane (om_io), so declare_completion never waits.
 /datum/controller/subsystem/dbcore/proc/SetRoundEnd()
 	if(!Connect())
 		return
-	var/datum/db_query/query_round_end = SSdbcore.NewQuery(
+	om_sql_write(
 		"UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = :game_mode_result, station_name = :station_name WHERE id = :round_id",
 		//list("game_mode_result" = SSticker.mode_result, "station_name" = station_name(), "round_id" = GLOB.round_id)
 		list("game_mode_result" = "extended", "station_name" = station_name(), "round_id" = GLOB.round_id) // FIXME: temporary solution as we only use extended so far
 	)
-	query_round_end.Execute()
-	qdel(query_round_end)
 
 /datum/controller/subsystem/dbcore/proc/Disconnect()
 	failed_connections = 0
@@ -335,37 +333,6 @@ SUBSYSTEM_DEF(dbcore)
 		message_admins("ERROR: Advanced admin proc call led to sql query. Query has been blocked")
 		return FALSE
 	return new /datum/db_query(connection, sql_query, arguments)
-
-/** QuerySelect
-	Run a list of query datums in parallel, blocking until they all complete.
-	* queries - List of queries or single query datum to run.
-	* warn - Controls rather warn_execute() or Execute() is called.
-	* qdel - If you don't care about the result or checking for errors, you can have the queries be deleted afterwards.
-		This can be combined with invoke_async as a way of running queries async without having to care about waiting for them to finish so they can be deleted.
-*/
-/datum/controller/subsystem/dbcore/proc/QuerySelect(list/queries, warn = FALSE, qdel = FALSE)
-	if (!islist(queries))
-		if (!istype(queries, /datum/db_query))
-			CRASH("Invalid query passed to QuerySelect: [queries]")
-		queries = list(queries)
-	else
-		queries = queries.Copy() //we don't want to hide bugs in the parent caller by removing invalid values from this list.
-
-	for (var/datum/db_query/query as anything in queries)
-		if (!istype(query))
-			queries -= query
-			stack_trace("Invalid query passed to QuerySelect: `[query]` [REF(query)]")
-			continue
-
-		if (warn)
-			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, warn_execute)) // S10b keeps: blocking SQL query
-		else
-			INVOKE_ASYNC(query, TYPE_PROC_REF(/datum/db_query, Execute)) // S10b keeps: blocking SQL query
-
-	for (var/datum/db_query/query as anything in queries)
-		query.sync()
-		if (qdel)
-			qdel(query)
 
 /*
 Takes a list of rows (each row being an associated list of column => value) and inserts them via a
@@ -401,9 +368,10 @@ Arguments:
 
 Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on error.
 */
-/datum/controller/subsystem/dbcore/proc/MassInsert(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, warn = FALSE, async = TRUE, special_columns = null)
+/// Builds MassInsert()'s statement: list(sql, arguments), or null for no rows.
+/datum/controller/subsystem/dbcore/proc/mass_insert_sql(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null)
 	if (!table || !rows || !istype(rows))
-		return
+		return null
 
 	// Prepare column list
 	var/list/columns = list()
@@ -452,12 +420,31 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 	else if (duplicate_key != FALSE)
 		query_parts += duplicate_key
 
-	var/datum/db_query/Query = NewQuery(query_parts.Join(), arguments)
+	return list(query_parts.Join(), arguments)
+
+/datum/controller/subsystem/dbcore/proc/MassInsert(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, warn = FALSE, async = TRUE, special_columns = null)
+	var/list/statement = mass_insert_sql(table, rows, duplicate_key, ignore_errors, special_columns)
+	if(!statement)
+		return
+	var/datum/db_query/Query = NewQuery(statement[1], statement[2])
 	if (warn)
 		. = Query.warn_execute(async)
 	else
 		. = Query.Execute(async)
 	qdel(Query)
+
+/// MassInsert() on the I/O lane: returns at once. `on_done` (optional) runs on E as
+/// on_done(result, error, context...) like any om_io() callback; without it a failure is logged.
+/datum/controller/subsystem/dbcore/proc/mass_insert_io(datum/E, table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null, on_done = null, ...)
+	var/list/statement = mass_insert_sql(table, rows, duplicate_key, ignore_errors, special_columns)
+	if(!statement)
+		return 0
+	if(!on_done)
+		return om_io(E, /datum/om/io/sql, statement[1], statement[2], /proc/om_io_log_sql_error, statement[1])
+	var/list/call_args = list(E, /datum/om/io/sql, statement[1], statement[2], on_done)
+	if(length(args) > 7)
+		call_args += args.Copy(8)
+	return om_io(arglist(call_args))
 
 /datum/db_query
 	// Inputs
@@ -550,10 +537,12 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 		log_sql("Query used: [sql]")
 		slow_query_check()
 
-/// Sleeps until execution of the query has finished.
+/// Sleeps until execution of the query has finished. Only Execute(async = TRUE) calls this,
+/// for the remaining callers that read results inline (admin panels and verbs, login,
+/// polls, library). New code uses om_io(E, /datum/om/io/sql, ...) and never waits.
 /datum/db_query/proc/sync()
 	while(status < DB_QUERY_FINISHED)
-		stoplag() // S10b keeps: waits on an SQL query (external)
+		stoplag() // S10b keeps: legacy inline-result SQL wait (admin/login/UI callers not yet on om_io)
 
 /datum/db_query/process(seconds_per_tick)
 	if(status >= DB_QUERY_FINISHED)
