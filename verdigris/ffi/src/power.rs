@@ -122,6 +122,49 @@ fn power_bind_cable(entity: ByondValue, shape: ByondValue) -> Result<ByondValue>
     Ok(ByondValue::from(entity::entity_value(e)))
 }
 
+/// A map-load chunk's cables in one call (`doc/rewrite/init_and_turfs.md`
+/// §3.3 step 4): [`power_bind_cable`] for each piece, in one topology edit.
+/// `entities` holds each piece's current handle (`0`: mint one) and `shapes`
+/// its `x, y, z, d1, d2, up, down, link`, flattened. Returns the handles in
+/// order.
+#[auxmacros::bind("/proc/vg_power_bind_cable_list")]
+fn power_bind_cable_list(entities: ByondValue, shapes: ByondValue) -> Result<ByondValue> {
+    let entities = entities.get_list_values()?;
+    let shapes = shapes.get_list_values()?;
+    if shapes.len() != entities.len() * 8 {
+        bail!("shapes must hold 8 values per entity");
+    }
+    let mut nodes = Vec::with_capacity(entities.len());
+    let mut handles = Vec::with_capacity(entities.len());
+    for (entity, shape) in entities.iter().zip(shapes.chunks_exact(8)) {
+        let [x, y, z, d1, d2, up, down, link] = shape else {
+            unreachable!("chunks_exact(8)");
+        };
+        let e = entity::bind_or_reuse(num(entity)?)?;
+        let p = cell(x, y, z)?;
+        let (d1, d2) = (whole(d1, "d1")? as u8, whole(d2, "d2")? as u8);
+        let data = Cable {
+            d1,
+            d2,
+            link: whole(link, "link")?,
+            reach: reach(p, d1, d2, whole(up, "up")?, whole(down, "down")?),
+        };
+        nodes.push((e, p, data));
+        handles.push(ByondValue::from(entity::entity_value(e)));
+    }
+    with_world(|w| {
+        w.edit_network::<Cables>(move |host| {
+            for (e, p, data) in nodes {
+                let _ = host.bind_node(e, p, NODE_CABLE, PowerNode::Cable(data));
+            }
+        })
+        .map_err(|err| eyre!("{err}"))
+    })?;
+    let list = ByondValue::new_list()?;
+    list.write_list(&handles)?;
+    Ok(list)
+}
+
 /// Binds (or rebinds) `entity`'s node as a plain machine terminal at
 /// `(x, y, z)`: a producer, an APC's own area terminal, or one of a SMES's
 /// two terminals. `entity` must already exist (a `vg_component_bind` on
@@ -154,6 +197,32 @@ fn power_unbind_node(entity: ByondValue) -> Result<ByondValue> {
     with_world(|w| {
         w.edit_network::<Cables>(move |host| host.unbind_node(e))
             .map_err(|err| eyre!("{err}"))
+    })?;
+    Ok(ByondValue::null())
+}
+
+/// Batched destroy's one power release (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): drops the node of every entity handle in `entities` in one
+/// topology edit. Zero/null or bad entries are skipped.
+#[auxmacros::bind("/proc/vg_power_unbind_node_list")]
+fn power_unbind_node_list(entities: ByondValue) -> Result<ByondValue> {
+    let mut doomed = Vec::new();
+    for v in entities.get_list_values()? {
+        // Zero/null or bad handles are skipped (the rest still go).
+        if let Ok(e) = num(&v).and_then(entity::decode) {
+            doomed.push(e);
+        }
+    }
+    if doomed.is_empty() {
+        return Ok(ByondValue::null());
+    }
+    with_world(|w| {
+        w.edit_network::<Cables>(move |host| {
+            for e in doomed {
+                host.unbind_node(e);
+            }
+        })
+        .map_err(|err| eyre!("{err}"))
     })?;
     Ok(ByondValue::null())
 }

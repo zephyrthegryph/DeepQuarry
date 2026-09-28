@@ -163,8 +163,27 @@ its turf visuals step and its first eight fires, so a boot keeps its memory
 marks even when the scenario never starts. After-boot marks: 70 MB after Atoms,
 137 MB after `air: turfs registered` (+67 MB: the uniform-chunk sharing
 that took the vg-ffi test's registration from 64 to 15 MB does not show up
-here yet), 153 MB peak after pipenets, 168 MB at round start, then 118-126 MB
+here yet; cause below), 153 MB peak after pipenets, 168 MB at round start, then 118-126 MB
 over the first fires.
+
+**Why registration missed the bulk path (fixed in rewrite/l-boot2).** The
+run's metrics show `bulk.direct_flushes` 94 and `bulk.port_fallback_flushes`
+94 (749,887 rows): half of the bulk flushes went through commands and the
+overlay, which is the old per-cell cost and never reaches
+`share_uniform_chunks()`. A bulk flush writes the live store only when its
+domain is quiescent, and during SSatoms a few turfs already registered one
+by one: `SSair.add_to_active()` on an initialized turf calls
+`update_air_ref()` at once (atoms spawning gas, pipelines, fires), which puts
+port writes into the gas and heat domains. No frame runs during init, so
+those writes stayed queued and every later bulk flush of those domains fell
+back. `Sim::write_direct()` now folds a domain's queued writes into its
+live store first (as the next frame's apply step would; not while recording
+or with a frame in flight), and `early_single_registrations_keep_the_bulk_path`
+in `boot_memory_tests.rs` covers it (160 fallbacks before, 0 after, 12 MB at
+"turfs registered"). Expect the live mark to drop from +67 MB toward the
+test's +6-15 MB, and the ~40 MB fall at "air: fire 1" (the overlay
+draining) to go away. Station chunks that mix walls, air and space still
+cannot share; only uniform chunks (mostly space) do.
 
 **Measuring caveat.** On this tree the bench scenario never starts on the full
 map: after round start the latency sweep keeps hitting a runtime in
@@ -735,6 +754,13 @@ site). Instead of `materialize()` per atom:
 4. **One Rust bind call per chunk** for everything that needs a core entity:
    turf cells (already bulk), heat bodies, pipe ports and edges (today's
    string transaction becomes the chunk's list), power nodes.
+   *Status (rewrite/l-boot2):* cables queue during an SSatoms batch
+   (`SSatoms.deferred_cable_binds`) and bind in one `vg_power_bind_cable_list`
+   call when it ends; `setup_rust_pipenets()` sends every port in one
+   `vg_pipe_upsert_list` and every edge in one `vg_pipe_connect_list`. Heat
+   bodies stay per atom (created lazily; callers use the handle at once);
+   machine power nodes stay per machine (bound in `on_materialize()`, some
+   with an immediate region read).
 5. **One lighting pass per chunk** (§5): sources registered in bulk, one
    propagation over the chunk, one batch of overlay writes.
 6. Smoothing once per chunk (§4.2).
@@ -877,8 +903,13 @@ so gibs and shuttle crushes are covered. `dq_destroy_effects_once(atom)` is
 the per-turf gate for cosmetic effects outside `destroy_effects()`: machinery
 destruction sparks and sound, catwalk and railing break messages use it.
 
-Remaining: heat bodies, pipe ports and power nodes still unbind one call each
-(Verdigris has no bulk release for them); material service cleanup is still
+Heat bodies, pipe ports and power nodes now release in one call each per
+batch too (`dq_heat_body_release()`, `dq_pipe_port_remove()`,
+`dq_power_unbind_node()` queue into the batch; `vg_heat_body_release_list`,
+`vg_pipe_remove_list`, `vg_power_unbind_node_list`), and the pipe topology
+commits once per batch after the removal (rewrite/l-boot2).
+
+Remaining: material service cleanup is still
 per service (its `om_unhook` calls on a doomed owner could be skipped once OM
 teardown is confirmed to drop inbound hooks); other `atom_destruction()`
 messages (material weapons and armour, mob spawners, grave markers,

@@ -194,8 +194,12 @@
 		var/port_id = rust_pipe_port_ids[index]
 		var/port_volume = rust_pipe_port_volume(index)
 		var/turf/open/release_turf = get_turf(src)
-		if(port_volume > 0 && release_turf?.air)
-			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_turf.air.arena_id(), release_turf.air.return_volume())
+		var/release_to = port_volume > 0 && release_turf?.air ? release_turf.air.arena_id() : 0
+		// Batched destroy: one removal call for the whole doomed set (init_and_turfs.md §4.4).
+		if(dq_pipe_port_remove(src, port_id, release_to))
+			continue
+		if(release_to)
+			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE_TO_MIXTURE, port_id, release_to, release_turf.air.return_volume())
 		else
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, port_id)
 		rust_free_pipe_port(port_id)
@@ -235,6 +239,10 @@
 
 /datum/controller/subsystem/air/proc/rust_commit_pending_pipenets()
 	if(!rust_pipe_topology_dirty)
+		return
+	// Inside a batched destroy the topology commits once, after the batch's
+	// one port removal call (dq_batch_flush()).
+	if(dq_batch_defer_pipe_commit())
 		return
 	rust_pipe_topology_dirty = FALSE
 	rust_apply_pipe_commit()
@@ -439,6 +447,10 @@
 /datum/controller/subsystem/air/proc/setup_rust_pipenets()
 	rust_pipe_region_networks = alist()
 	rust_queue_pipe_operation(RUST_PIPE_OP_CLEAR, 0, 0)
+	// The whole map's ports and edges go to Rust in one call each
+	// (init_and_turfs.md §3.3 step 4), not one call per port and edge.
+	var/list/upserts = list()
+	var/list/edges = list()
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		machine.rust_allocate_pipe_ports()
@@ -446,7 +458,12 @@
 			var/datum/gas_mixture/port_air = machine.rust_pipe_port_air(index)
 			if(!port_air)
 				continue
-			rust_queue_pipe_operation(RUST_PIPE_OP_UPSERT, machine.rust_pipe_port_ids[index], port_air.arena_id(), machine.rust_pipe_port_volume(index))
+			upserts += machine.rust_pipe_port_ids[index]
+			upserts += port_air.arena_id()
+			upserts += machine.rust_pipe_port_volume(index)
+
+	if(length(upserts))
+		vg_pipe_upsert_list(upserts)
 
 	for(var/obj/machinery/atmospherics/machine in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		for(var/index = 1 to machine.rust_pipe_port_count())
@@ -460,13 +477,18 @@
 				var/second = neighbor.rust_pipe_port_ids[neighbor_index]
 				// Each physical edge once: from its lower port handle.
 				if(first < second)
-					rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, first, second)
+					edges += first
+					edges += second
 		var/list/internal_edges = machine.rust_pipe_internal_edges()
 		for(var/edge_index = 1, edge_index < length(internal_edges), edge_index += 2)
 			var/first_index = internal_edges[edge_index]
 			var/second_index = internal_edges[edge_index + 1]
-			rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, machine.rust_pipe_port_ids[first_index], machine.rust_pipe_port_ids[second_index])
+			edges += machine.rust_pipe_port_ids[first_index]
+			edges += machine.rust_pipe_port_ids[second_index]
 
+	if(length(edges))
+		vg_pipe_connect_list(edges)
+	rust_pipe_topology_dirty = TRUE
 	rust_commit_pending_pipenets()
 
 /// Commits this batch of topology edits to the Rust pipe network (R7) and

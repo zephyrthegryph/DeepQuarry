@@ -123,6 +123,17 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!istype(T))
 		power_unregister()
 		return
+	// A map-load batch binds its cables in one call when it ends (SSatoms.flush_cable_binds()).
+	var/list/deferred = SSatoms?.deferred_cable_binds
+	if(deferred)
+		deferred[src] = TRUE
+		return
+	SSvg.untrack_entity(src, power_entity)
+	power_entity = vg_power_bind_cable(power_entity, power_shape(T))
+	SSvg.track_entity(src, power_entity)
+
+/// This piece as `vg_power_bind_cable` takes it: `x, y, z, d1, d2, up, down, link`.
+/obj/structure/cable/proc/power_shape(turf/T)
 	var/above = 0
 	var/below = 0
 	if((d1 | d2) & UP)
@@ -131,14 +142,35 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if((d1 | d2) & DOWN)
 		var/turf/D = GetBelow(T)
 		below = D?.z || 0
-	SSvg.untrack_entity(src, power_entity)
-	power_entity = vg_power_bind_cable(power_entity, list(T.x, T.y, T.z, d1, d2, above, below, power_link_id()))
-	SSvg.track_entity(src, power_entity)
+	return list(T.x, T.y, T.z, d1, d2, above, below, power_link_id())
+
+/// Binds `cables` (a list, or cable -> TRUE) in one Rust call: a map-load
+/// batch's cables (init_and_turfs.md sec 3.3 step 4). Deleted and unplaced
+/// pieces are skipped.
+/proc/power_bind_cables(list/cables)
+	var/list/bound = list()
+	var/list/entities = list()
+	var/list/shapes = list()
+	for(var/obj/structure/cable/C as anything in cables)
+		if(QDELETED(C) || !isturf(C.loc))
+			continue
+		bound += C
+		entities += C.power_entity
+		shapes += C.power_shape(C.loc)
+	if(!length(bound))
+		return
+	var/list/handles = vg_power_bind_cable_list(entities, shapes)
+	for(var/i in 1 to length(bound))
+		var/obj/structure/cable/C = bound[i]
+		SSvg.untrack_entity(C, C.power_entity)
+		C.power_entity = handles[i]
+		SSvg.track_entity(C, C.power_entity)
 
 /obj/structure/cable/proc/power_unregister()
+	SSatoms?.deferred_cable_binds?.Remove(src)
 	if(!power_entity)
 		return
-	vg_power_unbind_node(power_entity)
+	dq_power_unbind_node(src, power_entity)
 	SSvg.untrack_entity(src, power_entity)
 	dq_entity_unbind(src, power_entity)
 	power_entity = 0

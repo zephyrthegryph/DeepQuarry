@@ -25,6 +25,12 @@ SUBSYSTEM_DEF(atoms)
 	/// end (doc/rewrite/init_and_turfs.md sec 4.2). Null outside a batch.
 	var/list/deferred_wall_smoothing
 
+	/// While a map-load batch initializes, cables queue their power node here (cable -> TRUE)
+	/// and the batch binds them in one Rust call (doc/rewrite/init_and_turfs.md sec 3.3 step 4).
+	/// Null outside a batch. Machines poll their region every power step, so nothing needs the
+	/// nodes before the batch ends.
+	var/list/deferred_cable_binds
+
 	/// Atoms that will be deleted once the subsystem is initialized
 	var/list/queued_deletions = list()
 
@@ -66,11 +72,16 @@ SUBSYSTEM_DEF(atoms)
 	var/smoothing_owner = isnull(deferred_wall_smoothing)
 	if(smoothing_owner)
 		deferred_wall_smoothing = list()
+	var/cable_owner = isnull(deferred_cable_binds)
+	if(cable_owner)
+		deferred_cable_binds = list()
 	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
 	CreateAtoms(atoms, atoms_to_return, source)
 	clear_tracked_initalize(source)
 	if(smoothing_owner)
 		flush_wall_smoothing()
+	if(cable_owner)
+		flush_cable_binds()
 
 	if(length(late_loaders))
 		for(var/I in 1 to length(late_loaders))
@@ -120,6 +131,13 @@ SUBSYSTEM_DEF(atoms)
 			continue
 		W.update_connections()
 		W.update_icon()
+
+/// Binds every cable the batch queued in one Rust call.
+/datum/controller/subsystem/atoms/proc/flush_cable_binds()
+	var/list/queued = deferred_cable_binds
+	deferred_cable_binds = null
+	if(length(queued))
+		power_bind_cables(queued)
 
 /// Actually creates the list of atoms. Exists solely so a runtime in the creation logic doesn't cause initialized to totally break
 /datum/controller/subsystem/atoms/proc/CreateAtoms(list/atoms, list/atoms_to_return = null, mapload_source = null)

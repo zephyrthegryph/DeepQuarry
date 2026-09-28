@@ -955,6 +955,17 @@ fn heat_body_release(h: ByondValue) -> Result<ByondValue> {
     Ok(ByondValue::null())
 }
 
+/// Batched destroy's one heat release (`doc/rewrite/init_and_turfs.md`
+/// §4.4 step 4): [`heat_body_release`] for every handle in `bodies`.
+/// Zero/null and already-released entries are skipped.
+#[auxmacros::bind("/proc/heat_body_release_list")]
+fn heat_body_release_list(bodies: ByondValue) -> Result<ByondValue> {
+    for h in bodies.get_list_values()? {
+        heat_body_release(h)?;
+    }
+    Ok(ByondValue::null())
+}
+
 /// Settles `body` if it is relaxing, then moves whatever it holds above
 /// slot 0's environment there too (`body.rs::release`, ported): the
 /// baseline (what the environment already is) stays out of the books as

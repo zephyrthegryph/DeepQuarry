@@ -679,8 +679,26 @@ fn rate_models_schedule_crossings_on_the_wheel() {
 }
 
 #[test]
-fn write_direct_is_seen_at_once_and_refused_with_writes_in_flight() {
+fn write_direct_is_seen_at_once_and_folds_in_queued_writes() {
+    // A recorded run keeps queued writes for the next frame's batch: refused.
     let (builder, keys) = toy_builder(config(1), false);
+    let mut recorded = builder.build().unwrap();
+    recorded
+        .port(keys.heat)
+        .submit(3, HeatCmd::Add(1.0))
+        .unwrap();
+    assert!(
+        recorded
+            .write_direct(keys.heat, |store| store.set(3, Heat::default()))
+            .is_none()
+    );
+    assert_eq!(recorded.port(keys.heat).read(3), Some(Heat { energy: 1.0 }));
+
+    let unrecorded = SimConfig {
+        record: false,
+        ..config(1)
+    };
+    let (builder, keys) = toy_builder(unrecorded, false);
     let mut sim = builder.build().unwrap();
     // Nothing in flight: the write lands in the live store and is pinned.
     let wrote = sim.write_direct(keys.heat, |store| {
@@ -692,16 +710,28 @@ fn write_direct_is_seen_at_once_and_refused_with_writes_in_flight() {
     assert_eq!(sim.port(keys.heat).read(7), Some(Heat { energy: 2.0 }));
     assert_eq!(sim.port(keys.heat).overlay_len(), 0);
     assert_eq!(sim.port(keys.heat).queued(), 0);
-    // A queued command is in flight: refused, nothing written.
+    // A queued command (no frame running) is applied first, as the next
+    // frame would, and the direct write follows it.
     sim.port(keys.heat).submit(3, HeatCmd::Add(1.0)).unwrap();
-    assert!(sim.write_direct(keys.heat, |store| store.set(3, Heat::default())).is_none());
+    sim.port(keys.heat).submit(5, HeatCmd::Add(1.0)).unwrap();
+    assert!(
+        sim.write_direct(keys.heat, |store| store.set(5, Heat { energy: 7.0 }))
+            .is_some()
+    );
     assert_eq!(sim.port(keys.heat).read(3), Some(Heat { energy: 3.0 }));
-    // After a frame applies it, direct writes work again and a frame keeps them.
+    assert_eq!(sim.port(keys.heat).read(5), Some(Heat { energy: 7.0 }));
+    assert_eq!(sim.port(keys.heat).overlay_len(), 0);
+    assert_eq!(sim.port(keys.heat).queued(), 0);
+    // Frames keep the result; the folded command is not applied twice.
     sim.settle();
-    assert!(sim.write_direct(keys.heat, |store| store.set(4, Heat { energy: 9.0 })).is_some());
+    assert!(
+        sim.write_direct(keys.heat, |store| store.set(4, Heat { energy: 9.0 }))
+            .is_some()
+    );
     sim.dispatch_frame();
     sim.wait_for_frame();
     sim.begin_tick();
     assert_eq!(sim.port(keys.heat).read(4), Some(Heat { energy: 9.0 }));
     assert_eq!(sim.port(keys.heat).read(3), Some(Heat { energy: 3.0 }));
+    assert_eq!(sim.port(keys.heat).read(5), Some(Heat { energy: 7.0 }));
 }

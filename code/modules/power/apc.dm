@@ -211,7 +211,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 /obj/machinery/power/apc/lifecycle_unbind()
 	. = ..()
 	if(vg_entity)
-		vg_power_unbind_node(vg_entity)
+		dq_power_unbind_node(src, vg_entity)
 
 // its area loses power and its power alarm clears.
 /obj/machinery/power/apc/on_destroy(force)

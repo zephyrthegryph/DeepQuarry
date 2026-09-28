@@ -784,8 +784,9 @@ impl Sim {
     /// Writes straight into domain `key`'s live store, bypassing commands and
     /// the overlay: for bulk registration (a map load) where queueing one
     /// command and one overlay entry per cell would hold the whole batch
-    /// twice until the next frame. Runs only while no frame is running and
-    /// DM has nothing in flight for the domain; returns `None` (and does not
+    /// twice until the next frame. Runs only while no frame is running; DM
+    /// writes still queued for the domain are applied first, as the next
+    /// frame would (unless the run is recorded). Returns `None` (and does not
     /// call `f`) otherwise, and the caller falls back to commands. The
     /// written chunks differ from the last frame's, so the field wakes them.
     ///
@@ -797,13 +798,16 @@ impl Sim {
         f: impl FnOnce(&mut crate::cow::CowStore<D::Value>) -> R,
     ) -> Option<R> {
         self.reclaim();
+        // A recorded run replays command batches per frame: keep DM's queued
+        // writes in the next frame's batch rather than folding them in here.
+        let recording = self.log.is_some();
         let world = self.world.as_mut()?;
         let port: &mut MainPort<D> = self.ports[key.index]
             .as_any_mut()
             .downcast_mut()
             .expect("domain key from another Sim");
         let state = world.resources.get_mut(key.state);
-        if !port.quiescent(state) {
+        if !port.quiescent(state) && (recording || !port.absorb(state)) {
             return None;
         }
         let result = f(&mut state.store);

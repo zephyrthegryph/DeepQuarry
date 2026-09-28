@@ -73,6 +73,29 @@ fn stage(stages: &mut Vec<Stage>, name: &'static str) {
 
 #[test]
 fn southern_cross_boot_rust_heap_peak_is_bounded() {
+    boot(false);
+}
+
+/// The live boot: a few turfs register one by one before `setup_allturfs()`
+/// (`SSair.add_to_active()` on an initialized turf during SSatoms: atoms that
+/// spawn gas, pipelines, fires), which queues port writes in both gas and
+/// heat domains. No frame runs during init, so before the bulk bind folded
+/// those writes in, every bulk flush saw a non-quiescent domain and sent the
+/// whole map through commands and the overlay: half of the live boot's
+/// flushes (`bulk.port_fallback_flushes`), +67 MB at "air: turfs registered"
+/// and no uniform-chunk sharing (`doc/rewrite/init_and_turfs.md` §0.2b).
+#[test]
+fn early_single_registrations_keep_the_bulk_path() {
+    boot(true);
+}
+
+/// The allocator's counters are process-wide: one boot at a time.
+static BOOT: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn boot(early_writes: bool) {
+    let _one_at_a_time = BOOT
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let mut stages = Vec::new();
     allocator::reset_peak();
     let (base, _) = allocator::diagnostics();
@@ -81,6 +104,32 @@ fn southern_cross_boot_rust_heap_peak_is_bounded() {
 
     let gas = crate::gas::turf_key().unwrap();
     let heat = crate::heat::field().unwrap();
+    let fallbacks_before = crate::metrics::registry()
+        .counter("bulk.port_fallback_flushes")
+        .get();
+    if early_writes {
+        // Per-cell registrations outside any bulk bind, as update_air_ref does.
+        let c = MAX_X / 2;
+        for i in 0..4 {
+            let cell = c * MAX_X + c + i;
+            with_world(|w| {
+                crate::gas::register_cell(w, gas, cell, air(), CELL_VOLUME, false, Some(0));
+                Ok(())
+            })
+            .unwrap();
+            crate::heat::set_turf(
+                heat,
+                cell,
+                HEAT_CELL_SOLID,
+                20_000.0,
+                0.5,
+                0.9,
+                293.15,
+                true,
+            )
+            .unwrap();
+        }
+    }
     let cells: Vec<(u32, bool)> = (0..MAX_Z)
         .flat_map(|z| {
             (0..MAX_Y).flat_map(move |y| {
@@ -115,6 +164,14 @@ fn southern_cross_boot_rust_heap_peak_is_bounded() {
         .unwrap();
     }
     stage(&mut stages, "turfs registered");
+    let fallbacks = crate::metrics::registry()
+        .counter("bulk.port_fallback_flushes")
+        .get()
+        - fallbacks_before;
+    assert_eq!(
+        fallbacks, 0,
+        "{fallbacks} bulk flushes went through commands and the overlay instead of the live store"
+    );
 
     for i in 0..FRAMES {
         with_world(|w| {
