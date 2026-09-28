@@ -29,7 +29,7 @@
 			if(x == 0)
 				organs_to_edit += name
 			else
-				organs_to_edit.Insert(x + (O.robotic == ORGAN_NANOFORM ? 1 : 0), name)
+				organs_to_edit.Insert(x + (O.is_nanoform() ? 1 : 0), name)
 	for(var/name in organs_to_edit)
 		var/status = pref_organ_data[name]
 		var/obj/item/organ/external/O = target.organs_by_name[name]
@@ -51,7 +51,7 @@
 		var/obj/item/organ/I = target.internal_organs_by_name[name]
 		if(istype(I, /obj/item/organ/internal/brain))
 			var/obj/item/organ/external/E = target.get_organ(I.parent_organ)
-			if(!E || E.robotic < ORGAN_ASSISTED)
+			if(!E || E.is_organic())
 				continue
 		if(I)
 			if(status == FBP_ASSISTED)

@@ -497,7 +497,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 				if(x == 0)
 					organs_to_edit += name
 				else
-					organs_to_edit.Insert(x + (O.robotic == ORGAN_NANOFORM ? 1 : 0), name)
+					organs_to_edit.Insert(x + (O.is_nanoform() ? 1 : 0), name)
 		for(var/name in organs_to_edit)
 			var/status = pref_organ_data[name]
 			var/obj/item/organ/external/O = character.organs_by_name[name]

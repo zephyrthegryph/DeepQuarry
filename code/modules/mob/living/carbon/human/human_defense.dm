@@ -73,7 +73,7 @@ emp_act
 
 				drop_from_inventory(c_hand)
 				if(!isbelly(loc))
-					if (affected.robotic >= ORGAN_ROBOT)
+					if (affected.is_robotic())
 						automatic_custom_emote(VISIBLE_MESSAGE, "drops what they were holding, their [affected.name] malfunctioning!", check_stat = TRUE)
 					else
 						var/emote_scream = pick("screams in pain and ", "lets out a sharp cry and ", "cries out and ")
@@ -312,7 +312,7 @@ emp_act
 
 /mob/living/carbon/human/emag_act(remaining_charges, mob/user, emag_source)
 	var/obj/item/organ/external/affecting = get_organ(user.zone_sel.selecting)
-	if(!affecting || !(affecting.robotic >= ORGAN_ROBOT))
+	if(!affecting || !(affecting.is_robotic()))
 		to_chat(user, span_warning("That limb isn't robotic."))
 		return -1
 	if(affecting.sabotaged)

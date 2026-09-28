@@ -33,7 +33,7 @@
 	if(!istype(H))
 		return FALSE
 	var/obj/item/organ/external/E = H.organs_by_name[BP_HEAD]
-	return istype(E) && (E.robotic >= ORGAN_ROBOT)
+	return istype(E) && (E.is_robotic())
 
 /obj/item/clothing/mask/synthfacemask/update_icon()
 	var/mob/living/carbon/human/H = loc

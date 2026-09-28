@@ -222,7 +222,7 @@
 	for(var/datum/affliction/A as anything in afflictions)
 		raw_pain += A.pain_contribution()
 	for(var/obj/item/organ/external/E as anything in H.organs)
-		if(E.robotic >= ORGAN_ROBOT || !E.organ_can_feel_pain())
+		if(E.is_robotic() || !E.organ_can_feel_pain())
 			continue
 		raw_pain += PAIN_PER_LIMB_DAMAGE * (E.get_trauma() + E.get_burn())
 		if(E.is_broken())

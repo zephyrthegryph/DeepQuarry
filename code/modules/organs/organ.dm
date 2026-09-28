@@ -123,19 +123,19 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 /// Fully prosthetic: robot, lifelike or nanoform. No pulse, no blood, repaired
 /// with tools rather than medicine.
 /obj/item/organ/proc/is_robotic()
-	return robotic >= ORGAN_ROBOT
+	return is_robotic()
 
 /// Has any mechanical component: assisted (pacemaker-style) or fully robotic.
 /obj/item/organ/proc/is_assisted()
-	return robotic >= ORGAN_ASSISTED
+	return is_assisted()
 
 /// Made of nanites (protean).
 /obj/item/organ/proc/is_nanoform()
-	return robotic == ORGAN_NANOFORM
+	return is_nanoform()
 
 /// Plain flesh: no mechanical parts at all.
 /obj/item/organ/proc/is_organic()
-	return robotic < ORGAN_ASSISTED
+	return is_organic()
 
 /// The part's biology (BIOLOGY_* flag) for afflictions and treatment tags.
 /// Assisted parts are still organic tissue.
@@ -185,7 +185,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		tick_detached_afflictions()
 
 	//Process infections
-	if(robotic >= ORGAN_ROBOT || (istype(owner) && (owner.species && (owner.species.flags & (IS_PLANT | NO_INFECT)))))
+	if(is_robotic() || (istype(owner) && (owner.species && (owner.species.flags & (IS_PLANT | NO_INFECT)))))
 		germ_level = 0
 		return
 
@@ -257,7 +257,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 //A little wonky: internal organs stop calling this (they return early in process) when dead, but external ones cause further damage when dead
 /obj/item/organ/proc/handle_germ_effects()
 	//** Handle the effects of infections
-	if(robotic >= ORGAN_ROBOT) //Just in case!
+	if(is_robotic()) //Just in case!
 		germ_level = 0
 		return 0
 
@@ -453,7 +453,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 	for(var/obj/O as anything in contents_of(src))
 		O.emp_act(severity, recursive)
 
-	if(!(robotic >= ORGAN_ASSISTED))
+	if(!(is_assisted()))
 		return
 	for(var/i = 1; i <= robotic; i++)
 		switch (severity)
@@ -545,7 +545,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 
 /obj/item/organ/proc/bitten(mob/user)
 
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		return
 
 	to_chat(user, span_notice("You take an experimental bite out of \the [src]."))
@@ -573,7 +573,7 @@ REF_STATIC(/obj/item/organ, "assists_languages")
 		return FALSE
 
 	// Convert it to an edible form, yum yum.
-	if(!(robotic >= ORGAN_ROBOT) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
+	if(!(is_robotic()) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
 		bitten(user)
 		return TRUE
 	return FALSE
@@ -614,7 +614,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 		if(istype(O, /obj/machinery/gibber))	// The great equalizer.
 			return TRUE
 
-		if(robotic >= ORGAN_ROBOT)
+		if(is_robotic())
 			if(O.has_tool_quality(TOOL_SCREWDRIVER))
 				return TRUE
 
@@ -652,7 +652,7 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 
 /obj/item/organ/proc/butcher_done(mob/living/user, atom/newtarget)
 	if(user)
-		if(robotic >= ORGAN_ROBOT)
+		if(is_robotic())
 			user?.visible_message(span_warning("[user] disassembles \the [src]."))
 
 		else
@@ -739,10 +739,10 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 			if(!O)	// Parent limb is missing; nothing to be compatible with.
 				return FALSE
 			if(forgiving_class)
-				if(O.robotic <= ORGAN_ASSISTED && robotic <= ORGAN_LIFELIKE)	// Parent is organic or assisted, we are at most synthetic.
+				if(!O.is_robotic() && robotic <= ORGAN_LIFELIKE)	// Parent is organic or assisted, we are at most synthetic.
 					return TRUE
 
-				if(O.robotic >= ORGAN_ROBOT && robotic >= ORGAN_ASSISTED)		// Parent is synthetic, and we are biosynthetic at least.
+				if(O.is_robotic() && is_assisted())		// Parent is synthetic, and we are biosynthetic at least.
 					return TRUE
 
 			if(!target_parent_classes || !target_parent_classes.len)	// Default checks, if we're not looking for a Specific type.
@@ -750,10 +750,10 @@ DECLARE_INTERACTIONS(/obj/item/organ, \
 				if(O.robotic == robotic)	// Same thing, we're fine.
 					return TRUE
 
-				if(O.robotic < ORGAN_ROBOT && robotic < ORGAN_ROBOT)
+				if(!O.is_robotic() && !is_robotic())
 					return TRUE
 
-				if(O.robotic > ORGAN_ASSISTED && robotic > ORGAN_ASSISTED)
+				if(O.is_robotic() && is_robotic())
 					return TRUE
 
 			else

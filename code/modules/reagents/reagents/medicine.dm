@@ -227,7 +227,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
-		if(istype(L) && L.robotic >= ORGAN_ROBOT)
+		if(istype(L) && L.is_robotic())
 			return
 		// Liver repair is carthatoline's TREAT_HEPATORENAL tag (body/treatment.dm).
 		if(alien == IS_SLIME)
@@ -452,7 +452,7 @@
 			var/mob/living/carbon/human/H = M
 			var/obj/item/organ/internal/liver/L = H.internal_organs_by_name[O_LIVER]
 			if(istype(L) && prob(5))
-				if(L.robotic >= ORGAN_ROBOT)
+				if(L.is_robotic())
 					return
 
 				H.injure(INJURY_TOXIN, rand(1,3) * removed, L, src, flags = INJURE_IGNORE_RESISTANCE)
@@ -684,7 +684,7 @@
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 		if(istype(E))
-			if(E.robotic >= ORGAN_ROBOT)
+			if(E.is_robotic())
 				return
 			// Eye repair is imidazoline's TREAT_OCULAR tag (body/treatment.dm).
 			if(E.damage <= 5 && E.organ_tag == O_EYES)
@@ -710,7 +710,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT)
+			if(I.is_robotic())
 				continue
 			if(I.damage > 0) // Repair is peridaxon's organ tags; the confusion is its side effect.
 				H.status_at_least(EFFECT_CONFUSED, 5)
@@ -824,7 +824,7 @@
 	var/mob/living/carbon/human/H = M
 	var/list/targets = daxon_organs()
 	for(var/obj/item/organ/internal/I as anything in H.internal_organs)
-		if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in targets))
+		if(I.is_robotic() || !(I.organ_tag in targets))
 			continue
 		if(I.damage > 0)
 			H.status_at_least(EFFECT_CONFUSED, 2)
@@ -1005,7 +1005,7 @@
 		organtotal |= H.internal_organs
 
 		for(var/obj/item/organ/I in organtotal)	// Don't mess with robot bits, they don't reject.
-			if(I.robotic >= ORGAN_ROBOT)
+			if(I.is_robotic())
 				organtotal -= I
 
 		if(dose >= 15)
@@ -1053,7 +1053,7 @@
 		organtotal |= H.internal_organs
 
 		for(var/obj/item/organ/I in organtotal)	// Don't mess with robot bits, they don't reject.
-			if(I.robotic >= ORGAN_ROBOT)
+			if(I.is_robotic())
 				organtotal -= I
 
 		if(dose >= 15)

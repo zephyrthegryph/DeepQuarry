@@ -172,7 +172,7 @@
 				organ_data[name] = "amputated"
 			else
 				rlimb_data.Remove(name) // Missing limb and not in the global list means default model
-		else if(external_organ.robotic >= ORGAN_ROBOT)
+		else if(external_organ.is_robotic())
 			organ_data[name] = "cyborg"
 			if(external_organ.model)
 				rlimb_data[name] = external_organ.model
@@ -189,7 +189,7 @@
 				organ_data[name] = FBP_DIGITAL // Need a better way to detect this special type
 			else if(internal_organ.robotic == ORGAN_ASSISTED)
 				organ_data[name] = FBP_ASSISTED
-			else if(internal_organ.robotic >= ORGAN_ROBOT)
+			else if(internal_organ.is_robotic())
 				organ_data[name] = FBP_MECHANICAL
 			else
 				organ_data.Remove(name) // Missing organ_data entry means normal

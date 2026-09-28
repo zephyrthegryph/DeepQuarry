@@ -46,7 +46,7 @@
 			lines += "Viral infection - Inform a Virologist or the Chief Medical Officer and administer antiviral chemicals such as Spaceacillin. Limit exposure to other personnel."
 			break
 		for(var/obj/item/organ/external/E as anything in H.organs)
-			if(E.robotic >= ORGAN_ROBOT)
+			if(E.is_robotic())
 				lines += "Robotic body parts - Inform the Robotics department."
 				break
 	if(!length(lines))

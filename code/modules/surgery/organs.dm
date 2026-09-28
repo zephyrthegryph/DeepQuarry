@@ -71,7 +71,7 @@
 	var/obj/item/organ/internal/O = tool
 	if(!istype(O))
 		return FALSE
-	if((part.robotic >= ORGAN_ROBOT) && !(O.robotic >= ORGAN_ROBOT))
+	if((part.is_robotic()) && !(O.is_robotic()))
 		to_chat(user, span_warning("There are only sockets and mounts inside \the [part.name]; nothing \the [O] could be seated on."))
 		return SURGERY_REFUSED
 	if(target.internal_organs_by_name[O.organ_tag])
@@ -162,7 +162,7 @@
 /datum/surgical_step/organ/install_mmi/is_needed(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool)
 	if(!istype(tool, /obj/item/mmi))
 		return FALSE
-	if(!(part.robotic >= ORGAN_ROBOT))
+	if(!(part.is_robotic()))
 		to_chat(user, span_warning("Inside \the [part.name] is bone and soft tissue; there's no socket for \the [tool]."))
 		return SURGERY_REFUSED
 	if(!target.should_have_organ(O_BRAIN))
@@ -202,7 +202,7 @@
 	if(!N.held_mob?.client || N.held_mob.stat >= DEAD)
 		to_chat(user, span_warning("\The [N] hangs limp and unresponsive in your hands."))
 		return SURGERY_REFUSED
-	if(!(part.robotic >= ORGAN_ROBOT))
+	if(!(part.is_robotic()))
 		to_chat(user, span_warning("\The [part.name] is flesh and bone; there's no frame for \the [N] to take root in."))
 		return SURGERY_REFUSED
 	if(part.model != "Skrellian Exoskeleton")

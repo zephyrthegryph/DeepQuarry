@@ -5911,7 +5911,7 @@
 			var/mob/living/carbon/human/H = M
 			var/obj/item/organ/internal/eyes/E = H.internal_organs_by_name[O_EYES]
 			if(istype(E))
-				if(E.robotic >= ORGAN_ROBOT)
+				if(E.is_robotic())
 					return
 				if(E.damage < 100)
 					H.injure(INJURY_BLUNT, 1 * removed, E, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
@@ -5927,7 +5927,7 @@
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/internal/I in H.internal_organs)
-			if(I.robotic >= ORGAN_ROBOT || !(I.organ_tag in list(O_HEART)))
+			if(I.is_robotic() || !(I.organ_tag in list(O_HEART)))
 				continue
 			if(I.damage < 100 && prob(10))
 				H.injure(INJURY_TOXIN, 0.2 * removed, I, src, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)

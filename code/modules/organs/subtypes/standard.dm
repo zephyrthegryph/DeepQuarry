@@ -25,7 +25,7 @@
 
 /obj/item/organ/external/chest/robotize(company, skip_prosthetics = 0, keep_organs = 0)
 	if(..() && owner)
-		if(robotic != ORGAN_NANOFORM)
+		if(!is_nanoform())
 			// Give them fancy new organs (each takes its place in its limb).
 			new /obj/item/organ/internal/cell(owner,1)
 			new /obj/item/organ/internal/voicebox/robot(owner, 1)
@@ -152,12 +152,12 @@
 			owner.status_at_least(EFFECT_WEAKENED, 5)
 
 /obj/item/organ/external/leg/is_usable() // We only do legs, otherwise the stance_damage will be 8 instead of 4, meaning crutches do nothing as they only negate 4
-	if(robotic == ORGAN_FLESH && owner.sdisabilities & SPINE)
+	if(is_organic() && owner.sdisabilities & SPINE)
 		return FALSE
 	. = ..()
 
 /obj/item/organ/external/leg/organ_can_feel_pain()
-	if(robotic < ORGAN_ROBOT && owner.sdisabilities & SPINE)
+	if(!is_robotic() && owner.sdisabilities & SPINE)
 		return FALSE
 	. = ..()
 
@@ -203,7 +203,7 @@
 			owner.status_at_least(EFFECT_WEAKENED, 5)
 
 /obj/item/organ/external/foot/organ_can_feel_pain()
-	if(robotic < ORGAN_ROBOT && owner.sdisabilities & SPINE)
+	if(!is_robotic() && owner.sdisabilities & SPINE)
 		return FALSE
 	. = ..()
 

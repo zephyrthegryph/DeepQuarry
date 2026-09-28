@@ -26,7 +26,7 @@
 					var/obj/item/organ/checklimb = L.organs_by_name[parent_organ]
 					if(checklimb)
 						// valid limb, check if organic!
-						if(checklimb.status == 0 && checklimb.robotic < ORGAN_ROBOT)
+						if(checklimb.status == 0 && !checklimb.is_robotic())
 							return ..(mapload, internal)
 		else
 			parent_organ = force_location

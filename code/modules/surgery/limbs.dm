@@ -90,10 +90,10 @@
 	if(!P)
 		to_chat(user, span_warning("There's nothing on [target] for \the [E] to join onto."))
 		return SURGERY_REFUSED
-	if((P.robotic >= ORGAN_ROBOT) && (E.robotic < ORGAN_ROBOT))
+	if((P.is_robotic()) && (!E.is_robotic()))
 		to_chat(user, span_warning("\The [P] ends in metal couplings; living flesh won't take to them."))
 		return SURGERY_REFUSED
-	if(istype(E, /obj/item/organ/external/head) && E.robotic >= ORGAN_ROBOT && P.robotic < ORGAN_ROBOT)
+	if(istype(E, /obj/item/organ/external/head) && E.is_robotic() && !P.is_robotic())
 		to_chat(user, span_warning("The mounting on \the [E] would tear straight through the flesh of \the [P]."))
 		return SURGERY_REFUSED
 	return TRUE

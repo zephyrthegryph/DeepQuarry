@@ -89,7 +89,7 @@
 	if(!.)
 		var/has_organ = FALSE
 		var/obj/item/organ/internal/O = H.get_active_hand()
-		if(istype(O) && O.robotic < ORGAN_ROBOT && !(O.status & ORGAN_DEAD))
+		if(istype(O) && !O.is_robotic() && !(O.status & ORGAN_DEAD))
 			has_organ = TRUE
 		return has_organ
 
@@ -261,7 +261,7 @@
 		var/mob/living/carbon/human/H = M
 
 		var/obj/item/organ/external/E = H.organs_by_name[infest_target]
-		if(!E || E.is_stump() || E.robotic >= ORGAN_ROBOT)
+		if(!E || E.is_stump() || E.is_robotic())
 			to_chat(src,"\The [H] does not have an infestable [infest_target]!")
 			return
 
@@ -382,7 +382,7 @@
 		return
 
 	var/obj/item/organ/external/E = H.organs_by_name[infest_target]
-	if(!E || E.is_stump() || E.robotic >= ORGAN_ROBOT)
+	if(!E || E.is_stump() || E.is_robotic())
 		to_chat(src,"\The [H] does not have an infestable [infest_target]!")
 		return
 

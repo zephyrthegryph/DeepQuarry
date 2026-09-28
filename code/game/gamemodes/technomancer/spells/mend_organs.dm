@@ -38,7 +38,7 @@
 					H.set_sdisabilities(H.sdisabilities & (~BLIND))
 
 			for(var/obj/item/organ/external/O in H.organs) // Fix limbs
-				if(O.robotic >= ORGAN_ROBOT) // No robot parts for this.
+				if(O.is_robotic()) // No robot parts for this.
 					continue
 				H.mend(TREAT_BURN_CARE, heal_power / 4, O)
 

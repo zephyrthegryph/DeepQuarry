@@ -132,7 +132,7 @@
 				var/picked = pick(check)
 				var/obj/item/organ/external/affecting = H.get_organ(picked)
 				if(affecting)
-					if(affecting.robotic >= ORGAN_ROBOT)
+					if(affecting.is_robotic())
 						return
 					H.injure(INJURY_BLUNT, force, affecting, src)
 					if(affecting.organ_can_feel_pain())

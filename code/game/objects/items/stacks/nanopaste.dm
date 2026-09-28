@@ -39,7 +39,7 @@
 				balloon_alert(user, "you can't apply [src] through [H.get_equipped_item(SLOT_ID_SUIT)]!")
 				return ITEM_INTERACT_FAILURE
 
-		if (S && (S.robotic >= ORGAN_ROBOT))
+		if (S && (S.is_robotic()))
 			if(!S.get_damage())
 				balloon_alert(user, "nothing to fix here.")
 				return ITEM_INTERACT_FAILURE

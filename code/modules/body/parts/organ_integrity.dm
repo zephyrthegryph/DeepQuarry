@@ -131,7 +131,7 @@
 		CRASH("apply_lesion_damage() called with a negative amount ([amount]) on [src]; heal through mend().")
 	if(!amount || om_has(owner, EFFECT_GODMODE))
 		return 0
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		amount *= PROSTHETIC_ORGAN_DAMAGE_MULT
 		lesion_type = /datum/affliction/lesion/synthetic/component_fault
 	else
@@ -180,7 +180,7 @@
 	if(damage >= target)
 		return
 	var/deficit = target - damage
-	if(robotic >= ORGAN_ROBOT)
+	if(is_robotic())
 		lesion_type = /datum/affliction/lesion/synthetic/component_fault
 	else if(!lesion_type)
 		lesion_type = default_lesion_type()
@@ -210,7 +210,7 @@
 		return 0
 	if(isnull(amount))
 		amount = I.max_damage
-	if(I.robotic >= ORGAN_ROBOT)
+	if(I.is_robotic())
 		return mend(TREAT_SYSTEM_RESTORE, amount, I)
 	. = mend(TREAT_SURGICAL_REPAIR, amount, I)
 	var/remainder = amount - .

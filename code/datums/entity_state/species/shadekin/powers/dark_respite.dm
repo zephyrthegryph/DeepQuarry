@@ -89,7 +89,7 @@
 		L.mend(TREAT_ANTITOXIN, 0.25)
 		if(H)
 			for(var/obj/item/organ/internal/I in H.internal_organs)
-				if(I.robotic >= ORGAN_ROBOT)
+				if(I.is_robotic())
 					continue
 				if(I.damage > 0)
 					H.mend(TREAT_RESTORATION, 0.25, I)

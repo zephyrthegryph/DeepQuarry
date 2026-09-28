@@ -91,7 +91,7 @@
 /// Organic limbs grow cuts/punctures/bruises/burns; synthetic limbs dents,
 /// breaches and scorching (see code/modules/medical/conditions/wounds.dm).
 /obj/item/organ/external/proc/receive_injury(kind, amount, atom/source, flags)
-	var/synthetic = (robotic >= ORGAN_ROBOT)
+	var/synthetic = (is_robotic())
 	if(synthetic && kind == INJURY_FROSTBITE)
 		return 0 // prosthetics don't get frostbite
 	var/sharp = (kind == INJURY_CUT || kind == INJURY_PIERCE)
@@ -129,7 +129,7 @@
 			owner.adjust_shock((amount - inflict) * CONFIG_GET(number/organ_damage_spillover_multiplier), "wound spillover")
 	if(inflict <= 0)
 		return 0
-	var/synthetic = (robotic >= ORGAN_ROBOT)
+	var/synthetic = (is_robotic())
 	var/datum/affliction/wound/wound_type = wound_affliction_type(wound_kind, inflict, synthetic)
 	if(!wound_type)
 		return 0

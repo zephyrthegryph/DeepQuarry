@@ -162,7 +162,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 	for(var/obj/item/organ/external/temp in organs_to_check)
 
 		///First, we make sure it's not robotic.
-		if(temp.robotic >= ORGAN_ROBOT)
+		if(temp.is_robotic())
 			continue
 		///A tourniquet above the limb stops every bleed below it.
 		if(temp.flow_occluded())

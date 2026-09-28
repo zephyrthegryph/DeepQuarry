@@ -53,7 +53,7 @@
 	if(!E || !(E.organ_tag in applicable_zones))
 		balloon_alert(user, "a tourniquet goes on an arm or a leg!")
 		return ITEM_INTERACT_FAILURE
-	if(E.robotic >= ORGAN_ROBOT)
+	if(E.is_robotic())
 		balloon_alert(user, "there's no blood flow to stop in \the [E.name]!")
 		return ITEM_INTERACT_FAILURE
 	if(E.tourniquet)

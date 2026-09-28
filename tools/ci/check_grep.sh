@@ -394,6 +394,24 @@ if $grep -n '\b(add_chemical_effect|remove_chemical_effect|chem_effects)\b' "${c
 	FAILED=1
 fi;
 
+part "biology: no isSynthetic"
+# Systemic biology is mob.biology() / HAS_SYNTHETIC_BIOLOGY(), read from the body
+# (P2-S1); a part's is body.biology_of(part); a human's chassis model is robolimb_model().
+if $grep -n '\bisSynthetic\(' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: isSynthetic() detected. Use HAS_SYNTHETIC_BIOLOGY(mob) / mob.biology(), body.biology_of(part), or robolimb_model().${NC}"
+	FAILED=1
+fi;
+
+part "organs: construction predicates"
+# One vocabulary for part construction (P2-S2): is_robotic() / is_assisted() /
+# is_organic() / is_nanoform(). Only exact-state checks (== ORGAN_ROBOT, lifelike) stay raw.
+if $grep -n 'robotic\s*(>=\s*ORGAN_(ROBOT|ASSISTED|NANOFORM)|<\s*ORGAN_(ROBOT|ASSISTED)|>\s*ORGAN_ASSISTED|<=\s*ORGAN_ASSISTED)\b' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: raw robotic threshold detected. Use is_robotic() / is_assisted() / is_organic() / is_nanoform().${NC}"
+	FAILED=1
+fi;
+
 part "physiology: no asphyxia injury"
 # Lack of oxygen is an outcome the physiology computes (code/modules/body/physiology.dm),
 # not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath

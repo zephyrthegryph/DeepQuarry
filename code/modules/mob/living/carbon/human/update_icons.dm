@@ -245,7 +245,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 			if(part.nail_polish)
 				icon_key += "_[part.nail_polish.icon]_[part.nail_polish.icon_state]_[part.nail_polish.color]"
 
-			if(part.robotic >= ORGAN_ROBOT)
+			if(part.is_robotic())
 				icon_key += "2[part.model ? "-[part.model]": ""]"
 				robolimb_count++
 				if((part.robotic == ORGAN_ROBOT || part.robotic == ORGAN_LIFELIKE) && (part.organ_tag == BP_HEAD || part.organ_tag == BP_TORSO || part.organ_tag == BP_GROIN))

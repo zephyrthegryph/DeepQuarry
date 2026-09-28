@@ -285,7 +285,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_R_ARM)
 	arm.robotize()
-	TEST_ASSERT(arm.robotic >= ORGAN_ROBOT, "the arm is prosthetic")
+	TEST_ASSERT(arm.is_robotic(), "the arm is prosthetic")
 
 	var/datum/surgical_step/incise = surgical_step(/datum/surgical_step/access/incise)
 	var/datum/surgical_step/unscrew = surgical_step(/datum/surgical_step/access/unscrew_panel)

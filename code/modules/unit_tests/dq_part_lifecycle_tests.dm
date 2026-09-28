@@ -237,7 +237,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	arm.robotize()
-	TEST_ASSERT(arm.robotic >= ORGAN_ROBOT, "the arm is robotic")
+	TEST_ASSERT(arm.is_robotic(), "the arm is robotic")
 	var/obj/item/organ/external/hand = H.get_organ(BP_L_HAND)
 	TEST_ASSERT_EQUAL(hand.robotic, arm.robotic, "the hand in it too")
 	dq_assert_body_tree(H, "after robotizing an arm")

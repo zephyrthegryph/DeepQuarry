@@ -244,7 +244,7 @@
 			flags += "necrotic"
 		if(E.open)
 			flags += "open"
-		if(E.robotic >= ORGAN_ROBOT)
+		if(E.is_robotic())
 			flags += "prosthetic"
 		if(E.status & ORGAN_DESTROYED)
 			flags += "destroyed"

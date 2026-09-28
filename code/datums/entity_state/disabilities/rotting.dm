@@ -26,6 +26,6 @@
 		var/obj/item/organ/O = pick(owner.organs)
 		if(O && !(O.organ_tag == BP_GROIN || O.organ_tag == BP_TORSO) && istype(O,/obj/item/organ/external))
 			var/obj/item/organ/external/E = O
-			if(O.damage >= O.min_broken_damage && O.robotic <= ORGAN_ASSISTED && prob(70))
+			if(O.damage >= O.min_broken_damage && !O.is_robotic() && prob(70))
 				owner.apply_body_effect(/datum/body_effect/numbness/deep, 3 SECONDS) // what limb? Extreme nerve damage. Can't feel a thing + shock
 				E.droplimb(TRUE, DROPLIMB_ACID)

@@ -159,7 +159,7 @@
 
 /// The depth at which this limb's interior is reachable.
 /obj/item/organ/external/proc/surgical_full_access()
-	return (encased && !(robotic >= ORGAN_ROBOT)) ? BONE_RETRACTED : FLESH_RETRACTED
+	return (encased && !(is_robotic())) ? BONE_RETRACTED : FLESH_RETRACTED
 
 /// Open the surgical site on this limb to `depth`. Creates the incision.
 /obj/item/organ/external/proc/open_surgical_site(depth, sterility = 100)

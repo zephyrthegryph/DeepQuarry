@@ -511,12 +511,12 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 			if (x == 0)
 				organs_to_edit += name
 			else
-				organs_to_edit.Insert(x+(O.robotic == ORGAN_NANOFORM ? 1 : 0), name)
+				organs_to_edit.Insert(x+(O.is_nanoform() ? 1 : 0), name)
 	for(var/name in organs_to_edit)
 		var/obj/item/organ/external/I = character.organs_by_name[name]
 		var/obj/item/organ/external/O = organs_by_name[name]
 		if(O)
-			if(I.robotic >= ORGAN_ROBOT)
+			if(I.is_robotic())
 				O.robotize(I.model)
 			else
 				var/dsi_company = GLOB.dsi_to_species[bodytype]

@@ -504,7 +504,7 @@
 */
 /mob/living/carbon/human/proc/apply_pressure(mob/living/user, target_zone)
 	var/obj/item/organ/external/organ = get_organ(target_zone)
-	if(!organ || !(organ.status & ORGAN_BLEEDING) || (organ.robotic >= ORGAN_ROBOT))
+	if(!organ || !(organ.status & ORGAN_BLEEDING) || (organ.is_robotic()))
 		return FALSE
 
 	if(organ.applied_pressure)

@@ -131,6 +131,6 @@
 /proc/bodyscanner_organ_kind(obj/item/organ/I)
 	if(I.robotic == ORGAN_ASSISTED)
 		return "Assisted"
-	if(I.robotic >= ORGAN_ROBOT)
+	if(I.is_robotic())
 		return "Mechanical"
 	return null

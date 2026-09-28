@@ -367,7 +367,7 @@
 /mob/living/carbon/human/proc/radiation_burn(amount, flags = NONE)
 	var/list/candidates = list()
 	for(var/obj/item/organ/external/E as anything in organs)
-		if(E.robotic < ORGAN_ROBOT && !E.is_stump())
+		if(!E.is_robotic() && !E.is_stump())
 			candidates += E
 	if(!length(candidates))
 		return 0
@@ -396,205 +396,212 @@
 	var/antirad = self.body?.treatment_levels()?[TREAT_ANTIRADIATION]
 	if(antirad)
 		self.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
-	var/obj/item/organ/internal/I = null //Used for further down below when an organ is picked.
 	if(!self.radiation)
 		self.clear_alert("irradiated")
 		if(self.accumulated_rads)
 			self.decay_radiation(0, -RADIATION_SPEED_COEFFICIENT) //Accumulated rads slowly dissipate very slowly. Get to medical to get it treated!
-	else if(((self.life_tick % 5 == 0) && self.radiation) || (self.radiation > 600)) //Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
-
-		if(HAS_TRAIT(self, TRAIT_HALT_RADIATION_EFFECTS)) //If we have a trait that halts radiation effects, then we just stop here. No need to do any of the checks below.
+	//Radiation is a slow, insidious killer. Unless you get a massive dose, then the onset is sudden!
+	else if((self.life_tick % 5 == 0) || (self.radiation > 600))
+		if(HAS_TRAIT(self, TRAIT_HALT_RADIATION_EFFECTS)) //If we have a trait that halts radiation effects, then we just stop here.
 			return
+		acute_radiation(self)
+	chronic_radiation(self)
 
-		var/damage = 0
-		var/rad_mod = self.species.radiation_mod
-
-		if(!rad_mod) //If we are rad immune, stop here and remove rads if we have any.
-			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod)
+/// A23: the acute dose tier, 0 (below "safe") to 5 (above "danger_4"), from the species' radiation levels.
+/datum/om/stage/life/radiation/carbon/human/proc/dose_tier(mob/living/carbon/human/self)
+	var/list/levels = GLOB.radiation_levels[self.species.rad_levels]
+	var/static/list/tier_keys = list("safe", "danger_1", "danger_2", "danger_3", "danger_4")
+	. = 0
+	for(var/key in tier_keys)
+		if(self.radiation < levels[key])
 			return
+		.++
 
-		if (self.radiation < GLOB.radiation_levels[self.species.rad_levels]["safe"]) //Less than 1.0 Gy. No side effects.
-			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT) //No escape from accumulated rads.
+/// Acute radiation sickness for this tick: dose decay, then the tier's effects. The organic
+/// effects apply only to a body whose systemic biology is organic; the toxin load applies to
+/// every body (the species radiation_mod decides who is affected at all).
+/datum/om/stage/life/radiation/carbon/human/proc/acute_radiation(mob/living/carbon/human/self)
+	// Per tier (index tier + 1): base damage and dose decay (rads per RADIATION_SPEED_COEFFICIENT).
+	var/static/list/tier_damage = list(0, 1, 3, 5, 10, 30)
+	var/static/list/tier_decay = list(10, 10, 30, 50, 100, 300)
+	var/rad_mod = self.species.radiation_mod
+	if(!rad_mod) //If we are rad immune, stop here and remove rads if we have any.
+		self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod)
+		return
 
-		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["safe"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_1"]) //Equivalent of 1.0-2.0 Gy. Minimum stage you start seeing effects.
-			damage = 1
-			self.decay_radiation(10 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 10 * RADIATION_SPEED_COEFFICIENT)
-			if(!HAS_SYNTHETIC_BIOLOGY(self))
-				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.has_status(EFFECT_WEAKENED))
-					to_chat(self, span_warning("You feel exhausted."))
-					self.status_adjust(EFFECT_WEAKENED, 3)
-				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && self.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
-					if((self.h_style != "Bald" || self.f_style != "Shaved" ))
-						to_chat(self, span_warning("Your hair falls out."))
-						self.h_style = "Bald"
-						self.f_style = "Shaved"
-						self.update_hair()
-				if(prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //Rare chance of vomiting.
-					spawn self.vomit()
+	var/tier = dose_tier(self)
+	var/decay = tier_decay[tier + 1]
+	var/damage = tier_damage[tier + 1]
+	self.decay_radiation(decay * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, decay * RADIATION_SPEED_COEFFICIENT) //No escape from accumulated rads.
+	if(tier == 4)
+		self.throw_alert("irradiated", /atom/movable/screen/alert/irradiated)
+	if(!tier)
+		return
 
-		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_1"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_2"]) //Equivalent of 2.0 to 6.0 Gy. Nobody should ever be above this without extreme negligence.
-			damage = 3
-			self.decay_radiation(30 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 30 * RADIATION_SPEED_COEFFICIENT)
-			if(!HAS_SYNTHETIC_BIOLOGY(self))
-				if(prob(5))
-					self.radiation_burn(5 * RADIATION_SPEED_COEFFICIENT)
-				if(prob(1))
-					self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
-					self.emote("gasp")
-				if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT))
-					spawn self.vomit()
-				if(prob(10) && !self.has_status(EFFECT_WEAKENED))
-					to_chat(self, span_warning("You feel sick."))
-					self.status_adjust(EFFECT_WEAKENED, 3)
+	var/organic = self.biology() & BIOLOGY_ORGANIC
+	if(organic)
+		switch(tier)
+			if(1)
+				radiation_sickness_mild(self)
+			if(2)
+				radiation_sickness_moderate(self)
+			if(3)
+				radiation_sickness_severe(self, damage, rad_mod)
+			if(4)
+				radiation_sickness_critical(self, damage, rad_mod)
+			else
+				radiation_sickness_lethal(self, damage, rad_mod)
 
-		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_2"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_3"]) //Equivalent of 6.0 to 8.0 Gy.
-			damage = 5
-			self.decay_radiation(50 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 50 * RADIATION_SPEED_COEFFICIENT)
-			if(!HAS_SYNTHETIC_BIOLOGY(self))
-				if(prob(15))
-					self.radiation_burn(10 * RADIATION_SPEED_COEFFICIENT)
-				if(prob(2))
-					self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
-					self.emote("gasp")
-				if(prob(10) && prob(100 * RADIATION_SPEED_COEFFICIENT))
-					spawn self.vomit()
-				if(prob(15) && !self.has_status(EFFECT_WEAKENED))
-					to_chat(self, span_warning("You feel horribly ill."))
-					self.status_adjust(EFFECT_WEAKENED, 3)
-				if(prob(5) && self.internal_organs.len)
-					// begin - organ mutations
-					if(prob(2))
-						// random organ time!
-						self.random_malignant_organ(TRUE,FALSE,prob(40))
-					// end
-					else
-						I = pick(self.internal_organs) //Internal organ damage...Not good. Not good at all.
-						if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage)
-						self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
+	damage *= rad_mod
+	self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
+	if(organic && self.organs.len)
+		var/obj/item/organ/external/O = pick(self.organs)
+		if(istype(O))
+			O.add_autopsy_data("Radiation Poisoning", damage)
 
+/// Radiation damage to one internal organ (`organ_tag`, or a random one), logged for autopsy.
+/// Returns the organ hit, or null.
+/datum/om/stage/life/radiation/carbon/human/proc/irradiate_organ(mob/living/carbon/human/self, amount, autopsy_label, organ_tag, flags = NONE)
+	var/obj/item/organ/internal/I
+	if(organ_tag)
+		I = self.internal_organs_by_name[organ_tag]
+	else if(self.internal_organs.len)
+		I = pick(self.internal_organs)
+	if(!istype(I))
+		return null
+	I.add_autopsy_data(autopsy_label, amount)
+	self.injure(INJURY_RADIATION, amount, I, flags = INJURE_IGNORE_RESISTANCE | flags)
+	return I
 
-		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_3"] && self.radiation < GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Equivalent of 8.0 to 30 Gy.
-			self.throw_alert("irradiated", /atom/movable/screen/alert/irradiated)
-			damage = 10
-			self.decay_radiation(100 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 100 * RADIATION_SPEED_COEFFICIENT)
-			if(!HAS_SYNTHETIC_BIOLOGY(self))
-				if(prob(25))
-					self.radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
-					if(prob(5))
-						I = self.internal_organs_by_name[O_EYES]
-						if(I)
-							if(istype(I)) I.add_autopsy_data("Radiation Burns", damage)
-							self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
-							to_chat(self, span_warning("Your eyes burn!"))
-							self.status_adjust(EFFECT_BLURRY, 10)
-				if(prob(4))
-					self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
-					self.emote("gasp")
-				if(prob(25) && prob(100 * RADIATION_SPEED_COEFFICIENT))
-					spawn self.vomit()
-				if(prob(20) && !self.has_status(EFFECT_WEAKENED))
-					to_chat(self, span_critical("You feel like your insides are burning!"))
-					self.status_adjust(EFFECT_WEAKENED, 5)
-				if(prob(5))
-					to_chat(self, span_critical("Your entire body feels like it's on fire!"))
-					self.injure(INJURY_PAIN, 5)
-				if(prob(10) && self.internal_organs.len)
-					// begin - organ mutations
-					if(prob(2))
-						self.random_malignant_organ(TRUE,FALSE,prob(60))
-					// end
-					else
-						I = pick(self.internal_organs) //Internal organ damage...Not good. Not good at all.
-						if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage)
-						self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
+/// Organ damage or, rarely, a malignant growth.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_organ_mutation(mob/living/carbon/human/self, damage, rad_mod, malignant_spread_chance)
+	if(!self.internal_organs.len)
+		return
+	if(prob(2))
+		self.random_malignant_organ(TRUE, FALSE, prob(malignant_spread_chance))
+		return
+	irradiate_organ(self, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Induced Cancerous Growth")
 
-		else if (self.radiation >= GLOB.radiation_levels[self.species.rad_levels]["danger_4"]) //Above 30Gy. You had to get absolutely blasted with rads for this.
-			damage = 30
-			self.decay_radiation(300 * RADIATION_SPEED_COEFFICIENT * self.species.rad_removal_mod, 300 * RADIATION_SPEED_COEFFICIENT)
-			if(!HAS_SYNTHETIC_BIOLOGY(self))
-				self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
-				self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_vomit(mob/living/carbon/human/self)
+	INVOKE_ASYNC(self, TYPE_PROC_REF(/mob/living, vomit))
 
-				I = self.internal_organs_by_name[O_EYES]
-				if(I)
-					I.add_autopsy_data("Radiation Burns", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
-					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE | INJURE_CONTINUOUS) //3 eye damage a tick as your eyes melt down.
-					self.status_adjust(EFFECT_BLURRY, 10)
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_seizure(mob/living/carbon/human/self)
+	to_chat(self, span_critical("You have a seizure!"))
+	self.status_at_least(EFFECT_PARALYZED, 10)
+	self.status_at_least(EFFECT_SLEEPING, 10)
+	self.status_adjust(EFFECT_JITTERY, 1000)
+	if(!self.lying)
+		self.emote("collapse")
 
-				if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
-					spawn self.vomit()
-				if(!self.has_status(EFFECT_PARALYZED) && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
-					to_chat(self, span_critical("You have a seizure!"))
-					self.status_at_least(EFFECT_PARALYZED, 10)
-					self.status_at_least(EFFECT_SLEEPING, 10)
-					self.status_adjust(EFFECT_JITTERY, 1000)
-					if(!self.lying)
-						self.emote("collapse")
-				if(self.get_active_hand() && prob(15)) //CNS is shutting down.
-					to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
-					self.drop_item()
-				if(self.internal_organs.len)  //TODO: Add malignant organs. - The person that wrote radcode.
-					I = pick(self.internal_organs) //Internal organ damage...Not good. Not good at all.
-					if(istype(I)) I.add_autopsy_data("Radiation Induced Cancerous Growth", damage * rad_mod * RADIATION_SPEED_COEFFICIENT)
-					self.injure(INJURY_RADIATION, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE)
+/// Tier 1 (1-2 Gy): fatigue, hair loss, the odd vomit.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_sickness_mild(mob/living/carbon/human/self)
+	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && !self.has_status(EFFECT_WEAKENED))
+		to_chat(self, span_warning("You feel exhausted."))
+		self.status_adjust(EFFECT_WEAKENED, 3)
+	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT) && self.species.get_bodytype() == SPECIES_HUMAN) //apes go bald
+		if((self.h_style != "Bald" || self.f_style != "Shaved" ))
+			to_chat(self, span_warning("Your hair falls out."))
+			self.h_style = "Bald"
+			self.f_style = "Shaved"
+			self.update_hair()
+	if(prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //Rare chance of vomiting.
+		radiation_vomit(self)
 
-/* 		//Not-so-sparkledog code. TODO: Make a pref for 'special game interactions' that allows interactions that align with prefs to occur.
-		if(radiation >= 250) //Special effect stuff that occurs at certain rad levels.
-			if(prob(1) && prob(radiation/2 * RADIATION_SPEED_COEFFICIENT) && allow_spontaneous_tf) //If you've got spontaneous TF...well...
-				scramble(1, self, 3) //I tried to base this on how many rads you took and it was...Hilarious. Sparkledogs everywhere.
-				//For the most part, 3 strength will simply change colors. If you get really unlucky, it can do more TF's.
-				//Math: 250 rads = 1/800 chance
-				//500 rads = 1/400 chance chance. Etc.
-*/
+/// Tier 2 (2-6 Gy): burns, cellular damage, sickness.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_sickness_moderate(mob/living/carbon/human/self)
+	if(prob(5))
+		self.radiation_burn(5 * RADIATION_SPEED_COEFFICIENT)
+	if(prob(1))
+		self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
+		self.emote("gasp")
+	if(prob(5) && prob(100 * RADIATION_SPEED_COEFFICIENT))
+		radiation_vomit(self)
+	if(prob(10) && !self.has_status(EFFECT_WEAKENED))
+		to_chat(self, span_warning("You feel sick."))
+		self.status_adjust(EFFECT_WEAKENED, 3)
 
-		if(damage)
-			damage *= rad_mod
-			self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
-			if(!HAS_SYNTHETIC_BIOLOGY(self) && self.organs.len)
-				var/obj/item/organ/external/O = pick(self.organs)
-				if(istype(O)) O.add_autopsy_data("Radiation Poisoning", damage)
+/// Tier 3 (6-8 Gy): heavier burns; organ damage begins.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_sickness_severe(mob/living/carbon/human/self, damage, rad_mod)
+	if(prob(15))
+		self.radiation_burn(10 * RADIATION_SPEED_COEFFICIENT)
+	if(prob(2))
+		self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
+		self.emote("gasp")
+	if(prob(10) && prob(100 * RADIATION_SPEED_COEFFICIENT))
+		radiation_vomit(self)
+	if(prob(15) && !self.has_status(EFFECT_WEAKENED))
+		to_chat(self, span_warning("You feel horribly ill."))
+		self.status_adjust(EFFECT_WEAKENED, 3)
+	if(prob(5))
+		radiation_organ_mutation(self, damage, rad_mod, 40)
 
-	// Begin long-term radiation effects
-	// Loss of taste occurs at 100 (2Gy) and is handled in taste.dm
-	// These are all done one after another, so duplication is not required. Someone at 400rads will have the 100&400 effects.
-	if(!self.radiation && self.accumulated_rads >= 100  && !self.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE)) //Let's not hit them with long term effects when they're actively being hit with rads.
-		if(!HAS_SYNTHETIC_BIOLOGY(self))
-			I = self.internal_organs_by_name[O_EYES]
-			if(I) //Eye stuff
-				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
-					to_chat(self, span_warning("Your eyes water."))
-					self.status_adjust(EFFECT_BLURRY, 5)
-				if(self.accumulated_rads > 300) // (6Gy)
-					if(prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
-						to_chat(self, span_warning("Your eyes burn."))
-						I.add_autopsy_data("Radiation Burns", 1 * self.species.radiation_mod * RADIATION_SPEED_COEFFICIENT)
-						self.injure(INJURY_RADIATION, 1 * self.species.radiation_mod * RADIATION_SPEED_COEFFICIENT, I, flags = INJURE_IGNORE_RESISTANCE) //0.1 damage. Not a lot, but enough to tell you to get to medical.
-						self.status_adjust(EFFECT_BLURRY, 10)
+/// Tier 4 (8-30 Gy): eye burns, pain, frequent organ damage.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_sickness_critical(mob/living/carbon/human/self, damage, rad_mod)
+	if(prob(25))
+		self.radiation_burn(15 * RADIATION_SPEED_COEFFICIENT)
+		if(prob(5) && irradiate_organ(self, damage * rad_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Burns", O_EYES))
+			to_chat(self, span_warning("Your eyes burn!"))
+			self.status_adjust(EFFECT_BLURRY, 10)
+	if(prob(4))
+		self.injure(INJURY_CELLULAR, 5 * RADIATION_SPEED_COEFFICIENT)
+		self.emote("gasp")
+	if(prob(25) && prob(100 * RADIATION_SPEED_COEFFICIENT))
+		radiation_vomit(self)
+	if(prob(20) && !self.has_status(EFFECT_WEAKENED))
+		to_chat(self, span_critical("You feel like your insides are burning!"))
+		self.status_adjust(EFFECT_WEAKENED, 5)
+	if(prob(5))
+		to_chat(self, span_critical("Your entire body feels like it's on fire!"))
+		self.injure(INJURY_PAIN, 5)
+	if(prob(10))
+		radiation_organ_mutation(self, damage, rad_mod, 60)
 
-			if(self.accumulated_rads > 200) // (4Gy)
-				if(prob(5) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
-					to_chat(self, span_warning("Your feel nauseated."))
-					spawn self.vomit()
-				if(!self.has_status(EFFECT_WEAKENED) && prob(2) && prob(self.accumulated_rads * RADIATION_SPEED_COEFFICIENT))
-					to_chat(self, span_warning("Your feel exhausted."))
-					self.status_adjust(EFFECT_WEAKENED, 3)
-			if(self.accumulated_rads > 300) // (6Gy)
-				if(self.get_active_hand() && prob(15) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
-					to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
-					self.drop_item()
-			if(self.accumulated_rads > 700) // (12Gy)
-				if(!self.has_status(EFFECT_PARALYZED) && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //1 in 1000 chance per tick.
-					to_chat(self, span_critical("You have a seizure!"))
-					self.status_at_least(EFFECT_PARALYZED, 10)
-					self.status_at_least(EFFECT_SLEEPING, 10)
-					self.status_adjust(EFFECT_JITTERY, 1000)
-					if(!self.lying)
-						self.emote("collapse")
+/// Tier 5 (above 30 Gy): the body melts down and the CNS fails.
+/datum/om/stage/life/radiation/carbon/human/proc/radiation_sickness_lethal(mob/living/carbon/human/self, damage, rad_mod)
+	var/organ_damage = damage * rad_mod * RADIATION_SPEED_COEFFICIENT
+	self.radiation_burn(damage * RADIATION_SPEED_COEFFICIENT, INJURE_CONTINUOUS) //3 burn damage a tick as your body melts.
+	self.injure(INJURY_CELLULAR, 15 * RADIATION_SPEED_COEFFICIENT, flags = INJURE_CONTINUOUS) //1.5 cellular damage a tick as your cells mutate and break down.
+	if(irradiate_organ(self, organ_damage, "Radiation Burns", O_EYES, INJURE_CONTINUOUS)) //3 eye damage a tick as your eyes melt down.
+		self.status_adjust(EFFECT_BLURRY, 10)
+	if(prob(50) && prob(100 * RADIATION_SPEED_COEFFICIENT))
+		radiation_vomit(self)
+	if(!self.has_status(EFFECT_PARALYZED) && prob(30) && prob(100 * RADIATION_SPEED_COEFFICIENT)) //CNS is shutting down.
+		radiation_seizure(self)
+	if(self.get_active_hand() && prob(15)) //CNS is shutting down.
+		to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
+		self.drop_item()
+	irradiate_organ(self, organ_damage, "Radiation Induced Cancerous Growth")
 
-		else //The synthetic effects!
-			return //Nothing for now.
-
-
+/// Long-term (accumulated) radiation effects: annoying, not lethal, a nudge toward medical.
+/// Loss of taste at 100 (2 Gy) is handled in taste.dm. Effects stack by threshold. Only
+/// organic bodies have them, and never while a live dose is still being taken.
+/datum/om/stage/life/radiation/carbon/human/proc/chronic_radiation(mob/living/carbon/human/self)
+	if(self.radiation || self.accumulated_rads < 100 || self.reagents.has_reagent(REAGENT_ID_PRUSSIANBLUE))
+		return
+	if(!(self.biology() & BIOLOGY_ORGANIC))
+		return
+	var/rads = self.accumulated_rads
+	if(self.internal_organs_by_name[O_EYES])
+		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
+			to_chat(self, span_warning("Your eyes water."))
+			self.status_adjust(EFFECT_BLURRY, 5)
+		if(rads > 300 && prob(2) && prob(rads * RADIATION_SPEED_COEFFICIENT)) // (6Gy)
+			to_chat(self, span_warning("Your eyes burn."))
+			//0.1 damage. Not a lot, but enough to tell you to get to medical.
+			irradiate_organ(self, 1 * self.species.radiation_mod * RADIATION_SPEED_COEFFICIENT, "Radiation Burns", O_EYES)
+			self.status_adjust(EFFECT_BLURRY, 10)
+	if(rads > 200) // (4Gy)
+		if(prob(5) && prob(rads * RADIATION_SPEED_COEFFICIENT))
+			to_chat(self, span_warning("Your feel nauseated."))
+			radiation_vomit(self)
+		if(!self.has_status(EFFECT_WEAKENED) && prob(2) && prob(rads * RADIATION_SPEED_COEFFICIENT))
+			to_chat(self, span_warning("Your feel exhausted."))
+			self.status_adjust(EFFECT_WEAKENED, 3)
+	if(rads > 300 && self.get_active_hand() && prob(15) && prob(100 * RADIATION_SPEED_COEFFICIENT)) // (6Gy) CNS is shutting down.
+		to_chat(self, span_danger("Your hand won't respond properly, you drop what you're holding!"))
+		self.drop_item()
+	if(rads > 700 && !self.has_status(EFFECT_PARALYZED) && prob(1) && prob(100 * RADIATION_SPEED_COEFFICIENT)) // (12Gy) 1 in 1000 chance per tick.
+		radiation_seizure(self)
 
 	/** breathing **/
 
@@ -848,7 +855,7 @@
 		var/obj/item/organ/internal/lungs/L = self.internal_organs_by_name[O_LUNGS]
 		var/turf = get_turf(self)
 		var/mob/living/carbon/human/M = self
-		if(L && L.robotic < ORGAN_ROBOT && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
+		if(L && !L.is_robotic() && is_below_sound_pressure(turf) && M.internal) // Only non-synthetic lungs, please, and only play these while the pressure is below that which we can hear sounds normally AND we're on internals.
 			if(!failed_inhale && (COOLDOWN_FINISHED(self, breath_sound_cooldown))) // Were we able to inhale successfully? Play inhale.
 				var/exhale = failed_exhale // Pass through if we passed exhale or not
 				self.play_inhale(M, exhale)
@@ -2202,7 +2209,7 @@
 
 	var/obj/item/organ/internal/heart/H = self.internal_organs_by_name[O_HEART]
 
-	if(!H || (H.robotic >= ORGAN_ROBOT))
+	if(!H || (H.is_robotic()))
 		return
 
 	if(self.pulse >= PULSE_2FAST || self.shock_stage >= 10 || (istype(get_turf(self), /turf/space) && self.read_preference(/datum/preference/toggle/play_ambience)))
