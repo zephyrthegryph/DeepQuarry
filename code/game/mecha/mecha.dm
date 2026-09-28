@@ -634,28 +634,6 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 ////////////////////////////
 ///// Action processing ////
 ////////////////////////////
-/*
-/atom/DblClick(object,location,control,params)
-	var/mob/M = src.mob
-	if(M && M.in_contents_of(/obj/mecha))
-
-		if(mech_click == world.time) return
-		mech_click = world.time
-
-		if(!istype(object, /atom)) return
-		if(istype(object, /atom/movable/screen))
-			var/atom/movable/screen/using = object
-			if(using.screen_loc == ui_acti || using.screen_loc == ui_iarrowleft || using.screen_loc == ui_iarrowright)//ignore all HUD objects save 'intent' and its arrows
-				return ..()
-			else
-				return
-		var/obj/mecha/Mech = M.loc
-		spawn() //this helps prevent clickspam fest.
-			if (Mech)
-				Mech.click_action(object,M)
-//	else
-//		return ..()
-*/
 
 /obj/mecha/proc/click_action(atom/target,mob/user, params)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
@@ -2519,44 +2497,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return
 
 
-/*
-
-	if (href_list["ai_take_control"])
-		var/mob/living/silicon/ai/AI = locate(href_list["ai_take_control"])
-		var/duration = text2num(href_list["duration"])
-		var/mob/living/silicon/ai/O = new /mob/living/silicon/ai(src)
-		var/cur_occupant = src?.slot_item(MECHA_SLOT_PILOT)
-		O.invisibility = INVISIBILITY_NONE
-		O.canmove = 1
-		O.name = AI.name
-		O.real_name = AI.real_name
-		O.anchored = TRUE
-		O.aiRestorePowerRoutine = 0
-		O.control_disabled = 1 // Can't control things remotely if you're stuck in a card!
-		O.laws = AI.laws
-		O.set_stat(AI.stat)
-		mirror_injury_state(AI, O)
-		src?.slot_item(MECHA_SLOT_PILOT) = O
-		if(AI.mind)
-			AI.mind.transfer_to(O)
-		AI.name = "Inactive AI"
-		AI.real_name = "Inactive AI"
-		AI.icon_state = "ai-empty"
-		spawn(duration)
-			AI.name = O.name
-			AI.real_name = O.real_name
-			if(O.mind)
-				O.mind.transfer_to(AI)
-			AI.control_disabled = 0
-			AI.laws = O.laws
-			mirror_injury_state(O, AI)
-			qdel(O)
-			if (!AI.stat)
-				AI.icon_state = "ai"
-			else
-				AI.icon_state = "ai-crash"
-			src?.slot_item(MECHA_SLOT_PILOT) = cur_occupant
-*/
 
 ///////////////////////
 ///// Power stuff /////

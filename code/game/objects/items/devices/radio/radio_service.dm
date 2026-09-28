@@ -40,9 +40,9 @@
 
 	obj/proc/receive_signal(datum/signal/signal, var/receive_method as num, var/receive_param)
 		Handler from received signals. By default does nothing. Define your own for your object.
-		Avoid of sending signals directly from this proc, use spawn(-1). DO NOT use sleep() here or call procs that sleep please. If you must, use spawn()
+		Avoid sending signals directly from this proc: defer them with om_after(). Never block here; take time with om_task_timed() or om_after().
 		parameters:
-			signal - see description below. Extract all needed data from the signal before doing sleep(), spawn() or return!
+			signal - see description below. Extract all needed data from the signal before deferring work or returning!
 			receive_method - may be TRANSMISSION_WIRE or TRANSMISSION_RADIO.
 			TRANSMISSION_WIRE is currently unused.
 			receive_param - for TRANSMISSION_RADIO here comes frequency.

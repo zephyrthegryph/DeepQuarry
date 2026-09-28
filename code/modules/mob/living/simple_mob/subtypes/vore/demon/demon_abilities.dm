@@ -54,20 +54,6 @@
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
 		om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, FALSE) //The duration of the TP animation
 
-		/*
-		//Affect nearby lights
-		var/destroy_lights = 0
-
-		for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			if(L.z != z || get_dist(src,L) > 10)
-				continue
-
-			if(prob(destroy_lights))
-				spawn(rand(5,25))
-					L.broken()
-			else
-				L.flicker(10)
-		*/
 
 	//Shifting out
 	else

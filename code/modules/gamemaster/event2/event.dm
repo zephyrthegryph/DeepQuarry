@@ -4,8 +4,7 @@
 
 /*
 
-Important: DO NOT `sleep()` in any of the procs here, or the GM will get stuck. Use callbacks insead.
-Also please don't use spawn(), but use callbacks instead.
+Important: never block in any of the procs here, or the GM will get stuck. Defer work with om_after().
 
 Note that there is an important distinction between an event being ended, and an event being finished.
 - Ended is for when the actual event is over, regardless of whether an announcement happened or not.
