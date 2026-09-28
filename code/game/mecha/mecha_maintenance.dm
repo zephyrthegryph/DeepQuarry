@@ -130,36 +130,103 @@
 
 /obj/mecha/proc/maintenance_has_cell(mob/actor, atom/target, obj/item/held)
 	return cell ? TRUE : FALSE
-
 // ---------------------------------------------------------------------------
-// Repairs ahead of the graph.
+// Repairs ahead of the graph. Each one treats a body part or an affliction of the
+// mech body plan (code/modules/body/mech_body.dm).
 
 /obj/mecha/declare_interactions(list/into)
 	..()
 	into += list(
-		/datum/interaction/mecha_fix_temperature,
+		/datum/interaction/mecha_treat/fix_temperature,
+		/datum/interaction/mecha_treat/seal_tank,
 		/datum/interaction/mecha_weld_repair,
+		/datum/interaction/mecha_treat/fix_wiring,
+		/datum/interaction/mecha_treat/extinguish,
+		/datum/interaction/mecha_paste_repair,
 	)
 
-/datum/interaction/mecha_fix_temperature
-	id = "mecha_fix_temperature"
-	name = "Repair the temperature controller"
+/// The power unit hatch is open (short-circuit wiring is behind it).
+/obj/mecha/proc/maintenance_hatch_open(mob/actor, atom/target, obj/item/held)
+	return state >= MECHA_CELL_OPEN
+
+/// The securing bolts are undone (components are reachable).
+/obj/mecha/proc/maintenance_panel_loose(mob/actor, atom/target, obj/item/held)
+	return state >= MECHA_PANEL_LOOSE
+
+/// Base for repairs that treat one affliction: offered only while the mech has it.
+/datum/interaction/mecha_treat
 	category = INTERACTION_CAT_REPAIR
 	priority = 20
 	default_action = INPUT_ACTION_USE
-	tool = TOOL_SCREWDRIVER
 	tool_volume = 0
 	requires = list(REQ_REACH_ADJACENT)
+	/// MECHA_INT_* affliction this repair treats.
+	var/treats
+
+/datum/interaction/mecha_treat/applies_to(atom/target)
+	var/obj/mecha/mech = target
+	return istype(mech) && mech_body_plan().has_affliction(mech, treats)
+
+/datum/interaction/mecha_treat/fix_temperature
+	id = "mecha_fix_temperature"
+	name = "Repair the temperature controller"
+	tool = TOOL_SCREWDRIVER
+	treats = MECHA_INT_TEMP_CONTROL
 	effect = /obj/mecha/proc/fix_temperature_control
 	message_self = "You repair the damaged temperature controller."
 
-/datum/interaction/mecha_fix_temperature/applies_to(atom/target)
-	var/obj/mecha/mech = target
-	return istype(mech) && mech.hasInternalDamage(MECHA_INT_TEMP_CONTROL)
-
 /obj/mecha/proc/fix_temperature_control(mob/actor, obj/item/held, datum/interaction/interaction)
-	clearInternalDamage(MECHA_INT_TEMP_CONTROL)
+	return mech_body_plan().cure(src, MECHA_INT_TEMP_CONTROL)
+
+/// A welder seals a breached tank before it patches anything else.
+/datum/interaction/mecha_treat/seal_tank
+	id = "mecha_seal_tank"
+	name = "Seal the gas tank"
+	priority = 25
+	tool = TOOL_WELDER
+	treats = MECHA_INT_TANK_BREACH
+	effect = /obj/mecha/proc/seal_tank
+	message_self = "You repair the damaged gas tank."
+
+/obj/mecha/proc/seal_tank(mob/actor, obj/item/held, datum/interaction/interaction)
+	return mech_body_plan().cure(src, MECHA_INT_TANK_BREACH)
+
+/// Fused wiring behind the power unit hatch takes two lengths of cable.
+/datum/interaction/mecha_treat/fix_wiring
+	id = "mecha_fix_wiring"
+	name = "Replace the fused wires"
+	tool = TOOL_CABLE_COIL
+	tool_amount = 2
+	treats = MECHA_INT_SHORT_CIRCUIT
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_hatch_open, "the power unit hatch is closed"))
+	effect = /obj/mecha/proc/fix_wiring
+	message_self = "You replace the fused wires."
+
+/obj/mecha/proc/fix_wiring(mob/actor, obj/item/held, datum/interaction/interaction)
+	return mech_body_plan().cure(src, MECHA_INT_SHORT_CIRCUIT)
+
+/// An extinguisher puts out an internal fire.
+/datum/interaction/mecha_treat/extinguish
+	id = "mecha_extinguish"
+	name = "Extinguish the internal fire"
+	held_type = /obj/item/extinguisher
+	treats = MECHA_INT_FIRE
+	effect = /obj/mecha/proc/extinguish_internal_fire
+
+/// Foam used per extinguishing.
+#define MECHA_EXTINGUISH_FOAM 10
+
+/obj/mecha/proc/extinguish_internal_fire(mob/actor, obj/item/extinguisher/held, datum/interaction/interaction)
+	if(!istype(held) || !held.reagents || held.reagents.total_volume < MECHA_EXTINGUISH_FOAM)
+		to_chat(actor, span_warning("\The [held] is empty."))
+		return TRUE
+	held.reagents.remove_any(MECHA_EXTINGUISH_FOAM)
+	playsound(src, 'sound/effects/extinguish.ogg', 50, 1)
+	to_chat(actor, span_notice("You flood \the [src]'s internals with foam."))
+	mech_body_plan().cure(src, MECHA_INT_FIRE)
 	return TRUE
+
+#undef MECHA_EXTINGUISH_FOAM
 
 /datum/interaction/mecha_weld_repair
 	id = "mecha_weld_repair"
@@ -172,13 +239,11 @@
 	requires = list(REQ_REACH_ADJACENT)
 	effect = /obj/mecha/proc/weld_repair
 
-/// Seals a tank breach, then patches 10 integrity: the frame first, then the hull, then the armour.
+/// Patches 10 integrity: the frame first, then the hull, then the armour plates.
 /obj/mecha/proc/weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)
-	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
-	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
-	if(hasInternalDamage(MECHA_INT_TANK_BREACH))
-		clearInternalDamage(MECHA_INT_TANK_BREACH)
-		to_chat(actor, span_notice("You repair the damaged gas tank."))
+	var/datum/mech_body_plan/plan = mech_body_plan()
+	var/obj/item/mecha_parts/component/hull/HC = plan.part(src, MECH_HULL)
+	var/obj/item/mecha_parts/component/armor/AC = plan.part(src, MECH_ARMOR)
 	if(get_integrity() < max_integrity)
 		to_chat(actor, span_notice("You repair some damage to [name]."))
 		repair_damage(min(10, max_integrity - get_integrity()))
@@ -193,4 +258,32 @@
 		update_damage_alerts()
 	else
 		to_chat(actor, "The [name] is at full integrity")
+	return TRUE
+
+/// Nanopaste repairs every damaged component once the securing bolts are undone.
+/datum/interaction/mecha_paste_repair
+	id = "mecha_paste_repair"
+	name = "Repair components with nanopaste"
+	category = INTERACTION_CAT_REPAIR
+	priority = 20
+	default_action = INPUT_ACTION_USE
+	held_type = /obj/item/stack/nanopaste
+	requires = list(REQ_REACH_ADJACENT, REQ_ON(PRED_TARGET, /obj/mecha/proc/maintenance_panel_loose, "you can't reach the internal components"))
+	effect = /obj/mecha/proc/paste_repair
+
+/obj/mecha/proc/paste_repair(mob/actor, obj/item/stack/nanopaste/held, datum/interaction/interaction)
+	var/datum/mech_body_plan/plan = mech_body_plan()
+	var/any_part = FALSE
+	for(var/slot in plan.part_order())
+		var/obj/item/mecha_parts/component/C = plan.part(src, slot)
+		if(!C)
+			continue
+		any_part = TRUE
+		if(C.get_integrity() >= C.max_integrity)
+			to_chat(actor, span_notice("\The [C] does not require repairs."))
+			continue
+		to_chat(actor, span_notice("You start to repair damage to \the [C]."))
+		C.paste_repair_step(actor, held, src)
+	if(!any_part)
+		to_chat(actor, span_notice("There are no components installed!"))
 	return TRUE

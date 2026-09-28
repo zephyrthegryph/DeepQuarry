@@ -46,11 +46,40 @@
 	TEST_ASSERT(mech.get_integrity() >= worn, "negative damage repairs the chassis")
 	TEST_ASSERT_EQUAL(hull.get_integrity(), hull_before, "a repair does not wear the hull")
 
-	// Internal damage flags are afflictions with a flyweight each.
+	// Internal damage is afflictions, kept per mech and managed by the plan.
 	var/datum/mech_affliction/fire = plan.affliction_for(MECHA_INT_FIRE)
 	TEST_ASSERT_NOTNULL(fire, "internal fire is a mech affliction")
-	mech.setInternalDamage(MECHA_INT_FIRE)
-	TEST_ASSERT(mech.hasInternalDamage(MECHA_INT_FIRE), "the affliction is set")
-	mech.clearInternalDamage(MECHA_INT_FIRE)
-	TEST_ASSERT(!mech.hasInternalDamage(MECHA_INT_FIRE), "the affliction clears")
+	TEST_ASSERT(!plan.has_affliction(mech), "a fresh mech has no afflictions")
+	TEST_ASSERT(plan.afflict(mech, MECHA_INT_FIRE), "afflict adds a new affliction")
+	TEST_ASSERT(!plan.afflict(mech, MECHA_INT_FIRE), "afflict does not stack the same affliction")
+	TEST_ASSERT(plan.has_affliction(mech, MECHA_INT_FIRE), "the affliction is set")
+	TEST_ASSERT(fire in mech.afflictions, "the mech holds the affliction flyweight")
+	TEST_ASSERT(fire in plan.active_afflictions(mech), "status panels see the affliction")
+	TEST_ASSERT(plan.cure(mech, MECHA_INT_FIRE), "cure clears it")
+	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_FIRE), "the affliction is gone")
+	TEST_ASSERT(!plan.cure(mech, MECHA_INT_FIRE), "curing an absent affliction does nothing")
+
+	// tick(): a short circuit burns cell capacity; life support failure halts temperature control.
+	var/obj/item/cell/cell = mech.get_cell()
+	TEST_ASSERT_NOTNULL(cell, "a ripley has a cell")
+	cell.charge = cell.maxcharge
+	var/cap_before = cell.maxcharge
+	plan.afflict(mech, MECHA_INT_SHORT_CIRCUIT)
+	plan.afflict(mech, MECHA_INT_TEMP_CONTROL)
+	mech.start_process(MECHA_PROC_INT_TEMP)
+	plan.tick(mech)
+	TEST_ASSERT(cell.maxcharge < cap_before, "a short circuit tick burns cell capacity ([cap_before] -> [cell.maxcharge])")
+	TEST_ASSERT(!(mech.current_processes & MECHA_PROC_INT_TEMP), "a life support failure tick stops temperature control")
+	plan.cure(mech, MECHA_INT_SHORT_CIRCUIT)
+	plan.cure(mech, MECHA_INT_TEMP_CONTROL)
+	TEST_ASSERT(mech.current_processes & MECHA_PROC_INT_TEMP, "curing life support restarts temperature control")
+	plan.tick(mech)
+	TEST_ASSERT(!(mech.current_processes & MECHA_PROC_DAMAGE), "with no afflictions the damage process stops")
+
+	// roll_affliction only adds afflictions from the candidates the mech lacks.
+	for(var/i in 1 to 50)
+		plan.roll_affliction(mech, list(MECHA_INT_TANK_BREACH), TRUE)
+	TEST_ASSERT(plan.has_affliction(mech, MECHA_INT_TANK_BREACH), "rolling past the threshold eventually afflicts")
+	TEST_ASSERT(!plan.has_affliction(mech, MECHA_INT_FIRE), "rolling never adds a non-candidate")
+	plan.cure(mech, MECHA_INT_TANK_BREACH)
 	clear_debris(T)

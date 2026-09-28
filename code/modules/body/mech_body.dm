@@ -9,7 +9,9 @@
 //   the plan's `part_order`: armour plates first, then hull, then the internal parts
 //   (actuators, electrical, life support), each hit by its `relative_size`.
 // - Afflictions are the internal-damage conditions (`/datum/mech_affliction`, one flyweight per
-//   MECHA_INT_* flag). The bitfield `internal_damage` stays as their compact store.
+//   MECHA_INT_* id). The mech keeps its active ones in the lazylist `afflictions`, managed by
+//   the plan (afflict, cure, has_affliction, roll_affliction, tick); each affliction's per-tick
+//   effect is its datum's tick().
 // - `injure()` is the one sink every hit goes through: packets (`receive_damage`), rounds
 //   (`receive_projectile`), throws (`receive_thrown`) and legacy `take_damage` calls. It
 //   replaces the old absorbDamage/dynabsorbdamage, components_handle_damage and
@@ -158,7 +160,7 @@
 			return
 		var/list/possible = list(MECHA_INT_FIRE, MECHA_INT_TEMP_CONTROL, MECHA_INT_TANK_BREACH, MECHA_INT_CONTROL_LOST, MECHA_INT_SHORT_CIRCUIT)
 		if(pass_damage > host.internal_damage_minimum)
-			host.check_for_internal_damage(possible.Copy(), ignore_threshold)
+			roll_affliction(host, possible, ignore_threshold)
 		// AP rounds can carry on inside.
 		if(P.penetrating)
 			var/distance = get_dist(P.starting, get_turf(host.loc))
@@ -169,7 +171,7 @@
 					P.attack_mob(pilot, distance)
 					hit_occupant = FALSE
 				else if(pass_damage > host.internal_damage_minimum)
-					host.check_for_internal_damage(possible.Copy(), TRUE)
+					roll_affliction(host, possible, TRUE)
 				P.penetrating--
 				if(prob(15))
 					break
@@ -203,24 +205,144 @@
 	pass_damage *= factor
 	. = injure(host, pass_damage, MELEE)
 	if(!QDELETED(host) && pass_damage > host.internal_damage_minimum)
-		host.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL, MECHA_INT_TANK_BREACH, MECHA_INT_CONTROL_LOST))
+		roll_affliction(host, list(MECHA_INT_TEMP_CONTROL, MECHA_INT_TANK_BREACH, MECHA_INT_CONTROL_LOST))
+
+// ---------------------------------------------------------------------------------------------
+// Strikes: deflection and penetration shared by every entry point.
+
+/// TRUE when a strike gets past the armour plates' deflection.
+/datum/mech_body_plan/proc/strike_lands(obj/mecha/host)
+	return !prob(deflect_chance(host))
+
+/// A hand-held weapon hitting the mech (the old dynattackby). Returns the chassis integrity lost.
+/datum/mech_body_plan/proc/receive_melee(obj/mecha/host, obj/item/W, mob/user)
+	if(!strike_lands(host))
+		host.occupant_message(span_notice("\The [W] bounces off [host.name]."))
+		to_chat(user, span_danger("\The [W] bounces off [host.name]."))
+		host.log_append_to_last("Armor saved.")
+		return 0
+	var/factor = penetration_factor(host, W.force, W.armor_penetration, W)
+	if(!factor)
+		return 0
+	host.occupant_message(span_warning(span_red(span_bold("[user] hits [host] with [W]."))))
+	user.visible_message(span_warning(span_red(span_bold("[user] hits [host] with [W]."))), span_danger(span_red(span_bold("You hit [host] with [W]."))))
+	var/pass_damage = W.force * factor
+	for(var/obj/item/mecha_parts/mecha_equipment/ME in host.equipment)
+		pass_damage = ME.handle_projectile_contact(W, user, pass_damage)
+	. = injure(host, pass_damage, W.obj_damage_type())
+	if(!QDELETED(host) && pass_damage > host.internal_damage_minimum)
+		roll_affliction(host, list(MECHA_INT_TEMP_CONTROL, MECHA_INT_TANK_BREACH, MECHA_INT_CONTROL_LOST))
+
+/// Explosion severity after the plates had their chance to soften it (one step).
+/datum/mech_body_plan/proc/blast_severity(obj/mecha/host, severity)
+	if(!strike_lands(host))
+		severity++
+		host.log_append_to_last("Armor saved, changing severity to [severity].")
+	return severity
+
+// ---------------------------------------------------------------------------------------------
+// Affliction state. Active afflictions live in the mech's lazylist `afflictions` as flyweights.
+
+/// TRUE when the mech has the affliction `id`, or any affliction when `id` is null.
+/datum/mech_body_plan/proc/has_affliction(obj/mecha/host, id = null)
+	if(isnull(id))
+		return LAZYLEN(host.afflictions) > 0
+	var/datum/mech_affliction/A = affliction_for(id)
+	return A && (A in host.afflictions)
+
+/// Gives the mech the affliction `id`. Returns TRUE when it was new.
+/datum/mech_body_plan/proc/afflict(obj/mecha/host, id)
+	var/datum/mech_affliction/A = affliction_for(id)
+	if(!A || (A in host.afflictions))
+		return FALSE
+	LAZYADD(host.afflictions, A)
+	A.on_afflicted(host)
+	return TRUE
+
+/// Clears the affliction `id`. Returns TRUE when the mech had it.
+/datum/mech_body_plan/proc/cure(obj/mecha/host, id)
+	var/datum/mech_affliction/A = affliction_for(id)
+	if(!A || !(A in host.afflictions))
+		return FALSE
+	LAZYREMOVE(host.afflictions, A)
+	A.on_cleared(host)
+	return TRUE
+
+/// A hit's chance of afflicting the mech: 30% to add one of `candidates` it lacks, else 10% to
+/// wreck a piece of equipment. Only below the internal-damage threshold unless ignore_threshold.
+/// Returns the affliction id added, or null.
+/datum/mech_body_plan/proc/roll_affliction(obj/mecha/host, list/candidates, ignore_threshold = FALSE)
+	if(!length(candidates))
+		return null
+	var/below_threshold = ignore_threshold || (host.get_integrity() * 100 / host.max_integrity < host.internal_damage_threshold)
+	if(prob(30))
+		if(!below_threshold)
+			return null
+		var/list/fresh = list()
+		for(var/id in candidates)
+			if(!has_affliction(host, id))
+				fresh += id
+		var/picked = safepick(fresh)
+		if(picked)
+			afflict(host, picked)
+		return picked
+	if(below_threshold && prob(10))
+		var/obj/item/mecha_parts/mecha_equipment/destr = safepick(host.equipment)
+		destr?.destroy()
+	return null
+
+/// Runs each active affliction's effect. Stops the damage process when none remain.
+/datum/mech_body_plan/proc/tick(obj/mecha/host)
+	if(!LAZYLEN(host.afflictions))
+		host.stop_process(MECHA_PROC_DAMAGE)
+		return
+	for(var/datum/mech_affliction/A as anything in host.afflictions.Copy())
+		if(QDELETED(host))
+			return
+		if(A in host.afflictions)
+			A.tick(host)
+
+/// The mech's active affliction datums, in a stable (id) order, for status panels.
+/datum/mech_body_plan/proc/active_afflictions(obj/mecha/host)
+	. = list()
+	if(!LAZYLEN(host.afflictions))
+		return
+	var/list/table = afflictions()
+	for(var/key in table)
+		var/datum/mech_affliction/A = table[key]
+		if(A in host.afflictions)
+			. += A
 
 // ---------------------------------------------------------------------------------------------
 // Afflictions: the mech's internal-damage conditions.
 
 /datum/mech_affliction
 	var/name = "internal damage"
-	/// MECHA_INT_* flag this affliction is stored as.
+	/// MECHA_INT_* id of this affliction.
 	var/flag = 0
-	/// Pilot alarm text.
+	/// Pilot alarm text (status panels).
 	var/alarm = "INTERNAL DAMAGE"
+	/// Topic / tgui action that repairs it from the cockpit, if any.
+	var/cockpit_repair
 	/// Shown to the pilot when the affliction clears, if any.
 	var/cleared_message
+
+/// Called when the mech gains the affliction.
+/datum/mech_affliction/proc/on_afflicted(obj/mecha/host)
+	host.start_process(MECHA_PROC_DAMAGE)
+	host.log_append_to_last("Internal damage of type [flag] ([name]).", 1)
+	var/mob/living/pilot = host.slot_item(MECHA_SLOT_PILOT)
+	if(pilot)
+		pilot << sound('sound/mecha/internaldmgalarm.ogg', volume = 50)
 
 /// Called when the affliction clears.
 /datum/mech_affliction/proc/on_cleared(obj/mecha/host)
 	if(cleared_message)
 		host.occupant_message(span_infoplain(span_blue(span_bold(cleared_message))))
+
+/// Per-tick effect, run every other mech process tick (about a second).
+/datum/mech_affliction/proc/tick(obj/mecha/host)
+	return
 
 /datum/mech_affliction/fire
 	name = "internal fire"
@@ -228,11 +350,33 @@
 	alarm = "INTERNAL FIRE"
 	cleared_message = "Internal fire extinquished."
 
+/// Burns out on its own unless life support is down; heats the tank (breaching it past
+/// TANK_LEAK_PRESSURE, as /tg/ does) and the cabin, which scorches the chassis when hot.
+/datum/mech_affliction/fire/tick(obj/mecha/host)
+	var/datum/mech_body_plan/plan = mech_body_plan()
+	if(!plan.has_affliction(host, MECHA_INT_TEMP_CONTROL) && prob(5))
+		plan.cure(host, MECHA_INT_FIRE)
+	if(host.internal_tank)
+		var/datum/gas_mixture/int_tank_air = host.internal_tank.return_air()
+		if(int_tank_air && int_tank_air.return_pressure() > TANK_LEAK_PRESSURE)
+			plan.afflict(host, MECHA_INT_TANK_BREACH)
+		if(int_tank_air && int_tank_air.return_volume() > 0)
+			int_tank_air.set_temperature(min(6000 + T0C, int_tank_air.return_temperature() + rand(10, 15)))
+	var/datum/gas_mixture/cabin = host.cabin_air
+	if(cabin && cabin.return_volume() > 0)
+		cabin.set_temperature(min(6000 + T0C, cabin.return_temperature() + rand(10, 15)))
+		var/cabin_temp = cabin.return_temperature()
+		if(cabin_temp > host.max_temperature / 2)
+			plan.injure(host, 4 / round(host.max_temperature / cabin_temp, 0.1), FIRE)
+
 /datum/mech_affliction/life_support
 	name = "life support failure"
 	flag = MECHA_INT_TEMP_CONTROL
 	alarm = "LIFE SUPPORT SYSTEM MALFUNCTION"
 	cleared_message = "Life support system reactivated."
+
+/datum/mech_affliction/life_support/tick(obj/mecha/host)
+	host.stop_process(MECHA_PROC_INT_TEMP)
 
 /datum/mech_affliction/life_support/on_cleared(obj/mecha/host)
 	..()
@@ -244,12 +388,33 @@
 	alarm = "GAS TANK BREACH"
 	cleared_message = "Damaged internal tank has been sealed."
 
+/// Leaks a tenth of the internal tank each tick.
+/datum/mech_affliction/tank_breach/tick(obj/mecha/host)
+	if(!host.internal_tank)
+		return
+	var/datum/gas_mixture/int_tank_air = host.internal_tank.return_air()
+	if(!int_tank_air)
+		return
+	var/datum/gas_mixture/leaked_gas = int_tank_air.remove_ratio(0.10)
+	if(istype(host.loc, /turf/simulated))
+		host.loc.assume_air(leaked_gas)
+	else
+		qdel(leaked_gas)
+
 /datum/mech_affliction/control_damage
 	name = "control damage"
 	flag = MECHA_INT_CONTROL_LOST
 	alarm = "COORDINATION SYSTEM CALIBRATION FAILURE"
+	cockpit_repair = "repair_int_control_lost"
 
 /datum/mech_affliction/short_circuit
 	name = "short circuit"
 	flag = MECHA_INT_SHORT_CIRCUIT
 	alarm = "SHORT CIRCUIT"
+
+/// Sparks and burns out cell capacity.
+/datum/mech_affliction/short_circuit/tick(obj/mecha/host)
+	if(host.get_charge())
+		host.spark_system.start()
+		host.cell.charge -= min(20, host.cell.charge)
+		host.cell.maxcharge -= min(20, host.cell.maxcharge)

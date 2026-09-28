@@ -250,7 +250,7 @@
 
 
 /obj/mecha/combat/fighter/play_entered_noise(mob/who)
-	if(hasInternalDamage())
+	if(mech_body_plan().has_affliction(src))
 		who << sound('sound/mecha/fighter/fighter_entered_bad.ogg',volume=60)
 	else
 		who << sound('sound/mecha/fighter/fighter_entered.ogg',volume=60)
