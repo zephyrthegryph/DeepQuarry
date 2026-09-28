@@ -89,6 +89,8 @@ REF_OWNED_LIST(/datum/body, "supports")
 		remove_affliction(A)
 		qdel(A)
 	afflictions = null
+	// The mob outlives nothing here, but a deleted body must not pin it.
+	owner = null
 	return ..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.

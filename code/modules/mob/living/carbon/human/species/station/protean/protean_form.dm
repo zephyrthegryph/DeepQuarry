@@ -31,6 +31,8 @@
 /datum/component/forms/protean/Destroy(force)
 	if(rig?.myprotean == parent)
 		rig.myprotean = null
+	// A handle-kind var is never cleaned by the lifecycle: drop it here.
+	rig = null
 	return ..()
 
 /datum/component/forms/protean/proc/blob_form()

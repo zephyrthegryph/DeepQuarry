@@ -160,6 +160,7 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 			var/datum/ledger/L = movable.loc.ledger
 			if(L && !(movable.loc in internal))
 				. += L.refs_to(movable)
+		. += state_om_slot_refs(movable, internal)
 	if(isatom(node))
 		var/atom/A = node
 		. += STATE_REFS_PER_CONTENT * length(A.contents)
@@ -170,6 +171,25 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 		for(var/datum/element/E in (islist(listeners) ? listeners : list(listeners)))
 			elements |= E
 	. += length(elements)
+
+/// References to `movable` held by the object model for its containment: its
+/// own record (when the owned-part scan did not already count it) and the slot
+/// relation edge linking it to its loc (om_slot_entered()), which the loc's
+/// record holds from outside the subtree. Other edges stay outside holders.
+/proc/state_om_slot_refs(atom/movable/movable, list/internal)
+	. = 0
+	var/datum/om/rec/rec = movable.om_rec
+	if(!rec)
+		return
+	if(!(rec in internal))
+		for(var/name in rec.vars)
+			if(!(name in GLOB.state_refscan_skip))
+				. += state_count_refs_in(rec.vars[name], movable, 0)
+	for(var/datum/om/edge/edge as anything in rec.edges)
+		if(edge in internal)
+			continue
+		if(edge.source == movable && edge.target == movable.loc && istype(edge.rel, /datum/om/relation/slot))
+			. += 1
 
 /// References to `node` from the vars of the subtree and its components.
 /proc/state_internal_refs(datum/node, list/internal)
@@ -188,6 +208,9 @@ GLOBAL_LIST_INIT(state_refscan_skip, list("vars", "loc", "locs", "contents", "vi
 	. = 0
 	var/list/L = value
 	for(var/key in L)
+		// A null entry has no associated value, and L[null] is a bad index.
+		if(isnull(key))
+			continue
 		if(key == node)
 			.++
 		else if(islist(key))

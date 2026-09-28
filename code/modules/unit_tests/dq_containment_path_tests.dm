@@ -38,7 +38,7 @@
 	max_integrity = 10000
 
 /datum/om/relation/slot/dq_path_bag_interior
-	holder = /obj/item/dq_path_sealed
+	holder = list(/obj/item/dq_path_bag, /obj/item/dq_path_sealed)
 	slot_id = "interior"
 	exposure = SLOT_EXPOSURE_INTERNAL
 
