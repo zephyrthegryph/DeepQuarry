@@ -123,7 +123,7 @@
 	timeofdeath = world.time
 	if(isliving(src))
 		var/mob/living/dead_living = src
-		dead_living.identity?.time_of_death = world.time
+		dead_living.identity()?.time_of_death = world.time
 	registry_leave(REGISTRY_LIVING_MOBS, src)
 	registry_join(REGISTRY_DEAD_MOBS, src)
 	if(mind || ckey)

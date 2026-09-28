@@ -12,4 +12,4 @@ set_waitfor 0
 weakref 0
 del 0
 blocking_builtins 0
-lc_refs 746
+lc_refs 583

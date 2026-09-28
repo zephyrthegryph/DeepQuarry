@@ -3,9 +3,9 @@
 ///Is the parent attached to something else, its loc? Then we need to keep an eye of this.
 #define LIGHTING_ATTACHED (1<<1)
 
-#define GET_PARENT (parent_attached_to || parent)
+#define GET_PARENT (parent_attached_to() || parent)
 
-#define GET_LIGHT_SOURCE (directional_atom || current_holder)
+#define GET_LIGHT_SOURCE (directional_atom || current_holder())
 
 #define SHORT_CAST 2
 

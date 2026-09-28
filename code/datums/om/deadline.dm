@@ -128,7 +128,7 @@
 	if(!rec)
 		return null
 	var/datum/om/rate/R = new
-	R.owner = owner
+	R.owner_handle = om_handle(owner)
 	R.name = name
 	R.value = clamp(value, min_value, max_value)
 	R.per_second = per_second

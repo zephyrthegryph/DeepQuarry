@@ -317,5 +317,5 @@ Bonus
 */
 
 /// LC-refs: the mind to put back in its body -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/symptom/growth/proc/ownermind() as /datum/mind
+/datum/viral_trait/growth/proc/ownermind() as /datum/mind
 	return om_resolve(ownermind_handle)

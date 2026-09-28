@@ -224,7 +224,7 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_BAND
 			trigger.property = band.property
-			trigger.provider = provider
+			trigger.provider_handle = om_handle(provider)
 			trigger.lo = band.lo
 			trigger.hi = band.hi
 			triggers += trigger
@@ -241,9 +241,9 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_DIFFERENCE
 			trigger.property = rel.property
-			trigger.provider = a
+			trigger.provider_handle = om_handle(a)
 			trigger.property_b = rel.property_b
-			trigger.provider_b = b
+			trigger.provider_b_handle = om_handle(b)
 			triggers += trigger
 			return
 		if(b || dm_key(rel.property_b))
@@ -273,7 +273,7 @@
 	var/datum/rule_trigger/trigger = new
 	trigger.kind = provider ? RULE_TRIGGER_THRESHOLD : RULE_TRIGGER_KEY
 	trigger.property = property
-	trigger.provider = provider
+	trigger.provider_handle = om_handle(provider)
 	trigger.op = op
 	trigger.value = value
 	trigger.value_property = value_property

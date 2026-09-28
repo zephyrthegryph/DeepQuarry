@@ -1271,7 +1271,7 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /mob/living/proc/ask_metainfo(mob/user, field, reopen = TRUE, list/chain)
 	var/list/F = metainfo_field(field)
 	var/message = F[3] ? "Enter any information you'd like others to see relating to your [F[3]] roleplay preferences. This will not be saved permanently unless you click save in the OOC notes panel! Type \"!clear\" to empty." : "Enter any information you'd like others to see, such as Roleplay-preferences. This will not be saved permanently unless you click save in the OOC notes panel!"
-	om_prompt(src, src, list("kind" = "text", "message" = message, "title" = "Game Preference", "default" = html_decode(identity.vars[F[1]]), "multiline" = TRUE, "on_cancel" = PROC_REF(metainfo_skipped), "data" = list("field" = field, "reopen" = reopen, "chain" = chain)), PROC_REF(metainfo_entered))
+	om_prompt(src, src, list("kind" = "text", "message" = message, "title" = "Game Preference", "default" = html_decode(identity().vars[F[1]]), "multiline" = TRUE, "on_cancel" = PROC_REF(metainfo_skipped), "data" = list("field" = field, "reopen" = reopen, "chain" = chain)), PROC_REF(metainfo_entered))
 
 /mob/living/proc/metainfo_entered(mob/user, new_metadata, datum/om/prompt/ask)
 	var/field = ask.get("field")

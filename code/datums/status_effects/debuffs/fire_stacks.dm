@@ -322,7 +322,6 @@
 	enemy_types = list(/datum/status_effect/fire_handler/fire_stacks)
 	stack_modifier = -1
 	/// If the mob has the TRAIT_SLIPPERY_WHEN_WET trait, the mob gets this component while it's wet
-	var/slipperiness_handle
 
 /datum/status_effect/fire_handler/wet_stacks/on_apply()
 	. = ..()
@@ -369,8 +368,5 @@
 // 	return !(basic_owner.basic_mob_flags & IMMUNE_TO_GETTING_WET)
 /// BUBBER EDIT END
 
-/// LC-refs: the slippery component we gave our owner -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/status_effect/fire_handler/wet_stacks/proc/slipperiness() as /datum/component/slippery
-	return om_resolve(slipperiness_handle)
 
 REF_OWNED(/datum/status_effect/fire_handler/fire_stacks, "moblight")

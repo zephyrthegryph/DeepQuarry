@@ -26,11 +26,11 @@
 	. = ..()
 	var/datum/component/antag/changeling/comp = player.current.GetComponent(/datum/component/antag/changeling)
 	if(comp)
-		comp.owner.remove_changeling_powers()
-		remove_verb(comp.owner, /mob/proc/EvolutionMenu)
+		comp.owner().remove_changeling_powers()
+		remove_verb(comp.owner(), /mob/proc/EvolutionMenu)
 		comp.RemoveComponent()
-		if(comp.owner.mind)
-			comp.owner.mind.antag_holder.changeling = null
+		if(comp.owner().mind)
+			comp.owner().mind.antag_holder.changeling_handle = null
 
 /datum/antagonist/changeling/create_objectives(datum/mind/changeling)
 	if(!..())

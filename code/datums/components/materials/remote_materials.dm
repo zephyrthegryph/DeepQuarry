@@ -197,7 +197,7 @@ handles linking back and forth.
  *
  * Returns true if both are on the station or same z level
  */
-/datum/component/remote_materials/proc/check_z_level(obj/silo_to_check = silo)
+/datum/component/remote_materials/proc/check_z_level(obj/silo_to_check = silo())
 	if(isnull(silo_to_check))
 		return FALSE
 

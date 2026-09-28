@@ -906,9 +906,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	.["runs"] = sched.runs
 	.["errors"] = sched.errors.Copy()
 	.["registry_errors"] = reg.errors.Copy()
+	.["io"] = om_io_diagnostics(sched)
+	.["pools"] = pool_diagnostics()
 
 /// The behaviour this ring runs.
 /datum/om/ring/proc/behaviour() as /datum/om/behaviour
 	return om_registry().behaviours[behaviour_id]
-	.["io"] = om_io_diagnostics(sched)
-	.["pools"] = pool_diagnostics()

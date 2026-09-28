@@ -70,7 +70,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			changeling = (our_mind.current.GetComponent(/datum/component/antag/changeling)) //Check to see if the mob we are currently inhabiting is a changeling.
 	else //Fed it a mob and we failed
 		if(M.mind)
-			changeling = M.mind.antag_holder.changeling //Check our mind's antag holder.
+			changeling = M.mind.antag_holder.changeling() //Check our mind's antag holder.
 	return changeling
 
 ///Handles the cooldown for the power. Returns TRUE if the cooldown has passed. FALSE if it's still on cooldown.
@@ -95,7 +95,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 /datum/component/antag/changeling/Initialize()
 	..()
-	if(owner)
+	if(owner())
 		if(GLOB.possible_changeling_IDs.len)
 			changelingID = pick(GLOB.possible_changeling_IDs)
 			GLOB.possible_changeling_IDs -= changelingID
@@ -103,9 +103,9 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		else
 			changelingID = "[rand(1,999)]"
 
-		add_verb(owner,/mob/proc/EvolutionMenu)
-		add_verb(owner,/mob/proc/changeling_respec)
-		owner.add_language("Changeling")
+		add_verb(owner(),/mob/proc/EvolutionMenu)
+		add_verb(owner(),/mob/proc/changeling_respec)
+		owner().add_language("Changeling")
 
 ///This is a component that is referenced to by the mind, so it should never be deleted
 // ALLOW(lifecycle): antag state refuses deletion unless forced.
@@ -146,7 +146,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		return
 	//The current mob is made a changeling AND the mind is made a changeling.
 	var/datum/component/antag/changeling/comp = LoadComponent(/datum/component/antag/changeling, TRUE)
-	mind.antag_holder.changeling = comp
+	mind.antag_holder.changeling_handle = om_handle(comp)
 	var/lesser_form = !ishuman(src)
 
 	if(!GLOB.powerinstances.len)
@@ -157,7 +157,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	for(var/datum/power/changeling/P in GLOB.powerinstances)
 		if(!P.genomecost) // Is it free?
 			if(!(P in comp.purchased_powers)) // Do we not have it already?
-				comp.purchasePower(comp.owner, P.name, 0)// Purchase it. Don't remake our verbs, we're doing it after this.
+				comp.purchasePower(comp.owner(), P.name, 0)// Purchase it. Don't remake our verbs, we're doing it after this.
 
 	for(var/datum/power/changeling/P in comp.purchased_powers)
 		if(P.isVerb)
@@ -476,7 +476,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 	switch(action)
 		if("evolve_power")
-			comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
+			comp().purchasePower(comp().owner(), params["val"]) //The power must be the power's NAME.
 			return TRUE
 	return TRUE
 

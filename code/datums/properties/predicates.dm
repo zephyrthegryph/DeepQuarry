@@ -301,7 +301,7 @@
 	var/datum/pred_node/tag/node = leaf(/datum/pred_node/tag, negate)
 	node.subject = clause[2]
 	node.property = def.id
-	node.def = def
+	node.def_handle = om_handle(def)
 	return node
 
 /datum/predicate_compiler/proc/compile_cmp(list/clause, negate)
@@ -321,7 +321,7 @@
 	var/datum/pred_node/cmp/node = new
 	node.subject = clause[2]
 	node.property = def.id
-	node.def = def
+	node.def_handle = om_handle(def)
 	node.op = negate ? dq_pred_invert_cmp(op) : op
 	node.value = clause[5]
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def.id))
@@ -342,7 +342,7 @@
 	var/datum/pred_node/band/node = new
 	node.subject = clause[2]
 	node.property = def.id
-	node.def = def
+	node.def_handle = om_handle(def)
 	node.lo = clause[4]
 	node.hi = clause[6]
 	node.outside = negate
@@ -369,7 +369,7 @@
 	var/datum/pred_node/rel/node = new
 	node.subject = clause[2]
 	node.property = def_a.id
-	node.def = def_a
+	node.def_handle = om_handle(def_a)
 	node.op = negate ? dq_pred_invert_cmp(op) : op
 	node.subject_b = clause[5]
 	node.property_b = def_b.id

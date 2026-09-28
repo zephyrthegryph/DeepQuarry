@@ -30,7 +30,6 @@
 	if(!..())
 		return FALSE
 	var/mob/living/carbon/human/M = host
-	var/obj/item/organ/O // picked from the host's current organs, not a snapshot taken at infection
 	switch(stage)
 		if(2)
 			if(prob(1))

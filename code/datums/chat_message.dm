@@ -184,7 +184,7 @@ REF_OWNED(/datum/chatmessage, list("message", "finish_callback"))
 
 	var/msgwidth = extra_length ? CHAT_MESSAGE_EXT_WIDTH : CHAT_MESSAGE_WIDTH
 	// The height is measured on the owner's client (a round trip): DX-exec answers text_measured().
-	dx_measure_text(src, owned_by, complete_text, null, msgwidth, PROC_REF(text_measured), msgwidth, target, owner, complete_text, lifespan)
+	dx_measure_text(src, owned_by(), complete_text, null, msgwidth, PROC_REF(text_measured), msgwidth, target, owner, complete_text, lifespan)
 
 /// dx_measure_text() callback: the text's size ("WxH") is known; build the image.
 /datum/chatmessage/proc/text_measured(measured, msgwidth, atom/target, mob/owner, complete_text, lifespan)

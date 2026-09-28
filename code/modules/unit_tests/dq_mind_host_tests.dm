@@ -42,7 +42,7 @@
 		return "[holder] does not hold the mind"
 	if(M.identity != I)
 		return "the mind's identity changed"
-	if(holder.identity != I)
+	if(holder.identity() != I)
 		return "[holder] reads another identity"
 	if(old_holder && old_holder.mind == M)
 		return "[old_holder] still claims the mind"
@@ -64,8 +64,8 @@
 	var/datum/mind/M = dq_test_give_mind(H, "Brain Donor")
 	var/datum/character_identity/I = M.identity
 	TEST_ASSERT_NOTNULL(I, "a mind entering a body should adopt an identity")
-	TEST_ASSERT_EQUAL(H.identity, I, "the body reads the mind's identity")
-	TEST_ASSERT_EQUAL(I.dna, H.dna, "the identity references the body's DNA")
+	TEST_ASSERT_EQUAL(H.identity(), I, "the body reads the mind's identity")
+	TEST_ASSERT_EQUAL(I.dna(), H.dna, "the identity references the body's DNA")
 	TEST_ASSERT_EQUAL(I.languages, H.languages, "the identity references the body's language list")
 
 	var/obj/item/organ/internal/brain/brain = dq_test_remove_brain(H)
@@ -74,9 +74,9 @@
 	var/fault = dq_test_mind_fault(M, view, I, H)
 	TEST_ASSERT_NULL(fault, "after brain removal: [fault]")
 	TEST_ASSERT_EQUAL(view.real_name, I.real_name, "the view shows the character's name")
-	TEST_ASSERT_EQUAL(view.dna, I.dna, "the view reads the character's DNA datum, not a clone")
+	TEST_ASSERT_EQUAL(view.dna, I.dna(), "the view reads the character's DNA datum, not a clone")
 	TEST_ASSERT_EQUAL(view.languages, I.languages, "the view reads the character's language list, not a copy")
-	TEST_ASSERT_EQUAL(view.identity.ooc_notes, "notes of Brain Donor", "OOC notes are read through the identity")
+	TEST_ASSERT_EQUAL(view.identity().ooc_notes, "notes of Brain Donor", "OOC notes are read through the identity")
 	TEST_ASSERT_EQUAL(view.container, brain, "the view lives in its host organ")
 
 	var/mob/living/carbon/human/recipient = dq_test_brainless_recipient(src)
@@ -86,7 +86,7 @@
 	TEST_ASSERT_NULL(brain.hosted_view(), "an implanted brain hosts no view")
 	TEST_ASSERT(QDELETED(view), "the emptied view should be deleted")
 	TEST_ASSERT_EQUAL(recipient.languages, I.languages, "the new body speaks the character's languages")
-	TEST_ASSERT_EQUAL(recipient.identity.ooc_notes_likes, "likes of Brain Donor", "OOC notes follow the mind")
+	TEST_ASSERT_EQUAL(recipient.identity().ooc_notes_likes, "likes of Brain Donor", "OOC notes follow the mind")
 
 /// Brain -> MMI -> brain: the same view object (and mind) moves host to host;
 /// nothing is recreated or copied, and no host keeps a stale occupant.
@@ -137,7 +137,7 @@
 	var/fault = dq_test_mind_fault(M, view, I, H)
 	TEST_ASSERT_NULL(fault, "in the posibrain: [fault]")
 	TEST_ASSERT_EQUAL(view.real_name, I.real_name, "the posibrain view shows the character")
-	TEST_ASSERT_EQUAL(view.identity.ooc_notes, "notes of Posi Subject", "OOC notes are read through the identity")
+	TEST_ASSERT_EQUAL(view.identity().ooc_notes, "notes of Posi Subject", "OOC notes are read through the identity")
 
 /// Borging: the mind leaves the MMI for the cyborg through the host API; the
 /// cyborg reads the same identity, and the MMI's view no longer claims it.
@@ -157,7 +157,7 @@
 	TEST_ASSERT(host.release_mind(R, "unit test borging"), "the MMI should release the mind into the cyborg")
 	var/fault = dq_test_mind_fault(M, R, I, view)
 	TEST_ASSERT_NULL(fault, "after borging: [fault]")
-	TEST_ASSERT_EQUAL(R.identity.ooc_notes, "notes of Borg Subject", "the cyborg reads the character's OOC notes")
+	TEST_ASSERT_EQUAL(R.identity().ooc_notes, "notes of Borg Subject", "the cyborg reads the character's OOC notes")
 	TEST_ASSERT_NULL(view.mind, "the MMI view no longer holds a mind")
 
 	// The borg is destroyed: the mind goes back into its MMI.
@@ -183,8 +183,8 @@
 	var/fault = dq_test_mind_fault(M, sleeve, I, original)
 	TEST_ASSERT_NULL(fault, "after resleeving: [fault]")
 	TEST_ASSERT_EQUAL(sleeve.languages, langs, "the sleeve speaks the character's language list")
-	TEST_ASSERT_EQUAL(I.dna, sleeve.dna, "the identity references the sleeve's DNA")
-	TEST_ASSERT_EQUAL(sleeve.identity.ooc_notes, "notes of Sleeve Subject", "OOC notes follow the mind")
+	TEST_ASSERT_EQUAL(I.dna(), sleeve.dna, "the identity references the sleeve's DNA")
+	TEST_ASSERT_EQUAL(sleeve.identity().ooc_notes, "notes of Sleeve Subject", "OOC notes follow the mind")
 	qdel(sleeve)
 	qdel(BR)
 
