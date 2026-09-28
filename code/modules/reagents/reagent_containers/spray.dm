@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL = 300))
 /obj/item/reagent_containers/spray
 	name = "spray bottle"
 	desc = "A spray bottle, with an unscrewable top."
@@ -7,7 +8,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 	flags = OPENCONTAINER|NOBLUDGEON
-	MATERIAL_MIX(list(MAT_GLASS = 300, MAT_STEEL = 300))
 	slot_flags = SLOT_BELT
 	throwforce = 3
 	w_class = ITEMSIZE_SMALL

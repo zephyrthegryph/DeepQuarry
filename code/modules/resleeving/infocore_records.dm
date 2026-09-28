@@ -70,6 +70,7 @@ REF_BACK(/datum/transhuman/mind_record, list("mind_ref" = null))
 /// notes and persistent traits all come from the mind's identity (by
 /// reference), never from a body record.
 /datum/transhuman/mind_record/proc/get_identity()
+	RETURN_TYPE(/datum/character_identity)
 	return mind_ref?.get_identity()
 
 /////// Body Record ///////

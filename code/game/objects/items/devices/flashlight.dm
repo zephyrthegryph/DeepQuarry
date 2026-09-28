@@ -12,6 +12,7 @@
  * Flashlights
  */
 
+MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/flashlight
 	name = "flashlight"
 	desc = "A hand-held emergency light."
@@ -19,7 +20,6 @@
 	icon_state = "flashlight"
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
-	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
 	actions_types = list(/datum/action/item_action/toggle_flashlight)
 
 	light_system = MOVABLE_LIGHT_DIRECTIONAL
@@ -328,6 +328,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	desc = "A small flashlight. This one is yellow."
 	icon_state = "flashlight_yellow"
 
+MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50))
 /obj/item/flashlight/maglight
 	name = "maglight"
 	desc = "A very, very heavy duty flashlight."
@@ -337,7 +338,6 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list ("smacked", "thwacked", "thunked")
-	MATERIAL_MIX(list(MAT_STEEL = 200,MAT_GLASS = 50))
 	hitsound = "swing_hit"
 
 /obj/item/flashlight/drone

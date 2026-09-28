@@ -32,7 +32,6 @@
 	conflict = OM_REL_REFUSE
 
 /datum/om/relation/leashed_to/on_link(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	source.apply_body_effect(/datum/body_effect/leash)
@@ -41,7 +40,6 @@
 	PERIODIC_START(target, PERIODIC_SLOW)
 
 /datum/om/relation/leashed_to/on_unlink(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && !QDELETED(source))
 		source.clear_alert("leashed")
 		source.remove_body_effect(/datum/body_effect/leash)
@@ -58,14 +56,12 @@
 	source_single = TRUE
 
 /datum/om/relation/leash_held_by/on_link(obj/item/leash/source, mob/living/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	target.throw_alert("leash", /atom/movable/screen/alert/leash_dom, new_master = source)
 	om_hook(target, /datum/om/event/moved, source, TYPE_PROC_REF(/obj/item/leash, on_master_move))
 
 /datum/om/relation/leash_held_by/on_unlink(obj/item/leash/source, mob/living/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(target) && !QDELETED(target))
 		target.clear_alert("leash")
 	if(istype(source))

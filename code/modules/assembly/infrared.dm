@@ -1,10 +1,10 @@
 //This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
+MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 /obj/item/assembly/infra
 	name = "infrared emitter"
 	desc = "Emits a visible or invisible beam and is triggered when the beam is interrupted."
 	icon_state = "infrared"
-	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 	wires_type = WIRE_PULSE
 

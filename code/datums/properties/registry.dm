@@ -19,6 +19,7 @@
 /// The global registry, built and validated on first use. validate_property_registry() builds
 /// it at boot and reports validation errors.
 /proc/dq_property_registry()
+	RETURN_TYPE(/datum/property_registry)
 	var/static/datum/property_registry/registry
 	if(!registry)
 		var/list/defs = list()

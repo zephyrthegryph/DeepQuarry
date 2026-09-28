@@ -489,6 +489,7 @@ DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(inter
 	else
 		to_chat(user, span_red("No associated computer found. Only local scans will function properly."))
 	to_chat(user, "\n")
+	return TRUE
 
 /// LC-refs: What's in the book? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/book/proc/store() as /obj/item
@@ -501,4 +502,3 @@ DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(inter
 /// LC-refs: Currently scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/barcodescanner/proc/book() as /obj/item/book
 	return om_resolve(book_handle)
-	return TRUE

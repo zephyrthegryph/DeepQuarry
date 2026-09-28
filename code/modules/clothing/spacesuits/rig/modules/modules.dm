@@ -8,12 +8,12 @@
 	var/product_type = "undefined"
 	var/charges = 0
 
+MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, MAT_GLASS = 5000))
 /obj/item/rig_module
 	name = "hardsuit upgrade"
 	desc = "It looks pretty sciency."
 	icon = 'icons/obj/rig_modules.dmi'
 	icon_state = "module"
-	MATERIAL_MIX(list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, MAT_GLASS = 5000))
 
 	var/damage = 0
 	var/obj/item/rig/holder

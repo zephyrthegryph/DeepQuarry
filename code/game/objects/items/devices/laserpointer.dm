@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer
 	name = "laser pointer"
 	desc = "Don't shine it in your eyes!"
@@ -6,7 +7,6 @@
 	item_state = "pen"
 	var/pointer_icon_state
 	slot_flags = SLOT_BELT
-	MATERIAL_MIX(list(MAT_GLASS = 500, MAT_STEEL = 500))
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
 	var/pointer_loc_handle
 	var/energy = 8

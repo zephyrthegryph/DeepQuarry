@@ -153,6 +153,7 @@ REF_OWNED(/datum/mind_host, "view")
 
 /// The view mob a mind host holds (its hosted mind lives there), if any.
 /obj/proc/hosted_view()
+	RETURN_TYPE(/mob/living/carbon/brain)
 	var/datum/mind_host/host = get_mind_host(src)
 	return host?.view
 

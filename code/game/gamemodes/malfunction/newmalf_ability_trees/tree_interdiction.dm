@@ -109,7 +109,7 @@
 
 /proc/malf_unlock_confirm(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target)
-		om_ask(user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), receiver = user, title = "Unlock Cyborg", message = "Really try to unlock cyborg [target.name]?", malf_target = target)
+		om_ask_begin(null, user, /datum/om/prompt/confirm/malf, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_confirmed), list(receiver = user, title = "Unlock Cyborg", message = "Really try to unlock cyborg [target.name]?", malf_target = target))
 
 /mob/living/silicon/ai/proc/malf_unlock_confirmed(datum/om/prompt/confirm/malf/ask)
 	var/mob/living/silicon/ai/user = src
@@ -119,7 +119,7 @@
 		return
 	user.hacking = 1
 	to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
-	om_after(user, 30 SECONDS, TYPE_PROC_REF(/mob/living/silicon/ai, malf_unlock_cyborg_done), receiver = user, user, target)
+	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
 
 /proc/malf_unlock_cyborg_done(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target && target.lockcharge)

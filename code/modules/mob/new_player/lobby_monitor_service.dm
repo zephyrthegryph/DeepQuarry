@@ -21,7 +21,7 @@ GLOBAL_DATUM_INIT(lobby_monitor_service, /datum/world_service/lobby_monitor, new
 			continue
 
 		log_tgui(player, "Reinitialized [player.client.ckey]'s lobby window: [ui ? "ui" : "no ui"], status: [player.lobby_window?.status].", "lobby_monitor/Fire")
-		do_reinit(player)
+		INVOKE_ASYNC(src, PROC_REF(do_reinit), player) // ALLOW(scheduler): lobby window initialize may block on winexists/asset sends
 
 	var/initialize_queue = list()
 	for(var/mob/new_player/player as anything in new_players)

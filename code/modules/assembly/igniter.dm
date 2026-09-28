@@ -1,8 +1,8 @@
+MATERIAL_MIX(/obj/item/assembly/igniter, list(MAT_STEEL = 500, MAT_GLASS = 50))
 /obj/item/assembly/igniter
 	name = "igniter"
 	desc = "A small electronic device able to ignite combustable substances."
 	icon_state = "igniter"
-	MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 50))
 
 	secured = 1
 	wires_type = WIRE_RECEIVE

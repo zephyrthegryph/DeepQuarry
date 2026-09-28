@@ -163,8 +163,7 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 
 /datum/om/prompt/confirm/rip_poster/valid()
 	var/obj/structure/sign/poster/P = subject
-	return P.ruined ? "already ripped" : null
-	return TRUE
+	return P.is_ruined() ? "already ripped" : null
 
 /obj/structure/sign/poster/proc/rip_answered(datum/om/prompt/confirm/rip_poster/ask)
 	var/mob/user = ask.answerer
@@ -182,3 +181,7 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 	var/obj/item/poster/P = new roll_type(newloc, poster_decl)
 	P.forceMove(newloc)
 	qdel(src)
+
+/// Whether the poster has been ripped.
+/obj/structure/sign/poster/proc/is_ruined()
+	return ruined

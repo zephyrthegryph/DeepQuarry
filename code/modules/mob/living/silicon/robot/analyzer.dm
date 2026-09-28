@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 //
 //Robotic Component Analyser, basically a health analyser for robots
 //
@@ -13,7 +14,6 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 5
 	throw_range = 10
-	MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 200))
 	var/mode = 1;
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'

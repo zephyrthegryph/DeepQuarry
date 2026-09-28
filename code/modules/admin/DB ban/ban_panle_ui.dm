@@ -205,6 +205,7 @@
 	for(var/list/row as anything in rows)
 		UNTYPED_LIST_ADD(all_bans, list("auto" = ((row[3] in list("TEMPBAN", "JOB_TEMPBAN")) && now > row[7]), "data_list" = row))
 	db_records = all_bans
+	update_static_data_for_all_viewers()
 
 /// LC-refs: the admin_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_ban_panel/proc/admin_datum() as /datum/admins
@@ -213,4 +214,3 @@
 /// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_ban_panel/proc/holder() as /client
 	return om_resolve(holder_handle)
-	update_static_data_for_all_viewers()

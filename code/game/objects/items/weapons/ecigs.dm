@@ -156,13 +156,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		update_icon()
 	return TRUE
 
+MATERIAL_MIX(/obj/item/reagent_containers/ecig_cartridge, list(MAT_STEEL = 50, MAT_GLASS = 10))
 /obj/item/reagent_containers/ecig_cartridge
 	name = "tobacco flavour cartridge"
 	desc = "A small metal cartridge, used with electronic cigarettes, which contains an atomizing coil and a solution to be atomized."
 	w_class = ITEMSIZE_TINY
 	icon = 'icons/obj/ecig.dmi'
 	icon_state = "ecartridge"
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_GLASS = 10))
 	volume = 20
 	flags = OPENCONTAINER
 	max_transfer_amount = null

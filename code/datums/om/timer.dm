@@ -218,7 +218,8 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// Cancels timer `id` on E. Always safe: nothing is suspended inside a timer.
 /proc/om_cancel_timer(datum/E, id)
-	var/datum/om/rec/rec = (E || om_global_owner()).om_rec
+	var/datum/owner = E || om_global_owner()
+	var/datum/om/rec/rec = owner.om_rec
 	var/list/T = rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		if(T[i] == id)
@@ -234,7 +235,9 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	return length(E?.om_rec?.timers) / OM_TIMER_STRIDE
 
 /proc/om_timer_pending(datum/E, id)
-	var/list/T = (E || om_global_owner()).om_rec?.timers
+	var/datum/owner = E || om_global_owner()
+	var/datum/om/rec/rec = owner.om_rec
+	var/list/T = rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		if(T[i] == id)
 			return TRUE
@@ -242,7 +245,8 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// Deciseconds of E's timer clock left on timer `id`, or null.
 /proc/om_timer_left(datum/E, id)
-	var/datum/om/rec/rec = (E || om_global_owner()).om_rec
+	var/datum/owner = E || om_global_owner()
+	var/datum/om/rec/rec = owner.om_rec
 	var/list/T = rec?.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		if(T[i] == id)

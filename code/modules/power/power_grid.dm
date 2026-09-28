@@ -142,6 +142,7 @@
 
 /// The machines bound to region `id` (do not modify).
 /proc/power_grid_nodes(id)
+	RETURN_TYPE(/list)
 	var/list/grid = power_grid(id)
 	return grid ? grid[PGRID_NODES] : list()
 

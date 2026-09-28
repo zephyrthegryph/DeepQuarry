@@ -138,16 +138,16 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 	set_user_client(null)
 	..()
 
+MATERIAL_MIX(/obj/item/t_scanner/upgraded, list(MAT_STEEL = 500, PHORON = 150))
 /obj/item/t_scanner/upgraded
 	name = "Upgraded T-ray Scanner"
 	desc = "An upgraded version of the terahertz-ray emitter and scanner used to detect underfloor objects such as cables and pipes."
-	MATERIAL_MIX(list(MAT_STEEL = 500, PHORON = 150))
 	scan_range = 3
 
+MATERIAL_MIX(/obj/item/t_scanner/advanced, list(MAT_STEEL = 1500, PHORON = 200, SILVER = 250))
 /obj/item/t_scanner/advanced
 	name = "Advanced T-ray Scanner"
 	desc = "An advanced version of the terahertz-ray emitter and scanner used to detect underfloor objects such as cables and pipes."
-	MATERIAL_MIX(list(MAT_STEEL = 1500, PHORON = 200, SILVER = 250))
 	scan_range = 7
 
 

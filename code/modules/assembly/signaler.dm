@@ -1,9 +1,9 @@
+MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200))
 /obj/item/assembly/signaler
 	name = "remote signaling device"
 	desc = "Used to remotely activate devices.  Tap against another secured signaler to transfer configuration."
 	icon_state = "signaller"
 	item_state = "signaler"
-	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_GLASS = 200))
 	wires_type = WIRE_RECEIVE | WIRE_PULSE | WIRE_RADIO_PULSE | WIRE_RADIO_RECEIVE
 
 	secured = TRUE

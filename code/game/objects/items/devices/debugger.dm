@@ -4,6 +4,7 @@
  *
  */
 
+MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/debugger
 	name = "debugger"
 	desc = "Used to debug electronic equipment."
@@ -18,7 +19,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	MATERIAL_MIX(list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/buffer_handle // simple machine buffer for device linkage
 
 /obj/item/debugger/is_used_on(obj/O, mob/user)

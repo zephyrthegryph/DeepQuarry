@@ -102,6 +102,7 @@ REF_BACK(/datum/ai_brain, list("primary_threat" = null, "holder" = "ai_brain"))
 	return ..()
 
 /datum/ai_brain/proc/get_owner()
+	RETURN_TYPE(/mob/living)
 	return holder
 
 /datum/ai_brain/proc/get_leader()

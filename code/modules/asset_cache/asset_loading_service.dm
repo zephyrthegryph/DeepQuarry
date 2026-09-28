@@ -31,8 +31,6 @@ GLOBAL_DATUM_INIT(asset_loading_service, /datum/world_service/asset_loading, new
 	// We just emptied the queue
 	if(last_queue_len && !length(generate_queue) && !assets_generating)
 		last_queue_len = 0
-	return TRUE
-
 #ifdef BENCHMARK
 		benchmark_rust_mark("asset loading: queue done")
 #endif
@@ -41,6 +39,7 @@ GLOBAL_DATUM_INIT(asset_loading_service, /datum/world_service/asset_loading, new
 #ifdef BENCHMARK
 		benchmark_rust_mark("asset loading: iconforge cleaned")
 #endif
+	return TRUE
 
 /datum/world_service/asset_loading/has_work()
 	return length(generate_queue) || last_queue_len

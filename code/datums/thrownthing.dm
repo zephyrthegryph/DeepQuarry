@@ -14,7 +14,6 @@
 	on_target_delete = OM_END_DELETE_OTHER
 
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
 	if(target.throwing == source)
 		target.throwing = null

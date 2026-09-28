@@ -3,6 +3,7 @@
 // from their parent's; every other type inherits its nearest listed ancestor's value.
 // Do not regenerate from the current tree: this is the reference the conversion is checked against.
 /proc/dq_matter_snapshot_changes()
+	RETURN_TYPE(/list)
 	var/static/list/changes = list(
 		/obj/item/clothing = list("fibers" = 50),
 		/obj/item/clothing/head/pin/magnetic = list("steel" = 10),

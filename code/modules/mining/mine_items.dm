@@ -68,23 +68,23 @@
 	desc = "The most basic of mining drills, for short excavations and small mineral extractions."
 	drill_verb = "drilling"
 
+MATERIAL_MIX(/obj/item/pickaxe/advdrill, list(MAT_STEEL = 4000, MAT_PLASTEEL = 2500))
 /obj/item/pickaxe/advdrill
 	name = "advanced mining drill" // Can dig sand as well!
 	icon_state = "advdrill"
 	item_state = "jackhammer"
 	digspeed = 27
 	sand_dig = TRUE
-	MATERIAL_MIX(list(MAT_STEEL = 4000, MAT_PLASTEEL = 2500))
 	desc = "Yours is the drill that will pierce through the rock walls."
 	drill_verb = "drilling"
 
+MATERIAL_MIX(/obj/item/pickaxe/diamonddrill, list(MAT_STEEL = 4500, MAT_PLASTEEL = 3000, MAT_DIAMONDS = 1000))
 /obj/item/pickaxe/diamonddrill //When people ask about the badass leader of the mining tools, they are talking about ME!
 	name = "diamond mining drill"
 	icon_state = "diamonddrill"
 	item_state = "jackhammer"
 	digspeed = 4 //Digs through walls, girders, and can dig up sand
 	sand_dig = TRUE
-	MATERIAL_MIX(list(MAT_STEEL = 4500, MAT_PLASTEEL = 3000, MAT_DIAMONDS = 1000))
 	desc = "Yours is the drill that will pierce the heavens!"
 	drill_verb = "drilling"
 
@@ -107,6 +107,7 @@
 	drill_verb = "hammering"
 	destroy_artefacts = TRUE
 
+MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL = 1500, MAT_DIAMONDS = 500, MAT_PHORON = 500))
 /obj/item/pickaxe/plasmacutter
 	name = "plasma cutter"
 	desc = "A rock cutter that uses bursts of hot plasma. You could use it to cut limbs off of xenos! Or, you know, mine stuff."
@@ -114,7 +115,6 @@
 	item_state = "plasmacutter"
 	w_class = ITEMSIZE_NORMAL //it is smaller than the pickaxe
 	digspeed = 18 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/light thermite on fire
-	MATERIAL_MIX(list(MAT_STEEL = 3000, MAT_PLASTEEL = 1500, MAT_DIAMONDS = 500, MAT_PHORON = 500))
 	drill_verb = "cutting"
 	drill_sound = 'sound/items/Welder.ogg'
 	sharp = TRUE

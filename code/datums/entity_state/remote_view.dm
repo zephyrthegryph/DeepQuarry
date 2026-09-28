@@ -30,7 +30,7 @@ REF_BACK(/datum/remote_view, list("host_mob" = "remote_view", "remote_view_targe
 	var/datum/remote_view/old_view = remote_view
 	var/datum/remote_view/new_view = new view_type(src)
 	if(!new_view.start(focused_on, viewsize, vconfig_path, extra1, extra2, extra3))
-		new_view.host_mob = null // never attached: nothing to restore
+		new_view.forget_host() // never attached: nothing to restore
 		qdel(new_view)
 		return null
 	// Like the old component's highlander replace: the previous view goes after the new one began.
@@ -43,6 +43,10 @@ REF_BACK(/datum/remote_view, list("host_mob" = "remote_view", "remote_view_targe
 /datum/remote_view/New(mob/viewer)
 	..()
 	host_mob = viewer
+
+/// Drops the host without restoring its perspective: for a view that never started.
+/datum/remote_view/proc/forget_host()
+	host_mob = null
 
 /// Begins the view (was the component's Initialize). Returns FALSE if the view cannot start.
 /datum/remote_view/proc/start(atom/focused_on, viewsize, vconfig_path)

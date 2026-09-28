@@ -2092,7 +2092,7 @@
 		return
 	//allow it to bug them again now that we've waited
 	M.gender_change_cooldown = 0
-	om_ask(M, /datum/om/prompt/confirm/gender_change_drug, TYPE_PROC_REF(/mob/living/carbon/human, gender_change_drug_answered), receiver = M, gender_change = gender_change)
+	om_ask_begin(null, M, /datum/om/prompt/confirm/gender_change_drug, TYPE_PROC_REF(/mob/living/carbon/human, gender_change_drug_answered), list(receiver = M, gender_change = gender_change))
 
 /datum/om/prompt/confirm/gender_change_drug
 	title = "Warning"

@@ -36,12 +36,12 @@
 	max_ammo = 30
 	multiple_sprites = null
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/foam/riot, list(MAT_STEEL = 5040, MAT_PLASTIC = 1800))
 /obj/item/ammo_magazine/ammo_box/foam/riot
 	name = "\improper Donk-Soft riot ammo box"
 	desc = "Contains Donk-Soft riot darts. It's Donk or Don't! Ages 18 and up."
 	icon_state = "foambox_riot"
 	ammo_type = /obj/item/ammo_casing/afoam_dart/riot
-	MATERIAL_MIX(list(MAT_STEEL = 5040, MAT_PLASTIC = 1800))
 
 /*
  * Cap
@@ -140,13 +140,13 @@
 	max_ammo = 40
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b10mm/emp, list(MAT_STEEL = 5200, MAT_URANIUM = 4000))
 /obj/item/ammo_magazine/ammo_box/b10mm/emp
 	name = "ammo box (10mm haywire)"
 	desc = "A box of 10mm haywire rounds"
 	icon_state = "box10mm-hw"
 	caliber = "10mm"
 	ammo_type = /obj/item/ammo_casing/a10mm/emp
-	MATERIAL_MIX(list(MAT_STEEL = 5200, MAT_URANIUM = 4000))
 	max_ammo = 40
 	multiple_sprites = 1
 
@@ -198,23 +198,23 @@
 	max_ammo = 24
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b45/ap, list(MAT_STEEL = 1200, MAT_PLASTEEL = 600))
 /obj/item/ammo_magazine/ammo_box/b45/ap
 	name = "ammo box (.45 AP)"
 	desc = "A box of .45 armor-piercing rounds"
 	icon_state = "pistol_ap"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/ap
-	MATERIAL_MIX(list(MAT_STEEL = 1200, MAT_PLASTEEL = 600))
 	max_ammo = 24
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b45/hp, list(MAT_STEEL = 1440, MAT_PLASTIC = 360))
 /obj/item/ammo_magazine/ammo_box/b45/hp
 	name = "ammo box (.45 HP)"
 	desc = "A box of .45 hollow-point rounds"
 	icon_state = "pistol_hp"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/hp
-	MATERIAL_MIX(list(MAT_STEEL = 1440, MAT_PLASTIC = 360))
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -228,13 +228,13 @@
 	max_ammo = 24
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b45/emp, list(MAT_STEEL = 3120, MAT_URANIUM = 2400))
 /obj/item/ammo_magazine/ammo_box/b45/emp
 	name = "ammo box (.45 haywire)"
 	desc = "A box of .45 haywire rounds"
 	icon_state = "pistol_hw"
 	caliber = ".45"
 	ammo_type = /obj/item/ammo_casing/a45/emp
-	MATERIAL_MIX(list(MAT_STEEL = 3120, MAT_URANIUM = 2400))
 	max_ammo = 24
 	multiple_sprites = 1
 
@@ -272,33 +272,33 @@
 	max_ammo = 8
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b12g/stunshell, list(MAT_STEEL = 2880, MAT_GLASS = 5760))
 /obj/item/ammo_magazine/ammo_box/b12g/stunshell
 	name = "ammo box (12 gauge stun)"
 	desc = "A box of 12 gauge stun rounds"
 	icon_state = "stunslug"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/stunshell
-	MATERIAL_MIX(list(MAT_STEEL = 2880, MAT_GLASS = 5760))
 	max_ammo = 8
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b12g/emp, list(MAT_STEEL = 2880, MAT_URANIUM = 1920))
 /obj/item/ammo_magazine/ammo_box/b12g/emp
 	name = "ammo box (12 gauge EMP)"
 	desc = "A box of 12 gauge EMP rounds"
 	icon_state = "emp"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/emp
-	MATERIAL_MIX(list(MAT_STEEL = 2880, MAT_URANIUM = 1920))
 	max_ammo = 8
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b12g/flechette, list(MAT_STEEL = 2880, MAT_PLASTEEL = 800))
 /obj/item/ammo_magazine/ammo_box/b12g/flechette
 	name = "ammo box (12 gauge flechette)"
 	desc = "A box of 12 gauge flechette rounds"
 	icon_state = "bean"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/flechette
-	MATERIAL_MIX(list(MAT_STEEL = 2880, MAT_PLASTEEL = 800))
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -322,13 +322,13 @@
 	max_ammo = 8
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b12g/flash, list(MAT_STEEL = 720, MAT_GLASS = 720))
 /obj/item/ammo_magazine/ammo_box/b12g/flash
 	name = "ammo box (12 gauge flash)"
 	desc = "A box of 12 gauge flash rounds"
 	icon_state = "flash"
 	caliber = "12g"
 	ammo_type = /obj/item/ammo_casing/a12g/flash
-	MATERIAL_MIX(list(MAT_STEEL = 720, MAT_GLASS = 720))
 	max_ammo = 8
 	multiple_sprites = 1
 
@@ -336,23 +336,23 @@
  * 14.5mm (anti-materiel rifle round)
  */
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145, list(MAT_STEEL = 28000, MAT_PLASTEEL = 3500)) // Makes them a bit more expensive
 /obj/item/ammo_magazine/ammo_box/b145
 	desc = "ammo box (14.5mm)"
 	desc = "A box of 14.5mm rounds"
 	icon_state = "sniper"
 	caliber = "14.5mm"
 	ammo_type = /obj/item/ammo_casing/a145
-	MATERIAL_MIX(list(MAT_STEEL = 28000, MAT_PLASTEEL = 3500)) // Makes them a bit more expensive
 	max_ammo = 7
 	multiple_sprites = 1
 
+MATERIAL_MIX(/obj/item/ammo_magazine/ammo_box/b145/highvel, list(MAT_STEEL = 2800, MAT_PLASTEEL = 7000)) // Makes them a bit more expensive
 /obj/item/ammo_magazine/ammo_box/b145/highvel
 	desc = "ammo box (14.5mm sabot)"
 	desc = "A box of 14.5mm sabot rounds"
 	icon_state = "sniper"
 	caliber = "14.5mm"
 	ammo_type = /obj/item/ammo_casing/a145/highvel
-	MATERIAL_MIX(list(MAT_STEEL = 2800, MAT_PLASTEEL = 7000)) // Makes them a bit more expensive
 	max_ammo = 7
 	multiple_sprites = 1
 

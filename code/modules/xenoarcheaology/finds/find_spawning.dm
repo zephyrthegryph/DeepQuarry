@@ -12,7 +12,7 @@
 		to_chat(usr, "You need to select a mob with a proper LOC to spawn a minor artifact!")
 		return
 
-	om_ask(usr, /datum/om/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), receiver = usr.client, subject = target, title = "Spawn Artifact", message = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list")
+	om_ask_begin(null, usr, /datum/om/prompt/number, TYPE_PROC_REF(/client, artifact_spawn_debug_chosen), list(receiver = usr.client, subject = target, title = "Spawn Artifact", message = "Desired type to spawn. Consult xenoarcheaology.dm for the spawn list"))
 
 /client/proc/artifact_spawn_debug_chosen(datum/om/prompt/number/ask)
 	var/mob/target = ask.subject

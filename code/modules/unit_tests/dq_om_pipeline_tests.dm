@@ -203,6 +203,7 @@
 	return E
 
 /proc/pipe_test_state(datum/E)
+	RETURN_TYPE(/datum/om/frame)
 	return om_pipe_state(E, /datum/om/pipeline/test)
 
 // --- Runner --------------------------------------------------------------------------------
@@ -359,9 +360,12 @@
 
 /datum/unit_test/om_pipeline/variants_by_depth/run_pipeline()
 	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
-	TEST_ASSERT_EQUAL(P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity)?.type, /datum/om/stage/test/a, "the root serves the base type")
-	TEST_ASSERT_EQUAL(P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity/deep)?.type, /datum/om/stage/test/a/deep, "the deeper variant wins")
-	TEST_ASSERT_EQUAL(P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity/deep/deeper)?.type, /datum/om/stage/test/a/deep/deeper, "the deepest variant wins")
+	var/datum/om/stage/resolved0 = P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity)
+	TEST_ASSERT_EQUAL(resolved0?.type, /datum/om/stage/test/a, "the root serves the base type")
+	var/datum/om/stage/resolved1 = P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity/deep)
+	TEST_ASSERT_EQUAL(resolved1?.type, /datum/om/stage/test/a/deep, "the deeper variant wins")
+	var/datum/om/stage/resolved2 = P.resolve(/datum/om/stage/test/a, /datum/pipe_test_entity/deep/deeper)
+	TEST_ASSERT_EQUAL(resolved2?.type, /datum/om/stage/test/a/deep/deeper, "the deepest variant wins")
 	var/datum/pipe_test_entity/E = pipe_test_new(/datum/pipe_test_entity/deep/deeper)
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT("a deeper" in E.log, "an entity runs its variant")

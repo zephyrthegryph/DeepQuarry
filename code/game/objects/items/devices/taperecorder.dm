@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 /obj/item/taperecorder
 	name = "universal recorder"
 	desc = "A device that can record to cassette tapes, and play them. It automatically translates the content in playback."
@@ -6,7 +7,6 @@
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
 
-	MATERIAL_MIX(list(MAT_STEEL = 60,MAT_GLASS = 30))
 
 	var/emagged = 0.0
 	var/recording = 0.0
@@ -349,6 +349,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	else
 		icon_state = "taperecorder_idle"
 
+MATERIAL_MIX(/obj/item/rectape, list(MAT_STEEL=20, MAT_GLASS=5))
 /obj/item/rectape
 	name = "tape"
 	desc = "A magnetic tape that can hold up to ten minutes of content."
@@ -356,7 +357,6 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	icon_state = "tape_white"
 	item_state = "analyzer"
 	w_class = ITEMSIZE_TINY
-	MATERIAL_MIX(list(MAT_STEEL=20, MAT_GLASS=5))
 	force = 1
 	throwforce = 0
 	var/max_capacity = 1800

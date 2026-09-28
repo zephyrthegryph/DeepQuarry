@@ -3,11 +3,11 @@
 
 // ---- Fixtures ----
 
+MATERIAL_MIX(/obj/item/dq_property_test, list(MAT_STEEL = 1000, MAT_CARDBOARD = 500))
 /obj/item/dq_property_test
 	name = "property test item"
 	w_class = ITEMSIZE_SMALL
 	sharp = TRUE
-	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_CARDBOARD = 500))
 
 /// Same values as its parent, so it must share the parent's interned table.
 /obj/item/dq_property_test/twin

@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 3500))
 /obj/item/suit_cooling_unit
 	name = "portable suit cooling unit"
 	desc = "A portable heat sink and liquid cooled radiator that can be hooked up to a space suit's existing temperature controls to provide industrial levels of cooling."
@@ -14,7 +15,6 @@
 	throw_range = 4
 	actions_types = list(/datum/action/item_action/toggle_heatsink)
 
-	MATERIAL_MIX(list(MAT_STEEL = 15000, MAT_GLASS = 3500))
 
 	var/on = 0				//is it turned on?
 	var/cover_open = 0		//is the cover open?

@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/radio/electropack, list(MAT_STEEL = 10000,MAT_GLASS = 2500))
 /obj/item/radio/electropack
 	name = "electropack"
 	desc = "Dance my monkeys! DANCE!!!"
@@ -11,7 +12,6 @@
 	slot_flags = SLOT_BACK
 	w_class = ITEMSIZE_HUGE
 
-	MATERIAL_MIX(list(MAT_STEEL = 10000,MAT_GLASS = 2500))
 
 	var/code = 2
 	electric_pack = TRUE

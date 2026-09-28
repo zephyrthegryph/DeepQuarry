@@ -24,10 +24,10 @@
 	icon_state = "wrench_brass"
 	item_state = "wrench_brass"
 
+MATERIAL_MIX(/obj/item/weldingtool/brass, list(MAT_STEEL = 70, MAT_GLASS = 60))
 //Welder
 /obj/item/weldingtool/brass
 	name = "brass welding tool"
 	desc = "A welder made from brass fittings."
 	icon_state = "brasswelder"
 	max_fuel = 20
-	MATERIAL_MIX(list(MAT_STEEL = 70, MAT_GLASS = 60))

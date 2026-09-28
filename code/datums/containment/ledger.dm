@@ -26,6 +26,7 @@
 /// phase 0 has marked the holder QDELETED and must still resolve a holder whose
 /// latent contents were never built (an unmaterialized probe, a sealed kit).
 /proc/dq_ledger(atom/holder, destroying = FALSE)
+	RETURN_TYPE(/datum/ledger)
 	if(!holder)
 		return null
 	var/datum/ledger/L = holder.ledger
@@ -55,6 +56,7 @@
 /// The measures the ledger aggregates: every registered measure with an
 /// aggregator, in a fixed order. Tag words follow them in a snapshot.
 /proc/dq_ledger_measure_ids()
+	RETURN_TYPE(/list)
 	var/static/list/ids
 	if(!ids)
 		ids = list()

@@ -166,6 +166,7 @@ REF_OWNED_LIST(/datum/body, "supports")
 /// Find-or-create: the canonical way code gives a body an affliction.
 /// Idempotent per (type, location). Returns the affliction.
 /datum/body/proc/afflict(affliction_type, location = null, severity = 0)
+	RETURN_TYPE(/datum/affliction)
 	if(!ispath(affliction_type, /datum/affliction))
 		return null
 	var/datum/affliction/proto = dq_proto(affliction_type)

@@ -33,11 +33,11 @@
 	icon_state = "foamdart"
 	caseless = 1
 
+MATERIAL_MIX(/obj/item/ammo_casing/afoam_dart/riot, list(MAT_STEEL = 210, MAT_PLASTIC = 60))
 /obj/item/ammo_casing/afoam_dart/riot
 	name = "riot foam dart"
 	desc = "Whose smart idea was it to use toys as crowd control? Ages 18 and up."
 	projectile_type = /obj/item/projectile/bullet/foam_dart_riot
-	MATERIAL_MIX(list(MAT_STEEL = 210, MAT_PLASTIC = 60))
 	icon_state = "foamdart_riot"
 
 /*
@@ -90,12 +90,12 @@
 	icon_state = "r-casing"
 	projectile_type = /obj/item/projectile/bullet/pistol/rubber
 
+MATERIAL_MIX(/obj/item/ammo_casing/a38/emp, list(MAT_STEEL = 130, MAT_URANIUM = 100))
 /obj/item/ammo_casing/a38/emp
 	name = ".38 haywire round"
 	desc = "A .38 bullet casing fitted with a single-use ion pulse generator."
 	icon_state = "empcasing"
 	projectile_type = /obj/item/projectile/ion/small
-	MATERIAL_MIX(list(MAT_STEEL = 130, MAT_URANIUM = 100))
 
 /obj/item/ammo_casing/a38/bb
 	desc = "A .38 BB."
@@ -190,11 +190,11 @@
 	projectile_type = /obj/item/projectile/bullet/pistol/medium
 	MATERIAL_BULK(MAT_STEEL, 75)
 
+MATERIAL_MIX(/obj/item/ammo_casing/a45/ap, list(MAT_STEEL = 50, MAT_PLASTEEL = 25))
 /obj/item/ammo_casing/a45/ap
 	desc = "A .45 Armor-Piercing bullet casing."
 	icon_state = "r-casing"
 	projectile_type = /obj/item/projectile/bullet/pistol/medium/ap
-	MATERIAL_MIX(list(MAT_STEEL = 50, MAT_PLASTEEL = 25))
 
 /obj/item/ammo_casing/a45/practice
 	desc = "A .45 practice bullet casing."
@@ -214,17 +214,17 @@
 	projectile_type = /obj/item/projectile/energy/flash
 	MATERIAL_BULK(MAT_STEEL, 60)
 
+MATERIAL_MIX(/obj/item/ammo_casing/a45/emp, list(MAT_STEEL = 130, MAT_URANIUM = 100))
 /obj/item/ammo_casing/a45/emp
 	name = ".45 haywire round"
 	desc = "A .45 bullet casing fitted with a single-use ion pulse generator."
 	projectile_type = /obj/item/projectile/ion/small
 	icon_state = "empcasing"
-	MATERIAL_MIX(list(MAT_STEEL = 130, MAT_URANIUM = 100))
 
+MATERIAL_MIX(/obj/item/ammo_casing/a45/hp, list(MAT_STEEL = 60, MAT_PLASTIC = 15))
 /obj/item/ammo_casing/a45/hp
 	desc = "A .45 hollow-point bullet casing."
 	projectile_type = /obj/item/projectile/bullet/pistol/medium/hp
-	MATERIAL_MIX(list(MAT_STEEL = 60, MAT_PLASTIC = 15))
 
 /obj/item/ammo_casing/a45/bb
 	desc = "A .45 BB."
@@ -254,12 +254,12 @@
 	icon_state = "r-casing"
 	MATERIAL_BULK(MAT_STEEL, 60)
 
+MATERIAL_MIX(/obj/item/ammo_casing/a10mm/emp, list(MAT_STEEL = 130, MAT_URANIUM = 100))
 /obj/item/ammo_casing/a10mm/emp
 	name = "10mm haywire round"
 	desc = "A 10mm bullet casing fitted with a single-use ion pulse generator."
 	projectile_type = /obj/item/projectile/ion/small
 	icon_state = "empcasing"
-	MATERIAL_MIX(list(MAT_STEEL = 130, MAT_URANIUM = 100))
 
 /obj/item/ammo_casing/a10mm/bb
 	desc = "A 10mm BB."
@@ -306,6 +306,7 @@
 	projectile_type = /obj/item/projectile/bullet/shotgun/beanbag
 	MATERIAL_BULK(MAT_STEEL, 180)
 
+MATERIAL_MIX(/obj/item/ammo_casing/a12g/stunshell, list(MAT_STEEL = 360, MAT_GLASS = 720))
 //Can stun in one hit if aimed at the head, but
 //is blocked by clothing that stops tasers and is vulnerable to EMP
 /obj/item/ammo_casing/a12g/stunshell
@@ -313,7 +314,6 @@
 	desc = "A 12 gauge taser cartridge."
 	icon_state = "stunshell"
 	projectile_type = /obj/item/projectile/energy/electrode/stunshot
-	MATERIAL_MIX(list(MAT_STEEL = 360, MAT_GLASS = 720))
 
 /obj/item/ammo_casing/a12g/stunshell/emp_act(severity, recursive)
 	. = ..()
@@ -322,29 +322,29 @@
 	if(prob(100/severity)) BB = null
 	update_icon()
 
+MATERIAL_MIX(/obj/item/ammo_casing/a12g/flash, list(MAT_STEEL = 90, MAT_GLASS = 90))
 //Does not stun, only blinds, but has area of effect.
 /obj/item/ammo_casing/a12g/flash
 	name = "flash shell"
 	desc = "A chemical shell used to signal distress or provide illumination."
 	icon_state = "fshell"
 	projectile_type = /obj/item/projectile/energy/flash/flare
-	MATERIAL_MIX(list(MAT_STEEL = 90, MAT_GLASS = 90))
 
+MATERIAL_MIX(/obj/item/ammo_casing/a12g/emp, list(MAT_STEEL = 360, MAT_URANIUM = 240))
 /obj/item/ammo_casing/a12g/emp
 	name = "ion shell"
 	desc = "An advanced shotgun round that creates a small EMP when it strikes a target."
 	icon_state = "empshell"
 	projectile_type = /obj/item/projectile/ion
 //	projectile_type = /obj/item/projectile/bullet/shotgun/ion
-	MATERIAL_MIX(list(MAT_STEEL = 360, MAT_URANIUM = 240))
 
+MATERIAL_MIX(/obj/item/ammo_casing/a12g/flechette, list(MAT_STEEL = 360, MAT_PLASTEEL = 100))
 /obj/item/ammo_casing/a12g/flechette
 	name = "shotgun flechette"
 	desc = "A 12 gauge flechette cartidge, also known as nailshot."
 	icon_state = "slshell"
 	caliber = "12g"
 	projectile_type = /obj/item/projectile/scatter/flechette
-	MATERIAL_MIX(list(MAT_STEEL = 360, MAT_PLASTEEL = 100))
 
 /obj/item/ammo_casing/a12g/bb
 	desc = "A shotgun BB shell."
@@ -396,17 +396,17 @@
  * 14.5mm (anti-materiel rifle round)
  */
 
+MATERIAL_MIX(/obj/item/ammo_casing/a145, list(MAT_STEEL = 4000, MAT_PLASTEEL = 500)) // Makes them a bit more expensive
 /obj/item/ammo_casing/a145
 	desc = "A 14.5mm shell."
 	icon_state = "lcasing"
 	caliber = "14.5mm"
 	projectile_type = /obj/item/projectile/bullet/rifle/a145
-	MATERIAL_MIX(list(MAT_STEEL = 4000, MAT_PLASTEEL = 500)) // Makes them a bit more expensive
 
+MATERIAL_MIX(/obj/item/ammo_casing/a145/highvel, list(MAT_STEEL = 4000, MAT_PLASTEEL = 1000)) // Makes them a bit more expensive
 /obj/item/ammo_casing/a145/highvel
 	desc = "A 14.5mm sabot shell."
 	projectile_type = /obj/item/projectile/bullet/rifle/a145/highvel
-	MATERIAL_MIX(list(MAT_STEEL = 4000, MAT_PLASTEEL = 1000)) // Makes them a bit more expensive
 
 /obj/item/ammo_casing/a145/spent/Initialize(mapload)
 	. = ..()
@@ -497,13 +497,13 @@
 	projectile_type = null
 
 
+MATERIAL_MIX(/obj/item/ammo_casing/a12g/silver, list(DEFAULT_WALL_MATERIAL = 360, "silver" = 240))
 /obj/item/ammo_casing/a12g/silver
 	name = " Silver shotgun shell"
 	desc = "A 12 gauge slug. Bless and Sancitfied to banish otherworlds entities."
 	icon_state = "agshell"
 	caliber = "12g"
 	projectile_type = /obj/item/projectile/bullet/pellet/shotgun/silver
-	MATERIAL_MIX(list(DEFAULT_WALL_MATERIAL = 360, "silver" = 240))
 
 // === merged from zBallisticPort/projectiles.dm — Serdy weapon system casings ===
 

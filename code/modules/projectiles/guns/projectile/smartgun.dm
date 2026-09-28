@@ -1,6 +1,7 @@
 /**
  * The gun itself
  */
+MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMOND = 2000, MAT_URANIUM = 2000))
 /obj/item/gun/projectile/smartgun
 	name = "\improper OP-15 'S.M.A.R.T.' Rifle"
 	desc = "Suppressive Manual Action Reciprocating Taser rifle. A modified version of an Armadyne heavy machine gun fitted to fire miniature shock-bolts."
@@ -10,7 +11,6 @@
 	icon_override = 'icons/obj/guns/projectile/smartgun_mob.dmi'
 	item_state = "smartgun"
 	w_class = ITEMSIZE_LARGE
-	MATERIAL_MIX(list(MAT_STEEL = 6000, MAT_DIAMOND = 2000, MAT_URANIUM = 2000))
 	recoil = 1
 	projectile_type = /obj/item/projectile/bullet/smartgun	//Only used for chameleon guns
 	slot_flags = SLOT_BACK

@@ -183,7 +183,8 @@
 	// coarse survives being rounded back into that native representation far
 	// more reliably than the raw reactor epsilon, which is tuned for
 	// continuous channels like temperature.
-	var/datum/property_def/def = dq_property_registry().defs[trigger.property]
+	var/datum/property_registry/registry = dq_property_registry()
+	var/datum/property_def/def = registry.defs[trigger.property]
 	var/step = def?.unit == PROP_UNIT_RATIO ? 0.05 : dq_rule_epsilon(level) * 10
 	var/direction = trigger.fires_above() ? 1 : -1
 	var/quiet = level - direction * step

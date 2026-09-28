@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/mass_spectrometer, list(MAT_STEEL = 30,MAT_GLASS = 20))
 /obj/item/mass_spectrometer
 	name = "mass spectrometer"
 	desc = "A hand-held mass spectrometer which identifies trace chemicals in a blood sample."
@@ -10,7 +11,6 @@
 	throw_speed = 4
 	throw_range = 20
 
-	MATERIAL_MIX(list(MAT_STEEL = 30,MAT_GLASS = 20))
 
 	var/details = 0
 	var/recent_fail = 0

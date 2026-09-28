@@ -200,7 +200,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return TRUE
 	plan.generation_progress = 5
 	plan.generation_stage = "Allocating planetary survey area"
-	materialize_site_async(site, plan)
+	INVOKE_ASYNC(src, PROC_REF(materialize_site_async), site, plan) // ALLOW(scheduler): site generation allocates/wipes z-levels and yields (stoplag); callers run on the non-sleeping flight lane
 	return TRUE
 
 /datum/world_service/expedition/proc/materialize_site_async(datum/expedition_site/descriptor, datum/flight_plan/plan)

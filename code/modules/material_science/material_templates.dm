@@ -12,8 +12,8 @@
 //
 // Plain objects made of one material use the single-role bulk template:
 //     MATERIAL_BULK(MAT_STEEL, 500)
-// Objects made of a fixed mix of several use a per-type mix template:
-//     MATERIAL_MIX(list(MAT_STEEL = 500, MAT_GLASS = 250))
+// Objects made of a fixed mix of several use a per-type mix template (top level):
+//     MATERIAL_MIX(/obj/item/foo, list(MAT_STEEL = 500, MAT_GLASS = 250))
 
 /// One role of a template.
 /proc/material_template_role(fraction, default_material, label, description, optional = FALSE)

@@ -41,6 +41,7 @@
 
 /// The shared contagion trigger.
 /proc/contagion_trigger()
+	RETURN_TYPE(/datum/affliction_trigger/contagion)
 	var/static/datum/affliction_trigger/contagion/trigger
 	if(!trigger)
 		trigger = new

@@ -13,7 +13,6 @@
 	source_single = TRUE
 
 /datum/om/relation/orbiting/on_link(atom/movable/source, atom/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	watch(source)
@@ -22,7 +21,6 @@
 		watch_holders(target)
 
 /datum/om/relation/orbiting/on_unlink(atom/movable/source, atom/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && !QDELETED(source))
 		source.SpinAnimation(0, 0)
 		var/matrix/saved = edge.data?["transform"]

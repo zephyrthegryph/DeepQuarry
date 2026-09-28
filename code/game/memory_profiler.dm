@@ -9,7 +9,7 @@
 
 /proc/profile_memory()
 	if(usr?.client)
-		om_ask(usr, /datum/om/prompt/confirm/profile_memory, TYPE_PROC_REF(/client, profile_memory_confirmed), receiver = usr.client)
+		om_ask_begin(null, usr, /datum/om/prompt/confirm/profile_memory, TYPE_PROC_REF(/client, profile_memory_confirmed), list(receiver = usr.client))
 		return
 	profile_memory_run()
 

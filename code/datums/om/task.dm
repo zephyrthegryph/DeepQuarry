@@ -572,7 +572,7 @@
 /// a task on `E` claiming it, done at the deadline. `on_end`, a proc on `E`, runs when the hold
 /// ends (done or cancelled). Returns the task, or a reason (already busy).
 /proc/om_hold_busy(datum/E, duration, on_end)
-	return om_task_start(/datum/om/task/hold, E, null, duration = max(duration, 0), complete_proc = on_end, cancel_proc = on_end)
+	return om_task_begin(/datum/om/task/hold, E, list(null, duration = max(duration, 0), complete_proc = on_end, cancel_proc = on_end), null) // global proc: no caller src
 
 /// See om_hold_busy().
 /datum/om/task/hold

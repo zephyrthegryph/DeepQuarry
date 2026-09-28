@@ -1,8 +1,8 @@
+MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 200))
 /obj/item/assembly/prox_sensor
 	name = "proximity sensor"
 	desc = "Used for scanning and alerting when someone enters a certain proximity."
 	icon_state = "prox"
-	MATERIAL_MIX(list(MAT_STEEL = 800, MAT_GLASS = 200))
 	wires_type = WIRE_PULSE
 
 	secured = 0

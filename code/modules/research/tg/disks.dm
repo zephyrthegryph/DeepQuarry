@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/tech_disk
 	name = "technology disk"
 	desc = "A disk for storing technology data for further research."
@@ -6,7 +7,6 @@
 	item_state = "card-id"
 	randpixel = 5
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_MIX(list(MAT_STEEL = 30, MAT_GLASS = 10))
 	var/tmp/datum/techweb/stored_research_static
 
 /obj/item/disk/tech_disk/Initialize(mapload)
@@ -23,6 +23,7 @@
 	stored_research_static = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin)
 	return ..()
 
+MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/design_disk
 	name = "component design disk"
 	desc = "A disk for storing device design data for construction in lathes."
@@ -31,7 +32,6 @@
 	item_state = "card-id"
 	randpixel = 5
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_MIX(list(MAT_STEEL = 30, MAT_GLASS = 10))
 
 	///List of all `/datum/design` stored on the disk.
 	var/list/blueprints

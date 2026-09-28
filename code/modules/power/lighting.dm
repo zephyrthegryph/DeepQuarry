@@ -537,6 +537,7 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 
 /// The fitted bulb, made real if it was latent (C5). Null when empty.
 /obj/machinery/light/proc/bulb()
+	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
 		latent_bulb = FALSE
 		installed_light = new light_type(src)
@@ -552,6 +553,7 @@ REF_OWNED(/obj/machinery/light, list("cell", "overlay_layer"))
 
 /// The emergency cell, made real if it was latent (C5). Null when none.
 /obj/machinery/light/proc/emergency_cell()
+	RETURN_TYPE(/obj/item/cell/emergency_light)
 	if(!isnull(latent_cell_charge))
 		var/charge = latent_cell_charge
 		latent_cell_charge = null

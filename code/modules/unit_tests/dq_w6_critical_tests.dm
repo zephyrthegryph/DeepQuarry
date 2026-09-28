@@ -116,7 +116,8 @@
 
 	// Digital hosts are tissue-less and stay up.
 	var/obj/item/mmi/digital/posibrain/posi = allocate(/obj/item/mmi/digital/posibrain)
-	TEST_ASSERT(posi.get_occupant().stat != DEAD, "a posibrain view needs no tissue")
+	var/mob/living/carbon/brain/posi_view = posi.get_occupant()
+	TEST_ASSERT(posi_view.stat != DEAD, "a posibrain view needs no tissue")
 
 	// An empty view left behind doesn't block a new brain.
 	var/obj/item/mmi/empty = allocate(/obj/item/mmi)
@@ -127,8 +128,9 @@
 	var/datum/mind/M2 = dq_test_give_mind(H2, "Second Subject")
 	var/obj/item/organ/internal/brain/brain2 = dq_test_remove_brain(H2)
 	empty.insert_brain(brain2, "unit test")
-	TEST_ASSERT_EQUAL(empty.get_occupant()?.mind, M2, "the new brain's mind is seated despite the empty view")
-	TEST_ASSERT(empty.get_occupant().stat != DEAD, "the new brain's view is alive")
+	var/mob/living/carbon/brain/new_view = empty.get_occupant()
+	TEST_ASSERT_EQUAL(new_view?.mind, M2, "the new brain's mind is seated despite the empty view")
+	TEST_ASSERT(new_view.stat != DEAD, "the new brain's view is alive")
 
 /// A destroyed cyborg's mind goes to its MMI on a real turf, or to a ghost
 /// when there is no location; never into an MMI inside the deleting mob.

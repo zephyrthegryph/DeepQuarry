@@ -28,6 +28,7 @@
 
 /// The occupant view mob (the hosted mind lives there), if any.
 /obj/item/mmi/proc/get_occupant()
+	RETURN_TYPE(/mob/living/carbon/brain)
 	return hosted_view()
 
 /// Seat `B` as this MMI's brain tissue: the occupant's status reads it.

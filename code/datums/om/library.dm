@@ -114,7 +114,6 @@
 	var/pending_forced = FALSE
 
 /datum/om/relation/buckled_to/on_link(mob/living/source, atom/movable/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	source.facing_dir = null
@@ -129,7 +128,6 @@
 	source.throw_alert("buckled", /atom/movable/screen/alert/restrained/buckled, new_master = target)
 
 /datum/om/relation/buckled_to/on_unlink(mob/living/source, atom/movable/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && !QDELETED(source))
 		source.anchored = initial(source.anchored)
 		source.update_canmove()
@@ -159,7 +157,6 @@
 	on_target_delete = OM_END_DELETE_OTHER
 
 /datum/om/relation/grabbing/on_link(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	var/mob/living/carbon/human/assailant = source?.grab_assailant()
@@ -178,7 +175,6 @@
 		assailant.stop_pulling()
 
 /datum/om/relation/grabbing/on_unlink(obj/item/grab/source, mob/living/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(target) && !QDELETED(target))
 		animate(target, pixel_x = initial(target.pixel_x), pixel_y = initial(target.pixel_y), 4, 1, LINEAR_EASING)
 		target.reset_plane_and_layer()
@@ -211,7 +207,6 @@
 	break_if = CHECK(/datum/om/check/in_range, 1)
 
 /datum/om/relation/pulling/on_link(atom/movable/source, atom/movable/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	if(ismob(source))
@@ -224,7 +219,6 @@
 		pulled.inertia_dir = 0
 
 /datum/om/relation/pulling/on_unlink(atom/movable/source, atom/movable/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(source) && !QDELETED(source) && ismob(source))
 		var/mob/M = source
 		om_changed(M, CHANGE_MOB_STATUS)
@@ -281,7 +275,6 @@
 	target_single = TRUE
 
 /datum/om/relation/host_of/on_link(mob/living/simple_mob/animal/borer/source, mob/living/carbon/human/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(!istype(source) || !istype(target))
 		return
 	var/obj/item/organ/external/head = target.get_organ(BP_HEAD)
@@ -289,7 +282,6 @@
 		LAZYADD(head.implants, source)
 
 /datum/om/relation/host_of/on_unlink(mob/living/simple_mob/animal/borer/source, mob/living/carbon/human/target, datum/om/edge/edge)
-	SHOULD_NOT_SLEEP(TRUE)
 	if(istype(target))
 		var/obj/item/organ/external/head = target.get_organ(BP_HEAD)
 		if(head)

@@ -34,13 +34,13 @@ DECLARE_INTERACTIONS(/obj/item/tool/transforming, INTERACT_USE(null, PROC_REF(in
 /obj/item/tool/transforming/proc/on_tool_switch(mob/user)
 	return
 
+MATERIAL_MIX(/obj/item/tool/transforming/jawsoflife, list(MAT_METAL=150, MAT_SILVER=50))
 /obj/item/tool/transforming/jawsoflife
 	name = "jaws of life"
 	desc = "A set of jaws of life, compressed through the magic of science."
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "jaws_pry"
 	item_state = "jawsoflife"
-	MATERIAL_MIX(list(MAT_METAL=150, MAT_SILVER=50))
 	usesound = 'sound/items/jaws_pry.ogg'
 	force = 15
 	toolspeed = 0.25
@@ -71,13 +71,13 @@ DECLARE_INTERACTIONS(/obj/item/tool/transforming, INTERACT_USE(null, PROC_REF(in
 				playsound(src, 'sound/items/change_jaws.ogg', 50, 1)
 				to_chat(user, span_notice("You attach the cutting jaws to [src]."))
 
+MATERIAL_MIX(/obj/item/tool/transforming/powerdrill, list(MAT_STEEL = 150, MAT_SILVER = 50))
 /obj/item/tool/transforming/powerdrill
 	name = "hand drill"
 	desc = "A simple powered hand drill."
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "drill_bolt"
 	item_state = "drill"
-	MATERIAL_MIX(list(MAT_STEEL = 150, MAT_SILVER = 50))
 	hitsound = 'sound/items/drill_hit.ogg'
 	usesound = 'sound/items/drill_use.ogg'
 	force = 8

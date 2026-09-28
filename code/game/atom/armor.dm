@@ -32,6 +32,7 @@
 /// The interned armour with `values` (key -> points; "<key>_flat" -> flat soak).
 /// Identical values give the same datum. Zero entries are dropped.
 /proc/dq_armor(list/values)
+	RETURN_TYPE(/datum/armor)
 	var/static/list/interned = list()
 	var/list/percent
 	var/list/flat

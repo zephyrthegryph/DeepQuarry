@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 /obj/item/implanter
 	name = "implanter"
 	icon = 'icons/obj/items.dmi'
@@ -6,7 +7,6 @@
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	MATERIAL_MIX(list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 	var/obj/item/implant/imp = null
 	var/active = 1
 	///Var for attack_self chain

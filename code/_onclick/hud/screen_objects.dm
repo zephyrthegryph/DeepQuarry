@@ -524,7 +524,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		if("Show Camera List")
 			if(isAI(usr))
 				var/mob/living/silicon/ai/ai_user = usr
-				var/camera = rerun_ask(ai_user, "k545", "Click" /* a built-in proc, which nameof cannot name */, /datum/om/prompt/choice, message = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
+				var/camera = rerun_ask(ai_user, "k545", "Click" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
 				if(isnull(camera))
 					return
 				ai_user.ai_camera_list(camera)
@@ -532,7 +532,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		if("Track With Camera")
 			if(isAI(usr))
 				var/mob/living/silicon/ai/ai_user = usr
-				var/target_name = rerun_ask(ai_user, "k551", "Click" /* a built-in proc, which nameof cannot name */, /datum/om/prompt/choice, message = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
+				var/target_name = rerun_ask(ai_user, "k551", "Click" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
 				if(isnull(target_name))
 					return
 				ai_user.ai_camera_track(target_name)

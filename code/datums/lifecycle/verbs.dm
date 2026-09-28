@@ -156,7 +156,8 @@
 	for(var/datum/om/relation/slot/def as anything in defs)
 		if(!def)
 			continue
-		for(var/atom/movable/thing as anything in L.slots[def.slot_id].Copy())
+		var/list/slot_things = L.slots[def.slot_id]
+		for(var/atom/movable/thing as anything in slot_things.Copy())
 			if(QDELETED(thing))
 				continue
 			dq_lifecycle_apply_policy_now(src, def, thing, policy, drop)

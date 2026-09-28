@@ -424,7 +424,9 @@ SUBSYSTEM_DEF(garbage)
 	if(!isnull(to_delete.gc_destroyed))
 		if(to_delete.gc_destroyed == GC_BATCH_DOOMED)
 			return // qdel_batch() owns it and will run its transaction
-		SSgarbage.items[to_delete.type]?.qdels++
+		var/datum/qdel_item/item_info = SSgarbage.items[to_delete.type]
+		if(item_info)
+			item_info.qdels++
 		if(to_delete.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)
 			CRASH("[to_delete.type] destroy proc was called multiple times, likely due to a qdel loop in the Destroy logic")
 		return

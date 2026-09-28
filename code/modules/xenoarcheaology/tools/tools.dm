@@ -31,13 +31,13 @@
 		S.name = "sample bag"
 		S.desc = "a bag for holding research samples."
 
+MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 /obj/item/ano_scanner
 	name = "Alden-Saraspova counter"
 	desc = "Aids in triangulation of exotic particles."
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "xenoarch_scanner"
 	item_state = "analyzer"
-	MATERIAL_MIX(list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 
@@ -98,13 +98,13 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 	else
 		to_chat(user, "Scanning array is recharging.")
 
+MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 /obj/item/depth_scanner
 	name = "depth analysis scanner"
 	desc = "Used to check spatial depth and density of rock outcroppings."
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	icon_state = "depth_scanner"
 	item_state = "analyzer"
-	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/list/positive_locations
@@ -231,13 +231,13 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 				qdel_handle(current_handle); current_handle = null
 			return TRUE
 
+MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 /obj/item/beacon_locator
 	name = "locater device"
 	desc = "Used to scan and locate signals on a particular frequency."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "pinoff"	//pinonfar, pinonmedium, pinonclose, pinondirect, pinonnull
 	item_state = "electronic"
-	MATERIAL_MIX(list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
 	var/tmp/target_radio_handle
@@ -331,13 +331,13 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 			frequency = new_frequency
 			return TRUE
 
+MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 /obj/item/xenoarch_multi_tool
 	name = "xenoarcheology multitool"
 	desc = "Has the features of the Alden-Saraspova counter, a measuring tape, and a depth analysis scanner all in one!"
 	icon_state = "ano_scanner2"
 	item_state = "lampgreen"
 	icon = 'icons/obj/xenoarchaeology.dmi'
-	MATERIAL_MIX(list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
 	var/mode = 1 //Start off scanning. 1 = scanning, 0 = measuring

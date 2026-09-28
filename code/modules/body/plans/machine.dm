@@ -101,6 +101,7 @@
 
 /// Synthetic afflictions given without a location sit on their home slot.
 /datum/body/simple/machine/robot/afflict(affliction_type, location = null, severity = 0)
+	RETURN_TYPE(/datum/affliction)
 	if(!location)
 		var/slot = home_slot(affliction_type)
 		if(slot)

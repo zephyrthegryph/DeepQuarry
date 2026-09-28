@@ -1,3 +1,4 @@
+MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MAT_PLASTIC = 2000))
 /obj/item/fusion_coil
 	name = "fusion coil"
 	desc = "A special heavy-duty battery used to recharge SMES units. It dumps its entire power reserve into the SMES unit at once, and cannot be recharged locally. Safety systems on the coil itself mean it can't be used on charged SMES units if it would put them over their capacity."
@@ -19,7 +20,6 @@
 	var/coil_charged = TRUE	//have we been discharged into something yet?
 	var/coil_damaged = FALSE	//have we been damaged? one hit is fine, but two direct hits will explode us if we're charged
 	var/coil_charge = 4800000	//how much power do we dump into the SMES on use? restores the main (if unupgraded) by 20%, or engine by 80%
-	MATERIAL_MIX(list(MAT_STEEL = 6000, MAT_COPPER = 4000, MAT_PLASTIC = 2000))
 
 /obj/item/fusion_coil/Initialize(mapload)
 	. = ..()
