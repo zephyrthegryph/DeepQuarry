@@ -34,7 +34,7 @@
 	if(spawn_cartridges)
 		for(var/type in spawn_cartridges)
 			add_cartridge(new type(src))
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/chemical_dispenser/examine(mob/user)
 	. = ..()

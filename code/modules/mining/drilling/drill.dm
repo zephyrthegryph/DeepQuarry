@@ -488,7 +488,7 @@ REF_OWNED(/obj/machinery/mining/drill, list("faultreporter", "cell"))
 	. = ..()
 	default_apply_parts()
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/mining/brace/RefreshParts()
 	..()

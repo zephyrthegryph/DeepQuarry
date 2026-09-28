@@ -28,7 +28,7 @@
 		return INITIALIZE_HINT_QDEL
 	color = material.icon_colour
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/structure/gravemarker/examine(mob/user)
 	. = ..()

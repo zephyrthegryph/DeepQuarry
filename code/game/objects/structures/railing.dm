@@ -32,7 +32,7 @@
 	if (constructed) // player-constructed railings
 		anchored = FALSE
 	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 	if(src.anchored)
 		update_icon(0)
 

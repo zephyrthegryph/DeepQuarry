@@ -343,7 +343,7 @@
 		reagents.add_reagent(REAGENT_ID_WATER,2000)
 	update_icon()
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
 	. = ..()

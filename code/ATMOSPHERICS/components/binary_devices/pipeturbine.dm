@@ -37,7 +37,7 @@
 			initialize_directions = NORTH|SOUTH
 
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/atmospherics/pipeturbine/machine_step()
 	..()
@@ -218,7 +218,7 @@
 	. = ..()
 	updateConnection()
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/power/turbinemotor/proc/updateConnection()
 	turbine = null

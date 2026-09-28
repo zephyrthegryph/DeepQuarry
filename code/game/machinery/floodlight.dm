@@ -17,7 +17,7 @@
 	. = ..()
 	cell = new(src)
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/floodlight/update_icon()
 	cut_overlays()

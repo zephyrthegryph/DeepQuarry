@@ -368,7 +368,7 @@
 	if(state == 2 && anchored)
 		connect_to_network()
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
 
 /obj/machinery/power/emitter/update_icon()

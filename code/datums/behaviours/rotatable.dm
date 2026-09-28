@@ -1,26 +1,16 @@
-/datum/element/rotatable
-	VAR_PROTECTED/only_flip = FALSE
-
-/datum/element/rotatable/onlyflip
-	only_flip = TRUE
-
-/datum/element/rotatable/Attach(datum/target)
-	. = ..()
-	if(!isatom(target))
-		return ELEMENT_INCOMPATIBLE
-	var/atom/set_atom = target
+/// Rotation verbs (was /datum/element/rotatable). Stateless: the verbs themselves are
+/// the only per-atom state, so this is a plain proc rather than an OM behaviour (an OM
+/// record per rotatable object would cost more than it carries).
+/atom/movable/proc/make_rotatable(only_flip = FALSE)
 	if(!only_flip)
-		set_atom.verbs |= /atom/movable/proc/rotate_clockwise
-		set_atom.verbs |= /atom/movable/proc/rotate_counterclockwise
-	set_atom.verbs |= /atom/movable/proc/turn_around
+		verbs |= /atom/movable/proc/rotate_clockwise
+		verbs |= /atom/movable/proc/rotate_counterclockwise
+	verbs |= /atom/movable/proc/turn_around
 
-/datum/element/rotatable/Detach(datum/source)
-	var/atom/set_atom = source
-	if(!only_flip)
-		set_atom.verbs -= /atom/movable/proc/rotate_clockwise
-		set_atom.verbs -= /atom/movable/proc/rotate_counterclockwise
-	set_atom.verbs -= /atom/movable/proc/turn_around
-	return ..()
+/atom/movable/proc/unmake_rotatable()
+	verbs -= /atom/movable/proc/rotate_clockwise
+	verbs -= /atom/movable/proc/rotate_counterclockwise
+	verbs -= /atom/movable/proc/turn_around
 
 // Core rotation proc, override me to add conditions to object rotations or update_icons/state after!
 /atom/movable/proc/handle_rotation_verbs(angle, mob/user)

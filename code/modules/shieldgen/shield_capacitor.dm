@@ -23,7 +23,7 @@
 /obj/machinery/shield_capacitor/Initialize(mapload)
 	. = ..()
 	make_climbable()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/shield_capacitor/advanced
 	name = "advanced shield capacitor"

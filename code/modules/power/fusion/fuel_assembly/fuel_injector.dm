@@ -23,7 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 /obj/machinery/fusion_fuel_injector/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 REF_SPILL(/obj/machinery/fusion_fuel_injector, "cur_assembly")
 

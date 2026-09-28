@@ -1570,7 +1570,7 @@ REF_OWNED(/obj/machinery/light, "cell")
 
 /obj/machinery/light_construct/floortube/Initialize(mapload, newdir, building, datum/frame/frame_types/frame_type, obj/machinery/light/fixture)
 	. = ..()
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/machinery/light_construct/floortube/update_icon()
 	switch(stage)

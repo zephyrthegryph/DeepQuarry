@@ -44,7 +44,7 @@
 	update_state()
 
 	update_nearby_tiles(need_rebuild=1)
-	AddElement(/datum/element/rotatable)
+	make_rotatable()
 
 /obj/structure/windoor_assembly/update_icon()
 	icon_state = "[facing]_[secure]windoor_assembly[state]"
