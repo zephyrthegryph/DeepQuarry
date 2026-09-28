@@ -137,11 +137,14 @@
 		I.color = wrapper_color
 		add_overlay(I)
 
-/obj/item/storage/pill_bottle/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		om_prompt(src, user, list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(label_entered))
-	else
-		..()
+EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_REF(interaction_label)))
+
+/// Old attackby: a pen labels the bottle; anything else goes on to the storage's insertion.
+/obj/item/storage/pill_bottle/proc/interaction_label(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!istype(W, /obj/item/pen) && !istype(W, /obj/item/flashlight/pen))
+		return FALSE
+	om_prompt(src, user, list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE, "requires" = PROMPT_ADJACENT), PROC_REF(label_entered))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/storage/pill_bottle/proc/label_entered(mob/user, tmp_label, datum/om/prompt/ask)
 	tmp_label = sanitizeSafe(tmp_label, MAX_NAME_LEN)

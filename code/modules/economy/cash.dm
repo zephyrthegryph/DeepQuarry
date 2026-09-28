@@ -182,7 +182,11 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 
-/obj/item/spacecash/ewallet/attackby()    return  //like actual
+EXTEND_INTERACTIONS(/obj/item/spacecash/ewallet, INTERACT_ITEM(null, PROC_REF(interaction_no_bundling)))
+
+/// Old attackby: nothing, like an actual e-wallet (no bundling cash into it).
+/obj/item/spacecash/ewallet/proc/interaction_no_bundling(mob/user, obj/item/W, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 /obj/item/spacecash/ewallet/update_icon() return  //space cash
 
 /obj/item/spacecash/ewallet/examine(mob/user)

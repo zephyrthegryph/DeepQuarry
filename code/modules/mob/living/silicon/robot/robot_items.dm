@@ -138,10 +138,10 @@ REF_OWNED(/obj/item/card/robot, "dummy_card")
 	var/mode = 1
 	special_handling = TRUE
 
-/obj/item/pen/robopen/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode", PROC_REF(interaction_robopen)))
+
+/// Old attack_self.
+/obj/item/pen/robopen/proc/interaction_robopen(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("message" = "Would you like to change colour or mode?", "title" = "Change What?", "choices" = list("Colour","Mode","Cancel"), "requires" = PROMPT_HELD), PROC_REF(robopen_choice_made))
 
 /obj/item/pen/robopen/proc/robopen_choice_made(mob/user, choice, datum/om/prompt/ask)

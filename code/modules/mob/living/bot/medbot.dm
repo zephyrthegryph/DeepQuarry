@@ -483,7 +483,10 @@
 
 /* Construction */
 
-/obj/item/storage/firstaid/attackby(obj/item/S, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", PROC_REF(interaction_medbot_arm)))
+
+/// Old attackby: a robot arm on an empty kit starts a medibot; anything else goes on to the storage.
+/obj/item/storage/firstaid/proc/interaction_medbot_arm(mob/user, obj/item/S, datum/interaction/interaction)
 	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
 	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
 	var/is_robotic_organ = FALSE
@@ -492,11 +495,11 @@
 		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
 	if(!is_robot_arm && !is_robotic_organ)
-		return ..()
+		return FALSE
 
 	if(contents.len >= 1)
 		to_chat(user, span_notice("You need to empty [src] out first."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/firstaid_arm_assembly/A = new /obj/item/firstaid_arm_assembly
 	if(istype(src, /obj/item/storage/firstaid/fire))
@@ -510,6 +513,7 @@
 	user.put_in_hands(A)
 	to_chat(user, span_notice("You add the robot arm to the first aid kit."))
 	consume(src, user)
+	return TRUE
 
 /obj/item/firstaid_arm_assembly
 	name = "first aid/robot arm assembly"

@@ -14,7 +14,13 @@
 	//When set to 1, a click while it is equipped will instead move the first item inside it to your hand
 	var/quickmode = 0
 
-/obj/item/storage/quickdraw/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
+	INTERACT_HAND_UNGATED("Draw", PROC_REF(interaction_quickdraw)), \
+	INTERACT_ALT("Switch quickdraw mode", PROC_REF(interaction_quickdraw_alt)), \
+)
+
+/// Old attack_hand: in quickdraw mode a worn case hands over its first item; a pocketed one opens.
+/obj/item/storage/quickdraw/proc/interaction_quickdraw(mob/user, obj/item/held, datum/interaction/interaction)
 	if(loc == user) //If they aren't holding us, we do nothing special
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
@@ -23,15 +29,15 @@
 					var/first_item = slot_contents(CONTAINER_SLOT_STORAGE)[1]
 					if(first_item && !H.get_active_hand()) //Do we have anything to give you?
 						H.put_in_hands(first_item)
-						return
+						return TRUE
 
 			if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand()) //overrides
 				open(user)
-				return
+				return TRUE
 			if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
 				open(user)
-				return
-	..() //Nothing special happened, go call the other proc
+				return TRUE
+	return FALSE //Nothing special happened: the storage's own touch
 
 
 /obj/item/storage/quickdraw/verb/toggle_quickdraw()
@@ -45,10 +51,12 @@
 		if(0)
 			to_chat(usr, "[src] now opens as a container.")
 
-/obj/item/storage/quickdraw/click_alt(mob/user)
-	..()
+/// Old click_alt: the storage's own alt-click, then a carried case switches mode.
+/obj/item/storage/quickdraw/proc/interaction_quickdraw_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	. = interaction_alt(user, held, interaction)
 	if(src.loc == user) //Are they carrying us?
 		toggle_quickdraw()
+		return TRUE
 
 
 // If we start adding more of these, we'll need to make them their own folder. 'til then, this one should be fine.

@@ -35,7 +35,14 @@
 	if(Adjacent(user))
 		. += "The service panel is [src.open ? "open" : "closed"]."
 
-/obj/item/storage/secure/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/storage/secure, \
+	INTERACT_ITEM("Put in", PROC_REF(interaction_secure_item)), \
+	INTERACT_ALT("Open", PROC_REF(interaction_secure_alt)), \
+	INTERACT_USE("Keypad", PROC_REF(interaction_keypad)), \
+)
+
+/// Old attackby: locked, only an energy blade does anything; unlocked, the storage takes the item.
+/obj/item/storage/secure/proc/interaction_secure_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
 		if (istype(W, /obj/item/melee/energy/blade) && emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
 			var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
@@ -43,14 +50,14 @@
 			spark_system.start()
 			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 			playsound(src, "sparks", 50, 1)
-			return
+			return INTERACTION_HANDLED_PASS
 
 		//At this point you have exhausted all the special things to do when locked
 		// ... but it's still locked.
-		return
+		return INTERACTION_HANDLED_PASS
 
-	// -> storage/attackby() what with handle insertion, etc
-	..()
+	// -> the storage's insertion
+	return FALSE
 
 /obj/item/storage/secure/screwdriver_act(mob/user, obj/item/tool)
 	if(!locked)
@@ -86,7 +93,8 @@
 		return
 	..()
 
-/obj/item/storage/secure/click_alt(mob/user as mob)
+/// Old click_alt: opens only when unlocked; it never fell back to the default alt-click.
+/obj/item/storage/secure/proc/interaction_secure_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if (isliving(user) && Adjacent(user) && (src.locked == 1))
 		to_chat(user, span_warning("[src] is locked and cannot be opened!"))
 	else if (isliving(user) && Adjacent(user) && (!src.locked))
@@ -96,13 +104,14 @@
 			if (M.s_active == src)
 				src.close(M)
 	src.add_fingerprint(user)
-	return
+	return TRUE
 
-/obj/item/storage/secure/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+/// Old attack_self: after the storage's own self-use, the keypad.
+/obj/item/storage/secure/proc/interaction_keypad(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/storage/secure/tgui_interact(mob/user, datum/tgui/ui = null)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -184,18 +193,18 @@
 /obj/item/storage/secure/briefcase/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
-/obj/item/storage/secure/briefcase/attack_hand(mob/user as mob)
-	if ((src.loc == user) && (src.locked == 1))
+EXTEND_INTERACTIONS(/obj/item/storage/secure/briefcase, INTERACT_HAND_UNGATED("Open", PROC_REF(interaction_briefcase_hand)))
+
+/// Old attack_hand: a held briefcase opens only when unlocked; otherwise the storage's touch (pickup).
+/obj/item/storage/secure/briefcase/proc/interaction_briefcase_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(src.loc != user)
+		return FALSE
+	if(src.locked == 1)
 		to_chat(user, span_warning("[src] is locked and cannot be opened!"))
-	else if ((src.loc == user) && (!src.locked))
-		src.open(user)
 	else
-		..()
-		for(var/mob/M in range(1))
-			if (M.s_active == src)
-				src.close(M)
+		src.open(user)
 	src.add_fingerprint(user)
-	return
+	return TRUE
 
 // -----------------------------
 //        Secure Safe
@@ -224,5 +233,9 @@
 	var/list/refuses = list(/obj/item/storage/secure/briefcase)
 	return list(HOLD_NOT(refuses), HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
-/obj/item/storage/secure/safe/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/storage/secure/safe, INTERACT_HAND_UNGATED("Keypad", PROC_REF(interaction_safe_hand)))
+
+/// Old attack_hand: the keypad, never a pickup.
+/obj/item/storage/secure/safe/proc/interaction_safe_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE

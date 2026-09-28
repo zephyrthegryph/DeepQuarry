@@ -97,13 +97,17 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 			H.injure(INJURY_BLUNT, 2.5, E, src, flags = INJURE_SILENT)
 		H.emote("scream")
 
-/obj/item/paper/click_alt(mob/living/carbon/user, obj/item/I)
+/// Old click_alt: fold the paper into a plane.
+/obj/item/paper/proc/interaction_fold_plane(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
+	if(!plane_foldable)
+		return TRUE
 	if ( istype(user) )
 		if( (!in_range(src, user)) || user.stat || user.restrained() )
-			return
+			return TRUE
 		to_chat(user, span_notice("You fold [src] into the shape of a plane!"))
 		user.unEquip(src)
-		I = new /obj/item/paperplane(user, src)
+		var/obj/item/I = new /obj/item/paperplane(user, src)
 		user.put_in_hands(I)
 	else
 		to_chat(user, span_notice(" You lack the dexterity to fold \the [src]. "))
+	return TRUE

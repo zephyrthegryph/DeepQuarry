@@ -183,16 +183,18 @@
 		add_overlay(image('icons/obj/crayons.dmi',crayon.colourName))
 	appearance = ma
 
-/obj/item/storage/fancy/crayons/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/pen/crayon))
-		switch(W:colourName)
-			if("mime")
-				to_chat(user, "This crayon is too sad to be contained in this box.")
-				return
-			if("rainbow")
-				to_chat(user, "This crayon is too powerful to be contained in this box.")
-				return
-	..()
+EXTEND_INTERACTIONS(/obj/item/storage/fancy/crayons, INTERACT_INSERT(/obj/item/pen/crayon, PROC_REF(interaction_crayon), "Put in"))
+
+/// Old attackby: the mime and rainbow crayons refuse the box; the rest go on to the storage's insertion.
+/obj/item/storage/fancy/crayons/proc/interaction_crayon(mob/user, obj/item/pen/crayon/W, datum/interaction/interaction)
+	switch(W.colourName)
+		if("mime")
+			to_chat(user, "This crayon is too sad to be contained in this box.")
+			return INTERACTION_HANDLED_PASS
+		if("rainbow")
+			to_chat(user, "This crayon is too powerful to be contained in this box.")
+			return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/storage/fancy/markers
 	name = "box of markers"
@@ -226,16 +228,18 @@
 		ma.add_overlay(image('icons/obj/crayons.dmi',"m"+marker.colourName))
 	appearance = ma
 
-/obj/item/storage/fancy/markers/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W,/obj/item/pen/crayon/marker))
-		switch(W:colourName)
-			if("mime")
-				to_chat(user, "This marker is too depressing to be contained in this box.")
-				return
-			if("rainbow")
-				to_chat(user, "This marker is too childish to be contained in this box.")
-				return
-	..()
+EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/pen/crayon/marker, PROC_REF(interaction_marker), "Put in"))
+
+/// Old attackby: the mime and rainbow markers refuse the box; the rest go on to the storage's insertion.
+/obj/item/storage/fancy/markers/proc/interaction_marker(mob/user, obj/item/pen/crayon/marker/W, datum/interaction/interaction)
+	switch(W.colourName)
+		if("mime")
+			to_chat(user, "This marker is too depressing to be contained in this box.")
+			return INTERACTION_HANDLED_PASS
+		if("rainbow")
+			to_chat(user, "This marker is too childish to be contained in this box.")
+			return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /*
  * Cracker Pack
@@ -553,8 +557,11 @@
 	else
 		add_overlay("ledb")
 
-/obj/item/storage/lockbox/vials/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+EXTEND_INTERACTIONS(/obj/item/storage/lockbox/vials, INTERACT_ITEM("Put in", PROC_REF(interaction_vials_item)))
+
+/// Old attackby: the lockbox's handling, then the vial display updates.
+/obj/item/storage/lockbox/vials/proc/interaction_vials_item(mob/user, obj/item/W, datum/interaction/interaction)
+	. = interaction_lockbox_item(user, W, interaction)
 	update_icon()
 
 /*

@@ -36,19 +36,23 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-/obj/item/pen/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pen, \
+	INTERACT_SELF("Click", PROC_REF(interaction_click)), \
+	INTERACT_ALT("Click", PROC_REF(interaction_click_alt)), \
+)
+
+/// Old attack_self: click the pen. Specially handled pens leave it to their own self-use.
+/obj/item/pen/proc/interaction_click(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(!user.checkClickCooldown())
-		return
+		return TRUE
 	if(!can_click)
-		return
+		return TRUE
 	user.setClickCooldown(1 SECOND)
 	to_chat(user, span_notice("Click."))
 	playsound(src, 'sound/items/penclick.ogg', 50, 1)
+	return TRUE
 
 /*
  * Coloured Pens
@@ -112,16 +116,18 @@
 	var/colors = list("black","blue","red")
 	special_handling = TRUE
 
-/obj/item/pen/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/pen/proc/interaction_click_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
-		return
+		return TRUE
 	to_chat(user, span_notice("Click."))
 	playsound(src, 'sound/items/penclick.ogg', 50, 1)
+	return TRUE
 
-/obj/item/pen/multi/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/multi, INTERACT_USE("Change colour", PROC_REF(interaction_cycle_colour)))
+
+/// Old attack_self.
+/obj/item/pen/multi/proc/interaction_cycle_colour(mob/user, obj/item/held, datum/interaction/interaction)
 	if(++selectedColor > 3)
 		selectedColor = 1
 
@@ -192,14 +198,18 @@
 	active_icon_state = "[icon_state]-x"
 	default_icon_state = icon_state
 
-/obj/item/pen/blade/click_alt(mob/user)
-	..()
+EXTEND_INTERACTIONS(/obj/item/pen/blade, INTERACT_ALT("Toggle blade", PROC_REF(interaction_toggle_blade)))
+
+/// Old click_alt: the pen's click, then the blade toggles.
+/obj/item/pen/blade/proc/interaction_toggle_blade(mob/user, obj/item/held, datum/interaction/interaction)
+	interaction_click_alt(user, held, interaction)
 	if(active)
 		deactivate(user)
 	else
 		activate(user)
 
 	to_chat(user, span_notice("You [active ? "de" : ""]activate \the [src]'s blade."))
+	return TRUE
 
 /obj/item/pen/blade/proc/activate(mob/living/user)
 	if(active)
@@ -283,10 +293,10 @@
 	var/signature = ""
 	special_handling = TRUE
 
-/obj/item/pen/chameleon/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/chameleon, INTERACT_USE("Set signature", PROC_REF(interaction_signature)))
+
+/// Old attack_self.
+/obj/item/pen/chameleon/proc/interaction_signature(mob/user, obj/item/held, datum/interaction/interaction)
 	/*
 	// Limit signatures to official crew members
 	var/personnel_list[] = list()
@@ -298,7 +308,7 @@
 	if(new_signature)
 		signature = new_signature
 	*/
-	var/_answer_k301 = rerun_prompt(user, "k301", list("kind" = "text", "message" = "Enter new signature. Leave blank for 'Anonymous'", "title" = "New Signature", "default" = signature, "max_length" = MAX_MESSAGE_LEN), PROC_REF(attack_self), args)
+	var/_answer_k301 = rerun_prompt(user, "k301", list("kind" = "text", "message" = "Enter new signature. Leave blank for 'Anonymous'", "title" = "New Signature", "default" = signature, "max_length" = MAX_MESSAGE_LEN), PROC_REF(interaction_signature), args)
 	if(isnull(_answer_k301))
 		return TRUE
 	signature = _answer_k301

@@ -33,10 +33,14 @@
 	if(!reskin_ran)
 		. += span_notice("[src]'s external casing can be modified via alt-click.")
 
-/obj/item/storage/part_replacer/click_alt(mob/user)
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC_REF(interaction_reskin_alt)))
+
+/// Old click_alt: the storage's own alt-click, then the one-time reskin menu.
+/obj/item/storage/part_replacer/proc/interaction_reskin_alt(mob/user, obj/item/held, datum/interaction/interaction)
+	. = interaction_alt(user, held, interaction)
 	if(!reskin_ran)
 		reskin_radial(user)
+		return TRUE
 
 /obj/item/storage/part_replacer/proc/reskin_radial(mob/M)
 	if(!LAZYLEN(unique_reskin))

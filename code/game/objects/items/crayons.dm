@@ -6,10 +6,10 @@
 	colourName = "mime"
 	uses = 0
 
-/obj/item/pen/crayon/mime/attack_self(mob/living/user) //inversion
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/crayon/mime, INTERACT_USE("Invert colours", PROC_REF(interaction_invert)))
+
+/// Old attack_self.
+/obj/item/pen/crayon/mime/proc/interaction_invert(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
 		shadeColour = "#000000"
@@ -27,10 +27,10 @@
 	colourName = "rainbow"
 	uses = 0
 
-/obj/item/pen/crayon/rainbow/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PROC_REF(interaction_pick_colour)))
+
+/// Old attack_self.
+/obj/item/pen/crayon/rainbow/proc/interaction_pick_colour(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/new_colour = tgui_color_picker(user, "Please select the main colour.", "Crayon colour", colour)
 	if(new_colour)
 		colour = new_colour
@@ -136,10 +136,10 @@
 	colourName = "mime"
 	uses = 0
 
-/obj/item/pen/crayon/marker/mime/attack_self(mob/living/user) //inversion
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/mime, INTERACT_USE("Invert colours", PROC_REF(interaction_invert)))
+
+/// Old attack_self.
+/obj/item/pen/crayon/marker/mime/proc/interaction_invert(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(colour != "#FFFFFF" && shadeColour != "#000000")
 		colour = "#FFFFFF"
 		shadeColour = "#000000"
@@ -157,10 +157,10 @@
 	colourName = "rainbow"
 	uses = 0
 
-/obj/item/pen/crayon/marker/rainbow/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/rainbow, INTERACT_USE("Pick colour", PROC_REF(interaction_pick_colour)))
+
+/// Old attack_self.
+/obj/item/pen/crayon/marker/rainbow/proc/interaction_pick_colour(mob/living/user, obj/item/held, datum/interaction/interaction)
 	var/new_colour = tgui_color_picker(user, "Please select the main colour.", "Marker colour", colour)
 	if(new_colour)
 		colour = new_colour

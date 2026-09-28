@@ -19,22 +19,25 @@
 	return list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL))
 
 
-/obj/item/storage/lockbox/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(interaction_lockbox_item)))
+
+/// Old attackby: an ID locks or unlocks it, an energy blade slices it open; unlocked, the storage takes the item.
+/obj/item/storage/lockbox/proc/interaction_lockbox_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/card/id))
 		if(src.broken)
 			to_chat(user, span_warning("It appears to be broken."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(src.allowed(user))
 			src.locked = !( src.locked )
 			if(src.locked)
 				src.icon_state = src.icon_locked
 				to_chat(user, span_notice("You lock \the [src]!"))
 				close_all()
-				return
+				return INTERACTION_HANDLED_PASS
 			else
 				src.icon_state = src.icon_closed
 				to_chat(user, span_notice("You unlock \the [src]!"))
-				return
+				return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_warning("Access Denied"))
 	else if(istype(W, /obj/item/melee/energy/blade))
@@ -45,10 +48,9 @@
 			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
 			playsound(src, "sparks", 50, 1)
 	if(!locked)
-		..()
-	else
-		to_chat(user, span_warning("It's locked!"))
-	return
+		return interaction_item(user, W, interaction)
+	to_chat(user, span_warning("It's locked!"))
+	return INTERACTION_HANDLED_PASS
 
 
 /obj/item/storage/lockbox/show_to(mob/user as mob)

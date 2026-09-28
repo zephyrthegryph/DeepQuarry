@@ -56,10 +56,10 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/a_gift/attack_self(mob/M)
-	. = ..(M)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction_open_gift)))
+
+/// Old attack_self.
+/obj/item/a_gift/proc/interaction_open_gift(mob/M, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	var/gift_type = pick(
@@ -209,10 +209,10 @@ DECLARE_INTERACTIONS(/obj/item/wrapping_paper, INTERACT_ITEM(null, PROC_REF(inte
 		name = "chaotic present"
 		desc = "The casino dev messed up and gave you the wrong present! This one pulses with potential for good or evil!"
 
-/obj/item/a_gift/advanced/attack_self(mob/M) //WIP - ALWAYS add more items to list! - Jack
-	. = ..(M)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/a_gift/advanced, INTERACT_USE("Open", PROC_REF(interaction_open_advanced)))
+
+/// Old attack_self. WIP - ALWAYS add more items to list! - Jack
+/obj/item/a_gift/advanced/proc/interaction_open_advanced(mob/M, obj/item/held, datum/interaction/interaction)
 	var/gift_type_advanced = pick(
 		/obj/item/binoculars/spyglass,
 		/obj/item/bodysnatcher,

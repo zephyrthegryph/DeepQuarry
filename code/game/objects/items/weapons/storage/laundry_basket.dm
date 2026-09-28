@@ -24,7 +24,10 @@
 	return list(HOLD_MAX_SIZE(ITEMSIZE_LARGE))
 
 
-/obj/item/storage/laundry_basket/attack_hand(mob/living/user as mob)
+EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pick up", PROC_REF(interaction_two_hands)))
+
+/// Old attack_hand: lifting the basket takes both hands; with both free the storage's touch goes on.
+/obj/item/storage/laundry_basket/proc/interaction_two_hands(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.get_organ(BP_R_HAND)
@@ -32,12 +35,12 @@
 			temp = H.get_organ(BP_L_HAND)
 		if(!temp)
 			to_chat(user, span_warning("You need two hands to pick this up!"))
-			return
+			return TRUE
 
 	if(user.get_inactive_hand())
 		to_chat(user, span_warning("You need your other hand to be empty"))
-		return
-	return ..()
+		return TRUE
+	return FALSE
 
 /obj/item/storage/laundry_basket/pickup(mob/user)
 	var/obj/item/storage/laundry_basket/offhand/O = new(user)

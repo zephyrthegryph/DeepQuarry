@@ -198,10 +198,8 @@ Book Cart End
 	pickup_sound = 'sound/items/pickup/book.ogg'
 	resistance_flags = FLAMMABLE
 
-/obj/item/book/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: read the book. Occult and specially handled books leave it to their own self-use.
+/obj/item/book/proc/interaction_read(mob/user, obj/item/held, datum/interaction/interaction)
 	if(occult_tier)
 		return FALSE
 	if(special_handling)
@@ -211,10 +209,10 @@ Book Cart End
 			to_chat(user, span_notice("[store] falls out of [title]!"))
 			store.forceMove(get_turf(src.loc))
 			store = null
-			return
+			return TRUE
 		else
 			to_chat(user, span_notice("The pages of [title] have been cut out!"))
-			return
+			return TRUE
 	if(dat)
 		display_content(user)
 		user.visible_message("[user] opens a book titled \"[src.title]\" and begins reading intently.")
@@ -224,6 +222,7 @@ Book Cart End
 		playsound(src, 'sound/bureaucracy/bookclose.ogg', 50, 1)
 	else
 		to_chat(user, "This book is completely blank!")
+	return TRUE
 
 // TGUI migration. display_content now opens Book.tsx,
 // which renders the book's HTML content with a "Penned by [author]"
@@ -244,7 +243,10 @@ Book Cart End
 	data["content"] = dat || ""
 	return data
 
-DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/book, \
+	INTERACT_SELF("Read", PROC_REF(interaction_read)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/book/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -378,10 +380,10 @@ DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_it
 /obj/item/book/bundle/proc/show_content(mob/user)
 	tgui_interact(user)
 
-/obj/item/book/bundle/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interaction_read_bundle)))
+
+/// Old attack_self.
+/obj/item/book/bundle/proc/interaction_read_bundle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	update_icon()
 	tgui_interact(user)

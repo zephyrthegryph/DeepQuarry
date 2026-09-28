@@ -46,14 +46,12 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 		if("Edit")
 			agentcard_module.tgui_interact(user)
 		if("Show")
-			attack_self(user, TRUE)
+			show_id_card(user)
 
-/obj/item/card/id/syndicate/attack_self(mob/user, show_id = FALSE)
-	if(show_id)
-		return ..(user, TRUE)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/card/id/syndicate, INTERACT_USE("Edit or show", PROC_REF(interaction_agent_card)))
+
+/// Old attack_self: the card registers its first user, who can then edit or show it.
+/obj/item/card/id/syndicate/proc/interaction_agent_card(mob/user, obj/item/held, datum/interaction/interaction)
 	// We use the fact that registered_name is not unset should the owner be vaporized, to ensure the id doesn't magically become unlocked.
 	if(!registered_user && register_user(user))
 		to_chat(user, span_notice("The microscanner marks you as its owner, preventing others from accessing its internals."))

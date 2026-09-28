@@ -92,12 +92,15 @@
 	update_icon()
 	usr.update_inv_back()
 
-/obj/item/storage/backpack/holding/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/storage/backpack/holding))
-		to_chat(user, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
-		consume(W, user)
-		return
-	. = ..()
+EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
+	INTERACT_INSERT(/obj/item/storage/backpack/holding, PROC_REF(interaction_conflict), "Put in"), \
+)
+
+/// Old attackby: two bags of holding destroy the one put in.
+/obj/item/storage/backpack/holding/proc/interaction_conflict(mob/user, obj/item/W, datum/interaction/interaction)
+	to_chat(user, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
+	consume(W, user)
+	return TRUE
 
 /obj/item/storage/backpack/cultpack
 	name = "trophy rack"

@@ -88,17 +88,18 @@
 	var/list/mail_recipients
 	special_handling = TRUE
 
-/obj/item/mail/blank/attackby(obj/item/W, mob/user)
-	..()
+/// Old attackby: the letter's own tagging, then a pen addresses a sealed envelope, or the item goes inside an open one.
+/obj/item/mail/blank/proc/interaction_blank_item(mob/user, obj/item/W, datum/interaction/interaction)
+	if(istype(W, /obj/item/destTagger))
+		interaction_tag(user, W, interaction)
 	if(istype(W, /obj/item/pen) && sealed && !set_recipient)
 		setRecipient(user)
 		add_fingerprint(user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(!set_content && !sealed)
 		om_task_start(/datum/om/task/timed/blank_attackby, user, user, list("receiver" = src, "W" = W))
-		return
-	return
+	return INTERACTION_HANDLED_PASS
 
 /datum/om/task/timed/blank_attackby
 	duration = 1.5 SECONDS
@@ -135,7 +136,11 @@
 			B.set_recipient = TRUE
 		return TRUE
 
-EXTEND_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+EXTEND_INTERACTIONS(/obj/item/mail/blank, \
+	INTERACT_USE("Seal or open", PROC_REF(interaction_seal)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_blank_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
 
 /// Old click_alt.
 /obj/item/mail/blank/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
@@ -160,10 +165,8 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interactio
 	if(sender && !sealed)
 		desc = "A signed envelope, from [sender]."
 
-/obj/item/mail/blank/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: seal an open envelope, or open a sealed one.
+/obj/item/mail/blank/proc/interaction_seal(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!sealed)
 		om_do_after(user, 1.5 SECONDS, target = user, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(), on_fail = PROC_REF(attack_self_timed_failed), fail_args = list())
 		return
@@ -205,25 +208,25 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, INTERACT_ALT(null, PROC_REF(interactio
 		postmark_image.appearance_flags |= RESET_COLOR
 		add_overlay(postmark_image)
 
-/obj/item/mail/attackby(obj/item/W as obj, mob/user as mob)
-	. = ..()
-	// Destination tagging
-	if(istype(W, /obj/item/destTagger))
-		var/obj/item/destTagger/O = W
-		if(O.currTag)
-			if(src.sortTag != O.currTag)
-				balloon_alert(user, "labeled for [O.currTag].")
-				src.sortTag = O.currTag
-				playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
-				W.description_info = " It is labeled for [O.currTag]"
-			else
-				balloon_alert(user, "already labeled for [O.currTag].")
+/// Old attackby: destination tagging.
+/obj/item/mail/proc/interaction_tag(mob/user, obj/item/destTagger/O, datum/interaction/interaction)
+	if(O.currTag)
+		if(src.sortTag != O.currTag)
+			balloon_alert(user, "labeled for [O.currTag].")
+			src.sortTag = O.currTag
+			playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+			O.description_info = " It is labeled for [O.currTag]"
 		else
-			balloon_alert(user, "destination not set!")
-		return
+			balloon_alert(user, "already labeled for [O.currTag].")
+	else
+		balloon_alert(user, "destination not set!")
+	return INTERACTION_HANDLED_PASS
 
 
-DECLARE_INTERACTIONS(/obj/item/mail, INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)))
+DECLARE_INTERACTIONS(/obj/item/mail, \
+	INTERACT_USE("Unwrap", PROC_REF(interaction_unwrap)), \
+	INTERACT_INSERT(/obj/item/destTagger, PROC_REF(interaction_tag), "Tag"), \
+)
 
 /// Old attack_self: open the letter.
 /obj/item/mail/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)

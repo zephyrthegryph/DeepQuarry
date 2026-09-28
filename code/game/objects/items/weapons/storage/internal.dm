@@ -13,8 +13,11 @@
 	name = master_item.name
 	verbs -= /obj/item/verb/verb_pickup	//make sure this is never picked up.
 
-/obj/item/storage/internal/attack_hand()
-	return		//make sure this is never picked up
+EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_never_pick_up)))
+
+/// Old attack_hand: make sure this is never picked up.
+/obj/item/storage/internal/proc/interaction_never_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /// Internal storage is part of its owner and is never worn on its own.
 /obj/item/storage/internal/equip_constraint()

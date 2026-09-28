@@ -36,9 +36,14 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 	drop_sound = 'sound/bureaucracy/bookclose.ogg'
 	special_handling = TRUE
 
-/obj/item/storage/bible/attack_self(mob/living/carbon/human/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/bible, \
+	INTERACT_USE(null, PROC_REF(interaction_bible_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_bible_item)), \
+)
+
+/// Old attack_self: after the storage's own self-use, a chaplain configures their religion.
+/obj/item/storage/bible/proc/interaction_bible_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 
 	if(user?.mind?.assigned_role != JOB_CHAPLAIN)
@@ -113,7 +118,8 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 			A.reagents.del_reagent(REAGENT_ID_WATER)
 			A.reagents.add_reagent(REAGENT_ID_HOLYWATER,water2holy)
 
-/obj/item/storage/bible/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: the page-turn sound, then the storage's own insertion.
+/obj/item/storage/bible/proc/interaction_bible_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (src.use_sound)
 		playsound(src, src.use_sound, 50, 1, -5)
-	..()
+	return FALSE

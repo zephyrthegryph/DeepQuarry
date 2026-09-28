@@ -46,6 +46,8 @@
 
 	///Occult check. Used for do_after
 	var/occult = FALSE
+	/// Alt-click folds it into a paper plane.
+	var/plane_foldable = TRUE
 
 	var/was_maploaded = FALSE // This tracks if the paper was created on mapload.
 
@@ -66,8 +68,8 @@
 	icon_state = "greetingcard"
 	slot_flags = null //no fun allowed!!!!
 
-/obj/item/paper/card/click_alt() //No fun allowed
-	return
+/obj/item/paper/card
+	plane_foldable = FALSE //No fun allowed
 
 /obj/item/paper/card/update_icon()
 	return
@@ -107,8 +109,8 @@
 /obj/item/paper/alien/burnpaper()
 	return
 
-/obj/item/paper/alien/click_alt() // No airplanes for me.
-	return
+/obj/item/paper/alien
+	plane_foldable = FALSE // No airplanes for me.
 
 
 /obj/item/paper/Initialize(mapload, text, title)
@@ -322,10 +324,8 @@
 		add_fingerprint(usr)
 	return
 
-/obj/item/paper/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: read it, or crumple it in combat mode.
+/obj/item/paper/proc/interaction_paper_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(occult)
 		return
 	if(IS_HARMING(user))
@@ -554,7 +554,11 @@
 		return "paper" //Gross, but required for now.
 	return ..()
 
-DECLARE_INTERACTIONS(/obj/item/paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/paper, \
+	INTERACT_USE("Read", PROC_REF(interaction_paper_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \
+)
 
 /// Old attackby.
 /obj/item/paper/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)

@@ -398,16 +398,21 @@
 	// A converted item interaction (I7) answered: nothing else, as the old override's early return.
 	if(.)
 		return
-	if(istype(W, /obj/item/storage))
-		var/obj/item/storage/S = W
-		if(S.use_to_pickup)
-			if(S.collection_mode) //Mode is set to collect all items
-				if(isturf(src.loc))
-					S.gather_all(src.loc, user)
+	storage_gather_by(W, user)
 
-			else
-				S.try_insert(src, user)
-	return
+/// A pickup-mode storage used on this item collects it (or its whole tile). TRUE when W was such a storage.
+/obj/item/proc/storage_gather_by(obj/item/W, mob/user)
+	if(!istype(W, /obj/item/storage))
+		return FALSE
+	var/obj/item/storage/S = W
+	if(!S.use_to_pickup)
+		return FALSE
+	if(S.collection_mode) //Mode is set to collect all items
+		if(isturf(src.loc))
+			S.gather_all(src.loc, user)
+	else
+		S.try_insert(src, user)
+	return TRUE
 
 /obj/item/proc/talk_into(mob/M as mob, text)
 	return

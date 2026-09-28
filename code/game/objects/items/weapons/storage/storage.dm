@@ -441,22 +441,30 @@ REF_OWNED(/obj/item/storage, "hud")
 				user.put_in_l_hand(src)
 		add_fingerprint(user)
 
-/obj/item/storage/click_alt(mob/user)
+/// Old click_alt: open or close the storage; anywhere else, the default alt-click.
+/obj/item/storage/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	make_contents_real()
 	if(user in is_seeing)
 		src.close(user)
-	else if(isliving(user) && Adjacent(user))
+		return TRUE
+	if(isliving(user) && Adjacent(user))
 		src.open(user)
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
-//This proc is called when you want to place an item into the storage item.
-/obj/item/storage/attackby(obj/item/W as obj, mob/user as mob)
+/**
+ * Old attackby: place an item into the storage. The old override ran the item's base
+ * attackby first (signal listeners, then a pickup-mode bag gathering the tile), so this does too.
+ */
+/obj/item/storage/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	make_contents_real()
-	..()
+	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, dq_interaction_click_params(user)) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return TRUE
+	// After a gather the base item attackby must not gather again, so the input is used up.
+	var/pass = storage_gather_by(W, user) ? TRUE : INTERACTION_HANDLED_PASS
 
 	if(isrobot(user))
-		return //Robots can't interact with storage items.
+		return pass //Robots can't interact with storage items.
 
 	if(istype(W, /obj/item/lightreplacer))
 		var/obj/item/lightreplacer/LP = W
@@ -468,64 +476,73 @@ REF_OWNED(/obj/item/storage, "hud")
 				consume(L, user)
 		if(amt_inserted)
 			to_chat(user, "You inserted [amt_inserted] light\s into \the [LP.name]. You have [LP.uses] light\s remaining.")
-			return
+			return pass
 
 	var/refusal = insert_refusal(W, user)
 	if(refusal)
 		refuse_insert(W, user, refusal)
-		return
+		return pass
 
 	if(istype(W, /obj/item/tray))
 		var/obj/item/tray/T = W
 		if(T.calc_carry() > 0)
 			if(prob(85))
 				to_chat(user, span_warning("The tray won't fit in [src]."))
-				return
+				return pass
 			else
 				user.drop_from_inventory(W, get_turf(user))
 				to_chat(user, span_warning("God damn it!"))
 
 	W.add_fingerprint(user)
-	return insert_item(W, user)
+	return insert_item(W, user) ? TRUE : pass
 
-/obj/item/storage/attack_hand(mob/user as mob)
+/// Old attack_hand, the part before the pickup: a pocketed storage comes to hand, a held one opens.
+/obj/item/storage/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	make_contents_real()
 	if(ishuman(user) && !pocketable)
 		var/mob/living/carbon/human/H = user
 		if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand())	//Prevents opening if it's in a pocket.
 			H.put_in_hands(src)
-			return
+			return TRUE
 		if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
 			H.put_in_hands(src)
-			return
-
-	if (src.loc == user)
+			return TRUE
+	if(src.loc == user)
 		src.open(user)
-	else
-		..()
-		for(var/mob/M in range(1))
-			if (M.s_active == src)
-				src.close(M)
-	src.add_fingerprint(user)
-	return
-
-/obj/item/storage/attack_self(mob/user)
-	make_contents_real()
-	. = ..(user)
-	if(.)
+		src.add_fingerprint(user)
 		return TRUE
+	return FALSE
+
+/// Old attack_hand, the part after the pickup: whoever was looking inside stops.
+/obj/item/storage/hand_pickup(mob/living/user)
+	. = ..()
+	for(var/mob/M in range(1))
+		if (M.s_active == src)
+			src.close(M)
+	src.add_fingerprint(user)
+
+/// Old attack_self: quick-empty. FALSE lets a subtype's self-use go on.
+/obj/item/storage/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	make_contents_real()
 	if(special_handling)
 		return FALSE
 	if((user.get_active_hand() == src) || (isrobot(user)) && allow_quick_empty)
 		if(src.verbs.Find(/obj/item/storage/verb/quick_empty))
 			try_quick_empty(user)
 			return TRUE
+	return FALSE
 
 /obj/item/storage/AllowDrop()
 	return TRUE
 
 // Allows micros to drag themselves into storage items
-DECLARE_INTERACTIONS(/obj/item/storage, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+DECLARE_INTERACTIONS(/obj/item/storage, \
+	INTERACT_ITEM("Put in", PROC_REF(interaction_item)), \
+	INTERACT_HAND_UNGATED("Open", PROC_REF(interaction_hand)), \
+	INTERACT_SELF("Empty", PROC_REF(interaction_self)), \
+	INTERACT_ALT("Open", PROC_REF(interaction_alt)), \
+	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
+)
 
 /// Old MouseDrop_T.
 /obj/item/storage/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
@@ -1010,12 +1027,15 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-/obj/item/storage/trinketbox/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/trinketbox, INTERACT_USE("Open", PROC_REF(interaction_open_lid)))
+
+/// Old attack_self: after the storage's own self-use, flip the lid.
+/obj/item/storage/trinketbox/proc/interaction_open_lid(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 	open = !open
 	update_icon()
+	return TRUE
 
 /obj/item/storage/trinketbox/examine(mob/user)
 	. = ..()

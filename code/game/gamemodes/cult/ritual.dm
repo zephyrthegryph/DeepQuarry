@@ -335,10 +335,10 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	R.check_icon()
 	R.add_blooddna(H.dna,H)
 
-/obj/item/book/tome/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/book/tome, INTERACT_USE("Read", PROC_REF(interaction_tome)))
+
+/// Old attack_self.
+/obj/item/book/tome/proc/interaction_tome(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!user.canmove || user.stat || user.restrained())
 		return
 	if(occult_tier > 1) //This is a low tier book. If it's a higher tier, use ITS parent call instead of  continuing.
@@ -457,10 +457,10 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	w_class = ITEMSIZE_SMALL
 	occult_tier = 2
 	var/cultistsonly = 1
-/obj/item/book/tome/imbued/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/book/tome/imbued, INTERACT_USE("Scribe a rune", PROC_REF(interaction_imbued)))
+
+/// Old attack_self: the admin tome scribes working runes at once. Its parent's self-use did nothing at this tier.
+/obj/item/book/tome/imbued/proc/interaction_imbued(mob/user, obj/item/held, datum/interaction/interaction)
 	if(src.cultistsonly && !iscultist(user))
 		return
 	if(!GLOB.cultwords["travel"])

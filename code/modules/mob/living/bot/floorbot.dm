@@ -326,13 +326,13 @@
 
 /* Assembly */
 
-/obj/item/storage/toolbox/mechanical/attackby(obj/item/stack/tile/floor/T, mob/living/user as mob)
-	if(!istype(T, /obj/item/stack/tile/floor))
-		..()
-		return
+EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/item/stack/tile/floor, PROC_REF(interaction_floorbot_tiles), "Add tiles"))
+
+/// Old attackby: ten floor tiles in an empty toolbox start a floorbot.
+/obj/item/storage/toolbox/mechanical/proc/interaction_floorbot_tiles(mob/living/user, obj/item/stack/tile/floor/T, datum/interaction/interaction)
 	if(contents.len >= 1)
 		to_chat(user, span_notice("They wont fit in as there is already stuff inside."))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(user.s_active)
 		user.s_active.close(user)
 	if(T.use(10))
@@ -342,7 +342,7 @@
 		consume(src, user)
 	else
 		to_chat(user, span_warning("You need 10 floor tiles for a floorbot."))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toolbox_tiles
 	desc = "It's a toolbox with tiles sticking out the top"

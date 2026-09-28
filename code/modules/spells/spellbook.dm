@@ -185,10 +185,13 @@
 	. = ..()
 	name += spellname
 
-/obj/item/spellbook/oneuse/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
+	INTERACT_USE("Read", PROC_REF(interaction_learn_spell)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_ignore_item)), \
+)
+
+/// Old attack_self: learn the book's one spell.
+/obj/item/spellbook/oneuse/proc/interaction_learn_spell(mob/user, obj/item/held, datum/interaction/interaction)
 	var/datum/spell/S = new spell(user)
 	for(var/datum/spell/knownspell in user.spell_list)
 		if(knownspell.type == S.type)
@@ -214,8 +217,9 @@
 	used = 1
 	user.visible_message(span_warning("[src] glows dark for a second!"))
 
-/obj/item/spellbook/oneuse/attackby()
-	return
+/// Old attackby: nothing.
+/obj/item/spellbook/oneuse/proc/interaction_ignore_item(mob/user, obj/item/W, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/spellbook/oneuse/fireball
 	spell = /datum/spell/targeted/projectile/dumbfire/fireball

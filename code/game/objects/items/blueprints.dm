@@ -58,7 +58,10 @@
 		if(!charges)
 			. += "There seems to be no more room for any more edits!"
 
-DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/areaeditor, \
+	INTERACT_USE("Read", PROC_REF(areaeditor_text)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
 /// Old attackby.
 /obj/item/areaeditor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -78,10 +81,8 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/areaeditor/attack_self(mob/user) //Convert this to TGUI some time.
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: builds the area editing page, which subtypes add to and show. Convert this to TGUI some time.
+/obj/item/areaeditor/proc/areaeditor_text(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
@@ -134,10 +135,10 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	preserve_item = 1
 	var/legend = 1
 
-/obj/item/wire_reader/attack_self(mob/user) //Convert this to TGUI some time.
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/wire_reader, INTERACT_USE("Read", PROC_REF(interaction_read_wires)))
+
+/// Old attack_self. Convert this to TGUI some time.
+/obj/item/wire_reader/proc/interaction_read_wires(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
@@ -197,10 +198,11 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, INTERACT_ITEM(null, PROC_REF(interact
 	uses_charges = 1
 	can_override = 1 // This will allow easier building on the planets, dont think blueprint grief is too big of a problem. -Lotion
 
-/obj/item/areaeditor/blueprints/attack_self(mob/user)
-	. = ..(user)
-	if(. == 1) //I hate this so much.
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_REF(interaction_read_blueprints)))
+
+/// Old attack_self: the area editor's page, plus the station and wiring pages, shown.
+/obj/item/areaeditor/blueprints/proc/interaction_read_blueprints(mob/user, obj/item/held, datum/interaction/interaction)
+	. = areaeditor_text(user, held, interaction)
 	var/area/A = get_area(user)
 	if(!legend)
 		if(get_area_type() == AREA_STATION)

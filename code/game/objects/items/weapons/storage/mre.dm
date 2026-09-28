@@ -34,11 +34,14 @@ MRE Stuff
 		icon_state = "[initial(icon_state)][opened]"
 	. = ..()
 
-/obj/item/storage/mre/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/mre, INTERACT_USE("Open", PROC_REF(interaction_tear_open)))
+
+/// Old attack_self: after the storage's own self-use, tear it open.
+/obj/item/storage/mre/proc/interaction_tear_open(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 	open(user)
+	return TRUE
 
 /obj/item/storage/mre/open(mob/user)
 	if(!opened)
@@ -240,11 +243,14 @@ MRE Stuff
 		icon_state = "[initial(icon_state)][opened]"
 	. = ..()
 
-/obj/item/storage/mrebag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(interaction_tear_open)))
+
+/// Old attack_self: after the storage's own self-use, tear it open.
+/obj/item/storage/mrebag/proc/interaction_tear_open(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 	open(user)
+	return TRUE
 
 /obj/item/storage/mrebag/open(mob/user)
 	if(!opened && !isobserver(user))

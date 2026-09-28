@@ -44,10 +44,11 @@
 	to_chat(usr, span_notice("Issuing reason: [reason]."))
 	return
 
-/obj/item/card/id/guest/attack_self(mob/living/user as mob)
-	. = ..(user)
-	if(.)
-		return TRUE
+// Replaces the card's own flash: the old override ran both and flashed the pass twice.
+EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE("Show or deactivate", PROC_REF(interaction_guest_pass)))
+
+/// Old attack_self: flash the pass, or deactivate it in combat mode.
+/obj/item/card/id/guest/proc/interaction_guest_pass(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		if(icon_state == "guest-invalid")
 			to_chat(user, span_warning("This guest pass is already deactivated!"))

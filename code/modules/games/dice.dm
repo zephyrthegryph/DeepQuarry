@@ -223,9 +223,11 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 		)
 	return list(HOLD_ONLY(holds), HOLD_MAX_SIZE(ITEMSIZE_SMALL))
 
-/obj/item/storage/dicecup/attack_self(mob/user)
-	. = ..(user)
-	if(.)
+EXTEND_INTERACTIONS(/obj/item/storage/dicecup, INTERACT_USE("Shake", PROC_REF(interaction_shake)))
+
+/// Old attack_self: after the storage's own self-use, shake the cup.
+/obj/item/storage/dicecup/proc/interaction_shake(mob/user, obj/item/held, datum/interaction/interaction)
+	if(interaction_self(user, held, interaction))
 		return TRUE
 	user.visible_message(span_notice("[user] shakes [src]."), \
 							span_notice("You shake [src]."), \
