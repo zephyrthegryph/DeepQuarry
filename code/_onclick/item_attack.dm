@@ -9,7 +9,7 @@ item/resolve_attackby() calls the target atom's attackby() proc.
 
 Mobs:
 
-Mob attackby_default() (after the mob's interactions) checks for surgery, then calls the item's attack() proc.
+A mob's "Attack" default interaction (hit_with_item()) checks for surgery, then calls the item's attack() proc.
 item/attack() generates attack logs, sets click cooldown and calls the mob's attacked_with_item() proc. If you override this, consider whether you need to set a click cooldown, play attack animations, and generate logs yourself.
 /mob/attacked_with_item() should then do mob-type specific stuff (like determining hit/miss, handling shields, etc) and then possibly call the item's apply_hit_effect() proc to actually apply the effects of being hit.
 
@@ -160,27 +160,66 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
 	var/list/outcome = list()
 	var/saved_params = dq_interaction_set_click_params(user, click_parameters)
+	var/saved_modifier = GLOB.interaction_entry_attack_modifier[user]
+	if(user)
+		GLOB.interaction_entry_attack_modifier[user] = attack_modifier
 	var/datum/interaction/answered
 	try
 		answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM, outcome)
 	catch(var/exception/error)
 		dq_interaction_set_click_params(user, saved_params)
+		dq_interaction_restore_attack_modifier(user, saved_modifier)
 		throw error
 	dq_interaction_set_click_params(user, saved_params)
+	dq_interaction_restore_attack_modifier(user, saved_modifier)
 	if(answered)
-		if(!(INTERACTION_TRY_PASS in outcome))
-			return answered.consumes_input
-	else if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
+	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	return attackby_default(W, user, attack_modifier)
-
-/// Used with an item that no interaction used up (none answered, or one handled it and passed).
-/// Returns TRUE when it used the input. Items let a pickup-mode bag collect them (items.dm).
-/atom/proc/attackby_default(obj/item/W, mob/user, attack_modifier)
 	return FALSE
 
-/// Used with an item no interaction took: surgery, vore, then the attack (a phased swing in combat mode).
-/mob/living/attackby_default(obj/item/I, mob/user, attack_modifier)
+/// The attack_modifier of the item entry each actor is inside (a charged or off-hand swing).
+GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
+
+/proc/dq_interaction_restore_attack_modifier(mob/actor, saved)
+	if(!actor)
+		return
+	if(isnull(saved))
+		GLOB.interaction_entry_attack_modifier -= actor
+	else
+		GLOB.interaction_entry_attack_modifier[actor] = saved
+
+/**
+ * Every living mob's defaults, after everything else it offers: an empty hand
+ * touches it (help, disarm, grab or punch, by the actor's stance: unarmed_touch()),
+ * and an item hits it (hit_with_item()).
+ */
+/mob/living/declare_interactions(list/into)
+	..()
+	var/static/list/default_specs = list(
+		INTERACT_HAND_DEFAULT("Touch", PROC_REF(interaction_touch)),
+		INTERACT_ITEM_DEFAULT("Attack", PROC_REF(interaction_hit)),
+	)
+	for(var/spec in default_specs)
+		into += dq_interaction_from_spec(/mob/living, spec)
+
+/mob/living/proc/interaction_touch(mob/living/user, obj/item/held, datum/interaction/interaction)
+	unarmed_touch(user)
+	return TRUE
+
+/// Signal listeners first (a nanoform's held body), then the hit. A hit that didn't use the input lets afterattack follow.
+/mob/living/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
+	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, I, user, dq_interaction_click_params(user)) & COMPONENT_CANCEL_ATTACK_CHAIN)
+		return INTERACTION_HANDLED_PASS
+	var/modifier = GLOB.interaction_entry_attack_modifier[user]
+	return hit_with_item(I, user, isnull(modifier) ? 1 : modifier) ? TRUE : INTERACTION_HANDLED_PASS
+
+/// An empty-hand touch on this mob; mob types extend it (their unarmed combat). The base reacts for the AI and thorns.
+/mob/living/proc/unarmed_touch(mob/living/user)
+	return
+
+/// Hit with an item: surgery, vore, then the attack (a phased swing in combat mode).
+/mob/living/proc/hit_with_item(obj/item/I, mob/user, attack_modifier = 1)
 	if(!ismob(user))
 		return FALSE
 

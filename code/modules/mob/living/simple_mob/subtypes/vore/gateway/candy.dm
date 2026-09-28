@@ -629,7 +629,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 	INTERACT_DRAG(null, PROC_REF(vore_mob_block_drag)), \
 )
 
-/// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (attackby_default).
+/// Old attackby: the shell deflects most hits; forceless items only tap it. FALSE = the hit lands (hit_with_item).
 /mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(O.force)
 		if(prob(80))

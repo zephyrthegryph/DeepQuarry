@@ -67,7 +67,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND("Open controls", PROC
 
 /// Old attack_hand: the default touch first (old ..()); if that did nothing, open the controls.
 /mob/living/bot/farmbot/proc/farmbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!hand_default(user))
+	if(!unarmed_touch(user))
 		tgui_interact(user)
 	return TRUE
 

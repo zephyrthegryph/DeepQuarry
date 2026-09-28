@@ -610,7 +610,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		lay_down()
 		return
 	else if(!client)
-		hand_default(M)
+		unarmed_touch(M)
 		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 		if(wantpet >= 100) //We want pets sometimes
 			handle_affinity(M, 1)

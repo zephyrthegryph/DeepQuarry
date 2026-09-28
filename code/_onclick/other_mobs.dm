@@ -36,17 +36,7 @@
 /atom/proc/attack_hand(mob/user as mob)
 	if(!user)
 		return FALSE
-	if(run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE))
-		return TRUE
-	return hand_default(user)
-
-/**
- * An empty-hand touch that no gate stopped and no interaction answered: the type's default.
- * Items are picked up (items.dm); mobs are helped, disarmed, grabbed or punched (their
- * unarmed combat, e.g. human_attackhand.dm).
- */
-/atom/proc/hand_default(mob/living/user)
-	return FALSE
+	return run_interaction_entry(user, src, null, INTERACTION_ENTRY_HAND, null, TRUE) ? TRUE : FALSE
 
 /**
  * What a touch passes through before the type's own hand interactions: signal

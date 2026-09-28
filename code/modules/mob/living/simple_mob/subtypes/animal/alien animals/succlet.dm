@@ -226,7 +226,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, INT
 
 /// Old attack_hand: the normal touch, then a sting unless helping.
 /mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	hand_default(user)
+	unarmed_touch(user)
 	. = TRUE
 	if(!IS_HELPING(user))
 		if(isliving(user))

@@ -423,7 +423,7 @@
 			comp.dark_energy += gains
 
 // When someone clicks us with an empty hand
-/mob/living/simple_mob/shadekin/hand_default(mob/living/carbon/human/M)
+/mob/living/simple_mob/shadekin/unarmed_touch(mob/living/carbon/human/M)
 	. = ..()
 	if(IS_HELPING(M))
 		shy_approach = FALSE //ACCLIMATED

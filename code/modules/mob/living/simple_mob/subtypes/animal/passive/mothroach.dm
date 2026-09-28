@@ -60,7 +60,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
 /// Old attack_hand: the normal touch, then a scream.
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	hand_default(user)
+	unarmed_touch(user)
 
 	if(stat != DEAD)
 		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)
@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
 /// Old attackby: the normal attack, then a scream.
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	. = TRUE
-	attackby_default(O, user)
+	hit_with_item(O, user)
 
 	if(stat != DEAD)
 		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)

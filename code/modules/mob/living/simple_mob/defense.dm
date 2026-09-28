@@ -8,7 +8,7 @@
 
 
 // When someone clicks us with an empty hand
-/mob/living/simple_mob/hand_default(mob/living/L)
+/mob/living/simple_mob/unarmed_touch(mob/living/L)
 	if(reaction_sound)
 		playsound(src, reaction_sound, 50, 1)
 	..()
@@ -82,7 +82,7 @@
 
 
 // When somoene clicks us with an item in hand
-/mob/living/simple_mob/attackby_default(obj/item/O, mob/user, attack_modifier)
+/mob/living/simple_mob/hit_with_item(obj/item/O, mob/user, attack_modifier)
 	if(reaction_sound)
 		playsound(src, reaction_sound, 50, 1)
 	if(istype(O, /obj/item/stack/medical))
