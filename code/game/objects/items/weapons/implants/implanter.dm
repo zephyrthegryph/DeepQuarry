@@ -169,7 +169,8 @@
 		else if(istype(A.loc,/obj/item/storage))
 			var/obj/item/storage/S = A.loc
 			S.remove_from_storage(A)
-		A.moveToNullspace()
+		var/obj/item/scanned_item = A
+		scanned_item.moveToNullspace()
 		update()
 
 /obj/item/implanter/restrainingbolt
