@@ -613,9 +613,8 @@
 	target.update_integrity(10000)
 	var/obj/machinery/power/emitter/emitter = new(test_turf)
 	emitter.set_dir(NORTH)
-	var/datum/powernet/net = new
-	net.add_machine(emitter)
-	net.avail = 1000000
+	var/net = power_test_grid(1000000)
+	power_test_join(net, emitter)
 	emitter.state = 2
 	emitter.active = TRUE
 	TEST_ASSERT(abs(emitter.emitter_output_limit() - 1) < 0.001, "Default glass and copper must support the emitter's rated output")
@@ -632,8 +631,7 @@
 		qdel(beam)
 	qdel(emitter)
 	qdel(target)
-	if(!QDELETED(net))
-		qdel(net)
+	power_test_drop_grid(net)
 
 /datum/unit_test/dq_material_fingerprint_is_quantity_independent
 
@@ -827,7 +825,7 @@
 /datum/unit_test/dq_material_physical_cable_loss
 
 /datum/unit_test/dq_material_physical_cable_loss/Run()
-	var/datum/powernet/net = new
+	var/datum/material_power_overlay/net = new
 	var/obj/structure/cable/start = new(locate(2, 2, 1))
 	var/obj/structure/cable/middle = new(locate(3, 2, 1))
 	var/obj/structure/cable/end = new(locate(4, 2, 1))

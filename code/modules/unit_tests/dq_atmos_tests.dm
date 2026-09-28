@@ -4546,10 +4546,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning/Run()
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for power monitor hibernation test")
-	var/datum/powernet/P = new
+	var/P = power_test_grid()
 	var/obj/machinery/power/sensor/S = new(T)
 	var/obj/machinery/computer/power_monitor/M = new(T)
-	S.powernet = P
+	power_test_join(P, S)
 	M.power_monitor.grid_sensors = null
 	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
 	MACHINE_WAKE(M)
@@ -4557,12 +4557,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!machine_stepping(M), "stable power monitor remained scheduled")
 	TEST_ASSERT(M.react_sleep_tokens, "power monitor did not subscribe before sleeping")
 	om_trace(M)
-	P.trigger_warning()
+	power_warn(P)
 	TEST_ASSERT(om_wait_for_wake(M), "grid warning did not wake the sleeping power monitor")
 	om_untrace(M)
 	qdel(M)
 	qdel(S)
-	qdel(P)
+	power_test_drop_grid(P)
 
 /datum/unit_test/dq_idle_auxiliary_machines_hibernate
 

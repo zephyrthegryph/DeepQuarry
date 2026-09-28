@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Power networks no longer have a DM-side datum; machines and cables read the Rust power region directly."

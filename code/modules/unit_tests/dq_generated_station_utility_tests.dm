@@ -24,7 +24,7 @@
 		TEST_ASSERT_EQUAL(APC.dir, apc_wall_direction, "Generated APC does not face into its supporting wall")
 		TEST_ASSERT_NOTNULL(APC.terminal, "Generated APC has no physical terminal")
 		TEST_ASSERT_NOTNULL(APC.cell, "Generated APC has no physical cell")
-		TEST_ASSERT_NOTNULL(APC.terminal.powernet, "Generated APC terminal is not attached to a powernet")
+		TEST_ASSERT(APC.terminal.power_region, "Generated APC terminal is not attached to a powernet")
 		var/area/generated_station/powered_area = get_area(APC)
 		powered_area.power_change()
 		TEST_ASSERT(powered_area.powered(EQUIP), "Generated area is not powered by its physical APC")
