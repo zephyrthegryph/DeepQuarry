@@ -85,18 +85,18 @@
 	var/list/research_queue_nodes
 
 /datum/techweb/New()
-	SSresearch.techwebs += src
-	for(var/i in SSresearch.techweb_nodes_starting)
-		var/datum/techweb_node/DN = SSresearch.techweb_node_by_id(i)
+	GLOB.research_service.techwebs += src
+	for(var/i in GLOB.research_service.techweb_nodes_starting)
+		var/datum/techweb_node/DN = GLOB.research_service.techweb_node_by_id(i)
 		research_node(DN, TRUE, FALSE, FALSE)
-	hidden_nodes = SSresearch.techweb_nodes_hidden.Copy()
+	hidden_nodes = GLOB.research_service.techweb_nodes_hidden.Copy()
 	// initialize_published_papers()
 	return ..()
 
-/// Phase 2: leaves SSresearch's techwebs.
+/// Phase 2: leaves GLOB.research_service's techwebs.
 /datum/techweb/lifecycle_dematerialize()
 	. = ..()
-	SSresearch.techwebs -= src
+	GLOB.research_service.techwebs -= src
 
 /datum/techweb/proc/recalculate_nodes(recalculate_designs = FALSE, wipe_custom_designs = FALSE)
 	var/list/datum/techweb_node/processing = list()
@@ -112,39 +112,39 @@
 			custom_designs = list()
 	defer_tier_recompute()
 	for(var/id in processing)
-		update_node_status(SSresearch.techweb_node_by_id(id))
+		update_node_status(GLOB.research_service.techweb_node_by_id(id))
 		CHECK_TICK
 	flush_deferred_tiers()
 
 /datum/techweb/proc/add_point_list(list/pointlist)
 	for(var/i in pointlist)
-		if((i in SSresearch.point_types) && pointlist[i] > 0)
+		if((i in GLOB.research_service.point_types) && pointlist[i] > 0)
 			LAZYSET(research_points, i, FLOOR(LAZYACCESS(research_points, i) + pointlist[i], 0.1))
 
 /datum/techweb/proc/add_points_all(amount)
-	var/list/l = SSresearch.point_types.Copy()
+	var/list/l = GLOB.research_service.point_types.Copy()
 	for(var/i in l)
 		l[i] = amount
 	add_point_list(l)
 
 /datum/techweb/proc/remove_point_list(list/pointlist)
 	for(var/i in pointlist)
-		if((i in SSresearch.point_types) && pointlist[i] > 0)
+		if((i in GLOB.research_service.point_types) && pointlist[i] > 0)
 			LAZYSET(research_points, i, FLOOR(max(0, LAZYACCESS(research_points, i) - pointlist[i]), 0.1))
 
 /datum/techweb/proc/remove_points_all(amount)
-	var/list/l = SSresearch.point_types.Copy()
+	var/list/l = GLOB.research_service.point_types.Copy()
 	for(var/i in l)
 		l[i] = amount
 	remove_point_list(l)
 
 /datum/techweb/proc/modify_point_list(list/pointlist)
 	for(var/i in pointlist)
-		if((i in SSresearch.point_types) && pointlist[i] != 0)
+		if((i in GLOB.research_service.point_types) && pointlist[i] != 0)
 			LAZYSET(research_points, i, FLOOR(max(0, LAZYACCESS(research_points, i) + pointlist[i]), 0.1))
 
 /datum/techweb/proc/modify_points_all(amount)
-	var/list/l = SSresearch.point_types.Copy()
+	var/list/l = GLOB.research_service.point_types.Copy()
 	for(var/i in l)
 		l[i] = amount
 	modify_point_list(l)
@@ -181,19 +181,19 @@
 	return (researched_nodes || list()) - hidden_nodes
 
 /datum/techweb/proc/add_point_type(type, amount)
-	if(!(type in SSresearch.point_types) || (amount <= 0))
+	if(!(type in GLOB.research_service.point_types) || (amount <= 0))
 		return FALSE
 	LAZYADDASSOC(research_points, type, amount)
 	return TRUE
 
 /datum/techweb/proc/modify_point_type(type, amount)
-	if(!(type in SSresearch.point_types))
+	if(!(type in GLOB.research_service.point_types))
 		return FALSE
 	LAZYSET(research_points, type, max(0, LAZYACCESS(research_points, type) + amount))
 	return TRUE
 
 /datum/techweb/proc/remove_point_type(type, amount)
-	if(!(type in SSresearch.point_types) || (amount <= 0))
+	if(!(type in GLOB.research_service.point_types) || (amount <= 0))
 		return FALSE
 	LAZYSET(research_points, type, max(0, LAZYACCESS(research_points, type) - amount))
 	return TRUE
@@ -208,15 +208,15 @@
  * add_to - A custom list to add the node to, overwriting research_designs.
  */
 /datum/techweb/proc/add_design_by_id(id, custom = FALSE, list/add_to)
-	return add_design(SSresearch.techweb_design_by_id(id), custom, add_to)
+	return add_design(GLOB.research_service.techweb_design_by_id(id), custom, add_to)
 
 /datum/techweb/proc/add_design(datum/design_techweb/design, custom = FALSE, list/add_to)
 	if(!istype(design))
 		return FALSE
 	// Invariant: every design added to a techweb must be a registered global datum.
-	// An unregistered design ID means SSresearch state is inconsistent with what is being unlocked.
-	if(design.id != DESIGN_ID_IGNORE && !SSresearch.techweb_designs[design.id])
-		CRASH("add_design called with unregistered design ID '[design.id]' ([design.type]) on techweb '[id]' — design is not in SSresearch.techweb_designs")
+	// An unregistered design ID means GLOB.research_service state is inconsistent with what is being unlocked.
+	if(design.id != DESIGN_ID_IGNORE && !GLOB.research_service.techweb_designs[design.id])
+		CRASH("add_design called with unregistered design ID '[design.id]' ([design.type]) on techweb '[id]' — design is not in GLOB.research_service.techweb_designs")
 	SEND_SIGNAL(src, COMSIG_TECHWEB_ADD_DESIGN, design, custom)
 	if(custom)
 		LAZYSET(custom_designs, design.id, TRUE)
@@ -232,7 +232,7 @@
 	return TRUE
 
 /datum/techweb/proc/remove_design_by_id(id, custom = FALSE)
-	return remove_design(SSresearch.techweb_design_by_id(id), custom)
+	return remove_design(GLOB.research_service.techweb_design_by_id(id), custom)
 
 /datum/techweb/proc/remove_design(datum/design_techweb/design, custom = FALSE)
 	if(!istype(design))
@@ -371,15 +371,15 @@
 	return TRUE
 
 /datum/techweb/proc/research_node_id(id, force, auto_update_points, get_that_dosh_id, atom/research_source)
-	return research_node(SSresearch.techweb_node_by_id(id), force, auto_update_points, get_that_dosh_id, research_source)
+	return research_node(GLOB.research_service.techweb_node_by_id(id), force, auto_update_points, get_that_dosh_id, research_source)
 
 /datum/techweb/proc/research_node(datum/techweb_node/node, force = FALSE, auto_adjust_cost = TRUE, get_that_dosh = TRUE, atom/research_source)
 	if(!istype(node))
 		return FALSE
 	// Invariant: every node researched must be a registered global datum.
-	// An unregistered node means SSresearch state is inconsistent — error early.
-	if(node.id != "ERROR" && !SSresearch.techweb_nodes[node.id])
-		CRASH("research_node called with unregistered node '[node.id]' ([node.type]) on techweb '[id]' — node is not in SSresearch.techweb_nodes")
+	// An unregistered node means GLOB.research_service state is inconsistent — error early.
+	if(node.id != "ERROR" && !GLOB.research_service.techweb_nodes[node.id])
+		CRASH("research_node called with unregistered node '[node.id]' ([node.type]) on techweb '[id]' — node is not in GLOB.research_service.techweb_nodes")
 	// Defer the per-node tier BFS until the whole unlock batch below has run, so the
 	// many overlapping update_node_status() calls only trigger one coalesced sweep.
 	defer_tier_recompute()
@@ -406,7 +406,7 @@
 	// Gain the experiments from the new node
 	for(var/id in node.unlock_ids)
 		LAZYSET(visible_nodes, id, TRUE)
-		var/datum/techweb_node/unlocked_node = SSresearch.techweb_node_by_id(id)
+		var/datum/techweb_node/unlocked_node = GLOB.research_service.techweb_node_by_id(id)
 		if (length(unlocked_node.required_experiments))
 			add_experiments(unlocked_node.required_experiments)
 		if (length(unlocked_node.discount_experiments))
@@ -434,7 +434,7 @@
 	return TRUE
 
 /datum/techweb/proc/unresearch_node_id(id)
-	return unresearch_node(SSresearch.techweb_node_by_id(id))
+	return unresearch_node(GLOB.research_service.techweb_node_by_id(id))
 
 /datum/techweb/proc/unresearch_node(datum/techweb_node/node)
 	if(!istype(node))
@@ -477,7 +477,7 @@
 			if (tier != LAZYACCESS(tiers, node.id))
 				LAZYSET(tiers, node.id, tier)
 				for (var/id in node.unlock_ids)
-					next += SSresearch.techweb_node_by_id(id)
+					next += GLOB.research_service.techweb_node_by_id(id)
 		current = next
 
 /// Begin a batch during which update_node_status() defers its per-node update_tiers()
@@ -522,7 +522,7 @@
 	if(researched)
 		LAZYSET(researched_nodes, node.id, TRUE)
 		for(var/id in (node.design_ids || list()) - researched_designs)
-			add_design(SSresearch.techweb_design_by_id(id))
+			add_design(GLOB.research_service.techweb_design_by_id(id))
 	else
 		if(available)
 			LAZYSET(available_nodes, node.id, TRUE)
@@ -537,7 +537,7 @@
 //Laggy procs to do specific checks, just in case. Don't use them if you can just use the vars that already store all this!
 /datum/techweb/proc/designHasReqs(datum/design_techweb/D)
 	for(var/i in researched_nodes)
-		var/datum/techweb_node/N = SSresearch.techweb_node_by_id(i)
+		var/datum/techweb_node/N = GLOB.research_service.techweb_node_by_id(i)
 		if(LAZYACCESS(N.design_ids, D.id))
 			return TRUE
 	return FALSE
@@ -546,25 +546,25 @@
 	return isDesignResearchedID(D.id)
 
 /datum/techweb/proc/isDesignResearchedID(id)
-	return LAZYACCESS(researched_designs, id)? SSresearch.techweb_design_by_id(id) : FALSE
+	return LAZYACCESS(researched_designs, id)? GLOB.research_service.techweb_design_by_id(id) : FALSE
 
 /datum/techweb/proc/isNodeResearched(datum/techweb_node/N)
 	return isNodeResearchedID(N.id)
 
 /datum/techweb/proc/isNodeResearchedID(id)
-	return LAZYACCESS(researched_nodes, id)? SSresearch.techweb_node_by_id(id) : FALSE
+	return LAZYACCESS(researched_nodes, id)? GLOB.research_service.techweb_node_by_id(id) : FALSE
 
 /datum/techweb/proc/isNodeVisible(datum/techweb_node/N)
 	return isNodeResearchedID(N.id)
 
 /datum/techweb/proc/isNodeVisibleID(id)
-	return LAZYACCESS(visible_nodes, id)? SSresearch.techweb_node_by_id(id) : FALSE
+	return LAZYACCESS(visible_nodes, id)? GLOB.research_service.techweb_node_by_id(id) : FALSE
 
 /datum/techweb/proc/isNodeAvailable(datum/techweb_node/N)
 	return isNodeAvailableID(N.id)
 
 /datum/techweb/proc/isNodeAvailableID(id)
-	return LAZYACCESS(available_nodes, id)? SSresearch.techweb_node_by_id(id) : FALSE
+	return LAZYACCESS(available_nodes, id)? GLOB.research_service.techweb_node_by_id(id) : FALSE
 
 /// Fill published_papers with nulls.
 

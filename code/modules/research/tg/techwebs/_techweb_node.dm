@@ -66,12 +66,12 @@
 
 // ALLOW(lifecycle): nodes are immutable globals; deleting one is an error.
 /datum/techweb_node/Destroy()
-	// Nodes are immutable global datums registered at startup via SSresearch.
+	// Nodes are immutable global datums registered at startup via GLOB.research_service.
 	// Destroying one at runtime would corrupt every techweb that references this node ID.
 	// If you hit this crash, something is incorrectly calling qdel() on a node datum.
 	if(id != "ERROR") // Allow the error_node sentinel to be deleted normally.
 		CRASH("Attempted to destroy techweb node '[id]' ([type]) at runtime — nodes are immutable global datums")
-	SSresearch.techweb_nodes -= id
+	GLOB.research_service.techweb_nodes -= id
 	return ..()
 
 /datum/techweb_node/proc/on_design_deletion(datum/design_techweb/D)

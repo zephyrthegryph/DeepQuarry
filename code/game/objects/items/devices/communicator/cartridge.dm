@@ -138,20 +138,20 @@
 			om_prompt(src, user, list("kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"], "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("order" = O, "field" = href_list["edit"])), PROC_REF(order_field_entered))
 
 		if(href_list["approve"])
-			SSsupply.approve_order(O, user)
+			GLOB.supply_service.approve_order(O, user)
 
 		if(href_list["deny"])
-			SSsupply.deny_order(O, user)
+			GLOB.supply_service.deny_order(O, user)
 
 		if(href_list["delete"])
-			SSsupply.delete_order(O, user)
+			GLOB.supply_service.delete_order(O, user)
 
 	if(href_list["clear_all_requests"])
 		var/mob/user = locate(href_list["user"])
 		if(!istype(user)) // Invalid ref
 			return
 
-		SSsupply.deny_all_pending(user)
+		GLOB.supply_service.deny_all_pending(user)
 
 	if(href_list["export_ref"])
 		var/datum/exported_crate/E = locate(href_list["export_ref"])
@@ -179,29 +179,29 @@
 			om_prompt(src, user, list("kind" = "text", "message" = href_list["edit"], "title" = "Enter the new value for this field:", "default" = href_list["default"], "requires" = PROMPT_USABLE, "data" = list("crate" = E, "field" = href_list["edit"])), PROC_REF(export_field_entered))
 
 		else if(href_list["delete"])
-			SSsupply.delete_export(E, user)
+			GLOB.supply_service.delete_export(E, user)
 
 		else if(href_list["add_item"])
-			SSsupply.add_export_item(E, user)
+			GLOB.supply_service.add_export_item(E, user)
 
-	if(SSsupply && SSsupply.shuttle)
+	if(GLOB.supply_service && GLOB.supply_service.shuttle)
 		switch(href_list["send_shuttle"])
 			if("send_away")
-				if(SSsupply.shuttle.forbidden_atoms_check())
+				if(GLOB.supply_service.shuttle.forbidden_atoms_check())
 					to_chat(usr, span_warning("For safety reasons the automated supply shuttle cannot transport live organisms, classified nuclear weaponry or homing beacons."))
 				else
-					SSsupply.shuttle.launch(src)
+					GLOB.supply_service.shuttle.launch(src)
 					to_chat(usr, span_notice("Initiating launch sequence."))
 
 			if("send_to_station")
-				SSsupply.shuttle.launch(src)
-				to_chat(usr, span_notice("The supply shuttle has been called and will arrive in approximately [round(SSsupply.movetime/600,1)] minutes."))
+				GLOB.supply_service.shuttle.launch(src)
+				to_chat(usr, span_notice("The supply shuttle has been called and will arrive in approximately [round(GLOB.supply_service.movetime/600,1)] minutes."))
 
 			if("cancel_shuttle")
-				SSsupply.shuttle.cancel_launch(src)
+				GLOB.supply_service.shuttle.cancel_launch(src)
 
 			if("force_shuttle")
-				SSsupply.shuttle.force_launch(src)
+				GLOB.supply_service.shuttle.force_launch(src)
 
 	// Status display
 	switch(href_list["stat_display"])
@@ -256,7 +256,7 @@
 /obj/item/commcard/proc/supply_reason_entered(mob/user, reason, datum/om/prompt/ask)
 	if(!reason)
 		return
-	SSsupply.create_order(ask.get("pack"), user, reason)
+	GLOB.supply_service.create_order(ask.get("pack"), user, reason)
 	internal_data["supply_reqtime"] = (world.time + 5) % 1e5
 
 /obj/item/commcard/proc/export_item_edited(mob/user, datum/om/prompt/ask)

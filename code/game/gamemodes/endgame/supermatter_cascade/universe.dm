@@ -44,9 +44,9 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		M.flash_eyes()
 
-	if(SSemergency_shuttle.can_recall())
+	if(GLOB.emergency_shuttle_service.can_recall())
 		GLOB.priority_announcement.Announce("The emergency shuttle has returned due to bluespace distortion.")
-		SSemergency_shuttle.recall()
+		GLOB.emergency_shuttle_service.recall()
 
 	AreaSet()
 	MiscSet()

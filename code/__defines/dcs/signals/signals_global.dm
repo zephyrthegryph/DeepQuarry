@@ -21,7 +21,7 @@
 // NON TG SPECIFIC SIGNALS:
 
 // Shuttle Comsigs
-/// Supply shuttle selling, before all items are sold, called by /datum/controller/subsystem/supply/proc/sell() : (/list/area/supply_shuttle_areas)
+/// Supply shuttle selling, before all items are sold, called by /datum/world_service/supply/proc/sell() : (/list/area/supply_shuttle_areas)
 #define COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART "!sell_supply_shuttle"
 
 

@@ -87,8 +87,8 @@ REF_OWNED(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui
 	return !active_expedition() || QDELETED(active_expedition()) || active_expedition().status == EXP_STATUS_EXPIRED
 
 /obj/machinery/computer/shuttle_control/explore/proc/plot_expedition(mob/user, datum/shuttle/autodock/overmap/shuttle)
-	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(shuttle.myship())
-	var/datum/expedition_site/site = SSexpedition.plot_for_vessel(user, vessel, src)
+	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(shuttle.myship())
+	var/datum/expedition_site/site = GLOB.expedition_service.plot_for_vessel(user, vessel, src)
 	if(site)
 		active_expedition_handle = om_handle(site)
 		next_expedition_plot = world.time + EXP_LAUNCH_COOLDOWN

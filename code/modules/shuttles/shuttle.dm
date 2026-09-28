@@ -69,9 +69,9 @@
 		SSshuttles.process_shuttles += src
 		SSshuttles.refresh_processing_shuttle(src)
 	if(flags & SHUTTLE_FLAGS_SUPPLY)
-		if(SSsupply.shuttle)
+		if(GLOB.supply_service.shuttle)
 			CRASH("A supply shuttle is already defined.")
-		SSsupply.shuttle = src
+		GLOB.supply_service.shuttle = src
 
 // ALLOW(lifecycle): leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/Destroy()
@@ -80,8 +80,8 @@
 	SSshuttles.process_shuttles -= src
 	SSshuttles.active_process_shuttles -= src
 	SSshuttles.shuttle_logs -= src
-	if(SSsupply.shuttle == src)
-		SSsupply.shuttle = null
+	if(GLOB.supply_service.shuttle == src)
+		GLOB.supply_service.shuttle = null
 	. = ..()
 
 /datum/shuttle/proc/set_process_state(new_state)
@@ -462,10 +462,10 @@
 
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
-	if(src == SSemergency_shuttle?.shuttle)
-		om_changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
-	else if(src == SSsupply?.shuttle)
-		om_changed(SSsupply, CHANGE_SHUTTLE_SCHEDULE)
+	if(src == GLOB.emergency_shuttle_service?.shuttle)
+		om_changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	else if(src == GLOB.supply_service?.shuttle)
+		om_changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
 
 /// LC-refs: Set current_location_tag, not this: New() resolves the tag into the landmark. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark

@@ -4,7 +4,7 @@
 // REQUIRED objectives are complete, and pays bonus rewards for any optional
 // objectives also finished. Each objective:
 //   * populate(site)      — spawns its content into the generated site.
-//   * check()             — cheap poll (run on the SSexpedition tick); advances
+//   * check()             — cheap poll (run on the GLOB.expedition_service tick); advances
 //                           progress and flips state to COMPLETE / FAILED.
 //   * objective_text()    — the console line.
 //

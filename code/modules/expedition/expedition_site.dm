@@ -85,7 +85,7 @@ REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 	return origin_console() && !QDELETED(origin_console()) && origin_console().active_expedition() == src
 
 /datum/expedition_site/proc/has_travel_lease()
-	var/datum/flight_destination/destination = SSflight_operations?.destinations[flight_destination_id]
+	var/datum/flight_destination/destination = GLOB.flight_service?.destinations[flight_destination_id]
 	return LAZYLEN(destination?.active_plans)
 
 /// LC-refs: the landing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

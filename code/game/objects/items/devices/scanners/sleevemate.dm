@@ -387,7 +387,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/sleevemate/proc/our_db() as /datum/transcore_db
-	return SStranscore.db_by_key(db_key)
+	return GLOB.transcore_service.db_by_key(db_key)
 
 /// LC-refs: stored mind -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/sleevemate/proc/stored_mind() as /datum/mind

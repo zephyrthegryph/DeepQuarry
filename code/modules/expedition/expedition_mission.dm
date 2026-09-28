@@ -3,7 +3,7 @@
 // A mission is a bundle of /datum/expedition_objective (see expedition_objective.dm)
 // bound to one /datum/expedition_site. The completion system:
 //   * populate(site)       builds the objectives and spawns their content.
-//   * check_completion()   polled by SSexpedition.lane_step(): advances each
+//   * check_completion()   polled by GLOB.expedition_service.service_step(): advances each
 //                          objective, fails on a deadline or a party wipe, and
 //                          returns TRUE once every REQUIRED objective is done.
 //   * on_complete()        pays the base reward plus a bonus for each optional
@@ -74,7 +74,7 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 			return FALSE
 	return TRUE
 
-// Polled by SSexpedition.lane_step(). Returns TRUE when all required objectives are
+// Polled by GLOB.expedition_service.service_step(). Returns TRUE when all required objectives are
 // done; flips state to FAILED on a deadline or a total party wipe.
 /datum/expedition_mission/proc/check_completion()
 	if(state == EXP_MISSION_COMPLETE)
@@ -125,8 +125,8 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 		if(!O.required && O.state == EXP_OBJ_COMPLETE)
 			pts += O.bonus_points
 			cash += O.bonus_cash
-	if(SSexpedition)
-		SSexpedition.survey_points_total += pts
+	if(GLOB.expedition_service)
+		GLOB.expedition_service.survey_points_total += pts
 	var/list/mob/living/crew = list()
 	if(site())
 		for(var/mob/living/L in site().participants)
@@ -149,7 +149,7 @@ REF_OWNED_LIST(/datum/expedition_mission, "objectives")
 	if(department_cash > 0)
 		var/datum/money_account/exploration_budget = GLOB.department_accounts[DEPARTMENT_PLANET]
 		exploration_budget?.credit(department_cash, "Exploration program", "Expedition mission proceeds")
-	log_world("SSexpedition: mission '[name]' paid [pts] survey points, [paid_to_crew] Thalers to [length(crew)] crew, [department_cash] Thalers to [DEPARTMENT_PLANET].")
+	log_world("Expedition: mission '[name]' paid [pts] survey points, [paid_to_crew] Thalers to [length(crew)] crew, [department_cash] Thalers to [DEPARTMENT_PLANET].")
 
 #undef EXP_CREW_CASH_SHARE
 

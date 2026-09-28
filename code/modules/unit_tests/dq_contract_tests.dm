@@ -251,8 +251,8 @@
 /datum/unit_test/dq_contract_internal_escrow
 
 /datum/unit_test/dq_contract_internal_escrow/Run()
-	var/currency_created_before = SSsupply.currency_created
-	var/currency_destroyed_before = SSsupply.currency_destroyed
+	var/currency_created_before = GLOB.supply_service.currency_created
+	var/currency_destroyed_before = GLOB.supply_service.currency_destroyed
 	var/datum/money_account/funder = new
 	funder.owner_name = "Test issuer"
 	funder.money = 500
@@ -270,8 +270,8 @@
 	TEST_ASSERT_EQUAL(funder.money, 500, "suspended issuer lost its escrow refund")
 	TEST_ASSERT_EQUAL(contract.escrow_balance, 0, "refunded escrow remained available")
 	funder.suspended = FALSE
-	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_created_before, "internal escrow refund was counted as newly created currency")
-	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, currency_destroyed_before, "internal escrow funding was counted as destroyed currency")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, currency_created_before, "internal escrow refund was counted as newly created currency")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, currency_destroyed_before, "internal escrow funding was counted as destroyed currency")
 	qdel(contract)
 	var/station_money_before = GLOB.station_account.money
 	var/datum/contract/completed_contract = new
@@ -284,8 +284,8 @@
 	emit_contract_event("dq_escrow_payout_event", list("contract_id" = completed_contract.id), "dq-escrow-payout:[REF(completed_contract)]")
 	TEST_ASSERT_EQUAL(completed_contract.state, CONTRACT_COMPLETED, "funded payout contract did not complete")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_money_before + 200, "internal escrow payout did not reach its recipient")
-	TEST_ASSERT_EQUAL(SSsupply.currency_created, currency_created_before, "internal escrow payout was counted as newly created currency")
-	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, currency_destroyed_before, "completed internal escrow was counted as destroyed currency")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, currency_created_before, "internal escrow payout was counted as newly created currency")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, currency_destroyed_before, "completed internal escrow was counted as destroyed currency")
 	GLOB.station_account.money = station_money_before
 	qdel(completed_contract)
 	var/datum/money_account/contributor = new
@@ -956,7 +956,7 @@
 	var/obj/structure/closet/crate/corpse_crate = new(run_loc_floor_bottom_left)
 	create_contract_document(corpse_crate, "test corpse manifest", "test", trial.id, CONTRACT_DOCUMENT_MANIFEST, autopsy.issuer_name, list("side_contract_id" = autopsy.id))
 	corpse.forceMove(corpse_crate)
-	TEST_ASSERT(!SSsupply.forbidden_atoms_check(corpse_crate), "the real supply-shuttle freight guard rejected an eligible dead body")
+	TEST_ASSERT(!GLOB.supply_service.forbidden_atoms_check(corpse_crate), "the real supply-shuttle freight guard rejected an eligible dead body")
 	process_contract_export(corpse_crate)
 	TEST_ASSERT_EQUAL(autopsy.state, CONTRACT_COMPLETED, "manifested irreversible corpse export did not complete recovery contract")
 
@@ -1331,7 +1331,7 @@
 	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 10, actor), "authoritative Engineering allocation edit failed")
 	TEST_ASSERT(management.set_department_allocation_percent(DEPARTMENT_MEDICAL, 10, actor), "authoritative Medical allocation edit failed")
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_ACTIVE, "Department Management policy edits completed Command's contract before funds moved")
-	SSsupply.publish_budget_cycle_settlement(list(DEPARTMENT_ENGINEERING = 2000, DEPARTMENT_MEDICAL = 2000), 99991)
+	GLOB.supply_service.publish_budget_cycle_settlement(list(DEPARTMENT_ENGINEERING = 2000, DEPARTMENT_MEDICAL = 2000), 99991)
 	TEST_ASSERT_EQUAL(command.state, CONTRACT_COMPLETED, "the authoritative funded budget-cycle settlement did not complete Command's contract")
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/department_budget = GLOB.department_accounts[department]
@@ -1379,16 +1379,16 @@
 
 /datum/unit_test/dq_contract_budget_acceptance_feasibility/Run()
 	var/station_money = GLOB.station_account.money
-	var/old_salary_support = SSsupply.nt_salary_support
+	var/old_salary_support = GLOB.supply_service.nt_salary_support
 	GLOB.station_account.money = 2500
-	SSsupply.nt_salary_support = 0
+	GLOB.supply_service.nt_salary_support = 0
 	var/datum/contract_definition/outcome/command_budget_mandate/definition = SScontracts.definitions["command_budget_mandate"]
 	var/datum/contract/outcome/contract = definition.create_contract(list("allocation_target" = 20000, "department_target" = 5, "minimum_allocation" = 2000))
 	var/prepared = definition.prepare_accept(contract, null, null, null)
 	var/scaled_total = contract.primary_target
 	var/scaled_departments = contract.secondary_target
 	GLOB.station_account.money = station_money
-	SSsupply.nt_salary_support = old_salary_support
+	GLOB.supply_service.nt_salary_support = old_salary_support
 	TEST_ASSERT(prepared, "fundable low-budget mandate was rejected instead of scaled")
 	TEST_ASSERT(scaled_total <= 2500, "budget mandate exceeded authoritative next-cycle funding")
 	TEST_ASSERT_EQUAL(scaled_departments, 1, "budget mandate retained more funded departments than available money supports")
@@ -1425,33 +1425,33 @@
 	var/datum/money_account/provider = GLOB.department_accounts[DEPARTMENT_CIVILIAN]
 	var/provider_expenses_before = provider.monthly_expenses
 	var/provider_total_expenses_before = provider.total_expenses
-	var/refunds_before = SSsupply.currency_refunded
-	var/internal_refunds_before = SSsupply.currency_internal_refunded
+	var/refunds_before = GLOB.supply_service.currency_refunded
+	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
 	var/datum/money_account/customer = new
 	customer.account_number = 860001
 	customer.owner_name = "Refund Customer"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, customer)
 	var/old_provider_money = provider.money
 	provider.money = max(provider.money, 500)
-	var/period = SSsupply.service_accounting_period
-	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Meal" = 1), list("Meal" = 200), list("total" = 200, "subsidy" = 0, "personal" = 200, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
+	var/period = GLOB.supply_service.service_accounting_period
+	var/datum/service_invoice/invoice = GLOB.supply_service.create_service_invoice(customer, provider, "Unit test checkout", list("Meal" = 1), list("Meal" = 200), list("total" = 200, "subsidy" = 0, "personal" = 200, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	TEST_ASSERT(invoice, "refund settlement test invoice was not created")
-	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, provider, "Unit test checkout", refund_operator), "test invoice refund failed")
-	SSsupply.create_service_invoice(customer, provider, "Unit test checkout", list("Imaginary banquet" = 1), list("Imaginary banquet" = 1000000), list("total" = 1000000, "subsidy" = 0, "personal" = 1000000, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
+	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, provider, "Unit test checkout", refund_operator), "test invoice refund failed")
+	GLOB.supply_service.create_service_invoice(customer, provider, "Unit test checkout", list("Imaginary banquet" = 1), list("Imaginary banquet" = 1000000), list("total" = 1000000, "subsidy" = 0, "personal" = 1000000, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
 	var/datum/money_account/subsidized_customer = new
 	subsidized_customer.account_number = 860002
 	subsidized_customer.owner_name = "Subsidized Customer"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
-	var/datum/service_invoice/subsidized_invoice = SSsupply.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
-	SSsupply.settle_service_contract_period(period)
+	var/datum/service_invoice/subsidized_invoice = GLOB.supply_service.create_service_invoice(subsidized_customer, provider, "Unit test checkout", list("Subsidized meal" = 1), list("Subsidized meal" = 200), list("total" = 200, "subsidy" = 200, "personal" = 0, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null)
+	GLOB.supply_service.settle_service_contract_period(period)
 	TEST_ASSERT_EQUAL(service.state, CONTRACT_ACTIVE, "a refunded invoice or one fabricated high-price customer completed the settled Service contract")
 	TEST_ASSERT(subsidized_invoice.settled, "closed-period invoice was not finalized")
-	TEST_ASSERT(!SSsupply.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(subsidized_invoice, provider, "Unit test checkout", refund_operator), "a finalized accounting-period invoice was refunded after contract settlement")
 	provider.money = old_provider_money
 	provider.monthly_expenses = provider_expenses_before
 	provider.total_expenses = provider_total_expenses_before
-	SSsupply.currency_refunded = refunds_before
-	SSsupply.currency_internal_refunded = internal_refunds_before
+	GLOB.supply_service.currency_refunded = refunds_before
+	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, customer)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, subsidized_customer)
 	qdel(customer)

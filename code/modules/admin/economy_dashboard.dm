@@ -44,7 +44,7 @@
 				personal_low_balance++
 	sortTim(personal_balances, GLOBAL_PROC_REF(cmp_numeric_asc))
 
-	var/projected_payroll = SSsupply.projected_station_payroll()
+	var/projected_payroll = GLOB.supply_service.projected_station_payroll()
 	var/last_payroll_due = 0
 	var/last_payroll_paid = 0
 	var/department_savings = 0
@@ -62,7 +62,7 @@
 			"savings" = budget.savings,
 			"income" = budget.monthly_income,
 			"expenses" = budget.monthly_expenses,
-			"projected_payroll" = SSsupply.projected_department_payroll(department),
+			"projected_payroll" = GLOB.supply_service.projected_department_payroll(department),
 			"last_payroll_due" = budget.last_payroll_due,
 			"last_payroll_paid" = budget.last_payroll_paid
 		)))
@@ -70,7 +70,7 @@
 	var/personal_orders = 0
 	var/personal_order_spend = 0
 	var/pending_personal_orders = 0
-	for(var/datum/supply_order/order in SSsupply.order_history)
+	for(var/datum/supply_order/order in GLOB.supply_service.order_history)
 		if(!order.personal_order)
 			continue
 		personal_orders++
@@ -78,13 +78,13 @@
 		if(order.status == SUP_ORDER_REQUESTED)
 			pending_personal_orders++
 
-	var/list/service_sales = SSsupply.service_invoice_summary(DEPARTMENT_CIVILIAN, -1)
+	var/list/service_sales = GLOB.supply_service.service_invoice_summary(DEPARTMENT_CIVILIAN, -1)
 	var/market_purchase_volume = 0
 	var/market_export_volume = 0
 	var/covert_market_volume = 0
 	var/covert_market_traces = 0
 	var/covert_market_detections = 0
-	for(var/datum/cargo_market_transaction/market_transaction in SSsupply.market_transactions)
+	for(var/datum/cargo_market_transaction/market_transaction in GLOB.supply_service.market_transactions)
 		if(market_transaction.transaction_type == CARGO_MARKET_BUY)
 			market_purchase_volume += market_transaction.value
 		else if(market_transaction.transaction_type == CARGO_MARKET_SELL)
@@ -95,13 +95,13 @@
 			if(market_transaction.detected)
 				covert_market_detections++
 	var/market_listing_stock = 0
-	for(var/listing_id in SSsupply.market_listings)
-		var/datum/cargo_market_listing/listing = SSsupply.market_listings[listing_id]
+	for(var/listing_id in GLOB.supply_service.market_listings)
+		var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listings[listing_id]
 		market_listing_stock += listing.stock
 	var/market_target_units = 0
 	var/market_fulfilled_units = 0
-	for(var/bid_id in SSsupply.market_bids)
-		var/datum/cargo_market_bid/bid = SSsupply.market_bids[bid_id]
+	for(var/bid_id in GLOB.supply_service.market_bids)
+		var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bids[bid_id]
 		market_target_units += bid.target_units
 		market_fulfilled_units += bid.fulfilled_units
 	var/agent_contracts_completed = 0
@@ -135,20 +135,20 @@
 		"personal_zero_balance" = personal_zero_balance,
 		"personal_low_balance" = personal_low_balance,
 		"department_savings" = department_savings,
-		"currency_created" = SSsupply.currency_created,
-		"currency_destroyed" = SSsupply.currency_destroyed,
-		"currency_refunded" = SSsupply.currency_refunded,
-		"currency_sink_refunded" = SSsupply.currency_sink_refunded,
-		"currency_internal_refunded" = SSsupply.currency_internal_refunded,
-		"net_currency_flow" = SSsupply.currency_created - SSsupply.currency_destroyed + SSsupply.currency_sink_refunded,
-		"currency_sources" = ranked_ledger_rows(SSsupply.currency_sources),
-		"currency_sinks" = ranked_ledger_rows(SSsupply.currency_sinks),
+		"currency_created" = GLOB.supply_service.currency_created,
+		"currency_destroyed" = GLOB.supply_service.currency_destroyed,
+		"currency_refunded" = GLOB.supply_service.currency_refunded,
+		"currency_sink_refunded" = GLOB.supply_service.currency_sink_refunded,
+		"currency_internal_refunded" = GLOB.supply_service.currency_internal_refunded,
+		"net_currency_flow" = GLOB.supply_service.currency_created - GLOB.supply_service.currency_destroyed + GLOB.supply_service.currency_sink_refunded,
+		"currency_sources" = ranked_ledger_rows(GLOB.supply_service.currency_sources),
+		"currency_sinks" = ranked_ledger_rows(GLOB.supply_service.currency_sinks),
 		"projected_payroll" = projected_payroll,
 		"last_payroll_due" = last_payroll_due,
 		"last_payroll_paid" = last_payroll_paid,
 		"unpaid_wages" = max(0, last_payroll_due - last_payroll_paid),
-		"allocation_policy" = SSsupply.allocation_policy,
-		"service_subsidies" = SSsupply.service_subsidies,
+		"allocation_policy" = GLOB.supply_service.allocation_policy,
+		"service_subsidies" = GLOB.supply_service.service_subsidies,
 		"service_invoice_count" = service_sales["invoice_count"],
 		"service_sales_gross" = service_sales["gross_billed"],
 		"service_sales_net" = service_sales["net_billed"],
@@ -158,11 +158,11 @@
 		"personal_orders" = personal_orders,
 		"personal_order_spend" = personal_order_spend,
 		"pending_personal_orders" = pending_personal_orders,
-		"market_generation" = SSsupply.market_generation,
-		"market_counterparties" = length(SSsupply.market_counterparties),
-		"market_listings" = length(SSsupply.market_listings),
+		"market_generation" = GLOB.supply_service.market_generation,
+		"market_counterparties" = length(GLOB.supply_service.market_counterparties),
+		"market_listings" = length(GLOB.supply_service.market_listings),
 		"market_listing_stock" = market_listing_stock,
-		"market_bids" = length(SSsupply.market_bids),
+		"market_bids" = length(GLOB.supply_service.market_bids),
 		"market_target_units" = market_target_units,
 		"market_fulfilled_units" = market_fulfilled_units,
 		"market_purchase_volume" = market_purchase_volume,

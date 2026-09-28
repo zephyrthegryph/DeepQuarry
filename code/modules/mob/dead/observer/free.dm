@@ -29,7 +29,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 
 	//Resleeving cleanup
 	if(mind)
-		SStranscore.leave_round(src)
+		GLOB.transcore_service.leave_round(src)
 
 	//Job slot cleanup
 	var/job = src.mind.assigned_role

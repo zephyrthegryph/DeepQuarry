@@ -3,8 +3,8 @@
 /datum/unit_test/dq_economy_transfer_is_conservative
 
 /datum/unit_test/dq_economy_transfer_is_conservative/Run()
-	var/created_before = SSsupply.currency_created
-	var/destroyed_before = SSsupply.currency_destroyed
+	var/created_before = GLOB.supply_service.currency_created
+	var/destroyed_before = GLOB.supply_service.currency_destroyed
 	var/datum/money_account/source = new
 	var/datum/money_account/target = new
 	source.owner_name = "Source"
@@ -16,8 +16,8 @@
 	TEST_ASSERT_EQUAL(target.money, 65, "target balance was incorrect")
 	TEST_ASSERT(!transfer_account_funds(source, target, 100, "Overdraft"), "overdraft transfer was accepted")
 	TEST_ASSERT_EQUAL(source.money + target.money, 125, "transfer created or destroyed Thalers")
-	TEST_ASSERT_EQUAL(SSsupply.currency_created, created_before, "internal transfer was counted as currency creation")
-	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, destroyed_before, "internal transfer was counted as currency destruction")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, created_before, "internal transfer was counted as currency creation")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, destroyed_before, "internal transfer was counted as currency destruction")
 	qdel(source)
 	qdel(target)
 
@@ -68,20 +68,20 @@
 	var/old_allocation = engineering_budget.monthly_allocation
 	var/old_allocation_percent = engineering_budget.allocation_percent
 	var/old_allocation_configured = engineering_budget.allocation_configured
-	var/old_allocation_policy = SSsupply.allocation_policy
+	var/old_allocation_policy = GLOB.supply_service.allocation_policy
 	TEST_ASSERT(console.set_department_wage(DEPARTMENT_ENGINEERING, 1.25), "valid department wage policy was rejected")
 	TEST_ASSERT_EQUAL(engineering_budget.wage_multiplier, 1.25, "department wage policy did not update")
 	TEST_ASSERT(console.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 25), "valid recurring allocation share was rejected")
 	TEST_ASSERT_EQUAL(engineering_budget.allocation_percent, 25, "recurring allocation percentage did not update")
 	TEST_ASSERT(engineering_budget.allocation_configured, "explicit allocation was not recorded as a department override")
 	TEST_ASSERT(console.set_department_allocation_percent(DEPARTMENT_ENGINEERING, 15), "lower recurring share was rejected")
-	var/list/custom_plan = SSsupply.department_budget_plan()
+	var/list/custom_plan = GLOB.supply_service.department_budget_plan()
 	TEST_ASSERT(custom_plan["unallocated_operating"] > 0, "reducing a custom share did not retain the freed amount as operating reserve")
-	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, old_allocation_policy, "one department override disabled the station-wide automatic policy")
-	TEST_ASSERT(SSsupply.set_allocation_policy("staffing", TRUE), "staffing allocation policy was rejected")
-	TEST_ASSERT_EQUAL(SSsupply.allocation_policy, "staffing", "staffing allocation policy did not update")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.allocation_policy, old_allocation_policy, "one department override disabled the station-wide automatic policy")
+	TEST_ASSERT(GLOB.supply_service.set_allocation_policy("staffing", TRUE), "staffing allocation policy was rejected")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.allocation_policy, "staffing", "staffing allocation policy did not update")
 	TEST_ASSERT(!engineering_budget.allocation_configured, "selecting an automatic policy did not clear stale overrides")
-	TEST_ASSERT(!SSsupply.set_allocation_policy("embezzlement"), "invalid allocation policy was accepted")
+	TEST_ASSERT(!GLOB.supply_service.set_allocation_policy("embezzlement"), "invalid allocation policy was accepted")
 	var/list/data_after_policy = console.tgui_data(null)
 	var/list/finance_row = data_after_policy["department_finances"][1]
 	TEST_ASSERT(!isnull(finance_row["payroll_coverage"]), "finance UI omitted expected payroll coverage")
@@ -96,14 +96,14 @@
 	engineering_budget.monthly_allocation = old_allocation
 	engineering_budget.allocation_percent = old_allocation_percent
 	engineering_budget.allocation_configured = old_allocation_configured
-	SSsupply.allocation_policy = old_allocation_policy
+	GLOB.supply_service.allocation_policy = old_allocation_policy
 	qdel(console)
 
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded
 
 /datum/unit_test/dq_department_budget_plan_is_immediate_and_funded/Run()
 	var/list/original_players = dq_test_players_clear()
-	var/original_policy = SSsupply.allocation_policy
+	var/original_policy = GLOB.supply_service.allocation_policy
 	var/list/original_allocations = list()
 	var/list/original_percentages = list()
 	var/list/original_overrides = list()
@@ -121,8 +121,8 @@
 	employee_mind.initial_account_handle = om_handle(employee_account)
 	employee_mind.transfer_to(employee)
 	registry_join(REGISTRY_PLAYERS, employee)
-	SSsupply.allocation_policy = "equal"
-	var/list/plan = SSsupply.department_budget_plan()
+	GLOB.supply_service.allocation_policy = "equal"
+	var/list/plan = GLOB.supply_service.department_budget_plan()
 	var/list/departments = plan["departments"]
 	var/list/engineering = departments[DEPARTMENT_ENGINEERING]
 	var/list/medical = departments[DEPARTMENT_MEDICAL]
@@ -135,13 +135,13 @@
 	var/datum/money_account/engineering_budget = GLOB.department_accounts[DEPARTMENT_ENGINEERING]
 	engineering_budget.allocation_percent = 25
 	engineering_budget.allocation_configured = TRUE
-	plan = SSsupply.department_budget_plan()
+	plan = GLOB.supply_service.department_budget_plan()
 	departments = plan["departments"]
 	engineering = departments[DEPARTMENT_ENGINEERING]
 	TEST_ASSERT_EQUAL(engineering["requested"], engineering["payroll"] + round(plan["operating_pool"] * 0.25), "department percentage override did not replace only its recurring operating share")
 	TEST_ASSERT(engineering["overridden"], "budget preview did not identify the department override")
 	dq_test_players_restore(original_players)
-	SSsupply.allocation_policy = original_policy
+	GLOB.supply_service.allocation_policy = original_policy
 	for(var/department in GLOB.department_accounts)
 		var/datum/money_account/budget = GLOB.department_accounts[department]
 		budget.monthly_allocation = original_allocations[department]
@@ -177,7 +177,7 @@
 		registry_join(REGISTRY_PLAYERS, employee)
 		employees += employee
 		accounts += account
-	SSsupply.run_department_payroll()
+	GLOB.supply_service.run_department_payroll()
 	var/total_paid = 0
 	for(var/datum/money_account/account as anything in accounts)
 		TEST_ASSERT(account.money > 0, "insolvent payroll skipped an employee")
@@ -200,7 +200,7 @@
 		DEPARTMENT_MEDICAL = 100,
 		DEPARTMENT_RESEARCH = 100,
 	)
-	var/list/funded = SSsupply.proportional_department_allocations(requested, 150)
+	var/list/funded = GLOB.supply_service.proportional_department_allocations(requested, 150)
 	TEST_ASSERT_EQUAL(funded[DEPARTMENT_ENGINEERING], 50, "partial station funding favored Engineering by list order")
 	TEST_ASSERT_EQUAL(funded[DEPARTMENT_MEDICAL], 50, "partial station funding favored Medical by list order")
 	TEST_ASSERT_EQUAL(funded[DEPARTMENT_RESEARCH], 50, "partial station funding starved Research by list order")
@@ -247,16 +247,16 @@
 	TEST_ASSERT(!create_station_funded_account("Rejected account", 40, terminal), "suspended station budget created a funded account")
 	TEST_ASSERT_EQUAL(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS), accounts_before, "failed station debit left an account behind")
 	TEST_ASSERT_EQUAL(test_station.money, 100, "failed account activation changed station funds")
-	var/created_before = SSsupply.currency_created
-	var/destroyed_before = SSsupply.currency_destroyed
+	var/created_before = GLOB.supply_service.currency_created
+	var/destroyed_before = GLOB.supply_service.currency_destroyed
 	test_station.suspended = FALSE
 	var/datum/money_account/account = create_station_funded_account("Conservative account", 40, terminal)
 	TEST_ASSERT(account, "valid station-funded account creation failed")
 	TEST_ASSERT_EQUAL(test_station.money, 60, "station-funded account did not debit its source")
 	TEST_ASSERT_EQUAL(account.money, 40, "station-funded account received the wrong opening balance")
 	TEST_ASSERT_EQUAL(test_station.money + account.money, 100, "manual account creation created or destroyed Thalers")
-	TEST_ASSERT_EQUAL(SSsupply.currency_created, created_before, "internal account activation was counted as external creation")
-	TEST_ASSERT_EQUAL(SSsupply.currency_destroyed, destroyed_before, "internal account activation was counted as external destruction")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created, created_before, "internal account activation was counted as external creation")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_destroyed, destroyed_before, "internal account activation was counted as external destruction")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	GLOB.station_account = original_station
 	for(var/obj/item/smallDelivery/new_package in turf_contents_of_type(test_turf, /obj/item/smallDelivery))
@@ -273,7 +273,7 @@
 	station.owner_name = "Test station"
 	station.department_id = "Station"
 	station.is_budget_account = TRUE
-	TEST_ASSERT_EQUAL(SSsupply.nt_salary_support, 0.75, "NanoTrasen salary support did not default to 75%")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.nt_salary_support, 0.75, "NanoTrasen salary support did not default to 75%")
 	TEST_ASSERT(station.credit(750, "NanoTrasen", "Payroll support"), "station income credit failed")
 	TEST_ASSERT(station.credit(250, "External trade", "Export revenue"), "secondary station income credit failed")
 	TEST_ASSERT_EQUAL(station.monthly_income, 1000, "station monthly income total was incorrect")
@@ -289,12 +289,12 @@
 /datum/unit_test/dq_personal_supply_order_payment_and_refund/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/supply_pack/pack
-	var/destroyed_before = SSsupply.currency_destroyed
-	var/refunded_before = SSsupply.currency_refunded
-	var/sink_refunded_before = SSsupply.currency_sink_refunded
-	var/old_supply_sink = SSsupply.currency_sinks["Supply procurement"]
-	for(var/pack_name in SSsupply.supply_pack)
-		pack = SSsupply.supply_pack[pack_name]
+	var/destroyed_before = GLOB.supply_service.currency_destroyed
+	var/refunded_before = GLOB.supply_service.currency_refunded
+	var/sink_refunded_before = GLOB.supply_service.currency_sink_refunded
+	var/old_supply_sink = GLOB.supply_service.currency_sinks["Supply procurement"]
+	for(var/pack_name in GLOB.supply_service.supply_pack)
+		pack = GLOB.supply_service.supply_pack[pack_name]
 		break
 	TEST_ASSERT(pack, "supply subsystem had no packs to order")
 	var/mob/living/carbon/human/requester = new(test_turf)
@@ -302,32 +302,32 @@
 	var/datum/money_account/account = new
 	account.owner_name = "Personal Supply Tester"
 	account.account_number = 812345
-	account.money = SSsupply.pack_price(pack) + 10
+	account.money = GLOB.supply_service.pack_price(pack) + 10
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	requester_mind.initial_account_handle = om_handle(account)
 	requester_mind.transfer_to(requester)
 	var/starting_balance = account.money
-	var/datum/supply_order/order = SSsupply.create_order(pack, requester, "Personal test order", TRUE)
+	var/datum/supply_order/order = GLOB.supply_service.create_order(pack, requester, "Personal test order", TRUE)
 	TEST_ASSERT(order?.personal_order, "personal supply order was not created")
-	TEST_ASSERT_EQUAL(account.money, starting_balance - SSsupply.pack_price(pack), "personal order was not charged immediately")
+	TEST_ASSERT_EQUAL(account.money, starting_balance - GLOB.supply_service.pack_price(pack), "personal order was not charged immediately")
 	TEST_ASSERT_EQUAL(order.funding_account_number, account.account_number, "personal order did not retain stable account identity")
-	TEST_ASSERT(SSsupply.cancel_personal_order(order, account, requester), "owner could not cancel a pending personal order")
+	TEST_ASSERT(GLOB.supply_service.cancel_personal_order(order, account, requester), "owner could not cancel a pending personal order")
 	TEST_ASSERT_EQUAL(account.money, starting_balance, "personal order refund did not restore the purchaser")
 	TEST_ASSERT_EQUAL(order.status, SUP_ORDER_DENIED, "cancelled personal order did not enter denied state")
-	SSsupply.order_history -= order
-	for(var/datum/supply_order/admin_order in SSsupply.adm_order_history)
+	GLOB.supply_service.order_history -= order
+	for(var/datum/supply_order/admin_order in GLOB.supply_service.adm_order_history)
 		if(admin_order.ordernum == order.ordernum)
-			SSsupply.adm_order_history -= admin_order
+			GLOB.supply_service.adm_order_history -= admin_order
 			qdel(admin_order)
 			break
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
-	SSsupply.currency_destroyed = destroyed_before
-	SSsupply.currency_refunded = refunded_before
-	SSsupply.currency_sink_refunded = sink_refunded_before
+	GLOB.supply_service.currency_destroyed = destroyed_before
+	GLOB.supply_service.currency_refunded = refunded_before
+	GLOB.supply_service.currency_sink_refunded = sink_refunded_before
 	if(isnull(old_supply_sink))
-		SSsupply.currency_sinks -= "Supply procurement"
+		GLOB.supply_service.currency_sinks -= "Supply procurement"
 	else
-		SSsupply.currency_sinks["Supply procurement"] = old_supply_sink
+		GLOB.supply_service.currency_sinks["Supply procurement"] = old_supply_sink
 	qdel(order)
 	qdel(requester)
 	qdel(account)
@@ -343,10 +343,10 @@
 	var/service_total_expenses_before = service.total_expenses
 	var/station_before = GLOB.station_account.money
 	var/old_subsidy_policy = service.service_subsidy
-	var/subsidies_before = SSsupply.service_subsidies
-	var/invoice_counter_before = SSsupply.service_invoice_counter
-	var/refunds_before = SSsupply.currency_refunded
-	var/internal_refunds_before = SSsupply.currency_internal_refunded
+	var/subsidies_before = GLOB.supply_service.service_subsidies
+	var/invoice_counter_before = GLOB.supply_service.service_invoice_counter
+	var/refunds_before = GLOB.supply_service.currency_refunded
+	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
 	var/datum/money_account/customer = new
 	customer.owner_name = "Hungry Tester"
 	customer.account_number = 823456
@@ -363,20 +363,20 @@
 	TEST_ASSERT_EQUAL(service.money, service_before + 200, "Service checkout did not receive funded payment")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before - 50, "Service subsidy was not conserved")
 	TEST_ASSERT_EQUAL(customer.money, 0, "Service checkout did not debit the quoted personal amount")
-	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, service, "Test checkout", list("meal and drink" = 1), list("meal and drink" = 200), result, 0, null)
-	TEST_ASSERT(invoice in SSsupply.service_invoices, "Service invoice was not added to the global ledger")
+	var/datum/service_invoice/invoice = GLOB.supply_service.create_service_invoice(customer, service, "Test checkout", list("meal and drink" = 1), list("meal and drink" = 200), result, 0, null)
+	TEST_ASSERT(invoice in GLOB.supply_service.service_invoices, "Service invoice was not added to the global ledger")
 	var/mob/living/carbon/human/refund_operator = new
 	refund_operator.job = JOB_BARTENDER
-	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, service, "Test checkout", refund_operator), "Service refund failed")
+	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, service, "Test checkout", refund_operator), "Service refund failed")
 	TEST_ASSERT_EQUAL(service.money, service_before, "Service refund did not restore department funds")
 	TEST_ASSERT_EQUAL(GLOB.station_account.money, station_before, "Service refund did not restore subsidy funds")
 	TEST_ASSERT_EQUAL(customer.money, 150, "Service refund did not restore personal payment")
 	service.service_subsidy = old_subsidy_policy
-	SSsupply.service_subsidies = subsidies_before
-	SSsupply.service_invoice_counter = invoice_counter_before
-	SSsupply.currency_refunded = refunds_before
-	SSsupply.currency_internal_refunded = internal_refunds_before
-	SSsupply.service_invoices -= invoice
+	GLOB.supply_service.service_subsidies = subsidies_before
+	GLOB.supply_service.service_invoice_counter = invoice_counter_before
+	GLOB.supply_service.currency_refunded = refunds_before
+	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
+	GLOB.supply_service.service_invoices -= invoice
 	service.monthly_income = service_income_before
 	service.monthly_expenses = service_expenses_before
 	service.total_revenue = service_revenue_before
@@ -398,9 +398,9 @@
 	var/service_revenue_before = service.total_revenue
 	var/service_total_expenses_before = service.total_expenses
 	var/old_subsidy = service.service_subsidy
-	var/invoice_counter_before = SSsupply.service_invoice_counter
-	var/refunds_before = SSsupply.currency_refunded
-	var/internal_refunds_before = SSsupply.currency_internal_refunded
+	var/invoice_counter_before = GLOB.supply_service.service_invoice_counter
+	var/refunds_before = GLOB.supply_service.currency_refunded
+	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
 	var/datum/money_account/customer = new
 	customer.owner_name = "Adversarial Customer"
 	customer.account_number = 834567
@@ -416,7 +416,7 @@
 	TEST_ASSERT_EQUAL(invoice.staff_tip, 10, "staff gratuity split was incorrect")
 	TEST_ASSERT_EQUAL(invoice.service_tip, 10, "department gratuity split was incorrect")
 	TEST_ASSERT_EQUAL(staff.money, 10, "staff did not receive their gratuity")
-	TEST_ASSERT_EQUAL(length(SSsupply.service_invoice_rows(customer.account_number)), 1, "customer receipt lookup did not use the global ledger")
+	TEST_ASSERT_EQUAL(length(GLOB.supply_service.service_invoice_rows(customer.account_number)), 1, "customer receipt lookup did not use the global ledger")
 	var/datum/money_account/impostor = new
 	impostor.account_number = 834569
 
@@ -431,31 +431,31 @@
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 100, customer.account_number, customer.account_number, service, service, staff.account_number, impostor.account_number), "changed staff attribution survived confirmation validation")
 	qdel(terminal)
 	TEST_ASSERT(!service_checkout_confirmation_valid(terminal, user, 1, 1, 100, 100, customer.account_number, customer.account_number, service, service), "deleted terminal survived confirmation validation")
-	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "an unrelated department employee could refund Service revenue")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(invoice, service, "Replacement terminal", user), "an unrelated department employee could refund Service revenue")
 	user.job = JOB_BARTENDER
 
 	customer.suspended = TRUE
-	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund was issued to a suspended account")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund was issued to a suspended account")
 	customer.suspended = FALSE
 	var/funded_service_balance = service.money
 	service.money = 0
 	service.savings = 0
-	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "underfunded provider issued a refund")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(invoice, service, "Replacement terminal", user), "underfunded provider issued a refund")
 	service.money = funded_service_balance
 	TEST_ASSERT(transfer_account_funds(staff, impostor, staff.money, "Spent gratuity"), "test could not spend the staff gratuity")
-	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund succeeded after the staff gratuity was spent")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(invoice, service, "Replacement terminal", user), "refund succeeded after the staff gratuity was spent")
 	TEST_ASSERT_EQUAL(customer.money, 380, "failed refund changed the customer balance")
 	TEST_ASSERT(transfer_account_funds(impostor, staff, invoice.staff_tip, "Return gratuity"), "test could not restore the staff gratuity")
-	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "replacement terminal could not refund a global invoice")
-	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Replacement terminal", user), "duplicate refund was accepted")
+	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, service, "Replacement terminal", user), "replacement terminal could not refund a global invoice")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(invoice, service, "Replacement terminal", user), "duplicate refund was accepted")
 	TEST_ASSERT_EQUAL(customer.money, 500, "refund did not restore purchase and gratuity")
 	TEST_ASSERT_EQUAL(staff.money, 0, "refund did not reclaim the staff gratuity")
 	TEST_ASSERT_EQUAL(invoice.state, "Refunded", "refund did not become the invoice's terminal state")
 
-	SSsupply.service_invoices -= invoice
-	SSsupply.service_invoice_counter = invoice_counter_before
-	SSsupply.currency_refunded = refunds_before
-	SSsupply.currency_internal_refunded = internal_refunds_before
+	GLOB.supply_service.service_invoices -= invoice
+	GLOB.supply_service.service_invoice_counter = invoice_counter_before
+	GLOB.supply_service.currency_refunded = refunds_before
+	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
 	service.money = service_before
 	service.savings = service_savings_before
 	service.monthly_income = service_income_before
@@ -479,27 +479,27 @@
 	var/service_money_before = service.money
 	var/service_expenses_before = service.monthly_expenses
 	var/service_total_expenses_before = service.total_expenses
-	var/invoice_counter_before = SSsupply.service_invoice_counter
-	var/refunds_before = SSsupply.currency_refunded
-	var/internal_refunds_before = SSsupply.currency_internal_refunded
+	var/invoice_counter_before = GLOB.supply_service.service_invoice_counter
+	var/refunds_before = GLOB.supply_service.currency_refunded
+	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
 	var/list/preexisting_cash = list()
 	for(var/obj/item/spacecash/existing_cash in turf_contents_of_type(test_turf, /obj/item/spacecash))
 		preexisting_cash += existing_cash
 	service.money += 30
-	var/datum/service_invoice/invoice = SSsupply.create_service_external_invoice(service, "Anonymous refund test", list("Cash meal" = 1), list("Cash meal" = 30), "Cash customer", 30, "Cash")
+	var/datum/service_invoice/invoice = GLOB.supply_service.create_service_external_invoice(service, "Anonymous refund test", list("Cash meal" = 1), list("Cash meal" = 30), "Cash customer", 30, "Cash")
 	TEST_ASSERT(invoice, "anonymous cash checkout did not create an invoice")
 	var/mob/living/carbon/human/operator = new(test_turf)
 	operator.job = JOB_ENGINEER
-	TEST_ASSERT(!SSsupply.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "unrelated employee converted an anonymous invoice into cash")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "unrelated employee converted an anonymous invoice into cash")
 	TEST_ASSERT_EQUAL(invoice.state, "Paid", "unauthorized anonymous refund changed invoice state")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 30, "unauthorized anonymous refund drained Service funds")
 	operator.job = JOB_BARTENDER
-	TEST_ASSERT(SSsupply.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "authorized Service employee could not refund an anonymous sale")
+	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(invoice, service, "Anonymous refund test", operator), "authorized Service employee could not refund an anonymous sale")
 	TEST_ASSERT_EQUAL(service.money, service_money_before, "authorized anonymous refund did not reverse provider revenue")
-	SSsupply.service_invoices -= invoice
-	SSsupply.service_invoice_counter = invoice_counter_before
-	SSsupply.currency_refunded = refunds_before
-	SSsupply.currency_internal_refunded = internal_refunds_before
+	GLOB.supply_service.service_invoices -= invoice
+	GLOB.supply_service.service_invoice_counter = invoice_counter_before
+	GLOB.supply_service.currency_refunded = refunds_before
+	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
 	service.money = service_money_before
 	service.monthly_expenses = service_expenses_before
 	service.total_expenses = service_total_expenses_before
@@ -567,7 +567,7 @@
 	TEST_ASSERT(register.access_action("link_account", list("name" = "[second_provider.account_number]", "pin" = "[second_provider.remote_access_pin]"), null), "register rejected a valid provider relink")
 	TEST_ASSERT_EQUAL(length(register.item_list), 0, "register carried an old ticket into a new provider account")
 	TEST_ASSERT_EQUAL(register.service_staff_account_number, 0, "register carried old staff attribution into a new provider account")
-	TEST_ASSERT(!SSsupply.create_service_invoice(null, first_provider, "Malformed checkout", list("Meal" = 1), list("Meal" = 10), list("total" = 10, "subsidy" = 0, "personal" = 9, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null, "Malformed customer"), "invoice accepted a financial split that did not reconcile")
+	TEST_ASSERT(!GLOB.supply_service.create_service_invoice(null, first_provider, "Malformed checkout", list("Meal" = 1), list("Meal" = 10), list("total" = 10, "subsidy" = 0, "personal" = 9, "tip" = 0, "staff_tip" = 0, "service_tip" = 0), 0, null, "Malformed customer"), "invoice accepted a financial split that did not reconcile")
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, first_provider)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, second_provider)
 	qdel(scanner)
@@ -585,10 +585,10 @@
 	var/service_expenses_before = service.monthly_expenses
 	var/service_revenue_before = service.total_revenue
 	var/service_total_expenses_before = service.total_expenses
-	var/refunds_before = SSsupply.currency_refunded
-	var/internal_refunds_before = SSsupply.currency_internal_refunded
-	var/invoice_counter_before = SSsupply.service_invoice_counter
-	var/invoice_count_before = length(SSsupply.service_invoices)
+	var/refunds_before = GLOB.supply_service.currency_refunded
+	var/internal_refunds_before = GLOB.supply_service.currency_internal_refunded
+	var/invoice_counter_before = GLOB.supply_service.service_invoice_counter
+	var/invoice_count_before = length(GLOB.supply_service.service_invoices)
 
 	var/datum/money_account/customer_account = new
 	customer_account.owner_name = "Lifecycle Customer"
@@ -617,7 +617,7 @@
 	register.scan_wallet(wallet, customer)
 	TEST_ASSERT_EQUAL(wallet.worth, 35, "real register did not debit the e-wallet")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 25, "real register did not credit Service for an e-wallet sale")
-	var/datum/service_invoice/ewallet_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
+	var/datum/service_invoice/ewallet_invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
 	TEST_ASSERT_EQUAL(ewallet_invoice.payment_method, "E-Wallet", "e-wallet invoice recorded the wrong payment channel")
 
 	register.transaction_amount = 30
@@ -630,7 +630,7 @@
 	TEST_ASSERT_EQUAL(cash.worth, 20, "real register deducted the wrong cash amount")
 	TEST_ASSERT_EQUAL(register.cash_stored, cash_before, "Service cash sale remained off-books in the till")
 	TEST_ASSERT_EQUAL(service.money, service_money_before + 55, "Service cash deposit did not reach the department account")
-	var/datum/service_invoice/cash_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
+	var/datum/service_invoice/cash_invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
 	TEST_ASSERT_EQUAL(cash_invoice.payment_method, "Cash", "cash invoice recorded the wrong payment channel")
 
 	var/datum/service_invoice/account_invoice = complete_service_checkout(customer_account, service, 40, "Lifecycle account meal", register.machine_id, list("account meal" = 1), list("account meal" = 40), 0, null, 0)
@@ -640,25 +640,25 @@
 	receipt_app.update_ui(customer, pda_data)
 	TEST_ASSERT_EQUAL(length(pda_data["service_receipts"]), 1, "real PDA did not expose the inserted ID account's receipt")
 	TEST_ASSERT_EQUAL(pda_data["service_receipts"][1]["invoice_id"], account_invoice.id, "PDA returned the wrong account receipt")
-	var/list/summary = SSsupply.service_invoice_summary(DEPARTMENT_CIVILIAN)
+	var/list/summary = GLOB.supply_service.service_invoice_summary(DEPARTMENT_CIVILIAN)
 	TEST_ASSERT(summary["invoice_count"] >= 3, "Service summary omitted real payment-channel invoices")
 	TEST_ASSERT(summary["cash_sales"] >= 30, "Service summary omitted cash revenue")
 	TEST_ASSERT(summary["ewallet_sales"] >= 25, "Service summary omitted e-wallet revenue")
 
-	TEST_ASSERT(!SSsupply.refund_service_invoice(account_invoice, service, register.machine_id, customer), "a customer could refund their own Service invoice")
+	TEST_ASSERT(!GLOB.supply_service.refund_service_invoice(account_invoice, service, register.machine_id, customer), "a customer could refund their own Service invoice")
 	var/mob/living/carbon/human/refund_operator = new(test_turf)
 	refund_operator.job = JOB_BARTENDER
-	TEST_ASSERT(SSsupply.refund_service_invoice(account_invoice, service, register.machine_id, refund_operator), "authorized Service staff could not refund a real invoice")
+	TEST_ASSERT(GLOB.supply_service.refund_service_invoice(account_invoice, service, register.machine_id, refund_operator), "authorized Service staff could not refund a real invoice")
 	receipt_app.update_ui(customer, pda_data)
 	TEST_ASSERT_EQUAL(pda_data["service_receipts"][1]["state"], "Refunded", "PDA receipt did not update after refund")
 
-	while(length(SSsupply.service_invoices) > invoice_count_before)
-		var/datum/service_invoice/invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
-		SSsupply.service_invoices -= invoice
+	while(length(GLOB.supply_service.service_invoices) > invoice_count_before)
+		var/datum/service_invoice/invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
+		GLOB.supply_service.service_invoices -= invoice
 		qdel(invoice)
-	SSsupply.service_invoice_counter = invoice_counter_before
-	SSsupply.currency_refunded = refunds_before
-	SSsupply.currency_internal_refunded = internal_refunds_before
+	GLOB.supply_service.service_invoice_counter = invoice_counter_before
+	GLOB.supply_service.currency_refunded = refunds_before
+	GLOB.supply_service.currency_internal_refunded = internal_refunds_before
 	service.money = service_money_before
 	service.monthly_income = service_income_before
 	service.monthly_expenses = service_expenses_before
@@ -675,22 +675,22 @@
 
 /datum/unit_test/dq_economy_shift_tracking_reset/Run()
 	var/datum/money_account/service = GLOB.department_accounts[DEPARTMENT_CIVILIAN]
-	SSsupply.create_service_external_invoice(service, "Reset test", list("test" = 1), list("test" = 1), "Reset customer", 1, "Cash")
-	SSsupply.currency_created = 10
-	SSsupply.currency_destroyed = 5
-	SSsupply.currency_refunded = 2
-	SSsupply.currency_sink_refunded = 1
-	SSsupply.currency_internal_refunded = 1
-	SSsupply.service_subsidies = 3
-	SSsupply.currency_sources["Test"] = 10
-	SSsupply.currency_sinks["Test"] = 5
-	SSsupply.reset_shift_economy_tracking()
-	TEST_ASSERT_EQUAL(length(SSsupply.service_invoices), 0, "shift reset retained Service invoices")
-	TEST_ASSERT_EQUAL(SSsupply.service_invoice_counter, 0, "shift reset retained the invoice sequence")
-	TEST_ASSERT_EQUAL(SSsupply.service_accounting_period, 1, "shift reset retained the accounting period")
-	TEST_ASSERT_EQUAL(SSsupply.currency_created + SSsupply.currency_destroyed + SSsupply.currency_refunded + SSsupply.currency_sink_refunded + SSsupply.currency_internal_refunded, 0, "shift reset retained currency-flow metrics")
-	TEST_ASSERT_EQUAL(SSsupply.service_subsidies, 0, "shift reset retained Service subsidy metrics")
-	TEST_ASSERT_EQUAL(length(SSsupply.currency_sources) + length(SSsupply.currency_sinks), 0, "shift reset retained source or sink ledgers")
+	GLOB.supply_service.create_service_external_invoice(service, "Reset test", list("test" = 1), list("test" = 1), "Reset customer", 1, "Cash")
+	GLOB.supply_service.currency_created = 10
+	GLOB.supply_service.currency_destroyed = 5
+	GLOB.supply_service.currency_refunded = 2
+	GLOB.supply_service.currency_sink_refunded = 1
+	GLOB.supply_service.currency_internal_refunded = 1
+	GLOB.supply_service.service_subsidies = 3
+	GLOB.supply_service.currency_sources["Test"] = 10
+	GLOB.supply_service.currency_sinks["Test"] = 5
+	GLOB.supply_service.reset_shift_economy_tracking()
+	TEST_ASSERT_EQUAL(length(GLOB.supply_service.service_invoices), 0, "shift reset retained Service invoices")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.service_invoice_counter, 0, "shift reset retained the invoice sequence")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.service_accounting_period, 1, "shift reset retained the accounting period")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.currency_created + GLOB.supply_service.currency_destroyed + GLOB.supply_service.currency_refunded + GLOB.supply_service.currency_sink_refunded + GLOB.supply_service.currency_internal_refunded, 0, "shift reset retained currency-flow metrics")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.service_subsidies, 0, "shift reset retained Service subsidy metrics")
+	TEST_ASSERT_EQUAL(length(GLOB.supply_service.currency_sources) + length(GLOB.supply_service.currency_sinks), 0, "shift reset retained source or sink ledgers")
 
 /datum/unit_test/dq_economy_observatory_metrics
 
@@ -755,7 +755,7 @@
 	var/datum/exported_crate/science_export = new
 	TEST_ASSERT(prototype.export_sale(science_export, TRUE), "R&D prototype was not recognized as sellable cargo")
 	TEST_ASSERT_EQUAL(science_export.value, 10, "R&D prototype export value was incorrect")
-	SSsupply.distribute_export_revenue(science_export)
+	GLOB.supply_service.distribute_export_revenue(science_export)
 	TEST_ASSERT_EQUAL(research.money - research_before, 375, "Research did not receive its manufactured export share")
 	TEST_ASSERT_EQUAL(cargo.money - cargo_before, 100, "Cargo did not receive its R&D export handling share")
 	TEST_ASSERT_EQUAL(producer.money, 1025, "R&D producer did not receive their export bonus")
@@ -765,7 +765,7 @@
 	var/obj/item/salvage/cargo_goods = new(test_turf)
 	var/datum/exported_crate/cargo_export = new
 	TEST_ASSERT(cargo_goods.export_sale(cargo_export, TRUE), "Cargo salvage was not recognized as sellable cargo")
-	SSsupply.distribute_export_revenue(cargo_export)
+	GLOB.supply_service.distribute_export_revenue(cargo_export)
 	TEST_ASSERT_EQUAL(cargo.money - cargo_before, 5100, "Cargo did not receive unassigned goods revenue plus handling fees")
 	TEST_ASSERT_EQUAL(cargo_contract.state, CONTRACT_COMPLETED, "Cargo's contract did not count both handled Research freight and untagged salvage")
 
@@ -782,7 +782,7 @@
 	scanner.scan_card(customer_id, customer_id, customer)
 	TEST_ASSERT_EQUAL(research.money - research_before_crew_sale, 500, "Crew-facing R&D sale did not credit Research")
 	TEST_ASSERT_EQUAL(producer.money, 525, "Crew-facing R&D sale did not debit the purchaser")
-	var/datum/service_invoice/research_invoice = SSsupply.service_invoices[length(SSsupply.service_invoices)]
+	var/datum/service_invoice/research_invoice = GLOB.supply_service.service_invoices[length(GLOB.supply_service.service_invoices)]
 	TEST_ASSERT_EQUAL(research_invoice.verified_item_count, 1, "the real Research checkout did not retain physical merchandise evidence")
 	TEST_ASSERT_EQUAL(research_invoice.verified_amount, 500, "the real Research checkout recorded the wrong verified sale value")
 	var/datum/component/economic_adoption/adoption = prototype.GetComponent(/datum/component/economic_adoption)
@@ -841,14 +841,14 @@
 /datum/unit_test/dq_cargo_faction_market
 
 /datum/unit_test/dq_cargo_faction_market/Run()
-	TEST_ASSERT_EQUAL(length(SSsupply.market_counterparties), 9, "Cargo market did not register all faction counterparties")
-	TEST_ASSERT(length(SSsupply.market_listings) > 0, "Cargo market generated no seller listings")
-	TEST_ASSERT(length(SSsupply.market_bids) > 0, "Cargo market generated no buyer bids")
-	for(var/listing_id in SSsupply.market_listings)
-		var/datum/cargo_market_listing/listing = SSsupply.market_listings[listing_id]
+	TEST_ASSERT_EQUAL(length(GLOB.supply_service.market_counterparties), 9, "Cargo market did not register all faction counterparties")
+	TEST_ASSERT(length(GLOB.supply_service.market_listings) > 0, "Cargo market generated no seller listings")
+	TEST_ASSERT(length(GLOB.supply_service.market_bids) > 0, "Cargo market generated no buyer bids")
+	for(var/listing_id in GLOB.supply_service.market_listings)
+		var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listings[listing_id]
 		TEST_ASSERT(listing.pack && listing.unit_price > 0 && listing.stock > 0, "Cargo seller listing had invalid stock, pack, or price")
-	for(var/bid_id in SSsupply.market_bids)
-		var/datum/cargo_market_bid/bid = SSsupply.market_bids[bid_id]
+	for(var/bid_id in GLOB.supply_service.market_bids)
+		var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bids[bid_id]
 		TEST_ASSERT(bid.profile && bid.price_multiplier > 1 && bid.target_units > 0, "Cargo buyer bid had invalid demand or pricing")
 
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
@@ -856,9 +856,9 @@
 	test_product.name = "market integration prototype"
 	test_product.set_economic_provenance(DEPARTMENT_RESEARCH, 20)
 	var/datum/cargo_market_bid/matching_bid
-	for(var/bid_id in SSsupply.market_bids)
-		var/datum/cargo_market_bid/candidate = SSsupply.market_bids[bid_id]
-		var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparties[candidate.counterparty_id]
+	for(var/bid_id in GLOB.supply_service.market_bids)
+		var/datum/cargo_market_bid/candidate = GLOB.supply_service.market_bids[bid_id]
+		var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties[candidate.counterparty_id]
 		if(!counterparty.covert && candidate.profile.matches(test_product))
 			matching_bid = candidate
 			break
@@ -872,9 +872,9 @@
 	TEST_ASSERT_EQUAL(export.market_counterparty_id, matching_bid.counterparty_id, "export receipt lost its external buyer identity")
 
 	var/datum/cargo_market_listing/test_listing
-	for(var/listing_id in SSsupply.market_listings)
-		var/datum/cargo_market_listing/candidate = SSsupply.market_listings[listing_id]
-		var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparties[candidate.counterparty_id]
+	for(var/listing_id in GLOB.supply_service.market_listings)
+		var/datum/cargo_market_listing/candidate = GLOB.supply_service.market_listings[listing_id]
+		var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties[candidate.counterparty_id]
 		if(!counterparty.covert)
 			test_listing = candidate
 			break
@@ -888,19 +888,19 @@
 	var/mob/living/carbon/human/test_buyer = new(test_turf)
 	test_mind.transfer_to(test_buyer)
 	var/stock_before = test_listing.stock
-	var/datum/supply_order/order = SSsupply.request_market_order(test_listing, test_buyer, "Focused market test")
+	var/datum/supply_order/order = GLOB.supply_service.request_market_order(test_listing, test_buyer, "Focused market test")
 	TEST_ASSERT_NOTNULL(order, "valid market seller listing could not create an ordinary supply order")
 	TEST_ASSERT_EQUAL(order.quoted_price, test_listing.unit_price, "market order did not preserve its immutable quoted price")
 	TEST_ASSERT_EQUAL(test_listing.stock, stock_before - 1, "market order did not reserve seller stock")
-	SSsupply.deny_order(order, test_buyer)
+	GLOB.supply_service.deny_order(order, test_buyer)
 	TEST_ASSERT_EQUAL(test_listing.stock, stock_before, "denied market order did not release reserved stock")
 	var/datum/supply_order/admin_order
-	for(var/datum/supply_order/candidate in SSsupply.adm_order_history)
+	for(var/datum/supply_order/candidate in GLOB.supply_service.adm_order_history)
 		if(candidate.ordernum == order.ordernum)
 			admin_order = candidate
 			break
-	SSsupply.order_history -= order
-	SSsupply.adm_order_history -= admin_order
+	GLOB.supply_service.order_history -= order
+	GLOB.supply_service.adm_order_history -= admin_order
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(admin_order)
 	qdel(order)
@@ -915,8 +915,8 @@
 /datum/unit_test/dq_covert_market_agent_integration/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/datum/cargo_market_counterparty/syndicate_broker
-	for(var/counterparty_id in SSsupply.market_counterparties)
-		var/datum/cargo_market_counterparty/candidate = SSsupply.market_counterparties[counterparty_id]
+	for(var/counterparty_id in GLOB.supply_service.market_counterparties)
+		var/datum/cargo_market_counterparty/candidate = GLOB.supply_service.market_counterparties[counterparty_id]
 		if(candidate.faction_id == REPUTATION_FACTION_SYNDICATE)
 			syndicate_broker = candidate
 			break
@@ -946,16 +946,16 @@
 	collaborator_id.access = list(ACCESS_CARGO)
 	dq_test_wear_id(collaborator, collaborator_id)
 
-	TEST_ASSERT(!SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "unapproved account could see the covert market feed")
+	TEST_ASSERT(!GLOB.supply_service.market_counterparty_visible(syndicate_broker, collaborator), "unapproved account could see the covert market feed")
 	var/datum/faction_agent_record/record = new
 	record.account_number = owner_account.account_number
 	record.faction_id = REPUTATION_FACTION_SYNDICATE
 	record.agent_mind = owner_mind
 	record.tier = FACTION_AGENT_TIER_ACCREDITED
 	GLOB.station_faction_relations.agent_records["[owner_account.account_number]"] = record
-	TEST_ASSERT(SSsupply.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
-	TEST_ASSERT(SSsupply.market_true_identity_visible(syndicate_broker, owner), "principal account could not identify its own counterparty")
-	TEST_ASSERT(!SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "unsigned Cargo contact could see the private feed")
+	TEST_ASSERT(GLOB.supply_service.market_counterparty_visible(syndicate_broker, owner), "accredited agent could not see their principal market")
+	TEST_ASSERT(GLOB.supply_service.market_true_identity_visible(syndicate_broker, owner), "principal account could not identify its own counterparty")
+	TEST_ASSERT(!GLOB.supply_service.market_counterparty_visible(syndicate_broker, collaborator), "unsigned Cargo contact could see the private feed")
 
 	var/datum/contract/faction_agent/test_contract = new
 	test_contract.definition_id = "agent_confidential_brokerage"
@@ -968,16 +968,16 @@
 	test_contract.state = CONTRACT_ACTIVE
 	SScontracts.active_contracts += test_contract
 	TEST_ASSERT(test_contract.register_contact(null, collaborator, AGENT_CONTACT_CONFIDENTIAL, null), "Cargo contact could not sign a per-contract confidential agreement")
-	TEST_ASSERT(SSsupply.market_counterparty_visible(syndicate_broker, collaborator), "signed per-contract Cargo contact could not see the private feed")
-	TEST_ASSERT(!SSsupply.market_true_identity_visible(syndicate_broker, collaborator), "Cargo contact was shown the covert principal instead of its cover identity")
-	TEST_ASSERT_EQUAL(SSsupply.market_display_name(syndicate_broker, collaborator, syndicate_broker.active_cover_name), syndicate_broker.active_cover_name, "covert cover identity was not stable for a contact")
-	TEST_ASSERT(SSsupply.reserve_agent_contract_market(test_contract), "accepted agent contract could not reserve a stable market route")
+	TEST_ASSERT(GLOB.supply_service.market_counterparty_visible(syndicate_broker, collaborator), "signed per-contract Cargo contact could not see the private feed")
+	TEST_ASSERT(!GLOB.supply_service.market_true_identity_visible(syndicate_broker, collaborator), "Cargo contact was shown the covert principal instead of its cover identity")
+	TEST_ASSERT_EQUAL(GLOB.supply_service.market_display_name(syndicate_broker, collaborator, syndicate_broker.active_cover_name), syndicate_broker.active_cover_name, "covert cover identity was not stable for a contact")
+	TEST_ASSERT(GLOB.supply_service.reserve_agent_contract_market(test_contract), "accepted agent contract could not reserve a stable market route")
 	TEST_ASSERT_EQUAL(length(test_contract.market_reservation_ids), 1, "targeted contract created an ambiguous number of market routes")
 	var/reserved_id = test_contract.market_reservation_ids[1]
-	var/datum/cargo_market_bid/reserved_bid = SSsupply.market_bid(reserved_id)
+	var/datum/cargo_market_bid/reserved_bid = GLOB.supply_service.market_bid(reserved_id)
 	TEST_ASSERT_NOTNULL(reserved_bid, "reserved export bid was not published")
-	SSsupply.refresh_cargo_market()
-	TEST_ASSERT_EQUAL(SSsupply.market_bid(reserved_id), reserved_bid, "ordinary market refresh destroyed an accepted contract route")
+	GLOB.supply_service.refresh_cargo_market()
+	TEST_ASSERT_EQUAL(GLOB.supply_service.market_bid(reserved_id), reserved_bid, "ordinary market refresh destroyed an accepted contract route")
 
 	var/datum/contract/faction_agent/funding_contract = new
 	funding_contract.definition_id = "agent_reciprocal_trade"
@@ -992,37 +992,37 @@
 	funding_contract.state = CONTRACT_ACTIVE
 	SScontracts.active_contracts += funding_contract
 	TEST_ASSERT(funding_contract.register_contact(null, collaborator, AGENT_CONTACT_STANDARD, null), "Cargo contact could not sign the allowance-backed commission")
-	TEST_ASSERT(SSsupply.reserve_agent_contract_market(funding_contract), "preferred-supplier contract could not publish allowance-backed listings")
-	var/datum/cargo_market_listing/funded_listing = SSsupply.market_listing(funding_contract.market_reservation_ids[1])
+	TEST_ASSERT(GLOB.supply_service.reserve_agent_contract_market(funding_contract), "preferred-supplier contract could not publish allowance-backed listings")
+	var/datum/cargo_market_listing/funded_listing = GLOB.supply_service.market_listing(funding_contract.market_reservation_ids[1])
 	TEST_ASSERT_NOTNULL(funded_listing, "contract-funded listing reservation was not addressable")
 	var/owner_balance_before = owner_account.money
 	var/allowance_before = funding_contract.market_allowance - funding_contract.market_spend
 	var/funded_stock_before = funded_listing.stock
-	var/datum/supply_order/funded_order = SSsupply.request_market_order(funded_listing, collaborator, "Contract allowance integration test", TRUE, FALSE, TRUE)
+	var/datum/supply_order/funded_order = GLOB.supply_service.request_market_order(funded_listing, collaborator, "Contract allowance integration test", TRUE, FALSE, TRUE)
 	TEST_ASSERT_NOTNULL(funded_order, "approved collaborator could not use a principal contract allowance")
 	if(!funded_order)
 		return
 	TEST_ASSERT(funded_order.market_contract_funded && funded_order.paid_amount == funded_listing.unit_price, "contract-funded order did not retain its funding provenance")
 	TEST_ASSERT_EQUAL(owner_account.money, owner_balance_before, "contract allowance incorrectly debited the agent's personal balance")
 	TEST_ASSERT_EQUAL(funding_contract.market_allowance - funding_contract.market_spend, allowance_before - funded_listing.unit_price, "contract allowance did not reserve the quoted order value")
-	SSsupply.deny_order(funded_order, collaborator)
+	GLOB.supply_service.deny_order(funded_order, collaborator)
 	TEST_ASSERT_EQUAL(funding_contract.market_allowance - funding_contract.market_spend, allowance_before, "denied contract-funded order did not restore its allowance")
 	TEST_ASSERT_EQUAL(funded_listing.stock, funded_stock_before, "denied contract-funded order did not restore private listing stock")
 	var/datum/supply_order/funded_admin_order
-	for(var/datum/supply_order/candidate_order in SSsupply.adm_order_history)
+	for(var/datum/supply_order/candidate_order in GLOB.supply_service.adm_order_history)
 		if(candidate_order.ordernum == funded_order.ordernum)
 			funded_admin_order = candidate_order
 			break
-	SSsupply.order_history -= funded_order
-	SSsupply.adm_order_history -= funded_admin_order
+	GLOB.supply_service.order_history -= funded_order
+	GLOB.supply_service.adm_order_history -= funded_admin_order
 	SScontracts.active_contracts -= funding_contract
 	qdel(funded_admin_order)
 	qdel(funded_order)
 	qdel(funding_contract)
 
-	var/datum/cargo_market_transaction/transaction = SSsupply.record_market_transaction(CARGO_MARKET_SELL, syndicate_broker.id, "Covert integration settlement", 1600, collaborator_account.account_number, reserved_bid.cover_name, test_contract.offer_key)
+	var/datum/cargo_market_transaction/transaction = GLOB.supply_service.record_market_transaction(CARGO_MARKET_SELL, syndicate_broker.id, "Covert integration settlement", 1600, collaborator_account.account_number, reserved_bid.cover_name, test_contract.offer_key)
 	TEST_ASSERT(transaction.covert && record.exposure > 0, "covert settlement did not create trace/exposure state")
-	var/list/collaborator_ui = SSsupply.cargo_market_ui_data(collaborator)
+	var/list/collaborator_ui = GLOB.supply_service.cargo_market_ui_data(collaborator)
 	var/list/visible_transactions = collaborator_ui["transactions"]
 	var/list/visible_transaction = visible_transactions[1]
 	TEST_ASSERT_EQUAL(visible_transaction["counterparty"], transaction.cover_name, "ordinary market history leaked the covert principal name")
@@ -1039,26 +1039,26 @@
 	auditor_id.associated_account_number = auditor_account.account_number
 	auditor_id.access = list(ACCESS_SECURITY)
 	dq_test_wear_id(auditor, auditor_id)
-	TEST_ASSERT(SSsupply.market_security_auditor(auditor), "test Security ID did not authorize market forensics")
+	TEST_ASSERT(GLOB.supply_service.market_security_auditor(auditor), "test Security ID did not authorize market forensics")
 	transaction.trace_strength = FACTION_AGENT_INVESTIGATION_THRESHOLD
-	TEST_ASSERT(SSsupply.audit_market_transaction(transaction.id, auditor), "authorized Security account could not audit a covert settlement")
+	TEST_ASSERT(GLOB.supply_service.audit_market_transaction(transaction.id, auditor), "authorized Security account could not audit a covert settlement")
 	TEST_ASSERT(transaction.detected, "deterministic forensic threshold failed to correlate a covert account")
 	TEST_ASSERT_EQUAL(transaction.detected_account, owner_account.account_number, "collaborator traffic did not correlate back to its principal account")
-	TEST_ASSERT(!SSsupply.audit_market_transaction(transaction.id, auditor), "the same account could repeatedly audit one settlement")
+	TEST_ASSERT(!GLOB.supply_service.audit_market_transaction(transaction.id, auditor), "the same account could repeatedly audit one settlement")
 	record.tier = FACTION_AGENT_TIER_TRUSTED
 	TEST_ASSERT(GLOB.station_faction_relations.activate_contract_operative(owner_account.account_number, "TEST-RED-CONTRACT", owner), "trusted Syndicate agent could not explicitly enter the bounded operative role")
 	TEST_ASSERT_EQUAL(owner_mind.special_role, "Contract Operative", "red-contract opt-in did not register the antagonist role")
 	TEST_ASSERT(GLOB.station_faction_relations.deactivate_contract_operative(owner_account.account_number, "TEST-RED-CONTRACT"), "closing the red contract did not remove its bounded antagonist role")
 	TEST_ASSERT_NULL(owner_mind.special_role, "red-contract antagonist role outlived its contract")
 
-	SSsupply.release_agent_contract_market(test_contract)
+	GLOB.supply_service.release_agent_contract_market(test_contract)
 	TEST_ASSERT(reserved_bid.completed_at, "closed contract left its private buyer route usable")
 	for(var/datum/contract_offer_candidate/offer_candidate in SScontracts.offer_candidates.Copy())
 		if(offer_candidate.context?["suspect_account"] == owner_account.account_number)
 			SScontracts.withdraw_candidate(offer_candidate, "Covert market test cleanup")
 	GLOB.station_faction_relations.agent_records -= "[owner_account.account_number]"
 	SScontracts.active_contracts -= test_contract
-	SSsupply.market_transactions -= transaction
+	GLOB.supply_service.market_transactions -= transaction
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, collaborator_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, auditor_account)
@@ -1116,8 +1116,8 @@
 	SScontracts.register_contract(contract)
 	SScontracts.offered_contracts -= contract
 	SScontracts.active_contracts += contract
-	TEST_ASSERT(SSsupply.reserve_agent_contract_market(contract), "physical agent contract did not reserve a freight route")
-	var/datum/cargo_market_bid/bid = SSsupply.market_bid(contract.market_reservation_ids[1])
+	TEST_ASSERT(GLOB.supply_service.reserve_agent_contract_market(contract), "physical agent contract did not reserve a freight route")
+	var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(contract.market_reservation_ids[1])
 	TEST_ASSERT_NOTNULL(bid, "physical agent contract had no reserved buyer")
 
 	var/obj/item/paper/charter = create_contract_document(test_turf, "test operation charter", "<span class=\"paper_field\"></span>", contract.id, CONTRACT_DOCUMENT_AGENT_CHARTER, contract.issuer_name, list("agent_contract_id" = contract.id, "principal_account" = principal_account.account_number, "faction_id" = contract.agent_faction))
@@ -1166,7 +1166,7 @@
 	TEST_ASSERT_EQUAL(contract.discovery_stage, AGENT_DISCOVERY_PROVEN, "authenticated physical evidence did not advance the operation to proven discovery")
 	TEST_ASSERT(document.payload["cooperation_paid"], "Security scan did not settle the physical cooperation declaration")
 
-	SSsupply.release_agent_contract_market(contract)
+	GLOB.supply_service.release_agent_contract_market(contract)
 	GLOB.station_faction_relations.agent_records -= "[principal_account.account_number]"
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, principal_account)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, contact_account)

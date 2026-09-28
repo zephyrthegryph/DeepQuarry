@@ -53,7 +53,7 @@
 /obj/machinery/computer/stockexchange/proc/balance()
 	if (!logged_in)
 		return 0
-	return SSsupply.budget_balance()
+	return GLOB.supply_service.budget_balance()
 
 ///// MAIN TGUI SCREEN /////
 
@@ -277,7 +277,7 @@
 	if (!li)
 		to_chat(user, span_danger("No active account on the console!"))
 		return
-	var/b = SSsupply.budget_balance()
+	var/b = GLOB.supply_service.budget_balance()
 	var/avail = LAZYACCESS(S.shareholders, logged_in)
 	if (!avail)
 		to_chat(user, span_danger("This account does not own any shares of [S.name]!"))
@@ -295,7 +295,7 @@
 		return
 	if (li != logged_in)
 		return
-	b = SSsupply.budget_balance()
+	b = GLOB.supply_service.budget_balance()
 	if (!isnum(b))
 		to_chat(user, span_danger("No active account on the console!"))
 		return

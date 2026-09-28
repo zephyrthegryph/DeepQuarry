@@ -245,8 +245,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 /mob/observer/dead/get_status_tab_items()
 	. = ..()
-	if(SSemergency_shuttle)
-		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
+	if(GLOB.emergency_shuttle_service)
+		var/eta_status = GLOB.emergency_shuttle_service.get_status_panel_eta()
 		if(eta_status)
 			. += ""
 			. += "[eta_status]"
@@ -1044,7 +1044,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!mind)
 		to_chat(src,span_warning("Your ghost is missing game values that allow this functionality, sorry."))
 		return
-	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind.name)
+	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(!(record.dead_state == MR_DEAD))
@@ -1072,7 +1072,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!mind)
 		to_chat(src,span_warning("Your ghost is missing game values that allow this functionality, sorry."))
 		return
-	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind.name)
+	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(record.dead_state == MR_DEAD || !(record.do_notify))

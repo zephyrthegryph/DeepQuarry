@@ -133,9 +133,13 @@
 		GLOB.poi_service, GLOB.starmover_service, GLOB.turf_cascade_service, GLOB.explosion_service,
 		GLOB.inactivity_service, GLOB.transfer_service, GLOB.radio_service, GLOB.antag_service,
 		// Former feature subsystems (large).
-		// FEATURE_SERVICES_LARGE
+		GLOB.research_service, GLOB.supply_service, GLOB.transcore_service, GLOB.emergency_shuttle_service,
+		GLOB.expedition_service, GLOB.flight_service,
 		// Former feature subsystems (small) and client plumbing.
-		// FEATURE_SERVICES_SMALL
+		GLOB.character_setup_service, GLOB.lobby_monitor_service, GLOB.player_tips_service,
+		GLOB.vote_service, GLOB.persist_service,
+		GLOB.runechat_service, GLOB.chat_service, GLOB.asset_loading_service, GLOB.vis_overlays_service,
+		GLOB.ping_service, GLOB.time_track_service, GLOB.statpanels_service, GLOB.server_maint_service,
 	)
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).

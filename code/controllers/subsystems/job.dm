@@ -1075,7 +1075,7 @@ SUBSYSTEM_DEF(job)
 	if(!ishuman(target_client.mob))
 		return
 	var/mob/living/carbon/human/target_human = target_client.mob
-	SStranscore.m_backup(target_human.mind, target_human.nif, TRUE)
+	GLOB.transcore_service.m_backup(target_human.mind, target_human.nif, TRUE)
 
 /datum/controller/subsystem/job/proc/get_all_jobs()
 	var/list/all_jobs = list()

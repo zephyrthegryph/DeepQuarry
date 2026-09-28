@@ -107,7 +107,7 @@
 			if(ishuman(L))
 				var/mob/living/carbon/human/H = L
 				nif = H.nif
-			SStranscore.m_backup(L.mind,nif,one_time = TRUE)
+			GLOB.transcore_service.m_backup(L.mind,nif,one_time = TRUE)
 		L.gib()
 
 	..()

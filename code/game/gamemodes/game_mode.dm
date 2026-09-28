@@ -213,8 +213,8 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 		if(antag.is_latejoin_template())
 			LAZYOR(latejoin_templates, antag)
 
-	if(SSemergency_shuttle && auto_recall_shuttle)
-		SSemergency_shuttle.auto_recall = TRUE
+	if(GLOB.emergency_shuttle_service && auto_recall_shuttle)
+		GLOB.emergency_shuttle_service.auto_recall = TRUE
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
 	SSdbcore.SetRoundStart() // an om_io write; returns at once
@@ -266,14 +266,14 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	GLOB.command_announcement.Announce("The presence of [pick(reasons)] in the region is tying up all available local emergency resources; emergency response teams cannot be called at this time, and post-evacuation recovery efforts will be substantially delayed.","Emergency Transmission")
 
 /datum/game_mode/proc/check_finished()
-	if(SSemergency_shuttle.returned() || station_was_nuked)
+	if(GLOB.emergency_shuttle_service.returned() || station_was_nuked)
 		return 1
 	if(end_on_antag_death && antag_templates && antag_templates.len)
 		for(var/datum/antagonist/antag in antag_templates)
 			if(!antag.antags_are_dead())
 				return 0
 		if(CONFIG_GET(flag/continuous_rounds))
-			SSemergency_shuttle.auto_recall = FALSE
+			GLOB.emergency_shuttle_service.auto_recall = FALSE
 			return 0
 		return 1
 	return 0
@@ -363,7 +363,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	var/text = ""
 	if(surviving_total > 0)
 		text += "<br>There [surviving_total>1 ? ("were " + span_bold("[surviving_total] survivors")) : ("was " + span_bold("one survivor"))] ("
-		text += span_bold("[escaped_total>0 ? escaped_total : "none"] [SSemergency_shuttle.evac ? "escaped" : "transferred"]") + ") and " + span_bold("[ghosts] ghosts")
+		text += span_bold("[escaped_total>0 ? escaped_total : "none"] [GLOB.emergency_shuttle_service.evac ? "escaped" : "transferred"]") + ") and " + span_bold("[ghosts] ghosts")
 		text += ".<br>"
 	else
 		text += "There were " + span_bold("no survivors") + " (" + span_bold("[ghosts] ghosts") + ")."

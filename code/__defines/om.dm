@@ -385,7 +385,7 @@
 #define CHANGE_PIPE_LEAKS CHANGE_DATUM_A
 /// A meteor appeared or went away (on GLOB.meteor_watch).
 #define CHANGE_METEORS CHANGE_DATUM_A
-/// A shuttle's schedule changed (on SSemergency_shuttle for evac, SSsupply for supply).
+/// A shuttle's schedule changed (on GLOB.emergency_shuttle_service for evac, GLOB.supply_service for supply).
 #define CHANGE_SHUTTLE_SCHEDULE CHANGE_DATUM_D
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1

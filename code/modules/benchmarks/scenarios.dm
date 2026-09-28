@@ -271,7 +271,7 @@
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
-		generated_site_handle = om_handle(SSexpedition.generate_debug_station(seed, diagnostics))
+		generated_site_handle = om_handle(GLOB.expedition_service.generate_debug_station(seed, diagnostics))
 	catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the benchmark diagnostics
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
@@ -297,10 +297,10 @@
 		if(!generated_site())
 			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
 		mark("cycle[cycle]_generated")
-		SSexpedition.release_site(generated_site(), "generation benchmark")
+		GLOB.expedition_service.release_site(generated_site(), "generation benchmark")
 		generated_site_handle = null
 		var/waited = 0
-		while((length(SSexpedition.teardown_z) || !length(SSexpedition.free_z)) && waited++ < world.fps * 180)
+		while((length(GLOB.expedition_service.teardown_z) || !length(GLOB.expedition_service.free_z)) && waited++ < world.fps * 180)
 			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		if(waited >= world.fps * 180)
 			fail("expedition teardown did not return its z-level to the pool")

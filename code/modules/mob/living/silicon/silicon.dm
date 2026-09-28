@@ -148,8 +148,8 @@ REF_OWNED(/mob/living/silicon, list("aiCamera", "idcard", "laws"))
 
 // this function displays the shuttles ETA in the status panel if the shuttle has been called
 /mob/living/silicon/proc/show_emergency_shuttle_eta()
-	if(SSemergency_shuttle)
-		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
+	if(GLOB.emergency_shuttle_service)
+		var/eta_status = GLOB.emergency_shuttle_service.get_status_panel_eta()
 		if(eta_status)
 			. = "[eta_status]"
 

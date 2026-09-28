@@ -304,12 +304,12 @@ accident or assume they work:
   The SSair admin debug panel works again: verb "Debug Atmospherics" (Debug→Investigate) →
   `SSair.tgui_interact` → `AtmosControlPanel.tsx` (was dead: nonexistent interface + `ui_*` names when this
   fork's tgui calls `tgui_*`).
-- **Expeditions and Flight Operations.** The old quarry mode is gone. `SSexpedition`
+- **Expeditions and Flight Operations.** The old quarry mode is gone. `GLOB.expedition_service`
   (`code/modules/expedition/`) generates sites on demand: it allocates or recycles a
   z-level (`load_new_z()`), carves it with the `cave_system` automata or builds a generated
   station, bridges it into multi-z atmos, and populates POIs, loot and a
   `/datum/expedition_mission` objective. Sites are released and wiped when the crew leaves;
-  z-levels go back into a `free_z` pool. Crews reach sites by flying: `SSflight_operations`
+  z-levels go back into a `free_z` pool. Crews reach sites by flying: `GLOB.flight_service`
   (`code/modules/flight_operations/`) owns vessels, destinations, berths and flight plans,
   and the Flight Operations console plots expedition contracts as short-jump destinations.
   Admin debug verbs ("Generate Expedition Site" / "Generate Expedition Mission") jump

@@ -25,7 +25,7 @@ GLOBAL_DATUM_INIT(mail_service, /datum/world_service/mail, new)
 
 /datum/world_service/mail/proc/create_mail()
 	// Spawn crate
-	var/obj/structure/closet/crate/mail/mailcrate = new(pick(SSsupply.get_clear_turfs()))
+	var/obj/structure/closet/crate/mail/mailcrate = new(pick(GLOB.supply_service.get_clear_turfs()))
 	// Collect recipients
 	var/list/mail_recipients = list()
 	for(var/mob/living/carbon/human/player_human in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

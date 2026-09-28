@@ -467,7 +467,7 @@ REF_OWNED(/mob, "ability_master")
 
 		//Resleeving cleanup
 		if(mind)
-			SStranscore.leave_round(src)
+			GLOB.transcore_service.leave_round(src)
 
 		//Job slot cleanup
 		var/job = mind.assigned_role

@@ -20,7 +20,7 @@
 	var/mob/user = task.actor
 	var/obj/item/sleevemate/S = task.S
 	var/mind_name = task.mind_name
-	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind_name)
+	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(mind_name)
 	if(!db || pai)
 		return
 	var/datum/transhuman/mind_record/record = db.backed_up[mind_name]
@@ -33,7 +33,7 @@
 		var/obj/item/sleevemate/S = I
 		if(S.stored_mind() && !pai)
 			var/datum/mind/M = S.stored_mind()
-			var/datum/transcore_db/db = SStranscore.db_by_mind_name(M.name)
+			var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(M.name)
 			if(db)
 				to_chat(user, span_notice("You begin uploading [M.name] into \the [src]."))
 				om_task_start(/datum/om/task/timed/sleevecard_upload_mind, user, src, list("receiver" = src, "S" = S, "mind_name" = M.name))

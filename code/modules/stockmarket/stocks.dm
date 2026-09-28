@@ -243,7 +243,7 @@
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
 	if(!account || (by < 0 && account.money + by < 0 && !force))
 		return 0
-	if(!SSsupply.adjust_budget(by, "Stock exchange transaction"))
+	if(!GLOB.supply_service.adjust_budget(by, "Stock exchange transaction"))
 		return 0
 	GLOB.stockExchange.balanceLog(whose, by)
 	return 1

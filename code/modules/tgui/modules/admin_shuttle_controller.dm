@@ -105,7 +105,7 @@
 		if("overmap_control")
 			var/obj/effect/overmap/visitable/ship/V = locate(params["ref"])
 			if(istype(V))
-				var/datum/flight_vessel/vessel = SSflight_operations.vessel_for_ship(V) || SSflight_operations.register_vessel(V)
+				var/datum/flight_vessel/vessel = GLOB.flight_service.vessel_for_ship(V) || GLOB.flight_service.register_vessel(V)
 				var/datum/flight_operations_ui/flight_ui = new(src, vessel)
 				flight_ui.tgui_interact(ui.user)
 

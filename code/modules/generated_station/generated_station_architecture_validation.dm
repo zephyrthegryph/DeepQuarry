@@ -837,8 +837,8 @@
 	if(!check_rights(R_DEBUG))
 		return
 	var/datum/expedition_site/found_site
-	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/site = SSexpedition.sites[key]
+	for(var/key in GLOB.expedition_service?.sites)
+		var/datum/expedition_site/site = GLOB.expedition_service.sites[key]
 		if(site.z_level == mob?.z && site.station_materialization)
 			found_site = site
 			break

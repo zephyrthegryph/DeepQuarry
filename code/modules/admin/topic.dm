@@ -83,23 +83,23 @@
 
 		switch(href_list["call_shuttle"])
 			if("1")
-				if ((!( SSticker ) || !SSemergency_shuttle.location()))
+				if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
 					return
-				if (SSemergency_shuttle.can_call())
-					SSemergency_shuttle.call_evac()
+				if (GLOB.emergency_shuttle_service.can_call())
+					GLOB.emergency_shuttle_service.call_evac()
 					log_admin("[key_name(usr)] called the Emergency Shuttle")
 					message_admins(span_blue("[key_name_admin(usr)] called the Emergency Shuttle to the station."), 1)
 
 			if("2")
-				if (!( SSticker ) || !SSemergency_shuttle.location())
+				if (!( SSticker ) || !GLOB.emergency_shuttle_service.location())
 					return
-				if (SSemergency_shuttle.can_call())
-					SSemergency_shuttle.call_evac()
+				if (GLOB.emergency_shuttle_service.can_call())
+					GLOB.emergency_shuttle_service.call_evac()
 					log_admin("[key_name(usr)] called the Emergency Shuttle")
 					message_admins(span_blue("[key_name_admin(usr)] called the Emergency Shuttle to the station."), 1)
 
-				else if (SSemergency_shuttle.can_recall())
-					SSemergency_shuttle.recall()
+				else if (GLOB.emergency_shuttle_service.can_recall())
+					GLOB.emergency_shuttle_service.recall()
 					log_admin("[key_name(usr)] sent the Emergency Shuttle back")
 					message_admins(span_blue("[key_name_admin(usr)] sent the Emergency Shuttle back."), 1)
 
@@ -108,21 +108,21 @@
 	else if(href_list["edit_shuttle_time"])
 		if(!check_rights(R_SERVER))	return
 
-		if (SSemergency_shuttle.wait_for_launch)
-			var/new_time_left = topic_prompt(usr, href_list, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = SSemergency_shuttle.estimate_launch_time()))
+		if (GLOB.emergency_shuttle_service.wait_for_launch)
+			var/new_time_left = topic_prompt(usr, href_list, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = GLOB.emergency_shuttle_service.estimate_launch_time()))
 			if(isnull(new_time_left))
 				return
 
-			SSemergency_shuttle.launch_time = world.time + (new_time_left * 10)
+			GLOB.emergency_shuttle_service.launch_time = world.time + (new_time_left * 10)
 
 			log_admin("[key_name(usr)] edited the Emergency Shuttle's launch time to [new_time_left]")
 			message_admins(span_blue("[key_name_admin(usr)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
-		else if (SSemergency_shuttle.shuttle.has_arrive_time())
+		else if (GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
 
-			var/new_time_left = topic_prompt(usr, href_list, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = SSemergency_shuttle.estimate_arrival_time()))
+			var/new_time_left = topic_prompt(usr, href_list, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = GLOB.emergency_shuttle_service.estimate_arrival_time()))
 			if(isnull(new_time_left))
 				return
-			SSemergency_shuttle.shuttle.arrive_time = world.time + (new_time_left * 10)
+			GLOB.emergency_shuttle_service.shuttle.arrive_time = world.time + (new_time_left * 10)
 
 			log_admin("[key_name(usr)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 			message_admins(span_blue("[key_name_admin(usr)] edited the Emergency Shuttle's arrival time to [new_time_left * 10]"), 1)

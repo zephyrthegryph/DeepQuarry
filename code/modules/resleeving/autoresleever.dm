@@ -243,7 +243,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	if(imp.handle_implant(new_character,new_character.zone_sel.selecting))
 		imp.post_implant(new_character)
 
-	var/datum/transcore_db/db = SStranscore.db_by_mind_name(new_character.mind.name)
+	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(new_character.mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
 		if((world.time - record.last_notification) < 30 MINUTES)

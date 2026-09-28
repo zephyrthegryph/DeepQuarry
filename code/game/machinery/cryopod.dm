@@ -487,7 +487,7 @@
 
 	// Resleeving.
 	if(to_despawn.mind)
-		SStranscore.leave_round(to_despawn)
+		GLOB.transcore_service.leave_round(to_despawn)
 	// Resleeving.
 
 		// Everything below should only be applicable to a cliented living/carbon/human.

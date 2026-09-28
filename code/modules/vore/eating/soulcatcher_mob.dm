@@ -28,7 +28,7 @@
 		return
 
 	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.gem().setting_flags & NIF_SC_BACKUPS)
-		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+		GLOB.transcore_service.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
 	if(!self.client)
 		return

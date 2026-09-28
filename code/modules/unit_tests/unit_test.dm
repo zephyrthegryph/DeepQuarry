@@ -94,7 +94,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 		// z's contents when this happens; not yet root-caused (a map-loader
 		// or GLOB.cached_maps-reuse issue under this specific "allocate a
 		// brand new z, back to back, several times" pattern -- load_new_z()
-		// is also SSexpedition's z-allocation path, so this may not be
+		// is also GLOB.expedition_service's z-allocation path, so this may not be
 		// unique to tests). Retry a few fresh attempts per slot rather than
 		// let one bad load silently shrink the pool.
 		for(var/attempt in 1 to 3)
@@ -176,7 +176,7 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 	// Mirror /datum/unit_test/restore_atmos(): don't hand this block's z back
 	// out while expedition teardown (or anything else async) is still touching
 	// turfs on it.
-	while(SSexpedition && length(SSexpedition.teardown_z))
+	while(GLOB.expedition_service && length(GLOB.expedition_service.teardown_z))
 		sleep(1)
 
 	// Leak detection: by now QDEL_LIST(allocated) has already run, so anything
@@ -538,7 +538,7 @@ GLOBAL_VAR(dq_test_select_names)
 	// Expedition release is deliberately asynchronous in production. Do not let
 	// the next test start while a teardown job is still changing thousands of
 	// turfs and publishing atmosphere topology.
-	while(SSexpedition && length(SSexpedition.teardown_z))
+	while(GLOB.expedition_service && length(GLOB.expedition_service.teardown_z))
 		sleep(1)
 	// DQ atmos integration tests operate on mapped turfs because the inherited
 	// per-test reservation is not implemented. Restore every turf they snapshot

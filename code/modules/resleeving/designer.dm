@@ -25,7 +25,7 @@
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
-	our_db_handle = om_handle(SStranscore.db_by_key(db_key))
+	our_db_handle = om_handle(GLOB.transcore_service.db_by_key(db_key))
 
 REF_SPILL(/obj/machinery/computer/transhuman/designer, "disk")
 

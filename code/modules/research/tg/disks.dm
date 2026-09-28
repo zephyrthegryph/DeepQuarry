@@ -20,7 +20,7 @@
 	desc = "A debug item for research"
 
 /obj/item/disk/tech_disk/debug/Initialize(mapload)
-	stored_research_handle = om_handle(locate(/datum/techweb/admin) in SSresearch.techwebs)
+	stored_research_handle = om_handle(locate(/datum/techweb/admin) in GLOB.research_service.techwebs)
 	return ..()
 
 /obj/item/disk/design_disk
