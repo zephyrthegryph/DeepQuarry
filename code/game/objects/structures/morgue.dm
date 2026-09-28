@@ -35,7 +35,7 @@ REF_OWNED(/obj/structure/morgue, "connected")
 	if (src.connected)
 		src.icon_state = "morgue0"
 	else
-		if (src.contents.len)
+		if (contents_count(src))
 			src.icon_state = "morgue2"
 			get_occupants()
 			for (var/mob/living/carbon/human/H in occupants)
@@ -100,7 +100,7 @@ REF_OWNED(/obj/structure/morgue, "connected")
 	if (T.contents.Find(src.connected))
 		src.connected.connected = src
 		src.icon_state = "morgue0"
-		for(var/atom/movable/A as mob|obj in src)
+		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "morguet"
 		src.connected.set_dir(src.dir)
@@ -232,7 +232,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	if (src.connected)
 		src.icon_state = "crema0"
 	else
-		if (src.contents.len)
+		if (contents_count(src))
 			src.icon_state = "crema2"
 		else
 			src.icon_state = "crema1"
@@ -271,7 +271,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		if (T.contents.Find(src.connected))
 			src.connected.connected = src
 			src.icon_state = "crema0"
-			for(var/atom/movable/A as mob|obj in src)
+			for(var/atom/movable/A as mob|obj in contents_of(src))
 				A.forceMove(src.connected.loc)
 			src.connected.icon_state = "cremat"
 		else
@@ -309,7 +309,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	if (T.contents.Find(src.connected))
 		src.connected.connected = src
 		src.icon_state = "crema0"
-		for(var/atom/movable/A as mob|obj in src)
+		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "cremat"
 	else
@@ -326,7 +326,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	if(cremating)
 		return //don't let you cremate something twice or w/e
 
-	if(contents.len <= 0)
+	if(contents_count(src) <= 0)
 		for (var/mob/M in viewers(src))
 			to_chat(M, span_warning("You hear a hollow crackle."))
 			return
@@ -412,7 +412,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 	if(cremating)
 		return //don't let you cremate something twice or w/e
 
-	if(contents.len <= 0)
+	if(contents_count(src) <= 0)
 		for (var/mob/M in viewers(src))
 			M.show_message(span_warning("You hear a hollow crackle."), 1)
 			return
@@ -427,7 +427,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 				return
 			if(isliving(I))
 				var/mob/living/cremated = I
-				for(var/Z in cremated.contents)
+				for(var/Z in contents_of(cremated))
 					if(!is_type_in_list(Z, allowed_items))
 						to_chat(user, span_notice("\The [src] cannot cremate while there are items inside!"))
 						return

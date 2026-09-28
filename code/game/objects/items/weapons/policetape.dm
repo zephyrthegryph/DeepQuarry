@@ -166,7 +166,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 				if(T && T.density)
 					possible_dirs |= dir
 				else
-					for(var/obj/structure/window/W in T)
+					for(var/obj/structure/window/W in contents_of(T))
 						if(W.is_fulltile() || W.dir == GLOB.reverse_dir[dir])
 							possible_dirs |= dir
 			for(var/obj/structure/window/window in get_start())

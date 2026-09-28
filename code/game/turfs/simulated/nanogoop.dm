@@ -136,7 +136,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	var/mob/living/nutrienttarget = om_resolve(moblink)
 	if(check_target())
 		if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
-			if(!locate(user) in range(1, src))// AI can always control adjacent nanite tiles
+			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
 				return FALSE
 	om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), from_ai = TRUE)
 	return TRUE
@@ -238,7 +238,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	var/damage = 2
 	var/list/stuff = list()
 	var/nutrients = 0
-	for(var/thing in src)
+	for(var/thing in contents_of(src))
 		if(can_digest(thing))
 			stuff |= thing
 	if(!stuff.len)

@@ -65,7 +65,7 @@ REF_OWNED(/obj/machinery/computer/teleporter, "teleport_control")
 
 	for(var/obj/effect/landmark/sloc in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 		if(sloc.name != C.data) continue
-		if(locate(/mob/living) in sloc.loc) continue
+		if(locate_within(sloc.loc, /mob/living)) continue
 		L = sloc
 		break
 

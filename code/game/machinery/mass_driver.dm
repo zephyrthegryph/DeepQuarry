@@ -49,7 +49,7 @@
 	use_power(500)
 	var/O_limit
 	var/atom/target = get_edge_target_turf(src, dir)
-	for(var/atom/movable/O in loc)
+	for(var/atom/movable/O in contents_of(loc))
 		if(!O.anchored||istype(O, /obj/mecha))//Mechs need their launch platforms.
 			O_limit++
 			if(O_limit >= 20)

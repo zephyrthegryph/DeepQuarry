@@ -340,7 +340,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	if (!istype(human))
 		return FALSE
 	for (var/obj/item/clothing/worn in human.get_worn_clothing())
-		if (istype(worn, /obj/item/clothing/accessory/collar) || (locate(/obj/item/clothing/accessory/collar) in worn.accessories))
+		if (istype(worn, /obj/item/clothing/accessory/collar) || (locate_in_list(worn.accessories, /obj/item/clothing/accessory/collar)))
 			return TRUE
 	return FALSE
 

@@ -241,7 +241,7 @@ REF_OWNED(/obj/item/flash, "power_supply")
 		if(isrobot(target))
 			var/mob/living/silicon/robot/R = target
 			if(R.has_active_type(/obj/item/borg/combat/shield))
-				var/obj/item/borg/combat/shield/shield = locate() in R
+				var/obj/item/borg/combat/shield/shield = locate_within(R, /obj/item/borg/combat/shield)
 				if(shield)
 					if(shield.active)
 						shield.adjust_flash_count(R, 1)

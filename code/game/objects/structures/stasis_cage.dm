@@ -11,7 +11,7 @@
 /obj/structure/stasis_cage/Initialize(mapload)
 	. = ..()
 
-	var/mob/living/simple_mob/A = locate() in loc
+	var/mob/living/simple_mob/A = locate_within(loc, /mob/living/simple_mob)
 	if(A)
 		contain(A)
 

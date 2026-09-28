@@ -149,7 +149,7 @@
 			return
 		else
 			icon_state = "arfg_off"
-			for(var/obj/structure/atmospheric_retention_field/F in loc)
+			for(var/obj/structure/atmospheric_retention_field/F in contents_of(loc))
 				qdel(F)
 			src.visible_message("The ARF-G shuts down with a low hum.","You hear an ARF-G powering down.")
 			update_use_power(USE_POWER_IDLE)
@@ -159,7 +159,7 @@
 /obj/machinery/atmospheric_field_generator/Initialize(mapload)
 	. = ..()
 	//Delete ourselves if we find extra mapped in arfgs
-	for(var/obj/machinery/atmospheric_field_generator/F in loc)
+	for(var/obj/machinery/atmospheric_field_generator/F in contents_of(loc))
 		if(F != src)
 			log_mapping("Duplicate ARFGS at [x],[y],[z]")
 			return INITIALIZE_HINT_QDEL

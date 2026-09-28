@@ -86,7 +86,7 @@
 		var/new_y = 32 * (R.y - T_mob.y) + R.pixel_y
 		riftimage.pixel_x = new_x
 		riftimage.pixel_y = new_y
-		riftimage.loc = T_mob
+		image_anchor(riftimage, T_mob)
 
 		src << riftimage
 	else

@@ -51,8 +51,10 @@
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
-				ammo_magazine.contents.Cut(0,ammo_cut)
-				ammo_magazine.stored_ammo.Cut(0,ammo_cut)
+				for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
+					var/obj/item/ammo_casing/spent = ammo_magazine.stored_ammo[1]
+					ammo_magazine.stored_ammo.Cut(1, 2)
+					qdel(spent)
 
 	update_icon()
 

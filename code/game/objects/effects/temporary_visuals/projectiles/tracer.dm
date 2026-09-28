@@ -22,7 +22,7 @@ REF_OWNED_LIST(/datum/beam_components_cache, "beam_components")
 		var/list/turf/line = getline(starting.return_turf(), ending.return_turf())
 		tracing_line:
 			for(var/turf/T as anything in line)
-				for(var/obj/effect/projectile_lighting/PL in T)
+				for(var/obj/effect/projectile_lighting/PL in contents_of(T))
 					if(PL.owner == instance_key)
 						continue tracing_line
 				beam_components.beam_components += new /obj/effect/projectile_lighting(T, light_color_override, light_range, light_intensity, instance_key)

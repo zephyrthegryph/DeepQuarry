@@ -60,11 +60,11 @@
 		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
 				var/mob/living/carbon/M = user
-				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+				if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE
-				if(locate(/obj/item/organ/internal/xenos/resinspinner/replicant) in M.internal_organs)
+				if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/resinspinner/replicant))
 					om_do_after(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
 					return TRUE
 			visible_message(span_warning("[usr] claws at the [name]!"))

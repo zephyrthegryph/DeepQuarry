@@ -43,9 +43,9 @@
 					var/turf/simulated/mineral/M1 = target
 					M1.GetDrilled()
 				src.mecha_log_message("Drilled through [target]")
-				if(locate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp) in chassis.equipment)
+				if(locate_in_list(chassis.equipment, /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp))
 					var/obj/mecha/working/ripley/ripley_chassis = chassis
-					var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in ripley_chassis.cargo
+					var/obj/structure/ore_box/ore_box = locate_in_list(ripley_chassis.cargo, /obj/structure/ore_box)
 					if(ore_box)
 						for(var/obj/item/ore/ore in range(chassis,1))
 							if(get_dir(chassis,ore)&chassis.dir)
@@ -124,9 +124,9 @@
 				else
 					M.GetDrilled()
 					src.mecha_log_message("Bored through [target]")
-				if(locate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp) in chassis.equipment)
+				if(locate_in_list(chassis.equipment, /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp))
 					var/obj/mecha/working/ripley/ripley_chassis = chassis
-					var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in ripley_chassis.cargo
+					var/obj/structure/ore_box/ore_box = locate_in_list(ripley_chassis.cargo, /obj/structure/ore_box)
 					if(ore_box)
 						for(var/obj/item/ore/ore in range(chassis,1))
 							if(get_dir(chassis,ore)&chassis.dir)

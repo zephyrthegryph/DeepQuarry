@@ -109,7 +109,7 @@
 		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
-	hunting_handle = om_handle(locate(/mob/living) in range(7, src))
+	hunting_handle = om_handle(locate_in_list(range(7, src), /mob/living))
 	..()
 
 /*

@@ -99,7 +99,7 @@ REF_SPILL_LIST(/obj/effect/dummy/spell_jaunt, "contents")
 	if (!src.canmove || reappearing) return
 	var/turf/newLoc = get_step(src,direction)
 	if(newLoc && !(newLoc.flags & NOJAUNT))
-		loc = newLoc
+		loc = newLoc // ALLOW(containment): jaunt holder abstract move: must not trigger Entered/Crossed
 		var/turf/T = get_turf(loc)
 		if(!T.contains_dense_objects())
 			last_valid_turf_handle = om_handle(T)

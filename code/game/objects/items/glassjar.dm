@@ -91,21 +91,21 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 
 	switch(contains)
 		if(JAR_MONEY)
-			for(var/obj/O in src)
+			for(var/obj/O in contents_of(src))
 				O.forceMove(user.loc)
 			to_chat(user, span_notice("You take money out of \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()
 			return TRUE
 		if(JAR_ANIMAL)
-			for(var/mob/M in src)
+			for(var/mob/M in contents_of(src))
 				M.forceMove(user.loc)
 				user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()
 			return TRUE
 		if(JAR_SPIDER)
-			for(var/obj/effect/spider/spiderling/S in src)
+			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				S.forceMove(user.loc)
 				user.visible_message(span_notice("[user] releases [S] from \the [src]."), span_notice("You release [S] from \the [src]."))
 				PERIODIC_START(S, PERIODIC_SLOW) // They can grow after being let out though
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			update_icon()
 			return TRUE
 	//CHOMPDDITION: your god can not help you
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		if(istype(M,/mob/living/voice)) //Don't knock voices out!
 			continue
 		M.forceMove(get_turf(user))
@@ -135,7 +135,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 	//CHOMPDDITION: your god can not help you
 	if(istype(W,/obj/item/holder/micro))
 		var/full = 0
-		for(var/mob/M in src)
+		for(var/mob/M in contents_of(src))
 			if(istype(M,/mob/living/voice)) //Don't count voices as people!
 				continue
 			full++
@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			to_chat(user, span_warning("You can't fit anyone else into \the [src]!"))
 		else
 			var/obj/item/holder/micro/holder = W
-			if(holder.held_mob && (holder.held_mob in holder))
+			if(holder.held_mob && (holder.held_mob in contents_of(holder)))
 				var/mob/living/M = holder.held_mob
 				holder.dump_mob()
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
@@ -167,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			else
 				name = "tip jar"
 			desc = "A [name] with money inside."
-			for(var/obj/item/spacecash/S in src)
+			for(var/obj/item/spacecash/S in contents_of(src))
 				var/image/money = image(S.icon, S.icon_state)
 				money.pixel_x = rand(-2, 3)
 				money.pixel_y = rand(-6, 6)
@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 		if(JAR_ANIMAL)
 			//tank
 			if(can_fill)
-				for(var/mob/M in src)
+				for(var/mob/M in contents_of(src))
 					var/image/victim = image(M.icon, M.icon_state)
 					var/initial_x_scale = M.icon_scale_x
 					var/initial_y_scale = M.icon_scale_y
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 					name = "[name] with [M]"
 					desc = "A large [name] with [M] inside."
 			else
-				for(var/mob/M in src)
+				for(var/mob/M in contents_of(src))
 					var/image/victim = image(M.icon, M.icon_state)
 					victim.pixel_y = 6
 					victim.color = M.color
@@ -201,7 +201,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 					name = "glass jar with [M]"
 					desc = "A small jar with [M] inside."
 		if(JAR_SPIDER)
-			for(var/obj/effect/spider/spiderling/S in src)
+			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				var/image/victim = image(S.icon, S.icon_state)
 				underlays += victim
 				if(can_fill)

@@ -206,7 +206,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	create_eyeobj()
 	if(eyeobj)
-		eyeobj.loc = src.loc
+		eyeobj.forceMove(src.loc)
 
 /mob/living/silicon/ai/proc/on_mob_init()
 	var/init_text = list(span_bold("You are playing the station's AI. The AI cannot move, but can interact with many objects while viewing them (through cameras)."),
@@ -356,7 +356,7 @@ REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 		update_use_power(USE_POWER_OFF)
 		return
 	if(!powered_ai.anchored)
-		loc = powered_ai.loc
+		forceMove(powered_ai.loc)
 		update_use_power(USE_POWER_OFF)
 		use_power(50000) // Less optimalised but only called if AI is unwrenched. This prevents usage of wrenching as method to keep AI operational without power. Intellicard is for that.
 	if(powered_ai.anchored)
@@ -504,7 +504,7 @@ REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 		// legacy browse(null) close removed; see /mob/Topic.
 		unset_machine()
 	if (href_list["switchcamera"])
-		switchCamera(locate(href_list["switchcamera"]) in REGISTRY_MEMBERS(REGISTRY_CAMERAS))
+		switchCamera(locate_in_list(REGISTRY_MEMBERS(REGISTRY_CAMERAS), href_list["switchcamera"]))
 	if (href_list["showalerts"])
 		subsystem_alarm_monitor()
 	//Carn: holopad requests
@@ -517,7 +517,7 @@ REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 				to_chat(src, span_notice("Unable to locate the holopad."))
 
 	if (href_list["track"])
-		var/mob/target = locate(href_list["track"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["track"])
 
 		if(target && (!ishuman(target) || html_decode(href_list["trackname"]) == target:get_face_name()))
 			ai_actual_track(target)
@@ -526,7 +526,7 @@ REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 		return
 
 	if(href_list["trackbot"])
-		var/mob/living/bot/target = locate(href_list["trackbot"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/living/bot/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["trackbot"])
 		if(target)
 			ai_actual_track(target)
 		else
@@ -534,7 +534,7 @@ REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 		return
 
 	if(href_list["open"])
-		var/mob/target = locate(href_list["open"]) in REGISTRY_MEMBERS(REGISTRY_MOBS)
+		var/mob/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), href_list["open"])
 		if(target)
 			open_nearest_door(target)
 

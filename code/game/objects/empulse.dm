@@ -26,7 +26,7 @@
 		fourth_range = third_range
 
 	// One sound for the pulse; playsound already reaches every listener in range (Q6).
-	if(locate(/mob) in range(first_range, epicenter))
+	if(locate_in_list(range(first_range, epicenter), /mob))
 		playsound(epicenter, 'sound/effects/EMPulse.ogg', 100, TRUE)
 
 	for(var/list/hit as anything in emp_falloff_turfs(epicenter, first_range, second_range, third_range, fourth_range))

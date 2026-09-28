@@ -26,7 +26,7 @@
 /datum/technomancer_marker/Destroy()
 	var/mob/user = om_resolve(U)
 	user?.client?.images -= I
-	I?.loc = null
+	image_anchor(I, null)
 	return ..()
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.
@@ -111,7 +111,7 @@ GLOBAL_LIST_INIT(mark_spells, list())
 	var/turf/target_turf = marker.T() // Multiple technomancer support
 	var/turf/old_turf = get_turf(user)
 
-	for(var/obj/item/grab/G in user.contents) // People the Technomancer is grabbing come along for the ride.
+	for(var/obj/item/grab/G in contents_of(user)) // People the Technomancer is grabbing come along for the ride.
 		var/mob/living/grabbed = G?.grab_target()
 		if(grabbed)
 			grabbed.forceMove(locate( target_turf.x+rand(-1,1), target_turf.y+rand(-1,1), target_turf.z))

@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 		if(!!T.is_plating())
 			continue
 
-		for(var/obj/O in T.contents)
+		for(var/obj/O in contents_of(T))
 			if(O.level != 1)
 				continue
 			if(!O.invisibility)

@@ -54,11 +54,9 @@
 	if(tf_mob_holder && tf_mob_holder.loc == src)
 		return_player_to_tf_holder("transformed form destroyed")
 		if(isbelly(loc))
-			tf_mob_holder.loc = loc
 			tf_mob_holder.forceMove(loc)
 		else
 			var/turf/get_dat_turf = get_turf(src)
-			tf_mob_holder.loc = get_dat_turf
 			tf_mob_holder.forceMove(get_dat_turf)
 		QDEL_LIST_NULL(tf_mob_holder.vore_organs)
 		tf_mob_holder.vore_organs = list()
@@ -228,20 +226,20 @@
 	else
 
 		L += src.contents
-		for(var/obj/item/storage/S in src.contents)	//Check for storage items
+		for(var/obj/item/storage/S in contents_of(src))	//Check for storage items
 			L += get_contents(S)
 
-		for(var/obj/item/gift/G in src.contents) //Check for gift-wrapped items
+		for(var/obj/item/gift/G in contents_of(src)) //Check for gift-wrapped items
 			L += G.gift
 			if(istype(G.gift, /obj/item/storage))
 				L += get_contents(G.gift)
 
-		for(var/obj/item/smallDelivery/D in src.contents) //Check for package wrapped items
+		for(var/obj/item/smallDelivery/D in contents_of(src)) //Check for package wrapped items
 			L += D.wrapped
 			if(istype(D.wrapped, /obj/item/storage)) //this should never happen
 				L += get_contents(D.wrapped)
 
-		for(var/obj/item/rig/R in src.contents)	//Check rigsuit storage for items
+		for(var/obj/item/rig/R in contents_of(src))	//Check rigsuit storage for items
 			if(R.rig_storage)
 				L += get_contents(R.rig_storage)
 
@@ -450,7 +448,7 @@
 	return TRUE
 
 /mob/living/proc/get_restraining_bolt()
-	var/obj/item/implant/restrainingbolt/RB = locate() in src
+	var/obj/item/implant/restrainingbolt/RB = locate_within(src, )
 	if(RB)
 		if(!RB.malfunction)
 			return TRUE

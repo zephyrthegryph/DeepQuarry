@@ -179,7 +179,7 @@
 				to_chat(ui.user, span_warning("You must be wielding a tank to insert it!"))
 
 		if("remove_tank")
-			var/obj/item/tank/T = locate(params["ref"]) in list(tank1, tank2)
+			var/obj/item/tank/T = locate_in_list(list(tank1, tank2), params["ref"])
 			if(istype(T))
 				if(T == tank1)
 					tank1 = null

@@ -286,7 +286,7 @@
 	var/mob/living/carbon/human/OCCUPANT = src?.slot_item(OCCUPANT_SLOT_SUIT_STORAGE)
 	if(OCCUPANT)
 		OCCUPANT.apply_effect(50, IRRADIATE)
-		var/obj/item/organ/internal/diona/nutrients/rad_organ = locate() in OCCUPANT.internal_organs
+		var/obj/item/organ/internal/diona/nutrients/rad_organ = locate_in_list(OCCUPANT.internal_organs, /obj/item/organ/internal/diona/nutrients)
 		if(!rad_organ)
 			if(OCCUPANT.can_feel_pain())
 				OCCUPANT.emote("scream")

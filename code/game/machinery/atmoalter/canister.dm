@@ -227,7 +227,7 @@ update_flag
 	var/atom/location = src.loc
 	var/obj/machinery/atmospherics/portables_connector/port
 	if(location)
-		port = locate() in location // Finds if there's a port
+		port = locate_within(location, /obj/machinery/atmospherics/portables_connector) // Finds if there's a port
 		location.assume_air(air_contents)
 
 	if(port && anchored) // if it blew up, frees up the port

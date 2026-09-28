@@ -47,7 +47,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 			om_handle_release(D)
 		if(ismovable(D))
 			var/atom/movable/AM = D
-			for(var/atom/movable/thing in AM.contents.Copy())
+			for(var/atom/movable/thing in contents_of(AM).Copy())
 				qdel(thing)
 	catch(var/exception/e)
 		dq_report_caught(e, "finishing the aborted destroy of [D.type]")
@@ -66,7 +66,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	catch(var/exception/e)
 		dq_report_caught(e, "moving the destroyed [AM.type] to nullspace")
 	if(AM.loc)
-		AM.loc = null
+		AM.loc = null // ALLOW(containment): last-resort nullspace after moveToNullspace() threw
 
 /// The phases of destroy_transaction(), in order.
 /proc/destroy_transaction_phases(datum/D, force, datum/qdel_item/trash)

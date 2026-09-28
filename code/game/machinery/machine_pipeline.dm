@@ -414,7 +414,7 @@
 			M.time = 0
 			M.set_timing(0)
 
-	if(M.detecting && (locate(/obj/effect/hotspot) in M.loc))
+	if(M.detecting && (locate_within(M.loc, /obj/effect/hotspot)))
 		M.alarm()
 
 	// A running countdown is work every frame: returning STAGE_IDLE here would idle the stage

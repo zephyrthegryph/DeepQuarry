@@ -445,7 +445,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 
 /obj/structure/frame/proc/mass_install_parts(mob/user, obj/item/storage/S)
 	var/installed_part = FALSE
-	for(var/obj/item/P in S.contents)
+	for(var/obj/item/P in contents_of(S))
 		installed_part |= install_part(user, P, TRUE)
 	if(!installed_part)
 		return FALSE

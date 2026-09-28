@@ -559,7 +559,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 /obj/mecha/proc/check_for_support()
 	var/list/things = orange(1, src)
 
-	if(locate(/obj/structure/grille) in things || locate(/obj/structure/lattice) in things || locate(/turf/simulated) in things || locate(/turf/unsimulated) in things)
+	if(locate_in_list(things, /obj/structure/grille) || locate_in_list(things, /obj/structure/lattice) || locate_in_list(things, /turf/simulated) || locate_in_list(things, /turf/unsimulated))
 		return 1
 	else
 		return 0
@@ -1710,7 +1710,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		if(!brainmob.move_into(src, MECHA_SLOT_PILOT))
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
-		mmi_as_oc.loc = src
+		mmi_as_oc.forceMove(src)
 		mmi_as_oc.mecha = src
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)

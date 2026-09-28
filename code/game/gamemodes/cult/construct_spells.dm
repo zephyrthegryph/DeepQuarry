@@ -4,7 +4,7 @@
 	if(istype(target,/obj/item/nullrod))
 		return 1
 	else if(target.contents)
-		for(var/atom/A in target.contents)
+		for(var/atom/A in contents_of(target))
 			if(findNullRod(A))
 				return 1
 	return 0
@@ -191,7 +191,7 @@
 			spawn door.cultify()
 	return */
 	for(var/turf/T in targets)
-		for(var/obj/machinery/door/door in T.contents)
+		for(var/obj/machinery/door/door in contents_of(T))
 			if(istype(door,/obj/machinery/door/airlock))
 				var/obj/machinery/door/airlock/AL = door
 				AL.locked = 0 //The spirits of the damned care not for your locks.

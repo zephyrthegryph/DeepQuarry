@@ -81,7 +81,7 @@
 /obj/effect/alien/weeds/node/Initialize(mapload, node, newcolor)
 	. = ..()
 
-	for(var/obj/effect/alien/weeds/existing in loc)
+	for(var/obj/effect/alien/weeds/existing in contents_of(loc))
 		if(existing == src)
 			continue
 		else
@@ -210,7 +210,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
 				var/mob/living/carbon/M = user
-				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+				if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE

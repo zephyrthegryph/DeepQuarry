@@ -205,7 +205,7 @@
 				// Do The Move
 				if(movetime)
 					glide_for(movetime) // First attempt, lets let the diag do it.
-				loc = newloc
+				loc = newloc // ALLOW(containment): Move()'s own commit point (the ledger is only on holders, a turf-to-turf step)
 				. = TRUE
 
 				// So objects can be informed of z-level changes
@@ -228,7 +228,7 @@
 					newarea.Entered(src, oldloc)
 
 				// Multi-tile objects can't reach here, otherwise you'd need to avoid uncrossing yourself
-				for(var/atom/movable/thing as anything in loc)
+				for(var/atom/movable/thing as anything in contents_of(loc))
 					// We don't call parent so we are calling this for byond
 					thing.Crossed(src, oldloc)
 
@@ -402,7 +402,7 @@
 		// Do The Move
 		glide_for(movetime)
 		last_move = isnull(direction) ? 0 : direction
-		loc = destination
+		loc = destination // ALLOW(containment): doMove()'s commit point; note_exit/note_enter follow
 		// The containment ledger's commit point: account for the move before
 		// anything else can react to it.
 		if(!same_loc)
@@ -478,7 +478,7 @@
 		// instead of being silently dropped by moveToNullspace().
 		if(move_hooks)
 			move_hooks_dispatch(TRUE)
-		loc = null
+		loc = null // ALLOW(containment): doMove()'s nullspace commit point; note_exit follows
 		oldloc.ledger?.note_exit(src)
 
 		// Uncross everything where we left (no multitile safety like above because we are definitely not still there)
@@ -500,7 +500,7 @@
 
 /atom/movable/proc/onTransitZ(old_z,new_z)
 	OM_EMIT(src, /datum/om/event/before/movable_z_changed, old_z, new_z)
-	for(var/atom/movable/AM as anything in src) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
+	for(var/atom/movable/AM as anything in contents_of(src)) // Notify contents of Z-transition. This can be overridden IF we know the items contents do not care.
 		AM.onTransitZ(old_z,new_z)
 
 /atom/movable/proc/reset_glide_size()
@@ -764,7 +764,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	selfimage.alpha = 100
 	selfimage.layer = initial(layer)
 	selfimage.plane = initial(plane)
-	selfimage.loc = src
+	image_anchor(selfimage, src)
 
 	return selfimage
 
@@ -781,7 +781,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 /atom/movable/proc/abstract_move(atom/new_loc)
 	var/atom/old_loc = loc
 	var/direction = get_dir(old_loc, new_loc)
-	loc = new_loc
+	loc = new_loc // ALLOW(containment): abstract_move(): the deliberate no-Enter/Exit move primitive
 	Moved(old_loc, direction, TRUE)
 
 // Helper procs called on entering/exiting a belly. Does nothing by default, override on children for special behavior.

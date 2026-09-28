@@ -146,11 +146,11 @@
 	var/mob/living/carbon/WC = get_occupant()
 	go_out()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in src) // ALLOW(latent): materialized above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
 		if((!istype(O,/obj/item/reagent_containers)) && (!istype(O,/obj/item/circuitboard/clonescanner)) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
 			O.forceMove(get_turf(src)) //Ejects items that manage to get in there (exluding the components)
 	if(!WC)
-		for(var/mob/M in src)//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
+		for(var/mob/M in contents_of(src))//Failsafe so you can get mobs out // ALLOW(latent): mobs are never latent
 			M.forceMove(get_turf(src))
 
 EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
@@ -294,7 +294,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		return
 	if(istype(WC,/mob/living/carbon/brain))
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/O in src) // ALLOW(latent): materialized above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
 			if(istype(O,/obj/item/organ/internal/brain))
 				O.forceMove(get_turf(src))
 				slot_remove(WC, O)
@@ -772,7 +772,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		to_chat(user, span_danger( "Error: Cannot grow synthetic."))
 		return
 	//No pods
-	var/obj/machinery/clonepod/pod = locate() in get_area(src)
+	var/obj/machinery/clonepod/pod = locate_within(get_area(src), /obj/machinery/clonepod)
 	if(!pod)
 		to_chat(user, span_danger( "Error: No growpods detected."))
 		return

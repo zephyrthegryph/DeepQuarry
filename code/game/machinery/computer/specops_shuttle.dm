@@ -57,7 +57,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 					// find the turf to move things to
 		var/turf/D = locate(T.x, throwy - 1, 1)
 					//var/turf/E = get_step(D, SOUTH)
-		for(var/atom/movable/AM as mob|obj in T)
+		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
 			qdel(T)
@@ -71,7 +71,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	start_location.move_contents_to(end_location)
 
 	for(var/turf/T in get_area_turfs(end_location) )
-		var/mob/M = locate(/mob) in T
+		var/mob/M = locate_within(T, /mob)
 		to_chat(M, span_notice("You have arrived at [using_map.boss_name]. Operation has ended!"))
 
 	GLOB.specops_shuttle_at_station = 0
@@ -124,7 +124,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 					// find the turf to move things to
 		var/turf/D = locate(T.x, throwy - 1, 1)
 					//var/turf/E = get_step(D, SOUTH)
-		for(var/atom/movable/AM as mob|obj in T)
+		for(var/atom/movable/AM as mob|obj in contents_of(T))
 			AM.Move(D)
 		if(istype(T, /turf/simulated))
 			qdel(T)
@@ -132,7 +132,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	start_location.move_contents_to(end_location)
 
 	for(var/turf/T in get_area_turfs(end_location) )
-		var/mob/M = locate(/mob) in T
+		var/mob/M = locate_within(T, /mob)
 		to_chat(M, span_notice("You have arrived to [station_name()]. Commence operation!"))
 
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))

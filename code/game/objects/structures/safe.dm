@@ -35,7 +35,7 @@ FLOOR SAFES
 		return INITIALIZE_HINT_LATELOAD
 
 /obj/structure/safe/LateInitialize()
-	for(var/obj/item/I in loc)
+	for(var/obj/item/I in contents_of(loc))
 		if(space >= maxspace)
 			return
 		if(I.w_class + space <= maxspace)
@@ -151,7 +151,7 @@ FLOOR SAFES
 				check_unlocked(user, canhear)
 			return TRUE
 		if("retrieve")
-			var/obj/item/P = locate(params["ref"]) in src
+			var/obj/item/P = locate_within(src, params["ref"])
 			if(open && P && in_range(src, user))
 				user.put_in_hands(P)
 			return TRUE

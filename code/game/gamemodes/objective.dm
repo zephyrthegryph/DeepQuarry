@@ -473,7 +473,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			return found_amount>=target_amount
 
 		if("50 coins (in bag)")
-			var/obj/item/moneybag/B = locate() in all_items
+			var/obj/item/moneybag/B = locate_in_list(all_items, /obj/item/moneybag)
 
 			if(B)
 				var/target = text2num(target_name)
@@ -653,7 +653,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 	for(var/obj/O in locate(/area/shuttle/skipjack)) // Shuttle area pathname
 		if(istype(O,target)) total_amount++
-		for(var/obj/I in O.contents)
+		for(var/obj/I in contents_of(O))
 			if(istype(I,target)) total_amount++
 		if(total_amount >= target_amount) return 1
 
@@ -705,7 +705,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 			if(O.name == target)
 				S = O
 				total_amount += S.get_amount()
-		for(var/obj/I in O.contents)
+		for(var/obj/I in contents_of(O))
 			if(istype(I,/obj/item/stack/material))
 				if(I.name == target)
 					S = I
@@ -786,7 +786,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Summon Nar-Sie via the use of the appropriate rune (Hell join self). It will only work if nine cultists stand on and around it. The convert rune is join blood self."
 
 /datum/objective/cult/eldergod/check_completion()
-	return (locate(/obj/singularity/narsie/large) in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+	return (locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/singularity/narsie/large))
 
 /datum/objective/cult/sacrifice
 	explanation_text = "Conduct a ritual sacrifice for the glory of Nar-Sie."

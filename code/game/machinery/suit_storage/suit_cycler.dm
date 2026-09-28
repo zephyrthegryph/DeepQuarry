@@ -161,7 +161,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		to_chat(user, span_danger("The suit cycler is locked."))
 		return TRUE
 
-	if(contents.len > 0 || has_latent()) // ALLOW(latent): latent entries checked
+	if(contents_count(src) > 0 || has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_danger("There is no room inside the cycler for [grabbed.name]."))
 		return TRUE
 

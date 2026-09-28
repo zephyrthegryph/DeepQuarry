@@ -31,7 +31,7 @@
 		dig_exhaustion_chance = TURF_DIG_LOOT_EXHAUSTED
 
 /turf/proc/shovel_dig_grave(mob/user, obj/item/shovel/our_shovel)
-	if(length(contents))
+	if(contents_count(src))
 		to_chat(user, span_warning("You can't dig here!"))
 		return
 	// Make a grave

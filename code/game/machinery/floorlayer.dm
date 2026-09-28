@@ -73,7 +73,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)
-	if(!length(contents) && !has_latent()) // ALLOW(latent): latent entries checked
+	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_notice("\The [src] is empty."))
 		return ITEM_INTERACT_BLOCKING
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(tile_removal_chosen), message = "Choose remove tile type.", title = "Tiles", choices = contents, requires = PROMPT_ADJACENT)

@@ -33,11 +33,11 @@
 		var/area/A = src.loc.loc
 		if(last_trigger > world.time - cooldown)
 			return
-		for(var/obj/O in M.contents)
+		for(var/obj/O in contents_of(M))
 			if(is_type_in_list(O,contraband))
 				contraband_count++
 			if(deep_scan)
-				for(var/obj/O2 in O.contents)	//one layer deep is fine for now I think
+				for(var/obj/O2 in contents_of(O))	//one layer deep is fine for now I think
 					if(is_type_in_list(O2,contraband))
 						contraband_count++
 		if(contraband_count && last_trigger < world.time - cooldown)

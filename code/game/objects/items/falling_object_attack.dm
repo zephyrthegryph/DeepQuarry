@@ -31,7 +31,7 @@
 	icon_state = "[rand(1,33)]"
 
 /obj/effect/illusionary_fall/end_fall(crushing = FALSE)
-	for(var/mob/living/L in loc)
+	for(var/mob/living/L in contents_of(loc))
 		var/target_zone = ran_zone()
 		if(!L.injure(INJURY_BLUNT, 35, target_zone, src, flags = INJURE_ARMORED))
 			break

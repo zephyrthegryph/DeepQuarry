@@ -116,3 +116,11 @@
 	if(!L)
 		return null
 	return locate(what) in L
+
+/// Anchor an /image (not a movable: it has no ledger entry and no Move())
+/// to `A`, or detach it with null. The one place an image's loc is written,
+/// so the containment lint can ban raw `loc =` everywhere else.
+/proc/image_anchor(image/I, atom/A)
+	if(!I)
+		return
+	I.loc = A // ALLOW(containment): images are not movables; this is their only anchor

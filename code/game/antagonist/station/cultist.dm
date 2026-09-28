@@ -75,7 +75,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 		player.equip_to_slot(T, slot)
 		if(T.loc == player)
 			break
-	var/obj/item/storage/S = locate() in player.contents
+	var/obj/item/storage/S = locate_within(player, /obj/item/storage)
 	if(S && istype(S))
 		T.forceMove(S)
 

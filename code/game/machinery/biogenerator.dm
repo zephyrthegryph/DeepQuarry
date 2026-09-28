@@ -253,7 +253,7 @@
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is already full! Activate it."))
 		else
-			for(var/obj/item/reagent_containers/food/snacks/grown/G in O.contents)
+			for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(O))
 				G.forceMove(src)
 				i++
 				if(i >= 10)

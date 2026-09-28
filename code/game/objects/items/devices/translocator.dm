@@ -354,7 +354,7 @@ This device records all warnings given and teleport events for admin review in c
 	phase_in(target,get_turf(target))
 
 	//And any friends!
-	for(var/obj/item/grab/G in target.contents)
+	for(var/obj/item/grab/G in contents_of(target))
 		var/mob/grabbed = G?.grab_target()
 		if(grabbed && (G.state >= GRAB_AGGRESSIVE))
 

@@ -93,7 +93,7 @@
 	if(owner)
 		T = get_turf(T)
 		if(T != loc)
-			loc = T
+			loc = T // ALLOW(containment): camera eye abstract move: must not trigger Entered/Crossed
 
 			owner.reset_perspective(src)
 			if(owner_follows_eye)

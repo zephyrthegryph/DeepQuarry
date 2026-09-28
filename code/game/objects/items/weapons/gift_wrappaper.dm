@@ -52,7 +52,7 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 /obj/effect/spresent/wirecutter_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You cut open the present."))
 
-	for(var/mob/M in src) //Should only be one but whatever.
+	for(var/mob/M in contents_of(src)) //Should only be one but whatever.
 		M.forceMove(src.loc)
 
 	qdel(src)

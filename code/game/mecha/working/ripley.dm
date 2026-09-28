@@ -32,8 +32,8 @@
 		collect_ore()
 
 /obj/mecha/working/ripley/proc/collect_ore()
-	if(locate(/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp) in equipment)
-		var/obj/structure/ore_box/ore_box = locate(/obj/structure/ore_box) in cargo
+	if(locate_in_list(equipment, /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp))
+		var/obj/structure/ore_box/ore_box = locate_in_list(cargo, /obj/structure/ore_box)
 		if(ore_box)
 			for(var/obj/item/ore/ore in range(1, src))
 				if(ore.Adjacent(src) && ((get_dir(src, ore) & dir) || ore.loc == loc)) //we can reach it and it's in front of us? grab it!

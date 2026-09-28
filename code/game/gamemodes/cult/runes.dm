@@ -967,7 +967,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/mob/living/carbon/C in range(7,src))
 			if (iscultist(C))
 				continue
-			var/obj/item/nullrod/N = locate() in C
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
 			C.status_adjust(EFFECT_DEAFENED, 50)
@@ -988,7 +988,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/mob/living/carbon/C in range(7,user))
 			if (iscultist(C))
 				continue
-			var/obj/item/nullrod/N = locate() in C
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
 			C.status_adjust(EFFECT_DEAFENED, 30)
@@ -1011,7 +1011,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/mob/living/carbon/C in viewers(src))
 			if (iscultist(C))
 				continue
-			var/obj/item/nullrod/N = locate() in C
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
 			C.status_adjust(EFFECT_BLURRY, 50)
@@ -1034,7 +1034,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/mob/living/carbon/C in view(2,user))
 			if (iscultist(C))
 				continue
-			var/obj/item/nullrod/N = locate() in C
+			var/obj/item/nullrod/N = locate_within(C, /obj/item/nullrod)
 			if(N)
 				continue
 			C.status_adjust(EFFECT_BLURRY, 30)
@@ -1066,7 +1066,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		for(var/mob/living/carbon/M in viewers(user))
 			if(iscultist(M))
 				continue
-			var/obj/item/nullrod/N = locate() in M
+			var/obj/item/nullrod/N = locate_within(M, /obj/item/nullrod)
 			if(N)
 				continue
 			M.injure(INJURY_BLUNT, 51)
@@ -1140,7 +1140,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		qdel(src)
 	else                        ///When invoked as talisman, stun and mute the target mob.
 		user.say("Dream sign ''Evil sealing talisman'[pick("'","`")]!")
-		var/obj/item/nullrod/N = locate() in T
+		var/obj/item/nullrod/N = locate_within(T, /obj/item/nullrod)
 		if(N)
 			for(var/mob/O in viewers(T, null))
 				O.show_message(span_boldwarning("[user] invokes a talisman at [T], but they are unaffected!"), 1)

@@ -68,13 +68,13 @@ GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 				traitor.objectives += steal_objective
 		switch(rand(1,100))
 			if(1 to 100)
-				if (!(locate(/datum/objective/escape) in traitor.objectives))
+				if (!(locate_in_list(traitor.objectives, /datum/objective/escape)))
 					var/datum/objective/escape/escape_objective = new
 					escape_objective.owner = traitor
 					traitor.objectives += escape_objective
 
 			else
-				if (!(locate(/datum/objective/hijack) in traitor.objectives))
+				if (!(locate_in_list(traitor.objectives, /datum/objective/hijack)))
 					var/datum/objective/hijack/hijack_objective = new
 					hijack_objective.owner = traitor
 					traitor.objectives += hijack_objective
@@ -118,16 +118,16 @@ GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 	var/uplinklocation = traitor_mob.read_preference(/datum/preference/choiced/uplinklocation)
 
 	if(uplinklocation == "Headset")
-		R = locate(/obj/item/radio) in traitor_mob.contents
+		R = locate_within(traitor_mob, /obj/item/radio)
 		if(!R)
-			R = locate(/obj/item/pda) in traitor_mob.contents
+			R = locate_within(traitor_mob, /obj/item/pda)
 			to_chat(traitor_mob, "Could not locate a Radio, installing in PDA instead!")
 		if (!R)
 			to_chat(traitor_mob, "Unfortunately, neither a radio or a PDA relay could be installed.")
 	else if(uplinklocation == "PDA")
-		R = locate(/obj/item/pda) in traitor_mob.contents
+		R = locate_within(traitor_mob, /obj/item/pda)
 		if(!R)
-			R = locate(/obj/item/radio) in traitor_mob.contents
+			R = locate_within(traitor_mob, /obj/item/radio)
 			to_chat(traitor_mob, "Could not locate a PDA, installing into a Radio instead!")
 		if(!R)
 			to_chat(traitor_mob, "Unfortunately, neither a radio or a PDA relay could be installed.")
@@ -136,9 +136,9 @@ GLOBAL_DATUM(traitors, /datum/antagonist/traitor)
 		R = null
 	else
 		to_chat(traitor_mob, "You have not selected a location for your relay in the antagonist options! Defaulting to PDA!")
-		R = locate(/obj/item/pda) in traitor_mob.contents
+		R = locate_within(traitor_mob, /obj/item/pda)
 		if (!R)
-			R = locate(/obj/item/radio) in traitor_mob.contents
+			R = locate_within(traitor_mob, /obj/item/radio)
 			to_chat(traitor_mob, "Could not locate a PDA, installing into a Radio instead!")
 		if (!R)
 			to_chat(traitor_mob, "Unfortunately, neither a radio or a PDA relay could be installed.")

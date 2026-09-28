@@ -17,7 +17,6 @@
 
 /mob/living/proc/mob_belly_transfer(mob/living/M)
 	for(var/obj/belly/B as anything in M.vore_organs)
-		B.loc = src
 		B.forceMove(src)
 		B.owner = src
 		M.vore_organs -= B

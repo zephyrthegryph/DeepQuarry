@@ -2342,7 +2342,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/russian_revolver, INTERACT_USE(null, PROC_REF
 
 /obj/item/toy/russian_revolver/afterattack(atom/target, mob/user, flag, params)
 	if(flag)
-		if(target in user.contents)
+		if(target in contents_of(user))
 			return
 		if(!ismob(target))
 			return

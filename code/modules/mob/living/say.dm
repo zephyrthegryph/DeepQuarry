@@ -367,7 +367,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 		sb_alpha -= 50
 		if(sb_alpha < 0)
 			break
-	speech_bubble.loc = loc_before_turf
+	image_anchor(speech_bubble, loc_before_turf)
 	speech_bubble.alpha = CLAMP(sb_alpha, 0, 255)
 	images_to_clients[speech_bubble] = list()
 
@@ -473,7 +473,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	var/turf/T = get_turf(src)
 	//We're in something, gesture to people inside the same thing
 	if(loc != T && !istype(loc, /obj/item/holder)) // Partially fixes sign language while being held.
-		for(var/mob/M in loc)
+		for(var/mob/M in contents_of(loc))
 			M.hear_signlang(message, verb, verb_understood, language, src, type)
 
 	//We're on a turf, gesture to visible as if we were a normal language

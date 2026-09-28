@@ -19,7 +19,7 @@ GLOBAL_LIST_EMPTY(shared_particles)
 /obj/effect/abstract/shared_particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
 	. = ..()
 	// Shouldn't exist outside of nullspace
-	loc = null
+	moveToNullspace()
 	src.particle_flags = particle_flags
 	particles = new particle_path()
 

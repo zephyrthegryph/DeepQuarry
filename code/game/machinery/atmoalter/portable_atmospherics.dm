@@ -23,7 +23,7 @@
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/portable_atmospherics/LateInitialize()
-	var/obj/machinery/atmospherics/portables_connector/port = locate() in loc
+	var/obj/machinery/atmospherics/portables_connector/port = locate_within(loc, /obj/machinery/atmospherics/portables_connector)
 	if(port)
 		connect(port)
 		update_icon()
@@ -169,7 +169,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 		update_icon()
 		playsound(src, tool.usesound, 50, TRUE)
 		return ITEM_INTERACT_SUCCESS
-	var/obj/machinery/atmospherics/portables_connector/possible_port = locate(/obj/machinery/atmospherics/portables_connector) in loc
+	var/obj/machinery/atmospherics/portables_connector/possible_port = locate_within(loc, /obj/machinery/atmospherics/portables_connector)
 	if(!possible_port)
 		to_chat(user, span_notice("Nothing happens."))
 		return ITEM_INTERACT_BLOCKING

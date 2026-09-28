@@ -364,7 +364,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			E.contents.Cut(params["index"], params["index"] + 1)
+			E.contents.Cut(params["index"], params["index"] + 1) // ALLOW(containment): datum field list named contents, not atom contents
 			. = TRUE
 		if("export_add_field")
 			var/datum/exported_crate/E = locate(params["ref"])

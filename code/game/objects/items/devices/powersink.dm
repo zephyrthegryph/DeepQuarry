@@ -32,7 +32,7 @@
 		if(!isturf(T) || !T.is_plating())
 			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
 			return ITEM_INTERACT_BLOCKING
-		attached_handle = om_handle(locate(/obj/structure/cable) in T)
+		attached_handle = om_handle(locate_within(T, /obj/structure/cable))
 		if(!attached())
 			to_chat(user, "No exposed cable here to attach to.")
 			return ITEM_INTERACT_BLOCKING

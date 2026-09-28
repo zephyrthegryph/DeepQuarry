@@ -59,7 +59,7 @@
 			to_chat(user, span_warning("You haven't got enough [src] to build \the [recipe.title]!"))
 		return
 
-	if (recipe.one_per_turf && (locate(recipe.result_type) in user.loc))
+	if (recipe.one_per_turf && (locate_within(user.loc, recipe.result_type)))
 		to_chat(user, span_warning("There is another [recipe.title] here!"))
 		return
 

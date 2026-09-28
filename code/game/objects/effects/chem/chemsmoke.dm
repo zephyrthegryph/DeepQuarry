@@ -121,7 +121,7 @@ REF_OWNED(/datum/effect/effect/system/smoke_spread/chem, "chemholder")
 			chemholder.reagents.touch_turf(T)
 		for(var/turf/T in targetTurfs)
 			chemholder.reagents.touch_turf(T)
-			for(var/atom/A in T.contents)
+			for(var/atom/A in contents_of(T))
 				if(istype(A, /obj/effect/effect/smoke/chem) || istype(A, /mob))
 					continue
 				else if(isobj(A) && !A.simulated)

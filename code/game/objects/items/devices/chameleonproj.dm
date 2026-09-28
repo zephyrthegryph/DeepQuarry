@@ -115,18 +115,18 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 )
 
 /obj/effect/dummy/chameleon/proc/interaction_disrupt(mob/user, obj/item/held, datum/interaction/interaction)
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
 	return TRUE
 
 /obj/effect/dummy/chameleon/ex_act()
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	master.disrupt()
 
 /obj/effect/dummy/chameleon/bullet_act()
-	for(var/mob/M in src)
+	for(var/mob/M in contents_of(src))
 		to_chat(M, span_warning("Your chameleon-projector deactivates."))
 	..()
 	master.disrupt()

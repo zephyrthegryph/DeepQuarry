@@ -542,7 +542,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 /obj/machinery/proc/default_use_hicell()
 	materialize_parts()
-	var/obj/item/cell/C = locate(/obj/item/cell) in component_parts
+	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
 		component_parts -= C
 		qdel(C)
@@ -570,7 +570,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 				if(ispath(A.type, T))
 					P = T
 					break
-			for(var/obj/item/B in R.contents)
+			for(var/obj/item/B in contents_of(R))
 				if(istype(B, P) && istype(A, P))
 					if(B.get_rating() > A.get_rating())
 						R.remove_from_storage(B, src, user)

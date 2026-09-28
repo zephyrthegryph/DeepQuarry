@@ -57,10 +57,10 @@ DECLARE_INTERACTIONS(/obj/item/disposable_teleporter, INTERACT_USE(null, PROC_RE
 
 	//Copypasta
 	valid_turfs:
-		for(var/turf/simulated/T in A.contents)
+		for(var/turf/simulated/T in contents_of(A))
 			if(T.density || ismineralturf(T)) //Don't blink to vacuum or a wall
 				continue
-			for(var/atom/movable/stuff in T.contents)
+			for(var/atom/movable/stuff in contents_of(T))
 				if(stuff.density)
 					continue valid_turfs
 			targets.Add(T)

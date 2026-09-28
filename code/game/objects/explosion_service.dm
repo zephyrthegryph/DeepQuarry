@@ -342,7 +342,7 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 							//															One third because there are three power levels and I
 							//															want each one to take up a third of the crater
 	var/collect_start = TICK_USAGE
-	for(var/atom/movable/AM as anything in T)
+	for(var/atom/movable/AM as anything in contents_of(T))
 		queue_blast(AM, severity)
 	epoch_atom_collect_ms += TICK_DELTA_TO_MS(TICK_USAGE - collect_start)
 	T.ex_act(severity)
@@ -406,7 +406,7 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 			if(contents_severity && has_latent)
 				AM.latent_blast(contents_severity) // entries resolve as data (C5)
 			if(contents_severity)
-				for(var/atom/movable/inner as anything in AM.contents)
+				for(var/atom/movable/inner as anything in contents_of(AM))
 					queue_blast(inner, contents_severity)
 			epoch_atoms_resolved++
 			atom_profile_index++

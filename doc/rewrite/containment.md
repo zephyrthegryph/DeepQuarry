@@ -90,7 +90,7 @@ The code is in `code/datums/containment/`; defines are in `code/__defines/contai
   - An inserted item whose state serializes, with no contents and nothing running, folds into the count when its `state_hash` matches the record's (vending: a pristine item's; smartfridge: the first one's). Anything else stays real in the stock slot and the record's `instances`.
   - Slot definitions gained `latent_used()` (counts towards capacity and `slot_used`) and `drop_latent()`, which the base Destroy calls before the real contents. Smartfridge stock spills (latent copies made real); vending stock is deleted with the machine, as before.
   - Material stacks don't serialize yet (`recipes` has no codec), so sheet storage keeps them real.
-- **Lint.** `tools/ci/containment_lint.py` checks the legacy sites (681 in 310 files at C1) against the ceiling in `tools/ci/containment_baseline.txt`; the count may fall, never rise. A site that must stay raw carries `// ALLOW(containment): <reason>` and doesn't count.
+- **Lint.** `tools/ci/containment_lint.py` is an outright ban since C11: any raw `loc =` / `contents` write fails CI. Use `forceMove()`, `moveToNullspace()`, the slot API, or `image_anchor()` for an /image. A site that must stay raw (the move primitives' own commit points, area membership, camera-eye abstract moves) carries `// ALLOW(containment): <reason>`.
 
 ## 2a. No raw contents access (C11)
 

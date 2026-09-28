@@ -51,7 +51,7 @@
 		var/obj/O = target
 		if(O.has_buckled_mobs())
 			return
-		if(locate(/mob/living) in O)
+		if(locate_within(O, /mob/living))
 			occupant_message(span_warning("You can't load living things into the cargo compartment."))
 			return
 		if(O.anchored)

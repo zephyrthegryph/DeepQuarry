@@ -239,7 +239,7 @@ REF_TRANSIENT(/datum/damage_packet, list("source", "attacker", "weapon", "zone",
 			return
 	// What the shell let through reaches the holder's contents (containment
 	// paths, C2). A holder destroyed above has already spilled them.
-	if(length(contents))
+	if(contents_count(src))
 		propagate_damage(packet)
 
 /atom

@@ -2228,7 +2228,7 @@
 	var/area/A = get_area(src)
 	if(A)
 		A.flags |= BLUE_SHIELDED
-		for(var/turf/T in A.contents)
+		for(var/turf/T in contents_of(A))
 			T.block_tele = 1
 	expire(0)
 
@@ -2248,7 +2248,7 @@
 /obj/effect/map_helper/make_indoors/area/LateInitialize()
 	var/area/A = get_area(src)
 	if(A)
-		for(var/turf/simulated/T in A.contents)
+		for(var/turf/simulated/T in contents_of(A))
 			T.make_indoors()
 	expire(0)
 
@@ -2268,7 +2268,7 @@
 /obj/effect/map_helper/make_outdoors/area/LateInitialize()
 	var/area/A = get_area(src)
 	if(A)
-		for(var/turf/simulated/T in A.contents)
+		for(var/turf/simulated/T in contents_of(A))
 			T.make_outdoors()
 	expire(0)
 

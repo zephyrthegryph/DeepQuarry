@@ -30,12 +30,12 @@ GLOBAL_LIST_EMPTY(ashtray_cache)
 		GLOB.ashtray_cache[cache_key] = I
 	add_overlay(GLOB.ashtray_cache[cache_key])
 
-	if (contents.len == max_butts)
+	if (contents_count(src) == max_butts)
 		if(!GLOB.ashtray_cache["full"])
 			GLOB.ashtray_cache["full"] = image('icons/obj/objects.dmi',"ashtray_full")
 		add_overlay(GLOB.ashtray_cache["full"])
 		desc = "It's stuffed full."
-	else if (contents.len > max_butts/2)
+	else if (contents_count(src) > max_butts/2)
 		if(!GLOB.ashtray_cache["half"])
 			GLOB.ashtray_cache["half"] = image('icons/obj/objects.dmi',"ashtray_half")
 		add_overlay(GLOB.ashtray_cache["half"])
@@ -50,7 +50,7 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 	if (get_integrity() <= 0)
 		return INTERACTION_HANDLED_PASS
 	if (istype(W,/obj/item/trash/cigbutt) || istype(W,/obj/item/clothing/mask/smokable/cigarette) || istype(W, /obj/item/flame/match))
-		if (contents.len >= max_butts)
+		if (contents_count(src) >= max_butts)
 			to_chat(user, "\The [src] is full.")
 			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(W)
@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 
 /obj/item/material/ashtray/throw_impact(atom/hit_atom)
 	if (get_integrity() > 0)
-		if (contents.len)
+		if (contents_count(src))
 			src.visible_message(span_danger("\The [src] slams into [hit_atom], spilling its contents!"))
 		for (var/obj/item/O in contents) // Dump all items out, so it ejects butts too
 			O.forceMove(src.loc)

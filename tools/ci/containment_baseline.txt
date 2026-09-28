@@ -1,5 +1,0 @@
-# Legacy raw `loc =` / `contents +=` / `contents -=` writes (roadmap C1).
-# tools/ci/containment_lint.py fails when the count rises above this ceiling.
-# Convert sites to forceMove() or the slot API (code/datums/containment/api.dm), then
-# lower it: `python tools/ci/containment_lint.py --update`.
-raw_writes 59

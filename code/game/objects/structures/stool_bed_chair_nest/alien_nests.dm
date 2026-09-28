@@ -54,10 +54,10 @@
 	var/mob/living/carbon/xenos = user
 	var/mob/living/carbon/victim = M
 
-	if(istype(victim) && locate(/obj/item/organ/internal/xenos/hivenode) in victim.internal_organs)
+	if(istype(victim) && locate_in_list(victim.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 		return
 
-	if(istype(xenos) && !(locate(/obj/item/organ/internal/xenos/hivenode) in xenos.internal_organs))
+	if(istype(xenos) && !(locate_in_list(xenos.internal_organs, /obj/item/organ/internal/xenos/hivenode)))
 		return
 
 	if(M == user)
@@ -117,7 +117,7 @@
 		if(istype(user,/mob/living/carbon))
 			if(IS_HARMING(user))
 				var/mob/living/carbon/M = user
-				if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
+				if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE

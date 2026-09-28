@@ -44,7 +44,7 @@
 
 /obj/structure/catwalk/proc/redraw_nearby_catwalks()
 	for(var/direction in GLOB.alldirs)
-		var/obj/structure/catwalk/L = locate() in get_step(src, direction)
+		var/obj/structure/catwalk/L = locate_within(get_step(src, direction), /obj/structure/catwalk)
 		if(L)
 			L.update_connections()
 			L.update_icon() //so siding get updated properly
@@ -176,7 +176,7 @@ EXTEND_INTERACTIONS(/obj/effect/catwalk_plated, \
 /obj/effect/catwalk_plated/proc/activate()
 	if(activated) return
 
-	if(locate(/obj/structure/catwalk) in loc)
+	if(locate_within(loc, /obj/structure/catwalk))
 		WARNING("Frame Spawner: A catwalk already exists at [loc.x]-[loc.y]-[loc.z]")
 	else
 		var/obj/structure/catwalk/C = new /obj/structure/catwalk(loc)

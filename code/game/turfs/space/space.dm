@@ -81,7 +81,7 @@
 	return locate(/obj/structure/lattice, src) //counts as solid structure if it has a lattice
 
 /turf/space/proc/update_starlight()
-	if(locate(/turf/simulated) in orange(src,1))
+	if(locate_in_list(orange(src,1), /turf/simulated))
 		set_light(CONFIG_GET(number/starlight))
 	else
 		set_light(0)

@@ -70,7 +70,7 @@
 
 	switch(action)
 		if("clear")
-			var/datum/alarm/alarm = locate(params["ref"]) in GLOB.atmosphere_alarm.alarms
+			var/datum/alarm/alarm = locate_in_list(GLOB.atmosphere_alarm.alarms, params["ref"])
 			if(alarm)
 				for(var/datum/alarm_source/alarm_source in alarm.sources)
 					var/obj/machinery/alarm/air_alarm = alarm_source.source

@@ -170,14 +170,14 @@
 /datum/job/proc/apply_fingerprints(mob/living/carbon/human/target)
 	if(!istype(target))
 		return 0
-	for(var/obj/item/item in target.contents)
+	for(var/obj/item/item in contents_of(target))
 		apply_fingerprints_to_item(target, item)
 	return 1
 
 /datum/job/proc/apply_fingerprints_to_item(mob/living/carbon/human/holder, obj/item/item)
 	item.add_fingerprint(holder,1)
-	if(item.contents.len)
-		for(var/obj/item/sub_item in item.contents)
+	if(contents_count(item))
+		for(var/obj/item/sub_item in contents_of(item))
 			apply_fingerprints_to_item(holder, sub_item)
 
 /datum/job/proc/is_position_available()

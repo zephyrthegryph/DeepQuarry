@@ -48,7 +48,7 @@
 
 /obj/structure/closet/syndicate/resources/Initialize(mapload)
 	. = ..()
-	if(!contents.len && !has_latent()) // ALLOW(latent): latent entries checked
+	if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
 		var/common_min = 30 //Minimum amount of minerals in the stack for common minerals
 		var/common_max = 50 //Maximum amount of HONK in the stack for HONK common minerals
 		var/rare_min = 5  //Minimum HONK of HONK in the stack HONK HONK rare minerals

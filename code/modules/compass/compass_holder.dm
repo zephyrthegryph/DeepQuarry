@@ -35,7 +35,7 @@
 
 	for(var/i in 0 to (360/(COMPASS_PERIOD))-1)
 		var/image/I = new /image/compass_marker
-		I.loc = src
+		image_anchor(I, src)
 		var/str
 		var/str_col
 		if(i % COMPASS_INTERVAL == 0)

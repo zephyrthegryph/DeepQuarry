@@ -1332,7 +1332,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	selfimage.alpha = 100
 	selfimage.layer = initial(layer)
 	selfimage.plane = initial(plane)
-	selfimage.loc = src
+	image_anchor(selfimage, src)
 
 	return selfimage
 
@@ -1438,7 +1438,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/mob/user = ask.answerer
 	var/new_organ = ask.choice
 	var/mob/living/carbon/M = src
-	if(locate(new_organ) in M.internal_organs)
+	if(locate_in_list(M.internal_organs, new_organ))
 		to_chat(user, "Mob already has that organ.")
 		return
 	new new_organ(M)
@@ -1447,7 +1447,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	var/mob/user = ask.answerer
 	var/obj/item/organ/rem_organ = ask.choice
 	var/mob/living/carbon/M = src
-	if(!(locate(rem_organ) in M.internal_organs))
+	if(!(locate_in_list(M.internal_organs, rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
 		return
 	to_chat(user, "Removed [rem_organ] from [M].")

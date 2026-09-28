@@ -299,7 +299,7 @@ REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myre
 			if(istype(I, /obj/item/clothing/suit/caution) && signs < 4)
 				equip_janicart_item(ui.user, I)
 			else if(signs)
-				var/obj/item/clothing/suit/caution/sign = locate() in src
+				var/obj/item/clothing/suit/caution/sign = locate_within(src, /obj/item/clothing/suit/caution)
 				if(sign)
 					ui.user.put_in_hands(sign)
 					ui.user.balloon_alert(ui.user, "you take \a [sign] from [src].")
@@ -365,7 +365,7 @@ REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myre
 		mybucket = null
 
 	if (signs)
-		for (var/obj/item/clothing/suit/caution/Sign in src)
+		for (var/obj/item/clothing/suit/caution/Sign in contents_of(src))
 			if (prob(min((chance*2),100)))
 				signs--
 				Sign.forceMove(dropspot)

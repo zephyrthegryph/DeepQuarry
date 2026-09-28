@@ -30,7 +30,7 @@
 		for(var/turf/simulated/T in range(AM, range))
 			if(T.density || T.block_tele || ismineralturf(T)) //Don't blink to vacuum or a wall
 				continue
-			for(var/atom/movable/stuff in T.contents)
+			for(var/atom/movable/stuff in contents_of(T))
 				if(stuff.density)
 					continue valid_turfs
 			targets.Add(T)

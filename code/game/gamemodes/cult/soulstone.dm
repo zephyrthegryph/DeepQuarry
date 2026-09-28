@@ -57,7 +57,7 @@ DECLARE_INTERACTIONS(/obj/item/soulstone, INTERACT_USE(null, PROC_REF(interactio
 
 /obj/item/soulstone/tgui_data(mob/user)
 	var/list/data = list()
-	var/mob/living/simple_mob/construct/shade/A = locate() in src
+	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	data["has_shade"] = !!A
 	data["shade_name"] = A ? A.name : ""
 	return data
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/item/soulstone, INTERACT_USE(null, PROC_REF(interactio
 	add_fingerprint(usr)
 	switch(action)
 		if("summon")
-			for(var/mob/living/simple_mob/construct/shade/A in src)
+			for(var/mob/living/simple_mob/construct/shade/A in contents_of(src))
 				A.disable_godmode()
 				A.canmove = 1
 				to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [usr.name]'s will. Help them suceed in their goals at all costs.")))
@@ -117,11 +117,11 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	if(T.client == null)
 		to_chat(U, span_danger("Capture failed!") + ": The soul has already fled it's mortal frame.")
 		return
-	if(src.contents.len)
+	if(contents_count(src))
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone is full! Use or free an existing soul to make room.")
 		return
 
-	for(var/obj/item/W in T)
+	for(var/obj/item/W in contents_of(T))
 		T.drop_from_inventory(W)
 
 	new /obj/effect/decal/remains/human(T.loc) //Spawns a skeleton
@@ -164,7 +164,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	if (T.stat == DEAD)
 		to_chat(U, span_danger("Capture failed!") + ": The shade has already been banished!")
 		return
-	if(src.contents.len)
+	if(contents_count(src))
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone is full! Use or free an existing soul to make room.")
 		return
 	if(T.name != src.imprinted)
@@ -181,7 +181,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	to_chat(U, span_notice("Capture successful!") + ": [T.name]'s has been recaptured and stored within the soul stone.")
 
 /obj/item/soulstone/proc/transfer_construct(obj/structure/constructshell/T,mob/U)
-	var/mob/living/simple_mob/construct/shade/A = locate() in src
+	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	if(!A)
 		to_chat(U, span_danger("Capture failed!") + ": The soul stone is empty! Go kill someone!")
 		return;
@@ -191,7 +191,7 @@ DECLARE_INTERACTIONS(/obj/structure/constructshell, INTERACT_ITEM(null, PROC_REF
 	var/mob/U = ask.answerer
 	var/construct_class = ask.choice
 	var/obj/structure/constructshell/T = ask.subject
-	var/mob/living/simple_mob/construct/shade/A = locate() in src
+	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	if(!A)
 		return
 	switch(construct_class)

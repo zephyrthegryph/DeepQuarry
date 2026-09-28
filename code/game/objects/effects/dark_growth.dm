@@ -153,7 +153,7 @@ REF_BACKLIST(/obj/effect/dark, list("linked_node" = "children_effects"))
 /obj/structure/prop/dark_node/periodic_step()
 	//set background = 1
 
-	if(!(locate(/obj/effect/dark) in get_turf(src)))
+	if(!(locate_within(get_turf(src), /obj/effect/dark)))
 		var/obj/effect/dark/floor/new_dark_tile = new /obj/effect/dark/floor(get_turf(src), null, src)
 		if(!QDELETED(new_dark_tile))
 			LAZYADD(children_effects, new_dark_tile)

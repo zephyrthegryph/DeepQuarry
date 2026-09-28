@@ -40,7 +40,7 @@
 	if(istype(adj,/turf/simulated/shuttle/wall))
 		wall_flags |= flag      // turn on the bit flag
 	else
-		var/obj/structure/shuttle/window/window = locate(src.type) in adj
+		var/obj/structure/shuttle/window/window = locate_within(adj, src.type)
 		if(window)
 			window_flags |= flag      // turn on the bit flag
 		else

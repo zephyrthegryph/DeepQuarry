@@ -66,7 +66,7 @@
 
 	// I really am an idiot why did I make it this way
 	if(micro_target)
-		for(var/thing in src.contents)
+		for(var/thing in contents_of(src))
 			if(!ismob(thing))
 				continue
 			var/mob/m = thing

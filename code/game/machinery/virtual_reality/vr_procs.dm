@@ -66,7 +66,7 @@
 
 /mob/living/carbon/human/proc/fake_exit_vr_answered(datum/om/prompt/confirm/ask)
 	release_vore_contents(TRUE)
-	for(var/obj/item/I in src)
+	for(var/obj/item/I in contents_of(src))
 		drop_from_inventory(I)
 
 	ghostize(src)
