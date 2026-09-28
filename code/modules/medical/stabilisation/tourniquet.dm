@@ -108,12 +108,27 @@
 	tourniquet = T
 	T.forceMove(src)
 	T.applied_at = world.time
-	owner?.body?.afflict(/datum/affliction/limb_ischemia, src)
+	afflict_ischemia_below()
 	update_damages()
 	log_game("TOURNIQUET: [key_name(user)] applied [T] to [key_name(owner)]'s [name] at [AREACOORD(owner || src)]; flow below it stopped.")
 	if(user && owner && user != owner)
 		add_attack_logs(user, owner, "Applied a tourniquet to [name]")
 	return TRUE
+
+/// Ischemia on this limb and every limb distal to it: flow_occluded() starves them all, so each
+/// one grows its own ischemia (audit D15b: only the cinched limb used to).
+/obj/item/organ/external/proc/afflict_ischemia_below()
+	if(!owner?.body)
+		return
+	var/list/queue = list(src)
+	while(length(queue))
+		var/obj/item/organ/external/E = queue[length(queue)]
+		queue.len--
+		if(!E || E.owner != owner || E.is_stump())
+			continue
+		owner.body.afflict(/datum/affliction/limb_ischemia, E)
+		for(var/obj/item/organ/external/child as anything in E.children)
+			queue += child
 
 /// Loosen this limb's tourniquet, restoring flow. Returns the tourniquet
 /// (dropped at the patient's feet) or null if there was none.

@@ -459,11 +459,11 @@ GLOBAL_LIST_EMPTY(surgery_rerun_args)
 	if(user)
 		to_chat(user, span_warning("You must remain close to and keep focused on your patient to conduct surgery."))
 		user.balloon_alert(user, "you must remain close to and keep focused on your patient")
-	if(!task.tool || !user || !task.surgery_step)
-		LAZYREMOVE(surgery_zones_in_progress, task.zone)
-		update_surgery()
-		return
-	surgical_step_ended(FALSE, task.tool, task.surgery_step, user, task.zone, task.cleanliness, task.part, task.work_target, task.chance)
+	// An interrupted step is abandoned, not botched: no complication roll, and the target may be
+	// gone (a removed organ, a detached limb), so nothing touches it (audit D16).
+	log_game("SURGERY: [key_name(user)] interrupted [task.surgery_step?.name] on [key_name(src)] at [task.zone]; no complication.")
+	LAZYREMOVE(surgery_zones_in_progress, task.zone)
+	update_surgery()
 
 /mob/living/carbon/human/proc/surgical_step_done(datum/om/task/timed/surgical_step/task)
 	var/datum/surgical_step/step = task.surgery_step

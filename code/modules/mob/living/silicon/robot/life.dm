@@ -130,6 +130,11 @@
 	if(circulation >= ROBOT_CIRCULATION_OK)
 		if(heat_debt > 0)
 			heat_debt = max(0, heat_debt - ROBOT_HEAT_DEBT_SHED)
+		// A working loop is the chassis' coolant: it brings a runaway back down. Without this a
+		// borg (no reagent holder, so no coolant reagent) stayed in runaway until an admin healed it.
+		if(body?.has_affliction(/datum/affliction/synthetic/thermal_runaway) && mend(TREAT_COOLANT, ROBOT_RUNAWAY_LOOP_COOLING))
+			if(!body.has_affliction(/datum/affliction/synthetic/thermal_runaway))
+				log_runtime("ROBOT_HEAT: [key_name(src)] recovered from thermal runaway (circulation [round(circulation, 0.01)]).")
 		return
 	heat_debt += (1 - circulation) * ROBOT_HEAT_DEBT_SHED * 2
 	if(heat_debt < ROBOT_HEAT_DEBT_RUNAWAY || body?.has_affliction(/datum/affliction/synthetic/thermal_runaway))

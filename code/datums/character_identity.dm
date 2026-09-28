@@ -112,8 +112,11 @@
 
 /datum/mind
 	/// The character this mind is. Adopted from the first living body it
-	/// enters and carried from then on.
-	var/datum/character_identity/identity = new
+	/// enters and carried from then on. Null until then: a default `new` here
+	/// was bound over the body's identity on mind_initialize(), losing its
+	/// genetic modifiers (no_clone), notes and time of death (audit A10).
+	/// Read it through get_identity().
+	var/datum/character_identity/identity
 
 /// The mind's identity, adopting its current body's if it has none yet.
 /datum/mind/proc/get_identity()

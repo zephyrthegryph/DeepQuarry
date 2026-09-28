@@ -48,6 +48,8 @@
 #define ROBOT_HEAT_DEBT_SHED 5
 /// Circulation below this lets heat debt build.
 #define ROBOT_CIRCULATION_OK 0.75
+/// Coolant-treatment amount a circulating loop applies to thermal runaway per power cycle.
+#define ROBOT_RUNAWAY_LOOP_COOLING 10
 
 // --- Sleeper belly (/datum/component/robot_belly/var/sleeper_state) -----------------------------
 #define SLEEPER_STATE_EMPTY   0
