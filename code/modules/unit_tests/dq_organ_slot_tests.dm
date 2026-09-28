@@ -45,6 +45,7 @@
 	var/obj/item/organ/internal/kidneys = H.organ_in(O_KIDNEYS)
 	var/obj/item/organ/external/host = kidneys.parent_part()
 	TEST_ASSERT(kidneys.removed(), "removal succeeds")
+	own(kidneys) // removed organs drop to the floor
 	TEST_ASSERT_NULL(H.organ_in(O_KIDNEYS), "a removed organ's key is empty")
 	TEST_ASSERT(!(kidneys in INTERNAL_ORGANS(H)), "INTERNAL_ORGANS drops the removed organ")
 	var/obj/item/organ/internal/graft = donor.organ_in(O_KIDNEYS)
@@ -65,6 +66,7 @@
 	var/obj/item/organ/internal/brain = H.organ_in(O_BRAIN)
 	var/obj/item/organ/external/head = brain.parent_part()
 	head.droplimb(TRUE, DROPLIMB_EDGE)
+	own(head) // the severed head drops to the floor
 	TEST_ASSERT_NULL(H.organ_in(O_BRAIN), "a dropped head's brain is no longer the body's")
 	TEST_ASSERT(!(brain in INTERNAL_ORGANS(H)), "INTERNAL_ORGANS drops organs of a dropped limb")
 	if(!QDELETED(brain))
