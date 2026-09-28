@@ -23,10 +23,10 @@
 			to_chat(src, "You're committing suicide, this isn't going to work.")
 			return FALSE
 		if(C.does_not_breathe == FALSE)
-			C.does_not_breathe = TRUE
+			C.set_does_not_breathe(TRUE)
 			to_chat(src, span_notice("We stop breathing, as we no longer need to."))
 			return TRUE
 		else
-			C.does_not_breathe = FALSE
+			C.set_does_not_breathe(FALSE)
 			to_chat(src, span_notice("We resume breathing, as we now need to again."))
 	return FALSE

@@ -85,11 +85,6 @@
 
 // Stub species overrides for shoving trait abilities into
 
-//Called during handle_environment in Life() ticks.
-// Return: Not used.
-/datum/species/custom/environment_effects(mob/living/carbon/human/H)
-	return ..()
-
 //Called when spawning to equip them with special things.
 /datum/species/custom/equip_survival_gear(mob/living/carbon/human/H, extendedtank = 0, comprehensive = 0)
 	. = ..()

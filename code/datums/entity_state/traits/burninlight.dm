@@ -15,19 +15,13 @@
 /datum/trait_state/burninlight/life_tick()
 	if(QDELETED(owner))
 		return
-	if(owner.stat == DEAD)
-		return
 	if(owner.is_incorporeal())
 		return
 	if(!isturf(owner.loc))
 		return
-	if(owner.inStasisNow())
-		return
 
-	var/light_amount = 0 //how much light there is in the place, affects damage
-	if(isturf(owner.loc)) //else, there's considered to be no light
-		var/turf/T = owner.loc
-		light_amount = T.get_lumcount(0,1)
+	// P2-D7: the same light sample photosynthesis reads.
+	var/light_amount = owner.skin_light_level()
 
 	// Apply damage if beyond the minimum light threshold, actually makes zaddat SLIGHTLY more forgiving!
 	if(light_amount > 0 && light_amount > threshold) // Checks light_amount, as threshold of 0 can pass 0s to the damage procs otherwise.
@@ -52,3 +46,5 @@
 /datum/om/stage/life/trait/burninlight
 	name = "burninlight"
 	state_type = /datum/trait_state/burninlight
+	// P2-S6: paused stasis frames and dead bodies skip it.
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY

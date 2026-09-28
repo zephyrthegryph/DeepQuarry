@@ -556,15 +556,14 @@ REF_BACK(/datum/physiology, list("body" = "physiology"))
 	order = LIFE_PHASE_BODY + 85
 	name = "physiology"
 	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_PLACED_ALIVE
+	// P2-S6: oxygen debt stops on a paused (stasis) frame; the pipeline skips the stage.
+	run_if = LIFE_RUN_IF_PLACED_LIVE_BIOLOGY
 
 /datum/om/stage/life/physiology/applies(mob/living/self)
 	var/datum/body/proto = self.body_type
 	return !!initial(proto.physiology_type)
 
 /datum/om/stage/life/physiology/perform(mob/living/self, datum/om/frame/life/ctx)
-	if(ctx.fact("in_stasis"))
-		return
 	self.body?.physiology_tick(ctx.dt)
 
 /// Settled: no oxygen debt, no shortfall, nothing stale, and no support that lapses by a

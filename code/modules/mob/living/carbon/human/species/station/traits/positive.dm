@@ -875,7 +875,7 @@
 
 /datum/trait/positive/nobreathe/apply(datum/species/S, mob/living/carbon/human/H)
 	..()
-	H.does_not_breathe = 1
+	H.set_does_not_breathe(TRUE)
 	var/obj/item/organ/internal/breathy = H.internal_organs_by_name[O_LUNGS]
 	if(!breathy)
 		return

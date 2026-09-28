@@ -109,7 +109,7 @@
 	// or non-breathing patient returns 0.
 	if(is_dead())
 		return 0
-	if(!should_have_organ(O_LUNGS))
+	if(!breathes())
 		return 0
 	// Apnea or a closed airway: nothing moves.
 	if(breath_blocked())

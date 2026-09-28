@@ -216,7 +216,7 @@
 	. = istype(user) && HAS_SYNTHETIC_BIOLOGY(user)
 	if(!. && ishuman(user) && message_type == AUDIBLE_MESSAGE)
 		var/mob/living/carbon/human/H = user
-		if(H.should_have_organ(O_LUNGS))
+		if(H.breath_profile()?.uses_lungs)
 			var/obj/item/organ/internal/lungs/L = H.internal_organs_by_name[O_LUNGS]
 			if(L && L.robotic == 2)	//Hard-coded to 2, incase we add lifelike robotic lungs
 				. = TRUE

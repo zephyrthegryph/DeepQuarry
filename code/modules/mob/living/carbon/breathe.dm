@@ -24,7 +24,7 @@
 /// equipment (masks, internals) wake it (CHANGE_MOB_LOC, CHANGE_MOB_EQUIPMENT); air that
 /// changes in place is re-sampled by the rewake.
 /datum/om/stage/life/breathing/carbon/idle(mob/living/carbon/self)
-	if(!self.should_have_organ(O_LUNGS))
+	if(!self.breathes())
 		return TRUE
 	if(self.losebreath || self.failed_last_breath || self.internal || !isturf(self.loc))
 		return FALSE
@@ -36,12 +36,15 @@
 	return !self.is_critical()
 
 /datum/om/stage/life/breathing/carbon/rewake_delay(mob/living/carbon/self)
-	return self.should_have_organ(O_LUNGS) ? BREATH_STEADY_RESAMPLE : 0
+	return self.breathes() ? BREATH_STEADY_RESAMPLE : 0
 
-/// One breath: pick the breath source, exchange gas, exhale.
+/// One breath, taken the way the body breathes (P2-S7: its breath profile; none, no breath).
 /datum/om/stage/life/breathing/carbon/proc/breathe(mob/living/carbon/self)
-	//if(istype(loc, /obj/machinery/atmospherics/unary/cryo_cell)) return
-	if(!self.should_have_organ(O_LUNGS)) return
+	var/datum/breath_profile/profile = self.breath_profile()
+	profile?.take_breath(self, src)
+
+/// A breath through the lungs: pick the breath source, exchange gas, exhale.
+/datum/om/stage/life/breathing/carbon/proc/lung_breath(mob/living/carbon/self)
 
 	var/datum/gas_mixture/breath = null
 
