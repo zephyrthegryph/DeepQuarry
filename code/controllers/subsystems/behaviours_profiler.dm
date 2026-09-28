@@ -45,6 +45,14 @@
 			var/ms = S ? S[OM_STAT_MS] : 0
 			var/runs = S ? S[OM_STAT_RUNS] : 0
 			var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
+			var/population = 0
+			if(B.id <= length(sched.rings))
+				for(var/datum/om/ring/R as anything in sched.rings[B.id])
+					population += R.population()
+			var/parked = 0
+			if(istype(B, /datum/om/pipeline))
+				var/datum/om/pipeline/P = B
+				parked = length(P.parked_on(sched))
 			lane_ms[lane] += ms
 			lane_runs[lane] += runs
 			lane_count[lane] += 1
@@ -63,9 +71,13 @@
 				"errors" = S ? S[OM_STAT_ERRORS] : 0,
 				"wakes" = S ? S[OM_STAT_WAKES] : 0,
 				"parks" = S ? S[OM_STAT_PARKS] : 0,
+				"population" = population,
+				"parked" = parked,
 			))
 	data["behaviours"] = behaviours
 	data["shared_bucket"] = shared_bucket
+	var/list/world_diag = sched ? om_world_diagnostics(sched) : null
+	var/list/world_queued = world_diag?["queued"]
 	var/list/lanes = list()
 	for(var/i in 1 to OM_LANE_COUNT)
 		lanes += list(list(
@@ -75,6 +87,8 @@
 			"runs" = lane_runs[i],
 			"ms" = round(lane_ms[i], 0.001),
 			"ms_per_s" = round(lane_ms[i] / elapsed, 0.001),
+			"wake_queue" = sched ? length(sched.wake_q?[i]) : 0,
+			"world_queue" = world_queued ? world_queued[i] : 0,
 		))
 	data["lanes"] = lanes
 	var/list/stages = list()
@@ -89,6 +103,37 @@
 				"us_per_call" = calls ? round(cost * 1000 / calls, 0.01) : 0,
 			))
 	data["stages"] = stages
+	// World services: the global state and world-level periodic work former subsystems held.
+	var/datum/om/global_owner/owner = om_global_owner()
+	var/list/services = list()
+	for(var/datum/world_service/WS as anything in world_services())
+		if(!WS)
+			continue
+		var/lane_parked = FALSE
+		if(WS.lane && owner?.om_rec)
+			var/i = owner.om_rec.att.Find(om_registry().behaviour(WS.lane))
+			lane_parked = i ? !!(owner.om_rec.att_state[i] & OM_ATT_PARKED) : FALSE
+		services += list(list(
+			"name" = WS.name,
+			"type" = "[WS.type]",
+			"initialized" = WS.initialized,
+			"on_demand" = WS.on_demand,
+			"parked" = lane_parked,
+			"resuming" = WS.resuming,
+			"steps" = WS.steps,
+			"ms" = round(WS.total_ms, 0.001),
+			"ms_per_s" = round(WS.total_ms / max(world.time / (1 SECONDS), 1), 0.001),
+			"avg_ms" = round(WS.cost, 0.001),
+			"status" = WS.stat_line(),
+		))
+	data["services"] = services
+	if(world_diag)
+		data["world_step"] = list(
+			"step_ms" = round(world_diag["step_ms"], 0.001),
+			"total_wakes" = world_diag["total_wakes"],
+			"last_wakes" = world_diag["last_wakes"],
+			"dropped" = world_diag["dropped"],
+		)
 	return data
 
 /datum/controller/subsystem/behaviours/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)

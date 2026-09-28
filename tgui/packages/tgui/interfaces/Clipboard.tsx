@@ -51,7 +51,7 @@ export const Clipboard = () => {
             <Stack vertical>
               {items.map((i) => (
                 <Stack.Item key={i.ref}>
-                  {i.is_top && i.kind === 'paper' && !!has_pen ? (
+                  {i.is_top && i.kind === 'paper' && has_pen ? (
                     <Button
                       color="good"
                       onClick={() => act('write', { ref: i.ref })}

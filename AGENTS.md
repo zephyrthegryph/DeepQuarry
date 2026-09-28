@@ -72,8 +72,10 @@ no upstream to merge against, so there's no reason to keep a disabled include ar
 - **Use defined constants**, not string literals — job/faction/access/channel names,
   sounds. Defines live under `code/__defines/`.
 - **Avoid `usr`** outside verb procs — plumb `user` through args, or use `src`.
-- **Always chain `..()`** in lifecycle overrides (`Initialize`, `Destroy`,
-  `MouseDrop_T`, …) unless you specifically need to suppress the parent.
+- **Always chain `..()`** in lifecycle overrides (`Initialize`, `on_destroy`,
+  `lifecycle_prerelease`, …) unless you specifically need to suppress the parent.
+- **New to the object model?** Read `doc/rewrite/om_in_10_minutes.md` first, then
+  `doc/rewrite/time_mechanisms.md` for any delay, cadence or timer choice.
 - **Override via vars/subtypes**, not by editing an unrelated base — re-open the
   type and set `icon` / `name` / `desc`, or subtype it.
 - **Run DreamChecker before pushing.** Upstream-style red builds get rejected.
@@ -103,10 +105,18 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
 ### 3c. Lifecycle / hard-delete prevention
 
 - Prefer `Initialize(mapload, ...)` over `New()` for atoms; `return ..()`.
-- `Destroy()` must null held refs, cancel timers/callbacks, remove from global
-  tracking, then `return ..()`. Return the right `QDEL_HINT_*`. Event hooks
-  (`om_hook`) drop themselves when either end is deleted.
-- Always `qdel()`, never `del()`.
+- **Don't override `Destroy()`** (banned outside the core chain by
+  `lifecycle_counts_lint.py`). `qdel()` runs the destroy transaction
+  (`doc/rewrite/lifecycle.md`): declared references are cleared, owned children deleted,
+  OM timers/tasks/hooks/UIs torn down for you. Put consequences in `on_destroy(force)`
+  (calls `..()`), teardown that must still read declared vars in
+  `lifecycle_prerelease()`, behaviour-side work in `on_entity_destroy(E)`. The GC hint is
+  the `destroy_hint` var; refusal is `lifecycle_keep(force)`.
+- **Declare every object-typed var** (`REF_OWNED`, `REF_STATIC`, `REF_PAIR`, `REF_BACK`,
+  `REF_BACKLIST`, `REF_WEAK_LIST`, `REF_BACK_HANDLE`, OM handle, declared cache, …); see
+  the table in `doc/rewrite/om_in_10_minutes.md` §3.
+- Delete with a lifecycle verb (`consume()`, `replace_with()`, `expire()`, `slot_clear()`)
+  when one fits, else `qdel()`; never `del()`.
 
 ### 3d. Events & callbacks (OM events; the DCS is gone)
 
@@ -133,15 +143,19 @@ bans them). See `doc/rewrite/object_model_core.md` §10:
 - Cache appearances (`/image` / `/mutable_appearance`), not raw `/icon` objects.
 - Prefer flat lists indexed by `#define`d ints over assoc lists keyed by strings
   when the keys are a fixed enum (~8 B vs ~24 B/entry).
-- Scale `process()` effects by the subsystem `wait` (or a `seconds_per_tick` arg).
+- Scale cadence work by the `dt` the scheduler passes (`tick(E, dt)`, stage frames); there
+  is no `process()`/`START_PROCESSING` (use a behaviour cadence or `PERIODIC_START`).
 
 ### 3f. Magic numbers, input, SQL
 
 - Use the time defines (`1.5 SECONDS`, `5 MINUTES`) — never raw deciseconds.
 - `#define` flag/ID/threshold constants.
-- Sanitize/`stripped_input()` free text and **re-validate** user/target/state after
-  any `input()` / `tgui_input_*` returns. Validate `Topic()` hrefs (`locate(ref) in …`).
-- Parameterized SQL only; `format_table_name()` for table names.
+- Ask players with a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x,
+  PROC_REF(cb), var = value...)`; its `requires`/`valid()` re-check state before `cb` runs
+  (raw `input()`/`alert()`/`tgui_input_*` are banned). Sanitize free text. Validate
+  `Topic()` hrefs (`locate(ref) in …`).
+- Parameterized SQL only, through `om_io()` / `om_sql_write()` (nothing waits on I/O);
+  `format_table_name()` for table names.
 
 ### 3g. Ratchet lints and justified keeps
 
@@ -264,7 +278,7 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 
 - [ ] New `.dm` files `#include`d in `deepquarry.dme`.
 - [ ] Absolute type/proc paths only; no `:` operator on subtype access.
-- [ ] `Destroy()` nulls refs / cancels timers / returns the right `QDEL_HINT_*`.
+- [ ] No `Destroy()` overrides; object vars declared (`REF_*`); consequences in `on_destroy()`.
 - [ ] Event handlers start with `EVENT_HANDLER`; callbacks use the `*_PROC_REF` macros.
 - [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
 - [ ] DreamChecker (`SpacemanDMM`) passes locally.
@@ -278,6 +292,10 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 
 ## 8. Where to look when stuck
 
+- Object model: `doc/rewrite/om_in_10_minutes.md` (onboarding),
+  `doc/rewrite/time_mechanisms.md` (which timer/cadence/lane), then
+  `doc/rewrite/object_model_core.md` (§16 "one way to do X").
+- OM cost at runtime: admin verb "OM Profiler" (Debug > Investigate).
 - DM linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`.
 - Build entry: `bin/build.cmd` → `tools/build/build.ts`.
 - Icon pipeline: `tools/dq_icons/`.
@@ -292,6 +310,13 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 Things that are deliberately mid-flight or disabled, so you don't "fix" them by
 accident or assume they work:
 
+- **Object model (OM) — the architecture everything runs on.** Game objects are entities
+  with declared behaviours, pipelines, events, fields and references, scheduled by one
+  budgeted scheduler (SSbehaviours) in five lanes. There are no DCS signals/components,
+  no SStimer/`addtimer`/`spawn`/gameplay `sleep`, no `do_after`, no raw `input()`, no
+  weakrefs, no `/datum/modifier`, no per-type `Destroy()`, and most subsystems are now
+  world services. Onboarding: `doc/rewrite/om_in_10_minutes.md`; time choices:
+  `doc/rewrite/time_mechanisms.md`; reference: `doc/rewrite/object_model_core.md`.
 - **Atmospherics — LINDA on a Rust backend.** LINDA (the vendored /tg/ atmos under
   `code/ATMOSPHERICS/`) is the only engine; ZAS/XGM are gone. Gas math, turf diffusion,
   decompression and heat conduction (superconductivity) run in the auxmos arena inside
@@ -340,8 +365,9 @@ accident or assume they work:
   plus a registry to save memory. See `code/datums/variants/README.md`.
 - **Material behaviour system — rewritten; material synergies removed.** A material's three active
   behaviours are plain vars on `/datum/material` (`luminescence`/`radioactivity`/`toxicity`), read via
-  `dq_material_*()` and applied to items by a working self-processing `/datum/component/material_behaviors`
-  (`material_behaviors.dm`) — replacing the old half-wired magnitude-only component layer
+  `dq_material_*()` and applied to items by `dq_apply_material_behaviors()`: the shared `material_emission`
+  OM behaviour (`material_behaviors.dm`) ticks while an item irradiates or poisons — replacing the old
+  half-wired magnitude-only component layer
   (`material_components.dm`) and `material_traits.dm`, both deleted. `material_synergies.dm` is deleted, and
   the `dq_apply_material_synergies()`/`dq_synergy_value()` no-op shims plus all 53 `RefreshParts` call sites
   and 2 value-reads are **now fully removed** (zero residual refs). Structures/walls keep self-processing for
@@ -402,7 +428,7 @@ accident or assume they work:
     oxygenation, perfusion and an oxygen debt; there is no `INJURY_ASPHYXIA` — express a
     cause as a factor, support/restriction or breath quality, else `add_oxygen_debt()`.
   - **Stabilisation** (`code/modules/medical/stabilisation/`): tourniquets
-    (`flow_occluded()`), field items, and stasis on the biology clock (stasis modifiers hold
+    (`flow_occluded()`), field items, and stasis on the biology clock (stasis sources hold
     `EFFECT_CLOCK_BIO_INHIBIT`), read once per frame by `body.advance_stasis()`; systems check
     `ctx.in_stasis()` / `inStasisNow()`.
   - **Surgery as treatments** (`code/modules/surgery/`): steps deliver `TREAT_*` through
@@ -471,7 +497,7 @@ accident or assume they work:
   per type. There is no `Life()` proc, no frame loop in Life and no SSmobs (see World services). Don't add
   `handle_*` hooks on mobs: add a stage, or a variant whose path mirrors the mob path
   (`breathing/carbon/human`, `of = /mob/living/carbon/human`). Code outside Life uses
-  `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `om_stage_run_now()`; components add
+  `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `om_stage_run_now()`; other features add
   their stage with `om_stage_add()`. Observers (ghosts, AI eyes, blob) run `upkeep()` on their
   own behaviour. Life content is written per frame, so `LIFE_CYCLE` sets its per-second balance.
   **Mobs are event-driven and park, players included** (doc §5); the core runner owns it:
@@ -479,8 +505,8 @@ accident or assume they work:
     wakes when a `CHANGE_MOB_*` channel in its `wake_on` is raised (`LIFE_WAKE_ALL` wakes every
     stage). `rewake_delay()` sets a slow rewake for work that still drifts; `woken_by`
     documents the producers. The default `idle()` is FALSE, so a new stage stays awake until
-    you give it a rule. Stages must not sleep (`SHOULD_NOT_SLEEP`): hand slow work to
-    `INVOKE_ASYNC`.
+    you give it a rule. Stages must not sleep (`SHOULD_NOT_SLEEP`): slow work is `om_after()`, a task or
+    `om_lane_work()` (`INVOKE_ASYNC` is banned).
   - The old early returns are frame facts in `run_if` (`LIFE_RUN_IF_PLACED`,
     `LIFE_RUN_IF_PLACED_ALIVE`, ...); `ctx.fact("alive")`, `ctx.fact("environment")`,
     `ctx.fact("in_stasis")` read them; `return ctx.abort()` ends the frame.
@@ -489,7 +515,7 @@ accident or assume they work:
   - Anything that changes what a stage reads must raise the channel:
     `om_changed(L, CHANGE_MOB_HEALTH|STATUS|LOC|EQUIPMENT|CONDITIONS|STAT|CLIENT)`, or go through
     a producer that does: `injure`/`mend`, `body.invalidate()`, the status API, `Moved`,
-    equip/unequip, `set_stat`, Login, modifiers.
+    equip/unequip, `set_stat`, Login, body effects.
   - Every status (stun, weaken, paralysis, sleep, confusion, blindness, blur, deafness, stutter,
     mute, drugged, slurring, drowsy, hallucination, dizziness, jitters) is a core timed status
     (a row in `om_library_effects()`, `code/datums/om/status.dm`): set it with
