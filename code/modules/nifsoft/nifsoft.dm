@@ -55,7 +55,7 @@
 		qdel(src)
 
 //Destructor cleans up the software and nif reference
-// LIFECYCLE: installed software uninstalls.
+// ALLOW(lifecycle): installed software uninstalls.
 /datum/nifsoft/Destroy()
 	if(nif)
 		uninstall()

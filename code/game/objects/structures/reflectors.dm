@@ -17,7 +17,7 @@
 	var/fires_projectile = /obj/item/projectile/beam/emitter
 	var/fires_accuracy = 10000
 	var/fires_dispersion = 0
-	var/list/allowed_projectile_typecache = list(/obj/item/projectile/beam)
+	var/list/allowed_projectile_typecache = list(/obj/item/projectile/beam) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/rotation_angle = -1
 	var/can_decon = TRUE
 	var/list/has_projectiles

@@ -74,9 +74,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		stack_trace("/datum/chatmessage created with [isnull(owner) ? "null" : "invalid"] mob owner")
 		qdel(src)
 		return
-	INVOKE_ASYNC(src, PROC_REF(generate_image), text, target, owner, extra_classes, lifespan) // S10b keeps: generate_image waits on client MeasureText
+	INVOKE_ASYNC(src, PROC_REF(generate_image), text, target, owner, extra_classes, lifespan) // ALLOW(scheduler): generate_image waits on client MeasureText
 
-// LIFECYCLE: a message leaves its client's screen and seen list (clients aren't datums).
+// ALLOW(lifecycle): a message leaves its client's screen and seen list (clients aren't datums).
 /datum/chatmessage/Destroy()
 	if(istype(owned_by, /client))
 		if(owned_by.seen_messages)

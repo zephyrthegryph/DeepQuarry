@@ -24,7 +24,7 @@
 	var/current_capacity = 0
 	var/drill_moles_per_tick = 0
 
-	var/list/stored_ore = list(
+	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (13 writers)
 		ORE_SAND = 0,
 		ORE_HEMATITE = 0,
 		ORE_CARBON = 0,
@@ -46,7 +46,7 @@
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
 
-	var/list/ore_types = list(
+	var/list/ore_types = list( // ALLOW(instance_list): d: edited in place per instance (4 writers)
 		ORE_HEMATITE = /obj/item/ore/iron,
 		ORE_URANIUM = /obj/item/ore/uranium,
 		ORE_GOLD = /obj/item/ore/gold,

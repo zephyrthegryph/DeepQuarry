@@ -2,7 +2,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 
 /datum/decl/overmap_event_handler
 	var/list/hazard_by_turf
-	var/list/ship_events = list()
+	var/list/ship_events = list() // ALLOW(instance_list): d: singleton; nested per-ship lists edited in place
 
 // Populates overmap with random events!  Should be called once at startup at some point.
 /datum/decl/overmap_event_handler/proc/create_events(z_level, overmap_size, number_of_events)

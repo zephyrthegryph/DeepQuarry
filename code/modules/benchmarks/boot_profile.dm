@@ -21,18 +21,18 @@
 /// children to report self time.
 /datum/benchmark_init_stats
 	/// type -> list(count, init_self_us, materialize_self_us, late_count, late_self_us, inclusive_us)
-	var/list/by_type = list()
+	var/list/by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
 	var/depth = 0
 	/// child microseconds accumulated per depth
-	var/list/child_us = list()
+	var/list/child_us = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
 	/// qdel frames: child ms per depth and child ms at the last phase boundary
 	var/qdel_depth = 0
-	var/list/qdel_child_ms = list()
-	var/list/qdel_phase_mark_ms = list()
+	var/list/qdel_child_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_phase_mark_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
 	/// LIFECYCLE_PHASE_* id -> exclusive ms (children's time subtracted)
-	var/list/phase_self_ms = list()
+	var/list/phase_self_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
 	/// type -> list(qdels, self ms)
-	var/list/qdel_by_type = list()
+	var/list/qdel_by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
 
 GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 
@@ -247,7 +247,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		metric("init_ms_[name]", subsystems[name], "ms")
 	benchmark_rust_mark("booted")
 	detail("rust_memory_marks", GLOB.benchmark_rust_marks)
-	detail("early_notes", global.benchmark_early_notes)
+	detail("early_notes", benchmark_early_notes())
 	var/list/rust_now = vg_verdigris_allocator_diagnostics()
 	if(islist(rust_now))
 		metric("booted_rust_heap_mb", rust_now[1] / 1048576, "MB")
@@ -362,12 +362,12 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	while(SSexplosions.can_fire || SSexplosions.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
-		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
+		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 	var/resolved_at = REALTIMEOFDAY
 	while(length(SSlighting.sources_queue) || length(SSlighting.corners_queue) || length(SSlighting.objects_queue))
 		if(REALTIMEOFDAY > deadline)
 			fail("lighting did not settle within 300s")
-		stoplag() // S10b keeps: benchmark harness measures across real MC ticks
+		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 	var/lit_at = REALTIMEOFDAY
 	wait_fires(SSair, 3)
 	var/list/profile

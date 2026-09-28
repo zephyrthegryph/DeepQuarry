@@ -8,7 +8,7 @@ GLOBAL_LIST(fusion_reactions)
 	var/energy_production = 0
 	var/radiation = 0
 	var/instability = 0
-	var/list/products = list()
+	var/list/products = list() // ALLOW(instance_list): d: reaction singleton table
 	var/minimum_reaction_temperature = 100
 
 /datum/decl/fusion_reaction/proc/handle_reaction_special(obj/effect/fusion_em_field/holder)

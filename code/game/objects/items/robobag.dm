@@ -51,7 +51,7 @@
 		return
 	return ..()
 
-// LIFECYCLE: its corpse tag drops to the floor.
+// ALLOW(lifecycle): its corpse tag drops to the floor.
 /obj/structure/closet/body_bag/cryobag/robobag/Destroy()
 	if(corptag && get_turf(src))
 		var/turf/T = get_turf(src)
@@ -77,7 +77,7 @@
 	else //Allows the bag to respond to a cyborg analyzer and tag.
 		if(istype(W,/obj/item/robotanalyzer))
 			var/obj/item/robotanalyzer/analyzer = W
-			for(var/mob/living/L in contents) // latent-ok: mobs are never latent
+			for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
 				analyzer.attack(L,user)
 
 		else if(istype(W, /obj/item/clothing/accessory/badge))

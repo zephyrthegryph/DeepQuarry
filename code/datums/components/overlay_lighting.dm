@@ -147,7 +147,7 @@
 		turn_off()
 	return ..()
 
-// LIFECYCLE: the light leaves the turfs it lit and the atom it rode on.
+// ALLOW(lifecycle): the light leaves the turfs it lit and the atom it rode on.
 /datum/component/overlay_lighting/Destroy()
 	set_parent_attached_to(null)
 	set_holder(null)

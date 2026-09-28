@@ -2,8 +2,10 @@
 /datum/turbolift
 	var/datum/turbolift_floor/target_floor              // Where are we going?
 	var/datum/turbolift_floor/current_floor             // Where is the lift currently?
+	// ALLOW(instance_list): d: every lift has doors
 	var/list/doors = list()                             // Doors inside the lift structure.
 	var/list/queued_floors                     // Where are we moving to next?
+	// ALLOW(instance_list): d: filled when the lift is built
 	var/list/floors = list()                            // All floors in this system.
 	var/move_delay = 30                                 // Time between floor changes.
 	var/floor_wait_delay = 85                           // Time to wait at floor stops.
@@ -98,7 +100,7 @@
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
 /datum/turbolift/periodic_step()
-	if(world.time < next_process)
+	if(world.time < next_process) // ALLOW(cooldown): lift movement state machine
 		return
 	switch(busy_state)
 		if(LIFT_MOVING)

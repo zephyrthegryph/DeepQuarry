@@ -1,5 +1,5 @@
 /datum/stockMarket
-	var/list/stocks = list()
+	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/balances
 	var/list/last_read
 	var/list/stockBrokers

@@ -103,7 +103,7 @@
 /obj/item/universal_translator/limited
 	name = "handheld translator (galcom)"
 	desc = "This handy device appears to translate specific languages that it hears into onscreen text for a user."
-	var/list/known_languages = list(LANGUAGE_GALCOM)
+	var/list/known_languages = list(LANGUAGE_GALCOM) // ALLOW(instance_list): c: read-only per-subtype constant table (24 subtype overrides); a getter would share it, not worth it on a rare type
 	icon_state = "translator_small"
 
 /obj/item/universal_translator/limited/hear_talk(mob/M, list/message_pieces, verb)

@@ -1,8 +1,8 @@
 /datum/computer_file/data/email_account
-	var/list/inbox = list()
+	var/list/inbox = list() // ALLOW(instance_list): d: mailbox state
 	var/list/outbox
-	var/list/spam = list()
-	var/list/deleted = list()
+	var/list/spam = list() // ALLOW(instance_list): d: mailbox state
+	var/list/deleted = list() // ALLOW(instance_list): d: mailbox state
 
 	var/login = ""
 	var/password = ""

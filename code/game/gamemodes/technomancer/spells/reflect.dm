@@ -24,7 +24,7 @@
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)
 
-// LIFECYCLE: the caster is told the shield expired.
+// ALLOW(lifecycle): the caster is told the shield expired.
 /obj/item/spell/reflect/Destroy()
 	if(owner_ref())
 		to_chat(owner_ref(), span_danger("Your shield expires!"))

@@ -220,7 +220,7 @@ REF_OWNED(/datum/hud, list("lingchemdisplay", "wiz_instability_display", "wiz_en
 REF_OWNED_LIST(/datum/hud, list("minihuds", "floating_actions", "hotkeybuttons"))
 REF_OWNED_VALUES(/datum/hud, "ammo_hud_list")
 
-// LIFECYCLE: the mob's hud_used points at us (our side is a handle); a hud going clears it.
+// ALLOW(lifecycle): the mob's hud_used points at us (our side is a handle); a hud going clears it.
 /datum/hud/Destroy()
 	if(mymob()?.hud_used == src)
 		mymob().hud_used = null

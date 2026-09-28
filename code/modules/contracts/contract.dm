@@ -254,7 +254,7 @@ REF_OWNED_VALUES(/datum/contract_negotiation_clause, "options")
 REF_OWNED_LIST(/datum/contract, list("requirements", "audit_log"))
 REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 
-// LIFECYCLE: an active contract unsubscribes, leaves SScontracts and orphans its children.
+// ALLOW(lifecycle): an active contract unsubscribes, leaves SScontracts and orphans its children.
 /datum/contract/Destroy()
 	if(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE))
 		unsubscribe_events()
@@ -422,7 +422,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 	var/datum/contract_definition/definition = SScontracts?.definitions[definition_id]
 	if(state != CONTRACT_OFFERED || (definition && !definition.prepare_accept(src, accepting_account, user, source)) || validate())
 		return FALSE
-	if(offer_expires_at && world.time >= offer_expires_at)
+	if(offer_expires_at && world.time >= offer_expires_at) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		expire_offer()
 		return FALSE
 	if(scope == CONTRACT_SCOPE_PERSONAL && accepting_account?.account_number != owner_account_number)
@@ -444,7 +444,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
 		deadline = world.time + deadline_duration
-	if(deadline > world.time)
+	if(deadline > world.time) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		deadline_timer = om_after(src, deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	subscribe_events()
@@ -471,12 +471,12 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 
 /datum/contract/proc/check_deadline()
 	deadline_timer = null
-	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
+	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The deadline expired.")
-	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until)
+	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		fail("The evidence grace period expired.")
 
 /datum/contract/proc/enter_grace()
@@ -505,7 +505,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 /datum/contract/proc/receive_event(datum/contract_event/event)
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE
-	if(state == CONTRACT_ACTIVE && deadline && world.time > deadline)
+	if(state == CONTRACT_ACTIVE && deadline && world.time > deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		check_deadline()
 	if(!(state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)))
 		return FALSE

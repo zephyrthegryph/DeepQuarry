@@ -2,8 +2,9 @@
 /datum/unarmed_attack
 	var/attack_name = "fist"
 	// Both are interned in New(): shared between attacks with the same words, so never write to them.
+	// ALLOW(instance_list): kept: interned with string_list() in New()
 	var/list/attack_verb = list("attack")	// Empty hand hurt intent verb.
-	var/list/attack_noun = list("fist")
+	var/list/attack_noun = list("fist") // ALLOW(instance_list): kept: interned with string_list() in New()
 	var/damage = 0						// Extra empty hand attack damage.
 	var/attack_sound = "punch"
 	var/miss_sound = 'sound/weapons/punchmiss.ogg'

@@ -79,7 +79,7 @@
 	C.update_canmove() // Sync `lying` now so check_victim() does not race the next Life() tick.
 	C.forceMove(get_turf(src))
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in src) // latent-ok: materialized above
+	for(var/obj/O in src) // ALLOW(latent): materialized above
 		O.forceMove(src.loc)
 	add_fingerprint(user)
 	if(ishuman(C))

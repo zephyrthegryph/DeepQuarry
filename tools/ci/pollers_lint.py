@@ -4,7 +4,8 @@
 Periodic work runs on object-model pipelines, stages, watches, clocks and parking
 (doc/rewrite/object_model_core.md section 4.10, code/datums/om/periodic.dm,
 code/game/machinery/machine_pipeline.dm). This lint counts the old polling constructs
-per file and fails when a file has more than tools/ci/pollers_allowlist.txt allows:
+and fails on any site not marked `// ALLOW(pollers): <reason>` on its line or the
+comment line above it (tools/ci/allow_annotations.py):
 
     process      a `process()` proc definition (`/type/process(` at column 0, or an
                  indented `process(` / `proc/process(` under a type block)
@@ -18,16 +19,17 @@ It also checks that every type defining machine_step() is covered by the machine
 decl (so a stepping machine can't silently never run).
 
     python tools/ci/pollers_lint.py            # the CI check
-    python tools/ci/pollers_lint.py --report   # totals
-    python tools/ci/pollers_lint.py --update   # rewrite the allowlist to today's counts
+    python tools/ci/pollers_lint.py --report   # every site
 """
 import glob
 import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(__file__))
+from allow_annotations import allowed  # noqa: E402
+
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "pollers_allowlist.txt")
 
 EXEMPT_PREFIXES = (
     "code/controllers/",
@@ -76,31 +78,32 @@ def exempt(rel):
 
 
 def count_file(path):
-    process = 0
-    start = 0
+    """(process() definition lines, START_*PROCESSING call lines) not kept by ALLOW(pollers)."""
+    process = []
+    start = []
     in_type = False
     in_block_comment = False
     with open(path, encoding="utf-8", errors="replace") as f:
-        for raw in f:
-            line = raw.rstrip("\n").rstrip("\r")
-            if in_block_comment:
-                if "*/" in line:
-                    in_block_comment = False
-                continue
-            if line.lstrip().startswith("/*") and "*/" not in line:
-                in_block_comment = True
-                continue
-            code = strip_comment(line)
-            if TOP_LEVEL.match(code):
-                process += 1
-            elif in_type and NESTED.match(code):
-                process += 1
-            if TYPE_BLOCK.match(code):
-                in_type = True
-            elif code and not code[0].isspace():
-                in_type = False
-            if not DEFINE.match(code):
-                start += len(START.findall(code))
+        raw_lines = f.read().split("\n")
+    for number, raw in enumerate(raw_lines, 1):
+        line = raw.rstrip("\r")
+        if in_block_comment:
+            if "*/" in line:
+                in_block_comment = False
+            continue
+        if line.lstrip().startswith("/*") and "*/" not in line:
+            in_block_comment = True
+            continue
+        code = strip_comment(line)
+        kept = allowed(raw_lines, number, "pollers")
+        if (TOP_LEVEL.match(code) or (in_type and NESTED.match(code))) and not kept:
+            process.append(number)
+        if TYPE_BLOCK.match(code):
+            in_type = True
+        elif code and not code[0].isspace():
+            in_type = False
+        if not DEFINE.match(code) and not kept and START.search(code):
+            start.append(number)
     return process, start
 
 
@@ -113,33 +116,6 @@ def counts():
         if p or s:
             result[rel] = (p, s)
     return result
-
-
-def read_allowlist():
-    allowed = {}
-    if not os.path.exists(ALLOWLIST):
-        return allowed
-    with open(ALLOWLIST, encoding="utf-8") as f:
-        for line in f:
-            line = line.split("#", 1)[0].strip()
-            if not line:
-                continue
-            rel, p, s = line.rsplit(None, 2)
-            allowed[rel] = (int(p), int(s))
-    return allowed
-
-
-def write_allowlist(result):
-    total_p = sum(v[0] for v in result.values())
-    total_s = sum(v[1] for v in result.values())
-    with open(ALLOWLIST, "w", encoding="utf-8", newline="\n") as f:
-        f.write("# Polling ratchet (tools/ci/pollers_lint.py): <file> <process() defs> <START_*PROCESSING calls>.\n")
-        f.write("# A file may not exceed its counts; files not listed may have none. Lower it as types migrate:\n")
-        f.write("# `python tools/ci/pollers_lint.py --update`.\n")
-        f.write(f"# Totals: {total_p} process() definitions, {total_s} START_PROCESSING/START_MACHINE_PROCESSING calls.\n")
-        for rel in sorted(result):
-            p, s = result[rel]
-            f.write(f"{rel} {p} {s}\n")
 
 
 def machine_pipeline_roots():
@@ -180,25 +156,19 @@ def check_step_coverage():
 
 def main():
     result = counts()
-    if "--update" in sys.argv:
-        write_allowlist(result)
-        print(f"wrote {ALLOWLIST}")
-        return 0
-    total_p = sum(v[0] for v in result.values())
-    total_s = sum(v[1] for v in result.values())
+    total_p = sum(len(v[0]) for v in result.values())
+    total_s = sum(len(v[1]) for v in result.values())
+    errors = []
+    for rel, (p, st) in sorted(result.items()):
+        for n in p:
+            errors.append(f"{rel}:{n}: process() definition -- put the work on a pipeline (code/datums/om/periodic.dm)")
+        for n in st:
+            errors.append(f"{rel}:{n}: START_*PROCESSING call -- use PERIODIC_START or a machine wake")
     if "--report" in sys.argv:
-        for rel in sorted(result):
-            print(f"{rel} {result[rel][0]} {result[rel][1]}")
+        for e in errors:
+            print(e)
         print(f"total: {total_p} process() definitions, {total_s} START calls, {len(result)} files")
         return 0
-    allowed = read_allowlist()
-    errors = []
-    for rel, (p, s) in sorted(result.items()):
-        ap, as_ = allowed.get(rel, (0, 0))
-        if p > ap:
-            errors.append(f"{rel}: {p} process() definitions (allowed {ap}) -- put the work on a pipeline (code/datums/om/periodic.dm)")
-        if s > as_:
-            errors.append(f"{rel}: {s} START_*PROCESSING calls (allowed {as_}) -- use PERIODIC_START or a machine wake")
     errors += check_step_coverage()
     for e in errors:
         print(e)

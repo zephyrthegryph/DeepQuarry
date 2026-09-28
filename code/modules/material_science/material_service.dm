@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return types
 
 /obj
-	var/datum/material_service/material_service
+	var/datum/material_service/material_service // ALLOW(state_ref): running: the material simulation service while admitted
 	var/material_configuration_revision = 0
 	var/material_assembly_id
 	/// TRUE for player-fabricated or deliberately reconfigured assemblies. Map
@@ -220,7 +220,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	register_diagnostics()
 	schedule(1 SECOND)
 
-// LIFECYCLE: unregisters diagnostics and its service behaviour; its owner forgets it.
+// ALLOW(lifecycle): unregisters diagnostics and its service behaviour; its owner forgets it.
 /datum/material_service/Destroy()
 	unregister_diagnostics()
 	om_cancel_after(src, /datum/om/behaviour/material_service)

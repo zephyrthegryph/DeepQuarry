@@ -57,7 +57,7 @@
 	return alert
 
 /mob/proc/alert_timeout(atom/movable/screen/alert/alert, category)
-	if(alert.timeout && LAZYACCESS(alerts, category) == alert && world.time >= alert.timeout)
+	if(alert.timeout && LAZYACCESS(alerts, category) == alert && world.time >= alert.timeout) // ALLOW(cooldown): alert timeout
 		clear_alert(category)
 
 // Proc to clear an existing alert.
@@ -499,7 +499,7 @@ so as to remain in compliance with the most up-to-date laws."
 		return usr.client.Click(master, location, control, params)
 	..() // Pass through to click_vr
 
-// LIFECYCLE: alerts are pooled per mob; reset and queued rather than collected.
+// ALLOW(lifecycle): alerts are pooled per mob; reset and queued rather than collected.
 /atom/movable/screen/alert/Destroy()
 	..()
 	severity = 0

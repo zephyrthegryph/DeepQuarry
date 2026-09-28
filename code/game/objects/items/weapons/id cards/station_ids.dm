@@ -8,7 +8,7 @@
 		SPECIES_TESHARI = 'icons/mob/species/teshari/id.dmi'
 		)
 
-	var/list/access = list()
+	var/list/access = list() // ALLOW(instance_list): d: ID access; an empty list and null differ for access checks
 	var/registered_name = "Unknown" // The name registered_name on the card
 	slot_flags = SLOT_ID | SLOT_EARS
 

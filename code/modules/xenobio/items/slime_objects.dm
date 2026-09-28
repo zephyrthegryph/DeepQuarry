@@ -28,7 +28,7 @@
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
-	spawn(0) // S7 keeps: tgui_alert() sleeps (prompts, S10)
+	spawn(0) // ALLOW(scheduler): tgui_alert() sleeps (prompts, S10)
 		if(!C)
 			return
 		var/response = rerun_prompt(C, "k34", list("message" = "Someone is requesting a soul for a promethean. Would you like to play as one?", "title" = "Promethean request", "choices" = list("Yes", "No", "Never for this round")), PROC_REF(question), args)

@@ -4,7 +4,7 @@
 	icon = 'icons/obj/coatrack.dmi'
 	icon_state = "coatrack0"
 	var/coat_handle
-	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench)
+	var/list/allowed = list(/obj/item/clothing/suit/storage/toggle/labcoat, /obj/item/clothing/suit/storage/det_trench) // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 
 /obj/structure/coatrack/declare_interactions(list/into)
 	into += list(

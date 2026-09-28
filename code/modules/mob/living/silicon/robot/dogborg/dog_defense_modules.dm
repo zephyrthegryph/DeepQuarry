@@ -20,7 +20,7 @@
 	var/power_tick = 25
 	var/disabled_icon = "armor"
 	var/active_icon = "armor_broken"
-	var/list/target_components = list(ROBOT_SLOT_ARMOUR)
+	var/list/target_components = list(ROBOT_SLOT_ARMOUR) // ALLOW(instance_list): d: edited in place per instance (4 writers)
 	var/repairing = FALSE
 	flags = NOBLUDGEON
 

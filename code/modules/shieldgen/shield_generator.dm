@@ -62,7 +62,7 @@
 		mode_list.Add(SM)
 	toggle_flag(initial_shield_modes)
 
-// LIFECYCLE: its field shuts down.
+// ALLOW(lifecycle): its field shuts down.
 /obj/machinery/power/shield_generator/Destroy()
 	shutdown_field()
 	field_segments = null

@@ -4,7 +4,7 @@
 	var/obj/access = new()
 	var/emagged = 0
 	var/ui_ref
-	var/list/monitored_alarms = list()
+	var/list/monitored_alarms = list() // ALLOW(instance_list): d: UI module state, filled on open
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()

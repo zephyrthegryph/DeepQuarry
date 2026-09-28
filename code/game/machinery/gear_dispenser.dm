@@ -149,6 +149,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	icon_state = "geardispenser"
 	anchored = TRUE
 	density = TRUE
+	// ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/list/dispenses = list(/datum/gear_disp/trash) // put your gear datums here!
 	var/datum/gear_disp/one_setting
 	var/dispenser_flags = GD_NOGREED|GD_UNLIMITED

@@ -33,6 +33,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	var/tmp/power_usage = 0						// Nifsoft adds to this
 	var/tmp/mob/living/carbon/human/human		// Our owner!
+	// ALLOW(instance_list): d: fixed-slot software table indexed by list_pos
 	var/tmp/list/nifsofts[TOTAL_NIF_SOFTWARE]	// All our nifsofts
 	var/tmp/list/nifsofts_life			// Ones that want to be talked to on life()
 	var/owner									// Owner character name
@@ -51,7 +52,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 	var/obj/item/communicator/commlink/comm		// The commlink requires this
 
-	var/list/starting_software = list(
+	var/list/starting_software = list( // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 		/datum/nifsoft/commlink,
 		/datum/nifsoft/soulcatcher,
 		/datum/nifsoft/ar_civ
@@ -109,7 +110,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 REF_OWNED(/obj/item/nif, "comm")
 REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 
-// LIFECYCLE: the NIF unregisters from its human.
+// ALLOW(lifecycle): the NIF unregisters from its human.
 /obj/item/nif/Destroy()
 	if(human)
 		unregister_human()

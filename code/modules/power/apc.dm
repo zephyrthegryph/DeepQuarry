@@ -213,7 +213,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	if(vg_entity)
 		vg_power_unbind_node(vg_entity)
 
-// LIFECYCLE: its area loses power and its power alarm clears.
+// ALLOW(lifecycle): its area loses power and its power alarm clears.
 /obj/machinery/power/apc/Destroy()
 	if(power_alarm_raised)
 		GLOB.power_alarm.clearAlarm(loc, src)
@@ -811,7 +811,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		"chargingStatus"  = charging,
 		"totalLoad"       = round(channel_load_total()),
 		"totalCharging"   = 0,
-		"failTime"        = failure_until > world.time ? CEILING((failure_until - world.time) / 10, 1) : 0,
+		"failTime"        = failure_until > world.time ? CEILING((failure_until - world.time) / 10, 1) : 0, // ALLOW(cooldown): UI readout of failure time left
 		"gridCheck"       = grid_check,
 		"coverLocked"     = coverlocked,
 		"siliconUser"     = siliconaccess(user) || (isobserver(user) && is_admin(user)),
@@ -1213,7 +1213,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
-	set waitfor = FALSE // S10b keeps: update_nightshift() CHECK_TICKs over the area lights
+	set waitfor = FALSE // ALLOW(scheduler): update_nightshift() CHECK_TICKs over the area lights
 	if(automated && istype(area, /area/shuttle))
 		return
 	nightshift_lights = on

@@ -41,7 +41,7 @@
 	sleevers = list()
 	updatemodules()
 
-// LIFECYCLE: its pods are released.
+// ALLOW(lifecycle): its pods are released.
 /obj/machinery/computer/transhuman/resleeving/Destroy()
 	releasepods()
 	current_br = null
@@ -536,7 +536,7 @@
 	icon_state = "harddisk"
 	item_state = "card-id"
 	w_class = ITEMSIZE_SMALL
-	var/list/datum/transhuman/mind_record/stored = list()
+	var/list/datum/transhuman/mind_record/stored = list() // ALLOW(instance_list): d: the disk's stored records
 
 /**
  * Sets a temporary message to display to the user

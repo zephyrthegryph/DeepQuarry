@@ -31,7 +31,7 @@
 	var/timer_duration = 0
 
 	var/timing = FALSE		// boolean, true/1 timer is on, false/0 means it's not timing
-	var/list/obj/machinery/targets = list()
+	var/list/obj/machinery/targets = list() // ALLOW(instance_list): d: the timer's linked doors and flashers, filled at init
 
 	maptext_height = 26
 	maptext_width = 32

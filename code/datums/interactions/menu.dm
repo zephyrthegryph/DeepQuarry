@@ -12,7 +12,7 @@
 /datum/interaction_menu/New(client/owner)
 	src.owner = owner
 
-// LIFECYCLE: clears the client's back-reference (clients aren't datums).
+// ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
 /datum/interaction_menu/Destroy()
 	if(owner?.interaction_menu == src)
 		owner.interaction_menu = null

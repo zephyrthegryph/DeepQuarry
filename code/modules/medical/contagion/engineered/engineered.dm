@@ -42,7 +42,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	/// The strain's composition: /datum/viral_trait instances (each carries
 	/// its per-strain state: neutered, power, thresholds). This is the
 	/// strain's variant data; GetDiseaseID() is derived from it.
-	var/list/symptoms = list()
+	var/list/symptoms = list() // ALLOW(instance_list): d: every engineered strain has traits
 
 	var/s_processing = FALSE
 	var/id = ""
@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	..(process, D)
 	return
 
-// LIFECYCLE: ends the strain's running traits and deletes the traits it owns.
+// ALLOW(lifecycle): ends the strain's running traits and deletes the traits it owns.
 /datum/affliction/contagion/engineered/Destroy()
 	if(s_processing)
 		for(var/datum/viral_trait/S in symptoms)

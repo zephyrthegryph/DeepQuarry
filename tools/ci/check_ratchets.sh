@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Ratcheted rewrite lints (doc/rewrite/roadmap.md, Guardrails). Each fails when a
-# count rises above its ceiling or allowlist. Runs every lint, then reports.
+# count rises above its ceiling (tools/ci/*_baseline.txt); a justified keep is an inline
+# `// ALLOW(<lint>): <reason>` (tools/ci/allow_annotations.py). Runs every lint, then reports.
 # doc/rewrite/object_model_core.md sec 16 ("One way to do X") maps each banned
 # alternative to the lint here that counts it.
 set -uo pipefail
@@ -8,6 +9,7 @@ cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
 for lint in \
+	allow_annotations.py \
 	scheduler_lints.py \
 	declared_refs_lint.py \
 	lifecycle_counts_lint.py \
@@ -15,6 +17,7 @@ for lint in \
 	containment_lint.py \
 	latent_lint.py \
 	spatial_lint.py \
+	pollers_lint.py \
 	registry_lint.py \
 	instance_list_lint.py \
 	state_schema_lint.py \
@@ -23,7 +26,6 @@ for lint in \
 	breakpoint_lint.py \
 	api_lints.py \
 	cooldown_lint.py \
-	base_proc_lint.py \
 	dcs_lints.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then

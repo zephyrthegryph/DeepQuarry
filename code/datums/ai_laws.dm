@@ -23,15 +23,15 @@
 	var/selectable = 0
 	var/datum/ai_law/zero/zeroth_law = null
 	var/datum/ai_law/zero/zeroth_law_borg = null
-	var/list/datum/ai_law/inherent_laws = list()
-	var/list/datum/ai_law/supplied_laws = list()
-	var/list/datum/ai_law/ion/ion_laws = list()
+	var/list/datum/ai_law/inherent_laws = list() // ALLOW(instance_list): d: per law set; every silicon has inherent laws
+	var/list/datum/ai_law/supplied_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
+	var/list/datum/ai_law/ion/ion_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
 	var/list/datum/ai_law/sorted_laws
 
 	var/state_zeroth = 0
-	var/list/state_ion = list()
-	var/list/state_inherent = list()
-	var/list/state_supplied = list()
+	var/list/state_ion = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
+	var/list/state_inherent = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
+	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
 
 /datum/ai_laws/New()
 	..()

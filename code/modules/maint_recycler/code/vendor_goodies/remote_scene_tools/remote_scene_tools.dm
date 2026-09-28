@@ -135,7 +135,7 @@ why aren't these accessories?
 	else
 		icon_state = icon_root + "_inactive"
 
-// LIFECYCLE: its linked tool forgets it; its wearer is unregistered.
+// ALLOW(lifecycle): its linked tool forgets it; its wearer is unregistered.
 /obj/item/remote_scene_tool/Destroy()
 	. = ..()
 	if(linked)

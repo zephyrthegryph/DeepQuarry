@@ -1,7 +1,7 @@
 // This is a generic datum used to ask ghosts if they wish to be a specific role, such as a Promethean, an Apprentice, a Xeno, etc.
 // Simply instantiate the correct subtype of this datum, call query(), and it will return a list of ghost candidates after a delay.
 /datum/ghost_query
-	var/list/candidates = list()
+	var/list/candidates = list() // ALLOW(instance_list): d: ghost query responses; the query exists to collect them
 	var/finished = FALSE
 	var/role_name = "a thing"
 	var/question = "Would you like to play as a thing?"

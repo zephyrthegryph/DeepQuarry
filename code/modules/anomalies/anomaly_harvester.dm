@@ -170,7 +170,7 @@
 /obj/machinery/anomaly_harvester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/sample_data = list()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/research_sample/sample in src) // latent-ok: materialized above
+	for(var/obj/item/research_sample/sample in src) // ALLOW(latent): materialized above
 		UNTYPED_LIST_ADD(sample_data, list(
 			"name" = sample.name,
 			"icon" = sample.icon,
@@ -202,7 +202,7 @@
 			return TRUE
 		if("release_all")
 			latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/item/research_sample/sample in src) // latent-ok: materialized above
+			for(var/obj/item/research_sample/sample in src) // ALLOW(latent): materialized above
 				sample.forceMove(get_turf(src))
 			return TRUE
 

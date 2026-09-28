@@ -34,12 +34,14 @@
 	var/is_whitelisted = FALSE
 	var/whitelist_ckey
 	var/whitelist_charname
+	// ALLOW(instance_list): d: tested for truth (!belly_light_list), so an empty list and null behave differently
 	var/list/belly_light_list = list() // Support multiple sleepers with r/g light "sleeper". Kept: code tests it for truth, so empty and null differ.
+	// ALLOW(instance_list): d: tested for truth (!belly_capacity_list), so an empty list and null behave differently
 	var/list/belly_capacity_list = list() //Support multiple bellies with multiple sizes, default: "sleeper" = 1. Kept, as above.
 	var/list/sprite_decals // Allow extra decals
 	var/list/sprite_animations // Allows to flick animations
 
-	var/list/hat_offset = list("north" = list(0, -3), "south" = list(0, -3), "east" = list(4, -3), "west" = list(-4, -3))
+	var/list/hat_offset = list("north" = list(0, -3), "south" = list(0, -3), "east" = list(4, -3), "west" = list(-4, -3)) // ALLOW(instance_list): kept: interned by contents in New() (intern_list); read-only
 
 /// Determines if the borg has the proper flags to show an overlay.
 // Most sprites use one of a few hat offset tables; share identical ones (read-only).

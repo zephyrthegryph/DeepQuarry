@@ -5,7 +5,7 @@
 	 *
 	 * Format: list(<mapname> = list(/atom/movable/screen))
 	 */
-	var/list/screen_maps = list()
+	var/list/screen_maps = list() // ALLOW(instance_list): d: one per connected client; nested per-map lists edited in place
 
 /atom/movable/screen
 	/**

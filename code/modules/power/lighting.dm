@@ -1063,11 +1063,11 @@ REF_OWNED(/obj/machinery/light, "cell")
 	light_timer_at = 0
 	if(QDELETED(src))
 		return
-	if(emergency_discharge_at && world.time >= emergency_discharge_at)
+	if(emergency_discharge_at && world.time >= emergency_discharge_at) // ALLOW(cooldown): scheduled light state transitions
 		continue_emergency_discharge()
-	if(emergency_recharge_at && world.time >= emergency_recharge_at)
+	if(emergency_recharge_at && world.time >= emergency_recharge_at) // ALLOW(cooldown): scheduled light state transitions
 		finish_emergency_recharge()
-	if(flicker_check_at && world.time >= flicker_check_at)
+	if(flicker_check_at && world.time >= flicker_check_at) // ALLOW(cooldown): scheduled light state transitions
 		flicker_check_at = 0
 		auto_flicker_check()
 	schedule_light_timer()

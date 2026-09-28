@@ -278,7 +278,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	return
 
 /datum/modifier/redspace_drain/lesser/check_if_valid()
-	if(expire_at && expire_at < world.time)
+	if(expire_at && expire_at < world.time) // ALLOW(cooldown): modifier expiry
 		src.expire()
 
 /datum/modifier/redspace_drain/lesser/tick()
@@ -445,6 +445,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	if(bellied)
 		return
 
+	// ALLOW(cooldown): armor duration
 	if(armor_deployed && ((armor_deployed_time + armor_duration) < world.time)) //Time ran out.
 
 		//Are we still in panic mode?
@@ -495,6 +496,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 	//Cooldown?
 
+	// ALLOW(cooldown): armor duration
 	if(armor_deployed && (armor_deployed_time + (armor_duration * 2)) < world.time) //Takes longer for armor to undeploy when dead.
 		exit_battle_stance()
 

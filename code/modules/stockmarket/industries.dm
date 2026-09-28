@@ -1,7 +1,8 @@
 /datum/industry
 	var/name = "Industry"
-	var/list/tokens = list()
+	var/list/tokens = list() // ALLOW(instance_list): d: stock market singleton state
 
+	// ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/title_templates = list("The brand new %product_name% by %company_name% will revolutionize %industry%", \
 									"%jobs% rejoice as %product_name% hits shelves", \
 									"Does %product_name% threaten to reorganize the %industrial% status quo?", \
@@ -17,6 +18,7 @@
 										"Atrocious quality - %jobs% boycott %product_name%", \
 										"%product_name%: Inside the worst product launch in recent history")
 
+	// ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/title_templates_ooc = list("%company_name% is looking to enter the %industry% playing field with %product_name%", \
 										"%company_name% broadens spectrum, %product_name% is their latest and greatest")
 	var/static/list/subtitle_templates = list(	"%author% investigates whether or not you should invest!", \

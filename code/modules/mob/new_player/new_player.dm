@@ -102,7 +102,7 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	if(timer == -1)
 		return -1
 	// Timer expired
-	if(timer <= world.time)
+	if(timer <= world.time) // ALLOW(cooldown): lobby timer
 		GLOB.respawn_timers -= ckey
 		return 0
 	// Timer still going

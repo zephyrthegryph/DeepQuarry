@@ -101,7 +101,9 @@
 	//Mob melee settings
 	var/melee_damage_lower = 2		// Lower bound of randomized melee damage
 	var/melee_damage_upper = 6		// Upper bound of randomized melee damage
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/attacktext = list("attacked") // "You are [attacktext] by the mob!"
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/friendly = list("nuzzles") // "The mob [friendly] the person."
 	var/attack_sound = null				// Sound to play when I attack
 	var/melee_miss_chance = 0			// percent chance to miss a melee attack.
@@ -218,7 +220,7 @@
 
 REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 
-// LIFECYCLE: eye glow comes off and belly contents are released.
+// ALLOW(lifecycle): eye glow comes off and belly contents are released.
 /mob/living/simple_mob/Destroy()
 	if(has_eye_glow)
 		remove_eyes()
@@ -386,6 +388,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 	return ..()
 
 /datum/decl/mob_organ_names
+	// ALLOW(instance_list): c: read-only per-subtype constant table (55 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/hit_zones = list("body") //When in doubt, it's probably got a body.
 
 /*
@@ -753,7 +756,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
 		ai_busy_begin()
-		spawn() // S7 keeps: animal_nom() sleeps in do_after() (S8)
+		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after() (S8)
 			animal_nom(tmob)
 			update_icon()
 			ai_busy_end()
@@ -935,7 +938,7 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 // sets, so every override stays after its base definition (resolution preserved). ===
 /mob/living/simple_mob
 	//speech sounds
-	var/list/speech_sounds = list()
+	var/list/speech_sounds = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/speech_chance = 75 //mobs can be a bit more emotive than carbon/humans
 	var/speech_sound_enabled = TRUE
 

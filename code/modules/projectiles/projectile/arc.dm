@@ -127,7 +127,7 @@ REF_OWNED(/obj/item/projectile/arc, "shadow")
 /obj/item/projectile/arc/fragmentation
 	name = "fragmentation shot"
 	icon_state = "shell"
-	var/list/fragment_types = list(
+	var/list/fragment_types = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
 		/obj/item/projectile/bullet/pellet/fragment, /obj/item/projectile/bullet/pellet/fragment, \
 		/obj/item/projectile/bullet/pellet/fragment, /obj/item/projectile/bullet/pellet/fragment/strong
 		)

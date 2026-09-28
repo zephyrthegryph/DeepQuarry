@@ -58,16 +58,16 @@
 			if(V == "flags") // Is bitflag, implimentation means traits can only GIVE you flags, not remove them.
 				S.vars[V] |= var_changes[V]
 			else
-				S.vars[V] = var_changes[V]
+				S.vars[V] = var_changes[V] // ALLOW(api): trait var_changes tables
 	if (trait_prefs)
 		for (var/trait in trait_prefs)
 			switch(has_preferences[trait][3])
 				if(TRAIT_NO_VAREDIT_TARGET)
 					continue
 				if(TRAIT_VAREDIT_TARGET_SPECIES)
-					S.vars[trait] = trait_prefs[trait]
+					S.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
-					H.vars[trait] = trait_prefs[trait]
+					H.vars[trait] = trait_prefs[trait] // ALLOW(api): trait var_changes tables
 	// Traitgenes Traits can toggle mutations and disabilities
 	if(mutation)
 		if(!(H.has_mutation(mutation)))
@@ -95,16 +95,16 @@
 				if(!(initial(S.vars[V]) & var_changes[V]))
 					S.vars[V] &= ~var_changes[V]
 			else
-				S.vars[V] = initial(S.vars[V])
+				S.vars[V] = initial(S.vars[V]) // ALLOW(api): trait var_changes tables
 	if (trait_prefs)
 		for (var/trait in trait_prefs)
 			switch(has_preferences[trait][3])
 				if(TRAIT_NO_VAREDIT_TARGET)
 					continue
 				if(TRAIT_VAREDIT_TARGET_SPECIES)
-					S.vars[trait] = initial(S.vars[trait])
+					S.vars[trait] = initial(S.vars[trait]) // ALLOW(api): trait var_changes tables
 				if(TRAIT_VAREDIT_TARGET_MOB)
-					H.vars[trait] = initial(H.vars[trait])
+					H.vars[trait] = initial(H.vars[trait]) // ALLOW(api): trait var_changes tables
 	if(mutation)
 		H.remove_mutation(mutation)
 	if(disability)
@@ -149,7 +149,7 @@
 			if(migrated)
 				P.update_preference_by_type(migrated.type, var_changes_pref[V])
 			else
-				P.vars[V] = var_changes_pref[V]
+				P.vars[V] = var_changes_pref[V] // ALLOW(api): trait var_changes tables
 	return
 
 //Similar to the above, but for removing. Probably won't be called often/ever.
@@ -167,7 +167,7 @@
 			if(migrated)
 				P.update_preference_by_type(migrated.type, migrated.create_default_value())
 			else
-				P.vars[V] = initial(P.vars[V])
+				P.vars[V] = initial(P.vars[V]) // ALLOW(api): trait var_changes tables
 	return
 
 /datum/trait/proc/get_default_prefs()

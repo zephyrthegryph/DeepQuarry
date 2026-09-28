@@ -268,7 +268,7 @@
 	if(!prefs.read_preference(/datum/preference/toggle/auto_fit_viewport))
 		return
 	if(fully_created)
-		INVOKE_ASYNC(src, VERB_REF(fit_viewport)) // S10b keeps: fit_viewport winget round-trip
+		INVOKE_ASYNC(src, VERB_REF(fit_viewport)) // ALLOW(scheduler): fit_viewport winget round-trip
 	else //Delayed to avoid wingets from Login calls.
 		om_after_realtime(1 SECONDS, VERB_REF(fit_viewport), src)
 

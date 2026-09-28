@@ -211,6 +211,6 @@
 					target.particles.datum_flags |= DF_VAR_EDITED
 					return TRUE
 
-			owner.vars[param_var_name] = var_value
+			owner.vars[param_var_name] = var_value // ALLOW(api): admin particle editor
 			target.particles.datum_flags |= DF_VAR_EDITED
 			return TRUE

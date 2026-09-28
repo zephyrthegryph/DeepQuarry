@@ -223,7 +223,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	active_power_usage = 100
 
 //Destruction procs.
-// LIFECYCLE: its AI masters' holograms are cleared.
+// ALLOW(lifecycle): its AI masters' holograms are cleared.
 /obj/machinery/hologram/holopad/Destroy()
 	for (var/mob/living/silicon/ai/master in masters)
 		clear_holo(master)

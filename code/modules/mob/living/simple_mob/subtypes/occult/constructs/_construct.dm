@@ -54,7 +54,7 @@
 	supernatural = TRUE
 
 	var/construct_type = "shade"
-	var/list/construct_spells = list()
+	var/list/construct_spells = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 //	var/do_glow = TRUE
 
 	can_be_drop_prey = FALSE

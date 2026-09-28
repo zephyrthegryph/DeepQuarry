@@ -38,7 +38,7 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 /datum/ship_engine/proc/toggle()
 	return 1
 
-// LIFECYCLE: ships drop the engine.
+// ALLOW(lifecycle): ships drop the engine.
 /datum/ship_engine/Destroy()
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
 		LAZYREMOVE(S.engines, src)

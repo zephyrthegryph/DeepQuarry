@@ -19,7 +19,7 @@
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
 		next_event_time += (world.time - last_world_time)
-	else if(world.time > next_event_time)
+	else if(world.time > next_event_time) // ALLOW(cooldown): event scheduler
 		start_event()
 
 	last_world_time = world.time

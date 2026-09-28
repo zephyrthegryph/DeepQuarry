@@ -9,7 +9,7 @@
 	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
 	var/output_dest
-	var/list/vac_settings = list(
+	var/list/vac_settings = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 			"power off" = 0,
 			"dust and grime" = 1,
 			"tiny objects" = 2,
@@ -327,7 +327,7 @@
 				var/obj/item/storage/target_storage = output_atom
 				var/total_storage_space = ITEMSIZE_COST_SMALL
 				target_storage.latent_materialize_all() // a walk needs real things (C5)
-				for(var/obj/item/thing in target_storage.contents) // latent-ok: materialized above
+				for(var/obj/item/thing in target_storage.contents) // ALLOW(latent): materialized above
 					total_storage_space += thing.get_storage_cost()
 				if(total_storage_space > target_storage.max_storage_space)
 					return FALSE

@@ -70,10 +70,10 @@
 	* 10/8/21 edit - It's Time.
 	*/
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents) // latent-ok: materialized above
+	for(var/obj/item/B in contents) // ALLOW(latent): materialized above
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
-	for(var/obj/item/B in contents) // latent-ok: materialized above
+	for(var/obj/item/B in contents) // ALLOW(latent): materialized above
 		if(B.rped_rating() > lowest_rating)
 			continue
 		remove_from_storage(B, T, user)

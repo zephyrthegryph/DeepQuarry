@@ -51,7 +51,7 @@
 
 	default_apply_parts()
 
-// LIFECYCLE: cooking food and its containers go with the machine.
+// ALLOW(lifecycle): cooking food and its containers go with the machine.
 /obj/machinery/appliance/Destroy()
 	for(var/datum/cooking_item/CI as anything in cooking_objs)
 		qdel(CI.container)//Food is fragile, it probably doesnt survive the destruction of the machine

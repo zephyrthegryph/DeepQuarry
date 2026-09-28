@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 
 	var/charges = 0
 
-	var/list/stored_data = list()
+	var/list/stored_data = list() // ALLOW(instance_list): d: cartridge program data
 	var/list/programs
 	var/list/messenger_plugins
 

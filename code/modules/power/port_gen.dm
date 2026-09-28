@@ -147,7 +147,7 @@
 	if(anchored)
 		connect_to_network()
 
-// LIFECYCLE: its unburnt fuel drops as sheets.
+// ALLOW(lifecycle): its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/pacman/Destroy()
 	DropFuel()
 	return ..()
@@ -1045,7 +1045,7 @@
 	if(anchored)
 		connect_to_network()
 
-// LIFECYCLE: its unburnt fuel drops as sheets.
+// ALLOW(lifecycle): its unburnt fuel drops as sheets.
 /obj/machinery/power/port_gen/large_altevian/Destroy()
 	DropFuel()
 	return ..()

@@ -18,6 +18,7 @@
 	var/mysterious                 // Only used for the random seed packets.
 	var/can_self_harvest = 0       // Mostly used for living mobs.
 	var/growth_stages = 0          // Number of stages the plant passes through before it is mature.
+	// ALLOW(instance_list): d: every seed has traits
 	var/list/traits = list()       // Initialized in New()
 	var/list/mutants               // Possible predefined mutant varieties, if any.
 	var/list/chems                 // Chemicals that plant produces in products/injects into victim.

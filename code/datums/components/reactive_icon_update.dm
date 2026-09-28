@@ -9,7 +9,7 @@
 	///Range that we want it to look out for.
 	var/range
 	///What type of mobs trigger the icon change.
-	var/list/triggering_mobs = list(/mob/living)
+	var/list/triggering_mobs = list(/mob/living) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 
 /datum/component/reactive_icon_update/Initialize(icon_prefix, list/directions, range, triggering_mobs)
 	if(!isobj(parent) || !isnum(range) || (!directions || !LAZYLEN(directions)) || (triggering_mobs && !LAZYLEN(triggering_mobs)))

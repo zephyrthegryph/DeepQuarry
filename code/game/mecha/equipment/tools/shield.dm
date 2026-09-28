@@ -26,7 +26,7 @@
 	return
 
 REF_OWNED(/obj/item/mecha_parts/mecha_equipment/combat_shield, list("my_shield", "drone_overlay"))
-// LIFECYCLE: the shield drone overlay comes off the chassis and its shields drop.
+// ALLOW(lifecycle): the shield drone overlay comes off the chassis and its shields drop.
 /obj/item/mecha_parts/mecha_equipment/combat_shield/Destroy()
 	chassis?.cut_overlay(drone_overlay)
 	my_shield?.destroy_shields()

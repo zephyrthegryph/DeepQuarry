@@ -80,7 +80,7 @@
 		types[ROBOT_SLOT_ARMOUR] = /datum/robot_component/armour/platform
 	return types
 
-// LIFECYCLE: stored atoms and the recharging item drop out (stored as handles).
+// ALLOW(lifecycle): stored atoms and the recharging item drop out (stored as handles).
 /mob/living/silicon/robot/platform/Destroy()
 	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
 	for(var/drop_ref in stored_atoms)

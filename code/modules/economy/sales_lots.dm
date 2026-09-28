@@ -20,7 +20,7 @@
 /obj/structure/closet/crate/proc/freight_snapshot()
 	var/list/snapshot = list()
 	latent_materialize_all() // the ledger records each real item (C5)
-	for(var/atom/movable/cargo as anything in contents) // latent-ok
+	for(var/atom/movable/cargo as anything in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		if(istype(cargo, /obj/item/paper))
 			var/obj/item/paper/document = cargo
 			if(document.shipping_ledger_data)
@@ -266,7 +266,7 @@
 	var/list/stock = list()
 	var/list/rows_by_key = list()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/item as anything in contents) // latent-ok: materialized above
+	for(var/obj/item/item as anything in contents) // ALLOW(latent): materialized above
 		var/item_ref = REF(item)
 		var/listing_key = "[item.type]|[stock_prices[item_ref]]"
 		var/list/row = rows_by_key[listing_key]
@@ -298,7 +298,7 @@
 		return
 	var/item_ref = params["ref"]
 	latent_materialize_all() // a walk needs real things (C5)
-	var/obj/item/item = locate(item_ref) in contents // latent-ok: materialized above
+	var/obj/item/item = locate(item_ref) in contents // ALLOW(latent): materialized above
 	switch(action)
 		if("buy")
 			return storefront_purchase(item, ui.user)
@@ -317,7 +317,7 @@
 				return FALSE
 			var/old_price = stock_prices[item_ref]
 			latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/item/matching_item as anything in contents) // latent-ok: materialized above
+			for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): materialized above
 				var/matching_ref = REF(matching_item)
 				if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 					stock_prices[matching_ref] = round(new_price)
@@ -330,7 +330,7 @@
 				return FALSE
 			markup_percent = round(new_markup)
 			latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/item/stock_item as anything in contents) // latent-ok: materialized above
+			for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): materialized above
 				var/stock_ref = REF(stock_item)
 				stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
 			return TRUE

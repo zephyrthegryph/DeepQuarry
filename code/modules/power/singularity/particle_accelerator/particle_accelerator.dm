@@ -76,7 +76,7 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	AddElement(/datum/element/climbable)
 	AddElement(/datum/element/rotatable)
 
-// LIFECYCLE: its control box rescans its parts.
+// ALLOW(lifecycle): its control box rescans its parts.
 /obj/structure/particle_accelerator/Destroy()
 	construction_state = 0
 	if(master)

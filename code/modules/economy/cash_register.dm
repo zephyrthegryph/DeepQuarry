@@ -14,7 +14,9 @@
 	var/transaction_amount = 0 // cumulatd amount of money to pay in a single purchase
 	var/transaction_purpose = null // text that gets used in ATM transaction logs
 	var/list/transaction_logs // list of strings using html code to visualise data
+	// ALLOW(instance_list): d: current transaction, index-parallel with price_list
 	var/list/item_list = list()  // entities and according
+	// ALLOW(instance_list): d: current transaction, index-parallel with item_list
 	var/list/price_list = list() // prices for each purchase
 	/// Physical objects scanned into this ticket, keyed by object with scanned price.
 	var/list/verified_sale_items

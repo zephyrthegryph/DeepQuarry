@@ -177,7 +177,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(!mapload)
 		power_change()
 
-// LIFECYCLE: the base machine: board and parts deleted, occupants put out.
+// ALLOW(lifecycle): the base machine: board and parts deleted, occupants put out.
 /obj/machinery/Destroy()
 	cancel_sleep_keys()
 	om_watch_disarm_all(src)
@@ -201,7 +201,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		component_parts = null
 	if(contents) // The same for contents.
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/A in contents) // latent-ok: materialized above
+		for(var/atom/A in contents) // ALLOW(latent): materialized above
 			if(ishuman(A))
 				var/mob/living/carbon/human/H = A
 				H.forceMove(loc)
@@ -216,7 +216,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// until a channel (power_change(), settings, MACHINE_WAKE()) or a gas watch wakes it.
 /// Anything else keeps it running every MACHINE_PIPELINE_INTERVAL.
 /obj/machinery/proc/machine_step()
-	set waitfor = FALSE // S10b keeps: core dispatch hook: guards the machine pipeline against an override that still sleeps
+	set waitfor = FALSE // ALLOW(scheduler): core dispatch hook: guards the machine pipeline against an override that still sleeps
 	return PROCESS_KILL
 
 /// Once, when a machine on the machine pipeline materializes and the world is up (a zero-delay
@@ -256,8 +256,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		// Joined asleep (on_start); this wake is the reason it joined, so it is awake now.
 		var/datum/om/frame/S = om_pipe_state(M, /datum/om/pipeline/machine)
 		if(S)
-			om_pipe_set_all(S, FALSE)
-			S.idle_frames = 0
+			om_pipe_set_all(S, FALSE, 0)
 	om_wake(M, /datum/om/pipeline/machine)
 
 /// Ends `M`'s step work until the next MACHINE_WAKE(): its step stage idles and it parks.
@@ -609,7 +608,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	SEND_SIGNAL(src, COMSIG_OBJ_DECONSTRUCT, FALSE)
 	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/I in contents) // latent-ok: materialized above
+	for(var/obj/I in contents) // ALLOW(latent): materialized above
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 

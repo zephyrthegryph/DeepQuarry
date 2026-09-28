@@ -17,7 +17,7 @@
 	RegisterSignal(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL, PROC_REF(on_damage))
 	RegisterSignal(defender, COMSIG_MOB_DEATH, PROC_REF(on_death))
 
-// LIFECYCLE: its director unregisters the defender.
+// ALLOW(lifecycle): its director unregisters the defender.
 /datum/generated_station_defender_agent/Destroy()
 	if(defender)
 		UnregisterSignal(defender, GENERATED_STATION_DEFENDER_DAMAGE_SIGNAL)
@@ -97,7 +97,7 @@
 	active_patrols = list()
 	director.defense_runtime = src
 
-// LIFECYCLE: its director forgets it; its defenders go with it.
+// ALLOW(lifecycle): its director forgets it; its defenders go with it.
 /datum/generated_station_defense_runtime/Destroy()
 	if(director?.defense_runtime == src)
 		director.defense_runtime = null

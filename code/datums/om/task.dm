@@ -179,7 +179,7 @@
 		var/datum/D = value
 		if(isdatum(D) && QDELETED(D))
 			return "gone"
-		T.vars[key] = value
+		T.vars[key] = value // ALLOW(api): om_task_start() params and task_holds clearing: task state by name
 	if(!T.receiver)
 		T.receiver = actor
 	if(isnull(T.duration))
@@ -562,7 +562,7 @@
 	var/name = T.held_edges[edge]
 	T.held_edges -= edge
 	if(T.vars[name] == target)
-		T.vars[name] = null
+		T.vars[name] = null // ALLOW(api): om_task_start() params and task_holds clearing: task state by name
 	om_task_cancel(T, "gone")
 
 /// Preset: a timed tool use. State: tool (TOOL_* quality).

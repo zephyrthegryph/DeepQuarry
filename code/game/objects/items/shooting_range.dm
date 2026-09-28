@@ -15,7 +15,7 @@
 			to_chat(O, span_warning("\The [src] breaks into tiny pieces and collapses!"))
 	return ..()
 
-// LIFECYCLE: the stake it was pinned to forgets it and blocks again.
+// ALLOW(lifecycle): the stake it was pinned to forgets it and blocks again.
 /obj/item/target/Destroy()
 	// if a target is deleted and associated with a stake, force stake to forget
 	for(var/obj/structure/target_stake/T in view(3,src))

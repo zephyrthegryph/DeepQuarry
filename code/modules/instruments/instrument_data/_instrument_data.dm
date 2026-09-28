@@ -68,7 +68,7 @@
 		return length(samples)
 	return (length(samples) >= 128)
 
-// LIFECYCLE: songs using it drop it; leaves instrument_service().
+// ALLOW(lifecycle): songs using it drop it; leaves instrument_service().
 /datum/instrument/Destroy()
 	instrument_service().instrument_data -= id
 	for(var/i in songs_using)

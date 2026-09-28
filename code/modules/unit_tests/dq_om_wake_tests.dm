@@ -41,7 +41,7 @@
 
 /// Records every wake (the channels it arrived with).
 /datum/om_wake_test_subscriber
-	var/list/wakes = list()
+	var/list/wakes = list() // ALLOW(instance_list): unit-test witness, always filled
 
 /datum/om/behaviour/sleeper/test_subscriber
 	name = "test subscriber"

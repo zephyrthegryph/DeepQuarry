@@ -19,7 +19,7 @@
 		/mob/living/simple_mob/vore/bigdragon
 		)	//There are some things we don't want to come through no matter what.
 
-// LIFECYCLE: its paired gate closes.
+// ALLOW(lifecycle): its paired gate closes.
 /obj/structure/redgate/Destroy()
 	if(target)
 		target.target = null

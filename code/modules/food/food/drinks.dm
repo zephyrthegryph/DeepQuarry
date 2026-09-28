@@ -40,7 +40,7 @@
 			price_tag = null
 	return
 
-// LIFECYCLE: micros inside drop out.
+// ALLOW(lifecycle): micros inside drop out.
 /obj/item/reagent_containers/food/drinks/Destroy()
 	if(food_inserted_micros)
 		for(var/mob/mob in food_inserted_micros)

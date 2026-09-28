@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		stage = 1
 	..(null)
 
-// LIFECYCLE: parks the spread lane and drops the host view and strain data.
+// ALLOW(lifecycle): parks the spread lane and drops the host view and strain data.
 /datum/affliction/contagion/Destroy()
 	PERIODIC_STOP(src)
 	host = null

@@ -36,7 +36,7 @@
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
-// LIFECYCLE: leaves its generator's deployed shields (the generator is a handle).
+// ALLOW(lifecycle): leaves its generator's deployed shields (the generator is a handle).
 /obj/machinery/shield/Destroy()
 	opacity = 0
 	density = FALSE
@@ -126,7 +126,7 @@
 REF_OWNED(/obj/machinery/shieldgen, "cell")
 REF_OWNED_LIST(/obj/machinery/shieldgen, "deployed_shields")
 
-// LIFECYCLE: its shields collapse.
+// ALLOW(lifecycle): its shields collapse.
 /obj/machinery/shieldgen/Destroy()
 	collapse_shields()
 	. = ..()

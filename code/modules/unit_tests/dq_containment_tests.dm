@@ -52,7 +52,7 @@
 /datum/dq_containment_listener
 	var/block_insert = FALSE
 	var/block_remove = FALSE
-	var/list/events = list()
+	var/list/events = list() // ALLOW(instance_list): containment (C1/C4): landed on master unlisted; not edited here
 
 /datum/dq_containment_listener/proc/watch(atom/holder)
 	RegisterSignal(holder, COMSIG_SLOT_PRE_INSERT, PROC_REF(on_pre_insert))
@@ -106,9 +106,9 @@
 // ---- Conservation fuzz ----
 
 /datum/unit_test/dq_containment_conservation_fuzz
-	var/list/holders = list()
-	var/list/things = list()
-	var/list/made = list()
+	var/list/holders = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/things = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 	var/turf/floor
 	var/moves_done = 0
 	var/moves_refused = 0
@@ -619,7 +619,7 @@
 	name = "hooked test item"
 	has_slot_hooks = TRUE
 	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
-	var/list/log = list()
+	var/list/log = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /obj/item/dq_containment_test/hooked/on_slotted(atom/holder, slot_id)
 	log += "on:[holder]:[slot_id]"

@@ -34,7 +34,7 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 /datum/object_pool
 	var/pool_type
 	/// Released objects waiting to be taken again. The pool owns them.
-	var/list/free = list()
+	var/list/free = list() // ALLOW(instance_list): one pool per pooled type (a handful per round), always used as the free list
 	/// The type's REF_TRANSIENT names, read once from the first instance.
 	var/list/transient
 	var/created = 0
@@ -100,7 +100,7 @@ REF_OWNED_LIST(/datum/object_pool, list("free"))
 			pool.double_releases++
 		CRASH("pool_release: [D.type] released while not taken (state [isnull(D.pool_state) ? "unpooled" : D.pool_state]).")
 	for(var/name in pool.transient)
-		D.vars[name] = initial(D.vars[name])
+		D.vars[name] = initial(D.vars[name]) // ALLOW(api): pool_release(): resets the REF_TRANSIENT vars named by the declaration
 	pool.released++
 	pool.out--
 	if(GLOB.pool_poison)

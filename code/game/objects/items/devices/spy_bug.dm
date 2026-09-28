@@ -142,7 +142,7 @@
 	linkedmonitor_handle = null
 	replace_with(src, brokentype)
 
-// LIFECYCLE: its monitor unpairs it.
+// ALLOW(lifecycle): its monitor unpairs it.
 /obj/item/camerabug/Destroy()
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
@@ -159,7 +159,7 @@
 
 //	var/obj/item/radio/bug/radio
 	var/selected_camera_handle
-	var/list/obj/machinery/camera/bug/cameras = new()
+	var/list/obj/machinery/camera/bug/cameras = new() // ALLOW(instance_list): d: the monitor's linked bugs
 
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'

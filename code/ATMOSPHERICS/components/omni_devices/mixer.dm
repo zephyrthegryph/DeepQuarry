@@ -15,7 +15,7 @@
 	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 3700			//3700 W ~ 5 HP
 
-	var/list/inputs = new()
+	var/list/inputs = new() // ALLOW(instance_list): atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
 	var/datum/omni_port/output
 
 	//setup tags for initial concentration values (must be decimal)
@@ -27,7 +27,7 @@
 	var/max_flow_rate = 200
 	var/set_flow_rate = 200
 
-	var/list/mixing_inputs = list()
+	var/list/mixing_inputs = list() // ALLOW(instance_list): atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
 
 /obj/machinery/atmospherics/omni/mixer/Initialize(mapload)
 	. = ..()

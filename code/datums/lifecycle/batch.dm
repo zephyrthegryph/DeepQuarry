@@ -43,21 +43,21 @@ GLOBAL_VAR_INIT(dq_destroy_collect_time, 0)
 
 /datum/destroy_batch
 	/// Doomed datum -> TRUE, in marking (pre-)order.
-	var/list/doomed = list()
+	var/list/doomed = list() // ALLOW(instance_list): one per batched destroy, always filled
 	/// Turfs whose contents are doomed: anything that would land there is part of the set.
-	var/list/doomed_places = list()
+	var/list/doomed_places = list() // ALLOW(instance_list): one per batched destroy, always filled
 	/// Doomed datum -> force.
-	var/list/forced = list()
+	var/list/forced = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Entity handles freed by the one unbind call at the end.
-	var/list/unbind_entities = list()
+	var/list/unbind_entities = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Movables leaving SSvg's bound list in one pass.
-	var/list/unbind_movers = list()
+	var/list/unbind_movers = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// /datum/registry -> members leaving it in one pass.
-	var/list/registry_leaves = list()
+	var/list/registry_leaves = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> TRUE once one object's destroy effects played there.
-	var/list/effect_turfs = list()
+	var/list/effect_turfs = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Turf -> list of /datum/destroy_effects_data whose apply_after() runs once at the end.
-	var/list/after_effects = list()
+	var/list/after_effects = list() // ALLOW(instance_list): one per batched destroy, filled in the teardown pass
 	/// Diagnostics.
 	var/effects_merged = 0
 	var/edges_dropped = 0

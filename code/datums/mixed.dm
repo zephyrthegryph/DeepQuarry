@@ -17,14 +17,14 @@
 /datum/data/record
 	name = "record"
 	size = 5.0
-	var/list/fields = list(  )
+	var/list/fields = list(  ) // ALLOW(instance_list): d: every record has fields
 	/// Immutable disposition audit entries. This belongs to the records system;
 	/// contracts are only one consumer of the same authoritative history.
 	var/list/disposition_history
 
 // Mostly used for data_core records, but unfortuantely used some other places too.  But mostly here, so lets make a good effort.
 // TODO - Some machines/computers might be holding references to us.  Lets look into that, but at least for now lets make sure that the manifest is cleaned up.
-// LIFECYCLE: locked records refuse deletion unless forced; records leave the data core.
+// ALLOW(lifecycle): locked records refuse deletion unless forced; records leave the data core.
 /datum/data/record/Destroy(force)
 	disposition_history = null
 	if(GLOB.data_core.locked.Find(src))

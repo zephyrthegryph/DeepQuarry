@@ -517,7 +517,7 @@ A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` o
 
 A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones and is ratcheted to 0. Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
 
-**Lints, ratcheted to zero outside the allowlist:** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
+**Lints, ratcheted to zero outside the justified keeps (`// ALLOW(scheduler): <reason>`, §16):** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
 
 ### 4.12 I/O jobs
 
@@ -934,15 +934,39 @@ Each has a regression test in `dq_om_core_tests.dm`.
 ## 16. One way to do X
 
 Each job has one mechanism. Every alternative in the third column is counted by the lint in the
-fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never rise (the
-ceilings are in `tools/ci/api_lints_baseline.txt`, `scheduler_lints_baseline.txt`, `dcs_lints_baseline.txt` and the
-allowlists next to each lint).
+fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never rise. The
+ceilings are the `tools/ci/*_baseline.txt` files next to each lint (`api_lints_baseline.txt`,
+`scheduler_lints_baseline.txt`, `dcs_lints_baseline.txt`, `cooldown_baseline.txt`,
+`containment_baseline.txt`, `spatial_baseline.txt`, `latent_baseline.txt`,
+`declared_refs_baseline.txt`, `lifecycle_counts_baseline.txt`); lower
+one with the lint's `--update` after a sweep, never raise it.
 
-Justified keeps of the scheduler alternatives (the MC, GC and failsafe, world and client
-procs, savefiles, vendored TGS, and leaves that block on external I/O, per §4.11 "What
-stays") are listed in `tools/ci/scheduler_lints_allowlist.txt`, one line per count and file
-with a required reason (`NAME path count  # reason`). Allowlisted sites don't count, so each
-counted total ratchets to 0.
+**Justified keeps.** There are no allowlist files. A site that is right as it is says so where
+it stands, with one annotation every lint reads (`tools/ci/allow_annotations.py`):
+
+```dm
+spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
+
+// ALLOW(lifecycle): the ledger is the containment engine itself; it lets go of its holder.
+/datum/ledger/Destroy()
+```
+
+- It goes on the site's own line or on a comment-only line directly above it. Inside a
+  multi-line macro, where `//` would swallow the `\` continuation, write
+  `/* ALLOW(scheduler): reason */`.
+- One annotation can name several lints: `// ALLOW(declared_refs, state_ref): reason`.
+- The reason after the colon is required. `allow_annotations.py` (run by `check_ratchets.sh`)
+  fails on a missing reason, an unknown lint name or a malformed annotation.
+- Lint names: `api`, `check_grep` (same line only), `containment`, `cooldown`,
+  `dcs`, `declared_refs`, `instance_list`, `latent`, `lifecycle`, `object_keyed_lists`,
+  `pollers`, `registry`, `scheduler`, `spatial`, `state_ref`.
+- An annotated site doesn't count toward its ceiling, so each counted total ratchets to 0.
+  The scheduler's keeps are §4.11's "What stays": the MC, GC and failsafe, world and client
+  procs, savefiles, vendored TGS, and leaves that block on external I/O.
+- A declaration-level keep (a per-instance list, a saved reference var, an undeclared
+  reference var) goes on the `var/` line itself.
+- Legacy debt with no reason yet is not annotated; it stays in the ceiling until a sweep
+  converts it.
 
 | To... | The one way | Not | Lint (count) |
 |---|---|---|---|
@@ -953,7 +977,7 @@ counted total ratchets to 0.
 | Run slow work without blocking | nothing: gameplay procs don't sleep | `INVOKE_ASYNC`, `set waitfor`, `stoplag()` | `scheduler_lints.py` (`invoke_async`, `set_waitfor`, `stoplag`) |
 | Rate-limit something | `COOLDOWN_START()` / `COOLDOWN_FINISHED()` (a time compared) | `TIMER_COOLDOWN_START()`; a raw `world.time` compare against a hand-kept timestamp or deadline | `api_lints.py` (`timer_cooldown`), `cooldown_lint.py` |
 | Declare a var that a stage, behaviour or watch reads | `OM_FIELD(type, name, default, channel)`, and name it in the stage's `reads` (wake_on is derived) (§5.1) | a plain `var/x` plus a hand-written setter; listing the field's channel in `wake_on` by hand | `api_lints.py` (`field_write`), boot `check_field_reads()` |
-| Change a var that a stage, behaviour or watch reads | its generated setter, `E.set_x(v)`, or `om_set(E, "x", v)` (§5.1), in game code and tests alike | `x = v`, `E.x = v`, `x |= v` on a declared field anywhere (unit tests, `Initialize()` included); `vars[name] = v` outside the reflection sites in `api_lints_allowlist.txt`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |
+| Change a var that a stage, behaviour or watch reads | its generated setter, `E.set_x(v)`, or `om_set(E, "x", v)` (§5.1), in game code and tests alike | `x = v`, `E.x = v`, `x |= v` on a declared field anywhere (unit tests, `Initialize()` included); `vars[name] = v` outside the reflection sites marked `ALLOW(api)`; `om_set_var()` and friends | `api_lints.py` (`field_write`, `vars_write`, `vars_helpers`) |
 | Read a relation or a slot | the typed accessor proc, `M.buckled_to()`, `I.slot_item(slot)` (§7) | `BUCKLED()`, `PULLING()`, `SLOT_ITEM()`... macros; `om_relation_of()` outside `code/datums/om` | `api_lints.py` (`accessor_macros`, `raw_relation`) |
 | Wake on Rust-owned state, a DM key, a rate crossing or a tick-precise time | a world watch, `om_world_at/on_key/on_change/when/on_rate()`, delivered on the watch's lane (§4.8) | `SSreactor`, `REACT_*`, `on_react()`; a raw `vg_world_*` subscription bind | `api_lints.py` (`reactor_api`, `raw_world_bind`) |
 | Name a DM-owned key | a number from `om_world_key_id()` | a string key | `api_lints.py` (`string_keys`), `check_grep.sh` |
@@ -964,4 +988,4 @@ counted total ratchets to 0.
 | Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `REF_TRANSIENT` ([lifecycle.md §4.1](lifecycle.md#41-one-place-declarations-and-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
 | Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |
 | Keep a set of live instances | an OM registry (`REGISTRY_MEMBERS()`) | a `GLOB` list of instances; a list allocated per instance | `registry_lint.py`, `instance_list_lint.py` |
-| React to something happening now | an OM event, `om_emit(E, new /datum/om/event/x)`; a `/datum/om/event/before/x` returning `EVENT_VETO` to refuse it (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()` outside the DCS core allowlist (`tools/ci/dcs_allowlist.txt`); per-folder replacements in `signal_migration_map.md` | `dcs_lints.py` (`register_signal`, `add_component`, `add_element`) |
+| React to something happening now | an OM event, `om_emit(E, new /datum/om/event/x)`; a `/datum/om/event/before/x` returning `EVENT_VETO` to refuse it (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()` outside the DCS core (`CORE` in `dcs_lints.py`) and sites marked `ALLOW(dcs)`; per-folder replacements in `signal_migration_map.md` | `dcs_lints.py` (`register_signal`, `add_component`, `add_element`) |

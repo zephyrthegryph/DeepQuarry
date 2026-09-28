@@ -174,7 +174,7 @@
 /datum/lighting_corner/dummy/New()
 	return
 
-// LIFECYCLE: lighting engine: corners leave their sources and turfs; refuse deletion unless forced.
+// ALLOW(lifecycle): lighting engine: corners leave their sources and turfs; refuse deletion unless forced.
 /datum/lighting_corner/Destroy(force)
 	if (!force)
 		return QDEL_HINT_LETMELIVE

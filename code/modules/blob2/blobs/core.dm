@@ -113,7 +113,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob/core, REGISTRY_BLOB_CORES)
 	if(overmind)
 		update_icon()
 
-// LIFECYCLE: leaves a core chunk; its overmind dies with it.
+// ALLOW(lifecycle): leaves a core chunk; its overmind dies with it.
 /obj/structure/blob/core/Destroy()
 	var/turf/T = get_turf(src)
 	new /obj/item/blobcore_chunk(T, overmind?.blob_type)

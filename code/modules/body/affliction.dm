@@ -135,7 +135,7 @@
 	src.location = location
 	configure(location)
 
-// LIFECYCLE: an affliction leaves its body (symptoms end, factors recompute).
+// ALLOW(lifecycle): an affliction leaves its body (symptoms end, factors recompute).
 /datum/affliction/Destroy()
 	if(body)
 		body.remove_affliction(src)

@@ -52,14 +52,14 @@ GLOBAL_LIST_EMPTY(belly_type_shared_lists)
 	for(var/var_name in defaults)
 		var/list/current = vars[var_name]
 		if(isnull(current))
-			vars[var_name] = defaults[var_name]
+			vars[var_name] = defaults[var_name] // ALLOW(api): interned shared lists swapped in by var name
 			continue
 		if(!type_lists)
 			type_lists = list()
 			GLOB.belly_type_shared_lists[type] = type_lists
 		var/list/shared = type_lists[var_name]
 		if(shared)
-			vars[var_name] = shared
+			vars[var_name] = shared // ALLOW(api): interned shared lists swapped in by var name
 		else
 			type_lists[var_name] = current
 
@@ -72,10 +72,10 @@ GLOBAL_LIST_EMPTY(belly_type_shared_lists)
 			continue
 		if(!islist(current))
 			if(isnull(current))
-				vars[var_name] = shared
+				vars[var_name] = shared // ALLOW(api): interned shared lists swapped in by var name
 			continue
 		if(belly_lists_equal(current, shared))
-			vars[var_name] = shared
+			vars[var_name] = shared // ALLOW(api): interned shared lists swapped in by var name
 
 /// TRUE if two lists hold the same entries (and values) in the same order, one level of nesting deep.
 /proc/belly_lists_equal(list/a, list/b)

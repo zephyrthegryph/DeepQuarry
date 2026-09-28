@@ -21,7 +21,7 @@ GLOBAL_LIST_EMPTY(_preloader_attributes)
 			world.log << "DIRTY VAR: [message]"
 			// dirty_vars += message
 		#endif
-		what.vars[attribute] = value
+		what.vars[attribute] = value // ALLOW(api): map loader: DMM var overrides
 
 /area/template_noop
 	name = "Area Passthrough"

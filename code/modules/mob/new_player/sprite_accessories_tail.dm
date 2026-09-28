@@ -35,7 +35,7 @@
 	var/loaf_offset = 0
 	// Dirs in which the tail renders behind the body (lower layer); other dirs put it
 	// on the middle layer. Defaults to facing toward/away (north/south) — see get_tail_layer().
-	var/list/lower_layer_dirs = list(NORTH, SOUTH)
+	var/list/lower_layer_dirs = list(NORTH, SOUTH) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 	var/icon_loaf = null
 
 	// Taur Vore

@@ -19,7 +19,7 @@
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null
+	var/obj/item/master = null // ALLOW(state_ref): relationship: the item this one is attached to
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
 	var/throwforce = 0
@@ -127,7 +127,7 @@
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
 	var/my_augment_handle	// Used to reference the object's host organ.
-	var/datum/identification/identity = null
+	var/datum/identification/identity = null // ALLOW(state_ref): owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
@@ -159,7 +159,7 @@
 		else
 			embed_chance = max(5, round(force/(w_class*3)))
 
-// LIFECYCLE: the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
+// ALLOW(lifecycle): the base item: leaves its machine's parts list, its wearer's inventory and its granted actions.
 /obj/item/Destroy()
 	// Machine components are normally located inside their owner. Detach the
 	// owner's strong bookkeeping reference before qdel continues so a component

@@ -171,7 +171,7 @@
 		default_id = first.slot_id
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
-// LIFECYCLE: the ledger is the containment engine itself; it lets go of its holder.
+// ALLOW(lifecycle): the ledger is the containment engine itself; it lets go of its holder.
 /datum/ledger/Destroy()
 	if(holder)
 		dq_latency_sweep_unregister(holder) // the sweep list holds a hard ref

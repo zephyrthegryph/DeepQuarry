@@ -4,7 +4,7 @@
 // Allows the Eye to stream these chunks and know what it can and cannot see.
 
 /datum/chunk/camera
-	var/list/cameras = list()
+	var/list/cameras = list() // ALLOW(instance_list): d: camera chunk visibility state
 
 /datum/chunk/camera/acquireVisibleTurfs(list/visible)
 	for(var/obj/machinery/camera/c as anything in cameras)

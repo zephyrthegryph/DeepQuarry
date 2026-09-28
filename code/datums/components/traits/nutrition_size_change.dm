@@ -45,7 +45,7 @@
 	else if(owner.nutrition < 50 && grow_mode == GROWMODE_SHRINK)
 		return SHRINK_MULTIPLIER
 
-// LIFECYCLE: removes its Life trait stage from the owner.
+// ALLOW(lifecycle): removes its Life trait stage from the owner.
 /datum/component/nutrition_size_change/Destroy(force = FALSE)
 	om_stage_remove(owner, /datum/om/stage/life/trait/nutrition_size_change)
 	owner = null

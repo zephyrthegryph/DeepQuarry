@@ -30,7 +30,7 @@ other types of metals and chemistry for reagents).
 	/// Bitflags indicating what machines this design is compatable with. ([IMPRINTER]|[AWAY_IMPRINTER]|[PROTOLATHE]|[AWAY_LATHE]|[AUTOLATHE]|[MECHFAB]|[BIOGENERATOR]|[LIMBGROWER]|[SMELTER])
 	var/build_type = null
 	/// List of materials required to create one unit of the product. Format is (typepath or caregory) -> amount
-	var/list/materials = list()
+	var/list/materials = list() // ALLOW(instance_list): composition rewrite: design materials are being replaced; not edited here
 	/// Optional application bridge for ordinary items that do not implement set_material.
 	var/material_application = null
 	/// Blueprint (a /datum/material_template path) for this design's configurable
@@ -52,7 +52,7 @@ other types of metals and chemistry for reagents).
 	/// Reagent produced by this design. Currently only supported by the biogenerator.
 	var/make_reagent
 	/// What categories this design falls under. Used for sorting in production machines.
-	var/list/category = list()
+	var/list/category = list() // ALLOW(instance_list): d: every design is in a category (singletons)
 	/// List of reagents required to create one unit of the product. Currently only supported by the limb grower.
 	var/list/reagents_list // Lazy
 	/// How many times faster than normal is this to build on the protolathe
@@ -79,7 +79,7 @@ other types of metals and chemistry for reagents).
 /datum/design_techweb/New()
 	. = ..()
 
-// LIFECYCLE: designs are immutable globals; deleting one is an error.
+// ALLOW(lifecycle): designs are immutable globals; deleting one is an error.
 /datum/design_techweb/Destroy()
 	// Designs are immutable global datums registered at startup via SSresearch.
 	// Destroying one at runtime would corrupt every techweb that holds a reference to its ID.

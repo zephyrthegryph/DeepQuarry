@@ -16,7 +16,7 @@
 
 	AddComponent(/datum/component/connect_loc_behalf, parent, swarming_loc_connections)
 
-// LIFECYCLE: swarm-mates left alone stop swarming.
+// ALLOW(lifecycle): swarm-mates left alone stop swarming.
 /datum/component/swarming/Destroy()
 	for(var/other in swarm_members)
 		var/datum/component/swarming/other_swarm = other

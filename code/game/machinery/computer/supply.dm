@@ -286,7 +286,7 @@
 			if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
 				return FALSE
 
-			if(world.time < reqtime)
+			if(world.time < reqtime) // ALLOW(cooldown): supply request timeout state
 				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
 				return FALSE
 
@@ -306,7 +306,7 @@
 			if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
 				return FALSE
 
-			if(world.time < reqtime)
+			if(world.time < reqtime) // ALLOW(cooldown): supply request timeout state
 				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
 				return FALSE
 

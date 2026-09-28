@@ -258,7 +258,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
+	if(world.time >= next_fuel_consumption) // ALLOW(cooldown): fuel consumption schedule
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return
@@ -463,7 +463,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
+	if(world.time >= next_fuel_consumption) // ALLOW(cooldown): fuel consumption schedule
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return

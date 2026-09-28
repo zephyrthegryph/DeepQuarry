@@ -11,13 +11,13 @@ GLOBAL_DATUM_INIT(chemistry_service, /datum/world_service/chemistry, new)
 /datum/world_service/chemistry
 	name = "Chemistry"
 
-	var/list/chemical_reactions = list()
-	var/list/chemical_reactions_by_product = list()
-	var/list/instant_reactions_by_reagent = list()
-	var/list/distilled_reactions_by_reagent = list()
-	var/list/distilled_reactions_by_product = list()
+	var/list/chemical_reactions = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/chemical_reactions_by_product = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/instant_reactions_by_reagent = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/distilled_reactions_by_reagent = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/distilled_reactions_by_product = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 //	var/list/fusion_reactions_by_reagent = list() // TODO: Fusion reactions as chemical reactions
-	var/list/chemical_reagents = list()
+	var/list/chemical_reagents = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
 /datum/world_service/chemistry/initialize()
 	initialized = TRUE

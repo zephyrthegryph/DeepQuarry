@@ -26,7 +26,7 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	..(new_client)
 	display()
 
-// LIFECYCLE: clears the client's back-reference (clients aren't datums).
+// ALLOW(lifecycle): clears the client's back-reference (clients aren't datums).
 /datum/managed_browser/feedback_form/Destroy()
 	if(my_client)
 		my_client.feedback_form = null

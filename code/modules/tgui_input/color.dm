@@ -23,7 +23,7 @@
 
 	// Client does NOT have tgui_input on: Returns regular input
 	if(!user.client.prefs.read_preference(/datum/preference/toggle/tgui_input_mode))
-		return input(user, message, title, default) as color|null // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+		return input(user, message, title, default) as color|null // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 	var/datum/tgui_color_picker/picker = new(user, message, title, default, timeout, autofocus, ui_state)
 	picker.tgui_interact(user)
 	picker.wait()
@@ -77,7 +77,7 @@
  */
 /datum/tgui_color_picker/proc/wait()
 	while (!choice && !closed && !QDELETED(src))
-		stoplag(1)
+		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
 /datum/tgui_color_picker/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

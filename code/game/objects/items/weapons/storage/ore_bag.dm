@@ -19,7 +19,7 @@
 	var/current_capacity = 0
 	var/max_storage_space = 100
 	var/max_pickup = 100 //How much ore can be picked up in one go. There to prevent someone from walking on a turf with 10000 ore and making the server cry.
-	var/list/stored_ore = list(
+	var/list/stored_ore = list( // ALLOW(instance_list): d: edited in place per instance (14 writers)
 		ORE_SAND = 0,
 		ORE_HEMATITE = 0,
 		ORE_CARBON = 0,

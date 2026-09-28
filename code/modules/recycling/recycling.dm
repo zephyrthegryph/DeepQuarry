@@ -154,7 +154,7 @@
 	icon_state = "sorter"
 	circuit = /obj/item/circuitboard/recycler_sorter
 
-	var/list/materials = list()
+	var/list/materials = list() // ALLOW(instance_list): d: sorter filter table set at init
 	working = FALSE
 
 /obj/machinery/recycling/sorter/can_accept_item(obj/item/O)

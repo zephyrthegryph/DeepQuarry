@@ -159,7 +159,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 REF_OWNED_LIST(/datum/preferences, "middleware")
 
-// LIFECYCLE: in-flight character preview renders discard their result.
+// ALLOW(lifecycle): in-flight character preview renders discard their result.
 /datum/preferences/Destroy()
 	dq_preview_generation++
 	return ..()
@@ -544,7 +544,7 @@ REF_OWNED_LIST(/datum/preferences, "middleware")
 				if(!instance)
 					continue
 				for(var/key, value in instance.var_changes)
-					character.species.vars[key] = value
+					character.species.vars[key] = value // ALLOW(api): custom species prefs copied by name
 	character.update_transform()
 
 	// Snowflake shapeshifter bodytype derivation — this is what makes vanity_copy_to

@@ -12,7 +12,7 @@
 	active_power_usage = 100
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
-	var/list/item_records = list()
+	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
 	var/datum/stored_item/currently_vending = null	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
@@ -62,7 +62,7 @@
 REF_OWNED(/obj/machinery/smartfridge, "soundloop")
 REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 
-// LIFECYCLE: a persistent fridge is forgotten by persistence.
+// ALLOW(lifecycle): a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/Destroy()
 	if(persistent)
 		SSpersistence.forget_value(src, persistent)
@@ -161,14 +161,14 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 		var/obj/item/storage/bag/P = O
 		var/plants_loaded = 0
 		P.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/G in P.contents) // latent-ok: materialized above
+		for(var/obj/G in P.contents) // ALLOW(latent): materialized above
 			if(accept_check(G))
 				P.remove_from_storage(G) //fixes ui bug - Pull Request 5515
 				stock(G)
 				plants_loaded = 1
 		if(plants_loaded)
 			user.visible_message(span_notice("[user] loads \the [src] with \the [P]."), span_notice("You load \the [src] with \the [P]."))
-			if(P.contents.len > 0) // latent-ok: materialized above
+			if(P.contents.len > 0) // ALLOW(latent): materialized above
 				to_chat(user, span_notice("Some items are refused."))
 
 	else if(istype(O, /obj/item/gripper)) // Grippers. ~Mechoid.
@@ -393,7 +393,7 @@ REF_OWNED_LIST(/obj/machinery/smartfridge, "item_records")
 		return 1
 	return 0
 
-// LIFECYCLE: records shared with the upper unit must not be deleted with it.
+// ALLOW(lifecycle): records shared with the upper unit must not be deleted with it.
 /obj/machinery/smartfridge/chemistry/chemvator/down/Destroy()
 	if(attached)
 		attached.attached = null // clear the upper unit's back-reference to us

@@ -9,7 +9,7 @@
 	owner = parent
 
 ///Should never be destroyed as these are applied to the mind.
-// LIFECYCLE: antag state refuses deletion unless forced.
+// ALLOW(lifecycle): antag state refuses deletion unless forced.
 /datum/component/antag/Destroy(force = FALSE)
 	if(!force)
 		return QDEL_HINT_LETMELIVE

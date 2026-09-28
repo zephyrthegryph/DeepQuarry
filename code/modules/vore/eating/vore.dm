@@ -106,7 +106,7 @@
 
 
 	var/nutrition_message_visible = TRUE
-	var/list/nutrition_messages = list(
+	var/list/nutrition_messages = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 							"They are starving! You can hear their stomach snarling from across the room!",
 							"They are extremely hungry. A deep growl occasionally rumbles from their empty stomach.",
 							"",
@@ -118,7 +118,7 @@
 							"They are so absolutely stuffed that you aren't sure how it's possible for them to move. They can't seem to swell any bigger. The surface of their belly looks sorely strained!",
 							"They are utterly filled to the point where it's hard to even imagine them moving, much less comprehend it when they do. Their gut is swollen to monumental sizes and amount of food they consumed must be insane.")
 	var/weight_message_visible = TRUE
-	var/list/weight_messages = list(
+	var/list/weight_messages = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 							"They are terribly lithe and frail!",
 							"They have a very slender frame.",
 							"They have a lightweight, athletic build.",

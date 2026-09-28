@@ -23,7 +23,7 @@
 
 REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
 
-// LIFECYCLE: the mob's ability_master var points back at us; a master deleted on its own clears it.
+// ALLOW(lifecycle): the mob's ability_master var points back at us; a master deleted on its own clears it.
 /atom/movable/screen/movable/ability_master/Destroy()
 	var/mob/M = my_mob()
 	if(M?.ability_master == src)
@@ -181,7 +181,7 @@ REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
 
 //	var/icon/last_charged_icon
 
-// LIFECYCLE: an ability leaves its master's list (the master owns the list; the ability can go first).
+// ALLOW(lifecycle): an ability leaves its master's list (the master owns the list; the ability can go first).
 /atom/movable/screen/ability/Destroy()
 	var/atom/movable/screen/movable/ability_master/master = master_of()
 	if(master)

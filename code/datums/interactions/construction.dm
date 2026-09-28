@@ -128,7 +128,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /// Stores the state id on the target.
 /datum/construction_graph/proc/set_state(atom/target, state)
 	if(state_var && state != CONSTRUCTION_DONE)
-		target.vars[state_var] = state
+		target.vars[state_var] = state // ALLOW(api): construction graphs name the state var they advance
 
 /// Called when a step starts, before its cost is paid (click cooldown, touching the target).
 /datum/construction_graph/proc/on_step_started(atom/target, mob/actor, obj/item/held)

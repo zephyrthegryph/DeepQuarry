@@ -898,7 +898,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	else
 		to_chat(src.owner, span_warning("Message reply failed."))
 
-	spawn(100) // S7 keeps: admin verb (allowlist)
+	spawn(100) // ALLOW(scheduler): admin verb (allowlist)
 		qdel(P)
 		faxreply = null
 	return

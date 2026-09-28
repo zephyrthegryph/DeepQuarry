@@ -14,7 +14,7 @@
 	canmove = FALSE
 	blinded = FALSE
 	anchored = TRUE	//  don't get pushed around
-	var/list/visibleChunks = list()
+	var/list/visibleChunks = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/datum/visualnet/ghost/visualnet
 	var/static_visibility_range = 16
 
@@ -528,7 +528,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
-// LIFECYCLE: a ghost leaves the ghost visualnet and its chunks; one with a client is re-ghosted.
+// ALLOW(lifecycle): a ghost leaves the ghost visualnet and its chunks; one with a client is re-ghosted.
 /mob/observer/dead/Destroy()
 	if(exonet)
 		exonet.remove_address()

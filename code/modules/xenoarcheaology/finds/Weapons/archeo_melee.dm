@@ -64,7 +64,7 @@
 		else
 			return
 
-// LIFECYCLE: a charged blade punishes its wielder.
+// ALLOW(lifecycle): a charged blade punishes its wielder.
 /obj/item/melee/artifact_blade/Destroy()
 	if(stored_blood && last_touched && last_touched.stat != DEAD) //We have been activated (have some energy), an owner and they are alive. They are going to feel pain.
 		to_chat(last_touched, span_cult("You feel as though your mind is suddenly being torn apart at the seams as the [src] is destroyed!"))

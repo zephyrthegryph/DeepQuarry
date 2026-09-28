@@ -5,7 +5,7 @@
 	var/active = 0
 	//var/obj/item/cell/ec_cell = /obj/item/cell/device
 	var/cartridge_type = /obj/item/reagent_containers/ecig_cartridge/med_nicotine
-	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge
+	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_MASK
 	attack_verb = list("attacked", "poked", "battered")

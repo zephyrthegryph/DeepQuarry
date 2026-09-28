@@ -53,7 +53,7 @@
 	organ_to_implant = /obj/item/organ/internal/augment/armmounted/taser
 	organ_display_name = "physiological augment"
 
-	var/list/possible_targets = list(O_AUG_L_FOREARM, O_AUG_R_FOREARM)
+	var/list/possible_targets = list(O_AUG_L_FOREARM, O_AUG_R_FOREARM) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/implant/organ/limbaugment/post_implant(mob/M)
 	if(ishuman(M))

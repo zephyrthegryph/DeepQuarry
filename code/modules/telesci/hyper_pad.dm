@@ -33,7 +33,7 @@
 		detect()
 	set_light(3, 1, newcolor)
 
-// LIFECYCLE: its linked pads go with it; leaves the pad map.
+// ALLOW(lifecycle): its linked pads go with it; leaves the pad map.
 /obj/machinery/hyperpad/centre/Destroy()
 	if(map_pad_id && mapped_hyper_pads[map_pad_id] == src)
 		mapped_hyper_pads -= map_pad_id

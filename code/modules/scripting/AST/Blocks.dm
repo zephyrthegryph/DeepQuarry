@@ -10,7 +10,7 @@
 */
 /datum/node/BlockDefinition
 	var/list/statements
-	var/list/functions  = list()
+	var/list/functions  = list() // ALLOW(instance_list): d: script AST node state
 	var/list/initial_variables
 
 /*

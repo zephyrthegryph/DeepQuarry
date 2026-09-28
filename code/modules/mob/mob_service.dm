@@ -11,10 +11,10 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 	name = "Mobs"
 	lane = /datum/om/behaviour/world/mobs
 
-	var/list/death_list = list()
+	var/list/death_list = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	var/profile_next_dump = 0
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
-	var/list/last_counts = list(0, 0, 0)
+	var/list/last_counts = list(0, 0, 0) // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
 /datum/world_service/mobs/stat_line()
 	var/datum/om/behaviour/life = om_registry().behaviour(/datum/om/pipeline/life)

@@ -236,8 +236,8 @@
 	var/secondary_caliber = "12g"
 	var/secondary_ammo_type = /obj/item/ammo_casing/a12g
 	var/flipped_firing = 0
-	var/list/secondary_loaded = list()
-	var/list/tertiary_loaded = list()
+	var/list/secondary_loaded = list() // ALLOW(instance_list): d: swapped with loaded (ammo state) when the cylinder flips
+	var/list/tertiary_loaded = list() // ALLOW(instance_list): d: swapped with loaded (ammo state) when the cylinder flips
 
 
 /obj/item/gun/projectile/revolver/lemat/Initialize(mapload)

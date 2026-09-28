@@ -25,7 +25,7 @@
 
 REF_OWNED(/datum/component/xenochimera, "revival_record")
 
-// LIFECYCLE: the owner loses the reconstitute verb.
+// ALLOW(lifecycle): the owner loses the reconstitute verb.
 /datum/component/xenochimera/Destroy(force)
 	remove_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
 	. = ..()

@@ -273,7 +273,7 @@
 
 				//duplicate it's unique settings
 				for(var/varname in list("chargelevelmax","artifact_id","effect","effectrange","trigger"))
-					E.vars[varname] = source_effect.vars[varname]
+					E.vars[varname] = source_effect.vars[varname] // ALLOW(api): artifact effect copy
 
 				//copy the new datum into the battery
 				inserted_battery.battery_effect = E

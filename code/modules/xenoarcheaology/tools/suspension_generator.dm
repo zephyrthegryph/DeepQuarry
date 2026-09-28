@@ -236,7 +236,7 @@
 	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
 	update_icon()
 
-// LIFECYCLE: its field deactivates.
+// ALLOW(lifecycle): its field deactivates.
 /obj/machinery/suspension_gen/Destroy()
 	deactivate()
 	. = ..()

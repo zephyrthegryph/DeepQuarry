@@ -79,7 +79,7 @@ REF_OWNED(/obj/effect/anomaly, list("countdown", "anomaly_core", "stats"))
 /obj/effect/anomaly/proc/anomalyPulse()
 	if(!stats)
 		return FALSE
-	if(world.time < stats.next_activation)
+	if(world.time < stats.next_activation) // ALLOW(cooldown): anomaly activation schedule
 		return FALSE
 
 	stats.pulse_effect()

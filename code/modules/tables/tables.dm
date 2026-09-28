@@ -82,7 +82,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 
 	AddElement(/datum/element/climbable/table)
 
-// LIFECYCLE: neighbouring tables re-smooth without it.
+// ALLOW(lifecycle): neighbouring tables re-smooth without it.
 /obj/structure/table/Destroy()
 	material = null
 	reinforced = null

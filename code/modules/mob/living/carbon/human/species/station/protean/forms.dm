@@ -63,7 +63,7 @@
 	REMOVE_TRAIT(H, TRAIT_FORM_HIDES_BODY, FORM_TRAIT)
 	H.holder_type = prior_holder_type
 
-// LIFECYCLE: its form mobs are deleted after it detaches.
+// ALLOW(lifecycle): its form mobs are deleted after it detaches.
 /datum/component/forms/Destroy(force)
 	. = ..() // Detaches from the parent first; UnregisterFromParent still needs `current`.
 	current = null

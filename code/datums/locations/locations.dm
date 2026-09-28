@@ -1,7 +1,7 @@
 /datum/locations
 	var/name
 	var/desc
-	var/list/children = list()
+	var/list/children = list() // ALLOW(instance_list): d: location tree children
 	var/parent
 
 /datum/locations/New(creator)

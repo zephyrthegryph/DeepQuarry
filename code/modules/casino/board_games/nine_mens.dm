@@ -26,7 +26,7 @@
 	var/player_two
 	var/player_one_time = 0
 	var/player_two_time = 0
-	var/list/current_board = list(
+	var/list/current_board = list( // ALLOW(instance_list): d: edited in place per instance (6 writers)
 		null, null, null,
 		null, null, null,
 		null, null, null,

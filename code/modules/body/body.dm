@@ -83,7 +83,7 @@ REF_OWNED(/mob/living, "body")
 REF_OWNED(/datum/body, "physiology")
 REF_OWNED_LIST(/datum/body, "supports")
 
-// LIFECYCLE: each affliction is removed (symptoms end) before it is deleted.
+// ALLOW(lifecycle): each affliction is removed (symptoms end) before it is deleted.
 /datum/body/Destroy()
 	for(var/datum/affliction/A as anything in afflictions?.Copy())
 		remove_affliction(A)

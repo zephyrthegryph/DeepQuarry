@@ -352,6 +352,7 @@ Book Cart End
 
 /obj/item/book/bundle
 	var/page = 1 //current page
+	// ALLOW(instance_list): d: a bundle holds pages
 	var/list/pages = list() //the contents of each page
 	special_handling = TRUE
 

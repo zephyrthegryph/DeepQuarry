@@ -24,7 +24,7 @@
 	var/critical = 0
 
 	var/obj/machinery/power/fusion_core/owned_core
-	var/list/dormant_reactant_quantities = list()
+	var/list/dormant_reactant_quantities = list() // ALLOW(instance_list): d: live reactor state
 	var/list/particle_catchers
 
 	var/static/list/ignore_types = list(
@@ -506,7 +506,7 @@ REF_OWNED_LIST(/obj/effect/fusion_em_field, "particle_catchers")
 REF_PAIR(/obj/effect/fusion_em_field, list("owned_core" = "owned_field"))
 REF_PAIR(/obj/machinery/power/fusion_core, list("owned_field" = "owned_core"))
 
-// LIFECYCLE: a collapsing field radiates everything it held.
+// ALLOW(lifecycle): a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/Destroy()
 	RadiateAll()
 	. = ..()

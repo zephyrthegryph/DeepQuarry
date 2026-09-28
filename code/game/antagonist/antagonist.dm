@@ -65,6 +65,7 @@
 	var/list/pending_antagonists   // Candidates that are awaiting finalized antag status.
 	var/list/starting_locations   // Spawn points.
 	var/list/global_objectives   // Universal objectives if any.
+	// ALLOW(instance_list): d: antagonist template state; filled every roundstart selection
 	var/list/candidates =          list()   // Potential candidates.
 	var/list/faction_members   // Semi-antags (in-round revs, borer thralls)
 

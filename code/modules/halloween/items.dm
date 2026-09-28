@@ -50,7 +50,7 @@
 
 	var/has_candy = TRUE
 
-	var/list/candy = list(
+	var/list/candy = list( // ALLOW(instance_list): d: edited in place per instance (5 writers)
 		/obj/item/reagent_containers/food/snacks/cb01,
 		/obj/item/reagent_containers/food/snacks/cb02,
 		/obj/item/reagent_containers/food/snacks/cb03,

@@ -18,7 +18,7 @@
 	var/turf/T = src.loc
 	if(level==1) hide(!T.is_plating())
 
-// LIFECYCLE: its master disconnects the terminal.
+// ALLOW(lifecycle): its master disconnects the terminal.
 /obj/machinery/power/terminal/Destroy()
 	if(master)
 		master.disconnect_terminal(src)

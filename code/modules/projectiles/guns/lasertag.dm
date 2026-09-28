@@ -109,7 +109,7 @@
 	///How much damage it does to the lasertag vest. Generally for oneshots.
 	var/tag_damage = 5
 	///What vests we are allowed to hit with the knife.
-	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni)
+	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/lasertagknife/blue
 	name = "blue laser tag dagger"

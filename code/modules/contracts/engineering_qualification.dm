@@ -85,7 +85,7 @@ REF_OWNED(/datum/contract_requirement/recorded_stages, "filter")
 	var/measurement_kind = "power"
 	var/measurement_field = "minimum_output_watts"
 	var/measurement_unit = "W delivered"
-	var/list/thresholds = list(3500)
+	var/list/thresholds = list(3500) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 
 /datum/contract_definition/social/program/engineering_qualification/configure_contract(datum/contract/social/contract, list/context)
 	..()

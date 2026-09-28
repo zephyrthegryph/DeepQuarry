@@ -9,7 +9,7 @@
 	makes_dirt = FALSE	// No more dirt from Beepsky
 
 	var/obj/item/card/id/botcard = null
-	var/list/botcard_access = list()
+	var/list/botcard_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/on = 1
 	var/open = 0
 	var/locked = 1
@@ -17,14 +17,14 @@
 	var/light_strength = 3
 	var/obj/item/paicard/paicard = null
 	var/obj/access_scanner = null
-	var/list/req_access = list()
-	var/list/req_one_access = list()
+	var/list/req_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/req_one_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	var/atom/target = null
-	var/list/ignore_past = list()
-	var/list/ignore_list = list()
-	var/list/patrol_path = list()
-	var/list/target_path = list()
+	var/list/ignore_past = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/ignore_list = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/patrol_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/target_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/turf/obstacle = null
 
 	var/wait_if_pulled = 0 // Only applies to moving to the target

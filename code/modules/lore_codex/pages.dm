@@ -3,6 +3,7 @@
 	var/name = null // Title displayed
 	var/data = null // The actual words.
 	var/datum/lore/codex/parent = null // Category above us
+	// ALLOW(instance_list): d: codex page keywords, filled at init
 	var/list/keywords = list() // Used for searching.
 	var/datum/codex_tree/holder = null
 
@@ -48,6 +49,7 @@
 
 // Organizes pages together.
 /datum/lore/codex/category
+	// ALLOW(instance_list): d: codex categories exist to hold children
 	var/list/children = list() // Pages or more categories relevant to this category.  Self initializes from types to refs in New()
 
 /datum/lore/codex/category/New()

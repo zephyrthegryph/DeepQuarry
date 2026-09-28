@@ -3,7 +3,7 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 
 /datum/loadout_category
 	var/category = ""
-	var/list/gear = list()
+	var/list/gear = list() // ALLOW(instance_list): d: every loadout category holds its gear (singletons)
 
 /datum/loadout_category/New(cat)
 	category = cat

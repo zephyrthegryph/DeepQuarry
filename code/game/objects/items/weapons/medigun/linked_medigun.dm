@@ -1,7 +1,7 @@
 /obj/item/bork_medigun/linked
 	var/medigun_base_unit_handle
 
-// LIFECYCLE: the base unit's icon and wearer update.
+// ALLOW(lifecycle): the base unit's icon and wearer update.
 /obj/item/bork_medigun/linked/Destroy()
 	if(medigun_base_unit())
 		var/obj/item/bork_medigun/medigun = medigun_base_unit().get_medigun()

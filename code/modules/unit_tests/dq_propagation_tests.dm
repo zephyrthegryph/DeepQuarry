@@ -105,7 +105,7 @@
 
 /// Records every EMP severity it is hit with.
 /obj/dq_emp_probe
-	var/list/severities = list()
+	var/list/severities = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 
 /obj/dq_emp_probe/emp_act(severity, recursive)
 	severities |= severity

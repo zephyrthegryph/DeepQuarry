@@ -167,7 +167,7 @@
 	if(operating || !occupant)
 		return
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in src) // latent-ok: materialized above
+	for(var/obj/O in src) // ALLOW(latent): materialized above
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
 	update_icon()
@@ -236,7 +236,7 @@
 				byproducts[path] -= 1
 
 	latent_materialize_all() // a walk needs real things (C5)
-	for (var/obj/thing in contents) // latent-ok: materialized above
+	for (var/obj/thing in contents) // ALLOW(latent): materialized above
 		// There's a chance that the gibber will fail to destroy or butcher some evidence.
 		if(istype(thing,/obj/item/organ) && prob(80))
 			var/obj/item/organ/OR = thing

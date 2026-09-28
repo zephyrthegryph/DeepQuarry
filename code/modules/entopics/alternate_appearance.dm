@@ -12,7 +12,7 @@
 /datum/alternate_appearance
 	var/key = ""
 	var/image/img
-	var/list/viewers = list()
+	var/list/viewers = list() // ALLOW(instance_list): d: every alternate appearance is shown to someone
 	var/atom/owner = null
 
 /datum/alternate_appearance/proc/display_to(list/displayTo)
@@ -49,7 +49,7 @@
 			if(!owned.len)
 				dq_clear_alt_appearances_component(owner)
 
-// LIFECYCLE: it is removed from everyone who saw it.
+// ALLOW(lifecycle): it is removed from everyone who saw it.
 /datum/alternate_appearance/Destroy()
 	remove()
 	owner = null

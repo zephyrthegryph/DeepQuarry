@@ -244,15 +244,15 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		return null
 
 	if(!CONFIG_GET(flag/guests_allowed) && IsGuestKey(key))
-		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // S10 keeps: the client is deleted next, so the message must block until it's read
-		del(src)
+		alert(src,"This server doesn't allow guest accounts to play. Please go to https://www.byond.com/ and register for a key.","Guest") // ALLOW(scheduler): the client is deleted next, so the message must block until it's read
+		del(src) // ALLOW(scheduler): client: disconnects the client
 		return
 
 	//Only show this if they are put into a new_player mob. Otherwise, "what title screen?"
 	if(isnewplayer(src.mob))
 		to_chat(src, span_red("If the title screen is black, resources are still downloading. Please be patient until the title screen appears."))
 
-	GLOB.clients += src
+	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
 	GLOB.directory[ckey] = src
 
 	//var/reconnecting = FALSE we are not using this var yet
@@ -339,7 +339,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	)
 	om_after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
-	INVOKE_ASYNC(src, PROC_REF(acquire_dpi)) // S10b keeps: winget round-trip
+	INVOKE_ASYNC(src, PROC_REF(acquire_dpi)) // ALLOW(scheduler): winget round-trip
 
 	tgui_panel.initialize()
 
@@ -411,7 +411,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		Destroy() //Clean up signals and timers.
 	return ..()
 
-// LIFECYCLE: a client logs out of the directory, admins and tickets.
+// ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
 /client/Destroy()
 	GLOB.directory -= ckey
 	GLOB.clients -= src
@@ -602,7 +602,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
-	spawn (10) //removing this spawn causes all clients to not get verbs. // S7 keeps: client procs (asset delivery to the client)
+	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): client procs (asset delivery to the client)
 
 		//load info on what assets the client has
 		src << browse('code/modules/asset_cache/validate_assets.html', "window=asset_cache_browser")

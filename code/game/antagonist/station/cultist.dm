@@ -33,7 +33,7 @@ GLOBAL_DATUM(cult, /datum/antagonist/cultist)
 
 	var/allow_narsie = 1
 	var/sacrifice_target_handle
-	var/list/startwords = list("blood","join","self","hell")
+	var/list/startwords = list("blood","join","self","hell") // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	var/static/list/allwords = list("travel","self","see","hell","blood","join","tech","destroy", "other", "hide")
 	var/list/sacrificed
 	var/list/harvested

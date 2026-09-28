@@ -5,7 +5,7 @@ object-typed vars (LC-refs, doc/rewrite/lifecycle.md sec 4), across code/
 (unit tests excluded; `#define` lines are macro plumbing and don't count).
 Each count is ratcheted: tools/ci/scheduler_lints_baseline.txt holds the
 ceiling, today's counts at the time it was written. A sweep lowers them to 0
-outside the allowlist in sec 4.11 ("What stays").
+outside the justified keeps of sec 4.11 ("What stays").
 
     spawn            spawn(                        -> om_after, tasks
     addtimer         addtimer(                     -> om_after, clocks, contributions
@@ -32,8 +32,9 @@ state, held by the task_holds relation, and don't count. Medical, body, organs, 
 included (lifecycle.md sec 7).
 
 Justified keeps (MC, GC, failsafe, world and client procs, savefiles, vendored
-TGS, blocking external I/O) are listed per count and file, with a required
-reason, in tools/ci/scheduler_lints_allowlist.txt and don't count.
+TGS, blocking external I/O, prompts that must block) carry
+`// ALLOW(scheduler): <reason>` on the site's line or the comment line above it
+(tools/ci/allow_annotations.py) and don't count.
 
 Usage:
     python tools/ci/scheduler_lints.py                 # the CI check
@@ -47,13 +48,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
+from allow_annotations import allowed  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "scheduler_lints_baseline.txt")
-# Justified keeps (sec 4.11 "What stays"): `NAME path count  # reason`, one line per
-# count and file. The reason is required. Allowlisted sites don't count toward the
-# ceiling; a file with more sites than its line allows counts the excess.
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "scheduler_lints_allowlist.txt")
 
 PATTERNS = [
     ("spawn", re.compile(r"(?<![\w.])spawn\s*\(")),
@@ -68,8 +66,7 @@ PATTERNS = [
     ("del", re.compile(r"(?<![\w./])del\s*\(")),
 ]
 NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
-# Marks a blocking prompt the S10 allowlist keeps (file uploads, the tgui repair verb, ...).
-KEEP_MARK = "// S10 keeps:"
+LINT = "scheduler"
 
 UNSAVED_MODS = {"static", "global", "const"}
 ALL_MODS = {"tmp", "static", "global", "const", "final"}
@@ -97,7 +94,7 @@ def split_var(segs):
     return mods, ("/" + "/".join(tsegs) if tsegs else ""), name
 
 
-def lc_ref_sites(rel, raw_text, code_text):
+def lc_ref_sites(rel, raw_text, code_text, raw_lines):
     # Declared names come from string literals, so read them from the raw text.
     declared = {}
     sites = []
@@ -166,6 +163,8 @@ def lc_ref_sites(rel, raw_text, code_text):
         # relation, which clears the var and cancels the task when the datum is deleted.
         if owner_type == "/datum/om/task" or owner_type.startswith("/datum/om/task/"):
             continue
+        if allowed(raw_lines, no, LINT):
+            continue
         sites.append((rel, no, "%s var/%s %s" % (owner_type, vtype.strip("/"), name)))
     return sites
 
@@ -185,11 +184,11 @@ def scan():
                 continue
             for name, pattern in PATTERNS:
                 for _ in pattern.finditer(line):
-                    # A prompt the S10 allowlist keeps says why on its line (sec 4.11).
-                    if name == "prompts" and KEEP_MARK in raw_lines[no - 1]:
+                    # A justified keep says why on its line (sec 4.11).
+                    if allowed(raw_lines, no, LINT):
                         continue
                     sites[name].append((rel, no, name))
-        sites["lc_refs"].extend(lc_ref_sites(rel, raw_text, text))
+        sites["lc_refs"].extend(lc_ref_sites(rel, raw_text, text, raw_lines))
     return sites
 
 
@@ -203,35 +202,6 @@ def read_baseline():
                     name, count = line.split()
                     base[name] = int(count)
     return base
-
-
-def read_allowlist():
-    allowed = {}
-    if not os.path.exists(ALLOWLIST):
-        return allowed
-    with open(ALLOWLIST, encoding="utf-8") as handle:
-        for no, line in enumerate(handle, 1):
-            if not line.strip() or line.lstrip().startswith("#"):
-                continue
-            body, _, reason = line.partition("#")
-            parts = body.split()
-            if len(parts) < 3 or not parts[-1].isdigit() or not reason.strip():
-                raise SystemExit("%s:%d: expected `NAME path count  # reason`" % (ALLOWLIST, no))
-            allowed[(parts[0], " ".join(parts[1:-1]))] = int(parts[-1])
-    return allowed
-
-
-def counted(sites, allowed):
-    """Sites per count after the allowlist, plus stale allowlist lines."""
-    per_file = {}
-    for name in NAMES:
-        for rel, _, _ in sites[name]:
-            per_file[(name, rel)] = per_file.get((name, rel), 0) + 1
-    counts = {name: 0 for name in NAMES}
-    for (name, rel), n in per_file.items():
-        counts[name] += max(n - allowed.get((name, rel), 0), 0)
-    stale = [(k, v, per_file.get(k, 0)) for k, v in allowed.items() if per_file.get(k, 0) < v]
-    return counts, stale
 
 
 def write_baseline(counts):
@@ -248,9 +218,7 @@ def write_baseline(counts):
 
 def main(argv):
     sites = scan()
-    counts, stale = counted(sites, read_allowlist())
-    for (name, rel), allow, have in stale:
-        print("note: allowlist %s %s %d, now %d: lower it" % (name, rel, allow, have))
+    counts = {name: len(sites[name]) for name in NAMES}
     if "--update" in argv:
         write_baseline(counts)
         print("scheduler lints baseline: " + ", ".join("%s %d" % (n, counts[n]) for n in NAMES))

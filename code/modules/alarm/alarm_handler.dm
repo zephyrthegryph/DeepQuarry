@@ -3,6 +3,7 @@
 
 /datum/alarm_handler
 	var/category = ""
+	// ALLOW(instance_list): d: alarm handler singletons, one per alarm kind
 	var/list/datum/alarm/alarms = new		// All alarms, to handle cases when an origin has been deleted with one or more active alarms
 	var/list/datum/alarm/alarms_assoc	// Associative list of alarms, to efficiently acquire them based on origin.
 	var/list/listeners				// A list of all objects interested in alarm changes.
@@ -82,7 +83,7 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 	return visible_alarms(z)
 
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
-	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources))
+	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources)) // ALLOW(cooldown): alarm expiry
 		alarms -= alarm
 		LAZYREMOVE(alarms_assoc, alarm.origin)
 		on_alarm_change(alarm, ALARM_CLEARED)

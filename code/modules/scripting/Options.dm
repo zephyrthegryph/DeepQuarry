@@ -40,13 +40,14 @@ File: Options
 	An implementation of <n_scriptOptions> for the n_Script language.
 */
 /datum/n_scriptOptions/nS_Options
+	// ALLOW(instance_list): d: edited in place per instance (2 writers)
 	var/list/symbols  		= list("(", ")", "\[", "]", ";", ",", "{", "}")     										//scanner - Characters that can be in symbols
 /*
 Var: keywords
 An associative list used by the parser to parse keywords. Indices are strings which will trigger the keyword when parsed and the
 associated values are <nS_Keyword> types of which the <n_Keyword.Parse()> proc will be called.
 */
-	var/list/keywords = list(
+	var/list/keywords = list( // ALLOW(instance_list): d: edited in place per instance (3 writers)
 		"if"		= /datum/n_Keyword/nS_Keyword/kwIf,
 		"else"		= /datum/n_Keyword/nS_Keyword/kwElse,
 		"while"		= /datum/n_Keyword/nS_Keyword/kwWhile,

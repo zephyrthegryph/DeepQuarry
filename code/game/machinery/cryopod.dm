@@ -292,7 +292,7 @@
 // C8a: the occupant's a sealed slot (containment.md §10); the base Destroy()
 // spills it through the ledger's drop policy, so this just keeps the
 // pre-eject "let them fall asleep, not collapse" behaviour.
-// LIFECYCLE: its sleeper is left lying down as the pod goes.
+// ALLOW(lifecycle): its sleeper is left lying down as the pod goes.
 /obj/machinery/cryopod/Destroy()
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)

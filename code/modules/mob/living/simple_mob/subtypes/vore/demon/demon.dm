@@ -59,6 +59,7 @@
 	var/laugh = 'sound/misc/demonlaugh.ogg' //Yknow maybe someone wants a custom laugh, you never know.
 	injury_enrages = TRUE
 
+	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/alt_demon_appearances = list("boxfox","eater","engorge","wendigo","zellic","avarn","covern","ira","ire","laxel","lutra","brutola","ignia") // Allow extra decals
 
 /mob/living/simple_mob/vore/demon/load_default_bellies()

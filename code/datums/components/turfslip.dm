@@ -97,7 +97,7 @@
 		qdel(src)
 		return
 
-// LIFECYCLE: the slipping mob stops sliding.
+// ALLOW(lifecycle): the slipping mob stops sliding.
 /datum/component/turfslip/Destroy(force = FALSE)
 	owner.inertia_dir = 0
 	owner.is_slipping = FALSE

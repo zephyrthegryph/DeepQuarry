@@ -88,7 +88,7 @@
 			mode = DISPOSALMODE_CHARGED
 	update_icon()
 
-// LIFECYCLE: it unlinks and ejects its contents.
+// ALLOW(lifecycle): it unlinks and ejects its contents.
 /obj/machinery/disposal/Destroy()
 	if(power_retry_timer)
 		om_cancel_timer(src, power_retry_timer)
@@ -836,4 +836,4 @@
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/disposal/step_start_condition()
-	return mode == 1 || flush || length(contents) || has_latent() // latent-ok: latent entries checked
+	return mode == 1 || flush || length(contents) || has_latent() // ALLOW(latent): latent entries checked

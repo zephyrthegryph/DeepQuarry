@@ -22,7 +22,7 @@
 	user.client?.images |= I
 	om_after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
 
-// LIFECYCLE: the marker image comes off its caster's client.
+// ALLOW(lifecycle): the marker image comes off its caster's client.
 /datum/technomancer_marker/Destroy()
 	var/mob/user = om_resolve(U)
 	user?.client?.images -= I

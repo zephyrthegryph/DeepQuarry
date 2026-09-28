@@ -264,11 +264,11 @@ SUBSYSTEM_DEF(garbage)
 				// Based off the remaining and the ones we can account for
 				var/remaining_refs = refcount(D) - REFS_WE_EXPECT
 				if(reference_find_on_fail[ref(D)])
-					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // S10b keeps: find_references is a long CHECK_TICK-yielding scan
+					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // ALLOW(scheduler): find_references is a long CHECK_TICK-yielding scan
 					ref_searching = TRUE
 				#ifdef GC_FAILURE_HARD_LOOKUP
 				else
-					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // S10b keeps: find_references is a long CHECK_TICK-yielding scan
+					INVOKE_ASYNC(D, TYPE_PROC_REF(/datum,find_references), remaining_refs) // ALLOW(scheduler): find_references is a long CHECK_TICK-yielding scan
 					ref_searching = TRUE
 				#endif
 				reference_find_on_fail -= ref(D)
@@ -346,7 +346,7 @@ SUBSYSTEM_DEF(garbage)
 		LAZYADD(type_info.extra_details, detail)*/
 
 	var/tick_usage = TICK_USAGE
-	del(D)
+	del(D) // ALLOW(scheduler): GC: the hard delete behind qdel()
 	tick_usage = TICK_USAGE_TO_MS(tick_usage)
 
 	type_info.hard_deletes++
@@ -414,7 +414,7 @@ SUBSYSTEM_DEF(garbage)
 			stack_trace("Lists should not be directly passed to qdel! You likely want either list.Cut(), QDEL_LIST(list), QDEL_LIST_ASSOC(list), or QDEL_LIST_ASSOC_VAL(list)")
 		else if(to_delete != world)
 			stack_trace("Tried to qdel possibly invalid value: [to_delete]")
-		del(to_delete)
+		del(to_delete) // ALLOW(scheduler): GC: the hard delete behind qdel()
 		return
 
 	if(!isnull(to_delete.gc_destroyed))
@@ -498,7 +498,7 @@ SUBSYSTEM_DEF(garbage)
 		#ifdef REFERENCE_TRACKING
 		if (QDEL_HINT_FINDREFERENCE) //qdel will, if REFERENCE_TRACKING is enabled, display all references to this object, then queue the object for deletion.
 			SSgarbage.Queue(to_delete)
-			INVOKE_ASYNC(to_delete, TYPE_PROC_REF(/datum, find_references)) // S10b keeps: find_references is a long CHECK_TICK-yielding scan
+			INVOKE_ASYNC(to_delete, TYPE_PROC_REF(/datum, find_references)) // ALLOW(scheduler): find_references is a long CHECK_TICK-yielding scan
 		if (QDEL_HINT_IFFAIL_FINDREFERENCE) //qdel will, if REFERENCE_TRACKING is enabled and the object fails to collect, display all references to this object.
 			SSgarbage.Queue(to_delete)
 			SSgarbage.reference_find_on_fail[ref(to_delete)] = TRUE

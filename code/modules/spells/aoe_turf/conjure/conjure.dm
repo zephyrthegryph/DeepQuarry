@@ -62,7 +62,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 
 		for(var/varName in newVars)
 			if(varName in summoned_object.vars)
-				summoned_object.vars[varName] = LAZYACCESS(newVars, varName)
+				summoned_object.vars[varName] = LAZYACCESS(newVars, varName) // ALLOW(api): conjure spell's newVars table
 
 		if(duration)
 			if(!istype(summoned_object, /turf))

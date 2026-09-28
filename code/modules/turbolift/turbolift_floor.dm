@@ -7,7 +7,7 @@
 	var/arrival_sound
 	var/delay_time
 
-	var/list/doors = list()
+	var/list/doors = list() // ALLOW(instance_list): d: every lift floor has doors
 	var/obj/structure/lift/button/ext_panel
 
 /datum/turbolift_floor/proc/set_area_ref(ref)

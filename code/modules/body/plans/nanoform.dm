@@ -251,7 +251,7 @@
 	release()
 	return ..()
 
-// LIFECYCLE: a dormant core is released.
+// ALLOW(lifecycle): a dormant core is released.
 /datum/affliction/core_dormancy/Destroy()
 	release()
 	return ..()

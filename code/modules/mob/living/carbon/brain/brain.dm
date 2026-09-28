@@ -31,7 +31,7 @@
 	R.my_atom = src
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
-// LIFECYCLE: a brain with a player dies and ghosts; its host forgets the view.
+// ALLOW(lifecycle): a brain with a player dies and ghosts; its host forgets the view.
 /mob/living/carbon/brain/Destroy()
 	if(key)				//If there is a mob connected to this thing. Have to check key twice to avoid false death reporting.
 		if(stat != DEAD)	//If not dead.

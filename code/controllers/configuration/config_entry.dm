@@ -29,7 +29,7 @@
 	default_protection = protection
 	set_default()
 
-// LIFECYCLE: engine: leaves the config's entry table.
+// ALLOW(lifecycle): engine: leaves the config's entry table.
 /datum/config_entry/Destroy()
 	config.RemoveEntry(src)
 	return ..()

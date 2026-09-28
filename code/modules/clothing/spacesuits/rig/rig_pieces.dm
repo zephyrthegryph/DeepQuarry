@@ -79,7 +79,7 @@
 		SPECIES_ALTEVIAN 		= 'icons/inventory/suit/mob_altevian.dmi'
 		)
 	supporting_limbs = list()
-	var/obj/item/material/knife/tacknife
+	var/obj/item/material/knife/tacknife // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	max_pressure_protection = null
 	min_pressure_protection = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF

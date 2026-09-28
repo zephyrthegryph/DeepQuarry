@@ -7,7 +7,7 @@
 	var/paint_dir =    "precise"
 	var/paint_colour = "#FFFFFF"
 
-	var/list/decals = list(
+	var/list/decals = list( // ALLOW(instance_list): d: edited in place per instance (3 writers)
 		"quarter-turf" =      list("path" = /obj/effect/floor_decal/corner, "precise" = 1, "coloured" = 1),
 		"hazard stripes" =    list("path" = /obj/effect/floor_decal/industrial/warning),
 		"corner, hazard" =    list("path" = /obj/effect/floor_decal/industrial/warning/corner),

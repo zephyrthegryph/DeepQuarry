@@ -111,7 +111,7 @@
 
 REF_OWNED(/obj/item/mapping_unit, "extras_holder")
 
-// LIFECYCLE: its map display is torn down.
+// ALLOW(lifecycle): its map display is torn down.
 /obj/item/mapping_unit/Destroy()
 	last_run()
 	return ..()

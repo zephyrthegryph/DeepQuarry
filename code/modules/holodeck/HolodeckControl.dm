@@ -184,7 +184,7 @@
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 
 //This could all be done better, but it works for now.
-// LIFECYCLE: the holodeck shuts down.
+// ALLOW(lifecycle): the holodeck shuts down.
 /obj/machinery/computer/HolodeckControl/Destroy()
 	emergencyShutdown()
 	. = ..()

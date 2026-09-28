@@ -6,6 +6,7 @@
 	name = "GalCom language implant"
 	desc = "An implant allowing someone to speak the range of frequencies used in Galactic Common, as well as produce any phonemes that they usually cannot. Only helps with producing sounds, not understanding them."
 	known_implant = TRUE
+	// ALLOW(instance_list): d: edited in place per instance (10 writers)
 	var/list/languages = list(LANGUAGE_GALCOM)	// List of languages that this assists with
 	initialize_loc = BP_HEAD
 

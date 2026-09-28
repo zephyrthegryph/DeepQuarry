@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 	var/speed = 1	// delay of movement
 	var/facedir = 0 // if 1: atom faces the direction of movement
 	var/nostop = 0 // if 1: will only be stopped by teleporters
-	var/list/affecting = list()
+	var/list/affecting = list() // ALLOW(instance_list): d: live thrower state (generic name, too many ambiguous call sites)
 
 /obj/effect/step_trigger/thrower/Trigger(atom/A)
 	if(!A || !istype(A, /atom/movable))

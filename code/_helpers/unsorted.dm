@@ -821,7 +821,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		if((O) && (original))
 			for(var/V in original.vars)
 				if(!(V in blacklisted_var_names))
-					O.vars[V] = original.vars[V]
+					O.vars[V] = original.vars[V] // ALLOW(api): DuplicateObject() and the generic var setter helper
 	return O
 
 /area/proc/copy_contents_to(area/A , platingRequired = 0 )
@@ -1191,7 +1191,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 /mob/dview/skips_registry(registry_id)
 	return TRUE
 
-// LIFECYCLE: shared dview mob refuses deletion unless forced, then is replaced.
+// ALLOW(lifecycle): shared dview mob refuses deletion unless forced, then is replaced.
 /mob/dview/Destroy(force)
 	stack_trace("Attempt to delete the dview_mob: [log_info_line(src)]")
 	if (!force)

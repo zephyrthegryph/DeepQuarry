@@ -390,7 +390,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		var/list/vars = list()
 		for(var/key in blob)
 			if(key != STATE_KEY_TYPE)
-				vars[key] = blob[key]
+				vars[key] = blob[key] // ALLOW(api): state serializer: restores saved vars
 		for(var/key in vars)
 			blob -= key
 		blob[STATE_KEY_VARS] = vars
@@ -466,7 +466,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		for(var/name in A.vars)
 			var/value = A.vars[name]
 			if(isdatum(value) && (value in removed))
-				A.vars[name] = null
+				A.vars[name] = null // ALLOW(api): state serializer: restores saved vars
 	// The blob's latent entries replace whatever the holder declared at init.
 	if(A.latent_contents)
 		A.latent_generator_clear()
@@ -521,7 +521,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			continue
 		var/default = initial(D.vars[name])
 		if(value != default && !islist(default))
-			D.vars[name] = default
+			D.vars[name] = default // ALLOW(api): state serializer: restores saved vars
 	for(var/name in vars)
 		if(!(name in schema.saved_vars))
 			// The pre-L1 loader ignored keys it did not save; keep doing that for legacy blobs.
@@ -533,7 +533,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			var/datum/state_codec/codec = state_codec(codec_path)
 			codec.decode(D, name, vars[name], src)
 		else
-			D.vars[name] = decode_value(vars[name])
+			D.vars[name] = decode_value(vars[name]) // ALLOW(api): state serializer: restores saved vars
 
 /datum/state_context/proc/apply_components(datum/D, list/blob)
 	for(var/list/component_blob as anything in blob[STATE_KEY_COMPONENTS])

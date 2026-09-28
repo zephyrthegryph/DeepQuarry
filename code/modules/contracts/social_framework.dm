@@ -419,14 +419,14 @@ REF_OWNED_VALUES(/datum/contract/social, list("stakeholder_roles", "stakeholder_
 
 /datum/contract/social/check_deadline()
 	deadline_timer = null
-	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
+	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The delivery window closed before the minimum graded outcome and required stakeholder participation were reached.")
-	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until)
+	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else

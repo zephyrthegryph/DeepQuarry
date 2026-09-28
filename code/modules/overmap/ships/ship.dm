@@ -30,6 +30,7 @@
 
 	var/position_x						// Pixel coordinates in the world
 	var/position_y						// Pixel coordinates in the world.
+	// ALLOW(instance_list): d: replaced per instance at runtime (13 assignments)
 	var/list/speed = list(0,0)          //speed in x,y direction
 	COOLDOWN_DECLARE(burn_cooldown)                   //worldtime when ship last acceleated
 	var/burn_delay = 1 SECOND           //how often ship can do burns
@@ -63,7 +64,7 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
-// LIFECYCLE: leaves the ship list and its flight vessel.
+// ALLOW(lifecycle): leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/Destroy()
 	remove_vis_overlay(vector)
 	SSshuttles.ships -= src

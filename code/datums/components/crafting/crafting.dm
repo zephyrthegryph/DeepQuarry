@@ -17,7 +17,7 @@
 /datum/component/personal_crafting
 	var/viewing_category = 1 //typical powergamer starting on the Weapons tab
 	var/viewing_subcategory = 1
-	var/list/categories = list(
+	var/list/categories = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
 				CAT_WEAPONRY = list(
 					CAT_WEAPON,
 					CAT_AMMO,
@@ -441,7 +441,7 @@
 	SIGNAL_HANDLER
 
 	if(user == parent)
-		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // S10b keeps: tgui_interact may block on asset/window setup
+		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 
 /datum/component/personal_crafting/tgui_state(mob/user)
 	return GLOB.tgui_not_incapacitated_turf_state

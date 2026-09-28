@@ -140,7 +140,7 @@
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/AM in src.contents) //Dump whatever's in the bag before deleting. (latent-ok: materialized above)
+		for(var/atom/movable/AM in src.contents) //Dump whatever's in the bag before deleting. // ALLOW(latent): materialized above
 			AM.forceMove(get_turf(loc))
 		qdel(src)
 

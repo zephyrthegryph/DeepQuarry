@@ -43,7 +43,7 @@
 			animate(G, pixel_x = 0, time = MT, flags = ANIMATION_PARALLEL)
 			animate(G, pixel_y = 0, time = MT, flags = ANIMATION_PARALLEL)
 
-// LIFECYCLE: its images come off every client.
+// ALLOW(lifecycle): its images come off every client.
 /obj/effect/fake_attacker/Destroy(force)
 	. = ..()
 	clear_every_clients_images()

@@ -21,7 +21,7 @@
 		var/lazors = 0
 		var/shottas = 0
 		latent_materialize_all() // a walk needs real things (C5)
-		for (var/obj/item/gun/G in contents) // latent-ok: materialized above
+		for (var/obj/item/gun/G in contents) // ALLOW(latent): materialized above
 			if (istype(G, /obj/item/gun/energy))
 				lazors++
 			if (istype(G, /obj/item/gun/projectile))

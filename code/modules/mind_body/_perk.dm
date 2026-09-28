@@ -82,7 +82,7 @@
 		if(V == "flags") // Bitflag merge, like traits.
 			S.vars[V] |= var_changes[V]
 		else
-			S.vars[V] = var_changes[V]
+			S.vars[V] = var_changes[V] // ALLOW(api): perk var_changes table
 
 /datum/perk/body
 	abstract_type = /datum/perk/body

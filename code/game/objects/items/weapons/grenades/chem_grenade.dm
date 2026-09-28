@@ -15,7 +15,7 @@
 	var/sealed = FALSE
 	var/obj/item/assembly_holder/detonator = null
 	var/list/beakers
-	var/list/allowed_containers = list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle)
+	var/list/allowed_containers = list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/affected_area = 3
 	special_handling = TRUE
 

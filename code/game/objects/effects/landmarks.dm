@@ -92,7 +92,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark, REGISTRY_LATEJOIN)
 	else
 		registry_join(REGISTRY_LANDMARKS, src)
 
-// LIFECYCLE: landmarks survive deletion unless flagged delete_me or forced.
+// ALLOW(lifecycle): landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/Destroy(force = FALSE)
 	if(delete_me || force)
 		return ..()

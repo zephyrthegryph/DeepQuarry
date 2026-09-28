@@ -1,3 +1,0 @@
-# Raw contents walks on latent holders, per file (tools/ci/latent_lint.py).
-# Counts may only go down. Fix a site by going through the ledger API.
-code/modules/mob/living/carbon/human/species/station/station_special_abilities.dm 1

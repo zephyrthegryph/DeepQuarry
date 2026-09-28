@@ -13,4 +13,5 @@
 	if(!note_keys) note_keys = list()
 	note_keys |= has_notes
 	note_list << note_keys
+	// ALLOW(scheduler): savefile, not a datum
 	del(note_list) // savefile, so NOT qdel

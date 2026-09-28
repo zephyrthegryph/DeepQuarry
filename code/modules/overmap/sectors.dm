@@ -22,7 +22,7 @@
 	var/real_icon_state //actual icon name to be used. Find examples inside 'icons/obj/overmap.dmi'
 	var/real_color
 
-	var/list/map_z = list()
+	var/list/map_z = list() // ALLOW(instance_list): d: the sector's z-levels, filled when the sector registers
 	var/list/extra_z_levels //if you need to manually insist that these z-levels are part of this sector, for things like edge-of-map step trigger transitions rather than multi-z complexes
 
 	var/list/initial_generic_waypoints //store landmark_tag of landmarks that should be added to the actual lists below on init.
@@ -113,7 +113,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		known = FALSE
 
 // You generally shouldn't destroy these.
-// LIFECYCLE: its z-levels are unregistered.
+// ALLOW(lifecycle): its z-levels are unregistered.
 /obj/effect/overmap/visitable/Destroy()
 	testing("Deleting [src] overmap sector at [x],[y]")
 	unregister_z_levels()

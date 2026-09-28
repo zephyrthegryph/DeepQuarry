@@ -207,7 +207,7 @@
 
 /obj/item/storage/digest_act(atom/movable/item_storage = null)
 	make_contents_real()
-	for(var/obj/item/I in contents) // latent-ok
+	for(var/obj/item/I in contents) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		I.screen_loc = null
 
 	. = ..()

@@ -6,7 +6,7 @@
 	var/material_name
 
 	var/percent_depleted = 1
-	var/list/rod_quantities = list()
+	var/list/rod_quantities = list() // ALLOW(instance_list): d: filled in New() with the rod's reagent amounts
 	var/fuel_type = MAT_COMPOSITE
 	var/fuel_colour
 	var/radioactivity = 0

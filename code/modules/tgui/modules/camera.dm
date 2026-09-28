@@ -62,7 +62,7 @@ REF_OWNED(/atom/movable/screen/map_view_tg/camera, list("cam_background", "cam_f
 	tgui_id = "CameraConsole"
 
 	var/access_based = FALSE
-	var/list/network = list()
+	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
 	var/list/additional_networks
 
 	var/obj/machinery/camera/active_camera

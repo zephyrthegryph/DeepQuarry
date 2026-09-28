@@ -54,6 +54,7 @@
 	gravwave(get_turf(holder), effectrange, pull_power)
 
 /datum/artifact_effect/extreme/gravity_wave/proc/gravwave(atom/target, pull_range = 7, pull_power = STAGE_TWO)
+	// ALLOW(cooldown): pull interval with elapsed-time math
 	if(world.time >= last_wave_pull+10) //NO INFINITE LOOPS. do not touch this line or you WILL crash the server. I am not kidding. Go ahead, remove it on a test server and see what happens.
 		last_wave_pull = world.time
 		for(var/atom/A in oview(pull_range, target))

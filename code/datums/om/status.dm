@@ -46,7 +46,7 @@
 			if(!isnum(row[key]) || row[key] < 0)
 				reg.error("status [id]: [key] must be a number >= 0")
 				continue
-			vars[key] = row[key]
+			vars[key] = row[key] // ALLOW(api): status rows copied onto a status datum from om_library_effects()
 	if(unit <= 0 || rate <= 0)
 		reg.error("status [id]: unit and rate must be above 0")
 		unit = max(unit, 1)

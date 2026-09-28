@@ -468,7 +468,7 @@ SUBSYSTEM_DEF(ticker)
 				Master.SetRunLevel(RUNLEVEL_POSTGAME)
 
 /datum/controller/subsystem/ticker/proc/Reboot(reason, end_string, delay)
-	set waitfor = FALSE // S10b keeps: UNTIL waits on the round-end sound before arming the reboot timer
+	set waitfor = FALSE // ALLOW(scheduler): UNTIL waits on the round-end sound before arming the reboot timer
 	if(usr && !check_rights(R_SERVER, TRUE))
 		return
 

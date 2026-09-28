@@ -24,7 +24,7 @@
 
 /datum/om/registry
 	/// type path -> field name -> channel (every field_def whose `of` is an ancestor, merged).
-	var/list/fields_by_type = list()
+	var/list/fields_by_type = list() // ALLOW(instance_list): d: registry singleton, filled per entity type on first use
 	/// Every /datum/om/field_def type (read with initial(); never instantiated).
 	var/list/field_defs
 

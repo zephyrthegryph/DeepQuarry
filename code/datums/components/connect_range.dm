@@ -9,7 +9,7 @@
 	/// An assoc list of signal -> procpath to register to the loc this object is on.
 	var/list/connections
 	/// The turfs currently connected to this component
-	var/list/turfs = list()
+	var/list/turfs = list() // ALLOW(instance_list): d: the component's tracked turf set; always populated while attached
 	/**
 	 * The atom the component is tracking. The component will delete itself if the tracked is deleted.
 	 * Signals will also be updated whenever it moves (if it's a movable).

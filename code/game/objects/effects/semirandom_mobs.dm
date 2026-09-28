@@ -6,7 +6,7 @@
 	mob_returns_home = 1
 	mob_wander_distance = 7
 
-	var/list/possible_mob_types = list(
+	var/list/possible_mob_types = list( // ALLOW(instance_list): c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
 		list(/mob/living/simple_mob/animal/goat),
 		list(
 			/mob/living/simple_mob/animal/passive/bird,

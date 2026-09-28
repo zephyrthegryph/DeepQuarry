@@ -149,7 +149,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	// We want the lowest-part tier rating in the RPED so we only recycle the lowest-tier parts.
 	var/lowest_rating = INFINITY
 	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in replacer.contents) // latent-ok: materialized above
+	for(var/obj/item/B in replacer.contents) // ALLOW(latent): materialized above
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
 	if(lowest_rating == INFINITY)
@@ -160,7 +160,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	if(!materials)
 		return TRUE
 	replacer.latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in replacer.contents) // latent-ok: materialized above
+	for(var/obj/item/B in replacer.contents) // ALLOW(latent): materialized above
 		if(B.rped_rating() > lowest_rating)
 			continue
 		materials.insert_item(B, decon_mod, src)

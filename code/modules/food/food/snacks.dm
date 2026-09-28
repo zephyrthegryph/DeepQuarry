@@ -19,7 +19,7 @@
 	var/dry = 0
 	var/survivalfood = FALSE
 	var/nutriment_amt = 0
-	var/list/nutriment_desc = list("food" = 1)
+	var/list/nutriment_desc = list("food" = 1) // ALLOW(instance_list): d: add_reagent() stores it by reference as the nutriment data, and nutriment mix_data() edits that list; sharing it gains nothing (see memory_lists_audit.md)
 	var/datum/reagent/nutriment/coating/coating = null
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
@@ -482,7 +482,7 @@
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)
 
-// LIFECYCLE: things stuffed inside drop out.
+// ALLOW(lifecycle): things stuffed inside drop out.
 /obj/item/reagent_containers/food/snacks/Destroy()
 	if(contents)
 		for(var/atom/movable/something in contents)
@@ -1280,7 +1280,7 @@
 	nutriment_amt = 2
 	nutriment_desc = list("heartiness" = 1, "dough" = 2)
 	var/warm = FALSE
-	var/list/heated_reagents = list(REAGENT_ID_TRICORDRAZINE = 5)
+	var/list/heated_reagents = list(REAGENT_ID_TRICORDRAZINE = 5) // ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/item/reagent_containers/food/snacks/donkpocket/Initialize(mapload)
 	. = ..()
@@ -4195,6 +4195,7 @@
 	var/open = 0 // Is the box open?
 	var/ismessy = 0 // Fancy mess on the lid
 	var/obj/item/reagent_containers/food/snacks/sliceable/pizza/pizza // Content pizza
+	// ALLOW(instance_list): d: stacked pizza boxes, edited in place
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
 

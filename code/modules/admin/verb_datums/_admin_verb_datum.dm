@@ -13,7 +13,7 @@ GENERAL_PROTECT_DATUM(/datum/admin_verb)
 	var/visibility_flag //! The flag that determines if the verb is visible.
 	VAR_PROTECTED/verb_path //! The path to the verb proc.
 
-// LIFECYCLE: admin verbs are singletons and refuse deletion unless forced.
+// ALLOW(lifecycle): admin verbs are singletons and refuse deletion unless forced.
 /datum/admin_verb/Destroy(force)
 	if(!force)
 		return QDEL_HINT_LETMELIVE

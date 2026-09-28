@@ -12,7 +12,7 @@
 		to_chat(usr, span_red("The game hasn't started yet!"))
 		return
 
-	if(world.time < 6000)
+	if(world.time < 6000) // ALLOW(cooldown): round timing
 		to_chat(usr, span_red("There are [(6000-world.time)/10] seconds remaining before it may be called."))
 		return
 

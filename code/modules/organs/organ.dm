@@ -47,7 +47,7 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-// LIFECYCLE: afflictions on the organ are cured; organ mods removed.
+// ALLOW(lifecycle): afflictions on the organ are cured; organ mods removed.
 /obj/item/organ/Destroy()
 
 	handle_organ_mod_special(TRUE)

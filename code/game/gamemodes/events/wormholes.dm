@@ -52,7 +52,7 @@
 		for(var/I = 1 to number_of_selections)
 
 			//we've run into overtime. End the event
-			if( end_time < world.time + delay )
+			if( end_time < world.time + delay ) // ALLOW(cooldown): event end time
 				return
 			if( !pick_turfs.len )
 //					to_world("DEBUG: we've run out of turfs to pick. End the event")

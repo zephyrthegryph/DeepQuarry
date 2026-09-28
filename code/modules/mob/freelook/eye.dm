@@ -18,7 +18,7 @@
 	plane = PLANE_AI_EYE
 	invisibility = INVISIBILITY_EYE
 
-	var/list/visibleChunks = list()
+	var/list/visibleChunks = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	var/ghostimage = null
 	var/datum/visualnet/visualnet

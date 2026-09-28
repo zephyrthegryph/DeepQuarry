@@ -290,7 +290,7 @@
  * event_code - One of the TGS_EVENT_ defines. Extra parameters will be documented in each.
  */
 /datum/tgs_event_handler/proc/HandleEvent(event_code, ...)
-	set waitfor = FALSE // S10b keeps: vendored TGS API
+	set waitfor = FALSE // ALLOW(scheduler): vendored TGS API
 	return
 
 /// User definable handler for HTTP calls. This abstract version MUST be overridden to be used.

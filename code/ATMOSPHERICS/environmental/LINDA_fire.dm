@@ -355,7 +355,7 @@
 	dir = pick(GLOB.cardinals)
 	update_color()
 
-// LIFECYCLE: a dying fire cools its tile and leaves its hot group.
+// ALLOW(lifecycle): a dying fire cools its tile and leaves its hot group.
 /obj/effect/hotspot/Destroy()
 	SSair.hotspots -= src
 	var/turf/open/cur_turf = loc
@@ -393,7 +393,7 @@
 #define MIN_SIZE_SOUND 2
 ///handle the grouping of hotspot and then determining an average center to play sound in
 /datum/hot_group
-	var/list/obj/effect/hotspot/spot_list = list()
+	var/list/obj/effect/hotspot/spot_list = list() // ALLOW(instance_list): atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
 	///the sound center turf which the looping sound will play
 	var/turf/open/current_sound_loc
 	var/datum/looping_sound/fire/sound

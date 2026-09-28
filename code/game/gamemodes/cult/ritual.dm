@@ -73,7 +73,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 
 REF_OWNED(/obj/effect/rune, "blood_image")
 
-// LIFECYCLE: the rune's blood image comes off every AI client that was shown it.
+// ALLOW(lifecycle): the rune's blood image comes off every AI client that was shown it.
 /obj/effect/rune/Destroy()
 	for(var/mob/living/silicon/ai/our_ai in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(our_ai.client)
@@ -184,7 +184,7 @@ REF_OWNED(/obj/effect/rune, "blood_image")
 	w_class = ITEMSIZE_SMALL
 	unique = 1
 	var/tomedat = ""
-	var/list/words = list("ire" = "ire", "ego" = "ego", "nahlizet" = "nahlizet", "certum" = "certum", "veri" = "veri", "jatkaa" = "jatkaa", "balaq" = "balaq", "mgar" = "mgar", "karazet" = "karazet", "geeri" = "geeri")
+	var/list/words = list("ire" = "ire", "ego" = "ego", "nahlizet" = "nahlizet", "certum" = "certum", "veri" = "veri", "jatkaa" = "jatkaa", "balaq" = "balaq", "mgar" = "mgar", "karazet" = "karazet", "geeri" = "geeri") // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	occult_tier = 1
 
 	tomedat = {"<html>

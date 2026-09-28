@@ -1,6 +1,6 @@
 /datum/embedded_program
 	var/name
-	var/list/memory = list()
+	var/list/memory = list() // ALLOW(instance_list): d: every embedded program keeps its state in memory
 	var/obj/machinery/embedded_controller/master
 
 	var/id_tag

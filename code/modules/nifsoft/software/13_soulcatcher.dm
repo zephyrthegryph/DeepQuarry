@@ -9,7 +9,7 @@
 	p_drain = 0.01
 
 	var/setting_flags = (NIF_SC_ALLOW_EARS|NIF_SC_ALLOW_EYES|NIF_SC_BACKUPS|NIF_SC_PROJECTING)
-	var/list/brainmobs = list()
+	var/list/brainmobs = list() // ALLOW(instance_list): d: soulcatcher occupants, edited in place through many paths
 	var/inside_flavor = "A small completely white room with a couch, and a window to what seems to be the outside world. A small sign in the corner says 'Configure Me'."
 
 /datum/nifsoft/soulcatcher/New()
@@ -298,7 +298,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	plane_holder.set_vis(VIS_SOULCATCHER, TRUE)
 	identifying_gender = client.prefs.read_preference(/datum/preference/choiced/gender/identifying)
 
-// LIFECYCLE: the soulcatcher is told the mind unloaded.
+// ALLOW(lifecycle): the soulcatcher is told the mind unloaded.
 /mob/living/carbon/brain/caught_soul/Destroy()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(soulcatcher)

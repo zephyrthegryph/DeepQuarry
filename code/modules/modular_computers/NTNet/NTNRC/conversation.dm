@@ -4,7 +4,7 @@ GLOBAL_VAR_INIT(ntnrc_uid, 0)
 	var/id = null
 	var/title = "Untitled Conversation"
 	var/datum/computer_file/program/chatclient/operator // "Administrator" of this channel. Creator starts as channel's operator,
-	var/list/messages = list()
+	var/list/messages = list() // ALLOW(instance_list): d: chat channel history
 	var/list/clients
 	var/password
 

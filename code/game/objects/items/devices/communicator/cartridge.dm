@@ -12,6 +12,7 @@
 	var/list/internal_devices // Devices that can be toggled on to trigger on attack()
 	var/list/active_devices   // Devices that will be triggered on attack()
 	var/list/ui_templates     // List of ui templates the commcard can access
+	// ALLOW(instance_list): d: per-card UI state keyed by dynamic strings; few communicators
 	var/list/internal_data = list()	   // Data that shouldn't be updated every time nanoUI updates, or needs to persist between updates
 
 /obj/item/commcard/proc/get_device_status()
@@ -116,7 +117,7 @@
 			if(!istype(user)) // Invalid ref
 				return
 
-			if(world.time < internal_data["supply_reqtime"])
+			if(world.time < internal_data["supply_reqtime"]) // ALLOW(cooldown): supply request timeout state
 				visible_message(span_warning("[src] flashes, \"[internal_data["supply_reqtime"] - world.time] seconds remaining until another requisition form may be printed.\""))
 				return
 

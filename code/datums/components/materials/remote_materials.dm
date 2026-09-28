@@ -69,7 +69,7 @@ handles linking back and forth.
 	if(!mat_container && allow_standalone)
 		_MakeLocal()
 
-// LIFECYCLE: disconnects from its ore silo.
+// ALLOW(lifecycle): disconnects from its ore silo.
 /datum/component/remote_materials/Destroy()
 	if(silo)
 		allow_standalone = FALSE

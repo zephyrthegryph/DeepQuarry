@@ -21,7 +21,7 @@
 	var/ranged = FALSE
 	var/allow_concurrent_building = FALSE // If true, allows for multiple RCD builds at the same time.
 	var/mode_index = 1
-	var/list/modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT)
+	var/list/modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/can_remove_rwalls = FALSE
 	var/airlock_type = /obj/machinery/door/airlock
 	var/window_type = /obj/structure/window/reinforced/full

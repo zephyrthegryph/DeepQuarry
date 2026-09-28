@@ -6,7 +6,7 @@
 	var/old_turf_handle
 	var/on = 0
 	var/obj/item/stack/tile/T
-	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0)
+	var/list/mode = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 
 /obj/machinery/floorlayer/Initialize(mapload)
 	. = ..()
@@ -71,7 +71,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/crowbar_act(mob/user, obj/item/tool)
-	if(!length(contents) && !has_latent()) // latent-ok: latent entries checked
+	if(!length(contents) && !has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_notice("\The [src] is empty."))
 		return ITEM_INTERACT_BLOCKING
 	om_prompt(src, user, list("kind" = "list", "message" = "Choose remove tile type.", "title" = "Tiles", "choices" = contents, "requires" = PROMPT_ADJACENT), PROC_REF(tile_removal_chosen))
@@ -114,15 +114,15 @@
 
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile in contents) // latent-ok: materialized above
+	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): materialized above
 		T = tile
 		return 1
 	return 0
 
 /obj/machinery/floorlayer/proc/SortStacks()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stack/tile/tile1 in contents) // latent-ok: materialized above
-		for(var/obj/item/stack/tile/tile2 in contents) // latent-ok: materialized above
+	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): materialized above
+		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): materialized above
 			tile2.transfer_to(tile1)
 
 /obj/machinery/floorlayer/proc/layFloor(turf/w_turf)

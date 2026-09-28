@@ -74,7 +74,7 @@
 		src.vorish = TRUE
 	//This means weaker, longing lasting omens will take priority, but have some of the strength of the original.
 
-// LIFECYCLE: lifts the unlucky trait and tells the person.
+// ALLOW(lifecycle): lifts the unlucky trait and tells the person.
 /datum/component/omen/Destroy(force)
 	var/mob/living/person = parent
 	REMOVE_TRAIT(person, TRAIT_UNLUCKY, src)

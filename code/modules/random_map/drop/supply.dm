@@ -39,14 +39,16 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 /// per category (cancel ends a category), then the drop is confirmed and lands on the admin.
 /datum/supply_drop_order
 	var/mob/admin
-	/// Categories still to offer: question = root type.
-	var/list/categories = list(
+	/// The categories offered in order: question = root type. Shared by every order.
+	var/static/list/categories = list(
 		"Do you wish to add mobs?" = /mob/living,
 		"Do you wish to add structures or machines?" = /obj,
 		"Do you wish to add any non-weapon items?" = /obj/item,
 		"Do you wish to add weapons?" = /obj/item,
 		"Do you wish to add ABSOLUTELY ANYTHING ELSE? (you really shouldn't need to)" = /atom/movable,
 	)
+	/// How many of `categories` have been offered so far.
+	var/categories_offered = 0
 	var/current_root
 	var/list/chosen_loot_types
 	var/chosen_loot_type
@@ -95,12 +97,12 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	confirm()
 
 /datum/supply_drop_order/proc/next_category()
-	if(!length(categories))
+	if(categories_offered >= length(categories))
 		confirm()
 		return
-	var/question = categories[1]
+	categories_offered++
+	var/question = categories[categories_offered]
 	current_root = categories[question]
-	categories.Cut(1, 2)
 	ask(list("message" = question, "title" = "Supply Drop", "choices" = list("No","Yes")), PROC_REF(category_answered), PROC_REF(next_category_after_cancel))
 
 /datum/supply_drop_order/proc/next_category_after_cancel(mob/user, datum/om/prompt/ask)

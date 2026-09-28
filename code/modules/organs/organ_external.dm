@@ -84,7 +84,7 @@
 
 	special_handling = TRUE
 
-// LIFECYCLE: child limbs and internal organs go with it; it leaves its owner's organ tables.
+// ALLOW(lifecycle): child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/Destroy()
 	// Child limbs and organs sit in this limb's part slots: the ledger deletes
 	// them (SLOT_DROP_DELETE, children first) and the detach hook clears the
@@ -981,7 +981,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/wound_count = length(current_wounds)
 	for(var/datum/affliction/wound/W as anything in current_wounds)
 		// wounds can disappear after 10 minutes at the earliest
-		if(W.damage <= 0 && W.created + 10 MINUTES <= world.time)
+		if(W.damage <= 0 && W.created + 10 MINUTES <= world.time) // ALLOW(cooldown): wound age
 			remove_wound(W)
 			continue
 		// slow healing

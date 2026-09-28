@@ -25,7 +25,7 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 
 /// Writes the decoded value into owner.vars[var_name] (or does whatever the var needs).
 /datum/state_codec/proc/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
-	owner.vars[var_name] = ctx.decode_value(encoded)
+	owner.vars[var_name] = ctx.decode_value(encoded) // ALLOW(api): state serializer codecs
 
 // ---------------------------------------------------------------------------
 // child: a reference to an object in the same subtree. encode_value() already
@@ -61,10 +61,10 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 
 /datum/state_codec/owned/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
 	if(isnull(encoded))
-		owner.vars[var_name] = null
+		owner.vars[var_name] = null // ALLOW(api): state serializer codecs
 		return
 	var/list/nested = encoded[STATE_WRAP_OWNED]
-	owner.vars[var_name] = ctx.materialize_datum(nested)
+	owner.vars[var_name] = ctx.materialize_datum(nested) // ALLOW(api): state serializer codecs
 
 // ---------------------------------------------------------------------------
 // reagents: the /datum/reagents holder, as its capacity and its reagents.
@@ -110,7 +110,7 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 	return value & ~ATOM_RUNTIME_FLAGS
 
 /datum/state_codec/atom_flags/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
-	owner.vars[var_name] = (owner.vars[var_name] & ATOM_RUNTIME_FLAGS) | (encoded & ~ATOM_RUNTIME_FLAGS)
+	owner.vars[var_name] = (owner.vars[var_name] & ATOM_RUNTIME_FLAGS) | (encoded & ~ATOM_RUNTIME_FLAGS) // ALLOW(api): state serializer codecs
 
 // ---------------------------------------------------------------------------
 // frame_type: /obj/item/circuitboard/board_type (roadmap C6, containment.md
@@ -139,10 +139,10 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 
 /datum/state_codec/frame_type/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
 	if(isnull(encoded))
-		owner.vars[var_name] = null
+		owner.vars[var_name] = null // ALLOW(api): state serializer codecs
 		return
 	if(!islist(encoded))
-		owner.vars[var_name] = encoded
+		owner.vars[var_name] = encoded // ALLOW(api): state serializer codecs
 		return
 	var/list/nested = encoded[STATE_WRAP_OWNED]
-	owner.vars[var_name] = ctx.materialize_datum(nested)
+	owner.vars[var_name] = ctx.materialize_datum(nested) // ALLOW(api): state serializer codecs

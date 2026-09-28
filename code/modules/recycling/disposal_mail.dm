@@ -122,7 +122,7 @@
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-// LIFECYCLE: the wrapped thing is unwrapped onto the floor.
+// ALLOW(lifecycle): the wrapped thing is unwrapped onto the floor.
 /obj/structure/bigDelivery/Destroy()
 	if(wrapped) //sometimes items can disappear. For example, bombs. --rastaf0
 		wrapped.forceMove(get_turf(src))

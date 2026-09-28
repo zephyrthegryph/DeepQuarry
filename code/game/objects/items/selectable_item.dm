@@ -7,7 +7,7 @@
 	var/preface_title = "selectable item"
 	var/selection_string = "Select an item:"
 	var/selection_title = "Item Selection"
-	var/list/item_options = list("Gift" = /obj/item/a_gift,
+	var/list/item_options = list("Gift" = /obj/item/a_gift, // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 									"Health Analyzer" = /obj/item/healthanalyzer)
 
 /obj/item/selectable_item/attack_self(mob/user)

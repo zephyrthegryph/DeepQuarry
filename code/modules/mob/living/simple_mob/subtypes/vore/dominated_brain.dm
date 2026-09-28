@@ -10,7 +10,7 @@
 	/// The prey's mind. It carries the prey's identity wherever it goes.
 	var/datum/mind/prey_mind
 	var/prey_name					//In case the body is missing. ;3c
-	var/list/prey_langs = list()
+	var/list/prey_langs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/mob/living/pred_body		//The body of the person who was dominated
 	/// The predator's mind (null when the predator was an unplayed mob).
 	var/datum/mind/pred_mind

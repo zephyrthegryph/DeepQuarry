@@ -1,4 +1,5 @@
 /datum/eventkit/fake_pdaconvos
+	// ALLOW(instance_list): d: event kit state, one instance
 	var/list/names = list()		//Assoc list of refs in fakeRefs = name
 	var/list/fakeRefs //Used to find elements in other lists and tracking conversations. MUST BE UNIQUE.
 	var/list/fakeJobs //Assoc list of name in names = job

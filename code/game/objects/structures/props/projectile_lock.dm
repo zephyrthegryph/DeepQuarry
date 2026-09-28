@@ -11,7 +11,7 @@
 
 	var/list/linked_objects
 
-// LIFECYCLE: many-to-many with puzzle doors: leaves each door's lock list.
+// ALLOW(lifecycle): many-to-many with puzzle doors: leaves each door's lock list.
 /obj/structure/prop/lock/Destroy()
 	if(length(linked_objects))
 		for(var/obj/O in linked_objects)

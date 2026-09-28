@@ -1,15 +1,15 @@
 /datum/pipe_network
 	/// Compatibility list containing exactly the authoritative network mixture.
-	var/list/datum/gas_mixture/gases = list()
+	var/list/datum/gas_mixture/gases = list() // ALLOW(instance_list): d: pipe network membership; atmos agents own this area
 	/// The sole gas inventory for every fixed port and pipeline in this network.
 	var/datum/gas_mixture/air
 	var/volume = 0	//caches the total volume for atmos machines to use in gas calculations
 
-	var/list/obj/machinery/atmospherics/normal_members = list()
-	var/list/datum/pipeline/line_members = list()
+	var/list/obj/machinery/atmospherics/normal_members = list() // ALLOW(instance_list): d: pipe network membership; atmos agents own this area
+	var/list/datum/pipeline/line_members = list() // ALLOW(instance_list): d: pipe network membership; atmos agents own this area
 		//membership roster to go through for updates and what not
 
-	var/list/leaks = list()
+	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a/S1): listed in memory_lists_audit.md, not edited here
 	/// Runtime reservoirs connected through portable connectors: owner -> volume.
 	var/list/external_air_volumes
 
@@ -25,7 +25,7 @@
 
 // Rust-owned networks refuse deletion; a legacy network hands each member
 // its share of the gas before the topology splits.
-// LIFECYCLE: LETMELIVE for rust-owned networks; legacy gas split.
+// ALLOW(lifecycle): LETMELIVE for rust-owned networks; legacy gas split.
 /datum/pipe_network/Destroy()
 	if(rust_authoritative)
 		return QDEL_HINT_LETMELIVE

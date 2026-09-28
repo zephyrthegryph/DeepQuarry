@@ -126,7 +126,7 @@
 			soundloop.mid_length = 30
 	soundloop.start() // Have to do this here bc it starts on
 
-// LIFECYCLE: NTNet logs the lost relay and DoS programs lose their target.
+// ALLOW(lifecycle): NTNet logs the lost relay and DoS programs lose their target.
 /obj/machinery/ntnet_relay/Destroy()
 	if(GLOB.ntnet_global)
 		LAZYREMOVE(GLOB.ntnet_global.relays, src)

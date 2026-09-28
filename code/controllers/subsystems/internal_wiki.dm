@@ -789,7 +789,7 @@ SUBSYSTEM_DEF(internal_wiki)
 ////////////////////////////////////////////////////////////////////////////////////////////////
 /datum/internal_wiki/page
 	var/title = ""
-	var/list/data = list()
+	var/list/data = list() // ALLOW(instance_list): d: every page fills its data table
 
 /datum/internal_wiki/page/proc/assemble()
 	return

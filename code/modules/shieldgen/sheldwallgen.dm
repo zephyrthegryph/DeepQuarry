@@ -238,7 +238,7 @@
 			if(!G.active)
 				break
 
-// LIFECYCLE: its walls come down in every direction.
+// ALLOW(lifecycle): its walls come down in every direction.
 /obj/machinery/shieldwallgen/Destroy()
 	src.cleanup(1)
 	src.cleanup(2)

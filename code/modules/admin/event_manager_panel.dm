@@ -11,7 +11,7 @@
 
 /datum/event_manager_panel
 
-// LIFECYCLE: the event service forgets its manager panel.
+// ALLOW(lifecycle): the event service forgets its manager panel.
 /datum/event_manager_panel/Destroy()
 	if(GLOB.event_service?.tgui_event_manager_panel == src)
 		GLOB.event_service.tgui_event_manager_panel = null

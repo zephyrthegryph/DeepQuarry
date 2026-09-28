@@ -296,7 +296,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	holder = owner_holder
 	target = target_mob
 
-// LIFECYCLE: leaves the per-admin panel index.
+// ALLOW(lifecycle): leaves the per-admin panel index.
 /datum/jobban_panel/Destroy(force, ...)
 	if(holder && target)
 		GLOB.dq_jobban_panels -= "[REF(holder)]-[REF(target)]"

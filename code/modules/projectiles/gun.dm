@@ -25,7 +25,7 @@
 
 /datum/firemode/proc/apply_to(obj/item/gun/gun)
 	for(var/propname in settings)
-		gun.vars[propname] = LAZYACCESS(settings, propname)
+		gun.vars[propname] = LAZYACCESS(settings, propname) // ALLOW(api): firemode settings table applied to the gun
 
 //Parent gun type. Guns are weapons that can be aimed at mobs and act over a distance
 /obj/item/gun

@@ -27,9 +27,9 @@
 GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 
 /datum/tickets
-	var/list/active_tickets = list()
-	var/list/closed_tickets = list()
-	var/list/resolved_tickets = list()
+	var/list/active_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
+	var/list/closed_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
+	var/list/resolved_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 
 	var/obj/effect/statclick/ticket_list/astatclick = new(null, null, AHELP_ACTIVE)
 	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
@@ -306,7 +306,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-// LIFECYCLE: leaves the active, closed and resolved ticket lists.
+// ALLOW(lifecycle): leaves the active, closed and resolved ticket lists.
 /datum/ticket/Destroy()
 	RemoveActive()
 	GLOB.tickets.closed_tickets -= src

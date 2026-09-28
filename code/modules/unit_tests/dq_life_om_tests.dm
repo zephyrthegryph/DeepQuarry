@@ -134,7 +134,7 @@
 	order = LIFE_PHASE_TAIL + 900
 	name = "test counter"
 	/// Runs of this stage, per mob.
-	var/list/runs = list()
+	var/list/runs = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// dt of the last frame it ran in.
 	var/last_dt = 0
 
@@ -146,7 +146,7 @@
 /datum/om/stage/life/trait/test_timer
 	order = LIFE_PHASE_TAIL + 901
 	name = "test timer"
-	var/list/runs = list()
+	var/list/runs = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /datum/om/stage/life/trait/test_timer/perform(mob/living/self, datum/om/frame/life/ctx)
 	runs["[REF(self)]"] = (runs["[REF(self)]"] || 0) + 1
@@ -173,7 +173,7 @@
 	order = LIFE_PHASE_TAIL + 902
 	name = "test sleeper"
 	wake_on = CHANGE_MOB_HEALTH
-	var/list/runs = list()
+	var/list/runs = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /datum/om/stage/life/trait/test_sleeper/perform(mob/living/self, datum/om/frame/life/ctx)
 	runs["[REF(self)]"] = (runs["[REF(self)]"] || 0) + 1

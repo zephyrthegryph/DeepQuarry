@@ -65,7 +65,7 @@
 		// adjust locker size to hold everything with 5 units of free store room.
 		// Summed without the ledger, so an untouched closet never builds one.
 		var/content_size = 0
-		for(var/atom/movable/AM as anything in contents + loose) // latent-ok: the generator's latent entries are summed below
+		for(var/atom/movable/AM as anything in contents + loose) // ALLOW(latent): the generator's latent entries are summed below
 			content_size += storage_cost_of(AM)
 		var/list/generator = latent_declared ? starts_with : null
 		for(var/path in generator)

@@ -7,7 +7,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 /datum/world_service/events
 	name = "Events"
 
-	var/list/datum/event/finished_events = list()
+	var/list/datum/event/finished_events = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
 	var/list/datum/event/allEvents
 	var/alist/event_containers

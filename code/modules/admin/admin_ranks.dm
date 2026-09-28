@@ -42,7 +42,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(init_edit_rights)
 		can_edit_rights = init_edit_rights
 
-// LIFECYCLE: refuses deletion from advanced proc calls (permission elevation).
+// ALLOW(lifecycle): refuses deletion from advanced proc calls (permission elevation).
 /datum/admin_rank/Destroy()
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)

@@ -50,7 +50,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/last_tick = 0
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
-// LIFECYCLE: neighbouring plants resume spreading.
+// ALLOW(lifecycle): neighbouring plants resume spreading.
 /obj/effect/plant/Destroy()
 	LAZYCLEARLIST(neighbors)
 	if(seed && seed.get_trait(TRAIT_SPREAD)==2)
@@ -300,7 +300,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		die_off()
 
 /obj/effect/plant/proc/is_mature()
-	return (health >= (max_health/3) && world.time > mature_time)
+	return (health >= (max_health/3) && world.time > mature_time) // ALLOW(cooldown): plant maturity
 
 #undef DEFAULT_SEED
 #undef VINE_GROWTH_STAGES

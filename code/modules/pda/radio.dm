@@ -3,9 +3,10 @@
 	desc = "An electronic radio system."
 	icon = 'icons/obj/module.dmi'
 	icon_state = "power_mod"
-	var/obj/item/pda/hostpda = null
+	var/obj/item/pda/hostpda = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	var/list/botlist = null		// list of bots
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/mob/living/bot/active 	// the active bot; if null, show bot list
 	var/list/botstatus			// the status signal sent by the bot
 

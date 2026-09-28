@@ -150,7 +150,7 @@
 	holds_charge = TRUE
 	unique_frequency = TRUE
 
-// LIFECYCLE: its modkits are uninstalled.
+// ALLOW(lifecycle): its modkits are uninstalled.
 /obj/item/gun/energy/kinetic_accelerator/cyborg/Destroy()
 	for(var/obj/item/borg/upgrade/modkit/M in modkits)
 		M.uninstall(src)
@@ -160,7 +160,7 @@
 	holds_charge = TRUE
 	unique_frequency = TRUE
 
-// LIFECYCLE: its modkits are uninstalled.
+// ALLOW(lifecycle): its modkits are uninstalled.
 /obj/item/gun/energy/kinetic_accelerator/premiumka/cyborg/Destroy()
 	for(var/obj/item/borg/upgrade/modkit/M in modkits)
 		M.uninstall(src)

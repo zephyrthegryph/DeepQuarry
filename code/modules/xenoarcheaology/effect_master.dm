@@ -142,7 +142,7 @@
 		my_effects.Remove(to_remove_effect)
 		qdel(AE)
 
-// LIFECYCLE: its effects go with it.
+// ALLOW(lifecycle): its effects go with it.
 /datum/component/artifact_master/Destroy()
 	do_unregister()
 	holder = null

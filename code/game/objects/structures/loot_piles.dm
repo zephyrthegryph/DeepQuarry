@@ -24,6 +24,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	unacidable = TRUE
 	var/list/icon_states_to_use // List of icon states the pile can choose from on initialization. If empty or null, it will stay the initial icon_state.
 
+	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby = list()	// Keys that have searched this loot pile, with values of searched time.
 	var/loot_element_path = null
 

@@ -4,8 +4,8 @@
 /atom/movable/ref_holder
 	var/static/atom/movable/ref_test/static_test
 	var/atom/movable/ref_test/test
-	var/list/test_list = list()
-	var/list/test_assoc_list = list()
+	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
+	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 
 /atom/movable/ref_holder/Destroy()
 	test = null

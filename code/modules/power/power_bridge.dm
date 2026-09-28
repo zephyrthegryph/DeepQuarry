@@ -27,9 +27,9 @@
 	/// the ids are numbers, and a plain list would treat them as positions.
 	var/alist/power_regions = alist()
 	/// Areas whose static or one-off loads changed since the last step.
-	var/list/power_dirty_areas = list()
+	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
-	var/list/power_material_cables = list()
+	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
 
 /// The /datum/powernet for region `id`, made on first use.
 /datum/world_service/machines/proc/power_facade(id)

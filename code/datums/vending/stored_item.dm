@@ -42,7 +42,7 @@
 
 	..()
 
-// LIFECYCLE: deletes only the stock still inside the machine (instances handed out stay).
+// ALLOW(lifecycle): deletes only the stock still inside the machine (instances handed out stay).
 /datum/stored_item/Destroy()
 	for(var/atom/movable/product as anything in instances)
 		if(product.loc == stored)

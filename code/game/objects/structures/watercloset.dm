@@ -52,7 +52,7 @@
 	if(trunk)
 		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
 
-// LIFECYCLE: non-basic bins, the teleplumb crystal and flushed objects drop out.
+// ALLOW(lifecycle): non-basic bins, the teleplumb crystal and flushed objects drop out.
 /obj/structure/toilet/Destroy()
 	if(bin)
 		if(bin.type == /obj/item/stock_parts/matter_bin) //Specifically, if this is a basic bin, you dont get it back. Other bins are returned.

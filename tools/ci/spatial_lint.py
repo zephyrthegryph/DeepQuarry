@@ -18,15 +18,15 @@ Four patterns, each counted separately per file:
   - `locate(...) in` -- a locate search over a raw list/contents/loc instead of
     the spatial API's typed helper.
 
-The migration is gradual, so sites are listed per file with a count in
-tools/ci/spatial_allowlist.txt. A file may not exceed its count, and an
-unlisted file may have none. A file below its count is reported so the
-allowlist can be lowered (run with --update).
+The migration is gradual: tools/ci/spatial_baseline.txt holds the ceiling on
+legacy sites, which may fall, never rise. A read that is right as it is carries
+`// ALLOW(spatial): <reason>` on its line or the comment line above it
+(tools/ci/allow_annotations.py) and is not counted.
 
 Usage:
     python tools/ci/spatial_lint.py            # the CI check
     python tools/ci/spatial_lint.py --report   # every site, and totals per pattern
-    python tools/ci/spatial_lint.py --update   # rewrite the allowlist to today's counts
+    python tools/ci/spatial_lint.py --update   # rewrite the ceiling to today's count
 """
 import glob
 import os
@@ -35,9 +35,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
+from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-ALLOWLIST = os.path.join(ROOT, "tools", "ci", "spatial_allowlist.txt")
+BASELINE = os.path.join(ROOT, "tools", "ci", "spatial_baseline.txt")
 
 # Files that implement the ledger/spatial API itself: they're allowed to
 # touch raw contents/loc/locate freely since they're what the lint is
@@ -78,9 +79,13 @@ def is_api_file(rel):
 def scan_file(path):
     rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
     with open(path, encoding="utf-8", errors="replace") as handle:
-        text = code_only(handle.read())
+        raw = handle.read()
+    raw_lines = raw.split("\n")
+    text = code_only(raw)
     sites = []
     for number, line in enumerate(text.split("\n"), 1):
+        if allowed(raw_lines, number, "spatial"):
+            continue
         for kind, pattern in PATTERNS:
             for match in pattern.finditer(line):
                 sites.append((rel, number, kind, match.group(0).strip()))
@@ -99,37 +104,6 @@ def scan():
     return counts, all_sites
 
 
-def read_allowlist():
-    allowed = {}
-    if not os.path.exists(ALLOWLIST):
-        return allowed
-    with open(ALLOWLIST, encoding="utf-8") as handle:
-        for line in handle:
-            line = line.split("#", 1)[0].strip()
-            if not line:
-                continue
-            path, count = line.rsplit(None, 1)
-            allowed[path] = int(count)
-    return allowed
-
-
-def write_allowlist(counts):
-    lines = [
-        "# Legacy raw contents/loc reads: `in X.contents`, implicit `in src`/`in",
-        "# loc`/`in T` loops, `contents.len`/`length(contents)`, `locate() in`",
-        "# (roadmap C11). tools/ci/spatial_lint.py reads this file: a file may not",
-        "# exceed its count, and files not listed may have none. Convert sites to",
-        "# the ledger read API or the spatial API (doc/rewrite/containment.md",
-        "# section 2a) and lower the count; `python tools/ci/spatial_lint.py",
-        "# --update` rewrites it.",
-        "# Total: %d sites in %d files." % (sum(counts.values()), len(counts)),
-    ]
-    for path in sorted(counts):
-        lines.append("%s %d" % (path, counts[path]))
-    with open(ALLOWLIST, "w", encoding="utf-8", newline="\n") as handle:
-        handle.write("\n".join(lines) + "\n")
-
-
 def main():
     args = sys.argv[1:]
     counts, all_sites = scan()
@@ -146,28 +120,20 @@ def main():
         print("Total: %d sites in %d files" % (sum(counts.values()), len(counts)))
         return 0
 
+    total = sum(counts.values())
     if "--update" in args:
-        write_allowlist(counts)
-        print("Wrote %s: %d sites in %d files" % (ALLOWLIST, sum(counts.values()), len(counts)))
+        write_baseline(BASELINE, [
+            "Legacy raw contents/loc reads: `in X.contents`, implicit `in src`/`in loc`/`in T` loops,",
+            "`contents.len`/`length(contents)`, `locate() in` (roadmap C11). tools/ci/spatial_lint.py",
+            "fails when the count rises above this ceiling. Convert sites to the ledger read API or the",
+            "spatial API (doc/rewrite/containment.md section 2a), then lower it with --update.",
+        ], {"raw_reads": total})
+        print("Wrote %s: %d sites in %d files" % (BASELINE, total, len(counts)))
         return 0
 
-    allowed = read_allowlist()
-    failed = False
-    for rel, count in sorted(counts.items()):
-        limit = allowed.get(rel, 0)
-        if count > limit:
-            failed = True
-            print("FAIL: %s has %d raw contents/locate sites, allowlist caps it at %d" % (rel, count, limit))
-    for rel, limit in sorted(allowed.items()):
-        actual = counts.get(rel, 0)
-        if actual < limit:
-            print("INFO: %s dropped to %d sites (allowlist says %d) -- run --update to lower it" % (rel, actual, limit))
-    if failed:
-        print("\nContainment reads must go through the ledger/spatial API (doc/rewrite/containment.md section 2a).")
-        print("Run 'python tools/ci/spatial_lint.py --update' only after actually converting sites, not to paper over new ones.")
-        return 1
-    print("spatial_lint: OK (%d sites in %d files, capped by allowlist)" % (sum(counts.values()), len(counts)))
-    return 0
+    failed = check_ceilings("spatial", {"raw_reads": total}, read_baseline(BASELINE),
+                            "Containment reads go through the ledger/spatial API (doc/rewrite/containment.md section 2a).")
+    return 1 if failed else 0
 
 
 if __name__ == "__main__":

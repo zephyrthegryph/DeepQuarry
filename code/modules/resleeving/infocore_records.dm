@@ -26,7 +26,7 @@
 	var/nif_path
 	var/nif_durability
 	var/list/nif_software
-	var/list/nif_savedata = list()
+	var/list/nif_savedata = list() // ALLOW(instance_list): d: per mind record, passed to the new NIF as its save data
 
 	var/one_time = FALSE
 
@@ -88,8 +88,8 @@
 	var/synthetic
 	var/speciesname
 	var/bodygender
-	var/list/limb_data = list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO)
-	var/list/organ_data = list(O_HEART, O_EYES, O_LUNGS, O_BRAIN)
+	var/list/limb_data = list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO) // ALLOW(instance_list): d: edited in place per instance (4 writers)
+	var/list/organ_data = list(O_HEART, O_EYES, O_LUNGS, O_BRAIN) // ALLOW(instance_list): d: edited in place per instance (6 writers)
 	var/toocomplex
 	var/sizemult
 	var/weight
@@ -103,7 +103,7 @@
 	else if(ishuman(copyfrom))
 		init_from_mob(copyfrom, add_to_db, ckeylock)
 
-// LIFECYCLE: records ask for a hard delete (machines hold them untracked).
+// ALLOW(lifecycle): records ask for a hard delete (machines hold them untracked).
 /datum/transhuman/body_record/Destroy()
 	QDEL_NULL(mydna.dna)
 	QDEL_NULL(mydna)
@@ -217,9 +217,9 @@
 				continue
 		if(islist(vars[A]))
 			var/list/L = orig.vars[A]
-			vars[A] = L.Copy()
+			vars[A] = L.Copy() // ALLOW(api): record copy: every var
 			continue
-		vars[A] = orig.vars[A]
+		vars[A] = orig.vars[A] // ALLOW(api): record copy: every var
 
 /**
  * Spawning a body was once left entirely up to the machine doing it, but bodies are massivley complex

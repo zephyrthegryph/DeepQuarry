@@ -54,7 +54,7 @@
 
 	update()
 
-// LIFECYCLE: lighting engine: the source removes its light from the corners it lit.
+// ALLOW(lifecycle): lighting engine: the source removes its light from the corners it lit.
 /datum/light_source/Destroy(force)
 	remove_lum()
 	if (source_atom)

@@ -22,7 +22,7 @@
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
 
-// LIFECYCLE: hides itself from every client it is shown to.
+// ALLOW(lifecycle): hides itself from every client it is shown to.
 /atom/movable/screen/movable/pic_in_pic/Destroy()
 	for(var/C in shown_to)
 		unshow_to(C)

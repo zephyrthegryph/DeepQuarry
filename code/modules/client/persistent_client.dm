@@ -18,7 +18,7 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 	/// Action datums assigned to this player
 	var/list/datum/action/player_actions
 	/// Tracks client action logging
-	var/list/logging = list()
+	var/list/logging = list() // ALLOW(instance_list): d: one per connected client; logs fill on login
 
 	/// Callbacks invoked when this client logs in again
 	var/list/post_login_callbacks
@@ -45,7 +45,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	GLOB.persistent_clients_by_ckey[ckey] = src
 	join_registries()
 
-// LIFECYCLE: persistent clients refuse deletion.
+// ALLOW(lifecycle): persistent clients refuse deletion.
 /datum/persistent_client/Destroy(force)
 	SHOULD_CALL_PARENT(FALSE)
 	. = QDEL_HINT_LETMELIVE

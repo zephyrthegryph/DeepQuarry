@@ -152,7 +152,7 @@ GLOBAL_VAR(restart_counter)
 		var/abi_error = "FATAL: verdigris library ABI [verdigris_abi || "(none)"] does not match the DM build's VERDIGRIS_ABI [VERDIGRIS_ABI]. Rebuild verdigris.dll and the DM from the same tree (tools/build/build.sh)."
 		log_world(abi_error)
 		world.log << abi_error
-		del(world)
+		del(world) // ALLOW(scheduler): del(world): world shutdown
 		return
 	vg_verdigris_cleanup()
 	vg_heat_reset()

@@ -42,7 +42,7 @@
 
 REF_OWNED(/datum/cogbar, "blank")
 
-// LIFECYCLE: takes its overlay off the user and its image off the user's client.
+// ALLOW(lifecycle): takes its overlay off the user and its image off the user's client.
 /datum/cogbar/Destroy()
 	if(user)
 		SSvis_overlays.remove_vis_overlay(user, user.managed_vis_overlays)

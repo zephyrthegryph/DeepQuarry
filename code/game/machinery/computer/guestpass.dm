@@ -18,14 +18,14 @@
 	return
 
 /obj/item/card/id/guest/GetAccess()
-	if(world.time > expiration_time)
+	if(world.time > expiration_time) // ALLOW(cooldown): guest pass expiry
 		return access
 	else
 		return temp_access
 
 /obj/item/card/id/guest/examine(mob/user)
 	. = ..()
-	if(world.time < expiration_time)
+	if(world.time < expiration_time) // ALLOW(cooldown): guest pass expiry
 		. += span_notice("This pass expires at [worldtime2stationtime(expiration_time)].")
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
@@ -33,7 +33,7 @@
 /obj/item/card/id/guest/read()
 	if(!Adjacent(usr))
 		return //Too far to read
-	if(world.time > expiration_time)
+	if(world.time > expiration_time) // ALLOW(cooldown): guest pass expiry
 		to_chat(usr, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
 		to_chat(usr, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
@@ -83,7 +83,7 @@
 	return ..()
 
 /obj/item/card/id/guest/periodic_step()
-	if(expired == 0 && world.time >= expiration_time)
+	if(expired == 0 && world.time >= expiration_time) // ALLOW(cooldown): guest pass expiry
 		visible_message(span_warning("\The [src] flashes a few times before turning red."))
 		icon_state = "guest-invalid"
 		update_icon()

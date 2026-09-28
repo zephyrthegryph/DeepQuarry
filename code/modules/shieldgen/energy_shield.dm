@@ -62,7 +62,7 @@
 		return ..()
 	return 0
 
-// LIFECYCLE: leaves its generator's segment lists.
+// ALLOW(lifecycle): leaves its generator's segment lists.
 /obj/effect/shield/Destroy()
 	if(can_atmos_pass != ATMOS_PASS_YES)
 		update_nearby_tiles() //Force ZAS update

@@ -8,7 +8,7 @@
 	var/spamcheck = 0
 	var/emagged = 0
 	var/insults = 0
-	var/list/insultmsg = list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!")
+	var/list/insultmsg = list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!") // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
@@ -75,9 +75,9 @@
 	var/broadcast_font = "verdana"
 	var/broadcast_size = 3
 	var/broadcast_color = "#000000" //Black by default.
-	var/list/volume_options = list(2, 3, 4)
-	var/list/font_options = list("times new roman", "times", "verdana", "sans-serif", "serif", "georgia")
-	var/list/color_options= list("#000000", "#ff0000", "#00ff00", "#0000ff")
+	var/list/volume_options = list(2, 3, 4) // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/font_options = list("times new roman", "times", "verdana", "sans-serif", "serif", "georgia") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
+	var/list/color_options= list("#000000", "#ff0000", "#00ff00", "#0000ff") // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 
 	insultmsg = list("HONK?!", "HONK!", "HOOOOOOOONK!", "...!", "HUNK.", "Honk?")
 

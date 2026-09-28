@@ -72,7 +72,7 @@
 	///the component is attached: the source-tracked grant API, revoked in
 	///Destroy(). Every shadekin gets phase shift, regenerate other and create
 	///shade; phase_only and full override this to add or remove ids.
-	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
+	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE) // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	//Misc Vars
 	///Eyecolor
@@ -126,7 +126,7 @@
 
 REF_OWNED_LIST(/datum/component/shadekin, "active_dark_maws")
 
-// LIFECYCLE: revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
+// ALLOW(lifecycle): revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
 /datum/component/shadekin/Destroy(force)
 	if(owner)
 		for(var/ability_id in shadekin_granted_abilities)

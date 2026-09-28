@@ -17,8 +17,8 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 
 /datum/world_service/xenoarch
 	name = "Xenoarch"
-	var/list/artifact_spawning_turfs = list()
-	var/list/digsite_spawning_turfs = list()
+	var/list/artifact_spawning_turfs = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/digsite_spawning_turfs = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
 /datum/world_service/xenoarch/initialize()
 	if(initialized)

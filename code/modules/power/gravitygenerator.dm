@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	. = ..()
 	qdel(src)
 
-// LIFECYCLE: a broken part takes the whole generator down.
+// ALLOW(lifecycle): a broken part takes the whole generator down.
 /obj/machinery/gravity_generator/part/Destroy()
 	if(main_part)
 		qdel(main_part)
@@ -148,7 +148,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	update_list()
 	update_areas()
 
-// LIFECYCLE: gravity goes off on its levels and its parts go with it.
+// ALLOW(lifecycle): gravity goes off on its levels and its parts go with it.
 /obj/machinery/gravity_generator/main/Destroy() // If we somehow get deleted, remove all of our other parts.
 	investigate_log("was destroyed!", "gravity")
 	on = FALSE

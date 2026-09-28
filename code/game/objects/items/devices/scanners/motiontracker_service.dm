@@ -12,9 +12,9 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 	var/max_range = 8
 	var/all_echos_round = 0
 	var/all_pings_round = 0
-	var/list/queued_echo_turfs = list()
-	var/list/currentrun = list()
-	var/list/expended_echos = list()
+	var/list/queued_echo_turfs = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
+	var/list/expended_echos = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
 /datum/world_service/motiontracker/stat_line()
 	var/msg

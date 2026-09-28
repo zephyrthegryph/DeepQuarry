@@ -80,7 +80,7 @@ REF_OWNED(/obj/machinery/pda_multicaster, "soundloop")
 
 /obj/machinery/pda_multicaster/proc/update_PDAs(turn_off)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/pda/pda in contents) // latent-ok: materialized above
+	for(var/obj/item/pda/pda in contents) // ALLOW(latent): materialized above
 		var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger/multicast)
 		if(M)
 			M.toff = turn_off

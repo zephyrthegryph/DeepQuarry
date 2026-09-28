@@ -194,7 +194,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 
 	if(length(clean_zones) <= 1) //Need to clean the oldest one, too.
 		GLOB.rm_controller.dbg("RMC(pnz): Cleaning up oldest zone.")
-		spawn(0) //Detatch it so we can return the new zone for now. // S7 keeps: clean_zone() sleeps between deletions (long loop: a lane with a budget, S10)
+		spawn(0) //Detatch it so we can return the new zone for now. // ALLOW(scheduler): clean_zone() sleeps between deletions (long loop: a lane with a budget, S10)
 			var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()
 			if(ZM_oldest) ZM_oldest.clean_zone()
 

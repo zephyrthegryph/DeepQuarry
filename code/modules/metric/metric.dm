@@ -2,7 +2,7 @@
 // player.
 
 /datum/metric
-	var/list/departments = list(
+	var/list/departments = list( // ALLOW(instance_list): d: edited in place per instance (12 writers)
 		DEPARTMENT_COMMAND,
 		DEPARTMENT_SECURITY,
 		DEPARTMENT_ENGINEERING,

@@ -126,7 +126,7 @@
 	ASSERT(istype(C))
 	src.owner = C
 
-// LIFECYCLE: closes its media window.
+// ALLOW(lifecycle): closes its media window.
 /datum/media_manager/Destroy()
 	if(media_window)
 		media_window.close()

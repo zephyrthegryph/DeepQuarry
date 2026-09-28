@@ -31,7 +31,7 @@
 		list(null, "wM", null, "wM", null, "wM", null, "wM"),
 		list("wM", null, "wM", null, "wM", null, "wM", null)
 	)
-	var/list/current_board = list()
+	var/list/current_board = list() // ALLOW(instance_list): d: board state
 	var/list/valid_moves
 	var/list/selected_figure
 	var/list/possible_jumps

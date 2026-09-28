@@ -1428,7 +1428,7 @@
 	SIGNAL_HANDLER
 	var/mob/living/owner = user
 	if(istype(owner) && owner.vorePanel)
-		INVOKE_ASYNC(owner, TYPE_PROC_REF(/mob/living, insidePanel), owner) // S10b keeps: tgui_interact may block on asset/window setup
+		INVOKE_ASYNC(owner, TYPE_PROC_REF(/mob/living, insidePanel), owner) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 /**
  * Screen object for vore panel
  */

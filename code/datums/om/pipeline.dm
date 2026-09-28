@@ -688,7 +688,7 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		L[w] = 0
 
 /// Sets every stage of `S` idle (TRUE) or awake (FALSE).
-/proc/om_pipe_set_all(datum/om/frame/S, asleep)
+/proc/om_pipe_set_all(datum/om/frame/S, asleep, idle_frames = null)
 	var/list/bits = S.bits
 	var/n = S.plan.n
 	for(var/w in 1 to length(bits))
@@ -698,6 +698,8 @@ GLOBAL_VAR_INIT(om_pipeline_trace, FALSE)
 		for(var/i in 1 to n)
 			bits[OM_PIPE_WORD(i)] |= OM_PIPE_BIT(i)
 		S.asleep = n
+	if(!isnull(idle_frames))
+		S.idle_frames = idle_frames
 
 /// TRUE while stage `stage_type` (a family root or variant) is idle on `E`.
 /proc/om_stage_idle(datum/E, P, stage_type)

@@ -13,7 +13,7 @@
 	var/datum/sun_holder/sun_holder
 
 	var/sun_position = 0 // 0 means midnight, 1 means noon.
-	var/list/sun = list("brightness","color")
+	var/list/sun = list("brightness","color") // ALLOW(instance_list): d: edited in place per instance (2 writers)
 	var/list/expected_z_levels
 
 	var/turf/unsimulated/wall/planetary/planetary_wall_type = /turf/unsimulated/wall/planetary
@@ -55,7 +55,7 @@
 		current_time = current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER)
 	last_step = world.time
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
-	if(sun_last_process <= world.time - sun_process_interval)
+	if(sun_last_process <= world.time - sun_process_interval) // ALLOW(cooldown): sun process interval
 		update_sun()
 	if(needs_work & PLANET_PROCESS_SUN)
 		needs_work &= ~PLANET_PROCESS_SUN

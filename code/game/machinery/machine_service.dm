@@ -23,7 +23,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 
 	/// Machine gas transfers accumulated since the last commit. Rust commits this flat set under
 	/// one publication lock after the pipeline devices have calculated their requested flow.
-	var/list/pending_pump_transfers = list()
+	var/list/pending_pump_transfers = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	/// Cost and cardinality of the last atomic pump commit.
 	var/last_pump_commit_ms = 0
 	/// Independent monotonic wall time and its excess over BYOND active time.

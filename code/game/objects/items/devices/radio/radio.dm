@@ -17,6 +17,7 @@
 	var/b_stat = 0
 	var/broadcasting = FALSE
 	var/listening = TRUE
+	// ALLOW(instance_list): d: radios are given channels on creation
 	var/list/channels = list() //see communications.dm for full list. First channel is a "default" for :h
 	var/subspace_transmission = FALSE
 	var/subspace_switchable = FALSE
@@ -41,7 +42,7 @@
 	var/list/internal_channels
 
 	var/radio_connection_handle
-	var/list/datum/radio_frequency/secure_radio_connections
+	var/list/datum/radio_frequency/secure_radio_connections // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -630,6 +631,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/radio/borg
 	var/myborg_handle // Cyborg which owns this radio. Used for power checks
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"

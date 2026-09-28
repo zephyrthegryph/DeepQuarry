@@ -654,7 +654,7 @@ Further rules:
   `delete_on_death` and `destroy(target, cause)`. A lint bans bare `qdel` in
   normal code.
 - **Legitimate leftover `Destroy()`** is rare: a real consequence outside the
-  object's declared relations. It's justified with `// LIFECYCLE:`, preferably
+  object's declared relations. It's justified with `// ALLOW(lifecycle): <reason>`, preferably
   written as a hook on the other party's relation, and the count is ratcheted.
 
 ## 15. Initialization and startup

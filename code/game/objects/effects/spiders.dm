@@ -84,7 +84,7 @@
 	. = ..()
 	get_light_and_color(parent)
 
-// LIFECYCLE: leaves the implant list of the limb it was laid in.
+// ALLOW(lifecycle): leaves the implant list of the limb it was laid in.
 /obj/effect/spider/eggcluster/Destroy()
 	if(istype(loc, /obj/item/organ/external))
 		var/obj/item/organ/external/O = loc
@@ -133,7 +133,7 @@
 	var/amount_grown = 0
 	var/entry_vent_handle
 	var/travelling_in_vent = 0
-	var/list/grow_as = list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter)
+	var/list/grow_as = list(/mob/living/simple_mob/animal/giant_spider, /mob/living/simple_mob/animal/giant_spider/hunter) // ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
 	var/faction = FACTION_SPIDERS
 
 	var/stunted = FALSE
@@ -292,7 +292,7 @@
 	. = ..()
 	icon_state = pick("cocoon1","cocoon2","cocoon3")
 
-// LIFECYCLE: the cocoon splits open and drops its contents.
+// ALLOW(lifecycle): the cocoon splits open and drops its contents.
 /obj/effect/spider/cocoon/Destroy()
 	src.visible_message(span_warning("\The [src] splits open."))
 	for(var/atom/movable/A in contents)

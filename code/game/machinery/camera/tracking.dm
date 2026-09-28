@@ -98,11 +98,11 @@
 
 // Used to allow the AI is write in mob names/camera name from the CMD line.
 /datum/trackable
-	var/list/names = list()
+	var/list/names = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
 	var/list/namecounts
 	var/list/humans
 	var/list/others
-	var/list/cameras = list()
+	var/list/cameras = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
 
 /mob/living/silicon/ai/proc/trackable_mobs()
 	if(src.stat == 2)

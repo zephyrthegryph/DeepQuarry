@@ -12,7 +12,7 @@ GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
 /datum/world_service/instruments
 	name = "Instruments"
 	/// List of all instrument data, associative id = datum
-	var/list/datum/instrument/instrument_data = list()
+	var/list/datum/instrument/instrument_data = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 	/// Max lines in songs
 	var/musician_maxlines = 600
 	/// Max characters per line in songs
@@ -25,7 +25,7 @@ GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
 	var/current_instrument_channels = 0
 	/// Single cached list for synthesizer instrument ids, so you don't have to have a new list with every synthesizer.
 	var/list/synthesizer_instrument_ids
-	var/list/note_sustain_modes = list(
+	var/list/note_sustain_modes = list( // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 		SUSTAIN_LINEAR,
 		SUSTAIN_EXPONENTIAL,
 	)

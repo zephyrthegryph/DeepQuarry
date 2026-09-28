@@ -18,7 +18,7 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 		om_prompt(src, user, list("message" = "Do you want to build a growplot out of the dirt?", "title" = "Build growplot?", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(growplot_answered))
 
 /turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(mob/user, choice, datum/om/prompt/ask)
-	if(choice != "Yes" || (locate(/obj) in src))
+	if(choice != "Yes" || locate_on(src, /obj))
 		return
 	user.visible_message("[user] starts piling up \the [src]...", "You start piling up \the [src]...")
 	om_do_after(user, 5 SECONDS, src, src, PROC_REF(pile_done))
@@ -32,7 +32,7 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 	icon_state = "dirt0"
 
 /turf/simulated/floor/outdoors/newdirt/proc/pile_done()
-	if(!(locate(/obj) in src))
+	if(!locate_on(src, /obj))
 		new /obj/machinery/portable_atmospherics/hydroponics/soil(src)
 
 /turf/simulated/floor/outdoors/newdirt/get_dig_loot_type(mob/user, obj/item/W)

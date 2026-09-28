@@ -67,7 +67,7 @@
 
 	qdel(src)
 
-// LIFECYCLE: clears the radiation alert it raised on its mob.
+// ALLOW(lifecycle): clears the radiation alert it raised on its mob.
 /datum/component/radioactive_exposure/Destroy(force)
 	var/mob/living/carbon/human/human_parent = parent
 	human_parent.clear_alert("radioactive_area")

@@ -154,7 +154,7 @@
 
 REF_OWNED(/obj/item/storage, "hud")
 
-// LIFECYCLE: closes on everyone looking into it and leaves its wearer.
+// ALLOW(lifecycle): closes on everyone looking into it and leaves its wearer.
 /obj/item/storage/Destroy()
 	close_all()
 	for(var/mob/M as anything in is_seeing?.Copy())
@@ -185,7 +185,7 @@ REF_OWNED(/obj/item/storage, "hud")
 /// declared generator, its would-be cost).
 /obj/item/storage/proc/calibrate_size()
 	var/total_storage_space = 0
-	for(var/obj/item/I in contents) // latent-ok: declared contents counted below
+	for(var/obj/item/I in contents) // ALLOW(latent): declared contents counted below
 		total_storage_space += I.get_storage_cost()
 	var/list/generator = latent_declared ? starts_with : null
 	for(var/path in generator)
@@ -692,7 +692,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 REF_OWNED(/datum/storage_hud, "closer")
 REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 
-// LIFECYCLE: shown items lose their count text; the global hud count drops.
+// ALLOW(lifecycle): shown items lose their count text; the global hud count drops.
 /datum/storage_hud/Destroy()
 	GLOB.storage_hud_count--
 	for(var/obj/item/I as anything in shown)
@@ -947,7 +947,7 @@ REF_OWNED_LIST(/datum/storage_hud, list("catchers", "backdrop"))
 	// Runs at Initialize for fitted kits: read contents, don't make a ledger.
 	var/list/items = list()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/I in contents) // latent-ok: materialized above
+	for(var/obj/item/I in contents) // ALLOW(latent): materialized above
 		items += I
 	storage_slots = length(items)
 

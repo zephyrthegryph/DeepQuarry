@@ -311,7 +311,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	return OM_CALLEE_SLEPT
 
 /proc/om_trampoline(list/state, datum/E, proc_ref, list/call_args)
-	set waitfor = FALSE // S10b keeps: OM sleep-guard trampoline (detects callees that sleep)
+	set waitfor = FALSE // ALLOW(scheduler): OM sleep-guard trampoline (detects callees that sleep)
 	try
 		if(E)
 			state[2] = om_invoke(E, proc_ref, call_args)
@@ -368,7 +368,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 //
 // SStimer's TIMER_UNIQUE and TIMER_OVERRIDE, as the key they really were: the owner, the
 // proc and its arguments. No extra state: the owner's timer list is the index. These live on
-// the scheduler (base_proc_lint: no new global API taking a datum); call them through the
+// the scheduler; call them through the
 // om_after_unique() / om_after_replace() / om_cancel_calls() / om_timer_count() macros.
 
 /// The position in rec.timers of a pending timer calling `proc_ref` with `call_args`, or 0.

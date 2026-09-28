@@ -4,7 +4,7 @@
 	/// Assigned closet
 	VAR_PROTECTED/obj/structure/closet/assigned_closet = null
 	/// List of possible exits
-	var/list/connections = list()
+	var/list/connections = list() // ALLOW(instance_list): d: the component exists because of its connections
 	/// Exit sound that it'll make upon exiting
 	var/exit_sound
 	// How far things gets thrown

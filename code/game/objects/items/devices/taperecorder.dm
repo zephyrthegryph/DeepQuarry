@@ -376,7 +376,7 @@ REF_OWNED(/obj/item/taperecorder, "mytape")
 	var/max_capacity = 1800
 	var/used_capacity = 0
 	var/list/storedinfo
-	var/list/timestamp = new/list()
+	var/list/timestamp = new/list() // ALLOW(instance_list): d: index-parallel with storedinfo
 	var/ruined = 0
 
 /obj/item/rectape/update_icon()

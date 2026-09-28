@@ -9,6 +9,7 @@ code\game\dna\genes\goon_powers.dm
 	desc = "This spell inflicts a set of mutations and disabilities upon the target."
 
 	var/disabilities = 0 //bits
+	// ALLOW(instance_list): d: every genetic spell defines its mutations
 	var/list/mutations = list() //mutation strings
 	duration = 100 //deciseconds
 

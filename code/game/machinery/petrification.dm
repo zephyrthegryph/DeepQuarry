@@ -177,7 +177,7 @@
 		if("material","identifier","adjective")
 			om_prompt(src, user, list("kind" = "text", "message" = "What should the [option] be?", "title" = "Statue [option]", "default" = vars[option], "max_length" = MAX_NAME_LEN, "requires" = PROMPT_USABLE, "data" = list("option" = option)), PROC_REF(statue_text_entered))
 		if("able_to_unpetrify", "discard_clothes")
-			vars[option] = !vars[option]
+			vars[option] = !vars[option] // ALLOW(api): TGUI settings keyed by option name
 		if("target")
 			var/list/targets = get_viable_targets()
 			if (!length(targets))
@@ -209,7 +209,7 @@
 							input += "es"
 						else
 							input += "s"
-	vars[option] = input
+	vars[option] = input // ALLOW(api): TGUI settings keyed by option name
 
 /obj/machinery/petrification/proc/petrify_target_chosen(mob/user, selected, datum/om/prompt/ask)
 	var/list/targets = ask.get("targets")

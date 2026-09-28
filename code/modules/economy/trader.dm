@@ -12,6 +12,7 @@
 	var/list/bank					//Anything accepted by "money" or "item" mode will be marked down here
 	var/coinbalance = 0					//only for use with coin mode - when you put a curious coin in, it adds the coins value to this number
 	var/list/start_products	//Type paths entered here will spawn inside the trader and add themselves to the products list.
+	// ALLOW(instance_list): d: the trader's live stock
 	var/list/products = list()			//Anything in this list will be listed for sale
 	var/list/prices			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
 	var/list/multiple			//Enter a type path with an associated number, and the trader will have however many of that type to sell as the number you entered

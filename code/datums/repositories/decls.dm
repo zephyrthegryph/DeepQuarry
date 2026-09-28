@@ -63,7 +63,7 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-// LIFECYCLE: decls are immutable singletons and refuse deletion.
+// ALLOW(lifecycle): decls are immutable singletons and refuse deletion.
 /datum/decl/Destroy()
 	SHOULD_CALL_PARENT(FALSE)
 	stack_trace("Prevented attempt to delete a decl instance: [log_info_line(src)]")

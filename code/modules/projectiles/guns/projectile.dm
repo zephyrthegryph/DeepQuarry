@@ -17,6 +17,7 @@
 	//For SINGLE_CASING or SPEEDLOADER guns
 	var/max_shells = 0			//the number of casings that will fit inside
 	var/ammo_type = null		//the type of ammo that the gun comes preloaded with
+	// ALLOW(instance_list): d: guns spawn loaded; the chamber list is indexed everywhere
 	var/list/loaded = list()	//stored ammo
 
 	//For MAGAZINE guns
@@ -666,7 +667,7 @@ REF_OWNED(/obj/item/gun/projectile, "ammo_provider")
 		to_chat(user, span_notice("You start loading \the [src]."))
 		var/list/rounds = list()
 		storage.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/ammo_casing/ammo in storage.contents) // latent-ok: materialized above
+		for(var/obj/item/ammo_casing/ammo in storage.contents) // ALLOW(latent): materialized above
 			if(caliber == ammo.caliber)
 				rounds += ammo
 		om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)

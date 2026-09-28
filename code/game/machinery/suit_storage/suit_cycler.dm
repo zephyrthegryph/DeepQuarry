@@ -22,7 +22,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	/// Departments that the cycler can paint suits to look like. Null assumes all except specially excluded ones.
 	/// No idea why these particular suits are the default cycler's options.
-	var/list/limit_departments = list(
+	var/list/limit_departments = list( // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 		/datum/suit_cycler_choice/department/eng/standard,
 		/datum/suit_cycler_choice/department/crg/mining,
 		/datum/suit_cycler_choice/department/med/standard,
@@ -161,7 +161,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		to_chat(user, span_danger("The suit cycler is locked."))
 		return TRUE
 
-	if(contents.len > 0 || has_latent()) // latent-ok: latent entries checked
+	if(contents.len > 0 || has_latent()) // ALLOW(latent): latent entries checked
 		to_chat(user, span_danger("There is no room inside the cycler for [grabbed.name]."))
 		return TRUE
 

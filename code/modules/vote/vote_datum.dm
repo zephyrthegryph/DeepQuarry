@@ -134,7 +134,7 @@
 		handle_result(result)
 		qdel(src)
 
-// LIFECYCLE: SSvote forgets it.
+// ALLOW(lifecycle): SSvote forgets it.
 /datum/vote/Destroy(force)
 	if(SSvote.active_vote == src)
 		SSvote.active_vote = null

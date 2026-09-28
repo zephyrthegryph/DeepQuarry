@@ -129,14 +129,14 @@
 	for(var/key in holder_keys)
 		for(var/var_name in table[key])
 			if(holder.vars[var_name] == AM)
-				holder.vars[var_name] = null
+				holder.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 
 /// Phase 3, for declared spill vars (REF_SPILL/REF_SPILL_LIST): each thing
 /// still inside `AM` goes to its drop location. When that location is itself
 /// being destroyed in the same batch, the thing is simply deleted with it.
 /// The spill hook: a thing that lands refreshes its icon, since its sprite may
 /// show the holder's state (a recharger's cell mid-charge), as a hand eject does.
-/// It is the existing update_icon(), not a new base-type proc (base_proc_lint.py).
+/// It is the existing update_icon(), not a new base-type proc.
 /proc/dq_lifecycle_spill_declared(atom/movable/AM)
 	var/list/table = dq_lifecycle_link_table(AM)
 	var/list/spill = table["spill"]
@@ -149,7 +149,7 @@
 		var/atom/movable/thing = AM.vars[var_name]
 		if(!ismovable(thing) || thing.loc != AM || QDELETED(thing))
 			continue
-		AM.vars[var_name] = null
+		AM.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		if(doomed)
 			qdel(thing)
 		else
@@ -183,7 +183,7 @@
 	var/list/owned = table["owned"]
 	for(var/var_name in owned)
 		var/datum/child = D.vars[var_name]
-		D.vars[var_name] = null
+		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		// A typed var may still hold a type path (never materialized) or a list.
 		if(isdatum(child))
 			qdel(child)
@@ -213,14 +213,14 @@
 		var/datum/partner = D.vars[our_var]
 		if(batch && partner && batch.doomed[partner])
 			// Both ends doomed: the partner's own clear drops its side.
-			D.vars[our_var] = null
+			D.vars[our_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 			batch.edges_dropped++
 			continue
 		link_clear(D, our_var)
 	var/list/backlist = table["backlist"]
 	for(var/our_var in backlist)
 		var/datum/owner = D.vars[our_var]
-		D.vars[our_var] = null
+		D.vars[our_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 		if(batch && owner && batch.doomed[owner])
 			batch.edges_dropped++
 			continue // the owner's list goes with it
@@ -237,7 +237,7 @@
 	if(!table)
 		return
 	for(var/var_name in table["owned"])
-		D.vars[var_name] = null
+		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	for(var/var_name in table["pair"])
 		if(D.vars[var_name])
 			link_clear(D, var_name)
@@ -248,8 +248,8 @@
 /proc/link_set(datum/A, var_a, datum/B, var_b)
 	link_clear(A, var_a)
 	link_clear(B, var_b)
-	A.vars[var_a] = B
-	B.vars[var_b] = A
+	A.vars[var_a] = B // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	B.vars[var_b] = A // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 
 /// Clears a REF_PAIR from `A`'s side: nulls `A.vars[var_a]`, and, if it
 /// pointed somewhere, finds that object's declared reciprocal var (from its
@@ -257,13 +257,13 @@
 /// null pair.
 /proc/link_clear(datum/A, var_a)
 	var/datum/other = A.vars[var_a]
-	A.vars[var_a] = null
+	A.vars[var_a] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	if(!other)
 		return
 	var/list/other_pairs = dq_lifecycle_link_table(other)["pair"]
 	for(var/their_var in other_pairs)
 		if(other.vars[their_var] == A)
-			other.vars[their_var] = null
+			other.vars[their_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 			return
 
 /// Adds `member` to `owner.vars[list_var]` and sets `member.vars[owner_var] = owner`,
@@ -271,18 +271,18 @@
 /// types must declare `owner_var` in declared_backlist_vars(): member's
 /// entry is `owner_var -> list_var`.
 /proc/link_backlist_add(datum/member, owner_var, datum/owner, list_var)
-	member.vars[owner_var] = owner
+	member.vars[owner_var] = owner // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	var/list/L = owner.vars[list_var]
 	if(!L)
 		L = list()
-		owner.vars[list_var] = L
+		owner.vars[list_var] = L // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	L |= member
 
 /// Removes `member` from the back-list side, without waiting for either
 /// object's destruction.
 /proc/link_backlist_remove(datum/member, owner_var)
 	var/datum/owner = member.vars[owner_var]
-	member.vars[owner_var] = null
+	member.vars[owner_var] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	if(!owner)
 		return
 	// owner_var is member's var name, not owner's -- the list var lives on

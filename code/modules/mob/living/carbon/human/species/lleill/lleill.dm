@@ -63,7 +63,7 @@
 	poison_type = null //Not harmed by phoron.
 	water_breather = TRUE
 
-	var/list/valid_transform_species = list(
+	var/list/valid_transform_species = list( // ALLOW(instance_list): kept: shared per species type in share_type_tables()
 		SPECIES_HUMAN, SPECIES_UNATHI, SPECIES_TAJARAN, SPECIES_SKRELL,
 		SPECIES_DIONA, SPECIES_TESHARI, SPECIES_MONKEY, SPECIES_SERGAL,
 		SPECIES_AKULA, SPECIES_NEVREAN, SPECIES_ZORREN_HIGH,
@@ -132,7 +132,7 @@
 										/datum/power/lleill/alchemy,
 										/datum/power/lleill/beastform)
 
-	var/list/lleill_ability_datums = list()
+	var/list/lleill_ability_datums = list() // ALLOW(instance_list): d: New() fills it with this instance's power datums
 
 // Shapeshifters have some behaviour that doesn't play well with this species so I have taken the main parts needed for here.
 

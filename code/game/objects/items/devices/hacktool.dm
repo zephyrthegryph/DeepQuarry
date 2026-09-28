@@ -25,7 +25,7 @@
 
 REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 
-// LIFECYCLE: stops observing its known targets' destruction.
+// ALLOW(lifecycle): stops observing its known targets' destruction.
 /obj/item/multitool/hacktool/Destroy()
 	for(var/atom/target as anything in known_targets)
 		target.unregister(OBSERVER_EVENT_DESTROY, src)

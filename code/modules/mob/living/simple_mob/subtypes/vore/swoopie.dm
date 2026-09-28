@@ -245,7 +245,7 @@
 					return TRUE
 				var/foundstuff = 0 //Check if we actually found anything in the bin...
 				D.latent_materialize_all() // a walk needs real things (C5)
-				for(var/atom/movable/AM in D) // latent-ok: materialized above
+				for(var/atom/movable/AM in D) // ALLOW(latent): materialized above
 					if(istype(AM, /mob/living))
 						var/mob/living/M = AM
 						if(!can_spontaneous_vore(src, M))

@@ -74,7 +74,7 @@
 	deactivate_string = "Disable Visor"
 
 	var/datum/rig_vision/vision
-	var/list/vision_modes = list(
+	var/list/vision_modes = list( // ALLOW(instance_list): d: replaced per instance at runtime (1 assignments)
 		/datum/rig_vision/nvg,
 		/datum/rig_vision/thermal,
 		/datum/rig_vision/meson

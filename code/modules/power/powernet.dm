@@ -14,7 +14,7 @@
 	/// Rust region id (0 for a detached test network).
 	var/region_id = 0
 	/// Power machines bound to this network.
-	var/list/nodes = list()
+	var/list/nodes = list() // ALLOW(instance_list): M3 power (Rust): powernet.dm was rewritten on master; not edited here
 
 	var/avail = 0       // supply this step (W)
 	var/load = 0        // delivered this step (W)
@@ -35,7 +35,7 @@
 	// Cables of an ordinary region never enter this path.
 	var/material_candidate = FALSE
 	/// Member cables, rebuilt with the material graph.
-	var/list/cables = list()
+	var/list/cables = list() // ALLOW(instance_list): d: powernets exist because cables joined them; never empty
 	var/material_cache_dirty = TRUE
 	var/material_flow_dirty = TRUE
 	var/datum/material_power_graph/material_graph

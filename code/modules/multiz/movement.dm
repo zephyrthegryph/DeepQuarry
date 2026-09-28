@@ -927,7 +927,7 @@
 	var/mob/living/L = task.actor
 	var/turf/above_mob = task.above_mob
 	var/fall_after = task.fall_after
-	if(!L || world.time <= fall_after)
+	if(!L || world.time <= fall_after) // ALLOW(cooldown): fall scheduling
 		return
 	L.forceMove(above_mob)
 	L.visible_message(message = span_infoplain(span_bold("[L]") + " falls off " + span_bold("\The [src]")), self_message = span_danger("You slipped off " + span_bold("\The [src]")), \
@@ -1074,7 +1074,7 @@
 	var/turf/front_of_us = task.front_of_us
 	var/turf/below_wall = task.below_wall
 	var/fall_after = task.fall_after
-	if(world.time <= fall_after)
+	if(world.time <= fall_after) // ALLOW(cooldown): fall scheduling
 		return
 	src.forceMove(front_of_us)
 	src.visible_message(message = span_infoplain(span_bold("[src]") + " falls off " + span_bold("\The [below_wall]")), \

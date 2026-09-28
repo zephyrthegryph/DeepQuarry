@@ -46,7 +46,7 @@
 	var/datum/callback/still_valid
 
 /datum/body_support/proc/is_valid()
-	if(expires_at && world.time >= expires_at)
+	if(expires_at && world.time >= expires_at) // ALLOW(cooldown): physiology factor expiry
 		return FALSE
 	if(source && !om_resolve(source))
 		return FALSE

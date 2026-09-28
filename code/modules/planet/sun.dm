@@ -60,7 +60,7 @@
 
 /// One colour of the rainbow every 0.3 s until `end`, then the original light.
 /datum/sun_holder/proc/rainbow_step(end, list/colors, col_index, original_brightness, original_color)
-	if(world.time >= end)
+	if(world.time >= end) // ALLOW(cooldown): sun transition end time
 		update_brightness(original_brightness)
 		update_color(original_color)
 		return

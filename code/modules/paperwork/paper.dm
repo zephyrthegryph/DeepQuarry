@@ -29,7 +29,9 @@
 	var/free_space = MAX_PAPER_MESSAGE_LEN
 	var/list/stamped
 	var/list/ico      //Icons and
+	// ALLOW(instance_list): d: stamp and photo offsets indexed in step with ico
 	var/list/offset_x[0] //offsets stored for later
+	// ALLOW(instance_list): d: stamp and photo offsets indexed in step with ico
 	var/list/offset_y[0] //usage by the photocopier
 	var/rigged = 0
 	COOLDOWN_DECLARE(honk_cooldown)

@@ -166,7 +166,7 @@
 
 REF_OWNED(/obj/item/clothing/head/pilot, "pilot_hud")
 
-// LIFECYCLE: its HUD images are detached.
+// ALLOW(lifecycle): its HUD images are detached.
 /obj/item/clothing/head/pilot/Destroy()
 	for(var/image/I as anything in raw_images)
 		I.loc = null

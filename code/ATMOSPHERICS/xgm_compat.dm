@@ -278,17 +278,17 @@
 // =====================================================================
 
 /datum/xgm_gas_data
-	var/list/name = list()
-	var/list/specific_heat = list()
-	var/list/molar_mass = list()
-	var/list/gases = list()
-	var/list/tile_overlay = list()
-	var/list/molar_specific_volume = list()
-	var/list/flags = list()
-	var/list/overlay_limit = list()
+	var/list/name = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/specific_heat = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/molar_mass = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/gases = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/tile_overlay = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/molar_specific_volume = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/flags = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
+	var/list/overlay_limit = list() // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
 	/// Rust turf visuals (update_visuals) reads GLOB.gas_data.overlays[GAS_ID + 1][vis_factor].
 	/// Positional by numeric gas ID; a null entry means the gas has no overlay.
-	var/list/overlays = new /list(GAS_ID_COUNT)
+	var/list/overlays = new /list(GAS_ID_COUNT) // ALLOW(instance_list): d: gas data singleton (atmos compat), filled at init
 
 // Real molar masses (kg/mol) for the LINDA-only /datum/gas subtypes that
 // don't have a matching /datum/decl/xgm_gas in code/defines/gases.dm. Real

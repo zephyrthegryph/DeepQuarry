@@ -14,7 +14,7 @@
 	See Also:
 	- <scriptError>
 */
-	var/list/errors = list()
+	var/list/errors = list() // ALLOW(instance_list): d: scanner state (generic name, too many ambiguous call sites)
 /*
 	Var: warnings
 	A list of non-fatal problems in the source code found by the scanner.
@@ -63,6 +63,7 @@
 	Default Value:
 	Whitespace
 */
+	// ALLOW(instance_list): d: edited in place per instance (1 writers)
 	var/list/ignore = list(" ", "\t", "\n") //Don't add tokens for whitespace
 /*
 	Variable: end_stmt

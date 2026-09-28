@@ -26,7 +26,7 @@
 	if(trunk)
 		SEND_SIGNAL(src, COMSIG_DISPOSAL_LINK, trunk)
 
-// LIFECYCLE: it unlinks from its trunk.
+// ALLOW(lifecycle): it unlinks from its trunk.
 /obj/structure/disposaloutlet/Destroy()
 	SEND_SIGNAL(src, COMSIG_DISPOSAL_UNLINK) //Just to be safe.
 	target = null
@@ -79,7 +79,7 @@
 	SIGNAL_HANDLER
 
 	flick("outlet-open", src)
-	if((start_eject + 30) < world.time)
+	if((start_eject + 30) < world.time) // ALLOW(cooldown): eject progress
 		start_eject = world.time
 		playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)

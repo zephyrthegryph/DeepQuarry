@@ -9,7 +9,7 @@
 	. = ..()
 	AddComponent(/datum/component/holographic_nature)
 
-// LIFECYCLE: its bellies go back to the AI.
+// ALLOW(lifecycle): its bellies go back to the AI.
 /obj/effect/overlay/aiholo/Destroy()
 	for(var/obj/belly/B in src)
 		B.forceMove(master)

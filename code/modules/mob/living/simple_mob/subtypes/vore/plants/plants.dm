@@ -35,7 +35,7 @@
 	vore_default_mode = DM_SELECT
 	vore_pounce_maxhealth = 1000
 	vore_bump_emote = "encloses on"
-	var/list/eaten_mobs = list()
+	var/list/eaten_mobs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 /mob/living/simple_mob/vore/mantrap/load_default_bellies()
 	. = ..()

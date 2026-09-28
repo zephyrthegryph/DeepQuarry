@@ -28,7 +28,7 @@
 		return
 	process_weaver_silk()
 
-// LIFECYCLE: the owner loses the weaver verbs.
+// ALLOW(lifecycle): the owner loses the weaver verbs.
 /datum/component/weaver/Destroy(force = FALSE)
 	remove_verb(owner, /mob/living/proc/weaver_control_panel)
 	if(ishuman(parent))

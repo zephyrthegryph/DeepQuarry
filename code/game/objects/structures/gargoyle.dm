@@ -20,7 +20,7 @@
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
-	var/list/tail_lower_dirs = list(NORTH, SOUTH)
+	var/list/tail_lower_dirs = list(NORTH, SOUTH) // ALLOW(instance_list): d: edited in place per instance (1 writers)
 	var/image/tail_image
 
 	var/can_revert = TRUE
@@ -133,7 +133,7 @@
 
 	PERIODIC_START(src, PERIODIC_SECOND)
 
-// LIFECYCLE: the petrified gargoyle reverts, or crumbles.
+// ALLOW(lifecycle): the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/Destroy()
 	var/mob/living/carbon/human/gargoyle = om_resolve(WR_gargoyle)
 	if(!gargoyle)

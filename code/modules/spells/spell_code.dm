@@ -26,6 +26,7 @@
 	var/atom/movable/holder			//where the spell is. Normally the user, can be an item
 	var/duration = 0 //how long the spell lasts
 
+	// ALLOW(instance_list): d: edited in place per instance (1 writers)
 	var/list/spell_levels = list(Sp_SPEED = 0, Sp_POWER = 0) //the current spell levels - total spell levels can be obtained by just adding the two values
 	var/static/list/level_max = list(Sp_TOTAL = 4, Sp_SPEED = 4, Sp_POWER = 0) //maximum possible levels in each category. Total does cover both.
 	var/cooldown_reduc = 0		//If set, defines how much charge_max drops by every speed upgrade

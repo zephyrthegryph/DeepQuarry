@@ -26,7 +26,7 @@
 
 	var/obj/item/cell/cell
 	var/state = MECHA_OPERATING
-	var/list/log = list()
+	var/list/log = list() // ALLOW(instance_list): d: mech log (generic name, too many ambiguous call sites)
 	var/last_message = 0
 	var/add_req_access = 1
 	var/maint_access = 1
@@ -63,11 +63,13 @@
 	var/internal_damage_minimum = 15	//At least this much damage to trigger some real bad hurt.
 	var/internal_damage = 0 			//Contains bitflags
 
+	// ALLOW(instance_list): d: access list passed to check_access(); an empty list and null differ for some checks
 	var/list/operation_req_access = list()								//Required access level for mecha operation
 	var/static/list/internals_req_access = list(ACCESS_ENGINE,ACCESS_ROBOTICS)	//Required access level to open cell compartment
 
 	var/wreckage
 
+	// ALLOW(instance_list): d: mech equipment list; many call sites index and edit it directly
 	var/list/equipment = list()		//This lists holds what stuff you bolted onto your baby ride
 	var/obj/item/mecha_parts/mecha_equipment/selected
 	var/max_equip = 2
@@ -94,14 +96,14 @@
 	var/list/starting_equipment = null	// List containing starting tools.
 
 // Mech Components, similar to Cyborg, but Bigger.
-	var/list/internal_components = list(
+	var/list/internal_components = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
 		MECH_HULL = null,
 		MECH_ACTUATOR = null,
 		MECH_ARMOR = null,
 		MECH_GAS = null,
 		MECH_ELECTRIC = null
 		)
-	var/list/starting_components = list(
+	var/list/starting_components = list( // ALLOW(instance_list): c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
 		/obj/item/mecha_parts/component/hull,
 		/obj/item/mecha_parts/component/actuator,
 		/obj/item/mecha_parts/component/armor,
@@ -315,7 +317,7 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 REF_OWNED(/obj/mecha, "minihud")
 REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
-// LIFECYCLE: the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
+// ALLOW(lifecycle): the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
 /obj/mecha/Destroy()
 	src.go_out()
 	for(var/mob/M in slot_contents()) //Be Extra Sure

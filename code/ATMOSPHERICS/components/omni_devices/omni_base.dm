@@ -23,7 +23,7 @@
 	var/overlays_error[2]
 	var/underlays_current[4]
 
-	var/list/ports = new()
+	var/list/ports = new() // ALLOW(instance_list): atmos area (M1a): omni pipe device ports; listed in memory_lists_audit.md, not edited here
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()

@@ -30,7 +30,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		return
 	offset_tunnel()
 
-// LIFECYCLE: the tunnel collapses and spits out the micros inside it.
+// ALLOW(lifecycle): the tunnel collapses and spits out the micros inside it.
 /obj/structure/micro_tunnel/Destroy()
 	visible_message(span_warning("\The [src] collapses!"))
 	for(var/mob/thing in src.contents)

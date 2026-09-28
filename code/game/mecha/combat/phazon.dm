@@ -37,7 +37,7 @@
 	cloak_possible = FALSE // Cloaking is too much for something like this, and is moderately useless anyway.
 	phasing_possible = TRUE
 	switch_dmg_type_possible = TRUE
-	var/list/inherent_damage_absorption = list("brute"=0.7,"fire"=0.7,"bullet"=0.7,"laser"=0.7,"energy"=0.7,"bomb"=0.7)
+	var/list/inherent_damage_absorption = list("brute"=0.7,"fire"=0.7,"bullet"=0.7,"laser"=0.7,"energy"=0.7,"bomb"=0.7) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 
 /obj/mecha/combat/phazon/equipped/Initialize(mapload)
 	starting_equipment = list(

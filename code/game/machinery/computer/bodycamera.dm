@@ -40,7 +40,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 
 REF_OWNED(/obj/machinery/computer/security/telescreen/bodycamera, list("bpinboard", "bradio"))
 
-// LIFECYCLE: stops showing its feed.
+// ALLOW(lifecycle): stops showing its feed.
 /obj/machinery/computer/security/telescreen/bodycamera/Destroy()
 	if(showing)
 		stop_showing()

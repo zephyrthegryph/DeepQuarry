@@ -14,7 +14,7 @@ Only physical attributes are copied.
 	icon_dead = "939_dead"
 	pixel_x = -15
 	//Lets write down our base stats so we can revert easily
-	var/list/base_values = list()
+	var/list/base_values = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	var/flesh_mimic = FALSE //are we currently posing as something else?
 

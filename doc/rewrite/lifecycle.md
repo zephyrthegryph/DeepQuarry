@@ -63,7 +63,7 @@ place the ordering hazards now scattered through code comments are encoded:
 | 4 | **Links.** Clear every declared relationship (§4): owned children deleted, pairs' other sides nulled, back-list memberships removed. | links framework | ~400 null/QDEL_NULL/pair bodies |
 | 5 | **Teardown.** Stop every processor (START_PROCESSING records its subsystem on the datum); timers, reactor, components, signals and tgui (already in `/datum/Destroy`); `client.screen` release; OM timers and task steps owned by the datum (`om_teardown_rest`); arguments naming it are handles and stop resolving; grants auto-revoke (source lifetime). | core | ~150 stop/deltimer/unregister/close_uis bodies |
 | 6 | **Effects.** Declared `destroy_effects` data: message, sound, debris type, neighbour update. | effects | ~60 effect bodies |
-| 7 | **Leftover `Destroy()`.** Only domain consequences remain. Linted: an override must justify itself with a `// LIFECYCLE:` reason, and the count is ratcheted. | type | — |
+| 7 | **Leftover `Destroy()`.** Only domain consequences remain. Linted: an override must justify itself with a `// ALLOW(lifecycle): <reason>` annotation, and the count is ratcheted. | type | — |
 | 8 | **Scrub.** Null outbound declared owned and pair vars to break reference cycles, then hand the datum to GC. Nothing is parked in nullspace pending deletion. | links | cycle-breaking null-only bodies |
 
 **No nullspace parking** (DQ Medical requirement): the transaction never moves
@@ -139,7 +139,7 @@ enforces it.
   a registry, or is keyed by `om_handle()`. `tools/ci/declared_refs_lint.py` finds
   these writes syntactically (an object is `src`, `usr`, a `new` expression or a
   name the proc declares object-typed) and ratchets them per file in
-  `tools/ci/object_keyed_lists_allowlist.txt`.
+  the `object_keyed` ceiling in `tools/ci/declared_refs_baseline.txt` (a justified write carries `// ALLOW(object_keyed_lists): <reason>`).
 - **LC-refs: cache rules.** A `declared_cache_vars()` entry without a
   `CACHE_ON_*` rule fails the lint outright (no ratchet), and the core reports one
   at runtime when the type first joins the OM (`om_cache_scan()`). The rule is read

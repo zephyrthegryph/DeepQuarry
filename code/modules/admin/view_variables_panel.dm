@@ -28,7 +28,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	..()
 	owner = owner_client
 
-// LIFECYCLE: clears the client's cached panel (clients aren't datums).
+// ALLOW(lifecycle): clears the client's cached panel (clients aren't datums).
 /datum/view_variables_panel/Destroy(force, ...)
 	if(owner)
 		owner.dq_vv_panel = null

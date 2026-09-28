@@ -23,7 +23,7 @@
 	var/build_type = null //used when directly applied to a turf
 	var/uses_charge = 0
 	var/list/charge_costs = null
-	var/list/datum/matter_synth/synths = null
+	var/list/datum/matter_synth/synths = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/no_variants = TRUE // Determines whether the item should update it's sprites based on amount.
 
 	var/pass_color = FALSE // Will the item pass its own color var to the created item? Dyed cloth, wood, etc.

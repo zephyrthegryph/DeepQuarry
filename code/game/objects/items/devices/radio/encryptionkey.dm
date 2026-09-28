@@ -9,7 +9,7 @@
 	var/translate_binary = 0
 	var/translate_hive = 0
 	var/syndie = 0
-	var/list/channels = list()
+	var/list/channels = list() // ALLOW(instance_list): d: every key defines its channels
 
 /obj/item/encryptionkey/get_interactions()
 	var/static/list/L = list(INTERACT_ITEM(null, PROC_REF(interaction_item)))

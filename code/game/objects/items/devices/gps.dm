@@ -95,7 +95,7 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 
 REF_OWNED(/obj/item/gps, "compass")
 
-// LIFECYCLE: the GPS leaves its holder's tracking.
+// ALLOW(lifecycle): the GPS leaves its holder's tracking.
 /obj/item/gps/Destroy()
 	is_in_processing_list = FALSE
 	update_holder()

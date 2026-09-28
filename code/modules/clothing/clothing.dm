@@ -65,7 +65,7 @@
 // itself if the control module is removed, destroyed, or its owner dies, so a
 // deployed component is never left locked onto the wearer. See rig_self_detach().
 /obj/item/clothing
-	var/obj/item/rig/master_rig
+	var/obj/item/rig/master_rig // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 // The self-detach primitive. Gets a deployed rig piece off its wearer and somewhere
 // safe: retracted back into the control module if it still exists, otherwise dropped
@@ -290,9 +290,11 @@
 	siemens_coefficient = 0.9
 	blood_sprite_state = "bloodyhands"
 	var/wired = 0
-	var/obj/item/cell/cell = 0
+	var/obj/item/cell/cell = 0 // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/fingerprint_chance = 0					//How likely the glove is to let fingerprints through
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/accessory/ring = null	//Covered ring
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/gloves/gloves = null	//Undergloves. Used for gauntlets.
 	var/glove_level = 2							//What "layer" the glove is on
 	var/overgloves = 0							//Used by gauntlets and arm_guards
@@ -381,6 +383,7 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 		return
 
 /obj/item/clothing/gloves
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/datum/unarmed_attack/special_attack = null //do the gloves have a special unarmed attack?
 	var/special_attack_type = null
 
@@ -429,7 +432,7 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 	light_cone_y_offset = 11
 
 	var/light_overlay = "helmet_light"
-	var/image/helmet_light
+	var/image/helmet_light // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
@@ -592,7 +595,7 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 	blood_sprite_state = "shoeblood"
 
 	var/can_hold_knife = 0
-	var/obj/item/holding
+	var/obj/item/holding // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	var/shoes_under_pants = 0
 
@@ -600,6 +603,7 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 	var/snow_speed = 0		//Speed boost/decrease on snow, lower/negative values mean more speed
 
 	var/step_volume_mod = 1	//How quiet or loud footsteps in this shoe are
+	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
@@ -887,7 +891,7 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 
 	//Hood stuff. See hooded.dm for more info. This should be expanded so all suits can have hoods if desired.
 	//Currently only used by /obj/item/clothing/suit/storage/hooded.
-	var/obj/item/clothing/head/hood
+	var/obj/item/clothing/head/hood // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/hoodtype = null //so the chaplain hoodie or other hoodies can override this
 	var/hood_up = FALSE
 	var/has_hood_sprite = FALSE
@@ -1082,8 +1086,8 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 		|ACCESSORY_SLOT_DEPT\
 		|ACCESSORY_SLOT_OVER)
 
-	var/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi'
-	var/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi'
+	var/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
@@ -1323,7 +1327,7 @@ REF_OWNED(/obj/item/clothing/suit, "hood")
 
 REF_SPILL_LIST(/obj/item/clothing, "contents")
 
-// LIFECYCLE: its integrated circuit goes with it.
+// ALLOW(lifecycle): its integrated circuit goes with it.
 /obj/item/clothing/Destroy()
 	if(IC)
 		IC.clothing = null

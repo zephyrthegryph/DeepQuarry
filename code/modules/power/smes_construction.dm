@@ -108,7 +108,7 @@
 	charge = 0
 	should_be_mapped = 1
 
-// LIFECYCLE: RCON consoles rescan without it.
+// ALLOW(lifecycle): RCON consoles rescan without it.
 /obj/machinery/power/smes/buildable/Destroy()
 	for(var/datum/tgui_module/rcon/R in world)
 		R.FindDevices()

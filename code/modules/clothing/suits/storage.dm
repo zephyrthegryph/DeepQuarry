@@ -1,6 +1,6 @@
 /obj/item/clothing/suit/storage
 	name = DEVELOPER_WARNING_NAME
-	var/obj/item/storage/internal/pockets
+	var/obj/item/storage/internal/pockets // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 
 /obj/item/clothing/suit/storage/Initialize(mapload)
 	. = ..()

@@ -1,6 +1,0 @@
-# DCS core allowlist (tools/ci/dcs_lints.py): path prefixes whose DCS use is not counted.
-# The tg-inherited DCS machinery itself; everything else migrates to OM events/watches.
-code/datums/components/_component.dm  # component core
-code/datums/elements/_element.dm      # element core
-code/datums/signals.dm                # signal core
-code/controllers/subsystem/dcs.dm     # SSdcs

@@ -192,7 +192,7 @@
 		return TRUE
 	return ..()
 
-// LIFECYCLE: a destroyed chunk empties its stomach and kills the back half.
+// ALLOW(lifecycle): a destroyed chunk empties its stomach and kills the back half.
 /mob/living/simple_mob/animal/space/space_worm/Destroy() // If a chunk is destroyed, kill the back half.
 	DumpStomach()
 	if(previous)

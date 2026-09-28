@@ -420,7 +420,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 		//buttons that are fun for exactly you and nobody else.
 		if("corgie")
 			for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_MOBS))
-				spawn(0) // S7 keeps: admin verb (allowlist)
+				spawn(0) // ALLOW(scheduler): admin verb (allowlist)
 					H.corgize()
 
 		if("monkey")

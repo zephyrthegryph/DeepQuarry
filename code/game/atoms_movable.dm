@@ -9,7 +9,7 @@
 	var/tmp/moving_diagonally
 	var/tmp/move_speed = 10
 	var/tmp/l_move_time = 1
-	var/datum/thrownthing/throwing
+	var/datum/thrownthing/throwing // ALLOW(state_ref): running: set only mid-throw
 	var/tmp/throw_source_handle
 	var/throw_speed = 2
 	var/throw_range = 7
@@ -22,7 +22,7 @@
 	var/icon_expected_width = 32
 	var/old_x = 0
 	var/old_y = 0
-	var/datum/riding/riding_datum = null
+	var/datum/riding/riding_datum = null // ALLOW(state_ref): relationship: riding setup while buckled
 	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 

@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/playing_cards.dmi'
 	description_info = "Alt click to shuffle, Ctrl click to deal, Ctrl+Shift click to deal multiple."
-	var/list/cards = list()
+	var/list/cards = list() // ALLOW(instance_list): d: a deck always holds cards
 	var/cooldown = 0 // to prevent spam shuffle
 
 /obj/item/deck/holder
@@ -394,7 +394,7 @@
 	icon_state = "card_pack"
 	icon = 'icons/obj/playing_cards.dmi'
 	w_class = ITEMSIZE_TINY
-	var/list/cards = list()
+	var/list/cards = list() // ALLOW(instance_list): d: a card pack always holds cards
 	var/parentdeck = null // This variable is added here so that card pack dependent card can be mixed together by defining a "parentdeck" for them
 	drop_sound = 'sound/items/drop/paper.ogg'
 	pickup_sound = 'sound/items/pickup/paper.ogg'
@@ -427,7 +427,7 @@
 	w_class = ITEMSIZE_TINY
 
 	var/concealed = 0
-	var/list/cards = list()
+	var/list/cards = list() // ALLOW(instance_list): d: a hand of cards always holds cards
 	var/parentdeck = null
 
 /obj/item/hand/verb/discard()

@@ -540,7 +540,7 @@ Returns the result of Execute() / warn_execute(): TRUE on success, FALSE on erro
 /// polls, library). New code uses om_io(E, /datum/om/io/sql, ...) and never waits.
 /datum/db_query/proc/sync()
 	while(status < DB_QUERY_FINISHED)
-		stoplag() // S10b keeps: legacy inline-result SQL wait (admin/login/UI callers not yet on om_io)
+		stoplag() // ALLOW(scheduler): legacy inline-result SQL wait (admin/login/UI callers not yet on om_io)
 
 /datum/db_query/process(seconds_per_tick)
 	if(status >= DB_QUERY_FINISHED)

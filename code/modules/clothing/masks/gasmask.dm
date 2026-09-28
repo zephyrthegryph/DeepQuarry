@@ -11,7 +11,7 @@
 	permeability_coefficient = 0.01
 	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
-	var/list/filtered_gases = list(GAS_PHORON, GAS_N2O)
+	var/list/filtered_gases = list(GAS_PHORON, GAS_N2O) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
 	armor_spec = "bio=75"
 	pickup_sound = 'sound/items/pickup/rubber.ogg'
 	resistance_flags = FIRE_PROOF

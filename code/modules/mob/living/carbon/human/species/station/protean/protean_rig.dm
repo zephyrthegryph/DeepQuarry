@@ -100,7 +100,7 @@
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
-// LIFECYCLE: the protean core spills out; a dormant one repairs on the body.
+// ALLOW(lifecycle): the protean core spills out; a dormant one repairs on the body.
 /obj/item/rig/protean/Destroy()
 	stop_soaking()
 	if(myprotean)

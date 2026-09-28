@@ -337,13 +337,13 @@ GLOBAL_LIST_EMPTY(radial_menus)
 				return
 			else
 				COOLDOWN_START(src, next_check, check_delay)
-		stoplag(1) // S10b keeps: waits on the player's radial choice (prompt)
+		stoplag(1) // ALLOW(scheduler): waits on the player's radial choice (prompt)
 
 /// Phase 1: take the menu off the user's screen while its holder image (owned) still exists.
 /datum/radial_menu/lifecycle_unbind()
 	hide()
 
-// LIFECYCLE: a menu drops its choice lists, whose keys are the offered atoms.
+// ALLOW(lifecycle): a menu drops its choice lists, whose keys are the offered atoms.
 /datum/radial_menu/Destroy()
 	Reset()
 	. = ..()

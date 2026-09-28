@@ -290,7 +290,7 @@
 
 REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
-// LIFECYCLE: ghosts inside are let out.
+// ALLOW(lifecycle): ghosts inside are let out.
 /obj/belly/Destroy()
 	for(var/mob/observer/G in src)
 		G.forceMove(get_turf(src))

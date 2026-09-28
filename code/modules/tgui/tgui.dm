@@ -46,7 +46,7 @@
 	/// The Parent UI
 	var/datum/tgui/parent_ui
 	/// Children of this UI
-	var/list/children = list()
+	var/list/children = list() // ALLOW(instance_list): d: tgui window tree; many call sites
 	/// Any partial packets that we have received from TGUI, waiting to be sent
 	var/partial_packets
 	/// If the window should be closed with other windows when requested

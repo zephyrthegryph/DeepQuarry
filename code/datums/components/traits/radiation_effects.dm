@@ -120,7 +120,7 @@
 	if(toony)
 		src.toony = toony
 
-// LIFECYCLE: removes the control-panel verb and the radiation glow filter.
+// ALLOW(lifecycle): removes the control-panel verb and the radiation glow filter.
 /datum/component/radiation_effects/Destroy(force)
 	var/atom/movable/parent_movable = parent
 	if(show_panel)

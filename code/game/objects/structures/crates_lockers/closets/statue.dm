@@ -69,7 +69,7 @@
 			M.injure(INJURY_BLUNT, original_int - get_integrity(), null, src)
 		M.reset_perspective() // Fixes a blackscreen flicker
 
-// LIFECYCLE: the statue's mob is released unmuted and unregistered.
+// ALLOW(lifecycle): the statue's mob is released unmuted and unregistered.
 /obj/structure/closet/statue/Destroy()
 	// Release the mob properly (unmuted, unregistered) before the base
 	// Destroy() spills the interior.

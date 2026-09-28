@@ -27,7 +27,7 @@
 		remove_verb(H, power_verbs)
 	return ..()
 
-// LIFECYCLE: the protean's rig forgets its protean.
+// ALLOW(lifecycle): the protean's rig forgets its protean.
 /datum/component/forms/protean/Destroy(force)
 	if(rig?.myprotean == parent)
 		rig.myprotean = null

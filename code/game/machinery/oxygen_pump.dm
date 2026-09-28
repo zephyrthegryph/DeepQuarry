@@ -26,7 +26,7 @@
 
 REF_OWNED(/obj/machinery/oxygen_pump, list("tank", "contained"))
 
-// LIFECYCLE: the mask retracts from its breather.
+// ALLOW(lifecycle): the mask retracts from its breather.
 /obj/machinery/oxygen_pump/Destroy()
 	if(breather())
 		breather().internal = null

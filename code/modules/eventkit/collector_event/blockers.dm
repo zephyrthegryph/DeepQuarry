@@ -41,7 +41,7 @@
 	)
 
 	//what tools we need
-	var/list/active_repair_steps = list()
+	var/list/active_repair_steps = list() // ALLOW(instance_list): d: event prop repair state
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
 

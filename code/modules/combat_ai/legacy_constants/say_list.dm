@@ -21,6 +21,7 @@
 // silently dropping earlier ones).
 
 /datum/say_list
+	// ALLOW(instance_list): d: every say list defines its lines
 	var/list/speak = list()				// Things the mob might say if it talks while idle.
 	var/list/emote_hear		// Hearable emotes it might perform
 	var/list/emote_see			// Unlike speak_emote, the list of things in this variable only show by themselves with no spoken text. IE: Ian barks, Ian yaps

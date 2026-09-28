@@ -771,7 +771,7 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 		add_verb(src, /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring)
 	teppi_setup()
 
-// LIFECYCLE: the population cap counts it out.
+// ALLOW(lifecycle): the population cap counts it out.
 /mob/living/simple_mob/vore/alienanimals/teppi/Destroy()
 	GLOB.teppi_count --
 	friend_zone = null

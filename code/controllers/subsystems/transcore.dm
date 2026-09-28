@@ -205,11 +205,13 @@ SUBSYSTEM_DEF(transcore)
 	db.core_dump(disk=disk)
 
 /datum/transcore_db
+	// ALLOW(instance_list): d: one per transcore database (a handful); re-sorted on every write
 	var/list/datum/transhuman/mind_record/backed_up = list()	// All known mind records, indexed by MR.mindname/mind.name
 	var/list/datum/transhuman/mind_record/has_left		// Why do we even have this?
+	// ALLOW(instance_list): d: one per transcore database (a handful); re-sorted on every write
 	var/list/datum/transhuman/body_record/body_scans = list()	// All known body records, indexed by BR.mydna.name
 	/// All OPERATING backup implants that are being ticked, as OM handles (a deleted one is dropped on its next tick).
-	var/list/implants = list()
+	var/list/implants = list() // ALLOW(instance_list): d: one per transcore database (a handful)
 
 	var/core_dumped = FALSE
 	var/key // Key for this DB

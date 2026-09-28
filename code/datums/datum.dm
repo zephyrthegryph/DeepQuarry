@@ -87,7 +87,7 @@
  *
  * Returns [QDEL_HINT_QUEUE]
  */
-// LIFECYCLE: the base: timers, reactor, components, signals and tgui.
+// ALLOW(lifecycle): the base: timers, reactor, components, signals and tgui.
 /datum/proc/Destroy(force = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)

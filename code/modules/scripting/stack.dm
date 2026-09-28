@@ -1,5 +1,5 @@
 /datum/stack
-	var/list/items=new
+	var/list/items=new // ALLOW(instance_list): d: stack datum contents
 /datum/stack/proc/Push(value)
 	items+=value
 

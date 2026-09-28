@@ -117,7 +117,7 @@
 		if(istype(container, /obj/machinery))
 			var/obj/machinery/machine = container
 			machine.latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/O in ((machine.contents - (machine.component_parts || list())) - machine.circuit)) // latent-ok: materialized above
+			for(var/obj/O in ((machine.contents - (machine.component_parts || list())) - machine.circuit)) // ALLOW(latent): materialized above
 				if(istype(O,/obj/item/reagent_containers/food/snacks/grown))
 					continue // Fruit is handled in check_fruit().
 				var/found = FALSE
@@ -171,7 +171,7 @@
 	if(istype(container, /obj/machinery))
 		var/obj/machinery/machine = container
 		machine.latent_materialize_all() // a walk needs real things (C5)
-		for (var/obj/O in ((machine.contents-result_obj - (machine.component_parts || list())) - machine.circuit)) // latent-ok: materialized above
+		for (var/obj/O in ((machine.contents-result_obj - (machine.component_parts || list())) - machine.circuit)) // ALLOW(latent): materialized above
 			O.reagents.trans_to_obj(result_obj, O.reagents.total_volume)
 			qdel(O)
 	else

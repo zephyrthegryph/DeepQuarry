@@ -72,7 +72,7 @@ GLOBAL_LIST_EMPTY(tank_gauge_cache)
 
 REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 
-// LIFECYCLE: a tank in a transfer valve leaves the valve.
+// ALLOW(lifecycle): a tank in a transfer valve leaves the valve.
 /obj/item/tank/Destroy()
 	if(istype(loc, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TTV = loc

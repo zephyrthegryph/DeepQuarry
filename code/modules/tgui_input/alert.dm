@@ -32,9 +32,9 @@
 	// Client does NOT have tgui_input on: Returns regular input
 	if(!user.read_preference(/datum/preference/toggle/tgui_input_mode) || strict_byond)
 		if(length(buttons) == 2)
-			return alert(user, message, title, buttons[1], buttons[2]) // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+			return alert(user, message, title, buttons[1], buttons[2]) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 		if(length(buttons) == 3)
-			return alert(user, message, title, buttons[1], buttons[2], buttons[3]) // S10 keeps: the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
+			return alert(user, message, title, buttons[1], buttons[2], buttons[3]) // ALLOW(scheduler): the blocking prompt API itself (the non-tgui fallback om_prompt never uses)
 
 	var/datum/tgui_alert/alert = new(user, message, title, buttons, timeout, autofocus, ui_state)
 	alert.tgui_interact(user)
@@ -86,7 +86,7 @@
  */
 /datum/tgui_alert/proc/wait()
 	while (!choice && !closed && !QDELETED(src))
-		stoplag(1)
+		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
 /datum/tgui_alert/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

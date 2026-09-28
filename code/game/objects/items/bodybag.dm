@@ -115,7 +115,7 @@
 	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
 		if(!ishuman(usr))	return 0
 		if(opened)	return 0
-		if(contents.len || has_latent())	return 0 // latent-ok: latent entries checked
+		if(contents.len || has_latent())	return 0 // ALLOW(latent): latent entries checked
 		visible_message("[usr] folds up the [src.name]")
 		var/folded = new item_path(get_turf(src))
 		om_qdel_after(src, 0)
@@ -129,7 +129,7 @@
 
 /obj/structure/closet/body_bag/proc/get_occupants()
 	var/list/occupants = list()
-	for(var/mob/living/carbon/human/H in contents) // latent-ok: mobs are never latent
+	for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
 		occupants += H
 	return occupants
 
@@ -255,7 +255,7 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 		. += span_info("You peer into \the [src].")
 		if(syringe)
 			. += span_info("It has a syringe added to it.")
-		for(var/mob/living/L in contents) // latent-ok: mobs are never latent
+		for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
 			. += L.examine(user)
 
 /obj/structure/closet/body_bag/cryobag/attackby(obj/item/W, mob/user)
@@ -264,7 +264,7 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 	else //Allows the bag to respond to a health analyzer by analyzing the mob inside without needing to open it.
 		if(istype(W,/obj/item/healthanalyzer))
 			var/obj/item/healthanalyzer/analyzer = W
-			for(var/mob/living/L in contents) // latent-ok: mobs are never latent
+			for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
 				analyzer.attack(L,user)
 
 		else if(istype(W,/obj/item/reagent_containers/syringe))
@@ -276,7 +276,7 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 				user.unEquip(syringe)
 				src.syringe = syringe
 				syringe.moveToNullspace()
-				for(var/mob/living/carbon/human/H in contents) // latent-ok: mobs are never latent
+				for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
 					inject_occupant(H)
 					break
 

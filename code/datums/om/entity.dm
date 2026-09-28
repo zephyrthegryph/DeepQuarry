@@ -20,10 +20,10 @@
 	var/started = FALSE
 	var/torn_down = FALSE
 	/// Attached behaviours, sorted by id (= run order), with parallel lists.
-	var/list/att = list()
-	var/list/att_pend = list()
-	var/list/att_ring = list()
-	var/list/att_state = list()
+	var/list/att = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/att_pend = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/att_ring = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/list/att_state = list() // ALLOW(instance_list): baseline when CI was wired (2026-09-26); convert or give a real reason
 	/// Bumped whenever att changes shape (attach, detach), so loops over att re-find their
 	/// position only when a hook actually reshaped it.
 	var/att_ver = 0
