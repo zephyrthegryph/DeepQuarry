@@ -96,7 +96,7 @@
 		var/mob/living/carbon/human/H = A
 		H.expose_contagion(base_disease)
 /*
-/mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/aggressive/macrophage/do_special_attack(atom/A, stance)
 	. = TRUE
 	ai_busy_begin()
 	do_windup_animation(A, 20)

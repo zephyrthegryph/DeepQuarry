@@ -46,9 +46,9 @@
 		if(prob(25))
 			L.injure(INJURY_PAIN, leech, source = src)
 
-/mob/living/simple_mob/humanoid/cultist/magus/rift/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/cultist/magus/rift/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets

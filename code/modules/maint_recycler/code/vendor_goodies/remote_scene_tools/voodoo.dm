@@ -9,7 +9,6 @@
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_state = "voodoo_doll_inactive"
 	icon_root = "voodoo_doll"
-	description_info = "The Doll acts as a remote scene tool - any sort of emotes or subtles that the wearer does will go DIRECTLY to the necklace! It's vague, so use it how you want in RP! Just remember bystander consent!"
 
 	replacementType = /obj/item/remote_scene_tool/voodoo_necklace
 
@@ -50,7 +49,6 @@
 	icon_state = "necklace_inactive"
 	icon_root = "necklace"
 	slot_flags = SLOT_MASK
-	description_info = "The necklace and the associated doll act as remote scene tools - any sort of emotes or subtles that the wearer does will go DIRECTLY to the other! It's vague, so use it how you want in RP! Just remember bystander consent!"
 	replacementType = /obj/item/remote_scene_tool/voodoo_doll
 
 /obj/item/storage/box/remote_scene_tools/voodoo

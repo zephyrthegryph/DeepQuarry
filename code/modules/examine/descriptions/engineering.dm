@@ -7,17 +7,6 @@
 	description_antag = "This can be emagged to unlock it.  It will cause the APC to have a blue error screen. \
 	Wires can be pulsed remotely with a signaler attached to it.  A powersink will also drain any APCs connected to the same wire the powersink is on."
 
-/obj/item/inflatable
-	description_info = "Inflate by using it in your hand.  The inflatable barrier will inflate on your tile.  To deflate it, use the 'deflate' verb.  \
-	You can also inflate this on an adjacent tile by clicking the tile."
-
-/obj/structure/inflatable
-	description_info = "To remove these safely, use the 'deflate' verb, or alt-click on it.  Hitting these with any objects will probably puncture and break it forever."
-
-/obj/structure/inflatable/door
-	description_info = "Click the door to open or close it.  It only stops air while closed.<br>\
-	To remove these safely, use the 'deflate' verb.  Hitting these with any objects will probably puncture and break it forever."
-
 /obj/machinery/door/get_description_interaction()
 	var/list/results = list()
 	if((get_integrity() < max_integrity) && !(stat & BROKEN))

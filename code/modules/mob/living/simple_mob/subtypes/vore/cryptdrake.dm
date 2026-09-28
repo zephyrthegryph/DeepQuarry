@@ -97,7 +97,7 @@
 		"The constant, rhythmic kneading and massaging starts to take its toll along with the muggy heat, making you feel weaker and weaker!",
 		"The drake happily wanders around while digesting its meal, almost like it is trying to show off the hanging gut you've given it. Not like it made much of a difference on his already borderline obese form anyway~")
 
-/mob/living/simple_mob/vore/cryptdrake/do_special_attack(atom/A)	//Mostly copied from hunter.dm
+/mob/living/simple_mob/vore/cryptdrake/do_special_attack(atom/A, stance)	//Mostly copied from hunter.dm
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A

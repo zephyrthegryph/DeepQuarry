@@ -16,8 +16,6 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	silicon_use = ROBOT_USE_HAND_ADJACENT
 	name = "base loot pile"
 	desc = "If you can read me, this is bugged"
-	description_info = "This can be searched by clicking on it and waiting a few seconds.  You might find valuable treasures or worthless junk. \
-	These can only searched each once per player."
 	icon = 'icons/obj/loot_piles.dmi'
 	icon_state = "randompile"
 	density = FALSE

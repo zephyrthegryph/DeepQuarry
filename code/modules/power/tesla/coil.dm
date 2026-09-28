@@ -154,11 +154,8 @@
 /datum/interaction/machine_hand/tesla_coil_buckle_grabbed
 	id = "tesla_coil_buckle_grabbed"
 	name = "Buckle"
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/power/tesla_coil/proc/actor_is_grabbing, null))
+	stance = I_GRAB
 	effect = /obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed
-
-/obj/machinery/power/tesla_coil/proc/actor_is_grabbing(mob/actor, atom/target, obj/item/held)
-	return IS_GRABBING(actor)
 
 /obj/machinery/power/tesla_coil/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
 	return user_buckle_mob(user?.pulling_target(), user) ? TRUE : FALSE
@@ -372,11 +369,8 @@
 /datum/interaction/machine_hand/grounding_rod_buckle_grabbed
 	id = "grounding_rod_buckle_grabbed"
 	name = "Buckle"
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/power/grounding_rod/proc/actor_is_grabbing, null))
+	stance = I_GRAB
 	effect = /obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed
-
-/obj/machinery/power/grounding_rod/proc/actor_is_grabbing(mob/actor, atom/target, obj/item/held)
-	return IS_GRABBING(actor)
 
 /obj/machinery/power/grounding_rod/proc/interaction_buckle_grabbed(mob/user, obj/item/held, datum/interaction/interaction)
 	return user_buckle_mob(user?.pulling_target(), user) ? TRUE : FALSE

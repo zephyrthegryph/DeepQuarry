@@ -208,9 +208,9 @@
 		return TRUE
 	return ..()
 
-/obj/item/gun/projectile/automatic/z8/Fire(atom/target, mob/living/user, params, pointblank=0, reflex=0)
+/obj/item/gun/projectile/automatic/z8/Fire(atom/target, mob/living/user, params, pointblank=0, reflex=0, stance = I_HURT)
 	if(use_launcher)
-		launcher.Fire(target, user, params, pointblank, reflex)
+		launcher.Fire(target, user, params, pointblank, reflex, stance)
 		if(!launcher.chambered())
 			switch_firemodes(user) //switch back automatically
 	else

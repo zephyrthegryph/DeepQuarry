@@ -37,7 +37,8 @@
 	holstered = null
 	name = initial(name)
 
-/obj/item/clothing/accessory/holster/proc/unholster(mob/user)
+/// Draws the holstered item; `stance` I_HURT draws it ready to fire.
+/obj/item/clothing/accessory/holster/proc/unholster(mob/user, stance = I_HELP)
 	if(!holstered)
 		return
 
@@ -57,7 +58,7 @@
 					return
 		// end
 		var/sound_vol = 25
-		if(IS_HARMING(user))
+		if(stance == I_HURT)
 			sound_vol = 50
 			user.visible_message(
 				span_danger("[user] draws \the [holstered], ready to go!"),
@@ -79,16 +80,16 @@
 
 //YW change start
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(holster_draw_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Draw", PROC_REF(holster_draw_hand)), \
 	INTERACT_ITEM(null, PROC_REF(holster_item)), \
 	INTERACT_VERB("Holster", PROC_REF(holster_quick_holster_verb), REQ_IN_INVENTORY), \
 )
 
 /// Old attack_hand: draw from an attached holster in combat mode.
 /obj/item/clothing/accessory/holster/proc/holster_draw_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (IS_HARMING(user) && has_suit() && (slot & SLOT_HOLSTER ))	//if we are part of a suit and are using harm intent
+	if (has_suit() && (slot & SLOT_HOLSTER ))	//if we are part of a suit
 		if (holstered)
-			unholster(user)
+			unholster(user, interaction.stance)
 		return TRUE
 	return FALSE
 //YW change end
@@ -119,7 +120,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 			return
 		H.holster(W, user)
 	else
-		H.unholster(user)
+		H.unholster(user, interaction.stance)
 
 /obj/item/clothing/accessory/holster/armpit
 	name = "armpit holster"
@@ -238,7 +239,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	if(has_suit())
 		has_suit().update_clothing_icon()
 
-/obj/item/clothing/accessory/holster/machete/rapier/unholster(obj/item/I, mob/living/user)
+/obj/item/clothing/accessory/holster/machete/rapier/unholster(mob/user, stance = I_HELP)
 	..()
 	occupied()
 	if(has_suit())

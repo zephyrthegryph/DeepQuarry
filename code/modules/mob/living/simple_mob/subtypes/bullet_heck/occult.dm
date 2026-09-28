@@ -44,7 +44,7 @@
 	icon_living = "bloodguardian"
 	specialattackprojectile = /obj/item/projectile/energy/blood_bullet
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/occult/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/occult/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,2)
 	switch(attackcycle)
 		if(1)

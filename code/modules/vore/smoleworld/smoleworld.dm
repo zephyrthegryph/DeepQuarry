@@ -77,23 +77,22 @@
 	make_rotatable()
 
 EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(smoletrack_dismantle_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Take apart", PROC_REF(smoletrack_dismantle_hand)), \
 	INTERACT_VERB("Use Color Pieces", PROC_REF(smoletrack_verb_color)), \
 	INTERACT_VERB("Take Road Apart", PROC_REF(smoletrack_verb_dismantle)), \
 )
 
-/// Old attack_hand: a disarming touch takes the piece apart. It never reached the parent touch.
+/// Old attack_hand, disarm: take the piece apart.
 /obj/structure/smoletrack/proc/smoletrack_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(IS_DISARMING(user))
-		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
-			return
-		to_chat(user, span_notice("[src] was dismantaled into bricks."))
-		playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
-		var/turf/simulated/floor/F = get_turf(src)
-		if(istype(F))
-			new /obj/item/stack/material/smolebricks(F)
-		qdel(src)
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+		return
+	to_chat(user, span_notice("[src] was dismantaled into bricks."))
+	playsound(src, 'sound/items/smolesmallbuild.ogg', 50, 1, -1, volume_channel = VOLUME_CHANNEL_MASTER)
+	var/turf/simulated/floor/F = get_turf(src)
+	if(istype(F))
+		new /obj/item/stack/material/smolebricks(F)
+	qdel(src)
 
 /obj/structure/smoletrack/ghosts_can_use_rotate_verbs()
 	return CONFIG_GET(flag/ghost_interaction)
@@ -173,7 +172,10 @@ EXTEND_INTERACTIONS(/obj/structure/smoletrack, \
 
 //makes it so buildings can be dismaintaled or GodZilla style attacked
 EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(smolebuilding_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Knock on", PROC_REF(smolebuilding_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Take apart", PROC_REF(smolebuilding_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Knock on", PROC_REF(smolebuilding_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Bang on", PROC_REF(smolebuilding_hand)), \
 	INTERACT_ITEM(null, PROC_REF(smolebuilding_item)), \
 	INTERACT_VERB("Use Color Pieces", PROC_REF(smolebuilding_verb_color)), \
 	INTERACT_VERB("Take Building Apart", PROC_REF(smolebuilding_verb_dismantle)), \
@@ -182,7 +184,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 /// Old attack_hand: dismantle (disarm), bang on (harm) or knock on the building.
 /obj/structure/smolebuilding/proc/smolebuilding_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(IS_DISARMING(user))
+	if(interaction.stance == I_DISARM)
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
 		to_chat(user, span_notice("[src] was dismantaled into bricks."))
@@ -192,7 +194,7 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 			new /obj/item/stack/material/smolebricks(loc)
 		qdel(src)
 
-	else if (IS_HARMING(user))
+	else if (interaction.stance == I_HURT)
 
 		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
 			return
@@ -235,20 +237,19 @@ EXTEND_INTERACTIONS(/obj/structure/smolebuilding, \
 	return
 
 //get material from ruins
-EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED(null, PROC_REF(smoleruins_dismantle_hand)), 	INTERACT_ITEM(null, PROC_REF(smoleruins_item)), )
+EXTEND_INTERACTIONS(/obj/structure/smoleruins, 	INTERACT_HAND_UNGATED_AS(I_DISARM, "Take apart", PROC_REF(smoleruins_dismantle_hand)), 	INTERACT_ITEM(null, PROC_REF(smoleruins_item)), )
 
-/// Old attack_hand: a disarming touch takes the ruins apart. It never reached the parent touch.
+/// Old attack_hand, disarm: take the ruins apart.
 /obj/structure/smoleruins/proc/smoleruins_dismantle_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(IS_DISARMING(user))
-		if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
-			return
-		to_chat(user, span_notice("[src] was dismantaled into bricks."))
-		playsound(src, 'sound/items/smolelargeunbuild.ogg', 50, 1, volume_channel = VOLUME_CHANNEL_MASTER)
-		if(!isnull(loc))
-			new /obj/item/stack/material/smolebricks(loc)
-			new /obj/item/stack/material/smolebricks(loc)
-		qdel(src)
+	if(has_trait(user, TRAIT_AMBIENT_PEST_MOB) || (isobserver(user) && !CONFIG_GET(flag/ghost_interaction)))
+		return
+	to_chat(user, span_notice("[src] was dismantaled into bricks."))
+	playsound(src, 'sound/items/smolelargeunbuild.ogg', 50, 1, volume_channel = VOLUME_CHANNEL_MASTER)
+	if(!isnull(loc))
+		new /obj/item/stack/material/smolebricks(loc)
+		new /obj/item/stack/material/smolebricks(loc)
+	qdel(src)
 
 //Ruins go asplode same as buildings if attacked
 /// Old attackby: any hit with an item blows the ruins apart.

@@ -142,20 +142,20 @@
 		else continue
 		side = "right"
 
-/obj/item/reagent_containers/food/drinks/glass2/afterattack(obj/target, mob/user, proximity)
-	if(IS_HARMING(user)) //We only want splashing to be done if they are on harm intent.
+/obj/item/reagent_containers/food/drinks/glass2/afterattack(obj/target, mob/user, proximity, click_parameters, stance = I_HURT)
+	if(stance == I_HURT) //We only want splashing to be done in combat mode.
 		if(!is_open_container() || !proximity)
 			return TRUE
 		if(standard_splash_mob(user, target))
 			return TRUE
-		if(reagents && reagents.total_volume) //They are on harm intent, aka wanting to spill it.
+		if(reagents && reagents.total_volume) //Combat mode, aka wanting to spill it.
 			to_chat(user, span_notice("You splash the solution onto [target]."))
 			reagents.splash(target, reagents.total_volume)
 			return TRUE
 	..()
 
-/obj/item/reagent_containers/food/drinks/glass2/standard_feed_mob(mob/user, mob/target)
-	if(afterattack(target, user)) //Check to see if harm intent & splash.
-		return
-	else
-		..() //If they're splashed, no need to do anything else.
+/// In combat mode the glass isn't fed to anyone: afterattack splashes it instead.
+/obj/item/reagent_containers/food/drinks/glass2/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(stance == I_HURT && !(force && !(flags & NOBLUDGEON)))
+		return ITEM_INTERACT_FAILURE
+	return ..()

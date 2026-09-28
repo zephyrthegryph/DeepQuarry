@@ -33,7 +33,7 @@
 			return u_attack
 	return null
 
-/mob/living/carbon/human/unarmed_touch(mob/living/M as mob)
+/mob/living/carbon/human/unarmed_touch(mob/living/M, stance = I_HELP)
 	var/mob/living/carbon/human/H = M
 
 	if(is_incorporeal())
@@ -79,7 +79,7 @@
 			if(D.spread_flags & DISEASE_SPREAD_CONTACT)
 				expose_contagion(D)
 
-	switch(M.use_stance())
+	switch(stance)
 		//VARS:  (Placed here for your convenience, because it's confusing)
 		// H = THE PERSON DOING THE ATTACK, BUT DEFINED AS A HUMAN. (This is for human specific interactions, such as CPR.)
 		// M = THE PERSON DOING THE ATTACK, AGAIN, DEFINED AS A MOB
@@ -299,15 +299,15 @@
 		to_chat(M, span_danger("They are missing that limb!"))
 		return FALSE
 
-	switch(use_stance())
-		if(I_HELP)
-			// We didn't see this coming, so we get the full blow
-			rand_damage = 5
-			accurate = 1
-		if(I_HURT, I_GRAB)
-			// We're in a fighting stance, there's a chance we block
-			if(canmove && src!=H && prob(20))
-				block = 1
+	// Our own posture (state): out of combat mode we didn't see this coming.
+	if(!combat_mode)
+		// We didn't see this coming, so we get the full blow
+		rand_damage = 5
+		accurate = 1
+	else
+		// We're in a fighting stance, there's a chance we block
+		if(canmove && src!=H && prob(20))
+			block = 1
 
 	if(LAZYLEN(M?.grabbed_by_list()))
 		// Someone got a good grip on them, they won't be able to do much damage

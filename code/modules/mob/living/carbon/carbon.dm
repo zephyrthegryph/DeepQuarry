@@ -78,7 +78,7 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 				N.show_message(span_bolddanger("[M] bursts out of [src]!"), 2)
 	..()
 
-/mob/living/carbon/unarmed_touch(mob/M as mob)
+/mob/living/carbon/unarmed_touch(mob/living/M, stance = I_HELP)
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 		if(src != M)
 			if(istype(M,/mob/living))

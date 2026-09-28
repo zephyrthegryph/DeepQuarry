@@ -192,12 +192,12 @@ DECLARE_REF(/mob/living/simple_mob/slime, "hat", SPILL, null)
 // Clicked on by empty hand.
 EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	INTERACT_ITEM(null, PROC_REF(slime_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(slime_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat off", PROC_REF(slime_interaction_hand)))
 
 /// Old attack_hand: grab the hat off.
 /mob/living/simple_mob/slime/proc/slime_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(IS_GRABBING(L) && hat)
+	if(hat)
 		remove_hat(L)
 	else
 		return FALSE

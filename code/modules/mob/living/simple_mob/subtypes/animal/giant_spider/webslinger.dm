@@ -46,7 +46,7 @@
 	return FALSE
 
 // Now we've got a running human in sight, time to throw the bola
-/mob/living/simple_mob/animal/giant_spider/webslinger/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/giant_spider/webslinger/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	var/obj/item/projectile/bola/B = new /obj/item/projectile/bola(src.loc)
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 100, 1)

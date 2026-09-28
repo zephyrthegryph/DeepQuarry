@@ -68,11 +68,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Grey slimes *
 // ***************
 
+/obj/item/slime_extract/grey/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a grey slime. When injected with blood, this extract creates some monkey cubes. \
+	When injected with water, this extract creates some slime jelly.") + additional_information)
+
 /obj/item/slime_extract/grey
 	name = "grey slime extract"
 	icon_state = "grey slime extract"
-	description_info = "When injected with phoron, this extract creates a grey slime. When injected with blood, this extract creates some monkey cubes. \
-	When injected with water, this extract creates some slime jelly."
 	slime_type = /mob/living/simple_mob/slime/xenobio
 
 /datum/decl/chemical_reaction/instant/slime/grey_new_slime
@@ -113,11 +115,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Metal slimes *
 // ****************
 
+/obj/item/slime_extract/metal/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates some basic construction materials. When injected with blood, this extract creates some advanced construction materials. \
+	When injected with water, this extract creates some unorthodox materials. When injected with slime jelly, this extract creates some steel.") + additional_information)
+
 /obj/item/slime_extract/metal
 	name = "metal slime extract"
 	icon_state = "metal slime extract"
-	description_info = "When injected with phoron, this extract creates some basic construction materials. When injected with blood, this extract creates some advanced construction materials. \
-	When injected with water, this extract creates some unorthodox materials. When injected with slime jelly, this extract creates some steel."
 	slime_type = /mob/living/simple_mob/slime/xenobio/metal
 
 /datum/decl/chemical_reaction/instant/slime/metal_materials_basic
@@ -175,11 +179,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Blue slimes *
 // ***************
 
+/obj/item/slime_extract/blue/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates some frost oil. When injected with blood, this extract creates stability agent that can reduce slime's mutation chance. \
+	When injected with water, this extract creates a calmness wave that calms enraged slimes. When injected with slime jelly, this extract creates some cryotoxin.") + additional_information)
+
 /obj/item/slime_extract/blue
 	name = "blue slime extract"
 	icon_state = "blue slime extract"
-	description_info = "When injected with phoron, this extract creates some frost oil. When injected with blood, this extract creates stability agent that can reduce slime's mutation chance. \
-	When injected with water, this extract creates a clamness wave that calms enraged slimes. When injected with slime jelly, this extract creates some cryotoxin."
 	slime_type = /mob/living/simple_mob/slime/xenobio/blue
 
 /datum/decl/chemical_reaction/instant/slime/blue_frostoil
@@ -245,12 +251,14 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Purple slimes *
 // *****************
 
+/obj/item/slime_extract/purple/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates steroid agent, which can be used to increase amount of extracts in a slime. When injected with blood, this extract creates \
+	infertility agent, which can be used to decrease amount of slime's offspring. When injected with water, this extract creates shrink agent, which can be used to turn an adult slime into a baby. \
+	When injected with slime jelly, this extract creates a fertility agent, which can be used to increase amount of slime's offspring.") + additional_information)
+
 /obj/item/slime_extract/purple
 	name = "purple slime extract"
 	icon_state = "purple slime extract"
-	description_info = "When injected with phoron, this extract creates steroid agent, which can be used to increase amount of extracts in a slime. When injected with blood, this extract creates \
-	infertility agent, which can be used to decrease amount of slime's offspring. When injected with water, this extract creates shrink agent, which can be used to turn an adult slime into a baby. \
-	When injected with slime jelly, this extract creates a fertility agent, which can be used to increase amount of slime's offspring."
 	slime_type = /mob/living/simple_mob/slime/xenobio/purple
 
 /datum/decl/chemical_reaction/instant/slime/purple_steroid
@@ -301,11 +309,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Orange slimes *
 // *****************
 
+/obj/item/slime_extract/orange/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a phoron fire. When injected with blood, this extract creates a heat wave. When injected with water, this extract creates \
+	some smoke. When injected with slime jelly, this extract creates some pyrotoxin.") + additional_information)
+
 /obj/item/slime_extract/orange
 	name = "orange slime extract"
 	icon_state = "orange slime extract"
-	description_info = "When injected with phoron, this extract creates a phoron fire. When injected with blood, this extract creates a heat wave. When injected with water, this extract creates \
-	some smoke. When injected with slime jelly, this extract creates some pyrotoxin."
 	slime_type = /mob/living/simple_mob/slime/xenobio/orange
 
 /datum/decl/chemical_reaction/instant/slime/orange_fire
@@ -401,11 +411,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Yellow slimes *
 // *****************
 
+/obj/item/slime_extract/yellow/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a lightning strike. When injected with blood, this extract creates a slime flashlight. When injected with water \
+	this extract creates an EMP pulse. When injected with slime jelly, this extract creates a self-charging slime battery.") + additional_information)
+
 /obj/item/slime_extract/yellow
 	name = "yellow slime extract"
 	icon_state = "yellow slime extract"
-	description_info = "When injected with phoron, this extract creates a lightning strike. When injected with blood, this extract creates a slime flashlight. When injected with water \
-	this extract creates an EMP puls. When injected with slime jelly, this extract creates a self-charging slime battery."
 	slime_type = /mob/living/simple_mob/slime/xenobio/yellow
 
 /datum/decl/chemical_reaction/instant/slime/yellow_lightning
@@ -462,11 +474,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Gold slimes *
 // ***************
 
+/obj/item/slime_extract/gold/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a few random creatures. When injected with blood, this extract creates a random hostile creature. \
+	When injected with water, this extract creates a random passive creature. When injected with slime jelly, this extract creates some gold.") + additional_information)
+
 /obj/item/slime_extract/gold
 	name = "gold slime extract"
 	icon_state = "gold slime extract"
-	description_info = "When injected with phoron, this extract creates a few random creatures. When injected with blood, this extract a random hostile creature. \
-	When injected with water, this extract creates a random passive creature. When injected with slime jelly, this extract creates some gold."
 	slime_type = /mob/living/simple_mob/slime/xenobio/gold
 
 /datum/decl/chemical_reaction/instant/slime/gold_random_mobs
@@ -542,11 +556,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Silver slimes *
 // *****************
 
+/obj/item/slime_extract/silver/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates some basic science materials. When injected with blood, this extract creates some advanced science materials. When injected \
+	with water, this extract creates some completely random materials. When injected with slime jelly, this extract creates some silver.") + additional_information)
+
 /obj/item/slime_extract/silver
 	name = "silver slime extract"
 	icon_state = "silver slime extract"
-	description_info = "When injected with phoron, this extract creates some basic science materials. When injected with blood, this extract creates some advanced science materials. When injected \
-	with water, this extract creates some completely random materials. When injected with slime jelly, this extract creates some silver."
 	slime_type = /mob/living/simple_mob/slime/xenobio/silver
 
 /datum/decl/chemical_reaction/instant/slime/silver_materials_basic
@@ -613,10 +629,12 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Dark Purple slimes *
 // **********************
 
+/obj/item/slime_extract/dark_purple/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with water, this extract creates some phoron. When injected with slime jelly, this extract creates some blood.") + additional_information)
+
 /obj/item/slime_extract/dark_purple
 	name = "dark purple slime extract"
 	icon_state = "dark purple slime extract"
-	description_info = "When injected with water, this extract creates some phoron. When injected with slime jelly, this extract creates some blood."
 	slime_type = /mob/living/simple_mob/slime/xenobio/dark_purple
 
 /datum/decl/chemical_reaction/instant/slime/dark_purple_phoron
@@ -639,11 +657,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Dark Blue slimes *
 // ********************
 
+/obj/item/slime_extract/dark_blue/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a cold wave. When injected with blood, this extract grants ability to resist temperature for a while. \
+	When injected with water, the water freezes. When injected with slime jelly, this extract creates a death agent, which can be used to instantly kill a slime.") + additional_information)
+
 /obj/item/slime_extract/dark_blue
 	name = "dark blue slime extract"
 	icon_state = "dark blue slime extract"
-	description_info = "When injected with phoron, this extract creates a cold wave. When injected with blood, this extract grants ability to resist temperature for a while. \
-	When injected with water, the water freezes. When injected with slime jelly, this extract creates a death agent, which can be used to instantly kill a slime."
 	slime_type = /mob/living/simple_mob/slime/xenobio/dark_blue
 
 /datum/decl/chemical_reaction/instant/slime/dark_blue_cold_snap
@@ -755,12 +775,14 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Red slimes *
 // **************
 
+/obj/item/slime_extract/red/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a mutation agent, that can be used to increase a slime's mutation chance. When injected with blood, this extract causes \
+	nearby slimes to fall into rage. When injected with water, this extract creates some hot sauce. When injected with slime jelly, this extract creates a ferality agent, which makes slimes \
+	unreceptive to discipline.") + additional_information)
+
 /obj/item/slime_extract/red
 	name = "red slime extract"
 	icon_state = "red slime extract"
-	description_info = "When injected with phoron, this extract creates a mutation agent, that can be used to increase a slime's mutation chance. When injected with blood, this extract causes \
-	nearby slimes to fall into rage. When injected with water, this extract creates some hot sauce. When injected with slime jelly, this extract creates a ferality agent, which makes slimes \
-	unreceptive to discipline."
 	slime_type = /mob/living/simple_mob/slime/xenobio/red
 
 /datum/decl/chemical_reaction/instant/slime/red_mutation
@@ -831,11 +853,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Green slime *
 // ***************
 
+/obj/item/slime_extract/green/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a single radioactive pulse. When injected with blood, this extract creates a radioactive glob. When injected with water \
+	this extract creates some radium. When injected with slime jelly, this extract creates some uranium.") + additional_information)
+
 /obj/item/slime_extract/green
 	name = "green slime extract"
 	icon_state = "green slime extract"
-	description_info = "When injected with phoron, this extract creates a single radioactive pulse. When injected with blood, this extract creates a radioactive glob. When injected with water \
-	this extract creates some radium. When injected with slime jelly, this extract creates some uranium."
 	slime_type = /mob/living/simple_mob/slime/xenobio/green
 	COOLDOWN_DECLARE(event_cooldown)
 	/// Mutex to prevent infinite recursion when propagating radiation pulses
@@ -911,11 +935,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Pink slimes *
 // ***************
 
+/obj/item/slime_extract/pink/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates some bone fixing agent. When injected with blood, this extract creates some clotting agent. When injected with water, this \
+	extract creates some organ healing agent. When injected with slime jelly, this extract creates a powerful regenerative wave.") + additional_information)
+
 /obj/item/slime_extract/pink
 	name = "pink slime extract"
 	icon_state = "pink slime extract"
-	description_info = "When injected with phoron, this extract creates some bone fixing agent. When injected with blood, this extract creates some clotting agent. When injected with water, this \
-	extract creates some organ healing agent. When injected with slime jelly, this extract creates a powerful regenerative wave."
 	slime_type = /mob/living/simple_mob/slime/xenobio/pink
 
 /datum/decl/chemical_reaction/instant/slime/pink_bone_fix
@@ -964,11 +990,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Oil slimes *
 // **************
 
+/obj/item/slime_extract/oil/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates some fuel. When injected with blood, this extract creates some cooking oil. When injected with water, this extract \
+	creates a fake explosion sound. When injected with slime jelly, this extract explodes.") + additional_information)
+
 /obj/item/slime_extract/oil
 	name = "oil slime extract"
 	icon_state = "oil slime extract"
-	description_info = "When injected with phoron, this extract creates some fuel. When injected with blood, this extract creates some cooking oil. When injected with water, this extract \
-	creates a fake explosion sound. When injected with slime jelly, this extract explodes."
 	slime_type = /mob/living/simple_mob/slime/xenobio/oil
 
 /datum/decl/chemical_reaction/instant/slime/oil_fuel
@@ -1024,11 +1052,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Bluespace slimes *
 // ********************
 
+/obj/item/slime_extract/bluespace/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates some bluespace crystals. When injected with blood, this extract creates a bluespace bag. When injected with water, this \
+	extract causes random teleportation. When injected with slime jelly, this extract creates a disposable precise teleportation tool.") + additional_information)
+
 /obj/item/slime_extract/bluespace
 	name = "bluespace slime extract"
 	icon_state = "bluespace slime extract"
-	description_info = "When injected with phoron, this extract creates some bluespace crystals. When injected with blood, this extract creates a bluespace bag. When injected with water, this \
-	extract causes random teleportation. When injected with slime jelly, this extract creates a disposable precise teleportation tool."
 	slime_type = /mob/living/simple_mob/slime/xenobio/bluespace
 
 /datum/decl/chemical_reaction/instant/slime/bluespace_crystals
@@ -1094,12 +1124,14 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Cerulean slimes *
 // *******************
 
+/obj/item/slime_extract/cerulean/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates an enhancer agent, which can be used to increase amount of uses any extract has once. When injected with blood, this extract \
+	creates an invigoration agent, which can be used to create a slime out of an extract. When injected with water, this extract creates a mimic agent, which can copy properties of other agents. \
+	When injected with slime jelly, this extract creates a random agent.") + additional_information)
+
 /obj/item/slime_extract/cerulean
 	name = "cerulean slime extract"
 	icon_state = "cerulean slime extract"
-	description_info = "When injected with phoron, this extract creates an enhancer agent, which can be used to increase amount of uses any extract has once. When injected with blood, this extact \
-	creates an invigoration agent, which can be used to create a slime out of an extract. When injected with water, this extract creates a mimic agent, which can copy properties of other agents. \
-	When injected with slime jelly, this extract creates a random agent."
 	slime_type = /mob/living/simple_mob/slime/xenobio/cerulean
 
 /datum/decl/chemical_reaction/instant/slime/cerulean_enhancer
@@ -1151,11 +1183,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Amber slimes *
 // ****************
 
+/obj/item/slime_extract/amber/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a feeding agent, which can be used to instantly split a slime. When injected with blood, this extract creates some food. \
+	When injected with water, this extract creates some edible slime globs. When injected with slime jelly, this extract creates some super-nutritious slime goop.") + additional_information)
+
 /obj/item/slime_extract/amber
 	name = "amber slime extract"
 	icon_state = "amber slime extract"
-	description_info = "When injected with phoron, this extract creates a feeding agent, which can be used to instantly split a slime. When injected with blood, this extract creates some food. \
-	When injected with water, this extract creates some edible slime globs. When injected with slime jelly, this extract creates some super-nutritious slime goop."
 	slime_type = /mob/living/simple_mob/slime/xenobio/amber
 
 /datum/decl/chemical_reaction/instant/slime/amber_slimefood
@@ -1215,12 +1249,14 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Sapphire slimes *
 // *******************
 
+/obj/item/slime_extract/sapphire/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a promethean cube, which can be used to create a new promethean. When injected with blood, this extract creates some mutation \
+	toxin. When injected with water, this extract creates some plushies. When injected with slime jelly, this extract creates a sapience agent, which can be used to develop sentience in \
+	various creatures.") + additional_information)
+
 /obj/item/slime_extract/sapphire
 	name = "sapphire slime extract"
 	icon_state = "sapphire slime extract"
-	description_info = "When injected with phoron, this extract creates a promethean cube, which can be used to create a new promethean. When injected with blood, this extract creates some mutation \
-	toxin. When injected with water, this extract creates some plushies. When injected with slime jelly, this extract creates a sapience agent, which can be used to develop sentience in \
-	various creatures."
 	slime_type = /mob/living/simple_mob/slime/xenobio/sapphire
 
 /datum/decl/chemical_reaction/instant/slime/sapphire_promethean
@@ -1273,11 +1309,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Ruby slimes *
 // ***************
 
+/obj/item/slime_extract/ruby/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract grants extra strength for a time. When injected with blood, this extract causes a wave of pulling force. When injected with water, \
+	this extract creates some brute juice. When injected with slime jelly, this extract creates a pushing force.") + additional_information)
+
 /obj/item/slime_extract/ruby
 	name = "ruby slime extract"
 	icon_state = "ruby slime extract"
-	description_info = "When injected with phoron, this extract grants extra strength for a time. When injected with blood, this extract causes a wave of pulling force. When injected with water, \
-	this extract creates some brute juice. When injected with slime jelly, this extract creates a pushing force."
 	slime_type = /mob/living/simple_mob/slime/xenobio/ruby
 
 /datum/decl/chemical_reaction/instant/slime/ruby_swole
@@ -1355,11 +1393,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Emerald slime *
 // *****************
 
+/obj/item/slime_extract/emerald/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract grants extra agility, making you more evasive and fast-acting for a while. When injected with blood, this extract grants extra speed \
+	for a short time. When injected with water, this extract creates some hyperzine. When injected with slime jelly, this extract causes the area around it to become slippery for a time.") + additional_information)
+
 /obj/item/slime_extract/emerald
 	name = "emerald slime extract"
 	icon_state = "emerald slime extract"
-	description_info = "When injected with phoron, this extract grants extra agility, making you more evasive and fast-acting for a while. When injected with blood, this extract grants extra speed \
-	for a short time. When injected with water, this extract creates some hyperzine. When injected with slime jelly, this extract causes area around to become slippery for a time."
 	slime_type = /mob/living/simple_mob/slime/xenobio/emerald
 
 /datum/decl/chemical_reaction/instant/slime/emerald_agility
@@ -1436,12 +1476,14 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Light Pink slimes *
 // *********************
 
+/obj/item/slime_extract/light_pink/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract creates a friendship agent, which can be used to make a slime or a creature consider you a friend. When injected with blood, \
+	this extract creates a loyalty agent, which can be used to make a slime or a creature think of those like you as their own. When injected with water, this extract creates a docility agent, \
+	which can be used to pacify a slime or a creature permanently. When injected with slime jelly, this extract creates an obedience agent, which can be used to instantly fully discipline a slime.") + additional_information)
+
 /obj/item/slime_extract/light_pink
 	name = "light pink slime extract"
 	icon_state = "light pink slime extract"
-	description_info = "When injected with phoron, this extract creates a friendship agent, which can be used to make a slime or a creature consider you a friend. When injected with blood, \
-	this extract creates a loyalty agent, which can be used to make a slime or a creature think of those like you as their own. When injected with water, this extract creates a docility agent, \
-	which can be used to pacify a slime or a creature permanently. When injected with slime jelly, this extract creates an obedience agent, which can be used to instantly fully discipline a slime."
 	slime_type = /mob/living/simple_mob/slime/xenobio/light_pink
 
 /datum/decl/chemical_reaction/instant/slime/light_pink_friendship
@@ -1492,11 +1534,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 // * Rainbow slimes *
 // ******************
 
+/obj/item/slime_extract/rainbow/get_mechanics_info(list/additional_information)
+	return ..(list("When injected with phoron, this extract will create a random slime. When injected with blood, this extract will create a random slime extract. When injected with water, \
+	this extract will create pretty colors. When injected with slime jelly, this extract will create unity agent, which can be used to make a slime non-hostile to slimes of other colors.") + additional_information)
+
 /obj/item/slime_extract/rainbow
 	name = "rainbow slime extract"
 	icon_state = "rainbow slime extract"
-	description_info = "When injected with phoron, this extract will create a random slime. When injected with blood, this extract will create a random slime extract. When injected with water, \
-	this extract with create pretty colors. When injected with slime jelly, this extract will create unity agent, which can be used to make slime non-hostile to slimes of other colors."
 	slime_type = /mob/living/simple_mob/slime/xenobio/rainbow
 
 /datum/decl/chemical_reaction/instant/slime/rainbow_random_slime

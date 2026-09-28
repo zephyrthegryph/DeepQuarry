@@ -236,7 +236,7 @@ DECLARE_REF(/obj/item/organ, "assists_languages", STATIC, null)
 		if(INFECTION_LEVEL_THREE to INFINITY)
 			. += span_bolddanger("Necrosis has set in.")
 
-/obj/item/organ/get_description_info(list/additional_information)
+/obj/item/organ/get_mechanics_info(list/additional_information)
 	if(!additional_information)
 		additional_information = list()
 	if(butcherable && meat_type)
@@ -563,14 +563,19 @@ DECLARE_REF(/obj/item/organ, "assists_languages", STATIC, null)
 		return FALSE
 
 	// Convert it to an edible form, yum yum.
-	if(!(is_robotic()) && IS_HELPING(user) && user.zone_sel.selecting == O_MOUTH)
+	if(!(is_robotic()) && interaction.stance == I_HELP && user.zone_sel.selecting == O_MOUTH)
 		bitten(user)
 		return TRUE
 	return FALSE
 
+// One self-use per stance: outside combat mode (aiming at the mouth) it bites; external limbs
+// pull out embedded objects in any stance (their organ_self override).
 DECLARE_INTERACTIONS(/obj/item/organ, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_SELF(null, PROC_REF(organ_self)), \
+	INTERACT_SELF_AS(I_HELP, "Bite", PROC_REF(organ_self)), \
+	INTERACT_SELF_AS(I_DISARM, null, PROC_REF(organ_self)), \
+	INTERACT_SELF_AS(I_GRAB, null, PROC_REF(organ_self)), \
+	INTERACT_SELF_AS(I_HURT, null, PROC_REF(organ_self)), \
 )
 
 /// Old attackby.

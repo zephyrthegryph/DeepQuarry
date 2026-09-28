@@ -1,19 +1,17 @@
 //Step two - washing..... it's actually in washing machine code, and ere.
 
+/obj/item/stack/hairlesshide/get_mechanics_info(list/additional_information)
+	return ..(list("Get it " + span_bold(span_blue("wet")) + " to continue tanning it into leather: set it in a river, wash it in a sink, or splash water on it.") + additional_information)
+
 /obj/item/stack/hairlesshide
 	name = "hairless hide"
 	desc = "This hide was stripped of it's hair, but still needs tanning."
-	description_info = "Get it " + span_bold(span_blue("wet")) + " to continue tanning this into leather.<br>\
-					You could set it in a river, wash it with a sink, or just splash water on it with a bucket."
 	singular_name = "hairless hide piece"
 	icon_state = "sheet-hairlesshide"
 	no_variants = FALSE
 	max_amount = 20
 	stacktype = "hairlesshide"
 
-/obj/item/stack/hairlesshide/examine(mob/user)
-	. = ..()
-	. += description_info
 
 /obj/item/stack/hairlesshide/water_act(wateramount)
 	. = ..()

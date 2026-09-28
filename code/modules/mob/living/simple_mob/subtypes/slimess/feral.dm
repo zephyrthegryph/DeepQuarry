@@ -6,8 +6,8 @@
 	melee_damage_upper = 15
 	unity = 1
 
-/mob/living/simple_mob/slime/feral/apply_melee_effects(mob/living/L)
-	if(istype(L) && IS_HARMING(src))
+/mob/living/simple_mob/slime/feral/apply_melee_effects(mob/living/L, stance = I_HURT)
+	if(istype(L) && stance == I_HURT)
 		// Pump them full of toxins, if able.
 		if(L.reagents && L.can_inject() && reagent_injected)
 			L.reagents.add_reagent(reagent_injected, injection_amount)
@@ -146,7 +146,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITE
 	special_attack_max_range = 7
 	special_attack_cooldown = 5 SECONDS
 
-/mob/living/simple_mob/slime/feral/bluespace/do_special_attack(atom/A)
+/mob/living/simple_mob/slime/feral/bluespace/do_special_attack(atom/A, stance)
 	// Teleport attack.
 	if(!A)
 		to_chat(src, span_warning("There's nothing to teleport to."))
@@ -206,10 +206,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/feral/dark_purple, INTERACT_ITE
 	apply_body_effect(/datum/body_effect/slime_strength, null, src) // Slime is always swole.
 	return ..()
 
-/mob/living/simple_mob/slime/feral/ruby/apply_melee_effects(atom/A)
+/mob/living/simple_mob/slime/feral/ruby/apply_melee_effects(atom/A, stance = I_HURT)
 	..()
 
-	if(isliving(A) && IS_HARMING(src))
+	if(isliving(A) && stance == I_HURT)
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))

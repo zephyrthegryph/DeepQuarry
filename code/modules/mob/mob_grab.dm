@@ -169,7 +169,7 @@
 				affecting.status_at_least(EFFECT_BLINDED, 3)
 		if(BP_HEAD)
 			if(force_down)
-				if(IS_HELPING(user))
+				if(!user.combat_mode) // the holder's posture while the grab ticks (state)
 					if(announce)
 						assailant.visible_message(span_warning("[assailant] sits on [target]'s face!"))
 
@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 
 	return 1
 
-/obj/item/grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/grab/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	var/mob/living/carbon/human/assailant = src?.grab_assailant()
 	if(QDELETED(src))
 		return ITEM_INTERACT_FAILURE
@@ -319,7 +319,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 			var/mob/living/carbon/human/H = affecting
 			var/hit_zone = assailant.zone_sel.selecting
 			flick(hud.icon_state, hud)
-			switch(assailant.use_stance())
+			switch(stance) // the victim's per-stance item interaction (Use on / Shove with / Hold with / Hit)
 				if(I_HELP)
 					if(force_down)
 						to_chat(assailant, span_warning("You are no longer pinning [affecting] to the ground."))

@@ -1088,10 +1088,11 @@ GLOBAL_LIST_INIT(common_tools, list(
 
 // check if mob is lying down on something we can operate him on.
 // The RNG with table/rollerbeds comes into play in do_surgery() so that fail_step() can be used instead.
-/proc/can_operate(mob/living/carbon/M, mob/living/user)
+/// `stance` is the stance of the interaction doing the surgery: self-surgery only when helping.
+/proc/can_operate(mob/living/carbon/M, mob/living/user, stance)
 	if(M != user)
 		. = M.lying
-	else if(user && user.allow_self_surgery && IS_HELPING(user))    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
+	else if(user && user.allow_self_surgery && stance == I_HELP)    // You can, technically, always operate on yourself after standing still. Inadvised, but you can.
 		. = TRUE
 	return .
 

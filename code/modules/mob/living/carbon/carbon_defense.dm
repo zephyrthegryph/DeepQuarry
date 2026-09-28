@@ -1,10 +1,10 @@
 //Called when the mob is hit with an item in combat.
-/mob/living/carbon/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
-	if(check_neckgrab_attack(I, user, target_zone))
+/mob/living/carbon/resolve_item_attack(obj/item/I, mob/living/user, target_zone, stance = I_HURT)
+	if(check_neckgrab_attack(I, user, target_zone, stance))
 		return null
 	return ..()
 
-/mob/living/carbon/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone)
+/mob/living/carbon/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone, stance = I_HURT)
 	if(!effective_force || blocked >= 100)
 		return 0
 
@@ -32,8 +32,8 @@
 	return 1
 
 // Attacking someone with a weapon while they are neck-grabbed
-/mob/living/carbon/proc/check_neckgrab_attack(obj/item/W, mob/user, hit_zone)
-	if(IS_HARMING(user))
+/mob/living/carbon/proc/check_neckgrab_attack(obj/item/W, mob/user, hit_zone, stance = I_HURT)
+	if(stance == I_HURT)
 		for(var/obj/item/grab/G in src?.grabbed_by_list())
 			if(G?.grab_assailant() == user)
 				if(G.state >= GRAB_AGGRESSIVE)

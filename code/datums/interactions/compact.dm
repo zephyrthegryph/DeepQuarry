@@ -89,18 +89,12 @@
 	var/effect = spec[3]
 	var/list/requires = spec[4]
 	var/held_type = length(spec) >= 5 ? spec[5] : null
-	// INTERACT_STANCE_*: a hostile/peaceful shape is only meant in that combat stance (offered_when).
+	// The stance the interaction answers (I_HELP/I_DISARM/I_GRAB/I_HURT), or null for any: the INTERACT_*_AS shapes.
 	var/stance = length(spec) >= 6 ? spec[6] : null
 	// INTERACT_ORDER_DEFAULT: the type's default for this input, tried after everything else it offers.
 	var/priority = (length(spec) >= 7 && spec[7] == INTERACT_ORDER_DEFAULT) ? INTERACTION_DEFAULT_PRIORITY : 0
 	var/list/offered_when
 	var/list/tags
-	switch(stance)
-		if(INTERACT_STANCE_HOSTILE)
-			offered_when = list(REQ_HARMING)
-			tags = list(INTERACTION_TAG_HOSTILE)
-		if(INTERACT_STANCE_PEACEFUL)
-			offered_when = list(REQ_HELPING)
 
 	var/effect_key = "[effect]"
 	var/entry
@@ -185,6 +179,8 @@
 
 	var/datum/interaction/generic/interaction = new(id, name, category, priority, default_action, requires, effect, entry, held_type, offered_when, /* consumes_input */ TRUE, behind_gate, always_handled)
 	interaction.tags = tags
+	interaction.stance = stance
+	interaction.apply_stance_tags()
 	cache[spec] = interaction
 	return interaction
 

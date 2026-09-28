@@ -1,7 +1,6 @@
 /obj/mecha
 	name = "Mecha"
 	desc = "Exosuit"
-	description_info = "Alt click to strafe."
 	icon = 'icons/mecha/mecha.dmi'
 	density = TRUE							//Dense. To raise the heat.
 	opacity = 1							//Opaque. Menacing.
@@ -1020,6 +1019,9 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 // counts as reach (movable/Adjacent: neighbor == loc); pred_mecha_pilot keeps them pilot-only.
 DECLARE_INTERACTIONS(/obj/mecha, \
 	INTERACT_ITEM(null, PROC_REF(interaction_mecha_paint_kit)), \
+	INTERACT_ITEM_AS(I_HELP, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
+	INTERACT_ITEM_AS(I_DISARM, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
+	INTERACT_ITEM_AS(I_GRAB, "Weld repairs", PROC_REF(interaction_mecha_welder)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_mecha_item)), \
 	INTERACT_HAND(null, PROC_REF(interaction_mecha_hand)), \
 	INTERACT_DRAG("Enter exosuit", PROC_REF(interaction_mecha_drag)), \
@@ -1184,6 +1186,10 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 // Maintenance steps and weld repairs: mecha_maintenance.dm.
 
+/// Outside combat mode a welder never strikes the exosuit (weld repairs are its tool interaction).
+/obj/mecha/proc/interaction_mecha_welder(mob/user, obj/item/W, datum/interaction/interaction)
+	return W.has_tool_quality(TOOL_WELDER) ? TRUE : FALSE
+
 /// Old attackby: every item is handled here (maintenance, parts, else dynattackby).
 /obj/mecha/proc/interaction_mecha_item(mob/user, obj/item/W, datum/interaction/interaction)
 
@@ -1262,9 +1268,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 				src.mecha_log_message("Powercell installed")
 			else
 				to_chat(user, "There's already a powercell installed.")
-		return TRUE
-
-	else if(W.has_tool_quality(TOOL_WELDER) && !IS_HARMING(user))
 		return TRUE
 
 	else if(istype(W, /obj/item/mecha_parts/mecha_tracking))

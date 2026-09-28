@@ -183,12 +183,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 #define GEN_IDLE 1
 #define GEN_ACTIVE 2
 
+/obj/item/gun/magnetic/matfed/phoronbore/get_mechanics_info(list/additional_information)
+	return ..(list("The projectile travels six tiles before dissipating, excavating mineral walls as it does so. \
+	It is reloaded with phoron sheets or ore, and has a togglable generator that can recharge the power cell using stored phoron.") + additional_information)
+
 /obj/item/gun/magnetic/matfed/phoronbore
-	name = "portable phoron bore"
+	name ="portable phoron bore"
 	desc = "A large man-portable tunnel bore, using phorogenic plasma blasts. Point away from user."
 	description_fluff = "An aging Grayson Manufactories mining tool used for rapidly digging through rock. Mass production was discontinued when many of the devices were stolen and used to break into a high security facility by Boiling Point drones."
 	description_antag = "This device is exceptional at breaking down walls, though it is incredibly loud when doing so."
-	description_info = "The projectile of this tool will travel six tiles before dissipating, excavating mineral walls as it does so. It can be reloaded with phoron sheets or ore, and has a togglable generator that can recharge the power cell using stored phoron."
 
 	icon_state = "bore"
 	item_state = "bore"

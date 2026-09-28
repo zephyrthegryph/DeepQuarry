@@ -1,7 +1,9 @@
+/obj/structure/panic_button/get_mechanics_info(list/additional_information)
+	return ..(list("Sends a message to people on other z-levels requesting their aid. They may take a while to arrive, as they need to prepare. Only use it if you really need it.") + additional_information)
+
 /obj/structure/panic_button
 	name = "distress beacon trigger"
 	desc = "WARNING: Will deploy ship's distress beacon and request help. Misuse may result in fines and jail time."
-	description_info = "Using this device (smashing the glas on harm intent, and then pressing the button) will send a message to people on other z-levels requesting their aid. It may take them a while to come get you, as they'll need to prepare. You should only use this if you really need it."
 	icon = 'icons/obj/objects_vr.dmi'
 	icon_state = "panicbutton"
 	anchored = TRUE
@@ -24,7 +26,7 @@
 	else
 		icon_state = "[initial(icon_state)]"
 
-DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND_AS(I_HURT, "Smash the glass", PROC_REF(interaction_hand)), INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
 /obj/structure/panic_button/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
@@ -39,7 +41,7 @@ DECLARE_INTERACTIONS(/obj/structure/panic_button, INTERACT_HAND(null, PROC_REF(i
 		to_chat(user, span_warning("The button is already depressed; the beacon has been launched already."))
 	// Glass present
 	else if(glass)
-		if(IS_HARMING(user))
+		if(interaction.stance == I_HURT)
 			user.automatic_custom_emote(VISIBLE_MESSAGE, "smashes the glass on [src]!")
 			glass = FALSE
 			playsound(src, 'sound/effects/hit_on_shattered_glass.ogg')

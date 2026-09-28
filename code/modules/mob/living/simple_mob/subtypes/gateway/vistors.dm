@@ -102,7 +102,7 @@
 		return TRUE
 
 // Yes? Throw the grenade
-/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/vistor/vistorblue/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
@@ -141,7 +141,7 @@
 	loot_list = list(/obj/item/clothing/suit/armor/reactive/vistor = 100
 			)
 
-/mob/living/simple_mob/mechanical/mecha/vistor/vistorgreen/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/vistor/vistorgreen/do_special_attack(atom/A, stance)
 	var/obj/item/projectile/P = new /obj/item/projectile/arc/spore(get_turf(src))
 	P.launch_projectile(A, BP_TORSO, src)
 

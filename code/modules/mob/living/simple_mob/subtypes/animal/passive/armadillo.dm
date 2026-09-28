@@ -64,12 +64,12 @@ DECLARE_REF(/mob/living/simple_mob/animal/passive/armadillo, "hat", SPILL, null)
 // Clicked on by empty hand.
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 	INTERACT_ITEM(null, PROC_REF(armadillo_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(armadillo_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat", PROC_REF(armadillo_interaction_hand)))
 
 /// Old attack_hand: grab the hat off.
 /mob/living/simple_mob/animal/passive/armadillo/proc/armadillo_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(IS_GRABBING(L) && hat)
+	if(interaction.stance == I_GRAB && hat)
 		remove_hat(L)
 	else
 		return FALSE

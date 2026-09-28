@@ -129,13 +129,14 @@
 
 
 DECLARE_INTERACTIONS(/obj/item/reagent_containers/blood, \
+	INTERACT_USE_AS(I_HURT, "Drink", PROC_REF(interaction_self)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
-/// Old attack_self.
+/// Old attack_self: drink from it in combat mode, else put the lid on or take it off.
 /obj/item/reagent_containers/blood/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user))
+	if(interaction.stance == I_HURT)
 		if(reagents.total_volume && volume)
 			var/remove_volume = volume* 0.1 //10% of what the bloodpack can hold.
 			var/reagent_to_remove = reagents.get_master_reagent_id()

@@ -113,13 +113,13 @@
 		if(51 to 100)
 			return "an extremely long delay"
 
-/obj/item/gun/get_description_info(list/additional_information)
+/obj/item/gun/get_mechanics_info(list/additional_information)
 	var/is_loaded
 	var/non_lethal
 	var/non_lethal_list = list(/obj/item/gun/energy/medigun,/obj/item/gun/energy/mouseray,/obj/item/gun/energy/temperature,/obj/item/gun/energy/sizegun,/obj/item/gun/projectile/shotgun/pump/toy,/obj/item/gun/projectile/revolver/toy,/obj/item/gun/projectile/pistol/toy,/obj/item/gun/projectile/automatic/toy)
 	var/less_lethal
 	var/less_lethal_list = list(/obj/item/gun/energy/taser,/obj/item/gun/energy/stunrevolver,/obj/item/gun/energy/plasmastun,/obj/item/gun/energy/bfgtaser)
-	var/weapon_stats = description_info + "\
+	var/weapon_stats = "\
 	<br>"
 	if(istype(src, /obj/item/gun/energy))
 		is_loaded = LAZYLEN(src.contents)

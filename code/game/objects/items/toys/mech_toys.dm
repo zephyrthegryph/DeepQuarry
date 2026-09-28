@@ -150,11 +150,11 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 /**
  * Attack is called from the user's toy, aimed at target(another human), checking for target's toy.
  */
-/obj/item/toy/mecha/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
+/obj/item/toy/mecha/attack(mob/living/target, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(target == user)
 		to_chat(user, span_notice("Target another toy mech if you want to start a battle with yourself."))
 		return ITEM_INTERACT_FAILURE
-	else if(!IS_HARMING(user))
+	else if(stance != I_HURT)
 		if(wants_to_battle) //prevent spamming someone with offers
 			to_chat(user, span_notice("You already are offering battle to someone!"))
 			return ITEM_INTERACT_FAILURE

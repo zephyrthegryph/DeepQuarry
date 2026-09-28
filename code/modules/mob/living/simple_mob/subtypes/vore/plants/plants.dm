@@ -148,7 +148,7 @@
 	Despite the size of these plants, they are perfectly capable of trapping an adult human and should be treated with heavy caution. More typically, they predate on small mammals and reptiles in their local ecological environment."
 	value = CATALOGUER_REWARD_HARD
 
-/*/mob/living/simple_mob/vore/pitcher/do_special_attack(atom/A)
+/*/mob/living/simple_mob/vore/pitcher/do_special_attack(atom/A, stance)
 	. = TRUE
 	if(ckey)
 		return

@@ -148,15 +148,13 @@
 			icon_scale_y = prey.size_multiplier
 			update_transform()
 
-EXTEND_INTERACTIONS(/obj/item/digestion_remains, INTERACT_SELF("Crumble", PROC_REF(remains_crumble_self)))
+EXTEND_INTERACTIONS(/obj/item/digestion_remains, INTERACT_SELF_AS(I_HURT, "Crumble", PROC_REF(remains_crumble_self)))
 
-/// Old attack_self: squeezed on harm intent, the remains crumble away.
+/// Old attack_self: squeezed in combat mode, the remains crumble away.
 /obj/item/digestion_remains/proc/remains_crumble_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user))
-		to_chat(user,span_warning("As you squeeze the [name], it crumbles into dust and falls apart into nothing!"))
-		consume(src, user)
-		return TRUE
-	return FALSE
+	to_chat(user,span_warning("As you squeeze the [name], it crumbles into dust and falls apart into nothing!"))
+	consume(src, user)
+	return TRUE
 
 /obj/item/digestion_remains/ribcage
 	name = "ribcage"

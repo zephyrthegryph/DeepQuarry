@@ -11,7 +11,10 @@
 		playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
 
 EXTEND_INTERACTIONS(/turf/simulated/floor, \
-	INTERACT_ITEM(null, PROC_REF(floor_item)), \
+	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(floor_item)), \
+	INTERACT_ITEM_AS(I_DISARM, "Hit the floor", PROC_REF(floor_item)), \
+	INTERACT_ITEM_AS(I_GRAB, "Draw graffiti", PROC_REF(floor_item)), \
+	INTERACT_ITEM_AS(I_HURT, "Hit the floor", PROC_REF(floor_item)), \
 	INTERACT_ALT("Graffiti", PROC_REF(floor_graffiti_alt)), \
 )
 
@@ -30,11 +33,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 
 	if(isliving(user) && istype(C, /obj/item))
 		var/mob/living/L = user
-		if(!IS_HELPING(L))
-			if(IS_GRABBING(L))
+		if(interaction.stance != I_HELP)
+			if(interaction.stance == I_GRAB)
 				try_graffiti(L, C, click_parameters) // back by unpopular demand - Add - Click parameters
 				return INTERACTION_HANDLED_PASS
-			attack_tile(C, L) // Be on help intent if you want to decon something.
+			attack_tile(C, L) // Keep combat mode off if you want to decon something.
 			return INTERACTION_HANDLED_PASS
 
 	// Multi-z roof building

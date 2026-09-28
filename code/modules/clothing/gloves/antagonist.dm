@@ -7,9 +7,9 @@
 	name = "sterile gloves"
 	desc = "Sterile gloves."
 	description_antag = "These gloves are uniquely suited for stealing, as well as breaking and entering. They have minor insulation.\
-	Attempting to 'help' someone will open their backpack, if it exists, or their belt if they have no backpack, allowing you to deposit\
+	Touching someone out of combat mode will open their backpack, if it exists, or their belt if they have no backpack, allowing you to deposit\
 	items into the inventories. Be careful about making too much noise.\
-	Disarm intent will swap the items in your LEFT pockets. Grab will swap RIGHT pockets."
+	Touching with Disarm will swap the items in your LEFT pockets. Grab will swap RIGHT pockets."
 	icon_state = "latex"
 	item_state_slots = list(slot_r_hand_str = "white", slot_l_hand_str = "white")
 	siemens_coefficient = 0.5 // Not perfect, but slightly more protective than nothing.
@@ -17,10 +17,12 @@
 	germ_level = 0
 	fingerprint_chance = 10 // They're thieves' gloves. What do you think?
 
-/// Pickpocketing is one flow: a second's rummage, then by intent either opening their bag
+/// Pickpocketing is one flow: a second's rummage, then by the touch's stance either opening their bag
 /// (help) or swapping a pocket (disarm: left, grab: right) as take-theirs, give-yours.
 /datum/om/flow/pickpocket
 	name = "pickpocket"
+	/// The stance of the touch that started it (I_HELP, I_DISARM, I_GRAB or I_HURT).
+	var/stance = I_HURT
 	/// The pocket being swapped (slot id and equip slot).
 	var/slot_id
 	var/slot
@@ -37,9 +39,9 @@
 /datum/om/flow/pickpocket/proc/rummaged()
 	var/mob/living/carbon/human/user = actor
 	var/mob/living/carbon/human/victim = target
-	if(!IS_HARMING(user) && (turn(victim.dir, 180) == get_dir(user, victim)))
+	if(stance != I_HURT && (turn(victim.dir, 180) == get_dir(user, victim)))
 		to_chat(victim, span_warning("[user] rifles in your pockets!"))
-	if(IS_HELPING(user))
+	if(stance == I_HELP)
 		if(istype(victim.get_equipped_item(SLOT_ID_BACK), /obj/item/storage))
 			slot_id = SLOT_ID_BACK
 			wait(3 SECONDS, PROC_REF(open_storage), progress = FALSE)
@@ -47,10 +49,10 @@
 			slot_id = SLOT_ID_BELT
 			wait(5 SECONDS, PROC_REF(open_storage))
 		return
-	if(IS_DISARMING(user))
+	if(stance == I_DISARM)
 		slot_id = SLOT_ID_POCKET_L
 		slot = SLOT_ID_POCKET_L
-	else if(IS_GRABBING(user))
+	else if(stance == I_GRAB)
 		slot_id = SLOT_ID_POCKET_R
 		slot = SLOT_ID_POCKET_R
 	else
@@ -109,9 +111,9 @@
 	if(gave && victim)
 		victim.equip_to_slot(mine, slot)
 
-/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && ishuman(usr) && ishuman(A))
-		om_flow_start(/datum/om/flow/pickpocket, usr, A)
+		om_flow_start(/datum/om/flow/pickpocket, usr, A, stance = stance)
 		return 1
 	return 0
 
@@ -136,14 +138,14 @@ DECLARE_REF(/obj/item/clothing/gloves/ring/buzzer, "battery", OWNED, null)
 	if(!battery)
 		battery = new battery_type(src)
 
-/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && istype(usr, /mob/living/carbon/human))
-		return zap(usr, A, proximity)
+		return zap(usr, A, proximity, stance)
 	return 0
 
-/obj/item/clothing/gloves/ring/buzzer/proc/zap(mob/living/carbon/human/user, atom/movable/target, proximity)
+/obj/item/clothing/gloves/ring/buzzer/proc/zap(mob/living/carbon/human/user, atom/movable/target, proximity, stance = I_HURT)
 	. = FALSE
-	if(IS_HARMING(user) && battery.percent() >= 50)
+	if(stance == I_HURT && battery.percent() >= 50)
 		if(isliving(target))
 			var/mob/living/L = target
 

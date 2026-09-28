@@ -13,8 +13,11 @@
  *   one Use as that variant with use_attack_variant(). AI brains set it to
  *   hold their chosen special attack (set_use_stance()).
  *
- * Legacy handlers read the outcome with IS_HELPING/IS_HARMING/IS_DISARMING/
- * IS_GRABBING (code/__defines/combat_mode.dm) or switch on use_stance().
+ * The two together are the Use's stance (I_HELP, I_DISARM, I_GRAB, I_HURT).
+ * Nothing but the input layer reads it (input_stance()): interactions declare
+ * the stance they answer (`/datum/interaction/var/stance`), the resolver
+ * offers only the ones that match, and the interaction that runs carries the
+ * intent to its effect (`interaction.stance`) and on as a `stance` argument.
  */
 
 /// Whether combat mode is on. Write it with set_combat_mode().
@@ -23,21 +26,14 @@
 /mob/var/attack_variant = null
 
 /**
- * Read-only mirror of use_stance() for the tool *_act procs I4 is migrating
- * (list in doc/rewrite/interactions.md §12).
- * Only set_combat_mode() and set_attack_variant() write it. Nothing else may read
- * it: the "combat mode: a_intent" lint in tools/ci/check_grep.sh allows it only
- * in those files. It is deleted when they move to use_stance() or the IS_* macros.
+ * The stance of the input this mob is making now: I_HELP, I_DISARM, I_GRAB or I_HURT.
+ * The input layer's reading of combat mode and the held variant. Only the
+ * resolver's stance clauses, the actor adapters and the mob-action entries
+ * (click, bump, resist, throw, an AI brain's own choice) call it; everything
+ * downstream gets the stance from the interaction that ran or as an argument.
+ * tools/ci/stance_examine_lint.py enforces the allowlist.
  */
-/mob/var/tmp/a_intent = I_HELP
-
-/mob/Initialize(mapload)
-	. = ..()
-	if(combat_mode) // A type that starts in combat mode.
-		sync_use_stance()
-
-/// The outcome of a Use right now: I_HELP, I_DISARM, I_GRAB or I_HURT.
-/mob/proc/use_stance()
+/mob/proc/input_stance()
 	switch(attack_variant)
 		if(ATTACK_VARIANT_DISARM)
 			return I_DISARM
@@ -51,19 +47,12 @@
 	if(combat_mode == new_mode)
 		return
 	combat_mode = new_mode
-	sync_use_stance()
 	OM_EMIT(src, /datum/om/event/mob_combat_mode_changed, new_mode)
 	update_combat_mode_hud()
 
 /// Sets the attack variant (an ATTACK_VARIANT_* or null).
 /mob/proc/set_attack_variant(variant)
 	attack_variant = variant
-	sync_use_stance()
-
-/// Keeps the body rewrite's read-only mirror current.
-/mob/proc/sync_use_stance()
-	PRIVATE_PROC(TRUE)
-	a_intent = use_stance()
 
 /**
  * Sets combat mode and the variant from one of the four outcomes. For AI brains,
@@ -81,22 +70,32 @@
 		else
 			attack_variant = null
 			set_combat_mode(FALSE)
-	sync_use_stance()
 
-/// Predicate procs for REQ_COMBAT_MODE and REQ_NO_COMBAT_MODE.
-/mob/proc/pred_combat_mode(mob/actor, atom/target, obj/item/held)
-	return combat_mode
+/// Stance clauses (dq_stance_clause()): the actor's input has that stance.
+/proc/dq_pred_stance_help(mob/actor, atom/target, obj/item/held)
+	return istype(actor) && actor.input_stance() == I_HELP
 
-/mob/proc/pred_no_combat_mode(mob/actor, atom/target, obj/item/held)
-	return !combat_mode
+/proc/dq_pred_stance_disarm(mob/actor, atom/target, obj/item/held)
+	return istype(actor) && actor.input_stance() == I_DISARM
 
-/// REQ_HARMING: combat mode on and no Disarm/Grab variant held.
-/proc/dq_pred_harming(mob/actor, atom/target, obj/item/held)
-	return istype(actor) && IS_HARMING(actor)
+/proc/dq_pred_stance_grab(mob/actor, atom/target, obj/item/held)
+	return istype(actor) && actor.input_stance() == I_GRAB
 
-/// REQ_HELPING: combat mode off and no Disarm/Grab variant held.
-/proc/dq_pred_helping(mob/actor, atom/target, obj/item/held)
-	return istype(actor) && IS_HELPING(actor)
+/proc/dq_pred_stance_harm(mob/actor, atom/target, obj/item/held)
+	return istype(actor) && actor.input_stance() == I_HURT
+
+/// The selector clause for an interaction that answers `stance`, with the reason shown when it doesn't match.
+/proc/dq_stance_clause(stance)
+	switch(stance)
+		if(I_HELP)
+			return REQ_PROC(/proc/dq_pred_stance_help, "combat mode is on")
+		if(I_DISARM)
+			return REQ_PROC(/proc/dq_pred_stance_disarm, "hold Disarm")
+		if(I_GRAB)
+			return REQ_PROC(/proc/dq_pred_stance_grab, "hold Grab")
+		if(I_HURT)
+			return REQ_PROC(/proc/dq_pred_stance_harm, "combat mode is off")
+	CRASH("dq_stance_clause: unknown stance [stance]")
 
 /**
  * Runs one Use on `target` as `variant` (the Disarm or Grab interaction), then

@@ -20,7 +20,6 @@
 
 /turf/simulated/wall/solidrock //for more stylish anti-cheese.
 	resistance_flags = INDESTRUCTIBLE //These things are suppose to be unbreakable
-	description_info = "Probably not going to be able to drill or bomb your way through this, best to try and find a way around."
 	var/rock_side = "rock_side"
 	block_tele = TRUE
 

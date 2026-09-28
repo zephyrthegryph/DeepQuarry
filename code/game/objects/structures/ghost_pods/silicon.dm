@@ -3,8 +3,6 @@
 /obj/structure/ghost_pod/manual/lost_drone
 	name = "drone pod"
 	desc = "This is a pod which appears to contain a drone. You might be able to reactivate it, if you're brave enough."
-	description_info = "This contains a dormant drone, which can be activated. The drone will be another player, once activated. \
-	The laws the drone has will most likely not be the ones you're used to."
 	icon_state = "borg_pod_closed"
 	icon_state_opened = "borg_pod_opened"
 	density = TRUE
@@ -37,8 +35,6 @@
 /obj/structure/ghost_pod/automatic/gravekeeper_drone
 	name = "drone pod"
 	desc = "This is a pod which appears to contain a drone. You might be able to reactivate it, if you're brave enough."
-	description_info = "This contains a dormant drone, which may activate at any moment. The drone will be another player, once activated. \
-	The laws the drone has will most likely not be the ones you're used to."
 	icon_state = "borg_pod_closed"
 	icon_state_opened = "borg_pod_opened"
 	density = TRUE

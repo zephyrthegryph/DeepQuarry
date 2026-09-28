@@ -1,7 +1,6 @@
 /obj/structure/window/maintenance_panel
 	name = "maintenance panel"
 	desc = "A maintenance panel. It covers important things hidden inside the wall."
-	description_info = "Can be cut through or repaired with a welder. Can be deconstructed with a wrench once detached."
 	icon = 'icons/obj/maintenance_panel.dmi'
 	icon_state = "panel"
 	basestate = "panel"
@@ -36,7 +35,9 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
 	return ITEM_INTERACT_BLOCKING
 
 /obj/structure/window/maintenance_panel/welder_act(mob/user, obj/item/tool)
-	if(user.a_intent == I_HELP && get_integrity() < max_integrity)
+	// Damaged, and weld repair is meant (it is declared for I_HELP): repair it. Otherwise weld it to or cut it off the wall.
+	var/datum/interaction/window_repair/repair = INTERACTION(/datum/interaction/window_repair)
+	if(get_integrity() < max_integrity && repair.is_meant(user, src, tool))
 		return ..()
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.remove_fuel(1, user))

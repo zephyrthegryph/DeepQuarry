@@ -221,7 +221,7 @@ DECLARE_REF(/obj/item/organ/external, "applied_pressure", BACK, null)
 		return TRUE //no eating the limb until everything's been removed
 	return ..(user, held, interaction, TRUE)
 
-/obj/item/organ/external/get_description_info(list/additional_information)
+/obj/item/organ/external/get_mechanics_info(list/additional_information)
 	if(!additional_information)
 		additional_information = list()
 	switch(stage)

@@ -8,7 +8,7 @@ CATEGORY: Fiction
 /obj/item/book/bundle/custom_library/fiction/chroniclesofmargatavol1
 	name = "The Chronicles of Margata: Volume I"
 	desc = "A hardbound book titled \"The Chronicles of Margata: Volume I\" by Molly Highlander."
-	description_info = "This book is titled \"The Chronicles of Margata: Volume I\" by Molly Highlander. There's a blurb on the back: <br>\
+	description_fluff = "This book is titled \"The Chronicles of Margata: Volume I\" by Molly Highlander. There's a blurb on the back: <br>\
 						In this first volume in the series of the Chronicles of Margata, follow a young man's journey to dispel a curse of pure evil."
 
 	title = "The Chronicles of Margata: Volume I"

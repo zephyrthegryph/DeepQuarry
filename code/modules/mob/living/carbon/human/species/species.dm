@@ -659,7 +659,7 @@
 //CheckHighDamage returns the damage value of the attack if it meets at least the noted value
 /datum/species/proc/can_shred(mob/living/carbon/human/H, ignore_intent, checkhighdamage = 0)
 
-	if(!ignore_intent && !IS_HARMING(H))
+	if(!ignore_intent && !H.combat_mode) // the shredder's posture (state): combat mode on means claws out
 		return 0
 
 	if(H.get_feralness())

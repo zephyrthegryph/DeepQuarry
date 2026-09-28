@@ -115,7 +115,8 @@
 		"disarm", "grab", "dq_combat_friendly", "dq_combat_hostile", "dq_combat_needs_combat", "dq_combat_needs_peace",
 		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 		// Construction (dq_construction_tests.dm and its per-domain files). Graph edges are checked there, not here.
-		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "window_repair",
+		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "mecha_weld_repair_disarm", "mecha_weld_repair_grab", "mecha_weld_strike", "window_repair",
+		"catwalk_slice_help", "catwalk_slice_disarm", "catwalk_slice_grab", "catwalk_slice_harm", // code/game/objects/structures/catwalk.dm
 		"ai_slipper_toggle_lock", // code/game/machinery/ai_slipper.dm: no dedicated test or snapshot yet
 		"shadekin_phase_shift", "shadekin_dark_respite", "shadekin_regenerate_other", "shadekin_create_shade", // dq_ability_tests.dm
 		"shadekin_dark_maw", "shadekin_clear_dark_maws", "shadekin_dark_tunneling", // dq_ability_tests.dm
@@ -424,17 +425,6 @@
 		TEST_ASSERT(interaction.applies_to(machine), "[interaction.id] applies with its flag alone")
 		machine.maintenance_flags = NONE
 		TEST_ASSERT(!interaction.applies_to(machine), "[interaction.id] doesn't apply without its flag")
-	// The converted types' hand-written hints are gone: examine generates them.
-	var/checked = 0
-	for(var/obj/machinery/path as anything in typesof(/obj/machinery))
-		if(!initial(path.maintenance_flags))
-			continue
-		checked++
-		var/description = initial(path.description_info)
-		if(description)
-			for(var/word in list("screwdriver", "crowbar", "maintenance panel"))
-				TEST_ASSERT(!findtext(description, word), "[path]'s description_info repeats the generated maintenance hints ('[word]')")
-	TEST_ASSERT(checked > 50, "found the Maintainable machine types ([checked])")
 
 // ---- Menu, examine and screentips ----
 

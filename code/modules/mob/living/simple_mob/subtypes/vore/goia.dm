@@ -349,12 +349,13 @@
 	qdel(I)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(zorgoia_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(zorgoia_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(zorgoia_interaction_hand)), \
 )
 
 /// Old attack_hand (ran before the gate): help pets/tames, grab is refused while alive and AI-run. FALSE = default touch.
 /mob/living/simple_mob/vore/zorgoia/proc/zorgoia_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	switch(M.use_stance())
+	switch(interaction.stance)
 		if(I_HELP)
 			if(stat != DEAD)
 				if(M.zone_sel.selecting == BP_GROIN)

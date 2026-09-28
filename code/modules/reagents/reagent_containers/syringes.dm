@@ -169,7 +169,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 	else
 		to_chat(user, span_notice("The syringe is empty."))
 
-/obj/item/reagent_containers/syringe/afterattack(obj/target, mob/user, proximity)
+/obj/item/reagent_containers/syringe/afterattack(obj/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!proximity || !target.reagents)
 		return
 
@@ -177,7 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 		to_chat(user, span_warning("This syringe is broken!"))
 		return
 
-	if(IS_HARMING(user) && ismob(target))
+	if(stance == I_HURT && ismob(target))
 		if(CLUMSY_HARM_CHANCE(user))
 			target = user
 		syringestab(target, user)
@@ -392,11 +392,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 	visible_name = "a giant syringe"
 	time = 300
 
-/obj/item/reagent_containers/syringe/ld50_syringe/afterattack(obj/target, mob/user, flag)
+/obj/item/reagent_containers/syringe/ld50_syringe/afterattack(obj/target, mob/user, flag, click_parameters, stance = I_HURT)
 	if(mode == SYRINGE_DRAW && ismob(target)) // No drawing 50 units of blood at once
 		to_chat(user, span_notice("This needle isn't designed for drawing blood."))
 		return
-	if(IS_HARMING(user) && ismob(target)) // No instant injecting
+	if(stance == I_HURT && ismob(target)) // No instant injecting
 		to_chat(user, span_notice("This syringe is too big to stab someone with it."))
 		return
 	..()

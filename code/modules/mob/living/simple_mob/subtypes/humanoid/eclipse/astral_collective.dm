@@ -188,7 +188,7 @@
 	special_attack_min_range = 0
 	special_attack_max_range = 2
 
-/mob/living/simple_mob/humanoid/astral_collective/purity/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/purity/do_special_attack(atom/A, stance)
 	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
 	for(var/mob/living/M in orange(src, 2))
 		if(M.get_ear_protection() == 0)
@@ -206,7 +206,7 @@
 	ranged_cooldown = 65
 	projectiletype = /obj/item/projectile/energy/astral_collective/basic
 
-/mob/living/simple_mob/humanoid/astral_collective/ranged/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/ranged/do_special_attack(atom/A, stance)
 	switch(expirmental)
 		if(1)
 			burn_beam(A)
@@ -375,7 +375,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagge
 		teleport_attack(src)
 	..()
 
-/mob/living/simple_mob/humanoid/astral_collective/body/dagger/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/body/dagger/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7))
 		if(L.stat != DEAD && !IIsAlly(L))
 			L.apply_body_effect(/datum/body_effect/mmo_drop/eclipse_dagger, 3, src)
@@ -387,7 +387,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagge
 	special_attack_max_range = 3
 	special_attack_cooldown = 18 SECONDS
 
-/mob/living/simple_mob/humanoid/astral_collective/body/juggernaught/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/body/juggernaught/do_special_attack(atom/A, stance)
 	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
 	for(var/mob/living/M in orange(src, 3))
 		if(M.get_ear_protection() == 0)
@@ -420,7 +420,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 	else
 		return FALSE
 
-/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/mind/gravity/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7)) //despite the attack range being 6 we do 7 so folks don't wander in then get confused why they are getting hit by it
 		Beam(L, icon_state = "chain", time = 1.5 SECONDS, maxdistance = 6)
 	om_after(src, 2.5 SECONDS, PROC_REF(super_move), A)
@@ -456,7 +456,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 	icon_living = "clock_cat_shield"
 	var/barrier_health = 3
 
-/mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/soul/spear_bearer/do_special_attack(atom/A, stance)
 	barrier_health ++
 	icon_state = "clock_cat_shield"
 
@@ -480,7 +480,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 	icon_state = "clock_sergal"
 	icon_living = "clock_sergal"
 
-/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/astral_collective/soul/shield_projector/do_special_attack(atom/A, stance)
 	mend(TREAT_TISSUE_REPAIR, 200)
 	mend(TREAT_BURN_CARE, 200)
 

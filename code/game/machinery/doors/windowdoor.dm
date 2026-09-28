@@ -1,3 +1,6 @@
+/// welder_act(): the windoor's stance-declared weld repair.
+#define WINDOOR_ENTRY_WELD "windoor_weld"
+
 /obj/machinery/door/window
 	name = "interior door"
 	desc = "A strong door."
@@ -281,8 +284,33 @@
 	return TRUE
 
 /obj/machinery/door/window/welder_act(mob/user, obj/item/tool)
-	if(operating == 1 || user.a_intent != I_HELP)
+	if(operating == 1)
 		return FALSE
+	// Outside combat mode only (the stance-declared repair); otherwise the welder goes on to strike.
+	if(run_interaction_entry(user, src, tool, WINDOOR_ENTRY_WELD))
+		return TRUE
+	return FALSE
+
+/// Weld-repair the windoor, outside combat mode (run from welder_act()).
+/datum/interaction/windowdoor_repair
+	id = "windowdoor_repair"
+	name = "Repair"
+	entry = WINDOOR_ENTRY_WELD
+	default_action = INPUT_ACTION_USE
+	category = INTERACTION_CAT_REPAIR
+	stance = I_HELP
+	tool = TOOL_WELDER
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/door/window/proc/interaction_repair
+
+/obj/machinery/door/window/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/windowdoor_repair,
+	)
+	..()
+
+/obj/machinery/door/window/proc/interaction_repair(mob/user, obj/item/tool, datum/interaction/interaction)
 	if(get_integrity() >= max_integrity)
 		to_chat(user, span_warning("[src] is already in good condition!"))
 		return TRUE

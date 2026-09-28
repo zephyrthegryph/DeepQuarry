@@ -1,8 +1,6 @@
 // Parrots can talk, and may repeat things it hears.
 /mob/living/simple_mob/animal/passive/bird/parrot
 	name = "parrot"
-	description_info = "You can give it a headset by clicking on it with a headset. \
-	To remove it, click the bird while on grab intent."
 	has_langs = list(LANGUAGE_GALCOM, LANGUAGE_ANIMAL)
 
 
@@ -50,7 +48,7 @@
 // Clicked on while holding an object.
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 	INTERACT_ITEM(null, PROC_REF(parrot_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(parrot_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take headset", PROC_REF(parrot_interaction_hand)))
 
 /// Old attackby: give a headset.
 /mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
@@ -64,7 +62,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 /// Old attack_hand: grab the headset off.
 /mob/living/simple_mob/animal/passive/bird/parrot/proc/parrot_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(IS_GRABBING(L) && my_headset)
+	if(interaction.stance == I_GRAB && my_headset)
 		remove_headset(L)
 	else
 		return FALSE
@@ -249,3 +247,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 
 
 // AI
+
+// The worn headset sits in the parrot's contents.
+DECLARE_REF(/mob/living/simple_mob/animal/passive/bird/parrot, "my_headset", HELD, null)

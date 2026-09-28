@@ -19,9 +19,9 @@
 	icon_state = "medical"
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/bag_valve_mask/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/bag_valve_mask/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || IS_HARMING(user))
+	if(!istype(H) || stance == I_HURT)
 		return ..()
 	if(!H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_MASK) && (H.get_equipped_item(SLOT_ID_MASK).body_parts_covered & FACE)) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		to_chat(user, span_warning("You can't get a seal over [H]'s face."))
@@ -54,9 +54,9 @@
 	/// Airway treatment delivered per use.
 	var/airway_amount = 60
 
-/obj/item/airway_kit/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/airway_kit/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || IS_HARMING(user))
+	if(!istype(H) || stance == I_HURT)
 		return ..()
 	if(target_zone != O_MOUTH && target_zone != BP_HEAD)
 		to_chat(user, span_warning("Aim for [H]'s mouth."))
@@ -89,9 +89,9 @@
 	var/decompression_amount = 70
 	var/used = FALSE
 
-/obj/item/decompression_needle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/decompression_needle/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || IS_HARMING(user))
+	if(!istype(H) || stance == I_HURT)
 		return ..()
 	if(used)
 		to_chat(user, span_warning("\The [src] has already been used."))

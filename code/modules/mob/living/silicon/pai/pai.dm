@@ -316,7 +316,8 @@ DECLARE_REF(/mob/living/silicon/pai, "hackdoor", HELD, null)
 
 EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	INTERACT_ITEM(null, PROC_REF(pai_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(pai_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pat", PROC_REF(pai_interaction_pat)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Boop shut", PROC_REF(pai_interaction_boop)))
 
 /// Old attackby (never reached the default attack): ID access edits, else its own hit or bonk.
 /mob/living/silicon/pai/proc/pai_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -373,18 +374,18 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	if(radio)
 		radio.recalculateChannels()
 
-/// Old attack_hand: help pats, disarm boops it shut; other intents reach the gate and default touch.
-/mob/living/silicon/pai/proc/pai_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HELPING(user))
-		visible_message(span_notice("\The [user] pats \the [src]."))
-		return TRUE
-	if(IS_DISARMING(user))
-		visible_message(span_danger("\The [user] boops \the [src] on the head."))
-		close_up()
-		return TRUE
-	return FALSE
+/// Old attack_hand, help: pat it. (Grab and harm reach the gate and the default touch.)
+/mob/living/silicon/pai/proc/pai_interaction_pat(mob/user, obj/item/held, datum/interaction/interaction)
+	visible_message(span_notice("\The [user] pats \the [src]."))
+	return TRUE
 
-/mob/living/silicon/pai/UnarmedAttack(atom/A, proximity_flag)
+/// Old attack_hand, disarm: boop it shut.
+/mob/living/silicon/pai/proc/pai_interaction_boop(mob/user, obj/item/held, datum/interaction/interaction)
+	visible_message(span_danger("\The [user] boops \the [src] on the head."))
+	close_up()
+	return TRUE
+
+/mob/living/silicon/pai/UnarmedAttack(atom/A, proximity_flag, stance = I_HURT)
 	. = ..()
 
 	// Some restricted objects to interact with
@@ -417,7 +418,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	if(!ismob(A) || A == src)
 		return
 
-	switch(use_stance())
+	switch(stance)
 		if(I_HELP)
 			if(isliving(A))
 				hug(src, A)

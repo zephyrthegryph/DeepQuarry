@@ -26,12 +26,12 @@
 	. = ..()
 	update_icon()
 
-/obj/item/glass_jar/afterattack(atom/A, mob/user, proximity)
+/obj/item/glass_jar/afterattack(atom/A, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!proximity || contains)
 		return
 	if(can_fill && !filled)
 		if(istype(A, /obj/structure/sink) || istype(A, /turf/simulated/floor/water))
-			if(contains && IS_HELPING(user))
+			if(contains && stance == I_HELP)
 				to_chat(user, span_warning("That probably isn't the best idea."))
 				return
 
@@ -63,7 +63,10 @@
 		return
 
 DECLARE_INTERACTIONS(/obj/item/glass_jar, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_HELP, "Empty", PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_DISARM, "Empty, dumping the water", PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_GRAB, "Empty, dumping the water", PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_HURT, "Empty, dumping the water", PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
@@ -73,7 +76,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 	//For the fish jars
 	if(can_fill && filled)
 		if(contains == JAR_ANIMAL)
-			if(IS_HELPING(user))
+			if(interaction.stance == I_HELP)
 				to_chat(user, span_notice("Maybe you shouldn't empty the water..."))
 				return TRUE
 

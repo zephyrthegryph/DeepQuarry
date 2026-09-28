@@ -187,8 +187,8 @@ emp_act
 			return gear
 	return null
 
-/mob/living/carbon/human/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
-	if(check_neckgrab_attack(I, user, target_zone))
+/mob/living/carbon/human/resolve_item_attack(obj/item/I, mob/living/user, target_zone, stance = I_HURT)
+	if(check_neckgrab_attack(I, user, target_zone, stance))
 		return null
 
 	if(user == src) // Attacking yourself can't miss
@@ -212,7 +212,7 @@ emp_act
 
 	return hit_zone
 
-/mob/living/carbon/human/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
+/mob/living/carbon/human/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone, stance = I_HURT)
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
 	if(!affecting)
 		return //should be prevented by attacked_with_item() but for sanity.
@@ -221,11 +221,11 @@ emp_act
 
 	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
 
-	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone)
+	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
 	return blocked
 
-/mob/living/carbon/human/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone)
+/mob/living/carbon/human/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone, stance = I_HURT)
 	var/obj/item/organ/external/affecting = get_organ(hit_zone)
 	if(!affecting)
 		return 0
@@ -237,9 +237,9 @@ emp_act
 		C.clothing_impact(I, effective_force)
 
 	// Handle striking to cripple.
-	if(IS_DISARMING(user))
+	if(stance == I_DISARM)
 		effective_force *= 0.5 //reduced effective force...
-		if(!..(I, user, effective_force, blocked, hit_zone))
+		if(!..(I, user, effective_force, blocked, hit_zone, stance))
 			return 0
 
 		//set the dislocate mult less than the effective force mult so that

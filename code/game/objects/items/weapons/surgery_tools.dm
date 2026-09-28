@@ -22,8 +22,8 @@
 	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
 	var/helpforce = 0	//For help intent things
 
-/obj/item/surgical/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(IS_HELPING(user))	//A tad messy, but this should stop people from smacking their patients in surgery
+/obj/item/surgical/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(stance == I_HELP)	//A tad messy, but this should stop people from smacking their patients in surgery
 		return NONE
 	..()
 

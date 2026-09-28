@@ -15,7 +15,6 @@
 /turf/simulated/floor/gas_crack
 	icon = 'icons/turf/flooring/asteroid.dmi'
 	desc = "Rough sand with a huge crack. It seems to be nothing in particular."
-	description_info = "Fluid pumps can be used to frack for reagents in nearby ores, and a mining drill can also bore through trapped gas deposits beneath it."
 	name = "cracked sand"
 	icon_state = "asteroid_cracked"
 	initial_flooring = /datum/decl/flooring/rock

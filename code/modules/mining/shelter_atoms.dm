@@ -157,7 +157,7 @@
 /obj/item/survivalcapsule/superpose
 	name = "superposed surfluid shelter capsule"
 	desc = "A proprietary hyperstructure of many three-dimensional spaces superposed around a supermatter nano crystal; right-click to reset the pod. There's a license for use printed on the bottom."
-	description_info = "The capsule contains pockets of compressed space in a super position stabilized by a miniscule supermatter crystal. \
+	description_fluff = "The capsule contains pockets of compressed space in a super position stabilized by a miniscule supermatter crystal. \
 	NanoTrasen stresses the safety of this model over previous prototypes but assumes no liability for sub-kiloton explosions."
 	template_id = null
 	var/list/template_ids

@@ -15,27 +15,37 @@
 
 	projectile_type = /obj/item/projectile/energy/homing_bolt/wizard
 
+/obj/item/gun/magic/firestaff/vrwizard/fire/get_mechanics_info(list/additional_information)
+	return ..(list("It will burn the target along with reducing their bleeding.") + additional_information)
+
 /obj/item/gun/magic/firestaff/vrwizard/fire
-	description_info = "It will burn the target along with reducing their bleeding."
 	projectile_type = /obj/item/projectile/energy/homing_bolt/wizard/fire
 	color = "#FF0000"
 
+/obj/item/gun/magic/firestaff/vrwizard/lighting/get_mechanics_info(list/additional_information)
+	return ..(list("It will lightly burn targets and open them up to energy based attacks.") + additional_information)
+
 /obj/item/gun/magic/firestaff/vrwizard/lighting
-	description_info = "It will lightly burn targets and open them up to energy based attacks."
 	projectile_type = /obj/item/projectile/energy/homing_bolt/wizard/lighting
 	color = "#C1F20B"
 
+/obj/item/gun/magic/firestaff/vrwizard/poison/get_mechanics_info(list/additional_information)
+	return ..(list("It will heavily poison targets.") + additional_information)
+
 /obj/item/gun/magic/firestaff/vrwizard/poison
-	description_info = "It will heavly poison targets."
 	projectile_type = /obj/item/projectile/energy/homing_bolt/wizard/poison
 	color = "#003300"
 
+/obj/item/gun/magic/firestaff/vrwizard/frost/get_mechanics_info(list/additional_information)
+	return ..(list("It will slow down and minorly poison targets.") + additional_information)
+
 /obj/item/gun/magic/firestaff/vrwizard/frost
-	description_info = "Will slow down and minorly poison targets."
 	projectile_type = /obj/item/projectile/energy/homing_bolt/wizard/frost
 	color = "#00CCFF"
 
+/obj/item/gun/magic/firestaff/vrwizard/nuclear/get_mechanics_info(list/additional_information)
+	return ..(list("A high powered staff that burns through energy quickly but unleashes high energy bolts.") + additional_information)
+
 /obj/item/gun/magic/firestaff/vrwizard/nuclear
-	description_info = "A high powered staff that burns through energy quickly but unleashes high energy bolts."
 	projectile_type = /obj/item/projectile/energy/nuclearblast
 	color = "#660066"

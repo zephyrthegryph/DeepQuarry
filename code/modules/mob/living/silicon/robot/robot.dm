@@ -1,3 +1,7 @@
+/// Interaction entries: a crowbar or welder used on the chassis (crowbar_act()/welder_act()).
+#define ROBOT_ENTRY_CROWBAR "robot_crowbar"
+#define ROBOT_ENTRY_WELDER "robot_welder"
+
 /mob/living/silicon/robot
 	/// Traitor HUD images shown to a syndicate borg's client (see build_traitor_hud()).
 	var/list/traitor_hud_images
@@ -751,7 +755,10 @@
 
 EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(robot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(robot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tap", PROC_REF(robot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hold", PROC_REF(robot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Punch", PROC_REF(robot_interaction_hand)), \
 	INTERACT_DRAG("Block drag", TYPE_PROC_REF(/atom, interaction_swallow)), \
 	INTERACT_ROBOT("Drop hat", PROC_REF(robot_drop_own_hat)), \
 	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
@@ -901,21 +908,49 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	wires.Interact(user)
 	return ITEM_INTERACT_SUCCESS
 
-/// Crowbar: open or close the cover, lever out the brain, or pry out a part.
+/// Crowbar outside combat mode: the stance-declared pry interactions. In combat mode none is declared, so the crowbar goes on to strike.
 /mob/living/silicon/robot/crowbar_act(mob/user, obj/item/tool)
-	if(user.a_intent == I_HURT)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(run_interaction_entry(user, src, tool, ROBOT_ENTRY_CROWBAR))
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_SKIP_TO_ATTACK
+
+/// Abstract: working the chassis with a crowbar outside combat mode (run from crowbar_act()).
+/datum/interaction/robot_pry
+	entry = ROBOT_ENTRY_CROWBAR
+	default_action = INPUT_ACTION_USE
+	tool = TOOL_CROWBAR
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /mob/living/silicon/robot/proc/interaction_crowbar
+
+/datum/interaction/robot_pry/help
+	id = "robot_pry_help"
+	name = "Pry the cover or a part"
+	stance = I_HELP
+
+/datum/interaction/robot_pry/disarm
+	id = "robot_pry_disarm"
+	name = "Pry the cover or a part"
+	stance = I_DISARM
+
+/datum/interaction/robot_pry/grab
+	id = "robot_pry_grab"
+	name = "Pry the cover or a part"
+	stance = I_GRAB
+
+/// Crowbar: open or close the cover, lever out the brain, or pry out a part.
+/mob/living/silicon/robot/proc/interaction_crowbar(mob/user, obj/item/tool, datum/interaction/interaction)
 	if(!opened)
 		open_cover(user)
-		return ITEM_INTERACT_SUCCESS
+		return TRUE
 	if(cell)
 		close_cover(user)
-		return ITEM_INTERACT_SUCCESS
+		return TRUE
 	if(wiresexposed && wires.is_all_cut())
 		extract_mmi(user)
-		return ITEM_INTERACT_SUCCESS
+		return TRUE
 	pry_component(user)
-	return ITEM_INTERACT_SUCCESS
+	return TRUE
 
 /mob/living/silicon/robot/proc/open_cover(mob/user)
 	if(locked)
@@ -990,24 +1025,64 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	I.forceMove(loc)
 	return TRUE
 
+/// Welder outside combat mode: the stance-declared repair interactions. In combat mode none is declared, so the welder goes on to strike.
 /mob/living/silicon/robot/welder_act(mob/user, obj/item/tool)
-	if(user.a_intent == I_HURT)
-		return ITEM_INTERACT_SKIP_TO_ATTACK
+	if(run_interaction_entry(user, src, tool, ROBOT_ENTRY_WELDER))
+		return ITEM_INTERACT_SUCCESS
+	return ITEM_INTERACT_SKIP_TO_ATTACK
+
+/// Abstract: welding the chassis's dents outside combat mode (run from welder_act()).
+/datum/interaction/robot_weld_repair
+	entry = ROBOT_ENTRY_WELDER
+	default_action = INPUT_ACTION_USE
+	tool = TOOL_WELDER
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /mob/living/silicon/robot/proc/interaction_weld_repair
+
+/datum/interaction/robot_weld_repair/help
+	id = "robot_weld_repair_help"
+	name = "Weld the dents"
+	stance = I_HELP
+
+/datum/interaction/robot_weld_repair/disarm
+	id = "robot_weld_repair_disarm"
+	name = "Weld the dents"
+	stance = I_DISARM
+
+/datum/interaction/robot_weld_repair/grab
+	id = "robot_weld_repair_grab"
+	name = "Weld the dents"
+	stance = I_GRAB
+
+/// Welder: fix the chassis's dents (not your own).
+/mob/living/silicon/robot/proc/interaction_weld_repair(mob/user, obj/item/tool, datum/interaction/interaction)
 	if(src == user)
 		to_chat(user, span_warning("You lack the reach to be able to repair yourself."))
-		return ITEM_INTERACT_BLOCKING
+		return TRUE
 	if(!injury_load(INJURY_CATEGORY_PHYSICAL))
 		to_chat(user, span_filter_notice("Nothing to fix here!"))
-		return ITEM_INTERACT_BLOCKING
+		return TRUE
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder?.remove_fuel(0))
 		to_chat(user, span_filter_warning("Need more welding fuel!"))
-		return ITEM_INTERACT_BLOCKING
+		return TRUE
 	user.setClickCooldown(user.get_attack_speed(welder))
 	mend(TREAT_PLATING_REPAIR, 30)
 	add_fingerprint(user)
 	visible_message(span_filter_notice("[span_red("[user] has fixed some of the dents on [src]!")]"))
-	return ITEM_INTERACT_SUCCESS
+	return TRUE
+
+/mob/living/silicon/robot/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/robot_pry/help,
+		/datum/interaction/robot_pry/disarm,
+		/datum/interaction/robot_pry/grab,
+		/datum/interaction/robot_weld_repair/help,
+		/datum/interaction/robot_weld_repair/disarm,
+		/datum/interaction/robot_weld_repair/grab,
+	)
+	..()
 
 /mob/living/silicon/robot/multitool_act(mob/user, obj/item/tool)
 	return wirecutter_act(user, tool)
@@ -1112,7 +1187,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		take_out_power_part(user)
 
 	if(ishuman(user) && !opened)
-		hand_interact(user)
+		hand_interact(user, interaction.stance)
 	return TRUE
 
 /// Hand removal of the cell, or of the fried remains of its mount.
@@ -1133,9 +1208,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return TRUE
 	return FALSE
 
-/// Petting, punching, tapping and vore on a closed chassis.
-/mob/living/silicon/robot/proc/hand_interact(mob/living/carbon/human/H)
-	switch(H.use_stance())
+/// Petting, punching, tapping and vore on a closed chassis, in `stance` (the touch interaction's).
+/mob/living/silicon/robot/proc/hand_interact(mob/living/carbon/human/H, stance)
+	switch(stance)
 		if(I_HELP)
 			if(grabbable)
 				attempt_to_scoop(H)

@@ -44,11 +44,11 @@
 	if (prob(75))
 		pixel_y = rand(0, 16)
 
-/obj/item/tool/wirecutters/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/tool/wirecutters/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!iscarbon(M))
 		return ..()
 	var/mob/living/carbon/C = M
-	if(istype(C) && IS_HELPING(user) && (C.get_equipped_item(SLOT_ID_HANDCUFFED)) && (istype(C.get_equipped_item(SLOT_ID_HANDCUFFED), /obj/item/handcuffs/cable)))
+	if(istype(C) && stance == I_HELP && (C.get_equipped_item(SLOT_ID_HANDCUFFED)) && (istype(C.get_equipped_item(SLOT_ID_HANDCUFFED), /obj/item/handcuffs/cable)))
 		user.visible_message("\The [user] cuts \the [C]'s restraints with \the [src]!",\
 		"You cut \the [C]'s restraints with \the [src]!",\
 		"You hear cable being cut.")

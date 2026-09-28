@@ -26,6 +26,7 @@
 /obj/structure/alien/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/alien_item,
+		/datum/interaction/entry_hand/alien_hand/harm,
 		/datum/interaction/entry_hand/alien_hand,
 	)
 	..()
@@ -49,6 +50,12 @@
 	name = "Use"
 	effect = /obj/structure/alien/proc/interaction_hand
 
+/// Combat mode: hivenode carriers melt it away, replicant resin spinners dissolve it.
+/datum/interaction/entry_hand/alien_hand/harm
+	id = "alien_hand_harm"
+	name = "Melt"
+	stance = I_HURT
+
 /obj/structure/alien/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if (HULK in user.mutations)
@@ -58,7 +65,7 @@
 
 		// Aliens can get straight through these.
 		if(istype(user,/mob/living/carbon))
-			if(IS_HARMING(user))
+			if(interaction.stance == I_HURT)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/hivenode))
 					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)

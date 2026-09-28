@@ -170,10 +170,12 @@
 
 // Ooold, old reactive armor.
 // Alien armor has a chance to completely block attacks.
+/obj/item/clothing/suit/armor/alien/get_mechanics_info(list/additional_information)
+	return ..(list("It has a 20% chance to completely nullify an incoming attack, and the wearer moves slightly faster.") + additional_information)
+
 /obj/item/clothing/suit/armor/alien
 	name = "alien enhancement vest"
 	desc = "It's a strange piece of what appears to be armor. It looks very light and agile. Strangely enough it seems to have been designed for a humanoid shape."
-	description_info = "It has a 20% chance to completely nullify an incoming attack, and the wearer moves slightly faster."
 	icon_state = "alien_speed"
 	blood_overlay_type = "armor"
 	item_state_slots = list(slot_r_hand_str = "armor", slot_l_hand_str = "armor")
@@ -183,10 +185,12 @@
 	siemens_coefficient = 0.4
 	var/block_chance = 20
 
+/obj/item/clothing/suit/armor/alien/tank/get_mechanics_info(list/additional_information)
+	return ..(list("It has a 40% chance to completely nullify an incoming attack.") + additional_information)
+
 /obj/item/clothing/suit/armor/alien/tank
 	name = "alien protection suit"
 	desc = "It's really resilient yet lightweight, so it's probably meant to be armor. Strangely enough it seems to have been designed for a humanoid shape."
-	description_info = "It has a 40% chance to completely nullify an incoming attack."
 	icon_state = "alien_tank"
 	slowdown = 0
 	body_parts_covered = CHEST|LEGS|ARMS

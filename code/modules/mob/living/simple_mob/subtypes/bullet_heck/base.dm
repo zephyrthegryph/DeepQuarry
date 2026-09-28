@@ -24,7 +24,7 @@
 	var/artidrop = /obj/effect/artillery_attack
 	var/rng_cycle = 0
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/do_special_attack(atom/A, stance)
 	bullet_heck(A, 3, 3)
 
 /mob/living/simple_mob/mechanical/mecha/eclipse/hitby(atom/movable/source, datum/thrownthing/throwingdatum) //removal of E net cheese

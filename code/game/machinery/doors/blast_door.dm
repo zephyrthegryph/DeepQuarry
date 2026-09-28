@@ -147,7 +147,10 @@
 /obj/machinery/door/blast/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/blast_door_alien,
-		/datum/interaction/machine_item/blast_door_attack,
+		/datum/interaction/machine_item/blast_door_attack/help,
+		/datum/interaction/machine_item/blast_door_attack/disarm,
+		/datum/interaction/machine_item/blast_door_attack/grab,
+		/datum/interaction/machine_item/blast_door_attack/harm,
 	)
 	..()
 
@@ -172,17 +175,37 @@
 // Parameters: 2 (C - Item this object was clicked with, user - Mob which clicked this object)
 // Description: If we are clicked with crowbar, wielded fire axe, or armblade, try to manually open the door.
 // This only works on broken doors or doors without power. Also allows repair with Plasteel.
+/// Abstract: one per stance. Outside combat mode a prying tool forces the door; in combat mode items strike it.
 /datum/interaction/machine_item/blast_door_attack
-	id = "blast_door_attack"
-	name = "Use"
 	category = INTERACTION_CAT_ATTACK
 	held_type = /obj/item
 	effect = /obj/machinery/door/blast/proc/interaction_attackby
 
+/datum/interaction/machine_item/blast_door_attack/help
+	id = "blast_door_attack_help"
+	name = "Pry open"
+	stance = I_HELP
+
+/datum/interaction/machine_item/blast_door_attack/disarm
+	id = "blast_door_attack_disarm"
+	name = "Pry open"
+	stance = I_DISARM
+
+/datum/interaction/machine_item/blast_door_attack/grab
+	id = "blast_door_attack_grab"
+	name = "Pry open"
+	stance = I_GRAB
+
+/datum/interaction/machine_item/blast_door_attack/harm
+	id = "blast_door_attack_harm"
+	name = "Strike"
+	stance = I_HURT
+
 /obj/machinery/door/blast/proc/interaction_attackby(mob/user, obj/item/C, datum/interaction/interaction)
 	src.add_fingerprint(user)
+	var/harming = interaction.stance == I_HURT
 	if(istype(C, /obj/item)) // For reasons unknown, sometimes C is actually not what it is advertised as, like a mob.
-		if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
+		if(C.pry == 1 && (!harming || (stat & BROKEN))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
 			if(istype(C,/obj/item/material/twohanded/fireaxe)) // Fireaxes need to be in both hands to pry.
 				var/obj/item/material/twohanded/fireaxe/F = C
 				if(!F.wielded)
@@ -197,7 +220,7 @@
 				to_chat(user, span_notice("[src]'s motors resist your effort."))
 			return TRUE
 
-		else if(src.density && (IS_HARMING(user))) //If we can't pry it open and it's a weapon, let's hit it.
+		else if(src.density && harming) //If we can't pry it open and it's a weapon, let's hit it.
 			var/obj/item/W = C
 			user.setClickCooldown(user.get_attack_speed(W))
 			if(W.obj_damage_type())
@@ -222,7 +245,7 @@
 		to_chat(user, span_notice("You begin repairing [src]..."))
 		om_task_start(/datum/om/task/timed/blast_interaction_attackby, user, src, receiver = src, amt = amt, P = P)
 
-	else if(src.density && (IS_HARMING(user))) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
+	else if(src.density && harming) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
 		var/obj/item/W = C
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(istype(W) && (W.obj_damage_type()))

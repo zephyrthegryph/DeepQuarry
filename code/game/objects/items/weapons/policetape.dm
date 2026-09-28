@@ -331,29 +331,35 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 		add_fingerprint(M)
 		if(!allowed(M))	//only select few learn art of not crumpling the tape
 			to_chat(M, span_warning("You are not supposed to go past \the [src]..."))
-			if(IS_HELPING(M) && !(isanimal(M)))
+			if(!M.combat_mode && !(isanimal(M)))
 				return FALSE
 			crumple()
 	return ..()
 
 /// Old attackby.
 /obj/item/tape/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	breaktape(user)
+	breaktape(user, interaction.stance)
 	return INTERACTION_HANDLED_PASS
 
 DECLARE_INTERACTIONS(/obj/item/tape, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Lift", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Break", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Break", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Break", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_DISARM, "Break", PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_GRAB, "Break", PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_HURT, "Break", PROC_REF(interaction_item)), \
 )
 
 /// Old attack_hand.
 /obj/item/tape/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if (IS_HELPING(user) && src.allowed(user))
+	if (interaction.stance == I_HELP && src.allowed(user))
 		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
 			T.lift(100) //~10 seconds
 	else
-		breaktape(user)
+		breaktape(user, interaction.stance)
 	return TRUE
 
 /obj/item/tape/proc/lift(time)
@@ -388,8 +394,8 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 			cur = get_step(cur, dir)
 	return tapeline
 
-/obj/item/tape/proc/breaktape(mob/user)
-	if(IS_HELPING(user))
+/obj/item/tape/proc/breaktape(mob/user, stance = I_HURT)
+	if(stance == I_HELP)
 		to_chat(user, span_warning("You refrain from breaking \the [src]."))
 		return
 	user.visible_message(span_bold("\The [user]") + " breaks \the [src]!",span_notice("You break \the [src]."))

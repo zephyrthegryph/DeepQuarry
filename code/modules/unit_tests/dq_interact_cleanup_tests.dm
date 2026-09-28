@@ -142,17 +142,17 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 	dq_give_zone_sel(user)
 	victim.lying = TRUE // a prone target can't dodge the stab, so it always lands
 	user.set_combat_mode(TRUE)
-	TEST_ASSERT(IS_HARMING(user), "combat mode on is harming")
+	TEST_ASSERT_EQUAL(user.input_stance(), I_HURT, "combat mode on is the harm stance")
 
 	var/obj/item/reagent_containers/syringe/S = allocate(/obj/item/reagent_containers/syringe, T)
 	S.reagents.add_reagent(REAGENT_ID_WATER, 10)
-	S.afterattack(victim, user, TRUE)
+	S.afterattack(victim, user, TRUE, null, I_HURT)
 	TEST_ASSERT(findtext(S.desc, "broken"), "combat mode: the syringe is stabbed in and breaks")
 
 	var/obj/item/reagent_containers/syringe/ld50_syringe/big = allocate(/obj/item/reagent_containers/syringe/ld50_syringe, T)
 	big.mode = 1 // SYRINGE_INJECT (the defines are file-local)
 	big.reagents.add_reagent(REAGENT_ID_WATER, 10)
-	big.afterattack(victim, user, TRUE)
+	big.afterattack(victim, user, TRUE, null, I_HURT)
 	TEST_ASSERT_EQUAL(big.reagents.total_volume, 10, "combat mode: the lethal-injection syringe is too big to stab with")
 	TEST_ASSERT(!findtext(big.desc, "broken"), "combat mode: the lethal-injection syringe stays whole")
 

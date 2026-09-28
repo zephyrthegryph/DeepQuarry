@@ -423,9 +423,9 @@
 			shadekin.dark_energy += gains
 
 // When someone clicks us with an empty hand
-/mob/living/simple_mob/shadekin/unarmed_touch(mob/living/carbon/human/M)
+/mob/living/simple_mob/shadekin/unarmed_touch(mob/living/carbon/human/M, stance = I_HELP)
 	. = ..()
-	if(IS_HELPING(M))
+	if(stance == I_HELP)
 		shy_approach = FALSE //ACCLIMATED
 
 /datum/say_list/shadekin

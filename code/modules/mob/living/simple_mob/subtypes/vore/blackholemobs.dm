@@ -63,7 +63,7 @@
 ///otie pounce code!///
 ///-------------------------------------------------------------------------------------------------------------------------------------------------------------///
 
-/mob/living/simple_mob/vore/otie/syndicate/blackhole/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/otie/syndicate/blackhole/do_special_attack(atom/A, stance)
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A
@@ -696,10 +696,10 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 
 /// Was attack_hand with ..() first: the obelisk's reactions follow the normal touch.
-/mob/living/simple_mob/vore/blackhole_obelisk/unarmed_touch(mob/living/L)
+/mob/living/simple_mob/vore/blackhole_obelisk/unarmed_touch(mob/living/L, stance = I_HELP)
 	. = ..()
 
-	switch(L.use_stance())
+	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
 				if(L.zone_sel.selecting == BP_GROIN)

@@ -133,7 +133,7 @@
 	It is a carnivorous creature and quite capable of hunting. Aside from the deadly claws and teeth, it is also able to breathe fire like realspace dragons, turn itself invisible at will, and transform other creatures temporarily."
 	value = CATALOGUER_REWARD_HARD
 
-/mob/living/simple_mob/vore/ddraig/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/ddraig/do_special_attack(atom/A, stance)
 	. = TRUE
 	if(ckey)
 		return

@@ -2165,11 +2165,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/fluff/nikki, \
 	var/proximity_flag = task.proximity_flag
 	translocator?.afterattack(target, user, proximity_flag)
 
-/obj/item/clothing/head/fluff/nikki/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters)
+/obj/item/clothing/head/fluff/nikki/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	// If the hat is willing to cooperate with the holder...
 	if (hat_warp_checks(target, user, proximity_flag))
-		// Silly fluffed up styles of teleporting people based on user intent.
-		switch(user.use_stance())
+		// Silly fluffed up styles of teleporting people based on the user's stance.
+		switch(stance)
 			if (I_HELP)
 				user.visible_message(span_notice("[user] guides \the [target] to the bottomless hole within \the [src]. They begin to climb inside..."))
 				om_task_start(/datum/om/task/timed/nikki_hat_warp, user, target, receiver = src, proximity_flag = proximity_flag)

@@ -258,8 +258,10 @@ A plain `get_interactions()` override is for a type with no compact-declaring an
 
 ## 8. Examine and screentips
 
-- Examine gets a generated "Interactions" section: what you can do now, with its keys, and what you can't, with why. The 397 hand-written `description_info` strings are deleted as each type converts, so hints can't drift from behaviour.
+- Examine gets a generated "Interactions" section: what you can do now, with its keys, and what you can't, with why. There is no hand-written help text, so hints can't drift from behaviour.
 - Screentips show the Use and Alternate interactions for the hovered target and the held item, from the same resolver. They update only when the hovered atom or the held item changes.
+
+**As built (I2b).** `/atom/var/description_info` is deleted (it had 372 uses). What can be *done* with an atom is the resolver's generated text: the examine Interactions section, screentips, and the examine panel's info tab (`update_description_holders()` adds `interaction_examine_lines()`). Stance-declared interactions show there too, so examine says what each stance does ("Punch: combat mode is off"). What an atom's *properties* mean in play is `get_mechanics_info()` (renamed from `get_description_info()`), generated from vars: a weapon's damage and reach, armour ratings, a gun's modes; the few genuinely non-derivable mechanics a hint used to explain are a line in a type's `get_mechanics_info()` override. Lore stays in `description_fluff`. `tools/ci/stance_examine_lint.py` keeps `description_info` at 0.
 
 ## 9. Tools
 
@@ -322,11 +324,9 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - A Use has one of four outcomes, from two pieces of state:
   - `combat_mode`, the mob action. It is toggled by keys (`.combat-mode toggle|on|off`) and by the HUD button (`/atom/movable/screen/combat_mode`), which replaced the intent selector on the human, simple mob, pAI and borg HUDs. `set_combat_mode()` writes it.
   - `attack_variant`, Disarm or Grab. The Disarm and Grab keys (2 and 3; `.attack-variant` on press, `.attack-variant-release` on release) are held like modifiers: while one is down, clicks, bumps (stepping on micros) and belly struggles are disarms or grabs. The `disarm` and `grab` interactions are listed on every living target, in the Menu, in examine and under the attack category key; `use_attack_variant()` runs one Use as that variant (the adapter's `use_variant()`) and puts the old value back. `Login()` clears a variant, so a player never inherits one.
-- Legacy handlers read the outcome with `IS_HELPING`, `IS_HARMING`, `IS_DISARMING` and `IS_GRABBING`, or switch on `use_stance()`, which returns `I_HELP`, `I_DISARM`, `I_GRAB` or `I_HURT`. AI brains, admin tools and mob transforms set it as data with `set_use_stance()`. A type that starts hostile sets `combat_mode = TRUE`.
+- The outcome is the Use's stance: `I_HELP`, `I_DISARM`, `I_GRAB` or `I_HURT`. Interactions declare the stance they answer and carry it to their effects (I6b, below). AI brains, admin tools and mob transforms set it as data with `set_use_stance()`. A type that starts hostile sets `combat_mode = TRUE`.
 - Resolver: `interaction_priority_for()` moves `hostile`-tagged interactions up by `COMBAT_MODE_PRIORITY_SHIFT` with combat mode on, and down by the same with it off. The resolution keeps per-actor priorities, so sorting, `best_for_action()`, ties and category keys all respect it. `interactions_for()` still takes `modifiers`, but it needs none: the router has already turned them into the action.
-- Requirement clauses: `REQ_COMBAT_MODE` and `REQ_NO_COMBAT_MODE` (P2 proc clauses on the actor, with reasons).
-- Melee swing: the divert in `/mob/living/attackby` (`item_attack.dm`) starts a swing only when `IS_HARMING(user)`.
-- Lint: `combat mode: a_intent` in `tools/ci/check_grep.sh` forbids `a_intent` outside a fixed allowlist.
+- Melee swing: the divert in `hit_with_item()` (`item_attack.dm`) starts a swing only for the `I_HURT` item default.
 
 **Mapping: every former intent outcome**
 
@@ -346,11 +346,13 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 | Admin "AI intent", GM mob spawner intent | `set_use_stance()` | data |
 | Hook launcher intent, vore panel "current intent", attack logs | `use_stance()` at the time | |
 
-**Converted gates.** About 240 reads became `IS_*` checks or `use_stance()` switches in the legacy handlers (routing: attack_hand, attackby, UnarmedAttack, bump swapping, the melee swing divert). About 45 writes became data defaults (`set_use_stance()`, `combat_mode = TRUE`). Two gates compared against `"hurt"`, which never matched `I_HURT`: `floor_light.dm` now smashes in combat mode as intended, and the polymorph (`change.dm`) now turns combat mode on. `whip` read `if(user.a_intent)`, which was always true, and the check is gone. No legacy gate became an interaction requirement: each sits inside a legacy handler, and it moves to an interaction when I7 converts that handler's domain. The Disarm and Grab interactions and the requirement clauses are what those conversions build on.
-
-**Left for other work** (the lint allowlists them; `a_intent` stays as a read-only mirror of `use_stance()` until they convert, then it is deleted):
-- The body rewrite's gates (medical instruments, surgery, organs, syringes, hyposprays, blood packs, species) were converted in wave 5: `a_intent == I_HURT` → `IS_HARMING(user)`, `!= I_HELP` → `!IS_HELPING(user)`, `switch(M.a_intent)` → `switch(M.use_stance())`. The lethal-injection syringe's gate compared against `"hurt"` and never matched; it now refuses the stab in combat mode, as its message always said. `has_a_intent` in `species_hud.dm` still says whether the species draws the combat mode button.
-- Tool `*_act` procs, which I4 is migrating: `airlock.dm:797,850`, `windowdoor.dm:238`, `mecha.dm:1459`, `spy_bug.dm:127`, `window.dm:288`, `maintenance_panel.dm:36`, `robot.dm:970,1043`.
+**As built (I6b): the interaction choice carries the intent.** The ~360 stance reads (`IS_HELPING`/`IS_HARMING`/`IS_DISARMING`/`IS_GRABBING`, `use_stance()`, the `a_intent` mirror) are gone, and so are the macros, `REQ_HARMING`/`REQ_HELPING`, `REQ_COMBAT_MODE`/`REQ_NO_COMBAT_MODE` and `a_intent`.
+- `/datum/interaction/var/stance` (null for any). A stance adds a selector clause (`dq_stance_clause()`, `combat_mode.dm`), so a stance-declared interaction is offered only when the actor's input has that stance; in another stance it is listed as blocked with the reason ("combat mode is off", "hold Grab") and the entry falls through to the next candidate. Harm and disarm tag it hostile (`STANCE_IS_HOSTILE`), so combat mode ranks it.
+- Compact shapes: `INTERACT_USE_AS`, `INTERACT_SELF_AS`, `INTERACT_HAND_AS`, `INTERACT_HAND_UNGATED_AS`, `INTERACT_ITEM_AS`, `INTERACT_INSERT_AS`, `INTERACT_DRAG_AS`, `INTERACT_ALT_AS`, `INTERACT_HAND_DEFAULT_AS`, `INTERACT_ITEM_DEFAULT_AS`, each with the stance first (spec element 6). The `_HOSTILE`/`_PEACEFUL` shapes are `I_HURT`/`I_HELP` aliases. What one legacy branch did per stance is one declared interaction per stance with its own name; several may share an effect, which reads `interaction.stance`.
+- Living mobs' defaults are per stance: Help, Shove, Take hold and Punch with an empty hand (`unarmed_touch(user, stance)`), and Use on, Shove with, Hold with and Hit with an item (`hit_with_item(I, user, modifier, stance)` → `I.attack(M, user, zone, modifier, stance)`).
+- Code an interaction calls into takes a `stance` argument: item `attack()`, `apply_hit_effect()`, `unarmed_touch()`, `can_operate()`, simple mobs' `special_attack_target()`/`do_special_attack()`.
+- Mob actions that are not object interactions get the stance from the input layer as an argument: the adapters read `input_stance()` once and pass it to `UnarmedAttack(A, proximity, stance)`, `RangedAttack(A, params, stance)` and `afterattack(target, user, proximity, params, stance)` (gun safety and point-blank fire, gloves' `Touch()`); the bump and resist entries read it for the actor; AI brains choose it (`set_use_stance()`, or pass it to a special attack). Another mob's posture (a mob being swapped with, a swab target resisting) is its `combat_mode`, not a stance read.
+- `input_stance()` is callable only from the input layer: `combat_mode.dm`, `code/datums/interactions/`, `code/modules/keybindings/`, the bump and resist entries and `code/modules/combat_ai/`. `tools/ci/stance_examine_lint.py` (in `check_ratchets.sh`) holds the stance reads, `a_intent` and stray `input_stance()` at 0.
 
 ## 13. Migration, one domain at a time (I7)
 
@@ -389,9 +391,9 @@ The resolver shows the next steps, and examine explains them ("Next: weld the fr
 - Every binding default has a test.
 
 **Lint**
-- No `a_intent` outside the allowlist (I6).
+- No stance reads (`IS_*`, `use_stance()`, `a_intent`), and `input_stance()` only in the input layer (I6b).
 - No forwarding `attack_ai`/`attack_robot`/`attack_ghost` overrides (I3).
 - No `*_act` that calls `attackby` (I4).
 - No `attackby`, `attack_hand`, `attack_self`, `click_alt` or `MouseDrop_T` overrides anywhere, and no object verbs (I7).
 - No `attack_ai`/`attack_robot`/`attack_ghost`/`attack_tk` procs (I3).
-- No `description_info` in converted domains (I2).
+- No `description_info` (I2b).

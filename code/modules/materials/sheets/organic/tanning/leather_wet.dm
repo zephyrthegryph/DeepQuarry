@@ -1,11 +1,11 @@
 //Step three - drying
+/obj/item/stack/wetleather/get_mechanics_info(list/additional_information)
+	return ..(list("Dry it to finish tanning: under a " + span_bold(span_red("fire")) + ", in a " + span_bold(span_blue("drying rack")) + \
+		", or on a " + span_bold(span_brown("tanning rack")) + " built from steel or wooden boards.") + additional_information)
+
 /obj/item/stack/wetleather
 	name = "wet leather"
 	desc = "This leather has been cleaned but still needs to be dried."
-	description_info = "To finish tanning the leather, you need to dry it. \
-						You could place it under a " + span_bold(span_red("fire")) + ", \
-						put it in a " + span_bold(span_blue("drying rack")) + ", \
-						or build a " + span_bold(span_brown("tanning rack")) + " from steel or wooden boards."
 	singular_name = "wet leather piece"
 	icon_state = "sheet-wetleather"
 	var/wetness = 30 //Reduced when exposed to high temperautres
@@ -18,7 +18,6 @@
 
 /obj/item/stack/wetleather/examine(mob/user)
 	. = ..()
-	. += description_info
 	. += "\The [src] is [get_dryness_text()]."
 
 /obj/item/stack/wetleather/proc/get_dryness_text()

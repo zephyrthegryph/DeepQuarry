@@ -60,7 +60,6 @@
 	return TRUE
 
 /obj/item/dice/loaded
-	description_info = "This is a loaded die! To change the number it's weighted to, alt-click it. To put it back to normal, alt-click it again."
 	cheater = TRUE
 
 /obj/item/dice/d4

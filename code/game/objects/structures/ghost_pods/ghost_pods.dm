@@ -99,7 +99,6 @@
 
 // This type is triggered by a ghost clicking on it, as opposed to a living player.  A ghost query type isn't needed.
 /obj/structure/ghost_pod/ghost_activated
-	description_info = "A ghost can click on this to return to the round as whatever is contained inside this object."
 
 // Subtypes with their own ghost use override ghost_pod_observer_use() (it never fell through).
 EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER("Inhabit", PROC_REF(ghost_pod_observer_use)))

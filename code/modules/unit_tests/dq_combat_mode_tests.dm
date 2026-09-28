@@ -1,5 +1,5 @@
 // Combat mode (roadmap I6, doc/rewrite/interactions.md §12): the toggle, the
-// resolver's hostile priority, the combat-mode requirement, and parity: every
+// resolver's hostile priority, stance-declared interactions, and parity: every
 // former intent outcome (help, disarm, grab, harm) is reached through the new
 // controls, on humans and on simple mobs.
 
@@ -26,14 +26,14 @@
 	name = "Smash"
 	priority = 1
 	default_action = null
-	requires = list(REQ_COMBAT_MODE)
+	stance = I_HURT
 
 /datum/interaction/dq_combat_test/needs_peace
 	id = "dq_combat_needs_peace"
 	name = "Polish"
 	priority = 1
 	default_action = null
-	requires = list(REQ_NO_COMBAT_MODE)
+	stance = I_HELP
 
 /obj/dq_combat_probe
 	name = "combat probe"
@@ -76,11 +76,11 @@
 /datum/unit_test/dq_combat_mode_toggle/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
 	TEST_ASSERT(!H.combat_mode, "mobs start with combat mode off")
-	TEST_ASSERT_EQUAL(H.use_stance(), I_HELP, "combat mode off is the help outcome")
+	TEST_ASSERT_EQUAL(H.input_stance(), I_HELP, "combat mode off is the help outcome")
 
 	H.combat_mode_key("toggle")
 	TEST_ASSERT(H.combat_mode, "the toggle key turns combat mode on")
-	TEST_ASSERT_EQUAL(H.use_stance(), I_HURT, "combat mode on is the harm outcome")
+	TEST_ASSERT_EQUAL(H.input_stance(), I_HURT, "combat mode on is the harm outcome")
 	H.combat_mode_key("on")
 	TEST_ASSERT(H.combat_mode, "the on key keeps it on")
 	H.combat_mode_key("off")
@@ -88,15 +88,14 @@
 
 	H.set_combat_mode(TRUE)
 	H.set_attack_variant(ATTACK_VARIANT_DISARM)
-	TEST_ASSERT_EQUAL(H.use_stance(), I_DISARM, "a Disarm variant wins over combat mode")
-	TEST_ASSERT(IS_DISARMING(H) && !IS_HARMING(H) && !IS_HELPING(H), "exactly one outcome holds")
+	TEST_ASSERT_EQUAL(H.input_stance(), I_DISARM, "a Disarm variant wins over combat mode")
 	H.set_attack_variant(ATTACK_VARIANT_GRAB)
-	TEST_ASSERT_EQUAL(H.use_stance(), I_GRAB, "so does a Grab variant")
+	TEST_ASSERT_EQUAL(H.input_stance(), I_GRAB, "so does a Grab variant")
 	H.set_attack_variant(null)
 
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 		H.set_use_stance(stance)
-		TEST_ASSERT_EQUAL(H.use_stance(), stance, "set_use_stance([stance]) round-trips")
+		TEST_ASSERT_EQUAL(H.input_stance(), stance, "set_use_stance([stance]) round-trips")
 	H.set_use_stance(I_HELP)
 	TEST_ASSERT(!H.combat_mode && !H.attack_variant, "the help stance clears both")
 
@@ -127,12 +126,14 @@
 	TEST_ASSERT_EQUAL(probe.done[length(probe.done)], "dq_combat_hostile", "with combat mode on the hostile interaction wins Use, though its base priority is lower")
 
 	var/datum/interaction_resolution/resolution = interactions_for(H, probe, null)
-	TEST_ASSERT(INTERACTION(/datum/interaction/dq_combat_test/needs_combat) in resolution.available, "REQ_COMBAT_MODE passes in combat mode")
-	TEST_ASSERT_EQUAL(resolution.blocked[INTERACTION(/datum/interaction/dq_combat_test/needs_peace)], "combat mode is on", "REQ_NO_COMBAT_MODE fails with a reason")
+	TEST_ASSERT(INTERACTION(/datum/interaction/dq_combat_test/needs_combat) in resolution.available, "a harm-stance interaction is offered in combat mode")
+	TEST_ASSERT_EQUAL(resolution.blocked[INTERACTION(/datum/interaction/dq_combat_test/needs_peace)], "combat mode is on", "a help-stance interaction is blocked in combat mode, with a reason")
 	H.set_combat_mode(FALSE)
 	resolution = interactions_for(H, probe, null)
-	TEST_ASSERT_EQUAL(resolution.blocked[INTERACTION(/datum/interaction/dq_combat_test/needs_combat)], "combat mode is off", "REQ_COMBAT_MODE fails with a reason")
-	TEST_ASSERT(INTERACTION(/datum/interaction/dq_combat_test/needs_peace) in resolution.available, "REQ_NO_COMBAT_MODE passes out of combat mode")
+	TEST_ASSERT_EQUAL(resolution.blocked[INTERACTION(/datum/interaction/dq_combat_test/needs_combat)], "combat mode is off", "a harm-stance interaction is blocked out of combat mode, with a reason")
+	TEST_ASSERT(INTERACTION(/datum/interaction/dq_combat_test/needs_peace) in resolution.available, "a help-stance interaction is offered out of combat mode")
+	var/datum/interaction/harm_declared = INTERACTION(/datum/interaction/dq_combat_test/needs_combat)
+	TEST_ASSERT(INTERACTION_TAG_HOSTILE in harm_declared.tags, "a harm-stance interaction is tagged hostile")
 
 	// Disarm and Grab are listed on living targets; combat mode orders them.
 	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
@@ -149,6 +150,62 @@
 
 	var/datum/interaction_resolution/on_probe = interactions_for(H, probe, null)
 	TEST_ASSERT(!(disarm in on_probe.available) && !(disarm in on_probe.blocked), "Disarm isn't offered on objects")
+
+/// The interaction in `resolution` named `name`, available or blocked; null when not listed.
+/datum/unit_test/proc/dq_find_interaction_named(datum/interaction_resolution/resolution, name)
+	for(var/datum/interaction/interaction as anything in resolution.available)
+		if(interaction.name == name)
+			return interaction
+	for(var/datum/interaction/interaction as anything in resolution.blocked)
+		if(interaction.name == name)
+			return interaction
+	return null
+
+/// A living target offers its defaults per stance (code/_onclick/item_attack.dm /mob/living/declare_interactions):
+/// only the one matching the actor's stance is available, the rest are blocked.
+/datum/unit_test/dq_combat_mode_living_stance_defaults
+
+/datum/unit_test/dq_combat_mode_living_stance_defaults/Run()
+	var/list/pair = dq_combat_pair(/mob/living/carbon/human)
+	var/mob/living/carbon/human/attacker = pair[1]
+	var/mob/living/target = pair[2]
+	var/list/hand_names = list(I_HELP = "Help", I_DISARM = "Shove", I_GRAB = "Take hold", I_HURT = "Punch")
+	var/list/item_names = list(I_HELP = "Use on", I_DISARM = "Shove with", I_GRAB = "Hold with", I_HURT = "Hit")
+
+	for(var/pass in 1 to 2)
+		var/obj/item/held = null
+		var/list/names = hand_names
+		if(pass == 2)
+			held = allocate(/obj/item, attacker.loc)
+			TEST_ASSERT(attacker.put_in_active_hand(held), "the attacker holds an item")
+			names = item_names
+
+		// Out of combat mode: the help default is available, the others are listed but blocked.
+		attacker.set_use_stance(I_HELP)
+		var/datum/interaction_resolution/resolution = interactions_for(attacker, target, held)
+		for(var/stance in names)
+			var/datum/interaction/interaction = dq_find_interaction_named(resolution, names[stance])
+			TEST_ASSERT(interaction, "the living target offers '[names[stance]]'")
+			TEST_ASSERT_EQUAL(interaction?.stance, stance, "'[names[stance]]' is declared for the [stance] stance")
+			if(stance == I_HELP)
+				TEST_ASSERT(interaction in resolution.available, "out of combat mode '[names[stance]]' is available")
+			else
+				TEST_ASSERT(interaction in resolution.blocked, "out of combat mode '[names[stance]]' is blocked")
+
+		// In combat mode only the harm default is available.
+		attacker.set_combat_mode(TRUE)
+		resolution = interactions_for(attacker, target, held)
+		for(var/stance in names)
+			var/datum/interaction/interaction = dq_find_interaction_named(resolution, names[stance])
+			TEST_ASSERT(interaction, "in combat mode the living target still lists '[names[stance]]'")
+			if(stance == I_HURT)
+				TEST_ASSERT(interaction in resolution.available, "in combat mode '[names[stance]]' is available")
+			else
+				TEST_ASSERT(interaction in resolution.blocked, "in combat mode '[names[stance]]' is blocked")
+				TEST_ASSERT(!(interaction in resolution.available), "in combat mode '[names[stance]]' is not available")
+		attacker.set_use_stance(I_HELP)
+		if(held)
+			qdel(held)
 
 /// The Disarm and Grab keys are held: the variant lasts until release. The interactions are one Use.
 /datum/unit_test/dq_combat_mode_variant_keys
@@ -186,7 +243,7 @@
 		var/mob/living/target = pair[2]
 		var/before = target.injury_load(INJURY_CATEGORY_PHYSICAL)
 		GLOB.input_router.route_click(attacker, target, "left=1")
-		TEST_ASSERT_EQUAL(attacker.use_stance(), I_HELP, "[target_type]: Use out of combat mode is the help outcome")
+		TEST_ASSERT_EQUAL(attacker.input_stance(), I_HELP, "[target_type]: Use out of combat mode is the help outcome")
 		TEST_ASSERT_EQUAL(target.injury_load(INJURY_CATEGORY_PHYSICAL), before, "[target_type]: help does no harm")
 		TEST_ASSERT(!istype(attacker.get_active_hand(), /obj/item/grab), "[target_type]: help does not grab")
 

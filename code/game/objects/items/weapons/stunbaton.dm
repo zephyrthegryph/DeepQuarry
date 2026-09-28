@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 	deductcharge()
 	return ..()
 
-/obj/item/melee/baton/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/melee/baton/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(isrobot(target))
 		return ..()
 
@@ -199,7 +199,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		var/mob/living/carbon/human/H = target
 		affecting = H.get_organ(hit_zone)
 
-	if(IS_HARMING(user)) // No disarm. ONLY HARM.
+	if(stance == I_HURT) // No disarm. ONLY HARM.
 		. = ..()
 		//whacking someone causes a much poorer electrical contact than deliberately prodding them.
 		agony *= 0.5
@@ -275,16 +275,14 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 /obj/item/melee/baton/shocker
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
-	description_info = "Hitting a lesser lifeform with this while it is on will compel them to attack you above other nearby targets.  Otherwise \
-	it works like a regular stun baton, just less effectively."
 	icon_state = "shocker"
 	force = 10
 	throwforce = 5
 	agonyforce = 25 // Less efficent than a regular baton.
 	attack_verb = list("poked")
 
-/obj/item/melee/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	..(target, user, hit_zone)
+/obj/item/melee/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	..(target, user, hit_zone, attack_modifier, stance)
 	if(status && (target.ai_brain != null))
 		target.taunt(user)
 

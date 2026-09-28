@@ -1,9 +1,9 @@
 
 // Clicking with an empty hand
-/mob/living/unarmed_touch(mob/living/L)
+/mob/living/unarmed_touch(mob/living/L, stance = I_HELP)
 	..()
-	if(istype(L) && !IS_HELPING(L))
-		if(ai_brain) // Using disarm, grab, or harm intent is considered a hostile action to the mob's AI.
+	if(istype(L) && stance != I_HELP)
+		if(ai_brain) // A disarm, grab or harm touch is considered a hostile action to the mob's AI.
 			ai_brain.react_to_attack(L)
 	if(touch_reaction_flags & SPECIES_TRAIT_THORNS)
 		if(src != L)
@@ -144,11 +144,11 @@
 
 	receive_split(damage_packet(B, B?.overmind, null, def_zone, NONE, armor_pen), kind, kinds, damage)
 
-/mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone)
+/mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone, stance = I_HURT)
 	return target_zone
 
-//Called when the mob is hit with an item in combat. Returns the blocked result
-/mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
+//Called when the mob is hit with an item in combat, in `stance` (the swing's interaction stance). Returns the blocked result
+/mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone, stance = I_HURT)
 	visible_message(span_danger("[src] has been [LAZYLEN(I.attack_verb) ? pick(I.attack_verb) : "attacked"] with [I.name] by [user]!"))
 
 	if(ai_brain)
@@ -156,7 +156,7 @@
 
 	var/blocked = armor_against(I.injury_kind, hit_zone, I.armor_penetration)
 
-	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone)
+	standard_weapon_hit_effects(I, user, effective_force, blocked, hit_zone, stance)
 
 	if(injury_category(I.injury_kind) == INJURY_CATEGORY_PHYSICAL && prob(33)) // Added blood for whacking non-humans too
 		var/turf/simulated/location = get_turf(src)
@@ -165,7 +165,7 @@
 	return blocked
 
 //returns 0 if the effects failed to apply for some reason, 1 otherwise.
-/mob/living/proc/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone)
+/mob/living/proc/standard_weapon_hit_effects(obj/item/I, mob/living/user, effective_force, blocked, hit_zone, stance = I_HURT)
 	if(!effective_force || blocked >= 100)
 		return 0
 	// Apply weapon damage: armour (and its chance to turn an edge) is applied in injure().

@@ -244,7 +244,7 @@
 
 	return results
 
-/mob/living/simple_mob/slime/xenobio/get_description_info(list/additional_information)
+/mob/living/simple_mob/slime/xenobio/get_mechanics_info(list/additional_information)
 	var/list/lines = list()
 	var/intro_line = "Slimes are generally the test subjects of Xenobiology, with different colors having different properties.  \
 	They can be extremely dangerous if not handled properly."
@@ -259,7 +259,8 @@
 	lines.Add(reward_line)
 	lines.Add(null)
 
-	lines.Add(description_info)
+	if(LAZYLEN(additional_information))
+		lines += additional_information
 	return lines.Join("\n")
 
 DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "victim", HELD, null)

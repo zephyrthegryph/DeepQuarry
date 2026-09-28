@@ -238,7 +238,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		var/mob/living/carbon/human/h = user
 		var/mob/living/l = grabbed
 		if(isliving(grabbed))
-			if(!l.attempt_to_scoop(h))
+			if(!l.attempt_to_scoop(h, stance = (h.combat_mode ? I_HURT : I_HELP)))
 				l.forceMove(get_turf(src.loc))
 		else
 			var/atom/movable/whatever = grabbed
@@ -251,7 +251,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 		var/mob/living/simple_mob/a = user
 		var/mob/living/l = grabbed
 		if(!a.has_hands || isliving(grabbed))
-			if(!l.attempt_to_scoop(a))
+			if(!l.attempt_to_scoop(a, stance = (a.combat_mode ? I_HURT : I_HELP)))
 				l.forceMove(get_turf(src.loc))
 		else
 			var/atom/movable/whatever = grabbed
@@ -443,8 +443,8 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 		var/mob/living/carbon/human/h = usr_mob
 		var/mob/living/l = grabbed
 		if(isliving(grabbed))
-			l.attempt_to_scoop(h)
-			if(!l.attempt_to_scoop(h))
+			l.attempt_to_scoop(h, stance = (h.combat_mode ? I_HURT : I_HELP))
+			if(!l.attempt_to_scoop(h, stance = (h.combat_mode ? I_HURT : I_HELP)))
 				l.forceMove(get_turf(src.loc))
 		else
 			var/atom/movable/whatever = grabbed
@@ -457,7 +457,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 		var/mob/living/simple_mob/a = usr_mob
 		var/mob/living/l = grabbed
 		if(!a.has_hands || isliving(grabbed))
-			if(!l.attempt_to_scoop(a))
+			if(!l.attempt_to_scoop(a, stance = (a.combat_mode ? I_HURT : I_HELP)))
 				l.forceMove(get_turf(src.loc))
 		else
 			var/atom/movable/whatever = grabbed

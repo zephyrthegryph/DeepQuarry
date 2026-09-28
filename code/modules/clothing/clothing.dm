@@ -338,7 +338,7 @@ DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
 		M.update_inv_gloves()
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
-/obj/item/clothing/gloves/proc/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT)
 	return 0 // return 1 to cancel attack_hand()
 
 /obj/item/clothing/gloves/wash()
@@ -748,7 +748,13 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	var/message_pred = null
 	var/message_prey = null
 
-	switch(pred.use_stance())
+	// The wearer's held posture while walking (their state, not an input): the held Disarm/Grab variant, else combat mode.
+	var/posture = pred.combat_mode ? I_HURT : I_HELP
+	if(pred.attack_variant == ATTACK_VARIANT_DISARM)
+		posture = I_DISARM
+	else if(pred.attack_variant == ATTACK_VARIANT_GRAB)
+		posture = I_GRAB
+	switch(posture)
 		if(I_HELP)
 			if(prob(10)) //Reducing spam exclusively on I_HELP. Still more frequent than old pitiful prob(1)
 				if(pred.m_intent == I_RUN)

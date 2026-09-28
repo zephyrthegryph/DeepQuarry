@@ -264,6 +264,7 @@
 
 /obj/machinery/door/declare_interactions(list/into)
 	into += list(
+		/datum/interaction/machine_item/door_strike,
 		/datum/interaction/machine_item/door_use_item,
 		/datum/interaction/machine_hand/door_use,
 	)
@@ -282,6 +283,31 @@
 /// Old attack_tk: an ID-locked door ignores telekinesis; otherwise the default telekinetic poke.
 /obj/machinery/door/proc/interaction_door_tk(mob/user, obj/item/held, datum/interaction/interaction)
 	return requiresID() && !allowed(null)
+
+/// Combat mode: strike the closed door with the held item (plasteel still reinforces and cards still open it).
+/datum/interaction/machine_item/door_strike
+	id = "door_strike"
+	name = "Strike"
+	stance = I_HURT
+	effect = /obj/machinery/door/proc/interaction_door_strike
+
+/obj/machinery/door/proc/interaction_door_strike(mob/user, obj/item/W, datum/interaction/interaction)
+	//psa to whoever coded this, there are plenty of objects that need to call attack() on doors without bludgeoning them.
+	if(!density || !istype(W) || istype(W, /obj/item/card))
+		return FALSE
+	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_PLASTEEL)
+		return FALSE
+	add_fingerprint(user)
+	user.setClickCooldown(user.get_attack_speed(W))
+	if(W.obj_damage_type())
+		user.do_attack_animation(src)
+		if(W.force < min_force)
+			user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
+		else
+			user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
+			playsound(src, hitsound, 100, 1)
+			receive_weapon_hit(W, user, silent = FALSE)
+	return TRUE
 
 /datum/interaction/machine_item/door_use_item
 	id = "door_use_item"
@@ -327,20 +353,6 @@
 					amount_given = mats_given
 		if(amount_given)
 			to_chat(user, span_notice("You fit [amount_given] [singular_name]\s on \the [src]."))
-		return TRUE
-
-	//psa to whoever coded this, there are plenty of objects that need to call attack() on doors without bludgeoning them.
-	if(density && istype(I, /obj/item) && IS_HARMING(user) && !istype(I, /obj/item/card))
-		var/obj/item/W = I
-		user.setClickCooldown(user.get_attack_speed(W))
-		if(W.obj_damage_type())
-			user.do_attack_animation(src)
-			if(W.force < min_force)
-				user.visible_message(span_danger("\The [user] hits \the [src] with \the [W] with no visible effect."))
-			else
-				user.visible_message(span_danger("\The [user] forcefully strikes \the [src] with \the [W]!"))
-				playsound(src, hitsound, 100, 1)
-				receive_weapon_hit(W, user, silent = FALSE)
 		return TRUE
 
 	try_to_activate_door(user)

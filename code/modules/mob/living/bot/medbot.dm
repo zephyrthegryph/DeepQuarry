@@ -210,12 +210,15 @@
 
 EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	INTERACT_ITEM(null, PROC_REF(medbot_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(medbot_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Right or open controls", PROC_REF(medbot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tip over", PROC_REF(medbot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Open controls", PROC_REF(medbot_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Open controls", PROC_REF(medbot_interaction_hand)))
 
 /// Old attack_hand (no gate, no default touch): disarm tips it, help rights it, else open the controls.
 /mob/living/bot/medbot/proc/medbot_interaction_hand(mob/living/carbon/human/H, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(istype(H) && IS_DISARMING(H) && !is_tipped)
+	if(istype(H) && interaction.stance == I_DISARM && !is_tipped)
 		H.visible_message(span_danger("[H] begins tipping over [src]."), span_warning("You begin tipping over [src]..."))
 
 		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
@@ -227,7 +230,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done), done_args = list(H))
 
-	else if(istype(H) && IS_HELPING(H) && is_tipped)
+	else if(istype(H) && interaction.stance == I_HELP && is_tipped)
 		H.visible_message(span_notice("[H] begins righting [src]."), span_notice("You begin righting [src]..."))
 		om_task_timed(H, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_medbot_done2), done_args = list(H))
 	else

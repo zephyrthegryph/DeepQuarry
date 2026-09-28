@@ -37,7 +37,7 @@
 	var/mob/living/simple_mob/SM = brain.get_owner()
 	if(!istype(SM))
 		return DQ_BEHAVIOR_FAILED
-	SM.attack_target(target)
+	SM.attack_target(target, SM.input_stance())
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE  // single-tick action; attack_target handles cooldown
 

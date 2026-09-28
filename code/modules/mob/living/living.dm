@@ -806,7 +806,7 @@
 	if(selhand != src.hand)
 		swap_hand()
 
-/mob/living/throw_item(atom/target)
+/mob/living/throw_item(atom/target, stance = I_HURT)
 	if(incapacitated() || !target || istype(target, /atom/movable/screen) || is_incorporeal())
 		return FALSE
 
@@ -847,11 +847,11 @@
 	if(!item)
 		return FALSE //Grab processing has a chance of returning null
 
-	// Help intent + Adjacent = pass item to other
-	if(IS_HELPING(src) && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
+	// Help stance + Adjacent = pass item to other (the catcher out of combat mode takes it)
+	if(stance == I_HELP && Adjacent(target) && isitem(item) && ishuman(target) && target != src)
 		var/obj/item/I = item
 		var/mob/living/carbon/human/H = target
-		if(H.in_throw_mode && IS_HELPING(H) && unEquip(I))
+		if(H.in_throw_mode && !H.combat_mode && unEquip(I))
 			H.put_in_hands(I) // If this fails it will just end up on the floor, but that's fitting for things like dionaea.
 			visible_message(span_filter_notice(span_bold("[src]") + " hands \the [H] \a [I]."), span_notice("You give \the [target] \a [I]."))
 		else

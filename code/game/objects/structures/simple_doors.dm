@@ -380,8 +380,7 @@
 	id = "simple_door_resin_tear"
 	name = "Tear at"
 	effect = /obj/structure/simple_door/resin/proc/interaction_resin_tear
-	offered_when = list(REQ_HARMING)
-	tags = list(INTERACTION_TAG_HOSTILE)
+	stance = I_HURT
 
 /obj/structure/simple_door/resin/proc/interaction_resin_tear(mob/user, obj/item/held, datum/interaction/interaction)
 	if((HULK in user.mutations) || !istype(user, /mob/living/carbon))

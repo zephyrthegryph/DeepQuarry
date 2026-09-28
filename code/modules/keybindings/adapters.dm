@@ -183,7 +183,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	* mob/RangedAttack(atom, params) - ranged, no item: laser eyes and telekinesis
 */
 /datum/input_adapter/hands/use(mob/user, atom/A, list/modifiers, params)
-	if(user.intercept_use(A, params))
+	if(user.intercept_use(A, params, user.input_stance()))
 		return
 
 	if(INCAPACITATED_IGNORING(user, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
@@ -205,10 +205,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	var/currently_restrained = FALSE
 	if(user.restrained())
 		user.setClickCooldown(10)
-		user.RestrainedClickOn(A)
+		user.RestrainedClickOn(A, user.input_stance())
 		currently_restrained = TRUE
 
-	if(!currently_restrained && user.in_throw_mode && (isturf(A) || isturf(A.loc)) && user.throw_item(A))
+	if(!currently_restrained && user.in_throw_mode && (isturf(A) || isturf(A.loc)) && user.throw_item(A, user.input_stance()))
 		user.trigger_aiming(TARGET_CAN_CLICK)
 		user.throw_mode_off()
 		return TRUE
@@ -235,11 +235,11 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			// A consumed result means resolve_attackby did something; skip afterattack.
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, user, 1, params) // 1 indicates adjacency
+				W.afterattack(A, user, 1, params, user.input_stance()) // 1 indicates adjacency
 		else
 			if(ismob(A)) // No instant mob attacking
 				user.setClickCooldown(user.get_attack_speed())
-			user.UnarmedAttack(A, 1)
+			user.UnarmedAttack(A, 1, user.input_stance())
 
 		user.trigger_aiming(TARGET_CAN_CLICK)
 		return 1
@@ -248,11 +248,11 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		if(W)
 			var/resolved = W.resolve_attackby(A, user)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, user, 1, params) // 1: clicking something Adjacent
+				W.afterattack(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
 		else
 			if(ismob(A)) // No instant mob attacking
 				user.setClickCooldown(user.get_attack_speed())
-			user.UnarmedAttack(A, 1)
+			user.UnarmedAttack(A, 1, user.input_stance())
 		return
 
 	if(!isturf(user.loc)) // No telekinesis from inside a closet
@@ -265,7 +265,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		if(currently_restrained)
 			if(ismob(A) && A.Adjacent(user)) // restrained and adjacent
 				user.setClickCooldown(user.get_attack_speed())
-				user.UnarmedAttack(A, 1)
+				user.UnarmedAttack(A, 1, user.input_stance())
 				user.trigger_aiming(TARGET_CAN_CLICK)
 				return
 		else
@@ -274,25 +274,25 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 					// Return 1 in attackby() to prevent afterattack() effects (when safely moving items for example)
 					var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 					if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-						W.afterattack(A, user, 1, params) // 1: clicking something Adjacent
+						W.afterattack(A, user, 1, params, user.input_stance()) // 1: clicking something Adjacent
 				else
 					if(ismob(A)) // No instant mob attacking
 						user.setClickCooldown(user.get_attack_speed())
-					user.UnarmedAttack(A, 1)
+					user.UnarmedAttack(A, 1, user.input_stance())
 				user.trigger_aiming(TARGET_CAN_CLICK)
 				return
 			else // non-adjacent click
 				if(W)
-					W.afterattack(A, user, 0, params) // 0: not Adjacent
+					W.afterattack(A, user, 0, params, user.input_stance()) // 0: not Adjacent
 				else
-					user.RangedAttack(A, params)
+					user.RangedAttack(A, params, user.input_stance())
 
 				user.trigger_aiming(TARGET_CAN_CLICK)
 	return 1
 
 /// Hook for mobs that take over a plain Use click before the hands chain runs
 /// (the swoopie's vacuum). Return TRUE if handled. Modifier clicks never get here.
-/mob/proc/intercept_use(atom/A, params)
+/mob/proc/intercept_use(atom/A, params, stance = I_HURT)
 	return FALSE
 
 // ---------------------------------------------------------------------------
@@ -335,7 +335,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		if(isitem(O) && !isturf(O.loc))
 			return FALSE
 	if(!istype(O) || (O.anchored && !isitem(O)))
-		user.UnarmedAttack(target, 0)
+		user.UnarmedAttack(target, 0, user.input_stance())
 		return TRUE
 	var/obj/item/tk_grab/grab = new(O)
 	user.put_in_active_hand(grab)
@@ -514,7 +514,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		// No adjacency checks
 		var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 		if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-			W.afterattack(A, user, 1, params)
+			W.afterattack(A, user, 1, params, user.input_stance())
 		return
 
 	if(!isturf(user.loc))
@@ -526,10 +526,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 			OM_EMIT(user, /datum/om/event/before/robot_item_attack, W, user, params) // we ATTEMPTED to attack someone.
 			var/resolved = W.resolve_attackby(A, user, click_parameters = params)
 			if(!ITEM_INTERACT_CONSUMED(resolved) && A && W)
-				W.afterattack(A, user, 1, params)
+				W.afterattack(A, user, 1, params, user.input_stance())
 			return
 		else
-			W.afterattack(A, user, 0, params)
+			W.afterattack(A, user, 0, params, user.input_stance())
 			return
 
 /**

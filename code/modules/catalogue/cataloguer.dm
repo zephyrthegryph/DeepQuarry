@@ -11,14 +11,13 @@
 	the person with the scanner gets a visual box that shows where they are allowed to move to
 	without inturrupting the scan.
 */
+/obj/item/cataloguer/get_mechanics_info(list/additional_information)
+	return ..(list("Scanning requires staying within a certain radius of the target until the scan finishes. \
+	An interrupted scan resumes where it left off if the same thing is scanned again.") + additional_information)
+
 /obj/item/cataloguer
 	name = "cataloguer"
 	desc = "A hand-held device, used for compiling information about an object by scanning it. Alt+click to highlight scannable objects around you."
-	description_info = "This is a special device used to obtain information about objects and entities in the environment. \
-	To scan something, click on it with the scanner at a distance. \
-	Scanning something requires remaining within a certain radius of the object for a specific period of time, until the \
-	scan is finished. If the scan is interrupted, it can be resumed from where it was left off, if the same thing is \
-	scanned again."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "cataloguer"
 	w_class = ITEMSIZE_NORMAL
@@ -375,3 +374,6 @@ DECLARE_INTERACTIONS(/obj/item/cataloguer, \
 EXTEND_INTERACTIONS(/obj/item/cataloguer/compact, \
 	INTERACT_VERB("Toggle Cataloguer", PROC_REF(compact_toggle_effect), REQ_IN_INVENTORY), \
 )
+
+// The shown entry is a round-long catalogue definition.
+DECLARE_REF(/obj/item/cataloguer, "displayed_data", DEF, null)

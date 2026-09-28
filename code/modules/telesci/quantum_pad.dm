@@ -253,7 +253,6 @@
 	icon = 'icons/obj/device.dmi'
 	name = "quantum pad particle booster"
 	desc = "A deceptively simple interface for increasing the mass of objects a quantum pad is capable of teleporting, at the cost of increased power draw."
-	description_info = "The three prongs at the base of the tool are not, in fact, for show."
 	force = 9
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE

@@ -20,7 +20,6 @@
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie
 	name = "SWOOPIE XL"
 	desc = "A large birdlike robot with thick assets, plump belly, and a long elastic vacuum hose of a neck. Somehow still a cleanbot, even if just for its duties."
-	description_info = "Use DISARM intent to access the integrated Vac-Pack settings.<br>Use GRAB intent while targeting the head damage zone to grab the SWOOPIE XL's neck and use it as a vaccum."
 	catalogue_data = list(/datum/category_item/catalogue/technology/drone/corrupt_hound/swoopie)
 	icon_state = "swoopie"
 	icon_living = "swoopie"
@@ -226,17 +225,17 @@
 	say_maybe_target = list("Pest detected?")
 	say_got_target = list("PEST DETECTED!")
 
-/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/intercept_use(atom/A, params)
+/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/intercept_use(atom/A, params, stance = I_HURT)
 	if(stat) //Cant suck if we're not able to...
 		return FALSE
 	if(istype(A, /obj/item/storage)) //Dont put the nossle in bags
 		return FALSE
 	if(istype(Vac) && A.Adjacent(src))
 		face_atom(A)
-		if(IS_DISARMING(src) && A == src) //Only if on disarm intent.
+		if(stance == I_DISARM && A == src) //Only if on disarm intent.
 			Vac.attack_self(src)
 			return TRUE
-		if(IS_GRABBING(src) && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
+		if(stance == I_GRAB && Vac.vac_power != 0) //Only on grab intent. if someone needs to use grab intent they can just turn off the vac
 			if(istype(A, /obj/machinery/disposal)) //You used that bin when the bird was right there? How inconsiderate!
 				var/obj/machinery/disposal/D = A
 				if(D.flushing)
@@ -260,20 +259,21 @@
 				return TRUE
 			var/resolved = Vac.resolve_attackby(A, src, click_parameters = params)
 			if(!resolved && A && Vac)
-				Vac.afterattack(A, src, 1, params)
+				Vac.afterattack(A, src, 1, params, stance)
 				return TRUE
 	return FALSE
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, INTERACT_HAND_UNGATED(null, PROC_REF(swoopie_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, INTERACT_HAND_UNGATED_AS(I_DISARM, "Toggle Vac-Pack", PROC_REF(swoopie_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take Vac-Pack", PROC_REF(swoopie_interaction_hand)))
 
 /// Old attack_hand: disarm toggles the Vac-Pack, a head grab takes it; otherwise the normal touch.
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/proc/swoopie_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
 	if(stat) //Make sure we're alive
 		return FALSE
-	if(IS_DISARMING(L) && Vac)
+	if(interaction.stance == I_DISARM && Vac)
 		Vac.attack_self(L)
 		return TRUE
-	if(IS_GRABBING(L) && Vac && Vac.loc == src)
+	if(interaction.stance == I_GRAB && Vac && Vac.loc == src)
 		if(L.zone_sel.selecting == BP_HEAD)
 			if(L.put_in_active_hand(Vac))
 				L.visible_message(span_warning("[L] grabs [src] by the neck, brandishing the thing like a regular vacuum cleaner!"))

@@ -476,8 +476,14 @@ GLOBAL_VAR_INIT(teppi_count, 0)	// How mant teppi DO we have?
 	/////HIGHEST LAYER/////
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
-	INTERACT_ITEM(null, PROC_REF(teppi_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(teppi_interaction_hand)))
+	INTERACT_ITEM_AS(I_HELP, "Tend", PROC_REF(teppi_interaction_item)), \
+	INTERACT_ITEM_AS(I_HURT, "Hit", PROC_REF(teppi_interaction_item)), \
+	INTERACT_ITEM_AS(I_DISARM, "Hit", PROC_REF(teppi_interaction_item)), \
+	INTERACT_ITEM_AS(I_GRAB, "Hit", PROC_REF(teppi_interaction_item)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(teppi_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Remove accessory", PROC_REF(teppi_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Handle roughly", PROC_REF(teppi_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Handle roughly", PROC_REF(teppi_interaction_hand)))
 
 /// Old attackby: shearing, feeding, butchering, collars.
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -489,7 +495,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		return FALSE
 	if(istype(O, /obj/item/holder))
 		return FALSE
-	if(!IS_HELPING(user)) //be gentle
+	if(interaction.stance != I_HELP) //be gentle
 		if(resting)
 			lay_down()
 		handle_affinity(user, -5)
@@ -592,13 +598,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	. = TRUE
 	if(stat == DEAD)
 		return FALSE
-	if(IS_GRABBING(M) && item_type)
+	if(interaction.stance == I_GRAB && item_type)
 		if(affinity[M.real_name] >= 30)
 			M.visible_message(span_notice("\The [M.name] removes \the [src]'s [item_type]."),span_notice("You remove \the [src]'s [item_type]."))
 			item_type = null
 			update_icon()
 			return
-	if(!IS_HELPING(M)) //be gentle
+	if(interaction.stance != I_HELP) //be gentle
 		handle_affinity(M, -5)
 		to_chat(M, span_notice("\The [src] fusses at your rough treatment!!"))
 		if(resting)

@@ -169,24 +169,39 @@
 	..();\
 }
 
-// Hostile and peaceful compact shapes (combat mode, ยง12). They replace a legacy
-// handler's IS_HARMING()/IS_HELPING() gate: the interaction is only *meant* while
-// the actor's Use has that stance (an offered_when clause), so the other stance
-// falls through to the next candidate as the old `return ..()` did. Hostile ones
-// carry INTERACTION_TAG_HOSTILE, so the resolver ranks them by combat mode.
-/// Spec element 6: which stance the interaction is offered in.
-#define INTERACT_STANCE_HOSTILE "hostile"
-#define INTERACT_STANCE_PEACEFUL "peaceful"
-/// Used with any item, only in combat mode (old `if(IS_HARMING(user))` branch of attackby).
-#define INTERACT_ITEM_HOSTILE(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, INTERACT_STANCE_HOSTILE)
-/// Used with any item, only with combat mode off (old `if(IS_HELPING(user))` branch of attackby).
-#define INTERACT_ITEM_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, INTERACT_STANCE_PEACEFUL)
+// Stance-declared compact shapes (combat mode, doc/rewrite/interactions.md ง12).
+// Spec element 6 is the stance the interaction answers: I_HELP, I_DISARM, I_GRAB or
+// I_HURT. The resolver offers it only when the actor's input has that stance, so
+// the other stances fall through to the next candidate, and the interaction that
+// runs carries the intent: its effect reads `interaction.stance`. Harm and disarm
+// are hostile (INTERACTION_TAG_HOSTILE): the resolver ranks them by combat mode.
+// Several stances sharing one effect proc are several declared interactions.
+/// Self-use in `stance` (old attack_self branch on the stance). `effect(actor, held, interaction)`.
+#define INTERACT_USE_AS(stance, name, effect, requires...) list(INTERACT_KIND_USE, name, effect, list(requires), null, stance)
+/// Self-use in `stance` whose FALSE falls through (INTERACT_SELF).
+#define INTERACT_SELF_AS(stance, name, effect, requires...) list(INTERACT_KIND_SELF, name, effect, list(requires), null, stance)
+/// Touched with an empty hand in `stance`.
+#define INTERACT_HAND_AS(stance, name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, stance)
+/// Touched with an empty hand in `stance`, ahead of hand_gate() (INTERACT_HAND_UNGATED).
+#define INTERACT_HAND_UNGATED_AS(stance, name, effect, requires...) list(INTERACT_KIND_HAND_UNGATED, name, effect, list(requires), null, stance)
+/// Used with any item in `stance`.
+#define INTERACT_ITEM_AS(stance, name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, stance)
+/// Used with an item of `held_type` in `stance`.
+#define INTERACT_INSERT_AS(stance, held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, stance)
+/// Something dragged onto the target in `stance`.
+#define INTERACT_DRAG_AS(stance, name, effect, requires...) list(INTERACT_KIND_DRAG, name, effect, list(requires), null, stance)
+/// Alt-click in `stance`.
+#define INTERACT_ALT_AS(stance, name, effect, requires...) list(INTERACT_KIND_ALT, name, effect, list(requires), null, stance)
+/// Used with any item, only in combat mode: INTERACT_ITEM_AS(I_HURT, ...).
+#define INTERACT_ITEM_HOSTILE(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, I_HURT)
+/// Used with any item, only with combat mode off: INTERACT_ITEM_AS(I_HELP, ...).
+#define INTERACT_ITEM_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, I_HELP)
 /// Used with an item of `held_type`, only in combat mode.
-#define INTERACT_INSERT_HOSTILE(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, INTERACT_STANCE_HOSTILE)
-/// Touched with an empty hand, only in combat mode (old `if(IS_HARMING(user))` branch of attack_hand).
-#define INTERACT_HAND_HOSTILE(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_HOSTILE)
+#define INTERACT_INSERT_HOSTILE(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, I_HURT)
+/// Touched with an empty hand, only in combat mode.
+#define INTERACT_HAND_HOSTILE(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, I_HURT)
 /// Touched with an empty hand, only with combat mode off.
-#define INTERACT_HAND_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, INTERACT_STANCE_PEACEFUL)
+#define INTERACT_HAND_PEACEFUL(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, I_HELP)
 
 // Default interactions: what a type does with an input when nothing more specific it
 // offers takes it (an item's pickup, a mob being hit or touched). Spec element 7.
@@ -198,6 +213,10 @@
 #define INTERACT_HAND_DEFAULT(name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
 /// Used with any item, when nothing else takes it: the type's default (a mob is hit with it).
 #define INTERACT_ITEM_DEFAULT(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
+/// The type's default touch in `stance` (a living mob's help, disarm, grab and punch).
+#define INTERACT_HAND_DEFAULT_AS(stance, name, effect, requires...) list(INTERACT_KIND_HAND, name, effect, list(requires), null, stance, INTERACT_ORDER_DEFAULT)
+/// The type's default for any item in `stance` (a living mob used on, disarmed, grabbed or hit with it).
+#define INTERACT_ITEM_DEFAULT_AS(stance, name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, stance, INTERACT_ORDER_DEFAULT)
 /// Something dragged onto the target, when nothing else takes it (a movable's drag-buckle).
 #define INTERACT_DRAG_DEFAULT(name, effect, requires...) list(INTERACT_KIND_DRAG, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
 /// Used with an item of `held_type`, when nothing else takes it.

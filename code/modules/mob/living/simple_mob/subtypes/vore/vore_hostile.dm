@@ -182,7 +182,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/vore_hostile/abyss_lurker, INTER
 	B.escape_stun = 3
 
 // The leaping attack.
-/mob/living/simple_mob/vore/vore_hostile/leaper/do_special_attack(atom/A)	//Mostly copied from hunter.dm
+/mob/living/simple_mob/vore/vore_hostile/leaper/do_special_attack(atom/A, stance)	//Mostly copied from hunter.dm
 	if(!isliving(A))
 		return FALSE
 	var/mob/living/L = A

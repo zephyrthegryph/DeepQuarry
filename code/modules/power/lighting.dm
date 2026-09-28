@@ -1447,11 +1447,11 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 // shatter light, unless it was an attempt to put it in a light socket
 // now only shatter if the intent was harm
 
-/obj/item/light/afterattack(atom/target, mob/user, proximity)
+/obj/item/light/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!proximity) return
 	if(istype(target, /obj/machinery/light))
 		return
-	if(!IS_HARMING(user))
+	if(stance != I_HURT)
 		return
 
 	shatter()

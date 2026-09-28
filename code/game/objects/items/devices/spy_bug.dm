@@ -23,13 +23,10 @@
 	camera = new camtype(src)
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user))
-		to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
-		visible_message(span_notice("[user.name] crushes the [src] under their foot, breaking it!"))
-		replace_with(src, brokentype)
-/*	else
-		radio.interact(user)
-*/
+	to_chat(user, span_notice("You crush the [src] under your foot, breaking it."))
+	visible_message(span_notice("[user.name] crushes the [src] under their foot, breaking it!"))
+	replace_with(src, brokentype)
+
 /obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
@@ -93,8 +90,11 @@
 
 DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	INTERACT_INSERT(/obj/item/bug_monitor, PROC_REF(interaction_pair), "Pair"), \
+	INTERACT_ITEM_AS(I_HELP, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
+	INTERACT_ITEM_AS(I_DISARM, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
+	INTERACT_ITEM_AS(I_GRAB, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_HURT, "Crush", PROC_REF(interaction_self)), \
 )
 
 /obj/item/camerabug/proc/interaction_pair(mob/user, obj/item/bug_monitor/SM, datum/interaction/interaction)
@@ -121,13 +121,15 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 		consume(src, user)
 	return FALSE
 
-/obj/item/camerabug/wrench_act(mob/user, obj/item/tool)
-	if(user.a_intent == I_HURT || !isturf(loc))
-		return ..()
+/// Wrenching it down (any stance but harm; a harmful swing falls through to the hit).
+/obj/item/camerabug/proc/interaction_wrench(mob/user, obj/item/tool, datum/interaction/interaction)
 	anchored = !anchored
 	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
 	update_icon()
-	return ITEM_INTERACT_SUCCESS
+	return TRUE
+
+/obj/item/camerabug/proc/lies_on_turf(mob/actor, atom/target, obj/item/held)
+	return isturf(loc)
 
 /obj/item/camerabug/bullet_act()
 	visible_message("The [src] lens shatters!")

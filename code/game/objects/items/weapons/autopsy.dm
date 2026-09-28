@@ -151,11 +151,11 @@
 	if(istype(usr,/mob/living/carbon))
 		usr.put_in_hands(P)
 
-/obj/item/autopsy_scanner/do_surgery(mob/living/carbon/human/M, mob/living/user)
+/obj/item/autopsy_scanner/do_surgery(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
 	if(!istype(M))
 		return 0
 
-	if (IS_HELPING(user))
+	if (stance == I_HELP)
 		return ..()
 
 	if(target_name != M.name)

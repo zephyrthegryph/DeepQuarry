@@ -3,7 +3,6 @@
 /obj/structure/prop/prism
 	name = "prismatic turret"
 	desc = "A raised, externally powered 'turret'. It seems to have a massive crystal ring around its base."
-	description_info = "This device is capable of redirecting any beam projectile."
 	icon = 'icons/obj/props/prism.dmi'
 	icon_state = "prism"
 	density = TRUE
@@ -196,15 +195,12 @@ DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 
 /obj/structure/prop/prism/incremental
 	free_rotate = 0
-	description_info = "This device is capable of redirecting any beam projectile, but only locks to specific positions in rotation."
 
 /obj/structure/prop/prism/incremental/externalcont
 	external_control_lock = 1
-	description_info = "This device is capable of redirecting any beam projectile, but can only be rotated by a control dial to specific positions."
 
 /obj/structure/prop/prism/externalcont
 	external_control_lock = 1
-	description_info = "This device is capable of redirecting any beam projectile, but can only be rotated by an external control dial."
 
 /obj/structure/prop/prismcontrol
 	name = "prismatic dial"

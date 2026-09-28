@@ -154,8 +154,7 @@
 	id = "window_bang"
 	name = "Bang on"
 	effect = /obj/structure/window/proc/interaction_bang
-	offered_when = list(REQ_HARMING)
-	tags = list(INTERACTION_TAG_HOSTILE)
+	stance = I_HURT
 
 /obj/structure/window/proc/interaction_bang(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.has_mutation(HULK))

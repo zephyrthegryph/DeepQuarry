@@ -110,10 +110,10 @@
 	. = ..()
 	. += "Chemicals: [chemicals]"
 
-/mob/living/simple_mob/animal/sif/leech/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/sif/leech/do_special_attack(atom/A, stance)
 	. = TRUE
 	if(istype(A, /mob/living/carbon))
-		switch(use_stance())
+		switch(stance)
 			if(I_DISARM) // Poison
 				ai_busy_begin()
 				poison_inject(src, A)

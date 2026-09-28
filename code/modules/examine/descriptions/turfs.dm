@@ -1,6 +1,3 @@
-/turf/simulated/wall
-	description_info = "You can build a wall by using metal sheets and making a girder, then adding more metal or plasteel."
-
 /turf/simulated/wall/get_description_interaction()
 	var/list/results = list()
 	if(get_integrity_damage())
@@ -32,7 +29,7 @@
 				results += "[desc_panel_image("crowbar")]to finish deconstruction."
 	return results
 
-/turf/simulated/floor/get_description_info(list/additional_information)
+/turf/simulated/floor/get_mechanics_info(list/additional_information)
 	. = ..()
 	if(broken || burnt)
 		. += "It is broken."

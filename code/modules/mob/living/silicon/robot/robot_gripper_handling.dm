@@ -161,7 +161,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 		//We were not given a resolved, the object still exists, AND we hit something. Attack that thing with our wrapped item.
 		if(!resolved && wrapped && O)
-			O.afterattack(wrapped,user,1)
+			O.afterattack(wrapped, user, 1, null, interaction.stance)
 			wrapped = get_wrapped_item()
 			//The object still exists, but is not in our contents OR back in the gripper storage.
 			if(item_left_gripper(wrapped))
@@ -174,7 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	return FALSE
 
-/obj/item/gripper/afterattack(atom/target, mob/living/user, proximity, params)
+/obj/item/gripper/afterattack(atom/target, mob/living/user, proximity, params, stance = I_HURT)
 	if(!proximity)
 		return // This will prevent them using guns at range but adminbuse can add them directly to modules, so eh.
 
@@ -186,7 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		clear_and_select_item()
 		return
 
-	if(use_item(target, user, wrapped)) //Already have an item.
+	if(use_item(target, user, wrapped, params, stance)) //Already have an item.
 		return
 	update_ref(wrapped)
 
@@ -199,7 +199,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	if(item_left_gripper(wrapped))
 		clear_and_select_item()
 
-/obj/item/gripper/proc/use_item(atom/target, mob/user, obj/item/wrapped)
+/obj/item/gripper/proc/use_item(atom/target, mob/user, obj/item/wrapped, params, stance = I_HURT)
 	if(!wrapped)
 		return FALSE
 
@@ -218,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	var/resolved = target.attackby(wrapped, user)
 	if(!resolved && wrapped && target)
-		wrapped.afterattack(target, user, TRUE)
+		wrapped.afterattack(target, user, TRUE, params, stance)
 
 	if(item_left_gripper(wrapped))
 		clear_and_select_pocket()

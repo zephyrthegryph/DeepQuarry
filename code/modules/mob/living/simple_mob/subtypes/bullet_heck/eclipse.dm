@@ -9,9 +9,9 @@
 	projectiletype = /obj/item/projectile/energy/eclipse_boss/chillingwind
 	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/battle_top/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,3)
-	switch(use_stance())
+	switch(stance)
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)
@@ -79,8 +79,8 @@
 	wreckage = /obj/item/prop/deconstructable/gigacell
 	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo/do_special_attack(atom/A)
-	switch(use_stance())
+/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/ufo/do_special_attack(atom/A, stance)
+	switch(stance)
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)
@@ -142,9 +142,9 @@
 	wreckage = /obj/item/prop/deconstructable/gigacell
 	pilot_type = /mob/living/simple_mob/humanoid/astral_collective/purity
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/janus/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/janus/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,3)
-	switch(use_stance())
+	switch(stance)
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)

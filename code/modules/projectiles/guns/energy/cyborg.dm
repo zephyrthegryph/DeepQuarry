@@ -54,6 +54,9 @@
 
 
 /// Tasers
+/obj/item/gun/energy/robotic/taser/xeno/get_mechanics_info(list/additional_information)
+	return ..(list("This gun will stun a slime or other lesser slimy lifeform for about two seconds if hit with the projectile it fires.") + additional_information)
+
 /obj/item/gun/energy/robotic/taser/xeno
 	name = "xeno taser gun"
 	desc = "Straight out of NT's testing laboratories, this small gun is used to subdue non-humanoid xeno life forms. \
@@ -63,7 +66,6 @@
 	charge_cost = 120
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30
-	description_info = "This gun will stun a slime or other lesser slimy lifeform for about two seconds if hit with the projectile it fires."
 	description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
 	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
 	ineffective at stunning non-slimy lifeforms such as humanoids."
@@ -255,7 +257,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 	deductcharge(600)
 	return ..()
 
-/obj/item/melee/robotic/borg_combat_shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/melee/robotic/borg_combat_shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(isrobot(target))
 		return ..()
 
@@ -266,7 +268,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 		var/mob/living/carbon/human/H = target
 		affecting = H.get_organ(hit_zone)
 
-	if(IS_HARMING(user))
+	if(stance == I_HURT)
 		. = ..()
 		agony *= 0.5
 	else
@@ -384,12 +386,13 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	desc = "A glowing dagger. It appears to be extremely sharp."
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE | COUNTS_AS_ROBOT_DAGGER
 
+/obj/item/melee/robotic/blade/ionic/get_mechanics_info(list/additional_information)
+	return ..(list("Delivers a moderately powerful electromagnetic pulse to whatever it strikes. Striking a lesser robotic entity will compel it to attack you. \
+	It does extra burn damage to robotic entities, but very little damage to purely organic targets.") + additional_information)
+
 /obj/item/melee/robotic/blade/ionic
 	name = "ionic rapier"
 	desc = "Designed specifically for disrupting electronics at close range, it is extremely deadly against synthetics, but almost harmless to pure organic targets."
-	description_info = "This is a dangerous melee weapon that will deliver a moderately powerful electromagnetic pulse to whatever it strikes.  \
-	Striking a lesser robotic entity will compel it to attack you, as well.  It also does extra burn damage to robotic entities, but it does \
-	very little damage to purely organic targets."
 
 /obj/item/melee/robotic/blade/ionic/afterattack(atom/movable/AM, mob/living/user, proximity)
 	if(istype(AM, /obj) && proximity)
@@ -497,7 +500,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 		deductcharge(hitcost)
 	return ..()
 
-/obj/item/melee/robotic/baton/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/melee/robotic/baton/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(isrobot(target))
 		return ..()
 
@@ -508,7 +511,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 		var/mob/living/carbon/human/H = target
 		affecting = H.get_organ(hit_zone)
 
-	if(IS_HARMING(user))
+	if(stance == I_HURT)
 		. = ..()
 		//whacking someone causes a much poorer electrical contact than deliberately prodding them.
 		agony *= 0.5
@@ -542,18 +545,20 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/baton, \
 	hitcost = 750
 	agonyforce = 70
 
+/obj/item/melee/robotic/baton/shocker/get_mechanics_info(list/additional_information)
+	return ..(list("Hitting a lesser lifeform with this while it is on will compel them to attack you above other nearby targets. \
+	Otherwise it works like a regular stun baton, just less effectively.") + additional_information)
+
 /obj/item/melee/robotic/baton/shocker
 	name = "shocker"
 	desc = "A device that appears to arc electricity into a target to incapacitate or otherwise hurt them, similar to a stun baton.  It looks inefficent."
-	description_info = "Hitting a lesser lifeform with this while it is on will compel them to attack you above other nearby targets.  Otherwise \
-	it works like a regular stun baton, just less effectively."
 	icon_state = "shocker"
 	force = 10
 	agonyforce = 25 // Less efficent than a regular baton.
 	attack_verb = list("poked")
 
-/obj/item/melee/robotic/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	..(target, user, hit_zone)
+/obj/item/melee/robotic/baton/shocker/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	..(target, user, hit_zone, attack_modifier, stance)
 	if((target.ai_brain != null))
 		target.taunt(user)
 

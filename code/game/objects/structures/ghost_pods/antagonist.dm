@@ -3,7 +3,6 @@
 /obj/structure/ghost_pod/automatic/xenomorph_egg
 	name = "xenomorph egg"
 	desc = "A disgusting egg dripping with clear ooze, the existence of this is a omen for what is to come."
-	description_info = "This contains a growing xenomorph larva, which may wake up at any moment. The larva will be another player, once activated."
 	icon = 'icons/mob/alien.dmi'
 	icon_state = "egg"
 	icon_state_opened = "egg_opened"

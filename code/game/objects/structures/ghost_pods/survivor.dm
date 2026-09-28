@@ -2,8 +2,6 @@
 /obj/structure/ghost_pod/manual/survivor
 	name = "Emergency Cryopod"
 	desc = "A damaged cryopod smeared with blood. An injured body seems frozen in time within."
-	description_info = "This contains a body, which may wake at any time. The external controls\
-	seem to be functioning, though the warning lights that flash give no solace.."
 	ghost_query_type = /datum/ghost_query/shipwreck_survivor
 	var/occupant_type = "shipwreck survivor"
 

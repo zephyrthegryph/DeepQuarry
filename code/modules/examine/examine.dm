@@ -1,5 +1,6 @@
-/*	This code is responsible for the examine tab.  When someone examines something, it copies the examined object's description_info,
-	description_fluff, and description_antag, and shows it in a new tab.
+/*	This code is responsible for the examine tab.  When someone examines something, it shows the examined object's generated
+	mechanics (its declared interactions, from the resolver, and its properties: get_mechanics_info()), description_fluff
+	and description_antag in a new tab. There is no hand-written help text: it could drift from what the code does.
 
 	In this file, some atom and mob stuff is defined here.  It is defined here instead of in the normal files, to keep the whole system self-contained.
 	This means that this file can be unchecked, along with the other examine files, and can be removed entirely with no effort.
@@ -7,16 +8,19 @@
 
 
 /atom/
-	var/description_info = null //Helpful blue text.
 	var/description_fluff = null //Green text about the atom's fluff, if any exists.
 	var/description_antag = null //Malicious red text, for the antags.
 
-//Override these if you need special behaviour for a specific type.
-///What is shown to the user when something is examined. This can be overridden for specific uses.
-///The 'additional_information' list var requires creation in the proc itself. It should check to seee if(additional_information) before trying to do additional_information = list() and adding to it.
-/atom/proc/get_description_info(list/additional_information)
-	if(description_info)
-		return description_info
+/**
+ * Generated mechanics text: what the atom's properties mean in play (a weapon's
+ * damage, armour ratings, a gun's fire modes). Types add lines generated from
+ * their vars; what can be *done* with the atom comes from its declared
+ * interactions instead (interaction_examine_lines(), screentips).
+ * `additional_information` is extra lines from a subtype, listed first.
+ */
+/atom/proc/get_mechanics_info(list/additional_information)
+	if(LAZYLEN(additional_information))
+		return jointext(additional_information, "<br>")
 	return
 
 /atom/proc/get_description_fluff()
@@ -52,7 +56,15 @@
 
 /client/proc/update_description_holders(atom/A, update_antag_info=0)
 	examine_icon_handle = null
-	description_holders["info"] = A.get_description_info()
+	var/list/info = list()
+	var/mechanics = A.get_mechanics_info()
+	if(mechanics)
+		info += mechanics
+	if(mob)
+		var/list/interaction_lines = interaction_examine_lines(mob, A)
+		if(interaction_lines)
+			info += interaction_lines
+	description_holders["info"] = jointext(info, "<br>")
 	description_holders["fluff"] = A.get_description_fluff()
 	description_holders["antag"] = (update_antag_info)? A.get_description_antag() : ""
 	description_holders["interactions"] = A.get_description_interaction()
@@ -102,7 +114,7 @@
 		return //sorry oldchat
 
 	//do pref check here
-	var/desc_info_temp = A.get_description_info()
+	var/desc_info_temp = A.get_mechanics_info()
 	if(desc_info_temp)
 		. += span_details("ℹ️ | Information", desc_info_temp)
 	var/fluff_info_temp = A.get_description_fluff()

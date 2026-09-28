@@ -726,7 +726,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interacti
 
 DECLARE_INTERACTIONS(/obj/structure/plushie, \
 	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
-	INTERACT_HAND_UNGATED("Hug", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Hug", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Poke", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Strangle", PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
@@ -747,9 +749,9 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 /// Old attack_hand: hug it (or, holding Grab, strangle it; Disarm pokes it).
 /obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	touch_started(user)
-	if(IS_HELPING(user))
+	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
-	else if (IS_GRABBING(user))
+	else if (interaction.stance == I_GRAB)
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
@@ -866,11 +868,11 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 
 	if(world.time - last_message <= 1 SECOND)
 		return
-	if(IS_HELPING(user))
+	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
-	else if (IS_HARMING(user))
+	else if (interaction.stance == I_HURT)
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
-	else if (IS_GRABBING(user))
+	else if (interaction.stance == I_GRAB)
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
@@ -919,7 +921,10 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 		return 1
 
 DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
-	INTERACT_USE("Squeeze", PROC_REF(interaction_squeeze)), \
+	INTERACT_USE_AS(I_HELP, "Hug", PROC_REF(interaction_squeeze)), \
+	INTERACT_USE_AS(I_DISARM, "Poke", PROC_REF(interaction_squeeze)), \
+	INTERACT_USE_AS(I_GRAB, "Strangle", PROC_REF(interaction_squeeze)), \
+	INTERACT_USE_AS(I_HURT, "Punch", PROC_REF(interaction_squeeze)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
@@ -1431,62 +1436,50 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 /obj/item/toy/chess/pawn_white
 	name = "white pawn"
 	desc = "A white pawn chess piece. Get accused of cheating when executing a sick En Passant."
-	description_info = "Pawns can move forward one square, if that square is unoccupied. If the pawn has not yet moved, it has the option of moving two squares forward provided both squares in front of the pawn are unoccupied. A pawn cannot move backward. They can only capture an enemy piece on either of the two tiles diagonally in front of them, but not the tile directly in front of them."
 	icon_state = "white_pawn"
 /obj/item/toy/chess/pawn_black
 	name = "black pawn"
 	desc = "A black pawn chess piece. Get accused of cheating when executing a sick En Passant."
-	description_info = "Pawns can move forward one square, if that square is unoccupied. If the pawn has not yet moved, it has the option of moving two squares forward provided both squares in front of the pawn are unoccupied. A pawn cannot move backward. They can only capture an enemy piece on either of the two tiles diagonally in front of them, but not the tile directly in front of them."
 	icon_state = "black_pawn"
 /obj/item/toy/chess/rook_white
 	name = "white rook"
 	desc = "A white rook chess piece. Also known as a castle."
-	description_info = "The Rook can move any number of vacant squares vertically or horizontally."
 	icon_state = "white_rook"
 /obj/item/toy/chess/rook_black
 	name = "black rook"
 	desc = "A black rook chess piece. Also known as a castle."
-	description_info = "The Rook can move any number of vacant squares vertically or horizontally."
 	icon_state = "black_rook"
 /obj/item/toy/chess/knight_white
 	name = "white knight"
 	desc = "A white knight chess piece. Sadly, you can't ride it."
-	description_info = "The Knight can either move two squares horizontally and one square vertically or two squares vertically and one square horizontally. The knight's movement can also be viewed as an 'L' laid out at any horizontal or vertical angle."
 	icon_state = "white_knight"
 /obj/item/toy/chess/knight_black
 	name = "black knight"
 	desc = "A black knight chess piece. 'Just a flesh wound.'"
-	description_info = "The Knight can either move two squares horizontally and one square vertically or two squares vertically and one square horizontally. The knight's movement can also be viewed as an 'L' laid out at any horizontal or vertical angle."
 	icon_state = "black_knight"
 /obj/item/toy/chess/bishop_white
 	name = "white bishop"
 	desc = "A white bishop chess piece."
-	description_info = "The Bishop can move any number of vacant squares in any diagonal direction."
 	icon_state = "white_bishop"
 /obj/item/toy/chess/bishop_black
 	name = "black bishop"
 	desc = "A black bishop chess piece."
-	description_info = "The Bishop can move any number of vacant squares in any diagonal direction."
 	icon_state = "black_bishop"
 /obj/item/toy/chess/queen_white
 	name = "white queen"
 	desc = "A white queen chess piece."
-	description_info = "The Queen can move any number of vacant squares diagonally, horizontally, or vertically."
 	icon_state = "white_queen"
 /obj/item/toy/chess/queen_black
 	name = "black queen"
 	desc = "A black queen chess piece."
-	description_info = "The Queen can move any number of vacant squares diagonally, horizontally, or vertically."
 	icon_state = "black_queen"
 /obj/item/toy/chess/king_white
 	name = "white king"
 	desc = "A white king chess piece."
-	description_info = "The King can move exactly one square horizontally, vertically, or diagonally. If your opponent captures this piece, you lose."
 	icon_state = "white_king"
 /obj/item/toy/chess/king_black
 	name = "black king"
 	desc = "A black king chess piece."
-	description_info = "The King can move exactly one square horizontally, vertically, or diagonally. If your opponent captures this piece, you lose."
 	icon_state = "black_king"
 
 /// Balloon structures
@@ -1501,7 +1494,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/griffin, INTERACT_USE(null, PROC_REF(interact
 
 DECLARE_INTERACTIONS(/obj/structure/balloon, \
 	INTERACT_HAND_HOSTILE("Punch", PROC_REF(interaction_punch)), \
-	INTERACT_HAND_UNGATED("Poke", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Poke", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Bat", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Try to pop", PROC_REF(interaction_hand)), \
 )
 
 /// Old attack_hand's harm branch: punch the balloon (combat mode only).
@@ -1514,9 +1509,9 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 /obj/structure/balloon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
-	if(IS_HELPING(user))
+	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]!"),span_notice("You poke [src]!"))
-	else if (IS_GRABBING(user))
+	else if (interaction.stance == I_GRAB)
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to pop [src]!"),span_warning("You attempt to pop [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " lightly bats the [src]."),span_notice("You lightly bat the [src]."))
@@ -1570,11 +1565,16 @@ DECLARE_INTERACTIONS(/obj/structure/balloon, \
 	desc = "No teppi were harmed in the creation of this plushie."
 	icon_state = "teppialt"
 
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, INTERACT_USE("Squeeze", PROC_REF(interaction_teppi_squeeze)))
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
+	INTERACT_USE_AS(I_HELP, "Hug", PROC_REF(interaction_teppi_squeeze)), \
+	INTERACT_USE_AS(I_DISARM, "Poke", PROC_REF(interaction_teppi_squeeze)), \
+	INTERACT_USE_AS(I_GRAB, "Strangle", PROC_REF(interaction_teppi_squeeze)), \
+	INTERACT_USE_AS(I_HURT, "Punch", PROC_REF(interaction_teppi_squeeze)), \
+)
 
 /// Old attack_self: the teppi noise, then the plushie's squeeze.
 /obj/item/toy/plushie/teppi/proc/interaction_teppi_squeeze(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user) || IS_GRABBING(user))
+	if(interaction.stance == I_HURT || interaction.stance == I_GRAB)
 		playsound(user, 'sound/voice/teppi/roar.ogg', 10, 0)
 	else
 		var/teppi_noise = pick(
@@ -1593,15 +1593,15 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, INTERACT_USE("Squeeze", PROC_RE
 	icon_state = "seal-signet"
 	drop_sound = 'sound/items/drop/ring.ogg'
 
-/obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity)
+/obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity, stance = I_HURT)
 	if(proximity && istype(usr, /mob/living/carbon/human))
 
-		return zap(usr, A, proximity)
+		return zap(usr, A, proximity, stance)
 	return 0
 
-/obj/item/clothing/gloves/ring/buzzer/toy/zap(mob/living/carbon/human/user, atom/movable/target, proximity)
+/obj/item/clothing/gloves/ring/buzzer/toy/zap(mob/living/carbon/human/user, atom/movable/target, proximity, stance = I_HURT)
 	. = FALSE
-	if(IS_HELPING(user) && battery.percent() >= 50)
+	if(stance == I_HELP && battery.percent() >= 50)
 		if(isliving(target))
 			var/mob/living/L = target
 
@@ -1736,7 +1736,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	if (lights_glowing)
 		add_overlay(emissive_appearance(icon, "[icon_state]-lights"))
 
-/obj/item/toy/plushie/borgplushie/drake/get_description_info(list/additional_information)
+/obj/item/toy/plushie/borgplushie/drake/get_mechanics_info(list/additional_information)
 	return "The lights on the plushie can be toggled [lights_glowing ? "off" : "on"] by alt-clicking on it."
 
 /obj/item/toy/plushie/borgplushie/drake/sec

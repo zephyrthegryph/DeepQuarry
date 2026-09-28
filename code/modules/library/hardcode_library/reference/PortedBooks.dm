@@ -10,7 +10,7 @@ Category: Reference
 /obj/item/book/bundle/custom_library/reference/recyclingprocedures
 	name = "Recycling Procedures"
 	desc = "A hardbound book titled \"Recycling Procedures\" by Astrid Morton."
-	description_info = "This book is titled \"Recycling Procedures\" by Astrid Morton. It appears to be about ways you can help recycle on your average space station."
+	description_fluff = "This book is titled \"Recycling Procedures\" by Astrid Morton. It appears to be about ways you can help recycle on your average space station."
 
 	title = "Recycling Procedures"
 	icon_state = "book7"
@@ -107,7 +107,7 @@ Category: Reference
 /obj/item/book/bundle/custom_library/reference/fbpandprostheticmaintenance
 	name = "A Guide to FBP and Prosthetic Maintenance"
 	desc = "A hardbound book titled \"A Guide to FBP and Prosthetic Maintenance\" by Yuki Matsuda."
-	description_info = "This book is titled \"A Guide to FBP and Prosthetic Maintenance\" by Yuki Matsuda. It appears to cover general steps for repairing prosthetics."
+	description_fluff = "This book is titled \"A Guide to FBP and Prosthetic Maintenance\" by Yuki Matsuda. It appears to cover general steps for repairing prosthetics."
 
 	title = "A Guide to FBP and Prosthetic Maintenance"
 	icon_state = "bookEngineering"
@@ -237,7 +237,7 @@ Category: Reference
 
 	name = "A Fistful of D6's: Player's Guide"
 	desc = "A hardbound book titled \"A Fistful of D6's: Player's Guide\" by Ray Rogers."
-	description_info = "This book is titled \"A Fistful of D6's: Player's Guide\" by Ray Rogers. It is a player's guide to a TTRPG."
+	description_fluff = "This book is titled \"A Fistful of D6's: Player's Guide\" by Ray Rogers. It is a player's guide to a TTRPG."
 
 	title = "A Fistful of D6's: Player's Guide"
 	icon_state = "corp_regs"
@@ -273,7 +273,7 @@ Category: Reference
 
 	name = "The Space Survival Guide: Depressurization"
 	desc = "A hardbound book titled \"The Space Survival Guide: Depressurization\" by Lachina Green."
-	description_info = "This book is titled \"The Space Survival Guide: Depressurization\" by Lachina Green. It is a guide on how to handle being in a depressurized room on a space station."
+	description_fluff = "This book is titled \"The Space Survival Guide: Depressurization\" by Lachina Green. It is a guide on how to handle being in a depressurized room on a space station."
 
 	title = "The Space Survival Guide: Depressurization"
 	icon_state = "evabook"
@@ -326,7 +326,7 @@ Category: Reference
 
 	name = "Security Guidelines"
 	desc = "A hardbound book titled \"Security Guidelines\" as provided by NanoTrasen."
-	description_info = "This book is titled \"Security Guidelines\" as provided by NanoTrasen. It covers the basic security etiquette on NanoTrasen stations and vessels."
+	description_fluff = "This book is titled \"Security Guidelines\" as provided by NanoTrasen. It covers the basic security etiquette on NanoTrasen stations and vessels."
 
 	title = "Security Guidelines"
 	icon_state = "bookSpaceLaw"

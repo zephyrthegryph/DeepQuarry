@@ -8,12 +8,12 @@
 
 
 // When someone clicks us with an empty hand
-/mob/living/simple_mob/unarmed_touch(mob/living/L)
+/mob/living/simple_mob/unarmed_touch(mob/living/L, stance = I_HELP)
 	if(reaction_sound)
 		playsound(src, reaction_sound, 50, 1)
 	..()
 
-	switch(L.use_stance())
+	switch(stance)
 		if(I_HELP)
 			if(stat != DEAD)
 				if(L.zone_sel.selecting == BP_GROIN)
@@ -82,7 +82,7 @@
 
 
 // When somoene clicks us with an item in hand
-/mob/living/simple_mob/hit_with_item(obj/item/O, mob/user, attack_modifier)
+/mob/living/simple_mob/hit_with_item(obj/item/O, mob/user, attack_modifier = 1, stance = I_HURT)
 	if(reaction_sound)
 		playsound(src, reaction_sound, 50, 1)
 	if(istype(O, /obj/item/stack/medical))
@@ -99,7 +99,7 @@
 		harvest(user, O)
 		return
 
-	if(IS_HELPING(user) && harvest_tool && istype(O, harvest_tool) && stat != DEAD)
+	if(stance == I_HELP && harvest_tool && istype(O, harvest_tool) && stat != DEAD)
 		if(COOLDOWN_FINISHED(src, harvest_ready_cooldown))
 			livestock_harvest(O, user)
 			return

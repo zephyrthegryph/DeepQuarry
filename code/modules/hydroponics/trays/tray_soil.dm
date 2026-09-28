@@ -10,6 +10,7 @@
 /obj/machinery/portable_atmospherics/hydroponics/soil/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/soil_tank_block,
+		/datum/interaction/machine_item/soil_fill,
 		/datum/interaction/machine_item/soil_shovel,
 	)
 	..()
@@ -20,6 +21,19 @@
 	name = "Use"
 	held_type = /obj/item/tank
 	effect = /atom/proc/interaction_swallow
+
+/// Combat mode: fill the growplot in with the shovel.
+/datum/interaction/machine_item/soil_fill
+	id = "soil_fill"
+	name = "Fill in"
+	held_type = /obj/item/shovel
+	stance = I_HURT
+	effect = /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in
+
+/obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_fill_in(mob/user, obj/item/O, datum/interaction/interaction)
+	user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
+	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
+	return TRUE
 
 /datum/interaction/machine_item/soil_shovel
 	id = "soil_shovel"
@@ -32,10 +46,6 @@
 	qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
-	if(IS_HARMING(user))
-		user.visible_message(span_notice("\The [user] begins filling in \the [src]."))
-		om_task_timed(user, 3 SECONDS, src, src, PROC_REF(fill_in_done), list(user))
-		return TRUE
 	if(!seed)
 		var/choice= rerun_ask(user, "k43", PROC_REF(interaction_shovel), args, /datum/om/prompt/choice/alert, message = "Do you want to destroy the growplot?", title = "Destroy growplot?", choices = list("Yes", "No"))
 		if(isnull(choice))

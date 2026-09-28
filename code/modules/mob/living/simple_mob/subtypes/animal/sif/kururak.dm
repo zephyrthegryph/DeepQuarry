@@ -132,16 +132,15 @@
 /mob/living/simple_mob/animal/sif/kururak/should_special_attack(atom/A)
 	return has_body_effect(/datum/body_effect/ace)
 
-/mob/living/simple_mob/animal/sif/kururak/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/sif/kururak/do_special_attack(atom/A, stance)
 	. = TRUE
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Ranged mob flash, will also confuse borgs rather than stun.
 			tail_flash(A)
 		if(I_GRAB) // Armor-ignoring hit, causes agonizing wounds.
 			ai_busy_begin()
 			rending_strike(A)
 			ai_busy_end()
-	set_use_stance(I_HURT)
 	return ..()
 
 /mob/living/simple_mob/animal/sif/kururak/verb/do_flash()

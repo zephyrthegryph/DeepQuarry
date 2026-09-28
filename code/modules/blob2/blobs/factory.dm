@@ -1,11 +1,12 @@
+/obj/structure/blob/factory/get_mechanics_info(list/additional_information)
+	return ..(list("Creates hostile entities to attack enemies of the blob. It requires a 'node' blob nearby, or it will cease functioning.") + additional_information)
+
 /obj/structure/blob/factory
 	name = "factory blob"
 	base_name = "factory"
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blob_factory"
 	desc = "A thick spire of tendrils."
-	description_info = "A section of the blob that creates numerous hostile entities to attack enemies of the blob.  \
-	It requires a 'node' blob be nearby, or it will cease functioning."
 	max_integrity = 40
 	health_regen = 1
 	point_return = 25

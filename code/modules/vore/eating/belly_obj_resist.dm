@@ -6,6 +6,8 @@
 			return  // User is not in this belly
 
 	living_prey.setClickCooldown(50)
+	// The resist entry: the struggling prey's input stance, read once.
+	var/stance = living_prey.input_stance()
 
 	if(owner.stat) //If owner is stat (dead, KO) we can actually escape
 		resist_default_escape(living_prey, prey_item)
@@ -20,7 +22,7 @@
 	if(!private_struggle)
 		resist_play_sound()
 
-	if (prob(belchchance) && (escapable != B_ESCAPABLE_INTENT || (IS_HELPING(living_prey) && escapable == B_ESCAPABLE_INTENT)))
+	if (prob(belchchance) && (escapable != B_ESCAPABLE_INTENT || (stance == I_HELP && escapable == B_ESCAPABLE_INTENT)))
 		owner.emote("belch")
 
 	if(!escapable) //If the stomach has escapable enabled.
@@ -29,7 +31,7 @@
 		return
 
 	if(escapable == B_ESCAPABLE_INTENT)
-		switch(living_prey.use_stance())
+		switch(stance)
 			if(I_HURT)
 				if(resist_check_escapechance(living_prey, prey_item))
 					return

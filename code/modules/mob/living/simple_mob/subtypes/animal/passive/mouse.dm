@@ -255,13 +255,13 @@
 	universal_understand = 1
 
 //Jank grabber that uses the 'attack_hand' insead of 'MouseDrop'
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_UNGATED(null, PROC_REF(mouse_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_UNGATED_AS(I_HELP, "Scoop up", PROC_REF(mouse_interaction_hand)))
 
 /// Old attack_hand: scooping.
 /mob/living/simple_mob/animal/passive/mouse/proc/mouse_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	var/mob/living/carbon/human/H = user
-	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (IS_HELPING(src) && IS_HELPING(H)))
+	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && !combat_mode)
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (H == src))
 		return

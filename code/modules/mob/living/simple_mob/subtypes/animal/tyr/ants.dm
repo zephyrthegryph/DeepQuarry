@@ -61,7 +61,7 @@
 /mob/living/simple_mob/animal/tyr/mineral_ants/bronze/apply_melee_effects(atom/A)
 	..()
 
-	if(isliving(A) && IS_HARMING(src))
+	if(isliving(A) && combat_mode)
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
@@ -133,7 +133,7 @@
 	om_after(src, delay, PROC_REF(explode))
 	return ..()
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/agate/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/tyr/mineral_ants/agate/do_special_attack(atom/A, stance)
 	injure(INJURY_BLUNT, 30, source = src)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/quartz //irl quartz is apparently tough?
@@ -199,7 +199,7 @@
 	glow_intensity = 2
 	glow_toggle = TRUE
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/uranium/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/tyr/mineral_ants/uranium/do_special_attack(atom/A, stance)
 	visible_message(span_bolddanger(span_orange("The ant glows bright green!.")))
 	radiation_pulse(
 		src,
@@ -264,7 +264,7 @@
 	special_attack_max_range = 7
 	special_attack_cooldown = 10 SECONDS
 
-/mob/living/simple_mob/animal/tyr/mineral_ants/bronze/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/tyr/mineral_ants/bronze/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7))
 		if(IIsAlly(L))
 			L.apply_body_effect(/datum/body_effect/technomancer/haste, 3, src)

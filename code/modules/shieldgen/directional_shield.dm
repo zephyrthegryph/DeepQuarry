@@ -244,11 +244,13 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 
 // Subtypes
 
+/obj/item/shield_projector/rectangle/get_mechanics_info(list/additional_information)
+	return ..(list("This creates a shield in a rectangular shape, which allows projectiles to leave from inside but blocks projectiles from outside. \
+	Everything else can pass through the shield freely, including other people and thrown objects. The shield also cannot block certain effects which \
+	take place over an area, such as flashbangs or explosions.") + additional_information)
+
 /obj/item/shield_projector/rectangle
 	name = "rectangular combat shield projector"
-	description_info = "This creates a shield in a rectangular shape, which allows projectiles to leave from inside but blocks projectiles from outside.  \
-	Everything else can pass through the shield freely, including other people and thrown objects.  The shield also cannot block certain effects which \
-	take place over an area, such as flashbangs or explosions."
 	var/size_x = 3						// How big the rectangle will be, in tiles from the center.
 	var/size_y = 3						// Ditto.
 
@@ -332,11 +334,13 @@ DECLARE_INTERACTIONS(/obj/item/shield_projector, INTERACT_SELF("Toggle", PROC_RE
 	update_shield_colors()
 	return TRUE
 
+/obj/item/shield_projector/line/get_mechanics_info(list/additional_information)
+	return ..(list("This creates a shield in a straight line perpendicular to the direction where the user was facing when it was activated. \
+	The shield allows projectiles to leave from inside but blocks projectiles from outside. Everything else can pass through the shield freely, \
+	including other people and thrown objects. The shield also cannot block certain effects which take place over an area, such as flashbangs or explosions.") + additional_information)
+
 /obj/item/shield_projector/line
 	name = "linear combat shield projector"
-	description_info = "This creates a shield in a straight line perpendicular to the direction where the user was facing when it was activated. \
-	The shield allows projectiles to leave from inside but blocks projectiles from outside.  Everything else can pass through the shield freely, \
-	including other people and thrown objects.  The shield also cannot block certain effects which take place over an area, such as flashbangs or explosions."
 	var/line_length = 5			// How long the line is.  Recommended to be an odd number.
 	var/offset_from_center = 2	// How far from the projector will the line's center be.
 

@@ -117,7 +117,8 @@ DECLARE_REF(/mob/living/simple_mob/vore/alienanimals/catslug, "hat", SPILL, null
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \
-INTERACT_HAND_UNGATED(null, PROC_REF(catslug_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(catslug_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Take hat", PROC_REF(catslug_interaction_hand)))
 
 /// Old attackby: hats and feeding.
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_item(mob/user, obj/item/reagent_containers/food/snacks/O, datum/interaction/interaction)
@@ -159,8 +160,8 @@ INTERACT_HAND_UNGATED(null, PROC_REF(catslug_interaction_hand)))
 
 	if(stat == DEAD)
 		return FALSE
-	if(!IS_HELPING(M))
-		if(IS_GRABBING(M) && hat)
+	if(interaction.stance != I_HELP)
+		if(interaction.stance == I_GRAB && hat)
 			remove_hat(M)
 			return
 		return FALSE
@@ -347,7 +348,7 @@ INTERACT_HAND_UNGATED(null, PROC_REF(catslug_interaction_hand)))
 
 	if(stat == DEAD)
 		return FALSE
-	if(!IS_HELPING(M))
+	if(interaction.stance != I_HELP)
 		return FALSE
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)
@@ -447,7 +448,7 @@ INTERACT_HAND_UNGATED(null, PROC_REF(catslug_interaction_hand)))
 
 	if(stat == DEAD)
 		return FALSE
-	if(!IS_HELPING(M))
+	if(interaction.stance != I_HELP)
 		return FALSE
 	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 	if(resting)

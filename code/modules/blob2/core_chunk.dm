@@ -2,7 +2,6 @@
 /obj/item/blobcore_chunk
 	name = "core chunk"
 	desc = "The remains of some strange life-form. It smells awful."
-	description_info = "Some blob types will have core effects when the chunk is used in-hand, toggled with an alt click, or constantly active."
 	icon = 'icons/mob/blob.dmi'
 	icon_state = "blobcore"
 	flags = OPENCONTAINER

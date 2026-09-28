@@ -74,8 +74,8 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 	desc = "A white cane. They are commonly used by the blind or visually impaired as a mobility tool or as a courtesy to others."
 	icon_state = "whitecane"
 
-/obj/item/cane/white/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(IS_HELPING(user))
+/obj/item/cane/white/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(stance == I_HELP)
 		user.visible_message(span_notice("\The [user] has lightly tapped [M] on the ankle with their white cane!"))
 		return ITEM_INTERACT_SUCCESS
 	else

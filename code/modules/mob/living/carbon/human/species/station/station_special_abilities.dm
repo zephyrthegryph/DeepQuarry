@@ -54,7 +54,7 @@
 /mob/living/carbon/human/proc/bloodsuck_target_chosen(datum/om/prompt/choice/ask)
 	var/mob/living/carbon/human/B = ask.choice
 	if(B == src) //We are using this to minimize the amount of pop-ups or buttons.
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_mode_chosen), message = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and intents modes. Choosing intents prints controls to chat.", title = "Configure Bloodsuck", choices = list("always loud", "pop-up", "intents", "always subtle"), default = "always loud")
+		om_ask(src, /datum/om/prompt/choice, PROC_REF(bloodsuck_mode_chosen), message = "Choose your preferred control of blood sucking. You can only cause bleeding wounds with pop up and stance modes. Choosing stance prints controls to chat.", title = "Configure Bloodsuck", choices = list("always loud", "pop-up", "stance", "always subtle"), default = "always loud")
 		return
 	if(!bloodsuck_can(B))
 		return
@@ -67,28 +67,28 @@
 		if("pop-up")
 			om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_subtle), message = "Do you want to be subtle?", title = "Privacy", target = B)
 			return
-		if("intents")
+		if("stance")
 			/*
-			Logic is, with "Help", we are taking our time but it's pretty obvious..
-			With "disarm", we rush the act, letting it keep bleeding
-			"HURT" is self-evidently loud and bleedy
-			"Grab" is subtle because we keep our prey tight and close.
+			Logic is, out of combat mode, we are taking our time but it's pretty obvious..
+			With Disarm, we rush the act, letting it keep bleeding
+			Combat mode is self-evidently loud and bleedy
+			Grab is subtle because we keep our prey tight and close.
 			*/
-			switch(use_stance())
-				if(I_DISARM)
-					noise = FALSE
-					bleed = TRUE
-				if(I_GRAB)
-					noise = FALSE
-				if(I_HURT)
-					bleed =TRUE
+			// The biter's own posture (state) picks the mode.
+			if(attack_variant == ATTACK_VARIANT_DISARM)
+				noise = FALSE
+				bleed = TRUE
+			else if(attack_variant == ATTACK_VARIANT_GRAB)
+				noise = FALSE
+			else if(combat_mode)
+				bleed = TRUE
 	bloodsuck_begin(B, noise, bleed)
 
 /mob/living/carbon/human/proc/bloodsuck_mode_chosen(datum/om/prompt/choice/ask)
 	var/mode = ask.choice
 	species.bloodsucker_controlmode = mode
-	if(mode == "intents") //We are printing to chat for better readability
-		to_chat(src, span_notice("You've chosen to use intents for blood draining.\n HELP - Loud, No Bleeding\n DISARM - Subtle, Causes bleeding\n GRAB - Subtle, No Bleeding\n HARM - Loud, Causes Bleeding"))
+	if(mode == "stance") //We are printing to chat for better readability
+		to_chat(src, span_notice("You've chosen to use your stance for blood draining.\n Combat mode off - Loud, No Bleeding\n Disarm held - Subtle, Causes bleeding\n Grab held - Subtle, No Bleeding\n Combat mode on - Loud, Causes Bleeding"))
 
 /mob/living/carbon/human/proc/bloodsuck_popup_subtle(datum/om/prompt/choice/bloodsuck/ask)
 	om_ask(src, /datum/om/prompt/choice/bloodsuck, PROC_REF(bloodsuck_popup_answered), message = "Do you want your target to keep bleeding?", title = "Continue Bleeding", target = ask.target, subtle = ask.choice)

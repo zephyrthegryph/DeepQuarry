@@ -12,7 +12,7 @@
 //         always when always_stun is set;
 //       GRAB (eat) a downed victim it can consume (juvenile + can_consume + lying);
 //       else HURT.
-//     The mob's apply_attack() reads use_stance() to apply the matching effect, so
+//     The mob's apply_attack() reads input_stance() to apply the matching effect, so
 //     the behavior just calls set_use_stance() then runs the normal attack.
 //   closest_distance(): treated monkeys and downed/dying targets as melee range
 //     so ranged metroids would walk up and eat instead of shooting.
@@ -111,7 +111,7 @@
 		MJ.set_use_stance(I_GRAB)             // Then eat the downed target.
 	else
 		MJ.set_use_stance(I_HURT)             // Otherwise just hurt it.
-	MJ.attack_target(L)
+	MJ.attack_target(L, MJ.input_stance())
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 

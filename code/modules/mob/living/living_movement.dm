@@ -53,6 +53,8 @@ default behaviour is:
 	now_pushing = TRUE
 	if (isliving(AM))
 		var/mob/living/tmob = AM
+		// The bump entry: our input stance, read once. tmob's posture is its combat_mode.
+		var/stance = input_stance()
 
 		//Even if we don't push/swap places, we "touched" them, so spread fire
 		spreadFire(tmob)
@@ -69,7 +71,7 @@ default behaviour is:
 				now_pushing = FALSE
 				return
 
-		//BubbleWrap: people in handcuffs are always switched around as if they were on 'help' intent to prevent a person being pulled from being seperated from their puller
+		//BubbleWrap: people in handcuffs are always switched around as if they were in help stance to prevent a person being pulled from being seperated from their puller
 		var/can_swap = TRUE
 		if(loc.density || tmob.loc.density)
 			can_swap = FALSE
@@ -95,7 +97,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
+		if((tmob.mob_always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && tmob.canmove && canmove && !tmob?.buckled_to() && !src?.buckled_to() && can_swap && can_move_mob(tmob, 1, 0)) // mutual brohugs all around!
 			var/turf/oldloc = loc
 
 			//check bumpnom chance, if it's a simplemob that's doing the bumping
@@ -124,7 +126,7 @@ default behaviour is:
 			tmob.forceMove(oldloc)
 			now_pushing = FALSE
 			return
-		else if((tmob.mob_always_swap || (IS_HELPING(tmob) || tmob.restrained()) && (IS_HELPING(src) || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
+		else if((tmob.mob_always_swap || (!tmob.combat_mode || tmob.restrained()) && (stance == I_HELP || src.restrained())) && canmove && can_swap && handle_micro_bump_helping(tmob))
 			forceMove(tmob.loc)
 			now_pushing = FALSE
 			return
@@ -132,7 +134,7 @@ default behaviour is:
 		if(!can_move_mob(tmob, FALSE, FALSE))
 			now_pushing = FALSE
 			return
-		if(IS_HELPING(src) || src.restrained())
+		if(stance == I_HELP || src.restrained())
 			now_pushing = FALSE
 			return
 		// Plow that nerd.
@@ -145,16 +147,16 @@ default behaviour is:
 				H.status_at_least(EFFECT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
-			if(H.species.lightweight_light == 1 && IS_HELPING(H))
+			if(H.species.lightweight_light == 1 && !H.combat_mode)
 				H.visible_message(span_warning("[src] bumps into [H], knocking them off balance!"))
 				H.status_at_least(EFFECT_WEAKENED, 5)
 				now_pushing = FALSE
 				return
 		// Handle grabbing, stomping, and such of micros!
 		if(step_mechanics_pref && tmob.step_mechanics_pref)
-			if(handle_micro_bump_other(tmob)) return
+			if(handle_micro_bump_other(tmob, 0, stance)) return
 		else
-			if(handle_micro_bump_other(tmob,1)) return
+			if(handle_micro_bump_other(tmob, 1, stance)) return
 		// CHOMPSTATION edit end
 		if(ishuman(tmob) && (tmob.has_mutation(FAT)))
 			if(prob(40) && !(src.has_mutation(FAT)))
@@ -230,6 +232,11 @@ default behaviour is:
 			// Checks if we are riding a vehicle instead of our BUCKLED(src) vehicle, so that our trailers don't flatten us either!
 			var/obj/vehicle/V = AM
 			V.RunOver(src)
+
+	// A mob stepping onto us while we lie down: its input stance (the movement entry reads it) picks the micro step.
+	if(isliving(AM))
+		var/mob/living/stepper = AM
+		handle_micro_crossed_by(stepper, stepper.input_stance())
 
 // Almost all of this handles pulling movables behind us
 /mob/living/Move(atom/newloc, direct, movetime)

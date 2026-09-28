@@ -358,7 +358,7 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 	face_atom(movement_target)
 
 	if(isturf(movement_target.loc))
-		UnarmedAttack(movement_target)
+		UnarmedAttack(movement_target, TRUE, I_HELP)
 	else if(ishuman(movement_target.loc) && prob(20))
 		visible_emote("stares at the [movement_target] that [movement_target.loc] has with an unknowable gaze.")
 	movement_target = null
@@ -592,7 +592,7 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 		return 0
 	return 1
 
-/mob/living/simple_mob/apply_attack(atom/A, damage_to_do)
+/mob/living/simple_mob/apply_attack(atom/A, damage_to_do, stance = I_HURT)
 	if(isliving(A)) // Converts target to living
 		var/mob/living/L = A
 
@@ -831,7 +831,7 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 		riding_datum.rider_size = H.size_multiplier
 		src?.buckled_mob_list()[H] = "riding"
 
-/mob/living/simple_mob/unarmed_touch(mob/user as mob)
+/mob/living/simple_mob/unarmed_touch(mob/living/user, stance = I_HELP)
 	if(riding_datum && LAZYLEN(src?.buckled_mob_list()))
 		//We're getting off!
 		if(user in src?.buckled_mob_list())

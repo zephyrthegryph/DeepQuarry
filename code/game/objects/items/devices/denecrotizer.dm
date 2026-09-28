@@ -133,10 +133,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 		else
 			. += span_notice("The screen indicates that this device can be used again in [cooldowntime] seconds, and that it has enough energy for [charges] uses.")
 
-/obj/item/denecrotizer/proc/check_target(mob/living/simple_mob/target, mob/living/user)
+/obj/item/denecrotizer/proc/check_target(mob/living/simple_mob/target, mob/living/user, stance = I_HURT)
 	if(!target.Adjacent(user))
 		return FALSE
-	if(!IS_HELPING(user)) //be gentle
+	if(stance != I_HELP) //be gentle
 		user.visible_message("[user] bonks [target] with [src].", runemessage = "bonks [target]")
 		return FALSE
 	if(!istype(target))
@@ -235,8 +235,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	user.visible_message("[user] bonks [target] with [src]. Nothing happened.")
 	return
 
-/obj/item/denecrotizer/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
-	if(check_target(target, user))
+/obj/item/denecrotizer/attack(mob/living/target, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(check_target(target, user, stance))
 		if(advanced)
 			ghostjoin_rez(target, user)
 		else

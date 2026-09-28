@@ -37,8 +37,8 @@ DECLARE_REF(/obj/item/spell/flame_tongue, "welder", OWNED, null)
 /obj/item/weldingtool/spell/eyecheck(mob/user as mob)
 	return
 
-/obj/item/spell/flame_tongue/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
-	if(isliving(hit_atom) && !IS_HELPING(user))
+/obj/item/spell/flame_tongue/on_melee_cast(atom/hit_atom, mob/living/user, def_zone, stance = I_HURT)
+	if(isliving(hit_atom) && stance != I_HELP)
 		var/mob/living/L = hit_atom
 		if(pay_energy(1000))
 			visible_message(span_danger("\The [user] reaches out towards \the [L] with the flaming hand, and they ignite!"))

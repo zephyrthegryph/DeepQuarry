@@ -353,10 +353,11 @@ GLOBAL_PROTECT(surgical_steps)
 
 /// Attack-chain entry: try to operate on `M` with this item. TRUE when the
 /// attack was consumed by surgery.
-/obj/item/proc/do_surgery(mob/living/carbon/M, mob/living/user)
+/// `stance` is the stance of the interaction doing it: surgery is never a hostile use.
+/obj/item/proc/do_surgery(mob/living/carbon/M, mob/living/user, stance = I_HELP)
 	if(!can_do_surgery(M, user) || !ishuman(M))
 		return FALSE
-	if(IS_HARMING(user))
+	if(stance == I_HURT)
 		return FALSE
 	var/mob/living/carbon/human/target = M
 	if(user.action_blocked(ACTION_BLOCK_SURGERY))

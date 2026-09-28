@@ -332,9 +332,9 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	get_power_cell()?.material_record_enhanced_output(charge_amt, output_envelope)
 	return TRUE
 
-/obj/item/shockpaddles/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/shockpaddles/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	var/mob/living/carbon/human/H = M
-	if(!istype(H) || IS_HARMING(user))
+	if(!istype(H) || stance == I_HURT)
 		return ..() //Do a regular attack. Harm intent shocking happens as a hit effect
 
 	if(can_use(user, H))

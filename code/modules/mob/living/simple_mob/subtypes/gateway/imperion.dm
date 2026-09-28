@@ -29,9 +29,9 @@
 
 	armor_spec = "melee=35;bullet=35;laser=35;energy=35;bomb=35;bio=100;rad=100"
 
-/mob/living/simple_mob/mechanical/mecha/imperion/phase1/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/imperion/phase1/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -39,9 +39,9 @@
 		if(I_GRAB) // Micro-singulo
 			launch_microsingularity(A)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/phase2/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/imperion/phase2/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -49,9 +49,9 @@
 		if(I_GRAB) // Micro-singulo
 			launch_microsingularity(A)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/phase4/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/imperion/phase4/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -59,9 +59,9 @@
 		if(I_GRAB) // Micro-singulo
 			launch_microsingularity(A)
 
-/mob/living/simple_mob/mechanical/mecha/imperion/phase5/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/imperion/phase5/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets
@@ -148,7 +148,7 @@
 	special_attack_max_range = 14 //this thing will not let you recover during phase 3. It blitz you down, or you blitz it down.
 	special_attack_cooldown = 2 SECONDS
 
-/mob/living/simple_mob/mechanical/mecha/imperion/phase3/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/imperion/phase3/do_special_attack(atom/A, stance)
 	// Teleport attack.
 	if(!A)
 		to_chat(src, span_warning("There's nothing to teleport to."))

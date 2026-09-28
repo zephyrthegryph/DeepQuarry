@@ -212,10 +212,12 @@
 	defend_chance = 65
 
 
+/obj/item/shield_projector/rectangle/automatic/tyrbarrier/get_mechanics_info(list/additional_information)
+	return ..(list("The barrier has 150 health, and does not benefit from armor. It will fully regenerate every 180 seconds.") + additional_information)
+
 /obj/item/shield_projector/rectangle/automatic/tyrbarrier
 	name = "tyrian energy barrier"
 	desc = "An automatic shield generator made from tyr tech. Wearable as a belt."
-	description_info = "The barrier has 150 health, and does not benefit from armor. It will fully regenerate every 180 seconds."
 	max_integrity = 125
 	shield_regen_delay = 180 SECONDS
 	shield_regen_amount = 125
@@ -254,11 +256,13 @@
 //Axe is 60 damage, 65 AP, no guard
 //Normal attackspeed is 8
 //The katar is meant for quick strikes, the real damage from from effects
+/obj/item/melee/energy/tyr_katar/get_mechanics_info(list/additional_information)
+	return ..(list("Grab attacks light a fire, Disarm attacks briefly increase your speed, and combat-mode attacks phase out your foe's armor.") + additional_information)
+
 /obj/item/melee/energy/tyr_katar
 	name = "tyrian scout katar"
 	slot_flags = SLOT_BELT | SLOT_BACK
 	desc = "A forgien blade made via techniques formly lost. Gains a diffrent effect base off your stance."
-	description_info = "Attacking whilst on grab intent will light a fire, attacking whilst on disarm will increase your speed for a brief moment, and attacking whilst on harm will phase out your foe's armor."
 	lcolor = null
 	colorable = FALSE
 	attackspeed = 4
@@ -279,10 +283,10 @@
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
 
-/obj/item/melee/energy/tyr_katar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/melee/energy/tyr_katar/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(active)
 		. = ..()
-		switch(user.use_stance())
+		switch(stance)
 			if(I_GRAB)
 				target.adjust_fire_stacks(7)
 				target.ignite_mob()
@@ -301,11 +305,13 @@
 
 //Trades speed for defense
 //you are the wall
+/obj/item/melee/energy/tyr_hammer/get_mechanics_info(list/additional_information)
+	return ..(list("Grab attacks restore the wielder's health, Disarm attacks weaken the target, and combat-mode attacks can throw the target back.") + additional_information)
+
 /obj/item/melee/energy/tyr_hammer
 	name = "tyrian guardian hammer"
 	slot_flags = SLOT_BELT | SLOT_BACK
 	desc = "A strange hammer made via techniques formly lost. Gains a diffrent effect base off your stance."
-	description_info = "Attacking whilst on grab intent restore the wielder's health, attacking whilst on disarm weakens the target and attacking whilst on harm can throw back the target."
 	lcolor = null
 	colorable = FALSE
 
@@ -328,10 +334,10 @@
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
 
-/obj/item/melee/energy/tyr_hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/melee/energy/tyr_hammer/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	if(active)
 		. = ..()
-		switch(user.use_stance())
+		switch(stance)
 			if(I_GRAB)
 				user.mend(TREAT_BURN_CARE, 5)
 				user.mend(TREAT_TISSUE_REPAIR, 5)
@@ -342,11 +348,13 @@
 				if(!target.anchored)
 					target.throw_at(target_zone, 5, 2, user, FALSE)
 
+/obj/item/melee/energy/tyr_chainsaw/get_mechanics_info(list/additional_information)
+	return ..(list("Utilizes charge, which recharges with time.") + additional_information)
+
 /obj/item/melee/energy/tyr_chainsaw
 	name = "tyrian butcher blade"
 	slot_flags = SLOT_BELT | SLOT_BACK
 	desc = "What appears to be a weaponized chainsaw."
-	description_info = "Utilizes charge, recharges with time"
 	lcolor = null
 	colorable = FALSE
 

@@ -1,9 +1,10 @@
+/obj/item/mapping_unit/get_mechanics_info(list/additional_information)
+	return ..(list("The device shows other powered-on mapping units and activated mapping beacons, but only of the same 'type': \
+	normal units show normal beacons and units, ERT units show ERT ones, etc.") + additional_information)
+
 /obj/item/mapping_unit
 	name = "mapping unit"
 	desc = "A portable mapping unit, capable of locating other similar units on a map. Also has a short-range sonar mapping system."
-	description_info = "Use the device in your hand to add the mapping HUD to your screen. You can then power it on and change mapping modes.\
-	<br>The device will show other powered-on mapping units on the map, as well as activated mapping beacons, but only of the same 'type' mapping unit.\
-	<br>Normal mapping units can only display other normal beacons and mapping units, ERT mapping units can display other ERT, etc."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "mapping_unit"
 	item_state = null
@@ -107,6 +108,9 @@
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 
 DECLARE_REF(/obj/item/mapping_unit, "extras_holder", OWNED, null)
+DECLARE_REF(/obj/item/mapping_unit, "hud_datum", OWNED, null)
+DECLARE_REF(/obj/item/mapping_unit, "hud_item", OWNED, null)
+DECLARE_REF(/obj/item/mapping_unit, "cell", OWNED, null)
 
 // its map display is torn down.
 /obj/item/mapping_unit/on_destroy(force)

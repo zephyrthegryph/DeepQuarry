@@ -48,7 +48,7 @@
 //		Wraith special attack stuff
 ////////////////////////////
 
-/mob/living/simple_mob/construct/wraith/do_special_attack(atom/A)
+/mob/living/simple_mob/construct/wraith/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)

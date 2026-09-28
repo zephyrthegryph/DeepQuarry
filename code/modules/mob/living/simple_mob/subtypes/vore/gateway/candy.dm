@@ -217,10 +217,10 @@
 	melee_damage_lower = 15
 	melee_damage_upper = 25
 
-/mob/living/simple_mob/vore/candy/redcabold/apply_melee_effects(atom/A)
+/mob/living/simple_mob/vore/candy/redcabold/apply_melee_effects(atom/A, stance = I_HURT)
 	..()
 
-	if(isliving(A) && IS_HARMING(src))
+	if(isliving(A) && stance == I_HURT)
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
@@ -345,7 +345,7 @@
 			/obj/item/melee/cullingcane = 30
 			)
 
-/mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
 	om_after(src, 20, PROC_REF(chargeend), A)
@@ -447,8 +447,8 @@
 	else
 		..()
 
-/mob/living/simple_mob/vore/candy/ouroboros/do_special_attack(atom/A)
-	switch(use_stance())
+/mob/living/simple_mob/vore/candy/ouroboros/do_special_attack(atom/A, stance)
+	switch(stance)
 		if(I_GRAB)
 			summon_combo(A)
 		if(I_HURT)

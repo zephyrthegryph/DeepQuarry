@@ -93,7 +93,6 @@
 /obj/item/clothing/under/circuitry
 	name = "electronic jumpsuit"
 	desc = "It's a wearable case for electronics. This on is a black jumpsuit with wiring weaved into the fabric."
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon_state = "circuitry"
 	worn_state = "circuitry"
 
@@ -114,7 +113,6 @@
 	name = "electronic gloves"
 	desc = "It's a wearable case for electronics. This one is a pair of black gloves, with wires woven into them. A small \
 	device with a screen is attached to the left glove."
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
@@ -135,7 +133,6 @@
 	name = "electronic goggles"
 	desc = "It's a wearable case for electronics. This one is a pair of goggles, with wiring sticking out. \
 	Could this augment your vision?" // Sadly it won't, or at least not yet.
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon_state = "circuitry"
 	item_state = "night" // The on-mob sprite would be identical anyways.
 
@@ -156,7 +153,6 @@
 	name = "electronic boots"
 	desc = "It's a wearable case for electronics. This one is a pair of boots, with wires attached to a small \
 	cover."
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
@@ -177,7 +173,6 @@
 	name = "electronic headwear"
 	desc = "It's a wearable case for electronics. This one appears to be a very technical-looking piece that \
 	goes around the collar, with a heads-up-display attached on the right."
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon_state = "circuitry"
 	item_state = "circuitry"
 
@@ -197,7 +192,6 @@
 /obj/item/clothing/ears/circuitry
 	name = "electronic earwear"
 	desc = "It's a wearable case for electronics. This one appears to be a technical-looking headset."
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon = 'icons/inventory/ears/item.dmi'
 	icon_state = "circuitry"
 	item_state = "circuitry"
@@ -221,7 +215,6 @@
 	name = "electronic chestpiece"
 	desc = "It's a wearable case for electronics. This one appears to be a very technical-looking vest, that \
 	almost looks professionally made, however the wiring popping out betrays that idea."
-	description_info = "Control-shift-click on this with an item in hand to use it on the integrated circuit."
 	icon_state = "circuitry"
 	item_state = "circuitry"
 

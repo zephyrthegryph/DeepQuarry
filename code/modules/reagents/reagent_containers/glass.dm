@@ -19,7 +19,6 @@
 	unacidable = TRUE //glass doesn't dissolve in acid
 	drop_sound = 'sound/items/drop/bottle.ogg'
 	pickup_sound = 'sound/items/pickup/bottle.ogg'
-	description_info = "Clicking on a venomous animal (or person) with the lid closed will express their venom into the beaker!"
 	resistance_flags = ACID_PROOF
 
 	var/label_text = ""
@@ -52,7 +51,10 @@
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	INTERACT_SELF("Toggle lid", PROC_REF(glass_self)), \
-	INTERACT_ITEM(null, PROC_REF(glass_item)), \
+	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(glass_item)), \
+	INTERACT_ITEM_AS(I_DISARM, "Dip into it", PROC_REF(glass_item)), \
+	INTERACT_ITEM_AS(I_GRAB, "Dip into it", PROC_REF(glass_item)), \
+	INTERACT_ITEM_AS(I_HURT, "Dip into it", PROC_REF(glass_item)), \
 )
 
 /// Old attack_self.
@@ -68,23 +70,19 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	update_icon()
 	return TRUE
 
-/obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(force && !(flags & NOBLUDGEON) && IS_HARMING(user))
+/obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(force && !(flags & NOBLUDGEON) && stance == I_HURT)
 		return	..()
 
 	// If the container is *closed* we do snake milking!~
 	if(!is_open_container() && isliving(M))
 		return attempt_snake_milking(user, M)
 
-	if(standard_feed_mob(user, M))
+	// In combat mode it isn't fed to anyone: afterattack splashes it instead.
+	if(stance != I_HURT && standard_feed_mob(user, M))
 		return ITEM_INTERACT_SUCCESS
 
 	return ITEM_INTERACT_FAILURE
-
-/obj/item/reagent_containers/glass/standard_feed_mob(mob/user, mob/target)
-	if(IS_HARMING(user))
-		return FALSE
-	return ..()
 
 /obj/item/reagent_containers/glass/self_feed_message(mob/user)
 	balloon_alert(user, "swallowed from \the [src]")
@@ -114,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	reagents.add_reagent(reagent, amount)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/reagent_containers/glass/afterattack(obj/target, mob/user, proximity)
+/obj/item/reagent_containers/glass/afterattack(obj/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!proximity || !is_open_container()) //Is the container open & are they next to whatever they're clicking?
 		return 1 //If not, do nothing.
 	for(var/type in GLOB.reagent_containers_can_be_placed_into[container_can_be_placed_into]) //Is it something it can be placed into?
@@ -124,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 		return 1
 	if(standard_pour_into(user, target)) //Pouring into another beaker?
 		return
-	if(IS_HARMING(user))
+	if(stance == I_HURT)
 		if(standard_splash_mob(user,target))
 			return 1
 		if(reagents && reagents.total_volume)
@@ -150,7 +148,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 			balloon_alert(user, "label set to \"[tmp_label]\"")
 			label_text = tmp_label
 			update_name_label()
-	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && !IS_HELPING(user))
+	// Dipping is the Disarm/Grab/combat-mode declarations; outside combat mode it only labels.
+	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && (interaction.stance in list(I_DISARM, I_GRAB, I_HURT)))
 		balloon_alert(user, "[W] dipped into \the [src].")
 		reagents.touch_obj(W, reagents.total_volume)
 	attempt_changeling_test(W,user)

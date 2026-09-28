@@ -29,7 +29,7 @@ DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
 //when thrown on impact, bottles smash and spill their contents
 /obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback)
 	. = ..()
-	if(istype(thrower) && IS_HARMING(thrower))
+	if(istype(thrower) && thrower.combat_mode)
 		violent_throw = TRUE
 		throw_source_handle = om_handle(get_turf(thrower))
 
@@ -158,10 +158,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	else
 		set_light(0)
 
-/obj/item/reagent_containers/food/drinks/bottle/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/reagent_containers/food/drinks/bottle/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	var/blocked = ..()
 
-	if(!IS_HARMING(user))
+	if(stance != I_HURT)
 		return
 	if(!smash_check(1))
 		return //won't always break on the first hit

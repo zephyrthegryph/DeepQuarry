@@ -46,8 +46,8 @@
 		else
 			return "It's difficult to tell how much it'll influence your speed."
 
-/obj/item/clothing/get_description_info(list/additional_information)
-	var/armor_stats = description_info + "\
+/obj/item/clothing/get_mechanics_info(list/additional_information)
+	var/armor_stats = "\
 	<br>"
 
 	var/static/list/armor_descriptions = list(MELEE = "blunt force", BULLET = "ballistics", LASER = "lasers", ENERGY = "energy", BOMB = "explosions", BIO = "biohazards", ARMOR_RAD = "radiation", FIRE = "fire", ACID = "acid", ARMOR_COLD = "cold")

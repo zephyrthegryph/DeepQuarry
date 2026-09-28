@@ -341,7 +341,7 @@
 			return ITEM_INTERACT_SUCCESS
 	..()
 
-DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)), INTERACT_SELF(null, PROC_REF(interaction_electrovore)))
+DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)), INTERACT_SELF_AS(I_HELP, "Charge with your body", PROC_REF(interaction_electrovore)), INTERACT_SELF_AS(I_HURT, "Drain its charge", PROC_REF(interaction_electrovore)))
 
 /// Old attackby.
 /obj/item/cell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

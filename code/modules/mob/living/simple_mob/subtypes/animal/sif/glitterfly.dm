@@ -24,7 +24,7 @@
 /mob/living/simple_mob/animal/sif/glitterfly
 	name = "glitterfly"
 	desc = "A large, shiny butterfly!"
-	description_info = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."
+	description_fluff = "Glitterflies tend to have a wingspan equivalent to the length of an average human head."
 	tt_desc = "S Lepidoptera adamas"
 	catalogue_data = list(/datum/category_item/catalogue/fauna/glitterfly)
 

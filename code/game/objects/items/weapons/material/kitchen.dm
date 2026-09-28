@@ -85,11 +85,11 @@
 	loaded = null
 	update_icon()
 
-/obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/material/kitchen/utensil/attack(mob/living/carbon/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(!istype(M))
 		return ..()
 
-	if(!IS_HELPING(user))
+	if(stance != I_HELP)
 		if(user.zone_sel.selecting == BP_HEAD || user.zone_sel.selecting == O_EYES)
 			if(CLUMSY_HARM_CHANCE(user))
 				M = user

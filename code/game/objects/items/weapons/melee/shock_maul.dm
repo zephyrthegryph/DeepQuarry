@@ -1,7 +1,6 @@
 /obj/item/melee/shock_maul
 	name = "concussion maul"
 	desc = "A heavy-duty concussion hammer typically used for mining, as it can pulverize and break rocks without damaging denser ores if used correctly. If used incorrectly, there are very few things it cannot smash; this fact made it an iconic weapon for the many uprisings of Mars. It uses a manually engaged concussive-force amplifier unit in the head to multiply impact power, but its weight and the charge up time makes it difficult to use effectively. Devastating if used correctly, but requires skill. It also appears to have a sling attached, so that you can carry it on your back if you need to."
-	description_info = "The concussion maul can be manually charged to massively increase its damage, grant a powerful knockback and short stun effect, and allow it to instantly destroy certain obstacles. This takes a moment (and some battery charge upon impact), but is devastating if used correctly. You can also switch to Disarm intent in order increase the inflicted stun duration and knockback distance, at the cost of reducing the damage dealt. You can manually depower the maul to save charge (or for safety purposes), and the maul features a grip safety that will depower it if it is dropped or otherwise unequipped."
 	icon_state = "forcemaul"
 	item_state = "forcemaul"
 	slot_flags = SLOT_BACK
@@ -257,9 +256,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		powercheck(hitcost)
 	// end
 
-/obj/item/melee/shock_maul/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/melee/shock_maul/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	. = ..()
-	if(IS_DISARMING(user))
+	if(stance == I_DISARM)
 		launch_force *= launch_force_disarm
 		weaken_force *= weaken_force_disarm
 

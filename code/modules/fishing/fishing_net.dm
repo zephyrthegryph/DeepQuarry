@@ -1,12 +1,12 @@
+/obj/item/material/fishing_net/get_mechanics_info(list/additional_information)
+	return ..(list("It has a reach of two tiles. This version does not keep creatures inside in stasis, and is heavier while it contains a mob.") + additional_information)
+
 /obj/item/material/fishing_net
 	name = "fishing net"
 	desc = "A crude fishing net."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "net"
 	item_state = "net"
-	description_info = "This object can be used to capture certain creatures easily, most commonly fish. \
-	It has a reach of two tiles, and can be emptied by activating it in-hand. \
-	This version will not keep creatures inside in stasis, and will be heavier if it contains a mob."
 
 	var/empty_state = "net"
 	var/contain_state = "net_full"
@@ -126,8 +126,6 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 	icon = 'icons/obj/items.dmi'
 	icon_state = "butterfly_net"
 	item_state = "butterfly_net"
-	description_info = "This object can be used to capture certain creatures easily, most commonly butterflies. \
-	It can be emptied by activating it in-hand."
 
 	empty_state = "butterfly_net"
 	contain_state = "butterfly_net_full"
@@ -189,7 +187,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	for(var/mob/living/M in contents_of(src))
 		if(!user.get_inactive_hand()) //Check if the inactive hand is empty
 			M.forceMove(get_turf(src))
-			M.attempt_to_scoop(user)
+			M.attempt_to_scoop(user, stance = I_HELP)
 			user.visible_message(span_notice("[user] scoops [M] out from \the [src]."), span_notice("You pull [M] from \the [src]."))
 		else
 			M.forceMove(get_turf(src))

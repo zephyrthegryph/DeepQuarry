@@ -1065,7 +1065,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/flannel, \
 	name = "wet floor sign"
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
-	description_info = "Alt-click, or click in-hand to toggle the caution lights. It looks like you can wear it in your suit slot."
 	icon_state = "caution"
 	drop_sound = 'sound/items/drop/shoes.ogg'
 	force = 1
@@ -1228,9 +1227,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 /obj/item/clothing/suit/drake_cloak/proc/taur_fit(mob/living/carbon/human/H)
 	return istype(H) && istype(H.tail_style, /datum/sprite_accessory/tail/taur/drake)
 
+/obj/item/clothing/suit/barding/get_mechanics_info(list/additional_information)
+	return ..(list("Only a horse-bodied taur can wear this.") + additional_information)
+
 /obj/item/clothing/suit/barding
 	name = DEVELOPER_WARNING_NAME
-	description_info = "You need to be a horsy to wear that."
 	icon = 'icons/mob/taursuits_horse.dmi'
 	item_state_slots = list(slot_r_hand_str = "capjacket", slot_l_hand_str = "capjacket")
 	body_parts_covered = UPPER_TORSO|ARMS|LOWER_TORSO|LEGS

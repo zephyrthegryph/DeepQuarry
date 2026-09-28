@@ -170,6 +170,7 @@
 	..()
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
+	INTERACT_SELF_AS(I_HURT, "Squash", PROC_REF(grown_squash)), \
 	INTERACT_SELF(null, PROC_REF(grown_self)), \
 	INTERACT_ITEM(null, PROC_REF(grown_item)), \
 )
@@ -285,6 +286,20 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 				user.drop_from_inventory(src)
 			consume(src, user)
 
+/// Old attack_self in combat mode: squash it on yourself.
+/obj/item/reagent_containers/food/snacks/grown/proc/grown_squash(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!seed())
+		return FALSE
+
+	if(istype(user.loc,/turf/space))
+		return FALSE
+
+	user.visible_message(span_danger("\The [user] squashes \the [src]!"))
+	seed().thrown_at(src,user)
+	if(!QDELETED(src))
+		consume(src, user)
+	return TRUE
+
 /// Old attack_self.
 /obj/item/reagent_containers/food/snacks/grown/proc/grown_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!seed())
@@ -292,13 +307,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 
 	if(istype(user.loc,/turf/space))
 		return FALSE
-
-	if(IS_HARMING(user))
-		user.visible_message(span_danger("\The [user] squashes \the [src]!"))
-		seed().thrown_at(src,user)
-		if(!QDELETED(src))
-			consume(src, user)
-		return TRUE
 
 	if(seed().kitchen_tag == PLANT_GRASS)
 		user.show_message(span_notice("You make a grass tile out of \the [src]!"), 1)

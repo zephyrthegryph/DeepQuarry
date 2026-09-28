@@ -176,7 +176,7 @@ DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 		return TRUE
 
 	else if (istype(I, /obj/item/reagent_containers/glass/bucket) && mybucket)
-		I.afterattack(mybucket, user, 1)
+		I.afterattack(mybucket, user, 1, null, I_HELP) // wetting it in the bucket is a peaceful use
 		update_icon()
 		return TRUE
 
@@ -226,7 +226,7 @@ DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 		equip_janicart_item(user, I)
 	else if(istype(I, /obj/item/reagent_containers) && mybucket)
 		var/obj/item/reagent_containers/C = I
-		C.afterattack(mybucket, user, 1)
+		C.afterattack(mybucket, user, 1, null, I_HELP) // refilling from the bucket is a peaceful use
 		update_icon()
 	return TRUE
 

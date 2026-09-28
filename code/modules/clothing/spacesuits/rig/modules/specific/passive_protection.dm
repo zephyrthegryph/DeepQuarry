@@ -1,11 +1,11 @@
 // contains the Radiation Absorption Device (RAD) and Atmospheric Protective Equipment (APE) modules
 // you shits ready for some COPY AND PASTE?
+/obj/item/rig_module/rad_shield/get_mechanics_info(list/additional_information)
+	return ..(list("Protects the wearer from incoming ionizing radiation at a very high power cost; use it in short bursts.") + additional_information)
+
 /obj/item/rig_module/rad_shield
 	name = "radiation absorption device"
 	desc = "The acronym of this device - R.A.D. - and its full name both convey the application of the module."
-	description_info = "Through the usage of powered radiation collectors optimized for absorption rather than power generation, it protects the suit's wearer \
-	from incoming ionizing radiation and converts it into a significantly less harmful form. This comes at the cost of concerningly high power consumption, \
-	and thus should only be used in short bursts."
 	icon_state = "radsoak"
 	toggleable = TRUE
 	disruptable = TRUE
@@ -99,12 +99,12 @@
 	use_power_cost = 5
 	active_power_cost = 5
 
+/obj/item/rig_module/atmos_shield/get_mechanics_info(list/additional_information)
+	return ..(list("Protects the wearer from atmospheric pressure and temperature at a very high power cost; use it in short bursts.") + additional_information)
+
 /obj/item/rig_module/atmos_shield
 	name = "atmospheric protection enhancement suite"
 	desc = "The acronym of this suite - A.P.E. - unlike its loosely related cousin, the R.A.D., is remarkably unintuitive."
-	description_info = "Through the usage of powered shielding optimized for protection against the elements rather than from external physical issues, \
-	it protects the suit's wearer from atmospheric pressure and temperatures. This comes at the cost of concerningly high power consumption, \
-	and thus should only be used in short bursts."
 	icon_state = "atmosoak"
 
 	toggleable = TRUE
@@ -195,13 +195,13 @@
 	use_power_cost = 5
 	active_power_cost = 5
 
+/obj/item/rig_module/faraday_shield/get_mechanics_info(list/additional_information)
+	return ..(list("Grounds the wearer against electrical attacks (Teslas and the like) provided the body is fully covered by the suit, \
+	at a very high power cost; use it in short bursts.") + additional_information)
+
 /obj/item/rig_module/faraday_shield
 	name = "Faraday Protection Shield"
 	desc = "The acronym of this device - F.P.S. - does not represent the application of the device."
-	description_info  = "Instead of wrapping the user with a grounded mesh of wires and limiting mobility, this device instead creates an \
-	lattice within the electromagnetic field around the user. This field, while smelling pleasantly of ozone, will act as a means of grounding \
-	the suit's operator. This in turn will protect them from electrical attacks from Teslas and other electrical assaults provided the body is \
-	fully covered by the suit. This comes at the cost of concerningly high power consumption, and thus should only be used in short bursts."
 	icon_state = "elecsoak"
 	toggleable = TRUE
 	disruptable = TRUE

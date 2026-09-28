@@ -41,15 +41,17 @@
 /datum/construction_graph/floor/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	return
 
-/// Floors do their tool work only on help intent; otherwise the tool attacks the tile (attackby).
+/// Floor tool work is declared for I_HELP (the edges' stance). When this quality's edge isn't meant
+/// in the actor's stance, the tool attacks the tile instead (attackby).
 /turf/simulated/floor/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
 	if(isliving(user))
-		var/mob/living/L = user
-		if(!IS_HELPING(L))
-			return NONE
+		for(var/datum/interaction/construction/edge as anything in construction_edges_for(src))
+			if(edge.tool == quality && !edge.is_meant(user, src, tool))
+				return NONE
 	return ..()
 
 /datum/interaction/construction/floor
+	stance = I_HELP
 	tool_volume = 80
 
 /datum/interaction/construction/floor/pry_covering

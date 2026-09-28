@@ -5,10 +5,10 @@
 	desc = "A cannon developed by Curabitur Scimed, this weapon incorporates both Vey-Med and precursor technology to create a medical alternative to chemicals on the field."
 	icon = 'icons/vore/custom_guns_vr.dmi'
 	icon_state = "healcannon"
-	description_info = "Created to fulfill the needs and wants of the Curabitur Scimed personell during rescue operations, the Healcannon is a marvel of reverse-engineering and utilization of unknown technologies. \
+	description_fluff = "Created to fulfill the needs and wants of the Curabitur Scimed personell during rescue operations, the Healcannon is a marvel of reverse-engineering and utilization of unknown technologies. \
 	It makes use of the Vey-Med NERD 'Medigun' microbattery technology, combining the effects of multiple 'microbatteries' into single 'macrobatteries' that are built around precursor void cores, \
 	allowing for the batteries to self-charge for prolonged field use. However, the weakened beams caused by the use of misunderstood technology created a need for a VERY strong focus, \
-	which lead to the Healcannon becoming a very bulky tool. Fortunately, it's not as heavy as it looks." // CHOMPedit: Spellcheck
+	which lead to the Healcannon becoming a very bulky tool. Fortunately, it's not as heavy as it looks."
 
 	w_class = ITEMSIZE_LARGE
 	load_method = SINGLE_CASING

@@ -21,8 +21,7 @@
 	id = "punchingbag_hand"
 	name = "Punch"
 	effect = /obj/structure/fitness/punchingbag/proc/interaction_hand
-	offered_when = list(REQ_HARMING)
-	tags = list(INTERACTION_TAG_HOSTILE)
+	stance = I_HURT
 
 /obj/structure/fitness/punchingbag/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))

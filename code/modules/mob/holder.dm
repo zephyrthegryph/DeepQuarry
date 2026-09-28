@@ -324,12 +324,12 @@
 		if(prob(10))
 			L.status_at_least(EFFECT_STUNNED, 2)
 
-DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_REF(interaction_item)), INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby.
 /obj/item/holder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	// ITION: MicroHandCrush
-	if(W == src && IS_HARMING(user))
+	if(W == src && interaction.stance == I_HURT)
 		for(var/mob/living/M in contents_of(src))
 			if(user.size_multiplier > M.size_multiplier)
 				var/dam = (user.size_multiplier - M.size_multiplier)*(rand(2,5))
@@ -347,7 +347,7 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM(null, PROC_REF(interaction_
 
 /mob/living/MouseDrop(atom/over_object)
 	var/mob/living/carbon/human/H = over_object
-	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (IS_HELPING(src) && IS_HELPING(H)))
+	if(holder_type && issmall(src) && istype(H) && !H.lying && Adjacent(H) && (!combat_mode && !H.combat_mode))
 		if(!issmall(H) || !ishuman(src))
 			get_scooped(H, (usr == src))
 		return

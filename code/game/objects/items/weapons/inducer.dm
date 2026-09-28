@@ -38,14 +38,14 @@
 /obj/item/inducer/get_cell()
 	return cell
 
-/obj/item/inducer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(IS_HARMING(user))
+/obj/item/inducer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(stance == I_HURT)
 		return ..()
 	else
 		return ITEM_INTERACT_FAILURE //No accidental bludgeons!
 
-/obj/item/inducer/afterattack(atom/A, mob/living/carbon/user, proximity)
-	if(IS_HARMING(user))
+/obj/item/inducer/afterattack(atom/A, mob/living/carbon/user, proximity, click_parameters, stance = I_HURT)
+	if(stance == I_HURT)
 		return ..()
 
 	if(cantbeused(user))
