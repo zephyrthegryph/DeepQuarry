@@ -760,8 +760,6 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	else
 		nif.examine_msg = new_flavor
 		nif.save_data["examine_msg"] = new_flavor
-	//We add a timer that saves our changes 20 seconds from now. If we make another change, that timer is extended.
-	//However, we currently don't need mid-round updating. Updates are done on death, round end, and exiting the round.
-	//addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(persist_nif_data), src), 20 SECONDS, TIMER_UNIQUE|TIMER_OVERRIDE|TIMER_DELETE_ME)
+	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
 REF_OWNED(/mob/living/carbon/human, "nif")

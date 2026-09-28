@@ -2,7 +2,7 @@
 // facts reproduce the old control flow (doc/rewrite/life_on_om.md §4):
 //
 //	type_pre variants          (subtype code that ran before ..(); may ctx.abort())
-//	trait stages               (the old COMSIG_LIVING_LIFE listeners)
+//	trait stages               (per-trait Life work)
 //	upkeep, instability, modifiers
 //	[placed]                   light
 //	[placed, alive]            breathing, mutations, radiation, blood, random events, AFK
@@ -70,7 +70,7 @@
 
 // --- Trait systems ------------------------------------------------------------------------------
 
-/// Category for trait stages (the old COMSIG_LIVING_LIFE listeners). A trait state
+/// Category for trait stages (per-trait Life work). A trait state
 /// (/datum/trait_state, code/datums/entity_state/traits/_trait_state.dm) adds its stage with
 /// om_stage_add() when it attaches and removes it when it detaches. A subtype either sets
 /// `state_type` (the stage then calls life_tick() on each such state each cycle) or overrides perform().

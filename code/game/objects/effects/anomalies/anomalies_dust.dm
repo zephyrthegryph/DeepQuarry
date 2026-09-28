@@ -23,7 +23,7 @@
 	. = ..()
 	on_entered(loc, AM)
 
-/// Something entered our turf (was a connect_loc COMSIG_ATOM_ENTERED listener; now Crossed()).
+/// Something entered our turf: Crossed().
 /obj/effect/anomaly/dust/proc/on_entered(datum/source, atom/movable/AM)
 	if(istype(AM, /turf/simulated/floor))
 		var/turf/simulated/floor/floor = AM

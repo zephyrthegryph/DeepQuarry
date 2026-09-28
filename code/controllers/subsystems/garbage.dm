@@ -458,9 +458,7 @@ SUBSYSTEM_DEF(garbage)
 		return
 
 	// L1 (doc/rewrite/lifecycle.md §2): destroy_transaction() is the whole
-	// destruction -- phases 0 (this used to be inline here: gc_destroyed,
-	// COMSIG_QDELETING) through 8. Phase 7 is what to_delete.Destroy(force)
-	// used to be called directly.
+	// destruction, phases 0 through 8; phase 7 runs the core Destroy(force) chain.
 	var/start_time = world.time
 	var/start_tick = world.tick_usage
 	#ifdef BENCHMARK_DEEP_PROFILE

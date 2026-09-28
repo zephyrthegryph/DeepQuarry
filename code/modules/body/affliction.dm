@@ -200,7 +200,7 @@ REF_BACK(/datum/affliction, list("body" = null, "owner" = null, "location" = nul
 // --- Severity -------------------------------------------------------------------
 
 /// The sole runtime boundary for severity changes. Listeners (contracts,
-/// telemetry) hear COMSIG_AFFLICTION_SEVERITY_CHANGED on the owning mob.
+/// telemetry) hear /datum/om/event/affliction_severity_changed on the owning mob.
 /datum/affliction/proc/set_severity(new_severity)
 	var/old_severity = severity
 	severity = clamp(new_severity, 0, AFFLICTION_SEVERITY_TERMINAL)

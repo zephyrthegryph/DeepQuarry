@@ -155,10 +155,6 @@
 
 	return "[owner.p_They()] [owner.p_are()] covered in something flammable."
 
-// /datum/status_effect/fire_handler/fire_stacks/proc/owner_touched_sparks()
-// 	SIGNAL_HANDLER
-
-
 /datum/status_effect/fire_handler/fire_stacks/on_creation(mob/living/new_owner, new_stacks, forced = FALSE)
 	. = ..()
 
@@ -352,7 +348,6 @@
 	stack_modifier = HAS_TRAIT(owner, TRAIT_WET_FOR_LONGER) ? -3.5 : -1
 
 /datum/status_effect/fire_handler/wet_stacks/proc/become_slippery()
-	// slipperiness = owner.AddComponent(/datum/component/slippery, 5 SECONDS, lube_flags = SLIPPERY_WHEN_LYING_DOWN|NO_SLIP_WHEN_WALKING|WEAK_SLIDE)
 	ADD_TRAIT(owner, TRAIT_NO_SLIP_WATER, TRAIT_STATUS_EFFECT(id))
 
 /datum/status_effect/fire_handler/wet_stacks/proc/no_longer_slippery()

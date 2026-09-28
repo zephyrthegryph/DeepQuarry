@@ -188,7 +188,7 @@
 	object.color = silk_color
 	return
 
-/// Trait system: silk production. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: silk production.
 /datum/om/stage/life/trait/weaver
 	name = "weaver"
 	state_type = /datum/trait_state/weaver

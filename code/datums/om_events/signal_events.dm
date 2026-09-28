@@ -7,7 +7,7 @@
 // EVENT_VETO). Send with OM_EMIT(entity, /datum/om/event/x, args...).
 // Keep domain-specific events next to their domain when you touch them.
 
-/// Was COMSIG_AFFLICTION_SEVERITY_CHANGED. From /datum/affliction/proc/set_severity(), sent to the owning mob: (datum/affliction/affliction, old_severity)
+/// From /datum/affliction/proc/set_severity(), sent to the owning mob: (datum/affliction/affliction, old_severity)
 /datum/om/event/affliction_severity_changed
 	sync = TRUE
 	var/affliction
@@ -17,7 +17,7 @@
 	src.affliction = affliction
 	src.old_severity = old_severity
 
-/// Was COMSIG_ARCADE_PRIZEVEND. from /obj/machinery/computer/arcade/prizevend(mob/user, prizes = 1)
+/// From /obj/machinery/computer/arcade/prizevend(mob/user, prizes = 1)
 /datum/om/event/arcade_prizevend
 	sync = TRUE
 	var/user
@@ -25,7 +25,7 @@
 /datum/om/event/arcade_prizevend/New(user)
 	src.user = user
 
-/// Was COMSIG_ATOM_AFTER_SUCCESSFUL_INITIALIZED_ON. /atom signals from SSatoms InitAtom - Only if the  atom was not deleted or failed initialization from SSatoms InitAtom - Only if the  atom was not deleted or failed initialization and has a loc
+/// /atom signals from SSatoms InitAtom - Only if the  atom was not deleted or failed initialization from SSatoms InitAtom - Only if the  atom was not deleted or failed initialization and has a loc
 /datum/om/event/atom_after_successful_initialized_on
 	sync = TRUE
 	var/created
@@ -35,7 +35,7 @@
 	src.created = created
 	src.mapload = mapload
 
-/// Was COMSIG_ATOM_BULLET_ACT. from base of atom/bullet_act(): (/obj/proj, def_zone, piercing_hit, blocked)
+/// From base of atom/bullet_act(): (/obj/proj, def_zone, piercing_hit, blocked)
 /datum/om/event/before/atom_bullet_act
 	accumulate = TRUE
 	var/projectile
@@ -45,7 +45,7 @@
 	src.projectile = projectile
 	src.def_zone = def_zone
 
-/// Was COMSIG_ATOM_BUMPED. from base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
+/// From base of atom/Bumped(): (/atom/movable) (the one that gets bumped)
 /datum/om/event/atom_bumped
 	sync = TRUE
 	var/bumped
@@ -53,7 +53,7 @@
 /datum/om/event/atom_bumped/New(bumped)
 	src.bumped = bumped
 
-/// Was COMSIG_ATOM_DIR_CHANGE. from base of atom/setDir(): (old_dir, new_dir). Called before the direction changes.
+/// From base of atom/setDir(): (old_dir, new_dir). Called before the direction changes.
 /datum/om/event/atom_dir_change
 	sync = TRUE
 	var/old_dir
@@ -63,7 +63,7 @@
 	src.old_dir = old_dir
 	src.new_dir = new_dir
 
-/// Was COMSIG_ATOM_EMP_ACT. from base of atom/emp_act(severity): (severity, protection)
+/// From base of atom/emp_act(severity): (severity, protection)
 /datum/om/event/atom_emp_act
 	sync = TRUE
 	var/severity
@@ -73,7 +73,7 @@
 	src.severity = severity
 	src.protection = protection
 
-/// Was COMSIG_ATOM_ENTERED. from base of atom/Entered(): (atom/movable/arrived, atom/old_loc, list/atom/old_locs)
+/// From base of atom/Entered(): (atom/movable/arrived, atom/old_loc, list/atom/old_locs)
 /datum/om/event/atom_entered
 	sync = TRUE
 	var/arrived
@@ -83,7 +83,7 @@
 	src.arrived = arrived
 	src.old_loc = old_loc
 
-/// Was COMSIG_ATOM_ENTERING. Sent from the atom that just Entered src. From base of atom/Entered(): (/atom/destination, atom/old_loc, list/atom/old_locs)
+/// Sent from the atom that just Entered src. From base of atom/Entered(): (/atom/destination, atom/old_loc, list/atom/old_locs)
 /datum/om/event/atom_entering
 	sync = TRUE
 	var/destination
@@ -93,7 +93,7 @@
 	src.destination = destination
 	src.old_loc = old_loc
 
-/// Was COMSIG_ATOM_EXITED. From base of atom/Exited(): `gone` left the atom for `new_loc`.
+/// From base of atom/Exited(): `gone` left the atom for `new_loc`.
 /datum/om/event/atom_exited
 	sync = TRUE
 	var/gone
@@ -103,11 +103,11 @@
 	src.gone = gone
 	src.new_loc = new_loc
 
-/// Was COMSIG_ATOM_EXTINGUISH. from base of atom/attack_basic_mob(): (/mob/user) from base of [/atom/proc/extinguish]
+/// From base of atom/attack_basic_mob(): (/mob/user) from base of [/atom/proc/extinguish]
 /datum/om/event/before/atom_extinguish
 	accumulate = TRUE
 
-/// Was COMSIG_ATOM_EX_ACT. from the [EX_ACT] wrapper macro: (severity, target)
+/// From the [EX_ACT] wrapper macro: (severity, target)
 /datum/om/event/before/atom_ex_act
 	accumulate = TRUE
 	var/severity
@@ -117,7 +117,7 @@
 	src.severity = severity
 	src.target = target
 
-/// Was COMSIG_ATOM_FIRE_ACT. from base of atom/fire_act(): (exposed_temperature, exposed_volume)
+/// From base of atom/fire_act(): (exposed_temperature, exposed_volume)
 /datum/om/event/atom_fire_act
 	sync = TRUE
 	var/exposed_temperature
@@ -127,7 +127,7 @@
 	src.exposed_temperature = exposed_temperature
 	src.exposed_volume = exposed_volume
 
-/// Was COMSIG_ATOM_PRE_EMP_ACT. from base of atom/emp_act(severity): (severity). return EMP protection flags
+/// From base of atom/emp_act(severity): (severity). return EMP protection flags
 /datum/om/event/before/atom_pre_emp_act
 	accumulate = TRUE
 	var/severity
@@ -135,7 +135,7 @@
 /datum/om/event/before/atom_pre_emp_act/New(severity)
 	src.severity = severity
 
-/// Was COMSIG_ATOM_PROPAGATE_RAD_PULSE. from internal loop in /atom/proc/propagate_radiation_pulse: (atom/pulse_source)
+/// From internal loop in /atom/proc/propagate_radiation_pulse: (atom/pulse_source)
 /datum/om/event/atom_propagate_rad_pulse
 	sync = TRUE
 	var/pulse_source
@@ -143,7 +143,7 @@
 /datum/om/event/atom_propagate_rad_pulse/New(pulse_source)
 	src.pulse_source = pulse_source
 
-/// Was COMSIG_ATOM_TAKE_DAMAGE. from base of [/atom/proc/take_damage]: (damage_amount, damage_type, damage_flag, sound_effect, attack_dir, aurmor_penetration)
+/// From base of [/atom/proc/take_damage]: (damage_amount, damage_type, damage_flag, sound_effect, attack_dir, aurmor_penetration)
 /datum/om/event/before/atom_take_damage
 	accumulate = TRUE
 	var/damage_amount
@@ -161,7 +161,7 @@
 	src.attack_dir = attack_dir
 	src.aurmor_penetration = aurmor_penetration
 
-/// Was COMSIG_ATOM_UPDATE_LIGHT_COLOR. Called right after the atom changes the value of light_color to a different one, from base of [/atom/proc/set_light_color]: (old_color)
+/// Called right after the atom changes the value of light_color to a different one, from base of [/atom/proc/set_light_color]: (old_color)
 /datum/om/event/atom_update_light_color
 	sync = TRUE
 	var/old_color
@@ -169,7 +169,7 @@
 /datum/om/event/atom_update_light_color/New(old_color)
 	src.old_color = old_color
 
-/// Was COMSIG_ATOM_UPDATE_LIGHT_FLAGS. Called right after the atom changes the value of light_flags to a different one, from base of [/atom/proc/set_light_flags]: (old_flags)
+/// Called right after the atom changes the value of light_flags to a different one, from base of [/atom/proc/set_light_flags]: (old_flags)
 /datum/om/event/atom_update_light_flags
 	sync = TRUE
 	var/old_flags
@@ -177,7 +177,7 @@
 /datum/om/event/atom_update_light_flags/New(old_flags)
 	src.old_flags = old_flags
 
-/// Was COMSIG_ATOM_UPDATE_LIGHT_ON. Called right after the atom changes the value of light_on to a different one, from base of [/atom/proc/set_light_on]: (old_value)
+/// Called right after the atom changes the value of light_on to a different one, from base of [/atom/proc/set_light_on]: (old_value)
 /datum/om/event/atom_update_light_on
 	sync = TRUE
 	var/old_value
@@ -185,7 +185,7 @@
 /datum/om/event/atom_update_light_on/New(old_value)
 	src.old_value = old_value
 
-/// Was COMSIG_ATOM_UPDATE_LIGHT_POWER. Lighting: Called right after the atom changes the value of light_power to a different one, from base of [/atom/proc/set_light_power]: (old_power)
+/// Lighting: Called right after the atom changes the value of light_power to a different one, from base of [/atom/proc/set_light_power]: (old_power)
 /datum/om/event/atom_update_light_power
 	sync = TRUE
 	var/old_power
@@ -193,7 +193,7 @@
 /datum/om/event/atom_update_light_power/New(old_power)
 	src.old_power = old_power
 
-/// Was COMSIG_ATOM_UPDATE_LIGHT_RANGE. Called right after the atom changes the value of light_range to a different one, from base of [/atom/proc/set_light_range]: (old_range)
+/// Called right after the atom changes the value of light_range to a different one, from base of [/atom/proc/set_light_range]: (old_range)
 /datum/om/event/atom_update_light_range
 	sync = TRUE
 	var/old_range
@@ -201,7 +201,7 @@
 /datum/om/event/atom_update_light_range/New(old_range)
 	src.old_range = old_range
 
-/// Was COMSIG_ATOM_USED_IN_CRAFT. from base of atom/used_in_craft(): (atom/result)
+/// From base of atom/used_in_craft(): (atom/result)
 /datum/om/event/atom_used_in_craft
 	sync = TRUE
 	var/result_
@@ -209,7 +209,7 @@
 /datum/om/event/atom_used_in_craft/New(result_)
 	src.result_ = result_
 
-/// Was COMSIG_AUTOPSY_PERFORMED. from base of /obj/item/autopsy_scanner/do_surgery() : (mob/user, mob/target)
+/// From base of /obj/item/autopsy_scanner/do_surgery() : (mob/user, mob/target)
 /datum/om/event/autopsy_performed
 	sync = TRUE
 	var/user
@@ -219,7 +219,7 @@
 	src.user = user
 	src.target = target
 
-/// Was COMSIG_BELLY_UPDATE_VORE_FX. from /obj/belly/HandleBellyReagents() and /obj/belly/update_internal_overlay()
+/// From /obj/belly/HandleBellyReagents() and /obj/belly/update_internal_overlay()
 /datum/om/event/before/belly_update_vore_fx
 	accumulate = TRUE
 	var/volume
@@ -227,7 +227,7 @@
 /datum/om/event/before/belly_update_vore_fx/New(volume)
 	src.volume = volume
 
-/// Was COMSIG_BODY_AFFLICTIONS_CHANGED. From /datum/body/add_affliction() and remove_affliction(): (datum/affliction/affliction, added)
+/// From /datum/body/add_affliction() and remove_affliction(): (datum/affliction/affliction, added)
 /datum/om/event/body_afflictions_changed
 	sync = TRUE
 	var/affliction
@@ -237,7 +237,7 @@
 	src.affliction = affliction
 	src.added = added
 
-/// Was COMSIG_BODY_PART_ATTACHED. From /datum/body/proc/adopt_subtree(), sent to the owning mob once per part that joined it: (obj/item/organ/part)
+/// From /datum/body/proc/adopt_subtree(), sent to the owning mob once per part that joined it: (obj/item/organ/part)
 /datum/om/event/body_part_attached
 	sync = TRUE
 	var/part
@@ -245,7 +245,7 @@
 /datum/om/event/body_part_attached/New(part)
 	src.part = part
 
-/// Was COMSIG_BODY_PART_DETACHED. From /datum/body/proc/release_subtree(), sent to the owning mob once per part that left it: (obj/item/organ/part)
+/// From /datum/body/proc/release_subtree(), sent to the owning mob once per part that left it: (obj/item/organ/part)
 /datum/om/event/body_part_detached
 	sync = TRUE
 	var/part
@@ -253,7 +253,7 @@
 /datum/om/event/body_part_detached/New(part)
 	src.part = part
 
-/// Was COMSIG_CLICK. from base of atom/Click(): (atom/location, control, params, mob/user)
+/// From base of atom/Click(): (atom/location, control, params, mob/user)
 /datum/om/event/click
 	sync = TRUE
 	var/location
@@ -267,7 +267,7 @@
 	src.params = params
 	src.user = user
 
-/// Was COMSIG_CLICK_ALT. #define COMSIG_MOB_CANCEL_CLICKON (1<<0) //shared with other forms of click, this is so you're aware it exists here too. from base of atom/click_alt(): (/mob)
+/// #define COMSIG_MOB_CANCEL_CLICKON (1<<0) //shared with other forms of click, this is so you're aware it exists here too. from base of atom/click_alt(): (/mob)
 /datum/om/event/before/click_alt
 	accumulate = TRUE
 	var/mob
@@ -275,7 +275,7 @@
 /datum/om/event/before/click_alt/New(mob)
 	src.mob = mob
 
-/// Was COMSIG_CLIENT_CLICK. from base of client/Click(): (atom/target, atom/location, control, params, mob/user)
+/// From base of client/Click(): (atom/target, atom/location, control, params, mob/user)
 /datum/om/event/client_click
 	sync = TRUE
 	var/target
@@ -291,7 +291,7 @@
 	src.params = params
 	src.user = user
 
-/// Was COMSIG_DISPOSAL_FLUSH. called when a disposal connected object flushes its contents into the disposal pipe network
+/// Called when a disposal connected object flushes its contents into the disposal pipe network
 /datum/om/event/before/disposal_flush
 	accumulate = TRUE
 	var/items
@@ -301,7 +301,7 @@
 	src.items = items
 	src.gas = gas
 
-/// Was COMSIG_DISPOSAL_LINK. called when a disposal connected object attempts to link to a trunk: (/obj/structure/disposalpipe/trunk)
+/// Called when a disposal connected object attempts to link to a trunk: (/obj/structure/disposalpipe/trunk)
 /datum/om/event/disposal_link
 	sync = TRUE
 	var/trunk
@@ -309,7 +309,7 @@
 /datum/om/event/disposal_link/New(trunk)
 	src.trunk = trunk
 
-/// Was COMSIG_DISPOSAL_RECEIVE. called when a disposal connected object recieves an object from it's connected trunk
+/// Called when a disposal connected object recieves an object from it's connected trunk
 /datum/om/event/disposal_receive
 	sync = TRUE
 	var/items
@@ -319,7 +319,7 @@
 	src.items = items
 	src.gas = gas
 
-/// Was COMSIG_DISPOSAL_SEND. called when a disposal trunk attempts to send a packet, to be recieved by an atom with a disposal network connection component.
+/// Called when a disposal trunk attempts to send a packet, to be recieved by an atom with a disposal network connection component.
 /datum/om/event/before/disposal_send
 	accumulate = TRUE
 	var/holder
@@ -327,19 +327,18 @@
 /datum/om/event/before/disposal_send/New(holder)
 	src.holder = holder
 
-/// Was COMSIG_DISPOSAL_UNLINK. called when a disposal connected object should unlink from a trunk it's attached to.
+/// Called when a disposal connected object should unlink from a trunk it's attached to.
 /datum/om/event/disposal_unlink
 	sync = TRUE
 
-/// Was COMSIG_DO_AFTER_BEGAN. Sent from /proc/do_after if someone starts a do_after action bar.
+/// Sent from /proc/do_after if someone starts a do_after action bar.
 /datum/om/event/do_after_began
 	sync = TRUE
 
-/// Was COMSIG_DO_AFTER_ENDED. Sent from /proc/do_after once a do_after action completes, whether via the bar filling or via interruption.
+/// Sent from /proc/do_after once a do_after action completes, whether via the bar filling or via interruption.
 /datum/om/event/do_after_ended
 	sync = TRUE
 
-/// Was COMSIG_DQAI_ALLY_DISTRESS. 
 /datum/om/event/dqai_ally_distress
 	sync = TRUE
 	var/ally
@@ -349,7 +348,7 @@
 	src.ally = ally
 	src.target = target
 
-/// Was COMSIG_DQAI_DAMAGE_TAKEN. --------------------------------------------------------------------------- Signals emitted on the mob by the brain framework. Behaviors can subscribe to these via their eval_triggers list to re-evaluate only when relevant. ---------------------------------------------------------------------------
+/// --------------------------------------------------------------------------- Signals emitted on the mob by the brain framework. Behaviors can subscribe to these via their eval_triggers list to re-evaluate only when relevant. ---------------------------------------------------------------------------
 /datum/om/event/dqai_damage_taken
 	sync = TRUE
 	var/amount
@@ -361,7 +360,6 @@
 	src.injury_kind = injury_kind
 	src.attacker = attacker
 
-/// Was COMSIG_DQAI_TARGET_CHANGED. 
 /datum/om/event/dqai_target_changed
 	sync = TRUE
 	var/new_target
@@ -371,7 +369,6 @@
 	src.new_target = new_target
 	src.old_target = old_target
 
-/// Was COMSIG_DQAI_TARGET_LOST. 
 /datum/om/event/dqai_target_lost
 	sync = TRUE
 	var/old_target
@@ -379,7 +376,7 @@
 /datum/om/event/dqai_target_lost/New(old_target)
 	src.old_target = old_target
 
-/// Was COMSIG_GEIGER_COUNTER_SCAN. Fired when scanning something with a geiger counter. (mob/user, obj/item/geiger_counter/geiger_counter)
+/// Fired when scanning something with a geiger counter. (mob/user, obj/item/geiger_counter/geiger_counter)
 /datum/om/event/before/geiger_counter_scan
 	accumulate = TRUE
 	var/user
@@ -389,11 +386,11 @@
 	src.user = user
 	src.geiger_counter = geiger_counter
 
-/// Was COMSIG_GHOST_QUERY_COMPLETE. Signal that gets sent when a ghost query is completed
+/// Signal that gets sent when a ghost query is completed
 /datum/om/event/ghost_query_complete
 	sync = TRUE
 
-/// Was COMSIG_GLOB_AUTOPSY_PERFORMED. base /obj/item/autopsy_scanner/do_surgery() : (mob/user, mob/target)
+/// Base /obj/item/autopsy_scanner/do_surgery() : (mob/user, mob/target)
 /datum/om/event/world_autopsy_performed
 	sync = TRUE
 	var/user
@@ -403,7 +400,7 @@
 	src.user = user
 	src.target = target
 
-/// Was COMSIG_GLOB_BRAIN_REMOVED. NON TG Signals: brain removed from body, called by /obj/item/organ/internal/brain/proc/transfer_identity() : (mob/living/carbon/brain/brainmob)
+/// NON TG Signals: brain removed from body, called by /obj/item/organ/internal/brain/proc/transfer_identity() : (mob/living/carbon/brain/brainmob)
 /datum/om/event/world_brain_removed
 	sync = TRUE
 	var/brainmob
@@ -411,7 +408,7 @@
 /datum/om/event/world_brain_removed/New(brainmob)
 	src.brainmob = brainmob
 
-/// Was COMSIG_GLOB_EXPLOSION. called after an explosion happened : (epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
+/// Called after an explosion happened : (epicenter, devastation_range, heavy_impact_range, light_impact_range, took, orig_dev_range, orig_heavy_range, orig_light_range)
 /datum/om/event/world_explosion
 	sync = TRUE
 	var/epicenter
@@ -427,7 +424,7 @@
 	src.light_impact_range = light_impact_range
 	src.took = took
 
-/// Was COMSIG_GLOB_GHOST_CAPTURED. called when a ghost or phaser is captured by a ghosttrap: (mob/passing_entity)
+/// Called when a ghost or phaser is captured by a ghosttrap: (mob/passing_entity)
 /datum/om/event/world_ghost_captured
 	sync = TRUE
 	var/passing_entity
@@ -435,7 +432,7 @@
 /datum/om/event/world_ghost_captured/New(passing_entity)
 	src.passing_entity = passing_entity
 
-/// Was COMSIG_GLOB_MOB_CREATED. Called from base of /mob/Initialise : (mob)
+/// Called from base of /mob/Initialise : (mob)
 /datum/om/event/world_mob_created
 	sync = TRUE
 	var/mob
@@ -443,7 +440,7 @@
 /datum/om/event/world_mob_created/New(mob)
 	src.mob = mob
 
-/// Was COMSIG_GLOB_MOB_DEATH. mob died somewhere : (mob/living, gibbed)
+/// Mob died somewhere : (mob/living, gibbed)
 /datum/om/event/world_mob_death
 	sync = TRUE
 	var/living
@@ -453,7 +450,7 @@
 	src.living = living
 	src.gibbed = gibbed
 
-/// Was COMSIG_GLOB_PAYMENT_ACCOUNT_STATUS. payment account status changed /obj/machinery/account_database/tgui_act() : (datum/money_account/account)
+/// Payment account status changed /obj/machinery/account_database/tgui_act() : (datum/money_account/account)
 /datum/om/event/world_payment_account_status
 	sync = TRUE
 	var/account
@@ -461,7 +458,7 @@
 /datum/om/event/world_payment_account_status/New(account)
 	src.account = account
 
-/// Was COMSIG_GLOB_PLAY_CINEMATIC. called by datum/cinematic/play() : (datum/cinematic/new_cinematic)
+/// Called by datum/cinematic/play() : (datum/cinematic/new_cinematic)
 /datum/om/event/before/world_play_cinematic
 	accumulate = TRUE
 	var/new_cinematic
@@ -469,7 +466,7 @@
 /datum/om/event/before/world_play_cinematic/New(new_cinematic)
 	src.new_cinematic = new_cinematic
 
-/// Was COMSIG_GLOB_SUPPLY_SHUTTLE_DEPART. Shuttle Comsigs Supply shuttle selling, before all items are sold, called by /datum/controller/subsystem/supply/proc/sell() : (/list/area/supply_shuttle_areas)
+/// Shuttle Comsigs Supply shuttle selling, before all items are sold, called by /datum/controller/subsystem/supply/proc/sell() : (/list/area/supply_shuttle_areas)
 /datum/om/event/world_supply_shuttle_depart
 	sync = TRUE
 	var/supply_shuttle_areas
@@ -477,7 +474,7 @@
 /datum/om/event/world_supply_shuttle_depart/New(supply_shuttle_areas)
 	src.supply_shuttle_areas = supply_shuttle_areas
 
-/// Was COMSIG_GLOB_WIGHT_CAPTURED. Called when a shadow wright passes by a ghosttrap: (obj/effect/shadow_wight)
+/// Called when a shadow wright passes by a ghosttrap: (obj/effect/shadow_wight)
 /datum/om/event/world_wight_captured
 	sync = TRUE
 	var/shadow_wight
@@ -485,31 +482,31 @@
 /datum/om/event/world_wight_captured/New(shadow_wight)
 	src.shadow_wight = shadow_wight
 
-/// Was COMSIG_HANDLE_DISABILITIES. Non TG signals: From the disabilities life system.
+/// Non TG signals: From the disabilities life system.
 /datum/om/event/handle_disabilities
 	sync = TRUE
 
-/// Was COMSIG_HANDLE_MUTATIONS. from the mutations life system
+/// From the mutations life system
 /datum/om/event/before/handle_mutations
 	accumulate = TRUE
 
-/// Was COMSIG_HANDLE_RADIATION. from the radiation life system
+/// From the radiation life system
 /datum/om/event/before/handle_radiation
 	accumulate = TRUE
 
-/// Was COMSIG_HOSE_FORCEPUMP. Hose Connector Component
+/// Hose Connector Component
 /datum/om/event/hose_forcepump
 	sync = TRUE
 
-/// Was COMSIG_HUMAN_BURNING. from /datum/species/handle_fire. Called when the human is set on fire and burning clothes and stuff
+/// From /datum/species/handle_fire. Called when the human is set on fire and burning clothes and stuff
 /datum/om/event/human_burning
 	sync = TRUE
 
-/// Was COMSIG_HUMAN_DNA_FINALIZED. NON TG Signals When the mob's dna and species have been fully applied
+/// NON TG Signals When the mob's dna and species have been fully applied
 /datum/om/event/human_dna_finalized
 	sync = TRUE
 
-/// Was COMSIG_HUMAN_GET_ALT_NAME. from /mob/living/carbon/human/GetAltName(): (list/name_data) - name_data[1] contains the alt name
+/// From /mob/living/carbon/human/GetAltName(): (list/name_data) - name_data[1] contains the alt name
 /datum/om/event/before/human_get_alt_name
 	accumulate = TRUE
 	var/name_data
@@ -517,7 +514,7 @@
 /datum/om/event/before/human_get_alt_name/New(name_data)
 	src.name_data = name_data
 
-/// Was COMSIG_HUMAN_GET_VISIBLE_NAME. from /mob/living/carbon/human/get_visible_name(), not sent if the mob has TRAIT_UNKNOWN: (identity)
+/// From /mob/living/carbon/human/get_visible_name(), not sent if the mob has TRAIT_UNKNOWN: (identity)
 /datum/om/event/before/human_get_visible_name
 	accumulate = TRUE
 	var/identity
@@ -525,7 +522,7 @@
 /datum/om/event/before/human_get_visible_name/New(identity)
 	src.identity = identity
 
-/// Was COMSIG_HUMAN_GET_VOICE. from /mob/living/carbon/human/GetVoice(): (list/voice_data) - voice_data[1] contains the voice name
+/// From /mob/living/carbon/human/GetVoice(): (list/voice_data) - voice_data[1] contains the voice name
 /datum/om/event/before/human_get_voice
 	accumulate = TRUE
 	var/voice_data
@@ -533,7 +530,7 @@
 /datum/om/event/before/human_get_voice/New(voice_data)
 	src.voice_data = voice_data
 
-/// Was COMSIG_INSTRUMENT_END. sent to the instrument when a song stops playing
+/// Sent to the instrument when a song stops playing
 /datum/om/event/instrument_end
 	sync = TRUE
 	var/finished
@@ -541,7 +538,7 @@
 /datum/om/event/instrument_end/New(finished)
 	src.finished = finished
 
-/// Was COMSIG_INSTRUMENT_START. sent to the instrument when a song starts playing: (datum/starting_song, atom/player)
+/// Sent to the instrument when a song starts playing: (datum/starting_song, atom/player)
 /datum/om/event/instrument_start
 	sync = TRUE
 	var/starting_song
@@ -551,7 +548,7 @@
 	src.starting_song = starting_song
 	src.player = player
 
-/// Was COMSIG_IN_RANGE_OF_IRRADIATION. From the radiation subsystem, called before a potential irradiation. This does not guarantee radiation can reach or will succeed, but merely that there's a radiation source within range. (datum/radiation_pulse_information/pulse_information, insulation_to_target)
+/// From the radiation subsystem, called before a potential irradiation. This does not guarantee radiation can reach or will succeed, but merely that there's a radiation source within range. (datum/radiation_pulse_information/pulse_information, insulation_to_target)
 /datum/om/event/before/in_range_of_irradiation
 	accumulate = TRUE
 	var/pulse_information
@@ -561,7 +558,7 @@
 	src.pulse_information = pulse_information
 	src.insulation_to_target = insulation_to_target
 
-/// Was COMSIG_ITEM_ATTACK. from base of /obj/item/attack(): (mob/living, mob/living, list/modifiers, list/attack_modifiers)
+/// From base of /obj/item/attack(): (mob/living, mob/living, list/modifiers, list/attack_modifiers)
 /datum/om/event/item_attack
 	sync = TRUE
 	var/target
@@ -573,7 +570,7 @@
 	src.user = user
 	src.target_zone = target_zone
 
-/// Was COMSIG_ITEM_DROPPED. from base of obj/item/dropped(): (mob/user)
+/// From base of obj/item/dropped(): (mob/user)
 /datum/om/event/item_dropped
 	sync = TRUE
 	var/user
@@ -581,7 +578,7 @@
 /datum/om/event/item_dropped/New(user)
 	src.user = user
 
-/// Was COMSIG_ITEM_EQUIPPED. from base of obj/item/equipped(): (mob/equipper, slot)
+/// From base of obj/item/equipped(): (mob/equipper, slot)
 /datum/om/event/item_equipped
 	sync = TRUE
 	var/equipper
@@ -591,7 +588,7 @@
 	src.equipper = equipper
 	src.slot = slot
 
-/// Was COMSIG_ITEM_PICKUP. from base of obj/item/pickup(): (/mob/taker)
+/// From base of obj/item/pickup(): (/mob/taker)
 /datum/om/event/item_pickup
 	sync = TRUE
 	var/taker
@@ -599,7 +596,7 @@
 /datum/om/event/item_pickup/New(taker)
 	src.taker = taker
 
-/// Was COMSIG_ITEM_PRE_ATTACK. from base of obj/item/pre_attack(): (atom/target, mob/user, list/modifiers, list/attack_modifiers)
+/// From base of obj/item/pre_attack(): (atom/target, mob/user, list/modifiers, list/attack_modifiers)
 /datum/om/event/before/item_pre_attack
 	accumulate = TRUE
 	var/target
@@ -611,7 +608,7 @@
 	src.user = user
 	src.params = params
 
-/// Was COMSIG_ITEM_TOOL_ACTED. Sent from [atom/proc/item_interaction], when this atom is used as a tool and an event occurs
+/// Sent from [atom/proc/item_interaction], when this atom is used as a tool and an event occurs
 /datum/om/event/item_tool_acted
 	sync = TRUE
 	var/target
@@ -625,15 +622,15 @@
 	src.tool_quality = tool_quality
 	src.modifiers = modifiers
 
-/// Was COMSIG_LIVING_AHEAL. from end of revival_healing_action(): ()
+/// From end of revival_healing_action(): ()
 /datum/om/event/living_aheal
 	sync = TRUE
 
-/// Was COMSIG_LIVING_BODY_STATUS. from /datum/body/evaluate_status(), before death/unconsciousness is applied: ()
+/// From /datum/body/evaluate_status(), before death/unconsciousness is applied: ()
 /datum/om/event/before/living_body_status
 	accumulate = TRUE
 
-/// Was COMSIG_LIVING_DEATH_FINAL. from /mob/proc/death(), once per death, after EVERY death side effect (on_death(), HUD refresh, antag win check): (gibbed). Never sent on a repeated or replaced death. Hang end-of-death work (delete_on_death) here; death() itself never deletes the mob.
+/// From /mob/proc/death(), once per death, after EVERY death side effect (on_death(), HUD refresh, antag win check): (gibbed). Never sent on a repeated or replaced death. Hang end-of-death work (delete_on_death) here; death() itself never deletes the mob.
 /datum/om/event/living_death_final
 	sync = TRUE
 	var/gibbed
@@ -641,7 +638,7 @@
 /datum/om/event/living_death_final/New(gibbed)
 	src.gibbed = gibbed
 
-/// Was COMSIG_LIVING_INJURE. From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.
+/// From base of /mob/living/proc/injure(), before mitigation: (kind, list/amount_ref, zone, atom/source, flags). amount_ref[1] may be modified.
 /datum/om/event/before/living_injure
 	accumulate = TRUE
 	var/kind
@@ -657,7 +654,7 @@
 	src.source = source
 	src.flags = flags
 
-/// Was COMSIG_LIVING_INJURED. From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
+/// From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
 /datum/om/event/living_injured
 	sync = TRUE
 	var/kind
@@ -673,7 +670,7 @@
 	src.source = source
 	src.flags = flags
 
-/// Was COMSIG_LIVING_INJURY_EXPLAINED. From /mob/living/proc/injure() once mitigation is done, when something listens or the injury trace is on: (incoming_kind, landed_kind, list/stages, zone, atom/source, flags). Each stage is list(INJURY_STAGE_*, amount_in, amount_out, detail).
+/// From /mob/living/proc/injure() once mitigation is done, when something listens or the injury trace is on: (incoming_kind, landed_kind, list/stages, zone, atom/source, flags). Each stage is list(INJURY_STAGE_*, amount_in, amount_out, detail).
 /datum/om/event/living_injury_explained
 	sync = TRUE
 	var/incoming_kind
@@ -691,7 +688,7 @@
 	src.source = source
 	src.flags = flags
 
-/// Was COMSIG_LIVING_IRRADIATE_EFFECT. from base of /mob/living/proc/apply_effect(var/effect = 0,var/effecttype = STUN, var/blocked = 0, var/check_protection = 1, rad_protection)
+/// From base of /mob/living/proc/apply_effect(var/effect = 0,var/effecttype = STUN, var/blocked = 0, var/check_protection = 1, rad_protection)
 /datum/om/event/before/living_irradiate_effect
 	accumulate = TRUE
 	var/effect
@@ -707,7 +704,7 @@
 	src.check_protection = check_protection
 	src.rad_protection = rad_protection
 
-/// Was COMSIG_LIVING_REGENERATE_LIMBS. from base of /mob/living/regenerate_limbs(): (noheal, excluded_limbs)
+/// From base of /mob/living/regenerate_limbs(): (noheal, excluded_limbs)
 /datum/om/event/living_regenerate_limbs
 	sync = TRUE
 	var/noheal
@@ -717,7 +714,7 @@
 	src.noheal = noheal
 	src.excluded_limbs = excluded_limbs
 
-/// Was COMSIG_LIVING_REVIVED. from /mob/living/proc/return_from_death(), after the mob is alive again: (datum/source, reason)
+/// From /mob/living/proc/return_from_death(), after the mob is alive again: (datum/source, reason)
 /datum/om/event/living_revived
 	sync = TRUE
 	var/source
@@ -727,7 +724,7 @@
 	src.source = source
 	src.reason = reason
 
-/// Was COMSIG_LIVING_SHIELD_INJURY. From /mob/living/proc/injure(), mitigation stage 2 (energy shields), after armour: (kind, list/amount_ref, zone, atom/source, flags). Shields scale amount_ref[1].
+/// From /mob/living/proc/injure(), mitigation stage 2 (energy shields), after armour: (kind, list/amount_ref, zone, atom/source, flags). Shields scale amount_ref[1].
 /datum/om/event/living_shield_injury
 	sync = TRUE
 	var/kind
@@ -743,7 +740,7 @@
 	src.source = source
 	src.flags = flags
 
-/// Was COMSIG_LIVING_STATUS_BLIND. before a blindness increase (amount)
+/// Before a blindness increase (amount)
 /datum/om/event/living_status_blind
 	sync = TRUE
 	var/amount
@@ -751,7 +748,7 @@
 /datum/om/event/living_status_blind/New(amount)
 	src.amount = amount
 
-/// Was COMSIG_LIVING_STATUS_PARALYZE. before a paralysis increase (amount)
+/// Before a paralysis increase (amount)
 /datum/om/event/living_status_paralyze
 	sync = TRUE
 	var/amount
@@ -759,7 +756,7 @@
 /datum/om/event/living_status_paralyze/New(amount)
 	src.amount = amount
 
-/// Was COMSIG_LIVING_STATUS_SLEEP. before a sleep increase (amount)
+/// Before a sleep increase (amount)
 /datum/om/event/before/living_status_sleep
 	accumulate = TRUE
 	var/amount
@@ -767,7 +764,7 @@
 /datum/om/event/before/living_status_sleep/New(amount)
 	src.amount = amount
 
-/// Was COMSIG_LIVING_STATUS_STUN. before a stun increase (amount)
+/// Before a stun increase (amount)
 /datum/om/event/living_status_stun
 	sync = TRUE
 	var/amount
@@ -775,7 +772,7 @@
 /datum/om/event/living_status_stun/New(amount)
 	src.amount = amount
 
-/// Was COMSIG_LIVING_STATUS_WEAKEN. before a weakness increase (amount)
+/// Before a weakness increase (amount)
 /datum/om/event/living_status_weaken
 	sync = TRUE
 	var/amount
@@ -783,7 +780,7 @@
 /datum/om/event/living_status_weaken/New(amount)
 	src.amount = amount
 
-/// Was COMSIG_LIVING_TURF_COLLISION. called when a living mob collides with a dense turf : /mob/living/proc/turf_collision(var/turf/T, var/speed)
+/// Called when a living mob collides with a dense turf : /mob/living/proc/turf_collision(var/turf/T, var/speed)
 /datum/om/event/before/living_turf_collision
 	accumulate = TRUE
 	var/t
@@ -793,7 +790,7 @@
 	src.t = t
 	src.speed = speed
 
-/// Was COMSIG_MACHINERY_BROKEN. from /obj/machinery/atom_break(damage_flag): (damage_flag)
+/// From /obj/machinery/atom_break(damage_flag): (damage_flag)
 /datum/om/event/machinery_broken
 	sync = TRUE
 	var/damage_flag
@@ -801,7 +798,7 @@
 /datum/om/event/machinery_broken/New(damage_flag)
 	src.damage_flag = damage_flag
 
-/// Was COMSIG_MACHINERY_DESTRUCTIVE_SCAN. from /obj/machinery/rnd/destructive_analyzer/proc/destroy_item(gain_research_points = FALSE): Runs when the destructive scanner scans a group of objects. (list/scanned_atoms)
+/// From /obj/machinery/rnd/destructive_analyzer/proc/destroy_item(gain_research_points = FALSE): Runs when the destructive scanner scans a group of objects. (list/scanned_atoms)
 /datum/om/event/machinery_destructive_scan
 	sync = TRUE
 	var/scanned_atoms
@@ -809,7 +806,7 @@
 /datum/om/event/machinery_destructive_scan/New(scanned_atoms)
 	src.scanned_atoms = scanned_atoms
 
-/// Was COMSIG_MACHINERY_EXPLOSION_DETECTED. from /obj/machinery/doppler_array/proc/sense_explosion(): Runs when an explosion is detected. (turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
+/// From /obj/machinery/doppler_array/proc/sense_explosion(): Runs when an explosion is detected. (turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, seconds_taken)
 /datum/om/event/machinery_explosion_detected
 	sync = TRUE
 	var/epicenter
@@ -825,15 +822,15 @@
 	src.light_impact_range = light_impact_range
 	src.seconds_taken = seconds_taken
 
-/// Was COMSIG_MACHINERY_POWER_LOST. from base power_change() when power is lost
+/// From base power_change() when power is lost
 /datum/om/event/machinery_power_lost
 	sync = TRUE
 
-/// Was COMSIG_MACHINERY_POWER_RESTORED. from base power_change() when power is restored
+/// From base power_change() when power is restored
 /datum/om/event/machinery_power_restored
 	sync = TRUE
 
-/// Was COMSIG_MATCONTAINER_ITEM_CONSUMED. Material Container Signals Called from datum/component/material_container/proc/insert_item() : (item, primary_mat, mats_consumed, material_amount, context)
+/// Material Container Signals Called from datum/component/material_container/proc/insert_item() : (item, primary_mat, mats_consumed, material_amount, context)
 /datum/om/event/matcontainer_item_consumed
 	sync = TRUE
 	var/item
@@ -849,7 +846,7 @@
 	src.material_amount = material_amount
 	src.context = context
 
-/// Was COMSIG_MATCONTAINER_STACK_RETRIEVED. Called from datum/component/material_container/proc/retrieve_stack() : (new_stack, context)
+/// Called from datum/component/material_container/proc/retrieve_stack() : (new_stack, context)
 /datum/om/event/matcontainer_stack_retrieved
 	sync = TRUE
 	var/new_stack
@@ -859,7 +856,6 @@
 	src.new_stack = new_stack
 	src.context = context
 
-/// Was COMSIG_MATERIAL_SURGERY. 
 /datum/om/event/material_surgery
 	sync = TRUE
 	var/patient
@@ -871,7 +867,7 @@
 	src.zone = zone
 	src.success = success
 
-/// Was COMSIG_MOB_APPLY_DAMAGE. from base of /mob/living/proc/apply_damage(): (damage, damagetype, def_zone, blocked, wound_bonus, exposed_wound_bonus, sharpness, attack_direction, attacking_item)
+/// From base of /mob/living/proc/apply_damage(): (damage, damagetype, def_zone, blocked, wound_bonus, exposed_wound_bonus, sharpness, attack_direction, attacking_item)
 /datum/om/event/mob_apply_damage
 	sync = TRUE
 	var/damage
@@ -895,7 +891,7 @@
 	src.attack_direction = attack_direction
 	src.attacking_item = attacking_item
 
-/// Was COMSIG_MOB_CLIENT_LOGIN. sent when a mob/login() finishes: (client)
+/// Sent when a mob/login() finishes: (client)
 /datum/om/event/mob_client_login
 	sync = TRUE
 	var/client
@@ -903,7 +899,7 @@
 /datum/om/event/mob_client_login/New(client)
 	src.client = client
 
-/// Was COMSIG_MOB_COMBAT_MODE_CHANGED. From /mob/proc/set_combat_mode(): (new_mode)
+/// From /mob/proc/set_combat_mode(): (new_mode)
 /datum/om/event/mob_combat_mode_changed
 	sync = TRUE
 	var/new_mode
@@ -911,7 +907,7 @@
 /datum/om/event/mob_combat_mode_changed/New(new_mode)
 	src.new_mode = new_mode
 
-/// Was COMSIG_MOB_DEATH. from base of mob/death(): (gibbed)
+/// From base of mob/death(): (gibbed)
 /datum/om/event/mob_death
 	sync = TRUE
 	var/gibbed
@@ -919,11 +915,11 @@
 /datum/om/event/mob_death/New(gibbed)
 	src.gibbed = gibbed
 
-/// Was COMSIG_MOB_DNA_MUTATION. from /proc/domutcheck(): ()
+/// From /proc/domutcheck(): ()
 /datum/om/event/mob_dna_mutation
 	sync = TRUE
 
-/// Was COMSIG_MOB_EQUIPPED_ITEM. A mob has just equipped an item. Called on [/mob] from base of [/obj/item/equipped()]: (/obj/item/equipped_item, slot)
+/// A mob has just equipped an item. Called on [/mob] from base of [/obj/item/equipped()]: (/obj/item/equipped_item, slot)
 /datum/om/event/mob_equipped_item
 	sync = TRUE
 	var/equipped_item
@@ -933,7 +929,7 @@
 	src.equipped_item = equipped_item
 	src.slot = slot
 
-/// Was COMSIG_MOB_GRANTED_ACTION. From /datum/action/Grant(): (datum/action)
+/// From /datum/action/Grant(): (datum/action)
 /datum/om/event/mob_granted_action
 	sync = TRUE
 	var/action
@@ -941,35 +937,35 @@
 /datum/om/event/mob_granted_action/New(action)
 	src.action = action
 
-/// Was COMSIG_MOB_HANDLE_HUD. From the HUD life system (/mob/proc/hud_available()).
+/// From the HUD life system (/mob/proc/hud_available()).
 /datum/om/event/before/mob_handle_hud
 	accumulate = TRUE
 
-/// Was COMSIG_MOB_HANDLE_HUD_DARKSIGHT. From the HUD life system (darksight()).
+/// From the HUD life system (darksight()).
 /datum/om/event/mob_handle_hud_darksight
 	sync = TRUE
 
-/// Was COMSIG_MOB_HANDLE_HUD_HEALTH_ICON. From the HUD life system (health_icons()).
+/// From the HUD life system (health_icons()).
 /datum/om/event/before/mob_handle_hud_health_icon
 	accumulate = TRUE
 
-/// Was COMSIG_MOB_HANDLE_VISION. From the vision life system (/mob/proc/refresh_vision() for mobs without one).
+/// From the vision life system (/mob/proc/refresh_vision() for mobs without one).
 /datum/om/event/mob_handle_vision
 	sync = TRUE
 
-/// Was COMSIG_MOB_LOGIN. from base of /mob/Login(): ()
+/// From base of /mob/Login(): ()
 /datum/om/event/mob_login
 	sync = TRUE
 
-/// Was COMSIG_MOB_LOGOUT. from base of /mob/Logout(): ()
+/// From base of /mob/Logout(): ()
 /datum/om/event/mob_logout
 	sync = TRUE
 
-/// Was COMSIG_MOB_MEDICAL_ISSUES_CHANGED. A condition was attached, removed, or crossed a clinically meaningful threshold.
+/// A condition was attached, removed, or crossed a clinically meaningful threshold.
 /datum/om/event/mob_medical_issues_changed
 	sync = TRUE
 
-/// Was COMSIG_MOB_MIND_TRANSFERRED_INTO. from mind/transfer_to. Sent to the receiving mob.
+/// From mind/transfer_to. Sent to the receiving mob.
 /datum/om/event/mob_mind_transferred_into
 	sync = TRUE
 	var/old_character
@@ -977,7 +973,7 @@
 /datum/om/event/mob_mind_transferred_into/New(old_character)
 	src.old_character = old_character
 
-/// Was COMSIG_MOB_MIND_TRANSFERRED_OUT_OF. from mind/transfer_from. Sent to the mob the mind is being transferred out of.
+/// From mind/transfer_from. Sent to the mob the mind is being transferred out of.
 /datum/om/event/mob_mind_transferred_out_of
 	sync = TRUE
 	var/new_character
@@ -985,7 +981,7 @@
 /datum/om/event/mob_mind_transferred_out_of/New(new_character)
 	src.new_character = new_character
 
-/// Was COMSIG_MOB_RELAY_MOVEMENT. from base of /client/Move(n, direct) : (direction) returns bool, if component handled movement
+/// From base of /client/Move(n, direct) : (direction) returns bool, if component handled movement
 /datum/om/event/before/mob_relay_movement
 	accumulate = TRUE
 	var/direction
@@ -993,7 +989,7 @@
 /datum/om/event/before/mob_relay_movement/New(direction)
 	src.direction = direction
 
-/// Was COMSIG_MOB_REMOVED_ACTION. From /datum/action/Remove(): (datum/action)
+/// From /datum/action/Remove(): (datum/action)
 /datum/om/event/mob_removed_action
 	sync = TRUE
 	var/action
@@ -1001,11 +997,11 @@
 /datum/om/event/mob_removed_action/New(action)
 	src.action = action
 
-/// Was COMSIG_MOB_RESET_PERSPECTIVE. From base of /mob/proc/reset_perspective() : ()
+/// From base of /mob/proc/reset_perspective() : ()
 /datum/om/event/mob_reset_perspective
 	sync = TRUE
 
-/// Was COMSIG_MOB_STATCHANGE. from base of mob/set_stat(): (new_stat, old_stat)
+/// From base of mob/set_stat(): (new_stat, old_stat)
 /datum/om/event/mob_statchange
 	sync = TRUE
 	var/new_stat
@@ -1015,7 +1011,7 @@
 	src.new_stat = new_stat
 	src.old_stat = old_stat
 
-/// Was COMSIG_MOB_UNEQUIPPED_ITEM. A mob has just unequipped an item.
+/// A mob has just unequipped an item.
 /datum/om/event/mob_unequipped_item
 	sync = TRUE
 	var/item
@@ -1025,7 +1021,7 @@
 	src.item = item
 	src.target = target
 
-/// Was COMSIG_MOVABLE_ATTEMPTED_MOVE. from base of atom/movable/Moved(): (/atom, newloc, direction)
+/// From base of atom/movable/Moved(): (/atom, newloc, direction)
 /datum/om/event/movable_attempted_move
 	sync = TRUE
 	var/old_loc
@@ -1035,7 +1031,7 @@
 	src.old_loc = old_loc
 	src.new_loc = new_loc
 
-/// Was COMSIG_MOVABLE_BUMP. from base of atom/movable/Bump(): (/atom)
+/// From base of atom/movable/Bump(): (/atom)
 /datum/om/event/before/movable_bump
 	accumulate = TRUE
 	var/atom
@@ -1043,7 +1039,7 @@
 /datum/om/event/before/movable_bump/New(atom)
 	src.atom = atom
 
-/// Was COMSIG_MOVABLE_IMPACT. from base of atom/movable/throw_impact() after confirming a hit: (/atom/hit_atom, /datum/thrownthing/throwingdatum)
+/// From base of atom/movable/throw_impact() after confirming a hit: (/atom/hit_atom, /datum/thrownthing/throwingdatum)
 /datum/om/event/movable_impact
 	sync = TRUE
 	var/hit_atom
@@ -1053,7 +1049,7 @@
 	src.hit_atom = hit_atom
 	src.throwingdatum = throwingdatum
 
-/// Was COMSIG_MOVABLE_MOTIONTRACKER. from /datum/controller/subsystem/motion_tracker/notice() (source_atom OM handle,/turf/echo_turf_location)
+/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom OM handle,/turf/echo_turf_location)
 /datum/om/event/movable_motiontracker
 	sync = TRUE
 	var/handle
@@ -1063,7 +1059,7 @@
 	src.handle = handle
 	src.echo_turf_location = echo_turf_location
 
-/// Was COMSIG_MOVABLE_PRE_MOVE. from base of atom/movable/Moved(): (/atom)
+/// From base of atom/movable/Moved(): (/atom)
 /datum/om/event/before/movable_pre_move
 	accumulate = TRUE
 	var/new_loc
@@ -1075,7 +1071,7 @@
 	src.direction = direction
 	src.movetime = movetime
 
-/// Was COMSIG_MOVABLE_Z_CHANGED. from base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
+/// From base of atom/movable/on_changed_z_level(): (turf/old_turf, turf/new_turf, same_z_layer)
 /datum/om/event/before/movable_z_changed
 	accumulate = TRUE
 	var/old_z
@@ -1085,7 +1081,7 @@
 	src.old_z = old_z
 	src.new_z = new_z
 
-/// Was COMSIG_OBJ_DECONSTRUCT. /obj signals from base of obj/deconstruct(): (disassembled)
+/// /obj signals from base of obj/deconstruct(): (disassembled)
 /datum/om/event/obj_deconstruct
 	sync = TRUE
 	var/disassembled
@@ -1093,15 +1089,12 @@
 /datum/om/event/obj_deconstruct/New(disassembled)
 	src.disassembled = disassembled
 
-/// Was COMSIG_OBSERVER_APC. 
 /datum/om/event/observer_apc
 	sync = TRUE
 
-/// Was COMSIG_OBSERVER_GLOBALMOVED. 
 /datum/om/event/observer_globalmoved
 	sync = TRUE
 
-/// Was COMSIG_OBSERVER_SHUTTLE_ADDED. 
 /datum/om/event/observer_shuttle_added
 	sync = TRUE
 	var/shuttle
@@ -1109,7 +1102,6 @@
 /datum/om/event/observer_shuttle_added/New(shuttle)
 	src.shuttle = shuttle
 
-/// Was COMSIG_OBSERVER_SHUTTLE_MOVED. 
 /datum/om/event/observer_shuttle_moved
 	sync = TRUE
 	var/old_location
@@ -1119,7 +1111,6 @@
 	src.old_location = old_location
 	src.destination = destination
 
-/// Was COMSIG_OBSERVER_SHUTTLE_PRE_MOVE. 
 /datum/om/event/observer_shuttle_pre_move
 	sync = TRUE
 	var/old_location
@@ -1129,7 +1120,6 @@
 	src.old_location = old_location
 	src.destination = destination
 
-/// Was COMSIG_OBSERVER_TURF_ENTERED. 
 /datum/om/event/observer_turf_entered
 	sync = TRUE
 	var/arrived_handle
@@ -1139,7 +1129,7 @@
 	src.arrived_handle = arrived_handle
 	src.old_loc = old_loc
 
-/// Was COMSIG_POPUP_CLEARED. from /client/proc/handle_popup_close() : (window_id)
+/// From /client/proc/handle_popup_close() : (window_id)
 /datum/om/event/popup_cleared
 	sync = TRUE
 	var/window_id
@@ -1147,7 +1137,7 @@
 /datum/om/event/popup_cleared/New(window_id)
 	src.window_id = window_id
 
-/// Was COMSIG_QDELETING. just before a datum's Destroy() is called: (force), at this point none of the other components chose to interrupt qdel and Destroy will be called
+/// Just before a datum's Destroy() is called: (force), at this point none of the other components chose to interrupt qdel and Destroy will be called
 /datum/om/event/qdeleting
 	sync = TRUE
 	var/force
@@ -1155,7 +1145,7 @@
 /datum/om/event/qdeleting/New(force)
 	src.force = force
 
-/// Was COMSIG_REAGENTS_HOLDER_REACTED. Non TG signals: from base of /datum/reagents/proc/handle_reactions(): (list/datum/decl/chemical_reaction)
+/// Non TG signals: from base of /datum/reagents/proc/handle_reactions(): (list/datum/decl/chemical_reaction)
 /datum/om/event/reagents_holder_reacted
 	sync = TRUE
 	var/chemical_reaction
@@ -1163,7 +1153,7 @@
 /datum/om/event/reagents_holder_reacted/New(chemical_reaction)
 	src.chemical_reaction = chemical_reaction
 
-/// Was COMSIG_REAGENT_EXPOSE_OBJ. sent to the obj from base of [/datum/reagent/proc/touch_obj]: (datum/reagent/reagent, amount)
+/// Sent to the obj from base of [/datum/reagent/proc/touch_obj]: (datum/reagent/reagent, amount)
 /datum/om/event/reagent_expose_obj
 	sync = TRUE
 	/// The /datum/reagent touching the obj.
@@ -1174,11 +1164,11 @@
 	src.reagent = reagent
 	src.amount = amount
 
-/// Was COMSIG_REMOTE_VIEW_CLEAR. /datum/remote_view event that can be sent from the mob remote viewing, the viewed mob, or object being used to view to forcibly end all related remote viewing components
+/// /datum/remote_view event that can be sent from the mob remote viewing, the viewed mob, or object being used to view to forcibly end all related remote viewing components
 /datum/om/event/remote_view_clear
 	sync = TRUE
 
-/// Was COMSIG_ROBOT_BELLY_FULLNESS. From the robot belly overlay provider: (belly_class, list/fullness_ref) Handlers may adjust fullness_ref[1].
+/// From the robot belly overlay provider: (belly_class, list/fullness_ref) Handlers may adjust fullness_ref[1].
 /datum/om/event/robot_belly_fullness
 	sync = TRUE
 	var/belly_class
@@ -1188,7 +1178,7 @@
 	src.belly_class = belly_class
 	src.fullness_ref = fullness_ref
 
-/// Was COMSIG_ROBOT_EQUIPMENT_CHANGED. --- Signals ------------------------------------------------------------------------------- From /mob/living/silicon/robot/proc/after_equip(): (obj/item/equipped_or_null)
+/// From /mob/living/silicon/robot/proc/after_equip(): (obj/item/equipped_or_null)
 /datum/om/event/robot_equipment_changed
 	sync = TRUE
 	var/item
@@ -1196,7 +1186,7 @@
 /datum/om/event/robot_equipment_changed/New(item)
 	src.item = item
 
-/// Was COMSIG_ROBOT_ITEM_ATTACK. Non TG signals: from the base of /mob/living/silicon/robot/ClickOn(): (var/atom/A, var/params)
+/// Non TG signals: from the base of /mob/living/silicon/robot/ClickOn(): (var/atom/A, var/params)
 /datum/om/event/before/robot_item_attack
 	accumulate = TRUE
 	var/item
@@ -1208,7 +1198,7 @@
 	src.user = user
 	src.params = params
 
-/// Was COMSIG_SHOES_STEP_ACTION. from [/mob/living/carbon/human/Move]: ()
+/// From [/mob/living/carbon/human/Move]: ()
 /datum/om/event/before/shoes_step_action
 	accumulate = TRUE
 	var/m_intent
@@ -1216,11 +1206,11 @@
 /datum/om/event/before/shoes_step_action/New(m_intent)
 	src.m_intent = m_intent
 
-/// Was COMSIG_SILICON_LAWS_CHANGED. From /mob/living/silicon/proc/laws_changed(): ()
+/// From /mob/living/silicon/proc/laws_changed(): ()
 /datum/om/event/silicon_laws_changed
 	sync = TRUE
 
-/// Was COMSIG_SLOT_INSERTED. from the ledger after a thing entered one of the holder's slots: (atom/movable/thing, slot_id)
+/// From the ledger after a thing entered one of the holder's slots: (atom/movable/thing, slot_id)
 /datum/om/event/slot_inserted
 	sync = TRUE
 	var/thing
@@ -1230,7 +1220,7 @@
 	src.thing = thing
 	src.slot_id = slot_id
 
-/// Was COMSIG_SLOT_PRE_INSERT. Containment ledger (code/datums/containment/). Sent on the holder. from the ledger before a thing enters one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
+/// Containment ledger (code/datums/containment/). Sent on the holder. from the ledger before a thing enters one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
 /datum/om/event/before/slot_pre_insert
 	accumulate = TRUE
 	var/thing
@@ -1242,7 +1232,7 @@
 	src.slot_id = slot_id
 	src.actor = actor
 
-/// Was COMSIG_SLOT_PRE_REMOVE. from the ledger before a thing leaves one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
+/// From the ledger before a thing leaves one of the holder's slots: (atom/movable/thing, slot_id, mob/actor)
 /datum/om/event/before/slot_pre_remove
 	accumulate = TRUE
 	var/thing
@@ -1254,7 +1244,7 @@
 	src.slot_id = slot_id
 	src.actor = actor
 
-/// Was COMSIG_SLOT_REMOVED. from the ledger after a thing left one of the holder's slots: (atom/movable/thing, slot_id)
+/// From the ledger after a thing left one of the holder's slots: (atom/movable/thing, slot_id)
 /datum/om/event/slot_removed
 	sync = TRUE
 	var/thing
@@ -1264,7 +1254,7 @@
 	src.thing = thing
 	src.slot_id = slot_id
 
-/// Was COMSIG_TECHWEB_ADD_DESIGN. Called when a techweb design is researched (datum/design/researched_design, custom)
+/// Called when a techweb design is researched (datum/design/researched_design, custom)
 /datum/om/event/techweb_add_design
 	sync = TRUE
 	var/researched_design
@@ -1274,7 +1264,7 @@
 	src.researched_design = researched_design
 	src.custom = custom
 
-/// Was COMSIG_TECHWEB_REMOVE_DESIGN. Called when a techweb design is removed (datum/design/removed_design, custom)
+/// Called when a techweb design is removed (datum/design/removed_design, custom)
 /datum/om/event/techweb_remove_design
 	sync = TRUE
 	var/removed_design
@@ -1284,7 +1274,7 @@
 	src.removed_design = removed_design
 	src.custom = custom
 
-/// Was COMSIG_TELESCI_TELEPORT. from /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
+/// From /obj/machinery/computer/telescience/proc/doteleport(mob/user): (list/atom/movable/teleported_things, turf/target_turf, sending )
 /datum/om/event/telesci_teleport
 	sync = TRUE
 	var/teleported_things
@@ -1296,7 +1286,7 @@
 	src.target_turf = target_turf
 	src.sending = sending
 
-/// Was COMSIG_TGUI_WINDOW_VISIBLE. Window is fully visible and we can make fragile calls
+/// Window is fully visible and we can make fragile calls
 /datum/om/event/tgui_window_visible
 	sync = TRUE
 	var/client
@@ -1304,7 +1294,7 @@
 /datum/om/event/tgui_window_visible/New(client)
 	src.client = client
 
-/// Was COMSIG_TURF_CHANGE. from base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that signal handlers can mutate to append `/datum/callback` objects. They will be called with the new turf after the turf has changed.
+/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that signal handlers can mutate to append `/datum/callback` objects. They will be called with the new turf after the turf has changed.
 /datum/om/event/turf_change
 	sync = TRUE
 	var/path
@@ -1318,7 +1308,7 @@
 	src.flags = flags
 	src.post_change_callbacks = post_change_callbacks
 
-/// Was COMSIG_TURF_PREPARE_STEP_SOUND. from /datum/om/behaviour/footstep/prepare_step(): (list/steps)
+/// From /datum/om/behaviour/footstep/prepare_step(): (list/steps)
 /datum/om/event/before/turf_prepare_step_sound
 	accumulate = TRUE
 	var/steps
@@ -1326,7 +1316,7 @@
 /datum/om/event/before/turf_prepare_step_sound/New(steps)
 	src.steps = steps
 
-/// Was COMSIG_UI_ACT. from datum ui_act (usr, action)
+/// From datum ui_act (usr, action)
 /datum/om/event/ui_act
 	sync = TRUE
 	var/usr_
@@ -1336,7 +1326,6 @@
 	src.usr_ = usr_
 	src.action = action
 
-/// Was COMSIG_UNITTEST_DATA. 
 /datum/om/event/unittest_data
 	sync = TRUE
 	var/data

@@ -43,7 +43,7 @@
 // resistance, evasion...) are ordinary body factors; the one thing that is
 // not a simple multiplier is the charge-dependent damage resistance, which
 // also drains the generator's cell for what it absorbs. That runs as stage 2
-// of injure()'s mitigation (COMSIG_LIVING_SHIELD_INJURY) while the shield is up.
+// of injure()'s mitigation while the shield is up.
 /datum/body_effect/shield_projection
 	tick_interval = 2 SECONDS
 	name = "Shield Projection"

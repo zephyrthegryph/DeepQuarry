@@ -28,7 +28,6 @@
 /**
  * Vore proc that actually tries to instantly eat the preey
  * Params: user, prey, pred, belly
- * NOTE: THIS MUST NOT SLEEP, THIS IS CALLED BY THINGS THAT USE SIGNAL_HANDLER
  */
 /mob/living/proc/begin_instant_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly)
 	SHOULD_NOT_SLEEP(TRUE)

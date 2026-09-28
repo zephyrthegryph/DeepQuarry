@@ -191,7 +191,7 @@
 
 // ---- slot_remove() flags (J2) ----
 /// Skip the removal refusal, the acceptance refusal and both pre signals.
-/// The commit bookkeeping (note_exit/note_enter, COMSIG_SLOT_*, on_slotted/
+/// The commit bookkeeping (note_exit/note_enter, the slot_* OM events, on_slotted/
 /// on_unslotted) still runs. Used to spill or transfer a holder's contents
 /// while it is being destroyed (dq_lifecycle_resolve_contents(), L1), where
 /// the move must not be refusable.

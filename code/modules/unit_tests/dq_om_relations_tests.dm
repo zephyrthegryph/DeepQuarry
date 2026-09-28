@@ -236,7 +236,7 @@
 /// Hard-deleting the occupant mob clears the slot, with no dangling reference
 /// left behind -- closing the same class of dangling-reference bug the
 /// grabbing relation fixed: these machines used to hand-set `occupant = M` on
-/// entry with no COMSIG_QDELETING hook, so hard-deleting the occupant
+/// entry with no /datum/om/event/qdeleting hook, so hard-deleting the occupant
 /// mid-occupancy left `occupant` pointing at a QDELETED mob indefinitely.
 /datum/unit_test/dq_om_relation_occupant_slot_breaks_on_source_delete
 

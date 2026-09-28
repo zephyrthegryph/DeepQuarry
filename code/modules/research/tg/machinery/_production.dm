@@ -23,7 +23,7 @@
 	var/drop_direction = 0
 	///looping sound for printing items
 	var/datum/looping_sound/lathe_print/print_sound
-	///made so we dont call addtimer() 40,000 times in on_techweb_update(). only allows addtimer() to be called on the first update
+	///coalesces on_techweb_update() bursts: only the first update schedules the refresh
 	var/techweb_updating = FALSE
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0

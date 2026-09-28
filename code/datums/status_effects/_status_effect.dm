@@ -190,7 +190,7 @@ REF_BACKLIST(/datum/status_effect, list("owner" = "status_effects"))
 /datum/status_effect/proc/nextmove_adjust()
 	return 0
 
-/// Signal proc for [COMSIG_LIVING_POST_FULLY_HEAL] to remove us on fullheal
+/// /datum/om/event/living_aheal handler: removes us on a full heal
 /datum/status_effect/proc/remove_effect_on_heal(datum/source, datum/om/event/living_aheal/event)
 	EVENT_HANDLER
 

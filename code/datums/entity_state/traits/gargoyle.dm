@@ -108,7 +108,7 @@
 /datum/trait_state/gargoyle/proc/gargoyle_checkenergy()
 	to_chat(owner, span_notice("You have [round(energy,0.01)] energy remaining. It is currently [paused ? "stable" : (transformed ? "increasing" : "decreasing")]."))
 
-/// Trait system: gargoyle energy. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: gargoyle energy.
 /datum/om/stage/life/trait/gargoyle
 	name = "gargoyle"
 	state_type = /datum/trait_state/gargoyle

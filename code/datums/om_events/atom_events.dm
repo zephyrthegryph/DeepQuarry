@@ -7,7 +7,7 @@
 
 // ---------------------------------------------------------------- examine
 
-/// Notification (COMSIG_ATOM_EXAMINE): `user` examined the atom. Handlers
+/// Notification: `user` examined the atom. Handlers
 /// append lines to `texts`, the examine output list.
 /datum/om/event/examine
 	coalesce = FALSE
@@ -33,7 +33,7 @@
 
 // ---------------------------------------------------------------- moved
 
-/// Notification (COMSIG_MOVABLE_MOVED): the movable changed loc.
+/// Notification: the movable changed loc.
 /datum/om/event/moved
 	coalesce = FALSE
 	/// The previous loc.
@@ -59,7 +59,7 @@
 
 // ---------------------------------------------------------------- cross
 
-/// Veto (was COMSIG_MOVABLE_CROSS): `crosser` tries to cross the movable; EVENT_VETO blocks it.
+/// Veto: `crosser` tries to cross the movable; EVENT_VETO blocks it.
 /datum/om/event/before/cross
 	/// The movable crossing.
 	var/crosser
@@ -79,7 +79,7 @@
 
 // ---------------------------------------------------------------- attack_self / attackby
 
-/// Veto (beside COMSIG_ITEM_ATTACK_SELF): `user` uses the item in hand; EVENT_VETO
+/// Veto: `user` uses the item in hand; EVENT_VETO
 /// means a behaviour handled it and the attack chain stops.
 /datum/om/event/before/attack_self
 	var/user
@@ -93,7 +93,7 @@
 /datum/om/behaviour/proc/on_before_attack_self(datum/E, datum/om/event/before/attack_self/event)
 	return
 
-/// Veto (beside COMSIG_ATOM_ATTACKBY): `user` hits the atom with `item`; EVENT_VETO
+/// Veto: `user` hits the atom with `item`; EVENT_VETO
 /// means a behaviour handled it and the attack chain stops.
 /datum/om/event/before/attackby
 	var/item
@@ -113,7 +113,7 @@
 
 // ---------------------------------------------------------------- attack_hand
 
-/// Veto (beside COMSIG_ATOM_ATTACK_HAND, from hand_gate()): `user` touches the atom;
+/// Veto (from hand_gate()): `user` touches the atom;
 /// EVENT_VETO means a behaviour handled it and the touch stops there.
 /datum/om/event/before/attack_hand
 	var/user
@@ -129,7 +129,7 @@
 
 // ---------------------------------------------------------------- hitby
 
-/// Notification (was COMSIG_ATOM_HITBY): the atom was hit by thrown `source`.
+/// Notification: the atom was hit by thrown `source`.
 /datum/om/event/hitby
 	coalesce = FALSE
 	var/source

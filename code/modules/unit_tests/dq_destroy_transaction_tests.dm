@@ -292,7 +292,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 
 	TEST_ASSERT_NULL(B.partner, "destroying A nulled B's side of the pair too (phase 4)")
 
-/// A destroyed inside B's own transaction (B's COMSIG_QDELETING handler
+/// A destroyed inside B's own transaction (B's /datum/om/event/qdeleting handler
 /// qdels its partner) -- link_clear() must not double-clear or crash when
 /// the reciprocal side is already gone by the time phase 4 reaches it.
 /datum/dq_destroy_transaction_reentrant_pair

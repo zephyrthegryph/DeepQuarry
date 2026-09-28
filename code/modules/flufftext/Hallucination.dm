@@ -10,7 +10,7 @@ Strange audio (should be rare) (done)
 Gunshots/explosions/opening doors/less rare audio (done)
 */
 
-/// Active hallucinations on a carbon (was /datum/component/hallucinations). Owned by the
+/// Active hallucinations on a carbon. Owned by the
 /// mob's `hallucinations` var; one at a time, first come first serve.
 /datum/hallucinations
 	VAR_PRIVATE/mob/living/carbon/human/our_human = null

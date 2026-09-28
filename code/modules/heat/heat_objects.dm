@@ -129,7 +129,7 @@
 		return
 	deal_damage(DAMAGE_THERMAL, amount, FIRE, flags = DAMAGE_PACKET_SILENT)
 
-/// The overheating state (was /datum/component/overheating): while the object is
+/// The overheating state: while the object is
 /// above its heat limit (the overheating rule attaches this and detaches it when it
 /// cools), a thermal damage stream proportional to the excess, OVERHEAT_DAMAGE_PER_KELVIN
 /// per second per kelvin, between OVERHEAT_DAMAGE_MIN and OVERHEAT_DAMAGE_MAX per second.

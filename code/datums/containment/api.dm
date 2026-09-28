@@ -9,12 +9,12 @@
 //   dq_ledger_refusal(thing, holder, slot_id, actor)  why a move would fail, or null
 //
 // Each move checks both sides first: the thing can leave its current slot
-// (the slot's removal_refusal() and COMSIG_SLOT_PRE_REMOVE), and it can enter
+// (the slot's removal_refusal() and /datum/om/event/before/slot_pre_remove), and it can enter
 // the new one (the slot's acceptance predicate, capacity, a keyed slot's
-// duplicate-key check, and COMSIG_SLOT_PRE_INSERT). Nothing that can sleep
-// runs in between: the check procs and the pre signals' handlers are
-// SIGNAL_HANDLERs. Then the move commits with one forceMove, whose
-// bookkeeping (ledger.dm) fires COMSIG_SLOT_REMOVED/COMSIG_SLOT_INSERTED and
+// duplicate-key check, and /datum/om/event/before/slot_pre_insert). Nothing that can sleep
+// runs in between: the check procs and the pre events' handlers are
+// EVENT_HANDLERs. Then the move commits with one forceMove, whose
+// bookkeeping (ledger.dm) fires /datum/om/event/slot_removed and /datum/om/event/slot_inserted and
 // the thing's on_unslotted()/on_slotted() hooks. A refused move changes
 // nothing.
 //
@@ -139,7 +139,7 @@
 /// no pre signal sent on either side. If `destination` has slots, `thing`
 /// lands in `slot_id` (null: its default slot); otherwise this is a plain
 /// forced forceMove. Either way doMove()'s bookkeeping (note_exit/note_enter,
-/// COMSIG_SLOT_*, on_unslotted()/on_slotted()) runs as normal, carrying
+/// the slot_* OM events, on_unslotted()/on_slotted()) runs as normal, carrying
 /// `flags` to the hooks. L1's contents phase (lifecycle.dm) is the only
 /// caller that ever names an explicit `slot_id` (KEEP_WITH).
 /proc/dq_ledger_force_move(atom/movable/thing, atom/destination, flags = 0, slot_id = null)

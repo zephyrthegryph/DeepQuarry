@@ -1,4 +1,4 @@
-/// Swarming (was /datum/component/swarming). Movables sharing a turf with another swarmer
+/// Swarming. Movables sharing a turf with another swarmer
 /// spread out by a random pixel offset; alone again, they return. A shared behaviour
 /// singleton on the moved event: whoever moves leaves the swarmers of its old turf and
 /// joins those of its new one, so both sides of every pair stay in step. State lives on

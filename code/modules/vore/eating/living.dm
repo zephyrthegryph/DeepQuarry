@@ -1414,7 +1414,7 @@
 						to_chat(src, span_chatexport("[msg]"))
 
 /**
- * Small helper datum to manage the vore panel HUD icon (was /datum/component/vore_panel).
+ * Small helper datum to manage the vore panel HUD icon.
  * Owned by the mob's `vore_panel_button` var.
  */
 /datum/vore_panel_button

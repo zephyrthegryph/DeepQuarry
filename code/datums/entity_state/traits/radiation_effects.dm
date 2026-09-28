@@ -388,7 +388,7 @@
 	glow_toggle = FALSE
 	radiation_immunity = TRUE
 
-/// Trait system: radiation glow. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: radiation glow.
 /datum/om/stage/life/trait/radiation_glow
 	name = "radiation glow"
 	state_type = /datum/trait_state/radiation_effects

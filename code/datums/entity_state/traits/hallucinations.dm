@@ -80,7 +80,7 @@
 			total_vol += reagent.volume
 	return total_vol
 
-/// Trait system: hallucination episodes. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: hallucination episodes.
 /datum/om/stage/life/trait/schizophrenia
 	name = "schizophrenia"
 	state_type = /datum/trait_state/schizophrenia

@@ -1,4 +1,4 @@
-/// Bluespace connection (was /datum/component/bluespace_connection). Makes lockers into
+/// Bluespace connection. Makes lockers into
 /// portals: close one with something inside and it comes out of a connected exit. A shared
 /// OM behaviour on the closet_closed and hitby events; the exits live on the closet as
 /// om_handle()s, or, on the permanent network, are GLOB.bslockers.
@@ -120,7 +120,7 @@
 
 // ---------------------------------------------------------------- events
 
-/// Notification (was COMSIG_CLOSET_CLOSED): the closet closed.
+/// Notification: the closet closed.
 /datum/om/event/closet_closed
 	coalesce = FALSE
 

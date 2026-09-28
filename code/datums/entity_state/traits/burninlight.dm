@@ -42,7 +42,7 @@
 		owner.mend(TREAT_TISSUE_REPAIR, heal_rate)
 		owner.mend(TREAT_BURN_CARE, heal_rate)
 
-/// Trait system: light burns. Was a COMSIG_LIVING_LIFE listener.
+/// Trait system: light burns.
 /datum/om/stage/life/trait/burninlight
 	name = "burninlight"
 	state_type = /datum/trait_state/burninlight

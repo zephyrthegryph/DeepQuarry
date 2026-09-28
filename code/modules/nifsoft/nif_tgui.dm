@@ -19,7 +19,7 @@
 	var/datum/nif_menu/menu_ref
 
 /**
- * Small helper datum to manage the HUD icon (was /datum/component/nif_menu).
+ * Small helper datum to manage the HUD icon.
  * Owned by the NIF through `menu_ref`; hooks the implanted mob and goes away with it.
  */
 /datum/nif_menu

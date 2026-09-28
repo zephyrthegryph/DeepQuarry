@@ -1,6 +1,3 @@
-// SEND_SIGNAL(COMSIG_BELLY_UPDATE_VORE_FX) is sometimes used when calling vore_fx() to send belly visuals
-// to certain non-belly atoms. Not called here as vore_fx() is usually only called if a mob is in the belly.
-// Don't forget it if you need to rework vore_fx().
 //
 // (Stage 5): belly fullscreen overlay has been migrated to a TGUI
 // window (interfaces/BellyOverlay.tsx) backed by /datum/belly_overlay_tgui

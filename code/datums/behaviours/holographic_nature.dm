@@ -1,6 +1,5 @@
 /*
- * Holographic objects glitch out when passed through (was /datum/component/holographic_nature,
- * which listened for COMSIG_ATOM_ENTERED on its turf). Its one user, the AI hologram, reacts
+ * Holographic objects glitch out when passed through. Its one user, the AI hologram, reacts
  * in Crossed() instead.
  */
 #define GLITCH_DURATION 0.45 SECONDS

@@ -1,5 +1,5 @@
 /**
- * Like unlucky, but only has a chance of slipping into someone! (was /datum/component/slip_prone)
+ * Like unlucky, but only has a chance of slipping into someone!
  * A shared OM behaviour on the moved event; attached by the Slip Prone trait.
  */
 /datum/om/behaviour/slip_prone

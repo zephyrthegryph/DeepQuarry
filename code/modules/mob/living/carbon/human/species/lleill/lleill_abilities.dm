@@ -631,7 +631,7 @@
 		return
 	var/mob/living/ourmob = tf_mob_holder
 	//legacy ai_holder.set_stance(STANCE_SLEEP) removed; brain auto-sleeps on
-	// stat change via its COMSIG_MOB_STATCHANGE handler.
+	// stat change via its /datum/om/event/mob_statchange handler.
 	return_player_to_tf_holder("reverted beast form")
 	set_tf_mob_holder(null)
 	var/turf/beast_loc = src.loc
