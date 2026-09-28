@@ -1045,35 +1045,8 @@
 /datum/vore_look/proc/pick_from_outside(mob/user, params)
 	var/intent
 
-	//Handle the [All] choice. Ugh inelegant. Someone make this pretty.
 	if(params["pickall"])
-		intent = params["intent"]
-		switch(intent)
-			if("eject_all")
-				if(host().stat)
-					to_chat(user,span_warning("You can't do that in your state!"))
-					return TRUE
-
-				host().vore_selected.release_all_contents()
-				return TRUE
-
-			if("move_all")
-				if(host().stat)
-					to_chat(user,span_warning("You can't do that in your state!"))
-					return TRUE
-
-				var/obj/belly/choice = locate(params["val"])
-				if(!choice)
-					return FALSE
-
-				for(var/atom/movable/target in host().vore_selected)
-					to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
-					// Send the transfer message to indirect targets as well. Slightly different message because why not.
-					to_chat(host().vore_selected.get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
-					host().vore_selected.transfer_contents(target, choice, TRUE)
-				host().vore_selected.handle_visual_update()
-				return TRUE
-		return FALSE
+		return pick_all_from_outside(user, params)
 
 	var/atom/movable/target = locate(params["pick"])
 	if(!(target in host().vore_selected))
@@ -1082,7 +1055,6 @@
 	if(ishuman(target))
 		available_options += "Transform"
 		available_options += "Health Check"
-	// Add Reforming
 	if(isobserver(target) || istype(target,/obj/item/mmi))
 		available_options += "Reform"
 
@@ -1100,266 +1072,336 @@
 		intent = _answer_a1
 	switch(intent)
 		if("Examine")
-			var/list/results = target.examine(host())
-			if(!results || !results.len)
-				results = list("You were unable to examine that. Tell a developer!")
-			to_chat(user, jointext(results, "<br>"))
-			if(isliving(target))
-				var/mob/living/ourtarget = target
-				ourtarget.chat_healthbar(user, TRUE)
-			return TRUE
-
+			return pick_examine(user, target, params)
 		if("Eject")
-			if(host().stat)
-				to_chat(user,span_warning("You can't do that in your state!"))
-				return TRUE
-
-			host().vore_selected.release_specific_contents(target)
-			return TRUE
-
+			return pick_eject(user, target, params)
 		if("Launch")
-			if(host().stat)
-				to_chat(user, span_warning("You can't do that in your state!"))
-				return TRUE
-
-			host().vore_selected.release_specific_contents(target)
-			target.throw_at(get_edge_target_turf(host(), host().dir), 3, 1, host())
-			host().visible_message(span_danger("[host()] launches [target]!"))
-			return TRUE
-
+			return pick_launch(user, target, params)
 		if("Move")
-			if(host().stat)
-				to_chat(user,span_warning("You can't do that in your state!"))
-				return TRUE
-			var/obj/belly/choice = locate(params["targetBelly"])
-			if(!(choice in host().vore_organs))
-				var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
-				if(isnull(_answer_a2))
-					return
-				choice = _answer_a2
-			if(!choice || !(target in host().vore_selected))
-				return TRUE
-			to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to their [lowertext(choice.name)]!"))
-			// Send the transfer message to indirect targets as well. Slightly different message because why not.
-			to_chat(host().vore_selected.get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
-			host().vore_selected.transfer_contents(target, choice)
-
+			return pick_move(user, target, params)
 		if("Transfer")
-			if(host().stat)
-				to_chat(user,span_warning("You can't do that in your state!"))
-				return TRUE
-
-			var/mob/living/belly_owner = host()
-
-			var/list/viable_candidates = list()
-			for(var/mob/living/candidate in range(1, host()))
-				if(istype(candidate) && !(candidate == host()))
-					if(length(candidate.vore_organs) && candidate.feeding && !candidate.no_vore)
-						viable_candidates += candidate
-			if(!viable_candidates.len)
-				to_chat(user, span_notice("There are no viable candidates around you!"))
-				return TRUE
-			var/_answer_a3 = rerun_ask(user, "a3", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "Who do you want to receive the target?", title = "Select Predator", choices = viable_candidates)
-			if(isnull(_answer_a3))
-				return
-			belly_owner = _answer_a3
-
-			if(!belly_owner || !(belly_owner in range(1, host())))
-				return TRUE
-
-			var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
-			if(isnull(choice))
-				return
-			if(!choice || !(target in host().vore_selected) || !belly_owner || !(belly_owner in range(1, host())))
-				return TRUE
-
-			if(belly_owner != host())
-				to_chat(user, span_vnotice("Transfer offer sent. Await their response."))
-				var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice/alert, message = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"))
-				if(isnull(accepted))
-					return
-				if(accepted != "Yes")
-					to_chat(user, span_vwarning("[belly_owner] refused the transfer!!"))
-					return TRUE
-				if(!belly_owner || !(belly_owner in range(1, host())))
-					return TRUE
-				to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to [belly_owner]'s [lowertext(choice.name)]!"))
-				to_chat(belly_owner,span_vwarning("[target] is squished from [host()]'s [lowertext(host().vore_selected.name)] to your [lowertext(choice.name)]!"))
-				host().vore_selected.transfer_contents(target, choice)
-			else
-				to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to their [lowertext(choice.name)]!"))
-				host().vore_selected.transfer_contents(target, choice)
-			return TRUE
-
+			return pick_transfer(user, target, params)
 		if("Transform")
-			if(host().stat)
-				to_chat(user,span_warning("You can't do that in your state!"))
-				return TRUE
-
-			var/mob/living/carbon/human/H = target
-			if(!istype(H))
-				return FALSE
-
-			if(!H.allow_spontaneous_tf)
-				to_chat(user,span_warning("Your target can't be transformed!"))
-				return FALSE
-
-			var/datum/tgui_module/appearance_changer/vore/V = new(host(), H)
-			V.tgui_interact(user)
-			return TRUE
-
-		// Add Reforming
+			return pick_transform(user, target, params)
 		if("Reform")
+			return pick_reform(user, target, params)
+		if("Health")
+			return pick_health(user, target, params)
+		if("Process")
+			return pick_process(user, target, params)
+		if("Health Check")
+			return pick_health_check(user, target, params)
+
+/// The [All] choices: eject or move everything in the selected belly.
+/datum/vore_look/proc/pick_all_from_outside(mob/user, params)
+	switch(params["intent"])
+		if("eject_all")
 			if(host().stat)
 				to_chat(user,span_warning("You can't do that in your state!"))
 				return TRUE
 
-			if(isobserver(target))
-				var/mob/observer/T = target
-				if(!ismob(T.body_backup) || GLOB.prevent_respawns.Find(T.mind.name) || ispAI(T.body_backup))
-					to_chat(user,span_warning("They don't seem to be reformable!"))
-					return TRUE
-
-				var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
-				if(isnull(accepted))
-					return
-				if(accepted != "Yes")
-					to_chat(user,span_warning("[T] refused to be reformed!"))
-					return TRUE
-				if(!isbelly(T.loc))
-					to_chat(user,span_warning("[T] is no longer inside to be reformed!"))
-					to_chat(T,span_warning("You can't be reformed outside of a belly!"))
-					return TRUE
-
-				if(isliving(T.body_backup))
-					var/mob/living/body_backup = T.body_backup
-					if(ishuman(body_backup))
-						var/mob/living/carbon/human/H = body_backup
-						H.reform_restore("reformed in [host()]", host())
-					else
-						body_backup.revive()
-					body_backup.forceMove(T.loc)
-					om_unsuspend(body_backup, body_backup)
-					body_backup.ajourn = 0
-					transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
-					body_backup.teleop = null
-					T.body_backup = null
-					host().vore_selected.release_specific_contents(T, TRUE)
-					if(istype(body_backup, /mob/living/simple_mob))
-						var/mob/living/simple_mob/sm = body_backup
-						if(sm.icon_rest && sm.resting)
-							sm.icon_state = sm.icon_rest
-						else
-							sm.icon_state = sm.icon_living
-					T.update_icon()
-					announce_ghost_joinleave(T.mind, 0, "They now occupy their body again.")
-			else if(istype(target,/obj/item/mmi)) // A good bit of repeated code, sure, but... cleanest way to do this.
-				var/obj/item/mmi/MMI = target
-				var/mob/living/carbon/brain/mmi_occupant = MMI.get_occupant()
-				var/datum/mind_host/mmi_host = get_mind_host(MMI)
-				if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
-					to_chat(user,span_warning("They don't seem to be reformable!"))
-					return TRUE
-				var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
-				if(isnull(accepted))
-					return
-				if(accepted != "Yes")
-					to_chat(user,span_warning("[MMI] refused to be reformed!"))
-					return TRUE
-
-				if(isliving(MMI.body_backup))
-					var/mob/living/body_backup = MMI.body_backup
-					om_unsuspend(body_backup, body_backup)
-					body_backup.forceMove(MMI.loc)
-					body_backup.ajourn = 0
-					body_backup.teleop = null
-					//And now installing the MMI into the body...
-					if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death
-						var/mob/living/silicon/robot/R = body_backup
-						R.revive()
-						mmi_host.release_mind(R, "reformed by [key_name(user)]")
-						MMI.forceMove(R)
-						R.mmi = MMI
-						R.add_language(LANGUAGE_ROBOT_TALK)
-					else // the same install as the surgery step (install_mmi_holder())
-						install_mmi_holder(body_backup, MMI)
-
-						mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
-						//You've hopefully already named yourself, so... not implementing that bit.
-						var/mob/living/carbon/human/H = body_backup
-						H.reform_restore("reformed around [MMI] in [host()]", host())
-					MMI.body_backup = null
+			host().vore_selected.release_all_contents()
 			return TRUE
-		if("Health")
-			var/mob/living/ourtarget = target
-			to_chat(user, span_notice("Current health reading for \The [ourtarget]: [round(ourtarget.vitality() * 100)]%"))
+
+		if("move_all")
+			if(host().stat)
+				to_chat(user,span_warning("You can't do that in your state!"))
+				return TRUE
+
+			var/obj/belly/choice = locate(params["val"])
+			if(!choice)
+				return FALSE
+
+			for(var/atom/movable/target in host().vore_selected)
+				to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
+				// Send the transfer message to indirect targets as well. Slightly different message because why not.
+				to_chat(host().vore_selected.get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
+				host().vore_selected.transfer_contents(target, choice, TRUE)
+			host().vore_selected.handle_visual_update()
 			return TRUE
-		if("Process")
-			var/mob/living/ourtarget = target
-			var/list/process_options = list()
+	return FALSE
 
-			if(ourtarget.digestable)
-				process_options += "Digest"
-				process_options += "Break Bone"
+/// "Examine": Examine the prey and show its health bar.
+/datum/vore_look/proc/pick_examine(mob/user, atom/movable/target, params)
+	var/list/results = target.examine(host())
+	if(!results || !results.len)
+		results = list("You were unable to examine that. Tell a developer!")
+	to_chat(user, jointext(results, "<br>"))
+	if(isliving(target))
+		var/mob/living/ourtarget = target
+		ourtarget.chat_healthbar(user, TRUE)
+	return TRUE
 
-			if(ourtarget.absorbable)
-				process_options += "Absorb"
+/// "Eject": Release the prey.
+/datum/vore_look/proc/pick_eject(mob/user, atom/movable/target, params)
+	if(host().stat)
+		to_chat(user,span_warning("You can't do that in your state!"))
+		return TRUE
 
-			process_options += "Knockout" //Can't think of any mechanical prefs that would restrict this. Even if they are already asleep, you may want to make it permanent.
+	host().vore_selected.release_specific_contents(target)
+	return TRUE
 
-			if(process_options.len)
-				process_options += "Cancel"
+/// "Launch": Release the prey and throw it.
+/datum/vore_look/proc/pick_launch(mob/user, atom/movable/target, params)
+	if(host().stat)
+		to_chat(user, span_warning("You can't do that in your state!"))
+		return TRUE
+
+	host().vore_selected.release_specific_contents(target)
+	target.throw_at(get_edge_target_turf(host(), host().dir), 3, 1, host())
+	host().visible_message(span_danger("[host()] launches [target]!"))
+	return TRUE
+
+/// "Move": Move the prey to another of our bellies. Prompts re-run pick_from_outside.
+/datum/vore_look/proc/pick_move(mob/user, atom/movable/target, params)
+	if(host().stat)
+		to_chat(user,span_warning("You can't do that in your state!"))
+		return TRUE
+	var/obj/belly/choice = locate(params["targetBelly"])
+	if(!(choice in host().vore_organs))
+		var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
+		if(isnull(_answer_a2))
+			return
+		choice = _answer_a2
+	if(!choice || !(target in host().vore_selected))
+		return TRUE
+	to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to their [lowertext(choice.name)]!"))
+	// Send the transfer message to indirect targets as well. Slightly different message because why not.
+	to_chat(host().vore_selected.get_belly_surrounding(target.contents),span_warning("You're squished along with [target] from [host()]'s [lowertext(host().vore_selected)] to their [lowertext(choice.name)]!"))
+	host().vore_selected.transfer_contents(target, choice)
+
+/// "Transfer": Offer the prey to an adjacent predator's belly. Prompts re-run pick_from_outside.
+/datum/vore_look/proc/pick_transfer(mob/user, atom/movable/target, params)
+	if(host().stat)
+		to_chat(user,span_warning("You can't do that in your state!"))
+		return TRUE
+
+	var/mob/living/belly_owner = host()
+
+	var/list/viable_candidates = list()
+	for(var/mob/living/candidate in range(1, host()))
+		if(istype(candidate) && !(candidate == host()))
+			if(length(candidate.vore_organs) && candidate.feeding && !candidate.no_vore)
+				viable_candidates += candidate
+	if(!viable_candidates.len)
+		to_chat(user, span_notice("There are no viable candidates around you!"))
+		return TRUE
+	var/_answer_a3 = rerun_ask(user, "a3", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Who do you want to receive the target?", title = "Select Predator", choices = viable_candidates)
+	if(isnull(_answer_a3))
+		return
+	belly_owner = _answer_a3
+
+	if(!belly_owner || !(belly_owner in range(1, host())))
+		return TRUE
+
+	var/obj/belly/choice = rerun_ask(user, "a4", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = belly_owner.vore_organs)
+	if(isnull(choice))
+		return
+	if(!choice || !(target in host().vore_selected) || !belly_owner || !(belly_owner in range(1, host())))
+		return TRUE
+
+	if(belly_owner != host())
+		to_chat(user, span_vnotice("Transfer offer sent. Await their response."))
+		var/accepted = rerun_ask(belly_owner, "a5", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice/alert, message = "[host()] is trying to transfer [target] from their [lowertext(host().vore_selected.name)] into your [lowertext(choice.name)]. Do you accept?", title = "Feeding Offer", choices = list("Yes", "No"))
+		if(isnull(accepted))
+			return
+		if(accepted != "Yes")
+			to_chat(user, span_vwarning("[belly_owner] refused the transfer!!"))
+			return TRUE
+		if(!belly_owner || !(belly_owner in range(1, host())))
+			return TRUE
+		to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to [belly_owner]'s [lowertext(choice.name)]!"))
+		to_chat(belly_owner,span_vwarning("[target] is squished from [host()]'s [lowertext(host().vore_selected.name)] to your [lowertext(choice.name)]!"))
+		host().vore_selected.transfer_contents(target, choice)
+	else
+		to_chat(target,span_vwarning("You're squished from [host()]'s [lowertext(host().vore_selected.name)] to their [lowertext(choice.name)]!"))
+		host().vore_selected.transfer_contents(target, choice)
+	return TRUE
+
+/// "Transform": Open the appearance changer on a human prey.
+/datum/vore_look/proc/pick_transform(mob/user, atom/movable/target, params)
+	if(host().stat)
+		to_chat(user,span_warning("You can't do that in your state!"))
+		return TRUE
+
+	var/mob/living/carbon/human/H = target
+	if(!istype(H))
+		return FALSE
+
+	if(!H.allow_spontaneous_tf)
+		to_chat(user,span_warning("Your target can't be transformed!"))
+		return FALSE
+
+	var/datum/tgui_module/appearance_changer/vore/V = new(host(), H)
+	V.tgui_interact(user)
+	return TRUE
+
+/// "Reform": Reform a ghost or MMI prey into its backed-up body. Prompts re-run pick_from_outside.
+/datum/vore_look/proc/pick_reform(mob/user, atom/movable/target, params)
+	if(host().stat)
+		to_chat(user,span_warning("You can't do that in your state!"))
+		return TRUE
+
+	if(isobserver(target))
+		reform_ghost_prey(user, target, params)
+	else if(istype(target, /obj/item/mmi))
+		reform_mmi_prey(user, target, params)
+	return TRUE
+
+/// Reform a ghost prey into its body backup, inside the selected belly.
+/datum/vore_look/proc/reform_ghost_prey(mob/user, mob/observer/target, params)
+	var/mob/observer/T = target
+	if(!ismob(T.body_backup) || GLOB.prevent_respawns.Find(T.mind.name) || ispAI(T.body_backup))
+		to_chat(user,span_warning("They don't seem to be reformable!"))
+		return TRUE
+
+	var/accepted = rerun_ask(T, "a6", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
+	if(isnull(accepted))
+		return
+	if(accepted != "Yes")
+		to_chat(user,span_warning("[T] refused to be reformed!"))
+		return TRUE
+	if(!isbelly(T.loc))
+		to_chat(user,span_warning("[T] is no longer inside to be reformed!"))
+		to_chat(T,span_warning("You can't be reformed outside of a belly!"))
+		return TRUE
+
+	if(isliving(T.body_backup))
+		var/mob/living/body_backup = T.body_backup
+		if(ishuman(body_backup))
+			var/mob/living/carbon/human/H = body_backup
+			H.reform_restore("reformed in [host()]", host())
+		else
+			body_backup.revive()
+		body_backup.forceMove(T.loc)
+		om_unsuspend(body_backup, body_backup)
+		body_backup.ajourn = 0
+		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
+		body_backup.teleop = null
+		T.body_backup = null
+		host().vore_selected.release_specific_contents(T, TRUE)
+		if(istype(body_backup, /mob/living/simple_mob))
+			var/mob/living/simple_mob/sm = body_backup
+			if(sm.icon_rest && sm.resting)
+				sm.icon_state = sm.icon_rest
 			else
-				to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
-				return FALSE
+				sm.icon_state = sm.icon_living
+		T.update_icon()
+		announce_ghost_joinleave(T.mind, 0, "They now occupy their body again.")
 
-			var/ourchoice = rerun_ask(user, "a8", PROC_REF(pick_from_outside), args, /datum/om/prompt/choice, message = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", title = "Instant Process", choices = process_options)
-			if(isnull(ourchoice))
-				return
-			if(!ourchoice)
-				return FALSE
-			if(!ourtarget.client)
-				to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
-				return FALSE
-			var/obj/belly/b = ourtarget.loc
-			if(!istype(b) || b.owner != user)
-				to_chat(user, span_vwarning("[ourtarget] isn't in your belly."))
-				return FALSE
-			switch(ourchoice)
-				if("Digest")
-					return b.instant_digest(user, ourtarget)
-				if("Break Bone")
-					return b.instant_break_bone(user, ourtarget)
-				if("Absorb")
-					return b.instant_absorb(user, ourtarget)
-				if("Knockout")
-					return b.instant_knockout(user, ourtarget)
-				if("Cancel")
-					return FALSE
-		if("Health Check")
-			var/mob/living/carbon/human/H = target
-			var/target_health = round(H.vitality() * 100)
-			var/condition
-			var/condition_consequences
-			to_chat(user, span_vwarning("\The [target] is at [target_health]% health."))
-			if(H.blinded)
-				condition += "blinded"
-				condition_consequences += "hear emotes"
-			if(H.has_status(EFFECT_PARALYZED))
-				if(condition)
-					condition += " and "
-					condition_consequences += " or "
-				condition += "paralysed"
-				condition_consequences += "make emotes"
-			if(H.has_status(EFFECT_SLEEPING))
-				if(condition)
-					condition += " and "
-					condition_consequences += " or "
-				condition += "sleeping"
-				condition_consequences += "hear or do anything"
-			if(condition)
-				to_chat(user, span_vwarning("\The [target] is currently [condition], they will not be able to [condition_consequences]."))
+/// Reform an MMI prey: its body backup is revived around it.
+/datum/vore_look/proc/reform_mmi_prey(mob/user, obj/item/mmi/target, params)
+	var/obj/item/mmi/MMI = target
+	var/mob/living/carbon/brain/mmi_occupant = MMI.get_occupant()
+	var/datum/mind_host/mmi_host = get_mind_host(MMI)
+	if(!ismob(MMI.body_backup) || !mmi_occupant?.mind || GLOB.prevent_respawns.Find(mmi_occupant.mind.name))
+		to_chat(user,span_warning("They don't seem to be reformable!"))
+		return TRUE
+	var/accepted = rerun_ask(mmi_occupant, "a7", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice/alert, message = "[host()] is trying to reform your body! Would you like to get reformed inside [host()]'s [lowertext(host().vore_selected.name)]?", title = "Reforming Attempt", choices = list("Yes", "No"))
+	if(isnull(accepted))
+		return
+	if(accepted != "Yes")
+		to_chat(user,span_warning("[MMI] refused to be reformed!"))
+		return TRUE
+
+	if(isliving(MMI.body_backup))
+		var/mob/living/body_backup = MMI.body_backup
+		om_unsuspend(body_backup, body_backup)
+		body_backup.forceMove(MMI.loc)
+		body_backup.ajourn = 0
+		body_backup.teleop = null
+		//And now installing the MMI into the body...
+		if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death
+			var/mob/living/silicon/robot/R = body_backup
+			R.revive()
+			mmi_host.release_mind(R, "reformed by [key_name(user)]")
+			MMI.forceMove(R)
+			R.mmi = MMI
+			R.add_language(LANGUAGE_ROBOT_TALK)
+		else // the same install as the surgery step (install_mmi_holder())
+			install_mmi_holder(body_backup, MMI)
+
+			mmi_host.release_mind(body_backup, "reformed by [key_name(user)]")
+			//You've hopefully already named yourself, so... not implementing that bit.
+			var/mob/living/carbon/human/H = body_backup
+			H.reform_restore("reformed around [MMI] in [host()]", host())
+		MMI.body_backup = null
+
+/// "Health": Report the prey's vitality.
+/datum/vore_look/proc/pick_health(mob/user, atom/movable/target, params)
+	var/mob/living/ourtarget = target
+	to_chat(user, span_notice("Current health reading for \The [ourtarget]: [round(ourtarget.vitality() * 100)]%"))
+	return TRUE
+
+/// "Process": Instantly digest, absorb, break or knock out a consenting prey. Prompts re-run pick_from_outside.
+/datum/vore_look/proc/pick_process(mob/user, atom/movable/target, params)
+	var/mob/living/ourtarget = target
+	var/list/process_options = list()
+
+	if(ourtarget.digestable)
+		process_options += "Digest"
+		process_options += "Break Bone"
+
+	if(ourtarget.absorbable)
+		process_options += "Absorb"
+
+	process_options += "Knockout" //Can't think of any mechanical prefs that would restrict this. Even if they are already asleep, you may want to make it permanent.
+
+	if(process_options.len)
+		process_options += "Cancel"
+	else
+		to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
+		return FALSE
+
+	var/ourchoice = rerun_ask(user, "a8", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "How would you prefer to process \the [target]? This will perform the given action instantly if the prey accepts.", title = "Instant Process", choices = process_options)
+	if(isnull(ourchoice))
+		return
+	if(!ourchoice)
+		return FALSE
+	if(!ourtarget.client)
+		to_chat(user, span_vwarning("You cannot instantly process [ourtarget]."))
+		return FALSE
+	var/obj/belly/b = ourtarget.loc
+	if(!istype(b) || b.owner != user)
+		to_chat(user, span_vwarning("[ourtarget] isn't in your belly."))
+		return FALSE
+	switch(ourchoice)
+		if("Digest")
+			return b.instant_digest(user, ourtarget)
+		if("Break Bone")
+			return b.instant_break_bone(user, ourtarget)
+		if("Absorb")
+			return b.instant_absorb(user, ourtarget)
+		if("Knockout")
+			return b.instant_knockout(user, ourtarget)
+		if("Cancel")
 			return FALSE
+
+/// "Health Check": Report the prey's vitality and what its state keeps it from doing.
+/datum/vore_look/proc/pick_health_check(mob/user, atom/movable/target, params)
+	var/mob/living/carbon/human/H = target
+	var/target_health = round(H.vitality() * 100)
+	var/condition
+	var/condition_consequences
+	to_chat(user, span_vwarning("\The [target] is at [target_health]% health."))
+	if(H.blinded)
+		condition += "blinded"
+		condition_consequences += "hear emotes"
+	if(H.has_status(EFFECT_PARALYZED))
+		if(condition)
+			condition += " and "
+			condition_consequences += " or "
+		condition += "paralysed"
+		condition_consequences += "make emotes"
+	if(H.has_status(EFFECT_SLEEPING))
+		if(condition)
+			condition += " and "
+			condition_consequences += " or "
+		condition += "sleeping"
+		condition_consequences += "hear or do anything"
+	if(condition)
+		to_chat(user, span_vwarning("\The [target] is currently [condition], they will not be able to [condition_consequences]."))
+	return FALSE
 
 /datum/vore_look/proc/perform_prey_ability(mob/living/user, params)
 	var/obj/belly/OB = locate(params["belly"])
