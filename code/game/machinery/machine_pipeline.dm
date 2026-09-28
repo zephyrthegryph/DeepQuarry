@@ -418,12 +418,15 @@
 	if(M.detecting && (locate(/obj/effect/hotspot) in M.loc))
 		M.alarm()
 
-	return STAGE_IDLE
+	// A running countdown is work every frame: returning STAGE_IDLE here would idle the stage
+	// after one tick and strand the countdown (idle() says it still has work).
+	if(!M.timing)
+		return STAGE_IDLE
 
-/// Settled once there's no countdown left running; a fresh alarm still gets
-/// one perform() (from Initialize's first frame) before it parks.
+/// Settled once there's no countdown left running, or while unpowered/broken (power_change()
+/// and atom_fix() wake it); a fresh alarm still gets one perform() before it parks.
 /datum/om/stage/machine/power/firealarm/idle(obj/machinery/firealarm/M)
-	return !M.timing
+	return !M.timing || (M.stat & (NOPOWER|BROKEN))
 
 // ---------------------------------------------------------------- air alarms
 
@@ -530,7 +533,10 @@
 	M.set_om_settled(!M.valve_open && reaction_result == NO_REACTION && !material_active)
 	if(M.om_settled)
 		M.hibernate_until_gas_changes()
-	return STAGE_IDLE
+		return STAGE_IDLE
+	// Unsettled (open valve, a reaction, material work): keep running every frame. An
+	// unconditional STAGE_IDLE idled the stage with work left and set_om_settled() raises
+	// nothing on a repeat, so the canister parked mid-release (OM_AUDIT missed wake).
 
 /datum/om/stage/machine/power/canister/idle(obj/machinery/portable_atmospherics/canister/M)
 	return M.om_settled
