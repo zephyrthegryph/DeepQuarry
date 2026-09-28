@@ -78,7 +78,7 @@
 
 /datum/unit_test/dq_med7_p2d11_robot_rejuvenate/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, run_loc_floor_bottom_left)
-	R.nutrition = 0
+	R.set_nutrition(0)
 	R.set_bodytemperature(350)
 	R.rejuvenate()
 	TEST_ASSERT_EQUAL(R.nutrition, 0, "a borg has no nutrition to refill")
@@ -90,12 +90,12 @@
 
 /datum/unit_test/dq_med7_c11_regeneration_on_read/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.nutrition = 400
+	H.set_nutrition(400)
 	H.body.treatment_levels()
 	H.body.life_tick()
 	TEST_ASSERT(!(H.body.dirty & BODY_DIRTY_TREATMENT), "a life tick must not invalidate the treatment snapshot")
 	TEST_ASSERT(H.body.treatment_levels()?[TREAT_REGENERATION] > 0, "a fed body regenerates")
-	H.nutrition = REGENERATION_STARVING_NUTRITION - 1
+	H.set_nutrition(REGENERATION_STARVING_NUTRITION - 1)
 	H.body.regeneration_read_at = -1 // the body clock moved on
 	TEST_ASSERT(!H.body.treatment_levels()?[TREAT_REGENERATION], "a starving body stops regenerating on the next read")
 

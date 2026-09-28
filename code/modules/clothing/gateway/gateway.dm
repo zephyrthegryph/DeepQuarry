@@ -105,7 +105,7 @@
 		return PROCESS_KILL
 	if(!H || HAS_SYNTHETIC_BIOLOGY(H) || H.stat == DEAD)
 		return // Robots and dead people don't have a metabolism.
-	H.nutrition = max(H.nutrition + 8, 0)
+	H.set_nutrition(max(H.nutrition + 8, 0))
 
 /obj/item/clothing/suit/armor/buffvest
 	name = "candy armor"

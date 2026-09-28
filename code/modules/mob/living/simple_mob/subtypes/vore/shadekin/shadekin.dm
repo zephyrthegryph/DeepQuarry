@@ -195,7 +195,7 @@
 
 	//Convert spare nutrition into energy at a certain ratio
 	if(. && self.nutrition > initial(self.nutrition) && self.shadekin.dark_energy < 100)
-		self.nutrition = max(0, self.nutrition-5)
+		self.set_nutrition(max(0, self.nutrition-5))
 		self.shadekin.dark_energy = min(100,self.shadekin.dark_energy+1)
 	if(!self.client && self.check_for_observer && self.check_timer++ > 5)
 		self.check_timer = 0
@@ -254,7 +254,7 @@
 	mend(TREAT_ANTITOXIN, injury_load(INJURY_CATEGORY_TOXIC) / 2)
 	status_at_least(EFFECT_STUNNED, 10)
 	movement_cooldown = 5
-	nutrition = 0
+	set_nutrition(0)
 
 	if(istype(src.loc, /obj/belly))
 		//Yay digestion... presumably...

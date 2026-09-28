@@ -5548,13 +5548,13 @@
 				if(IS_SKRELL)
 					M.injure(INJURY_TOXIN, 0.25 * removed, source = src)  //Equivalent to half as much protein, since it's half protein.
 				if(IS_TESHARI)
-					M.nutrition += (alt_nutriment_factor * 1.2 * removed) //Give them the same nutrition they would get from protein.
+					M.adjust_nutrition((alt_nutriment_factor * 1.2 * removed)) //Give them the same nutrition they would get from protein.
 				if(IS_UNATHI)
-					M.nutrition += (alt_nutriment_factor * 1.125 * removed) //Give them the same nutrition they would get from protein.
+					M.adjust_nutrition((alt_nutriment_factor * 1.125 * removed)) //Give them the same nutrition they would get from protein.
 					//Takes into account the 0.5 factor for all nutriment which is applied on top of the 2.25 factor for protein.
 				//Chimera don't need their own case here since their factors for nutriment and protein cancel out.
 				else
-					M.nutrition += (alt_nutriment_factor * removed)
+					M.adjust_nutrition((alt_nutriment_factor * removed))
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			var/datum/xenochimera/xc = M.get_xenochimera_state()
@@ -5569,7 +5569,7 @@
 	..()
 	if(M.species.organic_food_coeff)
 		if(alien == IS_SLIME || alien == IS_CHIMERA) //slimes and chimera can get nutrition from injected nutriment and protein
-			M.nutrition += (alt_nutriment_factor * removed)
+			M.adjust_nutrition((alt_nutriment_factor * removed))
 
 //////////////////////Bepis Drinks (04/29/2021)//////////////////////
 
@@ -6247,7 +6247,7 @@
 	if(alien == IS_SLIME)
 		M.status_adjust(EFFECT_JITTERY, 4) //Hyperactive fluid pumping results in unstable 'skeleton', resulting in vibration.
 		if(dose >= 5)
-			M.nutrition = (M.nutrition - (removed * 2)) //Sadly this movement starts burning food in higher doses.
+			M.set_nutrition((M.nutrition - (removed * 2))) //Sadly this movement starts burning food in higher doses.
 	..()
 	if(prob(5))
 		M.emote(pick("twitch", "blink_r", "shiver", "weh", "weh", "weh")) // weh - Jack

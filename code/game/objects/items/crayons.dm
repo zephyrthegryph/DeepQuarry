@@ -158,7 +158,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/rainbow, INTERACT_USE("Pick colour", PR
 /obj/item/pen/crayon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user)
 		to_chat(user, "You take a bite of the crayon and swallow it.")
-		user.nutrition += 1
+		user.adjust_nutrition(1)
 		if(ishuman(user))
 			var/mob/living/carbon/human/human = user
 			human.ingested.add_reagent(REAGENT_ID_CRAYONDUST,min(5,uses)/3)
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/crayon/marker/rainbow, INTERACT_USE("Pick colo
 /obj/item/pen/crayon/marker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(M == user)
 		to_chat(user, "You take a bite of the marker and swallow it.")
-		user.nutrition += 1
+		user.adjust_nutrition(1)
 		if(ishuman(user))
 			var/mob/living/carbon/human/human = user
 			human.ingested.add_reagent(REAGENT_ID_MARKERINK,6)

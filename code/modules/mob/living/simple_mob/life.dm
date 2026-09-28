@@ -72,11 +72,11 @@
 		return
 	if(resting)
 		natural_mend(10)
-		nutrition -= 50
+		adjust_nutrition(-(50))
 		heal_countdown = 5
 		return
 	natural_mend(1)
-	nutrition -= 5
+	adjust_nutrition(-(5))
 	heal_countdown = 5
 
 /// Natural regeneration: physical injury first, then burns. Mechanical mobs

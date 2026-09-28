@@ -405,7 +405,7 @@
 		// At delta_factor == 1 this is exactly the original 0.95 multiplier.
 		var/keep_fraction = 0.95 ** delta_factor
 		var/oldnutrition = (L.nutrition * (1 - keep_fraction))
-		L.nutrition = (L.nutrition * keep_fraction)
+		L.set_nutrition((L.nutrition * keep_fraction))
 		if(show_liquids && reagent_mode_flags & DM_FLAG_REAGENTSDRAIN && reagents.total_volume < reagents.maximum_volume)   // draining reagent production //Added to this proc now since it's used for draining
 			owner_adjust_nutrition(oldnutrition * 0.75) //keeping the price static, due to how much nutrition can flunctuate
 			GenerateBellyReagents_absorbing() //Dont need unique proc so far

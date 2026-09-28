@@ -231,25 +231,25 @@
 		if(1)
 			to_chat(C, span_notice("You begin to drain [T]..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as [C] begins to drain you!"))
-			C.nutrition = (C.nutrition + (T.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
-			T.nutrition = T.nutrition*0.95
+			C.set_nutrition((C.nutrition + (T.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
+			T.set_nutrition(T.nutrition*0.95)
 		if(2)
 			to_chat(C, span_notice("You feel stronger with every passing moment of draining [T]."))
 			src.visible_message(span_danger("[C] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [C] drains you!"))
-			C.nutrition = (C.nutrition + (T.nutrition*0.1))
-			T.nutrition = T.nutrition*0.9
+			C.set_nutrition((C.nutrition + (T.nutrition*0.1)))
+			T.set_nutrition(T.nutrition*0.9)
 		if(3 to 99)
-			C.nutrition = (C.nutrition + (T.nutrition*0.1)) //Just keep draining them.
-			T.nutrition = T.nutrition*0.9
+			C.set_nutrition((C.nutrition + (T.nutrition*0.1))) //Just keep draining them.
+			T.set_nutrition(T.nutrition*0.9)
 			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 			if(T.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
-			C.nutrition = (C.nutrition + T.nutrition)
-			T.nutrition = 0 //Completely drained of everything.
+			C.set_nutrition((C.nutrition + T.nutrition))
+			T.set_nutrition(0) //Completely drained of everything.
 			var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 			T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
 			C.absorbing_prey = FALSE
@@ -296,17 +296,17 @@
 				return 0
 			to_chat(src, span_notice("You begin to drain [T]..."))
 			to_chat(T, span_danger("An odd sensation flows through your body as [src] begins to drain you!"))
-			nutrition = (nutrition + (T.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
-			T.nutrition = T.nutrition*0.95
+			set_nutrition((nutrition + (T.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
+			T.set_nutrition(T.nutrition*0.95)
 		if(2)
 			to_chat(src, span_notice("You feel stronger with every passing moment as you drain [T]."))
 			visible_message(span_danger("[src] seems to be doing something to [T], resulting in [T]'s body looking weaker with every passing moment!"))
 			to_chat(T, span_danger("You feel weaker with every passing moment as [src] drains you!"))
-			nutrition = (nutrition + (T.nutrition*0.1))
-			T.nutrition = T.nutrition*0.9
+			set_nutrition((nutrition + (T.nutrition*0.1)))
+			T.set_nutrition(T.nutrition*0.9)
 		if(3 to 48) //Should be more than enough to get under 100.
-			nutrition = (nutrition + (T.nutrition*0.1)) //Just keep draining them.
-			T.nutrition = T.nutrition*0.9
+			set_nutrition((nutrition + (T.nutrition*0.1))) //Just keep draining them.
+			T.set_nutrition(T.nutrition*0.9)
 			T.status_adjust(EFFECT_BLURRY, 5) //Some eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done.
 			if(T.nutrition < 100)//Did they drop below 100 nutrition? If so, do one last check then jump to stage 50 (Lethal!)
 				stage = 49
@@ -317,8 +317,8 @@
 			if(!T.digestable)
 				to_chat(src, span_danger("You feel invigorated as you completely drain [T] and begin to move onto draining them lethally before realizing they are too strong for you to do so!"))
 				to_chat(T, span_danger("You feel completely drained as [src] finishes draining you and begins to move onto draining you lethally, but you are too strong for them to do so!"))
-				nutrition = (nutrition + T.nutrition)
-				T.nutrition = 0 //Completely drained of everything.
+				set_nutrition((nutrition + T.nutrition))
+				T.set_nutrition(0) //Completely drained of everything.
 				var/damage_to_be_applied = T.get_endurance() //Enough pain to pass out.
 				T.injure(INJURY_PAIN, damage_to_be_applied, null, src) //Knock em out.
 				absorbing_prey = 0 //Clean this up before we return
@@ -338,7 +338,7 @@
 			if(drain_finalized == 1 || T.injury_load(INJURY_CATEGORY_NEURAL) < 55) //Let's not kill them with this unless the drain is finalized. This will still stack up to 55, since 60 is lethal.
 				T.injure(INJURY_NEURAL, 5, null, src) //Will kill them after a short bit!
 			T.status_adjust(EFFECT_BLURRY, 20) //A lot of eye blurry just to signify to the prey that they are still being drained. This'll stack up over time, leave the prey a bit more "weakened" after the deed is done. More than non-lethal due to their lifeforce being sucked out
-			nutrition = (nutrition + 25) //Assuming brain damage kills at 60, this gives 300 nutrition.
+			set_nutrition((nutrition + 25)) //Assuming brain damage kills at 60, this gives 300 nutrition.
 		if(99)
 			if(drain_finalized != 1)
 				stage = 51
@@ -390,25 +390,25 @@
 		if(1)
 			to_chat(C, span_notice("You begin to feed [T]..."))
 			to_chat(T, span_notice("An odd sensation flows through your body as [C] begins to feed you!"))
-			T.nutrition = (T.nutrition + (C.nutrition*0.05)) //Drain a small bit at first. 5% of the prey's nutrition.
-			C.nutrition = C.nutrition*0.95
+			T.set_nutrition((T.nutrition + (C.nutrition*0.05))) //Drain a small bit at first. 5% of the prey's nutrition.
+			C.set_nutrition(C.nutrition*0.95)
 		if(2)
 			to_chat(C, span_notice("You feel weaker with every passing moment of feeding [T]."))
 			src.visible_message(span_notice("[C] seems to be doing something to [T], resulting in [T]'s body looking stronger with every passing moment!"))
 			to_chat(T, span_notice("You feel stronger with every passing moment as [C] feeds you!"))
-			T.nutrition = (T.nutrition + (C.nutrition*0.1))
-			C.nutrition = C.nutrition*0.90
+			T.set_nutrition((T.nutrition + (C.nutrition*0.1)))
+			C.set_nutrition(C.nutrition*0.90)
 		if(3 to 99)
-			T.nutrition = (T.nutrition + (C.nutrition*0.1)) //Just keep draining them.
-			C.nutrition = C.nutrition*0.9
+			T.set_nutrition((T.nutrition + (C.nutrition*0.1))) //Just keep draining them.
+			C.set_nutrition(C.nutrition*0.9)
 			T.status_adjust(EFFECT_BLURRY, 1) //Eating a slime's body is odd and will make your vision a bit blurry!
 			if(C.nutrition < 100 && stage < 99 && C.drain_finalized == 1)//Did they drop below 100 nutrition? If so, immediately jump to stage 99 so it can advance to 100.
 				stage = 99
 			if(C.drain_finalized != 1 && stage == 99) //Are they not finalizing and the stage hit 100? If so, go back to stage 3 until they finalize it.
 				stage = 3
 		if(100)
-			T.nutrition = (T.nutrition + C.nutrition)
-			C.nutrition = 0 //Completely drained of everything.
+			T.set_nutrition((T.nutrition + C.nutrition))
+			C.set_nutrition(0) //Completely drained of everything.
 			C.absorbing_prey = FALSE
 			to_chat(C, span_danger("You have completely fed [T] every part of your body!"))
 			to_chat(T, span_notice("You feel quite strong and well fed, as [C] finishes feeding \himself to you!"))
@@ -1432,7 +1432,7 @@
 		return 0
 	else if(choice == "Make a Egg")
 		src.show_message(span_warning("You feel your belly bulging a bit, you made an egg!"))
-		C.nutrition -=150
+		C.adjust_nutrition(-(150))
 		eggs += 1
 		return 0
 	else if(choice == "lay your Eggs" && eggs > 0)

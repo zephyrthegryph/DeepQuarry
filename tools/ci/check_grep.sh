@@ -412,6 +412,14 @@ if $grep -n 'robotic\s*(>=\s*ORGAN_(ROBOT|ASSISTED|NANOFORM)|<\s*ORGAN_(ROBOT|AS
 	FAILED=1
 fi;
 
+part "nutrition writes"
+# adjust_nutrition() / set_nutrition() are the only writers (P2-S11); they clamp.
+if $grep -n '(\.nutrition\s*(\+=|-=|=[^=])|^\s+nutrition\s*(\+=|-=))' "${code_files[@]}"; then
+	echo
+	echo -e "${RED}ERROR: raw nutrition write detected. Use adjust_nutrition() / set_nutrition().${NC}"
+	FAILED=1
+fi;
+
 part "physiology: no asphyxia injury"
 # Lack of oxygen is an outcome the physiology computes (code/modules/body/physiology.dm),
 # not an injury. Express the cause as a mechanism: an airway / breathing restriction, breath

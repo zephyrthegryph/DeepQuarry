@@ -150,7 +150,7 @@
 				H.set_sdisabilities(H.sdisabilities & (~BLIND))
 			if(I.organ_tag == O_LUNGS)
 				H.SetLosebreath(0)
-		H.nutrition = 0
+		H.set_nutrition(0)
 		H.invisibility = INVISIBILITY_SHADEKIN
 		BITRESET(H.hud_updateflag, HEALTH_HUD)
 		BITRESET(H.hud_updateflag, STATUS_HUD)

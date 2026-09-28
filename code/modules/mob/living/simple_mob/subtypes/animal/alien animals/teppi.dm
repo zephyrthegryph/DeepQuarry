@@ -673,7 +673,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	if(self.amount_grown >= 1000)
 		if(self.teppi_adult)
 			if(not_hungy && !self.teppi_wool)
-				self.nutrition -= rand(250,500)
+				self.adjust_nutrition(-rand(250,500))
 				self.teppi_wool = TRUE
 				self.breedable = TRUE
 				self.meat_amount += rand(0,2)
@@ -771,7 +771,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		name = "[name] ([rand(1, 1000)])"
 		real_name = name
 	if(!teppi_adult)
-		nutrition = 0
+		set_nutrition(0)
 		add_verb(src, /mob/living/proc/ventcrawl)
 		add_verb(src, /mob/living/proc/hide)
 	else
@@ -957,7 +957,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	faction = teppi_data["faction"]
 	affinity = teppi_data["affinity"]
 	affection_factor = teppi_data["affection_factor"]
-	nutrition = teppi_data["nutrition"]
+	set_nutrition(teppi_data["nutrition"])
 	allergen_preference = teppi_data["allergen_preference"]
 	allergen_unpreference = teppi_data["allergen_unpreference"]
 	color = teppi_data["color"]
@@ -987,8 +987,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		teppi_mutate = TRUE
 	else if(prob(1))
 		teppi_mutate = TRUE
-	mom.nutrition -= 500
-	dad.nutrition -= 250
+	mom.adjust_nutrition(-500)
+	dad.adjust_nutrition(-250)
 	mom.visible_message("\The [src] is born from [mom]... It's the miracle of life!", runemessage = "grunts")
 	handle_affinity(mom, 26)	//this way the babies will follow their parents around (and keep track of them)
 	handle_affinity(dad, 25)

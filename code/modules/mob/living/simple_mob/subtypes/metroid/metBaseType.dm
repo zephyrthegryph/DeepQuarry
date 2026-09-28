@@ -67,7 +67,7 @@
 	pain_emote_3p = list("skrees")
 
 /mob/living/simple_mob/metroid/Initialize(mapload)
-	nutrition = 100		//Have them start off pretty hungry still.
+	set_nutrition(100) //Have them start off pretty hungry still.
 	add_verb(src,/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
 	return ..()
 

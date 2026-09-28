@@ -1213,7 +1213,7 @@ REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 /obj/item/reagent_containers/food/rawnutrition/standard_feed_mob(mob/user, mob/target)
 	if(isliving(target))
 		var/mob/living/L = target
-		L.nutrition += stored_nutrition
+		L.adjust_nutrition(stored_nutrition)
 		stored_nutrition = 0
 		consume(src, user)
 		return

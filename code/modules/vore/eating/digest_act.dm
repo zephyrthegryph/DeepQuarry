@@ -138,7 +138,7 @@
 					var/mob/living/carbon/human/H = B.owner
 					reagents.trans_to_holder(H.ingested, (reagents.total_volume), B.nutrition_percent / 100, 0)
 				else if(isliving(B.owner))
-					B.owner.nutrition += 15 * w_class * B.nutrition_percent / 100
+					B.owner.adjust_nutrition(15 * w_class * B.nutrition_percent / 100)
 				if(istype(src,/obj/item/reagent_containers/food/snacks))
 					var/obj/item/reagent_containers/food/snacks/goodmeal = src //What a typecast
 					//Drop the leftover garbage when the food melts
@@ -232,7 +232,7 @@
 		if(istype(B) && B.storing_nutrition)
 			return FALSE
 		else if(isliving(B.owner))
-			B.owner.nutrition += stored_nutrition * (B.nutrition_percent / 100)
+			B.owner.adjust_nutrition(stored_nutrition * (B.nutrition_percent / 100))
 			stored_nutrition = 0
 			qdel(src)
 			return w_class

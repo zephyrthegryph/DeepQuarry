@@ -122,7 +122,7 @@
 			if(HAS_SYNTHETIC_BIOLOGY(H))
 				var/nutrition_to_steal = flow_remaining * 0.025 // Should steal about 25 nutrition per second by default.
 				var/old_nutrition = H.nutrition
-				H.nutrition = max(H.nutrition - nutrition_to_steal, 0)
+				H.set_nutrition(max(H.nutrition - nutrition_to_steal, 0))
 				var/nutrition_delta = old_nutrition - H.nutrition
 				charge_to_give += nutrition_delta * SIPHON_FBP_TO_ENERGY
 				flow_remaining = flow_remaining - nutrition_to_steal / 0.025

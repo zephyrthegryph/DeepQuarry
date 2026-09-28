@@ -137,8 +137,8 @@
 	var/obj/belly/BF = vore_rate_belly(fast, DM_DRAIN)
 	var/mob/living/prey_s = slow[2]
 	var/mob/living/prey_f = fast[2]
-	prey_s.nutrition = 500
-	prey_f.nutrition = 500
+	prey_s.set_nutrition(500)
+	prey_f.set_nutrition(500)
 	vore_test_cycles(BS, 4, 6)
 	vore_test_cycles(BF, 12, 2)
 	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "drain totals differ: [prey_s.nutrition] over 4x6 s, [prey_f.nutrition] over 12x2 s")
@@ -165,8 +165,8 @@
 	BF = vore_rate_belly(fast, DM_DRAIN)
 	prey_s = slow[2]
 	prey_f = fast[2]
-	prey_s.nutrition = 400
-	prey_f.nutrition = 400
+	prey_s.set_nutrition(400)
+	prey_f.set_nutrition(400)
 	vore_test_cycles(BS, 1, 12)
 	vore_test_cycles(BF, 2, 6)
 	TEST_ASSERT(abs(prey_s.nutrition - prey_f.nutrition) < 0.01, "a late cycle should catch up: [prey_s.nutrition] vs [prey_f.nutrition]")
@@ -203,7 +203,7 @@
 	pair = vore_test_pair()
 	B = vore_rate_belly(pair, DM_ABSORB)
 	var/mob/living/carbon/human/absorbee = pair[2]
-	absorbee.nutrition = 110
+	absorbee.set_nutrition(110)
 	vore_test_cycles(B, 10)
 	TEST_ASSERT(absorbee.absorbed, "an absorb belly should absorb a drained prey (nutrition [absorbee.nutrition])")
 	B.release_all_contents(TRUE, TRUE)
@@ -214,7 +214,7 @@
 	var/mob/living/carbon/human/pred = pair[1]
 	B = vore_rate_belly(pair, DM_HEAL)
 	var/mob/living/carbon/human/patient = pair[2]
-	pred.nutrition = 500
+	pred.set_nutrition(500)
 	patient.injure(INJURY_CORROSIVE, 20)
 	var/hurt = _vore_test_total_injury(patient)
 	vore_test_cycles(B, 5)

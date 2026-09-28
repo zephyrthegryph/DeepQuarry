@@ -125,7 +125,7 @@
 
 /datum/unit_test/dq_p1_b23_lipostipo_feeds/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.nutrition = 100
+	H.set_nutrition(100)
 	var/weight = H.weight
 	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_LIPOSTIPO]
 	R.affect_blood(H, null, 0.2)
@@ -166,7 +166,7 @@
 
 /datum/unit_test/dq_p1_b18_drink_nutrition/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	H.nutrition = 100
+	H.set_nutrition(100)
 	var/datum/reagent/drink/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_ORANGEJUICE]
 	var/removed = 1
 	var/expected = 100 + R.nutriment_factor * removed * H.species.organic_food_coeff

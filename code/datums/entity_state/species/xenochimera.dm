@@ -57,7 +57,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 	if(revive_ready == REVIVING_NOW || revive_ready == REVIVING_DONE)
 		owner.status_set(EFFECT_STUNNED, 5)
 		owner.canmove = 0
-		owner.does_not_breathe = TRUE
+		owner.set_does_not_breathe(TRUE)
 		if(prob(2)) // 2% chance of playing squelchy noise while reviving, which is run roughly every 2 seconds/tick while regenerating.
 			playsound(owner, pick(regen_sounds), 30)
 			owner.visible_message(span_danger("<p>" + span_huge("[owner.name]'s motionless form shudders grotesquely, rippling unnaturally.") + "</p>"))
@@ -443,7 +443,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		if(stat == DEAD)
 			//Reviving from ded takes extra nutrition - if it isn't provided from outside sources, it comes from you
 			if(!hasnutriment())
-				nutrition=nutrition * 0.75
+				set_nutrition(nutrition * 0.75)
 				// sickness_duration = 20 MINUTES //
 			has_braindamage = TRUE
 
@@ -473,7 +473,7 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 	owner.species.update_vore_belly_def_variant()
 
 	if(!uninjured)
-		owner.nutrition = old_nutrition * 0.5
+		owner.set_nutrition(old_nutrition * 0.5)
 		//Drop everything
 		for(var/obj/item/W in owner)
 			owner.drop_from_inventory(W)
@@ -485,10 +485,10 @@ REF_VAR(/mob/living/carbon/human, OWNED, /datum/xenochimera, xenochimera)
 		owner.visible_message(span_danger(span_huge("The lifeless husk of [owner] bursts open, revealing a new, intact copy in the pool of viscera."))) //Bloody hell...
 		playsound(T, 'sound/effects/mob_effects/xenochimera/hatch.ogg', 50)
 	else //lower cost for doing a quick cosmetic revive
-		owner.nutrition = old_nutrition * 0.9
+		owner.set_nutrition(old_nutrition * 0.9)
 
 	//Unfreeze some things
-	owner.does_not_breathe = FALSE
+	owner.set_does_not_breathe(FALSE)
 	owner.update_canmove()
 	owner.status_adjust(EFFECT_STUNNED, 2)
 

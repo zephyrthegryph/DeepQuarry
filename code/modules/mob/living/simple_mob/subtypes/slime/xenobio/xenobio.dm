@@ -100,7 +100,7 @@
 	melee_damage_upper = round(melee_damage_upper / 2) // 30
 	endurance = initial(endurance)
 	max_nutrition = initial(max_nutrition)
-	nutrition = 400
+	set_nutrition(400)
 	amount_grown = 0
 	update_icon()
 	update_name()

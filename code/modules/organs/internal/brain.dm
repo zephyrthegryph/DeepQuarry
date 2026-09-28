@@ -261,7 +261,7 @@ REGISTRY_MEMBERSHIP(/obj/item/organ/internal/brain, REGISTRY_BRAIN_ORGANS)
 	H.initialize_vessel()
 	H.real_name = identity.real_name || H.dna.real_name || "promethean ([rand(0,999)])"
 
-	H.nutrition = 260 //Enough to try to regenerate ONCE.
+	H.set_nutrition(260) //Enough to try to regenerate ONCE.
 	H.injure(INJURY_BLUNT, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.injure(INJURY_BURN, 40, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)
 	H.status_at_least(EFFECT_PARALYZED, 4)

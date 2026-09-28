@@ -309,7 +309,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if(ishuman(nutrienttarget))
 			var/mob/living/carbon/human/targetcarbon = nutrienttarget
 			if(HAS_SYNTHETIC_BIOLOGY(targetcarbon))
-				targetcarbon.nutrition = targetcarbon.nutrition+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9)))
+				targetcarbon.set_nutrition(targetcarbon.nutrition+(10 * amt * (1-min(targetcarbon.species.synthetic_food_coeff, 0.9))))
 				return
 	if(isrobot(nutrienttarget))
 		var/mob/living/silicon/robot/targetrobot = nutrienttarget

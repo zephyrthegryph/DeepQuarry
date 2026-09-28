@@ -308,7 +308,7 @@
 /// Biological state a rejuvenate resets. Body plans without that biology (borgs) override it.
 /mob/living/proc/rejuvenate_physiology()
 	clear_radiation()
-	nutrition = 400
+	set_nutrition(400)
 	set_bodytemperature(T20C)
 
 /mob/living/proc/UpdateDamageIcon()
@@ -926,11 +926,24 @@
 /mob/living/proc/dirties_floor()	// If we ever decide to add fancy conditionals for making dirty floors (floating, etc), here's the proc.
 	return makes_dirt
 
+/// Affected by airborne agents (smoke, choking): a breathing, non-synthetic body (P2-S7: breathes()).
 /mob/living/proc/needs_to_breathe()
-	return !HAS_SYNTHETIC_BIOLOGY(src)
+	return breathes() && !HAS_SYNTHETIC_BIOLOGY(src)
 
+/// Shift nutrition by `amount`, clamped to [0, max_nutrition]. With
+/// set_nutrition(), the ONLY writers of `nutrition` (P2-S11).
 /mob/living/proc/adjust_nutrition(amount)
+	if(!amount || !isnum(amount))
+		return 0
+	var/old = nutrition
 	nutrition = between(0, nutrition + amount, max_nutrition)
+	return nutrition - old
+
+/// Set nutrition to `value`, clamped to [0, max_nutrition].
+/mob/living/proc/set_nutrition(value)
+	if(!isnum(value))
+		return 0
+	return adjust_nutrition(value - nutrition)
 
 /mob/living/proc/nutrition_percent()
 	return 100 * nutrition / max_nutrition

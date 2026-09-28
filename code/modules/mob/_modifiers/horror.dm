@@ -68,7 +68,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		return
 
 	//The dangerous health effects.
-	unfortunate_soul.nutrition = max(0, unfortunate_soul.nutrition - 5) //Your nutrition is being sapped faster than usual.
+	unfortunate_soul.set_nutrition(max(0, unfortunate_soul.nutrition - 5)) //Your nutrition is being sapped faster than usual.
 	if(unfortunate_soul.life_tick % 100 == 0)// Once every 100 ticks, we mutate some organs.
 		choose_organs(unfortunate_soul)
 		become_drippy(unfortunate_soul)

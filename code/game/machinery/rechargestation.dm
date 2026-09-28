@@ -109,7 +109,7 @@
 		var/mob/living/silicon/pai/P = occupant
 
 		if(P.nutrition < 400)
-			P.nutrition = min(P.nutrition+10, 400)
+			P.set_nutrition(min(P.nutrition+10, 400))
 			cell.use(7000/450*10)
 
 	else if(ishuman(occupant))
@@ -122,7 +122,7 @@
 
 			// Also recharge their internal battery.
 			if(HAS_SYNTHETIC_BIOLOGY(H) && H.nutrition < 500)
-				H.nutrition = min(H.nutrition+(10*(1-min(H.species.synthetic_food_coeff, 0.9))), 500)
+				H.set_nutrition(min(H.nutrition+(10*(1-min(H.species.synthetic_food_coeff, 0.9))), 500))
 				cell.use(7000/450*10)
 
 			// And clear up radiation

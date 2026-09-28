@@ -453,7 +453,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 			var/mob/living/carbon/human/H = L
 			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
-			H.nutrition = between(0, H.nutrition + rand(15, 25), 800)
+			H.set_nutrition(between(0, H.nutrition + rand(15, 25), 800))
 
 /mob/living/simple_mob/slime/xenobio/cerulean
 	desc = "This slime is generally superior in a wide range of attributes, compared to the common slime.  The jack of all trades, but master of none."
