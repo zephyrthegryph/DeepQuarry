@@ -49,7 +49,8 @@
 
 REF_OWNED(/obj/item/organ, "data")
 REF_OWNED_LIST(/obj/item/organ, "detached_afflictions")
-REF_BACK(/obj/item/organ, list("owner" = null))
+// `owner` is derived, not declared: the detach hook (body/parts/attach.dm) reads it
+// when the part leaves its slot in phase 7, then clears it with the owner caches.
 REF_STATIC(/obj/item/organ, "assists_languages")
 
 // afflictions on the organ are cured; organ mods removed.

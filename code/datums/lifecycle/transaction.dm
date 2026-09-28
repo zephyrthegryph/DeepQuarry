@@ -43,6 +43,13 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /proc/dq_lifecycle_finish_aborted(datum/D)
 	try
 		dq_lifecycle_scrub(D)
+		// Leave the registries and the live world (phase 7's /atom/Destroy()
+		// may never have run): a deleted object left in a registry is a hard-delete source.
+		if(isatom(D))
+			var/atom/A = D
+			A.dematerialize()
+		else
+			D.leave_registries()
 		if(D.om_hid)
 			om_handle_release(D)
 		if(ismovable(D))

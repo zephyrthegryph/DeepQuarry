@@ -396,6 +396,14 @@
 		return
 	for(var/var_name in table["owned"])
 		D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
+	// A destroyed object holds nothing: held things (a datum has no contents, so
+	// phase 2 never released them) and the emptied owned lists are dropped too.
+	// `contents` is built in and can't be nulled.
+	var/static/list/drop_keys = list("held", "owned_list", "owned_values")
+	for(var/key in drop_keys)
+		for(var/var_name in table[key])
+			if(var_name != "contents")
+				D.vars[var_name] = null // ALLOW(api): REF_* link plumbing: clears/pairs the declared var named by the link
 	for(var/our_var in table["back"])
 		dq_lifecycle_clear_back(D, our_var, table["back"][our_var])
 	for(var/var_name in table["pair"])

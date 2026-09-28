@@ -21,7 +21,7 @@
 	var/crash_on_tick = FALSE
 	var/native = 0
 	var/ui_pushes = 0
-	/// Set by Destroy(): how many om edges were still present then.
+	/// Set by on_destroy(): how many om edges were still present then.
 	var/edges_at_destroy = -1
 
 /datum/om_test_entity/on_destroy(force)
@@ -844,7 +844,8 @@
 	qdel(A)
 	TEST_ASSERT_EQUAL(A.log.len, 1, "on_unlink ran on delete")
 	TEST_ASSERT_EQUAL(A.log[1], "unlink:1:1:1", "both ends non-null, deleting end QDELETED")
-	TEST_ASSERT_EQUAL(A.edges_at_destroy, 0, "edges are gone before Destroy() (lifecycle phase 4 precedes phase 7)")
+	TEST_ASSERT_EQUAL(A.edges_at_destroy, 1, "on_destroy() still sees its edges (it runs at the start of phase 4, before the links clear)")
+	TEST_ASSERT_EQUAL(length(A.om_rec?.edges), 0, "the deleted end has no edges left")
 	TEST_ASSERT_EQUAL(length(om_related(B, /datum/om/relation/test_hooked)), 0, "other end cleaned")
 
 /datum/unit_test/om/relation_contributions_active_if
