@@ -4,7 +4,7 @@
 /obj/landed_holder
 	name = "landed turf holder"
 	desc = "holds all the info about the turf this turf 'landed on'"
-	var/turf/turf_type
+	var/turf_type
 	var/turf/simulated/shuttle/my_turf
 	var/image/turf_image
 	var/list/decals

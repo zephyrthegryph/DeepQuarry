@@ -9,3 +9,5 @@
 	if(turf_initializer)
 		for(var/turf/simulated/T in src)
 			turf_initializer.InitializeTurf(T)
+
+REF_OWNED(/area, list("turf_initializer"))

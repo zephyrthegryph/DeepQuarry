@@ -793,3 +793,5 @@
 		icon_state = "isolator_in"
 
 	update_icon()
+
+REF_OWNED(/obj/structure/prop/machine/nt_pod, list("outside", "door", "fluid"))
