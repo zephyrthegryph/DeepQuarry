@@ -102,6 +102,43 @@ drives the same path on a 256x256x5 grid: 255 MB peak before, 113 MB after
 (registration 173 → 63 MB). It fails above 160 MB. The DM unit test
 `dq_rust_heap_peak_bounded` checks the live world against 512 MB.
 
+Phase 4 track 4b (2026-09-28, `rewrite/k-boot`) took the same test from
+113 MB to **55 MB peak** (ceiling now 70 MB):
+
+| Mark | current before | peak before | current after | peak after |
+|---|---|---|---|---|
+| world built | 6.3 | 7.0 | 6.3 | 7.0 |
+| turfs registered | 62.9 | 63.7 | 12.4 | 14.6 |
+| first frames | 76.5 | 113.4 | 33.2 | 54.9 |
+
+- Uniform chunks share one allocation. Space is ~85% of the grid and every
+  space cell holds the same immutable vacuum, so a bulk flush now points each
+  all-identical chunk it touched at one shared chunk
+  (`CowStore::share_uniform_chunks`, counter `bulk.shared_uniform_chunks`).
+  Gas registration went from 43 MB of chunks to ~7 MB. A later write copies
+  the chunk as for any shared one. Field steps never list pure-space chunks,
+  so they stay shared.
+- Substeps don't snapshot. `FieldState::advance` took a snapshot of the
+  cells each substep, so the apply pass copied every target chunk again each
+  substep. The fluxes are all computed before anything is written, so they
+  read the live store directly. First-frame peak went from 113 to 70 MB.
+- Owner fluxes are summed per receiving cell. Before, the buffer held one
+  flux per cell and axis. It now holds one sum per cell of the chunk, plus
+  strips for the edges that leave it east, north and up, each allocated on
+  first use. Gas fluxes are 92 bytes, so this took the per-substep buffers
+  from ~21 MB to ~14 MB. The peak went from 70 to 55 MB.
+
+What is left at the peak: two copies of the ~8 MB station gas chunks (the
+live store being written and the snapshot the step started from, which the
+pinned view and `last_cells` share), ~14 MB of per-substep flux buffers
+(the vertical strip is as big as the per-cell sum wherever decks are open to
+each other), and ~12 MB of registered state. The live boot is not
+reproduced by this test. A base-tree bench boot with the old DLL logged
+73 MB after turf registration and 182 MB current / 404 MB peak after SSair
+init and the first frames. The unmeasured part is SSair init (14.8 s:
+pipenets, machinery, heat bodies), and it needs `RUST_ALLOC_PROFILE` marks
+around its stages to find out what allocates there.
+
 ### 0.3 DM memory census (boot_memory, sampled)
 
 809,798 instances: 393,216 turfs, 85,819 objs, 321,633 datums. The per-type
