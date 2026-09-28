@@ -1,12 +1,15 @@
 #define PING_BUFFER_TIME 25
+/// Lane cadence, in ticks (was the subsystem's wait).
+#define SERVER_MAINT_INTERVAL 6
 
-SUBSYSTEM_DEF(server_maint)
+// Server housekeeping (was SSserver_maint): wipes tmp/ at boot and shutdown, clears nulls from the
+// global mob lists and refreshes client pings every 6 ticks.
+GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
+
+/datum/world_service/server_maint
 	name = "Server Tasks"
-	wait = 6
-	flags = SS_POST_FIRE_TIMING
-	priority = FIRE_PRIORITY_SERVER_MAINT
-	init_stage = INITSTAGE_FIRST
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	lane = /datum/om/behaviour/world/server_maint
+	boot_after = /datum/controller/subsystem/garbage
 	var/list/currentrun
 	///Associated list of list names to lists to clear of nulls
 	var/list/lists_to_clear
@@ -14,10 +17,11 @@ SUBSYSTEM_DEF(server_maint)
 	var/delay = 5
 	var/cleanup_ticker = 0
 
-/*/datum/controller/subsystem/server_maint/PreInit()
+/*/datum/world_service/server_maint/PreInit()
 	world.hub_password = "" *///quickly! before the hubbies see us.
 
-/datum/controller/subsystem/server_maint/Initialize()
+/datum/world_service/server_maint/initialize()
+	initialized = TRUE
 	// A sharded dm-test run boots N worlds sharing this worktree's tmp/, each
 	// still actively using it (icon2base64's dummy savefiles, universal_icon's
 	// scratch .dmi files, ...); wiping it out from under a sibling shard was the
@@ -51,9 +55,8 @@ SUBSYSTEM_DEF(server_maint)
 	if(tgsversion)
 		SSblackbox.record_feedback("text", "server_tools", 1, tgsversion.raw_parameter)*/
 
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/server_maint/fire(resumed = FALSE)
+/datum/world_service/server_maint/service_step(resumed)
 	if(!resumed)
 		if(list_clear_nulls(GLOB.clients))
 			log_world("Found a null in clients list!")
@@ -79,14 +82,15 @@ SUBSYSTEM_DEF(server_maint)
 		var/client/C = I
 		//handle kicking inactive players
 
-		if (!(!C || world.time - C.connection_time < PING_BUFFER_TIME || C.inactivity >= (wait-1)))
+		if (!(!C || world.time - C.connection_time < PING_BUFFER_TIME || C.inactivity >= (SERVER_MAINT_INTERVAL - 1)))
 			winset(C, null, "command=.update_ping+[num2text(world.time+world.tick_lag*TICK_USAGE_REAL/100, 32)]")
 
-		if (MC_TICK_CHECK) //one day, when ss13 has 1000 people per server, you guys are gonna be glad I added this tick check
-			return
+		if(TICK_CHECK) //one day, when ss13 has 1000 people per server, you guys are gonna be glad I added this tick check
+			return FALSE
+	return TRUE
 
-/datum/controller/subsystem/server_maint/Shutdown()
-	// See the matching guard in Initialize(): a sharded run's worlds share tmp/
+/datum/world_service/server_maint/on_shutdown()
+	// See the matching guard in initialize(): a sharded run's worlds share tmp/
 	// with siblings that may still be running.
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	if (GLOB.dq_test_shard_count <= 1 && fexists("tmp/"))
@@ -105,3 +109,14 @@ SUBSYSTEM_DEF(server_maint)
 			C << link("byond://[server]")
 
 #undef PING_BUFFER_TIME
+
+/// server_maint (was SSserver_maint).
+/datum/om/behaviour/world/server_maint
+	name = "world: server_maint"
+	every = SERVER_MAINT_INTERVAL
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/server_maint/service()
+	return GLOB.server_maint_service
+
+#undef SERVER_MAINT_INTERVAL

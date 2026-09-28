@@ -4,8 +4,8 @@ SUBSYSTEM_DEF(air)
 		/datum/controller/subsystem/mapping,
 		/datum/controller/subsystem/atoms,
 		// The machine world service initializes at the top of Initialize() (it was
-		// SSmachines, which depended on points_of_interest).
-		/datum/controller/subsystem/points_of_interest,
+		// SSmachines, which depended on points_of_interest; POIs now load at the end of SSholomaps).
+		/datum/controller/subsystem/holomaps,
 	)
 	priority = FIRE_PRIORITY_AIR
 	wait = 0.5 SECONDS

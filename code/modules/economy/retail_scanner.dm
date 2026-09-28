@@ -98,7 +98,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 		"machine_id" = machine_id,
 		"department_checkout" = department_checkout,
 		"subsidized_checkout" = linked_account?.department_id == DEPARTMENT_CIVILIAN,
-		"transaction_logs" = linked_account?.is_department_budget() ? SSsupply.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
+		"transaction_logs" = linked_account?.is_department_budget() ? GLOB.supply_service.service_invoice_rows(0, linked_account.department_id) : (transaction_logs || list()),
 		"current_transactioon" = get_current_transaction()
 	)
 
@@ -117,8 +117,8 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 		if("refund_transaction")
 			if(locked || !linked_account?.is_department_budget() || !service_refund_authorized(ui.user, linked_account))
 				return FALSE
-			var/datum/service_invoice/invoice = SSsupply.get_service_invoice(text2num(params["invoice_id"] || params["log_id"]))
-			return SSsupply.refund_service_invoice(invoice, linked_account, machine_id, ui.user)
+			var/datum/service_invoice/invoice = GLOB.supply_service.get_service_invoice(text2num(params["invoice_id"] || params["log_id"]))
+			return GLOB.supply_service.refund_service_invoice(invoice, linked_account, machine_id, ui.user)
 	return access_action(action, params, ui.user)
 
 /obj/item/retail_scanner/proc/access_action(action, list/params, mob/user)
@@ -341,7 +341,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 						"staff_tip" = 0,
 						"service_tip" = 0,
 					)
-					SSsupply.create_service_invoice(D, linked_account, machine_id, item_list, price_list, department_result, service_staff_account_number, service_staff_name, null, "ID account", verified_sale_items)
+					GLOB.supply_service.create_service_invoice(D, linked_account, machine_id, item_list, price_list, department_result, service_staff_account_number, service_staff_name, null, "ID account", verified_sale_items)
 
 				// Confirm and reset
 				transaction_complete()
@@ -362,7 +362,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 			E.worth -= transaction_amount
 			linked_account.credit(transaction_amount, E.owner_name, transaction_purpose, machine_id, FALSE)
 
-			SSsupply.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
+			GLOB.supply_service.create_service_external_invoice(linked_account, machine_id, item_list, price_list, E.owner_name, transaction_amount, "E-Wallet", verified_sale_items)
 
 			// Confirm and reset
 			transaction_complete()
@@ -376,12 +376,12 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 	// First check if item has a valid price
 	var/price = O.get_item_cost()
 	if(isnull(price) && O.economic_export_value > 0)
-		price = SSsupply.export_revenue(O.economic_export_value)
+		price = GLOB.supply_service.export_revenue(O.economic_export_value)
 	if(isnull(price) && istype(O, /obj/item/stack))
 		var/obj/item/stack/material_stack = O
 		var/datum/material/material = material_stack.get_material()
 		if(material?.supply_conversion_value)
-			price = SSsupply.export_revenue(material_stack.get_amount() * material.supply_conversion_value)
+			price = GLOB.supply_service.export_revenue(material_stack.get_amount() * material.supply_conversion_value)
 	if(isnull(price))
 		src.visible_message("[icon2html(src, viewers(src))]" + span_warning("Unable to find item in database."))
 		return

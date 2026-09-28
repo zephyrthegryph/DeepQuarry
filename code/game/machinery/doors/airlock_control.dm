@@ -149,13 +149,13 @@
 
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
 	radio_connection_handle = null
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	last_reported_density = -1
 	last_reported_locked = -1
 
 	if(new_frequency)
-		radio_connection_handle = om_handle(SSradio.add_object(src, new_frequency, RADIO_AIRLOCK))
+		radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -257,9 +257,9 @@
 	return PROCESS_KILL
 
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_AIRLOCK))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor/Initialize(mapload)
 	. = ..()
@@ -397,9 +397,9 @@
 	return proximity_flag
 
 /obj/machinery/access_button/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_AIRLOCK))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/access_button/Initialize(mapload)
 	. = ..()

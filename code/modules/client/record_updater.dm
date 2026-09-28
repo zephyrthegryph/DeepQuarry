@@ -2,7 +2,7 @@ GLOBAL_VAR_INIT(client_record_update_lock, FALSE)
 
 // Manually updating records from medical console to a player's save.
 /proc/get_current_mob_from_record(datum/data/record/active)
-	var/datum/transcore_db/db = SStranscore.db_by_mind_name(active.fields["name"])
+	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(active.fields["name"])
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[active.fields["name"]]
 		if(record.mind_ref)

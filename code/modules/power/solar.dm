@@ -126,14 +126,14 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 
 //calculates the fraction of the sun that the panel recieves
 /obj/machinery/power/solar/proc/update_solar_exposure()
-	if(!SSsun.sun)
+	if(!GLOB.sun)
 		return
 	if(obscured)
 		sunfrac = 0
 		return
 
 	//find the smaller angle between the direction the panel is facing and the direction of the sun (the sign is not important here)
-	var/source_angle = SSsolars.get_solar_angle(get_turf(src))
+	var/source_angle = GLOB.solar_service.get_solar_angle(get_turf(src))
 	var/p_angle = min(abs(adir - source_angle), 360 - abs(adir - source_angle))
 	if(p_angle > 90) // if facing more than 90deg from sun, zero output
 		sunfrac = 0
@@ -145,7 +145,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/proc/get_power_supplied()
 	if(stat & BROKEN)
 		return 0
-	if(!SSsun.sun || !control())
+	if(!GLOB.sun || !control())
 		return 0  //if there's no sun or the panel is not linked to a solar control computer, no need to proceed
 	if(!powernet || powernet != control().powernet)
 		return 0 // We aren't connected to the controller
@@ -164,15 +164,15 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/proc/occlusion()
 	var/turf/our_t = get_turf(src)
 	var/datum/planet/our_planet
-	if(!our_t || our_t.z > length(SSplanets.z_to_planet) || !SSplanets.z_to_planet[our_t.z])
+	if(!our_t || our_t.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_t.z])
 		// If we are NOT on a planet, we check toward the edge of the map, otherwise we're going to assume the sun is above us on a planet
 		var/ax = x		// start at the solar panel
 		var/ay = y
 		var/turf/T = null
 
 		for(var/i = 1 to 20)		// 20 steps is enough
-			ax += SSsun.sun.dx	// do step
-			ay += SSsun.sun.dy
+			ax += GLOB.sun.dx	// do step
+			ay += GLOB.sun.dy
 
 			T = locate( round(ax,0.5),round(ay,0.5),z)
 
@@ -184,7 +184,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 				return
 	else
 		// If we are on a planet, get it for later so we can change the intensity of the light we recieve
-		our_planet = SSplanets.z_to_planet[our_t.z]
+		our_planet = GLOB.planet_service.z_to_planet[our_t.z]
 
 	obscured = 0		// if hit the edge or stepped 20 times, not obscured
 	update_solar_exposure()
@@ -338,7 +338,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 		track = 2 // Auto tracking mode.
 		search_for_connected()
 		if(connected_tracker())
-			connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
+			connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 		set_panels(cdir)
 
 /obj/machinery/power/solar_control/proc/add_panel(obj/machinery/power/solar/P)
@@ -350,7 +350,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 /obj/machinery/power/solar_control/proc/remove_panel(obj/machinery/power/solar/P)
 	connected_power -= connected_panels[P]
 	connected_panels.Remove(P)
-	SSsolars.panel_run[REF(src)] -= P // clear hardref in subsystem
+	GLOB.solar_service.panel_run[REF(src)] -= P // clear hardref in subsystem
 
 /obj/machinery/power/solar_control/proc/get_connected_panels()
 	RETURN_TYPE(/list)
@@ -406,7 +406,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				cdir = targetdir //...the current direction is the targetted one (and rotates panels to it)
 		if(2) // auto-tracking
 			if(connected_tracker())
-				connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
+				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 
 /obj/machinery/power/solar_control/update_icon()
 	if(stat & BROKEN)
@@ -441,7 +441,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	data["generated"] = round(connected_power)
 	data["generated_ratio"] = data["generated"] / round(max(connected_panels.len, 1) * GLOB.solar_gen_rate)
 
-	data["sun_angle"] = SSsolars.get_solar_angle(get_turf(src))
+	data["sun_angle"] = GLOB.solar_service.get_solar_angle(get_turf(src))
 	data["array_angle"] = cdir
 	data["rotation_rate"] = trackrate
 	data["max_rotation_rate"] = 7200
@@ -536,7 +536,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			track = mode
 			if(track == 2)
 				if(connected_tracker())
-					connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
+					connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 					set_panels(cdir)
 			else if(track == 1) //begin manual tracking
 				targetdir = cdir
@@ -549,7 +549,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			search_for_connected()
 			return TRUE
 
-/// rotates all connected panels to the passed angle, very expensive as it does them all at once in a single frame. This is what SSsolars does, but much more rude about it.
+/// rotates all connected panels to the passed angle, very expensive as it does them all at once in a single frame. This is what the solar world service does, but much more rude about it.
 /obj/machinery/power/solar_control/proc/set_panels(cdir)
 	var/sum = 0
 	for(var/obj/machinery/power/solar/S in connected_panels)

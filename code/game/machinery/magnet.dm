@@ -34,8 +34,8 @@
 	hide(!T.is_plating())
 	center_handle = om_handle(T)
 
-	if(SSradio)
-		SSradio.add_object(src, freq, RADIO_MAGNETS)
+	if(GLOB.radio_service)
+		GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
 
 	magnetic_process()
 
@@ -207,8 +207,8 @@
 			if(M.freq == frequency && M.code == code)
 				LAZYADD(magnets, M)
 
-	if(SSradio)
-		radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_MAGNETS))
+	if(GLOB.radio_service)
+		radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 
 	if(path) // check for default path
 		filter_path() // renders rpath

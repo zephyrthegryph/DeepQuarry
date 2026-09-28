@@ -215,8 +215,8 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	return jointext(parts, "; ")
 
 /proc/generated_station_utility_topology(station_id)
-	for(var/key in SSexpedition?.sites)
-		var/datum/expedition_site/site = SSexpedition.sites[key]
+	for(var/key in GLOB.expedition_service?.sites)
+		var/datum/expedition_site/site = GLOB.expedition_service.sites[key]
 		if(site.station_spec?.id == station_id)
 			return site.station_utilities
 	return null

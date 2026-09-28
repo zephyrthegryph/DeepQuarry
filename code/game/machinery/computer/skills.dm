@@ -107,7 +107,7 @@
 	// The first manual edit freezes the currently previewed policy shares into a
 	// coherent custom plan. Further edits then create or consume an explicit
 	// reserve instead of silently redistributing every other department.
-	var/list/current_plan = SSsupply.department_budget_plan()
+	var/list/current_plan = GLOB.supply_service.department_budget_plan()
 	var/list/current_departments = current_plan["departments"]
 	var/fixed_other_percent = 0
 	var/automatic_other_percent = 0
@@ -143,7 +143,7 @@
 	budget.allocation_configured = TRUE
 	budget.record_transaction(authenticated, "Recurring operating share set to [percent]%", 0, name)
 	if(old_percent != percent)
-		var/list/plan = SSsupply.department_budget_plan()
+		var/list/plan = GLOB.supply_service.department_budget_plan()
 		var/list/department_plan = plan["departments"]?[department]
 		// Report only the change in the planned request, never the whole
 		// figure: a policy edit is a plan, and re-toggling a plan is not new aid.
@@ -189,7 +189,7 @@
 	if(!budget?.is_department_budget() || !budget.allocation_configured)
 		return FALSE
 	budget.allocation_configured = FALSE
-	var/list/plan = SSsupply.department_budget_plan()
+	var/list/plan = GLOB.supply_service.department_budget_plan()
 	var/list/department_plan = plan["departments"]?[department]
 	var/old_requested = budget.monthly_allocation
 	budget.allocation_percent = 0
@@ -266,16 +266,16 @@
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)
-		var/list/budget_plan = SSsupply.department_budget_plan()
+		var/list/budget_plan = GLOB.supply_service.department_budget_plan()
 		var/list/planned_departments = budget_plan["departments"]
 		data["can_allocate_station_budget"] = can_allocate_station_budget()
 		data["station_balance"] = can_allocate_station_budget() ? GLOB.station_account.money : null
 		data["station_monthly_income"] = can_allocate_station_budget() ? GLOB.station_account.monthly_income : null
 		data["station_monthly_expenses"] = can_allocate_station_budget() ? GLOB.station_account.monthly_expenses : null
 		data["station_income_sources"] = can_allocate_station_budget() ? finance_income_source_rows(GLOB.station_account) : list()
-		data["nt_salary_support"] = can_allocate_station_budget() ? SSsupply.nt_salary_support : null
-		data["allocation_policy"] = can_allocate_station_budget() ? SSsupply.allocation_policy : null
-		data["next_budget_cycle"] = DisplayTimeText(max(0, SSsupply.next_payroll - world.time), 1)
+		data["nt_salary_support"] = can_allocate_station_budget() ? GLOB.supply_service.nt_salary_support : null
+		data["allocation_policy"] = can_allocate_station_budget() ? GLOB.supply_service.allocation_policy : null
+		data["next_budget_cycle"] = DisplayTimeText(max(0, GLOB.supply_service.next_payroll - world.time), 1)
 		data["budget_plan"] = can_allocate_station_budget() ? list(
 			"projected_payroll" = budget_plan["projected_payroll"],
 			"nt_grant" = budget_plan["nt_grant"],
@@ -295,7 +295,7 @@
 			if(department == "Vendor" || !can_view_department(department))
 				continue
 			var/datum/money_account/budget = GLOB.department_accounts[department]
-			var/projected_payroll = SSsupply.projected_department_payroll(department)
+			var/projected_payroll = GLOB.supply_service.projected_department_payroll(department)
 			var/list/department_plan = planned_departments[department]
 			var/planned_allocation = department_plan?["requested"] || 0
 			var/funded_allocation = department_plan?["funded"] || 0
@@ -328,7 +328,7 @@
 				"expenses" = budget.total_expenses,
 				"wage_multiplier" = budget.wage_multiplier,
 				"service_subsidy" = budget.service_subsidy,
-				"service_invoices" = SSsupply.service_invoice_summary(department),
+				"service_invoices" = GLOB.supply_service.service_invoice_summary(department),
 				"income_sources" = finance_income_source_rows(budget),
 				"transactions" = finance_transaction_rows(budget)
 			)))
@@ -589,7 +589,7 @@
 			if("set_allocation_policy")
 				if(!can_allocate_station_budget())
 					return FALSE
-				return SSsupply.set_allocation_policy(params["policy"], TRUE)
+				return GLOB.supply_service.set_allocation_policy(params["policy"], TRUE)
 			if("set_service_subsidy")
 				if(!can_view_department(DEPARTMENT_CIVILIAN))
 					return FALSE

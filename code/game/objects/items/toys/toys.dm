@@ -2153,7 +2153,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_s
 	var/list/players = list()
 
 	for(var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(!player.mind || SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
+		if(!player.mind || GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
 		players += player.real_name
 

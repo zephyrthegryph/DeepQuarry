@@ -2,13 +2,13 @@
 	set category = "OOC.Game"
 	set name = "Vote"
 
-	if(SSvote.active_vote)
-		SSvote.active_vote.tgui_interact(usr)
+	if(GLOB.vote_service.active_vote)
+		GLOB.vote_service.active_vote.tgui_interact(usr)
 	else
 		to_chat(src, span_warning("There is no active vote"))
 
 ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", ADMIN_CATEGORY_GAME)
-	if(SSvote.active_vote)
+	if(GLOB.vote_service.active_vote)
 		to_chat(user, span_warning("A vote is already in progress"))
 		return
 
@@ -28,7 +28,7 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 
 	if(choice != "\[CUSTOM]")
 		var/datum/votetype = votemap["[choice]"]
-		SSvote.start_vote(new votetype(user.ckey))
+		GLOB.vote_service.start_vote(new votetype(user.ckey))
 		return
 
 	var/question = verb_prompt(user, "k32", list("kind" = "text", "message" = "What is the vote for?", "title" = "Create Vote", "max_length" = MAX_MESSAGE_LEN), args)
@@ -58,4 +58,4 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 	V.show_counts = (c2 == "Yes")
 	if(c3)
 		V.vote_result_type = c3
-	SSvote.start_vote(V)
+	GLOB.vote_service.start_vote(V)

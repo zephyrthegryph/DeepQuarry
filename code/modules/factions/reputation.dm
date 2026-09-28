@@ -420,7 +420,7 @@ REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 	if(current_owner?.mind)
 		record.agent_mind = current_owner.mind
 	var/datum/mind/owner_mind = record.agent_mind
-	var/datum/antagonist/operative_role = SSantag_job?.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
+	var/datum/antagonist/operative_role = GLOB.antag_service.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
 	if(!owner_mind?.current || owner_mind.special_role || !operative_role || !operative_role.add_antagonist(owner_mind, TRUE, TRUE, FALSE, FALSE, TRUE))
 		return FALSE
 	record.tier = FACTION_AGENT_TIER_OPERATIVE
@@ -431,7 +431,7 @@ REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 	var/datum/faction_agent_record/record = get_agent_record(account_number)
 	if(!record || record.operative_contract_id != contract_id)
 		return FALSE
-	var/datum/antagonist/operative_role = SSantag_job?.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
+	var/datum/antagonist/operative_role = GLOB.antag_service.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
 	if(record.agent_mind && operative_role)
 		operative_role.remove_antagonist(record.agent_mind, TRUE)
 	record.operative_contract_id = null

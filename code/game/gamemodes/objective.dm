@@ -205,7 +205,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/hijack/check_completion()
 	if(!owner.current || owner.current.stat)
 		return 0
-	if(!SSemergency_shuttle.returned())
+	if(!GLOB.emergency_shuttle_service.returned())
 		return 0
 	if(issilicon(owner.current))
 		return 0
@@ -225,7 +225,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/block/check_completion()
 	if(!istype(owner.current, /mob/living/silicon))
 		return 0
-	if(!SSemergency_shuttle.returned())
+	if(!GLOB.emergency_shuttle_service.returned())
 		return 0
 	if(!owner.current)
 		return 0
@@ -243,7 +243,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	explanation_text = "Do not allow anyone to escape the station.  Only allow the shuttle to be called when everyone is dead and your story is the only one left."
 
 /datum/objective/silence/check_completion()
-	if(!SSemergency_shuttle.returned())
+	if(!GLOB.emergency_shuttle_service.returned())
 		return 0
 
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
@@ -266,7 +266,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		return 0
 	if(isbrain(owner.current))
 		return 0
-	if(!SSemergency_shuttle.returned())
+	if(!GLOB.emergency_shuttle_service.returned())
 		return 0
 	if(!owner.current || owner.current.stat ==2)
 		return 0
@@ -754,7 +754,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 
 /datum/objective/ninja_highlander/check_completion()
 	if(owner)
-		for(var/datum/mind/ninja in SSantag_job.get_antags("ninja"))
+		for(var/datum/mind/ninja in GLOB.antag_service.get_antags("ninja"))
 			if(ninja != owner)
 				if(ninja.current.stat < 2) return 0
 		return 1

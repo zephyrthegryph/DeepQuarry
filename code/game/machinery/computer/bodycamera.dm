@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/computer/security/telescreen/bodycamera, REGI
 
 	add_overlay("glass")
 
-	bpinboard = SSvis_overlays.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
+	bpinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
 	bpinboard.add_filter("screen cutter", 1, alpha_mask_filter(icon = mask))
 	vis_contents += bpinboard
 

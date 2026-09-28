@@ -6,12 +6,17 @@
 
 //Supply packs are in /code/datums/supplypacks
 //Computers are in /code/game/machinery/computer/supply.dm
-SUBSYSTEM_DEF(supply)
+// The supply world service (was SSsupply): supply packs, orders, the cargo market and the station
+// economy ledger, with the market and payroll cycle run by /datum/om/behaviour/world/supply (20 s).
+GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
+
+/datum/world_service/supply
 	name = "Supply"
-	wait = 20 SECONDS
-	priority = FIRE_PRIORITY_SUPPLY
-	//Initializes at default time
-	flags = SS_NO_TICK_CHECK
+	lane = /datum/om/behaviour/world/supply
+	// The old subsystem had no dependencies and initialized in the main stage. Its data (supply
+	// packs, the market) is read by map objects and by SSinternal_wiki, so boot it right after
+	// SSmapping, before the atoms initialize; SSinternal_wiki boots it explicitly as well.
+	boot_after = /datum/controller/subsystem/mapping
 
 	var/points_per_slip = 2
 	var/points_per_money = 0.02 // Legacy export values convert at 1 point = 50 Thalers.
@@ -30,26 +35,27 @@ SUBSYSTEM_DEF(supply)
 	var/currency_internal_refunded = 0
 	var/service_subsidies = 0
 	var/service_invoice_counter = 0
-	var/list/service_invoices = list()
+	var/list/service_invoices = list() // ALLOW(instance_list): d: world service singleton
 	/// Identifies the current 15-minute accounting window for Service invoices.
 	var/service_accounting_period = 1
 	/// Portion of an optional gratuity paid directly to the identified worker.
 	var/service_tip_staff_share = 0.5
-	var/list/currency_sources = list()
-	var/list/currency_sinks = list()
+	var/list/currency_sources = list() // ALLOW(instance_list): d: world service singleton
+	var/list/currency_sinks = list() // ALLOW(instance_list): d: world service singleton
 	//control
 	var/ordernum = 0						// Start at zero, it's per-shift tracking
-	var/list/shoppinglist = list()			// Approved orders
-	var/list/supply_pack = list()			// All supply packs
-	var/list/exported_crates = list()		// Crates sent from the station
-	var/list/order_history = list()			// History of orders, showing edits made by users
-	var/list/adm_order_history = list() 	// Complete history of all orders, for admin use
-	var/list/adm_export_history = list()	// Complete history of all crates sent back on the shuttle, for admin use
+	var/list/shoppinglist = list()			// Approved orders // ALLOW(instance_list): d: world service singleton
+	var/list/supply_pack = list()			// All supply packs // ALLOW(instance_list): d: world service singleton
+	var/list/exported_crates = list()		// Crates sent from the station // ALLOW(instance_list): d: world service singleton
+	var/list/order_history = list()			// History of orders, showing edits made by users // ALLOW(instance_list): d: world service singleton
+	var/list/adm_order_history = list() 	// Complete history of all orders, for admin use // ALLOW(instance_list): d: world service singleton
+	var/list/adm_export_history = list()	// Complete history of all crates sent back on the shuttle, for admin use // ALLOW(instance_list): d: world service singleton
 	//shuttle movement
 	var/movetime = 1200
 	var/datum/shuttle/autodock/ferry/supply/shuttle
 
-/datum/controller/subsystem/supply/Initialize()
+/datum/world_service/supply/initialize()
+	initialized = TRUE
 	reset_shift_economy_tracking()
 	// build master supply list
 	for(var/typepath in subtypesof(/datum/supply_pack))
@@ -61,9 +67,9 @@ SUBSYSTEM_DEF(supply)
 	initialize_cargo_market()
 
 	next_payroll = world.time + 15 MINUTES
-	return SS_INIT_SUCCESS
+	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
 
-/datum/controller/subsystem/supply/proc/reset_shift_economy_tracking()
+/datum/world_service/supply/proc/reset_shift_economy_tracking()
 	QDEL_LIST(service_invoices)
 	service_invoice_counter = 0
 	service_accounting_period = 1
@@ -76,18 +82,19 @@ SUBSYSTEM_DEF(supply)
 	currency_sources.Cut()
 	currency_sinks.Cut()
 
-/datum/controller/subsystem/supply/fire(resumed)
+/datum/world_service/supply/service_step(resumed)
 	process_cargo_market()
 	if(world.time < next_payroll)
-		return
+		return TRUE
 	next_payroll = world.time + 15 MINUTES
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
 	run_department_payroll()
 	publish_budget_cycle_settlement(funded_allocations, completed_service_period)
 	settle_service_contract_period(completed_service_period)
+	return TRUE
 
-/datum/controller/subsystem/supply/proc/run_department_budget_cycle()
+/datum/world_service/supply/proc/run_department_budget_cycle()
 	var/list/funded_allocations = list()
 	GLOB.station_account.roll_accounting_period()
 	var/list/plan = department_budget_plan()
@@ -130,7 +137,7 @@ SUBSYSTEM_DEF(supply)
 /// Build the exact next-cycle allocation plan used by both execution and UI.
 /// Payroll portions are funded before operating allowances, and explicit
 /// department overrides do not disable automatic planning elsewhere.
-/datum/controller/subsystem/supply/proc/department_budget_plan()
+/datum/world_service/supply/proc/department_budget_plan()
 	var/projected_payroll = projected_station_payroll()
 	var/nt_grant = max(0, round(projected_payroll * nt_salary_support))
 	var/available = max(0, round((GLOB.station_account?.money || 0) + nt_grant))
@@ -230,7 +237,7 @@ SUBSYSTEM_DEF(supply)
 /// Divide a constrained station allocation pool proportionally. Whole-Thaler
 /// remainders are distributed one at a time without allowing list order to
 /// decide which departments receive their entire budgets and which get zero.
-/datum/controller/subsystem/supply/proc/proportional_department_allocations(list/requested, available)
+/datum/world_service/supply/proc/proportional_department_allocations(list/requested, available)
 	var/list/result = list()
 	if(!islist(requested) || !isnum(available) || available <= 0)
 		return result
@@ -267,12 +274,12 @@ SUBSYSTEM_DEF(supply)
 /// Funds which can authoritatively exist at the next budget cycle before any
 /// speculative player income. Contract acceptance uses this lower bound so it
 /// never promises an allocation the station cannot presently fund.
-/datum/controller/subsystem/supply/proc/projected_station_budget_capacity()
+/datum/world_service/supply/proc/projected_station_budget_capacity()
 	var/current_funds = max(0, GLOB.station_account?.money || 0)
 	var/payroll_grant = max(0, round(projected_station_payroll() * nt_salary_support))
 	return current_funds + payroll_grant
 
-/datum/controller/subsystem/supply/proc/publish_budget_cycle_settlement(list/funded_allocations, accounting_period)
+/datum/world_service/supply/proc/publish_budget_cycle_settlement(list/funded_allocations, accounting_period)
 	var/qualifying_total = 0
 	var/funded_department_count = 0
 	var/command_allocation = 0
@@ -310,7 +317,7 @@ SUBSYSTEM_DEF(supply)
 		"detail" = "Closed station budget and payroll cycle [accounting_period]",
 	), "budget-cycle:[accounting_period]:station")
 
-/datum/controller/subsystem/supply/proc/projected_department_payroll(department)
+/datum/world_service/supply/proc/projected_department_payroll(department)
 	var/datum/money_account/budget = GLOB.department_accounts[department]
 	if(!budget)
 		return 0
@@ -323,28 +330,28 @@ SUBSYSTEM_DEF(supply)
 			projected += max(1, round(50 * job.economic_modifier * budget.wage_multiplier))
 	return projected
 
-/datum/controller/subsystem/supply/proc/projected_station_payroll()
+/datum/world_service/supply/proc/projected_station_payroll()
 	var/projected = 0
 	for(var/department in GLOB.department_accounts)
 		if(department != "Vendor")
 			projected += projected_department_payroll(department)
 	return projected
 
-/datum/controller/subsystem/supply/proc/active_department_employee_count(department)
+/datum/world_service/supply/proc/active_department_employee_count(department)
 	var/count = 0
 	for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!QDELETED(employee) && employee.stat != DEAD && employee.mind?.initial_account() && department_for_mob(employee) == department)
 			count++
 	return count
 
-/datum/controller/subsystem/supply/proc/active_station_employee_count()
+/datum/world_service/supply/proc/active_station_employee_count()
 	var/count = 0
 	for(var/department in GLOB.department_accounts)
 		if(department != "Vendor")
 			count += active_department_employee_count(department)
 	return count
 
-/datum/controller/subsystem/supply/proc/set_allocation_policy(policy, clear_overrides = FALSE)
+/datum/world_service/supply/proc/set_allocation_policy(policy, clear_overrides = FALSE)
 	if(!(policy in list(ALLOCATION_POLICY_EQUAL, ALLOCATION_POLICY_STAFFING, ALLOCATION_POLICY_PAYROLL)))
 		return FALSE
 	allocation_policy = policy
@@ -355,19 +362,19 @@ SUBSYSTEM_DEF(supply)
 				budget.allocation_configured = FALSE
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/record_currency_created(amount, source)
+/datum/world_service/supply/proc/record_currency_created(amount, source)
 	if(!isnum(amount) || amount <= 0)
 		return
 	currency_created += amount
 	currency_sources[source] = (currency_sources[source] || 0) + amount
 
-/datum/controller/subsystem/supply/proc/record_currency_destroyed(amount, sink)
+/datum/world_service/supply/proc/record_currency_destroyed(amount, sink)
 	if(!isnum(amount) || amount <= 0)
 		return
 	currency_destroyed += amount
 	currency_sinks[sink] = (currency_sinks[sink] || 0) + amount
 
-/datum/controller/subsystem/supply/proc/record_currency_refund(amount, reverses_external_sink = FALSE)
+/datum/world_service/supply/proc/record_currency_refund(amount, reverses_external_sink = FALSE)
 	if(!isnum(amount) || amount <= 0)
 		return
 	currency_refunded += amount
@@ -376,7 +383,7 @@ SUBSYSTEM_DEF(supply)
 	else
 		currency_internal_refunded += amount
 
-/datum/controller/subsystem/supply/proc/run_department_payroll()
+/datum/world_service/supply/proc/run_department_payroll()
 	for(var/department in GLOB.department_accounts)
 		if(department == "Vendor")
 			continue
@@ -423,22 +430,21 @@ SUBSYSTEM_DEF(supply)
 		budget.last_payroll_due = total_due
 		budget.last_payroll_paid = delivered
 
-/datum/controller/subsystem/supply/stat_entry(msg)
+/datum/world_service/supply/stat_line()
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
-	msg = "Cargo budget: [cargo?.money || 0] Thalers"
-	return ..()
+	return "Cargo budget: [cargo?.money || 0] Thalers"
 
-/datum/controller/subsystem/supply/proc/pack_price(datum/supply_pack/pack)
+/datum/world_service/supply/proc/pack_price(datum/supply_pack/pack)
 	return max(1, round(pack.cost * SUPPLY_THALERS_PER_LEGACY_POINT))
 
-/datum/controller/subsystem/supply/proc/export_revenue(legacy_points)
+/datum/world_service/supply/proc/export_revenue(legacy_points)
 	return max(0, round(legacy_points * SUPPLY_THALERS_PER_LEGACY_POINT))
 
-/datum/controller/subsystem/supply/proc/credit_department(department, legacy_points, purpose)
+/datum/world_service/supply/proc/credit_department(department, legacy_points, purpose)
 	var/datum/money_account/account = GLOB.department_accounts[department]
 	return account?.credit(export_revenue(legacy_points), "External trade", purpose, "Supply shuttle")
 
-/datum/controller/subsystem/supply/proc/distribute_export_revenue(datum/exported_crate/export)
+/datum/world_service/supply/proc/distribute_export_revenue(datum/exported_crate/export)
 	if(!export || export.value <= 0)
 		return
 	var/tagged_value = export.sales_eligible_value
@@ -473,11 +479,11 @@ SUBSYSTEM_DEF(supply)
 	if(export.value > tagged_value)
 		credit_department(DEPARTMENT_CARGO, export.value - tagged_value, "Exported goods: [export.name]")
 
-/datum/controller/subsystem/supply/proc/budget_balance()
+/datum/world_service/supply/proc/budget_balance()
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
 	return cargo?.money || 0
 
-/datum/controller/subsystem/supply/proc/adjust_budget(amount, purpose = "External market adjustment")
+/datum/world_service/supply/proc/adjust_budget(amount, purpose = "External market adjustment")
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
 	if(!cargo || !amount)
 		return FALSE
@@ -486,7 +492,7 @@ SUBSYSTEM_DEF(supply)
 	return cargo.debit(abs(amount), "External market", purpose, "Cargo market")
 
 //To stop things being sent to CentCom which should not be sent to centcomm. Recursively checks for these types.
-/datum/controller/subsystem/supply/proc/forbidden_atoms_check(atom/A)
+/datum/world_service/supply/proc/forbidden_atoms_check(atom/A)
 	if(isliving(A))
 		var/mob/living/living_content = A
 		// Living passengers must never be exported accidentally. Properly dead
@@ -512,7 +518,7 @@ SUBSYSTEM_DEF(supply)
 			return 1
 
 //Selling
-/datum/controller/subsystem/supply/proc/sell()
+/datum/world_service/supply/proc/sell()
 	// Loop over each area in the supply shuttle
 	OM_EMIT_WORLD(/datum/om/event/world_supply_shuttle_depart, shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
@@ -578,7 +584,7 @@ SUBSYSTEM_DEF(supply)
 
 			qdel(MA)
 
-/datum/controller/subsystem/supply/proc/get_clear_turfs()
+/datum/world_service/supply/proc/get_clear_turfs()
 	var/list/clear_turfs = list()
 
 	for(var/area/subarea in shuttle.shuttle_area)
@@ -597,7 +603,7 @@ SUBSYSTEM_DEF(supply)
 	return clear_turfs
 
 //Buying
-/datum/controller/subsystem/supply/proc/buy()
+/datum/world_service/supply/proc/buy()
 	var/list/shoppinglist = list()
 	for(var/datum/supply_order/SO in order_history)
 		if(SO.status == SUP_ORDER_APPROVED)
@@ -714,7 +720,7 @@ SUBSYSTEM_DEF(supply)
 	return
 
 // Will attempt to purchase the specified order, returning TRUE on success, FALSE on failure
-/datum/controller/subsystem/supply/proc/approve_order(datum/supply_order/O, mob/user)
+/datum/world_service/supply/proc/approve_order(datum/supply_order/O, mob/user)
 	if(O.paid_amount > 0 && !O.personal_order)
 		return FALSE
 	var/price = order_price(O)
@@ -758,7 +764,7 @@ SUBSYSTEM_DEF(supply)
 		notify_personal_order(O, "Personal Cargo order #[O.ordernum] ([O.name]) was approved.")
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/notify_personal_order(datum/supply_order/O, message)
+/datum/world_service/supply/proc/notify_personal_order(datum/supply_order/O, message)
 	if(!O?.personal_order || !O.funding_account_number)
 		return
 	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
@@ -767,7 +773,7 @@ SUBSYSTEM_DEF(supply)
 		var/datum/data/pda/app/supply_orders/app = device.find_program(/datum/data/pda/app/supply_orders)
 		app?.notify(message)
 
-/datum/controller/subsystem/supply/proc/refund_order(datum/supply_order/O, purpose)
+/datum/world_service/supply/proc/refund_order(datum/supply_order/O, purpose)
 	if(!O || O.paid_amount <= 0 || O.status == SUP_ORDER_SHIPPED)
 		return FALSE
 	if(O.market_contract_funded)
@@ -784,7 +790,7 @@ SUBSYSTEM_DEF(supply)
 	return TRUE
 
 // Will deny the specified order. Only useful if the order is currently requested, but available at any status
-/datum/controller/subsystem/supply/proc/deny_order(datum/supply_order/O, mob/user)
+/datum/world_service/supply/proc/deny_order(datum/supply_order/O, mob/user)
 	// Based on the current model, there shouldn't be any entries in order_history, requestlist, or shoppinglist, that aren't matched in adm_order_history
 	var/datum/supply_order/adm_order
 	for(var/datum/supply_order/temp in adm_order_history)
@@ -815,27 +821,27 @@ SUBSYSTEM_DEF(supply)
 		notify_personal_order(O, "Personal Cargo order #[O.ordernum] ([O.name]) was cancelled and refunded.")
 	return
 
-/datum/controller/subsystem/supply/proc/cancel_personal_order(datum/supply_order/O, datum/money_account/requester, mob/user)
+/datum/world_service/supply/proc/cancel_personal_order(datum/supply_order/O, datum/money_account/requester, mob/user)
 	if(!O?.personal_order || O.status != SUP_ORDER_REQUESTED || !requester || O.funding_account_number != requester.account_number)
 		return FALSE
 	deny_order(O, user)
 	return TRUE
 
 // Will deny all requested orders
-/datum/controller/subsystem/supply/proc/deny_all_pending(mob/user)
+/datum/world_service/supply/proc/deny_all_pending(mob/user)
 	for(var/datum/supply_order/O in order_history)
 		if(O.status == SUP_ORDER_REQUESTED)
 			deny_order(O, user)
 
 // Will delete the specified order from the user-side list
-/datum/controller/subsystem/supply/proc/delete_order(datum/supply_order/O, mob/user)
+/datum/world_service/supply/proc/delete_order(datum/supply_order/O, mob/user)
 	// Making sure they know what they're doing
 	om_prompt_sequence(src, user, list(
 		list("key" = "sure", "message" = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
 		list("key" = "really", "message" = "Are you really sure? There is no way to recover the order once deleted.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
 	), PROC_REF(delete_order_confirmed), list("data" = list("order" = O)))
 
-/datum/controller/subsystem/supply/proc/delete_order_confirmed(mob/user, datum/om/prompt/ask)
+/datum/world_service/supply/proc/delete_order_confirmed(mob/user, datum/om/prompt/ask)
 	var/datum/supply_order/O = ask.get("order")
 	if(!(O in order_history)) // deleted by someone else meanwhile
 		return
@@ -845,7 +851,7 @@ SUBSYSTEM_DEF(supply)
 	order_history -= O
 
 // Will generate a new, requested order, for the given supply pack type
-/datum/controller/subsystem/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
+/datum/world_service/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
 	if(!S || supply_pack[S.name] != S)
 		return FALSE
 	var/datum/supply_order/new_order = new()
@@ -918,14 +924,14 @@ SUBSYSTEM_DEF(supply)
 	return new_order
 
 // Will delete the specified export receipt from the user-side list
-/datum/controller/subsystem/supply/proc/delete_export(datum/exported_crate/E, mob/user)
+/datum/world_service/supply/proc/delete_export(datum/exported_crate/E, mob/user)
 	// Making sure they know what they're doing
 	om_prompt_sequence(src, user, list(
 		list("key" = "sure", "message" = "Are you sure you want to delete this record?", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
 		list("key" = "really", "message" = "Are you really sure? There is no way to recover the receipt once deleted.", "title" = "Delete Record", "choices" = list("No","Yes"), "confirm" = "Yes"),
 	), PROC_REF(delete_export_confirmed), list("data" = list("receipt" = E)))
 
-/datum/controller/subsystem/supply/proc/delete_export_confirmed(mob/user, datum/om/prompt/ask)
+/datum/world_service/supply/proc/delete_export_confirmed(mob/user, datum/om/prompt/ask)
 	var/datum/exported_crate/E = ask.get("receipt")
 	if(!(E in exported_crates))
 		return
@@ -933,14 +939,14 @@ SUBSYSTEM_DEF(supply)
 	exported_crates -= E
 
 // Will add an item entry to the specified export receipt on the user-side list
-/datum/controller/subsystem/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
+/datum/world_service/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
 	om_prompt_sequence(src, user, list(
 		list("key" = "name", "kind" = "text", "message" = "Please enter the name of the item.", "title" = "Name"),
 		list("key" = "quantity", "kind" = "number", "message" = "Please enter the quantity of the item.", "title" = "Quantity"),
 		list("key" = "value", "kind" = "number", "message" = "Please enter the value of the item.", "title" = "Value"),
 	), PROC_REF(export_item_entered), list("data" = list("receipt" = E)))
 
-/datum/controller/subsystem/supply/proc/export_item_entered(mob/user, datum/om/prompt/ask)
+/datum/world_service/supply/proc/export_item_entered(mob/user, datum/om/prompt/ask)
 	var/datum/exported_crate/E = ask.get("receipt")
 	var/new_name = ask.get("name")
 	var/new_quantity = ask.get("quantity")
@@ -1001,3 +1007,12 @@ SUBSYSTEM_DEF(supply)
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
 	return supply_pack_static
 REF_STATIC(/datum/supply_order, "supply_pack_static")
+
+/// Cargo market and department payroll (was SSsupply, 20 s).
+/datum/om/behaviour/world/supply
+	name = "world: supply"
+	every = 20 SECONDS
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/supply/service()
+	return GLOB.supply_service

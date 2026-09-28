@@ -149,7 +149,7 @@ REF_OWNED_LIST(/obj/soulgem, "brainmobs")
 
 	if(isliving(M))
 		if(ishuman(M))
-			SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
+			GLOB.transcore_service.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))

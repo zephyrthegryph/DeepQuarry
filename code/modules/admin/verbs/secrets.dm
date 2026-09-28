@@ -131,16 +131,16 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 			switch(val)
 				if("Automatic")
 					if(CONFIG_GET(flag/enable_night_shifts))
-						SSnightshift.can_fire = TRUE
-						SSnightshift.fire()
+						GLOB.nightshift_service.automatic = TRUE
+						GLOB.nightshift_service.check_nightshift(TRUE)
 					else
-						SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
+						GLOB.nightshift_service.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 				if("On")
-					SSnightshift.can_fire = FALSE
-					SSnightshift.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
+					GLOB.nightshift_service.automatic = FALSE
+					GLOB.nightshift_service.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
 				if("Off")
-					SSnightshift.can_fire = FALSE
-					SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
+					GLOB.nightshift_service.automatic = FALSE
+					GLOB.nightshift_service.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 
 		if("trigger_xenomorph_infestation")
 			GLOB.xenomorphs.attempt_random_spawn()
@@ -439,7 +439,7 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 				return
 			if(choice == "NO TIME TO EXPLAIN")
 				explosion(get_turf(holder().mob), 8, 16, 24, 32, 1)
-				SSturf_cascade.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
+				GLOB.turf_cascade_service.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
 				SetUniversalState(/datum/universal_state/supermatter_cascade)
 				message_admins("[key_name_admin(holder())] has managed to destroy the universe with a supermatter cascade. Good job, [key_name_admin(holder())]")
 

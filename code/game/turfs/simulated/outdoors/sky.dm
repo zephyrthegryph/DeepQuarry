@@ -14,7 +14,7 @@
 
 /turf/simulated/sky/Initialize(mapload, color = "#FFFFFF")
 	. = ..()
-	// SSplanets.addTurf(src) Handled by parent
+	// GLOB.planet_service.addTurf(src) Handled by parent
 	set_light(2, 2, color)
 
 /turf/simulated/sky/north

@@ -151,12 +151,12 @@
 	data["msg_cooldown"] = message_cooldown ? (round((message_cooldown - world.time) / 10)) : 0
 	data["cc_cooldown"] = centcomm_message_cooldown ? (round((centcomm_message_cooldown - world.time) / 10)) : 0
 
-	data["esc_callable"] = SSemergency_shuttle.location() && !SSemergency_shuttle.online() ? TRUE : FALSE
-	data["esc_recallable"] = SSemergency_shuttle.location() && SSemergency_shuttle.online() ? TRUE : FALSE
+	data["esc_callable"] = GLOB.emergency_shuttle_service.location() && !GLOB.emergency_shuttle_service.online() ? TRUE : FALSE
+	data["esc_recallable"] = GLOB.emergency_shuttle_service.location() && GLOB.emergency_shuttle_service.online() ? TRUE : FALSE
 	data["esc_status"] = FALSE
-	if(SSemergency_shuttle.has_eta())
-		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
-		data["esc_status"] = SSemergency_shuttle.online() ? "ETA:" : "RECALLING:"
+	if(GLOB.emergency_shuttle_service.has_eta())
+		var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
+		data["esc_status"] = GLOB.emergency_shuttle_service.online() ? "ETA:" : "RECALLING:"
 		data["esc_status"] += " [timeleft / 60 % 60]:[add_zero(num2text(timeleft % 60), 2)]"
 	return data
 
@@ -181,7 +181,7 @@
 	return GLOB.global_message_listener
 
 /proc/post_status(atom/source, command, data1, data2, mob/user = null)
-	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
+	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
 
 	if(!frequency)
 		return
@@ -286,7 +286,7 @@
 
 			if(response == "Yes")
 				call_shuttle_proc(ui.user)
-				if(SSemergency_shuttle.online())
+				if(GLOB.emergency_shuttle_service.online())
 					post_status(src, "shuttle", user = ui.user)
 				setMenuState(ui.user, COMM_SCREEN_MAIN)
 
@@ -403,7 +403,7 @@
 		PS.allowedtocall = !(PS.allowedtocall)
 
 /proc/call_shuttle_proc(mob/user)
-	if ((!( SSticker ) || !SSemergency_shuttle.location()))
+	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
 		return
 
 	if(!GLOB.universe.OnShuttleCall(user))
@@ -414,7 +414,7 @@
 		to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 		return
 
-	if(SSemergency_shuttle.deny_shuttle)
+	if(GLOB.emergency_shuttle_service.deny_shuttle)
 		to_chat(user, "The emergency shuttle may not be sent at this time. Please try again later.")
 		return
 
@@ -423,11 +423,11 @@
 		to_chat(user, "The emergency shuttle is refueling. Please wait another [round((6000-world.time)/600)] minute\s before trying again.")
 		return
 
-	if(SSemergency_shuttle.going_to_centcom())
+	if(GLOB.emergency_shuttle_service.going_to_centcom())
 		to_chat(user, "The emergency shuttle may not be called while returning to [using_map.boss_short].")
 		return
 
-	if(SSemergency_shuttle.online())
+	if(GLOB.emergency_shuttle_service.online())
 		to_chat(user, "The emergency shuttle is already on its way.")
 		return
 
@@ -435,7 +435,7 @@
 		to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 		return
 
-	SSemergency_shuttle.call_evac()
+	GLOB.emergency_shuttle_service.call_evac()
 	log_game("[key_name(user)] has called the shuttle.")
 	message_admins("[key_name_admin(user)] has called the shuttle.", 1)
 	admin_chat_message(message = "Emergency evac beginning! Called by [key_name(user)]!", color = "#CC2222")
@@ -443,20 +443,20 @@
 	return
 
 /proc/init_shift_change(mob/user, force = 0)
-	if ((!( SSticker ) || !SSemergency_shuttle.location()))
+	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
 		return
 
-	if(SSemergency_shuttle.going_to_centcom())
+	if(GLOB.emergency_shuttle_service.going_to_centcom())
 		to_chat(user, "The shuttle may not be called while returning to [using_map.boss_short].")
 		return
 
-	if(SSemergency_shuttle.online())
+	if(GLOB.emergency_shuttle_service.online())
 		to_chat(user, "The shuttle is already on its way.")
 		return
 
 	// if force is 0, some things may stop the shuttle call
 	if(!force)
-		if(SSemergency_shuttle.deny_shuttle)
+		if(GLOB.emergency_shuttle_service.deny_shuttle)
 			to_chat(user, "[using_map.boss_short] does not currently have a shuttle available in your sector. Please try again later.")
 			return
 
@@ -471,13 +471,13 @@
 
 		if(SSticker.mode.auto_recall_shuttle)
 			//New version pretends to call the shuttle but cause the shuttle to return after a random duration.
-			SSemergency_shuttle.auto_recall = TRUE
+			GLOB.emergency_shuttle_service.auto_recall = TRUE
 
 		if(SSticker.mode.name == "blob" || SSticker.mode.name == "epidemic")
 			to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 			return
 
-	SSemergency_shuttle.call_transfer()
+	GLOB.emergency_shuttle_service.call_transfer()
 
 	//delay events in case of an autotransfer
 	if (isnull(user))
@@ -491,13 +491,13 @@
 	return
 
 /proc/cancel_call_proc(mob/user)
-	if (!( SSticker ) || !SSemergency_shuttle.can_recall())
+	if (!( SSticker ) || !GLOB.emergency_shuttle_service.can_recall())
 		return
 	if((SSticker.mode.name == "blob")||(SSticker.mode.name == "Meteor"))
 		return
 
-	if(!SSemergency_shuttle.going_to_centcom()) //check that shuttle isn't already heading to CentCom
-		SSemergency_shuttle.recall()
+	if(!GLOB.emergency_shuttle_service.going_to_centcom()) //check that shuttle isn't already heading to CentCom
+		GLOB.emergency_shuttle_service.recall()
 		log_game("[key_name(user)] has recalled the shuttle.")
 		message_admins("[key_name_admin(user)] has recalled the shuttle.", 1)
 	return

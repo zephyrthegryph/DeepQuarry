@@ -252,7 +252,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 
 	//If they have these values, apply them
 	if(ishuman(M))
-		SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
+		GLOB.transcore_service.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
@@ -327,7 +327,7 @@ REF_OWNED_LIST(/datum/nifsoft/soulcatcher, "brainmobs")
 	..()
 
 	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
-		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+		GLOB.transcore_service.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
 	self.life_tick++
 

@@ -1,24 +1,23 @@
-SUBSYSTEM_DEF(solars)
-	name = "Solars"
-	priority = FIRE_PRIORITY_SOLARS
-	wait = 1 MINUTE
-	flags = SS_NO_INIT
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	dependencies = list(
-		/datum/controller/subsystem/planets,
-		/datum/controller/subsystem/sun
-	)
+// The solar world service (fold wave F4; was SSsun + SSsolars). Every minute
+// /datum/om/behaviour/world/solars (code/datums/om/world_lanes.dm) steps the sun and then updates
+// every solar controller and its panels, yielding across ticks over budget.
+GLOBAL_DATUM_INIT(sun, /datum/sun, new)
+GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 
+/datum/world_service/solars
+	name = "Solars"
+	lane = /datum/om/behaviour/world/solars
 	// List of solar controllers that need to be prepared for the second half of processing
 	var/list/current_run
 
 	// Each list has a key of its controller, for each subrun of the subsystem
-	var/list/controller_run = list()
-	var/list/panel_run = list()
-	var/list/panel_sum = list()
+	var/list/controller_run = list() // ALLOW(instance_list): d: world service singleton
+	var/list/panel_run = list() // ALLOW(instance_list): d: world service singleton
+	var/list/panel_sum = list() // ALLOW(instance_list): d: world service singleton
 
-/datum/controller/subsystem/solars/fire(resumed)
+/datum/world_service/solars/service_step(resumed)
 	if(!resumed)
+		GLOB.sun.calc_position()
 		// Get the list of controllers we need to process
 		current_run = REGISTRY_COPY(REGISTRY_SOLAR_CONTROLS)
 		// Clear secondary process lists so they're fresh for the impending run ahead
@@ -36,8 +35,8 @@ SUBSYSTEM_DEF(solars)
 		// Controllers with no network are ignored
 		if(!SC.powernet)
 			registry_leave(REGISTRY_SOLAR_CONTROLS, SC)
-			if(MC_TICK_CHECK)
-				return
+			if(TICK_CHECK)
+				return FALSE
 			continue
 
 		// Update the controller and prepare each of the solar array lists it needs
@@ -46,8 +45,8 @@ SUBSYSTEM_DEF(solars)
 		panel_run[REF(SC)] = SC.get_connected_panels().Copy()
 		panel_sum[REF(SC)] = 0
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Second processing cycle handles all of the panels for each controller!
@@ -60,8 +59,8 @@ SUBSYSTEM_DEF(solars)
 		var/obj/machinery/power/solar_control/SC = om_resolve(conref)
 		if(!SC)
 			controller_run -= conkey
-			if(MC_TICK_CHECK)
-				return
+			if(TICK_CHECK)
+				return FALSE
 			continue
 
 		// Handle all solar panels for this controller.
@@ -71,8 +70,8 @@ SUBSYSTEM_DEF(solars)
 			panel_sum[conkey] += S.update_power_generation(SC)
 			handling_panels.len--
 
-			if(MC_TICK_CHECK)
-				return
+			if(TICK_CHECK)
+				return FALSE
 
 		// Update the controller
 		SC.connected_power = panel_sum[conkey]
@@ -80,13 +79,17 @@ SUBSYSTEM_DEF(solars)
 		SC.update_icon()
 		controller_run.len--
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
 
-/datum/controller/subsystem/solars/proc/get_solar_angle(turf/our_t)
-	if(!our_t || our_t.z > length(SSplanets.z_to_planet) || !SSplanets.z_to_planet[our_t.z])
-		return SSsun.sun.angle // standard in space solar panels use the global SSsun angle
+/datum/world_service/solars/stat_line()
+	return "Controllers: [length(controller_run)]"
+
+/datum/world_service/solars/proc/get_solar_angle(turf/our_t)
+	if(!our_t || our_t.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_t.z])
+		return GLOB.sun.angle // standard in space solar panels use the global sun angle
 
 	// On planets, use the daynight cycle
-	var/datum/planet/our_planet = SSplanets.z_to_planet[our_t.z]
+	var/datum/planet/our_planet = GLOB.planet_service.z_to_planet[our_t.z]
 	return our_planet.get_sun_solar_position()

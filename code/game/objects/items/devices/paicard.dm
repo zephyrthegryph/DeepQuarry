@@ -901,7 +901,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		if(has_channel_access(card.pai, internal_chan))
 			channels += ch_name
 			channels[ch_name] = 1
-			secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 
 /obj/item/paicard/typeb
 	name = "personal AI device"

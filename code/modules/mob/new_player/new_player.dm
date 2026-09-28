@@ -29,8 +29,8 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 
 	. += "Game Mode: [SSticker.hide_mode ? "Secret" : "[config.mode_names[GLOB.master_mode]]"]"
 
-	// if(SSvote.mode)
-	// 	. += "Vote: [capitalize(SSvote.mode)] Time Left: [SSvote.time_remaining] s"
+	// if(GLOB.vote_service.mode)
+	// 	. += "Vote: [capitalize(GLOB.vote_service.mode)] Time Left: [GLOB.vote_service.time_remaining] s"
 
 	if(SSticker.current_state == GAME_STATE_STARTUP)
 		. += "Time To Start: Server Initializing"
@@ -71,7 +71,7 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	var/savefile/F = client.get_server_news()
 	if(F)
 		//client.prefs.lastnews = md5(F["body"]) //Chomp REMOVE
-		//SScharacter_setup.queue_preferences_save(client.prefs) //Chomp REMOVE
+		//GLOB.character_setup_service.queue_preferences_save(client.prefs) //Chomp REMOVE
 		// start - handle reads correctly
 		var/title
 		F["title"] >> title

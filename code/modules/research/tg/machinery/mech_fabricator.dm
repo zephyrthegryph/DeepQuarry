@@ -156,7 +156,7 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 
 	cached_designs.Cut()
 	for(var/v in stored_research().researched_designs)
-		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(v)
+		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
 			cached_designs |= design
@@ -472,10 +472,10 @@ REF_OWNED(/obj/machinery/mecha_part_fabricator_tg, list("print_sound", "rmat"))
 				if(!istext(design_id))
 					continue
 
-				if(!(LAZYFIND(stored_research().researched_designs, design_id) || is_type_in_list(SSresearch.techweb_design_by_id(design_id), illegal_local_designs)))
+				if(!(LAZYFIND(stored_research().researched_designs, design_id) || is_type_in_list(GLOB.research_service.techweb_design_by_id(design_id), illegal_local_designs)))
 					continue
 
-				var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
+				var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
 
 				if(!(design.build_type & fab_type) || design.id != design_id)
 					continue

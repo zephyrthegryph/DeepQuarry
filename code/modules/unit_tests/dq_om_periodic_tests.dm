@@ -352,7 +352,7 @@
 /datum/unit_test/dq_om_planets_on_lanes
 
 /datum/unit_test/dq_om_planets_on_lanes/Run()
-	for(var/datum/planet/P as anything in SSplanets.planets)
+	for(var/datum/planet/P as anything in GLOB.planet_service.planets)
 		TEST_ASSERT(P.periodic_pipe == PERIODIC_SLOW, "planet [P.name] is not on the slow lane")
 
 #endif

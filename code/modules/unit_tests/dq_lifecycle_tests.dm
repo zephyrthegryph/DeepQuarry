@@ -67,8 +67,8 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		// runtime here would be worse than a missed diff), treat it as absent
 		// rather than erroring length() on a non-list value.
 		snapshot[key] = islist(value) ? length(value) : 0
-	for(var/frequency_text in SSradio.frequencies)
-		var/datum/radio_frequency/frequency = SSradio.frequencies[frequency_text]
+	for(var/frequency_text in GLOB.radio_service.frequencies)
+		var/datum/radio_frequency/frequency = GLOB.radio_service.frequencies[frequency_text]
 		for(var/radio_filter in frequency.devices)
 			var/list/devices = frequency.devices[radio_filter]
 			snapshot["radio [frequency_text] [radio_filter]"] = length(devices)

@@ -83,8 +83,8 @@
 // register for radio system
 /obj/machinery/status_display/Initialize(mapload)
 	. = ..()
-	if(SSradio)
-		SSradio.add_object(src, frequency)
+	if(GLOB.radio_service)
+		GLOB.radio_service.add_object(src, frequency)
 	refresh()
 
 // A status display redraws only when its input changes: a signal, an alert, power, the
@@ -97,7 +97,7 @@
 		return 0
 	switch(mode)
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
-			if(SSemergency_shuttle?.shuttle && SSemergency_shuttle.has_eta())
+			if(GLOB.emergency_shuttle_service?.shuttle && GLOB.emergency_shuttle_service.has_eta())
 				return 2 SECONDS
 		if(STATUS_DISPLAY_MESSAGE)
 			if(index1 || index2)
@@ -116,9 +116,9 @@
 /proc/shuttle_schedule_source(id)
 	switch(id)
 		if(SHUTTLE_SCHEDULE_EVAC)
-			return SSemergency_shuttle
+			return GLOB.emergency_shuttle_service
 		if(SHUTTLE_SCHEDULE_SUPPLY)
-			return SSsupply
+			return GLOB.supply_service
 	return null
 
 /// A watched shuttle schedule changed.
@@ -199,20 +199,20 @@
 		if(STATUS_DISPLAY_BLANK)	//blank
 			return 1
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)				//emergency shuttle timer
-			if(!SSemergency_shuttle?.shuttle)
+			if(!GLOB.emergency_shuttle_service?.shuttle)
 				message1 = "-ETA-"
 				message2 = "Never" // You're here forever.
 				return 1
-			if(SSemergency_shuttle.waiting_to_leave())
+			if(GLOB.emergency_shuttle_service.waiting_to_leave())
 				message1 = "-ETD-"
-				if(SSemergency_shuttle.shuttle.is_launching())
+				if(GLOB.emergency_shuttle_service.shuttle.is_launching())
 					message2 = "Launch"
 				else
 					message2 = get_shuttle_timer_departure()
 					if(length(message2) > CHARS_PER_LINE)
 						message2 = "Error"
 				update_display(message1, message2)
-			else if(SSemergency_shuttle.has_eta())
+			else if(GLOB.emergency_shuttle_service.has_eta())
 				message1 = "-ETA-"
 				message2 = get_shuttle_timer_arrival()
 				if(length(message2) > CHARS_PER_LINE)
@@ -312,23 +312,23 @@
 		maptext = new_text
 
 /obj/machinery/status_display/proc/get_shuttle_timer_arrival()
-	if(!SSemergency_shuttle)
+	if(!GLOB.emergency_shuttle_service)
 		return "Error"
-	var/timeleft = SSemergency_shuttle.estimate_arrival_time()
+	var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
 	if(timeleft < 0)
 		return ""
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /obj/machinery/status_display/proc/get_shuttle_timer_departure()
-	if(!SSemergency_shuttle)
+	if(!GLOB.emergency_shuttle_service)
 		return "Error"
-	var/timeleft = SSemergency_shuttle.estimate_launch_time()
+	var/timeleft = GLOB.emergency_shuttle_service.estimate_launch_time()
 	if(timeleft < 0)
 		return ""
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /obj/machinery/status_display/proc/get_supply_shuttle_timer()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
 	if(!shuttle)
 		return "Error"
 

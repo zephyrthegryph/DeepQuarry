@@ -193,8 +193,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		absorbDNA(newDNA)
 
 		//Code to make it so our BR is marked as a changeling body, so it can't be stolen.
-		for(var/key in SStranscore.databases)
-			var/datum/transcore_db/db = SStranscore.databases[key]
+		for(var/key in GLOB.transcore_service.databases)
+			var/datum/transcore_db/db = GLOB.transcore_service.databases[key]
 			if(H.mind.name in db.body_scans)
 				var/datum/transhuman/body_record/BR = db.body_scans[H.mind.name]
 				BR.changeling_locked = TRUE

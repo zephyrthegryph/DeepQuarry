@@ -1,11 +1,11 @@
 // Debug entry points for the expedition system. The production flow is the
-// launch console (auto-placed by SSexpedition); these verbs let an admin jump a
+// launch console (auto-placed by GLOB.expedition_service); these verbs let an admin jump a
 // site directly for testing the generator + missions.
 
 /// Builds a generated station on an expedition-owned z-level. Registering the
 /// result as a site gives the ordinary expedition lifecycle sole ownership of
 /// the z-level, materialized areas, and entry landmark.
-/datum/controller/subsystem/expedition/proc/generate_debug_station(seed, list/validation_messages)
+/datum/world_service/expedition/proc/generate_debug_station(seed, list/validation_messages)
 	seed = round(seed)
 	var/datum/generated_station_planner/planner = new
 	var/datum/generated_station_spec/spec = planner.plan(seed, 160, 160)
@@ -73,6 +73,7 @@
 	site.deployed_at = world.time
 	site.last_occupied = world.time
 	sites["[z]"] = site
+	demand()
 	return site
 
 /client/verb/generate_procedural_station()
@@ -90,7 +91,7 @@
 		return
 	seed = max(1, round(seed) % 2147483647)
 	var/list/validation_messages = list()
-	var/datum/expedition_site/site = SSexpedition.generate_debug_station(seed, validation_messages)
+	var/datum/expedition_site/site = GLOB.expedition_service.generate_debug_station(seed, validation_messages)
 	if(!site)
 		to_chat(usr, span_warning("Generated station [seed] failed: [length(validation_messages) ? jointext(validation_messages, "; ") : "no diagnostic was returned"]."))
 		return
@@ -104,7 +105,7 @@
 	if(!check_rights(R_DEBUG))
 		return
 
-	var/datum/expedition_site/site = SSexpedition.generate_site()
+	var/datum/expedition_site/site = GLOB.expedition_service.generate_site()
 	if(!site || !site.landing())
 		to_chat(usr, span_warning("Expedition site generation failed (see world log)."))
 		return
@@ -145,7 +146,7 @@
 		return
 
 	var/datum/expedition_mission/mission = new mission_type(diff)
-	var/datum/expedition_site/site = SSexpedition.generate_site(mission)
+	var/datum/expedition_site/site = GLOB.expedition_service.generate_site(mission)
 	if(!site || !site.landing())
 		to_chat(usr, span_warning("Expedition mission generation failed (see world log)."))
 		return

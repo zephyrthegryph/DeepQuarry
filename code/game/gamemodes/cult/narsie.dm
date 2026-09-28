@@ -353,6 +353,6 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
 /// Nar-Sie has come: the evacuation shuttle is called and cannot be recalled.
 /proc/narsie_call_evac()
-	if(SSemergency_shuttle)
-		SSemergency_shuttle.call_evac()
-		SSemergency_shuttle.launch_time = 0	// Cannot recall
+	if(GLOB.emergency_shuttle_service)
+		GLOB.emergency_shuttle_service.call_evac()
+		GLOB.emergency_shuttle_service.launch_time = 0	// Cannot recall

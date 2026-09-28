@@ -92,7 +92,7 @@
 	return data
 
 /datum/trait_state/weaver/tgui_close(mob/user)
-	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
+	GLOB.character_setup_service.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
 /datum/trait_state/weaver/proc/correct_savefile_selected()

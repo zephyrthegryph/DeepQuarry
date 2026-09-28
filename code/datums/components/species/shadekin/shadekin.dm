@@ -260,7 +260,7 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 	return data
 
 /datum/shadekin/tgui_close(mob/user)
-	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
+	GLOB.character_setup_service.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
 /datum/shadekin/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)

@@ -720,12 +720,12 @@
 
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 	. = ..()
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/clothing/accessory/collar/shock/attack_self(mob/user, flag1)
 	. = ..(user)

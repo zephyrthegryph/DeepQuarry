@@ -50,9 +50,9 @@
 	var/uplink = FALSE
 
 /obj/item/radio/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_CHAT))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -66,7 +66,7 @@
 	if(bluespace_radio && (bs_tx_preload_id || bs_rx_preload_id))
 		return INITIALIZE_HINT_LATELOAD
 
-// radio_connection/secure_radio_connections are SSradio's live subscriptions,
+// radio_connection/secure_radio_connections are GLOB.radio_service's live subscriptions,
 // rebuilt by on_materialize() from frequency/channels (C5). The bluespace
 // links are relations (BS_TX_TARGET, BS_RX_SOURCE), not state.
 /obj/item/radio/state_exclude()
@@ -77,14 +77,14 @@
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 /obj/item/radio/on_dematerialize()
-	if(SSradio)
-		SSradio.remove_object(src, frequency)
+	if(GLOB.radio_service)
+		GLOB.radio_service.remove_object(src, frequency)
 		for (var/ch_name in channels)
-			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
 	radio_connection_handle = null
 	return ..()
 
@@ -668,7 +668,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		to_chat(user, "This radio doesn't have any encryption keys!")
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
-		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
 		secure_radio_connections[ch_name] = null
 	keyslot.forceMove(get_turf(user))
 	keyslot = null
@@ -704,24 +704,24 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 /obj/item/radio/borg/proc/controller_check(initial_run = FALSE)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!SSradio && initial_run)
+	if(!GLOB.radio_service && initial_run)
 		om_after(src, 3 SECONDS, PROC_REF(controller_check), FALSE)
 		return
-	if(!SSradio && !initial_run)
+	if(!GLOB.radio_service && !initial_run)
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 
 /obj/item/radio/proc/config(op)
-	if(SSradio)
+	if(GLOB.radio_service)
 		for (var/ch_name in channels)
-			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
+			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
 	secure_radio_connections = new
 	channels = op
-	if(SSradio)
+	if(GLOB.radio_service)
 		for (var/ch_name in op)
-			secure_radio_connections[ch_name] = SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
 	return
 
 /obj/item/radio/off

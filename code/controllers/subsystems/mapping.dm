@@ -8,8 +8,7 @@ SUBSYSTEM_DEF(mapping)
 	//)
 	dependencies = list(
 		/datum/controller/subsystem/garbage, // was transitive through chemistry
-		// Chemistry was a dependency; it is a lazy world service now (chemistry_service()).
-		/datum/controller/subsystem/vis_overlays
+		// Chemistry and vis_overlays were dependencies; both are world services now that need no boot.
 	)
 	flags = SS_NO_FIRE
 

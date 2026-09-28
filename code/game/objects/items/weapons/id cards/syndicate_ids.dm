@@ -36,7 +36,7 @@ REF_OWNED(/obj/item/card/id/syndicate, "agentcard_module")
 	if(istype(O, /obj/item/card/id))
 		var/obj/item/card/id/I = O
 		src.access |= I.GetAccess()
-		if(SSantag_job.player_is_antag(user.mind) || registered_user() == user)
+		if(GLOB.antag_service.player_is_antag(user.mind) || registered_user() == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
 /obj/item/card/id/syndicate/proc/edit_or_show_chosen(mob/user, choice, datum/om/prompt/ask)

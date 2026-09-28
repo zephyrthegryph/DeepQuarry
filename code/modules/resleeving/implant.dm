@@ -226,6 +226,6 @@
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/implant/backup/proc/our_db() as /datum/transcore_db
-	return SStranscore.db_by_key(db_key)
+	return GLOB.transcore_service.db_by_key(db_key)
 
 REF_OWNED_LIST(/obj/item/backup_implanter, "imps")

@@ -62,10 +62,10 @@
 	data["name"] = name
 	data["duration"] = roundduration2text()
 
-	if(SSemergency_shuttle?.going_to_centcom())
+	if(GLOB.emergency_shuttle_service?.going_to_centcom())
 		data["evac"] = "Gone"
-	else if(SSemergency_shuttle?.online())
-		if(SSemergency_shuttle.evac)
+	else if(GLOB.emergency_shuttle_service?.online())
+		if(GLOB.emergency_shuttle_service.evac)
 			data["evac"] = "Emergency"
 		else
 			data["evac"] = "Crew Transfer"

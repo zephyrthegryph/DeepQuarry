@@ -185,7 +185,7 @@ SUBSYSTEM_DEF(job)
 			player.mind.role_alt_title = get_player_alt_title(player, rank)
 			unassigned -= player
 			job.current_positions++
-			if(job.camp_protection && round_duration_in_ds < SStransfer.get_hard_end() - 30 MINUTES)
+			if(job.camp_protection && round_duration_in_ds < GLOB.transfer_service.get_hard_end() - 30 MINUTES)
 				job.register_shift_key(player.client.ckey)
 			return TRUE
 	job_debug_message("AR has failed, Player: [player], Rank: [rank]")
@@ -1075,7 +1075,7 @@ SUBSYSTEM_DEF(job)
 	if(!ishuman(target_client.mob))
 		return
 	var/mob/living/carbon/human/target_human = target_client.mob
-	SStranscore.m_backup(target_human.mind, target_human.nif, TRUE)
+	GLOB.transcore_service.m_backup(target_human.mind, target_human.nif, TRUE)
 
 /datum/controller/subsystem/job/proc/get_all_jobs()
 	var/list/all_jobs = list()

@@ -467,7 +467,7 @@ REF_OWNED(/mob, "ability_master")
 
 		//Resleeving cleanup
 		if(mind)
-			SStranscore.leave_round(src)
+			GLOB.transcore_service.leave_round(src)
 
 		//Job slot cleanup
 		var/job = mind.assigned_role
@@ -1231,7 +1231,7 @@ REF_OWNED(/mob, "ability_master")
 	if(!T || !A)
 		return null
 	if(T.is_outdoors()) // check weather
-		var/datum/planet/P = LAZYACCESS(SSplanets.z_to_planet, T.z)
+		var/datum/planet/P = LAZYACCESS(GLOB.planet_service.z_to_planet, T.z)
 		var/weather_tint = P?.weather_holder.current_weather.get_color_tint()
 		if(weather_tint) // But not if the weather has no blending!
 			return weather_tint

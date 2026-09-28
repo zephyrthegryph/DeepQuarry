@@ -27,7 +27,7 @@
 
 /datum/event/ionstorm/start()
 	for (var/mob/living/carbon/human/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(	!player.mind || SSantag_job.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
+		if(	!player.mind || GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1) || player.client.inactivity > 10 MINUTES)
 			continue
 		LAZYADD(players, player.real_name)
 

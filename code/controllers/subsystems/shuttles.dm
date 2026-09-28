@@ -10,8 +10,7 @@ SUBSYSTEM_DEF(shuttles)
 	priority = FIRE_PRIORITY_SHUTTLES
 	dependencies = list(
 		/datum/controller/subsystem/air,
-		/datum/controller/subsystem/atoms,
-		/datum/controller/subsystem/radio
+		/datum/controller/subsystem/atoms
 	)
 	// Shuttles with work run their shuttle_step() on the slow periodic lane (refresh_processing_shuttle()).
 	flags = SS_NO_FIRE

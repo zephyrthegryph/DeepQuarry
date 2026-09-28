@@ -1,31 +1,40 @@
-SUBSYSTEM_DEF(nightshift)
-	name = "Night Shift"
-	dependencies = list(
-		/datum/controller/subsystem/lighting
-	)
-	priority = FIRE_PRIORITY_NIGHTSHIFT
-	wait = 60 SECONDS
+// The night shift world service (fold wave F4; was SSnightshift). Every 60 s
+// /datum/om/behaviour/world/nightshift (code/datums/om/world_lanes.dm) checks the map's night hours
+// and the alert level and dims or restores the station APCs' lighting, yielding across ticks.
+GLOBAL_DATUM_INIT(nightshift_service, /datum/world_service/nightshift, new)
 
+/datum/world_service/nightshift
+	name = "Night Shift"
+	boot_after = /datum/controller/subsystem/atoms
+	lane = /datum/om/behaviour/world/nightshift
+	/// Follows the map's night hours on its own (was can_fire); FALSE when disabled by config or
+	/// while an admin holds night shift on or off.
+	var/automatic = TRUE
 	var/nightshift_active = FALSE
 	var/nightshift_first_check = 30 SECONDS
 
 	var/high_security_mode = FALSE
 	var/list/currentrun
 
-/datum/controller/subsystem/nightshift/Initialize()
+/datum/world_service/nightshift/initialize()
+	initialized = TRUE
 	if(!CONFIG_GET(flag/enable_night_shifts))
-		can_fire = FALSE
-	return SS_INIT_SUCCESS
+		automatic = FALSE
+	log_world("World service [name] initialized: [automatic ? "automatic" : "disabled by config"].")
 
-/datum/controller/subsystem/nightshift/fire(resumed = FALSE)
+/datum/world_service/nightshift/service_step(resumed)
 	if(resumed)
-		update_nightshift(resumed = TRUE)
-		return
+		return update_nightshift(resumed = TRUE)
+	if(!automatic)
+		return TRUE
 	if(world.time - SSticker.round_start_time < nightshift_first_check)
-		return
-	check_nightshift()
+		return TRUE
+	return check_nightshift()
 
-/datum/controller/subsystem/nightshift/proc/announce(message)
+/datum/world_service/nightshift/stat_line()
+	return "[automatic ? "Auto" : "Manual"] | [nightshift_active ? "Night" : "Day"]"
+
+/datum/world_service/nightshift/proc/announce(message)
 	var/announce_z
 	if(length(using_map.station_levels))
 		announce_z = pick(using_map.station_levels)
@@ -38,7 +47,7 @@ SUBSYSTEM_DEF(nightshift)
 			pickedsound = ANNOUNCER_MSG_NIGHTSHIFT_END
 	GLOB.priority_announcement.Announce(message, new_title = "Automated Lighting System Announcement", new_sound = pickedsound, zlevel = announce_z)
 
-/datum/controller/subsystem/nightshift/proc/check_nightshift(forced) //This is called from elsewhere, like setting the alert levels, sadly
+/datum/world_service/nightshift/proc/check_nightshift(forced) //This is called from elsewhere, like setting the alert levels, sadly
 	var/emergency = GLOB.security_level > SEC_LEVEL_GREEN
 	var/announcing = TRUE
 	var/night_time = using_map.get_nightshift()
@@ -53,9 +62,11 @@ SUBSYSTEM_DEF(nightshift)
 	if(emergency)
 		night_time = FALSE
 	if(nightshift_active != night_time)
-		update_nightshift(night_time, announcing, forced = forced)
+		return update_nightshift(night_time, announcing, forced = forced)
+	return TRUE
 
-/datum/controller/subsystem/nightshift/proc/update_nightshift(active, announce = TRUE, resumed = FALSE, forced = FALSE)
+/// Returns FALSE when a lane-driven (unforced) run yielded; the lane resumes it next tick.
+/datum/world_service/nightshift/proc/update_nightshift(active, announce = TRUE, resumed = FALSE, forced = FALSE)
 	if(!resumed)
 		currentrun = REGISTRY_COPY(REGISTRY_APCS)
 		nightshift_active = active
@@ -68,5 +79,6 @@ SUBSYSTEM_DEF(nightshift)
 		currentrun -= apc
 		if(apc.z in using_map.station_levels)
 			apc.set_nightshift(active, TRUE)
-		if(MC_TICK_CHECK && !forced) // subsystem will be in state SS_IDLE if forced by an admin
-			return
+		if(!forced && TICK_CHECK)
+			return FALSE
+	return TRUE

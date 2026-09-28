@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 				if(cell)
 					user.show_message("\t Power Cell Details: [span_blue("[capitalize(cell.name)]")] with a capacity of [cell.maxcharge] at [round(cell.percent())]% charge")
 				var/show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/utility/upgrade in SSresearch.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/utility/upgrade in GLOB.research_service.techweb_designs)
 					var/obj/item/borg/upgrade/utility/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || (R.stat != DEAD && (upgrade_type == /obj/item/borg/upgrade/utility/restart)) || (isshell(R) && (upgrade_type == /obj/item/borg/upgrade/utility/rename)))
@@ -93,7 +93,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 					else
 						user.show_message(span_blue("\t\t [capitalize(initial(upgrade.name))]: [span_green("Usable")]"))
 				show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/basic/upgrade in SSresearch.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/basic/upgrade in GLOB.research_service.techweb_designs)
 					var/obj/item/borg/upgrade/basic/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || R.stat == DEAD)
@@ -103,7 +103,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 						show_title = FALSE
 					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade in SSresearch.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/advanced/upgrade in GLOB.research_service.techweb_designs)
 					var/obj/item/borg/upgrade/advanced/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || R.stat == DEAD)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(intera
 						show_title = FALSE
 					show_upgrade_line(user, R, initial(upgrade.build_path), initial(upgrade.name))
 				show_title = TRUE
-				for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade in SSresearch.techweb_designs)
+				for(var/datum/design_techweb/prosfab/robot_upgrade/restricted/upgrade in GLOB.research_service.techweb_designs)
 					var/obj/item/borg/upgrade/restricted/upgrade_type = initial(upgrade.build_path)
 					var/needs_module = initial(upgrade_type.require_module)
 					if((!R.module && needs_module) || !initial(upgrade.name) || !R.supports_upgrade(initial(upgrade.build_path)) || R.stat == DEAD)

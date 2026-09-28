@@ -40,7 +40,7 @@
 	if(avoid_highlighting) message["avoidHighlighting"] = avoid_highlighting
 
 	// send it immediately
-	SSchat.send_immediate(target, message)
+	GLOB.chat_service.send_immediate(target, message)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
 		if (islist(target))
@@ -75,7 +75,7 @@
 	trailing_newline = TRUE,
 	confidential = FALSE
 )
-	if(isnull(Master) || !SSchat?.initialized || !MC_RUNNING(SSchat.init_stage))
+	if(isnull(Master) || !SSbehaviours?.initialized || !MC_RUNNING(INITSTAGE_LAST)) // the chat lane runs once the MC does
 		to_chat_immediate(target, html, type, text, avoid_highlighting)
 		return
 
@@ -99,7 +99,7 @@
 	if(text) message["text"] = text
 	if(html) message["html"] = html
 	if(avoid_highlighting) message["avoidHighlighting"] = avoid_highlighting
-	SSchat.queue(target, message)
+	GLOB.chat_service.queue(target, message)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
 		if (islist(target))

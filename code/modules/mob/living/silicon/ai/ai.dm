@@ -415,7 +415,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 		call_shuttle_proc(src)
 
 	// hack to display shuttle timer
-	if(SSemergency_shuttle.online())
+	if(GLOB.emergency_shuttle_service.online())
 		post_status(src, "shuttle", user = src)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle()

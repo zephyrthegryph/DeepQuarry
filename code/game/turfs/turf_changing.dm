@@ -107,7 +107,7 @@
 	if(istype(W_sim) && old_shandler)
 		W_sim.shandler = old_shandler
 		old_shandler.holder = W
-	else if(istype(W_sim) && (SSplanets && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
+	else if(istype(W_sim) && (GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) && has_dynamic_lighting())
 		W_sim.shandler = new(src)
 		W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
@@ -118,12 +118,12 @@
 	if(SSair)
 		SSair.mark_for_update(W)
 
-	var/defer_explosion_appearance = SSexplosions?.is_bulk_resolving()
+	var/defer_explosion_appearance = GLOB.explosion_service.is_bulk_resolving()
 	if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
 		for(var/turf/space/S in range(W, 1))
 			S.update_starlight()
 	if(defer_explosion_appearance)
-		SSexplosions.defer_turf_update(W)
+		GLOB.explosion_service.defer_turf_update(W)
 	else
 		W.levelupdate()
 		W.update_icon(1)

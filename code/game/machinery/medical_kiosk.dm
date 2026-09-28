@@ -374,7 +374,7 @@
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
-	return SStranscore.db_by_key(db_key)
+	return GLOB.transcore_service.db_by_key(db_key)
 
 /// LC-refs: active user -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/medical_kiosk/proc/active_user() as /mob/living

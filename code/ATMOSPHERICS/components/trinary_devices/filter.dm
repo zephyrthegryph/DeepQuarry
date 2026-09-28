@@ -39,10 +39,10 @@
 	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = SSradio.add_object(src, frequency, RADIO_ATMOSIA)
+		radio_connection = GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA)
 
 /obj/machinery/atmospherics/trinary/atmos_filter/Initialize(mapload)
 	. = ..()

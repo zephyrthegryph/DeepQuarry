@@ -394,7 +394,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	var/market_contract_key
 	var/market_contract_funded = FALSE
 
-/datum/controller/subsystem/supply
+/datum/world_service/supply
 	var/list/market_counterparties
 	var/list/market_listings
 	var/list/market_bids
@@ -403,7 +403,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	var/next_market_refresh = 0
 	var/market_generation = 0
 
-/datum/controller/subsystem/supply/proc/initialize_cargo_market()
+/datum/world_service/supply/proc/initialize_cargo_market()
 	QDEL_LIST(market_counterparties)
 	QDEL_LIST(market_listings)
 	QDEL_LIST(market_bids)
@@ -422,7 +422,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		market_counterparties[counterparty.id] = counterparty
 	refresh_cargo_market()
 
-/datum/controller/subsystem/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
+/datum/world_service/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
 	if(!counterparty?.faction_id)
 		return REPUTATION_NEUTRAL
 	var/station_standing = get_station_faction_reputation(counterparty.faction_id)
@@ -431,19 +431,19 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		cargo_standing = station_standing
 	return round((station_standing + cargo_standing) / 2)
 
-/datum/controller/subsystem/supply/proc/cargo_market_seller_price(datum/cargo_market_counterparty/counterparty, datum/supply_pack/pack)
+/datum/world_service/supply/proc/cargo_market_seller_price(datum/cargo_market_counterparty/counterparty, datum/supply_pack/pack)
 	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
 	var/reputation_factor = 1 - (standing / 3000)
 	var/market_factor = rand(90, 115) / 100
 	return max(1, round(pack_price(pack) * counterparty.seller_price_multiplier * reputation_factor * market_factor))
 
-/datum/controller/subsystem/supply/proc/cargo_market_buyer_multiplier(datum/cargo_market_counterparty/counterparty, datum/cargo_market_profile/profile)
+/datum/world_service/supply/proc/cargo_market_buyer_multiplier(datum/cargo_market_counterparty/counterparty, datum/cargo_market_profile/profile)
 	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
 	var/reputation_factor = 1 + (standing / 5000)
 	var/market_factor = rand(90, 115) / 100
 	return max(1.05, round(profile.base_price_multiplier * counterparty.buyer_price_multiplier * reputation_factor * market_factor, 0.01))
 
-/datum/controller/subsystem/supply/proc/refresh_cargo_market()
+/datum/world_service/supply/proc/refresh_cargo_market()
 	var/list/retained_listings = list()
 	for(var/listing_id in market_listings)
 		var/datum/cargo_market_listing/existing_listing = market_listings[listing_id]
@@ -498,30 +498,30 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 			market_bids[bid.id] = bid
 	next_market_refresh = expiry
 
-/datum/controller/subsystem/supply/proc/process_cargo_market()
+/datum/world_service/supply/proc/process_cargo_market()
 	if(world.time >= next_market_refresh) // ALLOW(cooldown): market listing/bid expiry state
 		refresh_cargo_market()
 
-/datum/controller/subsystem/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
+/datum/world_service/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
 	if(!counterparty?.covert)
 		return TRUE
 	return console_unlocked || has_faction_market_access(user, counterparty.faction_id)
 
-/datum/controller/subsystem/supply/proc/market_true_identity_visible(datum/cargo_market_counterparty/counterparty, mob/living/user)
+/datum/world_service/supply/proc/market_true_identity_visible(datum/cargo_market_counterparty/counterparty, mob/living/user)
 	if(!counterparty?.covert)
 		return TRUE
 	var/datum/money_account/account = contract_account_for_mob(user)
 	var/datum/faction_agent_record/record = account && GLOB.station_faction_relations.get_agent_record(account.account_number)
 	return record?.faction_id == counterparty.faction_id
 
-/datum/controller/subsystem/supply/proc/market_display_name(datum/cargo_market_counterparty/counterparty, mob/living/user, cover_name)
+/datum/world_service/supply/proc/market_display_name(datum/cargo_market_counterparty/counterparty, mob/living/user, cover_name)
 	if(!counterparty)
 		return "Spot market"
 	if(market_true_identity_visible(counterparty, user))
 		return counterparty.name
 	return cover_name || counterparty.active_cover_name || "Independent brokerage"
 
-/datum/controller/subsystem/supply/proc/market_reserved_access(reserved_account, mob/living/user, reservation_key)
+/datum/world_service/supply/proc/market_reserved_access(reserved_account, mob/living/user, reservation_key)
 	if(!reserved_account)
 		return TRUE
 	var/datum/money_account/account = contract_account_for_mob(user)
@@ -532,23 +532,23 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	var/datum/contract/faction_agent/contact_contract = SScontracts?.agent_contact_contract(account.account_number, null, reservation_key)
 	return contact_contract?.owner_account_number == reserved_account
 
-/datum/controller/subsystem/supply/proc/market_counterparty_access(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
+/datum/world_service/supply/proc/market_counterparty_access(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
 	if(!counterparty)
 		return FALSE
 	if(counterparty.legal_class == CARGO_MARKET_LEGAL_COVERT)
 		return console_unlocked || has_faction_market_access(user, counterparty.faction_id)
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/market_listing(listing_id) as /datum/cargo_market_listing
+/datum/world_service/supply/proc/market_listing(listing_id) as /datum/cargo_market_listing
 	return market_listings?[listing_id]
 
-/datum/controller/subsystem/supply/proc/market_bid(bid_id) as /datum/cargo_market_bid
+/datum/world_service/supply/proc/market_bid(bid_id) as /datum/cargo_market_bid
 	return market_bids?[bid_id]
 
-/datum/controller/subsystem/supply/proc/order_price(datum/supply_order/order)
+/datum/world_service/supply/proc/order_price(datum/supply_order/order)
 	return order?.quoted_price > 0 ? order.quoted_price : pack_price(order.supply_pack_of())
 
-/datum/controller/subsystem/supply/proc/market_contract_funding(reservation_key, mob/living/user, price) as /datum/contract/faction_agent
+/datum/world_service/supply/proc/market_contract_funding(reservation_key, mob/living/user, price) as /datum/contract/faction_agent
 	if(!reservation_key || !isnum(price) || price <= 0)
 		return null
 	var/datum/money_account/account = contract_account_for_mob(user)
@@ -559,7 +559,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 			return contract
 	return null
 
-/datum/controller/subsystem/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
+/datum/world_service/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing?.counterparty_id]
 	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || world.time >= listing.expires_at || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key)) // ALLOW(cooldown): market listing/bid expiry state
 		return FALSE
@@ -602,7 +602,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 			break
 	return order
 
-/datum/controller/subsystem/supply/proc/release_market_contract_funding(datum/supply_order/order)
+/datum/world_service/supply/proc/release_market_contract_funding(datum/supply_order/order)
 	if(!order?.market_contract_funded || !order.market_contract_key || order.paid_amount <= 0)
 		return FALSE
 	for(var/datum/contract/faction_agent/contract in SScontracts?.active_contracts + SScontracts?.grace_contracts)
@@ -613,7 +613,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	order.market_contract_funded = FALSE
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/release_market_order_reservation(datum/supply_order/order)
+/datum/world_service/supply/proc/release_market_order_reservation(datum/supply_order/order)
 	if(!order?.market_stock_reserved)
 		return FALSE
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
@@ -622,7 +622,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	order.market_stock_reserved = FALSE
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/complete_market_order(datum/supply_order/order)
+/datum/world_service/supply/proc/complete_market_order(datum/supply_order/order)
 	if(!order?.market_counterparty_id)
 		return FALSE
 	order.market_stock_reserved = FALSE
@@ -658,7 +658,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	), "market-purchase:[order.ordernum]")
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/record_market_transaction(transaction_type, counterparty_id, description, value, account_number = 0, cover_name, reservation_key) as /datum/cargo_market_transaction
+/datum/world_service/supply/proc/record_market_transaction(transaction_type, counterparty_id, description, value, account_number = 0, cover_name, reservation_key) as /datum/cargo_market_transaction
 	var/datum/cargo_market_transaction/transaction = new
 	transaction.id = "MKT-T-[next_market_id++]"
 	transaction.transaction_type = transaction_type
@@ -685,7 +685,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		qdel(oldest)
 	return transaction
 
-/datum/controller/subsystem/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)
+/datum/world_service/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)
 	if(!istype(item) || !export?.market_bid_id || !islist(export_row))
 		return FALSE
 	var/datum/cargo_market_bid/bid = market_bid(export.market_bid_id)
@@ -748,13 +748,13 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 			adjust_personal_faction_reputation(export.market_router_account, counterparty.faction_id, 8)
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/crate_is_on_supply_shuttle(obj/structure/closet/crate/crate)
+/datum/world_service/supply/proc/crate_is_on_supply_shuttle(obj/structure/closet/crate/crate)
 	if(!crate || !shuttle)
 		return FALSE
 	var/area/crate_area = get_area(crate)
 	return crate_area && (crate_area in shuttle.shuttle_area)
 
-/datum/controller/subsystem/supply/proc/route_market_crate(obj/structure/closet/crate/crate, bid_id, mob/living/user, console_unlocked = FALSE)
+/datum/world_service/supply/proc/route_market_crate(obj/structure/closet/crate/crate, bid_id, mob/living/user, console_unlocked = FALSE)
 	if(!crate_is_on_supply_shuttle(crate))
 		return FALSE
 	if(!bid_id)
@@ -771,7 +771,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	crate.cargo_market_contract_key = bid.reservation_key
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/cargo_market_profile_path(profile_id)
+/datum/world_service/supply/proc/cargo_market_profile_path(profile_id)
 	for(var/profile_path as anything in subtypesof(/datum/cargo_market_profile))
 		if(is_abstract(profile_path))
 			continue
@@ -782,7 +782,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		qdel(profile)
 	return /datum/cargo_market_profile/general_manufactured
 
-/datum/controller/subsystem/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)
+/datum/world_service/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)
 	var/list/eligible_packs = list()
 	var/list/groups = counterparty.seller_groups()
 	for(var/pack_name in supply_pack)
@@ -806,7 +806,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	market_listings[listing.id] = listing
 	return listing
 
-/datum/controller/subsystem/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
+/datum/world_service/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
 	var/profile_path = cargo_market_profile_path(profile_id)
 	var/datum/cargo_market_profile/profile = new profile_path
 	var/datum/cargo_market_bid/bid = new
@@ -822,7 +822,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	market_bids[bid.id] = bid
 	return bid
 
-/datum/controller/subsystem/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)
+/datum/world_service/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)
 	if(!contract?.offer_key || !contract.agent_faction)
 		return FALSE
 	var/datum/cargo_market_counterparty/counterparty
@@ -854,7 +854,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 			contract.market_reservation_ids += bid.id
 	return (!needs_purchase_route && !needs_export_route) || length(contract.market_reservation_ids)
 
-/datum/controller/subsystem/supply/proc/release_agent_contract_market(datum/contract/faction_agent/contract)
+/datum/world_service/supply/proc/release_agent_contract_market(datum/contract/faction_agent/contract)
 	if(!contract)
 		return FALSE
 	for(var/market_id in contract.market_reservation_ids)
@@ -875,13 +875,13 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 	contract.market_reservation_ids.Cut()
 	return TRUE
 
-/datum/controller/subsystem/supply/proc/market_security_auditor(mob/living/user)
+/datum/world_service/supply/proc/market_security_auditor(mob/living/user)
 	if(issilicon(user))
 		return TRUE
 	var/obj/item/card/id/id_card = user?.GetIdCard()
 	return id_card && ((ACCESS_SECURITY in id_card.access) || (ACCESS_HEADS in id_card.access))
 
-/datum/controller/subsystem/supply/proc/audit_market_transaction(transaction_id, mob/living/user)
+/datum/world_service/supply/proc/audit_market_transaction(transaction_id, mob/living/user)
 	if(!market_security_auditor(user))
 		return FALSE
 	var/datum/money_account/auditor = contract_account_for_mob(user)
@@ -927,7 +927,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 /// Re-publish already established forensic facts when an investigation is
 /// accepted. This makes offer timing irrelevant without making the auditor
 /// repeat an IC action or adding a polling requirement.
-/datum/controller/subsystem/supply/proc/replay_market_audit_evidence(datum/contract/covert_market_investigation/contract)
+/datum/world_service/supply/proc/replay_market_audit_evidence(datum/contract/covert_market_investigation/contract)
 	if(!contract?.suspect_account || contract.state != CONTRACT_ACTIVE)
 		return FALSE
 	var/replayed = 0
@@ -970,7 +970,7 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		replayed++
 	return replayed > 0
 
-/datum/controller/subsystem/supply/proc/cargo_market_ui_data(mob/living/user, console_unlocked = FALSE, station_trade_authorized = FALSE)
+/datum/world_service/supply/proc/cargo_market_ui_data(mob/living/user, console_unlocked = FALSE, station_trade_authorized = FALSE)
 	var/list/parties = list()
 	var/list/listings = list()
 	var/list/bids = list()
@@ -1085,6 +1085,6 @@ REF_OWNED(/datum/cargo_market_bid, "profile")
 		"is_auditor" = is_auditor,
 	)
 
-REF_OWNED_LIST(/datum/controller/subsystem/supply, "market_transactions")
+REF_OWNED_LIST(/datum/world_service/supply, "market_transactions")
 
-REF_OWNED_VALUES(/datum/controller/subsystem/supply, list("market_counterparties", "market_listings", "market_bids"))
+REF_OWNED_VALUES(/datum/world_service/supply, list("market_counterparties", "market_listings", "market_bids"))

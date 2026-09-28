@@ -38,9 +38,9 @@ REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 
 /datum/round_status_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(SSantag_job?.all_antag_types)
-		for(var/antag_type in SSantag_job.all_antag_types)
-			var/datum/antagonist/A = SSantag_job.all_antag_types[antag_type]
+	if(GLOB.antag_service.all_antag_types)
+		for(var/antag_type in GLOB.antag_service.all_antag_types)
+			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[antag_type]
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)
@@ -57,20 +57,20 @@ REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 	data["delay_end"] = !!SSticker?.delay_end
 
 	var/list/shuttle_data = list()
-	if(!SSemergency_shuttle.online())
+	if(!GLOB.emergency_shuttle_service.online())
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
-	else if(SSemergency_shuttle.wait_for_launch)
+	else if(GLOB.emergency_shuttle_service.wait_for_launch)
 		shuttle_data["state"] = SHUTTLE_STATE_COUNTING_DOWN
-		var/timeleft = SSemergency_shuttle.estimate_launch_time()
+		var/timeleft = GLOB.emergency_shuttle_service.estimate_launch_time()
 		shuttle_data["time_left_seconds"] = timeleft
 		shuttle_data["time_left_display"] = format_shuttle_timer(timeleft)
-	else if(SSemergency_shuttle.shuttle.has_arrive_time())
+	else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
 		shuttle_data["state"] = SHUTTLE_STATE_ARRIVING
-		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
+		var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
 		shuttle_data["time_left_seconds"] = timeleft
 		shuttle_data["time_left_display"] = format_shuttle_timer(timeleft)
-		shuttle_data["can_recall"] = SSemergency_shuttle.can_call() || SSemergency_shuttle.can_recall()
-	else if(SSemergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP)
+		shuttle_data["can_recall"] = GLOB.emergency_shuttle_service.can_call() || GLOB.emergency_shuttle_service.can_recall()
+	else if(GLOB.emergency_shuttle_service.shuttle.moving_status == SHUTTLE_WARMUP)
 		shuttle_data["state"] = SHUTTLE_STATE_WARMUP
 	else
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
@@ -99,10 +99,10 @@ REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 			if(SSticker?.mode?.name == "blob")
 				tgui_alert_async(ui.user, "You can't call the shuttle during blob!")
 				return
-			if(!SSticker || !SSemergency_shuttle.location())
+			if(!SSticker || !GLOB.emergency_shuttle_service.location())
 				return
-			if(SSemergency_shuttle.can_call())
-				SSemergency_shuttle.call_evac()
+			if(GLOB.emergency_shuttle_service.can_call())
+				GLOB.emergency_shuttle_service.call_evac()
 				log_admin("[key_name(ui.user)] called the Emergency Shuttle")
 				message_admins(span_blue("[key_name_admin(ui.user)] called the Emergency Shuttle to the station."), 1)
 			SStgui.update_uis(src)
@@ -111,10 +111,10 @@ REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 		if("recall_shuttle")
 			if(!check_rights(R_ADMIN|R_EVENT))
 				return
-			if(!SSticker || !SSemergency_shuttle.location())
+			if(!SSticker || !GLOB.emergency_shuttle_service.location())
 				return
-			if(SSemergency_shuttle.can_recall())
-				SSemergency_shuttle.recall()
+			if(GLOB.emergency_shuttle_service.can_recall())
+				GLOB.emergency_shuttle_service.recall()
 				log_admin("[key_name(ui.user)] sent the Emergency Shuttle back")
 				message_admins(span_blue("[key_name_admin(ui.user)] sent the Emergency Shuttle back."), 1)
 			SStgui.update_uis(src)
@@ -123,20 +123,20 @@ REF_PAIR(/datum/admins, list("round_status_panel" = "owner_admin"))
 		if("edit_shuttle_time")
 			if(!check_rights(R_SERVER))
 				return
-			if(SSemergency_shuttle.wait_for_launch)
-				var/new_time_left = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = SSemergency_shuttle.estimate_launch_time()))
+			if(GLOB.emergency_shuttle_service.wait_for_launch)
+				var/new_time_left = act_prompt(ui.user, action, params, ui, "a1", list("kind" = "number", "message" = "Enter new shuttle launch countdown (seconds):", "title" = "Edit Shuttle Launch Time", "default" = GLOB.emergency_shuttle_service.estimate_launch_time()))
 				if(isnull(new_time_left))
 					return
 				if(isnum(new_time_left))
-					SSemergency_shuttle.launch_time = world.time + (new_time_left * 10)
+					GLOB.emergency_shuttle_service.launch_time = world.time + (new_time_left * 10)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
-			else if(SSemergency_shuttle.shuttle.has_arrive_time())
-				var/new_time_left = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = SSemergency_shuttle.estimate_arrival_time()))
+			else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
+				var/new_time_left = act_prompt(ui.user, action, params, ui, "a2", list("kind" = "number", "message" = "Enter new shuttle arrival time (seconds):", "title" = "Edit Shuttle Arrival Time", "default" = GLOB.emergency_shuttle_service.estimate_arrival_time()))
 				if(isnull(new_time_left))
 					return
 				if(isnum(new_time_left))
-					SSemergency_shuttle.shuttle.arrive_time = world.time + (new_time_left * 10)
+					GLOB.emergency_shuttle_service.shuttle.arrive_time = world.time + (new_time_left * 10)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left * 10]"), 1)
 			else

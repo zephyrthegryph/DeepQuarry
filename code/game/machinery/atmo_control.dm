@@ -119,9 +119,9 @@
 
 /obj/machinery/air_sensor/proc/set_frequency(new_frequency)
 	invalidate_gas_dependencies()
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_ATMOSIA))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/air_sensor/Initialize(mapload)
 	. = ..()
@@ -242,9 +242,9 @@
 	return data
 
 /obj/machinery/computer/general_air_control/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_ATMOSIA))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/list/options = list("Sensors", "Frequency", "Cancel")

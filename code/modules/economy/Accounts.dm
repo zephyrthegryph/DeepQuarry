@@ -62,7 +62,7 @@
 		LAZYINITLIST(monthly_income_sources)
 		monthly_income_sources[source_name] = (monthly_income_sources[source_name] || 0) + amount
 	if(external)
-		SSsupply?.record_currency_created(amount, source_name)
+		GLOB.supply_service?.record_currency_created(amount, source_name)
 	return TRUE
 
 /datum/money_account/proc/debit(amount, target_name, purpose, terminal_id = "Station budget ledger", external = TRUE)
@@ -80,7 +80,7 @@
 	if(tracks_budget_period())
 		monthly_expenses += amount
 	if(external)
-		SSsupply?.record_currency_destroyed(amount, target_name)
+		GLOB.supply_service?.record_currency_destroyed(amount, target_name)
 	return TRUE
 
 /datum/money_account/proc/available_funds()
@@ -153,7 +153,7 @@
 	if(subsidy > 0)
 		if(!transfer_account_funds(GLOB.station_account, provider, subsidy, "Subsidy: [purpose]", provider_name))
 			return FALSE
-		SSsupply.service_subsidies += subsidy
+		GLOB.supply_service.service_subsidies += subsidy
 	var/paid = quote["personal"]
 	if(paid > 0 && customer.debit(paid, provider.owner_name, purpose, provider_name, FALSE))
 		provider.credit(paid, customer.owner_name, purpose, provider_name, FALSE)

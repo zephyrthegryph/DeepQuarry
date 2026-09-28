@@ -47,8 +47,8 @@
 			))
 	update_sun()
 
-/// Every 2 s on the slow lane (SSplanets starts every planet): the planet's clock, weather and
-/// sun. Lighting and wall temperature changes queue on SSplanets, which applies them in batches.
+/// Every 2 s on the slow lane (the planet service starts every planet): the planet's clock, weather and
+/// sun. Lighting and wall temperature changes queue on the planet service, which applies them in batches.
 /datum/planet/periodic_step(delta)
 	if(current_time)
 		var/difference = last_step ? world.time - last_step : delta
@@ -59,10 +59,12 @@
 		update_sun()
 	if(needs_work & PLANET_PROCESS_SUN)
 		needs_work &= ~PLANET_PROCESS_SUN
-		SSplanets.needs_sun_update |= src
+		GLOB.planet_service.needs_sun_update |= src
 	if(needs_work & PLANET_PROCESS_TEMP)
 		needs_work &= ~PLANET_PROCESS_TEMP
-		SSplanets.needs_temp_update |= src
+		GLOB.planet_service.needs_temp_update |= src
+	if(GLOB.planet_service.has_work())
+		GLOB.planet_service.demand()
 
 // This changes the position of the sun on the planet.
 /datum/planet/proc/update_sun()

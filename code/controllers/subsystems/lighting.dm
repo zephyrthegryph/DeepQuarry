@@ -25,7 +25,7 @@ SUBSYSTEM_DEF(lighting)
 		initialized = TRUE
 		create_all_lighting_objects()
 
-	for(var/datum/planet/planet in SSplanets.planets)
+	for(var/datum/planet/planet in GLOB.planet_service.planets)
 		if(!planet_shandlers[planet])
 			planet_shandlers[planet] = new /datum/planet_sunlight_handler(planet)
 
@@ -34,6 +34,7 @@ SUBSYSTEM_DEF(lighting)
 
 	return SS_INIT_SUCCESS
 
+// ALLOW(subsystem_fire): lighting folds in wave F5, after phase 4f makes it a Rust field
 /datum/controller/subsystem/lighting/fire(resumed, init_tick_checks)
 	MC_SPLIT_TICK_INIT(4)
 	if(!init_tick_checks)
@@ -145,8 +146,8 @@ SUBSYSTEM_DEF(lighting)
 	var/datum/planet_sunlight_handler/pshandler = z_to_pshandler[z]
 	if(istype(pshandler))
 		return pshandler
-	else if(SSplanets && length(SSplanets.z_to_planet) >= z && SSplanets.z_to_planet[z])
-		var/datum/planet/P = SSplanets.z_to_planet[z]
+	else if(GLOB.planet_service.initialized && length(GLOB.planet_service.z_to_planet) >= z && GLOB.planet_service.z_to_planet[z])
+		var/datum/planet/P = GLOB.planet_service.z_to_planet[z]
 		if(istype(P))
 			pshandler = get_pshandler_planet(P)
 			z_to_pshandler[z] = pshandler

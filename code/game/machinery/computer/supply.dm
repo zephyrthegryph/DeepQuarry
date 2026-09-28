@@ -83,7 +83,7 @@
 	var/list/data = ..()
 	var/list/shuttle_status = list()
 
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
 	if(shuttle)
 		if(shuttle.has_arrive_time())
 			shuttle_status["location"] = "In transit"
@@ -141,21 +141,21 @@
 	// Organized in field-entry list for iterative display
 	// List is nested so both the list of orders, and the list of elements in each order, can be iterated over
 	var/list/orders = list()
-	for(var/datum/supply_order/S in SSsupply.order_history)
+	for(var/datum/supply_order/S in GLOB.supply_service.order_history)
 		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
-		var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparties?[S.market_counterparty_id]
+		var/datum/cargo_market_counterparty/market_seller = GLOB.supply_service.market_counterparties?[S.market_counterparty_id]
 		orders.Add(list(list(
 			"ref" = "\ref[S]",
 			"status" = S.status,
-			"cost" = SSsupply.order_price(S),
+			"cost" = GLOB.supply_service.order_price(S),
 			"can_approve" = can_fund,
 			"entries" = list(
 				list("field" = "Supply Pack", "entry" = S.name),
 				list("field" = "Funding Source", "entry" = funding_label),
 				list("field" = "Charged", "entry" = S.paid_amount ? "[S.paid_amount] Thalers" : "Unpaid"),
-				list("field" = "Cost", "entry" = "[SSsupply.order_price(S)] Thalers"),
-				list("field" = "Seller", "entry" = SSsupply.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
+				list("field" = "Cost", "entry" = "[GLOB.supply_service.order_price(S)] Thalers"),
+				list("field" = "Seller", "entry" = GLOB.supply_service.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
 				list("field" = "Index", "entry" = S.index),
 				list("field" = "Reason", "entry" = S.comment),
 				list("field" = "Ordered by", "entry" = S.ordered_by),
@@ -167,8 +167,8 @@
 
 	// Compile exported crates
 	var/list/receipts = list()
-	for(var/datum/exported_crate/E in SSsupply.exported_crates)
-		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparties?[E.market_counterparty_id]
+	for(var/datum/exported_crate/E in GLOB.supply_service.exported_crates)
+		var/datum/cargo_market_counterparty/market_buyer = GLOB.supply_service.market_counterparties?[E.market_counterparty_id]
 		receipts.Add(list(list(
 			"ref" = "\ref[E]",
 			"contents" = E.contents,
@@ -176,7 +176,7 @@
 			"title" = list(
 				list("field" = "Name", "entry" = E.name),
 				list("field" = "Value", "entry" = E.value),
-				list("field" = "Buyer", "entry" = SSsupply.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
+				list("field" = "Buyer", "entry" = GLOB.supply_service.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
 				list("field" = "Market premium", "entry" = E.market_premium)
 			)
 		)))
@@ -199,7 +199,7 @@
 	data["receipts"] = receipts
 	data["contraband"] = can_order_contraband || (authorization & SUP_CONTRABAND)
 	data["market_auth"] = can_trade_market(user)
-	data["market"] = SSsupply.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user))
+	data["market"] = GLOB.supply_service.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user))
 	data["modal"] = tgui_modal_data(src)
 	return data
 
@@ -207,12 +207,12 @@
 	var/list/data = ..()
 
 	var/list/pack_list = list()
-	for(var/pack_name in SSsupply.supply_pack)
-		var/datum/supply_pack/P = SSsupply.supply_pack[pack_name]
+	for(var/pack_name in GLOB.supply_service.supply_pack)
+		var/datum/supply_pack/P = GLOB.supply_service.supply_pack[pack_name]
 		var/list/pack = list(
 				"name" = P.name,
 				"desc" = P.desc,
-				"cost" = SSsupply.pack_price(P),
+				"cost" = GLOB.supply_service.pack_price(P),
 				"group" = P.group,
 				"contraband" = P.contraband,
 				"manifest" = uniqueList(P.manifest),
@@ -228,10 +228,10 @@
 /obj/machinery/computer/supplycomp/tgui_act(action, params, datum/tgui/ui)
 	if(..())
 		return TRUE
-	if(!SSsupply)
-		log_runtime(EXCEPTION("## ERROR: The SSsupply datum is missing."))
+	if(!GLOB.supply_service)
+		log_runtime(EXCEPTION("## ERROR: The GLOB.supply_service datum is missing."))
 		return TRUE
-	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
 	if(!shuttle)
 		log_runtime(EXCEPTION("## ERROR: The supply shuttle datum is missing."))
 		return TRUE
@@ -241,7 +241,7 @@
 
 	switch(action)
 		if("market_request")
-			var/datum/cargo_market_listing/listing = SSsupply.market_listing(params["id"])
+			var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listing(params["id"])
 			if(!listing)
 				return FALSE
 			var/personal_funding = !!params["personal"]
@@ -251,14 +251,14 @@
 			om_prompt(src, ui.user, list("kind" = "text", "message" = "Procurement justification", "title" = "Why should the station purchase this market listing?", "default" = "External market procurement", "max_length" = MAX_MESSAGE_LEN, "requires" = PROMPT_USABLE, "data" = list("listing" = listing, "personal" = personal_funding, "contract" = contract_funding)), PROC_REF(market_request_justified))
 			. = TRUE
 		if("market_route")
-			var/datum/cargo_market_bid/bid = SSsupply.market_bid(params["bid"])
-			var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparties?[bid?.counterparty_id]
+			var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(params["bid"])
+			var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties?[bid?.counterparty_id]
 			if(!can_trade_market(ui.user) && !has_faction_market_access(ui.user, counterparty?.faction_id))
 				return FALSE
 			var/obj/structure/closet/crate/crate = locate(params["crate"])
 			if(!istype(crate))
 				return FALSE
-			if(!SSsupply.route_market_crate(crate, params["bid"], ui.user, can_order_contraband || (authorization & SUP_CONTRABAND)))
+			if(!GLOB.supply_service.route_market_crate(crate, params["bid"], ui.user, can_order_contraband || (authorization & SUP_CONTRABAND)))
 				to_chat(ui.user, span_warning("That route is no longer valid for this crate."))
 				return FALSE
 			. = TRUE
@@ -327,7 +327,7 @@
 				return FALSE
 			if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(ui.user, O.funding_department))
 				return FALSE
-			SSsupply.approve_order(O, ui.user)
+			GLOB.supply_service.approve_order(O, ui.user)
 			. = TRUE
 		if("deny_order")
 			var/datum/supply_order/O = locate(params["ref"])
@@ -335,7 +335,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			SSsupply.deny_order(O, ui.user)
+			GLOB.supply_service.deny_order(O, ui.user)
 			. = TRUE
 		if("delete_order")
 			var/datum/supply_order/O = locate(params["ref"])
@@ -343,12 +343,12 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			SSsupply.delete_order(O, ui.user)
+			GLOB.supply_service.delete_order(O, ui.user)
 			. = TRUE
 		if("clear_all_requests")
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			SSsupply.deny_all_pending(ui.user)
+			GLOB.supply_service.deny_all_pending(ui.user)
 			. = TRUE
 		// Exports
 		if("export_edit_field")
@@ -379,7 +379,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			SSsupply.add_export_item(E, ui.user)
+			GLOB.supply_service.add_export_item(E, ui.user)
 			. = TRUE
 		if("export_edit")
 			var/datum/exported_crate/E = locate(params["ref"])
@@ -397,7 +397,7 @@
 				return FALSE
 			if(!(authorization & SUP_ACCEPT_ORDERS))
 				return FALSE
-			SSsupply.delete_export(E, ui.user)
+			GLOB.supply_service.delete_export(E, ui.user)
 			. = TRUE
 		if("send_shuttle")
 			if(!(authorization & SUP_SEND_SHUTTLE))
@@ -412,7 +412,7 @@
 
 				if("send_to_station")
 					shuttle.launch(src)
-					to_chat(ui.user, span_notice("The supply shuttle has been called and will arrive in approximately [round(SSsupply.movetime/600,1)] minutes."))
+					to_chat(ui.user, span_notice("The supply shuttle has been called and will arrive in approximately [round(GLOB.supply_service.movetime/600,1)] minutes."))
 
 				if("cancel_shuttle")
 					shuttle.cancel_launch(src)
@@ -429,7 +429,7 @@
 	var/contract_funding = ask.get("contract")
 	if(!reason)
 		return FALSE
-	if(!SSsupply.request_market_order(listing, user, reason, can_order_contraband || (authorization & SUP_CONTRABAND), personal_funding, contract_funding))
+	if(!GLOB.supply_service.request_market_order(listing, user, reason, can_order_contraband || (authorization & SUP_CONTRABAND), personal_funding, contract_funding))
 		to_chat(user, span_warning("The market listing is no longer available."))
 		return FALSE
 	to_chat(user, span_notice("The quoted market order was submitted[contract_funding ? " against the contract allowance" : (personal_funding ? " with personal funding" : " for departmental approval")]."))
@@ -445,7 +445,7 @@
 	var/personal_funding = !!ask.get("personal")
 	var/orders_created = 0
 	for(var/i in 1 to amount)
-		if(!SSsupply.create_order(S, user, reason, personal_funding))
+		if(!GLOB.supply_service.create_order(S, user, reason, personal_funding))
 			break
 		orders_created++
 	if(!orders_created)
@@ -465,7 +465,7 @@
 	var/obj/item/paper/reqform = new /obj/item/paper(loc)
 	reqform.name = "Requisition Form - [S.name]"
 	reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
-	reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
+	reqform.info += "INDEX: #[GLOB.supply_service.ordernum]<br>"
 	reqform.info += "REQUESTED BY: [idname]<br>"
 	reqform.info += "RANK: [idrank]<br>"
 	reqform.info += "REASON: [reason]<br>"
@@ -486,7 +486,7 @@
 	if(!reason)
 		return FALSE
 
-	if(!SSsupply.create_order(S, user, reason, !!ask.get("personal")))
+	if(!GLOB.supply_service.create_order(S, user, reason, !!ask.get("personal")))
 		to_chat(user, span_warning("The order could not be funded."))
 		return FALSE
 
@@ -503,7 +503,7 @@
 	var/obj/item/paper/reqform = new /obj/item/paper(loc)
 	reqform.name = "Requisition Form - [S.name]"
 	reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
-	reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
+	reqform.info += "INDEX: #[GLOB.supply_service.ordernum]<br>"
 	reqform.info += "REQUESTED BY: [idname]<br>"
 	reqform.info += "RANK: [idrank]<br>"
 	reqform.info += "REASON: [reason]<br>"
@@ -597,7 +597,7 @@
 	. = TRUE
 
 /obj/machinery/computer/supplycomp/proc/post_signal(command)
-	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
+	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
 
 	if(!frequency) return
 

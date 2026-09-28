@@ -26,11 +26,48 @@
 	/// TRUE once initialize() has run. A lazy (data-only) service initializes on first use through
 	/// LAZY_SERVICE(); initialize() sets this first so a re-entrant lookup doesn't recurse.
 	var/initialized = FALSE
+	/// On-demand lane: parked while has_work() is FALSE, unparked by demand() when work is queued
+	/// (a cascade, an explosion, a star move). Idle services then cost the scheduler nothing.
+	var/on_demand = FALSE
+	/// Boot slot: the subsystem type after whose Initialize() the MC initializes this service
+	/// (boot_world_services_after()). Null: lazy (LAZY_SERVICE()) or initialized by its owner.
+	var/boot_after
+	/// Service types that must initialize before this one; booted first, in declared order.
+	var/list/order_after
 
 /// One-time setup, called by whatever used to be this service's Initialize() dependency slot, or
 /// on first use by ready() for a lazy service. Overrides set `initialized = TRUE` first.
 /datum/world_service/proc/initialize()
 	initialized = TRUE
+
+/// Server shutdown (MC Shutdown(), after the subsystems): flush whatever must survive the round.
+/datum/world_service/proc/on_shutdown()
+	return
+
+/// Initializes `S` after every service in its order_after (depth first; initialized guards cycles).
+/proc/boot_world_service(datum/world_service/S)
+	if(S.initialized)
+		return
+	for(var/datum/world_service/other as anything in world_services())
+		if(other.type in S.order_after)
+			boot_world_service(other)
+	var/started = REALTIMEOFDAY
+	S.initialize()
+	S.initialized = TRUE
+	log_world("World service [S.name] initialized in [(REALTIMEOFDAY - started) / 10]s.")
+
+/// MC boot hook: initializes every service whose boot slot is `subsystem_type`.
+/proc/boot_world_services_after(subsystem_type)
+	for(var/datum/world_service/S as anything in world_services())
+		if(S.boot_after == subsystem_type)
+			boot_world_service(S)
+
+/// MC shutdown hook.
+/proc/shutdown_world_services()
+	for(var/datum/world_service/S as anything in world_services())
+		if(S.initialized)
+			log_world("Shutting down [S.name] world service...")
+			S.on_shutdown()
 
 /// Lazy services: initializes on first use and returns the service (LAZY_SERVICE() in __defines/om.dm).
 /datum/world_service/proc/ready()
@@ -46,6 +83,21 @@
 /datum/world_service/proc/service_step(resumed)
 	SHOULD_NOT_SLEEP(TRUE)
 	return TRUE
+
+/// On-demand services: TRUE while there is queued work for the lane.
+/datum/world_service/proc/has_work()
+	return TRUE
+
+/// On-demand services: call after queueing work; wakes the lane if it was parked. `now`: also run a
+/// step at the scheduler's next drain instead of waiting for the lane's next cadence frame.
+/datum/world_service/proc/demand(now = FALSE)
+	if(!lane)
+		return
+	var/datum/om/global_owner/owner = om_global_owner()
+	if(owner && om_attached(owner, lane))
+		om_unpark(owner, lane)
+		if(now)
+			om_wake(owner, lane)
 
 /// One line for the admin status/profiler readouts (was the subsystem's stat_entry()).
 /datum/world_service/proc/stat_line()
@@ -76,6 +128,18 @@
 		GLOB.radiation_service, GLOB.motiontracker_service, GLOB.pai_service, GLOB.mail_service,
 		GLOB.chemistry_service, GLOB.sound_service, GLOB.instrument_service, GLOB.circuit_service,
 		GLOB.xenoarch_service, GLOB.event_service,
+		// Fold wave F4.
+		GLOB.solar_service, GLOB.nightshift_service, GLOB.planet_service, GLOB.skybox_service,
+		GLOB.poi_service, GLOB.starmover_service, GLOB.turf_cascade_service, GLOB.explosion_service,
+		GLOB.inactivity_service, GLOB.transfer_service, GLOB.radio_service, GLOB.antag_service,
+		// Former feature subsystems (large).
+		GLOB.research_service, GLOB.supply_service, GLOB.transcore_service, GLOB.emergency_shuttle_service,
+		GLOB.expedition_service, GLOB.flight_service,
+		// Former feature subsystems (small) and client plumbing.
+		GLOB.character_setup_service, GLOB.lobby_monitor_service, GLOB.player_tips_service,
+		GLOB.vote_service, GLOB.persist_service,
+		GLOB.runechat_service, GLOB.chat_service, GLOB.asset_loading_service, GLOB.vis_overlays_service,
+		GLOB.ping_service, GLOB.time_track_service, GLOB.statpanels_service, GLOB.server_maint_service,
 	)
 
 /// Attaches every world service's lane to the live scheduler's global owner (SSbehaviours init).
@@ -86,6 +150,8 @@
 			continue
 		if(!om_attached(owner, S.lane))
 			om_attach(owner, S.lane)
+		if(S.on_demand && !S.has_work())
+			om_park(owner, S.lane)
 		log_world("OM world lane started: [S.name] ([S.lane])")
 
 // ---------------------------------------------------------------- lanes
@@ -107,6 +173,13 @@
 		return
 	if(!S.run_step())
 		om_deadline(E, world.tick_lag, src)
+	else if(S.on_demand && !S.has_work())
+		om_park(E, src)
+
+/// demand(now = TRUE): run a step at the next drain.
+/datum/om/behaviour/world/on_wake(datum/E, changes)
+	if(changes & CHANGE_EXPLICIT)
+		tick(E, 0)
 
 /// A yielded step resumes here, one tick later.
 /datum/om/behaviour/world/on_deadline(datum/E)
@@ -115,6 +188,8 @@
 		return
 	if(!S.run_step())
 		om_deadline(E, world.tick_lag, src)
+	else if(S.on_demand && !S.has_work())
+		om_park(E, src)
 
 /// Gas watch dispatch, the batched pump commit and the power step (was SSmachines, 2 s).
 /datum/om/behaviour/world/machines
@@ -169,3 +244,84 @@
 
 /datum/om/behaviour/world/mail/service()
 	return GLOB.mail_service
+
+// ---------------------------------------------------------------- fold wave F4 lanes
+
+/// Sun position and the solar controllers and panels (was SSsun + SSsolars, 1 min).
+/datum/om/behaviour/world/solars
+	name = "world: solars"
+	every = 1 MINUTE
+
+/datum/om/behaviour/world/solars/service()
+	return GLOB.solar_service
+
+/// Night shift lighting (was SSnightshift, 60 s).
+/datum/om/behaviour/world/nightshift
+	name = "world: night shift"
+	every = 60 SECONDS
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/nightshift/service()
+	return GLOB.nightshift_service
+
+/// Planet sunlight and wall temperatures the planets queued (was SSplanets, 2 s). On demand.
+/datum/om/behaviour/world/planets
+	name = "world: planets"
+	every = 2 SECONDS
+	lane = LANE_BACKGROUND
+
+/datum/om/behaviour/world/planets/service()
+	return GLOB.planet_service
+
+/// Mid-round POI placement (was SSpoints_of_interest, 1 s). On demand; runs in the lobby too.
+/datum/om/behaviour/world/pois
+	name = "world: points of interest"
+	every = 1 SECOND
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/pois/service()
+	return GLOB.poi_service
+
+/// Star movement behind moving overmap ships (was SSstarmover, every tick). On demand.
+/datum/om/behaviour/world/starmover
+	name = "world: star movement"
+	every = 1
+	runlevels = RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/starmover/service()
+	return GLOB.starmover_service
+
+/// A spreading turf conversion (was SSturf_cascade, 0.2 s). On demand.
+/datum/om/behaviour/world/turf_cascade
+	name = "world: turf cascade"
+	every = 2
+
+/datum/om/behaviour/world/turf_cascade/service()
+	return GLOB.turf_cascade_service
+
+/// Explosion epochs (was SSexplosions, 0.5 s). On demand; explosion() wakes it at once.
+/datum/om/behaviour/world/explosions
+	name = "world: explosions"
+	every = 0.5 SECONDS
+
+/datum/om/behaviour/world/explosions/service()
+	return GLOB.explosion_service
+
+/// AFK kicks (was SSinactivity, 1 min).
+/datum/om/behaviour/world/inactivity
+	name = "world: inactivity"
+	every = 1 MINUTE
+	lane = LANE_BACKGROUND
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/inactivity/service()
+	return GLOB.inactivity_service
+
+/// Automatic crew transfer votes and the shift's hard end (was SStransfer, 1 s).
+/datum/om/behaviour/world/transfer
+	name = "world: crew transfer"
+	every = 1 SECOND
+	runlevels = RUNLEVEL_GAME
+
+/datum/om/behaviour/world/transfer/service()
+	return GLOB.transfer_service

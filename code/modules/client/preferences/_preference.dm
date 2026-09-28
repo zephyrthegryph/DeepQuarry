@@ -326,7 +326,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	return client?.prefs?.read_preference(preference_type)
 
 /// Write a /datum/preference type and return its value directly to the json.
-/// Please use SScharacter_setup.queue_preferences_save(prefs) when you edit multiple at once and set direct_write to WRITE_PREF_MANUAL
+/// Please use GLOB.character_setup_service.queue_preferences_save(prefs) when you edit multiple at once and set direct_write to WRITE_PREF_MANUAL
 /// Additionally, if you want something to be changed IN ROUND and change a pref for THAT CHARACTER'S SAVESLOT, ensure save_to_played_slot = TRUE!
 /mob/proc/write_preference_directly(preference_type, preference_value, write_mode = WRITE_PREF_INSTANT, save_to_played_slot)
 	var/remembered_default

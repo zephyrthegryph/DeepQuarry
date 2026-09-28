@@ -1,12 +1,15 @@
-SUBSYSTEM_DEF(explosions)
+// The explosion world service (fold wave F4; was SSexplosions). explosion() queues blasts here and
+// wakes /datum/om/behaviour/world/explosions (code/datums/om/world_lanes.dm), which prepares and
+// resolves each explosion epoch every 0.5 s, resuming the next tick when a phase runs over budget.
+// The lane parks when the epoch is done.
+GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
+
+/datum/world_service/explosions
 	name = "Explosions"
-	priority = FIRE_PRIORITY_EXPLOSIONS
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-	wait = 0.5 SECONDS
-	dependencies = list(
-		/datum/controller/subsystem/air
-	)
-	flags = SS_NO_INIT
+	lane = /datum/om/behaviour/world/explosions
+	on_demand = TRUE
+	/// An explosion epoch is in progress (was the subsystem's can_fire).
+	var/awake = FALSE
 
 	VAR_PRIVATE/resolve_explosions = FALSE
 	VAR_PRIVATE/list/currentrun = null
@@ -66,7 +69,10 @@ SUBSYSTEM_DEF(explosions)
 	VAR_PRIVATE/list/atom_profile_cost = list()
 	VAR_PRIVATE/list/atom_profile_calls = list()
 
-/datum/controller/subsystem/explosions/stat_entry(msg)
+/datum/world_service/explosions/has_work()
+	return awake
+
+/datum/world_service/explosions/stat_line()
 	var/meme = ""
 	switch(length(resolving_explosions))
 		if(0 to 10000) meme = ""
@@ -76,10 +82,9 @@ SUBSYSTEM_DEF(explosions)
 		if(25000 to 30000) meme = "- WANNA BET?"
 		if(30000 to INFINITY) meme = "- CALL /abort() TO FORCE END"
 	var/remaining = max(0, LAZYLEN(currentrun_keys) - currentrun_index + 1)
-	msg = "E:[epoch_submissions] P:[length(pending_explosions)] R:[length(resolving_explosions)] CR:[remaining] [resolve_explosions ? "RESOLVE" : remaining ? "PREP" : "IDLE"] last:[round(last_epoch_ms, 0.1)]ms prep:[round(epoch_prepare_ms, 0.1)]ms resolve:[round(epoch_resolve_ms, 0.1)]ms [meme]"
-	return ..()
+	return "E:[epoch_submissions] P:[length(pending_explosions)] R:[length(resolving_explosions)] CR:[remaining] [resolve_explosions ? "RESOLVE" : remaining ? "PREP" : "IDLE"] last:[round(last_epoch_ms, 0.1)]ms prep:[round(epoch_prepare_ms, 0.1)]ms resolve:[round(epoch_resolve_ms, 0.1)]ms [meme]"
 
-/datum/controller/subsystem/explosions/proc/performance_diagnostics()
+/datum/world_service/explosions/proc/performance_diagnostics()
 	return list(
 		"phase" = resolve_explosions ? "resolve" : currentrun_index <= LAZYLEN(currentrun_keys) ? "prepare" : "idle",
 		"pending" = length(pending_explosions),
@@ -104,14 +109,16 @@ SUBSYSTEM_DEF(explosions)
 		"topology_batch_open" = atmos_topology_batch_open,
 	)
 
-/datum/controller/subsystem/explosions/proc/gotosleep()
-	can_fire = FALSE
+/datum/world_service/explosions/proc/gotosleep()
+	awake = FALSE
 
-/datum/controller/subsystem/explosions/proc/wakeup()
-	can_fire = TRUE
-	next_fire = world.time
+/// Starts an epoch: the lane steps at the scheduler's next drain.
+/datum/world_service/explosions/proc/wakeup()
+	awake = TRUE
+	demand(now = TRUE)
 
-/datum/controller/subsystem/explosions/fire(resumed)
+/// Returns FALSE when a phase ran over the tick budget (the lane resumes it next tick), TRUE otherwise.
+/datum/world_service/explosions/service_step(resumed)
 	// Build both queues. The first one gets the explosion power in each turf
 	// The second queue applies that explosion power to all turfs and objects in them
 	if(!resumed)
@@ -126,7 +133,7 @@ SUBSYSTEM_DEF(explosions)
 			explosion_signals.Cut()
 	if(currentrun_index > LAZYLEN(currentrun_keys) && !resolve_explosions) // Wait till we're useful if we have nothing to do!
 		gotosleep()
-		return
+		return TRUE
 
 	// The heavy lifting part...
 	var/profile_resolve_phase = resolve_explosions
@@ -148,7 +155,7 @@ SUBSYSTEM_DEF(explosions)
 			currentrun_index++
 		else
 			record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
-			return
+			return TRUE
 
 		// Check if we move on to final resolution
 		if(currentrun_index > length(currentrun_keys))
@@ -157,18 +164,18 @@ SUBSYSTEM_DEF(explosions)
 				load_currentrun(resolving_explosions, TRUE)
 				resolving_explosions.Cut()
 				record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
-				return
+				return TRUE
 			break // In resolution mode, break into final res ahead
 
-		if(MC_TICK_CHECK)
+		if(TICK_CHECK)
 			record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
-			return
+			return FALSE
 	record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
 
 	if(resolve_explosions && !deliver_blast_batches())
-		return
+		return TRUE
 	if(resolve_explosions && !flush_deferred_turf_updates())
-		return
+		return TRUE
 
 	// Finalization is resumable too. A cascade can contain thousands of nested
 	// submissions; emitting every global signal in one call used to defeat the
@@ -192,8 +199,8 @@ SUBSYSTEM_DEF(explosions)
 		var/light_impact_range 	= time_dat[6]
 		var/took 				= (world.time - time_dat[7]) / (1 SECOND) // Horrifyingly, this has always been server performance dependant. Should really only be used for cosmetic stuff.
 		OM_EMIT_WORLD(/datum/om/event/world_explosion, epicenter, devastation_range, heavy_impact_range, light_impact_range, took)
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 	currentsignals.Cut()
 	current_signal_keys = null
 	current_signal_index = 1
@@ -205,14 +212,15 @@ SUBSYSTEM_DEF(explosions)
 		dump_atom_profile()
 		log_runtime("EXPLOSION_PROFILE [json_encode(performance_diagnostics())]")
 		suspend_and_invoke_deferred_subsystems()
+	return TRUE
 
-/datum/controller/subsystem/explosions/proc/record_turf_phase_cost(resolve_phase, profile_start)
+/datum/world_service/explosions/proc/record_turf_phase_cost(resolve_phase, profile_start)
 	if(resolve_phase)
 		epoch_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
 	else
 		epoch_prepare_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
 
-/datum/controller/subsystem/explosions/proc/load_currentrun(list/source, strongest_first = FALSE)
+/datum/world_service/explosions/proc/load_currentrun(list/source, strongest_first = FALSE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	currentrun = source.Copy()
@@ -236,7 +244,7 @@ SUBSYSTEM_DEF(explosions)
 			currentrun_keys += key
 	currentrun_index = 1
 
-/datum/controller/subsystem/explosions/proc/queue_sound_event(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
+/datum/world_service/explosions/proc/queue_sound_event(turf/epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 	// Every per-turf table is keyed by the turf itself: turfs change in place,
 	// so the ref is stable, and it costs no key string per visit.
 	var/key = epicenter
@@ -244,7 +252,7 @@ SUBSYSTEM_DEF(explosions)
 	if(!prior || max(devastation_range, heavy_impact_range, light_impact_range) > max(prior[2], prior[3], prior[4]))
 		pending_sound_events[key] = list(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
-/datum/controller/subsystem/explosions/proc/dispatch_sound_events()
+/datum/world_service/explosions/proc/dispatch_sound_events()
 	if(!length(pending_sound_events))
 		return
 	// One perceptual event per listener and subsystem slice. Cascading cells no
@@ -280,7 +288,7 @@ SUBSYSTEM_DEF(explosions)
 			M.playsound_local(epicenter, 'sound/effects/explosionfar.ogg', far_volume, TRUE, get_rand_frequency(), falloff = 5)
 	pending_sound_events.Cut()
 
-/datum/controller/subsystem/explosions/proc/fire_prepare_explosions(list/data)
+/datum/world_service/explosions/proc/fire_prepare_explosions(list/data)
 	var/pwr = data[4]
 	var/direction = data[5]
 	var/starting_power = data[6]
@@ -321,7 +329,7 @@ SUBSYSTEM_DEF(explosions)
 	// Build the final explosion list, will be processed when we get to final resolution
 	finalize_explosion(epicenter,pwr,starting_power)
 
-/datum/controller/subsystem/explosions/proc/fire_resolve_explosions(list/data)
+/datum/world_service/explosions/proc/fire_resolve_explosions(list/data)
 	var/pwr = data[4]
 	var/starting_power = data[5]
 	if(pwr <= 0)
@@ -342,7 +350,7 @@ SUBSYSTEM_DEF(explosions)
 
 /// Queue `AM` for a blast packet this epoch. Each atom is hit once, at the
 /// strongest severity that reached it. Bomb-proof atoms are never queued.
-/datum/controller/subsystem/explosions/proc/queue_blast(atom/movable/AM, severity)
+/datum/world_service/explosions/proc/queue_blast(atom/movable/AM, severity)
 	if(!AM || QDELETED(AM) || !AM.simulated)
 		return
 	if(isobj(AM))
@@ -367,14 +375,14 @@ SUBSYSTEM_DEF(explosions)
 /// `budget` atoms. Containers queue their contents into the same epoch, in
 /// bulk, before their own packet lands (a destroyed container spills them).
 /// Returns TRUE once every batch is delivered.
-/datum/controller/subsystem/explosions/proc/deliver_blast_batches(budget = blast_batch_budget, tick_checked = TRUE)
+/datum/world_service/explosions/proc/deliver_blast_batches(budget = blast_batch_budget, tick_checked = TRUE)
 	// Everything this slice of blast packets destroys goes as one batched
 	// destroy (code/datums/lifecycle/batch.dm), run before returning.
 	dq_destroy_collect_begin()
 	. = deliver_blast_batches_collected(budget, tick_checked)
 	epoch_batched_destroys += dq_destroy_collect_end()
 
-/datum/controller/subsystem/explosions/proc/deliver_blast_batches_collected(budget, tick_checked)
+/datum/world_service/explosions/proc/deliver_blast_batches_collected(budget, tick_checked)
 	PRIVATE_PROC(TRUE)
 	var/profile_start = TICK_USAGE
 	var/delivered = 0
@@ -383,7 +391,7 @@ SUBSYSTEM_DEF(explosions)
 		if(blast_batch_atom_index == 2)
 			epoch_blast_batches++
 		while(blast_batch_atom_index <= length(batch))
-			if(delivered >= budget || (tick_checked && MC_TICK_CHECK))
+			if(delivered >= budget || (tick_checked && TICK_CHECK))
 				epoch_atom_resolve_ms += TICK_DELTA_TO_MS(TICK_USAGE - profile_start)
 				return FALSE
 			var/atom/movable/AM = batch[blast_batch_atom_index++]
@@ -420,7 +428,7 @@ SUBSYSTEM_DEF(explosions)
 	clear_blast_batches()
 	return TRUE
 
-/datum/controller/subsystem/explosions/proc/clear_blast_batches()
+/datum/world_service/explosions/proc/clear_blast_batches()
 	blast_batches.Cut()
 	blast_batch_order.Cut()
 	blast_batch_type_index = 1
@@ -428,7 +436,7 @@ SUBSYSTEM_DEF(explosions)
 	resolved_atoms.Cut()
 
 /// Pending atoms, for tests and diagnostics.
-/datum/controller/subsystem/explosions/proc/pending_blast_count()
+/datum/world_service/explosions/proc/pending_blast_count()
 	. = 0
 	for(var/i in blast_batch_type_index to length(blast_batch_order))
 		var/list/batch = blast_batch_order[i]
@@ -436,7 +444,7 @@ SUBSYSTEM_DEF(explosions)
 	if(blast_batch_type_index <= length(blast_batch_order))
 		. -= blast_batch_atom_index - 2
 
-/datum/controller/subsystem/explosions/proc/dump_atom_profile()
+/datum/world_service/explosions/proc/dump_atom_profile()
 	if(!profile_atom_types || !length(atom_profile_cost))
 		return
 	var/list/sorted_cost = atom_profile_cost.Copy()
@@ -447,7 +455,7 @@ SUBSYSTEM_DEF(explosions)
 		if(++rank >= 25)
 			break
 
-/datum/controller/subsystem/explosions/proc/cached_explosion_resistance(turf/T)
+/datum/world_service/explosions/proc/cached_explosion_resistance(turf/T)
 	. = explosion_resistance_cache[T]
 	if(!isnull(.))
 		return
@@ -456,22 +464,22 @@ SUBSYSTEM_DEF(explosions)
 		. += O.explosion_resistance
 	explosion_resistance_cache[T] = .
 
-/datum/controller/subsystem/explosions/proc/start_resolve()
+/datum/world_service/explosions/proc/start_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = TRUE
 	bulk_resolution_active = TRUE
 
-/datum/controller/subsystem/explosions/proc/end_resolve()
+/datum/world_service/explosions/proc/end_resolve()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	resolve_explosions = FALSE
 	bulk_resolution_active = FALSE
 
-/datum/controller/subsystem/explosions/proc/is_bulk_resolving()
+/datum/world_service/explosions/proc/is_bulk_resolving()
 	return bulk_resolution_active
 
-/datum/controller/subsystem/explosions/proc/defer_turf_update(turf/T)
+/datum/world_service/explosions/proc/defer_turf_update(turf/T)
 	if(!T)
 		return
 	if(deferred_turf_updates[T])
@@ -480,24 +488,24 @@ SUBSYSTEM_DEF(explosions)
 	for(var/turf/neighbor as anything in RANGE_TURFS(1, T))
 		deferred_appearance_updates[neighbor] = TRUE
 
-/datum/controller/subsystem/explosions/proc/flush_deferred_turf_updates()
+/datum/world_service/explosions/proc/flush_deferred_turf_updates()
 	while(deferred_turf_update_index <= length(deferred_turf_updates))
 		var/turf/T = deferred_turf_updates[deferred_turf_update_index++]
 		T?.finalize_explosion_deferred_change(FALSE)
-		if(MC_TICK_CHECK)
+		if(TICK_CHECK)
 			return FALSE
 	deferred_turf_updates.Cut()
 	deferred_turf_update_index = 1
 	while(deferred_appearance_update_index <= length(deferred_appearance_updates))
 		var/turf/T = deferred_appearance_updates[deferred_appearance_update_index++]
 		T?.finalize_explosion_deferred_appearance()
-		if(MC_TICK_CHECK)
+		if(TICK_CHECK)
 			return FALSE
 	deferred_appearance_updates.Cut()
 	deferred_appearance_update_index = 1
 	return TRUE
 
-/datum/controller/subsystem/explosions/proc/wake_and_defer_subsystem_updates()
+/datum/world_service/explosions/proc/wake_and_defer_subsystem_updates()
 	// Even a small blast can destroy a cell, cable, or pipe.  Keep one
 	// transaction open for the complete nested explosion epoch: every cable
 	// the blast removes reaches Rust as one power commit. Gas geometry needs
@@ -508,7 +516,7 @@ SUBSYSTEM_DEF(explosions)
 		atmos_topology_batch_open = TRUE
 		SScontracts?.begin_contract_batch()
 	// waking from sleep, we are absolutely not resuming, and INSTANT feedback to players is required here.
-	if(can_fire) // already awake
+	if(awake) // already awake
 		return
 	epoch_started_at = REALTIMEOFDAY
 	epoch_prepare_ms = 0
@@ -536,7 +544,7 @@ SUBSYSTEM_DEF(explosions)
 	current_signal_index = 1
 	wakeup()
 
-/datum/controller/subsystem/explosions/proc/suspend_and_invoke_deferred_subsystems()
+/datum/world_service/explosions/proc/suspend_and_invoke_deferred_subsystems()
 	// Resolve all the stuff we put off for after the explosion resolved
 	if(atmos_topology_batch_open)
 		atmos_topology_batch_open = FALSE
@@ -544,11 +552,11 @@ SUBSYSTEM_DEF(explosions)
 		vg_power_commit()
 		SScontracts?.end_contract_batch()
 	// we've finished. Pause because was have no more work to do.
-	if(!can_fire) // already asleep
+	if(!awake) // already asleep
 		return
 	gotosleep()
 
-/datum/controller/subsystem/explosions/proc/abort()
+/datum/world_service/explosions/proc/abort()
 	if(currentrun_index > LAZYLEN(currentrun_keys))
 		return
 	// Removes all entries except the top most, so we enter resolution phase properly, need at least one entry to do so...
@@ -560,7 +568,7 @@ SUBSYSTEM_DEF(explosions)
 	currentrun_index = 1
 
 // INTERNAL explosion proc, meant for GROWING a currently processing blast.
-/datum/controller/subsystem/explosions/proc/append_currentrun(turf/key,pwr,direction,starting_power)
+/datum/world_service/explosions/proc/append_currentrun(turf/key,pwr,direction,starting_power)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(pwr <= 0)
@@ -584,7 +592,7 @@ SUBSYSTEM_DEF(explosions)
 		currentrun[key] = list(key.x,key.y,key.z,pwr,direction,max_starting)
 
 // Queue explosion event, call this from explosion() ONLY
-/datum/controller/subsystem/explosions/proc/append_explosion(turf/epicenter, pwr, devastation_range, heavy_impact_range, light_impact_range, flash_range, z_transfer)
+/datum/world_service/explosions/proc/append_explosion(turf/epicenter, pwr, devastation_range, heavy_impact_range, light_impact_range, flash_range, z_transfer)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(pwr <= 0)
 		return
@@ -621,7 +629,7 @@ SUBSYSTEM_DEF(explosions)
 	epoch_submissions++
 
 // Collect prepared explosions for BLAST PROCESSING
-/datum/controller/subsystem/explosions/proc/finalize_explosion(turf/key,pwr,max_starting)
+/datum/world_service/explosions/proc/finalize_explosion(turf/key,pwr,max_starting)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(pwr <= 0)
@@ -658,7 +666,7 @@ SUBSYSTEM_DEF(explosions)
 				explosion(GetAbove(epicenter), round(adj_dev), round(adj_heavy), round(adj_light), round(adj_flash), 0, UP, shaped)
 			if(HasBelow(epicenter.z) && z_transfer & DOWN)
 				explosion(GetBelow(epicenter), round(adj_dev), round(adj_heavy), round(adj_light), round(adj_flash), 0, DOWN, shaped)
-	SSexplosions.queue_sound_event(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
+	GLOB.explosion_service.queue_sound_event(epicenter, devastation_range, heavy_impact_range, light_impact_range, flash_range)
 
 	if(adminlog)
 		message_admins("Explosion with [shaped ? "shaped" : "non-shaped"] size ([devastation_range], [heavy_impact_range], [light_impact_range]) in area [epicenter.loc.name] ([epicenter.x],[epicenter.y],[epicenter.z]) (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[epicenter.x];Y=[epicenter.y];Z=[epicenter.z]'>JMP</a>)")
@@ -671,4 +679,4 @@ SUBSYSTEM_DEF(explosions)
 
 	// Queue explosion event
 	var/power = devastation_range * 2 + heavy_impact_range + light_impact_range //The ranges add up, ie light 14 includes both heavy 7 and devestation 3. So this calculation means devestation counts for 4, heavy for 2 and light for 1 power, giving us a cap of 27 power.
-	SSexplosions.append_explosion(epicenter,power,devastation_range,heavy_impact_range,light_impact_range,flash_range,z_transfer)
+	GLOB.explosion_service.append_explosion(epicenter,power,devastation_range,heavy_impact_range,light_impact_range,flash_range,z_transfer)

@@ -168,6 +168,7 @@ GLOBAL_REAL(Master, /datum/controller/master)
 		if (ss.slept_count > 0)
 			log_world("Warning: Subsystem `[ss.name]` slept [ss.slept_count] times.")
 		ss.Shutdown()
+	shutdown_world_services()
 	log_world("Shutdown complete")
 
 ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "View the current states of the Subsystem Controllers.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
@@ -434,6 +435,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			subsystem.init_order = evaluated_order
 			evaluated_order++
 			init_subsystem(subsystem)
+			boot_world_services_after(subsystem.type)
 
 			CHECK_TICK
 		current_initializing_subsystem = null

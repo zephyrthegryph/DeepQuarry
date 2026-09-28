@@ -29,7 +29,7 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 /turf/simulated/floor/lifecycle_dematerialize()
 	. = ..()
 	if(is_outdoors())
-		SSplanets.removeTurf(src)
+		GLOB.planet_service.removeTurf(src)
 
 /turf/simulated/floor/outdoors/get_dig_loot_type(mob/user, obj/item/W)
 	return pick( \
@@ -63,14 +63,14 @@ GLOBAL_LIST_EMPTY(turf_edge_cache)
 	if(is_outdoors()) // Already outdoors.
 		return
 	outdoors = OUTDOORS_YES
-	SSplanets.addTurf(src)
+	GLOB.planet_service.addTurf(src)
 
 /// Makes the turf explicitly indoors.
 /turf/simulated/proc/make_indoors()
 	if(!is_outdoors()) // Already indoors.
 		return
 	outdoors = OUTDOORS_NO
-	SSplanets.removeTurf(src)
+	GLOB.planet_service.removeTurf(src)
 
 /turf/simulated/post_change()
 	..()

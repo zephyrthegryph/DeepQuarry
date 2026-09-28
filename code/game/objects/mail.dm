@@ -122,7 +122,7 @@
 /obj/item/mail/proc/setRecipient(mob/user)
 	var/list/recipients = list()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(!SSantag_job.player_is_antag(player.mind) && player.mind.show_in_directory)
+		if(!GLOB.antag_service.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
 	om_prompt(src, user, list("kind" = "list", "message" = "Choose recipient", "title" = "Recipients", "choices" = recipients, "requires" = PROMPT_HELD), PROC_REF(recipient_chosen))
@@ -464,7 +464,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))
 		playsound(loc, 'sound/items/mail/mailapproved.ogg', 50, TRUE)
-		SSsupply.adjust_budget(SSsupply.export_revenue(cargo_points), "Mail delivery proceeds")
+		GLOB.supply_service.adjust_budget(GLOB.supply_service.export_revenue(cargo_points), "Mail delivery proceeds")
 
 // JUNK MAIL STUFF
 

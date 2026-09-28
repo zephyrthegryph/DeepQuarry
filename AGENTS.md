@@ -318,12 +318,12 @@ accident or assume they work:
   The SSair admin debug panel works again: verb "Debug Atmospherics" (Debug→Investigate) →
   `SSair.tgui_interact` → `AtmosControlPanel.tsx` (was dead: nonexistent interface + `ui_*` names when this
   fork's tgui calls `tgui_*`).
-- **Expeditions and Flight Operations.** The old quarry mode is gone. `SSexpedition`
+- **Expeditions and Flight Operations.** The old quarry mode is gone. `GLOB.expedition_service`
   (`code/modules/expedition/`) generates sites on demand: it allocates or recycles a
   z-level (`load_new_z()`), carves it with the `cave_system` automata or builds a generated
   station, bridges it into multi-z atmos, and populates POIs, loot and a
   `/datum/expedition_mission` objective. Sites are released and wiped when the crew leaves;
-  z-levels go back into a `free_z` pool. Crews reach sites by flying: `SSflight_operations`
+  z-levels go back into a `free_z` pool. Crews reach sites by flying: `GLOB.flight_service`
   (`code/modules/flight_operations/`) owns vessels, destinations, berths and flight plans,
   and the Flight Operations console plots expedition contracts as short-jump destinations.
   Admin debug verbs ("Generate Expedition Site" / "Generate Expedition Mission") jump
@@ -442,6 +442,18 @@ accident or assume they work:
   Per-object work is periodic: throws on `PERIODIC_THROWING` (every tick), reflectors on
   `PERIODIC_REFLECTORS` (machine clock, started when they catch a beam), loot panels on
   `PERIODIC_LOOT_ICONS`. Songs are `REGISTRY_SONGS`; running events are `REGISTRY_ACTIVE_EVENTS`.
+  **Fold wave F4** removed `SSsun`, `SSsolars`, `SSnightshift`, `SSplanets`, `SSskybox`,
+  `SSstarmover`, `SSturf_cascade`, `SSexplosions`, `SSradio`, `SSpoints_of_interest`,
+  `SSinactivity`, `SSantag_job`, `SStransfer`, `SSproperties`. They are `GLOB.<x>_service`
+  (`GLOB.sun` is the sun; `skybox_service()` is lazy). An **on-demand** service (`on_demand`,
+  `has_work()`, `demand()`) parks its lane while idle: POIs, star movement, turf cascade,
+  explosions, planet lighting. The former feature and client-plumbing subsystems are world
+  services too (`GLOB.vote_service`, `GLOB.supply_service`, `GLOB.research_service`,
+  `GLOB.chat_service`, `GLOB.statpanels_service`, …). A service that needs setup declares
+  `boot_after = <subsystem type>` (and `order_after = list(<service types>)`); the MC initializes
+  it right after that subsystem and calls `on_shutdown()` at server shutdown.
+  `tools/ci/subsystem_fire_lint.py` (K4) allows `fire()` only on air, behaviours, dbcore, garbage,
+  input, profiler, tgui, ticker, verb_manager and vg (lighting keeps an ALLOW until F5).
 - **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
   `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
   (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed

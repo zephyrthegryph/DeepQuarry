@@ -1,7 +1,10 @@
-SUBSYSTEM_DEF(time_track)
+// Time dilation and sendmaps tracking (was SStime_track): sampled every 10 s into the perf log.
+GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
+
+/datum/world_service/time_track
 	name = "Time Tracking"
-	wait = 100
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	lane = /datum/om/behaviour/world/time_track
+	boot_after = /datum/controller/subsystem/dbcore
 
 	var/time_dilation_current = 0
 
@@ -10,11 +13,13 @@ SUBSYSTEM_DEF(time_track)
 	var/time_dilation_avg_slow = 0
 
 	var/first_run = TRUE
+	/// Stops sampling after a malformed sendmaps profile (was can_fire = FALSE).
+	var/disabled = FALSE
 
 	var/last_tick_realtime = 0
 	var/last_tick_byond_time = 0
 	var/last_tick_tickcount = 0
-	var/list/sendmaps_names_map = list(
+	var/list/sendmaps_names_map = list( // ALLOW(instance_list): d: world service singleton
 		"SendMaps" = "send_maps",
 		"SendMaps: Initial housekeeping" = "initial_house",
 		"SendMaps: Cleanup" = "cleanup",
@@ -40,7 +45,8 @@ SUBSYSTEM_DEF(time_track)
 		"SendMaps: Per client: Map data: Look for movable changes: Movables examined" = "movables_examined",
 	)
 
-/datum/controller/subsystem/time_track/Initialize()
+/datum/world_service/time_track/initialize()
+	initialized = TRUE
 	//GLOB.perf_log = "[GLOB.log_directory]/perf-[GLOB.round_id ? GLOB.round_id : "NULL"]-[SSmapping.current_map.map_name].csv"
 	GLOB.perf_log = "[GLOB.log_directory]/perf-[GLOB.round_id ? GLOB.round_id : "NULL"]-[using_map.name].csv"
 	world.Profile(PROFILE_RESTART, type = "sendmaps")
@@ -97,9 +103,10 @@ SUBSYSTEM_DEF(time_track)
 			"queries_standby"
 		) + sendmaps_headers
 	)
-	return SS_INIT_SUCCESS
 
-/datum/controller/subsystem/time_track/fire()
+/datum/world_service/time_track/service_step(resumed)
+	if(disabled)
+		return TRUE
 
 	var/current_realtime = REALTIMEOFDAY
 	var/current_byondtime = world.time
@@ -126,8 +133,9 @@ SUBSYSTEM_DEF(time_track)
 		send_maps_data = json_decode(sendmaps_json)
 	catch // ALLOW(silent_catch): malformed profiler JSON is dumped to bad_sendmaps.json and tracking stops
 		text2file(sendmaps_json,"bad_sendmaps.json")
-		can_fire = FALSE
-		return
+		disabled = TRUE
+		log_world("Time tracking stopped: malformed sendmaps profile JSON (bad_sendmaps.json).")
+		return TRUE
 	var/send_maps_sort = send_maps_data.Copy() //Doing it like this guarantees us a properly sorted list
 
 	for(var/list/packet in send_maps_data)
@@ -194,3 +202,13 @@ SUBSYSTEM_DEF(time_track)
 	)
 
 	SSdbcore.reset_tracking()
+	return TRUE
+
+/// time_track (was SStime_track).
+/datum/om/behaviour/world/time_track
+	name = "world: time_track"
+	every = 10 SECONDS
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/time_track/service()
+	return GLOB.time_track_service

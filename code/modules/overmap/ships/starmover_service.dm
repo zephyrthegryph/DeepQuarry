@@ -1,32 +1,30 @@
 //
-// Handles the moving star effects behind overmap shuttles during travel.
+// Handles the moving star effects behind overmap shuttles during travel (fold wave F4; was
+// SSstarmover). /datum/om/behaviour/world/starmover (code/datums/om/world_lanes.dm) works through
+// the queued z-levels every tick, parked while nothing is queued.
 //
-SUBSYSTEM_DEF(starmover)
+GLOBAL_DATUM_INIT(starmover_service, /datum/world_service/starmover, new)
+
+/datum/world_service/starmover
 	name = "Shuttle Star Movement"
-	priority = FIRE_PRIORITY_STARMOVER
-	wait = 1 // This needs to be done pretty quickly
-	dependencies = list(
-		/datum/controller/subsystem/points_of_interest
-	)
-	var/list/zqueue = list()
+	lane = /datum/om/behaviour/world/starmover
+	on_demand = TRUE
+	var/list/zqueue = list() // ALLOW(instance_list): d: world service singleton
 	var/list/current_movement = null
 	//list used to track which zlevels are being 'moved' by the proc below
-	var/list/moving_levels = list()
+	var/list/moving_levels = list() // ALLOW(instance_list): d: world service singleton
 	var/list/currentrun = null
 	var/current_direction = 0
-
-/datum/controller/subsystem/starmover/Initialize()
-	return SS_INIT_SUCCESS
 
 #define CR_ZLEVEL 1
 #define CR_DIRECTION 2
 #define CR_TURFS 3
 
-/datum/controller/subsystem/starmover/fire(resumed)
+/datum/world_service/starmover/service_step(resumed)
 	// Get next in queue or dropout
 	if(!resumed && !current_movement)
 		if(!length(zqueue))
-			return
+			return TRUE
 		current_movement = zqueue[1]
 		zqueue[1] = null
 		zqueue -= null
@@ -36,7 +34,7 @@ SUBSYSTEM_DEF(starmover)
 		var/list/turf_list = current_movement[CR_TURFS]
 		if(!length(turf_list) || moving_levels["[zlevel]"] == new_dir)
 			clear_movement_run()
-			return
+			return TRUE
 		moving_levels["[zlevel]"] = new_dir
 		currentrun = turf_list
 
@@ -46,25 +44,29 @@ SUBSYSTEM_DEF(starmover)
 		currentrun.len--
 		if(istype(T))
 			T.toggle_transit(current_movement[CR_DIRECTION])
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
 	clear_movement_run()
+	return TRUE
 
-/datum/controller/subsystem/starmover/proc/clear_movement_run()
+/datum/world_service/starmover/proc/clear_movement_run()
 	current_movement.Cut()
 	current_movement = null
 	currentrun = null
 
-/datum/controller/subsystem/starmover/stat_entry(msg)
-	msg = "Q:[length(zqueue)] C:[currentrun ? length(currentrun) : "-"]"
-	return ..()
+/datum/world_service/starmover/stat_line()
+	return "Q:[length(zqueue)] C:[currentrun ? length(currentrun) : "-"]"
+
+/datum/world_service/starmover/has_work()
+	return length(zqueue) || current_movement
 
 /// Used to 'move' stars in spess. null direction stops movement
-/datum/controller/subsystem/starmover/proc/toggle_move_stars(zlevel, direction)
+/datum/world_service/starmover/proc/toggle_move_stars(zlevel, direction)
 	if(!zlevel)
 		return
 	var/list/spaceturfs = block(locate(1, 1, zlevel), locate(world.maxx, world.maxy, zlevel))
 	zqueue += list(list(zlevel,direction,spaceturfs))
+	demand()
 
 #undef CR_ZLEVEL
 #undef CR_DIRECTION

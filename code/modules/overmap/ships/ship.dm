@@ -60,7 +60,7 @@
 	vector_handle = om_handle(add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	SSflight_operations?.register_vessel(src)
+	GLOB.flight_service?.register_vessel(src)
 
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
@@ -68,11 +68,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 /obj/effect/overmap/visitable/ship/Destroy()
 	remove_vis_overlay(vector_overlay())
 	SSshuttles.ships -= src
-	if(SSflight_operations && flight_vessel_id)
-		var/datum/flight_vessel/vessel = SSflight_operations.vessels[flight_vessel_id]
+	if(GLOB.flight_service && flight_vessel_id)
+		var/datum/flight_vessel/vessel = GLOB.flight_service.vessels[flight_vessel_id]
 		if(vessel)
-			SSflight_operations.vessels -= flight_vessel_id
-			SSflight_operations.vessel_by_ship -= REF(src)
+			GLOB.flight_service.vessels -= flight_vessel_id
+			GLOB.flight_service.vessel_by_ship -= REF(src)
 			qdel(vessel)
 	return ..()
 
@@ -146,7 +146,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 	else if(still)
 		PERIODIC_STOP(src)
 		for(var/zz in map_z)
-			SSstarmover.toggle_move_stars(zz)
+			GLOB.starmover_service.toggle_move_stars(zz)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
 		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
@@ -159,7 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 		PERIODIC_START(src, PERIODIC_SECOND)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
-			SSstarmover.toggle_move_stars(zz, fore_dir)
+			GLOB.starmover_service.toggle_move_stars(zz, fore_dir)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
 		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
@@ -266,8 +266,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 	return "This ship cannot land."
 
 /obj/effect/overmap/visitable/ship/get_distress_info()
-	var/datum/flight_vessel/vessel = SSflight_operations?.vessel_for_ship(src)
-	var/datum/flight_destination/orbit = SSflight_operations?.destinations[vessel?.orbit_parent_id]
+	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
+	var/datum/flight_destination/orbit = GLOB.flight_service?.destinations[vessel?.orbit_parent_id]
 	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
 
 #undef SHIP_MOVE_RESOLUTION
@@ -296,7 +296,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
 	forceMove(bellychoice)
-	SSskybox.rebuild_skyboxes(map_z)
+	skybox_service().rebuild_skyboxes(map_z)
 	L.visible_message(span_warning("[L] eats a spaceship! This is totally normal."),"You eat the the spaceship! Yum, metal.")
 
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()

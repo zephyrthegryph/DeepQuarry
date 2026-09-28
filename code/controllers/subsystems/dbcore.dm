@@ -17,11 +17,11 @@ SUBSYSTEM_DEF(dbcore)
 
 	var/max_concurrent_queries = 25
 
-	/// Number of all queries, reset to 0 when logged in SStime_track. Used by SStime_track
+	/// Number of all queries, reset to 0 when logged in GLOB.time_track_service. Used by GLOB.time_track_service
 	var/all_queries_num = 0
-	/// Number of active queries, reset to 0 when logged in SStime_track. Used by SStime_track
+	/// Number of active queries, reset to 0 when logged in GLOB.time_track_service. Used by GLOB.time_track_service
 	var/queries_active_num = 0
-	/// Number of standby queries, reset to 0 when logged in SStime_track. Used by SStime_track
+	/// Number of standby queries, reset to 0 when logged in GLOB.time_track_service. Used by GLOB.time_track_service
 	var/queries_standby_num = 0
 
 	/// All the current queries that exist.
@@ -65,7 +65,7 @@ SUBSYSTEM_DEF(dbcore)
 	msg = "P:[length(all_queries)]|Active:[length(queries_active)]|Standby:[length(queries_standby)]"
 	return ..()
 
-/// Resets the tracking numbers on the subsystem. Used by SStime_track.
+/// Resets the tracking numbers on the subsystem. Used by GLOB.time_track_service.
 /datum/controller/subsystem/dbcore/proc/reset_tracking()
 	all_queries_num = 0
 	queries_active_num = 0

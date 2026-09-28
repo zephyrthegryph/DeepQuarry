@@ -21,7 +21,7 @@
 	var/vote_time = 60 SECONDS
 
 /datum/vote/New(_initiator, _question, list/_choices, _is_custom = FALSE)
-	if(SSvote.active_vote)
+	if(GLOB.vote_service.active_vote)
 		CRASH("Attempted to start another vote with one already in progress!")
 
 	if(_initiator)
@@ -134,10 +134,10 @@
 		handle_result(result)
 		qdel(src)
 
-// ALLOW(lifecycle): SSvote forgets it.
+// ALLOW(lifecycle): GLOB.vote_service forgets it.
 /datum/vote/Destroy(force)
-	if(SSvote.active_vote == src)
-		SSvote.active_vote = null
+	if(GLOB.vote_service.active_vote == src)
+		GLOB.vote_service.active_vote = null
 	return ..()
 
 /datum/vote/proc/handle_result(result)

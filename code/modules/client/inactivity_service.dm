@@ -1,14 +1,17 @@
-SUBSYSTEM_DEF(inactivity)
+// The AFK kick world service (fold wave F4; was SSinactivity): every minute on the background lane
+// (/datum/om/behaviour/world/inactivity, code/datums/om/world_lanes.dm) it disconnects clients idle
+// longer than the kick_inactive config minutes. Does nothing while that config is 0.
+GLOBAL_DATUM_INIT(inactivity_service, /datum/world_service/inactivity, new)
+
+/datum/world_service/inactivity
 	name = "Inactivity"
-	wait = 1 MINUTE
-	flags = SS_NO_INIT | SS_BACKGROUND
+	lane = /datum/om/behaviour/world/inactivity
 	var/tmp/list/client_list
 	var/number_kicked = 0
 
-/datum/controller/subsystem/inactivity/fire(resumed = FALSE)
+/datum/world_service/inactivity/service_step(resumed)
 	if (!CONFIG_GET(number/kick_inactive))
-		can_fire = FALSE
-		return
+		return TRUE
 	if (!resumed)
 		client_list = GLOB.clients.Copy()
 
@@ -53,13 +56,13 @@ SUBSYSTEM_DEF(inactivity)
 			qdel(C)
 			number_kicked++
 
-		if (MC_TICK_CHECK)
-			return
+		if (TICK_CHECK)
+			return FALSE
+	return TRUE
 
-/datum/controller/subsystem/inactivity/stat_entry(msg)
-	msg = "Kicked: [number_kicked]"
-	return ..()
+/datum/world_service/inactivity/stat_line()
+	return "Kicked: [number_kicked]"
 
-/datum/controller/subsystem/inactivity/proc/can_kick(client/C)
+/datum/world_service/inactivity/proc/can_kick(client/C)
 	if(check_rights_for(C, R_HOLDER|R_MENTOR)) return FALSE // Don't kick admins.
 	return TRUE

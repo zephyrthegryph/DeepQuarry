@@ -575,9 +575,9 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		send_signal(id_tag, list("status"))
 
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
-	SSradio.remove_object(src, frequency)
+	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
+	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
 
 /obj/machinery/alarm/proc/send_signal(target, list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
 	if(!radio_connection())
@@ -638,7 +638,7 @@ REF_OWNED(/obj/machinery/alarm, "soundloop")
 		AA.update_icon()
 
 /obj/machinery/alarm/proc/post_alert(alert_level)
-	var/datum/radio_frequency/frequency = SSradio.return_frequency(alarm_frequency)
+	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(alarm_frequency)
 	if(!frequency)
 		return
 

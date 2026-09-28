@@ -457,7 +457,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/pinata, INTERACT_IT
 
 	if(prob(6))
 		thalers += stage
-		supply_conversion_value = initial(supply_conversion_value) + ((thalers * SSsupply.points_per_money))
+		supply_conversion_value = initial(supply_conversion_value) + ((thalers * GLOB.supply_service.points_per_money))
 
 	if(prob(2))
 		var/obj/item/organ/external/O = owner.organs_by_name[parent_organ]

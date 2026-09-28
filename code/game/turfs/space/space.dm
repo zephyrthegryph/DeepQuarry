@@ -39,9 +39,9 @@
 		edge |= EAST
 
 	if(edge) //Magic edges
-		appearance = SSskybox.mapedge_cache["[edge]"]
+		appearance = skybox_service().mapedge_cache["[edge]"]
 	else //Dust
-		appearance = SSskybox.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+		appearance = skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 	return ..()
 
@@ -50,15 +50,15 @@
 		return
 
 	if(!direction) //Stopping our transit
-		appearance = SSskybox.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+		appearance = skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 	else if(direction & (NORTH|SOUTH)) //Starting transit vertically
-		var/x_shift = SSskybox.phase_shift_by_x[src.x % (SSskybox.phase_shift_by_x.len - 1) + 1]
+		var/x_shift = skybox_service().phase_shift_by_x[src.x % (skybox_service().phase_shift_by_x.len - 1) + 1]
 		var/transit_state = ((direction & SOUTH ? world.maxy - src.y : src.y) + x_shift)%15
-		appearance = SSskybox.speedspace_cache["NS_[transit_state]"]
+		appearance = skybox_service().speedspace_cache["NS_[transit_state]"]
 	else if(direction & (EAST|WEST)) //Starting transit horizontally
-		var/y_shift = SSskybox.phase_shift_by_y[src.y % (SSskybox.phase_shift_by_y.len - 1) + 1]
+		var/y_shift = skybox_service().phase_shift_by_y[src.y % (skybox_service().phase_shift_by_y.len - 1) + 1]
 		var/transit_state = ((direction & WEST ? world.maxx - src.x : src.x) + y_shift)%15
-		appearance = SSskybox.speedspace_cache["EW_[transit_state]"]
+		appearance = skybox_service().speedspace_cache["EW_[transit_state]"]
 
 	for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
 		if (!AM.simulated)

@@ -108,8 +108,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	. += ""
 	. += "Combat mode: [combat_mode ? "on" : "off"]"
 	. += "Move Mode: [m_intent]"
-	if(SSemergency_shuttle)
-		var/eta_status = SSemergency_shuttle.get_status_panel_eta()
+	if(GLOB.emergency_shuttle_service)
+		var/eta_status = GLOB.emergency_shuttle_service.get_status_panel_eta()
 		if(eta_status)
 			. += "[eta_status]"
 

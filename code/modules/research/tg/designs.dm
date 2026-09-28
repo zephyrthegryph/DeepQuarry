@@ -59,8 +59,8 @@ other types of metals and chemistry for reagents).
 	var/lathe_time_factor = 1
 	/// Bitflags indicating what departmental lathes should be allowed to process this design.
 	var/departmental_flags = ALL
-	/// What techwebs nodes unlock this design. Constructed by SSresearch
-	var/list/datum/techweb_node/unlocked_by // Lazy; built by SSresearch
+	/// What techwebs nodes unlock this design. Constructed by GLOB.research_service
+	var/list/datum/techweb_node/unlocked_by // Lazy; built by GLOB.research_service
 	/// Override for the automatic icon generation used for the research console.
 	var/research_icon
 	/// Override for the automatic icon state generation used for the research console.
@@ -81,12 +81,12 @@ other types of metals and chemistry for reagents).
 
 // ALLOW(lifecycle): designs are immutable globals; deleting one is an error.
 /datum/design_techweb/Destroy()
-	// Designs are immutable global datums registered at startup via SSresearch.
+	// Designs are immutable global datums registered at startup via GLOB.research_service.
 	// Destroying one at runtime would corrupt every techweb that holds a reference to its ID.
 	// If you hit this crash, something is incorrectly calling qdel() on a design datum.
 	if(id != DESIGN_ID_IGNORE) // Allow the error_design base instance to be deleted normally.
 		CRASH("Attempted to destroy techweb design '[id]' ([type]) at runtime — designs are immutable global datums")
-	SSresearch.techweb_designs -= id
+	GLOB.research_service.techweb_designs -= id
 	return ..()
 
 /datum/design_techweb/proc/InitializeMaterials()

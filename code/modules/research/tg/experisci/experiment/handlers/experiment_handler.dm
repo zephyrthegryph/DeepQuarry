@@ -379,12 +379,12 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		"has_start_callback" = !isnull(start_experiment_callback),
 	)
 	.["techwebs"] = list()
-	for (var/datum/techweb/techwebs as anything in SSresearch.techwebs)
+	for (var/datum/techweb/techwebs as anything in GLOB.research_service.techwebs)
 		if(!length(techwebs.techweb_servers)) //no servers, we don't care
 			if(techwebs == linked_web()) //disconnect if OUR techweb lost their servers.
 				unlink_techweb()
 			continue
-		if(!length(SSresearch.find_valid_servers(get_turf(owner), techwebs)))
+		if(!length(GLOB.research_service.find_valid_servers(get_turf(owner), techwebs)))
 			continue
 		var/list/data = list(
 			web_id = techwebs.id,

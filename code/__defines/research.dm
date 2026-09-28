@@ -21,7 +21,7 @@
 #define TECHWEB_TIER_4_POINTS 160
 #define TECHWEB_TIER_5_POINTS 200
 
-//! Amount of points gained per second by a single R&D server, see: [research][code/controllers/subsystem/research.dm]
+//! Amount of points gained per second by a single R&D server, see: [research][code/modules/research/research_service.dm]
 #define TECHWEB_SINGLE_SERVER_INCOME 0.4
 
 //! Swab cell line types
@@ -85,13 +85,13 @@
 ///Connects the 'server_var' to a valid research server on your Z level.
 ///Used for machines in LateInitialize, to ensure that RND servers are loaded first.
 #define CONNECT_TO_RND_SERVER_ROUNDSTART(server_var, holder) do { \
-	var/list/found_servers = SSresearch.get_available_servers(get_turf(holder)); \
+	var/list/found_servers = GLOB.research_service.get_available_servers(get_turf(holder)); \
 	var/obj/machinery/rnd/server/selected_server = length(found_servers) ? found_servers[1] : null; \
 	if (selected_server) { \
 		server_var = selected_server.stored_research; \
 	}; \
 	else { \
-		var/datum/techweb/station_fallback_web = locate(/datum/techweb/science) in SSresearch.techwebs; \
+		var/datum/techweb/station_fallback_web = locate(/datum/techweb/science) in GLOB.research_service.techwebs; \
 		server_var = station_fallback_web; \
 	}; \
 } while (FALSE)

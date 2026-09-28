@@ -670,4 +670,4 @@ ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/
 			to_chat(user, "You have [CONFIG_GET(flag/allow_simple_mob_recolor) ? "enabled" : "disabled"] newly spawned simple mobs to spawn with the recolour verb")
 
 ADMIN_VERB(modify_shift_end, (R_ADMIN|R_EVENT|R_SERVER), "Modify Shift End", "Modifies the hard shift end time.", ADMIN_CATEGORY_SERVER_GAME)
-	SStransfer.modify_hard_end(user)
+	GLOB.transfer_service.modify_hard_end(user)

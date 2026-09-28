@@ -1,6 +1,6 @@
 /// The plant world service (fold wave F1; was SSplants): seed and gene data. It has no periodic work
 /// of its own: spreading plants grow on their own lane (PERIODIC_PLANTS, 7.5 s), started by
-/// add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS registry. SSplanets.Initialize()
+/// add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS registry. GLOB.planet_service.Initialize()
 /// calls initialize(), where SSplants used to initialize.
 GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 

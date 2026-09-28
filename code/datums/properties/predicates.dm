@@ -9,7 +9,7 @@
 // Compiling. Each declaration compiles once, against the property registry,
 // into a tree of shared /datum/pred_node singletons. Compilation checks every
 // property id, kind and unit; a kelvin property compared with kilograms is an
-// error. SSproperties compiles every /datum/predicate subtype at boot and
+// error. validate_property_registry() compiles every /datum/predicate subtype at boot and
 // fails on any error. NOT is pushed into the leaves (De Morgan), so evaluation
 // never has a negation node and comparison nodes hold their effective operator.
 //

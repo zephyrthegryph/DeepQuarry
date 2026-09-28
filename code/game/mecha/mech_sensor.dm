@@ -74,10 +74,10 @@
 
 /obj/machinery/mech_sensor/proc/set_frequency(new_frequency)
 	if(radio_connection())
-		SSradio.remove_object(src, frequency)
+		GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection_handle = om_handle(SSradio.add_object(src, frequency))
+		radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency))
 
 /obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
 	if(stat & NOPOWER)

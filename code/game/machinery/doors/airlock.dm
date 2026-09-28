@@ -175,7 +175,7 @@
 	// If we are not on a planet don't bother checking again. We physically cannot be outdoors. Except shuttles...
 	var/area/our_area = get_area(src)
 	var/turf/our_turf = get_turf(src)
-	if(!istype(our_area, /area/shuttle) && (our_turf.z > length(SSplanets.z_to_planet) || !SSplanets.z_to_planet[our_turf.z]))
+	if(!istype(our_area, /area/shuttle) && (our_turf.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_turf.z]))
 		return
 
 	// Don't do anything if we are changing states

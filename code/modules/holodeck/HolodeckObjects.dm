@@ -67,7 +67,7 @@
 
 /turf/simulated/floor/holofloor/space/update_icon()
 	. = ..()
-	add_overlay(SSskybox.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"])
+	add_overlay(skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"])
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'

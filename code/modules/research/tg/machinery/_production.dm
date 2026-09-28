@@ -96,7 +96,7 @@ REF_OWNED(/obj/machinery/rnd/production, list("print_sound", "materials"))
 	cached_designs.Cut()
 
 	for(var/design_id in stored_research.researched_designs)
-		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
+		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
 
 		// TODO: only enable this if we port departmental techfabs
 		// if((isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)) && (design.build_type & allowed_buildtypes))
@@ -349,7 +349,7 @@ REF_OWNED(/obj/machinery/rnd/production, list("print_sound", "materials"))
 			var/design_id = params["ref"]
 			if(!design_id)
 				return
-			var/datum/design_techweb/design = LAZYACCESS(stored_research.researched_designs, design_id) ? SSresearch.techweb_design_by_id(design_id) : null
+			var/datum/design_techweb/design = LAZYACCESS(stored_research.researched_designs, design_id) ? GLOB.research_service.techweb_design_by_id(design_id) : null
 			if(!istype(design))
 				return FALSE
 			if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))

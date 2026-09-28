@@ -93,7 +93,7 @@ REF_OWNED_LIST(/obj/effect/overmap, "cam_plane_masters")
 	expire_skybox_representation()
 	build_skybox_representation()
 	for(var/obj/effect/overmap/visitable/O in loc)
-		SSskybox.rebuild_skyboxes(O.map_z)
+		skybox_service().rebuild_skyboxes(O.map_z)
 
 /obj/effect/overmap/proc/get_scan_data(mob/user)
 	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\n[scanner_desc]"}

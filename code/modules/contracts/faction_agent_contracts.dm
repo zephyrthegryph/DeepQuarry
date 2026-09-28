@@ -39,7 +39,7 @@
 
 // ALLOW(lifecycle): releases its market reservation.
 /datum/contract/faction_agent/Destroy()
-	SSsupply?.release_agent_contract_market(src)
+	GLOB.supply_service?.release_agent_contract_market(src)
 	market_reservation_ids = null
 	contact_name = null
 	contact_mode = null
@@ -51,7 +51,7 @@
 
 /datum/contract/faction_agent/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	if(!SSsupply?.reserve_agent_contract_market(src))
+	if(!GLOB.supply_service?.reserve_agent_contract_market(src))
 		withdraw("The principal's authenticated market route could not be established.")
 		return FALSE
 	if(red_contract && !GLOB.station_faction_relations.activate_contract_operative(owner_account_number, id, user))
@@ -201,7 +201,7 @@
 
 /datum/contract/covert_market_investigation/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	om_after(SSsupply, 1, TYPE_PROC_REF(/datum/controller/subsystem/supply, replay_market_audit_evidence), src)
+	om_after(GLOB.supply_service, 1, TYPE_PROC_REF(/datum/world_service/supply, replay_market_audit_evidence), src)
 
 /datum/contract_definition/covert_market_investigation
 	id = "covert_market_investigation"
@@ -358,7 +358,7 @@
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(contract.owner_account_number)
 	if(!record || record.faction_id != contract.agent_faction)
 		return
-	SSsupply?.release_agent_contract_market(contract)
+	GLOB.supply_service?.release_agent_contract_market(contract)
 	if(contract.red_contract)
 		GLOB.station_faction_relations.deactivate_contract_operative(contract.owner_account_number, contract.id)
 	if(contract.definition_id == "agent_vetting")

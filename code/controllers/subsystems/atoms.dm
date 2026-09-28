@@ -3,8 +3,6 @@ SUBSYSTEM_DEF(atoms)
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
 		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/planets,
-		/datum/controller/subsystem/transcore,
 		/datum/controller/subsystem/job
 	)
 	flags = SS_NO_FIRE
@@ -35,16 +33,18 @@ SUBSYSTEM_DEF(atoms)
 
 /datum/controller/subsystem/atoms/Initialize()
 	init_start_time = world.time
+	// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
+	boot_world_service(GLOB.transcore_service)
+	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
+	boot_world_service(GLOB.planet_service)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
 
-	// World services that set up on the initialized map (fold wave F3). Each was a subsystem that
-	// depended on atoms; they have no boot slot of their own now.
-	GLOB.pai_service.initialize()
-	GLOB.xenoarch_service.initialize()
-	GLOB.event_service.initialize()
+	// Services that set up on the initialized map declare boot_after = SSatoms (pai, xenoarch,
+	// events, night shift, antagonists, radio, crew transfer); the MC boots them next.
+	validate_property_registry()
 
 	return SS_INIT_SUCCESS
 

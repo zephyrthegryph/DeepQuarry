@@ -1,10 +1,10 @@
-SUBSYSTEM_DEF(statpanels)
+// The stat panel world service (was SSstatpanels): refreshes every client's stat tabs every 4 ticks.
+GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
+
+/datum/world_service/statpanels
 	name = "Stat Panels"
-	wait = 4
-	priority = FIRE_PRIORITY_STATPANEL
-	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
-	flags = SS_NO_INIT
-	var/list/currentrun = list()
+	lane = /datum/om/behaviour/world/statpanels
+	var/list/currentrun = list() // ALLOW(instance_list): d: world service singleton
 	var/list/global_data
 	var/list/mc_data
 	var/list/mc_metrics
@@ -21,7 +21,7 @@ SUBSYSTEM_DEF(statpanels)
 	///how many full runs this subsystem has completed. used for variable rate refreshes.
 	var/num_fires = 0
 
-/datum/controller/subsystem/statpanels/fire(resumed = FALSE)
+/datum/world_service/statpanels/service_step(resumed)
 	if (!resumed)
 		num_fires++
 		//var/datum/map_config/cached = SSmapping.next_map_config
@@ -35,11 +35,11 @@ SUBSYSTEM_DEF(statpanels)
 			"Round Time: [roundduration2text()]",
 			"Station Date: [stationdate2text()], [capitalize(GLOB.world_time_season)]",
 			"Station Time: [stationtime2text()]",
-			"Time Dilation: [round(SStime_track.time_dilation_current,1)]% AVG:([round(SStime_track.time_dilation_avg_fast,1)]%, [round(SStime_track.time_dilation_avg,1)]%, [round(SStime_track.time_dilation_avg_slow,1)]%)"
+			"Time Dilation: [round(GLOB.time_track_service.time_dilation_current,1)]% AVG:([round(GLOB.time_track_service.time_dilation_avg_fast,1)]%, [round(GLOB.time_track_service.time_dilation_avg,1)]%, [round(GLOB.time_track_service.time_dilation_avg_slow,1)]%)"
 		)
 
-		if(SSemergency_shuttle.evac)
-			var/ETA = SSemergency_shuttle.get_status_panel_eta()
+		if(GLOB.emergency_shuttle_service.evac)
+			var/ETA = GLOB.emergency_shuttle_service.get_status_panel_eta()
 			if(ETA)
 				global_data += "[ETA]"
 
@@ -110,10 +110,11 @@ SUBSYSTEM_DEF(statpanels)
 			if((num_fires % misc_wait == 0))
 				update_misc_tabs(target,target_mob)
 
-		if(MC_TICK_CHECK)
-			return
+		if(TICK_CHECK)
+			return FALSE
+	return TRUE
 
-/datum/controller/subsystem/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
+/datum/world_service/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
 	target_mob.update_misc_tabs()
 	for(var/tab in target_mob.misc_tabs)
 		if(length(target_mob.misc_tabs[tab]) == 0 && (tab in target.misc_tabs))
@@ -134,7 +135,7 @@ SUBSYSTEM_DEF(statpanels)
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
 
-/datum/controller/subsystem/statpanels/proc/set_status_tab(client/target)
+/datum/world_service/statpanels/proc/set_status_tab(client/target)
 	if(!global_data)//statbrowser hasnt fired yet and we were called from immediate_send_stat_data()
 		return
 
@@ -144,7 +145,7 @@ SUBSYSTEM_DEF(statpanels)
 		other_str = target.mob?.get_status_tab_items(),
 	))
 
-/datum/controller/subsystem/statpanels/proc/set_MC_tab(client/target)
+/datum/world_service/statpanels/proc/set_MC_tab(client/target)
 	var/turf/eye_turf = get_turf(target.eye)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
@@ -158,7 +159,7 @@ SUBSYSTEM_DEF(statpanels)
 		"coord_entry" = coord_entry,
 	))
 
-/datum/controller/subsystem/statpanels/proc/generate_mc_metrics()
+/datum/world_service/statpanels/proc/generate_mc_metrics()
 	var/list/history = Master.perf_tick_usage
 	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	var/history_start = max(1, history.len - 119)
@@ -181,10 +182,10 @@ SUBSYSTEM_DEF(statpanels)
 		"target_tps" = world.fps,
 		"current_usage" = history.len ? history[history.len] : 0,
 		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
-		"tidi" = SStime_track.time_dilation_current,
-		"tidi_fast" = SStime_track.time_dilation_avg_fast,
-		"tidi_medium" = SStime_track.time_dilation_avg,
-		"tidi_slow" = SStime_track.time_dilation_avg_slow,
+		"tidi" = GLOB.time_track_service.time_dilation_current,
+		"tidi_fast" = GLOB.time_track_service.time_dilation_avg_fast,
+		"tidi_medium" = GLOB.time_track_service.time_dilation_avg,
+		"tidi_slow" = GLOB.time_track_service.time_dilation_avg_slow,
 		"window_5s" = Master.performance_window(5),
 		"window_30s" = Master.performance_window(30),
 		"window_5m" = Master.performance_window(300),
@@ -204,7 +205,7 @@ SUBSYSTEM_DEF(statpanels)
 		),
 	)
 
-/datum/controller/subsystem/statpanels/proc/set_examine_tab(client/target)
+/datum/world_service/statpanels/proc/set_examine_tab(client/target)
 	var/description_holders = target.description_holders
 	var/list/examine_update = list()
 
@@ -246,13 +247,13 @@ SUBSYSTEM_DEF(statpanels)
 
 	target.stat_panel.send_message("update_examine", list("EX" = examine_update, "UPD" = update_panel))
 
-/datum/controller/subsystem/statpanels/proc/set_tickets_tab(client/target)
+/datum/world_service/statpanels/proc/set_tickets_tab(client/target)
 	var/list/tickets = list()
 	if(check_rights_for(target, R_ADMIN|R_SERVER|R_MOD|R_MENTOR)) //Prevents non-staff from opening the list of ahelp tickets
 		tickets = GLOB.tickets.stat_entry(target)
 	target.stat_panel.send_message("update_tickets", tickets)
 
-/datum/controller/subsystem/statpanels/proc/set_SDQL2_tab(client/target)
+/datum/world_service/statpanels/proc/set_SDQL2_tab(client/target)
 	var/list/sdql2A = list()
 	sdql2A[++sdql2A.len] = list("", "Access Global SDQL2 List", REF(GLOB.sdql2_vv_statobj))
 	var/list/sdql2B = list()
@@ -263,7 +264,7 @@ SUBSYSTEM_DEF(statpanels)
 	target.stat_panel.send_message("update_sdql2", sdql2A)
 
 /// Set up the various action tabs.
-/datum/controller/subsystem/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
+/datum/world_service/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
 	return
 	//var/list/actions = target_mob.get_actions_for_statpanel()
 	//target.spell_tabs.Cut()
@@ -273,7 +274,7 @@ SUBSYSTEM_DEF(statpanels)
 
 	//target.stat_panel.send_message("update_spells", list(spell_tabs = target.spell_tabs, actions = actions))
 
-/datum/controller/subsystem/statpanels/proc/generate_mc_data()
+/datum/world_service/statpanels/proc/generate_mc_data()
 	mc_data = list(
 		list("CPU:", world.cpu),
 		list("Instances:", "[num2text(length(world.contents), 10)]"),
@@ -305,10 +306,13 @@ SUBSYSTEM_DEF(statpanels)
 #endif
 	for(var/datum/controller/subsystem/sub_system as anything in Master.subsystems)
 		mc_data[++mc_data.len] = list("\[[sub_system.state_letter()]][sub_system.name]", sub_system.stat_entry(), "\ref[sub_system]")
+	for(var/datum/world_service/service as anything in world_services())
+		mc_data[++mc_data.len] = list("(service) [service.name]", service.stat_line(), "
+ef[service]")
 	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")
 
 ///immediately update the active statpanel tab of the target client
-/datum/controller/subsystem/statpanels/proc/immediate_send_stat_data(client/target)
+/datum/world_service/statpanels/proc/immediate_send_stat_data(client/target)
 	if(!target.stat_panel.is_ready())
 		return FALSE
 
@@ -354,3 +358,12 @@ SUBSYSTEM_DEF(statpanels)
 
 /// Stat panel window declaration
 /client/var/datum/tgui_window/stat_panel
+
+/// statpanels (was SSstatpanels).
+/datum/om/behaviour/world/statpanels
+	name = "world: statpanels"
+	every = 4
+	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+
+/datum/om/behaviour/world/statpanels/service()
+	return GLOB.statpanels_service

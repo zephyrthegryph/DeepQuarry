@@ -19,7 +19,7 @@
 	//servers handle techwebs differently as we are expected to be there to connect
 	//every other machinery on-station.
 	if(!stored_research)
-		var/datum/techweb/science_web = locate(/datum/techweb/science) in SSresearch.techwebs
+		var/datum/techweb/science_web = locate(/datum/techweb/science) in GLOB.research_service.techwebs
 		connect_techweb(science_web)
 	LAZYOR(stored_research.techweb_servers, src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.

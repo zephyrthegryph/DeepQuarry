@@ -103,7 +103,7 @@
 	icon_state = pressure_icon_state(environment)
 
 	if(frequency)
-		var/datum/radio_frequency/radio_connection = SSradio.return_frequency(frequency)
+		var/datum/radio_frequency/radio_connection = GLOB.radio_service.return_frequency(frequency)
 
 		if(!radio_connection)
 			register_gas_dependency()
