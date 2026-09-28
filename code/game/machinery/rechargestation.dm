@@ -401,3 +401,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
+
+REF_HELD(/obj/machinery/recharge_station, list("cell"))

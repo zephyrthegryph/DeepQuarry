@@ -280,3 +280,5 @@
 	addtimer(CALLBACK(src, PROC_REF(tick)), rand(150, 200))
 
 //Xenomorph Effect egg removed, replaced with Structure Egg.
+
+REF_OWNED(/obj/effect/alien/acid, list("target"))

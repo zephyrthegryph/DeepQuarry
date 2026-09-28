@@ -776,3 +776,5 @@
 #undef GENERAL_RECORD_DATA
 
 #undef FIELD
+
+REF_HELD(/obj/machinery/computer/skills, list("scan"))

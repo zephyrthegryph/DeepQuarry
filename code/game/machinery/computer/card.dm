@@ -313,3 +313,5 @@
 
 		for(var/A in modify.access)
 			P.info += "  [SSaccess.get_access_desc(A)]"
+
+REF_HELD(/obj/machinery/computer/card, list("scan", "modify"))

@@ -362,3 +362,5 @@
 /obj/machinery/computer/message_monitor/proc/brute_force_done(mob/user)
 	if(linkedServer && user)
 		BruteForce(user)
+
+REF_OWNED(/obj/machinery/computer/message_monitor, list("spark_system"))

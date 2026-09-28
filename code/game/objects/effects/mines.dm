@@ -7,7 +7,7 @@
 	icon_state = "landmine"
 	var/triggered = FALSE
 	var/smoke_strength = 3
-	var/obj/item/mine/mineitemtype = /obj/item/mine
+	var/mineitemtype = /obj/item/mine
 	var/panel_open = FALSE
 	var/camo_net = FALSE	// Will the mine 'cloak' on deployment?
 
@@ -524,3 +524,5 @@ REF_OWNED(/obj/effect/mine, list("trap", "wires"))
 	name = "chaos lasertag mine"
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
+
+REF_HELD(/obj/item/mine, list("trap"))

@@ -50,3 +50,5 @@
 			to_chat(user, "You take the target out of the stake.")
 
 		pinned_target = null
+
+REF_HELD(/obj/structure/target_stake, list("pinned_target"))

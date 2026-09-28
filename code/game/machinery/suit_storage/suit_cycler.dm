@@ -595,3 +595,5 @@ REF_OWNED(/obj/machinery/suit_cycler, "wires")
 /obj/machinery/suit_cycler/proc/finish_paintjob(mob/user)
 	apply_paintjob()
 	finished_job(user)
+
+REF_HELD(/obj/machinery/suit_cycler, list("suit", "helmet"))

@@ -700,3 +700,8 @@
 				P.update_appearance()
 		loaded = FALSE
 		log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
+
+REF_HELD(/obj/structure/easel, list("painting"))
+REF_OWNED(/obj/item/canvas, list("generated_icon"))
+REF_OWNED(/obj/item/paint_brush, list("color_drop"))
+REF_HELD(/obj/structure/sign/painting, list("current_canvas"))

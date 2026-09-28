@@ -226,3 +226,5 @@
 // eventually maybe have it update icon to show state (timer, prox etc.) like old bombs
 /obj/item/transfer_valve/proc/c_state()
 	return
+
+REF_HELD(/obj/item/transfer_valve, list("tank_one", "tank_two", "attached_device"))

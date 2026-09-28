@@ -263,3 +263,5 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 			gases = gas
 	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
+
+REF_HELD(/obj/machinery/portable_atmospherics/powered, list("cell"))

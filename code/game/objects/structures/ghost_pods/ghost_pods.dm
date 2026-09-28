@@ -172,3 +172,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 
 /obj/structure/ghost_pod/ghost_activated/LateInitialize()
 	ghostpod_startup(spawn_active)
+
+REF_OWNED(/obj/structure/ghost_pod, list("Q"))

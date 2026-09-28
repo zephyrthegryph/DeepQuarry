@@ -123,3 +123,5 @@
 // === merged from odysseus_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/mecha/medical/odysseus/
 	minimum_penetration = 0
+
+REF_HELD(/obj/mecha/medical/odysseus, list("hud"))

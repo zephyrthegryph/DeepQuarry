@@ -439,3 +439,5 @@
 /turf/simulated/floor/flock/proc/crossing_glow_off()
 	icon_state = "floor"
 	set_light(0,0,"#ffffff")
+
+REF_OWNED(/obj/landed_holder, list("turf_image"))

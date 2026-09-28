@@ -2937,3 +2937,6 @@ REF_OWNED(/obj/item/toy/minigibber, "stored_minature")
 	playsound(src, 'sound/machines/Alarm.ogg', 10, 0, 0)
 	VARSET_IN(src, icon_state, "nuketoycool", 135)
 	VARSET_IN(src, icon_state, "nuketoyidle", (135 + (cooldown - world.time)))
+
+REF_HELD(/obj/structure/plushie, list("stored_item"))
+REF_HELD(/obj/item/toy/plushie, list("stored_item"))

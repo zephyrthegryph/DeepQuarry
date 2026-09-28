@@ -46,3 +46,5 @@
 	if(!atmos_control)
 		atmos_control = new(src, req_access, req_one_access, monitored_alarm_ids)
 	atmos_control.tgui_interact(user)
+
+REF_OWNED(/obj/machinery/computer/atmoscontrol, list("atmos_control"))

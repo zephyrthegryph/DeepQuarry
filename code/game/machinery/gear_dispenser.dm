@@ -963,3 +963,5 @@ REF_OWNED(/obj/machinery/gear_dispenser/suit_fancy, "door")
 #undef GD_NOGREED
 #undef GD_UNLIMITED
 #undef GD_UNIQUE
+
+REF_OWNED(/obj/machinery/gear_dispenser, list("one_setting"))

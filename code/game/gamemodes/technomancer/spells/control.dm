@@ -141,3 +141,5 @@
 			adjust_instability(length(controlled_mobs))
 			to_chat(user, span_notice("You command your [length(controlled_mobs) > 1 ? "entities" : "[LAZYACCESS(controlled_mobs, 1)]"] to move \
 			towards \the [T]."))
+
+REF_OWNED(/obj/item/spell/control, list("control_overlay"))

@@ -592,3 +592,6 @@
 /obj/item/melee/energy/blade/equipped(mob/user, slot)
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
+
+REF_HELD(/obj/item/melee/energy, list("bcell"))
+REF_OWNED(/obj/item/melee/energy/blade, list("spark_system"))

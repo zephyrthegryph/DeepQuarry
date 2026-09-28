@@ -886,3 +886,7 @@
 #undef PAGE_REJUVENATORS
 
 /////////////////////////// DNA MACHINES
+
+REF_OWNED(/datum/dna2/record, list("dna"))
+REF_HELD(/obj/machinery/dna_scannernew, list("beaker"))
+REF_HELD(/obj/machinery/computer/scan_consolenew, list("disk"))

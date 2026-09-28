@@ -55,3 +55,5 @@
 		adjust_instability(2)
 		return 1
 	return 0
+
+REF_OWNED(/obj/item/spell/shield, list("spark_system"))

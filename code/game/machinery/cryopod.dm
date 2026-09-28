@@ -883,3 +883,5 @@
 	name = "departure airlock"
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
+
+REF_HELD(/obj/machinery/cryopod, list("announce"))

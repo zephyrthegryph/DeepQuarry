@@ -107,3 +107,5 @@
 	icon = 'icons/obj/power_breaker.dmi'
 	icon_state = "light1"
 	on = 0
+
+REF_OWNED(/obj/machinery/light_switch, list("overlay"))

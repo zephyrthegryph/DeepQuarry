@@ -367,7 +367,7 @@
 
 	charge_max = 10
 
-	var/obj/item/spell/construct/spell_obj = null //This is the var that determines what Technomancer-style spell is put into their hands.
+	var/spell_obj = null //This is the var that determines what Technomancer-style spell is put into their hands.
 
 /datum/spell/targeted/construct_advanced/cast(list/targets, mob/living/user)
 	if(!findNullRod(user))
@@ -496,7 +496,7 @@
 	icon_state = "generic"
 	desc = "This is a generic template that shoots projectiles.  If you can read this, the game broke!"
 	cast_methods = CAST_RANGED
-	var/obj/item/projectile/spell_projectile = null
+	var/spell_projectile = null
 	var/pre_shot_delay = 0
 	var/fire_sound = null
 	var/energy_cost_per_shot = 5
@@ -559,7 +559,7 @@
 	desc = "If you see me, someone messed up."
 	icon_state = "darkness"
 	cast_methods = CAST_RANGED
-	var/obj/effect/spawner_type = null
+	var/spawner_type = null
 
 /obj/item/spell/construct/spawner/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)

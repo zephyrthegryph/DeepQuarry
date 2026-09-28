@@ -53,8 +53,7 @@
 	. = ..()
 	setEmotion(16)
 
-REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler"))
-
+REF_OWNED(/obj/item/paicard, list("radio", "multitool", "signaler", "screen_layer"))
 // LIFECYCLE: the pAI dies with its card (no throwing friend pAIs into the singularity to respawn).
 /obj/item/paicard/Destroy()
 	if(!QDELETED(pai))

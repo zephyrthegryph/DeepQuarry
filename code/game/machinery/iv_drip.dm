@@ -197,3 +197,5 @@
 	if(istype(mover) && mover.checkpass(PASSTABLE)) //allow bullets, beams, thrown objects, mice, drones, and the like through.
 		return TRUE
 	return ..()
+
+REF_HELD(/obj/machinery/iv_drip, list("beaker"))

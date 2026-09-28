@@ -3,7 +3,7 @@
 	icon_state = "generic"
 	desc = "This is a generic template that shoots projectiles.  If you can read this, the game broke!"
 	cast_methods = CAST_RANGED
-	var/obj/item/projectile/spell_projectile = null
+	var/spell_projectile = null
 	var/energy_cost_per_shot = 0
 	var/instability_per_shot = 0
 	var/pre_shot_delay = 0

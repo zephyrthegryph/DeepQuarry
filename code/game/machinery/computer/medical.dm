@@ -515,3 +515,5 @@
 
 #undef FIELD
 #undef MED_FIELD
+
+REF_HELD(/obj/machinery/computer/med_data, list("scan"))

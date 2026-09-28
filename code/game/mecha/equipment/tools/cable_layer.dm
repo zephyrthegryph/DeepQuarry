@@ -117,3 +117,5 @@
 	NC.power_register()
 	last_piece = NC
 	return 1
+
+REF_HELD(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, list("cable"))

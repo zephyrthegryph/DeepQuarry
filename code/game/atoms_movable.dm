@@ -866,3 +866,4 @@
 		var/client/C = usr.client
 		C?.open_particle_editor(src)
 
+REF_OWNED(/atom/movable, list("riding_datum"))

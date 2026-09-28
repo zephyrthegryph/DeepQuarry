@@ -867,3 +867,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 /obj/item/radio/bluespacehandset/linked/cryogaia_prelinked
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
+
+REF_OWNED_LIST(/obj/item/radio, list("secure_radio_connections"))
+REF_HELD(/obj/item/radio/borg, list("keyslot"))

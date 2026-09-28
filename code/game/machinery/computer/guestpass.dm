@@ -290,3 +290,5 @@
 
 	add_fingerprint(ui.user)
 	return TRUE
+
+REF_HELD(/obj/machinery/computer/guestpass, list("giver"))

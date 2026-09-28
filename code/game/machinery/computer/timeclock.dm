@@ -296,3 +296,5 @@ REF_SPILL(/obj/machinery/computer/timeclock, "card")
 /obj/machinery/computer/timeclock/premade/west
 	dir = 4
 	pixel_x = -26
+
+REF_HELD(/obj/machinery/computer/timeclock, list("announce"))

@@ -587,3 +587,5 @@
 #undef SEC_DATA_RECORD
 
 #undef FIELD
+
+REF_HELD(/obj/machinery/computer/secure_data, list("scan"))

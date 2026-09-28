@@ -1240,3 +1240,7 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	B.digest_brute = 20
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
+
+REF_HELD(/obj/structure/toilet, list("teleplumb_crystal"))
+
+REF_OWNED(/obj/structure/toilet, list("bin"))

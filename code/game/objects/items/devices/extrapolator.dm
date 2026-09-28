@@ -276,3 +276,5 @@
 
 /obj/item/extrapolator/tier5
 	default_scanning_module = /obj/item/stock_parts/scanning_module
+
+REF_HELD(/obj/item/extrapolator, list("scanner"))

@@ -128,3 +128,5 @@
 	update_use_power(USE_POWER_IDLE)
 	operating = FALSE
 	cut_overlay("fab-active")
+
+REF_HELD(/obj/machinery/robotic_fabricator, list("being_built"))

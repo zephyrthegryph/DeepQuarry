@@ -9,13 +9,13 @@
 	var/message_type ="Story"
 	var/datum/feed_channel/parent_channel
 	var/is_admin_message = 0
-	var/icon/img = null
-	var/icon/caption = ""
+	var/img = null
+	var/caption = ""
 	var/time_stamp = ""
 	var/backup_body = ""
 	var/backup_author = ""
-	var/icon/backup_img = null
-	var/icon/backup_caption = ""
+	var/backup_img = null
+	var/backup_caption = ""
 	var/post_time = 0
 
 /datum/feed_channel
@@ -716,3 +716,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 /obj/machinery/newscaster/proc/clear_alert()
 	alert = 0
 	update_icon()
+
+REF_OWNED(/obj/machinery/newscaster, list("photo_data"))

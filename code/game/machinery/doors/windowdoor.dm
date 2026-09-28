@@ -405,3 +405,5 @@
 	dir = SOUTH
 	icon_state = "rightsecure"
 	base_state = "rightsecure"
+
+REF_HELD(/obj/machinery/door/window, list("electronics"))

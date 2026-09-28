@@ -172,3 +172,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/floodlight/step_start_condition()
 	return on
+
+REF_HELD(/obj/machinery/floodlight, list("cell"))

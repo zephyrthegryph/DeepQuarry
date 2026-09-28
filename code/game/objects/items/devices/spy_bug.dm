@@ -247,3 +247,4 @@
 	name = "DV-136ZB #[rand(1000,9999)]"
 	c_tag = name
 
+REF_OWNED(/obj/item/camerabug, list("camera"))

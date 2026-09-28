@@ -127,3 +127,5 @@ GLOBAL_LIST_INIT(mark_spells, list())
 
 	adjust_instability(25)
 	consume(src, user)
+
+REF_OWNED(/datum/technomancer_marker, list("I"))

@@ -21,8 +21,7 @@
 	var/hidden = FALSE
 
 REF_OWNED(/obj/item/circuitboard, "board_type")
-REF_HELD(/obj/machinery, "circuit")
-
+REF_HELD(/obj/machinery, list("circuit", "paicard"))
 //Called when the circuitboard is used to contruct a new machine.
 /obj/item/circuitboard/proc/construct(obj/machinery/M)
 	if(istype(M, build_path))

@@ -111,3 +111,5 @@
 	anchored = FALSE
 /obj/machinery/holoplant/shipped/Initialize(mapload)
 	. = ..()
+
+REF_OWNED(/obj/machinery/holoplant, list("plant"))

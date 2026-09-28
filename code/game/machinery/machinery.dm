@@ -755,3 +755,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /// TRUE while the machine sleeps on changes and has no step work.
 /obj/machinery/proc/asleep_on_keys()
 	return !isnull(react_sleep_tokens) && !step_active
+
+REF_OWNED(/obj/machinery, list("circuit"))

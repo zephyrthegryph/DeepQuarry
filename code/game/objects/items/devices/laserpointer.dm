@@ -229,3 +229,5 @@
 			recharging = FALSE
 			recharge_locked = FALSE
 			..()
+
+REF_HELD(/obj/item/laser_pointer, list("diode"))

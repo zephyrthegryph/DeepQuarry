@@ -713,3 +713,6 @@ REF_OWNED(/obj/item/tank, list("air_contents", "proxyassembly"))
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 #undef TANK_IDEAL_PRESSURE
+
+REF_PAIR(/obj/item/tankassemblyproxy, list("tank" = "proxyassembly"))
+REF_HELD(/obj/item/tankassemblyproxy, list("assembly"))

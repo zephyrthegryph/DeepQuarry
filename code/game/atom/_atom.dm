@@ -691,3 +691,5 @@ GLOBAL_LIST_EMPTY(icon_dimensions)
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)
 	color = new_color
+
+REF_OWNED(/atom, list("forensic_data", "reagents", "wires", "forensic_data", "reagents", "wires"))

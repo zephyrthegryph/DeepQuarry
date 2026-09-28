@@ -689,3 +689,5 @@ REF_PAIR(/obj/item/weldpack, list("nozzle" = "mounted_pack"))
 	return TRUE
 
 #undef WELDER_FUEL_BURN_INTERVAL
+
+REF_HELD(/obj/item/weldingtool/electric, list("power_supply"))

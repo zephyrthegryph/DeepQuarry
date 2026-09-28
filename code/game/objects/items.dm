@@ -95,7 +95,7 @@
 	var/reach = 1 // Length of tiles it can reach, 1 is adjacent.
 	var/addblends // Icon overlay for ADD highlights when applicable.
 
-	var/icon/default_worn_icon	//Default on-mob icon
+	var/default_worn_icon	//Default on-mob icon
 	var/worn_layer				//Default on-mob layer
 
 	// Pickup/Drop/Equip/Throw Sounds
@@ -1138,3 +1138,4 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 			return TRUE
 	return FALSE
 
+REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay"))

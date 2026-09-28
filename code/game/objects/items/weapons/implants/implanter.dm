@@ -190,3 +190,5 @@
 	. = ..()
 	imp = new /obj/item/implant/vrlanguage( src )
 	update()
+
+REF_HELD(/obj/item/implanter, list("imp"))

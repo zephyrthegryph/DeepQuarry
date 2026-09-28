@@ -62,3 +62,5 @@
 			. += span_notice("\The [src] contains [supply.total_volume] units of programmed nanites, ready for dispensing.")
 		else
 			. += span_notice("\The [src] is empty and ready to accept nanopaste.")
+
+REF_OWNED(/obj/item/nifrepairer, list("supply"))

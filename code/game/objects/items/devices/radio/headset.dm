@@ -816,3 +816,5 @@ REF_OWNED(/obj/item/radio/headset, list("keyslot1", "keyslot2"))
 /obj/item/radio/headset/alt/explorer
 	name = "explorer's bowman headset"
 	desc = "Bowman headset used by explorers for exploring. Access to the explorer channel."
+
+REF_OWNED(/obj/item/radio/headset/event, list("effect_overlay"))

@@ -385,3 +385,6 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
+
+REF_HELD(/obj/machinery/bomb_tester, list("tank1", "tank2"))
+REF_OWNED(/obj/machinery/bomb_tester, list("faketank"))

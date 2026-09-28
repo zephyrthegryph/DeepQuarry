@@ -8,7 +8,7 @@
 	var/face_state = null
 	var/icon/face_overlay
 
-	var/icon/pilot_image
+	var/pilot_image
 
 	// How many pixels do we bump the pilot upward?
 	var/pilot_lift = 0

@@ -43,3 +43,4 @@
 	if (can_puncture(W))
 		burst()
 
+REF_OWNED(/obj/item/latexballon, list("air_contents"))

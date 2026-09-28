@@ -157,3 +157,5 @@
 	if(height && istype(mover) && mover.checkpass(PASSTABLE)) //allow bullets, beams, thrown objects, mice, drones, and the like through.
 		return 1
 	return ..()
+
+REF_HELD(/obj/machinery/feeder, list("beaker"))

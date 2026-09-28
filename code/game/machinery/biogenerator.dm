@@ -330,3 +330,5 @@
 
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT
+
+REF_HELD(/obj/machinery/biogenerator, list("beaker"))

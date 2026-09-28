@@ -373,3 +373,5 @@
 			if(istype(M)) // Sanity check, though shouldn't be needed since this is already checked by the proc.
 				M.revert_mob_tf()
 		occupant.enter_vr(avatar)
+
+REF_OWNED(/obj/machinery/vr_sleeper, list("smoke"))

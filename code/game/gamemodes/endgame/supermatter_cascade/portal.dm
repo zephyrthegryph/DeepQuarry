@@ -92,3 +92,5 @@
 	else
 		if(riftimage)
 			qdel(riftimage)
+
+REF_OWNED(/mob, list("riftimage"))

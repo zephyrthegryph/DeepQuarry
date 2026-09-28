@@ -129,3 +129,5 @@
 /obj/machinery/floorlayer/proc/CollectTiles(turf/w_turf)
 	for(var/obj/item/stack/tile/tile in w_turf)
 		TakeTile(tile)
+
+REF_HELD(/obj/machinery/floorlayer, list("T"))

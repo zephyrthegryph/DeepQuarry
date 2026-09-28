@@ -187,3 +187,5 @@
 
 /obj/effect/anomaly/weather/hail
 	selected_weather = /datum/anomalous_weather/hail
+
+REF_OWNED(/obj/effect/anomaly/weather, list("selected_weather"))

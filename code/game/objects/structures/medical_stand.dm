@@ -464,3 +464,5 @@
 	spawn_type = /obj/item/tank/anesthetic
 	mask_type = /obj/item/clothing/mask/breath/medical
 	is_loosen = FALSE
+
+REF_OWNED(/obj/structure/medical_stand, list("tank", "contained", "beaker"))

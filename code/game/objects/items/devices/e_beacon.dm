@@ -74,3 +74,5 @@
 		gps.tracking = FALSE
 		user.visible_message("[user] disassembles \the [src].")
 		consume(src, user)
+
+REF_HELD(/obj/item/emergency_beacon, list("gps"))

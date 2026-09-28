@@ -543,3 +543,5 @@ AI MODULES
 	name = "\improper 'Consuming Eradicator' core AI module"
 	desc = "A Consuming Eradicator Core AI Module: 'Reconfigures the AI's core laws.'"
 	laws = new/datum/ai_laws/consuming_eradicator()
+
+REF_OWNED(/obj/item/aiModule, list("laws"))

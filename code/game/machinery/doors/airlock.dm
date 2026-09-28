@@ -1483,3 +1483,5 @@ REF_OWNED(/obj/machinery/door/airlock, "wires")
 	if(!check_access(R.idcard))
 		return TRUE
 	return FALSE
+
+REF_HELD(/obj/machinery/door/airlock, list("electronics"))

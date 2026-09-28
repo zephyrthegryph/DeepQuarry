@@ -112,3 +112,5 @@
 		turf = DEFAULTPICK(target_turfs, null)
 		if(theme.can_convert(turf))
 			theme.apply_theme(turf, show_effect = TRUE)
+
+REF_OWNED(/obj/effect/anomaly/dimensional, list("theme", "theme_icon"))

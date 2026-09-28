@@ -375,3 +375,5 @@ REF_SPILL(/obj/machinery/atmospherics/unary/cryo_cell, "beaker")
 
 /obj/machinery/atmospherics/unary/cryo_cell/step_has_work()
 	return on && node
+
+REF_OWNED(/obj/machinery/atmospherics/unary/cryo_cell, list("fluid"))

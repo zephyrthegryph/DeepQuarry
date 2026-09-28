@@ -490,3 +490,5 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/computer/cloning/step_start_condition()
 	return autoprocess
+
+REF_HELD(/obj/machinery/computer/cloning, list("diskette"))

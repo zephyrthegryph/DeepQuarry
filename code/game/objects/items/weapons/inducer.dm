@@ -293,3 +293,6 @@
 
 /obj/vehicle/get_cell()
 	return cell
+
+REF_OWNED(/obj/item/inducer, list("spark_system"))
+REF_HELD(/obj/item/inducer, list("cell"))
