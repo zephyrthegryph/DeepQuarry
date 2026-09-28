@@ -20,6 +20,11 @@ SUBSYSTEM_DEF(atoms)
 	///initAtom() adds the atom its creating to this list iff InitializeAtoms() has been given a list to populate as an argument
 	var/list/created_atoms
 
+	/// While a map-load batch initializes (InitializeAtoms()), walls queue here instead of
+	/// smoothing themselves and their neighbours one by one; the batch smooths each once at the
+	/// end (doc/rewrite/init_and_turfs.md sec 4.2). Null outside a batch.
+	var/list/deferred_wall_smoothing
+
 	/// Atoms that will be deleted once the subsystem is initialized
 	var/list/queued_deletions = list()
 
@@ -58,9 +63,14 @@ SUBSYSTEM_DEF(atoms)
 	var/source = "subsystem init [uid]"
 	set_tracked_initalized(INITIALIZATION_INNEW_MAPLOAD, source)
 
+	var/smoothing_owner = isnull(deferred_wall_smoothing)
+	if(smoothing_owner)
+		deferred_wall_smoothing = list()
 	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
 	CreateAtoms(atoms, atoms_to_return, source)
 	clear_tracked_initalize(source)
+	if(smoothing_owner)
+		flush_wall_smoothing()
 
 	if(length(late_loaders))
 		for(var/I in 1 to length(late_loaders))
@@ -93,6 +103,23 @@ SUBSYSTEM_DEF(atoms)
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
 	#endif
+
+/// Smooths every wall the batch queued, plus the walls next to them (a template's edge
+/// touches walls that were already there), once each, now that every material is set.
+/datum/controller/subsystem/atoms/proc/flush_wall_smoothing()
+	var/list/queued = deferred_wall_smoothing
+	deferred_wall_smoothing = null
+	if(!length(queued))
+		return
+	var/list/walls = queued.Copy()
+	for(var/turf/simulated/wall/W as anything in queued)
+		for(var/turf/simulated/wall/neighbour in orange(W, 1))
+			walls[neighbour] = TRUE
+	for(var/turf/simulated/wall/W as anything in walls)
+		if(QDELETED(W) || !istype(W))
+			continue
+		W.update_connections()
+		W.update_icon()
 
 /// Actually creates the list of atoms. Exists solely so a runtime in the creation logic doesn't cause initialized to totally break
 /datum/controller/subsystem/atoms/proc/CreateAtoms(list/atoms, list/atoms_to_return = null, mapload_source = null)
