@@ -192,6 +192,31 @@ reference finder spends its whole 323 s budget on it, while atmos uses ~125 ms
 a tick. The numbers above come from the boot log (`Initialized ... within`,
 `RUST_ALLOC_PROFILE`, `BENCH_RUST_MARK`) and `data/bench/process.json`.
 
+### 0.2c rewrite/l-boot2 on the live map (2026-09-28)
+
+One Southern Cross boot (`bench -DCITESTING_FULL_MAP --scenario=boot_profile`,
+`DQ_PREBUILT_VERDIGRIS=1` with the l-boot2 DLL). The machine was building
+Rust for another session at the same time (about 20 rustc processes), so the
+times are not comparable. The memory marks are.
+
+| | k-boot (0.2b) | l-boot2 |
+|---|---|---|
+| Atoms | 37.5-41.1 s | 61.4 s (loaded machine) |
+| Atmospherics | 8.5-9.0 s | 14.5 s (loaded machine) |
+| Lighting | 3.9-4.1 s | 7.0 s (loaded machine) |
+| Rust after Atoms | 70 MB | 68 MB |
+| `air: turfs registered` | 137 MB (**+67**) | 87 MB (**+18**) |
+| after pipenets | 153 MB (peak) | 98 MB (peak 103) |
+| Rust peak, first fires | 176 MB | **130 MB** |
+| Rust steady, fires 1-8 | 118-126 MB | 109-112 MB |
+| private after Atoms | ~985 MB | 1,152 MB |
+
+Turf registration now stays on the bulk path (see "Why registration missed"
+below). Take a quiet-machine boot before quoting any of these times. The run
+logged one runtime, repeated: `get_moles_hook` "no gas mixture behind
+handle 1" from the algae farm's `internal` mixture (a compile-time `new()`) in
+the OM pipeline audit. It is not yet known whether this is new.
+
 ### 0.3 DM memory census (boot_memory, sampled)
 
 809,798 instances: 393,216 turfs, 85,819 objs, 321,633 datums. The per-type
@@ -802,8 +827,31 @@ turf whose row needs none of the three as materialized without the call chain
 (hence the zero ceiling on turf `on_materialize()` overrides). Space turfs pick
 their dust appearance from a flat index and share one immutable-air lookup;
 `/turf/Initialize` checks multi-z neighbours without `GetAbove`/`GetBelow`.
-Not done: skipping `Initialize()` altogether for no-state types, the per-type
-appearance cache (§3.5), and the air template / material facts as table data.
+**l-boot2:**
+- **Skipping Initialize.** A type that sets `init_from_table = TRUE` has no
+  per-instance `Initialize()` state. `InitAtom()` calls its
+  `table_initialize()` instead of the Initialize chain and its arglist.
+  - `/turf/space` and plain `/turf/unsimulated` use it. The subtypes that
+    override Initialize turn the flag off.
+  - The lint's `table_init_overrides` count (ceiling 0) catches a subtype
+    that forgets to.
+- **Forwarding overrides removed.** 41 overrides whose body was only
+  `. = ..()` were deleted. The ceilings are now `initialize` 3284 and
+  `unreasoned` 3379.
+- **Air template per type.** `create_gas_mixture()` copies one mixture per
+  type when the turf's gas string and temperature are its type's.
+- **Walls.**
+  - Material facts come from one table per (material, reinforcement,
+    temperature): `wall_material_facts()`.
+  - Overlay images come from one shared list per (masks, materials,
+    connections, construction stage, damage step): `wall_overlay_images()`.
+- **Rule bindings.** One shared `/datum/rule_type_table` per rule list.
+  Per-object state is three bitmasks plus one flat token list.
+
+Not done:
+- Initialize-free obj types (decals, step triggers, emissive blockers).
+- Appearance caches for floors and windows.
+- Material facts for anything but walls.
 
 `tools/ci/check_grep.sh` gets a count of `/Initialize(` overrides (and
 separately of `/LateInitialize(`), with the baseline in the ratchet file.
