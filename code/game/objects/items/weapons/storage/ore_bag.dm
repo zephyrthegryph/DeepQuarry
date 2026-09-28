@@ -59,10 +59,13 @@
 	max_storage_space = 500
 	item_flags = INDESTRUCTIBLE | ABSTRACT
 
-/obj/item/ore_bag/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/ore_bag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(current_capacity >= max_storage_space)
 		to_chat(user, span_notice("\the [src] is too full to possibly fit anything else inside of it."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if (istype(W, /obj/item/ore) && !istype(W, /obj/item/ore/slag) && !istype(W, /obj/item/ore/archeology_debris))
 		var/obj/item/ore/ore = W
@@ -70,6 +73,7 @@
 		current_capacity++
 		user.remove_from_mob(W)
 		consume(ore, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/ore_bag/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
 	//If we attack a turf, we try to scoop up all the ore from the turf first.

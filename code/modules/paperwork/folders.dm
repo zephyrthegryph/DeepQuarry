@@ -85,23 +85,24 @@
 		add_overlay("folder_paper")
 	return
 
-/obj/item/folder/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/folder/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(HAS_TAG(W, TAG_PAPERWORK))
 		var/why = dq_ledger_refusal(W, src, CONTAINER_SLOT_PAGES, user)
 		if(why)
 			to_chat(user, span_warning("You can't put \the [W] into \the [src]: [why]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		if(W.move_into(src, CONTAINER_SLOT_PAGES, user))
 			to_chat(user, span_notice("You put the [W] into \the [src]."))
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k98 = rerun_prompt(user, "k98", list("kind" = "text", "message" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k98 = rerun_prompt(user, "k98", list("kind" = "text", "message" = "What would you like to label the folder?", "title" = "Folder Labelling", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k98))
 			return TRUE
 		var/n_name = sanitizeSafe(_answer_k98, MAX_NAME_LEN)
 		if(in_range(user, src) && user.stat == 0)
 			name = "folder[(n_name ? text("- '[n_name]'") : null)]"
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/folder/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
@@ -111,12 +112,16 @@
 // TGUI migration. attack_self opens Folder.tsx; the Topic
 // remove/rename/read/look/browse actions move to tgui_act. Reading a
 // paper/photo chains to that item's TGUI viewer (Paper.tsx / Photo.tsx).
-/obj/item/folder/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/folder, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/folder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/folder/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

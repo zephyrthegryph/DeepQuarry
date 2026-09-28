@@ -144,10 +144,13 @@
 	var/digspeed = 40
 	var/grave_mode = FALSE
 
-/obj/item/shovel/click_alt(mob/user)
+DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/shovel/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	grave_mode = !grave_mode
 	to_chat(user, span_notice("You'll now dig [grave_mode ? "out graves" : "for loot"]."))
-	. = ..()
+	return FALSE
 
 /obj/item/shovel/wood
 	icon_state = "whiteshovel"
@@ -241,11 +244,15 @@
 	singular_name = "green flag"
 	icon_state = "greenflag"
 
-/obj/item/stack/flag/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/stack/flag, INTERACT_ITEM(null, PROC_REF(flag_interaction_item)))
+
+/// Old attackby.
+/obj/item/stack/flag/proc/flag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(upright && istype(W,src.type))
 		src.attack_hand(user)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/stack/flag/attack_hand(user as mob)
 	if(upright)

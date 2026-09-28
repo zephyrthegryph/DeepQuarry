@@ -77,26 +77,29 @@ REF_OWNED(/obj/item/organ/internal/heart/machine/anomalock, "core")
 	SIGNAL_HANDLER
 	add_lightning_overlay(10 SECONDS)
 
-/obj/item/organ/internal/heart/machine/anomalock/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_ITEM(null, PROC_REF(anomalock_interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/internal/heart/machine/anomalock/proc/anomalock_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, required_anomaly))
 		if(core)
 			balloon_alert(user, "core already in!")
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(install_core), list(user, W))
 		return TRUE
 
 	if(W.has_tool_quality(IS_SCREWDRIVER))
 		if(!core)
 			balloon_alert(user, "no core!")
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		if(!core_removable)
 			balloon_alert(user, "can't remove core!")
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		balloon_alert(user, "removing core...")
 		om_task_start(/datum/om/task/timed/anomalock_remove_core, user, src, list("receiver" = src))
 		return TRUE
 
-	return ..()
+	return FALSE
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/install_core(mob/user, obj/item/W)
 	if(core || W.loc != user)

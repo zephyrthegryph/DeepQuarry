@@ -67,12 +67,15 @@
 			T.dismantle_wall(1)
 	qdel(src)
 
-/obj/item/syndie/c4explosive/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/syndie/c4explosive/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter/zippo/c4detonator))
 		var/obj/item/flame/lighter/zippo/c4detonator/D = W
 		D.bomb = src
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /*Detonator, disguised as a lighter*/
 /*Click it when closed to open, when open to bring up a prompt asking you if you want to close it or press the button.*/

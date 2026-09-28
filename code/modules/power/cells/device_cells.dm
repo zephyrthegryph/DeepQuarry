@@ -145,12 +145,12 @@
 /obj/item/cell/device/weapon/recharge/alien/update_icon()
 	return // No overlays please.
 
-/obj/item/cell/device/weapon/recharge/alien/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/recharge/alien, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!swaps_to)
-		return
+		return TRUE
 	user.remove_from_mob(src)
 	to_chat(user, span_notice("You swap [src] to 'machinery cell' mode."))
 	var/obj/item/cell/newcell = new swaps_to(null)
@@ -159,6 +159,7 @@
 	newcell.charge = newcell.maxcharge * percentage
 	newcell.persist_storable = persist_storable
 	consume(src, user)
+	return TRUE
 
 // Bloo friendlier hybrid tech
 /obj/item/cell/device/weapon/recharge/alien/hybrid

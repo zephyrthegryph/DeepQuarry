@@ -24,7 +24,10 @@
 	/// Whether attackby will be passed on it even with a closed panel
 	var/external_slot
 
-/obj/item/computer_hardware/attackby(obj/item/W as obj, mob/living/user as mob)
+DECLARE_INTERACTIONS(/obj/item/computer_hardware, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/computer_hardware/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	// Multitool. Runs diagnostics
 	if(W.has_tool_quality(TOOL_MULTITOOL))
 		to_chat(user, "***** DIAGNOSTICS REPORT *****")
@@ -50,7 +53,7 @@
 			to_chat(user, "You patch up \the [src] with a bit of \the [W].")
 			repair_damage(10)
 		return TRUE
-	return ..()
+	return FALSE
 
 /// Returns the name of the var on /obj/item/modular_computer that holds this
 /// hardware slot, or null if this type has no dedicated named slot.

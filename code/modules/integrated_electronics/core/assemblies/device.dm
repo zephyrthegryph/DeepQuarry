@@ -15,11 +15,15 @@
 
 REF_OWNED(/obj/item/assembly/electronic_assembly, "EA")
 
-/obj/item/assembly/electronic_assembly/attackby(obj/item/I as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)))
+
+/// Old attackby.
+/obj/item/assembly/electronic_assembly/proc/electronic_assembly_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(opened)
 		EA.attackby(I, user)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/assembly/electronic_assembly/crowbar_act(mob/user, obj/item/tool)
 	toggle_open(user)

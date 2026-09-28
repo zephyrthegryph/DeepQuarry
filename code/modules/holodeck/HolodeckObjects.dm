@@ -347,10 +347,13 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 		return TRUE
 	return FALSE
 
-/obj/item/holo/esword/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/holo/esword, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/holo/esword/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	active = !active
 	if (active)
 		force = 30
@@ -367,9 +370,10 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 
 	update_icon()
 	add_fingerprint(user)
-	return
+	return TRUE
 
-/obj/item/holo/esword/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/holo/esword/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_MULTITOOL) && !active)
 		if(!rainbow)
 			rainbow = TRUE
@@ -377,7 +381,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 			rainbow = FALSE
 		to_chat(user, span_notice("You manipulate the color controller in [src]."))
 		update_icon()
-	return ..()
+	return FALSE
 
 /obj/item/holo/esword/update_icon()
 	. = ..()

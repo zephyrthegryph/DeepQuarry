@@ -19,10 +19,10 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/uv_light/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/uv_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
 		set_light(range, 2, "#007fff")
@@ -33,6 +33,7 @@
 		clear_last_scan()
 		PERIODIC_STOP(src)
 		icon_state = "uv_off"
+	return TRUE
 
 /obj/item/uv_light/proc/clear_last_scan()
 	if(length(scanned))

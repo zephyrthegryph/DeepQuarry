@@ -66,16 +66,20 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 		var/obj/structure/marker_beacon/M = new(user.loc, picked_color)
 		transfer_fingerprints_to(M)
 
-/obj/item/stack/marker_beacon/click_alt(mob/living/user)
+EXTEND_INTERACTIONS(/obj/item/stack/marker_beacon, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/stack/marker_beacon/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.incapacitated() || !istype(user))
 		to_chat(user, span_warning("You can't do that right now!"))
-		return
+		return TRUE
 	if(!in_range(src, user))
-		return
+		return TRUE
 
 	var/options = GLOB.marker_beacon_colors.Copy()
 	options += list("Random" = FALSE) //not a true color, will pick a random color
 	om_prompt(src, user, list("kind" = "list", "message" = "Choose a color.", "title" = "Beacon Color", "choices" = options, "requires" = PROMPT_ADJACENT), PROC_REF(color_chosen))
+	return TRUE
 
 /obj/item/stack/marker_beacon/proc/color_chosen(mob/living/user, input_color, datum/om/prompt/ask)
 	if(input_color)

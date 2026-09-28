@@ -193,9 +193,13 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	src.add_fingerprint(user)
 	om_after(src, 0, PROC_REF(attack_self), user)
 
-/obj/item/geiger/wall/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/geiger/wall, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/geiger/wall/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	om_after(src, 0, PROC_REF(attack_self), user)
+	return TRUE
 
 /obj/item/geiger/wall/north
 	pixel_y = 28

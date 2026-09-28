@@ -159,9 +159,10 @@
 		if(!bcell)
 			. += span_warning("The concussion maul does not have a power source installed.")
 
-/obj/item/melee/shock_maul/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/melee/shock_maul/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!user.IsAdvancedToolUser())
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
@@ -174,11 +175,19 @@
 				to_chat(user, span_notice("\The [src] already has a cell."))
 		else
 			to_chat(user, span_notice("This cell is not fitted for [src]."))
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/melee/shock_maul/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/melee/shock_maul/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(!user.IsAdvancedToolUser())
-			return
+			return TRUE
 		else if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
@@ -186,17 +195,16 @@
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_held_icon()
-			return
-		..()
+			return TRUE
+		return FALSE
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
-/obj/item/melee/shock_maul/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/melee/shock_maul/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user.IsAdvancedToolUser())
-		return
+		return TRUE
 	if(!status && bcell && bcell.charge >= hitcost)
 		om_do_after(user, charge_time, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	else if(status)
@@ -209,6 +217,7 @@
 	else
 		to_chat(user, span_warning("\The [src] is out of charge."))
 	add_fingerprint(user)
+	return TRUE
 
 /obj/item/melee/shock_maul/proc/attack_self_timed_done(mob/user)
 	status = 1

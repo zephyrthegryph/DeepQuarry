@@ -87,15 +87,19 @@
 	M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/tray/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/tray/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/material/kitchen/rollingpin))
 		if(!COOLDOWN_FINISHED(src, shield_bash))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.visible_message(span_warning("[user] bashes [src] with [W]!"))
 		playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
 		COOLDOWN_START(src, shield_bash, 2.5 SECONDS)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /*
 ===============~~~~~================================~~~~~====================

@@ -66,7 +66,10 @@ REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 		camera.set_status(FALSE)
 	power_draw_idle = 0
 
-/obj/item/integrated_circuit/output/video_camera/attackby(obj/item/W, mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/integrated_circuit/output/video_camera/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
@@ -75,8 +78,8 @@ REF_OWNED(/obj/item/integrated_circuit/output/video_camera, "camera")
 		else
 			LAZYADD(input.paired_cameras, src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/integrated_circuit/output/video_camera/examine(mob/user)
 	. = ..()
@@ -189,11 +192,14 @@ REF_OWNED(/obj/item/integrated_circuit/input/video_camera_input, "camera_module"
 		var/status_text = cam.camera?.can_use() ? "ACTIVE" : "INACTIVE"
 		. += span_notice(" - [cam.camera?.c_tag || "Unknown"] ([status_text])")
 
-/obj/item/integrated_circuit/input/video_camera_input/attackby(obj/item/W, mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/integrated_circuit/input/video_camera_input/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/integrated_circuit/output/video_camera))
 		W.attackby(src, user)
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/integrated_circuit/input/video_camera_input/power_fail()
 	// Close any open UIs

@@ -80,21 +80,24 @@
 	else
 		to_chat (usr, "You were unable to toggle the [src]'s radio.")
 
-/obj/item/mmi/attackby(obj/item/O as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/mmi, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/mmi/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	var/mob/living/carbon/brain/occupant = get_occupant()
 	// An empty view with no brain behind it (left after its mind was released) doesn't block a new brain.
 	if(istype(O,/obj/item/organ/internal/brain) && (!occupant || (!occupant.mind && !brainobj))) //Time to stick a brain in it --NEO
 		var/obj/item/organ/internal/brain/B = O
 		if(B.is_brain_dead())
 			to_chat(user, span_warning("That brain is well and truly dead."))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/mob/living/carbon/brain/view = B.hosted_view()
 		if(!view)
 			to_chat(user, span_warning("You aren't sure where this brain came from, but you're pretty sure it's useless."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(view.identity.has_genetic_modifier(/datum/modifier/no_borg))	//Can't be shoved in an MMI.
 			to_chat(user, span_warning("\The [src] appears to reject this brain.  It is incompatible."))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " sticks \a [O] into \the [src]."))
 		user.drop_item()
@@ -102,7 +105,7 @@
 
 		feedback_inc("cyborg_mmis_filled",1)
 
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if((istype(O,/obj/item/card/id)||istype(O,/obj/item/pda)) && occupant)
 		if(allowed(user))
@@ -110,11 +113,11 @@
 			to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the brain holder."))
 		else
 			to_chat(user, span_warning("Access denied."))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(occupant)
 		O.attack(occupant, user)//Oh noooeeeee
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /// Seat a removed brain: the organ becomes the tissue and its view (with the
 /// mind) moves into this MMI. Nothing is copied.
@@ -228,8 +231,11 @@
 /obj/item/mmi/digital/update_occupied_state()
 	return
 
-/obj/item/mmi/digital/attackby(obj/item/O as obj, mob/user as mob)
-	return	//Doesn't do anything right now because none of the things that can be done to a regular MMI make any sense for these
+EXTEND_INTERACTIONS(/obj/item/mmi/digital, INTERACT_ITEM(null, PROC_REF(digital_interaction_item)))
+
+/// Old attackby.
+/obj/item/mmi/digital/proc/digital_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/mmi/digital/examine(mob/user)
 	. = ..()

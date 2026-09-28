@@ -111,16 +111,14 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 /obj/item/ghost_trap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !isAI(user) && !user.stat && !user.restrained())
 
-/obj/item/ghost_trap/attack_self(mob/user)
-	. = ..()
-	if(.)
-		return
+/// Old attack_self.
+/obj/item/ghost_trap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(captured_entity)
 		var/mob/our_entity = om_resolve(captured_entity)
 		if(our_entity)
 			to_chat(user, "You are unable to use \the [src]! It beeps that it an entity contained inside!")
-			return
+			return TRUE
 
 	if(!deployed && can_use(user))
 		user.visible_message(
@@ -129,6 +127,7 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 			)
 
 		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	return TRUE
 
 /obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
 	user.visible_message(
@@ -157,7 +156,13 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
 	update_icon()
 
-/obj/item/ghost_trap/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
+
+/// Old attack_hand.
+/obj/item/ghost_trap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
 		user.visible_message(
 			span_notice("[user] begins freeing something from \the [src]."),
@@ -173,7 +178,8 @@ REF_OWNED(/obj/item/ghost_trap, "ghost_reporter")
 
 		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
 	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))

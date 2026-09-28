@@ -40,22 +40,26 @@ REF_OWNED(/obj/item/paperplane, "internalPaper")
 			var/image/stampoverlay = image('icons/obj/bureaucracy.dmi', "paperplane_[initial(stamp.icon_state)]")
 			add_overlay(stampoverlay)
 
-/obj/item/paperplane/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/paperplane, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/paperplane/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You unfold [src]."))
 	var/atom/movable/internal_paper_tmp = internalPaper
 	internal_paper_tmp.forceMove(loc)
 	internalPaper = null
 	consume(src, user)
 	user.put_in_hands(internal_paper_tmp)
+	return TRUE
 
-/obj/item/paperplane/attackby(obj/item/P, mob/living/carbon/human/user, params)
-	..()
+/// Old attackby.
+/obj/item/paperplane/proc/interaction_item(mob/living/carbon/human/user, obj/item/P, datum/interaction/interaction)
 	if(istype(P, /obj/item/pen))
 		to_chat(user, span_notice("You should unfold [src] before changing it."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	else if(istype(P, /obj/item/stamp)) 	//we don't randomize stamps on a paperplane
 		internalPaper.attackby(P, user) //spoofed attack to update internal paper.
@@ -68,15 +72,16 @@ REF_OWNED(/obj/item/paperplane, "internalPaper")
 			user.unEquip(P)
 			user.adjust_fire_stacks(1)
 			user.ignite_mob()
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(!(in_range(user, src))) //to prevent issues as a result of telepathically lighting a paper
-			return
+			return INTERACTION_HANDLED_PASS
 		user.unEquip(src)
 		user.visible_message(span_danger("[user] lights [src] ablaze with [P]!"), span_danger("You light [src] on fire!"))
 		fire_act()
 
 	add_fingerprint(user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/paperplane/throw_impact(atom/hit_atom)
 	if(..() || !ishuman(hit_atom))//if the plane is caught or it hits a nonhuman

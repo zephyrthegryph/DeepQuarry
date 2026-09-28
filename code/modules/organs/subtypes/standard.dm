@@ -340,11 +340,14 @@
 			owner.custom_pain("Your [name] burns like it's on fire!",15)
 			owner.status_adjust(EFFECT_BLURRY, 20) //Specific level 2 'feature
 
-/obj/item/organ/external/head/attackby(obj/item/I as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/organ/external/head, INTERACT_ITEM(null, PROC_REF(head_interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/external/head/proc/head_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/toy/plushie) || istype(I, /obj/item/organ/external/head))
 		user.visible_message(span_notice("[user] makes \the [I] kiss \the [src]!."), \
 		span_notice("You make \the [I] kiss \the [src]!."))
-	return ..()
+	return FALSE
 
 /obj/item/organ/external/head/get_icon(skeletal, can_apply_transparency = TRUE)
 	..()

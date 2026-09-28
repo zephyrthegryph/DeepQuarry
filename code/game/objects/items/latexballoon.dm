@@ -39,7 +39,11 @@
 	burst()
 
 
-/obj/item/latexballon/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/latexballon, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/latexballon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (can_puncture(W))
 		burst()
+	return INTERACTION_HANDLED_PASS
 

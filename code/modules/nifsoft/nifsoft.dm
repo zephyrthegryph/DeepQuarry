@@ -260,16 +260,17 @@
 		return
 	..(A,user,flag,params)
 
-/obj/item/disk/nifsoft/compliance/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/newlaws = rerun_prompt(user, "k271", list("kind" = "text", "message" = "Please Input Laws", "title" = "Compliance Laws", "default" = laws, "max_length" = 2048, "multiline" = TRUE), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/disk/nifsoft/compliance/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/newlaws = rerun_prompt(user, "k271", list("kind" = "text", "message" = "Please Input Laws", "title" = "Compliance Laws", "default" = laws, "max_length" = 2048, "multiline" = TRUE), PROC_REF(interaction_self), args)
 	if(isnull(newlaws))
 		return TRUE
 	if(newlaws)
 		to_chat(user,span_filter_notice("You set the laws to: <br>" + span_notice("[newlaws]")))
 		laws = newlaws
+	return TRUE
 
 /obj/item/disk/nifsoft/compliance/extra_params()
 	return laws

@@ -32,11 +32,12 @@
 
 	return data
 
-/obj/item/destTagger/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/destTagger, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/destTagger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/destTagger/tgui_act(action, params, datum/tgui/ui)
 	if(..())

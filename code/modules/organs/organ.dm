@@ -552,17 +552,20 @@
 		bitten(user)
 		return
 
-/obj/item/organ/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/organ, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(can_butcher(W, user))
 		butcher(W, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/reagent_containers/container = W
 	if(istype(container))
 		if(container.reagents.has_reagent(REAGENT_ID_PERIDAXON, 5))
 			if(is_beyond_repair())
 				to_chat(user, span_warning("\The [src] is dead beyond any revival."))
-				return
+				return INTERACTION_HANDLED_PASS
 			status &= ~ORGAN_DEAD
 			var/obj/item/organ/internal/internal_organ = src
 			if(istype(internal_organ))
@@ -573,8 +576,8 @@
 			PERIODIC_START(src, PERIODIC_SLOW) //When an organ dies, it stops processing. This restarts it.
 			container.reagents.remove_reagent(REAGENT_ID_PERIDAXON, 5)
 			to_chat(user, "You use the [container] to revive \the [src]")
-			return
-	return ..()
+			return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/organ/proc/can_butcher(obj/item/O, mob/living/user)
 	if(butcherable && meat_type)

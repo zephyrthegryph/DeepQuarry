@@ -285,15 +285,20 @@
 	drop_sound = 'sound/items/drop/axe.ogg'
 	pickup_sound = 'sound/items/pickup/axe.ogg'
 
-/obj/item/roller/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/roller, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/roller/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/structure/bed/roller/R = new bedtype(user.loc)
 	R.add_fingerprint(user)
 	consume(src, user)
+	return TRUE
 
-/obj/item/roller/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/roller/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W,/obj/item/roller_holder))
 		var/obj/item/roller_holder/RH = W
@@ -301,9 +306,9 @@
 			to_chat(user, span_notice("You collect the roller bed."))
 			src.loc = RH
 			RH.held = src
-			return
+			return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 /obj/item/roller/adv
 	name = "advanced roller bed"
@@ -324,19 +329,20 @@
 	. = ..()
 	held = new /obj/item/roller(src)
 
-/obj/item/roller_holder/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/roller_holder/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!held)
 		to_chat(user, span_notice("The rack is empty."))
-		return
+		return TRUE
 
 	to_chat(user, span_notice("You deploy the roller bed."))
 	var/obj/structure/bed/roller/R = new held.bedtype(user.loc)
 	R.add_fingerprint(user)
 	qdel(held)
 	held = null
+	return TRUE
 
 
 /obj/structure/bed/roller/Moved(atom/old_loc, direction, forced = FALSE)

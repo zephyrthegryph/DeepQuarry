@@ -12,8 +12,11 @@
 	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
 	var/construction_state = "p0"
 
-/obj/item/mecha_parts/micro/chassis/attack_hand()
-	return
+DECLARE_INTERACTIONS(/obj/item/mecha_parts/micro/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/mecha_parts/micro/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 //Gopher
 /obj/item/mecha_parts/micro/chassis/gopher

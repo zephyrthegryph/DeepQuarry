@@ -64,7 +64,8 @@
 	. = ..()
 	init_cards()
 
-/obj/item/deck/attackby(obj/O, mob/user)
+/// Old attackby.
+/obj/item/deck/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(istype(O,/obj/item/hand))
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src)
@@ -72,18 +73,27 @@
 				cards += P
 			consume(H, user)
 			to_chat(user,span_notice("You place your cards on the bottom of \the [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user,span_warning("You can't mix cards from other decks!"))
-			return
-	..()
+			return INTERACTION_HANDLED_PASS
+	return FALSE
 
-/obj/item/deck/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/deck, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_hand.
+/obj/item/deck/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/carbon/human/H = user
 	if(ishuman(H) && (istype(src.loc, /obj/item/storage) || src == H.get_equipped_item(SLOT_ID_POCKET_R) || src == H.get_equipped_item(SLOT_ID_POCKET_L) || src.loc == user)) // so objects can be removed from storage containers or pockets. also added a catch-all, so if it's in the mob you'll pick it up. Human only, however!
-		..()
+		return FALSE
 	else // but if they're not, or are in your hands, you can still draw cards.
 		draw_card()
+	return TRUE
 
 /obj/item/deck/verb/draw_card()
 
@@ -283,17 +293,18 @@
 	H.throw_at(get_step(target,target.dir),10,1,H)
 
 
-/obj/item/hand/attackby(obj/O as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/hand/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(cards.len == 1 && istype(O, /obj/item/pen))
 		var/datum/playingcard/P = cards[1]
 		if(P.name != "Blank Card")
 			to_chat(user,span_notice("You cannot write on that card."))
-			return
-		var/cardtext = rerun_prompt(user, "k284", list("kind" = "text", "message" = "What do you wish to write on the card?", "title" = "Card Editing", "max_length" = MAX_PAPER_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+			return INTERACTION_HANDLED_PASS
+		var/cardtext = rerun_prompt(user, "k284", list("kind" = "text", "message" = "What do you wish to write on the card?", "title" = "Card Editing", "max_length" = MAX_PAPER_MESSAGE_LEN), PROC_REF(interaction_item), args)
 		if(isnull(cardtext))
 			return TRUE
 		if(!cardtext)
-			return
+			return INTERACTION_HANDLED_PASS
 		P.name = cardtext
 		// SNOWFLAKE FOR CAG, REMOVE IF OTHER CARDS ARE ADDED THAT USE THIS.
 		P.card_icon = "cag_white_card"
@@ -306,18 +317,17 @@
 			H.concealed = src.concealed
 			consume(src, user)
 			H.update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user,span_notice("You cannot mix cards from other decks!"))
-			return
+			return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
-/obj/item/deck/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/deck/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	shuffle(user)
+	return TRUE
 
 
 /obj/item/deck/verb/verb_shuffle()
@@ -341,10 +351,12 @@
 	else
 		return
 
-/obj/item/deck/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/deck/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user))
-		return
+		return TRUE
 	shuffle(user)
+	return TRUE
 
 /obj/item/deck/MouseDrop(mob/user) // Code from Paper bin, so you can still pick up the deck
 	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
@@ -400,10 +412,10 @@
 	pickup_sound = 'sound/items/pickup/paper.ogg'
 
 
-/obj/item/pack/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/pack/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_danger("[user] rips open \the [src]!"))
 	var/obj/item/hand/H = new()
 
@@ -415,6 +427,7 @@
 
 	H.update_icon()
 	user.put_in_active_hand(H)
+	return TRUE
 
 /obj/item/hand
 	name = "hand of cards"
@@ -471,13 +484,18 @@
 	if(!cards.len)
 		qdel(src)
 
-/obj/item/hand/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/hand, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/hand/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	concealed = !concealed
 	update_icon()
 	user.visible_message(span_notice("\The [user] [concealed ? "conceals" : "reveals"] their hand."))
+	return TRUE
 
 /obj/item/hand/examine(mob/user)
 	. = ..()
@@ -599,5 +617,7 @@
 		return
 	discard()
 
-/obj/item/hand/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/hand/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	Removecard()
+	return TRUE

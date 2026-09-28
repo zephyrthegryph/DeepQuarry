@@ -66,11 +66,15 @@
 	else
 		to_chat(user, "There is nothing to remove in \the [src].")
 
-/obj/item/gun/launcher/pneumatic/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gun/launcher/pneumatic/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		unload_hopper(user)
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
 /obj/item/gun/launcher/pneumatic/attackby(obj/item/W as obj, mob/user as mob)
 	if(!tank && istype(W,/obj/item/tank))
@@ -201,14 +205,17 @@
 			replace_with(src, /obj/item/gun/launcher/pneumatic)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/cannonframe/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/cannonframe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/pipe))
 		if(buildstate == 0)
 			consume(W, user)
 			to_chat(user, span_notice("You secure the piping inside the frame."))
 			buildstate++
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/stack/material) && W.get_material_name() == MAT_STEEL)
 		if(buildstate == 2)
 			var/obj/item/stack/material/M = W
@@ -218,13 +225,14 @@
 				update_icon()
 			else
 				to_chat(user, span_notice("You need at least five metal sheets to complete this task."))
-			return
+			return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/transfer_valve))
 		if(buildstate == 4)
 			consume(W, user)
 			to_chat(user, span_notice("You install the transfer valve and connect it to the piping."))
 			buildstate++
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS

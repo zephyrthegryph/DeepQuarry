@@ -342,8 +342,10 @@
 			return ITEM_INTERACT_SUCCESS
 	..()
 
-/obj/item/cell/attackby(obj/item/W, mob/user)
-	..()
+DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/cell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/reagent_containers/syringe))
 		var/obj/item/reagent_containers/syringe/S = W
 
@@ -357,6 +359,7 @@
 			message_admins("LOG: [user.name] ([user.ckey]) injected a power cell with phoron, rigging it to explode.")
 
 		S.reagents.clear_reagents()
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/cell/proc/explode()
 	// use() and give() can both be reached before qdel drains.  Make detonation

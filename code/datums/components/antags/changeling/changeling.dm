@@ -427,11 +427,12 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced")
 
-/obj/item/changeling_debug/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/changeling_debug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.make_changeling()
+	return TRUE
 
 ///Changeling Panel
 /datum/changeling_panel

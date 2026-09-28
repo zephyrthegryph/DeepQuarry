@@ -45,14 +45,15 @@
 		else
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 
-/obj/item/holosign_creator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return
+DECLARE_INTERACTIONS(/obj/item/holosign_creator, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/holosign_creator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(length(signs))
 		for(var/H in signs)
 			qdel(H)
 		to_chat(user, span_notice("You clear all active holograms."))
+	return TRUE
 
 /obj/item/holosign_creator/combifan
 	name = "ATMOS holo-combifan projector"

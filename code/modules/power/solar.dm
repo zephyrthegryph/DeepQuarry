@@ -226,13 +226,21 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	anchored = FALSE
 	var/tracker = 0
 
-/obj/item/solar_assembly/attack_hand(mob/user)
-	if(!anchored || !isturf(loc)) // You can't pick it up
-		..()
+DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
-/obj/item/solar_assembly/attackby(obj/item/W, mob/user)
+/// Old attack_hand.
+/obj/item/solar_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!anchored || !isturf(loc)) // You can't pick it up
+		return FALSE
+	return TRUE
+
+/// Old attackby.
+/obj/item/solar_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (!isturf(loc))
-		return 0
+		return INTERACTION_HANDLED_PASS
 	if(anchored)
 		if(istype(W, /obj/item/stack/material) && (W.get_material_name() == MAT_GLASS || W.get_material_name() == MAT_RGLASS))
 			var/obj/item/stack/material/S = W
@@ -246,7 +254,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 				qdel(src)
 			else
 				to_chat(user, span_warning("You need two sheets of glass to put them into a solar panel."))
-				return
+				return INTERACTION_HANDLED_PASS
 			return 1
 
 	if(!tracker)
@@ -256,7 +264,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 			consume(W, user)
 			user.visible_message(span_notice("[user] inserts the electronics into the solar assembly."))
 			return 1
-	..()
+	return FALSE
 
 /obj/item/solar_assembly/wrench_act(mob/user, obj/item/W)
 	if(!isturf(loc))

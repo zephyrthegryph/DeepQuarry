@@ -11,8 +11,6 @@
 	var/grave_name = ""		//Name of the intended occupant
 	var/epitaph = ""		//A quick little blurb
 
-/obj/item/material/gravemarker/attackby(obj/item/W, mob/user as mob)
-	..()
 
 /obj/item/material/gravemarker/screwdriver_act(mob/user, obj/item/W)
 	om_prompt_sequence(src, user, list(
@@ -68,22 +66,22 @@
 
 	..()
 
-/obj/item/material/gravemarker/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/material/gravemarker, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/material/gravemarker/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
 
 	if(!isturf(user.loc))
-		return 0
+		return TRUE
 
 	if(locate(/obj/structure/gravemarker, user.loc))
 		to_chat(user, span_warning("There's already something there."))
-		return 0
+		return TRUE
 	else
 		to_chat(user, span_notice("You begin to place \the [src.name]."))
 		om_do_after(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(place_done), done_args = list(user))
-	return
+	return TRUE
 
 /obj/item/material/gravemarker/proc/place_done(mob/user)
 	if(!isturf(user.loc) || locate(/obj/structure/gravemarker, user.loc))

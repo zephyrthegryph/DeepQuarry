@@ -91,10 +91,10 @@
 	attack_verb = null
 
 
-/obj/item/cell/device/weapon/gunsword/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/gunsword, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/cell/device/weapon/gunsword/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
 			user.visible_message(span_danger("\The [user] accidentally cuts [user.p_themselves()] with \the [src]."),\
@@ -115,7 +115,7 @@
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return
+	return TRUE
 
 /obj/item/cell/device/weapon/gunsword/update_icon()
 	cut_overlays()

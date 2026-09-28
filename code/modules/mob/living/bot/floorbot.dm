@@ -356,8 +356,10 @@
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Floorbot"
 
-/obj/item/toolbox_tiles/attackby(obj/item/W, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/toolbox_tiles, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/toolbox_tiles/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(isprox(W))
 		consume(W, user)
 		var/obj/item/toolbox_tiles_sensor/B = new /obj/item/toolbox_tiles_sensor()
@@ -367,6 +369,7 @@
 		consume(src, user)
 	else if (istype(W, /obj/item/pen))
 		ask_name_var(user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/toolbox_tiles_sensor
 	desc = "It's a toolbox with tiles sticking out the top and a sensor attached"
@@ -380,8 +383,10 @@
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Floorbot"
 
-/obj/item/toolbox_tiles_sensor/attackby(obj/item/W, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/toolbox_tiles_sensor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/toolbox_tiles_sensor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic right arm") || (W.name == "robotic left arm"))))
 		consume(W, user)
 		var/turf/T = get_turf(user.loc)
@@ -391,3 +396,4 @@
 		consume(src, user)
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
+	return INTERACTION_HANDLED_PASS

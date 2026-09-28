@@ -170,11 +170,6 @@
 					if(announce)
 						assailant.visible_message(span_warning("[assailant] sits on [target]'s face!"))
 
-/obj/item/grab/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return s_click(hud)
 
 //Updating pixelshift, position and direction
 //Gets called on process, when the grab gets upgraded or the assailant moves

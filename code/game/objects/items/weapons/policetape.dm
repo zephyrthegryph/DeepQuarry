@@ -133,14 +133,18 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	update_icon()
 	return ..()
 
-/obj/item/taperoll/attack_hand()
-	update_icon()
-	return ..()
+DECLARE_INTERACTIONS(/obj/item/taperoll, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
 
-/obj/item/taperoll/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_hand.
+/obj/item/taperoll/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	update_icon()
+	return FALSE
+
+/// Old attack_self.
+/obj/item/taperoll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!start)
 		start = get_turf(src)
 		to_chat(user, span_notice("You place the first end of \the [src]."))
@@ -151,7 +155,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			start = null
 			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
-			return
+			return TRUE
 
 		if(start == end)
 			// spread tape in all directions, provided there is a wall/window
@@ -172,7 +176,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 				start = null
 				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
-				return
+				return TRUE
 			if(possible_dirs & (NORTH|SOUTH))
 				var/obj/item/tape/TP = new tape_type(start)
 				for(var/dir in list(NORTH, SOUTH))
@@ -188,7 +192,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			start = null
 			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
-			return
+			return TRUE
 
 		var/turf/cur = start
 		var/orientation = get_dir(start, end)
@@ -237,7 +241,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			start = null
 			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
-			return
+			return TRUE
 
 		cur = start
 		var/tapetest
@@ -281,7 +285,8 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 		start = null
 		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
-		return
+		return TRUE
+	return TRUE
 
 /obj/item/taperoll/afterattack(atom/A, mob/user as mob, proximity)
 	if(!proximity)
@@ -331,16 +336,25 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			crumple()
 	return ..()
 
-/obj/item/tape/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/tape/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	breaktape(user)
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/tape/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/tape, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/tape/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if (IS_HELPING(user) && src.allowed(user))
 		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
 			T.lift(100) //~10 seconds
 	else
 		breaktape(user)
+	return TRUE
 
 /obj/item/tape/proc/lift(time)
 	lifted = 1

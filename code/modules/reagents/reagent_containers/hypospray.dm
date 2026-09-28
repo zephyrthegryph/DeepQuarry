@@ -101,7 +101,13 @@
 	volume = loaded_vial.volume
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 
-/obj/item/reagent_containers/hypospray/vial/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/reagent_containers/hypospray/vial/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		if(loaded_vial)
 			reagents.trans_to_holder(loaded_vial.reagents,volume)
@@ -112,10 +118,11 @@
 			balloon_alert(user, "vial removed from \the [src]")
 			update_icon()
 			playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
-			return
-		..()
+			return TRUE
+		return FALSE
 	else
-		return ..()
+		return FALSE
+	return TRUE
 
 /obj/item/reagent_containers/hypospray/vial/update_icon()
 	..()
@@ -139,7 +146,8 @@
 	update_icon()
 	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
 
-/obj/item/reagent_containers/hypospray/vial/attackby(obj/item/W, mob/user as mob)
+/// Old attackby.
+/obj/item/reagent_containers/hypospray/vial/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/reagent_containers/glass/beaker/vial))
 		if(!loaded_vial)
 			balloon_alert_visible("[user] begins loading [W] into \the [src].", "loading [W] into \the [src].")
@@ -147,7 +155,8 @@
 		else
 			balloon_alert(user, "\the [src] already has a vial.")
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/hypospray/autoinjector
 	name = "autoinjector"

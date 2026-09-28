@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, INTERACT_HAND_UNGATED(null, PROC_REF
 	if(!M.may_climb_ladders(src))
 		return TRUE
 
-	var/obj/structure/ladder/target_ladder = getTargetLadder(M, TYPE_PROC_REF(/atom, attack_hand), args)
+	var/obj/structure/ladder/target_ladder = getTargetLadder(M, PROC_REF(interaction_hand), args)
 	if(!target_ladder)
 		return TRUE
 	if(!(M.loc == loc) && !M.Move(get_turf(src)))

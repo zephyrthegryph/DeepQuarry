@@ -84,10 +84,10 @@
 	if(headline)
 		to_chat(user, "The headline screams, \"[headline]\"")
 
-/obj/item/tabloid/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/tabloid, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/tabloid/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_notice("\The [user] leafs idly through \the [src]."))
 	if(headline)
 		to_chat(user, "Most of it is the usual tabloid garbage, but the headline story, \"[headline]\", holds your attention for awhile.")

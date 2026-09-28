@@ -169,11 +169,15 @@
 	pixel_y = rand(-5,5)
 	if(prob(65)) color = pick("#BABABA","#7F7F7F")
 
-/obj/item/shreddedp/attackby(obj/item/W as obj, mob/user)
+DECLARE_INTERACTIONS(/obj/item/shreddedp, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/shreddedp/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter))
 		burnpaper(W, user)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/shreddedp/proc/burnpaper(obj/item/flame/lighter/P, mob/user)
 	if(user.restrained())

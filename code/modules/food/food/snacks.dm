@@ -466,7 +466,10 @@
 /obj/item/reagent_containers/food/snacks/proc/on_slice_extra()
 	return
 
-/obj/item/reagent_containers/food/snacks/MouseDrop_T(mob/living/M, mob/user)
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/food/snacks, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+
+/// Old MouseDrop_T.
+/obj/item/reagent_containers/food/snacks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
 	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
 		if(!food_inserted_micros)
 			food_inserted_micros = list()
@@ -476,9 +479,9 @@
 		food_inserted_micros += M
 
 		to_chat(user, span_warning("You climb into \the [src]."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)
@@ -4275,12 +4278,15 @@
 		return
 	..()
 
-/obj/item/pizzabox/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pizzabox, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/pizzabox/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if( boxes.len > 0 )
-		return
+		return TRUE
 
 	open = !open
 
@@ -4288,8 +4294,10 @@
 		ismessy = 1
 
 	update_icon()
+	return TRUE
 
-/obj/item/pizzabox/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/pizzabox/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if( istype(I, /obj/item/pizzabox/) )
 		var/obj/item/pizzabox/box = I
 
@@ -4316,7 +4324,7 @@
 		else
 			to_chat(user, span_warning("Close \the [box] first!"))
 
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if( istype(I, /obj/item/reagent_containers/food/snacks/sliceable/pizza/) ) // Long ass fucking object name
 
@@ -4330,14 +4338,14 @@
 			to_chat(user, span_warning("You put \the [I] in \the [src]!"))
 		else
 			to_chat(user, span_warning("You try to push \the [I] through the lid but it doesn't work!"))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if( istype(I, /obj/item/pen/) )
 
 		if( src.open )
-			return
+			return INTERACTION_HANDLED_PASS
 
-		var/t = rerun_prompt(user, "k4329", list("kind" = "text", "message" = "Enter what you want to add to the tag:", "title" = "Write", "max_length" = 30), TYPE_PROC_REF(/atom, attackby), args)
+		var/t = rerun_prompt(user, "k4329", list("kind" = "text", "message" = "Enter what you want to add to the tag:", "title" = "Write", "max_length" = 30), PROC_REF(interaction_item), args)
 		if(isnull(t))
 			return TRUE
 
@@ -4348,8 +4356,8 @@
 		boxtotagto.boxtag = copytext("[boxtotagto.boxtag][t]", 1, 30)
 
 		update_icon()
-		return
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
 	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src)
@@ -5878,7 +5886,10 @@
 	bitesize = 1
 	nutriment_amt = 10
 
-/obj/item/reagent_containers/food/snacks/chipplate/attack_hand(mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/reagent_containers/food/snacks/chipplate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/reagent_containers/food/snacks/returningitem = new vendingobject(loc)
 	reagents.trans_to(returningitem, bitesize)
 	returningitem.bitesize = 2
@@ -5891,6 +5902,7 @@
 		if (loc == user)
 			user.put_in_hands(waste)
 		consume(src, user)
+	return TRUE
 
 /obj/item/reagent_containers/food/snacks/chipplate/MouseDrop(mob/user) //Dropping the chip onto the user
 	if(istype(user) && user == usr)

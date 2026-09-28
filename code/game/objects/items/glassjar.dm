@@ -62,29 +62,32 @@
 		update_icon()
 		return
 
-/obj/item/glass_jar/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/glass_jar, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/glass_jar/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
 	//For the fish jars
 	if(can_fill && filled)
 		if(contains == JAR_ANIMAL)
 			if(IS_HELPING(user))
 				to_chat(user, span_notice("Maybe you shouldn't empty the water..."))
-				return
+				return TRUE
 
 			else
 				filled = FALSE
 				user.visible_message(span_warning("[user] dumps out \the [src]'s water!"))
 				update_icon()
-				return
+				return TRUE
 
 		else
 			user.visible_message(span_notice("[user] dumps \the [src]'s water."))
 			filled = FALSE
 			update_icon()
-			return
+			return TRUE
 
 	switch(contains)
 		if(JAR_MONEY)
@@ -93,14 +96,14 @@
 			to_chat(user, span_notice("You take money out of \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()
-			return
+			return TRUE
 		if(JAR_ANIMAL)
 			for(var/mob/M in src)
 				M.forceMove(user.loc)
 				user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
 			contains = JAR_NOTHING
 			update_icon()
-			return
+			return TRUE
 		if(JAR_SPIDER)
 			for(var/obj/effect/spider/spiderling/S in src)
 				S.loc = user.loc
@@ -108,7 +111,7 @@
 				PERIODIC_START(S, PERIODIC_SLOW) // They can grow after being let out though
 			contains = JAR_NOTHING
 			update_icon()
-			return
+			return TRUE
 	//CHOMPDDITION: your god can not help you
 	for(var/mob/M in src)
 		if(istype(M,/mob/living/voice)) //Don't knock voices out!
@@ -116,12 +119,14 @@
 		M.forceMove(get_turf(user))
 		to_chat(M, span_warning("[user] shakes you out of \the [src]!"))
 		to_chat(user, span_notice("You shake [M] out of \the [src]!"))
-/obj/item/glass_jar/attackby(obj/item/W, mob/user)
+	return TRUE
+/// Old attackby.
+/obj/item/glass_jar/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/spacecash))
 		if(contains == JAR_NOTHING)
 			contains = JAR_MONEY
 		if(contains != JAR_MONEY)
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/spacecash/S = W
 		user.visible_message(span_notice("[user] puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into \the [src]."))
 		user.drop_from_inventory(S)
@@ -144,6 +149,7 @@
 				to_chat(M, span_warning("[user] stuffs you into \the [src]!"))
 				M.forceMove(src)
 				to_chat(user, span_notice("You stuff \the [M] into \the [src]!"))
+	return INTERACTION_HANDLED_PASS
 /obj/item/glass_jar/update_icon() // Also updates name and desc
 	underlays.Cut()
 	cut_overlays()

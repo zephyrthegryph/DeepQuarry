@@ -252,10 +252,10 @@
 	var/swaps_to = /obj/item/cell/device/weapon/recharge/alien
 	robot_durability = 100
 
-/obj/item/cell/void/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/cell/void, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/cell/void/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.remove_from_mob(src)
 	to_chat(user, span_notice("You swap [src] to 'device cell' mode."))
 	var/obj/item/cell/newcell = new swaps_to(null)
@@ -264,6 +264,7 @@
 	newcell.charge = newcell.maxcharge * percentage
 	newcell.persist_storable = persist_storable
 	consume(src, user)
+	return TRUE
 
 /obj/item/cell/void/hybrid
 	icon = 'icons/obj/power_vr.dmi'

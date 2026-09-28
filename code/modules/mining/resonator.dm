@@ -80,11 +80,11 @@
 		fieldsactive++
 		om_after(src, burst_time, PROC_REF(field_burst))
 
-/obj/item/resonator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/_answer_k87 = rerun_prompt(user, "k87", list("message" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time")), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/resonator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/_answer_k87 = rerun_prompt(user, "k87", list("message" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time")), PROC_REF(interaction_self), args)
 	if(isnull(_answer_k87))
 		return TRUE
 	switch(_answer_k87)
@@ -98,6 +98,7 @@
 		if("Toggle Cascade")
 			spreadmode = !spreadmode
 			to_chat(user, span_info("You have [(spreadmode ? "enabled" : "disabled")] the resonance cascade mode."))
+	return TRUE
 
 /obj/item/resonator/afterattack(atom/target, mob/user, proximity_flag)
 	if(proximity_flag)

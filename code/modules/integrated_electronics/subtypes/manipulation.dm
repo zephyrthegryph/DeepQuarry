@@ -25,12 +25,13 @@
 	spawn_flags = IC_SPAWN_RESEARCH
 	power_draw_per_use = 50 // The targeting mechanism uses this.  The actual gun uses its own cell for firing if it's an energy weapon.
 
-/obj/item/integrated_circuit/manipulation/weapon_firing/attackby(obj/O, mob/user)
+/// Old attackby.
+/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/gun))
 		var/obj/item/gun/gun = O
 		if(installed_gun)
 			to_chat(user, span_warning("There's already a weapon installed."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(gun)
 		installed_gun = gun
 		size += gun.w_class
@@ -39,12 +40,16 @@
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
 		playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/integrated_circuit/manipulation/weapon_firing/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/integrated_circuit/manipulation/weapon_firing/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(installed_gun)
 		installed_gun.forceMove(get_turf(src))
 		to_chat(user, span_notice("You slide \the [installed_gun] out of the firing mechanism."))
@@ -54,6 +59,7 @@
 		installed_gun = null
 	else
 		to_chat(user, span_notice("There's no weapon to remove from the mechanism."))
+	return TRUE
 
 /obj/item/integrated_circuit/manipulation/weapon_firing/do_work()
 	if(!installed_gun)
@@ -177,7 +183,8 @@
 	detach_grenade()
 	. =..()
 
-/obj/item/integrated_circuit/manipulation/grenade/attackby(obj/item/grenade/G, mob/user)
+/// Old attackby.
+/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_item(mob/user, obj/item/grenade/G, datum/interaction/interaction)
 	if(istype(G))
 		if(attached_grenade)
 			to_chat(user, span_warning("There is already a grenade attached!"))
@@ -186,18 +193,23 @@
 			attach_grenade(G)
 			G.forceMove(src)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/integrated_circuit/manipulation/grenade/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
+	INTERACT_SELF(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/integrated_circuit/manipulation/grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(attached_grenade)
 		user.visible_message(span_warning("\The [user] removes \an [attached_grenade] from \the [src]!"), span_notice("You remove \the [attached_grenade] from \the [src]."))
 		user.put_in_any_hand_if_possible(attached_grenade) || attached_grenade.dropInto(loc)
 		detach_grenade()
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/integrated_circuit/manipulation/grenade/do_work()
 	if(attached_grenade && !attached_grenade.active)

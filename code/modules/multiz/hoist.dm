@@ -10,13 +10,14 @@
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_case"
 
-/obj/item/hoist_kit/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/hoist_kit/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	new /obj/structure/hoist (get_turf(user), user.dir)
 	user.visible_message(span_warning("[user] deploys the hoist kit!"), span_notice("You deploy the hoist kit!"), span_notice("You hear the sound of parts snapping into place."))
 	consume(src, user)
+	return TRUE
 
 /obj/effect/hoist_hook
 	name = "hoist clamp"

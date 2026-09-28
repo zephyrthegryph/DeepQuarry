@@ -183,8 +183,12 @@
 	adjusted_name = sane_name
 	return TRUE
 
-/obj/item/toy/plushie/customizable/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/customizable, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/toy/plushie/customizable/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/toy/plushie/customizable/dragon
 	name = "custom dragon plushie"

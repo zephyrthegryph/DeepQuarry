@@ -18,7 +18,10 @@
 	var/mine_points = 500
 	var/survey_points = 0
 
-/obj/item/card/mining_point_card/attackby(obj/item/I, mob/user, params)
+DECLARE_INTERACTIONS(/obj/item/card/mining_point_card, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/card/mining_point_card/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/card/id))
 		var/obj/item/card/id/C = I
 		var/datum/money_account/account = get_account(C.associated_account_number)
@@ -36,7 +39,7 @@
 		else
 			to_chat(user, span_info("There's no survey points left on [src]."))
 
-	..()
+	return FALSE
 
 /obj/item/card/mining_point_card/examine(mob/user)
 	. = ..()

@@ -7,16 +7,17 @@
 	description_info = "Use in your hand to attempt to create a Promethean.  It functions similarly to a positronic brain, in that a ghost is needed to become the Promethean."
 	var/searching = 0
 
-/obj/item/slime_cube/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/slime_cube/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!searching)
 		to_chat(user, span_warning("You stare at the slimy cube, watching as some activity occurs."))
 		icon_state = "slime cube active"
 		searching = 1
 		request_player()
 		om_after(src, 60 SECONDS, PROC_REF(reset_search))
+	return TRUE
 
 // Sometime down the road it would be great to make all of these 'ask ghosts if they want to be X' procs into a generic datum.
 /obj/item/slime_cube/proc/request_player()
@@ -91,13 +92,14 @@
 	safe_blink(target, 14)
 	consume(src, user)
 
-/obj/item/slime_crystal/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/slime_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] teleports themselves with \the [src]!"))
 	safe_blink(user, 14)
 	consume(src, user)
+	return TRUE
 
 /obj/item/slime_crystal/throw_impact(atom/movable/AM)
 	if(!istype(AM))

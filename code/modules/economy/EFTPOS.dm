@@ -74,14 +74,18 @@
 
 // TGUI migration. attack_self opens Eftpos.tsx; the
 // Topic switch is converted to tgui_act below.
-/obj/item/eftpos/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/eftpos, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/eftpos/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(get_dist(src, user) > 1)
 		SStgui.close_uis(src)
-		return
+		return TRUE
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/eftpos/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -100,7 +104,8 @@
 	data["linked_account_name"] = linked_account ? linked_account.owner_name : ""
 	return data
 
-/obj/item/eftpos/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/item/eftpos/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 
 	var/obj/item/card/id/I = O.GetID()
 
@@ -131,7 +136,8 @@
 			to_chat(user, "[icon2html(src, user.client)]" + span_warning("EFTPOS is not connected to an account."))
 
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 // Topic switch lifted into tgui_act with stable action names.
 /obj/item/eftpos/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)

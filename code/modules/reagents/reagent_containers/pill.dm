@@ -94,7 +94,10 @@
 
 	return
 
-/obj/item/reagent_containers/pill/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/pill, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/reagent_containers/pill/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(is_sharp(W))
 		var/obj/item/reagent_containers/powder/J = new /obj/item/reagent_containers/powder(src.loc)
 		user.balloon_alert_visible("[user] cuts up [src] with [W]!", "cut up \the [src] with [W]")
@@ -115,7 +118,7 @@
 		J.get_appearance()
 		consume(src, user)
 
-	return ..()
+	return FALSE
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Pills. END

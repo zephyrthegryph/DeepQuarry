@@ -285,15 +285,16 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 	icon_state = "box"
 	var/cattype = /mob/living/simple_mob/animal/passive/cat
 
-/obj/item/cat_box/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/cat_box/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/catturf = get_turf(src)
 	to_chat(user, span_notice("You peek into \the [name]-- and a cat jumps out!"))
 	new cattype(catturf)
 	new /obj/item/stack/material/cardboard(catturf) //if i fits i sits
 	qdel(src)
+	return TRUE
 
 /obj/item/cat_box/black
 	cattype = /mob/living/simple_mob/animal/passive/cat/black

@@ -35,7 +35,7 @@
 		O.loc = src
 		update_icon()
 	else if(istype(O, /obj/item/pen))
-		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to title this bookshelf?", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k37 = rerun_prompt(user, "k37", list("kind" = "text", "message" = "What would you like to title this bookshelf?", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k37))
 			return TRUE
 		var/newname = sanitizeSafe(_answer_k37, MAX_NAME_LEN)
@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 /// Old attack_hand.
 /obj/structure/bookcase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
-		var/obj/item/book/choice = rerun_prompt(user, "k65", list("kind" = "list", "message" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = contents), TYPE_PROC_REF(/atom, attack_hand), args)
+		var/obj/item/book/choice = rerun_prompt(user, "k65", list("kind" = "list", "message" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = contents), PROC_REF(interaction_hand), args)
 		if(isnull(choice))
 			return TRUE
 		if(choice)
@@ -244,7 +244,10 @@ Book Cart End
 	data["content"] = dat || ""
 	return data
 
-/obj/item/book/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/book, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/book/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(carved)
 		if(!store)
 			if(W.w_class < ITEMSIZE_LARGE)
@@ -252,52 +255,52 @@ Book Cart End
 				W.loc = src
 				store = W
 				to_chat(user, span_notice("You put [W] in [title]."))
-				return
+				return INTERACTION_HANDLED_PASS
 			else
 				to_chat(user, span_notice("[W] won't fit in [title]."))
-				return
+				return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, span_notice("There's already something in [title]!"))
-			return
+			return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/pen))
 		if(unique)
 			to_chat(user, "These pages don't seem to take the ink well. Looks like you can't modify it.")
-			return
-		var/choice = rerun_prompt(user, "k248", list("kind" = "list", "message" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+			return INTERACTION_HANDLED_PASS
+		var/choice = rerun_prompt(user, "k248", list("kind" = "list", "message" = "What would you like to change?", "title" = "Change What?", "choices" = list("Title", "Contents", "Author", "Cancel")), PROC_REF(interaction_item), args)
 		if(isnull(choice))
 			return TRUE
 		switch(choice)
 			if("Title")
-				var/_answer_k251 = rerun_prompt(user, "k251", list("kind" = "text", "message" = "Write a new title:", "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				var/_answer_k251 = rerun_prompt(user, "k251", list("kind" = "text", "message" = "Write a new title:", "encode" = FALSE), PROC_REF(interaction_item), args)
 				if(isnull(_answer_k251))
 					return TRUE
 				var/newtitle = reject_bad_text(sanitizeSafe(_answer_k251))
 				if(!newtitle)
 					to_chat(user, "The title is invalid.")
-					return
+					return INTERACTION_HANDLED_PASS
 				else
 					src.name = newtitle
 					src.title = newtitle
 			if("Contents")
-				var/content = rerun_prompt(user, "k259", list("kind" = "text", "message" = "Write your book's contents (HTML NOT allowed):", "max_length" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE), TYPE_PROC_REF(/atom, attackby), args)
+				var/content = rerun_prompt(user, "k259", list("kind" = "text", "message" = "Write your book's contents (HTML NOT allowed):", "max_length" = MAX_BOOK_MESSAGE_LEN, "multiline" = TRUE), PROC_REF(interaction_item), args)
 				if(isnull(content))
 					return TRUE
 				if(!content)
 					to_chat(user, "The content is invalid.")
-					return
+					return INTERACTION_HANDLED_PASS
 				else
 					src.dat += content
 			if("Author")
-				var/newauthor = rerun_prompt(user, "k266", list("kind" = "text", "message" = "Write the author's name:", "max_length" = MAX_LNAME_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				var/newauthor = rerun_prompt(user, "k266", list("kind" = "text", "message" = "Write the author's name:", "max_length" = MAX_LNAME_LEN), PROC_REF(interaction_item), args)
 				if(isnull(newauthor))
 					return TRUE
 				if(!newauthor)
 					to_chat(user, "The name is invalid.")
-					return
+					return INTERACTION_HANDLED_PASS
 				else
 					src.author = newauthor
 			else
-				return
+				return INTERACTION_HANDLED_PASS
 	else if(istype(W, /obj/item/barcodescanner))
 		var/obj/item/barcodescanner/scanner = W
 		if(!scanner.computer)
@@ -317,20 +320,21 @@ Book Cart End
 						if(b.bookname == src.name)
 							LAZYREMOVE(scanner.computer.checkouts, b)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
-							return
+							return INTERACTION_HANDLED_PASS
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
 				if(3)
 					scanner.book = src
 					for(var/obj/item/book in scanner.computer.inventory)
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
-							return
+							return INTERACTION_HANDLED_PASS
 					LAZYADD(scanner.computer.inventory, src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	else if(istype(W, /obj/item/material/knife))
 		return carve_pages(user)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/book/wirecutter_act(mob/user, obj/item/tool)
 	return carve_pages(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
@@ -456,10 +460,10 @@ Book Cart End
 	var/obj/item/book/book	 //  Currently scanned book
 	var/mode = 0 					// 0 - Scan only, 1 - Scan and Set Buffer, 2 - Scan and Attempt to Check In, 3 - Scan and Attempt to Add to Inventory
 
-/obj/item/barcodescanner/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/barcodescanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/barcodescanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	mode += 1
 	if(mode > 3)
 		mode = 0
@@ -482,3 +486,4 @@ Book Cart End
 	else
 		to_chat(user, span_red("No associated computer found. Only local scans will function properly."))
 	to_chat(user, "\n")
+	return TRUE

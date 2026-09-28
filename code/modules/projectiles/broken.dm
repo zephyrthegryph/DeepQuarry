@@ -87,12 +87,15 @@
 
 	material_needs[/obj/item/stack/material/steel] = rand(1,5)
 
-/obj/item/broken_gun/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/broken_gun, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/broken_gun/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(can_repair_with(W, user))
 		om_do_after(user, (rand() * 10 SECONDS + 5 SECONDS), src, src, PROC_REF(repair_with), list(W, user))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 /obj/item/broken_gun/proc/can_repair_with(obj/item/I, mob/user)
 	for(var/path in material_needs)

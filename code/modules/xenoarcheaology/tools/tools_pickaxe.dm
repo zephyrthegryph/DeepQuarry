@@ -164,16 +164,16 @@
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("drilled")
 
-/obj/item/pickaxe/excavationdrill/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/depth = rerun_prompt(user, "k171", list("kind" = "number", "message" = "Put the desired depth (1-60 centimeters).", "title" = "Set Depth", "default" = excavation_amount, "max" = 60, "min" = 1), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/pickaxe/excavationdrill, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/pickaxe/excavationdrill/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/depth = rerun_prompt(user, "k171", list("kind" = "number", "message" = "Put the desired depth (1-60 centimeters).", "title" = "Set Depth", "default" = excavation_amount, "max" = 60, "min" = 1), PROC_REF(interaction_self), args)
 	if(isnull(depth))
 		return TRUE
 	if(depth>60 || depth<1)
 		to_chat(user, span_notice("Invalid depth."))
-		return
+		return TRUE
 	excavation_amount = depth
 	to_chat(user, span_notice("You set the depth to [depth]cm."))
 	switch(depth)
@@ -189,6 +189,7 @@
 			icon_state = "excavationdrill4"
 		if(26 to 60)
 			icon_state = "excavationdrill5" //The other 2 sprites are comically long. Let's just cut it at 5.
+	return TRUE
 
 /obj/item/pickaxe/excavationdrill/examine(mob/user)
 	. = ..()

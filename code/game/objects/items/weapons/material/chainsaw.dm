@@ -58,14 +58,15 @@
 	on = 0
 	update_icon()
 
-/obj/item/chainsaw/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/chainsaw/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!on)
 		turnOn(user)
 	else
 		turnOff(user)
+	return TRUE
 
 /obj/item/chainsaw/afterattack(atom/A as mob|obj|turf|area, mob/user as mob, proximity)
 	if(!proximity) return

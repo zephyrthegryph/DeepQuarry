@@ -70,10 +70,16 @@ REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 	else if(get_integrity() <= (max_integrity/2))
 		. += span_warning("It looks pretty beaten up...")
 
-/obj/item/uav/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/uav, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/uav/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	//Has to be on the ground to work with it properly
 	if(!isturf(loc))
-		return ..()
+		return FALSE
 
 	var/list/options = list(
 		"Pick Up" = radial_pickup,
@@ -86,10 +92,10 @@ REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 		// Can pick up when off or packed
 		if("Pick Up")
 			if(state == UAV_OFF || state == UAV_PACKED)
-				return ..()
+				return FALSE
 			else
 				to_chat(user,span_warning("Turn [nickname] off or pack it first!"))
-				return
+				return TRUE
 		// Can disasemble or reassemble from packed or off (and this one takes time)
 		if("(Dis)Assemble")
 			if(can_transition_to(state == UAV_PACKED ? UAV_OFF : UAV_PACKED, user))
@@ -103,11 +109,13 @@ REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 		if("Pairing Mode")
 			if(can_transition_to(state == UAV_PAIRING ? UAV_OFF : UAV_PAIRING, user))
 				return toggle_pairing(user)
+	return TRUE
 
 /obj/item/uav/proc/attack_hand_timed_done(mob/user)
 	return toggle_packed(user)
 
-/obj/item/uav/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/uav/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
 		LAZYDISTINCTADD(MC.paired_uavs, om_handle(src))
@@ -121,7 +129,8 @@ REF_OWNED(/obj/item/uav, list("cell", "ion_trail"))
 	else if(istype(I, /obj/item/pen) || istype(I, /obj/item/flashlight/pen))
 		om_prompt(src, user, list("kind" = "text", "message" = "Enter a nickname for [src]", "title" = "Nickname", "default" = nickname, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(nickname_entered))
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/uav/proc/nickname_entered(mob/user, tmp_label, datum/om/prompt/ask)
 	if(length(tmp_label) > 50 || length(tmp_label) < 3)

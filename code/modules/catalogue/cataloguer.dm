@@ -209,8 +209,10 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 					other_cataloguer.adjust_points(points_gained)
 			to_chat(user, span_notice("Shared discovery with [contributers.len] other contributer\s."))
 
-/obj/item/cataloguer/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/cataloguer/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	pulse_scan(user)
+	return TRUE
 
 // Gives everything capable of being scanned an outline for a brief moment.
 // Helps to avoid having to click a hundred things in a room for things that have an entry.
@@ -258,11 +260,16 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 /obj/item/cataloguer/proc/adjust_points(amount)
 	points_stored = max(0, points_stored += amount)
 
-/obj/item/cataloguer/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/cataloguer, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/cataloguer/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	interact(user)
+	return TRUE
 
 /obj/item/cataloguer/interact(mob/user)
 	// structured TGUI Cataloguer panel (see
@@ -294,7 +301,8 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	interact(usr) // So it refreshes the window.
 	return 1
 
-/obj/item/cataloguer/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/cataloguer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/card/id) && !om_busy(src))
 		var/obj/item/card/id/ID = W
 		if(points_stored)
@@ -304,7 +312,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 			to_chat(user, span_notice("You swipe the id over \the [src]."))
 		else
 			to_chat(user, span_notice("\The [src] has no points available."))
-	return ..()
+	return FALSE
 
 /obj/item/cataloguer/compact
 	name = "compact cataloguer"

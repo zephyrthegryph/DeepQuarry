@@ -120,8 +120,10 @@
 		explosion(src.loc, 1, 2, 4, 6)
 		qdel(src)
 
-/obj/item/fuel_assembly/blitz/unshielded/attackby(obj/item/I, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/fuel_assembly/blitz/unshielded, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/fuel_assembly/blitz/unshielded/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/stack/material/lead/M = I
 	if(istype(M))
 		if(M.get_amount() > 5)
@@ -129,11 +131,13 @@
 			consume(src, user)
 			var/obj/item/fuel_assembly/blitz/shielded/rod = new(get_turf(user))
 			user.put_in_hands(rod)
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user,span_warning("You need at least five sheets of lead to add shielding!"))
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/fuel_assembly/blitz/unshielded/attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up.
+/obj/item/fuel_assembly/blitz/unshielded/after_attack_hand(mob/user)
 	. = ..()
 
 	if(!ishuman(user))

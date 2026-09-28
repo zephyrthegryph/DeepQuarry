@@ -20,7 +20,14 @@
 	return
 
 
-/obj/item/implantpad/attack_hand(mob/living/user as mob)
+DECLARE_INTERACTIONS(/obj/item/implantpad, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/implantpad/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if ((src.case && user.item_is_in_hands(src)))
 		user.put_in_active_hand(case)
 
@@ -30,30 +37,29 @@
 		src.add_fingerprint(user)
 		update()
 	else
-		return ..()
-	return
+		return FALSE
+	return TRUE
 
 
-/obj/item/implantpad/attackby(obj/item/implantcase/C as obj, mob/user as mob)
-	..()
+/// Old attackby.
+/obj/item/implantpad/proc/interaction_item(mob/user, obj/item/implantcase/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/implantcase))
 		if(!( src.case ))
 			user.drop_item()
 			C.loc = src
 			src.case = C
 	else
-		return
+		return INTERACTION_HANDLED_PASS
 	src.update()
-	return
+	return INTERACTION_HANDLED_PASS
 
 
 // TGUI migration. attack_self opens ImplantPad.tsx; the
 // Topic tracking_id stepper moves to tgui_act.
-/obj/item/implantpad/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/implantpad/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/implantpad/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

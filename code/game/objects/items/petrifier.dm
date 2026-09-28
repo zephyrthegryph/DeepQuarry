@@ -17,14 +17,15 @@
 	. = ..()
 	linked = to_link
 
-/obj/item/petrifier/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/petrifier/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (!isturf(user.loc) && get_ultimate_mob(user) != target)
 		to_chat(user, span_warning("The device beeps but does nothing."))
-		return
+		return TRUE
 	if (linked?.petrify(user, src))
 		visible_message(span_notice("A ray of purple light streams out of \the [src], aimed directly at [target]. Everywhere the light touches on them quickly [adjective] into [material]."))
 		to_chat(user, span_warning("The device fizzles and crumbles into dust."))
 		consume(src, user)
+	return TRUE

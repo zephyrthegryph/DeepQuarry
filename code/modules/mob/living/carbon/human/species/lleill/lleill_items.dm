@@ -127,10 +127,10 @@
 	icon_state = "face"
 	var/mob/living/homunculus = 0
 
-/obj/item/glamour_face/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/glamour_face/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!homunculus)
 		var/list/targets = list()
 		for(var/mob/living/carbon/human/M in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -142,12 +142,13 @@
 
 		if(!targets.len)
 			to_chat(user, span_warning("There are no appropriate targets in range."))
-			return
+			return TRUE
 
 		om_prompt(src, user, list("kind" = "list", "message" = "Which target do you wish to create a homunculus of?", "title" = "homunculus", "choices" = targets, "requires" = PROMPT_HELD), PROC_REF(homunculus_target_chosen))
-		return
+		return TRUE
 	if(homunculus)
 		om_prompt(src, user, list("message" = "What would you like to do with your homunculus?", "title" = "Actions", "choices" = list("Recall", "Speak Through", "Cancel"), "requires" = PROMPT_HELD), PROC_REF(homunculus_action_chosen))
+	return TRUE
 
 /obj/item/glamour_face/proc/homunculus_target_chosen(mob/user, mob/living/carbon/human/chosen_target, datum/om/prompt/ask)
 	if(homunculus)
@@ -386,13 +387,13 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		"leopardmander" = /mob/living/simple_mob/vore/leopardmander
 		)
 
-/obj/item/glamour_unstable/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/glamour_unstable, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/glamour_unstable/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/M = user
 	if(!istype(M))
-		return
+		return TRUE
 	user.visible_message(span_warning("[user] triggers \the [src]!"), span_danger("You trigger \the [src]!"))
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	s.set_up(5, 1, get_turf(src))
@@ -410,6 +411,7 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 			size_change(M)
 		if(4)
 			M.apply_effect(200, IRRADIATE)
+	return TRUE
 
 /obj/item/glamour_unstable/proc/blink_mob(mob/living/L)
 	var/starting_loc = (get_turf(src))
@@ -452,7 +454,8 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 	var/new_size = (rand(25,200))/100
 	L.resize(new_size, ignore_prefs = FALSE)
 
-/obj/item/glamour_unstable/attack_hand(mob/user)
+/// Old attack_hand: runs after the touch tried to pick it up.
+/obj/item/glamour_unstable/after_attack_hand(mob/user)
 	. = ..()
 
 	var/mob/living/M = user

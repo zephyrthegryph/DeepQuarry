@@ -122,16 +122,20 @@
 
 	return 1
 
-/obj/item/card/emag/attackby(obj/item/O as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/card/emag/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/stack/telecrystal))
 		var/obj/item/stack/telecrystal/T = O
 		if(T.get_amount() < 1)
 			to_chat(user, span_notice("You are not adding enough telecrystals to fuel \the [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		uses += T.get_amount()*0.5 //Gives 5 uses per 10 TC
 		uses = CEILING(uses, 1) //Ensures no decimal uses nonsense, rounds up to be nice
 		to_chat(user, span_notice("You add \the [O] to \the [src]. Increasing the uses of \the [src] to [uses]."))
 		consume(O, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/card/emag/borg
 	uses = 12
@@ -196,11 +200,12 @@
 	if(I)
 		icon = I
 
-/obj/item/card_fluff/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/card_fluff/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "list", "message" = "What element would you like to customize?", "title" = "Customize Card", "choices" = list("Band","Stamp","Reset"), "requires" = PROMPT_HELD), PROC_REF(customize_chosen))
+	return TRUE
 
 /obj/item/card_fluff/proc/customize_chosen(mob/user, choice, datum/om/prompt/ask)
 	switch(choice)

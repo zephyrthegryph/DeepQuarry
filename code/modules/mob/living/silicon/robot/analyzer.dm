@@ -22,9 +22,13 @@
 	do_scan(M, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/robotanalyzer/click_alt(mob/user)
+DECLARE_INTERACTIONS(/obj/item/robotanalyzer, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/robotanalyzer/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	mode = !mode
 	user.show_message(span_blue("[mode ? "Toggled to cyborg analyzing mode." : "Toggled to cyborg upgrade scan mode."]"), 1)
+	return TRUE
 
 /obj/item/robotanalyzer/proc/do_scan(mob/living/M, mob/living/user)
 	if(CLUMSY_FAIL_CHANCE(user))

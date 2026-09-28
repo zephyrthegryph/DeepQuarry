@@ -30,11 +30,12 @@
 
 // TGUI migration. attack_self opens Locator.tsx; Topic
 // frequency/refresh/clear actions move to tgui_act.
-/obj/item/locator/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/locator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/locator/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -134,14 +135,14 @@
 	MATERIAL_BULK(MAT_STEEL, 10000)
 	preserve_item = 1
 
-/obj/item/hand_tele/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/hand_tele, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/hand_tele/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/current_location = get_turf(user)//What turf is the user on?
 	if(!current_location || (current_location.z in using_map.admin_levels) || current_location.block_tele)//If turf was not found or they're on z level 2 or >7 which does not currently exist.
 		to_chat(user, span_notice("\The [src] is malfunctioning."))
-		return
+		return TRUE
 	var/list/L = list(  )
 	for(var/obj/machinery/teleport/hub/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		var/obj/machinery/computer/teleporter/com
@@ -168,6 +169,7 @@
 	if(turfs.len)
 		L["None (Dangerous)"] = pick(turfs)
 	om_prompt(src, user, list("kind" = "list", "message" = "Please select a teleporter to lock in on.", "title" = "Hand Teleporter", "choices" = L, "requires" = PROMPT_IN_HAND, "data" = list("targets" = L)), PROC_REF(teleporter_chosen))
+	return TRUE
 
 /obj/item/hand_tele/proc/teleporter_chosen(mob/user, t1, datum/om/prompt/ask)
 	var/list/L = ask.get("targets")

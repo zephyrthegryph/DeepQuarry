@@ -51,10 +51,13 @@
 	if(paired_juke && !anchored && isturf(loc))
 		anchor()
 
-/obj/item/juke_remote/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/juke_remote, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/juke_remote/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
 		unanchor()
-	return ..()
+	return FALSE
 
 /obj/item/juke_remote/proc/anchor()
 	if(anchored)

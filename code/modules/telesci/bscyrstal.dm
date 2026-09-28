@@ -13,16 +13,17 @@
 	pixel_x = rand(-5, 5)
 	pixel_y = rand(-5, 5)
 
-/obj/item/bluespace_crystal/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/bluespace_crystal, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/bluespace_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.balloon_alert_visible("[user] crushes [src]!", "Crushed [src]!") // Balloon alert
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread()
 	s.set_up(5, 1, get_turf(src))
 	s.start()
 	blink_mob(user)
 	consume(src, user)
+	return TRUE
 
 /obj/item/bluespace_crystal/proc/blink_mob(mob/living/L)
 	do_teleport(L, get_turf(L), blink_range, asoundin = 'sound/effects/phasein.ogg')

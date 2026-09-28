@@ -10,7 +10,10 @@
 	var/repair_amount = 5
 	var/repair_time = 40
 
-/obj/item/whetstone/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/item/whetstone, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/whetstone/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/stack/material))
 		var/obj/item/stack/material/M = I
 		if(M.get_amount() >= 5)
@@ -18,6 +21,7 @@
 			om_do_after(user, 7 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, M))
 		else
 			to_chat(user, "You need 5 [src] to refine it into a sharpening kit.")
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/whetstone/proc/attackby_timed_done(mob/user, obj/item/stack/material/M)
 	M.use(5)

@@ -166,13 +166,14 @@
 	light_color = "#3728ff"
 	var/active
 
-/obj/item/spaceflare/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/spaceflare/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!active)
 		visible_message(span_notice("[user] pulls the cord, activating the [src]."))
 		activate()
+	return TRUE
 
 /obj/item/spaceflare/proc/activate()
 	if(active)

@@ -296,15 +296,16 @@
 /mob/living/simple_mob/animal/passive/mouse/white/apple/Initialize(mapload, keep_parent_data)
 	. = ..(mapload, TRUE)
 
-/obj/item/holder/mouse/attack_self(mob/living/carbon/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/holder/mouse/proc/interaction_self(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
 	for(var/L in contents)
 		if(isanimal(L))
 			var/mob/living/simple_mob/S = L
 			user.visible_message(span_notice("[user] [S.response_help] \the [S]."))
+	return TRUE
 
 /mob/living/simple_mob/animal/passive/mouse/mining
 	body_color = "brown"

@@ -74,15 +74,17 @@
 		return
 	..()
 
-/obj/item/pda/click_alt(mob/user)
+/// Old click_alt.
+/obj/item/pda/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(issilicon(user))
-		return
+		return TRUE
 
 	if ( can_use(user) )
 		if(id)
 			remove_id()
 		else
 			to_chat(user, span_notice("This PDA does not have an ID in it."))
+	return TRUE
 
 /obj/item/pda/proc/play_ringtone()
 	var/S
@@ -416,8 +418,13 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	return 0
 
 // access to status display signals
-/obj/item/pda/attackby(obj/item/C, mob/user)
-	..()
+DECLARE_INTERACTIONS(/obj/item/pda, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attackby.
+/obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
 		cartridge = C
 		user.drop_item()
@@ -432,7 +439,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		var/obj/item/card/id/idcard = C
 		if(!idcard.registered_name)
 			to_chat(user, span_notice("\The [src] rejects the ID."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(!owner)
 			owner = idcard.registered_name
 			ownjob = idcard.assignment
@@ -445,7 +452,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 				if(id_check(user, 2))
 					to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 					add_overlay("pda-id")
-			return	//Return in case of failed check or when successful.
+			return INTERACTION_HANDLED_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
 		user.drop_item(src)
 		pai = C
@@ -460,7 +467,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 			C.forceMove(src)
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 			add_overlay("pda-pen")
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/pda/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(istype(M, /mob/living/carbon) && scanmode)

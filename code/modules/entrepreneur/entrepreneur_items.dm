@@ -185,11 +185,11 @@
 	advice = pick(advice_list)
 	pisces = "[stars] [prediction] [advice]"
 
-/obj/item/entrepreneur/horoscope/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	var/zodiac = rerun_prompt(user, "k192", list("kind" = "list", "message" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = zodiacs), PROC_REF(attack_self), args)
+DECLARE_INTERACTIONS(/obj/item/entrepreneur/horoscope, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/entrepreneur/horoscope/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/zodiac = rerun_prompt(user, "k192", list("kind" = "list", "message" = "Which of todays zodiacs do you want to read?", "title" = "Zodiac", "choices" = zodiacs), PROC_REF(interaction_self), args)
 	if(isnull(zodiac))
 		return TRUE
 	if(zodiac)
@@ -218,6 +218,7 @@
 				to_chat(user, span_notice("Today's reading for Aquarius: [aquarius]"))
 			if("pisces")
 				to_chat(user, span_notice("Today's reading for Pisces: [pisces]"))
+	return TRUE
 
 ///////Dentist tools, basically just fluff for RP
 
@@ -285,8 +286,11 @@
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "exercise_mat"
 
-/obj/item/bedsheet/pillow/exercise/attackby(obj/item/component, mob/user as mob)
-	return
+EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow/exercise, INTERACT_ITEM(null, PROC_REF(exercise_interaction_item)))
+
+/// Old attackby.
+/obj/item/bedsheet/pillow/exercise/proc/exercise_interaction_item(mob/user, obj/item/component, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/entrepreneur/dumbbell
 	name = "dumbbell"
@@ -294,16 +298,16 @@
 	icon = 'icons/obj/entrepreneur.dmi'
 	icon_state = "dumbbell"
 
-/obj/item/entrepreneur/dumbbell/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/entrepreneur/dumbbell, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/entrepreneur/dumbbell/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/M = user
 	if(M.nutrition <= 100)
 		to_chat(user, span_notice("You are too hungry to exercise right now."))
-		return 0
+		return TRUE
 	om_do_after(user, 3 SECONDS, src, src, PROC_REF(exercise_done), list(M))
-	return 0
+	return TRUE
 
 /obj/item/entrepreneur/dumbbell/proc/exercise_done(mob/living/M)
 	var/mob/user = M
@@ -351,14 +355,15 @@
 		return PROCESS_KILL
 	search_for_ghosts()
 
-/obj/item/entrepreneur/emf/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/entrepreneur/emf/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, scan_cooldown))
 		search_for_ghosts(user)
 	else
 		to_chat(user, span_warning("Your EMF scanner is recharging. The current reading is [emf]mG."))
+	return TRUE
 
 /obj/item/entrepreneur/emf/proc/search_for_ghosts(mob/user)
 	var/turf/our_turf = get_turf(src)
@@ -429,14 +434,20 @@
 	///If the board will always display what ghosts put
 	var/accurate = FALSE
 
-/obj/item/entrepreneur/spirit_board/attackby(obj/item/reagent_containers/food/drinks/W, mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attackby.
+/obj/item/entrepreneur/spirit_board/proc/interaction_item(mob/living/user, obj/item/reagent_containers/food/drinks/W, datum/interaction/interaction)
 	if(!istype(user))
-		return 0
+		return INTERACTION_HANDLED_PASS
 	if(!istype(W))
 		to_chat(user, span_notice("You need some sort of glass, bottle or cup to contact the spirit world."))
-		return 0
+		return INTERACTION_HANDLED_PASS
 	om_do_after(user, 3 SECONDS, src, src, PROC_REF(spirit_slide_done), list(W, user))
-	return 0
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/entrepreneur/spirit_board/proc/spirit_slide_done(obj/item/reagent_containers/food/drinks/W, mob/living/user)
 	var/result = 0
@@ -447,13 +458,15 @@
 	src.visible_message(span_notice("[user] slides the [W] over to [result]!"))
 	next_result = 0
 
-/obj/item/entrepreneur/spirit_board/click_alt(mob/living/carbon/user)
+/// Old click_alt.
+/obj/item/entrepreneur/spirit_board/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user)) //admins can be cheeky
-		return 0
-	var/_answer_k451 = rerun_prompt(user, "k451", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, click_alt), args)
+		return TRUE
+	var/_answer_k451 = rerun_prompt(user, "k451", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), PROC_REF(interaction_alt), args)
 	if(isnull(_answer_k451))
-		return
+		return TRUE
 	next_result = _answer_k451
+	return TRUE
 
 /obj/item/entrepreneur/spirit_board/attack_ghost(mob/observer/dead/user)
 	if(!ghost_enabled)

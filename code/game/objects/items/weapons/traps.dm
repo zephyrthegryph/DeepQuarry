@@ -33,10 +33,8 @@
 /obj/item/beartrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-/obj/item/beartrap/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/beartrap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!deployed && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to deploy \the [src]."),
@@ -45,6 +43,7 @@
 			)
 
 		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	return TRUE
 
 /obj/item/beartrap/proc/attack_self_timed_done(mob/user)
 	user.visible_message(
@@ -60,7 +59,13 @@
 	anchored = TRUE
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
-/obj/item/beartrap/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/beartrap, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
+
+/// Old attack_hand.
+/obj/item/beartrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
 		var/victim = english_list(src?.buckled_mob_list())
 		user.visible_message(
@@ -78,7 +83,8 @@
 
 		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
 	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
@@ -205,7 +211,13 @@
 /obj/item/material/barbedwire/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-/obj/item/material/barbedwire/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/material/barbedwire, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+)
+
+/// Old attack_hand.
+/obj/item/material/barbedwire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to collect \the [src]."),
@@ -216,7 +228,8 @@
 
 		om_do_after(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
 	user.visible_message(
@@ -226,10 +239,8 @@
 	anchored = FALSE
 	update_icon()
 
-/obj/item/material/barbedwire/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/material/barbedwire/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!anchored && can_use(user))
 		user.visible_message(
 			span_danger("[user] starts to deploy \the [src]."),
@@ -238,6 +249,7 @@
 			)
 
 		om_do_after(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
+	return TRUE
 
 /obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)
 	user.visible_message(

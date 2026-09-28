@@ -17,8 +17,11 @@
 	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
 	var/construction_state = "p0"
 
-/obj/item/mecha_parts/chassis/attack_hand()
-	return
+DECLARE_INTERACTIONS(/obj/item/mecha_parts/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/mecha_parts/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /////////// Ripley
 
@@ -282,8 +285,11 @@
 	/// "p<bitmask>" during the parts phase, "R<n>" on the reversible ladder. See construction_graph/mecha.
 	var/construction_state = "p0"
 
-/obj/item/mecha_parts/fighter/chassis/attack_hand(mob/user, list/params)
-	return
+DECLARE_INTERACTIONS(/obj/item/mecha_parts/fighter/chassis, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/mecha_parts/fighter/chassis/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 
 //! Pinnace

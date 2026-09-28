@@ -196,23 +196,29 @@
 // Proc: attack_self()
 // Parameters: 1 (user - the Technomancer that invoked this proc)
 // Description: Tries to call on_use_cast() if it is allowed to do so.  Don't override this, override on_use_cast() instead.
-/obj/item/spell/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/spell, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/spell/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(run_checks() && (cast_methods & CAST_USE))
 		on_use_cast(user)
+	return TRUE
 
 // Proc: attackby()
 // Parameters: 2 (W - the item this spell object is hitting, user - the technomancer who clicked the other object)
 // Description: Tries to combine the spells, if W is a spell, and has CHROMATIC aspect.
-/obj/item/spell/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/spell/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/spell))
 		var/obj/item/spell/spell = W
 		if(run_checks() & (cast_methods & CAST_COMBINE))
 			spell.on_combine_cast(src, user)
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 // Proc: afterattack()
 // Parameters: 4 (target - the atom clicked on by user, user - the technomancer who clicked with the spell, proximity_flag - argument

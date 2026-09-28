@@ -44,7 +44,8 @@
 	add_overlay("clipboard_over")
 	return
 
-/obj/item/clipboard/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/clipboard/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
 		user.drop_item()
@@ -58,7 +59,7 @@
 		toppaper.attackby(W, user)
 		update_icon()
 
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
@@ -71,12 +72,16 @@
 // Topic pen/write/remove/rename/read/look actions move to tgui_act.
 // Reading a paper/photo chains to that item's TGUI viewer
 // (Paper.tsx / Photo.tsx).
-/obj/item/clipboard/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/clipboard, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/clipboard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/clipboard/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

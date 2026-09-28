@@ -11,11 +11,12 @@
 /obj/item/borg/cloak/Initialize(mapload)
 	. = ..()
 
-/obj/item/borg/cloak/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/borg/cloak, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/borg/cloak/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	set_cloak_level(user)
+	return TRUE
 
 /obj/item/borg/cloak/item_ctrl_click(mob/user)
 	toggle_cloak(user)

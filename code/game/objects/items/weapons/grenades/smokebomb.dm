@@ -21,11 +21,15 @@ REF_OWNED(/obj/item/grenade/smokebomb, "smoke")
 /obj/item/grenade/smokebomb/detonate()
 	start_effect_sprayer(smoke, smoke_strength, 'sound/effects/smoke.ogg', smoke_color)
 
-/obj/item/grenade/smokebomb/attackby(obj/item/I as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/grenade/smokebomb, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/grenade/smokebomb/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(I.has_tool_quality(TOOL_MULTITOOL))
 		var/new_smoke_color = tgui_color_picker(user, "Choose a color for the smoke:", "Smoke Color", smoke_color)
 		if(new_smoke_color)
 			smoke_color = new_smoke_color
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/grenade/smokebomb/primed
 	desc = "A smoke bomb. This one appears to be already activated!"

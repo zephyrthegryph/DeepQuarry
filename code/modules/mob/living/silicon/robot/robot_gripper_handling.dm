@@ -72,14 +72,18 @@
 					pocket_image.overlays += overlay
 			photo_images["[pocket_to_check.name]" + "[pocket_content.name]"] = pocket_image
 
-/obj/item/gripper/attack_self(mob/user)
-	. = ..()
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/gripper, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/gripper/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
-		return FALSE
+		return TRUE
 	if(is_in_use(user))
-		return FALSE
+		return TRUE
 
 	generate_icons()
 
@@ -100,21 +104,23 @@
 		if(!isgripperpocket(selected_pocket)) //The pocket we're selecting is NOT a gripper storage
 			if(!isgripperpocket(selected_pocket.loc)) //We kept the radial menu opened, used the item, then selected it again.
 				clear_and_select_pocket() //Pick the next open pocket.
-				return
+				return TRUE
 
 			update_ref(selected_pocket)
-			return
+			return TRUE
 
 		current_pocket = selected_pocket
 		update_ref(null)
-		return
+		return TRUE
 
 	if(wrapped)
 		return wrapped.attack_self(user)
+	return TRUE
 
-/obj/item/gripper/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/item/gripper/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(is_in_use(user))
-		return FALSE
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/wrapped = get_wrapped_item()
 	if(wrapped)
@@ -125,7 +131,7 @@
 		//The object has been deleted. Select a new pocket and stop here.
 		if(!wrapped)
 			clear_and_select_pocket()
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 
 		//Object is not in our contents AND is not in the gripper storage still. AKA, it was moved into something or somewhere. Either way, it's not ours anymore.
 		if(item_left_gripper(wrapped))
@@ -145,7 +151,7 @@
 		wrapped.loc = current_pocket
 		return TRUE
 
-	return ..()
+	return FALSE
 
 /obj/item/gripper/afterattack(atom/target, mob/living/user, proximity, params)
 	if(!proximity)

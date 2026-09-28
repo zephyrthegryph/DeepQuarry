@@ -51,7 +51,10 @@ REF_OWNED(/obj/item/gun/magnetic/matfed, "manipulator")
 	overlays = overlays_to_add
 	..()
 
-/obj/item/gun/magnetic/matfed/attack_hand(mob/user) // It doesn't keep a loaded item inside.
+EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(matfed_interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/gun/magnetic/matfed/proc/matfed_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)
 		var/obj/item/removing
 
@@ -64,8 +67,8 @@ REF_OWNED(/obj/item/gun/magnetic/matfed, "manipulator")
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removing] from \the [src]."))
 			playsound(src, 'sound/machines/click.ogg', 10, 1)
 			update_icon()
-			return
-	. = ..()
+			return TRUE
+	return FALSE
 
 /obj/item/gun/magnetic/matfed/check_ammo()
 	if(mat_storage - mat_cost >= 0)

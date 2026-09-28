@@ -60,11 +60,14 @@
 		return
 	return ..()
 
-/obj/item/gun/projectile/smartgun/click_alt(mob/user)
+DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/item/gun/projectile/smartgun/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user) && !user.incapacitated() && Adjacent(user))
 		if(cycling)
 			to_chat(user, span_warning("[src] is still cycling!"))
-			return
+			return TRUE
 
 		cycling = TRUE
 
@@ -77,6 +80,7 @@
 			playsound(src, 'sound/weapons/smartgunclose.ogg', 75, 0)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
 		om_after_unique(src, 2 SECONDS, PROC_REF(toggle_real_state))
+	return TRUE
 
 /obj/item/gun/projectile/smartgun/proc/toggle_real_state()
 	cycling = FALSE

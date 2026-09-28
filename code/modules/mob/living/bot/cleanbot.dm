@@ -293,8 +293,10 @@
 	w_class = ITEMSIZE_NORMAL
 	var/created_name = "Cleanbot"
 
-/obj/item/bucket_sensor/attackby(obj/item/W, mob/user)
-	..()
+DECLARE_INTERACTIONS(/obj/item/bucket_sensor, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/bucket_sensor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/robot_parts/l_arm) || istype(W, /obj/item/robot_parts/r_arm) || (istype(W, /obj/item/organ/external/arm) && ((W.name == "robotic left arm") || (W.name == "robotic right arm"))))
 		user.drop_item()
 		consume(W, user)
@@ -306,3 +308,4 @@
 
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
+	return INTERACTION_HANDLED_PASS

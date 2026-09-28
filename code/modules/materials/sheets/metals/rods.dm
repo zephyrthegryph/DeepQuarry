@@ -38,7 +38,10 @@
 	else
 		icon_state = "rods"
 
-/obj/item/stack/rods/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/stack/rods, INTERACT_ITEM(null, PROC_REF(rods_interaction_item)))
+
+/// Old attackby.
+/obj/item/stack/rods/proc/rods_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/tape_roll))
 		var/obj/item/stack/medical/splint/ghetto/new_splint = new(get_turf(user))
 		new_splint.add_fingerprint(user)
@@ -46,9 +49,9 @@
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " constructs \a [new_splint] out of a [singular_name]."), \
 				span_notice("You use make \a [new_splint] out of a [singular_name]."))
 		src.use(1)
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	return FALSE
 
 /obj/item/stack/rods/welder_act(mob/user, obj/item/tool)
 	if(get_amount() < 2)

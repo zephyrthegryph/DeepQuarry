@@ -48,12 +48,12 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k43 = rerun_prompt(user, "k43", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k43 = rerun_prompt(user, "k43", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k43))
 			return TRUE
 		switch(_answer_k43)
 			if("Title")
-				var/_answer_k45 = rerun_prompt(user, "k45", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				var/_answer_k45 = rerun_prompt(user, "k45", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 				if(isnull(_answer_k45))
 					return TRUE
 				var/str = sanitizeSafe(_answer_k45, MAX_NAME_LEN)
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				else
 					nameset = 1
 			if("Description")
-				var/str = rerun_prompt(user, "k60", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				var/str = rerun_prompt(user, "k60", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), PROC_REF(interaction_item), args)
 				if(isnull(str))
 					return TRUE
 				if(!str || !length(str))
@@ -156,10 +156,13 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	var/nameset = 0
 	var/tag_x
 
-/obj/item/smallDelivery/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/smallDelivery/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if (wrapped) //sometimes items can disappear. For example, bombs. --rastaf0
 		wrapped.forceMove(user.loc)
 		if(ishuman(user))
@@ -168,9 +171,10 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 			wrapped.loc = get_turf(src)
 
 	consume(src, user)
-	return
+	return TRUE
 
-/obj/item/smallDelivery/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/smallDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/destTagger))
 		var/obj/item/destTagger/O = W
 		if(O.currTag)
@@ -188,18 +192,18 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 			to_chat(user, span_warning("You need to set a destination first!"))
 
 	else if(istype(W, /obj/item/pen))
-		var/_answer_k174 = rerun_prompt(user, "k174", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k174 = rerun_prompt(user, "k174", list("message" = "What would you like to alter?", "title" = "Select Alteration", "choices" = list("Title","Description","Cancel")), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k174))
 			return TRUE
 		switch(_answer_k174)
 			if("Title")
-				var/_answer_k176 = rerun_prompt(user, "k176", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+				var/_answer_k176 = rerun_prompt(user, "k176", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 				if(isnull(_answer_k176))
 					return TRUE
 				var/str = sanitizeSafe(_answer_k176, MAX_NAME_LEN)
 				if(!str || !length(str))
 					to_chat(user, span_warning(" Invalid text."))
-					return
+					return INTERACTION_HANDLED_PASS
 				user.visible_message("\The [user] titles \the [src] with \a [W], marking down: \"[str]\"",\
 				span_notice("You title \the [src]: \"[str]\""),\
 				"You hear someone scribbling a note.")
@@ -212,12 +216,12 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 					nameset = 1
 
 			if("Description")
-				var/str = rerun_prompt(user, "k192", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), TYPE_PROC_REF(/atom, attackby), args)
+				var/str = rerun_prompt(user, "k192", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_MESSAGE_LEN), PROC_REF(interaction_item), args)
 				if(isnull(str))
 					return TRUE
 				if(!str || !length(str))
 					to_chat(user, span_red("Invalid text."))
-					return
+					return INTERACTION_HANDLED_PASS
 				if(!examtext && !nameset)
 					examtext = str
 					update_icon()
@@ -227,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				span_notice("You label \the [src]: \"[examtext]\""),\
 				"You hear someone scribbling a note.")
 				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/smallDelivery/attack_robot(mob/living/user)
 	if(user.stat || !Adjacent(user))

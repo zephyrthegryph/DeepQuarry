@@ -12,17 +12,17 @@
 	force = 10
 	hitsound = 'sound/items/Welder2.ogg'
 
-/obj/item/scrying/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/scrying, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/scrying/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.mind && !GLOB.wizards.is_antagonist(user.mind)))
 		to_chat(user, span_warning("You stare into the orb and see nothing but your own reflection."))
-		return
+		return TRUE
 
 	to_chat(user, span_info("You can see... everything!"))
 	visible_message(span_danger("[user] stares into [src], [user.p_their()] eyes glazing over."))
 
 	user.teleop = user.ghostize(1)
 	announce_ghost_joinleave(user.teleop, 1, "You feel that they used a powerful artifact to [pick("invade","disturb","disrupt","infest","taint","spoil","blight")] this place with their presence.")
-	return
+	return TRUE

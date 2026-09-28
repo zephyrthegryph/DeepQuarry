@@ -37,10 +37,10 @@ REF_OWNED(/obj/item/shield_diffuser, "cell")
 	else
 		icon_state = "hdiffuser_off"
 
-/obj/item/shield_diffuser/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/shield_diffuser, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/shield_diffuser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	enabled = !enabled
 	update_icon()
 	if(enabled)
@@ -48,6 +48,7 @@ REF_OWNED(/obj/item/shield_diffuser, "cell")
 	else
 		PERIODIC_STOP(src)
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
+	return TRUE
 
 /obj/item/shield_diffuser/examine(mob/user)
 	. = ..()

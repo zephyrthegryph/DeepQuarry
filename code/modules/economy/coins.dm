@@ -152,21 +152,23 @@
 	icon_state = "coin_verdantium"
 	MATERIAL_BULK(MAT_VERDANTIUM, 250)
 
-/obj/item/coin/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/coin/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/CC = W
 		if(string_attached)
 			balloon_alert(user, "there is a string already attached to \the [src]")
-			return
+			return INTERACTION_HANDLED_PASS
 		if (CC.use(1))
 			add_overlay("coin_string_overlay")
 			string_attached = 1
 			balloon_alert(user, "string attached to \the [src]")
 		else
 			balloon_alert(user, "the coil seems to be empty...")
-		return
+		return INTERACTION_HANDLED_PASS
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/coin/wirecutter_act(mob/user, obj/item/tool)
 	if(!string_attached)
@@ -178,10 +180,13 @@
 	balloon_alert(user, "string detached")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/coin/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/coin, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/coin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -191,6 +196,7 @@
 	user.visible_message(span_notice("[user] has thrown \the [src]. It lands on [comment]!"), \
 							span_notice("You throw \the [src]. It lands on [comment]!"))
 	balloon_alert_visible("\the [src] lands on [comment]!", "\the [src] lands on [comment]!")
+	return TRUE
 
 //Weird coins that I would prefer didn't work with normal vending machines. Might use them to make weird vending machines later.
 
@@ -233,10 +239,10 @@
 	desc = "A curious triangular coin made primarily of some kind of dark, smooth metal. This one's markings appear to reveal a purple material underneath."
 	value = 20
 
-/obj/item/aliencoin/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/aliencoin, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/aliencoin/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -247,6 +253,7 @@
 	if(rand(1,20) == 1)
 		user.visible_message(span_notice("[user] fumbled the [src]!"), runemessage = "fumbles [src]")
 		user.remove_from_mob(src)
+	return TRUE
 
 /obj/item/aliencoin/examine(mob/user)
 	. = ..()

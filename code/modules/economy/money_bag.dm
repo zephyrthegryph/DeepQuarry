@@ -8,10 +8,17 @@
 	throwforce = 2.0
 	w_class = ITEMSIZE_LARGE
 
-/obj/item/moneybag/attack_hand(user as mob)
+DECLARE_INTERACTIONS(/obj/item/moneybag, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/moneybag/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	// structured TGUI Moneybag (see
 	// code/modules/admin/moneybag_panel.dm).
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/moneybag/proc/count_coins()
 	var/list/counts = list(
@@ -37,8 +44,8 @@
 			counts["uranium"]++
 	return counts
 
-/obj/item/moneybag/attackby(obj/item/W, mob/user)
-	..()
+/// Old attackby.
+/obj/item/moneybag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/coin))
 		var/obj/item/coin/C = W
 		to_chat(user, span_blue("You add the [C.name] into the bag."))
@@ -49,7 +56,7 @@
 		for (var/obj/O in C.contents)
 			contents += O;
 		to_chat(user, span_blue("You empty the [C.name] into the bag."))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/moneybag/Topic(href, href_list)
 	if(..())

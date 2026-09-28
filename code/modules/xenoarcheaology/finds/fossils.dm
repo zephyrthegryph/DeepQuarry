@@ -31,7 +31,10 @@
 	icon_state = "hskull"
 	desc = "It's a fossilised, horned skull."
 
-/obj/item/fossil/skull/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/item/fossil/skull, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/fossil/skull/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/fossil/bone))
 		var/obj/o = new /obj/skeleton(get_turf(src))
 		var/a = new /obj/item/fossil/bone
@@ -40,6 +43,7 @@
 		o.contents.Add(b)
 		consume(W, user)
 		consume(src, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/skeleton
 	name = "Incomplete skeleton"

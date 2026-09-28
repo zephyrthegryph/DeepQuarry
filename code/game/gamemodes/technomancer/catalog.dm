@@ -106,19 +106,23 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 
 // TGUI migration: full structured data, no embedded
 // byond:// hrefs. All actions dispatched via tgui_act.
-/obj/item/technomancer_catalog/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/technomancer_catalog/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!user)
-		return
+		return TRUE
 	if(owner && user != owner)
 		to_chat(user, span_danger("\The [src] knows that you're not the original owner, and has locked you out of it!"))
-		return
+		return TRUE
 	else if(!owner)
 		bind_to_owner(user)
 	user.set_machine(src)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/technomancer_catalog/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -233,16 +237,17 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 							break
 			return TRUE
 
-/obj/item/technomancer_catalog/attackby(atom/movable/AM, mob/user)
+/// Old attackby.
+/obj/item/technomancer_catalog/proc/interaction_item(mob/user, atom/movable/AM, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
 	if(T && (T.z in using_map.player_levels))
 		to_chat(user, span_danger("You can only refund at your base, it's too late now!"))
-		return
+		return INTERACTION_HANDLED_PASS
 	for(var/datum/technomancer/equipment/E in equipment_instances + assistance_instances)
 		if(AM.type == E.obj_path) // We got a match.
 			if(budget + E.cost > max_budget)
 				to_chat(user, span_warning("\The [src] will not allow you to overflow your maximum budget by refunding that."))
-				return
+				return INTERACTION_HANDLED_PASS
 			else
 				budget = budget + E.cost
 				to_chat(user, span_notice("You've refunded \the [AM]."))
@@ -258,7 +263,8 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 								core.remove_spell(spell)
 								break
 				qdel(AM)
-				return
+				return INTERACTION_HANDLED_PASS
 	to_chat(user, span_warning("\The [src] is unable to refund \the [AM]."))
+	return INTERACTION_HANDLED_PASS
 
 #undef ALL_SPELLS

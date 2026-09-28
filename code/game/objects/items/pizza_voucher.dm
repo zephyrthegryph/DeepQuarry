@@ -20,10 +20,10 @@
 	"WE ALWAYS DELIVER! WE ALWAYS DELIVER! WE ALWAYS DELIVER!")
 	desc = "A pocket-sized plastic slip with a button in the middle. \"[pick(descstrings)]\" is written on the back."
 
-/obj/item/pizzavoucher/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/pizzavoucher, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/pizzavoucher/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	if(!spent)
 		user.visible_message(span_notice("[user] presses a button on [src]!"))
@@ -39,6 +39,7 @@
 			new /obj/effect/falling_effect/pizza_delivery(user.loc)
 	else
 		to_chat(user, span_warning("The [src] is spent!"))
+	return TRUE
 
 /obj/item/pizzavoucher/emag_act(remaining_charges, mob/user)
 	if(spent)

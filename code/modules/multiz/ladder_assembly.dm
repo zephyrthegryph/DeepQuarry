@@ -15,7 +15,7 @@ DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_RE
 /// Old attackby.
 /obj/structure/ladder_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen))
-		var/_answer_k15 = rerun_prompt(user, "k15", list("kind" = "text", "message" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_k15 = rerun_prompt(user, "k15", list("kind" = "text", "message" = "Enter the name for the ladder.", "title" = "Ladder Name", "default" = src.created_name, "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 		if(isnull(_answer_k15))
 			return TRUE
 		var/t = sanitizeSafe(_answer_k15, MAX_NAME_LEN)

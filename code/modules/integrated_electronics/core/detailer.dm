@@ -62,9 +62,10 @@
 			update_icon()
 			return TRUE
 
-/obj/item/integrated_electronics/detailer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/integrated_electronics/detailer, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/integrated_electronics/detailer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 

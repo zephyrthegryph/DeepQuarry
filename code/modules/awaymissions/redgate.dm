@@ -122,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, INTERACT_HAND_UNGATED(null, PROC_RE
 			if(!nearby_restricted.len)
 				teleport(M) //teleport functionality remains if no restricted people are nearby.
 			else
-				var/mob/living/carbon/human/restricted_human = rerun_prompt(M, "k121", list("kind" = "list", "message" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = nearby_restricted), TYPE_PROC_REF(/atom, attack_hand), args)
+				var/mob/living/carbon/human/restricted_human = rerun_prompt(M, "k121", list("kind" = "list", "message" = "Who do you wish to give access through the redgate?", "title" = "Nearby Redgate Inhabitants", "choices" = nearby_restricted), PROC_REF(interaction_hand), args)
 				if(isnull(restricted_human))
 					return TRUE
 				if(!restricted_human)
@@ -234,7 +234,8 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, INTERACT_HAND_UNGATED(null, PROC_RE
 	src.loc = src.start_pos
 	GLOB.global_announcer.autosay("[capitalize(laser_team)] flag returned by [user]!","Laserdome Announcer","Entertainment")
 
-/obj/item/laserdome_flag/attack_hand(mob/user as mob)
+/// Old attack_hand: runs after the touch tried to pick it up.
+/obj/item/laserdome_flag/after_attack_hand(mob/user)
 	. = ..()
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team
@@ -361,7 +362,8 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 	. = ..()
 	start_pos = src.loc	//save our starting location for later
 
-/obj/item/laserdome_hyperball/attack_hand(mob/user as mob)
+/// Old attack_hand: runs after the touch tried to pick it up.
+/obj/item/laserdome_hyperball/after_attack_hand(mob/user)
 	. = ..()
 	var/mob/living/carbon/human/M = loc
 	var/grabbing_team

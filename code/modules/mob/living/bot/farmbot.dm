@@ -381,8 +381,8 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(n
 	new /obj/item/farmbot_arm_assembly(loc, src)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/farmbot_arm_assembly/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+/// Old attackby.
+/obj/item/farmbot_arm_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if((istype(W, /obj/item/analyzer/plant_analyzer)) && (build_step == 0))
 		build_step++
 		to_chat(user, "You add the plant analyzer to [src].")
@@ -416,9 +416,16 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(n
 
 	else if(istype(W, /obj/item/pen))
 		ask_name_var(user)
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/farmbot_arm_assembly/attack_hand(mob/user as mob)
-	return //it's a converted watertank, no you cannot pick it up and put it in your backpack
+DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/farmbot_arm_assembly/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 #undef FARMBOT_COLLECT
 #undef FARMBOT_WATER

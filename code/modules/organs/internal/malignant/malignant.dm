@@ -246,12 +246,15 @@
 		owner.vomit()
 		cooldown = rand(cooldownmin,cooldownmax)
 
-/obj/item/organ/internal/malignant/tumor/potato/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/potato, INTERACT_ITEM(null, PROC_REF(potato_interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/internal/malignant/tumor/potato/proc/potato_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawsticks(get_turf(src))
 		to_chat(user, span_notice("You cut the mimetic potato."))
 		consume(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/stack/cable_coil))
 		var/obj/item/stack/cable_coil/C = W
 		if(C.use(5))
@@ -263,9 +266,9 @@
 			pocell.maxcharge = 2000 // same as potato
 			pocell.charge = pocell.maxcharge
 			consume(src, user)
-			return
+			return INTERACTION_HANDLED_PASS
 
-	. = ..()
+	return FALSE
 
 
 
@@ -313,11 +316,14 @@
 			owner.custom_pain(span_danger("The pressure inside your [O.name] hurts."),1,TRUE)
 			owner.automatic_custom_emote(VISIBLE_MESSAGE, "winces painfully.", check_stat = TRUE)
 
-/obj/item/organ/internal/malignant/tumor/pinata/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/pinata, INTERACT_ITEM(null, PROC_REF(pinata_interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/internal/malignant/tumor/pinata/proc/pinata_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(can_puncture(W))
 		pop()
-		return
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/organ/internal/malignant/tumor/pinata/proc/pop()
 	// place a ton of candy at location, then delete organ!
@@ -486,11 +492,14 @@
 			pop()
 		cooldown = rand(cooldownmin,cooldownmax)
 
-/obj/item/organ/internal/malignant/tumor/moneyorgan/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERACT_ITEM(null, PROC_REF(moneyorgan_interaction_item)))
+
+/// Old attackby.
+/obj/item/organ/internal/malignant/tumor/moneyorgan/proc/moneyorgan_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(can_puncture(W))
 		pop()
-		return
-	. = ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/organ/internal/malignant/tumor/moneyorgan/proc/pop()
 	if(owner)

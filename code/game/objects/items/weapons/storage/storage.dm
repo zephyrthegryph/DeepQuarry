@@ -525,14 +525,17 @@ REF_OWNED(/obj/item/storage, "hud")
 	return TRUE
 
 // Allows micros to drag themselves into storage items
-/obj/item/storage/MouseDrop_T(mob/living/target, mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/storage, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+
+/// Old MouseDrop_T.
+/obj/item/storage/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
 	make_contents_real()
-	if(!istype(user)) return // If the user passed in isn't a living mob, exit
-	if(target != user) return // If the user didn't drag themselves, exit
-	if(user.incapacitated() || user?.buckled_to()) return // If user is incapacitated or buckled, exit
-	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return // No jumping into your own equipment
-	if(ishuman(user) && user.get_effective_size(TRUE) > 0.25) return // Only micro characters
-	if(ismouse(user) && user.get_effective_size(TRUE) > 1) return // Only normal sized mice or less
+	if(!istype(user)) return INTERACTION_HANDLED_PASS
+	if(target != user) return INTERACTION_HANDLED_PASS
+	if(user.incapacitated() || user?.buckled_to()) return INTERACTION_HANDLED_PASS
+	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return INTERACTION_HANDLED_PASS
+	if(ishuman(user) && user.get_effective_size(TRUE) > 0.25) return INTERACTION_HANDLED_PASS
+	if(ismouse(user) && user.get_effective_size(TRUE) > 1) return INTERACTION_HANDLED_PASS
 
 	// Create a dummy holder with user's size to test insertion
 	var/obj/item/holder/D = new/obj/item/holder
@@ -542,17 +545,17 @@ REF_OWNED(/obj/item/storage, "hud")
 		D.w_class = ITEMSIZE_SMALL // Players small
 	else        // Other creatures not accepted at this time
 		qdel(D) // If there's a better way to check the size of a
-		return  // mob's holder and if it fits, replace this slab
+		return INTERACTION_HANDLED_PASS
 	if(insert_refusal(D, user)) // If the dummy item doesn't fit, exit
 		qdel(D)
-		return
+		return INTERACTION_HANDLED_PASS
 	qdel(D)
 
 	// Scoop and insert target into storage
 	var/obj/item/holder/H = new user.holder_type(get_turf(user), user)
 	if(insert_item(H, null, TRUE))
 		to_chat(user, span_notice("You climb into \the [src]."))
-	return ..()
+	return FALSE
 
 // ---- Legacy wrappers for mob inventory (C3 moves these callers onto slots) ----
 // Only for: /mob/living/equip_to_storage (mob/living/inventory.dm, 3 calls),

@@ -7,16 +7,17 @@ GLOBAL_LIST_EMPTY(floor_light_cache)
 	icon_state = "item"
 	MATERIAL_MIX(list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 
-/obj/item/floor_light/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/floor_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
 	if(!T)
 		to_chat(user, span_warning("You need to be on a floor to install this."))
-		return
+		return TRUE
 	new /obj/machinery/floor_light(T)
 	qdel(src)
+	return TRUE
 
 /obj/machinery/floor_light
 	name = "floor light"

@@ -356,10 +356,11 @@
 	for(var/obj/item/integrated_circuit/input/reference_grabber/G in contents)
 		G.afterattack(target, user, proximity, null)
 
-/obj/item/electronic_assembly/attackby(obj/item/I, mob/user)
+/// Old attackby.
+/obj/item/electronic_assembly/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/integrated_circuit))
 		if(!user.unEquip(I) && !isrobot(user)) //Robots cannot de-equip items in grippers.
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		if(add_circuit(I, user))
 			to_chat(user, span_notice("You slide \the [I] inside \the [src]."))
 			playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
@@ -377,7 +378,7 @@
 
 		if(!id_card)
 			to_chat(user, span_warning("You need an ID card to lock this assembly!"))
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 
 		if(locked)
 			// Trying to unlock
@@ -404,7 +405,7 @@
 		else
 			to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components.  \
 			Try using a crowbar."))
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 
 	else if(istype(I, /obj/item/integrated_electronics/detailer))
 		var/obj/item/integrated_electronics/detailer/D = I
@@ -414,10 +415,10 @@
 	else if(istype(I, /obj/item/cell/device))
 		if(!opened)
 			to_chat(user, span_warning("\The [src] isn't opened, so you can't put anything inside.  Try using a crowbar."))
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		if(battery)
 			to_chat(user, span_warning("\The [src] already has \a [battery] inside.  Remove it first if you want to replace it."))
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/cell/device/cell = I
 		user.drop_item(cell)
 		cell.forceMove(src)
@@ -428,7 +429,8 @@
 		return TRUE
 
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/electronic_assembly/wrench_act(mob/user, obj/item/tool)
 	if(!can_anchor)
@@ -459,12 +461,15 @@
 	to_chat(user, span_warning("\The [src] isn't opened, so you can't fiddle with the internal components. Try using a crowbar."))
 	return ITEM_INTERACT_BLOCKING
 
-/obj/item/electronic_assembly/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/electronic_assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!check_interactivity(user))
-		return
+		return TRUE
 	if(opened)
 		tgui_interact(user)
 
@@ -484,7 +489,7 @@
 
 	var/obj/item/integrated_circuit/input/choice
 	if(available_inputs)
-		var/selection = rerun_prompt(user, "k490", list("kind" = "list", "message" = "What do you want to interact with?", "title" = "Interaction", "choices" = input_selection), PROC_REF(attack_self), args)
+		var/selection = rerun_prompt(user, "k490", list("kind" = "list", "message" = "What do you want to interact with?", "title" = "Interaction", "choices" = input_selection), PROC_REF(interaction_self), args)
 		if(isnull(selection))
 			return TRUE
 		if(selection)
@@ -493,6 +498,7 @@
 
 	if(choice)
 		choice.ask_for_input(user)
+	return TRUE
 
 /obj/item/electronic_assembly/attack_robot(mob/user as mob)
 	if(Adjacent(user))

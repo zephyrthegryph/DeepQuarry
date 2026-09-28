@@ -109,7 +109,10 @@
 	for(var/i in box_segments)
 		animate(i, color = new_color, time = new_time)
 
-/obj/item/bork_medigun/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/bork_medigun, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/item/bork_medigun/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.get_inactive_hand() == src)// && loc != get_turf)
-		return
-	return ..()
+		return TRUE
+	return FALSE

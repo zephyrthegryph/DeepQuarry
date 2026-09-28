@@ -554,8 +554,10 @@
 		return "paper" //Gross, but required for now.
 	return ..()
 
-/obj/item/paper/attackby(obj/item/P, mob/user)
-	..()
+DECLARE_INTERACTIONS(/obj/item/paper, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/paper/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	var/clown = 0
 	if(user.mind && ((user.mind.role_alt_title == JOB_CLOWN) || (user.mind.role_alt_title == JOB_ALT_JESTER) || (user.mind.role_alt_title == JOB_ALT_FOOL))) // Let clows/fools/jesters use clown stamps
 		clown = 1
@@ -563,7 +565,7 @@
 	if(istype(P, /obj/item/tape_roll))
 		var/obj/item/tape_roll/tape = P
 		tape.stick(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(P, /obj/item/clipboard))
 		var/obj/item/clipboard/CB = P
@@ -587,7 +589,7 @@
 			if (!C.iscopy && !C.copied)
 				to_chat(user, span_notice("Take off the carbon copy first."))
 				add_fingerprint(user)
-				return
+				return INTERACTION_HANDLED_PASS
 		var/obj/item/paper_bundle/B = new(src.loc)
 		if (name != initial(name))
 			B.name = name
@@ -628,7 +630,7 @@
 	else if(istype(P, /obj/item/pen))
 		if(icon_state == "scrap")
 			to_chat(user, span_warning("\The [src] is too crumpled to write on."))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		var/obj/item/pen/robopen/RP = P
 		if(istype(RP) && RP.mode == 2)
@@ -640,7 +642,7 @@
 			can_read_view = TRUE
 			tgui_view = "write"
 			tgui_interact(user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))
 		if(istype(P, /obj/item/stamp))
@@ -656,7 +658,7 @@
 			else
 				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("This paper has been stamped with the [the_stamp.name].")
 		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
 		var/x, y
 		if(istype(P, /obj/item/stamp/captain) || istype(P, /obj/item/stamp/centcomm))
@@ -673,7 +675,7 @@
 		if(istype(P, /obj/item/stamp/clown))
 			if(!clown)
 				to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
-				return
+				return INTERACTION_HANDLED_PASS
 
 		if(!ico)
 			ico = new
@@ -692,7 +694,7 @@
 		burnpaper(P, user)
 
 	add_fingerprint(user)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /*
  * Premade paper

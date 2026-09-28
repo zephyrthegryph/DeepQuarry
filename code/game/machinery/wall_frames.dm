@@ -21,15 +21,16 @@
 	replace_with(src, refund_type, refund_amt)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/frame/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/frame, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/frame/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	update_type_list()
 	if(!build_machine_type && !build_wall_only)
 		om_prompt(src, user, list("kind" = "list", "message" = "What kind of frame would you like to make?", "title" = "Frame type request", "choices" = frame_types_floor, "requires" = PROMPT_HELD), PROC_REF(floor_frame_chosen))
-		return
+		return TRUE
 	build_on_floor(user, null)
+	return TRUE
 
 /obj/item/frame/proc/floor_frame_chosen(mob/user, datum/frame/frame_types/frame_type, datum/om/prompt/ask)
 	if(build_machine_type)

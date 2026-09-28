@@ -81,11 +81,12 @@
 
 	var/buffered_anomaly = null
 
-/obj/item/anomaly_scanner/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/anomaly_scanner/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/anomaly_scanner/tgui_static_data(mob/user)
 	. = ..()

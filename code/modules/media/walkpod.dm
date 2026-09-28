@@ -70,21 +70,28 @@
 /obj/item/walkpod/proc/update_music()
 	listener?.force_music(media_url, media_start_time, volume) // Calling this with "" url (when we aren't playing) helpfully disables forced music
 
-/obj/item/walkpod/click_alt(mob/living/L)
+/// Old click_alt.
+/obj/item/walkpod/proc/interaction_alt(mob/living/L, obj/item/held, datum/interaction/interaction)
 	if(L == listener && check_listener())
 		tgui_interact(L)
 	else if(loc == L) // at least they're holding it
 		to_chat(L, span_warning("Turn on the [src] first."))
+	return TRUE
 
-/obj/item/walkpod/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/walkpod, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+)
+
+/// Old attack_self.
+/obj/item/walkpod/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user) || loc != user)
-		return
+		return TRUE
 	if(!listener)
 		set_listener(user)
 	tgui_interact(user)
+	return TRUE
 
 // Process ticks to ensure our listener remains valid and we do music-ing
 /obj/item/walkpod/periodic_step()
@@ -236,11 +243,12 @@
 	L.put_in_any_hand_if_possible(deployed_headpods)
 	update_icon()
 
-/obj/item/walkpod/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/walkpod/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W == deployed_headpods)
 		restore_headpods(user)
-		return
-	return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/walkpod/proc/restore_headpods(mob/living/potential_holder)
 	if(!deployed_headpods)

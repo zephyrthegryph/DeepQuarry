@@ -66,23 +66,24 @@
 		span_notice("You label [A] as [label]."))
 	A.name = "[A.name] ([label])"
 
-/obj/item/hand_labeler/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/hand_labeler, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/hand_labeler/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	mode = !mode
 	icon_state = "labeler[mode]"
 	if(mode)
 		to_chat(user, span_notice("You turn on \the [src]."))
 		//Now let them chose the text.
-		var/_answer_k78 = rerun_prompt(user, "k78", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(attack_self), args)
+		var/_answer_k78 = rerun_prompt(user, "k78", list("kind" = "text", "message" = "Label text?", "title" = "Set label", "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_self), args)
 		if(isnull(_answer_k78))
 			return TRUE
 		var/str = sanitizeSafe(_answer_k78, MAX_NAME_LEN)
 		if(!str || !length(str))
 			to_chat(user, span_warning("Invalid text."))
-			return
+			return TRUE
 		label = str
 		to_chat(user, span_notice("You set the text to '[str]'."))
 	else
 		to_chat(user, span_notice("You turn off \the [src]."))
+	return TRUE

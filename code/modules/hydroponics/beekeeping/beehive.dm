@@ -366,12 +366,13 @@
 	icon = 'icons/obj/apiary_bees_etc.dmi'
 	icon_state = "apiary"
 
-/obj/item/beehive_assembly/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/beehive_assembly/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You start assembling \the [src]..."))
 	om_do_after(user, 3 SECONDS, src, src, PROC_REF(assemble_done), list(user))
+	return TRUE
 
 /obj/item/beehive_assembly/proc/assemble_done(mob/user)
 	user.visible_message(span_notice("[user] constructs a beehive."), span_notice("You construct a beehive."))

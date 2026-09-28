@@ -42,20 +42,25 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	. = ..()
 	id = GLOB.photo_count++
 
-/obj/item/photo/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	user.examinate(src)
+DECLARE_INTERACTIONS(/obj/item/photo, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
 
-/obj/item/photo/attackby(obj/item/P as obj, mob/user as mob)
+/// Old attack_self.
+/obj/item/photo/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	user.examinate(src)
+	return TRUE
+
+/// Old attackby.
+/obj/item/photo/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if(istype(P, /obj/item/pen))
-		var/txt = rerun_prompt(user, "k53", list("kind" = "text", "message" = "What would you like to write on the back?", "title" = "Photo Writing", "max_length" = 128), TYPE_PROC_REF(/atom, attackby), args)
+		var/txt = rerun_prompt(user, "k53", list("kind" = "text", "message" = "What would you like to write on the back?", "title" = "Photo Writing", "max_length" = 128), PROC_REF(interaction_item), args)
 		if(isnull(txt))
 			return TRUE
 		if(loc == user && user.stat == 0)
 			scribble = txt
-	..()
+	return FALSE
 
 /obj/item/photo/examine(mob/user)
 	//This is one time we're not going to call parent, because photos are 'secret' unless you're close enough.
@@ -177,29 +182,33 @@ GLOBAL_VAR_INIT(photo_count, 0)
 /obj/item/camera/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	return NONE
 
-/obj/item/camera/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/camera, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/camera/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
 		src.icon_state = icon_on
 	else
 		src.icon_state = icon_off
 	to_chat(user, "You switch the camera [on ? "on" : "off"].")
-	return
+	return TRUE
 
-/obj/item/camera/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/camera/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/camera_film))
 		if(pictures_left)
 			to_chat(user, span_notice("[src] still has some film in it!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You insert [I] into [src]."))
 		user.drop_item()
 		consume(I, user)
 		pictures_left = pictures_max
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 
 /obj/item/camera/proc/get_icon(list/turfs, turf/center)

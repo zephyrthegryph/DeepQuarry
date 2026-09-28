@@ -77,15 +77,19 @@
 	color = "#6f432a"
 	plank_type = /obj/item/stack/material/wood/hard
 
-/obj/item/stack/material/log/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/stack/material/log, INTERACT_ITEM(null, PROC_REF(log_interaction_item)))
+
+/// Old attackby.
+/obj/item/stack/material/log/proc/log_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W) || W.force <= 0)
-		return ..()
+		return FALSE
 	if(W.sharp && W.edge)
 		var/time = (3 SECONDS / max(W.force / 10, 1)) * W.toolspeed
 		user.setClickCooldown(time)
 		om_do_after(user, time, src, src, PROC_REF(cut_planks_done), list(user, src.material.name))
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/stack/material/log/proc/cut_planks_done(mob/user, our_material_name)
 	if(!use(1))

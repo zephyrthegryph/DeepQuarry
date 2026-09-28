@@ -96,8 +96,10 @@
 	if (t)
 		src.created_name = t
 
-/obj/item/robot_parts/robot_suit/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/robot_parts/robot_suit/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_STEEL && !l_arm && !r_arm && !l_leg && !r_leg && !chest && !head)
 		var/obj/item/stack/material/M = W
 		if (M.use(1))
@@ -111,35 +113,35 @@
 		else
 			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
 	if(istype(W, /obj/item/robot_parts/l_leg))
-		if(src.l_leg)	return
+		if(src.l_leg)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.loc = src
 		src.l_leg = W
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
-		if(src.r_leg)	return
+		if(src.r_leg)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.loc = src
 		src.r_leg = W
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
-		if(src.l_arm)	return
+		if(src.l_arm)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.loc = src
 		src.l_arm = W
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
-		if(src.r_arm)	return
+		if(src.r_arm)	return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		W.loc = src
 		src.r_arm = W
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
-		if(src.chest)	return
+		if(src.chest)	return INTERACTION_HANDLED_PASS
 		if(W:wires_const && W:cell)
 			user.drop_item()
 			W.loc = src
@@ -151,7 +153,7 @@
 			to_chat(user, span_warning("You need to attach a cell to it first!"))
 
 	if(istype(W, /obj/item/robot_parts/head))
-		if(src.head)	return
+		if(src.head)	return INTERACTION_HANDLED_PASS
 		if(W:flash2 && W:flash1)
 			user.drop_item()
 			W.loc = src
@@ -164,16 +166,16 @@
 		var/obj/item/mmi/M = W
 		if (isshell(user) && istype(W, /obj/item/mmi/inert/ai_remote))
 			to_chat(user, span_warning("Your hardware prohibits you from self-replicating."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(check_completion())
 			if(!istype(loc,/turf))
 				to_chat(user, span_warning("You can't put \the [W] in, the frame has to be standing on the ground to be perfectly precise."))
-				return
+				return INTERACTION_HANDLED_PASS
 			var/mob/living/carbon/brain/occupant = M.get_occupant()
 			if(!istype(W, /obj/item/mmi/inert))
 				if(!occupant)
 					to_chat(user, span_warning("Sticking an empty [W] into the frame would sort of defeat the purpose."))
-					return
+					return INTERACTION_HANDLED_PASS
 				if(!occupant.key)
 					var/ghost_can_reenter = 0
 					if(occupant.mind)
@@ -181,21 +183,21 @@
 							if(G.can_reenter_corpse && G.mind == occupant.mind)
 								ghost_can_reenter = 1 //May come in use again at another point.
 								to_chat(user, span_notice("\The [W] is completely unresponsive; though it may be able to auto-resuscitate.")) //Jamming a ghosted brain into a borg is likely detrimental, and may result in some problems.
-								return
+								return INTERACTION_HANDLED_PASS
 					if(!ghost_can_reenter)
 						to_chat(user, span_notice("\The [W] is completely unresponsive; there's no point."))
-						return
+						return INTERACTION_HANDLED_PASS
 
 				if(occupant.stat == DEAD)
 					to_chat(user, span_warning("Sticking a dead [W] into the frame would sort of defeat the purpose."))
-					return
+					return INTERACTION_HANDLED_PASS
 
 				if(jobban_isbanned(occupant, JOB_CYBORG))
 					to_chat(user, span_warning("This [W] does not seem to fit."))
-					return
+					return INTERACTION_HANDLED_PASS
 
 			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), FALSE, TRUE)
-			if(!O)	return
+			if(!O)	return INTERACTION_HANDLED_PASS
 
 			user.drop_item()
 
@@ -225,14 +227,16 @@
 	if (istype(W, /obj/item/pen))
 		om_prompt(src, user, list("kind" = "text", "message" = "Enter new robot name", "title" = src.name, "default" = src.created_name, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_ADJACENT), PROC_REF(robot_named))
 
-	return
+	return INTERACTION_HANDLED_PASS
 
-/obj/item/robot_parts/chest/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/robot_parts/chest/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell))
 		if(src.cell)
 			to_chat(user, span_warning("You have already inserted a cell!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			user.drop_item()
 			W.loc = src
@@ -241,13 +245,13 @@
 	if(istype(W, /obj/item/stack/cable_coil))
 		if(src.wires_const)
 			to_chat(user, span_warning("You have already inserted wire!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			var/obj/item/stack/cable_coil/coil = W
 			coil.use(1)
 			src.wires_const = 1.0
 			to_chat(user, span_notice("You insert the wire!"))
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/robot_parts/head/attackby(obj/item/W as obj, mob/user as mob)
 	..()

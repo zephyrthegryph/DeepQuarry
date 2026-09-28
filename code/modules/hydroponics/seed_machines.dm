@@ -13,12 +13,12 @@
 	pixel_x = rand(-5,5)
 	pixel_y = rand(-5,5)
 
-/obj/item/disk/botany/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/disk/botany/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(LAZYLEN(genes))
-		var/choice = rerun_prompt(user, "k21", list("message" = "Are you sure you want to wipe the disk?", "title" = "Xenobotany Data", "choices" = list("No", "Yes")), PROC_REF(attack_self), args)
+		var/choice = rerun_prompt(user, "k21", list("message" = "Are you sure you want to wipe the disk?", "title" = "Xenobotany Data", "choices" = list("No", "Yes")), PROC_REF(interaction_self), args)
 		if(isnull(choice))
 			return TRUE
 		if(src && user && genes && choice && choice == "Yes" && user.Adjacent(get_turf(src)))
@@ -27,6 +27,7 @@
 			desc = initial(name)
 			genes = list()
 			genesource = "unknown"
+	return TRUE
 
 /obj/item/storage/box/botanydisk
 	name = "flora disk box"

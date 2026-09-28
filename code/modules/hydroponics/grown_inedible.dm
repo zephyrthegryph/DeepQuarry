@@ -41,12 +41,15 @@
 	throw_speed = 4
 	throw_range = 20
 
-/obj/item/corncob/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+DECLARE_INTERACTIONS(/obj/item/corncob, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/corncob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/surgical/circular_saw) || istype(W, /obj/item/material/knife/machete/hatchet) || istype(W, /obj/item/material/knife))
 		to_chat(user, span_notice("You use [W] to fashion a pipe out of the corn cob!"))
 		replace_with(src, /obj/item/clothing/mask/smokable/pipe/cobpipe)
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/bananapeel
 	name = "banana peel"

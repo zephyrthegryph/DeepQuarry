@@ -23,13 +23,11 @@
 		return TRUE
 	return FALSE
 
-/obj/item/assembly/signaler/anomaly/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
-	return
 
-/obj/item/assembly/signaler/anomaly/attackby(obj/item/W, mob/user, params)
+EXTEND_INTERACTIONS(/obj/item/assembly/signaler/anomaly, INTERACT_ITEM(null, PROC_REF(anomaly_interaction_item)))
+
+/// Old attackby.
+/obj/item/assembly/signaler/anomaly/proc/anomaly_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/analyzer))
 		to_chat(user, span_notice("Analyzing... [src]'s stabilized field is fluctuating along frequency [format_frequency(frequency)], code [code]."))
 		return TRUE
@@ -41,10 +39,10 @@
 	if(istype(W, /obj/item/anomaly_releaser))
 		var/obj/item/anomaly_releaser/releaser = W
 		if(releaser.used)
-			return FALSE
+			return INTERACTION_HANDLED_PASS
 		om_do_after(user, 3 SECONDS, src, src, PROC_REF(release_done), list(user, releaser))
 		return TRUE
-	return ..()
+	return FALSE
 
 /obj/item/assembly/signaler/anomaly/proc/release_done(mob/user, obj/item/anomaly_releaser/releaser)
 	if(!anomaly_type || releaser.used)

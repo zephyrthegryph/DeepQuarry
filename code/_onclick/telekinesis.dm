@@ -81,12 +81,13 @@
 	qdel(src)
 	return
 
-/obj/item/tk_grab/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/tk_grab/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(focus)
 		focus.attack_self_tk(user)
+	return TRUE
 
 /obj/item/tk_grab/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity)//TODO: go over this
 	if(!target || !user)	return

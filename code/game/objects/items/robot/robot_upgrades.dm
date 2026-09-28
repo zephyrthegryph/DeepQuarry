@@ -66,11 +66,12 @@
 	item_state = "cyborg_upgrade"
 	var/heldname = "default name"
 
-/obj/item/borg/upgrade/utility/rename/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, PROC_REF(interaction_self)))
+
+/// Old attack_self.
+/obj/item/borg/upgrade/utility/rename/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_prompt(src, user, list("kind" = "text", "message" = "Enter new robot name", "title" = "Robot Reclassification", "default" = heldname, "max_length" = MAX_NAME_LEN, "requires" = PROMPT_HELD), PROC_REF(name_entered))
+	return TRUE
 
 /obj/item/borg/upgrade/utility/rename/proc/name_entered(mob/user, new_name, datum/om/prompt/ask)
 	if(new_name)

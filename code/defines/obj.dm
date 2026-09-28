@@ -15,7 +15,7 @@ DECLARE_INTERACTIONS(/obj/structure/signpost, \
 
 /// Old attack_hand.
 /obj/structure/signpost/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), TYPE_PROC_REF(/atom, attack_hand), args)
+	var/_answer_k11 = rerun_prompt(user, "k11", list("message" = "Travel back to ss13?", "title" = "Return?", "choices" = list("Yes","No")), PROC_REF(interaction_hand), args)
 	if(isnull(_answer_k11))
 		return TRUE
 	if(_answer_k11 == "Yes")

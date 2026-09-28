@@ -435,25 +435,29 @@
 			if (!QDELETED(src) && user.check_current_machine(src))
 				src.interact(user)
 
-/obj/item/stack/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/stack, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/stack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/gripper))
 		var/obj/item/gripper/G = W
 		G.consolidate_stacks(src)
 		if(QDELETED(src))
-			return
+			return INTERACTION_HANDLED_PASS
 
 	else if(istype(W, /obj/item/stack))
 		var/obj/item/stack/S = W
 		src.transfer_to(S)
 		if(QDELETED(src))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if (S && user.check_current_machine(S))
 			S.interact(user)
 		if (src && user.check_current_machine(src))
 			src.interact(user)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/stack/proc/combine_in_loc()
 	return //STUBBED for now, as it seems to randomly delete stacks

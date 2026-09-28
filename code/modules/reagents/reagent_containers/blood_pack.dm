@@ -54,9 +54,10 @@
 		icon_state = "full"
 		item_state = "bloodpack_full"
 
-/obj/item/reagent_containers/blood/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/reagent_containers/blood/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(interaction_item), args)
 		if(isnull(_answer_a1))
 			return TRUE
 		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
@@ -70,6 +71,7 @@
 			to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
 			label_text = tmp_label
 			update_iv_label()
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/blood/proc/update_iv_label()
 	if(label_text == "")
@@ -122,10 +124,13 @@
 	. = ..()
 
 
-/obj/item/reagent_containers/blood/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/blood, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/reagent_containers/blood/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(IS_HARMING(user))
 		if(reagents.total_volume && volume)
 			var/remove_volume = volume* 0.1 //10% of what the bloodpack can hold.
@@ -137,15 +142,16 @@
 					user.adjust_nutrition(remove_volume*5)
 					reagents.remove_reagent(reagent_to_remove, remove_volume)
 					update_icon()
-					return
+					return TRUE
 				else
 					user.show_message(span_warning("You take a look at \the [src] and notice that it is not filled with blood!"))
-					return
+					return TRUE
 		else
 			user.show_message(span_warning("You take a look at \the [src] and notice it has nothing in it!"))
-			return
+			return TRUE
 	else
-		return
+		return TRUE
+	return TRUE
 
 /obj/item/reagent_containers/blood/prelabeled
 	name = "IV Pack"

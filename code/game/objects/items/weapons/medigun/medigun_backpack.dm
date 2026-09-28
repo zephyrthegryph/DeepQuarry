@@ -320,11 +320,17 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 	if(bcell)
 		bcell.emp_act(severity)
 
-/obj/item/medigun_backpack/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/medigun_backpack/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	// See important note in tethered_item.dm
 	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return TRUE
-	. = ..()
+	return FALSE
 
 /obj/item/medigun_backpack/MouseDrop()
 	if(ismob(src.loc))
@@ -336,9 +342,10 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 		src.add_fingerprint(usr)
 		M.put_in_any_hand_if_possible(src)
 
-/obj/item/medigun_backpack/attackby(obj/item/W, mob/user, params)
+/// Old attackby.
+/obj/item/medigun_backpack/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(refill_reagent(W, user))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/item/bork_medigun/medigun = get_medigun()
 
@@ -376,22 +383,22 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 		if(!maintenance)
 			maintenance = TRUE
 			to_chat(user, span_notice("You open the maintenance hatch on \the [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		maintenance = FALSE
 		to_chat(user, span_notice("You close the maintenance hatch on \the [src]."))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/cell))
 		if(!user.unEquip(W))
-			return
+			return INTERACTION_HANDLED_PASS
 		W.forceMove(src)
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
 		ccell = W
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(maintenance)
 		if(istype(W, /obj/item/stock_parts/scanning_module))
@@ -399,46 +406,46 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 				to_chat(user, span_notice("\The [src] already has a scanning module."))
 			else
 				if(!user.unEquip(W))
-					return
+					return INTERACTION_HANDLED_PASS
 				W.forceMove(src)
 				smodule = W
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
 				update_icon()
-				return
+				return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/stock_parts/manipulator))
 			if(smanipulator)
 				to_chat(user, span_notice("\The [src] already has a manipulator."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(!user.unEquip(W))
-				return
+				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
 			smanipulator = W
 			smaniptier = smanipulator.get_rating()
 			if(sbin && scapacitor)PERIODIC_START(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/stock_parts/micro_laser))
 			if(slaser)
 				to_chat(user, span_notice("\The [src] already has a micro laser."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(!user.unEquip(W))
-				return
+				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
 			slaser = W
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/stock_parts/capacitor))
 			if(scapacitor)
 				to_chat(user, span_notice("\The [src] already has a capacitor."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(!user.unEquip(W))
-				return
+				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
 			scapacitor = W
 			var/scaptier = scapacitor.get_rating()
@@ -471,14 +478,14 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 			if(sbin && smanipulator)PERIODIC_START(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(istype(W, /obj/item/stock_parts/matter_bin))
 			if(sbin)
 				to_chat(user, span_notice("\The [src] already has a matter bin."))
-				return
+				return INTERACTION_HANDLED_PASS
 			if(!user.unEquip(W))
-				return
+				return INTERACTION_HANDLED_PASS
 			W.forceMove(src)
 			sbin = W
 			sbintier = sbin.get_rating()
@@ -503,9 +510,9 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 			if(scapacitor && smanipulator)PERIODIC_START(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
-			return
+			return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
 /obj/item/medigun_backpack/proc/refill_reagent(obj/item/container, mob/user)
 	. = FALSE

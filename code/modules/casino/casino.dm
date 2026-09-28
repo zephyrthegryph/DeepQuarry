@@ -236,24 +236,26 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 		. += " with [trapped.name] trapped within"
 	return
 
-/obj/item/roulette_ball/hollow/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/roulette_ball/hollow/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(trapped)
 		to_chat(user, span_notice("This ball already has something trapped in it!"))
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/holder))
 		var/obj/item/holder/H = W
 		if(!H.held_mob)
 			to_chat(user, span_warning("This holder has nobody in it? Yell at a developer!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(H.held_mob.get_effective_size(TRUE) > 50)
 			to_chat(user, span_warning("\The [H] is too big to fit inside!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(H)
 		H.forceMove(src)
 		trapped = H
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))
 		update_icon()
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/roulette_ball/hollow/update_icon()
 	if(trapped && trapped.held_mob)
@@ -261,13 +263,16 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	else
 		icon_state = "roulette_ball_glass"
 
-/obj/item/roulette_ball/hollow/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_self.
+/obj/item/roulette_ball/hollow/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!trapped)
 		to_chat(user, span_notice("\The [src] is empty!"))
-		return
+		return TRUE
 	else
 		user.put_in_hands(trapped)
 		if(trapped.held_mob)
@@ -275,6 +280,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
 		trapped = null
 		update_icon()
+	return TRUE
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
 	trapped = null

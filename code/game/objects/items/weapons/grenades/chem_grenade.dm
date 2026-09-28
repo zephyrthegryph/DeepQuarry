@@ -56,15 +56,18 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 			var/mob/living/carbon/C = user
 			C.throw_mode_on()
 
-/obj/item/grenade/chem_grenade/attackby(obj/item/W as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/item/grenade/chem_grenade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/assembly_holder) && (!stage || stage==1) && !detonator && path != 2)
 		var/obj/item/assembly_holder/det = W
 		if(istype(det.a_left,det.a_right.type) || (!isigniter(det.a_left) && !isigniter(det.a_right)))
 			to_chat(user, span_warning("Assembly must contain one igniter."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if(!det.secured)
 			to_chat(user, span_warning("Assembly must be secured with screwdriver."))
-			return
+			return INTERACTION_HANDLED_PASS
 		path = 1
 		to_chat(user, span_notice("You add [W] to the metal casing."))
 		playsound(src, 'sound/items/Screwdriver2.ogg', 25, -3)
@@ -84,7 +87,7 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 		path = 1
 		if(length(beakers) == 2)
 			to_chat(user, span_warning("The grenade can not hold more containers."))
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			if(W.reagents.total_volume)
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
@@ -95,6 +98,7 @@ REF_OWNED_LIST(/obj/item/grenade/chem_grenade, "beakers")
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else
 				to_chat(user, span_warning("\The [W] is empty."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/grenade/chem_grenade/screwdriver_act(mob/user, obj/item/tool)
 	if(path == 2)

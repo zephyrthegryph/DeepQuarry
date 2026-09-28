@@ -104,16 +104,21 @@
 /obj/item/modular_computer/attack_ai(mob/user)
 	return attack_self(user)
 
-/obj/item/modular_computer/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/modular_computer, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/modular_computer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored || ispAI(user))
 		return attack_self(user)
-	return ..()
+	return FALSE
 
 // On-click handling. Turns on the computer if it's off and opens the GUI.
-/obj/item/modular_computer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self.
+/obj/item/modular_computer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(enabled && screen_on)
 		if(isliving(user) && HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(5))
 			var/mob/living/unlucky_soul = user
@@ -122,33 +127,35 @@
 			s.set_up(5, 1, src)
 			s.start()
 			unlucky_soul.electrocute_act(5, src, 1)
-			return
+			return TRUE
 		tgui_interact(user)
 	else if(!enabled && screen_on)
 		if(HAS_TRAIT(user, TRAIT_UNLUCKY) && prob(25))
 			to_chat(user, "You try to turn on \the [src] but it doesn't respond.")
-			return
+			return TRUE
 		turn_on(user)
+	return TRUE
 
-/obj/item/modular_computer/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/item/modular_computer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/card/id)) // ID Card, try to insert it.
 		var/obj/item/card/id/I = W
 		if(!card_slot)
 			to_chat(user, "You try to insert \the [I] into \the [src], but it does not have an ID card slot installed.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(card_slot.stored_card)
 			to_chat(user, "You try to insert \the [I] into \the [src], but it's ID card slot is occupied.")
-			return
+			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(I)
 		card_slot.stored_card = I
 		I.forceMove(src)
 		update_uis()
 		to_chat(user, "You insert \the [I] into \the [src].")
-		return
+		return INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/paper_bundle))
 		if(!nano_printer)
-			return
+			return INTERACTION_HANDLED_PASS
 		nano_printer.attackby(W, user)
 	if(istype(W, /obj/item/computer_hardware))
 		var/obj/item/computer_hardware/C = W
@@ -156,7 +163,7 @@
 			try_install_component(user, C)
 		else
 			to_chat(user, "This component is too large for \the [src].")
-	return ..()
+	return FALSE
 
 /obj/item/modular_computer/wrench_act(mob/user, obj/item/tool)
 	var/list/components = get_all_components()

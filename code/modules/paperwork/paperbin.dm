@@ -38,7 +38,13 @@
 
 	return
 
-/obj/item/paper_bin/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/item/paper_bin, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/item/paper_bin/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
 		var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -46,16 +52,16 @@
 			temp = H.organs_by_name[BP_L_HAND]
 		if(temp && !temp.is_usable())
 			to_chat(user, span_notice("You try to move your [temp.name], but cannot!"))
-			return
+			return TRUE
 	var/response = ""
 	if(!length(papers) > 0)
-		var/_answer_k52 = rerun_prompt(user, "k52", list("message" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel")), TYPE_PROC_REF(/atom, attack_hand), args)
+		var/_answer_k52 = rerun_prompt(user, "k52", list("message" = "Do you take regular paper, or Carbon copy paper?", "title" = "Paper type request", "choices" = list("Regular", "Carbon-Copy", "Cancel")), PROC_REF(interaction_hand), args)
 		if(isnull(_answer_k52))
 			return TRUE
 		response = _answer_k52
 		if (response != "Regular" && response != "Carbon-Copy")
 			add_fingerprint(user)
-			return
+			return TRUE
 	if(amount >= 1)
 		amount--
 		if(amount==0)
@@ -83,12 +89,13 @@
 		to_chat(user, span_notice("[src] is empty!"))
 
 	add_fingerprint(user)
-	return
+	return TRUE
 
 
-/obj/item/paper_bin/attackby(obj/item/paper/i as obj, mob/user as mob)
+/// Old attackby.
+/obj/item/paper_bin/proc/interaction_item(mob/user, obj/item/paper/i, datum/interaction/interaction)
 	if(!istype(i))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	user.drop_item()
 	i.loc = src
@@ -96,6 +103,7 @@
 	LAZYADD(papers, i)
 	update_icon()
 	amount++
+	return INTERACTION_HANDLED_PASS
 
 
 /obj/item/paper_bin/examine(mob/user)
