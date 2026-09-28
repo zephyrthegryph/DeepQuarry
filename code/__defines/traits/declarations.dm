@@ -64,8 +64,6 @@ Remember to update _globalvars/traits.dm if you're adding/removing/renaming trai
 #define TRAIT_RESISTHEATHANDS "resist_heat_handsonly"
 // Owner will be considered a tiny mob for some interactions, such as airlocks not opening unless they have a client, or being vacuumed up by the vacpack
 #define TRAIT_AMBIENT_PEST_MOB "ambient_pest_mob"
-///Trait given by /datum/component/germ_sensitive
-#define TRAIT_GERM_SENSITIVE "germ_sensitive"
 #define TRAIT_STRONG_STOMACH "strong_stomach"
 /// Marks that this object is irradiated
 #define TRAIT_IRRADIATED "irradiated"
