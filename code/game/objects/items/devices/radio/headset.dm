@@ -818,3 +818,6 @@ REF_OWNED(/obj/item/radio/headset/event, list("effect_overlay"))
 /// LC-refs: wearer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
 	return om_resolve(wearer_handle)
+
+// The AI owns this radio through common_radio; myAi is the back reference.
+REF_BACK(/obj/item/radio/headset/heads/ai_integrated, list("myAi" = "common_radio"))

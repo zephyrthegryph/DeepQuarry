@@ -13,7 +13,15 @@
 /datum/unit_test/dq_refs_handle_is_weak/Run()
 	var/h = dq_refs_dropped_handle()
 	TEST_ASSERT(om_is_handle(h), "the datum got a handle")
-	TEST_ASSERT_NULL(om_resolve(h), "a collected datum's handle resolves to null")
+	// Resolving a handle whose target BYOND collected without qdel() is the
+	// misuse the detector reports; this test builds that case on purpose, so
+	// capture the report and check it fired instead of failing the run.
+	var/list/capture = list()
+	GLOB.dq_lifecycle_report_capture = capture
+	var/resolved = om_resolve(h)
+	GLOB.dq_lifecycle_report_capture = null
+	TEST_ASSERT_NULL(resolved, "a collected datum's handle resolves to null")
+	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "HANDLE TARGET COLLECTED WITHOUT QDEL"), "the collected target was reported: [json_encode(capture)]")
 	var/datum/E = new
 	TEST_ASSERT_NULL(om_resolve(h), "a new datum never answers an old handle")
 	// ALLOW(handle_kinds): the test is about a handle to an otherwise unreferenced datum

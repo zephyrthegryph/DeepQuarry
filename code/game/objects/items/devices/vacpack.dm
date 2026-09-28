@@ -411,3 +411,6 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 EXTEND_INTERACTIONS(/obj/item/vac_attachment, \
 	INTERACT_VERB("Toggle Vac-Pack Sprites", PROC_REF(hide_pack_effect), REQ_IN_INVENTORY), \
 )
+
+// The swoopie owns its built-in attachment through Vac; vac_owner points back.
+REF_BACK(/obj/item/vac_attachment/swoopie, list("vac_owner" = "Vac"))

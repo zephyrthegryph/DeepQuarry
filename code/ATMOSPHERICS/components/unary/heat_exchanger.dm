@@ -119,3 +119,11 @@
 		span_notice("You have unfastened \the [src]."), \
 		"You hear a ratchet.")
 	atom_deconstruct()
+
+/// The partner link is two-sided: break both halves so a pair deleted
+/// together doesn't form a cycle of deleted objects.
+/obj/machinery/atmospherics/unary/heat_exchanger/lifecycle_unbind()
+	. = ..()
+	if(partner?.partner == src)
+		partner.partner = null
+	partner = null

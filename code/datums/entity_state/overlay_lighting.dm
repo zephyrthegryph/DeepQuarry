@@ -167,20 +167,15 @@
 	if(owner?.overlay_light == src)
 		owner.overlay_light = null
 	owner = null
-
-// ALLOW(lifecycle): owned state datum (was a component) unhooks and detaches from its owner.
-/datum/overlay_lighting/Destroy()
+	// The mask, cone and directional atom refuse any delete that isn't
+	// forced (only we may delete them). Phase 4's owned-var sweep qdels
+	// without force, so release them here, forced, before it runs.
 	qdel(visible_mask, TRUE)
 	visible_mask = null
-
-	if(directional)
-		qdel(directional_atom, TRUE)
-		directional_atom = null
-
-		qdel(cone, TRUE)
-		cone = null
-
-	return ..()
+	qdel(directional_atom, TRUE)
+	directional_atom = null
+	qdel(cone, TRUE)
+	cone = null
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()

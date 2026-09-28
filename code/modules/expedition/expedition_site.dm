@@ -63,6 +63,13 @@
 REF_OWNED(/datum/expedition_site, list("station_defense", "station_director", "station_simulation", "mission", "biome", "station_spec", "station_materialization", "landing_waypoint"))
 REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 
+/// A deleted descriptor leaves the service list that owned it.
+/datum/expedition_site/lifecycle_unbind()
+	. = ..()
+	var/datum/world_service/expedition/service = GLOB.expedition_service
+	if(service)
+		LAZYREMOVE(service.descriptors, src)
+
 // A random walkable floor on this site (prefers the cached list, falls back to
 // a fresh scan if the cache is stale/empty). Biome-agnostic.
 /datum/expedition_site/proc/random_floor()

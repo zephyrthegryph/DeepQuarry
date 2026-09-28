@@ -35,6 +35,10 @@ REF_OWNED_VALUES(/datum/reagents, "reagent_by_id")
 	reagent_by_id = null
 	if(my_atom && my_atom.reagents == src)
 		my_atom.reagents = null
+	// my_atom is a back reference: a holder the atom keeps in some other var
+	// (a human's vessel, a carbon's bloodstr) is often deleted while that var
+	// still points here (QDEL_NULL nulls after the qdel), which is a cycle.
+	my_atom = null
 	return ..()
 
 /* Internal procs */

@@ -82,6 +82,10 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	boot_after = /datum/controller/subsystem/mapping
 	/// "[z]" -> /datum/expedition_site for every live site.
 	var/list/sites = list() // ALLOW(instance_list): d: world service singleton
+	/// Surveyed site descriptors not yet materialized (z_level 0). Flight
+	/// destinations and vessels name a descriptor only by handle, so this list
+	/// is what owns it until it is materialized, abandoned or deleted.
+	var/list/descriptors
 	/// Wiped z-levels available for reuse.
 	var/list/free_z = list() // ALLOW(instance_list): d: world service singleton
 	/// Running survey-point score earned by completed missions this round.
@@ -182,6 +186,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(assigned_vessel)
 		assigned_vessel.active_expedition_handle = om_handle(site)
 	site.status = EXP_STATUS_GENERATING
+	LAZYADD(descriptors, site)
 	GLOB.flight_service?.register_expedition(site)
 	return site
 

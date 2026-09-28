@@ -169,3 +169,10 @@
 /obj/machinery/atmospherics/unary/arm_wakes()
 	..()
 	register_gas_dependencies()
+
+/// Our side of the single edge: a neighbour destroyed in the same batch is
+/// skipped by the base unbind (it's QDELETED), so nothing else clears `node`
+/// and two adjacent unary devices deleted together would pin each other.
+/obj/machinery/atmospherics/unary/lifecycle_unbind()
+	. = ..()
+	node = null

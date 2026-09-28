@@ -34,3 +34,6 @@
 
 /datum/reagents/metabolism/touch
 	metabolism_class = CHEM_TOUCH
+
+// parent is a back reference to the carbon holding this metabolism.
+REF_BACK(/datum/reagents/metabolism, list("parent" = null))
