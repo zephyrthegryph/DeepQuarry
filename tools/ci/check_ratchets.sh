@@ -29,7 +29,8 @@ for lint in \
 	i7_handler_lint.py \
 	dcs_lints.py \
 	silent_catch_lint.py \
-	ownership_cycle_lint.py; do
+	ownership_cycle_lint.py \
+	subsystem_fire_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")

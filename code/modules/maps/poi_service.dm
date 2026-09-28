@@ -11,6 +11,11 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	on_demand = TRUE
 	var/list/obj/effect/landmark/poi_loader/poi_queue = list() // ALLOW(instance_list): d: world service singleton
 
+/// Queued loader landmarks: each qdels itself once placed.
+/datum/world_service/pois/declared_cache_vars()
+	var/static/list/names = list("poi_queue")
+	return names
+
 /datum/world_service/pois/initialize()
 	if(initialized)
 		return

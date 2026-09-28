@@ -34,6 +34,7 @@ SUBSYSTEM_DEF(lighting)
 
 	return SS_INIT_SUCCESS
 
+// ALLOW(subsystem_fire): lighting folds in wave F5, after phase 4f makes it a Rust field
 /datum/controller/subsystem/lighting/fire(resumed, init_tick_checks)
 	MC_SPLIT_TICK_INIT(4)
 	if(!init_tick_checks)

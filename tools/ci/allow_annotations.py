@@ -44,6 +44,7 @@ LINTS = {
     "silent_catch": "tools/ci/silent_catch_lint.py (catches that swallow an exception)",
     "spatial": "tools/ci/spatial_lint.py",
     "state_ref": "tools/ci/state_schema_lint.py",
+    "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
 }
 
 # `// ALLOW(a, b): reason`; the reason is checked separately so a bare one is an error.

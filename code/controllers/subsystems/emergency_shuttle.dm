@@ -36,7 +36,7 @@ SUBSYSTEM_DEF(emergency_shuttle)
 			return TRUE
 
 		if(evac && auto_recall && world.time >= auto_recall_time)
-			INVOKE_ASYNC(src, PROC_REF(recall))
+			recall()
 		if(world.time >= launch_time)	//time to launch the shuttle
 			stop_launch_countdown()
 
@@ -45,7 +45,7 @@ SUBSYSTEM_DEF(emergency_shuttle)
 				current_run = escape_pods.Copy()
 
 			if(autopilot)
-				INVOKE_ASYNC(shuttle, TYPE_PROC_REF(/datum/shuttle/autodock, launch), src)
+				shuttle.launch(src)
 
 	while(length(current_run))
 		if(TICK_CHECK)
@@ -56,7 +56,7 @@ SUBSYSTEM_DEF(emergency_shuttle)
 		if(!istype(pod, /datum/shuttle/autodock/ferry/escape_pod))
 			continue
 		if(!pod.arming_controller() || pod.arming_controller().armed)
-			INVOKE_ASYNC(pod, TYPE_PROC_REF(/datum/shuttle/autodock, launch), src)
+			pod.launch(src)
 	return TRUE
 
 //called when the shuttle has arrived.

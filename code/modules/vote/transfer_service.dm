@@ -25,11 +25,11 @@ GLOBAL_DATUM_INIT(transfer_service, /datum/world_service/transfer, new)
 		shift_last_vote = 1000000000000 //Setting to a stupidly high number since it'll be not used again.
 		to_chat(world, span_world(span_notice("Warning: This upcoming round-extend vote will be your last chance to vote for shift extension. Wrap up your scenes in the next 60 minutes if the round is extended.")))
 	if (round_duration_in_ds >= shift_hard_end - 1 MINUTE)
-		INVOKE_ASYNC(GLOBAL_PROC, GLOBAL_PROC_REF(init_shift_change), null, 1)
+		init_shift_change(null, 1)
 		shift_hard_end = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval) //If shuttle somehow gets recalled, let's force it to call again next time a vote would occur.
 		timerbuffer = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval) //Just to make sure a vote doesn't occur immediately afterwords.
 	else if (round_duration_in_ds >= timerbuffer - 1 MINUTE)
-		INVOKE_ASYNC(SSvote, TYPE_PROC_REF(/datum/controller/subsystem/vote, start_vote), new /datum/vote/crew_transfer)
+		SSvote.start_vote(new /datum/vote/crew_transfer)
 		timerbuffer = timerbuffer + CONFIG_GET(number/vote_autotransfer_interval)
 	return TRUE
 

@@ -11,9 +11,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 	var/list/current_run
 
 	// Each list has a key of its controller, for each subrun of the subsystem
-	var/list/controller_run = list()
-	var/list/panel_run = list()
-	var/list/panel_sum = list()
+	var/list/controller_run = list() // ALLOW(instance_list): d: world service singleton
+	var/list/panel_run = list() // ALLOW(instance_list): d: world service singleton
+	var/list/panel_sum = list() // ALLOW(instance_list): d: world service singleton
 
 /datum/world_service/solars/service_step(resumed)
 	if(!resumed)

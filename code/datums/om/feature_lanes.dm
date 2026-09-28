@@ -6,8 +6,7 @@
 // (world_lanes.dm). The old fire() is the subsystem's lane_step(resumed).
 //
 // A step that runs out of budget returns FALSE (TICK_CHECK) and resumes one tick later through
-// a deadline, the same mechanism /datum/om/behaviour/world uses. A step that may sleep sets
-// `async` on its lane and runs through INVOKE_ASYNC instead (it cannot yield).
+// a deadline, the same mechanism /datum/om/behaviour/world uses. Steps must not sleep.
 
 /// TRUE while a yielded lane_step() is waiting to resume.
 /datum/controller/subsystem/var/lane_resuming = FALSE
@@ -15,10 +14,12 @@
 /// The feature subsystem's periodic work (was fire()). `resumed`: continuing a step that
 /// yielded. Return FALSE to yield (resumes next tick), TRUE when the step is complete.
 /datum/controller/subsystem/proc/lane_step(resumed)
+	SHOULD_NOT_SLEEP(TRUE)
 	return TRUE
 
 /// Runs lane_step() with resume bookkeeping. Returns what lane_step() returned.
 /datum/controller/subsystem/proc/run_lane_step()
+	SHOULD_NOT_SLEEP(TRUE)
 	var/resumed = lane_resuming
 	var/done = lane_step(resumed)
 	lane_resuming = !done
@@ -54,8 +55,6 @@
 /datum/om/behaviour/world/feature
 	abstract_type = /datum/om/behaviour/world/feature
 	runlevels = RUNLEVELS_DEFAULT
-	/// TRUE: the step may sleep, so it runs detached through INVOKE_ASYNC and never yields.
-	var/async = FALSE
 
 /// The subsystem whose lane_step() this lane runs.
 /datum/om/behaviour/world/feature/proc/subsystem()
@@ -65,9 +64,6 @@
 /datum/om/behaviour/world/feature/tick(datum/E, dt)
 	var/datum/controller/subsystem/S = subsystem()
 	if(!S || S.lane_resuming) // a yielded step owns the next tick's deadline
-		return
-	if(async)
-		INVOKE_ASYNC(S, TYPE_PROC_REF(/datum/controller/subsystem, lane_step), FALSE)
 		return
 	if(!S.run_lane_step())
 		om_deadline(E, world.tick_lag, src)
@@ -94,7 +90,6 @@
 	name = "feature: lobby monitor"
 	every = 2 SECONDS
 	runlevels = 0
-	async = TRUE
 
 /datum/om/behaviour/world/feature/lobby_monitor/subsystem()
 	return SSlobby_monitor
@@ -113,7 +108,6 @@
 	name = "feature: vote"
 	every = 1 SECOND
 	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-	async = TRUE
 
 /datum/om/behaviour/world/feature/vote/subsystem()
 	return SSvote
@@ -132,7 +126,6 @@
 /datum/om/behaviour/world/feature/research
 	name = "feature: research"
 	every = 1 SECOND
-	async = TRUE
 
 /datum/om/behaviour/world/feature/research/subsystem()
 	return SSresearch
@@ -141,7 +134,6 @@
 /datum/om/behaviour/world/feature/supply
 	name = "feature: supply"
 	every = 20 SECONDS
-	async = TRUE
 
 /datum/om/behaviour/world/feature/supply/subsystem()
 	return SSsupply
@@ -169,7 +161,6 @@
 /datum/om/behaviour/world/feature/expedition
 	name = "feature: expedition"
 	every = 2 SECONDS
-	async = TRUE
 
 /datum/om/behaviour/world/feature/expedition/subsystem()
 	return SSexpedition

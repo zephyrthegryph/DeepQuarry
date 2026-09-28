@@ -13,7 +13,7 @@ GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
 	lane = /datum/om/behaviour/world/turf_cascade
 	on_demand = TRUE
 
-	VAR_PRIVATE/last_group_time = 0
+	VAR_PRIVATE/next_group_time = 0 // cooldown: the next expansion
 	VAR_PRIVATE/next_group_delay = DEFAULT_CONVERSION_DELAY
 
 	VAR_PRIVATE/list/currentrun = list()
@@ -32,12 +32,12 @@ GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
 
 /datum/world_service/turf_cascade/service_step(resumed)
 	if(!resumed)
-		if(world.time < (last_group_time + next_group_delay)) // Wait for next expansion
+		if(!COOLDOWN_FINISHED(src, next_group_time)) // Wait for next expansion
 			return TRUE
 		if(!turf_replace_type || (!length(remaining_turf) && !length(currentrun)))
 			stop_cascade()
 			return TRUE
-		last_group_time = world.time
+		COOLDOWN_START(src, next_group_time, next_group_delay)
 
 		if(!length(currentrun) && length(remaining_turf) && turf_iterations <= 0)
 			// Create a random list of tiles to expand with instead of doing it in order

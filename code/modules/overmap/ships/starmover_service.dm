@@ -9,10 +9,10 @@ GLOBAL_DATUM_INIT(starmover_service, /datum/world_service/starmover, new)
 	name = "Shuttle Star Movement"
 	lane = /datum/om/behaviour/world/starmover
 	on_demand = TRUE
-	var/list/zqueue = list()
+	var/list/zqueue = list() // ALLOW(instance_list): d: world service singleton
 	var/list/current_movement = null
 	//list used to track which zlevels are being 'moved' by the proc below
-	var/list/moving_levels = list()
+	var/list/moving_levels = list() // ALLOW(instance_list): d: world service singleton
 	var/list/currentrun = null
 	var/current_direction = 0
 

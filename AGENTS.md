@@ -428,6 +428,14 @@ accident or assume they work:
   Per-object work is periodic: throws on `PERIODIC_THROWING` (every tick), reflectors on
   `PERIODIC_REFLECTORS` (machine clock, started when they catch a beam), loot panels on
   `PERIODIC_LOOT_ICONS`. Songs are `REGISTRY_SONGS`; running events are `REGISTRY_ACTIVE_EVENTS`.
+  **Fold wave F4** removed `SSsun`, `SSsolars`, `SSnightshift`, `SSplanets`, `SSskybox`,
+  `SSstarmover`, `SSturf_cascade`, `SSexplosions`, `SSradio`, `SSpoints_of_interest`,
+  `SSinactivity`, `SSantag_job`, `SStransfer`, `SSproperties`. They are `GLOB.<x>_service`
+  (`GLOB.sun` is the sun; `skybox_service()` is lazy). An **on-demand** service (`on_demand`,
+  `has_work()`, `demand()`) parks its lane while idle: POIs, star movement, turf cascade,
+  explosions, planet lighting. The feature subsystems (vote, supply, research, emergency shuttle, expedition, …) keep
+  their `SSx` names but run on feature lanes (`code/datums/om/feature_lanes.dm`, `lane_step()`).
+  `tools/ci/subsystem_fire_lint.py` (K4) allows `fire()` only on the core allowlist.
 - **Mob Life runs on object-model pipelines.** Read `doc/rewrite/life_on_om.md` and
   `doc/rewrite/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
   (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed
