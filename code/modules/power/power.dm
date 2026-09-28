@@ -145,6 +145,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /// updates `power_region` if it changed. A machine alone on its own singleton
 /// region (no cable reached it) reads as unconnected, as before.
 /obj/machinery/power/proc/power_refresh_network()
+	// A detached test grid (power_test_join(), negative ids) has no Rust region: process_power()'s
+	// per-step poll would otherwise rebind the machine to its lone Rust node (region 0) and pull it
+	// off the grid mid-test, so a later power_warn()/brownout on that grid wakes nothing.
+	if(power_region < 0)
+		return
 	var/id = vg_entity ? vg_power_region_of(vg_entity) : 0
 	var/connected = id && length(vg_power_region_members(id)) > 1
 	power_bind(connected ? id : 0)

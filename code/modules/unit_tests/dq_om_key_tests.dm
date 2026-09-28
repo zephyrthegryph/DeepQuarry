@@ -12,6 +12,9 @@
 	var/obj/machinery/power/sensor/S = allocate(/obj/machinery/power/sensor, T)
 	var/obj/machinery/computer/power_monitor/M = allocate(/obj/machinery/computer/power_monitor, T)
 	power_test_join(P, S)
+	// Regression (b11/b12 flake): a power step inside the window must not pull S off the test grid.
+	GLOB.machine_service.process_power()
+	TEST_ASSERT_EQUAL(S.power_region, P, "a power step kept the sensor on its detached test grid")
 	M.power_monitor.grid_sensors = null
 	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
 	MACHINE_WAKE(M)

@@ -116,6 +116,8 @@
 		"dq_tool_weld", "dq_tool_dig", // dq_tool_tests.dm
 		// Construction (dq_construction_tests.dm and its per-domain files). Graph edges are checked there, not here.
 		"wall_burn_rot", "wall_light_thermite", "wall_repair", "mecha_fix_temperature", "mecha_weld_repair", "mecha_weld_repair_disarm", "mecha_weld_repair_grab", "mecha_weld_strike", "window_repair",
+		"robot_pry_help", "robot_pry_disarm", "robot_pry_grab", "robot_weld_repair_help", "robot_weld_repair_disarm", "robot_weld_repair_grab", // dq_interaction_robot_tool_stances below
+		"mecha_seal_tank", "mecha_fix_wiring", "mecha_extinguish", "mecha_paste_repair", "mecha_recalibrate", // dq_mech_body_tests.dm mech_repair_interactions
 		"catwalk_slice_help", "catwalk_slice_disarm", "catwalk_slice_grab", "catwalk_slice_harm", // code/game/objects/structures/catwalk.dm
 		"ai_slipper_toggle_lock", // code/game/machinery/ai_slipper.dm: no dedicated test or snapshot yet
 		"shadekin_phase_shift", "shadekin_dark_respite", "shadekin_regenerate_other", "shadekin_create_shade", // dq_ability_tests.dm
@@ -133,8 +135,13 @@
 		"aiupload_access_internals", "card_eject_id", "cash_register_open_box_verb", "centrifuge_isolate_reagents", "centrifuge_isolate_reagents_bottle", "centrifuge_isolate_reagents_canisters", "cryopod_eject", "cryopod_enter", "disposal_force_eject", "distillery_toggle_mixing", "distillery_toggle_power", "drill_unload", "faxmachine_remove_card", "faxmachine_request_roles", "firework_launcher_eject", "food_replicator_eject_beaker", "fuel_compressor_eject_sheet", "guestpass_eject_id", "hydroponics_remove_label", "hydroponics_set_light", "hydroponics_toggle_lid", "implantchair_get_out", "implantchair_move_inside", "material_furnace_eject_contents", "mixer_set_rotation", "nuclearbomb_make_deployable", "papershredder_empty", "particle_smasher_eject_contents", "pod_syndicate_open_ui", "processor_eject", "reagent_filter_flip", "reagent_filter_set_filter", "reagent_furnace_flip", "reagent_furnace_set_filter", "reagent_refinery_set_transfer_amount", "recharge_station_eject", "recharge_station_enter", "secure_data_eject_id", "security_station_map", "suit_cycler_leave", "suit_storage_get_out", "suit_storage_move_inside", "teleporter_computer_set_id", "transportpod_eject", "transportpod_enter", "vending_check_logs", "vr_sleeper_alien_eject", "vr_sleeper_climb_in", "vr_sleeper_eject", "washing_machine_climb_out", "washing_machine_start_washing", "wheel_of_fortune_setinterval",
 	)
 
+/// Type-local entries: stance-declared interactions run from the one proc that names them
+/// (airlock.dm, windowdoor.dm, robot.dm keep the defines file-local).
+/datum/unit_test/dq_interaction_definitions/var/static/list/type_local_entries = list("airlock_ctrl", "airlock_weld", "airlock_pry", "windoor_weld", "robot_crowbar", "robot_welder")
+
 /datum/unit_test/dq_interaction_definitions/Run()
 	var/list/seen = list()
+	var/list/untested = list()
 	for(var/path in GLOB.interactions_by_type)
 		var/datum/interaction/interaction = GLOB.interactions_by_type[path]
 		TEST_ASSERT(istext(interaction.id) && length(interaction.id), "[path] has an id")
@@ -144,15 +151,18 @@
 		TEST_ASSERT(interaction.effect, "[interaction.id] has an effect")
 		TEST_ASSERT(isnull(interaction.category) || (interaction.category in INTERACTION_CATEGORIES) || (interaction.category in ABILITY_CATEGORIES), "[interaction.id] has a known category")
 		TEST_ASSERT(isnull(interaction.default_action) || (interaction.default_action in list(INPUT_ACTION_USE, INPUT_ACTION_ALTERNATE)), "[interaction.id] answers Use, Alternate or nothing")
-		TEST_ASSERT(isnull(interaction.entry) || (interaction.entry in list(INTERACTION_ENTRY_ITEM, INTERACTION_ENTRY_HAND, INTERACTION_ENTRY_SELF, INTERACTION_ENTRY_ALT, INTERACTION_ENTRY_DRAG)), "[interaction.id] has a known entry")
+		TEST_ASSERT(isnull(interaction.entry) || (interaction.entry in list(INTERACTION_ENTRY_ITEM, INTERACTION_ENTRY_HAND, INTERACTION_ENTRY_SELF, INTERACTION_ENTRY_ALT, INTERACTION_ENTRY_DRAG)) || (interaction.entry in type_local_entries), "[interaction.id] has a known entry")
 		var/datum/predicate/selector = interaction.selector()
 		if(selector)
 			TEST_ASSERT(!selector.errors, "[interaction.id] selector compiles: [jointext(selector.errors || list(), "; ")]")
 		var/datum/predicate/pred = interaction.predicate()
 		if(pred)
 			TEST_ASSERT(!pred.errors, "[interaction.id] requirements compile: [jointext(pred.errors || list(), "; ")]")
-		TEST_ASSERT((interaction.id in tested_ids) || (interaction.entry && dq_snapshot_covered_ids()[dq_snapshot_id(interaction.id)]) || findtext(interaction.id, "dq_entry_") == 1, "[interaction.id] has a test (add it to tested_ids with one, or record a converted domain's snapshot)")
+		if(!((interaction.id in tested_ids) || (interaction.entry && dq_snapshot_covered_ids()[dq_snapshot_id(interaction.id)]) || findtext(interaction.id, "dq_entry_") == 1))
+			untested += interaction.id
 		TEST_ASSERT_EQUAL(INTERACTION_BY_ID(interaction.id), interaction, "[interaction.id] is found by id")
+	// Listed together so one run names every uncovered id.
+	TEST_ASSERT(!length(untested), "[length(untested)] interaction(s) have no test (add each to tested_ids with one, or record a converted domain's snapshot): [jointext(untested, ", ")]")
 
 /// Open and close the maintenance panel.
 /datum/unit_test/dq_interaction_machine_panel
@@ -490,3 +500,34 @@
 	if(far)
 		H.forceMove(far)
 		TEST_ASSERT(findtext(dq_resolution_text(interactions_for(H, helm, null)), "ship_emote_beyond:too far away"), "past seven tiles Emote Beyond is blocked as too far away")
+
+/// i6b: a robot's crowbar and welder answer per stance outside combat mode, and strike in it.
+/datum/unit_test/dq_interaction_robot_tool_stances
+
+/datum/unit_test/dq_interaction_robot_tool_stances/Run()
+	var/turf/T = test_floor()
+	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T)
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/tool/crowbar/crowbar = dq_fast_tool(/obj/item/tool/crowbar, T)
+	var/obj/item/weldingtool/welder = dq_fueled_welder(T)
+	R.locked = FALSE
+	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
+		H.set_use_stance(stance)
+		H.put_in_active_hand(crowbar)
+		R.opened = FALSE
+		TEST_ASSERT(R.crowbar_act(H, crowbar) & ITEM_INTERACT_SUCCESS, "stance [stance]: the crowbar works the chassis")
+		TEST_ASSERT(R.opened, "stance [stance]: the crowbar opens the cover")
+		H.drop_from_inventory(crowbar)
+		H.put_in_active_hand(welder)
+		R.injure(INJURY_BLUNT, 20)
+		var/before = R.injury_load(INJURY_CATEGORY_PHYSICAL)
+		TEST_ASSERT(before > 0, "stance [stance]: the robot is dented")
+		TEST_ASSERT(R.welder_act(H, welder) & ITEM_INTERACT_SUCCESS, "stance [stance]: the welder works the chassis")
+		TEST_ASSERT(R.injury_load(INJURY_CATEGORY_PHYSICAL) < before, "stance [stance]: the weld repairs dents")
+		H.drop_from_inventory(welder)
+	R.opened = FALSE
+	H.set_use_stance(I_HURT)
+	H.put_in_active_hand(crowbar)
+	TEST_ASSERT(R.crowbar_act(H, crowbar) & ITEM_INTERACT_SKIP_TO_ATTACK, "combat mode: the crowbar goes on to strike")
+	TEST_ASSERT(!R.opened, "combat mode: the cover stays shut")
+	H.set_use_stance(I_HELP)

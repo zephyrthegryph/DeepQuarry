@@ -110,7 +110,7 @@
 	plan.afflict(mech, MECHA_INT_TANK_BREACH)
 	TEST_ASSERT_EQUAL(picked(H, mech, welder), INTERACTION(/datum/interaction/mecha_treat/seal_tank), "a welder seals a breached tank first")
 	plan.cure(mech, MECHA_INT_TANK_BREACH)
-	TEST_ASSERT_EQUAL(picked(H, mech, welder), INTERACTION(/datum/interaction/mecha_weld_repair), "otherwise a welder patches integrity")
+	TEST_ASSERT_EQUAL(picked(H, mech, welder), INTERACTION(/datum/interaction/mecha_weld_repair/help), "otherwise a welder patches integrity")
 
 	var/obj/item/extinguisher/extinguisher = allocate(/obj/item/extinguisher, T)
 	plan.afflict(mech, MECHA_INT_FIRE)

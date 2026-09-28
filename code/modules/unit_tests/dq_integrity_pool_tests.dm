@@ -73,7 +73,8 @@ DECLARE_REF(/datum/unit_test/dq_integrity_pool, "before_contents", WEAK_LIST, nu
 
 	W.take_damage(W.get_integrity() + 10)
 	TEST_ASSERT(!istype(T, /turf/simulated/wall), "a wall at zero integrity is dismantled ([T.type])")
-	TEST_ASSERT(!T.uses_integrity, "the floor left behind has no integrity")
+	// D-turf: floors keep integrity now; the overkill must not carry onto the floor left behind.
+	TEST_ASSERT(!T.uses_integrity || T.get_integrity() == T.max_integrity, "the floor left behind is undamaged ([T.uses_integrity ? T.get_integrity() : "n/a"])")
 
 	clear_debris(T)
 	T.ChangeTurf(old_type)

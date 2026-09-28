@@ -348,7 +348,10 @@
 	mech.tool_interaction(H, welder)
 	TEST_ASSERT_EQUAL(mech.get_integrity(), min(mech.max_integrity, before + 10), "a weld patches 10")
 	H.set_combat_mode(TRUE)
-	TEST_ASSERT(mech.tool_interaction(H, welder) & ITEM_INTERACT_SKIP_TO_ATTACK, "on harm intent the welder attacks")
+	// i6b: combat mode answers with the declared weld strike (mecha_weld_strike), not a repair.
+	var/before_strike = mech.get_integrity()
+	TEST_ASSERT(mech.tool_interaction(H, welder) & ITEM_INTERACT_SUCCESS, "on harm intent the welder strikes")
+	TEST_ASSERT(mech.get_integrity() <= before_strike, "a strike does not weld repairs ([mech.get_integrity()] vs [before_strike])")
 	H.set_combat_mode(FALSE)
 	for(var/obj/effect/effect/sparks/S in range(1, T))
 		own(S)
