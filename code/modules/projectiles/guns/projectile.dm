@@ -169,7 +169,7 @@
 	if(special_weapon_handling && !callback)
 		return FALSE
 	if(manual_chamber) // Gun Rework
-		om_do_after(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user)) // Gun Rework
+		om_do_after(user, 0.4 SECONDS, src, src, PROC_REF(bolt_handle), list(user, interaction?.stance)) // Gun Rework
 	else if(length(firemodes) > 1) // Gun Rework
 		switch_firemodes(user)
 	else
@@ -352,7 +352,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(manual_chamber && auto_loading_type)
 		bolt_toggle()
 
-/obj/item/gun/projectile/proc/bolt_handle(mob/user)
+/// Works the bolt; `stance` I_HURT slaps the release (flavour).
+/obj/item/gun/projectile/proc/bolt_handle(mob/user, stance)
 	var/previous_chambered = chambered
 	var/result = bolt_toggle(TRUE)
 	update_icon()
@@ -390,7 +391,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			playsound(src, sound_chamber, 50, 0)
 			if(unlocked)
 				if(bolt_release)
-					if(IS_HARMING(user) && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
+					if(stance == I_HURT && CHECK_BITFIELD(auto_loading_type,LOCK_SLAPPABLE))
 						user.visible_message(span_notice("[user] slaps the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"), \
 						span_notice("You slap the [bolt_release], causing \the [bolt_name] to slide forward[casing_chambered]!"))
 					else

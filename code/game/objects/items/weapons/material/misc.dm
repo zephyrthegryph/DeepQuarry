@@ -68,17 +68,24 @@
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("mushed", "splatted", "splooshed", "splushed") // Words that totally exist.
 
-DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
+	INTERACT_USE_AS(I_HELP, "Compact", PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_DISARM, "Compact", PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_GRAB, "Compact", PROC_REF(interaction_self)), \
+	INTERACT_USE_AS(I_HURT, "Smash", PROC_REF(interaction_smash)), \
+)
 
-/// Old attack_self.
+/// Old attack_self: compacting it into a harder snowball.
 /obj/item/material/snow/snowball/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user))
-		to_chat(user, span_notice("You smash the snowball in your hand."))
-		var/atom/S = replace_with(src, /obj/item/stack/material/snow)
-		user.put_in_hands(S)
-	else
-		to_chat(user, span_notice("You start compacting the snowball."))
-		om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	to_chat(user, span_notice("You start compacting the snowball."))
+	om_do_after(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
+	return TRUE
+
+/// Old attack_self's harm branch: smashing it back into snow.
+/obj/item/material/snow/snowball/proc/interaction_smash(mob/user, obj/item/held, datum/interaction/interaction)
+	to_chat(user, span_notice("You smash the snowball in your hand."))
+	var/atom/S = replace_with(src, /obj/item/stack/material/snow)
+	user.put_in_hands(S)
 	return TRUE
 
 /obj/item/material/snow/snowball/proc/attack_self_timed_done(mob/user)
@@ -94,10 +101,6 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, INTERACT_USE(null, PROC_R
 /obj/item/material/whip
 	name = "whip"
 	desc = "A tool used to discipline animals, or look cool. Mostly the latter."
-	description_info = "Help - Standard attack, no modifiers.<br>\
-	Disarm - Disarming strike. Attempts to disarm the target at range, similar to an unarmed disarm. Additionally, will force the target (if possible) to move away from you.<br>\
-	Grab - Grappling strike. Attempts to pull the target toward you. This can also move objects.<br>\
-	Harm - A standard strike with a small chance to disarm."
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "whip"
 	item_state = "chain"
@@ -136,8 +139,8 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, INTERACT_USE(null, PROC_R
 				user.visible_message(span_warning("\The [AM] is snatched by \the [src]!"))
 				AM.throw_at(user, reach, 0.1, user)
 
-/obj/item/material/whip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	switch(user.use_stance())
+/obj/item/material/whip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	switch(stance)
 		if(I_HURT)
 			if(prob(10) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
 				to_chat(target, span_warning("\The [src] rips at your hands!"))

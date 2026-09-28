@@ -1523,7 +1523,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/nikki, INTERACT_ITEM(null, PROC_REF(nikki_rig_
 	stored_item = null
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
-EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF("Squeeze", PROC_REF(mofuorb_squeeze_self)))
+EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(I_HELP, "Hug", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_DISARM, "Poke", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_GRAB, "Strangle", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_HURT, "Punch", PROC_REF(mofuorb_squeeze_self)))
 
 /// Old attack_self: search it, or hug, punch, strangle or poke it.
 /obj/item/toy/plushie/fluff/seona_mofuorb/proc/mofuorb_squeeze_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1534,13 +1534,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF("Sq
 
 	if(world.time - last_message <= 5 SECONDS)
 		return
-	if(IS_HELPING(user))
+	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
 		icon_state = "pandorba"
-	else if (IS_HARMING(user))
+	else if (interaction.stance == I_HURT)
 		user.visible_message(span_warning(span_bold("\The [user]") + " punches [src]!"),span_warning("You punch [src]!"))
 		icon_state = "pandorba_h"
-	else if (IS_GRABBING(user))
+	else if (interaction.stance == I_GRAB)
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to strangle [src]!"),span_warning("You attempt to strangle [src]!"))
 		icon_state = "pandorba_g"
 	else

@@ -327,7 +327,7 @@
 /obj/item/paper/proc/interaction_paper_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(occult)
 		return
-	if(IS_HARMING(user))
+	if(interaction.stance == I_HURT)
 		if(icon_state == "scrap")
 			user.show_message(span_warning("\The [src] is already crumpled."))
 			return
@@ -553,6 +553,7 @@
 	return ..()
 
 DECLARE_INTERACTIONS(/obj/item/paper, \
+	INTERACT_USE_AS(I_HURT, "Crumple", PROC_REF(interaction_paper_self)), \
 	INTERACT_USE("Read", PROC_REF(interaction_paper_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \

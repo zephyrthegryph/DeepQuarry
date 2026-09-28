@@ -8,7 +8,6 @@ MATERIAL_MIX(/obj/item/robotanalyzer, list(MAT_STEEL = 500, MAT_GLASS = 200))
 	icon_state = "robotanalyzer"
 	item_state = "analyzer"
 	desc = "A hand-held scanner able to diagnose robotic injuries."
-	description_info = "Alt-click to toggle between robot analysis and robot module scan mode."
 	slot_flags = SLOT_BELT
 	throwforce = 3
 	w_class = ITEMSIZE_SMALL

@@ -85,9 +85,9 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	update_icon()
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
 
-/obj/item/geiger/afterattack(atom/interacting_with, mob/user, proximity_flag, click_parameters)
+/obj/item/geiger/afterattack(atom/interacting_with, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	. = ..()
-	if(SHOULD_SKIP_INTERACTION(interacting_with, src, user))
+	if(SHOULD_SKIP_INTERACTION(interacting_with, src, stance))
 		return NONE
 	return attack_at_range(interacting_with, user, proximity_flag, click_parameters)
 

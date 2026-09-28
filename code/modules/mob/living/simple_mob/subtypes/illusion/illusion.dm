@@ -57,7 +57,11 @@
 
 	return PROJECTILE_FORCE_MISS
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, INTERACT_HAND_UNGATED(null, PROC_REF(illusion_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Hug", PROC_REF(illusion_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Shove", PROC_REF(illusion_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(illusion_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Hit", PROC_REF(illusion_interaction_hand)))
 
 /// Old attack_hand: unrealistic illusions can't be touched; realistic ones fake the reactions.
 /mob/living/simple_mob/illusion/proc/illusion_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
@@ -67,7 +71,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, INTERACT_HAND_UNGATED(null,
 		visible_message(span_warning("\The [M]'s hand goes through \the [src]!"))
 		return
 	else
-		switch(M.use_stance())
+		switch(interaction.stance)
 			if(I_HELP)
 				M.visible_message(
 					span_notice("\The [M] hugs [src] to make [p_them()] feel better!"), \

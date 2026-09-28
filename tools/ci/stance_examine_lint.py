@@ -61,7 +61,8 @@ def main():
                         for pattern, why in BANNED:
                             if pattern.search(line):
                                 errors.append(f"{rel}:{number}: {why}")
-                        if INPUT_STANCE.search(line) and not rel.startswith(INPUT_STANCE_READERS):
+                        code = line.split("//", 1)[0]
+                        if INPUT_STANCE.search(code) and not rel.startswith(INPUT_STANCE_READERS):
                             errors.append(f"{rel}:{number}: input_stance() outside the input layer; take the stance from the interaction or a stance argument")
     for error in errors:
         print(error)

@@ -3,11 +3,11 @@
 /mob/living/carbon/alien/attack_ui(slot_id)
 	return
 
-/mob/living/carbon/alien/unarmed_touch(mob/living/carbon/M as mob)
+/mob/living/carbon/alien/unarmed_touch(mob/living/M, stance = I_HELP)
 
 	..()
 
-	switch(M.use_stance())
+	switch(stance)
 
 		if (I_HELP)
 			help_shake_act(M)

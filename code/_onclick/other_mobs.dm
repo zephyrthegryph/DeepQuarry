@@ -48,9 +48,6 @@
 		return TRUE
 	return FALSE
 
-/mob/living/carbon/human/RestrainedClickOn(atom/A)
-	return
-
 /mob/proc/has_telegrip()
 	return has_mutation(TK)
 
@@ -84,14 +81,14 @@
 	else if(spitting) //Only used by xenos right now, can be expanded.
 		Spit(A)
 
-/mob/living/RestrainedClickOn(atom/A)
+/mob/living/RestrainedClickOn(atom/A, stance = I_HURT)
 	return
 
 /*
 	Aliens
 */
 
-/mob/living/carbon/alien/RestrainedClickOn(atom/A)
+/mob/living/carbon/alien/RestrainedClickOn(atom/A, stance = I_HURT)
 	return
 
 /mob/living/carbon/alien/UnarmedAttack(atom/A, proximity, stance = I_HURT)

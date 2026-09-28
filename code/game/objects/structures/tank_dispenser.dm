@@ -40,6 +40,7 @@
 /obj/structure/dispenser/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/dispenser_open_ui,
+		/datum/interaction/entry_item/dispenser_item/harm,
 		/datum/interaction/entry_item/dispenser_item,
 	)
 	..()
@@ -71,6 +72,11 @@
 	name = "Use"
 	effect = /obj/structure/dispenser/proc/interaction_item
 
+/// Combat mode: tanks still go in; anything else is refused without a word.
+/datum/interaction/entry_item/dispenser_item/harm
+	id = "dispenser_item_harm"
+	stance = I_HURT
+
 /obj/structure/dispenser/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	var/full
 	if(istype(I, /obj/item/tank/oxygen) || istype(I, /obj/item/tank/air) || istype(I, /obj/item/tank/anesthetic))
@@ -83,7 +89,7 @@
 			phorontanks++
 		else
 			full = TRUE
-	else if(!IS_HARMING(user))
+	else if(interaction.stance != I_HURT)
 		to_chat(user, span_notice("[I] does not fit into [src]."))
 		return TRUE
 	else

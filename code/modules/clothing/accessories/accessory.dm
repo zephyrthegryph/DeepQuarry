@@ -172,6 +172,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	desc = "The final touch that holds it all together."
 	icon_state = "maidcorset"
 
+/obj/item/clothing/accessory/maid_arms/get_mechanics_info(list/additional_information)
+	return ..(list("Wearable as gloves, or attachable to uniforms. May visually conflict with actual gloves when attached to uniforms.") + additional_information)
+
 /obj/item/clothing/accessory/maid_arms
 	name = "maid arm covers"
 	desc = "Cylindrical looking tubes that go over your arms, weird."
@@ -179,7 +182,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	body_parts_covered = ARMS
 	heat_protection = ARMS
 	cold_protection = ARMS
-	description_info = "Wearable as gloves, or attachable to uniforms. May visually conflict with actual gloves when attached to uniforms. Caveat emptor."
 	icon_state = "maid_arms"
 
 /obj/item/clothing/accessory/stethoscope
@@ -188,15 +190,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory, INTERACT_HAND_UNGATED(null, PR
 	icon_state = "stethoscope"
 	slot = ACCESSORY_SLOT_TIE
 
-/obj/item/clothing/accessory/stethoscope/do_surgery(mob/living/carbon/human/M, mob/living/user)
-	if(!IS_HELPING(user)) //in case it is ever used as a surgery tool
+/obj/item/clothing/accessory/stethoscope/do_surgery(mob/living/carbon/human/M, mob/living/user, stance = I_HURT)
+	if(stance != I_HELP) //in case it is ever used as a surgery tool
 		return ..()
-	attack(M, user) //default surgery behaviour is just to scan as usual
+	attack(M, user, user.zone_sel?.selecting || BP_TORSO, 1, stance) //default surgery behaviour is just to scan as usual
 	return 1
 
-/obj/item/clothing/accessory/stethoscope/attack(mob/living/carbon/human/M, mob/living/user)
+/obj/item/clothing/accessory/stethoscope/attack(mob/living/carbon/human/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M) && isliving(user))
-		if(IS_HELPING(user))
+		if(stance == I_HELP)
 			var/body_part = parse_zone(user.zone_sel.selecting)
 
 			var/message_holder	//Holds pervy message

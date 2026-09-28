@@ -40,7 +40,7 @@
 	speed = 8
 	crawl_destroy = TRUE
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/bomb_mauler/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,2)
 	switch(attackcycle)
 		if(1)

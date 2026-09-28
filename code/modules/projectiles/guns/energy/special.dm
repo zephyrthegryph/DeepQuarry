@@ -250,11 +250,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		list(mode_name="ten shot burst", burst = 10, burst_accuracy = list(75,75,75,75,75,75,75,75,75,75), dispersion = list(2,2,2,2,2,2,2,2,2,2)),
 		)
 
+/obj/item/gun/energy/maghowitzer/get_mechanics_info(list/additional_information)
+	return ..(list("This weapon requires a wind-up period: aiming creates a beam to the target turf, and it fires at that location when the timer completes.") + additional_information)
+
 /obj/item/gun/energy/maghowitzer
-	name = "portable MHD howitzer"
+	name ="portable MHD howitzer"
 	desc = "A massive weapon designed to destroy fortifications with a stream of molten tungsten."
 	description_fluff = "A weapon designed by joint cooperation of NanoTrasen, Hephaestus, and SCG scientists. Everything else is red tape and black highlighters."
-	description_info = "This weapon requires a wind-up period before being able to fire. Clicking on a target will create a beam between you and its turf, starting the timer. Upon completion, it will fire at the designated location."
 	icon_state = "mhdhowitzer"
 	item_state = "mhdhowitzer"
 	wielded_item_state = "mhdhowitzer-wielded"
@@ -409,7 +411,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	charge_cost = 2400 //yes, this bad boy empties an entire weapon cell in one shot. What of it?
 	var/spinning_up = FALSE
 
-/obj/item/gun/energy/bfgtaser/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
+/obj/item/gun/energy/bfgtaser/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, stance = I_HURT)
 	if(spun)
 		return ..()
 	if(spinning_up)
@@ -423,7 +425,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	update_icon()
 	user.visible_message(span_notice("[user] starts charging the [src]!"), \
 						span_notice("You start charging the [src]!"))
-	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex)
+	om_task_start(/datum/om/task/timed/bfgtaser_spun_up, user, src, receiver = src, target_arg = target, clickparams = clickparams, pointblank = pointblank, reflex = reflex, stance = stance)
 
 /obj/item/gun/energy/bfgtaser/var/spun = FALSE
 
@@ -438,6 +440,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	var/clickparams
 	var/pointblank
 	var/reflex
+	var/stance
 
 /// Charged: Fire() again, past the spin-up.
 /obj/item/gun/energy/bfgtaser/proc/spun_up(datum/om/task/timed/bfgtaser_spun_up/task)
@@ -448,7 +451,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 	var/reflex = task.reflex
 	spinning_up = FALSE
 	spun = TRUE
-	Fire(target, user, clickparams, pointblank, reflex)
+	Fire(target, user, clickparams, pointblank, reflex, task.stance)
 	spun = FALSE
 
 /obj/item/projectile/beam/stun/weak/BFG

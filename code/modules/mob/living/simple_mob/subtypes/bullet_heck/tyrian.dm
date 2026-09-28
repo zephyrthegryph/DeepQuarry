@@ -62,11 +62,11 @@
 	projectiletype = /obj/item/projectile/bullet/astral_blade
 	specialattackprojectile = /obj/item/projectile/bullet/astral_blade
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/sec_core/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/sec_core/do_special_attack(atom/A, stance)
 	switch(attackcycle)
 		if(1)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 1.5 SECONDS, PROC_REF(bomb_lines), A, 2)
 				if(I_GRAB)
@@ -75,7 +75,7 @@
 					om_after(src, 0.75 SECONDS, PROC_REF(bomb_chaos), A, 2)
 		if(2)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 3, /datum/body_effect/mmo_drop/blade_boss_long)
 				if(I_GRAB)
@@ -84,7 +84,7 @@
 					om_after(src, 0.75 SECONDS, PROC_REF(bomb_lines), A, 3)
 		if(3)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 0.5 SECONDS, PROC_REF(cutoff), A, 4, 5, 10)
 				if(I_GRAB)
@@ -93,7 +93,7 @@
 					om_after(src, 1 SECOND, PROC_REF(summon_puddles), A, 4, /datum/body_effect/mmo_drop/blade_boss_long)
 		if(4)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 1.5 SECONDS, PROC_REF(summon_puddles), A, 1, /datum/body_effect/mmo_drop/blade_boss_short)
 				if(I_GRAB)
@@ -111,11 +111,11 @@
 	icon_living = "engi_core"
 	specialattackprojectile = /obj/item/projectile/energy/agate_lighting
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/engi_core/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/engi_core/do_special_attack(atom/A, stance)
 	switch(attackcycle)
 		if(1)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 0.5 SECONDS, PROC_REF(cutoff), A, 2, 5, 10)
 				if(I_GRAB)
@@ -124,7 +124,7 @@
 					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 6, 2, 12)
 		if(2)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 0.5 SECONDS, PROC_REF(cutoff), A, 3, 5, 10)
 				if(I_GRAB)
@@ -133,7 +133,7 @@
 					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 6, 3, 9)
 		if(3)
 			attackcycle = 0
-			switch(use_stance())
+			switch(stance)
 				if(I_HURT)
 					om_after(src, 0.5 SECONDS, PROC_REF(cutoff_ulti), A, 1, 5, 10)
 				if(I_GRAB)
@@ -148,7 +148,7 @@
 	icon_living = "final_core"
 	endurance = 4200
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/ark_core/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ai_cores/ark_core/do_special_attack(atom/A, stance)
 	switch(attackcycle)
 		if(1)
 			specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/tyrjavelin
@@ -228,7 +228,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ex
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
 	return FALSE
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/slime/do_special_attack(atom/A, stance)
 	for(var/i =1 to 4)
 		new /obj/effect/spider/spiderling/antling/created(src.loc)
 
@@ -260,7 +260,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ex
 			visible_message(span_boldwarning(span_orange("The shield reactivates!!.")))
 			icon_state = "UPshield_boss"
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/barrier/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/expirments/barrier/do_special_attack(atom/A, stance)
 	rng_cycle = rand(1,4)
 	switch(attackcycle)
 		if(1)
@@ -320,5 +320,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha/eclipse/tyrbosses/ex
 
 	return (..(P))
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/tankyboss/crystal_boss/do_special_attack(atom/A, stance)
 	om_after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), A, 4)

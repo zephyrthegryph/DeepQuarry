@@ -38,9 +38,9 @@
 		L.taunt(src, TRUE)
 		L.apply_body_effect(/datum/body_effect/hivebot_weaken, 3 SECONDS)
 
-/mob/living/simple_mob/mechanical/hivebot/precusor/chrono/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/hivebot/precusor/chrono/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Side gun
 			electric_defense(A)
 		if(I_HURT) // Rockets

@@ -1,16 +1,16 @@
 /*
 	Animals
 */
-/mob/living/simple_mob/UnarmedAttack(atom/A, proximity)
+/mob/living/simple_mob/UnarmedAttack(atom/A, proximity, stance = I_HURT)
 	if(!(. = ..()))
 		return
 
 
-	if(has_hands && istype(A,/obj) && !IS_HARMING(src))
+	if(has_hands && istype(A,/obj) && stance != I_HURT)
 		var/obj/O = A
 		return O.attack_hand(src)
 
-	switch(use_stance())
+	switch(stance)
 		if(I_HELP)
 
 			if(isliving(A))
@@ -25,14 +25,14 @@
 				t.tunnel_interact(src)
 
 		if(I_HURT)
-			if(can_special_attack(A) && special_attack_target(A))
+			if(can_special_attack(A) && special_attack_target(A, stance))
 				return
 
 			else if(melee_damage_upper == 0 && isliving(A))
 				automatic_custom_emote(VISIBLE_MESSAGE,"[pick(friendly)] \the [A]!", check_stat = TRUE)
 
 			else
-				attack_target(A)
+				attack_target(A, stance)
 
 		if(I_GRAB)
 			if(has_hands)
@@ -40,17 +40,17 @@
 			else if(isliving(A) && src.client && !vore_attack_override)
 				animal_nom(A)
 			else
-				attack_target(A)
+				attack_target(A, stance)
 
 		if(I_DISARM)
 			if(has_hands)
 				A.attack_hand(src)
 			else
-				attack_target(A)
+				attack_target(A, stance)
 
-/mob/living/simple_mob/RangedAttack(atom/A)
+/mob/living/simple_mob/RangedAttack(atom/A, params, stance = I_HURT)
 
-	if(can_special_attack(A) && special_attack_target(A))
+	if(can_special_attack(A) && special_attack_target(A, stance))
 		return
 
 	if(projectiletype)

@@ -207,7 +207,6 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 /obj/item/laserdome_flag
 	name = "Flag"
 	desc = "Steal the enemy flag and take it to your base in order to score! First team to three captures wins! Or was it five? Eh, check with the referee I guess."
-	description_info = "Simply pick up your team's flag to return it to your base after a short delay. If you're carrying the enemy flag, use it on your team's flag base to score a point!"
 	slowdown = 1 //big flag is harder to run with, encourages teamwork and lets the opposing team catch up. would be nice if this was a forced slowdown that ignores hardy.
 	icon = 'icons/obj/flags.dmi'
 	item_icons = list(
@@ -333,10 +332,12 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 			flag.forceMove(src.loc)			//place our flag neatly back on its pedestal
 	return INTERACTION_HANDLED_PASS
 
+/obj/item/laserdome_hyperball/get_mechanics_info(list/additional_information)
+	return ..(list("Dunking the ball directly into the opposing goal scores more points than throwing it in, but you must be next to the goal.") + additional_information)
+
 /obj/item/laserdome_hyperball
 	name = "\improper HYPERball"	//*always* refer to it as "the hyperball", not just "the ball". corporate insists.
 	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	description_info = "Take the ball and dunk it into the opposing team's goal to score! You can either throw it into the goal or dunk it directly; the latter is worth more points, but it's more challenging as you need to be next to the goal in order to dunk."
 	slowdown = -0.5	//carrying the ball actually speeds you up a little bit? given you need to get past enemy defense and dunk. also makes it easier to get the ball away from your base if you intercept.
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
@@ -354,7 +355,6 @@ DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(inte
 /obj/item/laserdome_hyperball_prop
 	name = "demonstration HYPERball"
 	desc = "Because regular balls aren't exciting enough, the future needs HYPERballs!"
-	description_info = "This model is for demonstration purposes only. It looks pretty heavy!"
 	slowdown = 3	//really discourage people from trying to actually use these in the game if they get them out of the display cases
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball"
@@ -407,10 +407,12 @@ EXTEND_INTERACTIONS(/obj/item/laserdome_hyperball, INTERACT_HAND_DEFAULT("Pick u
 	anchored = TRUE
 
 //Finally, the goal objects. Like the flag bases, both goals *must* be in the same map area (e.g. /area/hyperball_arena) for the scoring system to work properly. But if they are, then it's basically just spawn-and-play, no other setup needed!
+/obj/structure/hyperball_goal/get_mechanics_info(list/additional_information)
+	return ..(list("A dunk scores more than a throw. A thrown ball may miss, or be intercepted by an enemy team member.") + additional_information)
+
 /obj/structure/hyperball_goal
 	name = "HYPERball goal"
 	desc = "A dangerous-looking hole, with an energy net that stops anything but a hyperball from passing through."
-	description_info = "Dunk the hyperball here to score! Just don't get an own goal. Alternately, throw the ball in for less points. There's a chance you'll miss, or an enemy team member might get in the way, but it can be easier than getting close enough for a dunk."
 	icon = 'icons/obj/flags.dmi'
 	icon_state = "hyperball_goal"
 	anchored = TRUE

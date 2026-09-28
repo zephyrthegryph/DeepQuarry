@@ -1,11 +1,12 @@
 // -------------- Pummeler -------------
+/obj/item/gun/energy/pummeler/get_mechanics_info(list/additional_information)
+	return ..(list("This gun punts people away and has a chance of knocking them down briefly. It may also throw them over railings in the process!") + additional_information)
+
 /obj/item/gun/energy/pummeler
 	name = "hypersonic gun"
 	desc = "For when you want to get that pesky marketing guy out of your face ASAP. The PML9 'Pummeler' fires one HUGE \
 	sonic blast in the direction of fire, throwing the target away from you at high speed. Now you can REALLY \
 	turn up the bass to max."
-
-	description_info = "This gun punts people away and has a chance of knocking them down briefly. It may also throw them over railings in the process!"
 	description_fluff = ""
 	description_antag = ""
 

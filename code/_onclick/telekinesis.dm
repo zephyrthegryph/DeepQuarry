@@ -56,7 +56,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 		focus().attack_self_tk(user)
 	return TRUE
 
-/obj/item/tk_grab/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity)//TODO: go over this
+/obj/item/tk_grab/afterattack(atom/target as mob|obj|turf|area, mob/living/user as mob|obj, proximity, click_parameters, stance = I_HURT)//TODO: go over this
 	if(!target || !user)	return
 	if(!COOLDOWN_FINISHED(src, throw_cooldown))	return
 	if(!host() || host() != user)
@@ -92,7 +92,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 		var/obj/item/I = focus()
 		var/resolved = target.attackby(I, user, user:get_organ_target())
 		if(!resolved && target && I)
-			I.afterattack(target,user,1) // for splashing with beakers
+			I.afterattack(target, user, 1, click_parameters, stance) // for splashing with beakers
 	else
 		apply_focus_overlay()
 		focus().throw_at(target, 10, 1, user)

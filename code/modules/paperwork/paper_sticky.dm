@@ -1,7 +1,9 @@
+/obj/item/sticky_pad/get_mechanics_info(list/additional_information)
+	return ..(list("Sticky notes stuck to surfaces/objects persist for 50 rounds.") + additional_information)
+
 /obj/item/sticky_pad
 	name = "sticky note pad"
 	desc = "A pad of densely packed sticky notes."
-	description_info = "Click to remove a sticky note from the pile. Click-drag to yourself to pick up the stack. Sticky notes stuck to surfaces/objects will persist for 50 rounds."
 	color = COLOR_YELLOW
 	icon = 'icons/obj/stickynotes.dmi'
 	icon_state = "pad_full"

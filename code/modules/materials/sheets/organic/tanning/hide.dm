@@ -1,7 +1,9 @@
+/obj/item/stack/animalhide/get_mechanics_info(list/additional_information)
+	return ..(list("Scrape the hairs/feathers/etc off with something " + span_bold(span_red("sharp")) + " to prepare it for tanning.") + additional_information)
+
 /obj/item/stack/animalhide
 	name = "hide"
 	desc = "The hide of some creature."
-	description_info = "Use something " + span_bold(span_red("sharp")) + ", like a knife, to scrape the hairs/feathers/etc off this hide to prepare it for tanning."
 	icon_state = "sheet-hide"
 	drop_sound = 'sound/items/drop/cloth.ogg'
 	pickup_sound = 'sound/items/pickup/cloth.ogg'
@@ -9,10 +11,6 @@
 	max_amount = 20
 	stacktype = "hide"
 	no_variants = TRUE
-// This needs to be very clearly documented for players. Whether it should stay in the main description is up for debate.
-/obj/item/stack/animalhide/examine(mob/user)
-	. = ..()
-	. += description_info
 
 //Step one - dehairing.
 EXTEND_INTERACTIONS(/obj/item/stack/animalhide, INTERACT_ITEM(null, PROC_REF(animalhide_interaction_item)))

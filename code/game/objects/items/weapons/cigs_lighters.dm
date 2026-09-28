@@ -298,7 +298,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable, INTERACT_ITEM(null, PROC_R
 		reagents.add_reagent(REAGENT_ID_NICOTINE, nicotine_amt)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
-	INTERACT_SELF(null, PROC_REF(cigarette_self)), \
+	INTERACT_SELF_AS(I_HELP, null, PROC_REF(cigarette_self)), \
+	INTERACT_SELF_AS(I_DISARM, null, PROC_REF(cigarette_self)), \
+	INTERACT_SELF_AS(I_GRAB, null, PROC_REF(cigarette_self)), \
+	INTERACT_SELF_AS(I_HURT, null, PROC_REF(cigarette_self)), \
 	INTERACT_ITEM(null, PROC_REF(cigarette_item)), \
 )
 
@@ -330,7 +333,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 /// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
 /obj/item/clothing/mask/smokable/cigarette/proc/cigarette_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit == 1)
-		if(IS_HARMING(user))
+		if(interaction.stance == I_HURT)
 			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)
@@ -443,14 +446,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette/cigar, INTERACT_I
 	name = "empty [initial(name)]"
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
-	INTERACT_SELF(null, PROC_REF(pipe_self)), \
+	INTERACT_SELF_AS(I_HELP, null, PROC_REF(pipe_self)), \
+	INTERACT_SELF_AS(I_DISARM, null, PROC_REF(pipe_self)), \
+	INTERACT_SELF_AS(I_GRAB, null, PROC_REF(pipe_self)), \
+	INTERACT_SELF_AS(I_HURT, null, PROC_REF(pipe_self)), \
 	INTERACT_ITEM(null, PROC_REF(pipe_item)), \
 )
 
 /// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
 /obj/item/clothing/mask/smokable/pipe/proc/pipe_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit == 1)
-		if(IS_HARMING(user))
+		if(interaction.stance == I_HURT)
 			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)

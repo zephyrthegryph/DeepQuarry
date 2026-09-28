@@ -98,9 +98,9 @@
 /datum/effect/effect/system/smoke_spread/mothspore
 	smoke_type = /obj/effect/effect/smoke/elemental/mothspore
 
-/mob/living/simple_mob/animal/sif/tymisian/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/sif/tymisian/do_special_attack(atom/A, stance)
 	. = TRUE
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM)
 			if(energy < 20)
 				return FALSE

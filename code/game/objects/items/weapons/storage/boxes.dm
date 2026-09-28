@@ -39,7 +39,12 @@
 
 /obj/item/storage/box/hold_constraint()
 	return list(HOLD_MAX_SIZE(ITEMSIZE_SMALL))
-EXTEND_INTERACTIONS(/obj/item/storage/box, INTERACT_USE("Fold", PROC_REF(interaction_fold)))
+EXTEND_INTERACTIONS(/obj/item/storage/box, \
+	INTERACT_USE_AS(I_HELP, "Fold", PROC_REF(interaction_fold)), \
+	INTERACT_USE_AS(I_DISARM, "Fold", PROC_REF(interaction_fold)), \
+	INTERACT_USE_AS(I_GRAB, "Fold", PROC_REF(interaction_fold)), \
+	INTERACT_USE_AS(I_HURT, "Fold or crush", PROC_REF(interaction_fold)), \
+)
 
 /// Old attack_self: after the storage's own self-use, fold the box flat or crumple it.
 /obj/item/storage/box/proc/interaction_fold(mob/user, obj/item/held, datum/interaction/interaction)
@@ -66,7 +71,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, INTERACT_USE("Fold", PROC_REF(interac
 
 	//try to crush it
 	if(ispath(trash))
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) &&  IS_HARMING(user))  // only crumple with things inside on harmintent.
+		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) && interaction.stance == I_HURT)  // only crush with things inside in combat mode.
 			user.visible_message(span_danger("[user] crushes \the [src], spilling its contents everywhere!"), span_danger("You crush \the [src], spilling its contents everywhere!"))
 			spill()
 		else

@@ -104,10 +104,12 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
 
 	to_chat(user, message)
 
+/obj/item/mining_scanner/advanced/get_mechanics_info(list/additional_information)
+	return ..(list("This scanner has variable range. Drills dig in 5x5.") + additional_information)
+
 /obj/item/mining_scanner/advanced
 	name = "advanced ore detector"
 	desc = "An advanced device used to locate ore deep underground."
-	description_info = "This scanner has variable range, you can use the Set Scanner Range verb, or alt+click the device. Drills dig in 5x5."
 	MATERIAL_BULK(MAT_STEEL, 150)
 	scan_time = 0.5 SECONDS
 	exact = TRUE

@@ -460,8 +460,8 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 ///////////////////////////////////
 
 //you can use wires to heal robotics
-/obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier)
-	if(ishuman(A) && IS_HELPING(user))
+/obj/item/stack/cable_coil/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(ishuman(A) && stance == I_HELP)
 		var/mob/living/carbon/human/H = A
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 

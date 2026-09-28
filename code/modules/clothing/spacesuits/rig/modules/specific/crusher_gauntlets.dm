@@ -33,7 +33,7 @@
 		to_chat(M, span_danger("Your hands are full."))
 		deactivate()
 		return
-	if(IS_HARMING(M))
+	if(M.combat_mode)
 		M.visible_message(
 			span_danger("[M] throws [M.p_their()] arms out, extending [stored_gauntlets] from \the [holder] with a click!"),
 			span_danger("You throw your arms out, extending [stored_gauntlets] from \the [holder] with a click!"),

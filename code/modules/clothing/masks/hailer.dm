@@ -1,7 +1,6 @@
 /obj/item/clothing/mask/gas/sechailer
 	name = "hailer face mask"
 	desc = "A compact, durable gas mask that can be connected to an air supply. This one possesses a security hailer."
-	description_info = "This mask has a hailer attached, you can activate it on the button or use the Halt! verb, for switching phrases you can alt+click it or change it using the change phrase verb."
 	icon_state = "halfgas"
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 	actions_types = list(/datum/action/item_action/halt)

@@ -18,8 +18,6 @@ GLOBAL_LIST_INIT(marker_beacon_colors, list(
 	name = "marker beacons"
 	singular_name = "marker beacon"
 	desc = "Prismatic path illumination devices. Used by explorers and miners to mark paths and warn of danger."
-	description_info = "Use inhand to drop one marker beacon. You can pick them up again with an empty hand or \
-	hitting them with this marker stack. Alt-click to select a specific color."
 	icon = 'icons/obj/lighting.dmi'
 	icon_state = "markerrandom"
 	max_amount = 100

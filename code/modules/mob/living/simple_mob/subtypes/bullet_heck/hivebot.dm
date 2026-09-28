@@ -26,7 +26,7 @@
 		/obj/item/prop/deconstructable/gigacell = 100,
 		)
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/tyr/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/tyr/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
 	switch(attackcycle)
 		if(1)
@@ -68,7 +68,7 @@
 		/obj/item/prop/deconstructable/gigacell = 100
 			)
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/nanoweavetower/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/nanoweavetower/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
 	switch(attackcycle)
 		if(1)

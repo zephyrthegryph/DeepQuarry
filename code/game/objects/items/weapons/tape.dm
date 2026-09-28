@@ -39,10 +39,10 @@
 	H.update_inv_wear_mask()
 	playsound(src, 'sound/effects/tape.ogg',25)
 
-/obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+/obj/item/tape_roll/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
-		if(IS_HELPING(user))
+		if(stance == I_HELP)
 			return ITEM_INTERACT_FAILURE
 		if(!can_place(H, user))
 			to_chat(user, span_danger("You need to have a firm grip on [H] before you can use \the [src]!"))

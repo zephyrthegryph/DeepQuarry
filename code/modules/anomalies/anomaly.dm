@@ -65,12 +65,12 @@ REF_VAR(/obj/item/anomaly_neutralizer, OWNED, /datum/effect_remover, effect_remo
 	gives_stats = FALSE // Evil and fucked up...
 	desc = "Single-use injector that releases and stabilizes anomalies by injecting an unknown substance. This one seems odd."
 
+/obj/item/anomaly_scanner/get_mechanics_info(list/additional_information)
+	return ..(list("Danger type adds severity. Unstable changes state. Containment stabilizes at the cost of health. Transformation adds modifiers.") + additional_information)
+
 /obj/item/anomaly_scanner
 	name = "anomaly scanner"
 	desc = "A hand-held anomaly scanner, able to distinguish the particles that might affect a stable anomaly."
-	description_info = "Click on an emitter to change into an anomalous emitter.<br>\
-	Click on an anomaly harvester to link the scanned anomaly to it.<br>\
-	Danger type adds severity. Unstable changes state. Containment stabilizes at the cost of health. Transformation adds modifiers."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "anom_scanner"
 	slot_flags = SLOT_BELT

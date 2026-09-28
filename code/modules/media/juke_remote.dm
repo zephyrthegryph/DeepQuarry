@@ -1,9 +1,11 @@
+/obj/item/juke_remote/get_mechanics_info(list/additional_information)
+	return ..(list("Plays only while set down in the world, not while held. Music plays by AREA, not by range; one speaker covers one area.") + additional_information)
+
 /obj/item/juke_remote
-	name = "\improper BoomTown cordless speaker"
+	name ="\improper BoomTown cordless speaker"
 	desc = "Once paired with a jukebox, this speaker can relay the tunes elsewhere!"
 
 	description_fluff = "The BoomTown cordless speaker is capable of maintaining a high-quality 49kbps audio stream from a stationary jukebox and relaying the sound locally. It's like magic!"
-	description_info = "Hit it on a jukebox to pair, then set it down to play tunes. Does nothing while held, it has to be stationary, visible in the world. Keep in mind music is done by AREA, not within a certain range. You will need more than one to cover a department."
 
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bspeaker"

@@ -83,10 +83,10 @@
 			. += "They are very angry. Petting them will likely result in unpleasant things."
 
 /// Was attack_hand with ..() first: petting reactions follow the normal touch.
-/mob/living/simple_mob/vore/rabbit/unarmed_touch(mob/living/user)
+/mob/living/simple_mob/vore/rabbit/unarmed_touch(mob/living/user, stance = I_HELP)
 	. = ..()
 
-	if(IS_HELPING(user)) // only patpet on help. :p
+	if(stance == I_HELP) // only patpet on help. :p
 		grumpiness = CLAMP(grumpiness + rand(5, 10), 0, 120)
 		last_pet = world.time
 

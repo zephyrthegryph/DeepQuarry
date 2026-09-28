@@ -118,7 +118,7 @@ REF_OWNED(/mob/living/simple_mob/slime/xenobio, "slime_state")
 			my_slime.set_use_stance(I_GRAB)
 		else
 			my_slime.set_use_stance(I_HURT)
-	SM.attack_target(target)
+	SM.attack_target(target, SM.input_stance())
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 

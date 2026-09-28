@@ -106,9 +106,9 @@ REF_OWNED(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special")
 		return TRUE
 	return FALSE
 
-/mob/living/simple_mob/animal/sif/frostfly/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/sif/frostfly/do_special_attack(atom/A, stance)
 	. = TRUE
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM)
 			if(energy < 20)
 				return FALSE

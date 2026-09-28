@@ -90,7 +90,7 @@
 	special_attack_max_range = 6
 	special_attack_cooldown = 10 SECONDS
 
-/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	// Save where we're gonna go soon.
 	var/turf/destination = get_turf(A)

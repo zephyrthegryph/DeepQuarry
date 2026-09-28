@@ -92,6 +92,7 @@
 	into += list(
 		/datum/interaction/entry_hand/toilet_hand,
 		/datum/interaction/entry_item/toilet_item,
+		/datum/interaction/entry_alt/toilet_alt/harm,
 		/datum/interaction/entry_alt/toilet_alt,
 	)
 	..()
@@ -244,6 +245,12 @@
 	name = "Flush"
 	effect = /obj/structure/toilet/proc/interaction_alt
 
+/// Combat mode: pulling the lever mid-flush makes the flush bigger.
+/datum/interaction/entry_alt/toilet_alt/harm
+	id = "toilet_alt_harm"
+	name = "Yank the flush lever"
+	stance = I_HURT
+
 /obj/structure/toilet/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user) || user.loc == src)
 		return TRUE
@@ -256,7 +263,7 @@
 		to_chat(user, span_notice("The toilet is still refilling its tank."))
 		playsound(src, 'sound/machines/door_locked.ogg', 30, 1)
 		//Even while it's flushing, you can repeatedly pull down the lever for a bigger flush.
-		if(IS_HARMING(user))
+		if(interaction.stance == I_HURT)
 			if(COOLDOWN_FINISHED(src, panic_flush))
 				panic_mult++
 				COOLDOWN_START(src, panic_flush, 1 SECOND) //Let's not encourage hitting the click-cap.

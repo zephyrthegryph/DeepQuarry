@@ -539,9 +539,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/chameleon, \
 		return
 
 	disguise(GLOB.gun_choices[picked])
-	// Adopt the impersonated weapon's help text (was an override in examine/descriptions/weapons.dm).
-	var/obj/O = GLOB.gun_choices[picked]
-	description_info = initial(O.description_info)
 
 	//so our overlays update.
 	if (ismob(src.loc))

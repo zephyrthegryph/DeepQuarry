@@ -9,7 +9,7 @@ CATEGORY: Fiction
 
 	name = "A Purrrrfect Man"
 	desc = "A hardbound book titled \"A Purrrrfect Man\" Karla."
-	description_info = "This book is titled \"A Purrrrfect Man\" Karla. There's a blurb on the back: <br>\
+	description_fluff = "This book is titled \"A Purrrrfect Man\" Karla. There's a blurb on the back: <br>\
 						A Tajaran woman and a Human man find warmth in each other to ward off the chill of Sif's night."
 
 	title = "A Purrrrfect Man"

@@ -158,7 +158,7 @@
 	devourable = TRUE
 	return ..()
 
-/mob/living/simple_mob/vore/fennec/huge/apply_attack(atom/A, damage_to_do)
+/mob/living/simple_mob/vore/fennec/huge/apply_attack(atom/A, damage_to_do, stance = I_HURT)
 	// We may stomp or instanom in combat
 	if(autodoom && isliving(A) && (damage_to_do >= (melee_damage_upper*0.9)))
 		var/mob/living/L = A

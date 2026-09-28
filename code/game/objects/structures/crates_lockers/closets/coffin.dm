@@ -28,6 +28,7 @@
 /obj/structure/closet/grave/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/grave_hand,
+		/datum/interaction/entry_item/grave_item/harm,
 		/datum/interaction/entry_item/grave_item,
 	)
 
@@ -68,7 +69,7 @@
 				return TRUE
 		if(isrobot(M))
 			var/mob/living/silicon/robot/R = M
-			if(IS_HELPING(R))
+			if(!R.combat_mode)
 				to_chat(R, span_warning("You stop at the edge of \the [src.name]."))
 				return FALSE
 			else
@@ -88,6 +89,12 @@
 	id = "grave_item"
 	name = "Use"
 	effect = /obj/structure/closet/grave/proc/interaction_grave_item
+
+/// Combat mode: a shovel smooths over a filled grave instead of unearthing it.
+/datum/interaction/entry_item/grave_item/harm
+	id = "grave_item_harm"
+	name = "Smooth over"
+	stance = I_HURT
 
 /obj/structure/closet/grave/proc/interaction_grave_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(src.opened)
@@ -120,7 +127,7 @@
 			W.forceMove(src.loc)
 	else
 		if(istype(W, /obj/item/shovel))
-			if(IS_HARMING(user))	// Hurt intent means you're trying to kill someone, or just get rid of the grave
+			if(interaction.stance == I_HURT)	// Combat mode means you're trying to kill someone, or just get rid of the grave
 				user.visible_message(span_notice("[user] begins to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You start to smoothe out the dirt of \the [src.name]."), \
 										span_notice("You hear dirt being moved."))

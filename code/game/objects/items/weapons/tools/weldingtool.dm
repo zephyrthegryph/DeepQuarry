@@ -61,8 +61,8 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	if(max_fuel && loc == user)
 		. += "It contains [get_fuel()]/[src.max_fuel] units of fuel!"
 
-/obj/item/weldingtool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(ishuman(M) && IS_HELPING(user))
+/obj/item/weldingtool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(ishuman(M) && stance == I_HELP)
 		var/mob/living/carbon/human/H = M
 		var/obj/item/organ/external/S = H.organs_by_name[user.zone_sel.selecting]
 

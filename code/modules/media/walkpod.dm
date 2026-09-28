@@ -1,11 +1,13 @@
 // Mostly a jukebox copy-paste, given the vastly different paths though it seemed worth it.
 // Would rather not have a bunch of /machinery baggage on our portable music player.
 
+/obj/item/walkpod/get_mechanics_info(list/additional_information)
+	return ..(list("Wearing the headphones is not necessary to listen to music.") + additional_information)
+
 /obj/item/walkpod
-	name = "\improper PodZu music player"
+	name ="\improper PodZu music player"
 	desc = "Portable music player! For when you need to ignore the rest of the world, there's only one choice: PodZu."
 	description_fluff = "A prestigious set: The ZuMan music player, and the HeadPods headphones, both 90th anniversary releases! Together they form the PodZu Music Player, famous in the local galactic cluster for pumping sick beats directly into your head."
-	description_info = "An easy way to access the menu while the player is in a pocket is Alt-Click. Wearing the headphones is not actually necessary to listen to music, but you can if you want, by right-clicking on the player and using 'Take HeadPods'."
 
 	icon = 'icons/obj/device.dmi'
 	icon_state = "podzu" // podzu_o, headpod, zuman

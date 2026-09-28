@@ -20,7 +20,6 @@
 /obj/item/slime_extract/sepia
 	name = "sepia slime extract"
 	icon_state = "sepia slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/sepia
 
 /datum/decl/chemical_reaction/instant/slime/senseenhancer
@@ -78,7 +77,6 @@
 /obj/item/slime_extract/redspace
 	name = "redspace slime extract"
 	icon_state = "ruby slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/redspace
 
 
@@ -146,7 +144,6 @@
 /obj/item/slime_extract/dark
 	name = "dark slime extract"
 	icon_state = "oil slime extract"
-	description_info = "A strange extract, seems inert. Maybe something strange can be done one day"
 	slime_type = /mob/living/simple_mob/slime/xenobio/dark
 
 /datum/decl/chemical_reaction/instant/slime/dark_neofire
@@ -246,7 +243,6 @@
 /obj/item/slime_extract/plague
 	name = "plague slime extract"
 	icon_state = "emerald slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/plague
 
 /datum/decl/chemical_reaction/instant/slime/plague_toxin
@@ -326,7 +322,6 @@
 /obj/item/slime_extract/oceanic
 	name = "oceanic slime extract"
 	icon_state = "blue slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/oceanic
 
 /datum/decl/chemical_reaction/instant/slime/carpfren
@@ -423,7 +418,6 @@
 /obj/item/slime_extract/nuclear
 	name = "nuclear slime extract"
 	icon_state = "green slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/nuclear
 
 /datum/decl/chemical_reaction/instant/slime/nuclear_radpulse
@@ -491,7 +485,6 @@
 /obj/item/slime_extract/dream
 	name = "dream slime extract"
 	icon_state = "grey slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/dream
 
 /datum/decl/chemical_reaction/instant/slime/dreamscale
@@ -573,7 +566,6 @@
 /obj/item/slime_extract/nightmare
 	name = "nightmare slime extract"
 	icon_state = "oil slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/nightmare
 
 /datum/decl/chemical_reaction/instant/slime/nightmarewater
@@ -682,7 +674,6 @@
 /obj/item/slime_extract/sound
 	name = "sound slime extract"
 	icon_state = "silver slime extract"
-	description_info = "Who knows what will happen."
 	slime_type = /mob/living/simple_mob/slime/xenobio/sound
 
 /datum/decl/chemical_reaction/instant/slime/soundblood

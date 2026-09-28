@@ -136,7 +136,7 @@
 		uncan(user)
 	return TRUE
 
-/obj/item/reagent_containers/food/snacks/attack(mob/living/eater, mob/living/user, target_zone, attack_modifier)
+/obj/item/reagent_containers/food/snacks/attack(mob/living/eater, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if(reagents && !reagents.total_volume)
 		balloon_alert(user, "none of \the [src] left!")
 		consume(src, user)
@@ -200,7 +200,7 @@
 				to_chat(eater, span_danger("Nope. That's it. You literally cannot force any more of [src] to go down your throat. It's fair to say you're full."))
 				return ITEM_INTERACT_FAILURE
 
-		else if(IS_HARMING(user))
+		else if(stance == I_HURT)
 			return ..()
 
 		else

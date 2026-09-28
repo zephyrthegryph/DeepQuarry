@@ -2,10 +2,10 @@
 /// every cell). A self-use interaction declared on /obj/item/cell (power/cell.dm); FALSE
 /// moves on to the next self-use, so non-electrovores fall through.
 /obj/item/cell/proc/interaction_electrovore(mob/user, obj/item/held, datum/interaction/interaction)
-	return (electrovore_attack_self(user) & COMPONENT_CANCEL_ATTACK_CHAIN) ? TRUE : FALSE
+	return (electrovore_attack_self(user, interaction.stance) & COMPONENT_CANCEL_ATTACK_CHAIN) ? TRUE : FALSE
 
 /// Electrovores charge (help, obligate) or drain (harm) the cell by hand.
-/obj/item/cell/proc/electrovore_attack_self(mob/user)
+/obj/item/cell/proc/electrovore_attack_self(mob/user, stance)
 	var/obj/item/source = src
 
 	if(!isliving(user))
@@ -22,7 +22,7 @@
 	var/obj/item/cell/source_cell = source
 
 	// HELP: obligate electrovores only (charge the cell)
-	if(IS_HELPING(living_user) && HAS_TRAIT(living_user, TRAIT_ELECTROVORE_OBLIGATE))
+	if(stance == I_HELP && HAS_TRAIT(living_user, TRAIT_ELECTROVORE_OBLIGATE))
 		if(source_cell.charge >= source_cell.maxcharge)
 			return COMPONENT_CANCEL_ATTACK_CHAIN
 
@@ -47,7 +47,7 @@
 		return COMPONENT_CANCEL_ATTACK_CHAIN
 
 	// HURT: drain energy for nutrition (obligate + freeform)
-	if(IS_HARMING(living_user))
+	if(stance == I_HURT)
 		if(!source_cell.charge)
 			living_user.show_message(span_warning("You take a look at [source_cell] and notice it has nothing in it!"))
 			return COMPONENT_CANCEL_ATTACK_CHAIN

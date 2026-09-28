@@ -302,10 +302,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 		if(COOLDOWN_FINISHED(src, cooldown) && L.is_sentient() && L.get_tension() >= tension_threshold)
 			activate_ability(L)
 
+/obj/item/clothing/head/psy_crown/wrath/get_mechanics_info(list/additional_information)
+	return ..(list("This has a chance to cause the wearer to become extremely angry when in extreme danger.") + additional_information)
+
 /obj/item/clothing/head/psy_crown/wrath
 	name = "red crown"
 	desc = "A crown-of-thorns set with a red gemstone that seems to glow unnaturally. It feels rather disturbing to touch."
-	description_info = "This has a chance to cause the wearer to become extremely angry when in extreme danger."
 	icon_state = "wrathcrown"
 	flavor_equip = span_warning("You feel a bit angrier after putting on this crown.")
 	flavor_unequip = span_notice("You feel calmer after removing the crown.")
@@ -316,10 +318,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	..()
 	wearer.apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 
+/obj/item/clothing/head/psy_crown/gluttony/get_mechanics_info(list/additional_information)
+	return ..(list("This has a chance to cause the wearer to become extremely durable, but hungry when in extreme danger.") + additional_information)
+
 /obj/item/clothing/head/psy_crown/gluttony
 	name = "green crown"
 	desc = "A crown-of-thorns set with a green gemstone that seems to glow unnaturally. It feels rather disturbing to touch."
-	description_info = "This has a chance to cause the wearer to become extremely durable, but hungry when in extreme danger."
 	icon_state = "gluttonycrown"
 	flavor_equip = span_warning("You feel a bit hungrier after putting on this crown.")
 	flavor_unequip = span_notice("You feel sated after removing the crown.")
@@ -333,7 +337,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 /obj/item/clothing/head/cone
 	name = "warning cone"
 	desc = "This cone is trying to warn you of something!"
-	description_info = "It looks like you can wear it in your head slot."
 	icon_state = "cone"
 	item_state = "cone"
 	drop_sound = 'sound/items/drop/shoes.ogg'

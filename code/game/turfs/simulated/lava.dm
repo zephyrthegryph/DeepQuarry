@@ -1,8 +1,6 @@
 /turf/simulated/floor/lava
 	name = "lava"
 	desc = "A pool of molten rock."
-	description_info = "Molten rock is extremly dangerous, as it will cause massive harm to anything that touches it.<br>\
-	A firesuit cannot fully protect from contact with molten rock."
 	gender = PLURAL // So it says "That's some lava." on examine.
 	icon = 'icons/turf/outdoors.dmi'
 	icon_state = "lava"

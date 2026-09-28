@@ -33,7 +33,7 @@
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 	INTERACT_ITEM(null, PROC_REF(cow_interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(cow_interaction_hand)))
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Tip over", PROC_REF(cow_interaction_hand)))
 
 /// Old attackby: milking.
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -61,7 +61,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 /// Old attack_hand: cow tipping.
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand(mob/living/carbon/M, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	if(!stat && IS_DISARMING(M) && icon_state != icon_dead)
+	if(!stat && interaction.stance == I_DISARM && icon_state != icon_dead)
 		M.visible_message(span_warning("[M] tips over [src]."),span_notice("You tip over [src]."))
 		status_at_least(EFFECT_WEAKENED, 30)
 		icon_state = icon_dead

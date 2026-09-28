@@ -18,7 +18,7 @@
 
 	var/target_distance = null	// Shamelessly stolen from arcing projectiles.
 	var/my_tracking_beam = null	// Beam made by the launcher. Tracked here to destroy it in time with the impact.
-	var/launcher_intent = null	// Stores the launcher's intent.
+	var/launcher_intent = null	// The stance the firer pulled the trigger in (receive_firer_stance()).
 
 	var/disarm_chance = 60		// Chance for a successful disarm hit. The inverse is a throw away from the firer.
 
@@ -27,12 +27,14 @@
 
 	var/datum/beam/chain = null
 
+/obj/item/projectile/energy/hook/receive_firer_stance(stance)
+	launcher_intent = stance
+
 /obj/item/projectile/energy/hook/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 	var/expected_distance = get_dist(target, loc)
 	range = expected_distance // So the hook hits the ground if no mob is hit.
 	target_distance = expected_distance
 	if(firer)	// Needed to ensure later checks in impact and on hit function.
-		launcher_intent = firer.use_stance()
 		chain = firer.Beam(src,icon_state=beam_state,icon='icons/effects/beam.dmi',time=60, maxdistance=10,beam_type=/obj/effect/ebeam,beam_sleep_time=1)
 
 	if(launcher_intent)

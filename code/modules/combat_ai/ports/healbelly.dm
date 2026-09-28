@@ -61,7 +61,7 @@
 /mob/living/simple_mob/proc/dq_heal_pounce(mob/living/L)
 	if(!istype(L) || !will_eat(L))
 		return FALSE
-	var/old_stance = use_stance()
+	var/old_stance = input_stance()
 	set_use_stance(I_HELP)
 	PounceTarget(L)
 	if(ishuman(L) && L.reagents)

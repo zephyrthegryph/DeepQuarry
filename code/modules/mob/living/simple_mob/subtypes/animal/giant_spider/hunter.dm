@@ -56,7 +56,7 @@
 
 
 // The actual leaping attack.
-/mob/living/simple_mob/animal/giant_spider/hunter/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/giant_spider/hunter/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)

@@ -13,23 +13,25 @@
 	icon_state = "whip"
 	item_state = "chain"
 
-/obj/item/melee/jellyfishwhip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	if(IS_HARMING(user)) //Healy mode
+/obj/item/melee/jellyfishwhip/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	if(stance == I_HURT) //Healy mode
 		. = ..()
 		target.injure(INJURY_BURN, 10, hit_zone, src)
 		user.mend(TREAT_BURN_CARE, 7)
 		user.mend(TREAT_TISSUE_REPAIR, 7)
-	else if(IS_DISARMING(user)) //DoT mode
+	else if(stance == I_DISARM) //DoT mode
 		. = ..()
 		target.lingering_poison(1, 2 SECONDS, user)
-	else if(IS_GRABBING(user)) //weaken mode
+	else if(stance == I_GRAB) //weaken mode
 		. = ..()
 		target.apply_body_effect(/datum/body_effect/hivebot_weaken, 20)
+
+/obj/item/cell/slime/jellyfish/get_mechanics_info(list/additional_information)
+	return ..(list("This 'cell' holds a max charge of 10k and self recharges over time.") + additional_information)
 
 /obj/item/cell/slime/jellyfish //Less max charge then slime but faster recharge
 	name = "Jellyfish Cell Core"
 	desc = "An energezied core of a toxic jellyfish titan."
-	description_info = "This 'cell' holds a max charge of 10k and self recharges over time."
 	maxcharge = 10000
 	charge_amount = 1000
 
@@ -37,11 +39,14 @@
 //E sword has 30 damage, 50 AP, and 65% projectile block
 //Midnightblade has less AP, and less projectile block chance
 //In exchange it has special charatisics on melee hits, and higher melee block
+/obj/item/melee/energy/tyr_sabre/get_mechanics_info(list/additional_information)
+	return ..(list("Grab attacks weaken the target's healing, Disarm attacks weaken the target's melee potential, \
+	and combat-mode attacks have a 2% chance to deal guaranteed massive damage.") + additional_information)
+
 /obj/item/melee/energy/tyr_sabre
 	name = "tyrian energy blade"
 	slot_flags = SLOT_BELT | SLOT_BACK //should make a proper sprite some time but spriting energy is hard
 	desc = "A forgien blade made via techniques of ages old. Gains a diffrent effect base off your stance."
-	description_info = "Attacking whilst on grab intent weakens the target's healing, attacking whilst on disarm weakens the target's melee potential, and attacking whilst on harm has a 2% chance to deal guaranteed massive damage."
 	active_force = 30
 	active_armourpen = 30
 	projectile_parry_chance = 20
@@ -58,16 +63,16 @@
 		slot_r_hand_str = 'icons/obj/guns/precursor/righthand.dmi',
 		)
 
-/obj/item/melee/energy/tyr_sabre/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
-	if(IS_GRABBING(user)) //Anti-Heal mode
+/obj/item/melee/energy/tyr_sabre/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
+	if(stance == I_GRAB) //Anti-Heal mode
 		. = ..()
 		if(active)
 			target.apply_body_effect(/datum/body_effect/grievous_wounds, 20)
-	else if(IS_DISARMING(user)) //weaken mode
+	else if(stance == I_DISARM) //weaken mode
 		. = ..()
 		if(active)
 			target.apply_body_effect(/datum/body_effect/berserk_exhaustion, 3)
-	else if(IS_HARMING(user)) //Tiny Chance to crit
+	else if(stance == I_HURT) //Tiny Chance to crit
 		. = ..()
 		if(active && prob(2))
 			target.injure(INJURY_CUT, 50, hit_zone, src)

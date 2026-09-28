@@ -1,13 +1,10 @@
 
+/obj/item/material/fishing_rod/get_mechanics_info(list/additional_information)
+	return ..(list("Needs cable to be used. Attached bait (food containing protein, sugar or nutriment) speeds up fishing based on its amount.") + additional_information)
+
 /obj/item/material/fishing_rod
 	name = "crude fishing rod"
 	desc = "A crude rod made for catching fish."
-	description_info = "A tool usable on water-tiles to attempt to catch fish by swiping it over them.\
-	You can add or remove cable by wirecutter or coil respectively to allow its use.\
-	Any food containing things like protein, sugar, or standard nutriment can be attached to the rod, allowing for faster fishing based on the amount.\
-	You can examine the rod to check if it has bait attached, and examine it automatically if so.\
-	\
-	Ctrl clicking the rod will remove any attached bait from the rod."
 	description_antag = "Some fishing rods can be utilized as long-range, sharp weapons, though their pseudo ranged ability comes at the cost of slow speed."
 	icon_state = "fishing_rod"
 	item_state = "fishing_rod"
@@ -146,3 +143,6 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 	default_material = MAT_DURASTEEL
 
 	toolspeed = 0.5
+
+// The bait sits in the rod's contents.
+REF_HELD(/obj/item/material/fishing_rod, "Bait")

@@ -42,7 +42,7 @@
 	var/mob/living/simple_mob/SM = brain.get_owner()
 	if(!istype(SM))
 		return DQ_BEHAVIOR_FAILED
-	SM.attack_target(target)
+	SM.attack_target(target, SM.input_stance())
 	return DQ_BEHAVIOR_DONE
 
 // --- Idle speak -------------------------------------------------------------

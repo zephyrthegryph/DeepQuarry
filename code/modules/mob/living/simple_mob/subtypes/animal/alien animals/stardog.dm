@@ -66,7 +66,7 @@
 		return
 	var/prev_size = that_one.size_multiplier
 	that_one.resize(RESIZE_TINY, ignore_prefs = TRUE)
-	if(!that_one.attempt_to_scoop(user, ignore_size = TRUE))
+	if(!that_one.attempt_to_scoop(user, ignore_size = TRUE, stance = (user.combat_mode ? I_HURT : I_HELP)))
 		that_one.resize(prev_size, ignore_prefs = TRUE)
 		return
 
@@ -1438,7 +1438,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 		return
 	else if(user.faction == faction)
 		SwitchState()
-	else if(IS_HELPING(user))
+	else if(!user.combat_mode)
 		visible_message(span_warningplain("[user] knocks on \the [src]."), span_warningplain("Someone knocks on \the [src]."))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10
@@ -1447,7 +1447,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
 
-DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "Knock", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_HURT, "Hammer on", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_DISARM, "Hammer on", PROC_REF(interaction_hand)), 	INTERACT_HAND_AS(I_GRAB, "Hammer on", PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
 /obj/structure/auto_flesh_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -1456,7 +1456,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_RE
 		return TRUE
 	else if(user.faction == faction)
 		SwitchState()
-	else if(IS_HELPING(user))
+	else if(interaction.stance == I_HELP)
 		visible_message(span_warningplain("[user] knocks on \the [src]."), span_warningplain("Someone knocks on \the [src]."))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 10

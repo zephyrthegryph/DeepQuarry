@@ -145,7 +145,7 @@
 		"The Scel looks quite content right now, with multiple black tendrils rubbing over the sloshing, groaning mass of its gut.",
 		"A soft belch escapes the jaws of the alien creature as its soft and lumpy belly works to digest its latest meal.")
 
-/mob/living/simple_mob/vore/scel/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/scel/do_special_attack(atom/A, stance)
 	. = TRUE
 	if(ckey)
 		return

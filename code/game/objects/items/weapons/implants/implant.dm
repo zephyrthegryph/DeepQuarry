@@ -766,12 +766,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implanter/sizecontrol
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
-	description_info = {"Only accessible by those who implanted the victim. Self-implanting allows everyone to change host size. The following special commands are available:
-'Shrink' - host size decreases.
-'Grow' - host size increases.
-'Resize (NUMBER)' - for accurate size control.
-'Ignore' - keywords in the speech won't have any effect.
-'Implant-toggle' - toggles implant."}
 
 /obj/item/implanter/sizecontrol/Initialize(mapload)
 	. = ..()
@@ -784,10 +778,6 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implanter/compliance
 	name = "compliance implant"
 	desc = "Implant which allows for implanting 'laws' or 'commands' in the host. Has a miniature keyboard for typing laws into."
-	description_info = {"An implant that allows for a 'law' or 'command' to be uploaded in the implanted host.
-In un-modified organics, this is performed through manipulation of the nervous system and release of chemicals to ensure continued compliance.
-In synthetics or modified organics, this implant uploads a virus to any compatible hardware.
-Due to the small chemical capacity of the implant, the life of the implant is relatively small, wearing off within 24 hours or sooner."}
 
 	description_fluff = "Due to the illegality of these types of implants, they are often made in clandestine facilities with a complete lack of quality control \
 	and as such, may malfunction or simply not work whatsoever. After loyalty implants were outlawed in many civilized areas of space, an abundance of readily \

@@ -471,11 +471,9 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/mining_scanner/robot
 	name = "integrated deep scan device"
-	description_info = "A basic, integrated ore scanning device which can be upgraded."
 
 /obj/item/mining_scanner/robot/proc/upgrade(mob/user)
 	desc = "An advanced device used to locate ore deep underground."
-	description_info = "This scanner has variable range, you can use the Set Scanner Range verb, or alt+click the device. Drills dig in 5x5."
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 

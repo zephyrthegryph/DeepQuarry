@@ -10,8 +10,8 @@
 //     else HURT (phase 1).  The base eclipse's do_special_attack() runs the
 //     same bullet_heck(A, 3, 3) regardless of intent, so the intent is a
 //     flavor/telegraph hook the subtypes (battle_top / ufo / janus) override.
-//     We faithfully reproduce the phase-set (set_use_stance()) so any subtype that keys
-//     off use_stance() in its do_special_attack still phases correctly.
+//     We faithfully reproduce the phase-set and pass the chosen stance to
+//     special_attack_target() so subtypes switching on it still phase correctly.
 //
 // The boss fires its special almost constantly (special_attack_cooldown = 10),
 // so the special-attack behavior is the centerpiece; melee is a fallback for
@@ -75,13 +75,12 @@
 	// Phase machine: pick the telegraph intent from the boss's HP fraction,
 	// exactly as legacy pre_special_attack() did.
 	var/hp_frac = E.vitality()
+	var/stance = I_HURT              // Phase one
 	if(hp_frac <= 0.35)
-		E.set_use_stance(I_DISARM)   // Phase three
+		stance = I_DISARM            // Phase three
 	else if(hp_frac <= 0.7)
-		E.set_use_stance(I_GRAB)     // Phase two
-	else
-		E.set_use_stance(I_HURT)     // Phase one
-	E.special_attack_target(target)
+		stance = I_GRAB              // Phase two
+	E.special_attack_target(target, stance)
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 

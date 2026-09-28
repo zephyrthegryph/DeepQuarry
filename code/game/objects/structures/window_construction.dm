@@ -55,9 +55,10 @@
 /datum/construction_graph/window/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	return
 
-/// A welder off help intent hits the window instead of repairing it.
+/// Weld repair is declared for I_HELP only: in any other stance it isn't meant, and the welder hits the window instead.
 /obj/structure/window/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
-	if(quality == TOOL_WELDER && !IS_HELPING(user))
+	var/datum/interaction/window_repair/repair = INTERACTION(/datum/interaction/window_repair)
+	if(quality == TOOL_WELDER && !repair.is_meant(user, src, tool))
 		return NONE
 	return ..()
 
@@ -137,6 +138,7 @@
 	category = INTERACTION_CAT_REPAIR
 	priority = 20
 	default_action = INPUT_ACTION_USE
+	stance = I_HELP
 	tool = TOOL_WELDER
 	tool_amount = 1
 	duration = 4 SECONDS

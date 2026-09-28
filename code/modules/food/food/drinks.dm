@@ -147,7 +147,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 /obj/item/reagent_containers/food/drinks/proc/drinks_self(mob/user, obj/item/held, datum/interaction/interaction, special_pass)
 	if(special_handling && !special_pass)
 		return FALSE
-	if(!is_open_container() && !(is_can && IS_HARMING(user)))
+	if(!is_open_container() && !(is_can && interaction.stance == I_HURT))
 		open(user)
 	return TRUE
 
@@ -161,8 +161,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 		to_chat(user, span_warning("...wait a second, this one doesn't have a ring pull. It's not a <b>can</b>, it's a <b>can't!</b>"))
 		name = "\improper can't of [initial(name)]"	//don't update the name until they try to open it
 
-/obj/item/reagent_containers/food/drinks/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(force && !(flags & NOBLUDGEON) && IS_HARMING(user))
+/obj/item/reagent_containers/food/drinks/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(force && !(flags & NOBLUDGEON) && stance == I_HURT)
 		return ..()
 
 	if(standard_feed_mob(user, M))

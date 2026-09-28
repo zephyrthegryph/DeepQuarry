@@ -8,7 +8,6 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/multitool
 	name = "multitool"
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."
-	description_info = "You can use this on airlocks or APCs to try to hack them without cutting wires."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "multitool"
 	force = 5.0
@@ -112,8 +111,8 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 /// TREAT_CALIBRATION, and a pass over the head also runs a system restore
 /// for processor corruption. Only synthetic parts respond — the body gates
 /// treatment by the part's biology.
-/obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!ishuman(M) || !IS_HELPING(user))
+/obj/item/multitool/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	if(!ishuman(M) || stance != I_HELP)
 		return ..()
 	var/mob/living/carbon/human/H = M
 	var/obj/item/organ/external/E = H.get_organ(target_zone)

@@ -1,5 +1,6 @@
 // Does a melee attack.
-/mob/living/simple_mob/proc/attack_target(atom/A)
+/// `stance` is the stance the melee attack is made in (the player's input or the AI brain's choice).
+/mob/living/simple_mob/proc/attack_target(atom/A, stance = I_HURT)
 
 	if(!A.Adjacent(src))
 		return ATTACK_FAILED
@@ -9,12 +10,12 @@
 
 	if(melee_attack_delay)
 		melee_pre_animation(A)
-		handle_attack_delay(A, melee_attack_delay, PROC_REF(attack_target_strike), their_T)
+		handle_attack_delay(A, melee_attack_delay, PROC_REF(attack_target_strike), their_T, stance)
 		return ATTACK_SUCCESSFUL // the real result is known once the telegraph ends
-	return attack_target_strike(A, their_T)
+	return attack_target_strike(A, their_T, stance)
 
 /// The melee attack itself, after any telegraph.
-/mob/living/simple_mob/proc/attack_target_strike(atom/A, turf/their_T)
+/mob/living/simple_mob/proc/attack_target_strike(atom/A, turf/their_T, stance = I_HURT)
 	// Cooldown testing is done at click code (for players) and interface code (for AI).
 	// Simplemob Injury
 	if(injury_enrages)
@@ -24,7 +25,7 @@
 	// Stop: Simplemob Injury
 
 	// Returns a value, but will be lost if
-	. = do_attack(A, their_T)
+	. = do_attack(A, their_T, stance)
 
 	if(melee_attack_delay)
 		melee_post_animation(A)
@@ -32,7 +33,7 @@
 // This does the actual attack.
 // This is a seperate proc for the purposes of attack animations.
 // A is the thing getting attacked, T is the turf A is/was on when attack_target was called.
-/mob/living/simple_mob/proc/do_attack(atom/A, turf/T)
+/mob/living/simple_mob/proc/do_attack(atom/A, turf/T, stance = I_HURT)
 	face_atom(A)
 	var/missed = FALSE
 	if(!isturf(A) && !(is_in_holder(A, T)) ) // Turfs don't contain themselves so checking contents is pointless if we're targeting a turf.
@@ -66,8 +67,8 @@
 			if(H.check_shields(damage = damage_to_do, damage_source = src, attacker = src, def_zone = null, attack_text = "the attack"))
 				return FALSE // We were blocked.
 
-	if(apply_attack(A, damage_to_do))
-		apply_melee_effects(A)
+	if(apply_attack(A, damage_to_do, stance))
+		apply_melee_effects(A, stance)
 		if(attack_sound)
 			playsound(src, attack_sound, 75, 1)
 
@@ -75,11 +76,11 @@
 
 // Generally used to do the regular attack.
 // Override for doing special stuff with the direct result of the attack.
-/mob/living/simple_mob/proc/apply_attack(atom/A, damage_to_do)
+/mob/living/simple_mob/proc/apply_attack(atom/A, damage_to_do, stance = I_HURT)
 	return A.attack_generic(src, damage_to_do, pick(attacktext))
 
 // Override for special effects after a successful attack, like injecting poison or stunning the target.
-/mob/living/simple_mob/proc/apply_melee_effects(atom/A)
+/mob/living/simple_mob/proc/apply_melee_effects(atom/A, stance = I_HURT)
 	return
 
 // Override to modify the amount of damage the mob does conditionally.
@@ -213,19 +214,19 @@
 
 // Special attacks, like grenades or blinding spit or whatever.
 // Don't override this, override do_special_attack() for your blinding spit/etc.
-/mob/living/simple_mob/proc/special_attack_target(atom/A)
+/mob/living/simple_mob/proc/special_attack_target(atom/A, stance = I_HURT)
 	face_atom(A)
 
 	if(special_attack_delay)
 		special_pre_animation(A)
-		handle_attack_delay(A, special_attack_delay, PROC_REF(special_attack_fire))
+		handle_attack_delay(A, special_attack_delay, PROC_REF(special_attack_fire), stance)
 		return TRUE
-	return special_attack_fire(A)
+	return special_attack_fire(A, stance)
 
 /// The special attack itself, after any telegraph.
-/mob/living/simple_mob/proc/special_attack_fire(atom/A)
+/mob/living/simple_mob/proc/special_attack_fire(atom/A, stance)
 	COOLDOWN_START(src, special_attack_cooldown_until, special_attack_cooldown)
-	if(do_special_attack(A))
+	if(do_special_attack(A, stance))
 		if(special_attack_charges)
 			special_attack_charges -= 1
 		. = TRUE
@@ -261,13 +262,14 @@
 	if(then_proc)
 		call(src, then_proc)(target)
 
-// Override this for the actual special attack.
-/mob/living/simple_mob/proc/do_special_attack(atom/A)
+// Override this for the actual special attack. `stance` is the stance the attacker chose (player input or AI).
+/mob/living/simple_mob/proc/do_special_attack(atom/A, stance)
 	return FALSE
 
 // Waits out an attack telegraph, then calls `then_proc(A, extra)` on src.
 // Also makes sure the AI doesn't do anything stupid in the middle of the delay.
-/mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount, then_proc, extra)
+/// Extra arguments after `then_proc` are passed on to it after `A`.
+/mob/living/simple_mob/proc/handle_attack_delay(atom/A, delay_amount, then_proc, ...)
 	ai_busy_begin()
 	// Click delay modifiers also affect telegraphing time.
 	// This means berserked enemies will leave less time to dodge.
@@ -275,7 +277,7 @@
 
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 
-	if(!om_after(src, true_attack_delay, PROC_REF(attack_delay_done), then_proc, list(A, extra)))
+	if(!om_after(src, true_attack_delay, PROC_REF(attack_delay_done), then_proc, list(A) + args.Copy(4)))
 		ai_busy_end()
 
 /mob/living/simple_mob/proc/attack_delay_done(then_proc, list/call_args)

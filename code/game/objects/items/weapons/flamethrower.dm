@@ -72,12 +72,12 @@ REF_OWNED(/obj/item/flamethrower, list("weldtool", "igniter", "ptank"))
 		item_state = "flamethrower_0"
 	return
 
-/obj/item/flamethrower/afterattack(atom/target, mob/user, proximity)
+/obj/item/flamethrower/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))
 		return
 	if(user && user.get_active_hand() == src)
-		if(IS_HELPING(user) && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
-			to_chat(user, span_warning("You refrain from firing \the [src] as your intent is set to help."))
+		if(stance == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring))
+			to_chat(user, span_warning("You refrain from firing \the [src] as you are out of combat mode."))
 			return
 		if(check_fuel())
 			// spawn projectile

@@ -1,7 +1,9 @@
+/obj/item/shield_diffuser/get_mechanics_info(list/additional_information)
+	return ..(list("This device disrupts shields on directly adjacent tiles (in a + shaped pattern), like the floor mounted variant. It runs on an internal battery that can be recharged in a regular recharger.") + additional_information)
+
 /obj/item/shield_diffuser
 	name = "portable shield diffuser"
 	desc = "A small handheld device designed to disrupt energy barriers."
-	description_info = "This device disrupts shields on directly adjacent tiles (in a + shaped pattern), in a similar way the floor mounted variant does. It is, however, portable and run by an internal battery. Can be recharged with a regular recharger."
 	icon = 'icons/obj/machines/shielding.dmi'
 	icon_state = "hdiffuser_off"
 	var/obj/item/cell/device/cell

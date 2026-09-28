@@ -801,7 +801,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 	adhoc_fallback = 1
 	canhear_range = 8
 	desc = "A heavy duty radio that can pick up all manor of shortwave and subspace frequencies. It's a bit bulkier than a normal radio thanks to the extra hardware."
-	description_info = "This radio can broadcast over any headset frequency that the user has access to. It has a shortwave fallback to directly broadcast to all radio equipment on the same Z-Level/Map in the event of a telecommunications failure. This device requires a functioning Telecommunications Network/Relay to send and receive signals meant for headsets. Additionally, the volume knob seems to be stuck on the max setting. You could hear this thing clear across a room... Not good for discretely listening in on secure channels or being stealthy!"
 	icon_state = "radio"
 	name = "subspace radio"
 	subspace_transmission = 1

@@ -1,3 +1,6 @@
+/obj/item/melee/baton/slime/get_mechanics_info(list/additional_information)
+	return ..(list("This baton will stun a slime or other slime-based lifeform for about five seconds, if hit with it while on.") + additional_information)
+
 /obj/item/melee/baton/slime
 	name = "slimebaton"
 	desc = "A modified stun baton designed to stun slimes and other lesser slimy xeno lifeforms for handling."
@@ -8,7 +11,6 @@
 	lightcolor = "#33CCFF"
 	agonyforce = 10	//It's not supposed to be great at stunning human beings.
 	hitcost = 48	//Less zap for less cost
-	description_info = "This baton will stun a slime or other slime-based lifeform for about five seconds, if hit with it while on."
 
 /obj/item/melee/baton/slime/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(istype(M) && status) // Is it on?
@@ -33,6 +35,9 @@
 	return ..()
 
 // Xeno stun gun + projectile
+/obj/item/gun/energy/taser/xeno/get_mechanics_info(list/additional_information)
+	return ..(list("This gun will stun a slime or other lesser slimy lifeform for about two seconds if hit with the projectile it fires.") + additional_information)
+
 /obj/item/gun/energy/taser/xeno
 	name = "xeno taser gun"
 	desc = "Straight out of NT's testing laboratories, this small gun is used to subdue non-humanoid xeno life forms. \
@@ -42,7 +47,6 @@
 	charge_cost = 120 // Twice as many shots.
 	projectile_type = /obj/item/projectile/beam/stun/xeno
 	accuracy = 30 // Make it a bit easier to hit the slimes.
-	description_info = "This gun will stun a slime or other lesser slimy lifeform for about two seconds if hit with the projectile it fires."
 	description_fluff = "An easy to use weapon designed by NanoTrasen, for NanoTrasen. This weapon is based on the NT Mk30 NL, \
 	it's core components swaped out for a new design made to subdue lesser slime-based xeno lifeforms at a distance.  It is \
 	ineffective at stunning non-slimy lifeforms such as humanoids."
@@ -210,7 +214,6 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	var/processing = FALSE // So I heard you like processing.
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
-	description_info = "Click a monkey or slime to begin processing."
 
 /// Grinds `AM`: one core per timed action for slimes; a monkey is one timed action, then cubes.
 /obj/item/slime_grinder/proc/extract(atom/movable/AM, mob/living/user)

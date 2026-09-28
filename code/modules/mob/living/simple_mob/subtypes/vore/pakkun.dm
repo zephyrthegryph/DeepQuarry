@@ -92,15 +92,13 @@
 		ai_brain.go_wake()
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(pakkun_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Shake awake", PROC_REF(pakkun_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(pakkun_interaction_item)), \
 )
 
 /// Old attack_hand: a help-touch shakes a resting pakkun awake; anything else is the normal touch.
 /mob/living/simple_mob/vore/pakkun/proc/pakkun_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(stat == DEAD)
-		return FALSE
-	if(!IS_HELPING(user))
 		return FALSE
 	if(!resting)
 		return FALSE
@@ -213,11 +211,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	/// OM handles of the help-touchers she remembers.
 	var/list/petters = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED(null, PROC_REF(snappy_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
 
 /// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	if(IS_HELPING(M) && !(om_handle(M) in petters))
+	if(!(om_handle(M) in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
 		petters += om_handle(M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
 	return FALSE

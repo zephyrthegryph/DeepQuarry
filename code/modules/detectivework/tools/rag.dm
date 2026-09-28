@@ -36,7 +36,10 @@
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	INTERACT_SELF(null, PROC_REF(rag_self)), \
-	INTERACT_ITEM(null, PROC_REF(rag_item)), \
+	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(rag_item)), \
+	INTERACT_ITEM_AS(I_DISARM, "Dip into it", PROC_REF(rag_item)), \
+	INTERACT_ITEM_AS(I_GRAB, "Dip into it", PROC_REF(rag_item)), \
+	INTERACT_ITEM_AS(I_HURT, "Dip into it", PROC_REF(rag_item)), \
 )
 
 /// Old attack_self.

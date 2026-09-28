@@ -6,6 +6,14 @@
 - Improper'd all of the names in the new()
 */
 
+// Airlock-local interaction entries: stance-declared interactions run from the proc that names them.
+/// click_ctrl(): hammer on the door (combat mode) or hold it open (Grab).
+#define AIRLOCK_ENTRY_CTRL "airlock_ctrl"
+/// welder_act(): weld shut or unweld.
+#define AIRLOCK_ENTRY_WELD "airlock_weld"
+/// crowbar_act(): remove the electronics or force the door, outside combat mode.
+#define AIRLOCK_ENTRY_PRY "airlock_pry"
+
 /obj/machinery/door/airlock
 	name = "Airlock"
 	icon = 'icons/obj/doors/doorint.dmi'
@@ -622,6 +630,44 @@ About the new airlock wires panel:
 
 	return FALSE
 
+/// Abstract: a ctrl-click on the airlock that answers one stance (run from click_ctrl()).
+/datum/interaction/airlock_ctrl
+	entry = AIRLOCK_ENTRY_CTRL
+	requires = list(REQ_REACH_ADJACENT)
+
+/datum/interaction/airlock_ctrl/hammer
+	id = "airlock_hammer"
+	name = "Hammer on the door"
+	stance = I_HURT
+	effect = /obj/machinery/door/airlock/proc/interaction_hammer
+
+/datum/interaction/airlock_ctrl/hold_open
+	id = "airlock_hold_open"
+	name = "Hold the door open"
+	stance = I_GRAB
+	effect = /obj/machinery/door/airlock/proc/interaction_hold_open
+
+/obj/machinery/door/airlock/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/airlock_ctrl/hammer,
+		/datum/interaction/airlock_ctrl/hold_open,
+	)
+	..()
+
+/obj/machinery/door/airlock/proc/interaction_hammer(mob/user, obj/item/held, datum/interaction/interaction)
+	visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
+	add_fingerprint(user)
+	if(icon_state == "door_closed" && arePowerSystemsOn())
+		flick("door_deny", src)
+	playsound(src, knock_hammer_sound, 50, 0, 3)
+	return TRUE
+
+/obj/machinery/door/airlock/proc/interaction_hold_open(mob/user, obj/item/held, datum/interaction/interaction)
+	hold_open_handle = om_handle(user)
+	visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
+	attack_hand(user)
+	return TRUE
+
 /obj/machinery/door/airlock/click_ctrl(mob/user) //Hold door open
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(user.is_incorporeal())
@@ -630,18 +676,8 @@ About the new airlock wires panel:
 	if(!Adjacent(user))
 		return CLICK_ACTION_BLOCKING
 
-	if(IS_HARMING(user))
-		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
-		add_fingerprint(user)
-		if(icon_state == "door_closed" && arePowerSystemsOn())
-			flick("door_deny", src)
-		playsound(src, knock_hammer_sound, 50, 0, 3)
-		return CLICK_ACTION_SUCCESS
-
-	if(IS_GRABBING(user)) //Hold door open
-		hold_open_handle = om_handle(user)
-		visible_message(span_info("[user] begins holding \the [src] open."), span_info("Someone has started holding \the [src] open."))
-		attack_hand(user)
+	// Combat mode hammers on the door; Grab holds it open (the stance-declared ctrl interactions below).
+	if(run_interaction_entry(user, src, user.get_active_hand(), AIRLOCK_ENTRY_CTRL))
 		return CLICK_ACTION_SUCCESS
 
 	if(arePowerSystemsOn())
@@ -864,14 +900,69 @@ About the new airlock wires panel:
 	if(!issilicon(user) && isElectrified() && shock(user, 75))
 		return ITEM_INTERACT_BLOCKING
 	add_fingerprint(user)
-	if(!reinforcing && !(operating > 0) && density && (get_integrity() >= max_integrity || user.a_intent != I_HELP))
-		var/obj/item/weldingtool/welder = tool.get_welder()
-		if(welder.remove_fuel(0,user))
-			welded = !welded
-			playsound(src, tool.usesound, 75, 1)
-			update_icon()
+	// Weld shut or unweld (the stance-declared weld interactions below); otherwise the door's reinforce/repair.
+	if(run_interaction_entry(user, src, tool, AIRLOCK_ENTRY_WELD))
 		return ITEM_INTERACT_SUCCESS
 	return ..()
+
+/// Abstract: welding the airlock shut or open with a welder, per stance (run from welder_act()).
+/datum/interaction/airlock_weld
+	entry = AIRLOCK_ENTRY_WELD
+	default_action = INPUT_ACTION_USE
+	category = INTERACTION_CAT_LOCK
+	tool = TOOL_WELDER
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/door/airlock/proc/interaction_weld
+
+/datum/interaction/airlock_weld/display_name(mob/actor, atom/target)
+	var/obj/machinery/door/airlock/airlock = target
+	return airlock.welded ? "Unweld" : "Weld shut"
+
+/// Outside combat mode a damaged airlock is repaired instead (interaction_weld() declines).
+/datum/interaction/airlock_weld/help
+	id = "airlock_weld_help"
+	name = "Weld shut"
+	stance = I_HELP
+
+/datum/interaction/airlock_weld/disarm
+	id = "airlock_weld_disarm"
+	name = "Weld shut"
+	stance = I_DISARM
+
+/datum/interaction/airlock_weld/grab
+	id = "airlock_weld_grab"
+	name = "Weld shut"
+	stance = I_GRAB
+
+/datum/interaction/airlock_weld/harm
+	id = "airlock_weld_harm"
+	name = "Weld shut"
+	stance = I_HURT
+
+/obj/machinery/door/airlock/declare_interactions(list/into)
+	into += list(
+		/datum/interaction/airlock_weld/help,
+		/datum/interaction/airlock_weld/disarm,
+		/datum/interaction/airlock_weld/grab,
+		/datum/interaction/airlock_weld/harm,
+		/datum/interaction/airlock_pry/help,
+		/datum/interaction/airlock_pry/disarm,
+		/datum/interaction/airlock_pry/grab,
+	)
+	..()
+
+/obj/machinery/door/airlock/proc/interaction_weld(mob/user, obj/item/tool, datum/interaction/interaction)
+	if(reinforcing || (operating > 0) || !density)
+		return FALSE
+	if(interaction.stance == I_HELP && get_integrity() < max_integrity)
+		return FALSE
+	var/obj/item/weldingtool/welder = tool.get_welder()
+	if(welder.remove_fuel(0,user))
+		welded = !welded
+		playsound(src, tool.usesound, 75, 1)
+		update_icon()
+	return TRUE
 
 /obj/machinery/door/airlock/proc/welder_act_timed_done(mob/user)
 	to_chat(user, span_notice("You finish melting the ice off \the [src]"))
@@ -921,25 +1012,61 @@ About the new airlock wires panel:
 	if(!issilicon(user) && isElectrified() && shock(user, 75))
 		return ITEM_INTERACT_BLOCKING
 	add_fingerprint(user)
-	if(reinforcing || user.a_intent == I_HURT)
+	if(reinforcing)
 		return ..()
+	// Outside combat mode: remove the electronics or force the door (the stance-declared pry interactions).
+	// In combat mode nothing is declared, so the crowbar goes on to strike the door.
+	if(run_interaction_entry(user, src, tool, AIRLOCK_ENTRY_PRY))
+		return ITEM_INTERACT_SUCCESS
+	return ..()
+
+/// Abstract: prying the airlock with a crowbar outside combat mode (run from crowbar_act()).
+/datum/interaction/airlock_pry
+	entry = AIRLOCK_ENTRY_PRY
+	default_action = INPUT_ACTION_USE
+	category = INTERACTION_CAT_OPEN
+	tool = TOOL_CROWBAR
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/machinery/door/airlock/proc/interaction_pry
+
+/datum/interaction/airlock_pry/display_name(mob/actor, atom/target)
+	var/obj/machinery/door/airlock/airlock = target
+	return airlock.can_remove_electronics() ? "Remove electronics" : "Force open or closed"
+
+/datum/interaction/airlock_pry/help
+	id = "airlock_pry_help"
+	name = "Force open or closed"
+	stance = I_HELP
+
+/datum/interaction/airlock_pry/disarm
+	id = "airlock_pry_disarm"
+	name = "Force open or closed"
+	stance = I_DISARM
+
+/datum/interaction/airlock_pry/grab
+	id = "airlock_pry_grab"
+	name = "Force open or closed"
+	stance = I_GRAB
+
+/obj/machinery/door/airlock/proc/interaction_pry(mob/user, obj/item/tool, datum/interaction/interaction)
 	if(can_remove_electronics())
 		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, message_self = "You start to remove electronics from the airlock assembly.", message_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-		return ITEM_INTERACT_SUCCESS
+		return TRUE
 
 	if(arePowerSystemsOn())
 		to_chat(user, span_notice("The airlock's motors resist your efforts to force it."))
-		return ITEM_INTERACT_BLOCKING
+		return TRUE
 	if(locked)
 		to_chat(user, span_notice("The airlock's bolts prevent it from being forced."))
-		return ITEM_INTERACT_BLOCKING
+		return TRUE
 
 	// Force doors open/closed
 	if(density)
 		open(TRUE)
 	else
 		close(1)
-	return ITEM_INTERACT_SUCCESS
+	return TRUE
 
 /obj/machinery/door/airlock/proc/crowbar_act_tool_done(mob/user)
 	to_chat(user, span_notice("You removed the airlock electronics!"))
@@ -1478,3 +1605,7 @@ REF_HELD(/obj/machinery/door/airlock, list("electronics"))
 /// LC-refs: water res -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
 	return om_resolve(water_res_handle)
+
+#undef AIRLOCK_ENTRY_CTRL
+#undef AIRLOCK_ENTRY_WELD
+#undef AIRLOCK_ENTRY_PRY

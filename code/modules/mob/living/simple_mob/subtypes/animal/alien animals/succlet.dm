@@ -222,13 +222,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 	icon_living = "poison_succlet"
 	icon_rest = "poison_succlet"
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, INTERACT_HAND(null, PROC_REF(succlet_poison_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet/poison, 	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(succlet_poison_interaction_hand)), 	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(succlet_poison_interaction_hand)))
 
 /// Old attack_hand: the normal touch, then a sting unless helping.
 /mob/living/simple_mob/vore/alienanimals/succlet/poison/proc/succlet_poison_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	unarmed_touch(user)
+	unarmed_touch(user, interaction.stance)
 	. = TRUE
-	if(!IS_HELPING(user))
+	if(interaction.stance != I_HELP)
 		if(isliving(user))
 			var/mob/living/l = user
 			to_chat(l, span_warning("You feel \the [src]'s sting!!!"))

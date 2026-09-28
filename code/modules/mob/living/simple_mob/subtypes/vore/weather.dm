@@ -83,7 +83,7 @@
 		icon_state = "rex"
 		icon_living = "rex"
 
-/mob/living/simple_mob/vore/fossiltank/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/fossiltank/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 14))
 		if(L.stat != DEAD && !IIsAlly(L))
 			L.adjust_fire_stacks(9)
@@ -161,7 +161,7 @@
 			L.adjust_nutrition(-leech)
 			adjust_nutrition(leech)
 
-/mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A, stance)
 	if(nutrition > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 		om_after(src, 4 SECONDS, PROC_REF(sniper_shot), A)

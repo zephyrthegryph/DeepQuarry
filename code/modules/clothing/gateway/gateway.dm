@@ -57,10 +57,12 @@
 /obj/item/clothing/suit/darkvrwizard/suit_storage_constraint()
 	var/list/stores = list(POCKET_SECURITY, POCKET_EMERGENCY, /obj/item/melee/baton,/obj/item/melee/energy/sword)
 	return list(HOLD_ONLY(stores))
+/obj/item/clothing/head/psy_crown/candycrown/get_mechanics_info(list/additional_information)
+	return ..(list("It will occasionally give a momentary buff to offensive capabilities.") + additional_information)
+
 /obj/item/clothing/head/psy_crown/candycrown
 	name = "candy crown"
 	desc = "A crown smelling oddly sweet"
-	description_info = "It will occasionally give a momentary buff to offensive capablities."
 	icon_state = "wrathcrown"
 	cooldown_duration = 1 MINUTES // How long the cooldown should be.
 	brainloss_cost = 0
@@ -70,10 +72,12 @@
 	..()
 	wearer.apply_body_effect(/datum/body_effect/aura/candy_orange, 30 SECONDS)
 
+/obj/item/clothing/gloves/stamina/get_mechanics_info(list/additional_information)
+	return ..(list("It has a strange property of restoring hunger.") + additional_information)
+
 /obj/item/clothing/gloves/stamina
 	name = "gloves of stamina"
 	desc = "A strange pair of gloves."
-	description_info = "It has a strange property of restoring hunger."
 	icon_state = "regen"
 	item_state = "graygloves"
 	siemens_coefficient = 0
@@ -154,10 +158,12 @@
 			activate_ability(L)
 
 //vistor section
+/obj/item/clothing/suit/armor/alien/vistor/get_mechanics_info(list/additional_information)
+	return ..(list("Reduces all damage types by 25% with a 12% chance to block.") + additional_information)
+
 /obj/item/clothing/suit/armor/alien/vistor
 	name = "rocky suit"
 	desc = "A strange set of armor made of rocky plates"
-	description_info = "Reduces all admage types by 25% with a 12% chance to block."
 	icon_state = "alien_tank"
 	slowdown = 0
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS

@@ -745,7 +745,13 @@ REF_OWNED(/obj/item/clothing/shoes, list("shoes", "holding"))
 	var/message_pred = null
 	var/message_prey = null
 
-	switch(pred.use_stance())
+	// The wearer's held posture while walking (their state, not an input): the held Disarm/Grab variant, else combat mode.
+	var/posture = pred.combat_mode ? I_HURT : I_HELP
+	if(pred.attack_variant == ATTACK_VARIANT_DISARM)
+		posture = I_DISARM
+	else if(pred.attack_variant == ATTACK_VARIANT_GRAB)
+		posture = I_GRAB
+	switch(posture)
 		if(I_HELP)
 			if(prob(10)) //Reducing spam exclusively on I_HELP. Still more frequent than old pitiful prob(1)
 				if(pred.m_intent == I_RUN)

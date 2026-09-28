@@ -115,13 +115,13 @@
 		user.drop_l_hand()
 		user.stop_pulling()
 
-/mob/living/carbon/human/RestrainedClickOn(atom/A)
+/mob/living/carbon/human/RestrainedClickOn(atom/A, stance = I_HURT)
 	if (A != src) return ..()
 	if (!COOLDOWN_FINISHED(src, chew_cooldown)) return
 
 	var/mob/living/carbon/human/H = A
 	if (!H.get_equipped_item(SLOT_ID_HANDCUFFED)) return
-	if (!IS_HARMING(H)) return
+	if (stance != I_HURT) return
 	if (H.zone_sel.selecting != O_MOUTH) return
 	if (H.get_equipped_item(SLOT_ID_MASK)) return
 	if (istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/straight_jacket)) return

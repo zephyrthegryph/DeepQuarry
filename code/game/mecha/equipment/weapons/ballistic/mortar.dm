@@ -1,7 +1,6 @@
 /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/mortar
 	name = "\improper HEP RC 4 \"Skyfall\""
 	desc = "A Hephaestus exosuit-mounted mortar for use on planetary-or-similar bodies."
-	description_info = "This weapon cannot be fired indoors, underground, or on-station."
 	icon_state = "mecha_mortar"
 	equip_cooldown = 30
 	fire_sound = 'sound/weapons/gunshot_cannon.ogg'
@@ -20,3 +19,6 @@
 		to_chat(chassis?.slot_item(MECHA_SLOT_PILOT), span_notice("\The [src]'s control system prevents you from firing due to a blocked firing arc."))
 		return 0
 	return ..()
+
+/obj/item/mecha_parts/mecha_equipment/weapon/ballistic/mortar/get_mechanics_info(list/additional_information)
+	return ..(list("This weapon cannot be fired indoors, underground, or on-station.") + additional_information)

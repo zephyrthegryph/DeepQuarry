@@ -2,7 +2,7 @@
 	var/mob/living/carbon/human/H = over_object
 	if(!istype(H) || !Adjacent(H))
 		return ..()
-	if(IS_GRABBING(H) && hat && !H.hands_are_full())
+	if(H.attack_variant == ATTACK_VARIANT_GRAB && hat && !H.hands_are_full())
 		hat.forceMove(get_turf(src))
 		H.put_in_hands(hat)
 		H.visible_message(span_danger("\The [H] removes \the [src]'s [hat]."))
@@ -11,11 +11,11 @@
 	else
 		return ..()
 
-EXTEND_INTERACTIONS(/mob/living/carbon/alien/diona, INTERACT_ITEM("Put on hat", PROC_REF(diona_interaction_hat)))
+EXTEND_INTERACTIONS(/mob/living/carbon/alien/diona, INTERACT_ITEM_AS(I_HELP, "Put on hat", PROC_REF(diona_interaction_hat)))
 
-/// Old attackby: on help intent, a hat goes on the nymph. Anything else reaches the attack.
+/// Old attackby, in help: a hat goes on the nymph. Anything else reaches the attack.
 /mob/living/carbon/alien/diona/proc/diona_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!IS_HELPING(user) || !istype(held, /obj/item/clothing/head))
+	if(!istype(held, /obj/item/clothing/head))
 		return FALSE
 	if(hat)
 		to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))

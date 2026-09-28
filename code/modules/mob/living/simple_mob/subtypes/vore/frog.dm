@@ -53,7 +53,7 @@
 		name = "rare Pepe"
 		desc = "You found a rare Pepe. Screenshot for good luck."
 
-/mob/living/simple_mob/vore/aggressive/frog/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/aggressive/frog/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
 	om_after(src, 20, PROC_REF(chargeend), A)

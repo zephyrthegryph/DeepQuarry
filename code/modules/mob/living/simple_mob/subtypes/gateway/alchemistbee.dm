@@ -95,9 +95,9 @@
 
 //Trying to learn from the AADG's ai and make my own
 
-/mob/living/simple_mob/vr/alchemistbee/do_special_attack(atom/A)
+/mob/living/simple_mob/vr/alchemistbee/do_special_attack(atom/A, stance)
 	. = TRUE
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM)
 			chemblast(A)
 		if(I_HURT)

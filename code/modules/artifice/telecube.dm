@@ -20,7 +20,6 @@
 /obj/item/telecube
 	name = "locus"
 	desc = "A strange metallic cube that pulses silently."
-	description_info = "Ctrl-Clicking on this object will attempt to activate its unique ability."
 	icon = 'icons/obj/props/telecube.dmi'
 	icon_state = "cube"
 	w_class = ITEMSIZE_NO_CONTAINER // Made impossible to store to help resolve a certain repeated issue that has been happening with these.
@@ -57,10 +56,6 @@
 	glow.appearance_flags = KEEP_APART
 	charge = image("[icon_state]-charging")
 	charge.appearance_flags = KEEP_APART
-
-	if(teleport_range)
-		description_info += "<br>"
-		description_info += "Alt-Clicking on this object will utilize its second unique ability."
 
 	if(randomize_colors)
 		glow_color = rgb(rand(0, 255),rand(0, 255),rand(0, 255))

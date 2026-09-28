@@ -4,7 +4,7 @@
 	var/uses = 0
 	info = "<center><img src='talisman.png'></center><br/><br/>"
 
-EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE("Invoke", PROC_REF(interaction_talisman)))
+EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple", PROC_REF(interaction_talisman)), INTERACT_USE("Invoke", PROC_REF(interaction_talisman)))
 
 /// Old attack_self: the paper's own self-use (read or crumple), then the talisman's effect.
 /obj/item/paper/talisman/proc/interaction_talisman(mob/living/user, obj/item/held, datum/interaction/interaction)

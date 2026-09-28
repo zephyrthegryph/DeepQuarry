@@ -1,13 +1,11 @@
+/obj/item/stack/hose/get_mechanics_info(list/additional_information)
+	return ..(list("Neutral sockets can link to all socket types; Input and Output sockets link to anything but their own type.", \
+		span_warning("The hose does not stretch: the two ends disconnect if moved further apart than they were when connected.")) + additional_information)
+
 /obj/item/stack/hose
 	name = "plastic tubing"
 	singular_name = "plastic tube"
 	desc = "A plastic tube for moving reagents to and fro. Stretching it too far will cause it to disconnect."
-
-	description_info = "This tubing may be used to join two hose sockets, if able.<br>\
-	Clicking on an object with a connector, such as a water tank, will display a list of possible sockets.<br>\
-	Neutral can link to all socket types, and Input/Output sockets can link to all but their own type.<br><br>\
-	" + span_warning("This hose does not stretch. The maximum distance you can move two objects from eachother\
-	without disconnecting the tube is determined by distance upon connection.")
 
 	icon = 'icons/obj/machines/reagent.dmi'
 	icon_state = "hose"

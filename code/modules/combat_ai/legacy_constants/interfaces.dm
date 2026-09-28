@@ -9,7 +9,7 @@
 /mob/living/simple_mob/IAttack(atom/A)
 	if(!checkClickCooldown()) // Still on cooldown from a "click".
 		return ATTACK_ON_COOLDOWN
-	return attack_target(A) // This will set click cooldown.
+	return attack_target(A, input_stance()) // This will set click cooldown. The AI brain chose the stance (set_use_stance()).
 
 /mob/living/carbon/human/IAttack(atom/A)
 	if(!checkClickCooldown()) // Still on cooldown from a "click".
@@ -39,7 +39,7 @@
 	return FALSE
 
 /mob/living/simple_mob/ISpecialAttack(atom/A)
-	return special_attack_target(A)
+	return special_attack_target(A, input_stance())
 
 // Is the AI allowed to attempt to do it?
 /mob/living/proc/ICheckSpecialAttack(atom/A)

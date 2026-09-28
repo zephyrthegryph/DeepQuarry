@@ -242,7 +242,7 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	explosion(src, 0, 0, 3, 4)
 	expire(1)
 
-/obj/item/gun/afterattack(atom/A, mob/living/user, adjacent, params)
+/obj/item/gun/afterattack(atom/A, mob/living/user, adjacent, params, stance = I_HURT)
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
 
 	if(!user.aiming)
@@ -252,12 +252,12 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
 		return
 
-	if(user && IS_HELPING(user) && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring)) //regardless of what happens, refuse to shoot if help intent is on
-		to_chat(user, span_warning("You refrain from firing your [src] as your intent is set to help."))
+	if(user && stance == I_HELP && user.client?.prefs?.read_preference(/datum/preference/toggle/safefiring)) //regardless of what happens, refuse to shoot out of combat mode
+		to_chat(user, span_warning("You refrain from firing your [src] as you are out of combat mode."))
 		return
 
 	else
-		Fire(A, user, params) //Otherwise, fire normally.
+		Fire(A, user, params, 0, 0, stance) //Otherwise, fire normally.
 		return
 
 /*	//Commented out for quality control and testing
@@ -278,16 +278,16 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	Fire(A,user,params) //Otherwise, fire normally.
 */
 
-/obj/item/gun/attack(mob/living/A, mob/living/user, target_zone, attack_modifier)
+/obj/item/gun/attack(mob/living/A, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
 	if (A == user && user.zone_sel.selecting == O_MOUTH && !mouthshoot)
 		handle_suicide(user)
 		return ITEM_INTERACT_SUCCESS
-	else if(IS_HARMING(user)) //point blank shooting
+	else if(stance == I_HURT) //point blank shooting
 		if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A && A != user)
 			PreFire(A,user) //They're using the new gun system, locate what they're aiming at.
 			return ITEM_INTERACT_SUCCESS
 		else
-			Fire(A, user, pointblank=1)
+			Fire(A, user, null, 1, 0, stance)
 			return ITEM_INTERACT_SUCCESS
 	else
 		return ..() //Pistolwhippin'
@@ -297,7 +297,10 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 // overrode attackby()/attack_self(), so the parent-first order of those chains is kept.
 EXTEND_INTERACTIONS(/obj/item/gun, \
 	INTERACT_ITEM("Fit", PROC_REF(gun_item)), \
-	INTERACT_SELF("Operate", PROC_REF(gun_self)), \
+	INTERACT_SELF_AS(I_HELP, "Operate", PROC_REF(gun_self)), \
+	INTERACT_SELF_AS(I_DISARM, "Operate", PROC_REF(gun_self)), \
+	INTERACT_SELF_AS(I_GRAB, "Operate", PROC_REF(gun_self)), \
+	INTERACT_SELF_AS(I_HURT, "Operate", PROC_REF(gun_self)), \
 	INTERACT_VERB("Give DNA", PROC_REF(gun_verb_give_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
 	INTERACT_VERB("Remove DNA", PROC_REF(gun_verb_remove_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
 	INTERACT_VERB("Toggle DNA Samples Allowance", PROC_REF(gun_verb_allow_dna), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/gun/proc/pred_has_dna_lock, "it has no DNA lock")), \
@@ -374,7 +377,8 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 				usr.put_in_l_hand(src)
 		src.add_fingerprint(usr)
 
-/obj/item/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0)
+/// `stance` is the firer's stance from the input that pulled the trigger (I_HURT for machines, AI and reflex shots).
+/obj/item/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, stance = I_HURT)
 	if(!user || !target)
 		return
 	if(target.z != user.z)
@@ -395,9 +399,9 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	var/shoot_time = (burst - 1)* burst_delay
 
 	COOLDOWN_START(src, next_fire_time, shoot_time)
-	handle_gunfire(target, user, clickparams, pointblank, reflex, 1, FALSE)
+	handle_gunfire(target, user, clickparams, pointblank, reflex, 1, FALSE, stance)
 
-/obj/item/gun/proc/handle_gunfire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, ticker, recursive = FALSE)
+/obj/item/gun/proc/handle_gunfire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, ticker, recursive = FALSE, stance = I_HURT)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(ticker > burst)
@@ -435,6 +439,10 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 			process_accuracy(projectile, user, target, ticker, held_twohanded)
 
+			var/obj/item/projectile/fired = projectile
+			if(istype(fired))
+				fired.receive_firer_stance(stance)
+
 			if(pointblank)
 				process_point_blank(projectile, user, target)
 
@@ -470,7 +478,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 				pointblank = 0
 
 			if(ticker < burst)
-				om_after(src, burst_delay, PROC_REF(handle_gunfire), target, user, clickparams, pointblank, reflex, ++ticker, TRUE)
+				om_after(src, burst_delay, PROC_REF(handle_gunfire), target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance)
 				return
 
 			if(ticker == burst)
@@ -688,6 +696,10 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 			P.accuracy -= 35
 
 //does the actual launching of the projectile
+/// A projectile about to leave a gun learns the stance its firer pulled the trigger in. Most ignore it.
+/obj/item/projectile/proc/receive_firer_stance(stance)
+	return
+
 /obj/item/gun/proc/process_projectile(obj/projectile, mob/user, atom/target, target_zone, params=null)
 	var/obj/item/projectile/P = projectile
 	if(!istype(P))

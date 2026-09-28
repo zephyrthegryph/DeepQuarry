@@ -2,10 +2,12 @@
  * The gun itself
  */
 MATERIAL_MIX(/obj/item/gun/projectile/smartgun, list(MAT_STEEL = 6000, MAT_DIAMOND = 2000, MAT_URANIUM = 2000))
+/obj/item/gun/projectile/smartgun/get_mechanics_info(list/additional_information)
+	return ..(list("The rifle can't be unloaded while ready, and takes a few seconds to get ready before firing.") + additional_information)
+
 /obj/item/gun/projectile/smartgun
-	name = "\improper OP-15 'S.M.A.R.T.' Rifle"
+	name ="\improper OP-15 'S.M.A.R.T.' Rifle"
 	desc = "Suppressive Manual Action Reciprocating Taser rifle. A modified version of an Armadyne heavy machine gun fitted to fire miniature shock-bolts."
-	description_info = "Alt-click to toggle the rifle's ready state. The rifle can't be unloaded when ready, and requires a few seconds to get ready before firing."
 	icon = 'icons/obj/guns/projectile/smartgun_item.dmi'
 	icon_state = "smartgun"
 	icon_override = 'icons/obj/guns/projectile/smartgun_mob.dmi'

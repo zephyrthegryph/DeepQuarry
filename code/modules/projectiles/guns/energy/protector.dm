@@ -1,11 +1,12 @@
 // -------------- Protector -------------
+/obj/item/gun/energy/gun/protector/get_mechanics_info(list/additional_information)
+	return ..(list("This gun can only be fired in lethal mode while on higher security alert levels.") + additional_information)
+
 /obj/item/gun/energy/gun/protector
 	name = "small energy gun"
 	desc = "The WT-98a 'Protector' is a common sidearm developed by Ward-Takahashi GMC. It features a powerful stun mode, and \
 	an alert-level-locked lethal mode, only usable when the connected jurisdiction allows. It also features an integrated flashlight!"
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/ward_takahashi)
-
-	description_info = "This gun can only be fired in lethal mode while on higher security alert levels. It is legal for sec to carry for this reason, since it cannot be used for lethal force until SOP allows it, in essence."
 	description_fluff = "One of the few sidearms developed by Ward-Takahashi, this gun has a wireless connection to the computer's datacore to ensure it can't be used without authorization from heads of staff who have raised the alert level. Until then, *click*!"
 	description_antag = "The gun can be emagged to remove the lethal security level restriction, allowing it to be fired on lethal mode at all times."
 
@@ -107,11 +108,12 @@
 	name = "small energy gun"
 	desc = "The LAEP95 'Protector' is another firearm from Lawson Arms and "+TSC_HEPH+", unlike the Perun this is designed for issue to non-security staff. It contains a detachable cell. It also features an integrated flashlight!"
 
+/obj/item/gun/energy/gun/protector/pilotgun/locked/get_mechanics_info(list/additional_information)
+	return ..(list("It's incapable of firing within the proximity of Nanotrasen facilities, courtesy of the built-in safety interlock.") + additional_information)
+
 /obj/item/gun/energy/gun/protector/pilotgun/locked
 	name = "secure shuttle-protection pistol"
 	desc = "The LAEP97 'Defender' is a variant of another firearm from Lawson Arms and "+TSC_HEPH+", designed to be issued to pilots for defence of their craft from trespassers whilst in-flight. It contains a detachable cell, two modes of fire and a safety interlock to minimize workplace accidents. It also features an integrated flashlight!"
-
-	description_info = "This gun can only fire non-lethally. Additionally, it's incapable of firing within the proximity of Nanotrasen facilities courtesy of the built-in safety interlock."
 	description_fluff = "A lighter weapon designed for pilots, this gun has a wireless connection to the computer's datacore to ensure it can't be used within the bounds of NT facilities without authorization from ranking members of security, or the Captain."
 
 	firemodes = list(

@@ -151,6 +151,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 
 /obj/structure/railing/declare_interactions(list/into)
 	into += list(
+		/datum/interaction/entry_item/railing_item/harm,
 		/datum/interaction/entry_item/railing_item,
 	)
 	var/static/list/flip_spec = INTERACT_VERB("Flip Railing", PROC_REF(railing_flip_effect))
@@ -163,8 +164,14 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	name = "Use"
 	effect = /obj/structure/railing/proc/interaction_item
 
+/// Combat mode: a weak grab slams the victim's face against the railing.
+/datum/interaction/entry_item/railing_item/harm
+	id = "railing_item_harm"
+	name = "Slam"
+	stance = I_HURT
+
 /obj/structure/railing/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	// Handle harm intent grabbing/tabling.
+	// Handle combat-mode grabbing/tabling.
 	if(istype(W, /obj/item/grab) && get_dist(src,user)<2)
 		var/obj/item/grab/G = W
 		if (isliving(G?.grab_target()))
@@ -174,7 +181,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 				to_chat(user, span_danger("There's \a [occupied] in the way."))
 				return TRUE
 			if (G.state < 2)
-				if(IS_HARMING(user))
+				if(interaction.stance == I_HURT)
 					if (prob(15))	M.status_at_least(EFFECT_WEAKENED, 5)
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)

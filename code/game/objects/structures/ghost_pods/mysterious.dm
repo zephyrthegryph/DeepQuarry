@@ -1,7 +1,6 @@
 /obj/structure/ghost_pod/manual/corgi
 	name = "glowing rune"
 	desc = "This rune slowly lights up and goes dim in a repeating pattern, like a slow heartbeat. It's almost as if it's calling out to you to touch it..."
-	description_info = "This will summon some manner of creature through quite dubious means. The creature will be controlled by a player."
 	icon_state = "corgirune"
 	icon_state_opened = "corgirune-inert"
 	density = FALSE

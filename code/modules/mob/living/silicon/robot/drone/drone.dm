@@ -252,11 +252,11 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
-EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM("Put on hat", PROC_REF(drone_interaction_hat)))
+EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM_AS(I_HELP, "Put on hat", PROC_REF(drone_interaction_hat)))
 
-/// Old attackby: on help intent a hat goes on the drone, before the cyborg item handling.
+/// Old attackby, in help: a hat goes on the drone, before the cyborg item handling.
 /mob/living/silicon/robot/drone/proc/drone_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!IS_HELPING(user) || !istype(held, /obj/item/clothing/head))
+	if(!istype(held, /obj/item/clothing/head))
 		return FALSE
 	if(hat)
 		to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))

@@ -1,14 +1,12 @@
 GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 
-EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATED("Dig", PROC_REF(newdirt_hand)))
+EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATED_AS(I_HELP, "Dig", PROC_REF(newdirt_hand)))
 
-/// Old attack_hand: loosen rocks, or pile the dirt into a growplot. Pulling, out of reach or in combat mode, the turf's own touch.
+/// Old attack_hand: loosen rocks, or pile the dirt into a growplot. Outside combat mode only (the interaction's stance); pulling or out of reach, the turf's own touch.
 /turf/simulated/floor/outdoors/newdirt/proc/newdirt_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user?.pulling_target())
 		return FALSE
 	if(!Adjacent(user))
-		return FALSE
-	if(!IS_HELPING(user))
 		return FALSE
 	if(icon_state in GLOB.has_rocks)
 		user.visible_message("[user] loosens rocks from \the [src]...", "You loosen rocks from \the [src]...")

@@ -76,7 +76,7 @@
 	var/mob/living/carbon/H = over_object
 	if(!istype(H) || !Adjacent(H)) return ..()
 
-	if(IS_HELPING(H))
+	if(!H.combat_mode)
 		get_scooped(H)
 		return
 	else

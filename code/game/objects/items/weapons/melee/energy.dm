@@ -362,9 +362,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 /obj/item/melee/energy/sword/ionic_rapier
 	name = "ionic rapier"
 	desc = "Designed specifically for disrupting electronics at close range, it is extremely deadly against synthetics, but almost harmless to pure organic targets."
-	description_info = "This is a dangerous melee weapon that will deliver a moderately powerful electromagnetic pulse to whatever it strikes.  \
-	Striking a lesser robotic entity will compel it to attack you, as well.  It also does extra burn damage to robotic entities, but it does \
-	very little damage to purely organic targets."
 	icon_state = "ionrapier"
 	item_state = "ionrapier"
 	active_force = 5

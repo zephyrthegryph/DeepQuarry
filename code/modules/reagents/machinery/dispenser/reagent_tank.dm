@@ -1,7 +1,6 @@
 /obj/structure/reagent_dispensers
 	name = "Dispenser"
 	desc = "..."
-	description_info = "The input can be opened by Alt-clicking it, allowing you to pour reagents inside."
 	icon = 'icons/obj/chemical_tanks.dmi'
 	icon_state = "tank"
 	layer = TABLE_LAYER

@@ -79,7 +79,6 @@
 
 /obj/item/mail/blank
 	desc = "A blank envelope."
-	description_info = "An object can be placed into the envelope, click on it with an empty hand to seal it. Alt-Click to retrieve the items from inside before sealing."
 	stamped = FALSE
 	postmarked = FALSE
 	var/set_recipient = FALSE
@@ -114,7 +113,6 @@
 	W.forceMove(src)
 	balloon_alert(user, "placed \the [W] into \the [src]")
 	set_content = TRUE
-	description_info = "Click with an empty hand to seal it, or Alt-Click to retrieve the object out."
 	return
 
 /obj/item/mail/blank/proc/attackby_timed_failed(datum/om/task/timed/blank_attackby/task)
@@ -154,7 +152,6 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 		else
 			stuff.forceMove(drop_location())
 	set_content = FALSE
-	description_info = initial(description_info)
 	return TRUE
 
 /obj/item/mail/blank/inspected_by(mob/user)
@@ -175,7 +172,6 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 
 /obj/item/mail/blank/proc/attack_self_timed_done()
 	sealed = TRUE
-	description_info = "Shift Click to add the sender's name to the envelope, or attack with a pen to set a receiver."
 	return
 
 /obj/item/mail/blank/proc/attack_self_timed_failed()
@@ -216,7 +212,6 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 			balloon_alert(user, "labeled for [O.currTag].")
 			src.sortTag = O.currTag
 			playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
-			O.description_info = " It is labeled for [O.currTag]"
 		else
 			balloon_alert(user, "already labeled for [O.currTag].")
 	else

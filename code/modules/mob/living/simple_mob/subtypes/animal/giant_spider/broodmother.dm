@@ -124,9 +124,9 @@
 		return FALSE
 	return TRUE
 
-/mob/living/simple_mob/animal/giant_spider/broodmother/do_special_attack(atom/A)
+/mob/living/simple_mob/animal/giant_spider/broodmother/do_special_attack(atom/A, stance)
 	. = TRUE
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM)
 			spawn_brood(A)
 		if(I_HURT)

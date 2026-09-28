@@ -55,12 +55,15 @@
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mothroach, \
 	INTERACT_ITEM(null, PROC_REF(mothroach_interaction_item)), \
-	INTERACT_HAND(null, PROC_REF(mothroach_interaction_hand)))
+	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(mothroach_interaction_hand)), \
+	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(mothroach_interaction_hand)), \
+	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(mothroach_interaction_hand)), \
+	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(mothroach_interaction_hand)))
 
 /// Old attack_hand: the normal touch, then a scream.
 /mob/living/simple_mob/animal/passive/mothroach/proc/mothroach_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	unarmed_touch(user)
+	unarmed_touch(user, interaction.stance)
 
 	if(stat != DEAD)
 		playsound(src, 'sound/voice/scream/moth/moth_scream.ogg', 50, TRUE)

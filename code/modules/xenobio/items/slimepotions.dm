@@ -7,18 +7,22 @@
 	w_class = ITEMSIZE_TINY
 
 // This is actually applied to an extract, so no attack() overriding needed.
+/obj/item/slimepotion/enhancer/get_mechanics_info(list/additional_information)
+	return ..(list("This will even work on inert slime extracts, if it wasn't enhanced before. Extracts enhanced cannot be enhanced again.") + additional_information)
+
 /obj/item/slimepotion/enhancer
 	name = "extract enhancer agent"
 	desc = "A potent chemical mix that will give a slime extract an additional two uses."
 	icon_state = "potcyan"
-	description_info = "This will even work on inert slime extracts, if it wasn't enhanced before.  Extracts enhanced cannot be enhanced again."
 
 // Makes slimes less likely to mutate.
+/obj/item/slimepotion/stabilizer/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive for this to work. It will reduce the chances of mutation by 15%.") + additional_information)
+
 /obj/item/slimepotion/stabilizer
 	name = "slime stabilizer agent"
 	desc = "A potent chemical mix that will reduce the chance of a slime mutating."
 	icon_state = "potcyan"
-	description_info = "The slime needs to be alive for this to work.  It will reduce the chances of mutation by 15%."
 
 /obj/item/slimepotion/stabilizer/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -41,10 +45,12 @@
 
 
 // The opposite, makes the slime more likely to mutate.
+/obj/item/slimepotion/mutator/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive for this to work. It will increase the chances of mutation by 12%.") + additional_information)
+
 /obj/item/slimepotion/mutator
 	name = "slime mutator agent"
 	desc = "A potent chemical mix that will increase the chance of a slime mutating."
-	description_info = "The slime needs to be alive for this to work.  It will increase the chances of mutation by 12%."
 	icon_state = "potred"
 
 /obj/item/slimepotion/mutator/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -68,11 +74,13 @@
 
 
 // Makes the slime friendly forever.
+/obj/item/slimepotion/docility/get_mechanics_info(list/additional_information)
+	return ..(list("The target needs to be alive, not already passive, and be an animal or slime type entity.") + additional_information)
+
 /obj/item/slimepotion/docility
 	name = "slime docility agent"
 	desc = "A potent chemical mix that nullifies a slime's hunger, causing it to become docile and tame.  It might also work on other creatures?"
 	icon_state = "potlightpink"
-	description_info = "The target needs to be alive, not already passive, and be an animal or slime type entity."
 	var/currently_using = FALSE						// To avoid same potion being usable multiple times
 
 /obj/item/slimepotion/docility/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -136,11 +144,13 @@
 
 
 // Makes slimes make more extracts.
+/obj/item/slimepotion/steroid/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive and not an adult for this to work. It will increase the amount of extracts gained by one, up to a max of five per slime. \
+	Extra extracts are not passed down to offspring when reproducing.") + additional_information)
+
 /obj/item/slimepotion/steroid
 	name = "slime steroid agent"
 	desc = "A potent chemical mix that will increase the amount of extracts obtained from harvesting a slime."
-	description_info = "The slime needs to be alive and not an adult for this to work.  It will increase the amount of extracts gained by one, up to a max of five per slime.  \
-	Extra extracts are not passed down to offspring when reproducing."
 	icon_state = "potpurple"
 
 /obj/item/slimepotion/steroid/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -167,11 +177,13 @@
 
 
 // Makes slimes not try to murder other slime colors.
+/obj/item/slimepotion/unity/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive for this to work. Slimes unified will not attack or be attacked by other colored slimes, and this will \
+	carry over to offspring when reproducing.") + additional_information)
+
 /obj/item/slimepotion/unity
 	name = "slime unity agent"
 	desc = "A potent chemical mix that makes the slime feel and be seen as all the colors at once, and as a result not be considered an enemy to any other color."
-	description_info = "The slime needs to be alive for this to work.  Slimes unified will not attack or be attacked by other colored slimes, and this will \
-	carry over to offspring when reproducing."
 	icon_state = "potpink"
 
 /obj/item/slimepotion/unity/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -196,11 +208,13 @@
 	return ITEM_INTERACT_SUCCESS
 
 // Makes slimes not kill (most) humanoids but still fight spiders/carp/bears/etc.
+/obj/item/slimepotion/loyalty/get_mechanics_info(list/additional_information)
+	return ..(list("The slime or other animal needs to be alive for this to work. The slime this is applied to will have their 'faction' change to \
+	the user's faction, which means the slime will attack things that are hostile to the user's faction, such as carp, spiders, and other slimes.") + additional_information)
+
 /obj/item/slimepotion/loyalty
 	name = "slime loyalty agent"
 	desc = "A potent chemical mix that makes an animal deeply loyal to the species of whoever applies this, and will attack threats to them."
-	description_info = "The slime or other animal needs to be alive for this to work.  The slime this is applied to will have their 'faction' change to \
-	the user's faction, which means the slime will attack things that are hostile to the user's faction, such as carp, spiders, and other slimes."
 	icon_state = "potlightpink"
 
 /obj/item/slimepotion/loyalty/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -236,11 +250,13 @@
 
 
 // User befriends the slime with this.
+/obj/item/slimepotion/friendship/get_mechanics_info(list/additional_information)
+	return ..(list("The slime or other animal needs to be alive for this to work. The slime this is applied to will consider the user \
+	their 'friend', and will never attack them. This might also work on other things besides slimes.") + additional_information)
+
 /obj/item/slimepotion/friendship
 	name = "slime friendship agent"
 	desc = "A potent chemical mix that makes an animal deeply loyal to the the specific entity which feeds them this agent."
-	description_info = "The slime or other animal needs to be alive for this to work.  The slime this is applied to will consider the user \
-	their 'friend', and will never attack them.  This might also work on other things besides slimes."
 	icon_state = "potlightpink"
 
 /obj/item/slimepotion/friendship/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -274,10 +290,12 @@
 
 
 // Feeds the slime instantly.
+/obj/item/slimepotion/feeding/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive for this to work. It will instantly grow the slime enough to reproduce.") + additional_information)
+
 /obj/item/slimepotion/feeding
 	name = "slime feeding agent"
 	desc = "A potent chemical mix that will instantly sediate the slime."
-	description_info = "The slime needs to be alive for this to work.  It will instantly grow the slime enough to reproduce."
 	icon_state = "potorange"
 
 /obj/item/slimepotion/feeding/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -314,11 +332,13 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	return FALSE
 
 
+/obj/item/slimepotion/infertility/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive for this to work. It will reduce the amount of slime babies by 2 (to minimum of 2).") + additional_information)
+
 /obj/item/slimepotion/infertility
 	name = "slime infertility agent"
 	desc = "A potent chemical mix that will reduce the amount of offspring this slime will have."
 	icon_state = "potpurple"
-	description_info = "The slime needs to be alive for this to work. It will reduce the amount of slime babies by 2 (to minimum of 2)."
 
 /obj/item/slimepotion/infertility/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -339,11 +359,13 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/slimepotion/fertility/get_mechanics_info(list/additional_information)
+	return ..(list("The slime needs to be alive for this to work. It will increase the amount of slime babies by 2 (to maximum of 6).") + additional_information)
+
 /obj/item/slimepotion/fertility
 	name = "slime fertility agent"
 	desc = "A potent chemical mix that will increase the amount of offspring this slime will have."
 	icon_state = "potpurple"
-	description_info = "The slime needs to be alive for this to work. It will increase the amount of slime babies by 2 (to maximum of 6)."
 
 /obj/item/slimepotion/fertility/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -368,7 +390,6 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	name = "slime shrinking agent"
 	desc = "A potent chemical mix that will turn adult slime into a baby one."
 	icon_state = "potpurple"
-	description_info = "The slime needs to be alive for this to work."
 
 /obj/item/slimepotion/shrink/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -393,7 +414,6 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	name = "slime death agent"
 	desc = "A potent chemical mix that will instantly kill a slime."
 	icon_state = "potblue"
-	description_info = "The slime needs to be alive for this to work."
 
 /obj/item/slimepotion/death/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -415,7 +435,6 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	name = "slime ferality agent"
 	desc = "A potent chemical mix that will make a slime untamable."
 	icon_state = "potred"
-	description_info = "The slime needs to be alive for this to work."
 
 /obj/item/slimepotion/ferality/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))
@@ -437,17 +456,21 @@ DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interac
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/slimepotion/reinvigoration/get_mechanics_info(list/additional_information)
+	return ..(list("This will even work on inert extracts. The extract is destroyed in the process.") + additional_information)
+
 /obj/item/slimepotion/reinvigoration
 	name = "extract reinvigoration agent"
 	desc = "A potent chemical mix that will create a slime of appropriate type out of an extract."
 	icon_state = "potcyan"
-	description_info = "This will even work on inert extracts. Extract is destroyed in process."
+
+/obj/item/slimepotion/mimic/get_mechanics_info(list/additional_information)
+	return ..(list("Warning: avoid combining multiple doses of mimic agent.") + additional_information)
 
 /obj/item/slimepotion/mimic
 	name = "mimic agent"
 	desc = "A potent chemical mix that will mimic effects of other slime-produced agents."
 	icon_state = "potsilver"
-	description_info = "Warning: avoid combining multiple doses of mimic agent."
 
 EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mimic_interaction_item)))
 
@@ -465,10 +488,12 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 		return ITEM_INTERACT_SUCCESS
 	return FALSE
 
+/obj/item/slimepotion/sapience/get_mechanics_info(list/additional_information)
+	return ..(list("The slime or other animal needs to be alive for this to work. The development is not always immediate and may take indeterminate time before effects show.") + additional_information)
+
 /obj/item/slimepotion/sapience
 	name = "slime sapience agent"
 	desc = "A potent chemical mix that makes an animal capable of developing more advanced, sapient thought."
-	description_info = "The slime or other animal needs to be alive for this to work. The development is not always immedeate and may take indeterminate time before effects show."
 	icon_state = "potblue"
 
 /obj/item/slimepotion/sapience/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -498,11 +523,13 @@ EXTEND_INTERACTIONS(/obj/item/slimepotion/mimic, INTERACT_ITEM(null, PROC_REF(mi
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
+/obj/item/slimepotion/obedience/get_mechanics_info(list/additional_information)
+	return ..(list("The target needs to be alive and currently misbehaving. Effect is equivalent to very strong discipline.") + additional_information)
+
 /obj/item/slimepotion/obedience
 	name = "slime obedience agent"
 	desc = "A potent chemical mix that makes slime extremely obedient."
 	icon_state = "potlightpink"
-	description_info = "The target needs to be alive and currently misbehaving. Effect is equivalent to very strong discipline."
 
 /obj/item/slimepotion/obedience/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))

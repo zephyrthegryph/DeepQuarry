@@ -230,10 +230,10 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	if(!ismob(user))
 		return FALSE
 
-	if(can_operate(src, user, stance) && I.do_surgery(src,user))
+	if(can_operate(src, user, stance) && I.do_surgery(src, user, stance))
 		return TRUE
 
-	if(vore_attackby(I, user)) // The vore, of course.
+	if(vore_attackby(I, user, stance)) // The vore, of course.
 		return
 
 	// Phased melee: a harm-intent attack with a real weapon winds up, telegraphs its swing
@@ -293,14 +293,15 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 		user.setClickCooldown(user.get_attack_speed(src))
 		user.do_attack_animation(M)
 
-	var/hit_zone = M.resolve_item_attack(src, user, target_zone)
+	var/hit_zone = M.resolve_item_attack(src, user, target_zone, stance)
 	if(hit_zone)
-		apply_hit_effect(M, user, hit_zone, attack_modifier)
+		apply_hit_effect(M, user, hit_zone, attack_modifier, stance)
 
 	return ITEM_INTERACT_SUCCESS
 
 //Called when a weapon is used to make a successful melee attack on a mob. Returns the blocked result
-/obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier)
+// `stance` is the stance of the attack() that landed it (I_HURT unless the swing said otherwise).
+/obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	user.break_cloak()
 	material_response_impact(get_turf(target), target)
 	if(hitsound)
@@ -313,4 +314,4 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 
 	power *= attack_modifier
 
-	return target.hit_with_weapon(src, user, power, hit_zone)
+	return target.hit_with_weapon(src, user, power, hit_zone, stance)

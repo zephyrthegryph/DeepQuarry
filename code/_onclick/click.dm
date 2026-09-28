@@ -76,7 +76,7 @@
 	Used when you are handcuffed and click things.
 	Not currently used by anything but could easily be.
 */
-/mob/proc/RestrainedClickOn(atom/A)
+/mob/proc/RestrainedClickOn(atom/A, stance = I_HURT)
 	return
 
 /*

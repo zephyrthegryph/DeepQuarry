@@ -263,7 +263,7 @@
 		use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 50, receiver = src, on_done = PROC_REF(attackby_tool_done), done_args = list(user, was_anchored))
 	else if(!isrobot(user) && gargoyle && gargoyle.vore_selected && gargoyle.trash_catching)
 		if(istype(W, /obj/item/grab) || istype(W, /obj/item/holder))
-			gargoyle.vore_attackby(W, user)
+			gargoyle.vore_attackby(W, user, I_HELP) // feeding the statue its catch is a peaceful use
 			return TRUE
 		if(gargoyle.adminbus_trash || is_type_in_list(W, GLOB.edible_trash) && W.trash_eatable && !is_type_in_list(W, GLOB.item_vore_blacklist))
 			to_chat(user, span_warning("You slip [W] into [gargoyle]'s [lowertext(gargoyle.vore_selected.name)] ."))

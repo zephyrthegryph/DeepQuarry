@@ -151,7 +151,7 @@
 	if(owner_ref())
 		return 1
 
-/obj/item/spell/unrestricted/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+/obj/item/spell/unrestricted/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	if(!run_checks())
 		return
 	if(!proximity_flag)
@@ -164,7 +164,7 @@
 				spell.on_combine_cast(src, user)
 				return
 		if(cast_methods & CAST_MELEE)
-			on_melee_cast(target, user)
+			on_melee_cast(target, user, null, stance)
 		else if(cast_methods & CAST_RANGED) //Try to use a ranged method if a melee one doesn't exist.
 			on_ranged_cast(target, user)
 	if(cooldown)

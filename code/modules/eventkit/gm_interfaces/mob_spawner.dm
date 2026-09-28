@@ -59,7 +59,7 @@
 					// equivalent of swapping AI subtype at runtime.
 					ai_type = null
 					faction = (L.faction ? L.faction : "neutral")
-					intent  = L.use_stance()
+					intent  = L.combat_mode ? I_HURT : I_HELP // the prototype's default posture (state; a fresh mob holds no variant)
 					new_path = FALSE
 
 					// "max_health" is the mob's endurance; "health" is how

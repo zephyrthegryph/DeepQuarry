@@ -144,10 +144,12 @@
  * These subtypes are used by the Replicant species, and provide bonuses to their owners. Even when transplanted!
  */
 
+/obj/item/organ/internal/heart/replicant/rage/get_mechanics_info(list/additional_information)
+	return ..(list("This organ, when connected properly to the body, will attempt to induce an adrenaline surge in the implantee.") + additional_information)
+
 /obj/item/organ/internal/heart/replicant/rage
 	name = "replicant adrenal heart"
 	desc = "A mass of rubber, muscle, and complex chemical networks used for pumping fluid."
-	description_info = "This organ, when connected properly to the body, will attempt to induce an adrenaline surge in the implantee."
 	var/prev_damage_tally = 0
 	var/last_activation_time = 0
 	/// Minimum time between surges.
@@ -178,10 +180,12 @@
 	activation_cooldown = 60 MINUTES //Can only be activated once every 60 minutes to prevent it being able to be spammed
 	berserk_duration = 40 SECONDS //Lasts a little longer so that it can actually get some use seeing as it activates so infrequently
 
+/obj/item/organ/internal/lungs/replicant/mending/get_mechanics_info(list/additional_information)
+	return ..(list("This organ, when connected properly to the body, will attempt to keep some other organs repaired.") + additional_information)
+
 /obj/item/organ/internal/lungs/replicant/mending
 	name = "replicant hive lungs"
 	desc = "A pair of rubbery sacs with large portions dedicated to honeycombed nanite filters."
-	description_info = "This organ, when connected properly to the body, will attempt to keep some other organs repaired."
 	/// Restoration delivered to each listed organ per organ tick.
 	var/repair_rate = 1
 

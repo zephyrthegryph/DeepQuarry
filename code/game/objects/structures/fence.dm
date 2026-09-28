@@ -12,7 +12,6 @@
 /obj/structure/fence
 	name = "fence"
 	desc = "A chain link fence. Not as effective as a wall, but generally it keeps people out."
-	description_info = "Projectiles can freely pass fences."
 	density = TRUE
 	anchored = TRUE
 
@@ -281,7 +280,6 @@
 	cuttable = FALSE
 	name = "fence"
 	desc = "A wooden fence. Not as effective as a wall, but generally it keeps people out."
-	description_info = "Projectiles can freely pass fences."
 	density = TRUE
 	anchored = TRUE
 
@@ -298,7 +296,6 @@
 	cuttable = FALSE
 	name = "hedge"
 	desc = "A large hedge. Not as effective as a wall, but generally it keeps people out."
-	description_info = "Projectiles can freely pass fences."
 	density = TRUE
 	anchored = TRUE
 	opacity = 1
@@ -319,3 +316,6 @@
 #undef MEDIUM_HOLE
 #undef LARGE_HOLE
 #undef MAX_HOLE_SIZE
+
+/obj/structure/fence/get_mechanics_info(list/additional_information)
+	return ..(list("Projectiles can freely pass fences.") + additional_information)

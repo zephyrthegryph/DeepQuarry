@@ -103,7 +103,7 @@ REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 /mob/living/simple_mob/mechanical/technomancer_golem/should_special_attack(atom/A)
 	return instability < 50 // Don't kill ourselves by casting everything.
 
-/mob/living/simple_mob/mechanical/technomancer_golem/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/technomancer_golem/do_special_attack(atom/A, stance)
 	var/proximity = Adjacent(A)
 	if(active_spell)
 		if(proximity && active_spell.cast_methods & CAST_MELEE) // Use melee method if available and close enough.

@@ -2,8 +2,6 @@
 /obj/item/borg/cloak
 	name = "personal cloaking"
 	desc = "A powerful experimental module that allows one to adjust their visiblity."
-	description_info = "Ctrl-Clicking on the cloak will turn it on or off.<br>\
-	Clicking the cloak while selected will allow you to change the strength of the cloak."
 	icon = 'icons/obj/decals.dmi'
 	icon_state = "shock"
 	var/cloak_strength = 0.5		//Percent of visibility, 0 is visible, 1 is fully invisible

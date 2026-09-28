@@ -1,10 +1,12 @@
 // Slime cube lives here.  Makes Prometheans.
+/obj/item/slime_cube/get_mechanics_info(list/additional_information)
+	return ..(list("A ghost is needed to become the Promethean, similar to a positronic brain.") + additional_information)
+
 /obj/item/slime_cube
 	name = "slimy monkey cube"
 	desc = "Wonder what might come out of this."
 	icon = 'icons/mob/slime2.dmi'
 	icon_state = "slime cube"
-	description_info = "Use in your hand to attempt to create a Promethean.  It functions similarly to a positronic brain, in that a ghost is needed to become the Promethean."
 	var/searching = 0
 
 DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -77,11 +79,12 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	consume(src, candidate)
 
 // More or less functionally identical to the telecrystal tele.
+/obj/item/slime_crystal/get_mechanics_info(list/additional_information)
+	return ..(list("Teleports its user to a mostly 'safe' tile, consuming the crystal. Throwing it at someone or attacking them with it teleports them instead.") + additional_information)
+
 /obj/item/slime_crystal
 	name = "lesser slime cystal"
 	desc = "A small, gooy crystal."
-	description_info = "This will teleport you to a mostly 'safe' tile when used in-hand, consuming the slime crystal.  \
-	It can also teleport someone else, by throwing it at them or attacking them with it."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "slime_crystal_small"
 	w_class = ITEMSIZE_TINY
@@ -115,7 +118,6 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 /obj/item/disposable_teleporter/slime
 	name = "greater slime crystal"
 	desc = "A larger, gooier crystal."
-	description_info = "This will teleport you to a specific area once, when used in-hand."
 	icon = 'icons/obj/objects.dmi'
 	icon_state = "slime_crystal_large"
 	uses = 1

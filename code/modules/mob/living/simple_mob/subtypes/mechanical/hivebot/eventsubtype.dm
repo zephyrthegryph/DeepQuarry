@@ -153,7 +153,7 @@
 		/obj/item/prop/deconstructable/gigacell = 100,
 			)
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/boss/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/boss/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
 	var/rng_cycle
 	if(attackcycle == 1)
@@ -209,9 +209,9 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/event
 	endurance = 3000
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/cyan/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: MAELSTORM.")
@@ -251,9 +251,9 @@
 /mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/event
 	endurance = 3000
 
-/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Phase 3
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")
@@ -399,9 +399,9 @@
 
 
 /*
-/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A)
+/mob/living/simple_mob/mechanical/mecha/eclipse/hivebot/green/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM) // Phase 3 1 safe zone
 			if(attackcycle == 1)
 				say("PROTOCOL: LASERBLADE.")

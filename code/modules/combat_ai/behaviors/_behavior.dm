@@ -21,7 +21,7 @@
 // STANCE CONVENTION: Most behaviors call simple_mob.attack_target() / shoot_target()
 // directly, which bypass the click pipeline and don't consult combat mode. If a
 // behavior instead routes through the click pipeline — e.g. IAttack() on a
-// humanoid mob, which becomes ClickOn(), which dispatches by use_stance() — the
+// humanoid mob, which becomes ClickOn(), which dispatches by input_stance() — the
 // behavior MUST call owner.set_use_stance() before calling, and restore it in stop().
 // HURT for kill behaviors, GRAB for vore-style restraint behaviors, DISARM for
 // shoves. HELP is for medical / friendly behaviors. The `valid_intents` field

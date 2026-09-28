@@ -4,7 +4,7 @@
 	icon_state = "ppistol"
 	item_state = "ppistol"
 	desc = "A Kawashima Material Technology Model 7 anti-particle projector, housed in a rugged casing."
-	description_info = "An unconventional weapon, APP guns generate attogram-scale quantities of antimatter which \
+	description_fluff = "An unconventional weapon, APP guns generate attogram-scale quantities of antimatter which \
 	are then launched using an electromagnetic field. They are only suitable for use in depressurised environments, \
 	else the antimatter pellet is liable to strike the air before it reaches the target. This can result in catastrophic \
 	failure, making them unsuitable as military weapons in practical situations as they are prone to backfiring and \

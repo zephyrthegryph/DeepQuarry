@@ -64,7 +64,7 @@
 		return TRUE
 
 // Yes? Throw the grenade
-/mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A)
+/mob/living/simple_mob/humanoid/merc/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))

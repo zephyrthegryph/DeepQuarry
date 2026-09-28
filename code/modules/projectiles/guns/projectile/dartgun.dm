@@ -33,10 +33,12 @@
 	max_ammo = 5
 	multiple_sprites = 1
 
+/obj/item/gun/projectile/dartgun/get_mechanics_info(list/additional_information)
+	return ..(list("Stores up to [max_beakers] beakers. The dart gun only draws from beakers with mixing enabled, in equal amounts from each.") + additional_information)
+
 /obj/item/gun/projectile/dartgun
 	name = "dart gun"
 	desc = "Zeng-Hu Pharmaceutical's entry into the arms market, the Z-H P Artemis is a gas-powered dart gun capable of delivering chemical cocktails swiftly across short distances."
-	description_info = "The dart gun is capable of storing three beakers. In order to use the dart gun, you must first use it in-hand to open its mixing UI. The dart-gun will only draw from beakers with mixing enabled. If multiple are enabled, the gun will draw from them in equal amounts."
 	description_antag = "The dart gun is silenced, but cannot pierce thick clothing such as armor or space-suits, and thus is better for use against soft targets, or commonly exposed areas of the body."
 	icon_state = "dartgun-empty"
 	item_state = null
@@ -177,7 +179,6 @@
 /obj/item/gun/projectile/dartgun/research
 	name = "prototype dart gun"
 	desc = "Zeng-Hu Pharmaceutical's entry into the arms market, the Z-H P Artemis is a gas-powered dart gun capable of delivering chemical cocktails swiftly across short distances. This one seems to be an early model with an NT stamp."
-	description_info = "The dart gun is capable of storing two beakers. In order to use the dart gun, you must first use it in-hand to open its mixing UI. The dart-gun will only draw from beakers with mixing enabled. If multiple are enabled, the gun will draw from them in equal amounts."
 	icon_state = "dartgun_sci-empty"
 	base_state = "dartgun_sci"
 	magazine_type = /obj/item/ammo_magazine/chemdart/small

@@ -3,8 +3,6 @@
 /obj/structure/ghost_pod/ghost_activated/human
 	name = "mysterious cryopod"
 	desc = "This is a pod which appears to contain a body."
-	description_info = "This contains a body, which may wake at any time. The external controls\
-	seem to be malfunctioning."
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "sleeper_1"
 	icon_state_opened = "sleeper_0"
@@ -129,8 +127,6 @@
 /obj/structure/ghost_pod/manual/human
 	name = "mysterious cryopod"
 	desc = "This is a pod which appears to contain a body."
-	description_info = "This contains a body, which may wake at any time. The external controls\
-	seem to be functioning, though the warning lights that flash give no solace.."
 	icon = 'icons/obj/Cryogenic2.dmi'
 	icon_state = "sleeper_1"
 	icon_state_opened = "sleeper_0"

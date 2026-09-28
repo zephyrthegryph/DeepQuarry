@@ -45,21 +45,22 @@
 	return
 
 // Replaces the card's own flash: the old override ran both and flashed the pass twice.
-EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE("Show or deactivate", PROC_REF(interaction_guest_pass)))
+EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_DISARM, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_GRAB, "Show", PROC_REF(interaction_guest_pass_show)), INTERACT_USE_AS(I_HURT, "Deactivate", PROC_REF(interaction_guest_pass_deactivate)))
 
-/// Old attack_self: flash the pass, or deactivate it in combat mode.
-/obj/item/card/id/guest/proc/interaction_guest_pass(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user))
-		if(icon_state == "guest-invalid")
-			to_chat(user, span_warning("This guest pass is already deactivated!"))
-			return
+/// Old attack_self outside combat mode: flash the pass.
+/obj/item/card/id/guest/proc/interaction_guest_pass_show(mob/living/user, obj/item/held, datum/interaction/interaction)
+	user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
+		"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
 
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(deactivation_confirmed), title = "Confirm Deactivation", message = "Do you really want to deactivate this guest pass? (you can't reactivate it)", ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	else
-		user.visible_message("\The [user] shows you: [icon2html(src,viewers(src))] [src.name]. The assignment on the card: [src.assignment]",\
-			"You flash your ID card: [icon2html(src, user.client)] [src.name]. The assignment on the card: [src.assignment]")
+	src.add_fingerprint(user)
 
-		src.add_fingerprint(user)
+/// Old attack_self in combat mode: deactivate the pass.
+/obj/item/card/id/guest/proc/interaction_guest_pass_deactivate(mob/living/user, obj/item/held, datum/interaction/interaction)
+	if(icon_state == "guest-invalid")
+		to_chat(user, span_warning("This guest pass is already deactivated!"))
+		return
+
+	om_ask(user, /datum/om/prompt/confirm, PROC_REF(deactivation_confirmed), title = "Confirm Deactivation", message = "Do you really want to deactivate this guest pass? (you can't reactivate it)", ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/card/id/guest/proc/deactivation_confirmed(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer

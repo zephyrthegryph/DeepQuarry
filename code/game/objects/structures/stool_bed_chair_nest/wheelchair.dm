@@ -201,10 +201,10 @@
 	if(!has_buckled_mobs())	return
 
 	var/mob/living/pulling = src?.pulling_target()
-	if(propelled || (pulling && (IS_HARMING(pulling))))
+	if(propelled || (pulling && pulling.combat_mode))
 		var/mob/living/occupant = unbuckle_mob()
 
-		if (pulling && (IS_HARMING(pulling)))
+		if (pulling && pulling.combat_mode)
 			occupant.throw_at(A, 3, 3, pulling)
 		else if (propelled)
 			occupant.throw_at(A, 3, propelled)

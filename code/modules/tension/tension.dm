@@ -111,7 +111,7 @@
 	if(incapacitated(INCAPACITATION_DISABLED))
 		return 0
 
-	var/friendly = (IIsAlly(threatened) && IS_HELPING(src))
+	var/friendly = (IIsAlly(threatened) && !combat_mode)
 
 	var/threat = guess_threat_level(threatened)
 
@@ -183,7 +183,7 @@
 
 			if(P) // Does the gun even have a projectile type?
 				weapon_damage = P.damage
-				if(will_point_blank && IS_HARMING(src))
+				if(will_point_blank && combat_mode)
 					weapon_damage *= 1.5
 				weapon_attack_speed = G.fire_delay / (1 SECOND)
 				qdel(P)
@@ -193,16 +193,11 @@
 
 		threat_guess += average_damage
 
-	// Consider intent.
-	switch(use_stance())
-		if(I_HELP) // Not likely to fight us.
-			threat_guess *= 0.4
-		if(I_DISARM) // Might engage us, but unlikely to be with the intent to kill.
-			threat_guess *= 0.8
-		if(I_GRAB) // May try to restrain us. This is here for reference, or later tweaking if needed.
-			threat_guess *= 1
-		if(I_HURT) // May try to hurt us.
-			threat_guess *= 1.25
+	// Consider their posture (combat mode is what an onlooker sees).
+	if(combat_mode) // May try to hurt us.
+		threat_guess *= 1.25
+	else // Not likely to fight us.
+		threat_guess *= 0.4
 
 	// Then consider their defense.
 	threat_guess += get_endurance() / 5 // 100 health translates to 20 threat.

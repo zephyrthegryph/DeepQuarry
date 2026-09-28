@@ -22,9 +22,10 @@
 	else if(dir & WEST)
 		pixel_x = 32
 
-/obj/structure/lift/proc/pressed(mob/user)
+/// `stance`: the touch's stance (a tgui button press is a plain press).
+/obj/structure/lift/proc/pressed(mob/user, stance = I_HELP)
 	if(!istype(user, /mob/living/silicon))
-		if(IS_HARMING(user))
+		if(stance == I_HURT)
 			user.visible_message(span_danger("\The [user] hammers on the lift button!"))
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " presses the lift button."))
@@ -39,13 +40,14 @@
 /obj/structure/lift/attack_generic(mob/user)
 	return attack_hand(user)
 
-DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hammer on it", PROC_REF(interaction_hand)), INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
 
 /// Old attack_hand.
 /obj/structure/lift/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	return interact(user)
+	return interact(user, interaction.stance)
 
-/obj/structure/lift/interact(mob/user)
+/// `stance`: the touch's stance, passed on to pressed().
+/obj/structure/lift/interact(mob/user, stance = I_HELP)
 	if(!lift().is_functional())
 		return 0
 	return 1
@@ -85,14 +87,14 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/obj/structure/lift/button/interact(mob/user)
+/obj/structure/lift/button/interact(mob/user, stance = I_HELP)
 	if(!..())
 		return
 	if(lift().fire_mode || lift().priority_mode)
 		playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
 		return
 	light_up()
-	pressed(user)
+	pressed(user, stance)
 	if(floor == lift().current_floor() && !(lift().target_floor()))	//Make sure we're not going anywhere before opening doors
 		lift().open_doors()
 		om_after(src, 3, PROC_REF(reset))

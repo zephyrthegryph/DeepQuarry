@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "What a click does in combat mode, or with Disarm or Grab held, is now a named interaction per stance (Help, Shove, Take hold, Punch, and so on), listed in the Menu and in examine."
+  - qol: "Examine help text is generated from what you can actually do with a thing and from its stats, so it can no longer be out of date."

@@ -76,7 +76,6 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 
 	icon_state = "trap"
 
-	description_info = "An infinitely small point in space that may or may not be used to supply power to some form of advanced machine."
 
 	activation_cooldown = 0	// These things run constantly.
 
@@ -106,7 +105,6 @@ REF_OWNED_LIST(/obj/structure/cult/pylon/swarm, "active_beams")
 
 	icon_state = "barricade"
 
-	description_info = "An infinitely small point in space spread upon infinitely many finitely-bounded points in space. Nice."
 
 /obj/structure/cult/pylon/swarm/defender/pylonhit(damage)
 	if(!isbroken)

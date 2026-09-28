@@ -346,12 +346,16 @@
 	if(steps > 1)
 		om_after(src, 3, PROC_REF(koi_flee), M, steps - 1)
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, INTERACT_HAND(null, PROC_REF(koi_poisonous_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
+	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(koi_poisonous_interaction_hand)), \
+	INTERACT_HAND_AS(I_HURT, "Hit", PROC_REF(koi_poisonous_interaction_hand)), \
+	INTERACT_HAND_AS(I_DISARM, "Shove", PROC_REF(koi_poisonous_interaction_hand)), \
+	INTERACT_HAND_AS(I_GRAB, "Grab", PROC_REF(koi_poisonous_interaction_hand)))
 
 /// Old attack_hand: the normal touch, then the koi flails and stings.
 /mob/living/simple_mob/animal/passive/fish/koi/poisonous/proc/koi_poisonous_interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
 	. = TRUE
-	unarmed_touch(L)
+	unarmed_touch(L, interaction.stance)
 	if(isliving(L) && Adjacent(L))
 		var/mob/living/M = L
 		visible_message(span_warning("\The [src][is_dead()?"'s corpse":""] flails at [M]!"))

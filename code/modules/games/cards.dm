@@ -6,7 +6,6 @@
 /obj/item/deck
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/playing_cards.dmi'
-	description_info = "Alt click to shuffle, Ctrl click to deal, Ctrl+Shift click to deal multiple."
 	var/list/cards = list() // ALLOW(instance_list): d: a deck always holds cards
 	var/cooldown = 0 // to prevent spam shuffle
 
@@ -390,7 +389,6 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 /obj/item/hand
 	name = "hand of cards"
 	desc = "Some playing cards."
-	description_info = "Alt click to remove a card, Ctrl click to discard cards."
 	icon = 'icons/obj/playing_cards.dmi'
 	icon_state = "empty"
 	drop_sound = 'sound/items/drop/paper.ogg'

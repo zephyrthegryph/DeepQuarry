@@ -1,16 +1,18 @@
-/mob/living/Crossed(atom/movable/AM)
-	..()
-	var/mob/living/target = AM
+/**
+ * target stepped onto us while we lie down; `stance` is target's input stance (the movement entry,
+ * /mob/living/Crossed in living_movement.dm, reads it). Our own posture is our combat_mode.
+ */
+/mob/living/proc/handle_micro_crossed_by(mob/living/target, stance)
 	if(istype(target) && src.lying && target.loc && target?.buckled_to() != src)
 		// src.lying being true means that in theory this code shouldn't run at the same time as the existing code for this in Bump. Probably.
 		// And optionally, this could be gated behind another preference, to prevent stunlock being abused.
-		if((mob_always_swap || (IS_HELPING(src) || src.restrained()) && (IS_HELPING(target) || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
+		if((mob_always_swap || (!combat_mode || src.restrained()) && (stance == I_HELP || target.restrained())) && target.canmove && target.handle_micro_bump_helping(src))
 			return
-		if(!(IS_HELPING(target) || target.restrained()))
+		if(!(stance == I_HELP || target.restrained()))
 			if(src.step_mechanics_pref && target.step_mechanics_pref)
-				target.handle_micro_bump_other(src)
+				target.handle_micro_bump_other(src, 0, stance)
 			else
-				target.handle_micro_bump_other(src, 1)
+				target.handle_micro_bump_other(src, 1, stance)
 
 
 // Adding needed defines to /mob/living
@@ -23,7 +25,7 @@
 
 /mob/living
 	var/holder_default
-	var/pickup_active = TRUE			// Toggle whether your help intent picks up micros or pets them
+	var/pickup_active = TRUE			// Toggle whether your help (combat mode off) touch picks up micros or pets them
 
 // Define holder_type on types we want to be scoop-able
 /mob/living/carbon/human
@@ -230,12 +232,12 @@
  * Attempt to scoop up this mob up into M's hands, if the size difference is large enough.
  * @return false if normal code should continue, 1 to prevent normal code.
  */
-/mob/living/proc/attempt_to_scoop(mob/living/M, mob/living/G, ignore_size = FALSE) //second one is for the Grabber, only exists for animals to self-grab
+/mob/living/proc/attempt_to_scoop(mob/living/M, mob/living/G, ignore_size = FALSE, stance = I_HELP) //second one is for the Grabber, only exists for animals to self-grab; `stance` is M's (the scooper's) stance
 	if(src == M)
 		return FALSE
 	if(!(pickup_pref && M.pickup_pref && M.pickup_active))
 		return FALSE
-	if(!(IS_HELPING(M)))
+	if(stance != I_HELP)
 		return FALSE
 	var/size_diff = M.get_effective_size(FALSE) - get_effective_size(TRUE)
 	if(!holder_default && holder_type)
@@ -262,7 +264,7 @@
 #define STEP_TEXT_OWNER(x) "[replacetext(x,"%prey",tmob)]"
 #define STEP_TEXT_PREY(x) "[replacetext(x,"%owner",src)]"
 /**
- * Handle bumping into someone with helping intent.
+ * Handle bumping into someone in help stance.
  * Called from /mob/living/Bump() in the 'brohugs all around' section.
  * @return false if normal code should continue, true to prevent normal code.
  */
@@ -274,7 +276,7 @@
 		return TRUE
 
 	//Both small! Go ahead and go.
-	if(get_effective_size(TRUE) <= RESIZE_A_SMALLTINY && tmob.get_effective_size(TRUE) <= RESIZE_A_SMALLTINY)		// For help intent interaction just assume both are 'smol'
+	if(get_effective_size(TRUE) <= RESIZE_A_SMALLTINY && tmob.get_effective_size(TRUE) <= RESIZE_A_SMALLTINY)		// For help interaction just assume both are 'smol'
 		return TRUE
 
 	//Worthy of doing messages at all
@@ -312,12 +314,12 @@
 	return FALSE
 
 /**
- * Handle bumping into someone without mutual help intent.
- * Called from /mob/living/Bump()
+ * Handle bumping into someone without mutual help.
+ * Called from /mob/living/Bump(); `stance` is our (the bumper's) input stance, read there.
  *
  * @return false if normal code should continue, 1 to prevent normal code.
  */
-/mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0) // changed a lot in this whole proc tbh, to bring back micro combat balance
+/mob/living/proc/handle_micro_bump_other(mob/living/tmob, nofetish = 0, stance = I_HURT) // changed a lot in this whole proc tbh, to bring back micro combat balance
 	ASSERT(istype(tmob))
 	//If we're flying, don't do any special interactions.
 	if(flying)
@@ -343,7 +345,7 @@
 
 	var/mob/living/carbon/human/prey = tmob
 	var/can_pass = TRUE
-	var/size_ratio_needed = (IS_DISARMING(src) || IS_HARMING(src)) ? 0.75 : (IS_GRABBING(src) ? 0.5 : 0)
+	var/size_ratio_needed = (stance == I_DISARM || stance == I_HURT) ? 0.75 : (stance == I_GRAB ? 0.5 : 0)
 	if (isturf(prey.loc))
 		for (var/atom/movable/M in prey.loc)
 			if (prey == M || pred == M)
@@ -360,25 +362,25 @@
 		return FALSE
 
 	// We need to be above a certain size ratio in order to do anything to the prey.
-	// For DISARM and HURT intent, this is >=0.75, for GRAB it is >=0.5
+	// For DISARM and HURT stance, this is >=0.75, for GRAB it is >=0.5
 	var/size_ratio = get_effective_size(FALSE) - tmob.get_effective_size(TRUE)
-	if((IS_GRABBING(src) || IS_DISARMING(src)) && size_ratio < 0.5) // more step changes
+	if((stance == I_GRAB || stance == I_DISARM) && size_ratio < 0.5) // more step changes
 		return FALSE
-	if(IS_HARMING(src) && size_ratio < 0.75)
+	if(stance == I_HURT && size_ratio < 0.75)
 		return FALSE
-	if(IS_HELPING(src)) // Theoretically not possible, but just in case.
+	if(stance == I_HELP) // Theoretically not possible, but just in case.
 		return FALSE
 
 	// removed chance to dodge steppies. Get rng out of my combat.
 	now_pushing = 0
 	forceMove(tmob.loc)
-	if(!IS_HELPING(src))
+	if(stance != I_HELP)
 		if(tmob.size_multiplier > 0.75 && nofetish) //So we can stun micros with step mechanics off, but prevent macros from stunning regular heights
 			to_chat(pred, span_danger("You pass over [tmob.name]."))
 			to_chat(prey, span_danger("[src.name] passes over you."))
 			return FALSE
 		tmob.resting = 1
-		tmob.status_at_least(EFFECT_WEAKENED, 3) // do both regardless of intent, dummy
+		tmob.status_at_least(EFFECT_WEAKENED, 3) // do both regardless of stance, dummy
 		if(nofetish)
 			to_chat(pred, span_danger("You casually knock [tmob.name] over."))
 			to_chat(prey, span_danger("[src.name] casually knocks you over."))
@@ -390,7 +392,7 @@
 	// I_HURT: Rand 1-3 multiplied by 1 min or 1.75 max. 1 min 5.25 max damage to each limb.
 	// I_DISARM: Inflict some pain (INJURY_PAIN) on the smaller.
 	//           Since stunned is broken, let's do this. Rand 15-30 multiplied by 1 min or 1.75 max. 15 holo to 52.5 holo, depending on RNG and size differnece.
-	var/damage = (IS_DISARMING(src)) ? (rand(15, 30) * size_damage_multiplier) : (rand(1, 3) * size_damage_multiplier)
+	var/damage = (stance == I_DISARM) ? (rand(15, 30) * size_damage_multiplier) : (rand(1, 3) * size_damage_multiplier)
 	// I_HURT only
 	var/calculated_damage = damage / 2 //This will sting, but not kill. Does .5 to 2.625 damage, randomly, to each limb.
 
@@ -400,7 +402,7 @@
 	if(istaurtail(pred.tail_style))
 		tail = pred.tail_style
 	if(!nofetish) // Brings back mandatory step mechanics, circumvents the fetish stuff if no pref match
-		if(IS_GRABBING(src))
+		if(stance == I_GRAB)
 			// You can only grab prey if you have no shoes on. And both of you are cool with it.
 			if(pred.get_equipped_item(SLOT_ID_SHOES) || !(pred.pickup_pref && prey.pickup_pref))
 				message_pred = "You step down onto [prey], squishing them and forcing them down to the ground!"
@@ -419,7 +421,7 @@
 				add_attack_logs(pred, prey, "Grabbed underfoot ([tail ? "taur" : "nontaur"], no shoes)")
 
 		if(m_intent == I_RUN)
-			switch(use_stance())
+			switch(stance)
 				if(I_DISARM)
 					message_pred = "You quickly push [prey] to the ground with your foot!"
 					message_prey = "[pred] pushes you down to the ground with their foot!"
@@ -439,7 +441,7 @@
 					prey.drip(0.1)
 					add_attack_logs(pred, prey, "Crushed underfoot (run, about [calculated_damage] damage)")
 		else
-			switch(use_stance())
+			switch(stance)
 				if(I_DISARM)
 					message_pred = "You firmly push your foot down on [prey], painfully but harmlessly pinning them to the ground!"
 					message_prey = "[pred] firmly pushes their foot down on you, quite painfully but harmlessly pinning you to the ground!"
@@ -467,11 +469,11 @@
 
 /mob/living/verb/toggle_pickups()
 	set name = "Toggle Micro Pick-up"
-	set desc = "Toggles whether your help-intent action attempts to pick up the micro or pet/hug/help them. Does not disable participation in pick-up mechanics entirely, refer to Vore Panel preferences for that."
+	set desc = "Toggles whether your help (combat mode off) action attempts to pick up the micro or pet/hug/help them. Does not disable participation in pick-up mechanics entirely, refer to Vore Panel preferences for that."
 	set category = "IC.Settings"
 
 	pickup_active = !pickup_active
-	to_chat(src, span_filter_notice("You will [pickup_active ? "now" : "no longer"] attempt to pick up mobs when clicking them with help intent."))
+	to_chat(src, span_filter_notice("You will [pickup_active ? "now" : "no longer"] attempt to pick up mobs when clicking them with combat mode off."))
 
 #undef STEP_TEXT_OWNER
 #undef STEP_TEXT_PREY

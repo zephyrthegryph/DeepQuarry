@@ -90,6 +90,7 @@
 DECLARE_INTERACTIONS(/obj/item/canvas, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_HELP, "Paint", PROC_REF(interaction_paint)), \
 )
 
 /// Old attack_self.
@@ -120,11 +121,11 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 	if(istype(I, /obj/item/paint_palette))
 		om_ask(user, /datum/om/prompt/confirm/canvas_fill, PROC_REF(ask_base_color), subject = I, canvas = src)
 		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-	if(IS_HELPING(user))
-		tgui_interact(user)
-	else
-		return FALSE
+/// Old attackby outside combat mode: open the canvas to paint on it.
+/obj/item/canvas/proc/interaction_paint(mob/living/user, obj/item/I, datum/interaction/interaction)
+	tgui_interact(user)
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/canvas/tgui_data(mob/user)
@@ -306,7 +307,6 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 /obj/item/paint_brush
 	name = "artist's paintbrush"
 	desc = "When you really want to put together a masterpiece!"
-	description_info = "Hit this on a palette to set the color, and use it on a canvas to paint with that color."
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "brush"
 	var/selected_color = "#000000"
@@ -342,7 +342,6 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 /obj/item/paint_palette
 	name = "artist's palette"
 	desc = "Helps to have a paintbrush, too."
-	description_info = "You can hit this on a canvas to set the entire canvas color (but note that it will wipe out any works in progress). You can hit a paintbrush on this to set the color."
 	icon = 'icons/obj/artstuff.dmi'
 	icon_state = "palette"
 

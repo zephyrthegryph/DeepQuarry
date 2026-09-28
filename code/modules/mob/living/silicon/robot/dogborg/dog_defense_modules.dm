@@ -1,9 +1,6 @@
 
 /obj/item/shield_projector/line/exploborg
 	name = "expirmental shield projector"
-	description_info = "This creates a shield in a straight line perpendicular to the direction where the user was facing when it was activated. \
-	The shield allows projectiles to leave from inside but blocks projectiles from outside.  Everything else can pass through the shield freely, \
-	including other people and thrown objects.  The shield also cannot block certain effects which take place over an area, such as flashbangs or explosions."
 	max_integrity = 90
 	shield_regen_amount = 25
 	line_length = 7			// How long the line is.  Recommended to be an odd number.

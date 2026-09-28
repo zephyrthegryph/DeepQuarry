@@ -1,7 +1,9 @@
+/obj/item/storage/sample_container/get_mechanics_info(list/additional_information)
+	return ..(list("Scooping samples up with the container negates the risk of hurting yourself if you don't have thick enough gloves.") + additional_information)
+
 /obj/item/storage/sample_container
 	name = "sample container"
 	desc = "A small containment device used to safely collect and carry up to eight research samples. Has a loop for attaching to belts."
-	description_info = "You can use the sample container directly on a sample to quickly scoop it up, or on a tile to scoop up all samples on that tile. This negates the risk of hurting yourself if you don't have thick enough gloves to safely handle the samples!"
 	icon = 'icons/obj/samples.dmi'
 	icon_state = "sample_container_0"
 

@@ -169,6 +169,7 @@
 
 EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	INTERACT_ITEM(null, PROC_REF(interaction_hit_weeds)), \
+	INTERACT_HAND_AS(I_HURT, "Tear up", PROC_REF(interaction_touch_weeds)), \
 	INTERACT_HAND(null, PROC_REF(interaction_touch_weeds)), \
 )
 
@@ -207,7 +208,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 
 		// Aliens can get straight through these.
 		if(istype(user,/mob/living/carbon))
-			if(IS_HARMING(user))
+			if(interaction.stance == I_HURT)
 				var/mob/living/carbon/M = user
 				if(locate_in_list(M.internal_organs, /obj/item/organ/internal/xenos/hivenode))
 					visible_message (span_warning("[user] strokes the [name] and it melts away!"), 1)

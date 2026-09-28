@@ -24,8 +24,14 @@
 	..()
 
 DECLARE_INTERACTIONS(/obj/item/deskbell, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_HAND_AS(I_HELP, "Ring", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_AS(I_DISARM, "Ring", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_AS(I_GRAB, "Ring", PROC_REF(interaction_hand)), \
+	INTERACT_HAND_AS(I_HURT, "Hammer rudely", PROC_REF(interaction_hand)), \
+	INTERACT_ITEM_AS(I_HELP, "Ring", PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_DISARM, "Ring", PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_GRAB, "Ring", PROC_REF(interaction_item)), \
+	INTERACT_ITEM_AS(I_HURT, "Hammer rudely", PROC_REF(interaction_item)), \
 )
 
 /// Old attack_hand.
@@ -60,15 +66,15 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 
 		if("use")
 			if(check_ability(user))
-				ring(user)
+				ring(user, interaction.stance)
 				add_fingerprint(user)
 
 		if("pick up")
 			return FALSE
 	return TRUE
 
-/obj/item/deskbell/proc/ring(mob/user)
-	if(IS_HARMING(user))
+/obj/item/deskbell/proc/ring(mob/user, stance = I_HELP)
+	if(stance == I_HURT)
 		playsound(src, 'sound/effects/deskbell_rude.ogg', 50, 1)
 		to_chat(user,span_notice("You hammer [src] rudely!"))
 		if (prob(2))
@@ -96,7 +102,7 @@ DECLARE_INTERACTIONS(/obj/item/deskbell, \
 	if(!istype(W))
 		return INTERACTION_HANDLED_PASS
 	if(!broken)
-		ring(user)
+		ring(user, interaction.stance)
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/deskbell/wrench_act(mob/user, obj/item/W)

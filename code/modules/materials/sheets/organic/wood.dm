@@ -17,37 +17,37 @@
 	name = MAT_HARDWOOD + " plank"
 	color = "#42291a"
 	default_type = MAT_HARDWOOD
-	description_info = "Rich, lustrous hardwood, imported from offworld at moderate expense. Mostly used for luxurious furniture, and not very good for weapons or other structures."
+	description_fluff ="Rich, lustrous hardwood, imported from offworld at moderate expense. Mostly used for luxurious furniture, and not very good for weapons or other structures."
 
 /obj/item/stack/material/wood/birch
 	name = MAT_BIRCHWOOD + " plank"
 	color = "#f6dec0"
 	default_type = MAT_BIRCHWOOD
-	description_info = "Sturdy hardwood, birch makes for beautiful furniture but also has many secondary applications. It's also an exceptionally good choice for firewood."
+	description_fluff ="Sturdy hardwood, birch makes for beautiful furniture but also has many secondary applications. It's also an exceptionally good choice for firewood."
 
 /obj/item/stack/material/wood/pine
 	name = MAT_PINEWOOD + " plank"
 	color = "#cd9d6f"
 	default_type = MAT_PINEWOOD
-	description_info = "Planks from tall, fast-growing coniferous pine trees, dense and mostly used for construction or furnishings."
+	description_fluff ="Planks from tall, fast-growing coniferous pine trees, dense and mostly used for construction or furnishings."
 
 /obj/item/stack/material/wood/oak
 	name = MAT_OAKWOOD + " plank"
 	color = "#674928"
 	default_type = MAT_OAKWOOD
-	description_info = "A sturdy, fairly common hardwood. A good choice for furnishings and structures. Oak barrels can be used to age alcohol, whilst oakwood chips are often used for smoking meats and cheeses."
+	description_fluff ="A sturdy, fairly common hardwood. A good choice for furnishings and structures. Oak barrels can be used to age alcohol, whilst oakwood chips are often used for smoking meats and cheeses."
 
 /obj/item/stack/material/wood/acacia
 	name = MAT_ACACIAWOOD + " plank"
 	color = "#b75e12"
 	default_type = MAT_ACACIAWOOD
-	description_info = "Vibrant reddish-orange acacia makes a striking statement wherever it's used, and the bark of some acacia species is useful for tanning leather."
+	description_fluff ="Vibrant reddish-orange acacia makes a striking statement wherever it's used, and the bark of some acacia species is useful for tanning leather."
 
 /obj/item/stack/material/wood/redwood
 	name = MAT_REDWOOD + " plank"
 	color = "#a45a52"
 	default_type = MAT_REDWOOD
-	description_info = "Blazing orange-red redwood planks. The trees used to make this can grow for centuries, and are often protected. This wood has been sustainably harvested from special tree nurseries, rather than chopping down ancient giants."
+	description_fluff ="Blazing orange-red redwood planks. The trees used to make this can grow for centuries, and are often protected. This wood has been sustainably harvested from special tree nurseries, rather than chopping down ancient giants."
 
 /obj/item/stack/material/log
 	name = MAT_LOG
@@ -57,7 +57,6 @@
 	color = "#824B28"
 	max_amount = 25
 	w_class = ITEMSIZE_HUGE
-	description_info = "Use inhand to craft things, or use a sharp and edged object on this to convert it into two wooden planks."
 	var/plank_type = /obj/item/stack/material/wood
 	drop_sound = 'sound/items/drop/wooden.ogg'
 	pickup_sound = 'sound/items/pickup/wooden.ogg'

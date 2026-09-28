@@ -689,9 +689,9 @@ I think I covered everything.
 		self.mend(TREAT_ANTITOXIN, 5)
 		self.mend(TREAT_OXYGENATION, 5)
 
-/mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/bigdragon/do_special_attack(atom/A, stance)
 	. = TRUE
-	switch(use_stance())
+	switch(stance)
 		if(I_DISARM)
 			if(!nospecial)
 				if(specialtoggle)

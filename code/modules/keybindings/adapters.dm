@@ -183,7 +183,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	* mob/RangedAttack(atom, params) - ranged, no item: laser eyes and telekinesis
 */
 /datum/input_adapter/hands/use(mob/user, atom/A, list/modifiers, params)
-	if(user.intercept_use(A, params))
+	if(user.intercept_use(A, params, user.input_stance()))
 		return
 
 	if(INCAPACITATED_IGNORING(user, INCAPABLE_RESTRAINTS|INCAPABLE_STASIS))
@@ -205,10 +205,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	var/currently_restrained = FALSE
 	if(user.restrained())
 		user.setClickCooldown(10)
-		user.RestrainedClickOn(A)
+		user.RestrainedClickOn(A, user.input_stance())
 		currently_restrained = TRUE
 
-	if(!currently_restrained && user.in_throw_mode && (isturf(A) || isturf(A.loc)) && user.throw_item(A))
+	if(!currently_restrained && user.in_throw_mode && (isturf(A) || isturf(A.loc)) && user.throw_item(A, user.input_stance()))
 		user.trigger_aiming(TARGET_CAN_CLICK)
 		user.throw_mode_off()
 		return TRUE
@@ -292,7 +292,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 
 /// Hook for mobs that take over a plain Use click before the hands chain runs
 /// (the swoopie's vacuum). Return TRUE if handled. Modifier clicks never get here.
-/mob/proc/intercept_use(atom/A, params)
+/mob/proc/intercept_use(atom/A, params, stance = I_HURT)
 	return FALSE
 
 // ---------------------------------------------------------------------------

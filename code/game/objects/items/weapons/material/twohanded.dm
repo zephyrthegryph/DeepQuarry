@@ -86,7 +86,6 @@
 	base_icon = "fireaxe"
 	name = "fire axe"
 	desc = "Truly, the weapon of a madman. Who would think to fight fire with an axe?"
-	description_info = "This weapon can cleave, striking nearby lesser, hostile enemies close to the primary target.  It must be held in both hands to do this."
 	unwielded_force_divisor = 0.25
 	force_divisor = 0.7 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
 	dulled_divisor = 0.75	//Still metal on a stick
@@ -211,7 +210,6 @@
 	base_icon = "sledgehammer"
 	name = "sledgehammer"
 	desc = "A long, heavy hammer meant to be used with both hands. Typically used for breaking rocks and driving posts, it can also be used for breaking bones or driving points home."
-	description_info = "This weapon can cleave, striking nearby lesser, hostile enemies close to the primary target.  It must be held in both hands to do this."
 	unwielded_force_divisor = 0.25
 	force = 25
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
@@ -343,7 +341,6 @@
 	default_material = MAT_WOOD
 	name = "staff"
 	desc = "A sturdy length of metal or wood. A common traveler's aid mostly used for support or probing unstable ground, but also a fairly effective weapon in a pinch."
-	description_info = "When wielded with two hands, staves can be used to parry incoming melee attacks. Being on disarm intent also grants them an added chance to stun or knock down opponents, and increases your chances of parrying an attack."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "mat_staff"
 	base_icon = "mat_staff"
@@ -368,7 +365,7 @@
 	if(istype(damage_source, /obj/item/projectile))	//can't block ranged attacks, only melee!
 		return 0
 	if(src.wielded == 1)
-		if(IS_DISARMING(user))
+		if(user.attack_variant == ATTACK_VARIANT_DISARM) // the defender's held posture, not an input
 			parry_chance = base_parry_chance * disarm_defense
 		else
 			parry_chance = base_parry_chance
@@ -378,8 +375,14 @@
 			return 1
 	return 0
 
-/obj/item/material/twohanded/staff/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+/obj/item/material/twohanded/staff/apply_hit_effect(mob/living/target, mob/living/user, hit_zone, attack_modifier, stance = I_HURT)
 	. = ..()
-	if(src.wielded == 1 && IS_DISARMING(user) && prob(stun_chance))
+	if(src.wielded == 1 && stance == I_DISARM && prob(stun_chance))
 		target.status_at_least(EFFECT_WEAKENED, stun_duration)
 		user.visible_message(span_danger("\The [user] trips [target] with \the [src]!"))
+
+/obj/item/material/twohanded/fireaxe/get_mechanics_info(list/additional_information)
+	return ..(list("This weapon can cleave, striking nearby lesser, hostile enemies close to the primary target. It must be held in both hands to do this.") + additional_information)
+
+/obj/item/material/twohanded/sledgehammer/get_mechanics_info(list/additional_information)
+	return ..(list("This weapon can cleave, striking nearby lesser, hostile enemies close to the primary target. It must be held in both hands to do this.") + additional_information)

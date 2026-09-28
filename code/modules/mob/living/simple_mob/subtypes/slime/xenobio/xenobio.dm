@@ -259,7 +259,8 @@
 	lines.Add(reward_line)
 	lines.Add(null)
 
-	lines.Add(description_info)
+	if(LAZYLEN(additional_information))
+		lines += additional_information
 	return lines.Join("\n")
 
 REF_HELD(/mob/living/simple_mob/slime/xenobio, "victim")

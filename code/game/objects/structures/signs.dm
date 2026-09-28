@@ -1621,14 +1621,12 @@
 				P2.pixel_y = 32
 		P2.name = name
 		P2.desc = desc
-		P2.description_info = description_info
 		P2.description_fluff = description_fluff
 		P2.flagtype = type
 	else
 		P.icon_state = "[flag_path]"
 	P.name = name
 	P.desc = desc
-	P.description_info = description_info
 	P.description_fluff = description_fluff
 	P.flagtype = type
 	consume(src, user)

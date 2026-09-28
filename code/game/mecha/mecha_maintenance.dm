@@ -34,12 +34,6 @@
 /datum/construction_graph/mecha_maintenance/on_traversed(atom/target, mob/actor, datum/interaction/construction/edge, before, after)
 	return
 
-/// A welder on harm intent attacks the exosuit instead of repairing it.
-/obj/mecha/interaction_tool_act(mob/user, obj/item/tool, quality, secondary = FALSE)
-	if(quality == TOOL_WELDER && IS_HARMING(user))
-		return ITEM_INTERACT_SKIP_TO_ATTACK
-	return ..()
-
 /datum/interaction/construction/mecha
 	tool_volume = 0
 
@@ -138,7 +132,10 @@
 	..()
 	into += list(
 		/datum/interaction/mecha_fix_temperature,
-		/datum/interaction/mecha_weld_repair,
+		/datum/interaction/mecha_weld_repair/help,
+		/datum/interaction/mecha_weld_repair/disarm,
+		/datum/interaction/mecha_weld_repair/grab,
+		/datum/interaction/mecha_weld_strike,
 	)
 
 /datum/interaction/mecha_fix_temperature
@@ -161,8 +158,8 @@
 	clearInternalDamage(MECHA_INT_TEMP_CONTROL)
 	return TRUE
 
+/// Abstract: weld repairs, outside combat mode (one per stance). In combat mode the welder strikes instead.
 /datum/interaction/mecha_weld_repair
-	id = "mecha_weld_repair"
 	name = "Weld repairs"
 	category = INTERACTION_CAT_REPAIR
 	priority = 20
@@ -171,6 +168,39 @@
 	tool_volume = 0
 	requires = list(REQ_REACH_ADJACENT)
 	effect = /obj/mecha/proc/weld_repair
+
+/datum/interaction/mecha_weld_repair/help
+	id = "mecha_weld_repair"
+	stance = I_HELP
+
+/datum/interaction/mecha_weld_repair/disarm
+	id = "mecha_weld_repair_disarm"
+	stance = I_DISARM
+
+/datum/interaction/mecha_weld_repair/grab
+	id = "mecha_weld_repair_grab"
+	stance = I_GRAB
+
+/// Combat mode: a welder attacks the exosuit instead of repairing it (lit or not).
+/datum/interaction/mecha_weld_strike
+	id = "mecha_weld_strike"
+	name = "Strike"
+	category = INTERACTION_CAT_ATTACK
+	priority = 20
+	default_action = INPUT_ACTION_USE
+	stance = I_HURT
+	tool = TOOL_WELDER
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/mecha/proc/weld_strike
+
+/// A strike, not a tool job: no lit-welder check, no fuel, no sound.
+/datum/interaction/mecha_weld_strike/pay_cost(mob/actor, atom/target, obj/item/held)
+	return TRUE
+
+/obj/mecha/proc/weld_strike(mob/actor, obj/item/held, datum/interaction/interaction)
+	call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(held, actor)
+	return TRUE
 
 /// Seals a tank breach, then patches 10 integrity: the frame first, then the hull, then the armour.
 /obj/mecha/proc/weld_repair(mob/actor, obj/item/held, datum/interaction/interaction)

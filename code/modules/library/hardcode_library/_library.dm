@@ -5,7 +5,6 @@
 /obj/item/book/custom_library
 	name = "Book"
 	desc = "A hardbound book."
-	description_info = "This book is printed from the custom repo. If you can see this, something went wrong."
 
 	icon = 'icons/obj/custom_books.dmi'
 	icon_state = "book"
@@ -32,7 +31,6 @@
 /obj/item/book/bundle/custom_library
 	name = "Book"
 	desc = "A hardbound book."
-	description_info = "This book is printed from the custom repo. If you can see this, something went wrong."
 
 	icon = 'icons/obj/custom_books.dmi'
 	icon_state = "book"

@@ -79,7 +79,7 @@
 			return damage_amount * 1.5
 	return ..()
 
-/mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A)
+/mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, leap_warmup)
 	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.

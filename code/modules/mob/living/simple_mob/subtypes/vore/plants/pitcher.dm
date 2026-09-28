@@ -180,14 +180,12 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 				adjust_nutrition(-NUTRITION_PITCHER)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(pitcher_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pick fruit", PROC_REF(pitcher_interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(pitcher_interaction_item)), \
 )
 
 /// Old attack_hand: a help-touch picks the fruit; anything else is the normal touch.
 /mob/living/simple_mob/vore/pitcher_plant/proc/pitcher_interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!IS_HELPING(user))
-		return FALSE
 	if(fruit)
 		to_chat(user, span_infoplain("You pick a fruit from \the [src]."))
 		var/obj/F = new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(user)) //Drops at the user's feet if put_in_hands fails

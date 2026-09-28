@@ -67,11 +67,12 @@
 /obj/structure/catwalk
 	silicon_use = ROBOT_USE_HAND_ADJACENT
 
-/obj/structure/catwalk/atom_deconstruct(disassembled = TRUE, mob/user)
+/// `leave_lattice`: sliced outside combat mode, so over open space the lattice stays.
+/obj/structure/catwalk/atom_deconstruct(disassembled = TRUE, mob/user, leave_lattice = FALSE)
 	playsound(src, 'sound/items/Welder.ogg', 100, 1)
 	to_chat(user, span_notice("Slicing \the [src] joints ..."))
 	//Lattice would delete itself, but let's save ourselves a new obj
-	if(isopenspace(loc) && IS_HELPING(user))
+	if(isopenspace(loc) && leave_lattice)
 		new /obj/structure/lattice/(src.loc)
 		new /obj/item/stack/rods(src.loc, 1)
 	else
@@ -83,8 +84,46 @@
 /obj/structure/catwalk/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/catwalk_plate,
+		/datum/interaction/catwalk_slice/help,
+		/datum/interaction/catwalk_slice/disarm,
+		/datum/interaction/catwalk_slice/grab,
+		/datum/interaction/catwalk_slice/harm,
 	)
 	..()
+
+/// Abstract: slice the catwalk apart with a lit welder. Outside combat mode the lattice over open space stays.
+/datum/interaction/catwalk_slice
+	name = "Slice apart"
+	category = INTERACTION_CAT_MAINTAIN
+	priority = 10
+	default_action = INPUT_ACTION_USE
+	tool = TOOL_WELDER
+	tool_volume = 0
+	requires = list(REQ_REACH_ADJACENT)
+	effect = /obj/structure/catwalk/proc/interaction_slice
+
+/datum/interaction/catwalk_slice/help
+	id = "catwalk_slice_help"
+	name = "Slice apart, keeping the lattice"
+	stance = I_HELP
+
+/datum/interaction/catwalk_slice/disarm
+	id = "catwalk_slice_disarm"
+	stance = I_DISARM
+
+/datum/interaction/catwalk_slice/grab
+	id = "catwalk_slice_grab"
+	stance = I_GRAB
+
+/datum/interaction/catwalk_slice/harm
+	id = "catwalk_slice_harm"
+	stance = I_HURT
+
+/obj/structure/catwalk/proc/interaction_slice(mob/user, obj/item/C, datum/interaction/interaction)
+	var/obj/item/weldingtool/WT = C.get_welder()
+	if(WT.isOn() && WT.remove_fuel(0, user))
+		atom_deconstruct(TRUE, user, interaction.stance == I_HELP)
+	return TRUE
 
 /// Old attackby: plate the catwalk with a floor tile stack.
 /datum/interaction/entry_item/catwalk_plate
@@ -113,12 +152,6 @@
 		if(istype(ST, tiletype))
 			plating_color = plating_colors[tiletype]
 	update_icon()
-
-/obj/structure/catwalk/welder_act(mob/user, obj/item/C)
-	var/obj/item/weldingtool/WT = C.get_welder()
-	if(WT.isOn() && WT.remove_fuel(0, user))
-		atom_deconstruct(TRUE, user)
-	return TRUE
 
 /obj/structure/catwalk/crowbar_act(mob/user, obj/item/C)
 	if(plated_tile)

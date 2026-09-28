@@ -2,12 +2,12 @@
 // Champagne bottle for creating new landable ship shuttles in game from scratch.
 // Note: It depends on the area being sane.  In theory players could use this to make pretty much any room a shuttle.
 //
+/obj/item/champagne/get_mechanics_info(list/additional_information)
+	return ..(list("Creates a new overmap shuttle from scratch. The shuttle must already be constructed with a single area defined (use the blueprints).") + additional_information)
+
 /obj/item/champagne
 	name = "bottle of champagne"
 	desc = "Made from grapes grown in the champagne asteroid belt, the bubbly liquid inside is softly glowing.  Suitable for christening boats, not so much for drinking."
-	description_info = "This lets you create a new overmap shuttle from scratch. \
-			The shuttle must already be constructed and have an area defined (use the blueprints). \
-			Only a single area is supported (for now).  Build a shuttle console and hit it with the bottle."
 	icon = 'icons/obj/drinks.dmi'
 	icon_state = "champagne"
 	attack_verb = list("attacked", "bonked", "hit")

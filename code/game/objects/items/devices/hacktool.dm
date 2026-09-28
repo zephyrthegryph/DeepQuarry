@@ -164,13 +164,11 @@ REF_OWNED(/obj/item/multitool/hacktool, "hack_state")
 /obj/item/multitool/hacktool/modified
 	name = "modified multitool"
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors. This ones seems a bit larger and heavier than the usual model, for some reason. Maybe it's an older version?"
-	description_info = "You can use this on airlocks or APCs to try to hack them without cutting wires."
 	icon_state = "multitool_modified"
 
 /obj/item/multitool/hacktool/obvious
 	name = "non-standard multitool"
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors. This one doesn't look like the usual model at all!"
-	description_info = "You can use this on airlocks or APCs to try to hack them without cutting wires."
 	icon_state = "multitool_suspicious"
 	in_hack_mode = 1	//start in hackmode
 

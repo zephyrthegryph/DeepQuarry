@@ -27,7 +27,6 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	var/tmp/source_hoist_handle
 	can_buckle = TRUE
 	anchored = TRUE
-	description_info = "Click and drag someone (or any object) to this to attach them to the clamp. If you are within reach, when you click and drag this to a turf adjacent to you, it will move the attached object there and release it."
 	plane = ABOVE_MOB_PLANE
 
 EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
@@ -107,7 +106,6 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	var/tmp/hoistee_handle
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
-	description_info = "Click this to raise or lower the hoist, or to switch directions if it can't move any further. It can also be collapsed into a hoist kit."
 
 /obj/structure/hoist/Initialize(mapload, ndir)
 	. = ..()

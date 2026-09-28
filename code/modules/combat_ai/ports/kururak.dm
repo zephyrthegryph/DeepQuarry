@@ -120,17 +120,16 @@
 	//   GRAB (rending strike) if adjacent — armor-ignoring agonizing wound.
 	//   DISARM (tail flash) if the victim has unprotected eyes / is a borg.
 	//   else HURT.
-	K.set_use_stance(I_HURT)
+	var/stance = I_HURT
 	if(K.Adjacent(L))
-		K.set_use_stance(I_GRAB)
+		stance = I_GRAB
 	if(iscarbon(L))
 		var/mob/living/carbon/C = L
-		if(!C.eyecheck() && !IS_GRABBING(K))
-			K.set_use_stance(I_DISARM)
-	if(issilicon(L) && !IS_GRABBING(K))
-		K.set_use_stance(I_DISARM)
-	K.special_attack_target(L)
-	K.set_use_stance(I_HURT)  // legacy post_special_attack reset
+		if(!C.eyecheck() && stance != I_GRAB)
+			stance = I_DISARM
+	if(issilicon(L) && stance != I_GRAB)
+		stance = I_DISARM
+	K.special_attack_target(L, stance)
 	brain.last_attack_at = world.time
 	return DQ_BEHAVIOR_DONE
 

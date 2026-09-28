@@ -1,7 +1,6 @@
 /obj/vehicle/train/engine/quadbike/snowmobile
 	name = "snowmobile"
 	desc = "An electric snowmobile for traversing snow and ice with ease! Other terrain, not so much."
-	description_info = "Use ctrl-click to quickly toggle the engine if you're adjacent. Alt-click to quickly remove keys. Click-drag yourself or another person to mount as a passenger (passengers can't drive!)."
 	icon = 'icons/obj/vehicles.dmi'
 	icon_state = "snowmobile"
 

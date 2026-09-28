@@ -232,7 +232,7 @@
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
 		om_after(src, duration, PROC_REF(end_speed_boost))
 
-/mob/living/simple_mob/glitch_boss/do_special_attack(atom/A)
+/mob/living/simple_mob/glitch_boss/do_special_attack(atom/A, stance)
 	. = TRUE
 	recently_used_attack = next_special_attack
 	switch(next_special_attack)

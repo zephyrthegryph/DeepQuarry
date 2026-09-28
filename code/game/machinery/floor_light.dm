@@ -63,6 +63,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /obj/machinery/floor_light/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/floor_light_harm,
+		/datum/interaction/machine_hand/ungated/floor_light_smash,
 		/datum/interaction/machine_hand/ungated/floor_light_use,
 	)
 	..()
@@ -81,42 +82,50 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		attack_hand(user)
 	return FALSE
 
+/// Combat mode: smash the light (small mobs can't, and just use it).
+/datum/interaction/machine_hand/ungated/floor_light_smash
+	id = "floor_light_smash"
+	name = "Smash"
+	stance = I_HURT
+	effect = /obj/machinery/floor_light/proc/interaction_smash
+
+/obj/machinery/floor_light/proc/interaction_smash(mob/user, obj/item/held, datum/interaction/interaction)
+	if(issmall(user))
+		return FALSE
+	if(!isnull(damaged) && !(stat & BROKEN))
+		visible_message(span_danger("\The [user] smashes \the [src]!"))
+		playsound(src, "shatter", 70, 1)
+		atom_break()
+	else
+		visible_message(span_danger("\The [user] attacks \the [src]!"))
+		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		if(isnull(damaged)) damaged = 0
+	update_brightness()
+	return TRUE
+
 /datum/interaction/machine_hand/ungated/floor_light_use
 	id = "floor_light_use"
 	name = "Use"
 	effect = /obj/machinery/floor_light/proc/interaction_use
 
 /obj/machinery/floor_light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_HARMING(user) && !issmall(user))
-		if(!isnull(damaged) && !(stat & BROKEN))
-			visible_message(span_danger("\The [user] smashes \the [src]!"))
-			playsound(src, "shatter", 70, 1)
-			atom_break()
-		else
-			visible_message(span_danger("\The [user] attacks \the [src]!"))
-			playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
-			if(isnull(damaged)) damaged = 0
-		update_brightness()
+	if(!anchored)
+		to_chat(user, span_warning("\The [src] must be screwed down first."))
 		return TRUE
-	else
 
-		if(!anchored)
-			to_chat(user, span_warning("\The [src] must be screwed down first."))
-			return TRUE
-
-		if(stat & BROKEN)
-			to_chat(user, span_warning("\The [src] is too damaged to be functional."))
-			return TRUE
-
-		if(stat & NOPOWER)
-			to_chat(user, span_warning("\The [src] is unpowered."))
-			return TRUE
-
-		on = !on
-		if(on) update_use_power(USE_POWER_ACTIVE)
-		// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
-		update_brightness()
+	if(stat & BROKEN)
+		to_chat(user, span_warning("\The [src] is too damaged to be functional."))
 		return TRUE
+
+	if(stat & NOPOWER)
+		to_chat(user, span_warning("\The [src] is unpowered."))
+		return TRUE
+
+	on = !on
+	if(on) update_use_power(USE_POWER_ACTIVE)
+	// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
+	update_brightness()
+	return TRUE
 
 /obj/machinery/floor_light/machine_step()
 	..()

@@ -121,6 +121,7 @@ REF_OWNED(/obj/machinery/microwave, "soundloop")
 
 EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	INTERACT_ITEM(null, PROC_REF(microwave_interaction_item)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Eject pAI", PROC_REF(microwave_interaction_eject_pai)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(microwave_interaction_hand)), \
 	INTERACT_VERB("Eject content", PROC_REF(microwave_verb_eject)), \
 )
@@ -292,12 +293,15 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		return STATUS_INTERACTIVE
 	. = ..()
 
+/// Old attack_hand with Grab held: pull the pAI out. Without one, the ordinary touch.
+/obj/machinery/microwave/proc/microwave_interaction_eject_pai(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!paicard)
+		return FALSE
+	ejectpai(user)
+	return TRUE
+
 /// Old attack_hand.
 /obj/machinery/microwave/proc/microwave_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(IS_GRABBING(user))
-		if(paicard)
-			ejectpai(user)
-			return TRUE
 	tgui_interact(user)
 	return TRUE
 

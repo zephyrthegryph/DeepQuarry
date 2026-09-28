@@ -1236,7 +1236,8 @@ REF_BACKLIST_HANDLE(/obj/item, list("exploit_for" = "exploit_addons"))
 	return
 
 //Throwing stuff
-/mob/proc/throw_item(atom/target)
+/// Throws the active item at target; `stance` is the thrower's input stance (the adapter reads it): in help, next to a person, it hands the item over instead.
+/mob/proc/throw_item(atom/target, stance = I_HURT)
 	return FALSE
 
 /mob/proc/will_show_tooltip()

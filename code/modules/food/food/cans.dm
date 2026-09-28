@@ -8,12 +8,12 @@
 	var/shaken = 0 // How many times this can has been shaken.
 	is_can = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF(null, PROC_REF(cans_self)))
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF_AS(I_HURT, "Shake", PROC_REF(cans_self)), INTERACT_SELF(null, PROC_REF(cans_self)))
 
 /// Old attack_self: the drinks self-use (open) first, as the old ..() did, then the shaking.
 /obj/item/reagent_containers/food/drinks/cans/proc/cans_self(mob/user, obj/item/held, datum/interaction/interaction)
 	drinks_self(user, held, interaction)
-	if(IS_HARMING(user) && !is_open_container())
+	if(interaction.stance == I_HURT && !is_open_container())
 		to_chat(user, span_warning("You shake [src]."))
 		if(!shaken)
 			PERIODIC_START(src, PERIODIC_SLOW)

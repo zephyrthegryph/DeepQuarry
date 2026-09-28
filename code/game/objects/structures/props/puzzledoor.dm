@@ -51,7 +51,10 @@ REF_LIST_BACK(/obj/machinery/door/blast/puzzle, list("locks" = list(/obj/structu
 /obj/machinery/door/blast/puzzle/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/puzzle_door_touch,
-		/datum/interaction/machine_item/puzzle_door_use,
+		/datum/interaction/machine_item/puzzle_door_use/help,
+		/datum/interaction/machine_item/puzzle_door_use/disarm,
+		/datum/interaction/machine_item/puzzle_door_use/grab,
+		/datum/interaction/machine_item/puzzle_door_use/harm,
 	)
 	..()
 
@@ -69,17 +72,36 @@ REF_LIST_BACK(/obj/machinery/door/blast/puzzle, list("locks" = list(/obj/structu
 	return TRUE
 
 /**
- * Old attackby: pry it, hit it or plastique it. Kept as one interaction with the whole
- * old body, since the branches share overlapping conditions (pry vs combat mode vs item type).
+ * Old attackby: pry it, hit it or plastique it. One effect with the whole old body, declared
+ * once per stance, since the branches share overlapping conditions (pry vs combat mode vs item type).
  */
 /datum/interaction/machine_item/puzzle_door_use
-	id = "puzzle_door_use"
-	name = "Use"
 	held_type = /obj/item
 	effect = /obj/machinery/door/blast/puzzle/proc/interaction_use
 
+/datum/interaction/machine_item/puzzle_door_use/help
+	id = "puzzle_door_use_help"
+	name = "Use"
+	stance = I_HELP
+
+/datum/interaction/machine_item/puzzle_door_use/disarm
+	id = "puzzle_door_use_disarm"
+	name = "Use"
+	stance = I_DISARM
+
+/datum/interaction/machine_item/puzzle_door_use/grab
+	id = "puzzle_door_use_grab"
+	name = "Use"
+	stance = I_GRAB
+
+/datum/interaction/machine_item/puzzle_door_use/harm
+	id = "puzzle_door_use_harm"
+	name = "Strike"
+	stance = I_HURT
+
 /obj/machinery/door/blast/puzzle/proc/interaction_use(mob/user, obj/item/C, datum/interaction/interaction)
-	if(C.pry == 1 && (!IS_HARMING(user) || (stat & BROKEN)))
+	var/harming = interaction.stance == I_HURT
+	if(C.pry == 1 && (!harming || (stat & BROKEN)))
 		if(istype(C,/obj/item/material/twohanded/fireaxe))
 			var/obj/item/material/twohanded/fireaxe/F = C
 			if(!F.wielded)
@@ -93,7 +115,7 @@ REF_LIST_BACK(/obj/machinery/door/blast/puzzle, list("locks" = list(/obj/structu
 			to_chat(user, span_notice("[src]'s arcane workings resist your effort."))
 		return TRUE
 
-	else if(src.density && (IS_HARMING(user)))
+	else if(src.density && harming)
 		var/obj/item/W = C
 		user.setClickCooldown(user.get_attack_speed(W))
 		if(W.obj_damage_type())

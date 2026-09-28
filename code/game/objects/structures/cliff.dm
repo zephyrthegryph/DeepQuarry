@@ -23,10 +23,6 @@ two tiles on initialization, and which way a cliff is facing may change during m
 /obj/structure/cliff
 	name = "cliff"
 	desc = "A steep rock ledge. You might be able to climb it if you feel bold enough."
-	description_info = "Walking off the edge of a cliff while on top will cause you to fall off, causing severe injury.<br>\
-	You can climb this cliff if wearing special climbing equipment, by click-dragging yourself onto the cliff.<br>\
-	Projectiles traveling up a cliff may hit the cliff instead, making it more difficult to fight something \
-	on top."
 	icon = 'icons/obj/flora/rocks.dmi'
 
 	anchored = TRUE

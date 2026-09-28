@@ -7,9 +7,6 @@
 /obj/item/robotic_multibelt
 	name = "Robotic multitool"
 	desc = "An integrated toolbelt that holds various tools."
-	description_info = "Pressing Z will interact with the item the multibelt has selected.<br>\
-	Pressing Ctrl+Z will open the radial menu to allow item swapping!<br>\
-	Clicking on the selected object will also open the radial menu."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg"
 	w_class = ITEMSIZE_HUGE
@@ -79,6 +76,8 @@
 
 // its integrated tools (assoc values) go with it.
 REF_OWNED_VALUES(/obj/item/robotic_multibelt, "cyborg_integrated_tools")
+// The selection and the by-name indexes point into cyborg_integrated_tools, which owns the tools.
+REF_DROP(/obj/item/robotic_multibelt, list("selected_item", "integrated_tools_by_name", "integrated_tool_images"))
 
 DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -195,17 +194,18 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/multitool/cyborg/update_icon()
 	icon_state = "toolkit_engiborg_multitool"
 
-/obj/item/multitool/ai_detector/cyborg
-	name = "AI detector multitool"
-	toolspeed = 0.5
-	desc = "Allows you to see if you are being watched by the AI or within network range. Also works as a normal multitool."
-	description_info = "Functions as a normal multitool with one added benefit.<br>\
-	This will change colors (and make sounds that only you can hear if in your active modules) during various events.<br>\
+/obj/item/multitool/ai_detector/cyborg/get_mechanics_info(list/additional_information)
+	return ..(list("This changes colors (and makes sounds that only you can hear if in your active modules) during various events.<br>\
 	BLUE: You are outside of camera range.<br>\
 	GREEN: You are inside of camera range.<br>\
 	RED: You are currently being watched by the AI.<br>\
 	FLASHING RED AND ORANGE: You are currently being TRACKED by the AI.<br>\
-	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range."
+	FLASHING ORANGE AND BLUE: The AI has attempted to track you but has failed to do so due to being outside camera range.") + additional_information)
+
+/obj/item/multitool/ai_detector/cyborg
+	name = "AI detector multitool"
+	toolspeed = 0.5
+	desc = "Allows you to see if you are being watched by the AI or within network range. Also works as a normal multitool."
 
 /obj/item/stack/cable_coil/cyborg
 	name = "cable coil synthesizer"
@@ -533,9 +533,6 @@ REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 /obj/item/gripper
 	name = "magnetic gripper"
 	desc = "A simple grasping tool specialized in construction and engineering work."
-	description_info = "Ctrl-Clicking on the gripper will interact with whatever it is holding.<br>\
-	Alt-Clicking on the gripper will drop the item it is holding.<br>\
-	Using an object on the gripper will interact with the item inside it, if it exists, instead."
 	icon = 'icons/obj/device.dmi'
 	icon_state = "gripper"
 
@@ -594,6 +591,8 @@ REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 	om_hook(our_robot, /datum/om/event/do_after_ended, src, PROC_REF(end_using))
 
 REF_OWNED_LIST(/obj/item/gripper, "pockets")
+// The selected pocket is one of `pockets`, and the robot owns the gripper.
+REF_DROP(/obj/item/gripper, list("current_pocket", "our_robot"))
 
 /obj/item/gripper/examine(mob/user)
 	. = ..()

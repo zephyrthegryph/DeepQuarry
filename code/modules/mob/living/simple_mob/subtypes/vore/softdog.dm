@@ -206,13 +206,17 @@
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
 	projectilesound = 'sound/voice/long_awoo.ogg'
 
-EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, INTERACT_HAND_UNGATED(null, PROC_REF(cass_interaction_hand)))
+EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
+	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(cass_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_DISARM, "Shove", PROC_REF(cass_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_GRAB, "Grab", PROC_REF(cass_interaction_hand)), \
+	INTERACT_HAND_UNGATED_AS(I_HURT, "Hit", PROC_REF(cass_interaction_hand)))
 
 /// Old attack_hand: while playing dead, only a long help-pet revives her; alive, the normal touch.
 /mob/living/simple_mob/vore/woof/cass/proc/cass_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	if(stat != DEAD)
 		return FALSE
-	if(IS_HELPING(M))
+	if(interaction.stance == I_HELP)
 		M.visible_message("[M] pets [src].", runemessage = "pets [src]")
 		om_do_after(M, 30 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_cass_done), done_args = list(M), on_fail = PROC_REF(attack_hand_cass_failed), fail_args = list(M))
 	return TRUE

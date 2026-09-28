@@ -9,6 +9,9 @@ why aren't these accessories?
 
 */
 
+/obj/item/remote_scene_tool/get_mechanics_info(list/additional_information)
+	return ..(list("Emotes and subtles the wearer does go directly to the linked tool; only its wearer sees them, and they must be wearing, holding or pocketing it. Remember bystander consent!") + additional_information)
+
 /obj/item/remote_scene_tool
 	var/tmp/linked_handle
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
@@ -18,7 +21,6 @@ why aren't these accessories?
 	icon_state = "sticker_inactive"
 	name = "Bluespace Sticker"
 	desc = "A stretchable, flexible sticker that induces a quasi-stable 4th dimensional bluespace buzzword rift, enabling moderate levels of touch between the two."
-	description_info = "These stickers act as remote scene tools - any sort of emotes or subtles that the wearer does will go DIRECTLY to the other sticker! It's vague, so use it how you want in RP! Just remember bystander consent!"
 	slot_flags = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)
 	w_class = ITEMSIZE_SMALL
 	var/tmp/worn_mob_handle
@@ -162,7 +164,6 @@ why aren't these accessories?
 	desc = "A box containing a few bluespace stickers. Moderately obsolete, limited range dimensional bypass technology that enables remote \"things\" and \"stuff\" as if there were no distance at all between them!"
 	var/primary = /obj/item/remote_scene_tool
 	var/secondary = /obj/item/remote_scene_tool
-	description_info = "These allow you to send emotes (and subtles!) over to the person wearing the other end of it! the only person that'll ever see the emotes is the person wearing it, and you need to be wearing (or holding/in a pocket) it for them to see your emotes!"
 	description_fluff = "A long since discarded prototype of a bag of holding - turns out it's hard to store things securely when the other end's open. too bad NOBODY has EVER found a practical use for them!"
 
 /obj/item/storage/box/remote_scene_tools/Initialize(mapload)

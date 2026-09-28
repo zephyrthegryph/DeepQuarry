@@ -40,7 +40,7 @@
 // Proc: on_melee_cast()
 // Parameters: 3 (hit_atom - the atom clicked on by the user, user - the technomancer that clicked hit_atom, def_zone - unknown)
 // Description: Override this for effects that occur at melee range.
-/obj/item/spell/proc/on_melee_cast(atom/hit_atom, mob/living/user, def_zone)
+/obj/item/spell/proc/on_melee_cast(atom/hit_atom, mob/living/user, def_zone, stance = I_HURT)
 	return
 
 // Proc: on_combine_cast()
@@ -221,7 +221,7 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 // Description: Tests to make sure it can cast, then casts a combined, ranged, or melee spell based on what it can do and the
 // range the click occured.  Melee casts have higher priority than ranged if both are possible.  Sets cooldown at the end.
 // Don't override this for spells, override the on_*_cast() spells shown above.
-/obj/item/spell/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
+/obj/item/spell/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
 	if(!run_checks())
 		return
 	if(!proximity_flag)
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 				spell.on_combine_cast(src, user)
 				return
 		if(cast_methods & CAST_MELEE)
-			on_melee_cast(target, user)
+			on_melee_cast(target, user, null, stance)
 		else if(cast_methods & CAST_RANGED) //Try to use a ranged method if a melee one doesn't exist.
 			on_ranged_cast(target, user)
 	if(cooldown)

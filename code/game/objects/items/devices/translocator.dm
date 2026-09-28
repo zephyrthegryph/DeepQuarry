@@ -263,7 +263,7 @@ This device records all warnings given and teleport events for admin review in c
 	//Seems okay to me!
 	return TRUE
 
-/obj/item/perfect_tele/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters, ignore_fail_chance = 0)
+/obj/item/perfect_tele/afterattack(mob/living/target, mob/user, proximity_flag, click_parameters, stance = I_HURT, ignore_fail_chance = 0)
 	//No, you can't teleport people from over there.
 	if(!user.Adjacent(target) && !proximity_flag)
 		return
@@ -278,7 +278,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/mob/living/L = target
 		if(!L.stat)
 			if(L != user)
-				if(!IS_HELPING(L) || (L.ai_brain != null))
+				if(L.combat_mode || (L.ai_brain != null))
 					to_chat(user, span_notice("[L] is resisting your attempt to teleport them with \the [src]."))
 					to_chat(L, span_danger(" [user] is trying to teleport you with \the [src]!"))
 					struggle = 3 SECONDS
