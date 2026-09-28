@@ -261,8 +261,7 @@ I think I covered everything.
 	build_icons(1)
 	add_language(LANGUAGE_DRUDAKAR)
 	add_language(LANGUAGE_UNATHI)
-	mob_radio = new /obj/item/radio/headset/mob_headset(src)	//We always give radios to spawned mobs anyway
-	icon_state = "dragon_maneNone"
+	icon_state = "dragon_maneNone" // ALLOW(decl): set after build_icons()
 
 /mob/living/simple_mob/vore/bigdragon/runechat_y_offset(width, height)
 	return (..()*size_multiplier) + 40
@@ -968,3 +967,5 @@ I think I covered everything.
 			catch // ALLOW(silent_catch): invalid player-entered colour is ignored
 			eyes = input_style_list[12]
 			build_icons()
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/bigdragon, "mob_radio", /obj/item/radio/headset/mob_headset)

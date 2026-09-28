@@ -6,7 +6,7 @@
 
 /mob/living/silicon/robot/platform/explorer/Initialize(mapload)
 	. = ..()
-	laws = new /datum/ai_laws/explorer
+	laws = new /datum/ai_laws/explorer // ALLOW(decl): replaces the laws the base set up
 
 /mob/living/silicon/robot/platform/explorer/welcome_client()
 	..()

@@ -1144,6 +1144,7 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 	//Prime this list if we need it.
 	if(has_huds)
 		// Note, this should be refactored to drop priority overlays
+		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
 		hud_list = list()
 		hud_list.len = TOTAL_HUDS
@@ -1159,10 +1160,8 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	om_attach(src, /datum/om/behaviour/spontaneous_vore)
-
-	deaf_loop = new(list(src), FALSE)
-	firesoundloop = new(list(src), FALSE)
+	deaf_loop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
+	firesoundloop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
 	// stunnedloop = new(list(src), FALSE)
 	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
 		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work
@@ -1457,3 +1456,5 @@ Maybe later, gotta figure out a way to click yourself when in a locker etc.
 /// om_after() target: the mob's AI picks up where it paused.
 /mob/living/proc/ai_brain_resume()
 	ai_busy_end()
+
+DECLARE_BEHAVIOUR(/mob/living, /datum/om/behaviour/spontaneous_vore)

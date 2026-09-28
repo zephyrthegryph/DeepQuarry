@@ -68,13 +68,13 @@
 	var/allowedtools = list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul)
 
 /mob/living/simple_mob/mechanical/mining_drone/Initialize(mapload)
-	ion_trail = new
+	ion_trail = new // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
-
-	my_storage = new /obj/item/ore_bag(src)
-	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
 	return ..()
+
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", /obj/item/ore_bag)
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
 DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "ion_trail", OWNED, null)
 DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "shields", OWNED, null)

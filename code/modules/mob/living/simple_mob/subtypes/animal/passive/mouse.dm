@@ -54,7 +54,6 @@
 	. = ..()
 	ghostjoin = TRUE
 	ghostjoin_icon()
-	registry_join(REGISTRY_GHOST_PODS, src)
 
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)
@@ -67,7 +66,7 @@
 
 	if(!body_color)
 		body_color = pick( list("brown","gray","white","black") )
-	icon_state = "mouse_[body_color]"
+	icon_state = "mouse_[body_color]" // ALLOW(decl): random colour pick
 	item_state = "mouse_[body_color]"
 	icon_living = "mouse_[body_color]"
 	icon_dead = "mouse_[body_color]_dead"
@@ -324,7 +323,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 
 	add_verb(src,/mob/living/proc/ventcrawl)
 	add_verb(src,/mob/living/proc/hide)
-	icon_state = "mouse_miner"
+	icon_state = "mouse_miner" // ALLOW(decl): overrides the parent's colour pick
 	item_state = "mouse_miner"
 	icon_living = "mouse_miner"
 	icon_dead = "mouse_miner_dead"
@@ -348,3 +347,5 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 DECLARE_REF(/mob/living/simple_mob/animal/passive/mouse, "rat_diseases", OWNED_LIST, null)
+
+DECLARE_REGISTRY(/mob/living/simple_mob/animal/passive/mouse, REGISTRY_GHOST_PODS)

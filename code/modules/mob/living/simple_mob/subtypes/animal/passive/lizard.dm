@@ -34,7 +34,7 @@
 			body_color = "redblue"
 		else
 			body_color = pick(list("green","red","orange","yellow","cyan"))
-	icon_state = "lizard_[body_color]"
+	icon_state = "lizard_[body_color]" // ALLOW(decl): random colour pick
 	item_state = "lizard_[body_color]"
 	icon_living = "lizard_[body_color]"
 	icon_dead = "lizard_[body_color]_dead"

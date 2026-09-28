@@ -351,7 +351,7 @@ GLOBAL_LIST_INIT(valid_random_lamias, list(
 	name = initial(new_attrs.name)
 	desc = initial(new_attrs.desc)
 
-	icon_state = initial(new_attrs.icon_state)
+	icon_state = initial(new_attrs.icon_state) // ALLOW(decl): random lamia pick
 	icon_living = initial(new_attrs.icon_living)
 	icon_rest = initial(new_attrs.icon_rest)
 	icon_dead = initial(new_attrs.icon_dead)

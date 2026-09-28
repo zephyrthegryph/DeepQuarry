@@ -531,10 +531,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", P
 	var/skin = null //Same as medbot, set to tox or ointment for the respective kits.
 	w_class = ITEMSIZE_NORMAL
 
-/obj/item/firstaid_arm_assembly/Initialize(mapload)
-	. = ..()
-	if(skin)
-		add_overlay("kit_skin_[src.skin]")
+DECLARE_APPEARANCE(/obj/item/firstaid_arm_assembly, "skin", list("ointment" = list(APPEARANCE_OVERLAYS = list("kit_skin_ointment")), "tox" = list(APPEARANCE_OVERLAYS = list("kit_skin_tox")), "o2" = list(APPEARANCE_OVERLAYS = list("kit_skin_o2"))))
 
 DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

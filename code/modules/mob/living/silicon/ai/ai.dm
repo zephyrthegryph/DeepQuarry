@@ -114,7 +114,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
-	announcement = new()
+	announcement = new() // ALLOW(decl): configured before parent init
 	announcement.title = "A.I. Announcement"
 	announcement.announcement_type = "A.I. Announcement"
 	announcement.newscast = 1
@@ -130,14 +130,14 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				pickedName = null
 
 	if(!is_dummy)
-		aiPDA = new/obj/item/pda/ai(src)
+		aiPDA = new/obj/item/pda/ai(src) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
 	anchored = TRUE
 	canmove = 0
 	density = TRUE
 
 	if(!is_dummy)
-		aiCommunicator = new /obj/item/communicator/integrated(src)
+		aiCommunicator = new /obj/item/communicator/integrated(src) // ALLOW(decl): conditional on is_dummy
 
 	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 
@@ -147,16 +147,13 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		if (istype(L, /datum/ai_laws))
 			laws = L
 	else
-		laws = new using_map.default_law_type
+		laws = new using_map.default_law_type // ALLOW(decl): only when no laws were passed in
 
-	aiMulti = new(src)
-	aiRadio = new(src)
+	aiRadio = new(src) // ALLOW(decl): wired to common_radio before parent init
 	common_radio = aiRadio
 	aiRadio.myAi = src
 	additional_law_channels["Binary"] = "#b"
 	additional_law_channels["Holopad"] = ":h"
-
-	aiCamera = new/obj/item/camera/siliconcam/ai_camera(src)
 
 	if (istype(loc, /turf))
 		add_ai_verbs(src)
@@ -250,6 +247,8 @@ DECLARE_REF(/mob/living/silicon/ai, "psupply", OWNED, null)
 DECLARE_REF(/mob/living/silicon/ai, "aiPDA", OWNED, null)
 DECLARE_REF(/mob/living/silicon/ai, "aiCommunicator", OWNED, null)
 DECLARE_REF(/mob/living/silicon/ai, "aiMulti", OWNED, null)
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiMulti", /obj/item/multitool)
+DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/siliconcam/ai_camera)
 DECLARE_REF(/mob/living/silicon/ai, "aiRadio", OWNED, null)
 DECLARE_REF(/mob/living/silicon/ai, "holo_icon", OWNED, null)
 DECLARE_REF(/mob/living/silicon/ai, "track", OWNED, null)

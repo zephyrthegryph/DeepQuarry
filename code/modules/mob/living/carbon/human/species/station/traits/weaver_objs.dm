@@ -54,7 +54,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 
 /obj/effect/weaversilk/floor/Initialize(mapload)
 	. = ..()
-	icon_state = pick(possible_icon_states)
+	icon_state = pick(possible_icon_states) // ALLOW(decl): random pick
 
 /obj/effect/weaversilk/wall
 	name = "weaversilk web wall"
@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 
 /obj/effect/weaversilk/wall/Initialize(mapload)
 	. = ..()
-	icon_state = pick(possible_icon_states)
+	icon_state = pick(possible_icon_states) // ALLOW(decl): random pick
 
 /obj/effect/weaversilk/wall/CanPass(atom/movable/mover, turf/target)
 	var/mob/living/L = mover

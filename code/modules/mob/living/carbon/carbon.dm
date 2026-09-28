@@ -1,16 +1,16 @@
 /mob/living/carbon/Initialize(mapload)
 	. = ..()
 	//setup reagent holders
-	bloodstr = new/datum/reagents/metabolism/bloodstream(500, src)
-	ingested = new/datum/reagents/metabolism/ingested(500, src)
-	touching = new/datum/reagents/metabolism/touch(500, src)
+	bloodstr = new/datum/reagents/metabolism/bloodstream(500, src) // ALLOW(decl): holder takes constructor args
+	ingested = new/datum/reagents/metabolism/ingested(500, src) // ALLOW(decl): holder takes constructor args
+	touching = new/datum/reagents/metabolism/touch(500, src) // ALLOW(decl): holder takes constructor args
 	reagents = bloodstr
 	if (!default_language && species_language)
 		default_language = GLOB.all_languages[species_language]
 
 	enable_footsteps(custom_footstep, 1, -6)
 
-	cozyloop = new(list(src), FALSE)
+	cozyloop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
 
 /// Skin germs creep up to the ambient level, on a rewake. Runs even while transforming or in
 /// nullspace (it followed ..() in the old carbon Life()).

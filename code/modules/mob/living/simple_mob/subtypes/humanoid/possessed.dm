@@ -62,15 +62,15 @@
 	var/obj/item/reagent_containers/glass/beaker/B1 = new(src)
 	var/obj/item/reagent_containers/glass/beaker/B2 = new(src)
 
-	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30)
-	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5)
-	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5)
-	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5)
+	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30) // ALLOW(decl): fills the grenade's own beakers
+	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5) // ALLOW(decl): fills the grenade's own beakers
+	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5) // ALLOW(decl): fills the grenade's own beakers
+	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5) // ALLOW(decl): fills the grenade's own beakers
 
 	LAZYADD(beakers, B1)
 	LAZYADD(beakers, B2)
 
-	icon_state = null
+	icon_state = null // ALLOW(decl): hidden just before it detonates
 
 	detonate()
 
@@ -95,8 +95,8 @@
 // the possessed suit collapses into remains and miasma.
 /mob/living/simple_mob/humanoid/possessed/on_destroy(force)
 	var/droploc = get_turf(src)
-	playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
-	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.",
+	playsound(src, 'sound/effects/blobattack.ogg', 40, 1) // ALLOW(decl): paired with the random death message
+	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.", // ALLOW(decl): random message
 	"\The [src] shudders as some hurt living thing, reeling as screaming servos overcompensate beneath the weight of that debilitating strike - the horrid sounds of shattered metal resonate as the RIG rips itself apart. Limbs flung about in distinctly inhuman motions in a final failed effort at balance before buckling inwards at the joints, hydraulic fluid jettisoned as blood from a severed artery as the long liquidized contents of the suit's ex-pilot spill from its chassis in a thick slurry.",
 	"Hissing atmosphereic valves pop and snap, breaking the ageless seal as the putrid stench of rot and carrion assaults the senses in debilitating waves. The damaged RIG's visor alight with warnings of hazardous atmospheric conditions as a final distorted scream echos from within the damaged chassis. The fetid miasma that breeches through those wheezing seals overtaken by a wet burble and plop as the suit is bathed in the liquid contents of its passenger, blackened flesh fed through those narrow seals as rotten grounds.",
 	"The timeworn suit's seals finally crack open with a hiss - spilling forth a thick fungal mist. The control module ejects from the rig as it loses all control impulses - leaving behind but a pile of bones and the rotten sludge it had been swimming in for heaven knows how long.",

@@ -54,9 +54,7 @@
 		"haste"				= /obj/item/spell/modifier/haste
 		)
 
-/mob/living/simple_mob/mechanical/technomancer_golem/Initialize(mapload)
-	core = new(src)
-	return ..()
+DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "core", /obj/item/technomancer_core/golem)
 
 DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED, null)
 

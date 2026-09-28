@@ -165,9 +165,7 @@
 	)
 	return options
 
-/obj/item/organ/internal/fruitgland/Initialize(mapload, internal)
-	. = ..()
-	create_reagents(usable_volume)
+DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 
 
 /obj/item/organ/internal/fruitgland/periodic_step()

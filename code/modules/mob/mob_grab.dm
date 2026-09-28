@@ -49,9 +49,8 @@
 	if(!istype(om_link(src, victim, /datum/om/relation/grabbing), /datum/om/edge))
 		return INITIALIZE_HINT_QDEL
 
-	hud = new /atom/movable/screen/grab(src)
 	hud.icon_state = "reinforce"
-	icon_state = "grabbed"
+	icon_state = "grabbed" // ALLOW(decl): only set once the grab link succeeds
 	hud.name = "reinforce grab"
 	hud.master_ref = om_handle(src)
 
@@ -405,6 +404,7 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 	return mob_size_difference(A.mob_size, B.mob_size)
 
 DECLARE_REF(/obj/item/grab, "hud", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/grab, "hud", /atom/movable/screen/grab)
 
 #undef UPGRADE_KILL_TIMER
 

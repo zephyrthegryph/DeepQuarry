@@ -23,7 +23,6 @@
 
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
-	radio = new(src)//Spawns a radio inside the MMI.
 	make_mind_host()
 
 /// The occupant view mob (the hosted mind lives there), if any.
@@ -180,8 +179,6 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.discard_view()
-	if(brainobj)
-		QDEL_NULL(brainobj)
 	..()
 
 /obj/item/mmi/radio_enabled
@@ -395,6 +392,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	w_class = ITEMSIZE_NORMAL
 
 DECLARE_REF(/obj/item/mmi, "radio", OWNED, null)
+DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
 DECLARE_REF(/obj/item/mmi, "body_backup", OWNED, null)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
 DECLARE_REF(/obj/item/mmi, "brainobj", HELD, null)

@@ -150,8 +150,7 @@
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
 	. = ..()
 	icon_living = "spookyghost-[rand(1,2)]"
-	icon_state = icon_living
-	om_after(src, 35 SECONDS, PROC_REF(death))
+	icon_state = icon_living // ALLOW(decl): random pick
 	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost
@@ -177,3 +176,5 @@
 		return
 	if(T.get_lumcount() >= 0.5)
 		self.injure(INJURY_BURN, 1, source = T) // Light sears it.
+
+DECLARE_START_TIMER(/mob/living/simple_mob/vore/alienanimals/spooky_ghost, 35 SECONDS, PROC_REF(death))
