@@ -5,7 +5,6 @@
 	organ_tag = O_CELL
 	parent_organ = BP_TORSO
 	vital = TRUE
-	var/defib_timer = 1 // This sits in the brain organ slot, but is not a brain.
 
 /obj/item/organ/internal/cell/Initialize(mapload, internal)
 	robotize()

@@ -240,7 +240,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/shockpaddles/paddles = allocate(/obj/item/shockpaddles)
 	var/obj/item/organ/internal/brain/brain = H.internal_organs_by_name[O_BRAIN]
-	brain.defib_timer = (CONFIG_GET(number/defib_timer) MINUTES) / 2
+	brain.reset_defib_window()
 
 	dq_test_set_organ_damage(brain, brain.max_damage - 1)
 	TEST_ASSERT(!brain.is_brain_dead(), "a brain at 99% is not brain dead")

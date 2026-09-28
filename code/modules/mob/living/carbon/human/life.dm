@@ -1759,7 +1759,8 @@
 		if(no_damage && (E.get_trauma() || E.get_burn()))
 			no_damage = 0
 		var/image/limb_image = E.get_damage_hud_image(limb_trauma_val)
-		key += "|ef[limb_image][limb_image.color]"
+		key += "|
+ef[limb_image][limb_image.color]"
 	var/show_pain = trauma_val && !(self.species.flags & NO_PAIN)
 	key += "|[show_pain && trauma_val > 0.7][show_pain && trauma_val >= 1][!trauma_val && no_damage]"
 	if(key == self.health_doll_key)
@@ -2394,30 +2395,8 @@
 	traumatic_shock = 0
 	..()
 
-/datum/om/stage/life/defib_timer
-	order = LIFE_PHASE_TAIL + 280
-	name = "defib timer"
-	wake_on = CHANGE_MOB_HEALTH
-	run_if = LIFE_RUN_IF_DEAD_BIOLOGY
-	of = /mob/living/carbon/human
-
-/// Busy while dead with a defibrillation window still open.
-/datum/om/stage/life/defib_timer/idle(mob/living/carbon/human/self)
-	if(self.stat != DEAD || !self.should_have_organ(O_BRAIN))
-		return TRUE
-	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	return !istype(brain) || brain.defib_timer <= 0
-
-/// Brain decay while dead, which closes the defibrillation window.
-/datum/om/stage/life/defib_timer/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	if(!self.should_have_organ(O_BRAIN))
-		return // No brain.
-
-	var/obj/item/organ/internal/brain/brain = self.internal_organs_by_name[O_BRAIN]
-	if(!istype(brain))
-		return // No brain, or an MMI holder / posibrain in the slot (they do not decay).
-
-	brain.tick_defib_timer()
+// The defibrillation window needs no Life stage: the brain charges it on the body clock when
+// read (/obj/item/organ/internal/brain/proc/sync_defib_window(), audit D10).
 
 
 

@@ -1,4 +1,3 @@
-#define DEFIB_TIME_LIMIT (10 MINUTES) //past this many seconds, defib is useless.
 #define DEFIB_TIME_LOSS  (2 MINUTES) //past this many seconds, brain damage occurs.
 
 //backpack item
@@ -252,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		else if(istype(brain, /obj/item/organ/internal/brain)) //Some species have weird 'brains' that aren't technically brains. Those don't have defib timers.
 			if(brain.is_brain_dead())
 				return "buzzes, \"Resuscitation failed - Brain death detected. Patient requires resleeving.\""
-			if(brain.defib_timer <= 0)
+			if(brain.defib_window_left() <= 0)
 				return "buzzes, \"Resuscitation failed - Patient's brain has naturally degraded past a recoverable state. Further attempts futile.\""
 
 	// Structural damage (physical + thermal + cellular) at twice the patient's endurance or more
@@ -521,24 +520,12 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	if(!brain)
 		return // Still no brain.
 
-	// If the brain'd `defib_timer` var gets below this number, brain damage will happen at a linear rate.
-	// This is measures in `Life()` ticks. E.g. 10 minute defib timer = 6000 world.time units = 3000 `Life()` ticks.
-	var/brain_damage_timer = ((CONFIG_GET(number/defib_timer) MINUTES) / 2) - ((CONFIG_GET(number/defib_braindamage_timer) MINUTES) / 2)
-
-	if(brain.defib_timer > brain_damage_timer)
-		return // They got revived before brain damage got a chance to set in.
-
-	// As the brain decays, this will be between 0 and 1, with 1 being the most fresh.
-	var/brain_death_scale = brain.defib_timer / brain_damage_timer
-
-	// This is backwards from what you might expect, since 1 = fresh and 0 = rip.
-	var/current_brain_damage = H.injury_load(INJURY_CATEGORY_NEURAL)
-	var/damage_calc = LERP(brain.max_damage, current_brain_damage, brain_death_scale)
-
-	// A bit of sanity.
-	var/brain_damage = between(current_brain_damage, damage_calc, brain.max_damage)
-
-	H.injure(INJURY_NEURAL, brain_damage - current_brain_damage, BP_HEAD, src, flags = INJURE_IGNORE_RESISTANCE)
+	if(!istype(brain))
+		return // an MMI holder or posibrain does not decay
+	var/brain_damage = brain.revival_brain_damage(H.injury_load(INJURY_CATEGORY_NEURAL))
+	if(brain_damage <= 0)
+		return // Revived before brain damage set in.
+	H.injure(INJURY_NEURAL, brain_damage, BP_HEAD, src, flags = INJURE_IGNORE_RESISTANCE)
 
 /obj/item/shockpaddles/proc/make_announcement(message, msg_class)
 	audible_message(span_bold(span_info("\The [src]") + " [message]"), span_info("\The [src] vibrates slightly."), runemessage = "buzz")
@@ -712,7 +699,6 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	item_state = "jumperpaddles0"
 	use_on_synthetic = 1
 
-#undef DEFIB_TIME_LIMIT
 #undef DEFIB_TIME_LOSS
 
 /obj/item/shockpaddles/proc/recharged()
