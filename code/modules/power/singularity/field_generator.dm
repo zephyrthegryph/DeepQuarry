@@ -370,3 +370,5 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/field_generator/step_start_condition()
 	return active || Varedit_start
+
+REF_OWNED_LIST(/obj/machinery/field_generator, "fields")

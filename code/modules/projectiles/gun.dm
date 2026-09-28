@@ -86,7 +86,6 @@
 	var/keep_aim = 1 	//1 for keep shooting until aim is lowered
 						//0 for one bullet after tarrget moves and aim is lowered
 	var/multi_aim = 0 //Used to determine if you can target multiple people.
-	var/tmp/list/mob/living/aim_targets //List of who yer targeting.
 	var/tmp/last_moved_mob_handle	//Used to fire faster at more than one person.
 	var/tmp/told_cant_shoot = 0 //So that it doesn't spam them with the fact they cannot hit them.
 	var/tmp/lock_time = -100
@@ -667,13 +666,6 @@ REF_OWNED(/obj/item/gun, "firemode_selector")
 	P.dispersion = disp_mod
 
 	P.accuracy -= user.get_accuracy_penalty()
-
-	//accuracy bonus from aiming
-	if (aim_targets && (target in aim_targets))
-		//If you aim at someone beforehead, it'll hit more often.
-		//Kinda balanced by fact you need like 2 seconds to aim
-		//As opposed to no-delay pew pew
-		P.accuracy += 30
 
 	// Body factors make it harder or easier to hit things.
 	P.accuracy += user.factor(BF_ACCURACY)

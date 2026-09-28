@@ -54,9 +54,11 @@
 	var/list/skipped_experiment_types
 
 	///All RD consoles connected to this individual techweb.
-	var/list/obj/machinery/computer/rdconsole_tg/consoles_accessing
+	/// The list side of a backlist: REF_BACKLIST(/obj/machinery/computer/rdconsole_tg, list("stored_research" = "consoles_accessing")).
+	var/list/consoles_accessing
 	///All research servers connected to this individual techweb.
-	var/list/obj/machinery/rnd/server/techweb_servers
+	/// The list side of a backlist: REF_BACKLIST(/obj/machinery/rnd/server, list("stored_research" = "techweb_servers")).
+	var/list/techweb_servers
 
 	///Boolean on whether the techweb should generate research points overtime.
 	var/should_generate_points = FALSE
@@ -584,3 +586,4 @@
 // 	return TRUE
 
 REF_OWNED_LIST(/datum/techweb, "available_experiments")
+REF_OWNED_VALUES(/datum/techweb, "completed_experiments")
