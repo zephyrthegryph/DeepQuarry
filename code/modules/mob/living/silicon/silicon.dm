@@ -164,7 +164,7 @@ REF_STATIC(/mob/living/silicon, list("speech_synthesizer_langs", "queued_alarms"
 	. += show_malf_ai()
 
 //can't inject synths
-/mob/living/silicon/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE)
+/mob/living/silicon/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
 	if(error_msg)
 		to_chat(user, span_warning("The armoured plating is too tough."))
 	return 0

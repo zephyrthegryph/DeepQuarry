@@ -275,7 +275,7 @@
 			ash()
 
 // Injections.
-/mob/living/simple_mob/can_inject(mob/user, error_msg, target_zone, ignore_thickness)
+/mob/living/simple_mob/can_inject(mob/user, error_msg, target_zone, ignore_thickness, method = INJECT_METHOD_NEEDLE)
 	if(ignore_thickness)
 		return TRUE
 	return !thick_armor

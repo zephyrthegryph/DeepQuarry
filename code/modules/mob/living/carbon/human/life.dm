@@ -393,6 +393,11 @@
 	if(self.inStasisNow())
 		return
 
+	// B14 / P2-S12: anti-radiation treatment (reagent tags) purges through the
+	// one writer instead of each drug writing the dose itself.
+	var/antirad = self.body?.treatment_levels()?[TREAT_ANTIRADIATION]
+	if(antirad)
+		self.purge_radiation(antirad * DQ_ANTIRAD_RADS_PER_LEVEL)
 	self.radiation = CLAMP(self.radiation,0,RADIATION_CAP) //Max of 100Gy. If you reach that...You're going to wish you were dead. You probably will be dead.
 	self.accumulated_rads = CLAMP(self.accumulated_rads,0,RADIATION_CAP) //Max of 100Gy as well. You should never get higher than this. You will be dead before you can reach this.
 	var/obj/item/organ/internal/I = null //Used for further down below when an organ is picked.
@@ -1199,7 +1204,13 @@
 		return TRUE
 	if(self.stat != DEAD && self.robobody_count)
 		return FALSE
-	return self.on_fire || abs(self.species.body_temperature - self.bodytemperature) < 0.5
+	return self.on_fire || abs(self.thermal_setpoint() - self.bodytemperature) < 0.5
+
+/// C16 / P2-S10: the temperature this body regulates toward — the species norm
+/// plus BF_TEMPERATURE (fevers and chills are factors on afflictions, not
+/// per-tick temperature writes).
+/mob/living/carbon/human/proc/thermal_setpoint()
+	return species.body_temperature + factor(BF_TEMPERATURE)
 
 /// Body temperature is written raw by the environment, reagents and afflictions.
 /datum/om/stage/life/thermoregulation/rewake_delay(mob/living/carbon/human/self)
@@ -1221,10 +1232,20 @@
 		if(!HS || HS.is_broken()) // However, NIF Heatsinks will not compensate for a core FBP component (your heatsink) being lost.
 			self.adjust_bodytemperature(round(self.robobody_count*0.5))
 
-	var/body_temperature_difference = self.species.body_temperature - self.bodytemperature
+	var/setpoint = self.thermal_setpoint()
+	var/body_temperature_difference = setpoint - self.bodytemperature
 
 	if (abs(body_temperature_difference) < 0.5)
 		return //fuck this precision
+
+	// B15: thermoregulating drugs (leporazine) act through their tag, here.
+	var/thermo = self.body?.treatment_levels()?[TREAT_THERMOREGULATION]
+	if(thermo)
+		var/step = min(abs(body_temperature_difference), thermo * DQ_THERMOREG_K_PER_LEVEL)
+		self.adjust_bodytemperature(body_temperature_difference > 0 ? step : -step)
+		body_temperature_difference = setpoint - self.bodytemperature
+		if (abs(body_temperature_difference) < 0.5)
+			return
 
 	if (self.on_fire)
 		return //too busy for pesky metabolic regulation

@@ -796,7 +796,7 @@
 /datum/reagent/frostoil/affect_blood(mob/living/carbon/M, alien, removed)
 	if(alien == IS_DIONA)
 		return
-	M.set_bodytemperature(min(M.bodytemperature, max(M.bodytemperature - 10 * TEMPERATURE_DAMAGE_COEFFICIENT, 215)))
+	warm_body(M, -10 * TEMPERATURE_DAMAGE_COEFFICIENT, removed, min_temp = min(M.bodytemperature, 215))
 	if(prob(1))
 		M.emote("shiver")
 	holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5)
@@ -807,7 +807,7 @@
 	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a chilly, tingling sensation in your mouth."))
-		M.adjust_bodytemperature(-(rand(10, 25)))
+		warm_body(M, -rand(10, 25), removed)
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -818,7 +818,7 @@
 		to_chat(M, span_danger("Your insides suddenly feel a spreading chill!"))
 	if(effective_dose >= 5)
 		M.apply_effect(2 * M.species.spice_mod, AGONY, 0)
-		M.adjust_bodytemperature(-(rand(1, 5) * M.species.spice_mod)) // Really fucks you up, cause it makes you cold.
+		warm_body(M, -rand(1, 5) * M.species.spice_mod, removed) // Really fucks you up, cause it makes you cold.
 		if(prob(5))
 			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are freezing!"), span_danger("Your insides feel like they're turning to ice!")))
 	// holder.remove_reagent(REAGENT_ID_CAPSAICIN, 5) // Nop, we don't instadelete spices for free.
@@ -863,7 +863,7 @@
 	if(alien == IS_ALRAUNE) // It wouldn't affect plants that much.
 		if(prob(5))
 			to_chat(M, span_rose("You feel a pleasant sensation in your mouth."))
-		M.adjust_bodytemperature(rand(10, 25))
+		warm_body(M, rand(10, 25), removed)
 		return
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
@@ -875,7 +875,7 @@
 		to_chat(M, span_danger("Your insides feel uncomfortably hot!"))
 	if(effective_dose >= 5)
 		M.apply_effect(2 * M.species.spice_mod, AGONY, 0)
-		M.adjust_bodytemperature(rand(1, 5) * M.species.spice_mod) // Really fucks you up, cause it makes you overheat, too.
+		warm_body(M, rand(1, 5) * M.species.spice_mod, removed) // Really fucks you up, cause it makes you overheat, too.
 		if(prob(5))
 			M.visible_message(span_warning("[M] [pick("dry heaves!","coughs!","splutters!")]"), pick(span_danger("You feel like your insides are burning!"), span_danger("You feel like your insides are on fire!"), span_danger("You feel like your belly is full of lava!")))
 	// holder.remove_reagent(REAGENT_ID_FROSTOIL, 5) // Nop, we don't instadelete spices for free.
@@ -1072,7 +1072,8 @@
 	M.status_adjust(EFFECT_DIZZY, adj_dizzy)
 	M.status_adjust(EFFECT_DROWSY, adj_drowsy)
 	M.status_adjust(EFFECT_SLEEPING, adj_sleepy)
-	M.set_bodytemperature(drink_temperature_step(M.bodytemperature, BODYTEMP_NORMAL, adj_temp))
+	if(adj_temp)
+		drive_body_temperature(M, BODYTEMP_NORMAL, abs(adj_temp) * TEMPERATURE_DAMAGE_COEFFICIENT, removed, warm = adj_temp > 0, cool = adj_temp < 0)
 	if(issmall(M)) removed *= 2
 	// B18: through adjust_nutrition (its clamp), scaled by the coefficient instead of gated on it.
 	if(M.species.organic_food_coeff)
@@ -1347,8 +1348,7 @@
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			if(O.is_fractured())
-				O.mend_fracture()
+			if(dq_reagent_knit_fracture(O))
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.injure(INJURY_PAIN, 60, O.organ_tag, source = src)
 				H.status_adjust(EFFECT_STUNNED, 1) // Crawling again, weakened to stunned
@@ -1457,18 +1457,12 @@
 /datum/reagent/drink/tea/icetea/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(M.bodytemperature > T0C)
-			M.adjust_bodytemperature(-(0.5))
-		if(M.bodytemperature < T0C)
-			M.adjust_bodytemperature(0.5)
+		drive_body_temperature(M, T0C, 0.5, removed)
 
 /datum/reagent/drink/tea/icetea/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(M.bodytemperature > T0C)
-			M.adjust_bodytemperature(-(0.5))
-		if(M.bodytemperature < T0C)
-			M.adjust_bodytemperature(0.5)
+		drive_body_temperature(M, T0C, 0.5, removed)
 
 /datum/reagent/drink/tea/icetea/decaf
 	name = REAGENT_ICETEADECAF
@@ -1717,18 +1711,12 @@
 /datum/reagent/drink/coffee/icecoffee/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(M.bodytemperature > T0C)
-			M.adjust_bodytemperature(-(0.5))
-		if(M.bodytemperature < T0C)
-			M.adjust_bodytemperature(0.5)
+		drive_body_temperature(M, T0C, 0.5, removed)
 
 /datum/reagent/drink/coffee/icecoffee/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(M.bodytemperature > T0C)
-			M.adjust_bodytemperature(-(0.5))
-		if(M.bodytemperature < T0C)
-			M.adjust_bodytemperature(0.5)
+		drive_body_temperature(M, T0C, 0.5, removed)
 
 /datum/reagent/drink/coffee/soy_latte
 	name = REAGENT_SOYLATTE
@@ -2608,18 +2596,12 @@
 /datum/reagent/drink/ice/affect_blood(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(M.bodytemperature > T0C)
-			M.adjust_bodytemperature(-(rand(1,3)))
-		if(M.bodytemperature < T0C)
-			M.adjust_bodytemperature(rand(1,3))
+		drive_body_temperature(M, T0C, rand(1,3), removed)
 
 /datum/reagent/drink/ice/affect_ingest(mob/living/carbon/M, alien, removed)
 	..()
 	if(alien == IS_SLIME)
-		if(M.bodytemperature > T0C)
-			M.adjust_bodytemperature(-(rand(1,3)))
-		if(M.bodytemperature < T0C)
-			M.adjust_bodytemperature(rand(1,3))
+		drive_body_temperature(M, T0C, rand(1,3), removed)
 
 /datum/reagent/drink/nothing
 	name = REAGENT_NOTHING
@@ -3204,7 +3186,7 @@
 		M.status_adjust(EFFECT_DROWSY, -3)
 		M.status_adjust(EFFECT_SLEEPING, -2)
 		if(M.bodytemperature > BODYTEMP_NORMAL)
-			M.set_bodytemperature(max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+			drive_body_temperature(M, BODYTEMP_NORMAL, 5 * TEMPERATURE_DAMAGE_COEFFICIENT, removed)
 
 		//if(alien == IS_TAJARA)
 			//M.make_jittery(4) //extra sensitive to caffine
@@ -3329,8 +3311,8 @@
 		if(alien == IS_DIONA)
 			return
 		M.status_adjust(EFFECT_DROWSY, -7)
-		if (M.bodytemperature > BODYTEMP_NORMAL)
-			M.set_bodytemperature(max(BODYTEMP_NORMAL, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT)))
+		if(M.bodytemperature > BODYTEMP_NORMAL)
+			drive_body_temperature(M, BODYTEMP_NORMAL, 5 * TEMPERATURE_DAMAGE_COEFFICIENT, removed)
 		M.status_adjust(EFFECT_JITTERY, 5)
 
 /datum/reagent/ethanol/vermouth

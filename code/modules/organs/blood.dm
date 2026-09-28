@@ -233,17 +233,17 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 		return 0
 
 	var/temp_bld = calculate_bloodloss_divisor() + 10 //IB is slower bloodloss than normal.
-	var/bicardose
-	if(reagents.get_reagent_amount(REAGENT_ID_BICARIDINE) || reagents.get_reagent_amount(REAGENT_ID_BICARIDAZE))
-		bicardose = TRUE
-	var/inaprovaline
-	if(reagents.get_reagent_amount(REAGENT_ID_INAPROVALINE) || reagents.get_reagent_amount(REAGENT_ID_INAPROVALAZE))
-		inaprovaline = TRUE
-	var/myeldose = reagents.get_reagent_amount(REAGENT_ID_MYELAMINE)
-	if(!(wound_to_check.can_autoheal() || (bicardose && inaprovaline) || myeldose))	//bicaridine and inaprovaline stop internal wounds from growing bigger with time, unless it is so small that it is already healing
+	// D18a: mechanisms, not reagent IDs. A strong hemostatic (myelamine), or a
+	// hemostatic backed by circulatory support (bicaridine + inaprovaline), stops
+	// the tear growing; strong hemostasis or stabilisation slows the loss.
+	var/list/levels = body?.treatment_levels()
+	var/hemostatic = levels?[TREAT_HEMOSTATIC] || 0
+	var/circulatory = levels?[TREAT_CIRCULATORY] || 0
+	var/strong_clot = hemostatic >= DQ_IB_STRONG_HEMOSTATIC
+	if(!(wound_to_check.can_autoheal() || strong_clot || (hemostatic > 0 && circulatory > 0)))
 		wound_to_check.open_wound(0.1)
-	if(factor(BF_STABILIZATION) || myeldose)
-		temp_bld = max(temp_bld + 30, 1) //Inaprovaline is great on internal wounds.
+	if(factor(BF_STABILIZATION) || strong_clot)
+		temp_bld = max(temp_bld + 30, 1) //Stabilisers are great on internal wounds.
 	if(applied_pressure) //Putting pressure on the afflicted wound helps stop the arterial bleeding.
 		temp_bld += 30
 	if(wound_to_check.clamped)

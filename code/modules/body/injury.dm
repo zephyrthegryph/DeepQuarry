@@ -247,6 +247,17 @@
 		BITSET(hud_updateflag, HEALTH_HUD)
 		om_changed(src, CHANGE_MOB_HEALTH)
 
+/// B14 / P2-S12: the one writer that takes radiation OUT of a mob — acute
+/// dose and accumulated dose together (anti-radiation treatment, restoration).
+/// Returns the acute dose removed.
+/mob/living/proc/purge_radiation(amount)
+	if(amount <= 0 || (!radiation && !accumulated_rads))
+		return 0
+	var/before = radiation
+	radiation = max(radiation - amount, 0)
+	accumulated_rads = max(accumulated_rads - amount, 0)
+	return before - radiation
+
 /// Clear every affliction and restore the body plan's parts. Admin heal,
 /// rejuvenate, resleeve.
 /mob/living/proc/fully_heal()

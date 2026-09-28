@@ -299,7 +299,9 @@
 			continue
 		var/alist/table = R.get_factors(owner)
 		var/scale = dq_chem_dose_scale(reagent_volumes[reagent_id])
-		if(length(table) && scale > 0)
+		// B2: the reagent's own table obeys the same gates as on_mob_life; the
+		// patient-side contributions (allergy, blood rebuild) still apply.
+		if(length(table) && scale > 0 && R.acts_on_body(owner))
 			acc = accumulate_scaled_reagent(acc, table, scale)
 		acc = R.accumulate_special_factors(acc, owner, reagent_volumes[reagent_id])
 	return acc
@@ -369,6 +371,32 @@
 			merged[id] = over[id]
 		merged_cache[key] = merged
 	return merged
+
+/// B2: the one gate for whether a reagent's own effects (treatment tags,
+/// body factors) reach this mob — the same rules `on_mob_life` applies: dead
+/// bodies, synthetic processing, and medical allergy (which gives no benefit;
+/// the reaction itself is `accumulate_special_factors`).
+/datum/reagent/proc/acts_on_body(mob/living/L)
+	if(!L)
+		return FALSE
+	if(!affects_dead && L.stat == DEAD && !L.has_body_effect(/datum/body_effect/bloodpump_corpse))
+		return FALSE
+	if(L.isSynthetic())
+		if(!affects_robots)
+			return FALSE
+		if(iscarbon(L))
+			var/mob/living/carbon/C = L
+			if(!C.synth_reag_processing)
+				return FALSE
+	if(ishuman(L))
+		var/mob/living/carbon/human/H = L
+		if(H.species?.medallergens & medallergen_type)
+			return FALSE
+	return TRUE
+
+/proc/dq_reagent_acts_on(reagent_id, mob/living/L)
+	var/datum/reagent/R = chemistry_service().chemical_reagents[reagent_id]
+	return R ? R.acts_on_body(L) : FALSE
 
 /// Contributions that depend on the patient rather than the reagent: the
 /// mob's allergies, and blood rebuilt from its own blood reagent. Called at

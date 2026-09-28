@@ -26,8 +26,7 @@
 	if(ishuman(M) && rand(1,10000) == 1)
 		var/mob/living/carbon/human/H = M
 		for(var/obj/item/organ/external/O in H.bad_external_organs)
-			if(O.is_fractured())
-				O.mend_fracture()
+			if(dq_reagent_knit_fracture(O))
 				H.custom_pain("You feel the agonizing power of calcium mending your bones!",60)
 				H.status_adjust(EFFECT_WEAKENED, 1)
 				break // Only mend one bone, whichever comes first in the list
@@ -247,7 +246,7 @@
 	// withdrawl mechanics
 	if(!M.factor(BF_STABILIZATION)) //Without stabilization effects
 		if(current_addiction <= 60)
-			M.pulse = PULSE_2FAST
+			M.apply_body_effect(/datum/body_effect/withdrawal_tachycardia, 3 SECONDS)
 		if(prob(2))
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel miserable.","You feel nauseous.","You get a raging headache.")]"))
@@ -256,9 +255,9 @@
 			else if(current_addiction <= 20)
 				to_chat(M, span_danger("You feel absolutely awful. You need some some liquor. Now."))
 				if(realistic_addiction && prob(20)) //1 in 5 on a 1 in 50, so 1 in 250 chance. DTs
-					to_chat(src, span_red("You have a seizure!"))
+					to_chat(M, span_red("You have a seizure!"))
 					for(var/mob/O in viewers(M, null))
-						if(O == src)
+						if(O == M)
 							continue
 						O.show_message(span_danger("[M] starts having a seizure!"), 1)
 					M.status_at_least(EFFECT_PARALYZED, 10)
@@ -279,7 +278,7 @@
 					M.apply_body_effect(/datum/body_effect/withdrawal_strain/moderate, 3 SECONDS)
 	else //Stabilization effects
 		if(current_addiction <= 60)
-			M.pulse = PULSE_FAST
+			M.apply_body_effect(/datum/body_effect/withdrawal_tachycardia/mild, 3 SECONDS)
 		if(prob(2))
 			if(current_addiction < 90 && prob(10))
 				to_chat(M, span_warning("[pick("You feel a light throbbing in your head.","Your stomach feels upset.","Your .")]"))

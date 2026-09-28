@@ -555,9 +555,6 @@
 /datum/reagent/toxin/sifslurry/overdose(mob/living/carbon/M, alien, removed) // Overdose effect.
 	if(alien == IS_DIONA)
 		return
-	if(ishuman(M))
-		var/mob/living/carbon/human/H = M
-		overdose_mod *= H.species.chemOD_mod
 	M.apply_effect(2 * removed,IRRADIATE, 0, 0)
 	M.apply_effect(5 * removed,DROWSY, 0, 0)
 

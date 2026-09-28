@@ -123,6 +123,17 @@
 /datum/body_effect/withdrawal_strain/severe
 	factors = alist(BF_WITHDRAWAL = 2.3)
 
+/// B25: alcohol withdrawal races the heart. A forced pulse level, so the
+/// heart system reads it instead of a raw `pulse` write it would overwrite.
+/datum/body_effect/withdrawal_tachycardia
+	name = "withdrawal tachycardia"
+	hidden = TRUE
+	stacks = MODIFIER_STACK_EXTEND
+	factors = alist(BF_PULSE_SET = PULSE_2FAST)
+
+/datum/body_effect/withdrawal_tachycardia/mild
+	factors = alist(BF_PULSE_SET = PULSE_FAST)
+
 /// Airborne allergens (pollen) set off the mob's allergies.
 /datum/body_effect/allergic_flare
 	name = "allergic flare"

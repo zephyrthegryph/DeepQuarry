@@ -424,6 +424,8 @@
 	progression_rate = 0.5
 	// Debridement (resection) cuts the colonised tissue out.
 	treated_by = list(TREAT_ANTIMICROBIAL = 1.0, TREAT_RESECTION = 1)
+	// C16: a modest fever — the set point rises up to +1.2 K at severity 100.
+	factors = alist(BF_TEMPERATURE = 1.2)
 	symptom_pool = list(
 		/datum/affliction_symptom/fever_sensation = 60,
 		/datum/affliction_symptom/chills          = 40,
@@ -444,10 +446,7 @@
 	. = ..()
 	if(!location || !owner)
 		return
-	// Modest fever — local infection, not systemic yet.
-	if(severity > 0 && istype(owner, /mob/living/carbon/human))
-		var/target_offset_k = (severity / 100) * 1.2
-		owner.adjust_bodytemperature(target_offset_k * 0.1, max_temp = BODYTEMP_NORMAL + 1.5)
+	// Its modest fever is the BF_TEMPERATURE factor (the set point), not a write here.
 	var/germ_level = location.germ_level
 	// Above INFECTION_LEVEL_ONE the wound is actively feeding the
 	// condition. The extra delta scales with how far past threshold

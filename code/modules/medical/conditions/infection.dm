@@ -34,22 +34,10 @@
 	// body temp (handled in tick below). We only need to
 	// fudge temp readings if we want a discrepancy between actual and
 	// reading — leave readings linked to truth.
-	factors = alist(BF_SLOWDOWN = 0.3)
+	// C16: fever raises the thermoregulation set point (up to +2 K at severity 100).
+	factors = alist(BF_SLOWDOWN = 0.3, BF_TEMPERATURE = 2.0)
 	spontaneous_emotes = list("wince", "shudder")
 	spontaneous_emote_prob = 3
-
-// Push actual body temperature up while present. Upstream
-// stabilize_body_temperature pulls it back toward normal each tick, so
-// we keep nudging.
-/datum/affliction/cellulitis/tick()
-	. = ..()
-	if(severity <= 0 || !owner)
-		return
-	// Up to about +2°C at severity 100. Body's regulation will fight
-	// back, so we apply repeatedly. Scale by severity so a low-grade
-	// fever feels different from a high one.
-	var/target_offset_k = (severity / 100) * 2.0
-	owner.adjust_bodytemperature(target_offset_k * 0.1, max_temp = BODYTEMP_NORMAL + 2.5)
 
 /datum/affliction/sepsis
 	name = "sepsis"
@@ -71,7 +59,7 @@
 	max_symptoms = 4
 	// Pulse derives from elevated body temp; BP drop from vasodilation
 	// is real and the only thing not modelled elsewhere.
-	factors = alist(BF_SLOWDOWN = 0.6, BF_ACCURACY = -10, BF_BP_SYSTOLIC = -15)
+	factors = alist(BF_SLOWDOWN = 0.6, BF_ACCURACY = -10, BF_BP_SYSTOLIC = -15, BF_TEMPERATURE = 3.5)
 	spontaneous_emotes = list("shudder", "cough", "groan")
 	spontaneous_emote_prob = 4
 	// Sepsis is multi-organ inflammation; the kidneys take the first hit.
@@ -79,14 +67,6 @@
 	organ_damage_type = "internal"
 	organ_damage_per_tick = 1
 	organ_damage_targets = list(O_KIDNEYS)
-
-// Bigger fever push than cellulitis — systemic.
-/datum/affliction/sepsis/tick()
-	. = ..()
-	if(severity <= 0 || !owner)
-		return
-	var/target_offset_k = (severity / 100) * 3.5
-	owner.adjust_bodytemperature(target_offset_k * 0.1, max_temp = BODYTEMP_NORMAL + 4.0)
 
 /datum/affliction/septic_shock
 	name = "septic shock"
