@@ -25,9 +25,9 @@
 	var/obj/item/storage/briefcase/new_briefcase = new(H)
 	for(var/obj/item/briefcase_item in new_briefcase)
 		qdel(briefcase_item)
-	new_briefcase.contents += new /obj/item/gun/projectile/pistol/toy
-	new_briefcase.contents += new /obj/item/ammo_magazine/mfoam_dart/pistol
-	new_briefcase.contents += new /obj/item/clothing/mask/gas/clown_hat
+	new /obj/item/gun/projectile/pistol/toy(new_briefcase)
+	new /obj/item/ammo_magazine/mfoam_dart/pistol(new_briefcase)
+	new /obj/item/clothing/mask/gas/clown_hat(new_briefcase)
 	H.equip_to_slot_or_del(new_briefcase, slot_l_hand)
 
 /datum/decl/hierarchy/outfit/costume/horrorcop

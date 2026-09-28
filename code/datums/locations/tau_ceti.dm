@@ -5,7 +5,7 @@
 	desc = "Tau Ceti is a relatively populated system that sits between the inner and outer systems of human colonized space."
 
 /datum/locations/tau_ceti/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/tau_ceti_i(src),
 		new /datum/locations/luthien(src),
 		new /datum/locations/bimna(src),

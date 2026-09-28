@@ -58,7 +58,7 @@
 	playsound(exit_point, exit_sound, 50, TRUE)
 	om_after(src, 1.3 SECONDS, PROC_REF(exit_connection), exit_point, assigned_closet.contents)
 
-/datum/component/bluespace_connection/proc/exit_connection(atom/exit_point, list/contents)
+/datum/component/bluespace_connection/proc/exit_connection(atom/exit_point, list/passengers)
 	// Nope, must be closed.
 	if(assigned_closet.opened)
 		return
@@ -71,21 +71,20 @@
 	if(istype(exit_point, /obj/structure/closet))
 		var/obj/structure/closet/exit_closet = exit_point
 		if(!exit_closet.can_open()) // Bwomp. You're locked now. :)
-			for(var/atom/movable/AM in contents)
+			for(var/atom/movable/AM in passengers)
 				do_teleport(AM, exit_closet, channel = TELEPORT_CHANNEL_BLUESPACE, no_effects = TRUE)
 			return
 		exit_closet.open()
 
 	var/turf/target = throw_target()
 
-	if(contents.len)
-		for(var/atom/movable/AM in contents)
+	if(passengers.len)
+		for(var/atom/movable/AM in passengers)
 			if(QDELETED(AM))
 				continue
 			do_teleport(AM, get_turf(exit_point), channel = TELEPORT_CHANNEL_BLUESPACE, no_effects = TRUE)
 			if(!isbelly(exit_point))
 				AM.throw_at(target, throw_range, 1)
-		contents.Cut()
 	return
 
 /datum/component/bluespace_connection/proc/on_hit()

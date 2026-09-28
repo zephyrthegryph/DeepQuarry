@@ -42,8 +42,8 @@
 	var/atom/movable/T = target
 	if(!istype(A) || !istype(T))
 		return "can't reach it"
-	for(var/atom/loc = T.loc; loc; loc = loc.loc)
-		if(loc == A)
+	for(var/atom/holder = T.loc; holder; holder = holder.loc)
+		if(holder == A)
 			return null
 	if(!A.Adjacent(T))
 		return "can't reach it"
@@ -336,8 +336,8 @@
 	var/atom/movable/T = target
 	if(!istype(T))
 		return "not carrying it"
-	for(var/atom/loc = T.loc; loc; loc = loc.loc)
-		if(loc == actor)
+	for(var/atom/holder = T.loc; holder; holder = holder.loc)
+		if(holder == actor)
 			return null
 	return "not carrying it"
 

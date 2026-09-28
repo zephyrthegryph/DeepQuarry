@@ -5,7 +5,7 @@
 	desc = "The home system of humanity."
 
 /datum/locations/sol/New(creator)
-	contents.Add(
+	children.Add(
 		new /datum/locations/mercury(src),
 		new /datum/locations/venus(src),
 		new /datum/locations/earth(src),
