@@ -222,3 +222,12 @@
 
 	else
 		to_chat(user, span_warning("Access denied."))
+
+/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
+/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
+/obj/machinery/atmospherics/trinary/lifecycle_unbind()
+	. = ..()
+	node3 = null
+	network1 = null
+	network2 = null
+	network3 = null

@@ -332,3 +332,7 @@
 /obj/machinery/atmospherics/omni/arm_wakes()
 	..()
 	hibernate_until_gas_changes()
+
+// Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
+// (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.
+REF_OWNED_LIST(/obj/machinery/atmospherics/omni, "ports")

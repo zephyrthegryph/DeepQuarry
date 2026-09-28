@@ -478,3 +478,6 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			comp.purchasePower(comp.owner, params["val"]) //The power must be the power's NAME.
 			return TRUE
 	return TRUE
+
+// The panel points back at us as `comp`; owned so neither keeps the other alive.
+REF_OWNED(/datum/component/antag/changeling, "power_panel")

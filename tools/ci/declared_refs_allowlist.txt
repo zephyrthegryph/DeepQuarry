@@ -3,7 +3,7 @@
 # count, and files not listed may have none. Declare the var as REF_OWNED/
 # REF_OWNED_LIST/REF_PAIR/REF_BACKLIST (or make it tmp, or an OM handle) and
 # lower the count; `python tools/ci/declared_refs_lint.py --update` rewrites it.
-# Total: 1605 vars in 754 files.
+# Total: 1596 vars in 752 files.
 code/ATMOSPHERICS/atmospherics.dm 3
 code/ATMOSPHERICS/components/binary_devices/algae_generator.dm 1
 code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm 4
@@ -12,7 +12,7 @@ code/ATMOSPHERICS/components/binary_devices/passive_gate.dm 1
 code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm 5
 code/ATMOSPHERICS/components/binary_devices/pump.dm 1
 code/ATMOSPHERICS/components/binary_devices/volume_pump.dm 2
-code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm 4
+code/ATMOSPHERICS/components/omni_devices/_omni_extras.dm 3
 code/ATMOSPHERICS/components/omni_devices/filter.dm 2
 code/ATMOSPHERICS/components/omni_devices/mixer.dm 1
 code/ATMOSPHERICS/components/portables_connector.dm 3
@@ -47,7 +47,7 @@ code/datums/cogbar.dm 3
 code/datums/components/animations/dizzy.dm 1
 code/datums/components/animations/jittery.dm 1
 code/datums/components/antags/antag.dm 2
-code/datums/components/antags/changeling/changeling.dm 3
+code/datums/components/antags/changeling/changeling.dm 2
 code/datums/components/antags/changeling/powers/armblade.dm 1
 code/datums/components/antags/changeling/powers/visible_camouflage.dm 2
 code/datums/components/connect_containers.dm 1
@@ -254,7 +254,6 @@ code/modules/communicator/exonet_log_panel.dm 2
 code/modules/compass/compass_holder.dm 1
 code/modules/compass/compass_waypoint.dm 1
 code/modules/contracts/contract.dm 2
-code/modules/contracts/contract_requirement.dm 1
 code/modules/contracts/department_outcomes.dm 1
 code/modules/contracts/department_programs.dm 3
 code/modules/contracts/medical_case_report.dm 2
@@ -323,7 +322,7 @@ code/modules/gamemaster/event2/events/security/surprise_carp.dm 1
 code/modules/generated_station/generated_station_defenders.dm 6
 code/modules/generated_station/generated_station_director.dm 2
 code/modules/generated_station/generated_station_jobs.dm 3
-code/modules/generated_station/generated_station_materializer.dm 10
+code/modules/generated_station/generated_station_materializer.dm 9
 code/modules/generated_station/generated_station_runtime.dm 2
 code/modules/generated_station/generated_station_simulation.dm 2
 code/modules/generated_station/generated_station_tile_plan.dm 1
@@ -563,7 +562,6 @@ code/modules/paperwork/clipboard.dm 2
 code/modules/paperwork/faxmachine.dm 1
 code/modules/paperwork/photocopier.dm 1
 code/modules/paperwork/photography.dm 2
-code/modules/pda/app.dm 1
 code/modules/pda/cart_apps.dm 3
 code/modules/pda/core_apps.dm 1
 code/modules/pda/messenger_plugins.dm 1
@@ -629,7 +627,7 @@ code/modules/recycling/disposal_machines.dm 1
 code/modules/recycling/disposal_mail.dm 2
 code/modules/recycling/disposal_outlet.dm 1
 code/modules/recycling/disposal_trunk.dm 1
-code/modules/recycling/v_garbosystem.dm 3
+code/modules/recycling/v_garbosystem.dm 1
 code/modules/research/message_server.dm 3
 code/modules/research/tg/designs.dm 1
 code/modules/research/tg/disks.dm 1
@@ -672,7 +670,7 @@ code/modules/shuttles/shuttle_emergency.dm 1
 code/modules/shuttles/shuttle_ferry.dm 2
 code/modules/shuttles/shuttle_specops.dm 1
 code/modules/shuttles/shuttles_web.dm 1
-code/modules/shuttles/web_datums.dm 11
+code/modules/shuttles/web_datums.dm 9
 code/modules/spells/spell_code.dm 3
 code/modules/spells/spell_projectile.dm 1
 code/modules/spells/spellbook.dm 1
