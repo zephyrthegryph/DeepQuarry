@@ -81,6 +81,7 @@
 	// An organ the body no longer has is not a target: the hit must not
 	// spill onto the limbs.
 	liver.removed()
+	own(liver)
 	var/before = H.injury_load(INJURY_CATEGORY_PHYSICAL)
 	TEST_ASSERT_EQUAL(H.injure(INJURY_BLUNT, 10, liver), 0, "injury aimed at a removed organ should do nothing")
 	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_PHYSICAL), before, "injury aimed at a removed organ must not spread to the limbs")

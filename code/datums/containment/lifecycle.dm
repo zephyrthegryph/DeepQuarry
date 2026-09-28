@@ -111,8 +111,8 @@
 	if(thing.loc == holder)
 		qdel(thing)
 
-/// Drop policies for latent entries, as data (damage.md §6): deleted entries
-/// are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if
+/// Drop policies for latent entries, as data (damage.md §6): deleted (and
+/// holder-kept) entries are removed; SPILL/TRANSFER/TO_LATENT/KEEP_WITH entries stay latent if
 /// they land in another latent holder, and are created only where they land
 /// on a turf. Mirrors dq_lifecycle_resolve_slot_entry() for real things.
 /proc/dq_lifecycle_resolve_latent(datum/ledger/L, atom/drop, atom/movable/successor)
@@ -123,7 +123,10 @@
 		var/list/blob = entry.blob
 		var/n = entry.count
 		L.latent_set_count(entry, 0)
-		if(def.drop_policy == SLOT_DROP_DELETE)
+		// SLOT_DROP_HOLDER: the base Destroy() deletes a holder-kept slot's real contents
+		// (a machine's board and parts, a body's worn items), so its latent entries go with
+		// the holder too. Spilling them made every deleted machine drop its unbuilt parts.
+		if(def.drop_policy == SLOT_DROP_DELETE || def.drop_policy == SLOT_DROP_HOLDER)
 			continue
 		var/atom/target
 		switch(def.drop_policy)

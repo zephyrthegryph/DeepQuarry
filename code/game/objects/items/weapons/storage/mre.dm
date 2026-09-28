@@ -325,13 +325,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 	. = ..()
 	pickflavor()
 
-// leaves its wrapper as trash.
-/obj/item/storage/box/tgmc_mre/on_destroy(force)
-	var/turf/T = get_turf(src)
-	if(T)
-		new /obj/item/trash/tgmc_mre(T)
-	..()
-
 /obj/item/storage/box/tgmc_mre/proc/pickflavor()
 	var/entree = pick("boneless pork ribs", "grilled chicken", "pizza square", "spaghetti", "chicken tenders")
 	var/side = pick("meatballs", "cheese spread", "beef turnover", "mashed potatoes")
@@ -349,6 +342,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 /obj/item/storage/box/tgmc_mre/remove_from_storage()
 	. = ..()
 	if(. && !length(slot_contents(CONTAINER_SLOT_STORAGE)) && !gc_destroyed)
+		// Eaten empty, it leaves its wrapper as trash. (A plain delete of the box does not:
+		// that dropped a wrapper for every MRE any cleanup or test ever removed.)
+		var/turf/T = get_turf(src)
+		if(T)
+			new /obj/item/trash/tgmc_mre(T)
 		qdel(src)
 
 /obj/item/storage/box/tgmc_mre/update_icon()

@@ -48,6 +48,8 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 	icon_state = "pillowpile_large_pink"
 	var/pillowpilefront = "/obj/structure/bed/pillowpilefront"
 	var/sourcepillow = "/obj/item/bedsheet/pillow"
+	/// The separate front-overlay piece this pile spawned.
+	var/obj/structure/bed/pillowpilefront/front
 	flippable = FALSE
 
 /obj/structure/bed/pillowpilefront
@@ -58,11 +60,20 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 	layer = ABOVE_MOB_LAYER
 	plane = MOB_PLANE
 	var/sourcepillow = "/obj/item/bedsheet/pillow"
+	/// The pile this is the front of.
+	var/obj/structure/bed/pillowpile/pile
 
 /obj/structure/bed/pillowpile/Initialize(mapload)
 	. = ..()
 	var/turf/T = get_turf(src)
-	new pillowpilefront(T)
+	front = new pillowpilefront(T)
+	front.pile = src
+
+// The front piece is the pile's other half: it goes when the pile does, and taking the
+// front apart on its own lets go of the link from both sides.
+REF_OWNED(/obj/structure/bed/pillowpile, "front")
+REF_PAIR(/obj/structure/bed/pillowpile, list("front" = "pile"))
+REF_PAIR(/obj/structure/bed/pillowpilefront, list("pile" = "front"))
 
 /obj/structure/bed/pillowpilefront/update_icon()
 	return
@@ -88,6 +99,9 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 
 /obj/structure/bed/pillowpile/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, span_notice("You dissasembled the large pillow pile!"))
+	// The pile was two pillows: the front (deleted with the pile) gives its one back too.
+	if(front && !QDELETED(front))
+		replace_with(front, front.sourcepillow)
 	replace_with(src, sourcepillow)
 
 /obj/structure/bed/pillowpilefront/declare_interactions(list/into)

@@ -350,6 +350,8 @@
 	H.set_combat_mode(TRUE)
 	TEST_ASSERT(mech.tool_interaction(H, welder) & ITEM_INTERACT_SKIP_TO_ATTACK, "on harm intent the welder attacks")
 	H.set_combat_mode(FALSE)
+	for(var/obj/effect/effect/sparks/S in range(1, T))
+		own(S)
 
 // ---- Wreckage ----
 
@@ -380,6 +382,7 @@
 	TEST_ASSERT(cut.why_not(H, wreck, welder), "and then can't cut any more")
 	var/datum/construction_graph/wreck_graph = construction_graph_of(wreck)
 	TEST_ASSERT_EQUAL(wreck_graph.state_of(wreck), "wreck", "still a wreck")
+	own_turf_contents(T) // the salvage
 
 // ---- Girders ----
 
@@ -424,6 +427,7 @@
 	girder.tool_interaction(H, wrench)
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], expected, "disassembling takes 35 + integrity/50")
 	TEST_ASSERT(QDELETED(girder), "disassembled")
+	own_turf_contents(T) // the returned sheets
 
 // ---- Windows ----
 
@@ -454,7 +458,7 @@
 	var/turf/where = window.loc
 	window.tool_interaction(H, wrench)
 	TEST_ASSERT(QDELETED(window), "dismantled")
-	var/obj/item/stack/material/glass/reinforced/sheet = locate_on(where, /obj/item/stack/material/glass/reinforced)
+	var/obj/item/stack/material/glass/reinforced/sheet = own(locate_on(where, /obj/item/stack/material/glass/reinforced))
 	TEST_ASSERT(sheet, "into reinforced glass")
 	TEST_ASSERT_EQUAL(sheet?.get_amount(), 1, "one sheet for a border window")
 
@@ -535,3 +539,4 @@
 	TEST_ASSERT(QDELETED(frame), "cut apart")
 	after = dq_materials_on(T)
 	TEST_ASSERT_EQUAL(after[/obj/item/stack/material/steel] - before[/obj/item/stack/material/steel], 5, "into its 5 sheets")
+	own_turf_contents(T) // the returned sheets

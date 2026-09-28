@@ -669,11 +669,12 @@
 
 /datum/unit_test/dq_material_furnace_cannot_create_heat/Run()
 	var/turf/test_turf = run_loc_floor_bottom_left || locate(1, 1, 1)
-	var/obj/machinery/material_furnace/unpowered_test/furnace = new(test_turf)
-	var/obj/item/stack/material/steel/stock = new(test_turf, 2)
+	var/obj/machinery/material_furnace/unpowered_test/furnace = allocate(/obj/machinery/material_furnace/unpowered_test, test_turf)
+	var/obj/item/stack/material/steel/stock = allocate(/obj/item/stack/material/steel, test_turf, 2)
 	stock.forceMove(furnace)
 	furnace.feedstock = list(stock)
 	furnace.finish_firing()
+	own(furnace.output_stock())
 	var/datum/material_batch/output = furnace.output_stock() ? furnace.output_stock().physical_batch() : null
 	TEST_ASSERT(output, "power-starved furnace failed to return recoverable stock")
 	TEST_ASSERT_EQUAL(output.energy_spent, 0, "power-starved furnace invented process energy")

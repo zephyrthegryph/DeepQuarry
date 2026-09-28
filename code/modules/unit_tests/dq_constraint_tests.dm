@@ -105,6 +105,9 @@
 		CHECK_TICK
 	for(var/obj/item/I as anything in items)
 		qdel(I)
+	// Deleting the probes drops their removable parts where they lay, as in play
+	// (a circuit's attached grenade): those are the test's too.
+	own_turf_contents(T)
 	finish(what, cells)
 
 /datum/unit_test/dq_constraint_parity/proc/storage_takes(obj/item/storage/S, obj/item/I)

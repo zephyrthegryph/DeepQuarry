@@ -999,6 +999,8 @@
 	qdel(grace_subject)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, owner)
 	qdel(owner)
+	// Printed forms, supplies and emptied crates are left on the floor by the subject.
+	own_turf_contents(test_turf)
 
 /datum/unit_test/dq_medical_contract_machine_integration
 
@@ -1029,6 +1031,8 @@
 	qdel(trial)
 	qdel(management)
 	qdel(doctor)
+	// Printed forms, supplies and emptied crates are left on the floor by the subject.
+	own_turf_contents(test_turf)
 
 /datum/unit_test/dq_rare_case_report_workflow
 
@@ -1093,6 +1097,8 @@
 	qdel(management)
 	qdel(doctor)
 	qdel(subject)
+	// Printed forms, supplies and emptied crates are left on the floor by the subject.
+	own_turf_contents(test_turf)
 
 /datum/unit_test/dq_rare_case_consent_revocation
 
@@ -1139,6 +1145,8 @@
 	qdel(report)
 	qdel(subject)
 	qdel(subject_mind)
+	// Printed forms, supplies and emptied crates are left on the floor by the subject.
+	own_turf_contents(test_turf)
 
 /proc/dq_contract_test_zero_rewards(datum/contract/contract)
 	contract.base_terms_captured = TRUE

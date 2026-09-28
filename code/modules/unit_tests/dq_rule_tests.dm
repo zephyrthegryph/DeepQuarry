@@ -171,6 +171,8 @@
 			qdel(R)
 	if(floor)
 		floor.extinguish()
+		// Whatever the case's threshold left behind (salvage, sparks, ash, fire).
+		own_turf_contents(floor)
 
 /datum/unit_test/dq_rule_thresholds/proc/check_case(datum/rule/rule, root, datum/rule_trigger/trigger, atom/thing)
 	var/label = "[rule.type] on [root]: [trigger.describe()]"

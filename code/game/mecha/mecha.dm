@@ -68,6 +68,9 @@
 	var/static/list/internals_req_access = list(ACCESS_ENGINE,ACCESS_ROBOTICS)	//Required access level to open cell compartment
 
 	var/wreckage
+	/// Set when the mech is destroyed in play (integrity ran out), not merely deleted: only then
+	/// does on_destroy() leave `wreckage`.
+	var/tmp/wrecked = FALSE
 
 	// ALLOW(instance_list): d: mech equipment list; many call sites index and edit it directly
 	var/list/equipment = list()		//This lists holds what stuff you bolted onto your baby ride
@@ -315,6 +318,10 @@ REF_OWNED(/obj/mecha, "minihud")
 REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 // the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
+/obj/mecha/atom_destruction(damage_flag)
+	wrecked = TRUE
+	return ..()
+
 /obj/mecha/on_destroy(force)
 	src.go_out()
 	for(var/mob/M in slot_contents()) //Be Extra Sure
@@ -332,10 +339,12 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	if(loc)
 		loc.Exited(src)
 
-	if(prob(30))
+	// Wreckage (and the chance of a blast) is what a mech destroyed in play leaves.
+	// A plain qdel (admin delete, cleanup, a test) takes everything with it.
+	if(wrecked && prob(30))
 		explosion(get_turf(loc), 0, 0, 1, 3)
 
-	if(wreckage)
+	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
 		LAZYCLEARLIST(hull_equipment)
 		LAZYCLEARLIST(weapon_equipment)
@@ -1124,6 +1133,7 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 	if(get_integrity() > 0)
 		src.spark_system.start()
 	else
+		wrecked = TRUE
 		qdel(src)
 	return
 

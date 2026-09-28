@@ -9,8 +9,12 @@
  *     the references its container, its contents and the subtree itself account
  *     for. Anything extra is an outside holder, and the object stays real.
  *
- * In unit-test builds, an extra reference runs the reference finder so the
- * blocker names the holder.
+ * With `name_holders` (unit-test builds only), an extra reference runs the
+ * reference finder so the blocker names the holder. It is opt-in: the finder
+ * walks the whole world with no tick checks (seconds per search), and the
+ * everyday callers (the latency policy's pin check, latent_collapse()) ask
+ * about things a live owner legitimately holds, such as a machine's parts in
+ * its component_parts, where "blocked" is the expected answer.
  */
 
 /// References a movable gets from its loc, and an atom gets per movable in its
@@ -58,7 +62,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
  * `held_refs` is how many references the caller itself holds to src (its own
  * variables and lists), which are not counted as outside holders.
  */
-/datum/proc/state_collapse_blockers(held_refs = 1)
+/datum/proc/state_collapse_blockers(held_refs = 1, name_holders = FALSE)
 	. = list()
 	var/list/errors = list()
 	if(!state_serialize(src, STATE_FULL, errors))
@@ -77,7 +81,7 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 	for(var/i in 1 to length(nodes))
 		. += state_running_blockers(nodes[i])
 	. += state_hook_blockers(nodes, internal)
-	. += state_refcount_blockers(nodes, internal, held_refs)
+	. += state_refcount_blockers(nodes, internal, held_refs, name_holders)
 
 /// Running behaviour: timers and processing.
 /proc/state_running_blockers(datum/node)
@@ -132,13 +136,13 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 				. += "[listener.type] hooks [path] on [node.type]"
 
 /// Compares refcount() of each object in the subtree with the references accounted for.
-/proc/state_refcount_blockers(list/nodes, list/internal, held_refs)
+/proc/state_refcount_blockers(list/nodes, list/internal, held_refs, name_holders = FALSE)
 	. = list()
 	var/list/overhead = state_refcount_overhead()
 	for(var/i in 1 to length(nodes))
 		var/extra = state_refcount_excess(nodes, internal, i) - (i == 1 ? overhead[1] + held_refs : overhead[2])
 		if(extra > 0)
-			. += state_describe_outside_refs(nodes[i], extra)
+			. += state_describe_outside_refs(nodes[i], extra, name_holders)
 
 /// refcount() of nodes[i] less the references its container, contents and subtree account for.
 /proc/state_refcount_excess(list/nodes, list/internal, i)
@@ -211,9 +215,11 @@ GLOBAL_LIST_INIT(state_refscan_flat, list("vis_contents"))
 			if(!isnull(assoc))
 				. += state_count_refs_in(assoc, node, depth + 1)
 
-/proc/state_describe_outside_refs(datum/node, extra)
+/proc/state_describe_outside_refs(datum/node, extra, name_holders = FALSE)
 	. = "[node.type] has [extra] reference\s from outside its container"
 #ifdef UNIT_TESTS
+	if(!name_holders)
+		return
 	// Name the holder. Slow (it walks the world), so test builds only.
 	SSgarbage.should_save_refs = TRUE
 	node.found_refs = null

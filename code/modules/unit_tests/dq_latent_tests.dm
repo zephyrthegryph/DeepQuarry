@@ -92,6 +92,10 @@
 		TEST_ASSERT_EQUAL(closet.ledger.entries[P][LEDGER_E_SLOT], CONTAINER_SLOT_INTERIOR, "into the entry's slot")
 	var/list/problems = closet.ledger.verify()
 	TEST_ASSERT(!length(problems), "ledger mismatch: [jointext(problems, "; ")]")
+	// The closet spills its contents (latent entries included) when it is deleted.
+	var/turf/T = closet.loc
+	qdel(closet)
+	own_turf_contents(T)
 
 /// Collapse: a plain pen goes back into an entry; a referenced one stays real.
 /datum/unit_test/dq_latent_collapse
@@ -107,7 +111,7 @@
 	TEST_ASSERT_EQUAL(closet.latent_count(), 1, "one latent pen")
 	var/list/made = closet.latent_materialize_all()
 	TEST_ASSERT_EQUAL(length(made), 1, "it comes back")
-	var/obj/item/pen/back = made[1]
+	var/obj/item/pen/back = own(made[1])
 	TEST_ASSERT_EQUAL(back.name, "labelled pen", "with its state")
 	var/datum/dq_state_holder/holder = new
 	holder.held = back
@@ -115,7 +119,7 @@
 	qdel(holder)
 	// Only latent holders take entries.
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box)
-	var/obj/item/pen/loose = new(box)
+	var/obj/item/pen/loose = own(new /obj/item/pen(box))
 	TEST_ASSERT(!loose.latent_collapse(), "a box without latent contents keeps real things")
 
 /// Parity: materialize(serialize(x)) == x for closets holding entries, and the
@@ -151,6 +155,10 @@
 		for(var/obj/item/I as anything in spilled)
 			qdel(I)
 		qdel(copy)
+	// The original closet still holds the collapsed pen and its generator; it spills them when deleted.
+	var/turf/closet_turf = closet.loc
+	qdel(closet)
+	own_turf_contents(closet_turf)
 
 /// Slot assignment survives the serializer (C1 left holders with several slots
 /// reloading into the default slot).
@@ -158,9 +166,9 @@
 
 /datum/unit_test/dq_latent_slot_round_trip/Run()
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box)
-	var/obj/item/dq_containment_test/wood/sharp = new(test_floor())
+	var/obj/item/dq_containment_test/wood/sharp = allocate(/obj/item/dq_containment_test/wood, test_floor())
 	TEST_ASSERT(sharp.move_into(box, "main"), "into the main slot")
-	new /obj/item/dq_containment_test(box) // default slot: pocket
+	allocate(/obj/item/dq_containment_test, box) // default slot: pocket
 	var/list/errors = list()
 	var/list/blob = state_serialize(box, STATE_FULL, errors)
 	TEST_ASSERT(blob, "serialize: [jointext(errors, "; ")]")
@@ -169,6 +177,8 @@
 	TEST_ASSERT_EQUAL(length(copy.slot_contents("main")), 1, "one thing back in main")
 	TEST_ASSERT_EQUAL(length(copy.slot_contents("pocket")), 1, "one thing back in the pocket")
 	TEST_ASSERT_EQUAL(state_canonical(state_serialize(copy, STATE_FULL)), state_canonical(blob), "same state")
+	for(var/atom/movable/thing as anything in contents_of(copy))
+		own(thing)
 	qdel(copy)
 
 /// Destroying a holder: latent contents come out the same as real ones would.
@@ -203,6 +213,7 @@
 	TEST_ASSERT_EQUAL(outer.latent_count(), 3, "entries moved into the outer closet as data")
 	TEST_ASSERT_EQUAL(length(outer.contents), real_items, "only the real item spilled as an atom")
 	qdel(outer)
+	own_turf_contents(T)
 
 /// Blasts resolve entries as data, matching what the same things do for real.
 /datum/unit_test/dq_latent_blast_parity
@@ -221,6 +232,10 @@
 				survivors_real += I
 		var/list/survived = latent.latent_materialize_all()
 		TEST_ASSERT_EQUAL(dq_latent_census(latent, survived), dq_latent_census(real, survivors_real), "severity [severity]: same survivors")
+		// Both closets spill their survivors when deleted.
+		qdel(latent)
+		qdel(real)
+		own_turf_contents(test_floor())
 
 /// Every closet type with a generator: resolving and opening gives what the
 /// old starts_with spawn gave, and each serializes and round-trips.

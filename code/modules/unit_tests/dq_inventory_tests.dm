@@ -38,7 +38,7 @@
 		var/slot = c[1]
 		var/id = c[2]
 		var/path = c[3]
-		var/obj/item/I = new path(T)
+		var/obj/item/I = allocate(path, T)
 		var/why = I.equip_refusal(H, slot, TRUE)
 		TEST_ASSERT_NULL(why, "[path] into [id] was refused: [why]")
 		TEST_ASSERT(H.equip_to_slot_if_possible(I, slot, disable_warning = TRUE), "[path] should equip into [id]")
@@ -47,11 +47,11 @@
 		worn[id] = I
 
 	// Occupied slots refuse, and a refused move changes nothing.
-	var/obj/item/clothing/head/hardhat/spare = new(T)
+	var/obj/item/clothing/head/hardhat/spare = allocate(/obj/item/clothing/head/hardhat, T)
 	TEST_ASSERT(findtext(spare.equip_refusal(H, SLOT_ID_HEAD, TRUE), "already wearing"), "a second hat should be refused")
 	TEST_ASSERT(!H.equip_to_slot_if_possible(spare, SLOT_ID_HEAD, disable_warning = TRUE), "a second hat should not equip")
 	TEST_ASSERT_EQUAL(spare.loc, T, "a refused hat stays where it was")
-	var/obj/item/tool/wrench/W = new(T)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
 	TEST_ASSERT(W.equip_refusal(H, SLOT_ID_SHOES, TRUE), "a wrench isn't shoes")
 
 	// get_equipped_items(): worn and held, not pockets.
@@ -81,9 +81,9 @@
 /datum/unit_test/dq_inventory_human_pickup_drop/Run()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/wrench/A = new(T)
-	var/obj/item/tool/screwdriver/B = new(T)
-	var/obj/item/tool/crowbar/C = new(T)
+	var/obj/item/tool/wrench/A = allocate(/obj/item/tool/wrench, T)
+	var/obj/item/tool/screwdriver/B = allocate(/obj/item/tool/screwdriver, T)
+	var/obj/item/tool/crowbar/C = allocate(/obj/item/tool/crowbar, T)
 	H.hand = FALSE // right hand active
 
 	TEST_ASSERT(H.put_in_hands(A), "the first item goes in a hand")
@@ -102,7 +102,7 @@
 	TEST_ASSERT_NULL(H.get_right_hand(), "the right hand is empty after the move")
 
 	// Hand to a worn slot and back.
-	var/obj/item/storage/belt/utility/belt = new(T)
+	var/obj/item/storage/belt/utility/belt = allocate(/obj/item/storage/belt/utility, T)
 	TEST_ASSERT(H.put_in_r_hand(belt), "pick up the belt")
 	TEST_ASSERT(H.equip_to_slot_if_possible(belt, SLOT_ID_BELT, disable_warning = TRUE), "belt from hand to waist")
 	dq_assert_in_slot(H, belt, SLOT_ID_BELT, "hand to belt")
@@ -133,7 +133,7 @@
 	var/turf/target = get_step(T, EAST)
 	if(!target || target.density)
 		target = get_step(T, WEST)
-	var/obj/item/tool/wrench/W = new(T)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
 	H.hand = FALSE
 	TEST_ASSERT(H.put_in_r_hand(W), "hold the wrench")
 	TEST_ASSERT(H.throw_item(target), "throw it")
@@ -148,25 +148,25 @@
 /datum/unit_test/dq_inventory_cuffs/Run()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/wrench/W = new(T)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
 	H.put_in_hands(W)
-	var/obj/item/handcuffs/cuffs = new(T)
+	var/obj/item/handcuffs/cuffs = allocate(/obj/item/handcuffs, T)
 	TEST_ASSERT(H.equip_to_slot(cuffs, SLOT_ID_HANDCUFFED), "cuffs go on")
 	dq_assert_in_slot(H, cuffs, SLOT_ID_HANDCUFFED, "handcuffed")
 	TEST_ASSERT(H.restrained(), "a cuffed mob is restrained")
 	TEST_ASSERT_EQUAL(W.loc, T, "cuffing drops what the hands hold")
-	var/obj/item/tool/wrench/W2 = new(T)
+	var/obj/item/tool/wrench/W2 = allocate(/obj/item/tool/wrench, T)
 	TEST_ASSERT(W2.equip_refusal(H, SLOT_ID_HANDCUFFED, TRUE), "only handcuffs go on the wrists")
-	var/obj/item/handcuffs/second = new(T)
+	var/obj/item/handcuffs/second = allocate(/obj/item/handcuffs, T)
 	TEST_ASSERT(!H.equip_to_slot(second, SLOT_ID_HANDCUFFED), "the wrists take one pair")
 	H.drop_from_inventory(cuffs)
 	TEST_ASSERT(!H.restrained(), "uncuffed")
 	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_HANDCUFFED), "the cuff slot is empty")
 
-	var/obj/item/handcuffs/legcuffs/leg = new(T)
+	var/obj/item/handcuffs/legcuffs/leg = allocate(/obj/item/handcuffs/legcuffs, T)
 	TEST_ASSERT(H.equip_to_slot(leg, SLOT_ID_LEGCUFFED), "legcuffs go on")
 	dq_assert_in_slot(H, leg, SLOT_ID_LEGCUFFED, "legcuffed")
-	TEST_ASSERT(!H.equip_to_slot(new /obj/item/handcuffs(T), SLOT_ID_LEGCUFFED), "handcuffs don't go on the ankles")
+	TEST_ASSERT(!H.equip_to_slot(allocate(/obj/item/handcuffs, T), SLOT_ID_LEGCUFFED), "handcuffs don't go on the ankles")
 	H.drop_from_inventory(leg)
 	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_LEGCUFFED), "the legcuff slot is empty")
 	dq_verify_ledger(H, "after cuffs")
@@ -177,20 +177,20 @@
 /datum/unit_test/dq_inventory_pockets_suit_storage/Run()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/pen/pen = new(T)
-	var/obj/item/storage/toolbox/toolbox = new(T)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
+	var/obj/item/storage/toolbox/toolbox = allocate(/obj/item/storage/toolbox, T)
 	TEST_ASSERT_EQUAL(pen.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "you need a jumpsuit first", "a pocket needs a jumpsuit")
 	TEST_ASSERT(!pen.move_into(H, SLOT_ID_POCKET_L, H), "the ledger slot refuses it too")
 	TEST_ASSERT_EQUAL(pen.loc, T, "a refused pen stays put")
-	var/obj/item/clothing/under/color/grey/U = new(T)
+	var/obj/item/clothing/under/color/grey/U = allocate(/obj/item/clothing/under/color/grey, T)
 	TEST_ASSERT(H.equip_to_slot_if_possible(U, SLOT_ID_UNIFORM, disable_warning = TRUE), "jumpsuit on")
 	TEST_ASSERT_EQUAL(toolbox.equip_refusal(H, SLOT_ID_POCKET_L, TRUE), "too big for a pocket", "a toolbox is too big")
 	TEST_ASSERT(H.equip_to_slot_if_possible(pen, SLOT_ID_POCKET_L, disable_warning = TRUE), "pen into the pocket")
 	dq_assert_in_slot(H, pen, SLOT_ID_POCKET_L, "pocket")
 
-	var/obj/item/pen/other = new(T)
+	var/obj/item/pen/other = allocate(/obj/item/pen, T)
 	TEST_ASSERT_EQUAL(other.equip_refusal(H, SLOT_ID_SUIT_STORAGE, TRUE), "you need a suit first", "suit storage needs a suit")
-	var/obj/item/clothing/suit/storage/hazardvest/vest = new(T)
+	var/obj/item/clothing/suit/storage/hazardvest/vest = allocate(/obj/item/clothing/suit/storage/hazardvest, T)
 	TEST_ASSERT(H.equip_to_slot_if_possible(vest, SLOT_ID_SUIT, disable_warning = TRUE), "vest on")
 	TEST_ASSERT(H.equip_to_slot_if_possible(other, SLOT_ID_SUIT_STORAGE, disable_warning = TRUE), "a pen fits any suit storage")
 	dq_assert_in_slot(H, other, SLOT_ID_SUIT_STORAGE, "suit storage")
@@ -209,7 +209,7 @@
 /datum/unit_test/dq_inventory_simple_mob_hands/Run()
 	var/turf/T = test_floor()
 	var/mob/living/simple_mob/M = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
-	var/obj/item/tool/wrench/W = new(T)
+	var/obj/item/tool/wrench/W = allocate(/obj/item/tool/wrench, T)
 	M.has_hands = FALSE
 	TEST_ASSERT(!M.put_in_l_hand(W), "a mob without hands can't hold anything")
 	TEST_ASSERT_EQUAL(W.loc, T, "the refused item stays on the floor")

@@ -1,0 +1,9 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Deleting a machine no longer drops its unbuilt circuit board and parts on the floor."
+  - bugfix: "A mech only leaves wreckage (and may explode) when destroyed, not when deleted."
+  - bugfix: "An AI's spare eyes are deleted with it; pillow pile fronts go with their pile."
+  - bugfix: "An unopened CRS MRE no longer leaves a wrapper when deleted; eating it empty still does."
+  - bugfix: "Deleting a RIG no longer runtimes while tearing down its pieces."
+  - code_imp: "Unit tests now fail when they leave objects on their test block."

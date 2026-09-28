@@ -70,6 +70,8 @@
 	TEST_ASSERT_EQUAL(SK.shadekin_get_energy(), before - expected_cost, "exactly the checked cost was spent")
 	TEST_ASSERT(SK.doing_phase, "the effect started a phase transition")
 	TEST_ASSERT_EQUAL(H.dq_phase_shift_pending_cost, 0, "the cached cost is consumed once spent")
+	for(var/obj/effect/temp_visual/V in get_turf(H))
+		own(V)
 
 /// Phasing back in (in_phase already TRUE) is free, regardless of watchers.
 /datum/unit_test/dq_ability_phase_shift_returning_is_free
@@ -83,6 +85,8 @@
 	TEST_ASSERT_EQUAL(A.attempt(H, H, null), INTERACTION_TRY_RAN, "phasing back in runs")
 	TEST_ASSERT_EQUAL(SK.shadekin_get_energy(), before, "returning to realspace costs nothing")
 	TEST_ASSERT(!SK.in_phase, "the effect completed the return")
+	for(var/obj/effect/temp_visual/V in get_turf(H))
+		own(V)
 
 /// A watcher raises the cost by exactly 15, computed once (fixes.md B13's second half).
 /datum/unit_test/dq_ability_phase_shift_watcher_cost

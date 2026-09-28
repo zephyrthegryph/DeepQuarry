@@ -339,5 +339,7 @@ REF_OWNED(/mob/living/simple_mob/dq_damage_probe, "last")
 /datum/unit_test/dq_damage_packet/electrocute_act/Run()
 	make_probes()
 	mob_probe.electrocute_act(30, probe, 0.5)
+	for(var/obj/effect/effect/sparks/S in range(3, get_turf(mob_probe)))
+		own(S) // the shock throws sparks
 	TEST_ASSERT(mob_probe.last?.only(DAMAGE_SHOCK, 15), "a shock should deliver its insulated amount: [mob_probe.last?.describe()]")
 	TEST_ASSERT(mob_probe.last.flags & DAMAGE_PACKET_UNARMORED, "armour doesn't apply to a shock twice")

@@ -250,10 +250,14 @@ REF_HELD(/mob/living/silicon/ai, list("camera", "hardware", "hack", "master_mult
 // GLOB.default_ai_icon or one of the shared icon sets (a custom one is only ever held here).
 REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 
-// the AI's eye goes with it.
+// the AI's eyes go with it: the active one and any other still linked to it (the eye
+// create_eyeobj() made before another took over, multicam eyes). Unlinked, they outlived it.
 /mob/living/silicon/ai/on_destroy(force)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	QDEL_NULL(eyeobj)
+	for(var/mob/observer/eye/other as anything in eyes_list())
+		if(!QDELETED(other))
+			qdel(other) // ALLOW(lifecycle): the AI's extra eyes are linked by an OM relation (eye_of), not a declared var
 	destroy_eyeobj()
 	..()
 

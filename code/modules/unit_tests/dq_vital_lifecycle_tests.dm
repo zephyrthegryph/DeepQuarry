@@ -89,9 +89,12 @@
 
 /datum/unit_test/dq_death_pipeline_replace_death/Run()
 	var/mob/living/simple_mob/animal/passive/cockroach/C = allocate(/mob/living/simple_mob/animal/passive/cockroach)
+	var/turf/where = get_turf(C)
 	var/datum/dq_vital_listener/listener = new
 	listener.watch(C)
 	TEST_ASSERT(!C.death(), "a replaced death reports no transition")
+	for(var/obj/effect/decal/cleanable/bug_remains/R in where)
+		own(R)
 	TEST_ASSERT(QDELETED(C), "the cockroach vanishes instead")
 	TEST_ASSERT_EQUAL(listener.deaths, 0, "a replaced death sends no death signal")
 	TEST_ASSERT_EQUAL(listener.finals, 0, "a replaced death sends no final signal")
