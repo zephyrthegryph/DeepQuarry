@@ -211,11 +211,11 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 	return 0
 
 /obj/item/pda/proc/find_program(type)
-	var/datum/data/pda/A = locate(type) in programs
+	var/datum/data/pda/A = locate_in_list(programs, type)
 	if(A)
 		return A
 	if(cartridge)
-		A = locate(type) in cartridge.programs
+		A = locate_in_list(cartridge.programs, type)
 		if(A)
 			return A
 	return null
@@ -305,7 +305,7 @@ REGISTRY_MEMBERSHIP(/obj/item/pda, REGISTRY_PDAS)
 		id = null
 
 /obj/item/pda/proc/remove_pen()
-	var/obj/item/pen/O = locate() in src
+	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
 	if(O)
 		if(istype(loc, /mob))
 			var/mob/M = loc
@@ -439,7 +439,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 			to_chat(user, span_notice("Card scanned."))
 		else
 			//Basic safety check. If either both objects are held by user or PDA is on ground and card is in hand.
-			if(((src in user.contents) && (C in user.contents)) || (istype(loc, /turf) && in_range(src, user) && (C in user.contents)) )
+			if(((src?.loc == user) && (C?.loc == user)) || (istype(loc, /turf) && in_range(src, user) && (C?.loc == user)) )
 				if(id_check(user, 2))
 					to_chat(user, span_notice("You put the ID into \the [src]'s slot."))
 					add_overlay("pda-id")
@@ -450,7 +450,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src
 	else if(istype(C, /obj/item/pen))
-		var/obj/item/pen/O = locate() in src
+		var/obj/item/pen/O = locate_within(src, /obj/item/pen)
 		if(O)
 			to_chat(user, span_notice("There is already a pen in \the [src]."))
 		else

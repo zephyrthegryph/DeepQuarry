@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJEC
 
 /obj/effect/overmap/visitable/ship/proc/get_vessel_mass()
 	. = vessel_mass
-	for(var/obj/effect/overmap/visitable/ship/ship in src)
+	for(var/obj/effect/overmap/visitable/ship/ship in contents_of(src))
 		. += ship.get_vessel_mass()
 
 /obj/effect/overmap/visitable/ship/proc/get_speed()

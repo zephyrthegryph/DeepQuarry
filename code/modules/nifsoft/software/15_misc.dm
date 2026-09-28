@@ -12,9 +12,9 @@
 /datum/nifsoft/apc_recharge/activate()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		apc_handle = om_handle(locate(/obj/machinery/power/apc) in get_step(H,H.dir))
+		apc_handle = om_handle(locate_within(get_step(H,H.dir), /obj/machinery/power/apc))
 		if(!apc())
-			apc_handle = om_handle(locate(/obj/machinery/power/apc) in get_step(H,0))
+			apc_handle = om_handle(locate_within(get_step(H,0), /obj/machinery/power/apc))
 		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
 			om_after(src, 0, PROC_REF(deactivate))

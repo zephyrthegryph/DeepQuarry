@@ -92,7 +92,7 @@ REF_OWNED_LIST(/obj/effect/overmap, "cam_plane_masters")
 /obj/effect/overmap/proc/update_skybox_representation()
 	expire_skybox_representation()
 	build_skybox_representation()
-	for(var/obj/effect/overmap/visitable/O in loc)
+	for(var/obj/effect/overmap/visitable/O in contents_of(loc))
 		skybox_service().rebuild_skyboxes(O.map_z)
 
 /obj/effect/overmap/proc/get_scan_data(mob/user)

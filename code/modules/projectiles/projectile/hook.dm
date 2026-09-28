@@ -118,7 +118,7 @@
 		if(launcher_intent)
 			if(launcher_intent != I_HELP && !done_mob_unique)
 				var/list/possible_mobs = list()
-				for(var/mob/living/possible_mob in target.contents)
+				for(var/mob/living/possible_mob in contents_of(target))
 					possible_mobs += possible_mob
 				var/target_mob = length(possible_mobs) ? pick(possible_mobs) : null
 
@@ -131,14 +131,14 @@
 			else if(firer)
 				var/obj/T
 
-				if((original() in target.contents) && istype(original(), /obj))
+				if((original()?.loc == target) && istype(original(), /obj))
 					T = original()
 
 				var/list/possible_targets = list()
-				for(var/obj/item/I in target.contents)
+				for(var/obj/item/I in contents_of(target))
 					if(!I.anchored)
 						possible_targets += I
-				for(var/obj/structure/S in target.contents)
+				for(var/obj/structure/S in contents_of(target))
 					if(!S.anchored)
 						possible_targets += S
 

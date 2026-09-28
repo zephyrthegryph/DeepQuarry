@@ -56,8 +56,8 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 	circ2_handle = null
 	if(src.loc && anchored)
 		if(src.dir & (EAST|WEST))
-			circ1_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,WEST))
-			circ2_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,EAST))
+			circ1_handle = om_handle(locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
+			circ2_handle = om_handle(locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2())
 				if(circ1().dir != NORTH || circ2().dir != SOUTH)
@@ -65,8 +65,8 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 					circ2_handle = null
 
 		else if(src.dir & (NORTH|SOUTH))
-			circ1_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,NORTH))
-			circ2_handle = om_handle(locate(/obj/machinery/atmospherics/binary/circulator) in get_step(src,SOUTH))
+			circ1_handle = om_handle(locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
+			circ2_handle = om_handle(locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2() && (circ1().dir != EAST || circ2().dir != WEST))
 				circ1_handle = null

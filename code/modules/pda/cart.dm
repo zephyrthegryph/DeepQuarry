@@ -365,7 +365,7 @@ DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
 	to_chat(user, span_notice("You empty [src]."))
 	var/turf/T = get_turf(src)
 	hold.hide_from(user)
-	for(var/obj/item/I in hold.contents)
+	for(var/obj/item/I in contents_of(hold))
 		hold.remove_from_storage(I, T, user)
 	add_fingerprint(user)
 	return TRUE

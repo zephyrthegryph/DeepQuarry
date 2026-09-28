@@ -90,7 +90,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 
 		//Blood regeneration if there is some space
 		if(blood_volume_raw < self.species.blood_volume)
-			var/datum/reagent/blood/B = locate() in self.vessel.reagent_list //Grab some blood
+			var/datum/reagent/blood/B = locate_in_list(self.vessel.reagent_list, /datum/reagent/blood) //Grab some blood
 			if(B) // Make sure there's some blood at all
 				if(B.data["donor"] != self) //If it's not theirs, then we look for theirs
 					for(var/datum/reagent/blood/D in self.vessel.reagent_list)
@@ -398,7 +398,7 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 
 //Gets human's own blood.
 /mob/living/carbon/proc/get_blood(datum/reagents/container)
-	var/datum/reagent/blood/res = locate() in container.reagent_list //Grab some blood
+	var/datum/reagent/blood/res = locate_in_list(container.reagent_list, /datum/reagent/blood) //Grab some blood
 	if(res) // Make sure there's some blood at all
 		if(res.data["donor"] != src) //If it's not theirs, then we look for theirs
 			for(var/datum/reagent/blood/D in container.reagent_list)
@@ -454,14 +454,14 @@ REF_OWNED(/mob/living/carbon/human, "vessel")
 	// Are we dripping or splattering?
 	var/list/drips = list()
 	// Only a certain number of drips (or one large splatter) can be on a given turf.
-	for(var/obj/effect/decal/cleanable/blood/drip/drop in T)
+	for(var/obj/effect/decal/cleanable/blood/drip/drop in contents_of(T))
 		drips |= drop.drips
 		qdel(drop)
 	if(!large && drips.len < 3)
 		decal_type = /obj/effect/decal/cleanable/blood/drip
 
 	// Find a blood decal or create a new one.
-	B = locate(decal_type) in T
+	B = locate_within(T, decal_type)
 	if(!B)
 		B = new decal_type(T)
 

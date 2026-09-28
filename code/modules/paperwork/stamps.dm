@@ -125,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/stamp/chameleon, INTERACT_USE(null, PROC_REF(inte
 	if(isnull(input_stamp))
 		return TRUE
 
-	if(user && (src in user.contents)) // Er, how necessary is this in attack_self?
+	if(user && (src?.loc == user)) // Er, how necessary is this in attack_self?
 
 		var/obj/item/stamp/chosen_stamp = stamps[capitalize(input_stamp)]
 

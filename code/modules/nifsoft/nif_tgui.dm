@@ -173,7 +173,7 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 				save_data["ui_theme"] = params["theme"]
 			return TRUE
 		if("toggle_module")
-			var/datum/nifsoft/NS = locate(params["module"]) in nifsofts
+			var/datum/nifsoft/NS = locate_in_list(nifsofts, params["module"])
 			if(!istype(NS))
 				return
 			if(NS.activates)
@@ -183,7 +183,7 @@ REF_BACK(/datum/nif_menu, list("owner" = null))
 					NS.activate()
 			return TRUE
 		if("uninstall")
-			var/datum/nifsoft/NS = locate(params["module"]) in nifsofts
+			var/datum/nifsoft/NS = locate_in_list(nifsofts, params["module"])
 			if(!istype(NS))
 				return
 			NS.uninstall()

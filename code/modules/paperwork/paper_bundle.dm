@@ -150,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	. = ..()
 	if(.)
 		return
-	if(!((src in usr.contents) || (istype(src.loc, /obj/item/folder) && (src.loc in usr.contents))))
+	if(!((src?.loc == usr) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == usr))))
 		to_chat(usr, span_notice("You need to hold it in hands!"))
 		return TRUE
 	usr.set_machine(src)
@@ -203,7 +203,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 /// Old Loose bundle verb.
 /obj/item/paper_bundle/proc/paper_bundle_verb_loosen(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_notice("You loosen the bundle."))
-	for(var/obj/O in src)
+	for(var/obj/O in contents_of(src))
 		O.forceMove(user.loc)
 		O.layer = initial(O.layer)
 		O.add_fingerprint(user)
@@ -218,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	underlays = 0
 	var/i = 0
 	var/photo
-	for(var/obj/O in src)
+	for(var/obj/O in contents_of(src))
 		var/image/img = image('icons/obj/bureaucracy.dmi')
 		if(istype(O, /obj/item/paper))
 			img.icon_state = O.icon_state

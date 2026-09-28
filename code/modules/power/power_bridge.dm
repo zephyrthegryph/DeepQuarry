@@ -134,8 +134,8 @@
 /// bulk moves that bypass Moved()).
 /datum/world_service/machines/proc/power_reregister(list/turfs)
 	for(var/turf/T as anything in turfs)
-		for(var/obj/structure/cable/cable in T)
+		for(var/obj/structure/cable/cable in contents_of(T))
 			cable.power_register()
-		for(var/obj/machinery/power/machine in T)
+		for(var/obj/machinery/power/machine in contents_of(T))
 			if(!istype(machine, /obj/machinery/power/apc))
 				machine.power_send_node()

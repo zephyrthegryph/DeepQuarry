@@ -17,7 +17,7 @@
 
 /obj/effect/decal/writing/Initialize(mapload, _age, _message, _author)
 	var/list/random_icon_states = icon_states_fast(icon)
-	for(var/obj/effect/decal/writing/writing in loc)
+	for(var/obj/effect/decal/writing/writing in contents_of(loc))
 		random_icon_states.Remove(writing.icon_state)
 	if(length(random_icon_states))
 		icon_state = pick(random_icon_states)

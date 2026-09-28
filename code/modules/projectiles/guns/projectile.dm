@@ -661,7 +661,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		to_chat(user, span_notice("You start loading \the [src]."))
 		var/list/rounds = list()
 		storage.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/ammo_casing/ammo in storage.contents) // ALLOW(latent): materialized above
+		for(var/obj/item/ammo_casing/ammo in contents_of(storage)) // ALLOW(latent): materialized above
 			if(caliber == ammo.caliber)
 				rounds += ammo
 		om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)

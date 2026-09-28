@@ -16,7 +16,7 @@
 		to_chat(usr, "Error: you are not an admin!")
 		return
 
-	if(!(locate(/obj/machinery/power/fusion_core/mapped) in REGISTRY_MEMBERS(REGISTRY_MACHINES)))
+	if(!(locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)))
 		to_chat(usr, "This map is not appropriate for this verb.")
 		return
 
@@ -36,7 +36,7 @@
 		injector.cur_assembly = new /obj/item/fuel_assembly/deuterium(injector)
 		injector.BeginInjecting()
 
-	var/obj/machinery/power/fusion_core/mapped/core = locate() in REGISTRY_MEMBERS(REGISTRY_MACHINES)
+	var/obj/machinery/power/fusion_core/mapped/core = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)
 	if(core.jumpstart(15000))
 		var/list/delayed_objects = list()
 

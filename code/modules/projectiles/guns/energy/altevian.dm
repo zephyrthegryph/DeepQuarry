@@ -120,7 +120,7 @@
 			var/turf/simulated/mineral/M = T
 			M.GetDrilled(TRUE)
 	if(firer)
-		var/obj/item/ore_bag/orebag = locate(/obj/item/ore_bag) in firer
+		var/obj/item/ore_bag/orebag = locate_within(firer, /obj/item/ore_bag)
 		if(orebag)
 			for(var/turf/T in RANGE_TURFS(2, target_turf))
 				orebag.gather_all(T, firer, TRUE)

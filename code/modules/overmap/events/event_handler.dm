@@ -10,7 +10,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 	var/list/overmap_turfs = block(locate(OVERMAP_EDGE, OVERMAP_EDGE, z_level), locate(overmap_size - OVERMAP_EDGE, overmap_size - OVERMAP_EDGE, z_level))
 	var/list/candidate_turfs = list()
 	for(var/turf/T as anything in overmap_turfs)
-		if(!(locate(/obj/effect/overmap/visitable) in T))
+		if(!(locate_within(T, /obj/effect/overmap/visitable)))
 			candidate_turfs += T
 
 	for(var/i = 1 to number_of_events)

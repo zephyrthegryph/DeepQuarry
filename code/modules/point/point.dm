@@ -4,7 +4,7 @@
 	if(!isturf(loc))
 		return
 
-	if (pointed_atom in src)
+	if (pointed_atom?.loc == src)
 		create_point_bubble(pointed_atom)
 		return
 

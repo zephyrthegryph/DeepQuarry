@@ -255,7 +255,7 @@
 		return
 	var/T = get_turf(A)
 	var/success = 0
-	for(var/obj/item/ammo_casing/afoam_dart/D in T)
+	for(var/obj/item/ammo_casing/afoam_dart/D in contents_of(T))
 		if(loaded.len >= max_shells)
 			break
 		D.forceMove(src)

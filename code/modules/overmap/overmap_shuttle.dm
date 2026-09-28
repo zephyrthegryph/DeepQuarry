@@ -17,14 +17,14 @@
 /datum/shuttle/autodock/overmap/proc/refresh_fuel_ports_list() //loop through all
 	fuel_ports = list()
 	for(var/area/A in shuttle_area)
-		for(var/obj/structure/fuel_port/fuel_port_in_area in A)
+		for(var/obj/structure/fuel_port/fuel_port_in_area in contents_of(A))
 			fuel_port_in_area.parent_shuttle = src
 			fuel_ports += fuel_port_in_area
 
 /datum/shuttle/autodock/overmap/fuel_check()
 	if(!src.try_consume_fuel()) //insufficient fuel
 		for(var/area/A in shuttle_area)
-			for(var/mob/living/M in A)
+			for(var/mob/living/M in contents_of(A))
 				M.show_message("<spawn class='warning'>You hear the shuttle engines sputter... perhaps it doesn't have enough fuel?", 1,
 				"<spawn class='warning'>The shuttle shakes but fails to take off.", 2)
 		return 0 //failure!
@@ -92,7 +92,7 @@
 		return 0 //Nowhere to get fuel from
 	var/list/obj/item/tank/fuel_tanks = list()
 	for(var/obj/structure/FP in fuel_ports) //loop through fuel ports and assemble list of all fuel tanks
-		var/obj/item/tank/FT = locate() in FP
+		var/obj/item/tank/FT = locate_within(FP, /obj/item/tank)
 		if(FT)
 			fuel_tanks += FT
 	if(!fuel_tanks.len)
@@ -152,14 +152,14 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 	if(!opened)
 		to_chat(user, "<spawn class='notice'>The door is secured tightly. You'll need a crowbar to open it.")
 		return TRUE
-	else if(contents.len > 0)
+	else if(contents_count(src) > 0)
 		user.put_in_hands(contents[1])
 	update_icon()
 	return TRUE
 
 /obj/structure/fuel_port/update_icon()
 	if(opened)
-		if(contents.len > 0)
+		if(contents_count(src) > 0)
 			icon_state = icon_full
 		else
 			icon_state = icon_empty
@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 		if(!opened)
 			to_chat(user, "<spawn class='warning'>\The [src] door is still closed!")
 			return INTERACTION_HANDLED_PASS
-		if(contents.len == 0)
+		if(contents_count(src) == 0)
 			user.unEquip(W, src)
 			W.forceMove(src)
 	update_icon()

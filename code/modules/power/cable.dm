@@ -369,7 +369,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 		var/reverse = GLOB.reverse_dir[cable_dir]
 		T = get_zstep(src, cable_dir)
 		if(T)
-			for(var/obj/structure/cable/C in T)
+			for(var/obj/structure/cable/C in contents_of(T))
 				if(C.d1 == reverse || C.d2 == reverse)
 					. += C
 		if(cable_dir & (cable_dir - 1)) // Diagonal, check for /\/\/\ style cables along GLOB.cardinal directions
@@ -377,17 +377,17 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 				T = get_step(src, cable_dir & pair)
 				if(T)
 					var/req_dir = cable_dir ^ pair
-					for(var/obj/structure/cable/C in T)
+					for(var/obj/structure/cable/C in contents_of(T))
 						if(C.d1 == req_dir || C.d2 == req_dir)
 							. += C
 
 	// Handle cables on the same turf as us
-	for(var/obj/structure/cable/C in loc)
+	for(var/obj/structure/cable/C in contents_of(loc))
 		if(C.d1 == d1 || C.d2 == d1 || C.d1 == d2 || C.d2 == d2) // if either of C's d1 and d2 match either of ours
 			. += C
 
 	if(d1 == 0)
-		for(var/obj/machinery/power/P in loc)
+		for(var/obj/machinery/power/P in contents_of(loc))
 			if(P.powernet == 0) continue // exclude APCs with powernet=0
 			if(!powernetless_only || !P.powernet)
 				. += P
