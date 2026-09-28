@@ -24,7 +24,6 @@
 	var/glasstype = null // Set this in subtypes. Null is assumed strange or otherwise impossible to dismantle, such as for shuttle glass.
 	var/silicate = 0 // number of units of silicate
 	var/fulltile = FALSE // Set to true on full-tile variants.
-	rad_insulation = RAD_VERY_LIGHT_INSULATION //Windows can have multiple placed on one tile, meaning you have to account for the potential that someone could just build a bunch of windows on one tile to prevent rads entirely.
 
 /obj/structure/window/examine(mob/user)
 	. = ..()
@@ -303,6 +302,7 @@
 
 /obj/structure/window/Initialize(mapload, start_dir=null, constructed=0)
 	. = ..()
+	update_rad_insulation()
 
 	if (start_dir)
 		set_dir(start_dir)
@@ -449,7 +449,6 @@
 	max_integrity = 80
 	fulltile = TRUE
 	flags = NONE
-	rad_insulation = RAD_LIGHT_INSULATION
 
 /obj/structure/window/phoronreinforced
 	name = "reinforced borosilicate window"
@@ -463,14 +462,12 @@
 	damage_per_fire_tick = 1.0 // This should last for 80 fire ticks if the window is not damaged at all. The idea is that borosilicate windows have something like ablative layer that protects them for a while.
 	max_integrity = 80.0
 	force_threshold = 10
-	rad_insulation = RAD_LIGHT_INSULATION
 
 /obj/structure/window/phoronreinforced/full
 	icon_state = "phoronrwindow-full"
 	max_integrity = 160
 	fulltile = TRUE
 	flags = NONE
-	rad_insulation = RAD_MEDIUM_INSULATION
 
 /obj/structure/window/reinforced
 	name = "reinforced window"
@@ -516,7 +513,6 @@
 	basestate = "w"
 	dir = 5
 	force_threshold = 7
-	rad_insulation = RAD_MEDIUM_INSULATION
 
 /obj/structure/window/reinforced/polarized
 	name = "electrochromic window"
@@ -691,7 +687,6 @@
 	damage_per_fire_tick = 1.0
 	max_integrity = 100.0
 	force_threshold = 10
-	rad_insulation = RAD_EXTREME_INSULATION
 
 /obj/structure/window/titanium/full
 	icon_state = "window-full"
@@ -711,7 +706,6 @@
 	damage_per_fire_tick = 1.0
 	max_integrity = 120.0
 	force_threshold = 10
-	rad_insulation = RAD_EXTREME_INSULATION
 
 /obj/structure/window/plastitanium/full
 	icon_state = "window-full"
@@ -721,3 +715,9 @@
 /obj/structure/window/reinforced/tinted/full
 	icon_state = "window-full"
 	fulltile = TRUE
+
+/// Window shielding derives from its glass (the glasstype stack's material).
+/obj/structure/window/proc/update_rad_insulation()
+	var/obj/item/stack/material/stack_type = glasstype
+	var/material_id = stack_type ? initial(stack_type.default_type) : MAT_GLASS
+	set_rad_insulation(material_rad_insulation(material_id, is_fulltile() ? RAD_FULLTILE_WINDOW_THICKNESS_MM : RAD_WINDOW_THICKNESS_MM, RAD_VERY_LIGHT_INSULATION))

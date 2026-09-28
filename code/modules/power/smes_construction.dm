@@ -102,7 +102,7 @@
 	var/cur_coils = 1 			// Current amount of installed coils
 	var/safeties_enabled = 1 	// If 0 modifications can be done without discharging the SMES, at risk of critical failure.
 	var/failing = 0 			// If 1 critical failure has occured and SMES explosion is imminent.
-	var/grounding = 1			// Cut to quickly discharge, at cost of "minor" electrical issues in output powernet.
+	var/grounding = 1			// Cut to quickly discharge, at cost of "minor" electrical issues in output grid.
 	var/RCon = 1				// Cut to disable AI and remote control.
 	var/RCon_tag = "NO_TAG"		// RCON tag, change to show it on SMES Remote control console.
 	charge = 0
@@ -311,10 +311,10 @@
 // Parameters: 2 (failure_chance - chance to actually break the APC, overload_chance - Chance of breaking lights)
 // Description: Damages output powernet by power surge. Destroys few APCs and lights, depending on parameters.
 /obj/machinery/power/smes/buildable/proc/apcs_overload(failure_chance, overload_chance)
-	if (!powernet)
+	if (!power_region)
 		return
 
-	for(var/obj/machinery/power/terminal/T in powernet.nodes)
+	for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region))
 		if(istype(T.master(), /obj/machinery/power/apc))
 			var/obj/machinery/power/apc/A = T.master()
 			if (prob(overload_chance))

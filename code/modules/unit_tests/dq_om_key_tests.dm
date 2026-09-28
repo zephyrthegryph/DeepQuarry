@@ -8,35 +8,38 @@
 
 /datum/unit_test/dq_om_keys_wake_power_monitor/Run()
 	var/turf/T = test_floor()
-	var/datum/powernet/P = new
+	var/P = power_test_grid()
 	var/obj/machinery/power/sensor/S = allocate(/obj/machinery/power/sensor, T)
 	var/obj/machinery/computer/power_monitor/M = allocate(/obj/machinery/computer/power_monitor, T)
-	S.powernet = P
+	power_test_join(P, S)
 	M.power_monitor.grid_sensors = null
 	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
 	MACHINE_WAKE(M)
 	M.machine_step()
 	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")
 	TEST_ASSERT_NULL(M.om_sleep_violation(), "a stable sleeping power monitor reported a violation")
-	var/failure = om_wake_test(M, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, trigger_warning)))
+	var/failure = om_wake_test(M, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(power_warn), P))
 	TEST_ASSERT(!failure, failure)
-	qdel(P)
+	power_test_drop_grid(P)
 
 /datum/unit_test/dq_om_keys_wake_shield_capacitor
 
 /datum/unit_test/dq_om_keys_wake_shield_capacitor/Run()
-	var/datum/powernet/P = new
+	var/P = power_test_grid()
+	// Grid channels are raised on the machines bound to the grid; the capacitor watches one.
+	var/obj/machinery/power/terminal/node = allocate(/obj/machinery/power/terminal, test_floor())
+	power_test_join(P, node)
 	var/obj/machinery/shield_capacitor/C = allocate(/obj/machinery/shield_capacitor, test_floor())
 	// The keys process() sleeps on when the grid gives it nothing.
-	TEST_ASSERT(C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE)), "capacitor refused to sleep")
-	var/failure = om_wake_test(C, CALLBACK(P, TYPE_PROC_REF(/datum/powernet, test_set_brownout), TRUE))
+	TEST_ASSERT(C.sleep_until_keys(list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE)), "capacitor refused to sleep")
+	var/failure = om_wake_test(C, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(power_test_set_brownout), P, TRUE))
 	TEST_ASSERT(!failure, failure)
 	// A topology-only change is not the capacitor's input.
-	C.sleep_until_keys(list(P, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
+	C.sleep_until_keys(list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE))
 	// Let the brownout wake above finish landing before the window opens.
 	om_settle(C)
 	om_trace(C)
-	om_changed(P, CHANGE_POWERNET_TOPOLOGY)
+	power_grid_changed(P, CHANGE_POWER_GRID_TOPOLOGY)
 	om_test_ticks(4)
 	// Only a watch wake (CHANGE_RELATED) can come from P. The capacitor has other real inputs
 	// (its area's power, a machine timer) that a full-suite world can move inside the window:
@@ -139,7 +142,3 @@
 
 #endif
 
-/// A brownout as refresh() reports one from Rust, without a Rust region.
-/datum/powernet/proc/test_set_brownout(value)
-	brownout = value
-	om_changed(src, CHANGE_POWERNET_STATE)

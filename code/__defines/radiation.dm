@@ -37,6 +37,19 @@ Ask Mothblocks if they're around
 #define RAD_EXTREME_INSULATION 0.5 // What rad collectors have
 #define RAD_FULL_INSULATION 0 // Completely stops radiation from coming through
 
+// Declared shielding thickness (mm) per structure class; the atom's rad_insulation is
+// derived from its material via /datum/material/proc/material_radiation_transmission().
+#define RAD_WALL_THICKNESS_MM 250
+#define RAD_DOOR_THICKNESS_MM 60
+#define RAD_GIRDER_THICKNESS_MM 25
+#define RAD_GIRDER_REINFORCEMENT_THICKNESS_MM 15
+#define RAD_WINDOW_THICKNESS_MM 10
+#define RAD_FULLTILE_WINDOW_THICKNESS_MM 25
+#define RAD_AIRLOCK_THICKNESS_MM 60
+#define RAD_BLAST_DOOR_THICKNESS_MM 150
+#define RAD_SHUTTLE_HULL_THICKNESS_MM 250
+#define RAD_COLLECTOR_THICKNESS_MM 150
+
 /// The default chance something can be irradiated
 #define DEFAULT_RADIATION_CHANCE 10
 

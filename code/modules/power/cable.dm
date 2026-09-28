@@ -49,8 +49,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	anchored =TRUE
 	unacidable = TRUE
 	/// Set only while a material overlay owns this cable (engineered
-	/// conductors, see powernet.dm). Everything else asks get_powernet().
-	var/datum/powernet/powernet
+	/// conductors, see power_grid.dm). Everything else asks get_power_region().
+	var/datum/material_power_overlay/material_overlay
 	/// This piece's entity in the Rust power domain (a cable is not a
 	/// `#[vg::component]` -- pure topology data -- so it has no `vg_entity`
 	/// of its own; `vg_power_bind_cable` mints and returns one).
@@ -94,7 +94,8 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return
 	GLOB.machine_service.power_material_cables[src] = TRUE
 	if(power_entity)
-		get_powernet()?.invalidate_material_cache()
+		var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[get_power_region()]
+		overlay?.invalidate_material_cache()
 
 /obj/structure/cable/proc/recover_coil(turf/location, length)
 	var/obj/item/stack/cable_coil/coil = new(location, length, color, engineered_material_id)
@@ -105,15 +106,15 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(drain_check)
 		return 1
 
-	var/datum/powernet/network = get_powernet()
-	if(!network)
+	var/region = get_power_region()
+	if(!region)
 		return 0
 
-	return network.draw_power(amount, src)
+	return power_draw(region, amount, src)
 
-/// The network this cable is on (asks Rust).
-/obj/structure/cable/proc/get_powernet()
-	return power_entity ? GLOB.machine_service.power_region_of(power_entity) : null
+/// The power region this cable is on (asks Rust), or 0.
+/obj/structure/cable/proc/get_power_region()
+	return power_entity ? (vg_power_region_of(power_entity) || 0) : 0
 
 /// Sends this piece (its turf and directions) to the Rust network. Placing,
 /// rotating and moving a cable all call this; Rust works out what it joins.
@@ -184,19 +185,19 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 	if(level==1) hide(!T.is_plating())
 	power_register()
 
-/// Phase 1 (unbind): the cable leaves its powernet and the material power graph.
+/// Phase 1 (unbind): the cable leaves its power region and the material power graph.
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
 	GLOB.machine_service.power_material_cables -= src
-	powernet?.remove_cable(src)
-	powernet = null
+	material_overlay?.remove_cable(src)
+	material_overlay = null
 	power_unregister()
 
 /obj/structure/cable/examine(mob/user)
 	. = ..()
 	if(isobserver(user))
-		var/datum/powernet/network = get_powernet()
-		. += span_warning("[network?.avail > 0 ? "[DisplayPower(network.avail)] in power network." : "The cable is not powered."]")
+		var/avail = power_avail(get_power_region())
+		. += span_warning("[avail > 0 ? "[DisplayPower(avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
 		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
@@ -319,9 +320,9 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	var/turf/T = src.loc
 	if(!T.is_plating())
 		return ITEM_INTERACT_BLOCKING
-	var/datum/powernet/network = get_powernet()
-	if(network && network.avail > 0)
-		to_chat(user, span_warning("[DisplayPower(network.avail)] in power network."))
+	var/avail = power_avail(get_power_region())
+	if(avail > 0)
+		to_chat(user, span_warning("[DisplayPower(avail)] in power network."))
 	else
 		to_chat(user, span_warning("The cable is not powered."))
 	shock(user, 5, 0.2)
@@ -332,7 +333,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 /obj/structure/cable/proc/shock(mob/user, prb, siemens_coeff = 1.0)
 	if(!prob(prb))
 		return 0
-	if (electrocute_mob(user, get_powernet(), src, siemens_coeff))
+	if (electrocute_mob(user, src, src, siemens_coeff))
 		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 		s.set_up(5, 1, src)
 		s.start()
@@ -388,14 +389,13 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 
 	if(d1 == 0)
 		for(var/obj/machinery/power/P in contents_of(loc))
-			if(P.powernet == 0) continue // exclude APCs with powernet=0
-			if(!powernetless_only || !P.powernet)
+			if(!powernetless_only || !P.power_region)
 				. += P
 
 	// if the caller asked for powernetless cables only, dump the ones with powernets
 	if(powernetless_only)
 		for(var/obj/structure/cable/C in .)
-			if(C.powernet)
+			if(C.material_overlay)
 				. -= C
 
 ///////////////////////////////////////////////
@@ -908,8 +908,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 
 #undef MAXCOIL
 
-/// LC-refs: a cable is a member of its powernet's cables; deleting it leaves the list.
-REF_BACKLIST(/obj/structure/cable, list("powernet" = "cables"))
+/// LC-refs: a cable is a member of its material overlay's cables; deleting it leaves the list.
+REF_BACKLIST(/obj/structure/cable, list("material_overlay" = "cables"))
 
 /// LC-refs: the breaker_box this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox

@@ -453,8 +453,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		var/datum/material/conductor = electrical_stock()
 		var/crossed_critical = conductor?.critical_temperature && ((temperature < conductor.critical_temperature) != (electrical_reference_temperature < conductor.critical_temperature))
 		if(abs(temperature - electrical_reference_temperature) >= 0.1 || crossed_critical)
-			if(cable.powernet?.material_graph)
-				cable.powernet.material_graph.invalidate_cable(cable)
+			if(cable.material_overlay?.material_graph)
+				cable.material_overlay.material_graph.invalidate_cable(cable)
 			electrical_reference_temperature = temperature
 	// Retain sub-resolution heat in the solid instead of scheduling every cable
 	// for fractions of a millikelvin. No energy is discarded by this coalescing.
@@ -594,7 +594,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	material_configuration_revision++
 	if(istype(src, /obj/structure/cable))
 		var/obj/structure/cable/cable = src
-		cable.powernet?.material_graph?.invalidate_cable(cable)
+		cable.material_overlay?.material_graph?.invalidate_cable(cable)
 	if(istype(src, /obj/machinery/atmospherics))
 		var/obj/machinery/atmospherics/device = src
 		if(device.power_rating > 0)

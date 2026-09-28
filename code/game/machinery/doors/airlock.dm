@@ -60,6 +60,8 @@
 	var/knock_unpowered_sound = 'sound/machines/door/knock_glass.ogg'
 	var/hold_open_handle
 	rad_insulation = RAD_MEDIUM_INSULATION
+	rad_shield_material = MAT_STEEL
+	rad_shield_thickness_mm = RAD_AIRLOCK_THICKNESS_MM
 
 	// Frozen airlocks and how to deice them
 	var/frozen = FALSE

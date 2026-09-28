@@ -81,15 +81,15 @@
 	var/turf/T = src.loc
 
 	var/obj/structure/cable/C = T.get_cable_node()
-	var/datum/powernet/PN
-	if(C)	PN = C.get_powernet()		// find the powernet of the connected cable
+	var/PN = 0
+	if(C)	PN = C.get_power_region()		// the power region of the connected cable
 
 	if(!PN)
 		power = 0
 		return 0
 
 	var/shieldload = between(500, max_stored_power - storedpower, power_draw)	//what we try to draw
-	shieldload = PN.draw_power(shieldload) //what we actually get
+	shieldload = power_draw(PN, shieldload) //what we actually get
 	storedpower += shieldload
 
 	//If we're still in the red, then there must not be enough available power to cover our load.

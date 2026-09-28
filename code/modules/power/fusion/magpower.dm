@@ -17,10 +17,10 @@
 
 /obj/machinery/power/hydromagnetic_trap/machine_step()
 	if(anchored)
-		if(!powernet)
+		if(!power_region)
 			src.active = 0
 			connect_to_network()
-			if(!powernet)
+			if(!power_region)
 				return PROCESS_KILL
 
 		Search()
@@ -31,7 +31,7 @@
 		Active()
 
 	else
-		if(powernet)
+		if(power_region)
 			LAZYCLEARLIST(active_field)
 			disconnect_from_network()
 		return PROCESS_KILL

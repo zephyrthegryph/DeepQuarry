@@ -20,7 +20,7 @@
 	if(id)
 		for(var/obj/structure/cable/ender/target in REGISTRY_MEMBERS(REGISTRY_CABLES))
 			if(target.id == id)
-				if (!powernetless_only || !target.powernet)
+				if (!powernetless_only || !target.material_overlay)
 					. |= target
 
 EXTEND_INTERACTIONS(/obj/structure/cable/ender, INTERACT_ITEM(null, PROC_REF(ender_interaction_item)))

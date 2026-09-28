@@ -248,7 +248,7 @@
 			floors++
 			for(var/obj/machinery/power/apc/APC in floor)
 				apcs++
-				TEST_ASSERT_NOTNULL(APC.terminal?.powernet, "Seed [seed] [module_id] APC lacks a live terminal powernet")
+				TEST_ASSERT(APC.terminal?.power_region, "Seed [seed] [module_id] APC lacks a live terminal powernet")
 			for(var/obj/machinery/atmospherics/unary/vent_pump/vent in floor)
 				vents++
 				TEST_ASSERT_NOTNULL(vent.network, "Seed [seed] [module_id] vent lacks a pipenet")

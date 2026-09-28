@@ -162,7 +162,7 @@
 		item.apply_material_role_effects(item.engineered_material_profile)
 	if(istype(owner(), /obj/structure/cable))
 		var/obj/structure/cable/cable = owner()
-		cable.powernet?.invalidate_material_cache()
+		cable.material_overlay?.invalidate_material_cache()
 	owner().visible_message(span_notice("[user] fits a new [role] into [owner()]."))
 	contents_changed()
 

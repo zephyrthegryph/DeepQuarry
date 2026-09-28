@@ -52,7 +52,7 @@
 /obj/machinery/power/thermoregulator/southerncross/machine_step()
 	if(!on)
 		return PROCESS_KILL
-	if(!powernet)
+	if(!power_region)
 		turn_off()
 		return PROCESS_KILL
 
@@ -223,7 +223,7 @@
 /obj/machinery/power/thermoregulator/machine_step()
 	if(!on)
 		return PROCESS_KILL
-	if(!powernet)
+	if(!power_region)
 		turn_off()
 		return PROCESS_KILL
 
@@ -317,7 +317,7 @@
 	update_icon()
 
 /obj/machinery/power/thermoregulator/overload(obj/machinery/power/source)
-	if(!anchored || !powernet)
+	if(!anchored || !power_region)
 		return
 	var/power_avail = draw_power(active_power_usage*10)
 	var/datum/gas_mixture/env = loc.return_air()

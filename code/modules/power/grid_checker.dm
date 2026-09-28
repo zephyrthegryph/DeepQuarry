@@ -88,8 +88,8 @@
 		"Critical Power Failure",
 		new_sound = ANNOUNCER_MSG_POWER_OFF)
 	power_failing = TRUE
-	if(powernet)
-		for(var/obj/machinery/power/terminal/T in powernet.nodes) // APCs that are "downstream" of the powernet.
+	if(power_region)
+		for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region)) // APCs that are "downstream" of the grid.
 
 			if(istype(T.master(), /obj/machinery/power/apc))
 				var/obj/machinery/power/apc/A = T.master()
@@ -97,7 +97,7 @@
 					continue
 				A.do_grid_check()
 
-		for(var/obj/machinery/power/smes/smes in powernet.nodes) // These are "upstream"
+		for(var/obj/machinery/power/smes/smes in power_grid_nodes(power_region)) // These are "upstream"
 			smes.do_grid_check()
 
 	update_icon()
@@ -112,14 +112,14 @@
 	power_failing = FALSE
 	update_icon()
 
-	for(var/obj/machinery/power/terminal/T in powernet.nodes)
+	for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region))
 		if(istype(T.master(), /obj/machinery/power/apc))
 			var/obj/machinery/power/apc/A = T.master()
 			if(A.is_critical)
 				continue
 			A.set_grid_check(FALSE)
 
-	for(var/obj/machinery/power/smes/smes in powernet.nodes) // These are "upstream"
+	for(var/obj/machinery/power/smes/smes in power_grid_nodes(power_region)) // These are "upstream"
 		smes.grid_check = FALSE
 
 /obj/machinery/power/grid_checker/proc/power_failure_times_out()

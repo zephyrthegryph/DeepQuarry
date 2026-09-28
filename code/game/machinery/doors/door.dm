@@ -63,6 +63,7 @@
 
 /obj/machinery/door/Initialize(mapload)
 	. = ..()
+	apply_rad_shield_material()
 	if(density)
 		layer = closed_layer
 		explosion_resistance = initial(explosion_resistance)

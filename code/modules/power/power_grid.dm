@@ -1,0 +1,387 @@
+// The DM view of the Rust power domain's cable regions (M3b). There is no
+// per-network datum: a machine holds the number of the region its node is on
+// (`/obj/machinery/power/var/power_region`, 0 = none) and everything else asks
+// the procs below with that number. Rust (verdigris/domains/power) owns the
+// topology and the ledger; DM keeps only what Rust deliberately does not:
+// display smoothing, the monitor warning, and which machines sit on a region
+// (so readers can walk them), in one flat list per region in
+// `GLOB.machine_service.power_grids`.
+//
+// Region ids are stable across edits that keep the region (a merge keeps the
+// larger region's id; a split keeps the parent id for one side). A region
+// Rust no longer knows is dropped at the next power step.
+//
+// Change channels are raised on each machine bound to the region
+// (CHANGE_POWER_GRID_* in om.dm), so something that waits on a grid watches a
+// machine that is on it.
+//
+// Negative ids are detached test grids (`power_test_grid()`): their numbers
+// are their own ledger and Rust never sees them.
+
+#define PGRID_AVAIL 1
+#define PGRID_LOAD 2
+#define PGRID_VIEWAVAIL 3
+#define PGRID_VIEWLOAD 4
+#define PGRID_BROWNOUT 5
+/// world.time the monitor warning lasts until.
+#define PGRID_PROBLEM_UNTIL 6
+/// The material overlay's own standing warning.
+#define PGRID_MATERIAL_PROBLEM 7
+/// The warning state last announced on CHANGE_POWER_GRID_STATE.
+#define PGRID_PROBLEM_SHOWN 8
+/// Machines bound to the region.
+#define PGRID_NODES 9
+#define PGRID_FIELDS 9
+
+/// The state list of region `id`, made on first use (null for 0).
+/proc/power_grid(id)
+	if(!id)
+		return null
+	var/list/grid = GLOB.machine_service.power_grids[id]
+	if(grid)
+		return grid
+	grid = new /list(PGRID_FIELDS)
+	grid[PGRID_AVAIL] = 0
+	grid[PGRID_LOAD] = 0
+	grid[PGRID_VIEWAVAIL] = 0
+	grid[PGRID_VIEWLOAD] = 0
+	grid[PGRID_BROWNOUT] = FALSE
+	grid[PGRID_PROBLEM_UNTIL] = 0
+	grid[PGRID_MATERIAL_PROBLEM] = FALSE
+	grid[PGRID_PROBLEM_SHOWN] = FALSE
+	grid[PGRID_NODES] = list() // ALLOW(instance_list): one per live region; created because a machine joined
+	GLOB.machine_service.power_grids[id] = grid
+	power_grid_refresh(id)
+	return grid
+
+/// Raises `bits` on every machine bound to region `id`.
+/proc/power_grid_changed(id, bits)
+	var/list/grid = id ? GLOB.machine_service.power_grids[id] : null
+	if(!grid)
+		return
+	for(var/obj/machinery/power/M as anything in grid[PGRID_NODES])
+		om_changed(M, bits)
+
+/// Polls region `id`'s numbers from Rust (once a power step). FALSE when Rust
+/// no longer has the region.
+/proc/power_grid_refresh(id)
+	if(id <= 0)
+		return TRUE
+	var/list/grid = GLOB.machine_service.power_grids[id]
+	if(!grid)
+		return FALSE
+	var/list/info = vg_power_region_read(id)
+	if(!info)
+		return FALSE
+	var/old_avail = grid[PGRID_AVAIL]
+	var/old_load = grid[PGRID_LOAD]
+	grid[PGRID_AVAIL] = info[1]
+	grid[PGRID_LOAD] = info[2]
+	// Rust reports raw numbers only (rust_core.md §15); monitors read these
+	// eased 80/20 per step.
+	grid[PGRID_VIEWAVAIL] = round(0.8 * grid[PGRID_VIEWAVAIL] + 0.2 * info[1])
+	grid[PGRID_VIEWLOAD] = round(0.8 * grid[PGRID_VIEWLOAD] + 0.2 * info[2])
+	var/bits = 0
+	var/brown = !!info[3]
+	if(brown != grid[PGRID_BROWNOUT])
+		grid[PGRID_BROWNOUT] = brown
+		bits |= CHANGE_POWER_GRID_STATE
+	if(old_avail != info[1] || old_load != info[2])
+		bits |= CHANGE_POWER_GRID_RATE
+	if(bits)
+		power_grid_changed(id, bits)
+	return TRUE
+
+/// Announces a warning that started or ended since the last announcement.
+/proc/power_grid_sync_problem(id)
+	var/list/grid = GLOB.machine_service.power_grids[id]
+	if(!grid)
+		return
+	var/now = power_problem(id)
+	if(now != grid[PGRID_PROBLEM_SHOWN])
+		grid[PGRID_PROBLEM_SHOWN] = now
+		power_grid_changed(id, CHANGE_POWER_GRID_STATE)
+
+// ---- reads ------------------------------------------------------------------
+
+/proc/power_avail(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_AVAIL] : 0
+
+/proc/power_load(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_LOAD] : 0
+
+/// Supply minus load at the last step (may be negative when overdrawn).
+/proc/power_netexcess(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_AVAIL] - grid[PGRID_LOAD] : 0
+
+/// Spare power right now, never negative.
+/proc/power_surplus(id)
+	return max(power_netexcess(id), 0)
+
+/proc/power_view_avail(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_VIEWAVAIL] : 0
+
+/proc/power_view_load(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_VIEWLOAD] : 0
+
+/proc/power_brownout(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_BROWNOUT] : FALSE
+
+/// TRUE while power monitors should show a warning for region `id`.
+/proc/power_problem(id)
+	var/list/grid = power_grid(id)
+	if(!grid)
+		return FALSE
+	return grid[PGRID_MATERIAL_PROBLEM] || grid[PGRID_PROBLEM_UNTIL] > world.time
+
+/// The machines bound to region `id` (do not modify).
+/proc/power_grid_nodes(id)
+	var/list/grid = power_grid(id)
+	return grid ? grid[PGRID_NODES] : list()
+
+/// Any one machine on region `id` (a key to watch it by), or null.
+/proc/power_grid_any_node(id)
+	var/list/nodes = power_grid_nodes(id)
+	return length(nodes) ? nodes[1] : null
+
+/proc/power_percent_load(id, smes_only = FALSE)
+	var/load = power_load(id)
+	if(smes_only)
+		var/smes_avail = 0
+		for(var/obj/machinery/power/smes/storage in power_grid_nodes(id))
+			smes_avail += storage.output_used
+		if(!smes_avail || !load)
+			return 0
+		return between(0, (min(load, smes_avail) / smes_avail) * 100, 100)
+	var/avail = power_avail(id)
+	if(!load || !avail)
+		return 0
+	return between(0, (load / avail) * 100, 100)
+
+/proc/power_electrocute_damage(id)
+	// Logarithmic damage scaling:
+	// 1kW=5, 10kW=24, 100kW=45, 250kW=53, 1MW=66, 10MW=88, 100MW=110, 1GW=132
+	var/avail = power_avail(id)
+	if(avail >= 1000)
+		var/damage = log(1.1, avail)
+		damage = damage - (log(1.1, damage) * 1.5)
+		return round(damage)
+	return 0
+
+// ---- writes -----------------------------------------------------------------
+
+/// Draws from region `id` for `consumer` (or anonymously). Returns what was
+/// delivered; never more than the spare supply this step.
+/proc/power_draw(id, amount, atom/consumer)
+	var/list/grid = power_grid(id)
+	if(!grid || amount <= 0)
+		return 0
+	var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[id]
+	var/efficiency = 1
+	if(consumer && overlay?.material_graph)
+		efficiency = overlay.material_graph.efficiencies?[om_handle(consumer)] || 1
+	var/drawn
+	if(id < 0)
+		drawn = between(0, amount / efficiency, grid[PGRID_AVAIL] - grid[PGRID_LOAD])
+	else
+		drawn = vg_power_region_draw(id, amount / efficiency)
+	grid[PGRID_LOAD] += drawn
+	var/delivered = drawn * efficiency
+	if(consumer && overlay?.material_graph)
+		LAZYINITLIST(overlay.material_consumers)
+		overlay.material_consumers[om_handle(consumer)] += delivered
+	return delivered
+
+/// Flags a problem visible on power monitors for `duration` deciseconds.
+/proc/power_warn(id, duration = 2 SECONDS)
+	var/list/grid = power_grid(id)
+	if(!grid)
+		return
+	grid[PGRID_PROBLEM_UNTIL] = max(grid[PGRID_PROBLEM_UNTIL], world.time + max(duration, 1))
+	power_grid_sync_problem(id)
+
+/proc/power_set_material_warning(id, active)
+	var/list/grid = power_grid(id)
+	if(!grid || grid[PGRID_MATERIAL_PROBLEM] == !!active)
+		return
+	grid[PGRID_MATERIAL_PROBLEM] = !!active
+	power_grid_sync_problem(id)
+
+/// Binds `M` onto region `new_id` (0 = none), leaving its old one.
+/proc/power_grid_move_node(obj/machinery/power/M, old_id, new_id)
+	var/list/old_grid = old_id ? GLOB.machine_service.power_grids[old_id] : null
+	if(old_grid)
+		old_grid[PGRID_NODES] -= M
+		power_grid_changed(old_id, CHANGE_POWER_GRID_TOPOLOGY)
+	var/list/new_grid = power_grid(new_id)
+	if(new_grid)
+		new_grid[PGRID_NODES] |= M
+		power_grid_changed(new_id, CHANGE_POWER_GRID_TOPOLOGY)
+	var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[old_id]
+	overlay?.material_cache_dirty = TRUE
+	overlay = GLOB.machine_service.power_material_overlays[new_id]
+	overlay?.material_cache_dirty = TRUE
+
+// ---- detached test grids ----------------------------------------------------
+
+/// A detached grid holding `avail` W that Rust never sees (tests). Returns its id.
+/proc/power_test_grid(avail = 0)
+	var/id = --GLOB.machine_service.power_test_grid_serial
+	var/list/grid = power_grid(id)
+	grid[PGRID_AVAIL] = avail
+	return id
+
+/proc/power_test_set_avail(id, avail)
+	var/list/grid = power_grid(id)
+	grid[PGRID_AVAIL] = avail
+	power_grid_changed(id, CHANGE_POWER_GRID_RATE)
+
+/proc/power_test_set_brownout(id, value)
+	var/list/grid = power_grid(id)
+	grid[PGRID_BROWNOUT] = !!value
+	power_grid_changed(id, CHANGE_POWER_GRID_STATE)
+
+/// Puts `M` on detached grid `id` without a Rust node.
+/proc/power_test_join(id, obj/machinery/power/M)
+	var/old = M.power_region
+	M.power_region = id
+	power_grid_move_node(M, old, id)
+
+/proc/power_test_drop_grid(id)
+	var/list/nodes = power_grid_nodes(id)
+	for(var/obj/machinery/power/M as anything in nodes.Copy())
+		if(M.power_region == id)
+			M.power_region = 0
+	GLOB.machine_service.power_grids -= id
+
+// ---- material overlay -------------------------------------------------------
+// The CG voltage solver (material_power.rs) runs only for regions holding an
+// engineered conductor. Member cables point at the overlay while it owns them.
+
+/datum/material_power_overlay
+	/// The region this overlays (0 for a detached test overlay).
+	var/region_id = 0
+	/// Member cables, rebuilt with the material graph.
+	var/list/cables = list() // ALLOW(instance_list): d: overlays exist because engineered cables joined them; never empty
+	var/material_cache_dirty = TRUE
+	var/datum/material_power_graph/material_graph
+	var/list/material_consumers
+	var/material_loss_watts = 0
+	var/material_pending_heat = 0
+	var/material_pending_heat_elapsed = 0
+	var/last_material_process = 0
+
+/datum/material_power_overlay/New(id)
+	region_id = id
+	..()
+
+REF_OWNED(/datum/material_power_overlay, "material_graph")
+
+/datum/material_power_overlay/lifecycle_unbind()
+	. = ..()
+	if(region_id && GLOB.machine_service.power_material_overlays[region_id] == src)
+		GLOB.machine_service.power_material_overlays -= region_id
+	release_material_cables()
+
+/datum/material_power_overlay/proc/add_cable(obj/structure/cable/C)
+	cables |= C
+	C.material_overlay = src
+	invalidate_material_cache()
+
+/datum/material_power_overlay/proc/remove_cable(obj/structure/cable/C)
+	cables -= C
+	if(C.material_overlay == src)
+		C.material_overlay = null
+	invalidate_material_cache()
+
+/datum/material_power_overlay/proc/invalidate_material_cache()
+	material_cache_dirty = TRUE
+
+/datum/material_power_overlay/proc/release_material_cables()
+	for(var/obj/structure/cable/C as anything in cables)
+		if(C?.material_overlay == src)
+			C.material_overlay = null
+	cables = list()
+
+/datum/material_power_overlay/proc/rebuild_material_cache()
+	material_cache_dirty = FALSE
+	if(region_id)
+		release_material_cables()
+		for(var/entity in vg_power_region_members(region_id))
+			var/obj/structure/cable/C = SSvg.entity_lookup(entity)
+			if(istype(C) && C.power_entity == entity)
+				cables += C
+				C.material_overlay = src
+	QDEL_NULL(material_graph)
+	material_graph = new
+	material_graph.build(cables, region_id)
+
+/// Supply by source for the solver: each bound machine's registered rate.
+/datum/material_power_overlay/proc/material_sources()
+	var/list/sources = list()
+	for(var/obj/machinery/power/M as anything in power_grid_nodes(region_id))
+		if(M.power_supply_rate > 0)
+			sources[om_handle(M)] = M.power_supply_rate
+	return sources
+
+/// One overlay step: settle heat for the last interval, solve, and pay the
+/// resistive loss from the grid. FALSE when the region holds no engineered
+/// conductor any more (the caller drops the overlay).
+/datum/material_power_overlay/proc/process_material_network()
+	var/elapsed_seconds = last_material_process ? max((world.time - last_material_process) / 10, 0.1) : 1
+	last_material_process = world.time
+	if(material_cache_dirty)
+		rebuild_material_cache()
+	if(!material_graph?.has_custom_conductors && !material_graph?.has_superconductors)
+		power_set_material_warning(region_id, FALSE)
+		return FALSE
+	LAZYINITLIST(material_consumers)
+	for(var/obj/machinery/power/terminal/T in power_grid_nodes(region_id))
+		var/obj/machinery/power/apc/A = T.master()
+		if(istype(A))
+			material_consumers[om_handle(T)] += A.channel_load_total()
+	material_pending_heat += material_loss_watts * elapsed_seconds
+	material_pending_heat_elapsed += elapsed_seconds
+	if(material_cache_dirty || material_graph.has_superconductors || material_pending_heat_elapsed >= MATERIAL_POWER_HEAT_SETTLEMENT_INTERVAL)
+		material_graph.deposit_losses(material_pending_heat, material_pending_heat_elapsed)
+		material_pending_heat = 0
+		material_pending_heat_elapsed = 0
+	material_graph.resolve_loads(material_sources(), material_consumers)
+	material_loss_watts = material_graph.loss_watts
+	material_consumers = null
+	var/list/grid = region_id ? power_grid(region_id) : null
+	if(material_loss_watts > 0 && grid)
+		grid[PGRID_LOAD] += vg_power_region_draw(region_id, material_loss_watts)
+	power_set_material_warning(region_id, material_loss_watts > max((grid ? grid[PGRID_LOAD] : 0) * 0.1, 1000))
+	return TRUE
+
+#undef PGRID_AVAIL
+#undef PGRID_LOAD
+#undef PGRID_VIEWAVAIL
+#undef PGRID_VIEWLOAD
+#undef PGRID_BROWNOUT
+#undef PGRID_PROBLEM_UNTIL
+#undef PGRID_MATERIAL_PROBLEM
+#undef PGRID_PROBLEM_SHOWN
+#undef PGRID_NODES
+#undef PGRID_FIELDS
+
+////////////////////////////////////////////////
+// Misc.
+///////////////////////////////////////////////
+
+// return a knot cable (O-X) if one is present in the turf, null otherwise.
+/turf/proc/get_cable_node()
+	for(var/obj/structure/cable/C in turf_contents_of_type(src, /obj/structure/cable))
+		if(C.d1 == 0)
+			return C
+	return null
+
+/area/proc/get_apc()
+	return apc

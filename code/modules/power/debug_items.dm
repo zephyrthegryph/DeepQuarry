@@ -12,16 +12,16 @@
 
 /obj/machinery/power/debug_items/proc/show_info(mob/user)
 	var/list/extra_info = list()
-	if(!powernet)
-		extra_info += span_filter_notice("This device is not connected to a powernet")
+	if(!power_region)
+		extra_info += span_filter_notice("This device is not connected to a power network")
 		return
 
-	extra_info += span_filter_notice("Connected to powernet: [powernet]")
-	extra_info += span_filter_notice("Available power: [num2text(powernet.avail, 20)] W")
-	extra_info += span_filter_notice("Load: [num2text(powernet.viewload, 20)] W")
-	extra_info += span_filter_notice("Has alert: [powernet.problem ? "YES" : "NO"]")
-	extra_info += span_filter_notice("Cables: [powernet.cables.len]")
-	extra_info += span_filter_notice("Nodes: [length(powernet.nodes)]")
+	extra_info += span_filter_notice("Connected to power region: [power_region]")
+	extra_info += span_filter_notice("Available power: [num2text(power_avail(power_region), 20)] W")
+	extra_info += span_filter_notice("Load: [num2text(power_view_load(power_region), 20)] W")
+	extra_info += span_filter_notice("Has alert: [power_problem(power_region) ? "YES" : "NO"]")
+	extra_info += span_filter_notice("Cables: [power_region > 0 ? length(vg_power_region_members(power_region)) : 0]")
+	extra_info += span_filter_notice("Nodes: [length(power_grid_nodes(power_region))]")
 
 	return extra_info
 

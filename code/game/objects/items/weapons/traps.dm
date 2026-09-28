@@ -342,17 +342,17 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T.get_cable_node()
 	if(C)
-		var/datum/powernet/PN = C.get_powernet()
+		var/PN = C.get_power_region()
 		if(PN)
 
 			if(PN)
-				PN.trigger_warning()
+				power_warn(PN)
 
-				var/PN_damage = PN.get_electrocute_damage() * (material.conductivity / 50)
+				var/PN_damage = power_electrocute_damage(PN) * (material.conductivity / 50)
 
 				var/drained_energy = PN_damage * 10 / CELLRATE
 
-				PN.draw_power(drained_energy)
+				power_draw(PN, drained_energy)
 
 				if(ishuman(user))
 					var/mob/living/carbon/human/H = user

@@ -72,6 +72,18 @@
 	rad_insulation = new_insulation
 	RAD_SHIELDING_CHANGED(isturf(src) ? src : loc)
 
+/// Radiation transmission of `material_id` (a MAT_* name) at `thickness_mm`,
+/// or `fallback` when the material is unknown.
+/proc/material_rad_insulation(material_id, thickness_mm, fallback = RAD_NO_INSULATION)
+	var/datum/material/M = material_id ? get_material_by_name(material_id) : null
+	return M ? M.material_radiation_transmission(thickness_mm) : fallback
+
+/// Declared shielding: an atom whose `rad_shield_material` is set derives its
+/// insulation from that material at `rad_shield_thickness_mm`.
+/atom/proc/apply_rad_shield_material()
+	if(rad_shield_material)
+		set_rad_insulation(material_rad_insulation(rad_shield_material, rad_shield_thickness_mm, rad_insulation))
+
 /turf/simulated/Initialize(mapload)
 	. = ..()
 	if(rad_insulation != RAD_NO_INSULATION)

@@ -43,10 +43,7 @@
 /obj/machinery/door/blast/Initialize(mapload)
 	. = ..()
 	implicit_material = get_material_by_name(MAT_PLASTEEL)
-	if(density)
-		rad_insulation = RAD_EXTREME_INSULATION
-	else
-		rad_insulation = RAD_NO_INSULATION
+	set_rad_insulation(density ? closed_rad_insulation() : RAD_NO_INSULATION)
 
 /obj/machinery/door/blast/get_material()
 	return implicit_material
@@ -93,7 +90,7 @@
 	update_nearby_tiles()
 	update_icon()
 	set_opacity(0)
-	rad_insulation = RAD_NO_INSULATION
+	set_rad_insulation(RAD_NO_INSULATION)
 	om_after_unique(src, 1.5 SECONDS, PROC_REF(complete_force_open))
 
 /obj/machinery/door/blast/proc/complete_force_open()
@@ -116,7 +113,7 @@
 	density = TRUE
 	update_nearby_tiles()
 	update_icon()
-	rad_insulation = RAD_EXTREME_INSULATION
+	set_rad_insulation(closed_rad_insulation())
 	if(istransparent)
 		set_opacity(0)
 	else
@@ -531,24 +528,23 @@
 	icon_state_closing = "pdoorc1"
 	icon_state = "pdoor1"
 	max_integrity = 600
-	rad_insulation = 0
+	rad_insulation = RAD_FULL_INSULATION
 	id = "EngineShroud"
 
 /obj/machinery/door/blast/radproof/open
 	icon_state = "pdoor0"
 	density = 0
 	opacity = 0
-	rad_insulation = 0
+	rad_insulation = RAD_NO_INSULATION
 
-/obj/machinery/door/blast/radproof/force_open()
-	set_rad_insulation(1)
-	..()
-
-/obj/machinery/door/blast/radproof/force_close()
-	set_rad_insulation(0)
-	..()
+/obj/machinery/door/blast/radproof/closed_rad_insulation()
+	return RAD_FULL_INSULATION
 
 /obj/machinery/button/remote/blast_door/radproof
 	name = "Reactor Shroud Control"
 	desc = "It the reactor shroud remotely."
 	id = "EngineShroud"
+
+/// Shielding while shut: its plasteel slab, or RAD_EXTREME_INSULATION without one.
+/obj/machinery/door/blast/proc/closed_rad_insulation()
+	return material_rad_insulation(implicit_material?.name, RAD_BLAST_DOOR_THICKNESS_MM, RAD_EXTREME_INSULATION)

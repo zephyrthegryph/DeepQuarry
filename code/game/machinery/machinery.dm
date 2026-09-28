@@ -513,8 +513,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		if(temp_area)
 			var/obj/machinery/power/apc/temp_apc = temp_area.get_apc()
 
-			if(temp_apc && temp_apc.terminal && temp_apc.terminal.powernet)
-				temp_apc.terminal.powernet.trigger_warning()
+			if(temp_apc && temp_apc.terminal && temp_apc.terminal.power_region)
+				power_warn(temp_apc.terminal.power_region)
 		if(user.has_status(EFFECT_STUNNED))
 			return 1
 	return 0

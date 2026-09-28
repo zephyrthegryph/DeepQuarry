@@ -58,11 +58,11 @@ SUBSYSTEM_DEF(profiler)
 		"explosions" = world_service_diagnostics(GLOB.explosion_service),
 	)
 	var/list/material_graphs = list()
-	for(var/id in GLOB.machine_service.power_regions)
-		var/datum/powernet/network = GLOB.machine_service.power_regions[id]
-		var/datum/material_power_graph/graph = network.material_graph
+	for(var/id in GLOB.machine_service.power_material_overlays)
+		var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[id]
+		var/datum/material_power_graph/graph = overlay.material_graph
 		if(graph)
-			material_graphs += list(list("cables" = length(network.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
+			material_graphs += list(list("cables" = length(overlay.cables), "vertices" = length(graph.vertices), "core" = length(graph.core_vertices), "edges" = length(graph.edges), "iterations" = graph.iterations, "solve_ms" = graph.solve_ms, "deposit_ms" = graph.deposit_ms, "resistance_ms" = graph.resistance_ms))
 	subsystems["machines"] += list("material_graphs" = material_graphs)
 	subsystems["atmos"] += list(
 		"dm_stage_average_ms" = list(
@@ -92,8 +92,8 @@ SUBSYSTEM_DEF(profiler)
 		"stage_average_ms" = list("machinery" = GLOB.machine_service.cost_machinery, "powernets" = GLOB.machine_service.cost_powernets),
 		"stage_last_logical_run_ms" = list("machinery" = GLOB.machine_service.last_cost_machinery, "powernets" = GLOB.machine_service.last_cost_powernets),
 		"pump_commit" = list("active_ms" = GLOB.machine_service.last_pump_commit_ms, "wall_ms" = GLOB.machine_service.last_pump_commit_wall_ms, "suspended_ms" = GLOB.machine_service.last_pump_commit_suspended_ms, "operations" = GLOB.machine_service.last_pump_commit_operations, "turfs" = GLOB.machine_service.last_pump_commit_turfs),
-		"power" = list("regions" = length(GLOB.machine_service.power_regions)),
-		"counts" = list("parked" = om_pipeline_parked_count(/datum/om/pipeline/machine), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(GLOB.machine_service.power_regions)),
+		"power" = list("regions" = length(GLOB.machine_service.power_grids)),
+		"counts" = list("parked" = om_pipeline_parked_count(/datum/om/pipeline/machine), "all" = length(REGISTRY_MEMBERS(REGISTRY_MACHINES)), "powernets" = length(GLOB.machine_service.power_grids)),
 		"gas_wakes" = list("dirty" = GLOB.machine_service.gas_dirty_last, "subscribers_checked" = GLOB.machine_service.gas_wake_subscribers_last, "scan_ms" = GLOB.machine_service.gas_wake_scan_last_ms, "woken" = GLOB.machine_service.gas_woken_last, "dead" = GLOB.machine_service.gas_dead_last, "pending" = length(GLOB.machine_service.pending_dirty_gas_mixtures)),
 	)
 	subsystems["mobs"] += list("counts" = list("world" = REGISTRY_COUNT(REGISTRY_MOBS), "parked" = om_pipeline_parked_count(/datum/om/pipeline/life), "deaths_pending" = length(GLOB.mob_service.death_list)))

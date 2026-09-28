@@ -84,7 +84,7 @@
 	var/obj/machinery/power/terminal/terminal = null
 	var/mob/living/silicon/ai/hacker = null // Malf AI that has full control of this APC.
 	var/wiresexposed = FALSE
-	powernet = null                 // set by connect_to_network() (the APC IS a network node now, step 3)
+	power_region = 0                 // set by connect_to_network() (the APC IS a network node now, step 3)
 	var/debug = 0
 	var/has_electronics = APC_HAS_ELECTRONICS_NONE
 	var/beenhit = 0                 // hit counter, used for Alien claws
@@ -145,7 +145,7 @@
 			if(bind_now)
 				power_bind_now()
 	power_sync()
-	return !!powernet
+	return !!power_region
 
 /obj/machinery/power/apc/drain_power(drain_check, surge, amount = 0)
 	wake_for_power_dependency()
@@ -158,9 +158,9 @@
 	var/drained_energy = 0
 
 	// Draw from the grid first (like draining from a cable).
-	if(terminal && terminal.powernet)
-		terminal.powernet.trigger_warning()
-		drained_energy += terminal.powernet.draw_power(amount, terminal)
+	if(terminal && terminal.power_region)
+		power_warn(terminal.power_region)
+		drained_energy += power_draw(terminal.power_region, amount, terminal)
 
 	// Grid rarely gives the full amount; draw the shortfall from the cell.
 	if((drained_energy < amount) && cell)
@@ -272,7 +272,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 	var/new_environ = get_channels(2)
 	var/new_charging = get_charging()
 	power_refresh_network()
-	var/new_status = !powernet ? APC_EXTERNAL_POWER_NOTCONNECTED : (powernet.avail > 0 && powernet.netexcess < 0 ? APC_EXTERNAL_POWER_NOENERGY : (powernet.avail > 0 ? APC_EXTERNAL_POWER_GOOD : APC_EXTERNAL_POWER_NOTCONNECTED))
+	var/new_status = !power_region ? APC_EXTERNAL_POWER_NOTCONNECTED : (power_avail(power_region) > 0 && power_netexcess(power_region) < 0 ? APC_EXTERNAL_POWER_NOENERGY : (power_avail(power_region) > 0 ? APC_EXTERNAL_POWER_GOOD : APC_EXTERNAL_POWER_NOTCONNECTED))
 	var/shown_changed = new_equipment != equipment || new_lighting != lighting || new_environ != environ || new_charging != charging || new_status != main_status
 	equipment = new_equipment
 	lighting = new_lighting
@@ -496,7 +496,7 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 /obj/machinery/power/apc/proc/wirecutter_act_tool_done(mob/user)
 	if(!(terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED))
 		return
-	if(prob(50) && electrocute_mob(user, terminal.powernet, terminal))
+	if(prob(50) && electrocute_mob(user, terminal.power_region, terminal))
 		var/datum/effect/effect/system/spark_spread/sparks = new
 		sparks.set_up(5, 1, src)
 		sparks.start()
@@ -1030,14 +1030,14 @@ REF_BACKLIST(/obj/machinery/power/apc, list("hacker" = "hacked_apcs"))
 		return 0
 
 /obj/machinery/power/apc/proc/last_surplus()
-	if(terminal && terminal.powernet)
-		return terminal.powernet.last_surplus()
+	if(terminal && terminal.power_region)
+		return power_surplus(terminal.power_region)
 	else
 		return 0
 
 /obj/machinery/power/apc/draw_power(amount)
-	if(terminal && terminal.powernet)
-		return terminal.powernet.draw_power(amount, terminal)
+	if(terminal && terminal.power_region)
+		return power_draw(terminal.power_region, amount, terminal)
 	return 0
 
 /obj/machinery/power/apc/avail()

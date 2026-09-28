@@ -387,10 +387,12 @@
 #define CHANGE_MACHINE_MODE (1<<18)
 /// An area's power channels or light switch changed (area power_change()).
 #define CHANGE_AREA_POWER CHANGE_DATUM_A
-/// A powernet's supply or load moved; cables, warnings or monitor state; machine membership.
-#define CHANGE_POWERNET_RATE CHANGE_DATUM_A
-#define CHANGE_POWERNET_STATE CHANGE_DATUM_B
-#define CHANGE_POWERNET_TOPOLOGY CHANGE_DATUM_C
+/// Power machine family, raised on every machine bound to a power region
+/// (code/modules/power/power_grid.dm): the region's supply or load moved; its
+/// brownout or monitor warning changed; a machine joined or left it.
+#define CHANGE_POWER_GRID_RATE (1<<19)
+#define CHANGE_POWER_GRID_STATE (1<<20)
+#define CHANGE_POWER_GRID_TOPOLOGY (1<<21)
 /// A pipe network's leaks or topology changed (on the network, or on GLOB.new_pipe_networks for
 /// a change whose network is not known yet).
 #define CHANGE_PIPE_LEAKS CHANGE_DATUM_A

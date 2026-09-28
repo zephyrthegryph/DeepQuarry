@@ -60,8 +60,8 @@
 // Description: Checks connected powernet for warnings. If warning is found returns 1
 /obj/machinery/power/sensor/proc/check_grid_warning()
 	connect_to_network()
-	if(powernet)
-		if(powernet.problem)
+	if(power_region)
+		if(power_problem(power_region))
 			return 1
 	return 0
 
@@ -69,14 +69,14 @@
 // Parameters: None
 // Description: This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/machine_step()
-	if(!powernet)
+	if(!power_region)
 		use_power = USE_POWER_IDLE
 		connect_to_network()
 	else
 		use_power = USE_POWER_ACTIVE
 		record()
 	if(!record_timer)
-		var/delay = powernet ? max(1, next_record - world.time) : record_interval
+		var/delay = power_region ? max(1, next_record - world.time) : record_interval
 		record_timer = om_after(src, delay, PROC_REF(wake_for_record))
 	return PROCESS_KILL
 
@@ -91,17 +91,16 @@
 	if(COOLDOWN_FINISHED(src, next_record))
 		COOLDOWN_START(src, next_record, record_interval)
 
-		var/datum/powernet/connected_powernet = powernet
 
 		var/list/supply = history["supply"]
-		if(connected_powernet)
-			supply += connected_powernet.viewavail
+		if(power_region)
+			supply += power_view_avail(power_region)
 		if(supply.len > record_size)
 			supply.Cut(1, 2)
 
 		var/list/demand = history["demand"]
-		if(connected_powernet)
-			demand += connected_powernet.viewload
+		if(power_region)
+			demand += power_view_load(power_region)
 		if(demand.len > record_size)
 			demand.Cut(1, 2)
 
@@ -111,12 +110,12 @@
 	data["name"] = name_tag
 	data["stored"] = record_size
 	data["interval"] = record_interval / 10
-	data["attached"] = !!powernet
+	data["attached"] = !!power_region
 	data["history"] = history
 
 	data["areas"] = list()
-	if(powernet)
-		for(var/obj/machinery/power/terminal/term in powernet.nodes)
+	if(power_region)
+		for(var/obj/machinery/power/terminal/term in power_grid_nodes(power_region))
 			if(istype(term.master(), /obj/machinery/power/apc))
 				var/obj/machinery/power/apc/A = term.master()
 				if(istype(A))
@@ -165,11 +164,11 @@
 // Parameters: None
 // Description: Searches powernet for APCs and returns them in a list.
 /obj/machinery/power/sensor/proc/find_apcs()
-	if(!powernet)
+	if(!power_region)
 		return
 
 	var/list/L = list()
-	for(var/obj/machinery/power/terminal/term in powernet.nodes)
+	for(var/obj/machinery/power/terminal/term in power_grid_nodes(power_region))
 		if(istype(term.master(), /obj/machinery/power/apc))
 			var/obj/machinery/power/apc/A = term.master()
 			L += A
@@ -181,10 +180,10 @@
 // Description: Generates string which contains HTML table with reading data.
 /obj/machinery/power/sensor/proc/return_reading_text()
 	// No powernet. Try to connect to one first.
-	if(!powernet)
+	if(!power_region)
 		connect_to_network()
 	var/out = ""
-	if(!powernet) // No powernet.
+	if(!power_region) // No grid.
 		out = "# SYSTEM ERROR - NO POWERNET #"
 		return out
 
@@ -213,12 +212,12 @@
 			load = reading_to_text(load)
 			out += "<td>[load]"
 
-	out += "<br><b>TOTAL AVAILABLE: [reading_to_text(powernet.avail)]</b>"
+	out += "<br><b>TOTAL AVAILABLE: [reading_to_text(power_avail(power_region))]</b>"
 	out += "<br><b>APC LOAD: [reading_to_text(total_apc_load)]</b>"
-	out += "<br><b>OTHER LOAD: [reading_to_text(max(powernet.load - total_apc_load, 0))]</b>"
-	out += "<br><b>TOTAL GRID LOAD: [reading_to_text(powernet.viewload)] ([powernet.avail ? round((powernet.load / powernet.avail) * 100) : 0]%)</b>"
+	out += "<br><b>OTHER LOAD: [reading_to_text(max(power_load(power_region) - total_apc_load, 0))]</b>"
+	out += "<br><b>TOTAL GRID LOAD: [reading_to_text(power_view_load(power_region))] ([power_avail(power_region) ? round((power_load(power_region) / power_avail(power_region)) * 100) : 0]%)</b>"
 
-	if(powernet.problem)
+	if(power_problem(power_region))
 		out += "<br><b>WARNING: Abnormal grid activity detected!</b>"
 	return out
 
@@ -227,11 +226,11 @@
 // Description: Generates list containing all powernet data. Optimised for usage with NanoUI
 /obj/machinery/power/sensor/proc/return_reading_data()
 	// No powernet. Try to connect to one first.
-	if(!powernet)
+	if(!power_region)
 		connect_to_network()
 	var/list/data = list()
 	data["name"] = name_tag
-	if(!powernet)
+	if(!power_region)
 		data["error"] = "# SYSTEM ERROR - NO POWERNET #"
 		data["alarm"] = 0 // Runtime Prevention
 		return data
@@ -269,16 +268,16 @@
 			// Add load of this APC to total APC load calculation
 			total_apc_load += A.channel_load_total()
 	data["apc_data"] = APC_data
-	data["total_avail"] = reading_to_text(max(powernet.avail, 0))
+	data["total_avail"] = reading_to_text(max(power_avail(power_region), 0))
 	data["total_used_apc"] = reading_to_text(max(total_apc_load, 0))
-	data["total_used_other"] = reading_to_text(max(powernet.viewload - total_apc_load, 0))
-	data["total_used_all"] = reading_to_text(max(powernet.viewload, 0))
+	data["total_used_other"] = reading_to_text(max(power_view_load(power_region) - total_apc_load, 0))
+	data["total_used_all"] = reading_to_text(max(power_view_load(power_region), 0))
 	// Prevents runtimes when avail is 0 (division by zero)
-	if(powernet.avail)
-		data["load_percentage"] = round((powernet.viewload / powernet.avail) * 100)
+	if(power_avail(power_region))
+		data["load_percentage"] = round((power_view_load(power_region) / power_avail(power_region)) * 100)
 	else
 		data["load_percentage"] = 100
-	data["alarm"] = powernet.problem ? 1 : 0
+	data["alarm"] = power_problem(power_region) ? 1 : 0
 	return data
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

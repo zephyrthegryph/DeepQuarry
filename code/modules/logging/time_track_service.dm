@@ -183,7 +183,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			GLOB.machine_service.cost_powernets,
 			0, // power objects: gone (powersinks drain on their own periodic step)
 			om_pipeline_parked_count(/datum/om/pipeline/machine),
-			length(GLOB.machine_service.power_regions),
+			length(GLOB.machine_service.power_grids),
 			GLOB.machine_service.cost,
 			GLOB.machine_service.steps,
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
