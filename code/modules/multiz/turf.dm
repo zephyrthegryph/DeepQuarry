@@ -19,15 +19,15 @@
 /turf/space/CanZPass(atom, direction)
 	return TRUE
 
-/// WARNING WARNING
-/// Turfs DO NOT lose their signals when they get replaced, REMEMBER THIS
-/// It's possible because turfs are fucked, and if you have one in a list and it's replaced with another one, the list ref points to the new turf
-/// We do it because moving signals over was needlessly expensive, and bloated a very commonly used bit of code
+/// The turf `T` in direction `dir` from this one is being deleted.
 /turf/proc/multiz_turf_del(turf/T, dir)
-	SEND_SIGNAL(src, COMSIG_TURF_MULTIZ_DEL, T, dir)
+	if(z_transparency && dir == DOWN)
+		z_transparency_update()
 
+/// A new turf `T` appeared in direction `dir` from this one.
 /turf/proc/multiz_turf_new(turf/T, dir)
-	SEND_SIGNAL(src, COMSIG_TURF_MULTIZ_NEW, T, dir)
+	if(z_transparency && dir == DOWN)
+		z_transparency_update()
 
 //
 // Open Space - "empty" turf that lets stuff fall thru it to the layer below
@@ -68,7 +68,7 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 
 /turf/simulated/open/LateInitialize()
 	. = ..()
-	AddElement(/datum/element/turf_z_transparency, FALSE)
+	make_z_transparent(FALSE)
 	update_icon()
 
 /turf/simulated/open/Entered(atom/movable/mover, atom/oldloc)
@@ -166,7 +166,7 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 
 /turf/simulated/floor/glass/LateInitialize()
 	. = ..()
-	AddElement(/datum/element/turf_z_transparency, TRUE)
+	make_z_transparent(TRUE)
 	blend_icons()
 
 // TG's icon blending method because I don't want to redo all the icon states AAA

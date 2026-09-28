@@ -74,7 +74,7 @@ GLOBAL_LIST_EMPTY(map_sectors)
 		if(x == using_map.overmap_size)
 			I.pixel_x = 5*i + 2
 		add_overlay(I)
-	AddElement(/datum/element/turf_z_transparency)
+	make_z_transparent()
 
 /turf/unsimulated/map/Entered(atom/movable/O, atom/oldloc)
 	..()

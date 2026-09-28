@@ -79,7 +79,7 @@
 
 /turf/simulated/floor/water/underwater/open/LateInitialize()
 	. = ..()
-	AddElement(/datum/element/turf_z_transparency, FALSE)
+	make_z_transparent(FALSE)
 
 /turf/simulated/floor/water/underwater/open/CanZPass(atom/A, direction, recursive)
 	return TRUE
@@ -115,7 +115,7 @@
 
 /turf/simulated/floor/water/underwater/indoors/open/LateInitialize()
 	. = ..()
-	AddElement(/datum/element/turf_z_transparency, FALSE)
+	make_z_transparent(FALSE)
 
 /turf/simulated/floor/water/underwater/indoors/open/update_icon()
 	. = ..()
