@@ -81,7 +81,7 @@
 	if(isnull(heat_body))
 		return
 	vg_heat_body_couple(heat_body, 1, HEAT_TARGET_NONE, 0, 0)
-	if(!GetComponent(/datum/component/burning))
+	if(!om_attached(src, /datum/om/behaviour/burning))
 		vg_heat_body_keep(heat_body, FALSE)
 
 /// A hotspot heats everything on its tile through each object's heat node:

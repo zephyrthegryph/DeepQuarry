@@ -110,3 +110,19 @@
 
 /datum/om/behaviour/proc/on_before_attackby(datum/E, datum/om/event/before/attackby/event)
 	return
+
+// ---------------------------------------------------------------- attack_hand
+
+/// Veto (beside COMSIG_ATOM_ATTACK_HAND, from hand_gate()): `user` touches the atom;
+/// EVENT_VETO means a behaviour handled it and the touch stops there.
+/datum/om/event/before/attack_hand
+	var/user
+
+/datum/om/event/before/attack_hand/New(user)
+	src.user = user
+
+/datum/om/event/before/attack_hand/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_attack_hand(E, src)
+
+/datum/om/behaviour/proc/on_before_attack_hand(datum/E, datum/om/event/before/attack_hand/event)
+	return

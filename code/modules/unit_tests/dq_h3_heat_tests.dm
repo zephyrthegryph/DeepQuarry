@@ -186,35 +186,32 @@
 	// Fuel: the damage stream burns it; it goes out when none is left.
 	var/obj/item/paper/fuelled = allocate(/obj/item/paper, T)
 	fuelled.rule_ignite()
-	var/datum/component/burning/burn = fuelled.GetComponent(/datum/component/burning)
-	TEST_ASSERT(burn, "ignited")
+	TEST_ASSERT(fuelled.is_burning(), "ignited")
 	TEST_ASSERT(!isnull(fuelled.heat_body), "burning is a heat source on the object's body")
 	var/integrity = fuelled.get_integrity()
 	var/oxygen = air.get_moles(GAS_O2)
-	burn.periodic_step(1)
+	fuelled.burning_step(1)
 	TEST_ASSERT(fuelled.get_integrity() < integrity, "a second of burning is an integrity damage stream")
 	TEST_ASSERT(air.get_moles(GAS_O2) < oxygen, "and uses the tile's oxygen")
-	burn.fuel = 1
-	burn.periodic_step(1)
-	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_FUEL, "it goes out when the fuel runs out")
+	fuelled.burn_fuel = 1
+	fuelled.burning_step(1)
+	TEST_ASSERT_EQUAL(fuelled.burn_ended_by, BURN_ENDED_FUEL, "it goes out when the fuel runs out")
 	TEST_ASSERT(!(fuelled.resistance_flags & ON_FIRE), "and is no longer on fire")
 
 	// Oxygen.
 	var/obj/item/paper/smothered = allocate(/obj/item/paper, T)
 	smothered.rule_ignite()
-	burn = smothered.GetComponent(/datum/component/burning)
 	air.set_moles(GAS_O2, 0)
-	burn.periodic_step(1)
+	smothered.burning_step(1)
 	air.set_moles(GAS_O2, 20)
-	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_OXYGEN, "it goes out without oxygen")
+	TEST_ASSERT_EQUAL(smothered.burn_ended_by, BURN_ENDED_OXYGEN, "it goes out without oxygen")
 
 	// Cooling below its ignition point less the margin.
 	var/obj/item/paper/doused = allocate(/obj/item/paper, T)
 	doused.rule_ignite()
-	burn = doused.GetComponent(/datum/component/burning)
 	vg_heat_body_set_temperature(doused.heat_body, T20C)
 	dq_rx_flush()
-	TEST_ASSERT_EQUAL(burn.ended_by, BURN_ENDED_COOLED, "it goes out when it cools, from a heat watch")
+	TEST_ASSERT_EQUAL(doused.burn_ended_by, BURN_ENDED_COOLED, "it goes out when it cools, from a heat watch")
 	air.copy_from(saved)
 	air.set_temperature(T20C)
 
