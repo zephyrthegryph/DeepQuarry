@@ -127,7 +127,10 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	req_one_access = list(ACCESS_HEADS, ACCESS_ATMOSPHERICS, ACCESS_MEDICAL)
 
 // Hit it with a PDA or ID to enable priority call mode
-EXTEND_INTERACTIONS(/obj/structure/lift/panel, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_OBSERVER("View", PROC_REF(lift_panel_ghost_view)), \
+)
 
 /// Old attackby.
 /obj/structure/lift/panel/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -145,8 +148,10 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, INTERACT_ITEM(null, PROC_REF(inte
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/obj/structure/lift/panel/attack_ghost(mob/user)
-	return interact(user)
+/// Old attack_ghost: open the panel.
+/obj/structure/lift/panel/proc/lift_panel_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
+	interact(user)
+	return TRUE
 
 /obj/structure/lift/panel/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

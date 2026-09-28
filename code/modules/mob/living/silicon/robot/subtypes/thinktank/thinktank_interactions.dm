@@ -1,7 +1,9 @@
 EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 	INTERACT_ITEM(null, PROC_REF(platform_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(platform_interaction_hand)), \
-	INTERACT_DRAG("Load into cargo", PROC_REF(platform_interaction_drag)))
+	INTERACT_DRAG("Load into cargo", PROC_REF(platform_interaction_drag)), \
+	INTERACT_SILICON("Unload cargo", PROC_REF(platform_silicon_unload)), \
+	INTERACT_OBSERVER("Take control", PROC_REF(platform_ghost_take_control)))
 
 /// Old attack_hand: pop out the recharging item or cargo; otherwise the cyborg touch follows.
 /mob/living/silicon/robot/platform/proc/platform_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -40,11 +42,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 
 	return FALSE
 
-/mob/living/silicon/robot/platform/attack_ghost(mob/observer/dead/user)
-
+/// Old attack_ghost: an unoccupied platform offers itself to the ghost; otherwise the default.
+/mob/living/silicon/robot/platform/proc/platform_ghost_take_control(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(client || key || stat == DEAD || !SSticker || !SSticker.mode)
-		return ..()
+		return FALSE
 
+	. = TRUE
 	om_prompt(src, user, list("message" = "Do you wish to take control of \the [src]?", "title" = "Platform Control", "choices" = list("No", "Yes")), PROC_REF(ghost_control_answered))
 
 /mob/living/silicon/robot/platform/proc/ghost_control_answered(mob/observer/dead/user, confirm, datum/om/prompt/ask)

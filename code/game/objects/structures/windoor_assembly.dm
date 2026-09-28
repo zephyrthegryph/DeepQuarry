@@ -71,11 +71,18 @@
 	created_name = sanitizeSafe(t, MAX_NAME_LEN)
 	update_state()
 
-/obj/structure/windoor_assembly/attack_robot(mob/living/silicon/robot/user)
+/// Old attack_robot: drones and engineering borgs rename the assembly. Never fell through.
+/obj/structure/windoor_assembly/proc/windoor_robot_rename(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
 		rename_door(user)
+	return TRUE
 
 /obj/structure/windoor_assembly/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_ROBOT("Rename", PROC_REF(windoor_robot_rename)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/entry_item/windoor_assembly_item,
 	)

@@ -31,6 +31,11 @@
 REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 
 /obj/structure/trash_pile/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Become mouse", PROC_REF(trash_pile_ghost_mouse)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/entry_item/trash_pile_item,
 		/datum/interaction/entry_hand/trash_pile_search,
@@ -74,31 +79,33 @@ REF_OWNED(/obj/structure/trash_pile, "mouse_nest")
 		L.forceMove(src)
 		hider = L
 
-/obj/structure/trash_pile/attack_ghost(mob/observer/user as mob)
+/// Old attack_ghost: offer to spawn as a mouse. Never fell through to the default.
+/obj/structure/trash_pile/proc/trash_pile_ghost_mouse(mob/observer/user, obj/item/held, datum/interaction/interaction)
 	if(CONFIG_GET(flag/disable_player_mice))
 		to_chat(user, span_warning("Spawning as a mouse is currently disabled."))
-		return
+		return TRUE
 
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot become a mouse because you are banned from playing ghost roles."))
-		return
+		return TRUE
 
 	if(!user.MayRespawn(TRUE))
-		return
+		return TRUE
 
 	var/turf/T = get_turf(src)
 	if(!T || (T.z in using_map.admin_levels))
 		to_chat(user, span_warning("You may not spawn as a mouse on this Z-level."))
-		return
+		return TRUE
 
 	var/timedifference = world.time - user.client.time_died_as_mouse
 	if(user.client.time_died_as_mouse && timedifference <= CONFIG_GET(number/mouse_respawn_time) MINUTES)
 		var/timedifference_text
 		timedifference_text = time2text(CONFIG_GET(number/mouse_respawn_time) MINUTES - timedifference,"mm:ss")
 		to_chat(user, span_warning("You may only spawn again as a mouse more than [CONFIG_GET(number/mouse_respawn_time)] minutes after your death. You have [timedifference_text] left."))
-		return
+		return TRUE
 
 	om_prompt(src, user, list("message" = "Are you -sure- you want to become a mouse?", "title" = "Are you sure you want to squeek?", "choices" = list("Squeek!","Nope!"), "requires" = list(/datum/om/check/has_client)), PROC_REF(mouse_confirmed))
+	return TRUE
 
 /obj/structure/trash_pile/proc/mouse_confirmed(mob/observer/user, response, datum/om/prompt/ask)
 	if(response != "Squeek!" || !isobserver(user)) return  //Hit the wrong key...again.

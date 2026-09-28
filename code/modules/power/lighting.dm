@@ -629,6 +629,11 @@ REF_OWNED(/obj/machinery/light, "cell")
 	update()
 
 /obj/machinery/light/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Toggle emergency lights", PROC_REF(light_silicon_toggle_emergency)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/light_paint,
 		/datum/interaction/machine_item/light_replace,
@@ -847,19 +852,21 @@ REF_OWNED(/obj/machinery/light, "cell")
 	flickering = 0
 
 // ai attack - turn on/off emergency lighting for a specific fixture
-/obj/machinery/light/attack_ai(mob/user)
+/// Old attack_ai: toggle the fixture's emergency lighting.
+/obj/machinery/light/proc/light_silicon_toggle_emergency(mob/user, obj/item/held, datum/interaction/interaction)
 	no_emergency = !no_emergency
 	to_chat(user, span_notice("Emergency lights for this fixture have been [no_emergency ? "disabled" : "enabled"]."))
 	update(FALSE)
-	return
+	return TRUE
 
 // ai alt click - Make light flicker.  Very important for atmosphere.
 /obj/machinery/light/AIAltClick(mob/user)
 	flicker(1)
 
-/obj/machinery/light/flamp/attack_ai(mob/user)
-	attack_hand()
-	return
+/// Old attack_ai: the hand's Use (the old body called attack_hand() without passing the user).
+/obj/machinery/light/flamp/proc/flamp_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 // attack with hand - remove tube/bulb
 // if hands aren't protected and the light is on, burn the player
@@ -922,6 +929,11 @@ REF_OWNED(/obj/machinery/light, "cell")
 	return TRUE
 
 /obj/machinery/light/flamp/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(flamp_silicon_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/light_flamp_add_shade,
 		/datum/interaction/machine_hand/ungated/light_flamp_toggle,

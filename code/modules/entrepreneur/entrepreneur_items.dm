@@ -437,6 +437,7 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/emf, INTERACT_USE(null, PROC_REF(int
 DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_OBSERVER("Guide", PROC_REF(spirit_board_ghost_guide)), \
 )
 
 /// Old attackby.
@@ -468,19 +469,21 @@ DECLARE_INTERACTIONS(/obj/item/entrepreneur/spirit_board, \
 	next_result = _answer_k451
 	return TRUE
 
-/obj/item/entrepreneur/spirit_board/attack_ghost(mob/observer/dead/user)
+/// Old attack_ghost: choose the board's next result. Never fell through to the default.
+/obj/item/entrepreneur/spirit_board/proc/spirit_board_ghost_guide(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!ghost_enabled)
-		return
+		return TRUE
 	if(jobban_isbanned(user, JOB_GHOSTROLES))
 		to_chat(user, span_warning("You cannot interact with this board because you are banned from playing ghost roles."))
-		return
-	var/_answer_k459 = rerun_prompt(user, "k459", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), TYPE_PROC_REF(/atom, attack_ghost), args)
+		return TRUE
+	var/_answer_k459 = rerun_prompt(user, "k459", list("kind" = "list", "message" = "What should it land on next?", "title" = "Next result", "choices" = possible_results), PROC_REF(spirit_board_ghost_guide), args)
 	if(isnull(_answer_k459))
-		return
+		return TRUE
 	next_result = _answer_k459
 	if(!is_admin(user) || !accurate) //admins can bypass this for event stuff
 		if(prob(25))
 			next_result = 0 //25% chance for the ghost to fail to manipulate the board
+	return TRUE
 
 // Spirit Healer stuff
 

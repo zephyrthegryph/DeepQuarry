@@ -192,6 +192,11 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("View", PROC_REF(chem_synthesizer_ghost_view)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/chem_synthesizer_add_cartridge,
 		/datum/interaction/machine_item/chem_synthesizer_add_catalyst,
@@ -497,10 +502,11 @@
 		else
 			return FALSE
 
-/obj/machinery/chemical_synthesizer/attack_ghost(mob/user)
-	if(stat & (BROKEN|NOPOWER))
-		return
-	tgui_interact(user)
+/// Old attack_ghost: view the interface while it works. Never fell through.
+/obj/machinery/chemical_synthesizer/proc/chem_synthesizer_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!(stat & (BROKEN|NOPOWER)))
+		tgui_interact(user)
+	return TRUE
 
 /// Old attack_hand (never called ..()).
 /datum/interaction/machine_hand/ungated/chem_synthesizer_use

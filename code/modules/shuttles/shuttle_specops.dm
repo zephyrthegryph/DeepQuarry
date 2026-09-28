@@ -3,9 +3,12 @@
 	shuttle_tag = "Special Operations"
 	req_access = list(ACCESS_CENT_SPECOPS)
 
-/obj/machinery/computer/shuttle_control/specops/attack_ai(user as mob)
+EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SILICON("Use", PROC_REF(specops_silicon_refuse)))
+
+/// Old attack_ai: refuse silicons.
+/obj/machinery/computer/shuttle_control/specops/proc/specops_silicon_refuse(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_warning("Access Denied."))
-	return 1
+	return TRUE
 
 // Formerly /datum/shuttle/ferry/multidock/specops
 /datum/shuttle/autodock/ferry/specops

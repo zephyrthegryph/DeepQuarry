@@ -1074,6 +1074,11 @@
 		sheet_left -= needed_sheets
 
 /obj/machinery/power/port_gen/large_altevian/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Toggle power", PROC_REF(large_altevian_silicon_toggle)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/large_altevian_add_sheets,
 		/datum/interaction/machine_hand/large_altevian_toggle,
@@ -1122,8 +1127,10 @@
 	TogglePower()
 	return TRUE
 
-/obj/machinery/power/port_gen/large_altevian/attack_ai(mob/user as mob)
+/// Old attack_ai: toggle the generator.
+/obj/machinery/power/port_gen/large_altevian/proc/large_altevian_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	TogglePower()
+	return TRUE
 
 /obj/machinery/power/port_gen/large_altevian/update_icon()
 	..()

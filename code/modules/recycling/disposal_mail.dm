@@ -17,6 +17,7 @@
 DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ROBOT("Unwrap", PROC_REF(big_delivery_robot_unwrap)), \
 )
 
 /// Old attack_hand.
@@ -88,10 +89,12 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
 	return INTERACTION_HANDLED_PASS
 
-/obj/structure/bigDelivery/attack_robot(mob/living/user)
+/// Old attack_robot: an adjacent cyborg unwraps it. Never fell through.
+/obj/structure/bigDelivery/proc/big_delivery_robot_unwrap(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user))
-		return
+		return TRUE
 	unwrap()
+	return TRUE
 
 /obj/structure/bigDelivery/update_icon()
 	cut_overlays()
@@ -159,6 +162,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ROBOT("Unwrap", PROC_REF(small_delivery_robot_unwrap)), \
 )
 
 /// Old attack_self.
@@ -233,10 +237,12 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/smallDelivery/attack_robot(mob/living/user)
+/// Old attack_robot: an adjacent cyborg unwraps it as in hand. Never fell through.
+/obj/item/smallDelivery/proc/small_delivery_robot_unwrap(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat || !Adjacent(user))
-		return
+		return TRUE
 	attack_self(user)
+	return TRUE
 
 /obj/item/smallDelivery/update_icon()
 	cut_overlays()

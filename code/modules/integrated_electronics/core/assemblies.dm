@@ -464,6 +464,7 @@
 DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ROBOT("Use", PROC_REF(assembly_robot_use)), \
 )
 
 /// Old attack_self.
@@ -500,11 +501,12 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 		choice.ask_for_input(user)
 	return TRUE
 
-/obj/item/electronic_assembly/attack_robot(mob/user as mob)
-	if(Adjacent(user))
-		return attack_self(user)
-	else
-		return ..()
+/// Old attack_robot: an adjacent cyborg uses it in hand; otherwise the default.
+/obj/item/electronic_assembly/proc/assembly_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
+		return FALSE
+	attack_self(user)
+	return TRUE
 
 // Returns true if power was successfully drawn.
 /obj/item/electronic_assembly/proc/draw_power(amount)

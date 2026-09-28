@@ -443,7 +443,11 @@ REF_SPILL_LIST(/obj/item/clothing/gloves, "contents")
 	pickup_sound = 'sound/items/pickup/hat.ogg'
 	helmet_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head, INTERACT_SELF(null, PROC_REF(head_light_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/head, \
+	INTERACT_SELF(null, PROC_REF(head_light_self)), \
+	INTERACT_ROBOT("Pick up hat", PROC_REF(head_robot_pick_up)), \
+	INTERACT_SILICON("Wear hat", PROC_REF(head_silicon_wear)), \
+)
 
 /// Old attack_self: toggle the helmet light. Returns FALSE as the old body returned nothing,
 /// so subtypes' legacy attack_self bodies that ran after ..() still run.
@@ -467,9 +471,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, INTERACT_SELF(null, PROC_REF(head_l
 	update_icon(user)
 	user.update_mob_action_buttons()
 
-/obj/item/clothing/head/attack_ai(mob/user)
-	if(!mob_wear_hat(user))
-		return ..()
+/// Old attack_ai: a silicon wears the hat; otherwise the default.
+/obj/item/clothing/head/proc/head_silicon_wear(mob/user, obj/item/held, datum/interaction/interaction)
+	return mob_wear_hat(user) ? TRUE : FALSE
 
 /obj/item/clothing/head/attack_generic(mob/user)
 	if(!mob_wear_hat(user))
@@ -1417,14 +1421,18 @@ REF_SPILL_LIST(/obj/item/clothing, "contents")
 /obj/item/clothing/head/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	. = ..()
 
-/obj/item/clothing/head/attack_robot(mob/living/silicon/robot/user)
-	. = ..()
+/// Old attack_robot: ran ..() first (attack_ai: wear the hat, else the item default), then an
+/// adjacent cyborg starts picking the hat up.
+/obj/item/clothing/head/proc/head_robot_pick_up(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
+	if(!head_silicon_wear(user, held, interaction))
+		INPUT_ADAPTER(ai).use_default(user, src)
 
 	if(!Adjacent(user))
-		return
+		return TRUE
 
 	balloon_alert(user, "picking up hat...")
 	om_do_after(user, 3 SECONDS, src, src, PROC_REF(robot_hat_done), list(user))
+	return TRUE
 
 /obj/item/clothing/head/proc/robot_hat_done(mob/living/silicon/robot/user)
 	if(!Adjacent(user) || user.incapacitated())

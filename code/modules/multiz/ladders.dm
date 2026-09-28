@@ -72,7 +72,10 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 	A.anchored = TRUE
 	qdel(src)
 
-DECLARE_INTERACTIONS(/obj/structure/ladder, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/ladder, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_OBSERVER("Climb", PROC_REF(ladder_ghost_climb)), \
+)
 
 /// Old attack_hand.
 /obj/structure/ladder/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
@@ -89,10 +92,12 @@ DECLARE_INTERACTIONS(/obj/structure/ladder, INTERACT_HAND_UNGATED(null, PROC_REF
 	climbLadder(M, target_ladder)
 	return TRUE
 
-/obj/structure/ladder/attack_ghost(mob/M)
-	var/target_ladder = getTargetLadder(M, TYPE_PROC_REF(/atom, attack_ghost), args)
+/// Old attack_ghost: drift up or down the ladder. Never fell through to the default.
+/obj/structure/ladder/proc/ladder_ghost_climb(mob/M, obj/item/held, datum/interaction/interaction)
+	var/target_ladder = getTargetLadder(M, PROC_REF(ladder_ghost_climb), args)
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
+	return TRUE
 
 /obj/structure/ladder
 	silicon_use = ROBOT_USE_HAND

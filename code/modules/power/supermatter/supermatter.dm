@@ -571,17 +571,23 @@ REF_OWNED(/obj/machinery/power/supermatter, "soundloop")
 		log_game("SUPERMATTER([x],[y],[z]) Hit by \"[Proj.name]\". +[added_energy] Energy, +[added_damage] Damage.")
 	return 0
 
-/obj/machinery/power/supermatter/attack_robot(mob/user as mob)
+/// Old attack_robot: an adjacent cyborg touches it (!); otherwise it opens the monitor.
+/obj/machinery/power/supermatter/proc/supermatter_robot_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(Adjacent(user))
-		return attack_hand(user)
+		attack_hand(user)
 	else
 		tgui_interact(user)
-	return
+	return TRUE
 
 /obj/machinery/power/supermatter
 	silicon_use = SILICON_USE_UI
 
 /obj/machinery/power/supermatter/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_ROBOT("Use", PROC_REF(supermatter_robot_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/supermatter_touch_item,
 		/datum/interaction/machine_hand/ungated/supermatter_touch,

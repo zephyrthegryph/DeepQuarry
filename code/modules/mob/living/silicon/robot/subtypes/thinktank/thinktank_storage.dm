@@ -85,10 +85,12 @@
 		else
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " pulls \the [ejecting] from \the [src]'s cargo compartment."))
 
-/mob/living/silicon/robot/platform/attack_ai(mob/user)
+/// Old attack_ai: an adjacent cyborg unloads cargo; otherwise the next silicon Use / default.
+/mob/living/silicon/robot/platform/proc/platform_silicon_unload(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user) && user.Adjacent(src))
-		return try_remove_cargo(user)
-	return ..()
+		try_remove_cargo(user)
+		return TRUE
+	return FALSE
 
 /mob/living/silicon/robot/platform/proc/try_remove_cargo(mob/user)
 	if(!length(stored_atoms) || !istype(user))

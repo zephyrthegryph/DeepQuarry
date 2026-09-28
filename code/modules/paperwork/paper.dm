@@ -346,7 +346,8 @@
 	return
 
 // AI/cyborg viewer routes through the same TGUI paper window.
-/obj/item/paper/attack_ai(mob/living/silicon/ai/user)
+/// Old attack_ai: read the paper; close enough (via the AI's camera) to read it properly.
+/obj/item/paper/proc/paper_silicon_read(mob/living/silicon/ai/user, obj/item/held, datum/interaction/interaction)
 	var/dist
 	if(istype(user) && user.camera)
 		dist = get_dist(src, user.camera)
@@ -355,7 +356,7 @@
 	can_read_view = (dist < 2)
 	tgui_view = "read"
 	tgui_interact(user)
-	return
+	return TRUE
 
 /obj/item/paper/proc/wipe_lipstick_done(mob/living/user, mob/living/carbon/human/H)
 	user.visible_message(span_notice("[user] wipes [H]'s lipstick off with \the [src]."), \
@@ -558,6 +559,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	INTERACT_USE("Read", PROC_REF(interaction_paper_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT("Fold into a plane", PROC_REF(interaction_fold_plane)), \
+	INTERACT_SILICON("Read", PROC_REF(paper_silicon_read)), \
 )
 
 /// Old attackby.

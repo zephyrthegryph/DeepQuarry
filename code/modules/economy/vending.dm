@@ -204,6 +204,11 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 		return 1
 
 /obj/machinery/vending/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("Use", PROC_REF(vending_ghost_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/vending_id_dispatch,
 		/datum/interaction/machine_item/vending_refill,
@@ -396,8 +401,10 @@ REF_OWNED_LIST(/obj/machinery/vending, "product_records")
 /obj/machinery/vending/proc/credit_purchase(target as text)
 	GLOB.vendor_account.credit(currently_vending.price, target, "Purchase of [currently_vending.item_name]", name)
 
-/obj/machinery/vending/attack_ghost(mob/user)
-	return attack_hand(user)
+/// Old attack_ghost: the hand's Use.
+/obj/machinery/vending/proc/vending_ghost_use(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_hand(user)
+	return TRUE
 
 /// Old attack_hand: never called ..().
 /datum/interaction/machine_hand/ungated/vending_use

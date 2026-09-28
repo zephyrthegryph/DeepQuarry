@@ -112,11 +112,21 @@ REF_OWNED(/obj/machinery/pump, "cell")
 /obj/machinery/pump
 	silicon_use = ROBOT_USE_HAND | SILICON_USE_HAND
 
-/obj/machinery/pump/attack_ai(mob/user)
+/// Old attack_ai: the AI toggles the pump. Cyborgs never reached it (ROBOT_USE_HAND sends
+/// their Use to attack_hand), so they fall through to that default.
+/obj/machinery/pump/proc/pump_silicon_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isrobot(user))
+		return FALSE
 	if(!set_state(!on))
 		to_chat(user, span_notice("You try to toggle \the [src] but it does not respond."))
+	return TRUE
 
 /obj/machinery/pump/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Toggle", PROC_REF(pump_silicon_toggle)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/pump_insert_cell,
 		/datum/interaction/machine_hand/ungated/pump_use,

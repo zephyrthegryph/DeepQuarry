@@ -18,13 +18,17 @@
 /obj/structure/window/maintenance_panel/updateSilicate()
 	return // can't fix it like that
 
-/obj/structure/window/maintenance_panel/attack_ghost(mob/observer/dead/user as mob)
-	return // Too powerful for ghosts
+/// Old attack_ghost: does nothing. Too powerful for ghosts.
+/obj/structure/window/maintenance_panel/proc/maintenance_panel_ghost_block(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/structure/window/maintenance_panel/is_fulltile()
 	return FALSE // NEVER
 
-EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, INTERACT_ITEM(null, PROC_REF(maintenance_panel_interaction_item)))
+EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
+	INTERACT_ITEM(null, PROC_REF(maintenance_panel_interaction_item)), \
+	INTERACT_OBSERVER("Nothing", PROC_REF(maintenance_panel_ghost_block)), \
+)
 
 /// Old attackby.
 /obj/structure/window/maintenance_panel/proc/maintenance_panel_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

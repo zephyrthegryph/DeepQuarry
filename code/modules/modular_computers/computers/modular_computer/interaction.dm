@@ -91,23 +91,29 @@
 	uninstall_component(user, portable_drive)
 	update_uis()
 
-/obj/item/modular_computer/attack_ghost(mob/observer/dead/user)
+/// Old attack_ghost: view the screen; staff may turn a powered-off computer on. Never fell through.
+/obj/item/modular_computer/proc/modular_computer_ghost_view(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(enabled)
 		tgui_interact(user)
 	else if(check_rights_for(user.client, R_ADMIN|R_EVENT|R_DEBUG))
-		var/response = rerun_prompt(user, "k98", list("message" = "This computer is turned off. Would you like to turn it on?", "title" = "Admin Override", "choices" = list("Yes", "No")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/response = rerun_prompt(user, "k98", list("message" = "This computer is turned off. Would you like to turn it on?", "title" = "Admin Override", "choices" = list("Yes", "No")), PROC_REF(modular_computer_ghost_view), args)
 		if(isnull(response))
-			return
+			return TRUE
 		if(response == "Yes")
 			turn_on(user)
+	return TRUE
 
-/obj/item/modular_computer/attack_ai(mob/user)
-	return attack_self(user)
+/// Old attack_ai: use it as in hand.
+/obj/item/modular_computer/proc/modular_computer_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	attack_self(user)
+	return TRUE
 
 DECLARE_INTERACTIONS(/obj/item/modular_computer, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_SILICON("Use", PROC_REF(modular_computer_silicon_use)), \
+	INTERACT_OBSERVER("View", PROC_REF(modular_computer_ghost_view)), \
 )
 
 /// Old attack_hand.

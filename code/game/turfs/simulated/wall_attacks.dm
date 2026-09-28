@@ -91,14 +91,6 @@
 		toggle_open(user)
 	return 0
 
-/turf/simulated/wall/attack_ai(mob/user)
-	if(!Adjacent(user))
-		return
-	if(!isrobot((user)))
-		return
-	var/rotting = (locate_on(src, /obj/effect/overlay/wallrot))
-	try_touch(user, rotting)
-
 EXTEND_INTERACTIONS(/turf/simulated/wall, \
 	INTERACT_ITEM(null, PROC_REF(wall_item)), \
 	INTERACT_HAND_UNGATED("Touch", PROC_REF(wall_hand)), \

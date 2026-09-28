@@ -222,13 +222,14 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 
 	undeploy("Remote session terminated.")
 
-/mob/living/silicon/robot/attack_ai(mob/user)
-	if(shell && CONFIG_GET(flag/allow_ai_shells) && (!connected_ai || connected_ai == user))
-		var/mob/living/silicon/ai/AI = user
-		if(istype(AI))		// Just in case we're clicked by a borg
-			AI.deploy_to_shell(src)
-	else
-		return ..()
+/// Old attack_ai: an AI deploys into this shell. Not a shell (or not ours): the default.
+/mob/living/silicon/robot/proc/robot_ai_deploy_shell(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!(shell && CONFIG_GET(flag/allow_ai_shells) && (!connected_ai || connected_ai == user)))
+		return FALSE
+	var/mob/living/silicon/ai/AI = user
+	if(istype(AI))		// Just in case we're clicked by a borg
+		AI.deploy_to_shell(src)
+	return TRUE
 
 // Place this on your map to mark where a free AI shell will be.
 // This can be turned off in the config (and is off by default).

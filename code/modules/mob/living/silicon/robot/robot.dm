@@ -780,7 +780,9 @@
 EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	INTERACT_ITEM(null, PROC_REF(robot_interaction_item)), \
 	INTERACT_HAND_UNGATED(null, PROC_REF(robot_interaction_hand)), \
-	INTERACT_DRAG("Block drag", PROC_REF(robot_interaction_drag_block)))
+	INTERACT_DRAG("Block drag", PROC_REF(robot_interaction_drag_block)), \
+	INTERACT_ROBOT("Drop hat", PROC_REF(robot_drop_own_hat)), \
+	INTERACT_SILICON("Deploy to shell", PROC_REF(robot_ai_deploy_shell)))
 
 /// Old attackby: parts, laws, repairs, IDs and upgrades. Anything else sparks and reaches the attack.
 /mob/living/silicon/robot/proc/robot_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -1386,12 +1388,13 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(. != old_dir)
 		update_worn_icons()
 
-/mob/living/silicon/robot/attack_robot(mob/user)
-	. = ..()
-
+/// Old attack_robot: a cyborg clicking itself drops its hat. The old body ran ..() (attack_ai) first,
+/// so that runs first here too, as the AI-style Use (silicon interactions, then the default).
+/mob/living/silicon/robot/proc/robot_drop_own_hat(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user != src || isnull(hat))
-		return
+		return FALSE
 
+	INPUT_ADAPTER(ai).interface(user, src)
 	balloon_alert(user, "dropping hat...")
 	om_do_after(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_robot_robot_done), done_args = list(user))
 	return TRUE

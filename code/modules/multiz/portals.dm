@@ -19,7 +19,10 @@
 		return	//do not send ghosts, zshadows, ai eyes, etc
 	teleport(AM)
 
-DECLARE_INTERACTIONS(/obj/structure/portal_event, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/portal_event, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_OBSERVER("Portal", PROC_REF(portal_event_ghost_use)), \
+)
 
 /// Old attack_hand.
 /obj/structure/portal_event/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -34,19 +37,20 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, INTERACT_HAND_UNGATED(null, PR
 		teleport(user)
 	return TRUE
 
-/obj/structure/portal_event/attack_ghost(mob/observer/dead/user)
+/// Old attack_ghost: staff bind an unbound portal, or travel through a bound one. Never fell through.
+/obj/structure/portal_event/proc/portal_event_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
 		to_chat(user, span_notice("Selecting 'Portal Here' will create and link a portal at your location, while 'Target Here' will create an object that is only visible to ghosts which will act as the target, again at your location. Each option will give you the ability to change portal types, but for all options except 'Select Type' you only get one shot at it, so be sure to experiment with 'Select Type' first if you're not familiar with them."))
-		var/response = rerun_prompt(user, "k36", list("message" = "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, see chat for more info, otherwise click 'Cancel'", "title" = "Unbound Portal", "choices" = list("Cancel","Portal Here","Target Here", "Select Type")), TYPE_PROC_REF(/atom, attack_ghost), args)
+		var/response = rerun_prompt(user, "k36", list("message" = "You appear to be staff. This portal has no exit point. If you want to make one, move to where you want it to go, and click the appropriate option, see chat for more info, otherwise click 'Cancel'", "title" = "Unbound Portal", "choices" = list("Cancel","Portal Here","Target Here", "Select Type")), PROC_REF(portal_event_ghost_use), args)
 		if(isnull(response))
-			return
+			return TRUE
 		if(response == "Portal Here")
 			target = new type(get_turf(user), src)
 			target.target = src
 			target.icon_state = icon_state
-			var/letsportal = rerun_prompt(user, "k41", list("message" = "Would you like to select a different portal type for these portals?", "title" = "Change portal", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+			var/letsportal = rerun_prompt(user, "k41", list("message" = "Would you like to select a different portal type for these portals?", "title" = "Change portal", "choices" = list("No","Yes")), PROC_REF(portal_event_ghost_use), args)
 			if(isnull(letsportal))
-				return
+				return TRUE
 			if(letsportal == "Yes")
 				var/portal_icon_selection = select_portal_subtype(user)
 				icon_state = portal_icon_selection
@@ -55,20 +59,20 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, INTERACT_HAND_UNGATED(null, PR
 			var/obj/structure/portal_target/newtarg = new(get_turf(user))
 			target = newtarg
 			newtarg.target = src
-			var/letsportal = rerun_prompt(user, "k50", list("message" = "Would you like to select a different portal type?", "title" = "Change portal", "choices" = list("No","Yes")), TYPE_PROC_REF(/atom, attack_ghost), args)
+			var/letsportal = rerun_prompt(user, "k50", list("message" = "Would you like to select a different portal type?", "title" = "Change portal", "choices" = list("No","Yes")), PROC_REF(portal_event_ghost_use), args)
 			if(isnull(letsportal))
-				return
+				return TRUE
 			if(letsportal == "Yes")
 				user.forceMove(src)
 				icon_state = select_portal_subtype(user)
 		if(response == "Select Type")
 			icon_state = select_portal_subtype(user)
-			return
+			return TRUE
 		if(target)
 			message_admins("The [src]([x],[y],[z]) was given [target]([target.x],[target.y],[target.z]) as a target, and should be ready to use.")
 	else if(check_rights_for(user?.client, R_HOLDER))
 		src.teleport(user)
-	else return
+	return TRUE
 
 /obj/structure/portal_event/proc/select_portal_subtype(user)
 	var/portal_type = rerun_prompt(user, "k64", list("message" = "What kind of portal would you like it to be?", "title" = "Type Selection", "choices" = list("Tech (Default)","Star","Weird Green","Pulsing")), PROC_REF(select_portal_subtype), args)

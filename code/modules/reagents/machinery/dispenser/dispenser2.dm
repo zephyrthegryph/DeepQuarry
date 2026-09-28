@@ -76,6 +76,11 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_OBSERVER("View", PROC_REF(chemical_dispenser_ghost_view)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/machine_item/chemical_dispenser_add_cartridge,
 		/datum/interaction/machine_item/chemical_dispenser_set_container,
@@ -304,10 +309,11 @@
 			LAZYREMOVE(saved_recipes, params["recipe"])
 			. = TRUE
 
-/obj/machinery/chemical_dispenser/attack_ghost(mob/user)
-	if(stat & BROKEN)
-		return
-	tgui_interact(user)
+/// Old attack_ghost: view the interface unless broken. Never fell through.
+/obj/machinery/chemical_dispenser/proc/chemical_dispenser_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!(stat & BROKEN))
+		tgui_interact(user)
+	return TRUE
 
 /datum/interaction/machine_hand/ungated/chemical_dispenser_use
 	id = "chemical_dispenser_use"

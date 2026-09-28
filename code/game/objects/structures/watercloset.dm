@@ -84,6 +84,11 @@
 	desc = initial(desc)
 
 /obj/structure/toilet/declare_interactions(list/into)
+	var/static/list/actor_specs = list(
+		INTERACT_SILICON("Use", PROC_REF(toilet_silicon_use)),
+	)
+	for(var/actor_spec in actor_specs)
+		into += dq_interaction_from_spec(type, actor_spec)
 	into += list(
 		/datum/interaction/entry_hand/toilet_hand,
 		/datum/interaction/entry_item/toilet_item,
@@ -131,12 +136,12 @@
 	update_icon()
 	return TRUE
 
-/obj/structure/toilet/attack_ai(mob/user)
-	if(isrobot(user))
-		if(user.client && !user.is_remote_viewing())
-			return attack_hand(user)
-	else
-		return attack_hand(user)
+/// Old attack_ai: the hand's Use, except for a cyborg that is remote viewing or has no client.
+/obj/structure/toilet/proc/toilet_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(isrobot(user) && (!user.client || user.is_remote_viewing()))
+		return TRUE
+	attack_hand(user)
+	return TRUE
 
 /// Old attackby: give a grabbed mob a swirlie, insert a crystal/bin, or fill the cistern.
 /datum/interaction/entry_item/toilet_item

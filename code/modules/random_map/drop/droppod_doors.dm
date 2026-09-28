@@ -15,15 +15,19 @@
 	if(autoopen)
 		om_after(src, 10 SECONDS, PROC_REF(deploy))
 
-/obj/structure/droppod_door/attack_ai(mob/user)
-	if(!user.Adjacent(src))
-		return
-	attack_hand(user)
+/// Old attack_ai: an adjacent silicon opens it as by hand.
+/obj/structure/droppod_door/proc/droppod_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.Adjacent(src))
+		attack_hand(user)
+	return TRUE
 
 /obj/structure/droppod_door/attack_generic(mob/user)
 	attack_hand(user)
 
-DECLARE_INTERACTIONS(/obj/structure/droppod_door, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_SILICON("Open", PROC_REF(droppod_door_silicon_use)), \
+)
 
 /// Old attack_hand.
 /obj/structure/droppod_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

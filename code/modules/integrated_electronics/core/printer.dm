@@ -56,11 +56,12 @@
 	can_clone = TRUE
 	debug = TRUE
 
-/obj/item/integrated_circuit_printer/attack_robot(mob/user as mob)
-	if(Adjacent(user))
-		return tgui_interact(user)
-	else
-		return ..()
+/// Old attack_robot: an adjacent cyborg opens the UI; otherwise the default.
+/obj/item/integrated_circuit_printer/proc/circuit_printer_robot_open(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!Adjacent(user))
+		return FALSE
+	tgui_interact(user)
+	return TRUE
 
 /// Old attackby.
 /obj/item/integrated_circuit_printer/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -128,6 +129,7 @@
 DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ROBOT("Open", PROC_REF(circuit_printer_robot_open)), \
 )
 
 /// Old attack_self.

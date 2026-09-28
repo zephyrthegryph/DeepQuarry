@@ -3,6 +3,7 @@
 //
 /obj/machinery/station_map
 	name = "station holomap"
+	silicon_use = NONE // Silicons can't use it yet (TODO: implement for AI).
 	desc = "A virtual map of the surrounding station."
 	icon = 'icons/obj/machines/stationmap.dmi'
 	icon_state = "station_map"
@@ -138,9 +139,8 @@
 			else
 				to_chat(user, span_notice("A hologram of the station appears before your eyes."))
 
-/obj/machinery/station_map/attack_ai(mob/living/silicon/robot/user)
-	return // TODO - Implement for AI ~Leshana
-	// user.station_holomap.toggleHolomap(user, isAI(user))
+// TODO - Implement for AI ~Leshana
+// user.station_holomap.toggleHolomap(user, isAI(user))
 
 /obj/machinery/station_map/machine_step()
 	if((stat & (NOPOWER|BROKEN)) || !anchored)
