@@ -28,16 +28,7 @@
 	COOLDOWN_START(src, spawn_cooldown, spawn_delay + rand(0, spawn_delay))
 
 // its spawned mobs lose their nest.
-/obj/structure/mob_spawner/on_destroy(force)
-	for(var/spawned in spawned_mobs)
-		if(istype(spawned, /mob/living))
-			var/mob/living/L = spawned
-			L.nest = null
-		if(istype(spawned, /obj/structure/closet/crate/mimic))
-			var/obj/structure/closet/crate/mimic/O = spawned
-			O.nest = null
-	LAZYCLEARLIST(spawned_mobs)
-	..()
+REF_LIST_BACK(/obj/structure/mob_spawner, list("spawned_mobs" = "nest"))
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()

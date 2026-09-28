@@ -15,15 +15,7 @@
 	var/spore_cooldown = 8 SECONDS
 
 // its spores lose their factory or nest.
-/obj/structure/blob/factory/on_destroy(force)
-	for(var/mob/living/L in spores)
-		var/mob/living/simple_mob/blob/spore/spore = L
-		if(istype(spore) && spore.factory == src)
-			spore.factory = null
-		else
-			spore.nest = null
-	spores = null
-	..()
+REF_LIST_BACK(/obj/structure/blob/factory, list("spores" = list("factory", "nest")))
 
 /obj/structure/blob/factory/pulsed()
 	. = ..()

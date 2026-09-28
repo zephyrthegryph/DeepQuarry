@@ -39,13 +39,9 @@ REF_VAR(/obj, OWNED, /datum/reactive_icon_update, reactive_icon)
 		src.triggering_mobs = triggering_mobs
 	update_watch()
 
-// drops its turf/container hooks and clears the shared lists it was handed.
-/datum/reactive_icon_update/on_destroy(force)
-	watched_turfs = null
-	watched_containers = null
-	directions?.Cut()
-	triggering_mobs?.Cut()
-	..()
+// Drops its turf/container lists and the lists it was handed (dropped, not cut:
+// the caller may share them). Its hooks go with the OM teardown.
+REF_DROP(/datum/reactive_icon_update, list("watched_turfs", "watched_containers", "directions", "triggering_mobs"))
 
 /// Re-hooks atom_entered on every turf in range of the owner, and Moved on the owner and every
 /// container it is nested in (what connect_range did for us).

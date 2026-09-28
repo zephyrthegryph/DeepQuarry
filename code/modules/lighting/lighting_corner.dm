@@ -178,6 +178,12 @@
 // Lighting engine: only a forced qdel() deletes a corner.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 
+/// SSlighting's corner queue (REF_QUEUE_MEMBER).
+/proc/lifecycle_lighting_corners_queue()
+	return SSlighting?.corners_queue
+
+REF_QUEUE_MEMBER(/datum/lighting_corner, list("needs_update" = /proc/lifecycle_lighting_corners_queue))
+
 // Corners leave their sources and turfs.
 /datum/lighting_corner/on_destroy(force)
 
@@ -195,8 +201,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 	if (master_NW)
 		master_NW.lighting_corner_SE = null
 		master_NW.lighting_corners_initialised = FALSE
-	if(needs_update)
-		SSlighting.corners_queue -= src
 
 	..()
 

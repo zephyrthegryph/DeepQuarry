@@ -166,10 +166,6 @@
 		console.refresh_sensor_light()
 	return ..()
 
-/obj/machinery/shipsensors/on_destroy(force)
-	update_use_power(USE_POWER_OFF)
-	..()
-
 /obj/machinery/shipsensors/proc/refresh_linked_consoles()
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(console.sensors() == src)

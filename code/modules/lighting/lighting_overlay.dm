@@ -40,9 +40,14 @@
 // Lighting engine: only a forced qdel() deletes a lighting object.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 
+/// SSlighting's lighting object queue (REF_QUEUE_MEMBER).
+/proc/lifecycle_lighting_objects_queue()
+	return SSlighting?.objects_queue
+
+REF_QUEUE_MEMBER(/datum/lighting_object, list("needs_update" = /proc/lifecycle_lighting_objects_queue))
+
 // The turf's overlay resets.
 /datum/lighting_object/on_destroy(force)
-	SSlighting.objects_queue -= src
 	if (isturf(affected_turf))
 		affected_turf.lighting_object = null
 		affected_turf.set_luminosity(1)

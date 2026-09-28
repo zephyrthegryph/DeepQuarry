@@ -54,11 +54,15 @@
 
 	update()
 
+/// SSlighting's light source queue (REF_QUEUE_MEMBER).
+/proc/lifecycle_lighting_sources_queue()
+	return SSlighting?.sources_queue
+
+REF_QUEUE_MEMBER(/datum/light_source, list("needs_update" = /proc/lifecycle_lighting_sources_queue))
+
 // lighting engine: the source removes its light from the corners it lit.
 /datum/light_source/on_destroy(force)
 	remove_lum()
-	if (needs_update)
-		SSlighting.sources_queue -= src
 	..()
 
 // Yes this doesn't align correctly on anything other than 4 width tabs.

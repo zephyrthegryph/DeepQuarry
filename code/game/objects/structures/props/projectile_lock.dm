@@ -12,14 +12,7 @@
 	var/list/linked_objects
 
 // many-to-many with puzzle doors: leaves each door's lock list.
-/obj/structure/prop/lock/on_destroy(force)
-	if(length(linked_objects))
-		for(var/obj/O in linked_objects)
-			if(istype(O, /obj/machinery/door/blast/puzzle))
-				var/obj/machinery/door/blast/puzzle/P = O
-				LAZYREMOVE(P.locks, src)
-				LAZYREMOVE(linked_objects, P)
-	..()
+REF_LIST_BACK(/obj/structure/prop/lock, list("linked_objects" = list(/obj/machinery/door/blast/puzzle = "locks")))
 
 /obj/structure/prop/lock/proc/toggle_lock()
 	enabled = !enabled

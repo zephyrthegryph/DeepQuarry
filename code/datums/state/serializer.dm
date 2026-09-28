@@ -110,11 +110,7 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// The id tables hold every atom the call touched as keys. A qdel'd context
 /// waits in the GC queue, so drop them now or those atoms carry a hidden
 /// reference (collapse's refcount check would see an outside holder).
-/datum/state_context/on_destroy(force)
-	ids = null
-	by_id = null
-	pending = null
-	..()
+REF_DROP(/datum/state_context, list("ids", "by_id", "pending"))
 
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)

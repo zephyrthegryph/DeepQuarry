@@ -263,11 +263,7 @@ REF_OWNED_VALUES(/datum/contract, "negotiation_clauses")
 	SScontracts?.unregister_contract(src)
 
 // its children are orphaned.
-/datum/contract/on_destroy(force)
-	for(var/datum/contract/child in children)
-		if(child.parent == src)
-			child.parent = null
-	..()
+REF_LIST_BACK(/datum/contract, list("children" = "parent"))
 
 /datum/contract/proc/finalize_offer(duration)
 	if(state != CONTRACT_OFFERED || !isnum(duration) || duration <= 0)

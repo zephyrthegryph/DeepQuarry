@@ -126,14 +126,15 @@
 			soundloop.mid_length = 30
 	soundloop.start() // Have to do this here bc it starts on
 
-// NTNet logs the lost relay and DoS programs lose their target.
+// Leaves NTNet's relay list; DoS programs aimed at it lose their target.
+REF_BACKLIST(/obj/machinery/ntnet_relay, list("NTNet_static" = "relays"))
+REF_LIST_BACK(/obj/machinery/ntnet_relay, list("dos_sources" = "target_handle"))
+
+// NTNet logs the lost relay and DoS programs report it.
 /obj/machinery/ntnet_relay/on_destroy(force)
-	if(GLOB.ntnet_global)
-		LAZYREMOVE(GLOB.ntnet_global.relays, src)
-		GLOB.ntnet_global.add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet().relays)]")
-		NTNet_static = null
+	if(NTNet())
+		NTNet().add_log("Quantum relay connection severed. Current amount of linked relays: [length(NTNet().relays) - (src in NTNet().relays ? 1 : 0)]")
 	for(var/datum/computer_file/program/ntnet_dos/D in dos_sources)
-		D.target_handle = null
 		D.error = "Connection to quantum relay severed"
 	..()
 
