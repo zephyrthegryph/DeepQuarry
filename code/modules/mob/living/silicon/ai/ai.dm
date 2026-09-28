@@ -191,7 +191,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 			registry_join(REGISTRY_EMPTY_AI_CORES, new/obj/structure/AIcore/deactivated(loc))//New empty terminal.
 			return INITIALIZE_HINT_QDEL //Delete AI.
 
-		var/datum/component/mind_host/host = get_mind_host(B)
+		var/datum/mind_host/host = get_mind_host(B)
 		host?.release_mind(src, "AI core activated")
 
 		on_mob_init()

@@ -239,7 +239,7 @@
 // Handle footstep sounds
 /mob/living/carbon/human/handle_footstep(turf/T)
 	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !flying)
-		if(SEND_SIGNAL(get_equipped_item(SLOT_ID_SHOES), COMSIG_SHOES_STEP_ACTION, m_intent))
+		if(OM_EMIT(get_equipped_item(SLOT_ID_SHOES), /datum/om/event/before/shoes_step_action, m_intent))
 			return
 	return
 

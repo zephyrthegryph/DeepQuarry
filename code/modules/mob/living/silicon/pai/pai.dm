@@ -109,7 +109,7 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_LIVING_INJURED, PROC_REF(on_injured))
+	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
 
 	card = loc
 	if(!istype(card))
@@ -413,8 +413,10 @@ REF_OWNED(/mob/living/silicon/pai, list("card", "pai_ui_chassis", "sradio", "com
 
 /// Something's probably attacking us! The more damage it is doing, the more
 /// likely it is to damage something important in the card.
-/mob/living/silicon/pai/proc/on_injured(datum/source, kind, amount, zone, atom/injury_source, flags)
-	SIGNAL_HANDLER
+/mob/living/silicon/pai/proc/on_injured(datum/source, datum/om/event/living_injured/event)
+	EVENT_HANDLER
+	var/kind = event.kind
+	var/amount = event.applied
 	var/category = injury_category(kind)
 	if(category != INJURY_CATEGORY_PHYSICAL && category != INJURY_CATEGORY_THERMAL)
 		return

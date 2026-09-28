@@ -4,54 +4,69 @@
 //   - riding
 //   - ejecting the sleeper's contents on death
 //   - the supply compactor's ore bag, and the bluespace pounce
-// Modules attach it in /obj/item/robot_module/proc/on_robot_equip() and remove it
-// on reset.
+// Modules create it in /obj/item/robot_module/proc/on_robot_equip() and delete it
+// on reset. Owned by the robot's `robot_belly` var (was /datum/robot_belly).
 
-/datum/component/robot_belly
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/datum/robot_belly
+	/// The chassis this belly belongs to.
+	var/mob/living/silicon/robot/owner
 	/// SLEEPER_STATE_*: drives the red/green belly light.
 	var/sleeper_state = SLEEPER_STATE_EMPTY
 	/// Ore bags currently autoloading (their sleeper is equipped). Lazy.
 	var/list/active_ore_bags
 
-/datum/component/robot_belly/Initialize()
-	if(!isrobot(parent))
-		return COMPONENT_INCOMPATIBLE
+REF_VAR(/mob/living/silicon/robot, OWNED, /datum/robot_belly, robot_belly)
+REF_BACK(/datum/robot_belly, list("owner" = "robot_belly"))
 
-/datum/component/robot_belly/RegisterWithParent()
-	var/mob/living/silicon/robot/R = parent
+/datum/robot_belly/New(mob/living/silicon/robot/R)
+	..()
+	if(!isrobot(R))
+		log_runtime("robot_belly created for a non-robot ([R]).")
+		return
+	owner = R
 	R.can_buckle = TRUE
 	R.buckle_movable = TRUE
 	R.buckle_lying = FALSE
 	R.max_buckled_mobs = 1
 	if(!R.riding_datum)
 		R.riding_datum = new /datum/riding/dogborg(R)
-	RegisterSignal(R, COMSIG_MOB_DEATH, PROC_REF(on_death))
-	RegisterSignal(R, COMSIG_ROBOT_EQUIPMENT_CHANGED, PROC_REF(on_equipment_changed))
-	RegisterSignal(R, COMSIG_ROBOT_BELLY_FULLNESS, PROC_REF(on_belly_fullness))
+	om_hook(R, /datum/om/event/mob_death, src, PROC_REF(on_death))
+	om_hook(R, /datum/om/event/robot_equipment_changed, src, PROC_REF(on_equipment_changed))
+	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
 
-/datum/component/robot_belly/UnregisterFromParent()
-	var/mob/living/silicon/robot/R = parent
-	UnregisterSignal(R, list(COMSIG_MOB_DEATH, COMSIG_ROBOT_EQUIPMENT_CHANGED, COMSIG_ROBOT_BELLY_FULLNESS))
-	for(var/obj/item/ore_bag/bag as anything in active_ore_bags)
-		bag.dropped(R)
+/datum/robot_belly/Destroy(force)
+	var/mob/living/silicon/robot/R = owner
+	if(R)
+		om_unhook(R, list(/datum/om/event/mob_death, /datum/om/event/robot_equipment_changed, /datum/om/event/robot_belly_fullness), src)
+		for(var/obj/item/ore_bag/bag as anything in active_ore_bags)
+			bag.dropped(R)
+		for(var/rider in R.buckled_mob_list())
+			R.riding_datum?.force_dismount(rider)
+		QDEL_NULL(R.riding_datum)
+		R.can_buckle = initial(R.can_buckle)
+		if(R.robot_belly == src)
+			R.robot_belly = null
 	active_ore_bags = null
-	for(var/rider in R?.buckled_mob_list())
-		R.riding_datum?.force_dismount(rider)
-	QDEL_NULL(R.riding_datum)
-	R.can_buckle = initial(R.can_buckle)
+	owner = null
+	return ..()
+
+/// Gives `R` a robot belly if it has none.
+/mob/living/silicon/robot/proc/add_robot_belly()
+	if(!robot_belly)
+		robot_belly = new /datum/robot_belly(src)
+	return robot_belly
 
 /// The sleeper sets this; the sprite only redraws when it actually changes.
-/datum/component/robot_belly/proc/set_sleeper_state(new_state)
+/datum/robot_belly/proc/set_sleeper_state(new_state)
 	if(sleeper_state == new_state)
 		return FALSE
 	sleeper_state = new_state
-	var/mob/living/silicon/robot/R = parent
+	var/mob/living/silicon/robot/R = owner
 	R.update_icon()
 	return TRUE
 
-/datum/component/robot_belly/proc/get_sleepers()
-	var/mob/living/silicon/robot/R = parent
+/datum/robot_belly/proc/get_sleepers()
+	var/mob/living/silicon/robot/R = owner
 	. = list()
 	if(!R.module)
 		return
@@ -60,16 +75,16 @@
 	for(var/obj/item/dogborg/sleeper/S in R.get_all_held_items())
 		. |= S
 
-/datum/component/robot_belly/proc/on_death(datum/source, gibbed)
-	SIGNAL_HANDLER
+/datum/robot_belly/proc/on_death(datum/source, datum/om/event/mob_death/event)
+	EVENT_HANDLER
 	for(var/obj/item/dogborg/sleeper/S as anything in get_sleepers())
 		S.go_out()
 
 /// Ore bags autoload only while their compactor is equipped; the pounce turns
 /// bluespace while anomalous sight is active.
-/datum/component/robot_belly/proc/on_equipment_changed(datum/source, obj/item/changed)
-	SIGNAL_HANDLER
-	var/mob/living/silicon/robot/R = parent
+/datum/robot_belly/proc/on_equipment_changed(datum/source, datum/om/event/robot_equipment_changed/event)
+	EVENT_HANDLER
+	var/mob/living/silicon/robot/R = owner
 	var/list/held = R.get_all_held_items()
 	for(var/obj/item/dogborg/sleeper/S as anything in get_sleepers())
 		if(!S.ore_storage || !S.ore_bag)
@@ -96,9 +111,11 @@
 
 /// The "sleeper" belly class shows the sleeper's contents per the owner's
 /// overlay preference.
-/datum/component/robot_belly/proc/on_belly_fullness(datum/source, belly_class, list/fullness_ref)
-	SIGNAL_HANDLER
-	var/mob/living/silicon/robot/R = parent
+/datum/robot_belly/proc/on_belly_fullness(datum/source, datum/om/event/robot_belly_fullness/event)
+	EVENT_HANDLER
+	var/belly_class = event.belly_class
+	var/list/fullness_ref = event.fullness_ref
+	var/mob/living/silicon/robot/R = owner
 	if(belly_class != "sleeper" || !R.vore_selected)
 		return
 	var/preference = R.vore_selected.silicon_belly_overlay_preference

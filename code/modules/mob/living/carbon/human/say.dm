@@ -1,6 +1,6 @@
 /mob/living/carbon/human/GetAltName()
 	var/list/name_data = list(null)
-	if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_ALT_NAME, name_data) & COMPONENT_ALT_NAME_CHANGED)
+	if(OM_EMIT(src, /datum/om/event/before/human_get_alt_name, name_data) & COMPONENT_ALT_NAME_CHANGED)
 		return name_data[1]
 
 	if(absorbed && isbelly(loc))
@@ -97,9 +97,9 @@
 	// Allow components to override voice (e.g., shadekin phase hiding).
 	// Only allocate the signal payload list when a handler is actually registered
 	// (GetVoice runs every Life() tick per human; the list(null) alloc is otherwise wasted).
-	if(_listen_lookup?[COMSIG_HUMAN_GET_VOICE])
+	if(om_wants(src, /datum/om/event/before/human_get_voice))
 		var/list/voice_data = list(null)
-		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VOICE, voice_data) & COMPONENT_VOICE_CHANGED)
+		if(OM_EMIT(src, /datum/om/event/before/human_get_voice, voice_data) & COMPONENT_VOICE_CHANGED)
 			return voice_data[1]
 
 	// Normal voice determination logic
@@ -121,7 +121,7 @@
 					voice_sub = get_id_name()
 	if(voice_sub)
 		return voice_sub
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(comp && comp.mimicing)
 		return comp.mimicing
 	var/special = GetSpecialVoice()

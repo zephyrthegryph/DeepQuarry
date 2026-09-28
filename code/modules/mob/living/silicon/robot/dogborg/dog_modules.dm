@@ -381,7 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 
 	if(isliving(T))
 		var/mob/living/M = T
-		var/datum/component/shadekin/SK = M.get_shadekin_component()
+		var/datum/shadekin/SK = M.get_shadekin_component()
 		if(SK && SK.in_phase)
 			power_cost *= 2
 
@@ -444,10 +444,11 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()
 	R = loc.loc
-	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(check_loc))
+	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
-/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(atom/movable/mover, atom/old_loc, atom/new_loc)
-	SIGNAL_HANDLER
+/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/source, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
 		last_robot_loc = old_loc
 	if(!istype(loc, /obj/machinery) && loc != R && loc != R.module)

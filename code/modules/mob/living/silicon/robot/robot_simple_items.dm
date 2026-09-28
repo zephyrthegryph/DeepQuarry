@@ -592,8 +592,8 @@ REF_OWNED_LIST(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools")
 		our_robot = loc
 	else //We were in neither. Let's qdel ourselves.
 		return INITIALIZE_HINT_QDEL
-	RegisterSignal(our_robot, COMSIG_DO_AFTER_BEGAN, PROC_REF(begin_using))
-	RegisterSignal(our_robot, COMSIG_DO_AFTER_ENDED, PROC_REF(end_using))
+	om_hook(our_robot, /datum/om/event/do_after_began, src, PROC_REF(begin_using))
+	om_hook(our_robot, /datum/om/event/do_after_ended, src, PROC_REF(end_using))
 
 REF_OWNED_LIST(/obj/item/gripper, "pockets")
 
@@ -740,10 +740,11 @@ REF_OWNED_LIST(/obj/item/gripper, "pockets")
 /obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
 	. = ..()
 	R = loc.loc
-	RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(check_loc))
+	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
-/obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(atom/movable/mover, atom/old_loc, atom/new_loc)
-	SIGNAL_HANDLER
+/obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
+	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
 		last_robot_loc = old_loc
 	if(!istype(loc, /obj/machinery) && loc != R && loc != R.module)

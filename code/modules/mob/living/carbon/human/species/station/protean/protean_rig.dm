@@ -90,7 +90,12 @@
 	. = ..()
 	if(!istype(P))
 		return
-	var/datum/component/forms/protean/F = P.LoadComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = P.get_protean_forms()
+	if(!F)
+		if(P.character_forms)
+			log_game("FORMS: [key_name(P)] had [P.character_forms.type] replaced by protean forms for a new control cluster.")
+			QDEL_NULL(P.character_forms)
+		F = P.add_forms(/datum/forms/protean)
 	if(F.rig && F.rig != src)
 		F.rig.myprotean = null
 	F.rig = src
@@ -104,7 +109,7 @@
 /obj/item/rig/protean/Destroy()
 	stop_soaking()
 	if(myprotean)
-		var/datum/component/forms/protean/F = myprotean.GetComponent(/datum/component/forms/protean)
+		var/datum/forms/protean/F = myprotean.get_protean_forms()
 		if(F?.rig == src)
 			F.rig = null
 		if(myprotean.loc == src)
@@ -455,16 +460,21 @@
 	if(!istype(M) || M == myprotean)
 		return
 	soaking_wearer = M
-	RegisterSignal(M, COMSIG_LIVING_INJURE, PROC_REF(soak_wearer_injury))
+	om_hook(M, /datum/om/event/before/living_injure, src, PROC_REF(soak_wearer_injury))
 
 /obj/item/rig/protean/proc/stop_soaking()
 	if(!soaking_wearer)
 		return
-	UnregisterSignal(soaking_wearer, COMSIG_LIVING_INJURE)
+	om_unhook(soaking_wearer, /datum/om/event/before/living_injure, src)
 	soaking_wearer = null
 
-/obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, kind, list/amount_ref, zone, atom/hit_source, flags)
-	SIGNAL_HANDLER
+/obj/item/rig/protean/proc/soak_wearer_injury(mob/living/carbon/human/source, datum/om/event/before/living_injure/event)
+	EVENT_HANDLER
+	var/kind = event.kind
+	var/list/amount_ref = event.amount_ref
+	var/zone = event.zone
+	var/atom/hit_source = event.source
+	var/flags = event.flags
 	if(!myprotean || inert || !(flags & INJURE_ARMORED))
 		return
 	var/armor_key = injury_armor_key(kind)

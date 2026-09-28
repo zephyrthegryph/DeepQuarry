@@ -377,7 +377,7 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	// And uncomment this, too.
 	//new_character.dna.UpdateSE()
 
-	SEND_SIGNAL(new_character, COMSIG_HUMAN_DNA_FINALIZED)
+	OM_EMIT(new_character, /datum/om/event/human_dna_finalized)
 
 	// Do the initial caching of the player's body icons.
 	new_character.force_update_limbs()

@@ -522,7 +522,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 			slot_vacated(id, item_dropping)
 		has_unequipped(item_dropping, FALSE)
 	//SEND_SIGNAL(item_dropping, COMSIG_ITEM_POST_UNEQUIP, item_dropping, target)
-	SEND_SIGNAL(src, COMSIG_MOB_UNEQUIPPED_ITEM, item_dropping, target)
+	OM_EMIT(src, /datum/om/event/mob_unequipped_item, item_dropping, target)
 	on_equipment_changed()
 	return TRUE
 

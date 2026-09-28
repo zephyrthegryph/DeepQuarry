@@ -633,7 +633,7 @@
 	cost = 0
 	custom_only = FALSE
 	allergen = ALLERGEN_POLLEN // Gee billy...
-	added_component_path = /datum/component/pollen_disability // Why does mom let you have two things?
+	added_behaviour_path = /datum/om/behaviour/disability/pollen // Why does mom let you have two things?
 
 /datum/trait/neutral/allergy/salt
 	name = "Allergy: Salt"
@@ -1553,11 +1553,11 @@
 							"tint" = list(TRAIT_PREF_TYPE_COLOR, "Statue color", TRAIT_NO_VAREDIT_TARGET, "#FFFFFF"),
 							"adjective" = list(TRAIT_PREF_TYPE_STRING, "Adjective", TRAIT_NO_VAREDIT_TARGET, "hardens")/*
 							"pickupable" = list(TRAIT_PREF_TYPE_BOOLEAN, "Can be picked up", TRAIT_NO_VAREDIT_TARGET, FALSE)*/)
-	added_component_path = /datum/component/gargoyle
+	added_component_path = /datum/trait_state/gargoyle
 
 /datum/trait/neutral/gargoyle/apply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)
 	..()
-	var/datum/component/gargoyle/G = H.GetComponent(added_component_path)
+	var/datum/trait_state/gargoyle/G = H.get_trait_state(added_component_path)
 	if(trait_prefs)
 		G.tint = trait_prefs["tint"]
 		G.material = lowertext(trait_prefs["material"])
@@ -1600,7 +1600,7 @@
 
 	activation_message="You feel softer..."
 	primitive_expression_messages=list("drips.")
-	added_component_path = /datum/component/drippy
+	added_component_path = /datum/trait_state/drippy
 
 /datum/trait/neutral/mudking
 	name = "Mudking"
@@ -1831,11 +1831,11 @@
 	is_genetrait = TRUE
 	hidden = FALSE
 	has_preferences = list("waddler" = list(TRAIT_PREF_TYPE_BOOLEAN, "Waddle on Spawn", TRAIT_NO_VAREDIT_TARGET, TRUE))
-	added_component_path = /datum/component/waddle_trait
+	added_component_path = /datum/trait_state/waddle_trait
 
 /datum/trait/neutral/waddle/apply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)
 	..()
-	var/datum/component/waddle_trait/G = H.GetComponent(added_component_path)
+	var/datum/trait_state/waddle_trait/G = H.get_trait_state(added_component_path)
 	if(trait_prefs)
 		G.waddling = trait_prefs["waddler"]
 
@@ -1844,14 +1844,14 @@
 	desc = "After you consume enough nutrition, you start to slowly grow while metabolizing nutrition faster."
 	cost = 0
 	hidden = FALSE // Disabled on Virgo
-	added_component_path = /datum/component/nutrition_size_change/growing
+	added_component_path = /datum/trait_state/nutrition_size_change/growing
 
 /datum/trait/neutral/nutritionshrink
 	name = "Shrinking"
 	desc = "If you don't eat enough, your body starts shrinking to make up the difference!"
 	cost = 0
 	hidden = FALSE // Disabled on Virgo
-	added_component_path = /datum/component/nutrition_size_change/shrinking
+	added_component_path = /datum/trait_state/nutrition_size_change/shrinking
 
 /datum/trait/neutral/disease_carrier
 	name = "Disease Carrier"
@@ -1936,12 +1936,12 @@
 	desc = "You emit a glow when exposed to radiation! This does not prevent you from being harmed by radiation."
 	cost = 0
 	has_preferences = list("glow_color" = list(TRAIT_PREF_TYPE_COLOR, "Glow color", TRAIT_NO_VAREDIT_TARGET, "#c3f314"))
-	added_component_path = /datum/component/radiation_effects
+	added_component_path = /datum/trait_state/radiation_effects
 	excludes = list(/datum/trait/positive/radioactive_heal)
 
 /datum/trait/neutral/glowing_radiation/apply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)
 	..()
-	var/datum/component/radiation_effects/G = H.GetComponent(added_component_path)
+	var/datum/trait_state/radiation_effects/G = H.get_trait_state(added_component_path)
 	if(trait_prefs)
 		G.radiation_color = trait_prefs["glow_color"]
 

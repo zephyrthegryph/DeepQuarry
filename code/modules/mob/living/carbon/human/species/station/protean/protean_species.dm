@@ -61,7 +61,7 @@
 
 	crit_mod = 4	//Unable to go crit
 	body_plan = /datum/body/humanoid/nanoform
-	species_component = list(/datum/component/forms/protean)
+	species_component = list(/datum/forms/protean)
 
 	genders = list(MALE, FEMALE, PLURAL, NEUTER)
 

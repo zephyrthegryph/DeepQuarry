@@ -6,13 +6,13 @@
 	if(!is_motion_tracking)
 		is_motion_tracking = TRUE
 		wants_to_see_motion_echos = TRUE
-		RegisterSignal(GLOB.motiontracker_service, COMSIG_MOVABLE_MOTIONTRACKER, PROC_REF(handle_motion_tracking))
+		om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
 		add_verb(src,/mob/proc/toggle_motion_echo_vis)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
 	if(is_motion_tracking)
 		is_motion_tracking = FALSE
-		UnregisterSignal(GLOB.motiontracker_service, COMSIG_MOVABLE_MOTIONTRACKER)
+		om_unhook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src)
 		remove_verb(src,/mob/proc/toggle_motion_echo_vis)
 
 /mob/living/carbon/human/motiontracker_unsubscribe(destroying = FALSE)
@@ -22,10 +22,12 @@
 	. = ..()
 
 // For COMSIG_MOVABLE_MOTIONTRACKER
-/mob/proc/handle_motion_tracking(mob/source, RW, turf/T)
-	SIGNAL_HANDLER
+/mob/proc/handle_motion_tracking(datum/source, datum/om/event/movable_motiontracker/event)
+	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
+	var/RW = event.handle
+	var/turf/T = event.echo_turf_location
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return
 	var/atom/echo_source = om_resolve(RW)

@@ -33,7 +33,7 @@
 	secondary_langs = list(LANGUAGE_PROMETHEAN, LANGUAGE_SOL_COMMON)	// For some reason, having this as their species language does not allow it to be chosen.
 	assisted_langs = list(LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX)	// Prometheans are weird, let's just assume they can use basically any language.
 
-	species_component = list(/datum/component/radiation_effects/promethean, /datum/component/forms/promethean, /datum/component/promethean_biology)
+	species_component = list(/datum/trait_state/radiation_effects/promethean, /datum/forms/promethean, /datum/trait_state/promethean_biology)
 
 	blood_name = "gelatinous ooze"
 	blood_reagents = REAGENT_ID_SLIMEJELLY
@@ -233,46 +233,46 @@
 #define PROMETHEAN_PAIN_CAP 70
 #define PROMETHEAN_STARVING_PAIN_CAP 90
 
-/datum/component/promethean_biology
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/// A trait state (was /datum/component/promethean_biology), added by the species.
+/datum/trait_state/promethean_biology
+	life_stage = /datum/om/stage/life/trait/promethean_biology
 	/// Held still for PROMETHEAN_STILLNESS_TIME.
 	var/still = FALSE
 	/// Stillness timer id.
 	var/still_timer
 
-/datum/component/promethean_biology/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/trait_state/promethean_biology/setup()
+	return ishuman(owner)
 
-/datum/component/promethean_biology/RegisterWithParent()
-	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_moved))
-	RegisterSignal(parent, COMSIG_MOB_EQUIPPED_ITEM, PROC_REF(on_equipped))
-	om_stage_add(parent, /datum/om/stage/life/trait/promethean_biology)
+/datum/trait_state/promethean_biology/attach()
+	..()
+	om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
+	om_hook(owner, /datum/om/event/mob_equipped_item, src, PROC_REF(on_equipped))
 	restart_stillness()
 
-/datum/component/promethean_biology/UnregisterFromParent()
-	UnregisterSignal(parent, list(COMSIG_MOVABLE_MOVED, COMSIG_MOB_EQUIPPED_ITEM))
-	om_stage_remove(parent, /datum/om/stage/life/trait/promethean_biology)
+/datum/trait_state/promethean_biology/detach()
+	om_unhook(owner, list(/datum/om/event/moved, /datum/om/event/mob_equipped_item), src)
+	..()
 	if(still_timer)
 		om_cancel_timer(src, still_timer)
 		still_timer = null
 
-/datum/component/promethean_biology/proc/restart_stillness()
+/datum/trait_state/promethean_biology/proc/restart_stillness()
 	still = FALSE
 	still_timer = om_after_replace(src, PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
 
-/datum/component/promethean_biology/proc/became_still()
+/datum/trait_state/promethean_biology/proc/became_still()
 	still = TRUE
 	still_timer = null
 
-/datum/component/promethean_biology/proc/on_moved(mob/living/carbon/human/source, atom/old_loc, dir, forced)
-	SIGNAL_HANDLER
+/datum/trait_state/promethean_biology/proc/on_moved(mob/living/carbon/human/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	restart_stillness()
 	if(isturf(source.loc))
 		clean_on_entry(source, source.loc)
 
 /// Prometheans clean every surface they touch and feed on the grime.
-/datum/component/promethean_biology/proc/clean_on_entry(mob/living/carbon/human/H, turf/T)
+/datum/trait_state/promethean_biology/proc/clean_on_entry(mob/living/carbon/human/H, turf/T)
 	var/gained = 0
 	if(!(H.get_equipped_item(SLOT_ID_SHOES) || (H.get_equipped_item(SLOT_ID_SUIT) && (H.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & FEET))))
 		for(var/obj/O in turf_contents_of_type(T, /obj))
@@ -302,8 +302,10 @@
 		H.update_bloodied()
 
 /// Whatever a bare-handed promethean picks up gets cleaned too.
-/datum/component/promethean_biology/proc/on_equipped(mob/living/carbon/human/source, obj/item/equipped_item, slot)
-	SIGNAL_HANDLER
+/datum/trait_state/promethean_biology/proc/on_equipped(mob/living/carbon/human/source, datum/om/event/mob_equipped_item/event)
+	EVENT_HANDLER
+	var/obj/item/equipped_item = event.equipped_item
+	var/slot = event.slot
 	if(slot != slot_l_hand && slot != slot_r_hand)
 		return
 	if(source.get_equipped_item(SLOT_ID_GLOVES) || (source.get_equipped_item(SLOT_ID_SUIT) && (source.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & HANDS)))
@@ -311,8 +313,10 @@
 	if(equipped_item.wash(CLEAN_SCRUB))
 		source.adjust_nutrition(rand(5, 15))
 
-/datum/component/promethean_biology/proc/on_life(mob/living/carbon/human/source)
-	SIGNAL_HANDLER
+/datum/trait_state/promethean_biology/life_tick()
+	on_life(owner)
+
+/datum/trait_state/promethean_biology/proc/on_life(mob/living/carbon/human/source)
 	if(source.stat == DEAD)
 		return
 	if(promethean_is_soaked(source))
@@ -321,7 +325,7 @@
 
 /// Regeneration: each mechanism heals by what mend() reports, and that is what
 /// the body pays for in nutrition and strains the matching regenerative network.
-/datum/component/promethean_biology/proc/regenerate(mob/living/carbon/human/H)
+/datum/trait_state/promethean_biology/proc/regenerate(mob/living/carbon/human/H)
 	if(!still || !H.body || H.body.has_affliction(/datum/affliction/dissolution))
 		return
 	var/datum/species/shapeshifter/promethean/S = H.species
@@ -407,7 +411,4 @@
 /// Trait system: promethean biology. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/promethean_biology
 	name = "promethean biology"
-	component_type = /datum/component/promethean_biology
-
-/datum/om/stage/life/trait/promethean_biology/tick_component(mob/living/self, datum/component/promethean_biology/component)
-	component.on_life(self)
+	state_type = /datum/trait_state/promethean_biology

@@ -47,7 +47,7 @@
 
 /obj/effect/overmap/visitable/simplemob/proc/om_mob_event_setup()
 	scanner_desc = parent.scanner_desc
-	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_parent_moved))
+	om_hook(parent, /datum/om/event/moved, src, PROC_REF(on_parent_moved))
 	skybox_pixel_x = rand(-100,100)
 	if(known)
 		name = initial(parent.name)
@@ -75,8 +75,8 @@ REF_BACK(/obj/effect/overmap/visitable/simplemob, list("parent" = "child_om_mark
 
 	return dat
 
-/obj/effect/overmap/visitable/simplemob/proc/on_parent_moved(atom/movable/source, OldLoc, Dir, Forced)
-	SIGNAL_HANDLER
+/obj/effect/overmap/visitable/simplemob/proc/on_parent_moved(atom/movable/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	forceMove(parent.loc)
 	set_dir(parent.dir)
 
@@ -186,7 +186,7 @@ REF_OWNED(/mob/living/simple_mob/vore/overmap, "child_om_marker")
 
 /obj/effect/overmap/visitable/ship/simplemob/proc/om_mob_event_setup()
 	scanner_desc = parent.scanner_desc
-	RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_parent_moved))
+	om_hook(parent, /datum/om/event/moved, src, PROC_REF(on_parent_moved))
 	skybox_pixel_x = rand(-100,100)
 	if(known)
 		name = initial(parent.name)
@@ -214,7 +214,7 @@ REF_BACK(/obj/effect/overmap/visitable/ship/simplemob, list("parent" = "child_om
 
 	return dat
 
-/obj/effect/overmap/visitable/ship/simplemob/proc/on_parent_moved(atom/movable/source, OldLoc, Dir, Forced)
-	SIGNAL_HANDLER
+/obj/effect/overmap/visitable/ship/simplemob/proc/on_parent_moved(atom/movable/source, datum/om/event/moved/event)
+	EVENT_HANDLER
 	forceMove(parent.loc)
 	set_dir(parent.dir)

@@ -90,11 +90,11 @@
 /// The module has been installed in `robot`. Modules compose what they add
 /// to the chassis here (the sleeper belly: riding, belly light, death eject).
 /obj/item/robot_module/proc/on_robot_equip(mob/living/silicon/robot/robot)
-	robot.AddComponent(/datum/component/robot_belly)
+	robot.add_robot_belly()
 
 /// The module is leaving `robot`. Undo on_robot_equip().
 /obj/item/robot_module/proc/on_robot_unequip(mob/living/silicon/robot/robot)
-	qdel(robot.GetComponent(/datum/component/robot_belly))
+	QDEL_NULL(robot.robot_belly)
 
 // Reset the module and delete it
 /obj/item/robot_module/proc/reset_module(mob/living/silicon/robot/robot)

@@ -191,7 +191,7 @@
 /datum/unarmed_attack/claws/shadekin/apply_effects(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	..()
 	if(!(target == user))
-		var/datum/component/shadekin/SK = user.get_shadekin_component()
+		var/datum/shadekin/SK = user.get_shadekin_component()
 		if(SK)
 			SK.shadekin_adjust_energy(attack_damage)
 
@@ -200,7 +200,7 @@
 /datum/unarmed_attack/bite/sharp/shadekin/apply_effects(mob/living/carbon/human/user, mob/living/carbon/human/target, zone, attack_damage)
 	..()
 	if(!(target == user))
-		var/datum/component/shadekin/SK = user.get_shadekin_component()
+		var/datum/shadekin/SK = user.get_shadekin_component()
 		if(SK)
 			SK.shadekin_adjust_energy(attack_damage)
 

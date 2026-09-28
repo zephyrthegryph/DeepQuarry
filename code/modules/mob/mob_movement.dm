@@ -215,7 +215,7 @@
 		return
 
 	// Relaymove could handle it
-	if(SEND_SIGNAL(my_mob, COMSIG_MOB_RELAY_MOVEMENT, direct))
+	if(OM_EMIT(my_mob, /datum/om/event/before/mob_relay_movement, direct))
 		return TRUE
 
 	// Can't control ourselves when drifting

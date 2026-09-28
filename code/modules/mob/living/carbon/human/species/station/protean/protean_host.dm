@@ -9,7 +9,7 @@
 	usable_in_rig = TRUE
 	verb_path = /mob/living/carbon/human/proc/nano_rig_transform
 
-/datum/protean_power/hardsuit/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/hardsuit/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(F.in_rig())
 		F.leave_rig()
 		return
@@ -24,11 +24,11 @@
 	duration = 2 SECONDS
 	complete_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_done
 	cancel_proc = /datum/protean_power/hardsuit/proc/activate_hardsuit_failed
-	var/datum/component/forms/protean/F
+	var/datum/forms/protean/F
 
 /datum/protean_power/hardsuit/proc/activate_hardsuit_done(datum/om/task/timed/hardsuit_activate_hardsuit/task)
 	var/mob/living/carbon/human/H = task.actor
-	var/datum/component/forms/protean/F = task.F
+	var/datum/forms/protean/F = task.F
 	if(can_use(H, F) && F.form_control_check())
 		F.enter_rig()
 
@@ -50,7 +50,7 @@
 	usable_in_rig = TRUE
 	verb_path = /mob/living/carbon/human/proc/nano_latch
 
-/datum/protean_power/latch_host/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/latch_host/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(F.in_rig())
 		var/mob/living/wearer = F.rig.wearer()
 		if(!wearer)
@@ -67,7 +67,7 @@
 	if(!istype(target))
 		to_chat(H, span_warning("You can only latch onto humanoid mobs!"))
 		return
-	if(target.GetComponent(/datum/component/forms/protean))
+	if(target.get_protean_forms())
 		to_chat(H, span_danger("You can't latch onto a fellow Protean!"))
 		return
 	if(G.state < GRAB_AGGRESSIVE)
@@ -80,12 +80,12 @@
 /datum/om/task/timed/latch_host_activate_latch_host
 	duration = 5 SECONDS
 	complete_proc = /datum/protean_power/latch_host/proc/activate_latch_host_done2
-	var/datum/component/forms/protean/F
+	var/datum/forms/protean/F
 	var/obj/item/grab/G
 
 /datum/protean_power/latch_host/proc/activate_latch_host_done2(datum/om/task/timed/latch_host_activate_latch_host/task)
 	var/mob/living/carbon/human/H = task.actor
-	var/datum/component/forms/protean/F = task.F
+	var/datum/forms/protean/F = task.F
 	var/obj/item/grab/G = task.G
 	var/mob/living/carbon/human/target = task.target
 	if(QDELETED(G) || G.loc != H || G.state < GRAB_AGGRESSIVE || !can_use(H, F))
@@ -113,7 +113,7 @@
 	rig_only = TRUE
 	verb_path = /mob/living/carbon/human/proc/nano_assimilate
 
-/datum/protean_power/assimilate_host/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/assimilate_host/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(!F.rig.wearer())
 		to_chat(H, span_vwarning("You need a host to assimilate."))
 		return
@@ -134,7 +134,7 @@
 	in_stat_panel = FALSE
 	verb_path = /mob/living/carbon/human/proc/usehardsuit
 
-/datum/protean_power/rig_interface/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/rig_interface/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	to_chat(H, "You attempt to interface with the [F.rig].")
 	F.rig.tgui_interact(H)
 

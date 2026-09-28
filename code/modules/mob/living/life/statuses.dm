@@ -53,16 +53,16 @@
 	deaf_loop.stop()
 
 /mob/proc/status_dizzy_started()
-	LoadComponent(/datum/component/dizzy_shake)
+	om_attach(src, /datum/om/behaviour/dizzy_shake)
 
 /mob/proc/status_dizzy_ended()
-	qdel(GetComponent(/datum/component/dizzy_shake))
+	om_detach(src, /datum/om/behaviour/dizzy_shake)
 
 /mob/proc/status_jittery_started()
-	LoadComponent(/datum/component/jittery_shake)
+	om_attach(src, /datum/om/behaviour/jittery_shake)
 
 /mob/proc/status_jittery_ended()
-	qdel(GetComponent(/datum/component/jittery_shake))
+	om_detach(src, /datum/om/behaviour/jittery_shake)
 
 // --- Presentation, rates and scaling ---------------------------------------------------------
 

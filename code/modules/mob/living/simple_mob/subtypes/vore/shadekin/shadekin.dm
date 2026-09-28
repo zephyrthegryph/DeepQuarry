@@ -67,7 +67,7 @@
 	var/image/tailimage //Cached tail image
 
 	//Darknesssss
-	var/datum/component/shadekin/comp = /datum/component/shadekin //Component that holds all the shadekin vars.
+	var/shadekin_type = /datum/shadekin //Type of the shadekin datum (held in /mob/living/var/shadekin) that holds all the shadekin vars.
 	var/dark_gains = 0 //Last tick's change in energy
 	var/ability_flags = 0 //Flags for active abilities
 
@@ -91,7 +91,7 @@
 		new new_type(loc)
 		flags |= ATOM_INITIALIZED
 		return INITIALIZE_HINT_QDEL
-	comp = LoadComponent(comp)
+	add_shadekin(shadekin_type)
 	set_eye_energy()
 
 	if(icon_state == "map_example")
@@ -190,13 +190,13 @@
 
 /datum/om/stage/life/type_post/simple_mob/shadekin/perform(mob/living/simple_mob/shadekin/self, datum/om/frame/life/ctx)
 	..()
-	if(self.comp.in_phase)
+	if(self.shadekin.in_phase)
 		self.density = FALSE
 
 	//Convert spare nutrition into energy at a certain ratio
-	if(. && self.nutrition > initial(self.nutrition) && self.comp.dark_energy < 100)
+	if(. && self.nutrition > initial(self.nutrition) && self.shadekin.dark_energy < 100)
 		self.nutrition = max(0, self.nutrition-5)
-		self.comp.dark_energy = min(100,self.comp.dark_energy+1)
+		self.shadekin.dark_energy = min(100,self.shadekin.dark_energy+1)
 	if(!self.client && self.check_for_observer && self.check_timer++ > 5)
 		self.check_timer = 0
 		var/non_kin_count = 0
@@ -204,14 +204,14 @@
 			if(!issimplekin(M))
 				non_kin_count ++
 		// Technically can be combined with ||, they call the same function, but readability is poor
-		if(!non_kin_count && (self.comp.in_phase))
+		if(!non_kin_count && (self.shadekin.in_phase))
 			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting back in, nobody present
-		else if (non_kin_count && !(self.comp.in_phase))
+		else if (non_kin_count && !(self.shadekin.in_phase))
 			dq_use_self_ability(self, ABILITY_ID_SHADEKIN_PHASE_SHIFT) // shifting out, scaredy
 
 	//They reach nutritional equilibrium (important for blue-eyes healbelly)
 	if(ctx.fact("alive"))
-		self.comp.handle_comp()
+		self.shadekin.handle_comp()
 
 /mob/living/simple_mob/shadekin/update_icon()
 	. = ..()
@@ -228,10 +228,10 @@
 
 /// They phase back to the dark when killed: a retreat, not a death, unless there is nowhere to go.
 /mob/living/simple_mob/shadekin/replace_death(gibbed)
-	if(comp.respite_activating)
+	if(shadekin.respite_activating)
 		return TRUE
 	var/area/current_area = get_area(src)
-	if(comp.in_dark_respite || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
+	if(shadekin.in_dark_respite || current_area.flag_check(AREA_LIMIT_DARK_RESPITE))
 		return FALSE
 	if(!LAZYLEN(GLOB.latejoin_thedark))
 		log_and_message_admins("[src] died outside of the dark but there were no valid floors to warp to")
@@ -240,13 +240,13 @@
 	cut_overlays()
 	flick("tp_out",src)
 	visible_message("<b>\The [src.name]</b> [death_message]")
-	comp.respite_activating = TRUE
+	shadekin.respite_activating = TRUE
 
 	drop_l_hand()
 	drop_r_hand()
 
-	comp.dark_energy = 0
-	comp.in_dark_respite = TRUE
+	shadekin.dark_energy = 0
+	shadekin.in_dark_respite = TRUE
 	invisibility = INVISIBILITY_LEVEL_TWO
 
 	mend(TREAT_BURN_CARE, injury_load(INJURY_CATEGORY_THERMAL) / 2)
@@ -263,8 +263,8 @@
 		to_chat(belly.owner, span_notice("\The [src.name] suddenly vanishes within your [belly.name]"))
 		forceMove(pick(GLOB.latejoin_thedark))
 		flick("tp_in",src)
-		comp.respite_activating = FALSE
-		comp.in_dark_respite = TRUE
+		shadekin.respite_activating = FALSE
+		shadekin.in_dark_respite = TRUE
 		belly.owner.handle_belly_update()
 		clear_fullscreen("belly")
 		belly_overlay_tgui?.hide() // hide TGUI belly overlay
@@ -288,17 +288,17 @@
 	om_qdel_after(src, 1 SECOND) //Back from whence you came!
 
 /mob/living/simple_mob/shadekin/enter_the_dark()
-	comp.respite_activating = FALSE
-	comp.in_dark_respite = TRUE
+	shadekin.respite_activating = FALSE
+	shadekin.in_dark_respite = TRUE
 
 	forceMove(pick(GLOB.latejoin_thedark))
 	update_icon()
 	flick("tp_in",src)
 	invisibility = initial(invisibility)
-	comp.respite_activating = FALSE
+	shadekin.respite_activating = FALSE
 
 /mob/living/simple_mob/shadekin/can_leave_dark()
-	comp.in_dark_respite = FALSE
+	shadekin.in_dark_respite = FALSE
 	movement_cooldown = initial(movement_cooldown)
 	to_chat(src, span_notice("You feel like you can leave the Dark again"))
 
@@ -317,26 +317,26 @@
 	switch(eye_state)
 		//Blue has constant, steady (slow) regen and ignores darkness.
 		if(BLUE_EYES)
-			comp.set_light_and_darkness(0.75,0.75)
-			comp.nutrition_conversion_scaling = 0.5
+			shadekin.set_light_and_darkness(0.75,0.75)
+			shadekin.nutrition_conversion_scaling = 0.5
 		if(RED_EYES)
-			comp.set_light_and_darkness(-0.5,0.5)
-			comp.nutrition_conversion_scaling = 2
+			shadekin.set_light_and_darkness(-0.5,0.5)
+			shadekin.nutrition_conversion_scaling = 2
 		if(PURPLE_EYES)
-			comp.set_light_and_darkness(-0.5,1)
-			comp.nutrition_conversion_scaling = 1
+			shadekin.set_light_and_darkness(-0.5,1)
+			shadekin.nutrition_conversion_scaling = 1
 		if(YELLOW_EYES)
-			comp.set_light_and_darkness(-2,3)
-			comp.nutrition_conversion_scaling = 0.5
+			shadekin.set_light_and_darkness(-2,3)
+			shadekin.nutrition_conversion_scaling = 0.5
 		if(GREEN_EYES)
-			comp.set_light_and_darkness(0.125,2)
-			comp.nutrition_conversion_scaling = 0.5
+			shadekin.set_light_and_darkness(0.125,2)
+			shadekin.nutrition_conversion_scaling = 0.5
 		if(ORANGE_EYES)
-			comp.set_light_and_darkness(-0.25,0.75)
-			comp.nutrition_conversion_scaling = 1.5
+			shadekin.set_light_and_darkness(-0.25,0.75)
+			shadekin.nutrition_conversion_scaling = 1.5
 
 /mob/living/simple_mob/shadekin/is_incorporeal()
-	if(comp.in_phase)
+	if(shadekin.in_phase)
 		return TRUE
 	return FALSE
 
@@ -420,7 +420,7 @@
 				if(ORANGE_EYES)
 					gains = 5
 
-			comp.dark_energy += gains
+			shadekin.dark_energy += gains
 
 // When someone clicks us with an empty hand
 /mob/living/simple_mob/shadekin/attack_hand(mob/living/carbon/human/M as mob)

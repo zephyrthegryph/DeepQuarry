@@ -1,9 +1,9 @@
 // The promethean's true form: the character's own mob as a slime. Tougher
 // against blows, far more vulnerable to heat, and it keeps its hat.
 
-/datum/component/forms/promethean
+/datum/forms/promethean
 
-/datum/component/forms/promethean/get_form_types()
+/datum/forms/promethean/get_form_types()
 	var/static/list/types = list(/datum/form/human, /datum/form/promethean_blob)
 	return types
 
@@ -28,16 +28,16 @@
 	)
 	return form_verbs
 
-/datum/form/promethean_blob/on_enter(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/promethean_blob/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	release_everything(H)
 	..()
 
-/datum/form/promethean_blob/on_exit(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/promethean_blob/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	..()
 	H.visible_message(span_infoplain(span_bold("[H.name]") + " pulls together, forming a humanoid shape!"))
 	playsound(H, 'sound/effects/slime_squish.ogg', 15)
 
-/datum/form/promethean_blob/build_overlays(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/promethean_blob/build_overlays(datum/forms/F, mob/living/carbon/human/H)
 	var/slime_icon = 'icons/mob/slime2.dmi'
 	. = list()
 	var/image/body = image(slime_icon, "slime [is_wide ? "adult" : "baby"]")
@@ -66,7 +66,7 @@
 		. += hat
 
 /// Slime bodies knit a little on their own, and pain fades fast.
-/datum/form/promethean_blob/on_life(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/promethean_blob/on_life(datum/forms/F, mob/living/carbon/human/H)
 	H.mend(TREAT_OXYGENATION, 0.2)
 	H.mend(TREAT_ANTITOXIN, 0.2)
 	H.mend(TREAT_BURN_CARE, 0.2)
@@ -79,7 +79,7 @@
 	set desc = "Switch between amorphous and humanoid forms."
 	set category = "Abilities.Promethean"
 
-	var/datum/component/forms/F = get_forms()
+	var/datum/forms/F = get_forms()
 	if(!F)
 		return
 	if(!isturf(loc))

@@ -1,24 +1,40 @@
 // Forms: one character, one mob, many shapes. See doc/mob_life_architecture.md §6.2.
 //
-// The character mob never leaves the world. /datum/component/forms holds the
+// The character mob never leaves the world. /datum/forms (owned by the mob's `character_forms` var) holds the
 // current /datum/form (human, protean blob, promethean blob). Switching form
 // swaps the datum and redraws the appearance; health, reagents, mind, bellies,
 // languages and OOC notes stay where they are because nothing changes mobs.
 //
-// Per-character state (blob style, the protean rig) lives on the component and
+// Per-character state (blob style, the protean rig) lives on the forms datum and
 // its form instances, never on the species datum.
 
+REF_VAR(/mob/living/carbon/human, OWNED, /datum/forms, character_forms)
+REF_BACK(/datum/forms, list("owner" = "character_forms"))
+
 /mob/living/carbon/human/proc/get_forms()
-	RETURN_TYPE(/datum/component/forms)
-	return GetComponent(/datum/component/forms)
+	RETURN_TYPE(/datum/forms)
+	return character_forms
+
+/// Gives the character a forms datum of `forms_type` unless it already has one.
+/mob/living/carbon/human/proc/add_forms(forms_type = /datum/forms)
+	RETURN_TYPE(/datum/forms)
+	if(!character_forms)
+		character_forms = new forms_type(src)
+	return character_forms
+
+/// Removes the character's forms datum if it is of `forms_type` (or a subtype).
+/mob/living/carbon/human/proc/remove_forms(forms_type = /datum/forms)
+	if(istype(character_forms, forms_type))
+		QDEL_NULL(character_forms)
 
 /// The form the character is currently wearing, or null for ordinary humans.
 /mob/living/carbon/human/proc/current_form()
-	var/datum/component/forms/F = get_forms()
+	var/datum/forms/F = get_forms()
 	return F?.current
 
-/datum/component/forms
-	dupe_mode = COMPONENT_DUPE_UNIQUE
+/datum/forms
+	/// The character wearing these forms.
+	var/mob/living/carbon/human/owner
 	/// Form type -> instance. The instances hold this character's form data.
 	var/list/forms
 	/// The form being worn right now. Never null while attached.
@@ -33,29 +49,35 @@
 	var/drawn_resting = FALSE
 
 /// Form types this character can take, first one is the starting form.
-/datum/component/forms/proc/get_form_types()
+/datum/forms/proc/get_form_types()
 	var/static/list/types = list(/datum/form/human)
 	return types
 
-/datum/component/forms/Initialize()
-	if(!ishuman(parent))
-		return COMPONENT_INCOMPATIBLE
+/datum/forms/New(mob/living/carbon/human/H)
+	..()
+	if(!ishuman(H))
+		log_runtime("FORMS: forms datum created for a non-human ([H]).")
+		return
+	owner = H
 	forms = list()
 	var/list/types = get_form_types()
 	for(var/form_type in types)
 		forms[form_type] = new form_type()
 	current = forms[types[1]]
+	attach()
 
-/datum/component/forms/RegisterWithParent()
-	var/mob/living/carbon/human/H = parent
+/// Joins the owner (was RegisterWithParent).
+/datum/forms/proc/attach()
+	var/mob/living/carbon/human/H = owner
 	prior_holder_type = H.holder_type
-	om_stage_add(parent, /datum/om/stage/life/trait/forms)
+	om_stage_add(H, /datum/om/stage/life/trait/forms)
 	current.on_enter(src, H)
 	H.invalidate_factors()
 
-/datum/component/forms/UnregisterFromParent()
-	var/mob/living/carbon/human/H = parent
-	om_stage_remove(parent, /datum/om/stage/life/trait/forms)
+/// Leaves the owner (was UnregisterFromParent).
+/datum/forms/proc/detach()
+	var/mob/living/carbon/human/H = owner
+	om_stage_remove(H, /datum/om/stage/life/trait/forms)
 	if(current)
 		current.on_exit(src, H)
 	H.invalidate_factors()
@@ -64,25 +86,30 @@
 	H.holder_type = prior_holder_type
 
 // ALLOW(lifecycle): its form mobs are deleted after it detaches.
-/datum/component/forms/Destroy(force)
-	. = ..() // Detaches from the parent first; UnregisterFromParent still needs `current`.
+/datum/forms/Destroy(force)
+	if(owner)
+		detach() // Needs `current`, so before it is cleared.
+		if(owner.character_forms == src)
+			owner.character_forms = null
+	owner = null
 	current = null
 	for(var/form_type in forms)
 		qdel(forms[form_type])
 	forms = null
 	form_overlays = null
+	return ..()
 
 /// Is the character wearing a form of this type (or a subtype)?
-/datum/component/forms/proc/is_form(form_type)
+/datum/forms/proc/is_form(form_type)
 	return istype(current, form_type)
 
 /// Switch to `form_type`. Instant: callers that want a channel do their
 /// do_after first. Returns TRUE if the form changed.
-/datum/component/forms/proc/set_form(form_type, silent = FALSE)
+/datum/forms/proc/set_form(form_type, silent = FALSE)
 	var/datum/form/next = forms?[form_type]
 	if(!next || next == current || switching)
 		return FALSE
-	var/mob/living/carbon/human/H = parent
+	var/mob/living/carbon/human/H = owner
 	switching = TRUE
 	var/datum/form/old = current
 	old.on_exit(src, H)
@@ -96,12 +123,11 @@
 	H.update_canmove()
 	switching = FALSE
 	log_game("FORMS: [key_name(H)] changed form [old.id] -> [next.id] at [AREACOORD(H)]")
-	SEND_SIGNAL(H, COMSIG_FORM_CHANGED, old, next)
 	return TRUE
 
 /// Redraw the current form. Human forms hand back to the ordinary body layers.
-/datum/component/forms/proc/refresh_appearance()
-	var/mob/living/carbon/human/H = parent
+/datum/forms/proc/refresh_appearance()
+	var/mob/living/carbon/human/H = owner
 	if(QDELETED(H))
 		return
 	clear_form_appearance(H)
@@ -118,13 +144,12 @@
 	if(length(form_overlays))
 		H.add_overlay(form_overlays)
 
-/datum/component/forms/proc/clear_form_appearance(mob/living/carbon/human/H)
+/datum/forms/proc/clear_form_appearance(mob/living/carbon/human/H)
 	if(length(form_overlays))
 		H.cut_overlay(form_overlays)
 	form_overlays = null
 
-/datum/component/forms/proc/on_life(mob/living/source)
-	SIGNAL_HANDLER
+/datum/forms/proc/on_life(mob/living/source)
 	// Shapeless forms draw their own resting states.
 	if(!current.draws_body && source.resting != drawn_resting)
 		refresh_appearance()
@@ -156,7 +181,7 @@
 /datum/form/proc/get_form_verbs()
 	return null
 
-/datum/form/proc/on_enter(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/proc/on_enter(datum/forms/F, mob/living/carbon/human/H)
 	if(!has_hands)
 		H.drop_l_hand()
 		H.drop_r_hand()
@@ -166,7 +191,7 @@
 	if(length(form_verbs))
 		add_verb(H, form_verbs)
 
-/datum/form/proc/on_exit(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/proc/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(holder_type)
 		H.holder_type = F.prior_holder_type
 	var/list/form_verbs = get_form_verbs()
@@ -180,11 +205,11 @@
 		playsound(H, enter_sound, 15)
 
 /// Appearances drawn instead of the body when draws_body is FALSE.
-/datum/form/proc/build_overlays(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/proc/build_overlays(datum/forms/F, mob/living/carbon/human/H)
 	return null
 
 /// One Life tick while this form is worn.
-/datum/form/proc/on_life(datum/component/forms/F, mob/living/carbon/human/H)
+/datum/form/proc/on_life(datum/forms/F, mob/living/carbon/human/H)
 	return
 
 /// Common preparation for collapsing into a shapeless form: nothing can stay
@@ -250,7 +275,9 @@
 /// Trait system: form upkeep. Was a COMSIG_LIVING_LIFE listener.
 /datum/om/stage/life/trait/forms
 	name = "forms"
-	component_type = /datum/component/forms
 
-/datum/om/stage/life/trait/forms/tick_component(mob/living/self, datum/component/forms/component)
-	component.on_life(self)
+/datum/om/stage/life/trait/forms/perform(mob/living/self, datum/om/frame/life/ctx)
+	var/mob/living/carbon/human/H = self
+	if(!istype(H))
+		return
+	H.character_forms?.on_life(H)

@@ -54,14 +54,14 @@
 
 /obj/item/dogborg/sleeper/Initialize(mapload)
 	if(analyzer) //Destructive analysis
-		var/static/list/destructive_signals = list(
-			COMSIG_MACHINERY_DESTRUCTIVE_SCAN = TYPE_PROC_REF(/datum/component/experiment_handler, try_run_destructive_experiment),
+		var/static/list/destructive_events = list(
+			/datum/om/event/machinery_destructive_scan = TYPE_PROC_REF(/datum/experiment_handler, try_run_destructive_experiment),
 		)
-		AddComponent(/datum/component/experiment_handler, \
+		new /datum/experiment_handler(src, \
 			config_mode = EXPERIMENT_CONFIG_ALTCLICK, \
 			allowed_experiments = list(/datum/experiment/scanning),\
 			config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE|EXPERIMENT_CONFIG_SILENT_FAIL,\
-			experiment_signals = destructive_signals, \
+			experiment_events = destructive_events, \
 		)
 	if(ore_storage)
 		ore_bag = new(null) //We don't need it inside, just need a reference to it.
@@ -322,7 +322,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 			"ingested_reagents" = ingested_reagents
 			)
 
-	var/datum/component/experiment_handler/handler = get_experiment_handler()
+	var/datum/experiment_handler/handler = get_experiment_handler()
 	var/current_capacity = 0
 	var/max_ore_storage = 0
 	if(ore_storage)
@@ -429,7 +429,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 /// The belly light: busy (red) while cleaning, crowded or holding the dead;
 /// green with a living patient. The robot only redraws when it changes.
 /obj/item/dogborg/sleeper/proc/set_hound_sleeper_state(new_state)
-	var/datum/component/robot_belly/belly = hound?.GetComponent(/datum/component/robot_belly)
+	var/datum/robot_belly/belly = hound?.robot_belly
 	belly?.set_sleeper_state(new_state)
 
 /obj/item/dogborg/sleeper/proc/patient_light_state(mob/living/carbon/who)
@@ -617,10 +617,10 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 									plastic.add_charge(total_material)
 								if(material == MAT_WOOD && wood)
 									wood.add_charge(total_material)
-					var/datum/component/experiment_handler/handler = get_experiment_handler()
+					var/datum/experiment_handler/handler = get_experiment_handler()
 					if(analyzer && handler)
 						techweb_item_generate_points(T, handler.linked_web())
-						SEND_SIGNAL(src, COMSIG_MACHINERY_DESTRUCTIVE_SCAN, T)
+						OM_EMIT(src, /datum/om/event/machinery_destructive_scan, T)
 					if(is_trash)
 						hound.adjust_nutrition(digested)
 					else
@@ -659,10 +659,10 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 /obj/item/dogborg/sleeper/proc/get_experiment_handler()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	RETURN_TYPE(/datum/component/experiment_handler)
+	RETURN_TYPE(/datum/experiment_handler)
 	if(!analyzer)
 		return null
-	return GetComponent(/datum/component/experiment_handler)
+	return experiment_handler
 
 #undef SLEEPER_INJECT_COST
 #undef DOGBORG_DIGEST_MAX_CATCHUP

@@ -282,10 +282,10 @@
 #define SHIELD_RESIST_ALL 0
 
 /datum/modifier/shield_projection/on_applied()
-	RegisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY, PROC_REF(on_holder_injure))
+	om_hook(holder, /datum/om/event/living_shield_injury, src, PROC_REF(on_holder_injure))
 
 /datum/modifier/shield_projection/on_expire()
-	UnregisterSignal(holder, COMSIG_LIVING_SHIELD_INJURY)
+	om_unhook(holder, /datum/om/event/living_shield_injury, src)
 
 /datum/modifier/shield_projection/check_if_valid() //Let's check to make sure you got the stuff and set the vars. Don't need to modify this for any subtypes!
 	if(ishuman(holder)) //Only humans can use this! Other things later down the line might use the same stuff this does, but the shield generator is human only!
@@ -326,8 +326,10 @@
 		var/mult = empty + (resist_full[key] - empty) * efficiency
 		. = isnull(.) ? mult : . * mult
 
-/datum/modifier/shield_projection/proc/on_holder_injure(mob/living/source, kind, list/amount_ref, zone, atom/injury_source, flags)
-	SIGNAL_HANDLER
+/datum/modifier/shield_projection/proc/on_holder_injure(mob/living/source, datum/om/event/living_shield_injury/event)
+	EVENT_HANDLER
+	var/kind = event.kind
+	var/list/amount_ref = event.amount_ref
 	var/mult = resistance(injury_category(kind))
 	if(isnull(mult))
 		return NONE

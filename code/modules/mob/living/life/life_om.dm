@@ -182,7 +182,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /mob/proc/hud_available()
 	if(!client)
 		return FALSE
-	if(SEND_SIGNAL(src,COMSIG_MOB_HANDLE_HUD) & COMSIG_COMPONENT_HANDLED_HUD)
+	if(OM_EMIT(src, /datum/om/event/before/mob_handle_hud) & HUD_EVENT_HANDLED)
 		return FALSE
 	return TRUE
 
@@ -191,7 +191,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 
 /// Recomputes sight flags (SEE_TURFS, see_in_dark, ...) now.
 /mob/proc/refresh_vision()
-	SEND_SIGNAL(src,COMSIG_MOB_HANDLE_VISION)
+	OM_EMIT(src, /datum/om/event/mob_handle_vision)
 
 /mob/living/refresh_vision()
 	om_stage_run_now(src, /datum/om/stage/life/vision)

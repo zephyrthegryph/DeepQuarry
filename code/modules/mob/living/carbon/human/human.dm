@@ -68,8 +68,8 @@
 	initialize_vessel()
 	regenerate_icons()
 
-	AddComponent(/datum/component/personal_crafting)
-	AddComponent(/datum/component/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
+	crafting = new /datum/personal_crafting(src)
+	add_hose_connector(/datum/hose_connector/inflation) // Comment out to disable all human mob inflation mechanics
 
 	// Chicken Stuff
 	var/animal = pick("cow","chicken_brown", "chicken_black", "chicken_white", "chick", "mouse_brown", "mouse_gray", "mouse_white", "lizard", "cat2", "goose", "penguin")
@@ -131,7 +131,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		if(suit.cell) cell_status = "[suit.cell.charge]/[suit.cell.maxcharge]"
 		. += "Suit charge: [cell_status]"
 
-	var/datum/component/antag/changeling/comp = is_changeling(src)
+	var/datum/changeling/comp = is_changeling(src)
 	if(comp)
 		. += "Chemical Storage: [comp.chem_charges]"
 		. += "Genetic Damage Time: [comp.geneticdamage]"
@@ -344,9 +344,9 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 //repurposed proc. Now it combines get_id_name() and get_face_name() to determine a mob's name variable. Made into a seperate proc as it'll be useful elsewhere
 /mob/living/carbon/human/get_visible_name()
-	if(_listen_lookup?[COMSIG_HUMAN_GET_VISIBLE_NAME])
+	if(om_wants(src, /datum/om/event/before/human_get_visible_name))
 		var/list/name_data = list(null)
-		if(SEND_SIGNAL(src, COMSIG_HUMAN_GET_VISIBLE_NAME, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
+		if(OM_EMIT(src, /datum/om/event/before/human_get_visible_name, name_data) & COMPONENT_VISIBLE_NAME_CHANGED)
 			return name_data[1]
 
 	if(get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).flags_inv&HIDEFACE))	//Wearing a mask which hides our face, use id-name if possible
@@ -1029,7 +1029,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 /mob/living/carbon/human/proc/remoteobserve_chosen(mob/user, mob/target, datum/om/prompt/ask)
 	if(target.stat != CONSCIOUS || is_remote_viewing())
 		return
-	AddComponent(/datum/component/remote_view/mremote_mutation, focused_on = target, viewsize = null, vconfig_path = null)
+	begin_remote_view(/datum/remote_view/mremote_mutation, target)
 
 /mob/living/carbon/human/get_visible_gender(mob/user, force)
 	switch(force)
@@ -1069,7 +1069,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(!client || !key) //Don't boot out anyone already in the mob.
 		// A loose brain that hosts this body's character goes home.
 		for (var/obj/item/organ/internal/brain/H in REGISTRY_MEMBERS(REGISTRY_BRAIN_ORGANS))
-			var/datum/component/mind_host/host = get_mind_host(H)
+			var/datum/mind_host/host = get_mind_host(H)
 			var/datum/mind/brain_mind = host?.hosted_mind()
 			if(brain_mind && brain_mind.get_identity() == identity())
 				host.release_mind(src, "revived body reclaimed its brain")
@@ -1285,7 +1285,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		if(species.name && species.name == new_species && species.name != "Custom Species")
 			return
 		// A protean folded into its control cluster unfolds before its swarm goes away.
-		var/datum/component/forms/protean/protean_forms = GetComponent(/datum/component/forms/protean)
+		var/datum/forms/protean/protean_forms = get_protean_forms()
 		if(protean_forms?.in_rig())
 			protean_forms.leave_rig()
 			log_game("SPECIES: [key_name(src)] unfolded from their control cluster for a species change to [new_species].")

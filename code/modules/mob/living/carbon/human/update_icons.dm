@@ -375,7 +375,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	update_vore_belly_sprite()
 	update_vore_tail_sprite()
 	if(species && species.component_requires_late_recalc)
-		var/datum/component/shadekin/SK = GetComponent(/datum/component/shadekin)
+		var/datum/shadekin/SK = get_shadekin_component()
 		if(SK)
 			SK.recalc_values()
 

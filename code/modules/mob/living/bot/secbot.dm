@@ -179,11 +179,13 @@
 
 /mob/living/bot/secbot/Initialize(mapload)
 	. = ..()
-	RegisterSignal(src, COMSIG_LIVING_INJURED, PROC_REF(on_injured))
+	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
 
 /// Anything that actually hurt us is an attack: find who did it and retaliate.
-/mob/living/bot/secbot/proc/on_injured(datum/source, kind, amount, zone, atom/injury_source, flags)
-	SIGNAL_HANDLER
+/mob/living/bot/secbot/proc/on_injured(datum/source, datum/om/event/living_injured/event)
+	EVENT_HANDLER
+	var/amount = event.applied
+	var/atom/injury_source = event.source
 	if(amount <= 0 || !injury_source)
 		return
 	var/mob/attacker
@@ -224,20 +226,20 @@
 	say("Down on the floor, [suspect_name]! You have [SECBOT_WAIT_TIME*2] seconds to comply.")
 	playsound(src, pick(preparing_arrest_sounds), 50)
 	// Register to be told when the target moves
-	target.AddComponent(/datum/component/recursive_move)
-	RegisterSignal(target, COMSIG_MOVABLE_ATTEMPTED_MOVE, /mob/living/bot/secbot/proc/target_moved)
+	dq_add_recursive_move(target)
+	om_hook(target, /datum/om/event/movable_attempted_move, src, PROC_REF(target_moved))
 
 // Callback invoked if the registered target moves
-/mob/living/bot/secbot/proc/target_moved(atom/movable/moving_instance, atom/old_loc, atom/new_loc)
-	SIGNAL_HANDLER
+/mob/living/bot/secbot/proc/target_moved(atom/movable/moving_instance, datum/om/event/movable_attempted_move/event)
+	EVENT_HANDLER
 	if(get_dist(get_turf(src), get_turf(target)) >= 1)
 		awaiting_surrender = INFINITY	// Done waiting!
-		UnregisterSignal(moving_instance, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		om_unhook(moving_instance, /datum/om/event/movable_attempted_move, src)
 
 /mob/living/bot/secbot/resetTarget()
 	..()
 	if(target)
-		UnregisterSignal(target, COMSIG_MOVABLE_ATTEMPTED_MOVE)
+		om_unhook(target, /datum/om/event/movable_attempted_move, src)
 	awaiting_surrender = 0
 	attacked = FALSE
 	walk_to(src, 0)

@@ -11,7 +11,7 @@
 	/// The object the view lives in (MMI, brain organ, soulcatcher).
 	var/obj/item/container = null
 	/// The mind host that owns this view, if any.
-	var/datum/component/mind_host/host
+	var/datum/mind_host/host
 	/// Set once the view has read its status from brain tissue. Only digital
 	/// hosts are tissue-less: a view that loses its tissue has lost its brain.
 	var/had_tissue = FALSE
@@ -73,7 +73,7 @@
 		had_tissue = TRUE
 	if(tissue ? tissue.is_brain_dead() : had_tissue)
 		if(stat != DEAD)
-			log_game("MIND: view [key_name(src)] in [host.parent] died: [tissue ? "its brain tissue is brain dead" : "its brain tissue is gone"].")
+			log_game("MIND: view [key_name(src)] in [host.owner] died: [tissue ? "its brain tissue is brain dead" : "its brain tissue is gone"].")
 			death()
 		return
 	if(stat == DEAD && return_from_death("brain tissue recovered", tissue, REVIVE_IGNORE_WINDOW) == TRUE)

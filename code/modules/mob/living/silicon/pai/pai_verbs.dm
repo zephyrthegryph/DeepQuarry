@@ -7,7 +7,7 @@
 
 	// ok, we're alive, camera is good and in our network...
 	src.current = C
-	src.AddComponent(/datum/component/remote_view, focused_on = C, viewsize = null, vconfig_path = /datum/remote_view_config/camera_standard)
+	src.begin_remote_view(/datum/remote_view, C, null, /datum/remote_view_config/camera_standard)
 	return 1
 
 /mob/living/silicon/pai/cancel_camera()

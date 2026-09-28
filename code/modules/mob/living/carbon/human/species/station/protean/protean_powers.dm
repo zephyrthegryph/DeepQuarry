@@ -64,7 +64,7 @@ REF_OWNED(/datum/protean_power, "button")
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
 	if(!istype(H))
 		return FALSE
-	var/datum/component/forms/protean/F = H.GetComponent(/datum/component/forms/protean)
+	var/datum/forms/protean/F = H.get_protean_forms()
 	if(!F)
 		to_chat(H, span_warning("You don't have a nanite swarm to do that with."))
 		return FALSE
@@ -73,7 +73,7 @@ REF_OWNED(/datum/protean_power, "button")
 	activate(H, F)
 	return TRUE
 
-/datum/protean_power/proc/can_use(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/proc/can_use(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(F.is_dormant())
 		to_chat(H, span_warning("You need to be repaired first before you can act!"))
 		return FALSE
@@ -95,7 +95,7 @@ REF_OWNED(/datum/protean_power, "button")
 		return FALSE
 	return TRUE
 
-/datum/protean_power/proc/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/proc/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	return
 
 /obj/effect/protean_power_button
@@ -130,7 +130,7 @@ REF_OWNED(/datum/protean_power, "button")
 	needs_turf = TRUE
 	verb_path = /mob/living/carbon/human/proc/nano_blobform
 
-/datum/protean_power/blobform/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/blobform/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(F.is_form(/datum/form/protean_blob))
 		om_task_start(/datum/om/task/timed/blobform_activate_blobform, H, H, F = F)
 		return
@@ -145,10 +145,10 @@ REF_OWNED(/datum/protean_power, "button")
 	duration = 2 SECONDS
 	complete_proc = /datum/protean_power/blobform/proc/activate_blobform_done
 	cancel_proc = /datum/protean_power/blobform/proc/activate_blobform_failed
-	var/datum/component/forms/protean/F
+	var/datum/forms/protean/F
 
 /datum/protean_power/blobform/proc/activate_blobform_done(datum/om/task/timed/blobform_activate_blobform/task)
-	var/datum/component/forms/protean/F = task.F
+	var/datum/forms/protean/F = task.F
 	if(F.form_control_check())
 		F.set_form(/datum/form/human)
 	return
@@ -161,10 +161,10 @@ REF_OWNED(/datum/protean_power, "button")
 	duration = 2 SECONDS
 	complete_proc = /datum/protean_power/blobform/proc/activate_blobform_done2
 	cancel_proc = /datum/protean_power/blobform/proc/activate_blobform_failed2
-	var/datum/component/forms/protean/F
+	var/datum/forms/protean/F
 
 /datum/protean_power/blobform/proc/activate_blobform_done2(datum/om/task/timed/blobform_activate_blobform2/task)
-	var/datum/component/forms/protean/F = task.F
+	var/datum/forms/protean/F = task.F
 	if(F.form_control_check())
 		F.set_form(/datum/form/protean_blob)
 
@@ -185,7 +185,7 @@ REF_OWNED(/datum/protean_power, "button")
 	icon_state = "volume"
 	allowed_forms = FORM_FLAG_HUMAN | FORM_FLAG_PROTEAN_BLOB
 
-/datum/protean_power/change_volume/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/change_volume/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	H.set_size()
 
 /// Species inherent verb: pick which species' clothing fit (and sprites) to use.
@@ -213,7 +213,7 @@ REF_OWNED(/datum/protean_power, "button")
 	in_stat_panel = FALSE
 	verb_path = /mob/living/carbon/human/proc/prot_hide
 
-/datum/protean_power/hide_self/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/hide_self/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	var/datum/form/protean_blob/B = F.blob_form()
 	if(!B.hiding && H.resting)
 		to_chat(H, span_warning("You can't hide while resting."))
@@ -250,7 +250,7 @@ REF_OWNED(/datum/protean_power, "button")
 	needs_turf = TRUE
 	verb_path = /mob/living/carbon/human/proc/nano_partswap
 
-/datum/protean_power/reform_limb/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/reform_limb/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
 	if(!refactory)
 		to_chat(H, span_warning("You don't have a working refactory module!"))
@@ -258,7 +258,7 @@ REF_OWNED(/datum/protean_power, "button")
 	om_prompt(src, H, list("kind" = "list", "message" = "Pick the bodypart to change:", "title" = "Refactor - One Bodypart", "choices" = H.species.has_limbs, "data" = list("form" = F)), PROC_REF(limb_chosen))
 
 /datum/protean_power/reform_limb/proc/limb_chosen(mob/living/carbon/human/H, choice, datum/om/prompt/ask)
-	var/datum/component/forms/protean/F = ask.get("form")
+	var/datum/forms/protean/F = ask.get("form")
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
 	if(!refactory || !can_use(H, F))
 		return
@@ -289,14 +289,14 @@ REF_OWNED(/datum/protean_power, "button")
 	eo.robotize(manu_choice)
 	H.update_icons_body()
 
-/datum/protean_power/reform_limb/proc/regrow_limb(mob/living/carbon/human/H, datum/component/forms/protean/F, obj/item/organ/internal/nano/refactory/refactory, choice)
+/datum/protean_power/reform_limb/proc/regrow_limb(mob/living/carbon/human/H, datum/forms/protean/F, obj/item/organ/internal/nano/refactory/refactory, choice)
 	if(refactory.get_stored_material(MAT_STEEL) < PER_LIMB_STEEL_COST)
 		to_chat(H, span_warning("You're missing that limb, and need to store at least [PER_LIMB_STEEL_COST] steel to regenerate it."))
 		return
 	om_prompt(src, H, list("message" = "That limb is missing, do you want to regenerate it in exchange for [PER_LIMB_STEEL_COST] steel?", "title" = "Regenerate limb?", "choices" = list("Yes", "No"), "data" = list("form" = F, "limb" = choice)), PROC_REF(regrow_limb_confirmed))
 
 /datum/protean_power/reform_limb/proc/regrow_limb_confirmed(mob/living/carbon/human/H, answer, datum/om/prompt/ask)
-	var/datum/component/forms/protean/F = ask.get("form")
+	var/datum/forms/protean/F = ask.get("form")
 	var/choice = ask.get("limb")
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
 	if(answer != "Yes" || !refactory || !can_use(H, F) || !refactory.use_stored_material(MAT_STEEL, PER_LIMB_STEEL_COST))
@@ -351,7 +351,7 @@ REF_OWNED(/datum/protean_power, "button")
 	var/repaired = B.total_reassembly(TOTAL_REBUILD_STEEL_COST)
 	log_game("PROTEAN: [key_name(H)] rebuilt themselves with Total Reassembly ([TOTAL_REBUILD_STEEL_COST] steel, [repaired] points repaired).")
 
-/datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/reform_body/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	om_prompt(src, H, list("message" = {"Do you want to rebuild or reassemble yourself?
 	Rebuilding will cost [TOTAL_REBUILD_STEEL_COST] steel and will rebuild all of your limbs and your cohesion, and spend the steel repairing your plating and wiring over a 40s period.
 	Reassembling costs no steel and will copy the appearance data of your currently loaded save slot."}, "title" = "Reassembly", "choices" = list("Rebuild", "Reassemble", "Cancel"), "data" = list("form" = F)), PROC_REF(reform_chosen))
@@ -414,7 +414,7 @@ REF_OWNED(/datum/protean_power, "button")
 			return G
 	return null
 
-/datum/protean_power/copy_form/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/copy_form/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	var/obj/item/grab/G = aggressive_grab_on(H)
 	if(!G)
 		to_chat(H, span_notice("You need to be aggressively grabbing someone before you can copy their form."))
@@ -476,7 +476,7 @@ REF_OWNED(/datum/protean_power, "button")
 	icon_state = "metal"
 	verb_path = /mob/living/carbon/human/proc/nano_metalnom
 
-/datum/protean_power/metal_nom/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/metal_nom/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	var/obj/item/organ/internal/nano/refactory/refactory = H.nano_get_refactory()
 	if(!refactory)
 		to_chat(H, span_warning("You don't have a working refactory module!"))
@@ -523,7 +523,7 @@ REF_OWNED(/datum/protean_power, "button")
 	usable_in_rig = TRUE
 	verb_path = /mob/living/carbon/human/proc/appearance_switch
 
-/datum/protean_power/appearance_switch/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/appearance_switch/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	var/datum/form/protean_blob/B = F.blob_form()
 	if(B.edit_appearance(H) && F.current == B)
 		F.refresh_appearance()
@@ -542,7 +542,7 @@ REF_OWNED(/datum/protean_power, "button")
 	allowed_forms = FORM_FLAG_HUMAN
 	verb_path = /mob/living/carbon/human/proc/chest_transparency_toggle
 
-/datum/protean_power/chest_transparency/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/chest_transparency/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	H.toggle_limb_transparency(include_head = FALSE)
 
 /mob/living/carbon/human/proc/chest_transparency_toggle()
@@ -558,7 +558,7 @@ REF_OWNED(/datum/protean_power, "button")
 	allowed_forms = FORM_FLAG_HUMAN
 	verb_path = /mob/living/carbon/human/proc/transparency_toggle
 
-/datum/protean_power/transparency/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/transparency/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	H.toggle_limb_transparency(include_head = TRUE)
 
 /mob/living/carbon/human/proc/transparency_toggle()
@@ -586,7 +586,7 @@ REF_OWNED(/datum/protean_power, "button")
 	allowed_forms = FORM_FLAG_HUMAN
 	verb_path = /mob/living/carbon/human/proc/absorb_implant
 
-/datum/protean_power/absorb_implant/activate(mob/living/carbon/human/H, datum/component/forms/protean/F)
+/datum/protean_power/absorb_implant/activate(mob/living/carbon/human/H, datum/forms/protean/F)
 	if(!COOLDOWN_FINISHED(H, last_special))
 		return
 	COOLDOWN_START(H, last_special, 5 SECONDS)

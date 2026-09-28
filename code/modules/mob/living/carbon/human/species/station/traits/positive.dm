@@ -254,12 +254,12 @@
 	custom_only = FALSE
 	has_preferences = list("silk_production" = list(TRAIT_PREF_TYPE_BOOLEAN, "Silk production on spawn", TRAIT_NO_VAREDIT_TARGET), \
 							"silk_color" = list(TRAIT_PREF_TYPE_COLOR, "Silk color", TRAIT_NO_VAREDIT_TARGET))
-	added_component_path = /datum/component/weaver
+	added_component_path = /datum/trait_state/weaver
 	excludes = list(/datum/trait/positive/cocoon_tf)
 
 /datum/trait/positive/weaver/apply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)
 	..()
-	var/datum/component/weaver/W = H.GetComponent(added_component_path)
+	var/datum/trait_state/weaver/W = H.get_trait_state(added_component_path)
 	if(S.get_bodytype() == SPECIES_VASILISSAN)
 		W.silk_reserve = 500
 		W.silk_max_reserve = 1000
@@ -431,7 +431,7 @@
 	desc = "Your body is able to produce nutrition from being in light."
 	cost = 3
 	can_take = ORGANICS|SYNTHETICS //Synths actually use nutrition, just with a fancy covering.
-	added_component_path = /datum/component/photosynth
+	added_component_path = /datum/trait_state/photosynth
 
 /datum/trait/positive/rad_resistance
 	name = "Radiation Resistance"
@@ -930,12 +930,12 @@
 	has_preferences = list("glow_color" = list(TRAIT_PREF_TYPE_COLOR, "Glow color", TRAIT_NO_VAREDIT_TARGET, "#c3f314",),
 	"glow_enabled" = list(TRAIT_PREF_TYPE_BOOLEAN, "Glow enabled on spawn", TRAIT_NO_VAREDIT_TARGET, FALSE))
 
-	added_component_path = /datum/component/radiation_effects
+	added_component_path = /datum/trait_state/radiation_effects
 	excludes = list(/datum/trait/neutral/glowing_radiation, /datum/trait/positive/rad_resistance, /datum/trait/positive/rad_resistance_extreme, /datum/trait/positive/rad_immune, /datum/trait/negative/rad_weakness)
 
 /datum/trait/positive/radioactive_heal/apply(datum/species/S,mob/living/carbon/human/H, list/trait_prefs)
 	..()
-	var/datum/component/radiation_effects/G = H.GetComponent(added_component_path)
+	var/datum/trait_state/radiation_effects/G = H.get_trait_state(added_component_path)
 	if(trait_prefs)
 		G.radiation_color = trait_prefs["glow_color"]
 		G.glows = trait_prefs["glow_enabled"]
@@ -946,7 +946,7 @@
 	..() //Does all the removal stuff
 	//We then check to see if we still have the radiation component (such as we have a species componennt of it)
 	//If so, we remove the healing effect.
-	var/datum/component/radiation_effects/G = H.GetComponent(added_component_path)
+	var/datum/trait_state/radiation_effects/G = H.get_trait_state(added_component_path)
 	if(G)
 		G.radiation_healing = initial(G.radiation_healing)
 		G.radiation_nutrition = initial(G.radiation_nutrition)

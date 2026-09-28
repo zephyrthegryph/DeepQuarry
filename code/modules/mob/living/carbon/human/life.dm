@@ -381,7 +381,7 @@
 
 /// MED-6: no dose and nothing accumulated to dissipate.
 /datum/om/stage/life/radiation/carbon/human/idle(mob/living/carbon/human/self)
-	return !self.radiation && !self.accumulated_rads && !self._listen_lookup?[COMSIG_HANDLE_RADIATION]
+	return !self.radiation && !self.accumulated_rads && !om_wants(self, /datum/om/event/before/handle_radiation)
 
 /datum/om/stage/life/radiation/carbon/human/rewake_delay(mob/living/carbon/human/self)
 	return 5 SECONDS
@@ -957,17 +957,16 @@
 /// Species components (xenochimera, shadekin). Not stat checked: those check in their own code.
 /datum/om/stage/life/species_components/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	//Xenochimera Species Component
-	var/datum/component/xenochimera/xc = self.get_xenochimera_component()
+	var/datum/xenochimera/xc = self.xenochimera
 	if(xc)
 		if(!self.stat || !(xc.revive_ready == REVIVING_NOW || xc.revive_ready == REVIVING_DONE))
-			SEND_SIGNAL(self, COMSIG_XENOCHIMERA_COMPONENT)
+			xc.handle_comp()
 
 	//Shadekin Species Component.
-	//For when shadekin actually have their component control everything.
-	var/datum/component/shadekin/sk = self.get_shadekin_component()
+	var/datum/shadekin/sk = self.shadekin
 	if(sk)
 		if(!self.stat)
-			SEND_SIGNAL(self, COMSIG_SHADEKIN_COMPONENT)
+			sk.handle_comp()
 
 /datum/om/stage/life/environment/carbon/human
 	of = /mob/living/carbon/human
@@ -1349,7 +1348,7 @@
 		var/species_metabolism = self.species.baseline_factor(BF_METABOLISM)
 		if(species_metabolism > 0)
 			nutrition_reduction *= self.factor(BF_METABOLISM) / species_metabolism
-		var/datum/component/nutrition_size_change/comp = self.GetComponent(/datum/component/nutrition_size_change)
+		var/datum/trait_state/nutrition_size_change/comp = self.get_trait_state(/datum/trait_state/nutrition_size_change)
 		if(comp)
 			nutrition_reduction *= comp.get_nutrition_multiplier()
 		self.adjust_nutrition(-nutrition_reduction)
@@ -1985,7 +1984,7 @@
 
 /// Updates the number of stored chemicals for powers.
 /datum/om/stage/life/changeling/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
-	var/datum/component/antag/changeling/comp = is_changeling(self)
+	var/datum/changeling/comp = is_changeling(self)
 	if(!comp)
 		if(self.mind && self.hud_used)
 			self.ling_chem_display.invisibility = INVISIBILITY_ABSTRACT
@@ -2413,7 +2412,7 @@
 	self.hud_updateflag = 0
 
 /mob/living/carbon/human/on_fire_stack(seconds_per_tick, datum/status_effect/fire_handler/fire_stacks/fire_handler)
-	SEND_SIGNAL(src, COMSIG_HUMAN_BURNING)
+	OM_EMIT(src, /datum/om/event/human_burning)
 	// burn_clothing(seconds_per_tick, fire_handler.stacks)
 	var/no_protection = FALSE
 	if(HAS_TRAIT(src, TRAIT_IGNORE_FIRE_PROTECTION))

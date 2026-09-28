@@ -287,7 +287,7 @@
 	// Traitgenes Made into a gene trait
 	is_genetrait = TRUE
 	hidden = FALSE
-	added_component_path = /datum/component/diabetic
+	added_component_path = /datum/trait_state/diabetic
 
 	activation_message="You feel drowsy..."
 	primitive_expression_messages=list("looks drowsy")
@@ -315,7 +315,7 @@
 	desc = "You very much dislike being in crowded places. When in the company of more than two other people, you start to panic and experience adverse effects."
 	cost = -3
 	excludes = list(/datum/trait/negative/lonely,/datum/trait/negative/lonely/major)
-	added_component_path = /datum/component/crowd_detection/agoraphobia
+	added_component_path = /datum/trait_state/crowd_detection/agoraphobia
 
 	//Traitgenes
 	is_genetrait = TRUE
@@ -329,14 +329,14 @@
 	desc = "You're very prone to loneliness! Being alone for extended periods of time causes adverse effects. Most mobs will cure this loneliness as long as they aren't hostile."
 	cost = -1
 	excludes = list(/datum/trait/negative/lonely/major,/datum/trait/negative/agoraphobia)
-	added_component_path = /datum/component/crowd_detection/lonely
+	added_component_path = /datum/trait_state/crowd_detection/lonely
 
 /datum/trait/negative/lonely/major
 	name = "Major loneliness vulnerability"
 	desc = "You're extremely prone to loneliness! Being alone for extended periods of time causes adverse effects. Most mobs won't be enough to cure this loneliness, you need other social beings."
 	cost = -3
 	excludes = list(/datum/trait/negative/lonely,/datum/trait/negative/agoraphobia)
-	added_component_path = /datum/component/crowd_detection/lonely/major
+	added_component_path = /datum/trait_state/crowd_detection/lonely/major
 
 	//Traitgenes
 	is_genetrait = TRUE
@@ -524,7 +524,7 @@
 	is_genetrait = TRUE // There is no upside, a neat landmine for genetics
 	hidden = TRUE //Disabled on Virgo
 	can_take = ORGANICS
-	added_component_path = /datum/component/burninlight // Literally just Zaddat, but you don't start with any suit. Good luck.
+	added_component_path = /datum/trait_state/burninlight // Literally just Zaddat, but you don't start with any suit. Good luck.
 
 // Addictions
 /datum/trait/neutral/addiction_alcohol
@@ -760,7 +760,7 @@
 	custom_only = FALSE
 	special_env = TRUE
 	can_take = ORGANICS
-	added_component_path = /datum/component/schizophrenia
+	added_component_path = /datum/trait_state/schizophrenia
 	hidden = FALSE // Disabled on //CHOMPEnable
 
 /datum/trait/negative/synth_pain
