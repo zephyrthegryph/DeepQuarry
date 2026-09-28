@@ -349,6 +349,24 @@ GLOBAL_LIST_EMPTY(interaction_entry_pass)
 		result?.Add(INTERACTION_TRY_BLOCKED)
 		return INTERACTION_GATE_STOPPED
 
+/// Click parameters of the item/drag entry each actor is inside (attackby's click_parameters,
+/// MouseDrop_T's params), so an effect can place precisely: dq_interaction_click_params().
+GLOBAL_LIST_EMPTY(interaction_entry_click_params)
+
+/// Sets `actor`'s entry click parameters (null clears them); returns the previous value to restore.
+/proc/dq_interaction_set_click_params(mob/actor, params)
+	if(!actor)
+		return null
+	. = GLOB.interaction_entry_click_params[actor]
+	if(params)
+		GLOB.interaction_entry_click_params[actor] = params
+	else
+		GLOB.interaction_entry_click_params -= actor
+
+/// The click parameters of the entry `actor` is running an interaction from, or null.
+/proc/dq_interaction_click_params(mob/actor)
+	return actor ? GLOB.interaction_entry_click_params[actor] : null
+
 /proc/interaction_entry_restore_pass(mob/actor, saved_pass)
 	if(saved_pass)
 		GLOB.interaction_entry_pass[actor] = saved_pass

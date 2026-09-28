@@ -159,7 +159,14 @@ avoid code duplication. This includes items that may sometimes act as a standard
  */
 /atom/proc/attackby(obj/item/W, mob/user, attack_modifier, click_parameters)
 	var/list/outcome = list()
-	var/datum/interaction/answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM, outcome)
+	var/saved_params = dq_interaction_set_click_params(user, click_parameters)
+	var/datum/interaction/answered
+	try
+		answered = run_interaction_entry(user, src, W, INTERACTION_ENTRY_ITEM, outcome)
+	catch(var/exception/error)
+		dq_interaction_set_click_params(user, saved_params)
+		throw error
+	dq_interaction_set_click_params(user, saved_params)
 	if(answered)
 		return (INTERACTION_TRY_PASS in outcome) ? FALSE : answered.consumes_input
 	if(SEND_SIGNAL(src, COMSIG_ATOM_ATTACKBY, W, user, click_parameters) & COMPONENT_CANCEL_ATTACK_CHAIN)

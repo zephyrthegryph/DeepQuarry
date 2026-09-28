@@ -176,6 +176,14 @@
 /proc/dq_interaction_name_from_effect(effect_key)
 	var/slash = findlasttext(effect_key, "/")
 	var/tail = slash ? copytext(effect_key, slash + 1) : effect_key
+	// A converted handler's effect is named after the old proc (interaction_item, <type>_interaction_hand...):
+	// name it for what the player does, not for the proc.
+	var/static/list/converted_names = list("item" = "Use", "hand" = "Use", "self" = "Use", "alt" = "Alternate use", "drag" = "Drop onto")
+	var/marker = findlasttext(tail, "interaction_")
+	if(marker && (marker == 1 || copytext(tail, marker - 1, marker) == "_"))
+		var/converted = converted_names[copytext(tail, marker + length("interaction_"))]
+		if(converted)
+			return converted
 	tail = replacetext(tail, "_", " ")
 	return capitalize(tail)
 
