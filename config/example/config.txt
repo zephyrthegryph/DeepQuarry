@@ -670,9 +670,13 @@ DRIFT_PROFILE_DELAY 150
 ## Uncomment to block granting profiling privileges to users with R_DEBUG, for performance purposes
 #FORBID_ADMIN_PROFILING
 
-## Comment to disable sending a toast notification on the host server when initializations complete.
+## Uncomment to send a toast notification on the host server when initializations complete.
 ## Even if this is enabled, a notification will only be sent if there are no clients connected.
-TOAST_NOTIFICATION_ON_INIT
+## WARNING: this runs world.shelleo(). Under DreamDaemon -safe (tools/build/build.sh server) BYOND
+## pops a modal "Safe Mode" permission dialog for shell access that blocks the DM VM thread until
+## answered; with -invisible nobody sees it, so the server hangs silently right after init.
+## Only enable this under -trusted.
+#TOAST_NOTIFICATION_ON_INIT
 
 ## Uncomment to allow admins with +DEBUG to start the byond-tracy profiler during the round.
 #ALLOW_TRACY_START
