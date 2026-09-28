@@ -16,8 +16,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.bloodstr.add_reagent(REAGENT_ID_TRAMADOL, 5)
 	// Past the normal threshold (-1000) but well short of the slow one (-1750).
-	LAZYADD(H.addictions, REAGENT_ID_TRAMADOL)
-	LAZYSET(H.addiction_counters, REAGENT_ID_TRAMADOL, -1200)
+	H.set_addiction_buildup(REAGENT_ID_TRAMADOL, -1200)
 	H.process_addictions()
 	TEST_ASSERT(H.get_addiction_to_reagent(REAGENT_ID_TRAMADOL) <= 0, "tramadol (ADDICT_SLOW) must not addict at the normal threshold, counter is [H.get_addiction_to_reagent(REAGENT_ID_TRAMADOL)]")
 	CONFIG_SET(flag/can_addict_during_round, old_config)

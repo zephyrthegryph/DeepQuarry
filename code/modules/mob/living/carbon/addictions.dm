@@ -54,7 +54,7 @@
 
 /// MED-6: no addiction to build, feed or withdraw from.
 /datum/om/stage/life/addictions/carbon/idle(mob/living/carbon/self)
-	if(LAZYLEN(self.addictions))
+	if(self.has_addictions())
 		return FALSE
 	var/list/addictive = get_addictive_reagents(ADDICT_ALL)
 	for(var/datum/reagent/R as anything in self.bloodstr?.reagent_list)
@@ -165,6 +165,17 @@
 	if(!LAZYFIND(addictions,reagentid))
 		LAZYADD(addictions,reagentid)
 	LAZYSET(addiction_counters,reagentid,ADDICTION_PEAK)
+
+/// Any addiction tracked (built up, active or in withdrawal)? Read by the addictions life stage.
+/mob/living/carbon/proc/has_addictions()
+	SHOULD_NOT_OVERRIDE(TRUE)
+	return LAZYLEN(addictions) > 0
+
+/// Sets a reagent's not-yet-addicted build-up counter (negative), e.g. to seed a scenario.
+/mob/living/carbon/proc/set_addiction_buildup(reagentid, value)
+	SHOULD_NOT_OVERRIDE(TRUE)
+	LAZYOR(addictions, reagentid)
+	LAZYSET(addiction_counters, reagentid, min(value, 0))
 
 /mob/living/carbon/proc/get_addiction_to_reagent(reagentid) // returns counter's value or 0
 	SHOULD_NOT_OVERRIDE(TRUE)

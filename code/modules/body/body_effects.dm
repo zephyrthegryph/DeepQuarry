@@ -87,6 +87,7 @@
 
 /// type -> stacks for every body effect on the mob (read only; empty list when none).
 /mob/living/proc/body_effects()
+	RETURN_TYPE(/list)
 	var/static/list/none = list()
 	return om_value_of(src, EFFECT_BODY_EFFECTS) || none
 
