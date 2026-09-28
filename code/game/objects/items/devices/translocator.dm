@@ -426,10 +426,14 @@ This device records all warnings given and teleport events for admin review in c
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
 		warned_users |= user.ckey
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(warning_answered), title = "OOC Warning", message = {")
+		om_ask(user, /datum/om/prompt/confirm/tele_beacon_warning, PROC_REF(warning_answered))
 		return TRUE
 	return FALSE
 
+/// The OOC warning before first picking up someone else's beacon. Re-checked on the answer: still next to it.
+/datum/om/prompt/confirm/tele_beacon_warning
+	title = "OOC Warning"
+	message = {"
 This device is a translocator beacon. Having it on your person may mean that anyone
 who teleports to this beacon gets teleported into your selected vore-belly. If you are prey-only
 or don't wish to potentially have a random person teleported into you, it's suggested that you

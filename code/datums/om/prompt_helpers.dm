@@ -149,10 +149,10 @@
 	if(om_answers && !isnull(om_answers[key]))
 		return om_kept_answer(om_answers, key)
 	var/list/rest = verb_args.Copy(2)
-	om_rerun_begin(/datum/om/flow/rerun/kept/verb, user, src, key, prompt, fields, list("answers" = om_answers?.Copy(), "rerun_args" = om_prompt_wrap_list(rest), "requires" = PROMPT_ADMIN(permissions)))
+	om_rerun_begin(/datum/om/flow/rerun/kept/admin_verb, user, src, key, prompt, fields, list("answers" = om_answers?.Copy(), "rerun_args" = om_prompt_wrap_list(rest), "requires" = PROMPT_ADMIN(permissions)))
 	return null
 
-/datum/om/flow/rerun/kept/verb/run_again(list/unwrapped)
+/datum/om/flow/rerun/kept/admin_verb/run_again(list/unwrapped)
 	var/mob/user = actor
 	var/datum/admin_verb/V = target
 	if(!user.client)
@@ -160,7 +160,7 @@
 	V.om_answers = answers
 	SSadmin_verbs.dynamic_invoke_verb(arglist(list(user.client, V.type) + unwrapped))
 
-/datum/om/flow/rerun/kept/verb/finished()
+/datum/om/flow/rerun/kept/admin_verb/finished()
 	var/datum/admin_verb/V = target
 	if(V)
 		V.om_answers = null
