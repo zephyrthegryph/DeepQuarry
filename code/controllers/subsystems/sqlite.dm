@@ -116,7 +116,7 @@ SUBSYSTEM_DEF(sqlite)
 
 // Returns TRUE if the player is 'old' enough, according to the config.
 /datum/controller/subsystem/sqlite/proc/is_old_enough(client/C)
-	if(get_player_age(C.key) < CONFIG_GET(number/sqlite_feedback_min_age))
+	if(!isnum(C.player_age) || C.player_age < CONFIG_GET(number/sqlite_feedback_min_age)) // loaded by the login gate
 		return FALSE
 	return TRUE
 

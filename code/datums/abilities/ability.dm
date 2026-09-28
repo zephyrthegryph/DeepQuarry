@@ -128,17 +128,27 @@
 	return list()
 
 /**
- * Picks one candidate interactively, or null (having told `actor` why) if
- * there's nothing to pick or they cancelled. Overridable for a picker whose
- * "no valid target" case is itself an action (robot_mount's dismount) rather
- * than a plain refusal.
+ * Asks `actor` to pick one candidate (om_prompt: nothing waits) and returns null;
+ * the pick runs the ability through target_picked(). Tells `actor` why if
+ * there's nothing to pick. Overridable for a picker whose "no valid target"
+ * case is itself an action (robot_mount's dismount) rather than a plain refusal.
  */
 /datum/interaction/ability/picker/proc/pick_target(mob/living/actor)
 	var/list/choices = candidates(actor)
 	if(!length(choices))
 		to_chat(actor, span_warning("There's nothing nearby to [lowertext(name)]."))
 		return null
-	return tgui_input_list(actor, picker_prompt, picker_title, choices)
+	om_prompt(src, actor, list("kind" = "list", "message" = picker_prompt, "title" = picker_title, "choices" = choices, "requires" = list(/datum/om/check/not_incapacitated)), PROC_REF(target_picked))
+	return null
+
+/// pick_target()'s answer: the pick must still be a candidate (re-checked now), then the
+/// ability runs on it as the keybind would have.
+/datum/interaction/ability/picker/proc/target_picked(mob/living/actor, atom/target, datum/om/prompt/ask)
+	if(!istype(actor) || !target || !(target in candidates(actor)))
+		return
+	if(!applies_to(target))
+		return
+	attempt(actor, target, actor.get_active_hand())
 
 /// Runs `ability_id` on `actor`: the keybind path (code/modules/keybindings/abilities.dm),
 /// used instead of the general resolver because a key binds to one specific

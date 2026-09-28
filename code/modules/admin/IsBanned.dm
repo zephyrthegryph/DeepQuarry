@@ -36,62 +36,8 @@
 
 		return ..()	//default pager ban stuff
 
-	else
-
-		var/ckeytext = ckey(key)
-
-		if(!SSdbcore.IsConnected())
-			var/msg = "Ban database connection failure. Key [ckeytext] not checked"
-			log_world(msg)
-			message_admins(msg)
-			return
-
-		var/failedcid = 1
-		var/failedip = 1
-
-		var/ipquery = ""
-		var/cidquery = ""
-		var/list/ban_params = list("ckeytext" = ckeytext)
-		if(address)
-			failedip = 0
-			ipquery = " OR ip = :address "
-			ban_params["address"] = address
-
-		if(computer_id)
-			failedcid = 0
-			if(isnum(text2num(computer_id)))
-				cidquery = " OR computerid = :computer_id "
-				ban_params["computer_id"] = computer_id
-			else
-				log_world("Key [ckeytext] cid not checked. Non-Numeric: [computer_id]")
-				failedcid = 1
-
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
-
-		query.Execute()
-
-		while(query.NextRow())
-			var/pckey = query.item[1]
-			//var/pip = query.item[2]
-			//var/pcid = query.item[3]
-			var/ackey = query.item[4]
-			var/reason = query.item[5]
-			var/expiration = query.item[6]
-			var/duration = query.item[7]
-			var/bantime = query.item[8]
-			var/bantype = query.item[9]
-
-			var/expires = ""
-			if(text2num(duration) > 0)
-				expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
-
-			var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
-			qdel(query)
-			return list("reason"="[bantype]", "desc"="[desc]")
-		qdel(query)
-		if (failedcid)
-			message_admins("[key] has logged in with a blank computer id in the ban check.")
-		if (failedip)
-			message_admins("[key] has logged in with a blank ip in the ban check.")
-		return ..()	//default pager ban stuff
+	// The database ban check can't run here: this hook must answer at once and a query answers
+	// later. The login gate runs it (/client/proc/login_ban_check(), in log_client_to_db()'s
+	// flow) and holds the client until it answers.
+	return ..()	//default pager ban stuff
 #endif

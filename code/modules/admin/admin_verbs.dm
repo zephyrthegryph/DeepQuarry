@@ -633,25 +633,29 @@ ADMIN_VERB(delbook, R_ADMIN, "Delete Book", "Permamently deletes a book from the
 		to_chat(user, span_warning("Unable to locate a library computer to use for book deleting."))
 		return
 
-	// Delete Book panel now opens a structured TGUI panel.
-	var/list/book_rows = list()
-	var/error_msg = ""
+	// Delete Book panel now opens a structured TGUI panel, once the book list arrives (om_io).
 	if(!SSdbcore.IsConnected())
-		error_msg = "Unable to contact External Archive. Please contact your system administrator for assistance."
-	else
-		// Map sortby to a fixed column literal so ORDER BY can never be injected.
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, author, title, category FROM library ORDER BY [our_comp.safe_sortby_column()]")
-		query.Execute()
-		while(query.NextRow())
-			book_rows += list(list(
-				"id" = "[query.item[1]]",
-				"author" = "[query.item[2]]",
-				"title" = "[query.item[3]]",
-				"category" = "[query.item[4]]",
-			))
-		qdel(query)
-	var/datum/dq_delete_book_panel/panel = new(our_comp, book_rows, error_msg)
-	panel.tgui_interact(user.mob)
+		var/datum/dq_delete_book_panel/offline_panel = new(our_comp, list(), "Unable to contact External Archive. Please contact your system administrator for assistance.")
+		offline_panel.tgui_interact(user.mob)
+		return
+	// Map sortby to a fixed column literal so ORDER BY can never be injected.
+	om_io(our_comp, /datum/om/io/sql, "SELECT id, author, title, category FROM library ORDER BY [our_comp.safe_sortby_column()]", null, TYPE_PROC_REF(/obj/machinery/librarycomp, delbook_rows_arrived), user.ckey)
+
+/// om_io() callback for Delete Book: opens the panel for the admin, if they still are one.
+/obj/machinery/librarycomp/proc/delbook_rows_arrived(list/result, error, admin_ckey)
+	var/client/C = GLOB.directory[admin_ckey]
+	if(!C || !check_rights_for(C, R_ADMIN))
+		return
+	var/list/book_rows = list()
+	for(var/list/row as anything in result?["rows"])
+		book_rows += list(list(
+			"id" = "[row[1]]",
+			"author" = "[row[2]]",
+			"title" = "[row[3]]",
+			"category" = "[row[4]]",
+		))
+	var/datum/dq_delete_book_panel/panel = new(src, book_rows, error ? "The External Archive query failed." : "")
+	panel.tgui_interact(C.mob)
 
 ADMIN_VERB(toggle_spawning_with_recolour, R_ADMIN|R_EVENT|R_FUN, "Toggle Simple/Robot recolour verb", "Makes it so new robots/simple_mobs spawn with a verb to recolour themselves for this round. You must set them separately.", ADMIN_CATEGORY_SERVER_GAME)
 	var/which = verb_prompt(user, "a34", list("message" = "Which do you want to toggle?", "title" = "Choose Recolour Toggle", "choices" = list("Robot", "Simple Mob")), args)

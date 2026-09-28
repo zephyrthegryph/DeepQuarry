@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Admin permission, ban, poll, whitelist, library and TGS database commands no longer stall the server while waiting on the database."
+  - code_imp: "New connections are held in the lobby until their ban, account and IP checks answer, instead of the server waiting on them."
+  - code_imp: "Window size, text measuring and shell lookups go through one non-blocking executor."
+  - code_imp: "The VV body editor, ability target pickers and rainbow crayon colour pickers no longer block while waiting for an answer."

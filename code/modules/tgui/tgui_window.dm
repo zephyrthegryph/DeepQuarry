@@ -122,9 +122,9 @@
 	// Clone an already-hidden skin window first, so browse() targets its existing
 	// browser control without ever painting a default popup on screen.
 	if(pooled)
-		if(!winexists(client, id))
+		if(!winexists(client, id)) // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
 			winclone(client, "tgui_window_template", id)
-		native_shell = winexists(client, id) == "MAIN"
+		native_shell = winexists(client, id) == "MAIN" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
 		if(native_shell)
 			winshow(client, id, FALSE)
 			winset(client, id, "alpha=0;titlebar=[!fancy];can-resize=[!fancy];can-minimize=false;on-close=\"uiclose [id]\"")
@@ -188,7 +188,7 @@
 		// make a reusable shell visible.
 		winshow(client, id, FALSE)
 	// Detect whether the control is a browser
-	is_browser = winexists(client, id) == "BROWSER"
+	is_browser = winexists(client, id) == "BROWSER" // ALLOW(scheduler): tgui window initialize() winexists (asset/window setup)
 	// Instruct the client to signal UI when the window is closed.
 	if(!is_browser)
 		winset(client, id, "on-close=\"uiclose [id]\"")
@@ -462,7 +462,12 @@
 /datum/tgui_window/proc/audit_prewarmed_hidden()
 	if(!client || locked || !prewarmed)
 		return
-	var/is_visible = winget(client, id, "is-visible")
+	dx_winget(src, client, id, "is-visible", PROC_REF(prewarmed_visibility_read))
+
+/// dx_winget() callback for audit_prewarmed_hidden(): re-checks, then hides a shown shell.
+/datum/tgui_window/proc/prewarmed_visibility_read(is_visible)
+	if(!client || locked || !prewarmed)
+		return
 	if(is_visible == "true")
 		log_tgui(client, "Prewarmed shell became visible; forcing it hidden.", window = src)
 		winshow(client, id, FALSE)
@@ -511,7 +516,7 @@
 				"files" = asset_generation.chunk_files,
 			))
 	if(type == "ready" && prewarmed && !locked)
-		INVOKE_ASYNC(src, PROC_REF(audit_prewarmed_hidden)) // ALLOW(scheduler): winget round-trip
+		audit_prewarmed_hidden()
 	// Pass message to UI that requested the lock
 	if(locked && locked_by)
 		var/prevent_default = locked_by.on_message(type, payload, href_list)

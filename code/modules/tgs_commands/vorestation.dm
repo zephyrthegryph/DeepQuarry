@@ -81,6 +81,48 @@
 	message += "**Admins:** [admin_msg]\n**Mods/GMs:** [mod_msg]\n**Devs:** [dev_msg]\n**Other:** [other_msg]\n**Total:** [count] online"
 	return message
 
+// ---------------------------------------------------------------- database commands
+//
+// A command that reads the database runs its body, flow_run(), as a prompt flow (flow_io.dm):
+// each query re-runs it when answered. A body that finishes at once (no query, or an error
+// before one) answers through Run() as usual; one that waited sends its reply to the channel
+// the command came from when it finishes. The sender is held here until then.
+
+/// Senders of commands whose flow is waiting on a query, by key: list(sender, started).
+GLOBAL_LIST_EMPTY(tgs_flow_senders)
+GLOBAL_VAR_INIT(tgs_flow_seq, 0)
+
+/datum/tgs_chat_command/proc/run_as_flow(datum/tgs_chat_user/sender, params)
+	for(var/stale in GLOB.tgs_flow_senders) // a flow dropped on the way never collects its sender
+		var/list/held = GLOB.tgs_flow_senders[stale]
+		if(world.time - held[2] > 10 MINUTES)
+			GLOB.tgs_flow_senders -= stale
+	var/key = "[++GLOB.tgs_flow_seq]"
+	GLOB.tgs_flow_senders[key] = list(sender, world.time)
+	. = flow_entry(key, params)
+	if(!isnull(.))
+		GLOB.tgs_flow_senders -= key
+
+/datum/tgs_chat_command/proc/flow_entry(key, params)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(flow_entry), args)
+	var/list/held = GLOB.tgs_flow_senders[key]
+	if(!held)
+		return
+	var/datum/tgs_chat_user/sender = held[1]
+	var/reply = flow_run(sender, params)
+	if(!om_flow_answers()) // finished on its first run: Run() returns the reply
+		return reply
+	GLOB.tgs_flow_senders -= key
+	if(isnull(reply))
+		return
+	var/datum/tgs_message_content/message = istext(reply) ? new /datum/tgs_message_content(reply) : reply
+	world.TgsChatBroadcast(message, sender.channel ? list(sender.channel) : null)
+
+/// The command's body when it runs as a flow; returns the reply (text or tgs_message_content).
+/datum/tgs_chat_command/proc/flow_run(datum/tgs_chat_user/sender, params)
+	return
+
 GLOBAL_LIST_EMPTY(pending_discord_registrations)
 /datum/tgs_chat_command/register
 	name = "register"
@@ -88,6 +130,9 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = FALSE
 
 /datum/tgs_chat_command/register/Run(datum/tgs_chat_user/sender, params)
+	return run_as_flow(sender, params)
+
+/datum/tgs_chat_command/register/flow_run(datum/tgs_chat_user/sender, params)
 	// Try to find if that ID is registered to someone already
 	var/datum/db_query/query = SSdbcore.NewQuery("SELECT discord_id FROM erro_player WHERE discord_id = :discord_id", list("discord_id" = sender.id))
 	query.Execute()
@@ -202,6 +247,9 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = TRUE
 
 /datum/tgs_chat_command/discordping/Run(datum/tgs_chat_user/sender, params)
+	return run_as_flow(sender, params)
+
+/datum/tgs_chat_command/discordping/flow_run(datum/tgs_chat_user/sender, params)
 	var/key_to_find = "[ckey(params)]"
 
 	// They didn't provide anything worth looking up.
@@ -228,6 +276,9 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = TRUE
 
 /datum/tgs_chat_command/getkey/Run(datum/tgs_chat_user/sender, params)
+	return run_as_flow(sender, params)
+
+/datum/tgs_chat_command/getkey/flow_run(datum/tgs_chat_user/sender, params)
 	if(!params)
 		return "[sender.friendly_name], you need to provide a Discord ID at the end of the command. To obtain someone's Discord ID, you need to enable developer mode on discord, and then right click on their name and click Copy ID."
 
@@ -385,6 +436,9 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 	admin_only = TRUE
 
 /datum/tgs_chat_command/whitelist/Run(datum/tgs_chat_user/sender, params)
+	return run_as_flow(sender, params)
+
+/datum/tgs_chat_command/whitelist/flow_run(datum/tgs_chat_user/sender, params)
 	var/list/message_as_list = splittext(params, " ")
 	var/datum/tgs_message_content/message = new("Invalid return message.")
 
@@ -482,16 +536,10 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 						message.text = "Error, robot module \"[role]\" is not a whitelist robot module."
 						return message
 
-			var/datum/db_query/command_add = SSdbcore.NewQuery(
-				"INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)",
-				list("ckey" = ckey, "kind" = kind, "entry" = role)
-			)
-			if(!command_add.Execute())
+			if(!flow_sql("INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)", list("ckey" = ckey, "kind" = kind, "entry" = role)))
 				log_sql("Error while trying to add [ckey] to the [role] [kind] whitelist.")
 				message.text = "Error while trying to add [ckey] to the [role] [kind] whitelist. Please review SQL logs."
-				qdel(command_add)
 				return message
-			qdel(command_add)
 
 			switch(kind)
 				if("job")
@@ -507,16 +555,10 @@ GLOBAL_LIST_EMPTY(pending_discord_registrations)
 					LAZYOR(GLOB.robot_whitelist[ckey], role)
 
 		if("remove")
-			var/datum/db_query/command_remove = SSdbcore.NewQuery(
-				"DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry",
-				list("ckey" = ckey, "kind" = kind, "entry" = role)
-			)
-			if(!command_remove.Execute())
+			if(!flow_sql("DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry", list("ckey" = ckey, "kind" = kind, "entry" = role)))
 				log_sql("Error while trying to remove [ckey] from the [role] [kind] whitelist.")
 				message.text = "Error while trying to remove [ckey] from the [role] [kind] whitelist. Please review SQL logs."
-				qdel(command_remove)
 				return message
-			qdel(command_remove)
 
 			switch(kind)
 				if("job")

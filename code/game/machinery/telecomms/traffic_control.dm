@@ -44,7 +44,7 @@
 
 	// For the typer, the input is enabled. Buffer the typed text
 	if(editingcode())
-		storedcode = "[winget(editingcode(), "tcscode", "text")]"
+		dx_winget(src, editingcode().client, "tcscode", "text", PROC_REF(ide_code_read), editingcode()) // DX-exec: a client round trip
 	if(editingcode()) // double if's to work around a runtime error
 		winset(editingcode(), "tcscode", "is-disabled=false")
 
@@ -73,6 +73,12 @@
 				LAZYREMOVE(viewingcode, M)
 				winshow(M, "Telecomms IDE", 0) // hide the window!
 	om_after(src, 5, PROC_REF(update_ide_tick))
+
+/// dx_winget() callback: buffers the typer's text, if they are still the one typing.
+/obj/machinery/computer/telecomms/traffic/proc/ide_code_read(value, mob/typer)
+	if(editingcode() != typer)
+		return
+	storedcode = "[value]"
 
 /obj/machinery/computer/telecomms/traffic/proc/update_ide_end()
 	ide_ticking = FALSE
@@ -145,8 +151,7 @@
 					var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
 					showcode = replacetext(storedcode, "\"", "\\\"")
 					winset(editingcode(), "tcscode", "text=\"[showcode]\"")
-					spawn() // ALLOW(scheduler): update_ide() polls winget(), a blocking client round trip (client procs)
-						update_ide()
+					update_ide()
 
 				else
 					LAZYADD(viewingcode, usr)

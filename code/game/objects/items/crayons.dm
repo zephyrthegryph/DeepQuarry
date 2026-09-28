@@ -31,13 +31,24 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/new_colour = tgui_color_picker(user, "Please select the main colour.", "Crayon colour", colour)
+	ask_rainbow_colours(user, "Crayon colour", "Crayon shade colour")
+	return
+
+/// Rainbow crayons and markers: asks for the main and the shade colour (om_prompt, one after
+/// the other; either may be cancelled), held in hand, and sets what was picked.
+/obj/item/pen/crayon/proc/ask_rainbow_colours(mob/user, main_title, shade_title)
+	om_prompt_sequence(src, user, list(
+		list("key" = "main", "kind" = "color", "message" = "Please select the main colour.", "title" = main_title, "default" = colour, "optional" = TRUE),
+		list("key" = "shade", "kind" = "color", "message" = "Please select the shade colour.", "title" = shade_title, "default" = shadeColour, "optional" = TRUE),
+	), PROC_REF(rainbow_colours_chosen), list("requires" = PROMPT_HELD))
+
+/obj/item/pen/crayon/proc/rainbow_colours_chosen(mob/user, datum/om/prompt/ask)
+	var/new_colour = ask.get("main")
 	if(new_colour)
 		colour = new_colour
-	new_colour = tgui_color_picker(user, "Please select the shade colour.", "Crayon shade colour", shadeColour)
+	new_colour = ask.get("shade")
 	if(new_colour)
 		shadeColour = new_colour
-	return
 
 /obj/item/pen/crayon/afterattack(atom/target, mob/user, proximity, click_parameters)
 	if(!proximity) return
@@ -161,12 +172,7 @@
 	. = ..(user)
 	if(.)
 		return TRUE
-	var/new_colour = tgui_color_picker(user, "Please select the main colour.", "Marker colour", colour)
-	if(new_colour)
-		colour = new_colour
-	new_colour = tgui_color_picker(user, "Please select the shade colour.", "Marker colour", shadeColour)
-	if(new_colour)
-		shadeColour = new_colour
+	ask_rainbow_colours(user, "Marker colour", "Marker colour")
 	return
 
 /obj/item/pen/crayon/marker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

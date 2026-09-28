@@ -74,7 +74,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 		stack_trace("/datum/chatmessage created with [isnull(owner) ? "null" : "invalid"] mob owner")
 		qdel(src)
 		return
-	INVOKE_ASYNC(src, PROC_REF(generate_image), text, target, owner, extra_classes, lifespan) // ALLOW(scheduler): generate_image waits on client MeasureText
+	generate_image(text, target, owner, extra_classes, lifespan)
 
 // ALLOW(lifecycle): a message leaves its client's screen and seen list (clients aren't datums).
 /datum/chatmessage/Destroy()
@@ -180,8 +180,13 @@ GLOBAL_LIST_EMPTY(runechat_image_cache)
 	var/complete_text = "<span class='center maptext [extra_classes != null ? extra_classes.Join(" ") : ""]' style='color: [tgt_color];'>[text]</span>"
 
 	var/msgwidth = extra_length ? CHAT_MESSAGE_EXT_WIDTH : CHAT_MESSAGE_WIDTH
+	// The height is measured on the owner's client (a round trip): DX-exec answers text_measured().
+	dx_measure_text(src, owned_by, complete_text, null, msgwidth, PROC_REF(text_measured), msgwidth, target, owner, complete_text, lifespan)
+
+/// dx_measure_text() callback: the text's size ("WxH") is known; build the image.
+/datum/chatmessage/proc/text_measured(measured, msgwidth, atom/target, mob/owner, complete_text, lifespan)
 	var/mheight
-	WXH_TO_HEIGHT(owned_by.MeasureText(complete_text, null, msgwidth), mheight)
+	WXH_TO_HEIGHT(measured, mheight)
 
 	if(!VERB_SHOULD_YIELD)
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)

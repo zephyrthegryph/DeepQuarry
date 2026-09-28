@@ -1,7 +1,20 @@
 
 //Either pass the mob you wish to ban in the 'banned_mob' attribute, or the banckey, banip and bancid variables. If both are passed, the mob takes priority! If a mob is not passed, banckey is the minimum that needs to be passed! banip and bancid are optional.
 /// `unseen_ok`: the admin already confirmed banning a ckey the server hasn't seen.
+/// Runs as a prompt flow (flow_io.dm): its reads re-run it when they arrive, re-checking the rights.
 /datum/admins/proc/DB_ban_record(bantype, mob/banned_mob, duration = -1, reason, job = "", rounds = 0, banckey = null, banip = null, bancid = null, unseen_ok = FALSE)
+	if(!GLOB.prompt_flow)
+		// Take the target's identifiers now: the flow re-runs later, after the caller may have
+		// kicked them (and a deleted mob would drop the re-run).
+		if(ismob(banned_mob))
+			banckey = banned_mob.ckey
+			if(banned_mob.client)
+				bancid = banned_mob.client.computer_id
+				banip = banned_mob.client.address
+			if(IsGuestKey(banned_mob.key))
+				unseen_ok = TRUE
+			banned_mob = null
+		return prompt_flow(src, PROC_REF(DB_ban_record), list(bantype, null, duration, reason, job, rounds, banckey, banip, bancid, unseen_ok))
 
 	if(!check_rights(R_MOD,0) && !check_rights(R_BAN))	return
 
@@ -85,14 +98,14 @@
 	var/ban_rounds_val = (rounds) ? rounds : 0
 	var/ban_interval = (duration > 0) ? duration : 0
 	var/sql = "INSERT INTO erro_ban (`id`,`bantime`,`serverip`,`bantype`,`reason`,`job`,`duration`,`rounds`,`expiration_time`,`ckey`,`computerid`,`ip`,`a_ckey`,`a_computerid`,`a_ip`,`who`,`adminwho`,`edits`,`unbanned`,`unbanned_datetime`,`unbanned_ckey`,`unbanned_computerid`,`unbanned_ip`) VALUES (null, Now(), :serverip, :bantype_str, :reason, :job, :ban_duration_val, :ban_rounds_val, Now() + INTERVAL :ban_interval MINUTE, :ckey, :computerid, :ip, :a_ckey, :a_computerid, :a_ip, :who, :adminwho, '', null, null, null, null, null)"
-	var/datum/db_query/query_insert = SSdbcore.NewQuery(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
-	query_insert.Execute()
+	om_sql_write(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
 	to_chat(usr, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
 	message_admins("[key_name_admin(usr)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
-	qdel(query_insert)
 
 
 /datum/admins/proc/DB_ban_unban(ckey, bantype, job = "")
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(DB_ban_unban), args)
 
 	if(!check_rights(R_BAN))
 		return
@@ -170,6 +183,8 @@
 	DB_ban_record(arglist(ban_args + TRUE))
 
 /datum/admins/proc/DB_ban_edit(client/user, banid = null, param = null, value = null)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(DB_ban_edit), args)
 
 	if(!check_rights_for(user, R_BAN))
 		return
@@ -207,10 +222,8 @@
 				to_chat(user, "Cancelled")
 				return
 
-			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET reason = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban reason from <cite><b>\"', :old_reason, '\"</b></cite> to <cite><b>\"', :value, '\"</b></cite><BR>')) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_reason" = reason, "banid" = banid))
-			update_query.Execute()
+			om_sql_write("UPDATE erro_ban SET reason = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban reason from <cite><b>\"', :old_reason, '\"</b></cite> to <cite><b>\"', :value, '\"</b></cite><BR>')) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_reason" = reason, "banid" = banid))
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s reason from [reason] to [value]")
-			qdel(update_query)
 			return
 		if("duration")
 			if(!value)
@@ -220,10 +233,8 @@
 				to_chat(user, "Cancelled")
 				return
 
-			var/datum/db_query/update_query = SSdbcore.NewQuery("UPDATE erro_ban SET duration = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban duration from ', :old_duration, ' to ', :value, '<br>')), expiration_time = DATE_ADD(bantime, INTERVAL :value MINUTE) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_duration" = duration, "banid" = banid))
+			om_sql_write("UPDATE erro_ban SET duration = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban duration from ', :old_duration, ' to ', :value, '<br>')), expiration_time = DATE_ADD(bantime, INTERVAL :value MINUTE) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_duration" = duration, "banid" = banid))
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s duration from [duration] to [value]")
-			update_query.Execute()
-			qdel(update_query)
 			return
 		if("unban")
 			if(value == "Yes")
@@ -243,6 +254,8 @@
 	DB_ban_edit(admin.client, ask.get("banid"), ask.get("param"), value)
 
 /datum/admins/proc/DB_ban_unban_by_id(id)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(DB_ban_unban_by_id), args)
 
 	if(!check_rights(R_BAN))	return
 
@@ -274,9 +287,8 @@
 	var/unban_ip = src.owner:address
 	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
 
-	var/datum/db_query/query_update = SSdbcore.NewQuery("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
-	query_update.Execute()
-	qdel(query_update)
+	om_sql_write("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
+
 
 /client/proc/DB_ban_panel()
 	set category = "Admin.Moderation"

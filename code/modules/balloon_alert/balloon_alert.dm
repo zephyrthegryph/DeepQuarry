@@ -10,7 +10,11 @@
 /atom/proc/balloon_alert(mob/viewer, text)
 	SHOULD_NOT_SLEEP(TRUE)
 
-	INVOKE_ASYNC(src, PROC_REF(balloon_alert_perform), viewer, text) // ALLOW(scheduler): MeasureText is a client round trip
+	var/client/viewer_client = viewer?.client
+	if(!viewer_client?.prefs?.read_preference(/datum/preference/toggle/runechat_balloon_messages))
+		return //no! I don't want that.
+	// The text's height is measured on the viewer's client (a round trip): DX-exec answers later.
+	dx_measure_text(src, viewer_client, text, null, BALLOON_TEXT_WIDTH, PROC_REF(balloon_alert_perform), viewer, text)
 
 /atom/proc/balloon_alert_visible(message, self_message, blind_message, range = world.view, list/exclude_mobs = null)
 	SHOULD_NOT_SLEEP(TRUE)
@@ -32,7 +36,8 @@
 
 		balloon_alert(M, (M == src && self_message) || message)
 
-/atom/proc/balloon_alert_perform(mob/viewer, text)
+/// dx_measure_text() callback: shows the balloon, now that its text's size ("WxH") is known.
+/atom/proc/balloon_alert_perform(measured, mob/viewer, text)
 
 	var/client/viewer_client = viewer?.client
 
@@ -60,7 +65,7 @@
 	balloon_alert.appearance_flags = RESET_ALPHA|RESET_COLOR|RESET_TRANSFORM
 	balloon_alert.maptext = MAPTEXT("<span style='text-align: center; -dm-text-outline: 1px #0005'>[text]</span>")
 	balloon_alert.maptext_x = (BALLOON_TEXT_WIDTH - bound_width) * -0.5
-	WXH_TO_HEIGHT(viewer_client?.MeasureText(text, null, BALLOON_TEXT_WIDTH), balloon_alert.maptext_height)
+	WXH_TO_HEIGHT(measured, balloon_alert.maptext_height)
 	balloon_alert.maptext_width = BALLOON_TEXT_WIDTH
 
 	viewer_client?.images += balloon_alert

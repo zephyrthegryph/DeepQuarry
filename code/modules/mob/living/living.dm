@@ -971,21 +971,23 @@
 
 /// The VV body editor: injure with a chosen kind, mend with a chosen tag, add
 /// or remove an affliction, or set oxygen debt. Returns the log line (what was
-/// done), or null when cancelled. Re-validates this mob after every prompt.
+/// done), or null when cancelled or still asking. Runs inside view_var_Topic()'s
+/// prompt flow: each flow_ask() answer re-runs the topic, which re-locates this
+/// mob, so every check below is made again before anything changes.
 /mob/living/proc/vv_adjust_body(client/C, action)
 	switch(action)
 		if("injure")
 			var/list/kinds = list()
 			for(var/kind in 1 to INJURY_KIND_COUNT)
 				kinds[injury_kind_name(kind)] = kind
-			var/choice = tgui_input_list(C, "Injury kind", "Injure [src]", kinds)
+			var/choice = flow_ask(C.mob, "body_injure_kind", list("kind" = "list", "message" = "Injury kind", "title" = "Injure [src]", "choices" = kinds))
 			if(!choice || QDELETED(src))
 				return null
-			var/amount = tgui_input_number(C, "How much [choice]?", "Injure [src]", 10, min_value = 0, round_value = FALSE)
+			var/amount = flow_ask(C.mob, "body_injure_amount", list("kind" = "number", "message" = "How much [choice]?", "title" = "Injure [src]", "default" = 10, "min" = 0, "round" = FALSE))
 			if(!amount || QDELETED(src))
 				return null
 			var/list/zones = list("whole body") + BP_ALL
-			var/zone = tgui_input_list(C, "Where? (systemic kinds ignore this)", "Injure [src]", zones, "whole body")
+			var/zone = flow_ask(C.mob, "body_injure_zone", list("kind" = "list", "message" = "Where? (systemic kinds ignore this)", "title" = "Injure [src]", "choices" = zones, "default" = "whole body"))
 			if(!zone || QDELETED(src))
 				return null
 			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
@@ -995,19 +997,23 @@
 			var/list/tags = list()
 			for(var/tag in names)
 				tags[names[tag]] = tag
-			var/choice = tgui_input_list(C, "Treatment tag", "Mend [src]", tags)
+			var/choice = flow_ask(C.mob, "body_mend_tag", list("kind" = "list", "message" = "Treatment tag", "title" = "Mend [src]", "choices" = tags))
 			if(!choice || QDELETED(src))
 				return null
-			var/amount = tgui_input_number(C, "How much [choice]?", "Mend [src]", 10, min_value = 0, round_value = FALSE)
+			var/amount = flow_ask(C.mob, "body_mend_amount", list("kind" = "number", "message" = "How much [choice]?", "title" = "Mend [src]", "default" = 10, "min" = 0, "round" = FALSE))
 			if(!amount || QDELETED(src))
 				return null
 			var/treated = mend(tags[choice], amount)
 			return "mended ([choice], [amount] requested, [round(treated, 0.1)] treated)"
 		if("afflict")
-			var/affliction_type = tgui_input_list(C, "Affliction", "Afflict [src]", subtypesof(/datum/affliction))
+			var/list/affliction_types = list()
+			for(var/path in subtypesof(/datum/affliction))
+				affliction_types["[path]"] = path
+			var/affliction_name = flow_ask(C.mob, "body_afflict_type", list("kind" = "list", "message" = "Affliction", "title" = "Afflict [src]", "choices" = affliction_types))
+			var/affliction_type = affliction_types[affliction_name]
 			if(!affliction_type || QDELETED(src) || !body)
 				return null
-			var/severity = tgui_input_number(C, "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", "Afflict [src]", 30, max_value = AFFLICTION_SEVERITY_TERMINAL, min_value = 0, round_value = FALSE)
+			var/severity = flow_ask(C.mob, "body_afflict_severity", list("kind" = "number", "message" = "Severity (0-[AFFLICTION_SEVERITY_TERMINAL])", "title" = "Afflict [src]", "default" = 30, "max" = AFFLICTION_SEVERITY_TERMINAL, "min" = 0, "round" = FALSE))
 			if(isnull(severity) || QDELETED(src) || !body)
 				return null
 			var/datum/affliction/A = body.afflict(affliction_type, null, severity)
@@ -1022,7 +1028,7 @@
 			if(!length(choices))
 				to_chat(C, span_notice("[src] has no afflictions."), confidential = TRUE)
 				return null
-			var/choice = tgui_input_list(C, "Remove which affliction?", "Cure [src]", choices)
+			var/choice = flow_ask(C.mob, "body_cure", list("kind" = "list", "message" = "Remove which affliction?", "title" = "Cure [src]", "choices" = choices))
 			var/datum/affliction/A = choices[choice]
 			if(!A || QDELETED(src) || A.owner != src)
 				return null
@@ -1030,7 +1036,7 @@
 			A.cure()
 			return "removed affliction [removed]"
 		if("oxygen")
-			var/amount = tgui_input_number(C, "Oxygen debt to add (negative pays it down)", "Oxygen debt of [src]", 0, min_value = -INFINITY, round_value = FALSE)
+			var/amount = flow_ask(C.mob, "body_oxygen", list("kind" = "number", "message" = "Oxygen debt to add (negative pays it down)", "title" = "Oxygen debt of [src]", "default" = 0, "min" = -INFINITY, "round" = FALSE))
 			if(!amount || QDELETED(src))
 				return null
 			if(amount > 0)

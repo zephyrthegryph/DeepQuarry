@@ -104,17 +104,11 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 					if(!(role in GLOB.whitelisted_module_types))
 						to_chat(ui.user, span_warning("Error, robot module \"[role]\" is not a whitelist robot module."))
 						return FALSE
-			var/datum/db_query/command_add = SSdbcore.NewQuery(
+			// om_io: the result is reported to the admin when it arrives.
+			om_io(null, /datum/om/io/sql,
 				"INSERT INTO [format_table_name("whitelist")] (ckey, kind, entry) VALUES (:ckey, :kind, :entry)",
-				list("ckey" = ckey, "kind" = kind, "entry" = role)
-			)
-			if(!command_add.Execute())
-				log_sql("Error while trying to add [ckey] to the [role] [kind] whitelist.")
-				to_chat(ui.user, span_warning("Error while trying to add [ckey] to the [role] [kind] whitelist. Please review SQL logs."))
-				qdel(command_add)
-				return FALSE
-			qdel(command_add)
-			log_and_message_admins("added [ckey]'s [role] entry to [kind] whitelsit.", ui.user)
+				list("ckey" = ckey, "kind" = kind, "entry" = role),
+				/proc/whitelist_edit_done, ui.user.ckey, "add [ckey] to the [role] [kind] whitelist", "added [ckey]'s [role] entry to [kind] whitelsit.")
 			return TRUE
 
 		if("remove_alienwhitelist")
@@ -130,17 +124,10 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 				to_chat(ui.user, span_warning("Error, invalid type entered."))
 				return FALSE
 			var/role = params["role"]
-			var/datum/db_query/command_remove = SSdbcore.NewQuery(
+			om_io(null, /datum/om/io/sql,
 				"DELETE FROM [format_table_name("whitelist")] WHERE ckey = :ckey AND kind = :kind AND entry = :entry",
-				list("ckey" = ckey, "kind" = kind, "entry" = role)
-			)
-			if(!command_remove.Execute())
-				log_sql("Error while trying to remove [ckey] from the [role] [kind] whitelist.")
-				to_chat(ui.user, span_warning("Error while trying to remove [ckey] from the [role] [kind] whitelist. Please review SQL logs."))
-				qdel(command_remove)
-				return FALSE
-			qdel(command_remove)
-			log_and_message_admins("removed [ckey]'s [role] entry from [kind] whitelsit.", ui.user)
+				list("ckey" = ckey, "kind" = kind, "entry" = role),
+				/proc/whitelist_edit_done, ui.user.ckey, "remove [ckey] from the [role] [kind] whitelist", "removed [ckey]'s [role] entry from [kind] whitelsit.")
 			return TRUE
 
 		if("reload_alienwhitelist")
@@ -150,6 +137,16 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 		if("reload_jobwhitelist")
 			reload_jobwhitelist()
 			return TRUE
+
+/// om_io() callback for the whitelist editor's writes: reports and logs the outcome.
+/proc/whitelist_edit_done(list/result, error, admin_ckey, what, done_message)
+	var/client/C = GLOB.directory[admin_ckey]
+	if(error)
+		log_sql("Error while trying to [what]: [error]")
+		if(C)
+			to_chat(C, span_warning("Error while trying to [what]. Please review SQL logs."))
+		return
+	log_and_message_admins(done_message, C?.mob)
 
 /proc/load_whitelist()
 	GLOB.whitelist = world.file2list(WHITELISTFILE)
@@ -162,28 +159,16 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 		return 0
 	return ("[M.ckey]" in GLOB.whitelist)
 
+/// Loads the alien whitelists: from the database (om_io; the lists are replaced when the rows
+/// arrive) or from the config file.
 /proc/load_alienwhitelist(dbfail = FALSE)
 	if (CONFIG_GET(flag/sql_enabled) && !dbfail)
-		var/datum/db_query/query_load_alienwhistelist = SSdbcore.NewQuery("SELECT ckey, entry, kind FROM [format_table_name("whitelist")] WHERE kind IN ('species', 'language', 'robot')")
-		if(!query_load_alienwhistelist.Execute())
-			message_admins("Error loading alienwhitelist from database. Loading from [global.config.directory]/alienwhitelist.txt.")
-			log_sql("Error loading alienwhitelist from database. Loading from [global.config.directory]/alienwhitelist.txt.")
-			load_alienwhitelist(dbfail = TRUE)
-			qdel(query_load_alienwhistelist)
-			return
-		while(query_load_alienwhistelist.NextRow())
-			var/ckey = query_load_alienwhistelist.item[1]
-			var/entry = query_load_alienwhistelist.item[2]
-			switch(query_load_alienwhistelist.item[3])
-				if("species")
-					LAZYADD(GLOB.alien_whitelist[ckey], entry)
-				if("language")
-					LAZYADD(GLOB.language_whitelist[ckey], entry)
-				if("robot")
-					LAZYADD(GLOB.robot_whitelist[ckey], entry)
-
-		qdel(query_load_alienwhistelist)
+		om_io(null, /datum/om/io/sql, "SELECT ckey, entry, kind FROM [format_table_name("whitelist")] WHERE kind IN ('species', 'language', 'robot')", null, /proc/alienwhitelist_rows_arrived)
+		return
 	else
+		GLOB.alien_whitelist.Cut()
+		GLOB.language_whitelist.Cut()
+		GLOB.robot_whitelist.Cut()
 		var/text = file2text("[global.config.directory]/alienwhitelist.txt")
 		if (!text)
 			log_world("Failed to load [global.config.directory]/alienwhitelist.txt")
@@ -220,10 +205,28 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	#endif
 
 /proc/reload_alienwhitelist()
+	load_alienwhitelist()
+
+/// om_io() callback: replaces the alien whitelists with the database's rows.
+/proc/alienwhitelist_rows_arrived(list/result, error)
+	if(error)
+		message_admins("Error loading alienwhitelist from database. Loading from [global.config.directory]/alienwhitelist.txt.")
+		log_sql("Error loading alienwhitelist from database ([error]). Loading from [global.config.directory]/alienwhitelist.txt.")
+		load_alienwhitelist(dbfail = TRUE)
+		return
 	GLOB.alien_whitelist.Cut()
 	GLOB.language_whitelist.Cut()
 	GLOB.robot_whitelist.Cut()
-	load_alienwhitelist()
+	for(var/list/row as anything in result["rows"])
+		var/ckey = row[1]
+		var/entry = row[2]
+		switch(row[3])
+			if("species")
+				LAZYADD(GLOB.alien_whitelist[ckey], entry)
+			if("language")
+				LAZYADD(GLOB.language_whitelist[ckey], entry)
+			if("robot")
+				LAZYADD(GLOB.robot_whitelist[ckey], entry)
 
 /proc/is_alien_whitelisted(client/C, datum/species/species)
 	//They are admin or the whitelist isn't in use
@@ -248,26 +251,13 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 	// Go apply!
 	return FALSE
 
+/// Loads the job whitelist: from the database (om_io; replaced when the rows arrive) or the file.
 /proc/load_jobwhitelist(dbfail = FALSE)
 	if (CONFIG_GET(flag/sql_enabled) && !dbfail)
-		var/datum/db_query/query_load_jobwhitelist = SSdbcore.NewQuery("SELECT ckey, entry FROM [format_table_name("whitelist")] WHERE kind = 'job'")
-		if(!query_load_jobwhitelist.Execute())
-			message_admins("Error loading jobwhitelist from database. Loading from [global.config.directory]/jobwhitelist.txt.")
-			log_sql("Error loading jobwhitelist from database. Loading from [global.config.directory]/jobwhitelist.txt.")
-			load_jobwhitelist(dbfail = TRUE)
-			return
-		else
-			while(query_load_jobwhitelist.NextRow())
-				var/ckey = query_load_jobwhitelist.item[1]
-				var/entry = query_load_jobwhitelist.item[2]
-
-				var/list/our_whitelists = GLOB.job_whitelist[ckey]
-				if(!our_whitelists) // Guess this is their first/only whitelist entry
-					our_whitelists = list()
-					GLOB.job_whitelist[ckey] = our_whitelists
-				our_whitelists += entry
-		qdel(query_load_jobwhitelist)
+		om_io(null, /datum/om/io/sql, "SELECT ckey, entry FROM [format_table_name("whitelist")] WHERE kind = 'job'", null, /proc/jobwhitelist_rows_arrived)
+		return
 	else
+		GLOB.job_whitelist.Cut()
 		var/text = file2text("[global.config.directory]/jobwhitelist.txt")
 		if (!text)
 			log_world("Failed to load [global.config.directory]/jobwhitelist.txt")
@@ -289,8 +279,23 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 				our_whitelists += left_and_right[2]
 
 /proc/reload_jobwhitelist()
-	GLOB.job_whitelist.Cut()
 	load_jobwhitelist()
+
+/// om_io() callback: replaces the job whitelist with the database's rows.
+/proc/jobwhitelist_rows_arrived(list/result, error)
+	if(error)
+		message_admins("Error loading jobwhitelist from database. Loading from [global.config.directory]/jobwhitelist.txt.")
+		log_sql("Error loading jobwhitelist from database ([error]). Loading from [global.config.directory]/jobwhitelist.txt.")
+		load_jobwhitelist(dbfail = TRUE)
+		return
+	GLOB.job_whitelist.Cut()
+	for(var/list/row as anything in result["rows"])
+		var/ckey = row[1]
+		var/list/our_whitelists = GLOB.job_whitelist[ckey]
+		if(!our_whitelists) // Guess this is their first/only whitelist entry
+			our_whitelists = list()
+			GLOB.job_whitelist[ckey] = our_whitelists
+		our_whitelists += row[2]
 
 /proc/is_job_whitelisted(mob/M, rank)
 	// Check if the job actually requires a whitelist

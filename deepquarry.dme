@@ -850,6 +850,8 @@
 #include "code\datums\om\status.dm"
 #include "code\datums\om\prompt.dm"
 #include "code\datums\om\prompt_helpers.dm"
+#include "code\datums\om\flow_io.dm"
+#include "code\datums\om\dx_exec.dm"
 #include "code\datums\om\task.dm"
 #include "code\datums\om\timed_action.dm"
 #include "code\datums\om\timer.dm"

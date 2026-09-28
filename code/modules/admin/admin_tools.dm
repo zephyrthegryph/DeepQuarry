@@ -98,29 +98,37 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 /datum/player_log_viwer/proc/refresh_cooldown()
 	return ((world.time - last_refresh) < 5 SECONDS)
 
+/// Adds the player's logged dialog from the database (om_io: the rows arrive later and the
+/// window's static data is resent then).
 /datum/player_log_viwer/proc/refresh_data()
 	if(!CONFIG_GET(flag/database_logging))
 		return
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT mid,time,ckey,mob,area,color,type,message from erro_dialog WHERE ckey = :t_ckey", list("t_ckey" = target_ckey))
-	if(!query.Execute())
-		to_chat(usr, span_admin("Database query error"))
-		qdel(query)
-		return
+	om_sql_view(src, "dialog", "SELECT mid,time,ckey,mob,area,color,type,message from erro_dialog WHERE ckey = :t_ckey", list("t_ckey" = target_ckey), PROC_REF(sql_rows_arrived))
 
+/datum/player_log_viwer/proc/sql_rows_arrived(list/result, error, key)
+	var/list/rows = om_sql_view_rows(result, error, key, src)
+	if(!length(open_tguis)) // closed meanwhile
+		return
+	if(error)
+		for(var/datum/tgui/ui as anything in open_tguis)
+			to_chat(ui.user, span_admin("Database query error"))
+		return
+	if(!islist(log_data))
+		log_data = list()
 	log_data.Cut()
-	while(query.NextRow())
+	for(var/list/row as anything in rows)
 		var/list/timestamped_message = list(
-			"event_id" = query.item[1],
-			"time" = query.item[2],
-			"ckey" = query.item[3],
-			"name" = query.item[4],
-			"loc" = query.item[5],
-			"color" = query.item[6],
-			"message" = query.item[8]
+			"event_id" = row[1],
+			"time" = row[2],
+			"ckey" = row[3],
+			"name" = row[4],
+			"loc" = row[5],
+			"color" = row[6],
+			"message" = row[8]
 		)
-		var/entry_type = query.item[7]
+		var/entry_type = row[7]
 		if(!islist(log_data[entry_type]))
 			log_data[entry_type] = list()
 		UNTYPED_LIST_ADD(log_data[entry_type], timestamped_message)
 	client_view = TRUE
-	qdel(query)
+	update_static_data_for_all_viewers()

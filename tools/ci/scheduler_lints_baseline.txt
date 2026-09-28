@@ -10,8 +10,6 @@ stoplag 2
 prompts 10
 set_waitfor 0
 weakref 0
-del 0
-lc_refs 1706
 del 13
-lc_refs 1657
+blocking_builtins 0
 lc_refs 2683

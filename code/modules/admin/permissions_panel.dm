@@ -54,9 +54,60 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	else
 		dq_permissions_panel.tgui_interact(usr)
 		SStgui.update_uis(dq_permissions_panel)
+	dq_permissions_panel.refresh_db()
 
 /datum/permissions_panel
 	var/datum/admins/holder
+	/// The database rows the pages show, by query key (om_sql_view); a missing key is loading.
+	var/list/db_rows
+
+/// Fetches the current page's database rows (om_io: nothing waits); tgui_data shows what has
+/// arrived and the rest as loading.
+/datum/permissions_panel/proc/refresh_db()
+	if(!holder || !SSdbcore.IsConnected())
+		return
+	db_rows = null
+	switch(holder.dq_perms_page)
+		if(PERMISSIONS_PAGE_RANKS, PERMISSIONS_PAGE_HOUSEKEEPING)
+			om_sql_view(src, "admins", "SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]", PROC_REF(sql_rows_arrived))
+			om_sql_view(src, "ranks", "SELECT rank, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", PROC_REF(sql_rows_arrived))
+		if(PERMISSIONS_PAGE_LOGGING)
+			var/list/filter = list("target" = holder.dq_perms_log_target, "adminckey" = holder.dq_perms_log_actor, "operation" = holder.dq_perms_log_operation)
+			om_sql_view(src, "log_count", {"
+				SELECT COUNT(id) FROM [format_table_name("admin_log")]
+				WHERE target LIKE CONCAT('%',:target,'%')
+					AND adminckey LIKE CONCAT('%',:adminckey,'%')
+					AND (:operation IS NULL OR operation = :operation)
+				"}, filter, PROC_REF(sql_rows_arrived))
+			var/list/search_args = filter.Copy()
+			search_args["skip"] = PERMISSIONS_LOGS_PER_PAGE * holder.dq_perms_log_page
+			search_args["take"] = PERMISSIONS_LOGS_PER_PAGE
+			om_sql_view(src, "log_search", {"
+				SELECT
+					datetime,
+					round_id,
+					IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE ckey = adminckey), adminckey),
+					operation,
+					IF(ckey IS NULL, target, ckey),
+					log
+				FROM [format_table_name("admin_log")]
+				LEFT JOIN [format_table_name("erro_player")] ON target = ckey
+				WHERE target LIKE CONCAT('%',:target,'%')
+					AND adminckey LIKE CONCAT('%',:adminckey,'%')
+					AND (:operation IS NULL OR operation = :operation)
+				ORDER BY datetime DESC
+				LIMIT :skip, :take
+			"}, search_args, PROC_REF(sql_rows_arrived))
+
+/// The rows arrive for whoever still has the panel and the rights to see it.
+/datum/permissions_panel/proc/sql_rows_arrived(list/result, error, key)
+	var/list/rows = om_sql_view_rows(result, error, key, src)
+	if(!holder?.owner || !check_rights_for(holder.owner, R_PERMISSIONS))
+		return
+	if(error)
+		to_chat(holder.owner, span_danger("A SQL error occurred during this operation, check the server logs."), confidential = TRUE)
+	LAZYSET(db_rows, key, rows || list())
+	SStgui.update_uis(src)
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
 	..()
@@ -103,14 +154,11 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	var/list/data = list()
 	// Pull admin->rank mapping from DB to feed "held by" counts.
 	var/list/admins_by_rank = list()
-	var/datum/db_query/q_admins = SSdbcore.NewQuery("SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]")
-	if(q_admins.warn_execute())
-		while(q_admins.NextRow())
-			var/admin_rank_text = q_admins.item[2]
-			for(var/datum/admin_rank/composed_rank as anything in ranks_from_rank_name(admin_rank_text))
-				admins_by_rank[composed_rank.name] ||= list()
-				admins_by_rank[composed_rank.name] |= list(q_admins.item[1])
-	QDEL_NULL(q_admins)
+	for(var/list/row as anything in db_rows?["admins"])
+		var/admin_rank_text = row[2]
+		for(var/datum/admin_rank/composed_rank as anything in ranks_from_rank_name(admin_rank_text))
+			admins_by_rank[composed_rank.name] ||= list()
+			admins_by_rank[composed_rank.name] |= list(row[1])
 	for(var/stored_key in GLOB.admin_datums)
 		var/datum/admins/live_holder = GLOB.admin_datums[stored_key]
 		for(var/datum/admin_rank/composed_rank as anything in live_holder.ranks)
@@ -119,16 +167,13 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 	// Collect rank rows from DB + live datums (DB is source of truth where it has the rank).
 	var/list/all_ranks = list()
-	var/datum/db_query/q_ranks = SSdbcore.NewQuery("SELECT rank, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
-	if(q_ranks.warn_execute())
-		while(q_ranks.NextRow())
-			all_ranks[q_ranks.item[1]] = list(
-				"rank" = q_ranks.item[1],
-				"flags" = text2num(q_ranks.item[2]),
-				"exclude_flags" = text2num(q_ranks.item[3]),
-				"can_edit_flags" = text2num(q_ranks.item[4]),
-			)
-	QDEL_NULL(q_ranks)
+	for(var/list/row as anything in db_rows?["ranks"])
+		all_ranks[row[1]] = list(
+			"rank" = row[1],
+			"flags" = text2num("[row[2]]"),
+			"exclude_flags" = text2num("[row[3]]"),
+			"can_edit_flags" = text2num("[row[4]]"),
+		)
 	for(var/datum/admin_rank/rank as anything in GLOB.admin_ranks)
 		if(all_ranks[rank.name])
 			continue
@@ -168,6 +213,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			"can_delete" = !!can_delete,
 		))
 	data["rows"] = rows
+	data["loading"] = !db_rows || isnull(db_rows["admins"]) || isnull(db_rows["ranks"])
 	data["can_create"] = check_rights(R_PERMISSIONS) && holder.can_edit_rights_flags() != NONE
 	return data
 
@@ -180,79 +226,44 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	data["action_options"] = GLOB.permission_action_types.Copy()
 
 	var/log_count = 0
-	var/datum/db_query/q_count = SSdbcore.NewQuery({"
-		SELECT COUNT(id) FROM [format_table_name("admin_log")]
-		WHERE target LIKE CONCAT('%',:target,'%')
-			AND adminckey LIKE CONCAT('%',:adminckey,'%')
-			AND (:operation IS NULL OR operation = :operation)
-		"},
-		list("target" = holder.dq_perms_log_target, "adminckey" = holder.dq_perms_log_actor, "operation" = holder.dq_perms_log_operation)
-	)
-	if(q_count.warn_execute() && q_count.NextRow())
-		log_count = text2num(q_count.item[1])
-	QDEL_NULL(q_count)
+	var/list/count_rows = db_rows?["log_count"]
+	if(length(count_rows))
+		var/list/count_row = count_rows[1]
+		log_count = text2num("[count_row[1]]")
 	data["log_count"] = log_count
 	data["per_page"] = PERMISSIONS_LOGS_PER_PAGE
 
 	var/list/entries = list()
-	var/datum/db_query/q_search = SSdbcore.NewQuery({"
-		SELECT
-			datetime,
-			round_id,
-			IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE ckey = adminckey), adminckey),
-			operation,
-			IF(ckey IS NULL, target, ckey),
-			log
-		FROM [format_table_name("admin_log")]
-		LEFT JOIN [format_table_name("erro_player")] ON target = ckey
-		WHERE target LIKE CONCAT('%',:target,'%')
-			AND adminckey LIKE CONCAT('%',:adminckey,'%')
-			AND (:operation IS NULL OR operation = :operation)
-		ORDER BY datetime DESC
-		LIMIT :skip, :take
-	"}, list(
-		"target" = holder.dq_perms_log_target,
-		"adminckey" = holder.dq_perms_log_actor,
-		"operation" = holder.dq_perms_log_operation,
-		"skip" = PERMISSIONS_LOGS_PER_PAGE * holder.dq_perms_log_page,
-		"take" = PERMISSIONS_LOGS_PER_PAGE,
-	))
-	if(q_search.warn_execute())
-		while(q_search.NextRow())
-			entries += list(list(
-				"datetime" = q_search.item[1],
-				"round_id" = "[q_search.item[2]]",
-				"admin_key" = q_search.item[3],
-				"operation" = q_search.item[4],
-				"ckey_actioned" = q_search.item[5],
-				"log" = q_search.item[6],
-			))
-	QDEL_NULL(q_search)
+	for(var/list/row as anything in db_rows?["log_search"])
+		entries += list(list(
+			"datetime" = row[1],
+			"round_id" = "[row[2]]",
+			"admin_key" = row[3],
+			"operation" = row[4],
+			"ckey_actioned" = row[5],
+			"log" = row[6],
+		))
+	data["loading"] = !db_rows || isnull(db_rows["log_search"])
 	data["entries"] = entries
 	return data
 
 /datum/permissions_panel/proc/page_data_housekeeping()
 	var/list/data = list()
 	var/list/admins_by_rank = list()
-	var/datum/db_query/q_admins = SSdbcore.NewQuery("SELECT IFNULL((SELECT ckey FROM [format_table_name("erro_player")] WHERE [format_table_name("erro_player")].ckey = [format_table_name("admin")].ckey), ckey), [format_table_name("admin")].`rank` FROM [format_table_name("admin")]")
-	if(q_admins.warn_execute())
-		while(q_admins.NextRow())
-			var/admin_rank_text = q_admins.item[2]
-			for(var/datum/admin_rank/composed_rank as anything in ranks_from_rank_name(admin_rank_text))
-				admins_by_rank[composed_rank.name] += list(q_admins.item[1])
-	QDEL_NULL(q_admins)
+	for(var/list/row as anything in db_rows?["admins"])
+		var/admin_rank_text = row[2]
+		for(var/datum/admin_rank/composed_rank as anything in ranks_from_rank_name(admin_rank_text))
+			admins_by_rank[composed_rank.name] += list(row[1])
 
 	var/list/all_db_ranks = list()
-	var/datum/db_query/q_ranks = SSdbcore.NewQuery("SELECT rank, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
-	if(q_ranks.warn_execute())
-		while(q_ranks.NextRow())
-			all_db_ranks[q_ranks.item[1]] = list(
-				"rank" = q_ranks.item[1],
-				"flags" = q_ranks.item[2],
-				"exclude_flags" = q_ranks.item[3],
-				"can_edit_flags" = q_ranks.item[4],
-			)
-	QDEL_NULL(q_ranks)
+	for(var/list/row as anything in db_rows?["ranks"])
+		all_db_ranks[row[1]] = list(
+			"rank" = row[1],
+			"flags" = "[row[2]]",
+			"exclude_flags" = "[row[3]]",
+			"can_edit_flags" = "[row[4]]",
+		)
+	data["loading"] = !db_rows || isnull(db_rows["admins"]) || isnull(db_rows["ranks"])
 
 	var/list/invalid_admin_rows = list()
 	var/list/invalid_admin_ranks = admins_by_rank - all_db_ranks
@@ -380,10 +391,12 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 			else
 				holder.dq_perms_log_operation = op
 			holder.dq_perms_log_page = 0
+			refresh_db()
 			SStgui.update_uis(src)
 			return TRUE
 		if("log_page")
 			holder.dq_perms_log_page = text2num(params["page"]) || 0
+			refresh_db()
 			SStgui.update_uis(src)
 			return TRUE
 		// Housekeeping page actions.

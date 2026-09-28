@@ -61,26 +61,17 @@ GLOBAL_LIST_EMPTY(jobban_keylist)		//to store the keys & ranks
 			jobban_loadbanfile()
 			return
 
-		//Job permabans
-		var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_PERMABAN' AND isnull(unbanned)")
-		query.Execute()
+		// Job permabans and tempbans (om_io: added to the keylist when the rows arrive).
+		om_io(null, /datum/om/io/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_PERMABAN' AND isnull(unbanned)", null, /proc/jobban_rows_arrived)
+		om_io(null, /datum/om/io/sql, "SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_TEMPBAN' AND isnull(unbanned) AND expiration_time > Now()", null, /proc/jobban_rows_arrived)
 
-		while(query.NextRow())
-			var/ckey = query.item[1]
-			var/job = query.item[2]
-
-			GLOB.jobban_keylist += "[ckey] - [job]"
-		qdel(query)
-		//Job tempbans
-		var/datum/db_query/query1 = SSdbcore.NewQuery("SELECT ckey, job FROM erro_ban WHERE bantype = 'JOB_TEMPBAN' AND isnull(unbanned) AND expiration_time > Now()")
-		query1.Execute()
-
-		while(query1.NextRow())
-			var/ckey = query1.item[1]
-			var/job = query1.item[2]
-
-			GLOB.jobban_keylist += "[ckey] - [job]"
-		qdel(query1)
+/// om_io() callback: adds loaded job bans to the keylist.
+/proc/jobban_rows_arrived(list/result, error)
+	if(error)
+		log_sql("Loading job bans failed: [error]")
+		return
+	for(var/list/row as anything in result["rows"])
+		GLOB.jobban_keylist |= "[row[1]] - [row[2]]"
 
 /proc/jobban_savebanfile()
 	var/savefile/S=new("data/job_full.ban")

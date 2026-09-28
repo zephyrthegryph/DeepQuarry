@@ -201,8 +201,13 @@
 	var/view_size = getviewsize(view)
 	var/aspect_ratio = view_size[1] / view_size[2]
 
-	// Calculate desired pixel width using window size and aspect ratio
-	var/list/sizes = params2list(winget(src, "mainwindow.mainvsplit;mapwindow", "size"))
+	// Calculate desired pixel width using window size and aspect ratio. The sizes are a round
+	// trip to the client: DX-exec answers fit_viewport_sized().
+	dx_winget(src, src, "mainwindow.mainvsplit;mapwindow", "size", PROC_REF(fit_viewport_sized), aspect_ratio, view_size[1])
+
+/// dx_winget() callback for fit_viewport(): sizes the splitter from the window sizes.
+/client/proc/fit_viewport_sized(size_params, aspect_ratio, view_width)
+	var/list/sizes = params2list(size_params)
 
 	// Client closed the window? Some other error? This is unexpected behaviour, let's
 	// CRASH with some info.
@@ -218,7 +223,7 @@
 
 	var/desired_width = 0
 	if(zoom_value)
-		desired_width = round(view_size[1] * zoom_value * world.icon_size)
+		desired_width = round(view_width * zoom_value * world.icon_size)
 	else
 
 		// Looks like we expect mapwindow.size to be "ixj" where i and j are numbers.
@@ -243,32 +248,35 @@
 	var/pct = 100 * (desired_width + 4) / split_width
 	winset(src, "mainwindow.mainvsplit", "splitter=[pct]")
 
-	// Apply an ever-lowering offset until we finish or fail
-	var/delta
-	for(var/safety in 1 to 10)
-		var/after_size = winget(src, "mapwindow", "size")
-		map_size = splittext(after_size, "x")
-		var/got_width = text2num(map_size[1])
+	// Apply an ever-lowering offset until we finish or fail: one round trip per step.
+	dx_winget(src, src, "mapwindow", "size", PROC_REF(fit_viewport_step), desired_width, split_width, pct, null, 1)
 
-		if (got_width == desired_width)
-			// success
-			return
-		else if (isnull(delta))
-			// calculate a probable delta value based on the difference
-			delta = 100 * (desired_width - got_width) / split_width
-		else if ((delta > 0 && got_width > desired_width) || (delta < 0 && got_width < desired_width))
-			// if we overshot, halve the delta and reverse direction
-			delta = -delta/2
+/// dx_winget() callback: one correction step of fit_viewport(), up to ten.
+/client/proc/fit_viewport_step(after_size, desired_width, split_width, pct, delta, safety)
+	var/list/map_size = splittext(after_size, "x")
+	var/got_width = text2num(map_size[1])
 
-		pct += delta
-		winset(src, "mainwindow.mainvsplit", "splitter=[pct]")
+	if (got_width == desired_width)
+		// success
+		return
+	else if (isnull(delta))
+		// calculate a probable delta value based on the difference
+		delta = 100 * (desired_width - got_width) / split_width
+	else if ((delta > 0 && got_width > desired_width) || (delta < 0 && got_width < desired_width))
+		// if we overshot, halve the delta and reverse direction
+		delta = -delta/2
+
+	pct += delta
+	winset(src, "mainwindow.mainvsplit", "splitter=[pct]")
+	if(safety < 10)
+		dx_winget(src, src, "mapwindow", "size", PROC_REF(fit_viewport_step), desired_width, split_width, pct, delta, safety + 1)
 
 /// Attempt to automatically fit the viewport, assuming the user wants it
 /client/proc/attempt_auto_fit_viewport()
 	if(!prefs.read_preference(/datum/preference/toggle/auto_fit_viewport))
 		return
 	if(fully_created)
-		INVOKE_ASYNC(src, VERB_REF(fit_viewport)) // ALLOW(scheduler): fit_viewport winget round-trip
+		fit_viewport() // its wingets go through DX-exec
 	else //Delayed to avoid wingets from Login calls.
 		om_after_realtime(1 SECONDS, VERB_REF(fit_viewport), src)
 

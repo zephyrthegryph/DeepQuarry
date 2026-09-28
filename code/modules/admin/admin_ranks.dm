@@ -133,7 +133,9 @@ GLOBAL_PROTECT(protected_ranks)
 
 /// Loads admin ranks.
 ///	Return a list containing the backup data if they were loaded from the database backup json
-/proc/load_admin_ranks(dbfail, no_update)
+/// `prefetched`: reload_admins_async()'s rows (list("ranks" = rows)); without it the query
+/// blocks, which only boot does (load_admins(initial = TRUE)).
+/proc/load_admin_ranks(dbfail, no_update, list/prefetched)
 	if(IsAdminAdvancedProcCall())
 		to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
@@ -160,29 +162,35 @@ GLOBAL_PROTECT(protected_ranks)
 			if(!no_update)
 				sync_ranks_with_db()
 		else
-			var/datum/db_query/query_load_admin_ranks = SSdbcore.NewQuery("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
-			if(!query_load_admin_ranks.Execute())
+			var/list/rank_rows
+			if(prefetched)
+				rank_rows = prefetched["ranks"]
+			else
+				var/datum/db_query/query_load_admin_ranks = SSdbcore.NewQuery("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
+				if(query_load_admin_ranks.Execute(async = FALSE)) // boot only (allowlisted)
+					rank_rows = query_load_admin_ranks.rows || list()
+				qdel(query_load_admin_ranks)
+			if(isnull(rank_rows))
 				message_admins("Error loading admin ranks from database. Loading from backup.")
 				log_sql("Error loading admin ranks from database. Loading from backup.")
 				dbfail = TRUE
 			else
-				while(query_load_admin_ranks.NextRow())
+				for(var/list/row as anything in rank_rows)
 					var/skip
-					var/rank_name = query_load_admin_ranks.item[1]
+					var/rank_name = row[1]
 					for(var/datum/admin_rank/R in GLOB.admin_ranks)
 						if(R.name == rank_name) //this rank was already loaded from txt override
 							skip = 1
 							break
 					if(skip)
 						continue
-					var/rank_flags = text2num(query_load_admin_ranks.item[2])
-					var/rank_exclude_flags = text2num(query_load_admin_ranks.item[3])
-					var/rank_can_edit_flags = text2num(query_load_admin_ranks.item[4])
+					var/rank_flags = text2num("[row[2]]")
+					var/rank_exclude_flags = text2num("[row[3]]")
+					var/rank_can_edit_flags = text2num("[row[4]]")
 					var/datum/admin_rank/db_rank = new(rank_name, RANK_SOURCE_DB, rank_flags, rank_exclude_flags, rank_can_edit_flags)
 					if(QDELETED(db_rank))
 						continue
 					GLOB.admin_ranks += db_rank
-			qdel(query_load_admin_ranks)
 	//load ranks from backup file
 	if(dbfail)
 		var/backup_file = file2text("data/admins_backup.json")
@@ -241,7 +249,9 @@ GLOBAL_PROTECT(protected_ranks)
 
 /// (Re)Loads the admin list.
 /// returns TRUE if database admins had to be loaded from the backup json
-/proc/load_admins(no_update, initial = FALSE)
+/// At runtime go through reload_admins_async(), which reads the tables on the I/O lane first
+/// and passes the rows as `prefetched`; only boot (initial) reads them blocking.
+/proc/load_admins(no_update, initial = FALSE, list/prefetched)
 	if(!initial)
 		if(!global.config.PreConfigReload())
 			return
@@ -259,7 +269,7 @@ GLOBAL_PROTECT(protected_ranks)
 	GLOB.admins.Cut()
 	GLOB.protected_admins.Cut()
 	GLOB.deadmins.Cut()
-	var/list/backup_file_json = load_admin_ranks(dbfail, no_update)
+	var/list/backup_file_json = load_admin_ranks(dbfail, no_update, prefetched)
 	dbfail = backup_file_json != null
 	//Clear profile access
 	for(var/A in world.GetConfig("admin"))
@@ -277,16 +287,23 @@ GLOBAL_PROTECT(protected_ranks)
 		new /datum/admins(ranks_from_rank_name(admin_rank), ckey(admin_key), force_active = FALSE, protected = TRUE)
 
 	if(!CONFIG_GET(flag/admin_legacy_system) && !dbfail)
-		var/datum/db_query/query_load_admins = SSdbcore.NewQuery("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`")
-		if(!query_load_admins.Execute())
+		var/list/admin_rows
+		if(prefetched)
+			admin_rows = prefetched["admins"]
+		else
+			var/datum/db_query/query_load_admins = SSdbcore.NewQuery("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`")
+			if(query_load_admins.Execute(async = FALSE)) // boot only (allowlisted)
+				admin_rows = query_load_admins.rows || list()
+			qdel(query_load_admins)
+		if(isnull(admin_rows))
 			message_admins("Error loading admins from database. Loading from backup.")
 			log_sql("Error loading admins from database. Loading from backup.")
 			dbfail = 1
 		else
-			while(query_load_admins.NextRow())
-				var/admin_ckey = ckey(query_load_admins.item[1])
-				var/admin_rank = query_load_admins.item[2]
-				var/admin_feedback = query_load_admins.item[3]
+			for(var/list/row as anything in admin_rows)
+				var/admin_ckey = ckey(row[1])
+				var/admin_rank = row[2]
+				var/admin_feedback = row[3]
 				var/skip
 
 				var/list/admin_ranks = ranks_from_rank_name(admin_rank)
@@ -299,7 +316,6 @@ GLOBAL_PROTECT(protected_ranks)
 				if(!skip)
 					var/datum/admins/admin_holder = new(admin_ranks, admin_ckey)
 					admin_holder.cached_feedback_link = admin_feedback || NO_FEEDBACK_LINK
-		qdel(query_load_admins)
 		if (!no_update)
 			save_admin_backup()
 			sync_admins_with_db()
@@ -331,6 +347,27 @@ GLOBAL_PROTECT(protected_ranks)
 	testing(msg)
 	#endif
 	return dbfail
+
+/// Reloads the admins at runtime without waiting: reads the rank and admin tables on the I/O
+/// lane (om_io), then runs load_admins() with the rows. A failed read loads from the backup.
+/proc/reload_admins_async(no_update)
+	if(IsAdminAdvancedProcCall())
+		to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
+		return
+	if(CONFIG_GET(flag/admin_legacy_system) || !SSdbcore.IsConnected())
+		load_admins(no_update, FALSE, list("ranks" = null, "admins" = null))
+		return
+	om_io(null, /datum/om/io/sql, "SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]", null, /proc/reload_admins_ranks_arrived, no_update)
+
+/// om_io() callback: the ranks are in; now read the admins.
+/proc/reload_admins_ranks_arrived(list/result, error, no_update)
+	var/list/rank_rows = error ? null : (result["rows"] || list())
+	om_io(null, /datum/om/io/sql, "SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`", null, /proc/reload_admins_admins_arrived, no_update, list(rank_rows))
+
+/// om_io() callback: both tables are in; rebuild the admins from them.
+/proc/reload_admins_admins_arrived(list/result, error, no_update, list/wrapped_rank_rows)
+	var/list/admin_rows = error ? null : (result["rows"] || list())
+	load_admins(no_update, FALSE, list("ranks" = wrapped_rank_rows[1], "admins" = admin_rows))
 
 /// Writes the protected ranks to the database on the I/O lane (om_io); returns at once.
 /proc/sync_ranks_with_db()

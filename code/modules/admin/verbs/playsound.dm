@@ -119,7 +119,13 @@ ADMIN_VERB(play_server_sound, R_SOUNDS, "Play Server Sound", "Plays a sound from
 		web_sound_play(user, null, list(), 0)
 		return
 	var/shell_scrubbed_input = shell_url_scrub(input)
-	var/list/output = world.shelleo("[ytdl] --geo-bypass --format \"bestaudio\[ext=mp3]/best\[ext=mp4]\[height <= 360]/bestaudio\[ext=m4a]/bestaudio\[ext=aac]\" --dump-single-json --no-playlist -- \"[shell_scrubbed_input]\"")
+	// youtube-dl is an OS process: DX-exec runs it and web_sound_resolved() gets its output.
+	dx_shelleo(null, "[ytdl] --geo-bypass --format \"bestaudio\[ext=mp3]/best\[ext=mp4]\[height <= 360]/bestaudio\[ext=m4a]/bestaudio\[ext=aac]\" --dump-single-json --no-playlist -- \"[shell_scrubbed_input]\"", GLOBAL_PROC_REF(web_sound_resolved), user, input, credit)
+
+/// dx_shelleo() callback: youtube-dl has answered for web_sound().
+/proc/web_sound_resolved(list/output, mob/user, input, credit)
+	if(!user?.client || !check_rights_for(user.client, R_SOUNDS))
+		return
 	var/errorlevel = output[SHELLEO_ERRORLEVEL]
 	var/stdout = output[SHELLEO_STDOUT]
 	var/stderr = output[SHELLEO_STDERR]

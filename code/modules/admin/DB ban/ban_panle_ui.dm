@@ -7,6 +7,8 @@
 	var/playercid
 	var/dbbantype
 	var/min_search = FALSE
+	/// The last search's rows (om_sql_view: they arrive after the search is made).
+	var/list/db_records
 
 /datum/tgui_ban_panel/New(user, pckey, datum/admins/admind)//user can either be a client or a mob due to byondcode(tm)
 	if (istype(user, /client))
@@ -17,6 +19,7 @@
 		holder = user_mob.client //if its a mob, assign the mob's client to holder
 	playerckey = pckey
 	admin_datum = admind
+	database_lookup()
 
 /datum/tgui_ban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_BAN)
@@ -45,7 +48,7 @@
 						"player_cid" = playercid,
 						"bantype" = dbbantype,
 						"possible_jobs" = get_all_jobs() + SSjob.get_job_titles_in_department(DEPARTMENT_SYNTHETIC) + bantypes,
-						"database_records" = database_lookup()
+						"database_records" = db_records
 					)
 	return data
 
@@ -125,6 +128,7 @@
 			playercid = params["cid"]
 			dbbantype = text2num(params["banType"])
 			min_search = text2num(params["minMatch"])
+			database_lookup()
 			update_tgui_static_data(ui.user, ui)
 			return TRUE
 
@@ -137,8 +141,9 @@
 			admin_datum.DB_ban_edit(ui.user.client, banid, banedit)
 			return TRUE
 
+/// Starts the ban search for the current filters; the rows arrive in sql_rows_arrived().
 /datum/tgui_ban_panel/proc/database_lookup()
-
+	db_records = null
 	if(!adminckey && !playerckey && !playerip && !playercid && !dbbantype)
 		return
 
@@ -189,13 +194,15 @@
 				bantypesearch += "'PERMABAN' "
 
 
-	var/datum/db_query/select_query = SSdbcore.NewQuery("SELECT id, bantime, bantype, reason, job, duration, expiration_time, ckey, a_ckey, unbanned, unbanned_ckey, unbanned_datetime, edits, ip, computerid FROM erro_ban WHERE 1 [playersearch] [adminsearch] [ipsearch] [cidsearch] [bantypesearch] ORDER BY bantime DESC LIMIT 100", search_params)
-	select_query.Execute()
+	om_sql_view(src, "bans", "SELECT id, bantime, bantype, reason, job, duration, expiration_time, ckey, a_ckey, unbanned, unbanned_ckey, unbanned_datetime, edits, ip, computerid FROM erro_ban WHERE 1 [playersearch] [adminsearch] [ipsearch] [cidsearch] [bantypesearch] ORDER BY bantime DESC LIMIT 100", search_params, PROC_REF(sql_rows_arrived))
 
+/datum/tgui_ban_panel/proc/sql_rows_arrived(list/result, error, key)
+	var/list/rows = om_sql_view_rows(result, error, key, src)
+	if(!holder || !check_rights_for(holder, R_BAN))
+		return
 	var/list/all_bans = list()
 	var/now = time2text(world.realtime, "YYYY-MM-DD hh:mm:ss") // MUST BE the same format as SQL gives us the dates in, and MUST be least to most specific (i.e. year, month, day not day, month, year)
-
-	while(select_query.NextRow())
-		UNTYPED_LIST_ADD(all_bans, list("auto" = ((select_query.item[3] in list("TEMPBAN", "JOB_TEMPBAN")) && now > select_query.item[7]), "data_list" = select_query.item))
-
-	return all_bans
+	for(var/list/row as anything in rows)
+		UNTYPED_LIST_ADD(all_bans, list("auto" = ((row[3] in list("TEMPBAN", "JOB_TEMPBAN")) && now > row[7]), "data_list" = row))
+	db_records = all_bans
+	update_static_data_for_all_viewers()

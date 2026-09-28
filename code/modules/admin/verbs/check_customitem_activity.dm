@@ -23,7 +23,6 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 	dq_admin_report_html(user.mob, "Inactive Custom Items", dat, user.holder)
 
 /proc/populate_inactive_customitems_list(client/C)
-	set background = 1
 
 	if(GLOB.checked_for_inactives)
 		return
@@ -50,27 +49,44 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 		if(!ckeys_with_customitems.Find(cur_key))
 			ckeys_with_customitems.Add(cur_key)
 
-	//run a query to get all ckeys inactive for over 2 months
-	var/list/inactive_ckeys = list()
-	if(ckeys_with_customitems.len)
-		var/datum/db_query/query_inactive = SSdbcore.NewQuery("SELECT ckey, lastseen FROM erro_player WHERE datediff(Now(), lastseen) > 60")
-		query_inactive.Execute()
-		while(query_inactive.NextRow())
-			var/cur_ckey = query_inactive.item[1]
-			//if the ckey has a custom item attached, output it
-			if(ckeys_with_customitems.Find(cur_ckey))
-				ckeys_with_customitems.Remove(cur_ckey)
-				inactive_ckeys[cur_ckey] = "last seen on [query_inactive.item[2]]"
-		qdel(query_inactive)
+	if(!ckeys_with_customitems.len)
+		populate_inactive_customitems_finish(list(), C?.ckey)
+		return
+	//run a query to get all ckeys inactive for over 2 months (om_io: the answer continues below)
+	om_io(null, /datum/om/io/sql, "SELECT ckey, lastseen FROM erro_player WHERE datediff(Now(), lastseen) > 60", null, /proc/populate_inactive_customitems_inactive, ckeys_with_customitems, C?.ckey)
 
-	//if there are ckeys left over, check whether they have a database entry at all
-	if(ckeys_with_customitems.len)
-		for(var/cur_ckey in ckeys_with_customitems)
-			var/datum/db_query/query_inactive = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ckey = :ckey", list("ckey" = cur_ckey))
-			query_inactive.Execute()
-			if(!query_inactive.rows)
-				inactive_ckeys += cur_ckey
-			qdel(query_inactive)
+/// om_io() callback: the long-inactive players are known; now check which of the rest have any
+/// database entry at all.
+/proc/populate_inactive_customitems_inactive(list/result, error, list/ckeys_with_customitems, asker_ckey)
+	var/list/inactive_ckeys = list()
+	for(var/list/row as anything in result?["rows"])
+		var/cur_ckey = row[1]
+		//if the ckey has a custom item attached, output it
+		if(ckeys_with_customitems.Find(cur_ckey))
+			ckeys_with_customitems.Remove(cur_ckey)
+			inactive_ckeys[cur_ckey] = "last seen on [row[2]]"
+	if(!ckeys_with_customitems.len)
+		populate_inactive_customitems_finish(inactive_ckeys, asker_ckey)
+		return
+	//if there are ckeys left over, check whether they have a database entry at all (one query)
+	var/list/placeholders = list()
+	var/list/arguments = list()
+	for(var/i in 1 to length(ckeys_with_customitems))
+		placeholders += ":k[i]"
+		arguments["k[i]"] = ckeys_with_customitems[i]
+	om_io(null, /datum/om/io/sql, "SELECT ckey FROM erro_player WHERE ckey IN ([jointext(placeholders, ",")])", arguments, /proc/populate_inactive_customitems_known, ckeys_with_customitems, inactive_ckeys, asker_ckey)
+
+/// om_io() callback: whoever isn't in the player table has no database entry.
+/proc/populate_inactive_customitems_known(list/result, error, list/ckeys_with_customitems, list/inactive_ckeys, asker_ckey)
+	var/list/known = list()
+	for(var/list/row as anything in result?["rows"])
+		known[row[1]] = TRUE
+	for(var/cur_ckey in ckeys_with_customitems)
+		if(!known[cur_ckey])
+			inactive_ckeys += cur_ckey
+	populate_inactive_customitems_finish(inactive_ckeys, asker_ckey)
+
+/proc/populate_inactive_customitems_finish(list/inactive_ckeys, asker_ckey)
 	if(inactive_ckeys.len)
 		GLOB.inactive_keys = ""
 		for(var/cur_key in inactive_ckeys)
@@ -80,5 +96,6 @@ ADMIN_VERB(check_customitem_activity, R_ADMIN|R_MOD|R_SERVER, "Check activity of
 				GLOB.inactive_keys += "[cur_key] - no database entry<br>"
 
 	GLOB.checked_for_inactives = TRUE
-	if(C)
-		SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/check_customitem_activity) //Recursively calling ourselves until cancelled or a unique name is given.
+	var/client/C = asker_ckey ? GLOB.directory[asker_ckey] : null
+	if(C && check_rights_for(C, R_ADMIN|R_MOD|R_SERVER))
+		SSadmin_verbs.dynamic_invoke_verb(C, /datum/admin_verb/check_customitem_activity)

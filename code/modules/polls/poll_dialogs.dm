@@ -80,6 +80,15 @@ REF_PAIR(/mob/new_player, list("privacy_poll_dialog" = "owner"))
 		else
 			return
 
+	record_vote(option)
+	return TRUE
+
+/// A prompt flow (flow_io.dm): the check and the insert each re-run it when answered.
+/datum/privacy_poll_dialog/proc/record_vote(option)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(record_vote), args)
+	if(!owner || answered)
+		return
 	var/voted = FALSE
 	var/datum/db_query/check = SSdbcore.NewQuery(
 		"SELECT 1 FROM erro_privacy WHERE ckey = :t_ckey",
@@ -92,18 +101,12 @@ REF_PAIR(/mob/new_player, list("privacy_poll_dialog" = "owner"))
 	qdel(check)
 
 	if(!voted)
-		var/datum/db_query/ins = SSdbcore.NewQuery(
-			"INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)",
-			list("t_ckey" = owner.ckey, "t_option" = option),
-		)
-		ins.Execute()
-		qdel(ins)
+		flow_sql("INSERT INTO erro_privacy VALUES (null, Now(), :t_ckey, :t_option)", list("t_ckey" = owner.ckey, "t_option" = option))
 		to_chat(owner, span_bold("Thank you for your vote!"))
 
 	answered = TRUE
 	SStgui.close_uis(src)
 	qdel(src)
-	return TRUE
 
 // ============================================================
 // Player poll browser
@@ -138,19 +141,24 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 	SStgui.close_uis(src)
 	qdel(src)
 
+/// A prompt flow (flow_io.dm): the list is replaced when the rows arrive.
 /datum/poll_browser_dialog/proc/refresh_poll_list()
-	poll_ids.Cut()
-	poll_meta.Cut()
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(refresh_poll_list), args)
 	if(!SSdbcore.IsConnected() || !owner?.client)
+		poll_ids.Cut()
+		poll_meta.Cut()
 		return
 	var/isadmin = check_rights_for(owner.client, R_HOLDER) ? 1 : 0
 	// Adminonly clause is a static fragment of the query selected at
-	// build-time â€” not user input. The Now() BETWEEN comparison takes no
+	// build-time — not user input. The Now() BETWEEN comparison takes no
 	// parameters. Parameterised queries below for any user-derived value.
 	var/datum/db_query/q = SSdbcore.NewQuery(
 		"SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime",
 	)
 	q.Execute()
+	poll_ids.Cut()
+	poll_meta.Cut()
 	while(q.NextRow())
 		var/id_str = "[q.item[1]]"
 		var/question = q.item[2]
@@ -167,6 +175,17 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 	data["selected"] = (selected_pollid && cached_detail) ? cached_detail : null
 	return data
 
+/// Loads the selected poll's detail as a prompt flow (flow_io.dm): build_poll_detail()'s reads
+/// each re-run it, and the detail shows once they have all arrived.
+/datum/poll_browser_dialog/proc/load_poll_detail(pollid)
+	if(!GLOB.prompt_flow)
+		return prompt_flow(src, PROC_REF(load_poll_detail), args)
+	if(selected_pollid != pollid)
+		return
+	cached_detail = build_poll_detail(pollid)
+	SStgui.update_uis(src)
+
+/// Runs inside load_poll_detail()'s flow.
 /datum/poll_browser_dialog/proc/build_poll_detail(pollid)
 	. = list()
 	.["id"] = pollid
@@ -326,7 +345,7 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 		if("refresh")
 			refresh_poll_list()
 			if(selected_pollid)
-				cached_detail = build_poll_detail(selected_pollid)
+				load_poll_detail(selected_pollid)
 			return TRUE
 
 		if("select")
@@ -334,7 +353,8 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 			if(!isnum(id))
 				return
 			selected_pollid = id
-			cached_detail = build_poll_detail(id)
+			cached_detail = null
+			load_poll_detail(id)
 			return TRUE
 
 		if("back")
@@ -347,8 +367,6 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 			var/optionid = text2num("[params["optionid"]]")
 			if(isnum(pollid) && isnum(optionid))
 				owner.vote_on_poll(pollid, optionid)
-			if(selected_pollid)
-				cached_detail = build_poll_detail(selected_pollid)
 			return TRUE
 
 		if("vote_text")
@@ -356,16 +374,12 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 			var/replytext = "[params["replytext"]]"
 			if(isnum(pollid) && length(replytext))
 				owner.log_text_poll_reply(pollid, replytext)
-			if(selected_pollid)
-				cached_detail = build_poll_detail(selected_pollid)
 			return TRUE
 
 		if("vote_text_abstain")
 			var/pollid = text2num("[params["pollid"]]")
 			if(isnum(pollid))
 				owner.log_text_poll_reply(pollid, "ABSTAIN")
-			if(selected_pollid)
-				cached_detail = build_poll_detail(selected_pollid)
 			return TRUE
 
 		if("vote_numval")
@@ -388,8 +402,6 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 					if(!isnum(rating))
 						continue
 				owner.vote_on_numval_poll(pollid, optionid, rating)
-			if(selected_pollid)
-				cached_detail = build_poll_detail(selected_pollid)
 			return TRUE
 
 		if("vote_multi")
@@ -403,8 +415,6 @@ REF_PAIR(/mob/new_player, list("poll_browser_dialog" = "owner"))
 				var/optionid = text2num("[choice]")
 				if(isnum(optionid))
 					owner.vote_on_poll(pollid, optionid, 1)
-			if(selected_pollid)
-				cached_detail = build_poll_detail(selected_pollid)
 			return TRUE
 
 // ============================================================
