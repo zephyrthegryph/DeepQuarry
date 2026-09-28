@@ -746,3 +746,5 @@ REF_OWNED(/obj/machinery/telecomms, "soundloop")
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/telecomms/step_start_condition()
 	return on
+
+REF_OWNED(/obj/machinery/telecomms/server, list("Compiler", "server_radio"))

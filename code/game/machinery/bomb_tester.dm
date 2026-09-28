@@ -19,7 +19,7 @@
 
 	var/obj/item/tank/tank1
 	var/obj/item/tank/tank2
-	var/obj/machinery/portable_atmospherics/canister/test_canister
+	var/test_canister_handle
 
 	var/sim_mode = MODE_SINGLE
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
@@ -51,8 +51,8 @@
 
 /obj/machinery/bomb_tester/machine_step()
 	..()
-	if(test_canister && !Adjacent(test_canister))
-		test_canister = null
+	if(test_canister() && !Adjacent(test_canister()))
+		test_canister_handle = null
 	if(simulating && world.time >= simulation_started + simulation_delay)
 		simulation_finish()
 
@@ -134,7 +134,7 @@
 		data["tank1ref"] = REF(tank1)
 		data["tank2"] = tank2
 		data["tank2ref"] = REF(tank2)
-		data["canister"] = test_canister
+		data["canister"] = test_canister()
 		data["sim_canister_output"] = sim_canister_output
 
 	return data
@@ -191,13 +191,13 @@
 
 		if("canister_scan")
 			for(var/obj/machinery/portable_atmospherics/canister/C in orange(1,src))
-				if(C && C == test_canister)
+				if(C && C == test_canister())
 					continue
 				else if(C)
-					test_canister = C
+					test_canister_handle = om_handle(C)
 					break
 				else
-					test_canister = null
+					test_canister_handle = null
 			return TRUE
 
 		if("set_can_pressure")
@@ -209,7 +209,7 @@
 			return TRUE
 
 /obj/machinery/bomb_tester/proc/start_simulating()
-	if(!tank1 || (sim_mode == MODE_DOUBLE && !tank2) || (sim_mode == MODE_CANISTER && !test_canister))
+	if(!tank1 || (sim_mode == MODE_DOUBLE && !tank2) || (sim_mode == MODE_CANISTER && !test_canister()))
 		simulation_results = "Error"
 		simulation_finish()
 		return
@@ -312,15 +312,15 @@
 		simulation_results += "<hr>Final Result: No detonation."
 
 /obj/machinery/bomb_tester/proc/canister_sim()
-	test_canister.anchored = TRUE
+	test_canister().anchored = TRUE
 	faketank.set_volume(tank1.air_contents.return_volume())
 	faketank.copy_from(tank1.air_contents)
 	faketank_integrity = tank1.get_integrity() / 10 // The sim counts the seal in its old 20-point scale.
 
 	var/datum/gas_mixture/fakecanister = new
-	fakecanister.set_volume(test_canister.air_contents.return_volume())
-	fakecanister.copy_from(test_canister.air_contents)
-	var/fakecanister_RFL = test_canister.release_flow_rate
+	fakecanister.set_volume(test_canister().air_contents.return_volume())
+	fakecanister.copy_from(test_canister().air_contents)
+	var/fakecanister_RFL = test_canister().release_flow_rate
 
 	simulation_results = "<center><h1><b>Canister-Assisted Single Tank Ignition Test</b></h1></center>"
 	simulation_results += "<hr>"
@@ -347,8 +347,8 @@
 	simulating = 0
 	update_use_power(USE_POWER_IDLE)
 	update_icon()
-	if(test_canister && test_canister.anchored && !test_canister.connected_port)
-		test_canister.anchored = FALSE
+	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
+		test_canister().anchored = FALSE
 	if(cancelled)
 		return
 	if(simulation_results == "Error")
@@ -385,3 +385,10 @@
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
+
+REF_HELD(/obj/machinery/bomb_tester, list("tank1", "tank2"))
+REF_OWNED(/obj/machinery/bomb_tester, list("faketank"))
+
+/// LC-refs: test canister -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister
+	return om_resolve(test_canister_handle)

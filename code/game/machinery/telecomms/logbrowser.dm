@@ -9,7 +9,7 @@
 	icon_screen = "comm_logs"
 
 	var/list/servers	// the servers located by the computer
-	var/obj/machinery/telecomms/server/SelectedServer
+	var/SelectedServer_handle
 	circuit = /obj/item/circuitboard/comm_server
 
 	var/network = "NULL"		// the network to probe
@@ -35,15 +35,15 @@
 	data["servers"] = serverData
 
 	data["selectedServer"] = null
-	if(SelectedServer)
+	if(SelectedServer())
 		data["selectedServer"] = list(
-			"id" = SelectedServer.id,
-			"totalTraffic" = SelectedServer.totaltraffic,
+			"id" = SelectedServer().id,
+			"totalTraffic" = SelectedServer().totaltraffic,
 		)
 
 		var/list/logs = list()
 		var/i = 0
-		for(var/c in SelectedServer.log_entries)
+		for(var/c in SelectedServer().log_entries)
 			i++
 			var/datum/comm_log_entry/C = c
 
@@ -98,17 +98,17 @@
 		if("view")
 			for(var/obj/machinery/telecomms/T in servers)
 				if(T.id == params["id"])
-					SelectedServer = T
+					SelectedServer_handle = om_handle(T)
 					break
 			. = TRUE
 
 		if("mainmenu")
-			SelectedServer = null
+			SelectedServer_handle = null
 			. = TRUE
 
 		if("release")
 			servers = list()
-			SelectedServer = null
+			SelectedServer_handle = null
 			. = TRUE
 
 		if("scan")
@@ -131,13 +131,13 @@
 				to_chat(ui.user, span_warning("ACCESS DENIED."))
 				return
 
-			if(SelectedServer)
+			if(SelectedServer())
 				var/idx = text2num(params["id"])
-				if(!idx || idx < 1 || idx > length(SelectedServer.log_entries))
+				if(!idx || idx < 1 || idx > length(SelectedServer().log_entries))
 					return
-				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer.log_entries, idx)
+				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
 				set_temp("DELETED ENTRY: [D.name]", "bad")
-				LAZYREMOVE(SelectedServer.log_entries, D)
+				LAZYREMOVE(SelectedServer().log_entries, D)
 				qdel(D)
 			else
 				set_temp("FAILED: NO SELECTED MACHINE", "bad")
@@ -172,3 +172,7 @@
 
 /obj/machinery/computer/telecomms/server/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)
+
+/// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server
+	return om_resolve(SelectedServer_handle)

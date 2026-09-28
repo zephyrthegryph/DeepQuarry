@@ -350,3 +350,5 @@
 /obj/item/dnainjector/set_trait/nonconduct/disable
 	disabling = TRUE
 // CHOMPEnable End
+
+REF_OWNED(/obj/item/dnainjector, list("buf"))

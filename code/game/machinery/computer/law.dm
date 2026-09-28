@@ -6,7 +6,7 @@
 	icon_keyboard = "rd_key"
 	icon_screen = "command"
 	circuit = /obj/item/circuitboard/aiupload
-	var/mob/living/silicon/ai/current = null
+	var/current_handle
 	var/opened = 0
 
 
@@ -72,8 +72,8 @@
 		return TRUE
 	var/mob/living/silicon/ai/picked = select_active_ai(user, src, PROC_REF(interaction_select_ai), args)
 	if(picked)
-		src.current = picked
-		to_chat(user, "[src.current.name] selected for law changes.")
+		src.current_handle = om_handle(picked)
+		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 
 /obj/machinery/computer/aiupload/attack_ghost(user as mob)
@@ -86,7 +86,7 @@
 	icon_keyboard = "rd_key"
 	icon_screen = "command"
 	circuit = /obj/item/circuitboard/borgupload
-	var/mob/living/silicon/robot/current = null
+	var/current_handle
 
 
 /obj/machinery/computer/borgupload/declare_interactions(list/into)
@@ -126,9 +126,17 @@
 		return TRUE
 	var/mob/living/silicon/robot/picked = freeborg(user, src, PROC_REF(interaction_select_borg), args)
 	if(picked)
-		src.current = picked
-		to_chat(user, "[src.current.name] selected for law changes.")
+		src.current_handle = om_handle(picked)
+		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 
 /obj/machinery/computer/borgupload/attack_ghost(user as mob)
 	return 1
+
+/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/aiupload/proc/current() as /mob/living/silicon/ai
+	return om_resolve(current_handle)
+
+/// LC-refs: current -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/borgupload/proc/current() as /mob/living/silicon/robot
+	return om_resolve(current_handle)

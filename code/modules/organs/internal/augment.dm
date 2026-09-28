@@ -157,7 +157,7 @@
 			return 0
 
 	if(cling_to_organ) // Does the object automatically return to the organ?
-		equipping.my_augment = cling_to_organ
+		equipping.my_augment_handle = om_handle(cling_to_organ)
 
 	if(make_sound)
 		playsound(src, 'sound/items/change_jaws.ogg', 30, 1)

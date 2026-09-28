@@ -14,8 +14,8 @@
 	// No view fields (OM relations step 3): `occupant` is still an ordinary
 	// var every reader here uses, but this slot's own on_link()/on_unlink()
 	// (below) are its only writer now.
-	var/mob/living/carbon/human/avatar = null
-	var/datum/mind/vr_mind = null
+	var/avatar_handle
+	var/vr_mind_handle
 	var/datum/effect/effect/system/smoke_spread/bad/smoke
 
 	var/eject_dead = TRUE
@@ -125,9 +125,9 @@
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
-	if(occupant && avatar)
-		avatar.exit_vr()
-		avatar = null
+	if(occupant && avatar())
+		avatar().exit_vr()
+		avatar_handle = null
 		perform_exit()
 	return ..()
 
@@ -244,14 +244,14 @@
 	if(!occupant)
 		return
 
-	if(avatar)
-		om_prompt(src, avatar, list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(leave_vr_answered))
+	if(avatar())
+		om_prompt(src, avatar(), list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(leave_vr_answered))
 		return
 
 	perform_exit()
 
 /obj/machinery/vr_sleeper/proc/leave_vr_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && user == avatar)
+	if(answer == "Yes" && user == avatar())
 		perform_exit()
 
 //The actual bulk of the exit code.
@@ -260,7 +260,7 @@
 	if(!occupant)
 		return
 
-	avatar = null
+	avatar_handle = null
 
 	if(occupant.vr_link)
 		occupant.vr_link.exit_vr(FALSE)
@@ -292,20 +292,20 @@
 	if(QDELETED(occupant.vr_link)) //Hardrefs...
 		occupant.vr_link = null
 
-	avatar = occupant.vr_link
+	avatar_handle = om_handle(occupant.vr_link)
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
-	if(avatar)
-		om_prompt(src, occupant, list("message" = "You already have a [avatar.stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", "title" = "New avatar", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(vr_reuse_answered))
+	if(avatar())
+		om_prompt(src, occupant, list("message" = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", "title" = "New avatar", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(vr_reuse_answered))
 		return
 	vr_choose_avatar(occupant)
 
 /obj/machinery/vr_sleeper/proc/vr_reuse_answered(mob/living/carbon/human/occupant, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && avatar)
+	if(answer == "Yes" && avatar())
 		vr_reenter(occupant)
 		return
 	// Delink the mob
 	occupant.vr_link = null
-	avatar = null
+	avatar_handle = null
 	vr_choose_avatar(occupant)
 
 /// Asks where the new avatar spawns and whether it is a creature; vr_avatar_chosen() makes it.
@@ -324,7 +324,7 @@
 		return list("key" = "creature", "kind" = "list", "message" = "Please select a creature:", "title" = "Mob list", "choices" = GLOB.vr_mob_tf_options)
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_chosen(mob/living/carbon/human/occupant, datum/om/prompt/ask)
-	if(avatar)
+	if(avatar())
 		return
 	var/S = ask.get("location")
 	var/tf = ask.get("creature") ? GLOB.vr_mob_tf_options[ask.get("creature")] : null
@@ -334,57 +334,67 @@
 			break
 
 	if(!perfect_replica)
-		avatar = new(S, "Virtual Reality Avatar")
+		avatar_handle = om_handle(new /mob/living/carbon/human(S, "Virtual Reality Avatar"))
 	else
-		avatar = new(src, occupant.species.name)
+		avatar_handle = om_handle(new /mob/living/carbon/human(src, occupant.species.name))
 
 	// If the user has a non-default (Human) bodyshape, make it match theirs.
 	if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
-		avatar.shapeshifter_change_shape(occupant.species.name)
-	avatar.forceMove(get_turf(S))			// Put the mob on the landmark, instead of inside it
+		avatar().shapeshifter_change_shape(occupant.species.name)
+	avatar().forceMove(get_turf(S))			// Put the mob on the landmark, instead of inside it
 
-	occupant.enter_vr(avatar)
+	occupant.enter_vr(avatar())
 	if(spawn_with_clothing)
-		SSjob.equip_rank(avatar,"Visitor", 1, FALSE)
-	add_verb(avatar,/mob/living/carbon/human/proc/perform_exit_vr)
-	add_verb(avatar,/mob/living/carbon/human/proc/vr_transform_into_mob)
-	add_verb(avatar,/mob/living/proc/set_size)
-	avatar.set_virtual_reality_mob(TRUE)
+		SSjob.equip_rank(avatar(),"Visitor", 1, FALSE)
+	add_verb(avatar(),/mob/living/carbon/human/proc/perform_exit_vr)
+	add_verb(avatar(),/mob/living/carbon/human/proc/vr_transform_into_mob)
+	add_verb(avatar(),/mob/living/proc/set_size)
+	avatar().set_virtual_reality_mob(TRUE)
 
 	//This handles all the 'We make it look like ourself' code.
 	//We do this BEFORE any mob tf so prefs  carry over properly!
 	if(perfect_replica)
-		avatar.species.create_organs(avatar) // Reset our organs/limbs.
-		avatar.restore_all_organs()
-		avatar.client.prefs.copy_to(avatar)
-		avatar.dna.ResetUIFrom(avatar)
-		avatar.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
-		avatar.sync_organ_dna()
-		avatar.initialize_vessel()
+		avatar().species.create_organs(avatar()) // Reset our organs/limbs.
+		avatar().restore_all_organs()
+		avatar().client.prefs.copy_to(avatar())
+		avatar().dna.ResetUIFrom(avatar())
+		avatar().sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
+		avatar().sync_organ_dna()
+		avatar().initialize_vessel()
 
-	SEND_SIGNAL(avatar, COMSIG_HUMAN_DNA_FINALIZED)
+	SEND_SIGNAL(avatar(), COMSIG_HUMAN_DNA_FINALIZED)
 
 	if(tf)
-		var/mob/living/new_form = avatar.transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
+		var/mob/living/new_form = avatar().transform_into_mob(tf, TRUE) // No need to check prefs when the occupant already chose to transform.
 		if(isliving(new_form)) // Make sure the mob spawned properly.
 			add_verb(new_form,/mob/living/proc/vr_revert_mob_tf)
 			new_form.set_virtual_reality_mob(TRUE)
 
-	add_verb(avatar, /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
-	avatar.status_at_least(EFFECT_SLEEPING, 1)
+	add_verb(avatar(), /mob/living/carbon/human/proc/perform_exit_vr) //ahealing removes the prommie verbs and the VR verbs, giving it back
+	avatar().status_at_least(EFFECT_SLEEPING, 1)
 
 	// Prompt for username after they've enterred the body.
-	om_prompt(src, avatar, list("kind" = "text", "message" = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(vr_avatar_named))
+	om_prompt(src, avatar(), list("kind" = "text", "message" = "You are entering virtual reality. Your username is currently [src.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(vr_avatar_named))
 
 /obj/machinery/vr_sleeper/proc/vr_avatar_named(mob/living/carbon/human/user, newname, datum/om/prompt/ask)
-	if(newname && user == avatar)
-		avatar.real_name = newname
-		avatar.name = newname
+	if(newname && user == avatar())
+		avatar().real_name = newname
+		avatar().name = newname
 
 /obj/machinery/vr_sleeper/proc/vr_reenter(mob/living/carbon/human/occupant)
 	// If TFed, revert TF. Easier than coding mind transfer stuff for edge cases.
-	if(avatar.tfed_into_mob_check())
-		var/mob/living/M = avatar
+	if(avatar().tfed_into_mob_check())
+		var/mob/living/M = avatar()
 		if(istype(M)) // Sanity check, though shouldn't be needed since this is already checked by the proc.
 			M.revert_mob_tf()
-	occupant.enter_vr(avatar)
+	occupant.enter_vr(avatar())
+
+REF_OWNED(/obj/machinery/vr_sleeper, list("smoke"))
+
+/// LC-refs: avatar -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human
+	return om_resolve(avatar_handle)
+
+/// LC-refs: vr mind -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/vr_sleeper/proc/vr_mind() as /datum/mind
+	return om_resolve(vr_mind_handle)

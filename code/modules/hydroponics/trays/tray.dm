@@ -735,7 +735,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, "temp_chem_holder")
 		var/datum/gas_mixture/environment
 
 		var/environment_type
-		if(closed_system && (connected_port || holding) && air_contents)
+		if(closed_system && (connected_port() || holding) && air_contents)
 			environment = air_contents
 			environment_type = "connected"
 		else

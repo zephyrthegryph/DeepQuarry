@@ -809,3 +809,5 @@
 	icon = 'icons/obj/flora/amayastuff.dmi'
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
+
+REF_HELD(/obj/structure/flora/pottedplant, list("stored_item"))

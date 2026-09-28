@@ -342,3 +342,4 @@
 	return ..()
 // END FLESH ORGAN PRINTER
 
+REF_HELD(/obj/machinery/organ_printer, list("container"))

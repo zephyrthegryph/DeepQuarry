@@ -176,3 +176,5 @@
 	b2y2 = pixel_y - pick(1,1,1,1,2,2,3,3,4)
 
 	LAZYADD(Target.bulletholes, src)
+
+REF_OWNED(/obj/item/target, list("virtualIcon"))

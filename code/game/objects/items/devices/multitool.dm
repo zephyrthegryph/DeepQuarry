@@ -24,9 +24,9 @@
 	var/toolmode = MULTITOOL_MODE_STANDARD
 	var/static/list/modes = list(MULTITOOL_MODE_STANDARD, MULTITOOL_MODE_INTCIRCUITS)
 
-	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
-	var/obj/machinery/clonepod/connecting //same for cryopod linkage
-	var/obj/machinery/connectable	//Used to connect machinery.
+	var/buffer_handle // simple machine buffer for device linkage
+	var/connecting_handle //same for cryopod linkage
+	var/connectable_handle	//Used to connect machinery.
 	var/ref_wiring //An IC ref (ic_ref()) for integrated circuitry. This is now the Omnitool.
 	toolspeed = 1
 	tool_qualities = list(TOOL_MULTITOOL)
@@ -54,9 +54,9 @@
 	switch(choice)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
-			buffer = null
-			connecting = null
-			connectable = null
+			buffer_handle = null
+			connecting_handle = null
+			connectable_handle = null
 			ref_wiring = null
 			accepting_refs = 0
 			if(toolmode == MULTITOOL_MODE_INTCIRCUITS)
@@ -142,3 +142,15 @@
 
 /obj/item/multitool/get_multitool()
 	return src
+
+/// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/multitool/proc/buffer() as /obj/machinery/telecomms
+	return om_resolve(buffer_handle)
+
+/// LC-refs: connecting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/multitool/proc/connecting() as /obj/machinery/clonepod
+	return om_resolve(connecting_handle)
+
+/// LC-refs: connectable -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/multitool/proc/connectable() as /obj/machinery
+	return om_resolve(connectable_handle)

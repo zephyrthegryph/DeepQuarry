@@ -101,7 +101,7 @@ REF_OWNED(/obj/machinery/embedded_controller, "program")
 
 	var/frequency = AIRLOCK_FREQ
 	var/radio_filter = null
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 /obj/machinery/embedded_controller/radio/Initialize(mapload)
 	set_frequency(frequency) // Set it before parent instantiates program
@@ -118,13 +118,17 @@ REF_OWNED(/obj/machinery/embedded_controller, "program")
 
 /obj/machinery/embedded_controller/radio/post_signal(datum/signal/signal, radio_filter = null)
 	signal.transmission_method = TRANSMISSION_RADIO
-	if(radio_connection)
+	if(radio_connection())
 		//use_power(radio_power_use)	//neat idea, but causes way too much lag.
-		return radio_connection.post_signal(src, signal, radio_filter)
+		return radio_connection().post_signal(src, signal, radio_filter)
 	else
 		qdel(signal)
 
 /obj/machinery/embedded_controller/radio/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, radio_filter)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, radio_filter))
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/embedded_controller/radio/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

@@ -23,7 +23,7 @@
 	var/state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
-	var/obj/crayon
+	var/crayon_handle
 	var/list/washing
 	var/static/list/disallowed_types = list(
 		/obj/item/clothing/suit/space,
@@ -170,11 +170,11 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 /obj/machinery/washing_machine/proc/interaction_washing_machine_use_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/pen/crayon) || istype(W,/obj/item/stamp))
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
-			if(!crayon)
+			if(!crayon())
 				user.drop_item()
-				crayon = W
-				crayon.forceMove(src)
-				crayon.loc = src
+				crayon_handle = om_handle(W)
+				crayon().forceMove(src)
+				crayon().loc = src
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
 		//else: old fell through to a bare ..() (approximated as a no-op)
@@ -247,7 +247,7 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			crayon = null
+			crayon_handle = null
 			LAZYCLEARLIST(washing)
 			state = EMPTY_OPEN
 		if(RUNNING)
@@ -264,7 +264,7 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 					mobs.gib()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			crayon = null
+			crayon_handle = null
 			state = EMPTY_OPEN
 			LAZYCLEARLIST(washing)
 
@@ -279,3 +279,7 @@ REF_SPILL_LIST(/obj/machinery/washing_machine, "washing")
 #undef BLOODY_OPEN
 #undef BLOODY_CLOSED
 #undef BLOODY_RUNNING
+
+/// LC-refs: crayon -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/washing_machine/proc/crayon() as /obj
+	return om_resolve(crayon_handle)

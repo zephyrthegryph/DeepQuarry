@@ -192,3 +192,5 @@
 				pixel_y += 32
 			else if(dir_offset & SOUTH)
 				pixel_y -= 32
+
+REF_HELD(/obj/item/ducttape, list("stuck"))

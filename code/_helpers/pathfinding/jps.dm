@@ -51,35 +51,18 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 
 #endif
 
-/datum/jps_node
-	/// our turf
-	var/turf/pos
-	/// previous node
-	var/datum/jps_node/prev
+// Search nodes are plain lists local to one search (LC-refs: nothing keeps a turf or a
+// parent node past the search): list(pos, prev, heuristic, depth, dir, score).
+#define JPS_NODE_POS 1
+#define JPS_NODE_PREV 2
+#define JPS_NODE_HEURISTIC 3
+#define JPS_NODE_DEPTH 4
+#define JPS_NODE_DIR 5
+#define JPS_NODE_SCORE 6
+#define JPS_NODE_NEW(pos, prev, heuristic, depth, dir) list(pos, prev, heuristic, depth, dir, (depth) + (heuristic))
 
-	/// our heuristic to goal
-	var/heuristic
-	/// our node depth - for jps, this is just the amount turfs passed to go from start to here.
-	var/depth
-	/// our jump direction
-	var/dir
-	/// our score - built from heuristic and cost
-	var/score
-
-/datum/jps_node/New(turf/pos, datum/jps_node/prev, heuristic, depth, dir)
-	#ifdef JPS_DEBUGGING
-	ASSERT(isturf(pos))
-	#endif
-	src.pos = pos
-	src.prev = prev
-	src.heuristic = heuristic
-	src.depth = depth
-	src.dir = dir
-
-	src.score = depth + heuristic
-
-/proc/cmp_jps_node(datum/jps_node/A, datum/jps_node/B)
-	return A.score - B.score
+/proc/cmp_jps_node(list/A, list/B)
+	return A[JPS_NODE_SCORE] - B[JPS_NODE_SCORE]
 
 /**
  * JPS (jump point search)
@@ -99,15 +82,16 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	adjacency_call = /proc/jps_pathfinding_adjacency
 
 /datum/pathfinding/jps/search()
+	var/turf/start = search_start()
 	//* define ops
 	#define JPS_HEURISTIC_CALL(TURF) (isnull(context)? call(heuristic_call)(TURF, goal) : call(context, heuristic_call)(TURF, goal))
 	#define JPS_ADJACENCY_CALL(A, B) (isnull(context)? call(adjacency_call)(A, B, actor, src) : call(context, adjacency_call)(A, B, actor, src))
 	//* preliminary checks
-	ASSERT(isturf(src.start) && isturf(src.goal) && src.start.z == src.goal.z)
-	if(src.start == src.goal)
+	ASSERT(isturf(start) && isturf(search_goal()) && start.z == search_goal().z)
+	if(start == search_goal())
 		return list()
 	// too far away
-	if(get_chebyshev_dist(src.start, src.goal) > max_path_length)
+	if(get_chebyshev_dist(start, search_goal()) > max_path_length)
 		return null
 	#ifdef JPS_DEBUGGING
 	//* set up debugging vars
@@ -116,12 +100,12 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	#endif
 	//* cache for sanic speed
 	var/max_depth = src.max_path_length
-	var/turf/goal = src.goal
+	var/turf/goal = search_goal()
 	var/target_distance = src.target_distance
-	var/atom/movable/actor = src.actor
+	var/atom/movable/actor = search_actor()
 	var/adjacency_call = src.adjacency_call
 	var/heuristic_call = src.heuristic_call
-	var/datum/context = src.context
+	var/datum/context = search_context()
 	var/datum/om/service/pathfinder/pathfinder = om_pathfinder()
 	if(pathfinder.pathfinding_cycle >= SHORT_REAL_LIMIT)
 		pathfinder.pathfinding_cycle = 0
@@ -132,9 +116,9 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	// open priority queue
 	var/datum/priority_queue/open = new /datum/priority_queue(/proc/cmp_jps_node)
 	// used when creating a node if we need to reference it
-	var/datum/jps_node/node_creating
+	var/list/node_creating
 	// the top node that we fetch at start of cycle
-	var/datum/jps_node/node_top
+	var/list/node_top
 	// turf of top node
 	var/turf/node_top_pos
 	// dir of top node
@@ -156,7 +140,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	var/dscan_initial
 	// diagonal node - this is held here because if we get a potential spot on cardinal we need to immediately
 	// make the diagonal node
-	var/datum/jps_node/dscan_node
+	var/list/dscan_node
 	//* variables - cardinal scan
 	// turf we're on right now
 	var/turf/cscan_current
@@ -199,7 +183,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		start_check = get_step(start, start_check_dir); \
 		if(!isnull(start_check) && JPS_ADJACENCY_CALL(start, start_check)) { \
 			start.overlays += get_jps_scan_overlay(DIR, TRUE); \
-			node_creating = new /datum/jps_node(start, null, start_heuristic, 0, start_check_dir) ; \
+			node_creating = JPS_NODE_NEW(start, null, start_heuristic, 0, start_check_dir) ; \
 			open.enqueue(node_creating); \
 		}
 	#else
@@ -207,7 +191,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		start_check_dir = DIR ; \
 		start_check = get_step(start, start_check_dir); \
 		if(!isnull(start_check) && JPS_ADJACENCY_CALL(start, start_check)) { \
-			node_creating = new /datum/jps_node(start, null, start_heuristic, 0, start_check_dir) ; \
+			node_creating = JPS_NODE_NEW(start, null, start_heuristic, 0, start_check_dir) ; \
 			open.enqueue(node_creating); \
 		}
 	#endif
@@ -246,7 +230,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	cscan_dir2_pass = TRUE; \
 	cscan_current = TURF; \
 	cscan_last = null; \
-	cscan_initial = JPS_CARDINAL_DURING_DIAGONAL? node_top.depth + dscan_steps : node_top.depth; \
+	cscan_initial = JPS_CARDINAL_DURING_DIAGONAL? node_top[JPS_NODE_DEPTH] + dscan_steps : node_top[JPS_NODE_DEPTH]; \
 	do { \
 		if(cscan_steps + cscan_initial + get_dist(cscan_current, goal) > max_depth) { \
 			om_after(cscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OUT_OF_BOUNDS); \
@@ -254,11 +238,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		} \
 		if(JPS_COMPLETION_CHECK(cscan_current)) { \
 			if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-				dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-				node_creating = new /datum/jps_node(cscan_current, dscan_node, JPS_HEURISTIC_CALL(cscan_current), dscan_node.depth + cscan_steps - 1, DIR | cscan_dir1); \
+				dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+				node_creating = JPS_NODE_NEW(cscan_current, dscan_node, JPS_HEURISTIC_CALL(cscan_current), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 			} \
 			else { \
-				node_creating = new /datum/jps_node(cscan_current, node_top, JPS_HEURISTIC_CALL(cscan_current), node_top.depth + cscan_steps - 1, DIR | cscan_dir1); \
+				node_creating = JPS_NODE_NEW(cscan_current, node_top, JPS_HEURISTIC_CALL(cscan_current), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 			} \
 			open.enqueue(node_creating); \
 			return jps_unwind_path(node_creating, turfs_got_colored); \
@@ -273,11 +257,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			} \
 			else if(cscan_dir1_pass == FALSE) { \
 				if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-					dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-					node_creating = new /datum/jps_node(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node.depth + cscan_steps - 1, DIR | cscan_dir1); \
+					dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+					node_creating = JPS_NODE_NEW(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 				} \
 				else { \
-					node_creating = new /datum/jps_node(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top.depth + cscan_steps - 1, DIR | cscan_dir1); \
+					node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 				} \
 				turfs_got_colored[cscan_last] = turfs_got_colored[cscan_last] + 1; \
 				om_after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN); \
@@ -291,11 +275,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			} \
 			else if(cscan_dir2_pass == FALSE) { \
 				if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-					dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-					node_creating = new /datum/jps_node(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node.depth + cscan_steps - 1, DIR | cscan_dir2); \
+					dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+					node_creating = JPS_NODE_NEW(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir2); \
 				} \
 				else { \
-					node_creating = new /datum/jps_node(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top.depth + cscan_steps - 1, DIR | cscan_dir2); \
+					node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir2); \
 				} \
 				turfs_got_colored[cscan_last] = turfs_got_colored[cscan_last] + 1; \
 				om_after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN); \
@@ -305,11 +289,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		} \
 		if(!cscan_pass) { \
 			if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-				dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-				node_creating = new /datum/jps_node(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node.depth + cscan_steps - 1, DIR); \
+				dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+				node_creating = JPS_NODE_NEW(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR); \
 			} \
 			else { \
-				node_creating = new /datum/jps_node(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top.depth + cscan_steps - 1, DIR); \
+				node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR); \
 			} \
 			turfs_got_colored[cscan_last] = turfs_got_colored[cscan_last] + 1; \
 			om_after(cscan_last, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN); \
@@ -336,18 +320,18 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	cscan_dir2_pass = TRUE; \
 	cscan_current = TURF; \
 	cscan_last = null; \
-	cscan_initial = JPS_CARDINAL_DURING_DIAGONAL? node_top.depth + dscan_steps : node_top.depth; \
+	cscan_initial = JPS_CARDINAL_DURING_DIAGONAL? node_top[JPS_NODE_DEPTH] + dscan_steps : node_top[JPS_NODE_DEPTH]; \
 	do { \
 		if(cscan_steps + cscan_initial + get_dist(cscan_current, goal) > max_depth) { \
 			break; \
 		} \
 		if(JPS_COMPLETION_CHECK(cscan_current)) { \
 			if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-				dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-				node_creating = new /datum/jps_node(cscan_current, dscan_node, JPS_HEURISTIC_CALL(cscan_current), dscan_node.depth + cscan_steps - 1, DIR | cscan_dir1); \
+				dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+				node_creating = JPS_NODE_NEW(cscan_current, dscan_node, JPS_HEURISTIC_CALL(cscan_current), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 			} \
 			else { \
-				node_creating = new /datum/jps_node(cscan_current, node_top, JPS_HEURISTIC_CALL(cscan_current), node_top.depth + cscan_steps - 1, DIR | cscan_dir1); \
+				node_creating = JPS_NODE_NEW(cscan_current, node_top, JPS_HEURISTIC_CALL(cscan_current), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 			} \
 			open.enqueue(node_creating); \
 			return jps_unwind_path(node_creating); \
@@ -360,11 +344,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			} \
 			else if(cscan_dir1_pass == FALSE) { \
 				if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-					dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-					node_creating = new /datum/jps_node(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node.depth + cscan_steps - 1, DIR | cscan_dir1); \
+					dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+					node_creating = JPS_NODE_NEW(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 				} \
 				else { \
-					node_creating = new /datum/jps_node(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top.depth + cscan_steps - 1, DIR | cscan_dir1); \
+					node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir1); \
 				} \
 				open.enqueue(node_creating); \
 				cscan_pass = FALSE; \
@@ -376,11 +360,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			} \
 			else if(cscan_dir2_pass == FALSE) { \
 				if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-					dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-					node_creating = new /datum/jps_node(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node.depth + cscan_steps - 1, DIR | cscan_dir2); \
+					dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+					node_creating = JPS_NODE_NEW(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir2); \
 				} \
 				else { \
-					node_creating = new /datum/jps_node(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top.depth + cscan_steps - 1, DIR | cscan_dir2); \
+					node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR | cscan_dir2); \
 				} \
 				open.enqueue(node_creating); \
 				cscan_pass = FALSE; \
@@ -388,11 +372,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 		} \
 		if(!cscan_pass) { \
 			if(JPS_CARDINAL_DURING_DIAGONAL && isnull(dscan_node)) { \
-				dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir); \
-				node_creating = new /datum/jps_node(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node.depth + cscan_steps - 1, DIR); \
+				dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir); \
+				node_creating = JPS_NODE_NEW(cscan_last, dscan_node, JPS_HEURISTIC_CALL(cscan_last), dscan_node[JPS_NODE_DEPTH] + cscan_steps - 1, DIR); \
 			} \
 			else { \
-				node_creating = new /datum/jps_node(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top.depth + cscan_steps - 1, DIR); \
+				node_creating = JPS_NODE_NEW(cscan_last, node_top, JPS_HEURISTIC_CALL(cscan_last), node_top[JPS_NODE_DEPTH] + cscan_steps - 1, DIR); \
 			} \
 			open.enqueue(node_creating); \
 			break; \
@@ -411,9 +395,9 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	//* loop
 	while(length(open.array))
 		node_top = open.dequeue()
-		node_top_pos = node_top.pos
+		node_top_pos = node_top[JPS_NODE_POS]
 		#ifdef JPS_DEBUGGING
-		om_after(node_top.pos, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_CURRENT)
+		om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_CURRENT)
 		debug_t += GLOB.jps_visualization_delay // the replay moves on a step (om_after(), no sleep)
 		#else
 		CHECK_TICK
@@ -428,23 +412,23 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			#endif
 
 		// too deep, abort
-		if(node_top.depth + get_dist(node_top_pos, goal) >= max_depth)
+		if(node_top[JPS_NODE_DEPTH] + get_dist(node_top_pos, goal) >= max_depth)
 			#ifdef JPS_DEBUGGING
-			om_after(node_top.pos, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OUT_OF_BOUNDS)
-			turfs_got_colored[node_top.pos] = turfs_got_colored[node_top.pos] || 0
+			om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OUT_OF_BOUNDS)
+			turfs_got_colored[node_top[JPS_NODE_POS]] = turfs_got_colored[node_top[JPS_NODE_POS]] || 0
 			#endif
 			continue
 
 		#ifdef JPS_DEBUGGING
-		if(!(turfs_got_colored[node_top.pos] -= 1))
-			om_after(node_top.pos, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_CLOSED)
-		else if(turfs_got_colored[node_top.pos] > 0)
-			om_after(node_top.pos, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN)
-		node_top_pos.maptext = MAPTEXT("d [node_top.depth]<br>s [node_top.score]<br>o [max(turfs_got_colored[node_top.pos], 0)]")
+		if(!(turfs_got_colored[node_top[JPS_NODE_POS]] -= 1))
+			om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_CLOSED)
+		else if(turfs_got_colored[node_top[JPS_NODE_POS]] > 0)
+			om_after(node_top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN)
+		node_top_pos.maptext = MAPTEXT("d [node_top[JPS_NODE_DEPTH]]<br>s [node_top[JPS_NODE_SCORE]]<br>o [max(turfs_got_colored[node_top[JPS_NODE_POS]], 0)]")
 		#endif
 
 		// get dir and run based on dir
-		node_top_dir = node_top.dir
+		node_top_dir = node_top[JPS_NODE_DIR]
 		if(node_top_dir & (node_top_dir - 1))
 			// node is diagonal
 			dscan_dir1 = turn(node_top_dir, -45)
@@ -453,7 +437,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 			dscan_current = node_top_pos
 			dscan_pass = TRUE
 			dscan_steps = 0
-			dscan_initial = node_top.depth
+			dscan_initial = node_top[JPS_NODE_DEPTH]
 			do
 				// check if we're out of bounds
 				if(dscan_steps + dscan_initial + get_dist(dscan_current, goal) > max_depth)
@@ -478,7 +462,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 				++dscan_steps
 				// check if it's close enough to goal
 				if(JPS_COMPLETION_CHECK(dscan_current))
-					node_creating = new(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir)
+					node_creating = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir)
 					#ifdef JPS_DEBUGGING
 					return jps_unwind_path(node_creating, turfs_got_colored)
 					#else
@@ -495,7 +479,7 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 				// proper linked with the created cardinal nodes
 				if(!dscan_pass)
 					if(isnull(dscan_node))
-						dscan_node = new /datum/jps_node(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top.depth + dscan_steps, node_top_dir)
+						dscan_node = JPS_NODE_NEW(dscan_current, node_top, JPS_HEURISTIC_CALL(dscan_current), node_top[JPS_NODE_DEPTH] + dscan_steps, node_top_dir)
 					#ifdef JPS_DEBUGGING
 					om_after(dscan_current, debug_t, TYPE_PROC_REF(/atom, set_base_color), JPS_VISUAL_COLOR_OPEN)
 					turfs_got_colored[dscan_current] = turfs_got_colored[dscan_current] + 1
@@ -534,19 +518,19 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
  * The proc used to grab the nodes back in order from start to finish after the algorithm runs.
  */
 #ifdef JPS_DEBUGGING
-/datum/pathfinding/jps/proc/jps_unwind_path(datum/jps_node/top, list/turfs_got_colored)
+/datum/pathfinding/jps/proc/jps_unwind_path(list/top, list/turfs_got_colored)
 #else
-/datum/pathfinding/jps/proc/jps_unwind_path(datum/jps_node/top)
+/datum/pathfinding/jps/proc/jps_unwind_path(list/top)
 #endif
 	// found; build path end to start of nodes
 	var/list/path_built = list()
 	while(top)
-		path_built += top.pos
+		path_built += top[JPS_NODE_POS]
 		#ifdef JPS_DEBUGGING
-		om_after(top.pos, debug_t, TYPE_PROC_REF(/atom, set_base_color), GLOB.jps_visualization_resolve? JPS_VISUAL_COLOR_INTERMEDIATE : JPS_VISUAL_COLOR_FOUND)
+		om_after(top[JPS_NODE_POS], debug_t, TYPE_PROC_REF(/atom, set_base_color), GLOB.jps_visualization_resolve? JPS_VISUAL_COLOR_INTERMEDIATE : JPS_VISUAL_COLOR_FOUND)
 		turfs_got_colored[top] = TRUE
 		#endif
-		top = top.prev
+		top = top[JPS_NODE_PREV]
 	// reverse
 	var/head = 1
 	var/tail = length(path_built)
@@ -603,3 +587,11 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	#undef JPS_VISUAL_COLOR_CURRENT
 	#undef JPS_VISUAL_COLOR_FOUND
 #endif
+
+#undef JPS_NODE_POS
+#undef JPS_NODE_PREV
+#undef JPS_NODE_HEURISTIC
+#undef JPS_NODE_DEPTH
+#undef JPS_NODE_DIR
+#undef JPS_NODE_SCORE
+#undef JPS_NODE_NEW

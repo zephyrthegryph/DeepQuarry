@@ -11,10 +11,10 @@
 
 	var/screen = 0				// the screen number:
 	var/list/servers	// the servers located by the computer
-	var/mob/editingcode
-	var/mob/lasteditor
+	var/editingcode_handle
+	var/lasteditor_handle
 	var/list/viewingcode
-	var/obj/machinery/telecomms/server/SelectedServer
+	var/SelectedServer_handle
 	circuit = /obj/item/circuitboard/comm_traffic
 	req_access = list(ACCESS_TCOMSAT)
 
@@ -34,25 +34,25 @@
 
 /// One half-second refresh of the IDE while someone is manning the keyboard.
 /obj/machinery/computer/telecomms/traffic/proc/update_ide_tick()
-	if(!editingcode)
+	if(!editingcode())
 		update_ide_end()
 		return
-	if(!editingcode.client)
-		editingcode = null
+	if(!editingcode().client)
+		editingcode_handle = null
 		update_ide_end()
 		return
 
 	// For the typer, the input is enabled. Buffer the typed text
-	if(editingcode)
-		storedcode = "[winget(editingcode, "tcscode", "text")]"
-	if(editingcode) // double if's to work around a runtime error
-		winset(editingcode, "tcscode", "is-disabled=false")
+	if(editingcode())
+		storedcode = "[winget(editingcode(), "tcscode", "text")]"
+	if(editingcode()) // double if's to work around a runtime error
+		winset(editingcode(), "tcscode", "is-disabled=false")
 
 	// If the player's not manning the keyboard anymore, adjust everything
-	if( (!(editingcode in range(1, src)) && !issilicon(editingcode)) || (!editingcode.check_current_machine(src) && !issilicon(editingcode)))
-		if(editingcode)
-			winshow(editingcode, "Telecomms IDE", 0) // hide the window!
-		editingcode = null
+	if( (!(editingcode() in range(1, src)) && !issilicon(editingcode())) || (!editingcode().check_current_machine(src) && !issilicon(editingcode())))
+		if(editingcode())
+			winshow(editingcode(), "Telecomms IDE", 0) // hide the window!
+		editingcode_handle = null
 		update_ide_end()
 		return
 
@@ -78,8 +78,8 @@
 	ide_ticking = FALSE
 
 	if(length(viewingcode) > 0)
-		editingcode = DEFAULTPICK(viewingcode, null)
-		LAZYREMOVE(viewingcode, editingcode)
+		editingcode_handle = om_handle(DEFAULTPICK(viewingcode, null))
+		LAZYREMOVE(viewingcode, editingcode())
 		update_ide()
 
 
@@ -103,7 +103,7 @@
 		screen = 1
 		for(var/obj/machinery/telecomms/T in servers)
 			if(T.id == href_list["viewserver"])
-				SelectedServer = T
+				SelectedServer_handle = om_handle(T)
 				break
 
 	if(href_list["operation"])
@@ -133,18 +133,18 @@
 					screen = 0
 
 			if("editcode")
-				if(editingcode == usr) return
+				if(editingcode() == usr) return
 				if(usr in viewingcode) return
 
-				if(!editingcode)
-					lasteditor = usr
-					editingcode = usr
-					winshow(editingcode, "Telecomms IDE", 1) // show the IDE
-					winset(editingcode, "tcscode", "is-disabled=false")
-					winset(editingcode, "tcscode", "text=\"\"")
+				if(!editingcode())
+					lasteditor_handle = om_handle(usr)
+					editingcode_handle = om_handle(usr)
+					winshow(editingcode(), "Telecomms IDE", 1) // show the IDE
+					winset(editingcode(), "tcscode", "is-disabled=false")
+					winset(editingcode(), "tcscode", "text=\"\"")
 					var/showcode = replacetext(storedcode, "\\\"", "\\\\\"")
 					showcode = replacetext(storedcode, "\"", "\\\"")
-					winset(editingcode, "tcscode", "text=\"[showcode]\"")
+					winset(editingcode(), "tcscode", "text=\"[showcode]\"")
 					spawn() // S7 keeps: update_ide() polls winget(), a blocking client round trip (client procs)
 						update_ide()
 
@@ -152,12 +152,12 @@
 					LAZYADD(viewingcode, usr)
 					winshow(usr, "Telecomms IDE", 1) // show the IDE
 					winset(usr, "tcscode", "is-disabled=true")
-					winset(editingcode, "tcscode", "text=\"\"")
+					winset(editingcode(), "tcscode", "text=\"\"")
 					var/showcode = replacetext(storedcode, "\"", "\\\"")
 					winset(usr, "tcscode", "text=\"[showcode]\"")
 
 			if("togglerun")
-				SelectedServer.autoruncode = !(SelectedServer.autoruncode)
+				SelectedServer().autoruncode = !(SelectedServer().autoruncode)
 
 	if(href_list["network"])
 
@@ -185,3 +185,15 @@
 		to_chat(user, span_notice("You you disable the security protocols"))
 		updateUsrDialog(user)
 		return 1
+
+/// LC-refs: editingcode -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telecomms/traffic/proc/editingcode() as /mob
+	return om_resolve(editingcode_handle)
+
+/// LC-refs: lasteditor -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telecomms/traffic/proc/lasteditor() as /mob
+	return om_resolve(lasteditor_handle)
+
+/// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/computer/telecomms/traffic/proc/SelectedServer() as /obj/machinery/telecomms/server
+	return om_resolve(SelectedServer_handle)

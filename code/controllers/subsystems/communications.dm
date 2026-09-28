@@ -175,7 +175,7 @@ SUBSYSTEM_DEF(radio)
 			devices -= devices_filter
 
 /datum/signal
-	var/obj/source
+	var/source_handle
 
 	var/transmission_method = 0 //unused at the moment
 	//0 = wire
@@ -188,17 +188,18 @@ SUBSYSTEM_DEF(radio)
 	var/frequency = ZERO_FREQ
 
 /datum/signal/proc/copy_from(datum/signal/model)
-	source = model.source
+	source_handle = model.source_handle
 	transmission_method = model.transmission_method
 	data = model.data
 	encryption = model.encryption
 	frequency = model.frequency
 
 /datum/signal/proc/debug_print()
-	if (source)
-		. = "signal = {source = '[source]' ([source:x],[source:y],[source:z])\n"
+	var/obj/sender = source()
+	if (sender)
+		. = "signal = {source = '[sender]' ([sender.x],[sender.y],[sender.z])\n"
 	else
-		. = "signal = {source = '[source]' ()\n"
+		. = "signal = {source = '[sender]' ()\n"
 	for (var/i in data)
 		. += "data\[\"[i]\"\] = \"[data[i]]\"\n"
 		if(islist(data[i]))
@@ -209,3 +210,7 @@ SUBSYSTEM_DEF(radio)
 //callback used by objects to react to incoming radio signals
 /obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
 	return null
+
+/// LC-refs: the device that sent this signal -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/signal/proc/source() as /obj
+	return om_resolve(source_handle)

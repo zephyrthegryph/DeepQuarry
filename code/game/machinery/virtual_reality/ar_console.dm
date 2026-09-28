@@ -78,18 +78,18 @@
 	if(!occupant)
 		return
 
-	if(avatar)
-		om_prompt(src, avatar, list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(alien_leave_answered))
+	if(avatar())
+		om_prompt(src, avatar(), list("message" = "Someone wants to remove you from virtual reality. Do you want to leave?", "title" = "Leave VR?", "choices" = list("Yes", "No")), PROC_REF(alien_leave_answered))
 		return
 	alien_exit()
 
 /obj/machinery/vr_sleeper/alien/proc/alien_leave_answered(mob/user, answer, datum/om/prompt/ask)
-	if(answer == "Yes" && user == avatar)
+	if(answer == "Yes" && user == avatar())
 		alien_exit()
 
 /obj/machinery/vr_sleeper/alien/proc/alien_exit()
 	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
-	avatar?.exit_vr() //We don't poof! We're a actual, living entity that isn't restrained by VR zones!
+	avatar()?.exit_vr() //We don't poof! We're a actual, living entity that isn't restrained by VR zones!
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return
 	occupant.forceMove(get_turf(src))
@@ -119,10 +119,10 @@
 	if(occupant.stat == DEAD && !occupant.client)
 		return
 
-	if(QDELETED(avatar)) //This REALLY needs to be changed to an OM handle
-		avatar = null
+	if(QDELETED(avatar())) //This REALLY needs to be changed to an OM handle
+		avatar_handle = null
 
-	if(avatar && !occupant.stat)
+	if(avatar() && !occupant.stat)
 		to_chat(occupant,span_alien("\The [src] begins to [pick("whir","hum","pulse")] as a screen appears in front of you."))
 		om_prompt(src, occupant, list("message" = "This pod is already linked. Are you certain you wish to engage?", "title" = "Commmit?", "choices" = list("Yes", "No"), "requires" = list(/datum/om/check/inside_target)), PROC_REF(alien_engage_answered))
 		return
@@ -138,52 +138,52 @@
 /obj/machinery/vr_sleeper/alien/proc/alien_engage(mob/living/carbon/human/occupant)
 	to_chat(occupant,span_alien("Your mind blurs as information bombards you."))
 
-	if(!avatar)
+	if(!avatar())
 		var/turf/T = get_turf(src)
 		if(!perfect_replica)
-			avatar = new(src, produce_species)
+			avatar_handle = om_handle(new /mob/living/carbon/human(src, produce_species))
 		else
-			avatar = new(src, occupant.species.name)
+			avatar_handle = om_handle(new /mob/living/carbon/human(src, occupant.species.name))
 
 		// If the user has a non-default (Human) bodyshape, make it match theirs.
 		if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)
-			avatar.shapeshifter_change_shape(occupant.species.name)
-		avatar.status_at_least(EFFECT_SLEEPING, 6)
+			avatar().shapeshifter_change_shape(occupant.species.name)
+		avatar().status_at_least(EFFECT_SLEEPING, 6)
 
-		occupant.enter_vr(avatar)
+		occupant.enter_vr(avatar())
 		if(spawn_with_clothing)
-			SSjob.equip_rank(avatar,"Visitor", 1, FALSE)
-		add_verb(avatar,/mob/living/carbon/human/proc/perform_exit_vr)
-		avatar.set_virtual_reality_mob(FALSE) //THIS IS THE BIG DIFFERENCE WITH ALIEN VR PODS. THEY ARE NOT VR, THEY ARE REAL.
+			SSjob.equip_rank(avatar(),"Visitor", 1, FALSE)
+		add_verb(avatar(),/mob/living/carbon/human/proc/perform_exit_vr)
+		avatar().set_virtual_reality_mob(FALSE) //THIS IS THE BIG DIFFERENCE WITH ALIEN VR PODS. THEY ARE NOT VR, THEY ARE REAL.
 
 		//This handles all the 'We make it look like ourself' code.
 		//We do this BEFORE any mob tf so prefs  carry over properly!
 		if(perfect_replica)
-			avatar.species.create_organs(avatar) // Reset our organs/limbs.
-			avatar.restore_all_organs()
-			avatar.client.prefs.copy_to(avatar)
-			avatar.dna.ResetUIFrom(avatar)
-			avatar.sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
-			avatar.sync_organ_dna()
-			avatar.initialize_vessel()
+			avatar().species.create_organs(avatar()) // Reset our organs/limbs.
+			avatar().restore_all_organs()
+			avatar().client.prefs.copy_to(avatar())
+			avatar().dna.ResetUIFrom(avatar())
+			avatar().sync_dna_traits(TRUE) // Traitgenes Sync traits to genetics if needed
+			avatar().sync_organ_dna()
+			avatar().initialize_vessel()
 
-		SEND_SIGNAL(avatar, COMSIG_HUMAN_DNA_FINALIZED)
+		SEND_SIGNAL(avatar(), COMSIG_HUMAN_DNA_FINALIZED)
 
-		om_prompt(src, avatar, list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
+		om_prompt(src, avatar(), list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it could also be [avatar().name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
 
-		avatar.forceMove(T)
-		visible_message(span_alium("\The [src] [pick("gurgles", "churns", "sloshes")] before spitting out \the [avatar]!"))
+		avatar().forceMove(T)
+		visible_message(span_alium("\The [src] [pick("gurgles", "churns", "sloshes")] before spitting out \the [avatar()]!"))
 
 	else
 
 		// There's only one body per one of these pods, so let's be kind.
-		om_prompt(src, avatar, list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar.name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
-		occupant.enter_vr(avatar)
+		om_prompt(src, avatar(), list("kind" = "text", "message" = "Your mind feels foggy. You're certain your name is [occupant.real_name], but it feels like it is [avatar().name]. Would you like to change it to something else?", "title" = "Name change", "max_length" = MAX_NAME_LEN), PROC_REF(alien_avatar_renamed))
+		occupant.enter_vr(avatar())
 
 /obj/machinery/vr_sleeper/alien/proc/alien_avatar_renamed(mob/living/carbon/human/user, newname, datum/om/prompt/ask)
-	if(newname && user == avatar)
-		avatar.real_name = newname
-		avatar.name = newname
+	if(newname && user == avatar())
+		avatar().real_name = newname
+		avatar().name = newname
 
 
 /*

@@ -1,5 +1,5 @@
 /datum/mini_hud
-	var/datum/hud/main_hud
+	var/main_hud_handle
 	var/list/screenobjs
 	var/needs_processing = FALSE
 
@@ -17,15 +17,15 @@ REF_OWNED_LIST(/datum/mini_hud, "screenobjs")
 
 // Apply to a real /datum/hud
 /datum/mini_hud/proc/apply_to_hud(datum/hud/other)
-	if(main_hud)
-		unapply_to_hud(main_hud)
-	main_hud = other
-	main_hud.apply_minihud(src)
+	if(main_hud())
+		unapply_to_hud(main_hud())
+	main_hud_handle = om_handle(other)
+	main_hud().apply_minihud(src)
 
 // Remove from a real /datum/hud
 /datum/mini_hud/proc/unapply_to_hud()
-	main_hud?.remove_minihud(src)
-	main_hud = null
+	main_hud()?.remove_minihud(src)
+	main_hud_handle = null
 
 // Update the hud
 /datum/mini_hud/periodic_step()
@@ -34,3 +34,7 @@ REF_OWNED_LIST(/datum/mini_hud, "screenobjs")
 // Return a list of screen objects we use
 /datum/mini_hud/proc/get_screen_objs(mob/M)
 	return screenobjs.Copy()
+
+/// LC-refs: the hud this mini hud is applied to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/mini_hud/proc/main_hud() as /datum/hud
+	return om_resolve(main_hud_handle)

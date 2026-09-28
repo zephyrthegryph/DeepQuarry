@@ -45,7 +45,7 @@
 				A.apply_mode()
 
 		if(WIRE_AALARM)
-			if(A.alarm_area.atmosalert(2, A))
+			if(A.alarm_area_ref().atmosalert(2, A))
 				A.post_alert(2)
 			A.update_icon()
 	..()
@@ -59,7 +59,7 @@
 		if(WIRE_MAIN_POWER1)
 			if(!A.shorted)
 				A.shorted = TRUE
-				for(var/obj/machinery/alarm/AA in A.alarm_area)
+				for(var/obj/machinery/alarm/AA in A.alarm_area_ref())
 					AA.update_icon()
 				om_changed(A, CHANGE_MACHINE_SETTINGS)
 			om_after(src, 20 MINUTES, PROC_REF(clear_short))
@@ -77,7 +77,7 @@
 			A.apply_mode()
 
 		if(WIRE_AALARM)
-			if(A.alarm_area.atmosalert(0, A))
+			if(A.alarm_area_ref().atmosalert(0, A))
 				A.post_alert(0)
 			A.update_icon()
 

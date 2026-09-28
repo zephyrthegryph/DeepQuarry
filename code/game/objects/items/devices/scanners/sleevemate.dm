@@ -15,38 +15,36 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	MATERIAL_BULK(MAT_STEEL, 200)
 
 	/// The stored mind. Its identity (OOC notes and all) is carried with it.
-	var/datum/mind/stored_mind
+	var/stored_mind_handle
 	var/soulcatcher_pref_flags = NONE
 
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/datum/transcore_db/our_db // These persist all round and are never destroyed, just keep a hard ref
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
 /obj/item/sleevemate/Initialize(mapload)
 	. = ..()
-	our_db = SStranscore.db_by_key(db_key)
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
-	stored_mind = null
+	stored_mind_handle = null
 	update_icon()
 
 /obj/item/sleevemate/proc/get_mind(mob/living/M)
 	ASSERT(M.mind)
-	stored_mind = M.mind
-	stored_mind.get_identity() // make sure the identity rides the stored mind
-	log_game("MIND: [stored_mind.key] ([stored_mind.name]) stored in [src] from [M]")
+	stored_mind_handle = om_handle(M.mind)
+	stored_mind().get_identity() // make sure the identity rides the stored mind
+	log_game("MIND: [stored_mind().key] ([stored_mind().name]) stored in [src] from [M]")
 	soulcatcher_pref_flags = M.soulcatcher_pref_flags
 	M.ghostize()
-	stored_mind.current = null
+	stored_mind().current = null
 	update_icon()
 
 /obj/item/sleevemate/proc/put_mind(mob/living/M)
-	stored_mind.active = TRUE
-	transfer_mind(stored_mind, M, "sleevemate upload")
+	stored_mind().active = TRUE
+	transfer_mind(stored_mind(), M, "sleevemate upload")
 	M.soulcatcher_pref_flags = soulcatcher_pref_flags
 	clear_mind()
 
@@ -87,22 +85,22 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	return L
 
 /obj/item/sleevemate/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!stored_mind)
+	if(!stored_mind())
 		to_chat(user,span_warning("No stored mind in \the [src]."))
 		return
 
-	om_prompt(src, user, list("message" = "What would you like to do?", "title" = "Stored: [stored_mind.name]", "choices" = list("Delete","Backup","Cancel"), "requires" = PROMPT_IN_HAND), PROC_REF(stored_mind_action))
+	om_prompt(src, user, list("message" = "What would you like to do?", "title" = "Stored: [stored_mind().name]", "choices" = list("Delete","Backup","Cancel"), "requires" = PROMPT_IN_HAND), PROC_REF(stored_mind_action))
 
 /obj/item/sleevemate/proc/stored_mind_action(mob/living/user, choice, datum/om/prompt/ask)
-	if(!stored_mind)
+	if(!stored_mind())
 		return
 	switch(choice)
 		if("Delete")
-			to_chat(user,span_notice("Internal copy of [stored_mind.name] deleted."))
+			to_chat(user,span_notice("Internal copy of [stored_mind().name] deleted."))
 			clear_mind()
 		if("Backup")
-			to_chat(user,span_notice("Internal copy of [stored_mind.name] backed up to database."))
-			our_db.m_backup(stored_mind,null,one_time = TRUE)
+			to_chat(user,span_notice("Internal copy of [stored_mind().name] backed up to database."))
+			our_db().m_backup(stored_mind(),null,one_time = TRUE)
 		if("Cancel")
 			return
 
@@ -143,7 +141,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	//Mind/body comparison
 	output += span_bold("Sleeve Pair:")
 	if(!H.ckey)
-		output += span_warning("No mind in that body") + " [stored_mind != null ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindupload=1'>Upload</a>\]" : null]<br>"
+		output += span_warning("No mind in that body") + " [stored_mind() != null ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindupload=1'>Upload</a>\]" : null]<br>"
 
 	else if(H.mind && (is_changeling(H) || (HAS_TRAIT(H, UNIQUE_MINDSTRUCTURE) || (ckey(H.mind.key) != H.ckey))))
 		output += span_boldwarning("Incorrect mind-sleeve match or hiveminded neurological structure") + "<br>"
@@ -161,8 +159,8 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 
 	//Saving a mind
 	output += span_bold("Store Full Mind:") + " "
-	if(stored_mind)
-		output += span_notice("Already Stored") + " ([stored_mind.name])<br>"
+	if(stored_mind())
+		output += span_notice("Already Stored") + " ([stored_mind().name])<br>"
 	else if(H.mind)
 		output += "\[<a href='byond://?src=\ref[src];target=\ref[H];mindsteal=1'>Perform</a>\]<br>"
 	else
@@ -177,7 +175,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			for(var/mob/living/carbon/brain/caught_soul/mind in SC.brainmobs)
 				output += "<i>[mind.name]: </i> [mind.transient == FALSE ? "\[<a href='byond://?src=\ref[src];target=\ref[H];mindrelease=[mind.name]'>Load</a>\]" : span_warning("Incompatible")]<br>"
 
-			if(stored_mind)
+			if(stored_mind())
 				output += span_bold("Store in Soulcatcher: ") + "\[<a href='byond://?src=\ref[src];target=\ref[H];mindput=1'>Perform</a>\]<br>"
 
 	to_chat(user,output)
@@ -234,7 +232,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 			to_chat(usr,span_warning("Target seems totally braindead."))
 			return
 
-		if(stored_mind)
+		if(stored_mind())
 			to_chat(usr,span_warning("There is already someone's mind stored inside"))
 			return
 
@@ -242,7 +240,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		return
 
 	if(href_list["mindput"])
-		if(!stored_mind)
+		if(!stored_mind())
 			to_chat(usr,span_warning("\The [src] no longer has a stored mind."))
 			return
 
@@ -271,7 +269,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		to_chat(usr,span_notice("Mind transferred into Soulcatcher!"))
 
 	if(href_list["mindupload"])
-		if(!stored_mind)
+		if(!stored_mind())
 			to_chat(usr,span_warning("\The [src] no longer has a stored mind."))
 			return
 
@@ -280,11 +278,11 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 
 		if(ishuman(target))
 			var/mob/living/carbon/human/H = target
-			if(H.resleeve_lock && stored_mind.loaded_from_ckey != H.resleeve_lock)
+			if(H.resleeve_lock && stored_mind().loaded_from_ckey != H.resleeve_lock)
 				to_chat(usr,span_warning("\The [H] is protected from impersonation!"))
 				return
 			//Changeling bodies. Only changelings can be put in them.
-			if(H.changeling_locked && !is_changeling(stored_mind))
+			if(H.changeling_locked && !is_changeling(stored_mind()))
 				to_chat(usr,span_warning("\The [H] is too complex to put this mind into!"))
 				return
 
@@ -292,7 +290,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		om_do_after(usr, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, usr))
 
 	if(href_list["mindrelease"])
-		if(stored_mind)
+		if(stored_mind())
 			to_chat(usr,span_warning("There is already someone's mind stored inside"))
 			return
 		var/mob/living/carbon/human/H = target
@@ -319,7 +317,7 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	var/mob/living/target = task.target
 	var/nif = task.nif
 	var/mob/usr_mob = task.actor
-	our_db.m_backup(target.mind,nif,one_time = TRUE)
+	our_db().m_backup(target.mind,nif,one_time = TRUE)
 	to_chat(usr_mob,span_notice("Mind backed up!"))
 
 /obj/item/sleevemate/proc/Topic_timed_failed(datum/om/task/timed/sleevemate_topic/task)
@@ -342,25 +340,25 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	var/mob/usr_mob = task.actor
 	to_chat(usr_mob,span_warning("You must remain close to your target!"))
 /obj/item/sleevemate/proc/Topic_timed_done3(mob/living/target, mob/usr_mob)
-	if(!stored_mind && target.mind)
+	if(!stored_mind() && target.mind)
 		get_mind(target)
 		to_chat(usr_mob,span_notice("Mind downloaded!"))
 /obj/item/sleevemate/proc/Topic_timed_done4(mob/living/target, mob/usr_mob)
-	if(!stored_mind)
+	if(!stored_mind())
 		to_chat(usr_mob,span_warning("\The [src] no longer has a stored mind."))
 		return
 	put_mind(target)
 	to_chat(usr_mob,span_notice("Mind transferred into [target]!"))
 
 /obj/item/sleevemate/update_icon()
-	if(stored_mind)
+	if(stored_mind())
 		icon_state = "[initial(icon_state)]_on"
 	else
 		icon_state = initial(icon_state)
 
 /obj/item/sleevemate/proc/mindsteal_confirmed(mob/living/user, choice, datum/om/prompt/ask)
 	var/mob/living/target = ask.get("target")
-	if(choice != "Continue" || stored_mind || !user.Adjacent(target))
+	if(choice != "Continue" || stored_mind() || !user.Adjacent(target))
 		return
 	user.visible_message(span_warning("[user] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
 	om_do_after(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
@@ -388,3 +386,11 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 		new /obj/item/mindbinder(src.loc)
 	qdel(src)
 	return 1
+
+/// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
+/obj/item/sleevemate/proc/our_db() as /datum/transcore_db
+	return SStranscore.db_by_key(db_key)
+
+/// LC-refs: stored mind -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/sleevemate/proc/stored_mind() as /datum/mind
+	return om_resolve(stored_mind_handle)

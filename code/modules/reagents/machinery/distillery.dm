@@ -300,9 +300,9 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 	var/avg_temp = 0
 	var/avg_pressure = 0
 
-	if(connected_port && connected_port.network.line_members.len)
+	if(connected_port() && connected_port().network.line_members.len)
 		var/list/members = list()
-		var/datum/pipe_network/Net = connected_port.network
+		var/datum/pipe_network/Net = connected_port().network
 		members = Net.line_members.Copy()
 
 		for(var/datum/pipeline/Line in members)
@@ -316,7 +316,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 		on = FALSE
 
 	var/current_temp = get_temperature()
-	if(!on || (use_atmos && (!connected_port || (avg_pressure / avg_temp) < (1000 / T20C)))) // This mostly respects gas laws by ignoring volume but it should make it usable at low temps
+	if(!on || (use_atmos && (!connected_port() || (avg_pressure / avg_temp) < (1000 / T20C)))) // This mostly respects gas laws by ignoring volume but it should make it usable at low temps
 		distillery_heat(0, null)
 
 	else if(on)
@@ -333,9 +333,9 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 				playsound(src, 'sound/machines/ping.ogg', 50, 0)
 				src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it reaches the target temperature."))
 
-		else if(connected_port && avg_pressure > 1000)
+		else if(connected_port() && avg_pressure > 1000)
 			// Heat exchanger: the body couples to the port's gas, conserving energy.
-			var/datum/pipeline/line = connected_port.network.line_members[1]
+			var/datum/pipeline/line = connected_port().network.line_members[1]
 			distillery_heat(0, line?.air)
 		else if(!run_pump)
 			visible_message(span_notice("\The [src]'s motors wind down."))
@@ -377,7 +377,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 	else
 		add_overlay(overlay_off)
 
-	if(connected_port)
+	if(connected_port())
 		add_overlay(overlay_connected)
 
 /*
@@ -393,8 +393,8 @@ REF_OWNED(/obj/machinery/portable_atmospherics/powered/reagent_distillery, list(
 	min_temp = T0C - 270
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/return_air()
-	if(connected_port)
-		var/obj/machinery/atmospherics/portables_connector/our_port = connected_port
+	if(connected_port())
+		var/obj/machinery/atmospherics/portables_connector/our_port = connected_port()
 		if(our_port.network)
 			return our_port.network.gases[1]
 	. = ..()

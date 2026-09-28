@@ -3,7 +3,7 @@
 	var/id_tag
 	var/frequency
 	var/shockedby = list()
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 	var/cur_command = null	//the command the door is currently attempting to complete
 	var/last_reported_density = -1
 	var/last_reported_locked = -1
@@ -113,7 +113,7 @@
 	return 1	//Unknown command. Just assume it's completed.
 
 /obj/machinery/door/airlock/proc/send_status(bumped = FALSE, force = FALSE)
-	if(radio_connection)
+	if(radio_connection())
 		if(!force && !bumped && density == last_reported_density && locked == last_reported_locked)
 			return
 		var/datum/signal/signal = new
@@ -127,7 +127,7 @@
 		if (bumped)
 			signal.data["bumped_with_access"] = 1
 
-		radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 		last_reported_density = density
 		last_reported_locked = locked
 
@@ -143,19 +143,19 @@
 	..(AM)
 	if(istype(AM, /obj/mecha))
 		var/obj/mecha/mecha = AM
-		if(density && radio_connection && mecha?.slot_item(MECHA_SLOT_PILOT) && (src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)) || src.check_access_list(mecha.operation_req_access)))
+		if(density && radio_connection() && mecha?.slot_item(MECHA_SLOT_PILOT) && (src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)) || src.check_access_list(mecha.operation_req_access)))
 			send_status(1)
 	return
 
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
-	radio_connection = null
+	radio_connection_handle = null
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	last_reported_density = -1
 	last_reported_locked = -1
 
 	if(new_frequency)
-		radio_connection = SSradio.add_object(src, new_frequency, RADIO_AIRLOCK)
+		radio_connection_handle = om_handle(SSradio.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -174,7 +174,7 @@
 	var/frequency = AIRLOCK_FREQ
 	var/command = "cycle"
 
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 	var/on = 1
 	var/alert = 0
@@ -227,7 +227,7 @@
 	signal.data["tag"] = master_tag
 	signal.data["command"] = command
 
-	radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+	radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 	flick("airlock_sensor_cycle", src)
 	return TRUE
 
@@ -246,7 +246,7 @@
 			signal.data["timestamp"] = world.time
 			signal.data["pressure"] = num2text(pressure)
 
-			radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+			radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 
 			previousPressure = pressure
 
@@ -259,7 +259,7 @@
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_AIRLOCK)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor/Initialize(mapload)
 	. = ..()
@@ -321,7 +321,7 @@
 	var/frequency = AMAG_ELE_FREQ
 	var/command = "cycle"
 
-	var/datum/radio_frequency/radio_connection
+	var/radio_connection_handle
 
 	var/on = 1
 
@@ -383,13 +383,13 @@
 	if(!allowed(user))
 		to_chat(user, span_warning("Access Denied"))
 
-	else if(radio_connection)
+	else if(radio_connection())
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = master_tag
 		signal.data["command"] = command
 
-		radio_connection.post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
+		radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)
 	flick("access_button_cycle", src)
 	return TRUE
 
@@ -399,7 +399,7 @@
 /obj/machinery/access_button/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = SSradio.add_object(src, frequency, RADIO_AIRLOCK)
+	radio_connection_handle = om_handle(SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/access_button/Initialize(mapload)
 	. = ..()
@@ -417,3 +417,15 @@
 /obj/machinery/airlock_sensor/arm_wakes()
 	..()
 	register_gas_dependencies()
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/door/airlock/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/airlock_sensor/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)
+
+/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/access_button/proc/radio_connection() as /datum/radio_frequency
+	return om_resolve(radio_connection_handle)

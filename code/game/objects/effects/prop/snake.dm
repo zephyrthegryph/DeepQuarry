@@ -9,7 +9,7 @@
 	invisibility = INVISIBILITY_MAXIMUM
 
 // The atom which created this.
-	var/atom/movable/creator
+	var/creator_handle
 // Will the snake ever intentionally move onto its creator's turf?
 	var/safe = FALSE
 
@@ -20,15 +20,15 @@
 // How many turfs this snake should remember.
 	var/total_turf_memory = 5
 // Is the snake hunting a specific atom? (Will always try to meander toward this target.)
-	var/atom/hunting
+	var/hunting_handle
 
 /obj/effect/temporary_effect/pulse/snake/Initialize(mapload, atom/hunt_target, atom/Creator)
 	. = ..()
 	if(hunt_target)
-		hunting = hunt_target
+		hunting_handle = om_handle(hunt_target)
 
 	if(Creator)
-		creator = Creator
+		creator_handle = om_handle(Creator)
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
 	snake_pulse_wait()
@@ -60,10 +60,10 @@
 		if(!ignore_density && T.density)
 			continue
 
-		if(safe && creator && get_dir(src, T) == get_dir(src,creator))
+		if(safe && creator() && get_dir(src, T) == get_dir(src,creator()))
 			continue
 
-		if(hunting && get_dist(T, hunting) > get_dist(src, hunting))
+		if(hunting() && get_dist(T, hunting()) > get_dist(src, hunting()))
 			continue
 
 		possible_turfs |= T
@@ -109,7 +109,7 @@
 		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
-	hunting = locate(/mob/living) in range(7, src)
+	hunting_handle = om_handle(locate(/mob/living) in range(7, src))
 	..()
 
 /*
@@ -126,3 +126,11 @@
 /obj/effect/temporary_effect/pulse/snake/flamestrike/on_leave_turf(turf/T)
 	if(T)
 		new /obj/effect/temporary_effect/eruption/flamestrike(T, 1.2 SECONDS, "#f75000")
+
+/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/temporary_effect/pulse/snake/proc/creator() as /atom/movable
+	return om_resolve(creator_handle)
+
+/// LC-refs: hunting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/temporary_effect/pulse/snake/proc/hunting() as /atom
+	return om_resolve(hunting_handle)

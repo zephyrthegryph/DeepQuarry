@@ -47,7 +47,7 @@
 	if(holding)
 		add_overlay("scrubber-open")
 
-	if(connected_port)
+	if(connected_port())
 		add_overlay("scrubber-connector")
 
 	return
@@ -116,7 +116,7 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/tgui_data(mob/user)
 	var/list/data = list()
 	data["on"] = on ? 1 : 0
-	data["connected"] = connected_port ? 1 : 0
+	data["connected"] = connected_port() ? 1 : 0
 	data["pressure"] = round(air_contents.return_pressure() > 0 ? air_contents.return_pressure() : 0)
 
 	data["rate"] = round(volume_rate)

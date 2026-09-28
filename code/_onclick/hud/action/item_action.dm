@@ -10,11 +10,13 @@
 	. = ..()
 
 	// If our button state is null, use the target's icon instead
+	var/datum/target = action_target()
 	if(target && isnull(button_icon_state))
 		AddComponent(/datum/component/action_item_overlay, target)
 
 /datum/action/item_action/vv_edit_var(var_name, var_value)
 	. = ..()
+	var/datum/target = action_target()
 	if(!. || !target)
 		return
 
@@ -28,9 +30,9 @@
 /datum/action/item_action/Trigger(trigger_flags)
 	if(!..())
 		return 0
-	if(target)
-		var/obj/item/item_target = target
-		item_target.ui_action_click(owner, src.type)
+	var/obj/item/item_target = action_target()
+	if(item_target)
+		item_target.ui_action_click(action_owner(), src.type)
 	return 1
 
 /datum/action/item_action/hands_free

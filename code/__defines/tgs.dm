@@ -617,3 +617,11 @@ ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
+
+REF_OWNED(/datum/tgs_chat_user, list("channel"))
+
+REF_OWNED(/datum/tgs_message_content, list("embed"))
+
+REF_OWNED(/datum/tgs_chat_embed/structure, list("image", "thumbnail", "video", "footer", "provider", "author"))
+
+REF_OWNED_LIST(/datum/tgs_chat_embed/structure, list("fields"))

@@ -295,3 +295,5 @@
 	desc = "A variant of the concussion maul that staggers and weakens victims. Despite their screams, does no real damage."
 	injury_kind = INJURY_PAIN
 	launch_force = 0
+
+REF_HELD(/obj/item/melee/shock_maul, list("bcell"))

@@ -447,3 +447,5 @@
 /obj/structure/dirtybed/proc/wrench_act_tool_done(mob/user)
 	anchored = !anchored
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
+
+REF_OWNED(/obj/item/roller_holder, list("held"))

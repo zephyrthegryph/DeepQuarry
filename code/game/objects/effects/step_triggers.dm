@@ -163,19 +163,19 @@ GLOBAL_LIST_EMPTY(mapped_autostrips_mob)
 /* Teleporter that sends objects stepping on it to a specific landmark. */
 
 /obj/effect/step_trigger/teleporter/landmark
-	var/obj/effect/landmark/the_landmark = null
+	var/the_landmark_handle
 	var/landmark_id = null
 
 /obj/effect/step_trigger/teleporter/landmark/Initialize(mapload)
 	. = ..()
 	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
 		if(mark.landmark_id == landmark_id)
-			the_landmark = mark
+			the_landmark_handle = om_handle(mark)
 			return
 
 /obj/effect/step_trigger/teleporter/landmark/Trigger(atom/movable/A)
-	if(the_landmark)
-		A.forceMove(get_turf(the_landmark))
+	if(the_landmark())
+		A.forceMove(get_turf(the_landmark()))
 
 /obj/effect/landmark/teleport_mark
 	var/landmark_id = null
@@ -188,7 +188,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 /* Teleporter which simulates falling out of the sky. */
 
 /obj/effect/step_trigger/teleporter/planetary_fall
-	var/datum/planet/planet = null
+	var/planet_handle
 
 // First time setup, which planet are we aiming for?
 /obj/effect/step_trigger/teleporter/planetary_fall/proc/find_planet()
@@ -198,7 +198,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/landmark/teleport_mark, REGISTRY_TELE_LANDMARKS)
 	var/turf/T = get_turf(A)
 	if(!T)
 		return
-	T.trigger_fall(A, planet)
+	T.trigger_fall(A, planet())
 
 //Death
 
@@ -252,8 +252,8 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/autostrip
 	name = "Autostrip trigger. Set the targetid to match the effect/autostriptarget"
 	var/targetid = "Default"
-	var/obj/effect/autostriptarget/target
-	var/obj/effect/autostriptarget/mob/Mtarget
+	var/target_handle
+	var/Mtarget_handle
 	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
@@ -264,12 +264,12 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/autostrip/Trigger(mob/living/carbon/human/H as mob)
 	if(!istype(H))
 		return
-	if(!target)
+	if(!target_ref())
 		if(!initMappedLink())
 			return
-	if(Mtarget)
-		H.forceMove(Mtarget.loc)
-	var/obj/locker = new /obj/structure/closet/secure_closet/mind(target.loc, H.mind)
+	if(Mtarget())
+		H.forceMove(Mtarget().loc)
+	var/obj/locker = new /obj/structure/closet/secure_closet/mind(target_ref().loc, H.mind)
 	for(var/obj/item/W in H)
 		if(istype(W, /obj/item/implant/backup) || istype(W, /obj/item/nif))
 			continue
@@ -301,9 +301,9 @@ But for now, for what it's been used for, it works.
 
 /obj/effect/step_trigger/autostrip/proc/initMappedLink()
 	. = FALSE
-	target = GLOB.mapped_autostrips[targetid]
-	Mtarget = GLOB.mapped_autostrips_mob[targetid]
-	if(target)
+	target_handle = om_handle(GLOB.mapped_autostrips[targetid])
+	Mtarget_handle = om_handle(GLOB.mapped_autostrips_mob[targetid])
+	if(target_ref())
 		. = TRUE
 
 /obj/effect/autostriptarget
@@ -381,3 +381,19 @@ But for now, for what it's been used for, it works.
 	if(teleprob && !prob(teleprob))
 		return FALSE
 	return ..()
+
+/// LC-refs: the landmark -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/step_trigger/teleporter/landmark/proc/the_landmark() as /obj/effect/landmark
+	return om_resolve(the_landmark_handle)
+
+/// LC-refs: planet -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/step_trigger/teleporter/planetary_fall/proc/planet() as /datum/planet
+	return om_resolve(planet_handle)
+
+/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/step_trigger/autostrip/proc/target_ref() as /obj/effect/autostriptarget
+	return om_resolve(target_handle)
+
+/// LC-refs: Mtarget -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/step_trigger/autostrip/proc/Mtarget() as /obj/effect/autostriptarget/mob
+	return om_resolve(Mtarget_handle)

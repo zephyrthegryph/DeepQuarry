@@ -7,8 +7,8 @@
 
 	toolspeed = 3 //You can use it in surgery. It's stupid, but you can.
 
-	var/turf/start
-	var/turf/end
+	var/start_handle
+	var/end_handle
 	var/tape_type = /obj/item/tape
 	var/icon_base = "tape"
 
@@ -118,7 +118,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	var/image/overlay = image(icon = src.icon)
 	overlay.appearance_flags = RESET_COLOR
 	if(ismob(loc))
-		if(!start)
+		if(!get_start())
 			overlay.icon_state = "start"
 		else
 			overlay.icon_state = "stop"
@@ -141,57 +141,57 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(!start)
-		start = get_turf(src)
+	if(!get_start())
+		start_handle = om_handle(get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
 		update_icon()
 	else
-		end = get_turf(src)
-		if(start.y != end.y && start.x != end.x || start.z != end.z)
-			start = null
+		end_handle = om_handle(get_turf(src))
+		if(get_start().y != get_end().y && get_start().x != get_end().x || get_start().z != get_end().z)
+			start_handle = null
 			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
 			return
 
-		if(start == end)
+		if(get_start() == get_end())
 			// spread tape in all directions, provided there is a wall/window
 			var/turf/T
 			var/possible_dirs = 0
 			for(var/dir in GLOB.cardinal)
-				T = get_step(start, dir)
+				T = get_step(get_start(), dir)
 				if(T && T.density)
 					possible_dirs |= dir
 				else
 					for(var/obj/structure/window/W in T)
 						if(W.is_fulltile() || W.dir == GLOB.reverse_dir[dir])
 							possible_dirs |= dir
-			for(var/obj/structure/window/window in start)
+			for(var/obj/structure/window/window in get_start())
 				if(istype(window) && !window.is_fulltile())
 					possible_dirs |= window.dir
 			if(!possible_dirs)
-				start = null
+				start_handle = null
 				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
 				return
 			if(possible_dirs & (NORTH|SOUTH))
-				var/obj/item/tape/TP = new tape_type(start)
+				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(NORTH, SOUTH))
 					if (possible_dirs & dir)
 						TP.tape_dir += dir
 				TP.update_icon()
 			if(possible_dirs & (EAST|WEST))
-				var/obj/item/tape/TP = new tape_type(start)
+				var/obj/item/tape/TP = new tape_type(get_start())
 				for(var/dir in list(EAST, WEST))
 					if (possible_dirs & dir)
 						TP.tape_dir += dir
 				TP.update_icon()
-			start = null
+			start_handle = null
 			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
 			return
 
-		var/turf/cur = start
-		var/orientation = get_dir(start, end)
+		var/turf/cur = get_start()
+		var/orientation = get_dir(get_start(), get_end())
 		var/dir = 0
 		switch(orientation)
 			if(NORTH, SOUTH)	dir = NORTH|SOUTH	// North-South taping
@@ -210,13 +210,13 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 						if(window.is_fulltile())
 							can_place = 0
 							break
-						if(cur == start)
+						if(cur == get_start())
 							if(window.dir == orientation)
 								can_place = 0
 								break
 							else
 								continue
-						else if(cur == end)
+						else if(cur == get_end())
 							if(window.dir == GLOB.reverse_dir[orientation])
 								can_place = 0
 								break
@@ -230,23 +230,23 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 					if(O.density)
 						can_place = 0
 						break
-			if(cur == end)
+			if(cur == get_end())
 				break
-			cur = get_step_towards(cur,end)
+			cur = get_step_towards(cur,get_end())
 		if (!can_place)
-			start = null
+			start_handle = null
 			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
 			return
 
-		cur = start
+		cur = get_start()
 		var/tapetest
 		var/tape_dir
 		while (1)
 			tapetest = 0
 			tape_dir = dir
-			if(cur == start)
-				var/turf/T = get_step(start, GLOB.reverse_dir[orientation])
+			if(cur == get_start())
+				var/turf/T = get_step(get_start(), GLOB.reverse_dir[orientation])
 				if(T && !T.density)
 					tape_dir = orientation
 					for(var/obj/structure/window/W in turf_contents_of_type(T, /obj/structure/window))
@@ -255,8 +255,8 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 				for(var/obj/structure/window/window in turf_contents_of_type(cur, /obj/structure/window))
 					if(istype(window) && !window.is_fulltile() && window.dir == GLOB.reverse_dir[orientation])
 						tape_dir = dir
-			else if(cur == end)
-				var/turf/T = get_step(end, orientation)
+			else if(cur == get_end())
+				var/turf/T = get_step(get_end(), orientation)
 				if(T && !T.density)
 					tape_dir = GLOB.reverse_dir[orientation]
 					for(var/obj/structure/window/W in turf_contents_of_type(T, /obj/structure/window))
@@ -275,10 +275,10 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 				T.update_icon()
 				if(tape_dir & SOUTH)
 					T.layer += 0.1 // Must always show above other tapes
-			if(cur == end)
+			if(cur == get_end())
 				break
-			cur = get_step_towards(cur,end)
-		start = null
+			cur = get_step_towards(cur,get_end())
+		start_handle = null
 		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
 		return
@@ -392,3 +392,11 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 /obj/item/tape/proc/settle()
 	lifted = 0
 	reset_plane_and_layer()
+
+/// LC-refs: start -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/taperoll/proc/get_start() as /turf
+	return om_resolve(start_handle)
+
+/// LC-refs: end -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/taperoll/proc/get_end() as /turf
+	return om_resolve(end_handle)

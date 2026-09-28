@@ -19,7 +19,7 @@
 	var/ready = 1
 	var/beacons_left = 3
 	var/failure_chance = 5 //Percent
-	var/obj/item/perfect_tele_beacon/destination
+	var/destination_handle
 	var/datum/effect/effect/system/spark_spread/spk
 	var/list/warned_users
 	var/list/logged_events
@@ -55,7 +55,7 @@ REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 // LIFECYCLE: its beacons forget it.
 /obj/item/perfect_tele/Destroy()
 	for(var/obj/item/perfect_tele_beacon/B in beacons)
-		B.tele_hand = null
+		B.tele_hand_handle = null
 	LAZYCLEARLIST(beacons)
 	return ..()
 
@@ -77,7 +77,7 @@ REF_OWNED(/obj/item/perfect_tele, list("power_source", "spk"))
 		var/image/I = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_[index]")
 
 		var/obj/item/perfect_tele_beacon/beacon = LAZYACCESS(beacons, bcn)
-		if(destination == beacon)
+		if(destination() == beacon)
 			I.add_overlay(radial_seton)
 		else
 			I.add_overlay(radial_set)
@@ -157,7 +157,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		destination = LAZYACCESS(beacons, choice)
+		destination_handle = om_handle(LAZYACCESS(beacons, choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/proc/beacon_named(mob/user, new_name, datum/om/prompt/ask)
@@ -176,7 +176,7 @@ This device records all warnings given and teleport events for admin review in c
 
 	var/obj/item/perfect_tele_beacon/nb = new(get_turf(src))
 	nb.tele_name = new_name
-	nb.tele_hand = src
+	nb.tele_hand_handle = om_handle(src)
 	nb.creator = user.ckey
 	LAZYSET(beacons, new_name, nb)
 	beacons_left--
@@ -234,12 +234,12 @@ This device records all warnings given and teleport events for admin review in c
 		return FALSE
 
 	//No, you can't teleport if there's no destination.
-	if(!destination)
+	if(!destination())
 		to_chat(user,span_warning("\The [src] doesn't have a current valid destination set!"))
 		return FALSE
 
 	//No, you can't teleport if there's a jammer.
-	if(is_jammed(src) || is_jammed(destination))
+	if(is_jammed(src) || is_jammed(destination()))
 		var/area/our_area = get_area(src)
 		if(!our_area.no_comms)	//I don't actually want this to block teleporters, just comms
 			to_chat(user,span_warning("\The [src] refuses to teleport you, due to strong interference!"))
@@ -247,7 +247,7 @@ This device records all warnings given and teleport events for admin review in c
 
 	//No, you can't port to or from away missions. Stupidly complicated check.
 	var/turf/uT = get_turf(user)
-	var/turf/dT = get_turf(destination)
+	var/turf/dT = get_turf(destination())
 	var/list/dat = list()
 	dat["z_level_detection"] = using_map.get_map_levels(uT.z)
 
@@ -297,7 +297,7 @@ This device records all warnings given and teleport events for admin review in c
 	var/mob/living/target = task.target
 	var/mob/user = task.actor
 	var/ignore_fail_chance = task.ignore_fail_chance
-	if(!ready || !destination || !power_source)
+	if(!ready || !destination() || !power_source)
 		return
 	//Bzzt.
 	ready = 0
@@ -314,16 +314,16 @@ This device records all warnings given and teleport events for admin review in c
 	//Failure chance
 	if (!ignore_fail_chance)
 		if(prob(failure_chance) && length(beacons) >= 2)
-			var/list/wrong_choices = beacons - destination.tele_name
+			var/list/wrong_choices = beacons - destination().tele_name
 			var/wrong_name = pick(wrong_choices)
-			destination = LAZYACCESS(beacons, wrong_name)
+			destination_handle = om_handle(LAZYACCESS(beacons, wrong_name))
 			to_chat(user,span_warning("\The [src] malfunctions and sends you to the wrong beacon!"))
 
 	//Destination beacon vore checking
-	var/turf/dT = get_turf(destination)
+	var/turf/dT = get_turf(destination())
 	var/atom/real_dest = dT
 
-	var/atom/real_loc = destination.loc
+	var/atom/real_loc = destination().loc
 	if(isbelly(real_loc))
 		real_dest = real_loc
 	if(isliving(real_loc))
@@ -408,7 +408,7 @@ This device records all warnings given and teleport events for admin review in c
 	w_class = ITEMSIZE_TINY
 
 	var/tele_name
-	var/obj/item/perfect_tele/tele_hand
+	var/tele_hand_handle
 	var/creator
 	var/warned_users = list()
 	var/tele_network = null
@@ -569,3 +569,11 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	loc_network = "unkfive"
 /obj/item/perfect_tele/frontier/unknown/six
 	loc_network = "unksix"
+
+/// LC-refs: destination -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/perfect_tele/proc/destination() as /obj/item/perfect_tele_beacon
+	return om_resolve(destination_handle)
+
+/// LC-refs: tele hand -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/perfect_tele_beacon/proc/tele_hand() as /obj/item/perfect_tele
+	return om_resolve(tele_hand_handle)

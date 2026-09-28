@@ -94,4 +94,4 @@
 
 // Step trigger to fall down to planet Sif
 /obj/effect/step_trigger/teleporter/planetary_fall/sif/find_planet()
-	planet = GLOB.planet_sif
+	planet_handle = om_handle(GLOB.planet_sif)

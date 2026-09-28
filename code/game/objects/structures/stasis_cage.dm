@@ -6,7 +6,7 @@
 	density = TRUE
 	unacidable = TRUE
 
-	var/mob/living/simple_mob/contained
+	var/contained_handle
 
 /obj/structure/stasis_cage/Initialize(mapload)
 	. = ..()
@@ -36,28 +36,28 @@
 		release()
 
 /obj/structure/stasis_cage/proc/contain(mob/living/simple_mob/animal)
-	if(contained || !istype(animal))
+	if(contained() || !istype(animal))
 		return
 
-	contained = animal
+	contained_handle = om_handle(animal)
 	animal.forceMove(src)
 	animal.set_stasis(/datum/modifier/stasis/total, src)
 	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
 		var/atom/movable/_tmp_buck_11 = animal?.buckled_to()
 		_tmp_buck_11.forceMove(animal.loc)
 	icon_state = "critter"
-	desc = initial(desc) + " \The [contained] is kept inside."
+	desc = initial(desc) + " \The [contained()] is kept inside."
 
 /obj/structure/stasis_cage/proc/release()
-	if(!contained)
+	if(!contained())
 		return
 
-	contained.dropInto(src)
-	if(contained?.buckled_to() && istype(contained?.buckled_to(), /obj/effect/energy_net))
-		var/atom/movable/_tmp_buck_12 = contained?.buckled_to()
+	contained().dropInto(src)
+	if(contained()?.buckled_to() && istype(contained()?.buckled_to(), /obj/effect/energy_net))
+		var/atom/movable/_tmp_buck_12 = contained()?.buckled_to()
 		_tmp_buck_12.dropInto(src)
-	contained.set_stasis(null, src)
-	contained = null
+	contained().set_stasis(null, src)
+	contained_handle = null
 	icon_state = "critteropen"
 	underlays.Cut()
 	desc = initial(desc)
@@ -87,3 +87,7 @@
 /mob/living/simple_mob/proc/MouseDrop_timed_done(obj/structure/stasis_cage/over_object, mob/user)
 	user.visible_message("[user] has stuffed \the [src] into \the [over_object].", "You have stuffed \the [src] into \the [over_object].")
 	over_object.contain(src)
+
+/// LC-refs: contained -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/structure/stasis_cage/proc/contained() as /mob/living/simple_mob
+	return om_resolve(contained_handle)

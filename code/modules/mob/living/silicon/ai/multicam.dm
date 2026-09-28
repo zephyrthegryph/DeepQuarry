@@ -62,7 +62,7 @@ REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, "aiEye")
 	if(!aiEye) // Exploit Fix
 		qdel(src)
 		return
-	aiEye.setLoc(get_turf(center))
+	aiEye.setLoc(get_turf(center()))
 
 /atom/movable/screen/movable/pic_in_pic/ai/proc/highlight()
 	if(highlighted)
@@ -271,6 +271,6 @@ REF_OWNED(/mob/observer/eye/aiEye/pic_in_pic, "screen")
 
 	if(P)
 		P.highlight()
-		eyeobj.setLoc(get_turf(P.center))
+		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
 		master_multicam = P

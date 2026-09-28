@@ -1,7 +1,7 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
 	var/detectTime = 0
-	var/area/ai_monitored/area_motion = null
+	var/area_motion_handle
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 
 /// The motion alarm fires once a target has been seen for alarm_delay (the camera's timer).
@@ -30,7 +30,7 @@
 /// ai_monitored area, which tracks its own exits) left the camera's range.
 /obj/machinery/camera/proc/on_motion_target_changed(mob/target)
 	SIGNAL_HANDLER
-	if(target.stat == DEAD || (!area_motion && !in_range(src, target)))
+	if(target.stat == DEAD || (!area_motion() && !in_range(src, target)))
 		lostTarget(target)
 
 /obj/machinery/camera/proc/on_motion_target_deleted(mob/target)
@@ -68,6 +68,10 @@
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
 	// Motion cameras outside of an "ai monitored" area will use this to detect stuff.
-	if (!area_motion)
+	if (!area_motion())
 		if(isliving(AM))
 			newTarget(AM)
+
+/// LC-refs: area motion -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/camera/proc/area_motion() as /area/ai_monitored
+	return om_resolve(area_motion_handle)

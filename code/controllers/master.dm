@@ -50,8 +50,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	/// The type of the last subsystem to be fire()'d.
 	var/last_type_processed
 
-	var/datum/controller/subsystem/queue_head //!Start of queue linked list
-	var/datum/controller/subsystem/queue_tail //!End of queue linked list (used for appending to the list)
+	var/queue_head_handle	//!Start of queue linked list
+	var/queue_tail_handle	//!End of queue linked list (used for appending to the list)
 	var/queue_priority_count = 0 //Running total so that we don't have to loop thru the queue each run to split up the tick
 	var/queue_priority_count_bg = 0 //Same, but for background subsystems
 	var/map_loading = FALSE //!Are we loading in a new map?
@@ -307,7 +307,6 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/list/filtered_variables = list(
 		NAMEOF(src, name),
 		NAMEOF(src, parent_type),
-		NAMEOF(src, statclick),
 		NAMEOF(src, tag),
 		NAMEOF(src, type),
 		NAMEOF(src, vars),
@@ -602,8 +601,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		if (SS.init_stage > init_stage)
 			continue
 		SS.queued_time = 0
-		SS.queue_next = null
-		SS.queue_prev = null
+		SS.queue_next_handle = null
+		SS.queue_prev_handle = null
 		SS.state = SS_IDLE
 		if ((SS.flags & (SS_TICKER|SS_BACKGROUND)) == SS_TICKER)
 			tickersubsystems += SS
@@ -632,8 +631,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		if(!added_to_any)
 			WARNING("[SS.name] subsystem is not SS_NO_FIRE but also does not have any runlevels set!")
 
-	queue_head = null
-	queue_tail = null
+	queue_head_handle = null
+	queue_tail_handle = null
 	//these sort by lower priorities first to reduce the number of loops needed to add subsequent SS's to the queue
 	//(higher subsystems will be sooner in the queue, adding them later in the loop means we don't have to loop thru them next queue add)
 	sortTim(tickersubsystems, GLOBAL_PROC_REF(cmp_subsystem_priority))
@@ -748,7 +747,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			error_level++
 			continue
 
-		if (queue_head)
+		if (queue_head())
 			if (RunQueue() <= 0) //error running queue
 				stack_trace("MC: RunQueue failed. Current error_level is [round(error_level, 0.25)]")
 				if (error_level > 1) //skip the first error,
@@ -767,7 +766,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 				error_level++
 		if (error_level > 0)
 			error_level = max(MC_AVERAGE_SLOW(error_level-1, error_level), 0)
-		if (!queue_head) //reset the counts if the queue is empty, in the off chance they get out of sync
+		if (!queue_head()) //reset the counts if the queue is empty, in the off chance they get out of sync
 			queue_priority_count = 0
 			queue_priority_count_bg = 0
 
@@ -963,11 +962,11 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 	//keep running while we have stuff to run and we haven't gone over a tick
 	// this is so subsystems paused eariler can use tick time that later subsystems never used
-	while (ran && queue_head && TICK_USAGE < TICK_LIMIT_MC)
+	while (ran && queue_head() && TICK_USAGE < TICK_LIMIT_MC)
 		ran = FALSE
 		bg_calc = FALSE
 		current_tick_budget = queue_priority_count
-		queue_node = queue_head
+		queue_node = queue_head()
 		while (queue_node)
 			if (ran && TICK_USAGE > TICK_LIMIT_RUNNING)
 				break
@@ -975,7 +974,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			queue_node_priority = queue_node.queued_priority
 
 			if (!(queue_node_flags & SS_TICKER) && skip_ticks)
-				queue_node = queue_node.queue_next
+				queue_node = queue_node.queue_next()
 				continue
 
 			if ((queue_node_flags & SS_BACKGROUND))
@@ -985,7 +984,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			else if (bg_calc)
 				//error state, do sane fallback behavior
 				if (. == 0)
-					log_world("MC: Queue logic failure, non-background subsystem queued to run after a background subsystem: [queue_node] queue_prev:[queue_node.queue_prev]")
+					log_world("MC: Queue logic failure, non-background subsystem queued to run after a background subsystem: [queue_node] queue_prev:[queue_node.queue_prev()]")
 				. = -1
 				current_tick_budget = queue_priority_count //this won't even be right, but is the best we have.
 				bg_calc = FALSE
@@ -1051,7 +1050,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			if (state == SS_PAUSED)
 				queue_node.paused_ticks++
 				queue_node.paused_tick_usage += tick_usage
-				queue_node = queue_node.queue_next
+				queue_node = queue_node.queue_next()
 				continue
 
 			queue_node.ticks = MC_AVERAGE(queue_node.ticks, queue_node.paused_ticks)
@@ -1083,7 +1082,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 			//remove from queue
 			queue_node.dequeue()
 
-			queue_node = queue_node.queue_next
+			queue_node = queue_node.queue_next()
 
 	if (. == 0)
 		. = 1
@@ -1111,21 +1110,14 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 				I -= list(SS)
 			log_world("MC: SoftReset: Found bad entry in subsystem list, '[SS]'")
 			continue
-		if (SS.queue_next && !istype(SS.queue_next))
-			log_world("MC: SoftReset: Found bad data in subsystem queue, queue_next = '[SS.queue_next]'")
-		SS.queue_next = null
-		if (SS.queue_prev && !istype(SS.queue_prev))
-			log_world("MC: SoftReset: Found bad data in subsystem queue, queue_prev = '[SS.queue_prev]'")
-		SS.queue_prev = null
+		// The queue links are OM handles: they can't hold bad data, only go stale.
+		SS.queue_next_handle = null
+		SS.queue_prev_handle = null
 		SS.queued_priority = 0
 		SS.queued_time = 0
 		SS.state = SS_IDLE
-	if (queue_head && !istype(queue_head))
-		log_world("MC: SoftReset: Found bad data in subsystem queue, queue_head = '[queue_head]'")
-	queue_head = null
-	if (queue_tail && !istype(queue_tail))
-		log_world("MC: SoftReset: Found bad data in subsystem queue, queue_tail = '[queue_tail]'")
-	queue_tail = null
+	queue_head_handle = null
+	queue_tail_handle = null
 	queue_priority_count = 0
 	queue_priority_count_bg = 0
 	log_world("MC: SoftReset: Finished.")
@@ -1183,3 +1175,13 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		return FALSE
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)
+
+/// LC-refs: the subsystem at the front of the run queue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/master/proc/queue_head() as /datum/controller/subsystem
+	return om_resolve(queue_head_handle)
+
+/// LC-refs: the subsystem at the back of the run queue -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
+	return om_resolve(queue_tail_handle)
+
+REF_OWNED(/datum/controller/master, "stack_end_detector")

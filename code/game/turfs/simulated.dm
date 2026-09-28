@@ -191,3 +191,5 @@
 	if(wet_overlay)
 		cut_overlay(wet_overlay)
 		wet_overlay = null
+
+REF_OWNED(/turf/simulated, list("wet_overlay"))

@@ -264,27 +264,27 @@
 	update_icon()
 
 /obj/item/card/id/synthetic/borg
-	var/mob/living/silicon/robot/robot_owner
+	var/robot_owner_handle
 	var/last_robot_loc
 
 /obj/item/card/id/synthetic/borg/Initialize(mapload)
 	. = ..()
 	if(isrobot(loc))
-		robot_owner = loc
-		registered_name = robot_owner.braintype
+		robot_owner_handle = om_handle(loc)
+		registered_name = robot_owner().braintype
 		RegisterSignal(src, COMSIG_MOVABLE_ATTEMPTED_MOVE, PROC_REF(check_loc))
 
 /obj/item/card/id/synthetic/borg/proc/check_loc(atom/movable/mover, atom/old_loc, atom/new_loc)
 	SIGNAL_HANDLER
-	if(old_loc == robot_owner || old_loc == robot_owner.module)
+	if(old_loc == robot_owner() || old_loc == robot_owner().module)
 		last_robot_loc = old_loc
-	if(!istype(loc, /obj/machinery) && loc != robot_owner && loc != robot_owner.module)
+	if(!istype(loc, /obj/machinery) && loc != robot_owner() && loc != robot_owner().module)
 		if(last_robot_loc)
 			forceMove(last_robot_loc)
 			last_robot_loc = null
 		else
-			forceMove(robot_owner)
-		if(loc == robot_owner)
+			forceMove(robot_owner())
+		if(loc == robot_owner())
 			hud_layerise()
 
 /obj/item/card/emag/examine(mob/user)
@@ -297,3 +297,7 @@
 /obj/item/card/emag/used/Initialize(mapload)
 	. = ..()
 	uses = rand(1, 5)
+
+/// LC-refs: robot owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/card/id/synthetic/borg/proc/robot_owner() as /mob/living/silicon/robot
+	return om_resolve(robot_owner_handle)

@@ -47,7 +47,7 @@
 	var/atom/movable/screen/movable/spell_master/new_spell_master = new master_type //we're here because either we didn't find our type, or we have no spell masters to attach to
 	if(client)
 		src.client.screen += new_spell_master
-	new_spell_master.spell_holder = src
+	new_spell_master.spell_holder_handle = om_handle(src)
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)
 		new_spell_master.icon_state = spell_base
@@ -123,7 +123,7 @@
 	throwforce = 0
 	force = 0
 	show_examine = FALSE
-	owner = null
+	owner_handle = null
 	core = null
 	cast_methods = null			// Controls how the spell is casted.
 	aspect = ASPECT_UNHOLY		// Not used for everything we do
@@ -135,8 +135,8 @@
 /obj/item/spell/unrestricted/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		owner = loc
-	if(!owner)
+		owner_handle = om_handle(loc)
+	if(!owner_ref())
 		return INITIALIZE_HINT_QDEL
 	update_icon()
 
@@ -148,7 +148,7 @@
 	return 0
 
 /obj/item/spell/unrestricted/pay_energy(amount)
-	if(owner)
+	if(owner_ref())
 		return 1
 
 /obj/item/spell/unrestricted/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -185,7 +185,7 @@
 /// A shot after its pre-shot delay: on_ranged_cast() again, past the delay.
 /obj/item/spell/unrestricted/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
 	qdel(target_image)
-	if(!owner)
+	if(!owner_ref())
 		return // We got dropped before the firing occured.
 	shot_ready = TRUE
 	on_ranged_cast(hit_atom, user)

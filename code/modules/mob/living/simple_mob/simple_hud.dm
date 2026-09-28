@@ -176,7 +176,7 @@
 
 		//Hand slots themselves
 		inv_box = new /atom/movable/screen/inventory/hand()
-		inv_box.hud = HUD
+		inv_box.hud_handle = om_handle(HUD)
 		inv_box.name = "r_hand"
 		inv_box.icon = ui_style
 		inv_box.icon_state = "r_hand_inactive"
@@ -191,7 +191,7 @@
 		slot_info["[slot_r_hand]"] = inv_box.screen_loc
 
 		inv_box = new /atom/movable/screen/inventory/hand()
-		inv_box.hud = HUD
+		inv_box.hud_handle = om_handle(HUD)
 		inv_box.name = "l_hand"
 		inv_box.icon = ui_style
 		inv_box.icon_state = "l_hand_inactive"

@@ -765,3 +765,5 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 /obj/machinery/proc/text_var_entered(mob/user, value, datum/om/prompt/ask)
 	if(value)
 		vars[ask.get("var")] = value
+
+REF_OWNED(/obj/machinery, list("circuit"))

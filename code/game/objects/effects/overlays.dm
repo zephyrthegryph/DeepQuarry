@@ -8,7 +8,7 @@
 	icon='icons/effects/beam.dmi'
 	icon_state="b_beam"
 	plane = ABOVE_OBJ_PLANE
-	var/tmp/atom/BeamSource
+	var/tmp/BeamSource_handle
 
 /obj/effect/overlay/beam/Initialize(mapload)
 	. = ..()
@@ -180,3 +180,7 @@
 	layer = FLOAT_LAYER
 	vis_flags = VIS_INHERIT_ID
 	appearance_flags = KEEP_TOGETHER | LONG_GLIDE | PIXEL_SCALE
+
+/// LC-refs: BeamSource -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/overlay/beam/proc/BeamSource() as /atom
+	return om_resolve(BeamSource_handle)

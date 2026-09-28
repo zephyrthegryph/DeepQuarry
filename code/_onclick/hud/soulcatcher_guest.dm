@@ -72,27 +72,27 @@
 
 	using = new /atom/movable/screen/nifsc/reenter()
 	using.screen_loc = ui_nifsc_reenter
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/nifsc/arproj()
 	using.screen_loc = ui_nifsc_arproj
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/nifsc/jumptoowner()
 	using.screen_loc = ui_nifsc_jumptoowner
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/nifsc/nme()
 	using.screen_loc = ui_nifsc_nme
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 	using = new /atom/movable/screen/nifsc/nsay()
 	using.screen_loc = ui_nifsc_nsay
-	using.hud = src
+	using.hud_handle = om_handle(src)
 	adding += using
 
 

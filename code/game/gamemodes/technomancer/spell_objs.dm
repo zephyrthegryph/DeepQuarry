@@ -12,7 +12,7 @@
 	force = 0
 	show_examine = FALSE
 //	var/mob/living/carbon/human/owner = null
-	var/mob/living/owner = null
+	var/owner_handle
 	var/obj/item/technomancer_core/core = null
 	var/cast_methods = null			// Controls how the spell is casted.
 	var/aspect = null				// Used for combining spells.
@@ -91,10 +91,10 @@
 // Parameters: 1 (amount - how much instability to give)
 // Description: Use this to quickly add or subtract instability from the caster of the spell.  Owner is set by New().
 /obj/item/spell/proc/adjust_instability(amount)
-	if(!owner || !core)
+	if(!owner_ref() || !core)
 		return 0
 	amount = round(amount * core.instability_modifier, 0.1)
-	owner.adjust_instability(amount)
+	owner_ref().adjust_instability(amount)
 
 // Proc: get_technomancer_core()
 // Parameters: 0
@@ -114,11 +114,11 @@
 /obj/item/spell/Initialize(mapload, coreless)
 	. = ..()
 	if(isliving(loc))
-		owner = loc
-	if(owner && !coreless)
-		core = owner.get_technomancer_core()
+		owner_handle = om_handle(loc)
+	if(owner_ref() && !coreless)
+		core = owner_ref().get_technomancer_core()
 		if(!core)
-			to_chat(owner, span_warning("You need a Core to do that."))
+			to_chat(owner_ref(), span_warning("You need a Core to do that."))
 			return INITIALIZE_HINT_QDEL
 //		if(istype(/obj/item/technomancer_core, owner.back))
 //			core = owner.back
@@ -129,8 +129,8 @@
 // Description: Nulls object references so it can qdel() cleanly.
 // LIFECYCLE: the caster forgets the spell.
 /obj/item/spell/Destroy()
-	owner?.unref_spell(src)
-	owner = null
+	owner_ref()?.unref_spell(src)
+	owner_handle = null
 	core = null
 	return ..()
 
@@ -156,18 +156,18 @@
 // Description: Ensures spells should not function if something is wrong.  If a core is missing, it will try to find one, then fail
 // if it still can't find one.  It will also check if the core is being worn properly, and finally checks if the owner is a technomancer.
 /obj/item/spell/proc/run_checks()
-	if(!owner)
+	if(!owner_ref())
 		return 0
 	if(!core)
-		core = locate(/obj/item/technomancer_core) in owner
+		core = locate(/obj/item/technomancer_core) in owner_ref()
 		if(!core)
-			to_chat(owner, span_danger("You need to be wearing a core on your back!"))
+			to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 			return 0
-	if(core.loc != owner || owner.get_equipped_item(SLOT_ID_BACK) != core) //Make sure the core's being worn.
-		to_chat(owner, span_danger("You need to be wearing a core on your back!"))
+	if(core.loc != owner_ref() || owner_ref().get_equipped_item(SLOT_ID_BACK) != core) //Make sure the core's being worn.
+		to_chat(owner_ref(), span_danger("You need to be wearing a core on your back!"))
 		return 0
-	if(!GLOB.technomancers.is_antagonist(owner.mind) && !core.universal) // Now make sure the person using this is the actual antag. // Universal cores
-		to_chat(owner, span_danger("You can't seem to figure out how to make the machine work properly."))
+	if(!GLOB.technomancers.is_antagonist(owner_ref().mind) && !core.universal) // Now make sure the person using this is the actual antag. // Universal cores
+		to_chat(owner_ref(), span_danger("You can't seem to figure out how to make the machine work properly."))
 		return 0
 	return 1
 
@@ -175,12 +175,12 @@
 // Parameters: 0
 // Description: Terrible code to check if a scepter is in the offhand, returns 1 if yes.
 /obj/item/spell/proc/check_for_scepter()
-	if(!src || !owner) return 0
-	if(owner.get_equipped_item(SLOT_ID_HAND_R) == src)
-		if(istype(owner.get_equipped_item(SLOT_ID_HAND_L), /obj/item/scepter))
+	if(!src || !owner_ref()) return 0
+	if(owner_ref().get_equipped_item(SLOT_ID_HAND_R) == src)
+		if(istype(owner_ref().get_equipped_item(SLOT_ID_HAND_L), /obj/item/scepter))
 			return 1
 	else
-		if(istype(owner.get_equipped_item(SLOT_ID_HAND_R), /obj/item/scepter))
+		if(istype(owner_ref().get_equipped_item(SLOT_ID_HAND_R), /obj/item/scepter))
 			return 1
 	return 0
 
@@ -292,3 +292,7 @@
 
 	// If we miss or hit an obstacle, we still want to delete the spell.
 	om_qdel_after(src, 2 SECONDS)
+
+/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/spell/proc/owner_ref() as /mob/living
+	return om_resolve(owner_handle)

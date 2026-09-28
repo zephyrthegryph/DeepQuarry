@@ -369,3 +369,5 @@
 	SStgui.update_uis(src)
 	playsound(src, 'sound/machines/ping.ogg', 30, TRUE)
 	return TRUE
+
+REF_HELD(/obj/machinery/computer/pandemic, list("beaker"))

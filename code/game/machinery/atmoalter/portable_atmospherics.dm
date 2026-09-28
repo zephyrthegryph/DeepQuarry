@@ -6,7 +6,7 @@
 	layer = OBJ_LAYER // These are mobile, best not be under everything.
 	var/datum/gas_mixture/air_contents
 
-	var/obj/machinery/atmospherics/portables_connector/connected_port
+	var/connected_port_handle
 	var/obj/item/tank/holding
 
 	var/volume = 0
@@ -33,7 +33,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 // Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
 // (code/game/machinery/machine_pipeline.dm, "canisters" section).
 /obj/machinery/portable_atmospherics/proc/react_or_update()
-	if(!connected_port) //only react when pipe_network will do it for you
+	if(!connected_port()) //only react when pipe_network will do it for you
 		//Allow for reactions
 		return air_contents.react(src)
 	update_icon()
@@ -86,7 +86,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 
 /obj/machinery/portable_atmospherics/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
 	//Make sure not already connected to something else
-	if(connected_port || !new_port || new_port.connected_device)
+	if(connected_port() || !new_port || new_port.connected_device)
 		return 0
 
 	//Make sure are close enough for a valid connection
@@ -94,41 +94,41 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 		return 0
 
 	//Perform the connection
-	connected_port = new_port
+	connected_port_handle = om_handle(new_port)
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
-	connected_port.connected_device = src
-	connected_port.on = 1 //Activate port updates
-	MACHINE_WAKE(connected_port)
+	connected_port().connected_device = src
+	connected_port().on = 1 //Activate port updates
+	MACHINE_WAKE(connected_port())
 
 	anchored = TRUE //Prevent movement
 
 	//Actually enforce the air sharing
-	connected_port.rust_attach_external_device(src)
+	connected_port().rust_attach_external_device(src)
 
 	return 1
 
 /obj/machinery/portable_atmospherics/proc/disconnect()
-	if(!connected_port)
+	if(!connected_port())
 		return 0
 
-	connected_port.rust_detach_external_device()
+	connected_port().rust_detach_external_device()
 
 	anchored = FALSE
 
-	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port
+	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
 	old_port.connected_device = null
 	old_port.on = 0
 	MACHINE_SLEEP(old_port)
-	connected_port = null
+	connected_port_handle = null
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
 
 /obj/machinery/portable_atmospherics/proc/update_connected_network()
-	if(!connected_port)
+	if(!connected_port())
 		return
 
-	var/datum/pipe_network/network = connected_port.return_network(src)
+	var/datum/pipe_network/network = connected_port().return_network(src)
 	if (network)
 		network.mark_dirty()
 
@@ -163,7 +163,7 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 /obj/machinery/portable_atmospherics/wrench_act(mob/user, obj/item/tool)
 	if(destroyed)
 		return ITEM_INTERACT_BLOCKING
-	if(connected_port)
+	if(connected_port())
 		disconnect()
 		to_chat(user, span_notice("You disconnect \the [src] from the port."))
 		update_icon()
@@ -263,3 +263,9 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 			gases = gas
 	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
+
+REF_HELD(/obj/machinery/portable_atmospherics/powered, list("cell"))
+
+/// LC-refs: connected port -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
+	return om_resolve(connected_port_handle)

@@ -817,3 +817,5 @@
 	icon = 'icons/obj/closets/bases/fencrate_vr.dmi'
 	closet_appearance = /datum/decl/closet_appearance/crate/fennec
 	points_per_crate = 0
+
+REF_HELD(/obj/structure/closet/crate, list("shipping_ledger"))

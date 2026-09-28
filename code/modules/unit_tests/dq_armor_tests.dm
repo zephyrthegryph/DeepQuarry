@@ -41,7 +41,7 @@
 	TEST_ASSERT_EQUAL(first.get_armor().value(MELEE), 5, "set_armor_value() changes the instance")
 	TEST_ASSERT_EQUAL(second.get_armor(), dq_armor_from_spec(initial(second.armor_spec)), "and not its twin")
 	first.set_armor(second.get_armor())
-	TEST_ASSERT_NULL(first.armor_override, "setting the type's own armour drops the override")
+	TEST_ASSERT_NULL(atom_armor_override(first), "setting the type's own armour drops the override")
 	first.set_armor_value(MELEE, 5)
 	first.set_armor(null)
 	TEST_ASSERT_EQUAL(first.get_armor(), second.get_armor(), "set_armor(null) restores the type's armour")

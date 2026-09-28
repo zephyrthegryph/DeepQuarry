@@ -219,7 +219,7 @@
 			var/obj/item/I = integrated_tools[path]
 			I.canremove = FALSE
 			I.toolspeed = toolspeed
-			I.my_augment = src
+			I.my_augment_handle = om_handle(src)
 			I.name = "integrated [I.name]"
 
 		for(var/tool in integrated_tools)

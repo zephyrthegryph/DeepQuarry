@@ -149,3 +149,5 @@
 /obj/machinery/cell_charger/RefreshParts()
 	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
 	efficiency = active_power_usage * (1+ (E - 1)*0.5)
+
+REF_HELD(/obj/machinery/cell_charger, list("charging"))

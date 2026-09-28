@@ -31,9 +31,8 @@
 	anchored = TRUE
 	density = TRUE
 
-	var/mob/living/active_user
+	var/active_user_handle
 	var/db_key
-	var/datum/transcore_db/our_db
 
 	//These are the variables that control 'When we were
 	COOLDOWN_DECLARE(dispense_cooldown_until)
@@ -42,15 +41,12 @@
 	/// This determines if the kiosk can dispense or not. Edit the below line to FALSE if you don't want them to do such.
 	var/can_dispense = TRUE
 
-/obj/machinery/medical_kiosk/Initialize(mapload)
-	. = ..()
-	our_db = SStranscore.db_by_key(db_key)
 
 /obj/machinery/medical_kiosk/update_icon()
 	. = ..()
 	if(panel_open)
 		icon_state = "kiosk_open" // panel
-	else if((stat & (NOPOWER|BROKEN)) || !active_user)
+	else if((stat & (NOPOWER|BROKEN)) || !active_user())
 		icon_state = "kiosk_off" // asleep or no power
 	else
 		icon_state = "kiosk" // waiting for user or to finish processing
@@ -60,7 +56,7 @@
 	if(istype(user) && Adjacent(user))
 		if(inoperable() || panel_open)
 			to_chat(user, span_warning("\The [src] seems to be nonfunctional..."))
-		else if(active_user && active_user != user)
+		else if(active_user() && active_user() != user)
 			to_chat(user, span_warning("Another patient has begin using this machine. Please wait for them to finish, or their session to time out."))
 		else
 			start_using(user)
@@ -71,12 +67,12 @@
 		return
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
-	active_user = user
+	active_user_handle = om_handle(user)
 	update_icon()
 	update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
-	active_user = null
+	active_user_handle = null
 	update_icon()
 	update_use_power(USE_POWER_IDLE)
 
@@ -121,7 +117,7 @@
 			var/health_report = medical_scan(user)
 			to_chat(user, span_boldnotice("Health report results:")+health_report)
 		if("Backup Scan")
-			if(!our_db)
+			if(!our_db())
 				to_chat(user, span_notice(span_bold("Backup scan results:")) + "<br>DATABASE ERROR!")
 			else
 				var/scan_report = do_backup_scan(user)
@@ -351,7 +347,7 @@
 	if(nif)
 		persist_nif_data(user)
 
-	our_db.m_backup(user.mind,nif,one_time = TRUE)
+	our_db().m_backup(user.mind,nif,one_time = TRUE)
 	var/datum/transhuman/body_record/BR = new()
 	BR.init_from_mob(user, TRUE, TRUE, database_key = db_key)
 
@@ -375,3 +371,11 @@
 #undef ALCOHOL_POISONING
 #undef BLOODLOSS
 #undef WEIRD_ORGANS // malignants
+
+/// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
+/obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
+	return SStranscore.db_by_key(db_key)
+
+/// LC-refs: active user -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/medical_kiosk/proc/active_user() as /mob/living
+	return om_resolve(active_user_handle)

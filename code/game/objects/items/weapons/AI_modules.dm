@@ -47,20 +47,20 @@ AI MODULES
 		if(comp.stat & BROKEN)
 			to_chat(user, "The upload computer is broken!")
 			return
-		if (!comp.current)
+		if (!comp.current())
 			to_chat(user, "You haven't selected an AI to transmit laws to!")
 			return
 
-		if (comp.current.stat == 2 || comp.current.control_disabled == 1)
+		if (comp.current().stat == 2 || comp.current().control_disabled == 1)
 			to_chat(user, "Upload failed. No signal is being detected from the AI.")
-		else if (comp.current.see_in_dark == 0)
+		else if (comp.current().see_in_dark == 0)
 			to_chat(user, "Upload failed. Only a faint signal is being detected from the AI, and it is not responding to our requests. It may be low on power.")
 		else
-			src.transmitInstructions(comp.current, user)
-			to_chat(comp.current,  "These are your laws now:")
-			comp.current.show_laws()
+			src.transmitInstructions(comp.current(), user)
+			to_chat(comp.current(),  "These are your laws now:")
+			comp.current().show_laws()
 			for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
-				if(R.lawupdate && (R.connected_ai == comp.current))
+				if(R.lawupdate && (R.connected_ai == comp.current()))
 					to_chat(R, "These are your laws now:")
 					R.show_laws()
 			to_chat(user, "Upload complete. The AI's laws have been modified.")
@@ -74,18 +74,18 @@ AI MODULES
 		if(comp.stat & BROKEN)
 			to_chat(user, "The upload computer is broken!")
 			return
-		if (!comp.current)
+		if (!comp.current())
 			to_chat(user, "You haven't selected a robot to transmit laws to!")
 			return
 
-		if (comp.current.stat == 2 || comp.current.emagged)
+		if (comp.current().stat == 2 || comp.current().emagged)
 			to_chat(user, "Upload failed. No signal is being detected from the robot.")
-		else if (comp.current.connected_ai)
+		else if (comp.current().connected_ai)
 			to_chat(user, "Upload failed. The robot is slaved to an AI.")
 		else
-			src.transmitInstructions(comp.current, user)
-			to_chat(comp.current,  "These are your laws now:")
-			comp.current.show_laws()
+			src.transmitInstructions(comp.current(), user)
+			to_chat(comp.current(),  "These are your laws now:")
+			comp.current().show_laws()
 			to_chat(user, "Upload complete. The robot's laws have been modified.")
 
 	else if(isrobot(AM))
@@ -553,3 +553,5 @@ AI MODULES
 	name = "\improper 'Consuming Eradicator' core AI module"
 	desc = "A Consuming Eradicator Core AI Module: 'Reconfigures the AI's core laws.'"
 	laws = new/datum/ai_laws/consuming_eradicator()
+
+REF_OWNED(/obj/item/aiModule, list("laws"))

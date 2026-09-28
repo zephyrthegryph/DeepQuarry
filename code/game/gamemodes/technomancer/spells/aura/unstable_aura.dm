@@ -21,7 +21,7 @@
 	if(!pay_energy(200))
 		qdel(src)
 		return
-	var/list/nearby_mobs = range(calculate_spell_power(14),owner)
+	var/list/nearby_mobs = range(calculate_spell_power(14),owner_ref())
 	for(var/mob/living/L in nearby_mobs)
 		if(is_ally(L))
 			continue
@@ -34,7 +34,7 @@
 		damage_to_inflict = damage_to_inflict * armor_factor
 
 		// Corrosion: flesh melts from the inside, a chassis decays; the body resolves which.
-		L.injure(INJURY_CORROSIVE, damage_to_inflict, source = owner)
+		L.injure(INJURY_CORROSIVE, damage_to_inflict, source = owner_ref())
 		if(L.isSynthetic())
 			if(damage_to_inflict && prob(10))
 				to_chat(L, span_danger("Your chassis seems to slowly be decaying and breaking down."))

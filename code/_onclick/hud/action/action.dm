@@ -8,19 +8,19 @@
 	var/name = "Generic Action"
 	/// The description of what the action does, shown in button tooltips
 	var/desc
-	/// The target the action is attached to. If the target datum is deleted, the action is as well.
-	/// Set in New() via the proc link_to(). PLEASE set a target if you're making an action
-	var/datum/target
+	// The target the action is attached to is the action_for relation (action_target()): if the
+	// target datum is deleted, the action is as well. Set in New() via the proc link_to().
+	// PLEASE set a target if you're making an action.
 	/// Where any buttons we create should be by default. Accepts screen_loc and location defines
 	var/default_button_position = SCRN_OBJ_IN_LIST
-	/// This is who currently owns the action, and most often, this is who is using the action if it is triggered
-	/// This can be the same as "target" but is not ALWAYS the same - this is set and unset with Grant() and Remove()
-	var/mob/owner
+	// Who currently owns the action (action_owner()), and most often who is using it when it is triggered, is
+	// the action_granted_to relation. It can be the same as the target but is not ALWAYS the same: Grant()
+	// and Remove() set and unset it, and the owner being deleted removes the action from them.
 	/// Flags that will determine of the owner / user of the action can... use the action
 	var/check_flags = NONE
 	/// Whether the button becomes transparent when it can't be used or just reddened
 	var/transparent_when_unavailable = TRUE
-	/// List of all mobs that are viewing our action button -> A unique movable for them to view.
+	/// The OM handle of every hud viewing our action button -> the unique button movable (owned) they view.
 	var/list/viewers = list()
 	/// If TRUE, this action button will be shown to observers / other mobs who view from this action's owner's eyes.
 	/// Used in [/mob/proc/show_other_mob_action_buttons]
@@ -49,43 +49,48 @@
 /datum/action/New(Target)
 	link_to(Target)
 
-/// Links the passed target to our action, registering any relevant signals
+/// Links the passed target to our action (the action_for relation: its deletion deletes us)
 /datum/action/proc/link_to(Target)
-	target = Target
-	RegisterSignal(target, COMSIG_QDELETING, PROC_REF(clear_ref), override = TRUE)
+	if(Target)
+		om_link(src, Target, /datum/om/relation/action_for)
 
 	// if(istype(target, /datum/mind))
 	// 	RegisterSignal(target, COMSIG_MIND_TRANSFERRED, PROC_REF(on_target_mind_swapped))
 
-// LIFECYCLE: an action leaves its owner (signals, owner's action list, every viewer's hud).
-/datum/action/Destroy()
-	if(owner)
-		Remove(owner)
-	QDEL_LIST_ASSOC_VAL(viewers)
-	return ..()
+/// An action -> the datum it acts for (an item, a mecha, a spell). Read with action_target().
+/// Deleting that datum deletes the action.
+/datum/om/relation/action_for
+	name = "action target"
+	source_single = TRUE
+	on_target_delete = OM_END_DELETE_OTHER
 
-/// Signal proc that clears any references based on the owner or target deleting
-/// If the owner's deleted, we will simply remove from them, but if the target's deleted, we will self-delete
-/datum/action/proc/clear_ref(datum/ref)
-	SIGNAL_HANDLER
-	if(ref == owner)
-		Remove(owner)
-	if(ref == target)
-		qdel(src)
+/// An action -> the mob it is granted to (its owner). Read with action_owner(). Grant() and
+/// Remove() link and unlink it; either end being deleted runs Remove() on the owner.
+/datum/om/relation/action_granted_to
+	name = "action owner"
+	source_single = TRUE
+
+/datum/om/relation/action_granted_to/on_unlink(datum/action/source, mob/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	if(QDELETED(source) || QDELETED(target))
+		source.Remove(target)
+
+/// The action's buttons (owned) are the values of `viewers`, keyed by hud handle.
+REF_OWNED_VALUES(/datum/action, "viewers")
 
 /// Grants the action to the passed mob, making it the owner
 /datum/action/proc/Grant(mob/grant_to)
 	if(!grant_to)
-		Remove(owner)
+		Remove(action_owner())
 		return
+	var/mob/owner = action_owner()
 	if(owner)
 		if(owner == grant_to)
 			return
 		Remove(owner)
 
 	SEND_SIGNAL(grant_to, COMSIG_MOB_GRANTED_ACTION, src)
-	owner = grant_to
-	RegisterSignal(owner, COMSIG_QDELETING, PROC_REF(clear_ref), override = TRUE)
+	om_link(src, grant_to, /datum/om/relation/action_granted_to)
 
 	GiveAction(grant_to)
 
@@ -93,21 +98,22 @@
 /datum/action/proc/Remove(mob/remove_from)
 	SHOULD_CALL_PARENT(TRUE)
 
-	for(var/datum/hud/hud in viewers)
-		if(!hud.mymob)
+	for(var/hud_handle in viewers)
+		var/datum/hud/hud = om_resolve(hud_handle)
+		var/mob/viewer = hud?.mymob()
+		if(!viewer)
 			continue
-		HideFrom(hud.mymob)
-	LAZYREMOVE(remove_from.actions, src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
+		HideFrom(viewer)
+	if(remove_from)
+		LAZYREMOVE(remove_from.actions, src) // We aren't always properly inserted into the viewers list, gotta make sure that action's cleared
+	QDEL_LIST_ASSOC_VAL(viewers) // whatever HideFrom() couldn't reach
 	viewers = list()
 
+	// While the owner relation is being torn down (either end deleted) the edge is already gone.
+	var/mob/owner = action_owner() || remove_from
 	if(owner)
 		SEND_SIGNAL(owner, COMSIG_MOB_REMOVED_ACTION, src)
-
-		UnregisterSignal(owner, COMSIG_QDELETING)
-		if(target == owner)
-			RegisterSignal(target, COMSIG_QDELETING, PROC_REF(clear_ref))
-
-		owner = null
+		om_unlink(src, owner, /datum/om/relation/action_granted_to)
 
 /// Actually triggers the effects of the action.
 /// Called when the on-screen button is clicked, for example.
@@ -118,6 +124,7 @@
 
 /// Whether our action is currently available to use or not
 /datum/action/proc/IsAvailable()
+	var/mob/owner = action_owner()
 	if(!owner)
 		return FALSE
 	if(check_flags & AB_CHECK_RESTRAINED)
@@ -136,8 +143,8 @@
 
 /// Builds / updates all buttons we have shared or given out
 /datum/action/proc/build_all_button_icons(update_flags = ALL, force)
-	for(var/datum/hud/hud as anything in viewers)
-		build_button_icon(viewers[hud], update_flags, force)
+	for(var/hud_handle in viewers)
+		build_button_icon(viewers[hud_handle], update_flags, force)
 
 /**
  * Builds the icon of the button.
@@ -202,6 +209,7 @@
 	)
 
 	// If background_icon_state is ACTION_BUTTON_DEFAULT_BACKGROUND instead use our hud's action button scheme
+	var/mob/owner = action_owner()
 	if(background_icon_state == ACTION_BUTTON_DEFAULT_BACKGROUND && owner?.hud_used)
 		icon_settings = owner.hud_used.get_action_buttons_icons()
 
@@ -260,7 +268,7 @@
 /// Puts our action in their actions list and shows them the button.
 /datum/action/proc/GiveAction(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
-	if(viewers[our_hud]) // Already have a copy of us? go away
+	if(our_hud && viewers[om_handle(our_hud)]) // Already have a copy of us? go away
 		return
 
 	LAZYOR(viewer.actions, src) // Move this in
@@ -269,14 +277,15 @@
 /// Adds our action button to the screen of the passed viewer.
 /datum/action/proc/ShowTo(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
-	if(!our_hud || viewers[our_hud]) // There's no point in this if you have no hud in the first place
+	if(!our_hud || viewers[om_handle(our_hud)]) // There's no point in this if you have no hud in the first place
 		return
 
 	var/atom/movable/screen/movable/action_button/button = create_button()
 	SetId(button, viewer)
 
-	button.our_hud = our_hud
-	viewers[our_hud] = button
+	var/hud_handle = om_handle(our_hud)
+	button.our_hud_handle = hud_handle
+	viewers[hud_handle] = button
 	if(viewer.client)
 		viewer.client.screen += button
 
@@ -286,7 +295,7 @@
 /// Removes our action from the passed viewer.
 /datum/action/proc/HideFrom(mob/viewer)
 	var/datum/hud/our_hud = viewer.hud_used
-	var/atom/movable/screen/movable/action_button/button = viewers[our_hud]
+	var/atom/movable/screen/movable/action_button/button = our_hud && viewers[om_handle(our_hud)]
 	LAZYREMOVE(viewer.actions, src)
 	if(button)
 		qdel(button)
@@ -294,7 +303,7 @@
 /// Creates an action button movable for the passed mob, and returns it.
 /datum/action/proc/create_button()
 	var/atom/movable/screen/movable/action_button/button = new()
-	button.linked_action = src
+	button.linked_action_handle = om_handle(src)
 	build_button_icon(button, ALL, TRUE)
 	return button
 
@@ -304,8 +313,8 @@
 	for(var/datum/action/action in owner.actions)
 		if(action == src) // This could be us, which is dumb
 			continue
-		var/atom/movable/screen/movable/action_button/button = action.viewers[owner.hud_used]
-		if(action.name == name && button.id)
+		var/atom/movable/screen/movable/action_button/button = owner.hud_used && action.viewers[om_handle(owner.hud_used)]
+		if(action.name == name && button?.id)
 			bitfield |= button.id
 
 	bitfield = ~bitfield // Flip our possible ids, so we can check if we've found a unique one

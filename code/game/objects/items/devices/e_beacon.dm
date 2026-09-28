@@ -83,3 +83,5 @@
 		consume(src, user)
 		return TRUE
 	return FALSE
+
+REF_HELD(/obj/item/emergency_beacon, list("gps"))

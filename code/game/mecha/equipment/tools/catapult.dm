@@ -5,7 +5,7 @@
 	equip_cooldown = 10
 	energy_drain = 100
 	range = MECH_MELEE|RANGED
-	var/atom/movable/locked
+	var/locked_handle
 	var/mode = 1 //1 - gravsling 2 - gravpush
 
 	COOLDOWN_DECLARE(catapult_fire_cooldown)  //Concept stolen from guns.
@@ -30,26 +30,26 @@
 
 	switch(mode)
 		if(1)
-			if(!action_checks(target) && !locked) return
-			if(!locked)
+			if(!action_checks(target) && !locked()) return
+			if(!locked())
 				if(!istype(target) || target.anchored)
 					occupant_message("Unable to lock on [target]")
 					return
-				locked = target
+				locked_handle = om_handle(target)
 				occupant_message("Locked on [target]")
 				send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 				return
-			else if(target!=locked)
-				if(locked in view(chassis))
-					locked.throw_at(target, 14, 1.5, chassis)
-					locked = null
+			else if(target!=locked())
+				if(locked() in view(chassis))
+					locked().throw_at(target, 14, 1.5, chassis)
+					locked_handle = null
 					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 					set_ready_state(FALSE)
 					chassis.use_power(energy_drain)
 					do_after_cooldown()
 				else
-					locked = null
-					occupant_message("Lock on [locked] disengaged.")
+					locked_handle = null
+					occupant_message("Lock on [locked()] disengaged.")
 					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 		if(2)
 			if(!action_checks(target)) return
@@ -67,7 +67,7 @@
 	return
 
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/get_equip_info()
-	return "[..()] [mode==1?"([locked||"Nothing"])":null] \[<a href='byond://?src=\ref[src];mode=1'>S</a>|<a href='byond://?src=\ref[src];mode=2'>P</a>\]"
+	return "[..()] [mode==1?"([locked()||"Nothing"])":null] \[<a href='byond://?src=\ref[src];mode=1'>S</a>|<a href='byond://?src=\ref[src];mode=2'>P</a>\]"
 
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/Topic(href, href_list)
 	..()
@@ -75,3 +75,7 @@
 		mode = text2num(href_list["mode"])
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
+
+/// LC-refs: locked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/locked() as /atom/movable
+	return om_resolve(locked_handle)

@@ -2312,7 +2312,7 @@
 					var/obj/item/implant/backup/B = I
 					if(!self.mind)
 						holder.icon_state = "hud_backup_nomind"
-					else if(!(self.mind.name in B.our_db.body_scans))
+					else if(!(self.mind.name in B.our_db().body_scans))
 						holder.icon_state = "hud_backup_nobody"
 					else
 						holder.icon_state = "hud_backup_norm"

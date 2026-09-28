@@ -70,3 +70,5 @@
 
 		pinned_target = null
 	return TRUE
+
+REF_HELD(/obj/structure/target_stake, list("pinned_target"))

@@ -1,22 +1,22 @@
 /obj/item/bork_medigun/linked
-	var/obj/item/medigun_backpack/medigun_base_unit
+	var/medigun_base_unit_handle
 
 // LIFECYCLE: the base unit's icon and wearer update.
 /obj/item/bork_medigun/linked/Destroy()
-	if(medigun_base_unit)
-		var/obj/item/bork_medigun/medigun = medigun_base_unit.get_medigun()
+	if(medigun_base_unit())
+		var/obj/item/bork_medigun/medigun = medigun_base_unit().get_medigun()
 		//ensure the base unit's icon updates
 		if(medigun == src)
 			medigun = null
-			medigun_base_unit.replace_icon()
+			medigun_base_unit().replace_icon()
 			if(ismob(loc))
 				var/mob/user = loc
 				user.update_inv_back()
-		medigun_base_unit = null
+		medigun_base_unit_handle = null
 	return ..()
 
 /obj/item/bork_medigun/linked/forceMove(atom/destination, direction, movetime) //Forcemove override, ugh
-	if(destination == medigun_base_unit || destination == medigun_base_unit.loc || isturf(destination))
+	if(destination == medigun_base_unit() || destination == medigun_base_unit().loc || isturf(destination))
 		. = doMove(destination, 0, 0)
 		if(isturf(destination))
 			for(var/atom/A as anything in destination) // If we can't scan the turf, see if we can scan anything on it, to help with aiming.
@@ -24,25 +24,25 @@
 					break
 
 /obj/item/bork_medigun/linked/proc/check_charge(charge_amt)
-	return (medigun_base_unit.bcell && medigun_base_unit.bcell.check_charge(charge_amt))
+	return (medigun_base_unit().bcell && medigun_base_unit().bcell.check_charge(charge_amt))
 
 /obj/item/bork_medigun/linked/proc/checked_use(charge_amt)
-	return (medigun_base_unit.bcell && medigun_base_unit.bcell.checked_use(charge_amt))
+	return (medigun_base_unit().bcell && medigun_base_unit().bcell.checked_use(charge_amt))
 
 /obj/item/bork_medigun/linked/attack_self(mob/living/user)
 	. = ..(user)
 	if(.)
 		return TRUE
-	if(medigun_base_unit.is_twohanded())
+	if(medigun_base_unit().is_twohanded())
 		update_twohanding()
 	if(busy)
 		busy = MEDIGUN_CANCELLED
 
 /obj/item/bork_medigun/linked/proc/should_stop(mob/living/target, mob/living/user, active_hand)
-	if(!target || !user || (!active_hand && medigun_base_unit.is_twohanded()) || !istype(target) || !istype(user) || busy < MEDIGUN_BUSY)
+	if(!target || !user || (!active_hand && medigun_base_unit().is_twohanded()) || !istype(target) || !istype(user) || busy < MEDIGUN_BUSY)
 		return TRUE
 
-	if((user.get_active_hand() != active_hand || wielded == 0) && medigun_base_unit.is_twohanded())
+	if((user.get_active_hand() != active_hand || wielded == 0) && medigun_base_unit().is_twohanded())
 		to_chat(user, span_warning("Please keep your hands free!"))
 		return TRUE
 
@@ -60,7 +60,7 @@
 		return TRUE
 
 	//if(get_dist(user, target) > beam_range)
-	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !(medigun_base_unit.smodule.get_rating() >= 5)))
+	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !(medigun_base_unit().smodule.get_rating() >= 5)))
 		to_chat(user, span_warning("You are too far away from \the [target] to heal them, Or they are not in view. Get closer."))
 		return TRUE
 
@@ -80,25 +80,25 @@
 			if(isliving(A))
 				target = A
 				break
-	if(!istype(medigun_base_unit, /obj/item/medigun_backpack/cmo))
+	if(!istype(medigun_base_unit(), /obj/item/medigun_backpack/cmo))
 		update_twohanding()
-	if(busy && !(target == current_target) && isliving(target))
+	if(busy && !(target == current_target()) && isliving(target))
 		to_chat(user, span_warning("\The [src] is already targeting something."))
 		return
 
 	if(!ishuman(target))
 		return
 
-	if(!medigun_base_unit.smanipulator)
+	if(!medigun_base_unit().smanipulator)
 		to_chat(user, span_warning("\The [src] Blinks a red error light, Manipulator missing."))
 		return
-	if(!medigun_base_unit.scapacitor)
+	if(!medigun_base_unit().scapacitor)
 		to_chat(user, span_warning("\The [src] Blinks a blue error light, capacitor missing."))
 		return
-	if(!medigun_base_unit.slaser)
+	if(!medigun_base_unit().slaser)
 		to_chat(user, span_warning("\The [src] Blinks an orange error light, laser missing."))
 		return
-	if(!medigun_base_unit.smodule)
+	if(!medigun_base_unit().smodule)
 		to_chat(user, span_warning("\The [src] Blinks a pink error light, scanning module missing."))
 		return
 	if(!check_charge(5))
@@ -108,17 +108,17 @@
 		to_chat(user, span_warning("You are too far away from \the [target] to affect it. Get closer."))
 		return
 
-	if(target == current_target && busy)
+	if(target == current_target() && busy)
 		busy = MEDIGUN_CANCELLED
 		return
 	if(target == user)
 		to_chat(user, span_warning("Cant heal yourself."))
 		return
-	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !medigun_base_unit.smodule))
+	if(!(target in range(beam_range, user)) || (!(target in view(10, user)) && !medigun_base_unit().smodule))
 		to_chat(user, span_warning("You are too far away from \the [target] to heal them, Or they are not in view. Get closer."))
 		return
 
-	current_target = target
+	current_target_handle = om_handle(target)
 	busy = MEDIGUN_BUSY
 	update_icon()
 	var/myicon = "medbeam_basic"
@@ -137,7 +137,7 @@
 
 	action_cancelled = FALSE
 	busy = MEDIGUN_IDLE
-	current_target = null
+	current_target_handle = null
 
 	// Now clean up the effects.
 	update_icon()
@@ -176,7 +176,7 @@
 	if(H.stat == DEAD)
 		process_medigun(H, user, filter)
 		return
-	var/lastier = medigun_base_unit.slaser.get_rating()
+	var/lastier = medigun_base_unit().slaser.get_rating()
 	var/list/demand = H.treatment_demand(/datum/diagnostic_profile/automation)
 	if(lastier >= 2)
 		if(checked_use(5))
@@ -198,11 +198,11 @@
 
 	// The chem tanks: each mends only the tags its mode provides, and
 	// only those the patient's triage demands.
-	var/treated = medigun_base_unit.treat_demand(H, lastier)
+	var/treated = medigun_base_unit().treat_demand(H, lastier)
 	if(treated)
 		checked_use(min(10, treated))
 		ishealing = TRUE
-	medigun_base_unit.update_icon()
+	medigun_base_unit().update_icon()
 
 	//Blood regeneration if there is some space
 	if(lastier >= 5)
@@ -217,3 +217,7 @@
 			H.filters -= filter
 
 	process_medigun(H, user, filter, ishealing)
+
+/// LC-refs: medigun base unit -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/bork_medigun/linked/proc/medigun_base_unit() as /obj/item/medigun_backpack
+	return om_resolve(medigun_base_unit_handle)

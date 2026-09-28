@@ -45,7 +45,7 @@
 	desc += "\n You see [K] engraved on \the [src]."
 	var/obj/item/flame/lighter/zippo/c4detonator/detonator = new(src.loc)
 	detonator.desc += " You see [K] engraved on the lighter."
-	detonator.bomb = src
+	detonator.bomb_handle = om_handle(src)
 
 /obj/item/syndie/c4explosive/proc/detonate()
 	icon_state = "c-4[size]_1"
@@ -70,7 +70,7 @@
 /obj/item/syndie/c4explosive/attackby(obj/item/W, mob/user)
 	if(istype(W, /obj/item/flame/lighter/zippo/c4detonator))
 		var/obj/item/flame/lighter/zippo/c4detonator/D = W
-		D.bomb = src
+		D.bomb_handle = om_handle(src)
 		return
 	..()
 
@@ -78,7 +78,7 @@
 /*Click it when closed to open, when open to bring up a prompt asking you if you want to close it or press the button.*/
 
 /obj/item/flame/lighter/zippo/c4detonator
-	var/obj/item/syndie/c4explosive/bomb
+	var/bomb_handle
 
 /obj/item/flame/lighter/zippo/c4detonator/attack_self(mob/user)
 	. = ..(user)
@@ -104,9 +104,9 @@
 		if("Press the button.")
 			to_chat(user, span_warning("You press the button."))
 			icon_state = "[base_state]click"
-			if(bomb)
-				var/obj/item/syndie/c4explosive/bomb_to_explode = bomb
-				bomb = null //clear up our ref
+			if(bomb())
+				var/obj/item/syndie/c4explosive/bomb_to_explode = bomb()
+				bomb_handle = null //clear up our ref
 				bomb_to_explode.detonate()
 				log_admin("[key_name(user)] has triggered [bomb_to_explode] with [src].")
 				message_admins(span_danger("[key_name_admin(user)] has triggered [bomb_to_explode] with [src]."))
@@ -123,3 +123,7 @@
 	playsound(src, tool.usesound, 50, 1)
 	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
 	return ITEM_INTERACT_SUCCESS
+
+/// LC-refs: bomb -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/item/flame/lighter/zippo/c4detonator/proc/bomb() as /obj/item/syndie/c4explosive
+	return om_resolve(bomb_handle)

@@ -15,7 +15,7 @@
 /obj/effect/anomaly/weather/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
 
-	LAZYADD(affected_areas, impact_area)
+	LAZYADD(affected_areas, impact_area())
 
 	if(selected_weather)
 		selected_weather = new selected_weather
@@ -53,7 +53,7 @@
 /obj/effect/anomaly/weather/proc/find_adjacent_impacted_area(check_dir)
 	var/limit = 10
 	var/turf/next_turf = get_step(src, check_dir)
-	while(next_turf.loc == impact_area && limit > 0)
+	while(next_turf.loc == impact_area() && limit > 0)
 		next_turf = get_step(next_turf, check_dir)
 		if(isnull(next_turf))
 			return null
@@ -187,3 +187,5 @@
 
 /obj/effect/anomaly/weather/hail
 	selected_weather = /datum/anomalous_weather/hail
+
+REF_OWNED(/obj/effect/anomaly/weather, list("selected_weather"))

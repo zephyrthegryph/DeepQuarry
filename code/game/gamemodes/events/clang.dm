@@ -74,12 +74,12 @@
 	density = TRUE
 	anchored = TRUE
 	movement_type = UNSTOPPABLE
-	var/turf/despawn_loc = null
+	var/despawn_loc_handle
 	var/has_hunted_unlucky = FALSE
 
 /obj/effect/immovablerod/proc/TakeFlight(turf/end)
-	despawn_loc = end
-	walk_towards(src, despawn_loc, 1)
+	despawn_loc_handle = om_handle(end)
+	walk_towards(src, despawn_loc(), 1)
 	explosion(loc, 2, 3, 5) // start out with a bang
 
 	// Get steps needed and then await that to despawn
@@ -110,7 +110,7 @@
 		else
 			qdel(src)
 
-	if(despawn_loc != null && (src.x == despawn_loc.x && src.y == despawn_loc.y))
+	if(despawn_loc() != null && (src.x == despawn_loc().x && src.y == despawn_loc().y))
 		qdel(src)
 		return
 
@@ -132,5 +132,8 @@
 
 /obj/effect/immovablerod/proc/resume_path()
 	walk(src, 0)
-	walk_towards(src, despawn_loc, 1)
+	walk_towards(src, despawn_loc(), 1)
 
+/// LC-refs: despawn loc -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/immovablerod/proc/despawn_loc() as /turf
+	return om_resolve(despawn_loc_handle)

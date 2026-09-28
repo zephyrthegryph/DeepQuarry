@@ -456,3 +456,5 @@ REF_OWNED_LIST(/obj/item/communicator, "cam_plane_masters")
 #undef WTHRTAB
 #undef MANITAB
 #undef SETTTAB
+
+REF_OWNED(/mob/observer/dead, list("exonet"))

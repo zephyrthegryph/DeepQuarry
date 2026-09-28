@@ -236,3 +236,5 @@
 
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
 	qdel(src)
+
+REF_OWNED_LIST(/obj/effect/decal/cleanable/vomit, list("viruses"))

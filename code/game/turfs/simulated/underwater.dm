@@ -125,3 +125,4 @@
 /turf/simulated/floor/water/underwater/indoors/open/CanZPass(atom/A, direction, recursive)
 	return TRUE
 
+REF_OWNED(/turf/simulated/floor/water/underwater/indoors, list("visuals"))

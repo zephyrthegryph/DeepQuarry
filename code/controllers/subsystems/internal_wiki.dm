@@ -250,7 +250,7 @@ SUBSYSTEM_DEF(internal_wiki)
 	var/list/section_data = searchcache_catalogs[section] || list()
 	for(var/PG in section_data)
 		var/datum/internal_wiki/page/catalog/P = catalogs["[PG]"]
-		var/datum/category_item/catalogue/C = P.catalog_record
+		var/datum/category_item/catalogue/C = P.catalog_record()
 		if(C.visible || C.value <= CATALOGUER_REWARD_TRIVIAL)
 			known_entries.Add(PG)
 	return known_entries
@@ -764,7 +764,7 @@ SUBSYSTEM_DEF(internal_wiki)
 				continue // too many silly entries
 			var/datum/internal_wiki/page/catalog/P = new()
 			P.title = item.name
-			P.catalog_record = item
+			P.catalog_record_handle = om_handle(item)
 			P.assemble()
 			catalogs["[item.name]"] = P
 			if(!searchcache_catalogs[G.name])
@@ -1394,11 +1394,11 @@ SUBSYSTEM_DEF(internal_wiki)
 // CATALOG
 ////////////////////////////////////////////
 /datum/internal_wiki/page/catalog
-	var/datum/category_item/catalogue/catalog_record = null
+	var/catalog_record_handle
 
 /datum/internal_wiki/page/catalog/assemble()
-	data["name"] = catalog_record.name
-	data["desc"] = catalog_record.desc
+	data["name"] = catalog_record().name
+	data["desc"] = catalog_record().desc
 
 // VIRUSES
 /////////////////////////////////////////////
@@ -1664,3 +1664,7 @@ SUBSYSTEM_DEF(internal_wiki)
 #undef WIKI_CATEGORY_KITCHEN
 #undef WIKI_CATEGORY_LORE
 #undef WIKI_CATEGORY_GENE
+
+/// LC-refs: the catalogue entry this page shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/internal_wiki/page/catalog/proc/catalog_record() as /datum/category_item/catalogue
+	return om_resolve(catalog_record_handle)

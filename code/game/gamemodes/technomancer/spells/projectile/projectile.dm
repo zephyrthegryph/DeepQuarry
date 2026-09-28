@@ -3,7 +3,7 @@
 	icon_state = "generic"
 	desc = "This is a generic template that shoots projectiles.  If you can read this, the game broke!"
 	cast_methods = CAST_RANGED
-	var/obj/item/projectile/spell_projectile = null
+	var/spell_projectile = null
 	var/energy_cost_per_shot = 0
 	var/instability_per_shot = 0
 	var/pre_shot_delay = 0
@@ -45,7 +45,7 @@
 
 /obj/item/spell/projectile/proc/delayed_shot(atom/hit_atom, mob/living/user, image/target_image)
 	qdel(target_image)
-	if(!owner)
+	if(!owner_ref())
 		return // We got dropped before the firing occured.
 	shot_ready = TRUE
 	on_ranged_cast(hit_atom, user)

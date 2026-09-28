@@ -12,7 +12,7 @@
 	/// See \code\__DEFINES\particles.dm
 	var/particle_flags = NONE
 
-	var/atom/parent
+	var/parent_handle
 
 /obj/effect/abstract/particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
 	. = ..()
@@ -24,7 +24,7 @@
 		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
 
 	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
-	parent = loc
+	parent_handle = om_handle(loc)
 	loc = null
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
@@ -32,13 +32,13 @@
 	src.particle_flags = particle_flags
 	particles = new particle_path()
 	// /atom doesn't have vis_contents, /turf and /atom/movable do
-	var/atom/movable/lie_about_areas = parent
+	var/atom/movable/lie_about_areas = get_parent()
 	lie_about_areas.vis_contents += src
-	RegisterSignal(parent, COMSIG_QDELETING, PROC_REF(parent_deleted))
+	RegisterSignal(get_parent(), COMSIG_QDELETING, PROC_REF(parent_deleted))
 
 	if(particle_flags & PARTICLE_ATTACH_MOB)
-		RegisterSignal(parent, COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
-	on_move(parent, null, NORTH)
+		RegisterSignal(get_parent(), COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
+	on_move(get_parent(), null, NORTH)
 
 REF_OWNED(/obj/effect/abstract/particle_holder, "particles")
 
@@ -68,3 +68,7 @@ REF_OWNED(/obj/effect/abstract/particle_holder, "particles")
 /// Sets the particles position to the passed coordinates
 /obj/effect/abstract/particle_holder/proc/set_particle_position(x = 0, y = 0, z = 0)
 	particles.position = list(x, y, z)
+
+/// LC-refs: parent -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/effect/abstract/particle_holder/proc/get_parent() as /atom
+	return om_resolve(parent_handle)

@@ -304,3 +304,5 @@
 /obj/item/implantcase/proc/inject_from(obj/item/reagent_containers/syringe/I, mob/user)
 	I.reagents.trans_to_obj(imp, 5)
 	to_chat(user, span_notice("You inject 5 units of the solution. The syringe now contains [I.reagents.total_volume] units."))
+
+REF_HELD(/obj/item/implantcase, list("imp"))

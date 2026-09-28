@@ -18,7 +18,7 @@
 
 /// Ensures all of our buttons are properly within the bounds of our client's view, moves them if they're not
 /datum/hud/proc/view_audit_buttons()
-	var/our_view = mymob?.client?.view
+	var/our_view = mymob()?.client?.view
 	if(!our_view)
 		return
 	listed_actions.check_against_view()
@@ -33,9 +33,9 @@
 	listed_actions = new(src)
 	palette_actions = new(src)
 	floating_actions = list()
-	for(var/datum/action/action as anything in mymob.actions)
-		var/atom/movable/screen/movable/action_button/button = action.viewers[src]
+	for(var/datum/action/action as anything in mymob().actions)
+		var/atom/movable/screen/movable/action_button/button = action.viewers[om_handle(src)]
 		if(!button)
-			action.ShowTo(mymob)
-			button = action.viewers[src]
+			action.ShowTo(mymob())
+			button = action.viewers[om_handle(src)]
 		position_action(button, button.location)

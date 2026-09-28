@@ -16,7 +16,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 REF_OWNED(/mob, "ability_master")
-REF_PAIR(/mob, list("ability_master" = "my_mob"))
 
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)

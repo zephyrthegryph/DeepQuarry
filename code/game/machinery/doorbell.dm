@@ -68,8 +68,8 @@
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	if(multitool.connectable && istype(multitool.connectable, /obj/machinery/button/doorbell))
-		var/obj/machinery/button/doorbell/button = multitool.connectable
+	if(multitool.connectable() && istype(multitool.connectable(), /obj/machinery/button/doorbell))
+		var/obj/machinery/button/doorbell/button = multitool.connectable()
 		id_tag = button.id
 		to_chat(user, span_notice("You upload the data from \the [tool]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
@@ -171,7 +171,7 @@
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/M = tool
-	M.connectable = src
+	M.connectable_handle = om_handle(src)
 	to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 

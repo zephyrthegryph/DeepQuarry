@@ -455,7 +455,7 @@
 		return
 
 	var/datum/signal/signal = new()
-	signal.source = src
+	signal.source_handle = om_handle(src)
 	signal.encryption = code
 	signal.data["message"] = "ACTIVATE"
 	radio_connection.post_signal(src, signal)
@@ -480,7 +480,7 @@
 		return 0
 	if(signal.encryption != code)
 		return 0
-	if(signal.source == src) // Don't trigger ourselves.
+	if(signal.source() == src) // Don't trigger ourselves.
 		return 0
 
 	activate_pin(3)

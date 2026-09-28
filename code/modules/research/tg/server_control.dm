@@ -32,8 +32,8 @@
 /obj/machinery/computer/rdservercontrol/proc/interaction_connect_techweb(mob/user, obj/item/I, datum/interaction/interaction)
 	var/obj/item/multitool/tool = I.get_multitool()
 	if(tool)
-		if(!QDELETED(tool.buffer) && istype(tool.buffer, /datum/techweb))
-			stored_research = tool.buffer
+		if(!QDELETED(tool.buffer()) && istype(tool.buffer(), /datum/techweb))
+			stored_research = tool.buffer()
 			balloon_alert(user, "techweb connected")
 	return TRUE
 

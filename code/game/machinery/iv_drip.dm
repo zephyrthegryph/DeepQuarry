@@ -6,12 +6,12 @@
 	density = FALSE
 
 
-/obj/machinery/iv_drip/var/mob/living/carbon/human/attached = null
+/obj/machinery/iv_drip/var/attached_handle
 /obj/machinery/iv_drip/var/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
 /obj/machinery/iv_drip/update_icon()
-	if(attached)
+	if(attached())
 		icon_state = "hooked"
 	else
 		icon_state = ""
@@ -41,16 +41,16 @@
 	if(!isliving(usr))
 		return
 
-	if(attached)
-		visible_message("[attached] is detached from \the [src]")
-		attached = null
+	if(attached())
+		visible_message("[attached()] is detached from \the [src]")
+		attached_handle = null
 		MACHINE_SLEEP(src)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		visible_message("[usr] attaches \the [src] to \the [over_object].")
-		attached = over_object
+		attached_handle = om_handle(over_object)
 		MACHINE_WAKE(src)
 		update_icon()
 
@@ -86,19 +86,19 @@
 
 /obj/machinery/iv_drip/machine_step()
 	set background = 1
-	if(!attached)
+	if(!attached())
 		return PROCESS_KILL
 
-	if(attached)
+	if(attached())
 
-		if(!(get_dist(src, attached) <= 1 && isturf(attached.loc)))
-			visible_message("The needle is ripped out of [attached], doesn't that hurt?")
-			attached.injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			attached = null
+		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
+			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
+			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
+			attached_handle = null
 			update_icon()
 			return PROCESS_KILL
 
-	if(attached && beaker)
+	if(attached() && beaker)
 		// Give blood
 		if(mode)
 			if(beaker.volume > 0)
@@ -106,7 +106,7 @@
 				if(istype(beaker, /obj/item/reagent_containers/blood))
 					// speed up transfer on blood packs
 					transfer_amount = 4
-				beaker.reagents.trans_to_mob(attached, transfer_amount, CHEM_BLOOD)
+				beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_BLOOD)
 				update_icon()
 
 		// Take blood
@@ -119,7 +119,7 @@
 					visible_message("\The [src] pings.")
 				return
 
-			var/mob/living/carbon/human/T = attached
+			var/mob/living/carbon/human/T = attached()
 
 			if(!istype(T))
 				return
@@ -191,9 +191,15 @@
 		else
 			. += span_notice("No chemicals are attached.")
 
-		. += span_notice("[attached ? attached : "No one"] is attached.")
+		. += span_notice("[attached() ? attached() : "No one"] is attached.")
 
 /obj/machinery/iv_drip/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE)) //allow bullets, beams, thrown objects, mice, drones, and the like through.
 		return TRUE
 	return ..()
+
+REF_HELD(/obj/machinery/iv_drip, list("beaker"))
+
+/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human
+	return om_resolve(attached_handle)

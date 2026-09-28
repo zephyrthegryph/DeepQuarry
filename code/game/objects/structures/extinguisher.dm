@@ -130,3 +130,5 @@
 	desc = "A classic small wall mounted cabinet designed to hold a fire extinguisher."
 	icon = 'icons/obj/closet.dmi'
 	icon_state = "oldextinguisher" // map preview sprite
+
+REF_HELD(/obj/structure/extinguisher_cabinet, list("has_extinguisher"))

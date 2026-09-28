@@ -4,15 +4,15 @@
 /obj/landed_holder
 	name = "landed turf holder"
 	desc = "holds all the info about the turf this turf 'landed on'"
-	var/turf/turf_type
-	var/turf/simulated/shuttle/my_turf
+	var/turf_type
+	var/my_turf_handle
 	var/image/turf_image
 	var/list/decals
 
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
-		my_turf = get_turf(src)
+		my_turf_handle = om_handle(get_turf(src))
 		moveToNullspace()
 
 /obj/landed_holder/proc/land_on(turf/T)
@@ -28,25 +28,25 @@
 	new_holder.decals = T.decals ? T.decals.Copy() : null
 
 	//Set the destination to be like us
-	var/turf/simulated/shuttle/new_dest = T.ChangeTurf(my_turf.type,,1)
-	my_turf.lighting_clear_overlay()
-	new_dest.set_dir(my_turf.dir)
-	new_dest.icon_state = my_turf.icon_state
-	new_dest.icon = my_turf.icon
-	new_dest.copy_overlays(my_turf, TRUE)
-	new_dest.underlays = my_turf.underlays.Copy()
-	new_dest.decals = my_turf.decals
+	var/turf/simulated/shuttle/new_dest = T.ChangeTurf(my_turf().type,,1)
+	my_turf().lighting_clear_overlay()
+	new_dest.set_dir(my_turf().dir)
+	new_dest.icon_state = my_turf().icon_state
+	new_dest.icon = my_turf().icon
+	new_dest.copy_overlays(my_turf(), TRUE)
+	new_dest.underlays = my_turf().underlays.Copy()
+	new_dest.decals = my_turf().decals
 	//Shuttle specific stuff
-	new_dest.interior_corner = my_turf.interior_corner
-	new_dest.takes_underlays = my_turf.takes_underlays
-	new_dest.under_turf = my_turf.under_turf
-	new_dest.join_flags = my_turf.join_flags
-	new_dest.join_group = my_turf.join_group
+	new_dest.interior_corner = my_turf().interior_corner
+	new_dest.takes_underlays = my_turf().takes_underlays
+	new_dest.under_turf = my_turf().under_turf
+	new_dest.join_flags = my_turf().join_flags
+	new_dest.join_group = my_turf().join_group
 	new_dest.lighting_build_overlay()
 
 	// Associate the holder with the new turf.
-	new_holder.my_turf = new_dest
-	new_dest.landed_holder = new_holder
+	new_holder.my_turf_handle = om_handle(new_dest)
+	new_dest.landed_holder_handle = om_handle(new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)
@@ -58,7 +58,7 @@
 	var/turf/new_source
 	//Change our source to whatever it was before
 	if(turf_type)
-		new_source = my_turf.ChangeTurf(turf_type,,1)
+		new_source = my_turf().ChangeTurf(turf_type,,1)
 		new_source.lighting_clear_overlay()
 		new_source.set_dir(dir)
 		new_source.icon_state = icon_state
@@ -68,7 +68,7 @@
 		new_source.decals = decals
 		new_source.lighting_build_overlay()
 	else
-		new_source = my_turf.ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(my_turf),,1)
+		new_source = my_turf().ChangeTurf(base_turf ? base_turf : get_base_turf_by_area(my_turf()),,1)
 
 	return new_source
 
@@ -79,10 +79,10 @@
 	heat_capacity = 0
 	flags = TURF_ACID_IMMUNE
 
-	var/obj/landed_holder/landed_holder
+	var/landed_holder_handle
 	var/interior_corner = 0
 	var/takes_underlays = 0
-	var/turf/under_turf //Underlay override turf path.
+	var/under_turf //Underlay override turf path.
 	var/join_flags = 0 //Bitstring to represent adjacency of joining walls
 	var/join_group = "shuttle" //A tag for what other walls to join with. Null if you don't want them to.
 	var/static/list/antilight_cache
@@ -124,14 +124,14 @@
 		under = under_turf
 
 	//Well if this isn't our first rodeo, we know EXACTLY what we landed on, and it looks like this.
-	if(landed_holder && !interior_corner)
+	if(landed_holder() && !interior_corner)
 		//Space gets special treatment
-		if(ispath(landed_holder.turf_type, /turf/space))
-			var/image/spaceimage = image(landed_holder.icon, landed_holder.icon_state)
+		if(ispath(landed_holder().turf_type, /turf/space))
+			var/image/spaceimage = image(landed_holder().icon, landed_holder().icon_state)
 			spaceimage.plane = SPACE_PLANE
 			underlays = list(spaceimage)
 		else
-			var/mutable_appearance/landed_on = new(landed_holder)
+			var/mutable_appearance/landed_on = new(landed_holder())
 			landed_on.layer = FLOAT_LAYER //Not turf
 			landed_on.plane = FLOAT_PLANE //Not turf
 			us.underlays = list(landed_on)
@@ -439,3 +439,13 @@
 /turf/simulated/floor/flock/proc/crossing_glow_off()
 	icon_state = "floor"
 	set_light(0,0,"#ffffff")
+
+REF_OWNED(/obj/landed_holder, list("turf_image"))
+
+/// LC-refs: my turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
+	return om_resolve(my_turf_handle)
+
+/// LC-refs: landed holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder
+	return om_resolve(landed_holder_handle)

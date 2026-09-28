@@ -26,8 +26,8 @@
 		if(I && pay_energy(200))
 			var/prox = user.Adjacent(chosen_target)
 			if(prox) // Needed or else they can attack with melee from afar.
-				I.attack(chosen_target,owner)
-			I.afterattack(chosen_target,owner, prox)
+				I.attack(chosen_target,owner_ref())
+			I.afterattack(chosen_target,owner_ref(), prox)
 			adjust_instability(2)
 
 			var/image/target_image = image(icon = 'icons/obj/spells.dmi', loc = get_turf(chosen_target), icon_state = "target")

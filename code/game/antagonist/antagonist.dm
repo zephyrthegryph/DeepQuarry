@@ -57,7 +57,7 @@
 	var/static/list/valid_species =       list(SPECIES_UNATHI,SPECIES_TAJARAN,SPECIES_SKRELL,SPECIES_HUMAN,SPECIES_DIONA,SPECIES_TESHARI)
 
 	// Runtime vars.
-	var/datum/mind/leader                   // Current leader, if any.
+	var/leader_handle                   // Current leader, if any.
 	var/cur_max = 0                         // Autotraitor current effective maximum.
 	var/spawned_nuke                        // Has a bomb been spawned?
 	var/nuke_spawn_loc                      // If so, where should it be placed?
@@ -217,3 +217,7 @@
 			player.assigned_role = null
 		player.special_role = null
 	LAZYCLEARLIST(pending_antagonists)
+
+/// LC-refs: leader -- an OM handle (om_handle()), so it reads null once that is deleted.
+/datum/antagonist/proc/leader() as /datum/mind
+	return om_resolve(leader_handle)

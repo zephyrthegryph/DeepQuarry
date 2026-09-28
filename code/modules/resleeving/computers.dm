@@ -31,7 +31,6 @@
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	var/datum/transcore_db/our_db // These persist all round and are never destroyed, just keep a hard ref
 
 	var/gene_sequencing = FALSE // Traitgenes edit - create a dna injector for fixing dna, but don't let it be abusable
 
@@ -40,7 +39,6 @@
 	pods = list()
 	spods = list()
 	sleevers = list()
-	our_db = SStranscore.db_by_key(db_key)
 	updatemodules()
 
 // LIFECYCLE: its pods are released.
@@ -56,7 +54,7 @@
 
 /obj/machinery/computer/transhuman/resleeving/proc/releasepods()
 	for(var/obj/machinery/clonepod/transhuman/P in pods)
-		P.connected = null
+		P.connected_handle = null
 		P.name = initial(P.name)
 	pods.Cut()
 	for(var/obj/machinery/transhuman/synthprinter/P in spods)
@@ -72,9 +70,9 @@
 	var/num = 1
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
-		if(!P.connected)
+		if(!P.connected())
 			pods += P
-			P.connected = src
+			P.connected_handle = om_handle(src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
 		if(!P.connected)
@@ -88,7 +86,7 @@
 			P.name = "[initial(P.name)] #[num++]"
 
 /obj/machinery/computer/transhuman/resleeving/attackby(obj/item/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/disk/transcore) && !our_db.core_dumped)
+	if(istype(W, /obj/item/disk/transcore) && !our_db().core_dumped)
 		user.unEquip(W)
 		disk = W
 		disk.forceMove(src)
@@ -109,11 +107,11 @@
 
 /obj/machinery/computer/transhuman/resleeving/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
-	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting
+	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
 		return ITEM_INTERACT_BLOCKING
 	pods += pod
-	pod.connected = src
+	pod.connected_handle = om_handle(src)
 	pod.name = "[initial(pod.name)] #[pods.len]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -184,7 +182,7 @@
 		))
 	data["sleevers"] = resleevers
 
-	data["coredumped"] = our_db.core_dumped
+	data["coredumped"] = our_db().core_dumped
 	data["emergency"] = disk
 	data["temp"] = temp
 	data["selected_pod"] = REF(selected_pod)
@@ -192,8 +190,8 @@
 	data["selected_sleever"] = REF(selected_sleever)
 
 	var/list/bodyrecords_list_ui = list()
-	for(var/N in our_db.body_scans)
-		var/datum/transhuman/body_record/BR = our_db.body_scans[N]
+	for(var/N in our_db().body_scans)
+		var/datum/transhuman/body_record/BR = our_db().body_scans[N]
 		bodyrecords_list_ui += list(list(
 			"name" = N,
 			"recref" = REF(BR)
@@ -201,8 +199,8 @@
 	data["bodyrecords"] = bodyrecords_list_ui
 
 	var/list/mindrecords_list_ui = list()
-	for(var/N in our_db.backed_up)
-		var/datum/transhuman/mind_record/MR = our_db.backed_up[N]
+	for(var/N in our_db().backed_up)
+		var/datum/transhuman/mind_record/MR = our_db().backed_up[N]
 		mindrecords_list_ui += list(list(
 			"name" = N,
 			"recref" = REF(MR)
@@ -264,7 +262,7 @@
 			. = TRUE
 		if("coredump")
 			if(disk)
-				our_db.core_dump(disk)
+				our_db().core_dump(disk)
 				om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
 				. = TRUE
 		if("ejectdisk")
@@ -612,3 +610,7 @@
 #undef MENU_MAIN
 #undef MENU_BODY
 #undef MENU_MIND
+
+/// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
+/obj/machinery/computer/transhuman/resleeving/proc/our_db() as /datum/transcore_db
+	return SStranscore.db_by_key(db_key)

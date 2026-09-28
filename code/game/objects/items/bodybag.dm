@@ -307,3 +307,5 @@ REF_OWNED(/obj/structure/closet/body_bag/cryobag, list("syringe", "tank"))
 	desc = "Pretty useless now.."
 	icon_state = "bodybag_used"
 	icon = 'icons/obj/closets/cryobag.dmi'
+
+REF_HELD(/obj/item/bodybag, list("syringe"))

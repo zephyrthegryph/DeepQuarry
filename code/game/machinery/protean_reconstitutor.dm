@@ -366,3 +366,5 @@
 	nanomass_reserve = min(nanotank_max, nanomass_reserve + nanomass_required)
 	processing_revive = FALSE
 	update_icon()
+
+REF_HELD(/obj/machinery/protean_reconstitutor, list("protean_brain", "protean_orchestrator", "protean_refactory"))

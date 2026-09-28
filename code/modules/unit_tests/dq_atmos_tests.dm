@@ -3843,7 +3843,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	A.alarm_area.main_air_alarm = om_handle(A)
+	A.alarm_area_ref().main_air_alarm = om_handle(A)
 	A.stat &= ~(NOPOWER | BROKEN)
 	A.shorted = FALSE
 	A.scan_atmo()
@@ -3896,7 +3896,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	T = dq_test_powered_floor()
 	TEST_ASSERT_NOTNULL(T, "no floor for air alarm radio test")
 	var/obj/machinery/alarm/A = new(T)
-	TEST_ASSERT_NOTNULL(A.alarm_area, "air alarm radio test has no area")
+	TEST_ASSERT_NOTNULL(A.alarm_area_ref(), "air alarm radio test has no area")
 	var/tag = "dq-radio-test-[REF(A)]"
 	var/datum/signal/status = new
 	status.data = list(
@@ -3907,12 +3907,12 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"timestamp" = world.time,
 	)
 	A.receive_signal(status)
-	TEST_ASSERT_EQUAL(LAZYACCESS(A.alarm_area.air_vent_info, tag), status.data, \
+	TEST_ASSERT_EQUAL(LAZYACCESS(A.alarm_area_ref().air_vent_info, tag), status.data, \
 		"air alarm discarded a matching vent status packet")
-	TEST_ASSERT(tag in A.alarm_area.air_vent_names, \
+	TEST_ASSERT(tag in A.alarm_area_ref().air_vent_names, \
 		"air alarm did not register the matching vent status tag")
-	LAZYREMOVE(A.alarm_area.air_vent_info, tag)
-	LAZYREMOVE(A.alarm_area.air_vent_names, tag)
+	LAZYREMOVE(A.alarm_area_ref().air_vent_info, tag)
+	LAZYREMOVE(A.alarm_area_ref().air_vent_names, tag)
 	qdel(status)
 	qdel(A)
 
@@ -4238,7 +4238,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/pipe_air = P.return_air()
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
 	var/obj/machinery/meter/M = new(T)
-	M.target = P
+	M.target_handle = om_handle(P)
 	M.machine_step()
 	TEST_ASSERT(om_watch_armed(M), "idle local meter did not subscribe and hibernate")
 	var/meter_wakes = M.machine_wake_count
@@ -4304,7 +4304,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_watch_armed(canister), "closed canister did not subscribe to its gas mixture")
 	// Spawned on the connector, it connected: closed and connected, it watches only its gauge
 	// band (desired_update_flag()), so a change that leaves the gauge alone is not a wake.
-	TEST_ASSERT(canister.connected_port, "canister did not connect to the port it spawned on")
+	TEST_ASSERT(canister.connected_port(), "canister did not connect to the port it spawned on")
 	var/canister_wakes = canister.gas_dependency_wake_count
 	canister.air_contents.adjust_moles(/datum/gas/oxygen, 1)
 	for(var/canister_i in 1 to 4096)
@@ -4362,7 +4362,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 			break
 	TEST_ASSERT_NOTNULL(staging_turf, "no staging floor for Rust portable-port test")
 	var/obj/machinery/portable_atmospherics/canister/P = new(staging_turf)
-	TEST_ASSERT(!P.connected_port, "fresh test portable unexpectedly started connected")
+	TEST_ASSERT(!P.connected_port(), "fresh test portable unexpectedly started connected")
 	TEST_ASSERT(!C.connected_device, "fresh test connector unexpectedly started occupied")
 	P.air_contents.clear()
 	P.air_contents.set_temperature(300)
@@ -4721,7 +4721,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(regulator.machine_wake_count > regulator_wakes, "enabling a thermoregulator did not wake it")
 	var/obj/machinery/portable_atmospherics/canister/air/airlock/airlock_canister = new(T)
 	var/obj/machinery/atmospherics/portables_connector/test_port = new(T)
-	airlock_canister.connected_port = test_port
+	airlock_canister.connected_port_handle = om_handle(test_port)
 	airlock_canister.update_flag = airlock_canister.desired_update_flag()
 	airlock_canister.hibernate_until_gas_changes()
 	TEST_ASSERT(om_watch_armed(airlock_canister), "connected closed canister did not arm a gauge-band watch")
@@ -5222,14 +5222,14 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/meter/M = new(T)
 	TEST_ASSERT_NOTNULL(M, "meter construct failed")
-	M.target = P  // direct assign so select_target search isn't required
+	M.target_handle = om_handle(P)  // direct assign so select_target search isn't required
 	M.use_power = USE_POWER_IDLE
 	M.stat &= ~(BROKEN | NOPOWER)
 	M.machine_step() // shouldn't crash; should set an icon_state based on pipe pressure
 
 	// Validate that the meter's target returns the same pressure we set on
 	// the pipeline.
-	var/datum/gas_mixture/env = M.target.return_air()
+	var/datum/gas_mixture/env = M.target_ref().return_air()
 	TEST_ASSERT_NOTNULL(env, "meter.target.return_air() returned null")
 	TEST_ASSERT(env.return_pressure() > 0, \
 		"meter target pipe pressure is 0 despite seeded nitrogen: [env.return_pressure()]")
@@ -7213,8 +7213,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/expected_command_filter = AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, alarm.area_uid)
 	TEST_ASSERT_EQUAL(vent.radio_filter_out, expected_status_filter, "vent status radio was not scoped to its area")
 	TEST_ASSERT_EQUAL(vent.radio_filter_in, expected_command_filter, "vent command radio was not scoped to its area")
-	TEST_ASSERT(alarm in alarm.radio_connection.devices[expected_status_filter], "air alarm did not subscribe to its area status filter")
-	TEST_ASSERT(!(alarm in alarm.radio_connection.devices[RADIO_TO_AIRALARM]), "air alarm remained on the station-wide status filter")
+	TEST_ASSERT(alarm in alarm.radio_connection().devices[expected_status_filter], "air alarm did not subscribe to its area status filter")
+	TEST_ASSERT(!(alarm in alarm.radio_connection().devices[RADIO_TO_AIRALARM]), "air alarm remained on the station-wide status filter")
 	qdel(vent)
 	qdel(alarm)
 
@@ -7538,7 +7538,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/pipe_air = P.return_air()
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
 	var/obj/machinery/meter/M = new(T)
-	M.target = P
+	M.target_handle = om_handle(P)
 	M.stat &= ~(BROKEN | NOPOWER)
 	TEST_ASSERT_EQUAL(M.machine_step(), PROCESS_KILL, "a meter kept running after drawing its reading")
 	TEST_ASSERT(om_watch_armed(M, "gas"), "meter did not arm its display watch")

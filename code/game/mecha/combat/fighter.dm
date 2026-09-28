@@ -492,3 +492,6 @@
 	value = CATALOGUER_REWARD_MEDIUM
 
 #undef NOGRAV_FIGHTER_DAMAGE
+
+REF_OWNED(/obj/mecha/combat/fighter, list("ion_trail"))
+REF_OWNED(/obj/mecha/combat/fighter/gunpod, list("stripe1_overlay", "stripe2_overlay"))

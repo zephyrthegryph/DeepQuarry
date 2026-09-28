@@ -261,7 +261,7 @@
 	var/list/data = ..()
 
 	data["cable"] = user.cable != null
-	data["machine"] = user.cable && (user.cable.machine != null)
+	data["machine"] = !!user.cable?.machine()
 	data["inprogress"] = user.hackdoor != null
 	data["progress_a"] = round(user.hackprogress / 10)
 	data["progress_b"] = user.hackprogress % 10
@@ -276,8 +276,8 @@
 
 	switch(action)
 		if("jack")
-			if(P.cable && P.cable.machine)
-				P.hackdoor = P.cable.machine
+			if(P.cable && P.cable.machine())
+				P.hackdoor = P.cable.machine()
 				P.hackloop()
 			return 1
 		if("cancel")
@@ -299,18 +299,18 @@
 			to_chat(AI, span_bolddanger("Network Alert: Brute-force encryption crack in progress in [T.loc]."))
 		else
 			to_chat(AI, span_bolddanger("Network Alert: Brute-force encryption crack in progress. Unable to pinpoint location."))
-	var/obj/machinery/door/D = cable.machine
+	var/obj/machinery/door/D = cable.machine()
 	if(!istype(D))
 		hack_aborted = 1
 		hackprogress = 0
-		cable.machine = null
+		cable.machine_handle = null
 		hackdoor = null
 		return
 	hack_tick(D)
 
 /// One second of brute-forcing the door.
 /mob/living/silicon/pai/proc/hack_tick(obj/machinery/door/D)
-	if(cable && cable.machine == D && cable.machine == hackdoor && get_dist(src, hackdoor) <= 1)
+	if(cable && cable.machine() == D && cable.machine() == hackdoor && get_dist(src, hackdoor) <= 1)
 		hackprogress = min(hackprogress+rand(1, 20), 1000)
 	else
 		hack_aborted = 1
@@ -320,7 +320,7 @@
 	if(hackprogress >= 1000)
 		hackprogress = 0
 		D.open()
-		cable.machine = null
+		cable.machine_handle = null
 		return
 	om_after(src, 1 SECOND, PROC_REF(hack_tick), D)			// Update every second
 
