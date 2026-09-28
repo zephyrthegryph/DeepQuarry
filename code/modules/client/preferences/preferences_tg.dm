@@ -26,3 +26,5 @@
 
 		value_cache -= preference.type
 		preference.apply_to_client(client(), read_preference(preference.type))
+
+REF_OWNED_LIST(/datum/preferences, "middleware")

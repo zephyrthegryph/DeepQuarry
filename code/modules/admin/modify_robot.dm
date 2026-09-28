@@ -792,3 +792,5 @@ REF_OWNED(/datum/eventkit/modify_robot, "source")
 /// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
 	return om_resolve(target_handle)
+
+REF_OWNED_LIST(/datum/eventkit/modify_robot, "law_list")

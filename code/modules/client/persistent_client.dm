@@ -16,7 +16,6 @@ GLOBAL_LIST_EMPTY_TYPED(persistent_clients_by_ckey, /datum/persistent_client)
 	var/byond_build
 
 	/// Action datums assigned to this player
-	var/list/datum/action/player_actions
 	/// Tracks client action logging
 	var/list/logging = list()
 

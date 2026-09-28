@@ -51,7 +51,7 @@
 	/// Assoc list of all experiment datums that have been skipped, to tech point reward for completing them -
 	/// That is, upon researching a node without completing its associated discounts, their experiments go here.
 	/// Completing these experiments will have a refund.
-	var/list/datum/experiment/skipped_experiment_types
+	var/list/skipped_experiment_types
 
 	///All RD consoles connected to this individual techweb.
 	var/list/obj/machinery/computer/rdconsole_tg/consoles_accessing
@@ -582,3 +582,5 @@
 // 			continue
 
 // 	return TRUE
+
+REF_OWNED_LIST(/datum/techweb, "available_experiments")

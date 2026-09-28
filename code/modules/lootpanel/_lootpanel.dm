@@ -80,3 +80,5 @@
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lootpanel/proc/owner() as /client
 	return om_resolve(owner_handle)
+
+REF_OWNED_LIST(/datum/lootpanel, list("to_image", "contents"))

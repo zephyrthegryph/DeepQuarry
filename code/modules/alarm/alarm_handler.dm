@@ -140,3 +140,5 @@ REF_OWNED_LIST(/datum/alarm_handler, "alarms")
 			continue
 		visible_alarms.Add(A)
 	return visible_alarms
+
+REF_OWNED_VALUES(/datum/alarm_handler, "alarms_assoc")

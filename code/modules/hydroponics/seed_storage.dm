@@ -638,3 +638,5 @@
 /// LC-refs: Keeps track of what our seed is -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/seed_pile/proc/seed_type() as /datum/seed
 	return om_resolve(seed_type_handle)
+
+REF_OWNED_LIST(/obj/machinery/seed_storage, list("piles", "piles_contra"))

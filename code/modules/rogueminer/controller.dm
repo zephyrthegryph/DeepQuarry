@@ -207,3 +207,5 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 /// LC-refs: the previous_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/controller/rogue/proc/previous_zone() as /datum/rogue/zonemaster
 	return om_resolve(previous_zone_handle)
+
+REF_OWNED_LIST(/datum/controller/rogue, list("all_zones", "clean_zones", "ready_zones"))

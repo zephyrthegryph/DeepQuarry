@@ -339,3 +339,5 @@ ADMIN_VERB(log_viewer_new, R_ADMIN|R_MOD|R_DEBUG, "View Round Logs", "View the r
 		jsonified_list[key] = data
 
 	return jsonified_list
+
+REF_OWNED_VALUES(/datum/log_holder, "log_categories")
