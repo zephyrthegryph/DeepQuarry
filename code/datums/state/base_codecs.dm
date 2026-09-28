@@ -65,11 +65,5 @@
 /datum/component/forensics_state/state_codecs()
 	return ..() + list("forensic_data" = /datum/state_codec/owned)
 
-/datum/component/catalogue_delay_override
-	state_mode = STATE_COMPONENT_SAVE
-
-/datum/component/chat_color_cache
-	state_mode = STATE_COMPONENT_DERIVED
-
 /datum/component/update_on_z
 	state_mode = STATE_COMPONENT_DERIVED
