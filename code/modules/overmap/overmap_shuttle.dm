@@ -142,13 +142,20 @@
 	opened = 1	//shows open so you can diagnose 'oops, no gas' easily
 	icon_state = "fuel_port_empty"	//set the default state just to be safe
 
-/obj/structure/fuel_port/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/fuel_port/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!opened)
 		to_chat(user, "<spawn class='notice'>The door is secured tightly. You'll need a crowbar to open it.")
-		return
+		return TRUE
 	else if(contents.len > 0)
 		user.put_in_hands(contents[1])
 	update_icon()
+	return TRUE
 
 /obj/structure/fuel_port/update_icon()
 	if(opened)
@@ -160,15 +167,17 @@
 		icon_state = icon_closed
 	..()
 
-/obj/structure/fuel_port/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/fuel_port/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/tank))
 		if(!opened)
 			to_chat(user, "<spawn class='warning'>\The [src] door is still closed!")
-			return
+			return INTERACTION_HANDLED_PASS
 		if(contents.len == 0)
 			user.unEquip(W, src)
 			W.forceMove(src)
 	update_icon()
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/fuel_port/crowbar_act(mob/user, obj/item/tool)
 	opened = !opened

@@ -72,18 +72,22 @@ REF_PAIR(/obj/structure/ladder, list("target_down" = "target_up", "target_up" = 
 	A.anchored = TRUE
 	qdel(src)
 
-/obj/structure/ladder/attack_hand(mob/M)
+DECLARE_INTERACTIONS(/obj/structure/ladder, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/ladder/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
 	if(!M.may_climb_ladders(src))
-		return
+		return TRUE
 
 	var/obj/structure/ladder/target_ladder = getTargetLadder(M, TYPE_PROC_REF(/atom, attack_hand), args)
 	if(!target_ladder)
-		return
+		return TRUE
 	if(!(M.loc == loc) && !M.Move(get_turf(src)))
 		to_chat(M, span_notice("You fail to reach \the [src]."))
-		return
+		return TRUE
 
 	climbLadder(M, target_ladder)
+	return TRUE
 
 /obj/structure/ladder/attack_ghost(mob/M)
 	var/target_ladder = getTargetLadder(M, TYPE_PROC_REF(/atom, attack_ghost), args)

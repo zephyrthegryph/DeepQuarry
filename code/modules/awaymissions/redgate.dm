@@ -107,7 +107,10 @@
 	src.teleport(M)
 	return
 
-/obj/structure/redgate/attack_hand(mob/M as mob)
+DECLARE_INTERACTIONS(/obj/structure/redgate, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/redgate/proc/interaction_hand(mob/M, obj/item/held, datum/interaction/interaction)
 	if(density)
 		if(ishuman(M))
 			var/mob/living/carbon/human/O = M
@@ -123,7 +126,7 @@
 				if(isnull(restricted_human))
 					return TRUE
 				if(!restricted_human)
-					return
+					return TRUE
 				restricted_human.redgate_restricted = FALSE
 				to_chat(M, span_notice("You have given [restricted_human] permission to use the redgate."))
 				to_chat(restricted_human, span_notice("[M] has given you permission to use the redgate."))
@@ -133,6 +136,7 @@
 	else
 		if(!find_partner())
 			to_chat(M, span_warning("The [src] remains off... seems like it doesn't have a destination."))
+	return TRUE
 
 /obj/structure/redgate/attack_ghost(mob/observer/dead/user)
 
@@ -300,8 +304,10 @@
 /obj/structure/flag_decor/red
 	icon_state = "red_flag_deco"
 
-/obj/structure/flag_base/attackby(obj/F as obj, mob/user as mob)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/structure/flag_base, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/flag_base/proc/interaction_item(mob/user, obj/F, datum/interaction/interaction)
 
 	//TODO- require the team's flag to be present before they can score?
 	if(istype(F,/obj/item/laserdome_flag))
@@ -321,6 +327,7 @@
 			GLOB.global_announcer.autosay("[capitalize(base_team)] flag returned!","Laserdome Announcer","Entertainment")
 			user.drop_from_inventory(flag)
 			flag.loc = src.loc			//place our flag neatly back on its pedestal
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/laserdome_hyperball
 	name = "\improper HYPERball"	//*always* refer to it as "the hyperball", not just "the ball". corporate insists.
@@ -416,8 +423,10 @@
 	icon_state = "hyperball_goal_red"
 	goal_team = "red"
 
-/obj/structure/hyperball_goal/attackby(obj/B as obj, mob/user as mob)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/hyperball_goal/proc/interaction_item(mob/user, obj/B, datum/interaction/interaction)
 	var/mob/living/carbon/human/M = user
 	var/dunking_team
 	if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/redtag))
@@ -425,7 +434,7 @@
 	else if(istype(M.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/lasertag/bluetag))
 		dunking_team = "blue"
 	else
-		return	//if they're not on a team, stop!
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(B,/obj/item/laserdome_hyperball))
 		var/obj/item/laserdome_hyperball/ball = B
@@ -454,6 +463,7 @@
 		ball.icon_state = "[initial(ball.icon_state)]"
 		ball.item_state = "[initial(ball.item_state)]"
 		ball.update_icon()
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()

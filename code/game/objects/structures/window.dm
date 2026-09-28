@@ -152,15 +152,42 @@
 
 /obj/structure/window/declare_interactions(list/into)
 	into += list(
+		/datum/interaction/entry_hand/window_bang,
 		/datum/interaction/entry_hand/window_hand,
 		/datum/interaction/entry_item/window_item,
 	)
 	..()
 
-/// Old attack_hand: a Hulk smashes through, harm intent bangs on it, or a knock.
+/// Old attack_hand's harm branch: bang on (or claw at) the window (combat mode only).
+/datum/interaction/entry_hand/window_bang
+	id = "window_bang"
+	name = "Bang on"
+	effect = /obj/structure/window/proc/interaction_bang
+	offered_when = list(REQ_HARMING)
+	tags = list(INTERACTION_TAG_HOSTILE)
+
+/obj/structure/window/proc/interaction_bang(mob/user, obj/item/held, datum/interaction/interaction)
+	if(user.has_mutation(HULK))
+		return FALSE // a Hulk smashes through: interaction_hand()
+	user.setClickCooldown(user.get_attack_speed())
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
+		var/shreddamage = H.species.can_shred(H, FALSE, 15)
+		if(shreddamage)
+			attack_generic(H, shreddamage + 5, "attacks")
+			return TRUE
+
+	playsound(src, 'sound/effects/glassknock.ogg', 80, 1)
+	user.do_attack_animation(src)
+	user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
+						span_danger("You bang against \the [src]!"),
+						"You hear a banging sound.")
+	return TRUE
+
+/// Old attack_hand: a Hulk smashes through, or a knock.
 /datum/interaction/entry_hand/window_hand
 	id = "window_hand"
-	name = "Use"
+	name = "Knock"
 	effect = /obj/structure/window/proc/interaction_hand
 
 /obj/structure/window/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -170,21 +197,6 @@
 		user.visible_message(span_danger("[user] smashes through [src]!"))
 		user.do_attack_animation(src)
 		shatter()
-
-	else if (IS_HARMING(user))
-
-		if(ishuman(user))
-			var/mob/living/carbon/human/H = user
-			var/shreddamage = H.species.can_shred(H, FALSE, 15)
-			if(shreddamage)
-				attack_generic(H, shreddamage + 5, "attacks")
-				return TRUE
-
-		playsound(src, 'sound/effects/glassknock.ogg', 80, 1)
-		user.do_attack_animation(src)
-		user.visible_message(span_danger("\The [user] bangs against \the [src]!"),
-							span_danger("You bang against \the [src]!"),
-							"You hear a banging sound.")
 	else
 		playsound(src, 'sound/effects/glassknock.ogg', 80, 1)
 		user.visible_message("[user.name] knocks on the [src.name].",

@@ -361,11 +361,14 @@ GLOBAL_LIST(construction_frame_floor)
 
 // The board, cables, glass and tool steps are the frame's construction graph:
 // frame_construction.dm. Stock parts still go in here until C6.
-/obj/structure/frame/attackby(obj/item/P as obj, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/frame/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	// A construction tool with no step here does nothing (it used to stop at its *_act hook).
 	for(var/quality in list(TOOL_SCREWDRIVER, TOOL_CROWBAR, TOOL_WRENCH, TOOL_WIRECUTTER, TOOL_WELDER))
 		if(P.has_tool_quality(quality))
-			return
+			return INTERACTION_HANDLED_PASS
 	if(istype(P, /obj/item/stack/cable_coil) && state == FRAME_WIRED && frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/I in req_components)
 			if(istype(P, I) && (req_components[I] > 0))
@@ -397,6 +400,7 @@ GLOBAL_LIST(construction_frame_floor)
 					install_part(user,P)
 
 	update_icon()
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/frame/proc/install_part(mob/user, obj/item/P, defer_feedback = FALSE)
 	var/installed_part = FALSE

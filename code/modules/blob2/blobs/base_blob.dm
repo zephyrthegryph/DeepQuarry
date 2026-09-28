@@ -244,16 +244,22 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 	adjust_integrity(-damage)
 
-/obj/structure/blob/attack_hand(mob/living/M as mob)
+DECLARE_INTERACTIONS(/obj/structure/blob, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/blob/proc/interaction_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		H.setClickCooldown(H.get_attack_speed())
 		var/datum/unarmed_attack/attack = H.get_unarmed_attack(src, BP_TORSO)
 		if(!attack)
-			return FALSE
+			return TRUE
 
 		if(attack.unarmed_override(H, src, BP_TORSO))
-			return FALSE
+			return TRUE
 
 		H.do_attack_animation(src)
 		H.visible_message(span_danger("[H] strikes \the [src]!"))
@@ -304,8 +310,10 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 	else
 		attack_generic(M, rand(1,10), "bashed")
+	return TRUE
 
-/obj/structure/blob/attackby(obj/item/W, mob/user)
+/// Old attackby.
+/obj/structure/blob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
@@ -334,7 +342,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 	if(overmind)
 		damage = overmind.blob_type.on_received_damage(src, damage, W.obj_damage_type(), user)
 	adjust_integrity(-damage)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /// Packet sink for the adapters with nothing blob-specific to say (fire,
 /// explosions, shocks): each kind is scaled by the blob type's brute or burn

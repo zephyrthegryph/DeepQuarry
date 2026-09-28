@@ -3,7 +3,6 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 /obj/structure/janitorialcart
 	name = "janitorial cart"
 	desc = "The ultimate in janitorial carts! Has space for water, mops, signs, trash bags, and more!"
-	description_info = "You can use alt-click while holding a mop to stow the mop. Alt-click holding a reagent container will empty the contents into the bucket without trying to put the container in any attached trash bag."
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "cart"
 	anchored = FALSE
@@ -125,21 +124,28 @@ REF_OWNED(/obj/structure/janitorialcart, list("mybag", "mymop", "myspray", "myre
 	else
 		. += "[icon2html(src, user.client)] There is no bucket mounted on it!"
 
-/obj/structure/janitorialcart/MouseDrop_T(atom/movable/O as mob|obj, mob/living/user as mob)
+/// Old MouseDrop_T: mount a dragged mop bucket.
+/datum/interaction/entry_drag/janitorialcart_drag
+	id = "janitorialcart_drag"
+	name = "Mount bucket"
+	effect = /obj/structure/janitorialcart/proc/interaction_drag
+
+/obj/structure/janitorialcart/proc/interaction_drag(mob/living/user, atom/movable/O, datum/interaction/interaction)
 	if (istype(O, /obj/structure/mopbucket) && !mybucket)
 		O.forceMove(src)
 		mybucket = O
 		setTguiIcon("mybucket", mybucket)
 		user.balloon_alert(user, "you mount the [O] on the janicart.")
 		update_icon()
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/structure/janitorialcart/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/janitorialcart_item,
 		/datum/interaction/entry_alt/janitorialcart_alt,
 		/datum/interaction/entry_hand/janitorialcart_hand,
+		/datum/interaction/entry_drag/janitorialcart_drag,
 	)
 	..()
 

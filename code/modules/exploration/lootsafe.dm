@@ -159,7 +159,10 @@
 		if(guesschar != code[i])
 			. = 0
 
-/obj/structure/closet/crate/secure/lootsafe/numberlock/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/numberlock, INTERACT_ITEM(null, PROC_REF(numberlock_interaction_item)))
+
+/// Old attackby.
+/obj/structure/closet/crate/secure/lootsafe/numberlock/proc/numberlock_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
 		if (W.has_tool_quality(TOOL_MULTITOOL)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
 			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
@@ -182,8 +185,8 @@
 				for(var/i in 1 to codelen)
 					previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
 				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
-			return
-	..()
+			return INTERACTION_HANDLED_PASS
+	return FALSE
 
 
 //Currently Admeme things but due to chatter I have ideas on how to expand this later
@@ -263,7 +266,10 @@
 		if(guesschar != code[i])
 			. = 0
 
-/obj/structure/closet/crate/secure/lootsafe/devillock/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/devillock, INTERACT_ITEM(null, PROC_REF(devillock_interaction_item)))
+
+/// Old attackby.
+/obj/structure/closet/crate/secure/lootsafe/devillock/proc/devillock_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
 		if (W.has_tool_quality(TOOL_MULTITOOL)) // Greetings Urist McProfessor, how about a nice game of cows and bulls?
 			to_chat(user, span_notice("DECA-CODE LOCK ANALYSIS:"))
@@ -286,5 +292,5 @@
 				for(var/i in 1 to codelen)
 					previousattempt = addtext(previousattempt, LAZYACCESS(lastattempt, i))
 				to_chat(user, span_notice("Last code attempt, [previousattempt], had [bulls] correct digits at correct positions and [cows] correct digits at incorrect positions."))
-			return
-	..()
+			return INTERACTION_HANDLED_PASS
+	return FALSE

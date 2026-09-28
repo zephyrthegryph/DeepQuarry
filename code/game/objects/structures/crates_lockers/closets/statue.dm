@@ -112,8 +112,9 @@
 	receive_weapon_hit(I, user)
 	return TRUE
 
-/obj/structure/closet/statue/MouseDrop_T()
-	return
+/// Overrides closet's interaction_drag(): nothing goes into a statue.
+/obj/structure/closet/statue/interaction_drag(mob/user, atom/movable/O, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/closet/statue/relaymove()
 	return

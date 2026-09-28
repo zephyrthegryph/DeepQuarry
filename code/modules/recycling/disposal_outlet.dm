@@ -32,12 +32,16 @@
 	target = null
 	. = ..()
 
-/obj/structure/disposaloutlet/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/disposaloutlet/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!I || !user)
-		return
+		return INTERACTION_HANDLED_PASS
 	src.add_fingerprint(user)
 	if(mode == OUTLET_SCREWED)
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/disposaloutlet/screwdriver_act(mob/user, obj/item/I)
 	mode = mode == OUTLET_SCREWED ? OUTLET_UNSCREWED : OUTLET_SCREWED

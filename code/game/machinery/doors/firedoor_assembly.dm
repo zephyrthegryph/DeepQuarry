@@ -19,12 +19,15 @@
 	else
 		icon_state = "door_construction"
 
-/obj/structure/firedoor_assembly/attackby(obj/item/C, mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/firedoor_assembly/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/stack/cable_coil) && !wired && anchored)
 		var/obj/item/stack/cable_coil/cable = C
 		if (cable.get_amount() < 1)
 			to_chat(user, span_warning("You need one length of coil to wire \the [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		user.visible_message("[user] wires \the [src].", "You start to wire \the [src].")
 		om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, cable))
 
@@ -50,7 +53,8 @@
 			om_do_after(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
 
 	else
-		..(C, user)
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/firedoor_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/cable)
 	if(!(!wired && anchored))

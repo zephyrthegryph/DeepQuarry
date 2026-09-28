@@ -79,18 +79,25 @@
 
 	var/list/treated
 
-/obj/structure/candybowl/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/candybowl, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/candybowl/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 
 
 	if(!has_candy)
 		to_chat(user, span_warning("There is no candy! Someone took too many..."))
-		return
+		return TRUE
 
 	if(om_busy(src))
 		to_chat(user, span_warning("Someone is already looking through \the [src]!"))
-		return
+		return TRUE
 
 	om_do_after(user, 5 SECONDS, src, src, PROC_REF(search_done), list(user), claims = TRUE)
+	return TRUE
 
 /obj/structure/candybowl/proc/search_done(mob/user)
 	var/thegoods
@@ -120,13 +127,14 @@
 	var/goodie = new thegoods(src)
 	user.put_in_hands(goodie)
 
-/obj/structure/candybowl/attackby(obj/item/O, mob/user)
-	. = ..()
+/// Old attackby.
+/obj/structure/candybowl/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/reagent_containers/food/snacks) && !has_candy)
 		to_chat(user, span_notice("You add \the [O] to the bowl."))
 		if(prob(20))
 			fill()
 		consume(O, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/candybowl/proc/empty()
 	var/newname = "empty " + initial(name)
@@ -217,8 +225,12 @@
 
 	costumes = typesof(/obj/item/storage/box/halloween/)
 
-/obj/structure/boxpile/attack_hand(mob/living/user)
+DECLARE_INTERACTIONS(/obj/structure/boxpile, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/boxpile/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	om_do_after(user, 5 SECONDS, src, src, PROC_REF(rummage_done), list(user), claims = TRUE)
+	return TRUE
 
 /obj/structure/boxpile/proc/rummage_done(mob/living/user)
 	if(!user.ckey)

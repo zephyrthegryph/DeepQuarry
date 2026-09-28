@@ -509,13 +509,17 @@
 	rollertype = /obj/item/roller/massage
 	bedtype = /obj/structure/bed/roller/massage
 
-/obj/structure/bed/roller/massage/click_alt(mob/living/carbon/user)
+EXTEND_INTERACTIONS(/obj/structure/bed/roller/massage, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+
+/// Old click_alt.
+/obj/structure/bed/roller/massage/proc/interaction_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(anchored)
 		anchored = 0
 		src.visible_message(span_notice("[user] turns the breaks off on the [src]!"))
 	else if(!anchored)
 		anchored = 1
 		src.visible_message(span_notice("[user] turns the breaks on for the [src]!"))
+	return TRUE
 
 /obj/structure/bed/roller/massage/buckle_mob(mob/living/M)
 	..()

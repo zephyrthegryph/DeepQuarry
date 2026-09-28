@@ -20,13 +20,17 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/structure/casino_table/attackby(obj/item/W, mob/user, hit_modifier, click_parameters)
+DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_REF(interaction_place)))
+
+/// Old attackby: put the held item on the table.
+/obj/structure/casino_table/proc/interaction_place(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!item_place)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(user.unEquip(W, 0, loc) && user.client?.prefs?.read_preference(/datum/preference/toggle/precision_placement))
-		auto_align(W, click_parameters) // Precisely place item like this is a normal table
-		return
+		auto_align(W, dq_interaction_click_params(user)) // Precisely place item like this is a normal table
+		return INTERACTION_HANDLED_PASS
 	user.drop_item(loc)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/casino_table/roulette_table
 	name = "roulette"
@@ -51,13 +55,19 @@
 	else
 		. += "It doesn't have a ball."
 
-/obj/structure/casino_table/roulette_table/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
+	INTERACT_HAND_UNGATED("Spin", PROC_REF(interaction_hand)), \
+	INTERACT_INSERT(/obj/item/roulette_ball, PROC_REF(interaction_insert_ball), null), \
+)
+
+/// Old attack_hand.
+/obj/structure/casino_table/roulette_table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(om_busy(src))
 		to_chat(user,span_notice("You cannot spin now! The roulette is already spinning."))
-		return
+		return TRUE
 	if(!ball)
 		to_chat(user,span_notice("This roulette wheel has no ball!"))
-		return
+		return TRUE
 	visible_message(span_notice("\The [user] spins the roulette and throws [ball.get_ball_desc()] into it."))
 	playsound(src.loc, 'sound/machines/roulette.ogg', 40, 1)
 	om_hold_busy(src, 5 SECONDS) // spinning: a hold claims the machine until the result
@@ -81,16 +91,17 @@
 	if(result == 37)
 		result = "00"
 	om_after(src, 5 SECONDS, PROC_REF(roulette_stops), result, color)
+	return TRUE
 
-/obj/structure/casino_table/roulette_table/attackby(obj/item/W, mob/user)
-	if(istype(W, /obj/item/roulette_ball))
-		if(!ball)
-			user.drop_from_inventory(W)
-			W.forceMove(src)
-			ball = W
-			to_chat(user, span_notice("You insert [W] into [src]."))
-			return
-	..()
+/// Old attackby: load a ball into an empty wheel; with one already in, it goes on the table.
+/obj/structure/casino_table/roulette_table/proc/interaction_insert_ball(mob/user, obj/item/W, datum/interaction/interaction)
+	if(ball)
+		return FALSE
+	user.drop_from_inventory(W)
+	W.forceMove(src)
+	ball = W
+	to_chat(user, span_notice("You insert [W] into [src]."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/casino_table/roulette_table/verb/remove_ball()
 	set name = "Remove Roulette Ball"

@@ -106,6 +106,7 @@
 /obj/structure/closet/secure_closet/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/secure_closet_hand,
+		/datum/interaction/entry_alt/secure_closet_alt,
 	)
 	..()
 	into -= /datum/interaction/entry_hand/closet_hand
@@ -124,9 +125,15 @@
 		toggle(user)
 	return TRUE
 
-/obj/structure/closet/secure_closet/click_alt()
-	..()
+/// Old click_alt: toggle the lock.
+/datum/interaction/entry_alt/secure_closet_alt
+	id = "secure_closet_alt"
+	name = "Toggle lock"
+	effect = /obj/structure/closet/secure_closet/proc/interaction_alt
+
+/obj/structure/closet/secure_closet/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	verb_togglelock()
+	return TRUE
 
 /obj/structure/closet/secure_closet/verb/verb_togglelock()
 	set src in oview(1) // One square distance

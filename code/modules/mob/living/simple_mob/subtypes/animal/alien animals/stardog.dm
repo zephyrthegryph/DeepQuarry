@@ -579,8 +579,9 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 /obj/structure/flora/tree/fur/choose_icon_state()
 	return "[base_state][rand(1, 2)]"
 
-/obj/structure/flora/tree/fur/attack_hand(mob/user)
-	return
+/// Overrides tree's interaction_search_sticks(): no sticks to find in fur.
+/obj/structure/flora/tree/fur/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
+	return TRUE
 
 /obj/structure/flora/tree/fur/die()
 	if(product && product_amount)
@@ -610,8 +611,11 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 	name = "dense fur"
 	desc = "Silky and soft, but too thick to pass or cut!"
 
-/obj/structure/flora/tree/fur/wall/attackby(obj/item/W, mob/living/user)
-	return
+EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, PROC_REF(wall_interaction_item)))
+
+/// Old attackby.
+/obj/structure/flora/tree/fur/wall/proc/wall_interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+	return INTERACTION_HANDLED_PASS
 
 /area/redgate/stardog
 	name = "dog"
@@ -821,14 +825,17 @@ REF_PAIR(/mob/living/simple_mob/vore/overmap/stardog, list("control_node" = "hos
 
 REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 
-/obj/structure/control_pod/attack_hand(mob/living/user)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/control_pod/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!host)
 		set_up()
 		if(!host)
 			to_chat(user, span_warning("It doesn't respond..."))
-			return
+			return TRUE
 	control(user)
+	return TRUE
 
 /obj/structure/control_pod/proc/control(mob/living/user)
 	if(!host.affinity)	//take care of my dog
@@ -1415,11 +1422,13 @@ REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
 
-/obj/structure/auto_flesh_door/attack_hand(mob/user as mob)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/auto_flesh_door/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(!Adjacent(user))
-		return
+		return TRUE
 	else if(user.faction == faction)
 		SwitchState()
 	else if(IS_HELPING(user))
@@ -1430,6 +1439,7 @@ REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
 		visible_message(span_warning("[user] hammers on \the [src]!"), span_warning("Someone hammers loudly on \the [src]!"))
 		playsound(src, knock_sound, 50, 0, 3)
 		countdown -= 25
+	return TRUE
 
 /obj/structure/auto_flesh_door/CanPass(atom/movable/mover, turf/target)
 	return !density

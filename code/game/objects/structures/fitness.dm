@@ -16,11 +16,13 @@
 	)
 	..()
 
-/// Old attack_hand: hit the punching bag.
+/// Old attack_hand: hit the punching bag (combat mode only).
 /datum/interaction/entry_hand/punchingbag_hand
 	id = "punchingbag_hand"
 	name = "Punch"
 	effect = /obj/structure/fitness/punchingbag/proc/interaction_hand
+	offered_when = list(REQ_HARMING)
+	tags = list(INTERACTION_TAG_HOSTILE)
 
 /obj/structure/fitness/punchingbag/proc/interaction_hand(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(user))
@@ -30,14 +32,13 @@
 	else if(user.weight < 70) // Add weight loss to old fitness equipment
 		to_chat(user, span_notice("You're too skinny to risk losing any more weight!"))
 	else
-		if(IS_HARMING(user))
-			user.setClickCooldown(user.get_attack_speed())
-			flick("[icon_state]_hit", src)
-			playsound(src, 'sound/effects/woodhit.ogg', 25, 1, -1)
-			user.do_attack_animation(src)
-			user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
-			user.weight -= 0.25 * weightloss_power * (0.01 * user.weight_loss)
-			to_chat(user, span_warning("You [pick(hit_message)] \the [src]."))
+		user.setClickCooldown(user.get_attack_speed())
+		flick("[icon_state]_hit", src)
+		playsound(src, 'sound/effects/woodhit.ogg', 25, 1, -1)
+		user.do_attack_animation(src)
+		user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
+		user.weight -= 0.25 * weightloss_power * (0.01 * user.weight_loss)
+		to_chat(user, span_warning("You [pick(hit_message)] \the [src]."))
 	return TRUE
 
 /obj/structure/fitness/weightlifter

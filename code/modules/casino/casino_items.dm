@@ -69,10 +69,13 @@
 	layer = BELOW_MOB_LAYER
 	density = 0
 
-/obj/structure/stripper_pole/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/stripper_pole, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/stripper_pole/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	dance(user)
 	user.spin(32,2)
-	..()
+	return FALSE
 
 /obj/structure/stripper_pole/proc/dance(mob/user)
 	if(layer == BELOW_MOB_LAYER)

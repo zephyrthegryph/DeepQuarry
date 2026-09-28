@@ -28,7 +28,8 @@
 	update_icon()
 	AddElement(/datum/element/climbable)
 
-/obj/structure/bookcase/attackby(obj/item/O, mob/user)
+/// Old attackby.
+/obj/structure/bookcase/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/book))
 		user.drop_item()
 		O.loc = src
@@ -39,11 +40,12 @@
 			return TRUE
 		var/newname = sanitizeSafe(_answer_k37, MAX_NAME_LEN)
 		if(!newname)
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			name = ("bookcase ([newname])")
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/bookcase/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 100, 1)
@@ -63,20 +65,27 @@
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/bookcase/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/bookcase, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/bookcase/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(contents.len)
 		var/obj/item/book/choice = rerun_prompt(user, "k65", list("kind" = "list", "message" = "Which book would you like to remove from the shelf?", "title" = "Book Selection", "choices" = contents), TYPE_PROC_REF(/atom, attack_hand), args)
 		if(isnull(choice))
 			return TRUE
 		if(choice)
 			if(!user.canmove || user.stat || user.restrained() || !in_range(loc, user))
-				return
+				return TRUE
 			if(ishuman(user))
 				if(!user.get_active_hand())
 					user.put_in_hands(choice)
 			else
 				choice.loc = get_turf(src)
 			update_icon()
+	return TRUE
 
 /obj/structure/bookcase/explosion_contents_severity(severity)
 	return severity
@@ -103,13 +112,17 @@ Book Cart
 	anchored = FALSE
 	opacity = 0
 
-/obj/structure/bookcase/bookcart/attackby(obj/item/O as obj, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/bookcase/bookcart, INTERACT_ITEM(null, PROC_REF(bookcart_interaction_item)))
+
+/// Old attackby.
+/obj/structure/bookcase/bookcart/proc/bookcart_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/book))
 		user.drop_item()
 		O.loc = src
 		update_icon()
 	else
-		return
+		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/bookcase/bookcart/update_icon()
 	if(contents.len < 5)

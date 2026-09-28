@@ -19,18 +19,21 @@
 	. = ..()
 
 // Override attackby so we disallow trunkremoval when somethings ontop
-/obj/structure/disposalpipe/trunk/attackby(obj/item/I, mob/user)
+DECLARE_INTERACTIONS(/obj/structure/disposalpipe/trunk, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/disposalpipe/trunk/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	//Linked atom.
 	if(linked)
-		return
+		return INTERACTION_HANDLED_PASS
 	//Disposal constructors
 	var/turf/T = get_turf(src)
 	for(var/obj/structure/disposalconstruct/C in turf_contents_of_type(T, /obj/structure/disposalconstruct))
 		if(C.ptype == DISPOSAL_PIPE_BIN || C.ptype == DISPOSAL_PIPE_OUTLET || C.ptype == DISPOSAL_PIPE_CHUTE)
 			if(C.anchored)
-				return
+				return INTERACTION_HANDLED_PASS
 
-	return ..() //Run the check from parent, instead of copypasta code
+	return FALSE //Run the check from parent, instead of copypasta code
 
 // would transfer to next pipe segment, but we are in a trunk
 // if not entering from disposal bin,

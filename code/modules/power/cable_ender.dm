@@ -23,13 +23,17 @@
 				if (!powernetless_only || !target.powernet)
 					. |= target
 
-/obj/structure/cable/ender/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/cable/ender, INTERACT_ITEM(null, PROC_REF(ender_interaction_item)))
+
+/// Old attackby.
+/obj/structure/cable/ender/proc/ender_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	if(istype(W, /obj/item/stack/cable_coil))
 		to_chat(user,  span_notice(" You will need heavier cables to connect to these."))
-		return
+		return INTERACTION_HANDLED_PASS
 	else
-		..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/cable/ender/wirecutter_act(mob/user, obj/item/W)
 	to_chat(user, span_notice("These cables are too tough to be cut with those [W.name]."))

@@ -98,11 +98,17 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 /obj/structure/event_collector_blocker/proc/get_repair_message(mob/user)
 	return "[user] repairs \the [src]!"
 
-/obj/structure/event_collector_blocker/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/event_collector_blocker, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/event_collector_blocker/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!tools_to_fix && block_amount > 0)
 		user.visible_message(get_repair_message(user)) //swap this with a message var, or just change it to be suitable
 		fix()
-	. = ..()
+	return FALSE
 
 
 /datum/om/task/timed/event_collector_blocker_repair_step
@@ -123,15 +129,16 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLE
 	if(active_repair_steps.len == 0)
 		fix()
 
-/obj/structure/event_collector_blocker/attackby(obj/item/O, mob/user)
-	. = ..()
+/// Old attackby.
+/obj/structure/event_collector_blocker/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(tools_to_fix)
 		if(active_repair_steps.len >= 1)
 			if(O.has_tool_quality(active_repair_steps[active_repair_steps.len]))
-				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return
+				if(!pre_repair_handling(O,active_repair_steps[active_repair_steps.len],user)) return INTERACTION_HANDLED_PASS
 				om_task_start(/datum/om/task/timed/event_collector_blocker_repair_step, user, src, list("receiver" = src, "O" = O, "step_count" = active_repair_steps.len))
 			else
 				to_chat(user,span_notice("this doesn't look like the right tool for the job..."))
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/event_collector_blocker/proc/pre_repair_handling(obj/item/O,toolType,mob/user) //can we use this tool?
 	switch(toolType)

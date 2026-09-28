@@ -89,9 +89,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 			destinations |= t
 	return destinations
 
-/obj/structure/micro_tunnel/attack_hand(mob/living/user)
+/// Old attack_hand.
+/obj/structure/micro_tunnel/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
 	tunnel_interact(user)
-	return ..()
+	return FALSE
 
 /obj/structure/micro_tunnel/attack_generic(mob/user, damage, attack_verb)
 	tunnel_interact(user)
@@ -248,15 +249,20 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 /obj/structure/micro_tunnel/proc/may_choose_to_enter(mob/living/user)
 	return is_type_in_list(user, non_micro_types)
 
-/obj/structure/micro_tunnel/MouseDrop_T(mob/living/M, mob/living/user)
-	. = ..()
+DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
+	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+)
+
+/// Old MouseDrop_T.
+/obj/structure/micro_tunnel/proc/interaction_drag(mob/living/user, mob/living/M, datum/interaction/interaction)
 	if(M != user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(!can_enter(user))
 		if(may_choose_to_enter(user))
 			om_prompt(src, user, list("message" = "Would you like to enter the tunnel, or reach inside it?", "title" = "Enter or reach", "choices" = list("Enter","Reach"), "requires" = PROMPT_ADJACENT, "data" = list("dropped" = TRUE)), PROC_REF(enter_or_reach_chosen))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	mouse_drop_climb(M)
 	return TRUE

@@ -220,11 +220,15 @@
 
 DESTROY_EFFECTS(/obj/structure/atmospheric_retention_field, new /datum/destroy_effects_data(neighbor_type = /obj/structure/atmospheric_retention_field))
 
-/obj/structure/atmospheric_retention_field/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/atmospheric_retention_field, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/atmospheric_retention_field/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(density)
 		visible_message("You touch the retention field, and it crackles faintly. Tingly!")
 	else
 		visible_message("You try to touch the retention field, but pass through it like it isn't even there.")
+	return TRUE
 
 /obj/structure/atmospheric_retention_field/impassable
 	desc = "A shimmering forcefield that keeps the good air inside and the bad air outside. It seems fairly solid, almost like it's made out of some kind of hardened light.<br><br>Note: prolonged immersion in active atmospheric retention fields may have negative long-term health consequences."

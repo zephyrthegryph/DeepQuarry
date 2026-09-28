@@ -715,7 +715,13 @@
 		if(in_range(user, src) && stored_item)
 			. += span_italics("You can see something in there...")
 
-/obj/structure/plushie/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/plushie, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/plushie/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(stored_item && opened && !om_busy(src))
@@ -731,6 +737,7 @@
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes the [src]."),span_notice("You poke the [src]."))
 	if(phrase) //There was no indiciation you had to use disarm intent to make it speak...So now it speaks if you touch it at all!
 		atom_say("[phrase]")
+	return TRUE
 
 /obj/structure/plushie/proc/attack_hand_timed_done(mob/user)
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
@@ -738,32 +745,33 @@
 	stored_item = null
 	return
 
-/obj/structure/plushie/attackby(obj/item/I as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/plushie/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/threadneedle) && opened)
 		to_chat(user, "You sew the hole in [src].")
 		opened = FALSE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(is_sharp(I) && !opened)
 		to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 		opened = TRUE
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(opened)
 		if(stored_item)
 			to_chat(user, "There is already something in here.")
-			return
+			return INTERACTION_HANDLED_PASS
 
 		if(!(I.w_class > w_class))
 			to_chat(user, "You place [I] inside [src].")
 			user.drop_from_inventory(I, src)
 			I.forceMove(src)
 			stored_item = I
-			return
+			return INTERACTION_HANDLED_PASS
 		else
 			to_chat(user, "You open a small incision in [src]. You can place tiny items inside.")
 
-	..()
+	return FALSE
 
 /obj/structure/plushie/ian
 	name = "plush corgi"
@@ -1468,7 +1476,10 @@
 	anchored = FALSE
 	density = FALSE
 
-/obj/structure/balloon/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/balloon, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/balloon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 
 	if(IS_HELPING(user))
@@ -1479,6 +1490,7 @@
 		user.visible_message(span_warning(span_bold("\The [user]") + " attempts to pop [src]!"),span_warning("You attempt to pop [src]!"))
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " lightly bats the [src]."),span_notice("You lightly bat the [src]."))
+	return TRUE
 
 /obj/structure/balloon/bat
 	name = "giant bat balloon"

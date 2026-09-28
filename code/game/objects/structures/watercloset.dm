@@ -1012,24 +1012,31 @@ REF_OWNED(/obj/machinery/shower, list("soundloop", "reagents"))
 	AddComponent(/datum/component/hose_connector/endless_source/water)
 	AddComponent(/datum/component/hose_connector/endless_drain)
 
-/obj/structure/sink/MouseDrop_T(obj/item/thing, mob/user)
-	..()
+/// Old MouseDrop_T: tip a dragged open container out into the sink.
+/datum/interaction/entry_drag/sink_empty
+	id = "sink_empty"
+	name = "Empty into sink"
+	effect = /obj/structure/sink/proc/interaction_drag
+
+/obj/structure/sink/proc/interaction_drag(mob/user, obj/item/thing, datum/interaction/interaction)
 	if(!istype(thing) || !thing.is_open_container())
-		return ..()
+		return FALSE
 	if(!user.Adjacent(src))
-		return ..()
+		return FALSE
 	if(!thing.reagents || thing.reagents.total_volume == 0)
 		to_chat(user, span_warning("\The [thing] is empty."))
-		return
+		return INTERACTION_HANDLED_PASS
 	// Clear the vessel.
 	visible_message(span_infoplain(span_bold("\The [user]") + " tips the contents of \the [thing] into \the [src]."))
 	thing.reagents.clear_reagents()
 	thing.update_icon()
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/sink/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/sink_wash,
 		/datum/interaction/entry_item/sink_item,
+		/datum/interaction/entry_drag/sink_empty,
 	)
 	..()
 

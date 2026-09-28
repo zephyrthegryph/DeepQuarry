@@ -14,15 +14,23 @@
 	var/label_x
 	var/tag_x
 
-/obj/structure/bigDelivery/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/bigDelivery/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	unwrap()
+	return TRUE
 
 /obj/structure/bigDelivery/proc/unwrap()
 	playsound(src, 'sound/items/package_unwrap.ogg', 50, 1)
 	// Destroy will drop our wrapped object on the turf, so let it.
 	qdel(src)
 
-/obj/structure/bigDelivery/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby.
+/obj/structure/bigDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/destTagger))
 		var/obj/item/destTagger/O = W
 		if(O.currTag)
@@ -51,7 +59,7 @@
 				var/str = sanitizeSafe(_answer_k45, MAX_NAME_LEN)
 				if(!str || !length(str))
 					to_chat(user, span_warning(" Invalid text."))
-					return
+					return INTERACTION_HANDLED_PASS
 				user.visible_message("\The [user] titles \the [src] with \a [W], marking down: \"[str]\"",\
 				span_notice("You title \the [src]: \"[str]\""),\
 				"You hear someone scribbling a note.")
@@ -68,7 +76,7 @@
 					return TRUE
 				if(!str || !length(str))
 					to_chat(user, span_red("Invalid text."))
-					return
+					return INTERACTION_HANDLED_PASS
 				if(!examtext && !nameset)
 					examtext = str
 					update_icon()
@@ -78,7 +86,7 @@
 				span_notice("You label \the [src]: \"[examtext]\""),\
 				"You hear someone scribbling a note.")
 				playsound(src, pick('sound/bureaucracy/pen1.ogg','sound/bureaucracy/pen2.ogg'), 20)
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/bigDelivery/attack_robot(mob/living/user)
 	if(user.stat || !Adjacent(user))

@@ -71,9 +71,11 @@ GLOBAL_LIST_INIT(has_rocks, list("dirt5", "dirt6", "dirt7", "dirt8", "dirt9"))
 	S.pixel_y = rand(-6,6)
 	sticks = FALSE
 
-/obj/structure/flora/tree/attack_hand(mob/user)
+/// Old attack_hand: search for loose sticks (tree_hand, trees.dm).
+/obj/structure/flora/tree/proc/interaction_search_sticks(mob/user, obj/item/held, datum/interaction/interaction)
 	if(sticks)
 		user.visible_message("[user] searches \the [src] for loose sticks...", "You search \the [src] for loose sticks...")
 		om_do_after(user, 5 SECONDS, src, src, PROC_REF(sticks_found), list(user))
 	else
 		to_chat(user, span_notice("You don't see any loose sticks..."))
+	return TRUE

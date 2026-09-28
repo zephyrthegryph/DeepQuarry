@@ -201,12 +201,12 @@ Deployable items
 	if(!toppled && (new_value < (max_integrity/2)))
 		topple()
 
-/obj/structure/barricade/cutout/attack_hand(mob/user)
-	if((. = ..()))
-		return
-
-	if(toppled)
-		untopple()
+/// Old attack_hand: stand a toppled cutout back up (behind the structure gate, as before).
+/obj/structure/barricade/cutout/proc/cutout_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!toppled)
+		return FALSE
+	untopple()
+	return TRUE
 
 /obj/structure/barricade/cutout/examine(mob/user)
 	. = ..()
@@ -214,13 +214,20 @@ Deployable items
 	if(Adjacent(user))
 		. += span_notice("... from this distance, they seem to be made of [material.name] ...")
 
-/obj/structure/barricade/cutout/attackby(obj/I, mob/user)
+EXTEND_INTERACTIONS(/obj/structure/barricade/cutout, \
+	INTERACT_HAND("Stand up", PROC_REF(cutout_interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(cutout_interaction_item)), \
+)
+
+/// Old attackby.
+/obj/structure/barricade/cutout/proc/cutout_interaction_item(mob/user, obj/I, datum/interaction/interaction)
 	if(is_type_in_list(I, painters))
 		om_prompt(src, user, list("kind" = "list", "message" = "What would you like to paint the cutout as?", "title" = "Cutout Painting", "choices" = cutout_types, "target" = I, "requires" = PROMPT_IN_HAND), PROC_REF(cutout_type_chosen))
 		return TRUE
 
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/barricade/cutout/proc/cutout_type_chosen(mob/user, choice, datum/om/prompt/ask)
 	if(!Adjacent(user))

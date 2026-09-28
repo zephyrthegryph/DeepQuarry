@@ -91,7 +91,8 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		T.update_icon()
 	. = ..()
 
-/obj/structure/table/attackby(obj/item/W, mob/user)
+/// Old attackby (tables.dm): carpet or plate the table.
+/obj/structure/table/proc/interaction_surface(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!carpeted && material && istype(W, /obj/item/stack/tile/carpet))
 		var/obj/item/stack/tile/carpet/C = W
 		if(C.use(1))
@@ -108,7 +109,7 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 		common_material_add(W, user, "plat", PROC_REF(plating_done))
 		return 1
 
-	return ..()
+	return FALSE
 
 /obj/structure/table/screwdriver_act(mob/user, obj/item/tool)
 	if(!reinforced)
@@ -148,13 +149,22 @@ GLOBAL_LIST_EMPTY(table_icon_cache)
 	repair_damage(max_integrity / 5)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/table/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/table, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM("Surface", PROC_REF(interaction_surface)), \
+	INTERACT_INSERT_HOSTILE(/obj/item/grab, PROC_REF(interaction_slam), "Slam against table"), \
+	INTERACT_ITEM("Place", PROC_REF(interaction_item)), \
+	INTERACT_DRAG("Place", PROC_REF(interaction_drag)), \
+)
+
+/// Old attack_hand.
+/obj/structure/table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(user))
 		var/mob/living/carbon/human/X = user
 		if(istype(X.species, /datum/species/xenos))
 			src.attack_alien(user)
-			return
-	..()
+			return TRUE
+	return FALSE
 
 /obj/structure/table/attack_alien(mob/user as mob)
 	visible_message(span_danger("\The [user] tears apart \the [src]!"))

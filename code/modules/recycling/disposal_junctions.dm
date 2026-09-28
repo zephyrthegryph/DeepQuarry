@@ -95,9 +95,10 @@
 	updatedesc()
 	update()
 
-/obj/structure/disposalpipe/sortjunction/attackby(obj/item/I, mob/user)
-	if(..())
-		return
+DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/disposalpipe/sortjunction/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 
 	if(istype(I, /obj/item/destTagger))
 		var/obj/item/destTagger/O = I
@@ -112,6 +113,7 @@
 			to_chat(user, span_blue("Changed filter to '[sortType]'."))
 			updatename()
 			updatedesc()
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/disposalpipe/sortjunction/screwdriver_act(mob/user, obj/item/I)
 	panel_open = !panel_open

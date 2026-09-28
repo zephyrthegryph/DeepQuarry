@@ -33,13 +33,16 @@
 	. = ..()
 	AddElement(/datum/element/climbable)
 
-/obj/structure/ore_box/attackby(obj/item/W, mob/user)
+DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+
+/// Old attackby.
+/obj/structure/ore_box/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/ore))
 		var/obj/item/ore/ore = W
 		stored_ore[ore.material]++
 		user.remove_from_mob(W)
 		consume(ore, user)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/dogborg/sleeper/compactor/supply))
 		var/obj/item/dogborg/sleeper/compactor/supply/borg_sleeper = W
@@ -54,9 +57,9 @@
 				S.stored_ore[ore] = 0 				// Set the value of the ore in the satchel to 0.
 				S.current_capacity = 0				// Set the amount of ore in the satchel  to 0.
 		to_chat(user, span_notice("You empty the satchel into the box."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/ore_box/examine(mob/user)
 	. = ..()

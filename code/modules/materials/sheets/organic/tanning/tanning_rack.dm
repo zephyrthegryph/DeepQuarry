@@ -36,7 +36,8 @@
 		else
 			add_overlay("leather_dry")
 
-/obj/structure/tanning_rack/attackby(atom/A, mob/user)
+/// Old attackby.
+/obj/structure/tanning_rack/proc/interaction_item(mob/user, atom/A, datum/interaction/interaction)
 	if(istype(A, /obj/item/stack/wetleather))
 		if(!drying) // If not drying anything, start drying the thing
 			if(user.unEquip(A, target = src))
@@ -48,9 +49,15 @@
 			PERIODIC_START(src, PERIODIC_SLOW)
 		update_icon()
 		return TRUE
-	return ..()
+	return FALSE
 
-/obj/structure/tanning_rack/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
+	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+)
+
+/// Old attack_hand.
+/obj/structure/tanning_rack/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(drying)
 		var/obj/item/stack/S = drying
 		if(!drying.wetness) // If it's dry, make a stack of dry leather and prepare to put that in their hands
@@ -66,6 +73,7 @@
 			S.forceMove(get_turf(src))
 		drying = null
 		update_icon()
+	return TRUE
 
 /obj/structure/tanning_rack
 	silicon_use = ROBOT_USE_HAND // attack_hand has the adjacency checks

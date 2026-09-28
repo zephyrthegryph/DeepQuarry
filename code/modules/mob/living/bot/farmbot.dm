@@ -360,7 +360,10 @@
 		tank = theTank
 		tank.forceMove(src)
 
-/obj/structure/reagent_dispensers/watertank/attackby(obj/item/S, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/watertank, INTERACT_ITEM(null, PROC_REF(watertank_interaction_item)))
+
+/// Old attackby.
+/obj/structure/reagent_dispensers/watertank/proc/watertank_interaction_item(mob/user, obj/item/S, datum/interaction/interaction)
 	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
 	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
 	var/is_robotic_organ = FALSE
@@ -369,13 +372,14 @@
 		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
 
 	if(!is_robot_arm && !is_robotic_organ)
-		return ..()
+		return FALSE
 
 	to_chat(user, "You add the robot arm to [src].")
 
 	consume(S, user)
 
 	new /obj/item/farmbot_arm_assembly(loc, src)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/farmbot_arm_assembly/attackby(obj/item/W as obj, mob/user as mob)
 	..()

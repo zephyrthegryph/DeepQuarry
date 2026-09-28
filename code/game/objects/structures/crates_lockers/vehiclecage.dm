@@ -37,6 +37,7 @@
 /obj/structure/vehiclecage/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/vehiclecage_hand,
+		/datum/interaction/entry_drag/vehiclecage_load,
 	)
 	..()
 
@@ -84,18 +85,25 @@
 		showcase.layer = src.layer - 0.1
 		underlays += showcase
 
-/obj/structure/vehiclecage/MouseDrop_T(atom/movable/C, mob/user as mob)
+/// Old MouseDrop_T: load a dragged vehicle into the cage.
+/datum/interaction/entry_drag/vehiclecage_load
+	id = "vehiclecage_load"
+	name = "Load vehicle"
+	effect = /obj/structure/vehiclecage/proc/interaction_drag
+
+/obj/structure/vehiclecage/proc/interaction_drag(mob/user, atom/movable/C, datum/interaction/interaction)
 	if(user && (user?.buckled_to() || user.stat || user.restrained() || !Adjacent(user) || !user.Adjacent(C)))
-		return
+		return INTERACTION_HANDLED_PASS
 
 	var/obj/vehicle/V
 	if(istype(C, /obj/vehicle))
 		V = C
 	if(!V)
-		return
+		return INTERACTION_HANDLED_PASS
 
 	if(!my_vehicle)
 		load_vehicle(V, user)
+	return INTERACTION_HANDLED_PASS
 
 /obj/structure/vehiclecage/proc/load_vehicle(obj/vehicle/V, mob/user as mob)
 	if(user)

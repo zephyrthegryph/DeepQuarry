@@ -364,9 +364,13 @@
 	visible_message("\The [user] knocks down \the [src].")
 	replace_with(src, stack_type, 1)
 
-/obj/structure/trailblazer/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/trailblazer/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istext(om_do_after(user, 8 SECONDS, src, src, PROC_REF(knock_down_done), list(user))))
-		return
+		return TRUE
+	return TRUE
 
 /obj/structure/trailblazer/red
 	name = "trail blazer"

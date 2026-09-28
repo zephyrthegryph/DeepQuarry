@@ -23,7 +23,10 @@
 	. = ..()
 	update_icon()
 
-/obj/structure/gootrap/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/gootrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
 		var/victim = english_list(src?.buckled_mob_list())
 		user.visible_message(
@@ -32,7 +35,8 @@
 			)
 		om_do_after(user, 5, target = src, receiver = src, on_done = PROC_REF(attack_hand_gootrap_done), done_args = list(user, victim))
 	else
-		..()
+		return FALSE
+	return TRUE
 
 /obj/structure/gootrap/proc/attack_hand_gootrap_done(mob/user, victim)
 	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))

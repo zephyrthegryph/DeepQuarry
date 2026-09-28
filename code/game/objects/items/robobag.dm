@@ -40,16 +40,22 @@
 
 		add_overlay(corptag_icon_state)
 
-/obj/structure/closet/body_bag/cryobag/robobag/click_alt(mob/user)
+EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
+	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_ITEM(null, PROC_REF(robobag_interaction_item)), \
+)
+
+/// Old click_alt.
+/obj/structure/closet/body_bag/cryobag/robobag/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
-		return ..()
+		return FALSE
 	if(corptag)
 		corptag.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove \the [corptag] from \the [src]."))
 		corptag = null
 		update_icon()
-		return
-	return ..()
+		return TRUE
+	return FALSE
 
 // LIFECYCLE: its corpse tag drops to the floor.
 /obj/structure/closet/body_bag/cryobag/robobag/Destroy()
@@ -71,9 +77,10 @@
 			else
 				H.add_modifier(/datum/modifier/fbp_debug/robobag)
 
-/obj/structure/closet/body_bag/cryobag/robobag/attackby(obj/item/W, mob/user)
+/// Old attackby: while closed, scan the occupant or swap its corporate tag.
+/obj/structure/closet/body_bag/cryobag/robobag/proc/robobag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(opened)
-		..()
+		return FALSE
 	else //Allows the bag to respond to a cyborg analyzer and tag.
 		if(istype(W,/obj/item/robotanalyzer))
 			var/obj/item/robotanalyzer/analyzer = W
@@ -96,7 +103,8 @@
 			update_icon()
 
 		else
-			..()
+			return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /datum/modifier/fbp_debug
 	name = "defragmenting"

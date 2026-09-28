@@ -146,11 +146,15 @@
 		roll_and_drop(get_turf(user))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/structure/sign/poster/attack_hand(mob/user as mob)
+DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/sign/poster/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ruined)
-		return
+		return TRUE
 
 	om_prompt(src, user, list("message" = "Do I want to rip the poster from the wall?", "title" = "You think...", "choices" = list("Yes","No"), "requires" = PROMPT_ADJACENT), PROC_REF(rip_answered))
+	return TRUE
 
 /obj/structure/sign/poster/proc/rip_answered(mob/user, answer, datum/om/prompt/ask)
 	if(answer == "Yes")

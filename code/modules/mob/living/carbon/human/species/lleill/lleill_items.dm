@@ -258,16 +258,20 @@
 		L.teleporters -= src
 	qdel(src)
 
-/obj/structure/glamour_ring/attack_hand(mob/living/M as mob)
+DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/glamour_ring/proc/interaction_hand(mob/living/M, obj/item/held, datum/interaction/interaction)
 
 	var/mob/living/carbon/human/L = connected_mob
 	if(!istype(L))
-		return
+		return TRUE
 
 	if(M == L)
 		om_prompt(src, M, list("message" = "Do you want to destroy the ring, or restore energy?", "title" = "Destroy ring", "choices" = list("Yes", "No", "Restore Energy"), "requires" = PROMPT_ADJACENT), PROC_REF(ring_action_chosen))
 	else
 		om_prompt(src, M, list("message" = "Do you want to destroy the ring, the owner of it may be aware that you have done this?", "title" = "Destroy ring", "choices" = list("Yes", "No"), "requires" = PROMPT_ADJACENT), PROC_REF(ring_action_chosen))
+	return TRUE
 
 /obj/structure/glamour_ring/proc/ring_action_chosen(mob/living/M, m_action, datum/om/prompt/ask)
 	var/mob/living/carbon/human/L = connected_mob

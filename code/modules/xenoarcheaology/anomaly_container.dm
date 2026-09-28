@@ -23,8 +23,12 @@
 /obj/structure/anomaly_container/proc/can_contain(obj/O)
 	return O.is_anomalous()
 
-/obj/structure/anomaly_container/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/structure/anomaly_container, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+
+/// Old attack_hand.
+/obj/structure/anomaly_container/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	release()
+	return TRUE
 
 /obj/structure/anomaly_container/attack_robot(mob/user)
 	if(Adjacent(user))

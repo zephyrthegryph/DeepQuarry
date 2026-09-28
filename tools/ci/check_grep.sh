@@ -359,6 +359,17 @@ if $grep -n "^($i7_converted_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attac
 	echo -e "${RED}ERROR: converted domains take interactions, not handler overrides or object verbs. Declare an interaction with an entry (code/datums/interactions/entries.dm).${NC}"
 	FAILED=1
 fi;
+# Domains whose input handlers are converted but whose object verbs are not yet (I7
+# continues domain by domain): no attackby/attack_hand/attack_self/click_alt/MouseDrop_T
+# overrides on these types. Declare interactions with DECLARE_INTERACTIONS/EXTEND_INTERACTIONS
+# (code/__defines/interactions.dm) instead. The allowlist below must not grow.
+i7_handler_types='/obj/structure'
+i7_handler_allowlist='code/game/objects/structures/medical_stand\.dm'
+if $grep -n "^($i7_handler_types)(/[A-Za-z0-9_]+)*/(attackby|attack_hand|attack_self|click_alt|MouseDrop_T)\(" "${code_files[@]}" | grep -vE "^($i7_allowlist)" | grep -vE "^($i7_handler_allowlist):"; then
+	echo
+	echo -e "${RED}ERROR: converted domains take interactions, not attackby/attack_hand/attack_self/click_alt/MouseDrop_T overrides. Use DECLARE_INTERACTIONS or EXTEND_INTERACTIONS (code/__defines/interactions.dm).${NC}"
+	FAILED=1
+fi;
 if $grep -n '^\s*description_info\s*=' "${code_files[@]}" | grep -E "^($i7_converted_dirs)" | grep -vE "^($i7_allowlist)"; then
 	echo
 	echo -e "${RED}ERROR: description_info in a converted domain. Examine text is generated from the interactions.${NC}"
