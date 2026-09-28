@@ -78,7 +78,7 @@
 		consume(L, 5)
 
 
-/mob/living/simple_mob/slime/xenobio/AltClickOn(atom/movable/A)
+/mob/living/simple_mob/slime/xenobio/action_alternate(atom/movable/A)
 	if(isliving(A) && Adjacent(A))
 		animal_nom(A)
 	else

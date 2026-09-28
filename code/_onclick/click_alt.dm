@@ -1,5 +1,5 @@
-///Main proc for primary alt click
-/mob/proc/AltClickOn(atom/target)
+/// Alternate (default: alt click): the target's click_alt, else the loot panel.
+/mob/proc/action_alternate(atom/target)
 	base_click_alt(target)
 
 /**
@@ -97,8 +97,8 @@
 	panel.open(tile)
 	return TRUE
 
-///Main proc for secondary alt click
-/mob/proc/AltClickSecondaryOn(atom/target)
+/// Secondary alternate (default: alt + right click): the target's click_alt_secondary.
+/mob/proc/action_alternate_secondary(atom/target)
 	base_click_alt_secondary(target)
 
 /**
@@ -134,7 +134,7 @@
 /**
  * ## No-op for unambiguous loot panel bind as a non-living mob.
  **/
-/mob/proc/alt_shift_click_on(atom/target)
+/mob/proc/action_loot(atom/target)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return FALSE
 
@@ -142,7 +142,7 @@
  * ## Bind for unambiguously opening the loot panel as a living mob.
  * This raises no signals and is not meant to have its behavior overridden.
  **/
-/mob/living/alt_shift_click_on(atom/target)
+/mob/living/action_loot(atom/target)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	return try_open_loot_panel_on(target)
 

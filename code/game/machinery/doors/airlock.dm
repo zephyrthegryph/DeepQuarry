@@ -1410,34 +1410,6 @@ About the new airlock wires panel:
 			else
 				to_chat(src, span_filter_notice("Insufficient water reserves."))
 
-/obj/machinery/door/airlock/BorgCtrlShiftClick(mob/living/silicon/robot/user)
-	if(check_access(user.idcard))
-		..()
-
-/obj/machinery/door/airlock/BorgShiftClick(mob/living/silicon/robot/user)  // Opens and closes doors! Forwards to AI code.
-	if(check_access(user.idcard))
-		..()
-
-/obj/machinery/door/airlock/BorgCtrlClick(mob/living/silicon/robot/user) // Bolts doors. Forwards to AI code.
-	if(check_access(user.idcard))
-		..()
-
-/obj/machinery/power/apc/BorgCtrlClick(mob/living/silicon/robot/user) // turns off/on APCs. Forwards to AI code.
-	if(allowed(user))
-		..()
-
-/obj/machinery/turretid/BorgCtrlClick(mob/living/silicon/robot/user) //turret control on/off. Forwards to AI code.
-	if(allowed(user))
-		..()
-
-/obj/machinery/door/airlock/BorgAltClick(mob/living/silicon/robot/user) // Eletrifies doors. Forwards to AI code.
-	if(check_access(user.idcard))
-		..()
-
-/obj/machinery/turretid/BorgAltClick(mob/living/silicon/robot/user) //turret lethal on/off. Forwards to AI code.
-	if(allowed(user))
-		..()
-
 // Old attack_robot overrides: a cyborg with access interfaces remotely as the AI does
 // (FALSE: the robot adapter's default); without it, only by hand from next to it.
 // atmos_control.dm, robot.dm and turret_control.dm declare these types' other interactions;

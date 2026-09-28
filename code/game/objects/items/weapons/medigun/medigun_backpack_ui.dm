@@ -144,7 +144,7 @@
 			update_icon()
 			return TRUE
 
-/obj/item/medigun_backpack/ShiftClick(mob/user)
+/obj/item/medigun_backpack/inspected_by(mob/user)
 	. = ..()
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(!medigun)

@@ -31,69 +31,77 @@
 	actor_use(/datum/input_adapter/ai, src, A)
 
 /*
-	Since the AI handles shift, ctrl, and alt-click differently
-	than anything else in the game, atoms have separate procs
-	for AI shift, ctrl, and alt clicking.
+	The AI's modifier actions: a target's silicon hook first (silicon_* below), then
+	what any mob's action does.
 */
-
-/mob/living/silicon/ai/ShiftClickOn(atom/A)
-	if(!control_disabled && A.AIShiftClick(src))
+/mob/living/silicon/ai/action_inspect(atom/A)
+	if(!control_disabled && A.silicon_inspect(src))
 		return
 	..()
 
-/mob/living/silicon/ai/CtrlClickOn(atom/A)
-	if(!control_disabled && A.ctrl_click_ai(src))
+/mob/living/silicon/ai/action_pull(atom/A)
+	if(!control_disabled && A.silicon_pull(src))
 		return
 	..()
 
-/mob/living/silicon/ai/AltClickOn(atom/A)
-	if(!control_disabled && A.AIAltClick(src))
+/mob/living/silicon/ai/action_alternate(atom/A)
+	if(!control_disabled && A.silicon_alternate(src))
 		return
 	..()
 
-/mob/living/silicon/ai/MiddleClickOn(atom/A)
-	if(!control_disabled && A.AIMiddleClick(src))
+/mob/living/silicon/ai/action_swap_hands(atom/A)
+	if(!control_disabled && A.silicon_swap_hands(src))
 		return
 	..()
 
 /*
-	The following criminally helpful code is just the previous code cleaned up;
-	I have no idea why it was in atoms.dm instead of respective files.
+	Silicon action hooks: what a target does when the AI or a cyborg runs a modifier
+	action on it (remote door, APC and turret controls). One hook per action, shared
+	by both actors; a hook returns TRUE when it handled the action, so the actor's
+	ordinary action is skipped.
 */
 
-/atom/proc/AIclick_ctrl_shift()
-	return
+/// Inspect (default: shift-click).
+/atom/proc/silicon_inspect(mob/living/silicon/user)
+	return FALSE
 
-/atom/proc/AIShiftClick()
-	return
+/// Pull (default: ctrl-click).
+/atom/proc/silicon_pull(mob/living/silicon/user)
+	return FALSE
 
-/obj/machinery/door/airlock/AIShiftClick(mob/user)  // Opens and closes doors!
+/// Alternate (default: alt-click). By default the ordinary click_alt.
+/atom/proc/silicon_alternate(mob/living/silicon/user)
+	return click_alt(user)
+
+/// Swap hands (default: middle-click). The AI only; cyborgs cycle modules instead.
+/atom/proc/silicon_swap_hands(mob/living/silicon/user)
+	return FALSE
+
+/// Quick (default: ctrl-shift-click). Cyborgs only; the AI uses the ordinary click_ctrl_shift.
+/atom/proc/silicon_quick(mob/living/silicon/user)
+	return click_ctrl_shift(user)
+
+/// A cyborg without the airlock's access can't use its remote controls. (The AI always can.)
+/obj/machinery/door/airlock/proc/silicon_denied(mob/living/silicon/user)
+	return isrobot(user) && !check_access(user.idcard)
+
+/obj/machinery/door/airlock/silicon_inspect(mob/living/silicon/user) // Opens and closes doors!
+	if(silicon_denied(user))
+		return TRUE
 	add_fingerprint(user)
 	user_toggle_open(user)
-	return 1
-
-/atom/proc/ctrl_click_ai(mob/user)
-	return
-
-/obj/machinery/door/airlock/ctrl_click_ai(mob/user) // Bolts doors
-	add_fingerprint(user)
-	toggle_bolt(user)
-	return 1
-
-/obj/machinery/power/apc/ctrl_click_ai(mob/user) // turns off/on APCs.
-	add_fingerprint(user)
-	toggle_breaker()
-	return 1
-
-/obj/machinery/turretid/ctrl_click_ai() //turns off/on Turrets
-	enabled = !enabled
-	updateTurrets()
 	return TRUE
 
-/atom/proc/AIAltClick(atom/A)
-	return click_alt(A)
+/obj/machinery/door/airlock/silicon_pull(mob/living/silicon/user) // Bolts doors
+	if(silicon_denied(user))
+		return TRUE
+	add_fingerprint(user)
+	toggle_bolt(user)
+	return TRUE
 
-/obj/machinery/door/airlock/AIAltClick(mob/user) // Electrifies doors.
+/obj/machinery/door/airlock/silicon_alternate(mob/living/silicon/user) // Electrifies doors.
+	if(silicon_denied(user))
+		return TRUE
 	add_fingerprint(user)
 	if(electrified_until)
 		electrify(0, 1)
@@ -104,20 +112,12 @@
 	var/image/client_only/electrify_notice/zap = new('icons/hud/screen_gen.dmi', root_turf, electrified_until ? "stamina_crit" : "stamina_dead", OBFUSCATION_LAYER, SOUTH)
 	zap.place_from_root(root_turf)
 	zap.append_client(user.client)
-	return 1
-
-/obj/machinery/turretid/AIAltClick() //toggles lethal on turrets
-	if(lethal_is_configurable)
-		lethal = !lethal
-		updateTurrets()
 	return TRUE
 
-/atom/proc/AIMiddleClick(mob/living/silicon/user)
-	return 0
+/obj/machinery/door/airlock/silicon_quick(mob/living/silicon/user) // Nothing, for cyborgs with or without access.
+	return TRUE
 
-/obj/machinery/door/airlock/AIMiddleClick(mob/user) // Toggles door bolt lights.
-	if(..())
-		return
+/obj/machinery/door/airlock/silicon_swap_hands(mob/living/silicon/user) // Toggles door bolt lights.
 	add_fingerprint(user)
 	if(wires.is_cut(WIRE_BOLT_LIGHT))
 		to_chat(user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
@@ -125,6 +125,28 @@
 	lights = !lights
 	to_chat(user, span_notice("Lights are now [lights ? "on." : "off."]"))
 	update_icon()
+	return TRUE
+
+/obj/machinery/power/apc/silicon_pull(mob/living/silicon/user) // turns off/on APCs.
+	if(isrobot(user) && !allowed(user))
+		return TRUE
+	add_fingerprint(user)
+	toggle_breaker()
+	return TRUE
+
+/obj/machinery/turretid/silicon_pull(mob/living/silicon/user) //turns off/on Turrets
+	if(isrobot(user) && !allowed(user))
+		return TRUE
+	enabled = !enabled
+	updateTurrets()
+	return TRUE
+
+/obj/machinery/turretid/silicon_alternate(mob/living/silicon/user) //toggles lethal on turrets
+	if(isrobot(user) && !allowed(user))
+		return TRUE
+	if(lethal_is_configurable)
+		lethal = !lethal
+		updateTurrets()
 	return TRUE
 
 //

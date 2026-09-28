@@ -79,7 +79,7 @@
 	else
 		. = ..()
 
-/mob/living/simple_mob/vore/morph/ShiftClickOn(atom/movable/A)
+/mob/living/simple_mob/vore/morph/action_inspect(atom/movable/A)
 	if(Adjacent(A))
 		if(COOLDOWN_FINISHED(src, morph_time) && !stat)
 			if(A == src)

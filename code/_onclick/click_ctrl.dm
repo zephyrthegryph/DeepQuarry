@@ -1,7 +1,5 @@
-/**
- * Ctrl click
- */
-/mob/proc/CtrlClickOn(atom/A)
+/// Pull (default: ctrl click): the target's click_ctrl, else pull it.
+/mob/proc/action_pull(atom/A)
 	base_click_ctrl(A)
 
 /**
@@ -38,15 +36,12 @@
 	. = TRUE
 	pulled(target)
 
-/**
- * Ctrl mouse wheel click
- * Except for tagging datumns same as control click
- */
-/mob/proc/CtrlMiddleClickOn(atom/A)
+/// Tag (default: ctrl + middle click): admins tag the datum; others Pull.
+/mob/proc/action_tag(atom/A)
 	if(check_rights_for(client, R_ADMIN))
 		client.toggle_tag_datum(A)
 		return
-	CtrlClickOn(A)
+	action_pull(A)
 
 /**
  * ## Custom ctrl click interaction
@@ -67,11 +62,8 @@
 /turf/click_ctrl(mob/user)
 	user.stop_pulling()
 
-/**
- * Control+Shift click
- * Unused except for AI
- */
-/mob/proc/CtrlShiftClickOn(atom/A)
+/// Quick (default: ctrl + shift click): the target's click_ctrl_shift.
+/mob/proc/action_quick(atom/A)
 	base_click_ctrl_shift(A)
 
 /**

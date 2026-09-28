@@ -157,7 +157,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 	description_info = initial(description_info)
 	return TRUE
 
-/obj/item/mail/blank/ShiftClick(mob/user)
+/obj/item/mail/blank/inspected_by(mob/user)
 	..()
 	if(!sealed)
 		om_ask(user, /datum/om/prompt/text, PROC_REF(sender_named), title = "Name", message = "Write name", default = user.name, ask_flags = ASK_CARRIED | ASK_CAPABLE)

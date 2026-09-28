@@ -160,7 +160,9 @@
 	playsound(src, 'sound/machines/click.ogg', 40, 1)
 	update_icon()
 
-/obj/machinery/appliance/ctrl_click_ai(mob/user)
+/obj/machinery/appliance/silicon_pull(mob/living/silicon/user)
+	if(!isAI(user))
+		return FALSE
 	attempt_toggle_power(user)
 
 /obj/machinery/appliance/proc/choose_output(mob/user, new_output)
