@@ -14,6 +14,9 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 
 	var/static/mutable_appearance/normal_space
 	var/static/list/dust_cache = list()
+	/// dust_cache as a flat list: dust_by_index[n + 1] is dust_cache["[n]"]. Space turfs
+	/// pick one each at map load, so the index skips building a string key per turf.
+	var/static/list/dust_by_index = list()
 	var/static/list/speedspace_cache = list()
 	var/static/list/mapedge_cache = list()
 	var/static/list/phase_shift_by_x = list()
@@ -50,6 +53,7 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 		MA.add_overlay(im)
 
 		dust_cache["[i]"] = MA
+		dust_by_index += MA
 
 	//Moving
 	for (var/i in 0 to 14)

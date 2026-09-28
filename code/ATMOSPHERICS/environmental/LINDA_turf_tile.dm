@@ -50,7 +50,12 @@
 			// Space and transit hold nothing but vacuum, so they all share one
 			// cached immutable mixture instead of a mixture (and Rust arena slot)
 			// each. The arena drops writes to it; Destroy() must never qdel it.
-			air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+			// Type-table fact: one lookup by the gas string, not a "[string]-[type]" key built per turf.
+			var/static/list/immutable_air = list()
+			air = immutable_air[initial_gas_mix]
+			if(!air)
+				air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+				immutable_air[initial_gas_mix] = air
 		else
 			air = create_gas_mixture()
 		if(planetary_atmos)

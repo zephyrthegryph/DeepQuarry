@@ -31,7 +31,8 @@ for lint in \
 	silent_catch_lint.py \
 	ownership_cycle_lint.py \
 	handle_kinds_lint.py \
-	subsystem_fire_lint.py; do
+	subsystem_fire_lint.py \
+	init_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")
