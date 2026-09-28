@@ -66,7 +66,7 @@ REF_SPILL(/obj/machinery/power/fusion_core, "material_sample")
 
 /// Runs its field while it has one; shut down, it sleeps until Startup().
 /obj/machinery/power/fusion_core/machine_step()
-	if((stat & BROKEN) || !powernet || !owned_field)
+	if((stat & BROKEN) || !power_region || !owned_field)
 		Shutdown()
 		return PROCESS_KILL
 

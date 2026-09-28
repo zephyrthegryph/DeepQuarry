@@ -53,7 +53,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	var/poison_per_bite = 5 //grubs cause a shock when they bite someone
 	var/poison_type = REAGENT_ID_SHOCKCHEM
 	var/poison_chance = 50
-	var/datum/powernet/PN            // Our powernet
+	var/PN = 0            // The power region we sink from
 	var/obj/structure/cable/attached        // the attached cable
 	var/shock_chance = 10 // Beware
 	var/powerdraw = 100000
@@ -89,11 +89,11 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 				sparks.set_up(5, 0, get_turf(self))
 				sparks.start()
 			self.anchored = TRUE
-			self.PN = self.attached.get_powernet()
-			self.PN.draw_power(self.powerdraw)
+			self.PN = self.attached.get_power_region()
+			power_draw(self.PN, self.powerdraw)
 			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
 			var/apc_drain_rate = 750 //Going to see if grubs are better as a minimal bother. previous value : 4000
-			for(var/obj/machinery/power/terminal/T in self.PN.nodes)
+			for(var/obj/machinery/power/terminal/T in power_grid_nodes(self.PN))
 				if(istype(T.master(), /obj/machinery/power/apc))
 					var/obj/machinery/power/apc/A = T.master()
 					if(A.operating && A.cell)
@@ -102,10 +102,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 						A.cell.use(drain_val * CELLRATE)
 		else if(!self.attached && self.anchored)
 			self.anchored = FALSE
-			self.PN = null
+			self.PN = 0
 		if(prob(1) && self.charge >= 32000 && self.can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
 			self.anchored = 0
-			self.PN = null
+			self.PN = 0
 			self.release_vore_contents()
 			if(self.prey_excludes)
 				self.prey_excludes.Cut()
@@ -204,4 +204,4 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 		"The solargrub chitters in irritation at your continued solidity, followed by a string of crushingly tight stomach clenches that grind its caustic stomach ooze into your body!",
 		"The deceptively severe heat trapped within the solargrub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!")
 
-REF_HELD(/mob/living/simple_mob/vore/solargrub, list("PN", "attached"))
+REF_HELD(/mob/living/simple_mob/vore/solargrub, list("attached"))

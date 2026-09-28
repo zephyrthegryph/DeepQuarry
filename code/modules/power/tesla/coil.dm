@@ -172,12 +172,12 @@
 
 //Unused.
 /obj/machinery/power/tesla_coil/proc/zap(power, explosive, current_jumps)
-	if(!COOLDOWN_FINISHED(src, zap_cooldown_until) || !powernet)
+	if(!COOLDOWN_FINISHED(src, zap_cooldown_until) || !power_region)
 		return FALSE
 	COOLDOWN_START(src, zap_cooldown_until, zap_cooldown)
 	var/coeff = (20 - ((input_power_multiplier - 1) * 3))
 	coeff = max(coeff, 10)
-	power = (powernet.avail/2)
+	power = (power_avail(power_region)/2)
 	draw_power(power)
 	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
 	tesla_zap(src, zap_range, power/(coeff/2), current_jumps = current_jumps)

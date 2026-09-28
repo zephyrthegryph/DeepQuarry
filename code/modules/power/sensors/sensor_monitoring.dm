@@ -27,12 +27,12 @@
 		update_icon()
 	var/list/dependencies = list()
 	for(var/obj/machinery/power/sensor/S as anything in weak_list_live(power_monitor.grid_sensors))
-		if(S.powernet)
-			dependencies[S.powernet] = TRUE
+		if(S.power_region)
+			dependencies[S] = TRUE
 	if(length(dependencies))
 		var/list/keys = list()
-		for(var/datum/powernet/PN as anything in dependencies)
-			keys += list(PN, CHANGE_POWERNET_STATE)
+		for(var/obj/machinery/power/sensor/S as anything in dependencies)
+			keys += list(S, CHANGE_POWER_GRID_STATE)
 		sleep_until_keys(keys)
 		return PROCESS_KILL
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.

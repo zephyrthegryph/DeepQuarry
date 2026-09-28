@@ -15,7 +15,7 @@
 //     `vg_power_bind_cable`/`vg_power_bind_machine` (topology is not a
 //     component: it is a network node's cell, not a field);
 //   - a region's numbers are read with `vg_power_region_read`, polled by
-//     `/datum/powernet` instead of pushed by an event stream (a
+//     `power_grid_refresh()` (power_grid.dm) instead of pushed by an event stream (a
 //     `POWER_EV_REGION` per step is gone with `PowerHost`).
 // There is no DM topology code: no flood fills, merges or rebuilds, and no
 // `power_key`/edit queue -- a bound atom's `vg_entity` (or, for a cable,
@@ -23,32 +23,18 @@
 // needs.
 
 /datum/world_service/machines
-	/// Region id (Rust's raw handle bits + 1) -> its /datum/powernet. An alist:
-	/// the ids are numbers, and a plain list would treat them as positions.
-	var/alist/power_regions = alist()
+	/// Region id (Rust's raw handle bits + 1; negative for detached test
+	/// grids) -> its flat state list (power_grid.dm). An alist: the ids are
+	/// numbers, and a plain list would treat them as positions.
+	var/alist/power_grids = alist()
+	/// Region id -> /datum/material_power_overlay, for regions holding an engineered conductor.
+	var/alist/power_material_overlays = alist()
+	/// Last id handed to a detached test grid (counts down from 0).
+	var/power_test_grid_serial = 0
 	/// Areas whose static or one-off loads changed since the last step.
 	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
 	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
-
-/// The /datum/powernet for region `id`, made on first use.
-/datum/world_service/machines/proc/power_facade(id)
-	if(!id)
-		return null
-	var/datum/powernet/network = power_regions[id]
-	if(network)
-		return network
-	network = new(id)
-	power_regions[id] = network
-	network.refresh()
-	return network
-
-/// The region an already-bound entity's node is on, or null.
-/datum/world_service/machines/proc/power_region_of(entity)
-	if(!entity)
-		return null
-	var/id = vg_power_region_of(entity)
-	return id ? power_facade(id) : null
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
@@ -73,26 +59,20 @@
 /// One power step: send area loads, commit topology, refresh every known
 /// region's numbers and the machines/material overlay that read them.
 /// Rust's own tick (`SSvg.fire()`) runs independently -- this only
-/// publishes its results to DM's own cache (`/datum/powernet`) and drives
-/// the machinery-tick-cadence bookkeeping (SMES icons, APC displays) that
-/// isn't itself simulated in Rust.
+/// publishes its results to DM's cache (`power_grids`) and drives the
+/// machinery-tick-cadence bookkeeping (SMES icons, APC displays) that isn't
+/// itself simulated in Rust.
 /datum/world_service/machines/proc/process_power()
 	power_flush_areas()
 	vg_power_commit()
-	for(var/obj/structure/cable/cable as anything in power_material_cables)
-		if(QDELETED(cable))
-			power_material_cables -= cable
+	for(var/id in power_grids)
+		if(!power_grid_refresh(id))
+			power_grids -= id
 			continue
-		cable.get_powernet()?.material_candidate = TRUE
-	for(var/id in power_regions)
-		var/datum/powernet/network = power_regions[id]
-		network.refresh()
-	// Every power machine's `powernet` var is polled here, not pushed --
+		power_grid_sync_problem(id)
+	// Every power machine's `power_region` is polled here, not pushed --
 	// a deferred `connect_to_network(FALSE)` (map load, and every
-	// `power_autoconnect()`) relies on this to eventually resolve. APC
-	// and SMES also refresh their own network below (bundled with their
-	// other per-tick bookkeeping); refreshing them again here is a no-op
-	// (`power_bind()` short-circuits when the region hasn't changed).
+	// `power_autoconnect()`) relies on this to eventually resolve.
 	for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
 		if(!QDELETED(machine))
 			machine.power_refresh_network()
@@ -100,22 +80,28 @@
 		apc.power_poll()
 	for(var/obj/machinery/power/smes/storage as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
 		storage.power_poll()
-	for(var/id in power_regions)
-		var/datum/powernet/network = power_regions[id]
-		if(network.material_candidate || network.material_graph)
-			network.process_material_network()
-		if(network.is_empty())
-			power_regions -= id
-			qdel(network)
+	for(var/obj/structure/cable/cable as anything in power_material_cables)
+		if(QDELETED(cable))
+			power_material_cables -= cable
+			continue
+		var/id = cable.get_power_region()
+		if(id && !power_material_overlays[id])
+			power_material_overlays[id] = new /datum/material_power_overlay(id)
+	for(var/id in power_material_overlays)
+		var/datum/material_power_overlay/overlay = power_material_overlays[id]
+		if(!power_grids[id] || !overlay.process_material_network())
+			power_material_overlays -= id
+			qdel(overlay)
 
 /// Clears every DM-side power cache and re-registers every cable, power
 /// machine, APC and SMES (admin repair): unbinds and rebinds every
 /// `vg_entity` a power object holds, so a divergence from Rust's own state
 /// cannot survive it.
 /datum/world_service/machines/proc/power_reregister_all()
-	for(var/id in power_regions)
-		qdel(power_regions[id])
-	power_regions = alist()
+	for(var/id in power_material_overlays)
+		qdel(power_material_overlays[id])
+	power_material_overlays = alist()
+	power_grids = alist()
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))
 		cable.power_unregister()
 		cable.power_register()

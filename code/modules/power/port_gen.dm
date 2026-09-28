@@ -41,7 +41,7 @@
 	MACHINE_WAKE(src)
 
 /obj/machinery/power/port_gen/machine_step()
-	if(active && HasFuel() && !IsBroken() && anchored && powernet)
+	if(active && HasFuel() && !IsBroken() && anchored && power_region)
 		set_power_supply(power_gen * power_output)
 		UseFuel()
 	else
@@ -404,12 +404,12 @@
 	data["fuel_usage"] = active ? round((power_output / time_per_sheet) * 1000) : 0
 
 	data["anchored"] = anchored
-	data["connected"] = (powernet == null ? 0 : 1)
+	data["connected"] = (power_region ? 1 : 0)
 	data["ready_to_boot"] = anchored && HasFuel()
 	data["power_generated"] = DisplayPower(power_gen)
 	data["power_output"] = DisplayPower(power_gen * power_output)
 	data["unsafe_output"] = power_output > max_safe_output
-	data["power_available"] = (powernet == null ? 0 : DisplayPower(avail()))
+	data["power_available"] = (!power_region ? 0 : DisplayPower(avail()))
 	data["temperature_current"] = temperature
 	data["temperature_max"] = max_temperature
 	data["temperature_overheat"] = overheating

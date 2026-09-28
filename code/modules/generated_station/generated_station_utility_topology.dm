@@ -122,7 +122,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
 	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		if(!QDELETED(generator) && !(generator.stat & BROKEN) && generator.powernet)
+		if(!QDELETED(generator) && !(generator.stat & BROKEN) && generator.power_region)
 			has_source = TRUE
 			break
 	for(var/obj/machinery/power/smes/SMES in power_objects)
@@ -131,7 +131,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 		if(QDELETED(SMES) || (SMES.stat & BROKEN) || SMES.charge <= 0)
 			continue
 		for(var/obj/machinery/power/terminal/terminal in SMES.terminals)
-			if(terminal.powernet)
+			if(terminal.power_region)
 				has_source = TRUE
 				break
 		if(has_source)
@@ -139,7 +139,7 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	if(!has_source)
 		return FALSE
 	for(var/obj/machinery/power/apc/APC in apcs)
-		if(!QDELETED(APC) && !(APC.stat & BROKEN) && APC.cell && APC.terminal?.powernet)
+		if(!QDELETED(APC) && !(APC.stat & BROKEN) && APC.cell && APC.terminal?.power_region)
 			return TRUE
 	return FALSE
 
@@ -150,27 +150,27 @@ REF_OWNED_LIST(/datum/generated_station_utility_topology, list("power_objects", 
 	return FALSE
 
 /datum/generated_station_utility_topology/proc/power_network_is_global()
-	var/datum/powernet/shared
+	var/shared = 0
 	for(var/obj/machinery/power/apc/APC in apcs)
-		if(!APC.terminal?.powernet)
+		if(!APC.terminal?.power_region)
 			return FALSE
 		if(!shared)
-			shared = APC.terminal.powernet
-		else if(APC.terminal.powernet != shared)
+			shared = APC.terminal.power_region
+		else if(APC.terminal.power_region != shared)
 			return FALSE
 	if(!shared)
 		return FALSE
 	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		if(generator.powernet == shared)
+		if(generator.power_region == shared)
 			return TRUE
 	return FALSE
 
 /datum/generated_station_utility_topology/proc/power_network_summary()
 	var/list/parts = list()
 	for(var/obj/machinery/power/apc/APC in apcs)
-		parts += "APC@[generated_station_coordinate(APC)] terminal=[generated_station_coordinate(APC.terminal)] network=[APC.terminal?.powernet ? REF(APC.terminal.powernet) : "null"]"
+		parts += "APC@[generated_station_coordinate(APC)] terminal=[generated_station_coordinate(APC.terminal)] network=[APC.terminal?.power_region ? APC.terminal.power_region : "null"]"
 	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		parts += "generator@[generated_station_coordinate(generator)] network=[generator.powernet ? REF(generator.powernet) : "null"]"
+		parts += "generator@[generated_station_coordinate(generator)] network=[generator.power_region ? generator.power_region : "null"]"
 	return jointext(parts, "; ")
 
 /datum/generated_station_utility_topology/proc/atmosphere_networks_are_global()

@@ -294,14 +294,14 @@ REF_OWNED(/obj/machinery/power/generator, "soundloop")
 	update_icon()
 
 /obj/machinery/power/generator/power_spike(announce_prob = 30)
-	if(!(effective_gen >= max_power / 2 && powernet)) // Don't make a spike if we're not making a whole lot of power.
+	if(!(effective_gen >= max_power / 2 && power_region)) // Don't make a spike if we're not making a whole lot of power.
 		return
 
-	var/list/powernet_union = LAZYCOPY(powernet.nodes)
-	for(var/obj/machinery/power/terminal/T in powernet.nodes)
+	var/list/powernet_union = LAZYCOPY(power_grid_nodes(power_region))
+	for(var/obj/machinery/power/terminal/T in power_grid_nodes(power_region))
 		if(T.master() && istype(T.master(), /obj/machinery/power/smes))
 			var/obj/machinery/power/smes/S = T.master()
-			if(length(S.powernet.nodes)) powernet_union |= S.powernet.nodes
+			if(length(power_grid_nodes(S.power_region))) powernet_union |= power_grid_nodes(S.power_region)
 
 	var/found_grid_checker = FALSE
 	for(var/obj/machinery/power/grid_checker/G in powernet_union)

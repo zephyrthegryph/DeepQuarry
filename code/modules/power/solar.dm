@@ -147,7 +147,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 		return 0
 	if(!GLOB.sun || !control())
 		return 0  //if there's no sun or the panel is not linked to a solar control computer, no need to proceed
-	if(!powernet || powernet != control().powernet)
+	if(!power_region || power_region != control().power_region)
 		return 0 // We aren't connected to the controller
 	if(obscured)
 		return 0 //get no light from the sun, so don't generate power
@@ -368,13 +368,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 /obj/machinery/power/solar_control/connect_to_network(bind_now = TRUE)
 	var/to_return = ..()
-	if(powernet) //if connected and not already in solar_list...
+	if(power_region) //if connected and not already in solar_list...
 		registry_join(REGISTRY_SOLAR_CONTROLS, src) //... add it
 		needs_panel_check = TRUE
 	return to_return
 
-/obj/machinery/power/solar_control/power_network_changed(datum/powernet/old, datum/powernet/network)
-	if(network)
+/obj/machinery/power/solar_control/power_network_changed(old_region, new_region)
+	if(new_region)
 		registry_join(REGISTRY_SOLAR_CONTROLS, src)
 	else
 		registry_leave(REGISTRY_SOLAR_CONTROLS, src)
@@ -382,8 +382,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 //search for unconnected panels and trackers in the computer powernet and connect them
 /obj/machinery/power/solar_control/proc/search_for_connected()
-	if(powernet)
-		for(var/obj/machinery/power/M in powernet.nodes)
+	if(power_region)
+		for(var/obj/machinery/power/M in power_grid_nodes(power_region))
 			if(istype(M, /obj/machinery/power/solar))
 				var/obj/machinery/power/solar/S = M
 				if(!S.control() && S.set_control(src)) //i.e unconnected
@@ -489,7 +489,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		return
 
 	if(connected_tracker()) //NOTE : handled here so that we don't add trackers to the processing list
-		if(connected_tracker().powernet != powernet)
+		if(connected_tracker().power_region != power_region)
 			connected_tracker().unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
@@ -500,7 +500,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 	if(needs_panel_check)
 		for(var/obj/machinery/power/solar/S in connected_panels)
-			if (S.powernet != powernet)
+			if (S.power_region != power_region)
 				S.unset_control()
 	set_power_supply(connected_power)
 	return PROCESS_KILL

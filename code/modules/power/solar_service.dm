@@ -33,7 +33,7 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		current_run.len--
 
 		// Controllers with no network are ignored
-		if(!SC.powernet)
+		if(!SC.power_region)
 			registry_leave(REGISTRY_SOLAR_CONTROLS, SC)
 			if(TICK_CHECK)
 				return FALSE

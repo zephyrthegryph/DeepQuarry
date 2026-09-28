@@ -54,7 +54,7 @@
 	//set icon dir to show sun illumination
 	set_dir(turn(NORTH, -angle - 22.5))	// 22.5 deg bias ensures, e.g. 67.5-112.5 is EAST
 
-	if(powernet && (powernet == control().powernet)) //update if we're still in the same powernet
+	if(power_region && (power_region == control().power_region)) //update if we're still in the same grid
 		control().cdir = angle
 
 /obj/machinery/power/tracker/crowbar_act(mob/user, obj/item/W)

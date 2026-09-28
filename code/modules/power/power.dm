@@ -10,9 +10,9 @@
 	name = null
 	icon = 'icons/obj/power.dmi'
 	anchored = TRUE
-	/// The network this machine is on (rust_architecture.md step 3: polled
-	/// from Rust, not pushed), or null.
-	var/datum/powernet/powernet = null
+	/// The Rust power region this machine's node is on (polled, not pushed;
+	/// power_grid.dm), or 0.
+	var/power_region = 0
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 	active_power_usage = 0
@@ -62,14 +62,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(drain_check)
 		return 1
 
-	if(powernet && powernet.avail)
-		powernet.trigger_warning()
-		return powernet.draw_power(amount, src)
+	if(power_region && power_avail(power_region))
+		power_warn(power_region)
+		return power_draw(power_region, amount, src)
 
 /// Supply for the next power step only (pulse sources: coils, collectors,
 /// fusion). A producer that runs every tick calls it every tick, as before.
 /obj/machinery/power/proc/add_avail(amount)
-	if(!powernet || amount <= 0 || !vg_entity)
+	if(!power_region || amount <= 0 || !vg_entity)
 		return FALSE
 	set_pulse(amount)
 	return TRUE
@@ -88,27 +88,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	set_power_supply(0)
 
 /obj/machinery/power/proc/draw_power(amount)
-	if(powernet)
-		return powernet.draw_power(amount, src)
-	return 0
+	return power_draw(power_region, amount, src)
 
 /obj/machinery/power/proc/surplus()
-	if(powernet)
-		return powernet.avail-powernet.load
-	else
-		return 0
+	return power_netexcess(power_region)
 
 /obj/machinery/power/proc/avail()
-	if(powernet)
-		return powernet.avail
-	else
-		return 0
+	return power_avail(power_region)
 
 /obj/machinery/power/proc/viewload()
-	if(powernet)
-		return powernet.viewload
-	else
-		return 0
+	return power_view_load(power_region)
 
 /obj/machinery/power/proc/disconnect_terminal(obj/machinery/power/terminal/term) // machines without a terminal will just return, no harm no fowl.
 	return
@@ -117,13 +106,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /// there. Returns TRUE when that put it on a network. Without `bind_now` the
 /// next power step binds it (map load).
 /obj/machinery/power/proc/connect_to_network(bind_now = TRUE)
-	if(powernet && vg_entity)
+	if(power_region && vg_entity)
 		return TRUE
 	if(!power_send_node())
 		return FALSE
 	if(bind_now)
 		power_bind_now()
-	return !!powernet
+	return !!power_region
 
 /// Sends this machine's node (its turf) to Rust; it joins the knots there.
 /// A no-op (not an error) before `vg_entity` exists: several subtypes call
@@ -156,7 +145,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	power_refresh_network()
 
 /// Re-reads which region (if any) this machine's node is on right now and
-/// updates `powernet` if it changed. A machine alone on its own singleton
+/// updates `power_region` if it changed. A machine alone on its own singleton
 /// region (no cable reached it) reads as unconnected, as before.
 /obj/machinery/power/proc/power_refresh_network()
 	var/id = vg_entity ? vg_power_region_of(vg_entity) : 0
@@ -168,23 +157,24 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(!vg_entity)
 		return FALSE
 	vg_power_unbind_node(vg_entity)
-	var/was = !!powernet
+	var/was = !!power_region
 	power_bind(0)
 	return was
 
 /// The machine's node is (or isn't) on region `region_id` now.
 /obj/machinery/power/proc/power_bind(region_id)
-	var/datum/powernet/network = region_id ? GLOB.machine_service.power_facade(region_id) : null
-	if(network == powernet)
+	if(region_id == power_region)
+		// Still re-join a grid list reset under us (admin re-register).
+		if(region_id && !(src in power_grid_nodes(region_id)))
+			power_grid_move_node(src, 0, region_id)
 		return
-	var/datum/powernet/old = powernet
-	powernet = network
-	old?.unbind_machine(src)
-	network?.bind_machine(src)
-	power_network_changed(old, network)
+	var/old = power_region
+	power_region = region_id
+	power_grid_move_node(src, old, region_id)
+	power_network_changed(old, region_id)
 
 /// Hook: the machine moved to another network (or off one).
-/obj/machinery/power/proc/power_network_changed(datum/powernet/old, datum/powernet/network)
+/obj/machinery/power/proc/power_network_changed(old_region, new_region)
 	return
 
 // attach a wire to a power machine - leads from the turf you are standing on
@@ -234,7 +224,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
 //Determines how strong could be shock, deals damage to mob, uses power.
 //M is a mob who touched wire/whatever
-//power_source is a source of electricity, can be powercell, area, apc, cable, powernet or null
+//power_source is a source of electricity, can be powercell, area, apc, cable, a power machine, a power region id or null
 //source is an object caused electrocuting (airlock, grille, etc)
 //No animations will be performed by this proc.
 /proc/electrocute_mob(mob/living/M as mob, power_source, obj/source, siemens_coeff = 1.0)
@@ -244,31 +234,32 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(istype(power_source,/area))
 		source_area = power_source
 		power_source = source_area.get_apc()
+	var/region = 0
+	var/obj/item/cell/cell
 	if(istype(power_source,/obj/structure/cable))
 		var/obj/structure/cable/Cable = power_source
-		power_source = Cable.get_powernet()
-
-	var/datum/powernet/PN
-	var/obj/item/cell/cell
-
-	if(istype(power_source,/datum/powernet))
-		PN = power_source
+		region = Cable.get_power_region()
+	else if(istype(power_source,/obj/machinery/power))
+		var/obj/machinery/power/P = power_source
+		if(istype(P, /obj/machinery/power/apc))
+			var/obj/machinery/power/apc/apc = P
+			cell = apc.cell
+			region = apc.terminal?.power_region
+		else
+			region = P.power_region
 	else if(istype(power_source,/obj/item/cell))
 		cell = power_source
-	else if(istype(power_source,/obj/machinery/power/apc))
-		var/obj/machinery/power/apc/apc = power_source
-		cell = apc.cell
-		if (apc.terminal)
-			PN = apc.terminal.powernet
+	else if(isnum(power_source))
+		region = power_source
 	else if (!power_source)
 		return 0
 	else
 		log_admin("ERROR: /proc/electrocute_mob([M], [power_source], [source]): wrong power_source")
 		return 0
-	//Triggers powernet warning, but only for 5 ticks (if applicable)
+	//Triggers a grid warning, but only for 5 ticks (if applicable)
 	//If following checks determine user is protected we won't alarm for long.
-	if(PN)
-		PN.trigger_warning(5)
+	if(region)
+		power_warn(region, 5)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 		if(H.species.siemens_coefficient <= 0)
@@ -278,35 +269,27 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 			if(G.siemens_coefficient == 0)	return 0		//to avoid spamming with insulated glvoes on
 	//Checks again. If we are still here subject will be shocked, trigger standard 20 tick warning
 	//Since this one is longer it will override the original one.
-	if(PN)
-		PN.trigger_warning()
+	if(region)
+		power_warn(region)
 
-	if (!cell && !PN)
+	if (!cell && !region)
 		return 0
-	var/PN_damage = 0
-	var/cell_damage = 0
-	if (PN)
-		PN_damage = PN.get_electrocute_damage()
-	if (cell)
-		cell_damage = cell.get_electrocute_damage()
+	var/PN_damage = region ? power_electrocute_damage(region) : 0
+	var/cell_damage = cell ? cell.get_electrocute_damage() : 0
 	var/shock_damage = 0
+	var/from_grid = FALSE
 	if (PN_damage>=cell_damage)
-		power_source = PN
+		from_grid = TRUE
 		shock_damage = PN_damage
 	else
-		power_source = cell
 		shock_damage = cell_damage
 	var/drained_hp = M.electrocute_act(shock_damage, source, siemens_coeff) //zzzzzzap!
 	var/drained_energy = drained_hp*20
 
 	if (source_area)
 		source_area.use_power_oneoff(drained_energy/CELLRATE, EQUIP)
-	else if (istype(power_source,/datum/powernet))
-		var/drained_power = drained_energy/CELLRATE
-		drained_power = PN.draw_power(drained_power)
-	else if (istype(power_source, /obj/item/cell))
+	else if (from_grid && region)
+		power_draw(region, drained_energy/CELLRATE)
+	else if (cell)
 		cell.use(drained_energy)
 	return drained_energy
-
-/// LC-refs: a power machine is a member of its powernet's nodes; deleting it leaves the list.
-REF_BACKLIST(/obj/machinery/power, list("powernet" = "nodes"))

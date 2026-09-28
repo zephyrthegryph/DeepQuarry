@@ -37,7 +37,7 @@
 	var/outputting = 0 				// 1 = actually outputting, 0 = not outputting
 	var/output_level = 50000		// amount of power the SMES attempts to output
 	var/output_level_max = 200000	// cap on output_level
-	var/output_used = 0				// amount of power actually outputted. may be less than output_level if the powernet returns excess power
+	var/output_used = 0				// amount of power actually outputted. may be less than output_level if the grid returns excess power
 
 	//Holders for powerout event.
 	var/last_output_attempt	= 0
@@ -97,7 +97,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		stat |= BROKEN
 		return
 	update_icon()
-	if(!powernet)
+	if(!power_region)
 		connect_to_network(!mapload)
 	power_sync()
 	if(!should_be_mapped)
@@ -257,7 +257,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 		inputting = 1
 	// else inputting = 0, as set in process()
 
-	var/inputted = term.powernet.draw_power(min(to_input, input_level - input_available), term)
+	var/inputted = power_draw(term.power_region, min(to_input, input_level - input_available), term)
 	add_charge(inputted)
 	input_available += inputted
 
@@ -345,7 +345,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\
 			span_filter_notice(span_notice("You added cables to the [src].")))
 	stat = 0
-	if(!powernet)
+	if(!power_region)
 		connect_to_network()
 
 /obj/machinery/power/smes/proc/check_terminal_exists(turf/location, mob/user, direction)
@@ -358,11 +358,11 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 /obj/machinery/power/smes/draw_power(amount)
 	var/drained = 0
 	for(var/obj/machinery/power/terminal/term in terminals)
-		if(!term.powernet)
+		if(!term.power_region)
 			continue
 		if((amount - drained) <= 0)
 			return 0
-		drained += term.powernet.draw_power(amount - drained, term)
+		drained += power_draw(term.power_region, amount - drained, term)
 	return drained
 
 /obj/machinery/power/smes
@@ -473,7 +473,7 @@ REF_OWNED(/obj/machinery/power/smes, "soundloop")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/smes/proc/wirecutter_act_tool_done(mob/user, obj/machinery/power/terminal/term)
-	if(prob(50) && electrocute_mob(user, term.powernet, term))
+	if(prob(50) && electrocute_mob(user, term.power_region, term))
 		var/datum/effect/effect/system/spark_spread/sparks = new
 		sparks.set_up(5, 1, src)
 		sparks.start()

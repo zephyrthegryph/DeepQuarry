@@ -119,18 +119,20 @@
 		return PROCESS_KILL
 
 	//see if we can connect to a power net.
-	var/datum/powernet/PN
+	var/PN = 0
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T.get_cable_node()
 	if (C && anchored) //Make sure its anchored too.
-		PN = C.get_powernet()
+		PN = C.get_power_region()
 
 	if (PN)
 		var/power_draw = between(0, max_charge - stored_charge, charge_rate) //what we are trying to draw
-		power_draw = PN.draw_power(power_draw) //what we actually get
+		power_draw = power_draw(PN, power_draw) //what we actually get
 		stored_charge += power_draw
 		if(power_draw <= 0 && stored_charge < max_charge)
-			sleep_until_keys(list(PN, CHANGE_POWERNET_RATE|CHANGE_POWERNET_STATE))
+			// Wait on a machine of the grid; with none, nothing can supply it.
+			var/obj/machinery/power/node = power_grid_any_node(PN)
+			sleep_until_keys(node ? list(node, CHANGE_POWER_GRID_RATE|CHANGE_POWER_GRID_STATE|CHANGE_POWER_GRID_TOPOLOGY) : list())
 			return PROCESS_KILL
 	else
 		return PROCESS_KILL
@@ -179,9 +181,9 @@
 		return null
 	var/turf/T = get_turf(src)
 	var/obj/structure/cable/C = T?.get_cable_node()
-	var/datum/powernet/PN = C?.get_powernet()
-	if(PN && PN.avail - PN.load > 0)
-		return "asleep below full charge on a grid with [PN.avail - PN.load] W spare"
+	var/PN = C?.get_power_region()
+	if(PN && power_surplus(PN) > 0)
+		return "asleep below full charge on a grid with [power_surplus(PN)] W spare"
 	return null
 
 

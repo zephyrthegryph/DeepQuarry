@@ -42,7 +42,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/emitter/gyrotron, REGISTRY_GYROTRONS)
 	return E
 
 /obj/machinery/power/emitter/gyrotron/update_icon()
-	if (active && powernet && avail(active_power_usage))
+	if (active && power_region && avail(active_power_usage))
 		icon_state = "emitter-on"
 	else
 		icon_state = "emitter-off"

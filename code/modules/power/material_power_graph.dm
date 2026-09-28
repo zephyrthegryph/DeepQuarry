@@ -47,7 +47,8 @@
 		vg_drop_material_power_graph(rust_handle)
 		rust_handle = 0
 
-/datum/material_power_graph/proc/build(list/cables)
+/// `region_id`: the power region the cables are on (0 for a detached test overlay).
+/datum/material_power_graph/proc/build(list/cables, region_id = 0)
 	vertices = list()
 	indices = list()
 	edges = list()
@@ -62,11 +63,11 @@
 		var/has_attachment = FALSE
 		if(cable.d1 == 0)
 			for(var/obj/machinery/power/equipment in cable.loc)
-				if(equipment.powernet == cable.powernet)
+				if(region_id && equipment.power_region == region_id)
 					has_attachment = TRUE
 					break
 		for(var/obj/structure/cable/neighbor in cable.get_connections())
-			if(neighbor != cable && neighbor.powernet == cable.powernet)
+			if(neighbor != cable && neighbor.material_overlay == cable.material_overlay)
 				neighbors |= neighbor
 		adjacency[cable] = neighbors
 		if(length(neighbors) != 2 || has_attachment)

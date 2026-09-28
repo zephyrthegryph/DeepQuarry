@@ -11,7 +11,7 @@
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	var/id = null
 
-	use_power = USE_POWER_OFF	//uses powernet power, not APC power
+	use_power = USE_POWER_OFF	//uses grid power, not APC power
 	active_power_usage = 30000	//30 kW laser. I guess that means 30 kJ per shot.
 
 	var/active = 0
@@ -63,7 +63,7 @@
 
 /obj/machinery/power/emitter/proc/activate(mob/user as mob)
 	if(state == 2)
-		if(!powernet)
+		if(!power_region)
 			to_chat(user, "\The [src] isn't connected to a wire.")
 			return 1
 		if(!src.locked)
@@ -94,7 +94,7 @@
 /obj/machinery/power/emitter/machine_step()
 	if(stat & (BROKEN))
 		return PROCESS_KILL
-	if(src.state != 2 || (!powernet && active_power_usage))
+	if(src.state != 2 || (!power_region && active_power_usage))
 		src.active = 0
 		update_icon()
 		return PROCESS_KILL
@@ -306,7 +306,7 @@
 		return 1
 
 /obj/machinery/power/emitter/atom_destruction(damage_flag)
-	if(powernet && avail(active_power_usage))
+	if(power_region && avail(active_power_usage))
 		visible_message(src, span_danger("\The [src] explodes violently!"), span_danger("You hear an explosion!"))
 		explosion(get_turf(src), 1, 2, 4)
 	else
@@ -378,7 +378,7 @@
 		flick("emitterflick-[previous_state][state]",src)
 		previous_state = state
 
-	if(powered && powernet && avail(active_power_usage) && active)
+	if(powered && power_region && avail(active_power_usage) && active)
 		var/image/emitterbeam = image(icon,"emitter-beam")
 		emitterbeam.plane = PLANE_LIGHTING_ABOVE
 		add_overlay(emitterbeam)
@@ -395,7 +395,7 @@
 	icon_state = "emitter"
 
 /obj/machinery/power/emitter/antique/update_icon()
-	if(powered && powernet && avail(active_power_usage) && active)
+	if(powered && power_region && avail(active_power_usage) && active)
 		icon_state = "emitter_+a"
 	else
 		icon_state = "emitter"

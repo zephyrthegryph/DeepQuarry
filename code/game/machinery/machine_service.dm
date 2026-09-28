@@ -51,7 +51,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	while(!wake_dirty_gas_subscribers(FALSE))
 		continue
 	flush_pump_transfers()
-	log_world("Machine service initialized: [length(power_regions)] power regions, [gas_dirty_last] gas observations.")
+	log_world("Machine service initialized: [length(power_grids)] power regions, [gas_dirty_last] gas observations.")
 
 /// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
 /// the power step. The gas wake may yield; the power step only runs once it has completed.
@@ -79,7 +79,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	. = "C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
 	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
 	. += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
-	. += "PN:[length(power_regions)]|"
+	. += "PN:[length(power_grids)]|"
 	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 
 /datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)

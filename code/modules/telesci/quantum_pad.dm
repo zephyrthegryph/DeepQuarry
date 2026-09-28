@@ -109,7 +109,7 @@
 	if(panel_open)
 		add_overlay("qpad-panel")
 
-	if(inoperable() || panel_open || !powernet)
+	if(inoperable() || panel_open || !power_region)
 		icon_state = "[initial(icon_state)]-o"
 	else if (!linked_pad())
 		icon_state = "[initial(icon_state)]-b"
@@ -121,11 +121,11 @@
 	var/result = ..()
 	if(!ITEM_INTERACT_CONSUMED(result))
 		return result
-	var/original_powernet = powernet
-	if(powernet)
+	var/original_powernet = power_region
+	if(power_region)
 		disconnect_from_network()
 	connect_to_network()
-	if(powernet != original_powernet)
+	if(power_region != original_powernet)
 		update_icon()
 	return result
 
@@ -148,7 +148,7 @@
 		// ition End
 		return TRUE
 
-	if(!powernet)
+	if(!power_region)
 		to_chat(user, span_warning("[src] is not attached to a powernet!"))
 		return TRUE
 
