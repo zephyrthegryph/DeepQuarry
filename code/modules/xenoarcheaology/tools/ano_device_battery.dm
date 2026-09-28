@@ -60,9 +60,6 @@
 	var/energy_consumed_on_touch = 100
 	var/tmp/last_user_touched_handle
 
-/obj/item/anodevice/Initialize(mapload)
-	. = ..()
-
 /obj/item/anodevice/equipped(mob/user, slot)
 	last_user_touched_handle = om_handle(user)
 	..()

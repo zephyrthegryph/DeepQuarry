@@ -23,9 +23,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 
-/obj/machinery/power/Initialize(mapload)
-	. = ..()
-
 /// `on_materialize()` (not `Initialize()`): joining the knot cables on this
 /// machine's turf is a world registration (a network join, exactly the
 /// class `atom_materialize.dm` documents), and needs `vg_entity` bound --

@@ -8536,9 +8536,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/steamtealeaf, INTER
 
 	var/food_type = "/obj/item/reagent_containers/food/snacks/proteinslab"
 
-/obj/item/reagent_containers/food/snacks/cube/Initialize(mapload)
-	. = ..()
-
 /obj/item/reagent_containers/food/snacks/cube/proc/Expand()
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " expands!"))
 	replace_with(src, food_type)
@@ -8622,9 +8619,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/steamtealeaf, INTER
 	bitesize = 2
 	nutriment_amt = 4
 	nutriment_desc = list(REAGENT_ID_HONEY = 2, "pastry" = 1)
-
-/obj/item/reagent_containers/food/snacks/bun/Initialize(mapload)
-	. = ..()
 
 //Readded Polaris Foods
 /obj/item/reagent_containers/food/snacks/nachos

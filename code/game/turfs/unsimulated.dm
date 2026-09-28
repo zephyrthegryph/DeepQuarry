@@ -5,9 +5,6 @@
 	var/skip_init = TRUE // Don't call down the chain, apparently for performance when loading maps at runtime.
 	flags = TURF_ACID_IMMUNE
 
-/turf/unsimulated/Initialize(mapload)
-	. = ..()
-
 /turf/unsimulated/fake_space
 	name = "\proper space"
 	icon = 'icons/turf/space.dmi'

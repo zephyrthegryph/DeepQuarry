@@ -17,9 +17,6 @@ GLOBAL_VAR_INIT(narsie_cometh, 0)
 
 REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 
-/obj/singularity/narsie/Initialize(mapload)
-	. = ..()
-
 /obj/singularity/narsie/large
 	name = "Nar-Sie"
 	icon = 'icons/obj/narsie.dmi'

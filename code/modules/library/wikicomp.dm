@@ -19,9 +19,6 @@
 	VAR_PRIVATE/just_donated = FALSE
 	VAR_PRIVATE/datum/internal_wiki/page/P
 
-/obj/machinery/librarywikicomp/Initialize(mapload)
-	. = ..()
-
 /obj/machinery/librarywikicomp/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/wikicomp_open_ui,

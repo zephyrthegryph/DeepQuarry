@@ -209,9 +209,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
-/obj/effect/bmode/buildholder/Initialize(mapload)
-	. = ..()
-
 REF_OWNED(/obj/effect/bmode/buildholder, list("builddir", "buildhelp", "buildmode", "buildquit"))
 
 // AI mobs it selected are deselected.

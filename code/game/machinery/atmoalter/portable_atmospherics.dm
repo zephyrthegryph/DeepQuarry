@@ -198,9 +198,6 @@ REF_OWNED(/obj/machinery/portable_atmospherics, list("air_contents", "holding"))
 		return 1
 	return 0
 
-/obj/machinery/portable_atmospherics/powered/Initialize(mapload)
-	. = ..()
-
 /obj/machinery/portable_atmospherics/powered/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/portable_atmos_insert_cell,

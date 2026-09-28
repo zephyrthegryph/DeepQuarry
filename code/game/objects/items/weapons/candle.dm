@@ -10,10 +10,6 @@
 	var/wax = 7200 // FOUR HOUR burn time, taking into account process only calling once every two seconds or so.
 	var/icon_type = "candle"
 
-/obj/item/flame/candle/Initialize(mapload)
-	. = ..()
-	//wax -= rand(800, 1000) // Enough for 27-33 minutes. 30 minutes on average. //CHOMPDisable - Consistent candle burn times.
-
 /obj/item/flame/candle/update_icon()
 	var/i
 	if(wax > 3600) // Icon update to match 4 hour burn

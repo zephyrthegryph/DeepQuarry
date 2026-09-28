@@ -16,9 +16,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEEVERS)
 
-/obj/machinery/transhuman/autoresleever/Initialize(mapload)
-	. = ..()
-
 /obj/machinery/transhuman/autoresleever/update_icon()
 	. = ..()
 	if(stat & (BROKEN | MAINT | EMPED))

@@ -43,8 +43,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
 	tool_qualities = list(TOOL_WELDER)
 
-/obj/item/weldingtool/Initialize(mapload)
-	. = ..()
 //	var/random_fuel = min(rand(10,20),max_fuel)
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
 	reagents = R

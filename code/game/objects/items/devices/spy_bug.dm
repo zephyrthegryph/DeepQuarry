@@ -19,8 +19,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-/obj/item/camerabug/Initialize(mapload)
-	. = ..()
 //	radio = new(src)
 	camera = new camtype(src)
 

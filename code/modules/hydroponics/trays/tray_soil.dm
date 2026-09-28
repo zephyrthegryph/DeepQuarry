@@ -48,9 +48,6 @@
 		to_chat(user, span_notice("There is something growing here."))
 	return TRUE
 
-/obj/machinery/portable_atmospherics/hydroponics/soil/Initialize(mapload)
-	. = ..()
-
 /obj/machinery/portable_atmospherics/hydroponics/soil/CanPass()
 	return 1
 

@@ -42,9 +42,6 @@
 		to_chat(H, span_danger("You feel the hypodermic needles as you slide \the [src] off!"))
 		H.custom_pain("Your hands hurt like hell!",1)
 
-/obj/item/clothing/gloves/regen/Initialize(mapload)
-	. = ..()
-
 /// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/regen/periodic_step()
 	var/mob/living/carbon/human/H = om_resolve(wearer)

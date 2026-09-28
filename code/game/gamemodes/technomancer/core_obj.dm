@@ -33,9 +33,6 @@
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
-/obj/item/technomancer_core/Initialize(mapload)
-	. = ..()
-
 // its summons are dismissed with it.
 /obj/item/technomancer_core/on_destroy(force)
 	dismiss_all_summons()

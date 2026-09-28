@@ -242,9 +242,6 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	var/scan_ticks = 0
 	var/tmp/target_radio_handle
 
-/obj/item/beacon_locator/Initialize(mapload)
-	. = ..()
-
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/periodic_step()
 	if(!target_radio() && !scan_ticks)

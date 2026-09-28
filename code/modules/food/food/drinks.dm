@@ -472,9 +472,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 	drop_sound = 'sound/items/drop/papercup.ogg'
 	pickup_sound = 'sound/items/pickup/papercup.ogg'
 
-/obj/item/reagent_containers/food/drinks/sillycup/Initialize(mapload)
-	. = ..()
-
 /obj/item/reagent_containers/food/drinks/sillycup/on_reagent_change()
 	..()
 	if(reagents.total_volume)

@@ -52,9 +52,6 @@
 		return persist_name
 
 
-/obj/machinery/item_bank/Initialize(mapload)
-	. = ..()
-
 /obj/machinery/item_bank/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_hand/ungated/item_bank_use,

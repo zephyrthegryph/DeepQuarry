@@ -58,9 +58,6 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
-/obj/structure/event_collector/Initialize(mapload)
-	. = ..()
-
 /obj/structure/event_collector/proc/get_blockers()
 	. = 0
 	if(GLOB.event_collector_associations)

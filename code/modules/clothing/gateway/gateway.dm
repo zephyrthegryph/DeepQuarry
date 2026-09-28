@@ -95,9 +95,6 @@
 			H.custom_pain("Your hands feel strange",1)
 	..()
 
-/obj/item/clothing/gloves/stamina/Initialize(mapload)
-	. = ..()
-
 /// Works every 2 s while worn (equipped() starts it); taken off, it sleeps.
 /obj/item/clothing/gloves/stamina/periodic_step()
 	var/mob/living/carbon/human/H = om_resolve(wearer)

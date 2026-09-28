@@ -12,9 +12,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
 
-/obj/effect/simple_portal/Initialize(mapload)
-	. = ..()
-
 /obj/effect/simple_portal/linked/Initialize(mapload)
 	..()
 	return INITIALIZE_HINT_LATELOAD
