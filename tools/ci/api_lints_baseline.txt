@@ -4,7 +4,7 @@
 do_after_state 0
 use_tool_state 0
 vars_helpers 0
-vars_write 9
+vars_write 11
 timer_cooldown 0
 accessor_macros 0
 field_write 0

@@ -26,7 +26,10 @@ for lint in \
 	breakpoint_lint.py \
 	api_lints.py \
 	cooldown_lint.py \
-	i7_handler_lint.py \n	dcs_lints.py \n	silent_catch_lint.py \n	ownership_cycle_lint.py; do
+	i7_handler_lint.py \
+	dcs_lints.py \
+	silent_catch_lint.py \
+	ownership_cycle_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")
