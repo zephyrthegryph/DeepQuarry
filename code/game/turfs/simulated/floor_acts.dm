@@ -44,9 +44,12 @@
 /turf/simulated/floor/blob_act(obj/structure/blob/B)
 	return
 
-/turf/simulated/floor/atom_break(damage_flag)
+/// The tile breaks as its condition crosses the failure fraction.
+/turf/simulated/floor/on_update_integrity(old_value, new_value)
 	. = ..()
-	break_tile()
+	var/failure_amount = integrity_failure * max_integrity
+	if(old_value > failure_amount && new_value <= failure_amount && new_value > 0)
+		break_tile()
 
 /turf/simulated/floor/atom_destruction(damage_flag)
 	. = ..()
