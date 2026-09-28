@@ -1,5 +1,6 @@
-/obj/item/reagent_containers/food/drinks/glass2/attackby(obj/item/I as obj, mob/user as mob)
-	if(length(extras) >= 2) return ..() // max 2 extras, one on each side of the drink
+/// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
+/obj/item/reagent_containers/food/drinks/glass2/proc/glass2_item(mob/user, obj/item/I, datum/interaction/interaction)
+	if(length(extras) >= 2) return FALSE // max 2 extras, one on each side of the drink
 
 	if(istype(I, /obj/item/glass_extra))
 		var/obj/item/glass_extra/GE = I
@@ -14,7 +15,7 @@
 	else if(istype(I, /obj/item/reagent_containers/food/snacks/fruit_slice))
 		if(!rim_pos)
 			to_chat(user, span_warning("There's no space to put \the [I] on \the [src]!"))
-			return
+			return INTERACTION_HANDLED_PASS
 		var/obj/item/reagent_containers/food/snacks/fruit_slice/FS = I
 		LAZYADD(extras, FS)
 		user.remove_from_mob(FS)
@@ -24,9 +25,13 @@
 		to_chat(user, span_notice("You add \the [FS] to \the [src]."))
 		update_icon()
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, INTERACT_HAND(null, PROC_REF(interaction_hand)))
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
+	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
+	INTERACT_ITEM(null, PROC_REF(glass2_item)), \
+)
 
 /// Old attack_hand.
 /obj/item/reagent_containers/food/drinks/glass2/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)

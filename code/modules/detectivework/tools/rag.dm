@@ -34,18 +34,23 @@
 	. = ..()
 	update_name()
 
-/obj/item/reagent_containers/glass/rag/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
+	INTERACT_SELF(null, PROC_REF(rag_self)), \
+	INTERACT_ITEM(null, PROC_REF(rag_item)), \
+)
+
+/// Old attack_self.
+/obj/item/reagent_containers/glass/rag/proc/rag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(on_fire)
 		user.visible_message(span_warning("\The [user] stamps out [src]."), span_warning("You stamp out [src]."))
 		user.unEquip(src)
 		extinguish()
 	else
 		remove_contents(user)
+	return TRUE
 
-/obj/item/reagent_containers/glass/rag/attackby(obj/item/W, mob/user)
+/// Old attackby: its own lighting, then the glass handling (the old ..()), then the name update.
+/obj/item/reagent_containers/glass/rag/proc/rag_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!on_fire && istype(W, /obj/item/flame))
 		var/obj/item/flame/F = W
 		if(F.lit)
@@ -55,8 +60,11 @@
 			else
 				to_chat(user, span_warning("You manage to singe [src], but fail to light it."))
 
-	. = ..()
+	. = glass_item(user, W, interaction)
 	update_name()
+	// The glass handling already ran here; don't let its candidate run it again.
+	if(!.)
+		return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/glass/rag/proc/update_name()
 	if(on_fire)

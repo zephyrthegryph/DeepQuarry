@@ -50,10 +50,13 @@
 		if(!is_open_container())
 			. += span_notice("Airtight lid seals it completely.")
 
-/obj/item/reagent_containers/glass/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
+	INTERACT_SELF("Toggle lid", PROC_REF(glass_self)), \
+	INTERACT_ITEM(null, PROC_REF(glass_item)), \
+)
+
+/// Old attack_self.
+/obj/item/reagent_containers/glass/proc/glass_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
 		return FALSE
 	if(is_open_container())
@@ -63,6 +66,7 @@
 		balloon_alert(user, "lid removed off \the [src]")
 		flags |= OPENCONTAINER
 	update_icon()
+	return TRUE
 
 /obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(force && !(flags & NOBLUDGEON) && IS_HARMING(user))
@@ -129,9 +133,10 @@
 			return 1
 	..()
 
-/obj/item/reagent_containers/glass/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby. A storage bag still reaches the base item handling afterwards (FALSE), as the old ..() did.
+/obj/item/reagent_containers/glass/proc/glass_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE), TYPE_PROC_REF(/atom, attackby), args)
+		var/_answer_a1 = rerun_prompt(user, "a1", list("kind" = "text", "message" = "Enter a label for [name]", "title" = "Label", "default" = label_text, "max_length" = MAX_NAME_LEN, "encode" = FALSE), PROC_REF(glass_item), args)
 		if(isnull(_answer_a1))
 			return TRUE
 		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
@@ -145,12 +150,13 @@
 			balloon_alert(user, "label set to \"[tmp_label]\"")
 			label_text = tmp_label
 			update_name_label()
-	if(istype(W,/obj/item/storage/bag))
-		..()
 	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && !IS_HELPING(user))
 		balloon_alert(user, "[W] dipped into \the [src].")
 		reagents.touch_obj(W, reagents.total_volume)
 	attempt_changeling_test(W,user)
+	if(istype(W,/obj/item/storage/bag))
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/glass/proc/update_name_label()
 	if(label_text == "")
@@ -314,13 +320,16 @@
 	drop_sound = 'sound/items/drop/helm.ogg'
 	pickup_sound = 'sound/items/pickup/helm.ogg'
 
-/obj/item/reagent_containers/glass/bucket/attackby(obj/item/D, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(null, PROC_REF(bucket_item)))
+
+/// Old attackby. FALSE falls to the glass handling, as the old ..() did.
+/obj/item/reagent_containers/glass/bucket/proc/bucket_item(mob/user, obj/item/D, datum/interaction/interaction)
 	if(isprox(D))
 		to_chat(user, "You add [D] to [src].")
 		consume(D, user)
 		user.put_in_hands(new /obj/item/bucket_sensor)
 		consume(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(D, /obj/item/stack/material) && D.get_material_name() == MAT_STEEL)
 		var/obj/item/stack/material/M = D
 		if (M.use(1))
@@ -341,7 +350,8 @@
 			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
 			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
 	else
-		return ..()
+		return FALSE
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/glass/bucket/wirecutter_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You cut a big hole in \the [src] with \the [tool]. It's kinda useless as a bucket now."))
@@ -372,15 +382,18 @@
 	drop_sound = 'sound/items/drop/wooden.ogg'
 	pickup_sound = 'sound/items/pickup/wooden.ogg'
 
-/obj/item/reagent_containers/glass/bucket/wood/attackby(obj/D, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITEM(null, PROC_REF(wood_bucket_item)))
+
+/// Old attackby. FALSE falls to the bucket handling, as the old ..() did.
+/obj/item/reagent_containers/glass/bucket/wood/proc/wood_bucket_item(mob/user, obj/item/D, datum/interaction/interaction)
 	if(isprox(D))
 		to_chat(user, "This wooden bucket doesn't play well with electronics.")
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(D, /obj/item/material/knife/machete/hatchet))
 		to_chat(user, span_notice("You cut a big hole in \the [src] with \the [D].  It's kinda useless as a bucket now."))
 		user.put_in_hands(new /obj/item/clothing/head/helmet/bucket/wood)
 		consume(src, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(D, /obj/item/mop))
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is empty!"))
@@ -388,9 +401,8 @@
 			reagents.trans_to_obj(D, 5)
 			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
 			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
-		return
-	else
-		return ..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/reagent_containers/glass/cooler_bottle
 	desc = "A bottle for a water-cooler."

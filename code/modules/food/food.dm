@@ -42,9 +42,13 @@
 		src.pixel_x = rand(-6.0, 6) //Randomizes postion
 		src.pixel_y = rand(-6.0, 6)
 
-/obj/item/reagent_containers/food/attackby(obj/item/W, mob/user)
-	. = ..()
+// DECLARE here, EXTEND on every food subtype: this spec must stay last (it was the ..() end of their chains).
+DECLARE_INTERACTIONS(/obj/item/reagent_containers/food, INTERACT_ITEM(null, PROC_REF(food_item)))
+
+/// Old attackby: the changeling blood test, then the base item handling (FALSE).
+/obj/item/reagent_containers/food/proc/food_item(mob/user, obj/item/W, datum/interaction/interaction)
 	attempt_changeling_test(W,user)
+	return FALSE
 
 /obj/item/reagent_containers/food/afterattack(atom/A, mob/user, proximity, params)
 	if((center_of_mass_x || center_of_mass_y) && proximity && params && istype(A, /obj/structure/table))

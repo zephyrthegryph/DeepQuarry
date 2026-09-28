@@ -22,15 +22,18 @@
 	if (name == initial(name))
 		name = "cooked [name]"
 
-/obj/item/reagent_containers/food/snacks/meat/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM(null, PROC_REF(meat_item)))
+
+/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
+/obj/item/reagent_containers/food/snacks/meat/proc/meat_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/material/knife))
 		new /obj/item/reagent_containers/food/snacks/rawcutlet(src)
 		new /obj/item/reagent_containers/food/snacks/rawcutlet(src)
 		new /obj/item/reagent_containers/food/snacks/rawcutlet(src)
 		to_chat(user, "You cut the meat into thin strips.")
 		consume(src, user)
-	else
-		..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/reagent_containers/food/snacks/meat/syntiflesh
 	name = "synthetic meat"
@@ -196,7 +199,10 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 	reagents.add_reagent(REAGENT_ID_MYELAMINE, 3)
 	src.bitesize = 3
 
-/obj/item/reagent_containers/food/snacks/meat/worm/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT_ITEM(null, PROC_REF(worm_meat_item)))
+
+/// Old attackby: its own spawn, then always the meat handling (FALSE), as the old ..() did.
+/obj/item/reagent_containers/food/snacks/meat/worm/proc/worm_meat_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W,/obj/item/material/knife))
 		var/to_spawn = pickweight(GLOB.worm_meat_spawns)
 
@@ -207,7 +213,7 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 
 		to_chat(user, span_alien("You cut the tissue holding the chunks together."))
 
-	..()
+	return FALSE
 
 
 /obj/item/reagent_containers/food/snacks/deathclawmeat

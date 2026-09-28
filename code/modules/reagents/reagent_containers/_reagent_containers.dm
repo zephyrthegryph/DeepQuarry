@@ -176,14 +176,18 @@
 			balloon_alert(user, "\The [W] burns the blood in \the [src].")
 			B.changling_blood_test(reagents)
 
-/obj/item/reagent_containers/click_alt(mob/user)
-	. = ..()
+// EXTEND (not DECLARE) so the many subtypes that DECLARE their own specs keep this one.
+EXTEND_INTERACTIONS(/obj/item/reagent_containers, INTERACT_ALT("Set transfer amount", PROC_REF(transfer_amount_alt)))
+
+/// Old click_alt. It ran the default alt-click first, so this always returns FALSE to let it follow.
+/obj/item/reagent_containers/proc/transfer_amount_alt(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
-		return
+		return FALSE
 	if(!max_transfer_amount)
-		return
-	var/N = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", "title" = "[src]", "default" = amount_per_transfer_from_this, "max" = max_transfer_amount, "min" = min_transfer_amount), TYPE_PROC_REF(/atom, click_alt), args)
+		return FALSE
+	var/N = rerun_prompt(user, "a2", list("kind" = "number", "message" = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", "title" = "[src]", "default" = amount_per_transfer_from_this, "max" = max_transfer_amount, "min" = min_transfer_amount), PROC_REF(transfer_amount_alt), args)
 	if(isnull(N))
-		return
+		return FALSE
 	if(N)
 		amount_per_transfer_from_this = N
+	return FALSE

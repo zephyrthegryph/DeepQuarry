@@ -245,8 +245,10 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-/obj/item/clothing/mask/smokable/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable, INTERACT_ITEM(null, PROC_REF(smokable_item)))
+
+/// Old attackby (ran its parent first; the clothing handling now runs before this candidate).
+/obj/item/clothing/mask/smokable/proc/smokable_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.is_hot())
 		var/text = matchmes
 		if(istype(W, /obj/item/flame/match))
@@ -263,6 +265,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		text = replacetext(text, "NAME", "[name]")
 		text = replacetext(text, "FLAME", "[W.name]")
 		light(text)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/mask/smokable/water_act(amount)
 	if(amount >= 5)
@@ -294,15 +297,21 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	if(nicotine_amt)
 		reagents.add_reagent(REAGENT_ID_NICOTINE, nicotine_amt)
 
-/obj/item/clothing/mask/smokable/cigarette/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
+	INTERACT_SELF(null, PROC_REF(cigarette_self)), \
+	INTERACT_ITEM(null, PROC_REF(cigarette_item)), \
+)
+
+/// Old attackby: the smokable handling first (the old ..()), then its own.
+/obj/item/clothing/mask/smokable/cigarette/proc/cigarette_item(mob/user, obj/item/W, datum/interaction/interaction)
+	smokable_item(user, W, interaction)
 
 	if(istype(W, /obj/item/melee/energy/sword))
 		var/obj/item/melee/energy/sword/S = W
 		if(S.active)
 			light(span_warning("[user] swings their [W], barely missing their nose. They light their [name] in the process."))
 
-	return
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/mask/smokable/cigarette/afterattack(obj/item/reagent_containers/glass/glass, mob/user as mob, proximity)
 	..()
@@ -318,10 +327,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 			else
 				to_chat(user, span_notice("[src] is full."))
 
-/obj/item/clothing/mask/smokable/cigarette/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/smokable/cigarette/proc/cigarette_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit == 1)
 		if(IS_HARMING(user))
 			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
@@ -330,6 +337,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		else
 			user.visible_message(span_notice("[user] puts out \the [src]."))
 			quench()
+	return FALSE
 
 ////////////
 // CIGARS //
@@ -399,12 +407,16 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	desc = "A manky old cigar butt."
 	icon_state = "cigarbutt"
 
-/obj/item/clothing/mask/smokable/cigarette/cigar/attackby(obj/item/W as obj, mob/user as mob)
-	..()
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette/cigar, INTERACT_ITEM(null, PROC_REF(cigar_item)))
+
+/// Old attackby: the cigarette handling first (the old ..()), then its own.
+/obj/item/clothing/mask/smokable/cigarette/cigar/proc/cigar_item(mob/user, obj/item/W, datum/interaction/interaction)
+	cigarette_item(user, W, interaction)
 
 	user.update_inv_wear_mask(0)
 	user.update_inv_l_hand(0)
 	user.update_inv_r_hand(1)
+	return INTERACTION_HANDLED_PASS
 
 /////////////////
 //SMOKING PIPES//
@@ -430,10 +442,13 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	. = ..()
 	name = "empty [initial(name)]"
 
-/obj/item/clothing/mask/smokable/pipe/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
+	INTERACT_SELF(null, PROC_REF(pipe_self)), \
+	INTERACT_ITEM(null, PROC_REF(pipe_item)), \
+)
+
+/// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
+/obj/item/clothing/mask/smokable/pipe/proc/pipe_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit == 1)
 		if(IS_HARMING(user))
 			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
@@ -442,21 +457,23 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 		else
 			user.visible_message(span_notice("[user] puts out \the [src]."))
 			quench()
+	return FALSE
 
-/obj/item/clothing/mask/smokable/pipe/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby: the smokable handling first (the old ..()), then its own.
+/obj/item/clothing/mask/smokable/pipe/proc/pipe_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/melee/energy/sword))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	..()
+	smokable_item(user, W, interaction)
 
 	if (istype(W, /obj/item/reagent_containers/food/snacks))
 		var/obj/item/reagent_containers/food/snacks/grown/G = W
 		if (!G.dry)
 			to_chat(user, span_notice("[G] must be dried before you stuff it into [src]."))
-			return
+			return INTERACTION_HANDLED_PASS
 		if (smoketime)
 			to_chat(user, span_notice("[src] is already packed."))
-			return
+			return INTERACTION_HANDLED_PASS
 		max_smoketime = 1000
 		smoketime = 1000
 		if(G.reagents)
@@ -480,6 +497,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	user.update_inv_wear_mask(0)
 	user.update_inv_l_hand(0)
 	user.update_inv_r_hand(1)
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/clothing/mask/smokable/pipe/cobpipe
 	name = "corn cob pipe"
@@ -635,10 +653,10 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	I.color = pick(available_colors)
 	add_overlay(I)
 
-/obj/item/flame/lighter/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighter_self)))
+
+/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
+/obj/item/flame/lighter/proc/lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(special_variant)
 		return FALSE
 	if(detonator_mode)
@@ -661,7 +679,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 		set_light(0)
 		PERIODIC_STOP(src)
 		update_icon()
-	return
+	return TRUE
 
 /obj/item/flame/lighter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(lit == 1)
@@ -701,10 +719,10 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	. = ..()
 	cut_overlays() //Prevents the Cheap Lighter overlay from appearing on this
 
-/obj/item/flame/lighter/zippo/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(zippo_self)))
+
+/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
+/obj/item/flame/lighter/zippo/proc/zippo_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(detonator_mode)
 		return FALSE
 	if(!base_state)
@@ -727,7 +745,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 
 		set_light(0)
 		PERIODIC_STOP(src)
-	return
+	return TRUE
 
 //Here we add Zippo skins.
 
@@ -825,10 +843,10 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	special_supermatter = TRUE
 
 // safe smzippo
-/obj/item/flame/lighter/supermatter/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PROC_REF(sm_lighter_self)))
+
+/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
+/obj/item/flame/lighter/supermatter/proc/sm_lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(special_supermatter)
 		return FALSE
 	if(!base_state)
@@ -902,10 +920,10 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	return
 
 // syndicate smzippo
-/obj/item/flame/lighter/supermatter/syndismzippo/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_SELF(null, PROC_REF(syndi_sm_lighter_self)))
+
+/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
+/obj/item/flame/lighter/supermatter/syndismzippo/proc/syndi_sm_lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!base_state)
 		base_state = icon_state
 	if(!lit)
@@ -976,10 +994,10 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	return
 
 // Experimental smzippo
-/obj/item/flame/lighter/supermatter/expsmzippo/attack_self(mob/living/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SELF(null, PROC_REF(exp_sm_lighter_self)))
+
+/// Old attack_self. FALSE falls to the ancestor's self-use, as the old chain did.
+/obj/item/flame/lighter/supermatter/expsmzippo/proc/exp_sm_lighter_self(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if (!base_state)
 		base_state = icon_state
 	if (!lit)

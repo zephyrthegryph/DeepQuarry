@@ -67,15 +67,6 @@
 		D.set_up(my_target, spray_size, 10)
 	return
 
-/*
-/obj/item/reagent_containers/spray/attack_self(mob/user) //Now done via alt-click instead
-	if(!max_transfer_amount)
-		return
-	amount_per_transfer_from_this = next_in_list(amount_per_transfer_from_this, possible_transfer_amounts)
-	spray_size = next_in_list(spray_size, spray_sizes)
-	balloon_alert(user, "pressure nozzle adjusted to [amount_per_transfer_from_this] units per spray.")
-*/
-
 /obj/item/reagent_containers/spray/examine(mob/user)
 	. = ..()
 	if(loc == user)
@@ -139,12 +130,13 @@
 	if(Adjacent(user))
 		. += "The safety is [safety ? "on" : "off"]."
 
-/obj/item/reagent_containers/spray/pepper/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("Toggle safety", PROC_REF(pepper_self)))
+
+/// Old attack_self.
+/obj/item/reagent_containers/spray/pepper/proc/pepper_self(mob/user, obj/item/held, datum/interaction/interaction)
 	safety = !safety
 	balloon_alert(user, "safety [safety ? "on" : "off"].")
+	return TRUE
 
 /obj/item/reagent_containers/spray/pepper/Spray_at(atom/A as mob|obj, mob/user)
 	if(safety)
@@ -254,11 +246,14 @@
 			add_overlay(hose_overlay)
 			break
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/click_alt(mob/living/carbon/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERACT_ALT("Turn dial", PROC_REF(hosed_alt)))
+
+/// Old click_alt (never called its parent: no transfer-amount prompt, no default alt-click).
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/hosed_alt(mob/living/carbon/user, obj/item/held, datum/interaction/interaction)
 	if(++spray_particles > 3) spray_particles = 1
 
 	balloon_alert(user, "dial turned to [spray_particles].")
-	return
+	return TRUE
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/item_ctrl_click(mob/user)
 	if(loc != get_turf(src))

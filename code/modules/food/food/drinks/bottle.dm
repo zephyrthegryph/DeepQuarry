@@ -106,23 +106,28 @@ REF_SPILL(/obj/item/reagent_containers/food/drinks/bottle, "rag")
 	usr.visible_message(span_danger("\The [usr] smashed \the [src] on \the [choice]!"))
 	to_chat(usr, span_danger("You smash \the [src] on \the [choice]!"))
 
-/obj/item/reagent_containers/food/drinks/bottle/attackby(obj/item/W, mob/user)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
+	INTERACT_SELF(null, PROC_REF(bottle_self)), \
+	INTERACT_ITEM(null, PROC_REF(bottle_item)), \
+)
+
+/// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!rag && istype(W, /obj/item/reagent_containers/glass/rag))
 		insert_rag(W, user)
-		return
+		return INTERACTION_HANDLED_PASS
 	if(rag && istype(W, /obj/item/flame))
 		rag.attackby(W, user)
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
-/obj/item/reagent_containers/food/drinks/bottle/attack_self(mob/user, special_pass)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self: pull the rag out, else open the bottle (the drinks self-use, forced past special_handling).
+/obj/item/reagent_containers/food/drinks/bottle/proc/bottle_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rag)
 		remove_rag(user)
 	else
-		..(user, TRUE)
+		drinks_self(user, held, interaction, TRUE)
+	return TRUE
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return

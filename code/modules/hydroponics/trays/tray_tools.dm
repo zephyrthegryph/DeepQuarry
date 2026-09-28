@@ -34,11 +34,13 @@
 
 REF_OWNED(/obj/item/analyzer/plant_analyzer, "last_seed")
 
-/obj/item/analyzer/plant_analyzer/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+// DECLARE replaces the gas analyzer's scan, which this type always skipped (special_handling).
+DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, PROC_REF(plant_analyzer_self)))
+
+/// Old attack_self.
+/obj/item/analyzer/plant_analyzer/proc/plant_analyzer_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /obj/item/analyzer/plant_analyzer/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)

@@ -50,15 +50,15 @@
 
 	return
 
-/obj/item/reagent_containers/food/drinks/attackby(obj/item/W as obj, mob/user as mob)
+/// Old attackby. FALSE falls to the food handling, as the old ..() did.
+/obj/item/reagent_containers/food/drinks/proc/drinks_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(food_can_insert_micro && istype(W, /obj/item/holder))
 		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			. = ..()
-			return
+			return FALSE
 
 		if(!is_open_container())
 			to_chat(user, span_warning("You cannot drop anything into \the [src] without opening it first."))
-			return
+			return INTERACTION_HANDLED_PASS
 
 		var/obj/item/holder/holder = W
 
@@ -75,11 +75,15 @@
 
 		to_chat(user, span_warning("You drop [living_mob] into \the [src]."))
 		to_chat(living_mob, span_warning("[user] drops you into \the [src]."))
-		return
+		return INTERACTION_HANDLED_PASS
 
-	return ..()
+	return FALSE
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/food/drinks, INTERACT_DRAG(null, PROC_REF(interaction_drag)))
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
+	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
+	INTERACT_SELF(null, PROC_REF(drinks_self)), \
+	INTERACT_ITEM(null, PROC_REF(drinks_item)), \
+)
 
 /// Old MouseDrop_T.
 /obj/item/reagent_containers/food/drinks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
@@ -147,14 +151,13 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/food/drinks, INTERACT_DRAG(nul
 /obj/item/reagent_containers/food/drinks/on_rag_wipe(obj/item/reagent_containers/glass/rag/R)
 	wash(CLEAN_SCRUB)
 
-/obj/item/reagent_containers/food/drinks/attack_self(mob/user, special_pass)
-	. = ..(user)
-	if(.)
-		return TRUE
+/// Old attack_self. `special_pass` is set when a subtype (the bottle) calls it directly to force the open.
+/obj/item/reagent_containers/food/drinks/proc/drinks_self(mob/user, obj/item/held, datum/interaction/interaction, special_pass)
 	if(special_handling && !special_pass)
 		return FALSE
 	if(!is_open_container() && !(is_can && IS_HARMING(user)))
 		open(user)
+	return TRUE
 
 /obj/item/reagent_containers/food/drinks/proc/open(mob/user)
 	if(!cant_open)

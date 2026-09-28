@@ -1,11 +1,3 @@
-/obj/item/reagent_containers/food/snacks/slice/bread/attackby(obj/item/W as obj, mob/user as mob)
-
-	if(istype(W,/obj/item/material/shard) || istype(W,/obj/item/reagent_containers/food/snacks))
-		var/obj/item/reagent_containers/food/snacks/csandwich/S = new(get_turf(src))
-		S.attackby(W,user)
-		consume(src, user)
-	..()
-
 /obj/item/reagent_containers/food/snacks/csandwich
 	name = "sandwich"
 	desc = "The best thing since sliced bread."
@@ -15,7 +7,10 @@
 
 	var/list/ingredients
 
-/obj/item/reagent_containers/food/snacks/csandwich/attackby(obj/item/W as obj, mob/user as mob)
+EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT_ITEM(null, PROC_REF(csandwich_item)))
+
+/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
+/obj/item/reagent_containers/food/snacks/csandwich/proc/csandwich_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	var/sandwich_limit = 4
 	for(var/obj/item/O in ingredients)
@@ -27,11 +22,11 @@
 		user.drop_item()
 		W.loc = src
 		update()
-		return
+		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/reagent_containers/food/snacks))
 		if(src.contents.len > sandwich_limit)
 			to_chat(user, span_red("If you put anything else on \the [src] it's going to collapse."))
-			return
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_blue("You layer [W] over \the [src]."))
 		var/obj/item/reagent_containers/F = W
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
@@ -39,8 +34,8 @@
 		W.loc = src
 		LAZYADD(ingredients, W)
 		update()
-		return
-	..()
+		return INTERACTION_HANDLED_PASS
+	return FALSE
 
 /obj/item/reagent_containers/food/snacks/csandwich/proc/update()
 	var/fullname = "" //We need to build this from the contents of the var.
