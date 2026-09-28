@@ -105,7 +105,7 @@
 	var/list/base_requires
 	if(kind == INTERACT_KIND_USE || kind == INTERACT_KIND_SELF)
 		base_requires = ispath(owner_type, /obj/item) ? list(REQ_SELF_USE_REACH) : list()
-	else if(kind == INTERACT_KIND_SILICON || kind == INTERACT_KIND_ROBOT || kind == INTERACT_KIND_OBSERVER)
+	else if(kind == INTERACT_KIND_SILICON || kind == INTERACT_KIND_ROBOT || kind == INTERACT_KIND_OBSERVER || kind == INTERACT_KIND_TK)
 		base_requires = list() // the actor's adapter decides reach (the AI's cameras, a cyborg's link, a ghost anywhere)
 	else
 		base_requires = list(REQ_INTERACTION_REACH)
@@ -154,6 +154,10 @@
 		if(INTERACT_KIND_OBSERVER)
 			category = INTERACTION_CAT_OPEN
 			tags = (tags || list()) + list(INTERACTION_TAG_OBSERVER)
+		if(INTERACT_KIND_TK)
+			category = INTERACTION_CAT_OPEN
+			priority = 1 // ahead of the hand's interactions telekinesis also reaches
+			tags = (tags || list()) + list(INTERACTION_TAG_TELEKINESIS)
 		else
 			CRASH("dq_interaction_from_spec: unknown compact interaction kind [kind] on [owner_type]")
 

@@ -107,7 +107,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /// Whether this kind of actor can ever do `interaction`. Excluded ones aren't even listed as blocked.
 /// Observer-only interactions are for ghosts alone.
 /datum/input_adapter/proc/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_SILICON in interaction.tags)
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_SILICON in interaction.tags) && !(INTERACTION_TAG_TELEKINESIS in interaction.tags)
 
 /// Use through the resolver with nothing in hand. TRUE if an interaction answered.
 /datum/input_adapter/proc/use_interaction(mob/user, atom/target)
@@ -302,6 +302,8 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/telekinesis/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
 	if(interaction.tool)
 		return FALSE
+	if(INTERACTION_TAG_TELEKINESIS in interaction.tags)
+		return TRUE
 	return ..()
 
 /// Use at range: grab or poke the target telekinetically.
@@ -315,8 +317,28 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return TRUE
 	use_default(user, target)
 
+/**
+ * A telekinetic Use no interaction answered: grab a loose object (an item on the floor,
+ * or anything unanchored) with a telekinetic grab; otherwise poke it as an unarmed hand
+ * would. Mobs, carried items and objects with `tk_reach = FALSE` are left alone.
+ */
 /datum/input_adapter/telekinesis/use_default(mob/user, atom/target)
-	return target.attack_tk(user)
+	if(user.stat || ismob(target))
+		return FALSE
+	var/obj/O = target
+	if(istype(O))
+		if(!O.tk_reach)
+			return FALSE
+		if(isitem(O) && !isturf(O.loc))
+			return FALSE
+	if(!istype(O) || (O.anchored && !isitem(O)))
+		user.UnarmedAttack(target, 0)
+		return TRUE
+	var/obj/item/tk_grab/grab = new(O)
+	user.put_in_active_hand(grab)
+	grab.host = user
+	grab.focus_object(O)
+	return TRUE
 
 // ---------------------------------------------------------------------------
 // Ghosts: observer-only.

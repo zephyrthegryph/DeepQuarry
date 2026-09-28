@@ -21,6 +21,8 @@
 #define INTERACTION_TAG_HOSTILE "hostile"
 /// Observer-only: offered to ghosts and to no one else (I3).
 #define INTERACTION_TAG_OBSERVER "observer"
+/// Telekinesis-only: offered to a telekinetic reach and to no one else (I3).
+#define INTERACTION_TAG_TELEKINESIS "telekinesis"
 /// Silicon-only: offered to the AI and cyborgs and to no one else (I3).
 #define INTERACTION_TAG_SILICON "silicon"
 /// Part of the Maintainable behaviour (panel, anchor, deconstruct, repair).
@@ -200,6 +202,9 @@
 #define INTERACT_SILICON(name, effect, requires...) list(INTERACT_KIND_SILICON, name, effect, list(requires))
 /// A cyborg's empty-gripper Use only (old attack_robot). List it before an INTERACT_SILICON it overrides.
 #define INTERACT_ROBOT(name, effect, requires...) list(INTERACT_KIND_ROBOT, name, effect, list(requires))
+#define INTERACT_KIND_TK "tk"
+/// A telekinetic Use at range (old attack_tk). FALSE lets the default telekinetic grab happen.
+#define INTERACT_TK(name, effect, requires...) list(INTERACT_KIND_TK, name, effect, list(requires))
 /// A ghost's Use (old attack_ghost). `effect(actor, held, interaction)`.
 #define INTERACT_OBSERVER(name, effect, requires...) list(INTERACT_KIND_OBSERVER, name, effect, list(requires))
 
