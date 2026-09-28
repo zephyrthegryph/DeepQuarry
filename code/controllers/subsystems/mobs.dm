@@ -26,7 +26,7 @@ SUBSYSTEM_DEF(mobs)
 			if(!SSdbcore.IsConnected())
 				log_game("SQL ERROR during death reporting. Failed to connect.")
 			else
-				SSdbcore.MassInsert(format_table_name("death"), death_list)
+				SSdbcore.mass_insert_io(null, format_table_name("death"), death_list.Copy()) // om_io: returns at once
 		death_list.Cut()
 	if(!profile_next_dump)
 		profile_next_dump = world.time + 2 MINUTES
