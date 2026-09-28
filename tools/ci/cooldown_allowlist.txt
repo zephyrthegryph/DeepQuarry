@@ -50,7 +50,7 @@ code/modules/admin/verbs/striketeam.dm|if(world.time < 6000) # round timing
 code/modules/alarm/alarm.dm|if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration))) # alarm expiry
 code/modules/alarm/alarm_handler.dm|if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources)) # alarm expiry
 code/modules/body/physiology.dm|if(expires_at && world.time >= expires_at) # physiology factor expiry
-code/modules/client/preferences/preview_async.dm|while(length(outputs) < length(jobs) && world.time <= deadline) # bounded wait deadline
+code/modules/client/preferences/preview_async.dm|if(length(outputs) < length(jobs) && world.time <= state[8]) # bounded wait deadline
 code/modules/combat_ai/brain/brain.dm|if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT) # threat memory expiry
 code/modules/combat_ai/brain/brain.dm|if(entry["expires"] && entry["expires"] < world.time) # threat memory expiry
 code/modules/combat_ai/world_model/world_model.dm|if(entry[3] < world.time) # memory entry expiry
