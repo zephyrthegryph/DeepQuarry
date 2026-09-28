@@ -75,7 +75,6 @@
 // stops the sound playing on its atoms.
 /datum/looping_sound/on_destroy(force)
 	stop()
-	output_atoms = null
 	..()
 
 /datum/looping_sound/proc/start(atom/add_thing, skip_start_sound = FALSE)

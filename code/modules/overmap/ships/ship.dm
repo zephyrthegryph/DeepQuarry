@@ -65,9 +65,12 @@
 REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 
 // leaves the ship list and its flight vessel.
+/obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
+	SSshuttles.ships -= src
+	return ..()
+
 /obj/effect/overmap/visitable/ship/on_destroy(force)
 	remove_vis_overlay(vector_overlay())
-	SSshuttles.ships -= src
 	if(GLOB.flight_service && flight_vessel_id)
 		var/datum/flight_vessel/vessel = GLOB.flight_service.vessels[flight_vessel_id]
 		if(vessel)

@@ -32,9 +32,9 @@
 		author = _author
 
 // persistent graffiti forgets it.
-/obj/effect/decal/writing/on_destroy(force)
-	SSpersistence.forget_value(src, /datum/persistent/graffiti)
+/obj/effect/decal/writing/lifecycle_dematerialize()
 	..()
+	SSpersistence.forget_value(src, /datum/persistent/graffiti)
 
 /obj/effect/decal/writing/examine(mob/user)
 	. = ..()

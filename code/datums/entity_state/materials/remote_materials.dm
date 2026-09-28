@@ -81,15 +81,11 @@ REF_OWNED(/datum/remote_materials, "local_container")
 		_MakeLocal()
 
 // disconnects from its ore silo.
-/datum/remote_materials/on_destroy(force)
+/datum/remote_materials/lifecycle_dematerialize()
+	..()
 	if(silo())
 		allow_standalone = FALSE
 		disconnect()
-	mat_container_handle = null
-	om_unhook_all(src)
-	owner = null
-
-	..()
 
 /datum/remote_materials/proc/_MakeLocal()
 	PRIVATE_PROC(TRUE)

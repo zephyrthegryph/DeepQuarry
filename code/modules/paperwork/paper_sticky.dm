@@ -118,8 +118,11 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	pixel_y = 0
 
 // persistence stops tracking it.
-/obj/item/paper/sticky/on_destroy(force)
+/obj/item/paper/sticky/lifecycle_dematerialize()
+	..()
 	reset_persistence_tracking()
+
+/obj/item/paper/sticky/on_destroy(force)
 	om_unhook(src, /datum/om/event/movable_attempted_move, src)
 	..()
 

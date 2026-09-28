@@ -309,10 +309,12 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 // leaves the active, closed and resolved ticket lists.
 /datum/ticket/on_destroy(force)
 	RemoveActive()
+	..()
+
+/datum/ticket/lifecycle_dematerialize()
+	..()
 	GLOB.tickets.closed_tickets -= src
 	GLOB.tickets.resolved_tickets -= src
-	handler_ref = null
-	..()
 
 /datum/ticket/proc/AddInteraction(formatted_message)
 	var/curinteraction = "[gameTimestamp()]: [formatted_message]"

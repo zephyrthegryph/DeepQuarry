@@ -16,8 +16,6 @@
 /datum/interaction_menu/on_destroy(force)
 	if(owner()?.interaction_menu == src)
 		owner().interaction_menu = null
-	owner_handle = null
-	target_ref = null
 	..()
 
 /client/var/tmp/datum/interaction_menu/interaction_menu

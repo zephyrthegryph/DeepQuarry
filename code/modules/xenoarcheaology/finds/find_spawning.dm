@@ -875,5 +875,3 @@
 		become_anomalous()
 
 // its artifact master is owned by /atom/var/artifact_master and deleted with it.
-/obj/item/archaeological_find/on_destroy(force)
-	..()

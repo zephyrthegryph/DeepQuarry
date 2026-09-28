@@ -55,11 +55,6 @@
 	return ..()
 
 // drops its owner and last target.
-/datum/tooltip/on_destroy(force)
-	last_target_handle = null
-	owner_handle = null
-	..()
-
 /datum/tooltip/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 

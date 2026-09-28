@@ -135,10 +135,10 @@
 		qdel(src)
 
 // GLOB.vote_service forgets it.
-/datum/vote/on_destroy(force)
+/datum/vote/lifecycle_dematerialize()
+	..()
 	if(GLOB.vote_service.active_vote == src)
 		GLOB.vote_service.active_vote = null
-	..()
 
 /datum/vote/proc/handle_result(result)
 	return

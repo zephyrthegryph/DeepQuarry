@@ -15,7 +15,6 @@
 /obj/structure/disposalpipe/trunk/on_destroy(force)
 	if(linked()) //Linked to something, better unlink.
 		OM_EMIT(linked(), /datum/om/event/disposal_unlink)
-		linked_handle = null
 	..()
 
 // Override attackby so we disallow trunkremoval when somethings ontop

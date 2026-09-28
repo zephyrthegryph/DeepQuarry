@@ -90,9 +90,6 @@
 
 // it unlinks and ejects its contents.
 /obj/machinery/disposal/on_destroy(force)
-	if(power_retry_timer)
-		om_cancel_timer(src, power_retry_timer)
-		power_retry_timer = null
 	clear_gas_dependency()
 	OM_EMIT(src, /datum/om/event/disposal_unlink) //Just to be safe.
 	eject()

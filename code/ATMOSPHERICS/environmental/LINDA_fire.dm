@@ -352,8 +352,11 @@
 	update_color()
 
 // a dying fire cools its tile and leaves its hot group.
-/obj/effect/hotspot/on_destroy(force)
+/obj/effect/hotspot/lifecycle_dematerialize()
+	..()
 	SSair.hotspots -= src
+
+/obj/effect/hotspot/on_destroy(force)
 	var/turf/open/cur_turf = loc
 	if(istype(cur_turf))
 		cool_tile(cur_turf)

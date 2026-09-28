@@ -31,13 +31,6 @@
 	src.time_to_remove = time_to_remove
 	om_hook(owner, /datum/om/event/before/item_pre_attack, src, PROC_REF(try_remove_effect))
 
-// owned state datum (was a component) unhooks and detaches from its owner.
-/datum/effect_remover/on_destroy(force)
-	if(owner)
-		om_unhook(owner, /datum/om/event/before/item_pre_attack, src)
-	owner = null
-	..()
-
 /datum/effect_remover/proc/try_remove_effect(datum/source, datum/om/event/before/item_pre_attack/event)
 	EVENT_HANDLER
 	var/atom/target = event.target

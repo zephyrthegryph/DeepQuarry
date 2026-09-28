@@ -47,12 +47,10 @@ REF_BACKLIST_VAR(/datum/trait_state, /mob/living, owner, "trait_states")
 	return
 
 // a state leaving its mob takes its life stage, hooks and verbs with it.
-/datum/trait_state/on_destroy(force)
-	if(owner)
-		detach()
-		LAZYREMOVE(owner.trait_states, src)
-	owner = null
+/datum/trait_state/lifecycle_prerelease()
 	..()
+	if(owner)
+		detach() // phase 4 then drops us from owner.trait_states (REF_BACKLIST)
 
 // --- Mob API ------------------------------------------------------------------------------------
 

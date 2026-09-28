@@ -32,13 +32,12 @@
 	return TRUE
 
 // Records leave the data core.
-/datum/data/record/on_destroy(force)
-	disposition_history = null
+/datum/data/record/lifecycle_dematerialize()
+	..()
 	GLOB.data_core.locked -= src
 	GLOB.data_core.medical -= src
 	GLOB.data_core.general -= src
 	GLOB.data_core.security -= src
-	..()
 
 /datum/data/text
 	name = "text"

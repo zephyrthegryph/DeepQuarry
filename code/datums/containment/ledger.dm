@@ -173,12 +173,12 @@
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
 // the ledger is the containment engine itself; it lets go of its holder.
-/datum/ledger/on_destroy(force)
+REF_BACK(/datum/ledger, list("holder" = "ledger"))
+
+/datum/ledger/lifecycle_dematerialize()
+	..()
 	if(holder)
 		dq_latency_sweep_unregister(holder) // the sweep list holds a hard ref
-	if(holder?.ledger == src)
-		holder.ledger = null
-	..()
 
 /datum/ledger/proc/def_by_id(id)
 	for(var/datum/om/relation/slot/def as anything in defs)

@@ -28,7 +28,8 @@
 	return rust_authoritative
 
 // A legacy network hands each member its share of the gas before the topology splits.
-/datum/pipe_network/on_destroy(force)
+/datum/pipe_network/lifecycle_unbind()
+	..()
 	STOP_PROCESSING_PIPENET(src)
 	// External reservoirs are real containers and must take their volume share
 	// with them before the fixed topology is split into independent port mixes.
@@ -58,7 +59,6 @@
 		normal_member.reassign_network(src, null)
 	QDEL_NULL(air)
 	volume = 0
-	..()
 
 /datum/pipe_network/proc/add_normal_member(obj/machinery/atmospherics/member)
 	if(!member || QDELETED(member))

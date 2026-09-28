@@ -43,12 +43,6 @@
 		power_supply.charge = charge_cost*rand(0,power_supply.maxcharge/charge_cost)
 	update_icon()
 
-// the cell goes only if it is still inside the gun.
-/obj/item/gun/energy/on_destroy(force)
-	if(power_supply?.loc == src && !QDELETED(power_supply))
-		qdel(power_supply)
-	..()
-
 /obj/item/gun/energy/get_cell()
 	return power_supply
 

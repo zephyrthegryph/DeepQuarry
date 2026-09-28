@@ -46,10 +46,8 @@
 // its docking controllers are released.
 /datum/shuttle/autodock/on_destroy(force)
 	in_use = null
-	next_location_handle = null
 	set_active_docking_controller(null)
 	set_shuttle_docking_controller(null)
-	landmark_transition_handle = null
 
 	..()
 

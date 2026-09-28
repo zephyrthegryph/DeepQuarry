@@ -30,9 +30,9 @@
 	set_default()
 
 // engine: leaves the config's entry table.
-/datum/config_entry/on_destroy(force)
-	config.RemoveEntry(src)
+/datum/config_entry/lifecycle_dematerialize()
 	..()
+	config.RemoveEntry(src)
 
 /**
  * Returns the value of the configuration datum to its default, used for resetting a config value. Note this also sets the protection back to default.

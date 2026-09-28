@@ -74,15 +74,14 @@
 		GLOB.supply_service.shuttle = src
 
 // leaves SSshuttles and the supply shuttle slot.
-/datum/shuttle/on_destroy(force)
-	current_location_handle = null
+/datum/shuttle/lifecycle_dematerialize()
 	SSshuttles.shuttles -= src.name
 	SSshuttles.process_shuttles -= src
 	SSshuttles.active_process_shuttles -= src
 	SSshuttles.shuttle_logs -= src
 	if(GLOB.supply_service.shuttle == src)
 		GLOB.supply_service.shuttle = null
-	..()
+	return ..()
 
 /datum/shuttle/proc/set_process_state(new_state)
 	process_state = new_state

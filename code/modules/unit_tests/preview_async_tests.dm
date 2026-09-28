@@ -6,10 +6,6 @@
 /datum/preferences/dq_preview_test_stub/New()
 	return
 
-/datum/preferences/dq_preview_test_stub/on_destroy(force)
-	value_cache = null
-	..()
-
 /datum/preferences/dq_preview_test_stub/update_preview_icon(south_only = FALSE)
 	return
 

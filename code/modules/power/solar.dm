@@ -247,11 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 			if(S.use(2))
 				playsound(src, 'sound/machines/click.ogg', 50, 1)
 				user.visible_message(span_notice("[user] places the glass on the solar assembly."))
-				if(tracker)
-					new /obj/machinery/power/tracker(get_turf(src), W.type)
-				else
-					new /obj/machinery/power/solar(get_turf(src), W.type)
-				qdel(src)
+				replace_with(src, tracker ? /obj/machinery/power/tracker : /obj/machinery/power/solar, W.type)
 			else
 				to_chat(user, span_warning("You need two sheets of glass to put them into a solar panel."))
 				return INTERACTION_HANDLED_PASS

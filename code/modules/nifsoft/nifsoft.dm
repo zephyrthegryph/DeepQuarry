@@ -59,7 +59,6 @@
 /datum/nifsoft/on_destroy(force)
 	if(nif())
 		uninstall()
-		nif_handle = null
 	..()
 
 //Called when the software is installed in the NIF

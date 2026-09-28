@@ -25,7 +25,6 @@
 // the cables it switched go with it; RCON consoles rescan.
 /obj/machinery/power/breakerbox/on_destroy(force)
 	for(var/obj/structure/cable/C in src.loc)
-		C.breaker_box_handle = null
 		qdel(C)
 	..()
 	for(var/datum/tgui_module/rcon/R in SStgui.all_uis)

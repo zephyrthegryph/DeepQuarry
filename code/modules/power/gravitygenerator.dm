@@ -156,7 +156,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	if(!gravity_in_level())
 		update_gravity(FALSE)
 	for(var/obj/machinery/gravity_generator/part/O in parts)
-		O.main_part_handle = null
 		if(!QDESTROYING(O))
 			qdel(O)
 	..()

@@ -158,13 +158,16 @@
 	idle_power_usage = 5000
 
 // sensor consoles lose it.
-/obj/machinery/shipsensors/on_destroy(force)
-	update_use_power(USE_POWER_OFF)
+/obj/machinery/shipsensors/lifecycle_dematerialize()
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(console.sensors() != src)
+		if(!om_handle_is(console.sensors_handle, src))
 			continue
 		console.sensors_handle = null
 		console.refresh_sensor_light()
+	return ..()
+
+/obj/machinery/shipsensors/on_destroy(force)
+	update_use_power(USE_POWER_OFF)
 	..()
 
 /obj/machinery/shipsensors/proc/refresh_linked_consoles()

@@ -22,7 +22,6 @@
 /obj/machinery/power/terminal/on_destroy(force)
 	if(master())
 		master().disconnect_terminal(src)
-		master_handle = null
 	..()
 
 /obj/machinery/power/terminal/hide(i)

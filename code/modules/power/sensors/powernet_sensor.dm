@@ -48,17 +48,12 @@
 
 // power monitors refresh their sensor lists once it is gone.
 /obj/machinery/power/sensor/on_destroy(force)
-	if(record_timer)
-		om_cancel_timer(src, record_timer)
-		record_timer = null
 	..()
 	// TODO - Switch power_monitor to register deletion events instead of this.
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(PM.power_monitor)
 			PM.power_monitor.refresh_sensors()
 			MACHINE_WAKE(PM)
-	history.Cut()
-	history = null
 
 // Proc: check_grid_warning()
 // Parameters: None

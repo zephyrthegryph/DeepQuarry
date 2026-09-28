@@ -149,20 +149,17 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 	QDEL_NULL(shadekin)
 
 // revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
-/datum/shadekin/on_destroy(force)
-	if(owner)
-		for(var/ability_id in shadekin_granted_abilities)
-			owner.revoke_ability(ability_id, src)
-		if(!ishuman(owner))
-			om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
-		remove_verb(owner, /mob/living/proc/shadekin_control_panel)
-		if(!QDELING(owner) && owner.shadekin_display)
-			owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
-		om_unhook_all(src)
-		if(owner.shadekin == src)
-			owner.shadekin = null
-	owner = null
+/datum/shadekin/lifecycle_prerelease()
 	..()
+	if(!owner)
+		return
+	for(var/ability_id in shadekin_granted_abilities)
+		owner.revoke_ability(ability_id, src)
+	if(!ishuman(owner))
+		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
+	remove_verb(owner, /mob/living/proc/shadekin_control_panel)
+	if(!QDELING(owner) && owner.shadekin_display)
+		owner.shadekin_display.invisibility = INVISIBILITY_ABSTRACT
 
 /datum/shadekin/proc/recalc_values()
 	set_shadekin_eyecolor() //Gets what eye color we are.
