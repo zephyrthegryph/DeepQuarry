@@ -157,12 +157,16 @@
 		UnregisterSignal(T, COMSIG_OBSERVER_TURF_ENTERED)
 
 
+/atom
+	/// EMP_PROTECT_* flags this atom always has (was /datum/element/empprotection).
+	var/emp_protection_flags = NONE
+
 /atom/proc/emp_act(severity, recursive)
 	SHOULD_CALL_PARENT(TRUE)
 	recursive++
 	if(recursive > 5) //After a certain depth, we're just going to assume that it's too insulated to be EMP'd.
 		return
-	var/protection = SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
+	var/protection = (emp_protection_flags & EMP_PROTECT_ALL) | SEND_SIGNAL(src, COMSIG_ATOM_PRE_EMP_ACT, severity)
 	if(!(protection & EMP_PROTECT_WIRES) && istype(wires))
 		wires.emp_pulse()
 

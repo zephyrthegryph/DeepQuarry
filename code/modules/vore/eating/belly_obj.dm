@@ -286,7 +286,7 @@
 		belly_reschedule()
 
 	create_reagents(300)	// So we can have some liquids in bellies
-	AddElement(/datum/element/empprotection, EMP_PROTECT_ALL)
+	emp_protection_flags |= EMP_PROTECT_ALL
 
 REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 

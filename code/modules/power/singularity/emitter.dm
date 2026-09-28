@@ -369,7 +369,7 @@
 		connect_to_network()
 	make_climbable()
 	make_rotatable()
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/power/emitter/update_icon()
 	cut_overlays()

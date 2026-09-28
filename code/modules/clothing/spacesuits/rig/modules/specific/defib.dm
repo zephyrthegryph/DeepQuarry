@@ -14,7 +14,7 @@
 	wielded = 1
 
 /obj/item/shockpaddles/standalone/rig/Initialize(mapload)
-	AddElement(/datum/element/empprotection, EMP_PROTECT_SELF)
+	emp_protection_flags |= EMP_PROTECT_SELF
 	. = ..()
 
 /obj/item/shockpaddles/standalone/rig/checked_use(charge_amt)
