@@ -21,6 +21,17 @@
 /obj/soulgem/state_codecs()
 	return ..() + list("linked_belly_handle" = /datum/state_codec/soulgem_belly)
 
+// v2: the linked belly var became linked_belly_handle (LC-refs); saves before
+// that (v1, and pre-L1 legacy blobs) carry it as "linked_belly".
+/obj/soulgem
+	state_version = 2
+
+/obj/soulgem/state_migrate(list/vars, from_version)
+	..()
+	if(from_version < 2 && ("linked_belly" in vars))
+		vars["linked_belly_handle"] = vars["linked_belly"]
+		vars -= "linked_belly"
+
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))

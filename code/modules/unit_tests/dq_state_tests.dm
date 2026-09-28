@@ -355,10 +355,19 @@
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")
 	var/list/gem_vars = gem_blob[STATE_KEY_VARS]
-	TEST_ASSERT_EQUAL(gem_vars["linked_belly"], "Tummy", "the linked belly should be saved by name")
+	TEST_ASSERT_EQUAL(gem_vars["linked_belly_handle"], "Tummy", "the linked belly should be saved by name")
 	gem.linked_belly_handle = null
 	var/obj/soulgem/gem_copy = state_materialize(json_decode(json_encode(gem_blob)), pred, NONE, errors)
 	TEST_ASSERT_EQUAL(gem_copy?.inside_flavor, "a test room", "soulgem text should round trip")
 	TEST_ASSERT(gem_copy?.linked_belly()?.name == "Tummy", "the soulgem should relink the belly by name")
 	qdel(gem_copy)
+	// A v1 save names the var "linked_belly": state_migrate() carries it over.
+	var/list/old_gem_blob = json_decode(json_encode(gem_blob))
+	old_gem_blob[STATE_KEY_VERSION] = 1
+	var/list/old_gem_vars = old_gem_blob[STATE_KEY_VARS]
+	old_gem_vars["linked_belly"] = old_gem_vars["linked_belly_handle"]
+	old_gem_vars -= "linked_belly_handle"
+	var/obj/soulgem/old_gem = state_materialize(old_gem_blob, pred, NONE, errors)
+	TEST_ASSERT(old_gem?.linked_belly()?.name == "Tummy", "a v1 soulgem save should relink its belly: [jointext(errors, "; ")]")
+	qdel(old_gem)
 	qdel(gem)

@@ -517,7 +517,14 @@
 	TEST_ASSERT_NOTNULL(paddles, "the kit should have tethered paddles")
 	TEST_ASSERT_EQUAL(paddles?.tether_host(), kit, "paddles?.tether_host() should be the kit")
 	qdel(paddles)
-	var/obj/item/remade = kit?.tethered_handheld()
+	// The host remakes its handheld out of the unlink, on an om_after(0) timer
+	// that fires on the next scheduler slot, so wait for it.
+	var/obj/item/remade
+	for(var/i in 1 to 40)
+		remade = kit?.tethered_handheld()
+		if(remade)
+			break
+		sleep(world.tick_lag)
 	TEST_ASSERT(remade && remade != paddles, "deleting the paddles should remake them")
 	qdel(kit)
 	TEST_ASSERT(QDELETED(remade), "deleting the kit should delete its paddles")

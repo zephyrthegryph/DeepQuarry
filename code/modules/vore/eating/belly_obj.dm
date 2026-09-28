@@ -11,6 +11,9 @@
 //
 
 /obj/belly
+	// Nothing inside a belly is EMPed through it. A type default, not set in
+	// Initialize(), so it matches initial() and stays out of the belly prefs.
+	emp_protection_flags = EMP_PROTECT_ALL
 	name = "belly"							// Name of this location
 	desc = "It's a belly! You're in it!"	// Flavor text description of inside sight/sound/smells/feels.
 	var/display_name = ""					// Optional display name
@@ -286,7 +289,6 @@
 		belly_reschedule()
 
 	create_reagents(300)	// So we can have some liquids in bellies
-	emp_protection_flags |= EMP_PROTECT_ALL
 
 REF_BACKLIST(/obj/belly, list("owner" = "vore_organs"))
 
