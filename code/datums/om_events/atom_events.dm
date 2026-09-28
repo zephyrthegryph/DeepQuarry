@@ -76,3 +76,37 @@
 /// TRUE when a behaviour on `AM` vetoes `crosser` crossing it.
 /proc/om_cross_vetoed(atom/movable/AM, atom/movable/crosser)
 	return om_wants(AM, /datum/om/event/before/cross) && om_emit(AM, new /datum/om/event/before/cross(crosser)) == EVENT_VETO
+
+// ---------------------------------------------------------------- attack_self / attackby
+
+/// Veto (beside COMSIG_ITEM_ATTACK_SELF): `user` uses the item in hand; EVENT_VETO
+/// means a behaviour handled it and the attack chain stops.
+/datum/om/event/before/attack_self
+	var/user
+
+/datum/om/event/before/attack_self/New(user)
+	src.user = user
+
+/datum/om/event/before/attack_self/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_attack_self(E, src)
+
+/datum/om/behaviour/proc/on_before_attack_self(datum/E, datum/om/event/before/attack_self/event)
+	return
+
+/// Veto (beside COMSIG_ATOM_ATTACKBY): `user` hits the atom with `item`; EVENT_VETO
+/// means a behaviour handled it and the attack chain stops.
+/datum/om/event/before/attackby
+	var/item
+	var/user
+	var/params
+
+/datum/om/event/before/attackby/New(item, user, params)
+	src.item = item
+	src.user = user
+	src.params = params
+
+/datum/om/event/before/attackby/dispatch(datum/om/behaviour/B, datum/E)
+	return B.on_before_attackby(E, src)
+
+/datum/om/behaviour/proc/on_before_attackby(datum/E, datum/om/event/before/attackby/event)
+	return

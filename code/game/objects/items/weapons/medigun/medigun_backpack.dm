@@ -279,7 +279,7 @@
 	update_icon()
 
 /obj/item/medigun_backpack/Initialize(mapload)
-	AddComponent(/datum/component/tethered_item, medigun_path)
+	make_tethered(medigun_path)
 	. = ..()
 
 	var/obj/item/bork_medigun/linked/medigun = get_medigun()
@@ -310,8 +310,7 @@
 REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "scapacitor", "slaser"))
 
 /obj/item/medigun_backpack/proc/get_medigun()
-	var/datum/component/tethered_item/TI = GetComponent(/datum/component/tethered_item)
-	return TI.get_handheld()
+	return tethered_handheld()
 
 /obj/item/medigun_backpack/emp_act(severity)
 	. = ..()
@@ -321,8 +320,8 @@ REF_OWNED(/obj/item/medigun_backpack, list("bcell", "smodule", "smanipulator", "
 		bcell.emp_act(severity)
 
 /obj/item/medigun_backpack/attack_hand(mob/living/user)
-	// See important note in tethered_item.dm
-	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	// See important note in code/datums/behaviours/tethered_item.dm
+	if(tether_swap(user))
 		return TRUE
 	. = ..()
 

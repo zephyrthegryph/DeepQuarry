@@ -24,7 +24,7 @@
 	return bcell
 
 /obj/item/defib_kit/Initialize(mapload) //starts without a cell for rnd
-	AddComponent(/datum/component/tethered_item, paddle_path)
+	make_tethered(paddle_path)
 	. = ..()
 	if(ispath(bcell))
 		bcell = new bcell(src)
@@ -36,8 +36,7 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 	bcell = /obj/item/cell/apc
 
 /obj/item/defib_kit/proc/get_paddles()
-	var/datum/component/tethered_item/TI = GetComponent(/datum/component/tethered_item)
-	return TI.get_handheld()
+	return tethered_handheld()
 
 /obj/item/defib_kit/update_icon()
 	cut_overlays()
@@ -66,10 +65,10 @@ REF_OWNED(/obj/item/defib_kit, "bcell")
 	)
 	return L
 
-/// Old attack_hand: let tethered_item swap the paddles into hand before falling through to pickup.
+/// Old attack_hand: let the tether swap the paddles into hand before falling through to pickup.
 /obj/item/defib_kit/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	// See important note in tethered_item.dm
-	if(SEND_SIGNAL(src,COMSIG_ITEM_ATTACK_SELF,user) & COMPONENT_CANCEL_ATTACK_CHAIN)
+	// See important note in code/datums/behaviours/tethered_item.dm
+	if(tether_swap(user))
 		return TRUE
 	return FALSE
 
