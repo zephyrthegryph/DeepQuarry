@@ -15,8 +15,12 @@
 	for(var/mob/living/simple_mob/test_path as anything in typesof(/mob/living/simple_mob))
 		if(!initial(test_path.vore_active))
 			continue
+		var/started = REALTIMEOFDAY
+		log_test("vbo: spawning [test_path]")
 		var/mob/living/simple_mob/test_mob = new test_path()
+		log_test("vbo: [test_path] made in [(REALTIMEOFDAY - started) / 10]s")
 		test_mob.init_vore(TRUE)
+		log_test("vbo: [test_path] init_vore done at [(REALTIMEOFDAY - started) / 10]s")
 		for(var/obj/belly/mob_belly in test_mob.vore_organs)
 			var/test_fullscreen = mob_belly.belly_fullscreen
 			if(!length(test_fullscreen))
@@ -25,4 +29,6 @@
 			if(test_overlay)
 				continue
 			TEST_FAIL("[test_mob] uses a non existing belly_fullscreen [test_fullscreen].")
+		log_test("vbo: [test_path] bellies checked, deleting")
 		qdel(test_mob)
+		log_test("vbo: [test_path] deleted at [(REALTIMEOFDAY - started) / 10]s")
