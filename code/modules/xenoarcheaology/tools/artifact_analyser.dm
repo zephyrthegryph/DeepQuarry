@@ -10,7 +10,7 @@
 	var/scan_num = 0
 	var/tmp/scanned_obj_handle
 	var/tmp/owned_scanner_handle
-	var/scan_completion_time = 0
+	TIMESTAMP_VAR(scan_completion_time)
 	var/scan_duration = 50
 	var/tmp/scanned_object_handle
 	var/report_num = 0
@@ -128,10 +128,10 @@
 /obj/machinery/artifact_analyser/machine_step()
 	if(!scan_in_progress)
 		return PROCESS_KILL
-	if(world.time <= scan_completion_time) // ALLOW(cooldown): scan progress
+	if(world.time <= scan_completion_time)
 		om_after(src, scan_completion_time + 1 - world.time, PROC_REF(scan_timer_fired))
 		return PROCESS_KILL
-	if(scan_in_progress && world.time > scan_completion_time) // ALLOW(cooldown): scan progress
+	if(scan_in_progress && world.time > scan_completion_time)
 		scan_in_progress = 0
 
 		var/results = ""

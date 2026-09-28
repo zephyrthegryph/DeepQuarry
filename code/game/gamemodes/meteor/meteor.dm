@@ -8,11 +8,11 @@
 	required_players = 0
 	votable = 0
 	deny_respawn = 0
-	var/next_wave = METEOR_DELAY
+	var/next_wave_at = METEOR_DELAY
 
 /datum/game_mode/meteor/periodic_step()
-	if(world.time >= next_wave) // ALLOW(cooldown): wave schedule
-		next_wave = world.time + GLOB.meteor_wave_delay
+	if(world.time >= next_wave_at)
+		next_wave_at = world.time + GLOB.meteor_wave_delay
 		spawn_meteors(6, GLOB.meteors_normal)
 
 /datum/game_mode/meteor/declare_completion()

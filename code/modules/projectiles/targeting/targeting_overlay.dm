@@ -14,7 +14,7 @@
 	var/tmp/aiming_with_handle	// What are we targeting with?
 	var/tmp/owner_handle	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
-	var/lock_time = 0          // When -will- we lock on?
+	TIMESTAMP_VAR(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
 	var/target_permissions = 0 // Permission bitflags.
 
@@ -100,7 +100,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 		cancel_aiming()
 		return
 
-	if(!locked && lock_time <= world.time) // ALLOW(cooldown): aim lock progress
+	if(!locked && lock_time <= world.time)
 		locked = 1
 		to_chat(owner(), span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))

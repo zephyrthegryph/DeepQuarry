@@ -97,19 +97,19 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 	if(!ckey)
 		return -1 // What?
 
-	var/timer = GLOB.respawn_timers[ckey]
+	var/respawn_at = GLOB.respawn_timers[ckey]
 	// No timer at all
-	if(!timer)
+	if(!respawn_at)
 		return 0
 	// Special case, infinite timer
-	if(timer == -1)
+	if(respawn_at == -1)
 		return -1
 	// Timer expired
-	if(timer <= world.time) // ALLOW(cooldown): lobby timer
+	if(respawn_at <= world.time)
 		GLOB.respawn_timers -= ckey
 		return 0
 	// Timer still going
-	return timer - world.time
+	return respawn_at - world.time
 
 /mob/new_player/proc/IsJobAvailable(rank)
 	var/datum/job/job = SSjob.get_job(rank)

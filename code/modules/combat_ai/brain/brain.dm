@@ -405,7 +405,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 			if(!lose_threat_at)
 				lose_threat_at = world.time
 				return  // Start the grace timer; don't drop yet.
-			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT) // ALLOW(cooldown): threat memory expiry
+			if(world.time < lose_threat_at + DQ_LOSE_THREAT_TIMEOUT)
 				return  // Still within the grace period.
 			// Grace period expired — drop the target.
 			drop_primary_threat()
@@ -465,7 +465,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 		var/ref = om_handle(other)
 		var/list/entry = personal[ref]
 		if(entry)
-			if(entry["expires"] && entry["expires"] < world.time) // ALLOW(cooldown): threat memory expiry
+			if(entry["expires"] && entry["expires"] < world.time)
 				personal -= ref
 				UNSETEMPTY(personal)
 			else

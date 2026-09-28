@@ -8,7 +8,7 @@
 	var/icon_state = "" //icon state of the main segments of the beam
 	var/beam_color = null // Color of the beam segments
 	var/max_distance = 0
-	var/endtime = 0
+	TIMESTAMP_VAR(endtime)
 	var/sleep_time = 3
 	var/finished = 0
 	var/target_oldloc = null
@@ -39,7 +39,7 @@
 
 /// Every `sleep_time`: redraw if an end moved; ends the beam when it runs out or breaks.
 /datum/beam/proc/beam_tick()
-	if(finished || !origin() || !target() || world.time >= endtime || get_dist(origin(),target()) >= max_distance || origin().z != target().z) // ALLOW(cooldown): beam lifetime
+	if(finished || !origin() || !target() || world.time >= endtime || get_dist(origin(),target()) >= max_distance || origin().z != target().z)
 		qdel(src)
 		return
 	var/origin_turf = get_turf(origin())

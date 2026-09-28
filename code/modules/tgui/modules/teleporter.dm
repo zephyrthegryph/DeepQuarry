@@ -45,7 +45,7 @@
 				else
 					var/mob/M = I.loc
 					if(M.stat == 2)
-						if(M.timeofdeath + 6000 < world.time) // ALLOW(cooldown): elapsed time since death
+						if(M.timeofdeath + 6000 < world.time)
 							continue
 					var/turf/T = get_turf(M)
 					if(!T)

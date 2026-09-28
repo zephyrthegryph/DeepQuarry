@@ -7,7 +7,8 @@
 
 	var/datum/time/current_time = new() // Holds the current time for sun positioning.  Note that we assume day and night is the same length because simplicity.
 	var/sun_process_interval = 1 HOUR
-	var/sun_last_process = null // world.time
+	/// When the sun next updates.
+	COOLDOWN_DECLARE(next_sun_process)
 
 	var/datum/weather_holder/weather_holder
 	var/datum/sun_holder/sun_holder
@@ -55,7 +56,7 @@
 		current_time = current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER)
 	last_step = world.time
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
-	if(sun_last_process <= world.time - sun_process_interval) // ALLOW(cooldown): sun process interval
+	if(COOLDOWN_FINISHED(src, next_sun_process))
 		update_sun()
 	if(needs_work & PLANET_PROCESS_SUN)
 		needs_work &= ~PLANET_PROCESS_SUN
@@ -68,7 +69,7 @@
 
 // This changes the position of the sun on the planet.
 /datum/planet/proc/update_sun()
-	sun_last_process = world.time
+	COOLDOWN_START(src, next_sun_process, sun_process_interval)
 
 /datum/planet/proc/update_weather()
 	if(weather_holder)

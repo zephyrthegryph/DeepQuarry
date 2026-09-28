@@ -25,7 +25,7 @@
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
 
 	var/simulating = 0
-	var/simulation_started = 0
+	TIMESTAMP_VAR(simulation_started)
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results
@@ -53,7 +53,7 @@
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
 		test_canister_handle = null
-	if(simulating && world.time >= simulation_started + simulation_delay) // ALLOW(cooldown): simulation progress
+	if(simulating && world.time >= simulation_started + simulation_delay)
 		simulation_finish()
 
 /obj/machinery/bomb_tester/update_icon()

@@ -54,7 +54,7 @@
 	/// The pending om_after() timer id: the next loop, the start delay or the dormant recheck.
 	var/tmp/loop_token
 	/// world.time of the first loop, so max_loops counts from the real start.
-	var/tmp/loop_starttime
+	var/tmp/loop_started_at
 	/// Player chunk tokens while nobody can hear the loop; null while it is looping (Q5).
 	var/tmp/list/dormant_chunk_tokens
 
@@ -107,7 +107,7 @@
 	cancel_loop_timer()
 	running = FALSE
 	started = FALSE
-	loop_starttime = null
+	loop_started_at = null
 
 /datum/looping_sound/proc/cancel_loop_timer()
 	if(!isnull(loop_token))
@@ -146,16 +146,16 @@
 /datum/looping_sound/proc/sound_loop()
 	if(QDELETED(src) || !running)
 		return
-	if(isnull(loop_starttime))
-		loop_starttime = world.time
-	if(max_loops && world.time >= loop_starttime + mid_length * max_loops) // ALLOW(cooldown): loop count timing
+	if(isnull(loop_started_at))
+		loop_started_at = world.time
+	if(max_loops && world.time >= loop_started_at + mid_length * max_loops)
 		stop()
 		return
 	if(!direct && !has_listener())
 		enter_dormancy()
 		return
 	if(!chance || prob(chance))
-		var/soundfile = get_sound(loop_starttime)
+		var/soundfile = get_sound(loop_started_at)
 		if(soundfile)
 			play(soundfile)
 	set_loop_timer(mid_length)

@@ -41,7 +41,7 @@
 	spawn_flags = IC_SPAWN_DEFAULT|IC_SPAWN_RESEARCH
 	power_draw_per_use = 1
 	var/delay = 2 SECONDS
-	var/next_fire = 0
+	TIMESTAMP_VAR(next_fire)
 	var/is_running = FALSE
 	// Power consumption scales based on how fast it ticks.
 	// This, plus the fact it ticks more often will increase consumption non-linearly,
@@ -67,7 +67,7 @@
 /obj/item/integrated_circuit/time/ticker/proc/tick()
 	if(is_running && check_power())
 		om_after(src, delay, PROC_REF(tick))
-		if(world.time > next_fire) // ALLOW(cooldown): timer circuit schedule
+		if(world.time > next_fire)
 			next_fire = world.time + delay
 			activate_pin(1)
 

@@ -17,7 +17,7 @@
 
 	var/tmp/moving_upwards
 	var/tmp/busy_state									// Used for controller processing.
-	var/tmp/next_process								// world.time process() should next do something
+	TIMESTAMP_TMP_VAR(next_process) // world.time process() should next do something
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
@@ -104,7 +104,7 @@
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
 /datum/turbolift/periodic_step()
-	if(world.time < next_process) // ALLOW(cooldown): lift movement state machine
+	if(world.time < next_process)
 		return
 	switch(busy_state)
 		if(LIFT_MOVING)

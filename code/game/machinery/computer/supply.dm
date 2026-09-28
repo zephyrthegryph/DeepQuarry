@@ -10,7 +10,8 @@
 	circuit = /obj/item/circuitboard/supplycomp
 	var/authorization = 0
 	var/temp = null
-	var/reqtime = 0 //Cooldown for requisitions - Quarxink
+	/// Cooldown between printed requisition forms.
+	COOLDOWN_DECLARE(reqtime)
 	var/can_order_contraband = 0
 	var/active_category = null
 	var/menu_tab = 0
@@ -286,8 +287,8 @@
 			if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
 				return FALSE
 
-			if(world.time < reqtime) // ALLOW(cooldown): supply request timeout state
-				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
+			if(!COOLDOWN_FINISHED(src, reqtime))
+				visible_message(span_warning("[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""))
 				return FALSE
 
 			om_ask(ui.user, /datum/om/prompt/number/supply_crate_amount, PROC_REF(crate_amount_entered), pack = S, personal = !!params["personal"])
@@ -303,8 +304,8 @@
 			if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
 				return FALSE
 
-			if(world.time < reqtime) // ALLOW(cooldown): supply request timeout state
-				visible_message(span_warning("[src]'s monitor flashes, \"[reqtime - world.time] seconds remaining until another requisition form may be printed.\""))
+			if(!COOLDOWN_FINISHED(src, reqtime))
+				visible_message(span_warning("[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""))
 				return FALSE
 
 			om_ask(ui.user, /datum/om/prompt/text/supply_crate_reason, PROC_REF(crate_requested), pack = S, personal = !!params["personal"])
@@ -510,7 +511,7 @@
 	reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
 
 	reqform.update_icon()	//Fix for appearing blank when printed.
-	reqtime = (world.time + 5) % 1e5
+	COOLDOWN_START(src, reqtime, 0.5 SECONDS)
 	. = TRUE
 
 /obj/machinery/computer/supplycomp/proc/crate_requested(datum/om/prompt/text/supply_crate_reason/ask)
@@ -549,7 +550,7 @@
 	reqform.info += "STAMP BELOW TO APPROVE THIS REQUISITION:<br>"
 
 	reqform.update_icon()	//Fix for appearing blank when printed.
-	reqtime = (world.time + 5) % 1e5
+	COOLDOWN_START(src, reqtime, 0.5 SECONDS)
 	. = TRUE
 
 /// Edits one field of an order or an export; re-checked on the answer: the console still accepts orders.

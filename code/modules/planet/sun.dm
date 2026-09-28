@@ -48,7 +48,7 @@
 	sun.remove_from_turf(T)
 
 /datum/sun_holder/proc/rainbow()
-	var/end = world.time + 30 SECONDS
+	var/ends_at = world.time + 30 SECONDS
 
 
 	var/list/colors = list("#ff5d5d","#ffd17b","#ffff5e","#7eff7e","#6868ff","#b753ff","#d08fff","#ffffff")
@@ -56,18 +56,18 @@
 	var/original_color = sun.color
 
 	update_brightness(0.8)
-	rainbow_step(end, colors, 1, original_brightness, original_color)
+	rainbow_step(ends_at, colors, 1, original_brightness, original_color)
 
-/// One colour of the rainbow every 0.3 s until `end`, then the original light.
-/datum/sun_holder/proc/rainbow_step(end, list/colors, col_index, original_brightness, original_color)
-	if(world.time >= end) // ALLOW(cooldown): sun transition end time
+/// One colour of the rainbow every 0.3 s until `ends_at`, then the original light.
+/datum/sun_holder/proc/rainbow_step(ends_at, list/colors, col_index, original_brightness, original_color)
+	if(world.time >= ends_at)
 		update_brightness(original_brightness)
 		update_color(original_color)
 		return
 	update_color(colors[col_index])
 	if(++col_index > colors.len)
 		col_index = 1
-	om_after(src, 0.3 SECONDS, PROC_REF(rainbow_step), end, colors, col_index, original_brightness, original_color)
+	om_after(src, 0.3 SECONDS, PROC_REF(rainbow_step), ends_at, colors, col_index, original_brightness, original_color)
 
 // Holds a full white icon that can be mutated to make sun on the O_LIGHTING plane
 /atom/movable/sun_visuals

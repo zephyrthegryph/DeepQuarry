@@ -11,7 +11,7 @@
 	length_lower_bound = 30 MINUTES
 	length_upper_bound = 1 HOUR
 	var/spam_debug = FALSE // If true, notices of the event sending spam go to `log_game()`.
-	var/last_spam_time = null // world.time of most recent spam.
+	TIMESTAMP_VAR(last_spam_time) // world.time of most recent spam.
 	var/next_spam_attempt_time = 0 // world.time of next attempt to try to spam.
 	var/give_up_after = 5 MINUTES
 	var/tmp/MS_handle
@@ -59,7 +59,7 @@
 	. = ..()
 	if(!.)
 		// Give up if nobody was reachable for five minutes.
-		if(last_spam_time + give_up_after < world.time) // ALLOW(cooldown): event give-up timeout
+		if(last_spam_time + give_up_after < world.time)
 			log_game("PDA Spam event giving up after not being able to spam for awhile.")
 			return TRUE
 

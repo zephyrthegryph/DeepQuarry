@@ -985,7 +985,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 	var/wound_count = length(current_wounds)
 	for(var/datum/affliction/wound/W as anything in current_wounds)
 		// wounds can disappear after 10 minutes at the earliest
-		if(W.damage <= 0 && W.created + 10 MINUTES <= world.time) // ALLOW(cooldown): wound age
+		if(W.damage <= 0 && W.created + 10 MINUTES <= world.time)
 			remove_wound(W)
 			continue
 		// slow healing

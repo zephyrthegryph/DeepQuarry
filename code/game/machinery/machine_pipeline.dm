@@ -356,7 +356,7 @@
 	of = /obj/machinery/power/apc
 
 /datum/om/stage/machine/power/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	if(M.failure_until && world.time >= M.failure_until) // ALLOW(cooldown): machine failure state (pipeline core)
+	if(M.failure_until && world.time >= M.failure_until)
 		M.failure_timer = 0
 		M.failure_until = 0
 		M.queue_icon_update()
@@ -365,7 +365,7 @@
 	return STAGE_IDLE
 
 /datum/om/stage/machine/power/apc/rewake_delay(obj/machinery/power/apc/M)
-	return M.failure_until > world.time ? M.failure_until - world.time : 0 // ALLOW(cooldown): machine failure state (pipeline core)
+	return M.failure_until > world.time ? M.failure_until - world.time : 0
 
 /// Icon updates, at most every APC_UPDATE_ICON_COOLDOWN.
 /datum/om/stage/machine/present/apc

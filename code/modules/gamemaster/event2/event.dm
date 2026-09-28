@@ -51,9 +51,9 @@ This allows for events that have their announcement happen after the end itself.
 	var/length_upper_bound = null
 
 	// Set automatically, don't touch.
-	var/time_to_start = null
-	var/time_to_announce = null
-	var/time_to_end = null
+	TIMESTAMP_VAR(time_to_start)
+	TIMESTAMP_VAR(time_to_announce)
+	TIMESTAMP_VAR(time_to_end)
 
 	// These are also set automatically, and are provided for events to know what RNG decided for the various durations.
 	var/start_delay = null
@@ -204,7 +204,7 @@ This allows for events that have their announcement happen after the end itself.
 /datum/event2/event/proc/should_announce()
 	if(!time_to_announce)
 		return TRUE
-	return time_to_announce <= world.time // ALLOW(cooldown): event lifecycle schedule
+	return time_to_announce <= world.time
 
 // Override this for code that alerts the crew that the event is happening in some form, e.g. a centcom announcement or some other message.
 // If you want them to not know, you can just not override it.
@@ -219,7 +219,7 @@ This allows for events that have their announcement happen after the end itself.
 /datum/event2/event/proc/should_start()
 	if(!time_to_start)
 		return TRUE
-	return time_to_start <= world.time // ALLOW(cooldown): event lifecycle schedule
+	return time_to_start <= world.time
 
 // Override this for code to do the actual event.
 /datum/event2/event/proc/start()
@@ -236,7 +236,7 @@ This allows for events that have their announcement happen after the end itself.
 /datum/event2/event/proc/should_end()
 	if(!time_to_end)
 		return TRUE
-	return time_to_end <= world.time // ALLOW(cooldown): event lifecycle schedule
+	return time_to_end <= world.time
 
 // Override this for code to run when the event is over, e.g. cleanup.
 /datum/event2/event/proc/end()

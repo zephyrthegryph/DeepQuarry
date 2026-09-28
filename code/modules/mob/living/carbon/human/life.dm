@@ -58,7 +58,7 @@
 /datum/om/stage/life/hud_refresh/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	// The periodic safety refresh is intentionally rare (once a minute); state-changing
 	// code continues to set its exact HUD dirty bits.
-	if(world.time >= self.hud_full_refresh_at) // ALLOW(cooldown): HUD refresh schedule
+	if(world.time >= self.hud_full_refresh_at)
 		self.hud_full_refresh_at = world.time + 1 MINUTES
 		self.hud_updateflag = (1 << TOTAL_HUDS) - 1
 

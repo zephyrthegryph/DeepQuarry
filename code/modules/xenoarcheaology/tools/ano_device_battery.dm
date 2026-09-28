@@ -52,7 +52,7 @@
 	var/activated = 0
 	var/duration = 0
 	var/interval = 0
-	var/time_end = 0
+	TIMESTAMP_VAR(time_end)
 	var/last_activation = 0
 	var/last_process = 0
 	var/tmp/inserted_battery_handle
@@ -213,7 +213,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			if(inserted_battery().stored_charge <= 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 				shutdown_emission()
-			else if(world.time > time_end) // ALLOW(cooldown): activation end time
+			else if(world.time > time_end)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
 				shutdown_emission()
 		else

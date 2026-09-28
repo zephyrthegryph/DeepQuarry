@@ -18,7 +18,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	var/datum/shuttle/autodock/ferry/emergency/shuttle // Set in shuttle_emergency.dm TODO - is it really?
 	var/list/escape_pods = list()
 
-	var/launch_time				//the time at which the shuttle will be launched
+	TIMESTAMP_VAR(launch_time) //the time at which the shuttle will be launched
 	var/auto_recall = FALSE		//if set, the shuttle will be auto-recalled
 	var/evac = FALSE			//1 = emergency evacuation, 0 = crew transfer
 	var/wait_for_launch = FALSE	//if the shuttle is waiting to launch
@@ -27,7 +27,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	var/deny_shuttle = FALSE	//allows admins to prevent the shuttle from being called
 	var/departed = FALSE		//if the shuttle has left the station at least once
 
-	VAR_PRIVATE/auto_recall_time		//the time at which the shuttle will be auto-recalled
+	VAR_PRIVATE/auto_recall_at		//the time at which the shuttle will be auto-recalled
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_docked
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_called
 	VAR_PRIVATE/datum/announcement/priority/emergency_shuttle_recalled
@@ -45,9 +45,9 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 		if(!wait_for_launch)
 			return TRUE
 
-		if(evac && auto_recall && world.time >= auto_recall_time) // ALLOW(cooldown): scheduled recall time in service
+		if(evac && auto_recall && world.time >= auto_recall_at)
 			recall()
-		if(world.time >= launch_time)	//time to launch the shuttle // ALLOW(cooldown): scheduled launch time in service
+		if(world.time >= launch_time)	//time to launch the shuttle
 			stop_launch_countdown()
 
 			if(!shuttle.location)	//leaving from the station
@@ -114,7 +114,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	//set the launch timer
 	autopilot = TRUE
 	set_launch_countdown(get_shuttle_prep_time())
-	auto_recall_time = rand(world.time + 300, launch_time - 300)
+	auto_recall_at = rand(world.time + 300, launch_time - 300)
 
 	//reset the shuttle transit time if we need to
 	shuttle.move_time = SHUTTLE_TRANSIT_DURATION
@@ -135,7 +135,7 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	//set the launch timer
 	autopilot = TRUE
 	set_launch_countdown(get_shuttle_prep_time())
-	auto_recall_time = rand(world.time + 300, launch_time - 300)
+	auto_recall_at = rand(world.time + 300, launch_time - 300)
 
 	//reset the shuttle transit time if we need to
 	shuttle.move_time = SHUTTLE_TRANSIT_DURATION

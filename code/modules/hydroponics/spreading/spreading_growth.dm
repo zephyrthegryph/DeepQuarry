@@ -86,8 +86,8 @@
 			if(seed().get_trait(TRAIT_CARNIVOROUS))
 				seed().do_thorns(L,src)
 
-	if(world.time >= last_tick+NEIGHBOR_REFRESH_TIME) // ALLOW(cooldown): process tick interval
-		last_tick = world.time
+	if(COOLDOWN_FINISHED(src, neighbor_refresh_cooldown))
+		COOLDOWN_START(src, neighbor_refresh_cooldown, NEIGHBOR_REFRESH_TIME)
 		update_neighbors()
 
 	if(sampled)

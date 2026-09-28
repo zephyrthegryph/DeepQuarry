@@ -36,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	layer = MOB_LAYER - 0.1
 	stat = 0
 
-	var/target_drop_time
+	TIMESTAMP_VAR(target_drop_time)
 	var/drop_delay = 450
 	var/expended
 	var/drop_type
@@ -125,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 		return
 	if(!target_drop_time)
 		target_drop_time = world.time + drop_delay
-	else if(world.time >= target_drop_time) // ALLOW(cooldown): drop schedule
+	else if(world.time >= target_drop_time)
 		deactivate(permanent = 1)
 		var/drop_x = src.x - 2
 		var/drop_y = src.y - 2

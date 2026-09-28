@@ -54,8 +54,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/spread_chance = 40
 	var/spread_distance = 3
 	var/evolve_chance = 2
-	var/mature_time		//minimum maturation time
-	var/last_tick = 0
+	TIMESTAMP_VAR(mature_time) //minimum maturation time
+	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
 // neighbouring plants resume spreading.
@@ -316,7 +316,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 		die_off()
 
 /obj/effect/plant/proc/is_mature()
-	return (health >= (max_health/3) && world.time > mature_time) // ALLOW(cooldown): plant maturity
+	return (health >= (max_health/3) && world.time > mature_time)
 
 #undef DEFAULT_SEED
 #undef VINE_GROWTH_STAGES

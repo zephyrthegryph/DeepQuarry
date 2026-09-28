@@ -48,7 +48,7 @@
 		playing = 0
 		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
-	if(current_track() && world.time < media_start_time + current_track().duration) // ALLOW(cooldown): track playback position
+	if(current_track() && world.time < media_start_time + current_track().duration)
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules
 	var/list/tracks = getTracksList()

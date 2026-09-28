@@ -57,7 +57,7 @@
 	return alert
 
 /mob/proc/alert_timeout(atom/movable/screen/alert/alert, category)
-	if(alert.timeout && LAZYACCESS(alerts, category) == alert && world.time >= alert.timeout) // ALLOW(cooldown): alert timeout
+	if(alert.timeout && LAZYACCESS(alerts, category) == alert && world.time >= alert.timeout)
 		clear_alert(category)
 
 // Proc to clear an existing alert.
@@ -78,7 +78,7 @@
 	name = "Alert"
 	desc = "Something seems to have gone wrong with this alert, so report this bug please"
 	mouse_opacity = 1
-	var/timeout = 0 //If set to a number, this alert will clear itself after that many deciseconds
+	TIMESTAMP_VAR(timeout) //If set to a number, this alert will clear itself after that many deciseconds
 	var/severity = 0
 	var/alerttooltipstyle = ""
 	var/no_underlay // Don't underlay the UI style's blank template icon under this

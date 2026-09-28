@@ -81,7 +81,7 @@ DECLARE_REF(/datum/expedition_mission, "objectives", OWNED_LIST, null)
 		return TRUE
 	if(state == EXP_MISSION_FAILED)
 		return FALSE
-	if(deadline && world.time > deadline) // ALLOW(cooldown): mission deadline
+	if(deadline && world.time > deadline)
 		state = EXP_MISSION_FAILED
 		return FALSE
 	if(party_wiped())

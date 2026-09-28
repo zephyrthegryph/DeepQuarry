@@ -79,7 +79,7 @@ GLOBAL_VAR_INIT(round_start_time, 0)
 /proc/roundduration2text()
 	if(!GLOB.round_start_time)
 		return "00:00"
-	if(GLOB.last_round_duration && world.time < GLOB.next_duration_update) // ALLOW(cooldown): round duration cache
+	if(GLOB.last_round_duration && !COOLDOWN_FINISHED(GLOB, next_duration_update))
 		return GLOB.last_round_duration
 
 	var/mills = round_duration_in_ds // 1/10 of a second, not real milliseconds but whatever
@@ -90,7 +90,7 @@ GLOBAL_VAR_INIT(round_start_time, 0)
 	hours = hours < 10 ? add_zero(hours, 1) : hours
 
 	GLOB.last_round_duration = "[hours]:[mins]"
-	GLOB.next_duration_update = world.time + 1 MINUTES
+	COOLDOWN_START(GLOB, next_duration_update, 1 MINUTES)
 	return GLOB.last_round_duration
 
 GLOBAL_VAR_INIT(midnight_rollovers, 0)

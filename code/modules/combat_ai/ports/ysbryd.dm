@@ -19,7 +19,7 @@
 	use_modern_ai = TRUE
 	/// world.time before which the brain shouldn't switch victims (legacy
 	/// find_target_cooldown = 1 MINUTE gate).
-	var/ysbryd_reacquire_after = 0
+	COOLDOWN_DECLARE(ysbryd_reacquire_after)
 
 /mob/living/simple_mob/ysbryd/get_ai_behaviors()
 	var/static/list/L = list(
@@ -63,13 +63,13 @@
 	if(threat)
 		// Honor the legacy 1-minute re-acquire gate: don't abandon a live victim
 		// for a new one until the cooldown lapses. Once bound, stay bound.
-		if(Y.chosen_target && Y.chosen_target != threat && world.time < Y.ysbryd_reacquire_after && Y.chosen_target.stat < DEAD) // ALLOW(cooldown): AI reacquire schedule
+		if(Y.chosen_target && Y.chosen_target != threat && !COOLDOWN_FINISHED(Y, ysbryd_reacquire_after) && Y.chosen_target.stat < DEAD)
 			return DQ_BEHAVIOR_DONE
 		if(threat != Y.chosen_target)
 			if(Y.chosen_target)
 				Y.disconnect_target()
 			Y.connect_target(threat)
-			Y.ysbryd_reacquire_after = world.time + 1 MINUTE
+			COOLDOWN_START(Y, ysbryd_reacquire_after, 1 MINUTE)
 	else if(Y.chosen_target)
 		// Brain dropped the target — release the haunt.
 		Y.disconnect_target()

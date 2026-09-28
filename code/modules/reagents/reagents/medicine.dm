@@ -1223,7 +1223,7 @@
 			to_chat(M, span_notice("You regain focus..."))
 		else
 			var/delay = (5 MINUTES)
-			if(world.time > data + delay) // ALLOW(cooldown): reagent data slot timestamp
+			if(world.time > data + delay)
 				data = world.time
 				to_chat(M, span_warning("Your senses feel unfocused, and divided."))
 
@@ -1258,7 +1258,7 @@
 			to_chat(M, span_notice("Your body ceases its revolt."))
 		else
 			var/delay = (3 MINUTES)
-			if(world.time > data + delay) // ALLOW(cooldown): reagent data slot timestamp
+			if(world.time > data + delay)
 				data = world.time
 				to_chat(M, span_critical("It feels like your body is revolting!"))
 		M.status_at_least(EFFECT_CONFUSED, 7)
@@ -1333,7 +1333,7 @@
 			to_chat(M, span_notice("The itching fades..."))
 		else
 			var/delay = (2 MINUTES)
-			if(world.time > data + delay) // ALLOW(cooldown): reagent data slot timestamp
+			if(world.time > data + delay)
 				data = world.time
 				to_chat(M, span_warning("Your skin itches."))
 

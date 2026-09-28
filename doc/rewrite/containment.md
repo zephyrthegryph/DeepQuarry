@@ -487,7 +487,7 @@ is the single read that decides whether `A` may be latent right now:
 - `A` has been idle for at least the holder's configured delay.
 
 **Idle tracking: one seam, not scattered hooks.** `dq_latent_touch(A)`
-(`latency_policy.dm`) is the only place `latent_last_touch` is written, and it
+(`latency_policy.dm`) is the only place `latent_touched_at` is written, and it
 is called from exactly one place: `note_enter()`, the ledger's own move path
 (`ledger.dm`), which already covers an ordinary move, a slot transaction
 (`move_into()`/`slot_transfer()`, §2) and adoption on `sync()` -- which is what

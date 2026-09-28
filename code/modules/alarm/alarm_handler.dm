@@ -83,7 +83,7 @@ DECLARE_REF(/datum/alarm_handler, "alarms", OWNED_LIST, null)
 	return visible_alarms(z)
 
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
-	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources)) // ALLOW(cooldown): alarm expiry
+	if ((alarm.end_time && world.time > alarm.end_time) || !length(alarm.sources))
 		alarms -= alarm
 		LAZYREMOVE(alarms_assoc, alarm.origin())
 		on_alarm_change(alarm, ALARM_CLEARED)

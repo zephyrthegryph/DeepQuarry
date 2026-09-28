@@ -74,3 +74,7 @@ Cost per behaviour, lane, pipeline stage and world service: admin verb **OM Prof
   isn't; never a timer that re-arms forever "just in case".
 - Anything owned by an entity is torn down with it; don't cancel in a destroy hook what the
   scheduler already drops.
+- A time kept as *data* (an expiry, a schedule, a start stamp read back for elapsed math) is
+  not a cooldown. Name it for a point in time (`*_at`, `*_until`, `*_since`, `*deadline`,
+  `*expires`) or declare it with `TIMESTAMP_VAR(name)` (`code/__defines/cooldowns.dm`), and
+  `tools/ci/cooldown_lint.py` recognises it without an `ALLOW(cooldown)`.

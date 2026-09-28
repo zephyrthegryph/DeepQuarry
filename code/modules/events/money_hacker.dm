@@ -3,7 +3,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 /datum/event/money_hacker
 	var/tmp/affected_account_handle
 	endWhen = 100
-	var/end_time
+	TIMESTAMP_VAR(end_time)
 
 /datum/event/money_hacker/setup()
 	end_time = world.time + 6000
@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 
 /datum/event/money_hacker/tick()
-	if(world.time >= end_time) // ALLOW(cooldown): event end time
+	if(world.time >= end_time)
 		endWhen = activeFor
 	else
 		endWhen = activeFor + 10

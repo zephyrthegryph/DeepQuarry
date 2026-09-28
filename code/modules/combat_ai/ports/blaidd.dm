@@ -151,7 +151,7 @@
 	if(!B.blaidd_watched_since)
 		B.blaidd_watched_since = world.time
 		return null
-	if(world.time < B.blaidd_watched_since + stare_grace) // ALLOW(cooldown): elapsed watch time since timestamp
+	if(world.time < B.blaidd_watched_since + stare_grace)
 		return null
 	return DQAI_RESULT(90, watcher)
 

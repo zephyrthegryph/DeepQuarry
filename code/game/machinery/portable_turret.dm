@@ -50,7 +50,8 @@
 	req_one_access = list(ACCESS_SECURITY, ACCESS_HEADS)
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE
 
-	var/last_process_time = 0	// Prevents turrets in fast processing mode from healing and popping down faster.
+	/// Prevents turrets in fast processing mode from healing and popping down faster.
+	COOLDOWN_DECLARE(slow_process_cooldown)
 
 	var/raised = FALSE			//if the turret cover is "open" and the turret is raised
 	var/raising= FALSE			//if the turret is currently opening or closing its cover
@@ -749,9 +750,9 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	PRIVATE_PROC(TRUE)
 
 	if(speed_process) // Even while in fast processing mode we want to popdown and heal at the tickrate of the standard machine loop.
-		if(world.time < (last_process_time + MACHINE_SERVICE_INTERVAL)) // ALLOW(cooldown): service tick interval gating
+		if(!COOLDOWN_FINISHED(src, slow_process_cooldown))
 			return
-		last_process_time = world.time
+		COOLDOWN_START(src, slow_process_cooldown, MACHINE_SERVICE_INTERVAL)
 
 	if(!shot_targets && --timeout <= 0)
 		popDown() // no valid targets, close the cover
