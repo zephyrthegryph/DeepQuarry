@@ -78,15 +78,15 @@
 /datum/lifecycle_decls/proc/set_gas(var_name, volume, temperature, list/gases)
 	gas = list(var_name, volume, temperature, gases)
 
-/datum/lifecycle_decls/proc/set_reagents(volume, list/contents, holder_type, tint)
+/datum/lifecycle_decls/proc/set_reagents(volume, list/added, holder_type, tint)
 	if(!isnull(volume))
 		reagent_volume = volume
 	else if(isnull(reagent_volume))
 		reagent_volume = 0 // contents with no holder declared anywhere up the chain
-	if(length(contents))
+	if(length(added))
 		var/list/merged = reagent_contents ? reagent_contents.Copy() : list()
-		for(var/id in contents)
-			merged[id] += contents[id] || 1
+		for(var/id in added)
+			merged[id] += added[id] || 1
 		reagent_contents = merged
 	if(holder_type)
 		reagent_holder_type = holder_type
