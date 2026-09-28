@@ -302,10 +302,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 	var/obj/item/seeds/pit = null
 	special_handling = TRUE
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, list(REAGENT_ID_PITCHERNECTAR = 5, REAGENT_ID_PARALYZE_FLUID = 5))
+
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_PITCHERNECTAR, 5)
-	reagents.add_reagent(REAGENT_ID_PARALYZE_FLUID, 5) // Something worth harvesting the fruits for.
 	bitesize = 1
 	pit = new /obj/item/seeds/pitcherseed(src.contents)
 	seed = pit.seed()

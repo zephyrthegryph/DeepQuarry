@@ -1045,10 +1045,7 @@
 	desc = "You probably shouldn't swallow this."
 	icon_state = "pill2"
 
-/obj/item/reagent_containers/pill/benzilate/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BENZILATE, 50)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/benzilate, null, list(REAGENT_ID_BENZILATE = 50))
 
 
 /obj/item/reagent_containers/pill/phenethylamine
@@ -1056,10 +1053,7 @@
 	desc = "Smells like... lilacs?"
 	icon_state = "pill5"
 
-/obj/item/reagent_containers/pill/phenethylamine/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PHENETHYLAMINE, 50)
-	color = reagents.get_color()
+DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, list(REAGENT_ID_PHENETHYLAMINE = 50))
 
 
 // PILLS THAT WE PROBABLY SHOULDN'T HAVE AAAAAAAAAA. The below is only so they can be included through mapping or "spawn " command. -Carl

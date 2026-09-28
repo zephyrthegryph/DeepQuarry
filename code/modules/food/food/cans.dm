@@ -56,9 +56,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_COLA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/cola, null, list(REAGENT_ID_COLA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/decaf_cola
 	name = "\improper Space Cola Free"
@@ -68,9 +66,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/decaf_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_DECAFCOLA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/decaf_cola, null, list(REAGENT_ID_DECAFCOLA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle
 	name = "bottled water"
@@ -82,9 +78,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	pickup_sound = 'sound/items/pickup/disk.ogg'
 	cant_chance = 0
 
-/obj/item/reagent_containers/food/drinks/cans/waterbottle/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle, null, list(REAGENT_ID_WATER = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/space_mountain_wind
 	name = "\improper Space Mountain Wind"
@@ -94,9 +88,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SPACEMOUNTAINWIND, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/space_mountain_wind, null, list(REAGENT_ID_SPACEMOUNTAINWIND = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/thirteenloko
 	name = "\improper Thirteen Loko"
@@ -105,9 +97,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/thirteenloko/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_THIRTEENLOKO, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/thirteenloko, null, list(REAGENT_ID_THIRTEENLOKO = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/dr_gibb
 	name = "\improper Dr. Gibb"
@@ -117,9 +107,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/dr_gibb/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_DRGIBB, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/dr_gibb, null, list(REAGENT_ID_DRGIBB = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet
 	name = "\improper Diet Dr. Gibb"
@@ -129,9 +117,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_DIETDRGIBB, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/dr_gibb_diet, null, list(REAGENT_ID_DIETDRGIBB = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/starkist
 	name = "\improper Star-kist"
@@ -141,9 +127,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/starkist/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BROWNSTAR, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/starkist, null, list(REAGENT_ID_BROWNSTAR = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/starkistdecaf
 	name = "\improper Star-kist Classic"
@@ -153,9 +137,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/starkistdecaf/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BROWNSTARDECAF, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/starkistdecaf, null, list(REAGENT_ID_BROWNSTARDECAF = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/space_up
 	name = "\improper Space-Up"
@@ -165,9 +147,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/space_up/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SPACEUP, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/space_up, null, list(REAGENT_ID_SPACEUP = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/lemon_lime
 	name = "\improper Lemon-Lime"
@@ -177,9 +157,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/lemon_lime/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_LEMONLIME, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/lemon_lime, null, list(REAGENT_ID_LEMONLIME = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/iced_tea
 	name = "\improper Vrisk Serket Iced Tea"
@@ -189,9 +167,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/iced_tea/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ICETEA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/iced_tea, null, list(REAGENT_ID_ICETEA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/grape_juice
 	name = "\improper Grapel Juice"
@@ -201,9 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/grape_juice/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_GRAPEJUICE, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/grape_juice, null, list(REAGENT_ID_GRAPEJUICE = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/tonic
 	name = "\improper T-Borg's Tonic Water"
@@ -213,9 +187,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/tonic/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_TONIC, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/tonic, null, list(REAGENT_ID_TONIC = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/sodawater
 	name = "soda water"
@@ -224,9 +196,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/sodawater/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SODAWATER, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/sodawater, null, list(REAGENT_ID_SODAWATER = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/gingerale
 	name = "\improper Classic Ginger Ale"
@@ -236,9 +206,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/gingerale/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_GINGERALE, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/gingerale, null, list(REAGENT_ID_GINGERALE = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/root_beer
 	name = "\improper R&D Root Beer"
@@ -248,9 +216,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/root_beer/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ROOTBEER, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/root_beer, null, list(REAGENT_ID_ROOTBEER = 30))
 
 /////////////////////////BODA VENDOR DRINKS/////////////////////////
 
@@ -262,9 +228,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/kvass/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_KVASS, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/kvass, null, list(REAGENT_ID_KVASS = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/kompot
 	name = "\improper Kompot"
@@ -274,9 +238,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/kompot/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_KOMPOT, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/kompot, null, list(REAGENT_ID_KOMPOT = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/boda
 	name = "\improper Boda"
@@ -285,9 +247,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/boda/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SODAWATER, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/boda, null, list(REAGENT_ID_SODAWATER = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/bodaplus
 	name = "\improper Boda-Plyus"
@@ -296,9 +256,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bodaplus, null, list(REAGENT_ID_SODAWATER = 15))
+
 /obj/item/reagent_containers/food/drinks/cans/bodaplus/Initialize(mapload)
 	. = ..()
-	reagents.add_reagent(REAGENT_ID_SODAWATER, 15)
 	reagents.add_reagent(pick(list(
 				REAGENT_ID_APPLEJUICE,
 				REAGENT_ID_GRAPEJUICE,
@@ -316,10 +277,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/redarmy/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_POTATOJUICE, 15)
-	reagents.add_reagent(REAGENT_ID_SODAWATER, 15)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/redarmy, null, list(REAGENT_ID_POTATOJUICE = 15, REAGENT_ID_SODAWATER = 15))
 
 /obj/item/reagent_containers/food/drinks/cans/arstbru
 	name = "\improper Arstotzka Brü"
@@ -328,9 +286,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/arstbru/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_TURNIPJUICE, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/arstbru, null, list(REAGENT_ID_TURNIPJUICE = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/terra_cola
 	name = "\improper Terra-Cola"
@@ -340,10 +296,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/terra_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 25)
-	reagents.add_reagent(REAGENT_ID_IRON, 5)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/terra_cola, null, list(REAGENT_ID_WATER = 25, REAGENT_ID_IRON = 5))
 
 /////////////////////////MISC VENDOR DRINKS/////////////////////////
 
@@ -354,9 +307,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/straw_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_STRAWSODA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/straw_cola, null, list(REAGENT_ID_STRAWSODA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/apple_cola
 	name = "\improper Andromeda Apple"
@@ -365,9 +316,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/apple_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_APPLESODA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/apple_cola, null, list(REAGENT_ID_APPLESODA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/lemon_cola
 	name = "\improper Lunar Lemon"
@@ -376,9 +325,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/lemon_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_LEMONSODA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/lemon_cola, null, list(REAGENT_ID_LEMONSODA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/sarsaparilla
 	name = "\improper Starship Sarsaparilla"
@@ -387,9 +334,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/sarsaparilla/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SARSAPARILLA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/sarsaparilla, null, list(REAGENT_ID_SARSAPARILLA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/grape_cola
 	name = "\improper Gravity Grape"
@@ -398,9 +343,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/grape_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_GRAPESODA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/grape_cola, null, list(REAGENT_ID_GRAPESODA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/orange_cola
 	name = "\improper Orion Orange"
@@ -409,9 +352,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/orange_cola/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ORANGESODA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/orange_cola, null, list(REAGENT_ID_ORANGESODA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/baconsoda
 	name = "\improper Bacon Soda"
@@ -420,9 +361,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/baconsoda/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PORKSODA, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/baconsoda, null, list(REAGENT_ID_PORKSODA = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/bepis
 	name = "\improper Bepis"
@@ -435,9 +374,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/bepis/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BEPIS, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/bepis, null, list(REAGENT_ID_BEPIS = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/astrodew
 	name = "\improper Astro Dew Spring Water"
@@ -447,9 +384,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/astrodew/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/astrodew, null, list(REAGENT_ID_WATER = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/icecoffee
 	name = "\improper Café Del Consumir"
@@ -464,9 +399,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/icecoffee/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ICECOFFEE, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/icecoffee, null, list(REAGENT_ID_ICECOFFEE = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/buzz
 	name = "\improper Buzz Fuzz"
@@ -476,9 +409,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/buzz/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BUZZFUZZ, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/buzz, null, list(REAGENT_ID_BUZZFUZZ = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/shambler
 	name = "\improper Shambler's Juice"
@@ -488,9 +419,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/shambler/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SHAMBLERS, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/shambler, null, list(REAGENT_ID_SHAMBLERS = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/cranberry
 	name = "\improper Sprited Cranberry"
@@ -500,9 +429,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 10
 
-/obj/item/reagent_containers/food/drinks/cans/cranberry/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_SPRITEDCRANBERRY, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/cranberry, null, list(REAGENT_ID_SPRITEDCRANBERRY = 30))
 
 /////////////////////////CANNED BOOZE DRINKS/////////////////////////
 
@@ -513,9 +440,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/beercan/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_BEER, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/beercan, null, list(REAGENT_ID_BEER = 30))
 
 /obj/item/reagent_containers/food/drinks/cans/alecan
 	name = "\improper Spacecastle Pale Ale"
@@ -524,9 +449,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_x = 16
 	center_of_mass_y = 8
 
-/obj/item/reagent_containers/food/drinks/cans/alecan/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_ALE, 30)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/alecan, null, list(REAGENT_ID_ALE = 30))
 
 /////////////////////////ENERGY DRINKS/////////////////////////
 
@@ -538,9 +461,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_peach/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEPEACH, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_peach, null, list(REAGENT_ID_NUKIEPEACH = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_pear
 	name = "\improper Nukies - Great Pear"
@@ -550,9 +471,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_pear/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEPEAR, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_pear, null, list(REAGENT_ID_NUKIEPEAR = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_cherry
 	name = "\improper Nukies - Popping Cherry"
@@ -562,9 +481,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_cherry/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIECHERRY, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_cherry, null, list(REAGENT_ID_NUKIECHERRY = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_melon
 	name = "\improper Nukies - Melon Squirter"
@@ -574,9 +491,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_melon/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMELON, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_melon, null, list(REAGENT_ID_NUKIEMELON = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_banana
 	name = "\improper Nukies - Bursting Banana"
@@ -586,9 +501,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_banana/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEBANANA, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_banana, null, list(REAGENT_ID_NUKIEBANANA = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_rose
 	name = "\improper Nukies - Insatiable Rose"
@@ -598,9 +511,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_rose/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEROSE, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_rose, null, list(REAGENT_ID_NUKIEROSE = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_lemon
 	name = "\improper Nukies - Citrus Got Real"
@@ -610,9 +521,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_lemon/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIELEMON, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_lemon, null, list(REAGENT_ID_NUKIELEMON = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_fruit
 	name = "\improper Nukies - Swelling Fruit"
@@ -622,9 +531,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_fruit/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEFRUIT, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_fruit, null, list(REAGENT_ID_NUKIEFRUIT = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_special
 	name = "\improper Nukies - Limited Edition"
@@ -634,9 +541,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_special/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIESPECIAL, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_special, null, list(REAGENT_ID_NUKIESPECIAL = 60))
 
 /////////////////////////MEGA NUKIES/////////////////////////
 //Rare loot energy drinks with special properties, for the funnies.
@@ -649,9 +554,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGASIGHT, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sight, null, list(REAGENT_ID_NUKIEMEGASIGHT = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart
 	name = "\improper Nukies Mega - Juice Pumper"
@@ -661,9 +564,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGAHEART, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_heart, null, list(REAGENT_ID_NUKIEMEGAHEART = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep
 	name = "\improper Nukies Nega - Vibrating Nights"
@@ -673,9 +574,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGASLEEP, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_sleep, null, list(REAGENT_ID_NUKIEMEGASLEEP = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock
 	name = "\improper Nukies Mega - Jolt Railer"
@@ -685,9 +584,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGASHOCK, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shock, null, list(REAGENT_ID_NUKIEMEGASHOCK = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast
 	name = "\improper Nukies Mega - Rapid Rager"
@@ -697,9 +594,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGAFAST, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_fast, null, list(REAGENT_ID_NUKIEMEGAFAST = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_high
 	name = "\improper Nukies Mega - Diamond Sky"
@@ -709,9 +604,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGAHIGH, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_high, null, list(REAGENT_ID_NUKIEMEGAHIGH = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink
 	name = "\improper Nukies Mega - Shrinking Flower"
@@ -721,9 +614,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGASHRINK, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_shrink, null, list(REAGENT_ID_NUKIEMEGASHRINK = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow
 	name = "\improper Nukies Mega - Growing Geyser"
@@ -733,9 +624,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEMEGAGROWTH, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_mega_grow, null, list(REAGENT_ID_NUKIEMEGAGROWTH = 60))
 
 ////////////////////////Event Only Nukie//////////////////////////////////
 
@@ -747,9 +636,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	center_of_mass_y = 8
 	volume = 60
 
-/obj/item/reagent_containers/food/drinks/cans/nukie_one/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_NUKIEONE, 60)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/nukie_one, null, list(REAGENT_ID_NUKIEONE = 60))
 
 /obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur
 	name = "bottled wataur"
@@ -759,6 +646,4 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF
 	volume = 150
 	drop_sound = 'sound/items/drop/food.ogg'
 
-/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_WATER, 120)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/cans/waterbottle/wataur, null, list(REAGENT_ID_WATER = 120))

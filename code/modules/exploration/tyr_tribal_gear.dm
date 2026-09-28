@@ -74,9 +74,7 @@
 	nutriment_desc = list(REAGENT_ID_PROTEIN = 4)
 	bitesize = 2
 
-/obj/item/reagent_containers/food/snacks/mutatedmeat/Initialize(mapload)
-	. = ..()
-	reagents.add_reagent(REAGENT_ID_PROTEIN, 4)
+DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mutatedmeat, null, list(REAGENT_ID_PROTEIN = 4))
 
 /obj/item/prop/alien/prototype
 	name = "alien prototype"

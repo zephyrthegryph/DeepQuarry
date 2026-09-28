@@ -1,0 +1,1255 @@
+# Declarative-lifecycle backlog (tools/ci/decl_lint.py, doc/rewrite/declarative_lifecycle.md).
+# rule<TAB>file<TAB>normalized line. Shrink-only: convert sites, then `python tools/ci/decl_lint.py --update`.
+init_reagents	code/ATMOSPHERICS/components/unary/cold_sink.dm	create_reagents(120)
+init_reagents	code/ATMOSPHERICS/components/unary/heat_source.dm	create_reagents(120)
+init_reagents	code/game/mecha/equipment/tools/extinguisher.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
+init_reagents	code/game/mecha/equipment/tools/syringe_gun.dm	create_reagents(max_volume)
+init_reagents	code/game/objects/effects/chem/chemsmoke.dm	create_reagents(500)
+init_reagents	code/game/objects/effects/chem/coating.dm	create_reagents(100)
+init_reagents	code/game/objects/items/contraband.dm	reagents.add_reagent(reagent, picked_reagents[reagent])
+init_reagents	code/game/objects/items/fantasy_items.dm	create_reagents(300)
+init_reagents	code/game/objects/items/soap.dm	create_reagents(5)
+init_reagents	code/game/objects/items/weapons/chewables.dm	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
+init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(R, LAZYACCESS(filling, R))
+init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(REAGENT_ID_NICOTINE, 2)
+init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),10)
+init_reagents	code/game/objects/items/weapons/chewables.dm	reagents.add_reagent(pick(REAGENT_ID_BANANA,REAGENT_ID_BERRYJUICE,REAGENT_ID_GRAPEJUICE,REAGENT_ID_LEMONJUICE,REAGENT_ID_LIMEJUICE,REAGENT_ID_ORANGEJUICE,REAGENT_ID_WATERMELONJUICE),20)
+init_reagents	code/game/objects/items/weapons/cigs_lighters.dm	create_reagents(chem_volume) // making the cigarrete a chemical holder with a maximum volume of 15
+init_reagents	code/game/objects/items/weapons/cigs_lighters.dm	reagents.add_reagent(REAGENT_ID_NICOTINE, nicotine_amt)
+init_reagents	code/game/objects/items/weapons/extinguisher.dm	create_reagents(max_water)
+init_reagents	code/game/objects/items/weapons/extinguisher.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM, max_water)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	create_reagents(1000)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_ALUMINIUM, 30)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_FOAMINGAGENT, 10)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_PACID, 10)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_ALUMINIUM, 15)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_FUEL,20)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_PHORON, 15)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_SACID, 15)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_FUEL,20)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_PLANTBGONE, 25)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 25)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 25)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 25)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_FLUOROSURFACTANT, 40)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_WATER, 40)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_CLEANER, 10)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 40)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 40)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B1.reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 40)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 40)
+init_reagents	code/game/objects/items/weapons/grenades/chem_grenade.dm	B2.reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN, 80)
+init_reagents	code/game/objects/items/weapons/implants/implantreagent.dm	create_reagents(usable_volume)
+init_reagents	code/game/objects/items/weapons/material/kitchen.dm	create_reagents(scoop_volume)
+init_reagents	code/game/objects/items/weapons/mop.dm	create_reagents(30)
+init_reagents	code/game/objects/items/weapons/mop_deploy.dm	create_reagents(5)
+init_reagents	code/game/objects/items/weapons/paint.dm	reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type)
+init_reagents	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots)//so people can inject cigarettes without opening a packet, now with being able to inject the whole one
+init_reagents	code/game/objects/items/weapons/storage/fancy.dm	create_reagents(15 * storage_slots)
+init_reagents	code/game/objects/items/weapons/storage/mre.dm	reagents.add_reagent(seasoning, 1)
+init_reagents	code/game/objects/items/weapons/storage/uplink_kits.dm	pack.reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 15 * pack.storage_slots)
+init_reagents	code/game/objects/structures/mop_bucket.dm	create_reagents(300)
+init_reagents	code/game/objects/structures/watercloset.dm	create_reagents(reaction_volume)
+init_reagents	code/game/objects/structures/watercloset.dm	reagents.add_reagent(reagent_id, reaction_volume)
+init_reagents	code/game/objects/unit_testing.dm	create_reagents(5000,/datum/reagents/distilling)
+init_reagents	code/modules/blob2/core_chunk.dm	create_reagents(120)
+init_reagents	code/modules/clothing/accessories/rings.dm	create_reagents(15)
+init_reagents	code/modules/clothing/accessories/rings.dm	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 15) // Less than a sleepy-pen, but still enough to knock someone out
+init_reagents	code/modules/exploration/tyr_tribal_gear.dm	reagents.add_reagent(REAGENT_ID_LUMINOL,1)
+init_reagents	code/modules/exploration/tyr_tribal_gear.dm	reagents.add_reagent(REAGENT_ID_PROTEIN,1)
+init_reagents	code/modules/food/drinkingglass/shaker.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 30)
+init_reagents	code/modules/food/drinkingglass/shaker.dm	reagents.add_reagent(REAGENT_ID_IRON, 10)
+init_reagents	code/modules/food/drinkingglass/shaker.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 35)
+init_reagents	code/modules/food/drinkingglass/shaker.dm	reagents.add_reagent(REAGENT_ID_WATER, 25)
+init_reagents	code/modules/food/drinkingglass/shaker.dm	reagents.add_reagent(REAGENT_ID_LIQUIDPROTEAN, 50)
+init_reagents	code/modules/food/drinkingglass/shaker.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 50)
+init_reagents	code/modules/food/food/cans.dm	reagents.add_reagent(pick(list(
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT,(nutriment_amt*2),nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CHOCOLATE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CHOCOLATE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SPRINKLES, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SPRINKLES, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SPRINKLES, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CHOCOLATE, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SPRINKLES, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CHOCOLATE, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CAPSAICIN, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SPRINKLES, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PHORON, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_COCO, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BANANA, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BERRYJUICE, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, rand(3,5))
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TOXIN, rand(1,3))
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(toxin_type, toxin_amount)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 8, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 3, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CAPSAICIN, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_FROSTOIL, 3)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 2)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_WATER, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_WATER, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 2, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BANANA, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SLIMEJELLY, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_WATER, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CARBON, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TOXIN, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 6, nutriment_desc)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TOMATOJUICE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_IMIDAZOLINE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 8, list("something good" = 8))
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BEETSOUP, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_OXYCODONE, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SIFSAP, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_BLISS, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_OIL, 4)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(reagent_string, 4)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 4)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(pick(list(
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SALMONELLA, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(brainmeat, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_HOTNSOURSOUP, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 20)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_IRON, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 10)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CARBON, 5)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 20)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 2)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 8)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_CAPSAICIN, 4)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_PROTEIN, 4)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_SODIUMCHLORIDE, 1)
+init_reagents	code/modules/food/food/snacks.dm	reagents.add_reagent(REAGENT_ID_POTATOJUICE, 30) // for people who want to get fat, FAST.
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_NEUROTOXIC_PROTEIN, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_SHOCKCHEM, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_AMATOXIN, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_CARPOTOXIN, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_SPIDERTOXIN, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_STOXIN, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_BLISS, 10)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_SEROTROTIUM, 4)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 8)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_MINDBREAKER, 10)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_PSILOCYBIN, 10)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 20)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_STOMACID, 10)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_MUTAGEN, 4)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_THIRTEENLOKO, 20)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_HYPERZINE, 10)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_ANTITOXIN, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_DEXALINP, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_BICARIDINE, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_TRICORDRAZINE, 2)
+init_reagents	code/modules/food/food/superfoods.dm	reagents.add_reagent(REAGENT_ID_KELOTANE, 2)
+init_reagents	code/modules/food/food/z_custom_food.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT,3)
+init_reagents	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	create_reagents(size*8 + 10)
+init_reagents	code/modules/food/kitchen/cooking_machines/container.dm	create_reagents(max_reagents)
+init_reagents	code/modules/food/kitchen/icecream.dm	create_reagents(100)
+init_reagents	code/modules/food/kitchen/icecream.dm	reagents.add_reagent(REAGENT_ID_MILK, 5)
+init_reagents	code/modules/food/kitchen/icecream.dm	reagents.add_reagent(REAGENT_ID_FLOUR, 5)
+init_reagents	code/modules/food/kitchen/icecream.dm	reagents.add_reagent(REAGENT_ID_SUGAR, 5)
+init_reagents	code/modules/food/kitchen/icecream.dm	reagents.add_reagent(REAGENT_ID_ICE, 5)
+init_reagents	code/modules/food/kitchen/icecream.dm	create_reagents(20)
+init_reagents	code/modules/food/kitchen/icecream.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, 5)
+init_reagents	code/modules/hydroponics/grown.dm	reagents.add_reagent(rid,max(1,rtotal),data)
+init_reagents	code/modules/hydroponics/grown_inedible.dm	create_reagents(50)
+init_reagents	code/modules/hydroponics/grown_inedible.dm	reagents.add_reagent(rid,max(1,rtotal))
+init_reagents	code/modules/hydroponics/trays/tray.dm	temp_chem_holder.create_reagents(10)
+init_reagents	code/modules/hydroponics/trays/tray.dm	create_reagents(200)
+init_reagents	code/modules/integrated_electronics/passive/power.dm	create_reagents(volume)
+init_reagents	code/modules/integrated_electronics/subtypes/reagents.dm	create_reagents(volume)
+init_reagents	code/modules/material_science/material_machines.dm	create_reagents(120)
+init_reagents	code/modules/material_science/material_machines.dm	create_reagents(200)
+init_reagents	code/modules/mob/living/carbon/human/species/station/alraune.dm	create_reagents(usable_volume)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	reagents.add_reagent(REAGENT_ID_NUTRIMENT, nutriment_amt, nutriment_desc)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	create_reagents(60)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	reagents.add_reagent(REAGENT_ID_TOXIN, 45)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/passive/fish.dm	reagents.add_reagent(REAGENT_ID_IMPEDREZENE, 15)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	reagents.add_reagent(REAGENT_ID_SUGAR, 2)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/gateway/alchemistbee.dm	create_reagents(splatter_volume)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B1.reagents.add_reagent(REAGENT_ID_MIASMA, 30)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 5)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5)
+init_reagents	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5)
+init_reagents	code/modules/organs/internal/brain.dm	create_reagents(50)
+init_reagents	code/modules/organs/internal/stomach.dm	create_reagents(30)
+init_reagents	code/modules/organs/organ.dm	create_reagents(5)
+init_reagents	code/modules/paperwork/pen.dm	create_reagents(30)
+init_reagents	code/modules/paperwork/pen.dm	reagents.add_reagent(REAGENT_ID_CHLORALHYDRATE, 22)
+init_reagents	code/modules/paperwork/pen.dm	reagents.add_reagent(REAGENT_ID_ZOMBIEPOWDER, 5)
+init_reagents	code/modules/paperwork/pen.dm	reagents.add_reagent(REAGENT_ID_CRYPTOBIOLIN, 10)
+init_reagents	code/modules/power/fusion/core/_core.dm	create_reagents(10000)
+init_reagents	code/modules/projectiles/guns/projectile/dartgun.dm	B.reagents.add_reagent(chem, 60)
+init_reagents	code/modules/projectiles/precursor/eclipse.dm	B1.reagents.add_reagent(REAGENT_ID_CRYOSLURRY, 150)
+init_reagents	code/modules/projectiles/precursor/eclipse.dm	B1.reagents.add_reagent(REAGENT_ID_POTASSIUM, 150)
+init_reagents	code/modules/projectiles/precursor/eclipse.dm	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 150)
+init_reagents	code/modules/projectiles/precursor/eclipse.dm	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 150)
+init_reagents	code/modules/projectiles/projectile/blob.dm	create_reagents(splatter_volume)
+init_reagents	code/modules/reagents/machinery/bunsen_burner.dm	create_reagents(1, /datum/reagents/distilling) // resizes based on the boiling container
+init_reagents	code/modules/reagents/machinery/dispenser/cartridge.dm	reagents.add_reagent(spawn_reagent, volume)
+init_reagents	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	create_reagents(600)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_WATER, 1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_WATER, 4000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_FUEL,1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_FUEL,4000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_FIREFOAM,1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_HELIUM3,1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_CONDENSEDCAPSAICIN,1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_VIRUSFOOD, 1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_SACID, 1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_WATER,2000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_BEER,1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_REDWINE,1000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_COOKINGOIL,5000)
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_CLEANER, 1000)
+init_reagents	code/modules/reagents/machinery/distillery.dm	create_reagents(600, /datum/reagents/distilling)
+init_reagents	code/modules/reagents/machinery/pump.dm	create_reagents(200)
+init_reagents	code/modules/reagents/reagent_containers/blood_pack.dm	reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
+init_reagents	code/modules/reagents/reagent_containers/glass.dm	reagents.add_reagent(R,prefill[R])
+init_reagents	code/modules/reagents/reagent_containers/hypospray.dm	reagents.add_reagent(r, LAZYACCESS(filled_reagents, r))
+init_reagents	code/modules/reagents/reagent_containers/pill.dm	reagents.add_reagent(REAGENT_ID_MOLD, 2) //Chance to be more dangerous
+init_reagents	code/modules/reagents/reagent_containers/pill.dm	reagents.add_reagent(REAGENT_ID_EXPIREDMEDICINE, 5)
+init_reagents	code/modules/reagents/reagent_containers/pill.dm	reagents.add_reagent(REAGENT_ID_STIMM, 5) // end: Zoom pill adjustments
+init_reagents	code/modules/reagents/reagent_containers/spray.dm	reagents.add_reagent(REAGENT_ID_CLEANER, volume)
+init_reagents	code/modules/reagents/reagent_containers/spray.dm	reagents.add_reagent(REAGENT_ID_STERILIZINE, volume)
+init_reagents	code/modules/reagents/reagent_containers/syringes.dm	reagents.add_reagent(REAGENT_ID_HYPERZINE,10)
+init_reagents	code/modules/reagents/reagent_containers/virology.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+init_reagents	code/modules/reagents/reagent_containers/virology.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+init_reagents	code/modules/reagents/reagent_containers/virology.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+init_reagents	code/modules/reagents/reagent_containers/virology.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+init_reagents	code/modules/reagents/reagent_containers/virology.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+init_reagents	code/modules/reagents/reagent_containers/virology.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
+init_reagents	code/modules/recycling/v_garbosystem.dm	create_reagents(CARGOTANKER_VOLUME * 2)
+init_reagents	code/modules/refinery/core/industrial_reagent_machines.dm	create_reagents(default_max_vol, reagent_type)
+init_reagents	code/modules/refinery/equipment/chemcontainer.dm	reagents.add_reagent(R.id, volume)
+init_reagents	code/modules/refinery/equipment/pumprelay.dm	create_reagents(200)
+init_reagents	code/modules/refinery/equipment/smart_centrifuge.dm	create_reagents(CARGOTANKER_VOLUME)
+init_reagents	code/modules/vehicles/cargo_train.dm	create_reagents(CARGOTANKER_VOLUME)
+init_reagents	code/modules/vehicles/janicart.dm	create_reagents(600)
+init_reagents	code/modules/vore/eating/belly_obj.dm	create_reagents(300) // So we can have some liquids in bellies
+init_reagents	code/modules/xenoarcheaology/finds/find_spawning.dm	S.reagents.add_reagent(new_chem, 3)
+init_reagents	code/modules/xenoarcheaology/tools/coolant_tank.dm	reagents.add_reagent(REAGENT_ID_COOLANT, 1000)
+init_reagents	code/modules/xenoarcheaology/tools/geosample_scanner.dm	create_reagents(COOLANT_MAX)
+init_reagents	code/modules/xenobio/items/extracts.dm	create_reagents(60)
+init_gas	code/ATMOSPHERICS/components/unary/unary_base.dm	air_contents = new
+init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_O2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_N2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CO2, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_PHORON, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_N2O, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+init_gas	code/ATMOSPHERICS/pipes/tank.dm	air_temporary.adjust_gas(GAS_CH4, (start_pressure)*(air_temporary.return_volume())/(R_IDEAL_GAS_EQUATION*air_temporary.return_temperature()))
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_O2, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_O2, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2O, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents = new
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CH4, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_N2, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_CO2, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/canister.dm	air_contents.adjust_gas(GAS_PHORON, MolesForPressure())
+init_gas	code/game/machinery/atmoalter/portable_atmospherics.dm	air_contents = new
+init_gas	code/game/objects/effects/spawners/bombspawner.dm	PT.air_contents.adjust_gas(GAS_PHORON, (phoron_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_PHORON))
+init_gas	code/game/objects/effects/spawners/bombspawner.dm	PT.air_contents.adjust_gas(GAS_CO2, (carbon_amt) - LINDA_GAS_AMT(PT.air_contents, GAS_CO2))
+init_gas	code/game/objects/effects/spawners/bombspawner.dm	OT.air_contents.adjust_gas(GAS_O2, (oxygen_amt) - LINDA_GAS_AMT(OT.air_contents, GAS_O2))
+init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_VOLATILE_FUEL, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/jetpack.dm	air_contents.adjust_gas(GAS_CO2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_O2, (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_O2, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * O2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_O2))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_N2O, ((3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C) * N2STANDARD) - LINDA_GAS_AMT(air_contents, GAS_N2O))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_PHORON, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (7*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_O2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_O2, (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_N2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CH4, (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CO2, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	src.air_contents.adjust_gas(GAS_CH4, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tank_types.dm	air_contents.adjust_gas(GAS_PHORON, (10*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+init_gas	code/game/objects/items/weapons/tanks/tanks.dm	src.air_contents = new /datum/gas_mixture()
+init_gas	code/game/objects/structures/transit_tubes.dm	air_contents = new()
+init_gas	code/modules/recycling/disposal_machines.dm	air_contents = new(PRESSURE_TANK_VOLUME)
+init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LATEJOIN, src)
+init_registry	code/game/objects/effects/landmarks.dm	registry_join(REGISTRY_LANDMARKS, src)
+init_registry	code/game/objects/effects/step_triggers.dm	GLOB.mapped_autostrips[targetid] = src
+init_registry	code/game/objects/effects/step_triggers.dm	GLOB.mapped_autostrips_mob[targetid] = src
+init_registry	code/game/objects/items/devices/radio/radio.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+init_registry	code/game/objects/items/devices/taperecorder.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+init_registry	code/game/objects/items/devices/tvcamera.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+init_registry	code/game/objects/items/devices/tvcamera.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+init_registry	code/game/objects/structures/ghost_pods/event.dm	registry_join(REGISTRY_GHOST_PODS, src)
+init_registry	code/game/objects/structures/ghost_pods/event.dm	registry_join(REGISTRY_GHOST_PODS, src)
+init_registry	code/game/objects/structures/ghost_pods/unified_ghost_hole.dm	registry_join(REGISTRY_GHOST_PODS, src)
+init_registry	code/game/turfs/simulated/fancy_shuttles.dm	GLOB.fancy_shuttles[fancy_shuttle_tag] = src
+init_registry	code/modules/holomap/mapper.dm	registry_join(REGISTRY_MAPPING_BEACONS, src)
+init_registry	code/modules/integrated_electronics/subtypes/input.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+init_registry	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	registry_join(REGISTRY_GHOST_PODS, src)
+init_registry	code/modules/mob/living/simple_mob/subtypes/animal/passive/raccoon.dm	registry_join(REGISTRY_GHOST_PODS, src)
+init_registry	code/modules/mob/mob.dm	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
+init_registry	code/modules/overmap/ships/ship.dm	registry_join(REGISTRY_LISTENING_OBJECTS, src)
+init_service	code/game/machinery/computer/bodycamera.dm	bpinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
+init_service	code/game/machinery/computer/camera.dm	pinboard = GLOB.vis_overlays_service.add_vis_overlay(src, icon = icon, iconstate = "pinboard", layer = 0.1, add_appearance_flags = KEEP_TOGETHER, add_vis_flags = VIS_INHERIT_ID|VIS_INHERIT_PLANE, unique = TRUE)
+init_service	code/game/machinery/doors/alarmlock.dm	GLOB.radio_service.remove_object(src, air_frequency)
+init_service	code/game/machinery/doors/alarmlock.dm	air_connection_handle = om_handle(GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
+init_service	code/game/machinery/magnet.dm	GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
+init_service	code/game/machinery/magnet.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
+init_service	code/game/machinery/status_display.dm	GLOB.radio_service.add_object(src, frequency)
+init_service	code/game/objects/effects/landmarks_poi.dm	GLOB.poi_service.enqueue(src)
+init_service	code/game/objects/items/devices/communicator/cartridge.dm	GLOB.radio_service.add_object(src, 1435)
+init_service	code/game/objects/items/devices/radio/radio.dm	secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name], RADIO_CHAT)
+init_service	code/game/turfs/simulated.dm	GLOB.planet_service.addTurf(src)
+init_service	code/game/turfs/unsimulated/planetary.dm	GLOB.planet_service.addTurf(src)
+init_service	code/modules/clothing/accessories/accessory.dm	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
+init_bind	code/modules/power/fusion/core/_core.dm	connect_to_network()
+init_bind	code/modules/power/port_gen.dm	connect_to_network()
+init_bind	code/modules/power/port_gen.dm	connect_to_network()
+init_bind	code/modules/power/port_gen.dm	connect_to_network()
+init_bind	code/modules/power/singularity/emitter.dm	connect_to_network()
+init_bind	code/modules/power/singularity/emitter.dm	connect_to_network()
+init_bind	code/modules/power/singularity/emitter.dm	connect_to_network()
+init_bind	code/modules/power/solar.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/power/tesla/coil.dm	connect_to_network()
+init_bind	code/modules/shieldgen/shield_generator.dm	connect_to_network()
+init_bind	code/modules/telesci/quantum_pad.dm	connect_to_network()
+init_scheduling	code/ATMOSPHERICS/components/shutoff.dm	om_attach(src, /datum/om/behaviour/sleeper/shutoff_valve)
+init_scheduling	code/datums/beam.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/dna/dna_modifier.dm	om_after(src, 25 SECONDS, PROC_REF(injector_cooldown_finish))
+init_scheduling	code/game/gamemodes/cult/cult_structures.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/gamemodes/cult/cult_structures.dm	om_after(src, rand(30, 60) SECONDS, PROC_REF(spawn_and_qdel))
+init_scheduling	code/game/gamemodes/cult/narsie.dm	om_after(src, 10 SECONDS, /proc/narsie_call_evac)
+init_scheduling	code/game/gamemodes/endgame/supermatter_cascade/portal.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/gamemodes/events/black_hole.dm	om_after(src, 0.4 SECONDS, PROC_REF(controller))
+init_scheduling	code/game/gamemodes/technomancer/spells/aura/aura.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/gamemodes/technomancer/spells/phase_shift.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/gamemodes/technomancer/spells/radiance.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/machinery/bluespace_denier.dm	timerid = om_after(src, 10 SECONDS, PROC_REF(start_up))
+init_scheduling	code/game/machinery/computer/guestpass.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/machinery/machinery.dm	om_task_periodic(src, PERIODIC_FAST)
+init_scheduling	code/game/mecha/mecha.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/alien/aliens.dm	om_task_periodic(src, PERIODIC_SLOW) // Only the node processes in a subsystem, the rest are process()'d by the node
+init_scheduling	code/game/objects/effects/anomalies/_anomalies.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/anomalies/_anomalies.dm	om_after(src, lifespan, PROC_REF(lifespan_over))
+init_scheduling	code/game/objects/effects/anomalies/anomalies_weather.dm	om_after(src, telegraph, PROC_REF(start_weather))
+init_scheduling	code/game/objects/effects/bluespace_spawner.dm	om_after(src, time_between_spawn, PROC_REF(spawn_due))
+init_scheduling	code/game/objects/effects/bluespace_spawner.dm	om_after(src, time_to_end, /datum/proc/qdel_self)
+init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, 3 + metal * 3, PROC_REF(post_spread))
+init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, 12 SECONDS, PROC_REF(pre_harden))
+init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, 15 SECONDS, PROC_REF(harden))
+init_scheduling	code/game/objects/effects/chem/foam.dm	om_after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
+init_scheduling	code/game/objects/effects/dark_growth.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/decals/Cleanable/humans.dm	om_after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
+init_scheduling	code/game/objects/effects/decals/Cleanable/misc.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/decals/Cleanable/vore.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/effect_system.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/map_effects/beam_point.dm	om_after(src, initial_delay, PROC_REF(handle_beam_timer))
+init_scheduling	code/game/objects/effects/map_effects/map_effects.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/map_effects/radiation_emitter.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/effects/prop/columnblast.dm	om_after(src, time_to_die - 0.2 SECONDS, PROC_REF(on_eruption), get_turf(src))
+init_scheduling	code/game/objects/effects/spiders.dm	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
+init_scheduling	code/game/objects/effects/spiders.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/items/devices/communicator/communicator.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/items/devices/communicator/communicator.dm	om_after(src, 5 SECONDS, PROC_REF(register_to_holder))
+init_scheduling	code/game/objects/items/devices/uplink.dm	om_after(src, offer_time, PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
+init_scheduling	code/game/objects/items/falling_object_attack.dm	om_after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object))
+init_scheduling	code/game/objects/items/poi_items.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/items/poi_items.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate))
+init_scheduling	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate))
+init_scheduling	code/game/objects/items/weapons/medigun/medigun_backpack.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/items/weapons/melee/energy.dm	om_after(src, 0, PROC_REF(check_held))
+init_scheduling	code/game/objects/items/weapons/mop_deploy.dm	om_after(src, 0, PROC_REF(check_held))
+init_scheduling	code/game/objects/items/weapons/tools/weldingtool.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/items/weapons/weaponry.dm	om_after(src, 2 SECONDS, PROC_REF(check_empty)) // a net that caught nobody goes away
+init_scheduling	code/game/objects/micro_event.dm	om_after(src, time_til_open, /datum/proc/qdel_self)
+init_scheduling	code/game/objects/mob_spawner.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/structures/crates_lockers/closets/statue.dm	om_after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
+init_scheduling	code/game/objects/structures/gargoyle.dm	om_task_periodic(src, PERIODIC_SECOND)
+init_scheduling	code/game/objects/structures/ghost_pods/ghost_pods.dm	om_after(src, delay_to_self_open, PROC_REF(trigger))
+init_scheduling	code/game/objects/structures/props/nest.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/game/objects/structures/simple_doors.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/assembly/infrared.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/asset_cache/transports/asset_transport.dm	om_after(src, 1 SECONDS, PROC_REF(send_assets_slow), C, preload)
+init_scheduling	code/modules/blob/blob.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/blob2/blobs/core.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/blob2/blobs/node.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/clothing/accessories/badges.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/clothing/shoes/miscellaneous.dm	om_attach(src, /datum/om/behaviour/dry)
+init_scheduling	code/modules/clothing/suits/utility.dm	om_attach(src, /datum/om/behaviour/radiation_protected_clothing)
+init_scheduling	code/modules/clothing/suits/utility.dm	om_attach(src, /datum/om/behaviour/radiation_protected_clothing)
+init_scheduling	code/modules/economy/coins.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/flufftext/fake_attacker.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/integrated_electronics/subtypes/input.dm	om_after(src, 40, PROC_REF(set_frequency), frequency)
+init_scheduling	code/modules/materials/sheets/organic/tanning/tanning_rack.dm	om_task_periodic(src, PERIODIC_SLOW) // SSObj fires ~every 2s , starting from wetness 30 takes ~1m
+init_scheduling	code/modules/materials/sheets/supermatter.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/mining/resonator.dm	om_after(src, timetoburst, PROC_REF(burst), creator)
+init_scheduling	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK))
+init_scheduling	code/modules/mob/living/living.dm	om_attach(src, /datum/om/behaviour/spontaneous_vore)
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm	om_after(src, 35 SECONDS, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/stardog.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/animal/giant_spider/broodmother_spawn.dm	deathtimer = om_after(src, 2 MINUTES, PROC_REF(death))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/bullet_heck/puddle_mechanic.dm	om_after(src, fuse_time, PROC_REF(detonate))
+init_scheduling	code/modules/mob/living/simple_mob/subtypes/metroid/metObjects.dm	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
+init_scheduling	code/modules/modular_computers/computers/modular_computer/core.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/power/cell.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/power/singularity/singularity.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/projectiles/ammunition/smartmag.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/projectiles/broken.dm	om_after(src, 30 SECONDS, PROC_REF(validate_gun_type))
+init_scheduling	code/modules/projectiles/guns/energy.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/projectiles/guns/energy/cell_loaded/multi_cannon_cells.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/projectiles/guns/magic.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/projectiles/guns/magnetic/magnetic.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/random_map/drop/droppod_doors.dm	om_after(src, 10 SECONDS, PROC_REF(deploy))
+init_scheduling	code/modules/shieldgen/directional_shield.dm	om_after(src, 0, PROC_REF(create_shields))
+init_scheduling	code/modules/xenoarcheaology/finds/special.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/xenoarcheaology/finds/special.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/xenoarcheaology/finds/special.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/xenoarcheaology/finds/special.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_scheduling	code/modules/xenobio/items/slime_objects.dm	om_task_periodic(src, PERIODIC_SLOW)
+init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
+init_visuals	code/ATMOSPHERICS/components/binary_devices/algae_generator.dm	add_overlay(I)
+init_visuals	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	icon_state = "base"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "air"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "air"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "o2"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "n2"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "co2"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "phoron"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "n2o"
+init_visuals	code/ATMOSPHERICS/pipes/tank.dm	icon_state = "ch4"
+init_visuals	code/_onclick/hud/popups.dm	icon_state = "popup[rand(1,10)]"
+init_visuals	code/datums/entity_state/reactive_icon_update.dm	icon_state = "screwdriver"
+init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
+init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
+init_visuals	code/game/area/areas.dm	icon_state = ""
+init_visuals	code/game/machinery/cell_charger.dm	add_overlay("ccharger1")
+init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
+init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
+init_visuals	code/game/machinery/cryo.dm	icon_state = "base"
+init_visuals	code/game/machinery/cryo.dm	add_overlay(tank)
+init_visuals	code/game/machinery/deployable.dm	icon_state = "barrier[locked]"
+init_visuals	code/game/machinery/doors/windowdoor.dm	icon_state = "[icon_state]"
+init_visuals	code/game/machinery/event/christmas.dm	icon_state = "gift[pick("1", "2", "3")]_[pick("g", "r", "b", "y", "p")]"
+init_visuals	code/game/machinery/gear_dispenser.dm	icon_state = "suit_storage"
+init_visuals	code/game/machinery/gear_dispenser.dm	add_overlay(special_frame)
+init_visuals	code/game/machinery/igniter.dm	icon_state = "igniter[on]"
+init_visuals	code/game/machinery/portable_turret.dm	add_overlay(turret_opened_overlay)
+init_visuals	code/game/machinery/teleporter.dm	add_overlay("controller-wires")
+init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = DEFAULTPICK(random_icon_states, null)
+init_visuals	code/game/objects/effects/decals/Cleanable/humans.dm	icon_state = "writing1"
+init_visuals	code/game/objects/effects/decals/cleanable.dm	src.icon_state = DEFAULTPICK(src.random_icon_states, null)
+init_visuals	code/game/objects/effects/decals/posters/posters.dm	icon_state = poster_decl.icon_state
+init_visuals	code/game/objects/effects/decals/warning_stripes.dm	T.add_overlay(I)
+init_visuals	code/game/objects/effects/mines.dm	icon_state = "landmine_armed"
+init_visuals	code/game/objects/effects/spiders.dm	icon_state = "stickyweb2"
+init_visuals	code/game/objects/effects/spiders.dm	icon_state = pick("cocoon1","cocoon2","cocoon3")
+init_visuals	code/game/objects/items/devices/taperecorder.dm	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]"
+init_visuals	code/game/objects/items/devices/ticket_printer.dm	icon_state = "sec_ticket"
+init_visuals	code/game/objects/items/devices/ticket_printer.dm	icon_state = "permit_ticket"
+init_visuals	code/game/objects/items/devices/uplink.dm	icon_state = "radio"
+init_visuals	code/game/objects/items/falling_object_attack.dm	icon_state = "[rand(1,33)]"
+init_visuals	code/game/objects/items/fantasy_items.dm	icon_state = "toilet3"
+init_visuals	code/game/objects/items/magazine.dm	icon_state = pick(icon_states_fast('icons/obj/magazine.dmi'))
+init_visuals	code/game/objects/items/soap.dm	icon_state = "[icon_state]-alt"
+init_visuals	code/game/objects/items/trash_material.dm	icon_state = "metal[rand(4)]"
+init_visuals	code/game/objects/items/trash_material.dm	icon_state = "circuit[rand(3)]"
+init_visuals	code/game/objects/items/trash_material.dm	icon_state = "device[rand(3)]"
+init_visuals	code/game/objects/items/weapons/RMS.dm	add_overlay("rms_charge[charge_stage]")
+init_visuals	code/game/objects/items/weapons/cigs_lighters.dm	add_overlay(I)
+init_visuals	code/game/objects/items/weapons/cigs_lighters.dm	cut_overlays() //Prevents the Cheap Lighter overlay from appearing on this
+init_visuals	code/game/objects/items/weapons/extinguisher.dm	add_overlay("[item_state]O[choice]")
+init_visuals	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "gift[w_class]" + "_[pick("g","r","b","y","p")]"
+init_visuals	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "gift[pick(1, 2, 3)]" + "_[pick("g","r","b","y","p")]"
+init_visuals	code/game/objects/items/weapons/gift_wrappaper.dm	icon_state = "chomp_present_chaos"
+init_visuals	code/game/objects/items/weapons/grenades/chem_grenade.dm	icon_state = "grenade"
+init_visuals	code/game/objects/items/weapons/grenades/flashbang.dm	icon_state = "clusterbang_segment_active"
+init_visuals	code/game/objects/items/weapons/grenades/flashbang.dm	icon_state = "flashbang_active"
+init_visuals	code/game/objects/items/weapons/material/ashtray.dm	icon_state = "blank"
+init_visuals	code/game/objects/items/weapons/storage/backpack.dm	icon_state = "[icon_state]_tilted"
+init_visuals	code/game/objects/items/weapons/storage/backpack.dm	icon_state = "[icon_state]_tilted"
+init_visuals	code/game/objects/items/weapons/storage/firstaid.dm	icon_state = pick(icon_variety)
+init_visuals	code/game/objects/items/weapons/tools/crowbar.dm	icon_state = "prybar[pick("","_green","_aubergine","_blue")]"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver2"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver3"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver4"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver5"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver6"
+init_visuals	code/game/objects/items/weapons/tools/screwdriver.dm	icon_state = "screwdriver7"
+init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters"
+init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-b"
+init_visuals	code/game/objects/items/weapons/tools/wirecutters.dm	icon_state = "cutters-y"
+init_visuals	code/game/objects/mob_spawner.dm	icon_state = "tunnel_hole"
+init_visuals	code/game/objects/structures/barsign.dm	icon_state = pick(get_valid_states())
+init_visuals	code/game/objects/structures/crates_lockers/closets/secure/secure_closets.dm	add_overlay(IM)
+init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "human_female"
+init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "monkey"
+init_visuals	code/game/objects/structures/crates_lockers/closets/statue.dm	icon_state = "corgi"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "desert_rock[rand(0,6)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "desert_pebble[rand(0,6)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "anthill[rand(0,2)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "potplant[rand(0,2)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "thicket[rand(0,6)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "shrub[rand(0,5)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "bush[rand(0,5)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "barrelcacti[rand(0,3)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "palmy[rand(0,2)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "shrubber[rand(0,2)]"
+init_visuals	code/game/objects/structures/desert_planet_structures.dm	icon_state = "lbarrelcacti[rand(0,2)]"
+init_visuals	code/game/objects/structures/electricchair.dm	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "snowbush[rand(1, 6)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = bush_icon
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "firstbush_[rand(1, 4)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "sunnybush_[rand(1, 3)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "genericbush_[rand(1, 4)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "mush[rand(1,4)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,2)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,3)]"
+init_visuals	code/game/objects/structures/flora/flora.dm	icon_state = "[initial(icon_state)][rand(1,3)]"
+init_visuals	code/game/objects/structures/flora/grass.dm	icon_state = grass_icon
+init_visuals	code/game/objects/structures/flora/moretrees.dm	add_overlay(i)
+init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = choose_icon_state()
+init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = "[base_state][rand(1, 6)]"
+init_visuals	code/game/objects/structures/flora/trees.dm	icon_state = "[base_state][rand(1, 6)]"
+init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(new_image)
+init_visuals	code/game/objects/structures/gargoyle.dm	add_overlay(H.overlays_standing[i])
+init_visuals	code/game/objects/structures/lattice.dm	icon_state = "latticeblank"
+init_visuals	code/game/objects/structures/loot_piles.dm	icon_state = DEFAULTPICK(icon_states_to_use, null)
+init_visuals	code/game/objects/structures/low_wall.dm	icon_state = "blank"
+init_visuals	code/game/objects/structures/mirror.dm	icon_state = "mirror_frame"
+init_visuals	code/game/objects/structures/props/alien_props.dm	icon_state = pick(possible_states)
+init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_proc")
+init_visuals	code/game/objects/structures/props/machines.dm	add_overlay("stamper_but")
+init_visuals	code/game/objects/structures/props/machines.dm	icon_state = "nt_pod"
+init_visuals	code/game/objects/structures/reflectors.dm	icon_state = "reflector_base"
+init_visuals	code/game/objects/structures/reflectors.dm	add_overlay(deflector_overlay)
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "machine[rand(0,6)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "computer[rand(0,7)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "implant_container[rand(0,1)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "data[rand(0,1)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "server[rand(0,1)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "personal[rand(0,12)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "bliss[rand(0,1)]"
+init_visuals	code/game/objects/structures/salvageable.dm	icon_state = "console[rand(0,2)]"
+init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(MA)
+init_visuals	code/game/objects/structures/stool_bed_chair_nest/chairs.dm	add_overlay(I)
+init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
+init_visuals	code/game/objects/structures/trash_pile.dm	icon_state = pick(
+init_visuals	code/game/turfs/flooring/flooring_decals.dm	icon_state = "asteroid[rand(0,9)]"
+init_visuals	code/game/turfs/simulated/fancy_shuttles.dm	icon_state = "floors [x - F.x],[y - F.y]"
+init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "alienpod[rand(1, 9)]"
+init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
+init_visuals	code/game/turfs/simulated/floor_types.dm	icon_state = "carry_ingame"
+init_visuals	code/game/turfs/simulated/wall_types.dm	icon_state = base_state
+init_visuals	code/game/turfs/simulated/walls.dm	icon_state = "blank"
+init_visuals	code/game/turfs/unsimulated.dm	icon_state = "[((x + y) ^ ~(x * y) + z) % 25]"
+init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water2","layer"=MOB_LAYER+0.1))
+init_visuals	code/game/turfs/unsimulated/beach.dm	icon_state = "desert[rand(0,4)]"
+init_visuals	code/game/turfs/unsimulated/beach.dm	add_overlay(image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1))
+init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = "hawaiian_[random_color]"
+init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = "hawaiian_red"
+init_visuals	code/modules/clothing/accessories/clothing.dm	icon_state = initial(new_item.icon_state)
+init_visuals	code/modules/clothing/clothing.dm	icon_state = O.icon_state
+init_visuals	code/modules/clothing/gloves/miscellaneous.dm	icon_state = "[glovecolor]_ranger_gloves"
+init_visuals	code/modules/clothing/shoes/miscellaneous.dm	icon_state = "[bootcolor]_ranger_boots"
+init_visuals	code/modules/clothing/spacesuits/void/void.dm	add_overlay(glass_overlay)
+init_visuals	code/modules/clothing/under/miscellaneous.dm	icon_state = "[unicolor]_ranger_uniform"
+init_visuals	code/modules/detectivework/tools/sample_kits.dm	icon_state = "fingerprint1"
+init_visuals	code/modules/economy/EFTPOS.dm	R.add_overlay(stampoverlay)
+init_visuals	code/modules/entrepreneur/entrepreneur_items.dm	icon_state = pick(colour_choice)
+init_visuals	code/modules/exploration/tyr_tribal_gear.dm	icon_state = "tyrflora[rand(1, 5)]gb"
+init_visuals	code/modules/exploration/tyr_tribal_gear.dm	icon_state = pick(possible_states)
+init_visuals	code/modules/food/drinkingglass/drinkingglass.dm	icon_state = base_icon
+init_visuals	code/modules/food/drinkingglass/shaker.dm	cut_overlays()
+init_visuals	code/modules/food/drinkingglass/shaker.dm	cut_overlays()
+init_visuals	code/modules/food/food/drinks/drinkingglass.dm	icon_state = pick("fitness-cup_black", "fitness-cup_red", "fitness-cup_black")
+init_visuals	code/modules/food/food/snacks.dm	icon_state = "nugget_[shape]"
+init_visuals	code/modules/food/food/snacks.dm	icon_state = pick(color_options)
+init_visuals	code/modules/food/food/snacks.dm	icon_state = pick(color_options)
+init_visuals	code/modules/food/food/superfoods.dm	icon_state = "chaoscake_slice-[i]"
+init_visuals	code/modules/food/glass/bottle.dm	icon_state = "bottle-[rand(1,4)]"
+init_visuals	code/modules/food/kitchen/gibber.dm	add_overlay("grjam")
+init_visuals	code/modules/games/dice.dm	icon_state = "[name][rand(1,sides)]"
+init_visuals	code/modules/generated_station/generated_station_utility_topology.dm	icon_state = generated_icon_state
+init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
+init_visuals	code/modules/holomap/mapper.dm	icon_state = initial(icon_state) + (in_list ? "_on" : "")
+init_visuals	code/modules/hydroponics/beekeeping/beehive.dm	add_overlay("beepack-full")
+init_visuals	code/modules/hydroponics/grown.dm	add_overlay(GLOB.fruit_icon_cache["rind-[rind_colour]"])
+init_visuals	code/modules/hydroponics/grown.dm	add_overlay(GLOB.fruit_icon_cache["slice-[rind_colour]"])
+init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
+init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
+init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")
+init_visuals	code/modules/mining/mineral_effect.dm	icon_state = "rock_[ore_key]"
+init_visuals	code/modules/mob/dead/observer/observer.dm	add_overlay(H.overlays_standing)
+init_visuals	code/modules/mob/living/bot/medbot.dm	add_overlay("kit_skin_[src.skin]")
+init_visuals	code/modules/mob/living/carbon/human/human_species.dm	icon_state = ""
+init_visuals	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	icon_state = power.icon_state
+init_visuals	code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm	icon_state = pick(possible_icon_states)
+init_visuals	code/modules/mob/living/carbon/human/species/station/traits/weaver_objs.dm	icon_state = pick(possible_icon_states)
+init_visuals	code/modules/mob/living/living.dm	add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
+init_visuals	code/modules/mob/living/silicon/robot/component.dm	icon_state = pick(possible_icons)
+init_visuals	code/modules/mob/living/silicon/robot/drone/drone.dm	icon_state = shell_types[random]
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/spookyghost.dm	icon_state = icon_living
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/chicken.dm	icon_state = "chicken_[body_color]"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/passive/lizard.dm	icon_state = "lizard_[body_color]"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	icon_state = "mouse_[body_color]"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/passive/mouse.dm	icon_state = "mouse_miner"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/pets/parrot.dm	icon_state = "eclectusf"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/space/mouse_army.dm	icon_state = "mouse_[rank]"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/animal/space/snake.dm	icon_state = "snack_[snack_colour]"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/bullet_heck/other_attacks.dm	icon_state = "arti"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/fleshtaker.dm	icon_state = icon_living
+init_visuals	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	icon_state = null
+init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	icon_state = "dragon_maneNone"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/fennec.dm	add_overlay(bigshadow)
+init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/lamia.dm	icon_state = initial(new_attrs.icon_state)
+init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/rabbit.dm	icon_state = "rabbit_[body_color]"
+init_visuals	code/modules/mob/living/simple_mob/subtypes/vore/shadekin/shadekin.dm	icon_state = pick("white","dark","brown")
+init_visuals	code/modules/mob/mob_grab.dm	icon_state = "grabbed"
+init_visuals	code/modules/multiz/turf.dm	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
+init_visuals	code/modules/multiz/turf.dm	icon_state = "" //Prevent the normal icon from appearing behind the smooth overlays
+init_visuals	code/modules/organs/subtypes/nano.dm	icon_state = "posi"
+init_visuals	code/modules/overmap/events/overmap_event.dm	icon_state = pick(event_icon_states)
+init_visuals	code/modules/overmap/sectors.dm	icon_state = unknown_state
+init_visuals	code/modules/overmap/ships/engines/gas_thruster.dm	icon_state = "exhaust"
+init_visuals	code/modules/overmap/turfs.dm	add_overlay(I)
+init_visuals	code/modules/pda/pda.dm	add_overlay("pda-pen")
+init_visuals	code/modules/persistence/graffiti.dm	icon_state = pick(random_icon_states)
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cmo")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cmo")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cent")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_cent")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamped_rd")
+init_visuals	code/modules/persistence/noticeboard.dm	P.add_overlay("paper_stamp-cap")
+init_visuals	code/modules/planet/sun.dm	icon_state = newstate
+init_visuals	code/modules/power/cells/power_cells.dm	add_overlay("[icon_state]_100")
+init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
+init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	add_overlay(list(I, image(icon, "fuel_assembly_bracket")))
+init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
+init_visuals	code/modules/power/fusion/fuel_assembly/fuel_assembly.dm	icon_state = "blank"
+init_visuals	code/modules/power/gravitygenerator.dm	middle().add_overlay("activated")
+init_visuals	code/modules/power/privacy_switch.dm	icon_state = "privacy1"
+init_visuals	code/modules/reagents/reagent_containers/hypospray.dm	icon_state = "[initial(icon_state)]"
+init_visuals	code/modules/reagents/reagent_containers/hypospray.dm	icon_state = "[initial(icon_state)]0"
+init_visuals	code/modules/reagents/reagent_containers/pill.dm	icon_state = "[base_state][rand(1, 4)]" //preset pills only use colour changing or unique icons
+init_visuals	code/modules/research/tg/server.dm	add_overlay("RD-server-objective-stripes")
+init_visuals	code/modules/samples/samples.dm	icon_state = "generic_sample[sample_icon]"
+init_visuals	code/modules/vehicles/Securitrain.dm	add_overlay(I)
+init_visuals	code/modules/vehicles/bike.dm	icon_state = "[bike_icon]_off"
+init_visuals	code/modules/vehicles/cargo_train.dm	add_overlay(I)
+init_visuals	code/modules/vehicles/construction.dm	icon_state = "[initial(icon_state)][build_stage]"
+init_visuals	code/modules/vore/fluffstuff/custom_items.dm	icon_state = "ceph_d6[rand(1,sides)]"
+init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
+init_visuals	code/modules/vore/resizing/crackers.dm	icon_state = style
+init_visuals	code/modules/vore/resizing/holder_micro.dm	icon_state = "teshariplushie_white"
+init_visuals	code/modules/xenoarcheaology/artifacts/artifact.dm	icon_state = "ano[icon_num]0"
+init_visuals	code/modules/xenoarcheaology/artifacts/crystal.dm	icon_state = pick("ano70","ano80")
+init_visuals	code/modules/xenoarcheaology/boulder.dm	icon_state = "boulder[rand(1,4)]"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "unknown[rand(1,4)]"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "statuette[rand(1,3)]"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "instrument"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = pick("oxygen","oxygen_fr","oxygen_f","phoron","anesthetic")
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "pen1"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "Green lump"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "Phazon"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "changerock"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remains"
+init_visuals	code/modules/xenoarcheaology/finds/find_spawning.dm	icon_state = "remainsrobot"
+init_visuals	code/modules/xenoarcheaology/finds/fossils.dm	icon_state = "plant[rand(1,4)]"
+init_visuals	code/modules/xenoarcheaology/sampling.dm	icon_state = "sliver[rand(1, 3)]"
+init_new_child	code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm	air1 = new
+init_new_child	code/ATMOSPHERICS/components/binary_devices/binary_atmos_base.dm	air2 = new
+init_new_child	code/ATMOSPHERICS/components/omni_devices/omni_base.dm	ports = new()
+init_new_child	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	air1 = new
+init_new_child	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	air2 = new
+init_new_child	code/ATMOSPHERICS/components/trinary_devices/trinary_base.dm	air3 = new
+init_new_child	code/ATMOSPHERICS/components/unary/unary_base.dm	air_contents = new
+init_new_child	code/ATMOSPHERICS/environmental/LINDA_fire.dm	our_hot_group = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/ATMOSPHERICS/pipes/tank.dm	air_temporary = new
+init_new_child	code/_onclick/hud/ability_screen_objects.dm	ability_master = new /atom/movable/screen/movable/ability_master(src)
+init_new_child	code/_onclick/hud/picture_in_picture.dm	popup_screen = new
+init_new_child	code/_onclick/hud/screen_objects.dm	mask_full = new(src) // Full white square mask
+init_new_child	code/_onclick/hud/screen_objects.dm	mask_ping = new(src) // Animated 'pinging' mask
+init_new_child	code/_onclick/hud/screen_objects.dm	bg = new(src) // Background color, holds map in vis_contents, uses mult against masks
+init_new_child	code/_onclick/hud/screen_objects.dm	frame = new(src) // Decorative frame
+init_new_child	code/_onclick/hud/screen_objects.dm	powbutton = new(src) // Clickable button
+init_new_child	code/_onclick/hud/screen_objects.dm	mapbutton = new(src) // Clickable button
+init_new_child	code/datums/topturfcrossed.dm	topturfcrossed = new /datum/topturfcrossed(src)
+init_new_child	code/game/gamemodes/technomancer/devices/shield_armor.dm	spark_system = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/game/gamemodes/technomancer/spells/flame_tongue.dm	welder = new /obj/item/weldingtool/spell(src)
+init_new_child	code/game/gamemodes/technomancer/spells/reflect.dm	spark_system = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/game/gamemodes/technomancer/spells/shield.dm	spark_system = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/game/gamemodes/technomancer/spells/warp_strike.dm	sparks = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/game/machinery/Beacon.dm	Beacon = new /obj/item/radio/beacon
+init_new_child	code/game/machinery/CableLayer.dm	cable = new(src, max_cable)
+init_new_child	code/game/machinery/Sleeper.dm	beaker = new /obj/item/reagent_containers/glass/beaker/large(src)
+init_new_child	code/game/machinery/air_alarm.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/game/machinery/atmoalter/canister.dm	air_contents = new
+init_new_child	code/game/machinery/atmoalter/portable_atmospherics.dm	air_contents = new
+init_new_child	code/game/machinery/atmoalter/pump.dm	cell = new/obj/item/cell/apc(src)
+init_new_child	code/game/machinery/atmoalter/scrubber.dm	cell = new/obj/item/cell/apc(src)
+init_new_child	code/game/machinery/autolathe.dm	print_sound = new(list(src), FALSE, TRUE)
+init_new_child	code/game/machinery/autolathe.dm	materials = new /datum/material_container( \
+init_new_child	code/game/machinery/biogenerator.dm	beaker = new /obj/item/reagent_containers/glass/bottle(src)
+init_new_child	code/game/machinery/bioprinter.dm	container = new /obj/item/reagent_containers/glass/bottle/biomass(src)
+init_new_child	code/game/machinery/bomb_tester.dm	faketank = new
+init_new_child	code/game/machinery/camera/camera.dm	assembly = new(src)
+init_new_child	code/game/machinery/computer/RCON_Console.dm	rcon = new(src)
+init_new_child	code/game/machinery/computer/ai_core.dm	laws = new using_map.default_law_type
+init_new_child	code/game/machinery/computer/bodycamera.dm	bradio = new(src)
+init_new_child	code/game/machinery/computer/camera.dm	camera = new camera_datum_type(src, network)
+init_new_child	code/game/machinery/computer/camera.dm	pinboard = new()
+init_new_child	code/game/machinery/computer/camera.dm	radio = new(src)
+init_new_child	code/game/machinery/computer/communications.dm	communications = new(src)
+init_new_child	code/game/machinery/computer/crew.dm	crew_monitor = new(src)
+init_new_child	code/game/machinery/computer/shutoff_monitor.dm	monitor = new(src)
+init_new_child	code/game/machinery/computer/station_alert.dm	alarm_monitor = new monitor_type(src)
+init_new_child	code/game/machinery/computer/timeclock.dm	announce = new /obj/item/radio/intercom(src)
+init_new_child	code/game/machinery/cryopod.dm	announce = new /obj/item/radio/intercom(src)
+init_new_child	code/game/machinery/embedded_controller/airlock_docking_controller.dm	airlock_program = new/datum/embedded_program/airlock/docking(src)
+init_new_child	code/game/machinery/embedded_controller/airlock_docking_controller.dm	docking_program = new/datum/embedded_program/docking/airlock(src, airlock_program)
+init_new_child	code/game/machinery/exonet_node.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/game/machinery/fire_alarm.dm	soundloop = new(list(src), FALSE) // Create soundloop
+init_new_child	code/game/machinery/fire_alarm.dm	engalarm = new(list(src), FALSE) // Create soundloop
+init_new_child	code/game/machinery/fire_alarm.dm	critalarm = new(list(src), FALSE) // Create soundloop
+init_new_child	code/game/machinery/fire_alarm.dm	causality = new(list(src), FALSE) // Create soundloop
+init_new_child	code/game/machinery/floorlayer.dm	T = new/obj/item/stack/tile/floor(src)
+init_new_child	code/game/machinery/frame.dm	circuit = new frame_type.circuit(src)
+init_new_child	code/game/machinery/gear_dispenser.dm	one_setting = new one_setting
+init_new_child	code/game/machinery/oxygen_pump.dm	tank = new spawn_type (src)
+init_new_child	code/game/machinery/oxygen_pump.dm	contained = new mask_type (src)
+init_new_child	code/game/machinery/pda_multicaster.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/game/machinery/pipe/pipelayer.dm	W = new(src)
+init_new_child	code/game/machinery/portable_turret.dm	spark_system = new /datum/effect/effect/system/spark_spread
+init_new_child	code/game/machinery/requests_console.dm	announcement = new
+init_new_child	code/game/machinery/suit_storage/suit_storage.dm	SUIT = new suit_type(src)
+init_new_child	code/game/machinery/suit_storage/suit_storage.dm	HELMET = new helmet_type(src)
+init_new_child	code/game/machinery/suit_storage/suit_storage.dm	MASK = new mask_type(src)
+init_new_child	code/game/machinery/telecomms/telecomunications.dm	Compiler = new()
+init_new_child	code/game/machinery/telecomms/telecomunications.dm	server_radio = new()
+init_new_child	code/game/machinery/teleporter.dm	teleport_control = new(src)
+init_new_child	code/game/machinery/virtual_reality/vr_console.dm	smoke = new
+init_new_child	code/game/mecha/combat/fighter.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
+init_new_child	code/game/mecha/combat/gygax.dm	hud = new /obj/item/clothing/glasses/hud/health/mech(src)
+init_new_child	code/game/mecha/equipment/tools/cable_layer.dm	cable = new(src, 0)
+init_new_child	code/game/mecha/equipment/tools/generator.dm	fuel = new fuel_type(src)
+init_new_child	code/game/mecha/equipment/tools/orescanner.dm	my_scanner = new(src)
+init_new_child	code/game/mecha/equipment/tools/powertool.dm	my_tool = new tooltype(src)
+init_new_child	code/game/mecha/equipment/tools/rcd.dm	my_rcd = new(src)
+init_new_child	code/game/mecha/equipment/tools/shield.dm	my_shield = new my_shield_type
+init_new_child	code/game/mecha/equipment/tools/syringe_gun.dm	syringes = new
+init_new_child	code/game/mecha/equipment/tools/syringe_gun.dm	drone_overlay = new(src.icon, icon_state = droid_state)
+init_new_child	code/game/mecha/mecha.dm	eject_action = new
+init_new_child	code/game/mecha/mecha.dm	internals_action = new
+init_new_child	code/game/mecha/mecha.dm	lights_action = new
+init_new_child	code/game/mecha/mecha.dm	stats_action = new
+init_new_child	code/game/mecha/mecha.dm	strafing_action = new
+init_new_child	code/game/mecha/mecha.dm	defence_action = new
+init_new_child	code/game/mecha/mecha.dm	overload_action = new
+init_new_child	code/game/mecha/mecha.dm	smoke_action = new
+init_new_child	code/game/mecha/mecha.dm	zoom_action = new
+init_new_child	code/game/mecha/mecha.dm	thrusters_action = new
+init_new_child	code/game/mecha/mecha.dm	cycle_action = new
+init_new_child	code/game/mecha/mecha.dm	switch_damtype_action = new
+init_new_child	code/game/mecha/mecha.dm	phasing_action = new
+init_new_child	code/game/mecha/mecha.dm	cloak_action = new
+init_new_child	code/game/mecha/mecha.dm	spark_system = new
+init_new_child	code/game/mecha/mecha.dm	smoke_system = new
+init_new_child	code/game/mecha/medical/odysseus.dm	hud = new /obj/item/clothing/glasses/hud/health/mech(src)
+init_new_child	code/game/mecha/space/hoverpod.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
+init_new_child	code/game/mecha/working/ripley.dm	orescanner = new /obj/item/mining_scanner
+init_new_child	code/game/objects/effects/anomalies/_anomalies.dm	anomaly_core = new anomaly_core(src)
+init_new_child	code/game/objects/effects/anomalies/_anomalies.dm	countdown = new(src)
+init_new_child	code/game/objects/effects/anomalies/anomalies_weather.dm	selected_weather = new selected_weather
+init_new_child	code/game/objects/effects/map_effects/effect_emitter.dm	effect_system = new effect_system_type()
+init_new_child	code/game/objects/effects/mines.dm	trap = new trap(src)
+init_new_child	code/game/objects/effects/misc.dm	light_spot = new
+init_new_child	code/game/objects/effects/particle_holder.dm	particles = new particle_path()
+init_new_child	code/game/objects/effects/shared_particle_holder.dm	particles = new particle_path()
+init_new_child	code/game/objects/items/antag_spawners.dm	sparks = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/game/objects/items/bodybag.dm	tank = new tank_type(null) //It's in nullspace to prevent ejection when the bag is opened.
+init_new_child	code/game/objects/items/devices/advnifrepair.dm	supply = new(max = 60, A = src)
+init_new_child	code/game/objects/items/devices/communicator/communicator.dm	camera = new(src)
+init_new_child	code/game/objects/items/devices/communicator/communicator.dm	exonet = new(src)
+init_new_child	code/game/objects/items/devices/defib.dm	bcell = new bcell(src)
+init_new_child	code/game/objects/items/devices/e_beacon.dm	gps = new/obj/item/gps/emergency_beacon(src)
+init_new_child	code/game/objects/items/devices/extrapolator.dm	scanner = new starting_scanner(src)
+init_new_child	code/game/objects/items/devices/flash.dm	power_supply = new cell_type(src)
+init_new_child	code/game/objects/items/devices/flashlight.dm	cell = new cell_type(src)
+init_new_child	code/game/objects/items/devices/flipper.dm	pai = new /mob/living/silicon/pai/flipper(src)
+init_new_child	code/game/objects/items/devices/geiger.dm	geiger_sound = new /datum/geiger_sound/wall(src)
+init_new_child	code/game/objects/items/devices/gps.dm	compass = new(src)
+init_new_child	code/game/objects/items/devices/hacktool.dm	hack_state = new(src)
+init_new_child	code/game/objects/items/devices/laserpointer.dm	diode = new laser_path
+init_new_child	code/game/objects/items/devices/laserpointer.dm	diode = new(src)
+init_new_child	code/game/objects/items/devices/personal_shield_generator.dm	bcell = new bcell(src)
+init_new_child	code/game/objects/items/devices/personal_shield_generator.dm	active_weapon = new active_weapon(src, src)
+init_new_child	code/game/objects/items/devices/personal_shield_generator.dm	active_weapon = new(src, src)
+init_new_child	code/game/objects/items/devices/radio/headset.dm	keyslot1 = new ks1type(src)
+init_new_child	code/game/objects/items/devices/radio/headset.dm	keyslot2 = new ks2type(src)
+init_new_child	code/game/objects/items/devices/radio/intercom.dm	circuit = new circuit(src)
+init_new_child	code/game/objects/items/devices/radio/jammer.dm	power_source = new(src)
+init_new_child	code/game/objects/items/devices/radio/radio.dm	secure_radio_connections = new
+init_new_child	code/game/objects/items/devices/spy_bug.dm	camera = new camtype(src)
+init_new_child	code/game/objects/items/devices/suit_cooling.dm	cell = new cell(src)
+init_new_child	code/game/objects/items/devices/taperecorder.dm	mytape = new mytape(src)
+init_new_child	code/game/objects/items/devices/translocator.dm	power_source = new cell_type(src)
+init_new_child	code/game/objects/items/devices/translocator.dm	power_source = new /obj/item/cell/device(src)
+init_new_child	code/game/objects/items/devices/translocator.dm	spk = new(src)
+init_new_child	code/game/objects/items/devices/tvcamera.dm	camera = new(src)
+init_new_child	code/game/objects/items/devices/tvcamera.dm	radio = new(src)
+init_new_child	code/game/objects/items/devices/tvcamera.dm	bcamera = new(src)
+init_new_child	code/game/objects/items/devices/tvcamera.dm	bradio = new(src)
+init_new_child	code/game/objects/items/ghost_hunting/trap.dm	ghost_reporter = new(null)
+init_new_child	code/game/objects/items/robot/robot_items.dm	hud = new /obj/item/clothing/glasses/hud/health(src)
+init_new_child	code/game/objects/items/robot/robot_items.dm	hud = new /obj/item/clothing/glasses/hud/security(src)
+init_new_child	code/game/objects/items/uav.dm	cell = new cell_type
+init_new_child	code/game/objects/items/uav.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
+init_new_child	code/game/objects/items/weapons/AI_modules.dm	laws = new using_map.default_law_type // Pull from loaded map
+init_new_child	code/game/objects/items/weapons/RCD.dm	src.spark_system = new /datum/effect/effect/system/spark_spread
+init_new_child	code/game/objects/items/weapons/RCD.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/game/objects/items/weapons/RMS.dm	src.spark_system = new /datum/effect/effect/system/spark_spread
+init_new_child	code/game/objects/items/weapons/RPD.dm	src.spark_system = new /datum/effect/effect/system/spark_spread
+init_new_child	code/game/objects/items/weapons/RPD.dm	tool = new /obj/item/tool/wrench/cyborg(src) // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
+init_new_child	code/game/objects/items/weapons/canes.dm	concealed_blade = new(src)
+init_new_child	code/game/objects/items/weapons/cosmetics.dm	M = new(src, null)
+init_new_child	code/game/objects/items/weapons/dna_injector.dm	buf=new
+init_new_child	code/game/objects/items/weapons/ecigs.dm	ec_cartridge = new cartridge_type(src)
+init_new_child	code/game/objects/items/weapons/flamethrower.dm	weldtool = new /obj/item/weldingtool(src)
+init_new_child	code/game/objects/items/weapons/flamethrower.dm	igniter = new /obj/item/assembly/igniter(src)
+init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+init_new_child	code/game/objects/items/weapons/grenades/chem_grenade.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+init_new_child	code/game/objects/items/weapons/grenades/confetti.dm	confetti_spread = new /datum/effect/effect/system/confetti_spread()
+init_new_child	code/game/objects/items/weapons/grenades/smokebomb.dm	smoke = new /datum/effect/effect/system/smoke_spread/bad()
+init_new_child	code/game/objects/items/weapons/id cards/syndicate_ids.dm	agentcard_module = new(src)
+init_new_child	code/game/objects/items/weapons/implants/implant.dm	src.imp = new /obj/item/implant/sizecontrol( src )
+init_new_child	code/game/objects/items/weapons/implants/implant.dm	imp = new /obj/item/implant/compliance(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/tracking(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/explosive(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/chem(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/loyalty(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/death_alarm(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/freedom(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/adrenalin(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/dexplosive(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/health(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/language(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/language/eal(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/laser(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/dart(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm/medkit(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm/surge(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/wrist(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/wrist/sword(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/pelvic/sprint(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/pelvic/scanner(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/upperarm/blade(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/organ/limbaugment/wrist/blade(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/restrainingbolt(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcase.dm	imp = new /obj/item/implant/vrlanguage(src)
+init_new_child	code/game/objects/items/weapons/implants/implantcircuits.dm	IC = new(src)
+init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/loyalty(src)
+init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/explosive(src)
+init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/adrenalin(src)
+init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/compressed(src)
+init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/restrainingbolt(src)
+init_new_child	code/game/objects/items/weapons/implants/implanter.dm	imp = new /obj/item/implant/vrlanguage( src )
+init_new_child	code/game/objects/items/weapons/implants/implantreagent.dm	imp = new implant_type(src)
+init_new_child	code/game/objects/items/weapons/inducer.dm	cell = new cell_type
+init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	bcell = new bcell(src)
+init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	sbin = new sbin(src)
+init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	smodule = new smodule(src)
+init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	smanipulator = new smanipulator(src)
+init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	scapacitor = new scapacitor(src)
+init_new_child	code/game/objects/items/weapons/medigun/medigun_backpack.dm	slaser = new slaser(src)
+init_new_child	code/game/objects/items/weapons/melee/energy.dm	bcell = new/obj/item/cell/device/weapon(src)
+init_new_child	code/game/objects/items/weapons/melee/energy.dm	bcell = new/obj/item/cell/device/weapon(src)
+init_new_child	code/game/objects/items/weapons/melee/energy.dm	spark_system = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/game/objects/items/weapons/melee/shock_maul.dm	bcell = new/obj/item/cell/device/weapon(src)
+init_new_child	code/game/objects/items/weapons/stunbaton.dm	bcell = new/obj/item/cell/device/weapon(src)
+init_new_child	code/game/objects/items/weapons/tanks/jetpack.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
+init_new_child	code/game/objects/items/weapons/tanks/tanks.dm	src.air_contents = new /datum/gas_mixture()
+init_new_child	code/game/objects/items/weapons/tools/transforming.dm	welder = new weldertype(src)
+init_new_child	code/game/objects/items/weapons/tools/weldingtool.dm	power_supply = new cell_type(src)
+init_new_child	code/game/objects/items/weapons/tools/weldingtool.dm	power_supply = new /obj/item/cell/device(src)
+init_new_child	code/game/objects/mob_spawner.dm	prox = new(src, range)
+init_new_child	code/game/objects/structures/droppod.dm	air = new
+init_new_child	code/game/objects/structures/extinguisher.dm	has_extinguisher = new/obj/item/extinguisher(src)
+init_new_child	code/game/objects/structures/fireaxe.dm	fireaxe = new /obj/item/material/twohanded/fireaxe()
+init_new_child	code/game/objects/structures/medical_stand.dm	tank = new spawn_type (src)
+init_new_child	code/game/objects/structures/medical_stand.dm	contained = new mask_type (src)
+init_new_child	code/game/objects/structures/mirror.dm	M = new(src, null)
+init_new_child	code/game/objects/structures/props/transmitter.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/game/objects/structures/stool_bed_chair_nest/bed.dm	held = new /obj/item/roller(src)
+init_new_child	code/game/objects/structures/transit_tubes.dm	air_contents = new()
+init_new_child	code/game/objects/structures/trash_pile.dm	mouse_nest = new(src)
+init_new_child	code/game/objects/structures/watercloset.dm	bin = new bin(src)
+init_new_child	code/game/objects/structures/watercloset.dm	teleplumb_crystal = new /obj/item/bluespace_crystal(src)
+init_new_child	code/game/objects/structures/watercloset.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/game/turfs/simulated/lava.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/anomalies/anomaly.dm	effect_remover = new /datum/effect_remover(src, \
+init_new_child	code/modules/blob2/overmind/overmind.dm	blob_type = new desired_blob_type()
+init_new_child	code/modules/blob2/overmind/overmind.dm	blob_type = new BT()
+init_new_child	code/modules/body/body.dm	body = new body_type(src)
+init_new_child	code/modules/casino/board_games/board_table.dm	game_ui = new game_ui(src)
+init_new_child	code/modules/casino/casino.dm	ball = new(src)
+init_new_child	code/modules/clothing/accessories/badges.dm	current_film = new /obj/item/dosimeter_film(src)
+init_new_child	code/modules/clothing/accessories/storage.dm	hold = new/obj/item/storage/internal(src)
+init_new_child	code/modules/clothing/accessories/watches.dm	gps = new/obj/item/gps/watch(src)
+init_new_child	code/modules/clothing/clothing.dm	special_attack = new special_attack_type
+init_new_child	code/modules/clothing/glasses/hud.dm	tgarscreen = new tgarscreen_path(src)
+init_new_child	code/modules/clothing/gloves/antagonist.dm	battery = new battery_type(src)
+init_new_child	code/modules/clothing/gloves/telekinetic.dm	cell = new /obj/item/cell/device(src)
+init_new_child	code/modules/clothing/head/pilot_helmet.dm	pilot_hud = new(src)
+init_new_child	code/modules/clothing/masks/miscellaneous.dm	eye = new(src)
+init_new_child	code/modules/clothing/masks/voice.dm	changer = new(src)
+init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/crusher_gauntlets.dm	stored_gauntlets = new /obj/item/kinetic_crusher/machete/gauntlets/rig(src)
+init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/jetpack.dm	jets = new(src)
+init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/mounted_gun.dm	gun = new gun_type(src)
+init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/self_destruct.dm	smoke = new /datum/effect/effect/system/smoke_spread/bad()
+init_new_child	code/modules/clothing/spacesuits/rig/modules/specific/voice.dm	voice_holder = new(src)
+init_new_child	code/modules/clothing/spacesuits/rig/rig.dm	spark_system = new()
+init_new_child	code/modules/clothing/spacesuits/rig/rig.dm	power_system = new /datum/rig_power_system(src)
+init_new_child	code/modules/clothing/spacesuits/rig/rig.dm	component_registry = new /datum/rig_component_registry(src)
+init_new_child	code/modules/clothing/spacesuits/void/void.dm	boots = new boots(src)
+init_new_child	code/modules/clothing/spacesuits/void/void.dm	hood = new hood(src)
+init_new_child	code/modules/clothing/spacesuits/void/void.dm	tank = new tank(src)
+init_new_child	code/modules/clothing/spacesuits/void/void.dm	hood = new /obj/item/clothing/head/helmet/space/void/autolok //autoinstall the helmet
+init_new_child	code/modules/clothing/suits/storage.dm	pockets = new/obj/item/storage/internal(src)
+init_new_child	code/modules/clothing/suits/storage.dm	pockets = new/obj/item/storage/internal(src)
+init_new_child	code/modules/combat_ai/integration/mob_living.dm	say_list = new say_list_type(src)
+init_new_child	code/modules/combat_ai/ports/slime.dm	slime_state = new /datum/slime_state(src)
+init_new_child	code/modules/compass/compass_holder.dm	compass_heading_marker = new /image/compass_marker
+init_new_child	code/modules/economy/ATM.dm	spark_system = new /datum/effect/effect/system/spark_spread
+init_new_child	code/modules/entopics/entopics.dm	ent_debug = new(aholder = src, aicon = icon, aicon_state = "holo_Jin")
+init_new_child	code/modules/exploration/tyr_tribal_gear.dm	bcell = new/obj/item/cell/device/weapon/recharge/alien/tyr(src)
+init_new_child	code/modules/food/food/snacks.dm	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src)
+init_new_child	code/modules/food/food/snacks.dm	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src)
+init_new_child	code/modules/food/food/snacks.dm	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src)
+init_new_child	code/modules/food/food/snacks.dm	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src)
+init_new_child	code/modules/food/food/snacks.dm	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src)
+init_new_child	code/modules/food/food/snacks.dm	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src)
+init_new_child	code/modules/food/kitchen/cooking_machines/_mixer.dm	mixer_loop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/cooking_machines/candy.dm	candymaker_loop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/cooking_machines/cereal.dm	cerealmaker_loop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/cooking_machines/fryer.dm	fry_loop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/cooking_machines/fryer.dm	oil = new/datum/reagents/oil_reagents(optimal_oil * 1.25, src)
+init_new_child	code/modules/food/kitchen/cooking_machines/grill.dm	grill_loop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/cooking_machines/oven.dm	oven_loop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/microwave.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/food/kitchen/smartfridge/smartfridge.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/holomap/mapper.dm	extras_holder = new()
+init_new_child	code/modules/holomap/mapper.dm	cell = new cell_type(src)
+init_new_child	code/modules/holomap/station_holomap.dm	holomap_datum = new()
+init_new_child	code/modules/hydroponics/trays/tray.dm	temp_chem_holder = new()
+init_new_child	code/modules/identification/item_procs.dm	identity = new identity_type(src)
+init_new_child	code/modules/instruments/items.dm	song = new(src, allowed_instrument_ids, instrument_range)
+init_new_child	code/modules/instruments/stationary.dm	song = new(src, allowed_instrument_ids)
+init_new_child	code/modules/integrated_electronics/core/assemblies.dm	battery = new(src)
+init_new_child	code/modules/integrated_electronics/core/assemblies/device.dm	EA = new(src)
+init_new_child	code/modules/integrated_electronics/passive/power.dm	IO = new(src)
+init_new_child	code/modules/integrated_electronics/subtypes/camera.dm	camera = new(src, camera_network_id, see_dark)
+init_new_child	code/modules/integrated_electronics/subtypes/camera.dm	camera_module = new(src)
+init_new_child	code/modules/integrated_electronics/subtypes/illegal.dm	exonet = new(src)
+init_new_child	code/modules/integrated_electronics/subtypes/input.dm	exonet = new(src)
+init_new_child	code/modules/integrated_electronics/subtypes/output.dm	my_voice = new (src)
+init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	hatch = new
+init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	monitor_screen = new
+init_new_child	code/modules/maint_recycler/code/maint_recycler.dm	item_overlay = new
+init_new_child	code/modules/maint_recycler/code/maint_vendor.dm	monitor_screen = new
+init_new_child	code/modules/material_science/material_machines.dm	chamber_air = new(500)
+init_new_child	code/modules/mining/drilling/drill.dm	cell = new cell(src)
+init_new_child	code/modules/mining/drilling/drill.dm	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
+init_new_child	code/modules/mining/machine_silo.dm	materials = new /datum/material_container( \
+init_new_child	code/modules/mob/living/bot/bot.dm	botcard = new /obj/item/card/id(src)
+init_new_child	code/modules/mob/living/bot/bot.dm	access_scanner = new /obj(src)
+init_new_child	code/modules/mob/living/bot/farmbot.dm	tank = new /obj/structure/reagent_dispensers/watertank(src)
+init_new_child	code/modules/mob/living/carbon/brain/MMI.dm	radio = new(src)//Spawns a radio inside the MMI.
+init_new_child	code/modules/mob/living/carbon/carbon.dm	bloodstr = new/datum/reagents/metabolism/bloodstream(500, src)
+init_new_child	code/modules/mob/living/carbon/carbon.dm	ingested = new/datum/reagents/metabolism/ingested(500, src)
+init_new_child	code/modules/mob/living/carbon/carbon.dm	touching = new/datum/reagents/metabolism/touch(500, src)
+init_new_child	code/modules/mob/living/carbon/carbon.dm	cozyloop = new(list(src), FALSE)
+init_new_child	code/modules/mob/living/carbon/human/human.dm	dna = new /datum/dna(null)
+init_new_child	code/modules/mob/living/carbon/human/human.dm	crafting = new /datum/personal_crafting(src)
+init_new_child	code/modules/mob/living/living.dm	deaf_loop = new(list(src), FALSE)
+init_new_child	code/modules/mob/living/living.dm	firesoundloop = new(list(src), FALSE)
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	announcement = new()
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiPDA = new/obj/item/pda/ai(src)
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiCommunicator = new /obj/item/communicator/integrated(src)
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	laws = new using_map.default_law_type
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiMulti = new(src)
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiRadio = new(src)
+init_new_child	code/modules/mob/living/silicon/ai/ai.dm	aiCamera = new/obj/item/camera/siliconcam/ai_camera(src)
+init_new_child	code/modules/mob/living/silicon/ai/multicam.dm	aiEye = new /mob/observer/eye/aiEye/pic_in_pic()
+init_new_child	code/modules/mob/living/silicon/pai/pai.dm	card = new default_pai_card_path(src)
+init_new_child	code/modules/mob/living/silicon/pai/pai.dm	sradio = new(src)
+init_new_child	code/modules/mob/living/silicon/pai/pai.dm	communicator = new(src)
+init_new_child	code/modules/mob/living/silicon/pai/pai.dm	pai_ui_chassis = new(src)
+init_new_child	code/modules/mob/living/silicon/pai/pai.dm	pda = new(src)
+init_new_child	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	ore_bag = new(null) //We don't need it inside, just need a reference to it.
+init_new_child	code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm	med_analyzer = new /obj/item/healthanalyzer
+init_new_child	code/modules/mob/living/silicon/robot/robot.dm	spark_system = new /datum/effect/effect/system/spark_spread()
+init_new_child	code/modules/mob/living/silicon/robot/robot.dm	robotact = new(src)
+init_new_child	code/modules/mob/living/silicon/robot/robot.dm	robot_modules_background = new()
+init_new_child	code/modules/mob/living/silicon/robot/robot_items.dm	dummy_card = new dummy_card_type(src)
+init_new_child	code/modules/mob/living/silicon/robot/robot_remote_control.dm	mmi = new /obj/item/mmi/inert/ai_remote(src)
+init_new_child	code/modules/mob/living/silicon/robot/subtypes/thinktank/_thinktank.dm	mmi = new /obj/item/mmi/digital/robot(src)
+init_new_child	code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_subtypes.dm	laws = new /datum/ai_laws/explorer
+init_new_child	code/modules/mob/living/simple_mob/simple_mob.dm	myid = new /obj/item/card/id(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/catslug.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/cow.dm	udder = new(50)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/farm animals/goat.dm	udder = new(50)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/passive/armadillo.dm	hat = new /obj/item/clothing/head/sombrero
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/pets/parrot.dm	my_headset = new my_headset(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/sif/frostfly.dm	smoke_special = new
+init_new_child	code/modules/mob/living/simple_mob/subtypes/animal/sif/moth.dm	smoke_spore = new
+init_new_child	code/modules/mob/living/simple_mob/subtypes/gateway/imperion.dm	shields = new /obj/item/shield_projector/rectangle/automatic/imperion(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/gateway/vistors.dm	shields = new /obj/item/shield_projector/rectangle/automatic/orange(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/humanoid/cultist.dm	shields = new /obj/item/shield_projector/rectangle/automatic/magus(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/humanoid/pirates.dm	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	ion_trail = new
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/combat_drone.dm	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	ion_trail = new
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	my_storage = new /obj/item/ore_bag(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/drones/mining_drone.dm	shields = new /obj/item/shield_projector/rectangle/automatic/drone(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/golem.dm	core = new(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/hivebot/precusor_hivebots.dm	shields = new /obj/item/shield_projector/rectangle/automatic/hivebot_drone(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/hoverpod.dm	ion_trail = new /datum/effect/effect/system/ion_trail_follow()
+init_new_child	code/modules/mob/living/simple_mob/subtypes/mechanical/mecha/mecha.dm	sparks = new (src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/bigdragon.dm	mob_radio = new /obj/item/radio/headset/mob_headset(src) //We always give radios to spawned mobs anyway
+init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/blackholemobs.dm	loopy = new(list(src),FALSE)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/plants/pitcher.dm	pit = new /obj/item/seeds/pitcherseed(src.contents)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	powermachine = new(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/solargrub_larva.dm	sparks = new(src)
+init_new_child	code/modules/mob/living/simple_mob/subtypes/vore/swoopie.dm	Vac = new /obj/item/vac_attachment/swoopie(src)
+init_new_child	code/modules/mob/mob_grab.dm	hud = new /atom/movable/screen/grab(src)
+init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/modular_computers/hardware/battery_module.dm	battery = new cell_type(src)
+init_new_child	code/modules/modular_computers/hardware/battery_module.dm	battery = new/obj/item/cell(src)
+init_new_child	code/modules/multiz/hoist.dm	source_hook = new(newloc)
+init_new_child	code/modules/nifsoft/nif_softshop.dm	entopic = new(aholder = src, aicon = icon, aicon_state = "beacon")
+init_new_child	code/modules/organs/internal/augment.dm	integrated_object = new integrated_object_type(src)
+init_new_child	code/modules/organs/internal/augment/bio.dm	med_analyzer = new /obj/item/healthanalyzer/advanced
+init_new_child	code/modules/organs/internal/special/heart_anomalock.dm	core = new /obj/item/assembly/signaler/anomaly/flux(src)
+init_new_child	code/modules/organs/subtypes/machine.dm	stored_mmi = new brain_type(src)
+init_new_child	code/modules/overmap/overmap_object.dm	cam_screen = new
+init_new_child	code/modules/overmap/overmap_object.dm	cam_background = new
+init_new_child	code/modules/overmap/ships/computers/helm.dm	nav_tgui = new(src)
+init_new_child	code/modules/overmap/ships/engines/gas_thruster.dm	controller = new(src)
+init_new_child	code/modules/overmap/ships/engines/ion_thruster.dm	controller = new(src)
+init_new_child	code/modules/paperwork/paperplane.dm	internalPaper = new /obj/item/paper(src)
+init_new_child	code/modules/pda/cart.dm	radio = new /obj/item/radio/integrated/signal(src)
+init_new_child	code/modules/pda/cart.dm	radio = new /obj/item/radio/integrated/signal(src)
+init_new_child	code/modules/pda/cart.dm	hold = new/obj/item/storage/internal(src)
+init_new_child	code/modules/pda/pda.dm	cartridge = new default_cartridge(src)
+init_new_child	code/modules/power/apc.dm	icon_renderer = new /datum/apc_icon_renderer()
+init_new_child	code/modules/power/fusion/core/core_control.dm	monitor = new(src)
+init_new_child	code/modules/power/fusion/fuel_assembly/fuel_control.dm	monitor = new(src)
+init_new_child	code/modules/power/fusion/gyrotron/gyrotron_control.dm	monitor = new(src)
+init_new_child	code/modules/power/generator.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/power/port_gen.dm	cell = new(src)
+init_new_child	code/modules/power/port_gen.dm	cell = new /obj/item/cell/void/hybrid(src)
+init_new_child	code/modules/power/sensors/sensor_monitoring.dm	power_monitor = new(src)
+init_new_child	code/modules/power/smes.dm	soundloop = new(list(src), FALSE) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+init_new_child	code/modules/power/supermatter/supermatter.dm	soundloop = new(list(src), TRUE)
+init_new_child	code/modules/power/turbine.dm	gas_contained = new()
+init_new_child	code/modules/projectiles/ammunition.dm	BB = new projectile_type(src)
+init_new_child	code/modules/projectiles/gun.dm	attached_lock = new /obj/item/dnalockingchip(src)
+init_new_child	code/modules/projectiles/gun.dm	firemode_selector = new /datum/gun_firemode_selector(src)
+init_new_child	code/modules/projectiles/guns/energy.dm	power_supply = new /obj/item/cell/device/weapon(src)
+init_new_child	code/modules/projectiles/guns/energy.dm	power_supply = new cell_type(src)
+init_new_child	code/modules/projectiles/guns/energy/bsharpoon.dm	scanmod = new(src)
+init_new_child	code/modules/projectiles/guns/energy/special.dm	emitter = new(src)
+init_new_child	code/modules/projectiles/guns/launcher/pneumatic.dm	item_storage = new(src)
+init_new_child	code/modules/projectiles/guns/magnetic/bore.dm	manipulator = new manipulator(src)
+init_new_child	code/modules/projectiles/guns/magnetic/bore.dm	soundloop = new(list(src), 0)
+init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	cell = new cell(src)
+init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	capacitor = new capacitor(src)
+init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	loaded = new loaded(src)
+init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	cell = new /obj/item/cell/high
+init_new_child	code/modules/projectiles/guns/magnetic/magnetic.dm	capacitor = new /obj/item/stock_parts/capacitor
+init_new_child	code/modules/projectiles/guns/projectile.dm	ammo_magazine = new magazine_type(src)
+init_new_child	code/modules/projectiles/precursor/eclipse.dm	detonator = new/obj/item/assembly_holder/timer_igniter(src)
+init_new_child	code/modules/projectiles/projectile/arc.dm	shadow = new(get_turf(src))
+init_new_child	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	catalyst = new /obj/item/reagent_containers/glass/beaker(src)
+init_new_child	code/modules/reagents/machinery/grinder.dm	beaker = new /obj/item/reagent_containers/glass/beaker/large(src)
+init_new_child	code/modules/reagents/reagent_containers/hypospray.dm	loaded_vial = new /obj/item/reagent_containers/glass/beaker/vial(src) //Comes with an empty vial
+init_new_child	code/modules/recycling/disposal_machines.dm	air_contents = new(PRESSURE_TANK_VOLUME)
+init_new_child	code/modules/refinery/core/industrial_reagent_furnace.dm	beaker = new /obj/item/reagent_containers/glass/beaker/bluespace(src) // Get it all out as fast as possible
+init_new_child	code/modules/refinery/core/industrial_reagent_reactor.dm	internal_tank = new /obj/machinery/portable_atmospherics/canister/empty()
+init_new_child	code/modules/research/message_server.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/research/tg/machinery/_production.dm	print_sound = new(list(src), FALSE)
+init_new_child	code/modules/research/tg/machinery/_production.dm	materials = new /datum/remote_materials(
+init_new_child	code/modules/research/tg/machinery/destructive_analyzer.dm	rmat = new /datum/remote_materials( \
+init_new_child	code/modules/research/tg/machinery/mech_fabricator.dm	print_sound = new(list(src), FALSE)
+init_new_child	code/modules/research/tg/machinery/mech_fabricator.dm	rmat = new /datum/remote_materials( \
+init_new_child	code/modules/resleeving/implant.dm	imp = new /obj/item/implant/backup(src)
+init_new_child	code/modules/shieldgen/emergency_shield.dm	cell = new cell_type(src)
+init_new_child	code/modules/shieldgen/handheld_defuser.dm	cell = new(src)
+init_new_child	code/modules/shieldgen/shield_gen.dm	shield_hum = new(list(src), FALSE)
+init_new_child	code/modules/vehicles/Securitrain.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/vehicles/Securitrain.dm	key = new key_type(src)
+init_new_child	code/modules/vehicles/bike.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/vehicles/bike.dm	ion = new /datum/effect/effect/system/ion_trail_follow()
+init_new_child	code/modules/vehicles/boat.dm	riding_datum = new riding_datum_type(src)
+init_new_child	code/modules/vehicles/cargo_train.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/vehicles/cargo_train.dm	key = new key_type(src)
+init_new_child	code/modules/vehicles/janicart.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/vehicles/janicart.dm	key = new key_type(src)
+init_new_child	code/modules/vehicles/quad.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/vehicles/quad.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/vehicles/quad.dm	key = new key_type(src)
+init_new_child	code/modules/vehicles/rover.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/vehicles/rover.dm	key = new(src)
+init_new_child	code/modules/vehicles/snowmobile.dm	riding_datum = new riding_datum_type(src)
+init_new_child	code/modules/vehicles/vehicle.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/vore/fluffstuff/custom_items.dm	soundloop = new(list(src), FALSE)
+init_new_child	code/modules/vore/fluffstuff/custom_items.dm	bcell = new/obj/item/cell/device/weapon(src)
+init_new_child	code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm	BB = new our_gun.projectile_type(src) //Then we create the bullet inside of us that is the projectile_type that the gun shoots!
+init_new_child	code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm	BB = new /obj/item/ammo_casing/afoam_dart/riot(src) //Something went wrong. Should never happen.
+init_new_child	code/modules/xenoarcheaology/finds/Weapons/archeo_guns.dm	BB = new /obj/item/ammo_casing/afoam_dart/riot(src)
+init_new_child	code/modules/xenoarcheaology/finds/find_spawning.dm	src.talking_atom = new(src)
+init_new_child	code/modules/xenoarcheaology/tools/ano_device_battery.dm	battery_effect = new()
+init_new_child	code/modules/xenoarcheaology/tools/suspension_generator.dm	cell = new /obj/item/cell/high(src)
+init_new_child	code/modules/xenoarcheaology/tools/tools.dm	anomaly_scanner = new/obj/item/ano_scanner(src)
+init_new_child	code/modules/xenoarcheaology/tools/tools.dm	depth_scanner = new/obj/item/depth_scanner(src)
+init_new_child	code/modules/xenobio/items/weapons.dm	bcell = new/obj/item/cell/device(src)
+destroy_qdel_owned	code/game/mecha/mecha.dm	qdel(cell)
+destroy_qdel_owned	code/game/mecha/mecha.dm	qdel(internal_tank)
+destroy_qdel_owned	code/modules/medical/contagion/engineered/engineered.dm	QDEL_LIST(symptoms)
+destroy_qdel_owned	code/modules/mob/living/carbon/brain/MMI.dm	QDEL_NULL(brainobj)
+destroy_qdel_owned	code/modules/mob/living/silicon/robot/robot.dm	QDEL_NULL(mmi)
+destroy_qdel_owned	code/modules/mob/living/silicon/robot/robot.dm	QDEL_NULL(mmi)
+destroy_qdel_owned	code/modules/mob/mob.dm	QDEL_NULL(soulgem) //Soulcatcher
+destroy_qdel_owned	code/modules/organs/organ_external.dm	qdel(splinted)
+destroy_qdel_owned	code/modules/organs/organ_external.dm	qdel(tourniquet)
+destroy_qdel_owned	code/modules/pda/pda.dm	QDEL_NULL(id)
+destroy_drop	code/game/machinery/machinery.dm	for(var/mob/living/carbon/human/H in contents)
+destroy_drop	code/game/objects/items/devices/communicator/communicator.dm	for(var/mob/living/voice/voice in contents.Copy())
+destroy_drop	code/game/objects/micro_structures.dm	for(var/mob/thing in contents_of(src))
+destroy_drop	code/game/objects/objs.dm	for(var/thing in contents_of(src))
+destroy_drop	code/game/objects/structures/crates_lockers/closets/statue.dm	dump_contents()
+destroy_drop	code/modules/recycling/disposal_mail.dm	for(var/atom/movable/AM in contents)
+destroy_drop	code/modules/ventcrawl/ventcrawl_atmospherics.dm	for(var/mob/living/M in contents_of(src)) //ventcrawling is serious business // ALLOW(latent): mobs are never latent
+destroy_drop	code/modules/vore/eating/belly_obj.dm	for(var/mob/observer/G in contents_of(src))
+destroy_effects	code/game/objects/effects/spiders.dm	src.visible_message(span_warning("\The [src] splits open."))
+destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [src] collapses!"))
+destroy_effects	code/game/objects/micro_structures.dm	visible_message(span_warning("\The [thing] tumbles out!"))
+destroy_effects	code/game/objects/objs.dm	m.visible_message(span_notice("\The [m] tumbles out of \the [src]!"))
+destroy_effects	code/game/objects/structures/gargoyle.dm	visible_message(span_warning("The [identifier] loses shape and crumbles into a pile of [material]!"))
+destroy_effects	code/modules/artifice/telecube.dm	mate().visible_message(span_critical("\The [mate()] collapses into itself!"))
+destroy_effects	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster."))
+destroy_effects	code/modules/mob/living/simple_mob/subtypes/blob/spore.dm	visible_message(span_warning("\The [infested] falls to the ground as the blob spore bursts."))
+destroy_effects	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+destroy_effects	code/modules/mob/living/simple_mob/subtypes/humanoid/possessed.dm	visible_message(span_critical(pick("The horrid screech of metal grating metal cuts through the air as the suit's interlocking joints grind and fold inwards upon itself. A putrid wash of decayed flesh spills forwards, staining the ground dark with the contents of the collapsing RIG's long expired pilot.",
+destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	src.visible_message(span_bolddanger("[src] shatters!"))
+destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard/phoron(src.loc)
+destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard(src.loc)
+destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	visible_message(span_cult("\The [src] screeches as it's destroyed"))
+destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.

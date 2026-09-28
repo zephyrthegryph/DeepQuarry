@@ -13,9 +13,10 @@
 	var/open = 0
 	var/brightness_on = 8		//can't remember what the maxed out value is
 
+DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
+
 /obj/machinery/floodlight/Initialize(mapload)
 	. = ..()
-	cell = new(src)
 	make_climbable()
 	make_rotatable()
 

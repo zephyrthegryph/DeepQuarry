@@ -8,7 +8,6 @@
 	var/max_transfer_amount = 30
 	var/min_transfer_amount = 5
 	var/volume = 30
-	var/list/starts_with
 	/// FALSE hides the Set transfer amount Menu entry (sprays, canisters), as the old verbs -= set_APTFT did.
 	var/transfer_amount_verb = TRUE
 
@@ -20,19 +19,9 @@
 	if(N)
 		amount_per_transfer_from_this = N
 
-/obj/item/reagent_containers/Initialize(mapload)
-	. = ..()
-	create_reagents(volume)
-
-	if(starts_with)
-		var/total_so_far = 0
-		for(var/string in starts_with)
-			var/amt = starts_with[string] || 1
-			total_so_far += amt
-			reagents.add_reagent(string, amt)
-		if(total_so_far > volume)
-			WARNING("[src]([src.type]) starts with more reagents than it has total volume")
-		starts_with = null // it should gc, since it's just strings and numbers
+// Every container gets a holder of its (possibly mapped) volume; subtypes declare what starts in it
+// (doc/rewrite/declarative_lifecycle.md).
+DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 
 /obj/item/reagent_containers/afterattack(obj/target, mob/user, flag)
 	return

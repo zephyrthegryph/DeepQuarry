@@ -359,10 +359,16 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 	icon_state = "tgmcmre_entree"
 	var/flavor = "boneless pork ribs"
 
+/obj/item/reagent_containers/food/snacks/tgmc_mre_component
+	/// The one reagent the flavour adds (a per-instance pick, so not a declaration).
+	var/seasoning
+
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component/Initialize(mapload, newflavor)
 	determinetype(newflavor)
 	desc = "A packaged [flavor] from a Meal Ready-to-Eat, there is a lengthy list of [pick("obscure", "arcane", "unintelligible", "revolutionary", "sophisticated", "unspellable")] ingredients and addictives printed on the back."
 	. = ..()
+	if(seasoning)
+		reagents.add_reagent(seasoning, 1)
 
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component/unpackage(mob/user as mob)
 	. = ..()
@@ -379,19 +385,19 @@ EXTEND_INTERACTIONS(/obj/item/storage/mrebag, INTERACT_USE("Open", PROC_REF(inte
 		if("boneless pork ribs", "grilled chicken", "pizza square", "spaghetti", "chicken tenders")
 			icon_state = "tgmcmre_entree"
 			nutriment_amt = 5
-			starts_with = list(REAGENT_ID_SODIUMCHLORIDE = 1)
+			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("meatballs", "cheese spread", "beef turnover", "mashed potatoes")
 			icon_state = "tgmcmre_side"
 			nutriment_amt = 3
-			starts_with = list(REAGENT_ID_SODIUMCHLORIDE= 1)
+			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("biscuit", "pretzels", "peanuts", "cracker")
 			icon_state = "tgmcmre_snack"
 			nutriment_amt = 2
-			starts_with = list(REAGENT_ID_SODIUMCHLORIDE = 1)
+			seasoning = REAGENT_ID_SODIUMCHLORIDE
 		if("spiced apples", "chocolate brownie", "sugar cookie", "choco bar")
 			icon_state = "tgmcmre_dessert"
 			nutriment_amt = 2
-			starts_with = list(REAGENT_ID_SUGAR = 1)
+			seasoning = REAGENT_ID_SUGAR
 
 	package_open_state = "tgmcmre_[flavor]"
 	nutriment_desc = list("[new_taste]" = nutriment_amt)

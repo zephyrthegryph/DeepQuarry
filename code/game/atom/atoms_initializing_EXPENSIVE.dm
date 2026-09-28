@@ -162,6 +162,10 @@
 	if(uses_integrity)
 		atom_integrity = max_integrity
 
+	// Declared instance state (code/datums/lifecycle/declarations.dm): children, gas, reagents,
+	// appearance. Here, at the root of the chain, so a subtype's code after `. = ..()` sees it.
+	lifecycle_decls_init(src)
+
 	/*
 	if (light_system == COMPLEX_LIGHT && light_power && light_range)
 		update_light()

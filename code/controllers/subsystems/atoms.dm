@@ -84,6 +84,9 @@ SUBSYSTEM_DEF(atoms)
 	var/machine_owner = isnull(deferred_machine_binds)
 	if(machine_owner)
 		deferred_machine_binds = list()
+	var/decl_bind_owner = isnull(deferred_decl_binds)
+	if(decl_bind_owner)
+		deferred_decl_binds = list()
 	// Heat bodies created by the batch take pre-reserved handles and configure in one call (heat_bind_batch.dm).
 	dq_heat_bind_begin()
 	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
@@ -95,6 +98,9 @@ SUBSYSTEM_DEF(atoms)
 		flush_cable_binds()
 	if(machine_owner)
 		flush_machine_binds()
+	// Decl binds run inside the heat bind scope, so bodies they create batch too.
+	if(decl_bind_owner)
+		flush_decl_binds()
 	dq_heat_bind_end()
 
 	if(length(late_loaders))

@@ -1,0 +1,307 @@
+// Declarative lifecycle primitives (doc/rewrite/declarative_lifecycle.md,
+// code/datums/lifecycle/declarations.dm): one test per primitive, plus the documented
+// order and the pilot conversions (reagent containers, space heater, floodlight).
+
+#define REGISTRY_DQ_DECL_TEST "dq_decl_test"
+REGISTRY_DECLARE_CONDITIONAL(dq_decl_test, REGISTRY_DQ_DECL_TEST)
+
+GLOBAL_LIST_EMPTY(dq_decl_test_log)
+
+// ---- Fixtures ----
+
+/datum/dq_decl_owned_child
+	var/datum/owner_ref
+
+/datum/dq_decl_owned_child/New(datum/owner)
+	owner_ref = owner
+
+DECLARE_REF(/datum/dq_decl_owned_child, "owner_ref", BACK, null)
+
+/obj/item/dq_decl_part
+	name = "declared part"
+
+/obj/item/dq_decl_part/better
+	name = "better declared part"
+
+/datum/om/behaviour/dq_decl_test
+
+/datum/decl_binder/dq_decl_test/bind_list(list/atoms)
+	GLOB.dq_decl_test_log += "bind:[length(atoms)]"
+	return ..()
+
+/datum/decl_binder/dq_decl_test/bind(atom/A)
+	var/obj/item/dq_decl_probe/probe = A
+	probe.bound = TRUE
+
+/datum/decl_binder/dq_decl_test/unbind(atom/A)
+	var/obj/item/dq_decl_probe/probe = A
+	if(probe.bound)
+		GLOB.dq_decl_test_log += "unbind"
+	probe.bound = FALSE
+
+/// Uses every primitive.
+/obj/item/dq_decl_probe
+	name = "declaration probe"
+	icon = 'icons/obj/chemical.dmi'
+	icon_state = "beaker"
+	var/volume = 40
+	var/mode = "off"
+	var/lid = FALSE
+	var/bound = FALSE
+	var/timer_fired = FALSE
+	var/datum/dq_decl_owned_child/helper
+	var/obj/item/dq_decl_part/part
+	var/obj/item/dq_decl_part/mapped_part = /obj/item/dq_decl_part/better
+	var/list/spares
+	var/datum/gas_mixture/air_contents
+	/// What the type's own Initialize() saw after `. = ..()` (the init declarations ran first).
+	var/saw_reagents_in_initialize = 0
+	var/saw_part_in_initialize = FALSE
+
+DECLARE_REF(/obj/item/dq_decl_probe, "helper", OWNED, null)
+DECLARE_REF(/obj/item/dq_decl_probe, "part", HELD, null)
+DECLARE_REF(/obj/item/dq_decl_probe, "mapped_part", HELD, null)
+DECLARE_REF(/obj/item/dq_decl_probe, "spares", OWNED_LIST, null)
+DECLARE_REF(/obj/item/dq_decl_probe, "air_contents", OWNED, null)
+
+DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "helper", /datum/dq_decl_owned_child)
+DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "part", /obj/item/dq_decl_part)
+DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "mapped_part", /obj/item/dq_decl_part)
+DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "spares", list(/obj/item/dq_decl_part = 2))
+DECLARE_GAS(/obj/item/dq_decl_probe, "air_contents", 70, T20C, list(GAS_O2 = ONE_ATMOSPHERE))
+DECLARE_REAGENTS(/obj/item/dq_decl_probe, "volume", list(REAGENT_ID_WATER = 10))
+DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "mode", list("off" = list(APPEARANCE_ICON_STATE = "beaker"), "on" = list(APPEARANCE_ICON_STATE = "beakerlarge", APPEARANCE_OVERLAYS = list("lid_beaker"))))
+DECLARE_APPEARANCE(/obj/item/dq_decl_probe, "lid", list("1" = list(APPEARANCE_OVERLAYS = list("lid_beakerlarge"))))
+DECLARE_REGISTRY(/obj/item/dq_decl_probe, REGISTRY_DQ_DECL_TEST)
+DECLARE_BIND(/obj/item/dq_decl_probe, /datum/decl_binder/dq_decl_test)
+DECLARE_BEHAVIOUR(/obj/item/dq_decl_probe, /datum/om/behaviour/dq_decl_test)
+DECLARE_PERIODIC(/obj/item/dq_decl_probe, PERIODIC_SLOW)
+DECLARE_START_TIMER(/obj/item/dq_decl_probe, 2 SECONDS, PROC_REF(timer_done))
+DESTROY_EFFECTS(/obj/item/dq_decl_probe, new /datum/destroy_effects_data(drop_contents = TRUE, debris = list(/obj/item/dq_decl_part/better = 2)))
+
+// INIT: records what the declarations had already set up (test probe)
+/obj/item/dq_decl_probe/Initialize(mapload)
+	. = ..()
+	saw_reagents_in_initialize = reagents?.total_volume
+	saw_part_in_initialize = istype(part)
+
+/obj/item/dq_decl_probe/proc/timer_done()
+	timer_fired = TRUE
+
+/obj/item/dq_decl_probe/periodic_step(delta)
+	return
+
+/// Adds to the parent's reagents (the old ..() chain added too) and tints.
+/obj/item/dq_decl_probe/sub
+DECLARE_REAGENTS_TINTED(/obj/item/dq_decl_probe/sub, 60, list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5))
+
+/// Starts with no declared reagents at all.
+/obj/item/dq_decl_probe/dry
+DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
+
+/// How many of A's overlays show icon state `state` (add_overlay() re-adds priority overlays, so
+/// the raw length is no measure).
+/proc/dq_decl_overlay_count(atom/A, state)
+	. = 0
+	for(var/image/overlay as anything in A.overlays)
+		if(overlay.icon_state == state)
+			.++
+
+// ---- Tests ----
+
+/datum/unit_test/dq_decl_reagents
+
+/datum/unit_test/dq_decl_reagents/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, T)
+	TEST_ASSERT(probe.reagents, "a declared holder exists")
+	TEST_ASSERT_EQUAL(probe.reagents.maximum_volume, 40, "volume read from the declared var")
+	TEST_ASSERT_EQUAL(probe.reagents.get_reagent_amount(REAGENT_ID_WATER), 10, "declared water")
+	TEST_ASSERT_EQUAL(probe.saw_reagents_in_initialize, 10, "the type's Initialize() saw the reagents after ..()")
+
+	var/obj/item/dq_decl_probe/sub/sub = allocate(/obj/item/dq_decl_probe/sub, T)
+	TEST_ASSERT_EQUAL(sub.reagents.maximum_volume, 60, "a subtype's volume replaces the parent's")
+	TEST_ASSERT_EQUAL(sub.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "a subtype's contents add to the parent's")
+	TEST_ASSERT_EQUAL(sub.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 5, "and bring their own")
+	TEST_ASSERT_EQUAL(uppertext(copytext(sub.color, 1, 8)), uppertext(copytext(sub.reagents.get_color(), 1, 8)), "the tinted form colours from the reagents")
+
+	var/obj/item/dq_decl_probe/dry/dry = allocate(/obj/item/dq_decl_probe/dry, T)
+	TEST_ASSERT(isnull(dry.reagents), "DECLARE_NO_REAGENTS drops the inherited holder")
+
+	var/datum/lifecycle_decls/a = lifecycle_decls_of(probe)
+	var/obj/item/dq_decl_probe/other = allocate(/obj/item/dq_decl_probe, T)
+	TEST_ASSERT(a == lifecycle_decls_of(other), "one declaration table per type")
+	TEST_ASSERT(a.reagent_contents == lifecycle_decls_of(other).reagent_contents, "the contents list is the type's, not the instance's")
+
+/datum/unit_test/dq_decl_children
+
+/datum/unit_test/dq_decl_children/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, T)
+	TEST_ASSERT(istype(probe.helper, /datum/dq_decl_owned_child), "an owned datum child from the default type")
+	TEST_ASSERT_EQUAL(probe.helper.owner_ref, probe, "created with src as its first argument")
+	TEST_ASSERT(istype(probe.part, /obj/item/dq_decl_part) && probe.part.loc == probe, "a held child made inside the owner")
+	TEST_ASSERT(istype(probe.mapped_part, /obj/item/dq_decl_part/better), "a path in the var beats the declared default")
+	TEST_ASSERT_EQUAL(length(probe.spares), 2, "a list default with a count")
+	TEST_ASSERT(probe.saw_part_in_initialize, "children exist when the type's Initialize() runs")
+
+	var/datum/dq_decl_owned_child/helper = probe.helper
+	var/obj/item/dq_decl_part/spare = probe.spares[1]
+	qdel(probe)
+	TEST_ASSERT(QDELETED(helper), "an OWNED declared child dies with its owner (phase 4)")
+	TEST_ASSERT(QDELETED(spare), "so does each OWNED_LIST member")
+
+
+/datum/unit_test/dq_decl_gas
+
+/datum/unit_test/dq_decl_gas/Run()
+	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, dq_containment_floor())
+	TEST_ASSERT(probe.air_contents, "a declared gas mixture")
+	TEST_ASSERT_EQUAL(probe.air_contents.return_volume(), 70, "at the declared volume")
+	var/pressure = probe.air_contents.return_pressure()
+	TEST_ASSERT(abs(pressure - ONE_ATMOSPHERE) < 1, "at the declared pressure, got [pressure]")
+
+/datum/unit_test/dq_decl_appearance
+
+/datum/unit_test/dq_decl_appearance/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, T)
+	var/obj/item/dq_decl_probe/twin = allocate(/obj/item/dq_decl_probe, T)
+	TEST_ASSERT_EQUAL(probe.icon_state, "beaker", "the row for the initial state")
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker"), 0, "no row overlay yet")
+
+	probe.mode = "on"
+	probe.update_icon()
+	TEST_ASSERT_EQUAL(probe.icon_state, "beakerlarge", "update_icon() follows the state var with no override")
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker"), 1, "the row's overlay was added")
+
+	probe.lid = TRUE
+	probe.update_icon()
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beakerlarge"), 1, "a second layer adds its overlay")
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker"), 1, "and keeps the first layer's")
+
+	probe.mode = "off"
+	probe.lid = FALSE
+	probe.update_icon()
+	TEST_ASSERT_EQUAL(probe.icon_state, "beaker", "back to the first row")
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(probe, "lid_beaker") + dq_decl_overlay_count(probe, "lid_beakerlarge"), 0, "the declared overlays were swapped out")
+
+	twin.mode = "on"
+	twin.update_icon()
+	probe.mode = "on"
+	probe.update_icon()
+	var/datum/lifecycle_decls/decls = lifecycle_decls_of(probe)
+	TEST_ASSERT(decls.appearance_row(probe, decls.appearance_key(probe)) == decls.appearance_row(twin, decls.appearance_key(twin)), "one shared appearance per (type, state)")
+
+/datum/unit_test/dq_decl_registry
+
+/datum/unit_test/dq_decl_registry/Run()
+	var/obj/item/dq_decl_probe/probe = allocate(/obj/item/dq_decl_probe, dq_containment_floor())
+	TEST_ASSERT(probe in REGISTRY_MEMBERS(REGISTRY_DQ_DECL_TEST), "a conditional registry joined at materialize")
+	probe.dematerialize()
+	TEST_ASSERT(!(probe in REGISTRY_MEMBERS(REGISTRY_DQ_DECL_TEST)), "left at dematerialize")
+	probe.materialize()
+	TEST_ASSERT(probe in REGISTRY_MEMBERS(REGISTRY_DQ_DECL_TEST), "and joined again")
+	qdel(probe)
+	TEST_ASSERT(!(probe in REGISTRY_MEMBERS(REGISTRY_DQ_DECL_TEST)), "left at destroy")
+
+/datum/unit_test/dq_decl_binds
+
+/datum/unit_test/dq_decl_binds/Run()
+	var/turf/T = dq_containment_floor()
+	GLOB.dq_decl_test_log = list()
+	var/obj/item/dq_decl_probe/single = allocate(/obj/item/dq_decl_probe, T)
+	TEST_ASSERT(single.bound, "bound at materialize outside a batch")
+	TEST_ASSERT_EQUAL(jointext(GLOB.dq_decl_test_log, ","), "bind:1", "one bind_list() call for it")
+
+	// A batch: SSatoms owns deferred_decl_binds for the length of InitializeAtoms().
+	GLOB.dq_decl_test_log = list()
+	var/list/saved = SSatoms.deferred_decl_binds
+	SSatoms.deferred_decl_binds = list()
+	var/list/probes = list()
+	for(var/i in 1 to 3)
+		probes += allocate(/obj/item/dq_decl_probe, T)
+	var/obj/item/dq_decl_probe/first = probes[1]
+	TEST_ASSERT(!first.bound, "not bound until the batch ends")
+	qdel(probes[3]) // gone before the flush: never bound, dropped from the queue
+	SSatoms.flush_decl_binds()
+	SSatoms.deferred_decl_binds = saved
+	TEST_ASSERT(first.bound, "bound when the batch flushed")
+	TEST_ASSERT_EQUAL(jointext(GLOB.dq_decl_test_log, ","), "bind:2", "one bind_list() for the whole batch")
+
+	GLOB.dq_decl_test_log = list()
+	qdel(single)
+	TEST_ASSERT_EQUAL(jointext(GLOB.dq_decl_test_log, ","), "unbind", "released once, in destroy phase 1")
+
+/datum/unit_test/dq_decl_scheduling
+
+/datum/unit_test/dq_decl_scheduling/Run()
+	om_test_begin()
+	var/obj/item/dq_decl_probe/probe = new(dq_containment_floor())
+	TEST_ASSERT(om_attached(probe, /datum/om/behaviour/dq_decl_test), "the declared behaviour attached at materialize")
+	TEST_ASSERT(probe.periodic_pipe == PERIODIC_SLOW, "periodic work started at materialize")
+	TEST_ASSERT(!probe.timer_fired, "the timer waits")
+	scheduler_advance(3)
+	TEST_ASSERT(probe.timer_fired, "the declared timer fired")
+	probe.dematerialize()
+	TEST_ASSERT(isnull(probe.periodic_pipe), "periodic work stopped at dematerialize")
+	qdel(probe)
+	om_test_end()
+
+/datum/unit_test/dq_decl_destroy_effects
+
+/datum/unit_test/dq_decl_destroy_effects/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/dq_decl_probe/probe = new(T)
+	var/obj/item/dq_decl_part/loose = new(probe) // no slot, no declaration: a leftover in contents
+	var/before = length(contents_of(T, /obj/item/dq_decl_part/better))
+	qdel(probe)
+	TEST_ASSERT_EQUAL(loose.loc, T, "drop_contents moved the leftover to the turf")
+	// Two declared debris (the HELD mapped_part, also a /better, may be dropped too).
+	TEST_ASSERT(length(contents_of(T, /obj/item/dq_decl_part/better)) - before >= 2, "the declared debris list spawned")
+	for(var/obj/item/dq_decl_part/P in contents_of(T))
+		qdel(P)
+
+/// The documented order: init declarations inside Initialize() (before the type's own code after
+/// ..()), materialize ones after. A sandboxed object has the first and not the second.
+/datum/unit_test/dq_decl_order
+
+/datum/unit_test/dq_decl_order/Run()
+	var/obj/item/dq_decl_probe/probe = new_unmaterialized(/obj/item/dq_decl_probe, dq_containment_floor())
+	TEST_ASSERT(probe.reagents && probe.part && probe.air_contents, "init declarations ran in a sandbox")
+	TEST_ASSERT(!(probe in REGISTRY_MEMBERS(REGISTRY_DQ_DECL_TEST)) && !probe.bound, "materialize declarations did not")
+	probe.materialize()
+	TEST_ASSERT((probe in REGISTRY_MEMBERS(REGISTRY_DQ_DECL_TEST)) && probe.bound, "they run when it goes live")
+	qdel(probe)
+
+// ---- Pilot conversions ----
+
+/datum/unit_test/dq_decl_pilot_reagent_containers
+
+/datum/unit_test/dq_decl_pilot_reagent_containers/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/item/reagent_containers/glass/beaker/beaker = allocate(/obj/item/reagent_containers/glass/beaker, T)
+	TEST_ASSERT_EQUAL(beaker.reagents?.maximum_volume, beaker.volume, "every container gets a holder of its volume")
+	var/obj/item/reagent_containers/pill/antitox/pill = allocate(/obj/item/reagent_containers/pill/antitox, T)
+	TEST_ASSERT_EQUAL(pill.reagents.get_reagent_amount(REAGENT_ID_ANTITOXIN), 30, "a converted pill keeps its contents")
+	TEST_ASSERT_EQUAL(uppertext(copytext(pill.color, 1, 8)), uppertext(copytext(pill.reagents.get_color(), 1, 8)), "and its reagent colour")
+
+/datum/unit_test/dq_decl_pilot_space_heater
+
+/datum/unit_test/dq_decl_pilot_space_heater/Run()
+	var/turf/T = dq_containment_floor()
+	var/obj/machinery/space_heater/heater = allocate(/obj/machinery/space_heater, T)
+	TEST_ASSERT(istype(heater.cell, heater.cell_type) && heater.cell.loc == heater, "the cell comes from cell_type")
+	TEST_ASSERT_EQUAL(heater.icon_state, "sheater0", "icon_state follows state")
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(heater, "sheater-open"), 0, "hatch closed")
+	heater.panel_open = TRUE
+	heater.update_icon()
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(heater, "sheater-open"), 1, "the hatch overlay follows panel_open")
+	heater.panel_open = FALSE
+	heater.update_icon()
+	TEST_ASSERT_EQUAL(dq_decl_overlay_count(heater, "sheater-open"), 0, "and goes again")
+
+	var/obj/machinery/floodlight/light = allocate(/obj/machinery/floodlight, T)
+	TEST_ASSERT(istype(light.cell, /obj/item/cell), "the floodlight's declared default cell")
+
+#undef REGISTRY_DQ_DECL_TEST

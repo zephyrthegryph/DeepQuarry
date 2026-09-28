@@ -20,8 +20,10 @@
 #define TYPE_TABLE_HAS_RULES (1<<2)
 /// The type has object-model declarations (code/datums/om/).
 #define TYPE_TABLE_HAS_OM (1<<3)
+/// The type has materialize-time lifecycle declarations (code/datums/lifecycle/declarations.dm).
+#define TYPE_TABLE_HAS_DECLS (1<<4)
 /// Any of these means on_materialize() has work for the type.
-#define TYPE_TABLE_MATERIALIZE_WORK (TYPE_TABLE_JOINS_REGISTRIES|TYPE_TABLE_HAS_RULES|TYPE_TABLE_HAS_OM)
+#define TYPE_TABLE_MATERIALIZE_WORK (TYPE_TABLE_JOINS_REGISTRIES|TYPE_TABLE_HAS_RULES|TYPE_TABLE_HAS_OM|TYPE_TABLE_HAS_DECLS)
 /// Set on every built row, so a type with no facts is still cached.
 #define TYPE_TABLE_BUILT (1<<23)
 
@@ -40,6 +42,9 @@
 		bits |= TYPE_TABLE_HAS_RULES
 	if(om_type_has_decl(thing.type))
 		bits |= TYPE_TABLE_HAS_OM
+	var/datum/lifecycle_decls/decls = lifecycle_decls_of(thing)
+	if(decls && (decls.work & DECL_WORK_MATERIALIZE))
+		bits |= TYPE_TABLE_HAS_DECLS
 	rows[thing.type] = bits
 	return bits
 
@@ -60,3 +65,4 @@
 	flags_1 |= INITIALIZED_1
 	if(uses_integrity)
 		atom_integrity = max_integrity
+	lifecycle_decls_init(src)

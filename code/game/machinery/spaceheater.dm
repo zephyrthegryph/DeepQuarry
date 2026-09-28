@@ -40,10 +40,15 @@
 	bubble_icon = "engineering"
 	circuit = /obj/item/circuitboard/space_heater
 
+// The cell comes from cell_type (null: none); icon_state follows state, the open-hatch overlay
+// panel_open (doc/rewrite/declarative_lifecycle.md).
+DECLARE_DEFAULT_CHILD(/obj/machinery/space_heater, "cell", "cell_type")
+// Rows by state: SHEATER_OFF, SHEATER_STANDBY, SHEATER_HEAT, SHEATER_COOL.
+DECLARE_APPEARANCE(/obj/machinery/space_heater, "state", list( 	"0" = list(APPEARANCE_ICON_STATE = "sheater0"), 	"1" = list(APPEARANCE_ICON_STATE = "sheater1"), 	"2" = list(APPEARANCE_ICON_STATE = "sheater2"), 	"3" = list(APPEARANCE_ICON_STATE = "sheater3") ))
+DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("sheater-open"))))
+
 /obj/machinery/space_heater/Initialize(mapload)
 	. = ..()
-	if(cell_type)
-		cell = new cell_type(src)
 	default_apply_parts()
 	update_icon()
 	make_climbable()
@@ -62,10 +67,7 @@
 	power_efficiency -= cap_over * 0.06 //Four T2 parts = 24% more efficient. Four T5 parts = 96% more efficient
 	min_temperature = max(1, min_temperature)
 /obj/machinery/space_heater/update_icon()
-	cut_overlays()
-	icon_state = "sheater[state]"
-	if(panel_open)
-		add_overlay("sheater-open")
+	..() // declared appearance
 	switch(state)
 		// start, fixing runtimes
 		if(SHEATER_OFF)
