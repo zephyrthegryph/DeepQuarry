@@ -400,7 +400,7 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 	if(!rule.is_ready(signal_snapshots))
 		return
 	var/cooldown_until = opportunity_cooldowns[window_key] || 0
-	if(cooldown_until > world.time) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
+	if(cooldown_until > world.time)
 		opportunities_suppressed++
 		return
 	if(!rule.trigger(src, window, event, signal_snapshots))

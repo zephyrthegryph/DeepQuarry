@@ -147,3 +147,22 @@ GLOBAL_LIST_EMPTY(state_codec_instances)
 		return
 	var/list/nested = encoded[STATE_WRAP_OWNED]
 	owner.vars[var_name] = ctx.materialize_datum(nested) // ALLOW(api): state serializer codecs
+
+// ---------------------------------------------------------------------------
+// pinned: an owned child that holds live wiring (hooks registered in New(), back
+// references, a hosted mind) and cannot be rebuilt from saved vars. While it is
+// set the holder is not serialized, so it stays materialised; while it is null
+// the holder saves normally. This is the declared form of "not saved: keeps the
+// holder live", in place of a reference the serializer would refuse unannounced.
+// ---------------------------------------------------------------------------
+/datum/state_codec/pinned
+
+/datum/state_codec/pinned/encode(datum/owner, var_name, value, datum/state_context/ctx)
+	if(isnull(value))
+		return null
+	ctx.refuse("[owner.type].[var_name] holds live state ([value]) and pins its holder materialised")
+	return null
+
+/datum/state_codec/pinned/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
+	return
+

@@ -307,7 +307,8 @@
 /// use it. It observes the ordinary item interaction events and publishes one
 /// reversible physical fact rather than teaching individual item types about
 /// contracts.
-/obj/item/var/datum/economic_adoption/economic_adoption // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+/obj/item/var/datum/economic_adoption/economic_adoption
+/// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 DECLARE_REF(/obj/item, "economic_adoption", OWNED, null)
 
 /datum/economic_adoption

@@ -12,7 +12,7 @@
 	anchored = TRUE
 	buckle_lying = FALSE
 	var/burning = FALSE
-	var/next_fuel_consumption = 0 // world.time of when next item in fuel list gets eatten to sustain the fire.
+	TIMESTAMP_VAR(next_fuel_consumption) // world.time of when next item in fuel list gets eatten to sustain the fire.
 	var/grill = FALSE
 	var/datum/material/material
 	var/set_temperature = T0C + 30	//K
@@ -259,7 +259,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption) // ALLOW(cooldown): fuel consumption schedule
+	if(world.time >= next_fuel_consumption)
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return
@@ -316,7 +316,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/burning = FALSE
-	var/next_fuel_consumption = 0
+	TIMESTAMP_VAR(next_fuel_consumption)
 	var/set_temperature = T0C + 20	//K
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
@@ -464,7 +464,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption) // ALLOW(cooldown): fuel consumption schedule
+	if(world.time >= next_fuel_consumption)
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return

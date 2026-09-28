@@ -29,7 +29,10 @@
 	var/add_req_access = 1
 	var/maint_access = 1
 	var/dna								//Dna-locking the mech
-	var/list/proc_res 			//Stores proc owners, like proc_res["functionname"] = owner reference
+	/// The active ion jetpack; when set, movement goes through its dyndomove().
+	var/obj/item/mecha_parts/mecha_equipment/tool/jetpack/active_jetpack
+	/// The attached energy relay; when set, charge reads go through its dyngetcharge().
+	var/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/energy_relay
 	var/datum/effect/effect/system/spark_spread/spark_system
 	var/lights = 0
 	var/lights_power = 6
@@ -631,28 +634,6 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 ////////////////////////////
 ///// Action processing ////
 ////////////////////////////
-/*
-/atom/DblClick(object,location,control,params)
-	var/mob/M = src.mob
-	if(M && M.in_contents_of(/obj/mecha))
-
-		if(mech_click == world.time) return
-		mech_click = world.time
-
-		if(!istype(object, /atom)) return
-		if(istype(object, /atom/movable/screen))
-			var/atom/movable/screen/using = object
-			if(using.screen_loc == ui_acti || using.screen_loc == ui_iarrowleft || using.screen_loc == ui_iarrowright)//ignore all HUD objects save 'intent' and its arrows
-				return ..()
-			else
-				return
-		var/obj/mecha/Mech = M.loc
-		spawn() //this helps prevent clickspam fest.
-			if (Mech)
-				Mech.click_action(object,M)
-//	else
-//		return ..()
-*/
 
 /obj/mecha/proc/click_action(atom/target,mob/user, params)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
@@ -779,7 +760,9 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 
 /obj/mecha/proc/domove(direction)
 
-	return call((LAZYACCESS(proc_res, "dyndomove")||src), "dyndomove")(direction)
+	if(active_jetpack)
+		return active_jetpack.dyndomove(direction)
+	return dyndomove(direction)
 
 /obj/mecha/proc/get_step_delay()
 	var/tally = 0
@@ -2514,44 +2497,6 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return
 
 
-/*
-
-	if (href_list["ai_take_control"])
-		var/mob/living/silicon/ai/AI = locate(href_list["ai_take_control"])
-		var/duration = text2num(href_list["duration"])
-		var/mob/living/silicon/ai/O = new /mob/living/silicon/ai(src)
-		var/cur_occupant = src?.slot_item(MECHA_SLOT_PILOT)
-		O.invisibility = INVISIBILITY_NONE
-		O.canmove = 1
-		O.name = AI.name
-		O.real_name = AI.real_name
-		O.anchored = TRUE
-		O.aiRestorePowerRoutine = 0
-		O.control_disabled = 1 // Can't control things remotely if you're stuck in a card!
-		O.laws = AI.laws
-		O.set_stat(AI.stat)
-		mirror_injury_state(AI, O)
-		src?.slot_item(MECHA_SLOT_PILOT) = O
-		if(AI.mind)
-			AI.mind.transfer_to(O)
-		AI.name = "Inactive AI"
-		AI.real_name = "Inactive AI"
-		AI.icon_state = "ai-empty"
-		spawn(duration)
-			AI.name = O.name
-			AI.real_name = O.real_name
-			if(O.mind)
-				O.mind.transfer_to(AI)
-			AI.control_disabled = 0
-			AI.laws = O.laws
-			mirror_injury_state(O, AI)
-			qdel(O)
-			if (!AI.stat)
-				AI.icon_state = "ai"
-			else
-				AI.icon_state = "ai-crash"
-			src?.slot_item(MECHA_SLOT_PILOT) = cur_occupant
-*/
 
 ///////////////////////
 ///// Power stuff /////
@@ -2561,14 +2506,16 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return (get_charge()>=amount)
 
 /obj/mecha/proc/get_charge()
-	return call((LAZYACCESS(proc_res, "dyngetcharge")||src), "dyngetcharge")()
+	if(energy_relay)
+		return energy_relay.dyngetcharge()
+	return dyngetcharge()
 
 /obj/mecha/proc/dyngetcharge()//returns null if no powercell, else returns cell.charge
 	if(!src.cell) return
 	return max(0, src.cell.charge)
 
 /obj/mecha/proc/use_power(amount)
-	return call((LAZYACCESS(proc_res, "dynusepower")||src), "dynusepower")(amount)
+	return dynusepower(amount)
 
 /obj/mecha/proc/dynusepower(amount)
 	update_cell_alerts()
@@ -2762,6 +2709,8 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 DECLARE_REF(/obj/mecha, "spark_system", OWNED, null)
 DECLARE_REF(/obj/mecha, "smoke_system", OWNED, null)
 DECLARE_REF(/obj/mecha, "radio", OWNED, null)
+DECLARE_REF(/obj/mecha, "active_jetpack", HELD, null)
+DECLARE_REF(/obj/mecha, "energy_relay", HELD, null)
 DECLARE_REF(/obj/mecha, "eject_action", OWNED, null)
 DECLARE_REF(/obj/mecha, "internals_action", OWNED, null)
 DECLARE_REF(/obj/mecha, "lights_action", OWNED, null)

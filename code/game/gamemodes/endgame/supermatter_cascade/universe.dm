@@ -72,17 +72,6 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 
 /datum/universal_state/supermatter_cascade/OverlayAndAmbientSet()
 	return
-	/* TODO
-	spawn(0)
-		for(var/datum/lighting_corner/L in world)
-			if(L.z in using_map.admin_levels)
-				L.update_lumcount(1,1,1)
-			else
-				L.update_lumcount(0.0, 0.4, 1)
-
-		for(var/turf/space/T in world)
-			OnTurfChange(T)
-	*/
 /datum/universal_state/supermatter_cascade/proc/MiscSet()
 	for (var/obj/machinery/firealarm/alm in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if (!(alm.stat & BROKEN))

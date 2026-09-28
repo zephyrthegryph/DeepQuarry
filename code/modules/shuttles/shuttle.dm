@@ -11,7 +11,7 @@
 	var/tmp/current_location_handle	//Set current_location_tag, not this: New() resolves the tag into the landmark.
 	var/current_location_tag	// the tag it starts as; resolved into current_location at init
 
-	var/tmp/arrive_time = 0	//the time at which the shuttle arrives when long jumping
+	TIMESTAMP_TMP_VAR(arrive_time) //the time at which the shuttle arrives when long jumping
 	var/flags = SHUTTLE_FLAGS_NONE
 	var/process_state = IDLE_STATE // Used with SHUTTLE_FLAGS_PROCESS, as well as to store current state.
 	var/always_process = FALSE // Automated shuttles may need idle-state checks.
@@ -215,7 +215,7 @@
 /// In transit: every half second until arrival time, the travel sound every four seconds
 /// (the sound file is five) and the landing warning five seconds out.
 /datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, made_warning)
-	if(world.time >= arrive_time) // ALLOW(cooldown): shuttle arrival schedule
+	if(world.time >= arrive_time)
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
@@ -224,7 +224,7 @@
 		make_sounds(HYPERSPACE_PROGRESS)
 		COOLDOWN_START(src, progress_sound_cooldown, 4 SECONDS)
 
-	if(arrive_time - world.time <= 5 SECONDS && !made_warning) // ALLOW(cooldown): shuttle arrival schedule
+	if(arrive_time - world.time <= 5 SECONDS && !made_warning)
 		made_warning = TRUE
 		create_warning_effect(destination)
 	om_after(src, 5, PROC_REF(long_jump_transit), start_location, destination, made_warning)

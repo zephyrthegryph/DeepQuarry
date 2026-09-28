@@ -505,7 +505,7 @@
 	if(brigged_since == -1)
 		brigged_since = world.time
 
-	return (duration <= world.time - brigged_since) // ALLOW(cooldown): elapsed brig time
+	return (duration <= world.time - brigged_since)
 
 /datum/mind/proc/reset()
 	assigned_role =   null

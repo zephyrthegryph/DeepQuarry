@@ -2,7 +2,7 @@
 	var/severity = -1
 	var/delayed = 0
 	var/delay_modifier = 1
-	var/next_event_time = 0
+	TIMESTAMP_VAR(next_event_time)
 	var/list/available_events
 	var/list/last_event_time
 	var/tmp/next_event_handle
@@ -19,7 +19,7 @@
 
 	if(delayed || !CONFIG_GET(flag/allow_random_events))
 		next_event_time += (world.time - last_world_time)
-	else if(world.time > next_event_time) // ALLOW(cooldown): event scheduler
+	else if(world.time > next_event_time)
 		start_event()
 
 	last_world_time = world.time

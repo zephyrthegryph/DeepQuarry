@@ -369,3 +369,19 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 	TEST_ASSERT(old_gem?.linked_belly()?.name == "Tummy", "a v1 soulgem save should relink its belly: [jointext(errors, "; ")]")
 	qdel(old_gem)
 	qdel(gem)
+
+/// A pinned owned child (a paper carrying a contract) refuses serialization while
+/// set, and the holder saves normally once it is cleared.
+/datum/unit_test/dq_state_pinned_codec
+
+/datum/unit_test/dq_state_pinned_codec/Run()
+	var/obj/item/paper/paper = allocate(/obj/item/paper, test_floor())
+	TEST_ASSERT_NOTNULL(state_serialize(paper), "a plain paper should serialize")
+	var/datum/contract_document/document = new(paper, "test-contract", "consent", null, list())
+	TEST_ASSERT_EQUAL(paper.contract_document, document, "the document should attach to the paper")
+	var/list/errors = list()
+	TEST_ASSERT_NULL(state_serialize(paper, NONE, errors), "a paper with a pinned contract document should refuse serialization")
+	TEST_ASSERT(length(errors), "the pinned refusal should say why")
+	paper.contract_document = null
+	qdel(document)
+	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")

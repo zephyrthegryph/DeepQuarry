@@ -495,14 +495,14 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 	for(var/list/evidence as anything in scan_reports)
 		if(evidence["subject_id"] != subject_id)
 			continue
-		var/scan_time = evidence["scan_time"]
-		if(!isnum(scan_time) || scan_time > world.time) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
+		var/scanned_at = evidence["scan_time"]
+		if(!isnum(scanned_at) || scanned_at > world.time)
 			continue
-		if(scan_time >= signature_time && scan_time <= participant.exposure_time)
-			if(!baseline || scan_time > baseline["scan_time"])
+		if(scanned_at >= signature_time && scanned_at <= participant.exposure_time)
+			if(!baseline || scanned_at > baseline["scan_time"])
 				baseline = evidence
-		if(scan_time >= participant.exposure_time + MEDICAL_TRIAL_OBSERVATION_TIME)
-			if(!followup || scan_time < followup["scan_time"])
+		if(scanned_at >= participant.exposure_time + MEDICAL_TRIAL_OBSERVATION_TIME)
+			if(!followup || scanned_at < followup["scan_time"])
 				followup = evidence
 	if(!baseline)
 		to_chat(sender, span_warning("VeyMed rejects the packet: it lacks a genuine body-scanner report made after consent and before exposure."))

@@ -22,7 +22,7 @@
 	var/process_queue = FALSE
 
 	/// World time when the build will finish.
-	var/build_finish = 0
+	TIMESTAMP_VAR(build_finish)
 
 	/// World time when the build started.
 	var/build_start = 0
@@ -287,7 +287,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 		on_start_printing()
 
 	// If there's an item being built, check if it is complete.
-	if(being_built() && (build_finish < world.time)) // ALLOW(cooldown): build progress
+	if(being_built() && (build_finish < world.time))
 		// Then attempt to dispense it and if appropriate build the next item.
 		dispense_built_part(being_built())
 		if(process_queue)

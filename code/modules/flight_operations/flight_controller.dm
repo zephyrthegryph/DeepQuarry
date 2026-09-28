@@ -383,7 +383,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 
 /datum/world_service/flight/proc/process_plan(datum/flight_plan/plan)
 	if(plan.state == FLIGHT_PLAN_FAILED)
-		if(world.time >= plan.terminal_cleanup_at) // ALLOW(cooldown): flight plan schedule deadlines
+		if(world.time >= plan.terminal_cleanup_at)
 			finish_plan(plan)
 		return
 	if(plan.cancel_requested)
@@ -409,11 +409,11 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		if(istype(landable) && landable.status == SHIP_STATUS_OVERMAP && plan.vessel.shuttle().moving_status == SHUTTLE_IDLE)
 			enter_transit(plan)
 			return
-		if(world.time > plan.departure_deadline) // ALLOW(cooldown): flight plan schedule deadlines
+		if(world.time > plan.departure_deadline)
 			plan.fail("The vessel could not complete undocking.")
 		return
 	if(plan.state == FLIGHT_PLAN_TRANSIT)
-		if(world.time < plan.estimated_arrival_at) // ALLOW(cooldown): flight plan schedule deadlines
+		if(world.time < plan.estimated_arrival_at)
 			return
 		if(plan.generation_state == FLIGHT_GENERATION_RUNNING)
 			plan.state = FLIGHT_PLAN_HOLDING
@@ -450,7 +450,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 			plan.release_leases()
 			finish_plan(plan)
 			return
-		if(world.time > plan.departure_deadline) // ALLOW(cooldown): flight plan schedule deadlines
+		if(world.time > plan.departure_deadline)
 			plan.fail("The vessel could not complete its landing sequence.")
 
 /datum/world_service/flight/proc/enter_transit(datum/flight_plan/plan)

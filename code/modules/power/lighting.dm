@@ -1076,11 +1076,11 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	light_timer_at = 0
 	if(QDELETED(src))
 		return
-	if(emergency_discharge_at && world.time >= emergency_discharge_at) // ALLOW(cooldown): scheduled light state transitions
+	if(emergency_discharge_at && world.time >= emergency_discharge_at)
 		continue_emergency_discharge()
-	if(emergency_recharge_at && world.time >= emergency_recharge_at) // ALLOW(cooldown): scheduled light state transitions
+	if(emergency_recharge_at && world.time >= emergency_recharge_at)
 		finish_emergency_recharge()
-	if(flicker_check_at && world.time >= flicker_check_at) // ALLOW(cooldown): scheduled light state transitions
+	if(flicker_check_at && world.time >= flicker_check_at)
 		flicker_check_at = 0
 		auto_flicker_check()
 	schedule_light_timer()

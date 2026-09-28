@@ -581,7 +581,8 @@
 /datum/body_effect/trait/phobia/xenophobia/on_tick(mob/living/L)
 	if(L.stat)
 		return // You got bigger problems.
-	if(world.time >= (L.body_effect_state(type) || 0)) // ALLOW(cooldown): body effect state schedule
+	// ALLOW(cooldown): per-type state slot on the body; phobias share one slot table
+	if(world.time >= (L.body_effect_state(type) || 0))
 		if(intermittent_message(L))
 			L.set_body_effect_state(type, world.time + message_cooldown)
 

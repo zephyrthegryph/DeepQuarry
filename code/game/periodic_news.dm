@@ -108,7 +108,8 @@ GLOBAL_LIST_EMPTY(announced_news_types)
 /proc/check_for_newscaster_updates(type)
 	for(var/subtype in subtypesof(type))
 		var/datum/news_announcement/news = new subtype()
-		if(news.round_time * 10 <= world.time && !(subtype in GLOB.announced_news_types)) // ALLOW(cooldown): round timing
+		// ALLOW(cooldown): news items are scheduled by configured round time, in seconds
+		if(news.round_time * 10 <= world.time && !(subtype in GLOB.announced_news_types))
 			GLOB.announced_news_types += subtype
 			announce_newscaster_news(news)
 

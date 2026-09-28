@@ -41,12 +41,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 	if(user.mind)
 		if(user.mind.vore_death)
-			if(vore_respawn <= world.time - user.timeofdeath) // ALLOW(cooldown): elapsed time since death
+			if(vore_respawn <= world.time - user.timeofdeath)
 				autoresleeve(user)
 			else
 				to_chat(user, span_warning("You must wait [((vore_respawn - (world.time - user.timeofdeath)) * 0.1) / 60] minutes to use \the [src]."))
 				return
-		else if(respawn <= world.time - user.timeofdeath) // ALLOW(cooldown): elapsed time since death
+		else if(respawn <= world.time - user.timeofdeath)
 			autoresleeve(user)
 		else
 			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
@@ -134,7 +134,6 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")
-		// ALLOW(cooldown): elapsed time since death
 		if(respawn >= world.time - ghost.timeofdeath) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
 			ghost.timeofdeath = world.time - respawn
 		return

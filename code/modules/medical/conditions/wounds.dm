@@ -66,7 +66,7 @@
 	var/salved = FALSE
 	var/disinfected = FALSE
 	/// world.time the wound was made.
-	var/created = 0
+	TIMESTAMP_VAR(created)
 	/// Number of merged wounds of this type.
 	var/amount = 1
 	var/germ_level = 0
@@ -154,7 +154,6 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
-		// ALLOW(cooldown): wound age
 		if(created + 10 MINUTES > world.time) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE

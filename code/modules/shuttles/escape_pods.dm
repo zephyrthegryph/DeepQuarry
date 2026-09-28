@@ -41,7 +41,7 @@
 	return ..()
 
 /datum/shuttle/autodock/ferry/escape_pod/can_force()
-	if (arming_controller().eject_time && world.time < arming_controller().eject_time + 50) // ALLOW(cooldown): pod eject schedule
+	if (arming_controller().eject_time && world.time < arming_controller().eject_time + 50)
 		return 0	//dont allow force launching until 5 seconds after the arming controller has reached it's countdown
 	return ..()
 
@@ -119,7 +119,7 @@
 /datum/embedded_program/docking/simple/escape_pod_berth
 	var/armed = 0
 	var/eject_delay = 10	//give latecomers some time to get out of the way if they don't make it onto the pod
-	var/eject_time = null
+	TIMESTAMP_VAR(eject_time)
 	var/closing = 0
 
 /datum/embedded_program/docking/simple/escape_pod_berth/proc/arm()
@@ -134,7 +134,7 @@
 
 /datum/embedded_program/docking/simple/escape_pod_berth/periodic_step()
 	..()
-	if (eject_time && world.time >= eject_time && !closing) // ALLOW(cooldown): pod eject schedule
+	if (eject_time && world.time >= eject_time && !closing)
 		close_door()
 		closing = 1
 

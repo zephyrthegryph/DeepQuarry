@@ -297,7 +297,7 @@
 			continue
 		for(var/market_id in contract.market_reservation_ids)
 			var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(market_id)
-			if(!bid || bid.completed_at || world.time >= bid.expires_at) // ALLOW(cooldown): contract/offer expiry and deadline state, not a rate limit
+			if(!bid || bid.completed_at || world.time >= bid.expires_at)
 				continue
 			crate.cargo_market_bid_id = bid.id
 			crate.cargo_market_router_account = contract.contact_account_number

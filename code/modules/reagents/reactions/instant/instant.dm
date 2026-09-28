@@ -1647,7 +1647,8 @@
 			if(H.stat == DEAD)
 				if(H.hasnutriment()) // make sure it actually has the conditions to revive
 					if(comp.revive_ready >= 1) // if it's not reviving, start doing so
-						comp.revive_ready = REVIVING_READY // overrides the normal cooldown
+						comp.revive_ready = REVIVING_READY
+						COOLDOWN_RESET(comp, revive_cooldown) // overrides the normal cooldown
 						H.visible_message(span_info("[H] shudders briefly, then relaxes, faint movements stirring within."))
 						comp.chimera_regenerate()
 					else if(comp.revive_ready == REVIVING_DONE)// already reviving, check if they're ready to hatch

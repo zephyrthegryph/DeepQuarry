@@ -7,7 +7,7 @@
 /// Per-atom idle clock: world.time of the last materialize, move into a
 /// holder, or interaction. Reset on every one of those, so the sweep only
 /// offers atoms that have genuinely sat untouched.
-/atom/movable/var/tmp/latent_last_touch = 0
+/atom/movable/var/tmp/latent_touched_at = 0
 
 /// world.time before which the sweep will not offer this atom again, set when
 /// latent_collapse() refused it although can_be_latent() passed. A refusal is a
@@ -38,7 +38,7 @@
  */
 /proc/dq_latent_touch(atom/movable/A)
 	if(A)
-		A.latent_last_touch = world.time
+		A.latent_touched_at = world.time
 
 // ---- Policy ----
 
@@ -83,7 +83,7 @@
 	if(record && record[LEDGER_E_SLOT] == CONTAINER_SLOT_STOCK)
 		return FALSE
 	var/delay = A.loc.latent_idle_delay
-	if(world.time < A.latent_last_touch + delay) // ALLOW(cooldown): idle-since data timestamp; the delay is the holder's, read at check time
+	if(world.time < A.latent_touched_at + delay)
 		return FALSE
 	return TRUE
 

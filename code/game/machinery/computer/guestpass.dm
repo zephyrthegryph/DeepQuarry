@@ -9,7 +9,7 @@
 	light_color = "#0099ff"
 
 	var/temp_access = list() //to prevent agent cards stealing access as permanent
-	var/expiration_time = 0
+	TIMESTAMP_VAR(expiration_time)
 	var/expired = 0
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
@@ -18,14 +18,14 @@
 	return
 
 /obj/item/card/id/guest/GetAccess()
-	if(world.time > expiration_time) // ALLOW(cooldown): guest pass expiry
+	if(world.time > expiration_time)
 		return access
 	else
 		return temp_access
 
 /obj/item/card/id/guest/examine(mob/user)
 	. = ..()
-	if(world.time < expiration_time) // ALLOW(cooldown): guest pass expiry
+	if(world.time < expiration_time)
 		. += span_notice("This pass expires at [worldtime2stationtime(expiration_time)].")
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
@@ -33,7 +33,7 @@
 /obj/item/card/id/guest/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
 		return //Too far to read
-	if(world.time > expiration_time) // ALLOW(cooldown): guest pass expiry
+	if(world.time > expiration_time)
 		to_chat(user, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
 		to_chat(user, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
@@ -86,7 +86,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 	return ..()
 
 /obj/item/card/id/guest/periodic_step()
-	if(expired == 0 && world.time >= expiration_time) // ALLOW(cooldown): guest pass expiry
+	if(expired == 0 && world.time >= expiration_time)
 		visible_message(span_warning("\The [src] flashes a few times before turning red."))
 		icon_state = "guest-invalid"
 		update_icon()

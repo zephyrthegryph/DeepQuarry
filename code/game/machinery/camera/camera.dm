@@ -120,7 +120,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_token = null
 	camera_timer_at = 0
-	if((stat & EMPED) && world.time >= affected_by_emp_until) // ALLOW(cooldown): EMP state expiry
+	if((stat & EMPED) && world.time >= affected_by_emp_until)
 		stat &= ~EMPED
 		cancelCameraAlarm()
 		update_icon()
@@ -144,7 +144,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(!isEmpProof() && (forced || prob(100/severity)))
-		if(!affected_by_emp_until || (world.time > affected_by_emp_until)) // ALLOW(cooldown): EMP state expiry
+		if(!affected_by_emp_until || (world.time > affected_by_emp_until))
 			affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
 			stat |= EMPED
 			set_light(0)

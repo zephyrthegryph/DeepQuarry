@@ -12,7 +12,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 	lane = /datum/om/behaviour/world/mobs
 
 	var/list/death_list = list()
-	var/profile_next_dump = 0
+	TIMESTAMP_VAR(profile_next_dump)
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
 
@@ -28,7 +28,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 		insert_deaths(batch)
 	if(!profile_next_dump)
 		profile_next_dump = world.time + 2 MINUTES
-	else if(world.time >= profile_next_dump) // ALLOW(cooldown): scheduled profile dump time in service
+	else if(world.time >= profile_next_dump)
 		dump_profile()
 	return TRUE
 

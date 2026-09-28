@@ -16,7 +16,7 @@
 	var/last_heat_capacity = 0
 	var/last_temperature = 0
 	var/last_pressure_delta = 0
-	var/last_worldtime_transfer = 0
+	TIMESTAMP_VAR(last_worldtime_transfer)
 	var/last_stored_energy_transferred = 0
 	var/volume_capacity_used = 0
 	var/stored_energy = 0
@@ -73,7 +73,7 @@
 	return last_stored_energy_transferred
 
 /obj/machinery/atmospherics/binary/circulator/proc/expire_transfer_display()
-	if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50) // ALLOW(cooldown): transfer recency (elapsed math)
+	if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50)
 		return
 	recent_moles_transferred = 0
 	update_icon()

@@ -66,19 +66,19 @@
 	return jps_output_turfs(run_pathfinding(instance))
 
 /datum/om/service/pathfinder/proc/run_pathfinding(datum/pathfinding/instance)
-	var/started = world.time
+	var/started_at = world.time
 	++pathfinding_blocked
 	if(pathfinding_blocked < 10)
 		while(pathfinding_mutex)
 			stoplag(1) // ALLOW(scheduler): mutex held across the search's CHECK_TICK yields
-			if(world.time > started + PATHFINDER_TIMEOUT) // ALLOW(cooldown): search timeout on a running loop
+			if(world.time > started_at + PATHFINDER_TIMEOUT)
 				stack_trace("pathfinder timeout; check debug logs.")
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 				return
 	else
 		while(pathfinding_mutex)
 			stoplag(3) // ALLOW(scheduler): mutex held across the search's CHECK_TICK yields
-			if(world.time > started + PATHFINDER_TIMEOUT) // ALLOW(cooldown): search timeout on a running loop
+			if(world.time > started_at + PATHFINDER_TIMEOUT)
 				stack_trace("pathfinder timeout; check debug logs.")
 				log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 				return
@@ -94,7 +94,7 @@
 			LAZYREMOVE(failed_searches, failure_key)
 	pathfinding_mutex = TRUE
 	. = instance.search()
-	if(world.time > started + PATHFINDER_TIMEOUT) // ALLOW(cooldown): search timeout on a running loop
+	if(world.time > started_at + PATHFINDER_TIMEOUT)
 		stack_trace("pathfinder timeout; check debug logs.")
 		log_runtime("pathfinder timeout of instance with debug variables [instance.debug_log_string()]")
 	pathfinding_mutex = FALSE

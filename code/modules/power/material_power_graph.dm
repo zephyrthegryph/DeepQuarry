@@ -15,7 +15,7 @@
 	var/resistance_dirty = TRUE
 	var/has_superconductors = FALSE
 	var/has_custom_conductors = FALSE
-	var/next_solve = 0
+	COOLDOWN_DECLARE(next_solve)
 	var/list/numeric_topology
 	var/list/energized_cables
 	var/list/core_vertices
@@ -381,7 +381,7 @@
 			if(abs(new_injection - old_injection) > material_change)
 				changed = TRUE
 				break
-	if(changed && !has_superconductors && world.time < next_solve) // ALLOW(cooldown): solver scheduling
+	if(changed && !has_superconductors && !COOLDOWN_FINISHED(src, next_solve))
 		changed = FALSE
 	if(changed)
 		// Baseline station cable meshes are large and highly cyclic. Their
@@ -393,12 +393,12 @@
 			if(!submit_async_solve(injections, sources, consumers, total_source))
 				return solve_pending ? 2 : FALSE
 			last_injections = injections.Copy()
-			next_solve = world.time + MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL
+			COOLDOWN_START(src, next_solve, MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL)
 			return 2
 		if(!solve(injections))
 			return FALSE
 		last_injections = injections.Copy()
-		next_solve = world.time + MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL
+		COOLDOWN_START(src, next_solve, MATERIAL_POWER_GRAPH_SETTLEMENT_INTERVAL)
 	var/source_potential = 0
 	for(var/reference as anything in sources)
 		var/index = vertex_for(om_resolve(reference))

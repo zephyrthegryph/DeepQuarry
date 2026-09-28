@@ -114,14 +114,6 @@
 	*/
 	new /obj/effect/decal/remains/human(droploc)
 	new /obj/item/grenade/chem_grenade/miasma(droploc)
-	/*Broken smoke spawn code. Above line is a bandaid.
-	var/datum/reagents/R = new/datum/reagents(30)
-	reagents.add_reagent(REAGENT_ID_MIASMA, 30)
-	var/datum/effect_system/smoke_spread/chem/S = new /datum/effect_system/smoke_spread/chem
-	S.attach(droploc)
-	S.set_up(R, 30, 0, droploc)
-	spawn(0)
-		S.start()*/
 	..()
 
 //What about if someone's in it? Well here you go.

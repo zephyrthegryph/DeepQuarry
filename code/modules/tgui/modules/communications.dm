@@ -417,7 +417,6 @@
 		to_chat(user, "The emergency shuttle may not be sent at this time. Please try again later.")
 		return
 
-	// ALLOW(cooldown): round-start grace period
 	if(world.time < 6000) // Ten minute grace period to let the game get going without lolmetagaming. -- TLE
 		to_chat(user, "The emergency shuttle is refueling. Please wait another [round((6000-world.time)/600)] minute\s before trying again.")
 		return
@@ -463,7 +462,6 @@
 			to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 			return
 
-		// ALLOW(cooldown): round-start grace period
 		if(world.time < 54000) // 30 minute grace period to let the game get going
 			to_chat(user, "The shuttle is refueling. Please wait another [round((54000-world.time)/60)] minutes before trying again.")
 			return

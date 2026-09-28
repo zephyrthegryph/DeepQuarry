@@ -90,7 +90,8 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 /datum/world_service/pai/proc/check_is_delayed(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(ghost_ref in asked)
-		if(world.time < asked[ghost_ref] + PAI_DELAY_TIME) // ALLOW(cooldown): assoc-list cooldown table
+		// ALLOW(cooldown): per-ghost ask cooldown table keyed by ref
+		if(world.time < asked[ghost_ref] + PAI_DELAY_TIME)
 			return TRUE
 	return FALSE
 

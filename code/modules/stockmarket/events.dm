@@ -2,7 +2,7 @@
 
 /datum/stockEvent
 	var/name = "event"
-	var/next_phase = 0
+	TIMESTAMP_VAR(next_phase)
 	var/tmp/company_handle
 	var/current_title = "A company holding a pangalactic conference in the Seattle Conference Center, Seattle, Earth"
 	var/current_desc = "We will continue to monitor their stocks as the situation unfolds."
@@ -14,7 +14,7 @@
 /datum/stockEvent/proc/event_tick()
 	if (finished)
 		return
-	if (world.time > next_phase) // ALLOW(cooldown): stock lease/offer expiry and market phases
+	if (world.time > next_phase)
 		transition()
 
 /datum/stockEvent/proc/transition()

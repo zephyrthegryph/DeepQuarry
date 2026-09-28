@@ -890,7 +890,7 @@
 		blind_message = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_after = world.time + grace_time)
+	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_at = world.time + grace_time)
 
 /datum/om/task/timed/simulated_climb_wall
 	complete_proc = /turf/simulated/proc/climb_wall_done
@@ -900,7 +900,7 @@
 	var/fall_chance
 	var/drop_our_held
 	var/nutrition_cost
-	var/fall_after
+	var/fall_at
 
 /turf/simulated/proc/climb_wall_done(datum/om/task/timed/simulated_climb_wall/task)
 	var/mob/living/L = task.actor
@@ -926,8 +926,8 @@
 /turf/simulated/proc/climb_wall_interrupted(datum/om/task/timed/simulated_climb_wall/task)
 	var/mob/living/L = task.actor
 	var/turf/above_mob = task.above_mob
-	var/fall_after = task.fall_after
-	if(!L || world.time <= fall_after) // ALLOW(cooldown): fall scheduling
+	var/fall_at = task.fall_at
+	if(!L || world.time <= fall_at)
 		return
 	L.forceMove(above_mob)
 	L.visible_message(message = span_infoplain(span_bold("[L]") + " falls off " + span_bold("\The [src]")), self_message = span_danger("You slipped off " + span_bold("\The [src]")), \
@@ -1039,7 +1039,7 @@
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_after = world.time + grace_time)
+	om_task_start(/datum/om/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_at = world.time + grace_time)
 
 /datum/om/task/timed/living_climb_down
 	complete_proc = /mob/living/proc/climb_down_done
@@ -1049,7 +1049,7 @@
 	var/turf/below_wall
 	var/fall_chance
 	var/nutrition_cost
-	var/fall_after
+	var/fall_at
 
 /mob/living/proc/climb_down_done(datum/om/task/timed/living_climb_down/task)
 	var/turf/front_of_us = task.front_of_us
@@ -1073,8 +1073,8 @@
 /mob/living/proc/climb_down_interrupted(datum/om/task/timed/living_climb_down/task)
 	var/turf/front_of_us = task.front_of_us
 	var/turf/below_wall = task.below_wall
-	var/fall_after = task.fall_after
-	if(world.time <= fall_after) // ALLOW(cooldown): fall scheduling
+	var/fall_at = task.fall_at
+	if(world.time <= fall_at)
 		return
 	src.forceMove(front_of_us)
 	src.visible_message(message = span_infoplain(span_bold("[src]") + " falls off " + span_bold("\The [below_wall]")), \

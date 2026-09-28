@@ -104,12 +104,6 @@
 		NEWSCASTER.update_icon()
 
 
-	// spawn(0)	// get_receptions sleeps further down the line, spawn of elsewhere
-	// 	var/datum/receptions/receptions = get_receptions(null, receiving_pdas) // datums are not atoms, thus we have to assume the newscast network always has reception
-
-	// 	for(var/obj/item/pda/PDA in receiving_pdas)
-	// 		if(!(receptions.receiver_reception[PDA] & TELECOMMS_RECEPTION_RECEIVER))
-	// 			continue
 
 
 /obj/machinery/newscaster

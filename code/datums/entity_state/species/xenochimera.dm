@@ -5,6 +5,8 @@
 	VAR_PRIVATE/mob/living/carbon/human/owner
 	var/feral = 0
 	var/revive_ready = REVIVING_READY
+	/// Time before another regeneration may start.
+	COOLDOWN_DECLARE(revive_cooldown)
 	var/revive_finished = FALSE
 	VAR_PRIVATE/regen_sounds = list(
 		'sound/effects/mob_effects/xenochimera/regen_1.ogg',
@@ -327,7 +329,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		if(REVIVING_DONE)
 			to_chat(owner, "Your reconstruction is done, but you need to hatch now.")
 			return
-	if(revive_ready > world.time) // ALLOW(cooldown): revive readiness deadline, shared with elapsed display
+	if(!COOLDOWN_FINISHED(src, revive_cooldown))
 		to_chat(owner, "You can't use that ability again so soon!")
 		return
 
@@ -379,7 +381,8 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 	// check to see if they've been fixed by outside forces in the meantime such as defibbing
 	if(owner.stat != DEAD)
 		to_chat(owner, span_notice("Your body has recovered from its ordeal, ready to regenerate itself again."))
-		revive_ready = REVIVING_READY //reset their cooldown
+		revive_ready = REVIVING_READY
+		COOLDOWN_RESET(src, revive_cooldown) //reset their cooldown
 		owner.clear_alert("regen")
 		owner.throw_alert("hatch", /atom/movable/screen/alert/xenochimera/readytohatch)
 
@@ -492,7 +495,8 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 	owner.update_canmove()
 	owner.status_adjust(EFFECT_STUNNED, 2)
 
-	revive_ready = world.time + 10 MINUTES //set the cooldown, Reduced this to 10 minutes, you're playing with fire if you're reviving that often.
+	revive_ready = REVIVING_READY
+	COOLDOWN_START(src, revive_cooldown, 10 MINUTES) //set the cooldown, Reduced this to 10 minutes, you're playing with fire if you're reviving that often.
 
 /datum/body_effect/resleeving_sickness/chimera //near identical to the regular version, just with different flavortexts
 	stacks = MODIFIER_STACK_FORBID

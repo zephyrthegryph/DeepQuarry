@@ -92,7 +92,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	changeling_cooldowns[id] = world.time + cooldown_time
 
 /datum/changeling/proc/is_on_cooldown(id)
-	return (world.time < changeling_cooldowns[id]) // ALLOW(cooldown): list-based cooldown table
+	// ALLOW(cooldown): per-ability cooldown table keyed by id (one var per ability would be dozens)
+	return (world.time < changeling_cooldowns[id])
 
 /datum/changeling/New(mob/living/new_owner)
 	..()

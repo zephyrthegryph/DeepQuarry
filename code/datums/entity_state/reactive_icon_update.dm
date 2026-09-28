@@ -16,7 +16,8 @@
 	var/list/watched_containers
 
 DECLARE_REF(/datum/reactive_icon_update, "owner", BACK, "reactive_icon")
-/obj/var/datum/reactive_icon_update/reactive_icon // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+/// Not saved: rebuilt by Initialize() (or the toggle that adds it) on the materialised object.
+/obj/var/tmp/datum/reactive_icon_update/reactive_icon
 DECLARE_REF(/obj, "reactive_icon", OWNED, null)
 
 /// Gives this object a reactive icon (was AddComponent(/datum/reactive_icon_update...)).

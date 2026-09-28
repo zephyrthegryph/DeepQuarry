@@ -1,9 +1,9 @@
-/mob/living/carbon/human/proc/change_appearance(var/flags = APPEARANCE_ALL_HAIR,
-												var/mob/user = src,
-												var/check_species_whitelist = 1,
-												var/list/species_whitelist = list(),
-												var/list/species_blacklist = list(),
-												var/datum/tgui_state/state = GLOB.tgui_self_state)
+/mob/living/carbon/human/proc/change_appearance(flags = APPEARANCE_ALL_HAIR,
+												mob/user = src,
+												check_species_whitelist = 1,
+												list/species_whitelist = list(),
+												list/species_blacklist = list(),
+												datum/tgui_state/state = GLOB.tgui_self_state)
 	var/datum/tgui_module/appearance_changer/self_deleting/AC = new(src, src, check_species_whitelist, species_whitelist, species_blacklist)
 	AC.flags = flags
 	AC.tgui_interact(user, custom_state = state)

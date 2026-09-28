@@ -42,7 +42,7 @@
 		var/event_duration = set_duration
 		var/number_of_selections = round(pick_turfs.len/(4 * (Z_choices.len + 1)))+1	//+1 to avoid division by zero!
 		var/sleep_duration = 0.2 SECONDS
-		var/end_time = world.time + event_duration	//the time by which the event should have ended
+		var/ends_at = world.time + event_duration	//the time by which the event should have ended
 
 		var/increment =	max(1,round(number_of_selections/50))
 
@@ -51,7 +51,7 @@
 		for(var/I = 1 to number_of_selections)
 
 			//we've run into overtime. End the event
-			if( end_time < world.time + delay ) // ALLOW(cooldown): event end time
+			if( ends_at < world.time + delay )
 				return
 			if( !pick_turfs.len )
 				return

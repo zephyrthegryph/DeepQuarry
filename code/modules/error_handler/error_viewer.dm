@@ -96,7 +96,7 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 
 	// Show the error to admins with debug messages turned on, but only if one
 	//  from the same source hasn't been shown too recently
-	if (error_source.next_message_at <= world.time) // ALLOW(cooldown): error log throttling (debug infrastructure)
+	if (COOLDOWN_FINISHED(error_source, next_message_at))
 		var/const/viewtext = "\[view]" // Nesting these in other brackets went poorly
 		var/err_msg_delay
 		if(config?.loaded)
@@ -104,11 +104,11 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 		else
 			var/datum/config_entry/CE = /datum/config_entry/number/error_msg_delay
 			err_msg_delay = initial(CE.default)
-		error_source.next_message_at = world.time + err_msg_delay
+		COOLDOWN_START(error_source, next_message_at, err_msg_delay)
 
 /datum/error_viewer/error_source
 	var/list/errors = list() // ALLOW(instance_list): d: error viewer state
-	var/next_message_at = 0
+	COOLDOWN_DECLARE(next_message_at)
 
 /datum/error_viewer/error_source/New(exception/e)
 	if (!istype(e))

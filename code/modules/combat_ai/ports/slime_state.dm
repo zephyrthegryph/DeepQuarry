@@ -16,7 +16,8 @@
 	var/resentment = 0
 	var/obedience = 0
 	var/always_stun = FALSE
-	var/last_discipline_decay = null
+	/// Discipline decays by at most one step per discipline_decay_time.
+	COOLDOWN_DECLARE(discipline_decay_cooldown)
 	var/discipline_decay_time = 5 SECONDS
 	var/list/grudges = null   // lazylist of /mob/living/carbon/human
 
@@ -114,10 +115,10 @@
 // ---------------------------------------------------------------------------
 
 /datum/slime_state/proc/discipline_decay()
-	if(discipline > 0 && (isnull(last_discipline_decay) || last_discipline_decay + discipline_decay_time < world.time)) // ALLOW(cooldown): nullable decay timer
+	if(discipline > 0 && COOLDOWN_FINISHED(src, discipline_decay_cooldown))
 		if(!prob(75 + (obedience * 5)))
 			adjust_discipline(-1)
-			last_discipline_decay = world.time
+			COOLDOWN_START(src, discipline_decay_cooldown, discipline_decay_time)
 
 // ---------------------------------------------------------------------------
 // Voice command handler — bound via hear_say re-open.

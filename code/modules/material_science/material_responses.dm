@@ -34,7 +34,8 @@
 
 /// The physical-response state of an item made of an engineered material (was the
 /// material_response component). Owned by the item; hooks its events with om_hook().
-/obj/item/var/datum/material_response/material_response // ALLOW(state_ref): owned child (DECLARE_REF OWNED); saved as before, the one-line REF_VAR form hid it from this lint
+/obj/item/var/datum/material_response/material_response
+/// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 DECLARE_REF(/obj/item, "material_response", OWNED, null)
 
 /datum/material_response
