@@ -337,7 +337,7 @@ REF_PAIR(/obj/machinery/sleeper, list("console" = "sleeper"))
 	add_fingerprint(ui.user)
 
 /obj/machinery/sleeper/proc/stasis_level_chosen(mob/user, new_stasis, datum/om/prompt/ask)
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_SLEEPER)
+	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_SLEEPER)
 	if(new_stasis in stasis_choices)
 		stasis_level = stasis_choices[new_stasis]
 		log_game("STASIS: [key_name(user)] set [src] at [AREACOORD(src)] to [new_stasis] (occupant: [key_name(occupant)]).")

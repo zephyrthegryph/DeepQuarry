@@ -389,7 +389,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	om_prompt(src, src, list("kind" = "text", "message" = "Please write a message to announce to the station crew.", "title" = "A.I. Announcement"), PROC_REF(ai_announcement_entered))
 
 /mob/living/silicon/ai/proc/ai_announcement_entered(mob/user, input, datum/om/prompt/ask)
-	if(message_cooldown || check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
+	if(!COOLDOWN_FINISHED(src, announcement_cooldown) || check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
 
 	announcement.Announce(input)
@@ -444,7 +444,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 	om_prompt(src, src, list("kind" = "text", "message" = "Please choose a message to transmit to [using_map.boss_short] via quantum entanglement.  Please be aware that this process is very expensive, and abuse will lead to... termination.  Transmission does not guarantee a response. There is a 30 second delay before you may send another message, be clear, full and concise.", "title" = "To abort, send an empty message.", "max_length" = MAX_MESSAGE_LEN), PROC_REF(ai_emergency_message_entered))
 
 /mob/living/silicon/ai/proc/ai_emergency_message_entered(mob/user, input, datum/om/prompt/ask)
-	if(emergency_message_cooldown || check_unable(AI_CHECK_WIRELESS))
+	if(!COOLDOWN_FINISHED(src, emergency_message_cooldown) || check_unable(AI_CHECK_WIRELESS))
 		return
 	CentCom_announce(input, src)
 	to_chat(src, span_notice("Message transmitted."))

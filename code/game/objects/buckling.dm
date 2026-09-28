@@ -10,7 +10,7 @@
 
 
 /atom/movable/proc/unbuckle_chosen(mob/living/user, mob/living/unbuckled, datum/om/prompt/ask)
-	if(unbuckled in BUCKLED_MOBS(src))
+	if(unbuckled in buckled_mob_list())
 		user_unbuckle_mob(unbuckled, user)
 
 /atom/movable/hand_gate(mob/living/user)

@@ -88,7 +88,7 @@
 		alien_exit()
 
 /obj/machinery/vr_sleeper/alien/proc/alien_exit()
-	var/mob/living/carbon/human/occupant = SLOT_ITEM(src, OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
 	avatar?.exit_vr() //We don't poof! We're a actual, living entity that isn't restrained by VR zones!
 	if(!occupant) //This whole thing needs cleaned up later, but this works for now.
 		return

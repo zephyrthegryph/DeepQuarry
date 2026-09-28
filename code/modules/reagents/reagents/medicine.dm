@@ -2063,7 +2063,7 @@
 			span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")
 		)
 		//wait 30 seconds, growth takes time yo
-		addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(change_drug_ask), M, gender_change), 30 SECONDS)
+		om_after(M, 30 SECONDS, GLOBAL_PROC_REF(change_drug_ask), M, gender_change)
 
 /// The gender change drug asks before it acts, for pref sake.
 /proc/change_drug_ask(mob/living/carbon/human/M, gender_change)

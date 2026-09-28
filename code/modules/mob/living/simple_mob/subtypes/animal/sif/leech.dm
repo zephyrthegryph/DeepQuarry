@@ -446,7 +446,7 @@
 	to_chat(src, span_alien("We decide not to feed."))
 
 /mob/living/simple_mob/animal/sif/leech/proc/feed_organ_chosen(mob/user, obj/item/organ/internal/target, datum/om/prompt/ask)
-	if(host && target.owner == host && !docile && world.time >= last_feeding + feeding_delay)
+	if(host && target.owner == host && !docile && COOLDOWN_FINISHED(src, feeding_cooldown))
 		bite_organ(target)
 
 /// Feeds on an organ of the host without asking (the leech's own Life): never sleeps.

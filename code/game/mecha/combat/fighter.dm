@@ -119,7 +119,7 @@
 	set_dir(backwards)
 
 /obj/mecha/combat/fighter/proc/overmap_destination_chosen(mob/user, choice, datum/om/prompt/ask)
-	var/mob/living/carbon/occupant = SLOT_ITEM(src, MECHA_SLOT_PILOT)
+	var/mob/living/carbon/occupant = slot_item(MECHA_SLOT_PILOT)
 	var/obj/effect/overmap/visitable/our_ship = get_overmap_sector(z)
 	var/list/choices = ask.get("choices")
 	var/what_edge = ask.get("edge")

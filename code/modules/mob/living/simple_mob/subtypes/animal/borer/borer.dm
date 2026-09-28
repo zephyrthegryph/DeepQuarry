@@ -347,7 +347,7 @@
 /// The mob a hostless borer's psionic pulse makes speak.
 /mob/living/simple_mob/animal/borer/proc/psychic_speaker_chosen(mob/user, mob/living/speaker, datum/om/prompt/ask)
 	var/message = ask.get("message")
-	if(BORER_HOST(src) || speaker.stat || get_dist(src, speaker) > 7)
+	if(borer_host() || speaker.stat || get_dist(src, speaker) > 7)
 		return
 	log_admin("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
 	message_admins("[src.ckey]/([src]) tried to force [speaker] to say: [message]")
