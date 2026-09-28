@@ -117,8 +117,9 @@
 	else
 		// find out if local gas mixture is enough to override use of internals
 		// if pressure is low enough, they can still breathe from internals without a suit
-		var/datum/gas_mixture/environment = H.loc.return_air()
-		var/envpressure = environment.return_pressure()
+		// P2-F9: no loc (nullspace, being moved) means no air, not a runtime.
+		var/datum/gas_mixture/environment = H.loc?.return_air()
+		var/envpressure = environment ? environment.return_pressure() : 0
 		if(envpressure < hazard_low_pressure)
 			breath = H.get_breath_from_internal()
 
@@ -297,9 +298,9 @@
 		H.bodytemperature += temp_adj
 
 	else if(breath_temperature >= heat_discomfort_level)
-		get_environment_discomfort(src,"heat")
+		get_environment_discomfort(H,"heat") // P2-F9: the mob, not the species datum
 	else if(breath_temperature <= cold_discomfort_level)
-		get_environment_discomfort(src,"cold")
+		get_environment_discomfort(H,"cold")
 
 	// breath.update_values() removed; no-op under LINDA.
 	..()

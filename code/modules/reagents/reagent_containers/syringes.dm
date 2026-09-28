@@ -291,6 +291,11 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 				warmup_time = injtime*0.66 //66% of the time is warmup
 
 				if(istype(H))
+					// B22: humans go through can_inject() like every other target (missing
+					// limb, thick hide, sealed prosthetics). A suit only slows the needle down:
+					// the user hunts for an injection port instead of being refused.
+					if(!H.can_inject(user, 1, affected?.organ_tag, TRUE))
+						return
 					if(H.get_equipped_item(SLOT_ID_SUIT))
 						if(istype(H.get_equipped_item(SLOT_ID_SUIT), /obj/item/clothing/suit/space))
 							injtime = injtime * 2
@@ -318,6 +323,10 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 
 // dirty(target,affected) // Removed by Request
 	return
+
+/// Units a harm-intent stab forces in out of `volume`: 5-10 short of the barrel, never below 0.
+/obj/item/reagent_containers/syringe/proc/syringestab_amount(volume)
+	return rand(max(volume - 10, 0), max(volume - 5, 0))
 
 /obj/item/reagent_containers/syringe/proc/syringestab(mob/living/carbon/target as mob, mob/living/carbon/user as mob)
 	if(ishuman(target))
@@ -354,7 +363,8 @@ REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
 		balloon_alert_visible("stabs [user] in \the [target] with [src.name]!")
 		target.injure(INJURY_PIERCE, 3, source = src)// 7 is the same as crowbar punch
 
-	var/syringestab_amount_transferred = rand(max(reagents.total_volume - 10, 0), (reagents.total_volume - 5)) //nerfed by popular demand
+	// B22: never negative, however little is left in the barrel.
+	var/syringestab_amount_transferred = syringestab_amount(reagents.total_volume) //nerfed by popular demand
 	var/contained = reagents.get_reagents()
 	var/trans = reagents.trans_to_mob(target, syringestab_amount_transferred, CHEM_BLOOD)
 	if(isnull(trans)) trans = 0

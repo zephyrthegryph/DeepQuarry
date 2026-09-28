@@ -158,6 +158,11 @@
 /// adopt_part() (attach.dm), which invalidates the body once per subtree.
 /datum/body/proc/attach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in O.detached_afflictions)
+		// C23: a carried affliction that can't exist on this body (plan or the part's biology
+		// here) is dropped, not smuggled in past can_afflict().
+		if(!A.can_afflict(src, O))
+			qdel(A)
+			continue
 		add_affliction(A, O)
 		A.last_reroll_band = -1
 	O.detached_afflictions = null

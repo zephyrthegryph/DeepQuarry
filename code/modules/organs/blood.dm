@@ -194,7 +194,10 @@ BLOOD_VOLUME_SURVIVE = 40
 				else
 					blood_max += W.damage / temp_bld
 
-		if(temp.open)
+		// D18b: an open surgical site bleeds only while the incision does (clamped, closed or
+		// bloodless sites don't).
+		var/datum/affliction/surgical_incision/incision = temp.get_incision()
+		if(incision?.is_bleeding())
 			blood_max += 2 //Yer stomach is cut open
 	if(bleed)
 		blood_max = round(blood_max, 0.1)
@@ -259,6 +262,10 @@ BLOOD_VOLUME_SURVIVE = 40
 /mob/living/carbon/proc/take_blood(obj/item/reagent_containers/container, amount)
 
 	var/datum/reagent/B = get_blood(container.reagents)
+	// B3: blood already in the container that isn't ours (another donor, a stock pack) is never
+	// relabelled as ours: refuse to draw rather than mix two donors under one label.
+	if(B && B.data?["donor"] != src)
+		return null
 	if(!B)
 		B = new /datum/reagent/blood
 	B.holder = container.reagents
@@ -286,6 +293,10 @@ BLOOD_VOLUME_SURVIVE = 40
 		var/mob/living/carbon/human/H = src
 		B.data["blood_colour"] = H.species.get_blood_colour(H)
 		B.color = B.data["blood_colour"]
+		// B17: drawn blood carries its species, as the vessel's does (fixblood()), so
+		// blood_incompatible() can refuse a cross-species transfusion.
+		var/datum/reagent/blood/own = H.vessel ? get_blood(H.vessel) : null
+		B.data["species"] = own?.data?["species"] || H.species.name
 
 	var/list/temp_chem = list()
 	for(var/datum/reagent/R in src.reagents.reagent_list)
@@ -304,7 +315,8 @@ BLOOD_VOLUME_SURVIVE = 40
 		return null
 
 	. = ..()
-	remove_blood(amount) // Removes blood if human
+	if(.) // B3: a refused draw takes nothing from the vessel
+		remove_blood(amount) // Removes blood if human
 
 //Transfers blood from container ot vessels
 /mob/living/carbon/proc/inject_blood(datum/reagent/blood/injected, amount)

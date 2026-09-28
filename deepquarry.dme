@@ -5172,6 +5172,7 @@
 #include "code\modules\map_stubs\map_stubs.dm"
 #include "code\modules\body\affliction.dm"
 #include "code\modules\body\body.dm"
+#include "code\modules\body\body_effects.dm"
 #include "code\modules\body\factors.dm"
 #include "code\modules\body\injury.dm"
 #include "code\modules\body\physiology.dm"

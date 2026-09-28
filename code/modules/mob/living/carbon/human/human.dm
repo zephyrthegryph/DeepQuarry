@@ -1260,7 +1260,9 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	var/mob/usr_mob = task.actor
 	to_chat(usr_mob, span_warning("You failed to check the pulse. Try again."))
 
-/mob/living/carbon/human/proc/set_species(new_species)
+/// `keep_organs`: change the species' facts (languages, verbs, components, factors, HUD) but
+/// keep the body and organs it has, e.g. a nymph taking over a synthetic body (D21).
+/mob/living/carbon/human/proc/set_species(new_species, keep_organs = FALSE)
 
 	if(!dna)
 		if(!new_species)
@@ -1331,10 +1333,11 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	// Swap the body plan before the organs are built so they attach to the new body.
 	// On the first set_species() (before /mob/living/Initialize()) the body is
 	// built here: organs attach into the plan's part slots as they are made.
-	body_type = species.body_plan
+	if(!keep_organs)
+		body_type = species.body_plan
 	if(!body)
 		body = new body_type(src)
-	else if(body.type != body_type)
+	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		QDEL_NULL(body)
 		body = new body_type(src)
@@ -1343,7 +1346,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
 	species.handle_post_spawn(src)
 
-	species.create_organs(src)
+	if(!keep_organs)
+		species.create_organs(src)
 
 	species.apply_components(src)
 
@@ -1356,8 +1360,10 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	pixel_y = default_pixel_y
 	center_offset = species.center_offset
 
-	if(vessel)
+	if(vessel && !keep_organs)
 		initialize_vessel()
+	if(keep_organs)
+		body?.invalidate(BODY_DIRTY_ALL) // the same organs now answer to a new species
 
 	// Rebuild the HUD. If they aren't logged in then login() should reinstantiate it for them.
 	update_hud()

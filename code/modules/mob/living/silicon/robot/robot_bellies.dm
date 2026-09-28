@@ -2,6 +2,9 @@
 	vore_icon_bellies = list() //Clear any belly options that may not exist now
 	vore_capacity_ex = list()
 	vore_fullness_ex = list()
+	vore_light_states = null // A22: no stale light keys from the previous sprite
+	if(!sprite_datum) // A22
+		return
 	if(length(sprite_datum.belly_capacity_list))
 		for(var/belly in sprite_datum.belly_capacity_list) //vore icons list only contains a list of names with no associated data
 			vore_capacity_ex[belly] = LAZYACCESS(sprite_datum.belly_capacity_list, belly) //I dont know why but this wasnt working when I just

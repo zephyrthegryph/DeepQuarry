@@ -115,7 +115,16 @@
 		user.visible_message(span_warning("[user] drives \the [src] into [H]'s chest. Nothing comes out."), span_warning("Nothing comes out. There was no trapped air."))
 		H.injure(INJURY_PIERCE, 3, BP_TORSO, src, flags = INJURE_SILENT)
 
+/// Vents trapped pleural air (C4/D2): the needle is delivered where each pneumothorax sits, so
+/// an untargeted mend no longer "decompresses" a subdural hematoma or a limb's compartment
+/// syndrome from the chest.
 /obj/item/decompression_needle/proc/decompress(mob/living/carbon/human/H)
-	return H.mend(TREAT_DECOMPRESSION, decompression_amount) > 0
+	. = FALSE
+	var/list/sites = list()
+	for(var/datum/affliction/A as anything in H.body?.afflictions_of(/datum/affliction/pneumothorax))
+		sites |= A.location || BP_TORSO
+	for(var/site in sites)
+		if(H.mend(TREAT_DECOMPRESSION, decompression_amount, site) > 0)
+			. = TRUE
 
 #undef BVM_BREATH_SECONDS

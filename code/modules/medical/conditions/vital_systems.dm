@@ -57,8 +57,9 @@
 	body_plans = BODY_PLAN_HUMANOID
 	/// Severity at which the airway is completely closed (no gas exchange).
 	var/complete_threshold = 50
-	/// Severity a freshly created instance starts at.
-	var/initial_severity = 30
+	/// Severity a freshly created instance starts at (the base /datum/affliction var).
+	initial_severity = 30
+	continuous_factors = TRUE // C21: patency follows severity
 
 /datum/affliction/airway/on_added()
 	. = ..()
@@ -79,7 +80,9 @@
 /// The airway's patency is a factor the physiology reads.
 /datum/affliction/airway/accumulate_factors(list/acc)
 	acc = ..()
-	return body_factor_accumulate(acc, alist(BF_AIRWAY = patency()), 1)
+	var/static/alist/scratch = alist(BF_AIRWAY = 1)
+	scratch[BF_AIRWAY] = patency()
+	return body_factor_accumulate(acc, scratch, 1)
 
 /// Something lodged in the airway: food, vomit, blood, a broken jaw.
 /datum/affliction/airway_obstruction
@@ -129,6 +132,8 @@
 
 /// The patient has stopped breathing on their own.
 /datum/affliction/respiratory_arrest
+	systemic_singleton = TRUE // C9
+	continuous_factors = TRUE // C21: the breathing drive follows severity
 	factors = alist(BF_HEART_RATE = 10)
 	name = "respiratory arrest"
 	category = "Respiratory"
@@ -160,7 +165,9 @@
 /// The drive to breathe is a factor the physiology reads: none while apneic.
 /datum/affliction/respiratory_arrest/accumulate_factors(list/acc)
 	acc = ..()
-	return body_factor_accumulate(acc, alist(BF_RESP_DRIVE = (is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL)), 1)
+	var/static/alist/scratch = alist(BF_RESP_DRIVE = 1)
+	scratch[BF_RESP_DRIVE] = is_apneic() ? 0 : 1 - severity / AFFLICTION_SEVERITY_TERMINAL
+	return body_factor_accumulate(acc, scratch, 1)
 
 /// Is something still suppressing the drive to breathe?
 /datum/affliction/respiratory_arrest/proc/is_sustained()
@@ -272,6 +279,7 @@
 /// A disordered heart rhythm. The state machine lives in `rhythm`; severity is
 /// electrical instability (pinned at 100 while the heart has no output).
 /datum/affliction/cardiac_arrhythmia
+	systemic_singleton = TRUE // C9
 	name = "cardiac arrhythmia"
 	category = "Circulation"
 	clinical_description = "The heart's electrical rhythm has broken down. A fast unstable rhythm still pumps but degenerates if untreated. Ventricular fibrillation (VF) and asystole pump nothing: the patient collapses, the brain starts dying within minutes, and only CPR buys time. A defibrillator converts VF but cannot restart a flatline — asystole needs CPR and a vasopressor (adrenaline) until it coarsens into a shockable rhythm."

@@ -88,12 +88,13 @@
 
 			if(LAZYACCESS(addiction_counters,A) < SLOWADDICT_PROC)
 				LAZYSET(addiction_counters,A,SLOWADDICT_PROC)
-			// Check for addition
+			// Check for addiction: one chain, so a SLOW reagent never falls through to the
+			// normal threshold (B10).
 			if(A in get_addictive_reagents(ADDICT_SLOW))
 				// Slowest addictions for some medications
 				if(LAZYACCESS(addiction_counters,A) <= SLOWADDICT_PROC)
 					addict_to_reagent(A, FALSE)
-			if(A in get_addictive_reagents(ADDICT_FAST))
+			else if(A in get_addictive_reagents(ADDICT_FAST))
 				// quickly addict to these drugs, bliss, oxyco etc
 				if(LAZYACCESS(addiction_counters,A) <= FASTADDICT_PROC)
 					addict_to_reagent(A, FALSE)

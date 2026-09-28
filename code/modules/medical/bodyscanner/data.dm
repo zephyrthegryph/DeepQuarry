@@ -30,7 +30,7 @@
 	dq_emit_external_organs(H, occupantData)
 	dq_emit_internal_organs(H, occupantData)
 
-	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
+	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner, src) // D9: this scanner's baseline; the UI refresh doesn't move it
 	occupantData["diagnosis"] = D.report_data()
 	occupantData["healthBand"] = D.band
 	occupantData["worstFinding"] = D.worst_finding_band()
@@ -189,10 +189,9 @@
 	for(var/obj/item/organ/I in H.internal_organs)
 		var/list/od = list()
 		od["name"] = I.name
-		if(I.status & ORGAN_ASSISTED)
-			od["desc"] = "Assisted"
-		else if(I.robotic >= ORGAN_ROBOT)
-			od["desc"] = "Mechanical"
+		var/kind = bodyscanner_organ_kind(I)
+		if(kind)
+			od["desc"] = kind
 		od["germ_level"] = I.germ_level
 		var/effective_damage = I.damage
 		if(fakedeath)
@@ -208,3 +207,12 @@
 			od["inflamed"] = A.inflamed
 		intOrganData += list(od)
 	out["intOrgan"] = intOrganData
+
+/// The scanner's prosthesis label for an internal organ (D7: the robotic LEVEL is compared,
+/// not a bit of the status bitfield that happened to share ORGAN_ASSISTED's value).
+/proc/bodyscanner_organ_kind(obj/item/organ/I)
+	if(I.robotic == ORGAN_ASSISTED)
+		return "Assisted"
+	if(I.robotic >= ORGAN_ROBOT)
+		return "Mechanical"
+	return null

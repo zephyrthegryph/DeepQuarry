@@ -18,8 +18,9 @@
 		if(AGONY)
 			injure(INJURY_PAIN, effect * blocked) // Useful for objects that cause "subdual" damage. PAIN!
 		if(IRRADIATE)
-			var/rad_protection = injury_armor(INJURY_RADIATION, null)
-			rad_protection = (100-rad_protection)/100
+			// P2-F7: check_protection is honoured: callers that pass 0 (DNA scanners and
+			// injectors dosing from inside the suit) skip the radiation armour.
+			var/rad_protection = check_protection ? radiation_protection_fraction() : 1
 			if(!(SEND_SIGNAL(src, COMSIG_LIVING_IRRADIATE_EFFECT, effect, effecttype, blocked, check_protection, rad_protection) & COMPONENT_BLOCK_IRRADIATION))
 				radiation += max((effect * rad_protection), 0)
 		if(STUTTER)
@@ -31,6 +32,10 @@
 			status_at_least(EFFECT_DROWSY, (effect * blocked))
 	return 1
 
+
+/// Fraction of incoming radiation that gets through this mob's radiation armour (1 = none stops it).
+/mob/living/proc/radiation_protection_fraction()
+	return (100 - injury_armor(INJURY_RADIATION, null)) / 100
 
 /mob/living/proc/apply_effects(stun = 0, weaken = 0, paralyze = 0, irradiate = 0, stutter = 0, eyeblur = 0, drowsy = 0, agony = 0, blocked = 0, ignite = 0, flammable = 0)
 	if(SEND_SIGNAL(src, COMSIG_TAKING_APPLY_EFFECT) & COMSIG_CANCEL_EFFECT)

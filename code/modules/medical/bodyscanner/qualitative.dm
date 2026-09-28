@@ -62,10 +62,11 @@
 /// Trend bucket for a condition's severity delta. Uses a small dead
 /// zone around zero so a condition that's drifting by < 2 severity
 /// between scans reads as "stable" rather than flickering.
-/proc/_dq_trend_for_condition(datum/affliction/C)
-	if(isnull(C.last_scanned_severity))
+/proc/_dq_trend_for_condition(datum/affliction/C, key)
+	var/baseline = C.scan_baselines?[key]
+	if(isnull(baseline))
 		return "new"
-	var/delta = C.severity - C.last_scanned_severity
+	var/delta = C.severity - baseline
 	if(delta > 2)
 		return "worsening"
 	if(delta < -2)

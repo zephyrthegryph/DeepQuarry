@@ -233,8 +233,9 @@
 		D.mind.transfer_to(target)
 		target.languages |= D.languages
 	qdel(D)
-	target.species = GLOB.all_species[SPECIES_DIONA]
-	target.invalidate_factors()
+	// D21: through set_species() (languages, verbs, components, factors, body invalidation),
+	// keeping the host body's organs.
+	target.set_species(SPECIES_DIONA, keep_organs = TRUE)
 	add_verb(target, /mob/living/carbon/human/proc/diona_split_nymph)
 	add_verb(target, /mob/living/carbon/human/proc/regenerate)
 	log_game("SURGERY: [key_name(user)] installed a nymph into [key_name(target)]")

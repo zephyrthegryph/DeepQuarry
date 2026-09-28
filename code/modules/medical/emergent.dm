@@ -114,12 +114,14 @@
 			var/span = max(1, 100 - min_thresh)
 			var/target_severity = clamp((metric - min_thresh) / span * 100, 0, 100)
 			if(existing)
+				existing.metric_owned = TRUE
 				existing.set_severity(target_severity)
 				if(active_outcome.tier && active_outcome.tier != existing.stage)
 					existing._apply_stage(active_outcome.tier)
 			else
 				var/datum/affliction/N = body.afflict(condition_type, host)
 				if(N)
+					N.metric_owned = TRUE
 					N.set_severity(target_severity)
 					if(active_outcome.tier)
 						N._apply_stage(active_outcome.tier)
@@ -300,14 +302,8 @@
 	if(new_stage == existing.stage)
 		return
 	if(!new_stage)
-		// Sub-clinical: clear the stage-applied state so the patient has
-		// no overt symptoms while severity ticks under threshold.
-		existing.stage = null
-		existing.active_symptoms = null
-		existing.symptom_pool = null
-		existing.spontaneous_emotes = null
-		existing.last_reroll_band = -1
-		existing.body?.invalidate(BODY_DIRTY_FACTORS)
+		// Sub-clinical: no overt symptoms while severity ticks under threshold.
+		existing.clear_stage()
 		return
 	existing._apply_stage(new_stage)
 

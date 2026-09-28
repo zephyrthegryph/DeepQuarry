@@ -208,6 +208,13 @@
 /datum/reagent/claridyl
 	treatment_tags = list(TREAT_TISSUE_REPAIR = 0.25)
 
+/datum/reagent/claridyl/bloodburn
+	treatment_tags = null
+
+/datum/reagent/hannoa
+	// B7: "a powerful clotting agent that treats brute damage very quickly".
+	treatment_tags = list(TREAT_HEMOSTATIC = 1.0, TREAT_TISSUE_REPAIR = 1.0)
+
 // --- Generics (medicine.dm / other.dm / drugs.dm) ---
 
 /datum/reagent/tricorlidaze

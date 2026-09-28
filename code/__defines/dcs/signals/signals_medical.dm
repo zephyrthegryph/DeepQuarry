@@ -45,5 +45,3 @@
 #define COMSIG_LIVING_INJURY_EXPLAINED "living_injury_explained"
 /// From base of /mob/living/proc/injure(), after the injury applied: (kind, applied, zone, atom/source, flags)
 #define COMSIG_LIVING_INJURED "living_injured"
-/// From /datum/body/proc/recompute_factors() when a body factor value changed: ()
-#define COMSIG_LIVING_FACTORS_CHANGED "living_factors_changed"

@@ -91,10 +91,9 @@
 	min_symptoms = 1
 	max_symptoms = 3
 
-/datum/affliction/tendon_severed/New()
-	..()
+/datum/affliction/tendon_severed
 	// Spawn with severity 50 so it presents symptoms immediately.
-	severity = 50
+	initial_severity = 50
 
 // Body factors depend on which limb is affected, which is fixed for the
 // lifetime of the condition: the affected hand can't hold anything; a leg
@@ -134,9 +133,8 @@
 	max_symptoms = 3
 	factors = alist(BF_ACCURACY = -10, BF_MOTOR_CONTROL = 0.99)
 
-/datum/affliction/nerve_damage/New()
-	..()
-	severity = 60
+/datum/affliction/nerve_damage
+	initial_severity = 60
 
 /datum/affliction/nerve_damage/tick()
 	. = ..()
@@ -191,6 +189,5 @@
 	spontaneous_emotes = list("smells faintly of decay")
 	spontaneous_emote_prob = 2
 
-/datum/affliction/tissue_necrosis/New()
-	..()
-	severity = 75
+/datum/affliction/tissue_necrosis
+	initial_severity = 75

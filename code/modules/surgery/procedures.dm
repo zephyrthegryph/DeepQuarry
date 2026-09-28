@@ -247,15 +247,21 @@
 	description = "Cutting dead tissue out of an internal organ before it spreads. Sutures don't touch necrosis; only resection removes it."
 	body_region = "Torso, groin or head"
 	steps = list(
-		"Open the region and retract the tissue (and bone, where encased).",
+		"Open the region and retract the tissue.",
+		"Where the organ is encased, saw through and retract the bone.",
 		"Resect the necrotic tissue from the organ.",
+		"Set any bone back together.",
 		"Close the region in layers.",
 	)
 	tools = list("Scalpel", "Retractor", "Circular saw", "Bone gel", "Cautery")
+	// D8: the saw and pry steps, so resection is reachable inside the ribcage and skull.
 	procedure = list(
 		/datum/surgical_step/access/incise,
 		/datum/surgical_step/access/retract,
+		/datum/surgical_step/access/saw,
+		/datum/surgical_step/access/pry_bone,
 		/datum/surgical_step/treat/organ/resection,
+		/datum/surgical_step/set_bone,
 		/datum/surgical_step/cauterize,
 	)
 
@@ -326,16 +332,22 @@
 	steps = list(
 		"Open the skin around the eye.",
 		"Retract the lids and soft tissue.",
+		"Saw through and lift the orbital bone.",
 		"Suture the damaged eye.",
+		"Set the bone back in place.",
 		"Close the incision.",
 	)
-	tools = list("Scalpel", "Retractor", "FixOVein", "Cautery")
+	tools = list("Scalpel", "Retractor", "Circular saw", "FixOVein", "Bone gel", "Cautery")
 	treats = list(/datum/affliction/ischemic_vision_loss)
 	repairs_organs = list(O_EYES)
+	// D8: the eyes sit in the (encased) head, so the saw and pry steps come first.
 	procedure = list(
 		/datum/surgical_step/access/incise,
 		/datum/surgical_step/access/retract,
+		/datum/surgical_step/access/saw,
+		/datum/surgical_step/access/pry_bone,
 		/datum/surgical_step/treat/organ/suture,
+		/datum/surgical_step/set_bone,
 		/datum/surgical_step/cauterize,
 	)
 

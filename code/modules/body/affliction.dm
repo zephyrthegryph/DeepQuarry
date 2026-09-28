@@ -41,6 +41,21 @@
 	/// harms a creature. 0 = no ongoing harm there (mechanical effects and
 	/// symptoms still apply).
 	var/simple_load_rate = 0
+	/// Drift used on a simple body when `progression_rate` is 0 (C2): a creature with no
+	/// medic still clears a poison that a patient must have treated. 0 = no clearance.
+	var/simple_clearance_rate = 0
+	/// Set by the emergent/metric dispatcher (_dq_apply_outcomes()) on the afflictions it owns:
+	/// severity follows the source every tick, so treatment is the source's (C6).
+	var/metric_owned = FALSE
+	/// Severity a new affliction starts at when afflict() is given none (C22: set through
+	/// set_severity(), not written in New()).
+	var/initial_severity = 0
+	/// A whole-body condition (respiratory arrest, arrhythmia): afflict() reuses the one that
+	/// exists instead of adding another at a different location (C9).
+	var/systemic_singleton = FALSE
+	/// accumulate_factors() reads severity continuously (airway patency, breathing drive), so
+	/// every severity change re-dirties the factors (C21).
+	var/continuous_factors = FALSE
 	/// INJURY_CATEGORY_* this affliction counts toward for load queries
 	/// (vitality readouts, analysers, medbots). Null = not an injury
 	/// (side effects, interactions, infections).
@@ -126,7 +141,9 @@
 	var/list/spontaneous_emotes
 	/// Per-tick chance (%) of one of `spontaneous_emotes`.
 	var/spontaneous_emote_prob = 2
-	var/last_scanned_severity = null
+	/// Trend baselines (D9): baseline key (a device, or a profile type) -> severity at that
+	/// device's last explicit scan. Lazy.
+	var/list/scan_baselines
 	/// Active stage id (see get_stages()).
 	var/stage
 
@@ -162,6 +179,18 @@
 		affliction_symptom(symptom_type).on_resolve(owner, src)
 	active_symptoms = null
 
+/// Drops the stage-applied state (C15): the presenting symptoms are RESOLVED (their
+/// on_resolve() undoes what they applied) before the lists are cleared.
+/datum/affliction/proc/clear_stage()
+	for(var/symptom_type in active_symptoms)
+		affliction_symptom(symptom_type).on_resolve(owner, src)
+	stage = null
+	active_symptoms = null
+	symptom_pool = null
+	spontaneous_emotes = null
+	last_reroll_band = -1
+	body?.invalidate(BODY_DIRTY_FACTORS)
+
 /// Resolve and remove. The normal way an affliction ends.
 /datum/affliction/proc/cure()
 	if(body)
@@ -179,7 +208,9 @@
 		return FALSE
 	if(body)
 		var/dirty = BODY_DIRTY_VITALS
-		if(factors && round(severity / BF_SEVERITY_BAND) != factor_band)
+		// C21: a type whose factors follow severity continuously re-dirties on every change,
+		// not only per band (and even with no static `factors` table).
+		if(continuous_factors || (factors && round(severity / BF_SEVERITY_BAND) != factor_band))
 			dirty |= BODY_DIRTY_FACTORS
 		body.invalidate(dirty)
 	if(owner)
@@ -212,6 +243,11 @@
 /// Base: continuous treatment accrues into this tick's progress(); instant
 /// treatment reduces severity now.
 /datum/affliction/proc/receive_tagged_treatment(tag, amount, continuous = FALSE)
+	// C6: an affliction whose severity a dispatcher derives from a metric or an organ's
+	// damage only presents that source. Treatment acts on the source (the organ's lesion,
+	// the body temperature); taking it here was undone next tick and churned cures.
+	if(metric_owned)
+		return 0
 	if(continuous)
 		pending_treatment -= amount
 		return amount
@@ -303,7 +339,10 @@
 /// progression_rate plus this tick's continuous treatment, snowballing with
 /// severity. Wounds and lesions override (damage is their state).
 /datum/affliction/proc/progress()
-	var/drift = AFFLICTION_BASE_PROGRESSION * progression_rate
+	var/rate = progression_rate
+	if(!rate && simple_clearance_rate && istype(body, /datum/body/simple))
+		rate = simple_clearance_rate
+	var/drift = AFFLICTION_BASE_PROGRESSION * rate
 	if(drift > 0)
 		drift *= body.get_factor(BF_PROGRESSION)
 	var/delta = drift + pending_treatment

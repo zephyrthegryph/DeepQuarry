@@ -12,7 +12,8 @@
 	name = "deep bruising"
 	category = "Soft Tissue"
 	clinical_description = "Bruised soft tissue from a heavy impact. Sore, but the body heals it on its own given time."
-	progression_rate = 1.0
+	// C5: it heals on its own (it used to grow at 1.0 with nothing to bring it down).
+	progression_rate = -0.5
 	treated_by = list(TREAT_TISSUE_REPAIR = 0.6)
 	symptom_pool = list(
 		/datum/affliction_symptom/throbbing_pain    = 60,
@@ -27,7 +28,9 @@
 	if(location)
 		var/obj/item/organ/external/E = location
 		if(istype(E))
-			. *= dq_damage_scale(E.get_trauma(), 5, 50, 0.5, 2.0)
+			// A badly traumatised limb heals its bruising more slowly (the drift is negative,
+			// so the scale divides).
+			. /= dq_damage_scale(E.get_trauma(), 5, 50, 0.5, 2.0)
 
 /datum/affliction/internal_hemorrhage
 	name = "internal hemorrhage"
@@ -124,14 +127,24 @@
 	/// This band's factor table, applied at full value.
 	var/alist/band_factors
 
+/// C7: the declared `factors` (scaled by severity, like any affliction) AND the band table.
 /datum/affliction/hypovolemic_shock/accumulate_factors(list/acc)
 	factor_band = round(severity / BF_SEVERITY_BAND)
+	acc = body_factor_accumulate(acc, factors, severity / AFFLICTION_SEVERITY_TERMINAL)
 	return body_factor_accumulate(acc, band_factors, 1)
+
+/// C7: the first band applies from the moment the shock takes hold, not from its first tick.
+/datum/affliction/hypovolemic_shock/on_added()
+	. = ..()
+	update_shock_band()
 
 /datum/affliction/hypovolemic_shock/tick()
 	. = ..()
 	if(severity <= 0)
 		return
+	update_shock_band()
+
+/datum/affliction/hypovolemic_shock/proc/update_shock_band()
 	var/band
 	if(severity >= 60)
 		band = 2
@@ -285,9 +298,8 @@
 // Concussions normally heal. Spawn this with an initial severity high
 // enough to actually present symptoms before the negative progression
 // drags it back down.
-/datum/affliction/concussion/New()
-	..()
-	severity = 100
+/datum/affliction/concussion
+	initial_severity = 100
 
 // --- Burns ---
 
@@ -436,12 +448,13 @@
 	// condition. The extra delta scales with how far past threshold
 	// we are: each 1000 germs over threshold = +1.0/tick (on top of
 	// base progression).
+	// C8: through adjust_severity() (clamp, invalidation, signal), not a raw write.
 	if(germ_level > INFECTION_LEVEL_ONE)
-		severity = min(severity + ((germ_level - INFECTION_LEVEL_ONE) / 1000), AFFLICTION_SEVERITY_TERMINAL)
+		adjust_severity((germ_level - INFECTION_LEVEL_ONE) / 1000)
 	// Hysteresis: germs well below threshold means the wound has been
 	// cleaned. Condition severity drifts down on its own.
 	else if(germ_level < (INFECTION_LEVEL_ONE - 100))
-		severity = max(severity - 0.2, 0)
+		adjust_severity(-0.2)
 		if(severity <= 0)
 			cure()
 

@@ -21,6 +21,8 @@
 	// body it keeps dealing toxin load while it lasts.
 	body_plans = BODY_PLAN_ALL
 	simple_load_rate = 1
+	// C2: a venom with no drift of its own wears off a simple body instead of loading forever.
+	simple_clearance_rate = -1
 	/// If FALSE this venom is felt, not suffered: it contributes nothing to a
 	/// simple creature's injury load.
 	var/counts_on_simple_bodies = TRUE
