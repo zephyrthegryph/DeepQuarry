@@ -142,9 +142,6 @@
 	else
 		return null
 
-/obj/attack_ghost(mob/user)
-	tgui_interact(user)
-	..()
 
 /obj/proc/hide(h)
 	return

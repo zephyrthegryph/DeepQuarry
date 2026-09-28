@@ -35,6 +35,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 
 EXTEND_INTERACTIONS(/obj/effect/portal, \
 	INTERACT_HAND("Enter", PROC_REF(interaction_enter_portal)), \
+	INTERACT_OBSERVER("Go through", PROC_REF(portal_ghost_follow)), \
 )
 
 /// Old attack_hand: step through the portal.

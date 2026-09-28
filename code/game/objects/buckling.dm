@@ -30,10 +30,6 @@
 /obj/proc/attack_alien(mob/user as mob) //For calling in the event of Xenomorph or other alien checks.
 	return
 
-/obj/attack_robot(mob/living/user)
-	if(Adjacent(user) && has_buckled_mobs()) //Checks if what we're touching is adjacent to us and has someone buckled to it. This should prevent interacting with anti-robot manual valves among other things.
-		return attack_hand(user) //Process as if we're a normal person touching the object.
-	return ..() //Otherwise, treat this as an AI click like usual.
 
 /atom/movable
 	/// Dragging a mob onto this buckles it (when can_buckle) or climbs it. FALSE for mobs that are

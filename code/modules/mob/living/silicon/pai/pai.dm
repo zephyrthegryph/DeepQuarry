@@ -389,7 +389,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	if(istype(A, /obj/machinery))
 		var/obj/machinery/M = A
 		if(M.paicard == card)
-			M.attack_ai(src)
+			INPUT_ADAPTER(ai).interface(src, M)
 			return
 	return ..()
 

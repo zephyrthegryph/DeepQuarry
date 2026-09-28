@@ -104,7 +104,7 @@
 			if (!(user in nearby))
 				if (user.client && user.check_current_machine(src)) // && M.machine == src is omitted because if we triggered this by using the dialog, it doesn't matter if our machine changed in between triggering it and this - the dialog is probably still supposed to refresh.
 					is_in_use = 1
-					src.attack_ai(user)
+					INPUT_ADAPTER(ai).interface(user, src)
 
 		// check for TK users
 

@@ -36,7 +36,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		for(var/mob/living/silicon/ai/M as anything in REGISTRY_MEMBERS(REGISTRY_AIS))
 			if ((M.client && M.check_current_machine(subject)))
 				is_in_use = 1
-				subject.attack_ai(M)
+				INPUT_ADAPTER(ai).interface(M, subject)
 	return is_in_use
 
 /// Full backup capacitor charge (the old 200-point oxyloss budget).
@@ -481,7 +481,7 @@ REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCo
 		var/obj/machinery/hologram/holopad/H = locate(href_list["jumptoholopad"])
 		if(stat == CONSCIOUS)
 			if(H)
-				H.attack_ai(src) //may as well recycle
+				INPUT_ADAPTER(ai).interface(src, H) //may as well recycle
 			else
 				to_chat(src, span_notice("Unable to locate the holopad."))
 

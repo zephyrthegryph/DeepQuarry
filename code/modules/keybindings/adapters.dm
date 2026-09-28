@@ -336,8 +336,13 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return TRUE
 	use_default(user, target)
 
-/datum/input_adapter/ghost/use_default(mob/user, atom/target)
-	return target.attack_ghost(user)
+/// A ghost's Use when no observer interaction answers: an object's UI, to view; an inquisitive ghost examines.
+/datum/input_adapter/ghost/use_default(mob/observer/dead/user, atom/target)
+	if(isobj(target))
+		target.tgui_interact(user)
+	if(user.client?.inquisitive_ghost)
+		user.examinate(target)
+	return TRUE
 
 // ---------------------------------------------------------------------------
 // AI: remote, no hands, acts through the camera network.
@@ -399,8 +404,13 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return TRUE
 	use_default(user, target)
 
+/// The AI's Use when no silicon interaction answers: what the type's `silicon_use` says.
 /datum/input_adapter/ai/use_default(mob/user, atom/target)
-	return target.attack_ai(user)
+	if(target.silicon_use & SILICON_USE_HAND)
+		return target.attack_hand(user)
+	if(target.silicon_use & SILICON_USE_UI)
+		return target.tgui_interact(user)
+	return FALSE
 
 // ---------------------------------------------------------------------------
 // Cyborgs: AI-style remote interfacing with an empty gripper, reach-limited items.
@@ -408,8 +418,18 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /datum/input_adapter/robot
 	name = "robot"
 
+/// A cyborg's empty-gripper Use when no interaction answers: a hand's Use where the type says so
+/// (or on something with a mob buckled to it, so anti-robot valves can't be worked around it), else like the AI.
 /datum/input_adapter/robot/use_default(mob/user, atom/target)
-	return target.attack_robot(user)
+	if(target.silicon_use & ROBOT_USE_HAND)
+		return target.attack_hand(user)
+	if(target.silicon_use & ROBOT_USE_HAND_ADJACENT)
+		return target.Adjacent(user) ? target.attack_hand(user) : FALSE
+	if(isobj(target) && target.Adjacent(user))
+		var/obj/O = target
+		if(O.has_buckled_mobs())
+			return O.attack_hand(user)
+	return INPUT_ADAPTER(ai).use_default(user, target)
 
 /// Cyborgs get everything but observer-only interactions, silicon-only ones included.
 /datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
@@ -427,7 +447,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 	return TRUE
 
 /*
-	Cyborgs have no range restriction on attack_robot(), because it is basically an
+	Cyborgs have no range restriction on empty-gripper Use, because it is basically an
 	AI click. They do have a range restriction on item use.
 */
 /datum/input_adapter/robot/use(mob/living/silicon/robot/user, atom/A, list/modifiers, params)

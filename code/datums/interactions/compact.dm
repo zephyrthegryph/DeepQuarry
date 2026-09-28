@@ -149,6 +149,7 @@
 			tags = (tags || list()) + list(INTERACTION_TAG_REMOTE, INTERACTION_TAG_SILICON)
 		if(INTERACT_KIND_ROBOT)
 			category = INTERACTION_CAT_OPEN
+			priority = 1 // a cyborg's own Use goes ahead of the silicon one it overrides
 			tags = (tags || list()) + list(INTERACTION_TAG_SILICON)
 		if(INTERACT_KIND_OBSERVER)
 			category = INTERACTION_CAT_OPEN

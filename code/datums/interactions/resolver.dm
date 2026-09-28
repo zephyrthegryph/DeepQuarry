@@ -175,8 +175,8 @@
 		return INTERACTION_TRY_MENU
 	if(length(best) == 1)
 		var/datum/interaction/interaction = best[1]
-		interaction.perform(actor, target, held)
-		return INTERACTION_TRY_RAN
+		// An effect that declined (returned FALSE) leaves the input to the actor's default.
+		return interaction.attempt(actor, target, held)
 	if(quality)
 		var/datum/interaction/meant = resolution.intended_blocked(action, quality)
 		if(meant)
