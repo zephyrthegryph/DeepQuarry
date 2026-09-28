@@ -31,7 +31,6 @@ LINTS = {
     "check_grep": "tools/ci/check_grep.sh (same line only)",
     "containment": "tools/ci/containment_lint.py",
     "cooldown": "tools/ci/cooldown_lint.py",
-    "dcs": "tools/ci/dcs_lints.py",
     "declared_refs": "tools/ci/declared_refs_lint.py (undeclared object-typed vars)",
     "instance_list": "tools/ci/instance_list_lint.py",
     "latent": "tools/ci/latent_lint.py",
