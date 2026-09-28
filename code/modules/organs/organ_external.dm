@@ -385,7 +385,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	dislocated = 0
 	if(istype(owner))
 		if(!organ_can_feel_pain())
-			owner.shock_stage += 20
+			owner.adjust_shock(20, "dislocation reset")
 
 		//check to see if we still need the verb
 		for(var/obj/item/organ/external/limb in owner.organs)
@@ -544,7 +544,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	if(!spillover)
 		return null
 	if(owner) // detached limbs have no owner (D14)
-		owner.shock_stage += spillover * CONFIG_GET(number/organ_damage_spillover_multiplier)
+		owner.adjust_shock(spillover * CONFIG_GET(number/organ_damage_spillover_multiplier), "organ spillover")
 	return list(brute_overflow, burn_overflow)
 
 /// Chance-based dismemberment after a hit. Returns LIMB_DISMEMBER_INELIGIBLE (the hit can't take
@@ -1145,7 +1145,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			child.droplimb(clean, disintegrate, TRUE)
 
 	removed(null)
-	victim?.shock_stage += 60
+	victim?.adjust_shock(60, "limb loss")
 
 	if(parent_organ)
 		var/datum/affliction/wound/lost_limb/W = new (null, src, disintegrate, clean)

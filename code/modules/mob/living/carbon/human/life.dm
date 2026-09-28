@@ -2013,7 +2013,7 @@
 	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
-	woken_by = "injure/mend and body invalidate (pain, analgesia); its rewake for raw shock_stage writes"
+	woken_by = "injure/mend and body invalidate (pain, analgesia); adjust_shock()/set_shock()"
 
 /// MED-6: no traumatic shock building and none to recover from.
 /datum/om/stage/life/shock/idle(mob/living/carbon/human/self)
@@ -2028,10 +2028,9 @@
 	if(om_has(self, EFFECT_GODMODE))
 		return 0	// Cancelled by a component
 	if(self.traumatic_shock >= 80 && self.can_feel_pain())
-		self.shock_stage += 1
+		self.adjust_shock(1, "traumatic pain")
 	else
-		self.shock_stage = min(self.shock_stage, 160)
-		self.shock_stage = max(self.shock_stage-1, 0)
+		self.adjust_shock(-1, "recovery")
 	if(!self.can_feel_pain()) return
 
 	if(self.stat)
@@ -2398,7 +2397,7 @@
 
 /mob/living/carbon/human/rejuvenate()
 	restore_blood()
-	shock_stage = 0
+	set_shock(0, "rejuvenate")
 	traumatic_shock = 0
 	..()
 

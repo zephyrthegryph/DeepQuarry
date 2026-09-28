@@ -126,7 +126,7 @@
 	if(CONFIG_GET(flag/limbs_can_break) && !is_damageable(amount))
 		inflict = clamp(max_damage * CONFIG_GET(number/organ_health_multiplier) - (get_trauma() + get_burn()), 0, amount)
 		if(owner && amount > inflict)
-			owner.shock_stage += (amount - inflict) * CONFIG_GET(number/organ_damage_spillover_multiplier)
+			owner.adjust_shock((amount - inflict) * CONFIG_GET(number/organ_damage_spillover_multiplier), "wound spillover")
 	if(inflict <= 0)
 		return 0
 	var/synthetic = (robotic >= ORGAN_ROBOT)

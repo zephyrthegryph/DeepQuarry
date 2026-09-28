@@ -99,7 +99,7 @@ the artifact triggers the rage.
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
 		L.set_body_effect_state(type, H.shock_stage)
-		H.shock_stage = 0
+		H.set_shock(0, "berserk")
 
 /datum/body_effect/berserk/on_end(mob/living/L, expired)
 	var/last_shock_stage = L.body_effect_state(type) || 0
@@ -113,7 +113,7 @@ the artifact triggers the rage.
 
 		if(ishuman(L))
 			var/mob/living/carbon/human/H = L
-			H.shock_stage = last_shock_stage
+			H.set_shock(last_shock_stage, "berserk end")
 
 /datum/body_effect/berserk/can_apply(mob/living/L, suppress_failure = FALSE)
 	if(L.stat)

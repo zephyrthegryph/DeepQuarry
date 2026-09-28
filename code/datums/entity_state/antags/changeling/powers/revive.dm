@@ -65,7 +65,7 @@
 			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_SUIT), H.loc)
 		H.UpdateAppearance()
 
-	C.shock_stage = 0 //Pain
+	C.set_shock(0, "changeling revive") //Pain
 	var/revived = C.return_from_death("changeling regeneration", changeling, REVIVE_IGNORE_WINDOW)
 	if(revived != TRUE)
 		to_chat(C, span_danger("Our regeneration failed: [revived]."))
