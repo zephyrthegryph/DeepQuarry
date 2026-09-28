@@ -24,7 +24,7 @@
 
 
 /obj/item/storage/backpack/equipped(mob/user, slot)
-	if (slot == slot_back && src.use_sound)
+	if (slot == SLOT_ID_BACK && src.use_sound)
 // Chomp edit
 		if(isbelly(user.loc))
 			var/obj/belly/B = user.loc

@@ -8,9 +8,9 @@
 // (organs, implants, grabbed and stored things) sits in its interior slot.
 //
 // Reading equipment:
-//   get_equipped_item(slot)    the item in a slot (slot_* number or SLOT_ID_* id)
+//   get_equipped_item(id)      the item in slot id (SLOT_ID_*)
+//   items_on(zone)             items hung on or covering body zone (BP_*)
 //   get_active_hand() / get_inactive_hand() / get_left_hand() / get_right_hand()
-//   get_inventory_slot(I)      the slot_* number I is equipped in, or 0
 //   inventory_slot_id(I)       the SLOT_ID_* id I is equipped in, or null
 //   get_equipped_items()       worn and held items
 //
@@ -20,89 +20,56 @@
 
 //The list of slots by priority. equip_to_appropriate_slot() uses this list. Doesn't matter if a mob type doesn't have a slot.
 GLOBAL_LIST_INIT(slot_equipment_priority, list(
-		slot_back,
-		slot_wear_id,
-		slot_w_uniform,
-		slot_wear_suit,
-		slot_wear_mask,
-		slot_head,
-		slot_shoes,
-		slot_gloves,
-		slot_l_ear,
-		slot_r_ear,
-		slot_glasses,
-		slot_belt,
-		slot_s_store,
-		slot_tie,
-		slot_l_store,
-		slot_r_store
+		SLOT_ID_BACK,
+		SLOT_ID_ID,
+		SLOT_ID_UNIFORM,
+		SLOT_ID_SUIT,
+		SLOT_ID_MASK,
+		SLOT_ID_HEAD,
+		SLOT_ID_SHOES,
+		SLOT_ID_GLOVES,
+		SLOT_ID_EAR_L,
+		SLOT_ID_EAR_R,
+		SLOT_ID_EYES,
+		SLOT_ID_BELT,
+		SLOT_ID_SUIT_STORAGE,
+		SLOT_ID_TIE,
+		SLOT_ID_POCKET_L,
+		SLOT_ID_POCKET_R
 	))
 
-/// slot_* number -> SLOT_ID_* ledger id (null for the action slots).
-GLOBAL_LIST_INIT(slot_id_by_num, dq_build_slot_id_table())
-/// SLOT_ID_* ledger id -> slot_* number.
-GLOBAL_LIST_INIT(slot_num_by_id, dq_build_slot_num_table())
 /// The slots get_equipped_items() reports (worn and held; not pockets, suit
 /// storage or restraints, as before).
 GLOBAL_LIST_INIT(slot_ids_equipped_items, list(SLOT_ID_BACK, SLOT_ID_HAND_L, SLOT_ID_HAND_R, SLOT_ID_MASK, SLOT_ID_BELT, SLOT_ID_EAR_L, SLOT_ID_EAR_R, SLOT_ID_EYES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_ID, SLOT_ID_SUIT, SLOT_ID_UNIFORM))
-/// Worn-clothing slots, whose items make up a human's worn_clothing.
+/// Worn-clothing slots: get_worn_clothing().
 GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_ID_BELT, SLOT_ID_EYES, SLOT_ID_GLOVES, SLOT_ID_HEAD, SLOT_ID_SHOES, SLOT_ID_SUIT, SLOT_ID_UNIFORM))
-
-/proc/dq_build_slot_id_table()
-	. = new /list(SLOT_TOTAL)
-	.[slot_l_hand] = SLOT_ID_HAND_L
-	.[slot_r_hand] = SLOT_ID_HAND_R
-	.[slot_back] = SLOT_ID_BACK
-	.[slot_belt] = SLOT_ID_BELT
-	.[slot_wear_id] = SLOT_ID_ID
-	.[slot_s_store] = SLOT_ID_SUIT_STORAGE
-	.[slot_l_store] = SLOT_ID_POCKET_L
-	.[slot_r_store] = SLOT_ID_POCKET_R
-	.[slot_glasses] = SLOT_ID_EYES
-	.[slot_wear_mask] = SLOT_ID_MASK
-	.[slot_gloves] = SLOT_ID_GLOVES
-	.[slot_head] = SLOT_ID_HEAD
-	.[slot_shoes] = SLOT_ID_SHOES
-	.[slot_wear_suit] = SLOT_ID_SUIT
-	.[slot_w_uniform] = SLOT_ID_UNIFORM
-	.[slot_l_ear] = SLOT_ID_EAR_L
-	.[slot_r_ear] = SLOT_ID_EAR_R
-	.[slot_handcuffed] = SLOT_ID_HANDCUFFED
-	.[slot_legcuffed] = SLOT_ID_LEGCUFFED
-
-/proc/dq_build_slot_num_table()
-	. = list()
-	var/list/by_num = dq_build_slot_id_table()
-	for(var/num in 1 to length(by_num))
-		if(by_num[num])
-			.[by_num[num]] = num
-
-/// The ledger id for `slot`: a slot_* number or already a SLOT_ID_* id. Null
-/// for action slots (tie, backpack, legs) and nonsense.
-/proc/dq_slot_id(slot)
-	if(istext(slot))
-		return slot
-	if(!isnum(slot) || slot < 1 || slot > SLOT_TOTAL)
-		return null
-	return GLOB.slot_id_by_num[slot]
-
-/// The slot_* number for ledger id `id`, or 0.
-/proc/dq_slot_num(id)
-	return GLOB.slot_num_by_id[id] || 0
 
 /mob
 	var/tmp/obj/item/storage/s_active = null // Even ghosts can/should be able to peek into boxes on the ground
 
 // ---- Reading ----
 
-/// The item in `slot` (a slot_* number or SLOT_ID_* id), or null.
-/mob/proc/get_equipped_item(slot) as /obj/item
-	var/id = dq_slot_id(slot)
-	if(!id)
-		return null
+/// The item in equip slot `id` (SLOT_ID_*), or null.
+/mob/proc/get_equipped_item(id) as /obj/item
 	var/datum/ledger/L = dq_ledger(src)
 	var/list/things = L?.slots[id]
 	return length(things) ? things[1] : null
+
+/// Items on body zone `zone` (BP_*): every body-slot item whose slot hangs on
+/// that part, plus worn items whose coverage includes it.
+/mob/proc/items_on(zone)
+	. = list()
+	var/datum/ledger/L = dq_ledger(src)
+	if(!L)
+		return
+	var/part_flag = dq_zone_body_part_flag(zone)
+	for(var/datum/om/relation/slot/body/def in dq_slot_defs_for(src))
+		var/list/things = L.slots[def.slot_id]
+		if(!length(things))
+			continue
+		var/obj/item/I = things[1]
+		if((zone in def.required_parts) || (zone in def.any_parts) || (part_flag && (I.body_parts_covered & part_flag)))
+			. += I
 
 /// The SLOT_ID_* id `I` is equipped in, or null (not ours, in the interior, or
 /// the root body part: parts are not equipment).
@@ -116,14 +83,16 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	var/id = entry[LEDGER_E_SLOT]
 	return (id == L.default_id || id == SLOT_ID_PART_ROOT) ? null : id
 
-/// The slot_* number `I` is equipped in, or 0.
-/mob/proc/get_inventory_slot(obj/item/I)
-	var/id = inventory_slot_id(I)
-	return id ? dq_slot_num(id) : 0
-
-///Get the item on the mob in the storage slot identified by the id passed in
-/mob/proc/get_item_by_slot(slot_id)
-	return get_equipped_item(slot_id)
+/// Items in the worn-clothing slots, in slot order.
+/mob/proc/get_worn_clothing()
+	. = list()
+	var/datum/ledger/L = dq_ledger(src)
+	if(!L)
+		return
+	for(var/id in GLOB.slot_ids_worn_clothing)
+		var/list/things = L.slots[id]
+		if(length(things))
+			. += things
 
 /// Worn and held items.
 /mob/proc/get_equipped_items()
@@ -166,13 +135,12 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /mob/proc/isEquipped(obj/item/I)
 	if(!I)
 		return 0
-	return get_inventory_slot(I) != 0
+	return !!inventory_slot_id(I)
 
 /mob/proc/canUnEquip(obj/item/I)
 	if(!I) //If there's nothing to drop, the drop is automatically successful.
 		return 1
-	var/slot = get_inventory_slot(I)
-	return I.mob_can_unequip(src, slot)
+	return I.mob_can_unequip(src, inventory_slot_id(I))
 
 /mob/proc/getBackSlot()
 	return SLOT_BACK
@@ -189,45 +157,21 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 /// only updates this mob's own state (icons, HUD, caches) and must not sleep or
 /// move anything. Behaviour that moves other things is in slot_vacated().
 /mob/proc/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
-	switch(slot_id)
-		if(SLOT_ID_HAND_L)
-			update_inv_l_hand()
-		if(SLOT_ID_HAND_R)
-			update_inv_r_hand()
-		if(SLOT_ID_BACK)
-			update_inv_back()
-		if(SLOT_ID_MASK)
-			update_inv_wear_mask()
-		if(SLOT_ID_HANDCUFFED)
-			update_inv_handcuffed()
-		if(SLOT_ID_LEGCUFFED)
-			update_inv_legcuffed()
-		if(SLOT_ID_BELT)
-			update_inv_belt()
-		if(SLOT_ID_ID)
-			update_inv_wear_id()
-		if(SLOT_ID_EYES)
-			update_inv_glasses()
-		if(SLOT_ID_GLOVES)
-			update_inv_gloves()
-		if(SLOT_ID_HEAD)
-			update_inv_head()
-		if(SLOT_ID_SHOES)
-			update_inv_shoes()
-		if(SLOT_ID_SUIT)
-			update_inv_wear_suit()
-		if(SLOT_ID_UNIFORM)
-			update_inv_w_uniform()
-		if(SLOT_ID_SUIT_STORAGE)
-			update_inv_s_store()
-		if(SLOT_ID_EAR_L, SLOT_ID_EAR_R)
-			update_inv_ears()
+	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
+	if(istype(def) && def.redraw)
+		call(src, def.redraw)()
 
 /// An item left equip slot `slot_id` through the inventory procs. What that
 /// does to the rest of the inventory (pockets fall out with the jumpsuit, and
 /// so on). Override and call the parent.
 /mob/proc/slot_vacated(slot_id, obj/item/I)
-	return
+	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot_id)
+	if(!istype(def))
+		return
+	for(var/id in def.drops_with)
+		var/obj/item/loose = get_equipped_item(id)
+		if(loose)
+			drop_from_inventory(loose)
 
 /* Inventory manipulation */
 
@@ -239,7 +183,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
  */
 /mob/proc/attack_ui(slot, params)
 	var/obj/item/active_item = get_active_held_item()
-	var/obj/item/equipped_item = get_item_by_slot(slot)
+	var/obj/item/equipped_item = get_equipped_item(slot)
 	var/list/modifiers = params2list(params)
 
 	if(istype(equipped_item))
@@ -257,9 +201,9 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	return FALSE
 
 /mob/proc/put_in_any_hand_if_possible(obj/item/W, del_on_fail = 0, disable_warning = 1, redraw_mob = 1)
-	if(equip_to_slot_if_possible(W, slot_l_hand, del_on_fail, disable_warning, redraw_mob))
+	if(equip_to_slot_if_possible(W, SLOT_ID_HAND_L, del_on_fail, disable_warning, redraw_mob))
 		return 1
-	else if(equip_to_slot_if_possible(W, slot_r_hand, del_on_fail, disable_warning, redraw_mob))
+	else if(equip_to_slot_if_possible(W, SLOT_ID_HAND_R, del_on_fail, disable_warning, redraw_mob))
 		return 1
 	return 0
 
@@ -285,12 +229,12 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(!slot || !istype(W))
 		return FALSE
 	switch(slot)
-		if(slot_in_backpack)
+		if(SLOT_ID_IN_BACKPACK)
 			return equip_to_backpack(W)
-		if(slot_tie)
+		if(SLOT_ID_TIE)
 			return equip_accessory(W)
-	var/id = dq_slot_id(slot)
-	if(!id)
+	var/id = slot
+	if(!istext(id) || !dq_ledger(src)?.def_by_id(id))
 		to_chat(src, span_red("You are trying to equip this item to an unsupported inventory slot. How the heck did you manage that? Stop it..."))
 		return FALSE
 	var/old_id = inventory_slot_id(W)
@@ -306,21 +250,21 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 
 /// After `W` landed in `slot`: the item's equipped() and the slot's effects.
 /mob/proc/equipped_to_slot(obj/item/W, slot)
-	if(slot != slot_handcuffed) // Restraints were never "equipped".
+	if(slot != SLOT_ID_HANDCUFFED) // Restraints were never "equipped".
 		W.equipped(src, slot)
 	W.hud_layerise()
 	W.in_inactive_hand(src)
 	W.equip_special()
 	on_equipment_changed()
 
-/// slot_in_backpack: into the worn backpack's storage.
+/// SLOT_ID_IN_BACKPACK: into the worn backpack's storage.
 /mob/proc/equip_to_backpack(obj/item/W)
 	var/obj/item/storage/B = get_equipped_item(SLOT_ID_BACK)
 	if(!istype(B))
 		return FALSE
 	if(W.loc == src && !remove_from_mob(W, B))
 		return FALSE
-	// The backpack's own rules were checked by the slot_in_backpack predicate.
+	// The backpack's own rules were checked by the SLOT_ID_IN_BACKPACK predicate.
 	if(W.loc != B && !W.move_into(B, null, src))
 		W.forceMove(B)
 	if(W.loc != B)
@@ -328,7 +272,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	on_equipment_changed()
 	return TRUE
 
-/// slot_tie: attached to the first worn clothing that takes it.
+/// SLOT_ID_TIE: attached to the first worn clothing that takes it.
 /mob/proc/equip_accessory(obj/item/W)
 	if(!istype(W, /obj/item/clothing/accessory))
 		return FALSE
@@ -352,9 +296,17 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	W.refit_for_species(species)
 	return equip_to_slot_if_possible(W, slot, 1, 1, 0)
 
-//Checks if a given slot can be accessed at this time, either to equip or unequip I
+/// Whether slot `slot` can be reached now to put on or take off `I`: the item
+/// in the slot's covered_by slot mustn't cover it (slot definitions, body/slots.dm).
 /mob/proc/slot_is_accessible(slot, obj/item/I, mob/user=null)
-	return 1
+	var/datum/om/relation/slot/body/def = dq_ledger(src)?.def_by_id(slot)
+	if(!istype(def) || !def.covered_by)
+		return TRUE
+	var/obj/item/covering = get_equipped_item(def.covered_by)
+	if(covering && (covering.body_parts_covered & (I.body_parts_covered | def.cover_flags)))
+		to_chat(user, span_warning("\The [covering] is in the way."))
+		return FALSE
+	return TRUE
 
 //puts the item "W" into an appropriate slot in a human's inventory
 //returns 0 if it cannot, 1 if successful
@@ -386,7 +338,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 		return FALSE
 	if(old_id && old_id != id)
 		slot_vacated(old_id, W)
-	W.equipped(src, dq_slot_num(id))
+	W.equipped(src, id)
 	W.add_fingerprint(src)
 	return TRUE
 

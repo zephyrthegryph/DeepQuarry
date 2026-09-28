@@ -18,7 +18,7 @@
 	var/obj/item/radio/headset/event/headset = allocate(/obj/item/radio/headset/event)
 	headset.slowdown_to_set = 0.5
 
-	TEST_ASSERT(wearer.equip_to_slot_if_possible(headset, slot_l_ear, disable_warning = TRUE), "the event headset should equip to an ear slot")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(headset, SLOT_ID_EAR_L, disable_warning = TRUE), "the event headset should equip to an ear slot")
 
 	TEST_ASSERT_EQUAL(wearer.species.item_slowdown_mod, baseline_mod, "equipping the event headset must not mutate the shared species datum's item_slowdown_mod")
 	TEST_ASSERT_EQUAL(bystander.species.item_slowdown_mod, baseline_mod, "an unrelated human sharing the same species singleton must be unaffected by someone else's headset")
@@ -49,7 +49,7 @@
 	for(var/spell_type in headset.spells)
 		TEST_ASSERT(ispath(spell_type, /datum/spell), "[spell_type] should be a real /datum/spell type path, not a bare string")
 
-	TEST_ASSERT(wearer.equip_to_slot_if_possible(headset, slot_l_ear, disable_warning = TRUE), "the event headset should equip to an ear slot")
+	TEST_ASSERT(wearer.equip_to_slot_if_possible(headset, SLOT_ID_EAR_L, disable_warning = TRUE), "the event headset should equip to an ear slot")
 
 	TEST_ASSERT_EQUAL(length(headset.remove_spells), length(headset.spells), "equipping should have instantiated and granted every configured spell")
 	for(var/datum/spell/granted_spell in headset.remove_spells)

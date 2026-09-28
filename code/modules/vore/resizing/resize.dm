@@ -416,7 +416,7 @@
 				if(tail)
 					message_pred = STEP_TEXT_OWNER(tail.msg_owner_grab_success)
 					message_prey = STEP_TEXT_PREY(tail.msg_prey_grab_success)
-				equip_to_slot_if_possible(prey.get_scooped(pred), slot_shoes, 0, 1)
+				equip_to_slot_if_possible(prey.get_scooped(pred), SLOT_ID_SHOES, 0, 1)
 				add_attack_logs(pred, prey, "Grabbed underfoot ([tail ? "taur" : "nontaur"], no shoes)")
 
 		if(m_intent == I_RUN)

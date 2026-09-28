@@ -35,8 +35,8 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 		target_mob.forceMove(pick(GLOB.prisonwarp))
 		if(ishuman(target_mob))
 			var/mob/living/carbon/human/prisoner = target_mob
-			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), slot_w_uniform)
-			prisoner.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(prisoner), slot_shoes)
+			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), SLOT_ID_UNIFORM)
+			prisoner.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(prisoner), SLOT_ID_SHOES)
 		om_after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), target_mob, span_bolddanger("You have been sent to the prison station!"))
 		log_admin("[key_name(user)] sent [key_name(target_mob)] to the prison station.")
 		message_admins(span_blue("[key_name_admin(user)] sent [key_name_admin(target_mob)] to the prison station."), 1)

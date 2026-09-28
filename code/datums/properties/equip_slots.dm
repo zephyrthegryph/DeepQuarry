@@ -14,26 +14,26 @@
 
 /datum/predicate/equip_slot
 	name = "equip slot"
-	/// slot_* id.
+	/// SLOT_ID_* id.
 	var/slot
 
 /datum/predicate/equip_slot/back
-	slot = slot_back
+	slot = SLOT_ID_BACK
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_BACK))
 
 /datum/predicate/equip_slot/belt
-	slot = slot_belt
+	slot = SLOT_ID_BELT
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_BELT))
 
 /datum/predicate/equip_slot/id
-	slot = slot_wear_id
+	slot = SLOT_ID_ID
 	spec = list(
 		REQ_TAG(PRED_TARGET, TAG_WEAR_ID),
 		REQ_PROC(/proc/dq_equip_has_uniform, null),
 	)
 
 /datum/predicate/equip_slot/suit_storage
-	slot = slot_s_store
+	slot = SLOT_ID_SUIT_STORAGE
 	spec = list(REQ_PROC(/proc/dq_equip_suit_storage_takes, null))
 
 /datum/predicate/equip_slot/pocket
@@ -44,47 +44,47 @@
 	)
 
 /datum/predicate/equip_slot/pocket/left
-	slot = slot_l_store
+	slot = SLOT_ID_POCKET_L
 
 /datum/predicate/equip_slot/pocket/right
-	slot = slot_r_store
+	slot = SLOT_ID_POCKET_R
 
 /datum/predicate/equip_slot/glasses
-	slot = slot_glasses
+	slot = SLOT_ID_EYES
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_EYES))
 
 /datum/predicate/equip_slot/mask
-	slot = slot_wear_mask
+	slot = SLOT_ID_MASK
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_MASK))
 
 /datum/predicate/equip_slot/gloves
-	slot = slot_gloves
+	slot = SLOT_ID_GLOVES
 	spec = list(
 		REQ_TAG(PRED_TARGET, TAG_WEAR_GLOVES),
 		REQ_PROC(/proc/dq_equip_glove_layering, null),
 	)
 
 /datum/predicate/equip_slot/head
-	slot = slot_head
+	slot = SLOT_ID_HEAD
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_HEAD))
 
 /datum/predicate/equip_slot/shoes
-	slot = slot_shoes
+	slot = SLOT_ID_SHOES
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_FEET))
 
 /datum/predicate/equip_slot/suit
-	slot = slot_wear_suit
+	slot = SLOT_ID_SUIT
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_SUIT))
 
 /datum/predicate/equip_slot/uniform
-	slot = slot_w_uniform
+	slot = SLOT_ID_UNIFORM
 	spec = list(REQ_TAG(PRED_TARGET, TAG_WEAR_UNIFORM))
 
 /// Ears: a two-ear item needs the other ear free.
 /datum/predicate/equip_slot/ear
 
 /datum/predicate/equip_slot/ear/left
-	slot = slot_l_ear
+	slot = SLOT_ID_EAR_L
 	spec = list(
 		REQ_ANY(REQ_TAG(PRED_TARGET, TAG_WEAR_EARS), REQ_TAG(PRED_TARGET, TAG_WEAR_TWO_EARS)),
 		REQ_BECAUSE(REQ_ANY(REQ_AT_MOST(PRED_TARGET, PROP_SIZE_CLASS, SIZE_CLASS(ITEMSIZE_TINY)), REQ_TAG(PRED_TARGET, TAG_WEAR_EARS)), "too big for an ear"),
@@ -92,7 +92,7 @@
 	)
 
 /datum/predicate/equip_slot/ear/right
-	slot = slot_r_ear
+	slot = SLOT_ID_EAR_R
 	spec = list(
 		REQ_ANY(REQ_TAG(PRED_TARGET, TAG_WEAR_EARS), REQ_TAG(PRED_TARGET, TAG_WEAR_TWO_EARS)),
 		REQ_BECAUSE(REQ_ANY(REQ_AT_MOST(PRED_TARGET, PROP_SIZE_CLASS, SIZE_CLASS(ITEMSIZE_TINY)), REQ_TAG(PRED_TARGET, TAG_WEAR_EARS)), "too big for an ear"),
@@ -100,22 +100,22 @@
 	)
 
 /datum/predicate/equip_slot/tie
-	slot = slot_tie
+	slot = SLOT_ID_TIE
 	spec = list(
 		REQ_TAG(PRED_TARGET, TAG_WEAR_TIE),
 		REQ_PROC(/proc/dq_equip_accessory_attachable, null),
 	)
 
 /datum/predicate/equip_slot/handcuffs
-	slot = slot_handcuffed
+	slot = SLOT_ID_HANDCUFFED
 	spec = list(REQ_BECAUSE(REQ_ALL(REQ_TYPE(PRED_TARGET, list(/obj/item/handcuffs)), REQ_NOT_TYPE(PRED_TARGET, list(/obj/item/handcuffs/legcuffs))), "only handcuffs go there"))
 
 /datum/predicate/equip_slot/legcuffs
-	slot = slot_legcuffed
+	slot = SLOT_ID_LEGCUFFED
 	spec = list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list(/obj/item/handcuffs/legcuffs)), "only legcuffs go there"))
 
 /datum/predicate/equip_slot/backpack
-	slot = slot_in_backpack
+	slot = SLOT_ID_IN_BACKPACK
 	spec = list(REQ_PROC(/proc/dq_equip_backpack_takes, null))
 
 /// The compiled slot predicate for `slot`, or null for slots with no rules (hands, legs).
@@ -123,44 +123,34 @@
 	var/static/list/by_slot
 	if(!by_slot)
 		by_slot = list()
-		by_slot.len = SLOT_TOTAL
 		for(var/path in subtypesof(/datum/predicate/equip_slot))
 			var/datum/predicate/equip_slot/P = path
 			var/id = initial(P.slot)
 			if(id)
 				by_slot[id] = dq_predicate(path)
-	if(!isnum(slot) || slot < 1 || slot > SLOT_TOTAL)
-		return null
-	return by_slot[slot]
+	return istext(slot) ? by_slot[slot] : null
 
 /// The old slot_flags enumeration, kept for callers that ask "does this slot
 /// suit this item" without a mob (worn checks in equipped()).
 /proc/dq_item_fits_slot_flags(obj/item/I, slot)
-	switch(slot)
-		if(slot_wear_mask)
-			return HAS_TAG(I, TAG_WEAR_MASK)
-		if(slot_back)
-			return HAS_TAG(I, TAG_WEAR_BACK)
-		if(slot_wear_suit)
-			return HAS_TAG(I, TAG_WEAR_SUIT)
-		if(slot_gloves)
-			return HAS_TAG(I, TAG_WEAR_GLOVES)
-		if(slot_shoes)
-			return HAS_TAG(I, TAG_WEAR_FEET)
-		if(slot_belt)
-			return HAS_TAG(I, TAG_WEAR_BELT)
-		if(slot_glasses)
-			return HAS_TAG(I, TAG_WEAR_EYES)
-		if(slot_head)
-			return HAS_TAG(I, TAG_WEAR_HEAD)
-		if(slot_l_ear, slot_r_ear)
-			return HAS_TAG(I, TAG_WEAR_EARS) || HAS_TAG(I, TAG_WEAR_TWO_EARS)
-		if(slot_w_uniform)
-			return HAS_TAG(I, TAG_WEAR_UNIFORM)
-		if(slot_wear_id)
-			return HAS_TAG(I, TAG_WEAR_ID)
-		if(slot_tie)
-			return HAS_TAG(I, TAG_WEAR_TIE)
+	var/static/alist/tags_by_slot = alist(
+		SLOT_ID_MASK = list(TAG_WEAR_MASK),
+		SLOT_ID_BACK = list(TAG_WEAR_BACK),
+		SLOT_ID_SUIT = list(TAG_WEAR_SUIT),
+		SLOT_ID_GLOVES = list(TAG_WEAR_GLOVES),
+		SLOT_ID_SHOES = list(TAG_WEAR_FEET),
+		SLOT_ID_BELT = list(TAG_WEAR_BELT),
+		SLOT_ID_EYES = list(TAG_WEAR_EYES),
+		SLOT_ID_HEAD = list(TAG_WEAR_HEAD),
+		SLOT_ID_EAR_L = list(TAG_WEAR_EARS, TAG_WEAR_TWO_EARS),
+		SLOT_ID_EAR_R = list(TAG_WEAR_EARS, TAG_WEAR_TWO_EARS),
+		SLOT_ID_UNIFORM = list(TAG_WEAR_UNIFORM),
+		SLOT_ID_ID = list(TAG_WEAR_ID),
+		SLOT_ID_TIE = list(TAG_WEAR_TIE),
+	)
+	for(var/tag in tags_by_slot[slot])
+		if(HAS_TAG(I, tag))
+			return TRUE
 	return FALSE
 
 // ---- Equipping ----
@@ -176,8 +166,8 @@
 /proc/dq_equip_refusal(obj/item/I, mob/M, slot, disable_warning, ignore_obstruction, go_over_slot)
 	if(!slot || !M)
 		return "there's nowhere to put it"
-	var/id = dq_slot_id(slot)
-	if(!id)
+	var/datum/om/relation/slot/def = dq_ledger(M)?.def_by_id(slot)
+	if(!def && (slot == SLOT_ID_IN_BACKPACK || slot == SLOT_ID_TIE))
 		// Action slots (backpack, accessory): the slot rules are all there is.
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
@@ -192,8 +182,6 @@
 		return dq_equip_item_refusal(I, M, slot)
 	// The mob's slot list says whether it has the slot; the slot's definition
 	// (its body part, then its equip_slot predicate) whether it takes the item.
-	var/datum/ledger/L = dq_ledger(M)
-	var/datum/om/relation/slot/def = L?.def_by_id(id)
 	if(!def)
 		return ishuman(M) ? "you have nowhere to wear it" : "you can't wear things"
 	. = def.refusal(M, I, M)
@@ -202,7 +190,7 @@
 	// Capacity: one item per equip slot, unless this one goes on over it.
 	if(isnull(go_over_slot))
 		go_over_slot = HAS_TAG(I, TAG_WEAR_OVER)
-	var/obj/item/present = M.get_equipped_item(id)
+	var/obj/item/present = M.get_equipped_item(slot)
 	if(present && present != I && !go_over_slot)
 		return "you're already wearing 	he [present] there"
 	if(!ignore_obstruction && !M.slot_is_accessible(slot, I, disable_warning ? null : M))
@@ -212,7 +200,7 @@
 /// The item's own constraints on its wearer: fit (except in pockets and suit
 /// storage) and equip.
 /proc/dq_equip_item_refusal(obj/item/I, mob/M, slot)
-	if(slot != slot_l_store && slot != slot_r_store && slot != slot_s_store)
+	if(slot != SLOT_ID_POCKET_L && slot != SLOT_ID_POCKET_R && slot != SLOT_ID_SUIT_STORAGE)
 		. = dq_constraint_refusal(I, CONSTRAINT_FIT, I, M)
 		if(.)
 			return .
@@ -226,7 +214,7 @@
 // ---- Slot rules (REQ_PROC clauses: (actor, target, held) -> TRUE or a reason) ----
 
 /proc/dq_equip_has_uniform(mob/living/carbon/human/H, obj/item/I)
-	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_UNIFORM) || !(slot_w_uniform in dq_equip_slots_of(H)))
+	if(!ishuman(H) || H.get_equipped_item(SLOT_ID_UNIFORM) || !(SLOT_ID_UNIFORM in dq_equip_slots_of(H)))
 		return TRUE
 	return "you need a jumpsuit first"
 
@@ -258,14 +246,14 @@
 	return TRUE
 
 /proc/dq_equip_left_ear_free(mob/living/carbon/human/H, obj/item/I)
-	return (ishuman(H) && H.get_equipped_item(slot_l_ear)) ? "it needs both ears free" : TRUE
+	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_L)) ? "it needs both ears free" : TRUE
 
 /proc/dq_equip_right_ear_free(mob/living/carbon/human/H, obj/item/I)
-	return (ishuman(H) && H.get_equipped_item(slot_r_ear)) ? "it needs both ears free" : TRUE
+	return (ishuman(H) && H.get_equipped_item(SLOT_ID_EAR_R)) ? "it needs both ears free" : TRUE
 
 /proc/dq_equip_accessory_attachable(mob/living/carbon/human/H, obj/item/I)
 	if(ishuman(H))
-		for(var/obj/item/clothing/C in H.worn_clothing)
+		for(var/obj/item/clothing/C in H.get_worn_clothing())
 			if(C.can_attach_accessory(I))
 				return TRUE
 	return "you're not wearing anything you can attach it to"

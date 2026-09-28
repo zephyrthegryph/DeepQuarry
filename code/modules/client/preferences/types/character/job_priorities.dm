@@ -150,7 +150,7 @@
 /// Returns the *effective* gear list for the given job context — the player's "_default"
 /// loadout merged with their per-job overrides. Per-job items take precedence for body
 /// slots they fill (so a Captain-only Top Hat replaces the Default Bowler), but anything
-/// that doesn't conflict stacks. slot_tie and slot-less ("other" bucket) items always
+/// that doesn't conflict stacks. SLOT_ID_TIE and slot-less ("other" bucket) items always
 /// stack without eviction.
 ///
 /// Used by SSjob.equip_rank at spawn time and by dress_preview_mob when previewing the
@@ -171,7 +171,7 @@
 	for(var/name in per_job)
 		var/datum/gear/G = GLOB.gear_datums[name]
 		// Per-job item evicts conflicting default items in the same single-occupancy slot.
-		if(G && G.slot && G.slot != slot_tie)
+		if(G && G.slot && G.slot != SLOT_ID_TIE)
 			for(var/existing_name in result.Copy())
 				if(existing_name == name)
 					continue
@@ -207,7 +207,7 @@
 		inherited[name] = TRUE
 	for(var/name in per_job)
 		var/datum/gear/G = GLOB.gear_datums[name]
-		if(G && G.slot && G.slot != slot_tie)
+		if(G && G.slot && G.slot != SLOT_ID_TIE)
 			for(var/existing_name in result.Copy())
 				if(existing_name == name)
 					continue

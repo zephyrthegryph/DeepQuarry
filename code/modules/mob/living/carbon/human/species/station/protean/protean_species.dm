@@ -174,11 +174,11 @@
 	permit.set_name(H.real_name)
 
 	if(H.backbag == 1) //Somewhat misleading, 1 == no bag (not boolean)
-		H.equip_to_slot_or_del(permit, slot_l_hand)
-		H.equip_to_slot_or_del(metal_stack, slot_r_hand)
+		H.equip_to_slot_or_del(permit, SLOT_ID_HAND_L)
+		H.equip_to_slot_or_del(metal_stack, SLOT_ID_HAND_R)
 	else
-		H.equip_to_slot_or_del(permit, slot_in_backpack)
-		H.equip_to_slot_or_del(metal_stack, slot_in_backpack)
+		H.equip_to_slot_or_del(permit, SLOT_ID_IN_BACKPACK)
+		H.equip_to_slot_or_del(metal_stack, SLOT_ID_IN_BACKPACK)
 
 	om_after(src, 1, PROC_REF(finish_survival_gear), H) //Let their real nif load if they have one
 

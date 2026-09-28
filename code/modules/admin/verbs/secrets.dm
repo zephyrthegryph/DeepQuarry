@@ -117,8 +117,8 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 						H.drop_from_inventory(W)
 					//teleport person to cell
 					H.forceMove(pick(GLOB.prisonwarp))
-					H.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(H), slot_w_uniform)
-					H.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(H), slot_shoes)
+					H.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(H), SLOT_ID_UNIFORM)
+					H.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(H), SLOT_ID_SHOES)
 				else
 					//teleport security person
 					H.forceMove(pick(GLOB.prisonsecuritywarp))

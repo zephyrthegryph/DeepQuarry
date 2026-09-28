@@ -1674,23 +1674,10 @@ Note that amputating the affected organ does in fact remove the infection from t
 		return english_list(flavor_text)
 
 // Returns a list of the clothing (not glasses) that are covering this part
-/obj/item/organ/external/proc/get_covering_clothing(target_covering)	// target_covering checks for mouth/eye coverage
-	var/list/covering_clothing = list()
-
-	if(!target_covering)
-		target_covering = src.body_part
-
-	if(owner)
-		var/list/protective_gear = list(owner.get_equipped_item(SLOT_ID_HEAD), owner.get_equipped_item(SLOT_ID_MASK), owner.get_equipped_item(SLOT_ID_SUIT), owner.get_equipped_item(SLOT_ID_UNIFORM), owner.get_equipped_item(SLOT_ID_GLOVES), owner.get_equipped_item(SLOT_ID_SHOES), owner.get_equipped_item(SLOT_ID_EYES))
-		for(var/obj/item/clothing/gear in protective_gear)
-			if(gear.body_parts_covered & target_covering)
-				covering_clothing |= gear
-			if(LAZYLEN(gear.accessories))
-				for(var/obj/item/clothing/accessory/bling in gear.accessories)
-					if(bling.body_parts_covered & src.body_part)
-						covering_clothing |= bling
-
-	return covering_clothing
+/// Clothing and accessories over this limb (or over `target_covering`, a body
+/// part flag such as FACE or EYES): the owner's covering_items().
+/obj/item/organ/external/proc/get_covering_clothing(target_covering)
+	return owner ? owner.covering_items(target_covering || body_part) : list()
 
 /mob/living/carbon/human/proc/has_embedded_objects()
 	. = 0

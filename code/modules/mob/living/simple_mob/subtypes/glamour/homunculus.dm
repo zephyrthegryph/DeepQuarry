@@ -118,7 +118,7 @@
 				ranged_attack_delay = 1.5 SECONDS
 				projectile_dispersion = 5
 				projectile_accuracy = 20
-			var/obj/item/clothing/suit/S = H.get_equipped_item(slot_wear_suit)
+			var/obj/item/clothing/suit/S = H.get_equipped_item(SLOT_ID_SUIT)
 			if(istype(S,/obj/item/clothing/suit/armor) || istype(S,/obj/item/clothing/suit/space/rig/))
 				set_armor(dq_armor(list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 100, rad = 100)))
 			transformed = 1

@@ -358,9 +358,9 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 /mob/living/bot/secbot/proc/UnarmedAttack_secbot_done(mob/living/carbon/human/H)
 	if(!H.get_equipped_item(SLOT_ID_HANDCUFFED))
 		if(istype(H.get_equipped_item(SLOT_ID_BACK), /obj/item/rig) && istype(H.get_equipped_item(SLOT_ID_GLOVES),/obj/item/clothing/gloves/gauntlets/rig))
-			H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), slot_handcuffed) // Better to be cable cuffed than stun-locked
+			H.equip_to_slot_or_del(new /obj/item/handcuffs/cable(H), SLOT_ID_HANDCUFFED) // Better to be cable cuffed than stun-locked
 		else
-			H.equip_to_slot_or_del(new /obj/item/handcuffs(H), slot_handcuffed)
+			H.equip_to_slot_or_del(new /obj/item/handcuffs(H), SLOT_ID_HANDCUFFED)
 
 /mob/living/bot/secbot/slime/UnarmedAttack(mob/living/L, proximity)
 	..()

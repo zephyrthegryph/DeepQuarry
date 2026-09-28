@@ -45,7 +45,7 @@
 /proc/dq_test_pick_slotted_gear(datum/preferences/prefs)
 	for(var/name in GLOB.gear_datums)
 		var/datum/gear/G = GLOB.gear_datums[name]
-		if(!G.slot || G.slot == slot_tie)
+		if(!G.slot || G.slot == SLOT_ID_TIE)
 			continue
 		if(!G.is_pickable_by(prefs))
 			continue
@@ -246,7 +246,7 @@
 	var/datum/gear/b
 	for(var/name in GLOB.gear_datums)
 		var/datum/gear/G = GLOB.gear_datums[name]
-		if(!G.slot || G.slot == slot_tie || !G.is_pickable_by(p))
+		if(!G.slot || G.slot == SLOT_ID_TIE || !G.is_pickable_by(p))
 			continue
 		if(!a)
 			a = G

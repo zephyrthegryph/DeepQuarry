@@ -1245,71 +1245,27 @@
 		//to_world("Hot. Difference = [body_temperature_difference]. Recovering [recovery_amt]")
 		self.adjust_bodytemperature(recovery_amt)
 
-	//This proc returns a number made up of the flags for body parts which you are protected on. (such as HEAD, UPPER_TORSO, LOWER_TORSO, etc. See setup.dm for the full list)
-//Read from the body's worn protection cache (code/modules/body/worn_protection.dm), not by scanning the slots.
-/mob/living/carbon/human/proc/get_heat_protection_flags(temperature) //Temperature is the temperature you're being exposed to.
+/// Body part flags protected from heat at `temperature` (worn protection cache).
+/mob/living/carbon/human/proc/get_heat_protection_flags(temperature)
 	return body ? body.worn_heat_flags(temperature) : 0
 
-//See proc/get_heat_protection_flags(temperature) for the description of this proc.
+/// Body part flags protected from cold at `temperature` (worn protection cache).
 /mob/living/carbon/human/proc/get_cold_protection_flags(temperature)
 	return body ? body.worn_cold_flags(temperature) : 0
 
-/mob/living/carbon/human/get_heat_protection(temperature) //Temperature is the temperature you're being exposed to.
-	var/thermal_protection_flags = get_heat_protection_flags(temperature)
-
-	. = get_thermal_protection(thermal_protection_flags)
-	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
-
-	// Body factors stack multiplicatively, so two sources that each let half the heat through combine to a quarter.
-	. *= factor(BF_HEAT_EXPOSURE)
-
-	// Code that calls this expects 1 = immunity so we need to invert again.
-	. = 1 - .
-	. = min(., 1.0)
+/// 0..1 protection from air at `temperature` (1 = immune): the surface share
+/// worn layers seal, then BF_HEAT_EXPOSURE, which stacks multiplicatively.
+/mob/living/carbon/human/get_heat_protection(temperature)
+	var/exposed = 1 - (body ? body.worn_thermal_protection(temperature, FALSE) : 0)
+	return min(1 - exposed * factor(BF_HEAT_EXPOSURE), 1)
 
 /mob/living/carbon/human/get_cold_protection(temperature)
 	if(has_mutation(COLD_RESISTANCE))
-		return 1 //Fully protected from the cold.
-
-	temperature = max(temperature, 2.7) //There is an occasional bug where the temperature is miscalculated in ares with a small amount of gas on them, so this is necessary to ensure that that bug does not affect this calculation. Space's temperature is 2.7K and most suits that are intended to protect against any cold, protect down to 2.0K.
-	var/thermal_protection_flags = get_cold_protection_flags(temperature)
-
-	. = get_thermal_protection(thermal_protection_flags)
-	. = 1 - . // Invert from 1 = immunity to 0 = immunity.
-
-	// Body factors stack multiplicatively, so two sources that each let half the cold through combine to a quarter.
-	. *= factor(BF_COLD_EXPOSURE)
-
-	// Code that calls this expects 1 = immunity so we need to invert again.
-	. = 1 - .
-	. = min(., 1.0)
-
-/mob/living/carbon/human/proc/get_thermal_protection(flags)
-	.=0
-	if(flags)
-		if(flags & HEAD)
-			. += THERMAL_PROTECTION_HEAD
-		if(flags & UPPER_TORSO)
-			. += THERMAL_PROTECTION_UPPER_TORSO
-		if(flags & LOWER_TORSO)
-			. += THERMAL_PROTECTION_LOWER_TORSO
-		if(flags & LEG_LEFT)
-			. += THERMAL_PROTECTION_LEG_LEFT
-		if(flags & LEG_RIGHT)
-			. += THERMAL_PROTECTION_LEG_RIGHT
-		if(flags & FOOT_LEFT)
-			. += THERMAL_PROTECTION_FOOT_LEFT
-		if(flags & FOOT_RIGHT)
-			. += THERMAL_PROTECTION_FOOT_RIGHT
-		if(flags & ARM_LEFT)
-			. += THERMAL_PROTECTION_ARM_LEFT
-		if(flags & ARM_RIGHT)
-			. += THERMAL_PROTECTION_ARM_RIGHT
-		if(flags & HAND_LEFT)
-			. += THERMAL_PROTECTION_HAND_LEFT
-		if(flags & HAND_RIGHT)
-			. += THERMAL_PROTECTION_HAND_RIGHT
-	return min(1,.)
+		return 1
+	// Space is 2.7 K; low-moles tiles occasionally report less, and cold-rated suits protect to 2 K.
+	temperature = max(temperature, 2.7)
+	var/exposed = 1 - (body ? body.worn_thermal_protection(temperature, TRUE) : 0)
+	return min(1 - exposed * factor(BF_COLD_EXPOSURE), 1)
 
 /datum/om/stage/life/chemicals/carbon/human
 	of = /mob/living/carbon/human

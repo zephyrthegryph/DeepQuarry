@@ -328,6 +328,6 @@
 	has_internals = 0
 
 	gear = list(
-		"storage1" =     list("loc" = ui_storage1,  "name" = "Left Pocket",  "slot" = slot_l_store,   "state" = "pocket"),
-		"storage2" =     list("loc" = ui_storage2,  "name" = "Right Pocket", "slot" = slot_r_store,   "state" = "pocket"),
+		"storage1" =     list("loc" = ui_storage1,  "name" = "Left Pocket",  "slot" = SLOT_ID_POCKET_L,   "state" = "pocket"),
+		"storage2" =     list("loc" = ui_storage2,  "name" = "Right Pocket", "slot" = SLOT_ID_POCKET_R,   "state" = "pocket"),
 		) //Removed hat and outer slots, it caused too many problems that required admin intervention.

@@ -72,10 +72,10 @@
 
 	var/damage_mod = 1
 	//presumably, if they are wearing a helmet that stops pressure effects, then it probably covers the throat as well
-	var/obj/item/clothing/head/helmet = get_equipped_item(slot_head)
+	var/obj/item/clothing/head/helmet = get_equipped_item(SLOT_ID_HEAD)
 	if(istype(helmet) && (helmet.body_parts_covered & HEAD) && (helmet.min_pressure_protection != null)) // Both min- and max_pressure_protection must be set for it to function at all, so we can just check that one is set.
 		//we don't do an armor_check here because this is not an impact effect like a weapon swung with momentum, that either penetrates or glances off.
-		damage_mod = 1.0 - (helmet.get_armor().value("melee")/100)
+		damage_mod = 1.0 - min(body.worn_armor(HEAD, MELEE), 100) / 100
 
 	var/total_damage = 0
 	for(var/i in 1 to 3)
@@ -127,31 +127,8 @@
 	if(W.edge)
 		damage = damage * 1.25 //small damage bonus for having sharp and edge
 
-	var/obj/item/clothing/suit/worn_suit
-	var/obj/item/clothing/under/worn_under
-	var/worn_suit_armor
-	var/worn_under_armor
-
-	//if(slot_wear_suit)
-	if(get_equipped_item(slot_wear_suit))
-		worn_suit = get_equipped_item(slot_wear_suit)
-		//worn_suit = get_equipped_item(slot_wear_suit)
-		worn_suit_armor = worn_suit.get_armor().value("melee")
-	else
-		worn_suit_armor = 0
-
-	//if(slot_w_uniform)
-	if(get_equipped_item(slot_w_uniform))
-		worn_under = get_equipped_item(slot_w_uniform)
-		//worn_under_armor = slot_w_uniform.get_armor().value("melee")
-		worn_under_armor = worn_under.get_armor().value("melee")
-	else
-		worn_under_armor = 0
-
-	if(worn_under_armor > worn_suit_armor)
-		damage_mod = 1 - (worn_under_armor/100)
-	else
-		damage_mod = 1 - (worn_suit_armor/100)
+	// Whatever is worn over the chest, combined (worn protection cache).
+	damage_mod = 1 - min(body?.worn_armor(UPPER_TORSO, MELEE), 100) / 100
 
 	damage = damage * damage_mod
 

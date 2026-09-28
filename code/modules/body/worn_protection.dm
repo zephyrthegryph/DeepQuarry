@@ -10,6 +10,9 @@
 //   heat_limit_by_part  highest max_heat_protection_temperature among the
 //                       insulation items whose heat_protection covers the part
 //   cold_limit_by_part  lowest min_cold_protection_temperature, likewise
+//   worn_insulation     surface share (dq_part_thermal_weights()) covered by
+//                       thermally rated layers; scales the living mob's heat
+//                       API conductance (thermal_properties())
 // Read them through worn_armor_set(), worn_armor(), worn_siemens(),
 // worn_heat_flags() and worn_cold_flags().
 // It holds numbers only, never item references, and is rebuilt in one pass
@@ -35,6 +38,9 @@
 	var/alist/heat_limit_by_part
 	/// Body part flag -> lowest temperature a covering item protects down to.
 	var/alist/cold_limit_by_part
+	/// Surface fraction (0..1, dq_part_thermal_weights()) covered by any
+	/// thermally rated clothing: how much worn layers slow heat exchange.
+	var/worn_insulation = 0
 
 /// The body part flags the cache holds: the external limbs' body_part values.
 /proc/dq_worn_zone_parts()
@@ -45,13 +51,7 @@
 /// (clothing in the armour slots) and their accessories. Null when nothing
 /// armoured covers it.
 /proc/dq_worn_armor_scan(list/items, part)
-	var/list/covering = list()
-	for(var/obj/item/clothing/gear in items)
-		if(gear.body_parts_covered & part)
-			covering |= gear
-		for(var/obj/item/clothing/accessory/bling in gear.accessories)
-			if(bling.body_parts_covered & part)
-				covering |= bling
+	var/list/covering = dq_worn_covering(items, part)
 	var/datum/armor/combined
 	for(var/obj/item/clothing/gear as anything in covering)
 		var/datum/armor/layer = gear.get_armor()
@@ -59,6 +59,29 @@
 			continue
 		combined = combined ? combined.add(layer) : layer
 	return combined
+
+/// The clothing in `items` and the accessories on it that cover body part flag `part`.
+/proc/dq_worn_covering(list/items, part)
+	. = list()
+	for(var/obj/item/clothing/gear in items)
+		if(gear.body_parts_covered & part)
+			. |= gear
+		for(var/obj/item/clothing/accessory/bling in gear.accessories)
+			if(bling.body_parts_covered & part)
+				. |= bling
+
+/// Clothing and accessories in this mob's armour slots covering body part flag `part`.
+/mob/living/proc/covering_items(part)
+	return dq_worn_covering(body_slot_items(BODY_SLOT_ARMOR), part)
+
+/// The body part flag (HEAD, UPPER_TORSO, ...) of body zone `zone` (BP_*), or NONE.
+/proc/dq_zone_body_part_flag(zone)
+	var/static/alist/flags = alist(
+		BP_HEAD = HEAD, BP_TORSO = UPPER_TORSO, BP_GROIN = LOWER_TORSO,
+		BP_L_ARM = ARM_LEFT, BP_R_ARM = ARM_RIGHT, BP_L_HAND = HAND_LEFT, BP_R_HAND = HAND_RIGHT,
+		BP_L_LEG = LEG_LEFT, BP_R_LEG = LEG_RIGHT, BP_L_FOOT = FOOT_LEFT, BP_R_FOOT = FOOT_RIGHT,
+	)
+	return flags[zone] || NONE
 
 /// Product of the conductivity of `items` (clothing in the insulation slots) covering `part`.
 /proc/dq_worn_siemens_scan(list/items, part)
@@ -76,6 +99,7 @@
 	siemens_by_part = null
 	heat_limit_by_part = null
 	cold_limit_by_part = null
+	worn_insulation = 0
 	var/list/armor_items = owner?.body_slot_items(BODY_SLOT_ARMOR)
 	var/list/insulation_items = owner?.body_slot_items(BODY_SLOT_INSULATION)
 	if(!length(armor_items) && !length(insulation_items))
@@ -115,6 +139,13 @@
 				var/current = cold_limit_by_part[part]
 				if(isnull(current) || cold < current)
 					cold_limit_by_part[part] = cold
+
+	var/insulated = NONE
+	for(var/part in heat_limit_by_part)
+		insulated |= part
+	for(var/part in cold_limit_by_part)
+		insulated |= part
+	worn_insulation = dq_thermal_surface(insulated)
 
 /// The combined worn armour (/datum/armor) on body part flag `part`; the
 /// empty armour when nothing armoured covers it. What injure()'s armour stage
@@ -157,6 +188,45 @@
 		if(heat_limit_by_part[part] >= temperature)
 			. |= part
 
+/// Fraction (0..1) of the body's surface protected from air at `temperature`:
+/// the heat limits when `temperature` is above body heat, the cold limits
+/// below. 1 means worn layers seal the body from it.
+/datum/body/proc/worn_thermal_protection(temperature, cold)
+	return dq_thermal_surface(cold ? worn_cold_flags(temperature) : worn_heat_flags(temperature))
+
+/// Surface fraction of the covered clothing layers (0..1).
+/datum/body/proc/get_worn_insulation()
+	ensure_worn_protection()
+	return worn_insulation
+
+/// Body part flag -> share of the body's surface (sums to 1).
+/proc/dq_part_thermal_weights()
+	var/static/alist/weights = alist(
+		HEAD = THERMAL_PROTECTION_HEAD,
+		UPPER_TORSO = THERMAL_PROTECTION_UPPER_TORSO,
+		LOWER_TORSO = THERMAL_PROTECTION_LOWER_TORSO,
+		LEG_LEFT = THERMAL_PROTECTION_LEG_LEFT,
+		LEG_RIGHT = THERMAL_PROTECTION_LEG_RIGHT,
+		FOOT_LEFT = THERMAL_PROTECTION_FOOT_LEFT,
+		FOOT_RIGHT = THERMAL_PROTECTION_FOOT_RIGHT,
+		ARM_LEFT = THERMAL_PROTECTION_ARM_LEFT,
+		ARM_RIGHT = THERMAL_PROTECTION_ARM_RIGHT,
+		HAND_LEFT = THERMAL_PROTECTION_HAND_LEFT,
+		HAND_RIGHT = THERMAL_PROTECTION_HAND_RIGHT,
+	)
+	return weights
+
+/// Surface share (0..1) of body part flags `flags`.
+/proc/dq_thermal_surface(flags)
+	. = 0
+	if(!flags)
+		return
+	var/alist/weights = dq_part_thermal_weights()
+	for(var/part in weights)
+		if(flags & part)
+			. += weights[part]
+	return min(., 1)
+
 /// Body part flags protected from cold at `temperature`.
 /datum/body/proc/worn_cold_flags(temperature)
 	. = 0
@@ -194,6 +264,15 @@
 			var/mob/living/L = A
 			L.worn_protection_changed()
 			return
+
+/// Worn layers slow a living mob's heat coupling to its surroundings (the heat
+/// API's conductance) by the share of its body they cover, down to
+/// WORN_INSULATION_MIN_CONDUCTANCE of bare skin when fully covered.
+/mob/living/thermal_properties()
+	. = ..()
+	var/insulation = body?.get_worn_insulation()
+	if(insulation)
+		.[THERMAL_CONDUCTANCE] *= 1 - insulation * (1 - WORN_INSULATION_MIN_CONDUCTANCE)
 
 /// Something this mob wears changed: the worn protection cache is stale.
 /mob/living/proc/worn_protection_changed()

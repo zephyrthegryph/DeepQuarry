@@ -120,9 +120,9 @@
 	mask = /obj/item/clothing/mask/gas/explorer
 	suit = /obj/item/clothing/suit/storage/hooded/explorer
 	gloves = /obj/item/clothing/gloves/black
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/exploration
-	pda_slot = slot_belt
+	pda_slot = SLOT_ID_BELT
 	pda_type = /obj/item/pda/cargo // Brown looks more rugged
 	r_pocket = /obj/item/gps/explorer
 	id_pda_assignment = JOB_EXPLORER

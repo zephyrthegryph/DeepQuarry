@@ -139,7 +139,7 @@ REF_OWNED(/obj/item/organ/internal/augment, list("integrated_object", "my_radial
 			to_chat(M, span_notice("You cannot use your augments when restrained."))
 			return 0
 
-	if((slot == slot_l_hand && get_equipped_item(SLOT_ID_HAND_L)) || (slot == slot_r_hand && get_equipped_item(SLOT_ID_HAND_R)))
+	if((slot == SLOT_ID_HAND_L && get_equipped_item(SLOT_ID_HAND_L)) || (slot == SLOT_ID_HAND_R && get_equipped_item(SLOT_ID_HAND_R)))
 		to_chat(M,span_warning("Your hand is full.  Drop something first."))
 		return 0
 

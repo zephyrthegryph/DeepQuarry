@@ -96,7 +96,7 @@
 	target.status_at_least(EFFECT_WEAKENED, 3)
 	if(!F.enter_rig())
 		return
-	target.equip_to_slot(F.rig, slot_back)
+	target.equip_to_slot(F.rig, SLOT_ID_BACK)
 	log_game("PROTEAN: [key_name(H)] latched onto [key_name(target)] at [AREACOORD(target)]")
 
 /mob/living/carbon/human/proc/nano_latch()

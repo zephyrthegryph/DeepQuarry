@@ -285,7 +285,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/mouse, INTERACT_HAND_U
 	if(self_grab)
 		to_chat(grabber, span_notice("\The [src] clambers onto you!"))
 		to_chat(src, span_notice("You climb up onto \the [grabber]!"))
-		grabber.equip_to_slot_if_possible(H, slot_back, 0, 1)
+		grabber.equip_to_slot_if_possible(H, SLOT_ID_BACK, 0, 1)
 	else
 		to_chat(grabber, span_notice("You scoop up \the [src]!"))
 		to_chat(src, span_notice("\The [grabber] scoops you up!"))

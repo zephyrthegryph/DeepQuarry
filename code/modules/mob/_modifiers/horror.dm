@@ -640,22 +640,22 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	var/obj/item/clothing/suit/A = new armor_type(M)
 	if(M.get_equipped_item(SLOT_ID_SUIT))
 		M.unEquip(M.get_equipped_item(SLOT_ID_SUIT), TRUE)
-	M.equip_to_slot_or_del(A, slot_wear_suit)
+	M.equip_to_slot_or_del(A, SLOT_ID_SUIT)
 
 	var/obj/item/clothing/suit/H = new helmet_type(M)
 	if(M.get_equipped_item(SLOT_ID_HEAD))
 		M.unEquip(M.get_equipped_item(SLOT_ID_HEAD), TRUE)
-	M.equip_to_slot_or_del(H, slot_head)
+	M.equip_to_slot_or_del(H, SLOT_ID_HEAD)
 
 	var/obj/item/clothing/shoes/B = new boot_type(M)
 	if(M.get_equipped_item(SLOT_ID_SHOES))
 		M.unEquip(M.get_equipped_item(SLOT_ID_SHOES), TRUE)
-	M.equip_to_slot_or_del(B, slot_shoes)
+	M.equip_to_slot_or_del(B, SLOT_ID_SHOES)
 
 	var/obj/item/clothing/gloves/G = new glove_type(M)
 	if(M.get_equipped_item(SLOT_ID_GLOVES))
 		M.unEquip(M.get_equipped_item(SLOT_ID_GLOVES), TRUE)
-	M.equip_to_slot_or_del(G, slot_gloves)
+	M.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
 
 	playsound(M, 'sound/effects/blobattack.ogg', 30, 1)
 	M.update_inv_wear_suit()

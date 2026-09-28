@@ -119,13 +119,13 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	if(!istype(M))
 		return 0 //not equipped
 
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_BACK) == src)
 		return 1
-	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_belt) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(SLOT_ID_BELT) == src)
 		return 1
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_SUIT_STORAGE) == src)
 		return 1
-	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_s_store) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(SLOT_ID_SUIT_STORAGE) == src)
 		return 1
 
 	return 0

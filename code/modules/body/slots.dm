@@ -24,8 +24,8 @@
 //   back, belt, uniform, suit, suit_storage, pocket_l, pocket_r   BP_TORSO
 //   id, body          none
 //
-// Not slots: slot_tie (an accessory goes on the clothing, not the body),
-// slot_in_backpack (a move into the back item's storage) and slot_legs (unused).
+// Not slots: SLOT_ID_TIE (an accessory goes on the clothing, not the body),
+// SLOT_ID_IN_BACKPACK (a move into the back item's storage) and SLOT_ID_LEGS (unused).
 //
 // Equipping, picking up, dropping and throwing are ledger moves into these
 // slots (code/modules/mob/inventory.dm); the ledger is the only record of what
@@ -42,14 +42,21 @@
 	drop_policy = SLOT_DROP_HOLDER
 	// Hits on the mob reach equipment through the zone armour (worn_protection.dm), not this path.
 	damage_transmission = list(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-	/// slot_* number the equip API names this slot by, or null.
-	var/legacy_slot
 	/// BODY_SLOT_* roles.
 	var/roles = NONE
 	/// BP_* parts that must all be present (and not stumps).
 	var/list/required_parts
 	/// BP_* parts of which at least one must be present.
 	var/list/any_parts
+	/// /mob proc that redraws this slot's overlay and HUD icon when its item changes.
+	var/redraw
+	/// Slots whose items fall out when this slot is emptied through the inventory
+	/// procs (pockets and ID with the jumpsuit, suit storage with the suit).
+	var/list/drops_with
+	/// Slot whose item can be in the way of reaching this one, and the extra
+	/// body part flags it blocks this slot by (on top of the item's own coverage).
+	var/covered_by
+	var/cover_flags = NONE
 
 /datum/om/relation/slot/body/refusal(atom/holder, atom/movable/thing, mob/actor)
 	var/mob/living/wearer = holder
@@ -87,65 +94,71 @@
 	exposure = SLOT_EXPOSURE_EXTERNAL
 
 /datum/om/relation/slot/body/hand/left
+	redraw = /mob/proc/update_inv_l_hand
 	slot_id = SLOT_ID_HAND_L
 	name = "left hand"
-	legacy_slot = slot_l_hand
 	required_parts = list(BP_L_HAND)
 
 /datum/om/relation/slot/body/hand/right
+	redraw = /mob/proc/update_inv_r_hand
 	slot_id = SLOT_ID_HAND_R
 	name = "right hand"
-	legacy_slot = slot_r_hand
 	required_parts = list(BP_R_HAND)
 
 // ---- Humanoid equipment ----
 
 /datum/om/relation/slot/body/head
+	redraw = /mob/proc/update_inv_head
 	slot_id = SLOT_ID_HEAD
 	name = "head"
-	legacy_slot = slot_head
 	accepts = /datum/predicate/equip_slot/head
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
 /datum/om/relation/slot/body/mask
+	redraw = /mob/proc/update_inv_wear_mask
+	covered_by = SLOT_ID_HEAD
+	cover_flags = FACE
 	slot_id = SLOT_ID_MASK
 	name = "mask"
-	legacy_slot = slot_wear_mask
 	accepts = /datum/predicate/equip_slot/mask
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_HEAD)
 
 /datum/om/relation/slot/body/suit
+	redraw = /mob/proc/update_inv_wear_suit
+	drops_with = list(SLOT_ID_SUIT_STORAGE)
 	slot_id = SLOT_ID_SUIT
 	name = "suit"
-	legacy_slot = slot_wear_suit
 	accepts = /datum/predicate/equip_slot/suit
 	layer = SLOT_LAYER_SUIT
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_TORSO)
 
 /datum/om/relation/slot/body/uniform
+	redraw = /mob/proc/update_inv_w_uniform
+	drops_with = list(SLOT_ID_POCKET_R, SLOT_ID_POCKET_L, SLOT_ID_ID)
+	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_UNIFORM
 	name = "uniform"
-	legacy_slot = slot_w_uniform
 	accepts = /datum/predicate/equip_slot/uniform
 	layer = SLOT_LAYER_UNIFORM
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	required_parts = list(BP_TORSO)
 
 /datum/om/relation/slot/body/gloves
+	redraw = /mob/proc/update_inv_gloves
+	covered_by = SLOT_ID_SUIT
 	slot_id = SLOT_ID_GLOVES
 	name = "gloves"
-	legacy_slot = slot_gloves
 	accepts = /datum/predicate/equip_slot/gloves
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	any_parts = list(BP_L_HAND, BP_R_HAND)
 
 /datum/om/relation/slot/body/shoes
+	redraw = /mob/proc/update_inv_shoes
 	slot_id = SLOT_ID_SHOES
 	name = "shoes"
-	legacy_slot = slot_shoes
 	accepts = /datum/predicate/equip_slot/shoes
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR | BODY_SLOT_INSULATION
 	any_parts = list(BP_L_FOOT, BP_R_FOOT)
@@ -153,57 +166,59 @@
 /// Glasses: armour (get_covering_clothing() counts them) but not conductivity
 /// or thermal protection, as before.
 /datum/om/relation/slot/body/eyes
+	redraw = /mob/proc/update_inv_glasses
+	covered_by = SLOT_ID_HEAD
+	cover_flags = EYES
 	slot_id = SLOT_ID_EYES
 	name = "eyes"
-	legacy_slot = slot_glasses
 	accepts = /datum/predicate/equip_slot/glasses
 	roles = BODY_SLOT_WORN | BODY_SLOT_ARMOR
 	required_parts = list(BP_HEAD)
 
 /datum/om/relation/slot/body/ear_left
+	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_L
 	name = "left ear"
-	legacy_slot = slot_l_ear
 	accepts = /datum/predicate/equip_slot/ear/left
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
 /datum/om/relation/slot/body/ear_right
+	redraw = /mob/proc/update_inv_ears
 	slot_id = SLOT_ID_EAR_R
 	name = "right ear"
-	legacy_slot = slot_r_ear
 	accepts = /datum/predicate/equip_slot/ear/right
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_HEAD)
 
 /datum/om/relation/slot/body/back
+	redraw = /mob/proc/update_inv_back
 	slot_id = SLOT_ID_BACK
 	name = "back"
-	legacy_slot = slot_back
 	accepts = /datum/predicate/equip_slot/back
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
 /datum/om/relation/slot/body/belt
+	redraw = /mob/proc/update_inv_belt
 	slot_id = SLOT_ID_BELT
 	name = "belt"
-	legacy_slot = slot_belt
 	accepts = /datum/predicate/equip_slot/belt
 	roles = BODY_SLOT_WORN
 	required_parts = list(BP_TORSO)
 
 /datum/om/relation/slot/body/id
+	redraw = /mob/proc/update_inv_wear_id
 	slot_id = SLOT_ID_ID
 	name = "ID"
-	legacy_slot = slot_wear_id
 	accepts = /datum/predicate/equip_slot/id
 	roles = BODY_SLOT_WORN
 
 /// Suit storage: clipped inside the suit.
 /datum/om/relation/slot/body/suit_storage
+	redraw = /mob/proc/update_inv_s_store
 	slot_id = SLOT_ID_SUIT_STORAGE
 	name = "suit storage"
-	legacy_slot = slot_s_store
 	exposure = SLOT_EXPOSURE_INTERNAL
 	accepts = /datum/predicate/equip_slot/suit_storage
 	roles = BODY_SLOT_WORN
@@ -216,26 +231,24 @@
 /datum/om/relation/slot/body/pocket/left
 	slot_id = SLOT_ID_POCKET_L
 	name = "left pocket"
-	legacy_slot = slot_l_store
 	accepts = /datum/predicate/equip_slot/pocket/left
 
 /datum/om/relation/slot/body/pocket/right
 	slot_id = SLOT_ID_POCKET_R
 	name = "right pocket"
-	legacy_slot = slot_r_store
 	accepts = /datum/predicate/equip_slot/pocket/right
 
 /datum/om/relation/slot/body/handcuffed
+	redraw = /mob/proc/update_inv_handcuffed
 	slot_id = SLOT_ID_HANDCUFFED
 	name = "wrists"
-	legacy_slot = slot_handcuffed
 	accepts = /datum/predicate/equip_slot/handcuffs
 	required_parts = list(BP_L_HAND, BP_R_HAND)
 
 /datum/om/relation/slot/body/legcuffed
+	redraw = /mob/proc/update_inv_legcuffed
 	slot_id = SLOT_ID_LEGCUFFED
 	name = "ankles"
-	legacy_slot = slot_legcuffed
 	accepts = /datum/predicate/equip_slot/legcuffs
 	required_parts = list(BP_L_FOOT, BP_R_FOOT)
 
@@ -414,7 +427,7 @@
 /// Species slots and body parts. Species gating is the species HUD's slot list
 /// (what mob_can_equip() checked); body parts are the part map above.
 /mob/living/carbon/human/body_slot_refusal(datum/om/relation/slot/body/def)
-	if(def.legacy_slot && species && !(def.legacy_slot in dq_equip_slots_of(src)))
+	if(def.slot_id != SLOT_ID_BODY && species && !(def.slot_id in dq_equip_slots_of(src)))
 		return "you have nowhere to wear it"
 	for(var/part in def.required_parts)
 		if(!has_body_part(part))

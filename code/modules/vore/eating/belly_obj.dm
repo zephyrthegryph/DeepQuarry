@@ -136,7 +136,7 @@
 	var/tmp/static/list/drainmodes = list(DR_NORMAL,DR_SLEEP,DR_FAKE,DR_WEIGHT)
 
 	//List of slots that stripping handles strips
-	var/tmp/static/list/slots = list(slot_back,slot_handcuffed,slot_l_store,slot_r_store,slot_wear_mask,slot_l_hand,slot_r_hand,slot_wear_id,slot_glasses,slot_gloves,slot_head,slot_shoes,slot_belt,slot_wear_suit,slot_w_uniform,slot_s_store,slot_l_ear,slot_r_ear)
+	var/tmp/static/list/slots = list(SLOT_ID_BACK,SLOT_ID_HANDCUFFED,SLOT_ID_POCKET_L,SLOT_ID_POCKET_R,SLOT_ID_MASK,SLOT_ID_HAND_L,SLOT_ID_HAND_R,SLOT_ID_ID,SLOT_ID_EYES,SLOT_ID_GLOVES,SLOT_ID_HEAD,SLOT_ID_SHOES,SLOT_ID_BELT,SLOT_ID_SUIT,SLOT_ID_UNIFORM,SLOT_ID_SUIT_STORAGE,SLOT_ID_EAR_L,SLOT_ID_EAR_R)
 
 	var/tmp/mob/living/owner					// The mob whose belly this is.
 	var/digest_mode = DM_HOLD				// Current mode the belly is set to from digest_modes (+transform_modes if human)

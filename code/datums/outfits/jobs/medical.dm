@@ -2,7 +2,7 @@
 	hierarchy_type = /datum/decl/hierarchy/outfit/job/medical
 	shoes = /obj/item/clothing/shoes/white
 	pda_type = /obj/item/pda/medical
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 
 	backpack = /obj/item/storage/backpack/medic
 	satchel_one = /obj/item/storage/backpack/satchel/med
@@ -111,7 +111,7 @@
 	shoes = /obj/item/clothing/shoes/boots/jackboots
 	l_hand = /obj/item/storage/firstaid/regular
 	belt = /obj/item/storage/belt/medical/emt
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 	id_type = /obj/item/card/id/medical/emt
 	flags = OUTFIT_HAS_BACKPACK|OUTFIT_EXTENDED_SURVIVAL
 

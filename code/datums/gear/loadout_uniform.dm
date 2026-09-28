@@ -7,7 +7,7 @@
 /datum/gear/uniform
 	display_name = "blazer, blue"
 	path = /obj/item/clothing/under/blazer
-	slot = slot_w_uniform
+	slot = SLOT_ID_UNIFORM
 	sort_category = "Casual Dress"
 
 /datum/gear/uniform/blazerskirt

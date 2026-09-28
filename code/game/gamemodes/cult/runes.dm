@@ -1174,10 +1174,10 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	user.visible_message(span_warning("The rune disappears with a flash of red light, and a set of armor appears on [user]..."), \
 	span_warning("You are blinded by the flash of red light! After you're able to see again, you see that you are now wearing a set of armor."))
 
-	H.equip_to_slot_or_del(new /obj/item/clothing/head/culthood/alt(H), slot_head)
-	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cultrobes/alt(H), slot_wear_suit)
-	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/cult(H), slot_shoes)
-	H.equip_to_slot_or_del(new /obj/item/storage/backpack/cultpack(H), slot_back)
+	H.equip_to_slot_or_del(new /obj/item/clothing/head/culthood/alt(H), SLOT_ID_HEAD)
+	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cultrobes/alt(H), SLOT_ID_SUIT)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/cult(H), SLOT_ID_SHOES)
+	H.equip_to_slot_or_del(new /obj/item/storage/backpack/cultpack(H), SLOT_ID_BACK)
 	//the above update their overlay icons cache but do not call update_icons()
 	//the below calls update_icons() at the end, which will update overlay icons by using the (now updated) cache
 	H.put_in_hands(new /obj/item/melee/cultblade(H))	//put in hands or on floor

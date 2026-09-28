@@ -236,14 +236,14 @@
 
 				if(G.slot && !(G.slot in equipped_slots))
 					// Evict whatever the job equipped here so the loadout item takes priority.
-					// Skip eviction for slot_tie since it's the multi-allowed accessory slot.
-					if(G.slot != slot_tie)
+					// Skip eviction for SLOT_ID_TIE since it's the multi-allowed accessory slot.
+					if(G.slot != SLOT_ID_TIE)
 						var/obj/item/existing = mannequin.get_equipped_item(G.slot)
 						if(existing)
 							consume(existing, mannequin)
 					var/metadata = active_gear_list[G.display_name]
 					if(mannequin.equip_to_slot_or_del(G.spawn_item(mannequin, metadata), G.slot))
-						if(G.slot != slot_tie)
+						if(G.slot != SLOT_ID_TIE)
 							equipped_slots += G.slot
 
 // Preview rebuild runs synchronously so pref changes feel instant; only

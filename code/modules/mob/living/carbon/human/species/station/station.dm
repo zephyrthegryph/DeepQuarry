@@ -199,7 +199,7 @@
 
 /datum/species/unathi/equip_survival_gear(mob/living/carbon/human/H)
 	..()
-	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),SLOT_ID_SHOES)
 
 /datum/species/tajaran
 	name = SPECIES_TAJARAN
@@ -314,7 +314,7 @@
 
 /datum/species/tajaran/equip_survival_gear(mob/living/carbon/human/H)
 	..()
-	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),SLOT_ID_SHOES)
 
 /datum/species/skrell
 	name = SPECIES_SKRELL
@@ -522,14 +522,14 @@
 	if(H.get_equipped_item(SLOT_ID_HEAD))
 		H.slot_clear(SLOT_ID_HEAD)
 
-	H.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/zaddat/(H), slot_wear_mask) // mask has to come first or Shroud helmet will get in the way
-	H.equip_to_slot_or_del(new /obj/item/clothing/suit/space/void/zaddat/(H), slot_wear_suit)
+	H.equip_to_slot_or_del(new /obj/item/clothing/mask/gas/zaddat/(H), SLOT_ID_MASK) // mask has to come first or Shroud helmet will get in the way
+	H.equip_to_slot_or_del(new /obj/item/clothing/suit/space/void/zaddat/(H), SLOT_ID_SUIT)
 
 	var/obj/item/storage/toolbox/lunchbox/survival/zaddat/L = new(get_turf(H))
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(L, slot_r_hand)
+		H.equip_to_slot_or_del(L, SLOT_ID_HAND_R)
 	else
-		H.equip_to_slot_or_del(L, slot_in_backpack)
+		H.equip_to_slot_or_del(L, SLOT_ID_IN_BACKPACK)
 
 /datum/species/diona
 
@@ -639,9 +639,9 @@
 
 /datum/species/diona/equip_survival_gear(mob/living/carbon/human/H)
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H), slot_r_hand)
+		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H), SLOT_ID_HAND_R)
 	else
-		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H.get_equipped_item(SLOT_ID_BACK)), slot_in_backpack)
+		H.equip_to_slot_or_del(new /obj/item/flashlight/flare(H.get_equipped_item(SLOT_ID_BACK)), SLOT_ID_IN_BACKPACK)
 
 /datum/species/diona/handle_post_spawn(mob/living/carbon/human/H)
 	H.gender = NEUTER
@@ -1226,7 +1226,7 @@
 /datum/species/teshari/equip_survival_gear(mob/living/carbon/human/H)
 	..()
 	// if(!(H.client?.prefs?.shoe_hater)) // . Disables shoe_hater. Un-indents below line by 1.
-	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),SLOT_ID_SHOES)
 /*
 /datum/species/teshari/handle_falling(mob/living/carbon/human/H, atom/hit_atom, damage_min, damage_max, silent, planetary)
 

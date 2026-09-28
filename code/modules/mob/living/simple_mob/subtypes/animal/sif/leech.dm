@@ -265,11 +265,9 @@
 			to_chat(src,"\The [H] does not have an infestable [infest_target]!")
 			return
 
-		var/list/covering_clothing = E.get_covering_clothing()
-		for(var/obj/item/clothing/C in covering_clothing)
-			if(C.get_armor().value("melee") >= 20 + attack_armor_pen)
-				to_chat(user, span_notice("We cannot get through that host's protective gear."))
-				return
+		if(H.body.worn_armor(E.body_part, MELEE) >= 20 + attack_armor_pen)
+			to_chat(user, span_notice("We cannot get through that host's protective gear."))
+			return
 
 	om_task_start(/datum/om/task/timed/leech_do_infest_leech, src, M, user = user, M = M)
 	return TRUE
@@ -388,11 +386,9 @@
 		to_chat(src,"\The [H] does not have an infestable [infest_target]!")
 		return
 
-	var/list/covering_clothing = E.get_covering_clothing()
-	for(var/obj/item/clothing/C in covering_clothing)
-		if(C.get_armor().value("melee") >= 40 + attack_armor_pen)
-			to_chat(user, span_notice("You cannot get through that host's protective gear."))
-			return
+	if(H.body.worn_armor(E.body_part, MELEE) >= 40 + attack_armor_pen)
+		to_chat(user, span_notice("You cannot get through that host's protective gear."))
+		return
 
 	H.lingering_poison(0.75, 15 SECONDS, src, TRUE)
 	H.status_at_least(EFFECT_PARALYZED, 4)

@@ -14,7 +14,7 @@
 
 	parent_organ = BP_L_ARM
 
-	target_slot = slot_l_hand
+	target_slot = SLOT_ID_HAND_L
 
 	target_parent_classes = list(ORGAN_FLESH, ORGAN_ROBOT, ORGAN_NANOFORM)
 
@@ -25,11 +25,11 @@
 		if(O_AUG_L_FOREARM)
 			organ_tag = O_AUG_R_FOREARM
 			parent_organ = BP_R_ARM
-			target_slot = slot_r_hand
+			target_slot = SLOT_ID_HAND_R
 		if(O_AUG_R_FOREARM)
 			organ_tag = O_AUG_L_FOREARM
 			parent_organ = BP_L_ARM
-			target_slot = slot_l_hand
+			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the lower [parent_organ] mount."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -62,7 +62,7 @@
 	// Needs to be redefined here, or the switch statement beneath with no default case can never change target limb... Also prevents putting it in your shoulder when it's a hand implant.
 	organ_tag = O_AUG_R_HAND
 	parent_organ = BP_R_HAND
-	target_slot = slot_r_hand
+	target_slot = SLOT_ID_HAND_R
 
 	integrated_object_type = null
 
@@ -71,11 +71,11 @@
 		if(O_AUG_L_HAND)
 			organ_tag = O_AUG_R_HAND
 			parent_organ = BP_R_HAND
-			target_slot = slot_r_hand
+			target_slot = SLOT_ID_HAND_R
 		if(O_AUG_R_HAND)
 			organ_tag = O_AUG_L_HAND
 			parent_organ = BP_L_HAND
-			target_slot = slot_l_hand
+			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -103,7 +103,7 @@
 
 	organ_tag = O_AUG_R_UPPERARM
 	parent_organ = BP_R_ARM
-	target_slot = slot_r_hand
+	target_slot = SLOT_ID_HAND_R
 
 	w_class = ITEMSIZE_HUGE
 
@@ -114,11 +114,11 @@
 		if(O_AUG_L_UPPERARM)
 			organ_tag = O_AUG_R_UPPERARM
 			parent_organ = BP_R_ARM
-			target_slot = slot_r_hand
+			target_slot = SLOT_ID_HAND_R
 		if(O_AUG_R_UPPERARM)
 			organ_tag = O_AUG_L_UPPERARM
 			parent_organ = BP_L_ARM
-			target_slot = slot_l_hand
+			target_slot = SLOT_ID_HAND_L
 	to_chat(user, span_notice("You swap \the [src]'s servos to install neatly into \the upper [parent_organ] mount."))
 	return ITEM_INTERACT_SUCCESS
 

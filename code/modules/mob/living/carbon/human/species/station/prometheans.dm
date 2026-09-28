@@ -152,9 +152,9 @@
 	new /obj/item/reagent_containers/food/snacks/candy/proteinbar(L)
 	new /obj/item/tool/prybar/red(L)
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(L, slot_r_hand)
+		H.equip_to_slot_or_del(L, SLOT_ID_HAND_R)
 	else
-		H.equip_to_slot_or_del(L, slot_in_backpack)
+		H.equip_to_slot_or_del(L, SLOT_ID_IN_BACKPACK)
 
 /datum/species/shapeshifter/promethean/hug(mob/living/carbon/human/H, mob/living/target)
 	var/static/list/parent_handles = list("head", "r_hand", "l_hand", "mouth")
@@ -306,7 +306,7 @@
 	EVENT_HANDLER
 	var/obj/item/equipped_item = event.equipped_item
 	var/slot = event.slot
-	if(slot != slot_l_hand && slot != slot_r_hand)
+	if(slot != SLOT_ID_HAND_L && slot != SLOT_ID_HAND_R)
 		return
 	if(source.get_equipped_item(SLOT_ID_GLOVES) || (source.get_equipped_item(SLOT_ID_SUIT) && (source.get_equipped_item(SLOT_ID_SUIT).body_parts_covered & HANDS)))
 		return

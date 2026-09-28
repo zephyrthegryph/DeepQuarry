@@ -6,7 +6,7 @@
 	r_pocket = /obj/item/spacecash/ewallet
 	l_pocket = /obj/item/survivalcapsule/superpose
 
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/external // No access, allows activating PDA's.
 
 	flags = OUTFIT_HAS_BACKPACK|OUTFIT_EXTENDED_SURVIVAL|OUTFIT_COMPREHENSIVE_SURVIVAL
@@ -40,7 +40,7 @@
 	r_pocket = /obj/item/spacecash/ewallet
 	l_pocket = /obj/item/survivalcapsule/superpose //Kind of want this removed, but I don't have the energy for this plus other kin change discussion
 
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/external // No access, allows activating PDA's.
 
 	flags = OUTFIT_HAS_BACKPACK|OUTFIT_EXTENDED_SURVIVAL|OUTFIT_COMPREHENSIVE_SURVIVAL

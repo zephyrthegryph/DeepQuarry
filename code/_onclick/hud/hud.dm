@@ -237,43 +237,43 @@ REF_OWNED_VALUES(/datum/hud, "ammo_hud_list")
 			var/list/hud_data = H.species.hud.gear[gear_slot]
 			if(inventory_shown && hud_shown)
 				switch(hud_data["slot"])
-					if(slot_head)
+					if(SLOT_ID_HEAD)
 						if(H.get_equipped_item(SLOT_ID_HEAD))      H.get_equipped_item(SLOT_ID_HEAD).screen_loc =      hud_data["loc"]
-					if(slot_shoes)
+					if(SLOT_ID_SHOES)
 						if(H.get_equipped_item(SLOT_ID_SHOES))     H.get_equipped_item(SLOT_ID_SHOES).screen_loc =     hud_data["loc"]
-					if(slot_l_ear)
+					if(SLOT_ID_EAR_L)
 						if(H.get_equipped_item(SLOT_ID_EAR_L))     H.get_equipped_item(SLOT_ID_EAR_L).screen_loc =     hud_data["loc"]
-					if(slot_r_ear)
+					if(SLOT_ID_EAR_R)
 						if(H.get_equipped_item(SLOT_ID_EAR_R))     H.get_equipped_item(SLOT_ID_EAR_R).screen_loc =     hud_data["loc"]
-					if(slot_gloves)
+					if(SLOT_ID_GLOVES)
 						if(H.get_equipped_item(SLOT_ID_GLOVES))    H.get_equipped_item(SLOT_ID_GLOVES).screen_loc =    hud_data["loc"]
-					if(slot_glasses)
+					if(SLOT_ID_EYES)
 						if(H.get_equipped_item(SLOT_ID_EYES))   H.get_equipped_item(SLOT_ID_EYES).screen_loc =   hud_data["loc"]
-					if(slot_w_uniform)
+					if(SLOT_ID_UNIFORM)
 						if(H.get_equipped_item(SLOT_ID_UNIFORM)) H.get_equipped_item(SLOT_ID_UNIFORM).screen_loc = hud_data["loc"]
-					if(slot_wear_suit)
+					if(SLOT_ID_SUIT)
 						if(H.get_equipped_item(SLOT_ID_SUIT)) H.get_equipped_item(SLOT_ID_SUIT).screen_loc = hud_data["loc"]
-					if(slot_wear_mask)
+					if(SLOT_ID_MASK)
 						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = hud_data["loc"]
 			else
 				switch(hud_data["slot"])
-					if(slot_head)
+					if(SLOT_ID_HEAD)
 						if(H.get_equipped_item(SLOT_ID_HEAD))      H.get_equipped_item(SLOT_ID_HEAD).screen_loc =      null
-					if(slot_shoes)
+					if(SLOT_ID_SHOES)
 						if(H.get_equipped_item(SLOT_ID_SHOES))     H.get_equipped_item(SLOT_ID_SHOES).screen_loc =     null
-					if(slot_l_ear)
+					if(SLOT_ID_EAR_L)
 						if(H.get_equipped_item(SLOT_ID_EAR_L))     H.get_equipped_item(SLOT_ID_EAR_L).screen_loc =     null
-					if(slot_r_ear)
+					if(SLOT_ID_EAR_R)
 						if(H.get_equipped_item(SLOT_ID_EAR_R))     H.get_equipped_item(SLOT_ID_EAR_R).screen_loc =     null
-					if(slot_gloves)
+					if(SLOT_ID_GLOVES)
 						if(H.get_equipped_item(SLOT_ID_GLOVES))    H.get_equipped_item(SLOT_ID_GLOVES).screen_loc =    null
-					if(slot_glasses)
+					if(SLOT_ID_EYES)
 						if(H.get_equipped_item(SLOT_ID_EYES))   H.get_equipped_item(SLOT_ID_EYES).screen_loc =   null
-					if(slot_w_uniform)
+					if(SLOT_ID_UNIFORM)
 						if(H.get_equipped_item(SLOT_ID_UNIFORM)) H.get_equipped_item(SLOT_ID_UNIFORM).screen_loc = null
-					if(slot_wear_suit)
+					if(SLOT_ID_SUIT)
 						if(H.get_equipped_item(SLOT_ID_SUIT)) H.get_equipped_item(SLOT_ID_SUIT).screen_loc = null
-					if(slot_wear_mask)
+					if(SLOT_ID_MASK)
 						if(H.get_equipped_item(SLOT_ID_MASK)) H.get_equipped_item(SLOT_ID_MASK).screen_loc = null
 
 /datum/hud/proc/persistant_inventory_update()
@@ -286,31 +286,31 @@ REF_OWNED_VALUES(/datum/hud, "ammo_hud_list")
 			var/list/hud_data = H.species.hud.gear[gear_slot]
 			if(hud_shown)
 				switch(hud_data["slot"])
-					if(slot_s_store)
+					if(SLOT_ID_SUIT_STORAGE)
 						if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) H.get_equipped_item(SLOT_ID_SUIT_STORAGE).screen_loc = hud_data["loc"]
-					if(slot_wear_id)
+					if(SLOT_ID_ID)
 						if(H.get_equipped_item(SLOT_ID_ID)) H.get_equipped_item(SLOT_ID_ID).screen_loc = hud_data["loc"]
-					if(slot_belt)
+					if(SLOT_ID_BELT)
 						if(H.get_equipped_item(SLOT_ID_BELT))    H.get_equipped_item(SLOT_ID_BELT).screen_loc =    hud_data["loc"]
-					if(slot_back)
+					if(SLOT_ID_BACK)
 						if(H.get_equipped_item(SLOT_ID_BACK))    H.get_equipped_item(SLOT_ID_BACK).screen_loc =    hud_data["loc"]
-					if(slot_l_store)
+					if(SLOT_ID_POCKET_L)
 						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = hud_data["loc"]
-					if(slot_r_store)
+					if(SLOT_ID_POCKET_R)
 						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = hud_data["loc"]
 			else
 				switch(hud_data["slot"])
-					if(slot_s_store)
+					if(SLOT_ID_SUIT_STORAGE)
 						if(H.get_equipped_item(SLOT_ID_SUIT_STORAGE)) H.get_equipped_item(SLOT_ID_SUIT_STORAGE).screen_loc = null
-					if(slot_wear_id)
+					if(SLOT_ID_ID)
 						if(H.get_equipped_item(SLOT_ID_ID)) H.get_equipped_item(SLOT_ID_ID).screen_loc = null
-					if(slot_belt)
+					if(SLOT_ID_BELT)
 						if(H.get_equipped_item(SLOT_ID_BELT))    H.get_equipped_item(SLOT_ID_BELT).screen_loc =    null
-					if(slot_back)
+					if(SLOT_ID_BACK)
 						if(H.get_equipped_item(SLOT_ID_BACK))    H.get_equipped_item(SLOT_ID_BACK).screen_loc =    null
-					if(slot_l_store)
+					if(SLOT_ID_POCKET_L)
 						if(H.get_equipped_item(SLOT_ID_POCKET_L)) H.get_equipped_item(SLOT_ID_POCKET_L).screen_loc = null
-					if(slot_r_store)
+					if(SLOT_ID_POCKET_R)
 						if(H.get_equipped_item(SLOT_ID_POCKET_R)) H.get_equipped_item(SLOT_ID_POCKET_R).screen_loc = null
 
 /datum/hud/proc/instantiate()

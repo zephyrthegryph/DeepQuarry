@@ -30,13 +30,13 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 			to_chat(traitor_mob, "Unfortunately, a headset could not be found.  You have been given an encryption key \
 			to put into a new headset.  Once that is done, you can talk to your team using <b>:t</b>")
 			var/obj/item/encryptionkey/syndicate/encrypt_key = new(null)
-			traitor_mob.equip_to_slot_or_del(encrypt_key, slot_in_backpack)
+			traitor_mob.equip_to_slot_or_del(encrypt_key, SLOT_ID_IN_BACKPACK)
 		else
 			var/obj/item/encryptionkey/syndicate/encrypt_key = new(null)
 			if(R.keyslot1 && R.keyslot2) // No room.
 				to_chat(traitor_mob, "Unfortunately, your headset cannot accept anymore encryption keys.  You have been given an encryption key \
 				to put into a headset after making some room instead.  Once that is done, you can talk to your team using <b>:t</b>")
-				traitor_mob.equip_to_slot_or_del(encrypt_key, slot_in_backpack)
+				traitor_mob.equip_to_slot_or_del(encrypt_key, SLOT_ID_IN_BACKPACK)
 			else
 				if(R.keyslot1)
 					R.keyslot2 = encrypt_key

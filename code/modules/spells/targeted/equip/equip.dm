@@ -14,7 +14,6 @@
 	for(var/mob/living/L in targets)
 		for(var/slot_id in equipped_summons)
 			var/to_create = LAZYACCESS(equipped_summons, slot_id)
-			slot_id = text2num(slot_id) //because the index is text, we access this instead
 			var/obj/item/new_item = summon_item(to_create)
 			var/obj/item/old_item = L.get_equipped_item(slot_id)
 			L.equip_to_slot(new_item, slot_id)

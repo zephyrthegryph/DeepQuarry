@@ -182,7 +182,7 @@ REF_VAR(/mob/living, OWNED, /datum/shadekin, shadekin)
 	var/darkness = 1
 	var/dark_gains = 0
 
-	var/suit = owner.get_equipped_item(slot_wear_suit)
+	var/suit = owner.get_equipped_item(SLOT_ID_SUIT)
 	if(istype(suit, /obj/item/clothing/suit/space/rig))
 		if(dark_energy)
 			to_chat(owner, span_warning("You feel your energy waning and your powers being blocked from the heavy equipment you're wearing!"))

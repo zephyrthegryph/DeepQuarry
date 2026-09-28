@@ -25,7 +25,7 @@
 	if(!H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		return
 	user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
-	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), slot_glasses, ignore_obstructions = FALSE)
+	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), SLOT_ID_EYES, ignore_obstructions = FALSE)
 	H.update_inv_glasses()
 	playsound(src, 'sound/effects/tape.ogg',25)
 
@@ -35,7 +35,7 @@
 	if(!H.organs_by_name[BP_HEAD] || !H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		return
 	user.visible_message(span_danger("\The [user] has taped up \the [H]'s mouth!"))
-	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), slot_wear_mask, ignore_obstructions = FALSE)
+	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), SLOT_ID_MASK, ignore_obstructions = FALSE)
 	H.update_inv_wear_mask()
 	playsound(src, 'sound/effects/tape.ogg',25)
 

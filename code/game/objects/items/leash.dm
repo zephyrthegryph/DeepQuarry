@@ -288,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 /obj/item/leash/proc/drop_effects(mob/user)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/mob/living/leash_master = src?.leash_master()
-	if(leash_master && (leash_master.item_is_in_hands(src) || leash_master.get_item_by_slot(SLOT_TIE) == src))
+	if(leash_master && (leash_master.item_is_in_hands(src) || leash_master.isEquipped(src)))
 		return  //Dom still has the leash as it turns out. Cancel the proc.
 	if(leash_master)
 		leash_master.visible_message(span_notice("\The [leash_master] drops \the [src]."), span_notice("You drop \the [src]."))
@@ -339,7 +339,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 /obj/item/leash/proc/is_wearing_collar(mob/living/carbon/human/human)
 	if (!istype(human))
 		return FALSE
-	for (var/obj/item/clothing/worn in human.worn_clothing)
+	for (var/obj/item/clothing/worn in human.get_worn_clothing())
 		if (istype(worn, /obj/item/clothing/accessory/collar) || (locate(/obj/item/clothing/accessory/collar) in worn.accessories))
 			return TRUE
 	return FALSE

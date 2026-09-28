@@ -7,13 +7,13 @@
 /datum/gear/eyes
 	display_name = "eyepatch"
 	path = /obj/item/clothing/glasses/eyepatch
-	slot = slot_glasses
+	slot = SLOT_ID_EYES
 	sort_category = "Glasses and Eyewear"
 
 /datum/gear/eyes/eyepatchwhite
 	display_name = "eyepatch (recolorable)"
 	path = /obj/item/clothing/glasses/eyepatchwhite
-	slot = slot_glasses
+	slot = SLOT_ID_EYES
 	sort_category = "Glasses and Eyewear"
 
 /datum/gear/eyes/eyepatchwhite/New()

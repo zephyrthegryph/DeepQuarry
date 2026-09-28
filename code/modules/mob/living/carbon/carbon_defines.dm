@@ -31,8 +31,6 @@
 	var/last_taste_time = 0
 	var/last_taste_text = ""
 
-	///Only used by humans. Kept by the slot signals (inventory_slot_changed()).
-	var/list/worn_clothing	//Contains all CLOTHING items worn. Lazy.
 
 // bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):
 // left set, it and the holder's my_atom would keep each other alive.

@@ -133,11 +133,11 @@
 	var/mob/M = loc
 	if(!istype(M))
 		return FALSE
-	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(slot_back) == src)
+	if(HAS_TAG(src, TAG_WEAR_BACK) && M.get_equipped_item(SLOT_ID_BACK) == src)
 		return TRUE
-	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(slot_belt) == src)
+	if(HAS_TAG(src, TAG_WEAR_BELT) && M.get_equipped_item(SLOT_ID_BELT) == src)
 		return TRUE
-	if(M.get_equipped_item(slot_s_store) == src) // There is no flag for this, just a whitelist on the suits themselves
+	if(M.get_equipped_item(SLOT_ID_SUIT_STORAGE) == src) // There is no flag for this, just a whitelist on the suits themselves
 		return TRUE
 	return FALSE
 

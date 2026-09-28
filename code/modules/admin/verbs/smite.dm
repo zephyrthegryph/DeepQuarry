@@ -392,7 +392,7 @@ GLOBAL_VAR(redspace_abduction_z)
 		H.unEquip(H.get_equipped_item(SLOT_ID_SUIT))
 	var/obj/item/clothing/suit = new /obj/item/clothing/suit/storage/hooded/foodcostume/hotdog
 	var/obj/item/clothing/hood = new /obj/item/clothing/head/hood_vr/hotdog_hood
-	H.equip_to_slot_if_possible(suit, slot_wear_suit, 0, 0, 1)
-	H.equip_to_slot_if_possible(hood, slot_head, 0, 0, 1)
+	H.equip_to_slot_if_possible(suit, SLOT_ID_SUIT, 0, 0, 1)
+	H.equip_to_slot_if_possible(hood, SLOT_ID_HEAD, 0, 0, 1)
 	om_qdel_after(suit, 5 SECONDS)
 	om_qdel_after(hood, 5 SECONDS)

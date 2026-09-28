@@ -5,9 +5,9 @@
 	gloves = /obj/item/clothing/gloves/white
 	glasses = /obj/item/clothing/glasses/sunglasses
 
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/centcom	//station
-	pda_slot = slot_r_store
+	pda_slot = SLOT_ID_POCKET_R
 	pda_type = /obj/item/pda/heads
 
 	headset = /obj/item/radio/headset/heads/hop

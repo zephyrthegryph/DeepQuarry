@@ -5,9 +5,9 @@
 	uniform = /obj/item/clothing/under/color/grey
 	shoes = /obj/item/clothing/shoes/black
 
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/civilian
-	pda_slot = slot_belt
+	pda_slot = SLOT_ID_BELT
 	pda_type = /obj/item/pda
 
 	flags = OUTFIT_HAS_BACKPACK

@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 
 /obj/item/clothing/mask/chewable/equipped(mob/living/user, slot)
 	..()
-	if(slot == slot_wear_mask)
+	if(slot == SLOT_ID_MASK)
 		var/mob/living/carbon/human/C = user
 		if(C.check_has_mouth())
 			PERIODIC_START(src, PERIODIC_SECOND)
@@ -93,7 +93,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 			if(M.get_equipped_item(SLOT_ID_MASK))
 				M.remove_from_mob(src) //un-equip it so the overlays can update
 				M.update_inv_wear_mask(0)
-				if(!M.equip_to_slot_if_possible(butt, slot_wear_mask))
+				if(!M.equip_to_slot_if_possible(butt, SLOT_ID_MASK))
 					M.update_inv_l_hand(0)
 					M.update_inv_r_hand(1)
 					M.put_in_hands(butt)

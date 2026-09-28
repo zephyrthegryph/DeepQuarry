@@ -2,7 +2,7 @@
 /datum/gear/suit
 	display_name = "apron, blue"
 	path = /obj/item/clothing/suit/storage/apron
-	slot = slot_wear_suit
+	slot = SLOT_ID_SUIT
 	sort_category = "Suits and Overwear"
 	cost = 1
 

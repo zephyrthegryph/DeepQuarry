@@ -29,7 +29,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	var/r_hand = null
 	var/l_hand = null
 	// In the list(path=count,otherpath=count) format
-	var/list/uniform_accessories // webbing, armbands etc - fits in slot_tie
+	var/list/uniform_accessories // webbing, armbands etc - fits in SLOT_ID_TIE
 	var/list/backpack_contents
 
 	var/id_type
@@ -101,7 +101,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	for(var/path in backpack_contents)
 		var/number = LAZYACCESS(backpack_contents, path)
 		for(var/i=0,i<number,i++)
-			H.equip_to_slot_or_del(new path(H), slot_in_backpack)
+			H.equip_to_slot_or_del(new path(H), SLOT_ID_IN_BACKPACK)
 
 	post_equip(H)
 
@@ -114,40 +114,40 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 
 	//Start with uniform,suit,backpack for additional slots
 	if(uniform)
-		H.equip_to_slot_or_del(new uniform(H),slot_w_uniform)
+		H.equip_to_slot_or_del(new uniform(H),SLOT_ID_UNIFORM)
 	if(suit)
 		// no_jacket pref deleted; always equip the default suit. Players who don't
 		// want it pick an alternate uniform via the regular loadout system.
-		H.equip_to_slot_or_del(new suit(H),slot_wear_suit)
+		H.equip_to_slot_or_del(new suit(H),SLOT_ID_SUIT)
 	if(back)
-		H.equip_to_slot_or_del(new back(H),slot_back)
+		H.equip_to_slot_or_del(new back(H),SLOT_ID_BACK)
 	if(belt)
-		H.equip_to_slot_or_del(new belt(H),slot_belt)
+		H.equip_to_slot_or_del(new belt(H),SLOT_ID_BELT)
 	if(gloves)
-		H.equip_to_slot_or_del(new gloves(H),slot_gloves)
+		H.equip_to_slot_or_del(new gloves(H),SLOT_ID_GLOVES)
 	if(shoes)
 	// remove RS No shoes
 	//	if(!(H.client?.prefs?.shoe_hater))	//RS ADD
-		H.equip_to_slot_or_del(new shoes(H),slot_shoes)
+		H.equip_to_slot_or_del(new shoes(H),SLOT_ID_SHOES)
 	// remove RS No Shoes
 	if(mask)
-		H.equip_to_slot_or_del(new mask(H),slot_wear_mask)
+		H.equip_to_slot_or_del(new mask(H),SLOT_ID_MASK)
 	if(head)
-		H.equip_to_slot_or_del(new head(H),slot_head)
+		H.equip_to_slot_or_del(new head(H),SLOT_ID_HEAD)
 	if(l_ear)
-		H.equip_to_slot_or_del(new l_ear(H),slot_l_ear)
+		H.equip_to_slot_or_del(new l_ear(H),SLOT_ID_EAR_L)
 	if(r_ear)
-		H.equip_to_slot_or_del(new r_ear(H),slot_r_ear)
+		H.equip_to_slot_or_del(new r_ear(H),SLOT_ID_EAR_R)
 	if(glasses)
-		H.equip_to_slot_or_del(new glasses(H),slot_glasses)
+		H.equip_to_slot_or_del(new glasses(H),SLOT_ID_EYES)
 	if(id)
-		H.equip_to_slot_or_del(new id(H),slot_wear_id)
+		H.equip_to_slot_or_del(new id(H),SLOT_ID_ID)
 	if(l_pocket)
-		H.equip_to_slot_or_del(new l_pocket(H),slot_l_store)
+		H.equip_to_slot_or_del(new l_pocket(H),SLOT_ID_POCKET_L)
 	if(r_pocket)
-		H.equip_to_slot_or_del(new r_pocket(H),slot_r_store)
+		H.equip_to_slot_or_del(new r_pocket(H),SLOT_ID_POCKET_R)
 	if(suit_store)
-		H.equip_to_slot_or_del(new suit_store(H),slot_s_store)
+		H.equip_to_slot_or_del(new suit_store(H),SLOT_ID_SUIT_STORAGE)
 
 	if(l_hand)
 		H.put_in_l_hand(new l_hand(H))
@@ -157,7 +157,7 @@ GLOBAL_DATUM_INIT(outfits_decls_root, /datum/decl/hierarchy/outfit, new) // Rewu
 	for(var/path in uniform_accessories)
 		var/number = LAZYACCESS(uniform_accessories, path)
 		for(var/i=0,i<number,i++)
-			H.equip_to_slot_or_del(new path(H), slot_tie)
+			H.equip_to_slot_or_del(new path(H), SLOT_ID_TIE)
 
 	if(H.species)
 		H.species.equip_survival_gear(H, flags&OUTFIT_EXTENDED_SURVIVAL, flags&OUTFIT_COMPREHENSIVE_SURVIVAL)
@@ -331,8 +331,8 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	name = OUTFIT_JOB_NAME(JOB_EXPLORER)
 	shoes = /obj/item/clothing/shoes/boots/winter/explorer
 	uniform = /obj/item/clothing/under/explorer
-	id_slot = slot_wear_id
-	pda_slot = slot_l_store
+	id_slot = SLOT_ID_ID
+	pda_slot = SLOT_ID_POCKET_L
 	pda_type = /obj/item/pda/explorer
 	id_type = /obj/item/card/id/exploration
 	id_pda_assignment = JOB_EXPLORER
@@ -353,8 +353,8 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	gloves = /obj/item/clothing/gloves/fingerless
 	glasses = /obj/item/clothing/glasses/fakesunglasses/aviator
 	uniform_accessories = list(/obj/item/clothing/accessory/storage/webbing/pilot1 = 1)
-	id_slot = slot_wear_id
-	pda_slot = slot_belt
+	id_slot = SLOT_ID_ID
+	pda_slot = SLOT_ID_BELT
 	pda_type = /obj/item/pda/pilot
 	id_type = /obj/item/card/id/civilian/pilot
 	id_pda_assignment = JOB_PILOT
@@ -371,7 +371,7 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	shoes = /obj/item/clothing/shoes/boots/winter/explorer
 	l_hand = /obj/item/storage/firstaid/regular
 	belt = /obj/item/storage/belt/medical/emt
-	pda_slot = slot_l_store
+	pda_slot = SLOT_ID_POCKET_L
 	pda_type = /obj/item/pda/sar
 	id_type = /obj/item/card/id/exploration/fm
 	id_pda_assignment = JOB_FIELD_MEDIC
@@ -388,8 +388,8 @@ Keep outfits simple. Spawn with basic uniforms and minimal gear. Gear instead go
 	name = OUTFIT_JOB_NAME(JOB_PATHFINDER)
 	shoes = /obj/item/clothing/shoes/boots/winter/explorer
 	uniform = /obj/item/clothing/under/explorer //TODO: Uniforms.
-	id_slot = slot_wear_id
-	pda_slot = slot_l_store
+	id_slot = SLOT_ID_ID
+	pda_slot = SLOT_ID_POCKET_L
 	pda_type = /obj/item/pda/pathfinder
 	id_type = /obj/item/card/id/exploration/head
 	id_pda_assignment = JOB_PATHFINDER

@@ -32,7 +32,7 @@
 	glasses = /obj/item/clothing/glasses/thermal/plain/eyepatch
 	suit = /obj/item/clothing/suit/hgpirate
 
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/centcom	//station
 	id_pda_assignment = "Admiral"
 
@@ -44,9 +44,9 @@
 	name = "Merchant"
 	shoes = /obj/item/clothing/shoes/black
 	uniform = /obj/item/clothing/under/color/grey
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/civilian	//merchant
-	pda_slot = slot_r_store
+	pda_slot = SLOT_ID_POCKET_R
 	pda_type = /obj/item/pda/chef //cause I like the look
 	id_pda_assignment = "Merchant"
 
@@ -67,9 +67,9 @@
 
 /datum/decl/hierarchy/outfit/maint_lurker
 	name = "Maintenance Lurker Outfit"
-	id_slot = slot_wear_id
+	id_slot = SLOT_ID_ID
 	id_type = /obj/item/card/id/civilian/lurker
-	pda_slot = slot_belt
+	pda_slot = SLOT_ID_BELT
 	pda_type = /obj/item/pda
 	id_pda_assignment = "NO DATA"
 
@@ -90,4 +90,4 @@
 /datum/decl/hierarchy/outfit/maint_lurker/post_equip(mob/living/carbon/human/H)
 	..()
 	if(H.backbag == 1)
-		H.equip_to_slot_or_del(new /obj/item/spacecash/c200(H), slot_l_hand)
+		H.equip_to_slot_or_del(new /obj/item/spacecash/c200(H), SLOT_ID_HAND_L)

@@ -519,41 +519,18 @@ emp_act
 	var/penetrated_dam = max(0,(damage - SS.breach_threshold))
 	if(penetrated_dam) SS.create_breaches(breach_type, penetrated_dam)
 
+/// Share of the body's surface reagents reach through what is worn: each part's
+/// surface share times the permeability of every worn item covering it.
 /mob/living/carbon/human/reagent_permeability()
-	var/perm = 0
-
-	var/list/perm_by_part = list(
-		"head" = THERMAL_PROTECTION_HEAD,
-		"upper_torso" = THERMAL_PROTECTION_UPPER_TORSO,
-		"lower_torso" = THERMAL_PROTECTION_LOWER_TORSO,
-		"legs" = THERMAL_PROTECTION_LEG_LEFT + THERMAL_PROTECTION_LEG_RIGHT,
-		"feet" = THERMAL_PROTECTION_FOOT_LEFT + THERMAL_PROTECTION_FOOT_RIGHT,
-		"arms" = THERMAL_PROTECTION_ARM_LEFT + THERMAL_PROTECTION_ARM_RIGHT,
-		"hands" = THERMAL_PROTECTION_HAND_LEFT + THERMAL_PROTECTION_HAND_RIGHT
-		)
-
-	for(var/obj/item/clothing/C in src.get_equipped_items())
-		if(C.permeability_coefficient == 1 || !C.body_parts_covered)
-			continue
-		if(C.body_parts_covered & HEAD)
-			perm_by_part["head"] *= C.permeability_coefficient
-		if(C.body_parts_covered & UPPER_TORSO)
-			perm_by_part["upper_torso"] *= C.permeability_coefficient
-		if(C.body_parts_covered & LOWER_TORSO)
-			perm_by_part["lower_torso"] *= C.permeability_coefficient
-		if(C.body_parts_covered & LEGS)
-			perm_by_part["legs"] *= C.permeability_coefficient
-		if(C.body_parts_covered & FEET)
-			perm_by_part["feet"] *= C.permeability_coefficient
-		if(C.body_parts_covered & ARMS)
-			perm_by_part["arms"] *= C.permeability_coefficient
-		if(C.body_parts_covered & HANDS)
-			perm_by_part["hands"] *= C.permeability_coefficient
-
-	for(var/part in perm_by_part)
-		perm += perm_by_part[part]
-
-	return perm
+	. = 0
+	var/list/worn = get_equipped_items()
+	var/alist/weights = dq_part_thermal_weights()
+	for(var/part in weights)
+		var/through = weights[part]
+		for(var/obj/item/clothing/C in worn)
+			if(C.body_parts_covered & part)
+				through *= C.permeability_coefficient
+		. += through
 
 // This is for preventing harm by being covered in water, which only prometheans need to deal with.
 /mob/living/carbon/human/get_water_protection()
@@ -630,8 +607,4 @@ emp_act
 
 ///Get all the clothing on a specific body part
 /mob/living/carbon/human/proc/get_clothing_on_part(obj/item/organ/external/def_zone)
-	var/list/covering_part = list()
-	for(var/obj/item/clothing/equipped in get_equipped_items(INCLUDE_ABSTRACT))
-		if(equipped.body_parts_covered & def_zone.body_part)
-			covering_part += equipped
-	return covering_part
+	return covering_items(def_zone.body_part)

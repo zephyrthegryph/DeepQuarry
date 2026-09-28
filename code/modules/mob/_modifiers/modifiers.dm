@@ -86,7 +86,7 @@
 	if(!ishuman(L))
 		return null
 	var/mob/living/carbon/human/H = L
-	for(var/slot in list(slot_back, slot_belt, slot_s_store))
+	for(var/slot in list(SLOT_ID_BACK, SLOT_ID_BELT, SLOT_ID_SUIT_STORAGE))
 		var/obj/item/personal_shield_generator/G = H.get_equipped_item(slot)
 		if(istype(G))
 			return G

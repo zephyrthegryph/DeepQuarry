@@ -62,34 +62,7 @@
 #define BLOCKHEADHAIR   0x20    // Hides the user's hair overlay. Leaves facial hair.
 #define BLOCKHAIR       0x40    // Hides the user's hair, facial and otherwise.
 
-// Slots as numbers //
-//Hands
-#define slot_l_hand      1
-#define slot_r_hand      2 //Some things may reference this, try to keep it here
-//Shown unless F12 pressed
-#define slot_back        3
-#define slot_belt        4
-#define slot_wear_id     5
-#define slot_s_store     6
-#define slot_l_store     7
-#define slot_r_store     8 //Some things may reference this, try to keep it here
-//Shown when inventory unhidden
-#define slot_glasses     9
-#define slot_wear_mask   10
-#define slot_gloves      11
-#define slot_head        12
-#define slot_shoes       13
-#define slot_wear_suit   14
-#define slot_w_uniform   15
-#define slot_l_ear       16
-#define slot_r_ear       17
-//Secret slots
-#define slot_legs        18
-#define slot_tie         19
-#define slot_handcuffed  20
-#define slot_legcuffed   21
-#define slot_in_backpack 22
-#define SLOT_TOTAL       22
+// Equip slots are SLOT_ID_* text ids (code/__defines/containment.dm).
 
 
 // Inventory slot strings.
@@ -150,6 +123,8 @@
 #define THERMAL_PROTECTION_ARM_RIGHT   0.075
 #define THERMAL_PROTECTION_HAND_LEFT   0.025
 #define THERMAL_PROTECTION_HAND_RIGHT  0.025
+/// Conductance fraction left when worn layers cover the whole body (heat API).
+#define WORN_INSULATION_MIN_CONDUCTANCE 0.25
 
 // Pressure limits.
 

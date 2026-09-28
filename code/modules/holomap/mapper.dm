@@ -386,7 +386,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 	if (prefix_update_head)
 		if(ishuman(loc))
 			var/mob/living/carbon/human/H = loc
-			var/obj/item/helmet = H.get_equipped_item(slot_head)
+			var/obj/item/helmet = H.get_equipped_item(SLOT_ID_HEAD)
 			if(helmet && ("[helmet.type]" in prefix_update_head))
 				marker_prefix = prefix_update_head["[helmet.type]"]
 				return

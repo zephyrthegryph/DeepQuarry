@@ -642,7 +642,7 @@
 							var/obj/item/handcuffs/C = new(src.loc)
 							var/mob/living/carbon/human/H = usr
 							if(istype(H))
-								H.equip_to_slot(C, slot_handcuffed)
+								H.equip_to_slot(C, SLOT_ID_HANDCUFFED)
 							else
 								C.throw_at(usr,16,3,src)
 

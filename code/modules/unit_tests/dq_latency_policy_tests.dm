@@ -171,7 +171,7 @@
 	H.set_species(SPECIES_HUMAN)
 	var/obj/item/dq_latency_test_item/item = new(holder)
 	TEST_ASSERT(!dq_latent_pinned(item), "an unworn item should not be pinned")
-	TEST_ASSERT(H.equip_to_slot_if_possible(item, slot_l_hand), "the item should equip into a hand")
+	TEST_ASSERT(H.equip_to_slot_if_possible(item, SLOT_ID_HAND_L), "the item should equip into a hand")
 	TEST_ASSERT(dq_latent_pinned(item), "a held item must be pinned")
 	H.unEquip(item)
 	TEST_ASSERT(!dq_latent_pinned(item), "dropping should release the pin")

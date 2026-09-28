@@ -7,7 +7,7 @@
 /datum/gear/shoes
 	display_name = "sandals"
 	path = /obj/item/clothing/shoes/sandal
-	slot = slot_shoes
+	slot = SLOT_ID_SHOES
 	sort_category = "Shoes and Footwear"
 
 /datum/gear/shoes/tourist_1

@@ -49,7 +49,7 @@
 	else
 		//attack_area = BP_HEAD //Ensure we're hitting a valid area.
 		face_hit = TRUE //Our head is being hit! Let's presume we got hit in the face until we are told otherwise.
-		for(var/slot in list(slot_head, slot_wear_mask, slot_glasses))
+		for(var/slot in list(SLOT_ID_HEAD, SLOT_ID_MASK, SLOT_ID_EYES))
 			var/obj/item/protection = M.get_equipped_item(slot)
 			if(istype(protection) && (protection.body_parts_covered & FACE))
 				face_hit = FALSE

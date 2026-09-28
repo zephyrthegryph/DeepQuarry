@@ -49,10 +49,10 @@
 		return
 	if(IS_DISARMING(user))
 		slot_id = SLOT_ID_POCKET_L
-		slot = slot_l_store
+		slot = SLOT_ID_POCKET_L
 	else if(IS_GRABBING(user))
 		slot_id = SLOT_ID_POCKET_R
-		slot = slot_r_store
+		slot = SLOT_ID_POCKET_R
 	else
 		return
 	theirs = victim.get_equipped_item(slot_id)

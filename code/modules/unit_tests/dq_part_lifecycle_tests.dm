@@ -263,7 +263,7 @@
 /datum/unit_test/dq_part_sever_drops_worn/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves/black)
-	TEST_ASSERT(H.equip_to_slot_or_del(G, slot_gloves), "the gloves go on")
+	TEST_ASSERT(H.equip_to_slot_or_del(G, SLOT_ID_GLOVES), "the gloves go on")
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	arm.droplimb(TRUE, DROPLIMB_EDGE)
 	TEST_ASSERT(H.get_equipped_item(SLOT_ID_GLOVES) != G, "severing an arm drops the gloves on its hand")

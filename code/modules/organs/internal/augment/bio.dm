@@ -65,12 +65,12 @@
 	else
 		if(aug && aug.integrated_object)
 			to_chat(src, span_alien("Your [aug.integrated_object] deploy."))
-			equip_to_slot(aug.integrated_object, slot_glasses, 0, 1)
+			equip_to_slot(aug.integrated_object, SLOT_ID_EYES, 0, 1)
 			if(!get_equipped_item(SLOT_ID_EYES) || get_equipped_item(SLOT_ID_EYES) != aug.integrated_object)
 				aug.integrated_object.forceMove(aug)
 		else
 			var/obj/item/clothing/glasses/hud/security/jensenshades/J = new(get_turf(src))
-			equip_to_slot(J, slot_glasses, 1, 1)
+			equip_to_slot(J, SLOT_ID_EYES, 1, 1)
 			to_chat(src, span_notice("Your [aug.integrated_object] deploy."))
 
 /obj/item/organ/internal/augment/bioaugment/sprint_enhance

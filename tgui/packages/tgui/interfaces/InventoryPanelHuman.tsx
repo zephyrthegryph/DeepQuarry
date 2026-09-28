@@ -12,9 +12,9 @@ type Data = {
   internalsValid: BooleanLike;
   sensors: BooleanLike;
   handcuffed: BooleanLike;
-  handcuffedParams: { slot: number };
+  handcuffedParams: { slot: string };
   legcuffed: BooleanLike;
-  legcuffedParams: { slot: number };
+  legcuffedParams: { slot: string };
   accessory: BooleanLike;
 };
 
@@ -23,7 +23,7 @@ type slot = {
   item: string;
   icon: string;
   act: string;
-  params: { slot: number };
+  params: { slot: string };
 };
 
 type GridInfo = {

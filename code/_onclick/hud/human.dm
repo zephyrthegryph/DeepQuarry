@@ -117,12 +117,12 @@
 		if(!hand)	//This being 0 or null means the right hand is in use
 			inv_box.icon_state = "r_hand_active"
 		inv_box.screen_loc = ui_rhand
-		inv_box.slot_id = slot_r_hand
+		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
 		HUD.r_hand_hud_object = inv_box
 		adding += inv_box
-		slot_info["[slot_r_hand]"] = inv_box.screen_loc
+		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
 		inv_box = new /atom/movable/screen/inventory/hand()
 		inv_box.hud_handle = om_handle(HUD)
@@ -132,12 +132,12 @@
 		if(hand)	//This being 1 means the left hand is in use
 			inv_box.icon_state = "l_hand_active"
 		inv_box.screen_loc = ui_lhand
-		inv_box.slot_id = slot_l_hand
+		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = HUD.ui_color
 		inv_box.alpha = HUD.ui_alpha
 		HUD.l_hand_hud_object = inv_box
 		adding += inv_box
-		slot_info["[slot_l_hand]"] = inv_box.screen_loc
+		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"

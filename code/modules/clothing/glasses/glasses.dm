@@ -16,7 +16,7 @@ BLIND     // can't see anything
 	icon = 'icons/inventory/eyes/item.dmi'
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_EYES
-	plane_slots = list(slot_glasses)
+	plane_slots = list(SLOT_ID_EYES)
 	var/vision_flags = 0
 	var/darkness_view = 0//Base human is 2
 	var/see_invisible = -1

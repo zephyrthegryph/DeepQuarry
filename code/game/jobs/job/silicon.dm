@@ -36,8 +36,8 @@
 	return (REGISTRY_COUNT(REGISTRY_EMPTY_AI_CORES) != 0)
 
 /datum/job/ai/equip_preview(mob/living/carbon/human/H)
-	H.equip_to_slot_or_del(new /obj/item/clothing/suit/straight_jacket(H), slot_wear_suit)
-	H.equip_to_slot_or_del(new /obj/item/clothing/head/cardborg(H), slot_head)
+	H.equip_to_slot_or_del(new /obj/item/clothing/suit/straight_jacket(H), SLOT_ID_SUIT)
+	H.equip_to_slot_or_del(new /obj/item/clothing/head/cardborg(H), SLOT_ID_HEAD)
 	return 1
 
 //////////////////////////////////
@@ -83,8 +83,8 @@
 	return 1
 
 /datum/job/cyborg/equip_preview(mob/living/carbon/human/H)
-	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cardborg(H), slot_wear_suit)
-	H.equip_to_slot_or_del(new /obj/item/clothing/head/cardborg(H), slot_head)
+	H.equip_to_slot_or_del(new /obj/item/clothing/suit/cardborg(H), SLOT_ID_SUIT)
+	H.equip_to_slot_or_del(new /obj/item/clothing/head/cardborg(H), SLOT_ID_HEAD)
 	return 1
 
 

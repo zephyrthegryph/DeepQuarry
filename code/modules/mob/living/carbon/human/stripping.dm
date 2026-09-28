@@ -19,7 +19,7 @@
 		SStgui.close_uis(src)
 		return
 
-	var/obj/item/target_slot = get_equipped_item(text2num(slot_to_strip))
+	var/obj/item/target_slot = get_equipped_item(slot_to_strip)
 
 	switch(slot_to_strip)
 		// Handle things that are part of this interface but not removing/replacing a given item.
@@ -81,14 +81,14 @@
 			return
 		visible_message(span_danger("\The [user] is trying to remove \the [src]'s [target_slot.name]!"))
 	else if(!istype(held, /obj/item/gripper))
-		if(slot_to_strip == slot_wear_mask && istype(held, /obj/item/grenade))
+		if(slot_to_strip == SLOT_ID_MASK && istype(held, /obj/item/grenade))
 			visible_message(span_danger("\The [user] is trying to put \a [held] in \the [src]'s mouth!"))
 		else
 			visible_message(span_danger("\The [user] is trying to put \a [held] on \the [src]!"))
 	else
 		var/obj/item/gripper/G = held
 		var/obj/item/wrapped = G.get_wrapped_item()
-		if(slot_to_strip == slot_wear_mask && istype(wrapped, /obj/item/grenade))
+		if(slot_to_strip == SLOT_ID_MASK && istype(wrapped, /obj/item/grenade))
 			visible_message(span_danger("\The [user] is trying to put \a [wrapped] in \the [src]'s mouth!"))
 		else
 			visible_message(span_danger("\The [user] is trying to put \a [wrapped] on \the [src]!"))
@@ -153,12 +153,12 @@
 		var/obj/item/gripper/G = held
 		var/obj/item/wrapped = G.get_wrapped_item()
 		if(istype(wrapped))
-			if(equip_to_slot_if_possible(wrapped, text2num(slot_to_strip), 0, 1, 1))
+			if(equip_to_slot_if_possible(wrapped, slot_to_strip, 0, 1, 1))
 				if(wrapped.loc != src)
 					return
 				G.clear_and_select_item()
 	else if(user.unEquip(held))
-		equip_to_slot_if_possible(held, text2num(slot_to_strip), 0, 1, 1)
+		equip_to_slot_if_possible(held, slot_to_strip, 0, 1, 1)
 		if(held.loc != src)
 			user.put_in_hands(held)
 

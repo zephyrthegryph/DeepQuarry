@@ -294,10 +294,10 @@ But for now, for what it's been used for, it works.
 			H.update_mutations()
 	if(H.species.name == SPECIES_VOX || H.species.name == SPECIES_ZADDAT)	//Species that 'actually' require survival gear to live. The rest don't.
 		H.species.equip_survival_gear(H)
-	H.equip_to_slot_or_del(new /obj/item/clothing/under/chameleon(H), slot_w_uniform)
-	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),slot_shoes)
-	H.equip_to_slot_or_del(new /obj/item/radio/headset(H),slot_l_ear)
-	H.equip_to_slot_or_del(new /obj/item/clothing/under/permit(H), slot_l_hand)
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/chameleon(H), SLOT_ID_UNIFORM)
+	H.equip_to_slot_or_del(new /obj/item/clothing/shoes/sandal(H),SLOT_ID_SHOES)
+	H.equip_to_slot_or_del(new /obj/item/radio/headset(H),SLOT_ID_EAR_L)
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/permit(H), SLOT_ID_HAND_L)
 
 /obj/effect/step_trigger/autostrip/proc/initMappedLink()
 	. = FALSE
