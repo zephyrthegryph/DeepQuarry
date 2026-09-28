@@ -131,7 +131,7 @@
 		for(var/obj/item/organ/external/E in user.bad_external_organs)
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-				supporting_limbs |= E
+				supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
 	else
 		// Otherwise, remove the splints.
 		for(var/obj/item/organ/external/E in supporting_limbs)
@@ -144,6 +144,6 @@
 		return
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-		supporting_limbs |= E
+		supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
 
 REF_OWNED(/obj/item/clothing/head/helmet/space, "camera")

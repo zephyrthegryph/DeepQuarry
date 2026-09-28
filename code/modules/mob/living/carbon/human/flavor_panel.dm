@@ -81,3 +81,5 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 		if("done")
 			host.Topic("flavor_change=done", list("flavor_change" = "done"))
 			return TRUE
+
+REF_HELD(/datum/flavor_panel, "host")

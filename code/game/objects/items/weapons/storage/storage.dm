@@ -696,6 +696,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 	/// One click catcher per shown item.
 	var/list/atom/movable/storage_slot/catchers
 	/// Items placed on screen (one per type with display_contents_with_number).
+	// ALLOW(object_keyed_lists): items of the open storage on screen; Destroy() unpins each
 	var/list/obj/item/shown
 
 GLOBAL_VAR_INIT(storage_hud_count, 0)
@@ -1061,3 +1062,6 @@ EXTEND_INTERACTIONS(/obj/item/storage, \
 	INTERACT_VERB("Switch Gathering Method", PROC_REF(toggle_gathering_mode_effect), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_toggle_gathering, "it has only one gathering method")), \
 	INTERACT_VERB("Empty Contents", PROC_REF(quick_empty_effect), REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_quick_empty, "it can't be emptied that way")), \
 )
+
+REF_BACK(/datum/storage_hud, list("storage" = "hud"))
+REF_HELD(/datum/storage_hud, "shown")

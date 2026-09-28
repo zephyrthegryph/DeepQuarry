@@ -286,3 +286,5 @@
 /obj/machinery/atmospherics/pipe/manifold/lifecycle_unbind()
 	. = ..()
 	node3 = null
+
+REF_HELD(/obj/machinery/atmospherics/pipe/manifold, "node3")

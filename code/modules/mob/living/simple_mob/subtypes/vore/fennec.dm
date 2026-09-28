@@ -175,3 +175,5 @@
 		else
 			return ..()
 	return ..()
+
+REF_OWNED(/mob/living/simple_mob/vore/fennec/huge, "bigshadow")

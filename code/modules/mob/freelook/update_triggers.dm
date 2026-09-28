@@ -57,3 +57,5 @@
 	// don't check then?
 	if(!glass)
 		updateVisibility(src, 0)
+
+REF_OWNED_LIST(/turf, "obfuscations")

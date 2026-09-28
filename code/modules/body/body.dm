@@ -80,7 +80,7 @@ REF_OWNED(/mob/living, "body")
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
-REF_OWNED(/datum/body, "physiology")
+REF_BACK(/datum/body, list("owner" = "body"))
 REF_OWNED_LIST(/datum/body, "supports")
 
 // ALLOW(lifecycle): each affliction is removed (symptoms end) before it is deleted.
@@ -89,8 +89,6 @@ REF_OWNED_LIST(/datum/body, "supports")
 		remove_affliction(A)
 		qdel(A)
 	afflictions = null
-	// The mob outlives nothing here, but a deleted body must not pin it.
-	owner = null
 	return ..()
 
 /// Mark `domains` (BODY_DIRTY_*) stale.

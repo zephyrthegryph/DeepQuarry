@@ -875,3 +875,5 @@ REF_OWNED_VALUES(/datum/contract/medical_trial, "participants")
 		return 0
 	var/list/contracts = medical_trial_contract_fractions(reagent.data)
 	return reagent.volume * (contracts[contract_id] || 0)
+
+REF_BACK(/datum/medical_trial_participant, list("consent_record" = null))

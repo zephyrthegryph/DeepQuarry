@@ -342,3 +342,11 @@ REF_OWNED_VALUES(/datum/generated_station_tile_plan, "tiles")
 /// LC-refs: the generation_owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_tile_plan/proc/generation_owner() as /datum/generated_station_materializer
 	return om_resolve(generation_owner_handle)
+
+/datum/generated_station_tile_plan/declared_cache_vars()
+	var/list/L = ..()
+	L = L ? L.Copy() : list()
+	L["hull_coordinates"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	L["hull_corners"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	L["seal_open"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	return L

@@ -73,6 +73,18 @@
 /// something else manages. tools/ci/handle_kinds_lint.py refuses a handle var
 /// whose target type is marked OM_STATIC_TYPE.
 #define REF_STATIC(PATH, NAMES) ##PATH/declared_static_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Lists of other live entities the holder neither owns nor keeps alive (alarms a
+/// console monitors, sensors on a grid, hearers of a sound, queued items). Members
+/// are stored as OM handles, never references: add/remove/iterate only through
+/// WEAK_LIST_ADD / WEAK_LIST_REMOVE / WEAK_LIST_HAS / weak_list_live(), which resolve
+/// and prune dead entries. Destruction cuts the list (phase 4) without deleting members.
+#define REF_WEAK_LIST(PATH, NAMES) ##PATH/declared_weak_list_vars() { . = ..(); . = (. || list()) + NAMES; }
+/// Adds live entity X to weak list L (lazily created); a no-op for null or a deleted X.
+#define WEAK_LIST_ADD(L, X) do { var/__wl_h = om_handle(X); if(__wl_h) { LAZYOR(L, __wl_h); } } while(0)
+/// Removes X from weak list L; works while X is being destroyed (om_handle_of()).
+#define WEAK_LIST_REMOVE(L, X) LAZYREMOVE(L, om_handle_of(X))
+/// TRUE if X is a live member of weak list L.
+#define WEAK_LIST_HAS(L, X) (LAZYLEN(L) && (om_handle_of(X) in L))
 /// Marks PATH (and its subtypes) as a singleton / flyweight / definition type:
 /// instances are shared and live for the round, so references to them are
 /// REF_STATIC (or read from the registry at the use site), never handles.
@@ -89,7 +101,7 @@
 // REF_VAR(/obj/machinery/foo, OWNED, /datum/bar, helper) declares
 // `/obj/machinery/foo/var/datum/bar/helper` and adds "helper" to the type's
 // REF_OWNED list. KIND is any single-name kind: OWNED, OWNED_LIST, OWNED_VALUES,
-// SPILL, SPILL_LIST, HELD, DEF, STATIC, TRANSIENT. VARTYPE is the full type path (/list
+// SPILL, SPILL_LIST, HELD, DEF, STATIC, TRANSIENT, WEAK_LIST. VARTYPE is the full type path (/list
 // for list kinds). The older REF_* forms keep working.
 #define REF_VAR(PATH, KIND, VARTYPE, NAME) ##PATH { var##VARTYPE/##NAME; } REF_##KIND(PATH, #NAME)
 /// REF_VAR for a pair: OTHER is the partner's var pointing back.

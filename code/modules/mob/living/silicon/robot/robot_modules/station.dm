@@ -29,7 +29,8 @@
 	var/list/datum/matter_synth/synths = list() // ALLOW(instance_list): d: filled per module type when the module is created
 	var/list/emag = list() // ALLOW(instance_list): d: robot module item lists, filled per module type
 	var/list/subsystems = list() // ALLOW(instance_list): d: filled per module type when the module is created
-	var/list/obj/item/borg/upgrade/supported_upgrades
+	/// Upgrade type paths this module accepts (types, not instances).
+	var/list/supported_upgrades
 
 	// Bookkeeping
 	var/list/original_languages

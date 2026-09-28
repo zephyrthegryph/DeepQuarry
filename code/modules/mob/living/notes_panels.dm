@@ -156,3 +156,6 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 		panel = new(src)
 		GLOB.dq_ooc_notes_panels[key] = panel
 	panel.tgui_interact(user)
+
+REF_HELD(/datum/private_notes_panel, "host")
+REF_HELD(/datum/ooc_notes_panel, "host")

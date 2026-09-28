@@ -12,6 +12,7 @@
 	var/screen = 0
 	var/pages = 0
 	var/curr_page = 0
+	// ALLOW(scheduler, declared_refs, object_keyed_lists): the news network's own channels at print time; the network owns them, the paper only reads them
 	var/list/datum/feed_channel/news_content
 	var/tmp/important_message_handle
 	var/scribble=""

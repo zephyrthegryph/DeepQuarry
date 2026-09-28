@@ -350,7 +350,7 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 	if(!T)
 		return
 	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	var/area/generated_station/department_area = department_areas[node.id]
+	var/area/generated_station/department_area = result.department_areas[node.id]
 	if(department_area)
 		ChangeArea(T, department_area)
 	result.floor_count++
@@ -425,8 +425,8 @@ REF_OWNED_LIST(/datum/generated_station_service_route, "physical_markers")
 /datum/generated_station_materializer/proc/service_for_utility_edge(datum/generated_station_layout_edge/edge)
 	if(edge.service_id)
 		return edge.service_id
-	var/datum/generated_station_layout_node/from_node = nodes_by_id[edge.from_node_id]
-	var/datum/generated_station_layout_node/to_node = nodes_by_id[edge.to_node_id]
+	var/datum/generated_station_layout_node/from_node = om_resolve(nodes_by_id[edge.from_node_id])
+	var/datum/generated_station_layout_node/to_node = om_resolve(nodes_by_id[edge.to_node_id])
 	var/datum/generated_station_department_instance/provider = department_for_node(from_node)
 	var/datum/generated_station_department_instance/consumer = department_for_node(to_node)
 	for(var/datum/generated_station_capability_provision/provision in provider?.definition()?.provisions)

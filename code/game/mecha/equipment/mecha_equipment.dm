@@ -281,3 +281,6 @@
 
 /obj/item/mecha_parts/mecha_equipment/proc/get_step_delay() // Equipment returns its slowdown or speedboost.
 	return step_delay
+
+// Read by detach() in Destroy().
+REF_HELD(/obj/item/mecha_parts/mecha_equipment, "chassis")

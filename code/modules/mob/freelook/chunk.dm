@@ -146,3 +146,7 @@
 		LAZYADD(obscured, t.obfuscations[obfuscation.type])
 
 #undef UPDATE_BUFFER
+
+REF_OWNED(/datum/chunk, "obfuscation")
+// Turfs are never deleted (a changed turf keeps its object), so the chunk's turf index holds them strongly.
+REF_STATIC(/datum/chunk, "turfs")

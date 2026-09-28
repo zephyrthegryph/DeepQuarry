@@ -245,3 +245,8 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	if(!limb_count)
 		return 0
 	return (protected_limbs/limb_count)
+
+// Queued pulses belong to the queue until processed.
+REF_OWNED_LIST(/datum/world_service/radiation, list("processing"))
+// Turfs are round-long; the dirty set is flushed and cut every tick.
+REF_STATIC(/datum/world_service/radiation, list("dirty_turfs"))

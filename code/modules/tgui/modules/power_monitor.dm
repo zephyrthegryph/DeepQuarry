@@ -19,7 +19,7 @@
 	var/list/map_levels = using_map.get_map_levels(z)
 
 	// Build list of data from sensor readings.
-	for(var/obj/machinery/power/sensor/S in grid_sensors)
+	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))
 		if(!(S.z in map_levels))
 			continue
 		sensors.Add(list(list(
@@ -53,13 +53,13 @@
 			. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()
-	for(var/obj/machinery/power/sensor/S in grid_sensors)
+	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))
 		if(S.check_grid_warning())
 			return TRUE
 	return FALSE
 
 /datum/tgui_module/power_monitor/proc/refresh_sensors()
-	grid_sensors = list()
+	grid_sensors = null
 
 	// Handle ultranested programs
 	var/turf/T = get_turf(tgui_host())
@@ -74,7 +74,7 @@
 			if(S.name_tag == "#UNKN#") // Default name. Shouldn't happen!
 				WARNING("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
 			else
-				grid_sensors += S
+				WEAK_LIST_ADD(grid_sensors, S)
 
 /datum/tgui_module/power_monitor/ntos
 	ntos = TRUE
@@ -83,3 +83,6 @@
 /datum/tgui_module/power_monitor/robot
 /datum/tgui_module/power_monitor/robot/tgui_state(mob/user)
 	return GLOB.tgui_self_state
+
+/// Sensors on the grid, rebuilt by refresh_sensors().
+REF_WEAK_LIST(/datum/tgui_module/power_monitor, "grid_sensors")

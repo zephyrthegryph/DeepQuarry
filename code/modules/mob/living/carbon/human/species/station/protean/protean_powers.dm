@@ -677,3 +677,5 @@ REF_OWNED(/datum/protean_power, "button")
 
 #undef PER_LIMB_STEEL_COST
 #undef TOTAL_REBUILD_STEEL_COST
+
+REF_BACK(/obj/effect/protean_power_button, list("power" = "button"))

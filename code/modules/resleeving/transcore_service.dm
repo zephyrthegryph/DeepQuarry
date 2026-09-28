@@ -10,6 +10,11 @@
 // implant scan and backup staleness pass run by /datum/om/behaviour/world/transcore (3 min).
 GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 
+REF_OWNED_VALUES(/datum/world_service/transcore, "databases")
+REF_OWNED(/datum/world_service/transcore, "default_db")
+// The per-cadence work queue: record/implant -> its database, all round-long service data.
+REF_STATIC(/datum/world_service/transcore, "current_run")
+
 /datum/world_service/transcore
 	name = "Transcore"
 	lane = /datum/om/behaviour/world/transcore

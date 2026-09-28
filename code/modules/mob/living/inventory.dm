@@ -193,9 +193,6 @@
 
 	return TRUE
 
-// The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
-REF_OWNED(/mob/living, "inventory_panel")
-
 /datum/inventory_panel
 	var/mob/living/host
 	var/tgui_id = "InventoryPanel"
@@ -371,3 +368,6 @@ REF_OWNED(/mob/living, "inventory_panel")
 		data["accessory"] = TRUE
 
 	return data
+
+REF_HELD(/mob/living, "internal")
+REF_BACK(/datum/inventory_panel, list("host" = "inventory_panel"))

@@ -400,3 +400,6 @@ REF_OWNED(/datum/n_Interpreter, list("scopes", "functions", "globalScope", "prog
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Interpreter/proc/curScope() as /datum/scope
 	return curScope_ref
+
+// Cursors into scopes and function definitions held by the scope stack and the program tree.
+REF_BACK(/datum/n_Interpreter, list("curScope_ref" = null, "curFunction_ref" = null))

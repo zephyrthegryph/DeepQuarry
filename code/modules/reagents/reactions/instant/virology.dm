@@ -85,7 +85,8 @@
 
 /datum/decl/chemical_reaction/instant/mix_virus/picky
 	id = "mixviruspicky"
-	var/list/datum/viral_trait/symptoms
+	/// /datum/viral_trait type paths the evolution may pick from.
+	var/list/symptoms
 
 /datum/decl/chemical_reaction/instant/mix_virus/on_reaction(datum/reagents/holder)
 	var/datum/reagent/blood/B = locate(/datum/reagent/blood) in holder.reagent_list

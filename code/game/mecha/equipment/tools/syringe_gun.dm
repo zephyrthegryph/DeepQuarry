@@ -12,7 +12,6 @@
 	var/synth_speed = 5 //[num] reagent units per cycle
 	energy_drain = 10
 	var/mode = 0 //0 - fire syringe, 1 - analyze reagents.
-	var/datum/global_iterator/mech_synth/synth
 	range = MECH_MELEE|RANGED
 	equip_cooldown = 10
 	required_type = list(/obj/mecha/medical)
@@ -558,3 +557,7 @@
 		update_icon()
 		return
 	om_after(src, 1, PROC_REF(mech_syringe_flight), trg, steps_left - 1)
+
+REF_OWNED_LIST(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "syringes")
+REF_OWNED(/obj/item/mecha_parts/mecha_equipment/crisis_drone, list("drone_overlay", "MyBeam"))
+REF_HELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "Target")

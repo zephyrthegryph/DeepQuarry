@@ -531,3 +531,7 @@ REF_OWNED_LIST(/datum/station_faction_relations, "agent_records")
 /mob/living/carbon/human/set_faction_affiliations(list/affiliations)
 	// Affiliations describe relationships; NanoTrasen employment remains independent.
 	return ..()
+
+REF_BACK(/datum/faction_agent_record, list("agent_mind" = null))
+// Usually the station relations' personal ledger for our account (owned there), else a private one.
+REF_BACK(/mob/living, list("faction_reputation" = null))

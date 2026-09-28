@@ -202,6 +202,7 @@
 	var/tmp/mob/living/carbon/LAssailant = null
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
+	// ALLOW(object_keyed_lists): spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm); the mob neither owns nor deletes them
 	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 //Changlings, but can be used in other modes
@@ -273,6 +274,7 @@
 	/// dict of custom stat tabs with data
 	var/list/list/misc_tabs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
+	// ALLOW(object_keyed_lists): membership list maintained by /datum/action Grant()/Remove(); the action owns the relation
 	var/tmp/list/datum/action/actions
 
 
@@ -297,3 +299,10 @@
 	var/size_multiplier = 1 //multiplier for the mob's icon size
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
+
+REF_OWNED(/mob, list("dna", "plane_holder", "hud_used", "ability_master"))
+REF_OWNED_LIST(/mob, "spell_masters")
+REF_STATIC(/mob, "lastarea")
+// Screen objects belong to hud_used; the mob only points at them (remove_screen_obj_references()).
+REF_HELD(/mob, list("hands", "pullin", "purged", "internals", "i_select", "m_select", "healths", "throw_icon", "pain", "item_use_icon", "radio_use_icon", "gun_move_icon", "gun_run_icon", "gun_setting_icon", "ling_chem_display", "borer_chem_display", "wiz_energy_display", "wiz_instability_display", "autowhisper_display", "zone_sel", "shadekin_display", "lleill_display", "xenochimera_danger_display"))
+REF_HELD(/mob, list("persistent_client", "mind", "organStructure", "LAssailant", "control_object", "teleop", "click_intercept", "focus", "spell_list", "actions"))

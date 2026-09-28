@@ -40,6 +40,7 @@ Possible to do for anyone motivated enough:
 	var/power_per_hologram = 500 //per usage per hologram
 	idle_power_usage = 5
 	use_power = USE_POWER_IDLE
+	// ALLOW(object_keyed_lists): AI -> hologram; Destroy() runs clear_holo() per AI, which resets the AI's holo and deletes its hologram
 	var/list/mob/living/silicon/ai/masters //Lazy list of AIs that use the holopad
 	COOLDOWN_DECLARE(request_cooldown) //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
@@ -245,3 +246,5 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 #undef HOLOPAD_PASSIVE_POWER_USAGE
 #undef HOLOGRAM_POWER_USAGE
 #undef IS_RANGE_BASED
+
+REF_HELD(/obj/machinery/hologram/holopad, "masters")

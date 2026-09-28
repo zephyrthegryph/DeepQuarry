@@ -520,3 +520,6 @@ GLOBAL_DATUM_INIT(gas_data, /datum/xgm_gas_data, new())
 	return
 /turf/proc/create_fire(temp = T0C + 300)
 	return
+
+// gas id -> gas type path, on the round-long gas data singleton.
+REF_STATIC(/datum/xgm_gas_data, "gases")

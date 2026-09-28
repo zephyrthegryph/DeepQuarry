@@ -66,6 +66,7 @@
 
 			switch(P.mode)
 				if(ATM_INPUT)
+					// ALLOW(object_keyed_lists): subset of the owned ports list (REF_OWNED_LIST on /omni), rebuilt from it
 					inputs += P
 				if(ATM_OUTPUT)
 					output = P
@@ -352,3 +353,5 @@
 	for(var/datum/omni_port/P in inputs)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
+
+REF_HELD(/obj/machinery/atmospherics/omni/mixer, "output")

@@ -357,3 +357,6 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 /// whose scheduled work depends on their settings wake here (a machine's step, a refinery line).
 /atom/proc/interaction_ran(mob/actor, datum/interaction/interaction)
 	return
+
+// Compiled predicates are shared from the dq_predicate_for() registry.
+REF_STATIC(/datum/interaction, list("compiled", "compiled_selector"))

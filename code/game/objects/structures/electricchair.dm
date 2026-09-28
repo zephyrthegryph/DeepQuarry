@@ -76,3 +76,5 @@
 EXTEND_INTERACTIONS(/obj/structure/bed/chair/e_chair, \
 	INTERACT_VERB("Toggle Electric Chair", PROC_REF(e_chair_toggle_effect)), \
 )
+
+REF_HELD(/obj/structure/bed/chair/e_chair, "part")

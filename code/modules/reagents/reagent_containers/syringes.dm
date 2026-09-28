@@ -45,6 +45,7 @@
 	update_icon()
 
 REF_OWNED_LIST(/obj/item/reagent_containers/syringe, "viruses")
+REF_OWNED(/obj/item/reagent_containers/syringe, "filling")
 
 /obj/item/reagent_containers/syringe/periodic_step()
 	dirtiness = min(dirtiness + targets.len,75)

@@ -997,3 +997,8 @@ REF_SPILL(/obj/item/roulette_ball/hollow, "trapped")
 	confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	flick("[icon_state]-winning",src)
 	icon_state = "wheel_of_fortune"
+
+REF_HELD(/obj/structure/casino_table/roulette_table, list("ball"))
+REF_OWNED(/obj/structure/casino_table/roulette_table, list("confetti_spread"))
+REF_OWNED(/obj/machinery/wheel_of_fortune, list("confetti_spread"))
+REF_BACK(/obj/machinery/casinosentientprize_handler, list("selected_collar" = null))

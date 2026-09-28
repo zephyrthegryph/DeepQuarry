@@ -141,7 +141,8 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 		human.nif = src
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		menu_handle = om_handle(new /datum/nif_menu(H))
+		QDEL_NULL(menu_ref)
+		menu_ref = new /datum/nif_menu(H)
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
@@ -190,7 +191,7 @@ REF_OWNED_LIST(/obj/item/nif, "nifsofts")
 	if(H)
 		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
 		H.nif = null
-	qdel_handle(menu_handle); menu_handle = null
+	QDEL_NULL(menu_ref)
 	unregister_human()
 	human = null
 	install_done = null

@@ -19,6 +19,9 @@ GLOBAL_DATUM_INIT(chemistry_service, /datum/world_service/chemistry, new)
 //	var/list/fusion_reactions_by_reagent = list() // TODO: Fusion reactions as chemical reactions
 	var/list/chemical_reagents = list() // ALLOW(instance_list): d: world service singleton (one instance in GLOB, was a subsystem)
 
+// Reaction decls and reagent definitions: round-long registry singletons.
+REF_STATIC(/datum/world_service/chemistry, list("chemical_reactions", "chemical_reagents"))
+
 /datum/world_service/chemistry/initialize()
 	initialized = TRUE
 	initialize_chemical_reagents()

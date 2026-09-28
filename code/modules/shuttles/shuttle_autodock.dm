@@ -253,3 +253,6 @@
 /// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/shuttle/autodock/proc/landmark_transition() as /obj/effect/shuttle_landmark
 	return om_resolve(landmark_transition_handle)
+
+// Owned by its docking console elsewhere; set_shuttle_docking_controller() tracks its deletion.
+REF_HELD(/datum/shuttle/autodock, list("shuttle_docking_controller"))

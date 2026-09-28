@@ -388,3 +388,5 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 	icon_state = ""
 	flick("kphaseout",src)
 	om_qdel_after(src, 1 SECOND) //Back from whence you came!
+
+REF_HELD(/mob/living/simple_mob/animal/passive/cat, "friend")

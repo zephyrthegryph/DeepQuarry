@@ -428,3 +428,6 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	stat &= ~EMPED
 	if(was_on)
 		turn_on()
+
+REF_HELD(/obj/vehicle, list("cell"))
+REF_BACK(/obj/vehicle, list("load" = null))

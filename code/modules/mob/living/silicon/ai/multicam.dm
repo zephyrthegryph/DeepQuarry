@@ -11,7 +11,10 @@
 	aiEye = new /mob/observer/eye/aiEye/pic_in_pic()
 	aiEye.screen = src
 
-REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, "aiEye")
+// ALLOW(ownership_cycle): type-level only; a pic_in_pic window is never one of its own eye's hud elements.
+REF_OWNED(/atom/movable/screen/movable/pic_in_pic/ai, list("aiEye", "highlighted_background"))
+// set_ai(null) in Destroy() takes the window off the AI.
+REF_HELD(/atom/movable/screen/movable/pic_in_pic/ai, "ai")
 
 // ALLOW(lifecycle): the AI loses this multicam window.
 /atom/movable/screen/movable/pic_in_pic/ai/Destroy()
@@ -181,7 +184,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 	for(var/obj/machinery/camera/C as anything in add)
 		if(QDELETED(C))
 			continue
-		cameras_telegraphed |= C
+		cameras_telegraphed |= C // ALLOW(object_keyed_lists): cameras whose in_use_lights we raised; disable_camera_telegraphing() lowers them again, so the list must survive until then
 		C.in_use_lights++
 		C.update_icon()
 

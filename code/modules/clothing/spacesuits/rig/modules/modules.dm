@@ -338,3 +338,5 @@ REF_OWNED_LIST(/obj/item/rig_module, "stat_modules")
 	else
 		suit_overlay = suit_overlay_inactive
 	holder?.update_icon()
+
+REF_BACKLIST(/atom/movable/stat_rig_module, list("module" = "stat_modules"))

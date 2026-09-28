@@ -99,6 +99,7 @@
 	var/found = 0
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in range(range, src.loc))
 		found = 1
+		// ALLOW(object_keyed_lists): scan roster of nearby scrubbers, rebuilt by every scan and pruned when one is gone
 		connectedscrubbers["[scrubber.id]"] = scrubber
 
 	if(!found)
@@ -117,6 +118,7 @@
 	var/found = 0
 	var/area/A = get_area(src)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in area_contents_of_type(A, /obj/machinery/portable_atmospherics/powered/scrubber/huge))
+		// ALLOW(object_keyed_lists): scan roster of nearby scrubbers, rebuilt by every scan and pruned when one is gone
 		connectedscrubbers["[scrubber.id]"] = scrubber
 		found = 1
 
@@ -155,6 +157,7 @@
 
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in world)
 		if(scrubber.scrub_id == src.scrub_id)
+			// ALLOW(object_keyed_lists): scan roster of nearby scrubbers, rebuilt by every scan and pruned when one is gone
 			connectedscrubbers["[scrubber.id]"] = scrubber
 
 	SStgui.update_uis(src)

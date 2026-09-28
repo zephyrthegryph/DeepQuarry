@@ -143,3 +143,5 @@
 	else
 		sprint = initial
 	return 1
+
+REF_STATIC(/mob/observer/eye, "visualnet")

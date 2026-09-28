@@ -4,21 +4,18 @@
 // Allows the Eye to stream these chunks and know what it can and cannot see.
 
 /datum/chunk/camera
-	var/list/cameras = list() // ALLOW(instance_list): d: camera chunk visibility state
+	/// Cameras in range (REF_WEAK_LIST), revalidated (can_use(), range) on every acquireVisibleTurfs() pass.
+	var/list/cameras
 
 /datum/chunk/camera/acquireVisibleTurfs(list/visible)
-	for(var/obj/machinery/camera/c as anything in cameras)
-
-		if(!istype(c))
-			cameras -= c
-			continue
+	for(var/obj/machinery/camera/c as anything in weak_list_live(cameras))
 
 		if(!c.can_use())
 			continue
 
 		var/turf/point = locate(src.x + 8, src.y + 8, src.z)
 		if(get_dist(point, c) > 24)
-			cameras -= c
+			WEAK_LIST_REMOVE(cameras, c)
 
 		for(var/turf/t in c.can_see())
 			visible[t] = t
@@ -32,7 +29,7 @@
 /datum/chunk/camera/New(loc, x, y, z)
 	for(var/obj/machinery/camera/c in range(16, locate(x + 8, y + 8, z)))
 		if(c.can_use())
-			cameras += c
+			WEAK_LIST_ADD(cameras, c)
 	..()
 
 /mob/living/silicon/proc/provides_camera_vision()
@@ -46,3 +43,5 @@
 
 /mob/living/silicon/ai/proc/seen_camera_turfs()
 	return seen_turfs_in_range(src, world.view)
+
+REF_WEAK_LIST(/datum/chunk/camera, "cameras")

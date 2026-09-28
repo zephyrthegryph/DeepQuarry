@@ -153,10 +153,7 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 
 // ALLOW(lifecycle): its vessel forgets it and its leases are released.
 /datum/flight_plan/Destroy()
-	if(vessel?.active_plan == src)
-		vessel.active_plan = null
 	release_leases(state != FLIGHT_PLAN_ARRIVED)
-	vessel = null
 	origin_handle = null
 	destination_handle = null
 	arrival_port_handle = null
@@ -269,3 +266,5 @@ REF_OWNED(/datum/flight_vessel, "active_plan")
 /// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
 	return om_resolve(active_expedition_handle)
+
+REF_BACK(/datum/flight_plan, list("vessel" = "active_plan"))

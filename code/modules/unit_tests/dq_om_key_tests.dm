@@ -12,7 +12,8 @@
 	var/obj/machinery/power/sensor/S = allocate(/obj/machinery/power/sensor, T)
 	var/obj/machinery/computer/power_monitor/M = allocate(/obj/machinery/computer/power_monitor, T)
 	S.powernet = P
-	M.power_monitor.grid_sensors = list(S)
+	M.power_monitor.grid_sensors = null
+	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
 	MACHINE_WAKE(M)
 	M.machine_step()
 	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")

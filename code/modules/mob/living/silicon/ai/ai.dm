@@ -245,7 +245,10 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon/ai, REGISTRY_AIS)
 
-REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio"))
+REF_OWNED(/mob/living/silicon/ai, list("announcement", "psupply", "aiPDA", "aiCommunicator", "aiMulti", "aiRadio", "holo_icon", "track", "research"))
+REF_HELD(/mob/living/silicon/ai, list("camera", "hardware", "hack", "master_multicam"))
+// GLOB.default_ai_icon or one of the shared icon sets (a custom one is only ever held here).
+REF_STATIC(/mob/living/silicon/ai, "selected_sprite")
 
 // ALLOW(lifecycle): the AI's eye goes with it.
 /mob/living/silicon/ai/Destroy()
@@ -1105,3 +1108,5 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 /// A short system operation (an emergency forcefield) is over.
 /mob/living/silicon/ai/proc/hacking_done()
 	hacking = 0
+
+REF_BACK(/obj/machinery/ai_powersupply, list("powered_ai" = "psupply"))

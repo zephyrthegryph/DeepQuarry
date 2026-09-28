@@ -134,6 +134,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	// Phase 4: links. Owned children deleted, pair partners nulled,
 	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
 	tick = world.tick_usage
+	D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
 	dq_lifecycle_clear_links(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_LINKS, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_LINKS done")

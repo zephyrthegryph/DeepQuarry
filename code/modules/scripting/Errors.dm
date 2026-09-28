@@ -130,3 +130,6 @@ REF_OWNED(/datum/runtimeError, "stack")
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scriptError/BadReturn/proc/token() as /datum/token
 	return token_ref
+
+REF_BACK(/datum/scriptError/BadToken, list("token_ref" = null))
+REF_BACK(/datum/scriptError/BadReturn, list("token_ref" = null))

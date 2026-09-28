@@ -527,3 +527,5 @@
 
 /obj/machinery/chem_master/proc/printing_done()
 	printing = FALSE
+
+REF_HELD(/obj/machinery/chem_master, list("beaker", "loaded_pill_bottle"))

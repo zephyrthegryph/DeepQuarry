@@ -377,3 +377,5 @@
 				P.update_icon()
 				if(new_name)
 					P.name = new_name
+
+REF_HELD(/obj/machinery/injector_maker, "beaker")

@@ -98,3 +98,5 @@
 //	icon_dead = "fallen_armor"
 //	icon_rest = "ignis"
 //	retaliate = 1 // In theory this will make Ignis fight back. Maybe. -RF
+
+REF_HELD(/mob/living/simple_mob/clockwork, "flee_target")

@@ -157,3 +157,5 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/computer_file/program/digitalwarrant/proc/activewarrant() as /datum/data/record/warrant
 	return activewarrant_ref
+
+REF_BACK(/datum/computer_file/program/digitalwarrant, list("activewarrant_ref" = null))

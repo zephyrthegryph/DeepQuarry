@@ -319,3 +319,5 @@
 				qdel(thing)
 			if(RULE_OP_REMOVE)
 				qdel(thing)
+
+REF_BACK(/datum/rule_binding, list("owner" = null))

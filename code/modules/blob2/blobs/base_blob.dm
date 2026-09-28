@@ -458,3 +458,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 
 /turf/simulated/wall/blob_act(obj/structure/blob/B)
 	deal_damage(DAMAGE_BLUNT, 100, MELEE, B, B?.overmind)
+
+// Every blob names its overmind; only resource blobs sit in its resource_blobs list, and
+// removing a non-member is a no-op, so the base declaration is the resource one.
+REF_BACKLIST(/obj/structure/blob, list("overmind" = "resource_blobs"))

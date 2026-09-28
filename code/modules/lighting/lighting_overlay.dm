@@ -140,3 +140,6 @@
 
 // Held, not owned: Destroy() takes the underlay back off the turf (and may refuse deletion).
 REF_HELD(/datum/lighting_object, "current_underlay")
+
+// Turfs are never deleted; Destroy() (forced only) resets the turf itself.
+REF_STATIC(/datum/lighting_object, list("affected_turf"))

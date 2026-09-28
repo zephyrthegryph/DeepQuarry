@@ -347,3 +347,6 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 /mob/living/simple_mob/animal/passive/mouse/beastmode/Initialize(mapload)
 	. = ..()
 	remove_verb(src,/mob/living/proc/ventcrawl) //No ventcrawl for hanner
+
+// The rat's own disease strains; exposure passes on copies (expose_contagion()).
+REF_OWNED_LIST(/mob/living/simple_mob/animal/passive/mouse, "rat_diseases")

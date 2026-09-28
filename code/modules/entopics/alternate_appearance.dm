@@ -20,7 +20,7 @@
 		return
 	for(var/mob/M as anything in displayTo)
 		var/list/viewing = dq_get_viewing_alt_appearances(M, create = TRUE)
-		viewers |= M
+		viewers |= M // ALLOW(object_keyed_lists): hide()/remove() walk viewers to pull the image off each client; a cache null would strand it
 		viewing |= src
 		if(M.client)
 			M.client.images |= img

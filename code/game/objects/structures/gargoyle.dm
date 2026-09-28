@@ -312,3 +312,5 @@
 				gargoyle.can_be_drop_prey = TRUE
 			return
 	return ..()
+
+REF_OWNED(/obj/structure/gargoyle, "tail_image")

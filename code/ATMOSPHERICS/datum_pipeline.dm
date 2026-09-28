@@ -5,13 +5,16 @@
 	/// is rebound to the larger authoritative network mixture.
 	var/volume
 
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	var/list/obj/machinery/atmospherics/pipe/members
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	var/list/obj/machinery/atmospherics/pipe/edges //Used for building networks
 
 	// Nodes that are leaking. Used for A.S. Valves.
 	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
 
 	var/datum/pipe_network/network
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	var/list/datum/pipe_network/network_memberships
 	var/alert_pressure = 0
 	var/engineered_exposure_timer
@@ -224,3 +227,6 @@
 	air.add_thermal_energy(heat_gain)
 	if(network)
 		network.mark_dirty()
+
+// Topology links and the (possibly network-shared) air slot: Destroy() hands the gas back and severs each side.
+REF_HELD(/datum/pipeline, list("air", "members", "edges", "network", "network_memberships"))

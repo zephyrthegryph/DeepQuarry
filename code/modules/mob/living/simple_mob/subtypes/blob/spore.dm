@@ -52,7 +52,8 @@
 		LAZYADD(factory.spores, src)
 	return ..()
 
-REF_BACKLIST(/mob/living/simple_mob/blob/spore, list("factory" = "spores"))
+// Destroy() drops the body out before letting go.
+REF_HELD(/mob/living/simple_mob/blob/spore, "infested")
 
 // ALLOW(lifecycle): the infested body falls out as the spore bursts.
 /mob/living/simple_mob/blob/spore/Destroy()

@@ -706,6 +706,4 @@ would spawn and follow the beaker, even if it is carried or thrown.
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return om_resolve(oldposition_handle)
 
-// holder is the atom that owns this effect system (a mech's spark_system...):
-// a back reference, let go when the system is destroyed.
-REF_BACK(/datum/effect/effect/system, list("holder" = null))
+REF_HELD(/datum/effect/effect/system, "holder")

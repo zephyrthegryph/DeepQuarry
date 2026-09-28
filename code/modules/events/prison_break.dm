@@ -74,3 +74,5 @@
 /datum/event/prison_break/end()
 	for(var/area/A in shuffle(areas))
 		A.prison_break()
+
+REF_STATIC(/datum/event/prison_break, list("areas"))

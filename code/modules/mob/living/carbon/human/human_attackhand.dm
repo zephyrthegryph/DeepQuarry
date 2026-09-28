@@ -668,3 +668,6 @@
 	else
 		emote("cough")
 	return TRUE
+
+// One of the species' shared unarmed attacks.
+REF_STATIC(/mob/living/carbon/human, "default_attack")

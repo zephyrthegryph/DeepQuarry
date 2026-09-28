@@ -217,6 +217,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 
 	var/icon/hose_overlay
 
+REF_OWNED(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay")
+
 /obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)

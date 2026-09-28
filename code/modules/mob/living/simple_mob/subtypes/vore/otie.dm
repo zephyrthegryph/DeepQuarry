@@ -334,3 +334,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 	emote_see = list("stares ferociously", "snarls", "licks their chops", "stretches", "yawns")
 	say_maybe_target = list("Ruh?", "Waf?")
 	say_got_target = list("Rurrr!", "ROAR!", "MARR!", "RERR!", "RAHH!", "RAH!", "WARF!")
+
+REF_HELD(/mob/living/simple_mob/vore/otie, "friend")

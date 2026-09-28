@@ -313,3 +313,5 @@
 /obj/machinery/atmospherics/binary/dp_vent_pump/arm_wakes()
 	..()
 	hibernate_until_gas_changes()
+
+REF_STATIC(/obj/machinery/atmospherics/binary/dp_vent_pump, "radio_connection")

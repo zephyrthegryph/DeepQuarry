@@ -239,3 +239,5 @@
 	volume_rate = ATMOS_DEFAULT_VOLUME_PUMP + 500
 	to_chat(user, span_notice("You have set \the [src] to [volume_rate]"))
 	update_icon()
+
+REF_STATIC(/obj/machinery/atmospherics/unary/outlet_injector, "radio_connection")

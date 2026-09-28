@@ -1036,3 +1036,7 @@ REF_STATIC(/datum/supply_order, "supply_pack_static")
 
 /datum/om/behaviour/world/supply/service()
 	return GLOB.supply_service
+
+REF_OWNED_VALUES(/datum/world_service/supply, list("supply_pack"))
+REF_OWNED_LIST(/datum/world_service/supply, list("exported_crates", "order_history", "adm_order_history", "adm_export_history"))
+REF_STATIC(/datum/world_service/supply, list("shuttle"))

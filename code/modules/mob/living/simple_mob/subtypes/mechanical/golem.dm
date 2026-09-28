@@ -166,3 +166,5 @@ REF_OWNED(/mob/living/simple_mob/mechanical/technomancer_golem, "core")
 	The drone's frame is heavy and armored, unbendable by hand, is barren of any markings or ID,\
 	no traces of paint visible and any 'writing' visible is uncomprehendable, short term scan unable to translate."
 	value = CATALOGUER_REWARD_MEDIUM
+
+REF_HELD(/mob/living/simple_mob/mechanical/technomancer_golem, list("active_spell", "master"))

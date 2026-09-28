@@ -1,12 +1,12 @@
 /datum/pipe_network
 	/// Compatibility list containing exactly the authoritative network mixture.
-	var/list/datum/gas_mixture/gases = list() // ALLOW(instance_list): d: pipe network membership; atmos agents own this area
+	var/list/datum/gas_mixture/gases = list() // ALLOW(instance_list, object_keyed_lists): d: pipe network membership; atmos agents own this area
 	/// The sole gas inventory for every fixed port and pipeline in this network.
 	var/datum/gas_mixture/air
 	var/volume = 0	//caches the total volume for atmos machines to use in gas calculations
 
-	var/list/obj/machinery/atmospherics/normal_members = list() // ALLOW(instance_list): d: pipe network membership; atmos agents own this area
-	var/list/datum/pipeline/line_members = list() // ALLOW(instance_list): d: pipe network membership; atmos agents own this area
+	var/list/obj/machinery/atmospherics/normal_members = list() // ALLOW(instance_list, object_keyed_lists): d: pipe network membership; atmos agents own this area
+	var/list/datum/pipeline/line_members = list() // ALLOW(instance_list, object_keyed_lists): d: pipe network membership; atmos agents own this area
 		//membership roster to go through for updates and what not
 
 	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a/S1): listed in memory_lists_audit.md, not edited here
@@ -63,6 +63,7 @@
 /datum/pipe_network/proc/add_normal_member(obj/machinery/atmospherics/member)
 	if(!member || QDELETED(member))
 		return FALSE
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	normal_members |= member
 	member.register_network_membership(src)
 	return TRUE
@@ -70,6 +71,7 @@
 /datum/pipe_network/proc/add_line_member(datum/pipeline/member)
 	if(!member || QDELETED(member))
 		return FALSE
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	line_members |= member
 	member.register_network_membership(src)
 	return TRUE
@@ -162,6 +164,7 @@
 		if(!external_air_volumes)
 			external_air_volumes = list()
 		for(var/atom/movable/owner as anything in giver_external)
+			// ALLOW(object_keyed_lists): external reservoir -> volume roster, drained by detach_external_air() in Destroy()
 			external_air_volumes[owner] = giver_external[owner]
 			owner.set_port_network_air(air)
 
@@ -210,6 +213,7 @@
 		line_member.bind_network_air(src, network_air)
 	for(var/obj/machinery/atmospherics/normal_member in normal_members)
 		normal_member.bind_network_air(src, network_air)
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	gases = list(network_air)
 	for(var/datum/gas_mixture/member_air in old_gases)
 		if(member_air != network_air)
@@ -229,6 +233,7 @@
 	air.set_volume(max(volume, 1))
 	if(!external_air_volumes)
 		external_air_volumes = list()
+	// ALLOW(object_keyed_lists): external reservoir -> volume roster, drained by detach_external_air() in Destroy()
 	external_air_volumes[owner] = external_volume
 	owner.set_port_network_air(air)
 	qdel(external_air)
@@ -273,3 +278,6 @@
 /// arena handle, so there is nothing to reconcile.
 /datum/pipe_network/proc/reconcile_air()
 	return
+
+// Rosters and the authoritative mixture: Destroy() splits the gas across members, then severs every side.
+REF_HELD(/datum/pipe_network, list("gases", "air", "normal_members", "line_members"))

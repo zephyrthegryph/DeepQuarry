@@ -71,17 +71,17 @@
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
 		if(!P.connected())
-			pods += P
+			pods += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
 			P.connected_handle = om_handle(src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
 		if(!P.connected)
-			spods += P
+			spods += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
 			P.connected = src
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/resleever/P in A.get_contents())
 		if(!P.connected)
-			sleevers += P
+			sleevers += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
 			P.connected = src
 			P.name = "[initial(P.name)] #[num++]"
 
@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
 		return ITEM_INTERACT_BLOCKING
-	pods += pod
+	pods += pod // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
 	pod.connected_handle = om_handle(src)
 	pod.name = "[initial(pod.name)] #[pods.len]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))

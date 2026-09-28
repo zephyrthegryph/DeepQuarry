@@ -120,3 +120,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, INTERACT_HAND_UNGATED(null,
 /mob/living/simple_mob/illusion/get_catalogue_delay()
 	if(copying)
 		return copying.get_catalogue_delay()
+
+REF_HELD(/mob/living/simple_mob/illusion, "copying")

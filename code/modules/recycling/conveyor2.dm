@@ -273,7 +273,7 @@
 	conveyors = list()
 	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
-			conveyors += C
+			conveyors += C // ALLOW(object_keyed_lists): conveyors sharing our id, rebuilt on relink; each conveyor removes itself in lifecycle_dematerialize()
 
 /obj/machinery/conveyor_switch/proc/toggle_speed(forced)
 	speed_active = !speed_active // switching gears
@@ -370,7 +370,7 @@
 	conveyors = list()
 	for(var/obj/machinery/conveyor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.id == id)
-			conveyors += C
+			conveyors += C // ALLOW(object_keyed_lists): conveyors sharing our id, rebuilt on relink; each conveyor removes itself in lifecycle_dematerialize()
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/conveyor_switch/wrench_act(mob/user, obj/item/I)

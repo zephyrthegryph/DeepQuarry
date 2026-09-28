@@ -548,3 +548,5 @@ REF_STATIC(/datum/tgui, "state_static")
 /// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return om_resolve(parent_ui_handle)
+
+REF_BACKLIST(/datum/tgui, list("user" = "tgui_open_uis"))

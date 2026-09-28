@@ -147,6 +147,8 @@
 	/// Active stage id (see get_stages()).
 	var/stage
 
+REF_BACK(/datum/affliction, list("body" = null, "owner" = null, "location" = null))
+
 /datum/affliction/New(location)
 	..()
 	src.location = location
@@ -157,7 +159,6 @@
 	if(body)
 		body.remove_affliction(src)
 	active_symptoms = null
-	location = null
 	return ..()
 
 /// Location-dependent setup, run once at construction (location may be null:

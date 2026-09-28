@@ -66,3 +66,5 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 		panel = new(src)
 		GLOB.dq_attacks_panels[key] = panel
 	panel.tgui_interact(src)
+
+REF_HELD(/datum/attacks_panel, "host")

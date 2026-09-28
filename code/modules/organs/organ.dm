@@ -47,6 +47,10 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+REF_OWNED(/obj/item/organ, "data")
+REF_BACK(/obj/item/organ, list("owner" = null))
+REF_STATIC(/obj/item/organ, "assists_languages")
+
 // ALLOW(lifecycle): afflictions on the organ are cured; organ mods removed.
 /obj/item/organ/Destroy()
 
@@ -60,8 +64,6 @@
 	if(transplant_data) transplant_data.Cut()
 	if(autopsy_data)    autopsy_data.Cut()
 	if(trace_chemicals) trace_chemicals.Cut()
-	QDEL_NULL(data)
-
 	QDEL_LIST(detached_afflictions)
 
 	return ..()

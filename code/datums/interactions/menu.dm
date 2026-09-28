@@ -156,3 +156,5 @@
 /// LC-refs: the client using the menu -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/interaction_menu/proc/owner() as /client
 	return om_resolve(owner_handle)
+
+REF_OWNED(/client, "interaction_menu")

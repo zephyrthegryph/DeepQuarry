@@ -194,14 +194,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		if(!ispath(circuit) && circuit.loc == src && !QDELETED(circuit))
 			qdel(circuit)
 		circuit = null
-	if(component_parts)
-		for(var/atom/A in component_parts)
-			if(A.loc == src) // If the components are inside the machine, delete them.
-				qdel(A)
-			else // Otherwise we assume they were dropped to the ground during deconstruction, and were not removed from the component_parts list by deconstruction code.
-				WARNING("[A] was still in [src]'s component_parts when it was Destroy()'d")
-		component_parts.Cut()
-		component_parts = null
 	if(contents) // The same for contents.
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/atom/A in contents) // ALLOW(latent): materialized above
@@ -788,3 +780,5 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		vars[ask.var_name] = ask.text
 
 REF_OWNED(/obj/machinery, list("circuit"))
+
+REF_OWNED_LIST(/obj/machinery, "component_parts")

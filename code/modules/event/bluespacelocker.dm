@@ -66,3 +66,5 @@
 /// LC-refs: the exit_point this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/bluespace_locker/proc/exit_point() as /obj/structure/closet
 	return om_resolve(exit_point_handle)
+
+REF_STATIC(/datum/event/bluespace_locker, list("pickable_areas"))

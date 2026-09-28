@@ -516,3 +516,5 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 			if(C) //Could have disconnected after message sent, before removing bubble.
 				C.images -= I
 		qdel(I)
+
+REF_HELD(/obj/effect/speech_bubble, "parent")

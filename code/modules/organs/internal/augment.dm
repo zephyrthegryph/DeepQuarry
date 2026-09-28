@@ -31,6 +31,8 @@
 
 	description_fluff = "If attempting to implant a compatible augment into a synthetic limb, the limb must be screwdrivered open and then the augment port opened with a crowbar before insertion can begin."
 
+REF_OWNED(/obj/item/organ/internal/augment, list("integrated_object", "my_radial_icon"))
+
 /obj/item/organ/internal/augment/Initialize(mapload)
 	. = ..()
 	setup_radial_icon()

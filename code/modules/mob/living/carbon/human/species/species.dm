@@ -990,3 +990,8 @@
 			allergies.Add(REAGENT_KELOTANE)
 		return allergies
 	return null
+
+REF_OWNED(/datum/species, "hud")
+REF_OWNED_LIST(/datum/species, "unarmed_attacks")
+// An icon file and a trail type path.
+REF_STATIC(/datum/species, list("icon_template", "move_trail"))

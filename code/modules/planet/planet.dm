@@ -84,3 +84,5 @@
 	return 220 - (sun_position * 80) // this base version doesn't know how long a planet's day is, so just goes back and forth facing south-eastish based on midnight to noon intensity
 
 REF_OWNED(/datum/planet, list("weather_holder", "sun_holder", "current_time"))
+// Turfs are never deleted.
+REF_STATIC(/datum/planet, list("planet_floors", "planet_walls"))

@@ -89,3 +89,5 @@
 	if(deployed_shell) // Forcibly call back AI in event of things such as damage, EMP or power loss.
 		message = span_danger(message)
 		deployed_shell.undeploy(message)
+
+REF_HELD(/mob/living/silicon/ai, "deployed_shell")

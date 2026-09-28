@@ -302,3 +302,5 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 /// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/spell/proc/owner_ref() as /mob/living
 	return om_resolve(owner_handle)
+
+REF_HELD(/obj/item/spell, "core")

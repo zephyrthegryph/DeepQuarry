@@ -121,3 +121,5 @@
 
 			dronefab.produce_drones = !dronefab.produce_drones
 			to_chat(ui.user, span_notice("You [dronefab.produce_drones ? "enable" : "disable"] drone production in the nearby fabricator."))
+
+REF_HELD(/obj/machinery/computer/drone_control, "dronefab")

@@ -546,7 +546,15 @@ Escape: `// ALLOW(handle_kinds): <reason>`.
 | BACKLIST | `REF_BACKLIST` / `_VAR` | strong | removed from the owner's list | reported if left | membership in another object's list |
 | KEEP | `REF_KEEP` | strong | deliberately left set | never reported | a value read after destruction (an id the GC report reads) |
 | DEF | `REF_DEF` (implicit for `DEF_TYPES`) | strong | untouched | reported only if deleted | frozen definitions and registry objects |
+| WEAK_LIST | `REF_WEAK_LIST` | weak (OM handles) | list cut, members untouched | text, never reported | a list of other live entities the holder doesn't own (monitored alarms, grid sensors, hearers, queued items). Only through `WEAK_LIST_ADD` / `WEAK_LIST_REMOVE` / `WEAK_LIST_HAS` / `weak_list_live()`, which resolves and prunes dead members |
 | handle | a text var, `om_handle()` / `om_resolve()` | weak | nothing to clear | text, never reported | another live entity whose lifetime something else manages |
+
+Teardown that must still read declared vars (a holder ending its busy state, a hologram handing
+bellies back to its master, a projectile drawing tracers from its owned segments) goes in
+`lifecycle_prerelease()`, which the destroy transaction runs just before phase 4 clears the links.
+A declared cache (`CACHE_ON_*`) is only for data that is purely derivable and rebuilt on read: the
+core nulls it whenever its rule fires (a `CHANGE_EXPLICIT` cache on every `MACHINE_WAKE`), so a list
+that must survive is a `REF_WEAK_LIST`, an owned list, or (turfs, never freed) `REF_STATIC`.
 
 `REF_STATIC` and `REF_DEF` differ only in the leak check (a static var is exempt from it
 outright, like `REF_KEEP`); new code uses `REF_STATIC` for singletons and flyweights.
@@ -558,7 +566,7 @@ outright, like `REF_KEEP`); new code uses `REF_STATIC` for singletons and flywei
 3a. a **static reference** (`REF_STATIC`) to a singleton or flyweight;
 4. a **declared cache** with an invalidation rule (`declared_cache_vars()`, naming the channel or event that clears it).
 
-A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones and is ratcheted to 0. Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
+A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones; with `declared_refs_lint.py` it is an outright ban (both reached 0). Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
 
 **Lints, ratcheted to zero outside the justified keeps (`// ALLOW(scheduler): <reason>`, §16):** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
 
@@ -1221,7 +1229,7 @@ fourth, and `tools/ci/check_ratchets.sh` runs them all: a count may fall, never 
 ceilings are the `tools/ci/*_baseline.txt` files next to each lint (`api_lints_baseline.txt`,
 `scheduler_lints_baseline.txt`, `cooldown_baseline.txt`,
 `containment_baseline.txt`, `spatial_baseline.txt`, `latent_baseline.txt`,
-`declared_refs_baseline.txt`, `lifecycle_counts_baseline.txt`); lower
+`lifecycle_counts_baseline.txt`); lower
 one with the lint's `--update` after a sweep, never raise it.
 
 **Justified keeps.** There are no allowlist files. A site that is right as it is says so where
@@ -1287,4 +1295,4 @@ Destroying an object is the lifecycle transaction (`code/datums/lifecycle/transa
 
 **The GC report names the cycle.** When SSgarbage fails to collect an object it logs that object's `LIFECYCLE LEAK` lines under its "unable to be GC'd" line.
 
-**Declared index lists.** `tools/ci/declared_refs_lint.py` counts a list var declared with an object element type (`var/list/datum/reagent/reagent_by_id`, tmp or not) as an object-holding list even when no write is recognisable. It must be declared (`REF_OWNED_LIST`, `REF_OWNED_VALUES`, a backlist, a cache) or stay within the `object_keyed` ceiling in `declared_refs_baseline.txt`. `/datum/reagents` declares `reagent_by_id` with `REF_OWNED_VALUES`, so phase 4 empties it.
+**Declared index lists.** `tools/ci/declared_refs_lint.py` counts a list var declared with an object element type (`var/list/datum/reagent/reagent_by_id`, tmp or not) as an object-holding list even when no write is recognisable. It must be declared (`REF_OWNED_LIST`, `REF_OWNED_VALUES`, a backlist, a cache); undeclared ones are banned outright. `/datum/reagents` declares `reagent_by_id` with `REF_OWNED_VALUES`, so phase 4 empties it.

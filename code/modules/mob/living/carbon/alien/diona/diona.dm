@@ -74,3 +74,5 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 		step(D, pick(GLOB.cardinal))
 	if(prob(1))
 		D.emote(pick("scratch","jump","chirp","roll"))
+
+REF_SPILL(/mob/living/carbon/alien/diona, "hat")

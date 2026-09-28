@@ -242,3 +242,5 @@ DECLARE_INTERACTIONS(/obj/structure/atmospheric_retention_field, INTERACT_HAND_U
 /obj/structure/atmospheric_retention_field/underdoors
 	plane = OBJ_PLANE
 	layer = UNDER_JUNK_LAYER
+
+REF_STATIC(/obj/machinery/atmospheric_field_generator, "areas_added")

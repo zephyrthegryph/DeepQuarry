@@ -218,6 +218,7 @@
 	update_icon()
 	return INITIALIZE_HINT_LATELOAD
 
+REF_STATIC(/obj/machinery/portable_atmospherics/hydroponics, "seed")
 REF_OWNED(/obj/machinery/portable_atmospherics/hydroponics, list("temp_chem_holder", "ov_lowhealth", "ov_lowwater", "ov_lownutri", "ov_harvest", "ov_frozen", "ov_alert3"))
 
 /obj/machinery/portable_atmospherics/hydroponics/on_reagent_change()

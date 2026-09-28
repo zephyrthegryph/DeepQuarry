@@ -841,6 +841,7 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 			dog.control_node = src
 
 REF_PAIR(/obj/structure/control_pod, list("host" = "control_node"))
+REF_HELD(/obj/structure/control_pod, "controller")
 
 DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
@@ -1520,3 +1521,6 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, INTERACT_HAND(null, PROC_RE
 		icon_state = "flesh-open"
 	else
 		icon_state = "flesh-closed"
+
+REF_HELD(/obj/effect/dog_teleporter, "target")
+REF_HELD(/turf/simulated/floor/water/digestive_enzymes, "linked_mob")

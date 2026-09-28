@@ -1042,3 +1042,6 @@ REF_OWNED(/mob/living/simple_mob, list("myid", "mob_radio"))
 /mob/living/simple_mob/proc/hunting_vision_ends()
 	to_chat(src, "Your concentration wears off.")
 	sight -= SEE_MOBS
+
+REF_OWNED(/mob/living/simple_mob, list("modifier_overlay", "eye_layer"))
+REF_HELD(/mob/living/simple_mob, "movement_target")

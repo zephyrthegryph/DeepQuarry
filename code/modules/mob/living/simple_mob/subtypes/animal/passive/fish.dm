@@ -397,3 +397,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, IN
 	vore_default_mode = DM_HOLD //docile shark
 	vore_capacity = 5
 	pixel_x = -50
+
+REF_OWNED(/mob/living/simple_mob/animal/passive/fish/icebass, list("dorsal_image", "belly_image"))
+REF_OWNED(/mob/living/simple_mob/animal/passive/fish/rockfish, "head_image")

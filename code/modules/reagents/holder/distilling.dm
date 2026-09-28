@@ -25,6 +25,8 @@
 	/// Levels in the set (payload = index).
 	var/tmp/list/heat_set_levels
 
+REF_OWNED(/datum/reagents/distilling, "heat_set_watch")
+
 // ALLOW(lifecycle): stops watching reaction temperatures.
 /datum/reagents/distilling/Destroy()
 	unwatch_reaction_temperatures()

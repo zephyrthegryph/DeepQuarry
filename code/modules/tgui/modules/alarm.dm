@@ -141,3 +141,6 @@
 	data["categories"] = categories
 
 	return data
+
+// The global alarm handler singletons.
+REF_STATIC(/datum/tgui_module/alarm_monitor, "alarm_handlers")

@@ -202,3 +202,5 @@
 	. = ..()
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
+
+REF_HELD(/obj/machinery/bunsen_burner, "held_container")

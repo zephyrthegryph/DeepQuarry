@@ -351,3 +351,6 @@ Thus, the two variables affect pump operation are set in New():
 // (No #undef here: VOLUME_PUMP_MAX_OUTPUT_PRESSURE / VOLUME_PUMP_LEAK_AMOUNT are
 // globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
 // from a component file would break any later include that uses them.)
+
+REF_STATIC(/obj/machinery/atmospherics/binary/volume_pump, "radio_connection")
+REF_OWNED(/obj/machinery/atmospherics/binary/volume_pump, "overclock_overlay")

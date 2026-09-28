@@ -196,9 +196,9 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 
 /// Registers a furnishing and every movable it created inside itself for teardown.
 /datum/generated_station_materialization/proc/register_furnishing(atom/movable/furnishing)
-	if(!furnishing || (furnishing in furnishings))
+	if(!furnishing || WEAK_LIST_HAS(furnishings, furnishing))
 		return
-	furnishings += furnishing
+	WEAK_LIST_ADD(furnishings, furnishing)
 	register_owned_furnishing_atom(furnishing)
 
 /datum/generated_station_materialization/proc/register_owned_furnishing_atom(atom/movable/furnishing)
@@ -208,26 +208,23 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
-// ALLOW(lifecycle): its areas revert to space and its built atoms go with it.
+/// The areas are owned values (deleted in phase 4); their turfs revert to space first.
+/datum/generated_station_materialization/lifecycle_prerelease()
+	var/area/space/space_area = generated_station_space_area()
+	for(var/list/by_id in list(department_areas, module_areas))
+		for(var/id in by_id)
+			var/area/generated_station/A = by_id[id]
+			if(!A)
+				continue
+			var/list/owned_turfs = A.contents.Copy()
+			for(var/turf/T in owned_turfs)
+				ChangeArea(T, space_area)
+	return ..()
+
+// ALLOW(lifecycle): its transit/maintenance turfs revert to space and its built atoms go with it.
 /datum/generated_station_materialization/Destroy()
 	qdel_handle(entry_handle); entry_handle = null
 	var/area/space/space_area = generated_station_space_area()
-	if(department_areas)
-		for(var/node_id in department_areas)
-			var/area/generated_station/A = department_areas[node_id]
-			var/list/owned_turfs = A.contents.Copy()
-			for(var/turf/T in owned_turfs)
-				ChangeArea(T, space_area)
-			qdel(A)
-		department_areas = null
-	if(module_areas)
-		for(var/module_id in module_areas)
-			var/area/generated_station/A = module_areas[module_id]
-			var/list/owned_turfs = A.contents.Copy()
-			for(var/turf/T in owned_turfs)
-				ChangeArea(T, space_area)
-			qdel(A)
-		module_areas = null
 	if(transit_area())
 		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
@@ -243,8 +240,6 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	QDEL_LIST(control_landmarks)
 	QDEL_LIST(service_endpoints)
 	QDEL_LIST(service_routes)
-	QDEL_LIST(owned_furnishing_atoms)
-	furnishings = null
 	QDEL_LIST(doors)
 	QDEL_LIST(infrastructure)
 	degradation_events = null
@@ -261,9 +256,8 @@ REF_OWNED(/datum/generated_room_fragment_placement, "fragment")
 	var/min_y
 	var/max_x
 	var/max_y
+	/// Layout node handles by id (the spec owns the nodes).
 	var/list/nodes_by_id
-	var/list/department_areas
-	var/list/module_areas
 	var/transit_area_handle
 	var/tmp/maintenance_area_handle
 	var/datum/generated_station_materialization/result
@@ -327,8 +321,6 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	max_x = origin_x + spec().grid_width - 1
 	max_y = origin_y + spec().grid_height - 1
 	nodes_by_id = list()
-	department_areas = list()
-	module_areas = list()
 	transit_area_handle = om_handle(generated_station_create_area(/area/generated_station/transit))
 	transit_area().station_id = spec().id
 	transit_area().name = "[spec().name] Transit"
@@ -343,14 +335,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	result.transit_area_handle = om_handle(transit_area())
 	result.maintenance_area_handle = om_handle(maintenance_area())
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		nodes_by_id[node.id] = node
+		nodes_by_id[node.id] = om_handle(node)
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(department)
 			var/area/generated_station/department_area = make_department_area(department.definition().id)
 			department_area.station_id = spec().id
 			department_area.department_id = department.id
 			department_area.name = "[spec().name] [department.definition().name]"
-			department_areas[node.id] = department_area
 			result.department_areas[node.id] = department_area
 		generation_checkpoint("Allocating station areas", 25)
 	return TRUE
@@ -485,7 +476,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/y = text2num(parts[2])
 		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors[key])
 			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors[key]
-			var/datum/generated_station_layout_node/door_node = nodes_by_id[maintenance_door.owner_node_id]
+			var/datum/generated_station_layout_node/door_node = om_resolve(nodes_by_id[maintenance_door.owner_node_id])
 			var/access_id
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
 				access_id = department_for_node(door_node)?.definition()?.id
@@ -557,7 +548,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 					ChangeArea(T, maintenance_area())
 					result.corridor_count++
 				else
-					var/area/generated_station/owner_area = module_areas[intent.zone_id] || department_areas[intent.owner_id]
+					var/area/generated_station/owner_area = result.module_areas[intent.zone_id] || result.department_areas[intent.owner_id]
 					if(!owner_area)
 						// ChangeArea() crashes on a null area. A floor whose planned
 						// owner never received an area still needs a pressurised,
@@ -587,7 +578,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			var/obj/machinery/door/airlock/airlock = new intent.door_type(T)
 			airlock.set_dir(intent.door_direction || NORTH)
 			if(intent.owner_id != "transit" && intent.owner_id != "maintenance")
-				configure_department_airlock(airlock, department_for_node(nodes_by_id[intent.owner_id]))
+				configure_department_airlock(airlock, department_for_node(om_resolve(nodes_by_id[intent.owner_id])))
 			else if(intent.access_id)
 				configure_airlock_access(airlock, intent.access_id)
 			result.doors += airlock
@@ -722,7 +713,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Resolves cross-room access constraints after every authored fragment and
 /// generated furnishing exists, while the station can still be rejected safely.
 /datum/generated_station_materializer/proc/finalize_furnishing_access()
-	for(var/atom/movable/furnishing in result.furnishings)
+	for(var/atom/movable/furnishing in weak_list_live(result.furnishings))
 		var/turf/current = get_turf(furnishing)
 		if(!current)
 			continue
@@ -744,7 +735,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 						break
 				if(!destination)
 					if(generated_station_is_removable_decor(furnishing))
-						result.furnishings -= furnishing
+						WEAK_LIST_REMOVE(result.furnishings, furnishing)
 						result.owned_furnishing_atoms -= furnishing
 						qdel(furnishing)
 						continue
@@ -768,12 +759,13 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	// A later room or emergency fixture can change the final boundary graph
 	// after an individual room was solved. Remove only non-functional decor,
 	// newest first, until every room again has one component connected to a door.
-	for(var/module_id in module_areas)
-		var/area/generated_station/A = module_areas[module_id]
+	for(var/module_id in result.module_areas)
+		var/area/generated_station/A = result.module_areas[module_id]
 		while(!generated_station_room_area_is_accessible(A))
 			var/atom/movable/removable
-			for(var/i in length(result.furnishings) to 1 step -1)
-				var/atom/movable/candidate = result.furnishings[i]
+			var/list/live_furnishings = weak_list_live(result.furnishings)
+			for(var/i in length(live_furnishings) to 1 step -1)
+				var/atom/movable/candidate = live_furnishings[i]
 				if(get_area(candidate) == A && generated_station_is_removable_decor(candidate))
 					removable = candidate
 					break
@@ -784,14 +776,15 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				// authored fixture still partitions the room after relocation, drop
 				// that fixture and publish a degraded but fully traversable room.
 				var/atom/movable/required_blocker
-				for(var/i in length(result.furnishings) to 1 step -1)
-					var/atom/movable/candidate = result.furnishings[i]
+				var/list/live_blockers = weak_list_live(result.furnishings)
+				for(var/i in length(live_blockers) to 1 step -1)
+					var/atom/movable/candidate = live_blockers[i]
 					if(get_area(candidate) == A && candidate.density && !istype(candidate, /obj/machinery/door))
 						required_blocker = candidate
 						break
 				if(required_blocker)
 					result.degradation_events += "removed [required_blocker.type] from [A.name] to preserve room access"
-					result.furnishings -= required_blocker
+					WEAK_LIST_REMOVE(result.furnishings, required_blocker)
 					result.owned_furnishing_atoms -= required_blocker
 					qdel(required_blocker)
 					continue
@@ -804,7 +797,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 							blockers += "[blocker.type]@[blocked_floor.x],[blocked_floor.y]"
 				log_world("Generated station could not repair furnishing access for [A.name]: [jointext(blockers, ", ")]")
 				return FALSE
-			result.furnishings -= removable
+			WEAK_LIST_REMOVE(result.furnishings, removable)
 			result.owned_furnishing_atoms -= removable
 			qdel(removable)
 			generation_checkpoint("Opening final room circulation", 55)
@@ -813,7 +806,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 /// Moves a required dense furnishing to another valid socket when the complete
 /// room graph proves its authored position is an articulation point.
 /datum/generated_station_materializer/proc/relocate_blocking_room_furnishing(area/generated_station/A)
-	for(var/atom/movable/furnishing in result.furnishings)
+	for(var/atom/movable/furnishing in weak_list_live(result.furnishings))
 		if(get_area(furnishing) != A || !furnishing.density || istype(furnishing, /obj/machinery/door))
 			continue
 		var/turf/original = get_turf(furnishing)
@@ -927,12 +920,11 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 		var/datum/generated_station_room_allocation/allocation = room_allocation_for_module(module)
 		var/base_name = allocation?.area_name || "[spec().name] [department_name] [role_name]"
 		A.name = designation_number > 1 ? "[base_name] [designation_number]" : base_name
-		module_areas[module.id] = A
 		result.module_areas[module.id] = A
 	return TRUE
 
 /datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)
-	var/datum/generated_station_layout_node/node = nodes_by_id[module?.department_node_id]
+	var/datum/generated_station_layout_node/node = om_resolve(nodes_by_id[module?.department_node_id])
 	for(var/datum/generated_station_room_allocation/room in node?.room_program)
 		if(room.id == module.id)
 			return room
@@ -1120,8 +1112,8 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /// Installs baseline fire detection and emergency supplies independently of room decoration.
 /datum/generated_station_materializer/proc/place_emergency_equipment()
-	for(var/module_id in module_areas)
-		var/area/generated_station/A = module_areas[module_id]
+	for(var/module_id in result.module_areas)
+		var/area/generated_station/A = result.module_areas[module_id]
 		var/turf/alarm_turf
 		for(var/datum/generated_station_tile_intent/intent in result.tile_plan.utility_floors(null, module_id))
 			if(intent.zone_id == module_id && (GENERATED_STATION_UTILITY_FIRE_ALARM in intent.utility_intents))
@@ -1286,7 +1278,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 
 /datum/generated_station_materializer/proc/carve_departments()
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		var/area/generated_station/department_area = department_areas[node.id]
+		var/area/generated_station/department_area = result.department_areas[node.id]
 		for(var/x in node.x to node.x + node.width - 1)
 			for(var/y in node.y to node.y + node.height - 1)
 				var/turf/T = world_turf(x, y)
@@ -1382,7 +1374,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	var/list/point = run[CEILING(length(run) / 2, 1)]
 	var/turf/T = world_turf(point[1], point[2])
 	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	ChangeArea(T, department_areas[node.id])
+	ChangeArea(T, result.department_areas[node.id])
 	var/obj/machinery/door/airlock/airlock = new(T)
 	airlock.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 	configure_department_airlock(airlock, department)
@@ -1473,7 +1465,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 				break
 		if(!hull_turf)
 			continue
-		var/area/generated_station/A = department_areas[node.id]
+		var/area/generated_station/A = result.department_areas[node.id]
 		if(!A)
 			continue
 		var/turf/chamber = get_step(hull_turf, outward)
@@ -1558,7 +1550,7 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 			T = candidate
 			break
 	if(!T)
-		var/area/generated_station/docking/docking_area = department_areas[docking.id]
+		var/area/generated_station/docking/docking_area = result.department_areas[docking.id]
 		for(var/turf/simulated/floor/candidate in area_contents_of_type(docking_area, /turf/simulated/floor))
 			if(!candidate.density && !(locate_on(candidate, /obj/machinery/door)))
 				T = candidate
@@ -1573,15 +1565,19 @@ REF_OWNED(/datum/generated_station_materializer, list("last_architecture_validat
 	// area power state, avoiding partially-built networks becoming observable.
 	if(SSair)
 		SSair.update_dynamic_multiz_atmos_level(result.z_level)
-	for(var/node_id in department_areas)
-		var/area/generated_station/A = department_areas[node_id]
+	for(var/node_id in result.department_areas)
+		var/area/generated_station/A = result.department_areas[node_id]
 		A.power_change()
-	for(var/module_id in module_areas)
-		var/area/generated_station/room_area = module_areas[module_id]
+	for(var/module_id in result.module_areas)
+		var/area/generated_station/room_area = result.module_areas[module_id]
 		room_area.power_change()
 	transit_area()?.power_change()
+	maintenance_area()?.power_change()
 
 REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_validation"))
+REF_OWNED_LIST(/datum/generated_station_materialization, "owned_furnishing_atoms")
+REF_OWNED_VALUES(/datum/generated_station_materialization, list("department_areas", "module_areas"))
+REF_WEAK_LIST(/datum/generated_station_materialization, "furnishings")
 
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materializer/proc/spec() as /datum/generated_station_spec
@@ -1606,4 +1602,4 @@ REF_OWNED(/datum/generated_station_materialization, list("tile_plan", "service_v
 /// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
 	return om_resolve(transit_area_handle)
-	maintenance_area()?.power_change()
+

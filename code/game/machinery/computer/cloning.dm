@@ -93,6 +93,7 @@ REF_OWNED_LIST(/obj/machinery/computer/cloning, "records")
 	var/num = 1
 	for(var/obj/machinery/clonepod/P in get_area(src))
 		if(!P.connected())
+			// ALLOW(object_keyed_lists): linked pods; each pod removes itself on disconnect/destroy (clonepod connected().pods -= src)
 			pods += P
 			P.connected_handle = om_handle(src)
 			P.name = "[initial(P.name)] #[num++]"
@@ -120,6 +121,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/pod = multitool.connecting()
 	if(pod && !(pod in pods))
+		// ALLOW(object_keyed_lists): linked pods; each pod removes itself on disconnect/destroy (clonepod connected().pods -= src)
 		pods += pod
 		pod.connected_handle = om_handle(src)
 		pod.name = "[initial(pod.name)] #[length(pods)]"

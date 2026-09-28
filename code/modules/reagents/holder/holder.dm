@@ -25,20 +25,15 @@ REF_OWNED_LIST(/datum/reagents, "reagent_list")
 // (its members are already deleted through reagent_list by then) and the
 // holder <-> reagent.holder cycle can't survive the destroy.
 REF_OWNED_VALUES(/datum/reagents, "reagent_by_id")
+REF_BACK(/datum/reagents, list("my_atom" = "reagents"))
 
-// ALLOW(lifecycle): its atom forgets it (atoms delete their reagents late, in /atom/Destroy()).
+// ALLOW(lifecycle): breaks the reagent_by_id cycle (its atom forgets it via REF_BACK my_atom).
 /datum/reagents/Destroy()
 	// reagent_by_id isn't a declared owned list (REF_OWNED_LIST above already
 	// deleted its members through reagent_list), but it still points at every
 	// reagent, and each reagent's `holder` points back here: left set, the pair
 	// is a reference cycle that never collects (every holder hard-deleted).
 	reagent_by_id = null
-	if(my_atom && my_atom.reagents == src)
-		my_atom.reagents = null
-	// my_atom is a back reference: a holder the atom keeps in some other var
-	// (a human's vessel, a carbon's bloodstr) is often deleted while that var
-	// still points here (QDEL_NULL nulls after the qdel), which is a cycle.
-	my_atom = null
 	return ..()
 
 /* Internal procs */

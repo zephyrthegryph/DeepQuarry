@@ -36,7 +36,7 @@
 	var/min_urgency = 1
 	var/use_beaker = 0 //Use reagents in beaker instead of default treatment agents.
 	var/treatment_emag = REAGENT_ID_TOXIN
-	var/datum/declare_treatment = 0 //When attempting to treat a patient, should it notify everyone wearing medhuds?
+	var/declare_treatment = 0 //When attempting to treat a patient, should it notify everyone wearing medhuds?
 
 	// Are we tipped over?
 	var/is_tipped = FALSE
@@ -578,3 +578,5 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_MAX_INJECTION
 #undef MEDBOT_MIN_URGENCY
 #undef MEDBOT_MAX_URGENCY
+
+REF_HELD(/mob/living/bot/medbot, "reagent_glass")

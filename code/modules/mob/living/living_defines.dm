@@ -141,3 +141,7 @@
 	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
 	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 	var/eggs = 0
+
+// The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
+REF_OWNED(/mob/living, list("inventory_panel", "dsoverlay", "selected_image"))
+REF_HELD(/mob/living, list("cameraFollow", "tf_form", "tf_form_mind"))

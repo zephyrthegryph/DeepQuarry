@@ -137,11 +137,11 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 			to_chat(user, span_notice("You fail to pick anything up with \the [src]."))
 	if(istype(user?.pulling_target(), /obj/structure/ore_box)) //Bit of a crappy way to do this, as it doubles spam for the user, but it works. //Then let me fix it. ~CL.
 		var/obj/structure/ore_box/OB = user?.pulling_target()
-		for(var/ore in stored_ore)
-			if(stored_ore[ore] > 0)
-				var/ore_amount = stored_ore[ore]	// How many ores does the satchel have?
-				OB.stored_ore[ore] += ore_amount	// Add the ore to the box
-				stored_ore[ore] = 0 				// Set the value of the ore in the satchel to 0.
+		for(var/ore_material in stored_ore)
+			if(stored_ore[ore_material] > 0)
+				var/ore_amount = stored_ore[ore_material]	// How many ores does the satchel have?
+				OB.stored_ore[ore_material] += ore_amount	// Add the ore to the box
+				stored_ore[ore_material] = 0 				// Set the value of the ore in the satchel to 0.
 				current_capacity = 0				// Set the amount of ore in the satchel to 0.
 	current_pickup = 0
 	return success

@@ -488,3 +488,5 @@
 	hit_zones = list("mouthparts", "central segment", "tail segment")
 
 #undef LEECH_TREAT_URGENCY
+
+REF_HELD(/mob/living/simple_mob/animal/sif/leech, list("host_bodypart", "host"))

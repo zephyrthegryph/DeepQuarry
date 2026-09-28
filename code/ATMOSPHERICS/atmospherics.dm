@@ -45,6 +45,7 @@ Pipelines + Other Objects -> Pipe network
 	var/material_last_exposure = 0
 	/// Every pipe-network roster currently retaining this machine. This is the
 	/// authoritative reverse index used to make topology teardown cycle-proof.
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	var/list/datum/pipe_network/network_memberships
 
 /obj/machinery/atmospherics/proc/register_network_membership(datum/pipe_network/network)
@@ -381,3 +382,6 @@ Pipelines + Other Objects -> Pipe network
 	if(internal_pressure > 2*ONE_ATMOSPHERE)
 		unsafe_pressure_release(user, internal_pressure)
 		playsound(our_turf, 'sound/machines/hiss.ogg', 50, 0, 0)
+
+// Topology links: strong, cleared by lifecycle_unbind() (phase 1), which does the real disconnection.
+REF_HELD(/obj/machinery/atmospherics, list("node1", "node2", "network_memberships"))

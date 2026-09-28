@@ -279,3 +279,5 @@ Reads a comment and outputs the type of comment
 	return options_ref
 
 REF_OWNED_LIST(/datum/n_Scanner, "errors")
+
+REF_BACK(/datum/n_Scanner/nS_Scanner, list("options_ref" = null))

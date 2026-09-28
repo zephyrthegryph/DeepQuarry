@@ -342,43 +342,14 @@
 		if(deployed)
 			undeploy()
 		revert_shell() // To get it out of the GLOB list.
-	sprite_datum = null
-	QDEL_NULL(robotact)
 	set_cell(null)
 	QDEL_LIST(components)
-	if(bolt)
-		QDEL_NULL(bolt)
 	if(module)
 		QDEL_NULL(module)
 	if(radio)
 		QDEL_NULL(radio)
-	if(communicator)
-		QDEL_NULL(communicator)
 	if(camera)
 		QDEL_NULL(camera)
-	if(rbPDA)
-		QDEL_NULL(rbPDA)
-	if(hat)
-		var/turf/T = get_turf(src)
-		if(T)
-			hat.forceMove(T)
-			hat = null
-		else
-			QDEL_NULL(hat)
-	if(hat_overlay)
-		QDEL_NULL(hat_overlay)
-	if(inv1)
-		QDEL_NULL(inv1)
-	if(inv2)
-		QDEL_NULL(inv2)
-	if(inv3)
-		QDEL_NULL(inv3)
-	if(robot_modules_background)
-		QDEL_NULL(robot_modules_background)
-	if(ion_trail)
-		QDEL_NULL(ion_trail)
-	if(spark_system)
-		QDEL_NULL(spark_system)
 	module_active = null
 
 	return ..()
@@ -1880,3 +1851,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 // Do we support specific upgrades?
 /mob/living/silicon/robot/proc/supports_upgrade(given_type)
 	return (given_type in module.supported_upgrades)
+
+REF_OWNED(/mob/living/silicon/robot, list("robotact", "bolt", "communicator", "rbPDA", "hat_overlay", "inv1", "inv2", "inv3", "robot_modules_background", "ion_trail", "spark_system"))
+REF_SPILL(/mob/living/silicon/robot, "hat")
+// Destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks,
+// the module, radio and camera go after the AI link and shell are undone.
+REF_HELD(/mob/living/silicon/robot, list("mmi", "cell", "module", "radio", "camera", "connected_ai", "traitor_hud_client"))
+REF_STATIC(/mob/living/silicon/robot, "sprite_datum")

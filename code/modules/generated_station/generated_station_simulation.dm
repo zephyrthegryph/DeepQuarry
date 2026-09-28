@@ -173,3 +173,6 @@ REF_OWNED_VALUES(/datum/generated_station_simulation, "departments")
 /// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/generated_station_simulation/proc/spec() as /datum/generated_station_spec
 	return om_resolve(spec_handle)
+
+// areas the station materialization owns; the simulation is its child
+REF_STATIC(/datum/generated_station_simulation, "power_areas")

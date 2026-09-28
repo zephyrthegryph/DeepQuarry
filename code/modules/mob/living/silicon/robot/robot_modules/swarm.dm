@@ -38,3 +38,5 @@
 	projectile_type = /obj/item/projectile/beam/stun/disabler
 	charge_cost = 800
 	recharge_time = 0.5 SECONDS
+
+REF_HELD(/obj/item/robot_module/drone/swarm, "drone_id")

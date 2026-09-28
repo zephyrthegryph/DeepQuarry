@@ -1135,7 +1135,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 			return TRUE
 	return FALSE
 
-REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay"))
+REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay", "identity"))
 
 /// LC-refs: hidden uplink -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
@@ -1144,3 +1144,5 @@ REF_OWNED(/obj/item, list("blood_overlay", "d_stage_overlay"))
 /// LC-refs: my augment -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
 	return om_resolve(I?.my_augment_handle)
+
+REF_HELD(/obj/item, "master")

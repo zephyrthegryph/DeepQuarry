@@ -433,3 +433,6 @@
 	parent_morph.original_mind = null
 
 #undef MORPH_COOLDOWN
+
+REF_HELD(/mob/living/simple_mob/vore/morph, list("form", "original_mind"))
+REF_HELD(/mob/living/simple_mob/vore/morph/dominated_prey, list("parent_morph", "prey_body", "prey_mind"))

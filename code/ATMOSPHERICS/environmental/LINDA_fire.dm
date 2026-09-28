@@ -393,7 +393,7 @@
 #define MIN_SIZE_SOUND 2
 ///handle the grouping of hotspot and then determining an average center to play sound in
 /datum/hot_group
-	var/list/obj/effect/hotspot/spot_list = list() // ALLOW(instance_list): atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
+	var/list/obj/effect/hotspot/spot_list = list() // ALLOW(instance_list, object_keyed_lists): atmos area (M1a): LINDA fire hotspot groups; listed in memory_lists_audit.md, not edited here
 	///the sound center turf which the looping sound will play
 	var/turf/open/current_sound_loc
 	var/datum/looping_sound/fire/sound
@@ -416,6 +416,7 @@ REF_OWNED(/datum/hot_group, "sound")
 /datum/hot_group/proc/add_to_group(obj/effect/hotspot/target)
 	if(QDELETED(target))
 		return
+	// ALLOW(object_keyed_lists): hotspot group roster; each hotspot's Destroy() calls remove_from_group(), which retires an empty group
 	spot_list += target
 	target.our_hot_group = src
 	if(COOLDOWN_FINISHED(src, update_sound_center) && length(spot_list) > MIN_SIZE_SOUND)//arbitrary size to start playing the sound
@@ -510,3 +511,7 @@ REF_OWNED(/datum/hot_group, "sound")
 
 /datum/om/stage/hotspot/idle(obj/effect/hotspot/H)
 	return FALSE
+
+REF_HELD(/obj/effect/hotspot, "our_hot_group")
+REF_HELD(/datum/hot_group, "spot_list")
+REF_STATIC(/datum/hot_group, "current_sound_loc")

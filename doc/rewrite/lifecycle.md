@@ -139,7 +139,7 @@ enforces it.
   a registry, or is keyed by `om_handle()`. `tools/ci/declared_refs_lint.py` finds
   these writes syntactically (an object is `src`, `usr`, a `new` expression or a
   name the proc declares object-typed) and ratchets them per file in
-  the `object_keyed` ceiling in `tools/ci/declared_refs_baseline.txt` (a justified write carries `// ALLOW(object_keyed_lists): <reason>`).
+  an outright ban (the ratchet reached 0; a justified write carries `// ALLOW(object_keyed_lists): <reason>`).
 - **LC-refs: cache rules.** A `declared_cache_vars()` entry without a
   `CACHE_ON_*` rule fails the lint outright (no ratchet), and the core reports one
   at runtime when the type first joins the OM (`om_cache_scan()`). The rule is read

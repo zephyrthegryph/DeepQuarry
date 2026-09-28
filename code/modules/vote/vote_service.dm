@@ -30,3 +30,5 @@ GLOBAL_DATUM_INIT(vote_service, /datum/world_service/vote, new)
 
 /datum/om/behaviour/world/vote/service()
 	return GLOB.vote_service
+
+REF_OWNED(/datum/world_service/vote, list("active_vote"))

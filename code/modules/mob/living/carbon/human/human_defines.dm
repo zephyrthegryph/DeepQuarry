@@ -189,3 +189,6 @@
 
 /mob/living/carbon/human/ai_controlled
 	low_priority = TRUE
+
+REF_STATIC(/mob/living/carbon/human, list("synthetic", "ear_style", "ear_secondary_style", "tail_style", "wing_style"))
+REF_HELD(/mob/living/carbon/human, list("vr_holder", "vr_link", "machine_visual"))

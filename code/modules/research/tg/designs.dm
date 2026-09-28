@@ -285,3 +285,6 @@ other types of metals and chemistry for reagents).
 			break
 		return legacy
 	return list()
+
+// The techweb nodes that unlock this design: frozen definitions.
+REF_DEF(/datum/design_techweb, list("unlocked_by"))

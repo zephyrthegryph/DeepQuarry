@@ -95,6 +95,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	if(!.)
 		return FALSE
 	var/text_channel = num2text(.)
+	// ALLOW(object_keyed_lists): channel -> reserving datum on the sound service; released when that datum is deleted
 	using_channels[text_channel] = D
 	LAZYINITLIST(using_channels_by_datum[D])
 	using_channels_by_datum[D] += .

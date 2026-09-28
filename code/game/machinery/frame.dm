@@ -326,8 +326,9 @@ GLOBAL_LIST(construction_frame_floor)
 	for(var/A in circuit.req_components)
 		req_components[A] = circuit.req_components[A]
 	req_component_names = circuit.req_components.Copy()
-	for(var/obj/ct as anything in req_components)
-		req_component_names[ct] = initial(ct.name)
+	for(var/ct_path in req_components)
+		var/obj/ct = ct_path
+		req_component_names[ct_path] = initial(ct.name)
 
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
@@ -454,3 +455,6 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	return TRUE
 
 REF_HELD(/obj/structure/frame, list("circuit"))
+
+REF_STATIC(/obj/structure/frame, "frame_type")
+REF_OWNED_LIST(/obj/structure/frame, "components")

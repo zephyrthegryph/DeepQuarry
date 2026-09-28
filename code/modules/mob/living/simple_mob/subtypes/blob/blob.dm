@@ -44,7 +44,8 @@
 		color = null
 	..()
 
-REF_BACKLIST(/mob/living/simple_mob/blob, list("overmind" = "blob_mobs"))
+REF_BACKLIST(/mob/living/simple_mob/blob, list("overmind" = "blob_mobs", "factory" = "spores"))
+REF_STATIC(/mob/living/simple_mob/blob, "blob_type")
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)

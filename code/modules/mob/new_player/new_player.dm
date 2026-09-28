@@ -545,3 +545,6 @@ REF_OWNED(/mob/new_player, list("manifest_dialog", "late_choices_dialog", "priva
 	if (!pass)
 		tgui_alert_async(src,"There were problems with spawning your character. Check your message log for details.","Error")
 	return pass
+
+// The window belongs to the client (tgui_window); the lobby only drives it.
+REF_HELD(/mob/new_player, "lobby_window")

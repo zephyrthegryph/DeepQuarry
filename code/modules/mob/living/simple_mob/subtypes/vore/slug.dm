@@ -239,3 +239,5 @@
 		qdel(src)
 		return TRUE
 	return .
+
+REF_STATIC(/obj/effect/slug_glue, "my_turf")

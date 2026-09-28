@@ -658,3 +658,5 @@
 REF_OWNED(/datum/mind, list("antag_holder", "my_religion"))
 
 REF_OWNED_LIST(/datum/mind, "objectives")
+
+REF_BACK(/datum/mind, list("current" = "mind"))

@@ -37,23 +37,24 @@
 	valid_z_levels = get_location_z_levels()
 	valid_z_levels -= using_map.sealed_levels // Space levels only please!
 
-	valid_apcs = list()
+	valid_apcs = null
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in valid_z_levels)
-			valid_apcs += A
+			WEAK_LIST_ADD(valid_apcs, A)
 
 /datum/event2/event/electrical_fault/start()
 	GLOB.command_announcement.Announce("Irregularities detected in \the [location_name()] power grid.", "[location_name()] Power Grid Monitoring", ANNOUNCER_MSG_WIRING_FAULT_START)
 
 /datum/event2/event/electrical_fault/event_tick()
-	if(!valid_apcs.len)
+	var/list/live_apcs = weak_list_live(valid_apcs)
+	if(!live_apcs.len)
 		log_game("ELECTRICAL EVENT: No valid APCs found for electrical fault event. Aborting.")
 		abort()
 		return
 
 	var/list/picked_apcs = list()
 	for(var/i = 1 to max_apcs_per_tick)
-		picked_apcs |= pick(valid_apcs)
+		picked_apcs |= pick(live_apcs)
 
 	for(var/A in picked_apcs)
 		affect_apc(A)
@@ -96,3 +97,5 @@
 //		log_game("ELECTRICAL EVENT: Emagged \the [A].")
 		playsound(A, 'sound/machines/chime.ogg', 50, 1)
 		apcs_emagged++
+
+REF_WEAK_LIST(/datum/event2/event/electrical_fault, "valid_apcs")

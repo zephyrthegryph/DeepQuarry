@@ -505,3 +505,9 @@ EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(
 		if(water.energy < 5)
 			. += span_notice("[src] is dry.")
 // CHOMPEnable End
+
+// Matter synths belong to the robot module (REF_OWNED_LIST "synths"); tools draw on them.
+REF_HELD(/obj/item/reagent_containers/borghypo/hound, "water")
+REF_HELD(/obj/item/robot_tongue, "water")
+REF_HELD(/obj/item/lightreplacer/dogborg, "glass")
+REF_HELD(/obj/item/reagent_containers/glass/beaker/large/borg, "R")

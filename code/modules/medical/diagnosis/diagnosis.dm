@@ -43,6 +43,7 @@
 	var/list/hints
 
 REF_OWNED_LIST(/datum/diagnosis, "findings")
+REF_STATIC(/datum/diagnosis, "profile")
 
 /datum/diagnosis/proc/add_finding(datum/diagnosis_finding/F)
 	for(var/datum/diagnosis_finding/existing as anything in findings)

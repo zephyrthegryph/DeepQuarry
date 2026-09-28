@@ -815,3 +815,7 @@
 #undef SYNTHESIZER_MAX_QUEUE
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
+
+REF_HELD(/obj/machinery/chemical_synthesizer, "catalyst")
+// Label -> installed cartridge (in contents); they go with the machine.
+REF_OWNED_VALUES(/obj/machinery/chemical_synthesizer, "cartridges")

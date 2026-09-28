@@ -319,3 +319,11 @@
 #undef APPLY_CORNER
 #undef SETUP_CORNERS_REMOVAL_CACHE
 #undef SETUP_CORNERS_CACHE
+
+// Membership in the atoms' light_sources lazylists (Destroy() also removes them by hand).
+REF_BACKLIST(/datum/light_source, list("source_atom" = "light_sources", "top_atom" = "light_sources"))
+REF_STATIC(/datum/light_source, list("source_turf", "pixel_turf"))
+// Corner -> strength; lighting corners are immortal, so keying by them strongly is safe on the hot path.
+REF_STATIC(/datum/light_source, "effect_str")
+
+

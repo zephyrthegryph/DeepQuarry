@@ -36,9 +36,6 @@
 		// brain stores relationships as OM handles in personal[], which
 		// invalidate automatically when the referenced mob qdels.
 		QDEL_NULL(ai_brain)
-	if(dsoverlay)
-		dsoverlay.loc = null //I'll take my coat with me
-		dsoverlay = null
 	if(nest) //Ew.
 		if(istype(nest, /obj/structure/prop/nest))
 			var/obj/structure/prop/nest/N = nest
@@ -69,7 +66,6 @@
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
 	QDEL_NULL_LIST(hud_list)
-	QDEL_NULL(selected_image)
 	temp_language_sources = null
 	temp_languages = null
 

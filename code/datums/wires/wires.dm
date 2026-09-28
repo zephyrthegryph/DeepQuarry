@@ -63,9 +63,6 @@
 /datum/wires/Destroy()
 	for(var/color in assemblies)
 		detach_assembly(color)
-	if(holder?.wires == src)
-		holder.wires = null
-	holder = null
 	return ..()
 
 /**
@@ -523,3 +520,5 @@
 				break
 
 #undef MAXIMUM_EMP_WIRES
+
+REF_BACK(/datum/wires, list("holder" = "wires"))

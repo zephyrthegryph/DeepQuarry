@@ -63,3 +63,5 @@ GLOBAL_DATUM_INIT(asset_loading_service, /datum/world_service/asset_loading, new
 
 /datum/om/behaviour/world/asset_loading/service()
 	return GLOB.asset_loading_service
+
+REF_STATIC(/datum/world_service/asset_loading, list("generate_queue"))

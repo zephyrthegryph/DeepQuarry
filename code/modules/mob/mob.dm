@@ -15,7 +15,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	. = ..()
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
-REF_OWNED(/mob, "ability_master")
 
 /mob/Destroy()//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
@@ -27,9 +26,6 @@ REF_OWNED(/mob, "ability_master")
 	unset_machine()
 	clear_fullscreen()
 	if(client)
-		// Snapshot: spell_master Destroy() removes itself from spell_masters.
-		for(var/atom/movable/screen/movable/spell_master/spell_master in spell_masters?.Copy())
-			qdel(spell_master)
 		remove_screen_obj_references()
 		client.screen = list()
 	if(mind && mind.current == src)
@@ -37,9 +33,6 @@ REF_OWNED(/mob, "ability_master")
 	if(!istype(src,/mob/observer))
 		ghostize(FALSE)
 	QDEL_NULL(soulgem) //Soulcatcher
-	QDEL_NULL(dna)
-	QDEL_NULL(plane_holder)
-	QDEL_NULL(hud_used)
 	for(var/key in alerts) //clear out alerts
 		clear_alert(key)
 	if(src?.pulling_target())

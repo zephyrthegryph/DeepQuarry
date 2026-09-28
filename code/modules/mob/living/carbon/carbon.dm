@@ -48,9 +48,7 @@
 /datum/om/stage/life/germs/rewake_delay(mob/living/carbon/self)
 	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
-// bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):
-// left set, it and the holder's my_atom would keep each other alive.
-REF_OWNED(/mob/living/carbon, list("ingested", "touching", "cozyloop", "bloodstr"))
+REF_OWNED(/mob/living/carbon, "cozyloop")
 
 /mob/living/carbon/rejuvenate()
 	bloodstr.clear_reagents()

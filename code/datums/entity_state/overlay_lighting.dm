@@ -577,3 +577,7 @@ REF_BACK(/datum/overlay_lighting, list("owner" = "overlay_light"))
 	///The overlay light of MOVABLE_LIGHT / MOVABLE_LIGHT_DIRECTIONAL atoms (see add_overlay_lighting()).
 	var/tmp/datum/overlay_lighting/overlay_light
 REF_OWNED(/atom/movable, list("overlay_light"))
+
+/// Lit turfs: rebuilt by make_luminosity_update(), dropped by clean_old_turfs() (unbind).
+// turfs, never freed
+REF_STATIC(/datum/overlay_lighting, "affected_turfs")

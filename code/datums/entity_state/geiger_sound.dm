@@ -145,3 +145,5 @@ REF_VAR(/obj/item/geiger, OWNED, /datum/geiger_sound, geiger_sound)
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
 	return last_radiation_pulse_ref
+
+REF_HELD(/datum/looping_sound/geiger, "last_radiation_pulse_ref")

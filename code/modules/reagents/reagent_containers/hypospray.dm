@@ -94,6 +94,8 @@
 	var/obj/item/reagent_containers/glass/beaker/vial/loaded_vial //Wow, what a name.
 	volume = 0
 
+REF_HELD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial")
+
 /obj/item/reagent_containers/hypospray/vial/Initialize(mapload)
 	. = ..()
 	icon_state = "[initial(icon_state)]"

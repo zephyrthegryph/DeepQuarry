@@ -99,3 +99,5 @@
 		our_item.forceMove(drop_location())
 	loaded_item = null
 	. = ..()
+
+REF_STATIC(/obj/machinery/rnd, list("stored_research"))

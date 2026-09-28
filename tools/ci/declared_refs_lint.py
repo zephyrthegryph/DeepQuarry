@@ -38,8 +38,7 @@ Medical, body, organs, surgery, protean and mind_body are included like
 everything else (doc sec 7). tools/ci/scheduler_lints.py's LC-refs count is
 the stricter successor (tmp vars count there too).
 
-Legacy undeclared vars are ratcheted: tools/ci/declared_refs_baseline.txt holds
-the ceiling, which may fall, never rise. A var that is justified as it is carries
+Undeclared vars are banned outright (the ratchet reached 0 and was removed). A var that is justified as it is carries
 `// ALLOW(declared_refs): <reason>` on its declaration (or the comment line above
 it; tools/ci/allow_annotations.py) and doesn't count.
 
@@ -75,10 +74,9 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
-from allow_annotations import allowed, check_ceilings, read_baseline, write_baseline  # noqa: E402
+from allow_annotations import allowed, check_ceilings  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
-BASELINE = os.path.join(ROOT, "tools", "ci", "declared_refs_baseline.txt")
 
 # Medical, body, organs, surgery and Life are no longer excluded
 # (doc/rewrite/lifecycle.md sec 7): the sweeps include them.
@@ -424,19 +422,6 @@ def main(argv):
     counts, sites, obj_counts, obj_sites, cache_errors = scan()
     total, obj_total = sum(counts.values()), sum(obj_counts.values())
     totals = {"undeclared": total, "object_keyed": obj_total}
-    if "--update" in argv:
-        write_baseline(BASELINE, [
-            "Declared-reference ceilings (roadmap L2, doc/rewrite/lifecycle.md sec 4).",
-            "undeclared: object-typed vars not named by a declared_*_vars(); object_keyed: objects",
-            "written into undeclared instance lists. tools/ci/declared_refs_lint.py fails when a",
-            "count rises above its line. Declare the var/list (REF_OWNED/REF_OWNED_LIST/REF_PAIR/",
-            "REF_BACKLIST, a declared cache, tmp, an OM handle) and lower it with --update.",
-        ], totals)
-        print("declared-refs baseline: %d undeclared vars in %d files; %d object-keyed list writes in %d files"
-              % (total, len(counts), obj_total, len(obj_counts)))
-        for error in cache_errors:
-            print("FAIL: " + error)
-        return 1 if cache_errors else 0
     if "--report" in argv:
         for rel, number, what in sites:
             print("%s:%d: %s" % (rel, number, what))
@@ -446,7 +431,7 @@ def main(argv):
               % (total, len(counts), obj_total))
         return 0
     failed = check_ceilings(
-        "declared-refs", totals, read_baseline(BASELINE),
+        "declared-refs", totals, {"undeclared": 0, "object_keyed": 0},
         "Declare each new var as REF_OWNED/REF_OWNED_LIST/REF_PAIR/REF_BACKLIST "
         "(code/datums/lifecycle/links.dm), tmp, or an OM handle; declare a new object-keyed list "
         "(declared_owned_list_vars/backlist/declared_cache_vars) or key it by om_handle().")

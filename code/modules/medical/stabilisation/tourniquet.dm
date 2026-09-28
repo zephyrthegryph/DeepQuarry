@@ -92,6 +92,8 @@
 	/// Tourniquet cinched on this limb, or null. Stops flow to it and every limb below it.
 	var/obj/item/tourniquet/tourniquet
 
+REF_HELD(/obj/item/organ/external, "tourniquet")
+
 /// Is blood flow into this limb cut off by a tourniquet here or on a limb above it?
 /obj/item/organ/external/proc/flow_occluded()
 	var/obj/item/organ/external/E = src

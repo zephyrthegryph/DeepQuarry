@@ -669,3 +669,5 @@ REF_BACKLIST(/obj/machinery/door/firedoor, list("turbolift_floor" = "doors"))
 /obj/machinery/door/firedoor/arm_wakes()
 	..()
 	hibernate_until_air_changes()
+
+REF_STATIC(/obj/machinery/door/firedoor, "areas_added")

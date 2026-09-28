@@ -269,3 +269,6 @@
 	. = ..()
 	network1 = null
 	network2 = null
+
+REF_HELD(/obj/machinery/atmospherics/pipeturbine, list("air_in", "air_out", "network1", "network2"))
+REF_HELD(/obj/machinery/power/turbinemotor, "turbine")

@@ -83,3 +83,6 @@
 			user?.visible_message(span_danger("[user] butchers \the [src] messily!"))
 			if(gib_on_butchery)
 				gib()
+
+// A meat type path or a shared definition, never a per-mob instance.
+REF_STATIC(/mob/living, "meat_type")

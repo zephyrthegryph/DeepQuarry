@@ -10,6 +10,7 @@
 	var/damaged_leak = FALSE
 	/// Pipelines which cache this pipe as a boundary edge. A pipe can be an edge
 	/// of several foreign pipelines, so `parent` alone is not sufficient ownership.
+	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
 	var/list/datum/pipeline/edge_pipelines
 
 	layer = PIPES_LAYER
@@ -333,3 +334,4 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
+REF_HELD(/obj/machinery/atmospherics/pipe, list("air_temporary", "parent", "edge_pipelines"))

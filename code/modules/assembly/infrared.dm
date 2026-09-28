@@ -182,3 +182,5 @@
 /// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
 	return om_resolve(master_handle)
+
+REF_OWNED_LIST(/obj/item/assembly/infra, list("i_beams"))

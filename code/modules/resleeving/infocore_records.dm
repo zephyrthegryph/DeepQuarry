@@ -30,6 +30,8 @@
 
 	var/one_time = FALSE
 
+REF_BACK(/datum/transhuman/mind_record, list("mind_ref" = null))
+
 /datum/transhuman/mind_record/New(datum/mind/mind, mob/living/carbon/human/M, add_to_db = TRUE, one_time = FALSE, database_key)
 	ASSERT(mind)
 
@@ -103,12 +105,12 @@
 	else if(ishuman(copyfrom))
 		init_from_mob(copyfrom, add_to_db, ckeylock)
 
+REF_OWNED(/datum/transhuman/body_record, "mydna")
+REF_BACK(/datum/transhuman/body_record, list("client_ref" = null, "mind_ref" = null))
+
 // ALLOW(lifecycle): records ask for a hard delete (machines hold them untracked).
 /datum/transhuman/body_record/Destroy()
 	QDEL_NULL(mydna.dna)
-	QDEL_NULL(mydna)
-	client_ref = null
-	mind_ref = null
 	limb_data.Cut()
 	organ_data.Cut()
 	..()

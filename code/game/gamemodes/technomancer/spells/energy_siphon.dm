@@ -63,7 +63,9 @@
 
 /obj/item/spell/energy_siphon/proc/populate_siphon_list(atom/movable/target)
 	things_to_siphon.Cut()
+	// ALLOW(object_keyed_lists): per-cycle scratch list of drain targets, Cut() every cycle and on stop
 	things_to_siphon |= target // The recursive check below does not add the object being checked to its list.
+	// ALLOW(object_keyed_lists): per-cycle scratch list of drain targets, Cut() every cycle and on stop
 	things_to_siphon |= recursive_content_check(target, things_to_siphon, recursion_limit = 3, client_check = 0, sight_check = 0, include_mobs = 1, include_objects = 1, ignore_show_messages = 1)
 	for(var/atom/movable/AM in things_to_siphon)
 		if(ishuman(AM)) // We can drain FBPs, so we can skip the test below.

@@ -118,3 +118,9 @@ REF_OWNED_LIST(/datum/expedition_site, "station_controls")
 /// LC-refs: the assigned_shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
 	return om_resolve(assigned_shuttle_handle)
+
+/datum/expedition_site/declared_cache_vars()
+	var/list/L = ..()
+	L = L ? L.Copy() : list()
+	L["floors"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
+	return L

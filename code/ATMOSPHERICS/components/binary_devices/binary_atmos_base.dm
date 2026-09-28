@@ -105,3 +105,5 @@
 	. = ..()
 	network1 = null
 	network2 = null
+
+REF_HELD(/obj/machinery/atmospherics/binary, list("air1", "air2", "network1", "network2"))

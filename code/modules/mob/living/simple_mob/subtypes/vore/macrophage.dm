@@ -161,3 +161,7 @@
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
 	vore_selected = B
+
+// The macrophage's own strain; victims get copies. base_disease is also in infections.
+REF_OWNED(/mob/living/simple_mob/vore/aggressive/macrophage, "base_disease")
+REF_OWNED_LIST(/mob/living/simple_mob/vore/aggressive/macrophage, "infections")
