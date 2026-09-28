@@ -2,4 +2,4 @@
 # tools/ci/lifecycle_counts_lint.py fails when it rises above its line (Destroy()
 # overrides are banned outright). A site with `// ALLOW(lifecycle): <reason>` doesn't count.
 # Lower after a sweep: `python tools/ci/lifecycle_counts_lint.py --update`.
-qdel 2015
+qdel 2013
