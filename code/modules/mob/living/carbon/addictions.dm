@@ -49,6 +49,24 @@
 
 /datum/om/stage/life/addictions/carbon
 	of = /mob/living/carbon
+	wake_on = CHANGE_MOB_HEALTH
+	woken_by = "reagent changes (body invalidate); its rewake"
+
+/// MED-6: no addiction to build, feed or withdraw from.
+/datum/om/stage/life/addictions/carbon/idle(mob/living/carbon/self)
+	if(LAZYLEN(self.addictions))
+		return FALSE
+	var/list/addictive = get_addictive_reagents(ADDICT_ALL)
+	for(var/datum/reagent/R as anything in self.bloodstr?.reagent_list)
+		if((R.id in addictive) || istype(R, /datum/reagent/ethanol))
+			return FALSE
+	for(var/datum/reagent/R as anything in self.ingested?.reagent_list)
+		if((R.id in addictive) || istype(R, /datum/reagent/ethanol) || istype(R, /datum/reagent/drink/coffee))
+			return FALSE
+	return TRUE
+
+/datum/om/stage/life/addictions/carbon/rewake_delay(mob/living/carbon/self)
+	return 30 SECONDS
 
 /datum/om/stage/life/addictions/carbon/perform(mob/living/carbon/self, datum/om/frame/life/ctx)
 	self.process_addictions()

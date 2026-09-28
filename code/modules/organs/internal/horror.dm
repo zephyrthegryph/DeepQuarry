@@ -239,3 +239,35 @@
 	if(owner.life_tick % 10 == 0 && prob(speak_chance))
 		if(prob(5)) //1/20 on a 1/4 chance. 1/80 chance every 10 ticks.
 			owner.say(pick("; Accept our gift.", "; Become one with us.", "; Join our embrace.", "; Come to us.", "; We welcome all that can hear.", "; You can be just like us."))
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/appendix/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/eyes/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/heart/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/intestine/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/kidneys/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/liver/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/lungs/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/spleen/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/stomach/horror/life_step_idle()
+	return FALSE
+
+/obj/item/organ/internal/voicebox/horror/life_step_idle()
+	return FALSE
+

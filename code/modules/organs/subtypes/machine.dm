@@ -119,3 +119,8 @@ REF_OWNED(/obj/item/organ/internal/mmi_holder, "stored_mmi")
 	stored_mmi.icon_state = "mainboard"
 	icon_state = stored_mmi.icon_state
 
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/cell/machine/life_step_idle()
+	return FALSE
+

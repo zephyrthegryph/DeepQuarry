@@ -89,3 +89,31 @@
 	TEST_ASSERT(H.has_affliction(/datum/affliction/venom/lingering_poison), "a lingering poison dose should afflict an organic patient")
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_TOXIC) > 0, "the poisoning counts toward toxic load")
 	qdel(H)
+
+/// MED-6: the former polling life stages idle on a healthy, idle human (they wake on events or
+/// their rewake instead of running every cycle).
+/datum/unit_test/dq_med6_life_stages_idle_when_healthy
+
+/datum/unit_test/dq_med6_life_stages_idle_when_healthy/Run()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	H.phobias = 0
+	H.weight_gain = 0
+	H.weight_loss = 0
+	H.bodytemperature = H.species.body_temperature || H.bodytemperature
+	var/list/stages = list(
+		/datum/om/stage/life/medical,
+		/datum/om/stage/life/npc,
+		/datum/om/stage/life/changeling,
+		/datum/om/stage/life/shock,
+		/datum/om/stage/life/heartbeat,
+		/datum/om/stage/life/weight,
+		/datum/om/stage/life/nif,
+		/datum/om/stage/life/phobias,
+		/datum/om/stage/life/addictions,
+		/datum/om/stage/life/radiation,
+	)
+	for(var/stage_type in stages)
+		var/datum/om/stage/S = om_stage_for(H, stage_type)
+		if(!S)
+			continue
+		TEST_ASSERT(S.idle(H), "[S.type] should idle on a healthy human")

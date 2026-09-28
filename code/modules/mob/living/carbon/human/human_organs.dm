@@ -19,9 +19,27 @@
 /datum/om/stage/life/organs
 	order = LIFE_PHASE_TAIL + 150
 	name = "organs"
-	wake_on = 0
+	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "injure/mend and body invalidate (limb damage, lesions); its rewake for raw germ writes"
+
+/// MED-6: no limb needs processing, the stance is sound and every internal organ is idle
+/// (life_step_idle()).
+/datum/om/stage/life/organs/idle(mob/living/carbon/human/self)
+	if(length(self.bad_external_organs) || self.stance_damage)
+		return FALSE
+	for(var/obj/item/organ/external/E as anything in self.organs)
+		if(E.germ_level || E.need_process())
+			return FALSE
+	for(var/obj/item/organ/I as anything in self.internal_organs)
+		if(!I.life_step_idle())
+			return FALSE
+	return TRUE
+
+/// Germs and organ reagents are written raw.
+/datum/om/stage/life/organs/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /datum/om/stage/life/organs/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	process_organs(self)

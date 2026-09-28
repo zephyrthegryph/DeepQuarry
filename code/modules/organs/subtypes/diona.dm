@@ -247,3 +247,8 @@
 	dislocated = -1
 	vital = FALSE
 	slot_flags = SLOT_BELT
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/diona/life_step_idle()
+	return FALSE
+

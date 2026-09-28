@@ -56,6 +56,21 @@ BLOOD_VOLUME_SURVIVE = 40
 // Takes care blood loss and regeneration
 /datum/om/stage/life/blood/carbon/human
 	of = /mob/living/carbon/human
+	wake_on = CHANGE_MOB_HEALTH
+	woken_by = "injure/mend (wounds, bleeding); its rewake for raw vessel writes (draws, transfusions)"
+
+/// MED-6: a full vessel with nothing bleeding and no pallor to clear has nothing to do.
+/datum/om/stage/life/blood/carbon/human/idle(mob/living/carbon/human/self)
+	if(!self.should_have_organ(O_HEART) || !self.vessel)
+		return TRUE
+	if(self.pale)
+		return FALSE
+	if(self.vessel.get_reagent_amount(REAGENT_ID_BLOOD) < self.species.blood_volume)
+		return FALSE
+	return !self.caculate_bloodloss_and_bleed(FALSE)
+
+/datum/om/stage/life/blood/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /datum/om/stage/life/blood/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(self.inStasisNow())

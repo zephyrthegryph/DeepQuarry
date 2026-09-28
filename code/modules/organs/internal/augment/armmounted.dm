@@ -284,3 +284,8 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/medical/synth_types()
 	var/static/list/types = list(/datum/matter_synth/bandage)
 	return types
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/life_step_idle()
+	return FALSE
+

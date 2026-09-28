@@ -78,3 +78,11 @@
 /obj/item/organ/internal/spleen/minor/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.7)
+
+// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+/obj/item/organ/internal/spleen/life_step_idle()
+	if(!..())
+		return FALSE
+	if(!owner)
+		return TRUE
+	return owner.injury_load(INJURY_CATEGORY_TOXIC) < 30 && !owner.factor(BF_WITHDRAWAL)

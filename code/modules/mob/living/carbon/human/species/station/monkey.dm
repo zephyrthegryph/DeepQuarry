@@ -56,6 +56,10 @@
 		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
 		)
 
+/// Monkeys wander and emote whenever they're awake.
+/datum/species/monkey/npc_behaviour_active(mob/living/carbon/human/H)
+	return H.stat == CONSCIOUS
+
 /datum/species/monkey/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat != CONSCIOUS)
 		return

@@ -75,3 +75,14 @@
 /obj/item/organ/internal/lungs/erikLungs
 	name = "Erik's lungs"
 	desc = "These lungs supposedly belonged to someone named 'Erik', he loses them so often they've been displayed here for whenever they might be needed."
+
+// MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
+/obj/item/organ/internal/lungs/life_step_idle()
+	if(!..())
+		return FALSE
+	if(!owner)
+		return TRUE
+	if(is_bruised())
+		return FALSE
+	var/obj/item/organ/internal/brain/B = owner.internal_organs_by_name[O_BRAIN]
+	return !B || B.get_control_efficiency() > 0.8

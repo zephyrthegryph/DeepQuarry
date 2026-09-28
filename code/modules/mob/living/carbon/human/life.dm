@@ -129,6 +129,25 @@
 	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "body invalidate (conditions, chems, factors, oxygen debt via tissue hypoxia); its rewake for raw temperature/radiation writes"
+
+/// MED-6: nothing to do while no trigger domain is dirty, no side effect runs, no allergen
+/// reacts and the oxygen debt is below the ischemia threshold.
+/datum/om/stage/life/medical/idle(mob/living/carbon/human/self)
+	var/datum/body/B = self.body
+	if(!B)
+		return TRUE
+	if(B.dirty & (BODY_DIRTY_CONDITIONS | BODY_DIRTY_FACTORS))
+		return FALSE
+	if(LAZYLEN(self.side_effects))
+		return FALSE
+	if(B.factors?[BF_ALLERGY] > 0)
+		return FALSE
+	return self.oxygen_debt() < MEDICAL_STAGE_ISCHEMIA_DEBT
+
+/// The metric triggers read body temperature and radiation, which many places write raw.
+/datum/om/stage/life/medical/rewake_delay(mob/living/carbon/human/self)
+	return 5 SECONDS
 
 /datum/om/stage/life/medical/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	SEND_SIGNAL(self,COMSIG_HANDLE_ALLERGENS, self.factor(BF_ALLERGY))
@@ -141,9 +160,17 @@
 /datum/om/stage/life/npc
 	order = LIFE_PHASE_TAIL + 270
 	name = "npc"
-	wake_on = 0
+	wake_on = CHANGE_MOB_CLIENT | CHANGE_MOB_STAT
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "login/logout; set_stat; its rewake"
+
+/// MED-6: a player, or a species with nothing to do for this body, has no NPC work.
+/datum/om/stage/life/npc/idle(mob/living/carbon/human/self)
+	return self.client || !self.species.npc_behaviour_active(self)
+
+/datum/om/stage/life/npc/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /datum/om/stage/life/npc/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	if(!self.client)
@@ -349,6 +376,14 @@
 
 /datum/om/stage/life/radiation/carbon/human
 	of = /mob/living/carbon/human
+	woken_by = "its rewake (radiation is written raw)"
+
+/// MED-6: no dose and nothing accumulated to dissipate.
+/datum/om/stage/life/radiation/carbon/human/idle(mob/living/carbon/human/self)
+	return !self.radiation && !self.accumulated_rads && !self._listen_lookup?[COMSIG_HANDLE_RADIATION]
+
+/datum/om/stage/life/radiation/carbon/human/rewake_delay(mob/living/carbon/human/self)
+	return 5 SECONDS
 
 /datum/om/stage/life/radiation/carbon/human/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
 	. = ..()
@@ -1151,9 +1186,24 @@
 /datum/om/stage/life/thermoregulation
 	order = LIFE_PHASE_TAIL + 160
 	name = "thermoregulation"
-	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
+	wake_on = CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_STAT
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "movement; equipment; set_stat; its rewake for raw body temperature writes"
+
+/// MED-6: at its set point, with no heat source of its own, the body has nothing to regulate.
+/datum/om/stage/life/thermoregulation/idle(mob/living/carbon/human/self)
+	if(self.species.passive_temp_gain)
+		return FALSE
+	if(isnull(self.species.body_temperature))
+		return TRUE
+	if(self.stat != DEAD && self.robobody_count)
+		return FALSE
+	return self.on_fire || abs(self.species.body_temperature - self.bodytemperature) < 0.5
+
+/// Body temperature is written raw by the environment, reagents and afflictions.
+/datum/om/stage/life/thermoregulation/rewake_delay(mob/living/carbon/human/self)
+	return 4 SECONDS
 
 /// Body temperature adjusts itself (self-regulation).
 /datum/om/stage/life/thermoregulation/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
@@ -1918,9 +1968,19 @@
 /datum/om/stage/life/changeling
 	order = LIFE_PHASE_TAIL + 140
 	name = "changeling"
-	wake_on = 0
+	wake_on = CHANGE_MOB_CLIENT
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "login (HUD); its rewake (becoming a changeling)"
+
+/// MED-6: a non-changeling whose chemical display is already hidden has nothing to do.
+/datum/om/stage/life/changeling/idle(mob/living/carbon/human/self)
+	if(is_changeling(self))
+		return FALSE
+	return !self.mind || !self.hud_used || self.ling_chem_display?.invisibility == INVISIBILITY_ABSTRACT
+
+/datum/om/stage/life/changeling/rewake_delay(mob/living/carbon/human/self)
+	return 30 SECONDS
 
 /// Updates the number of stored chemicals for powers.
 /datum/om/stage/life/changeling/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
@@ -1976,6 +2036,14 @@
 	wake_on = CHANGE_MOB_HEALTH
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "injure/mend and body invalidate (pain, analgesia); its rewake for raw shock_stage writes"
+
+/// MED-6: no traumatic shock building and none to recover from.
+/datum/om/stage/life/shock/idle(mob/living/carbon/human/self)
+	return self.shock_stage <= 0 && self.traumatic_shock < 80
+
+/datum/om/stage/life/shock/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /// Traumatic shock stages from pain.
 /datum/om/stage/life/shock/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
@@ -2137,9 +2205,19 @@
 /datum/om/stage/life/heartbeat
 	order = LIFE_PHASE_TAIL + 240
 	name = "heartbeat"
-	wake_on = CHANGE_MOB_HEALTH
+	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_LOC | CHANGE_MOB_CLIENT
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "body invalidate; movement (space); login; its rewake for raw pulse writes"
+
+/// MED-6: the heartbeat is a sound for a player with a racing pulse, in shock or in space.
+/datum/om/stage/life/heartbeat/idle(mob/living/carbon/human/self)
+	if(!self.client || self.pulse == PULSE_NONE)
+		return TRUE
+	return self.pulse < PULSE_2FAST && self.shock_stage < 10 && !istype(get_turf(self), /turf/space)
+
+/datum/om/stage/life/heartbeat/rewake_delay(mob/living/carbon/human/self)
+	return 4 SECONDS
 
 /// Heartbeat sound for fast pulses, shock or space.
 /datum/om/stage/life/heartbeat/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
@@ -2392,6 +2470,16 @@
 	wake_on = 0
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "its rewake (nutrition is written raw everywhere)"
+
+/// MED-6: neither gaining (well fed, gain on, under the cap) nor losing (starving, loss on).
+/datum/om/stage/life/weight/idle(mob/living/carbon/human/self)
+	var/gaining = self.weight_gain && self.nutrition > MIN_NUTRITION_TO_GAIN && self.weight < MAX_MOB_WEIGHT
+	var/losing = self.weight_loss && self.nutrition <= MAX_NUTRITION_TO_LOSE && self.weight > MIN_MOB_WEIGHT
+	return !gaining && !losing
+
+/datum/om/stage/life/weight/rewake_delay(mob/living/carbon/human/self)
+	return 10 SECONDS
 
 /// Weight gain and loss from nutrition.
 /datum/om/stage/life/weight/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)
@@ -2409,6 +2497,14 @@
 	wake_on = 0
 	run_if = LIFE_RUN_IF_LIVE_BIOLOGY
 	of = /mob/living/carbon/human
+	woken_by = "its rewake (a NIF installed)"
+
+/// MED-6: no NIF, nothing to run.
+/datum/om/stage/life/nif/idle(mob/living/carbon/human/self)
+	return !self.nif
+
+/datum/om/stage/life/nif/rewake_delay(mob/living/carbon/human/self)
+	return 30 SECONDS
 
 /// Our call for the NIF to do whatever.
 /datum/om/stage/life/nif/perform(mob/living/carbon/human/self, datum/om/frame/life/ctx)

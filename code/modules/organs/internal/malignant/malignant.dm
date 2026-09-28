@@ -806,3 +806,8 @@
 	deg_chance = 1
 	deg_intensity = 3
 	side_effect_multiplier = 2
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/malignant/life_step_idle()
+	return FALSE
+

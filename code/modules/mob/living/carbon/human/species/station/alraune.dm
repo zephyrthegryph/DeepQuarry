@@ -506,3 +506,8 @@
 /datum/species/alraune/get_race_key()
 	var/datum/species/real = GLOB.all_species[base_species]
 	return real.race_key
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/fruitgland/life_step_idle()
+	return FALSE
+

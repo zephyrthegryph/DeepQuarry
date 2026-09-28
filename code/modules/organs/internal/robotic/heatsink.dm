@@ -62,3 +62,8 @@
 		return owner.species.heat_level_2
 
 	return environment.return_temperature()
+
+// MED-6: this organ has work every periodic_step(), so the organs life stage stays awake for it.
+/obj/item/organ/internal/robotic/heatsink/life_step_idle()
+	return FALSE
+

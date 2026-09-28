@@ -169,6 +169,9 @@
 /// a worn item's armour, coverage, conductivity or insulation, changed.
 #define BODY_DIRTY_ARMOR     (1<<7)
 #define BODY_DIRTY_CONDITIONS (BODY_DIRTY_ORGANS | BODY_DIRTY_METRICS | BODY_DIRTY_CHEMS)
+/// Oxygen debt from which sustained hypoxia starts injuring organs (dq_check_ischemic_damage());
+/// the medical life stage stays awake at or above it.
+#define MEDICAL_STAGE_ISCHEMIA_DEBT 30
 #define BODY_DIRTY_ALL       (BODY_DIRTY_VITALS | BODY_DIRTY_CONDITIONS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS | BODY_DIRTY_PHYSIOLOGY | BODY_DIRTY_ARMOR)
 
 // --- Natural regeneration (TREAT_REGENERATION) ---------------------------------------------
