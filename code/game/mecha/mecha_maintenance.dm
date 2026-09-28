@@ -143,6 +143,7 @@
 		/datum/interaction/mecha_treat/fix_wiring,
 		/datum/interaction/mecha_treat/extinguish,
 		/datum/interaction/mecha_paste_repair,
+		/datum/interaction/mecha_treat/recalibrate,
 	)
 
 /// The power unit hatch is open (short-circuit wiring is behind it).
@@ -286,4 +287,21 @@
 		C.paste_repair_step(actor, held, src)
 	if(!any_part)
 		to_chat(actor, span_notice("There are no components installed!"))
+	return TRUE
+
+/// The pilot recalibrates the coordination system (control damage) from the cockpit. The
+/// cockpit panel's "Recalibrate" action runs this interaction; it has no click action.
+/datum/interaction/mecha_treat/recalibrate
+	id = "mecha_recalibrate"
+	name = "Recalibrate the coordination system"
+	default_action = null
+	treats = MECHA_INT_CONTROL_LOST
+	requires = list(REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, "only the pilot can recalibrate"))
+	effect = /obj/mecha/proc/start_recalibration
+
+/// Recalibration takes 10 seconds and fails if the mech moves meanwhile (recalibration_done()).
+/obj/mecha/proc/start_recalibration(mob/actor, obj/item/held, datum/interaction/interaction)
+	occupant_message("Recalibrating coordination system.")
+	mecha_log_message("Recalibration of coordination system started.")
+	om_after(src, 10 SECONDS, PROC_REF(recalibration_done), loc)
 	return TRUE

@@ -18,7 +18,6 @@
 	var/dir_in = 2						//What direction will the mech face when entered/powered on? Defaults to South.
 	var/step_energy_drain = 10
 	max_integrity = 300 				//Chassis HP, backed by the TG atom_integrity system.
-	var/deflect_chance = 10 			//Chance to deflect the incoming projectiles, hits, or lesser the effect of ex_act.
 
 	var/damage_minimum = 10				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	var/minimum_penetration = 15		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
@@ -130,7 +129,6 @@
 
 	var/defence_mode_possible = 0 	//Can we even use defence mode? This is used to assign it to mechs and check for verbs.
 	var/defence_mode = 0 			//Are we in defence mode
-	var/defence_deflect = 35		//How much it deflect
 
 	var/overload_possible = 0 		//Same as above. Don't forget to GRANT the verb&actions if you want everything to work proper.
 	var/overload = 0 				//Are our legs overloaded
@@ -1271,12 +1269,8 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		user.visible_message("[user] attaches [W] to [src].", "You attach [W] to [src]")
 		return TRUE
 
-	// Nanopaste and cable repairs are declared interactions (mecha_maintenance.dm).
-	else if(istype(W, /obj/item/stack/nanopaste) || istype(W, /obj/item/stack/cable_coil))
-		return TRUE
-
 	else
-		call((LAZYACCESS(proc_res, "dynattackby")||src), "dynattackby")(W,user)
+		dynattackby(W, user)
 	return TRUE
 
 
@@ -2442,10 +2436,10 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
 		src.dna = null
 	if(href_list["repair_int_control_lost"])
-		if(usr != src?.slot_item(MECHA_SLOT_PILOT))	return
-		src.occupant_message("Recalibrating coordination system.")
-		src.mecha_log_message("Recalibration of coordination system started.")
-		om_after(src, 10 SECONDS, PROC_REF(recalibration_done), src.loc)
+		// The declared interaction checks the pilot and that there is control damage.
+		var/datum/interaction/recalibrate = INTERACTION(/datum/interaction/mecha_treat/recalibrate)
+		if(recalibrate?.applies_to(src))
+			recalibrate.attempt(usr, src, null)
 	if(href_list["drop_from_cargo"])
 		var/obj/O = locate(href_list["drop_from_cargo"])
 		if(O && (O in src.cargo))

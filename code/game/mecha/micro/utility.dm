@@ -6,7 +6,6 @@
 	step_in = 3
 	dir_in = 2 //Facing south.
 	max_integrity = 100
-	deflect_chance = 10
 	max_temperature = 15000
 	infra_luminosity = 6
 	wreckage = /obj/effect/decal/mecha_wreckage/micro/utility/gopher

@@ -418,9 +418,8 @@ REF_WEAK_LIST(/datum/unit_test/dq_integrity_pool, "before_contents")
 /datum/unit_test/dq_integrity_pool/mech_packet/Run()
 	var/turf/T = scratch_turf()
 	var/obj/mecha/working/ripley/mech = allocate(/obj/mecha/working/ripley, T)
-	// Mechs deflect hits at random (deflect_chance, and the armour component's); pin both
-	// to zero so the packet always lands.
-	mech.deflect_chance = 0
+	// Mechs deflect hits at random (the armour plates' deflect_chance); pin it to zero so
+	// the packet always lands.
 	var/obj/item/mecha_parts/component/armor/armour = mech.internal_components[MECH_ARMOR]
 	if(armour)
 		armour.deflect_chance = 0

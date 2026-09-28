@@ -7,7 +7,6 @@
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
 	max_integrity = 250 // Don't forget to update the /old variant if you change this number.
-	deflect_chance = 30
 	max_temperature = 25000
 	infra_luminosity = 3
 	wreckage = /obj/effect/decal/mecha_wreckage/phazon
@@ -90,7 +89,6 @@
 	dir_in = 1 //Facing North.
 	step_energy_drain = 3
 	max_integrity = 350
-	deflect_chance = 30
 	inherent_damage_absorption = list("brute"=0.6,"fire"=0.7,"bullet"=0.7,"laser"=0.9,"energy"=0.7,"bomb"=0.5)
 	max_temperature = 10000
 	infra_luminosity = 3

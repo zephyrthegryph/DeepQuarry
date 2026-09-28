@@ -17,7 +17,7 @@
 		return inc_damage// Don't care about test projectiles, just what comes after them
 	if(!action_checks(src))
 		return inc_damage
-	if(prob(chassis.deflect_chance*deflect_coeff))
+	if(prob(mech_body_plan().deflect_chance(chassis)*deflect_coeff))
 		chassis.occupant_message(span_notice("The armor deflects incoming projectile."))
 		chassis.visible_message("The [chassis.name] armor deflects the projectile.")
 		chassis.log_append_to_last("Armor saved.")
@@ -32,7 +32,7 @@
 /obj/item/mecha_parts/mecha_equipment/antiproj_armor_booster/handle_ranged_contact(obj/A, inc_damage = 0)
 	if(!action_checks(A))
 		return inc_damage
-	if(prob(chassis.deflect_chance*deflect_coeff))
+	if(prob(mech_body_plan().deflect_chance(chassis)*deflect_coeff))
 		chassis.occupant_message(span_notice("The [A] bounces off the armor."))
 		chassis.visible_message("The [A] bounces off \the [chassis]'s armor")
 		chassis.log_append_to_last("Armor saved.")

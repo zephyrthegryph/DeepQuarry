@@ -256,11 +256,10 @@
 		return
 	playsound(src, 'sound/mecha/duranddefencemode.ogg', 50, 1)
 	defence_mode = !defence_mode
+	// The body plan adds the defence-mode deflection bonus (mech_body_plan().deflect_chance()).
 	if(defence_mode)
-		deflect_chance = defence_deflect
 		src.occupant_message(span_blue("You enable [src] defence mode."))
 	else
-		deflect_chance = initial(deflect_chance)
 		src.occupant_message(span_red("You disable [src] defence mode."))
 	src.log_message("Toggled defence mode.", LOG_GAME)
 	return
