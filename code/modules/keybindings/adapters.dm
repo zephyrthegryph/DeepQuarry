@@ -107,7 +107,7 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 /// Whether this kind of actor can ever do `interaction`. Excluded ones aren't even listed as blocked.
 /// Observer-only interactions are for ghosts alone.
 /datum/input_adapter/proc/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
-	return !(INTERACTION_TAG_OBSERVER in interaction.tags)
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags) && !(INTERACTION_TAG_SILICON in interaction.tags)
 
 /// Use through the resolver with nothing in hand. TRUE if an interaction answered.
 /datum/input_adapter/proc/use_interaction(mob/user, atom/target)
@@ -388,6 +388,10 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 
 /datum/input_adapter/robot
 	name = "robot"
+
+/// Cyborgs get everything but observer-only interactions, silicon-only ones included.
+/datum/input_adapter/robot/allows_interaction(mob/user, atom/target, datum/interaction/interaction)
+	return !(INTERACTION_TAG_OBSERVER in interaction.tags)
 
 /datum/input_adapter/robot/accept_click(mob/living/silicon/robot/user, atom/target, params)
 	if(!user.checkClickCooldown())

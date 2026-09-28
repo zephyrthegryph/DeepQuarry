@@ -105,6 +105,8 @@
 	var/list/base_requires
 	if(kind == INTERACT_KIND_USE || kind == INTERACT_KIND_SELF)
 		base_requires = ispath(owner_type, /obj/item) ? list(REQ_SELF_USE_REACH) : list()
+	else if(kind == INTERACT_KIND_SILICON || kind == INTERACT_KIND_ROBOT || kind == INTERACT_KIND_OBSERVER)
+		base_requires = list() // the actor's adapter decides reach (the AI's cameras, a cyborg's link, a ghost anywhere)
 	else
 		base_requires = list(REQ_INTERACTION_REACH)
 	requires = base_requires + (requires || list())
@@ -137,6 +139,16 @@
 			entry = INTERACTION_ENTRY_ALT
 			category = INTERACTION_CAT_TOGGLE
 			default_action = INPUT_ACTION_ALTERNATE
+		// Actor-kind Use (I3): resolver-native, offered only to the actors their tags name.
+		if(INTERACT_KIND_SILICON)
+			category = INTERACTION_CAT_OPEN
+			tags = (tags || list()) + list(INTERACTION_TAG_REMOTE, INTERACTION_TAG_SILICON)
+		if(INTERACT_KIND_ROBOT)
+			category = INTERACTION_CAT_OPEN
+			tags = (tags || list()) + list(INTERACTION_TAG_SILICON)
+		if(INTERACT_KIND_OBSERVER)
+			category = INTERACTION_CAT_OPEN
+			tags = (tags || list()) + list(INTERACTION_TAG_OBSERVER)
 		else
 			CRASH("dq_interaction_from_spec: unknown compact interaction kind [kind] on [owner_type]")
 

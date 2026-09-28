@@ -21,6 +21,8 @@
 #define INTERACTION_TAG_HOSTILE "hostile"
 /// Observer-only: offered to ghosts and to no one else (I3).
 #define INTERACTION_TAG_OBSERVER "observer"
+/// Silicon-only: offered to the AI and cyborgs and to no one else (I3).
+#define INTERACTION_TAG_SILICON "silicon"
 /// Part of the Maintainable behaviour (panel, anchor, deconstruct, repair).
 #define INTERACTION_TAG_MAINTENANCE "maintenance"
 
@@ -186,3 +188,15 @@
 #define INTERACT_ITEM_DEFAULT(name, effect, requires...) list(INTERACT_KIND_ITEM, name, effect, list(requires), null, null, INTERACT_ORDER_DEFAULT)
 /// Used with an item of `held_type`, when nothing else takes it.
 #define INTERACT_INSERT_DEFAULT(held_type, effect, name, requires...) list(INTERACT_KIND_INSERT, name, effect, list(requires), held_type, null, INTERACT_ORDER_DEFAULT)
+
+// Actor-kind shapes (I3). Resolver-native Use for one kind of actor, replacing the
+// attack_ai / attack_robot / attack_ghost overrides. The actor's adapter decides reach.
+#define INTERACT_KIND_SILICON "silicon"
+#define INTERACT_KIND_ROBOT "robot"
+#define INTERACT_KIND_OBSERVER "observer"
+/// The AI's Use, and a cyborg's empty-gripper Use (old attack_ai). `effect(actor, held, interaction)`.
+#define INTERACT_SILICON(name, effect, requires...) list(INTERACT_KIND_SILICON, name, effect, list(requires))
+/// A cyborg's empty-gripper Use only (old attack_robot). List it before an INTERACT_SILICON it overrides.
+#define INTERACT_ROBOT(name, effect, requires...) list(INTERACT_KIND_ROBOT, name, effect, list(requires))
+/// A ghost's Use (old attack_ghost). `effect(actor, held, interaction)`.
+#define INTERACT_OBSERVER(name, effect, requires...) list(INTERACT_KIND_OBSERVER, name, effect, list(requires))
